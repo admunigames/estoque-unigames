@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const env = {
@@ -89,4 +90,18 @@ test("cria uma sessão assinada com credenciais válidas", async () => {
     ctx,
   );
   assert.notEqual(protectedResponse.headers.get("location"), "http://localhost/login?next=%2F");
+});
+
+test("configura o banco geral e conecta a interface à API compartilhada", async () => {
+  const [hosting, html, migration] = await Promise.all([
+    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0000_wild_magik.sql", import.meta.url), "utf8"),
+  ]);
+
+  assert.equal(JSON.parse(hosting).d1, "DB");
+  assert.match(migration, /CREATE TABLE `shared_state`/);
+  assert.match(html, /\/api\/shared-state/);
+  assert.match(html, /BANCO GERAL ATIVO/);
+  assert.match(html, /ifAbsent:true/);
 });
