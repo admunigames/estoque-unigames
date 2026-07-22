@@ -118,6 +118,14 @@
     display:flex; align-items:center; gap:10px; padding:10px 10px 4px;
     color:var(--ink-soft); font-family:var(--mono); font-size:9px; letter-spacing:.7px;
   }
+  .logout-form{margin-top:12px;}
+  .logout-button{
+    width:100%; padding:10px 12px; border-radius:9px; cursor:pointer;
+    border:1px solid rgba(255,116,116,.3); background:rgba(126,28,28,.12);
+    color:#ffc4c4; font-family:var(--mono); font-size:10px; font-weight:800;
+    letter-spacing:.55px; text-align:left;
+  }
+  .logout-button:hover{border-color:rgba(255,116,116,.65); background:rgba(126,28,28,.24);}
   .ios-storage-box{
     margin-top:auto; padding:12px; border:1px solid rgba(79,134,189,.34); border-radius:11px;
     background:rgba(8,18,30,.58); box-shadow:inset 0 1px rgba(255,255,255,.035);
@@ -592,6 +600,9 @@
       </div>
       <input class="pull-hidden-input" id="iosRestoreInput" type="file" accept=".json,application/json">
     </div>
+    <form class="logout-form" method="post" action="/logout">
+      <button class="logout-button" type="submit">SAIR DO SISTEMA</button>
+    </form>
     <div class="sidebar-status"><span class="status-pulse" aria-hidden="true"></span><span>SISTEMA LOCAL IOS</span></div>
   </nav>
 
