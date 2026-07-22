@@ -1,5 +1,4 @@
 const NOTION_VERSION = "2026-03-11";
-const DEFAULT_DATA_SOURCE_ID = "3281f04e-8950-8046-937e-000bcedd0246";
 
 type JsonMap = Record<string, unknown>;
 
@@ -293,7 +292,14 @@ export function appendUploadedFiles(
 }
 
 export function notionDataSourceId() {
-  return process.env.NOTION_DATA_SOURCE_ID?.trim() || DEFAULT_DATA_SOURCE_ID;
+  const dataSourceId = process.env.NOTION_DATA_SOURCE_ID?.trim();
+  if (!dataSourceId) {
+    throw new NotionApiError(
+      "A BASE DE CONTROLE DE COMPRAS AINDA NÃO FOI CONFIGURADA.",
+      503,
+    );
+  }
+  return dataSourceId;
 }
 
 function notionToken() {
@@ -350,7 +356,13 @@ export async function notionRequest(path: string, init: RequestInit = {}) {
 export function unauthorizedResponse(request: Request) {
   const hostname = new URL(request.url).hostname;
   const local = hostname === "localhost" || hostname === "127.0.0.1";
-  if (local || request.headers.get("oai-authenticated-user-email")) return null;
+  if (
+    local ||
+    request.headers.get("oai-authenticated-user-email") ||
+    request.headers.get("x-unigames-authenticated") === "1"
+  ) {
+    return null;
+  }
   return Response.json({ error: "ACESSO NÃO AUTORIZADO." }, { status: 401 });
 }
 
