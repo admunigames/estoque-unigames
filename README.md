@@ -28,6 +28,15 @@ Para validar a versão de produção:
 pnpm build
 ```
 
+## Fonte principal e publicação
+
+O código-fonte completo e atualizado é mantido em
+`https://github.com/admunigames/estoque-unigames`.
+
+Toda alteração deve ser validada e enviada ao GitHub antes da publicação no
+ChatGPT Sites. A hospedagem deve reutilizar o projeto definido em
+`.openai/hosting.json`, mantendo o mesmo endereço e o mesmo banco D1.
+
 ## Configuração segura
 
 Copie `.env.example` para um arquivo `.env` local e preencha:
@@ -55,4 +64,3 @@ de puxadas são persistidos no banco D1 compartilhado do site. O primeiro acesso
 após a migração aproveita os dados existentes do navegador somente quando a
 mesma chave ainda não existe no banco geral. O Controle de Compras permanece no
 Notion.
-
