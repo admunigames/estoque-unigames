@@ -6,8 +6,9 @@ compras integrado ao Notion.
 ## Funcionalidades
 
 - dashboard e divergências de estoque;
-- cadastros de lojas e dados locais;
+- cadastros de lojas e bases de produtos;
 - criação e acompanhamento de puxadas;
+- banco geral compartilhado para Cadastros, Dados, Dashboard e Puxadas;
 - controle de compras sincronizado com o Notion;
 - anexos de pedidos e notas fiscais;
 - acesso protegido por usuário, senha e sessão assinada no servidor.
@@ -46,3 +47,11 @@ Todas as páginas, arquivos estáticos e APIs passam pela proteção do Worker. 
 sessão usa cookie `HttpOnly`, `Secure` em produção, `SameSite=Strict`, assinatura
 HMAC-SHA-256 e expiração de 12 horas. Tentativas repetidas de login recebem
 bloqueio temporário.
+
+## Persistência
+
+Cadastros, bases de produtos, dados processados de entrada e saída e relatórios
+de puxadas são persistidos no banco D1 compartilhado do site. O primeiro acesso
+após a migração aproveita os dados existentes do navegador somente quando a
+mesma chave ainda não existe no banco geral. O Controle de Compras permanece no
+Notion.

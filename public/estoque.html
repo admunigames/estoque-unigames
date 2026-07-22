@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ESTOQUE">
 <meta name="format-detection" content="telephone=no">
-<title>ESTOQUE — IOS</title>
+<title>ESTOQUE — UNIGAMES</title>
   <link rel="icon" type="image/png" id="appFavicon" href="">
   <link rel="apple-touch-icon" id="appleTouchIcon" href="">
   <link rel="manifest" href="manifest.webmanifest">
@@ -592,8 +592,8 @@
     <button class="nav-item" id="navPuxadas" data-page="puxadas"><span>Puxadas</span></button>
     <button class="nav-item" id="navCompras" data-page="compras"><span>Controle de Compras</span></button>
     <div class="ios-storage-box">
-      <strong>DADOS LOCAIS DO IOS</strong>
-      <p id="iosStorageStatus">VERIFICANDO O ARMAZENAMENTO NESTE DISPOSITIVO...</p>
+      <strong>DADOS COMPARTILHADOS</strong>
+      <p id="iosStorageStatus">VERIFICANDO A CONEXÃO COM O BANCO GERAL...</p>
       <div class="ios-storage-actions">
         <button id="btnIosBackup" type="button">EXPORTAR BACKUP</button>
         <button id="btnIosRestore" type="button">RESTAURAR BACKUP</button>
@@ -603,7 +603,7 @@
     <form class="logout-form" method="post" action="/logout">
       <button class="logout-button" type="submit">SAIR DO SISTEMA</button>
     </form>
-    <div class="sidebar-status"><span class="status-pulse" aria-hidden="true"></span><span>SISTEMA LOCAL IOS</span></div>
+    <div class="sidebar-status"><span class="status-pulse" aria-hidden="true"></span><span>BANCO GERAL ATIVO</span></div>
   </nav>
 
   <div class="content">
@@ -1112,7 +1112,7 @@
     catch(e){ return null; }
   }
 
-  const storage = {
+  const legacyStorage = {
     async get(key){
       const fullKey = STORAGE_PREFIX + key;
       let value = null;
@@ -1145,16 +1145,65 @@
     }
   };
 
-  function hasStorage(){
-    if(typeof indexedDB !== 'undefined') return true;
-    try{
-      const testKey = STORAGE_PREFIX + '__test__';
-      localStorage.setItem(testKey, '1');
-      localStorage.removeItem(testKey);
-      return true;
-    } catch(e){
-      return false;
+  async function sharedStateRequest(key, options){
+    const requestOptions = options || {};
+    const method = requestOptions.method || 'GET';
+    const fetchOptions = {
+      method,
+      headers:{'Accept':'application/json'},
+      cache:'no-store'
+    };
+    let url = '/api/shared-state?key=' + encodeURIComponent(key);
+    if(method === 'PUT'){
+      fetchOptions.headers['Content-Type'] = 'application/json';
+      fetchOptions.body = JSON.stringify({
+        key,
+        value:requestOptions.value,
+        ifAbsent:requestOptions.ifAbsent === true
+      });
+      url = '/api/shared-state';
     }
+    const response = await fetch(url, fetchOptions);
+    let data = {};
+    try{ data = await response.json(); } catch(e){ /* usa a mensagem padrão abaixo */ }
+    if(!response.ok){
+      if(response.status === 401) location.assign('/login?next=' + encodeURIComponent(location.pathname));
+      throw new Error(data.error || 'BANCO COMPARTILHADO INDISPONÍVEL');
+    }
+    return data;
+  }
+
+  const storage = {
+    async get(key){
+      const shared = await sharedStateRequest(key);
+      if(shared.value !== null && typeof shared.value !== 'undefined'){
+        return { value:shared.value, version:shared.version || 0, updatedAt:shared.updatedAt || null };
+      }
+
+      // Migra automaticamente os dados existentes deste aparelho apenas quando
+      // a mesma chave ainda não existe no banco geral. Assim, outro aparelho não
+      // substitui acidentalmente o primeiro conjunto de dados já compartilhado.
+      const local = await legacyStorage.get(key);
+      if(!local || local.value === null) return null;
+      const migrated = await sharedStateRequest(key, {
+        method:'PUT',
+        value:local.value,
+        ifAbsent:true
+      });
+      return { value:migrated.value, version:migrated.version || 1, updatedAt:migrated.updatedAt || null };
+    },
+    async set(key, value){
+      const shared = await sharedStateRequest(key, {method:'PUT', value});
+      return { value:shared.value, version:shared.version || 1, updatedAt:shared.updatedAt || null };
+    },
+    async delete(key){
+      await sharedStateRequest(key, {method:'DELETE'});
+      await legacyStorage.delete(key);
+    }
+  };
+
+  function hasStorage(){
+    return true;
   }
 
   function genId(){
@@ -1643,7 +1692,7 @@
     try{
       await storage.set('puxadas:data', JSON.stringify(payload));
     } catch(e){
-      showPullError('Os dados foram lidos, mas o navegador não conseguiu salvá-los. Exporte o resultado antes de fechar esta página.');
+      showPullError('Os dados foram lidos, mas o banco geral não conseguiu salvá-los. Exporte o resultado antes de fechar esta página.');
     }
   }
 
@@ -1995,16 +2044,13 @@
   }
 
   async function verifyIosStorage(){
-    const healthKey = '__ios_health__';
+    const healthKey = '__shared_health__';
     try{
-      await storage.set(healthKey, String(Date.now()));
+      await storage.set(healthKey, JSON.stringify({checkedAt:new Date().toISOString()}));
       await storage.delete(healthKey);
-      setIosStorageStatus('ARMAZENAMENTO LOCAL ATIVO NESTE DISPOSITIVO. USE O BACKUP PARA MAIOR SEGURANÇA.');
-      if(navigator.storage && typeof navigator.storage.persist === 'function'){
-        try{ await navigator.storage.persist(); } catch(e){ /* recurso opcional */ }
-      }
+      setIosStorageStatus('BANCO GERAL ATIVO. CADASTROS, DADOS, DASHBOARD E PUXADAS ESTÃO COMPARTILHADOS.');
     } catch(e){
-      setIosStorageStatus('ARMAZENAMENTO LIMITADO. ABRA PELO SAFARI E ADICIONE À TELA DE INÍCIO.', true);
+      setIosStorageStatus('BANCO GERAL INDISPONÍVEL. TENTE NOVAMENTE EM INSTANTES.', true);
     }
   }
 
@@ -2033,8 +2079,8 @@
       if(result && result.value !== null) values[key] = result.value;
     }
     return {
-      app:'ESTOQUE_IOS_BACKUP',
-      version:1,
+      app:'ESTOQUE_SHARED_BACKUP',
+      version:2,
       exportedAt:new Date().toISOString(),
       values
     };
@@ -2044,7 +2090,7 @@
     if(typeof File === 'function' && navigator.share && navigator.canShare){
       const file = new File([blob], fileName, {type:blob.type});
       if(navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:'BACKUP LOCAL DO ESTOQUE'});
+        await navigator.share({files:[file], title:'BACKUP DO BANCO GERAL'});
         return;
       }
     }
@@ -2060,11 +2106,11 @@
 
   async function exportIosBackup(){
     try{
-      setIosStorageStatus('PREPARANDO O BACKUP LOCAL...');
+      setIosStorageStatus('PREPARANDO O BACKUP DO BANCO GERAL...');
       const payload = await collectIosBackup();
       const date = new Date().toISOString().slice(0,10);
       const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json;charset=utf-8'});
-      await deliverIosFile(blob, 'backup_estoque_ios_' + date + '.json');
+      await deliverIosFile(blob, 'backup_estoque_geral_' + date + '.json');
       setIosStorageStatus('BACKUP EXPORTADO COM SUCESSO.');
     } catch(e){
       if(e && e.name === 'AbortError'){
@@ -2079,11 +2125,12 @@
     try{
       const text = typeof file.text === 'function' ? await file.text() : await readAsText(file, 'UTF-8');
       const payload = JSON.parse(text);
-      if(!payload || payload.app !== 'ESTOQUE_IOS_BACKUP' || !payload.values || typeof payload.values !== 'object'){
+      const supportedBackup = payload && (payload.app === 'ESTOQUE_SHARED_BACKUP' || payload.app === 'ESTOQUE_IOS_BACKUP');
+      if(!supportedBackup || !payload.values || typeof payload.values !== 'object'){
         throw new Error('ARQUIVO DE BACKUP INVÁLIDO');
       }
       if(!confirm('RESTAURAR ESTE BACKUP? OS DADOS COM AS MESMAS CHAVES SERÃO SUBSTITUÍDOS.')) return;
-      setIosStorageStatus('RESTAURANDO O BACKUP LOCAL...');
+      setIosStorageStatus('RESTAURANDO O BACKUP NO BANCO GERAL...');
       for(const [key, value] of Object.entries(payload.values)){
         if(typeof value === 'string') await storage.set(key, value);
       }
@@ -2111,7 +2158,7 @@
     });
   }
 
-  // ---------- GESTÃO DE EMPRESAS (persistência local no navegador) ----------
+  // ---------- GESTÃO DE EMPRESAS (persistência no banco geral) ----------
 
   function renderCompanySelects(){
     ['companySelectView','companySelectData'].forEach(id => {
@@ -2187,7 +2234,7 @@
 
   async function loadCompanies(){
     if(!hasStorage()){
-      showError('O armazenamento local não está disponível neste navegador. Verifique as permissões de dados do site.');
+      showError('O banco compartilhado não está disponível neste momento.');
       return;
     }
     try{
@@ -2344,7 +2391,7 @@
       await storage.set('estoque:' + activeCompanyId, JSON.stringify(payload));
       setCompanyMeta('Atualizado em ' + new Date(payload.updatedAt).toLocaleString('pt-BR'));
     } catch(e){
-      showError('O resultado está na tela, mas não foi possível salvá-lo neste navegador: ' + e.message);
+      showError('O resultado está na tela, mas não foi possível salvá-lo no banco geral: ' + e.message);
     }
   }
 
@@ -2423,7 +2470,7 @@
           };
           await storage.set('products_catalog:' + activeCatalogKey, JSON.stringify(payload));
         } catch(e){
-          showError('A base foi lida, mas não foi possível salvá-la neste navegador: ' + e.message);
+          showError('A base foi lida, mas não foi possível salvá-la no banco geral: ' + e.message);
         }
       }
 
