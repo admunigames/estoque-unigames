@@ -180,6 +180,8 @@
     display:flex; align-items:center; justify-content:flex-start; gap:14px;
     min-height:58px; padding-left:62px; margin-bottom:14px;
   }
+  .page-heading-dashboard{justify-content:space-between;}
+  .page-heading-dashboard .page-title{margin-left:auto; text-align:right;}
   .page-title{
     margin:0; font-size:25px; font-weight:700; color:var(--ink); font-family:var(--mono);
     letter-spacing:0.3px;
@@ -589,16 +591,42 @@
 
   /* IMPRESSAO / PDF */
   @media print{
-    body{background:#fff; color:#111; background-image:none;}
+    :root{
+      --bg:#fff;
+      --bg-card:#fff;
+      --bg-card-2:#f7f9fb;
+      --border:#cfd8e3;
+      --border-soft:#e2e8f0;
+      --ink:#111827;
+      --ink-soft:#334155;
+      --ink-faint:#64748b;
+      --neg:#b42318;
+      --neg-bg:#fee4e2;
+    }
+    *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    body{background:#fff !important; color:#111827 !important; background-image:none !important;}
     .sidebar, .upload-row, .controls, .company-bar, .catalog-bar, footer.hint, .no-print{display:none !important;}
+    .content,.page,.wrap{background:#fff !important;}
     .content{padding:0;}
-    .card{border:1px solid #ddd; background:#fff;}
-    .card .num{color:#111;}
-    .card.neg .num{color:var(--neg);}
-    .table-panel, .top-divergencias{border:1px solid #ddd;}
-    thead th, .top-divergencias th{background:#f2f2f2; color:#333;}
-    tbody td, .top-divergencias td{color:#111;}
-    tbody tr.neg td{background:var(--neg-bg) !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .page-heading{padding-left:0;}
+    .page-logo{display:none !important;}
+    .page-heading-dashboard .page-title{margin-left:0; text-align:left;}
+    .page-title{color:#111827 !important;}
+    .page-desc{color:#334155 !important;}
+    .summary{break-inside:avoid;}
+    .card{border:1px solid #cfd8e3 !important; background:#fff !important; box-shadow:none !important;}
+    .card .lbl{color:#475569 !important;}
+    .card .num{color:#111827 !important;}
+    .card.neg .num{color:#b42318 !important;}
+    .table-panel,.table-scroll,.top-divergencias,table,tbody,tr,td{background:#fff !important;}
+    .table-panel, .top-divergencias{border:1px solid #cfd8e3 !important; box-shadow:none !important;}
+    thead th, .top-divergencias th{background:#eef2f6 !important; color:#1e293b !important; border-color:#cfd8e3 !important;}
+    tbody td, .top-divergencias td{color:#111827 !important; border-color:#dbe3ec !important;}
+    tbody tr.neg td{background:#fee4e2 !important; color:#7a271a !important;}
+    tbody tr.neg td.nome,tbody tr.neg td.codigo{color:#7a271a !important;}
+    .tag-zerado{background:#eef2f6 !important; color:#334155 !important; border-color:#cfd8e3 !important;}
+    .tag-alerta{background:#fee4e2 !important; color:#7a271a !important; border-color:#fda29b !important;}
+    .pagination{display:none !important;}
     .wrap{max-width:100%; padding:0 10px;}
   }
 </style>
@@ -653,17 +681,17 @@
 
     <!-- ================= MENU PRINCIPAL ================= -->
     <section id="pageDashboard" class="page wrap active">
-      <div class="page-heading">
+      <div class="page-heading page-heading-dashboard">
         <button class="page-logo" type="button" data-dashboard-home aria-label="Ir para o Dashboard" title="Ir para o Dashboard"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
         <h2 class="page-title">Dashboard</h2>
       </div>
-      <div class="page-desc">Escolha a empresa para visualizar os dados já inseridos na aba Dados.</div>
+      <div class="page-desc">Escolha uma loja ou o estoque fiscal geral para visualizar os dados inseridos na aba Dados.</div>
 
       <div class="error-box" id="errorBox"></div>
 
       <section class="company-bar no-print">
         <div class="company-select-wrap">
-          <span class="company-label">Empresa</span>
+          <span class="company-label">Visão</span>
           <select id="companySelectView">
             <option value="">Selecione uma empresa</option>
           </select>
@@ -1066,13 +1094,27 @@
 
   const DEFAULT_COMPANIES = ['GUARARAPES','NORTH WAY','PATTEO','RECIFE','RIOMAR','TACARUNA','P.A LOJA','QUIOSQUE P.A'];
   const SPECIAL_CATALOG_COMPANIES = new Set(['P.A LOJA','QUIOSQUE P.A']);
+  const FISCAL_VIEW_OPTIONS = {
+    '__fiscal_standard__': { group:'standard', label:'ESTOQUE FISCAL GERAL — UNIGAMES' },
+    '__fiscal_pa__': { group:'pa', label:'ESTOQUE FISCAL GERAL — P.A' }
+  };
   const textCollator = new Intl.Collator('pt-BR', {sensitivity:'base'});
   const codeCollator = new Intl.Collator('pt-BR', {numeric:true, sensitivity:'base'});
 
   const el = id => document.getElementById(id);
   const errorBox = el('errorBox');
 
+  function fiscalViewOption(id){
+    return FISCAL_VIEW_OPTIONS[id] || null;
+  }
+
+  function isFiscalSelection(id){
+    return Boolean(fiscalViewOption(id));
+  }
+
   function catalogKeyForCompany(id){
+    const fiscalOption = fiscalViewOption(id);
+    if(fiscalOption) return fiscalOption.group;
     const company = companies.find(item => item.id === id);
     const name = company ? company.name.trim().toUpperCase() : '';
     return SPECIAL_CATALOG_COMPANIES.has(name) ? 'pa' : 'standard';
@@ -1264,6 +1306,14 @@
 
   function setCompanyMeta(text){
     ['companyMeta','companyMetaView'].forEach(id => { if(el(id)) el(id).textContent = text; });
+  }
+
+  function setDashboardCompanyMeta(text){
+    if(el('companyMetaView')) el('companyMetaView').textContent = text;
+  }
+
+  function setDataCompanyMeta(text){
+    if(el('companyMeta')) el('companyMeta').textContent = text;
   }
 
   // ---------- NAVEGAÇÃO ENTRE PÁGINAS ----------
@@ -2291,13 +2341,25 @@
   // ---------- GESTÃO DE EMPRESAS (persistência no banco geral) ----------
 
   function renderCompanySelects(){
-    ['companySelectView','companySelectData'].forEach(id => {
-      const sel = el(id);
-      if(!sel) return;
-      sel.innerHTML = '<option value="">Selecione uma empresa</option>' +
-        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-      sel.value = activeCompanyId || '';
-    });
+    const storeOptions = companies.map(c =>
+      '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>'
+    ).join('');
+    const viewSelect = el('companySelectView');
+    const dataSelect = el('companySelectData');
+
+    if(viewSelect){
+      const fiscalOptions = Object.entries(FISCAL_VIEW_OPTIONS).map(([id, option]) =>
+        '<option value="'+escapeHtml(id)+'">'+escapeHtml(option.label)+'</option>'
+      ).join('');
+      viewSelect.innerHTML = '<option value="">Selecione uma empresa</option>'+
+        '<optgroup label="ESTOQUE FISCAL GERAL">'+fiscalOptions+'</optgroup>'+
+        '<optgroup label="LOJAS">'+storeOptions+'</optgroup>';
+      viewSelect.value = activeCompanyId || '';
+    }
+    if(dataSelect){
+      dataSelect.innerHTML = '<option value="">Selecione uma empresa</option>'+storeOptions;
+      dataSelect.value = isFiscalSelection(activeCompanyId) ? '' : (activeCompanyId || '');
+    }
     renderLojasTable();
     renderPullStoreRows();
     renderPullDestinationFilter();
@@ -2332,6 +2394,7 @@
     el('dzEntrada').classList.toggle('disabled', disabled);
     el('dzSaida').classList.toggle('disabled', disabled);
     el('btnCatalogUpload').disabled = disabled;
+    el('btnLimpar').disabled = disabled;
   }
 
   function resetDropzonesUI(){
@@ -2446,6 +2509,73 @@
     renderCompanySelects();
   }
 
+  function addFiscalQuantities(target, savedItems){
+    for(const [codigo, rawValue] of Object.entries(savedItems || {})){
+      const value = rawValue && typeof rawValue === 'object'
+        ? rawValue
+        : { qtd:Number(rawValue) || 0, nome:'' };
+      const current = target.get(codigo) || { nome:'', qtd:0 };
+      target.set(codigo, {
+        nome:current.nome || value.nome || '',
+        qtd:current.qtd + (Number(value.qtd) || 0)
+      });
+    }
+  }
+
+  async function loadFiscalView(selectionId){
+    const fiscalOption = fiscalViewOption(selectionId);
+    if(!fiscalOption) return;
+
+    activeCatalogKey = fiscalOption.group;
+    catalogMap = catalogMaps[activeCatalogKey];
+    entradaMap = new Map();
+    saidaMap = new Map();
+    resetDropzonesUI();
+    setDropzonesDisabled(true);
+    setDashboardCompanyMeta('Consolidando o estoque fiscal das lojas...');
+    setDataCompanyMeta('Selecione uma loja para enviar ou limpar arquivos');
+
+    const groupCompanies = companies.filter(company =>
+      catalogKeyForCompany(company.id) === fiscalOption.group
+    );
+    const results = await Promise.allSettled(groupCompanies.map(async company => ({
+      company,
+      result:await storage.get('estoque:' + company.id)
+    })));
+
+    let storesWithData = 0;
+    let failedStores = 0;
+    let latestUpdatedAt = null;
+    for(const result of results){
+      if(result.status !== 'fulfilled'){
+        failedStores++;
+        continue;
+      }
+      const stored = result.value.result;
+      if(!stored || !stored.value) continue;
+      const data = JSON.parse(stored.value);
+      addFiscalQuantities(entradaMap, data.entrada);
+      addFiscalQuantities(saidaMap, data.saida);
+      storesWithData++;
+      if(data.updatedAt){
+        const updatedAt = new Date(data.updatedAt);
+        if(!Number.isNaN(updatedAt.getTime()) && (!latestUpdatedAt || updatedAt > latestUpdatedAt)){
+          latestUpdatedAt = updatedAt;
+        }
+      }
+    }
+
+    merged = (entradaMap.size > 0 || saidaMap.size > 0 || catalogMap.size > 0) ? mergeMaps() : [];
+    const parts = [
+      fiscalOption.label,
+      storesWithData + ' de ' + groupCompanies.length + ' lojas com dados'
+    ];
+    if(latestUpdatedAt) parts.push('atualizado em ' + latestUpdatedAt.toLocaleString('pt-BR'));
+    if(failedStores > 0) parts.push(failedStores + ' loja(s) indisponível(is)');
+    setDashboardCompanyMeta(parts.join(' · '));
+    renderAll();
+  }
+
   async function selectCompany(id){
     activeCompanyId = id;
     activateCatalogForCompany(id);
@@ -2461,6 +2591,20 @@
       setDropzonesDisabled(true);
       setCompanyMeta('Selecione ou adicione uma empresa para começar');
       renderAll();
+      return;
+    }
+
+    if(isFiscalSelection(id)){
+      try{
+        await loadFiscalView(id);
+      } catch(e){
+        entradaMap = new Map();
+        saidaMap = new Map();
+        merged = [];
+        setDashboardCompanyMeta('Não foi possível consolidar o estoque fiscal geral');
+        showError('Erro ao carregar o estoque fiscal geral: ' + e.message);
+        renderAll();
+      }
       return;
     }
 
@@ -2509,7 +2653,7 @@
   }
 
   async function persistCompanyData(){
-    if(!activeCompanyId || !hasStorage()) return;
+    if(!activeCompanyId || isFiscalSelection(activeCompanyId) || !hasStorage()) return;
     const payload = {
       entrada: Object.fromEntries(entradaMap),
       saida: Object.fromEntries(saidaMap),
@@ -3017,7 +3161,7 @@
   }
 
   function handleFile(file, kind){
-    if(!activeCompanyId){
+    if(!activeCompanyId || isFiscalSelection(activeCompanyId)){
       showError('Selecione ou adicione uma empresa antes de enviar arquivos.');
       return;
     }
