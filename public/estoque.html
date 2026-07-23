@@ -183,22 +183,33 @@
   .page{display:none;}
   .page.active{display:block;}
   .page-heading{
-    display:flex; align-items:center; justify-content:flex-start; gap:14px;
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
     min-height:58px; padding-left:62px; margin-bottom:14px;
   }
-  .page-heading-dashboard{justify-content:space-between;}
-  .page-heading-dashboard .page-title{margin-left:auto; text-align:right;}
   .page-title{
-    margin:0; font-size:25px; font-weight:700; color:var(--ink); font-family:var(--mono);
-    letter-spacing:0.3px;
+    min-width:0; margin:0 0 0 auto; font-size:25px; font-weight:700; color:var(--ink); font-family:var(--mono);
+    letter-spacing:0.3px; text-align:right; overflow-wrap:anywhere;
   }
   .page-logo{
-    display:flex; align-items:center; gap:11px; color:var(--ink-soft); font-family:var(--mono); font-size:12px; letter-spacing:.7px;
-    min-height:44px; padding:2px 7px 2px 2px; border:1px solid transparent; background:transparent; cursor:pointer;
+    position:relative; isolation:isolate; flex:0 0 clamp(46px,4.3vw,56px);
+    display:grid; place-items:center; width:clamp(46px,4.3vw,56px); height:clamp(46px,4.3vw,56px);
+    min-height:0; padding:5px; overflow:hidden; border:1px solid rgba(114,167,216,.62); border-radius:16px;
+    background:
+      radial-gradient(circle at 28% 16%,rgba(255,255,255,.18),transparent 36%),
+      linear-gradient(145deg,rgba(79,134,189,.34),rgba(8,18,30,.9));
+    box-shadow:0 10px 28px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.16),0 0 24px rgba(79,134,189,.13);
+    cursor:pointer; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
   }
-  .page-logo:hover{opacity:1; color:var(--ink); border-color:rgba(79,134,189,.55); background:rgba(79,134,189,.08);}
+  .page-logo::after{
+    content:''; position:absolute; inset:auto -35% -58% 18%; height:70%; z-index:-1;
+    background:radial-gradient(circle,rgba(114,167,216,.42),transparent 68%); pointer-events:none;
+  }
+  .page-logo:hover{
+    opacity:1; transform:translateY(-2px) scale(1.02); border-color:rgba(157,207,252,.92);
+    box-shadow:0 14px 34px rgba(0,0,0,.4),0 0 28px rgba(79,134,189,.24),inset 0 1px rgba(255,255,255,.2);
+  }
   .page-logo:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
-  .page-logo .brand-logo{width:40px; height:40px; flex-basis:40px; border-radius:9px; padding:1px;}
+  .page-logo .brand-logo{width:100%; height:100%; object-fit:contain; border-radius:11px; padding:1px; background:rgba(255,255,255,.96);}
   .page-desc{font-size:15px; color:var(--ink-soft); margin:-8px 0 26px; line-height:1.6;}
 
   /* INÍCIO / CENTRAL LIGHTGLASS */
@@ -347,51 +358,24 @@
   }
   .dropzone:hover{border-color:var(--accent);}
   .dropzone.has-file{border-style:solid; border-color:var(--ok);}
-  .dropzone.disabled{opacity:0.4; cursor:not-allowed;}
-  .dz-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:34px; text-align:left;}
-  .dz-top h3{margin:0; font-size:16px; font-weight:700; color:var(--ink);}
-  .dz-badge{
-    font-family:var(--sans); font-size:12px; color:var(--ink-soft); border:1px solid var(--border);
-    padding:4px 12px; border-radius:20px; background:var(--bg-card-2); white-space:nowrap;
-  }
-  .dz-icon{margin-bottom:14px; color:var(--ink-faint);}
-  .dropzone p{margin:0; font-size:14px; color:var(--ink-soft); line-height:1.6;}
-  .dropzone p b{color:var(--ink); font-weight:700;}
-  .dropzone input{display:none;}
-  .status{ma…39275 tokens truncated…l('purchaseMetricOverdue').textContent = overdue.toLocaleString('pt-BR');
-    el('purchaseMetricDone').textContent = done.toLocaleString('pt-BR');
-  }
-
-  function renderPurchaseRows(){
-    const body = el('purchaseTableBody');
-    renderPurchaseMetrics();
-    el('purchaseResultCount').textContent = purchaseRows.length.toLocaleString('pt-BR') + ' PEDIDOS';
-    el('purchasePageInfo').textContent = purchaseRows.length.toLocaleString('pt-BR') + ' PEDIDOS CARREGADOS';
-    el('btnPurchasesMore').hidden = !purchaseCursor;
-
-    if(purchaseRows.length === 0){
-      body.innerHTML = '<tr><td colspan="12"><div class="empty-state"><h4>Nenhum pedido encontrado</h4><p>Ajuste a busca ou cadastre um novo pedido.</p></div></td></tr>';
-      return;
-    }
-
-    body.innerHTML = purchaseRows.map(item => {
+  .dropzone.disabled{opac…40472 tokens truncated…ody.innerHTML = purchaseRows.map(item => {
       const responsible = Array.isArray(item.responsaveis) && item.responsaveis.length
         ? item.responsaveis.map(person => person.name || person.email || 'USUÁRIO').join(', ')
         : '—';
       const forecastClass = purchaseIsOverdue(item) ? 'date-overdue' : '';
       return '<tr data-purchase-row="'+escapeHtml(item.id)+'">'+
-        '<td class="supplier">'+escapeHtml(item.fornecedor || 'SEM FORNECEDOR')+'</td>'+
-        '<td>'+escapeHtml(item.loja || '—')+'</td>'+
-        '<td>'+purchaseDate(item.dataPedido)+'</td>'+
-        '<td class="'+forecastClass+'">'+purchaseDate(item.previsao)+(forecastClass ? '<br><small>ATRASADO</small>' : '')+'</td>'+
-        '<td>'+escapeHtml(responsible)+'</td>'+
-        '<td>'+purchaseDate(item.dataRecebimento)+'</td>'+
-        '<td>'+purchaseDivisionHtml(item.divisao)+'</td>'+
-        '<td>'+purchaseStatusHtml(item.statusDivisao)+'</td>'+
-        '<td>'+purchaseFilesHtml(item)+'</td>'+
-        '<td>'+purchaseDate(item.movimentacaoSistema)+'</td>'+
-        '<td>'+purchaseStatusHtml(item.status)+'</td>'+
-        '<td><div class="purchase-actions">'+
+        '<td class="supplier" data-label="FORNECEDOR">'+escapeHtml(item.fornecedor || 'SEM FORNECEDOR')+'</td>'+
+        '<td data-label="LOJA">'+escapeHtml(item.loja || '—')+'</td>'+
+        '<td data-label="DATA DO PEDIDO">'+purchaseDate(item.dataPedido)+'</td>'+
+        '<td data-label="PREVISÃO" class="'+forecastClass+'">'+purchaseDate(item.previsao)+(forecastClass ? '<br><small>ATRASADO</small>' : '')+'</td>'+
+        '<td data-label="RESPONSÁVEL">'+escapeHtml(responsible)+'</td>'+
+        '<td data-label="RECEBIMENTO">'+purchaseDate(item.dataRecebimento)+'</td>'+
+        '<td data-label="DIVISÃO">'+purchaseDivisionHtml(item.divisao)+'</td>'+
+        '<td data-label="STATUS DA DIVISÃO">'+purchaseStatusHtml(item.statusDivisao)+'</td>'+
+        '<td data-label="ARQUIVOS">'+purchaseFilesHtml(item)+'</td>'+
+        '<td data-label="MOV. SISTEMA">'+purchaseDate(item.movimentacaoSistema)+'</td>'+
+        '<td data-label="STATUS">'+purchaseStatusHtml(item.status)+'</td>'+
+        '<td data-label="AÇÕES"><div class="purchase-actions">'+
           '<button class="btn-outline" type="button" data-edit-purchase="'+escapeHtml(item.id)+'">EDITAR</button>'+
           '<a class="btn-outline" href="'+escapeHtml(item.url || '#')+'" target="_blank" rel="noopener noreferrer">NOTION ↗</a>'+
         '</div></td></tr>';
@@ -412,9 +396,9 @@
     try{
       const params = new URLSearchParams();
       const query = el('purchaseSearch').value.trim();
-      const status = el('purchaseStatusFilter').value;
+      const statuses = selectedPurchaseStatuses();
       if(query) params.set('query', query);
-      if(status) params.set('status', status);
+      statuses.forEach(status => params.append('status', status));
       if(!reset && purchaseCursor) params.set('cursor', purchaseCursor);
       const response = await fetch('/api/compras?'+params.toString(), {headers:{'Accept':'application/json'}});
       const data = await response.json();
@@ -706,7 +690,18 @@
     clearTimeout(purchaseSearchTimer);
     purchaseSearchTimer = setTimeout(() => loadPurchases(true), 350);
   });
-  el('purchaseStatusFilter').addEventListener('change', () => loadPurchases(true));
+  el('purchaseStatusFilter').addEventListener('change', event => {
+    if(!event.target.matches('input[name="purchaseStatus"]')) return;
+    updatePurchaseStatusSummary();
+    clearTimeout(purchaseSearchTimer);
+    purchaseSearchTimer = setTimeout(() => loadPurchases(true), 120);
+  });
+  el('btnClearPurchaseStatus').addEventListener('click', () => {
+    document.querySelectorAll('input[name="purchaseStatus"]').forEach(input => { input.checked = false; });
+    updatePurchaseStatusSummary();
+    el('purchaseStatusFilter').open = false;
+    loadPurchases(true);
+  });
   el('purchaseTableBody').addEventListener('click', event => {
     const button = event.target.closest('[data-edit-purchase]');
     if(!button) return;
