@@ -153,3 +153,19 @@ test("exporta PDF e Excel de acordo com a visão, busca e filtros atuais", async
   assert.match(html, /#inventoryTable \.tag-zerado,#inventoryTable \.tag-alerta\{display:none !important;\}/);
   assert.match(html, /body\.pdf-export \.summary/);
 });
+
+test("filtra somente produtos com saldo negativo no dashboard e nas exportações", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /id="filtroNegativos"> Só negativos/);
+  assert.match(html, /const showNegatives = el\('filtroNegativos'\)\.checked/);
+  assert.match(html, /if\(showNegatives && r\.saldo >= 0\) continue/);
+  assert.match(html, /if\(el\('filtroNegativos'\)\.checked\) labels\.push\('SÓ NEGATIVOS'\)/);
+  assert.match(html, /\['filtroNegativos','filtroZeroEntrada','filtroZeroSaida'\]/);
+  assert.doesNotMatch(html, /id="filtroDivergencias"/);
+  assert.doesNotMatch(html, /SÓ DIVERGÊNCIAS/);
+  assert.match(html, /btnCsv[\s\S]*const rows = getExportRows\(\)/);
+});
