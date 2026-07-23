@@ -189,7 +189,12 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /data-home-target="dashboard"/);
   assert.match(html, /data-home-target="lojas"/);
   assert.match(html, /document\.querySelectorAll\('\[data-home-target\]'\)/);
+  assert.match(html, /\.page\.home-page\.active\{display:flex;\}/);
+  assert.doesNotMatch(html, /\.home-page\{[^}]*display:flex/);
   assert.match(html, /@media \(max-width:800px\)[\s\S]*\.home-access-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
   assert.match(html, /@media \(max-width:520px\)[\s\S]*\.home-access-grid\{grid-template-columns:1fr;/);
   assert.doesNotMatch(html, /data-dashboard-home/);
+  for (const pageId of ["pagePuxadas", "pageCompras", "pageDashboard", "pageLojas", "pageDados"]) {
+    assert.match(html, new RegExp(`id="${pageId}" class="page wrap"`));
+  }
 });
