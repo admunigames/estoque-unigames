@@ -223,7 +223,7 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
     html,
     /id="navInicio"[\s\S]*>Início<[\s\S]*id="navPuxadas"[\s\S]*id="navCompras"[\s\S]*id="navDashboard"[\s\S]*>Estoque Fiscal<[\s\S]*id="navCadastros"/,
   );
-  assert.match(html, /id="navLojas"[\s\S]*class="nav-item sub-item nested-item" id="navDados"/);
+  assert.match(html, /id="navLojas"[\s\S]*class="nav-item sub-item" id="navDados"/);
   assert.match(html, /id="pageInicio" class="page wrap home-page active"/);
   assert.match(html, /class="home-lightglass"/);
   assert.match(html, /class="home-brand-logo" data-logo alt="LOGO UNIGAMES"/);
@@ -253,9 +253,24 @@ test("abre o menu de cadastros e encaminha para lojas ou base de dados", async (
   assert.match(html, /data-cadastro-target="lojas"[\s\S]*<strong>LOJAS<\/strong>/);
   assert.match(html, /data-cadastro-target="dados"[\s\S]*<strong>BASE DE DADOS<\/strong>/);
   assert.match(html, /id="navDados" data-page="dados">Base de Dados<\/button>/);
-  assert.match(html, /navCadastrosToggle\.addEventListener\('click', \(\) => \{[\s\S]*navigateToPage\('cadastros'\)/);
+  assert.match(html, /id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu"/);
+  assert.match(html, /id="navCadastrosSubmenu" hidden/);
+  assert.match(html, /function setCadastrosExpanded\(expanded\)/);
+  assert.match(html, /setCadastrosExpanded\(!expanded\)/);
   assert.match(html, /document\.querySelectorAll\('\[data-cadastro-target\]'\)/);
   assert.match(html, /navigateToPage\(button\.dataset\.cadastroTarget\)/);
+});
+
+test("oculta a sidebar no inicio e exibe o acesso nos demais modulos", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /<body class="home-active">/);
+  assert.match(html, /body\.home-active \.menu-toggle\{display:none;\}/);
+  assert.match(html, /document\.body\.classList\.toggle\('home-active', isHome\)/);
+  assert.match(html, /if\(isHome\) setSidebarOpen\(false, false\)/);
 });
 
 test("mantém uma URL por módulo e integra voltar e avançar do navegador", async () => {
