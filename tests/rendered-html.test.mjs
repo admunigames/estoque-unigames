@@ -76,6 +76,7 @@ test("cria uma sessão assinada com credenciais válidas", async () => {
     ctx,
   );
   assert.equal(login.status, 303);
+  assert.equal(login.headers.get("location"), "/inicio");
   const setCookie = login.headers.get("set-cookie") ?? "";
   assert.match(setCookie, /^unigames_session=/);
   assert.match(setCookie, /HttpOnly/);
@@ -119,6 +120,7 @@ test("serve as rotas dos módulos sem alterar o endereço do navegador", async (
     routeEnv,
     ctx,
   );
+  assert.equal(login.headers.get("location"), "/inicio");
   const cookie = (login.headers.get("set-cookie") ?? "").split(";")[0];
   const response = await runtime.fetch(
     new Request("http://localhost/cadastros/lojas", {
