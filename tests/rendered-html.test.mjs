@@ -135,5 +135,21 @@ test("oferece estoque fiscal consolidado e PDF em tema claro", async () => {
   assert.match(html, /addFiscalQuantities\(entradaMap, data\.entrada\)/);
   assert.match(html, /addFiscalQuantities\(saidaMap, data\.saida\)/);
   assert.match(html, /--bg:#fff/);
-  assert.match(html, /tbody tr\.neg td\{background:#fee4e2 !important/);
+  assert.match(html, /#inventoryTable tbody tr\.neg td\{background:#fff1f0 !important/);
+});
+
+test("exporta PDF e Excel de acordo com a visão, busca e filtros atuais", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /<h1 id="printReportTitle">RELATÓRIO DE ESTOQUE<\/h1>/);
+  assert.match(html, /function currentViewLabel\(\)/);
+  assert.match(html, /function currentFilterLabels\(\)/);
+  assert.match(html, /const rows = getExportRows\(\);[\s\S]*preparePrintReport\(rows\);[\s\S]*window\.print\(\);/);
+  assert.match(html, /btnExcel[\s\S]*const rows = getExportRows\(\);[\s\S]*XLSX\.writeFile\(wb, exportFileBase\(\) \+ '\.xlsx'\)/);
+  assert.match(html, /#inventoryTable th\.code-col,#inventoryTable td\.codigo\{display:none !important;\}/);
+  assert.match(html, /#inventoryTable \.tag-zerado,#inventoryTable \.tag-alerta\{display:none !important;\}/);
+  assert.match(html, /body\.pdf-export \.summary/);
 });
