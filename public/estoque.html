@@ -177,14 +177,19 @@
   .page{display:none;}
   .page.active{display:block;}
   .page-heading{
-    display:flex; align-items:center; justify-content:space-between; gap:18px;
+    display:flex; align-items:center; justify-content:flex-start; gap:14px;
     min-height:58px; padding-left:62px; margin-bottom:14px;
   }
   .page-title{
     margin:0; font-size:25px; font-weight:700; color:var(--ink); font-family:var(--mono);
     letter-spacing:0.3px;
   }
-  .page-logo{display:flex; align-items:center; gap:11px; color:var(--ink-soft); font-family:var(--mono); font-size:12px; letter-spacing:.7px;}
+  .page-logo{
+    display:flex; align-items:center; gap:11px; color:var(--ink-soft); font-family:var(--mono); font-size:12px; letter-spacing:.7px;
+    min-height:44px; padding:2px 7px 2px 2px; border:1px solid transparent; background:transparent; cursor:pointer;
+  }
+  .page-logo:hover{opacity:1; color:var(--ink); border-color:rgba(79,134,189,.55); background:rgba(79,134,189,.08);}
+  .page-logo:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .page-logo .brand-logo{width:40px; height:40px; flex-basis:40px; border-radius:9px; padding:1px;}
   .page-desc{font-size:15px; color:var(--ink-soft); margin:-8px 0 26px; line-height:1.6;}
 
@@ -649,8 +654,8 @@
     <!-- ================= MENU PRINCIPAL ================= -->
     <section id="pageDashboard" class="page wrap active">
       <div class="page-heading">
+        <button class="page-logo" type="button" data-dashboard-home aria-label="Ir para o Dashboard" title="Ir para o Dashboard"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
         <h2 class="page-title">Dashboard</h2>
-        <div class="page-logo" aria-label="ESTOQUE"><img class="brand-logo" data-logo alt="LOGO ESTOQUE"><span>ESTOQUE</span></div>
       </div>
       <div class="page-desc">Escolha a empresa para visualizar os dados já inseridos na aba Dados.</div>
 
@@ -756,8 +761,8 @@
     <!-- ================= CADASTRO DE LOJAS ================= -->
     <section id="pageLojas" class="page wrap">
       <div class="page-heading">
+        <button class="page-logo" type="button" data-dashboard-home aria-label="Ir para o Dashboard" title="Ir para o Dashboard"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
         <h2 class="page-title">Cadastro de Lojas</h2>
-        <div class="page-logo" aria-label="ESTOQUE"><img class="brand-logo" data-logo alt="LOGO ESTOQUE"><span>ESTOQUE</span></div>
       </div>
       <div class="page-desc">Cadastre, renomeie ou remova as empresas. A lista aparece para escolha no Dashboard e na aba Dados.</div>
 
@@ -786,8 +791,8 @@
     <!-- ================= DADOS ================= -->
     <section id="pageDados" class="page wrap">
       <div class="page-heading">
+        <button class="page-logo" type="button" data-dashboard-home aria-label="Ir para o Dashboard" title="Ir para o Dashboard"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
         <h2 class="page-title">Dados</h2>
-        <div class="page-logo" aria-label="ESTOQUE"><img class="brand-logo" data-logo alt="LOGO ESTOQUE"><span>ESTOQUE</span></div>
       </div>
       <div class="page-desc">Escolha a empresa e envie a base de produtos correspondente ao grupo, além dos relatórios de entrada e saída.</div>
 
@@ -847,8 +852,8 @@
     <!-- ================= PUXADAS ================= -->
     <section id="pagePuxadas" class="page wrap">
       <div class="page-heading">
+        <button class="page-logo" type="button" data-dashboard-home aria-label="Ir para o Dashboard" title="Ir para o Dashboard"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
         <h2 class="page-title">Puxadas</h2>
-        <div class="page-logo" aria-label="ESTOQUE"><img class="brand-logo" data-logo alt="LOGO ESTOQUE"><span>ESTOQUE</span></div>
       </div>
       <div class="page-desc">Equilibre o estoque entre as lojas usando as vendas do período e o estoque físico disponível.</div>
 
@@ -929,6 +934,7 @@
     <!-- ================= CONTROLE DE COMPRAS / NOTION ================= -->
     <section id="pageCompras" class="page wrap">
       <div class="page-heading">
+        <button class="page-logo" type="button" data-dashboard-home aria-label="Ir para o Dashboard" title="Ir para o Dashboard"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
         <h2 class="page-title">Controle de Compras</h2>
         <div class="purchases-heading-actions">
           <button class="btn-outline" id="btnPurchasesRefresh" type="button">Atualizar</button>
@@ -1312,6 +1318,14 @@
       showPage(btn.dataset.page);
       setSidebarOpen(false, true);
       if(btn.dataset.page === 'compras' && !purchasesLoaded) loadPurchases(true);
+    });
+  });
+
+  document.querySelectorAll('[data-dashboard-home]').forEach(button => {
+    button.addEventListener('click', () => {
+      showPage('dashboard');
+      setSidebarOpen(false, false);
+      window.scrollTo({top:0, behavior:'smooth'});
     });
   });
 
