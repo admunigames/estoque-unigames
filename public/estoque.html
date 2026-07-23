@@ -759,7 +759,7 @@
           </select>
         </label>
         <div class="filters">
-          <label><input type="checkbox" id="filtroDivergencias"> Só divergências</label>
+          <label><input type="checkbox" id="filtroNegativos"> Só negativos</label>
           <label><input type="checkbox" id="filtroZeroEntrada"> Zerados de entrada</label>
           <label><input type="checkbox" id="filtroZeroSaida"> Zerados de saída</label>
         </div>
@@ -2837,7 +2837,7 @@
 
   function getFilteredRows(){
     if(filteredRowsCache) return filteredRowsCache;
-    const showDiv = el('filtroDivergencias').checked;
+    const showNegatives = el('filtroNegativos').checked;
     const showZeroEnt = el('filtroZeroEntrada').checked;
     const showZeroSai = el('filtroZeroSaida').checked;
     const busca = el('busca').value.trim().toLowerCase();
@@ -2845,7 +2845,7 @@
 
     const rows = [];
     for(const r of merged){
-      if(showDiv && r.saldo === 0) continue;
+      if(showNegatives && r.saldo >= 0) continue;
       if(showZeroEnt && !r.zeradoEntrada) continue;
       if(showZeroSai && !r.zeradoSaida) continue;
       if(busca && !r.codigo.toLowerCase().includes(busca) && !r.nome.toLowerCase().includes(busca)) continue;
@@ -2888,7 +2888,7 @@
     const labels = [];
     const search = el('busca').value.trim();
     if(search) labels.push('BUSCA: ' + search.toUpperCase());
-    if(el('filtroDivergencias').checked) labels.push('SÓ DIVERGÊNCIAS');
+    if(el('filtroNegativos').checked) labels.push('SÓ NEGATIVOS');
     if(el('filtroZeroEntrada').checked) labels.push('ZERADOS DE ENTRADA');
     if(el('filtroZeroSaida').checked) labels.push('ZERADOS DE SAÍDA');
     const sortLabels = {
@@ -3284,7 +3284,7 @@
   wireDropzone('dzEntrada','fileEntrada','entrada');
   wireDropzone('dzSaida','fileSaida','saida');
 
-  ['filtroDivergencias','filtroZeroEntrada','filtroZeroSaida'].forEach(id => {
+  ['filtroNegativos','filtroZeroEntrada','filtroZeroSaida'].forEach(id => {
     el(id).addEventListener('change', () => {
       currentPage = 1;
       filteredRowsCache = null;
@@ -3336,7 +3336,7 @@
     saidaMap = new Map();
     merged = catalogMap.size > 0 ? mergeMaps() : [];
     resetDropzonesUI();
-    ['filtroDivergencias','filtroZeroEntrada','filtroZeroSaida'].forEach(id => el(id).checked = false);
+    ['filtroNegativos','filtroZeroEntrada','filtroZeroSaida'].forEach(id => el(id).checked = false);
     el('busca').value = '';
     el('mainSort').value = 'produto';
     currentPage = 1;
@@ -3460,7 +3460,7 @@
   });
 
   el('btnCsv').addEventListener('click', () => {
-    const rows = getFilteredRows();
+    const rows = getExportRows();
     const header = ['Codigo','Produto','Entrada','Saida','Saldo'];
     const lines = [header.join(';')];
     for(const r of rows){
