@@ -9,6 +9,11 @@ import {
 } from "../../lib/notion";
 
 type JsonMap = Record<string, unknown>;
+const PURCHASE_FILTER_STATUSES = new Set([
+  "Não iniciado",
+  "Em andamento",
+  "Concluído",
+]);
 
 function asRecord(value: unknown): JsonMap {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -23,7 +28,14 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const query = (url.searchParams.get("query") || "").trim().slice(0, 200);
-    const status = (url.searchParams.get("status") || "").trim();
+    const statuses = Array.from(
+      new Set(
+        url.searchParams
+          .getAll("status")
+          .map((status) => status.trim())
+          .filter((status) => PURCHASE_FILTER_STATUSES.has(status)),
+      ),
+    );
     const cursor = (url.searchParams.get("cursor") || "").trim();
     const filters: JsonMap[] = [];
 
@@ -36,8 +48,19 @@ export async function GET(request: Request) {
         ],
       });
     }
-    if (status) {
-      filters.push({ property: "STATUS", status: { equals: status } });
+    if (statuses.length === 1) {
+      filters.push({
+        property: "STATUS",
+        status: { equals: statuses[0] },
+      });
+    }
+    if (statuses.length > 1) {
+      filters.push({
+        or: statuses.map((status) => ({
+          property: "STATUS",
+          status: { equals: status },
+        })),
+      });
     }
 
     const body: JsonMap = {
@@ -91,4 +114,3 @@ export async function POST(request: Request) {
     return apiErrorResponse(error);
   }
 }
-
