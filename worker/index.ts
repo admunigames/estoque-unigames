@@ -37,6 +37,7 @@ type LoginConfig = {
 
 const SESSION_COOKIE = "unigames_session";
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
+const LOGIN_SUCCESS_PATH = "/inicio";
 const INTERNAL_AUTH_HEADER = "x-unigames-authenticated";
 const PUBLIC_ASSET_PATHS = new Set(["/favicon.svg", "/og.png"]);
 const APP_ROUTE_PATHS = new Set([
@@ -263,7 +264,7 @@ function loginPage(options: {
 
 async function handleLogin(request: Request, env: Env, url: URL): Promise<Response> {
   const config = loginConfig(env);
-  const next = safeNext(url.searchParams.get("next"));
+  const next = LOGIN_SUCCESS_PATH;
   if (!config) {
     return loginPage({
       next,
@@ -299,14 +300,13 @@ async function handleLogin(request: Request, env: Env, url: URL): Promise<Respon
   const form = await request.formData();
   const username = String(form.get("username") ?? "");
   const password = String(form.get("password") ?? "");
-  const formNext = safeNext(String(form.get("next") ?? next));
   if (
     !constantTimeEqual(username, config.username) ||
     !constantTimeEqual(password, config.password)
   ) {
     recordFailure(request);
     return loginPage({
-      next: formNext,
+      next,
       status: 401,
       message: "Usuário ou senha inválidos.",
       configured: true,
@@ -319,7 +319,7 @@ async function handleLogin(request: Request, env: Env, url: URL): Promise<Respon
   return new Response(null, {
     status: 303,
     headers: {
-      location: formNext,
+      location: LOGIN_SUCCESS_PATH,
       "cache-control": "no-store",
       "set-cookie": `${SESSION_COOKIE}=${token}; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=${SESSION_TTL_SECONDS}`,
     },
