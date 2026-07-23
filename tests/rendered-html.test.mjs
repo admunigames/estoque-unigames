@@ -160,6 +160,9 @@ test("oferece divisao expansivel e TXT separado por rota nas puxadas", async () 
   assert.match(html, /\*TRANSFERÊNCIA\*/);
   assert.match(html, /route\.origin\.toUpperCase\(\) \+ ' >>>> ' \+ route\.destination\.toUpperCase\(\)/);
   assert.match(html, /padStart\(2,'0'\)/);
+  assert.doesNotMatch(html, /Equilibre o estoque entre as lojas usando as vendas do período/);
+  assert.doesNotMatch(html, /ETAPA 01/);
+  assert.doesNotMatch(html, /class="pull-flow"/);
 });
 
 test("oferece estoque fiscal consolidado e PDF em tema claro", async () => {
@@ -203,14 +206,62 @@ test("filtra somente produtos com saldo negativo no dashboard e nas exportaçõe
     "utf8",
   );
 
-  assert.match(html, /id="filtroNegativos"> Só negativos/);
+  assert.match(html, /id="filtroNegativos"> Negativos/);
   assert.match(html, /const showNegatives = el\('filtroNegativos'\)\.checked/);
   assert.match(html, /if\(showNegatives && r\.saldo >= 0\) continue/);
-  assert.match(html, /if\(el\('filtroNegativos'\)\.checked\) labels\.push\('SÓ NEGATIVOS'\)/);
+  assert.match(html, /if\(el\('filtroNegativos'\)\.checked\) labels\.push\('NEGATIVOS'\)/);
   assert.match(html, /\['filtroNegativos','filtroZeroEntrada','filtroZeroSaida'\]/);
   assert.doesNotMatch(html, /id="filtroDivergencias"/);
   assert.doesNotMatch(html, /SÓ DIVERGÊNCIAS/);
   assert.match(html, /btnCsv[\s\S]*const rows = getExportRows\(\)/);
+});
+
+test("alinha os titulos à direita e usa somente a logo como botao responsivo", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /\.page-title\{[\s\S]*margin:0 0 0 auto;[\s\S]*text-align:right/);
+  assert.match(html, /\.page-logo\{[\s\S]*width:clamp\(46px,4\.3vw,56px\)/);
+  assert.match(html, /\.page-logo \.brand-logo\{width:100%; height:100%/);
+  assert.doesNotMatch(html, /class="page-logo"[\s\S]{0,220}<span>ESTOQUE<\/span>/);
+  for (const title of ["Controle de Compras", "Puxadas", "Base de Dados", "Cadastro de Lojas"]) {
+    assert.match(html, new RegExp(`<h2 class="page-title">${title}</h2>`));
+  }
+});
+
+test("oferece compras responsivas e filtro combinado por status", async () => {
+  const [html, route] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /id="purchaseStatusFilter"[\s\S]*name="purchaseStatus" value="Não iniciado"/);
+  assert.match(html, /name="purchaseStatus" value="Em andamento"/);
+  assert.match(html, /name="purchaseStatus" value="Concluído"/);
+  assert.match(html, /function selectedPurchaseStatuses\(\)/);
+  assert.match(html, /statuses\.forEach\(status => params\.append\('status', status\)\)/);
+  assert.match(html, /data-label="FORNECEDOR"/);
+  assert.match(html, /data-label="AÇÕES"/);
+  assert.match(html, /@media \(max-width:680px\)[\s\S]*\.purchase-table tbody tr\{[\s\S]*\.purchase-table tbody td\{/);
+  assert.match(html, /\.purchase-table \.table-scroll\{[\s\S]*overflow-x:auto/);
+  assert.match(route, /searchParams[\s\S]*\.getAll\("status"\)/);
+  assert.match(route, /statuses\.length > 1/);
+  assert.match(route, /or: statuses\.map/);
+});
+
+test("simplifica os indicadores e filtros do estoque fiscal", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.doesNotMatch(html, /<span class="company-label">Visão<\/span>/);
+  assert.doesNotMatch(html, /Sem cadastro no catálogo/);
+  assert.doesNotMatch(html, /id="cardNaoCadastrado"/);
+  assert.doesNotMatch(html, /el\('cardNaoCadastrado'\)/);
+  assert.match(html, /\.summary\{display:grid; grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
 });
 
 test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos", async () => {
