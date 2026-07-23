@@ -768,14 +768,23 @@
     .nav-item{font-size:13px; padding:11px 10px;}
     .wrap{padding:18px 12px 42px;}
     body{font-size:14px;}
-    .page-title{font-size:21px;}
+    .page-title{
+      width:100%; max-width:100%; font-size:clamp(14px,4.6vw,19px); line-height:1.2;
+      letter-spacing:0; overflow-wrap:normal; word-break:normal; hyphens:auto;
+    }
     .page-desc{font-size:13.5px; margin-bottom:20px;}
     .card{min-height:106px; padding:19px 18px;}
     .card .num{font-size:25px;}
     .summary{grid-template-columns:1fr;}
     .summary .card:last-child:nth-child(odd){grid-column:span 1;}
     .menu-toggle{top:calc(12px + env(safe-area-inset-top)); left:calc(12px + env(safe-area-inset-left));}
-    .page-heading{padding-left:52px;}
+    .page-heading{
+      display:grid; grid-template-columns:44px minmax(0,1fr); align-items:center;
+      gap:10px; min-height:50px; padding-left:52px; margin-bottom:16px;
+    }
+    .page-logo{
+      width:44px; height:44px; min-height:44px; padding:4px; border-radius:13px;
+    }
     .pull-settings,.pull-store-row,.pull-summary{grid-template-columns:1fr;}
     .pull-store-row{padding:12px;}
     .pull-group-tag{justify-self:start;}
