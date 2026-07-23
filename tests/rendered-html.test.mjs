@@ -231,7 +231,7 @@ test("alinha os titulos à direita e usa somente a logo como botao responsivo", 
   }
 });
 
-test("oferece compras responsivas e filtro combinado por status", async () => {
+test("oferece compras em cards responsivos e filtro combinado por status", async () => {
   const [html, route] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras/route.ts", import.meta.url), "utf8"),
@@ -242,10 +242,13 @@ test("oferece compras responsivas e filtro combinado por status", async () => {
   assert.match(html, /name="purchaseStatus" value="Concluído"/);
   assert.match(html, /function selectedPurchaseStatuses\(\)/);
   assert.match(html, /statuses\.forEach\(status => params\.append\('status', status\)\)/);
-  assert.match(html, /data-label="FORNECEDOR"/);
-  assert.match(html, /data-label="AÇÕES"/);
-  assert.match(html, /@media \(max-width:680px\)[\s\S]*\.purchase-table tbody tr\{[\s\S]*\.purchase-table tbody td\{/);
-  assert.match(html, /\.purchase-table \.table-scroll\{[\s\S]*overflow-x:auto/);
+  assert.match(html, /id="purchaseCardGrid"/);
+  assert.match(html, /class="purchase-card"/);
+  assert.match(html, /class="purchase-card-dates"/);
+  assert.match(html, /class="purchase-card-actions"/);
+  assert.match(html, /grid-template-columns:repeat\(auto-fit,minmax\(min\(100%,390px\),1fr\)\)/);
+  assert.match(html, /el\('purchaseCardGrid'\)\.addEventListener/);
+  assert.doesNotMatch(html, /class="table-panel purchase-table"/);
   assert.match(route, /searchParams[\s\S]*\.getAll\("status"\)/);
   assert.match(route, /statuses\.length > 1/);
   assert.match(route, /or: statuses\.map/);
