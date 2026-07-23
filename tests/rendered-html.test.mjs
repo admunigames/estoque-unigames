@@ -92,6 +92,47 @@ test("cria uma sessão assinada com credenciais válidas", async () => {
   assert.notEqual(protectedResponse.headers.get("location"), "http://localhost/login?next=%2F");
 });
 
+test("serve as rotas dos módulos sem alterar o endereço do navegador", async () => {
+  const requestedAssets = [];
+  const routeEnv = {
+    ...env,
+    ASSETS: {
+      fetch: async (request) => {
+        requestedAssets.push(new URL(request.url).pathname);
+        return new Response("<!doctype html><title>ESTOQUE</title>", {
+          headers: { "content-type": "text/html; charset=utf-8" },
+        });
+      },
+    },
+  };
+  const runtime = await worker();
+  const login = await runtime.fetch(
+    new Request("http://localhost/login", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        username: "unigames",
+        password: "senha-de-teste-forte",
+        next: "/cadastros/lojas",
+      }),
+    }),
+    routeEnv,
+    ctx,
+  );
+  const cookie = (login.headers.get("set-cookie") ?? "").split(";")[0];
+  const response = await runtime.fetch(
+    new Request("http://localhost/cadastros/lojas", {
+      headers: { accept: "text/html", cookie },
+    }),
+    routeEnv,
+    ctx,
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(requestedAssets, ["/estoque.html"]);
+  assert.match(await response.text(), /ESTOQUE/);
+});
+
 test("configura o banco geral e conecta a interface à API compartilhada", async () => {
   const [hosting, html, migration] = await Promise.all([
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
@@ -210,7 +251,31 @@ test("abre o menu de cadastros e encaminha para lojas ou base de dados", async (
   assert.match(html, /data-cadastro-target="lojas"[\s\S]*<strong>LOJAS<\/strong>/);
   assert.match(html, /data-cadastro-target="dados"[\s\S]*<strong>BASE DE DADOS<\/strong>/);
   assert.match(html, /id="navDados" data-page="dados">Base de Dados<\/button>/);
-  assert.match(html, /navCadastrosToggle\.addEventListener\('click', \(\) => \{[\s\S]*showPage\('cadastros'\)/);
+  assert.match(html, /navCadastrosToggle\.addEventListener\('click', \(\) => \{[\s\S]*navigateToPage\('cadastros'\)/);
   assert.match(html, /document\.querySelectorAll\('\[data-cadastro-target\]'\)/);
-  assert.match(html, /showPage\(button\.dataset\.cadastroTarget\)/);
+  assert.match(html, /navigateToPage\(button\.dataset\.cadastroTarget\)/);
+});
+
+test("mantém uma URL por módulo e integra voltar e avançar do navegador", async () => {
+  const [html, manifest, homePage, workerSource] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /inicio:'\/inicio'/);
+  assert.match(html, /puxadas:'\/puxadas'/);
+  assert.match(html, /compras:'\/compras'/);
+  assert.match(html, /dashboard:'\/estoque'/);
+  assert.match(html, /lojas:'\/cadastros\/lojas'/);
+  assert.match(html, /dados:'\/cadastros\/base-de-dados'/);
+  assert.match(html, /history\[method\]\(\{page:name\}, '', route\)/);
+  assert.match(html, /window\.addEventListener\('popstate'/);
+  assert.match(html, /href="\/manifest\.webmanifest"/);
+  assert.match(html, /register\('\/service-worker\.js'\)/);
+  assert.equal(JSON.parse(manifest).start_url, "/inicio");
+  assert.match(homePage, /redirect\("\/inicio"\)/);
+  assert.match(workerSource, /APP_ROUTE_PATHS/);
+  assert.match(workerSource, /new URL\("\/estoque\.html", request\.url\)/);
 });
