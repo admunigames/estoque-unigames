@@ -39,6 +39,16 @@ const SESSION_COOKIE = "unigames_session";
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
 const INTERNAL_AUTH_HEADER = "x-unigames-authenticated";
 const PUBLIC_ASSET_PATHS = new Set(["/favicon.svg", "/og.png"]);
+const APP_ROUTE_PATHS = new Set([
+  "/inicio",
+  "/puxadas",
+  "/compras",
+  "/estoque",
+  "/cadastros",
+  "/cadastros/lojas",
+  "/cadastros/base-de-dados",
+  "/estoque.html",
+]);
 const MAX_LOGIN_ATTEMPTS = 8;
 const LOGIN_WINDOW_MS = 10 * 60 * 1000;
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -384,6 +394,22 @@ const worker = {
       headers: authenticatedHeaders,
     });
 
+    const normalizedPath =
+      url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : url.pathname;
+    if (
+      (request.method === "GET" || request.method === "HEAD") &&
+      APP_ROUTE_PATHS.has(normalizedPath)
+    ) {
+      if (normalizedPath !== url.pathname) {
+        const canonicalUrl = new URL(normalizedPath, url.origin);
+        canonicalUrl.search = url.search;
+        return Response.redirect(canonicalUrl, 308);
+      }
+      const appAssetUrl = new URL("/estoque.html", request.url);
+      const appAssetRequest = new Request(appAssetUrl, authenticatedRequest);
+      return securityHeaders(await env.ASSETS.fetch(appAssetRequest));
+    }
+
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       const response = await handleImageOptimization(
@@ -408,4 +434,3 @@ const worker = {
 };
 
 export default worker;
-
