@@ -178,7 +178,7 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
 
   assert.match(
     html,
-    /id="navInicio"[\s\S]*>Início<[\s\S]*id="navPuxadas"[\s\S]*id="navCompras"[\s\S]*id="navDashboard"[\s\S]*>Estoque Fiscal<[\s\S]*id="navCadastrosToggle"/,
+    /id="navInicio"[\s\S]*>Início<[\s\S]*id="navPuxadas"[\s\S]*id="navCompras"[\s\S]*id="navDashboard"[\s\S]*>Estoque Fiscal<[\s\S]*id="navCadastros"/,
   );
   assert.match(html, /id="navLojas"[\s\S]*class="nav-item sub-item nested-item" id="navDados"/);
   assert.match(html, /id="pageInicio" class="page wrap home-page active"/);
@@ -187,7 +187,7 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /data-home-target="puxadas"/);
   assert.match(html, /data-home-target="compras"/);
   assert.match(html, /data-home-target="dashboard"/);
-  assert.match(html, /data-home-target="lojas"/);
+  assert.match(html, /data-home-target="cadastros"/);
   assert.match(html, /document\.querySelectorAll\('\[data-home-target\]'\)/);
   assert.match(html, /\.page\.home-page\.active\{display:flex;\}/);
   assert.doesNotMatch(html, /\.home-page\{[^}]*display:flex/);
@@ -197,4 +197,20 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   for (const pageId of ["pagePuxadas", "pageCompras", "pageDashboard", "pageLojas", "pageDados"]) {
     assert.match(html, new RegExp(`id="${pageId}" class="page wrap"`));
   }
+});
+
+test("abre o menu de cadastros e encaminha para lojas ou base de dados", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /id="pageCadastros" class="page wrap"/);
+  assert.match(html, /class="cadastros-menu"/);
+  assert.match(html, /data-cadastro-target="lojas"[\s\S]*<strong>LOJAS<\/strong>/);
+  assert.match(html, /data-cadastro-target="dados"[\s\S]*<strong>BASE DE DADOS<\/strong>/);
+  assert.match(html, /id="navDados" data-page="dados">Base de Dados<\/button>/);
+  assert.match(html, /navCadastrosToggle\.addEventListener\('click', \(\) => \{[\s\S]*showPage\('cadastros'\)/);
+  assert.match(html, /document\.querySelectorAll\('\[data-cadastro-target\]'\)/);
+  assert.match(html, /showPage\(button\.dataset\.cadastroTarget\)/);
 });
