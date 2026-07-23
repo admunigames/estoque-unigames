@@ -118,3 +118,22 @@ test("oferece divisao expansivel e TXT separado por rota nas puxadas", async () 
   assert.match(html, /route\.origin\.toUpperCase\(\) \+ ' >>>> ' \+ route\.destination\.toUpperCase\(\)/);
   assert.match(html, /padStart\(2,'0'\)/);
 });
+
+test("oferece estoque fiscal consolidado e PDF em tema claro", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    html,
+    /page-heading page-heading-dashboard[\s\S]*data-dashboard-home[\s\S]*<h2 class="page-title">Dashboard<\/h2>/,
+  );
+  assert.match(html, /ESTOQUE FISCAL GERAL — UNIGAMES/);
+  assert.match(html, /ESTOQUE FISCAL GERAL — P\.A/);
+  assert.match(html, /Promise\.allSettled\(groupCompanies\.map/);
+  assert.match(html, /addFiscalQuantities\(entradaMap, data\.entrada\)/);
+  assert.match(html, /addFiscalQuantities\(saidaMap, data\.saida\)/);
+  assert.match(html, /--bg:#fff/);
+  assert.match(html, /tbody tr\.neg td\{background:#fee4e2 !important/);
+});
