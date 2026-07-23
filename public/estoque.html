@@ -119,8 +119,6 @@
     content:''; position:absolute; left:14px; top:50%; width:5px; height:5px; border-radius:50%;
     background:var(--ink-faint); transform:translateY(-50%);
   }
-  .nav-item.sub-item.nested-item{padding-left:46px;}
-  .nav-item.sub-item.nested-item::before{left:30px; width:4px; height:4px;}
   .nav-item.sub-item.active::before{background:var(--accent-ink);}
   .sidebar-status{
     display:flex; align-items:center; gap:10px; padding:10px 10px 4px;
@@ -174,6 +172,7 @@
   body.menu-open .menu-toggle-icon span:nth-child(1){transform:translateY(6px) rotate(45deg);}
   body.menu-open .menu-toggle-icon span:nth-child(2){opacity:0;}
   body.menu-open .menu-toggle-icon span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
+  body.home-active .menu-toggle{display:none;}
   .sidebar-backdrop{
     position:fixed; inset:0; z-index:900; padding:0; border:0; border-radius:0;
     background:rgba(5,7,9,0.68); opacity:0; visibility:hidden; pointer-events:none;
@@ -357,7 +356,9 @@
   }
   .dz-icon{margin-bottom:14px; color:var(--ink-faint);}
   .dropzone p{margin:0; font-size:14px; color:var(--ink-soft); line-height:1.6;}
-  .dropzone p …39149 tokens truncated…l('purchaseMetricOverdue').textContent = overdue.toLocaleString('pt-BR');
+  .dropzone p b{color:var(--ink); font-weight:700;}
+  .dropzone input{display:none;}
+  .status{ma…39275 tokens truncated…l('purchaseMetricOverdue').textContent = overdue.toLocaleString('pt-BR');
     el('purchaseMetricDone').textContent = done.toLocaleString('pt-BR');
   }
 
