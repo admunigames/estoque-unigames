@@ -127,7 +127,7 @@ test("oferece estoque fiscal consolidado e PDF em tema claro", async () => {
 
   assert.match(
     html,
-    /page-heading page-heading-dashboard[\s\S]*data-dashboard-home[\s\S]*<h2 class="page-title">Dashboard<\/h2>/,
+    /page-heading page-heading-dashboard[\s\S]*data-home[\s\S]*<h2 class="page-title">Estoque Fiscal<\/h2>/,
   );
   assert.match(html, /ESTOQUE FISCAL GERAL — UNIGAMES/);
   assert.match(html, /ESTOQUE FISCAL GERAL — P\.A/);
@@ -168,4 +168,28 @@ test("filtra somente produtos com saldo negativo no dashboard e nas exportaçõe
   assert.doesNotMatch(html, /id="filtroDivergencias"/);
   assert.doesNotMatch(html, /SÓ DIVERGÊNCIAS/);
   assert.match(html, /btnCsv[\s\S]*const rows = getExportRows\(\)/);
+});
+
+test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    html,
+    /id="navInicio"[\s\S]*>Início<[\s\S]*id="navPuxadas"[\s\S]*id="navCompras"[\s\S]*id="navDashboard"[\s\S]*>Estoque Fiscal<[\s\S]*id="navCadastrosToggle"/,
+  );
+  assert.match(html, /id="navLojas"[\s\S]*class="nav-item sub-item nested-item" id="navDados"/);
+  assert.match(html, /id="pageInicio" class="page wrap home-page active"/);
+  assert.match(html, /class="home-lightglass"/);
+  assert.match(html, /class="home-brand-logo" data-logo alt="LOGO UNIGAMES"/);
+  assert.match(html, /data-home-target="puxadas"/);
+  assert.match(html, /data-home-target="compras"/);
+  assert.match(html, /data-home-target="dashboard"/);
+  assert.match(html, /data-home-target="lojas"/);
+  assert.match(html, /document\.querySelectorAll\('\[data-home-target\]'\)/);
+  assert.match(html, /@media \(max-width:800px\)[\s\S]*\.home-access-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
+  assert.match(html, /@media \(max-width:520px\)[\s\S]*\.home-access-grid\{grid-template-columns:1fr;/);
+  assert.doesNotMatch(html, /data-dashboard-home/);
 });
