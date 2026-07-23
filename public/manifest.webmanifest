@@ -2,7 +2,7 @@
   "name": "Estoque Unigames",
   "short_name": "Estoque",
   "description": "Reconciliação de estoque, puxadas e controle de compras integrado ao Notion.",
-  "start_url": "/estoque.html",
+  "start_url": "/inicio",
   "scope": "/",
   "display": "standalone",
   "background_color": "#08121e",
@@ -17,4 +17,3 @@
     }
   ]
 }
-
