@@ -358,27 +358,27 @@
   }
   .dropzone:hover{border-color:var(--accent);}
   .dropzone.has-file{border-style:solid; border-color:var(--ok);}
-  .dropzone.disabled{opac…40472 tokens truncated…ody.innerHTML = purchaseRows.map(item => {
-      const responsible = Array.isArray(item.responsaveis) && item.responsaveis.length
-        ? item.responsaveis.map(person => person.name || person.email || 'USUÁRIO').join(', ')
-        : '—';
-      const forecastClass = purchaseIsOverdue(item) ? 'date-overdue' : '';
-      return '<tr data-purchase-row="'+escapeHtml(item.id)+'">'+
-        '<td class="supplier" data-label="FORNECEDOR">'+escapeHtml(item.fornecedor || 'SEM FORNECEDOR')+'</td>'+
-        '<td data-label="LOJA">'+escapeHtml(item.loja || '—')+'</td>'+
-        '<td data-label="DATA DO PEDIDO">'+purchaseDate(item.dataPedido)+'</td>'+
-        '<td data-label="PREVISÃO" class="'+forecastClass+'">'+purchaseDate(item.previsao)+(forecastClass ? '<br><small>ATRASADO</small>' : '')+'</td>'+
-        '<td data-label="RESPONSÁVEL">'+escapeHtml(responsible)+'</td>'+
-        '<td data-label="RECEBIMENTO">'+purchaseDate(item.dataRecebimento)+'</td>'+
-        '<td data-label="DIVISÃO">'+purchaseDivisionHtml(item.divisao)+'</td>'+
-        '<td data-label="STATUS DA DIVISÃO">'+purchaseStatusHtml(item.statusDivisao)+'</td>'+
-        '<td data-label="ARQUIVOS">'+purchaseFilesHtml(item)+'</td>'+
-        '<td data-label="MOV. SISTEMA">'+purchaseDate(item.movimentacaoSistema)+'</td>'+
-        '<td data-label="STATUS">'+purchaseStatusHtml(item.status)+'</td>'+
-        '<td data-label="AÇÕES"><div class="purchase-actions">'+
+  .dropzone.disabled{opac…40610 tokens truncated…s="purchase-card-store">LOJA · '+escapeHtml(item.loja || '—')+'</span>'+
+          '</div>'+
+          purchaseStatusHtml(item.status)+
+        '</header>'+
+        '<div class="purchase-card-dates">'+
+          '<div class="purchase-card-field"><span>DATA DO PEDIDO</span><strong>'+purchaseDate(item.dataPedido)+'</strong></div>'+
+          '<div class="purchase-card-field '+forecastClass+'"><span>PREVISÃO</span><strong>'+purchaseDate(item.previsao)+'</strong>'+(forecastClass ? '<small>ATRASADO</small>' : '')+'</div>'+
+          '<div class="purchase-card-field"><span>RECEBIMENTO</span><strong>'+purchaseDate(item.dataRecebimento)+'</strong></div>'+
+        '</div>'+
+        '<div class="purchase-card-details">'+
+          '<div class="purchase-card-detail wide"><span>RESPONSÁVEL</span><strong>'+escapeHtml(responsible)+'</strong></div>'+
+          '<div class="purchase-card-detail"><span>MOV. SISTEMA</span><strong>'+purchaseDate(item.movimentacaoSistema)+'</strong></div>'+
+          '<div class="purchase-card-detail"><span>STATUS DA DIVISÃO</span>'+purchaseStatusHtml(item.statusDivisao)+'</div>'+
+        '</div>'+
+        '<div class="purchase-card-section"><span>DIVISÃO</span>'+purchaseDivisionHtml(item.divisao)+'</div>'+
+        '<div class="purchase-card-section"><span>ARQUIVOS</span>'+purchaseFilesHtml(item)+'</div>'+
+        '<footer class="purchase-card-footer"><div class="purchase-card-actions">'+
           '<button class="btn-outline" type="button" data-edit-purchase="'+escapeHtml(item.id)+'">EDITAR</button>'+
           '<a class="btn-outline" href="'+escapeHtml(item.url || '#')+'" target="_blank" rel="noopener noreferrer">NOTION ↗</a>'+
-        '</div></td></tr>';
+        '</div></footer>'+
+      '</article>';
     }).join('');
   }
 
@@ -388,7 +388,7 @@
     if(reset){
       purchaseRows = [];
       purchaseCursor = null;
-      renderPurchaseRows();
+      renderPurchaseCards();
     }
     setPurchaseSync('SINCRONIZANDO COM O NOTION...', 'loading');
     el('btnPurchasesRefresh').disabled = true;
@@ -406,11 +406,11 @@
       purchaseRows = reset ? (data.items || []) : purchaseRows.concat(data.items || []);
       purchaseCursor = data.nextCursor || null;
       purchasesLoaded = true;
-      renderPurchaseRows();
+      renderPurchaseCards();
       setPurchaseSync('SINCRONIZADO COM O NOTION · '+purchaseRows.length.toLocaleString('pt-BR')+' PEDIDOS CARREGADOS', 'ready');
     } catch(error){
       purchasesLoaded = false;
-      renderPurchaseRows();
+      renderPurchaseCards();
       setPurchaseSync(error && error.message ? error.message : 'FALHA NA CONEXÃO COM O NOTION.', 'error');
     } finally {
       purchasesLoading = false;
@@ -702,7 +702,7 @@
     el('purchaseStatusFilter').open = false;
     loadPurchases(true);
   });
-  el('purchaseTableBody').addEventListener('click', event => {
+  el('purchaseCardGrid').addEventListener('click', event => {
     const button = event.target.closest('[data-edit-purchase]');
     if(!button) return;
     const item = purchaseRows.find(row => row.id === button.dataset.editPurchase);
