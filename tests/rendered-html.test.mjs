@@ -216,7 +216,7 @@ test("filtra somente produtos com saldo negativo no dashboard e nas exportaçõe
   assert.match(html, /btnCsv[\s\S]*const rows = getExportRows\(\)/);
 });
 
-test("alinha os titulos à direita e usa somente a logo como botao responsivo", async () => {
+test("alinha os titulos à direita e mantém os cabeçalhos dentro do iPhone", async () => {
   const html = await readFile(
     new URL("../public/estoque.html", import.meta.url),
     "utf8",
@@ -225,6 +225,9 @@ test("alinha os titulos à direita e usa somente a logo como botao responsivo", 
   assert.match(html, /\.page-title\{[\s\S]*margin:0 0 0 auto;[\s\S]*text-align:right/);
   assert.match(html, /\.page-logo\{[\s\S]*width:clamp\(46px,4\.3vw,56px\)/);
   assert.match(html, /\.page-logo \.brand-logo\{width:100%; height:100%/);
+  assert.match(html, /@media \(max-width:520px\)[\s\S]*\.page-title\{[\s\S]*font-size:clamp\(14px,4\.6vw,19px\)[\s\S]*overflow-wrap:normal/);
+  assert.match(html, /@media \(max-width:520px\)[\s\S]*\.page-heading\{[\s\S]*grid-template-columns:44px minmax\(0,1fr\)[\s\S]*padding-left:52px/);
+  assert.match(html, /@media \(max-width:520px\)[\s\S]*\.page-logo\{[\s\S]*width:44px; height:44px/);
   assert.doesNotMatch(html, /class="page-logo"[\s\S]{0,220}<span>ESTOQUE<\/span>/);
   for (const title of ["Controle de Compras", "Puxadas", "Base de Dados", "Cadastro de Lojas"]) {
     assert.match(html, new RegExp(`<h2 class="page-title">${title}</h2>`));
