@@ -105,6 +105,11 @@
     font-size:10.5px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase;
   }
   .nav-group-toggle:hover{opacity:1; color:var(--ink); background:var(--bg-card-2);}
+  .nav-group-toggle.active{
+    color:var(--accent-ink); border:1px solid var(--accent);
+    background:linear-gradient(90deg,rgba(29,72,126,.98),rgba(79,134,189,.9));
+    box-shadow:0 0 24px rgba(79,134,189,.24),inset 0 1px rgba(255,255,255,.22);
+  }
   .nav-group-chevron{font-size:13px; transition:transform .18s ease;}
   .nav-group-toggle[aria-expanded="false"] .nav-group-chevron{transform:rotate(-90deg);}
   .nav-submenu{display:flex; flex-direction:column; gap:4px;}
@@ -261,6 +266,45 @@
   .home-access-copy strong{color:#10233a; font:800 13px/1.25 var(--mono); letter-spacing:.25px;}
   .home-access-copy span{color:#5c7187; font:600 10px/1.45 var(--sans);}
   .home-access-arrow{align-self:flex-end; color:#386b9c; font:800 18px/1 var(--mono);}
+
+  /* MENU DE CADASTROS */
+  .cadastros-menu{
+    position:relative; overflow:hidden; max-width:980px; margin:18px auto 0; padding:clamp(26px,5vw,54px);
+    border:1px solid rgba(255,255,255,.72); border-radius:28px;
+    background:
+      radial-gradient(circle at 10% 0%,rgba(255,255,255,.96),transparent 42%),
+      linear-gradient(145deg,rgba(242,249,255,.94),rgba(207,226,243,.84));
+    box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.96);
+    color:#10233a; backdrop-filter:blur(20px) saturate(135%);
+  }
+  .cadastros-menu-head{text-align:center; max-width:650px; margin:0 auto 30px;}
+  .cadastros-menu-head img{
+    width:76px; height:76px; object-fit:contain; padding:4px; border-radius:18px;
+    background:#fff; border:1px solid rgba(36,79,131,.2); box-shadow:0 12px 30px rgba(36,79,131,.17);
+  }
+  .cadastros-menu-head h3{margin:18px 0 7px; color:#10233a; font:800 25px/1.2 var(--mono);}
+  .cadastros-menu-head p{margin:0; color:#536a81; font:600 12px/1.55 var(--sans);}
+  .cadastros-menu-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px;}
+  .cadastros-option{
+    min-height:210px; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between;
+    padding:26px; border:1px solid rgba(255,255,255,.94); border-radius:21px; cursor:pointer; text-align:left;
+    background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(233,242,250,.56));
+    color:#10233a; box-shadow:0 14px 34px rgba(36,79,131,.13),inset 0 1px 0 #fff;
+    transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+  }
+  .cadastros-option:hover{
+    opacity:1; transform:translateY(-5px); border-color:rgba(36,79,131,.38);
+    box-shadow:0 20px 42px rgba(36,79,131,.2),inset 0 1px 0 #fff;
+  }
+  .cadastros-option:focus-visible{outline:3px solid rgba(36,79,131,.48); outline-offset:3px;}
+  .cadastros-option-icon{
+    width:52px; height:52px; display:grid; place-items:center; border-radius:15px;
+    background:#244f83; color:#fff; font:800 22px/1 var(--mono); box-shadow:0 10px 22px rgba(36,79,131,.23);
+  }
+  .cadastros-option-copy{display:flex; flex-direction:column; gap:8px;}
+  .cadastros-option-copy strong{color:#10233a; font:800 16px/1.25 var(--mono);}
+  .cadastros-option-copy span{color:#5b7187; font:600 11px/1.5 var(--sans);}
+  .cadastros-option-arrow{align-self:flex-end; color:#386b9c; font:800 20px/1 var(--mono);}
 
   /* BARRA DE EMPRESA */
   .company-bar{
@@ -636,6 +680,9 @@
     .home-title{letter-spacing:-1px;}
     .home-access-grid{grid-template-columns:1fr; gap:12px; margin-top:30px;}
     .home-access-card{min-height:132px; padding:18px;}
+    .cadastros-menu{padding:28px 16px 18px; border-radius:20px;}
+    .cadastros-menu-grid{grid-template-columns:1fr; gap:12px;}
+    .cadastros-option{min-height:158px; padding:20px;}
     .sidebar{width:min(280px, calc(100vw - 28px)); padding:calc(18px + env(safe-area-inset-top)) 12px calc(18px + env(safe-area-inset-bottom));}
     .sidebar-brand{margin:50px 0 16px;}
     .nav-item{font-size:13px; padding:11px 10px;}
@@ -738,12 +785,12 @@
     <button class="nav-item" id="navDashboard" data-page="dashboard"><span>Estoque Fiscal</span></button>
     <div class="nav-divider"></div>
     <div class="nav-group">
-      <button class="nav-group-toggle" id="navCadastrosToggle" type="button" aria-expanded="true" aria-controls="navCadastrosSubmenu">
-        <span>Cadastros</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+      <button class="nav-group-toggle" id="navCadastros" type="button">
+        <span>Cadastros</span><span class="nav-group-chevron" aria-hidden="true">→</span>
       </button>
       <div class="nav-submenu" id="navCadastrosSubmenu">
         <button class="nav-item sub-item" id="navLojas" data-page="lojas">Lojas</button>
-        <button class="nav-item sub-item nested-item" id="navDados" data-page="dados">Dados</button>
+        <button class="nav-item sub-item nested-item" id="navDados" data-page="dados">Base de Dados</button>
       </div>
     </div>
     <div class="ios-storage-box">
@@ -788,10 +835,38 @@
             <span class="home-access-copy"><strong>ESTOQUE FISCAL</strong><span>CONCILIAÇÃO, FILTROS E EXPORTAÇÕES.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
-          <button class="home-access-card" type="button" data-home-target="lojas">
+          <button class="home-access-card" type="button" data-home-target="cadastros">
             <span class="home-access-icon" aria-hidden="true">+</span>
             <span class="home-access-copy"><strong>CADASTROS</strong><span>LOJAS, BASES E ENVIO DE DADOS.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MENU DE CADASTROS ================= -->
+    <section id="pageCadastros" class="page wrap">
+      <div class="page-heading">
+        <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
+        <h2 class="page-title">Cadastros</h2>
+      </div>
+      <div class="page-desc">Escolha a área de cadastro que deseja acessar.</div>
+      <div class="cadastros-menu">
+        <div class="cadastros-menu-head">
+          <img data-logo alt="LOGO UNIGAMES">
+          <h3>MENU DE CADASTROS</h3>
+          <p>ACESSE O CADASTRO DE LOJAS OU A BASE DE DADOS DO ESTOQUE.</p>
+        </div>
+        <div class="cadastros-menu-grid">
+          <button class="cadastros-option" type="button" data-cadastro-target="lojas">
+            <span class="cadastros-option-icon" aria-hidden="true">L</span>
+            <span class="cadastros-option-copy"><strong>LOJAS</strong><span>CADASTRE, RENOMEIE OU REMOVA AS EMPRESAS.</span></span>
+            <span class="cadastros-option-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="cadastros-option" type="button" data-cadastro-target="dados">
+            <span class="cadastros-option-icon" aria-hidden="true">DB</span>
+            <span class="cadastros-option-copy"><strong>BASE DE DADOS</strong><span>CARREGUE CATÁLOGOS, ENTRADAS E SAÍDAS DAS LOJAS.</span></span>
+            <span class="cadastros-option-arrow" aria-hidden="true">→</span>
           </button>
         </div>
       </div>
@@ -803,7 +878,7 @@
         <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
         <h2 class="page-title">Estoque Fiscal</h2>
       </div>
-      <div class="page-desc">Escolha uma loja ou o estoque fiscal geral para visualizar os dados inseridos na aba Dados.</div>
+      <div class="page-desc">Escolha uma loja ou o estoque fiscal geral para visualizar os dados inseridos na Base de Dados.</div>
 
       <div class="error-box" id="errorBox"></div>
 
@@ -891,7 +966,7 @@
               </tr>
             </thead>
             <tbody id="tbody">
-              <tr><td colspan="5"><div class="empty-state"><h4>Nenhum dado ainda</h4><p>Selecione uma empresa acima. Os arquivos são enviados na aba Dados.</p></div></td></tr>
+              <tr><td colspan="5"><div class="empty-state"><h4>Nenhum dado ainda</h4><p>Selecione uma empresa acima. Os arquivos são enviados na Base de Dados.</p></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -916,7 +991,7 @@
         <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
         <h2 class="page-title">Cadastro de Lojas</h2>
       </div>
-      <div class="page-desc">Cadastre, renomeie ou remova as empresas. A lista aparece para escolha no Estoque Fiscal e na aba Dados.</div>
+      <div class="page-desc">Cadastre, renomeie ou remova as empresas. A lista aparece para escolha no Estoque Fiscal e na Base de Dados.</div>
 
       <div class="company-bar">
         <div class="company-actions" style="flex:1 1 auto;">
@@ -944,7 +1019,7 @@
     <section id="pageDados" class="page wrap">
       <div class="page-heading">
         <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""><span>ESTOQUE</span></button>
-        <h2 class="page-title">Dados</h2>
+        <h2 class="page-title">Base de Dados</h2>
       </div>
       <div class="page-desc">Escolha a empresa e envie a base de produtos correspondente ao grupo, além dos relatórios de entrada e saída.</div>
 
@@ -1444,8 +1519,7 @@
   const menuToggle = el('menuToggle');
   const sidebar = el('sidebar');
   const sidebarBackdrop = el('sidebarBackdrop');
-  const navCadastrosToggle = el('navCadastrosToggle');
-  const navCadastrosSubmenu = el('navCadastrosSubmenu');
+  const navCadastrosToggle = el('navCadastros');
 
   function setSidebarOpen(open, returnFocus){
     document.body.classList.toggle('menu-open', open);
@@ -1476,22 +1550,21 @@
   });
 
   navCadastrosToggle.addEventListener('click', () => {
-    const open = navCadastrosToggle.getAttribute('aria-expanded') === 'true';
-    navCadastrosToggle.setAttribute('aria-expanded', String(!open));
-    navCadastrosSubmenu.hidden = open;
+    showPage('cadastros');
+    setSidebarOpen(false, true);
+    window.scrollTo({top:0, behavior:'smooth'});
   });
 
   function showPage(name){
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav-item,.nav-group-toggle').forEach(b => b.classList.remove('active'));
     const page = el('page' + name.charAt(0).toUpperCase() + name.slice(1));
     const navItem = el('nav' + name.charAt(0).toUpperCase() + name.slice(1));
     if(!page || !navItem) return;
     page.classList.add('active');
     navItem.classList.add('active');
     if(name === 'lojas' || name === 'dados'){
-      navCadastrosToggle.setAttribute('aria-expanded','true');
-      navCadastrosSubmenu.hidden = false;
+      navCadastrosToggle.classList.add('active');
     }
   }
   document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1515,6 +1588,13 @@
       const target = button.dataset.homeTarget;
       showPage(target);
       if(target === 'compras' && !purchasesLoaded) loadPurchases(true);
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+
+  document.querySelectorAll('[data-cadastro-target]').forEach(button => {
+    button.addEventListener('click', () => {
+      showPage(button.dataset.cadastroTarget);
       window.scrollTo({top:0, behavior:'smooth'});
     });
   });
@@ -2368,7 +2448,7 @@
     try{
       await storage.set(healthKey, JSON.stringify({checkedAt:new Date().toISOString()}));
       await storage.delete(healthKey);
-      setIosStorageStatus('BANCO GERAL ATIVO. CADASTROS, DADOS, ESTOQUE FISCAL E PUXADAS ESTÃO COMPARTILHADOS.');
+      setIosStorageStatus('BANCO GERAL ATIVO. CADASTROS, BASE DE DADOS, ESTOQUE FISCAL E PUXADAS ESTÃO COMPARTILHADOS.');
     } catch(e){
       setIosStorageStatus('BANCO GERAL INDISPONÍVEL. TENTE NOVAMENTE EM INSTANTES.', true);
     }
@@ -3040,7 +3120,7 @@
 
     if(rows.length === 0){
       const html = merged.length === 0
-        ? '<h4>Nenhum dado ainda</h4><p>Selecione uma empresa acima. Os arquivos são enviados na aba Dados.</p>'
+        ? '<h4>Nenhum dado ainda</h4><p>Selecione uma empresa acima. Os arquivos são enviados na Base de Dados.</p>'
         : (emptyMsg || '<h4>Nada por aqui</h4><p>Nenhum produto encontrado com os filtros atuais.</p>');
       tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">'+html+'</div></td></tr>';
       return;
