@@ -257,6 +257,27 @@ test("oferece compras em cards responsivos e filtro combinado por status", async
   assert.match(route, /or: statuses\.map/);
 });
 
+test("envia documentos de compras em partes e trata respostas não JSON", async () => {
+  const [html, route] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras/files/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /PURCHASE_FILE_CHUNK_SIZE = 5 \* 1024 \* 1024/);
+  assert.match(html, /PURCHASE_FILE_MAX_SIZE = 100 \* 1024 \* 1024/);
+  assert.match(html, /function purchaseApiResponse\(response, fallbackMessage\)/);
+  assert.match(html, /response\.status === 413/);
+  assert.match(html, /file\.slice\(start, Math\.min\(start \+ PURCHASE_FILE_CHUNK_SIZE/);
+  assert.match(html, /action:'create'/);
+  assert.match(html, /action:'complete'/);
+  assert.match(html, /ENVIANDO DOCUMENTO/);
+  assert.match(route, /mode: "multi_part"/);
+  assert.match(route, /number_of_parts: numberOfParts/);
+  assert.match(route, /notionForm\.append\("part_number", String\(partNumber\)\)/);
+  assert.match(route, /file_uploads\/\$\{encodeURIComponent\(uploadId\)\}\/complete/);
+  assert.match(route, /O ARQUIVO DEVE TER NO MÁXIMO 100 MB/);
+});
+
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
   const html = await readFile(
     new URL("../public/estoque.html", import.meta.url),
