@@ -9,6 +9,7 @@ import handler from "vinext/server/app-router-entry";
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  UPLOADS: R2Bucket;
   APP_LOGIN_USER?: string;
   APP_LOGIN_PASSWORD?: string;
   APP_SESSION_SECRET?: string;

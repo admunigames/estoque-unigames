@@ -258,24 +258,32 @@ test("oferece compras em cards responsivos e filtro combinado por status", async
 });
 
 test("envia documentos de compras em partes e trata respostas não JSON", async () => {
-  const [html, route] = await Promise.all([
+  const [html, route, hosting] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras/files/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
   ]);
 
-  assert.match(html, /PURCHASE_FILE_CHUNK_SIZE = 5 \* 1024 \* 1024/);
+  assert.match(html, /PURCHASE_FILE_CHUNK_SIZE = 512 \* 1024/);
   assert.match(html, /PURCHASE_FILE_MAX_SIZE = 100 \* 1024 \* 1024/);
   assert.match(html, /function purchaseApiResponse\(response, fallbackMessage\)/);
   assert.match(html, /response\.status === 413/);
   assert.match(html, /file\.slice\(start, Math\.min\(start \+ PURCHASE_FILE_CHUNK_SIZE/);
   assert.match(html, /action:'create'/);
   assert.match(html, /action:'complete'/);
+  assert.match(html, /action:'cancel'/);
+  assert.match(html, /X-Purchase-Upload-Id/);
   assert.match(html, /ENVIANDO DOCUMENTO/);
-  assert.match(route, /mode: "multi_part"/);
-  assert.match(route, /number_of_parts: numberOfParts/);
+  assert.match(route, /TRANSPORT_CHUNK_SIZE = 512 \* 1024/);
+  assert.match(route, /const bucket = \(env as \{ UPLOADS\?: R2Bucket \}\)\.UPLOADS/);
+  assert.match(route, /bucket\.put\(partKey\(sessionId, partNumber\), bytes/);
+  assert.match(route, /createNotionUpload\(metadata, "single_part"\)/);
+  assert.match(route, /createNotionUpload\([\s\S]*"multi_part"/);
+  assert.match(route, /payload\.number_of_parts = numberOfParts/);
   assert.match(route, /notionForm\.append\("part_number", String\(partNumber\)\)/);
   assert.match(route, /file_uploads\/\$\{encodeURIComponent\(uploadId\)\}\/complete/);
   assert.match(route, /O ARQUIVO DEVE TER NO MÁXIMO 100 MB/);
+  assert.equal(JSON.parse(hosting).r2, "UPLOADS");
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
