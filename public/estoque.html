@@ -1212,6 +1212,18 @@
   .home-task-row{flex-wrap:wrap;}
   .home-task-outcome{flex:1 1 100%; margin-left:30px;}
 }
+  [data-access-hidden]{display:none!important}
+  .session-user{margin-top:auto;padding:14px 12px 4px;border-top:1px solid var(--line);display:grid;gap:3px}
+  .session-user strong{font-size:12px;color:var(--ink)}
+  .session-user span{font:700 10px/1.4 var(--mono);color:var(--ink-soft);text-transform:uppercase}
+  .users-layout{display:grid;grid-template-columns:minmax(280px,390px) 1fr;gap:18px;align-items:start}
+  .user-panel{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:20px}
+  .user-panel h3{margin:0 0 6px}.user-panel>p{margin:0 0 18px;color:var(--ink-soft);font-size:13px}
+  .user-form{display:grid;gap:13px}.user-form .field{display:grid;gap:6px}.user-form label{font:800 10px var(--mono);letter-spacing:.08em;color:var(--ink-soft)}
+  .permission-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.permission-option{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--line);border-radius:9px;font-size:12px}
+  .user-actions{display:flex;gap:8px;flex-wrap:wrap}.user-list{display:grid;gap:10px}.user-card{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+  .user-card.inactive{opacity:.58}.user-card h4{margin:0 0 3px}.user-card p{margin:0;color:var(--ink-soft);font-size:11px}.user-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
+  @media(max-width:850px){.users-layout{grid-template-columns:1fr}.permission-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body class="home-active">
@@ -1235,11 +1247,11 @@
       <span aria-hidden="true">⇤</span><span class="compact-label">MENU COMPACTO</span>
     </button>
     <button class="nav-item active" id="navInicio" data-page="inicio" title="Início"><span class="nav-icon" aria-hidden="true">⌂</span><span class="nav-label">Início</span></button>
-    <button class="nav-item" id="navPuxadas" data-page="puxadas" title="Puxadas"><span class="nav-icon" aria-hidden="true">⇄</span><span class="nav-label">Puxadas</span></button>
-    <button class="nav-item" id="navCompras" data-page="compras" title="Controle de Compras"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Controle de Compras</span></button>
-    <button class="nav-item" id="navDashboard" data-page="dashboard" title="Estoque Fiscal"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></button>
-    <button class="nav-item" id="navTarefas" data-page="tarefas" title="Tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></button>
-    <div class="nav-group">
+    <button class="nav-item" id="navPuxadas" data-page="puxadas" data-permission="pulls" title="Puxadas"><span class="nav-icon" aria-hidden="true">⇄</span><span class="nav-label">Puxadas</span></button>
+    <button class="nav-item" id="navCompras" data-page="compras" data-permission="purchases" title="Controle de Compras"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Controle de Compras</span></button>
+    <button class="nav-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></button>
+    <button class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></button>
+    <div class="nav-group" data-permission="database">
       <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
         <span class="nav-icon" aria-hidden="true">⬡</span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
       </button>
@@ -1248,6 +1260,7 @@
         <button class="nav-item sub-item" id="navDados" data-page="dados" title="Base de Dados"><span class="nav-icon" aria-hidden="true">⛁</span><span class="nav-label">Base de Dados</span></button>
       </div>
     </div>
+    <button class="nav-item" id="navUsuarios" data-page="usuarios" data-admin-only title="Usuários e acessos"><span class="nav-icon" aria-hidden="true">⚿</span><span class="nav-label">Usuários e acessos</span></button>
     <div class="ios-storage-box">
       <strong>DADOS COMPARTILHADOS</strong>
       <p id="iosStorageStatus">VERIFICANDO A CONEXÃO COM O BANCO GERAL...</p>
@@ -1257,6 +1270,7 @@
       </div>
       <input class="pull-hidden-input" id="iosRestoreInput" type="file" accept=".json,application/json">
     </div>
+    <div class="session-user"><strong id="sessionDisplayName">Carregando usuário…</strong><span id="sessionAccessLabel"></span></div>
     <form class="logout-form" method="post" action="/logout">
       <button class="logout-button" type="submit">SAIR DO SISTEMA</button>
     </form>
@@ -1275,28 +1289,28 @@
           <p class="home-subtitle">Acesse rapidamente as áreas de equilíbrio, compras, estoque fiscal e cadastros.</p>
         </div>
         <div class="home-access-grid" aria-label="Acessos rápidos">
-          <button class="home-access-card" type="button" data-home-target="puxadas">
+          <button class="home-access-card" type="button" data-home-target="puxadas" data-permission="pulls">
             <span class="home-access-icon" aria-hidden="true">↗</span>
             <span class="home-access-copy"><strong>PUXADAS</strong><span>Equilíbrio e transferências entre lojas.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
-          <button class="home-access-card" type="button" data-home-target="compras">
+          <button class="home-access-card" type="button" data-home-target="compras" data-permission="purchases">
             <span class="home-access-icon" aria-hidden="true">▤</span>
             <span class="home-access-copy"><strong>CONTROLE DE COMPRAS</strong><span>Pedidos, recebimentos e divisões.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
-          <button class="home-access-card" type="button" data-home-target="dashboard">
+          <button class="home-access-card" type="button" data-home-target="dashboard" data-permission="stock">
             <span class="home-access-icon" aria-hidden="true">Σ</span>
             <span class="home-access-copy"><strong>ESTOQUE FISCAL</strong><span>Conciliação, filtros e exportações.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
-          <button class="home-access-card" type="button" data-home-target="cadastros">
+          <button class="home-access-card" type="button" data-home-target="cadastros" data-permission="database">
             <span class="home-access-icon" aria-hidden="true">+</span>
             <span class="home-access-copy"><strong>CADASTROS</strong><span>Lojas, bases e envio de dados.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
         </div>
-        <section class="home-overview" aria-labelledby="homeOverviewTitle">
+        <section class="home-overview" data-any-permission="stock,purchases" aria-labelledby="homeOverviewTitle">
           <div class="home-overview-head">
             <div><span>VISÃO GERAL</span><h2 id="homeOverviewTitle">Operação de hoje</h2></div>
             <div class="home-purchase-status"><span>PEDIDOS EM ANDAMENTO</span><strong id="homePurchaseProgress">—</strong></div>
@@ -1309,7 +1323,7 @@
           </div>
         </section>
         <!-- TAREFAS DO DIA -->
-<section class="home-tasks" aria-labelledby="homeTasksTitle">
+<section class="home-tasks" data-permission="tasks" aria-labelledby="homeTasksTitle">
   <div class="home-tasks-head">
     <div>
       <span>AGENDA</span>
@@ -1768,14 +1782,57 @@
       </section>
     </section>
 
+    <!-- ================= ADMINISTRAÇÃO DE USUÁRIOS ================= -->
+    <section id="pageUsuarios" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Usuários e acessos</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Crie contas individuais e determine exatamente quais módulos cada pessoa pode abrir.</p></div>
+      </header>
+      <div class="users-layout">
+        <section class="user-panel">
+          <h3 id="userFormTitle">NOVO USUÁRIO</h3>
+          <p>A senha fica protegida e não poderá ser visualizada depois de salva.</p>
+          <form class="user-form" id="userForm">
+            <input id="userEditId" type="hidden">
+            <div class="field"><label for="userDisplayName">NOME DA PESSOA</label><input id="userDisplayName" maxlength="80" required></div>
+            <div class="field"><label for="userUsername">USUÁRIO DE LOGIN</label><input id="userUsername" maxlength="40" autocomplete="off" required></div>
+            <div class="field"><label for="userPassword">SENHA <span id="userPasswordHint">(MÍNIMO 8 CARACTERES)</span></label><input id="userPassword" type="password" minlength="8" maxlength="200" autocomplete="new-password"></div>
+            <div class="field">
+              <label>MÓDULOS LIBERADOS</label>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks"> Tarefas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases"> Compras</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="stock"> Estoque Fiscal</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="database"> Base de Dados</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="pulls"> Puxadas</label>
+              </div>
+            </div>
+            <label class="permission-option" id="userActiveWrap" hidden><input id="userActive" type="checkbox" checked> Usuário ativo</label>
+            <div class="user-actions">
+              <button class="btn-accent" id="btnSaveUser" type="submit">CRIAR USUÁRIO</button>
+              <button class="btn-outline" id="btnCancelUserEdit" type="button" hidden>CANCELAR</button>
+            </div>
+          </form>
+        </section>
+        <section class="user-panel">
+          <h3>CONTAS CADASTRADAS</h3>
+          <p>Bloquear ou alterar uma conta encerra imediatamente as sessões existentes dela.</p>
+          <div class="user-list" id="userList"><div class="task-empty">Carregando usuários…</div></div>
+        </section>
+      </div>
+    </section>
+
   </div>
 </div>
 
 <nav class="mobile-tabbar no-print" aria-label="Atalhos principais">
   <button class="mobile-tab active" type="button" data-mobile-page="inicio"><span aria-hidden="true">⌂</span><small>INÍCIO</small></button>
-  <button class="mobile-tab" type="button" data-mobile-page="dashboard"><span aria-hidden="true">Σ</span><small>ESTOQUE</small></button>
-  <button class="mobile-tab" type="button" data-mobile-page="puxadas"><span aria-hidden="true">⇄</span><small>PUXADAS</small></button>
-  <button class="mobile-tab" type="button" data-mobile-page="compras"><span aria-hidden="true">▤</span><small>COMPRAS</small></button>
+  <button class="mobile-tab" type="button" data-mobile-page="dashboard" data-permission="stock"><span aria-hidden="true">Σ</span><small>ESTOQUE</small></button>
+  <button class="mobile-tab" type="button" data-mobile-page="puxadas" data-permission="pulls"><span aria-hidden="true">⇄</span><small>PUXADAS</small></button>
+  <button class="mobile-tab" type="button" data-mobile-page="compras" data-permission="purchases"><span aria-hidden="true">▤</span><small>COMPRAS</small></button>
 </nav>
 
 <dialog class="purchase-dialog" id="purchaseDialog" aria-labelledby="purchaseDialogTitle">
@@ -1821,6 +1878,8 @@
   let pageSize = 100;
   let searchTimer = null;
   let filteredRowsCache = null;
+  let currentSession = {role:'user', permissions:[]};
+  let managedUsers = [];
 
   let companies = [];              // [{id, name}]
   let activeCompanyId = '';
@@ -2090,7 +2149,9 @@
     dashboard:'/estoque',
     cadastros:'/cadastros',
     lojas:'/cadastros/lojas',
-    dados:'/cadastros/base-de-dados'
+    dados:'/cadastros/base-de-dados',
+    tarefas:'/tarefas',
+    usuarios:'/administracao/usuarios'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -2099,7 +2160,18 @@
     dashboard:'ESTOQUE FISCAL',
     cadastros:'CADASTROS',
     lojas:'CADASTRO DE LOJAS',
-    dados:'BASE DE DADOS'
+    dados:'BASE DE DADOS',
+    tarefas:'TAREFAS',
+    usuarios:'USUÁRIOS E ACESSOS'
+  });
+  const PAGE_PERMISSIONS = Object.freeze({
+    puxadas:'pulls',
+    compras:'purchases',
+    dashboard:'stock',
+    tarefas:'tasks',
+    cadastros:'database',
+    lojas:'database',
+    dados:'database'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -2115,6 +2187,42 @@
     const path = normalizeRoutePath(pathname);
     const page = Object.keys(PAGE_ROUTES).find(name => PAGE_ROUTES[name] === path);
     return page || LEGACY_ROUTES[path] || 'inicio';
+  }
+
+  function canAccess(permission){
+    return currentSession.role === 'admin' || currentSession.permissions.includes(permission);
+  }
+
+  function canAccessPage(name){
+    if(name === 'usuarios') return currentSession.role === 'admin';
+    return !PAGE_PERMISSIONS[name] || canAccess(PAGE_PERMISSIONS[name]);
+  }
+
+  function applyAccessVisibility(){
+    document.querySelectorAll('[data-permission]').forEach(node => {
+      node.toggleAttribute('data-access-hidden', !canAccess(node.dataset.permission));
+    });
+    document.querySelectorAll('[data-any-permission]').forEach(node => {
+      const allowed = node.dataset.anyPermission.split(',').some(permission => canAccess(permission));
+      node.toggleAttribute('data-access-hidden', !allowed);
+    });
+    document.querySelectorAll('[data-admin-only]').forEach(node => {
+      node.toggleAttribute('data-access-hidden', currentSession.role !== 'admin');
+    });
+    el('sessionDisplayName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
+    el('sessionAccessLabel').textContent = currentSession.role === 'admin' ? 'Administrador · acesso completo' : 'Acesso limitado';
+  }
+
+  async function loadSessionAccess(){
+    const response = await fetch('/api/session', {cache:'no-store', headers:{Accept:'application/json'}});
+    if(response.status === 401){
+      location.assign('/login?next=' + encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA');
+    }
+    if(!response.ok) throw new Error('NÃO FOI POSSÍVEL VALIDAR O ACESSO');
+    currentSession = await response.json();
+    currentSession.permissions = Array.isArray(currentSession.permissions) ? currentSession.permissions : [];
+    applyAccessVisibility();
   }
 
   function setSidebarOpen(open, returnFocus){
@@ -2167,6 +2275,7 @@
   });
 
   function showPage(name){
+    if(!canAccessPage(name)) return false;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item,.nav-group-toggle').forEach(b => b.classList.remove('active'));
     const page = el('page' + name.charAt(0).toUpperCase() + name.slice(1));
@@ -2201,13 +2310,15 @@
       history[method]({page:name}, '', route);
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
+    if(name === 'usuarios') loadAdminUsers();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
   }
 
   function syncPageFromLocation(replace){
-    const name = pageFromPath(location.pathname);
+    let name = pageFromPath(location.pathname);
+    if(!canAccessPage(name)) name = 'inicio';
     showPage(name);
     if(replace || normalizeRoutePath(location.pathname) !== PAGE_ROUTES[name]){
       history.replaceState({page:name}, '', PAGE_ROUTES[name]);
@@ -2280,7 +2391,6 @@
   try{ setSidebarCompact(localStorage.getItem('estoque_sidebar_compact') === '1'); } catch(e){ setSidebarCompact(false); }
   try{ setTableDensity(localStorage.getItem('estoque_table_density') || 'comfortable'); } catch(e){ setTableDensity('comfortable'); }
   try{ setPurchaseDensity(localStorage.getItem('estoque_purchase_density') || 'comfortable'); } catch(e){ setPurchaseDensity('comfortable'); }
-  syncPageFromLocation(false);
 
   function parseNumeroBR(str){
     if(str === undefined || str === null) return 0;
@@ -4686,9 +4796,6 @@
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
-  loadTasks();
-  loadTaskAgenda();
-
   let documentTitleBeforePrint = '';
 
   el('btnPdf').addEventListener('click', () => {
@@ -4798,7 +4905,7 @@ function renderHomeTasks(){
       await storage.set('tarefas:' + todayKey, JSON.stringify(data));
       await syncTaskCarryover(todayKey, task, !task.done && task.outcome === 'carryover');
       if(el('taskDate').value === todayKey) renderTasks(data);
-      renderHomeTasks();
+      if(canAccess('tasks')) renderHomeTasks();
       loadTaskAgenda();
     } catch(error){
       event.target.checked = !event.target.checked;
@@ -4826,12 +4933,154 @@ function renderHomeTasks(){
       renderHomeTasks();
     }
   });
+  const permissionNames = {
+    tasks:'Tarefas',
+    purchases:'Compras',
+    stock:'Estoque Fiscal',
+    database:'Base de Dados',
+    pulls:'Puxadas'
+  };
+
+  function resetUserForm(){
+    el('userForm').reset();
+    el('userEditId').value = '';
+    el('userActive').checked = true;
+    el('userActiveWrap').hidden = true;
+    el('btnCancelUserEdit').hidden = true;
+    el('userFormTitle').textContent = 'NOVO USUÁRIO';
+    el('btnSaveUser').textContent = 'CRIAR USUÁRIO';
+    el('userPasswordHint').textContent = '(MÍNIMO 8 CARACTERES)';
+  }
+
+  function renderAdminUsers(){
+    const list = el('userList');
+    if(!managedUsers.length){
+      list.innerHTML = '<div class="task-empty">Nenhum usuário cadastrado.</div>';
+      return;
+    }
+    list.innerHTML = managedUsers.map(user => {
+      const badges = user.role === 'admin'
+        ? '<span class="user-badge">ACESSO COMPLETO</span>'
+        : (user.permissions || []).map(permission => '<span class="user-badge">'+escapeHtml(permissionNames[permission] || permission)+'</span>').join('') || '<span class="user-badge">SEM MÓDULOS</span>';
+      const actions = user.managed ? '<div class="user-actions"><button class="btn-outline" type="button" data-edit-user="'+escapeHtml(user.id)+'">ALTERAR</button><button class="btn-outline" type="button" data-toggle-user="'+escapeHtml(user.id)+'">'+(user.active ? 'BLOQUEAR' : 'REATIVAR')+'</button></div>' : '<span class="user-badge">CONTA PRINCIPAL</span>';
+      return '<article class="user-card'+(user.active ? '' : ' inactive')+'"><div><h4>'+escapeHtml(user.displayName)+'</h4><p>@'+escapeHtml(user.username)+' · '+(user.active ? 'ATIVO' : 'BLOQUEADO')+'</p><div class="user-badges">'+badges+'</div></div>'+actions+'</article>';
+    }).join('');
+  }
+
+  async function adminUserRequest(options){
+    const response = await fetch('/api/admin/users', Object.assign({
+      headers:{Accept:'application/json'},
+      cache:'no-store'
+    }, options || {}));
+    let data = {};
+    try{ data = await response.json(); }catch(e){}
+    if(response.status === 401) location.assign('/login?next=' + encodeURIComponent(location.pathname));
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL SALVAR O USUÁRIO.');
+    return data;
+  }
+
+  async function loadAdminUsers(){
+    if(currentSession.role !== 'admin') return;
+    try{
+      const data = await adminUserRequest();
+      managedUsers = Array.isArray(data.users) ? data.users : [];
+      renderAdminUsers();
+    }catch(error){
+      el('userList').innerHTML = '<div class="task-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  el('userForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const editId = el('userEditId').value;
+    const payload = {
+      id: editId || undefined,
+      displayName: el('userDisplayName').value,
+      username: el('userUsername').value,
+      password: el('userPassword').value,
+      active: editId ? el('userActive').checked : true,
+      permissions: Array.from(document.querySelectorAll('[name="userPermission"]:checked')).map(input => input.value)
+    };
+    if(!editId && payload.password.length < 8){
+      showError('A senha deve ter pelo menos 8 caracteres.');
+      return;
+    }
+    el('btnSaveUser').disabled = true;
+    try{
+      await adminUserRequest({
+        method:editId ? 'PATCH' : 'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      resetUserForm();
+      await loadAdminUsers();
+    }catch(error){
+      showError(error.message);
+    }finally{
+      el('btnSaveUser').disabled = false;
+    }
+  });
+
+  el('btnCancelUserEdit').addEventListener('click', resetUserForm);
+  el('userList').addEventListener('click', async event => {
+    const editId = event.target.dataset.editUser;
+    const toggleId = event.target.dataset.toggleUser;
+    const user = managedUsers.find(item => item.id === (editId || toggleId));
+    if(!user) return;
+    if(editId){
+      el('userEditId').value = user.id;
+      el('userDisplayName').value = user.displayName;
+      el('userUsername').value = user.username;
+      el('userPassword').value = '';
+      document.querySelectorAll('[name="userPermission"]').forEach(input => { input.checked = user.permissions.includes(input.value); });
+      el('userActive').checked = user.active;
+      el('userActiveWrap').hidden = false;
+      el('btnCancelUserEdit').hidden = false;
+      el('userFormTitle').textContent = 'ALTERAR USUÁRIO';
+      el('btnSaveUser').textContent = 'SALVAR ALTERAÇÕES';
+      el('userPasswordHint').textContent = '(DEIXE VAZIO PARA MANTER)';
+      el('userDisplayName').focus();
+      return;
+    }
+    event.target.disabled = true;
+    try{
+      await adminUserRequest({
+        method:'PATCH',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({
+          id:user.id,
+          displayName:user.displayName,
+          username:user.username,
+          password:'',
+          active:!user.active,
+          permissions:user.permissions
+        })
+      });
+      await loadAdminUsers();
+    }catch(error){
+      showError(error.message);
+      event.target.disabled = false;
+    }
+  });
+
   async function initializeApp(){
     setDropzonesDisabled(true);
     renderAll();
-    await loadCompanies();
-    await loadCatalog();
-    await loadPullData();
+    await loadSessionAccess();
+    syncPageFromLocation(false);
+    if(canAccess('database') || canAccess('stock') || canAccess('pulls')){
+      await loadCompanies();
+      await loadCatalog();
+    }
+    if(canAccess('purchases') && !(canAccess('database') || canAccess('stock') || canAccess('pulls'))){
+      await loadHomeOverview();
+    }
+    if(canAccess('pulls')) await loadPullData();
+    if(canAccess('tasks')){
+      await loadTasks();
+      await loadTaskAgenda();
+      renderHomeTasks();
+    }
     await verifyIosStorage();
     prepareIosInstallHint();
   }
