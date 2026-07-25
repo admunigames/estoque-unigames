@@ -36,19 +36,50 @@ type LoginConfig = {
   sessionSecret: string;
 };
 
+type Permission = "tasks" | "purchases" | "stock" | "database" | "pulls";
+type AuthenticatedUser = {
+  id: string;
+  username: string;
+  displayName: string;
+  role: "admin" | "user";
+  permissions: Permission[];
+  sessionVersion: number;
+};
+type StoredUserRow = {
+  id: string;
+  username: string;
+  displayName: string;
+  passwordHash: string;
+  passwordSalt: string;
+  role: string;
+  permissionsJson: string;
+  active: number;
+  sessionVersion: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const SESSION_COOKIE = "unigames_session";
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
 const LOGIN_SUCCESS_PATH = "/inicio";
 const INTERNAL_AUTH_HEADER = "x-unigames-authenticated";
+const USER_ID_HEADER = "x-unigames-user-id";
+const USERNAME_HEADER = "x-unigames-username";
+const DISPLAY_NAME_HEADER = "x-unigames-display-name";
+const ROLE_HEADER = "x-unigames-role";
+const PERMISSIONS_HEADER = "x-unigames-permissions";
+const ALL_PERMISSIONS: Permission[] = ["tasks", "purchases", "stock", "database", "pulls"];
 const PUBLIC_ASSET_PATHS = new Set(["/favicon.svg", "/og.png"]);
 const APP_ROUTE_PATHS = new Set([
   "/inicio",
   "/puxadas",
   "/compras",
   "/estoque",
+  "/tarefas",
   "/cadastros",
   "/cadastros/lojas",
   "/cadastros/base-de-dados",
+  "/administracao/usuarios",
   "/estoque.html",
 ]);
 const MAX_LOGIN_ATTEMPTS = 8;
@@ -127,11 +158,100 @@ async function hmac(value: string, secret: string): Promise<string> {
   return toBase64Url(new Uint8Array(signature));
 }
 
-async function createSession(username: string, secret: string): Promise<string> {
+function normalizePermissions(value: unknown): Permission[] {
+  if (!Array.isArray(value)) return [];
+  return ALL_PERMISSIONS.filter((permission) => value.includes(permission));
+}
+
+function permissionsFromJson(value: string): Permission[] {
+  try {
+    return normalizePermissions(JSON.parse(value));
+  } catch {
+    return [];
+  }
+}
+
+function storedUser(row: StoredUserRow): AuthenticatedUser {
+  const role = row.role === "admin" ? "admin" : "user";
+  return {
+    id: row.id,
+    username: row.username,
+    displayName: row.displayName,
+    role,
+    permissions: role === "admin" ? [...ALL_PERMISSIONS] : permissionsFromJson(row.permissionsJson),
+    sessionVersion: row.sessionVersion,
+  };
+}
+
+function envAdministrator(config: LoginConfig): AuthenticatedUser {
+  return {
+    id: "env-admin",
+    username: config.username,
+    displayName: "Administrador principal",
+    role: "admin",
+    permissions: [...ALL_PERMISSIONS],
+    sessionVersion: 1,
+  };
+}
+
+async function readUserByUsername(database: D1Database, username: string) {
+  return database
+    .prepare(
+      `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
+              password_salt AS passwordSalt, role, permissions_json AS permissionsJson,
+              active, session_version AS sessionVersion, created_at AS createdAt,
+              updated_at AS updatedAt
+       FROM app_users WHERE lower(username) = lower(?1) LIMIT 1`,
+    )
+    .bind(username)
+    .first<StoredUserRow>();
+}
+
+async function readUserById(database: D1Database, id: string) {
+  return database
+    .prepare(
+      `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
+              password_salt AS passwordSalt, role, permissions_json AS permissionsJson,
+              active, session_version AS sessionVersion, created_at AS createdAt,
+              updated_at AS updatedAt
+       FROM app_users WHERE id = ?1 LIMIT 1`,
+    )
+    .bind(id)
+    .first<StoredUserRow>();
+}
+
+async function passwordDigest(password: string, salt: Uint8Array): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: 120_000 },
+    key,
+    256,
+  );
+  return toBase64Url(new Uint8Array(bits));
+}
+
+async function hashPassword(password: string): Promise<{ hash: string; salt: string }> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  return { hash: await passwordDigest(password, salt), salt: toBase64Url(salt) };
+}
+
+async function verifyPassword(password: string, row: StoredUserRow): Promise<boolean> {
+  const digest = await passwordDigest(password, fromBase64Url(row.passwordSalt));
+  return constantTimeEqual(digest, row.passwordHash);
+}
+
+async function createSession(user: AuthenticatedUser, secret: string): Promise<string> {
   const payload = toBase64Url(
     encoder.encode(
       JSON.stringify({
-        sub: username,
+        sub: user.id,
+        ver: user.sessionVersion,
         exp: Date.now() + SESSION_TTL_SECONDS * 1000,
       }),
     ),
@@ -148,26 +268,37 @@ function cookieValue(request: Request, name: string): string | null {
   return null;
 }
 
-async function hasValidSession(request: Request, config: LoginConfig): Promise<boolean> {
+async function authenticatedUser(
+  request: Request,
+  env: Env,
+  config: LoginConfig,
+): Promise<AuthenticatedUser | null> {
   const token = cookieValue(request, SESSION_COOKIE);
-  if (!token) return false;
+  if (!token) return null;
   const [payload, signature, extra] = token.split(".");
-  if (!payload || !signature || extra) return false;
+  if (!payload || !signature || extra) return null;
 
   try {
     const expected = await hmac(payload, config.sessionSecret);
-    if (!constantTimeEqual(signature, expected)) return false;
+    if (!constantTimeEqual(signature, expected)) return null;
     const parsed = JSON.parse(decoder.decode(fromBase64Url(payload))) as {
       sub?: unknown;
+      ver?: unknown;
       exp?: unknown;
     };
-    return (
-      parsed.sub === config.username &&
-      typeof parsed.exp === "number" &&
-      parsed.exp > Date.now()
-    );
+    if (
+      typeof parsed.sub !== "string" ||
+      typeof parsed.ver !== "number" ||
+      typeof parsed.exp !== "number" ||
+      parsed.exp <= Date.now()
+    ) return null;
+    if (parsed.sub === "env-admin" && parsed.ver === 1) return envAdministrator(config);
+    if (!env.DB) return null;
+    const row = await readUserById(env.DB, parsed.sub);
+    if (!row || row.active !== 1 || row.sessionVersion !== parsed.ver) return null;
+    return storedUser(row);
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -276,7 +407,7 @@ async function handleLogin(request: Request, env: Env, url: URL): Promise<Respon
   }
 
   if (request.method === "GET" || request.method === "HEAD") {
-    if (await hasValidSession(request, config)) {
+    if (await authenticatedUser(request, env, config)) {
       return Response.redirect(new URL(next, url.origin), 303);
     }
     return loginPage({ next, configured: true });
@@ -299,12 +430,25 @@ async function handleLogin(request: Request, env: Env, url: URL): Promise<Respon
   }
 
   const form = await request.formData();
-  const username = String(form.get("username") ?? "");
+  const username = String(form.get("username") ?? "").trim();
   const password = String(form.get("password") ?? "");
+  let user: AuthenticatedUser | null = null;
   if (
-    !constantTimeEqual(username, config.username) ||
-    !constantTimeEqual(password, config.password)
+    constantTimeEqual(username, config.username) &&
+    constantTimeEqual(password, config.password)
   ) {
+    user = envAdministrator(config);
+  } else if (env.DB) {
+    try {
+      const row = await readUserByUsername(env.DB, username);
+      if (row && row.active === 1 && await verifyPassword(password, row)) {
+        user = storedUser(row);
+      }
+    } catch {
+      user = null;
+    }
+  }
+  if (!user) {
     recordFailure(request);
     return loginPage({
       next,
@@ -315,7 +459,7 @@ async function handleLogin(request: Request, env: Env, url: URL): Promise<Respon
   }
 
   clearFailures(request);
-  const token = await createSession(config.username, config.sessionSecret);
+  const token = await createSession(user, config.sessionSecret);
   const secure = url.protocol === "https:" ? "; Secure" : "";
   return new Response(null, {
     status: 303,
@@ -359,6 +503,198 @@ function unauthorized(request: Request, url: URL): Response {
   return Response.json({ error: "SESSÃO EXPIRADA OU NÃO AUTORIZADA." }, { status: 401 });
 }
 
+function forbidden(request: Request, url: URL): Response {
+  if (url.pathname.startsWith("/api/")) {
+    return Response.json({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR ESTE MÓDULO." }, { status: 403 });
+  }
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Acesso não permitido</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#06111d;color:#f5f9ff;font-family:Arial,sans-serif;padding:24px}.card{max-width:520px;padding:32px;border:1px solid #2b5f8f;border-radius:18px;background:#0b1b2c;text-align:center}h1{font-size:24px}p{color:#a9bfd3;line-height:1.55}a{display:inline-block;margin-top:12px;padding:12px 18px;border-radius:10px;background:#65b8ff;color:#04111d;font-weight:800;text-decoration:none}</style></head><body><main class="card"><h1>Acesso não permitido</h1><p>Seu usuário não possui autorização para abrir este módulo. Se precisar dele, solicite a liberação ao administrador.</p><a href="/inicio">Voltar ao início</a></main></body></html>`;
+  return new Response(html, {
+    status: 403,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+  });
+}
+
+function jsonError(message: string, status: number): Response {
+  return Response.json({ error: message }, { status });
+}
+
+function hasPermission(user: AuthenticatedUser, permission: Permission): boolean {
+  return user.role === "admin" || user.permissions.includes(permission);
+}
+
+function hasAnyPermission(user: AuthenticatedUser, permissions: Permission[]): boolean {
+  return user.role === "admin" || permissions.some((permission) => user.permissions.includes(permission));
+}
+
+function sharedStatePermission(key: string, scope: string): Permission | Permission[] {
+  const normalized = `${scope}:${key}`.toLowerCase();
+  if (normalized.includes("tarefa")) return "tasks";
+  if (normalized.includes("puxada")) return "pulls";
+  return ["stock", "database", "pulls"];
+}
+
+async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): Promise<boolean> {
+  const path = url.pathname.replace(/\/+$/, "") || "/";
+  if (path === "/administracao/usuarios" || path === "/api/admin/users") {
+    return user.role === "admin";
+  }
+  const directPermissions: Array<[boolean, Permission]> = [
+    [path === "/tarefas", "tasks"],
+    [path === "/compras" || path.startsWith("/api/compras"), "purchases"],
+    [path === "/estoque", "stock"],
+    [path === "/puxadas", "pulls"],
+    [path === "/cadastros" || path.startsWith("/cadastros/"), "database"],
+  ];
+  const direct = directPermissions.find(([matches]) => matches);
+  if (direct) return hasPermission(user, direct[1]);
+  if (path === "/api/shared-state") {
+    let key = url.searchParams.get("key") ?? "";
+    let scope = url.searchParams.get("scope") ?? "";
+    if (request.method === "PUT" || request.method === "POST") {
+      try {
+        const body = await request.clone().json() as { key?: unknown; scope?: unknown };
+        if (typeof body.key === "string") key = body.key;
+        if (typeof body.scope === "string") scope = body.scope;
+      } catch {
+        return false;
+      }
+    }
+    const required = sharedStatePermission(key, scope);
+    return Array.isArray(required) ? hasAnyPermission(user, required) : hasPermission(user, required);
+  }
+  return true;
+}
+
+function sessionResponse(user: AuthenticatedUser): Response {
+  return Response.json({
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    role: user.role,
+    permissions: user.permissions,
+  }, { headers: { "cache-control": "no-store" } });
+}
+
+function validUsername(value: string): boolean {
+  return /^[a-z0-9._-]{3,40}$/i.test(value);
+}
+
+function sameOrigin(request: Request, url: URL): boolean {
+  const origin = request.headers.get("origin");
+  return !origin || origin === url.origin;
+}
+
+function publicUser(row: StoredUserRow) {
+  return {
+    id: row.id,
+    username: row.username,
+    displayName: row.displayName,
+    role: row.role === "admin" ? "admin" : "user",
+    permissions: permissionsFromJson(row.permissionsJson),
+    active: row.active === 1,
+    managed: true,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
+  const result = await env.DB.prepare(
+    `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
+            password_salt AS passwordSalt, role, permissions_json AS permissionsJson,
+            active, session_version AS sessionVersion, created_at AS createdAt,
+            updated_at AS updatedAt
+     FROM app_users ORDER BY display_name COLLATE NOCASE`,
+  ).all<StoredUserRow>();
+  return Response.json({
+    users: [{
+      id: "env-admin",
+      username: config.username,
+      displayName: "Administrador principal",
+      role: "admin",
+      permissions: ALL_PERMISSIONS,
+      active: true,
+      managed: false,
+    }, ...(result.results ?? []).map(publicUser)],
+  });
+}
+
+async function handleAdminUsers(
+  request: Request,
+  env: Env,
+  url: URL,
+  config: LoginConfig,
+): Promise<Response> {
+  if (request.method === "GET") return listUsers(env, config);
+  if (!sameOrigin(request, url)) return jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403);
+  if (request.method !== "POST" && request.method !== "PATCH") {
+    return new Response("Método não permitido", { status: 405, headers: { allow: "GET, POST, PATCH" } });
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json() as Record<string, unknown>;
+  } catch {
+    return jsonError("DADOS INVÁLIDOS.", 400);
+  }
+
+  const username = String(body.username ?? "").trim().toLowerCase();
+  const displayName = String(body.displayName ?? "").trim();
+  const password = String(body.password ?? "");
+  const permissions = normalizePermissions(body.permissions);
+  if (!validUsername(username)) {
+    return jsonError("O USUÁRIO DEVE TER DE 3 A 40 CARACTERES: LETRAS, NÚMEROS, PONTO, HÍFEN OU _.", 400);
+  }
+  if (displayName.length < 2 || displayName.length > 80) {
+    return jsonError("INFORME UM NOME ENTRE 2 E 80 CARACTERES.", 400);
+  }
+
+  try {
+    if (request.method === "POST") {
+      if (password.length < 8 || password.length > 200) {
+        return jsonError("A SENHA DEVE TER PELO MENOS 8 CARACTERES.", 400);
+      }
+      const credential = await hashPassword(password);
+      const id = crypto.randomUUID();
+      await env.DB.prepare(
+        `INSERT INTO app_users
+          (id, username, display_name, password_hash, password_salt, role, permissions_json, active, session_version)
+         VALUES (?1, ?2, ?3, ?4, ?5, 'user', ?6, 1, 1)`,
+      ).bind(id, username, displayName, credential.hash, credential.salt, JSON.stringify(permissions)).run();
+      const created = await readUserById(env.DB, id);
+      return Response.json({ user: created ? publicUser(created) : null }, { status: 201 });
+    }
+
+    const id = String(body.id ?? "");
+    if (!id || id === "env-admin") return jsonError("O ADMINISTRADOR PRINCIPAL NÃO PODE SER ALTERADO AQUI.", 400);
+    const existing = await readUserById(env.DB, id);
+    if (!existing) return jsonError("USUÁRIO NÃO ENCONTRADO.", 404);
+    const active = body.active === false ? 0 : 1;
+    if (password && (password.length < 8 || password.length > 200)) {
+      return jsonError("A NOVA SENHA DEVE TER PELO MENOS 8 CARACTERES.", 400);
+    }
+    if (password) {
+      const credential = await hashPassword(password);
+      await env.DB.prepare(
+        `UPDATE app_users SET username=?1, display_name=?2, permissions_json=?3, active=?4,
+          password_hash=?5, password_salt=?6, session_version=session_version+1,
+          updated_at=CURRENT_TIMESTAMP WHERE id=?7`,
+      ).bind(username, displayName, JSON.stringify(permissions), active, credential.hash, credential.salt, id).run();
+    } else {
+      await env.DB.prepare(
+        `UPDATE app_users SET username=?1, display_name=?2, permissions_json=?3, active=?4,
+          session_version=session_version+1, updated_at=CURRENT_TIMESTAMP WHERE id=?5`,
+      ).bind(username, displayName, JSON.stringify(permissions), active, id).run();
+    }
+    const updated = await readUserById(env.DB, id);
+    return Response.json({ user: updated ? publicUser(updated) : null });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (/unique|constraint/i.test(message)) return jsonError("ESTE NOME DE USUÁRIO JÁ ESTÁ EM USO.", 409);
+    return jsonError("NÃO FOI POSSÍVEL SALVAR O USUÁRIO.", 500);
+  }
+}
+
 function securityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set("referrer-policy", "same-origin");
@@ -385,12 +721,27 @@ const worker = {
     if (PUBLIC_ASSET_PATHS.has(url.pathname)) return env.ASSETS.fetch(request);
 
     const config = loginConfig(env);
-    if (!config || !(await hasValidSession(request, config))) {
-      return unauthorized(request, url);
+    if (!config) return unauthorized(request, url);
+    const user = await authenticatedUser(request, env, config);
+    if (!user) return unauthorized(request, url);
+    if (!(await isAllowed(request, url, user))) return forbidden(request, url);
+    if (url.pathname === "/api/session") return sessionResponse(user);
+    if (url.pathname === "/api/admin/users") {
+      return securityHeaders(await handleAdminUsers(request, env, url, config));
     }
 
     const authenticatedHeaders = new Headers(request.headers);
+    authenticatedHeaders.delete(USER_ID_HEADER);
+    authenticatedHeaders.delete(USERNAME_HEADER);
+    authenticatedHeaders.delete(DISPLAY_NAME_HEADER);
+    authenticatedHeaders.delete(ROLE_HEADER);
+    authenticatedHeaders.delete(PERMISSIONS_HEADER);
     authenticatedHeaders.set(INTERNAL_AUTH_HEADER, "1");
+    authenticatedHeaders.set(USER_ID_HEADER, user.id);
+    authenticatedHeaders.set(USERNAME_HEADER, user.username);
+    authenticatedHeaders.set(DISPLAY_NAME_HEADER, encodeURIComponent(user.displayName));
+    authenticatedHeaders.set(ROLE_HEADER, user.role);
+    authenticatedHeaders.set(PERMISSIONS_HEADER, user.permissions.join(","));
     const authenticatedRequest = new Request(request, {
       headers: authenticatedHeaders,
     });
