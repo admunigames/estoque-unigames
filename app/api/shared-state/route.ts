@@ -20,6 +20,7 @@ function validStateKey(key: string): boolean {
     key === "products_catalog:pa" ||
     key === "puxadas:data" ||
     key === "__shared_health__" ||
+    /^tarefas:\d{4}-\d{2}-\d{2}$/.test(key) ||
     /^estoque:c[a-z0-9]{6,40}$/i.test(key)
   );
 }
