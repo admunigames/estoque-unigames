@@ -131,7 +131,7 @@
     display:flex; flex-direction:column; gap:4px; max-height:0; opacity:0; overflow:hidden;
     transform:translateY(-6px); transition:max-height .24s ease,opacity .18s ease,transform .24s ease;
   }
-  .nav-group-toggle[aria-expanded="true"] + .nav-submenu{max-height:150px; opacity:1; transform:translateY(0);}
+  .nav-group-toggle[aria-expanded="true"] + .nav-submenu{max-height:220px; opacity:1; transform:translateY(0);}
   .nav-item.sub-item{position:relative; padding-left:25px;}
   body.sidebar-compact .sidebar{width:92px;}
   body.sidebar-compact .sidebar-brand{justify-content:center;}
@@ -1258,9 +1258,9 @@
       <div class="nav-submenu" id="navCadastrosSubmenu" aria-hidden="true">
         <button class="nav-item sub-item" id="navLojas" data-page="lojas" title="Lojas"><span class="nav-icon" aria-hidden="true">◫</span><span class="nav-label">Lojas</span></button>
         <button class="nav-item sub-item" id="navDados" data-page="dados" title="Base de Dados"><span class="nav-icon" aria-hidden="true">⛁</span><span class="nav-label">Base de Dados</span></button>
+        <button class="nav-item sub-item" id="navUsuarios" data-page="usuarios" data-admin-only title="Usuários e acessos"><span class="nav-icon" aria-hidden="true">⚿</span><span class="nav-label">Usuários e acessos</span></button>
       </div>
     </div>
-    <button class="nav-item" id="navUsuarios" data-page="usuarios" data-admin-only title="Usuários e acessos"><span class="nav-icon" aria-hidden="true">⚿</span><span class="nav-label">Usuários e acessos</span></button>
     <div class="ios-storage-box">
       <strong>DADOS COMPARTILHADOS</strong>
       <p id="iosStorageStatus">VERIFICANDO A CONEXÃO COM O BANCO GERAL...</p>
@@ -1353,7 +1353,7 @@
         <div class="cadastros-menu-head">
           <img data-logo alt="LOGO UNIGAMES">
           <h3>MENU DE CADASTROS</h3>
-          <p>Acesse o cadastro de lojas ou a base de dados do estoque.</p>
+          <p>Acesse lojas, base de dados e, como administrador, o controle de usuários.</p>
         </div>
         <div class="cadastros-menu-grid">
           <button class="cadastros-option" type="button" data-cadastro-target="lojas">
@@ -1364,6 +1364,11 @@
           <button class="cadastros-option" type="button" data-cadastro-target="dados">
             <span class="cadastros-option-icon" aria-hidden="true">DB</span>
             <span class="cadastros-option-copy"><strong>BASE DE DADOS</strong><span>Carregue catálogos, entradas e saídas das lojas.</span></span>
+            <span class="cadastros-option-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="cadastros-option" type="button" data-cadastro-target="usuarios" data-admin-only>
+            <span class="cadastros-option-icon" aria-hidden="true">U</span>
+            <span class="cadastros-option-copy"><strong>USUÁRIOS E ACESSOS</strong><span>Crie contas, bloqueie usuários e escolha os módulos liberados.</span></span>
             <span class="cadastros-option-arrow" aria-hidden="true">→</span>
           </button>
         </div>
@@ -2151,7 +2156,7 @@
     lojas:'/cadastros/lojas',
     dados:'/cadastros/base-de-dados',
     tarefas:'/tarefas',
-    usuarios:'/administracao/usuarios'
+    usuarios:'/cadastros/usuarios'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -2284,7 +2289,7 @@
     page.classList.add('active');
     navItem.classList.add('active');
     const isHome = name === 'inicio';
-    const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados';
+    const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'usuarios';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
