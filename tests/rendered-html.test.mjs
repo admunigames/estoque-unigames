@@ -275,6 +275,10 @@ test("separa compras e lembretes no Início e oferece tema por usuário", async 
   assert.match(html, /id="themeToggle"/);
   assert.match(html, /body\.home-active \.theme-toggle\{display:none;\}/);
   assert.match(html, /estoque_theme:/);
+  assert.match(html, /\.theme-toggle\{[\s\S]*position:fixed;[\s\S]*width:60px; height:32px/);
+  assert.match(html, /CONTRASTE E LEGIBILIDADE DO TEMA CLARO/);
+  assert.match(html, /html\[data-theme="light"\] input:not\(\[type="checkbox"\]\)/);
+  assert.match(html, /html\[data-theme="light"\] thead th\{[\s\S]*background:#dce7f0/);
   assert.match(serviceWorker, /notificationclick/);
   assert.match(serviceWorker, /openWindow\(targetUrl\)/);
 });
