@@ -8,6 +8,13 @@
       "when": 1784692359752,
       "tag": "0000_wild_magik",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1784996028686,
+      "tag": "0001_safe_lightspeed",
+      "breakpoints": true
     }
   ]
 }
