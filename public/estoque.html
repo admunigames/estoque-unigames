@@ -28,8 +28,25 @@
     --neg:#ef6a55;
     --neg-bg:rgba(239,106,85,0.12);
     --ok:#72a7d8;
+    --line:var(--border);
+    --panel:var(--bg-card);
     --mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
     --sans:'Inter','Segoe UI',Helvetica,Arial,sans-serif;
+  }
+  html[data-theme="light"]{
+    --bg:#eef4f9;
+    --bg-card:#ffffff;
+    --bg-card-2:#e7f0f8;
+    --border:#b9ccdd;
+    --ink:#10233a;
+    --ink-soft:#49627b;
+    --ink-faint:#6f8498;
+    --accent:#2f6fa9;
+    --accent-deep:#1d487e;
+    --accent-ink:#ffffff;
+    --neg:#c44735;
+    --neg-bg:rgba(196,71,53,.1);
+    --ok:#397cae;
   }
   *{box-sizing:border-box;}
   [hidden]{display:none !important;}
@@ -41,6 +58,38 @@
     background-image: radial-gradient(rgba(255,255,255,0.026) 1px, transparent 1px);
     background-size: 22px 22px; text-transform:none; overscroll-behavior-y:none;
   }
+  html[data-theme="light"] body{
+    background-image:radial-gradient(rgba(36,79,131,.075) 1px,transparent 1px);
+  }
+  html[data-theme="light"] .sidebar{
+    background:
+      linear-gradient(rgba(36,79,131,.045) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(36,79,131,.045) 1px,transparent 1px),
+      radial-gradient(circle at 12% 4%,rgba(79,134,189,.2),transparent 34%),
+      linear-gradient(160deg,#f8fbfe 0%,#dce9f4 72%);
+    box-shadow:24px 0 64px rgba(36,79,131,.22),inset -1px 0 rgba(36,79,131,.1);
+  }
+  html[data-theme="light"] .sidebar-brand,
+  html[data-theme="light"] .ios-storage-box{background:rgba(255,255,255,.64);}
+  html[data-theme="light"] .menu-toggle{
+    background:linear-gradient(145deg,#ffffff,#dce8f2);
+    box-shadow:0 8px 22px rgba(36,79,131,.2),0 0 0 1px rgba(36,79,131,.08);
+  }
+  html[data-theme="light"] .mobile-tabbar{
+    background:rgba(247,251,255,.96);
+    box-shadow:0 18px 48px rgba(36,79,131,.24),inset 0 1px rgba(255,255,255,.9);
+  }
+  html[data-theme="light"] #inventoryTable th,
+  html[data-theme="light"] .pull-table th{background:var(--bg-card-2);}
+  html[data-theme="light"] #inventoryTable th:first-child,
+  html[data-theme="light"] .pull-table th:first-child{background:var(--bg-card-2);}
+  html[data-theme="light"] #inventoryTable td:first-child,
+  html[data-theme="light"] .pull-table td:first-child{background:var(--bg-card);}
+  html[data-theme="light"] .purchase-status-options,
+  html[data-theme="light"] .purchase-division-content{background:#f7fbff;}
+  html[data-theme="light"] .purchase-toast,
+  html[data-theme="light"] .ios-install-hint,
+  html[data-theme="light"] .task-reminder-toast{background:rgba(247,251,255,.98);}
   button, select, option, label, thead th, .lbl, .page-title, .status-pill{ text-transform:uppercase; }
   button, input, select, option{ -webkit-tap-highlight-color:transparent; }
   input, textarea{ text-transform:none; }
@@ -199,6 +248,24 @@
   body.menu-open .menu-toggle-icon span:nth-child(2){opacity:0;}
   body.menu-open .menu-toggle-icon span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
   body.home-active .menu-toggle{display:none;}
+  .theme-toggle{
+    position:fixed; top:calc(17px + env(safe-area-inset-top)); right:calc(18px + env(safe-area-inset-right));
+    z-index:850; width:78px; height:40px; display:flex; align-items:center; justify-content:space-between;
+    padding:5px 8px; border:1px solid var(--border); border-radius:999px; cursor:pointer;
+    background:var(--bg-card); color:var(--ink-soft); box-shadow:0 10px 28px rgba(0,0,0,.24);
+  }
+  .theme-toggle:hover{opacity:1; border-color:var(--accent);}
+  .theme-toggle-icon{position:relative; z-index:2; width:22px; text-align:center; font-size:15px; line-height:1;}
+  .theme-toggle-knob{
+    position:absolute; z-index:1; top:4px; left:4px; width:30px; height:30px; border-radius:50%;
+    background:var(--accent); box-shadow:0 5px 13px rgba(0,0,0,.28);
+    transition:transform .22s ease;
+  }
+  html[data-theme="light"] .theme-toggle-knob{transform:translateX(38px);}
+  html[data-theme="light"] .theme-toggle-sun{color:#f4a62a;}
+  html:not([data-theme="light"]) .theme-toggle-moon{color:#d9ecff;}
+  body.home-active .theme-toggle{display:none;}
+  .page:not(.home-page) .page-heading{padding-right:86px;}
   .sidebar-backdrop{
     position:fixed; inset:0; z-index:900; padding:0; border:0; border-radius:0;
     background:rgba(5,7,9,0.68); opacity:0; visibility:hidden; pointer-events:none;
@@ -266,6 +333,10 @@
     background:linear-gradient(115deg,rgba(255,255,255,.42),transparent 36%,rgba(255,255,255,.2));
     pointer-events:none;
   }
+  .home-account{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:18px;color:#49627b;font:800 10px/1.4 var(--mono)}
+  .home-account form{margin:0}.home-account button{min-height:34px;padding:7px 11px;border:1px solid rgba(173,55,55,.32);border-radius:9px;background:rgba(173,55,55,.08);color:#8a2d2d;font:800 9px/1 var(--mono)}
+  .home-no-access{margin-top:24px;padding:18px;border:1px solid rgba(36,79,131,.22);border-radius:14px;background:rgba(79,134,189,.08);text-align:center}
+  .home-no-access strong{display:block;margin-bottom:5px}.home-no-access span{color:#49627b;font-size:12px}
   .home-brand{display:flex; flex-direction:column; align-items:center;}
   .home-brand-logo{
     width:clamp(92px,11vw,128px); height:clamp(92px,11vw,128px); object-fit:contain;
@@ -305,6 +376,55 @@
   .home-access-copy strong{color:#10233a; font:800 13px/1.25 var(--sans); letter-spacing:.25px;}
   .home-access-copy span{color:#5c7187; font:600 11px/1.5 var(--sans); text-transform:none;}
   .home-access-arrow{align-self:flex-end; color:#386b9c; font:800 18px/1 var(--mono);}
+  .home-operations{
+    display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:20px;
+    text-align:left;
+  }
+  .home-operation-card{
+    min-width:0; padding:22px; border:1px solid rgba(255,255,255,.9); border-radius:22px;
+    background:rgba(255,255,255,.58); box-shadow:0 14px 34px rgba(36,79,131,.1),inset 0 1px #fff;
+  }
+  .home-operation-head{display:flex; align-items:center; gap:12px; margin-bottom:17px;}
+  .home-operation-icon{
+    width:42px; height:42px; flex:0 0 42px; display:grid; place-items:center; border-radius:13px;
+    background:#244f83; color:#fff; font:800 18px/1 var(--mono); box-shadow:0 9px 20px rgba(36,79,131,.2);
+  }
+  .home-operation-head span{
+    display:block; color:#4e6c89; font:800 9px/1.3 var(--sans); letter-spacing:1px;
+  }
+  .home-operation-head h2{margin:4px 0 0; color:#10233a; font:800 19px/1.2 var(--sans);}
+  .home-purchase-metrics{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px;}
+  .home-purchase-metric{
+    min-width:0; padding:13px 10px; border-radius:12px; background:rgba(236,244,251,.8);
+    text-align:center;
+  }
+  .home-purchase-metric strong{display:block; color:#244f83; font:800 24px/1 var(--mono);}
+  .home-purchase-metric span{
+    display:block; margin-top:7px; color:#5c7187; font:800 8px/1.35 var(--sans); letter-spacing:.25px;
+  }
+  .home-purchase-metric.overdue strong{color:#b74234;}
+  .home-reminder-main{
+    display:grid; grid-template-columns:auto minmax(0,1fr); gap:13px; align-items:center;
+    padding:14px; border-radius:13px; background:rgba(236,244,251,.8);
+  }
+  .home-reminder-clock{
+    width:54px; height:54px; display:grid; place-items:center; border-radius:50%;
+    border:2px solid rgba(36,79,131,.24); background:rgba(255,255,255,.7);
+    color:#244f83; font:800 12px/1 var(--mono);
+  }
+  .home-reminder-copy{min-width:0;}
+  .home-reminder-copy strong{
+    display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    color:#10233a; font:800 12px/1.35 var(--sans);
+  }
+  .home-reminder-copy span{display:block; margin-top:4px; color:#5c7187; font:700 10px/1.4 var(--sans);}
+  .home-reminder-actions{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px;}
+  .home-reminder-status{color:#5c7187; font:700 9px/1.4 var(--sans);}
+  .home-reminder-enable{
+    flex:0 0 auto; min-height:34px; padding:7px 10px; border:1px solid rgba(36,79,131,.28);
+    border-radius:9px; background:rgba(36,79,131,.08); color:#244f83; font:800 8px/1.2 var(--sans);
+  }
+  .home-reminder-enable:disabled{cursor:default; opacity:.7;}
   .home-overview{
     margin-top:20px; padding:22px; border:1px solid rgba(255,255,255,.9); border-radius:22px;
     background:rgba(255,255,255,.58); box-shadow:0 14px 34px rgba(36,79,131,.1),inset 0 1px #fff;
@@ -329,6 +449,14 @@
     color:#5c7187; font:700 12px/1.5 var(--sans); text-align:center;
   }
   .home-update-skeleton{height:42px; border-radius:11px;}
+  .task-reminder-toast{
+    position:fixed; z-index:1400; right:max(16px,env(safe-area-inset-right));
+    bottom:calc(20px + env(safe-area-inset-bottom)); width:min(390px,calc(100vw - 32px));
+    padding:15px 16px; border:1px solid rgba(114,167,216,.55); border-radius:14px;
+    background:rgba(16,29,43,.98); color:var(--ink); box-shadow:0 20px 52px rgba(0,0,0,.48);
+  }
+  .task-reminder-toast strong{display:block; margin-bottom:5px; color:var(--accent); font:800 10px/1.3 var(--mono);}
+  .task-reminder-toast span{display:block; font:700 13px/1.45 var(--sans);}
 
   /* MENU DE CADASTROS */
   .cadastros-menu{
@@ -947,6 +1075,9 @@
   }
   footer.hint{margin-top:16px; font-size:12px; color:var(--ink-faint); text-align:center;}
   .mobile-tabbar{display:none;}
+  body:not(.access-ready) [data-permission],
+  body:not(.access-ready) [data-any-permission],
+  body:not(.access-ready) [data-admin-only]{display:none!important;}
 
   @media (max-width:1280px){
     .summary{grid-template-columns:repeat(3,1fr);}
@@ -955,6 +1086,7 @@
     body{padding-bottom:calc(74px + env(safe-area-inset-bottom));}
     .home-page{align-items:flex-start;}
     .home-access-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .home-operations{grid-template-columns:1fr;}
     .home-lightglass{border-radius:24px;}
     .page-header{
       position:sticky; top:0; z-index:50; margin:-26px -18px 20px; padding:calc(18px + env(safe-area-inset-top)) 18px 12px;
@@ -962,6 +1094,12 @@
       background:linear-gradient(180deg,rgba(7,18,29,.96),rgba(7,18,29,.88));
       box-shadow:0 14px 30px rgba(0,0,0,.16); backdrop-filter:blur(18px) saturate(120%);
     }
+    html[data-theme="light"] .page-header{
+      background:linear-gradient(180deg,rgba(247,251,255,.97),rgba(232,241,248,.92));
+      box-shadow:0 14px 30px rgba(36,79,131,.12);
+    }
+    .page:not(.home-page) .page-heading{padding-right:74px;}
+    .theme-toggle{top:calc(14px + env(safe-area-inset-top)); right:calc(12px + env(safe-area-inset-right));}
     .page-header-meta{padding-left:62px;}
     .summary{grid-template-columns:repeat(2,1fr);}
     .summary .card:last-child:nth-child(odd){grid-column:span 2;}
@@ -997,6 +1135,8 @@
       background:rgba(8,18,30,.94); box-shadow:0 18px 48px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.06);
       backdrop-filter:blur(20px) saturate(130%);
     }
+    body.home-active .mobile-tabbar,
+    body.menu-open .mobile-tabbar{display:none!important;}
     .mobile-tab{
       min-width:0; min-height:50px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
       padding:5px 3px; border:0; border-radius:13px; background:transparent; color:var(--ink-faint);
@@ -1004,7 +1144,7 @@
     .mobile-tab span{font:800 17px/1 var(--mono);}
     .mobile-tab small{max-width:100%; overflow:hidden; text-overflow:ellipsis; font:800 8px/1 var(--sans); letter-spacing:.2px;}
     .mobile-tab.active{color:#fff; background:linear-gradient(145deg,rgba(38,92,151,.92),rgba(79,134,189,.58)); box-shadow:0 8px 18px rgba(0,0,0,.2);}
-    .purchase-toast,.ios-install-hint{bottom:calc(82px + env(safe-area-inset-bottom));}
+    .purchase-toast,.ios-install-hint,.task-reminder-toast{bottom:calc(82px + env(safe-area-inset-bottom));}
   }
   @media (max-width:680px){
     .purchase-status-options{position:static; width:100%; margin-top:7px; box-shadow:none;}
@@ -1206,8 +1346,13 @@
 .home-tasks-date{
   text-align:right; color:#5c7187; font:700 10px/1.35 var(--sans); margin-top:4px;
 }
-@media (max-width:520px){
-  .home-tasks{padding:18px 14px; border-radius:17px;}
+  @media (max-width:520px){
+    .home-purchase-metrics{grid-template-columns:1fr;}
+    .home-purchase-metric{display:flex; align-items:center; justify-content:space-between; gap:12px; text-align:left;}
+    .home-purchase-metric span{margin-top:0; text-align:right;}
+    .home-reminder-actions{align-items:stretch; flex-direction:column;}
+    .home-reminder-enable{width:100%;}
+    .home-tasks{padding:18px 14px; border-radius:17px;}
   .home-tasks-head{align-items:flex-start; flex-direction:column; gap:10px;}
   .home-task-row{flex-wrap:wrap;}
   .home-task-outcome{flex:1 1 100%; margin-left:30px;}
@@ -1234,6 +1379,11 @@
   <span class="menu-toggle-icon" aria-hidden="true"><span></span><span></span><span></span></span>
 </button>
 <button class="sidebar-backdrop no-print" id="sidebarBackdrop" type="button" tabindex="-1" aria-label="Fechar menu"></button>
+<button class="theme-toggle no-print" id="themeToggle" type="button" aria-pressed="false" aria-label="Ativar tema claro" title="Alternar tema claro e escuro">
+  <span class="theme-toggle-icon theme-toggle-moon" aria-hidden="true">☾</span>
+  <span class="theme-toggle-icon theme-toggle-sun" aria-hidden="true">☀</span>
+  <span class="theme-toggle-knob" aria-hidden="true"></span>
+</button>
 <aside class="ios-install-hint no-print" id="iosInstallHint" hidden>
   <span><b>NO IPHONE/IPAD:</b> NO SAFARI, TOQUE EM COMPARTILHAR E DEPOIS EM “ADICIONAR À TELA DE INÍCIO” PARA MELHOR PERSISTÊNCIA DOS DADOS.</span>
   <button class="btn-outline" id="btnDismissIosHint" type="button">OK</button>
@@ -1284,6 +1434,7 @@
     <!-- ================= INÍCIO ================= -->
     <section id="pageInicio" class="page wrap home-page active">
       <div class="home-lightglass">
+        <div class="home-account"><span id="homeSessionName">Carregando usuário…</span><form method="post" action="/logout"><button type="submit">SAIR</button></form></div>
         <div class="home-brand">
           <img class="home-brand-logo" data-logo alt="LOGO UNIGAMES">
           <div class="home-eyebrow">CENTRAL DE OPERAÇÕES</div>
@@ -1312,10 +1463,37 @@
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
         </div>
-        <section class="home-overview" data-any-permission="stock,purchases" aria-labelledby="homeOverviewTitle">
+        <div class="home-no-access" id="homeNoAccess" hidden><strong>NENHUM MÓDULO LIBERADO</strong><span>Solicite ao administrador a liberação das áreas necessárias.</span></div>
+        <section class="home-operations" aria-label="Operações do dia">
+          <article class="home-operation-card" data-permission="purchases" aria-labelledby="homePurchasesTitle">
+            <header class="home-operation-head">
+              <span class="home-operation-icon" aria-hidden="true">▤</span>
+              <div><span>OPERAÇÕES DO DIA</span><h2 id="homePurchasesTitle">Compras</h2></div>
+            </header>
+            <div class="home-purchase-metrics" aria-live="polite">
+              <div class="home-purchase-metric"><strong id="homePurchaseProgress">—</strong><span>EM ANDAMENTO</span></div>
+              <div class="home-purchase-metric"><strong id="homePurchaseNotStarted">—</strong><span>NÃO INICIADOS</span></div>
+              <div class="home-purchase-metric overdue"><strong id="homePurchaseOverdue">—</strong><span>ATRASADOS</span></div>
+            </div>
+          </article>
+          <article class="home-operation-card" data-permission="tasks" aria-labelledby="homeRemindersTitle">
+            <header class="home-operation-head">
+              <span class="home-operation-icon" aria-hidden="true">◷</span>
+              <div><span>RELÓGIO DE ALERTAS</span><h2 id="homeRemindersTitle">Lembretes</h2></div>
+            </header>
+            <div class="home-reminder-main" id="homeReminderNext" aria-live="polite">
+              <span class="home-reminder-clock">--:--</span>
+              <div class="home-reminder-copy"><strong>Nenhuma tarefa com horário</strong><span>Cadastre um horário na tarefa para receber o alerta.</span></div>
+            </div>
+            <div class="home-reminder-actions">
+              <span class="home-reminder-status" id="homeReminderStatus">Os alertas visuais já estão ativos.</span>
+              <button class="home-reminder-enable" id="btnEnableTaskNotifications" type="button">ATIVAR NOTIFICAÇÕES</button>
+            </div>
+          </article>
+        </section>
+        <section class="home-overview" data-any-permission="stock,database,pulls" aria-labelledby="homeOverviewTitle">
           <div class="home-overview-head">
-            <div><span>VISÃO GERAL</span><h2 id="homeOverviewTitle">Operação de hoje</h2></div>
-            <div class="home-purchase-status"><span>PEDIDOS EM ANDAMENTO</span><strong id="homePurchaseProgress">—</strong></div>
+            <div><span>ESTOQUE FISCAL</span><h2 id="homeOverviewTitle">Atualizações das lojas</h2></div>
           </div>
           <div class="home-store-updates" id="homeStoreUpdates" aria-live="polite">
             <div class="home-update-skeleton skeleton"></div>
@@ -1874,6 +2052,10 @@
   </form>
 </dialog>
 <div class="purchase-toast" id="purchaseToast" role="status" aria-live="polite" hidden></div>
+<div class="task-reminder-toast" id="taskReminderToast" role="alert" aria-live="assertive" hidden>
+  <strong>LEMBRETE DE TAREFA</strong>
+  <span id="taskReminderToastText"></span>
+</div>
 
 <script>
 (function(){
@@ -1918,6 +2100,9 @@
   let purchaseSearchTimer = null;
   let notionUsersLoaded = false;
   let homeOverviewLoading = false;
+  let homeTodayTasks = [];
+  let taskReminderTimer = null;
+  const taskReminderMemory = new Set();
 
   const DEFAULT_COMPANIES = ['GUARARAPES','NORTH WAY','PATTEO','RECIFE','RIOMAR','TACARUNA','P.A LOJA','QUIOSQUE P.A'];
   const SPECIAL_CATALOG_COMPANIES = new Set(['P.A LOJA','QUIOSQUE P.A']);
@@ -2218,8 +2403,38 @@
       node.toggleAttribute('data-access-hidden', currentSession.role !== 'admin');
     });
     el('sessionDisplayName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
+    el('homeSessionName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
     el('sessionAccessLabel').textContent = currentSession.role === 'admin' ? 'Administrador · acesso completo' : 'Acesso limitado';
+    el('homeNoAccess').hidden = currentSession.role === 'admin' || currentSession.permissions.length > 0;
+    document.body.classList.add('access-ready');
   }
+
+  function userThemeStorageKey(){
+    return 'estoque_theme:' + String(currentSession.id || currentSession.username || 'usuario');
+  }
+
+  function setUserTheme(theme, persist){
+    const selected = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = selected;
+    const toggle = el('themeToggle');
+    toggle.setAttribute('aria-pressed', String(selected === 'light'));
+    toggle.setAttribute('aria-label', selected === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro');
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if(themeMeta) themeMeta.content = selected === 'light' ? '#eef4f9' : '#08121e';
+    if(persist){
+      try{ localStorage.setItem(userThemeStorageKey(), selected); }catch(error){ /* preferência opcional */ }
+    }
+  }
+
+  function loadUserTheme(){
+    let saved = 'dark';
+    try{ saved = localStorage.getItem(userThemeStorageKey()) || 'dark'; }catch(error){ /* usa o tema escuro */ }
+    setUserTheme(saved, false);
+  }
+
+  el('themeToggle').addEventListener('click', () => {
+    setUserTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light', true);
+  });
 
   async function loadSessionAccess(){
     const response = await fetch('/api/session', {cache:'no-store', headers:{Accept:'application/json'}});
@@ -2230,6 +2445,7 @@
     if(!response.ok) throw new Error('NÃO FOI POSSÍVEL VALIDAR O ACESSO');
     currentSession = await response.json();
     currentSession.permissions = Array.isArray(currentSession.permissions) ? currentSession.permissions : [];
+    loadUserTheme();
     applyAccessVisibility();
   }
 
@@ -3419,57 +3635,92 @@
 
   function renderHomeOverviewSkeletons(){
     const list = el('homeStoreUpdates');
-    if(!list) return;
-    list.innerHTML = Array.from({length:Math.max(2,Math.min(companies.length || 4,8))}, () =>
-      '<div class="home-update-skeleton skeleton"></div>'
-    ).join('');
-    el('homePurchaseProgress').textContent = '—';
+    if(list && (canAccess('stock') || canAccess('database') || canAccess('pulls'))){
+      list.innerHTML = Array.from({length:Math.max(2,Math.min(companies.length || 4,8))}, () =>
+        '<div class="home-update-skeleton skeleton"></div>'
+      ).join('');
+    }
+    if(canAccess('purchases')){
+      el('homePurchaseProgress').textContent = '—';
+      el('homePurchaseNotStarted').textContent = '—';
+      el('homePurchaseOverdue').textContent = '—';
+    }
+  }
+
+  async function fetchHomePurchaseSummary(){
+    const allItems = [];
+    let cursor = '';
+    let hasMore = true;
+    let pages = 0;
+    while(hasMore && pages < 20){
+      const params = new URLSearchParams();
+      params.append('status', 'Não iniciado');
+      params.append('status', 'Em andamento');
+      if(cursor) params.set('cursor', cursor);
+      const response = await fetch('/api/compras?' + params.toString(), {
+        headers:{'Accept':'application/json'},
+        cache:'no-store'
+      });
+      const data = await response.json();
+      if(!response.ok) throw new Error(data.error || 'Pedidos indisponíveis');
+      allItems.push(...(Array.isArray(data.items) ? data.items : []));
+      cursor = data.nextCursor || '';
+      hasMore = Boolean(data.hasMore && cursor);
+      pages++;
+    }
+    const progress = allItems.filter(item => normalizeHeader(item.status || '') === 'em andamento').length;
+    const notStarted = allItems.filter(item => normalizeHeader(item.status || '') === 'nao iniciado').length;
+    const overdue = allItems.filter(purchaseIsOverdue).length;
+    return {progress, notStarted, overdue, truncated:hasMore};
   }
 
   async function loadHomeOverview(){
-    if(homeOverviewLoading || !el('homeStoreUpdates')) return;
+    if(homeOverviewLoading) return;
     homeOverviewLoading = true;
     renderHomeOverviewSkeletons();
     try{
-      const updatesPromise = Promise.all(companies.map(async company => {
-        try{
-          const result = await storage.get('estoque:' + company.id);
-          if(!result || !result.value) return {company, updatedAt:null};
-          const data = JSON.parse(result.value);
-          const updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
-          return {company, updatedAt:updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt : null};
-        } catch(e){
-          return {company, updatedAt:null, unavailable:true};
+      const shouldLoadStores = canAccess('stock') || canAccess('database') || canAccess('pulls');
+      const updatesPromise = shouldLoadStores ? Promise.all(companies.map(async company => {
+          try{
+            const result = await storage.get('estoque:' + company.id);
+            if(!result || !result.value) return {company, updatedAt:null};
+            const data = JSON.parse(result.value);
+            const updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
+            return {company, updatedAt:updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt : null};
+          } catch(e){
+            return {company, updatedAt:null, unavailable:true};
+          }
+        })) : Promise.resolve([]);
+      const purchasesPromise = canAccess('purchases')
+        ? fetchHomePurchaseSummary().catch(() => null)
+        : Promise.resolve(null);
+      const [updates, purchaseSummary] = await Promise.all([updatesPromise, purchasesPromise]);
+      if(shouldLoadStores){
+        const list = el('homeStoreUpdates');
+        if(companies.length === 0){
+          list.innerHTML = '<div class="home-store-empty">Cadastre as lojas para acompanhar as últimas atualizações.</div>';
+        } else {
+          list.innerHTML = updates.map(item => {
+            const text = item.unavailable
+              ? 'Indisponível'
+              : item.updatedAt
+                ? item.updatedAt.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})
+                : 'Sem atualização';
+            return '<div class="home-store-update"><strong>'+escapeHtml(item.company.name)+'</strong>'+
+              (item.updatedAt
+                ? '<time datetime="'+item.updatedAt.toISOString()+'">'+escapeHtml(text)+'</time>'
+                : '<span>'+escapeHtml(text)+'</span>')+
+            '</div>';
+          }).join('');
         }
-      }));
-      const purchasesPromise = fetch('/api/compras?status=' + encodeURIComponent('Em andamento'), {
-        headers:{'Accept':'application/json'}
-      }).then(async response => {
-        const data = await response.json();
-        if(!response.ok) throw new Error(data.error || 'Pedidos indisponíveis');
-        return (data.items || []).length.toLocaleString('pt-BR') + (data.nextCursor ? '+' : '');
-      }).catch(() => '—');
-      const [updates, purchaseCount] = await Promise.all([updatesPromise, purchasesPromise]);
-      const list = el('homeStoreUpdates');
-      if(companies.length === 0){
-        list.innerHTML = '<div class="home-store-empty">Cadastre as lojas para acompanhar as últimas atualizações.</div>';
-      } else {
-        list.innerHTML = updates.map(item => {
-          const text = item.unavailable
-            ? 'Indisponível'
-            : item.updatedAt
-              ? item.updatedAt.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})
-              : 'Sem atualização';
-          return '<div class="home-store-update"><strong>'+escapeHtml(item.company.name)+'</strong>'+
-            (item.updatedAt
-              ? '<time datetime="'+item.updatedAt.toISOString()+'">'+escapeHtml(text)+'</time>'
-              : '<span>'+escapeHtml(text)+'</span>')+
-          '</div>';
-        }).join('');
       }
-      el('homePurchaseProgress').textContent = purchaseCount;
-      el('homePurchaseProgress').textContent = purchaseCount;
-      renderHomeTasks();
+      if(canAccess('purchases')){
+        const suffix = purchaseSummary && purchaseSummary.truncated ? '+' : '';
+        el('homePurchaseProgress').textContent = purchaseSummary ? purchaseSummary.progress.toLocaleString('pt-BR') + suffix : '—';
+        el('homePurchaseNotStarted').textContent = purchaseSummary ? purchaseSummary.notStarted.toLocaleString('pt-BR') + suffix : '—';
+        el('homePurchaseOverdue').textContent = purchaseSummary ? purchaseSummary.overdue.toLocaleString('pt-BR') + suffix : '—';
+      }
+      if(canAccess('tasks')) renderHomeTasks();
     } finally {
       homeOverviewLoading = false;
     }
@@ -4069,7 +4320,7 @@
 
   function purchaseIsOverdue(item){
     if(!item.previsao || normalizeHeader(item.status) === 'concluido') return false;
-    return String(item.previsao).slice(0,10) < new Date().toISOString().slice(0,10);
+    return String(item.previsao).slice(0,10) < todayDateKey();
   }
 
   function purchaseFilesHtml(item){
@@ -4592,6 +4843,128 @@
     })) : [];
     return {tasks, notes:typeof source.notes === 'string' ? source.notes : ''};
   }
+  function taskDueAt(task){
+    if(!task || !task.time) return null;
+    const due = new Date(todayDateKey()+'T'+task.time+':00');
+    return Number.isNaN(due.getTime()) ? null : due;
+  }
+  function taskReminderKey(task){
+    return [
+      'estoque_task_reminder',
+      String(currentSession.id || currentSession.username || 'usuario'),
+      todayDateKey(),
+      String(task.id || ''),
+      String(task.time || '')
+    ].join(':');
+  }
+  function hasTaskReminderFired(task){
+    const key = taskReminderKey(task);
+    if(taskReminderMemory.has(key)) return true;
+    try{ return localStorage.getItem(key) === '1'; }catch(error){ return false; }
+  }
+  function markTaskReminderFired(task){
+    const key = taskReminderKey(task);
+    taskReminderMemory.add(key);
+    try{ localStorage.setItem(key, '1'); }catch(error){ /* evita repetição enquanto a página estiver aberta */ }
+  }
+  function updateTaskNotificationStatus(){
+    const status = el('homeReminderStatus');
+    const button = el('btnEnableTaskNotifications');
+    if(!status || !button) return;
+    if(!('Notification' in window)){
+      status.textContent = 'Alertas visuais ativos enquanto o site estiver aberto.';
+      button.textContent = 'NÃO DISPONÍVEL';
+      button.disabled = true;
+      return;
+    }
+    if(Notification.permission === 'granted'){
+      status.textContent = 'Notificações do aparelho ativadas.';
+      button.textContent = 'NOTIFICAÇÕES ATIVAS';
+      button.disabled = true;
+      return;
+    }
+    if(Notification.permission === 'denied'){
+      status.textContent = 'Notificações bloqueadas nas configurações do navegador.';
+      button.textContent = 'NOTIFICAÇÕES BLOQUEADAS';
+      button.disabled = true;
+      return;
+    }
+    status.textContent = 'Ative para receber o lembrete no aparelho.';
+    button.textContent = 'ATIVAR NOTIFICAÇÕES';
+    button.disabled = false;
+  }
+  function renderHomeReminder(tasks){
+    const container = el('homeReminderNext');
+    if(!container) return;
+    const now = new Date();
+    const pending = (Array.isArray(tasks) ? tasks : [])
+      .filter(task => !task.done && task.time && taskDueAt(task))
+      .sort((a,b) => taskDueAt(a) - taskDueAt(b));
+    if(!pending.length){
+      container.innerHTML = '<span class="home-reminder-clock">--:--</span>'+
+        '<div class="home-reminder-copy"><strong>Nenhuma tarefa com horário</strong>'+
+        '<span>Cadastre um horário na tarefa para receber o alerta.</span></div>';
+      updateTaskNotificationStatus();
+      return;
+    }
+    const next = pending.find(task => taskDueAt(task) >= now) || pending[pending.length - 1];
+    const due = taskDueAt(next);
+    const differenceMinutes = Math.round((due.getTime() - now.getTime()) / 60000);
+    const timing = differenceMinutes > 0
+      ? (differenceMinutes < 60 ? 'Lembrete em '+differenceMinutes+' min' : 'Lembrete às '+next.time)
+      : (differenceMinutes === 0 ? 'Horário da tarefa agora' : 'Pendente desde '+next.time);
+    container.innerHTML = '<span class="home-reminder-clock">'+escapeHtml(next.time)+'</span>'+
+      '<div class="home-reminder-copy"><strong>'+escapeHtml(next.text || 'Tarefa agendada')+'</strong>'+
+      '<span>'+escapeHtml(timing)+'</span></div>';
+    updateTaskNotificationStatus();
+  }
+  async function showTaskReminder(task){
+    markTaskReminderFired(task);
+    const message = task.time+' — '+task.text;
+    el('taskReminderToastText').textContent = message;
+    el('taskReminderToast').hidden = false;
+    clearTimeout(showTaskReminder.timer);
+    showTaskReminder.timer = setTimeout(() => { el('taskReminderToast').hidden = true; }, 9000);
+    if('Notification' in window && Notification.permission === 'granted'){
+      const options = {
+        body:task.text,
+        tag:'unigames-task-'+todayDateKey()+'-'+task.id,
+        icon:'/favicon.svg',
+        badge:'/favicon.svg',
+        data:{url:'/tarefas'}
+      };
+      try{
+        const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+        if(registration) await registration.showNotification('Tarefa agendada para '+task.time, options);
+        else new Notification('Tarefa agendada para '+task.time, options);
+      }catch(error){ /* o alerta dentro do site já foi exibido */ }
+    }
+    renderHomeReminder(homeTodayTasks);
+  }
+  function checkTaskReminders(){
+    if(!canAccess('tasks')) return;
+    const now = Date.now();
+    homeTodayTasks.forEach(task => {
+      const due = taskDueAt(task);
+      if(!task.done && due && now >= due.getTime() && now - due.getTime() <= 10 * 60 * 1000 && !hasTaskReminderFired(task)){
+        showTaskReminder(task);
+      }
+    });
+  }
+  function startTaskReminderMonitor(){
+    clearInterval(taskReminderTimer);
+    checkTaskReminders();
+    taskReminderTimer = setInterval(checkTaskReminders, 30000);
+    updateTaskNotificationStatus();
+  }
+  async function enableTaskNotifications(){
+    if(!('Notification' in window)) return;
+    try{
+      await Notification.requestPermission();
+    }catch(error){ /* o navegador pode exigir o app instalado */ }
+    updateTaskNotificationStatus();
+    checkTaskReminders();
+  }
   function readTaskData(){
     try{
       const data = JSON.parse(el('taskList').dataset.taskData || '{}');
@@ -4705,6 +5078,15 @@
   el('taskDate').addEventListener('change', () => { loadTasks(); loadTaskAgenda(); });
   el('btnAddTask').addEventListener('click', addTask);
   el('taskInputText').addEventListener('keydown', event => { if(event.key === 'Enter') addTask(); });
+  el('btnEnableTaskNotifications').addEventListener('click', enableTaskNotifications);
+  el('taskReminderToast').addEventListener('click', () => {
+    el('taskReminderToast').hidden = true;
+    navigateToPage('tarefas');
+  });
+  window.addEventListener('focus', checkTaskReminders);
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible') checkTaskReminders();
+  });
   el('taskList').addEventListener('change', async event => {
     const id = event.target.dataset.taskDone;
     if(!id) return;
@@ -4872,12 +5254,17 @@ function renderHomeTasks(){
 
     storage.get('tarefas:' + dateKey).then(result => {
       if(!result || !result.value){
+        homeTodayTasks = [];
+        renderHomeReminder(homeTodayTasks);
         list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
         return;
       }
       let data;
       try{ data = JSON.parse(result.value); } catch(e){ data = {}; }
       const tasks = normalizeTaskData(data).tasks;
+      homeTodayTasks = tasks;
+      renderHomeReminder(homeTodayTasks);
+      checkTaskReminders();
       if(tasks.length === 0){
         list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
         return;
@@ -4895,6 +5282,8 @@ function renderHomeTasks(){
         '</div>'
       ).join('');
     }).catch(() => {
+      homeTodayTasks = [];
+      renderHomeReminder(homeTodayTasks);
       list.innerHTML = '<div class="home-tasks-empty">Não foi possível carregar as tarefas.</div>';
     });
   }
@@ -4976,7 +5365,7 @@ function renderHomeTasks(){
       const badges = user.role === 'admin'
         ? '<span class="user-badge">ACESSO COMPLETO</span>'
         : (user.permissions || []).map(permission => '<span class="user-badge">'+escapeHtml(permissionNames[permission] || permission)+'</span>').join('') || '<span class="user-badge">SEM MÓDULOS</span>';
-      const actions = user.managed ? '<div class="user-actions"><button class="btn-outline" type="button" data-edit-user="'+escapeHtml(user.id)+'">ALTERAR</button><button class="btn-outline" type="button" data-toggle-user="'+escapeHtml(user.id)+'">'+(user.active ? 'BLOQUEAR' : 'REATIVAR')+'</button></div>' : '<span class="user-badge">CONTA PRINCIPAL</span>';
+      const actions = user.managed ? '<div class="user-actions"><button class="btn-outline" type="button" data-edit-user="'+escapeHtml(user.id)+'">ALTERAR</button><button class="btn-outline" type="button" data-toggle-user="'+escapeHtml(user.id)+'">'+(user.active ? 'BLOQUEAR' : 'REATIVAR')+'</button><button class="btn-danger-outline" type="button" data-delete-user="'+escapeHtml(user.id)+'">EXCLUIR</button></div>' : '<span class="user-badge">CONTA PRINCIPAL</span>';
       return '<article class="user-card'+(user.active ? '' : ' inactive')+'"><div><h4>'+escapeHtml(user.displayName)+'</h4><p>@'+escapeHtml(user.username)+' · '+(user.active ? 'ATIVO' : 'BLOQUEADO')+'</p><div class="user-badges">'+badges+'</div></div>'+actions+'</article>';
     }).join('');
   }
@@ -5043,8 +5432,32 @@ function renderHomeTasks(){
   el('userList').addEventListener('click', async event => {
     const editId = event.target.dataset.editUser;
     const toggleId = event.target.dataset.toggleUser;
-    const user = managedUsers.find(item => item.id === (editId || toggleId));
+    const deleteId = event.target.dataset.deleteUser;
+    const user = managedUsers.find(item => item.id === (editId || toggleId || deleteId));
     if(!user) return;
+    if(deleteId){
+      const confirmed = window.confirm('Excluir definitivamente o usuário \"'+user.displayName+'\" (@'+user.username+')? Ele perderá o acesso imediatamente.');
+      if(!confirmed) return;
+      event.target.disabled = true;
+      try{
+        await fetch('/api/admin/users?id=' + encodeURIComponent(user.id), {
+          method:'DELETE',
+          headers:{Accept:'application/json'},
+          cache:'no-store'
+        }).then(async response => {
+          const data = await response.json().catch(() => ({}));
+          if(response.status === 401) location.assign('/login?next=' + encodeURIComponent(location.pathname));
+          if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL EXCLUIR O USUÁRIO.');
+        });
+        if(el('userEditId').value === user.id) resetUserForm();
+        await loadAdminUsers();
+        setUserFormStatus('Usuário excluído definitivamente.', 'success');
+      }catch(error){
+        setUserFormStatus(error.message, 'error');
+        event.target.disabled = false;
+      }
+      return;
+    }
     if(editId){
       el('userEditId').value = user.id;
       el('userDisplayName').value = user.displayName;
@@ -5098,6 +5511,7 @@ function renderHomeTasks(){
       await loadTasks();
       await loadTaskAgenda();
       renderHomeTasks();
+      startTaskReminderMonitor();
     }
     await verifyIosStorage();
     prepareIosInstallHint();
