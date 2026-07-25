@@ -65,6 +65,29 @@ export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
 
+  const url = new URL(request.url);
+  if (url.searchParams.get("scope") === "task-agenda") {
+    const from = (url.searchParams.get("from") || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) {
+      return jsonResponse({ error: "DATA INICIAL INVÁLIDA." }, 400);
+    }
+    try {
+      const database = await getD1();
+      const result = await database
+        .prepare(
+          `SELECT state_key AS stateKey, value_json AS value
+           FROM shared_state
+           WHERE state_key LIKE 'tarefas:%' AND state_key > ?1
+           ORDER BY state_key ASC`,
+        )
+        .bind(`tarefas:${from}`)
+        .all();
+      return jsonResponse({ items: result.results ?? [] });
+    } catch {
+      return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR A AGENDA." }, 500);
+    }
+  }
+
   const key = stateKey(request);
   if (!validStateKey(key)) return jsonResponse({ error: "CHAVE INVÁLIDA." }, 400);
 
