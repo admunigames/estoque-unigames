@@ -1162,12 +1162,10 @@
   padding:4px 6px; border-radius:6px; background:rgba(36,79,131,.1);
 }
 .home-task-check{
-  flex:0 0 18px; width:18px; height:18px; border-radius:50%;
-  border:2px solid currentColor; display:grid; place-items:center;
+  flex:0 0 18px; width:18px; height:18px; margin:0; cursor:pointer;
+  accent-color:#244f83;
 }
-.home-task-row.done .home-task-check{background:#244f83; border-color:#244f83; color:#fff;}
-.home-task-check::after{content:'✓'; font:800 10px/1 var(--sans); display:none;}
-.home-task-row.done .home-task-check::after{display:block;}
+.home-task-check:focus-visible{outline:2px solid #244f83; outline-offset:3px;}
 .home-task-text{flex:1; min-width:0; font:600 12px/1.45 var(--sans); overflow-wrap:anywhere;}
 .home-tasks-empty{
   padding:18px; border-radius:11px; background:rgba(236,244,251,.76);
@@ -4403,6 +4401,121 @@
   el('btnPullCsv').addEventListener('click', exportPullCsv);
   el('btnPullExcel').addEventListener('click', exportPullExcel);
 
+  function taskStorageKey(){ return 'tarefas:' + el('taskDate').value; }
+  function normalizeTaskData(data){
+    const source = data && typeof data === 'object' ? data : {};
+    const tasks = Array.isArray(source.tasks) ? source.tasks.map((task, index) => ({
+      id:String(task && task.id ? task.id : 'legacy-'+index),
+      time:task && typeof task.time === 'string' ? task.time : '',
+      text:task && typeof task.text === 'string' ? task.text : '',
+      done:Boolean(task && task.done)
+    })) : [];
+    return {tasks, notes:typeof source.notes === 'string' ? source.notes : ''};
+  }
+  function readTaskData(){
+    try{
+      const data = JSON.parse(el('taskList').dataset.taskData || '{}');
+      return normalizeTaskData(data);
+    } catch(error){ return {tasks:[], notes:''}; }
+  }
+  function updateTaskSummary(tasks){
+    const done = tasks.filter(task => task.done).length;
+    el('taskCardTotal').textContent = tasks.length;
+    el('taskCardDone').textContent = done;
+    el('taskCardPending').textContent = tasks.length - done;
+    el('taskMeta').textContent = tasks.length ? done+' concluída'+(done===1?'':'s')+' de '+tasks.length : 'Nenhuma tarefa cadastrada';
+  }
+  function renderTasks(data){
+    const normalized = normalizeTaskData(data);
+    const tasks = normalized.tasks.slice().sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+    el('taskList').dataset.taskData = JSON.stringify({tasks, notes:normalized.notes});
+    el('taskNotes').value = normalized.notes;
+    updateTaskSummary(tasks);
+    el('taskList').innerHTML = tasks.length ? tasks.map(task =>
+      '<div class="task-row'+(task.done ? ' done' : '')+'">'+
+        '<input type="checkbox" data-task-done="'+escapeHtml(task.id)+'" '+(task.done ? 'checked' : '')+' aria-label="Marcar tarefa como concluída">'+
+        (task.time ? '<span class="task-time">'+escapeHtml(task.time)+'</span>' : '')+
+        '<span class="task-text">'+escapeHtml(task.text || '')+'</span>'+
+        '<button class="task-remove" type="button" data-task-remove="'+escapeHtml(task.id)+'">REMOVER</button></div>'
+    ).join('') : '<div class="task-empty">Nenhuma tarefa cadastrada para esta data.</div>';
+  }
+  async function saveTaskData(data){
+    const normalized = normalizeTaskData(data);
+    await storage.set(taskStorageKey(), JSON.stringify(normalized));
+    renderTasks(normalized); renderHomeTasks();
+  }
+  async function loadTasks(){
+    if(!el('taskDate').value) return;
+    try{
+      const result = await storage.get(taskStorageKey());
+      const saved = result && result.value ? JSON.parse(result.value) : {};
+      renderTasks(normalizeTaskData(saved));
+    } catch(error){ renderTasks({tasks:[], notes:''}); el('taskMeta').textContent = 'Não foi possível carregar as tarefas.'; }
+  }
+  async function addTask(){
+    const text = el('taskInputText').value.trim();
+    if(!text){ el('taskInputText').focus(); return; }
+    const data = readTaskData();
+    data.tasks.push({id:Date.now().toString(36), time:el('taskInputTime').value, text, done:false});
+    try{ await saveTaskData(data); el('taskInputText').value=''; el('taskInputTime').value=''; el('taskInputText').focus(); }
+    catch(error){ showError('Não foi possível salvar a tarefa. Tente novamente.'); }
+  }
+  let taskNotesTimer;
+  el('taskDate').value = new Date().toISOString().slice(0,10);
+  el('taskDate').addEventListener('change', loadTasks);
+  el('btnAddTask').addEventListener('click', addTask);
+  el('taskInputText').addEventListener('keydown', event => { if(event.key === 'Enter') addTask(); });
+  el('taskList').addEventListener('change', async event => {
+    const id = event.target.dataset.taskDone; if(!id) return;
+    const data = readTaskData();
+    const task = data.tasks.find(item => item.id === id);
+    if(!task) return;
+    task.done = event.target.checked;
+    event.target.closest('.task-row').classList.toggle('done', task.done);
+    try{ await saveTaskData(data); }
+    catch(error){ task.done = !task.done; renderTasks(data); showError('Não foi possível atualizar a tarefa. Tente novamente.'); }
+  });
+  el('taskList').addEventListener('click', async event => {
+    const id = event.target.dataset.taskRemove; if(!id) return;
+    const data = readTaskData();
+    data.tasks = data.tasks.filter(item => item.id !== id);
+    try{ await saveTaskData(data); }
+    catch(error){ showError('Não foi possível remover a tarefa. Tente novamente.'); }
+  });
+  el('taskNotes').addEventListener('input', () => {
+    clearTimeout(taskNotesTimer); taskNotesTimer = setTimeout(async () => {
+      const data = readTaskData(); data.notes = el('taskNotes').value;
+      try{ await saveTaskData(data); } catch(error){ showError('Não foi possível salvar as anotações.'); }
+    },450);
+  });
+  el('btnClearTaskDay').addEventListener('click', async () => { if(confirm('Limpar todas as tarefas e anotações desta data?')) await saveTaskData({tasks:[],notes:''}); });
+  el('btnDownloadTaskTxt').addEventListener('click', () => {
+    const data = readTaskData();
+    const date = el('taskDate').value;
+    const tasks = data.tasks.slice().sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+    const lines = [
+      'TAREFAS DO DIA — ' + (date ? date.split('-').reverse().join('/') : 'SEM DATA'),
+      '',
+      'AGENDA DO DIA'
+    ];
+    if(tasks.length){
+      tasks.forEach(task => lines.push((task.done ? '[X] ' : '[ ] ') + (task.time ? task.time + ' — ' : '') + task.text));
+    } else {
+      lines.push('Nenhuma tarefa cadastrada.');
+    }
+    lines.push('', 'ATIVIDADES COMPLEMENTARES', data.notes.trim() || 'Nenhuma atividade complementar registrada.');
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'tarefas-' + (date || 'sem-data') + '.txt';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  loadTasks();
+
   let documentTitleBeforePrint = '';
 
   el('btnPdf').addEventListener('click', () => {
@@ -4476,7 +4589,7 @@ function renderHomeTasks(){
       }
       let data;
       try{ data = JSON.parse(result.value); } catch(e){ data = {}; }
-      const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+      const tasks = normalizeTaskData(data).tasks;
       if(tasks.length === 0){
         list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
         return;
@@ -4485,7 +4598,7 @@ function renderHomeTasks(){
       list.innerHTML = sorted.map(task =>
         '<div class="home-task-row'+(task.done ? ' done' : '')+'">'+
           (task.time ? '<span class="home-task-time">'+escapeHtml(task.time)+'</span>' : '')+
-          '<span class="home-task-check" aria-hidden="true"></span>'+
+          '<input class="home-task-check" type="checkbox" data-home-task-done="'+escapeHtml(task.id)+'" '+(task.done ? 'checked' : '')+' aria-label="Marcar tarefa como concluída">'+
           '<span class="home-task-text">'+escapeHtml(task.text || '')+'</span>'+
         '</div>'
       ).join('');
@@ -4493,6 +4606,27 @@ function renderHomeTasks(){
       list.innerHTML = '<div class="home-tasks-empty">Não foi possível carregar as tarefas.</div>';
     });
   }
+  el('homeTasksList').addEventListener('change', async event => {
+    const id = event.target.dataset.homeTaskDone;
+    if(!id) return;
+    const todayKey = new Date().toISOString().slice(0,10);
+    const row = event.target.closest('.home-task-row');
+    row.classList.toggle('done', event.target.checked);
+    try{
+      const result = await storage.get('tarefas:' + todayKey);
+      const data = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
+      const task = data.tasks.find(item => item.id === id);
+      if(!task) throw new Error('TAREFA NÃO ENCONTRADA');
+      task.done = event.target.checked;
+      await storage.set('tarefas:' + todayKey, JSON.stringify(data));
+      if(el('taskDate').value === todayKey) renderTasks(data);
+      renderHomeTasks();
+    } catch(error){
+      event.target.checked = !event.target.checked;
+      row.classList.toggle('done', event.target.checked);
+      showError('Não foi possível atualizar a tarefa. Tente novamente.');
+    }
+  });
   async function initializeApp(){
     setDropzonesDisabled(true);
     renderAll();
