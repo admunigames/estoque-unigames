@@ -312,6 +312,66 @@ test("envia documentos de compras em partes e trata respostas não JSON", async 
   assert.equal(JSON.parse(hosting).r2, "UPLOADS");
 });
 
+test("isola tarefas por usuário e oferece prioridade, recorrência e lembretes push", async () => {
+  const [html, sharedState, workerSource, pushRoute, serviceWorker, viteConfig] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/shared-state/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/push/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
+      readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(sharedState, /return `tarefas:\$\{userId\}:\$\{taskMatch\[1\]\}`/);
+  assert.match(sharedState, /const prefix = `tarefas:\$\{userId\}:`/);
+  assert.match(html, /id="taskInputPriority"/);
+  assert.match(html, /value="urgent">URGENTE/);
+  assert.match(html, /id="taskInputRecurrence"/);
+  assert.match(html, /value="daily">DIÁRIA/);
+  assert.match(html, /value="weekly">SEMANAL/);
+  assert.match(html, /value="monthly">MENSAL/);
+  assert.match(html, /syncTaskRecurrence/);
+  assert.match(html, /pushManager\.subscribe/);
+  assert.match(pushRoute, /INSERT INTO push_subscriptions/);
+  assert.match(workerSource, /dispatchDueTaskNotifications/);
+  assert.match(workerSource, /webPush\.sendNotification/);
+  assert.match(viteConfig, /crons: \["\* \* \* \* \*"\]/);
+  assert.match(serviceWorker, /addEventListener\("push"/);
+});
+
+test("inclui grupos, recuperação, entregas, preferências, PWA e backup automático", async () => {
+  const [html, workerSource, schema, migration, manifest, serviceWorker] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0002_square_sandman.sql", import.meta.url), "utf8"),
+      readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
+      readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(workerSource, /ACCESS_GROUP_PERMISSIONS/);
+  assert.match(workerSource, /\/recuperar-senha/);
+  assert.match(workerSource, /DELETE FROM app_users WHERE id = \?1/);
+  assert.match(workerSource, /automatic-backups\/\$\{date\}\.json\.aes/);
+  assert.match(workerSource, /AES-GCM/);
+  assert.match(html, /id="partialDeliveryDialog"/);
+  assert.match(html, /\/api\/compras\/deliveries/);
+  assert.match(html, /id="appearanceDialog"/);
+  assert.match(html, /\/api\/preferences/);
+  assert.match(html, /beforeinstallprompt/);
+  assert.match(html, /estoque_offline_queue:/);
+  assert.match(html, /id="homeTaskChartDone"/);
+  assert.match(html, /data-quick-action="task"/);
+  assert.match(html, /\/api\/health/);
+  assert.match(schema, /purchaseDeliveryRecords/);
+  assert.match(schema, /userPreferences/);
+  assert.match(migration, /CREATE TABLE `password_reset_requests`/);
+  assert.equal(JSON.parse(manifest).display, "standalone");
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v4"/);
+});
+
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
   const html = await readFile(
     new URL("../public/estoque.html", import.meta.url),

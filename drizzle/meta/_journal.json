@@ -15,6 +15,20 @@
       "when": 1784996028686,
       "tag": "0001_safe_lightspeed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1785013019062,
+      "tag": "0002_square_sandman",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1785013066765,
+      "tag": "0003_wide_lester",
+      "breakpoints": true
     }
   ]
 }

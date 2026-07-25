@@ -5,6 +5,7 @@ type JsonMap = Record<string, unknown>;
 
 const MAX_VALUE_BYTES = 5 * 1024 * 1024;
 const encoder = new TextEncoder();
+const TASK_KEY_PATTERN = /^tarefas:(\d{4}-\d{2}-\d{2})$/;
 
 function asRecord(value: unknown): JsonMap {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -37,6 +38,19 @@ function jsonResponse(body: JsonMap, status = 200): Response {
 
 function stateKey(request: Request): string {
   return (new URL(request.url).searchParams.get("key") || "").trim();
+}
+
+function authenticatedUserId(request: Request): string {
+  const value = (request.headers.get("x-unigames-user-id") || "").trim();
+  return /^[a-z0-9._-]{3,80}$/i.test(value) ? value : "";
+}
+
+function scopedStateKey(request: Request, key: string): string {
+  const taskMatch = TASK_KEY_PATTERN.exec(key);
+  if (!taskMatch) return key;
+  const userId = authenticatedUserId(request);
+  if (!userId) throw new Error("USUÁRIO NÃO IDENTIFICADO");
+  return `tarefas:${userId}:${taskMatch[1]}`;
 }
 
 function validJsonValue(value: unknown): value is string {
@@ -73,16 +87,46 @@ export async function GET(request: Request) {
     }
     try {
       const database = await getD1();
+      const userId = authenticatedUserId(request);
+      if (!userId) return jsonResponse({ error: "USUÁRIO NÃO IDENTIFICADO." }, 401);
+      const prefix = `tarefas:${userId}:`;
       const result = await database
         .prepare(
           `SELECT state_key AS stateKey, value_json AS value
            FROM shared_state
-           WHERE state_key LIKE 'tarefas:%' AND state_key > ?1
+           WHERE substr(state_key, 1, length(?1)) = ?1 AND state_key > ?2
            ORDER BY state_key ASC`,
         )
-        .bind(`tarefas:${from}`)
-        .all();
-      return jsonResponse({ items: result.results ?? [] });
+        .bind(prefix, `${prefix}${from}`)
+        .all<{ stateKey: string; value: string }>();
+      const items = (result.results ?? []).map((item) => ({
+        ...item,
+        stateKey: `tarefas:${String(item.stateKey || "").slice(prefix.length)}`,
+      }));
+
+      // A conta principal mantém acesso às tarefas criadas antes da separação
+      // por usuário. Quando um dia antigo for salvo novamente, ele passa
+      // automaticamente para a chave privada da conta principal.
+      if (userId === "env-admin") {
+        const legacy = await database
+          .prepare(
+            `SELECT state_key AS stateKey, value_json AS value
+             FROM shared_state
+             WHERE length(state_key) = 18
+               AND state_key LIKE 'tarefas:____-__-__'
+               AND state_key > ?1
+             ORDER BY state_key ASC`,
+          )
+          .bind(`tarefas:${from}`)
+          .all<{ stateKey: string; value: string }>();
+        const existingDates = new Set(items.map((item) => String(item.stateKey)));
+        for (const item of legacy.results ?? []) {
+          if (!existingDates.has(String(item.stateKey))) items.push(item);
+        }
+        items.sort((left, right) => String(left.stateKey).localeCompare(String(right.stateKey)));
+      }
+
+      return jsonResponse({ items });
     } catch {
       return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR A AGENDA." }, 500);
     }
@@ -92,7 +136,11 @@ export async function GET(request: Request) {
   if (!validStateKey(key)) return jsonResponse({ error: "CHAVE INVÁLIDA." }, 400);
 
   try {
-    const row = await readState(key);
+    const resolvedKey = scopedStateKey(request, key);
+    let row = await readState(resolvedKey);
+    if (!row && authenticatedUserId(request) === "env-admin" && TASK_KEY_PATTERN.test(key)) {
+      row = await readState(key);
+    }
     return jsonResponse({
       value: row?.value ?? null,
       version: row?.version ?? 0,
@@ -119,12 +167,13 @@ export async function PUT(request: Request) {
 
     const now = new Date().toISOString();
     const database = await getD1();
+    const resolvedKey = scopedStateKey(request, key);
     if (ifAbsent) {
       await database
         .prepare(
           "INSERT OR IGNORE INTO shared_state (state_key, value_json, version, updated_at) VALUES (?1, ?2, 1, ?3)",
         )
-        .bind(key, value, now)
+        .bind(resolvedKey, value, now)
         .run();
     } else {
       await database
@@ -136,11 +185,11 @@ export async function PUT(request: Request) {
              version = shared_state.version + 1,
              updated_at = excluded.updated_at`,
         )
-        .bind(key, value, now)
+        .bind(resolvedKey, value, now)
         .run();
     }
 
-    const row = await readState(key);
+    const row = await readState(resolvedKey);
     return jsonResponse({
       value: row?.value ?? value,
       version: row?.version ?? 1,
@@ -160,13 +209,13 @@ export async function DELETE(request: Request) {
 
   try {
     const database = await getD1();
+    const resolvedKey = scopedStateKey(request, key);
     await database
       .prepare("DELETE FROM shared_state WHERE state_key = ?1")
-      .bind(key)
+      .bind(resolvedKey)
       .run();
     return jsonResponse({ deleted: true });
   } catch {
     return jsonResponse({ error: "NÃO FOI POSSÍVEL APAGAR DO BANCO COMPARTILHADO." }, 500);
   }
 }
-

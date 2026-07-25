@@ -18,6 +18,9 @@ const localBindingConfig = {
     binding: "ASSETS",
     run_worker_first: true,
   },
+  triggers: {
+    crons: ["* * * * *"],
+  },
   d1_databases: d1
     ? [
         {
@@ -61,4 +64,3 @@ export default defineConfig(async () => {
     ],
   };
 });
-

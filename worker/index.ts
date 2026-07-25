@@ -5,6 +5,7 @@ import {
   DEFAULT_IMAGE_SIZES,
 } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import webPush from "web-push";
 
 interface Env {
   ASSETS: Fetcher;
@@ -13,6 +14,9 @@ interface Env {
   APP_LOGIN_USER?: string;
   APP_LOGIN_PASSWORD?: string;
   APP_SESSION_SECRET?: string;
+  VAPID_PUBLIC_KEY?: string;
+  VAPID_PRIVATE_KEY?: string;
+  VAPID_SUBJECT?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -37,10 +41,12 @@ type LoginConfig = {
 };
 
 type Permission = "tasks" | "purchases" | "stock" | "database" | "pulls";
+type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "custom";
 type AuthenticatedUser = {
   id: string;
   username: string;
   displayName: string;
+  accessGroup: AccessGroup;
   role: "admin" | "user";
   permissions: Permission[];
   sessionVersion: number;
@@ -49,14 +55,17 @@ type StoredUserRow = {
   id: string;
   username: string;
   displayName: string;
+  email: string;
   passwordHash: string;
   passwordSalt: string;
   role: string;
+  accessGroup: string;
   permissionsJson: string;
   active: number;
   sessionVersion: number;
   createdAt: string;
   updatedAt: string;
+  recoveryRequested?: number;
 };
 
 const SESSION_COOKIE = "unigames_session";
@@ -70,7 +79,19 @@ const DISPLAY_NAME_HEADER = "x-unigames-display-name";
 const ROLE_HEADER = "x-unigames-role";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
 const ALL_PERMISSIONS: Permission[] = ["tasks", "purchases", "stock", "database", "pulls"];
-const PUBLIC_ASSET_PATHS = new Set(["/favicon.svg", "/og.png"]);
+const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
+  administrator: [...ALL_PERMISSIONS],
+  purchases: ["tasks", "purchases"],
+  fiscal: ["stock", "database", "pulls"],
+  operator: ["tasks"],
+  custom: [],
+};
+const PUBLIC_ASSET_PATHS = new Set([
+  "/favicon.svg",
+  "/og.png",
+  "/manifest.webmanifest",
+  "/service-worker.js",
+]);
 const APP_ROUTE_PATHS = new Set([
   "/inicio",
   "/puxadas",
@@ -90,6 +111,7 @@ const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 let appUsersReady: Promise<void> | null = null;
+let automaticBackupDate = "";
 
 function loginConfig(env: Env): LoginConfig | null {
   const username = env.APP_LOGIN_USER?.trim() ?? "";
@@ -166,6 +188,26 @@ function normalizePermissions(value: unknown): Permission[] {
   return ALL_PERMISSIONS.filter((permission) => value.includes(permission));
 }
 
+function normalizeAccessGroup(value: unknown): AccessGroup {
+  return value === "administrator" ||
+    value === "purchases" ||
+    value === "fiscal" ||
+    value === "operator" ||
+    value === "custom"
+    ? value
+    : "custom";
+}
+
+function accessForGroup(group: AccessGroup, requested: unknown) {
+  if (group === "custom") {
+    return { role: "user" as const, permissions: normalizePermissions(requested) };
+  }
+  if (group === "administrator") {
+    return { role: "admin" as const, permissions: [...ALL_PERMISSIONS] };
+  }
+  return { role: "user" as const, permissions: [...ACCESS_GROUP_PERMISSIONS[group]] };
+}
+
 function permissionsFromJson(value: string): Permission[] {
   try {
     return normalizePermissions(JSON.parse(value));
@@ -176,10 +218,14 @@ function permissionsFromJson(value: string): Permission[] {
 
 function storedUser(row: StoredUserRow): AuthenticatedUser {
   const role = row.role === "admin" ? "admin" : "user";
+  const accessGroup = role === "admin"
+    ? "administrator"
+    : normalizeAccessGroup(row.accessGroup);
   return {
     id: row.id,
     username: row.username,
     displayName: row.displayName,
+    accessGroup,
     role,
     permissions: role === "admin" ? [...ALL_PERMISSIONS] : permissionsFromJson(row.permissionsJson),
     sessionVersion: row.sessionVersion,
@@ -191,6 +237,7 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
     id: "env-admin",
     username: config.username,
     displayName: "Administrador principal",
+    accessGroup: "administrator",
     role: "admin",
     permissions: [...ALL_PERMISSIONS],
     sessionVersion: 1,
@@ -205,9 +252,11 @@ async function ensureAppUsersTable(database: D1Database): Promise<void> {
           id TEXT PRIMARY KEY NOT NULL,
           username TEXT NOT NULL,
           display_name TEXT NOT NULL,
+          email TEXT NOT NULL DEFAULT '',
           password_hash TEXT NOT NULL,
           password_salt TEXT NOT NULL,
           role TEXT NOT NULL DEFAULT 'user',
+          access_group TEXT NOT NULL DEFAULT 'operator',
           permissions_json TEXT NOT NULL DEFAULT '[]',
           active INTEGER NOT NULL DEFAULT 1,
           session_version INTEGER NOT NULL DEFAULT 1,
@@ -231,7 +280,8 @@ async function readUserByUsername(database: D1Database, username: string) {
   return database
     .prepare(
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
-              password_salt AS passwordSalt, role, permissions_json AS permissionsJson,
+              email, password_salt AS passwordSalt, role, access_group AS accessGroup,
+              permissions_json AS permissionsJson,
               active, session_version AS sessionVersion, created_at AS createdAt,
               updated_at AS updatedAt
        FROM app_users WHERE lower(username) = lower(?1) LIMIT 1`,
@@ -245,7 +295,8 @@ async function readUserById(database: D1Database, id: string) {
   return database
     .prepare(
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
-              password_salt AS passwordSalt, role, permissions_json AS permissionsJson,
+              email, password_salt AS passwordSalt, role, access_group AS accessGroup,
+              permissions_json AS permissionsJson,
               active, session_version AS sessionVersion, created_at AS createdAt,
               updated_at AS updatedAt
        FROM app_users WHERE id = ?1 LIMIT 1`,
@@ -388,17 +439,17 @@ function loginPage(options: {
     :root{color-scheme:dark;--bg:#06111d;--panel:#0b1b2c;--line:#2b5f8f;--accent:#65b8ff;--ink:#f5f9ff;--soft:#a9bfd3;}
     *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 10%,#173754 0,transparent 36%),radial-gradient(circle at 90% 90%,#102945 0,transparent 34%),var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
     main{width:min(430px,100%);background:linear-gradient(180deg,rgba(17,42,66,.98),rgba(7,24,40,.98));border:1px solid rgba(101,184,255,.38);border-radius:20px;padding:34px;box-shadow:0 28px 80px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.05)}
-    .brand{display:flex;align-items:center;gap:14px;margin-bottom:28px}.mark{display:grid;place-items:center;width:48px;height:48px;border:1px solid var(--accent);border-radius:14px;color:var(--accent);font-weight:900;box-shadow:0 0 24px rgba(101,184,255,.18)}
+    .brand{display:flex;align-items:center;gap:14px;margin-bottom:28px}.mark{display:grid;place-items:center;width:52px;height:52px;border:1px solid var(--accent);border-radius:15px;background:rgba(101,184,255,.08);box-shadow:0 0 24px rgba(101,184,255,.18)}.mark img{width:34px;height:34px}
     h1{font-size:24px;margin:0 0 5px}.brand p,.intro{margin:0;color:var(--soft)}.intro{font-size:14px;line-height:1.55;margin-bottom:24px}
     label{display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 8px;color:#dcecff}input{width:100%;border:1px solid rgba(101,184,255,.35);border-radius:11px;background:#071522;color:var(--ink);padding:13px 14px;font:inherit;outline:none}input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(101,184,255,.13)}
-    button{width:100%;margin-top:22px;border:0;border-radius:11px;padding:14px;background:linear-gradient(135deg,#4f9fe5,#76c4ff);color:#04111d;font-weight:900;font-size:14px;cursor:pointer}button:hover{filter:brightness(1.06)}button:disabled{opacity:.45;cursor:not-allowed}.notice{border:1px solid rgba(255,112,112,.45);background:rgba(126,28,28,.24);color:#ffd6d6;border-radius:10px;padding:11px 12px;font-size:13px;margin-bottom:18px}.security{margin:22px 0 0;color:#7894aa;text-align:center;font-size:11px;line-height:1.5}
+    button{width:100%;margin-top:22px;border:0;border-radius:11px;padding:14px;background:linear-gradient(135deg,#4f9fe5,#76c4ff);color:#04111d;font-weight:900;font-size:14px;cursor:pointer}button:hover{filter:brightness(1.06)}button:disabled{opacity:.45;cursor:not-allowed}.notice{border:1px solid rgba(255,112,112,.45);background:rgba(126,28,28,.24);color:#ffd6d6;border-radius:10px;padding:11px 12px;font-size:13px;margin-bottom:18px}.help{display:block;margin-top:15px;color:#9fd4ff;text-align:center;font-size:12px;font-weight:700;text-decoration:none}.help:hover{text-decoration:underline}.security{margin:22px 0 0;color:#7894aa;text-align:center;font-size:11px;line-height:1.5}
     @media(max-width:480px){main{padding:27px 21px;border-radius:16px}}
   </style>
 </head>
 <body>
   <main>
-    <div class="brand"><div class="mark">EU</div><div><h1>Estoque Unigames</h1><p>Acesso restrito</p></div></div>
-    <p class="intro">Entre com as credenciais fornecidas pela administração para acessar o controle de estoque e compras.</p>
+    <div class="brand"><div class="mark"><img src="/favicon.svg" alt=""></div><div><h1>Central Unigames</h1><p>Operações, tarefas e estoque</p></div></div>
+    <p class="intro">Entre com seu usuário individual. Seus módulos, preferências e tarefas serão carregados de forma segura.</p>
     ${notice}
     <form method="post" action="/login">
       <input type="hidden" name="next" value="${escapeHtml(next)}">
@@ -408,6 +459,7 @@ function loginPage(options: {
       <input id="password" name="password" type="password" autocomplete="current-password" required${disabled}>
       <button type="submit"${disabled}>Entrar no sistema</button>
     </form>
+    <a class="help" href="/recuperar-senha">Esqueci minha senha</a>
     <p class="security">Sessão protegida e válida por 12 horas. Não compartilhe a senha em canais públicos.</p>
   </main>
 </body>
@@ -419,13 +471,101 @@ function loginPage(options: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store",
       "content-security-policy":
-        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+        "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
       "referrer-policy": "no-referrer",
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
       "x-robots-tag": "noindex, nofollow",
     },
   });
+}
+
+function passwordRecoveryPage(message = "", success = false): Response {
+  const notice = message
+    ? `<div class="notice ${success ? "success" : ""}" role="status">${escapeHtml(message)}</div>`
+    : "";
+  const html = `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Recuperar senha · Central Unigames</title>
+<style>
+:root{color-scheme:dark;--bg:#06111d;--accent:#65b8ff;--ink:#f5f9ff;--soft:#a9bfd3}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 10%,#173754 0,transparent 36%),radial-gradient(circle at 90% 90%,#102945 0,transparent 34%),var(--bg);font-family:Arial,sans-serif;color:var(--ink)}
+main{width:min(440px,100%);padding:34px;border:1px solid rgba(101,184,255,.38);border-radius:20px;background:linear-gradient(180deg,rgba(17,42,66,.98),rgba(7,24,40,.98));box-shadow:0 28px 80px rgba(0,0,0,.48)}
+.brand{display:flex;align-items:center;gap:13px}.brand img{width:45px;height:45px;padding:8px;border:1px solid rgba(101,184,255,.45);border-radius:13px}h1{margin:0;font-size:22px}.brand p,p{color:var(--soft);line-height:1.55}.intro{font-size:14px;margin:22px 0}
+label{display:block;margin:15px 0 8px;color:#dcecff;font-size:12px;font-weight:800;letter-spacing:.08em}input{width:100%;padding:13px 14px;border:1px solid rgba(101,184,255,.35);border-radius:11px;background:#071522;color:var(--ink);font:inherit;outline:none}input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(101,184,255,.13)}
+button{width:100%;margin-top:20px;padding:14px;border:0;border-radius:11px;background:linear-gradient(135deg,#4f9fe5,#76c4ff);color:#04111d;font-weight:900;cursor:pointer}.back{display:block;margin-top:17px;color:#9fd4ff;text-align:center;text-decoration:none;font-size:12px;font-weight:800}
+.notice{margin:18px 0 0;padding:11px 12px;border:1px solid rgba(255,112,112,.45);border-radius:10px;background:rgba(126,28,28,.24);color:#ffd6d6;font-size:13px}.notice.success{border-color:rgba(92,211,151,.45);background:rgba(21,96,62,.25);color:#c9ffe3}
+</style></head><body><main>
+<div class="brand"><img src="/favicon.svg" alt=""><div><h1>Recuperar senha</h1><p>Central Unigames</p></div></div>
+<p class="intro">Informe seu usuário. A solicitação ficará visível para o administrador, que poderá cadastrar uma nova senha com segurança.</p>
+${notice}
+<form method="post" action="/recuperar-senha">
+<label for="username">USUÁRIO DE LOGIN</label>
+<input id="username" name="username" autocomplete="username" minlength="3" maxlength="40" required>
+<button type="submit">Solicitar recuperação</button>
+</form>
+<a class="back" href="/login">← Voltar para entrar</a>
+</main></body></html>`;
+  return new Response(html, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "content-security-policy":
+        "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "x-robots-tag": "noindex, nofollow",
+    },
+  });
+}
+
+async function handlePasswordRecovery(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  if (request.method === "GET" || request.method === "HEAD") {
+    return passwordRecoveryPage();
+  }
+  if (request.method !== "POST") {
+    return new Response("Método não permitido", {
+      status: 405,
+      headers: { allow: "GET, HEAD, POST" },
+    });
+  }
+  if (isRateLimited(request)) {
+    return passwordRecoveryPage("Muitas solicitações. Aguarde alguns minutos e tente novamente.");
+  }
+  try {
+    const form = await request.formData();
+    const username = String(form.get("username") ?? "").trim();
+    const row = await readUserByUsername(env.DB, username);
+    if (row && row.active === 1) {
+      const pending = await env.DB
+        .prepare(
+          "SELECT id FROM password_reset_requests WHERE user_id=?1 AND status='pending' LIMIT 1",
+        )
+        .bind(row.id)
+        .first<{ id: string }>();
+      if (!pending) {
+        await env.DB
+          .prepare(
+            `INSERT INTO password_reset_requests (id, user_id, status, requested_at)
+             VALUES (?1, ?2, 'pending', CURRENT_TIMESTAMP)`,
+          )
+          .bind(crypto.randomUUID(), row.id)
+          .run();
+      }
+    }
+    clearFailures(request);
+    return passwordRecoveryPage(
+      "Solicitação registrada. Peça ao administrador para definir uma nova senha no cadastro do usuário.",
+      true,
+    );
+  } catch {
+    recordFailure(request);
+    return passwordRecoveryPage("Não foi possível registrar a solicitação agora. Tente novamente.");
+  }
 }
 
 async function handleLogin(request: Request, env: Env, url: URL): Promise<Response> {
@@ -604,6 +744,7 @@ function sessionResponse(user: AuthenticatedUser): Response {
     id: user.id,
     username: user.username,
     displayName: user.displayName,
+    accessGroup: user.accessGroup,
     role: user.role,
     permissions: user.permissions,
   }, { headers: { "cache-control": "no-store" } });
@@ -623,9 +764,12 @@ function publicUser(row: StoredUserRow) {
     id: row.id,
     username: row.username,
     displayName: row.displayName,
+    email: row.email,
     role: row.role === "admin" ? "admin" : "user",
+    accessGroup: row.role === "admin" ? "administrator" : normalizeAccessGroup(row.accessGroup),
     permissions: permissionsFromJson(row.permissionsJson),
     active: row.active === 1,
+    recoveryRequested: row.recoveryRequested === 1,
     managed: true,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -636,9 +780,14 @@ async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
   await ensureAppUsersTable(env.DB);
   const result = await env.DB.prepare(
     `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
-            password_salt AS passwordSalt, role, permissions_json AS permissionsJson,
+            email, password_salt AS passwordSalt, role, access_group AS accessGroup,
+            permissions_json AS permissionsJson,
             active, session_version AS sessionVersion, created_at AS createdAt,
-            updated_at AS updatedAt
+            updated_at AS updatedAt,
+            EXISTS(
+              SELECT 1 FROM password_reset_requests request
+              WHERE request.user_id = app_users.id AND request.status = 'pending'
+            ) AS recoveryRequested
      FROM app_users ORDER BY display_name COLLATE NOCASE`,
   ).all<StoredUserRow>();
   return Response.json({
@@ -646,9 +795,12 @@ async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
       id: "env-admin",
       username: config.username,
       displayName: "Administrador principal",
+      email: "",
       role: "admin",
+      accessGroup: "administrator",
       permissions: ALL_PERMISSIONS,
       active: true,
+      recoveryRequested: false,
       managed: false,
     }, ...(result.results ?? []).map(publicUser)],
   });
@@ -680,7 +832,12 @@ async function handleAdminUsers(
     try {
       const existing = await readUserById(env.DB, id);
       if (!existing) return jsonError("USUÁRIO NÃO ENCONTRADO.", 404);
-      await env.DB.prepare("DELETE FROM app_users WHERE id = ?1").bind(id).run();
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM password_reset_requests WHERE user_id = ?1").bind(id),
+        env.DB.prepare("DELETE FROM user_preferences WHERE user_id = ?1").bind(id),
+        env.DB.prepare("DELETE FROM push_subscriptions WHERE user_id = ?1").bind(id),
+        env.DB.prepare("DELETE FROM app_users WHERE id = ?1").bind(id),
+      ]);
       return Response.json({ deleted: true, id });
     } catch (error) {
       console.error("Não foi possível excluir o usuário.", error);
@@ -697,13 +854,18 @@ async function handleAdminUsers(
 
   const username = String(body.username ?? "").trim().toLowerCase();
   const displayName = String(body.displayName ?? "").trim();
+  const email = String(body.email ?? "").trim().toLowerCase().slice(0, 200);
   const password = String(body.password ?? "");
-  const permissions = normalizePermissions(body.permissions);
+  const accessGroup = normalizeAccessGroup(body.accessGroup);
+  const access = accessForGroup(accessGroup, body.permissions);
   if (!validUsername(username)) {
     return jsonError("O USUÁRIO DEVE TER DE 3 A 40 CARACTERES: LETRAS, NÚMEROS, PONTO, HÍFEN OU _.", 400);
   }
   if (displayName.length < 2 || displayName.length > 80) {
     return jsonError("INFORME UM NOME ENTRE 2 E 80 CARACTERES.", 400);
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return jsonError("INFORME UM E-MAIL VÁLIDO OU DEIXE O CAMPO VAZIO.", 400);
   }
 
   try {
@@ -715,9 +877,20 @@ async function handleAdminUsers(
       const id = crypto.randomUUID();
       await env.DB.prepare(
         `INSERT INTO app_users
-          (id, username, display_name, password_hash, password_salt, role, permissions_json, active, session_version)
-         VALUES (?1, ?2, ?3, ?4, ?5, 'user', ?6, 1, 1)`,
-      ).bind(id, username, displayName, credential.hash, credential.salt, JSON.stringify(permissions)).run();
+          (id, username, display_name, email, password_hash, password_salt, role,
+           access_group, permissions_json, active, session_version)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, 1)`,
+      ).bind(
+        id,
+        username,
+        displayName,
+        email,
+        credential.hash,
+        credential.salt,
+        access.role,
+        accessGroup,
+        JSON.stringify(access.permissions),
+      ).run();
       const created = await readUserById(env.DB, id);
       return Response.json({ user: created ? publicUser(created) : null }, { status: 201 });
     }
@@ -732,16 +905,44 @@ async function handleAdminUsers(
     }
     if (password) {
       const credential = await hashPassword(password);
-      await env.DB.prepare(
-        `UPDATE app_users SET username=?1, display_name=?2, permissions_json=?3, active=?4,
-          password_hash=?5, password_salt=?6, session_version=session_version+1,
-          updated_at=CURRENT_TIMESTAMP WHERE id=?7`,
-      ).bind(username, displayName, JSON.stringify(permissions), active, credential.hash, credential.salt, id).run();
+      await env.DB.batch([
+        env.DB.prepare(
+          `UPDATE app_users SET username=?1, display_name=?2, email=?3, role=?4,
+            access_group=?5, permissions_json=?6, active=?7, password_hash=?8,
+            password_salt=?9, session_version=session_version+1,
+            updated_at=CURRENT_TIMESTAMP WHERE id=?10`,
+        ).bind(
+          username,
+          displayName,
+          email,
+          access.role,
+          accessGroup,
+          JSON.stringify(access.permissions),
+          active,
+          credential.hash,
+          credential.salt,
+          id,
+        ),
+        env.DB.prepare(
+          `UPDATE password_reset_requests SET status='resolved', resolved_at=CURRENT_TIMESTAMP
+           WHERE user_id=?1 AND status='pending'`,
+        ).bind(id),
+      ]);
     } else {
       await env.DB.prepare(
-        `UPDATE app_users SET username=?1, display_name=?2, permissions_json=?3, active=?4,
-          session_version=session_version+1, updated_at=CURRENT_TIMESTAMP WHERE id=?5`,
-      ).bind(username, displayName, JSON.stringify(permissions), active, id).run();
+        `UPDATE app_users SET username=?1, display_name=?2, email=?3, role=?4,
+          access_group=?5, permissions_json=?6, active=?7,
+          session_version=session_version+1, updated_at=CURRENT_TIMESTAMP WHERE id=?8`,
+      ).bind(
+        username,
+        displayName,
+        email,
+        access.role,
+        accessGroup,
+        JSON.stringify(access.permissions),
+        active,
+        id,
+      ).run();
     }
     const updated = await readUserById(env.DB, id);
     return Response.json({ user: updated ? publicUser(updated) : null });
@@ -750,6 +951,224 @@ async function handleAdminUsers(
     console.error("Não foi possível salvar o usuário.", error);
     if (/unique|constraint/i.test(message)) return jsonError("ESTE NOME DE USUÁRIO JÁ ESTÁ EM USO.", 409);
     return jsonError("NÃO FOI POSSÍVEL SALVAR O USUÁRIO.", 500);
+  }
+}
+
+function recifeDateTime(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Recife",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value || "";
+  return {
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    time: `${value("hour")}:${value("minute")}`,
+  };
+}
+
+async function encryptBackup(payload: unknown, secret: string) {
+  const keyMaterial = await crypto.subtle.digest("SHA-256", encoder.encode(secret));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyMaterial,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt"],
+  );
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = new Uint8Array(
+    await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encoder.encode(JSON.stringify(payload)),
+    ),
+  );
+  const result = new Uint8Array(iv.length + encrypted.length);
+  result.set(iv);
+  result.set(encrypted, iv.length);
+  return result;
+}
+
+async function createAutomaticBackup(env: Env, secret: string) {
+  const bucket = (env as { UPLOADS?: R2Bucket }).UPLOADS;
+  if (!bucket) return;
+  const { date } = recifeDateTime();
+  if (automaticBackupDate === date) return;
+  const objectKey = `automatic-backups/${date}.json.aes`;
+  try {
+    if (await bucket.head(objectKey)) {
+      automaticBackupDate = date;
+      return;
+    }
+    const [
+      sharedState,
+      users,
+      preferences,
+      deliveries,
+      resetRequests,
+    ] = await Promise.all([
+      env.DB.prepare(
+        "SELECT state_key AS stateKey, value_json AS value, version, updated_at AS updatedAt FROM shared_state",
+      ).all(),
+      env.DB.prepare(
+        `SELECT id, username, display_name AS displayName, email, password_hash AS passwordHash,
+                password_salt AS passwordSalt, role, access_group AS accessGroup,
+                permissions_json AS permissions, active, session_version AS sessionVersion,
+                created_at AS createdAt, updated_at AS updatedAt
+         FROM app_users`,
+      ).all(),
+      env.DB.prepare("SELECT * FROM user_preferences").all(),
+      env.DB.prepare("SELECT * FROM purchase_delivery_records").all(),
+      env.DB.prepare("SELECT * FROM password_reset_requests").all(),
+    ]);
+    const bytes = await encryptBackup({
+      app: "ESTOQUE_UNIGAMES_AUTOMATIC_BACKUP",
+      version: 1,
+      encryptedAt: new Date().toISOString(),
+      sharedState: sharedState.results ?? [],
+      users: users.results ?? [],
+      preferences: preferences.results ?? [],
+      purchaseDeliveries: deliveries.results ?? [],
+      passwordResetRequests: resetRequests.results ?? [],
+    }, secret);
+    await bucket.put(objectKey, bytes, {
+      httpMetadata: { contentType: "application/octet-stream" },
+      customMetadata: {
+        format: "AES-GCM",
+        ivBytes: "12",
+        createdAt: new Date().toISOString(),
+      },
+    });
+    automaticBackupDate = date;
+
+    const oldBackups = await bucket.list({ prefix: "automatic-backups/" });
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - 35);
+    const expired = oldBackups.objects
+      .filter((object) => object.uploaded < cutoff)
+      .map((object) => object.key);
+    if (expired.length) await bucket.delete(expired);
+  } catch (error) {
+    console.error("Não foi possível gerar o backup automático.", error);
+  }
+}
+
+type PushSubscriptionRow = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
+
+async function dispatchDueTaskNotifications(env: Env) {
+  const publicKey = env.VAPID_PUBLIC_KEY?.trim() || "";
+  const privateKey = env.VAPID_PRIVATE_KEY?.trim() || "";
+  const subject = env.VAPID_SUBJECT?.trim() || "";
+  if (!publicKey || !privateKey || !subject) return;
+
+  const now = recifeDateTime();
+  const nowMinutes =
+    Number(now.time.slice(0, 2)) * 60 + Number(now.time.slice(3, 5));
+  const result = await env.DB
+    .prepare(
+      `SELECT state_key AS stateKey, value_json AS value
+       FROM shared_state
+       WHERE state_key = ?1 OR state_key LIKE ?2`,
+    )
+    .bind(`tarefas:${now.date}`, `tarefas:%:${now.date}`)
+    .all<{ stateKey: string; value: string }>();
+
+  webPush.setVapidDetails(subject, publicKey, privateKey);
+  for (const row of result.results ?? []) {
+    const userId = row.stateKey === `tarefas:${now.date}`
+      ? "env-admin"
+      : row.stateKey.slice("tarefas:".length, -(now.date.length + 1));
+    if (!userId) continue;
+    let tasks: Array<Record<string, unknown>> = [];
+    try {
+      const parsed = JSON.parse(row.value) as { tasks?: unknown };
+      tasks = Array.isArray(parsed.tasks)
+        ? parsed.tasks.filter((task): task is Record<string, unknown> =>
+            Boolean(task) && typeof task === "object")
+        : [];
+    } catch {
+      continue;
+    }
+
+    for (const task of tasks) {
+      if (task.done === true || typeof task.time !== "string" || typeof task.id !== "string") {
+        continue;
+      }
+      const taskMinutes =
+        Number(task.time.slice(0, 2)) * 60 + Number(task.time.slice(3, 5));
+      const delay = nowMinutes - taskMinutes;
+      if (!Number.isFinite(taskMinutes) || delay < 0 || delay > 4) continue;
+      const scheduledFor = `${now.date}T${task.time}:00-03:00`;
+      const delivered = await env.DB
+        .prepare(
+          `SELECT id FROM push_delivery_log
+           WHERE user_id=?1 AND task_key=?2 AND task_id=?3 AND scheduled_for=?4 LIMIT 1`,
+        )
+        .bind(userId, row.stateKey, task.id, scheduledFor)
+        .first<{ id: string }>();
+      if (delivered) continue;
+
+      const subscriptions = await env.DB
+        .prepare(
+          `SELECT id, endpoint, p256dh, auth
+           FROM push_subscriptions WHERE user_id=?1`,
+        )
+        .bind(userId)
+        .all<PushSubscriptionRow>();
+      let sent = false;
+      for (const subscription of subscriptions.results ?? []) {
+        try {
+          await webPush.sendNotification(
+            {
+              endpoint: subscription.endpoint,
+              keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+            },
+            JSON.stringify({
+              title: `Tarefa agendada para ${task.time}`,
+              body: typeof task.text === "string" ? task.text : "Tarefa pendente",
+              url: "/tarefas",
+              tag: `unigames-task-${now.date}-${task.id}`,
+            }),
+            { TTL: 60 * 60, urgency: "high" },
+          );
+          sent = true;
+        } catch (error) {
+          const statusCode =
+            typeof error === "object" && error && "statusCode" in error
+              ? Number((error as { statusCode?: unknown }).statusCode)
+              : 0;
+          if (statusCode === 404 || statusCode === 410) {
+            await env.DB
+              .prepare("DELETE FROM push_subscriptions WHERE id=?1")
+              .bind(subscription.id)
+              .run();
+          } else {
+            console.error("Falha ao enviar lembrete de tarefa.", error);
+          }
+        }
+      }
+      if (sent) {
+        await env.DB
+          .prepare(
+            `INSERT OR IGNORE INTO push_delivery_log
+              (id, user_id, task_key, task_id, scheduled_for, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)`,
+          )
+          .bind(crypto.randomUUID(), userId, row.stateKey, task.id, scheduledFor)
+          .run();
+      }
+    }
   }
 }
 
@@ -775,6 +1194,9 @@ const worker = {
     const url = new URL(request.url);
 
     if (url.pathname === "/login") return handleLogin(request, env, url);
+    if (url.pathname === "/recuperar-senha") {
+      return handlePasswordRecovery(request, env);
+    }
     if (url.pathname === "/logout") return handleLogout(request, url);
     if (PUBLIC_ASSET_PATHS.has(url.pathname)) return env.ASSETS.fetch(request);
 
@@ -782,6 +1204,7 @@ const worker = {
     if (!config) return unauthorized(request, url);
     const user = await authenticatedUser(request, env, config);
     if (!user) return unauthorized(request, url);
+    ctx.waitUntil(createAutomaticBackup(env, config.sessionSecret));
     if (!(await isAllowed(request, url, user))) return forbidden(request, url);
     if (url.pathname === "/api/session") return sessionResponse(user);
     if (url.pathname === "/api/admin/users") {
@@ -846,6 +1269,18 @@ const worker = {
     }
 
     return securityHeaders(await handler.fetch(authenticatedRequest, env, ctx));
+  },
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    const config = loginConfig(env);
+    if (!config) return;
+    ctx.waitUntil(Promise.all([
+      dispatchDueTaskNotifications(env),
+      createAutomaticBackup(env, config.sessionSecret),
+    ]));
   },
 };
 

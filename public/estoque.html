@@ -218,6 +218,7 @@
     min-height:38px; padding:7px 8px; border-radius:8px; border:1px solid rgba(79,134,189,.42);
     background:rgba(79,134,189,.1); color:var(--ink); font:700 8.5px/1.25 var(--mono); cursor:pointer;
   }
+  #btnAppearance{grid-column:1 / -1;}
   .ios-storage-actions button:active{transform:scale(.98);}
   .ios-install-hint{
     position:fixed; z-index:1200; left:max(12px,env(safe-area-inset-left)); right:max(12px,env(safe-area-inset-right));
@@ -381,6 +382,30 @@
     display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:20px;
     text-align:left;
   }
+  .home-health-alert{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px;
+    padding:12px 14px; border:1px solid rgba(239,106,85,.42); border-radius:13px;
+    background:rgba(126,28,28,.14); color:#ffd6d6; text-align:left;
+    font:700 11px/1.45 var(--sans);
+  }
+  .home-health-alert button{flex:0 0 auto; min-height:34px; padding:7px 10px;}
+  .home-quick-actions{
+    display:flex; gap:9px; flex-wrap:wrap; margin-top:16px; padding:13px;
+    border:1px solid rgba(255,255,255,.72); border-radius:16px; background:rgba(255,255,255,.45);
+  }
+  .home-quick-action{
+    flex:1 1 150px; min-height:43px; padding:9px 12px; border:1px solid rgba(36,79,131,.25);
+    border-radius:11px; background:rgba(36,79,131,.08); color:#244f83;
+    font:800 10px/1.25 var(--sans);
+  }
+  .home-task-chart{display:grid; gap:12px;}
+  .home-task-chart-row{display:grid; grid-template-columns:92px 1fr 36px; gap:9px; align-items:center;}
+  .home-task-chart-row span{color:#5c7187; font:800 9px/1.3 var(--sans);}
+  .home-task-chart-track{height:10px; overflow:hidden; border-radius:999px; background:rgba(36,79,131,.12);}
+  .home-task-chart-bar{display:block; width:0; height:100%; border-radius:inherit; transition:width .25s ease;}
+  .home-task-chart-bar.done{background:#397cae;}
+  .home-task-chart-bar.pending{background:#e4b85f;}
+  .home-task-chart-row strong{color:#244f83; text-align:right; font:800 13px/1 var(--mono);}
   .home-operation-card{
     min-width:0; padding:22px; border:1px solid rgba(255,255,255,.9); border-radius:22px;
     background:rgba(255,255,255,.58); box-shadow:0 14px 34px rgba(36,79,131,.1),inset 0 1px #fff;
@@ -1028,6 +1053,14 @@
   .task-row.done{opacity:.55;}
   .task-row.done .task-text{text-decoration:line-through;}
   .task-row input[type=checkbox]{width:18px; height:18px; accent-color:var(--accent); cursor:pointer; flex:0 0 auto;}
+  .task-badges{display:flex; gap:5px; flex-wrap:wrap; align-items:center;}
+  .task-priority,.task-recurrence{
+    flex:0 0 auto; padding:4px 7px; border:1px solid rgba(79,134,189,.3); border-radius:999px;
+    background:rgba(79,134,189,.08); color:var(--ink-soft); font:800 8px/1.2 var(--mono);
+  }
+  .task-priority.medium{color:#d3a646;border-color:rgba(211,166,70,.35);background:rgba(211,166,70,.08);}
+  .task-priority.high{color:#ef8a55;border-color:rgba(239,138,85,.4);background:rgba(239,138,85,.09);}
+  .task-priority.urgent{color:#ff7667;border-color:rgba(255,118,103,.45);background:rgba(255,118,103,.1);}
   .task-outcome{
     flex:0 1 230px; min-width:190px; min-height:36px; padding:7px 9px;
     border:1px solid var(--border); border-radius:8px; background:var(--bg-card);
@@ -1070,9 +1103,30 @@
   .task-agenda-item{display:flex; align-items:center; gap:11px; padding:10px 13px;}
   .task-agenda-item + .task-agenda-item{border-top:1px solid rgba(39,69,97,.3);}
   .task-agenda-item .task-text{font-size:12.5px;}
+  .purchase-deliveries{display:grid; gap:7px; margin-top:8px;}
+  .purchase-delivery-record{
+    display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; gap:8px; align-items:center;
+    padding:8px 9px; border:1px solid rgba(39,69,97,.4); border-radius:9px; background:var(--bg-card-2);
+    color:var(--ink-soft); font:700 9px/1.35 var(--sans);
+  }
+  .purchase-delivery-record strong{color:var(--accent); font:800 10px/1.2 var(--mono);}
+  .preference-logo-preview{
+    width:72px; height:72px; object-fit:contain; padding:8px; border:1px solid var(--border);
+    border-radius:14px; background:var(--bg-card-2);
+  }
+  .appearance-preview{display:flex; align-items:center; gap:13px; margin-top:8px;}
   @media (max-width:520px){
     .task-add-row{flex-direction:column; align-items:stretch;}
     .task-row{flex-wrap:wrap;}
+    input,select,textarea,button{font-size:16px;}
+    button,input,select{min-height:44px;}
+    .task-outcome{flex:1 1 100%; min-width:0;}
+    .purchase-delivery-record{grid-template-columns:1fr auto;}
+    .purchase-delivery-record span{grid-column:1 / -1;}
+    body.mobile-compact .wrap{padding-left:12px;padding-right:12px;}
+    body.mobile-compact .card,
+    body.mobile-compact .task-panel,
+    body.mobile-compact .purchase-card{border-radius:12px;padding:13px;}
   }
   footer.hint{margin-top:16px; font-size:12px; color:var(--ink-faint); text-align:center;}
   .mobile-tabbar{display:none;}
@@ -1561,6 +1615,7 @@
       <div class="ios-storage-actions">
         <button id="btnIosBackup" type="button">EXPORTAR BACKUP</button>
         <button id="btnIosRestore" type="button">RESTAURAR BACKUP</button>
+        <button id="btnAppearance" type="button">APARÊNCIA E APLICATIVO</button>
       </div>
       <input class="pull-hidden-input" id="iosRestoreInput" type="file" accept=".json,application/json">
     </div>
@@ -1606,6 +1661,15 @@
           </button>
         </div>
         <div class="home-no-access" id="homeNoAccess" hidden><strong>NENHUM MÓDULO LIBERADO</strong><span>Solicite ao administrador a liberação das áreas necessárias.</span></div>
+        <div class="home-health-alert" id="homeHealthAlert" hidden>
+          <span id="homeHealthMessage">Uma integração do sistema está indisponível.</span>
+          <button class="btn-outline" id="btnRetryHealth" type="button">VERIFICAR</button>
+        </div>
+        <div class="home-quick-actions" aria-label="Ações rápidas">
+          <button class="home-quick-action" type="button" data-quick-action="task" data-permission="tasks">+ NOVA TAREFA</button>
+          <button class="home-quick-action" type="button" data-quick-action="purchase" data-permission="purchases">+ NOVA COMPRA</button>
+          <button class="home-quick-action" type="button" data-quick-action="register" data-permission="database">+ NOVO CADASTRO</button>
+        </div>
         <section class="home-operations" aria-label="Operações do dia">
           <article class="home-operation-card" data-permission="purchases" aria-labelledby="homePurchasesTitle">
             <header class="home-operation-head">
@@ -1630,6 +1694,16 @@
             <div class="home-reminder-actions">
               <span class="home-reminder-status" id="homeReminderStatus">Os alertas visuais já estão ativos.</span>
               <button class="home-reminder-enable" id="btnEnableTaskNotifications" type="button">ATIVAR NOTIFICAÇÕES</button>
+            </div>
+          </article>
+          <article class="home-operation-card" data-permission="tasks" aria-labelledby="homeTaskChartTitle">
+            <header class="home-operation-head">
+              <span class="home-operation-icon" aria-hidden="true">✓</span>
+              <div><span>RESUMO DO DIA</span><h2 id="homeTaskChartTitle">Tarefas</h2></div>
+            </header>
+            <div class="home-task-chart" aria-live="polite">
+              <div class="home-task-chart-row"><span>CONCLUÍDAS</span><div class="home-task-chart-track"><i class="home-task-chart-bar done" id="homeTaskChartDone"></i></div><strong id="homeTaskChartDoneCount">0</strong></div>
+              <div class="home-task-chart-row"><span>PENDENTES</span><div class="home-task-chart-track"><i class="home-task-chart-bar pending" id="homeTaskChartPending"></i></div><strong id="homeTaskChartPendingCount">0</strong></div>
             </div>
           </article>
         </section>
@@ -1858,6 +1932,24 @@
             <label for="taskInputText">ATIVIDADE</label>
             <input type="text" id="taskInputText" maxlength="300" placeholder="Ex.: Conferir divergências da loja Recife">
           </div>
+          <div class="field" style="max-width:145px">
+            <label for="taskInputPriority">PRIORIDADE</label>
+            <select id="taskInputPriority">
+              <option value="low">BAIXA</option>
+              <option value="medium" selected>MÉDIA</option>
+              <option value="high">ALTA</option>
+              <option value="urgent">URGENTE</option>
+            </select>
+          </div>
+          <div class="field" style="max-width:145px">
+            <label for="taskInputRecurrence">REPETIÇÃO</label>
+            <select id="taskInputRecurrence">
+              <option value="none">NÃO REPETIR</option>
+              <option value="daily">DIÁRIA</option>
+              <option value="weekly">SEMANAL</option>
+              <option value="monthly">MENSAL</option>
+            </select>
+          </div>
           <button class="btn-accent" id="btnAddTask" type="button">+ ADICIONAR</button>
         </div>
         <div class="task-list" id="taskList">
@@ -1872,7 +1964,6 @@
       </section>
     </section>
 
-</parameter>
     <!-- ================= CADASTRO DE LOJAS ================= -->
     <section id="pageLojas" class="page wrap">
       <header class="page-header">
@@ -2126,10 +2217,21 @@
             <input id="userEditId" type="hidden">
             <div class="field"><label for="userDisplayName">NOME DA PESSOA</label><input id="userDisplayName" maxlength="80" required></div>
             <div class="field"><label for="userUsername">USUÁRIO DE LOGIN</label><input id="userUsername" maxlength="40" autocomplete="off" required></div>
+            <div class="field"><label for="userEmail">E-MAIL (OPCIONAL)</label><input id="userEmail" type="email" maxlength="200" autocomplete="off"></div>
             <div class="field"><label for="userPassword">SENHA <span id="userPasswordHint">(MÍNIMO 8 CARACTERES)</span></label><input id="userPassword" type="password" minlength="8" maxlength="200" autocomplete="new-password"></div>
             <div class="field">
-              <label>MÓDULOS LIBERADOS</label>
-              <div class="permission-grid">
+              <label for="userAccessGroup">GRUPO DE ACESSO</label>
+              <select id="userAccessGroup">
+                <option value="operator">OPERADOR — TAREFAS</option>
+                <option value="purchases">COMPRAS — TAREFAS E COMPRAS</option>
+                <option value="fiscal">FISCAL — ESTOQUE, BASE E PUXADAS</option>
+                <option value="administrator">ADMINISTRADOR — ACESSO COMPLETO</option>
+                <option value="custom">PERSONALIZADO</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>MÓDULOS LIBERADOS <span id="userPermissionHint">(DEFINIDOS PELO GRUPO)</span></label>
+              <div class="permission-grid" id="userPermissionGrid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks"> Tarefas</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases"> Compras</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="stock"> Estoque Fiscal</label>
@@ -2193,6 +2295,44 @@
     </div>
   </form>
 </dialog>
+<dialog class="purchase-dialog" id="partialDeliveryDialog" aria-labelledby="partialDeliveryTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="partialDeliveryTitle">REGISTRAR ENTREGA PARCIAL</h3>
+    <button class="purchase-dialog-close" id="btnClosePartialDelivery" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="partialDeliveryForm">
+    <input type="hidden" id="partialDeliveryPurchaseId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="partialDeliveryDate">DATA DA ENTREGA *</label><input type="date" id="partialDeliveryDate" required></div>
+      <div class="purchase-field"><label for="partialDeliveryPercent">PERCENTUAL RECEBIDO</label><input type="number" id="partialDeliveryPercent" min="1" max="100" value="50" required></div>
+      <div class="purchase-field full"><label for="partialDeliveryQuantity">O QUE FOI RECEBIDO *</label><input id="partialDeliveryQuantity" maxlength="200" placeholder="Ex.: 8 de 20 unidades" required></div>
+      <div class="purchase-field full"><label for="partialDeliveryNotes">OBSERVAÇÕES</label><textarea id="partialDeliveryNotes" rows="3" maxlength="1000" placeholder="Produtos, volumes ou ocorrências da entrega"></textarea></div>
+    </div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelPartialDelivery" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSavePartialDelivery" type="submit">REGISTRAR ENTREGA</button>
+    </div>
+  </form>
+</dialog>
+<dialog class="purchase-dialog" id="appearanceDialog" aria-labelledby="appearanceDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="appearanceDialogTitle">APARÊNCIA E APLICATIVO</h3>
+    <button class="purchase-dialog-close" id="btnCloseAppearance" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="appearanceForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="appearanceTheme">TEMA</label><select id="appearanceTheme"><option value="dark">ESCURO</option><option value="light">CLARO</option></select></div>
+      <div class="purchase-field"><label for="appearanceAccent">COR PRINCIPAL</label><input type="color" id="appearanceAccent" value="#4f86bd"></div>
+      <div class="purchase-field full"><label for="appearanceLogo">LOGOTIPO/ÍCONE PESSOAL</label><input type="file" id="appearanceLogo" accept="image/png,image/jpeg,image/webp"><span class="purchase-field-help">A IMAGEM SERÁ REDUZIDA E SALVA APENAS PARA O SEU USUÁRIO.</span></div>
+      <div class="purchase-field full appearance-preview"><img class="preference-logo-preview" id="appearanceLogoPreview" src="/favicon.svg" alt="Prévia do logotipo"><button class="btn-outline" id="btnRemoveAppearanceLogo" type="button">USAR LOGO PADRÃO</button></div>
+      <label class="permission-option full"><input id="appearanceCompactMobile" type="checkbox"> Usar visual mais compacto no celular</label>
+    </div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnInstallApp" type="button">INSTALAR APLICATIVO</button>
+      <button class="btn-accent" id="btnSaveAppearance" type="submit">SALVAR APARÊNCIA</button>
+    </div>
+  </form>
+</dialog>
 <div class="purchase-toast" id="purchaseToast" role="status" aria-live="polite" hidden></div>
 <div class="task-reminder-toast" id="taskReminderToast" role="alert" aria-live="assertive" hidden>
   <strong>LEMBRETE DE TAREFA</strong>
@@ -2240,11 +2380,14 @@
   let purchasesLoaded = false;
   let purchasesLoading = false;
   let purchaseSearchTimer = null;
+  let purchaseDeliveryMap = new Map();
   let notionUsersLoaded = false;
   let homeOverviewLoading = false;
   let homeTodayTasks = [];
   let taskReminderTimer = null;
   const taskReminderMemory = new Set();
+  let currentPreferences = {theme:'dark',accentColor:'#4f86bd',logoDataUrl:'',compactMobile:false};
+  let deferredInstallPrompt = null;
 
   const DEFAULT_COMPANIES = ['GUARARAPES','NORTH WAY','PATTEO','RECIFE','RIOMAR','TACARUNA','P.A LOJA','QUIOSQUE P.A'];
   const SPECIAL_CATALOG_COMPANIES = new Set(['P.A LOJA','QUIOSQUE P.A']);
@@ -2360,15 +2503,27 @@
     catch(e){ return null; }
   }
 
+  function deviceStorageKey(key){
+    if(/^tarefas:\d{4}-\d{2}-\d{2}$/.test(key)){
+      const owner = String(currentSession.id || currentSession.username || 'usuario');
+      return 'usuarios:' + owner + ':' + key;
+    }
+    return key;
+  }
+
   const legacyStorage = {
     async get(key){
-      const fullKey = STORAGE_PREFIX + key;
+      const scopedKey = deviceStorageKey(key);
+      const fullKey = STORAGE_PREFIX + scopedKey;
       let value = null;
       try{ value = await iosDbGet(fullKey); } catch(e){ /* usa a reserva abaixo */ }
       if(value !== null) return { value };
       value = readLocalStorage(fullKey);
-      if(value === null){
+      if(value === null && scopedKey === key){
         value = readLocalStorage(LEGACY_STORAGE_PREFIX + key);
+      }
+      if(value === null && currentSession.id === 'env-admin' && scopedKey !== key){
+        value = readLocalStorage(STORAGE_PREFIX + key) || readLocalStorage(LEGACY_STORAGE_PREFIX + key);
       }
       if(value !== null){
         try{ await iosDbSet(fullKey, value); } catch(e){ /* mantém no localStorage */ }
@@ -2377,21 +2532,39 @@
       return value === null ? null : { value };
     },
     async set(key, value){
-      const fullKey = STORAGE_PREFIX + key;
+      const fullKey = STORAGE_PREFIX + deviceStorageKey(key);
       let saved = false;
       try{ await iosDbSet(fullKey, value); saved = true; } catch(e){ /* tenta a reserva */ }
       try{ localStorage.setItem(fullKey, value); saved = true; } catch(e){ /* IndexedDB pode ter salvo */ }
       if(!saved) throw new Error('NÃO FOI POSSÍVEL SALVAR OS DADOS NESTE DISPOSITIVO');
     },
     async delete(key){
-      const fullKey = STORAGE_PREFIX + key;
+      const scopedKey = deviceStorageKey(key);
+      const fullKey = STORAGE_PREFIX + scopedKey;
       try{ await iosDbDelete(fullKey); } catch(e){ /* limpa a reserva abaixo */ }
       try{
         localStorage.removeItem(fullKey);
-        localStorage.removeItem(LEGACY_STORAGE_PREFIX + key);
+        if(scopedKey === key) localStorage.removeItem(LEGACY_STORAGE_PREFIX + key);
       } catch(e){ /* IndexedDB pode ter sido limpo */ }
     }
   };
+
+  function offlineQueueKey(){
+    return 'estoque_offline_queue:' + String(currentSession.id || currentSession.username || 'usuario');
+  }
+
+  function readOfflineQueue(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(offlineQueueKey()) || '[]');
+      return Array.isArray(saved) ? saved : [];
+    }catch(error){ return []; }
+  }
+
+  function queueOfflineMutation(operation){
+    const queue = readOfflineQueue().filter(item => item && item.key !== operation.key);
+    queue.push({...operation, queuedAt:new Date().toISOString()});
+    try{ localStorage.setItem(offlineQueueKey(), JSON.stringify(queue)); }catch(error){ /* reserva local já foi salva */ }
+  }
 
   async function sharedStateRequest(key, options){
     const requestOptions = options || {};
@@ -2423,9 +2596,17 @@
 
   const storage = {
     async get(key){
-      const shared = await sharedStateRequest(key);
-      if(shared.value !== null && typeof shared.value !== 'undefined'){
-        return { value:shared.value, version:shared.version || 0, updatedAt:shared.updatedAt || null };
+      let shared = null;
+      try{
+        shared = await sharedStateRequest(key);
+        if(shared.value !== null && typeof shared.value !== 'undefined'){
+          await legacyStorage.set(key, shared.value);
+          return { value:shared.value, version:shared.version || 0, updatedAt:shared.updatedAt || null };
+        }
+      }catch(error){
+        const localOffline = await legacyStorage.get(key);
+        if(localOffline) return {...localOffline, offline:true};
+        throw error;
       }
 
       // Migra automaticamente os dados existentes deste aparelho apenas quando
@@ -2441,14 +2622,46 @@
       return { value:migrated.value, version:migrated.version || 1, updatedAt:migrated.updatedAt || null };
     },
     async set(key, value){
-      const shared = await sharedStateRequest(key, {method:'PUT', value});
-      return { value:shared.value, version:shared.version || 1, updatedAt:shared.updatedAt || null };
+      await legacyStorage.set(key, value);
+      try{
+        const shared = await sharedStateRequest(key, {method:'PUT', value});
+        return { value:shared.value, version:shared.version || 1, updatedAt:shared.updatedAt || null };
+      }catch(error){
+        queueOfflineMutation({method:'PUT',key,value});
+        return {value,version:0,updatedAt:new Date().toISOString(),offline:true};
+      }
     },
     async delete(key){
-      await sharedStateRequest(key, {method:'DELETE'});
       await legacyStorage.delete(key);
+      try{
+        await sharedStateRequest(key, {method:'DELETE'});
+      }catch(error){
+        queueOfflineMutation({method:'DELETE',key});
+      }
     }
   };
+
+  async function flushOfflineMutations(){
+    if(!navigator.onLine) return;
+    const queue = readOfflineQueue();
+    if(!queue.length) return;
+    const remaining = [];
+    for(const operation of queue){
+      try{
+        if(operation.method === 'PUT'){
+          await sharedStateRequest(operation.key,{method:'PUT',value:operation.value});
+        }else{
+          await sharedStateRequest(operation.key,{method:'DELETE'});
+        }
+      }catch(error){
+        remaining.push(operation);
+      }
+    }
+    try{ localStorage.setItem(offlineQueueKey(),JSON.stringify(remaining)); }catch(error){ /* tenta novamente no próximo acesso */ }
+    if(!remaining.length) setIosStorageStatus('ALTERAÇÕES OFFLINE SINCRONIZADAS COM O BANCO GERAL.');
+  }
+
+  window.addEventListener('online', flushOfflineMutations);
 
   function hasStorage(){
     return true;
@@ -2546,7 +2759,8 @@
     });
     el('sessionDisplayName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
     el('homeSessionName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
-    el('sessionAccessLabel').textContent = currentSession.role === 'admin' ? 'Administrador · acesso completo' : 'Acesso limitado';
+    const groupLabels = {administrator:'Administrador',purchases:'Compras',fiscal:'Fiscal',operator:'Operador',custom:'Personalizado'};
+    el('sessionAccessLabel').textContent = (groupLabels[currentSession.accessGroup] || 'Acesso limitado') + (currentSession.role === 'admin' ? ' · acesso completo' : '');
     el('homeNoAccess').hidden = currentSession.role === 'admin' || currentSession.permissions.length > 0;
     document.body.classList.add('access-ready');
   }
@@ -2557,6 +2771,7 @@
 
   function setUserTheme(theme, persist){
     const selected = theme === 'light' ? 'light' : 'dark';
+    currentPreferences.theme = selected;
     document.documentElement.dataset.theme = selected;
     const toggle = el('themeToggle');
     toggle.setAttribute('aria-pressed', String(selected === 'light'));
@@ -2565,6 +2780,7 @@
     if(themeMeta) themeMeta.content = selected === 'light' ? '#eef4f9' : '#08121e';
     if(persist){
       try{ localStorage.setItem(userThemeStorageKey(), selected); }catch(error){ /* preferência opcional */ }
+      saveUserPreferences();
     }
   }
 
@@ -2574,8 +2790,142 @@
     setUserTheme(saved, false);
   }
 
+  function applyAccentColor(color){
+    const selected = /^#[0-9a-f]{6}$/i.test(color || '') ? color.toLowerCase() : '#4f86bd';
+    currentPreferences.accentColor = selected;
+    document.documentElement.style.setProperty('--accent', selected);
+  }
+
+  function applyUserLogo(dataUrl){
+    const source = dataUrl || LOGO_DATA_URI;
+    currentPreferences.logoDataUrl = dataUrl || '';
+    document.querySelectorAll('[data-logo]').forEach(img => { img.src = source; });
+    el('appFavicon').href = source;
+    el('appleTouchIcon').href = source;
+    if(el('appearanceLogoPreview')) el('appearanceLogoPreview').src = source;
+  }
+
+  let preferenceSaveTimer = null;
+  function saveUserPreferences(){
+    clearTimeout(preferenceSaveTimer);
+    preferenceSaveTimer = setTimeout(async () => {
+      try{
+        await fetch('/api/preferences',{
+          method:'PUT',
+          headers:{'Content-Type':'application/json','Accept':'application/json'},
+          body:JSON.stringify(currentPreferences)
+        });
+      }catch(error){ /* permanece salvo neste aparelho e sincroniza no próximo ajuste */ }
+    },220);
+  }
+
+  async function loadUserPreferences(){
+    loadUserTheme();
+    try{
+      const response = await fetch('/api/preferences',{headers:{Accept:'application/json'},cache:'no-store'});
+      const data = await response.json();
+      if(response.ok && data.preferences){
+        currentPreferences = {
+          theme:data.preferences.theme === 'light' ? 'light' : 'dark',
+          accentColor:/^#[0-9a-f]{6}$/i.test(data.preferences.accentColor || '') ? data.preferences.accentColor : '#4f86bd',
+          logoDataUrl:typeof data.preferences.logoDataUrl === 'string' ? data.preferences.logoDataUrl : '',
+          compactMobile:data.preferences.compactMobile === true
+        };
+      }
+    }catch(error){ /* preferências locais continuam disponíveis */ }
+    setUserTheme(currentPreferences.theme,false);
+    applyAccentColor(currentPreferences.accentColor);
+    applyUserLogo(currentPreferences.logoDataUrl);
+    document.body.classList.toggle('mobile-compact',currentPreferences.compactMobile);
+  }
+
   el('themeToggle').addEventListener('click', () => {
     setUserTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light', true);
+  });
+
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+  });
+
+  function openAppearanceDialog(){
+    el('appearanceTheme').value = currentPreferences.theme;
+    el('appearanceAccent').value = currentPreferences.accentColor;
+    el('appearanceCompactMobile').checked = currentPreferences.compactMobile;
+    el('appearanceLogo').value = '';
+    applyUserLogo(currentPreferences.logoDataUrl);
+    el('appearanceDialog').showModal();
+  }
+
+  function closeAppearanceDialog(){
+    if(el('appearanceDialog').open) el('appearanceDialog').close();
+  }
+
+  async function resizePreferenceLogo(file){
+    if(!file || !/^image\/(?:png|jpeg|webp)$/i.test(file.type)) throw new Error('ESCOLHA UMA IMAGEM PNG, JPG OU WEBP.');
+    const source = await new Promise((resolve,reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('NÃO FOI POSSÍVEL LER A IMAGEM.'));
+      reader.readAsDataURL(file);
+    });
+    const image = await new Promise((resolve,reject) => {
+      const candidate = new Image();
+      candidate.onload = () => resolve(candidate);
+      candidate.onerror = () => reject(new Error('IMAGEM INVÁLIDA.'));
+      candidate.src = source;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const context = canvas.getContext('2d');
+    context.clearRect(0,0,256,256);
+    const scale = Math.min(256 / image.width, 256 / image.height);
+    const width = image.width * scale; const height = image.height * scale;
+    context.drawImage(image,(256-width)/2,(256-height)/2,width,height);
+    return canvas.toDataURL('image/webp',.86);
+  }
+
+  el('btnAppearance').addEventListener('click',openAppearanceDialog);
+  el('btnCloseAppearance').addEventListener('click',closeAppearanceDialog);
+  el('appearanceDialog').addEventListener('click',event => {
+    if(event.target === el('appearanceDialog')) closeAppearanceDialog();
+  });
+  el('appearanceLogo').addEventListener('change',async event => {
+    const file = event.target.files && event.target.files[0];
+    if(!file) return;
+    try{
+      currentPreferences.logoDataUrl = await resizePreferenceLogo(file);
+      el('appearanceLogoPreview').src = currentPreferences.logoDataUrl;
+    }catch(error){ showPurchaseToast(error.message || 'Não foi possível usar esta imagem.','error'); }
+  });
+  el('btnRemoveAppearanceLogo').addEventListener('click',() => {
+    currentPreferences.logoDataUrl = '';
+    el('appearanceLogoPreview').src = LOGO_DATA_URI;
+    el('appearanceLogo').value = '';
+  });
+  el('appearanceForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    currentPreferences.theme = el('appearanceTheme').value === 'light' ? 'light' : 'dark';
+    currentPreferences.accentColor = el('appearanceAccent').value;
+    currentPreferences.compactMobile = el('appearanceCompactMobile').checked;
+    setUserTheme(currentPreferences.theme,false);
+    applyAccentColor(currentPreferences.accentColor);
+    applyUserLogo(currentPreferences.logoDataUrl);
+    document.body.classList.toggle('mobile-compact',currentPreferences.compactMobile);
+    saveUserPreferences();
+    closeAppearanceDialog();
+    showPurchaseToast('Aparência salva para o seu usuário.');
+  });
+  el('btnInstallApp').addEventListener('click',async () => {
+    if(deferredInstallPrompt){
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      return;
+    }
+    prepareIosInstallHint();
+    el('iosInstallHint').hidden = false;
+    closeAppearanceDialog();
   });
 
   async function loadSessionAccess(){
@@ -2587,7 +2937,7 @@
     if(!response.ok) throw new Error('NÃO FOI POSSÍVEL VALIDAR O ACESSO');
     currentSession = await response.json();
     currentSession.permissions = Array.isArray(currentSession.permissions) ? currentSession.permissions : [];
-    loadUserTheme();
+    await loadUserPreferences();
     applyAccessVisibility();
   }
 
@@ -2712,6 +3062,42 @@
       navigateToPage(target);
     });
   });
+
+  document.querySelectorAll('[data-quick-action]').forEach(button => {
+    button.addEventListener('click', async () => {
+      const action = button.dataset.quickAction;
+      if(action === 'task'){
+        navigateToPage('tarefas');
+        requestAnimationFrame(() => el('taskInputText').focus());
+      }else if(action === 'purchase'){
+        navigateToPage('compras');
+        await openPurchaseDialog(null);
+      }else if(action === 'register'){
+        navigateToPage('cadastros');
+      }
+    });
+  });
+
+  async function checkIntegrationHealth(){
+    const alert = el('homeHealthAlert');
+    try{
+      const response = await fetch('/api/health',{headers:{Accept:'application/json'},cache:'no-store'});
+      const data = await response.json();
+      const issues = [];
+      if(!data.database) issues.push('banco geral');
+      if(canAccess('purchases') && !data.notion) issues.push('Notion/Compras');
+      if(issues.length){
+        el('homeHealthMessage').textContent = 'Atenção: '+issues.join(' e ')+' '+(issues.length > 1 ? 'estão indisponíveis' : 'está indisponível')+'. Tente novamente em instantes.';
+        alert.hidden = false;
+      }else{
+        alert.hidden = true;
+      }
+    }catch(error){
+      el('homeHealthMessage').textContent = 'Não foi possível confirmar a conexão das integrações.';
+      alert.hidden = false;
+    }
+  }
+  el('btnRetryHealth').addEventListener('click',checkIntegrationHealth);
 
   document.querySelectorAll('[data-mobile-page]').forEach(button => {
     button.addEventListener('click', () => navigateToPage(button.dataset.mobilePage));
@@ -4477,6 +4863,35 @@
     ).join('')+'</div></details>';
   }
 
+  function purchaseDeliveriesHtml(item){
+    const records = purchaseDeliveryMap.get(item.id) || [];
+    if(!records.length) return '<span style="color:var(--ink-faint)">NENHUMA ENTREGA PARCIAL</span>';
+    return '<div class="purchase-deliveries">'+records.map(record =>
+      '<div class="purchase-delivery-record">'+
+        '<strong>'+escapeHtml(String(record.percentage || 0))+'%</strong>'+
+        '<time>'+escapeHtml(purchaseDate(record.deliveredAt))+'</time>'+
+        '<span>'+escapeHtml(record.quantityNote || '')+(record.notes ? ' · '+escapeHtml(record.notes) : '')+'</span>'+
+        '<button class="task-remove" type="button" data-delete-delivery="'+escapeHtml(record.id)+'" data-delivery-purchase="'+escapeHtml(item.id)+'">EXCLUIR</button>'+
+      '</div>'
+    ).join('')+'</div>';
+  }
+
+  async function loadPurchaseDeliveries(){
+    purchaseDeliveryMap = new Map();
+    if(!purchaseRows.length) return;
+    const params = new URLSearchParams();
+    purchaseRows.slice(0,50).forEach(item => params.append('purchaseId',item.id));
+    try{
+      const response = await fetch('/api/compras/deliveries?'+params.toString(),{headers:{Accept:'application/json'},cache:'no-store'});
+      const data = await response.json();
+      if(!response.ok) throw new Error(data.error || 'ENTREGAS INDISPONÍVEIS');
+      for(const record of data.items || []){
+        if(!purchaseDeliveryMap.has(record.purchaseId)) purchaseDeliveryMap.set(record.purchaseId,[]);
+        purchaseDeliveryMap.get(record.purchaseId).push(record);
+      }
+    }catch(error){ /* os pedidos continuam disponíveis mesmo sem o histórico parcial */ }
+  }
+
   function purchaseDivisionHtml(value){
     const division = String(value || '').trim();
     if(!division) return '<span class="purchase-division-empty">SEM DIVISÃO</span>';
@@ -4567,7 +4982,9 @@
         '</div>'+
         '<div class="purchase-card-section"><span>DIVISÃO</span>'+purchaseDivisionHtml(item.divisao)+'</div>'+
         '<div class="purchase-card-section"><span>ARQUIVOS</span>'+purchaseFilesHtml(item)+'</div>'+
+        '<div class="purchase-card-section"><span>ENTREGAS PARCIAIS</span>'+purchaseDeliveriesHtml(item)+'</div>'+
         '<footer class="purchase-card-footer"><div class="purchase-card-actions">'+
+          '<button class="btn-outline" type="button" data-partial-purchase="'+escapeHtml(item.id)+'">ENTREGA PARCIAL</button>'+
           '<button class="btn-outline" type="button" data-edit-purchase="'+escapeHtml(item.id)+'">EDITAR</button>'+
           '<a class="btn-outline" href="'+escapeHtml(item.url || '#')+'" target="_blank" rel="noopener noreferrer">NOTION ↗</a>'+
         '</div></footer>'+
@@ -4599,6 +5016,7 @@
       purchaseRows = reset ? (data.items || []) : purchaseRows.concat(data.items || []);
       purchaseCursor = data.nextCursor || null;
       purchasesLoaded = true;
+      await loadPurchaseDeliveries();
       renderPurchaseCards();
       setPurchaseSync('Sincronizado com o Notion · '+purchaseRows.length.toLocaleString('pt-BR')+' pedidos carregados', 'ready');
       loadHomeOverview();
@@ -4653,6 +5071,63 @@
     if(el('purchaseDialog').open) el('purchaseDialog').close();
   }
 
+  function openPartialDeliveryDialog(purchaseId){
+    el('partialDeliveryForm').reset();
+    el('partialDeliveryPurchaseId').value = purchaseId;
+    el('partialDeliveryDate').value = todayDateKey();
+    el('partialDeliveryPercent').value = '50';
+    el('partialDeliveryDialog').showModal();
+    requestAnimationFrame(() => el('partialDeliveryQuantity').focus());
+  }
+
+  function closePartialDeliveryDialog(){
+    if(el('partialDeliveryDialog').open) el('partialDeliveryDialog').close();
+  }
+
+  async function savePartialDelivery(event){
+    event.preventDefault();
+    const button = el('btnSavePartialDelivery');
+    button.disabled = true;
+    button.textContent = 'REGISTRANDO…';
+    try{
+      const response = await fetch('/api/compras/deliveries',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({
+          purchaseId:el('partialDeliveryPurchaseId').value,
+          deliveredAt:el('partialDeliveryDate').value,
+          percentage:Number(el('partialDeliveryPercent').value),
+          quantityNote:el('partialDeliveryQuantity').value,
+          notes:el('partialDeliveryNotes').value
+        })
+      });
+      const data = await response.json();
+      if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL REGISTRAR A ENTREGA.');
+      closePartialDeliveryDialog();
+      await loadPurchaseDeliveries();
+      renderPurchaseCards();
+      showPurchaseToast('Entrega parcial registrada.');
+    }catch(error){
+      showPurchaseToast(error.message || 'Não foi possível registrar a entrega parcial.','error');
+    }finally{
+      button.disabled = false;
+      button.textContent = 'REGISTRAR ENTREGA';
+    }
+  }
+
+  async function deletePartialDelivery(id){
+    if(!confirm('Excluir este registro de entrega parcial?')) return;
+    const response = await fetch('/api/compras/deliveries?id='+encodeURIComponent(id),{
+      method:'DELETE',
+      headers:{Accept:'application/json'}
+    });
+    const data = await response.json().catch(() => ({}));
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL EXCLUIR A ENTREGA.');
+    await loadPurchaseDeliveries();
+    renderPurchaseCards();
+    showPurchaseToast('Registro de entrega parcial excluído.');
+  }
+
   function showPurchaseToast(message, tone){
     const toast = el('purchaseToast');
     toast.textContent = message;
@@ -4662,14 +5137,93 @@
     showPurchaseToast.timer = setTimeout(() => { toast.hidden = true; }, 4200);
   }
 
+  const PURCHASE_FILE_CHUNK_SIZE = 512 * 1024;
+  const PURCHASE_FILE_MAX_SIZE = 100 * 1024 * 1024;
+
+  async function purchaseApiResponse(response, fallbackMessage){
+    const raw = await response.text();
+    let data = {};
+    try{ data = raw ? JSON.parse(raw) : {}; }catch(_error){
+      data = {error:raw && raw.length < 240 ? raw : ''};
+    }
+    if(!response.ok){
+      if(response.status === 413){
+        throw new Error(data.error || 'O ARQUIVO É MUITO GRANDE. O LIMITE É 100 MB.');
+      }
+      throw new Error(data.error || fallbackMessage);
+    }
+    return data;
+  }
+
   async function uploadPurchaseFile(file){
     if(!file) return null;
-    const formData = new FormData();
-    formData.append('file', file, file.name);
-    const response = await fetch('/api/compras/files', {method:'POST', body:formData});
-    const data = await response.json();
-    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL ENVIAR '+file.name+'.');
-    return data.file;
+    if(file.size > PURCHASE_FILE_MAX_SIZE){
+      throw new Error('O ARQUIVO '+file.name+' DEVE TER NO MÁXIMO 100 MB.');
+    }
+
+    const numberOfParts = Math.max(1,Math.ceil(file.size / PURCHASE_FILE_CHUNK_SIZE));
+    let sessionId = '';
+    try{
+      const createResponse = await fetch('/api/compras/files',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({
+          action:'create',
+          fileName:file.name,
+          contentType:file.type || 'application/octet-stream',
+          fileSize:file.size,
+          numberOfParts
+        })
+      });
+      const created = await purchaseApiResponse(
+        createResponse,
+        'NÃO FOI POSSÍVEL INICIAR O ENVIO DE '+file.name+'.'
+      );
+      sessionId = created.session && created.session.id;
+      if(!sessionId) throw new Error('O SERVIDOR NÃO INICIOU O ENVIO DE '+file.name+'.');
+
+      for(let partNumber = 1;partNumber <= numberOfParts;partNumber += 1){
+        const start = (partNumber - 1) * PURCHASE_FILE_CHUNK_SIZE;
+        const chunk = file.slice(start, Math.min(start + PURCHASE_FILE_CHUNK_SIZE,file.size));
+        const percent = Math.round((partNumber / numberOfParts) * 100);
+        const saveButton = el('btnSavePurchase');
+        if(saveButton) saveButton.textContent = 'ENVIANDO DOCUMENTO '+percent+'%…';
+        const partResponse = await fetch('/api/compras/files',{
+          method:'POST',
+          headers:{
+            'Content-Type':'application/octet-stream',
+            'Accept':'application/json',
+            'X-Purchase-Upload-Id':sessionId,
+            'X-Purchase-Part-Number':String(partNumber)
+          },
+          body:chunk
+        });
+        await purchaseApiResponse(
+          partResponse,
+          'NÃO FOI POSSÍVEL ENVIAR UMA PARTE DE '+file.name+'.'
+        );
+      }
+
+      const completeResponse = await fetch('/api/compras/files',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({action:'complete',sessionId})
+      });
+      const completed = await purchaseApiResponse(
+        completeResponse,
+        'NÃO FOI POSSÍVEL FINALIZAR O ENVIO DE '+file.name+'.'
+      );
+      return completed.file;
+    }catch(error){
+      if(sessionId){
+        fetch('/api/compras/files',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'cancel',sessionId})
+        }).catch(() => undefined);
+      }
+      throw error;
+    }
   }
 
   async function savePurchase(event){
@@ -4879,8 +5433,14 @@
   el('btnClosePurchaseDialog').addEventListener('click', closePurchaseDialog);
   el('btnCancelPurchase').addEventListener('click', closePurchaseDialog);
   el('purchaseForm').addEventListener('submit', savePurchase);
+  el('btnClosePartialDelivery').addEventListener('click',closePartialDeliveryDialog);
+  el('btnCancelPartialDelivery').addEventListener('click',closePartialDeliveryDialog);
+  el('partialDeliveryForm').addEventListener('submit',savePartialDelivery);
   el('purchaseDialog').addEventListener('click', event => {
     if(event.target === el('purchaseDialog')) closePurchaseDialog();
+  });
+  el('partialDeliveryDialog').addEventListener('click',event => {
+    if(event.target === el('partialDeliveryDialog')) closePartialDeliveryDialog();
   });
   el('purchaseSearch').addEventListener('input', () => {
     clearTimeout(purchaseSearchTimer);
@@ -4899,10 +5459,21 @@
     loadPurchases(true);
   });
   el('purchaseCardGrid').addEventListener('click', event => {
-    const button = event.target.closest('[data-edit-purchase]');
-    if(!button) return;
-    const item = purchaseRows.find(row => row.id === button.dataset.editPurchase);
-    if(item) openPurchaseDialog(item);
+    const editButton = event.target.closest('[data-edit-purchase]');
+    const partialButton = event.target.closest('[data-partial-purchase]');
+    const deleteButton = event.target.closest('[data-delete-delivery]');
+    if(editButton){
+      const item = purchaseRows.find(row => row.id === editButton.dataset.editPurchase);
+      if(item) openPurchaseDialog(item);
+      return;
+    }
+    if(partialButton){
+      openPartialDeliveryDialog(partialButton.dataset.partialPurchase);
+      return;
+    }
+    if(deleteButton){
+      deletePartialDelivery(deleteButton.dataset.deleteDelivery).catch(error => showPurchaseToast(error.message,'error'));
+    }
   });
 
   el('pullStoreList').addEventListener('click', event => {
@@ -4969,6 +5540,17 @@
     const day = String(date.getDate()).padStart(2,'0');
     return year+'-'+month+'-'+day;
   }
+  function recurringDateKey(dateKey, recurrence){
+    const date = new Date(dateKey+'T12:00:00');
+    if(recurrence === 'daily') date.setDate(date.getDate()+1);
+    else if(recurrence === 'weekly') date.setDate(date.getDate()+7);
+    else if(recurrence === 'monthly') date.setMonth(date.getMonth()+1);
+    else return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth()+1).padStart(2,'0');
+    const day = String(date.getDate()).padStart(2,'0');
+    return year+'-'+month+'-'+day;
+  }
   function formatTaskDate(dateKey){
     return dateKey ? dateKey.split('-').reverse().join('/') : 'SEM DATA';
   }
@@ -4981,9 +5563,18 @@
       text:task && typeof task.text === 'string' ? task.text : '',
       done:Boolean(task && task.done),
       outcome:task && task.outcome === 'carryover' ? 'carryover' : 'not_seen',
-      carriedFrom:task && typeof task.carriedFrom === 'string' ? task.carriedFrom : ''
+      carriedFrom:task && typeof task.carriedFrom === 'string' ? task.carriedFrom : '',
+      priority:task && ['low','medium','high','urgent'].includes(task.priority) ? task.priority : 'medium',
+      recurrence:task && ['daily','weekly','monthly'].includes(task.recurrence) ? task.recurrence : 'none',
+      seriesId:task && typeof task.seriesId === 'string' ? task.seriesId : ''
     })) : [];
     return {tasks, notes:typeof source.notes === 'string' ? source.notes : ''};
+  }
+  const taskPriorityLabels = {low:'BAIXA',medium:'MÉDIA',high:'ALTA',urgent:'URGENTE'};
+  const taskRecurrenceLabels = {daily:'DIÁRIA',weekly:'SEMANAL',monthly:'MENSAL'};
+  function taskBadgesHtml(task){
+    return '<span class="task-badges"><span class="task-priority '+escapeHtml(task.priority)+'">'+escapeHtml(taskPriorityLabels[task.priority] || 'MÉDIA')+'</span>'+
+      (task.recurrence !== 'none' ? '<span class="task-recurrence">↻ '+escapeHtml(taskRecurrenceLabels[task.recurrence] || '')+'</span>' : '')+'</span>';
   }
   function taskDueAt(task){
     if(!task || !task.time) return null;
@@ -5020,7 +5611,9 @@
       return;
     }
     if(Notification.permission === 'granted'){
-      status.textContent = 'Notificações do aparelho ativadas.';
+      status.textContent = button.dataset.pushActive === '1'
+        ? 'Lembretes ativos mesmo com o site fechado.'
+        : 'Notificações do aparelho ativadas.';
       button.textContent = 'NOTIFICAÇÕES ATIVAS';
       button.disabled = true;
       return;
@@ -5098,12 +5691,49 @@
     checkTaskReminders();
     taskReminderTimer = setInterval(checkTaskReminders, 30000);
     updateTaskNotificationStatus();
+    if('serviceWorker' in navigator && 'PushManager' in window && Notification.permission === 'granted'){
+      navigator.serviceWorker.ready.then(registration => registration.pushManager.getSubscription()).then(subscription => {
+        if(subscription) el('btnEnableTaskNotifications').dataset.pushActive = '1';
+        updateTaskNotificationStatus();
+      }).catch(() => {});
+    }
+  }
+  function urlBase64ToBytes(value){
+    const padded = value + '='.repeat((4 - value.length % 4) % 4);
+    const binary = atob(padded.replace(/-/g,'+').replace(/_/g,'/'));
+    return Uint8Array.from(binary,character => character.charCodeAt(0));
+  }
+  async function subscribeTaskPush(){
+    if(!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+    const keyResponse = await fetch('/api/push',{headers:{Accept:'application/json'},cache:'no-store'});
+    const keyData = await keyResponse.json();
+    if(!keyResponse.ok) throw new Error(keyData.error || 'NOTIFICAÇÕES AINDA NÃO CONFIGURADAS.');
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if(!subscription){
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToBytes(keyData.publicKey)
+      });
+    }
+    const saved = await fetch('/api/push',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify(subscription.toJSON())
+    });
+    const payload = await saved.json();
+    if(!saved.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL ATIVAR OS LEMBRETES.');
+    el('btnEnableTaskNotifications').dataset.pushActive = '1';
+    return true;
   }
   async function enableTaskNotifications(){
     if(!('Notification' in window)) return;
     try{
-      await Notification.requestPermission();
-    }catch(error){ /* o navegador pode exigir o app instalado */ }
+      const permission = await Notification.requestPermission();
+      if(permission === 'granted') await subscribeTaskPush();
+    }catch(error){
+      showPurchaseToast(error.message || 'Instale o aplicativo para receber alertas com o site fechado.','error');
+    }
     updateTaskNotificationStatus();
     checkTaskReminders();
   }
@@ -5132,6 +5762,7 @@
         '<input type="checkbox" data-task-done="'+escapeHtml(task.id)+'" '+(task.done ? 'checked' : '')+' aria-label="Marcar tarefa como concluída">'+
         (task.time ? '<span class="task-time">'+escapeHtml(task.time)+'</span>' : '')+
         '<span class="task-text">'+escapeHtml(task.text || '')+'</span>'+
+        taskBadgesHtml(task)+
         (futureDate
           ? '<span class="task-scheduled">AGENDADA</span>'
           : '<select class="task-outcome" data-task-outcome="'+escapeHtml(task.id)+'" '+(task.done ? 'disabled' : '')+' aria-label="Situação da tarefa">'+
@@ -5162,11 +5793,40 @@
         text:task.text,
         done:false,
         outcome:'not_seen',
-        carriedFrom:sourceDate
+        carriedFrom:sourceDate,
+        priority:task.priority,
+        recurrence:'none',
+        seriesId:''
       });
     }
     if(!shouldCarry && existingIndex >= 0) targetData.tasks.splice(existingIndex,1);
     await storage.set(targetKey, JSON.stringify(targetData));
+  }
+  async function syncTaskRecurrence(sourceDate, task, shouldSchedule){
+    if(!task || task.recurrence === 'none') return;
+    const targetDate = recurringDateKey(sourceDate,task.recurrence);
+    if(!targetDate) return;
+    const targetKey = 'tarefas:' + targetDate;
+    const seriesId = task.seriesId || task.id;
+    const recurringId = 'rec-'+seriesId+'-'+targetDate.replace(/-/g,'');
+    const result = await storage.get(targetKey);
+    const targetData = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
+    const existingIndex = targetData.tasks.findIndex(item => item.id === recurringId);
+    if(shouldSchedule && existingIndex < 0){
+      targetData.tasks.push({
+        id:recurringId,
+        time:task.time,
+        text:task.text,
+        done:false,
+        outcome:'not_seen',
+        carriedFrom:'',
+        priority:task.priority,
+        recurrence:task.recurrence,
+        seriesId
+      });
+    }
+    if(!shouldSchedule && existingIndex >= 0) targetData.tasks.splice(existingIndex,1);
+    await storage.set(targetKey,JSON.stringify(targetData));
   }
   async function loadTaskAgenda(){
     const agenda = el('taskAgendaFuture');
@@ -5191,6 +5851,7 @@
             '<div class="task-agenda-item">'+
               (task.time ? '<span class="task-time">'+escapeHtml(task.time)+'</span>' : '')+
               '<span class="task-text">'+escapeHtml(task.text)+'</span>'+
+              taskBadgesHtml(task)+
             '</div>'
           ).join('')+'</div>'+
         '</article>'
@@ -5211,8 +5872,27 @@
     const text = el('taskInputText').value.trim();
     if(!text){ el('taskInputText').focus(); return; }
     const data = readTaskData();
-    data.tasks.push({id:Date.now().toString(36), time:el('taskInputTime').value, text, done:false, outcome:'not_seen'});
-    try{ await saveTaskData(data); el('taskInputText').value=''; el('taskInputTime').value=''; el('taskInputText').focus(); }
+    const id = Date.now().toString(36);
+    const task = {
+      id,
+      time:el('taskInputTime').value,
+      text,
+      done:false,
+      outcome:'not_seen',
+      carriedFrom:'',
+      priority:el('taskInputPriority').value,
+      recurrence:el('taskInputRecurrence').value,
+      seriesId:id
+    };
+    data.tasks.push(task);
+    try{
+      await saveTaskData(data);
+      await syncTaskRecurrence(el('taskDate').value,task,true);
+      el('taskInputText').value='';
+      el('taskInputTime').value='';
+      el('taskInputText').focus();
+      loadTaskAgenda();
+    }
     catch(error){ showError('Não foi possível salvar a tarefa. Tente novamente.'); }
   }
   let taskNotesTimer;
@@ -5240,6 +5920,7 @@
     try{
       await saveTaskData(data);
       await syncTaskCarryover(el('taskDate').value, task, !task.done && task.outcome === 'carryover');
+      await syncTaskRecurrence(el('taskDate').value,task,true);
       loadTaskAgenda();
     }
     catch(error){ task.done = !task.done; renderTasks(data); showError('Não foi possível atualizar a tarefa. Tente novamente.'); }
@@ -5267,7 +5948,10 @@
     data.tasks = data.tasks.filter(item => item.id !== id);
     try{
       await saveTaskData(data);
-      if(removedTask) await syncTaskCarryover(el('taskDate').value, removedTask, false);
+      if(removedTask){
+        await syncTaskCarryover(el('taskDate').value, removedTask, false);
+        await syncTaskRecurrence(el('taskDate').value,removedTask,false);
+      }
       loadTaskAgenda();
     }
     catch(error){ showError('Não foi possível remover a tarefa. Tente novamente.'); }
@@ -5290,7 +5974,10 @@
     const date = el('taskDate').value;
     const data = readTaskData();
     try{
-      await Promise.all(data.tasks.map(task => syncTaskCarryover(date, task, false)));
+      await Promise.all(data.tasks.flatMap(task => [
+        syncTaskCarryover(date,task,false),
+        syncTaskRecurrence(date,task,false)
+      ]));
       await saveTaskData({tasks:[],notes:''});
     } catch(error){
       showError('Não foi possível limpar as tarefas desta data.');
@@ -5384,6 +6071,17 @@
     XLSX.utils.book_append_sheet(wb, ws, 'Estoque');
     XLSX.writeFile(wb, exportFileBase() + '.xlsx');
   });
+  function updateHomeTaskChart(tasks){
+    const total = tasks.length;
+    const done = tasks.filter(task => task.done).length;
+    const pending = total - done;
+    const donePercent = total ? Math.round(done / total * 100) : 0;
+    const pendingPercent = total ? 100 - donePercent : 0;
+    el('homeTaskChartDone').style.width = donePercent+'%';
+    el('homeTaskChartPending').style.width = pendingPercent+'%';
+    el('homeTaskChartDoneCount').textContent = done;
+    el('homeTaskChartPendingCount').textContent = pending;
+  }
 function renderHomeTasks(){
     const list = el('homeTasksList');
     const dateEl = el('homeTasksDate');
@@ -5398,6 +6096,7 @@ function renderHomeTasks(){
       if(!result || !result.value){
         homeTodayTasks = [];
         renderHomeReminder(homeTodayTasks);
+        updateHomeTaskChart(homeTodayTasks);
         list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
         return;
       }
@@ -5406,6 +6105,7 @@ function renderHomeTasks(){
       const tasks = normalizeTaskData(data).tasks;
       homeTodayTasks = tasks;
       renderHomeReminder(homeTodayTasks);
+      updateHomeTaskChart(homeTodayTasks);
       checkTaskReminders();
       if(tasks.length === 0){
         list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
@@ -5417,6 +6117,7 @@ function renderHomeTasks(){
           (task.time ? '<span class="home-task-time">'+escapeHtml(task.time)+'</span>' : '')+
           '<input class="home-task-check" type="checkbox" data-home-task-done="'+escapeHtml(task.id)+'" '+(task.done ? 'checked' : '')+' aria-label="Marcar tarefa como concluída">'+
           '<span class="home-task-text">'+escapeHtml(task.text || '')+'</span>'+
+          taskBadgesHtml(task)+
           '<select class="home-task-outcome" data-home-task-outcome="'+escapeHtml(task.id)+'" '+(task.done ? 'disabled' : '')+' aria-label="Situação da tarefa">'+
             '<option value="carryover" '+(task.outcome === 'carryover' ? 'selected' : '')+'>EM ANDAMENTO — PRÓXIMO DIA</option>'+
             '<option value="not_seen" '+(task.outcome === 'not_seen' ? 'selected' : '')+'>NÃO VISUALIZADA HOJE</option>'+
@@ -5426,6 +6127,7 @@ function renderHomeTasks(){
     }).catch(() => {
       homeTodayTasks = [];
       renderHomeReminder(homeTodayTasks);
+      updateHomeTaskChart(homeTodayTasks);
       list.innerHTML = '<div class="home-tasks-empty">Não foi possível carregar as tarefas.</div>';
     });
   }
@@ -5443,6 +6145,7 @@ function renderHomeTasks(){
       task.done = event.target.checked;
       await storage.set('tarefas:' + todayKey, JSON.stringify(data));
       await syncTaskCarryover(todayKey, task, !task.done && task.outcome === 'carryover');
+      await syncTaskRecurrence(todayKey,task,true);
       if(el('taskDate').value === todayKey) renderTasks(data);
       if(canAccess('tasks')) renderHomeTasks();
       loadTaskAgenda();
@@ -5479,16 +6182,44 @@ function renderHomeTasks(){
     database:'Base de Dados',
     pulls:'Puxadas'
   };
+  const accessGroupNames = {
+    administrator:'Administrador',
+    purchases:'Compras',
+    fiscal:'Fiscal',
+    operator:'Operador',
+    custom:'Personalizado'
+  };
+  const accessGroupPermissions = {
+    administrator:['tasks','purchases','stock','database','pulls'],
+    purchases:['tasks','purchases'],
+    fiscal:['stock','database','pulls'],
+    operator:['tasks']
+  };
+
+  function updateUserGroupFields(){
+    const group = el('userAccessGroup').value;
+    const custom = group === 'custom';
+    const selected = custom
+      ? Array.from(document.querySelectorAll('[name="userPermission"]:checked')).map(input => input.value)
+      : (accessGroupPermissions[group] || []);
+    document.querySelectorAll('[name="userPermission"]').forEach(input => {
+      input.checked = selected.includes(input.value);
+      input.disabled = !custom;
+    });
+    el('userPermissionHint').textContent = custom ? '(ESCOLHA OS MÓDULOS)' : '(DEFINIDOS PELO GRUPO)';
+  }
 
   function resetUserForm(){
     el('userForm').reset();
     el('userEditId').value = '';
+    el('userAccessGroup').value = 'operator';
     el('userActive').checked = true;
     el('userActiveWrap').hidden = true;
     el('btnCancelUserEdit').hidden = true;
     el('userFormTitle').textContent = 'NOVO USUÁRIO';
     el('btnSaveUser').textContent = 'CRIAR USUÁRIO';
     el('userPasswordHint').textContent = '(MÍNIMO 8 CARACTERES)';
+    updateUserGroupFields();
   }
 
   function setUserFormStatus(message, type){
@@ -5504,11 +6235,13 @@ function renderHomeTasks(){
       return;
     }
     list.innerHTML = managedUsers.map(user => {
-      const badges = user.role === 'admin'
+      const groupBadge = '<span class="user-badge">'+escapeHtml(accessGroupNames[user.accessGroup] || 'Personalizado')+'</span>';
+      const recoveryBadge = user.recoveryRequested ? '<span class="user-badge" style="color:#ef8a55">RECUPERAÇÃO SOLICITADA</span>' : '';
+      const badges = groupBadge + recoveryBadge + (user.role === 'admin'
         ? '<span class="user-badge">ACESSO COMPLETO</span>'
-        : (user.permissions || []).map(permission => '<span class="user-badge">'+escapeHtml(permissionNames[permission] || permission)+'</span>').join('') || '<span class="user-badge">SEM MÓDULOS</span>';
+        : (user.permissions || []).map(permission => '<span class="user-badge">'+escapeHtml(permissionNames[permission] || permission)+'</span>').join('') || '<span class="user-badge">SEM MÓDULOS</span>');
       const actions = user.managed ? '<div class="user-actions"><button class="btn-outline" type="button" data-edit-user="'+escapeHtml(user.id)+'">ALTERAR</button><button class="btn-outline" type="button" data-toggle-user="'+escapeHtml(user.id)+'">'+(user.active ? 'BLOQUEAR' : 'REATIVAR')+'</button><button class="btn-danger-outline" type="button" data-delete-user="'+escapeHtml(user.id)+'">EXCLUIR</button></div>' : '<span class="user-badge">CONTA PRINCIPAL</span>';
-      return '<article class="user-card'+(user.active ? '' : ' inactive')+'"><div><h4>'+escapeHtml(user.displayName)+'</h4><p>@'+escapeHtml(user.username)+' · '+(user.active ? 'ATIVO' : 'BLOQUEADO')+'</p><div class="user-badges">'+badges+'</div></div>'+actions+'</article>';
+      return '<article class="user-card'+(user.active ? '' : ' inactive')+'"><div><h4>'+escapeHtml(user.displayName)+'</h4><p>@'+escapeHtml(user.username)+(user.email ? ' · '+escapeHtml(user.email) : '')+' · '+(user.active ? 'ATIVO' : 'BLOQUEADO')+'</p><div class="user-badges">'+badges+'</div></div>'+actions+'</article>';
     }).join('');
   }
 
@@ -5543,8 +6276,10 @@ function renderHomeTasks(){
       id: editId || undefined,
       displayName: el('userDisplayName').value,
       username: el('userUsername').value,
+      email: el('userEmail').value,
       password: el('userPassword').value,
       active: editId ? el('userActive').checked : true,
+      accessGroup:el('userAccessGroup').value,
       permissions: Array.from(document.querySelectorAll('[name="userPermission"]:checked')).map(input => input.value)
     };
     if(!editId && payload.password.length < 8){
@@ -5571,6 +6306,8 @@ function renderHomeTasks(){
   });
 
   el('btnCancelUserEdit').addEventListener('click', resetUserForm);
+  el('userAccessGroup').addEventListener('change',updateUserGroupFields);
+  updateUserGroupFields();
   el('userList').addEventListener('click', async event => {
     const editId = event.target.dataset.editUser;
     const toggleId = event.target.dataset.toggleUser;
@@ -5604,8 +6341,11 @@ function renderHomeTasks(){
       el('userEditId').value = user.id;
       el('userDisplayName').value = user.displayName;
       el('userUsername').value = user.username;
+      el('userEmail').value = user.email || '';
       el('userPassword').value = '';
+      el('userAccessGroup').value = user.accessGroup || (user.role === 'admin' ? 'administrator' : 'custom');
       document.querySelectorAll('[name="userPermission"]').forEach(input => { input.checked = user.permissions.includes(input.value); });
+      updateUserGroupFields();
       el('userActive').checked = user.active;
       el('userActiveWrap').hidden = false;
       el('btnCancelUserEdit').hidden = false;
@@ -5624,8 +6364,10 @@ function renderHomeTasks(){
           id:user.id,
           displayName:user.displayName,
           username:user.username,
+          email:user.email || '',
           password:'',
           active:!user.active,
+          accessGroup:user.accessGroup || 'custom',
           permissions:user.permissions
         })
       });
@@ -5640,7 +6382,9 @@ function renderHomeTasks(){
     setDropzonesDisabled(true);
     renderAll();
     await loadSessionAccess();
+    await flushOfflineMutations();
     syncPageFromLocation(false);
+    checkIntegrationHealth();
     if(canAccess('database') || canAccess('stock') || canAccess('pulls')){
       await loadCompanies();
       await loadCatalog();
