@@ -61,6 +61,7 @@ type StoredUserRow = {
 
 const SESSION_COOKIE = "unigames_session";
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
+const PASSWORD_HASH_ITERATIONS = 100_000;
 const LOGIN_SUCCESS_PATH = "/inicio";
 const INTERNAL_AUTH_HEADER = "x-unigames-authenticated";
 const USER_ID_HEADER = "x-unigames-user-id";
@@ -262,7 +263,7 @@ async function passwordDigest(password: string, salt: Uint8Array): Promise<strin
     ["deriveBits"],
   );
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt, iterations: 120_000 },
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: PASSWORD_HASH_ITERATIONS },
     key,
     256,
   );
