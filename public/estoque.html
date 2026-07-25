@@ -1220,6 +1220,8 @@
   .user-panel{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:20px}
   .user-panel h3{margin:0 0 6px}.user-panel>p{margin:0 0 18px;color:var(--ink-soft);font-size:13px}
   .user-form{display:grid;gap:13px}.user-form .field{display:grid;gap:6px}.user-form label{font:800 10px var(--mono);letter-spacing:.08em;color:var(--ink-soft)}
+  .user-form-status{min-height:18px;font:800 11px/1.45 var(--mono)}
+  .user-form-status.success{color:#8dd6a8}.user-form-status.error{color:#ff9b91}
   .permission-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.permission-option{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--line);border-radius:9px;font-size:12px}
   .user-actions{display:flex;gap:8px;flex-wrap:wrap}.user-list{display:grid;gap:10px}.user-card{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
   .user-card.inactive{opacity:.58}.user-card h4{margin:0 0 3px}.user-card p{margin:0;color:var(--ink-soft);font-size:11px}.user-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
@@ -1820,6 +1822,7 @@
               <button class="btn-accent" id="btnSaveUser" type="submit">CRIAR USUÁRIO</button>
               <button class="btn-outline" id="btnCancelUserEdit" type="button" hidden>CANCELAR</button>
             </div>
+            <div class="user-form-status" id="userFormStatus" role="status" aria-live="polite"></div>
           </form>
         </section>
         <section class="user-panel">
@@ -4957,6 +4960,12 @@ function renderHomeTasks(){
     el('userPasswordHint').textContent = '(MÍNIMO 8 CARACTERES)';
   }
 
+  function setUserFormStatus(message, type){
+    const status = el('userFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status' + (type ? ' ' + type : '');
+  }
+
   function renderAdminUsers(){
     const list = el('userList');
     if(!managedUsers.length){
@@ -4997,6 +5006,7 @@ function renderHomeTasks(){
 
   el('userForm').addEventListener('submit', async event => {
     event.preventDefault();
+    setUserFormStatus('', '');
     const editId = el('userEditId').value;
     const payload = {
       id: editId || undefined,
@@ -5007,10 +5017,11 @@ function renderHomeTasks(){
       permissions: Array.from(document.querySelectorAll('[name="userPermission"]:checked')).map(input => input.value)
     };
     if(!editId && payload.password.length < 8){
-      showError('A senha deve ter pelo menos 8 caracteres.');
+      setUserFormStatus('A senha deve ter pelo menos 8 caracteres.', 'error');
       return;
     }
     el('btnSaveUser').disabled = true;
+    el('btnSaveUser').textContent = editId ? 'SALVANDO…' : 'CRIANDO…';
     try{
       await adminUserRequest({
         method:editId ? 'PATCH' : 'POST',
@@ -5019,10 +5030,12 @@ function renderHomeTasks(){
       });
       resetUserForm();
       await loadAdminUsers();
+      setUserFormStatus(editId ? 'Usuário alterado com sucesso.' : 'Usuário criado com sucesso. Ele já pode entrar no sistema.', 'success');
     }catch(error){
-      showError(error.message);
+      setUserFormStatus(error.message, 'error');
     }finally{
       el('btnSaveUser').disabled = false;
+      el('btnSaveUser').textContent = el('userEditId').value ? 'SALVAR ALTERAÇÕES' : 'CRIAR USUÁRIO';
     }
   });
 
