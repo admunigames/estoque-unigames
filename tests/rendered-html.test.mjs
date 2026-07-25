@@ -257,6 +257,28 @@ test("oferece compras em cards responsivos e filtro combinado por status", async
   assert.match(route, /or: statuses\.map/);
 });
 
+test("separa compras e lembretes no Início e oferece tema por usuário", async () => {
+  const [html, serviceWorker] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /class="home-operations"/);
+  assert.match(html, /id="homePurchaseProgress"/);
+  assert.match(html, /id="homePurchaseNotStarted"/);
+  assert.match(html, /id="homePurchaseOverdue"/);
+  assert.match(html, /params\.append\('status', 'Não iniciado'\)/);
+  assert.match(html, /params\.append\('status', 'Em andamento'\)/);
+  assert.match(html, /id="homeReminderNext"/);
+  assert.match(html, /Notification\.requestPermission\(\)/);
+  assert.match(html, /setInterval\(checkTaskReminders, 30000\)/);
+  assert.match(html, /id="themeToggle"/);
+  assert.match(html, /body\.home-active \.theme-toggle\{display:none;\}/);
+  assert.match(html, /estoque_theme:/);
+  assert.match(serviceWorker, /notificationclick/);
+  assert.match(serviceWorker, /openWindow\(targetUrl\)/);
+});
+
 test("envia documentos de compras em partes e trata respostas não JSON", async () => {
   const [html, route, hosting] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
