@@ -434,33 +434,94 @@ function loginPage(options: {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#050d18">
   <title>Entrar · Estoque Unigames</title>
   <style>
-    :root{color-scheme:dark;--bg:#06111d;--panel:#0b1b2c;--line:#2b5f8f;--accent:#65b8ff;--ink:#f5f9ff;--soft:#a9bfd3;}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 10%,#173754 0,transparent 36%),radial-gradient(circle at 90% 90%,#102945 0,transparent 34%),var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
-    main{width:min(430px,100%);background:linear-gradient(180deg,rgba(17,42,66,.98),rgba(7,24,40,.98));border:1px solid rgba(101,184,255,.38);border-radius:20px;padding:34px;box-shadow:0 28px 80px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.05)}
-    .brand{display:flex;align-items:center;gap:14px;margin-bottom:28px}.mark{display:grid;place-items:center;width:52px;height:52px;border:1px solid var(--accent);border-radius:15px;background:rgba(101,184,255,.08);box-shadow:0 0 24px rgba(101,184,255,.18)}.mark img{width:34px;height:34px}
-    h1{font-size:24px;margin:0 0 5px}.brand p,.intro{margin:0;color:var(--soft)}.intro{font-size:14px;line-height:1.55;margin-bottom:24px}
-    label{display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 8px;color:#dcecff}input{width:100%;border:1px solid rgba(101,184,255,.35);border-radius:11px;background:#071522;color:var(--ink);padding:13px 14px;font:inherit;outline:none}input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(101,184,255,.13)}
-    button{width:100%;margin-top:22px;border:0;border-radius:11px;padding:14px;background:linear-gradient(135deg,#4f9fe5,#76c4ff);color:#04111d;font-weight:900;font-size:14px;cursor:pointer}button:hover{filter:brightness(1.06)}button:disabled{opacity:.45;cursor:not-allowed}.notice{border:1px solid rgba(255,112,112,.45);background:rgba(126,28,28,.24);color:#ffd6d6;border-radius:10px;padding:11px 12px;font-size:13px;margin-bottom:18px}.help{display:block;margin-top:15px;color:#9fd4ff;text-align:center;font-size:12px;font-weight:700;text-decoration:none}.help:hover{text-decoration:underline}.security{margin:22px 0 0;color:#7894aa;text-align:center;font-size:11px;line-height:1.5}
-    @media(max-width:480px){main{padding:27px 21px;border-radius:16px}}
+    :root{color-scheme:dark;--bg:#030914;--panel:#081625;--cyan:#66d9ff;--blue:#4b8dff;--violet:#8b6cff;--mint:#65f7ce;--ink:#f5fbff;--soft:#9eb5c9;--line:rgba(125,210,255,.23)}
+    *{box-sizing:border-box}
+    html{min-height:100%;background:var(--bg)}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;overflow-x:hidden;padding:30px;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:
+      radial-gradient(circle at 8% 12%,rgba(64,122,211,.23),transparent 31%),
+      radial-gradient(circle at 92% 82%,rgba(86,67,190,.19),transparent 33%),
+      linear-gradient(145deg,#030914 0%,#061321 52%,#020711 100%)}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.36;background-image:
+      linear-gradient(rgba(112,205,255,.07) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(112,205,255,.07) 1px,transparent 1px);
+      background-size:54px 54px;mask-image:linear-gradient(to bottom,black,transparent 88%)}
+    body::after{content:"";position:fixed;inset:-20%;pointer-events:none;background:conic-gradient(from 180deg at 50% 50%,transparent 0 24%,rgba(77,144,255,.08) 31%,transparent 38% 66%,rgba(103,226,255,.07) 73%,transparent 80%);animation:auroraSpin 28s linear infinite}
+    .ambient{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+    .orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.72}
+    .orb.one{width:310px;height:310px;left:-110px;top:10%;border:1px solid rgba(102,217,255,.24);box-shadow:inset 0 0 90px rgba(75,141,255,.12),0 0 80px rgba(75,141,255,.1);animation:orbDrift 11s ease-in-out infinite}
+    .orb.two{width:210px;height:210px;right:-42px;bottom:7%;border:1px solid rgba(139,108,255,.3);box-shadow:inset 0 0 72px rgba(139,108,255,.13),0 0 70px rgba(139,108,255,.12);animation:orbDrift 9s ease-in-out infinite reverse}
+    .particle{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--cyan);box-shadow:0 0 18px 4px rgba(102,217,255,.46);animation:particleFloat 8s ease-in-out infinite}
+    .particle.p1{left:10%;top:74%}.particle.p2{left:28%;top:12%;animation-delay:-3s}.particle.p3{right:18%;top:18%;animation-delay:-5s}.particle.p4{right:8%;top:58%;animation-delay:-1.5s}
+    .login-shell{position:relative;z-index:1;width:min(1080px,100%);min-height:650px;display:grid;grid-template-columns:1.08fr .92fr;overflow:hidden;border:1px solid rgba(135,215,255,.25);border-radius:34px;background:linear-gradient(135deg,rgba(10,30,49,.78),rgba(4,14,27,.9));box-shadow:0 42px 120px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.025) inset,0 0 80px rgba(62,133,224,.08);backdrop-filter:blur(26px);animation:shellFloat 8s ease-in-out infinite}
+    .login-shell::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.06),transparent 21% 74%,rgba(102,217,255,.035))}
+    .command-panel{position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:48px 50px;overflow:hidden;border-right:1px solid rgba(125,210,255,.15);background:radial-gradient(circle at 48% 50%,rgba(55,122,213,.16),transparent 42%)}
+    .brand{position:relative;z-index:2;display:flex;align-items:center;gap:15px}.mark{position:relative;display:grid;place-items:center;width:57px;height:57px;border:1px solid rgba(102,217,255,.52);border-radius:18px;background:linear-gradient(145deg,rgba(102,217,255,.14),rgba(75,141,255,.05));box-shadow:0 0 28px rgba(102,217,255,.16),inset 0 0 18px rgba(102,217,255,.06)}.mark::after{content:"";position:absolute;inset:-6px;border:1px solid rgba(102,217,255,.13);border-radius:23px;animation:pulseRing 3s ease-out infinite}.mark img{width:36px;height:36px;filter:drop-shadow(0 0 12px rgba(102,217,255,.38))}
+    .brand-kicker{margin:0 0 5px;color:var(--cyan);font-size:10px;font-weight:900;letter-spacing:.2em}.brand h2{margin:0;font-size:18px;letter-spacing:.01em}.brand small{display:block;margin-top:3px;color:#7894aa;font-size:11px;letter-spacing:.04em}
+    .hero-copy{position:relative;z-index:2;max-width:480px;margin:30px 0}.eyebrow{display:inline-flex;align-items:center;gap:8px;margin:0 0 17px;color:#b8e9ff;font-size:10px;font-weight:900;letter-spacing:.18em;text-transform:uppercase}.eyebrow::before{content:"";width:24px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+    h1{max-width:460px;margin:0;font-size:clamp(39px,5vw,62px);line-height:.98;letter-spacing:-.055em}.gradient-text{background:linear-gradient(110deg,#fff 18%,#8ee3ff 58%,#9d8cff);-webkit-background-clip:text;background-clip:text;color:transparent}.hero-copy>p{max-width:430px;margin:22px 0 0;color:var(--soft);font-size:14px;line-height:1.7}
+    .tech-core{position:absolute;left:50%;top:52%;width:330px;height:330px;transform:translate(-50%,-50%);opacity:.82;pointer-events:none}.tech-ring{position:absolute;inset:0;border:1px solid rgba(102,217,255,.18);border-radius:50%;animation:ringSpin 18s linear infinite}.tech-ring::before,.tech-ring::after{content:"";position:absolute;border-radius:50%;background:var(--cyan);box-shadow:0 0 18px var(--cyan)}.tech-ring::before{width:7px;height:7px;left:48px;top:33px}.tech-ring::after{width:4px;height:4px;right:22px;bottom:95px}.tech-ring.mid{inset:43px;border-style:dashed;border-color:rgba(139,108,255,.26);animation-duration:12s;animation-direction:reverse}.tech-ring.inner{inset:96px;border-color:rgba(101,247,206,.25);animation-duration:8s}.core-light{position:absolute;inset:126px;border-radius:50%;background:radial-gradient(circle,#bdf5ff 0,#66d9ff 16%,rgba(75,141,255,.28) 44%,transparent 72%);box-shadow:0 0 54px rgba(102,217,255,.38);animation:corePulse 3.2s ease-in-out infinite}
+    .system-stats{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{padding:14px 13px;border:1px solid rgba(125,210,255,.15);border-radius:14px;background:rgba(7,23,38,.58);box-shadow:0 13px 30px rgba(0,0,0,.14);backdrop-filter:blur(12px);animation:chipFloat 5.5s ease-in-out infinite}.stat:nth-child(2){animation-delay:-1.8s}.stat:nth-child(3){animation-delay:-3.4s}.stat strong{display:block;color:#dff7ff;font-size:11px;letter-spacing:.07em}.stat span{display:flex;align-items:center;gap:6px;margin-top:5px;color:#7795ac;font-size:9px;letter-spacing:.09em;text-transform:uppercase}.stat span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px rgba(101,247,206,.72)}
+    .auth-zone{position:relative;display:grid;place-items:center;padding:46px}.auth-zone::before{content:"";position:absolute;width:240px;height:240px;right:-70px;top:-80px;border:1px solid rgba(102,217,255,.13);border-radius:50%;box-shadow:0 0 60px rgba(75,141,255,.07)}
+    .auth-card{position:relative;width:min(390px,100%);padding:33px;border:1px solid rgba(148,220,255,.19);border-radius:25px;background:linear-gradient(160deg,rgba(14,35,55,.88),rgba(5,17,31,.93));box-shadow:0 28px 65px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.045);backdrop-filter:blur(22px);animation:cardFloat 6.5s ease-in-out infinite}
+    .auth-card::before{content:"";position:absolute;inset:-1px;border-radius:25px;padding:1px;background:linear-gradient(135deg,rgba(102,217,255,.54),transparent 30% 70%,rgba(139,108,255,.4));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+    .access-status{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid rgba(101,247,206,.2);border-radius:999px;background:rgba(101,247,206,.055);color:#9df9df;font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.access-status::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px rgba(101,247,206,.8);animation:statusBlink 2s ease-in-out infinite}
+    .auth-card h2{margin:23px 0 8px;font-size:29px;letter-spacing:-.035em}.intro{margin:0 0 24px;color:var(--soft);font-size:13px;line-height:1.55}
+    .notice{margin:0 0 18px;padding:12px 13px;border:1px solid rgba(255,112,140,.38);border-radius:12px;background:rgba(126,28,58,.19);color:#ffd6df;font-size:12px;line-height:1.45}
+    label{display:flex;justify-content:space-between;margin:15px 0 8px;color:#ccecff;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.label-code{color:#536f86;font-weight:700}
+    .field{position:relative}.field-icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#7199b7;font-size:15px;pointer-events:none}.field::after{content:"";position:absolute;left:43px;top:13px;bottom:13px;width:1px;background:rgba(125,210,255,.13)}
+    input{width:100%;min-height:50px;border:1px solid rgba(125,210,255,.2);border-radius:13px;background:rgba(2,12,23,.75);color:var(--ink);padding:13px 14px 13px 56px;font:inherit;font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s,background .2s}input::placeholder{color:#49647a}input:hover{border-color:rgba(125,210,255,.32)}input:focus{border-color:rgba(102,217,255,.75);background:rgba(4,17,30,.92);box-shadow:0 0 0 3px rgba(102,217,255,.09),0 0 24px rgba(102,217,255,.08)}
+    button{position:relative;width:100%;min-height:51px;margin-top:22px;overflow:hidden;border:0;border-radius:13px;padding:14px 18px;background:linear-gradient(110deg,#55c9f3,#5f9cff 56%,#8170f5);color:#03101d;font-weight:950;font-size:12px;letter-spacing:.09em;text-transform:uppercase;cursor:pointer;box-shadow:0 14px 32px rgba(76,145,245,.26);transition:transform .2s,filter .2s,box-shadow .2s}button::before{content:"";position:absolute;inset:0;transform:translateX(-120%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);transition:transform .6s}button:hover{transform:translateY(-2px);filter:brightness(1.07);box-shadow:0 18px 38px rgba(76,145,245,.36)}button:hover::before{transform:translateX(120%)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .form-links{display:flex;justify-content:center;margin-top:17px}.help{color:#9edfff;font-size:11px;font-weight:800;letter-spacing:.04em;text-decoration:none}.help:hover{text-decoration:underline}.security{display:flex;align-items:flex-start;gap:9px;margin:22px 0 0;padding-top:18px;border-top:1px solid rgba(125,210,255,.1);color:#627f96;font-size:10px;line-height:1.5}.security-icon{color:#7bbddf;font-size:13px}
+    @keyframes shellFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}@keyframes cardFloat{0%,100%{transform:translateY(0) rotateX(0)}50%{transform:translateY(-8px) rotateX(.6deg)}}@keyframes chipFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes orbDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-18px) scale(1.05)}}@keyframes particleFloat{0%,100%{transform:translateY(0);opacity:.35}50%{transform:translateY(-30px);opacity:1}}@keyframes ringSpin{to{transform:rotate(360deg)}}@keyframes auroraSpin{to{transform:rotate(360deg)}}@keyframes pulseRing{0%{transform:scale(.84);opacity:0}55%{opacity:.75}100%{transform:scale(1.16);opacity:0}}@keyframes corePulse{0%,100%{transform:scale(.88);opacity:.7}50%{transform:scale(1.08);opacity:1}}@keyframes statusBlink{0%,100%{opacity:.48}50%{opacity:1}}
+    @media(max-width:860px){body{padding:20px}.login-shell{width:min(520px,100%);grid-template-columns:1fr;min-height:0}.command-panel{min-height:250px;padding:30px;border-right:0;border-bottom:1px solid rgba(125,210,255,.15)}.hero-copy{margin:27px 0 0}.hero-copy h1{font-size:38px}.hero-copy>p,.system-stats{display:none}.tech-core{width:230px;height:230px;left:78%;top:62%}.tech-ring.mid{inset:32px}.tech-ring.inner{inset:70px}.core-light{inset:88px}.auth-zone{padding:25px}.auth-card{width:100%;animation:none}}
+    @media(max-width:520px){body{align-items:start;padding:13px}.login-shell{margin:8px 0;border-radius:24px;animation:none}.command-panel{min-height:215px;padding:24px 22px}.mark{width:49px;height:49px;border-radius:15px}.mark img{width:31px;height:31px}.brand h2{font-size:16px}.brand small{font-size:10px}.hero-copy{margin-top:25px}.eyebrow{margin-bottom:12px}.hero-copy h1{max-width:290px;font-size:34px}.tech-core{left:84%;top:65%;width:185px;height:185px}.tech-ring.mid{inset:27px}.tech-ring.inner{inset:58px}.core-light{inset:72px}.auth-zone{padding:14px}.auth-card{padding:25px 20px;border-radius:20px}.auth-card::before{border-radius:20px}.auth-card h2{font-size:26px}.orb.one{width:220px;height:220px}.orb.two{width:150px;height:150px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important}button{transition:none}}
   </style>
 </head>
 <body>
-  <main>
-    <div class="brand"><div class="mark"><img src="/favicon.svg" alt=""></div><div><h1>Central Unigames</h1><p>Operações, tarefas e estoque</p></div></div>
-    <p class="intro">Entre com seu usuário individual. Seus módulos, preferências e tarefas serão carregados de forma segura.</p>
-    ${notice}
-    <form method="post" action="/login">
-      <input type="hidden" name="next" value="${escapeHtml(next)}">
-      <label for="username">Usuário</label>
-      <input id="username" name="username" type="text" autocomplete="username" required${disabled}>
-      <label for="password">Senha</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required${disabled}>
-      <button type="submit"${disabled}>Entrar no sistema</button>
-    </form>
-    <a class="help" href="/recuperar-senha">Esqueci minha senha</a>
-    <p class="security">Sessão protegida e válida por 12 horas. Não compartilhe a senha em canais públicos.</p>
+  <div class="ambient" aria-hidden="true">
+    <span class="orb one"></span><span class="orb two"></span>
+    <span class="particle p1"></span><span class="particle p2"></span><span class="particle p3"></span><span class="particle p4"></span>
+  </div>
+  <main class="login-shell">
+    <section class="command-panel" aria-label="Central de operações Unigames">
+      <div class="brand">
+        <div class="mark"><img src="/favicon.svg" alt=""></div>
+        <div><p class="brand-kicker">UNIGAMES // CORE</p><h2>Central de Operações</h2><small>Ambiente inteligente de gestão</small></div>
+      </div>
+      <div class="tech-core" aria-hidden="true"><span class="tech-ring"></span><span class="tech-ring mid"></span><span class="tech-ring inner"></span><span class="core-light"></span></div>
+      <div class="hero-copy">
+        <p class="eyebrow">Núcleo operacional conectado</p>
+        <h1>Controle tudo.<br><span class="gradient-text">Em um só lugar.</span></h1>
+        <p>Tarefas, compras, estoque fiscal e base de dados trabalham juntos em uma central segura, rápida e personalizada para cada usuário.</p>
+      </div>
+      <div class="system-stats" aria-label="Estado da plataforma">
+        <div class="stat"><strong>SISTEMA</strong><span>Operacional</span></div>
+        <div class="stat"><strong>DADOS</strong><span>Sincronizados</span></div>
+        <div class="stat"><strong>ACESSO</strong><span>Protegido</span></div>
+      </div>
+    </section>
+    <section class="auth-zone">
+      <div class="auth-card">
+        <span class="access-status">Canal seguro ativo</span>
+        <h2>Acesse sua central</h2>
+        <p class="intro">Use suas credenciais individuais para carregar seus módulos, preferências e tarefas.</p>
+        ${notice}
+        <form method="post" action="/login">
+          <input type="hidden" name="next" value="${escapeHtml(next)}">
+          <label for="username"><span>Usuário</span><span class="label-code">ID.01</span></label>
+          <div class="field"><span class="field-icon" aria-hidden="true">●</span><input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Digite seu usuário" required${disabled}></div>
+          <label for="password"><span>Senha</span><span class="label-code">KEY.02</span></label>
+          <div class="field"><span class="field-icon" aria-hidden="true">◆</span><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required${disabled}></div>
+          <button type="submit"${disabled}>Entrar no sistema&nbsp;&nbsp;→</button>
+        </form>
+        <div class="form-links"><a class="help" href="/recuperar-senha">Esqueci minha senha</a></div>
+        <p class="security"><span class="security-icon" aria-hidden="true">◈</span><span>Sessão criptografada e válida por 12 horas. Suas permissões são verificadas novamente a cada acesso.</span></p>
+      </div>
+    </section>
   </main>
 </body>
 </html>`;
@@ -486,23 +547,29 @@ function passwordRecoveryPage(message = "", success = false): Response {
     : "";
   const html = `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>Recuperar senha · Central Unigames</title>
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#050d18"><title>Recuperar senha · Central Unigames</title>
 <style>
-:root{color-scheme:dark;--bg:#06111d;--accent:#65b8ff;--ink:#f5f9ff;--soft:#a9bfd3}*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 10%,#173754 0,transparent 36%),radial-gradient(circle at 90% 90%,#102945 0,transparent 34%),var(--bg);font-family:Arial,sans-serif;color:var(--ink)}
-main{width:min(440px,100%);padding:34px;border:1px solid rgba(101,184,255,.38);border-radius:20px;background:linear-gradient(180deg,rgba(17,42,66,.98),rgba(7,24,40,.98));box-shadow:0 28px 80px rgba(0,0,0,.48)}
-.brand{display:flex;align-items:center;gap:13px}.brand img{width:45px;height:45px;padding:8px;border:1px solid rgba(101,184,255,.45);border-radius:13px}h1{margin:0;font-size:22px}.brand p,p{color:var(--soft);line-height:1.55}.intro{font-size:14px;margin:22px 0}
-label{display:block;margin:15px 0 8px;color:#dcecff;font-size:12px;font-weight:800;letter-spacing:.08em}input{width:100%;padding:13px 14px;border:1px solid rgba(101,184,255,.35);border-radius:11px;background:#071522;color:var(--ink);font:inherit;outline:none}input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(101,184,255,.13)}
-button{width:100%;margin-top:20px;padding:14px;border:0;border-radius:11px;background:linear-gradient(135deg,#4f9fe5,#76c4ff);color:#04111d;font-weight:900;cursor:pointer}.back{display:block;margin-top:17px;color:#9fd4ff;text-align:center;text-decoration:none;font-size:12px;font-weight:800}
-.notice{margin:18px 0 0;padding:11px 12px;border:1px solid rgba(255,112,112,.45);border-radius:10px;background:rgba(126,28,28,.24);color:#ffd6d6;font-size:13px}.notice.success{border-color:rgba(92,211,151,.45);background:rgba(21,96,62,.25);color:#c9ffe3}
-</style></head><body><main>
-<div class="brand"><img src="/favicon.svg" alt=""><div><h1>Recuperar senha</h1><p>Central Unigames</p></div></div>
-<p class="intro">Informe seu usuário. A solicitação ficará visível para o administrador, que poderá cadastrar uma nova senha com segurança.</p>
+:root{color-scheme:dark;--bg:#030914;--cyan:#66d9ff;--blue:#4b8dff;--violet:#8b6cff;--ink:#f5fbff;--soft:#9eb5c9}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;overflow-x:hidden;padding:24px;background:radial-gradient(circle at 12% 15%,rgba(64,122,211,.24),transparent 32%),radial-gradient(circle at 88% 84%,rgba(103,77,198,.2),transparent 32%),linear-gradient(145deg,#030914,#071625 55%,#020711);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;background-image:linear-gradient(rgba(112,205,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(112,205,255,.07) 1px,transparent 1px);background-size:54px 54px;mask-image:linear-gradient(to bottom,black,transparent 90%)}
+.recovery-orbit{position:fixed;width:430px;height:430px;border:1px solid rgba(102,217,255,.15);border-radius:50%;pointer-events:none;animation:orbitFloat 9s ease-in-out infinite}.recovery-orbit::before,.recovery-orbit::after{content:"";position:absolute;border-radius:50%;border:1px dashed rgba(139,108,255,.17)}.recovery-orbit::before{inset:52px}.recovery-orbit::after{inset:115px;background:radial-gradient(circle,rgba(102,217,255,.12),transparent 65%);box-shadow:0 0 70px rgba(75,141,255,.09)}
+main{position:relative;z-index:1;width:min(480px,100%);padding:38px;border:1px solid rgba(135,215,255,.24);border-radius:28px;background:linear-gradient(145deg,rgba(13,34,53,.88),rgba(4,15,28,.94));box-shadow:0 36px 100px rgba(0,0,0,.53),inset 0 1px rgba(255,255,255,.045);backdrop-filter:blur(25px);animation:cardFloat 7s ease-in-out infinite}
+main::before{content:"";position:absolute;inset:-1px;border-radius:28px;padding:1px;background:linear-gradient(135deg,rgba(102,217,255,.55),transparent 33% 70%,rgba(139,108,255,.38));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.brand{display:flex;align-items:center;gap:14px}.brand-icon{position:relative;display:grid;place-items:center;width:55px;height:55px;border:1px solid rgba(102,217,255,.46);border-radius:17px;background:rgba(102,217,255,.08);box-shadow:0 0 27px rgba(102,217,255,.13)}.brand-icon::after{content:"";position:absolute;inset:-6px;border:1px solid rgba(102,217,255,.12);border-radius:22px;animation:pulse 3s ease-out infinite}.brand img{width:35px;height:35px}.kicker{margin:0 0 4px;color:var(--cyan);font-size:9px;font-weight:900;letter-spacing:.18em}.brand h1{margin:0;font-size:24px;letter-spacing:-.025em}.brand small{display:block;margin-top:3px;color:#718da3;font-size:10px}
+.intro{margin:26px 0 21px;color:var(--soft);font-size:13px;line-height:1.65}.step{display:inline-flex;align-items:center;gap:8px;margin-bottom:5px;color:#a8ebff;font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.step::before{content:"";width:7px;height:7px;border-radius:50%;background:#65f7ce;box-shadow:0 0 11px rgba(101,247,206,.72)}
+label{display:flex;justify-content:space-between;margin:17px 0 8px;color:#ccecff;font-size:10px;font-weight:900;letter-spacing:.12em}.field{position:relative}.field::before{content:"●";position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#7199b7;font-size:14px}.field::after{content:"";position:absolute;left:43px;top:13px;bottom:13px;width:1px;background:rgba(125,210,255,.13)}
+input{width:100%;min-height:51px;padding:13px 14px 13px 56px;border:1px solid rgba(125,210,255,.21);border-radius:13px;background:rgba(2,12,23,.78);color:var(--ink);font:inherit;font-size:16px;outline:none}input:focus{border-color:rgba(102,217,255,.74);box-shadow:0 0 0 3px rgba(102,217,255,.09),0 0 25px rgba(102,217,255,.07)}
+button{position:relative;width:100%;min-height:51px;margin-top:21px;overflow:hidden;padding:14px;border:0;border-radius:13px;background:linear-gradient(110deg,#55c9f3,#5f9cff 56%,#8170f5);color:#03101d;font-weight:950;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 15px 34px rgba(76,145,245,.26);transition:transform .2s,filter .2s}button:hover{transform:translateY(-2px);filter:brightness(1.08)}.back{display:block;margin-top:19px;color:#9fdfff;text-align:center;text-decoration:none;font-size:11px;font-weight:800}.back:hover{text-decoration:underline}
+.notice{margin:18px 0 0;padding:12px 13px;border:1px solid rgba(255,112,140,.38);border-radius:12px;background:rgba(126,28,58,.2);color:#ffd6df;font-size:12px;line-height:1.45}.notice.success{border-color:rgba(92,211,151,.4);background:rgba(21,96,62,.22);color:#c9ffe3}
+@keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}@keyframes orbitFloat{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(12deg) scale(1.04)}}@keyframes pulse{0%{transform:scale(.84);opacity:0}55%{opacity:.7}100%{transform:scale(1.16);opacity:0}}@media(max-width:520px){body{padding:14px}main{padding:29px 21px;border-radius:22px;animation:none}.recovery-orbit{width:300px;height:300px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
+</style></head><body><span class="recovery-orbit" aria-hidden="true"></span><main>
+<div class="brand"><div class="brand-icon"><img src="/favicon.svg" alt=""></div><div><p class="kicker">UNIGAMES // ACCESS</p><h1>Recuperar senha</h1><small>Central de Operações</small></div></div>
+<p class="intro"><span class="step">Solicitação protegida</span><br>Informe seu usuário. O administrador receberá o pedido e poderá cadastrar uma nova senha com segurança.</p>
 ${notice}
 <form method="post" action="/recuperar-senha">
-<label for="username">USUÁRIO DE LOGIN</label>
-<input id="username" name="username" autocomplete="username" minlength="3" maxlength="40" required>
-<button type="submit">Solicitar recuperação</button>
+<label for="username"><span>USUÁRIO DE LOGIN</span><span>REC.01</span></label>
+<div class="field"><input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="40" placeholder="Digite seu usuário" required></div>
+<button type="submit">Solicitar recuperação&nbsp;&nbsp;→</button>
 </form>
 <a class="back" href="/login">← Voltar para entrar</a>
 </main></body></html>`;

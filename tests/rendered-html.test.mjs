@@ -43,7 +43,27 @@ test("renderiza a tela de login sem expor a senha", async () => {
   assert.match(html, /Entrar · Estoque Unigames/);
   assert.match(html, /name="username"/);
   assert.match(html, /name="password"/);
+  assert.match(html, /class="login-shell"/);
+  assert.match(html, /Central de Operações/);
+  assert.match(html, /class="tech-core"/);
+  assert.match(html, /Canal seguro ativo/);
+  assert.match(html, /prefers-reduced-motion:reduce/);
   assert.doesNotMatch(html, /senha-de-teste-forte/);
+});
+
+test("mantém a recuperação de senha alinhada à identidade tecnológica", async () => {
+  const response = await (await worker()).fetch(
+    new Request("http://localhost/recuperar-senha"),
+    env,
+    ctx,
+  );
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Recuperar senha · Central Unigames/);
+  assert.match(html, /UNIGAMES \/\/ ACCESS/);
+  assert.match(html, /class="recovery-orbit"/);
+  assert.match(html, /name="username"/);
+  assert.match(html, /Solicitação protegida/);
 });
 
 test("recusa credenciais inválidas", async () => {
