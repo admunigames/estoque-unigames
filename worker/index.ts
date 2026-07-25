@@ -79,6 +79,7 @@ const APP_ROUTE_PATHS = new Set([
   "/cadastros",
   "/cadastros/lojas",
   "/cadastros/base-de-dados",
+  "/cadastros/usuarios",
   "/administracao/usuarios",
   "/estoque.html",
 ]);
@@ -535,7 +536,7 @@ function sharedStatePermission(key: string, scope: string): Permission | Permiss
 
 async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): Promise<boolean> {
   const path = url.pathname.replace(/\/+$/, "") || "/";
-  if (path === "/administracao/usuarios" || path === "/api/admin/users") {
+  if (path === "/cadastros/usuarios" || path === "/administracao/usuarios" || path === "/api/admin/users") {
     return user.role === "admin";
   }
   const directPermissions: Array<[boolean, Permission]> = [
