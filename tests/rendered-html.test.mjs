@@ -44,10 +44,16 @@ test("renderiza a tela de login sem expor a senha", async () => {
   assert.match(html, /name="username"/);
   assert.match(html, /name="password"/);
   assert.match(html, /class="login-shell"/);
-  assert.match(html, /Central de Operações/);
   assert.match(html, /class="tech-core"/);
+  assert.match(html, /class="unigames-emblem"/);
+  assert.match(html, /src="\/unigames-logo\.png"/);
   assert.match(html, /Canal seguro ativo/);
   assert.match(html, /prefers-reduced-motion:reduce/);
+  assert.doesNotMatch(html, /UNIGAMES \/\/ CORE/);
+  assert.doesNotMatch(html, /Central de Operações/);
+  assert.doesNotMatch(html, /Núcleo operacional conectado/);
+  assert.doesNotMatch(html, /Controle tudo\./);
+  assert.doesNotMatch(html, /Em um só lugar\./);
   assert.doesNotMatch(html, /senha-de-teste-forte/);
 });
 
@@ -64,6 +70,26 @@ test("mantém a recuperação de senha alinhada à identidade tecnológica", asy
   assert.match(html, /class="recovery-orbit"/);
   assert.match(html, /name="username"/);
   assert.match(html, /Solicitação protegida/);
+});
+
+test("serve a logo Unigames na tela pública de acesso", async () => {
+  let requestedPath = "";
+  const logoEnv = {
+    ...env,
+    ASSETS: {
+      fetch: async (request) => {
+        requestedPath = new URL(request.url).pathname;
+        return new Response("logo", { status: 200 });
+      },
+    },
+  };
+  const response = await (await worker()).fetch(
+    new Request("http://localhost/unigames-logo.png"),
+    logoEnv,
+    ctx,
+  );
+  assert.equal(response.status, 200);
+  assert.equal(requestedPath, "/unigames-logo.png");
 });
 
 test("recusa credenciais inválidas", async () => {
