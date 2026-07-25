@@ -870,7 +870,56 @@
   body.purchase-density-compact .purchase-card-field,
   body.purchase-density-compact .purchase-card-detail{padding:8px 9px;}
   body.purchase-density-compact .purchase-card-section{padding-top:9px;}
-
+/* TAREFAS */
+  .task-toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(145deg,rgba(255,255,255,.02),transparent 58%),var(--bg-card);
+    border:1px solid rgba(39,69,97,.46); border-radius:14px;
+    padding:16px 20px; margin-bottom:18px; box-shadow:0 14px 34px rgba(0,0,0,.1);
+  }
+  .task-toolbar .field{min-width:170px;}
+  .task-add-row{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
+    background:var(--bg-card); border:1px solid rgba(39,69,97,.6); border-radius:14px;
+    padding:16px; margin-bottom:16px;
+  }
+  .task-add-row .field{flex:1 1 160px; min-width:140px;}
+  .task-add-row .field.grow{flex:2 1 260px;}
+  .task-panel{
+    background:var(--bg-card); border:1px solid rgba(39,69,97,.62); border-radius:16px;
+    padding:20px; margin-bottom:18px; box-shadow:0 18px 42px rgba(0,0,0,.14);
+  }
+  .task-panel h3{margin:0 0 4px; font-size:15px; color:var(--ink);}
+  .task-panel p{margin:0 0 14px; font-size:12.5px; color:var(--ink-soft);}
+  .task-list{display:flex; flex-direction:column; gap:8px;}
+  .task-row{
+    display:flex; align-items:center; gap:12px; padding:11px 13px;
+    border:1px solid rgba(39,69,97,.5); border-radius:10px; background:var(--bg-card-2);
+  }
+  .task-row.done{opacity:.55;}
+  .task-row.done .task-text{text-decoration:line-through;}
+  .task-row input[type=checkbox]{width:18px; height:18px; accent-color:var(--accent); cursor:pointer; flex:0 0 auto;}
+  .task-time{
+    flex:0 0 62px; font-family:var(--mono); font-size:11.5px; color:var(--accent);
+    text-align:center; padding:4px 6px; border-radius:6px; background:rgba(79,134,189,.12);
+  }
+  .task-text{flex:1; min-width:0; font-size:13.5px; color:var(--ink); overflow-wrap:anywhere;}
+  .task-remove{
+    flex:0 0 auto; min-height:32px; padding:6px 10px; font-size:11px;
+    background:transparent; color:var(--neg); border:1px solid rgba(239,106,85,0.35);
+  }
+  .task-empty{padding:30px 14px; text-align:center; color:var(--ink-soft); font-size:13px;}
+  #taskNotes{
+    width:100%; min-height:180px; resize:vertical; background:var(--bg-card-2); color:var(--ink);
+    border:1px solid var(--border); border-radius:10px; padding:14px; font-family:var(--sans);
+    font-size:13.5px; line-height:1.55;
+  }
+  .task-summary{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px;}
+  .task-summary .card{flex:1 1 140px; min-height:0; padding:16px 18px;}
+  @media (max-width:520px){
+    .task-add-row{flex-direction:column; align-items:stretch;}
+    .task-row{flex-wrap:wrap;}
+  }
   footer.hint{margin-top:16px; font-size:12px; color:var(--ink-faint); text-align:center;}
   .mobile-tabbar{display:none;}
 
@@ -1083,6 +1132,54 @@
     .pagination{display:none !important;}
     .wrap{max-width:100%; padding:0;}
   }
+  /* TAREFAS DO DIA — INÍCIO */
+.home-tasks{
+  margin-top:20px; padding:22px; border:1px solid rgba(255,255,255,.9); border-radius:22px;
+  background:rgba(255,255,255,.58); box-shadow:0 14px 34px rgba(36,79,131,.1),inset 0 1px #fff;
+  text-align:left;
+}
+.home-tasks-head{
+  display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:16px;
+}
+.home-tasks-head > div > span{
+  display:block; color:#4e6c89; font:800 9px/1.3 var(--sans); letter-spacing:1px;
+}
+.home-tasks-head h2{margin:5px 0 0; color:#10233a; font:800 21px/1.2 var(--sans);}
+.home-tasks-goto{
+  min-height:36px; padding:8px 14px; border-radius:9px; border:1px solid rgba(36,79,131,.28);
+  background:rgba(36,79,131,.08); color:#244f83; font:700 9px/1 var(--sans); cursor:pointer;
+}
+.home-tasks-goto:hover{opacity:1; background:rgba(36,79,131,.16);}
+.home-tasks-list{display:flex; flex-direction:column; gap:8px;}
+.home-task-row{
+  display:flex; align-items:center; gap:12px; padding:11px 14px;
+  border-radius:11px; background:rgba(236,244,251,.76); color:#10233a;
+}
+.home-task-row.done{opacity:.55;}
+.home-task-row.done .home-task-text{text-decoration:line-through; color:#5c7187;}
+.home-task-time{
+  flex:0 0 54px; font:700 11px/1 var(--mono); color:#244f83; text-align:center;
+  padding:4px 6px; border-radius:6px; background:rgba(36,79,131,.1);
+}
+.home-task-check{
+  flex:0 0 18px; width:18px; height:18px; border-radius:50%;
+  border:2px solid currentColor; display:grid; place-items:center;
+}
+.home-task-row.done .home-task-check{background:#244f83; border-color:#244f83; color:#fff;}
+.home-task-check::after{content:'✓'; font:800 10px/1 var(--sans); display:none;}
+.home-task-row.done .home-task-check::after{display:block;}
+.home-task-text{flex:1; min-width:0; font:600 12px/1.45 var(--sans); overflow-wrap:anywhere;}
+.home-tasks-empty{
+  padding:18px; border-radius:11px; background:rgba(236,244,251,.76);
+  color:#5c7187; font:700 12px/1.5 var(--sans); text-align:center;
+}
+.home-tasks-date{
+  text-align:right; color:#5c7187; font:700 10px/1.35 var(--sans); margin-top:4px;
+}
+@media (max-width:520px){
+  .home-tasks{padding:18px 14px; border-radius:17px;}
+  .home-tasks-head{align-items:flex-start; flex-direction:column; gap:10px;}
+}
 </style>
 </head>
 <body class="home-active">
@@ -1109,6 +1206,7 @@
     <button class="nav-item" id="navPuxadas" data-page="puxadas" title="Puxadas"><span class="nav-icon" aria-hidden="true">⇄</span><span class="nav-label">Puxadas</span></button>
     <button class="nav-item" id="navCompras" data-page="compras" title="Controle de Compras"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Controle de Compras</span></button>
     <button class="nav-item" id="navDashboard" data-page="dashboard" title="Estoque Fiscal"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></button>
+    <button class="nav-item" id="navTarefas" data-page="tarefas" title="Tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></button>
     <div class="nav-group">
       <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
         <span class="nav-icon" aria-hidden="true">⬡</span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
@@ -1178,6 +1276,21 @@
             <div class="home-update-skeleton skeleton"></div>
           </div>
         </section>
+        <!-- TAREFAS DO DIA -->
+<section class="home-tasks" aria-labelledby="homeTasksTitle">
+  <div class="home-tasks-head">
+    <div>
+      <span>AGENDA</span>
+      <h2 id="homeTasksTitle">Tarefas de hoje</h2>
+      <div class="home-tasks-date" id="homeTasksDate"></div>
+    </div>
+    <button class="home-tasks-goto" type="button" data-home-target="tarefas">VER TODAS →</button>
+  </div>
+  <div class="home-tasks-list" id="homeTasksList">
+    <div class="home-update-skeleton skeleton" style="height:42px; border-radius:11px;"></div>
+    <div class="home-update-skeleton skeleton" style="height:42px; border-radius:11px;"></div>
+  </div>
+</section>
       </div>
     </section>
 
@@ -1324,7 +1437,61 @@
 
       <footer class="hint no-print">No PDF, apenas as linhas com saldo negativo saem destacadas. Use o diálogo de impressão do navegador e escolha "Salvar como PDF".</footer>
     </section>
+<!-- ================= TAREFAS ================= -->
+    <section id="pageTarefas" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Tarefas</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Organize a agenda do dia e registre as atividades complementares. No fim do dia, baixe tudo em TXT.</p></div>
+      </header>
 
+      <div class="task-toolbar">
+        <div class="field" style="max-width:220px">
+          <label for="taskDate">DATA</label>
+          <input type="date" id="taskDate">
+        </div>
+        <div class="task-meta" id="taskMeta" style="color:var(--ink-soft); font-family:var(--mono); font-size:11.5px;">Selecione uma data</div>
+        <div class="actions">
+          <button class="btn-outline" id="btnClearTaskDay" type="button">LIMPAR DIA</button>
+          <button class="btn-accent" id="btnDownloadTaskTxt" type="button">BAIXAR TXT</button>
+        </div>
+      </div>
+
+      <section class="summary task-summary" aria-label="Resumo das tarefas">
+        <div class="card"><div class="lbl">Planejadas</div><div class="num" id="taskCardTotal">0</div></div>
+        <div class="card"><div class="lbl">Concluídas</div><div class="num" id="taskCardDone">0</div></div>
+        <div class="card"><div class="lbl">Pendentes</div><div class="num" id="taskCardPending">0</div></div>
+      </section>
+
+      <section class="task-panel">
+        <h3>AGENDA DO DIA</h3>
+        <p>Cadastre as atividades planejadas. Marque como concluída assim que finalizar.</p>
+        <div class="task-add-row">
+          <div class="field" style="max-width:110px">
+            <label for="taskInputTime">HORÁRIO</label>
+            <input type="time" id="taskInputTime">
+          </div>
+          <div class="field grow">
+            <label for="taskInputText">ATIVIDADE</label>
+            <input type="text" id="taskInputText" maxlength="300" placeholder="Ex.: Conferir divergências da loja Recife">
+          </div>
+          <button class="btn-accent" id="btnAddTask" type="button">+ ADICIONAR</button>
+        </div>
+        <div class="task-list" id="taskList">
+          <div class="task-empty">Nenhuma tarefa cadastrada para esta data.</div>
+        </div>
+      </section>
+
+      <section class="task-panel">
+        <h3>ATIVIDADES COMPLEMENTARES</h3>
+        <p>Anote aqui o que foi feito além do planejado, observações e pendências.</p>
+        <textarea id="taskNotes" placeholder="Descreva as atividades complementares realizadas hoje..."></textarea>
+      </section>
+    </section>
+
+</parameter>
     <!-- ================= CADASTRO DE LOJAS ================= -->
     <section id="pageLojas" class="page wrap">
       <header class="page-header">
@@ -1592,8 +1759,8 @@
       </div>
       <div class="purchase-field"><label for="purchaseStatus">STATUS</label><select id="purchaseStatus"><option>Não iniciado</option><option>Em andamento</option><option>Concluído</option></select></div>
       <div class="purchase-form-section">DOCUMENTOS</div>
-      <div class="purchase-field"><label for="purchaseOrderFile">ARQUIVO DO PEDIDO</label><input type="file" id="purchaseOrderFile" accept=".pdf,.txt,.json,.doc,.docx,.xls,.xlsx"><span class="purchase-field-help">ATÉ 100 MB. ARQUIVOS MAIORES SÃO ENVIADOS EM PARTES. EM EDIÇÕES, O NOVO ARQUIVO SERÁ ACRESCENTADO AOS EXISTENTES.</span></div>
-      <div class="purchase-field"><label for="purchaseInvoiceFile">NOTA FISCAL</label><input type="file" id="purchaseInvoiceFile" accept=".pdf,.txt,.json,.doc,.docx,.xls,.xlsx"><span class="purchase-field-help">ATÉ 100 MB. O DOCUMENTO SERÁ ARMAZENADO DIRETAMENTE NO NOTION.</span></div>
+      <div class="purchase-field"><label for="purchaseOrderFile">ARQUIVO DO PEDIDO</label><input type="file" id="purchaseOrderFile" accept=".pdf,.txt,.json,.doc,.docx,.xls,.xlsx"><span class="purchase-field-help">ATÉ 20 MB. EM EDIÇÕES, O NOVO ARQUIVO SERÁ ACRESCENTADO AOS EXISTENTES.</span></div>
+      <div class="purchase-field"><label for="purchaseInvoiceFile">NOTA FISCAL</label><input type="file" id="purchaseInvoiceFile" accept=".pdf,.txt,.json,.doc,.docx,.xls,.xlsx"><span class="purchase-field-help">O DOCUMENTO SERÁ ARMAZENADO DIRETAMENTE NO NOTION.</span></div>
     </div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelPurchase" type="button">CANCELAR</button>
@@ -3143,6 +3310,8 @@
         }).join('');
       }
       el('homePurchaseProgress').textContent = purchaseCount;
+      el('homePurchaseProgress').textContent = purchaseCount;
+      renderHomeTasks();
     } finally {
       homeOverviewLoading = false;
     }
@@ -3942,104 +4111,14 @@
     showPurchaseToast.timer = setTimeout(() => { toast.hidden = true; }, 4200);
   }
 
-  const PURCHASE_FILE_CHUNK_SIZE = 512 * 1024;
-  const PURCHASE_FILE_MAX_SIZE = 100 * 1024 * 1024;
-
-  async function purchaseApiResponse(response, fallbackMessage){
-    const raw = await response.text();
-    let data = {};
-    if(raw){
-      try{
-        data = JSON.parse(raw);
-      } catch(error){
-        data = {};
-      }
-    }
-    if(!response.ok){
-      if(response.status === 413){
-        throw new Error('O ARQUIVO É MAIOR DO QUE O LIMITE ACEITO. USE UM DOCUMENTO DE ATÉ 100 MB.');
-      }
-      const safeText = raw && !raw.trim().startsWith('<') ? raw.trim() : '';
-      throw new Error(data.error || safeText || fallbackMessage);
-    }
-    if(!data || typeof data !== 'object'){
-      throw new Error(fallbackMessage);
-    }
-    return data;
-  }
-
   async function uploadPurchaseFile(file){
     if(!file) return null;
-    if(file.size <= 0) throw new Error('O ARQUIVO '+file.name+' ESTÁ VAZIO.');
-    if(file.size > PURCHASE_FILE_MAX_SIZE){
-      throw new Error('O ARQUIVO '+file.name+' DEVE TER NO MÁXIMO 100 MB.');
-    }
-
-    const numberOfParts = Math.max(1, Math.ceil(file.size / PURCHASE_FILE_CHUNK_SIZE));
-    let sessionId = '';
-    try{
-      const createResponse = await fetch('/api/compras/files', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Accept':'application/json'},
-        body:JSON.stringify({
-          action:'create',
-          fileName:file.name,
-          contentType:file.type || 'application/octet-stream',
-          fileSize:file.size,
-          numberOfParts
-        })
-      });
-      const created = await purchaseApiResponse(
-        createResponse,
-        'NÃO FOI POSSÍVEL PREPARAR O ENVIO DE '+file.name+'.'
-      );
-      sessionId = created.session && created.session.id;
-      if(!sessionId) throw new Error('NÃO FOI POSSÍVEL PREPARAR O ENVIO DE '+file.name+'.');
-
-      const progressButton = el('btnSavePurchase');
-      for(let index = 0; index < numberOfParts; index += 1){
-        const start = index * PURCHASE_FILE_CHUNK_SIZE;
-        const chunk = file.slice(start, Math.min(start + PURCHASE_FILE_CHUNK_SIZE, file.size));
-        progressButton.textContent = 'ENVIANDO DOCUMENTO '+(index + 1)+'/'+numberOfParts+'...';
-        const partResponse = await fetch('/api/compras/files', {
-          method:'POST',
-          headers:{
-            'Content-Type':'application/octet-stream',
-            'X-Purchase-Upload-Id':sessionId,
-            'X-Purchase-Part-Number':String(index + 1)
-          },
-          body:chunk
-        });
-        await purchaseApiResponse(
-          partResponse,
-          'NÃO FOI POSSÍVEL ENVIAR '+file.name+'. TENTE NOVAMENTE.'
-        );
-      }
-
-      progressButton.textContent = 'ARMAZENANDO NO NOTION...';
-      const completeResponse = await fetch('/api/compras/files', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Accept':'application/json'},
-        body:JSON.stringify({action:'complete', sessionId})
-      });
-      const completed = await purchaseApiResponse(
-        completeResponse,
-        'NÃO FOI POSSÍVEL CONCLUIR O ENVIO DE '+file.name+'.'
-      );
-      sessionId = '';
-      return completed.file;
-    } catch(error){
-      if(sessionId){
-        try{
-          await fetch('/api/compras/files', {
-            method:'POST',
-            headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify({action:'cancel', sessionId})
-          });
-        } catch(cancelError){}
-      }
-      throw error;
-    }
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    const response = await fetch('/api/compras/files', {method:'POST', body:formData});
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL ENVIAR '+file.name+'.');
+    return data.file;
   }
 
   async function savePurchase(event){
@@ -4049,10 +4128,10 @@
     button.disabled = true;
     button.textContent = 'SALVANDO...';
     try{
-      const uploads = [
-        await uploadPurchaseFile(el('purchaseOrderFile').files && el('purchaseOrderFile').files[0]),
-        await uploadPurchaseFile(el('purchaseInvoiceFile').files && el('purchaseInvoiceFile').files[0])
-      ];
+      const uploads = await Promise.all([
+        uploadPurchaseFile(el('purchaseOrderFile').files && el('purchaseOrderFile').files[0]),
+        uploadPurchaseFile(el('purchaseInvoiceFile').files && el('purchaseInvoiceFile').files[0])
+      ]);
       const payload = {
         fornecedor:el('purchaseSupplier').value.trim(),
         loja:el('purchaseStore').value.trim(),
@@ -4074,7 +4153,8 @@
         headers:{'Content-Type':'application/json','Accept':'application/json'},
         body:JSON.stringify(payload)
       });
-      await purchaseApiResponse(response, 'NÃO FOI POSSÍVEL SALVAR O PEDIDO.');
+      const data = await response.json();
+      if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL SALVAR O PEDIDO.');
       closePurchaseDialog();
       showPurchaseToast(pageId ? 'Pedido atualizado no Notion.' : 'Pedido criado no Notion.');
       await loadPurchases(true);
@@ -4379,7 +4459,40 @@
     XLSX.utils.book_append_sheet(wb, ws, 'Estoque');
     XLSX.writeFile(wb, exportFileBase() + '.xlsx');
   });
+function renderHomeTasks(){
+    const list = el('homeTasksList');
+    const dateEl = el('homeTasksDate');
+    if(!list) return;
 
+    const today = new Date();
+    const dateKey = today.toISOString().slice(0,10);
+    const dateFormatted = today.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+    if(dateEl) dateEl.textContent = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
+
+    storage.get('tarefas:' + dateKey).then(result => {
+      if(!result || !result.value){
+        list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
+        return;
+      }
+      let data;
+      try{ data = JSON.parse(result.value); } catch(e){ data = {}; }
+      const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+      if(tasks.length === 0){
+        list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
+        return;
+      }
+      const sorted = tasks.slice().sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+      list.innerHTML = sorted.map(task =>
+        '<div class="home-task-row'+(task.done ? ' done' : '')+'">'+
+          (task.time ? '<span class="home-task-time">'+escapeHtml(task.time)+'</span>' : '')+
+          '<span class="home-task-check" aria-hidden="true"></span>'+
+          '<span class="home-task-text">'+escapeHtml(task.text || '')+'</span>'+
+        '</div>'
+      ).join('');
+    }).catch(() => {
+      list.innerHTML = '<div class="home-tasks-empty">Não foi possível carregar as tarefas.</div>';
+    });
+  }
   async function initializeApp(){
     setDropzonesDisabled(true);
     renderAll();
