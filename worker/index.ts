@@ -88,6 +88,7 @@ const LOGIN_WINDOW_MS = 10 * 60 * 1000;
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+let appUsersReady: Promise<void> | null = null;
 
 function loginConfig(env: Env): LoginConfig | null {
   const username = env.APP_LOGIN_USER?.trim() ?? "";
@@ -195,7 +196,37 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
   };
 }
 
+async function ensureAppUsersTable(database: D1Database): Promise<void> {
+  if (!appUsersReady) {
+    appUsersReady = database.batch([
+      database.prepare(
+        `CREATE TABLE IF NOT EXISTS app_users (
+          id TEXT PRIMARY KEY NOT NULL,
+          username TEXT NOT NULL,
+          display_name TEXT NOT NULL,
+          password_hash TEXT NOT NULL,
+          password_salt TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'user',
+          permissions_json TEXT NOT NULL DEFAULT '[]',
+          active INTEGER NOT NULL DEFAULT 1,
+          session_version INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`,
+      ),
+      database.prepare(
+        "CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_unique ON app_users (username)",
+      ),
+    ]).then(() => undefined).catch((error) => {
+      appUsersReady = null;
+      throw error;
+    });
+  }
+  return appUsersReady;
+}
+
 async function readUserByUsername(database: D1Database, username: string) {
+  await ensureAppUsersTable(database);
   return database
     .prepare(
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
@@ -209,6 +240,7 @@ async function readUserByUsername(database: D1Database, username: string) {
 }
 
 async function readUserById(database: D1Database, id: string) {
+  await ensureAppUsersTable(database);
   return database
     .prepare(
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
@@ -600,6 +632,7 @@ function publicUser(row: StoredUserRow) {
 }
 
 async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
+  await ensureAppUsersTable(env.DB);
   const result = await env.DB.prepare(
     `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
             password_salt AS passwordSalt, role, permissions_json AS permissionsJson,
@@ -626,6 +659,12 @@ async function handleAdminUsers(
   url: URL,
   config: LoginConfig,
 ): Promise<Response> {
+  try {
+    await ensureAppUsersTable(env.DB);
+  } catch (error) {
+    console.error("Não foi possível preparar a tabela de usuários.", error);
+    return jsonError("NÃO FOI POSSÍVEL PREPARAR O CADASTRO DE USUÁRIOS.", 500);
+  }
   if (request.method === "GET") return listUsers(env, config);
   if (!sameOrigin(request, url)) return jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403);
   if (request.method !== "POST" && request.method !== "PATCH") {
@@ -691,6 +730,7 @@ async function handleAdminUsers(
     return Response.json({ user: updated ? publicUser(updated) : null });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
+    console.error("Não foi possível salvar o usuário.", error);
     if (/unique|constraint/i.test(message)) return jsonError("ESTE NOME DE USUÁRIO JÁ ESTÁ EM USO.", 409);
     return jsonError("NÃO FOI POSSÍVEL SALVAR O USUÁRIO.", 500);
   }
