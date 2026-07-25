@@ -668,8 +668,24 @@ async function handleAdminUsers(
   }
   if (request.method === "GET") return listUsers(env, config);
   if (!sameOrigin(request, url)) return jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403);
-  if (request.method !== "POST" && request.method !== "PATCH") {
-    return new Response("Método não permitido", { status: 405, headers: { allow: "GET, POST, PATCH" } });
+  if (request.method !== "POST" && request.method !== "PATCH" && request.method !== "DELETE") {
+    return new Response("Método não permitido", { status: 405, headers: { allow: "GET, POST, PATCH, DELETE" } });
+  }
+
+  if (request.method === "DELETE") {
+    const id = url.searchParams.get("id") ?? "";
+    if (!id || id === "env-admin") {
+      return jsonError("O ADMINISTRADOR PRINCIPAL NÃO PODE SER EXCLUÍDO.", 400);
+    }
+    try {
+      const existing = await readUserById(env.DB, id);
+      if (!existing) return jsonError("USUÁRIO NÃO ENCONTRADO.", 404);
+      await env.DB.prepare("DELETE FROM app_users WHERE id = ?1").bind(id).run();
+      return Response.json({ deleted: true, id });
+    } catch (error) {
+      console.error("Não foi possível excluir o usuário.", error);
+      return jsonError("NÃO FOI POSSÍVEL EXCLUIR O USUÁRIO.", 500);
+    }
   }
 
   let body: Record<string, unknown>;
@@ -790,6 +806,12 @@ const worker = {
 
     const normalizedPath =
       url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : url.pathname;
+    if (
+      normalizedPath === "/" &&
+      (request.method === "GET" || request.method === "HEAD")
+    ) {
+      return Response.redirect(new URL(LOGIN_SUCCESS_PATH, url.origin), 302);
+    }
     if (
       (request.method === "GET" || request.method === "HEAD") &&
       APP_ROUTE_PATHS.has(normalizedPath)
