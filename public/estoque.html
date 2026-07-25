@@ -899,6 +899,17 @@
   .task-row.done{opacity:.55;}
   .task-row.done .task-text{text-decoration:line-through;}
   .task-row input[type=checkbox]{width:18px; height:18px; accent-color:var(--accent); cursor:pointer; flex:0 0 auto;}
+  .task-outcome{
+    flex:0 1 230px; min-width:190px; min-height:36px; padding:7px 9px;
+    border:1px solid var(--border); border-radius:8px; background:var(--bg-card);
+    color:var(--ink); font:700 10px/1.25 var(--sans); cursor:pointer;
+  }
+  .task-outcome:disabled{cursor:not-allowed; opacity:.58;}
+  .task-scheduled{
+    flex:0 0 auto; padding:6px 9px; border:1px solid rgba(114,167,216,.34);
+    border-radius:999px; background:rgba(79,134,189,.1); color:var(--accent);
+    font:700 9px/1.2 var(--mono);
+  }
   .task-time{
     flex:0 0 62px; font-family:var(--mono); font-size:11.5px; color:var(--accent);
     text-align:center; padding:4px 6px; border-radius:6px; background:rgba(79,134,189,.12);
@@ -916,6 +927,20 @@
   }
   .task-summary{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px;}
   .task-summary .card{flex:1 1 140px; min-height:0; padding:16px 18px;}
+  .task-agenda-list{display:grid; gap:12px;}
+  .task-agenda-day{
+    border:1px solid rgba(39,69,97,.5); border-radius:12px; overflow:hidden;
+    background:var(--bg-card-2);
+  }
+  .task-agenda-day-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:10px 13px; border-bottom:1px solid rgba(39,69,97,.42);
+    color:var(--accent); font:800 10px/1.3 var(--mono);
+  }
+  .task-agenda-items{display:flex; flex-direction:column;}
+  .task-agenda-item{display:flex; align-items:center; gap:11px; padding:10px 13px;}
+  .task-agenda-item + .task-agenda-item{border-top:1px solid rgba(39,69,97,.3);}
+  .task-agenda-item .task-text{font-size:12.5px;}
   @media (max-width:520px){
     .task-add-row{flex-direction:column; align-items:stretch;}
     .task-row{flex-wrap:wrap;}
@@ -1166,6 +1191,13 @@
   accent-color:#244f83;
 }
 .home-task-check:focus-visible{outline:2px solid #244f83; outline-offset:3px;}
+.home-task-outcome{
+  flex:0 1 220px; min-width:180px; min-height:34px; padding:6px 8px;
+  border:1px solid rgba(36,79,131,.28); border-radius:8px;
+  background:rgba(255,255,255,.72); color:#244f83; font:800 9px/1.25 var(--sans);
+  cursor:pointer;
+}
+.home-task-outcome:disabled{cursor:not-allowed; opacity:.58;}
 .home-task-text{flex:1; min-width:0; font:600 12px/1.45 var(--sans); overflow-wrap:anywhere;}
 .home-tasks-empty{
   padding:18px; border-radius:11px; background:rgba(236,244,251,.76);
@@ -1177,6 +1209,8 @@
 @media (max-width:520px){
   .home-tasks{padding:18px 14px; border-radius:17px;}
   .home-tasks-head{align-items:flex-start; flex-direction:column; gap:10px;}
+  .home-task-row{flex-wrap:wrap;}
+  .home-task-outcome{flex:1 1 100%; margin-left:30px;}
 }
 </style>
 </head>
@@ -1461,6 +1495,14 @@
         <div class="card"><div class="lbl">Planejadas</div><div class="num" id="taskCardTotal">0</div></div>
         <div class="card"><div class="lbl">Concluídas</div><div class="num" id="taskCardDone">0</div></div>
         <div class="card"><div class="lbl">Pendentes</div><div class="num" id="taskCardPending">0</div></div>
+      </section>
+
+      <section class="task-panel">
+        <h3>AGENDA FUTURA</h3>
+        <p>Tarefas cadastradas para datas posteriores aparecem aqui, sem entrar nas pendências do dia atual.</p>
+        <div class="task-agenda-list" id="taskAgendaFuture">
+          <div class="task-empty">Nenhuma tarefa futura agendada.</div>
+        </div>
       </section>
 
       <section class="task-panel">
@@ -4401,6 +4443,24 @@
   el('btnPullCsv').addEventListener('click', exportPullCsv);
   el('btnPullExcel').addEventListener('click', exportPullExcel);
 
+  function todayDateKey(){
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth()+1).padStart(2,'0');
+    const day = String(today.getDate()).padStart(2,'0');
+    return year+'-'+month+'-'+day;
+  }
+  function nextDateKey(dateKey){
+    const date = new Date(dateKey+'T12:00:00');
+    date.setDate(date.getDate()+1);
+    const year = date.getFullYear();
+    const month = String(date.getMonth()+1).padStart(2,'0');
+    const day = String(date.getDate()).padStart(2,'0');
+    return year+'-'+month+'-'+day;
+  }
+  function formatTaskDate(dateKey){
+    return dateKey ? dateKey.split('-').reverse().join('/') : 'SEM DATA';
+  }
   function taskStorageKey(){ return 'tarefas:' + el('taskDate').value; }
   function normalizeTaskData(data){
     const source = data && typeof data === 'object' ? data : {};
@@ -4408,7 +4468,9 @@
       id:String(task && task.id ? task.id : 'legacy-'+index),
       time:task && typeof task.time === 'string' ? task.time : '',
       text:task && typeof task.text === 'string' ? task.text : '',
-      done:Boolean(task && task.done)
+      done:Boolean(task && task.done),
+      outcome:task && task.outcome === 'carryover' ? 'carryover' : 'not_seen',
+      carriedFrom:task && typeof task.carriedFrom === 'string' ? task.carriedFrom : ''
     })) : [];
     return {tasks, notes:typeof source.notes === 'string' ? source.notes : ''};
   }
@@ -4428,6 +4490,7 @@
   function renderTasks(data){
     const normalized = normalizeTaskData(data);
     const tasks = normalized.tasks.slice().sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+    const futureDate = el('taskDate').value > todayDateKey();
     el('taskList').dataset.taskData = JSON.stringify({tasks, notes:normalized.notes});
     el('taskNotes').value = normalized.notes;
     updateTaskSummary(tasks);
@@ -4436,13 +4499,72 @@
         '<input type="checkbox" data-task-done="'+escapeHtml(task.id)+'" '+(task.done ? 'checked' : '')+' aria-label="Marcar tarefa como concluída">'+
         (task.time ? '<span class="task-time">'+escapeHtml(task.time)+'</span>' : '')+
         '<span class="task-text">'+escapeHtml(task.text || '')+'</span>'+
+        (futureDate
+          ? '<span class="task-scheduled">AGENDADA</span>'
+          : '<select class="task-outcome" data-task-outcome="'+escapeHtml(task.id)+'" '+(task.done ? 'disabled' : '')+' aria-label="Situação da tarefa">'+
+              '<option value="carryover" '+(task.outcome === 'carryover' ? 'selected' : '')+'>EM ANDAMENTO — PRÓXIMO DIA</option>'+
+              '<option value="not_seen" '+(task.outcome === 'not_seen' ? 'selected' : '')+'>NÃO VISUALIZADA HOJE</option>'+
+            '</select>')+
         '<button class="task-remove" type="button" data-task-remove="'+escapeHtml(task.id)+'">REMOVER</button></div>'
     ).join('') : '<div class="task-empty">Nenhuma tarefa cadastrada para esta data.</div>';
   }
   async function saveTaskData(data){
     const normalized = normalizeTaskData(data);
     await storage.set(taskStorageKey(), JSON.stringify(normalized));
-    renderTasks(normalized); renderHomeTasks();
+    renderTasks(normalized);
+    renderHomeTasks();
+    loadTaskAgenda();
+  }
+  async function syncTaskCarryover(sourceDate, task, shouldCarry){
+    const targetDate = nextDateKey(sourceDate);
+    const targetKey = 'tarefas:' + targetDate;
+    const carryId = 'carry-'+sourceDate.replace(/-/g,'')+'-'+task.id;
+    const result = await storage.get(targetKey);
+    const targetData = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
+    const existingIndex = targetData.tasks.findIndex(item => item.id === carryId);
+    if(shouldCarry && existingIndex < 0){
+      targetData.tasks.push({
+        id:carryId,
+        time:task.time,
+        text:task.text,
+        done:false,
+        outcome:'not_seen',
+        carriedFrom:sourceDate
+      });
+    }
+    if(!shouldCarry && existingIndex >= 0) targetData.tasks.splice(existingIndex,1);
+    await storage.set(targetKey, JSON.stringify(targetData));
+  }
+  async function loadTaskAgenda(){
+    const agenda = el('taskAgendaFuture');
+    try{
+      const response = await fetch('/api/shared-state?scope=task-agenda&from='+encodeURIComponent(todayDateKey()), {
+        headers:{'Accept':'application/json'},
+        cache:'no-store'
+      });
+      const payload = await response.json();
+      if(!response.ok) throw new Error(payload.error || 'AGENDA INDISPONÍVEL');
+      const days = (Array.isArray(payload.items) ? payload.items : []).map(item => {
+        const date = String(item.stateKey || '').replace(/^tarefas:/,'');
+        let saved = {};
+        try{ saved = JSON.parse(item.value || '{}'); } catch(error){ saved = {}; }
+        return {date, tasks:normalizeTaskData(saved).tasks};
+      }).filter(day => day.date > todayDateKey() && day.tasks.length);
+      agenda.innerHTML = days.length ? days.map(day =>
+        '<article class="task-agenda-day">'+
+          '<div class="task-agenda-day-head"><span>'+formatTaskDate(day.date)+'</span>'+
+            '<button class="btn-outline" type="button" data-task-agenda-date="'+day.date+'">VER DIA</button></div>'+
+          '<div class="task-agenda-items">'+day.tasks.map(task =>
+            '<div class="task-agenda-item">'+
+              (task.time ? '<span class="task-time">'+escapeHtml(task.time)+'</span>' : '')+
+              '<span class="task-text">'+escapeHtml(task.text)+'</span>'+
+            '</div>'
+          ).join('')+'</div>'+
+        '</article>'
+      ).join('') : '<div class="task-empty">Nenhuma tarefa futura agendada.</div>';
+    } catch(error){
+      agenda.innerHTML = '<div class="task-empty">Não foi possível carregar a agenda futura.</div>';
+    }
   }
   async function loadTasks(){
     if(!el('taskDate').value) return;
@@ -4456,31 +4578,64 @@
     const text = el('taskInputText').value.trim();
     if(!text){ el('taskInputText').focus(); return; }
     const data = readTaskData();
-    data.tasks.push({id:Date.now().toString(36), time:el('taskInputTime').value, text, done:false});
+    data.tasks.push({id:Date.now().toString(36), time:el('taskInputTime').value, text, done:false, outcome:'not_seen'});
     try{ await saveTaskData(data); el('taskInputText').value=''; el('taskInputTime').value=''; el('taskInputText').focus(); }
     catch(error){ showError('Não foi possível salvar a tarefa. Tente novamente.'); }
   }
   let taskNotesTimer;
-  el('taskDate').value = new Date().toISOString().slice(0,10);
-  el('taskDate').addEventListener('change', loadTasks);
+  el('taskDate').value = todayDateKey();
+  el('taskDate').addEventListener('change', () => { loadTasks(); loadTaskAgenda(); });
   el('btnAddTask').addEventListener('click', addTask);
   el('taskInputText').addEventListener('keydown', event => { if(event.key === 'Enter') addTask(); });
   el('taskList').addEventListener('change', async event => {
-    const id = event.target.dataset.taskDone; if(!id) return;
+    const id = event.target.dataset.taskDone;
+    if(!id) return;
     const data = readTaskData();
     const task = data.tasks.find(item => item.id === id);
     if(!task) return;
     task.done = event.target.checked;
     event.target.closest('.task-row').classList.toggle('done', task.done);
-    try{ await saveTaskData(data); }
+    try{
+      await saveTaskData(data);
+      await syncTaskCarryover(el('taskDate').value, task, !task.done && task.outcome === 'carryover');
+      loadTaskAgenda();
+    }
     catch(error){ task.done = !task.done; renderTasks(data); showError('Não foi possível atualizar a tarefa. Tente novamente.'); }
+  });
+  el('taskList').addEventListener('change', async event => {
+    const id = event.target.dataset.taskOutcome;
+    if(!id) return;
+    const data = readTaskData();
+    const task = data.tasks.find(item => item.id === id);
+    if(!task) return;
+    task.outcome = event.target.value === 'carryover' ? 'carryover' : 'not_seen';
+    try{
+      await saveTaskData(data);
+      await syncTaskCarryover(el('taskDate').value, task, !task.done && task.outcome === 'carryover');
+      loadTaskAgenda();
+    } catch(error){
+      showError('Não foi possível atualizar a situação da tarefa.');
+      loadTasks();
+    }
   });
   el('taskList').addEventListener('click', async event => {
     const id = event.target.dataset.taskRemove; if(!id) return;
     const data = readTaskData();
+    const removedTask = data.tasks.find(item => item.id === id);
     data.tasks = data.tasks.filter(item => item.id !== id);
-    try{ await saveTaskData(data); }
+    try{
+      await saveTaskData(data);
+      if(removedTask) await syncTaskCarryover(el('taskDate').value, removedTask, false);
+      loadTaskAgenda();
+    }
     catch(error){ showError('Não foi possível remover a tarefa. Tente novamente.'); }
+  });
+  el('taskAgendaFuture').addEventListener('click', event => {
+    const button = event.target.closest('[data-task-agenda-date]');
+    if(!button) return;
+    el('taskDate').value = button.dataset.taskAgendaDate;
+    loadTasks();
+    el('taskDate').scrollIntoView({behavior:'smooth',block:'center'});
   });
   el('taskNotes').addEventListener('input', () => {
     clearTimeout(taskNotesTimer); taskNotesTimer = setTimeout(async () => {
@@ -4488,22 +4643,39 @@
       try{ await saveTaskData(data); } catch(error){ showError('Não foi possível salvar as anotações.'); }
     },450);
   });
-  el('btnClearTaskDay').addEventListener('click', async () => { if(confirm('Limpar todas as tarefas e anotações desta data?')) await saveTaskData({tasks:[],notes:''}); });
+  el('btnClearTaskDay').addEventListener('click', async () => {
+    if(!confirm('Limpar todas as tarefas e anotações desta data?')) return;
+    const date = el('taskDate').value;
+    const data = readTaskData();
+    try{
+      await Promise.all(data.tasks.map(task => syncTaskCarryover(date, task, false)));
+      await saveTaskData({tasks:[],notes:''});
+    } catch(error){
+      showError('Não foi possível limpar as tarefas desta data.');
+    }
+  });
   el('btnDownloadTaskTxt').addEventListener('click', () => {
     const data = readTaskData();
     const date = el('taskDate').value;
     const tasks = data.tasks.slice().sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+    const completed = tasks.filter(task => task.done);
+    const carryover = tasks.filter(task => !task.done && task.outcome === 'carryover');
+    const notSeen = tasks.filter(task => !task.done && task.outcome !== 'carryover');
+    const taskLine = task => '- ' + (task.time ? task.time + ' — ' : '') + task.text;
+    const addSection = (lines, title, items) => {
+      lines.push('*'+title+'*', '');
+      if(items.length) items.forEach(task => lines.push(taskLine(task)));
+      else lines.push('Nenhuma atividade.');
+      lines.push('');
+    };
     const lines = [
-      'TAREFAS DO DIA — ' + (date ? date.split('-').reverse().join('/') : 'SEM DATA'),
-      '',
-      'AGENDA DO DIA'
+      '*TAREFAS DO DIA (' + formatTaskDate(date) + ')*',
+      ''
     ];
-    if(tasks.length){
-      tasks.forEach(task => lines.push((task.done ? '[X] ' : '[ ] ') + (task.time ? task.time + ' — ' : '') + task.text));
-    } else {
-      lines.push('Nenhuma tarefa cadastrada.');
-    }
-    lines.push('', 'ATIVIDADES COMPLEMENTARES', data.notes.trim() || 'Nenhuma atividade complementar registrada.');
+    addSection(lines, 'ATIVIDADES FINALIZADAS', completed);
+    addSection(lines, 'ATIVIDADES EM ANDAMENTO', carryover);
+    addSection(lines, 'ATIVIDADES NÃO EFETUADAS', notSeen);
+    lines.push('----');
     const blob = new Blob(['\uFEFF' + lines.join('\r\n')], {type:'text/plain;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -4515,6 +4687,7 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   loadTasks();
+  loadTaskAgenda();
 
   let documentTitleBeforePrint = '';
 
@@ -4578,7 +4751,7 @@ function renderHomeTasks(){
     if(!list) return;
 
     const today = new Date();
-    const dateKey = today.toISOString().slice(0,10);
+    const dateKey = todayDateKey();
     const dateFormatted = today.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
     if(dateEl) dateEl.textContent = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
 
@@ -4600,6 +4773,10 @@ function renderHomeTasks(){
           (task.time ? '<span class="home-task-time">'+escapeHtml(task.time)+'</span>' : '')+
           '<input class="home-task-check" type="checkbox" data-home-task-done="'+escapeHtml(task.id)+'" '+(task.done ? 'checked' : '')+' aria-label="Marcar tarefa como concluída">'+
           '<span class="home-task-text">'+escapeHtml(task.text || '')+'</span>'+
+          '<select class="home-task-outcome" data-home-task-outcome="'+escapeHtml(task.id)+'" '+(task.done ? 'disabled' : '')+' aria-label="Situação da tarefa">'+
+            '<option value="carryover" '+(task.outcome === 'carryover' ? 'selected' : '')+'>EM ANDAMENTO — PRÓXIMO DIA</option>'+
+            '<option value="not_seen" '+(task.outcome === 'not_seen' ? 'selected' : '')+'>NÃO VISUALIZADA HOJE</option>'+
+          '</select>'+
         '</div>'
       ).join('');
     }).catch(() => {
@@ -4609,7 +4786,7 @@ function renderHomeTasks(){
   el('homeTasksList').addEventListener('change', async event => {
     const id = event.target.dataset.homeTaskDone;
     if(!id) return;
-    const todayKey = new Date().toISOString().slice(0,10);
+    const todayKey = todayDateKey();
     const row = event.target.closest('.home-task-row');
     row.classList.toggle('done', event.target.checked);
     try{
@@ -4619,12 +4796,34 @@ function renderHomeTasks(){
       if(!task) throw new Error('TAREFA NÃO ENCONTRADA');
       task.done = event.target.checked;
       await storage.set('tarefas:' + todayKey, JSON.stringify(data));
+      await syncTaskCarryover(todayKey, task, !task.done && task.outcome === 'carryover');
       if(el('taskDate').value === todayKey) renderTasks(data);
       renderHomeTasks();
+      loadTaskAgenda();
     } catch(error){
       event.target.checked = !event.target.checked;
       row.classList.toggle('done', event.target.checked);
       showError('Não foi possível atualizar a tarefa. Tente novamente.');
+    }
+  });
+  el('homeTasksList').addEventListener('change', async event => {
+    const id = event.target.dataset.homeTaskOutcome;
+    if(!id) return;
+    const todayKey = todayDateKey();
+    try{
+      const result = await storage.get('tarefas:' + todayKey);
+      const data = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
+      const task = data.tasks.find(item => item.id === id);
+      if(!task) throw new Error('TAREFA NÃO ENCONTRADA');
+      task.outcome = event.target.value === 'carryover' ? 'carryover' : 'not_seen';
+      await storage.set('tarefas:' + todayKey, JSON.stringify(data));
+      await syncTaskCarryover(todayKey, task, !task.done && task.outcome === 'carryover');
+      if(el('taskDate').value === todayKey) renderTasks(data);
+      renderHomeTasks();
+      loadTaskAgenda();
+    } catch(error){
+      showError('Não foi possível atualizar a situação da tarefa.');
+      renderHomeTasks();
     }
   });
   async function initializeApp(){
