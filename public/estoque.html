@@ -355,7 +355,7 @@
     max-width:700px; margin:16px auto 0; color:#49627b; font:600 clamp(12px,1.6vw,15px)/1.65 var(--sans);
   }
   .home-access-grid{
-    display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-top:clamp(32px,5vw,54px);
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; margin-top:clamp(32px,5vw,54px);
     text-align:left;
   }
   .home-access-card{
@@ -699,10 +699,11 @@
   body.table-density-compact thead th{padding-block:10px; font-size:9.5px;}
   @media (min-width:901px){
     #inventoryTable th:first-child,#inventoryTable td:first-child,
-    .pull-table th:first-child,.pull-table td:first-child{position:sticky; left:0; z-index:4;}
-    #inventoryTable th:first-child,.pull-table th:first-child{z-index:7; background:#16283b;}
-    #inventoryTable td:first-child,.pull-table td:first-child{background:#101d2b;}
-    #inventoryTable tr:nth-child(even):not(.neg) td:first-child,.pull-table tr:nth-child(even):not(.neg) td:first-child{background:#132231;}
+    .pull-table th:first-child,.pull-table td:first-child,
+    .report41-table th:first-child,.report41-table td:first-child{position:sticky; left:0; z-index:4;}
+    #inventoryTable th:first-child,.pull-table th:first-child,.report41-table th:first-child{z-index:7; background:#16283b;}
+    #inventoryTable td:first-child,.pull-table td:first-child,.report41-table td:first-child{background:#101d2b;}
+    #inventoryTable tr:nth-child(even):not(.neg) td:first-child,.pull-table tr:nth-child(even):not(.neg) td:first-child,.report41-table tr:nth-child(even):not(.neg) td:first-child{background:#132231;}
     #inventoryTable tr.neg td:first-child{background:#2c2225;}
   }
   .tag-zerado{
@@ -803,6 +804,46 @@
     background:rgba(8,18,30,.48); border:1px solid var(--border); color:var(--ink);
   }
   .pull-txt-route small{display:block; margin-top:4px; color:var(--ink-soft); font:9px/1.35 var(--mono);}
+
+  /* RELATÓRIO 41 */
+  .report41-panel{
+    margin-bottom:18px; padding:22px; border:1px solid rgba(39,69,97,.62); border-radius:16px;
+    background:var(--bg-card); box-shadow:0 18px 42px rgba(0,0,0,.14);
+  }
+  .report41-panel-head{display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; margin-bottom:17px;}
+  .report41-panel-head h3{margin:0 0 6px; color:var(--ink); font:800 16px/1.3 var(--sans);}
+  .report41-panel-head p{max-width:760px; margin:0; color:var(--ink-soft); font-size:13px; line-height:1.55; text-transform:none;}
+  .report41-store-layout{display:grid; grid-template-columns:minmax(220px,.65fr) minmax(320px,1.35fr); gap:14px; align-items:start;}
+  .report41-store-choices{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
+  .report41-store-option{
+    display:flex; align-items:center; gap:8px; min-height:42px; padding:9px 10px; border:1px solid var(--border);
+    border-radius:9px; background:var(--bg-card-2); color:var(--ink-soft); font:700 10px/1.35 var(--mono); cursor:pointer;
+  }
+  .report41-store-option:has(input:checked){border-color:rgba(114,167,216,.72); background:rgba(79,134,189,.15); color:var(--ink);}
+  .report41-store-option input{width:16px; height:16px; flex:0 0 16px; accent-color:var(--accent);}
+  .report41-store-meta{margin-top:11px; color:var(--ink-faint); font:9.5px/1.5 var(--mono);}
+  .report41-summary{grid-template-columns:repeat(4,minmax(0,1fr));}
+  .report41-toolbar{
+    display:grid; grid-template-columns:minmax(220px,1fr) minmax(170px,230px) auto; gap:10px; align-items:center;
+    margin-bottom:13px;
+  }
+  .report41-toolbar select{min-height:40px; background:var(--bg-card-2); color:var(--ink); border:1px solid var(--border); border-radius:9px; padding:8px 10px; font-size:11px;}
+  .report41-result-count{justify-self:end; color:var(--ink-soft); font:9.5px/1.4 var(--mono);}
+  .report41-table table{min-width:1120px;}
+  .report41-table td.number{text-align:right; font-family:var(--mono);}
+  .report41-product-name{display:block; color:var(--ink); font-weight:750;}
+  .report41-stock-detail{display:block; margin-top:4px; color:var(--ink-faint); font:8.5px/1.45 var(--mono);}
+  .report41-status{display:inline-flex; align-items:center; min-height:26px; padding:5px 8px; border:1px solid var(--border); border-radius:999px; font:800 8.5px/1.2 var(--mono);}
+  .report41-status.ok{color:#9ec6ea; background:rgba(79,134,189,.11);}
+  .report41-status.low{color:#f3c86d; border-color:rgba(243,200,109,.4); background:rgba(243,200,109,.1);}
+  .report41-status.zero{color:#ff9a88; border-color:rgba(239,106,85,.45); background:var(--neg-bg);}
+  .report41-status.transfer{color:#93d7b5; border-color:rgba(95,185,139,.42); background:rgba(95,185,139,.1);}
+  .report41-status.unavailable{color:#ff9a88; border-color:rgba(239,106,85,.38); background:var(--neg-bg);}
+  .report41-help{
+    display:flex; gap:10px; align-items:flex-start; margin-top:13px; padding:11px 13px; border:1px solid rgba(79,134,189,.2);
+    border-radius:9px; background:rgba(79,134,189,.09); color:var(--ink-soft); font-size:10.5px; line-height:1.5;
+  }
+  .report41-help b{color:var(--ink);}
 
   /* CONTROLE DE COMPRAS / NOTION */
   .purchases-heading-actions{display:flex; align-items:center; justify-content:flex-end; gap:9px; flex-wrap:wrap; margin:-4px 0 16px;}
@@ -1180,6 +1221,11 @@
     .pull-settings{grid-template-columns:1fr 1fr;}
     .pull-store-row{grid-template-columns:1fr 1fr;}
     .pull-summary{grid-template-columns:repeat(2,1fr);}
+    .report41-store-layout{grid-template-columns:1fr;}
+    .report41-summary{grid-template-columns:repeat(2,1fr);}
+    .report41-toolbar{grid-template-columns:1fr 1fr;}
+    .report41-toolbar .search-box{grid-column:1 / -1;}
+    .report41-result-count{justify-self:start;}
     .purchase-metrics{grid-template-columns:repeat(2,1fr);}
     .purchase-toolbar{grid-template-columns:1fr 1fr;}
     .purchase-toolbar .search-box{grid-column:1 / -1;}
@@ -1272,9 +1318,12 @@
     .page-logo{
       width:44px; height:44px; min-height:44px; padding:4px; border-radius:13px;
     }
-    .pull-settings,.pull-store-row,.pull-summary{grid-template-columns:1fr;}
+    .pull-settings,.pull-store-row,.pull-summary,.report41-summary,.report41-toolbar{grid-template-columns:1fr;}
     .pull-store-row{padding:12px;}
     .pull-group-tag{justify-self:start;}
+    .report41-panel{padding:18px 14px;}
+    .report41-store-choices{grid-template-columns:1fr;}
+    .report41-toolbar .search-box{grid-column:1;}
     button,select,input:not([type="checkbox"]):not([type="file"]){min-height:44px;}
     .ios-install-hint{align-items:flex-start;}
     .purchase-metrics,.purchase-toolbar,.purchase-form-grid{grid-template-columns:1fr;}
@@ -1445,6 +1494,7 @@
   html[data-theme="light"] .top-divergencias,
   html[data-theme="light"] .table-panel,
   html[data-theme="light"] .pull-panel,
+  html[data-theme="light"] .report41-panel,
   html[data-theme="light"] .purchase-metric,
   html[data-theme="light"] .purchase-toolbar,
   html[data-theme="light"] .purchase-card,
@@ -1505,9 +1555,11 @@
     background:linear-gradient(90deg,transparent,rgba(151,174,194,.3));
   }
   html[data-theme="light"] #inventoryTable th:first-child,
-  html[data-theme="light"] .pull-table th:first-child{background:#dce7f0;}
+  html[data-theme="light"] .pull-table th:first-child,
+  html[data-theme="light"] .report41-table th:first-child{background:#dce7f0;}
   html[data-theme="light"] #inventoryTable td:first-child,
-  html[data-theme="light"] .pull-table td:first-child{background:#fff;}
+  html[data-theme="light"] .pull-table td:first-child,
+  html[data-theme="light"] .report41-table td:first-child{background:#fff;}
   html[data-theme="light"] #inventoryTable tr:nth-child(even):not(.neg) td:first-child,
   html[data-theme="light"] .pull-table tr:nth-child(even):not(.neg) td:first-child{background:#f5f8fb;}
   html[data-theme="light"] #inventoryTable tr.neg td:first-child{background:#fff0ee;}
@@ -1596,6 +1648,7 @@
     </button>
     <button class="nav-item active" id="navInicio" data-page="inicio" title="Início"><span class="nav-icon" aria-hidden="true">⌂</span><span class="nav-label">Início</span></button>
     <button class="nav-item" id="navPuxadas" data-page="puxadas" data-permission="pulls" title="Puxadas"><span class="nav-icon" aria-hidden="true">⇄</span><span class="nav-label">Puxadas</span></button>
+    <button class="nav-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" title="Relatório 41"><span class="nav-icon" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></button>
     <button class="nav-item" id="navCompras" data-page="compras" data-permission="purchases" title="Controle de Compras"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Controle de Compras</span></button>
     <button class="nav-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></button>
     <button class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></button>
@@ -1642,6 +1695,11 @@
           <button class="home-access-card" type="button" data-home-target="puxadas" data-permission="pulls">
             <span class="home-access-icon" aria-hidden="true">↗</span>
             <span class="home-access-copy"><strong>PUXADAS</strong><span>Equilíbrio e transferências entre lojas.</span></span>
+            <span class="home-access-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="home-access-card" type="button" data-home-target="relatorio41" data-permission="report41">
+            <span class="home-access-icon" aria-hidden="true">41</span>
+            <span class="home-access-copy"><strong>RELATÓRIO 41</strong><span>Vendas e necessidade de reposição da Loja 1.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
           <button class="home-access-card" type="button" data-home-target="compras" data-permission="purchases">
@@ -1707,7 +1765,7 @@
             </div>
           </article>
         </section>
-        <section class="home-overview" data-any-permission="stock,database,pulls" aria-labelledby="homeOverviewTitle">
+        <section class="home-overview" data-any-permission="stock,database,pulls,report41" aria-labelledby="homeOverviewTitle">
           <div class="home-overview-head">
             <div><span>ESTOQUE FISCAL</span><h2 id="homeOverviewTitle">Atualizações das lojas</h2></div>
           </div>
@@ -2141,6 +2199,87 @@
       </section>
     </section>
 
+    <!-- ================= RELATÓRIO 41 ================= -->
+    <section id="pageRelatorio41" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Relatório 41</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Analise tudo o que foi vendido na Loja 1, o estoque atual dessa loja e a disponibilidade somada das Lojas 2, 3, 4 e 5.</p></div>
+      </header>
+
+      <section class="report41-panel">
+        <div class="report41-panel-head">
+          <div><h3>LOJAS DO RELATÓRIO</h3><p>Escolha a Loja 1 e até quatro lojas que formarão o estoque comparativo da empresa.</p></div>
+          <div class="actions">
+            <button class="btn-outline" id="btnReport41OpenPulls" type="button" data-permission="pulls">ABRIR PUXADAS</button>
+            <button class="btn-accent" id="btnRefreshReport41" type="button">ATUALIZAR RELATÓRIO</button>
+          </div>
+        </div>
+        <div class="report41-store-layout">
+          <div class="field">
+            <label for="report41MainStore">LOJA 1 — LOJA ANALISADA</label>
+            <select id="report41MainStore"><option value="">Selecione a Loja 1</option></select>
+          </div>
+          <div>
+            <div class="field"><label>LOJAS 2, 3, 4 E 5 — ESTOQUE DA EMPRESA</label></div>
+            <div class="report41-store-choices" id="report41ComparisonStores"></div>
+          </div>
+        </div>
+        <div class="report41-store-meta" id="report41StoreMeta">Selecione as lojas para montar o relatório.</div>
+        <div class="report41-help"><span aria-hidden="true">◆</span><span><b>CRITÉRIO DE NECESSIDADE:</b> o produto precisa de reposição quando foi vendido na Loja 1 e possui estoque atual entre 0 e 1 unidade. O relatório usa os arquivos de Vendas e Estoque Físico já carregados em Puxadas.</span></div>
+      </section>
+
+      <section class="summary report41-summary" aria-label="Resumo do Relatório 41">
+        <div class="card"><div class="lbl">PRODUTOS VENDIDOS</div><div class="num" id="report41CardProducts">0</div></div>
+        <div class="card"><div class="lbl">UNIDADES VENDIDAS</div><div class="num" id="report41CardSales">0</div></div>
+        <div class="card neg"><div class="lbl">ESTOQUE BAIXO — 0 OU 1</div><div class="num" id="report41CardLow">0</div></div>
+        <div class="card"><div class="lbl">COM ESTOQUE NAS OUTRAS LOJAS</div><div class="num" id="report41CardAvailable">0</div></div>
+      </section>
+
+      <section class="report41-panel">
+        <div class="report41-panel-head">
+          <div><h3>PRODUTOS VENDIDOS E NECESSIDADE DA LOJA 1</h3><p>Os itens com estoque 0 ou 1 aparecem primeiro. A necessidade mínima considera a quantidade necessária para a Loja 1 chegar a 2 unidades.</p></div>
+          <div class="actions">
+            <button class="btn-outline" id="btnReport41Csv" type="button" disabled>BAIXAR CSV</button>
+            <button class="btn-accent" id="btnReport41Excel" type="button" disabled>BAIXAR EXCEL</button>
+          </div>
+        </div>
+        <div class="report41-toolbar">
+          <div class="search-box"><input type="search" id="report41Search" placeholder="BUSCAR CÓDIGO OU PRODUTO..." autocomplete="off"></div>
+          <select id="report41Filter" aria-label="Filtrar necessidade">
+            <option value="all">TODOS OS PRODUTOS VENDIDOS</option>
+            <option value="low">SOMENTE ESTOQUE BAIXO</option>
+            <option value="zero">SOMENTE ESTOQUE ZERADO</option>
+            <option value="available">COM REPOSIÇÃO DISPONÍVEL</option>
+            <option value="unavailable">SEM ESTOQUE NAS OUTRAS LOJAS</option>
+          </select>
+          <span class="report41-result-count" id="report41ResultCount">0 PRODUTOS</span>
+        </div>
+        <div class="table-panel report41-table responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>CÓDIGO</th>
+                  <th>PRODUTO</th>
+                  <th style="text-align:right">VENDIDO — LOJA 1</th>
+                  <th style="text-align:right">ESTOQUE — LOJA 1</th>
+                  <th style="text-align:right">ESTOQUE — LOJAS 2 A 5</th>
+                  <th style="text-align:right">NECESSIDADE MÍNIMA</th>
+                  <th>INDICAÇÃO</th>
+                </tr>
+              </thead>
+              <tbody id="report41Body">
+                <tr><td class="responsive-empty" colspan="7"><div class="pull-result-empty"><strong>RELATÓRIO AINDA NÃO DISPONÍVEL</strong><span>Carregue os relatórios de vendas e estoque físico em Puxadas.</span></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </section>
+
     <!-- ================= CONTROLE DE COMPRAS / NOTION ================= -->
     <section id="pageCompras" class="page wrap">
       <header class="page-header">
@@ -2237,6 +2376,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="stock"> Estoque Fiscal</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="database"> Base de Dados</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="pulls"> Puxadas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="report41"> Relatório 41</label>
               </div>
             </div>
             <label class="permission-option" id="userActiveWrap" hidden><input id="userActive" type="checkbox" checked> Usuário ativo</label>
@@ -2374,6 +2514,10 @@
   let pendingPullUpload = null;
   let pullSearchTimer = null;
   let pullTxtDownloadGroups = [];
+  let report41Rows = [];
+  let report41MainStoreId = '';
+  let report41ComparisonStoreIds = new Set();
+  let report41SearchTimer = null;
 
   let purchaseRows = [];
   let purchaseCursor = null;
@@ -2693,6 +2837,7 @@
   const PAGE_ROUTES = Object.freeze({
     inicio:'/inicio',
     puxadas:'/puxadas',
+    relatorio41:'/relatorio-41',
     compras:'/compras',
     dashboard:'/estoque',
     cadastros:'/cadastros',
@@ -2704,6 +2849,7 @@
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
     puxadas:'PUXADAS',
+    relatorio41:'RELATÓRIO 41',
     compras:'CONTROLE DE COMPRAS',
     dashboard:'ESTOQUE FISCAL',
     cadastros:'CADASTROS',
@@ -2714,6 +2860,7 @@
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
+    relatorio41:'report41',
     compras:'purchases',
     dashboard:'stock',
     tarefas:'tasks',
@@ -3532,6 +3679,221 @@
     return index;
   }
 
+  function report41MainCompany(){
+    return companies.find(company => company.id === report41MainStoreId) || null;
+  }
+
+  function report41ComparisonCompanies(){
+    return companies.filter(company => report41ComparisonStoreIds.has(company.id) && company.id !== report41MainStoreId);
+  }
+
+  function ensureReport41StoreSelection(resetComparisons){
+    if(!companies.some(company => company.id === report41MainStoreId)){
+      report41MainStoreId = companies[0] ? companies[0].id : '';
+      resetComparisons = true;
+    }
+    const availableIds = companies
+      .filter(company => company.id !== report41MainStoreId)
+      .map(company => company.id);
+    report41ComparisonStoreIds = new Set(
+      Array.from(report41ComparisonStoreIds).filter(id => availableIds.includes(id)).slice(0,4)
+    );
+    if(resetComparisons || report41ComparisonStoreIds.size === 0){
+      report41ComparisonStoreIds = new Set(availableIds.slice(0,4));
+    }
+  }
+
+  function renderReport41StoreSelectors(resetComparisons){
+    const mainSelect = el('report41MainStore');
+    const choices = el('report41ComparisonStores');
+    if(!mainSelect || !choices) return;
+    ensureReport41StoreSelection(Boolean(resetComparisons));
+    mainSelect.innerHTML = '<option value="">Selecione a Loja 1</option>' +
+      companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    mainSelect.value = report41MainStoreId;
+    const comparisonCompanies = companies.filter(company => company.id !== report41MainStoreId);
+    choices.innerHTML = comparisonCompanies.length
+      ? comparisonCompanies.map(company =>
+        '<label class="report41-store-option"><input type="checkbox" data-report41-store="'+escapeHtml(company.id)+'"'+
+        (report41ComparisonStoreIds.has(company.id) ? ' checked' : '')+'><span>'+escapeHtml(company.name)+'</span></label>'
+      ).join('')
+      : '<div class="task-empty">Cadastre outras lojas para formar o estoque comparativo.</div>';
+    renderReport41();
+  }
+
+  function buildReport41Rows(){
+    const mainCompany = report41MainCompany();
+    if(!mainCompany) return [];
+    const mainData = pullDataForCompany(mainCompany.id);
+    if(mainData.sales.size === 0 || mainData.stock.size === 0) return [];
+    const mainIndex = buildCompanyPullProductIndex(mainCompany);
+    const comparisonCompanies = report41ComparisonCompanies();
+    const comparisonIndexes = comparisonCompanies.map(company => ({
+      company,
+      index:buildCompanyPullProductIndex(company)
+    }));
+    const rows = [];
+    for(const [productKey, product] of mainIndex){
+      const sales = Math.max(0, Number(product.sales) || 0);
+      if(sales <= 0) continue;
+      const mainStock = Math.max(0, Math.round(Number(product.stock) || 0));
+      const storeStocks = comparisonIndexes.map(({company,index}) => {
+        const compared = index.get(productKey);
+        return {company, stock:compared ? Math.max(0,Math.round(Number(compared.stock) || 0)) : 0};
+      });
+      const companyStock = storeStocks.reduce((sum,item) => sum + item.stock,0);
+      const low = mainStock >= 0 && mainStock <= 1;
+      const need = low ? Math.max(0,2 - mainStock) : 0;
+      rows.push({
+        productKey,
+        codigo:product.salesCode || product.stockCode || '',
+        nome:product.nome || knownPullProductName(catalogKeyForCompany(mainCompany.id),product.salesCode || product.stockCode || '') || 'PRODUTO SEM DESCRIÇÃO',
+        sales,
+        mainStock,
+        companyStock,
+        need,
+        suggestedTransfer:Math.min(need,companyStock),
+        low,
+        zero:mainStock === 0,
+        storeStocks
+      });
+    }
+    return rows.sort((a,b) =>
+      Number(b.low) - Number(a.low) ||
+      a.mainStock - b.mainStock ||
+      b.sales - a.sales ||
+      textCollator.compare(a.nome,b.nome) ||
+      codeCollator.compare(a.codigo,b.codigo)
+    );
+  }
+
+  function getFilteredReport41Rows(){
+    const search = el('report41Search').value.trim().toLowerCase();
+    const filter = el('report41Filter').value;
+    return report41Rows.filter(item => {
+      if(search && !item.codigo.toLowerCase().includes(search) && !item.nome.toLowerCase().includes(search)) return false;
+      if(filter === 'low' && !item.low) return false;
+      if(filter === 'zero' && !item.zero) return false;
+      if(filter === 'available' && !(item.low && item.companyStock > 0)) return false;
+      if(filter === 'unavailable' && !(item.low && item.companyStock <= 0)) return false;
+      return true;
+    });
+  }
+
+  function report41Indication(item){
+    if(!item.low) return {className:'ok',label:'ESTOQUE OK'};
+    if(item.companyStock > 0){
+      return {className:'transfer',label:'TRANSFERIR ATÉ '+fmt(item.suggestedTransfer)};
+    }
+    return {className:'unavailable',label:'COMPRAR · SEM ESTOQUE NAS OUTRAS'};
+  }
+
+  function renderReport41(){
+    if(!el('report41Body')) return;
+    const mainCompany = report41MainCompany();
+    const comparisonCompanies = report41ComparisonCompanies();
+    const mainData = mainCompany ? pullDataForCompany(mainCompany.id) : null;
+    report41Rows = buildReport41Rows();
+    const rows = getFilteredReport41Rows();
+    const totalSales = report41Rows.reduce((sum,item) => sum + item.sales,0);
+    const lowRows = report41Rows.filter(item => item.low);
+    const availableRows = lowRows.filter(item => item.companyStock > 0);
+    el('report41CardProducts').textContent = report41Rows.length.toLocaleString('pt-BR');
+    el('report41CardSales').textContent = fmt(totalSales);
+    el('report41CardLow').textContent = lowRows.length.toLocaleString('pt-BR');
+    el('report41CardAvailable').textContent = availableRows.length.toLocaleString('pt-BR');
+    el('report41ResultCount').textContent = rows.length.toLocaleString('pt-BR') + ' PRODUTOS';
+    el('btnReport41Csv').disabled = rows.length === 0;
+    el('btnReport41Excel').disabled = rows.length === 0;
+
+    const readyComparisons = comparisonCompanies.filter(company => pullDataForCompany(company.id).stock.size > 0).length;
+    el('report41StoreMeta').textContent = mainCompany
+      ? 'LOJA 1: '+mainCompany.name+' · '+comparisonCompanies.length+' LOJAS COMPARADAS · '+readyComparisons+' COM ESTOQUE FÍSICO CARREGADO'
+      : 'Selecione as lojas para montar o relatório.';
+
+    if(!mainCompany){
+      el('report41Body').innerHTML = '<tr><td class="responsive-empty" colspan="7"><div class="pull-result-empty"><strong>LOJA 1 NÃO SELECIONADA</strong><span>Selecione a loja que será analisada.</span></div></td></tr>';
+      return;
+    }
+    if(!mainData || mainData.sales.size === 0 || mainData.stock.size === 0){
+      const missing = [];
+      if(!mainData || mainData.sales.size === 0) missing.push('Vendas');
+      if(!mainData || mainData.stock.size === 0) missing.push('Estoque Físico');
+      el('report41Body').innerHTML = '<tr><td class="responsive-empty" colspan="7"><div class="pull-result-empty"><strong>DADOS DA LOJA 1 INCOMPLETOS</strong><span>Carregue em Puxadas: '+escapeHtml(missing.join(' e '))+'.</span></div></td></tr>';
+      return;
+    }
+    if(rows.length === 0){
+      el('report41Body').innerHTML = '<tr><td class="responsive-empty" colspan="7"><div class="pull-result-empty"><strong>NENHUM PRODUTO NESTE FILTRO</strong><span>Ajuste a busca ou selecione outra situação de estoque.</span></div></td></tr>';
+      return;
+    }
+
+    el('report41Body').innerHTML = rows.map(item => {
+      const indication = report41Indication(item);
+      const stockDetail = item.storeStocks.filter(store => store.stock > 0)
+        .map(store => store.company.name+': '+fmt(store.stock)).join(' · ') || 'SEM SALDO NAS LOJAS SELECIONADAS';
+      const rowClass = item.zero ? 'neg' : '';
+      const stockStatus = item.zero
+        ? '<span class="report41-status zero">ZERADO</span>'
+        : item.low
+          ? '<span class="report41-status low">BAIXO · 1 UNIDADE</span>'
+          : '<span class="report41-status ok">ACIMA DO MÍNIMO</span>';
+      return '<tr class="'+rowClass+'">'+
+        '<td class="codigo" data-label="Código">'+escapeHtml(item.codigo)+'</td>'+
+        '<td class="nome" data-label="Produto"><span class="report41-product-name">'+escapeHtml(item.nome)+'</span>'+stockStatus+'</td>'+
+        '<td class="number" data-label="Vendido — Loja 1">'+fmt(item.sales)+'</td>'+
+        '<td class="number" data-label="Estoque — Loja 1">'+fmt(item.mainStock)+'</td>'+
+        '<td class="number" data-label="Estoque — Lojas 2 a 5">'+fmt(item.companyStock)+'<span class="report41-stock-detail">'+escapeHtml(stockDetail)+'</span></td>'+
+        '<td class="number" data-label="Necessidade mínima">'+fmt(item.need)+'</td>'+
+        '<td data-label="Indicação"><span class="report41-status '+indication.className+'">'+escapeHtml(indication.label)+'</span></td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function report41ExportData(){
+    const mainCompany = report41MainCompany();
+    const comparisonLabel = report41ComparisonCompanies().map(company => company.name).join(', ');
+    return getFilteredReport41Rows().map(item => {
+      const indication = report41Indication(item);
+      return {
+        'Código':item.codigo,
+        'Produto':item.nome,
+        ['Vendido — '+(mainCompany ? mainCompany.name : 'Loja 1')]:item.sales,
+        ['Estoque — '+(mainCompany ? mainCompany.name : 'Loja 1')]:item.mainStock,
+        ['Estoque — '+(comparisonLabel || 'Lojas 2 a 5')]:item.companyStock,
+        'Necessidade mínima':item.need,
+        'Indicação':indication.label
+      };
+    });
+  }
+
+  function exportReport41Csv(){
+    const rows = report41ExportData();
+    if(!rows.length) return;
+    const headers = Object.keys(rows[0]);
+    const csvCell = value => '"'+String(value === undefined || value === null ? '' : value).replace(/"/g,'""')+'"';
+    const lines = [headers.map(csvCell).join(';')].concat(rows.map(row => headers.map(header => csvCell(row[header])).join(';')));
+    const blob = new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'relatorio_41_'+todayDateKey()+'.csv';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportReport41Excel(){
+    if(typeof XLSX === 'undefined'){
+      showPurchaseToast('Não foi possível carregar o gerador de Excel. Use o download em CSV.','error');
+      return;
+    }
+    const rows = report41ExportData();
+    if(!rows.length) return;
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook,sheet,'Relatório 41');
+    XLSX.writeFile(workbook,'relatorio_41_'+todayDateKey()+'.xlsx');
+  }
+
   function quantityMapToArray(map){
     return Array.from(map, ([codigo, item]) => [codigo, item.qtd]);
   }
@@ -3926,6 +4288,7 @@
   function renderPullAll(){
     renderPullStoreRows();
     renderPullResults();
+    renderReport41();
   }
 
   async function clearPullData(){
@@ -4134,6 +4497,7 @@
     renderLojasTable();
     renderPullStoreRows();
     renderPullDestinationFilter();
+    renderReport41StoreSelectors(false);
   }
 
   function renderPullDestinationFilter(){
@@ -5476,6 +5840,36 @@
     }
   });
 
+  el('report41MainStore').addEventListener('change', event => {
+    report41MainStoreId = event.target.value;
+    renderReport41StoreSelectors(true);
+  });
+  el('report41ComparisonStores').addEventListener('change', event => {
+    const input = event.target.closest('[data-report41-store]');
+    if(!input) return;
+    const companyId = input.dataset.report41Store;
+    if(input.checked && !report41ComparisonStoreIds.has(companyId) && report41ComparisonStoreIds.size >= 4){
+      input.checked = false;
+      showPurchaseToast('Selecione no máximo quatro lojas para representar as Lojas 2, 3, 4 e 5.','error');
+      return;
+    }
+    if(input.checked) report41ComparisonStoreIds.add(companyId);
+    else report41ComparisonStoreIds.delete(companyId);
+    renderReport41();
+  });
+  el('report41Search').addEventListener('input', () => {
+    clearTimeout(report41SearchTimer);
+    report41SearchTimer = setTimeout(renderReport41,120);
+  });
+  el('report41Filter').addEventListener('change',renderReport41);
+  el('btnRefreshReport41').addEventListener('click', async () => {
+    await loadPullData();
+    showPurchaseToast('Relatório 41 atualizado com os dados mais recentes.');
+  });
+  el('btnReport41OpenPulls').addEventListener('click',() => navigateToPage('puxadas'));
+  el('btnReport41Csv').addEventListener('click',exportReport41Csv);
+  el('btnReport41Excel').addEventListener('click',exportReport41Excel);
+
   el('pullStoreList').addEventListener('click', event => {
     const button = event.target.closest('[data-pull-company][data-pull-kind]');
     if(!button) return;
@@ -6180,7 +6574,8 @@ function renderHomeTasks(){
     purchases:'Compras',
     stock:'Estoque Fiscal',
     database:'Base de Dados',
-    pulls:'Puxadas'
+    pulls:'Puxadas',
+    report41:'Relatório 41'
   };
   const accessGroupNames = {
     administrator:'Administrador',
@@ -6190,9 +6585,9 @@ function renderHomeTasks(){
     custom:'Personalizado'
   };
   const accessGroupPermissions = {
-    administrator:['tasks','purchases','stock','database','pulls'],
+    administrator:['tasks','purchases','stock','database','pulls','report41'],
     purchases:['tasks','purchases'],
-    fiscal:['stock','database','pulls'],
+    fiscal:['stock','database','pulls','report41'],
     operator:['tasks']
   };
 
@@ -6385,14 +6780,14 @@ function renderHomeTasks(){
     await flushOfflineMutations();
     syncPageFromLocation(false);
     checkIntegrationHealth();
-    if(canAccess('database') || canAccess('stock') || canAccess('pulls')){
+    if(canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41')){
       await loadCompanies();
       await loadCatalog();
     }
-    if(canAccess('purchases') && !(canAccess('database') || canAccess('stock') || canAccess('pulls'))){
+    if(canAccess('purchases') && !(canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41'))){
       await loadHomeOverview();
     }
-    if(canAccess('pulls')) await loadPullData();
+    if(canAccess('pulls') || canAccess('report41')) await loadPullData();
     if(canAccess('tasks')){
       await loadTasks();
       await loadTaskAgenda();

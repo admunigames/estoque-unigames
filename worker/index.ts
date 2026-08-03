@@ -40,7 +40,7 @@ type LoginConfig = {
   sessionSecret: string;
 };
 
-type Permission = "tasks" | "purchases" | "stock" | "database" | "pulls";
+type Permission = "tasks" | "purchases" | "stock" | "database" | "pulls" | "report41";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "custom";
 type AuthenticatedUser = {
   id: string;
@@ -78,11 +78,11 @@ const USERNAME_HEADER = "x-unigames-username";
 const DISPLAY_NAME_HEADER = "x-unigames-display-name";
 const ROLE_HEADER = "x-unigames-role";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
-const ALL_PERMISSIONS: Permission[] = ["tasks", "purchases", "stock", "database", "pulls"];
+const ALL_PERMISSIONS: Permission[] = ["tasks", "purchases", "stock", "database", "pulls", "report41"];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
   purchases: ["tasks", "purchases"],
-  fiscal: ["stock", "database", "pulls"],
+  fiscal: ["stock", "database", "pulls", "report41"],
   operator: ["tasks"],
   custom: [],
 };
@@ -96,6 +96,7 @@ const PUBLIC_ASSET_PATHS = new Set([
 const APP_ROUTE_PATHS = new Set([
   "/inicio",
   "/puxadas",
+  "/relatorio-41",
   "/compras",
   "/estoque",
   "/tarefas",
@@ -222,13 +223,18 @@ function storedUser(row: StoredUserRow): AuthenticatedUser {
   const accessGroup = role === "admin"
     ? "administrator"
     : normalizeAccessGroup(row.accessGroup);
+  const permissions = role === "admin"
+    ? [...ALL_PERMISSIONS]
+    : accessGroup === "custom"
+      ? permissionsFromJson(row.permissionsJson)
+      : [...ACCESS_GROUP_PERMISSIONS[accessGroup]];
   return {
     id: row.id,
     username: row.username,
     displayName: row.displayName,
     accessGroup,
     role,
-    permissions: role === "admin" ? [...ALL_PERMISSIONS] : permissionsFromJson(row.permissionsJson),
+    permissions,
     sessionVersion: row.sessionVersion,
   };
 }
@@ -760,11 +766,11 @@ function hasAnyPermission(user: AuthenticatedUser, permissions: Permission[]): b
   return user.role === "admin" || permissions.some((permission) => user.permissions.includes(permission));
 }
 
-function sharedStatePermission(key: string, scope: string): Permission | Permission[] {
+function sharedStatePermission(key: string, scope: string, write: boolean): Permission | Permission[] {
   const normalized = `${scope}:${key}`.toLowerCase();
   if (normalized.includes("tarefa")) return "tasks";
-  if (normalized.includes("puxada")) return "pulls";
-  return ["stock", "database", "pulls"];
+  if (normalized.includes("puxada")) return write ? "pulls" : ["pulls", "report41"];
+  return write ? ["stock", "database", "pulls"] : ["stock", "database", "pulls", "report41"];
 }
 
 async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): Promise<boolean> {
@@ -777,6 +783,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/compras" || path.startsWith("/api/compras"), "purchases"],
     [path === "/estoque", "stock"],
     [path === "/puxadas", "pulls"],
+    [path === "/relatorio-41", "report41"],
     [path === "/cadastros" || path.startsWith("/cadastros/"), "database"],
   ];
   const direct = directPermissions.find(([matches]) => matches);
@@ -793,7 +800,11 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
         return false;
       }
     }
-    const required = sharedStatePermission(key, scope);
+    const required = sharedStatePermission(
+      key,
+      scope,
+      request.method !== "GET" && request.method !== "HEAD",
+    );
     return Array.isArray(required) ? hasAnyPermission(user, required) : hasPermission(user, required);
   }
   return true;
@@ -820,14 +831,20 @@ function sameOrigin(request: Request, url: URL): boolean {
 }
 
 function publicUser(row: StoredUserRow) {
+  const role = row.role === "admin" ? "admin" : "user";
+  const accessGroup = role === "admin" ? "administrator" : normalizeAccessGroup(row.accessGroup);
   return {
     id: row.id,
     username: row.username,
     displayName: row.displayName,
     email: row.email,
-    role: row.role === "admin" ? "admin" : "user",
-    accessGroup: row.role === "admin" ? "administrator" : normalizeAccessGroup(row.accessGroup),
-    permissions: permissionsFromJson(row.permissionsJson),
+    role,
+    accessGroup,
+    permissions: role === "admin"
+      ? [...ALL_PERMISSIONS]
+      : accessGroup === "custom"
+        ? permissionsFromJson(row.permissionsJson)
+        : [...ACCESS_GROUP_PERMISSIONS[accessGroup]],
     active: row.active === 1,
     recoveryRequested: row.recoveryRequested === 1,
     managed: true,

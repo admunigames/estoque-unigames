@@ -415,7 +415,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v4"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v5"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
@@ -455,9 +455,33 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /@media \(max-width:800px\)[\s\S]*\.home-access-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
   assert.match(html, /@media \(max-width:520px\)[\s\S]*\.home-access-grid\{grid-template-columns:1fr;/);
   assert.doesNotMatch(html, /data-dashboard-home/);
-  for (const pageId of ["pagePuxadas", "pageCompras", "pageDashboard", "pageLojas", "pageDados"]) {
+  for (const pageId of ["pagePuxadas", "pageRelatorio41", "pageCompras", "pageDashboard", "pageLojas", "pageDados"]) {
     assert.match(html, new RegExp(`id="${pageId}" class="page wrap"`));
   }
+});
+
+test("adiciona o Relatório 41 com vendas, estoque baixo e comparação entre lojas", async () => {
+  const [html, workerSource] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /id="navRelatorio41" data-page="relatorio41" data-permission="report41"/);
+  assert.match(html, /data-home-target="relatorio41" data-permission="report41"/);
+  assert.match(html, /id="pageRelatorio41" class="page wrap"/);
+  assert.match(html, /id="report41MainStore"/);
+  assert.match(html, /id="report41ComparisonStores"/);
+  assert.match(html, /ESTOQUE BAIXO — 0 OU 1/);
+  assert.match(html, /function buildReport41Rows\(\)/);
+  assert.match(html, /mainStock >= 0 && mainStock <= 1/);
+  assert.match(html, /Math\.max\(0,2 - mainStock\)/);
+  assert.match(html, /function exportReport41Csv\(\)/);
+  assert.match(html, /function exportReport41Excel\(\)/);
+  assert.match(html, /relatorio41:'\/relatorio-41'/);
+  assert.match(html, /value="report41"> Relatório 41/);
+  assert.match(workerSource, /"\/relatorio-41"/);
+  assert.match(workerSource, /\[path === "\/relatorio-41", "report41"\]/);
+  assert.match(workerSource, /fiscal: \["stock", "database", "pulls", "report41"\]/);
 });
 
 test("abre o menu de cadastros e encaminha para lojas ou base de dados", async () => {
@@ -502,6 +526,7 @@ test("mantém uma URL por módulo e integra voltar e avançar do navegador", asy
 
   assert.match(html, /inicio:'\/inicio'/);
   assert.match(html, /puxadas:'\/puxadas'/);
+  assert.match(html, /relatorio41:'\/relatorio-41'/);
   assert.match(html, /compras:'\/compras'/);
   assert.match(html, /dashboard:'\/estoque'/);
   assert.match(html, /lojas:'\/cadastros\/lojas'/);
