@@ -851,10 +851,30 @@ function validUsername(value: string): boolean {
 }
 
 function sameOrigin(request: Request, url: URL): boolean {
-  const origin = request.headers.get("origin");
-  if (origin) return origin === url.origin;
   const fetchSite = request.headers.get("sec-fetch-site");
-  return !fetchSite || fetchSite === "same-origin" || fetchSite === "none";
+  if (fetchSite === "cross-site") return false;
+  if (fetchSite === "same-origin") return true;
+
+  const origin = request.headers.get("origin");
+  if (origin) {
+    const allowedOrigins = new Set([url.origin]);
+    const forwardedHost =
+      request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+      request.headers.get("host")?.trim() ||
+      "";
+    if (forwardedHost) {
+      const forwardedProtocol =
+        request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+        (url.protocol === "http:" ? "http" : "https");
+      try {
+        allowedOrigins.add(new URL(`${forwardedProtocol}://${forwardedHost}`).origin);
+      } catch {
+        return false;
+      }
+    }
+    return allowedOrigins.has(origin);
+  }
+  return !fetchSite || fetchSite === "none";
 }
 
 function publicUser(row: StoredUserRow) {

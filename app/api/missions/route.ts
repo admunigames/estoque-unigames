@@ -92,8 +92,29 @@ function identity(request: Request): Identity {
 }
 
 function sameOrigin(request: Request) {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite === "cross-site") return false;
+  if (fetchSite === "same-origin") return true;
+
   const origin = request.headers.get("origin");
-  return !origin || origin === new URL(request.url).origin;
+  if (!origin) return !fetchSite || fetchSite === "none";
+  const url = new URL(request.url);
+  const allowedOrigins = new Set([url.origin]);
+  const forwardedHost =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    request.headers.get("host")?.trim() ||
+    "";
+  if (forwardedHost) {
+    const forwardedProtocol =
+      request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+      (url.protocol === "http:" ? "http" : "https");
+    try {
+      allowedOrigins.add(new URL(`${forwardedProtocol}://${forwardedHost}`).origin);
+    } catch {
+      return false;
+    }
+  }
+  return allowedOrigins.has(origin);
 }
 
 function dateAtUtc(value: string) {

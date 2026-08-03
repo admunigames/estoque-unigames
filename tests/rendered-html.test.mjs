@@ -182,6 +182,32 @@ test("bloqueia alterações enviadas por outra origem", async () => {
   assert.equal(logoutResponse.status, 403);
 });
 
+test("aceita o login same-origin quando a hospedagem usa um endereço interno", async () => {
+  const runtime = await worker();
+  const response = await runtime.fetch(
+    new Request("https://worker-interno.example/login", {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        origin: "https://estoque-unigames-compras.admunigames.chatgpt.site",
+        "sec-fetch-site": "same-origin",
+        "x-forwarded-host": "estoque-unigames-compras.admunigames.chatgpt.site",
+        "x-forwarded-proto": "https",
+      },
+      body: new URLSearchParams({
+        username: "unigames",
+        password: "senha-de-teste-forte",
+      }),
+    }),
+    env,
+    ctx,
+  );
+
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("location"), "/inicio");
+  assert.match(response.headers.get("set-cookie") ?? "", /unigames_session=/);
+});
+
 test("serve as rotas dos módulos sem alterar o endereço do navegador", async () => {
   const requestedAssets = [];
   const routeEnv = {
