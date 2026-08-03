@@ -415,7 +415,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v8"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v9"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
@@ -477,6 +477,9 @@ test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", 
   assert.match(html, /id="btnReport41StockUpload"/);
   assert.match(html, /id="btnCompanyStockUpload"/);
   assert.match(html, /id="userCompanyId"/);
+  assert.match(html, /REPORT41_EXCLUDED_PRODUCT_TERMS = new Set\(\['indicacao','cortesia','garantia'\]\)/);
+  assert.match(html, /function report41ExcludedProduct\(name\)/);
+  assert.match(html, /if\(report41ExcludedProduct\(nome\)\) continue/);
   assert.match(html, /function buildReport41Rows\(\)/);
   assert.match(html, /if\(mainStock > 1\) continue/);
   assert.match(html, /function exportReport41Txt\(\)/);

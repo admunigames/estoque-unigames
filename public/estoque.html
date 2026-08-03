@@ -2277,7 +2277,7 @@
           <input type="file" id="fileReport41Stock" accept=".xls,.xlsx,.csv,.html,.htm" hidden>
         </div>
         <div class="error-box pull-error" id="report41Error"></div>
-        <div class="report41-help"><span aria-hidden="true">◆</span><span><b>CRITÉRIO:</b> entram no Relatório 41 somente produtos vendidos no dia anterior cujo estoque atual da loja seja 0 ou 1. O saldo “Empresa” vem do arquivo carregado em Cadastros → Base de Dados.</span></div>
+        <div class="report41-help"><span aria-hidden="true">◆</span><span><b>CRITÉRIO:</b> entram no Relatório 41 somente produtos vendidos no dia anterior cujo estoque atual da loja seja 0 ou 1. Produtos com “Indicação”, “Cortesia” ou “Garantia” no nome são ignorados. O saldo “Empresa” vem do arquivo carregado em Cadastros → Base de Dados.</span></div>
       </section>
 
       <section class="summary report41-summary" aria-label="Resumo do Relatório 41">
@@ -3379,6 +3379,17 @@
       .trim();
   }
 
+  const REPORT41_EXCLUDED_PRODUCT_TERMS = new Set(['indicacao','cortesia','garantia']);
+
+  function report41ExcludedProduct(name){
+    const words = normalizeHeader(String(name || ''))
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    return words.some(word => REPORT41_EXCLUDED_PRODUCT_TERMS.has(word));
+  }
+
   const ALWAYS_BALANCE_PRODUCT_KEYS = new Set([
     'FIGURINHAS DA COPA DO MUNDO',
     'FIGURINHAS COPA DO MUNDO',
@@ -3930,6 +3941,7 @@
       const saleItem = report41StoreData.sales.get(codigo);
       const stockItem = report41StoreData.stock.get(codigo);
       const nome = (saleItem && saleItem.nome) || (stockItem && stockItem.nome) || '';
+      if(report41ExcludedProduct(nome)) continue;
       const key = normalizeProductKey(nome) || ('codigo '+codigo);
       if(!index.has(key)) index.set(key,{codigo,nome:nome || 'PRODUTO SEM DESCRIÇÃO',sales:0,stock:0});
       const product = index.get(key);
