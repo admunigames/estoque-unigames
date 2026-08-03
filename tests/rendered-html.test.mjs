@@ -415,7 +415,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v5"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v6"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
@@ -460,28 +460,42 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   }
 });
 
-test("adiciona o Relatório 41 com vendas, estoque baixo e comparação entre lojas", async () => {
-  const [html, workerSource] = await Promise.all([
+test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", async () => {
+  const [html, workerSource, sharedStateRoute, schema, migration] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/shared-state/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0004_short_nighthawk.sql", import.meta.url), "utf8"),
   ]);
 
   assert.match(html, /id="navRelatorio41" data-page="relatorio41" data-permission="report41"/);
   assert.match(html, /data-home-target="relatorio41" data-permission="report41"/);
   assert.match(html, /id="pageRelatorio41" class="page wrap"/);
-  assert.match(html, /id="report41MainStore"/);
-  assert.match(html, /id="report41ComparisonStores"/);
-  assert.match(html, /ESTOQUE BAIXO — 0 OU 1/);
+  assert.match(html, /id="report41StoreSelect"/);
+  assert.match(html, /id="btnReport41SalesUpload"/);
+  assert.match(html, /id="btnReport41StockUpload"/);
+  assert.match(html, /id="btnCompanyStockUpload"/);
+  assert.match(html, /id="userCompanyId"/);
   assert.match(html, /function buildReport41Rows\(\)/);
-  assert.match(html, /mainStock >= 0 && mainStock <= 1/);
-  assert.match(html, /Math\.max\(0,2 - mainStock\)/);
-  assert.match(html, /function exportReport41Csv\(\)/);
-  assert.match(html, /function exportReport41Excel\(\)/);
+  assert.match(html, /if\(mainStock > 1\) continue/);
+  assert.match(html, /function exportReport41Txt\(\)/);
+  assert.match(html, /\['\*RELATORIO 41\*',''\]/);
+  assert.match(html, /EMPRESA: '\+report41TwoDigits/);
+  assert.match(html, /report41-siren[\s\S]*🚨/);
+  assert.match(html, /report41:company-stock/);
+  assert.match(html, /report41:store:/);
   assert.match(html, /relatorio41:'\/relatorio-41'/);
   assert.match(html, /value="report41"> Relatório 41/);
   assert.match(workerSource, /"\/relatorio-41"/);
   assert.match(workerSource, /\[path === "\/relatorio-41", "report41"\]/);
+  assert.match(workerSource, /reportStoreMatch[\s\S]*user\.companyId/);
+  assert.match(workerSource, /company_id AS companyId/);
   assert.match(workerSource, /fiscal: \["stock", "database", "pulls", "report41"\]/);
+  assert.match(sharedStateRoute, /key === "report41:company-stock"/);
+  assert.match(sharedStateRoute, /report41:store:c\[a-z0-9\]/);
+  assert.match(schema, /companyId: text\("company_id"\)/);
+  assert.match(migration, /ALTER TABLE `app_users` ADD `company_id`/);
 });
 
 test("abre o menu de cadastros e encaminha para lojas ou base de dados", async () => {

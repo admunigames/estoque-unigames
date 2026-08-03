@@ -18,6 +18,7 @@ export const appUsers = sqliteTable("app_users", {
   role: text("role").notNull().default("user"),
   accessGroup: text("access_group").notNull().default("operator"),
   permissions: text("permissions_json").notNull().default("[]"),
+  companyId: text("company_id").notNull().default(""),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   sessionVersion: integer("session_version").notNull().default(1),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),

@@ -1,0 +1,1 @@
+ALTER TABLE `app_users` ADD `company_id` text DEFAULT '' NOT NULL;

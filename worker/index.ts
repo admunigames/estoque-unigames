@@ -46,6 +46,7 @@ type AuthenticatedUser = {
   id: string;
   username: string;
   displayName: string;
+  companyId: string;
   accessGroup: AccessGroup;
   role: "admin" | "user";
   permissions: Permission[];
@@ -61,6 +62,7 @@ type StoredUserRow = {
   role: string;
   accessGroup: string;
   permissionsJson: string;
+  companyId: string;
   active: number;
   sessionVersion: number;
   createdAt: string;
@@ -78,6 +80,7 @@ const USERNAME_HEADER = "x-unigames-username";
 const DISPLAY_NAME_HEADER = "x-unigames-display-name";
 const ROLE_HEADER = "x-unigames-role";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
+const COMPANY_ID_HEADER = "x-unigames-company-id";
 const ALL_PERMISSIONS: Permission[] = ["tasks", "purchases", "stock", "database", "pulls", "report41"];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
@@ -232,6 +235,7 @@ function storedUser(row: StoredUserRow): AuthenticatedUser {
     id: row.id,
     username: row.username,
     displayName: row.displayName,
+    companyId: row.companyId || "",
     accessGroup,
     role,
     permissions,
@@ -244,6 +248,7 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
     id: "env-admin",
     username: config.username,
     displayName: "Administrador principal",
+    companyId: "",
     accessGroup: "administrator",
     role: "admin",
     permissions: [...ALL_PERMISSIONS],
@@ -253,28 +258,37 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
 
 async function ensureAppUsersTable(database: D1Database): Promise<void> {
   if (!appUsersReady) {
-    appUsersReady = database.batch([
-      database.prepare(
-        `CREATE TABLE IF NOT EXISTS app_users (
-          id TEXT PRIMARY KEY NOT NULL,
-          username TEXT NOT NULL,
-          display_name TEXT NOT NULL,
-          email TEXT NOT NULL DEFAULT '',
-          password_hash TEXT NOT NULL,
-          password_salt TEXT NOT NULL,
-          role TEXT NOT NULL DEFAULT 'user',
-          access_group TEXT NOT NULL DEFAULT 'operator',
-          permissions_json TEXT NOT NULL DEFAULT '[]',
-          active INTEGER NOT NULL DEFAULT 1,
-          session_version INTEGER NOT NULL DEFAULT 1,
-          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )`,
-      ),
-      database.prepare(
-        "CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_unique ON app_users (username)",
-      ),
-    ]).then(() => undefined).catch((error) => {
+    appUsersReady = (async () => {
+      await database.batch([
+        database.prepare(
+          `CREATE TABLE IF NOT EXISTS app_users (
+            id TEXT PRIMARY KEY NOT NULL,
+            username TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            email TEXT NOT NULL DEFAULT '',
+            password_hash TEXT NOT NULL,
+            password_salt TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'user',
+            access_group TEXT NOT NULL DEFAULT 'operator',
+            permissions_json TEXT NOT NULL DEFAULT '[]',
+            company_id TEXT NOT NULL DEFAULT '',
+            active INTEGER NOT NULL DEFAULT 1,
+            session_version INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          )`,
+        ),
+        database.prepare(
+          "CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_unique ON app_users (username)",
+        ),
+      ]);
+      const columns = await database.prepare("PRAGMA table_info(app_users)").all<{ name: string }>();
+      if (!(columns.results ?? []).some((column) => column.name === "company_id")) {
+        await database.prepare(
+          "ALTER TABLE app_users ADD COLUMN company_id TEXT NOT NULL DEFAULT ''",
+        ).run();
+      }
+    })().catch((error) => {
       appUsersReady = null;
       throw error;
     });
@@ -288,7 +302,7 @@ async function readUserByUsername(database: D1Database, username: string) {
     .prepare(
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
               email, password_salt AS passwordSalt, role, access_group AS accessGroup,
-              permissions_json AS permissionsJson,
+              permissions_json AS permissionsJson, company_id AS companyId,
               active, session_version AS sessionVersion, created_at AS createdAt,
               updated_at AS updatedAt
        FROM app_users WHERE lower(username) = lower(?1) LIMIT 1`,
@@ -303,7 +317,7 @@ async function readUserById(database: D1Database, id: string) {
     .prepare(
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
               email, password_salt AS passwordSalt, role, access_group AS accessGroup,
-              permissions_json AS permissionsJson,
+              permissions_json AS permissionsJson, company_id AS companyId,
               active, session_version AS sessionVersion, created_at AS createdAt,
               updated_at AS updatedAt
        FROM app_users WHERE id = ?1 LIMIT 1`,
@@ -770,6 +784,8 @@ function sharedStatePermission(key: string, scope: string, write: boolean): Perm
   const normalized = `${scope}:${key}`.toLowerCase();
   if (normalized.includes("tarefa")) return "tasks";
   if (normalized.includes("puxada")) return write ? "pulls" : ["pulls", "report41"];
+  if (key === "report41:company-stock") return write ? "database" : ["database", "report41"];
+  if (/^report41:store:c[a-z0-9]{6,40}$/i.test(key)) return "report41";
   return write ? ["stock", "database", "pulls"] : ["stock", "database", "pulls", "report41"];
 }
 
@@ -805,6 +821,14 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
       scope,
       request.method !== "GET" && request.method !== "HEAD",
     );
+    const reportStoreMatch = /^report41:store:(c[a-z0-9]{6,40})$/i.exec(key);
+    if (
+      reportStoreMatch &&
+      user.role !== "admin" &&
+      (!user.companyId || reportStoreMatch[1] !== user.companyId)
+    ) {
+      return false;
+    }
     return Array.isArray(required) ? hasAnyPermission(user, required) : hasPermission(user, required);
   }
   return true;
@@ -815,6 +839,7 @@ function sessionResponse(user: AuthenticatedUser): Response {
     id: user.id,
     username: user.username,
     displayName: user.displayName,
+    companyId: user.companyId,
     accessGroup: user.accessGroup,
     role: user.role,
     permissions: user.permissions,
@@ -838,6 +863,7 @@ function publicUser(row: StoredUserRow) {
     username: row.username,
     displayName: row.displayName,
     email: row.email,
+    companyId: row.companyId || "",
     role,
     accessGroup,
     permissions: role === "admin"
@@ -858,7 +884,7 @@ async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
   const result = await env.DB.prepare(
     `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
             email, password_salt AS passwordSalt, role, access_group AS accessGroup,
-            permissions_json AS permissionsJson,
+            permissions_json AS permissionsJson, company_id AS companyId,
             active, session_version AS sessionVersion, created_at AS createdAt,
             updated_at AS updatedAt,
             EXISTS(
@@ -873,6 +899,7 @@ async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
       username: config.username,
       displayName: "Administrador principal",
       email: "",
+      companyId: "",
       role: "admin",
       accessGroup: "administrator",
       permissions: ALL_PERMISSIONS,
@@ -933,6 +960,9 @@ async function handleAdminUsers(
   const displayName = String(body.displayName ?? "").trim();
   const email = String(body.email ?? "").trim().toLowerCase().slice(0, 200);
   const password = String(body.password ?? "");
+  const companyId = /^c[a-z0-9]{6,40}$/i.test(String(body.companyId ?? "").trim())
+    ? String(body.companyId ?? "").trim()
+    : "";
   const accessGroup = normalizeAccessGroup(body.accessGroup);
   const access = accessForGroup(accessGroup, body.permissions);
   if (!validUsername(username)) {
@@ -955,8 +985,8 @@ async function handleAdminUsers(
       await env.DB.prepare(
         `INSERT INTO app_users
           (id, username, display_name, email, password_hash, password_salt, role,
-           access_group, permissions_json, active, session_version)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, 1)`,
+           access_group, permissions_json, company_id, active, session_version)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 1, 1)`,
       ).bind(
         id,
         username,
@@ -967,6 +997,7 @@ async function handleAdminUsers(
         access.role,
         accessGroup,
         JSON.stringify(access.permissions),
+        companyId,
       ).run();
       const created = await readUserById(env.DB, id);
       return Response.json({ user: created ? publicUser(created) : null }, { status: 201 });
@@ -985,9 +1016,9 @@ async function handleAdminUsers(
       await env.DB.batch([
         env.DB.prepare(
           `UPDATE app_users SET username=?1, display_name=?2, email=?3, role=?4,
-            access_group=?5, permissions_json=?6, active=?7, password_hash=?8,
-            password_salt=?9, session_version=session_version+1,
-            updated_at=CURRENT_TIMESTAMP WHERE id=?10`,
+            access_group=?5, permissions_json=?6, company_id=?7, active=?8, password_hash=?9,
+            password_salt=?10, session_version=session_version+1,
+            updated_at=CURRENT_TIMESTAMP WHERE id=?11`,
         ).bind(
           username,
           displayName,
@@ -995,6 +1026,7 @@ async function handleAdminUsers(
           access.role,
           accessGroup,
           JSON.stringify(access.permissions),
+          companyId,
           active,
           credential.hash,
           credential.salt,
@@ -1008,8 +1040,8 @@ async function handleAdminUsers(
     } else {
       await env.DB.prepare(
         `UPDATE app_users SET username=?1, display_name=?2, email=?3, role=?4,
-          access_group=?5, permissions_json=?6, active=?7,
-          session_version=session_version+1, updated_at=CURRENT_TIMESTAMP WHERE id=?8`,
+          access_group=?5, permissions_json=?6, company_id=?7, active=?8,
+          session_version=session_version+1, updated_at=CURRENT_TIMESTAMP WHERE id=?9`,
       ).bind(
         username,
         displayName,
@@ -1017,6 +1049,7 @@ async function handleAdminUsers(
         access.role,
         accessGroup,
         JSON.stringify(access.permissions),
+        companyId,
         active,
         id,
       ).run();
@@ -1096,7 +1129,8 @@ async function createAutomaticBackup(env: Env, secret: string) {
       env.DB.prepare(
         `SELECT id, username, display_name AS displayName, email, password_hash AS passwordHash,
                 password_salt AS passwordSalt, role, access_group AS accessGroup,
-                permissions_json AS permissions, active, session_version AS sessionVersion,
+                permissions_json AS permissions, company_id AS companyId,
+                active, session_version AS sessionVersion,
                 created_at AS createdAt, updated_at AS updatedAt
          FROM app_users`,
       ).all(),
@@ -1294,12 +1328,14 @@ const worker = {
     authenticatedHeaders.delete(DISPLAY_NAME_HEADER);
     authenticatedHeaders.delete(ROLE_HEADER);
     authenticatedHeaders.delete(PERMISSIONS_HEADER);
+    authenticatedHeaders.delete(COMPANY_ID_HEADER);
     authenticatedHeaders.set(INTERNAL_AUTH_HEADER, "1");
     authenticatedHeaders.set(USER_ID_HEADER, user.id);
     authenticatedHeaders.set(USERNAME_HEADER, user.username);
     authenticatedHeaders.set(DISPLAY_NAME_HEADER, encodeURIComponent(user.displayName));
     authenticatedHeaders.set(ROLE_HEADER, user.role);
     authenticatedHeaders.set(PERMISSIONS_HEADER, user.permissions.join(","));
+    authenticatedHeaders.set(COMPANY_ID_HEADER, user.companyId);
     const authenticatedRequest = new Request(request, {
       headers: authenticatedHeaders,
     });

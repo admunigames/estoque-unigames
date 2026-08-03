@@ -29,6 +29,13 @@
       "when": 1785013066765,
       "tag": "0003_wide_lester",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1785779507299,
+      "tag": "0004_short_nighthawk",
+      "breakpoints": true
     }
   ]
 }
