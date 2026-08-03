@@ -1255,7 +1255,7 @@
     .purchase-toolbar .search-box{grid-column:1 / -1;}
     .mobile-tabbar{
       position:fixed; z-index:1050; left:max(10px,env(safe-area-inset-left)); right:max(10px,env(safe-area-inset-right));
-      bottom:calc(8px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(4,1fr);
+      bottom:calc(8px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(5,1fr);
       min-height:60px; padding:5px; border:1px solid rgba(114,167,216,.34); border-radius:18px;
       background:rgba(8,18,30,.94); box-shadow:0 18px 48px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.06);
       backdrop-filter:blur(20px) saturate(130%);
@@ -1641,9 +1641,112 @@
   html[data-theme="light"] .theme-toggle{
     background:#fff;border-color:#93abc0;box-shadow:0 7px 18px rgba(28,67,102,.16);
   }
+  .mission-toolbar,.mission-admin-panel,.mission-board,.home-missions{
+    background:linear-gradient(145deg,rgba(255,255,255,.025),transparent 58%),var(--bg-card);
+    border:1px solid rgba(39,69,97,.58);border-radius:16px;
+    box-shadow:0 18px 42px rgba(0,0,0,.13);
+  }
+  .mission-toolbar{
+    display:flex;align-items:flex-end;justify-content:space-between;gap:14px;
+    flex-wrap:wrap;padding:16px 18px;margin-bottom:16px;
+  }
+  .mission-toolbar .field{min-width:180px;max-width:230px;}
+  .mission-notification-action{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .mission-notification-action span{max-width:340px;color:var(--ink-soft);font:700 9px/1.45 var(--mono);}
+  .mission-admin-panel{padding:20px;margin-bottom:16px;}
+  .mission-admin-head,.mission-board-head,.home-missions-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;
+  }
+  .mission-admin-head h3,.mission-board-head h3,.home-missions-head h2{margin:0;color:var(--ink);}
+  .mission-admin-head p,.mission-board-head p,.home-missions-head p{
+    margin:5px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5;
+  }
+  .mission-form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+  .mission-form-grid .field.full{grid-column:1 / -1;}
+  .mission-form-grid .field.double{grid-column:span 2;}
+  .mission-form-actions{display:flex;justify-content:flex-end;margin-top:14px;}
+  .mission-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 1px 8px;scrollbar-width:thin;}
+  .mission-tab{
+    flex:0 0 auto;min-height:38px;padding:8px 13px;border:1px solid rgba(79,134,189,.38);
+    border-radius:999px;background:rgba(79,134,189,.06);color:var(--ink-soft);
+    font:800 9px/1 var(--mono);letter-spacing:.4px;
+  }
+  .mission-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(36,79,131,.24);}
+  .mission-board{padding:20px;}
+  .mission-board-meta{display:flex;gap:9px;align-items:center;flex-wrap:wrap;}
+  .mission-count{color:var(--ink-soft);font:800 10px/1.3 var(--mono);}
+  .mission-list{display:grid;gap:10px;}
+  .mission-card{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:13px;
+    padding:15px;border:1px solid rgba(39,69,97,.48);border-radius:13px;background:var(--bg-card-2);
+  }
+  .mission-card.completed{opacity:.58;}
+  .mission-card.completed .mission-card-title{text-decoration:line-through;}
+  .mission-check{width:21px;height:21px;margin-top:3px;accent-color:var(--accent);cursor:pointer;}
+  .mission-check:disabled{cursor:default;}
+  .mission-card-copy{min-width:0;}
+  .mission-card-title{display:block;color:var(--ink);font:800 14px/1.35 var(--sans);overflow-wrap:anywhere;}
+  .mission-card-description{margin:6px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .mission-badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+  .mission-badge{
+    padding:5px 8px;border:1px solid rgba(79,134,189,.34);border-radius:999px;
+    background:rgba(79,134,189,.08);color:var(--ink-soft);font:800 8px/1.2 var(--mono);
+  }
+  .mission-badge.deadline{color:#e1ad49;border-color:rgba(225,173,73,.38);background:rgba(225,173,73,.08);}
+  .mission-badge.overdue{color:#ff7667;border-color:rgba(255,118,103,.42);background:rgba(255,118,103,.09);}
+  .mission-completion-detail{display:block;margin-top:8px;color:var(--ink-soft);font:700 9px/1.5 var(--mono);}
+  .mission-card-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  .mission-status{
+    min-width:102px;padding:7px 9px;border-radius:9px;background:rgba(79,134,189,.08);
+    color:var(--ink-soft);text-align:center;font:800 8px/1.3 var(--mono);
+  }
+  .mission-status.done{background:rgba(66,166,119,.11);color:#66d49e;}
+  .mission-delete{
+    min-height:32px;padding:7px 9px;border:1px solid rgba(183,66,52,.38);border-radius:8px;
+    background:rgba(183,66,52,.08);color:#e4776a;font:800 8px/1 var(--mono);
+  }
+  .mission-empty{padding:28px 18px;text-align:center;color:var(--ink-soft);font-size:12px;line-height:1.55;}
+  .home-missions{margin-top:18px;padding:20px;}
+  .home-missions-head{align-items:center;}
+  .home-missions-head > div > span{color:#58718a;font:800 9px/1 var(--mono);letter-spacing:1.2px;}
+  .home-missions-head h2{margin-top:5px;font-size:21px;}
+  .home-missions-goto{
+    min-height:36px;padding:8px 12px;border:1px solid rgba(36,79,131,.24);border-radius:10px;
+    background:rgba(36,79,131,.08);color:#244f83;font:800 9px/1 var(--mono);
+  }
+  .home-mission-list{display:grid;gap:8px;}
+  .home-mission-row{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;
+    padding:11px 12px;border:1px solid rgba(36,79,131,.16);border-radius:11px;background:rgba(255,255,255,.46);
+  }
+  .home-mission-row.completed{opacity:.55;}
+  .home-mission-row.completed .home-mission-title{text-decoration:line-through;}
+  .home-mission-check{width:18px;height:18px;accent-color:var(--accent);}
+  .home-mission-copy{min-width:0;}
+  .home-mission-title{display:block;color:#10233a;font:800 12px/1.4 var(--sans);overflow-wrap:anywhere;}
+  .home-mission-meta{display:block;margin-top:3px;color:#5c7187;font:700 9px/1.4 var(--mono);}
+  .home-mission-time{color:#244f83;font:800 10px/1 var(--mono);white-space:nowrap;}
+  html[data-theme="light"] .mission-toolbar,
+  html[data-theme="light"] .mission-admin-panel,
+  html[data-theme="light"] .mission-board{background:#fff;border-color:#b8cad9;box-shadow:0 14px 34px rgba(28,67,102,.1);}
+  html[data-theme="light"] .mission-card{background:#f6f9fb;border-color:#c4d1dc;}
+  html[data-theme="light"] .mission-status.done{color:#24714a;background:#e2f3e9;}
+  html[data-theme="light"] .mission-delete{color:#9c3328;background:#fff1ef;border-color:#d9a29c;}
   @media(max-width:800px){
     .theme-toggle{top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));}
     .page:not(.home-page) .page-heading{padding-right:62px;}
+    .mission-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .mission-form-grid .field.double{grid-column:span 2;}
+  }
+  @media(max-width:560px){
+    .mission-form-grid{grid-template-columns:1fr;}
+    .mission-form-grid .field.double,.mission-form-grid .field.full{grid-column:1;}
+    .mission-admin-panel,.mission-board,.home-missions{padding:16px 13px;}
+    .mission-card{grid-template-columns:auto minmax(0,1fr);}
+    .mission-card-actions{grid-column:2;align-items:stretch;}
+    .mission-status{min-width:0;}
+    .home-mission-row{grid-template-columns:auto minmax(0,1fr);}
+    .home-mission-time{grid-column:2;}
   }
 </style>
 </head>
@@ -1678,6 +1781,7 @@
     <button class="nav-item" id="navCompras" data-page="compras" data-permission="purchases" title="Controle de Compras"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Controle de Compras</span></button>
     <button class="nav-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></button>
     <button class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></button>
+    <button class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" title="Missões"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-label">Missões</span></button>
     <div class="nav-group" data-permission="database">
       <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
         <span class="nav-icon" aria-hidden="true">⬡</span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
@@ -1738,6 +1842,11 @@
             <span class="home-access-copy"><strong>ESTOQUE FISCAL</strong><span>Conciliação, filtros e exportações.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
+          <button class="home-access-card" type="button" data-home-target="missoes" data-permission="missions">
+            <span class="home-access-icon" aria-hidden="true">◎</span>
+            <span class="home-access-copy"><strong>MISSÕES</strong><span>Metas diárias e semanais da sua loja.</span></span>
+            <span class="home-access-arrow" aria-hidden="true">→</span>
+          </button>
           <button class="home-access-card" type="button" data-home-target="cadastros" data-permission="database">
             <span class="home-access-icon" aria-hidden="true">+</span>
             <span class="home-access-copy"><strong>CADASTROS</strong><span>Lojas, bases e envio de dados.</span></span>
@@ -1790,6 +1899,16 @@
               <div class="home-task-chart-row"><span>PENDENTES</span><div class="home-task-chart-track"><i class="home-task-chart-bar pending" id="homeTaskChartPending"></i></div><strong id="homeTaskChartPendingCount">0</strong></div>
             </div>
           </article>
+        </section>
+        <section class="home-missions" data-permission="missions" aria-labelledby="homeMissionsTitle">
+          <div class="home-missions-head">
+            <div><span>MISSÕES DO DIA</span><h2 id="homeMissionsTitle">Prioridades das lojas</h2></div>
+            <button class="home-missions-goto" type="button" data-home-target="missoes">VER MISSÕES →</button>
+          </div>
+          <div class="home-mission-list" id="homeMissionList" aria-live="polite">
+            <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
+            <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
+          </div>
         </section>
         <section class="home-overview" data-any-permission="stock,database,pulls,report41" aria-labelledby="homeOverviewTitle">
           <div class="home-overview-head">
@@ -1968,6 +2087,57 @@
 
       <footer class="hint no-print">No PDF, apenas as linhas com saldo negativo saem destacadas. Use o diálogo de impressão do navegador e escolha "Salvar como PDF".</footer>
     </section>
+<!-- ================= MISSÕES ================= -->
+    <section id="pageMissoes" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Missões</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Acompanhe as missões gerais e as missões específicas de cada loja.</p></div>
+      </header>
+
+      <div class="mission-toolbar">
+        <div class="field">
+          <label for="missionDate">DATA DAS MISSÕES</label>
+          <input id="missionDate" type="date">
+        </div>
+        <div class="mission-notification-action">
+          <span>Ative os avisos para receber lembretes 2 horas e 1 hora antes do limite.</span>
+          <button class="btn-outline" id="btnEnableMissionNotifications" type="button">ATIVAR NOTIFICAÇÕES</button>
+        </div>
+      </div>
+
+      <section class="mission-admin-panel" data-admin-only>
+        <div class="mission-admin-head">
+          <div><h3>CADASTRAR NOVA MISSÃO</h3><p>Escolha se a missão será geral ou exclusiva para uma loja.</p></div>
+        </div>
+        <form id="missionForm">
+          <div class="mission-form-grid">
+            <div class="field double"><label for="missionTitle">TÍTULO DA MISSÃO</label><input id="missionTitle" maxlength="160" required placeholder="Ex.: Organizar a vitrine de acessórios"></div>
+            <div class="field"><label for="missionScope">DESTINO</label><select id="missionScope"><option value="general">MISSÃO GERAL — TODAS AS LOJAS</option><option value="store">MISSÃO PARA UMA LOJA</option></select></div>
+            <div class="field" id="missionCompanyField" hidden><label for="missionCompany">LOJA</label><select id="missionCompany"><option value="">SELECIONE A LOJA</option></select></div>
+            <div class="field full"><label for="missionDescription">DESCRIÇÃO E ORIENTAÇÕES</label><textarea id="missionDescription" maxlength="1200" rows="3" placeholder="Detalhes necessários para a loja concluir a missão..."></textarea></div>
+            <div class="field"><label for="missionStartDate">DATA INICIAL</label><input id="missionStartDate" type="date" required></div>
+            <div class="field"><label for="missionFrequency">REPETIÇÃO</label><select id="missionFrequency"><option value="once">SOMENTE NESTE DIA</option><option value="daily">DIÁRIA</option><option value="weekly">SEMANAL</option></select></div>
+            <div class="field"><label for="missionDeadlineMode">LIMITE DE HORÁRIO</label><select id="missionDeadlineMode"><option value="free">SEM LIMITE — LIVRE</option><option value="timed">COM HORÁRIO LIMITE</option></select></div>
+            <div class="field" id="missionDueTimeField" hidden><label for="missionDueTime">CONCLUIR ATÉ</label><input id="missionDueTime" type="time"></div>
+          </div>
+          <div class="mission-form-actions"><button class="btn-accent" id="btnSaveMission" type="submit">CADASTRAR MISSÃO</button></div>
+          <div class="user-form-status" id="missionFormStatus" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="mission-board">
+        <div class="mission-board-head">
+          <div><h3>MISSÕES PROGRAMADAS</h3><p id="missionBoardDescription">Selecione a visão que deseja acompanhar.</p></div>
+          <div class="mission-board-meta"><span class="mission-count" id="missionCount">0 MISSÕES</span></div>
+        </div>
+        <div class="mission-tabs" id="missionTabs" aria-label="Visões de missões"></div>
+        <div class="mission-list" id="missionList" aria-live="polite"><div class="mission-empty">Carregando missões…</div></div>
+      </section>
+    </section>
+
 <!-- ================= TAREFAS ================= -->
     <section id="pageTarefas" class="page wrap">
       <header class="page-header">
@@ -2407,9 +2577,9 @@
             <div class="field">
               <label for="userAccessGroup">GRUPO DE ACESSO</label>
               <select id="userAccessGroup">
-                <option value="operator">OPERADOR — TAREFAS</option>
-                <option value="purchases">COMPRAS — TAREFAS E COMPRAS</option>
-                <option value="fiscal">FISCAL — ESTOQUE, BASE, PUXADAS E RELATÓRIO 41</option>
+                <option value="operator">OPERADOR — TAREFAS E MISSÕES</option>
+                <option value="purchases">COMPRAS — TAREFAS, MISSÕES E COMPRAS</option>
+                <option value="fiscal">FISCAL — MISSÕES, ESTOQUE, BASE, PUXADAS E RELATÓRIO 41</option>
                 <option value="administrator">ADMINISTRADOR — ACESSO COMPLETO</option>
                 <option value="custom">PERSONALIZADO</option>
               </select>
@@ -2425,6 +2595,7 @@
               <label>MÓDULOS LIBERADOS <span id="userPermissionHint">(DEFINIDOS PELO GRUPO)</span></label>
               <div class="permission-grid" id="userPermissionGrid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks"> Tarefas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions"> Missões</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases"> Compras</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="stock"> Estoque Fiscal</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="database"> Base de Dados</label>
@@ -2454,6 +2625,7 @@
 <nav class="mobile-tabbar no-print" aria-label="Atalhos principais">
   <button class="mobile-tab active" type="button" data-mobile-page="inicio"><span aria-hidden="true">⌂</span><small>INÍCIO</small></button>
   <button class="mobile-tab" type="button" data-mobile-page="dashboard" data-permission="stock"><span aria-hidden="true">Σ</span><small>ESTOQUE</small></button>
+  <button class="mobile-tab" type="button" data-mobile-page="missoes" data-permission="missions"><span aria-hidden="true">◎</span><small>MISSÕES</small></button>
   <button class="mobile-tab" type="button" data-mobile-page="puxadas" data-permission="pulls"><span aria-hidden="true">⇄</span><small>PUXADAS</small></button>
   <button class="mobile-tab" type="button" data-mobile-page="compras" data-permission="purchases"><span aria-hidden="true">▤</span><small>COMPRAS</small></button>
 </nav>
@@ -2575,6 +2747,10 @@
   let companyStockData = { products:new Map(), fileName:'', updatedAt:null };
   let companyStockLoadError = '';
   let report41SearchTimer = null;
+  let missionRows = [];
+  let missionView = 'general';
+  let missionCompanyId = '';
+  let missionsLoading = false;
 
   let purchaseRows = [];
   let purchaseCursor = null;
@@ -2906,6 +3082,7 @@
     lojas:'/cadastros/lojas',
     dados:'/cadastros/base-de-dados',
     tarefas:'/tarefas',
+    missoes:'/missoes',
     usuarios:'/cadastros/usuarios'
   });
   const PAGE_TITLES = Object.freeze({
@@ -2918,6 +3095,7 @@
     lojas:'CADASTRO DE LOJAS',
     dados:'BASE DE DADOS',
     tarefas:'TAREFAS',
+    missoes:'MISSÕES',
     usuarios:'USUÁRIOS E ACESSOS'
   });
   const PAGE_PERMISSIONS = Object.freeze({
@@ -2926,6 +3104,7 @@
     compras:'purchases',
     dashboard:'stock',
     tarefas:'tasks',
+    missoes:'missions',
     cadastros:'database',
     lojas:'database',
     dados:'database'
@@ -3237,6 +3416,7 @@
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
     if(name === 'usuarios') loadAdminUsers();
+    if(name === 'missoes') loadMissions();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -3250,6 +3430,7 @@
       history.replaceState({page:name}, '', PAGE_ROUTES[name]);
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
+    if(name === 'missoes') loadMissions();
   }
 
   document.querySelectorAll('.nav-item').forEach(btn => {
@@ -4755,6 +4936,8 @@
     renderPullStoreRows();
     renderPullDestinationFilter();
     renderReport41StoreSelector();
+    renderMissionCompanyOptions();
+    renderMissionTabs();
   }
 
   function renderPullDestinationFilter(){
@@ -6257,6 +6440,7 @@
   function updateTaskNotificationStatus(){
     const status = el('homeReminderStatus');
     const button = el('btnEnableTaskNotifications');
+    updateMissionNotificationStatus();
     if(!status || !button) return;
     if(!('Notification' in window)){
       status.textContent = 'Alertas visuais ativos enquanto o site estiver aberto.';
@@ -6829,8 +7013,328 @@ function renderHomeTasks(){
       renderHomeTasks();
     }
   });
+
+  const missionFrequencyLabels = {once:'SOMENTE NO DIA',daily:'DIÁRIA',weekly:'SEMANAL'};
+
+  function setMissionFormStatus(message,type){
+    const status = el('missionFormStatus');
+    if(!status) return;
+    status.textContent = message || '';
+    status.className = 'user-form-status' + (type ? ' ' + type : '');
+  }
+
+  function renderMissionCompanyOptions(){
+    const select = el('missionCompany');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">SELECIONE A LOJA</option>' +
+      companies.map(company =>
+        '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
+      ).join('');
+    select.value = companies.some(company => company.id === selected) ? selected : '';
+  }
+
+  function missionSelectedStoreName(){
+    if(currentSession.role !== 'admin') return 'Minha loja';
+    const company = companies.find(item => item.id === missionCompanyId);
+    return company ? company.name : 'Selecione uma loja';
+  }
+
+  function renderMissionTabs(){
+    const tabs = el('missionTabs');
+    if(!tabs) return;
+    const items = [{view:'general',companyId:'',label:'MISSÃO GERAL'}];
+    if(currentSession.role === 'admin'){
+      companies.forEach(company => items.push({
+        view:'store',
+        companyId:company.id,
+        label:company.name
+      }));
+    }else if(currentSession.companyId){
+      items.push({view:'store',companyId:currentSession.companyId,label:'MINHA LOJA'});
+    }
+    if(missionView === 'store' && !items.some(item => item.view === 'store' && item.companyId === missionCompanyId)){
+      missionView = 'general';
+      missionCompanyId = '';
+    }
+    tabs.innerHTML = items.map(item =>
+      '<button class="mission-tab'+(missionView === item.view && missionCompanyId === item.companyId ? ' active' : '')+
+      '" type="button" data-mission-view="'+item.view+'" data-mission-company="'+escapeHtml(item.companyId)+'">'+
+      escapeHtml(item.label)+'</button>'
+    ).join('');
+  }
+
+  function missionDisplayCompleted(mission){
+    if(currentSession.role !== 'admin') return mission.completed === true;
+    if(mission.scope === 'store') return Number(mission.completionCount || 0) > 0;
+    return companies.length > 0 && Number(mission.completionCount || 0) >= companies.length;
+  }
+
+  function missionDeadlinePresentation(mission,date){
+    if(!mission.dueTime) return {label:'SEM LIMITE DE HORÁRIO',className:''};
+    const due = new Date(date+'T'+mission.dueTime+':00');
+    const isPast = date < todayDateKey() ||
+      (date === todayDateKey() && !Number.isNaN(due.getTime()) && due.getTime() < Date.now());
+    return {
+      label:(isPast && !missionDisplayCompleted(mission) ? 'ATRASADA · ' : 'ATÉ ') + mission.dueTime,
+      className:isPast && !missionDisplayCompleted(mission) ? ' overdue' : ' deadline'
+    };
+  }
+
+  function missionCompletionCopy(mission){
+    const count = Number(mission.completionCount || 0);
+    if(currentSession.role !== 'admin') return mission.completed ? 'CONCLUÍDA PELA SUA LOJA' : 'AGUARDANDO CONCLUSÃO';
+    if(mission.scope === 'general'){
+      return count+' DE '+companies.length+' LOJAS CONCLUÍRAM';
+    }
+    return count ? 'CONCLUÍDA PELA LOJA' : 'AGUARDANDO A LOJA';
+  }
+
+  function missionCompletionsDetail(mission){
+    if(currentSession.role !== 'admin' || !Array.isArray(mission.completions) || !mission.completions.length) return '';
+    return '<span class="mission-completion-detail">CONCLUÍDA POR: '+
+      mission.completions.map(item => escapeHtml(item.companyName || item.completedByName || 'Loja')).join(' · ')+
+      '</span>';
+  }
+
+  function missionCardHtml(mission,date){
+    const completed = missionDisplayCompleted(mission);
+    const deadline = missionDeadlinePresentation(mission,date);
+    const target = mission.scope === 'general' ? 'GERAL · TODAS AS LOJAS' : mission.companyName;
+    const marker = currentSession.role === 'admin'
+      ? '<span class="mission-check" aria-hidden="true">'+(completed ? '✓' : '○')+'</span>'
+      : '<input class="mission-check" type="checkbox" data-mission-complete="'+escapeHtml(mission.id)+'" '+
+          (mission.completed ? 'checked' : '')+' aria-label="Marcar missão como concluída">';
+    return '<article class="mission-card'+(completed ? ' completed' : '')+'">'+
+      marker+
+      '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(mission.title)+'</strong>'+
+        (mission.description ? '<p class="mission-card-description">'+escapeHtml(mission.description)+'</p>' : '')+
+        '<div class="mission-badges">'+
+          '<span class="mission-badge">'+escapeHtml(target || 'LOJA')+'</span>'+
+          '<span class="mission-badge">↻ '+escapeHtml(missionFrequencyLabels[mission.frequency] || 'SOMENTE NO DIA')+'</span>'+
+          '<span class="mission-badge'+deadline.className+'">'+escapeHtml(deadline.label)+'</span>'+
+        '</div>'+missionCompletionsDetail(mission)+'</div>'+
+      '<div class="mission-card-actions"><span class="mission-status'+(completed ? ' done' : '')+'">'+
+        escapeHtml(missionCompletionCopy(mission))+'</span>'+
+        (currentSession.role === 'admin'
+          ? '<button class="mission-delete" type="button" data-mission-delete="'+escapeHtml(mission.id)+'">EXCLUIR</button>'
+          : '')+
+      '</div></article>';
+  }
+
+  function renderMissionList(){
+    const list = el('missionList');
+    if(!list) return;
+    const date = el('missionDate').value || todayDateKey();
+    el('missionCount').textContent = missionRows.length+' MISSÃO'+(missionRows.length === 1 ? '' : 'ÕES');
+    el('missionBoardDescription').textContent = missionView === 'general'
+      ? 'Missões destinadas a todas as lojas.'
+      : 'Missões específicas de '+missionSelectedStoreName()+'.';
+    list.innerHTML = missionRows.length
+      ? missionRows.map(mission => missionCardHtml(mission,date)).join('')
+      : '<div class="mission-empty">Nenhuma missão programada para esta visão e data.</div>';
+  }
+
+  async function missionApiRequest(path,options){
+    const settings = options || {};
+    const response = await fetch(path,{
+      ...settings,
+      cache:'no-store',
+      headers:{Accept:'application/json',...(settings.headers || {})}
+    });
+    let data = {};
+    try{ data = await response.json(); }catch(error){ data = {}; }
+    if(!response.ok) throw new Error(data.error || 'Não foi possível concluir a operação.');
+    return data;
+  }
+
+  async function loadMissions(){
+    if(!canAccess('missions') || missionsLoading) return;
+    const list = el('missionList');
+    const date = el('missionDate').value || todayDateKey();
+    missionsLoading = true;
+    if(list) list.innerHTML = '<div class="mission-empty">Carregando missões…</div>';
+    try{
+      const params = new URLSearchParams({date,view:missionView});
+      if(missionView === 'store'){
+        params.set('companyId',currentSession.role === 'admin' ? missionCompanyId : currentSession.companyId);
+      }
+      const data = await missionApiRequest('/api/missions?'+params.toString());
+      missionRows = Array.isArray(data.missions) ? data.missions : [];
+      renderMissionTabs();
+      renderMissionList();
+    }catch(error){
+      missionRows = [];
+      if(list) list.innerHTML = '<div class="mission-empty">'+escapeHtml(error.message)+'</div>';
+      el('missionCount').textContent = '0 MISSÕES';
+    }finally{
+      missionsLoading = false;
+    }
+  }
+
+  function homeMissionRowHtml(mission,date){
+    const completed = missionDisplayCompleted(mission);
+    const deadline = missionDeadlinePresentation(mission,date);
+    const target = mission.scope === 'general' ? 'MISSÃO GERAL' : (mission.companyName || 'MINHA LOJA');
+    const marker = currentSession.role === 'admin'
+      ? '<span class="home-mission-check" aria-hidden="true">'+(completed ? '✓' : '○')+'</span>'
+      : '<input class="home-mission-check" type="checkbox" data-home-mission-complete="'+escapeHtml(mission.id)+'" '+
+          (mission.completed ? 'checked' : '')+' aria-label="Marcar missão como concluída">';
+    return '<div class="home-mission-row'+(completed ? ' completed' : '')+'">'+marker+
+      '<div class="home-mission-copy"><strong class="home-mission-title">'+escapeHtml(mission.title)+'</strong>'+
+      '<span class="home-mission-meta">'+escapeHtml(target)+' · '+escapeHtml(missionCompletionCopy(mission))+'</span></div>'+
+      '<span class="home-mission-time">'+escapeHtml(mission.dueTime ? deadline.label : 'LIVRE')+'</span></div>';
+  }
+
+  async function loadHomeMissions(){
+    const list = el('homeMissionList');
+    if(!list || !canAccess('missions')) return;
+    const date = todayDateKey();
+    try{
+      const data = await missionApiRequest('/api/missions?'+new URLSearchParams({date,view:'dashboard'}));
+      const missions = Array.isArray(data.missions) ? data.missions : [];
+      list.innerHTML = missions.length
+        ? missions.slice(0,8).map(mission => homeMissionRowHtml(mission,date)).join('')
+        : '<div class="home-tasks-empty">Nenhuma missão programada para hoje.</div>';
+    }catch(error){
+      list.innerHTML = '<div class="home-tasks-empty">Não foi possível carregar as missões.</div>';
+    }
+  }
+
+  async function updateMissionCompletion(missionId,completed,date){
+    await missionApiRequest('/api/missions',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({missionId,date,completed})
+    });
+    await Promise.all([loadMissions(),loadHomeMissions()]);
+    if(completed) showPurchaseToast('Missão concluída. O administrador responsável foi avisado.');
+  }
+
+  function updateMissionNotificationStatus(){
+    const button = el('btnEnableMissionNotifications');
+    if(!button) return;
+    if(!('Notification' in window)){
+      button.textContent = 'NÃO DISPONÍVEL';
+      button.disabled = true;
+    }else if(Notification.permission === 'granted'){
+      button.textContent = 'NOTIFICAÇÕES ATIVAS';
+      button.disabled = true;
+    }else if(Notification.permission === 'denied'){
+      button.textContent = 'NOTIFICAÇÕES BLOQUEADAS';
+      button.disabled = true;
+    }else{
+      button.textContent = 'ATIVAR NOTIFICAÇÕES';
+      button.disabled = false;
+    }
+  }
+
+  el('missionTabs').addEventListener('click',event => {
+    const button = event.target.closest('[data-mission-view]');
+    if(!button) return;
+    missionView = button.dataset.missionView;
+    missionCompanyId = button.dataset.missionCompany || '';
+    renderMissionTabs();
+    loadMissions();
+  });
+  el('missionDate').addEventListener('change',() => loadMissions());
+  el('missionScope').addEventListener('change',() => {
+    const storeMission = el('missionScope').value === 'store';
+    el('missionCompanyField').hidden = !storeMission;
+    el('missionCompany').required = storeMission;
+  });
+  el('missionDeadlineMode').addEventListener('change',() => {
+    const timed = el('missionDeadlineMode').value === 'timed';
+    el('missionDueTimeField').hidden = !timed;
+    el('missionDueTime').required = timed;
+    if(!timed) el('missionDueTime').value = '';
+  });
+  el('missionForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const storeMission = el('missionScope').value === 'store';
+    const company = companies.find(item => item.id === el('missionCompany').value);
+    const button = el('btnSaveMission');
+    button.disabled = true;
+    setMissionFormStatus('SALVANDO MISSÃO…','');
+    try{
+      await missionApiRequest('/api/missions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          title:el('missionTitle').value,
+          description:el('missionDescription').value,
+          scope:storeMission ? 'store' : 'general',
+          companyId:storeMission ? el('missionCompany').value : '',
+          companyName:storeMission && company ? company.name : '',
+          frequency:el('missionFrequency').value,
+          startDate:el('missionStartDate').value,
+          dueTime:el('missionDeadlineMode').value === 'timed' ? el('missionDueTime').value : ''
+        })
+      });
+      setMissionFormStatus('MISSÃO CADASTRADA COM SUCESSO.','success');
+      el('missionTitle').value = '';
+      el('missionDescription').value = '';
+      missionView = storeMission ? 'store' : 'general';
+      missionCompanyId = storeMission ? el('missionCompany').value : '';
+      el('missionDate').value = el('missionStartDate').value;
+      renderMissionTabs();
+      await Promise.all([loadMissions(),loadHomeMissions()]);
+    }catch(error){
+      setMissionFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+  el('missionList').addEventListener('change',async event => {
+    const missionId = event.target.dataset.missionComplete;
+    if(!missionId) return;
+    event.target.disabled = true;
+    try{
+      await updateMissionCompletion(missionId,event.target.checked,el('missionDate').value);
+    }catch(error){
+      event.target.checked = !event.target.checked;
+      showPurchaseToast(error.message,'error');
+    }finally{
+      event.target.disabled = false;
+    }
+  });
+  el('missionList').addEventListener('click',async event => {
+    const button = event.target.closest('[data-mission-delete]');
+    if(!button || !confirm('Excluir esta missão e todos os registros de conclusão dela?')) return;
+    button.disabled = true;
+    try{
+      await missionApiRequest('/api/missions?id='+encodeURIComponent(button.dataset.missionDelete),{method:'DELETE'});
+      await Promise.all([loadMissions(),loadHomeMissions()]);
+      showPurchaseToast('Missão excluída.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      button.disabled = false;
+    }
+  });
+  el('homeMissionList').addEventListener('change',async event => {
+    const missionId = event.target.dataset.homeMissionComplete;
+    if(!missionId) return;
+    event.target.disabled = true;
+    try{
+      await updateMissionCompletion(missionId,event.target.checked,todayDateKey());
+    }catch(error){
+      event.target.checked = !event.target.checked;
+      showPurchaseToast(error.message,'error');
+    }finally{
+      event.target.disabled = false;
+    }
+  });
+  el('btnEnableMissionNotifications').addEventListener('click',async () => {
+    await enableTaskNotifications();
+    updateMissionNotificationStatus();
+  });
+  el('missionDate').value = todayDateKey();
+  el('missionStartDate').value = todayDateKey();
+  updateMissionNotificationStatus();
+
   const permissionNames = {
     tasks:'Tarefas',
+    missions:'Missões',
     purchases:'Compras',
     stock:'Estoque Fiscal',
     database:'Base de Dados',
@@ -6845,10 +7349,10 @@ function renderHomeTasks(){
     custom:'Personalizado'
   };
   const accessGroupPermissions = {
-    administrator:['tasks','purchases','stock','database','pulls','report41'],
-    purchases:['tasks','purchases'],
-    fiscal:['stock','database','pulls','report41'],
-    operator:['tasks']
+    administrator:['tasks','missions','purchases','stock','database','pulls','report41'],
+    purchases:['tasks','missions','purchases'],
+    fiscal:['missions','stock','database','pulls','report41'],
+    operator:['tasks','missions']
   };
 
   function updateUserGroupFields(){
@@ -7061,6 +7565,11 @@ function renderHomeTasks(){
       await loadTaskAgenda();
       renderHomeTasks();
       startTaskReminderMonitor();
+    }
+    if(canAccess('missions')){
+      await loadMissions();
+      await loadHomeMissions();
+      updateMissionNotificationStatus();
     }
     await verifyIosStorage();
     prepareIosInstallHint();

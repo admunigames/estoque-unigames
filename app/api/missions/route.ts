@@ -1,0 +1,433 @@
+import webPush from "web-push";
+import { getD1 } from "../../../db";
+import { unauthorizedResponse } from "../../lib/notion";
+
+type JsonMap = Record<string, unknown>;
+type Identity = {
+  id: string;
+  displayName: string;
+  role: "admin" | "user";
+  companyId: string;
+};
+type MissionRow = {
+  id: string;
+  title: string;
+  description: string;
+  scope: "general" | "store";
+  companyId: string;
+  companyName: string;
+  frequency: "once" | "daily" | "weekly";
+  startDate: string;
+  dueTime: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+};
+type CompletionRow = {
+  id: string;
+  missionId: string;
+  occurrenceDate: string;
+  companyId: string;
+  companyName: string;
+  completedBy: string;
+  completedByName: string;
+  completedAt: string;
+};
+type PushSubscriptionRow = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+const COMPANY_PATTERN = /^c[a-z0-9]{6,40}$/i;
+
+function jsonResponse(body: JsonMap, status = 200) {
+  return Response.json(body, {
+    status,
+    headers: {
+      "cache-control": "private, no-store",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
+
+function safeText(value: unknown, maxLength: number) {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
+function decodedHeader(request: Request, name: string) {
+  const value = request.headers.get(name) || "";
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function identity(request: Request): Identity {
+  return {
+    id: safeText(request.headers.get("x-unigames-user-id"), 80),
+    displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
+    role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
+  };
+}
+
+function sameOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  return !origin || origin === new URL(request.url).origin;
+}
+
+function dateAtUtc(value: string) {
+  return new Date(`${value}T12:00:00Z`);
+}
+
+function missionOccursOn(mission: MissionRow, date: string) {
+  if (!DATE_PATTERN.test(date) || mission.startDate > date) return false;
+  if (mission.frequency === "daily") return true;
+  if (mission.frequency === "once") return mission.startDate === date;
+  return dateAtUtc(mission.startDate).getUTCDay() === dateAtUtc(date).getUTCDay();
+}
+
+async function companyName(database: D1Database, companyId: string) {
+  try {
+    const row = await database
+      .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
+      .first<{ value: string }>();
+    const parsed = row?.value ? JSON.parse(row.value) : [];
+    if (!Array.isArray(parsed)) return "";
+    const company = parsed.find(
+      (item): item is { id: string; name: string } =>
+        Boolean(item) &&
+        typeof item === "object" &&
+        "id" in item &&
+        item.id === companyId &&
+        "name" in item &&
+        typeof item.name === "string",
+    );
+    return company?.name?.trim().slice(0, 120) || "";
+  } catch {
+    return "";
+  }
+}
+
+async function notifyMissionCreator(
+  database: D1Database,
+  mission: MissionRow,
+  completedByStore: string,
+) {
+  const publicKey = process.env.VAPID_PUBLIC_KEY?.trim() || "";
+  const privateKey = process.env.VAPID_PRIVATE_KEY?.trim() || "";
+  const subject = process.env.VAPID_SUBJECT?.trim() || "";
+  if (!publicKey || !privateKey || !subject || !mission.createdBy) return;
+
+  const subscriptions = await database
+    .prepare(
+      `SELECT id, endpoint, p256dh, auth
+       FROM push_subscriptions WHERE user_id=?1`,
+    )
+    .bind(mission.createdBy)
+    .all<PushSubscriptionRow>();
+  if (!(subscriptions.results ?? []).length) return;
+
+  webPush.setVapidDetails(subject, publicKey, privateKey);
+  for (const subscription of subscriptions.results ?? []) {
+    try {
+      await webPush.sendNotification(
+        {
+          endpoint: subscription.endpoint,
+          keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+        },
+        JSON.stringify({
+          title: `Missão concluída — ${completedByStore}`,
+          body: mission.title,
+          url: "/missoes",
+          tag: `unigames-mission-complete-${mission.id}-${completedByStore}`,
+        }),
+        { TTL: 60 * 60 * 12, urgency: "high" },
+      );
+    } catch (error) {
+      const statusCode =
+        typeof error === "object" && error && "statusCode" in error
+          ? Number((error as { statusCode?: unknown }).statusCode)
+          : 0;
+      if (statusCode === 404 || statusCode === 410) {
+        await database
+          .prepare("DELETE FROM push_subscriptions WHERE id=?1")
+          .bind(subscription.id)
+          .run();
+      } else {
+        console.error("Falha ao avisar o administrador sobre a missão.", error);
+      }
+    }
+  }
+}
+
+export async function GET(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  const url = new URL(request.url);
+  const date = (url.searchParams.get("date") || "").trim();
+  const view = (url.searchParams.get("view") || "dashboard").trim();
+  const selectedCompanyId = (url.searchParams.get("companyId") || "").trim();
+  if (!DATE_PATTERN.test(date)) return jsonResponse({ error: "DATA INVÁLIDA." }, 400);
+
+  try {
+    const database = await getD1();
+    const result = await database
+      .prepare(
+        `SELECT id, title, description, scope, company_id AS companyId,
+                company_name AS companyName, frequency, start_date AS startDate,
+                due_time AS dueTime, created_by AS createdBy,
+                created_by_name AS createdByName, created_at AS createdAt,
+                updated_at AS updatedAt
+         FROM missions
+         WHERE start_date <= ?1
+           AND (
+             frequency='daily'
+             OR (frequency='once' AND start_date=?1)
+             OR (frequency='weekly' AND strftime('%w', start_date)=strftime('%w', ?1))
+           )
+         ORDER BY CASE WHEN due_time='' THEN 1 ELSE 0 END, due_time, created_at`,
+      )
+      .bind(date)
+      .all<MissionRow>();
+
+    let missions = result.results ?? [];
+    if (actor.role !== "admin") {
+      if (!actor.companyId) missions = [];
+      else {
+        missions = missions.filter((mission) => {
+          if (view === "general") return mission.scope === "general";
+          if (view === "store") {
+            return mission.scope === "store" && mission.companyId === actor.companyId;
+          }
+          return mission.scope === "general" || mission.companyId === actor.companyId;
+        });
+      }
+    } else if (view === "general") {
+      missions = missions.filter((mission) => mission.scope === "general");
+    } else if (view === "store") {
+      missions = missions.filter(
+        (mission) =>
+          mission.scope === "store" &&
+          COMPANY_PATTERN.test(selectedCompanyId) &&
+          mission.companyId === selectedCompanyId,
+      );
+    }
+
+    const completionResult = await database
+      .prepare(
+        `SELECT id, mission_id AS missionId, occurrence_date AS occurrenceDate,
+                company_id AS companyId, company_name AS companyName,
+                completed_by AS completedBy, completed_by_name AS completedByName,
+                completed_at AS completedAt
+         FROM mission_completions WHERE occurrence_date=?1
+         ORDER BY completed_at DESC`,
+      )
+      .bind(date)
+      .all<CompletionRow>();
+    const missionIds = new Set(missions.map((mission) => mission.id));
+    const completions = (completionResult.results ?? []).filter(
+      (completion) =>
+        missionIds.has(completion.missionId) &&
+        (actor.role === "admin" || completion.companyId === actor.companyId),
+    );
+
+    return jsonResponse({
+      date,
+      missions: missions.map((mission) => {
+        const missionCompletions = completions.filter(
+          (completion) => completion.missionId === mission.id,
+        );
+        return {
+          ...mission,
+          completed:
+            Boolean(actor.companyId) &&
+            missionCompletions.some(
+              (completion) => completion.companyId === actor.companyId,
+            ),
+          completions: actor.role === "admin" ? missionCompletions : [],
+          completionCount: missionCompletions.length,
+        };
+      }),
+    });
+  } catch (error) {
+    console.error("Não foi possível carregar as missões.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR AS MISSÕES." }, 500);
+  }
+}
+
+export async function POST(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (actor.role !== "admin") return jsonResponse({ error: "SOMENTE O ADMINISTRADOR PODE CRIAR MISSÕES." }, 403);
+  if (!sameOrigin(request)) return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+
+  try {
+    const body = (await request.json()) as JsonMap;
+    const title = safeText(body.title, 160);
+    const description = safeText(body.description, 1200);
+    const scope = body.scope === "general" ? "general" : "store";
+    const companyId = scope === "store" ? safeText(body.companyId, 80) : "";
+    const companyLabel = scope === "store"
+      ? safeText(body.companyName, 120)
+      : "Todas as lojas";
+    const frequency =
+      body.frequency === "daily" || body.frequency === "weekly"
+        ? body.frequency
+        : "once";
+    const startDate = safeText(body.startDate, 10);
+    const dueTime = safeText(body.dueTime, 5);
+    if (title.length < 3) return jsonResponse({ error: "INFORME O TÍTULO DA MISSÃO." }, 400);
+    if (!DATE_PATTERN.test(startDate)) return jsonResponse({ error: "INFORME UMA DATA VÁLIDA." }, 400);
+    if (dueTime && !TIME_PATTERN.test(dueTime)) return jsonResponse({ error: "HORÁRIO LIMITE INVÁLIDO." }, 400);
+    if (scope === "store" && !COMPANY_PATTERN.test(companyId)) {
+      return jsonResponse({ error: "ESCOLHA A LOJA DA MISSÃO." }, 400);
+    }
+
+    const database = await getD1();
+    const trustedCompanyName =
+      scope === "store"
+        ? (await companyName(database, companyId)) || companyLabel || "Loja"
+        : "Todas as lojas";
+    const id = crypto.randomUUID();
+    await database
+      .prepare(
+        `INSERT INTO missions
+          (id, title, description, scope, company_id, company_name, frequency,
+           start_date, due_time, created_by, created_by_name, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11,
+                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      )
+      .bind(
+        id,
+        title,
+        description,
+        scope,
+        companyId,
+        trustedCompanyName,
+        frequency,
+        startDate,
+        dueTime,
+        actor.id,
+        actor.displayName || "Administrador",
+      )
+      .run();
+    return jsonResponse({ created: true, id }, 201);
+  } catch (error) {
+    console.error("Não foi possível cadastrar a missão.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL CADASTRAR A MISSÃO." }, 500);
+  }
+}
+
+export async function PATCH(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!sameOrigin(request)) return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  if (!actor.id || !COMPANY_PATTERN.test(actor.companyId)) {
+    return jsonResponse({ error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA." }, 403);
+  }
+
+  try {
+    const body = (await request.json()) as JsonMap;
+    const missionId = safeText(body.missionId, 80);
+    const occurrenceDate = safeText(body.date, 10);
+    const completed = body.completed === true;
+    if (!missionId || !DATE_PATTERN.test(occurrenceDate)) {
+      return jsonResponse({ error: "MISSÃO OU DATA INVÁLIDA." }, 400);
+    }
+    const database = await getD1();
+    const mission = await database
+      .prepare(
+        `SELECT id, title, description, scope, company_id AS companyId,
+                company_name AS companyName, frequency, start_date AS startDate,
+                due_time AS dueTime, created_by AS createdBy,
+                created_by_name AS createdByName, created_at AS createdAt,
+                updated_at AS updatedAt
+         FROM missions WHERE id=?1 LIMIT 1`,
+      )
+      .bind(missionId)
+      .first<MissionRow>();
+    if (!mission || !missionOccursOn(mission, occurrenceDate)) {
+      return jsonResponse({ error: "MISSÃO NÃO ENCONTRADA PARA ESTA DATA." }, 404);
+    }
+    if (mission.scope === "store" && mission.companyId !== actor.companyId) {
+      return jsonResponse({ error: "ESTA MISSÃO PERTENCE A OUTRA LOJA." }, 403);
+    }
+
+    const existing = await database
+      .prepare(
+        `SELECT id FROM mission_completions
+         WHERE mission_id=?1 AND occurrence_date=?2 AND company_id=?3 LIMIT 1`,
+      )
+      .bind(missionId, occurrenceDate, actor.companyId)
+      .first<{ id: string }>();
+    if (!completed) {
+      if (existing) {
+        await database
+          .prepare("DELETE FROM mission_completions WHERE id=?1")
+          .bind(existing.id)
+          .run();
+      }
+      return jsonResponse({ completed: false });
+    }
+    if (existing) return jsonResponse({ completed: true });
+
+    const storeName =
+      (await companyName(database, actor.companyId)) ||
+      mission.companyName ||
+      "Loja";
+    await database
+      .prepare(
+        `INSERT INTO mission_completions
+          (id, mission_id, occurrence_date, company_id, company_name,
+           completed_by, completed_by_name, completed_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        missionId,
+        occurrenceDate,
+        actor.companyId,
+        storeName,
+        actor.id,
+        actor.displayName,
+      )
+      .run();
+    await notifyMissionCreator(database, mission, storeName);
+    return jsonResponse({ completed: true });
+  } catch (error) {
+    console.error("Não foi possível concluir a missão.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL ATUALIZAR A MISSÃO." }, 500);
+  }
+}
+
+export async function DELETE(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (actor.role !== "admin") return jsonResponse({ error: "SOMENTE O ADMINISTRADOR PODE EXCLUIR MISSÕES." }, 403);
+  if (!sameOrigin(request)) return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  const id = (new URL(request.url).searchParams.get("id") || "").trim();
+  if (!id) return jsonResponse({ error: "MISSÃO INVÁLIDA." }, 400);
+
+  try {
+    const database = await getD1();
+    await database.batch([
+      database.prepare("DELETE FROM mission_completions WHERE mission_id=?1").bind(id),
+      database.prepare("DELETE FROM missions WHERE id=?1").bind(id),
+    ]);
+    return jsonResponse({ deleted: true });
+  } catch (error) {
+    console.error("Não foi possível excluir a missão.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR A MISSÃO." }, 500);
+  }
+}

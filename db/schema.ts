@@ -98,3 +98,55 @@ export const pushDeliveryLog = sqliteTable(
     ),
   ],
 );
+
+export const missions = sqliteTable(
+  "missions",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    scope: text("scope").notNull().default("store"),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    frequency: text("frequency").notNull().default("once"),
+    startDate: text("start_date").notNull(),
+    dueTime: text("due_time").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("missions_scope_company_date_idx").on(
+      table.scope,
+      table.companyId,
+      table.startDate,
+    ),
+    index("missions_created_by_idx").on(table.createdBy),
+  ],
+);
+
+export const missionCompletions = sqliteTable(
+  "mission_completions",
+  {
+    id: text("id").primaryKey(),
+    missionId: text("mission_id").notNull(),
+    occurrenceDate: text("occurrence_date").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    completedBy: text("completed_by").notNull(),
+    completedByName: text("completed_by_name").notNull().default(""),
+    completedAt: text("completed_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("mission_completions_occurrence_unique").on(
+      table.missionId,
+      table.occurrenceDate,
+      table.companyId,
+    ),
+    index("mission_completions_date_company_idx").on(
+      table.occurrenceDate,
+      table.companyId,
+    ),
+  ],
+);

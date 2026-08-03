@@ -415,7 +415,61 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v9"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v10"/);
+});
+
+test("oferece missões gerais e por loja com conclusão e lembretes protegidos", async () => {
+  const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/missions/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0005_free_exodus.sql", import.meta.url), "utf8"),
+      readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
+      readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(html, /id="navMissoes" data-page="missoes" data-permission="missions"/);
+  assert.match(html, /data-home-target="missoes" data-permission="missions"/);
+  assert.match(html, /id="pageMissoes" class="page wrap"/);
+  assert.match(html, /id="homeMissionList"/);
+  assert.match(html, /id="missionScope"/);
+  assert.match(html, /value="general">MISSÃO GERAL/);
+  assert.match(html, /id="missionCompany"/);
+  assert.match(html, /id="missionFrequency"/);
+  assert.match(html, /value="daily">DIÁRIA/);
+  assert.match(html, /value="weekly">SEMANAL/);
+  assert.match(html, /id="missionDeadlineMode"/);
+  assert.match(html, /id="missionDueTime"/);
+  assert.match(html, /data-mission-complete/);
+  assert.match(html, /data-home-mission-complete/);
+  assert.match(html, /Missão concluída\. O administrador responsável foi avisado/);
+  assert.match(html, /missoes:'\/missoes'/);
+  assert.match(html, /value="missions"> Missões/);
+
+  assert.match(workerSource, /type Permission = "tasks" \| "missions"/);
+  assert.match(workerSource, /"\/missoes"/);
+  assert.match(workerSource, /path === "\/missoes" \|\| path\.startsWith\("\/api\/missions"\)/);
+  assert.match(workerSource, /dispatchDueMissionNotifications/);
+  assert.match(workerSource, /\[120, 60\]/);
+  assert.match(workerSource, /Missão termina em 2 horas/);
+  assert.match(workerSource, /Missão termina em 1 hora/);
+  assert.match(workerSource, /dispatchDueTaskNotifications\(env\),[\s\S]*dispatchDueMissionNotifications\(env\)/);
+
+  assert.match(route, /actor\.role !== "admin"/);
+  assert.match(route, /mission\.companyId !== actor\.companyId/);
+  assert.match(route, /INSERT INTO missions/);
+  assert.match(route, /INSERT INTO mission_completions/);
+  assert.match(route, /notifyMissionCreator/);
+  assert.match(route, /Missão concluída — \$\{completedByStore\}/);
+  assert.match(schema, /export const missions = sqliteTable/);
+  assert.match(schema, /export const missionCompletions = sqliteTable/);
+  assert.match(migration, /CREATE TABLE `missions`/);
+  assert.match(migration, /CREATE TABLE `mission_completions`/);
+  assert.match(migration, /mission_completions_occurrence_unique/);
+  assert.match(manifest, /"url": "\/missoes"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v10"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
@@ -455,7 +509,7 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /@media \(max-width:800px\)[\s\S]*\.home-access-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
   assert.match(html, /@media \(max-width:520px\)[\s\S]*\.home-access-grid\{grid-template-columns:1fr;/);
   assert.doesNotMatch(html, /data-dashboard-home/);
-  for (const pageId of ["pagePuxadas", "pageRelatorio41", "pageCompras", "pageDashboard", "pageLojas", "pageDados"]) {
+  for (const pageId of ["pagePuxadas", "pageRelatorio41", "pageCompras", "pageDashboard", "pageMissoes", "pageLojas", "pageDados"]) {
     assert.match(html, new RegExp(`id="${pageId}" class="page wrap"`));
   }
 });
@@ -502,7 +556,7 @@ test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", 
   assert.match(workerSource, /\[path === "\/relatorio-41", "report41"\]/);
   assert.match(workerSource, /reportStoreMatch[\s\S]*user\.companyId/);
   assert.match(workerSource, /company_id AS companyId/);
-  assert.match(workerSource, /fiscal: \["stock", "database", "pulls", "report41"\]/);
+  assert.match(workerSource, /fiscal: \["missions", "stock", "database", "pulls", "report41"\]/);
   assert.match(sharedStateRoute, /key === "report41:company-stock"/);
   assert.match(sharedStateRoute, /report41:store:c\[a-z0-9\]/);
   assert.match(schema, /companyId: text\("company_id"\)/);

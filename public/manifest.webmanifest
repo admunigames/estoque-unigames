@@ -13,6 +13,12 @@
   "categories": ["business", "productivity"],
   "shortcuts": [
     {
+      "name": "Missões",
+      "short_name": "Missões",
+      "url": "/missoes",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
       "name": "Tarefas",
       "short_name": "Tarefas",
       "url": "/tarefas",

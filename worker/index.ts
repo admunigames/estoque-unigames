@@ -40,7 +40,7 @@ type LoginConfig = {
   sessionSecret: string;
 };
 
-type Permission = "tasks" | "purchases" | "stock" | "database" | "pulls" | "report41";
+type Permission = "tasks" | "missions" | "purchases" | "stock" | "database" | "pulls" | "report41";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "custom";
 type AuthenticatedUser = {
   id: string;
@@ -81,12 +81,12 @@ const DISPLAY_NAME_HEADER = "x-unigames-display-name";
 const ROLE_HEADER = "x-unigames-role";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
 const COMPANY_ID_HEADER = "x-unigames-company-id";
-const ALL_PERMISSIONS: Permission[] = ["tasks", "purchases", "stock", "database", "pulls", "report41"];
+const ALL_PERMISSIONS: Permission[] = ["tasks", "missions", "purchases", "stock", "database", "pulls", "report41"];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
-  purchases: ["tasks", "purchases"],
-  fiscal: ["stock", "database", "pulls", "report41"],
-  operator: ["tasks"],
+  purchases: ["tasks", "missions", "purchases"],
+  fiscal: ["missions", "stock", "database", "pulls", "report41"],
+  operator: ["tasks", "missions"],
   custom: [],
 };
 const PUBLIC_ASSET_PATHS = new Set([
@@ -103,6 +103,7 @@ const APP_ROUTE_PATHS = new Set([
   "/compras",
   "/estoque",
   "/tarefas",
+  "/missoes",
   "/cadastros",
   "/cadastros/lojas",
   "/cadastros/base-de-dados",
@@ -796,6 +797,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
   }
   const directPermissions: Array<[boolean, Permission]> = [
     [path === "/tarefas", "tasks"],
+    [path === "/missoes" || path.startsWith("/api/missions"), "missions"],
     [path === "/compras" || path.startsWith("/api/compras"), "purchases"],
     [path === "/estoque", "stock"],
     [path === "/puxadas", "pulls"],
@@ -1122,6 +1124,8 @@ async function createAutomaticBackup(env: Env, secret: string) {
       preferences,
       deliveries,
       resetRequests,
+      missions,
+      missionCompletions,
     ] = await Promise.all([
       env.DB.prepare(
         "SELECT state_key AS stateKey, value_json AS value, version, updated_at AS updatedAt FROM shared_state",
@@ -1137,6 +1141,8 @@ async function createAutomaticBackup(env: Env, secret: string) {
       env.DB.prepare("SELECT * FROM user_preferences").all(),
       env.DB.prepare("SELECT * FROM purchase_delivery_records").all(),
       env.DB.prepare("SELECT * FROM password_reset_requests").all(),
+      env.DB.prepare("SELECT * FROM missions").all(),
+      env.DB.prepare("SELECT * FROM mission_completions").all(),
     ]);
     const bytes = await encryptBackup({
       app: "ESTOQUE_UNIGAMES_AUTOMATIC_BACKUP",
@@ -1147,6 +1153,8 @@ async function createAutomaticBackup(env: Env, secret: string) {
       preferences: preferences.results ?? [],
       purchaseDeliveries: deliveries.results ?? [],
       passwordResetRequests: resetRequests.results ?? [],
+      missions: missions.results ?? [],
+      missionCompletions: missionCompletions.results ?? [],
     }, secret);
     await bucket.put(objectKey, bytes, {
       httpMetadata: { contentType: "application/octet-stream" },
@@ -1283,6 +1291,166 @@ async function dispatchDueTaskNotifications(env: Env) {
   }
 }
 
+type DueMissionRow = {
+  id: string;
+  title: string;
+  scope: string;
+  companyId: string;
+  dueTime: string;
+};
+
+type MissionNotificationUserRow = {
+  id: string;
+  role: string;
+  accessGroup: string;
+  permissionsJson: string;
+  companyId: string;
+};
+
+function addDateDays(value: string, days: number) {
+  const date = new Date(`${value}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function missionNotificationAllowed(user: MissionNotificationUserRow) {
+  if (!user.companyId) return false;
+  if (user.role === "admin" || user.accessGroup !== "custom") return true;
+  return permissionsFromJson(user.permissionsJson).includes("missions");
+}
+
+async function dispatchDueMissionNotifications(env: Env) {
+  const publicKey = env.VAPID_PUBLIC_KEY?.trim() || "";
+  const privateKey = env.VAPID_PRIVATE_KEY?.trim() || "";
+  const subject = env.VAPID_SUBJECT?.trim() || "";
+  if (!publicKey || !privateKey || !subject) return;
+
+  const now = recifeDateTime();
+  const occurrenceDates = [now.date, addDateDays(now.date, 1)];
+  const nowEpoch = Date.parse(`${now.date}T${now.time}:00-03:00`);
+  webPush.setVapidDetails(subject, publicKey, privateKey);
+
+  for (const occurrenceDate of occurrenceDates) {
+    const result = await env.DB
+      .prepare(
+        `SELECT id, title, scope, company_id AS companyId, due_time AS dueTime
+         FROM missions
+         WHERE due_time <> ''
+           AND start_date <= ?1
+           AND (
+             frequency='daily'
+             OR (frequency='once' AND start_date=?1)
+             OR (frequency='weekly' AND strftime('%w', start_date)=strftime('%w', ?1))
+           )`,
+      )
+      .bind(occurrenceDate)
+      .all<DueMissionRow>();
+
+    for (const mission of result.results ?? []) {
+      const dueEpoch = Date.parse(`${occurrenceDate}T${mission.dueTime}:00-03:00`);
+      const remainingMinutes = Math.round((dueEpoch - nowEpoch) / 60_000);
+      const reminderOffset = [120, 60].find(
+        (offset) => remainingMinutes <= offset && remainingMinutes >= offset - 4,
+      );
+      if (!reminderOffset) continue;
+
+      const users = await env.DB
+        .prepare(
+          `SELECT id, role, access_group AS accessGroup,
+                  permissions_json AS permissionsJson, company_id AS companyId
+           FROM app_users
+           WHERE active=1 AND company_id <> ''
+             AND (?1='general' OR company_id=?2)`,
+        )
+        .bind(mission.scope, mission.companyId)
+        .all<MissionNotificationUserRow>();
+
+      for (const user of (users.results ?? []).filter(missionNotificationAllowed)) {
+        const completion = await env.DB
+          .prepare(
+            `SELECT id FROM mission_completions
+             WHERE mission_id=?1 AND occurrence_date=?2 AND company_id=?3 LIMIT 1`,
+          )
+          .bind(mission.id, occurrenceDate, user.companyId)
+          .first<{ id: string }>();
+        if (completion) continue;
+
+        const scheduledFor =
+          `${occurrenceDate}T${mission.dueTime}:00-03:00|${reminderOffset}`;
+        const deliveryKey = `missao:${mission.id}:${occurrenceDate}`;
+        const deliveryId = `${mission.id}:${reminderOffset}`;
+        const delivered = await env.DB
+          .prepare(
+            `SELECT id FROM push_delivery_log
+             WHERE user_id=?1 AND task_key=?2 AND task_id=?3 AND scheduled_for=?4 LIMIT 1`,
+          )
+          .bind(user.id, deliveryKey, deliveryId, scheduledFor)
+          .first<{ id: string }>();
+        if (delivered) continue;
+
+        const subscriptions = await env.DB
+          .prepare(
+            `SELECT id, endpoint, p256dh, auth
+             FROM push_subscriptions WHERE user_id=?1`,
+          )
+          .bind(user.id)
+          .all<PushSubscriptionRow>();
+        let sent = false;
+        for (const subscription of subscriptions.results ?? []) {
+          try {
+            await webPush.sendNotification(
+              {
+                endpoint: subscription.endpoint,
+                keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+              },
+              JSON.stringify({
+                title:
+                  reminderOffset === 120
+                    ? "Missão termina em 2 horas"
+                    : "Missão termina em 1 hora",
+                body: mission.title,
+                url: "/missoes",
+                tag: `unigames-mission-${mission.id}-${occurrenceDate}-${reminderOffset}`,
+              }),
+              { TTL: 60 * 60, urgency: "high" },
+            );
+            sent = true;
+          } catch (error) {
+            const statusCode =
+              typeof error === "object" && error && "statusCode" in error
+                ? Number((error as { statusCode?: unknown }).statusCode)
+                : 0;
+            if (statusCode === 404 || statusCode === 410) {
+              await env.DB
+                .prepare("DELETE FROM push_subscriptions WHERE id=?1")
+                .bind(subscription.id)
+                .run();
+            } else {
+              console.error("Falha ao enviar lembrete de missão.", error);
+            }
+          }
+        }
+        if (sent) {
+          await env.DB
+            .prepare(
+              `INSERT OR IGNORE INTO push_delivery_log
+                (id, user_id, task_key, task_id, scheduled_for, created_at)
+               VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)`,
+            )
+            .bind(
+              crypto.randomUUID(),
+              user.id,
+              deliveryKey,
+              deliveryId,
+              scheduledFor,
+            )
+            .run();
+        }
+      }
+    }
+  }
+}
+
 function securityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set("referrer-policy", "same-origin");
@@ -1392,6 +1560,7 @@ const worker = {
     if (!config) return;
     ctx.waitUntil(Promise.all([
       dispatchDueTaskNotifications(env),
+      dispatchDueMissionNotifications(env),
       createAutomaticBackup(env, config.sessionSecret),
     ]));
   },
