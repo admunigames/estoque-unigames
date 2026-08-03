@@ -561,7 +561,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(migration, /CREATE TABLE `mission_completions`/);
   assert.match(migration, /mission_completions_occurrence_unique/);
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
-  assert.match(statusMigration, /ADD `updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL/);
+  assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
   assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v14"/);
 });

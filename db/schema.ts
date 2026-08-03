@@ -74,7 +74,7 @@ export const pushSubscriptions = sqliteTable(
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(""),
   },
   (table) => [index("push_subscriptions_user_idx").on(table.userId)],
 );
