@@ -844,6 +844,8 @@
     border-radius:9px; background:rgba(79,134,189,.09); color:var(--ink-soft); font-size:10.5px; line-height:1.5;
   }
   .report41-help b{color:var(--ink);}
+  .report41-download-actions{display:flex; flex-direction:column; align-items:flex-end; gap:7px;}
+  .report41-download-actions span{max-width:280px; color:var(--ink-faint); font:8.5px/1.4 var(--mono); text-align:right;}
   .report41-store-field{max-width:520px;}
   .report41-upload-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:16px;}
   .report41-upload-card{
@@ -1345,6 +1347,8 @@
     .pull-group-tag{justify-self:start;}
     .report41-panel{padding:18px 14px;}
     .report41-store-choices,.report41-upload-grid{grid-template-columns:1fr;}
+    .report41-download-actions{align-items:stretch; width:100%;}
+    .report41-download-actions span{text-align:left;}
     .report41-toolbar .search-box{grid-column:1;}
     button,select,input:not([type="checkbox"]):not([type="file"]){min-height:44px;}
     .ios-install-hint{align-items:flex-start;}
@@ -2286,8 +2290,9 @@
       <section class="report41-panel">
         <div class="report41-panel-head">
           <div><h3>PRODUTOS COM ESTOQUE BAIXO</h3><p>Produtos zerados aparecem com uma sirene. O arquivo TXT segue o modelo oficial do Relatório 41.</p></div>
-          <div class="actions">
+          <div class="report41-download-actions">
             <button class="btn-accent" id="btnReport41Txt" type="button" disabled>BAIXAR RELATÓRIO TXT</button>
+            <span id="report41TxtHint">Carregue os arquivos da loja para liberar o TXT.</span>
           </div>
         </div>
         <div class="report41-toolbar">
@@ -4015,7 +4020,12 @@
     el('report41CardZero').textContent = zeroCount.toLocaleString('pt-BR');
     el('report41CardAvailable').textContent = availableCount.toLocaleString('pt-BR');
     el('report41ResultCount').textContent = rows.length.toLocaleString('pt-BR')+' PRODUTOS';
-    el('btnReport41Txt').disabled = report41Rows.length === 0 || companyStockData.products.size === 0;
+    el('btnReport41Txt').disabled = report41Rows.length === 0;
+    el('report41TxtHint').textContent = report41Rows.length === 0
+      ? 'Carregue os arquivos da loja para liberar o TXT.'
+      : companyStockData.products.size === 0
+        ? 'Antes do download, carregue o estoque geral em Cadastros → Base de Dados.'
+        : 'TXT pronto com '+report41Rows.length.toLocaleString('pt-BR')+' produto(s).';
 
     if(!company){
       el('report41Body').innerHTML = '<tr><td class="responsive-empty" colspan="5"><div class="pull-result-empty"><strong>LOJA NÃO VINCULADA</strong><span>O administrador precisa selecionar uma loja para este usuário.</span></div></td></tr>';
@@ -4053,9 +4063,39 @@
     return String(Math.max(0,Math.round(Number(value) || 0))).padStart(2,'0');
   }
 
+  function downloadBlobFile(blob,fileName){
+    if(!blob || !fileName || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function'){
+      throw new Error('DOWNLOAD NÃO SUPORTADO NESTE NAVEGADOR');
+    }
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.rel = 'noopener';
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url),60000);
+  }
+
   async function exportReport41Txt(){
     const company = report41Company();
-    if(!company || !report41Rows.length || companyStockData.products.size === 0) return;
+    showReport41Error('');
+    if(!company){
+      showReport41Error('Seu usuário ainda não possui uma loja vinculada.');
+      return;
+    }
+    if(!report41Rows.length){
+      showReport41Error('Não há produtos com estoque 0 ou 1 para gerar o Relatório 41.');
+      return;
+    }
+    if(companyStockData.products.size === 0){
+      const message = 'Carregue primeiro o estoque atual da empresa em Cadastros → Base de Dados.';
+      showReport41Error(message);
+      showPurchaseToast(message,'error');
+      return;
+    }
     const lines = ['*RELATORIO 41*',''];
     for(const item of report41Rows){
       lines.push(String(item.nome || 'PRODUTO SEM DESCRIÇÃO').toUpperCase()+(item.zero ? ' 🚨' : ''));
@@ -4066,7 +4106,20 @@
     }
     const safeStore = normalizeProductKey(company.name).replace(/\s+/g,'_') || 'loja';
     const blob = new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/plain;charset=utf-8;'});
-    await deliverIosFile(blob,'relatorio_41_'+safeStore+'_'+todayDateKey()+'.txt');
+    try{
+      const fileName = 'relatorio_41_'+safeStore+'_'+todayDateKey()+'.txt';
+      const isIosDevice = /IPHONE|IPAD|IPOD/i.test(navigator.userAgent || '') ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if(isIosDevice){
+        await deliverIosFile(blob,fileName,'RELATÓRIO 41');
+      }else{
+        downloadBlobFile(blob,fileName);
+      }
+      showPurchaseToast(isIosDevice ? 'Relatório 41 preparado para salvar ou compartilhar.' : 'Relatório 41 em TXT baixado com sucesso.');
+    }catch(error){
+      if(error && error.name === 'AbortError') return;
+      showReport41Error('Não foi possível baixar o TXT neste aparelho. Tente novamente pelo navegador Safari ou Chrome.');
+    }
   }
 
   function quantityMapToArray(map){
@@ -4579,22 +4632,21 @@
     };
   }
 
-  async function deliverIosFile(blob, fileName){
+  async function deliverIosFile(blob, fileName, title){
     if(typeof File === 'function' && navigator.share && navigator.canShare){
       const file = new File([blob], fileName, {type:blob.type});
       if(navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:'BACKUP DO BANCO GERAL'});
-        return;
+        try{
+          await navigator.share({files:[file], title:title || 'ARQUIVO UNIGAMES'});
+          return;
+        }catch(error){
+          if(error && error.name === 'AbortError') throw error;
+          // Alguns navegadores anunciam suporte a arquivos, mas falham ao abrir
+          // o compartilhamento. Nesse caso, continua para o download direto.
+        }
       }
     }
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = fileName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadBlobFile(blob,fileName);
   }
 
   async function exportIosBackup(){
