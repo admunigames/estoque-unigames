@@ -104,6 +104,7 @@ const APP_ROUTE_PATHS = new Set([
   "/estoque",
   "/tarefas",
   "/missoes",
+  "/instrucoes",
   "/cadastros",
   "/cadastros/lojas",
   "/cadastros/base-de-dados",
@@ -795,6 +796,9 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
   if (path === "/cadastros/usuarios" || path === "/administracao/usuarios" || path === "/api/admin/users") {
     return user.role === "admin";
   }
+  if (path === "/instrucoes" || path.startsWith("/api/instructions")) {
+    return true;
+  }
   const directPermissions: Array<[boolean, Permission]> = [
     [path === "/tarefas", "tasks"],
     [path === "/missoes" || path.startsWith("/api/missions"), "missions"],
@@ -1126,6 +1130,7 @@ async function createAutomaticBackup(env: Env, secret: string) {
       resetRequests,
       missions,
       missionCompletions,
+      instructions,
     ] = await Promise.all([
       env.DB.prepare(
         "SELECT state_key AS stateKey, value_json AS value, version, updated_at AS updatedAt FROM shared_state",
@@ -1143,6 +1148,7 @@ async function createAutomaticBackup(env: Env, secret: string) {
       env.DB.prepare("SELECT * FROM password_reset_requests").all(),
       env.DB.prepare("SELECT * FROM missions").all(),
       env.DB.prepare("SELECT * FROM mission_completions").all(),
+      env.DB.prepare("SELECT * FROM instructions").all(),
     ]);
     const bytes = await encryptBackup({
       app: "ESTOQUE_UNIGAMES_AUTOMATIC_BACKUP",
@@ -1155,6 +1161,7 @@ async function createAutomaticBackup(env: Env, secret: string) {
       passwordResetRequests: resetRequests.results ?? [],
       missions: missions.results ?? [],
       missionCompletions: missionCompletions.results ?? [],
+      instructions: instructions.results ?? [],
     }, secret);
     await bucket.put(objectKey, bytes, {
       httpMetadata: { contentType: "application/octet-stream" },

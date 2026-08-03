@@ -420,7 +420,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v11"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v12"/);
 });
 
 test("oferece missões gerais e por loja com conclusão e lembretes protegidos", async () => {
@@ -477,7 +477,50 @@ test("oferece missões gerais e por loja com conclusão e lembretes protegidos",
   assert.match(migration, /CREATE TABLE `mission_completions`/);
   assert.match(migration, /mission_completions_occurrence_unique/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v11"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v12"/);
+});
+
+test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
+  const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/instructions/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0006_omniscient_spectrum.sql", import.meta.url), "utf8"),
+      readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
+      readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(html, /id="navInstrucoes" data-page="instrucoes"/);
+  assert.doesNotMatch(html, /id="navInstrucoes"[^>]*data-permission/);
+  assert.match(html, /data-home-target="instrucoes"/);
+  assert.match(html, /id="homeInstructionList"/);
+  assert.match(html, /id="pageInstrucoes" class="page wrap"/);
+  assert.match(html, /id="instructionForm"/);
+  assert.match(html, /id="instructionDueDate" type="date" required/);
+  assert.match(html, /PUBLICAR PARA TODAS AS LOJAS/);
+  assert.match(html, /data-instruction-view="active"/);
+  assert.match(html, /data-instruction-view="history"/);
+  assert.match(html, /Após o prazo, a instrução sai da lista vigente e permanece no histórico/);
+  assert.match(html, /instrucoes:'\/instrucoes'/);
+  assert.match(html, /loadHomeInstructions/);
+
+  assert.match(workerSource, /"\/instrucoes"/);
+  assert.match(workerSource, /path === "\/instrucoes" \|\| path\.startsWith\("\/api\/instructions"\)/);
+  assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM instructions"\)\.all\(\)/);
+  assert.match(workerSource, /instructions: instructions\.results \?\? \[\]/);
+  assert.match(route, /actor\.role !== "admin"/);
+  assert.match(route, /SOMENTE O ADMINISTRADOR PODE CADASTRAR INSTRUÇÕES/);
+  assert.match(route, /due_date < \?1/);
+  assert.match(route, /due_date >= \?1/);
+  assert.match(route, /America\/Recife/);
+  assert.match(route, /INSERT INTO instructions/);
+  assert.match(schema, /export const instructions = sqliteTable/);
+  assert.match(migration, /CREATE TABLE `instructions`/);
+  assert.match(migration, /instructions_due_date_created_idx/);
+  assert.match(manifest, /"url": "\/instrucoes"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v12"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
@@ -517,7 +560,7 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /@media \(max-width:800px\)[\s\S]*\.home-access-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
   assert.match(html, /@media \(max-width:520px\)[\s\S]*\.home-access-grid\{grid-template-columns:1fr;/);
   assert.doesNotMatch(html, /data-dashboard-home/);
-  for (const pageId of ["pagePuxadas", "pageRelatorio41", "pageCompras", "pageDashboard", "pageMissoes", "pageLojas", "pageDados"]) {
+  for (const pageId of ["pagePuxadas", "pageRelatorio41", "pageCompras", "pageDashboard", "pageMissoes", "pageInstrucoes", "pageLojas", "pageDados"]) {
     assert.match(html, new RegExp(`id="${pageId}" class="page wrap"`));
   }
 });

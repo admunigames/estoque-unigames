@@ -1255,7 +1255,7 @@
     .purchase-toolbar .search-box{grid-column:1 / -1;}
     .mobile-tabbar{
       position:fixed; z-index:1050; left:max(10px,env(safe-area-inset-left)); right:max(10px,env(safe-area-inset-right));
-      bottom:calc(8px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(5,1fr);
+      bottom:calc(8px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(6,1fr);
       min-height:60px; padding:5px; border:1px solid rgba(114,167,216,.34); border-radius:18px;
       background:rgba(8,18,30,.94); box-shadow:0 18px 48px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.06);
       backdrop-filter:blur(20px) saturate(130%);
@@ -1732,11 +1732,107 @@
   html[data-theme="light"] .mission-card{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .mission-status.done{color:#24714a;background:#e2f3e9;}
   html[data-theme="light"] .mission-delete{color:#9c3328;background:#fff1ef;border-color:#d9a29c;}
+  .instruction-summary{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;
+  }
+  .instruction-summary-card{
+    min-height:104px;padding:17px 18px;border:1px solid var(--line);border-radius:14px;
+    background:var(--bg-card);box-shadow:var(--shadow);
+  }
+  .instruction-summary-card span{display:block;color:var(--ink-soft);font:800 9px/1.3 var(--mono);letter-spacing:.5px;}
+  .instruction-summary-card strong{display:block;margin-top:11px;color:var(--ink);font:800 26px/1 var(--sans);}
+  .instruction-summary-card strong.date{font-size:17px;}
+  .instruction-admin-panel,.instruction-board{
+    border:1px solid var(--line);border-radius:15px;background:var(--bg-card);box-shadow:var(--shadow);
+  }
+  .instruction-admin-panel{padding:20px;margin-bottom:16px;}
+  .instruction-admin-head,.instruction-board-head,.home-instructions-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;
+  }
+  .instruction-admin-head h3,.instruction-board-head h3,.home-instructions-head h2{margin:0;color:var(--ink);}
+  .instruction-admin-head p,.instruction-board-head p,.home-instructions-head p{
+    margin:5px 0 0;color:var(--ink-soft);font-size:11px;line-height:1.5;
+  }
+  .instruction-form-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(180px,.7fr);gap:12px;}
+  .instruction-form-grid .field.full{grid-column:1 / -1;}
+  .instruction-form-actions{display:flex;justify-content:flex-end;margin-top:14px;}
+  .instruction-board{padding:20px;}
+  .instruction-tabs{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;}
+  .instruction-tab{
+    min-height:38px;padding:8px 13px;border:1px solid rgba(79,134,189,.38);
+    border-radius:999px;background:rgba(79,134,189,.06);color:var(--ink-soft);
+    font:800 9px/1 var(--mono);
+  }
+  .instruction-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(36,79,131,.24);}
+  .instruction-list{display:grid;gap:11px;}
+  .instruction-card{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;gap:15px;padding:17px;
+    border:1px solid rgba(39,69,97,.48);border-radius:14px;background:var(--bg-card-2);
+  }
+  .instruction-card.history{opacity:.66;}
+  .instruction-card-copy{min-width:0;}
+  .instruction-card-title{display:block;color:var(--ink);font:800 15px/1.4 var(--sans);overflow-wrap:anywhere;}
+  .instruction-card-description{margin:7px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .instruction-card-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+  .instruction-badge{
+    padding:6px 9px;border:1px solid rgba(79,134,189,.34);border-radius:999px;
+    background:rgba(79,134,189,.08);color:var(--ink-soft);font:800 8px/1.2 var(--mono);
+  }
+  .instruction-badge.deadline{color:#e1ad49;border-color:rgba(225,173,73,.38);background:rgba(225,173,73,.08);}
+  .instruction-badge.today{color:#ff7667;border-color:rgba(255,118,103,.42);background:rgba(255,118,103,.09);}
+  .instruction-badge.finished{color:#66d49e;border-color:rgba(66,166,119,.35);background:rgba(66,166,119,.1);}
+  .instruction-card-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  .instruction-state{
+    min-width:126px;padding:8px 10px;border-radius:9px;background:rgba(79,134,189,.08);
+    color:var(--ink-soft);text-align:center;font:800 8px/1.35 var(--mono);
+  }
+  .instruction-state.finished{background:rgba(66,166,119,.11);color:#66d49e;}
+  .instruction-delete{
+    min-height:32px;padding:7px 9px;border:1px solid rgba(183,66,52,.38);border-radius:8px;
+    background:rgba(183,66,52,.08);color:#e4776a;font:800 8px/1 var(--mono);
+  }
+  .instruction-empty{padding:30px 18px;text-align:center;color:var(--ink-soft);font-size:12px;line-height:1.55;}
+  .home-instructions{
+    margin-top:18px;padding:20px;border:1px solid rgba(255,255,255,.78);border-radius:20px;
+    background:rgba(255,255,255,.48);box-shadow:0 14px 34px rgba(36,79,131,.1);text-align:left;
+  }
+  .home-instructions-head{align-items:center;}
+  .home-instructions-head > div > span{color:#58718a;font:800 9px/1 var(--mono);letter-spacing:1.2px;}
+  .home-instructions-head h2{margin-top:5px;font-size:21px;color:#10233a;}
+  .home-instructions-goto{
+    min-height:36px;padding:8px 12px;border:1px solid rgba(36,79,131,.24);border-radius:10px;
+    background:rgba(36,79,131,.08);color:#244f83;font:800 9px/1 var(--mono);
+  }
+  .home-instruction-list{display:grid;gap:8px;}
+  .home-instruction-row{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;
+    padding:12px;border:1px solid rgba(36,79,131,.16);border-radius:11px;background:rgba(255,255,255,.5);
+  }
+  .home-instruction-icon{
+    width:32px;height:32px;display:grid;place-items:center;border-radius:10px;
+    background:#244f83;color:#fff;font:800 14px/1 var(--mono);
+  }
+  .home-instruction-copy{min-width:0;}
+  .home-instruction-copy strong{display:block;color:#10233a;font:800 12px/1.4 var(--sans);overflow-wrap:anywhere;}
+  .home-instruction-copy span{
+    display:-webkit-box;margin-top:3px;overflow:hidden;color:#5c7187;font:600 10px/1.4 var(--sans);
+    -webkit-box-orient:vertical;-webkit-line-clamp:2;
+  }
+  .home-instruction-due{color:#244f83;font:800 9px/1.25 var(--mono);white-space:nowrap;text-align:right;}
+  html[data-theme="light"] .instruction-summary-card,
+  html[data-theme="light"] .instruction-admin-panel,
+  html[data-theme="light"] .instruction-board{background:#fff;border-color:#b8cad9;box-shadow:0 14px 34px rgba(28,67,102,.1);}
+  html[data-theme="light"] .instruction-card{background:#f6f9fb;border-color:#c4d1dc;}
+  html[data-theme="light"] .instruction-state.finished{color:#24714a;background:#e2f3e9;}
+  html[data-theme="light"] .instruction-delete{color:#9c3328;background:#fff1ef;border-color:#d9a29c;}
   @media(max-width:800px){
     .theme-toggle{top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));}
     .page:not(.home-page) .page-heading{padding-right:62px;}
     .mission-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .mission-form-grid .field.double{grid-column:span 2;}
+    .instruction-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .instruction-form-grid{grid-template-columns:1fr;}
+    .instruction-form-grid .field.full{grid-column:1;}
   }
   @media(max-width:560px){
     .mission-form-grid{grid-template-columns:1fr;}
@@ -1747,6 +1843,13 @@
     .mission-status{min-width:0;}
     .home-mission-row{grid-template-columns:auto minmax(0,1fr);}
     .home-mission-time{grid-column:2;}
+    .instruction-summary{grid-template-columns:1fr;}
+    .instruction-admin-panel,.instruction-board,.home-instructions{padding:16px 13px;}
+    .instruction-card{grid-template-columns:1fr;}
+    .instruction-card-actions{align-items:stretch;}
+    .instruction-state{min-width:0;}
+    .home-instruction-row{grid-template-columns:auto minmax(0,1fr);}
+    .home-instruction-due{grid-column:2;text-align:left;}
   }
 </style>
 </head>
@@ -1782,6 +1885,7 @@
     <button class="nav-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></button>
     <button class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></button>
     <button class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" title="Missões"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-label">Missões</span></button>
+    <button class="nav-item" id="navInstrucoes" data-page="instrucoes" title="Instruções"><span class="nav-icon" aria-hidden="true">!</span><span class="nav-label">Instruções</span></button>
     <div class="nav-group" data-permission="database">
       <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
         <span class="nav-icon" aria-hidden="true">⬡</span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
@@ -1847,6 +1951,11 @@
             <span class="home-access-copy"><strong>MISSÕES</strong><span>Metas diárias e semanais da sua loja.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
+          <button class="home-access-card" type="button" data-home-target="instrucoes">
+            <span class="home-access-icon" aria-hidden="true">!</span>
+            <span class="home-access-copy"><strong>INSTRUÇÕES</strong><span>Orientações gerais com prazo para todas as lojas.</span></span>
+            <span class="home-access-arrow" aria-hidden="true">→</span>
+          </button>
           <button class="home-access-card" type="button" data-home-target="cadastros" data-permission="database">
             <span class="home-access-icon" aria-hidden="true">+</span>
             <span class="home-access-copy"><strong>CADASTROS</strong><span>Lojas, bases e envio de dados.</span></span>
@@ -1863,6 +1972,16 @@
           <button class="home-quick-action" type="button" data-quick-action="purchase" data-permission="purchases">+ NOVA COMPRA</button>
           <button class="home-quick-action" type="button" data-quick-action="register" data-permission="database">+ NOVO CADASTRO</button>
         </div>
+        <section class="home-instructions" aria-labelledby="homeInstructionsTitle">
+          <div class="home-instructions-head">
+            <div><span>COMUNICADOS GERAIS</span><h2 id="homeInstructionsTitle">Instruções vigentes</h2></div>
+            <button class="home-instructions-goto" type="button" data-home-target="instrucoes">VER INSTRUÇÕES →</button>
+          </div>
+          <div class="home-instruction-list" id="homeInstructionList" aria-live="polite">
+            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
+            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
+          </div>
+        </section>
         <section class="home-operations" aria-label="Operações do dia">
           <article class="home-operation-card" data-permission="purchases" aria-labelledby="homePurchasesTitle">
             <header class="home-operation-head">
@@ -2136,6 +2255,50 @@
         </div>
         <div class="mission-tabs" id="missionTabs" aria-label="Visões de missões"></div>
         <div class="mission-list" id="missionList" aria-live="polite"><div class="mission-empty">Carregando missões…</div></div>
+      </section>
+    </section>
+
+<!-- ================= INSTRUÇÕES ================= -->
+    <section id="pageInstrucoes" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Instruções</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Orientações oficiais publicadas pelo administrador para todas as lojas.</p></div>
+      </header>
+
+      <section class="instruction-summary" aria-label="Resumo das instruções">
+        <article class="instruction-summary-card"><span>INSTRUÇÕES VIGENTES</span><strong id="instructionActiveCount">0</strong></article>
+        <article class="instruction-summary-card"><span>HISTÓRICO FINALIZADO</span><strong id="instructionHistoryCount">0</strong></article>
+        <article class="instruction-summary-card"><span>PRÓXIMO PRAZO</span><strong class="date" id="instructionNearestDue">—</strong></article>
+      </section>
+
+      <section class="instruction-admin-panel" data-admin-only>
+        <div class="instruction-admin-head">
+          <div><h3>CADASTRAR NOVA INSTRUÇÃO</h3><p>A orientação será publicada imediatamente para todos os usuários e lojas.</p></div>
+        </div>
+        <form id="instructionForm">
+          <div class="instruction-form-grid">
+            <div class="field"><label for="instructionTitle">TÍTULO DA INSTRUÇÃO</label><input id="instructionTitle" maxlength="160" required placeholder="Ex.: Aumentar o fluxo de emissão de notas"></div>
+            <div class="field"><label for="instructionDueDate">PRAZO FINAL</label><input id="instructionDueDate" type="date" required></div>
+            <div class="field full"><label for="instructionDescription">ORIENTAÇÃO PARA AS LOJAS</label><textarea id="instructionDescription" maxlength="3000" rows="4" required placeholder="Descreva claramente o que todas as lojas precisam seguir até o prazo informado."></textarea></div>
+          </div>
+          <div class="instruction-form-actions"><button class="btn-accent" id="btnSaveInstruction" type="submit">PUBLICAR PARA TODAS AS LOJAS</button></div>
+          <div class="user-form-status" id="instructionFormStatus" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="instruction-board">
+        <div class="instruction-board-head">
+          <div><h3>INSTRUÇÕES PARA AS LOJAS</h3><p>Após o prazo, a instrução sai da lista vigente e permanece no histórico.</p></div>
+          <span class="mission-count" id="instructionCount">0 INSTRUÇÕES</span>
+        </div>
+        <div class="instruction-tabs" role="tablist" aria-label="Situação das instruções">
+          <button class="instruction-tab active" type="button" role="tab" aria-selected="true" data-instruction-view="active">VIGENTES <span id="instructionActiveTabCount">0</span></button>
+          <button class="instruction-tab" type="button" role="tab" aria-selected="false" data-instruction-view="history">HISTÓRICO <span id="instructionHistoryTabCount">0</span></button>
+        </div>
+        <div class="instruction-list" id="instructionList" aria-live="polite"><div class="instruction-empty">Carregando instruções…</div></div>
       </section>
     </section>
 
@@ -2627,6 +2790,7 @@
   <button class="mobile-tab active" type="button" data-mobile-page="inicio"><span aria-hidden="true">⌂</span><small>INÍCIO</small></button>
   <button class="mobile-tab" type="button" data-mobile-page="dashboard" data-permission="stock"><span aria-hidden="true">Σ</span><small>ESTOQUE</small></button>
   <button class="mobile-tab" type="button" data-mobile-page="missoes" data-permission="missions"><span aria-hidden="true">◎</span><small>MISSÕES</small></button>
+  <button class="mobile-tab" type="button" data-mobile-page="instrucoes"><span aria-hidden="true">!</span><small>INSTRUÇÕES</small></button>
   <button class="mobile-tab" type="button" data-mobile-page="puxadas" data-permission="pulls"><span aria-hidden="true">⇄</span><small>PUXADAS</small></button>
   <button class="mobile-tab" type="button" data-mobile-page="compras" data-permission="purchases"><span aria-hidden="true">▤</span><small>COMPRAS</small></button>
 </nav>
@@ -2752,6 +2916,9 @@
   let missionView = 'general';
   let missionCompanyId = '';
   let missionsLoading = false;
+  let instructionRows = [];
+  let instructionView = 'active';
+  let instructionToday = '';
 
   let purchaseRows = [];
   let purchaseCursor = null;
@@ -3085,6 +3252,7 @@
     dados:'/cadastros/base-de-dados',
     tarefas:'/tarefas',
     missoes:'/missoes',
+    instrucoes:'/instrucoes',
     usuarios:'/cadastros/usuarios'
   });
   const PAGE_TITLES = Object.freeze({
@@ -3098,6 +3266,7 @@
     dados:'BASE DE DADOS',
     tarefas:'TAREFAS',
     missoes:'MISSÕES',
+    instrucoes:'INSTRUÇÕES',
     usuarios:'USUÁRIOS E ACESSOS'
   });
   const PAGE_PERMISSIONS = Object.freeze({
@@ -3151,7 +3320,7 @@
     el('homeSessionName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
     const groupLabels = {administrator:'Administrador',purchases:'Compras',fiscal:'Fiscal',operator:'Operador',custom:'Personalizado'};
     el('sessionAccessLabel').textContent = (groupLabels[currentSession.accessGroup] || 'Acesso limitado') + (currentSession.role === 'admin' ? ' · acesso completo' : '');
-    el('homeNoAccess').hidden = currentSession.role === 'admin' || currentSession.permissions.length > 0;
+    el('homeNoAccess').hidden = true;
     document.body.classList.add('access-ready');
   }
 
@@ -3419,6 +3588,7 @@
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
     if(name === 'usuarios') loadAdminUsers();
     if(name === 'missoes') loadMissions();
+    if(name === 'instrucoes') loadInstructions();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -3433,6 +3603,7 @@
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
     if(name === 'missoes') loadMissions();
+    if(name === 'instrucoes') loadInstructions();
   }
 
   document.querySelectorAll('.nav-item').forEach(btn => {
@@ -7438,6 +7609,192 @@ function renderHomeTasks(){
   el('missionStartDate').value = todayDateKey();
   updateMissionNotificationStatus();
 
+  async function instructionApiRequest(path,options){
+    const response = await fetch(path,{
+      ...(options || {}),
+      headers:{Accept:'application/json',...((options && options.headers) || {})},
+      cache:'no-store'
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function formatInstructionDate(dateKey){
+    return /^\d{4}-\d{2}-\d{2}$/.test(dateKey || '')
+      ? dateKey.split('-').reverse().join('/')
+      : '—';
+  }
+
+  function instructionDayDifference(dateKey,today){
+    const due = new Date(dateKey+'T12:00:00');
+    const current = new Date(today+'T12:00:00');
+    return Math.round((due.getTime()-current.getTime())/86400000);
+  }
+
+  function instructionDeadlineCopy(row){
+    if(instructionView === 'history') return 'FINALIZADA EM '+formatInstructionDate(row.dueDate);
+    const remaining = instructionDayDifference(row.dueDate,instructionToday || todayDateKey());
+    if(remaining <= 0) return 'FINALIZA HOJE';
+    if(remaining === 1) return '1 DIA RESTANTE';
+    return remaining+' DIAS RESTANTES';
+  }
+
+  function instructionCardHtml(row){
+    const history = instructionView === 'history';
+    const remaining = instructionDayDifference(row.dueDate,instructionToday || todayDateKey());
+    const deadlineClass = history ? 'finished' : (remaining <= 0 ? 'today' : 'deadline');
+    const published = formatInstructionDate(String(row.createdAt || '').slice(0,10));
+    return '<article class="instruction-card'+(history ? ' history' : '')+'">'+
+      '<div class="instruction-card-copy">'+
+        '<strong class="instruction-card-title">'+escapeHtml(row.title || '')+'</strong>'+
+        '<p class="instruction-card-description">'+escapeHtml(row.description || '')+'</p>'+
+        '<div class="instruction-card-meta">'+
+          '<span class="instruction-badge '+deadlineClass+'">'+escapeHtml(instructionDeadlineCopy(row))+'</span>'+
+          '<span class="instruction-badge">PRAZO: '+escapeHtml(formatInstructionDate(row.dueDate))+'</span>'+
+          '<span class="instruction-badge">PUBLICADA EM '+escapeHtml(published)+'</span>'+
+          '<span class="instruction-badge">POR '+escapeHtml(row.createdByName || 'ADMINISTRADOR')+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="instruction-card-actions">'+
+        '<span class="instruction-state'+(history ? ' finished' : '')+'">'+(history ? 'NO HISTÓRICO' : 'VIGENTE PARA TODAS AS LOJAS')+'</span>'+
+        (currentSession.role === 'admin' ? '<button class="instruction-delete" type="button" data-instruction-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+
+      '</div>'+
+    '</article>';
+  }
+
+  function renderInstructionTabs(summary){
+    const activeCount = Number(summary && summary.activeCount || 0);
+    const historyCount = Number(summary && summary.historyCount || 0);
+    el('instructionActiveCount').textContent = activeCount;
+    el('instructionHistoryCount').textContent = historyCount;
+    el('instructionActiveTabCount').textContent = activeCount;
+    el('instructionHistoryTabCount').textContent = historyCount;
+    el('instructionNearestDue').textContent = summary && summary.nearestDueDate
+      ? formatInstructionDate(summary.nearestDueDate)
+      : '—';
+    document.querySelectorAll('[data-instruction-view]').forEach(button => {
+      const active = button.dataset.instructionView === instructionView;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+  }
+
+  function renderInstructions(data){
+    instructionRows = Array.isArray(data.instructions) ? data.instructions : [];
+    instructionToday = data.today || todayDateKey();
+    renderInstructionTabs(data.summary || {});
+    el('instructionCount').textContent = instructionRows.length+' INSTRUÇ'+(instructionRows.length === 1 ? 'ÃO' : 'ÕES');
+    el('instructionList').innerHTML = instructionRows.length
+      ? instructionRows.map(instructionCardHtml).join('')
+      : '<div class="instruction-empty">'+(instructionView === 'history'
+          ? 'Nenhuma instrução foi finalizada ainda. Quando um prazo terminar, ela aparecerá automaticamente aqui.'
+          : 'Nenhuma instrução vigente para as lojas neste momento.')+'</div>';
+  }
+
+  async function loadInstructions(){
+    el('instructionList').innerHTML = '<div class="instruction-empty">Carregando instruções…</div>';
+    try{
+      const data = await instructionApiRequest('/api/instructions?status='+encodeURIComponent(instructionView));
+      renderInstructions(data);
+    }catch(error){
+      el('instructionList').innerHTML = '<div class="instruction-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  function homeInstructionRowHtml(row,today){
+    const remaining = instructionDayDifference(row.dueDate,today);
+    const deadline = remaining <= 0 ? 'FINALIZA HOJE' : 'ATÉ '+formatInstructionDate(row.dueDate);
+    return '<article class="home-instruction-row">'+
+      '<span class="home-instruction-icon" aria-hidden="true">!</span>'+
+      '<div class="home-instruction-copy"><strong>'+escapeHtml(row.title || '')+'</strong><span>'+escapeHtml(row.description || '')+'</span></div>'+
+      '<span class="home-instruction-due">'+escapeHtml(deadline)+'</span>'+
+    '</article>';
+  }
+
+  async function loadHomeInstructions(){
+    const list = el('homeInstructionList');
+    if(!list) return;
+    try{
+      const data = await instructionApiRequest('/api/instructions?status=active');
+      const rows = Array.isArray(data.instructions) ? data.instructions : [];
+      list.innerHTML = rows.length
+        ? rows.slice(0,3).map(row => homeInstructionRowHtml(row,data.today || todayDateKey())).join('')
+        : '<div class="home-tasks-empty">Nenhuma instrução vigente para as lojas.</div>';
+    }catch(error){
+      list.innerHTML = '<div class="home-tasks-empty">Não foi possível carregar as instruções.</div>';
+    }
+  }
+
+  function setInstructionFormStatus(message,tone){
+    const status = el('instructionFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(tone ? ' '+tone : '');
+  }
+
+  function instructionDefaultDueDate(){
+    const date = new Date(todayDateKey()+'T12:00:00');
+    date.setDate(date.getDate()+7);
+    return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+  }
+
+  el('instructionForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const button = el('btnSaveInstruction');
+    button.disabled = true;
+    setInstructionFormStatus('PUBLICANDO INSTRUÇÃO…','');
+    try{
+      await instructionApiRequest('/api/instructions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          title:el('instructionTitle').value,
+          description:el('instructionDescription').value,
+          dueDate:el('instructionDueDate').value
+        })
+      });
+      el('instructionTitle').value = '';
+      el('instructionDescription').value = '';
+      el('instructionDueDate').value = instructionDefaultDueDate();
+      instructionView = 'active';
+      setInstructionFormStatus('INSTRUÇÃO PUBLICADA PARA TODAS AS LOJAS.','success');
+      await Promise.all([loadInstructions(),loadHomeInstructions()]);
+      showPurchaseToast('Instrução publicada para todas as lojas.');
+    }catch(error){
+      setInstructionFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  document.querySelector('.instruction-tabs').addEventListener('click',event => {
+    const button = event.target.closest('[data-instruction-view]');
+    if(!button || button.dataset.instructionView === instructionView) return;
+    instructionView = button.dataset.instructionView;
+    loadInstructions();
+  });
+
+  el('instructionList').addEventListener('click',async event => {
+    const button = event.target.closest('[data-instruction-delete]');
+    if(!button || !confirm('Excluir esta instrução definitivamente? Ela também será removida do histórico.')) return;
+    button.disabled = true;
+    try{
+      await instructionApiRequest('/api/instructions?id='+encodeURIComponent(button.dataset.instructionDelete),{method:'DELETE'});
+      await Promise.all([loadInstructions(),loadHomeInstructions()]);
+      showPurchaseToast('Instrução excluída.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      button.disabled = false;
+    }
+  });
+
+  el('instructionDueDate').min = todayDateKey();
+  el('instructionDueDate').value = instructionDefaultDueDate();
+
   const permissionNames = {
     tasks:'Tarefas',
     missions:'Missões',
@@ -7681,6 +8038,7 @@ function renderHomeTasks(){
       }
       updateMissionNotificationStatus();
     }
+    await Promise.all([loadInstructions(),loadHomeInstructions()]);
     await verifyIosStorage();
     prepareIosInstallHint();
   }

@@ -150,3 +150,20 @@ export const missionCompletions = sqliteTable(
     ),
   ],
 );
+
+export const instructions = sqliteTable(
+  "instructions",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    dueDate: text("due_date").notNull(),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("instructions_due_date_created_idx").on(table.dueDate, table.createdAt),
+  ],
+);
