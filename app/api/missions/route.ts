@@ -33,7 +33,10 @@ type CompletionRow = {
   completedBy: string;
   completedByName: string;
   completedAt: string;
+  status: MissionStatus;
+  updatedAt: string;
 };
+type MissionStatus = "todo" | "in_progress" | "completed";
 type PushSubscriptionRow = {
   id: string;
   endpoint: string;
@@ -44,6 +47,11 @@ type PushSubscriptionRow = {
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const COMPANY_PATTERN = /^c[a-z0-9]{6,40}$/i;
+const MISSION_STATUSES = new Set<MissionStatus>([
+  "todo",
+  "in_progress",
+  "completed",
+]);
 
 function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -57,6 +65,12 @@ function jsonResponse(body: JsonMap, status = 200) {
 
 function safeText(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
+function missionStatus(value: unknown): MissionStatus | null {
+  return typeof value === "string" && MISSION_STATUSES.has(value as MissionStatus)
+    ? (value as MissionStatus)
+    : null;
 }
 
 function decodedHeader(request: Request, name: string) {
@@ -226,9 +240,10 @@ export async function GET(request: Request) {
         `SELECT id, mission_id AS missionId, occurrence_date AS occurrenceDate,
                 company_id AS companyId, company_name AS companyName,
                 completed_by AS completedBy, completed_by_name AS completedByName,
-                completed_at AS completedAt
+                completed_at AS completedAt, status,
+                updated_at AS updatedAt
          FROM mission_completions WHERE occurrence_date=?1
-         ORDER BY completed_at DESC`,
+         ORDER BY updated_at DESC`,
       )
       .bind(date)
       .all<CompletionRow>();
@@ -245,15 +260,21 @@ export async function GET(request: Request) {
         const missionCompletions = completions.filter(
           (completion) => completion.missionId === mission.id,
         );
+        const recipientStatus =
+          missionCompletions.find(
+            (completion) => completion.companyId === actor.companyId,
+          )?.status ?? "todo";
         return {
           ...mission,
-          completed:
-            Boolean(actor.companyId) &&
-            missionCompletions.some(
-              (completion) => completion.companyId === actor.companyId,
-            ),
+          status: recipientStatus,
+          completed: recipientStatus === "completed",
           completions: actor.role === "admin" ? missionCompletions : [],
-          completionCount: missionCompletions.length,
+          completionCount: missionCompletions.filter(
+            (completion) => completion.status === "completed",
+          ).length,
+          inProgressCount: missionCompletions.filter(
+            (completion) => completion.status === "in_progress",
+          ).length,
         };
       }),
     });
@@ -332,6 +353,12 @@ export async function PATCH(request: Request) {
   if (unauthorized) return unauthorized;
   const actor = identity(request);
   if (!sameOrigin(request)) return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  if (actor.role === "admin") {
+    return jsonResponse(
+      { error: "O ADMINISTRADOR NÃO PODE ALTERAR O STATUS DAS MISSÕES." },
+      403,
+    );
+  }
   if (!actor.id || !COMPANY_PATTERN.test(actor.companyId)) {
     return jsonResponse({ error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA." }, 403);
   }
@@ -340,9 +367,21 @@ export async function PATCH(request: Request) {
     const body = (await request.json()) as JsonMap;
     const missionId = safeText(body.missionId, 80);
     const occurrenceDate = safeText(body.date, 10);
-    const completed = body.completed === true;
+    const status =
+      missionStatus(body.status) ??
+      (body.completed === true
+        ? "completed"
+        : body.completed === false
+          ? "todo"
+          : null);
     if (!missionId || !DATE_PATTERN.test(occurrenceDate)) {
       return jsonResponse({ error: "MISSÃO OU DATA INVÁLIDA." }, 400);
+    }
+    if (!status) {
+      return jsonResponse(
+        { error: "ESCOLHA: CONCLUÍDO, EM ANDAMENTO OU A FAZER." },
+        400,
+      );
     }
     const database = await getD1();
     const mission = await database
@@ -365,21 +404,20 @@ export async function PATCH(request: Request) {
 
     const existing = await database
       .prepare(
-        `SELECT id FROM mission_completions
+        `SELECT id, status FROM mission_completions
          WHERE mission_id=?1 AND occurrence_date=?2 AND company_id=?3 LIMIT 1`,
       )
       .bind(missionId, occurrenceDate, actor.companyId)
-      .first<{ id: string }>();
-    if (!completed) {
+      .first<{ id: string; status: MissionStatus }>();
+    if (status === "todo") {
       if (existing) {
         await database
           .prepare("DELETE FROM mission_completions WHERE id=?1")
           .bind(existing.id)
           .run();
       }
-      return jsonResponse({ completed: false });
+      return jsonResponse({ status, completed: false });
     }
-    if (existing) return jsonResponse({ completed: true });
 
     const storeName =
       (await companyName(database, actor.companyId)) ||
@@ -389,8 +427,14 @@ export async function PATCH(request: Request) {
       .prepare(
         `INSERT INTO mission_completions
           (id, mission_id, occurrence_date, company_id, company_name,
-           completed_by, completed_by_name, completed_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)`,
+           completed_by, completed_by_name, completed_at, status, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP, ?8, CURRENT_TIMESTAMP)
+         ON CONFLICT(mission_id, occurrence_date, company_id) DO UPDATE SET
+           company_name=excluded.company_name,
+           completed_by=excluded.completed_by,
+           completed_by_name=excluded.completed_by_name,
+           status=excluded.status,
+           updated_at=CURRENT_TIMESTAMP`,
       )
       .bind(
         crypto.randomUUID(),
@@ -400,10 +444,13 @@ export async function PATCH(request: Request) {
         storeName,
         actor.id,
         actor.displayName,
+        status,
       )
       .run();
-    await notifyMissionCreator(database, mission, storeName);
-    return jsonResponse({ completed: true });
+    if (status === "completed" && existing?.status !== "completed") {
+      await notifyMissionCreator(database, mission, storeName);
+    }
+    return jsonResponse({ status, completed: status === "completed" });
   } catch (error) {
     console.error("Não foi possível concluir a missão.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL ATUALIZAR A MISSÃO." }, 500);

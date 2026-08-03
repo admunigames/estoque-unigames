@@ -1682,8 +1682,13 @@
   }
   .mission-card.completed{opacity:.58;}
   .mission-card.completed .mission-card-title{text-decoration:line-through;}
-  .mission-check{width:21px;height:21px;margin-top:3px;accent-color:var(--accent);cursor:pointer;}
-  .mission-check:disabled{cursor:default;}
+  .mission-card.in-progress{border-color:rgba(225,173,73,.48);box-shadow:inset 3px 0 0 rgba(225,173,73,.72);}
+  .mission-check{
+    display:grid;place-items:center;width:23px;height:23px;margin-top:2px;border:1px solid rgba(79,134,189,.42);
+    border-radius:7px;background:rgba(79,134,189,.08);color:var(--ink-soft);font:900 13px/1 var(--mono);
+  }
+  .mission-check.in-progress{border-color:rgba(225,173,73,.48);color:#e1ad49;background:rgba(225,173,73,.09);}
+  .mission-check.completed{border-color:rgba(66,166,119,.46);color:#66d49e;background:rgba(66,166,119,.11);}
   .mission-card-copy{min-width:0;}
   .mission-card-title{display:block;color:var(--ink);font:800 14px/1.35 var(--sans);overflow-wrap:anywhere;}
   .mission-card-description{margin:6px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
@@ -1701,6 +1706,14 @@
     color:var(--ink-soft);text-align:center;font:800 8px/1.3 var(--mono);
   }
   .mission-status.done{background:rgba(66,166,119,.11);color:#66d49e;}
+  .mission-status.progress{background:rgba(225,173,73,.11);color:#e1ad49;}
+  .mission-status-select{
+    min-width:178px;min-height:40px;padding:8px 34px 8px 10px;border:1px solid rgba(79,134,189,.44);
+    border-radius:9px;background-color:var(--bg-card);color:var(--ink);font:800 9px/1.2 var(--mono);
+  }
+  .mission-status-select:focus{outline:2px solid rgba(73,180,220,.28);outline-offset:2px;}
+  .mission-status-select.status-in-progress{border-color:rgba(225,173,73,.58);color:#e1ad49;}
+  .mission-status-select.status-completed{border-color:rgba(66,166,119,.54);color:#66d49e;}
   .mission-delete{
     min-height:32px;padding:7px 9px;border:1px solid rgba(183,66,52,.38);border-radius:8px;
     background:rgba(183,66,52,.08);color:#e4776a;font:800 8px/1 var(--mono);
@@ -1721,11 +1734,19 @@
   }
   .home-mission-row.completed{opacity:.55;}
   .home-mission-row.completed .home-mission-title{text-decoration:line-through;}
-  .home-mission-check{width:18px;height:18px;accent-color:var(--accent);}
+  .home-mission-row.in-progress{border-color:rgba(194,135,27,.35);box-shadow:inset 3px 0 0 rgba(194,135,27,.62);}
+  .home-mission-check{
+    display:grid;place-items:center;width:20px;height:20px;border:1px solid rgba(36,79,131,.24);
+    border-radius:6px;color:#5c7187;font:900 11px/1 var(--mono);
+  }
+  .home-mission-check.in-progress{color:#9a6912;border-color:rgba(194,135,27,.42);background:rgba(225,173,73,.12);}
+  .home-mission-check.completed{color:#24714a;border-color:rgba(36,113,74,.35);background:#e2f3e9;}
   .home-mission-copy{min-width:0;}
   .home-mission-title{display:block;color:#10233a;font:800 12px/1.4 var(--sans);overflow-wrap:anywhere;}
   .home-mission-meta{display:block;margin-top:3px;color:#5c7187;font:700 9px/1.4 var(--mono);}
   .home-mission-time{color:#244f83;font:800 10px/1 var(--mono);white-space:nowrap;}
+  .home-mission-actions{display:flex;flex-direction:column;align-items:flex-end;gap:7px;}
+  .home-mission-actions .mission-status-select{min-width:158px;min-height:38px;background-color:rgba(255,255,255,.72);color:#10233a;}
   html[data-theme="light"] .mission-toolbar,
   html[data-theme="light"] .mission-admin-panel,
   html[data-theme="light"] .mission-board{background:#fff;border-color:#b8cad9;box-shadow:0 14px 34px rgba(28,67,102,.1);}
@@ -1839,8 +1860,11 @@
     .mission-card{grid-template-columns:auto minmax(0,1fr);}
     .mission-card-actions{grid-column:2;align-items:stretch;}
     .mission-status{min-width:0;}
+    .mission-status-select{width:100%;min-height:44px;}
     .home-mission-row{grid-template-columns:auto minmax(0,1fr);}
-    .home-mission-time{grid-column:2;}
+    .home-mission-actions{grid-column:2;align-items:stretch;}
+    .home-mission-actions .mission-status-select{width:100%;min-height:44px;}
+    .home-mission-time{text-align:left;}
     .instruction-summary{grid-template-columns:1fr;}
     .instruction-admin-panel,.instruction-board,.home-instructions{padding:16px 13px;}
     .instruction-card{grid-template-columns:1fr;}
@@ -2211,7 +2235,7 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Missões</h2>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Acompanhe as missões gerais e as missões específicas de cada loja.</p></div>
+        <div class="page-header-meta"><p class="page-desc">Acompanhe as missões por loja. Os usuários destinatários informam se cada missão está a fazer, em andamento ou concluída.</p></div>
       </header>
 
       <div class="mission-toolbar">
@@ -7264,6 +7288,11 @@ function renderHomeTasks(){
   });
 
   const missionFrequencyLabels = {once:'SOMENTE NO DIA',daily:'DIÁRIA',weekly:'SEMANAL'};
+  const missionStatusLabels = {
+    todo:'A FAZER',
+    in_progress:'EM ANDAMENTO',
+    completed:'CONCLUÍDO'
+  };
 
   function setMissionFormStatus(message,type){
     const status = el('missionFormStatus');
@@ -7313,10 +7342,37 @@ function renderHomeTasks(){
     ).join('');
   }
 
+  function normalizedMissionStatus(value){
+    return value === 'completed' || value === 'in_progress' ? value : 'todo';
+  }
+
+  function missionTargetCompanies(mission){
+    if(mission.scope === 'general') return companies;
+    const company = companies.find(item => item.id === mission.companyId);
+    return [{id:mission.companyId,name:(company && company.name) || mission.companyName || 'Loja'}];
+  }
+
+  function missionStoreStatuses(mission){
+    const rows = Array.isArray(mission.completions) ? mission.completions : [];
+    return missionTargetCompanies(mission).map(company => {
+      const row = rows.find(item => item.companyId === company.id);
+      return {
+        companyName:company.name,
+        status:normalizedMissionStatus(row && row.status)
+      };
+    });
+  }
+
+  function missionVisualStatus(mission){
+    if(currentSession.role !== 'admin') return normalizedMissionStatus(mission.status);
+    const statuses = missionStoreStatuses(mission);
+    if(statuses.length && statuses.every(item => item.status === 'completed')) return 'completed';
+    if(statuses.some(item => item.status === 'in_progress' || item.status === 'completed')) return 'in_progress';
+    return 'todo';
+  }
+
   function missionDisplayCompleted(mission){
-    if(currentSession.role !== 'admin') return mission.completed === true;
-    if(mission.scope === 'store') return Number(mission.completionCount || 0) > 0;
-    return companies.length > 0 && Number(mission.completionCount || 0) >= companies.length;
+    return missionVisualStatus(mission) === 'completed';
   }
 
   function missionDeadlinePresentation(mission,date){
@@ -7331,30 +7387,50 @@ function renderHomeTasks(){
   }
 
   function missionCompletionCopy(mission){
-    const count = Number(mission.completionCount || 0);
-    if(currentSession.role !== 'admin') return mission.completed ? 'CONCLUÍDA PELA SUA LOJA' : 'AGUARDANDO CONCLUSÃO';
-    if(mission.scope === 'general'){
-      return count+' DE '+companies.length+' LOJAS CONCLUÍRAM';
+    if(currentSession.role !== 'admin'){
+      const status = normalizedMissionStatus(mission.status);
+      if(status === 'completed') return 'CONCLUÍDO · FOI FEITO';
+      if(status === 'in_progress') return 'EM ANDAMENTO · FINALIZAR DEPOIS';
+      return 'A FAZER · AINDA NÃO FOI VISTO';
     }
-    return count ? 'CONCLUÍDA PELA LOJA' : 'AGUARDANDO A LOJA';
+    const statuses = missionStoreStatuses(mission);
+    const completed = statuses.filter(item => item.status === 'completed').length;
+    const progress = statuses.filter(item => item.status === 'in_progress').length;
+    const todo = statuses.filter(item => item.status === 'todo').length;
+    return completed+' CONCLUÍDO'+(completed === 1 ? '' : 'S')+' · '+
+      progress+' EM ANDAMENTO · '+todo+' A FAZER';
   }
 
   function missionCompletionsDetail(mission){
-    if(currentSession.role !== 'admin' || !Array.isArray(mission.completions) || !mission.completions.length) return '';
-    return '<span class="mission-completion-detail">CONCLUÍDA POR: '+
-      mission.completions.map(item => escapeHtml(item.companyName || item.completedByName || 'Loja')).join(' · ')+
+    if(currentSession.role !== 'admin') return '';
+    const statuses = missionStoreStatuses(mission);
+    if(!statuses.length) return '';
+    return '<span class="mission-completion-detail">STATUS DAS LOJAS: '+
+      statuses.map(item =>
+        escapeHtml(item.companyName || 'Loja')+' — '+escapeHtml(missionStatusLabels[item.status])
+      ).join(' · ')+
       '</span>';
+  }
+
+  function missionStatusSelectHtml(mission,home){
+    const status = normalizedMissionStatus(mission.status);
+    const dataAttribute = home ? 'data-home-mission-status' : 'data-mission-status';
+    return '<select class="mission-status-select status-'+status+'" '+dataAttribute+'="'+escapeHtml(mission.id)+
+      '" data-current-status="'+status+'" aria-label="Status da missão">'+
+      '<option value="todo"'+(status === 'todo' ? ' selected' : '')+'>A FAZER</option>'+
+      '<option value="in_progress"'+(status === 'in_progress' ? ' selected' : '')+'>EM ANDAMENTO</option>'+
+      '<option value="completed"'+(status === 'completed' ? ' selected' : '')+'>CONCLUÍDO</option>'+
+      '</select>';
   }
 
   function missionCardHtml(mission,date){
     const completed = missionDisplayCompleted(mission);
+    const status = missionVisualStatus(mission);
     const deadline = missionDeadlinePresentation(mission,date);
     const target = mission.scope === 'general' ? 'GERAL · TODAS AS LOJAS' : mission.companyName;
-    const marker = currentSession.role === 'admin'
-      ? '<span class="mission-check" aria-hidden="true">'+(completed ? '✓' : '○')+'</span>'
-      : '<input class="mission-check" type="checkbox" data-mission-complete="'+escapeHtml(mission.id)+'" '+
-          (mission.completed ? 'checked' : '')+' aria-label="Marcar missão como concluída">';
-    return '<article class="mission-card'+(completed ? ' completed' : '')+'">'+
+    const marker = '<span class="mission-check '+status+'" aria-hidden="true">'+
+      (status === 'completed' ? '✓' : status === 'in_progress' ? '◐' : '○')+'</span>';
+    return '<article class="mission-card'+(completed ? ' completed' : status === 'in_progress' ? ' in-progress' : '')+'">'+
       marker+
       '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(mission.title)+'</strong>'+
         (mission.description ? '<p class="mission-card-description">'+escapeHtml(mission.description)+'</p>' : '')+
@@ -7363,11 +7439,11 @@ function renderHomeTasks(){
           '<span class="mission-badge">↻ '+escapeHtml(missionFrequencyLabels[mission.frequency] || 'SOMENTE NO DIA')+'</span>'+
           '<span class="mission-badge'+deadline.className+'">'+escapeHtml(deadline.label)+'</span>'+
         '</div>'+missionCompletionsDetail(mission)+'</div>'+
-      '<div class="mission-card-actions"><span class="mission-status'+(completed ? ' done' : '')+'">'+
+      '<div class="mission-card-actions"><span class="mission-status'+(completed ? ' done' : status === 'in_progress' ? ' progress' : '')+'">'+
         escapeHtml(missionCompletionCopy(mission))+'</span>'+
         (currentSession.role === 'admin'
           ? '<button class="mission-delete" type="button" data-mission-delete="'+escapeHtml(mission.id)+'">EXCLUIR</button>'
-          : '')+
+          : missionStatusSelectHtml(mission,false))+
       '</div></article>';
   }
 
@@ -7423,16 +7499,18 @@ function renderHomeTasks(){
 
   function homeMissionRowHtml(mission,date){
     const completed = missionDisplayCompleted(mission);
+    const status = missionVisualStatus(mission);
     const deadline = missionDeadlinePresentation(mission,date);
     const target = mission.scope === 'general' ? 'MISSÃO GERAL' : (mission.companyName || 'MINHA LOJA');
-    const marker = currentSession.role === 'admin'
-      ? '<span class="home-mission-check" aria-hidden="true">'+(completed ? '✓' : '○')+'</span>'
-      : '<input class="home-mission-check" type="checkbox" data-home-mission-complete="'+escapeHtml(mission.id)+'" '+
-          (mission.completed ? 'checked' : '')+' aria-label="Marcar missão como concluída">';
-    return '<div class="home-mission-row'+(completed ? ' completed' : '')+'">'+marker+
+    const marker = '<span class="home-mission-check '+status+'" aria-hidden="true">'+
+      (status === 'completed' ? '✓' : status === 'in_progress' ? '◐' : '○')+'</span>';
+    return '<div class="home-mission-row'+(completed ? ' completed' : status === 'in_progress' ? ' in-progress' : '')+'">'+marker+
       '<div class="home-mission-copy"><strong class="home-mission-title">'+escapeHtml(mission.title)+'</strong>'+
       '<span class="home-mission-meta">'+escapeHtml(target)+' · '+escapeHtml(missionCompletionCopy(mission))+'</span></div>'+
-      '<span class="home-mission-time">'+escapeHtml(mission.dueTime ? deadline.label : 'LIVRE')+'</span></div>';
+      '<div class="home-mission-actions"><span class="home-mission-time">'+
+      escapeHtml(mission.dueTime ? deadline.label : 'LIVRE')+'</span>'+
+      (currentSession.role === 'admin' ? '' : missionStatusSelectHtml(mission,true))+
+      '</div></div>';
   }
 
   async function loadHomeMissions(){
@@ -7450,14 +7528,20 @@ function renderHomeTasks(){
     }
   }
 
-  async function updateMissionCompletion(missionId,completed,date){
+  async function updateMissionStatus(missionId,status,date){
     await missionApiRequest('/api/missions',{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({missionId,date,completed})
+      body:JSON.stringify({missionId,date,status})
     });
     await Promise.all([loadMissions(),loadHomeMissions()]);
-    if(completed) showPurchaseToast('Missão concluída. O administrador responsável foi avisado.');
+    if(status === 'completed'){
+      showPurchaseToast('Missão concluída. O administrador responsável foi avisado.');
+    }else if(status === 'in_progress'){
+      showPurchaseToast('Missão marcada como em andamento.');
+    }else{
+      showPurchaseToast('Missão marcada como a fazer.');
+    }
   }
 
   function updateMissionNotificationStatus(){
@@ -7569,13 +7653,14 @@ function renderHomeTasks(){
     }
   });
   el('missionList').addEventListener('change',async event => {
-    const missionId = event.target.dataset.missionComplete;
+    const missionId = event.target.dataset.missionStatus;
     if(!missionId) return;
+    const previousStatus = event.target.dataset.currentStatus;
     event.target.disabled = true;
     try{
-      await updateMissionCompletion(missionId,event.target.checked,el('missionDate').value);
+      await updateMissionStatus(missionId,event.target.value,el('missionDate').value);
     }catch(error){
-      event.target.checked = !event.target.checked;
+      event.target.value = previousStatus;
       showPurchaseToast(error.message,'error');
     }finally{
       event.target.disabled = false;
@@ -7595,13 +7680,14 @@ function renderHomeTasks(){
     }
   });
   el('homeMissionList').addEventListener('change',async event => {
-    const missionId = event.target.dataset.homeMissionComplete;
+    const missionId = event.target.dataset.homeMissionStatus;
     if(!missionId) return;
+    const previousStatus = event.target.dataset.currentStatus;
     event.target.disabled = true;
     try{
-      await updateMissionCompletion(missionId,event.target.checked,todayDateKey());
+      await updateMissionStatus(missionId,event.target.value,todayDateKey());
     }catch(error){
-      event.target.checked = !event.target.checked;
+      event.target.value = previousStatus;
       showPurchaseToast(error.message,'error');
     }finally{
       event.target.disabled = false;

@@ -492,17 +492,18 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v13"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v14"/);
 });
 
-test("oferece missões gerais e por loja com conclusão e lembretes protegidos", async () => {
-  const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
+test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
+  const [html, workerSource, route, schema, migration, statusMigration, manifest, serviceWorker] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/missions/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
       readFile(new URL("../drizzle/0005_free_exodus.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0007_striped_magdalene.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
@@ -522,8 +523,14 @@ test("oferece missões gerais e por loja com conclusão e lembretes protegidos",
   assert.match(html, /id="missionNotificationStatus"/);
   assert.match(html, /id="btnTestMissionNotifications"/);
   assert.match(html, /Aparelho inscrito\. Os lembretes de 2 horas e 1 hora estão ativos/);
-  assert.match(html, /data-mission-complete/);
-  assert.match(html, /data-home-mission-complete/);
+  assert.match(html, /data-mission-status/);
+  assert.match(html, /data-home-mission-status/);
+  assert.match(html, /value="todo"/);
+  assert.match(html, /value="in_progress"/);
+  assert.match(html, /value="completed"/);
+  assert.match(html, /A FAZER · AINDA NÃO FOI VISTO/);
+  assert.match(html, /EM ANDAMENTO · FINALIZAR DEPOIS/);
+  assert.match(html, /CONCLUÍDO · FOI FEITO/);
   assert.match(html, /Missão concluída\. O administrador responsável foi avisado/);
   assert.match(html, /missoes:'\/missoes'/);
   assert.match(html, /value="missions"> Missões/);
@@ -535,12 +542,17 @@ test("oferece missões gerais e por loja com conclusão e lembretes protegidos",
   assert.match(workerSource, /\[120, 60\]/);
   assert.match(workerSource, /Missão termina em 2 horas/);
   assert.match(workerSource, /Missão termina em 1 hora/);
+  assert.match(workerSource, /completion\?\.status === "completed"/);
   assert.match(workerSource, /dispatchDueTaskNotifications\(env\),[\s\S]*dispatchDueMissionNotifications\(env\)/);
 
   assert.match(route, /actor\.role !== "admin"/);
+  assert.match(route, /O ADMINISTRADOR NÃO PODE ALTERAR O STATUS DAS MISSÕES/);
   assert.match(route, /mission\.companyId !== actor\.companyId/);
+  assert.match(route, /"todo",[\s\S]*"in_progress",[\s\S]*"completed"/);
   assert.match(route, /INSERT INTO missions/);
   assert.match(route, /INSERT INTO mission_completions/);
+  assert.match(route, /ON CONFLICT\(mission_id, occurrence_date, company_id\) DO UPDATE/);
+  assert.match(route, /status === "completed" && existing\?\.status !== "completed"/);
   assert.match(route, /notifyMissionCreator/);
   assert.match(route, /Missão concluída — \$\{completedByStore\}/);
   assert.match(schema, /export const missions = sqliteTable/);
@@ -548,8 +560,10 @@ test("oferece missões gerais e por loja com conclusão e lembretes protegidos",
   assert.match(migration, /CREATE TABLE `missions`/);
   assert.match(migration, /CREATE TABLE `mission_completions`/);
   assert.match(migration, /mission_completions_occurrence_unique/);
+  assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
+  assert.match(statusMigration, /ADD `updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v13"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v14"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -592,7 +606,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v13"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v14"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {

@@ -1371,12 +1371,12 @@ async function dispatchDueMissionNotifications(env: Env) {
       for (const user of (users.results ?? []).filter(missionNotificationAllowed)) {
         const completion = await env.DB
           .prepare(
-            `SELECT id FROM mission_completions
+            `SELECT id, status FROM mission_completions
              WHERE mission_id=?1 AND occurrence_date=?2 AND company_id=?3 LIMIT 1`,
           )
           .bind(mission.id, occurrenceDate, user.companyId)
-          .first<{ id: string }>();
-        if (completion) continue;
+          .first<{ id: string; status: string }>();
+        if (completion?.status === "completed") continue;
 
         const scheduledFor =
           `${occurrenceDate}T${mission.dueTime}:00-03:00|${reminderOffset}`;

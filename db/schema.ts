@@ -137,6 +137,8 @@ export const missionCompletions = sqliteTable(
     completedBy: text("completed_by").notNull(),
     completedByName: text("completed_by_name").notNull().default(""),
     completedAt: text("completed_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    status: text("status").notNull().default("completed"),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [
     uniqueIndex("mission_completions_occurrence_unique").on(
