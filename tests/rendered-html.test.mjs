@@ -379,7 +379,12 @@ test("isola tarefas por usuário e oferece prioridade, recorrência e lembretes 
   assert.match(html, /value="monthly">MENSAL/);
   assert.match(html, /syncTaskRecurrence/);
   assert.match(html, /pushManager\.subscribe/);
+  assert.match(html, /function restorePushSubscription\(\)/);
+  assert.match(html, /function savePushSubscription\(subscription\)/);
+  assert.match(html, /notificationInstallRequired\(\)/);
   assert.match(pushRoute, /INSERT INTO push_subscriptions/);
+  assert.match(pushRoute, /payload\.action === "test"/);
+  assert.match(pushRoute, /Notificações Unigames ativadas/);
   assert.match(workerSource, /dispatchDueTaskNotifications/);
   assert.match(workerSource, /webPush\.sendNotification/);
   assert.match(viteConfig, /crons: \["\* \* \* \* \*"\]/);
@@ -415,7 +420,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v10"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v11"/);
 });
 
 test("oferece missões gerais e por loja com conclusão e lembretes protegidos", async () => {
@@ -442,6 +447,9 @@ test("oferece missões gerais e por loja com conclusão e lembretes protegidos",
   assert.match(html, /value="weekly">SEMANAL/);
   assert.match(html, /id="missionDeadlineMode"/);
   assert.match(html, /id="missionDueTime"/);
+  assert.match(html, /id="missionNotificationStatus"/);
+  assert.match(html, /id="btnTestMissionNotifications"/);
+  assert.match(html, /Aparelho inscrito\. Os lembretes de 2 horas e 1 hora estão ativos/);
   assert.match(html, /data-mission-complete/);
   assert.match(html, /data-home-mission-complete/);
   assert.match(html, /Missão concluída\. O administrador responsável foi avisado/);
@@ -469,7 +477,7 @@ test("oferece missões gerais e por loja com conclusão e lembretes protegidos",
   assert.match(migration, /CREATE TABLE `mission_completions`/);
   assert.match(migration, /mission_completions_occurrence_unique/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v10"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v11"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {

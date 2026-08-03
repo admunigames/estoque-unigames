@@ -1762,7 +1762,7 @@
   <span class="theme-toggle-knob" aria-hidden="true"></span>
 </button>
 <aside class="ios-install-hint no-print" id="iosInstallHint" hidden>
-  <span><b>NO IPHONE/IPAD:</b> NO SAFARI, TOQUE EM COMPARTILHAR E DEPOIS EM “ADICIONAR À TELA DE INÍCIO” PARA MELHOR PERSISTÊNCIA DOS DADOS.</span>
+  <span><b>NO IPHONE/IPAD:</b> NO SAFARI, TOQUE EM COMPARTILHAR E DEPOIS EM “ADICIONAR À TELA DE INÍCIO”. ABRA PELO NOVO ÍCONE PARA ATIVAR AS NOTIFICAÇÕES.</span>
   <button class="btn-outline" id="btnDismissIosHint" type="button">OK</button>
 </aside>
 
@@ -2103,8 +2103,9 @@
           <input id="missionDate" type="date">
         </div>
         <div class="mission-notification-action">
-          <span>Ative os avisos para receber lembretes 2 horas e 1 hora antes do limite.</span>
+          <span id="missionNotificationStatus" role="status" aria-live="polite">Ative os avisos para receber lembretes 2 horas e 1 hora antes do limite.</span>
           <button class="btn-outline" id="btnEnableMissionNotifications" type="button">ATIVAR NOTIFICAÇÕES</button>
+          <button class="btn-outline" id="btnTestMissionNotifications" type="button" hidden>TESTAR NOTIFICAÇÃO</button>
         </div>
       </div>
 
@@ -2763,6 +2764,7 @@
   let homeTodayTasks = [];
   let taskReminderTimer = null;
   const taskReminderMemory = new Set();
+  let pushNotificationsActive = false;
   let currentPreferences = {theme:'dark',accentColor:'#4f86bd',logoDataUrl:'',compactMobile:false};
   let deferredInstallPrompt = null;
 
@@ -4895,12 +4897,18 @@
     }
   }
 
-  function prepareIosInstallHint(){
+  function isIosDevice(){
     const ua = navigator.userAgent || '';
-    const isIos = /IPHONE|IPAD|IPOD/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const standalone = navigator.standalone === true ||
+    return /IPHONE|IPAD|IPOD/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  function isStandaloneApp(){
+    return navigator.standalone === true ||
       (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-    if(isIos && !standalone) el('iosInstallHint').hidden = false;
+  }
+
+  function prepareIosInstallHint(){
+    if(isIosDevice() && !isStandaloneApp()) el('iosInstallHint').hidden = false;
   }
 
   function registerIosServiceWorker(){
@@ -6437,34 +6445,59 @@
     taskReminderMemory.add(key);
     try{ localStorage.setItem(key, '1'); }catch(error){ /* evita repetição enquanto a página estiver aberta */ }
   }
+  function setPushNotificationsActive(active){
+    pushNotificationsActive = Boolean(active);
+    const taskButton = el('btnEnableTaskNotifications');
+    if(taskButton) taskButton.dataset.pushActive = pushNotificationsActive ? '1' : '0';
+    const testButton = el('btnTestMissionNotifications');
+    if(testButton) testButton.hidden = !pushNotificationsActive;
+  }
+  function notificationInstallRequired(){
+    return isIosDevice() && !isStandaloneApp();
+  }
   function updateTaskNotificationStatus(){
     const status = el('homeReminderStatus');
     const button = el('btnEnableTaskNotifications');
-    updateMissionNotificationStatus();
     if(!status || !button) return;
+    if(notificationInstallRequired()){
+      status.textContent = 'No iPhone, instale o app na Tela de Início para receber alertas.';
+      button.textContent = 'COMO INSTALAR';
+      button.disabled = false;
+      updateMissionNotificationStatus();
+      return;
+    }
     if(!('Notification' in window)){
       status.textContent = 'Alertas visuais ativos enquanto o site estiver aberto.';
       button.textContent = 'NÃO DISPONÍVEL';
       button.disabled = true;
+      updateMissionNotificationStatus();
+      return;
+    }
+    if(Notification.permission === 'granted' && pushNotificationsActive){
+      status.textContent = 'Lembretes ativos mesmo com o site fechado.';
+      button.textContent = 'NOTIFICAÇÕES ATIVAS';
+      button.disabled = true;
+      updateMissionNotificationStatus();
       return;
     }
     if(Notification.permission === 'granted'){
-      status.textContent = button.dataset.pushActive === '1'
-        ? 'Lembretes ativos mesmo com o site fechado.'
-        : 'Notificações do aparelho ativadas.';
-      button.textContent = 'NOTIFICAÇÕES ATIVAS';
-      button.disabled = true;
+      status.textContent = 'Permissão concedida. Conclua a ativação neste aparelho.';
+      button.textContent = 'CONCLUIR ATIVAÇÃO';
+      button.disabled = false;
+      updateMissionNotificationStatus();
       return;
     }
     if(Notification.permission === 'denied'){
       status.textContent = 'Notificações bloqueadas nas configurações do navegador.';
       button.textContent = 'NOTIFICAÇÕES BLOQUEADAS';
       button.disabled = true;
+      updateMissionNotificationStatus();
       return;
     }
     status.textContent = 'Ative para receber o lembrete no aparelho.';
     button.textContent = 'ATIVAR NOTIFICAÇÕES';
     button.disabled = false;
+    updateMissionNotificationStatus();
   }
   function renderHomeReminder(tasks){
     const container = el('homeReminderNext');
@@ -6529,17 +6562,41 @@
     checkTaskReminders();
     taskReminderTimer = setInterval(checkTaskReminders, 30000);
     updateTaskNotificationStatus();
-    if('serviceWorker' in navigator && 'PushManager' in window && Notification.permission === 'granted'){
-      navigator.serviceWorker.ready.then(registration => registration.pushManager.getSubscription()).then(subscription => {
-        if(subscription) el('btnEnableTaskNotifications').dataset.pushActive = '1';
-        updateTaskNotificationStatus();
-      }).catch(() => {});
+    if('Notification' in window && 'serviceWorker' in navigator &&
+      'PushManager' in window && Notification.permission === 'granted'){
+      restorePushSubscription().catch(() => setPushNotificationsActive(false)).finally(updateTaskNotificationStatus);
     }
   }
   function urlBase64ToBytes(value){
     const padded = value + '='.repeat((4 - value.length % 4) % 4);
     const binary = atob(padded.replace(/-/g,'+').replace(/_/g,'/'));
     return Uint8Array.from(binary,character => character.charCodeAt(0));
+  }
+  async function savePushSubscription(subscription){
+    const saved = await fetch('/api/push',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify(subscription.toJSON())
+    });
+    const payload = await saved.json();
+    if(!saved.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL ATIVAR OS LEMBRETES.');
+    setPushNotificationsActive(true);
+    return true;
+  }
+  async function restorePushSubscription(){
+    if(notificationInstallRequired() || !('Notification' in window) ||
+      !('serviceWorker' in navigator) || !('PushManager' in window) ||
+      Notification.permission !== 'granted'){
+      setPushNotificationsActive(false);
+      return false;
+    }
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if(!subscription){
+      setPushNotificationsActive(false);
+      return false;
+    }
+    return savePushSubscription(subscription);
   }
   async function subscribeTaskPush(){
     if(!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
@@ -6554,26 +6611,40 @@
         applicationServerKey:urlBase64ToBytes(keyData.publicKey)
       });
     }
-    const saved = await fetch('/api/push',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify(subscription.toJSON())
-    });
-    const payload = await saved.json();
-    if(!saved.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL ATIVAR OS LEMBRETES.');
-    el('btnEnableTaskNotifications').dataset.pushActive = '1';
-    return true;
+    return savePushSubscription(subscription);
   }
   async function enableTaskNotifications(){
-    if(!('Notification' in window)) return;
+    if(notificationInstallRequired()){
+      prepareIosInstallHint();
+      el('iosInstallHint').hidden = false;
+      showPurchaseToast('No iPhone, adicione o site à Tela de Início, abra pelo novo ícone e ative as notificações.','error');
+      return false;
+    }
+    if(!('Notification' in window)){
+      showPurchaseToast('Este navegador não oferece notificações para o aplicativo.','error');
+      return false;
+    }
     try{
-      const permission = await Notification.requestPermission();
-      if(permission === 'granted') await subscribeTaskPush();
+      const permission = Notification.permission === 'granted'
+        ? 'granted'
+        : await Notification.requestPermission();
+      if(permission === 'granted'){
+        await subscribeTaskPush();
+        updateTaskNotificationStatus();
+        checkTaskReminders();
+        showPurchaseToast('Notificações ativadas neste aparelho.');
+        return true;
+      }
+      if(permission === 'denied'){
+        throw new Error('As notificações estão bloqueadas. Libere-as nas configurações do navegador.');
+      }
     }catch(error){
       showPurchaseToast(error.message || 'Instale o aplicativo para receber alertas com o site fechado.','error');
+      setPushNotificationsActive(false);
     }
     updateTaskNotificationStatus();
     checkTaskReminders();
+    return false;
   }
   function readTaskData(){
     try{
@@ -7213,18 +7284,52 @@ function renderHomeTasks(){
 
   function updateMissionNotificationStatus(){
     const button = el('btnEnableMissionNotifications');
+    const status = el('missionNotificationStatus');
     if(!button) return;
-    if(!('Notification' in window)){
+    if(notificationInstallRequired()){
+      if(status) status.textContent = 'No iPhone, instale o app na Tela de Início para habilitar os lembretes.';
+      button.textContent = 'COMO INSTALAR';
+      button.disabled = false;
+    }else if(!('Notification' in window)){
+      if(status) status.textContent = 'Este navegador não oferece notificações para o aplicativo.';
       button.textContent = 'NÃO DISPONÍVEL';
       button.disabled = true;
-    }else if(Notification.permission === 'granted'){
+    }else if(Notification.permission === 'granted' && pushNotificationsActive){
+      if(status) status.textContent = 'Aparelho inscrito. Os lembretes de 2 horas e 1 hora estão ativos.';
       button.textContent = 'NOTIFICAÇÕES ATIVAS';
       button.disabled = true;
+    }else if(Notification.permission === 'granted'){
+      if(status) status.textContent = 'A permissão foi concedida, mas a inscrição deste aparelho ainda precisa ser concluída.';
+      button.textContent = 'CONCLUIR ATIVAÇÃO';
+      button.disabled = false;
     }else if(Notification.permission === 'denied'){
+      if(status) status.textContent = 'Notificações bloqueadas. Libere-as nas configurações do navegador.';
       button.textContent = 'NOTIFICAÇÕES BLOQUEADAS';
       button.disabled = true;
     }else{
+      if(status) status.textContent = 'Ative os avisos para receber lembretes 2 horas e 1 hora antes do limite.';
       button.textContent = 'ATIVAR NOTIFICAÇÕES';
+      button.disabled = false;
+    }
+  }
+
+  async function testMissionNotifications(){
+    const button = el('btnTestMissionNotifications');
+    button.disabled = true;
+    try{
+      const response = await fetch('/api/push',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({action:'test'})
+      });
+      const payload = await response.json();
+      if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL ENVIAR A NOTIFICAÇÃO DE TESTE.');
+      showPurchaseToast('Notificação de teste enviada. Ela deve aparecer em alguns segundos.');
+    }catch(error){
+      showPurchaseToast(error.message || 'Não foi possível testar as notificações.','error');
+      await restorePushSubscription().catch(() => setPushNotificationsActive(false));
+      updateTaskNotificationStatus();
+    }finally{
       button.disabled = false;
     }
   }
@@ -7328,6 +7433,7 @@ function renderHomeTasks(){
     await enableTaskNotifications();
     updateMissionNotificationStatus();
   });
+  el('btnTestMissionNotifications').addEventListener('click',testMissionNotifications);
   el('missionDate').value = todayDateKey();
   el('missionStartDate').value = todayDateKey();
   updateMissionNotificationStatus();
@@ -7569,6 +7675,10 @@ function renderHomeTasks(){
     if(canAccess('missions')){
       await loadMissions();
       await loadHomeMissions();
+      if(!canAccess('tasks') && 'Notification' in window &&
+        Notification.permission === 'granted'){
+        await restorePushSubscription().catch(() => setPushNotificationsActive(false));
+      }
       updateMissionNotificationStatus();
     }
     await verifyIosStorage();

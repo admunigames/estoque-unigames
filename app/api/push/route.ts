@@ -1,7 +1,14 @@
+import webPush from "web-push";
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
 
 type JsonMap = Record<string, unknown>;
+type PushSubscriptionRow = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
 
 function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -32,6 +39,70 @@ export async function POST(request: Request) {
 
   try {
     const payload = (await request.json()) as JsonMap;
+    if (payload.action === "test") {
+      const publicKey = process.env.VAPID_PUBLIC_KEY?.trim() || "";
+      const privateKey = process.env.VAPID_PRIVATE_KEY?.trim() || "";
+      const subject = process.env.VAPID_SUBJECT?.trim() || "";
+      if (!publicKey || !privateKey || !subject) {
+        return jsonResponse({ error: "NOTIFICAÇÕES AINDA NÃO CONFIGURADAS." }, 503);
+      }
+      const database = await getD1();
+      const subscriptions = await database
+        .prepare(
+          `SELECT id, endpoint, p256dh, auth
+           FROM push_subscriptions WHERE user_id=?1`,
+        )
+        .bind(id)
+        .all<PushSubscriptionRow>();
+      if (!(subscriptions.results ?? []).length) {
+        return jsonResponse(
+          { error: "ESTE APARELHO AINDA NÃO ESTÁ INSCRITO. CONCLUA A ATIVAÇÃO PRIMEIRO." },
+          409,
+        );
+      }
+
+      webPush.setVapidDetails(subject, publicKey, privateKey);
+      let sent = 0;
+      for (const subscription of subscriptions.results ?? []) {
+        try {
+          await webPush.sendNotification(
+            {
+              endpoint: subscription.endpoint,
+              keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+            },
+            JSON.stringify({
+              title: "Notificações Unigames ativadas",
+              body: "Este aparelho está pronto para receber lembretes de tarefas e missões.",
+              url: "/missoes",
+              tag: `unigames-push-test-${id}`,
+            }),
+            { TTL: 60 * 10, urgency: "high" },
+          );
+          sent += 1;
+        } catch (error) {
+          const statusCode =
+            typeof error === "object" && error && "statusCode" in error
+              ? Number((error as { statusCode?: unknown }).statusCode)
+              : 0;
+          if (statusCode === 404 || statusCode === 410) {
+            await database
+              .prepare("DELETE FROM push_subscriptions WHERE id=?1")
+              .bind(subscription.id)
+              .run();
+          } else {
+            console.error("Falha ao enviar notificação de teste.", error);
+          }
+        }
+      }
+      if (!sent) {
+        return jsonResponse(
+          { error: "A INSCRIÇÃO DESTE APARELHO EXPIROU. ATIVE AS NOTIFICAÇÕES NOVAMENTE." },
+          410,
+        );
+      }
+      return jsonResponse({ sent: true, count: sent });
+    }
+
     const endpoint = typeof payload.endpoint === "string" ? payload.endpoint.trim() : "";
     const keys = payload.keys && typeof payload.keys === "object"
       ? (payload.keys as JsonMap)
