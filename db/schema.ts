@@ -74,7 +74,7 @@ export const pushSubscriptions = sqliteTable(
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [index("push_subscriptions_user_idx").on(table.userId)],
 );
@@ -138,7 +138,7 @@ export const missionCompletions = sqliteTable(
     completedByName: text("completed_by_name").notNull().default(""),
     completedAt: text("completed_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     status: text("status").notNull().default("completed"),
-    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(""),
   },
   (table) => [
     uniqueIndex("mission_completions_occurrence_unique").on(
@@ -167,5 +167,42 @@ export const instructions = sqliteTable(
   },
   (table) => [
     index("instructions_due_date_created_idx").on(table.dueDate, table.createdAt),
+  ],
+);
+
+export const capturedProducts = sqliteTable(
+  "captured_products",
+  {
+    id: text("id").primaryKey(),
+    category: text("category").notNull(),
+    productName: text("product_name").notNull(),
+    serialNumber: text("serial_number").notNull(),
+    defects: text("defects").notNull(),
+    color: text("color").notNull(),
+    originCompanyId: text("origin_company_id").notNull(),
+    originCompanyName: text("origin_company_name").notNull().default(""),
+    status: text("status").notNull().default("submitted"),
+    destinationCompanyId: text("destination_company_id").notNull().default(""),
+    destinationCompanyName: text("destination_company_name").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    receivedBy: text("received_by").notNull().default(""),
+    receivedByName: text("received_by_name").notNull().default(""),
+    receivedAt: text("received_at").notNull().default(""),
+    readyBy: text("ready_by").notNull().default(""),
+    readyByName: text("ready_by_name").notNull().default(""),
+    readyAt: text("ready_at").notNull().default(""),
+    assignedBy: text("assigned_by").notNull().default(""),
+    assignedByName: text("assigned_by_name").notNull().default(""),
+    assignedAt: text("assigned_at").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("captured_products_status_updated_idx").on(table.status, table.updatedAt),
+    index("captured_products_origin_created_idx").on(
+      table.originCompanyId,
+      table.createdAt,
+    ),
   ],
 );

@@ -518,7 +518,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v14"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v15"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -589,7 +589,61 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v14"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v15"/);
+});
+
+test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
+  const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/captures/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0008_luxuriant_killer_shrike.sql", import.meta.url), "utf8"),
+      readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
+      readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(html, /id="navCaptacao" data-page="captacao" data-permission="captures"/);
+  assert.match(html, /id="pageCaptacao" class="page wrap"/);
+  assert.match(html, /id="captureForm"/);
+  assert.match(html, /id="captureCategory"/);
+  assert.match(html, /id="captureProductName"/);
+  assert.match(html, /id="captureSerialNumber"/);
+  assert.match(html, /id="captureDefects"/);
+  assert.match(html, /id="captureColor"/);
+  assert.match(html, /AGUARDANDO ASSISTÊNCIA/);
+  assert.match(html, /RECEBIDO PELA ASSISTÊNCIA/);
+  assert.match(html, /DISPONÍVEL PARA SEPARAÇÃO/);
+  assert.match(html, /data-capture-action="receive"/);
+  assert.match(html, /data-capture-action="ready"/);
+  assert.match(html, /data-capture-action="assign"/);
+  assert.match(html, /value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO/);
+  assert.match(html, /value="captures"> Captação/);
+  assert.match(html, /captacao:'\/captacao'/);
+
+  assert.match(workerSource, /"captures"/);
+  assert.match(workerSource, /assistance: \["captures"\]/);
+  assert.match(workerSource, /path === "\/captacao" \|\| path\.startsWith\("\/api\/captures"\)/);
+  assert.match(workerSource, /authenticatedHeaders\.set\(ACCESS_GROUP_HEADER, user\.accessGroup\)/);
+  assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM captured_products"\)\.all\(\)/);
+  assert.match(workerSource, /capturedProducts: capturedProducts\.results \?\? \[\]/);
+
+  assert.match(route, /actor\.accessGroup === "assistance"/);
+  assert.match(route, /actor\.accessGroup !== "assistance"/);
+  assert.match(route, /SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA/);
+  assert.match(route, /SOMENTE O ADMINISTRADOR PODE DEFINIR O DESTINO/);
+  assert.match(route, /existing\.status !== "submitted"/);
+  assert.match(route, /existing\.status !== "received"/);
+  assert.match(route, /existing\.status !== "ready"/);
+  assert.match(route, /origin_company_id=\?1/);
+  assert.match(route, /destination_company_id=\?1/);
+  assert.match(schema, /export const capturedProducts = sqliteTable/);
+  assert.match(migration, /CREATE TABLE `captured_products`/);
+  assert.match(migration, /captured_products_status_updated_idx/);
+  assert.match(migration, /captured_products_origin_created_idx/);
+  assert.match(manifest, /"url": "\/captacao"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v15"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -632,7 +686,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v14"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v15"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {

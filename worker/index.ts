@@ -18,8 +18,8 @@ type LoginConfig = {
   sessionSecret: string;
 };
 
-type Permission = "tasks" | "missions" | "purchases" | "stock" | "database" | "pulls" | "report41";
-type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "custom";
+type Permission = "tasks" | "missions" | "captures" | "purchases" | "stock" | "database" | "pulls" | "report41";
+type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type AuthenticatedUser = {
   id: string;
   username: string;
@@ -57,14 +57,16 @@ const USER_ID_HEADER = "x-unigames-user-id";
 const USERNAME_HEADER = "x-unigames-username";
 const DISPLAY_NAME_HEADER = "x-unigames-display-name";
 const ROLE_HEADER = "x-unigames-role";
+const ACCESS_GROUP_HEADER = "x-unigames-access-group";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
 const COMPANY_ID_HEADER = "x-unigames-company-id";
-const ALL_PERMISSIONS: Permission[] = ["tasks", "missions", "purchases", "stock", "database", "pulls", "report41"];
+const ALL_PERMISSIONS: Permission[] = ["tasks", "missions", "captures", "purchases", "stock", "database", "pulls", "report41"];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
-  purchases: ["tasks", "missions", "purchases"],
+  purchases: ["tasks", "missions", "captures", "purchases"],
   fiscal: ["missions", "stock", "database", "pulls", "report41"],
-  operator: ["tasks", "missions"],
+  operator: ["tasks", "missions", "captures"],
+  assistance: ["captures"],
   custom: [],
 };
 const PUBLIC_ASSET_PATHS = new Set([
@@ -81,6 +83,7 @@ const APP_ROUTE_PATHS = new Set([
   "/estoque",
   "/tarefas",
   "/missoes",
+  "/captacao",
   "/instrucoes",
   "/cadastros",
   "/cadastros/lojas",
@@ -181,6 +184,7 @@ function normalizeAccessGroup(value: unknown): AccessGroup {
     value === "purchases" ||
     value === "fiscal" ||
     value === "operator" ||
+    value === "assistance" ||
     value === "custom"
     ? value
     : "custom";
@@ -796,6 +800,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
   const directPermissions: Array<[boolean, Permission]> = [
     [path === "/tarefas", "tasks"],
     [path === "/missoes" || path.startsWith("/api/missions"), "missions"],
+    [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/compras" || path.startsWith("/api/compras"), "purchases"],
     [path === "/estoque", "stock"],
     [path === "/puxadas", "pulls"],
@@ -1147,6 +1152,7 @@ async function createAutomaticBackup(env: Env, secret: string) {
       missions,
       missionCompletions,
       instructions,
+      capturedProducts,
     ] = await Promise.all([
       env.DB.prepare(
         "SELECT state_key AS stateKey, value_json AS value, version, updated_at AS updatedAt FROM shared_state",
@@ -1165,6 +1171,7 @@ async function createAutomaticBackup(env: Env, secret: string) {
       env.DB.prepare("SELECT * FROM missions").all(),
       env.DB.prepare("SELECT * FROM mission_completions").all(),
       env.DB.prepare("SELECT * FROM instructions").all(),
+      env.DB.prepare("SELECT * FROM captured_products").all(),
     ]);
     const bytes = await encryptBackup({
       app: "ESTOQUE_UNIGAMES_AUTOMATIC_BACKUP",
@@ -1178,6 +1185,7 @@ async function createAutomaticBackup(env: Env, secret: string) {
       missions: missions.results ?? [],
       missionCompletions: missionCompletions.results ?? [],
       instructions: instructions.results ?? [],
+      capturedProducts: capturedProducts.results ?? [],
     }, secret);
     await bucket.put(objectKey, bytes, {
       httpMetadata: { contentType: "application/octet-stream" },
@@ -1526,6 +1534,7 @@ const worker = {
     authenticatedHeaders.delete(USERNAME_HEADER);
     authenticatedHeaders.delete(DISPLAY_NAME_HEADER);
     authenticatedHeaders.delete(ROLE_HEADER);
+    authenticatedHeaders.delete(ACCESS_GROUP_HEADER);
     authenticatedHeaders.delete(PERMISSIONS_HEADER);
     authenticatedHeaders.delete(COMPANY_ID_HEADER);
     authenticatedHeaders.set(INTERNAL_AUTH_HEADER, "1");
@@ -1533,6 +1542,7 @@ const worker = {
     authenticatedHeaders.set(USERNAME_HEADER, user.username);
     authenticatedHeaders.set(DISPLAY_NAME_HEADER, encodeURIComponent(user.displayName));
     authenticatedHeaders.set(ROLE_HEADER, user.role);
+    authenticatedHeaders.set(ACCESS_GROUP_HEADER, user.accessGroup);
     authenticatedHeaders.set(PERMISSIONS_HEADER, user.permissions.join(","));
     authenticatedHeaders.set(COMPANY_ID_HEADER, user.companyId);
     const authenticatedRequest = new Request(request, {
