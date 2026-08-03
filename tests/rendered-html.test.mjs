@@ -139,6 +139,49 @@ test("cria uma sessão assinada com credenciais válidas", async () => {
   assert.notEqual(protectedResponse.headers.get("location"), "http://localhost/login?next=%2F");
 });
 
+test("bloqueia alterações enviadas por outra origem", async () => {
+  const runtime = await worker();
+  const login = await runtime.fetch(
+    new Request("http://localhost/login", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        username: "unigames",
+        password: "senha-de-teste-forte",
+      }),
+    }),
+    env,
+    ctx,
+  );
+  const cookie = (login.headers.get("set-cookie") ?? "").split(";")[0];
+
+  const apiResponse = await runtime.fetch(
+    new Request("http://localhost/api/preferences", {
+      method: "PUT",
+      headers: {
+        cookie,
+        "content-type": "application/json",
+        origin: "https://site-malicioso.example",
+      },
+      body: JSON.stringify({ theme: "light" }),
+    }),
+    env,
+    ctx,
+  );
+  assert.equal(apiResponse.status, 403);
+  assert.match(await apiResponse.text(), /ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA/);
+
+  const logoutResponse = await runtime.fetch(
+    new Request("http://localhost/logout", {
+      method: "POST",
+      headers: { cookie, "sec-fetch-site": "cross-site" },
+    }),
+    env,
+    ctx,
+  );
+  assert.equal(logoutResponse.status, 403);
+});
+
 test("serve as rotas dos módulos sem alterar o endereço do navegador", async () => {
   const requestedAssets = [];
   const routeEnv = {
@@ -179,6 +222,35 @@ test("serve as rotas dos módulos sem alterar o endereço do navegador", async (
   assert.equal(response.status, 200);
   assert.deepEqual(requestedAssets, ["/estoque.html"]);
   assert.match(await response.text(), /ESTOQUE/);
+});
+
+test("mantém a interface sem referências quebradas ou identificadores duplicados", async () => {
+  const [html, layout, workerSource, envExample] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../.env.example", import.meta.url), "utf8"),
+  ]);
+  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+  const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+  assert.deepEqual([...new Set(duplicates)], []);
+
+  const knownIds = new Set(ids);
+  const referencedIds = [
+    ...html.matchAll(/\bel\('([^']+)'\)/g),
+  ].map((match) => match[1]);
+  for (const id of referencedIds) {
+    assert.ok(knownIds.has(id), `Referência a elemento inexistente: ${id}`);
+  }
+
+  assert.doesNotMatch(layout, /\/og\.png/);
+  assert.doesNotMatch(workerSource, /"\/og\.png"/);
+  assert.match(workerSource, /mutatingApiRequest[\s\S]*sameOrigin\(request, url\)/);
+  assert.match(html, /safeExternalUrl\(file\.url\)/);
+  assert.match(html, /safeExternalUrl\(item\.url\)/);
+  assert.match(envExample, /VAPID_PUBLIC_KEY=/);
+  assert.match(envExample, /VAPID_PRIVATE_KEY=/);
+  assert.match(envExample, /VAPID_SUBJECT=/);
 });
 
 test("configura o banco geral e conecta a interface à API compartilhada", async () => {
@@ -420,7 +492,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v12"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v13"/);
 });
 
 test("oferece missões gerais e por loja com conclusão e lembretes protegidos", async () => {
@@ -477,7 +549,7 @@ test("oferece missões gerais e por loja com conclusão e lembretes protegidos",
   assert.match(migration, /CREATE TABLE `mission_completions`/);
   assert.match(migration, /mission_completions_occurrence_unique/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v12"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v13"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -520,7 +592,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v12"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v13"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {

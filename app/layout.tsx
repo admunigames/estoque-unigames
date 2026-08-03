@@ -14,7 +14,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = `${protocol}://${host}`;
   const description =
     "Reconciliação de estoque, puxadas e controle de compras integrado ao Notion.";
-  const imageUrl = new URL("/og.png", origin).toString();
 
   return {
     metadataBase: new URL(origin),
@@ -28,13 +27,11 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Estoque Unigames",
       description,
       type: "website",
-      images: [{ url: imageUrl, width: 1733, height: 907 }],
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title: "Estoque Unigames",
       description,
-      images: [imageUrl],
     },
   };
 }
@@ -50,4 +47,3 @@ export default function RootLayout({
     </html>
   );
 }
-

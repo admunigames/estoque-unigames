@@ -1218,8 +1218,8 @@
       background:linear-gradient(180deg,rgba(247,251,255,.97),rgba(232,241,248,.92));
       box-shadow:0 14px 30px rgba(36,79,131,.12);
     }
-    .page:not(.home-page) .page-heading{padding-right:74px;}
-    .theme-toggle{top:calc(14px + env(safe-area-inset-top)); right:calc(12px + env(safe-area-inset-right));}
+    .page:not(.home-page) .page-heading{padding-right:62px;}
+    .theme-toggle{top:calc(10px + env(safe-area-inset-top)); right:calc(10px + env(safe-area-inset-right));}
     .page-header-meta{padding-left:62px;}
     .summary{grid-template-columns:repeat(2,1fr);}
     .summary .card:last-child:nth-child(odd){grid-column:span 2;}
@@ -1826,8 +1826,6 @@
   html[data-theme="light"] .instruction-state.finished{color:#24714a;background:#e2f3e9;}
   html[data-theme="light"] .instruction-delete{color:#9c3328;background:#fff1ef;border-color:#d9a29c;}
   @media(max-width:800px){
-    .theme-toggle{top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));}
-    .page:not(.home-page) .page-heading{padding-right:62px;}
     .mission-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .mission-form-grid .field.double{grid-column:span 2;}
     .instruction-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -3046,7 +3044,7 @@
 
   function readLocalStorage(key){
     try{ return localStorage.getItem(key); }
-    catch(e){ return null; }
+    catch{ return null; }
   }
 
   function deviceStorageKey(key){
@@ -3062,7 +3060,7 @@
       const scopedKey = deviceStorageKey(key);
       const fullKey = STORAGE_PREFIX + scopedKey;
       let value = null;
-      try{ value = await iosDbGet(fullKey); } catch(e){ /* usa a reserva abaixo */ }
+      try{ value = await iosDbGet(fullKey); } catch{ /* usa a reserva abaixo */ }
       if(value !== null) return { value };
       value = readLocalStorage(fullKey);
       if(value === null && scopedKey === key){
@@ -3072,26 +3070,26 @@
         value = readLocalStorage(STORAGE_PREFIX + key) || readLocalStorage(LEGACY_STORAGE_PREFIX + key);
       }
       if(value !== null){
-        try{ await iosDbSet(fullKey, value); } catch(e){ /* mantém no localStorage */ }
-        try{ localStorage.setItem(fullKey, value); } catch(e){ /* IndexedDB já recebeu */ }
+        try{ await iosDbSet(fullKey, value); } catch{ /* mantém no localStorage */ }
+        try{ localStorage.setItem(fullKey, value); } catch{ /* IndexedDB já recebeu */ }
       }
       return value === null ? null : { value };
     },
     async set(key, value){
       const fullKey = STORAGE_PREFIX + deviceStorageKey(key);
       let saved = false;
-      try{ await iosDbSet(fullKey, value); saved = true; } catch(e){ /* tenta a reserva */ }
-      try{ localStorage.setItem(fullKey, value); saved = true; } catch(e){ /* IndexedDB pode ter salvo */ }
+      try{ await iosDbSet(fullKey, value); saved = true; } catch{ /* tenta a reserva */ }
+      try{ localStorage.setItem(fullKey, value); saved = true; } catch{ /* IndexedDB pode ter salvo */ }
       if(!saved) throw new Error('NÃO FOI POSSÍVEL SALVAR OS DADOS NESTE DISPOSITIVO');
     },
     async delete(key){
       const scopedKey = deviceStorageKey(key);
       const fullKey = STORAGE_PREFIX + scopedKey;
-      try{ await iosDbDelete(fullKey); } catch(e){ /* limpa a reserva abaixo */ }
+      try{ await iosDbDelete(fullKey); } catch{ /* limpa a reserva abaixo */ }
       try{
         localStorage.removeItem(fullKey);
         if(scopedKey === key) localStorage.removeItem(LEGACY_STORAGE_PREFIX + key);
-      } catch(e){ /* IndexedDB pode ter sido limpo */ }
+      } catch{ /* IndexedDB pode ter sido limpo */ }
     }
   };
 
@@ -3103,13 +3101,13 @@
     try{
       const saved = JSON.parse(localStorage.getItem(offlineQueueKey()) || '[]');
       return Array.isArray(saved) ? saved : [];
-    }catch(error){ return []; }
+    }catch{ return []; }
   }
 
   function queueOfflineMutation(operation){
     const queue = readOfflineQueue().filter(item => item && item.key !== operation.key);
     queue.push({...operation, queuedAt:new Date().toISOString()});
-    try{ localStorage.setItem(offlineQueueKey(), JSON.stringify(queue)); }catch(error){ /* reserva local já foi salva */ }
+    try{ localStorage.setItem(offlineQueueKey(), JSON.stringify(queue)); }catch{ /* reserva local já foi salva */ }
   }
 
   async function sharedStateRequest(key, options){
@@ -3132,7 +3130,7 @@
     }
     const response = await fetch(url, fetchOptions);
     let data = {};
-    try{ data = await response.json(); } catch(e){ /* usa a mensagem padrão abaixo */ }
+    try{ data = await response.json(); } catch{ /* usa a mensagem padrão abaixo */ }
     if(!response.ok){
       if(response.status === 401) location.assign('/login?next=' + encodeURIComponent(location.pathname));
       const requestError = new Error(data.error || 'BANCO COMPARTILHADO INDISPONÍVEL');
@@ -3204,11 +3202,11 @@
         }else{
           await sharedStateRequest(operation.key,{method:'DELETE'});
         }
-      }catch(error){
+      }catch{
         remaining.push(operation);
       }
     }
-    try{ localStorage.setItem(offlineQueueKey(),JSON.stringify(remaining)); }catch(error){ /* tenta novamente no próximo acesso */ }
+    try{ localStorage.setItem(offlineQueueKey(),JSON.stringify(remaining)); }catch{ /* tenta novamente no próximo acesso */ }
     if(!remaining.length) setIosStorageStatus('ALTERAÇÕES OFFLINE SINCRONIZADAS COM O BANCO GERAL.');
   }
 
@@ -3338,14 +3336,14 @@
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if(themeMeta) themeMeta.content = selected === 'light' ? '#eef4f9' : '#08121e';
     if(persist){
-      try{ localStorage.setItem(userThemeStorageKey(), selected); }catch(error){ /* preferência opcional */ }
+      try{ localStorage.setItem(userThemeStorageKey(), selected); }catch{ /* preferência opcional */ }
       saveUserPreferences();
     }
   }
 
   function loadUserTheme(){
     let saved = 'dark';
-    try{ saved = localStorage.getItem(userThemeStorageKey()) || 'dark'; }catch(error){ /* usa o tema escuro */ }
+    try{ saved = localStorage.getItem(userThemeStorageKey()) || 'dark'; }catch{ /* usa o tema escuro */ }
     setUserTheme(saved, false);
   }
 
@@ -3374,7 +3372,7 @@
           headers:{'Content-Type':'application/json','Accept':'application/json'},
           body:JSON.stringify(currentPreferences)
         });
-      }catch(error){ /* permanece salvo neste aparelho e sincroniza no próximo ajuste */ }
+      }catch{ /* permanece salvo neste aparelho e sincroniza no próximo ajuste */ }
     },220);
   }
 
@@ -3391,7 +3389,7 @@
           compactMobile:data.preferences.compactMobile === true
         };
       }
-    }catch(error){ /* preferências locais continuam disponíveis */ }
+    }catch{ /* preferências locais continuam disponíveis */ }
     setUserTheme(currentPreferences.theme,false);
     applyAccentColor(currentPreferences.accentColor);
     applyUserLogo(currentPreferences.logoDataUrl);
@@ -3543,7 +3541,7 @@
     document.body.classList.toggle('sidebar-compact', compact);
     btnSidebarCompact.setAttribute('aria-pressed', String(compact));
     btnSidebarCompact.querySelector('span').textContent = compact ? '⇥' : '⇤';
-    try{ localStorage.setItem('estoque_sidebar_compact', compact ? '1' : '0'); } catch(e){ /* preferÃªncia opcional */ }
+    try{ localStorage.setItem('estoque_sidebar_compact', compact ? '1' : '0'); } catch{ /* preferência opcional */ }
   }
 
   btnSidebarCompact.addEventListener('click', () => {
@@ -3656,7 +3654,7 @@
       }else{
         alert.hidden = true;
       }
-    }catch(error){
+    }catch{
       el('homeHealthMessage').textContent = 'Não foi possível confirmar a conexão das integrações.';
       alert.hidden = false;
     }
@@ -3673,7 +3671,7 @@
     document.querySelectorAll('[data-table-density]').forEach(button => {
       button.classList.toggle('active', button.dataset.tableDensity === (compact ? 'compact' : 'comfortable'));
     });
-    try{ localStorage.setItem('estoque_table_density', compact ? 'compact' : 'comfortable'); } catch(e){ /* preferÃªncia opcional */ }
+    try{ localStorage.setItem('estoque_table_density', compact ? 'compact' : 'comfortable'); } catch{ /* preferência opcional */ }
   }
 
   document.querySelectorAll('[data-table-density]').forEach(button => {
@@ -3686,7 +3684,7 @@
     document.querySelectorAll('[data-purchase-density]').forEach(button => {
       button.classList.toggle('active', button.dataset.purchaseDensity === (compact ? 'compact' : 'comfortable'));
     });
-    try{ localStorage.setItem('estoque_purchase_density', compact ? 'compact' : 'comfortable'); } catch(e){ /* preferÃªncia opcional */ }
+    try{ localStorage.setItem('estoque_purchase_density', compact ? 'compact' : 'comfortable'); } catch{ /* preferência opcional */ }
   }
 
   document.querySelectorAll('[data-purchase-density]').forEach(button => {
@@ -3704,9 +3702,9 @@
     setSidebarOpen(false, false);
     window.scrollTo({top:0, behavior:'auto'});
   });
-  try{ setSidebarCompact(localStorage.getItem('estoque_sidebar_compact') === '1'); } catch(e){ setSidebarCompact(false); }
-  try{ setTableDensity(localStorage.getItem('estoque_table_density') || 'comfortable'); } catch(e){ setTableDensity('comfortable'); }
-  try{ setPurchaseDensity(localStorage.getItem('estoque_purchase_density') || 'comfortable'); } catch(e){ setPurchaseDensity('comfortable'); }
+  try{ setSidebarCompact(localStorage.getItem('estoque_sidebar_compact') === '1'); } catch{ setSidebarCompact(false); }
+  try{ setTableDensity(localStorage.getItem('estoque_table_density') || 'comfortable'); } catch{ setTableDensity('comfortable'); }
+  try{ setPurchaseDensity(localStorage.getItem('estoque_purchase_density') || 'comfortable'); } catch{ setPurchaseDensity('comfortable'); }
 
   function parseNumeroBR(str){
     if(str === undefined || str === null) return 0;
@@ -4536,7 +4534,7 @@
     };
     try{
       await storage.set('puxadas:data', JSON.stringify(payload));
-    } catch(e){
+    } catch{
       showPullError('Os dados foram lidos, mas o banco geral não conseguiu salvá-los. Exporte o resultado antes de fechar esta página.');
     }
   }
@@ -4565,7 +4563,7 @@
         }
         el('pullMinTransfer').value = Math.max(1, Number(data.minTransfer) || 1);
       }
-    } catch(e){
+    } catch{
       pullStoreData = {};
       pullProductNames = { standard:new Map(), pa:new Map() };
       showPullError('Não foi possível recuperar a puxada salva. Os demais dados do estoque fiscal não foram alterados.');
@@ -4971,7 +4969,7 @@
       await storage.set(healthKey, JSON.stringify({checkedAt:new Date().toISOString()}));
       await storage.delete(healthKey);
       setIosStorageStatus('BANCO GERAL ATIVO. CADASTROS, BASE DE DADOS, ESTOQUE FISCAL E PUXADAS ESTÃO COMPARTILHADOS.');
-    } catch(e){
+    } catch{
       setIosStorageStatus('BANCO GERAL INDISPONÍVEL. TENTE NOVAMENTE EM INSTANTES.', true);
     }
   }
@@ -4992,7 +4990,7 @@
         for(const company of Array.isArray(storedList) ? storedList : []){
           if(company && company.id) keys.add('estoque:' + company.id);
         }
-      } catch(e){ /* a lista carregada abaixo continua disponível */ }
+      } catch{ /* a lista carregada abaixo continua disponível */ }
     }
     for(const company of companies){
       keys.add('estoque:' + company.id);
@@ -5198,7 +5196,7 @@
             const data = JSON.parse(result.value);
             const updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
             return {company, updatedAt:updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt : null};
-          } catch(e){
+          } catch{
             return {company, updatedAt:null, unavailable:true};
           }
         })) : Promise.resolve([]);
@@ -5280,7 +5278,7 @@
     try{
       const res = await storage.get('companies_list');
       companies = res && res.value ? JSON.parse(res.value) : [];
-    } catch(e){
+    } catch{
       companies = [];
     }
     renderCompanySelects();
@@ -5343,7 +5341,7 @@
     pullCalculated = false;
     await savePullData();
     if(hasStorage()){
-      try{ await storage.delete('estoque:' + id); } catch(e){ /* chave pode já não existir */ }
+      try{ await storage.delete('estoque:' + id); } catch{ /* chave pode já não existir */ }
     }
     if(activeCompanyId === id){
       activeCompanyId = '';
@@ -5543,7 +5541,7 @@
       if(!standardResult && legacyResult){
         await storage.set('products_catalog:standard', legacyResult.value);
       }
-    } catch(e){
+    } catch{
       catalogMaps.standard = new Map();
       catalogMaps.pa = new Map();
     }
@@ -5745,13 +5743,13 @@
     return title;
   }
 
-  function renderRows(rows, emptyMsg){
+  function renderRows(rows){
     const tbody = el('tbody');
 
     if(rows.length === 0){
       const html = merged.length === 0
         ? '<h4>Nenhum dado ainda</h4><p>Selecione uma empresa acima. Os arquivos são enviados na Base de Dados.</p>'
-        : (emptyMsg || '<h4>Nada por aqui</h4><p>Nenhum produto encontrado com os filtros atuais.</p>');
+        : '<h4>Nada por aqui</h4><p>Nenhum produto encontrado com os filtros atuais.</p>';
       tbody.innerHTML = '<tr><td class="responsive-empty" colspan="5"><div class="empty-state">'+html+'</div></td></tr>';
       return;
     }
@@ -5795,6 +5793,15 @@
 
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function safeExternalUrl(value){
+    try{
+      const url = new URL(String(value || ''));
+      return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '#';
+    }catch{
+      return '#';
+    }
   }
 
   // ---------- CONTROLE DE COMPRAS: NOTION ----------
@@ -5841,7 +5848,7 @@
     ];
     if(files.length === 0) return '<span style="color:var(--ink-faint)">—</span>';
     return '<details class="purchase-files"><summary>VER ARQUIVOS · '+files.length+'</summary><div class="purchase-file-links">'+files.map(file =>
-      '<a href="'+escapeHtml(file.url || '#')+'" target="_blank" rel="noopener noreferrer">'+
+      '<a href="'+escapeHtml(safeExternalUrl(file.url))+'" target="_blank" rel="noopener noreferrer">'+
       escapeHtml(file.label + ': ' + (file.name || 'ARQUIVO'))+' ↗</a>'
     ).join('')+'</div></details>';
   }
@@ -5872,7 +5879,7 @@
         if(!purchaseDeliveryMap.has(record.purchaseId)) purchaseDeliveryMap.set(record.purchaseId,[]);
         purchaseDeliveryMap.get(record.purchaseId).push(record);
       }
-    }catch(error){ /* os pedidos continuam disponíveis mesmo sem o histórico parcial */ }
+    }catch{ /* os pedidos continuam disponíveis mesmo sem o histórico parcial */ }
   }
 
   function purchaseDivisionHtml(value){
@@ -5969,7 +5976,7 @@
         '<footer class="purchase-card-footer"><div class="purchase-card-actions">'+
           '<button class="btn-outline" type="button" data-partial-purchase="'+escapeHtml(item.id)+'">ENTREGA PARCIAL</button>'+
           '<button class="btn-outline" type="button" data-edit-purchase="'+escapeHtml(item.id)+'">EDITAR</button>'+
-          '<a class="btn-outline" href="'+escapeHtml(item.url || '#')+'" target="_blank" rel="noopener noreferrer">NOTION ↗</a>'+
+          '<a class="btn-outline" href="'+escapeHtml(safeExternalUrl(item.url))+'" target="_blank" rel="noopener noreferrer">NOTION ↗</a>'+
         '</div></footer>'+
       '</article>';
     }).join('');
@@ -6025,7 +6032,7 @@
         '<option value="'+escapeHtml(user.id)+'">'+escapeHtml(user.name || user.email || 'USUÁRIO NOTION')+'</option>'
       ).join('');
       notionUsersLoaded = true;
-    } catch(error){
+    } catch{
       select.innerHTML = '<option value="">SEM RESPONSÁVEL</option>';
     }
   }
@@ -6126,7 +6133,7 @@
   async function purchaseApiResponse(response, fallbackMessage){
     const raw = await response.text();
     let data = {};
-    try{ data = raw ? JSON.parse(raw) : {}; }catch(_error){
+    try{ data = raw ? JSON.parse(raw) : {}; }catch{
       data = {error:raw && raw.length < 240 ? raw : ''};
     }
     if(!response.ok){
@@ -6370,7 +6377,7 @@
       const ok = confirm('Apagar os dados salvos de "' + (company ? company.name : 'empresa') + '"? Esta ação não pode ser desfeita.');
       if(!ok) return;
       if(hasStorage()){
-        try{ await storage.delete('estoque:' + activeCompanyId); } catch(e){ /* já pode não existir */ }
+        try{ await storage.delete('estoque:' + activeCompanyId); } catch{ /* já pode não existir */ }
       }
       setCompanyMeta('Nenhum dado salvo ainda para esta empresa');
     }
@@ -6609,12 +6616,12 @@
   function hasTaskReminderFired(task){
     const key = taskReminderKey(task);
     if(taskReminderMemory.has(key)) return true;
-    try{ return localStorage.getItem(key) === '1'; }catch(error){ return false; }
+    try{ return localStorage.getItem(key) === '1'; }catch{ return false; }
   }
   function markTaskReminderFired(task){
     const key = taskReminderKey(task);
     taskReminderMemory.add(key);
-    try{ localStorage.setItem(key, '1'); }catch(error){ /* evita repetição enquanto a página estiver aberta */ }
+    try{ localStorage.setItem(key, '1'); }catch{ /* evita repetição enquanto a página estiver aberta */ }
   }
   function setPushNotificationsActive(active){
     pushNotificationsActive = Boolean(active);
@@ -6714,7 +6721,7 @@
         const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
         if(registration) await registration.showNotification('Tarefa agendada para '+task.time, options);
         else new Notification('Tarefa agendada para '+task.time, options);
-      }catch(error){ /* o alerta dentro do site já foi exibido */ }
+      }catch{ /* o alerta dentro do site já foi exibido */ }
     }
     renderHomeReminder(homeTodayTasks);
   }
@@ -6821,7 +6828,7 @@
     try{
       const data = JSON.parse(el('taskList').dataset.taskData || '{}');
       return normalizeTaskData(data);
-    } catch(error){ return {tasks:[], notes:''}; }
+    } catch{ return {tasks:[], notes:''}; }
   }
   function updateTaskSummary(tasks){
     const done = tasks.filter(task => task.done).length;
@@ -6920,7 +6927,7 @@
       const days = (Array.isArray(payload.items) ? payload.items : []).map(item => {
         const date = String(item.stateKey || '').replace(/^tarefas:/,'');
         let saved = {};
-        try{ saved = JSON.parse(item.value || '{}'); } catch(error){ saved = {}; }
+        try{ saved = JSON.parse(item.value || '{}'); } catch{ saved = {}; }
         return {date, tasks:normalizeTaskData(saved).tasks};
       }).filter(day => day.date > todayDateKey() && day.tasks.length);
       agenda.innerHTML = days.length ? days.map(day =>
@@ -6936,7 +6943,7 @@
           ).join('')+'</div>'+
         '</article>'
       ).join('') : '<div class="task-empty">Nenhuma tarefa futura agendada.</div>';
-    } catch(error){
+    } catch{
       agenda.innerHTML = '<div class="task-empty">Não foi possível carregar a agenda futura.</div>';
     }
   }
@@ -6946,7 +6953,7 @@
       const result = await storage.get(taskStorageKey());
       const saved = result && result.value ? JSON.parse(result.value) : {};
       renderTasks(normalizeTaskData(saved));
-    } catch(error){ renderTasks({tasks:[], notes:''}); el('taskMeta').textContent = 'Não foi possível carregar as tarefas.'; }
+    } catch{ renderTasks({tasks:[], notes:''}); el('taskMeta').textContent = 'Não foi possível carregar as tarefas.'; }
   }
   async function addTask(){
     const text = el('taskInputText').value.trim();
@@ -6973,7 +6980,7 @@
       el('taskInputText').focus();
       loadTaskAgenda();
     }
-    catch(error){ showError('Não foi possível salvar a tarefa. Tente novamente.'); }
+    catch{ showError('Não foi possível salvar a tarefa. Tente novamente.'); }
   }
   let taskNotesTimer;
   el('taskDate').value = todayDateKey();
@@ -7003,7 +7010,7 @@
       await syncTaskRecurrence(el('taskDate').value,task,true);
       loadTaskAgenda();
     }
-    catch(error){ task.done = !task.done; renderTasks(data); showError('Não foi possível atualizar a tarefa. Tente novamente.'); }
+    catch{ task.done = !task.done; renderTasks(data); showError('Não foi possível atualizar a tarefa. Tente novamente.'); }
   });
   el('taskList').addEventListener('change', async event => {
     const id = event.target.dataset.taskOutcome;
@@ -7016,7 +7023,7 @@
       await saveTaskData(data);
       await syncTaskCarryover(el('taskDate').value, task, !task.done && task.outcome === 'carryover');
       loadTaskAgenda();
-    } catch(error){
+    } catch{
       showError('Não foi possível atualizar a situação da tarefa.');
       loadTasks();
     }
@@ -7034,7 +7041,7 @@
       }
       loadTaskAgenda();
     }
-    catch(error){ showError('Não foi possível remover a tarefa. Tente novamente.'); }
+    catch{ showError('Não foi possível remover a tarefa. Tente novamente.'); }
   });
   el('taskAgendaFuture').addEventListener('click', event => {
     const button = event.target.closest('[data-task-agenda-date]');
@@ -7046,7 +7053,7 @@
   el('taskNotes').addEventListener('input', () => {
     clearTimeout(taskNotesTimer); taskNotesTimer = setTimeout(async () => {
       const data = readTaskData(); data.notes = el('taskNotes').value;
-      try{ await saveTaskData(data); } catch(error){ showError('Não foi possível salvar as anotações.'); }
+      try{ await saveTaskData(data); } catch{ showError('Não foi possível salvar as anotações.'); }
     },450);
   });
   el('btnClearTaskDay').addEventListener('click', async () => {
@@ -7059,7 +7066,7 @@
         syncTaskRecurrence(date,task,false)
       ]));
       await saveTaskData({tasks:[],notes:''});
-    } catch(error){
+    } catch{
       showError('Não foi possível limpar as tarefas desta data.');
     }
   });
@@ -7181,7 +7188,7 @@ function renderHomeTasks(){
         return;
       }
       let data;
-      try{ data = JSON.parse(result.value); } catch(e){ data = {}; }
+      try{ data = JSON.parse(result.value); } catch{ data = {}; }
       const tasks = normalizeTaskData(data).tasks;
       homeTodayTasks = tasks;
       renderHomeReminder(homeTodayTasks);
@@ -7229,7 +7236,7 @@ function renderHomeTasks(){
       if(el('taskDate').value === todayKey) renderTasks(data);
       if(canAccess('tasks')) renderHomeTasks();
       loadTaskAgenda();
-    } catch(error){
+    } catch{
       event.target.checked = !event.target.checked;
       row.classList.toggle('done', event.target.checked);
       showError('Não foi possível atualizar a tarefa. Tente novamente.');
@@ -7250,7 +7257,7 @@ function renderHomeTasks(){
       if(el('taskDate').value === todayKey) renderTasks(data);
       renderHomeTasks();
       loadTaskAgenda();
-    } catch(error){
+    } catch{
       showError('Não foi possível atualizar a situação da tarefa.');
       renderHomeTasks();
     }
@@ -7385,7 +7392,7 @@ function renderHomeTasks(){
       headers:{Accept:'application/json',...(settings.headers || {})}
     });
     let data = {};
-    try{ data = await response.json(); }catch(error){ data = {}; }
+    try{ data = await response.json(); }catch{ data = {}; }
     if(!response.ok) throw new Error(data.error || 'Não foi possível concluir a operação.');
     return data;
   }
@@ -7438,7 +7445,7 @@ function renderHomeTasks(){
       list.innerHTML = missions.length
         ? missions.slice(0,8).map(mission => homeMissionRowHtml(mission,date)).join('')
         : '<div class="home-tasks-empty">Nenhuma missão programada para hoje.</div>';
-    }catch(error){
+    }catch{
       list.innerHTML = '<div class="home-tasks-empty">Não foi possível carregar as missões.</div>';
     }
   }
@@ -7725,7 +7732,7 @@ function renderHomeTasks(){
       list.innerHTML = rows.length
         ? rows.slice(0,3).map(row => homeInstructionRowHtml(row,data.today || todayDateKey())).join('')
         : '<div class="home-tasks-empty">Nenhuma instrução vigente para as lojas.</div>';
-    }catch(error){
+    }catch{
       list.innerHTML = '<div class="home-tasks-empty">Não foi possível carregar as instruções.</div>';
     }
   }
@@ -7876,7 +7883,7 @@ function renderHomeTasks(){
       cache:'no-store'
     }, options || {}));
     let data = {};
-    try{ data = await response.json(); }catch(e){}
+    try{ data = await response.json(); }catch{}
     if(response.status === 401) location.assign('/login?next=' + encodeURIComponent(location.pathname));
     if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL SALVAR O USUÁRIO.');
     return data;

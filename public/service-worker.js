@@ -1,4 +1,4 @@
-const CACHE_NAME = "estoque-unigames-v12";
+const CACHE_NAME = "estoque-unigames-v13";
 const APP_SHELL = [
   "/estoque.html",
   "/favicon.svg",
@@ -43,18 +43,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request).then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      });
-      return cached || network;
-    }),
-  );
+  const network = fetch(request).then((response) => {
+    if (response.ok) {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+    }
+    return response;
+  });
+  event.waitUntil(network.then(() => undefined).catch(() => undefined));
+  event.respondWith(caches.match(request).then((cached) => cached || network));
 });
 
 self.addEventListener("push", (event) => {

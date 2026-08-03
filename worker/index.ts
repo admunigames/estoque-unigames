@@ -7,28 +7,6 @@ import {
 import handler from "vinext/server/app-router-entry";
 import webPush from "web-push";
 
-interface Env {
-  ASSETS: Fetcher;
-  DB: D1Database;
-  UPLOADS: R2Bucket;
-  APP_LOGIN_USER?: string;
-  APP_LOGIN_PASSWORD?: string;
-  APP_SESSION_SECRET?: string;
-  VAPID_PUBLIC_KEY?: string;
-  VAPID_PRIVATE_KEY?: string;
-  VAPID_SUBJECT?: string;
-  IMAGES: {
-    input(stream: ReadableStream): {
-      transform(options: Record<string, unknown>): {
-        output(options: {
-          format: string;
-          quality: number;
-        }): Promise<{ response(): Response }>;
-      };
-    };
-  };
-}
-
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
@@ -92,7 +70,6 @@ const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
 const PUBLIC_ASSET_PATHS = new Set([
   "/favicon.svg",
   "/unigames-logo.png",
-  "/og.png",
   "/manifest.webmanifest",
   "/service-worker.js",
 ]);
@@ -171,11 +148,15 @@ function toBase64Url(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function fromBase64Url(value: string): Uint8Array {
+function fromBase64Url(value: string): Uint8Array<ArrayBuffer> {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
   const binary = atob(padded);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
 }
 
 async function hmac(value: string, secret: string): Promise<string> {
@@ -328,7 +309,10 @@ async function readUserById(database: D1Database, id: string) {
     .first<StoredUserRow>();
 }
 
-async function passwordDigest(password: string, salt: Uint8Array): Promise<string> {
+async function passwordDigest(
+  password: string,
+  salt: Uint8Array<ArrayBuffer>,
+): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
     encoder.encode(password),
@@ -605,6 +589,7 @@ ${notice}
 async function handlePasswordRecovery(
   request: Request,
   env: Env,
+  url: URL,
 ): Promise<Response> {
   if (request.method === "GET" || request.method === "HEAD") {
     return passwordRecoveryPage();
@@ -614,6 +599,9 @@ async function handlePasswordRecovery(
       status: 405,
       headers: { allow: "GET, HEAD, POST" },
     });
+  }
+  if (!sameOrigin(request, url)) {
+    return jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403);
   }
   if (isRateLimited(request)) {
     return passwordRecoveryPage("Muitas solicitações. Aguarde alguns minutos e tente novamente.");
@@ -675,6 +663,9 @@ async function handleLogin(request: Request, env: Env, url: URL): Promise<Respon
       headers: { allow: "GET, HEAD, POST" },
     });
   }
+  if (!sameOrigin(request, url)) {
+    return jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403);
+  }
 
   if (isRateLimited(request)) {
     return loginPage({
@@ -734,6 +725,9 @@ function handleLogout(request: Request, url: URL): Response {
       headers: { allow: "POST" },
     });
   }
+  if (!sameOrigin(request, url)) {
+    return jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403);
+  }
   const secure = url.protocol === "https:" ? "; Secure" : "";
   return new Response(null, {
     status: 303,
@@ -759,7 +753,7 @@ function unauthorized(request: Request, url: URL): Response {
   return Response.json({ error: "SESSÃO EXPIRADA OU NÃO AUTORIZADA." }, { status: 401 });
 }
 
-function forbidden(request: Request, url: URL): Response {
+function forbidden(url: URL): Response {
   if (url.pathname.startsWith("/api/")) {
     return Response.json({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR ESTE MÓDULO." }, { status: 403 });
   }
@@ -858,7 +852,9 @@ function validUsername(value: string): boolean {
 
 function sameOrigin(request: Request, url: URL): boolean {
   const origin = request.headers.get("origin");
-  return !origin || origin === url.origin;
+  if (origin) return origin === url.origin;
+  const fetchSite = request.headers.get("sec-fetch-site");
+  return !fetchSite || fetchSite === "same-origin" || fetchSite === "none";
 }
 
 function publicUser(row: StoredUserRow) {
@@ -1481,7 +1477,7 @@ const worker = {
 
     if (url.pathname === "/login") return handleLogin(request, env, url);
     if (url.pathname === "/recuperar-senha") {
-      return handlePasswordRecovery(request, env);
+      return handlePasswordRecovery(request, env, url);
     }
     if (url.pathname === "/logout") return handleLogout(request, url);
     if (PUBLIC_ASSET_PATHS.has(url.pathname)) return env.ASSETS.fetch(request);
@@ -1490,8 +1486,16 @@ const worker = {
     if (!config) return unauthorized(request, url);
     const user = await authenticatedUser(request, env, config);
     if (!user) return unauthorized(request, url);
+    const mutatingApiRequest =
+      url.pathname.startsWith("/api/") &&
+      !["GET", "HEAD", "OPTIONS"].includes(request.method);
+    if (mutatingApiRequest && !sameOrigin(request, url)) {
+      return securityHeaders(
+        jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403),
+      );
+    }
     ctx.waitUntil(createAutomaticBackup(env, config.sessionSecret));
-    if (!(await isAllowed(request, url, user))) return forbidden(request, url);
+    if (!(await isAllowed(request, url, user))) return forbidden(url);
     if (url.pathname === "/api/session") return sessionResponse(user);
     if (url.pathname === "/api/admin/users") {
       return securityHeaders(await handleAdminUsers(request, env, url, config));
