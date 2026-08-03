@@ -2573,6 +2573,7 @@
     sales:new Map(), stock:new Map(), salesFileName:'', stockFileName:'', updatedAt:null
   };
   let companyStockData = { products:new Map(), fileName:'', updatedAt:null };
+  let companyStockLoadError = '';
   let report41SearchTimer = null;
 
   let purchaseRows = [];
@@ -3813,6 +3814,7 @@
   }
 
   async function loadCompanyStock(){
+    companyStockLoadError = '';
     try{
       const result = await storage.get('report41:company-stock');
       if(result && result.value){
@@ -3826,10 +3828,14 @@
         companyStockData = {products:new Map(),fileName:'',updatedAt:null};
       }
     }catch(error){
-      companyStockData = {products:new Map(),fileName:'',updatedAt:null};
+      companyStockLoadError = error && error.message ? error.message : 'BANCO GERAL INDISPONÍVEL';
+      if(companyStockData.products.size === 0){
+        companyStockData = {products:new Map(),fileName:'',updatedAt:null};
+      }
     }
     renderCompanyStockStatus();
     renderReport41();
+    return companyStockData.products.size > 0;
   }
 
   async function saveCompanyStock(){
@@ -4024,7 +4030,9 @@
     el('report41TxtHint').textContent = report41Rows.length === 0
       ? 'Carregue os arquivos da loja para liberar o TXT.'
       : companyStockData.products.size === 0
-        ? 'Antes do download, carregue o estoque geral em Cadastros → Base de Dados.'
+        ? (companyStockLoadError
+          ? 'Não foi possível consultar o estoque geral agora. O botão tentará novamente.'
+          : 'Estoque geral ainda não localizado. O botão consultará o banco novamente.')
         : 'TXT pronto com '+report41Rows.length.toLocaleString('pt-BR')+' produto(s).';
 
     if(!company){
@@ -4091,7 +4099,13 @@
       return;
     }
     if(companyStockData.products.size === 0){
-      const message = 'Carregue primeiro o estoque atual da empresa em Cadastros → Base de Dados.';
+      showPurchaseToast('Consultando novamente o estoque geral da empresa…');
+      await loadCompanyStock();
+    }
+    if(companyStockData.products.size === 0){
+      const message = companyStockLoadError
+        ? 'O estoque geral está cadastrado, mas não foi possível consultá-lo agora. Atualize a página e tente novamente.'
+        : 'O banco não encontrou o arquivo de estoque geral em Cadastros → Base de Dados.';
       showReport41Error(message);
       showPurchaseToast(message,'error');
       return;

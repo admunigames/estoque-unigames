@@ -415,7 +415,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v7"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v8"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
@@ -484,7 +484,9 @@ test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", 
   assert.match(html, /id="report41TxtHint"/);
   assert.match(html, /el\('btnReport41Txt'\)\.disabled = report41Rows\.length === 0/);
   assert.doesNotMatch(html, /btnReport41Txt'\)\.disabled = report41Rows\.length === 0 \|\|/);
-  assert.match(html, /Carregue primeiro o estoque atual da empresa/);
+  assert.match(html, /Consultando novamente o estoque geral da empresa/);
+  assert.match(html, /await loadCompanyStock\(\)/);
+  assert.match(html, /O estoque geral está cadastrado, mas não foi possível consultá-lo agora/);
   assert.match(html, /isIosDevice[\s\S]*deliverIosFile\(blob,fileName,'RELATÓRIO 41'\)/);
   assert.match(html, /\['\*RELATORIO 41\*',''\]/);
   assert.match(html, /EMPRESA: '\+report41TwoDigits/);
