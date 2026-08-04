@@ -446,7 +446,7 @@ function loginPage(options: {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#050d18">
-  <title>Entrar · Estoque Unigames</title>
+  <title>Entrar · Unigames</title>
   <style>
     :root{color-scheme:dark;--bg:#030914;--panel:#081625;--cyan:#66d9ff;--blue:#4b8dff;--violet:#8b6cff;--mint:#65f7ce;--ink:#f5fbff;--soft:#9eb5c9;--line:rgba(125,210,255,.23)}
     *{box-sizing:border-box}

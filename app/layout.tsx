@@ -12,25 +12,24 @@ export async function generateMetadata(): Promise<Metadata> {
     requestHeaders.get("x-forwarded-proto") ||
     (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const description =
-    "Reconciliação de estoque, puxadas e controle de compras integrado ao Notion.";
+  const description = "Central de operações Unigames.";
 
   return {
     metadataBase: new URL(origin),
-    title: "Estoque Unigames",
+    title: "Unigames",
     description,
     icons: {
       icon: "/favicon.svg",
       shortcut: "/favicon.svg",
     },
     openGraph: {
-      title: "Estoque Unigames",
+      title: "Unigames",
       description,
       type: "website",
     },
     twitter: {
       card: "summary",
-      title: "Estoque Unigames",
+      title: "Unigames",
       description,
     },
   };

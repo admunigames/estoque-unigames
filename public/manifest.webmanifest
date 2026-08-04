@@ -1,7 +1,7 @@
 {
-  "name": "Estoque Unigames",
-  "short_name": "Estoque",
-  "description": "Reconciliação de estoque, puxadas e controle de compras integrado ao Notion.",
+  "name": "Unigames",
+  "short_name": "Unigames",
+  "description": "Central de operações Unigames.",
   "id": "/inicio",
   "start_url": "/inicio",
   "scope": "/",
