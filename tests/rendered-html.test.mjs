@@ -521,7 +521,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v21"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -592,7 +592,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v21"/);
 });
 
 test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
@@ -650,7 +650,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v21"/);
 });
 
 test("registra saídas por defeito por loja e preserva o histórico do administrador", async () => {
@@ -697,7 +697,7 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(migration, /defective_outputs_company_created_idx/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v21"/);
 });
 
 test("separa insumos por loja, registra pedidos recorrentes e preserva recebimentos", async () => {
@@ -724,6 +724,10 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(html, /data-supply-view="history"/);
   assert.match(html, /data-supply-request/);
   assert.match(html, /data-supply-receive/);
+  assert.match(html, /data-supply-delete/);
+  assert.match(html, /currentSession\.role === 'admin'/);
+  assert.match(html, /method:'DELETE'/);
+  assert.match(html, /EXCLUIR SOLICITAÇÃO/);
   assert.match(html, /class="supply-history-group"/);
   assert.match(html, /insumos:'\/insumos'/);
   assert.match(html, /value="supplies"> Insumos/);
@@ -742,6 +746,11 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(route, /SET status='received'/);
   assert.match(route, /received_at=CURRENT_TIMESTAMP/);
   assert.match(route, /REGISTRE O PEDIDO DESTE INSUMO ANTES DO RECEBIMENTO/);
+  assert.match(route, /export async function DELETE/);
+  assert.match(route, /actor\.role !== "admin"/);
+  assert.match(route, /SOMENTE O ADMINISTRADOR PODE EXCLUIR UMA SOLICITAÇÃO DE INSUMO/);
+  assert.match(route, /DELETE FROM supply_request_events WHERE supply_item_id=\?1/);
+  assert.match(route, /DELETE FROM supply_items WHERE id=\?1/);
   assert.match(route, /timeZone: "America\/Recife"/);
   assert.match(schema, /export const supplyItems = sqliteTable/);
   assert.match(schema, /export const supplyRequestEvents = sqliteTable/);
@@ -751,7 +760,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v21"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -794,7 +803,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v21"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {

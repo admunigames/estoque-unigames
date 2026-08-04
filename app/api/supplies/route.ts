@@ -443,3 +443,46 @@ export async function PATCH(request: Request) {
     return jsonResponse({ error: "NÃO FOI POSSÍVEL ATUALIZAR OS INSUMOS." }, 500);
   }
 }
+
+export async function DELETE(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (actor.role !== "admin") {
+    return jsonResponse(
+      { error: "SOMENTE O ADMINISTRADOR PODE EXCLUIR UMA SOLICITAÇÃO DE INSUMO." },
+      403,
+    );
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+
+  try {
+    const body = (await request.json()) as JsonMap;
+    const id = safeText(body.id, 80);
+    if (!/^[a-z0-9-]{8,80}$/i.test(id)) {
+      return jsonResponse({ error: "INSUMO INVÁLIDO." }, 400);
+    }
+
+    const database = await getD1();
+    const existing = await database
+      .prepare("SELECT id FROM supply_items WHERE id=?1 LIMIT 1")
+      .bind(id)
+      .first<{ id: string }>();
+    if (!existing) {
+      return jsonResponse({ error: "INSUMO NÃO ENCONTRADO." }, 404);
+    }
+
+    await database.batch([
+      database
+        .prepare("DELETE FROM supply_request_events WHERE supply_item_id=?1")
+        .bind(id),
+      database.prepare("DELETE FROM supply_items WHERE id=?1").bind(id),
+    ]);
+    return jsonResponse({ deleted: true, id });
+  } catch (error) {
+    console.error("Não foi possível excluir o insumo.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR O INSUMO." }, 500);
+  }
+}
