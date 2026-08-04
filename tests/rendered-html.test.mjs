@@ -122,7 +122,7 @@ test("cria uma sessão assinada com credenciais válidas", async () => {
     ctx,
   );
   assert.equal(login.status, 303);
-  assert.equal(login.headers.get("location"), "/inicio");
+  assert.equal(login.headers.get("location"), "/inicio?entrada=1");
   const setCookie = login.headers.get("set-cookie") ?? "";
   assert.match(setCookie, /^unigames_session=/);
   assert.match(setCookie, /HttpOnly/);
@@ -204,7 +204,7 @@ test("aceita o login same-origin quando a hospedagem usa um endereço interno", 
   );
 
   assert.equal(response.status, 303);
-  assert.equal(response.headers.get("location"), "/inicio");
+  assert.equal(response.headers.get("location"), "/inicio?entrada=1");
   assert.match(response.headers.get("set-cookie") ?? "", /unigames_session=/);
 });
 
@@ -235,7 +235,7 @@ test("serve as rotas dos módulos sem alterar o endereço do navegador", async (
     routeEnv,
     ctx,
   );
-  assert.equal(login.headers.get("location"), "/inicio");
+  assert.equal(login.headers.get("location"), "/inicio?entrada=1");
   const cookie = (login.headers.get("set-cookie") ?? "").split(";")[0];
   const response = await runtime.fetch(
     new Request("http://localhost/cadastros/lojas", {
@@ -521,7 +521,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v17"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v18"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -592,7 +592,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v17"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v18"/);
 });
 
 test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
@@ -650,7 +650,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v17"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v18"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -693,7 +693,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v17"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v18"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
@@ -726,7 +726,13 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /data-home-target="puxadas"/);
   assert.match(html, /data-home-target="compras"/);
   assert.match(html, /data-home-target="dashboard"/);
+  assert.match(html, /data-home-target="captacao" data-permission="captures"/);
   assert.match(html, /data-home-target="cadastros"/);
+  assert.match(html, /Atividades diárias e semanais que precisam ser realizadas pela loja/);
+  assert.match(html, /\.home-operation-head > div > span\{/);
+  assert.match(html, /html\[data-theme="light"\] \.home-missions\{/);
+  assert.match(html, /get\('entrada'\) === '1'/);
+  assert.match(html, /document\.title = 'UNIGAMES'/);
   assert.match(html, /document\.querySelectorAll\('\[data-home-target\]'\)/);
   assert.match(html, /\.page\.home-page\.active\{display:flex;\}/);
   assert.doesNotMatch(html, /\.home-page\{[^}]*display:flex/);

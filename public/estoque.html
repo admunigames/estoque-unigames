@@ -94,13 +94,13 @@
   button, input, select, option{ -webkit-tap-highlight-color:transparent; }
   input, textarea{ text-transform:none; }
   code,.codigo,.num,.saldo,.entrada,.saida,.qty,.company-meta,.pagination-info{font-family:var(--mono);}
-  .wrap{max-width:1680px; margin:0 auto; padding:36px 32px calc(76px + env(safe-area-inset-bottom));}
+  .wrap{max-width:1680px; margin:0 auto; padding:30px 26px calc(68px + env(safe-area-inset-bottom));}
 
   /* SHELL / MENU LATERAL */
   body.menu-open{overflow:hidden;}
   .shell{min-height:100vh;}
   .sidebar{
-    width:min(300px, calc(100vw - 48px));
+    width:min(286px, calc(100vw - 48px));
     background:
       linear-gradient(rgba(79,134,189,0.045) 1px, transparent 1px),
       linear-gradient(90deg, rgba(79,134,189,0.045) 1px, transparent 1px),
@@ -108,7 +108,7 @@
       linear-gradient(160deg, #12243a 0%, #08121e 72%);
     background-size:24px 24px, 24px 24px, auto, auto;
     border-right:1px solid rgba(79,134,189,0.48);
-    padding:calc(26px + env(safe-area-inset-top)) 18px calc(26px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:6px;
+    padding:calc(22px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:5px;
     position:fixed; inset:0 auto 0 0; height:100vh; overflow-y:auto; z-index:1000;
     transform:translateX(-102%); visibility:hidden;
     box-shadow:24px 0 64px rgba(0,0,0,0.52), inset -1px 0 rgba(79,134,189,0.12);
@@ -126,7 +126,7 @@
   body.menu-open .sidebar{transform:translateX(0); visibility:visible; transition-delay:0s;}
   .sidebar-brand{
     display:flex; align-items:center; gap:12px; position:relative;
-    color:var(--ink); margin:48px 0 14px; padding:12px;
+    color:var(--ink); margin:44px 0 12px; padding:11px;
     background:rgba(255,255,255,0.028); border:1px solid rgba(79,134,189,0.2); border-radius:14px;
   }
   .brand-logo{
@@ -146,7 +146,7 @@
   .nav-item{
     display:flex; align-items:center; gap:11px; position:relative; overflow:hidden;
     background:transparent; border:1px solid transparent; color:var(--ink-soft);
-    text-align:left; padding:11px 12px; border-radius:10px; font-size:12.5px; font-weight:700;
+    text-align:left; padding:9px 10px; border-radius:10px; font-size:12px; font-weight:700;
     cursor:pointer; width:100%; font-family:var(--sans); letter-spacing:.1px;
   }
   .nav-icon{
@@ -318,7 +318,7 @@
   .page.home-page.active{display:flex;}
   .home-lightglass{
     position:relative; isolation:isolate; width:min(1160px,100%); overflow:hidden;
-    padding:clamp(32px,6vw,76px); border:1px solid rgba(255,255,255,.78); border-radius:32px;
+    padding:clamp(28px,4.4vw,54px); border:1px solid rgba(255,255,255,.78); border-radius:30px;
     background:
       radial-gradient(circle at 12% 0%,rgba(255,255,255,.98),transparent 42%),
       radial-gradient(circle at 92% 18%,rgba(114,167,216,.34),transparent 34%),
@@ -341,12 +341,12 @@
   .home-no-access strong{display:block;margin-bottom:5px}.home-no-access span{color:#49627b;font-size:12px}
   .home-brand{display:flex; flex-direction:column; align-items:center;}
   .home-brand-logo{
-    width:clamp(92px,11vw,128px); height:clamp(92px,11vw,128px); object-fit:contain;
+    width:clamp(82px,9vw,112px); height:clamp(82px,9vw,112px); object-fit:contain;
     padding:5px; border-radius:26px; background:#fff; border:1px solid rgba(36,79,131,.2);
     box-shadow:0 18px 44px rgba(36,79,131,.2),0 0 0 8px rgba(255,255,255,.32);
   }
   .home-eyebrow{
-    margin:26px 0 8px; color:#386b9c; font:700 10px/1.3 var(--mono); letter-spacing:2.1px;
+    margin:22px 0 8px; color:#386b9c; font:700 10px/1.3 var(--mono); letter-spacing:2.1px;
   }
   .home-title{
     margin:0; color:#10233a; font:800 clamp(30px,5vw,54px)/1.04 var(--sans); letter-spacing:-1.8px;
@@ -355,12 +355,12 @@
     max-width:700px; margin:16px auto 0; color:#49627b; font:600 clamp(12px,1.6vw,15px)/1.65 var(--sans);
   }
   .home-access-grid{
-    display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; margin-top:clamp(32px,5vw,54px);
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:13px; margin-top:clamp(26px,4vw,40px);
     text-align:left;
   }
   .home-access-card{
-    min-height:176px; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between;
-    padding:22px; border:1px solid rgba(255,255,255,.92); border-radius:20px; cursor:pointer;
+    min-height:150px; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between;
+    overflow:hidden; padding:18px; border:1px solid rgba(255,255,255,.92); border-radius:18px; cursor:pointer;
     background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(236,244,251,.48));
     box-shadow:0 14px 34px rgba(36,79,131,.12),inset 0 1px 0 #fff; color:#10233a;
     transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease;
@@ -374,12 +374,12 @@
     width:44px; height:44px; display:grid; place-items:center; border-radius:13px;
     background:#244f83; color:#fff; font:800 19px/1 var(--mono); box-shadow:0 9px 20px rgba(36,79,131,.22);
   }
-  .home-access-copy{display:flex; flex-direction:column; gap:7px;}
+  .home-access-copy{display:flex; flex-direction:column; gap:6px; width:100%; min-width:0;}
   .home-access-copy strong{color:#10233a; font:800 13px/1.25 var(--sans); letter-spacing:.25px;}
-  .home-access-copy span{color:#5c7187; font:600 11px/1.5 var(--sans); text-transform:none;}
+  .home-access-copy span{color:#5c7187; font:600 11px/1.45 var(--sans); text-transform:none; overflow-wrap:anywhere;}
   .home-access-arrow{align-self:flex-end; color:#386b9c; font:800 18px/1 var(--mono);}
   .home-operations{
-    display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:20px;
+    display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; margin-top:16px;
     text-align:left;
   }
   .home-health-alert{
@@ -407,7 +407,7 @@
   .home-task-chart-bar.pending{background:#e4b85f;}
   .home-task-chart-row strong{color:#244f83; text-align:right; font:800 13px/1 var(--mono);}
   .home-operation-card{
-    min-width:0; padding:22px; border:1px solid rgba(255,255,255,.9); border-radius:22px;
+    min-width:0; padding:18px; border:1px solid rgba(255,255,255,.9); border-radius:20px;
     background:rgba(255,255,255,.58); box-shadow:0 14px 34px rgba(36,79,131,.1),inset 0 1px #fff;
   }
   .home-operation-head{display:flex; align-items:center; gap:12px; margin-bottom:17px;}
@@ -415,7 +415,7 @@
     width:42px; height:42px; flex:0 0 42px; display:grid; place-items:center; border-radius:13px;
     background:#244f83; color:#fff; font:800 18px/1 var(--mono); box-shadow:0 9px 20px rgba(36,79,131,.2);
   }
-  .home-operation-head span{
+  .home-operation-head > div > span{
     display:block; color:#4e6c89; font:800 9px/1.3 var(--sans); letter-spacing:1px;
   }
   .home-operation-head h2{margin:4px 0 0; color:#10233a; font:800 19px/1.2 var(--sans);}
@@ -452,7 +452,7 @@
   }
   .home-reminder-enable:disabled{cursor:default; opacity:.7;}
   .home-overview{
-    margin-top:20px; padding:22px; border:1px solid rgba(255,255,255,.9); border-radius:22px;
+    margin-top:16px; padding:18px; border:1px solid rgba(255,255,255,.9); border-radius:20px;
     background:rgba(255,255,255,.58); box-shadow:0 14px 34px rgba(36,79,131,.1),inset 0 1px #fff;
     text-align:left;
   }
@@ -1719,10 +1719,13 @@
     background:rgba(183,66,52,.08);color:#e4776a;font:800 8px/1 var(--mono);
   }
   .mission-empty{padding:28px 18px;text-align:center;color:var(--ink-soft);font-size:12px;line-height:1.55;}
-  .home-missions{margin-top:18px;padding:20px;}
+  .home-missions{
+    margin-top:16px;padding:18px;border-color:rgba(255,255,255,.78);
+    background:rgba(255,255,255,.52);box-shadow:0 14px 34px rgba(36,79,131,.1);
+  }
   .home-missions-head{align-items:center;}
   .home-missions-head > div > span{color:#58718a;font:800 9px/1 var(--mono);letter-spacing:1.2px;}
-  .home-missions-head h2{margin-top:5px;font-size:21px;}
+  .home-missions-head h2{margin-top:5px;font-size:21px;color:#10233a;}
   .home-missions-goto{
     min-height:36px;padding:8px 12px;border:1px solid rgba(36,79,131,.24);border-radius:10px;
     background:rgba(36,79,131,.08);color:#244f83;font:800 9px/1 var(--mono);
@@ -1747,9 +1750,11 @@
   .home-mission-time{color:#244f83;font:800 10px/1 var(--mono);white-space:nowrap;}
   .home-mission-actions{display:flex;flex-direction:column;align-items:flex-end;gap:7px;}
   .home-mission-actions .mission-status-select{min-width:158px;min-height:38px;background-color:rgba(255,255,255,.72);color:#10233a;}
+  .home-missions .mission-empty{border-radius:11px;background:rgba(236,244,251,.78);color:#5c7187;}
   html[data-theme="light"] .mission-toolbar,
   html[data-theme="light"] .mission-admin-panel,
   html[data-theme="light"] .mission-board{background:#fff;border-color:#b8cad9;box-shadow:0 14px 34px rgba(28,67,102,.1);}
+  html[data-theme="light"] .home-missions{background:rgba(255,255,255,.64);border-color:rgba(255,255,255,.9);}
   html[data-theme="light"] .mission-card{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .mission-status.done{color:#24714a;background:#e2f3e9;}
   html[data-theme="light"] .mission-delete{color:#9c3328;background:#fff1ef;border-color:#d9a29c;}
@@ -1879,7 +1884,7 @@
   }
   .instruction-empty{padding:30px 18px;text-align:center;color:var(--ink-soft);font-size:12px;line-height:1.55;}
   .home-instructions{
-    margin-top:18px;padding:20px;border:1px solid rgba(255,255,255,.78);border-radius:20px;
+    margin-top:16px;padding:18px;border:1px solid rgba(255,255,255,.78);border-radius:20px;
     background:rgba(255,255,255,.48);box-shadow:0 14px 34px rgba(36,79,131,.1);text-align:left;
   }
   .home-instructions-head{align-items:center;}
@@ -2023,7 +2028,7 @@
           <img class="home-brand-logo" data-logo alt="LOGO UNIGAMES">
           <div class="home-eyebrow">CENTRAL DE OPERAÇÕES</div>
           <h1 class="home-title">UNIGAMES</h1>
-          <p class="home-subtitle">Acesse rapidamente as áreas de equilíbrio, compras, estoque fiscal e cadastros.</p>
+          <p class="home-subtitle">Acesse rapidamente as áreas disponíveis para o seu usuário.</p>
         </div>
         <div class="home-access-grid" aria-label="Acessos rápidos">
           <button class="home-access-card" type="button" data-home-target="puxadas" data-permission="pulls">
@@ -2048,12 +2053,17 @@
           </button>
           <button class="home-access-card" type="button" data-home-target="missoes" data-permission="missions">
             <span class="home-access-icon" aria-hidden="true">◎</span>
-            <span class="home-access-copy"><strong>MISSÕES</strong><span>Metas diárias e semanais da sua loja.</span></span>
+            <span class="home-access-copy"><strong>MISSÕES</strong><span>Atividades diárias e semanais que precisam ser realizadas pela loja.</span></span>
+            <span class="home-access-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="home-access-card" type="button" data-home-target="captacao" data-permission="captures">
+            <span class="home-access-icon" aria-hidden="true">◇</span>
+            <span class="home-access-copy"><strong>CAPTAÇÃO</strong><span>Cadastro e acompanhamento dos produtos captados.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
           <button class="home-access-card" type="button" data-home-target="instrucoes">
             <span class="home-access-icon" aria-hidden="true">!</span>
-            <span class="home-access-copy"><strong>INSTRUÇÕES</strong><span>Orientações gerais com prazo para todas as lojas.</span></span>
+            <span class="home-access-copy"><strong>INSTRUÇÕES</strong><span>Orientações gerais com prazo para as lojas.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
           <button class="home-access-card" type="button" data-home-target="cadastros" data-permission="database">
@@ -3732,7 +3742,7 @@
       button.classList.toggle('active', active);
       button.setAttribute('aria-current', active ? 'page' : 'false');
     });
-    document.title = (PAGE_TITLES[name] || 'ESTOQUE') + ' — UNIGAMES';
+    document.title = 'UNIGAMES';
     return true;
   }
 
@@ -8475,7 +8485,9 @@ function renderHomeTasks(){
     renderAll();
     await loadSessionAccess();
     await flushOfflineMutations();
-    syncPageFromLocation(false);
+    const freshLogin = new URLSearchParams(location.search).get('entrada') === '1';
+    if(freshLogin) navigateToPage('inicio',{replace:true,scroll:false,smooth:false});
+    else syncPageFromLocation(false);
     checkIntegrationHealth();
     if(canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41')){
       await loadCompanies();

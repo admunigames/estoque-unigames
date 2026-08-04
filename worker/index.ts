@@ -51,7 +51,7 @@ type StoredUserRow = {
 const SESSION_COOKIE = "unigames_session";
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
 const PASSWORD_HASH_ITERATIONS = 100_000;
-const LOGIN_SUCCESS_PATH = "/inicio";
+const LOGIN_SUCCESS_PATH = "/inicio?entrada=1";
 const INTERNAL_AUTH_HEADER = "x-unigames-authenticated";
 const USER_ID_HEADER = "x-unigames-user-id";
 const USERNAME_HEADER = "x-unigames-username";
