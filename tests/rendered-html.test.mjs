@@ -521,7 +521,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v19"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -592,7 +592,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v19"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
 });
 
 test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
@@ -650,7 +650,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v19"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
 });
 
 test("registra saídas por defeito por loja e preserva o histórico do administrador", async () => {
@@ -697,7 +697,61 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(migration, /defective_outputs_company_created_idx/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v19"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
+});
+
+test("separa insumos por loja, registra pedidos recorrentes e preserva recebimentos", async () => {
+  const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/supplies/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0010_flowery_la_nuit.sql", import.meta.url), "utf8"),
+      readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
+      readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(html, /id="navInsumos" data-page="insumos" data-permission="supplies"/);
+  assert.match(html, /data-home-target="insumos" data-permission="supplies"/);
+  assert.match(html, /id="homeSuppliesAlert" data-permission="supplies" hidden/);
+  assert.match(html, /LEMBRETE DE SEGUNDA-FEIRA/);
+  assert.match(html, /id="pageInsumos" class="page wrap"/);
+  assert.match(html, /id="supplyProductName"/);
+  assert.match(html, /id="supplyQuantityText"/);
+  assert.match(html, /id="supplyCompany"/);
+  assert.match(html, /data-supply-view="active"/);
+  assert.match(html, /data-supply-view="history"/);
+  assert.match(html, /data-supply-request/);
+  assert.match(html, /data-supply-receive/);
+  assert.match(html, /class="supply-history-group"/);
+  assert.match(html, /insumos:'\/insumos'/);
+  assert.match(html, /value="supplies"> Insumos/);
+
+  assert.match(workerSource, /"supplies"/);
+  assert.match(workerSource, /path === "\/insumos" \|\| path\.startsWith\("\/api\/supplies"\)/);
+  assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM supply_items"\)\.all\(\)/);
+  assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM supply_request_events"\)\.all\(\)/);
+  assert.match(workerSource, /supplyItems: supplyItems\.results \?\? \[\]/);
+  assert.match(workerSource, /supplyRequestEvents: supplyRequestEvents\.results \?\? \[\]/);
+
+  assert.match(route, /actor\.role === "admin" \? requestedCompanyId : actor\.companyId/);
+  assert.match(route, /actor\.role !== "admin" && existing\.companyId !== actor\.companyId/);
+  assert.match(route, /INSERT OR IGNORE INTO supply_request_events/);
+  assert.match(route, /request_date/);
+  assert.match(route, /SET status='received'/);
+  assert.match(route, /received_at=CURRENT_TIMESTAMP/);
+  assert.match(route, /REGISTRE O PEDIDO DESTE INSUMO ANTES DO RECEBIMENTO/);
+  assert.match(route, /timeZone: "America\/Recife"/);
+  assert.match(schema, /export const supplyItems = sqliteTable/);
+  assert.match(schema, /export const supplyRequestEvents = sqliteTable/);
+  assert.match(migration, /CREATE TABLE `supply_items`/);
+  assert.match(migration, /CREATE TABLE `supply_request_events`/);
+  assert.match(migration, /supply_items_company_status_created_idx/);
+  assert.match(migration, /supply_request_events_item_date_unique/);
+  assert.match(migration, /PRAGMA optimize/);
+  assert.match(manifest, /"url": "\/insumos"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -740,7 +794,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v19"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v20"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
@@ -786,7 +840,7 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /@media \(max-width:800px\)[\s\S]*\.home-access-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
   assert.match(html, /@media \(max-width:520px\)[\s\S]*\.home-access-grid\{grid-template-columns:1fr;/);
   assert.doesNotMatch(html, /data-dashboard-home/);
-  for (const pageId of ["pagePuxadas", "pageRelatorio41", "pageCompras", "pageDashboard", "pageMissoes", "pageSaidas", "pageInstrucoes", "pageLojas", "pageDados"]) {
+  for (const pageId of ["pagePuxadas", "pageRelatorio41", "pageCompras", "pageDashboard", "pageMissoes", "pageSaidas", "pageInsumos", "pageInstrucoes", "pageLojas", "pageDados"]) {
     assert.match(html, new RegExp(`id="${pageId}" class="page wrap"`));
   }
 });
@@ -833,7 +887,7 @@ test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", 
   assert.match(workerSource, /\[path === "\/relatorio-41", "report41"\]/);
   assert.match(workerSource, /reportStoreMatch[\s\S]*user\.companyId/);
   assert.match(workerSource, /company_id AS companyId/);
-  assert.match(workerSource, /fiscal: \["missions", "outputs", "stock", "database", "pulls", "report41"\]/);
+  assert.match(workerSource, /fiscal: \["missions", "outputs", "supplies", "stock", "database", "pulls", "report41"\]/);
   assert.match(sharedStateRoute, /key === "report41:company-stock"/);
   assert.match(sharedStateRoute, /report41:store:c\[a-z0-9\]/);
   assert.match(schema, /companyId: text\("company_id"\)/);

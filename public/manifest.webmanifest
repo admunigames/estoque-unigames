@@ -13,6 +13,12 @@
   "categories": ["business", "productivity"],
   "shortcuts": [
     {
+      "name": "Insumos",
+      "short_name": "Insumos",
+      "url": "/insumos",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
       "name": "Saídas",
       "short_name": "Saídas",
       "url": "/saidas",

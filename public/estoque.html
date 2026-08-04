@@ -1877,6 +1877,101 @@
   html[data-theme="light"] .output-board{background:#fff;border-color:#b8cad9;box-shadow:0 14px 34px rgba(28,67,102,.1);}
   html[data-theme="light"] .output-card{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .output-complete{color:#24714a;background:#e2f3e9;}
+  .supply-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-bottom:16px;}
+  .supply-summary-card,.supply-register-panel,.supply-board{
+    border:1px solid rgba(39,69,97,.58);border-radius:16px;background:var(--bg-card);
+    box-shadow:0 18px 42px rgba(0,0,0,.13);
+  }
+  .supply-summary-card{padding:16px 17px;}
+  .supply-summary-card span{display:block;color:var(--ink-soft);font:800 8px/1.35 var(--mono);letter-spacing:.45px;}
+  .supply-summary-card strong{display:block;margin-top:10px;color:var(--accent);font:900 25px/1 var(--sans);}
+  .supply-summary-card.awaiting strong{color:#e1ad49;}
+  .supply-summary-card.received strong{color:#66d49e;}
+  .supply-register-panel,.supply-board{padding:20px;margin-bottom:16px;}
+  .supply-panel-head,.supply-board-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;
+  }
+  .supply-panel-head h3,.supply-board-head h3{margin:0;color:var(--ink);}
+  .supply-panel-head p,.supply-board-head p{margin:5px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5;}
+  .supply-form-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(180px,.6fr) minmax(200px,.7fr);gap:12px;}
+  .supply-form-actions{display:flex;justify-content:flex-end;margin-top:14px;}
+  .supply-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .supply-toolbar-main{display:flex;align-items:flex-end;gap:10px;flex:1;flex-wrap:wrap;}
+  .supply-toolbar .field.search{flex:1;min-width:220px;max-width:480px;}
+  .supply-toolbar .field.store{min-width:190px;}
+  .supply-tabs{display:flex;gap:8px;}
+  .supply-tab{
+    min-height:38px;padding:8px 13px;border:1px solid rgba(79,134,189,.38);border-radius:999px;
+    background:rgba(79,134,189,.06);color:var(--ink-soft);font:800 9px/1 var(--mono);
+  }
+  .supply-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(36,79,131,.24);}
+  .supply-request-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;padding:12px 13px;
+    border:1px solid rgba(225,173,73,.32);border-radius:11px;background:rgba(225,173,73,.075);
+  }
+  .supply-request-bar span{color:var(--ink-soft);font:700 10px/1.5 var(--sans);}
+  .supply-request-all{
+    min-height:39px;padding:9px 12px;border:1px solid rgba(225,173,73,.46);background:rgba(225,173,73,.13);
+    color:#e1ad49;font:900 8px/1.25 var(--mono);
+  }
+  .supply-list{display:grid;gap:10px;}
+  .supply-card{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,auto);gap:15px;
+    padding:16px;border:1px solid rgba(39,69,97,.48);border-radius:13px;background:var(--bg-card-2);
+  }
+  .supply-card.received{padding:13px 15px;opacity:.76;border-color:rgba(66,166,119,.34);}
+  .supply-card-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .supply-card-title strong{color:var(--ink);font:900 14px/1.35 var(--sans);overflow-wrap:anywhere;}
+  .supply-quantity{padding:5px 8px;border-radius:999px;background:rgba(79,134,189,.1);color:var(--ink-soft);font:800 8px/1 var(--mono);}
+  .supply-store{margin:8px 0 0;color:var(--ink-soft);font:800 8px/1.4 var(--mono);}
+  .supply-history{margin:8px 0 0;color:var(--ink-faint);font:700 8px/1.55 var(--mono);}
+  .supply-card-actions{display:flex;flex-direction:column;align-items:stretch;gap:7px;min-width:170px;}
+  .supply-state{padding:8px 10px;border-radius:9px;background:rgba(79,134,189,.09);color:var(--accent);text-align:center;font:900 8px/1.35 var(--mono);}
+  .supply-state.awaiting{background:rgba(225,173,73,.11);color:#e1ad49;}
+  .supply-state.received{background:rgba(66,166,119,.11);color:#66d49e;}
+  .supply-action{
+    min-height:39px;padding:9px 11px;border:1px solid rgba(79,134,189,.42);border-radius:9px;
+    background:rgba(79,134,189,.1);color:var(--ink);font:900 8px/1.25 var(--mono);
+  }
+  .supply-action.receive{border-color:rgba(66,166,119,.46);background:rgba(66,166,119,.13);color:#66d49e;}
+  .supply-empty{padding:28px 18px;text-align:center;color:var(--ink-soft);font-size:12px;line-height:1.55;}
+  .supply-history-groups{display:grid;gap:9px;}
+  .supply-history-group{border:1px solid rgba(39,69,97,.45);border-radius:12px;background:rgba(79,134,189,.025);overflow:hidden;}
+  .supply-history-group > summary{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;cursor:pointer;
+    color:var(--ink);font:900 9px/1.3 var(--mono);list-style:none;
+  }
+  .supply-history-group > summary::-webkit-details-marker{display:none;}
+  .supply-history-group > summary span{color:var(--ink-soft);font-size:8px;}
+  .supply-history-group-list{display:grid;gap:8px;padding:0 9px 9px;}
+  .home-supplies-alert{
+    margin-top:16px;padding:18px;border:1px solid rgba(225,173,73,.38);border-radius:16px;
+    background:linear-gradient(135deg,rgba(255,242,203,.88),rgba(255,255,255,.66));box-shadow:0 14px 32px rgba(93,71,22,.09);
+  }
+  .home-supplies-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px;}
+  .home-supplies-head span{display:block;color:#7e6427;font:900 8px/1.3 var(--mono);letter-spacing:.5px;}
+  .home-supplies-head h2{margin:5px 0 0;color:#352b16;font:900 18px/1.25 var(--sans);}
+  .home-supplies-head button{border:1px solid rgba(126,100,39,.3);background:rgba(255,255,255,.54);color:#604c20;font:900 8px/1 var(--mono);}
+  .home-supplies-list{display:grid;gap:7px;}
+  .home-supply-row{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;
+    padding:10px 11px;border:1px solid rgba(126,100,39,.18);border-radius:10px;background:rgba(255,255,255,.54);
+  }
+  .home-supply-quantity{padding:5px 7px;border-radius:999px;background:rgba(126,100,39,.1);color:#6d5623;font:900 7px/1 var(--mono);}
+  .home-supply-copy strong{display:block;color:#352b16;font:800 11px/1.35 var(--sans);}
+  .home-supply-copy span{display:block;margin-top:3px;color:#776846;font:700 8px/1.35 var(--mono);}
+  .home-supply-state{color:#8b6b20;font:900 7px/1.3 var(--mono);text-align:right;}
+  .home-supplies-more{padding:8px;text-align:center;color:#6d5623;font:800 8px/1.4 var(--mono);}
+  html[data-theme="dark"] .home-supplies-alert{background:linear-gradient(135deg,rgba(68,54,23,.94),rgba(23,31,40,.96));}
+  html[data-theme="dark"] .home-supplies-head h2,html[data-theme="dark"] .home-supply-copy strong{color:#fff5d4;}
+  html[data-theme="dark"] .home-supplies-head span,html[data-theme="dark"] .home-supply-copy span,html[data-theme="dark"] .home-supply-state,html[data-theme="dark"] .home-supplies-more{color:#e5c978;}
+  html[data-theme="dark"] .home-supply-row{background:rgba(255,255,255,.035);border-color:rgba(225,173,73,.22);}
+  html[data-theme="dark"] .home-supplies-head button{background:rgba(255,255,255,.04);color:#f0d58b;border-color:rgba(225,173,73,.28);}
+  html[data-theme="light"] .supply-summary-card,
+  html[data-theme="light"] .supply-register-panel,
+  html[data-theme="light"] .supply-board{background:#fff;border-color:#b8cad9;box-shadow:0 14px 34px rgba(28,67,102,.1);}
+  html[data-theme="light"] .supply-card{background:#f6f9fb;border-color:#c4d1dc;}
+  html[data-theme="light"] .supply-action.receive{color:#24714a;background:#e2f3e9;}
   .instruction-summary{
     display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;
   }
@@ -1978,6 +2073,8 @@
     .capture-details{grid-template-columns:repeat(2,minmax(0,1fr));}
     .output-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .output-form-grid .field.full{grid-column:1 / -1;}
+    .supply-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .supply-form-grid .field:first-child{grid-column:1 / -1;}
     .instruction-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
     .instruction-form-grid{grid-template-columns:1fr;}
     .instruction-form-grid .field.full{grid-column:1;}
@@ -2011,6 +2108,20 @@
     .output-card-actions{min-width:0;}
     .output-details{grid-template-columns:1fr;}
     .output-complete{min-height:44px;}
+    .supply-summary{grid-template-columns:1fr 1fr;}
+    .supply-summary-card:last-child{grid-column:1 / -1;}
+    .supply-register-panel,.supply-board{padding:16px 13px;}
+    .supply-form-grid{grid-template-columns:1fr;}
+    .supply-form-grid .field:first-child{grid-column:1;}
+    .supply-card{grid-template-columns:1fr;}
+    .supply-card-actions{min-width:0;}
+    .supply-action,.supply-request-all{min-height:44px;}
+    .supply-request-bar{align-items:stretch;flex-direction:column;}
+    .home-supplies-alert{padding:15px 13px;}
+    .home-supplies-head{align-items:stretch;flex-direction:column;}
+    .home-supplies-head button{min-height:42px;}
+    .home-supply-row{grid-template-columns:auto minmax(0,1fr);}
+    .home-supply-state{grid-column:2;text-align:left;}
     .instruction-summary{grid-template-columns:1fr;}
     .instruction-admin-panel,.instruction-board,.home-instructions{padding:16px 13px;}
     .instruction-card{grid-template-columns:1fr;}
@@ -2055,6 +2166,7 @@
     <button class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" title="Missões"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-label">Missões</span></button>
     <button class="nav-item" id="navCaptacao" data-page="captacao" data-permission="captures" title="Captação"><span class="nav-icon" aria-hidden="true">C</span><span class="nav-label">Captação</span></button>
     <button class="nav-item" id="navSaidas" data-page="saidas" data-permission="outputs" title="Saídas"><span class="nav-icon" aria-hidden="true">S</span><span class="nav-label">Saídas</span></button>
+    <button class="nav-item" id="navInsumos" data-page="insumos" data-permission="supplies" title="Insumos"><span class="nav-icon" aria-hidden="true">I</span><span class="nav-label">Insumos</span></button>
     <button class="nav-item" id="navInstrucoes" data-page="instrucoes" title="Instruções"><span class="nav-icon" aria-hidden="true">!</span><span class="nav-label">Instruções</span></button>
     <div class="nav-group" data-permission="database">
       <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
@@ -2131,6 +2243,11 @@
             <span class="home-access-copy"><strong>SAÍDAS</strong><span>Solicitações de saída por defeito enviadas pelas lojas.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
+          <button class="home-access-card" type="button" data-home-target="insumos" data-permission="supplies">
+            <span class="home-access-icon" aria-hidden="true">I</span>
+            <span class="home-access-copy"><strong>INSUMOS</strong><span>Anote faltas, solicite na segunda e confirme o recebimento.</span></span>
+            <span class="home-access-arrow" aria-hidden="true">→</span>
+          </button>
           <button class="home-access-card" type="button" data-home-target="instrucoes">
             <span class="home-access-icon" aria-hidden="true">!</span>
             <span class="home-access-copy"><strong>INSTRUÇÕES</strong><span>Orientações gerais com prazo para as lojas.</span></span>
@@ -2147,6 +2264,13 @@
           <span id="homeHealthMessage">Uma integração do sistema está indisponível.</span>
           <button class="btn-outline" id="btnRetryHealth" type="button">VERIFICAR</button>
         </div>
+        <section class="home-supplies-alert" id="homeSuppliesAlert" data-permission="supplies" hidden aria-labelledby="homeSuppliesTitle">
+          <div class="home-supplies-head">
+            <div><span>LEMBRETE DE SEGUNDA-FEIRA</span><h2 id="homeSuppliesTitle">Solicitar os insumos da loja</h2></div>
+            <button type="button" data-home-target="insumos">ABRIR INSUMOS →</button>
+          </div>
+          <div class="home-supplies-list" id="homeSuppliesList" aria-live="polite"></div>
+        </section>
         <div class="home-quick-actions" aria-label="Ações rápidas">
           <button class="home-quick-action" type="button" data-quick-action="task" data-permission="tasks">+ NOVA TAREFA</button>
           <button class="home-quick-action" type="button" data-quick-action="purchase" data-permission="purchases">+ NOVA COMPRA</button>
@@ -2536,6 +2660,60 @@
           </div>
         </div>
         <div class="output-list" id="outputList" aria-live="polite"><div class="output-empty">Carregando solicitações…</div></div>
+      </section>
+    </section>
+
+<!-- ================= INSUMOS ================= -->
+    <section id="pageInsumos" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Insumos</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Anote o que está faltando na loja, registre o pedido semanal e mantenha em aberto tudo o que ainda não chegou.</p></div>
+      </header>
+
+      <section class="supply-summary" aria-label="Resumo dos insumos">
+        <article class="supply-summary-card"><span>ANOTADOS PARA PEDIR</span><strong id="supplyNotedCount">0</strong></article>
+        <article class="supply-summary-card awaiting"><span>AGUARDANDO CHEGADA</span><strong id="supplyAwaitingCount">0</strong></article>
+        <article class="supply-summary-card received"><span>HISTÓRICO RECEBIDO</span><strong id="supplyReceivedCount">0</strong></article>
+      </section>
+
+      <section class="supply-register-panel" id="supplyRegisterPanel">
+        <div class="supply-panel-head">
+          <div><h3>ANOTAR INSUMO FALTANTE</h3><p id="supplyRegisterDescription">Registre durante a semana tudo o que deverá entrar no próximo pedido.</p></div>
+        </div>
+        <form id="supplyForm">
+          <div class="supply-form-grid">
+            <div class="field"><label for="supplyProductName">PRODUTO / INSUMO</label><input id="supplyProductName" maxlength="180" required placeholder="Ex.: Bobina para impressora térmica"></div>
+            <div class="field"><label for="supplyQuantityText">QUANTIDADE</label><input id="supplyQuantityText" maxlength="100" required placeholder="Ex.: 2 caixas ou 10 unidades"></div>
+            <div class="field" id="supplyCompanyField" hidden><label for="supplyCompany">LOJA</label><select id="supplyCompany"><option value="">SELECIONE A LOJA</option></select></div>
+          </div>
+          <div class="supply-form-actions"><button class="btn-accent" id="btnSaveSupply" type="submit">ADICIONAR À LISTA</button></div>
+          <div class="user-form-status" id="supplyFormStatus" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="supply-board">
+        <div class="supply-board-head">
+          <div><h3>LISTA DE INSUMOS</h3><p id="supplyBoardDescription">Acompanhe as anotações e os itens que ainda não chegaram.</p></div>
+          <button class="btn-outline" id="btnRefreshSupplies" type="button">ATUALIZAR</button>
+        </div>
+        <div class="supply-toolbar">
+          <div class="supply-toolbar-main">
+            <div class="field search"><label for="supplySearch">BUSCAR</label><input id="supplySearch" type="search" placeholder="Produto, quantidade ou loja"></div>
+            <div class="field store" id="supplyFilterCompanyField" hidden><label for="supplyFilterCompany">LOJA</label><select id="supplyFilterCompany"><option value="">TODAS AS LOJAS</option></select></div>
+          </div>
+          <div class="supply-tabs" role="tablist" aria-label="Situação dos insumos">
+            <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-supply-view="active">EM ABERTO</button>
+            <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-view="history">HISTÓRICO</button>
+          </div>
+        </div>
+        <div class="supply-request-bar" id="supplyRequestBar">
+          <span>Na segunda-feira, confirme o pedido da lista. Itens não recebidos continuarão em aberto e poderão ser solicitados novamente.</span>
+          <button class="supply-request-all" id="btnRequestAllSupplies" type="button">REGISTRAR PEDIDO DOS ITENS EM ABERTO</button>
+        </div>
+        <div class="supply-list" id="supplyList" aria-live="polite"><div class="supply-empty">Carregando insumos…</div></div>
       </section>
     </section>
 
@@ -3022,9 +3200,9 @@
             <div class="field">
               <label for="userAccessGroup">GRUPO DE ACESSO</label>
               <select id="userAccessGroup">
-                <option value="operator">OPERADOR — TAREFAS, MISSÕES, CAPTAÇÃO E SAÍDAS</option>
-                <option value="purchases">COMPRAS — TAREFAS, MISSÕES, CAPTAÇÃO, SAÍDAS E COMPRAS</option>
-                <option value="fiscal">FISCAL — MISSÕES, SAÍDAS, ESTOQUE, BASE, PUXADAS E RELATÓRIO 41</option>
+                <option value="operator">OPERADOR — TAREFAS, MISSÕES, CAPTAÇÃO, SAÍDAS E INSUMOS</option>
+                <option value="purchases">COMPRAS — TAREFAS, MISSÕES, CAPTAÇÃO, SAÍDAS, INSUMOS E COMPRAS</option>
+                <option value="fiscal">FISCAL — MISSÕES, SAÍDAS, INSUMOS, ESTOQUE, BASE, PUXADAS E RELATÓRIO 41</option>
                 <option value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO</option>
                 <option value="administrator">ADMINISTRADOR — ACESSO COMPLETO</option>
                 <option value="custom">PERSONALIZADO</option>
@@ -3044,6 +3222,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="missions"> Missões</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="captures"> Captação</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs"> Saídas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies"> Insumos</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases"> Compras</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="stock"> Estoque Fiscal</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="database"> Base de Dados</label>
@@ -3204,6 +3383,10 @@
   let outputRows = [];
   let outputsLoading = false;
   let outputView = 'requested';
+  let supplyRows = [];
+  let suppliesLoading = false;
+  let supplyView = 'active';
+  let supplySummary = {noted:0,awaiting:0,received:0};
   let instructionRows = [];
   let instructionView = 'active';
   let instructionToday = '';
@@ -3542,6 +3725,7 @@
     missoes:'/missoes',
     captacao:'/captacao',
     saidas:'/saidas',
+    insumos:'/insumos',
     instrucoes:'/instrucoes',
     usuarios:'/cadastros/usuarios'
   });
@@ -3558,6 +3742,7 @@
     missoes:'MISSÕES',
     captacao:'CAPTAÇÃO',
     saidas:'SAÍDAS',
+    insumos:'INSUMOS',
     instrucoes:'INSTRUÇÕES',
     usuarios:'USUÁRIOS E ACESSOS'
   });
@@ -3570,6 +3755,7 @@
     missoes:'missions',
     captacao:'captures',
     saidas:'outputs',
+    insumos:'supplies',
     cadastros:'database',
     lojas:'database',
     dados:'database'
@@ -3884,6 +4070,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
+    if(name === 'insumos') loadSupplies();
     if(name === 'instrucoes') loadInstructions();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -3901,6 +4088,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
+    if(name === 'insumos') loadSupplies();
     if(name === 'instrucoes') loadInstructions();
   }
 
@@ -5416,6 +5604,7 @@
     renderMissionCompanyOptions();
     renderMissionTabs();
     renderOutputCompanyOptions();
+    renderSupplyCompanyOptions();
   }
 
   function renderPullDestinationFilter(){
@@ -8395,6 +8584,323 @@ function renderHomeTasks(){
   });
   el('btnRefreshOutputs').addEventListener('click',loadOutputs);
 
+  async function supplyApiRequest(options,query){
+    const suffix = query ? '?'+query.toString() : '';
+    const response = await fetch('/api/supplies'+suffix,{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function renderSupplyCompanyOptions(){
+    const options = companies.map(company =>
+      '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
+    ).join('');
+    const createSelect = el('supplyCompany');
+    const filterSelect = el('supplyFilterCompany');
+    if(createSelect){
+      const selected = createSelect.value;
+      createSelect.innerHTML = '<option value="">SELECIONE A LOJA</option>'+options;
+      if(companies.some(company => company.id === selected)) createSelect.value = selected;
+    }
+    if(filterSelect){
+      const selected = filterSelect.value;
+      filterSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+options;
+      if(companies.some(company => company.id === selected)) filterSelect.value = selected;
+    }
+  }
+
+  function supplyDateTime(value){
+    return outputDateTime(value);
+  }
+
+  function supplyCardHtml(row){
+    const received = row.status === 'received';
+    const requests = Number(row.requestCount || 0);
+    const stateClass = received ? ' received' : (requests ? ' awaiting' : '');
+    const stateLabel = received
+      ? 'RECEBIDO'
+      : (requests ? 'SOLICITADO • AGUARDANDO CHEGADA' : 'ANOTADO PARA O PRÓXIMO PEDIDO');
+    const requestHistory = requests
+      ? 'ÚLTIMO PEDIDO: '+escapeHtml(supplyDateTime(row.lastRequestedAt))+
+        ' POR '+escapeHtml(row.lastRequestedByName || 'LOJA')+
+        (requests > 1 ? ' • '+requests+' SOLICITAÇÕES' : '')
+      : 'AINDA NÃO FOI MARCADO COMO SOLICITADO';
+    const completedHistory = received
+      ? ' • RECEBIDO POR '+escapeHtml(row.receivedByName || 'LOJA')+
+        ' EM '+escapeHtml(supplyDateTime(row.receivedAt))
+      : '';
+    return '<article class="supply-card'+(received ? ' received' : '')+'">'+
+      '<div class="supply-card-copy">'+
+        '<div class="supply-card-title"><span class="supply-quantity">'+
+          escapeHtml(row.quantityText || '—')+'</span><strong>'+
+          escapeHtml(row.productName || 'Insumo sem nome')+'</strong></div>'+
+        '<p class="supply-store">LOJA: '+escapeHtml(row.companyName || 'Loja')+
+          ' • ANOTADO POR '+escapeHtml(row.createdByName || 'USUÁRIO')+
+          ' EM '+escapeHtml(supplyDateTime(row.createdAt))+'</p>'+
+        '<p class="supply-history">'+requestHistory+completedHistory+'</p>'+
+      '</div>'+
+      '<div class="supply-card-actions">'+
+        '<span class="supply-state'+stateClass+'">'+stateLabel+'</span>'+
+        (!received
+          ? '<button class="supply-action" type="button" data-supply-request="'+
+              escapeHtml(row.id)+'">'+(requests ? 'PEDIR NOVAMENTE' : 'REGISTRAR PEDIDO')+'</button>'+
+            (requests
+              ? '<button class="supply-action receive" type="button" data-supply-receive="'+
+                escapeHtml(row.id)+'">MARCAR COMO RECEBIDO</button>'
+              : '')
+          : '')+
+      '</div>'+
+    '</article>';
+  }
+
+  function filteredSupplyRows(){
+    const search = normalizeHeader(el('supplySearch').value || '');
+    return supplyRows.filter(row => {
+      if(!search) return true;
+      return normalizeHeader([
+        row.productName,row.quantityText,row.companyName,row.createdByName,
+        row.receivedByName,row.lastRequestedByName
+      ].join(' ')).includes(search);
+    });
+  }
+
+  function supplyHistoryMonth(value){
+    const raw = String(value || '');
+    const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(raw)
+      ? raw.replace(' ','T')+'Z'
+      : raw;
+    const date = new Date(normalized);
+    if(Number.isNaN(date.getTime())) return 'OUTRAS DATAS';
+    return new Intl.DateTimeFormat('pt-BR',{
+      timeZone:'America/Recife',month:'long',year:'numeric'
+    }).format(date).toUpperCase();
+  }
+
+  function supplyHistoryHtml(rows){
+    const groups = new Map();
+    rows.forEach(row => {
+      const month = supplyHistoryMonth(row.receivedAt);
+      if(!groups.has(month)) groups.set(month,[]);
+      groups.get(month).push(row);
+    });
+    return '<div class="supply-history-groups">'+Array.from(groups.entries()).map(([month,items],index) =>
+      '<details class="supply-history-group"'+(index === 0 ? ' open' : '')+'>'+
+        '<summary>'+escapeHtml(month)+'<span>'+items.length+' ITEM'+(items.length === 1 ? '' : 'S')+'</span></summary>'+
+        '<div class="supply-history-group-list">'+items.map(supplyCardHtml).join('')+'</div>'+
+      '</details>'
+    ).join('')+'</div>';
+  }
+
+  function renderSupplies(){
+    el('supplyNotedCount').textContent = supplySummary.noted || 0;
+    el('supplyAwaitingCount').textContent = supplySummary.awaiting || 0;
+    el('supplyReceivedCount').textContent = supplySummary.received || 0;
+    const isAdmin = currentSession.role === 'admin';
+    el('supplyRegisterPanel').hidden = !isAdmin && !currentSession.companyId;
+    el('supplyCompanyField').hidden = !isAdmin;
+    el('supplyCompany').required = isAdmin;
+    el('supplyFilterCompanyField').hidden = !isAdmin;
+    renderSupplyCompanyOptions();
+    el('supplyRegisterDescription').textContent = isAdmin
+      ? 'Registre o item e escolha a loja responsável.'
+      : 'O item será vinculado automaticamente à sua loja.';
+    el('supplyBoardDescription').textContent = isAdmin
+      ? 'Visualize os insumos de todas as lojas ou filtre uma unidade.'
+      : 'Somente os registros da sua loja são exibidos.';
+    document.querySelectorAll('[data-supply-view]').forEach(button => {
+      const active = button.dataset.supplyView === supplyView;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+    const rows = filteredSupplyRows();
+    const activeView = supplyView === 'active';
+    el('supplyRequestBar').hidden = !activeView;
+    const bulkButton = el('btnRequestAllSupplies');
+    const needsStoreFilter = isAdmin && !el('supplyFilterCompany').value;
+    bulkButton.disabled = !activeView || !supplyRows.length || needsStoreFilter;
+    bulkButton.textContent = needsStoreFilter
+      ? 'ESCOLHA UMA LOJA PARA REGISTRAR O PEDIDO'
+      : 'REGISTRAR PEDIDO DOS ITENS EM ABERTO';
+    el('supplyList').innerHTML = rows.length
+      ? (activeView ? rows.map(supplyCardHtml).join('') : supplyHistoryHtml(rows))
+      : '<div class="supply-empty">'+
+        (activeView
+          ? 'Nenhum insumo em aberto para esta loja.'
+          : 'Nenhum recebimento registrado no histórico.')+
+        '</div>';
+  }
+
+  async function loadSupplies(){
+    if(!canAccess('supplies') || suppliesLoading) return;
+    suppliesLoading = true;
+    el('supplyList').innerHTML = '<div class="supply-empty">Carregando insumos…</div>';
+    const query = new URLSearchParams({view:supplyView});
+    if(currentSession.role === 'admin' && el('supplyFilterCompany').value){
+      query.set('companyId',el('supplyFilterCompany').value);
+    }
+    try{
+      const data = await supplyApiRequest(null,query);
+      supplyRows = Array.isArray(data.items) ? data.items : [];
+      supplySummary = {
+        noted:Number(data.summary && data.summary.noted || 0),
+        awaiting:Number(data.summary && data.summary.awaiting || 0),
+        received:Number(data.summary && data.summary.received || 0)
+      };
+      renderSupplies();
+    }catch(error){
+      supplyRows = [];
+      renderSupplies();
+      el('supplyList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
+    }finally{
+      suppliesLoading = false;
+    }
+  }
+
+  async function loadHomeSupplies(){
+    const alert = el('homeSuppliesAlert');
+    if(!alert || !canAccess('supplies')){
+      if(alert) alert.hidden = true;
+      return;
+    }
+    try{
+      const query = new URLSearchParams({view:'active'});
+      const data = await supplyApiRequest(null,query);
+      if(!data.isMonday){
+        alert.hidden = true;
+        return;
+      }
+      const items = Array.isArray(data.items) ? data.items : [];
+      const shown = items.slice(0,8);
+      el('homeSuppliesList').innerHTML = shown.length
+        ? shown.map(row =>
+            '<div class="home-supply-row">'+
+              '<span class="home-supply-quantity">'+escapeHtml(row.quantityText || '—')+'</span>'+
+              '<div class="home-supply-copy"><strong>'+escapeHtml(row.productName || 'Insumo')+'</strong>'+
+                '<span>'+escapeHtml(row.companyName || 'Loja')+'</span></div>'+
+              '<span class="home-supply-state">'+
+                (Number(row.requestCount || 0) ? 'PEDIR NOVAMENTE' : 'SOLICITAR HOJE')+
+              '</span>'+
+            '</div>'
+          ).join('')+
+          (items.length > shown.length
+            ? '<div class="home-supplies-more">E MAIS '+(items.length-shown.length)+' ITEM(NS) EM ABERTO</div>'
+            : '')
+        : '<div class="home-supplies-more">NENHUM INSUMO ANOTADO PARA SOLICITAR HOJE.</div>';
+      alert.hidden = false;
+    }catch{
+      alert.hidden = true;
+    }
+  }
+
+  function setSupplyFormStatus(message,type){
+    const status = el('supplyFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  el('supplyForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const button = el('btnSaveSupply');
+    button.disabled = true;
+    setSupplyFormStatus('ADICIONANDO À LISTA…','');
+    try{
+      await supplyApiRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          productName:el('supplyProductName').value,
+          quantityText:el('supplyQuantityText').value,
+          companyId:currentSession.role === 'admin' ? el('supplyCompany').value : ''
+        })
+      });
+      el('supplyForm').reset();
+      setSupplyFormStatus('INSUMO ADICIONADO À LISTA DA LOJA.','success');
+      supplyView = 'active';
+      await Promise.all([loadSupplies(),loadHomeSupplies()]);
+    }catch(error){
+      setSupplyFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  async function requestSupplyItems(itemIds){
+    if(!itemIds.length) return;
+    try{
+      await supplyApiRequest({
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'request',itemIds})
+      });
+      showPurchaseToast(itemIds.length === 1
+        ? 'Pedido do insumo registrado.'
+        : 'Pedido semanal registrado para os itens em aberto.');
+      await Promise.all([loadSupplies(),loadHomeSupplies()]);
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      throw error;
+    }
+  }
+
+  el('supplyList').addEventListener('click',async event => {
+    const requestButton = event.target.closest('[data-supply-request]');
+    if(requestButton){
+      if(!confirm('Registrar que este insumo foi solicitado hoje?')) return;
+      requestButton.disabled = true;
+      try{
+        await requestSupplyItems([requestButton.dataset.supplyRequest]);
+      }catch{
+        requestButton.disabled = false;
+      }
+      return;
+    }
+    const receiveButton = event.target.closest('[data-supply-receive]');
+    if(!receiveButton || !confirm('Confirmar que este insumo chegou à loja?')) return;
+    receiveButton.disabled = true;
+    try{
+      await supplyApiRequest({
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'receive',id:receiveButton.dataset.supplyReceive})
+      });
+      showPurchaseToast('Insumo recebido e enviado para o histórico.');
+      await Promise.all([loadSupplies(),loadHomeSupplies()]);
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      receiveButton.disabled = false;
+    }
+  });
+
+  el('btnRequestAllSupplies').addEventListener('click',async event => {
+    const ids = supplyRows.filter(row => row.status === 'pending').map(row => row.id);
+    if(!ids.length || !confirm('Registrar o pedido de todos os '+ids.length+' insumos em aberto desta loja?')) return;
+    event.currentTarget.disabled = true;
+    try{
+      await requestSupplyItems(ids);
+    }catch{
+      event.currentTarget.disabled = false;
+    }
+  });
+  el('supplySearch').addEventListener('input',renderSupplies);
+  el('supplyFilterCompany').addEventListener('change',loadSupplies);
+  document.querySelectorAll('[data-supply-view]').forEach(button => {
+    button.addEventListener('click',() => {
+      if(button.dataset.supplyView === supplyView) return;
+      supplyView = button.dataset.supplyView;
+      loadSupplies();
+    });
+  });
+  el('btnRefreshSupplies').addEventListener('click',loadSupplies);
+
   async function instructionApiRequest(path,options){
     const response = await fetch(path,{
       ...(options || {}),
@@ -8585,6 +9091,8 @@ function renderHomeTasks(){
     tasks:'Tarefas',
     missions:'Missões',
     captures:'Captação',
+    outputs:'Saídas',
+    supplies:'Insumos',
     purchases:'Compras',
     stock:'Estoque Fiscal',
     database:'Base de Dados',
@@ -8600,10 +9108,10 @@ function renderHomeTasks(){
     custom:'Personalizado'
   };
   const accessGroupPermissions = {
-    administrator:['tasks','missions','captures','outputs','purchases','stock','database','pulls','report41'],
-    purchases:['tasks','missions','captures','outputs','purchases'],
-    fiscal:['missions','outputs','stock','database','pulls','report41'],
-    operator:['tasks','missions','captures','outputs'],
+    administrator:['tasks','missions','captures','outputs','supplies','purchases','stock','database','pulls','report41'],
+    purchases:['tasks','missions','captures','outputs','supplies','purchases'],
+    fiscal:['missions','outputs','supplies','stock','database','pulls','report41'],
+    operator:['tasks','missions','captures','outputs','supplies'],
     assistance:['captures']
   };
 
@@ -8834,6 +9342,7 @@ function renderHomeTasks(){
     }
     if(canAccess('captures')) await loadCaptures();
     if(canAccess('outputs')) await loadOutputs();
+    if(canAccess('supplies')) await Promise.all([loadSupplies(),loadHomeSupplies()]);
     await Promise.all([loadInstructions(),loadHomeInstructions()]);
     await verifyIosStorage();
     prepareIosInstallHint();

@@ -18,7 +18,7 @@ type LoginConfig = {
   sessionSecret: string;
 };
 
-type Permission = "tasks" | "missions" | "captures" | "outputs" | "purchases" | "stock" | "database" | "pulls" | "report41";
+type Permission = "tasks" | "missions" | "captures" | "outputs" | "supplies" | "purchases" | "stock" | "database" | "pulls" | "report41";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type AuthenticatedUser = {
   id: string;
@@ -60,12 +60,12 @@ const ROLE_HEADER = "x-unigames-role";
 const ACCESS_GROUP_HEADER = "x-unigames-access-group";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
 const COMPANY_ID_HEADER = "x-unigames-company-id";
-const ALL_PERMISSIONS: Permission[] = ["tasks", "missions", "captures", "outputs", "purchases", "stock", "database", "pulls", "report41"];
+const ALL_PERMISSIONS: Permission[] = ["tasks", "missions", "captures", "outputs", "supplies", "purchases", "stock", "database", "pulls", "report41"];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
-  purchases: ["tasks", "missions", "captures", "outputs", "purchases"],
-  fiscal: ["missions", "outputs", "stock", "database", "pulls", "report41"],
-  operator: ["tasks", "missions", "captures", "outputs"],
+  purchases: ["tasks", "missions", "captures", "outputs", "supplies", "purchases"],
+  fiscal: ["missions", "outputs", "supplies", "stock", "database", "pulls", "report41"],
+  operator: ["tasks", "missions", "captures", "outputs", "supplies"],
   assistance: ["captures"],
   custom: [],
 };
@@ -85,6 +85,7 @@ const APP_ROUTE_PATHS = new Set([
   "/missoes",
   "/captacao",
   "/saidas",
+  "/insumos",
   "/instrucoes",
   "/cadastros",
   "/cadastros/lojas",
@@ -803,6 +804,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/missoes" || path.startsWith("/api/missions"), "missions"],
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
+    [path === "/insumos" || path.startsWith("/api/supplies"), "supplies"],
     [path === "/compras" || path.startsWith("/api/compras"), "purchases"],
     [path === "/estoque", "stock"],
     [path === "/puxadas", "pulls"],
@@ -1156,6 +1158,8 @@ async function createAutomaticBackup(env: Env, secret: string) {
       instructions,
       capturedProducts,
       defectiveOutputs,
+      supplyItems,
+      supplyRequestEvents,
     ] = await Promise.all([
       env.DB.prepare(
         "SELECT state_key AS stateKey, value_json AS value, version, updated_at AS updatedAt FROM shared_state",
@@ -1176,6 +1180,8 @@ async function createAutomaticBackup(env: Env, secret: string) {
       env.DB.prepare("SELECT * FROM instructions").all(),
       env.DB.prepare("SELECT * FROM captured_products").all(),
       env.DB.prepare("SELECT * FROM defective_outputs").all(),
+      env.DB.prepare("SELECT * FROM supply_items").all(),
+      env.DB.prepare("SELECT * FROM supply_request_events").all(),
     ]);
     const bytes = await encryptBackup({
       app: "ESTOQUE_UNIGAMES_AUTOMATIC_BACKUP",
@@ -1191,6 +1197,8 @@ async function createAutomaticBackup(env: Env, secret: string) {
       instructions: instructions.results ?? [],
       capturedProducts: capturedProducts.results ?? [],
       defectiveOutputs: defectiveOutputs.results ?? [],
+      supplyItems: supplyItems.results ?? [],
+      supplyRequestEvents: supplyRequestEvents.results ?? [],
     }, secret);
     await bucket.put(objectKey, bytes, {
       httpMetadata: { contentType: "application/octet-stream" },

@@ -230,3 +230,58 @@ export const defectiveOutputs = sqliteTable(
     index("defective_outputs_company_created_idx").on(table.companyId, table.createdAt),
   ],
 );
+
+export const supplyItems = sqliteTable(
+  "supply_items",
+  {
+    id: text("id").primaryKey(),
+    productName: text("product_name").notNull(),
+    quantityText: text("quantity_text").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    status: text("status").notNull().default("pending"),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    receivedBy: text("received_by").notNull().default(""),
+    receivedByName: text("received_by_name").notNull().default(""),
+    receivedAt: text("received_at").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("supply_items_company_status_created_idx").on(
+      table.companyId,
+      table.status,
+      table.createdAt,
+    ),
+    index("supply_items_status_updated_idx").on(table.status, table.updatedAt),
+  ],
+);
+
+export const supplyRequestEvents = sqliteTable(
+  "supply_request_events",
+  {
+    id: text("id").primaryKey(),
+    supplyItemId: text("supply_item_id").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    requestDate: text("request_date").notNull(),
+    requestedBy: text("requested_by").notNull(),
+    requestedByName: text("requested_by_name").notNull().default(""),
+    requestedAt: text("requested_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("supply_request_events_item_date_unique").on(
+      table.supplyItemId,
+      table.requestDate,
+    ),
+    index("supply_request_events_company_date_idx").on(
+      table.companyId,
+      table.requestDate,
+    ),
+    index("supply_request_events_item_requested_idx").on(
+      table.supplyItemId,
+      table.requestedAt,
+    ),
+  ],
+);
