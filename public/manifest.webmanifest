@@ -13,6 +13,12 @@
   "categories": ["business", "productivity"],
   "shortcuts": [
     {
+      "name": "Saídas",
+      "short_name": "Saídas",
+      "url": "/saidas",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
       "name": "Captação",
       "short_name": "Captação",
       "url": "/captacao",

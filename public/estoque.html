@@ -1823,6 +1823,60 @@
   html[data-theme="light"] .capture-board{background:#fff;border-color:#b8cad9;box-shadow:0 14px 34px rgba(28,67,102,.1);}
   html[data-theme="light"] .capture-card{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .capture-action.primary{color:#24714a;background:#e2f3e9;}
+  .output-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-bottom:16px;}
+  .output-summary-card,.output-register-panel,.output-board{
+    border:1px solid rgba(39,69,97,.58);border-radius:16px;background:var(--bg-card);
+    box-shadow:0 18px 42px rgba(0,0,0,.13);
+  }
+  .output-summary-card{padding:16px 17px;}
+  .output-summary-card span{display:block;color:var(--ink-soft);font:800 8px/1.35 var(--mono);letter-spacing:.45px;}
+  .output-summary-card strong{display:block;margin-top:10px;color:#e1ad49;font:900 25px/1 var(--sans);}
+  .output-summary-card.completed strong{color:#66d49e;}
+  .output-register-panel,.output-board{padding:20px;margin-bottom:16px;}
+  .output-panel-head,.output-board-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;
+  }
+  .output-panel-head h3,.output-board-head h3{margin:0;color:var(--ink);}
+  .output-panel-head p,.output-board-head p{margin:5px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5;}
+  .output-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+  .output-form-grid .field.double{grid-column:span 2;}
+  .output-form-grid .field.full{grid-column:1 / -1;}
+  .output-form-actions{display:flex;justify-content:flex-end;margin-top:14px;}
+  .output-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .output-toolbar .field.search{flex:1;min-width:220px;max-width:540px;}
+  .output-tabs{display:flex;gap:8px;}
+  .output-tab{
+    min-height:38px;padding:8px 13px;border:1px solid rgba(79,134,189,.38);border-radius:999px;
+    background:rgba(79,134,189,.06);color:var(--ink-soft);font:800 9px/1 var(--mono);
+  }
+  .output-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(36,79,131,.24);}
+  .output-list{display:grid;gap:10px;}
+  .output-card{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,auto);gap:15px;
+    padding:16px;border:1px solid rgba(39,69,97,.48);border-radius:13px;background:var(--bg-card-2);
+  }
+  .output-card.completed{opacity:.72;border-color:rgba(66,166,119,.34);}
+  .output-card-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .output-card-title strong{color:var(--ink);font:900 14px/1.35 var(--sans);overflow-wrap:anywhere;}
+  .output-quantity{padding:5px 8px;border-radius:999px;background:rgba(79,134,189,.1);color:var(--ink-soft);font:800 8px/1 var(--mono);}
+  .output-details{display:grid;grid-template-columns:minmax(120px,.35fr) minmax(0,1fr);gap:8px;margin-top:12px;}
+  .output-detail{padding:9px 10px;border:1px solid rgba(79,134,189,.2);border-radius:9px;background:rgba(79,134,189,.045);}
+  .output-detail span{display:block;color:var(--ink-soft);font:800 7px/1.25 var(--mono);letter-spacing:.4px;}
+  .output-detail strong{display:block;margin-top:5px;color:var(--ink);font:700 11px/1.45 var(--sans);overflow-wrap:anywhere;white-space:pre-wrap;}
+  .output-history{margin:10px 0 0;color:var(--ink-soft);font:700 8px/1.55 var(--mono);}
+  .output-card-actions{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:170px;}
+  .output-state{padding:8px 10px;border-radius:9px;background:rgba(225,173,73,.11);color:#e1ad49;text-align:center;font:900 8px/1.35 var(--mono);}
+  .output-state.completed{background:rgba(66,166,119,.11);color:#66d49e;}
+  .output-complete{
+    min-height:40px;padding:9px 11px;border:1px solid rgba(66,166,119,.46);border-radius:9px;
+    background:rgba(66,166,119,.13);color:#66d49e;font:900 8px/1.25 var(--mono);
+  }
+  .output-empty{padding:28px 18px;text-align:center;color:var(--ink-soft);font-size:12px;line-height:1.55;}
+  html[data-theme="light"] .output-summary-card,
+  html[data-theme="light"] .output-register-panel,
+  html[data-theme="light"] .output-board{background:#fff;border-color:#b8cad9;box-shadow:0 14px 34px rgba(28,67,102,.1);}
+  html[data-theme="light"] .output-card{background:#f6f9fb;border-color:#c4d1dc;}
+  html[data-theme="light"] .output-complete{color:#24714a;background:#e2f3e9;}
   .instruction-summary{
     display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;
   }
@@ -1922,6 +1976,8 @@
     .capture-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
     .capture-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .capture-details{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .output-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .output-form-grid .field.full{grid-column:1 / -1;}
     .instruction-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
     .instruction-form-grid{grid-template-columns:1fr;}
     .instruction-form-grid .field.full{grid-column:1;}
@@ -1947,6 +2003,14 @@
     .capture-details{grid-template-columns:1fr;}
     .capture-detail.wide{grid-column:1;}
     .capture-action,.capture-destination{min-height:44px;}
+    .output-summary{grid-template-columns:1fr 1fr;}
+    .output-register-panel,.output-board{padding:16px 13px;}
+    .output-form-grid{grid-template-columns:1fr;}
+    .output-form-grid .field.double,.output-form-grid .field.full{grid-column:1;}
+    .output-card{grid-template-columns:1fr;}
+    .output-card-actions{min-width:0;}
+    .output-details{grid-template-columns:1fr;}
+    .output-complete{min-height:44px;}
     .instruction-summary{grid-template-columns:1fr;}
     .instruction-admin-panel,.instruction-board,.home-instructions{padding:16px 13px;}
     .instruction-card{grid-template-columns:1fr;}
@@ -1990,6 +2054,7 @@
     <button class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></button>
     <button class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" title="Missões"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-label">Missões</span></button>
     <button class="nav-item" id="navCaptacao" data-page="captacao" data-permission="captures" title="Captação"><span class="nav-icon" aria-hidden="true">C</span><span class="nav-label">Captação</span></button>
+    <button class="nav-item" id="navSaidas" data-page="saidas" data-permission="outputs" title="Saídas"><span class="nav-icon" aria-hidden="true">S</span><span class="nav-label">Saídas</span></button>
     <button class="nav-item" id="navInstrucoes" data-page="instrucoes" title="Instruções"><span class="nav-icon" aria-hidden="true">!</span><span class="nav-label">Instruções</span></button>
     <div class="nav-group" data-permission="database">
       <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
@@ -2059,6 +2124,11 @@
           <button class="home-access-card" type="button" data-home-target="captacao" data-permission="captures">
             <span class="home-access-icon" aria-hidden="true">◇</span>
             <span class="home-access-copy"><strong>CAPTAÇÃO</strong><span>Cadastro e acompanhamento dos produtos captados.</span></span>
+            <span class="home-access-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="home-access-card" type="button" data-home-target="saidas" data-permission="outputs">
+            <span class="home-access-icon" aria-hidden="true">S</span>
+            <span class="home-access-copy"><strong>SAÍDAS</strong><span>Solicitações de saída por defeito enviadas pelas lojas.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </button>
           <button class="home-access-card" type="button" data-home-target="instrucoes">
@@ -2419,6 +2489,53 @@
           <div class="field"><label for="captureStatusFilter">STATUS</label><select id="captureStatusFilter"><option value="">TODOS OS STATUS</option><option value="submitted">AGUARDANDO ASSISTÊNCIA</option><option value="received">RECEBIDO</option><option value="ready">DISPONÍVEL PARA SEPARAÇÃO</option><option value="assigned">DESTINADO</option></select></div>
         </div>
         <div class="capture-list" id="captureList" aria-live="polite"><div class="mission-empty">Carregando captações…</div></div>
+      </section>
+    </section>
+
+<!-- ================= SAÍDAS ================= -->
+    <section id="pageSaidas" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Saídas</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Registre e acompanhe solicitações de saída de produtos com defeito. O administrador conclui a baixa e o registro permanece no histórico.</p></div>
+      </header>
+
+      <section class="output-summary" aria-label="Resumo das saídas">
+        <article class="output-summary-card"><span>AGUARDANDO EFETUAÇÃO</span><strong id="outputRequestedCount">0</strong></article>
+        <article class="output-summary-card completed"><span>HISTÓRICO EFETUADO</span><strong id="outputCompletedCount">0</strong></article>
+      </section>
+
+      <section class="output-register-panel" id="outputRegisterPanel">
+        <div class="output-panel-head">
+          <div><h3>REGISTRAR SOLICITAÇÃO DE SAÍDA</h3><p id="outputRegisterDescription">Informe os dados do produto com defeito.</p></div>
+        </div>
+        <form id="outputForm">
+          <div class="output-form-grid">
+            <div class="field"><label for="outputQuantity">QUANTIDADE</label><input id="outputQuantity" type="number" min="1" max="9999" step="1" required value="1"></div>
+            <div class="field" id="outputCompanyField" hidden><label for="outputCompany">LOJA</label><select id="outputCompany"><option value="">SELECIONE A LOJA</option></select></div>
+            <div class="field double"><label for="outputProductName">PRODUTO</label><input id="outputProductName" maxlength="180" required placeholder="Ex.: Controle DualSense PS5"></div>
+            <div class="field full"><label for="outputDefect">DEFEITO DO PRODUTO</label><textarea id="outputDefect" maxlength="1200" rows="3" required placeholder="Descreva o defeito que motivou a saída."></textarea></div>
+          </div>
+          <div class="output-form-actions"><button class="btn-accent" id="btnSaveOutput" type="submit">ENVIAR SOLICITAÇÃO</button></div>
+          <div class="user-form-status" id="outputFormStatus" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="output-board">
+        <div class="output-board-head">
+          <div><h3>SOLICITAÇÕES DE SAÍDA</h3><p id="outputBoardDescription">Acompanhe as solicitações registradas pela sua loja.</p></div>
+          <button class="btn-outline" id="btnRefreshOutputs" type="button">ATUALIZAR</button>
+        </div>
+        <div class="output-toolbar">
+          <div class="field search"><label for="outputSearch">BUSCAR</label><input id="outputSearch" type="search" placeholder="Produto, loja ou defeito"></div>
+          <div class="output-tabs" role="tablist" aria-label="Situação das saídas">
+            <button class="output-tab active" type="button" role="tab" aria-selected="true" data-output-view="requested">PENDENTES</button>
+            <button class="output-tab" type="button" role="tab" aria-selected="false" data-output-view="completed">HISTÓRICO</button>
+          </div>
+        </div>
+        <div class="output-list" id="outputList" aria-live="polite"><div class="output-empty">Carregando solicitações…</div></div>
       </section>
     </section>
 
@@ -2905,9 +3022,9 @@
             <div class="field">
               <label for="userAccessGroup">GRUPO DE ACESSO</label>
               <select id="userAccessGroup">
-                <option value="operator">OPERADOR — TAREFAS, MISSÕES E CAPTAÇÃO</option>
-                <option value="purchases">COMPRAS — TAREFAS, MISSÕES, CAPTAÇÃO E COMPRAS</option>
-                <option value="fiscal">FISCAL — MISSÕES, ESTOQUE, BASE, PUXADAS E RELATÓRIO 41</option>
+                <option value="operator">OPERADOR — TAREFAS, MISSÕES, CAPTAÇÃO E SAÍDAS</option>
+                <option value="purchases">COMPRAS — TAREFAS, MISSÕES, CAPTAÇÃO, SAÍDAS E COMPRAS</option>
+                <option value="fiscal">FISCAL — MISSÕES, SAÍDAS, ESTOQUE, BASE, PUXADAS E RELATÓRIO 41</option>
                 <option value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO</option>
                 <option value="administrator">ADMINISTRADOR — ACESSO COMPLETO</option>
                 <option value="custom">PERSONALIZADO</option>
@@ -2926,6 +3043,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks"> Tarefas</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="missions"> Missões</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="captures"> Captação</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs"> Saídas</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases"> Compras</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="stock"> Estoque Fiscal</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="database"> Base de Dados</label>
@@ -3083,6 +3201,9 @@
   let missionView = 'general';
   let missionCompanyId = '';
   let missionsLoading = false;
+  let outputRows = [];
+  let outputsLoading = false;
+  let outputView = 'requested';
   let instructionRows = [];
   let instructionView = 'active';
   let instructionToday = '';
@@ -3420,6 +3541,7 @@
     tarefas:'/tarefas',
     missoes:'/missoes',
     captacao:'/captacao',
+    saidas:'/saidas',
     instrucoes:'/instrucoes',
     usuarios:'/cadastros/usuarios'
   });
@@ -3435,6 +3557,7 @@
     tarefas:'TAREFAS',
     missoes:'MISSÕES',
     captacao:'CAPTAÇÃO',
+    saidas:'SAÍDAS',
     instrucoes:'INSTRUÇÕES',
     usuarios:'USUÁRIOS E ACESSOS'
   });
@@ -3446,6 +3569,7 @@
     tarefas:'tasks',
     missoes:'missions',
     captacao:'captures',
+    saidas:'outputs',
     cadastros:'database',
     lojas:'database',
     dados:'database'
@@ -3759,6 +3883,7 @@
     if(name === 'usuarios') loadAdminUsers();
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
+    if(name === 'saidas') loadOutputs();
     if(name === 'instrucoes') loadInstructions();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -3775,6 +3900,7 @@
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
+    if(name === 'saidas') loadOutputs();
     if(name === 'instrucoes') loadInstructions();
   }
 
@@ -5289,6 +5415,7 @@
     renderReport41StoreSelector();
     renderMissionCompanyOptions();
     renderMissionTabs();
+    renderOutputCompanyOptions();
   }
 
   function renderPullDestinationFilter(){
@@ -8077,6 +8204,197 @@ function renderHomeTasks(){
   el('captureStatusFilter').addEventListener('change',renderCaptures);
   el('btnRefreshCaptures').addEventListener('click',loadCaptures);
 
+  async function outputApiRequest(options){
+    const response = await fetch('/api/outputs',{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function outputDateTime(value){
+    const raw = String(value || '').trim();
+    if(!raw) return '—';
+    const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(raw)
+      ? raw.replace(' ','T')+'Z'
+      : raw;
+    const date = new Date(normalized);
+    if(Number.isNaN(date.getTime())) return raw;
+    return new Intl.DateTimeFormat('pt-BR',{
+      timeZone:'America/Recife',
+      day:'2-digit',month:'2-digit',year:'numeric',
+      hour:'2-digit',minute:'2-digit',hour12:false
+    }).format(date).replace(',', '');
+  }
+
+  function renderOutputCompanyOptions(){
+    const select = el('outputCompany');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">SELECIONE A LOJA</option>'+
+      companies.map(company =>
+        '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
+      ).join('');
+    if(companies.some(company => company.id === selected)) select.value = selected;
+  }
+
+  function outputCardHtml(row){
+    const completed = row.status === 'completed';
+    const history = completed
+      ? 'EFETUADA POR '+escapeHtml(row.completedByName || 'ADMINISTRADOR')+
+        ' EM '+escapeHtml(outputDateTime(row.completedAt))
+      : 'SOLICITADA POR '+escapeHtml(row.createdByName || 'LOJA')+
+        ' EM '+escapeHtml(outputDateTime(row.createdAt));
+    return '<article class="output-card'+(completed ? ' completed' : '')+'">'+
+      '<div class="output-card-copy">'+
+        '<div class="output-card-title"><span class="output-quantity">'+
+          escapeHtml(String(row.quantity || 0))+' UN.</span><strong>'+
+          escapeHtml(row.productName || 'Produto sem nome')+'</strong></div>'+
+        '<div class="output-details">'+
+          '<div class="output-detail"><span>LOJA</span><strong>'+
+            escapeHtml(row.companyName || 'Loja')+'</strong></div>'+
+          '<div class="output-detail"><span>DEFEITO INFORMADO</span><strong>'+
+            escapeHtml(row.defect || '—')+'</strong></div>'+
+        '</div><p class="output-history">'+history+'</p>'+
+      '</div>'+
+      '<div class="output-card-actions">'+
+        '<span class="output-state'+(completed ? ' completed' : '')+'">'+
+          (completed ? 'SAÍDA EFETUADA' : 'AGUARDANDO ADMINISTRADOR')+'</span>'+
+        (currentSession.role === 'admin' && !completed
+          ? '<button class="output-complete" type="button" data-output-complete="'+
+            escapeHtml(row.id)+'">MARCAR COMO FEITO</button>'
+          : '')+
+      '</div>'+
+    '</article>';
+  }
+
+  function filteredOutputRows(){
+    const search = normalizeHeader(el('outputSearch').value || '');
+    return outputRows.filter(row => {
+      if(row.status !== outputView) return false;
+      if(!search) return true;
+      return normalizeHeader([
+        row.productName,row.defect,row.companyName,row.createdByName,row.completedByName
+      ].join(' ')).includes(search);
+    });
+  }
+
+  function renderOutputs(){
+    const requested = outputRows.filter(row => row.status === 'requested').length;
+    const completed = outputRows.filter(row => row.status === 'completed').length;
+    el('outputRequestedCount').textContent = requested;
+    el('outputCompletedCount').textContent = completed;
+
+    const isAdmin = currentSession.role === 'admin';
+    el('outputRegisterPanel').hidden = !isAdmin && !currentSession.companyId;
+    el('outputCompanyField').hidden = !isAdmin;
+    el('outputCompany').required = isAdmin;
+    renderOutputCompanyOptions();
+    el('outputRegisterDescription').textContent = isAdmin
+      ? 'Informe os dados e escolha a loja responsável pela solicitação.'
+      : 'A solicitação será vinculada automaticamente à sua loja.';
+    el('outputBoardDescription').textContent = isAdmin
+      ? 'Visualize todas as lojas e conclua a saída após efetuá-la no sistema.'
+      : 'Acompanhe as solicitações registradas pela sua loja.';
+    document.querySelectorAll('[data-output-view]').forEach(button => {
+      const active = button.dataset.outputView === outputView;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+    const rows = filteredOutputRows();
+    el('outputList').innerHTML = rows.length
+      ? rows.map(outputCardHtml).join('')
+      : '<div class="output-empty">'+
+        (outputView === 'completed'
+          ? 'Nenhuma saída efetuada no histórico.'
+          : 'Nenhuma solicitação aguardando o administrador.')+
+        '</div>';
+  }
+
+  async function loadOutputs(){
+    if(!canAccess('outputs') || outputsLoading) return;
+    outputsLoading = true;
+    el('outputList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
+    try{
+      const data = await outputApiRequest();
+      outputRows = Array.isArray(data.outputs) ? data.outputs : [];
+      renderOutputs();
+    }catch(error){
+      outputRows = [];
+      renderOutputs();
+      el('outputList').innerHTML = '<div class="output-empty">'+escapeHtml(error.message)+'</div>';
+    }finally{
+      outputsLoading = false;
+    }
+  }
+
+  function setOutputFormStatus(message,type){
+    const status = el('outputFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  el('outputForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const button = el('btnSaveOutput');
+    button.disabled = true;
+    setOutputFormStatus('ENVIANDO SOLICITAÇÃO…','');
+    try{
+      await outputApiRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          quantity:Number(el('outputQuantity').value),
+          productName:el('outputProductName').value,
+          defect:el('outputDefect').value,
+          companyId:currentSession.role === 'admin' ? el('outputCompany').value : ''
+        })
+      });
+      el('outputForm').reset();
+      el('outputQuantity').value = '1';
+      setOutputFormStatus('SOLICITAÇÃO ENVIADA AO ADMINISTRADOR.','success');
+      outputView = 'requested';
+      await loadOutputs();
+    }catch(error){
+      setOutputFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('outputList').addEventListener('click',async event => {
+    const button = event.target.closest('[data-output-complete]');
+    if(!button || !confirm('Confirmar que esta saída já foi efetuada no sistema?')) return;
+    button.disabled = true;
+    try{
+      await outputApiRequest({
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:button.dataset.outputComplete})
+      });
+      showPurchaseToast('Saída efetuada e enviada para o histórico.');
+      await loadOutputs();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      button.disabled = false;
+    }
+  });
+  el('outputSearch').addEventListener('input',renderOutputs);
+  document.querySelectorAll('[data-output-view]').forEach(button => {
+    button.addEventListener('click',() => {
+      outputView = button.dataset.outputView;
+      renderOutputs();
+    });
+  });
+  el('btnRefreshOutputs').addEventListener('click',loadOutputs);
+
   async function instructionApiRequest(path,options){
     const response = await fetch(path,{
       ...(options || {}),
@@ -8282,10 +8600,10 @@ function renderHomeTasks(){
     custom:'Personalizado'
   };
   const accessGroupPermissions = {
-    administrator:['tasks','missions','captures','purchases','stock','database','pulls','report41'],
-    purchases:['tasks','missions','captures','purchases'],
-    fiscal:['missions','stock','database','pulls','report41'],
-    operator:['tasks','missions','captures'],
+    administrator:['tasks','missions','captures','outputs','purchases','stock','database','pulls','report41'],
+    purchases:['tasks','missions','captures','outputs','purchases'],
+    fiscal:['missions','outputs','stock','database','pulls','report41'],
+    operator:['tasks','missions','captures','outputs'],
     assistance:['captures']
   };
 
@@ -8515,6 +8833,7 @@ function renderHomeTasks(){
       updateMissionNotificationStatus();
     }
     if(canAccess('captures')) await loadCaptures();
+    if(canAccess('outputs')) await loadOutputs();
     await Promise.all([loadInstructions(),loadHomeInstructions()]);
     await verifyIosStorage();
     prepareIosInstallHint();

@@ -206,3 +206,27 @@ export const capturedProducts = sqliteTable(
     ),
   ],
 );
+
+export const defectiveOutputs = sqliteTable(
+  "defective_outputs",
+  {
+    id: text("id").primaryKey(),
+    quantity: integer("quantity").notNull(),
+    productName: text("product_name").notNull(),
+    defect: text("defect").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    status: text("status").notNull().default("requested"),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    completedBy: text("completed_by").notNull().default(""),
+    completedByName: text("completed_by_name").notNull().default(""),
+    completedAt: text("completed_at").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("defective_outputs_status_created_idx").on(table.status, table.createdAt),
+    index("defective_outputs_company_created_idx").on(table.companyId, table.createdAt),
+  ],
+);
