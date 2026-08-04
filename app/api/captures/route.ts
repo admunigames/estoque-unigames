@@ -215,19 +215,29 @@ export async function POST(request: Request) {
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
   }
-  if (
-    actor.role === "admin" ||
-    actor.accessGroup === "assistance" ||
-    !COMPANY_PATTERN.test(actor.companyId)
-  ) {
+  if (actor.accessGroup === "assistance") {
     return jsonResponse(
-      { error: "O CADASTRO DE PRODUTOS DEVE SER FEITO POR UM USUÁRIO VINCULADO À LOJA." },
+      { error: "A ASSISTÊNCIA NÃO PODE CADASTRAR PRODUTOS CAPTADOS." },
       403,
     );
   }
 
   try {
     const body = (await request.json()) as JsonMap;
+    const requestedOriginCompanyId = safeText(body.originCompanyId, 80);
+    const originCompanyId =
+      actor.role === "admin" ? requestedOriginCompanyId : actor.companyId;
+    if (!COMPANY_PATTERN.test(originCompanyId)) {
+      return jsonResponse(
+        {
+          error:
+            actor.role === "admin"
+              ? "ESCOLHA A LOJA DE ORIGEM."
+              : "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.",
+        },
+        400,
+      );
+    }
     const category: CaptureCategory =
       body.category === "console" || body.category === "controller"
         ? body.category
@@ -248,8 +258,10 @@ export async function POST(request: Request) {
     if (!color) return jsonResponse({ error: "INFORME A COR DO PRODUTO." }, 400);
 
     const database = await getD1();
-    const originCompanyName =
-      (await companyName(database, actor.companyId)) || "Loja";
+    const originCompanyName = await companyName(database, originCompanyId);
+    if (!originCompanyName) {
+      return jsonResponse({ error: "LOJA DE ORIGEM NÃO ENCONTRADA." }, 400);
+    }
     const id = crypto.randomUUID();
     await database
       .prepare(
@@ -267,7 +279,7 @@ export async function POST(request: Request) {
         serialNumber,
         defects,
         color,
-        actor.companyId,
+        originCompanyId,
         originCompanyName,
         actor.id,
         actor.displayName,

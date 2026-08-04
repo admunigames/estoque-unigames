@@ -2377,13 +2377,17 @@
 
       <section class="capture-register-panel" id="captureRegisterPanel">
         <div class="capture-panel-head">
-          <div><h3>CADASTRAR PRODUTO CAPTADO</h3><p>Cadastre um produto por vez. A loja de origem será identificada automaticamente pelo usuário.</p></div>
+          <div><h3>CADASTRAR PRODUTO CAPTADO</h3><p id="captureRegisterDescription">Cadastre um produto por vez. A loja de origem será identificada automaticamente pelo usuário.</p></div>
         </div>
         <form id="captureForm">
           <div class="capture-form-grid">
             <div class="field">
               <label for="captureCategory">CATEGORIA</label>
               <select id="captureCategory"><option value="console">CONSOLE</option><option value="controller">CONTROLE</option><option value="other">OUTRO PRODUTO</option></select>
+            </div>
+            <div class="field" id="captureOriginCompanyField" hidden>
+              <label for="captureOriginCompany">LOJA DE ORIGEM</label>
+              <select id="captureOriginCompany"><option value="">SELECIONE A LOJA</option></select>
             </div>
             <div class="field double"><label for="captureProductName">PRODUTO / MODELO</label><input id="captureProductName" maxlength="160" required placeholder="Ex.: PlayStation 5 Slim"></div>
             <div class="field"><label for="captureSerialNumber">SERIAL DO PRODUTO</label><input id="captureSerialNumber" maxlength="160" required placeholder="Digite o serial completo"></div>
@@ -7954,10 +7958,19 @@ function renderHomeTasks(){
     el('captureReadyCount').textContent = counts.ready;
     el('captureAssignedCount').textContent = counts.assigned;
 
-    const canRegister = currentSession.role !== 'admin' &&
-      currentSession.accessGroup !== 'assistance' &&
-      Boolean(currentSession.companyId);
+    const isAdmin = currentSession.role === 'admin';
+    const canRegister = isAdmin ||
+      (currentSession.accessGroup !== 'assistance' && Boolean(currentSession.companyId));
     el('captureRegisterPanel').hidden = !canRegister;
+    el('captureOriginCompanyField').hidden = !isAdmin;
+    el('captureOriginCompany').required = isAdmin;
+    el('captureOriginCompany').innerHTML = '<option value="">SELECIONE A LOJA</option>'+
+      companies.map(company =>
+        '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
+      ).join('');
+    el('captureRegisterDescription').textContent = isAdmin
+      ? 'Cadastre um produto por vez e escolha obrigatoriamente a loja de origem.'
+      : 'Cadastre um produto por vez. A loja de origem será identificada automaticamente pelo usuário.';
     el('captureBoardDescription').textContent = currentSession.role === 'admin'
       ? 'Visão completa para definir o destino dos produtos liberados pela assistência.'
       : currentSession.accessGroup === 'assistance'
@@ -8003,6 +8016,7 @@ function renderHomeTasks(){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           category:el('captureCategory').value,
+          originCompanyId:currentSession.role === 'admin' ? el('captureOriginCompany').value : '',
           productName:el('captureProductName').value,
           serialNumber:el('captureSerialNumber').value,
           defects:el('captureDefects').value,
