@@ -1535,7 +1535,6 @@ const worker = {
         jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403),
       );
     }
-    ctx.waitUntil(createAutomaticBackup(env, config.sessionSecret));
     if (!(await isAllowed(request, url, user))) return forbidden(url);
     if (url.pathname === "/api/session") return sessionResponse(user);
     if (url.pathname === "/api/admin/users") {

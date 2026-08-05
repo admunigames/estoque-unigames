@@ -983,7 +983,8 @@ test("aplica o sistema visual responsivo sem alterar os módulos existentes", as
   assert.match(html, /data-label="Produto"/);
   assert.match(html, /position:sticky; top:0/);
   assert.match(html, /body\.purchase-density-compact \.purchase-card/);
-  assert.match(html, /<script defer src="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/xlsx/);
+  assert.doesNotMatch(html, /<script defer src="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/xlsx/);
+  assert.match(html, /function ensureXlsx\(\)/);
   assert.match(html, /BASE GLOBAL DE RESPONSIVIDADE E DESEMPENHO/);
   assert.match(html, /min-height:100dvh/);
   assert.match(html, /@supports\(content-visibility:auto\)/);
