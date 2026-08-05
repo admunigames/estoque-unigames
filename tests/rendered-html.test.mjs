@@ -488,6 +488,9 @@ test("isola tarefas por usuário e oferece prioridade, recorrência e lembretes 
   assert.match(html, /value="weekly">SEMANAL/);
   assert.match(html, /value="monthly">MENSAL/);
   assert.match(html, /syncTaskRecurrence/);
+  assert.match(html, /const TASK_RECURRENCE_HORIZON_DAYS/);
+  assert.match(html, /function recurrenceDateKeys\(dateKey, recurrence/);
+  assert.match(html, /task\.carriedFrom/);
   assert.match(html, /pushManager\.subscribe/);
   assert.match(html, /function restorePushSubscription\(\)/);
   assert.match(html, /function savePushSubscription\(subscription\)/);
@@ -530,7 +533,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v22"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v24"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -559,6 +562,10 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(html, /id="missionDeadlineMode"/);
   assert.match(html, /id="missionDueTime"/);
   assert.match(html, /id="missionNotificationStatus"/);
+  assert.match(html, /id="missionMonth"/);
+  assert.match(html, /id="missionMonthCalendar"/);
+  assert.match(html, /btnDownloadMissionMonthPdf/);
+  assert.match(html, /function loadMissionMonthAgenda\(\)/);
   assert.match(html, /id="btnTestMissionNotifications"/);
   assert.match(html, /Aparelho inscrito\. Os lembretes de 2 horas e 1 hora estão ativos/);
   assert.match(html, /data-mission-status/);
@@ -586,6 +593,9 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(route, /actor\.role !== "admin"/);
   assert.match(route, /O ADMINISTRADOR NÃO PODE ALTERAR O STATUS DAS MISSÕES/);
   assert.match(route, /mission\.companyId !== actor\.companyId/);
+  assert.match(route, /weekday >= 1 && weekday <= 5/);
+  assert.match(route, /function missionRangeResponse\(/);
+  assert.match(route, /occurrence_date BETWEEN \?1 AND \?2/);
   assert.match(route, /"todo",[\s\S]*"in_progress",[\s\S]*"completed"/);
   assert.match(route, /INSERT INTO missions/);
   assert.match(route, /INSERT INTO mission_completions/);
@@ -601,7 +611,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v22"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v24"/);
 });
 
 test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
@@ -632,21 +642,30 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(html, /data-capture-action="receive"/);
   assert.match(html, /data-capture-action="ready"/);
   assert.match(html, /data-capture-action="assign"/);
+  assert.match(html, /function isAssistanceSession\(\)/);
+  assert.match(html, /username\.includes\('assistencia'\)/);
+  assert.match(html, /displayName\.includes\('assistencia'\)/);
   assert.match(html, /value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO/);
   assert.match(html, /value="captures"> Captação/);
   assert.match(html, /captacao:'\/captacao'/);
 
   assert.match(workerSource, /"captures"/);
   assert.match(workerSource, /assistance: \["captures"\]/);
+  assert.match(workerSource, /normalized === "assistencia"/);
+  assert.match(workerSource, /const companyId = accessGroup === "assistance" \? "" : requestedCompanyId/);
   assert.match(workerSource, /path === "\/captacao" \|\| path\.startsWith\("\/api\/captures"\)/);
   assert.match(workerSource, /authenticatedHeaders\.set\(ACCESS_GROUP_HEADER, user\.accessGroup\)/);
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM captured_products"\)\.all\(\)/);
   assert.match(workerSource, /capturedProducts: capturedProducts\.results \?\? \[\]/);
 
-  assert.match(route, /actor\.accessGroup === "assistance"/);
+  assert.match(route, /accessGroup === "assistance"/);
+  assert.match(route, /accessGroup === "assistencia"/);
+  assert.match(route, /username\.includes\("assistencia"\)/);
+  assert.match(route, /displayName\.includes\("assistencia"\)/);
+  assert.match(route, /const allStores = actor\.role === "admin" \|\| isAssistanceActor\(actor\)/);
   assert.match(route, /actor\.role === "admin" \? requestedOriginCompanyId : actor\.companyId/);
   assert.match(route, /ESCOLHA A LOJA DE ORIGEM/);
-  assert.match(route, /actor\.accessGroup !== "assistance"/);
+  assert.match(route, /!isAssistanceActor\(actor\)/);
   assert.match(route, /SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA/);
   assert.match(route, /SOMENTE O ADMINISTRADOR PODE DEFINIR O DESTINO/);
   assert.match(route, /existing\.status !== "submitted"/);
@@ -659,7 +678,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v22"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v24"/);
 });
 
 test("registra saídas por defeito por loja e preserva o histórico do administrador", async () => {
@@ -706,7 +725,7 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(migration, /defective_outputs_company_created_idx/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v22"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v24"/);
 });
 
 test("separa insumos por loja, registra pedidos recorrentes e preserva recebimentos", async () => {
@@ -769,7 +788,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v22"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v24"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -812,7 +831,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v22"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v24"/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
