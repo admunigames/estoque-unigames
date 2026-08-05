@@ -12,6 +12,8 @@
   <link rel="icon" type="image/png" id="appFavicon" href="">
   <link rel="apple-touch-icon" id="appleTouchIcon" href="">
   <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#08121e;
@@ -4548,7 +4550,9 @@
       return parseHtmlRows(text);
     }
     // Não é uma tabela HTML (formato usado pelos relatórios do CRM) — tenta como planilha real (.xlsx/.xls/.csv).
-    const XLSX = await ensureXlsx();
+    if(typeof XLSX === 'undefined'){
+      throw new Error('Não consegui interpretar este arquivo como tabela, e o leitor de Excel não carregou (sem conexão).');
+    }
     const buffer = await readAsArrayBuffer(file);
     const wb = XLSX.read(buffer, {type:'array'});
     const sheet = wb.Sheets[wb.SheetNames[0]];
