@@ -12,8 +12,6 @@
   <link rel="icon" type="image/png" id="appFavicon" href="">
   <link rel="apple-touch-icon" id="appleTouchIcon" href="">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#08121e;
@@ -4529,15 +4527,28 @@
     });
   }
 
+  let xlsxLoader = null;
+  function ensureXlsx(){
+    if(window.XLSX) return Promise.resolve(window.XLSX);
+    if(xlsxLoader) return xlsxLoader;
+    xlsxLoader = new Promise((resolve,reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.async = true;
+      script.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error('LEITOR DE EXCEL INDISPONÍVEL'));
+      script.onerror = () => reject(new Error('NÃO FOI POSSÍVEL CARREGAR O LEITOR DE EXCEL.'));
+      document.head.appendChild(script);
+    });
+    return xlsxLoader;
+  }
+
   async function extractRowsFromFile(file){
     const text = await readAsText(file, 'ISO-8859-1');
     if(/<table/i.test(text)){
       return parseHtmlRows(text);
     }
     // Não é uma tabela HTML (formato usado pelos relatórios do CRM) — tenta como planilha real (.xlsx/.xls/.csv).
-    if(typeof XLSX === 'undefined'){
-      throw new Error('Não consegui interpretar este arquivo como tabela, e o leitor de Excel não carregou (sem conexão).');
-    }
+    const XLSX = await ensureXlsx();
     const buffer = await readAsArrayBuffer(file);
     const wb = XLSX.read(buffer, {type:'array'});
     const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -5558,9 +5569,11 @@
     URL.revokeObjectURL(url);
   }
 
-  function exportPullExcel(){
-    if(typeof XLSX === 'undefined'){
-      showPullError('NÃO FOI POSSÍVEL CARREGAR O GERADOR DE EXCEL. USE O DOWNLOAD EM CSV.');
+  async function exportPullExcel(){
+    let XLSX;
+    try{ XLSX = await ensureXlsx(); }
+    catch(error){
+      showPullError(error && error.message ? error.message : 'NÃO FOI POSSÍVEL CARREGAR O GERADOR DE EXCEL. USE O DOWNLOAD EM CSV.');
       return;
     }
     const rows = getFilteredPullTransfers().map(item => ({
@@ -5906,7 +5919,6 @@
       companies = [];
     }
     renderCompanySelects();
-    loadHomeOverview();
   }
 
   async function saveCompaniesList(){
@@ -7770,9 +7782,11 @@
     URL.revokeObjectURL(url);
   });
 
-  el('btnExcel').addEventListener('click', () => {
-    if(typeof XLSX === 'undefined'){
-      showError('Não foi possível carregar o gerador de Excel (sem conexão). Tente o Baixar CSV.');
+  el('btnExcel').addEventListener('click', async () => {
+    let XLSX;
+    try{ XLSX = await ensureXlsx(); }
+    catch(error){
+      showError(error && error.message ? error.message : 'Não foi possível carregar o gerador de Excel. Tente o Baixar CSV.');
       return;
     }
     const rows = getExportRows();
@@ -9478,35 +9492,38 @@ function renderHomeTasks(){
     if(freshLogin) navigateToPage('inicio',{replace:true,scroll:false,smooth:false});
     else syncPageFromLocation(false);
     checkIntegrationHealth();
-    if(canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41')){
-      await loadCompanies();
-      await loadCatalog();
-    }
-    if(canAccess('purchases') && !(canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41'))){
+    const needsCompanies = canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41');
+    if(needsCompanies){
+      const companiesPromise = loadCompanies();
+      const catalogPromise = loadCatalog();
+      const homeOverviewPromise = companiesPromise.then(() => loadHomeOverview());
+      await Promise.all([companiesPromise,catalogPromise,homeOverviewPromise]);
+    } else if(canAccess('purchases')) {
       await loadHomeOverview();
     }
-    if(canAccess('pulls')) await loadPullData();
-    if(canAccess('database') || canAccess('report41')) await loadCompanyStock();
-    if(canAccess('report41')) await loadReport41StoreData();
-    if(canAccess('tasks')){
-      await loadTasks();
-      await loadTaskAgenda();
+
+    const loaders = [];
+    if(canAccess('pulls')) loaders.push(loadPullData());
+    if(canAccess('database') || canAccess('report41')) loaders.push(loadCompanyStock());
+    if(canAccess('report41')) loaders.push(loadReport41StoreData());
+    if(canAccess('tasks')) loaders.push((async () => {
+      await Promise.all([loadTasks(),loadTaskAgenda()]);
       renderHomeTasks();
       startTaskReminderMonitor();
-    }
-    if(canAccess('missions')){
-      await loadMissions();
-      await loadHomeMissions();
+    })());
+    if(canAccess('missions')) loaders.push((async () => {
+      await Promise.all([loadMissions(),loadHomeMissions()]);
       if(!canAccess('tasks') && 'Notification' in window &&
         Notification.permission === 'granted'){
         await restorePushSubscription().catch(() => setPushNotificationsActive(false));
       }
       updateMissionNotificationStatus();
-    }
-    if(canAccess('captures')) await loadCaptures();
-    if(canAccess('outputs')) await loadOutputs();
-    if(canAccess('supplies')) await Promise.all([loadSupplies(),loadHomeSupplies()]);
-    await Promise.all([loadInstructions(),loadHomeInstructions()]);
+    })());
+    if(canAccess('captures')) loaders.push(loadCaptures());
+    if(canAccess('outputs')) loaders.push(loadOutputs());
+    if(canAccess('supplies')) loaders.push(Promise.all([loadSupplies(),loadHomeSupplies()]));
+    loaders.push(Promise.all([loadInstructions(),loadHomeInstructions()]));
+    await Promise.all(loaders);
     await verifyIosStorage();
     prepareIosInstallHint();
   }
