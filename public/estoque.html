@@ -3097,9 +3097,10 @@
         <div class="pull-settings" style="grid-template-columns:minmax(220px,360px)">
           <div class="field"><label for="pullMinTransfer">MÍNIMO POR TRANSFERÊNCIA</label><input type="number" id="pullMinTransfer" min="1" step="1" value="1"></div>
         </div>
-        <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>REGRA DE EQUILÍBRIO:</b> Produtos compartilhados são identificados pelo nome, mesmo quando possuem códigos diferentes. Quando não há venda no período, não há transferência. Somente lojas com os dois relatórios participam, com mínimo de 3 lojas prontas.</span></div>
+        <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>REGRA DE EQUILÍBRIO:</b> Produtos compartilhados são identificados pelo nome, mesmo quando possuem códigos diferentes. Quando não há venda no período, não há transferência. A assistência não participa e são necessárias pelo menos 3 lojas prontas.</span></div>
         <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>ESTOQUE MÍNIMO:</b> Produtos comuns não recebem transferência quando a loja já possui pelo menos 1 unidade. Exceções com equilíbrio proporcional: figurinhas da Copa do Mundo, chips de celular e grips personalizados, simples ou para Switch.</span></div>
         <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>PROTEÇÃO DA ORIGEM:</b> Cada loja pode ceder no máximo 1/3 do estoque físico do produto, preservando pelo menos 2/3. Quando necessário, a transferência é dividida entre várias lojas de origem.</span></div>
+        <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>DEPÓSITO:</b> O depósito entra somente com estoque físico, nunca com vendas. Quando houver estoque do produto no depósito, nenhuma outra loja será usada como origem.</span></div>
       </section>
 
       <section class="pull-panel">
@@ -4618,6 +4619,29 @@
     return pullStoreData[id];
   }
 
+  function pullCompanyRole(company){
+    const name = normalizeProductKey(company && company.name);
+    if(/\bassistencia\b/.test(name) || name.includes('assistance')) return 'assistance';
+    if(/\bdeposito\b/.test(name) || name === 'cd' || name.startsWith('cd ') || name.includes('centro de distribuicao')) return 'depot';
+    return 'store';
+  }
+
+  function isPullDepot(company){
+    return pullCompanyRole(company) === 'depot';
+  }
+
+  function isPullAssistance(company){
+    return pullCompanyRole(company) === 'assistance';
+  }
+
+  function pullStoreCompanies(){
+    return companies.filter(company => !isPullDepot(company) && !isPullAssistance(company));
+  }
+
+  function pullDepotCompanies(){
+    return companies.filter(isPullDepot);
+  }
+
   function parsePullRows(rows, kind){
     const map = new Map();
     let idxCodigo = -1;
@@ -4714,10 +4738,11 @@
     const data = pullDataForCompany(company.id);
     const group = catalogKeyForCompany(company.id);
     const index = new Map();
-    const codes = new Set([...data.sales.keys(), ...data.stock.keys()]);
+    const sales = isPullDepot(company) || isPullAssistance(company) ? new Map() : data.sales;
+    const codes = new Set([...sales.keys(), ...data.stock.keys()]);
 
     for(const codigo of codes){
-      const saleItem = data.sales.get(codigo);
+      const saleItem = sales.get(codigo);
       const stockItem = data.stock.get(codigo);
       const nome = (saleItem && saleItem.nome) || (stockItem && stockItem.nome) ||
         knownPullProductName(group, codigo) || '';
@@ -5220,32 +5245,44 @@
   function renderPullStoreRows(){
     const list = el('pullStoreList');
     if(!list) return;
-    if(companies.length === 0){
+    const pullCompanies = companies.filter(company => !isPullAssistance(company));
+    const storeCompanies = pullStoreCompanies();
+    if(pullCompanies.length === 0){
       list.innerHTML = '<div class="module-placeholder"><h3>NENHUMA LOJA CADASTRADA</h3><p>CADASTRE AS LOJAS ANTES DE INICIAR UMA PUXADA.</p></div>';
       el('pullProgress').textContent = '0 LOJAS PRONTAS · MÍNIMO 3';
       el('pullCardStores').textContent = '0';
       return;
     }
     let readyCount = 0;
-    list.innerHTML = companies.map(company => {
+    list.innerHTML = pullCompanies.map(company => {
       const data = pullDataForCompany(company.id);
-      if(data.sales.size > 0 && data.stock.size > 0) readyCount++;
+      const depot = isPullDepot(company);
+      const ready = depot ? data.stock.size > 0 : data.sales.size > 0 && data.stock.size > 0;
+      if(!depot && ready) readyCount++;
       const group = catalogKeyForCompany(company.id);
       const groupLabel = group === 'pa' ? 'BASE P.A' : 'BASE PADRÃO';
+      const status = depot
+        ? (ready ? 'DEPÓSITO · SOMENTE ESTOQUE' : 'DEPÓSITO · AGUARDANDO ESTOQUE')
+        : (ready ? 'PRONTA PARA CÁLCULO' : 'AGUARDANDO RELATÓRIOS');
       return '<div class="pull-store-row">'+
-        '<div class="pull-store-name"><strong>'+escapeHtml(company.name)+'</strong><small>'+((data.sales.size > 0 && data.stock.size > 0) ? 'PRONTA PARA CÁLCULO' : 'AGUARDANDO RELATÓRIOS')+'</small></div>'+
+        '<div class="pull-store-name"><strong>'+escapeHtml(company.name)+'</strong><small>'+status+'</small></div>'+ 
         '<span class="pull-group-tag">'+groupLabel+'</span>'+
-        pullUploadButton(company, 'sales', data)+
+        (depot ? '<span class="pull-group-tag">SOMENTE ESTOQUE</span>' : pullUploadButton(company, 'sales', data))+
         pullUploadButton(company, 'stock', data)+
         '</div>';
     }).join('');
-    el('pullProgress').textContent = readyCount + ' DE ' + companies.length + ' LOJAS PRONTAS · MÍNIMO 3';
+    el('pullProgress').textContent = readyCount + ' DE ' + storeCompanies.length + ' LOJAS PRONTAS · MÍNIMO 3 · DEPÓSITO FORA DA CONTAGEM';
     el('pullCardStores').textContent = readyCount;
   }
 
   async function handlePullFile(file, companyId, kind){
     const company = companies.find(item => item.id === companyId);
     if(!company) return;
+    if(isPullAssistance(company)) return;
+    if(isPullDepot(company) && kind === 'sales'){
+      showPullError('O depósito participa somente com estoque físico; vendas não são carregadas para ele.');
+      return;
+    }
     clearPullError();
     try{
       const rows = await extractRowsFromFile(file);
@@ -5286,12 +5323,14 @@
 
   function calculatePullBalance(){
     clearPullError();
-    const readyCompanies = companies.filter(company => {
+    const readyStores = pullStoreCompanies().filter(company => {
       const data = pullDataForCompany(company.id);
       return data.sales.size > 0 && data.stock.size > 0;
     });
-    if(readyCompanies.length < 3){
-      showPullError('CARREGUE OS RELATÓRIOS DE VENDAS E ESTOQUE FÍSICO EM PELO MENOS 3 LOJAS. LOJAS PRONTAS: ' + readyCompanies.length + '.');
+    const readyDepots = pullDepotCompanies().filter(company => pullDataForCompany(company.id).stock.size > 0);
+    const readyCompanies = readyStores.concat(readyDepots);
+    if(readyStores.length < 3){
+      showPullError('CARREGUE OS RELATÓRIOS DE VENDAS E ESTOQUE FÍSICO EM PELO MENOS 3 LOJAS. LOJAS PRONTAS: ' + readyStores.length + '. O depósito entra somente com estoque físico.');
       return;
     }
 
@@ -5317,7 +5356,8 @@
           group:catalogKeyForCompany(company.id),
           product:product || null,
           sales:product ? product.sales : 0,
-          stock:product ? product.stock : 0
+          stock:product ? product.stock : 0,
+          isDepot:isPullDepot(company)
         };
       });
       const totalStock = storeRows.reduce((sum, row) => sum + row.stock, 0);
@@ -5330,21 +5370,25 @@
 
       if(alwaysBalance){
         const targets = allocateIntegerTargets(storeRows, totalStock, totalSales);
+        const hasDepotStock = storeRows.some(item => item.isDepot && item.stock > 0);
         storeRows.forEach((row, index) => {
           const difference = row.stock - targets[index];
-          if(difference > 0){
+          if(difference > 0 && (!hasDepotStock || row.isDepot)){
             const capacity = Math.min(difference, protectedOriginCapacity(row.stock));
             if(capacity > 0) donors.push({row, remaining:capacity});
           }
-          if(difference < 0) receivers.push({row, remaining:-difference});
+          if(difference < 0 && !row.isDepot) receivers.push({row, remaining:-difference});
         });
       } else {
+        const hasDepotStock = storeRows.some(item => item.isDepot && item.stock > 0);
         for(const row of storeRows){
-          if(row.stock > 1){
+          if((!hasDepotStock || row.isDepot) && row.stock > 1){
             const capacity = Math.min(row.stock - 1, protectedOriginCapacity(row.stock));
             if(capacity > 0) donors.push({row, remaining:capacity});
           }
-          if(row.sales > 0 && row.stock < 1) receivers.push({row, remaining:1 - row.stock});
+          if(!row.isDepot && row.sales > 0 && row.stock < 1){
+            receivers.push({row, remaining:Math.max(1, Math.floor(row.sales))});
+          }
         }
       }
       donors.sort((a,b) => b.remaining - a.remaining || textCollator.compare(a.row.company.name, b.row.company.name));

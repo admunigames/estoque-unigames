@@ -310,6 +310,15 @@ test("oferece divisao expansivel e TXT separado por rota nas puxadas", async () 
   assert.doesNotMatch(html, /Equilibre o estoque entre as lojas usando as vendas do período/);
   assert.doesNotMatch(html, /ETAPA 01/);
   assert.doesNotMatch(html, /class="pull-flow"/);
+  assert.match(html, /function pullCompanyRole\(company\)/);
+  assert.match(html, /return 'assistance'/);
+  assert.match(html, /return 'depot'/);
+  assert.match(html, /const readyStores = pullStoreCompanies\(\)/);
+  assert.match(html, /const readyDepots = pullDepotCompanies\(\)/);
+  assert.match(html, /const hasDepotStock = storeRows\.some/);
+  assert.match(html, /Math\.floor\(row\.sales\)/);
+  assert.match(html, /DEPÓSITO.*somente com estoque físico/i);
+  assert.match(html, /SOMENTE ESTOQUE/);
 });
 
 test("oferece estoque fiscal consolidado e PDF em tema claro", async () => {
