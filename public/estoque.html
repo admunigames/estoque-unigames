@@ -1185,6 +1185,12 @@
     input,select,textarea,button{font-size:16px;}
     button,input,select{min-height:44px;}
     .task-outcome{flex:1 1 100%; min-width:0;}
+    .mission-month-calendar{gap:2px;}
+    .mission-month-weekday{font-size:7px;padding:4px 2px;}
+    .mission-month-day{min-height:68px;padding:4px 3px;border-radius:6px;}
+    .mission-month-day-number strong{font-size:9px;}
+    .mission-month-day-number{font-size:7px;}
+    .mission-month-item{margin-top:2px;font-size:6px;line-height:1.15;}
     .purchase-delivery-record{grid-template-columns:1fr auto;}
     .purchase-delivery-record span{grid-column:1 / -1;}
     body.mobile-compact .wrap{padding-left:12px;padding-right:12px;}
@@ -1652,6 +1658,39 @@
   .mission-toolbar .field{min-width:180px;max-width:230px;}
   .mission-notification-action{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .mission-notification-action span{max-width:340px;color:var(--ink-soft);font:700 9px/1.45 var(--mono);}
+  .mission-month-panel{
+    margin-bottom:16px;padding:16px 18px;background:var(--bg-card);
+    border:1px solid rgba(39,69,97,.52);border-radius:16px;box-shadow:0 14px 34px rgba(0,0,0,.1);
+  }
+  .mission-month-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .mission-month-head h3{margin:0;color:var(--ink);font-size:14px;}
+  .mission-month-head p{margin:5px 0 0;color:var(--ink-soft);font-size:11.5px;line-height:1.45;}
+  .mission-month-actions{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap;}
+  .mission-month-actions .field{min-width:150px;}
+  .mission-month-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;}
+  .mission-month-weekday{padding:5px 6px;color:var(--ink-faint);font:800 8px/1 var(--mono);text-align:center;letter-spacing:.4px;}
+  .mission-month-day{min-height:104px;padding:7px;border:1px solid rgba(39,69,97,.34);border-radius:8px;background:var(--bg-card-2);}
+  .mission-month-day.is-today{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgba(79,134,189,.28);}
+  .mission-month-day.is-empty{background:transparent;border-color:transparent;}
+  .mission-month-day-number{display:flex;align-items:center;justify-content:space-between;color:var(--ink-soft);font:800 9px/1 var(--mono);}
+  .mission-month-day-number strong{color:var(--ink);font-size:11px;}
+  .mission-month-items{display:grid;gap:3px;margin-top:7px;}
+  .mission-month-item{padding:4px 5px;border-left:2px solid rgba(79,134,189,.5);background:rgba(79,134,189,.06);color:var(--ink-soft);font:700 8px/1.25 var(--sans);overflow-wrap:anywhere;}
+  .mission-month-item.in-progress{border-left-color:#b7872a;}
+  .mission-month-item.completed{border-left-color:#5f8a72;opacity:.7;text-decoration:line-through;}
+  .mission-month-empty{padding:18px;text-align:center;color:var(--ink-soft);font-size:11px;}
+  body.mission-month-pdf *{visibility:hidden !important;}
+  body.mission-month-pdf #missionMonthPanel,
+  body.mission-month-pdf #missionMonthPanel *{visibility:visible !important;}
+  body.mission-month-pdf #missionMonthPanel{position:absolute;inset:0;margin:0;padding:0;border:0;box-shadow:none;background:#fff;color:#1b2b38;}
+  body.mission-month-pdf .mission-month-head p{color:#53636e;}
+  body.mission-month-pdf .mission-month-day{min-height:112px;background:#fff;border-color:#b8c2c8;}
+  body.mission-month-pdf .mission-month-item{background:#f3f5f6;color:#263640;}
+  body.mission-month-pdf .mission-month-actions{display:none;}
+  @media print{
+    body.mission-month-pdf{background:#fff;}
+    body.mission-month-pdf .mission-month-calendar{gap:4px;}
+  }
   .mission-admin-panel{padding:20px;margin-bottom:16px;}
   .mission-admin-head,.mission-board-head,.home-missions-head{
     display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;
@@ -2069,6 +2108,8 @@
   @media(max-width:800px){
     .mission-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .mission-form-grid .field.double{grid-column:span 2;}
+    .mission-month-day{min-height:88px;padding:5px;}
+    .mission-month-item{font-size:7px;padding:3px;}
     .capture-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
     .capture-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .capture-details{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -2656,6 +2697,18 @@
           <button class="btn-outline" id="btnTestMissionNotifications" type="button" hidden>TESTAR NOTIFICAÇÃO</button>
         </div>
       </div>
+
+      <section class="mission-month-panel" id="missionMonthPanel">
+        <div class="mission-month-head">
+          <div><h3>AGENDA DO MÊS</h3><p>Visualização compacta das missões registradas e do histórico de execução.</p></div>
+          <div class="mission-month-actions">
+            <div class="field"><label for="missionMonth">MÊS</label><input id="missionMonth" type="month"></div>
+            <button class="btn-outline" id="btnRefreshMissionMonth" type="button">ATUALIZAR</button>
+            <button class="btn-accent" id="btnDownloadMissionMonthPdf" type="button">BAIXAR PDF</button>
+          </div>
+        </div>
+        <div id="missionMonthCalendar" class="mission-month-calendar" aria-live="polite"><div class="mission-month-empty">Selecione um mês para carregar a agenda.</div></div>
+      </section>
 
       <section class="mission-admin-panel" data-admin-only>
         <div class="mission-admin-head">
@@ -4549,9 +4602,7 @@
       return parseHtmlRows(text);
     }
     // Não é uma tabela HTML (formato usado pelos relatórios do CRM) — tenta como planilha real (.xlsx/.xls/.csv).
-    if(typeof XLSX === 'undefined'){
-      throw new Error('Não consegui interpretar este arquivo como tabela, e o leitor de Excel não carregou (sem conexão).');
-    }
+    const XLSX = await ensureXlsx();
     const buffer = await readAsArrayBuffer(file);
     const wb = XLSX.read(buffer, {type:'array'});
     const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -5265,8 +5316,8 @@
         ? (ready ? 'DEPÓSITO · SOMENTE ESTOQUE' : 'DEPÓSITO · AGUARDANDO ESTOQUE')
         : (ready ? 'PRONTA PARA CÁLCULO' : 'AGUARDANDO RELATÓRIOS');
       return '<div class="pull-store-row">'+
-        '<div class="pull-store-name"><strong>'+escapeHtml(company.name)+'</strong><small>'+status+'</small></div>'+ 
-        '<span class="pull-group-tag">'+groupLabel+'</span>'+
+        '<div class="pull-store-name"><strong>'+escapeHtml(company.name)+'</strong><small>'+status+'</small></div>'+
+        '<span class="pull-group-tag">'+groupLabel+'</span>'+ 
         (depot ? '<span class="pull-group-tag">SOMENTE ESTOQUE</span>' : pullUploadButton(company, 'sales', data))+
         pullUploadButton(company, 'stock', data)+
         '</div>';
@@ -7245,16 +7296,22 @@
     const day = String(date.getDate()).padStart(2,'0');
     return year+'-'+month+'-'+day;
   }
-  function recurringDateKey(dateKey, recurrence){
-    const date = new Date(dateKey+'T12:00:00');
-    if(recurrence === 'daily') date.setDate(date.getDate()+1);
-    else if(recurrence === 'weekly') date.setDate(date.getDate()+7);
-    else if(recurrence === 'monthly') date.setMonth(date.getMonth()+1);
-    else return '';
-    const year = date.getFullYear();
-    const month = String(date.getMonth()+1).padStart(2,'0');
-    const day = String(date.getDate()).padStart(2,'0');
-    return year+'-'+month+'-'+day;
+  const TASK_RECURRENCE_HORIZON_DAYS = 62;
+  function recurrenceDateKeys(dateKey, recurrence, horizon = TASK_RECURRENCE_HORIZON_DAYS){
+    const source = new Date(dateKey+'T12:00:00');
+    if(Number.isNaN(source.getTime()) || !['daily','weekly','monthly'].includes(recurrence)) return [];
+    const dates = [];
+    for(let offset = 1; offset <= horizon; offset++){
+      const date = new Date(source);
+      date.setDate(source.getDate() + offset);
+      if(recurrence === 'weekly' && date.getDay() !== source.getDay()) continue;
+      if(recurrence === 'monthly' && date.getDate() !== source.getDate()) continue;
+      const year = date.getFullYear();
+      const month = String(date.getMonth()+1).padStart(2,'0');
+      const day = String(date.getDate()).padStart(2,'0');
+      dates.push(year+'-'+month+'-'+day);
+    }
+    return dates;
   }
   function formatTaskDate(dateKey){
     return dateKey ? dateKey.split('-').reverse().join('/') : 'SEM DATA';
@@ -7578,29 +7635,30 @@
   }
   async function syncTaskRecurrence(sourceDate, task, shouldSchedule){
     if(!task || task.recurrence === 'none') return;
-    const targetDate = recurringDateKey(sourceDate,task.recurrence);
-    if(!targetDate) return;
-    const targetKey = 'tarefas:' + targetDate;
     const seriesId = task.seriesId || task.id;
-    const recurringId = 'rec-'+seriesId+'-'+targetDate.replace(/-/g,'');
-    const result = await storage.get(targetKey);
-    const targetData = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
-    const existingIndex = targetData.tasks.findIndex(item => item.id === recurringId);
-    if(shouldSchedule && existingIndex < 0){
-      targetData.tasks.push({
-        id:recurringId,
-        time:task.time,
-        text:task.text,
-        done:false,
-        outcome:'not_seen',
-        carriedFrom:'',
-        priority:task.priority,
-        recurrence:task.recurrence,
-        seriesId
-      });
-    }
-    if(!shouldSchedule && existingIndex >= 0) targetData.tasks.splice(existingIndex,1);
-    await storage.set(targetKey,JSON.stringify(targetData));
+    const targetDates = recurrenceDateKeys(sourceDate,task.recurrence);
+    await Promise.all(targetDates.map(async targetDate => {
+      const targetKey = 'tarefas:' + targetDate;
+      const recurringId = 'rec-'+seriesId+'-'+targetDate.replace(/-/g,'');
+      const result = await storage.get(targetKey);
+      const targetData = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
+      const existingIndex = targetData.tasks.findIndex(item => item.id === recurringId);
+      if(shouldSchedule && existingIndex < 0){
+        targetData.tasks.push({
+          id:recurringId,
+          time:task.time,
+          text:task.text,
+          done:false,
+          outcome:'not_seen',
+          carriedFrom:'',
+          priority:task.priority,
+          recurrence:task.recurrence,
+          seriesId
+        });
+      }
+      if(!shouldSchedule && existingIndex >= 0) targetData.tasks.splice(existingIndex,1);
+      await storage.set(targetKey,JSON.stringify(targetData));
+    }));
   }
   async function loadTaskAgenda(){
     const agenda = el('taskAgendaFuture');
@@ -7616,7 +7674,10 @@
         let saved = {};
         try{ saved = JSON.parse(item.value || '{}'); } catch{ saved = {}; }
         return {date, tasks:normalizeTaskData(saved).tasks};
-      }).filter(day => day.date > todayDateKey() && day.tasks.length);
+      }).map(day => ({
+        date:day.date,
+        tasks:day.tasks.filter(task => Boolean(task.carriedFrom) && task.outcome === 'carryover')
+      })).filter(day => day.date > todayDateKey() && day.tasks.length);
       agenda.innerHTML = days.length ? days.map(day =>
         '<article class="task-agenda-day">'+
           '<div class="task-agenda-day-head"><span>'+formatTaskDate(day.date)+'</span>'+
@@ -7954,6 +8015,61 @@ function renderHomeTasks(){
   });
 
   const missionFrequencyLabels = {once:'SOMENTE NO DIA',daily:'DIÁRIA',weekly:'SEMANAL'};
+  let missionMonthLoading = false;
+  function missionMonthBounds(month){
+    const match = /^(\d{4})-(\d{2})$/.exec(month || '');
+    if(!match) return null;
+    const year = Number(match[1]);
+    const monthNumber = Number(match[2]);
+    if(monthNumber < 1 || monthNumber > 12) return null;
+    const lastDay = new Date(year,monthNumber,0).getDate();
+    return {from:month+'-01',to:month+'-'+String(lastDay).padStart(2,'0'),year,month:monthNumber};
+  }
+  function missionMonthItemHtml(mission){
+    const status = missionVisualStatus(mission);
+    const className = status === 'completed' ? ' completed' : status === 'in_progress' ? ' in-progress' : '';
+    const target = mission.scope === 'general' ? 'GERAL' : (mission.companyName || 'LOJA');
+    return '<div class="mission-month-item'+className+'" title="'+escapeHtml(mission.title)+'">'+
+      escapeHtml(mission.title)+' · '+escapeHtml(target)+'</div>';
+  }
+  function renderMissionMonthAgenda(payload){
+    const calendar = el('missionMonthCalendar');
+    const bounds = missionMonthBounds(el('missionMonth').value);
+    if(!calendar || !bounds) return;
+    const days = new Map((Array.isArray(payload && payload.days) ? payload.days : []).map(day => [day.date,day.missions || []]));
+    const weekdays = ['SEG','TER','QUA','QUI','SEX','SÁB','DOM'];
+    const firstDay = new Date(bounds.year,bounds.month-1,1).getDay();
+    const leading = (firstDay + 6) % 7;
+    const cells = weekdays.map(day => '<div class="mission-month-weekday">'+day+'</div>');
+    for(let index=0;index<leading;index++) cells.push('<div class="mission-month-day is-empty" aria-hidden="true"></div>');
+    const today = todayDateKey();
+    for(let day=1;day<=Number(bounds.to.slice(-2));day++){
+      const date = bounds.from.slice(0,8)+String(day).padStart(2,'0');
+      const missions = days.get(date) || [];
+      const items = missions.slice(0,6).map(missionMonthItemHtml).join('')+
+        (missions.length > 6 ? '<div class="mission-month-item">+'+(missions.length-6)+' OUTRAS</div>' : '');
+      cells.push('<article class="mission-month-day'+(date === today ? ' is-today' : '')+'">'+
+        '<div class="mission-month-day-number"><strong>'+day+'</strong><span>'+missions.length+'</span></div>'+
+        '<div class="mission-month-items">'+(items || '<span class="mission-month-item" style="opacity:.35">—</span>')+'</div></article>');
+    }
+    while(cells.length % 7) cells.push('<div class="mission-month-day is-empty" aria-hidden="true"></div>');
+    calendar.innerHTML = cells.join('');
+  }
+  async function loadMissionMonthAgenda(){
+    const calendar = el('missionMonthCalendar');
+    const bounds = missionMonthBounds(el('missionMonth').value);
+    if(!calendar || !bounds || missionMonthLoading) return;
+    missionMonthLoading = true;
+    calendar.innerHTML = '<div class="mission-month-empty">Carregando agenda do mês…</div>';
+    try{
+      const data = await missionApiRequest('/api/missions?'+new URLSearchParams({from:bounds.from,to:bounds.to,view:'dashboard'}));
+      renderMissionMonthAgenda(data);
+    }catch(error){
+      calendar.innerHTML = '<div class="mission-month-empty">'+escapeHtml(error.message || 'Não foi possível carregar a agenda do mês.')+'</div>';
+    }finally{
+      missionMonthLoading = false;
+    }
+  }
   const missionStatusLabels = {
     todo:'A FAZER',
     in_progress:'EM ANDAMENTO',
@@ -8271,6 +8387,25 @@ function renderHomeTasks(){
     loadMissions();
   });
   el('missionDate').addEventListener('change',() => loadMissions());
+  el('missionMonth').value = todayDateKey().slice(0,7);
+  el('missionMonth').addEventListener('change',loadMissionMonthAgenda);
+  el('btnRefreshMissionMonth').addEventListener('click',loadMissionMonthAgenda);
+  let missionMonthTitleBeforePrint = '';
+  el('btnDownloadMissionMonthPdf').addEventListener('click',() => {
+    if(!missionMonthBounds(el('missionMonth').value)) return;
+    missionMonthTitleBeforePrint = document.title;
+    document.title = 'agenda-missoes-'+el('missionMonth').value;
+    document.body.classList.add('mission-month-pdf');
+    window.print();
+  });
+  window.addEventListener('afterprint',() => {
+    if(!document.body.classList.contains('mission-month-pdf')) return;
+    document.body.classList.remove('mission-month-pdf');
+    if(missionMonthTitleBeforePrint){
+      document.title = missionMonthTitleBeforePrint;
+      missionMonthTitleBeforePrint = '';
+    }
+  });
   el('missionScope').addEventListener('change',() => {
     const storeMission = el('missionScope').value === 'store';
     el('missionCompanyField').hidden = !storeMission;
@@ -8382,6 +8517,18 @@ function renderHomeTasks(){
     other:'OUTRO PRODUTO'
   };
 
+  function isAssistanceSession(){
+    const accessGroup = normalizeHeader(currentSession.accessGroup || '');
+    const username = normalizeHeader(currentSession.username || '');
+    const displayName = normalizeHeader(currentSession.displayName || '');
+    return currentSession.role !== 'admin' &&
+      canAccess('captures') &&
+      (accessGroup === 'assistance' ||
+        accessGroup === 'assistencia' ||
+        username.includes('assistencia') ||
+        displayName.includes('assistencia'));
+  }
+
   async function captureApiRequest(options){
     const response = await fetch('/api/captures',{
       ...(options || {}),
@@ -8420,7 +8567,7 @@ function renderHomeTasks(){
   }
 
   function captureActionsHtml(row){
-    if(currentSession.accessGroup === 'assistance' && currentSession.role !== 'admin'){
+    if(isAssistanceSession()){
       if(row.status === 'submitted'){
         return '<button class="capture-action" type="button" data-capture-action="receive" data-capture-key="'+escapeHtml(row.id)+'">MARCAR COMO RECEBIDO</button>';
       }
@@ -8485,8 +8632,9 @@ function renderHomeTasks(){
     el('captureAssignedCount').textContent = counts.assigned;
 
     const isAdmin = currentSession.role === 'admin';
+    const isAssistance = isAssistanceSession();
     const canRegister = isAdmin ||
-      (currentSession.accessGroup !== 'assistance' && Boolean(currentSession.companyId));
+      (!isAssistance && Boolean(currentSession.companyId));
     el('captureRegisterPanel').hidden = !canRegister;
     el('captureOriginCompanyField').hidden = !isAdmin;
     el('captureOriginCompany').required = isAdmin;
@@ -8499,7 +8647,7 @@ function renderHomeTasks(){
       : 'Cadastre um produto por vez. A loja de origem será identificada automaticamente pelo usuário.';
     el('captureBoardDescription').textContent = currentSession.role === 'admin'
       ? 'Visão completa para definir o destino dos produtos liberados pela assistência.'
-      : currentSession.accessGroup === 'assistance'
+      : isAssistance
         ? 'Receba os produtos e libere-os quando estiverem disponíveis para separação.'
         : 'Acompanhe somente os produtos cadastrados pela sua loja.';
     const visibleRows = filteredCaptureRows();
@@ -9547,7 +9695,6 @@ function renderHomeTasks(){
     } else if(canAccess('purchases')) {
       await loadHomeOverview();
     }
-
     const loaders = [];
     if(canAccess('pulls')) loaders.push(loadPullData());
     if(canAccess('database') || canAccess('report41')) loaders.push(loadCompanyStock());
@@ -9558,7 +9705,7 @@ function renderHomeTasks(){
       startTaskReminderMonitor();
     })());
     if(canAccess('missions')) loaders.push((async () => {
-      await Promise.all([loadMissions(),loadHomeMissions()]);
+      await Promise.all([loadMissions(),loadHomeMissions(),loadMissionMonthAgenda()]);
       if(!canAccess('tasks') && 'Notification' in window &&
         Notification.permission === 'granted'){
         await restorePushSubscription().catch(() => setPushNotificationsActive(false));

@@ -123,9 +123,123 @@ function dateAtUtc(value: string) {
 
 function missionOccursOn(mission: MissionRow, date: string) {
   if (!DATE_PATTERN.test(date) || mission.startDate > date) return false;
-  if (mission.frequency === "daily") return true;
+  if (mission.frequency === "daily") {
+    const weekday = dateAtUtc(date).getUTCDay();
+    return weekday >= 1 && weekday <= 5;
+  }
   if (mission.frequency === "once") return mission.startDate === date;
   return dateAtUtc(mission.startDate).getUTCDay() === dateAtUtc(date).getUTCDay();
+}
+
+function dateKeysBetween(from: string, to: string) {
+  const start = dateAtUtc(from);
+  const end = dateAtUtc(to);
+  const dates: string[] = [];
+  for (const cursor = new Date(start); cursor <= end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+    dates.push(cursor.toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
+function missionsForDate(
+  missions: MissionRow[],
+  completions: CompletionRow[],
+  date: string,
+  actor: Identity,
+  view: string,
+  selectedCompanyId: string,
+) {
+  let visible = missions.filter((mission) => missionOccursOn(mission, date));
+  if (actor.role !== "admin") {
+    visible = !actor.companyId
+      ? []
+      : visible.filter((mission) =>
+          view === "general"
+            ? mission.scope === "general"
+            : view === "store"
+              ? mission.scope === "store" && mission.companyId === actor.companyId
+              : mission.scope === "general" || mission.companyId === actor.companyId,
+        );
+  } else if (view === "general") {
+    visible = visible.filter((mission) => mission.scope === "general");
+  } else if (view === "store") {
+    visible = visible.filter(
+      (mission) =>
+        mission.scope === "store" &&
+        COMPANY_PATTERN.test(selectedCompanyId) &&
+        mission.companyId === selectedCompanyId,
+    );
+  }
+
+  const missionIds = new Set(visible.map((mission) => mission.id));
+  const dayCompletions = completions.filter(
+    (completion) =>
+      completion.occurrenceDate === date &&
+      missionIds.has(completion.missionId) &&
+      (actor.role === "admin" || completion.companyId === actor.companyId),
+  );
+  return visible.map((mission) => {
+    const missionCompletions = dayCompletions.filter(
+      (completion) => completion.missionId === mission.id,
+    );
+    const recipientStatus =
+      missionCompletions.find((completion) => completion.companyId === actor.companyId)?.status ??
+      "todo";
+    return {
+      ...mission,
+      status: recipientStatus,
+      completed: recipientStatus === "completed",
+      completions: actor.role === "admin" ? missionCompletions : [],
+      completionCount: missionCompletions.filter((completion) => completion.status === "completed").length,
+      inProgressCount: missionCompletions.filter((completion) => completion.status === "in_progress").length,
+    };
+  });
+}
+
+async function missionRangeResponse(
+  database: D1Database,
+  from: string,
+  to: string,
+  actor: Identity,
+  view: string,
+  selectedCompanyId: string,
+) {
+  const dates = dateKeysBetween(from, to);
+  if (dates.length > 62) return jsonResponse({ error: "O INTERVALO PODE TER NO MÃXIMO 62 DIAS." }, 400);
+  const missionResult = await database
+    .prepare(
+      `SELECT id, title, description, scope, company_id AS companyId,
+              company_name AS companyName, frequency, start_date AS startDate,
+              due_time AS dueTime, created_by AS createdBy,
+              created_by_name AS createdByName, created_at AS createdAt,
+              updated_at AS updatedAt
+       FROM missions WHERE start_date <= ?1
+       ORDER BY CASE WHEN due_time='' THEN 1 ELSE 0 END, due_time, created_at`,
+    )
+    .bind(to)
+    .all<MissionRow>();
+  const completionResult = await database
+    .prepare(
+      `SELECT id, mission_id AS missionId, occurrence_date AS occurrenceDate,
+              company_id AS companyId, company_name AS companyName,
+              completed_by AS completedBy, completed_by_name AS completedByName,
+              completed_at AS completedAt, status,
+              updated_at AS updatedAt
+       FROM mission_completions WHERE occurrence_date BETWEEN ?1 AND ?2
+       ORDER BY updated_at DESC`,
+    )
+    .bind(from, to)
+    .all<CompletionRow>();
+  const missions = missionResult.results ?? [];
+  const completions = completionResult.results ?? [];
+  return jsonResponse({
+    from,
+    to,
+    days: dates.map((date) => ({
+      date,
+      missions: missionsForDate(missions, completions, date, actor, view, selectedCompanyId),
+    })),
+  });
 }
 
 async function companyName(database: D1Database, companyId: string) {
@@ -210,10 +324,28 @@ export async function GET(request: Request) {
   const date = (url.searchParams.get("date") || "").trim();
   const view = (url.searchParams.get("view") || "dashboard").trim();
   const selectedCompanyId = (url.searchParams.get("companyId") || "").trim();
+  const from = (url.searchParams.get("from") || "").trim();
+  const to = (url.searchParams.get("to") || "").trim();
+  const rangeRequested = Boolean(from || to);
+  if (rangeRequested && (!DATE_PATTERN.test(from) || !DATE_PATTERN.test(to) || from > to)) {
+    return jsonResponse({ error: "INTERVALO DE DATAS INVALIDO." }, 400);
+  }
+  if (rangeRequested && !date) {
+    try {
+      return missionRangeResponse(await getD1(), from, to, actor, view, selectedCompanyId);
+    } catch {
+      return jsonResponse({ error: "NÃƒO FOI POSSÃVEL CARREGAR AS MISSÃ•ES." }, 500);
+    }
+  }
+  if (rangeRequested && (!DATE_PATTERN.test(from) || !DATE_PATTERN.test(to) || from > to)) {
+    return jsonResponse({ error: "INTERVALO DE DATAS INVÃLIDO." }, 400);
+  }
+  if (rangeRequested && date) return jsonResponse({ error: "USE DATA OU INTERVALO, NÃƒO OS DOIS." }, 400);
   if (!DATE_PATTERN.test(date)) return jsonResponse({ error: "DATA INVÁLIDA." }, 400);
 
   try {
     const database = await getD1();
+    if (rangeRequested) return missionRangeResponse(database, from, to, actor, view, selectedCompanyId);
     const result = await database
       .prepare(
         `SELECT id, title, description, scope, company_id AS companyId,
