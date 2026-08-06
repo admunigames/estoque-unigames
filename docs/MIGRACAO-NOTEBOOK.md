@@ -9,7 +9,7 @@
 
 ## Configuração no notebook
 
-Instalar Node.js 22.13 ou superior, Git, pnpm e VS Code. Depois:
+Instalar Node.js 22.13 ou superior, Git, pnpm e VS Code. Os scripts do projeto são compatíveis com PowerShell e outros terminais. Depois:
 
 ```bash
 git clone https://github.com/admunigames/estoque-unigames.git
