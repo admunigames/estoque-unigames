@@ -941,7 +941,7 @@ test("abre o menu de cadastros e encaminha para lojas ou base de dados", async (
   assert.match(html, /class="cadastros-menu"/);
   assert.match(html, /data-cadastro-target="lojas"[\s\S]*<strong>LOJAS<\/strong>/);
   assert.match(html, /data-cadastro-target="dados"[\s\S]*<strong>BASE DE DADOS<\/strong>/);
-  assert.match(html, /id="navDados" data-page="dados"[\s\S]*class="nav-label">Base de Dados<\/span><\/button>/);
+  assert.match(html, /id="navDados" data-page="dados"[\s\S]*class="nav-label">Base de Dados<\/span><\/a>/);
   assert.match(html, /id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu"/);
   assert.match(html, /id="navCadastrosSubmenu" aria-hidden="true"/);
   assert.match(html, /\.nav-group-toggle\[aria-expanded="true"\] \+ \.nav-submenu/);

@@ -146,7 +146,7 @@
     display:flex; align-items:center; gap:11px; position:relative; overflow:hidden;
     background:transparent; border:1px solid transparent; color:var(--ink-soft);
     text-align:left; padding:9px 10px; border-radius:10px; font-size:12px; font-weight:700;
-    cursor:pointer; width:100%; font-family:var(--sans); letter-spacing:.1px;
+    cursor:pointer; width:100%; font-family:var(--sans); letter-spacing:.1px; text-decoration:none;
   }
   .nav-icon{
     width:25px; height:25px; flex:0 0 25px; display:grid; place-items:center; border-radius:8px;
@@ -361,7 +361,7 @@
     min-height:150px; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between;
     overflow:hidden; padding:18px; border:1px solid rgba(255,255,255,.92); border-radius:18px; cursor:pointer;
     background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(236,244,251,.48));
-    box-shadow:0 14px 34px rgba(36,79,131,.12),inset 0 1px 0 #fff; color:#10233a;
+    box-shadow:0 14px 34px rgba(36,79,131,.12),inset 0 1px 0 #fff; color:#10233a; text-decoration:none;
     transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease;
   }
   .home-access-card:hover{
@@ -1990,7 +1990,7 @@
   .home-supplies-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px;}
   .home-supplies-head span{display:block;color:#7e6427;font:900 8px/1.3 var(--mono);letter-spacing:.5px;}
   .home-supplies-head h2{margin:5px 0 0;color:#352b16;font:900 18px/1.25 var(--sans);}
-  .home-supplies-head button{border:1px solid rgba(126,100,39,.3);background:rgba(255,255,255,.54);color:#604c20;font:900 8px/1 var(--mono);}
+  .home-supplies-head button,.home-supplies-head a{border:1px solid rgba(126,100,39,.3);background:rgba(255,255,255,.54);color:#604c20;font:900 8px/1 var(--mono);text-decoration:none;display:inline-block;}
   .home-supplies-list{display:grid;gap:7px;}
   .home-supply-row{
     display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;
@@ -2005,7 +2005,7 @@
   html[data-theme="dark"] .home-supplies-head h2,html[data-theme="dark"] .home-supply-copy strong{color:#fff5d4;}
   html[data-theme="dark"] .home-supplies-head span,html[data-theme="dark"] .home-supply-copy span,html[data-theme="dark"] .home-supply-state,html[data-theme="dark"] .home-supplies-more{color:#e5c978;}
   html[data-theme="dark"] .home-supply-row{background:rgba(255,255,255,.035);border-color:rgba(225,173,73,.22);}
-  html[data-theme="dark"] .home-supplies-head button{background:rgba(255,255,255,.04);color:#f0d58b;border-color:rgba(225,173,73,.28);}
+  html[data-theme="dark"] .home-supplies-head button,html[data-theme="dark"] .home-supplies-head a{background:rgba(255,255,255,.04);color:#f0d58b;border-color:rgba(225,173,73,.28);}
   html[data-theme="light"] .supply-summary-card,
   html[data-theme="light"] .supply-register-panel,
   html[data-theme="light"] .supply-board{background:#fff;border-color:#b8cad9;box-shadow:0 14px 34px rgba(28,67,102,.1);}
@@ -2161,7 +2161,7 @@
     .supply-request-bar{align-items:stretch;flex-direction:column;}
     .home-supplies-alert{padding:15px 13px;}
     .home-supplies-head{align-items:stretch;flex-direction:column;}
-    .home-supplies-head button{min-height:42px;}
+    .home-supplies-head button,.home-supplies-head a{min-height:42px;}
     .home-supply-row{grid-template-columns:auto minmax(0,1fr);}
     .home-supply-state{grid-column:2;text-align:left;}
     .instruction-summary{grid-template-columns:1fr;}
@@ -2323,26 +2323,38 @@
     <button class="sidebar-compact-toggle" id="btnSidebarCompact" type="button" aria-pressed="false" title="Alternar menu compacto">
       <span aria-hidden="true">⇤</span><span class="compact-label">MENU COMPACTO</span>
     </button>
-    <button class="nav-item active" id="navInicio" data-page="inicio" title="Início"><span class="nav-icon" aria-hidden="true">⌂</span><span class="nav-label">Início</span></button>
-    <button class="nav-item" id="navPuxadas" data-page="puxadas" data-permission="pulls" title="Puxadas"><span class="nav-icon" aria-hidden="true">⇄</span><span class="nav-label">Puxadas</span></button>
-    <button class="nav-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" title="Relatório 41"><span class="nav-icon" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></button>
-    <button class="nav-item" id="navCompras" data-page="compras" data-permission="purchases" title="Controle de Compras"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Controle de Compras</span></button>
-    <button class="nav-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></button>
-    <button class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></button>
-    <button class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" title="Missões"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-label">Missões</span></button>
-    <button class="nav-item" id="navCaptacao" data-page="captacao" data-permission="captures" title="Captação"><span class="nav-icon" aria-hidden="true">C</span><span class="nav-label">Captação</span></button>
-    <button class="nav-item" id="navSaidas" data-page="saidas" data-permission="outputs" title="Saídas"><span class="nav-icon" aria-hidden="true">S</span><span class="nav-label">Saídas</span></button>
-    <button class="nav-item" id="navInsumos" data-page="insumos" data-permission="supplies" title="Insumos"><span class="nav-icon" aria-hidden="true">I</span><span class="nav-label">Insumos</span></button>
-    <button class="nav-item" id="navInstrucoes" data-page="instrucoes" title="Instruções"><span class="nav-icon" aria-hidden="true">!</span><span class="nav-label">Instruções</span></button>
+    <a class="nav-item active" id="navInicio" data-page="inicio" title="Início" href="/inicio"><span class="nav-icon" aria-hidden="true">⌂</span><span class="nav-label">Início</span></a>
+    <a class="nav-item" id="navPuxadas" data-page="puxadas" data-permission="pulls" title="Puxadas" href="/puxadas"><span class="nav-icon" aria-hidden="true">⇄</span><span class="nav-label">Puxadas</span></a>
+    <a class="nav-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" title="Relatório 41" href="/relatorio-41"><span class="nav-icon" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></a>
+    <a class="nav-item" id="navCompras" data-page="compras" data-permission="purchases" title="Controle de Compras" href="/compras"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Controle de Compras</span></a>
+    <a class="nav-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal" href="/estoque"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></a>
+    <a class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas" href="/tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></a>
+    <a class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" title="Missões" href="/missoes"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-label">Missões</span></a>
+    <a class="nav-item" id="navCaptacao" data-page="captacao" data-permission="captures" title="Captação" href="/captacao"><span class="nav-icon" aria-hidden="true">C</span><span class="nav-label">Captação</span></a>
+    <a class="nav-item" id="navSaidas" data-page="saidas" data-permission="outputs" title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true">S</span><span class="nav-label">Saídas</span></a>
+    <a class="nav-item" id="navInsumos" data-page="insumos" data-permission="supplies" title="Insumos" href="/insumos"><span class="nav-icon" aria-hidden="true">I</span><span class="nav-label">Insumos</span></a>
+    <a class="nav-item" id="navInstrucoes" data-page="instrucoes" title="Instruções" href="/instrucoes"><span class="nav-icon" aria-hidden="true">!</span><span class="nav-label">Instruções</span></a>
     <div class="nav-group" data-permission="database">
       <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
         <span class="nav-icon" aria-hidden="true">⬡</span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
       </button>
       <div class="nav-submenu" id="navCadastrosSubmenu" aria-hidden="true">
-        <button class="nav-item sub-item" id="navLojas" data-page="lojas" title="Lojas"><span class="nav-icon" aria-hidden="true">◫</span><span class="nav-label">Lojas</span></button>
-        <button class="nav-item sub-item" id="navDados" data-page="dados" title="Base de Dados"><span class="nav-icon" aria-hidden="true">⛁</span><span class="nav-label">Base de Dados</span></button>
-        <button class="nav-item sub-item" id="navUsuarios" data-page="usuarios" data-admin-only title="Usuários e acessos"><span class="nav-icon" aria-hidden="true">⚿</span><span class="nav-label">Usuários e acessos</span></button>
+        <a class="nav-item sub-item" id="navLojas" data-page="lojas" title="Lojas" href="/cadastros/lojas"><span class="nav-icon" aria-hidden="true">◫</span><span class="nav-label">Lojas</span></a>
+        <a class="nav-item sub-item" id="navDados" data-page="dados" title="Base de Dados" href="/cadastros/base-de-dados"><span class="nav-icon" aria-hidden="true">⛁</span><span class="nav-label">Base de Dados</span></a>
+        <a class="nav-item sub-item" id="navUsuarios" data-page="usuarios" data-admin-only title="Usuários e acessos" href="/cadastros/usuarios"><span class="nav-icon" aria-hidden="true">⚿</span><span class="nav-label">Usuários e acessos</span></a>
       </div>
+    </div>
+    <div class="nav-group" data-permission="hr">
+      <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
+        <span class="nav-icon" aria-hidden="true">☺</span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div class="nav-submenu" id="navRhSubmenu" aria-hidden="true"></div>
+    </div>
+    <div class="nav-group" data-permission="finance">
+      <button class="nav-group-toggle" id="navFinanceiro" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
+        <span class="nav-icon" aria-hidden="true">$</span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true"></div>
     </div>
     <div class="ios-storage-box">
       <strong>DADOS COMPARTILHADOS</strong>
@@ -2374,56 +2386,56 @@
           <p class="home-subtitle">Acesse rapidamente as áreas disponíveis para o seu usuário.</p>
         </div>
         <div class="home-access-grid" aria-label="Acessos rápidos">
-          <button class="home-access-card" type="button" data-home-target="puxadas" data-permission="pulls">
+          <a class="home-access-card" href="/puxadas" data-home-target="puxadas" data-permission="pulls">
             <span class="home-access-icon" aria-hidden="true">↗</span>
             <span class="home-access-copy"><strong>PUXADAS</strong><span>Equilíbrio e transferências entre lojas.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="home-access-card" type="button" data-home-target="relatorio41" data-permission="report41">
+          </a>
+          <a class="home-access-card" href="/relatorio-41" data-home-target="relatorio41" data-permission="report41">
             <span class="home-access-icon" aria-hidden="true">41</span>
             <span class="home-access-copy"><strong>RELATÓRIO 41</strong><span>Vendas e estoque baixo da sua loja.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="home-access-card" type="button" data-home-target="compras" data-permission="purchases">
+          </a>
+          <a class="home-access-card" href="/compras" data-home-target="compras" data-permission="purchases">
             <span class="home-access-icon" aria-hidden="true">▤</span>
             <span class="home-access-copy"><strong>CONTROLE DE COMPRAS</strong><span>Pedidos, recebimentos e divisões.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="home-access-card" type="button" data-home-target="dashboard" data-permission="stock">
+          </a>
+          <a class="home-access-card" href="/estoque" data-home-target="dashboard" data-permission="stock">
             <span class="home-access-icon" aria-hidden="true">Σ</span>
             <span class="home-access-copy"><strong>ESTOQUE FISCAL</strong><span>Conciliação, filtros e exportações.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="home-access-card" type="button" data-home-target="missoes" data-permission="missions">
+          </a>
+          <a class="home-access-card" href="/missoes" data-home-target="missoes" data-permission="missions">
             <span class="home-access-icon" aria-hidden="true">◎</span>
             <span class="home-access-copy"><strong>MISSÕES</strong><span>Atividades diárias e semanais que precisam ser realizadas pela loja.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="home-access-card" type="button" data-home-target="captacao" data-permission="captures">
+          </a>
+          <a class="home-access-card" href="/captacao" data-home-target="captacao" data-permission="captures">
             <span class="home-access-icon" aria-hidden="true">◇</span>
             <span class="home-access-copy"><strong>CAPTAÇÃO</strong><span>Cadastro e acompanhamento dos produtos captados.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="home-access-card" type="button" data-home-target="saidas" data-permission="outputs">
+          </a>
+          <a class="home-access-card" href="/saidas" data-home-target="saidas" data-permission="outputs">
             <span class="home-access-icon" aria-hidden="true">S</span>
             <span class="home-access-copy"><strong>SAÍDAS</strong><span>Solicitações de saída por defeito enviadas pelas lojas.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="home-access-card" type="button" data-home-target="insumos" data-permission="supplies">
+          </a>
+          <a class="home-access-card" href="/insumos" data-home-target="insumos" data-permission="supplies">
             <span class="home-access-icon" aria-hidden="true">I</span>
             <span class="home-access-copy"><strong>INSUMOS</strong><span>Anote faltas, solicite na segunda e confirme o recebimento.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="home-access-card" type="button" data-home-target="instrucoes">
+          </a>
+          <a class="home-access-card" href="/instrucoes" data-home-target="instrucoes">
             <span class="home-access-icon" aria-hidden="true">!</span>
             <span class="home-access-copy"><strong>INSTRUÇÕES</strong><span>Orientações gerais com prazo para as lojas.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="home-access-card" type="button" data-home-target="cadastros" data-permission="database">
+          </a>
+          <a class="home-access-card" href="/cadastros" data-home-target="cadastros" data-permission="database">
             <span class="home-access-icon" aria-hidden="true">+</span>
             <span class="home-access-copy"><strong>CADASTROS</strong><span>Lojas, bases e envio de dados.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
-          </button>
+          </a>
         </div>
         <div class="home-no-access" id="homeNoAccess" hidden><strong>NENHUM MÓDULO LIBERADO</strong><span>Solicite ao administrador a liberação das áreas necessárias.</span></div>
         <div class="home-health-alert" id="homeHealthAlert" hidden>
@@ -2433,7 +2445,7 @@
         <section class="home-supplies-alert" id="homeSuppliesAlert" data-permission="supplies" hidden aria-labelledby="homeSuppliesTitle">
           <div class="home-supplies-head">
             <div><span>LEMBRETE DE SEGUNDA-FEIRA</span><h2 id="homeSuppliesTitle">Solicitar os insumos da loja</h2></div>
-            <button type="button" data-home-target="insumos">ABRIR INSUMOS →</button>
+            <a href="/insumos" data-home-target="insumos">ABRIR INSUMOS →</a>
           </div>
           <div class="home-supplies-list" id="homeSuppliesList" aria-live="polite"></div>
         </section>
@@ -3898,6 +3910,10 @@
   const btnSidebarCompact = el('btnSidebarCompact');
   const navCadastrosToggle = el('navCadastros');
   const navCadastrosSubmenu = el('navCadastrosSubmenu');
+  const navRhToggle = el('navRh');
+  const navRhSubmenu = el('navRhSubmenu');
+  const navFinanceiroToggle = el('navFinanceiro');
+  const navFinanceiroSubmenu = el('navFinanceiroSubmenu');
   const PAGE_ROUTES = Object.freeze({
     inicio:'/inicio',
     puxadas:'/puxadas',
@@ -4205,6 +4221,26 @@
     setCadastrosExpanded(!expanded);
   });
 
+  function setRhExpanded(expanded){
+    navRhToggle.setAttribute('aria-expanded', String(expanded));
+    navRhSubmenu.setAttribute('aria-hidden', String(!expanded));
+  }
+
+  navRhToggle.addEventListener('click', () => {
+    const expanded = navRhToggle.getAttribute('aria-expanded') === 'true';
+    setRhExpanded(!expanded);
+  });
+
+  function setFinanceiroExpanded(expanded){
+    navFinanceiroToggle.setAttribute('aria-expanded', String(expanded));
+    navFinanceiroSubmenu.setAttribute('aria-hidden', String(!expanded));
+  }
+
+  navFinanceiroToggle.addEventListener('click', () => {
+    const expanded = navFinanceiroToggle.getAttribute('aria-expanded') === 'true';
+    setFinanceiroExpanded(!expanded);
+  });
+
   function setSidebarCompact(compact){
     document.body.classList.toggle('sidebar-compact', compact);
     btnSidebarCompact.setAttribute('aria-pressed', String(compact));
@@ -4278,8 +4314,14 @@
     if(name === 'instrucoes') loadInstructions();
   }
 
+  function isPlainClick(event){
+    return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+  }
+
   document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', event => {
+      if(!btn.dataset.page || !isPlainClick(event)) return;
+      event.preventDefault();
       navigateToPage(btn.dataset.page);
       setSidebarOpen(false, true);
     });
@@ -4293,7 +4335,9 @@
   });
 
   document.querySelectorAll('[data-home-target]').forEach(button => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', event => {
+      if(!isPlainClick(event)) return;
+      event.preventDefault();
       const target = button.dataset.homeTarget;
       navigateToPage(target);
     });

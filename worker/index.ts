@@ -1580,7 +1580,18 @@ const worker = {
       }
       const appAssetUrl = new URL("/estoque.html", request.url);
       const appAssetRequest = new Request(appAssetUrl, authenticatedRequest);
-      return securityHeaders(await env.ASSETS.fetch(appAssetRequest));
+      const appResponse = securityHeaders(await env.ASSETS.fetch(appAssetRequest));
+      // estoque.html is a static, unpersonalized shell (session/permission data
+      // loads client-side via /api/session), so it's safe to let the browser
+      // cache it briefly instead of re-downloading the ~500KB file on every
+      // navigation between pages.
+      const appHeaders = new Headers(appResponse.headers);
+      appHeaders.set("cache-control", "private, max-age=300, must-revalidate");
+      return new Response(appResponse.body, {
+        status: appResponse.status,
+        statusText: appResponse.statusText,
+        headers: appHeaders,
+      });
     }
 
     if (url.pathname === "/_vinext/image") {
