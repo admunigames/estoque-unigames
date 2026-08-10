@@ -21,6 +21,13 @@
   "compatibility_date": "2026-08-04",
   "compatibility_flags": ["nodejs_compat"],
 
+  // Fase 2: corte de producao para o Supabase (Postgres), via Hyperdrive
+  // (ver binding "hyperdrive" abaixo). Reversivel a qualquer momento
+  // voltando para "d1" e fazendo novo deploy.
+  "vars": {
+    "DB_DRIVER": "postgres"
+  },
+
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist/client",
