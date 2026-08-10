@@ -11,8 +11,11 @@
 //     CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID no ambiente, com acesso
 //     ao banco D1 "estoque-unigames-db" (produção).
 //   - SUPABASE_DB_URL setada, apontando para o Supabase de destino
-//     (recomendado: usar a connection string DIRETA, porta 5432, para uma
-//     carga em lote única — não o transaction pooler usado em runtime).
+//     (recomendado: a connection string DIRETA, porta 5432, para uma carga
+//     em lote única — não o transaction pooler usado em runtime. Se a
+//     conexão direta não for alcançável da sua rede/máquina — ela exige
+//     IPv6 —, use o "Session pooler", porta 5432, que também suporta
+//     lotes grandes sem as restrições do transaction pooler).
 //
 // Uso:
 //   SUPABASE_DB_URL="postgresql://postgres:...@db.<ref>.supabase.co:5432/postgres" \
@@ -28,12 +31,10 @@ const execFileAsync = promisify(execFile);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..", "..");
-const wranglerBin = path.join(
-  projectRoot,
-  "node_modules",
-  ".bin",
-  process.platform === "win32" ? "wrangler.CMD" : "wrangler",
-);
+// Chama o entry point JS do wrangler via `node`, em vez do shim
+// wrangler.CMD/wrangler em node_modules/.bin — no Windows, spawnar um
+// .CMD diretamente com execFile (sem shell) falha com EINVAL.
+const wranglerEntry = path.join(projectRoot, "node_modules", "wrangler", "bin", "wrangler.js");
 
 const D1_DATABASE_NAME = "estoque-unigames-db";
 
@@ -61,15 +62,22 @@ const dryRun = args.includes("--dry-run");
 const onlyTable = args.find((arg) => arg.startsWith("--table="))?.split("=")[1];
 
 async function fetchD1Rows(table) {
-  const { stdout } = await execFileAsync(wranglerBin, [
-    "d1",
-    "execute",
-    D1_DATABASE_NAME,
-    "--remote",
-    "--json",
-    "--command",
-    `SELECT * FROM ${table}`,
-  ]);
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [
+      wranglerEntry,
+      "d1",
+      "execute",
+      D1_DATABASE_NAME,
+      "--remote",
+      "--json",
+      "--command",
+      `SELECT * FROM ${table}`,
+    ],
+    // Tabelas com JSON grande (ex.: shared_state) podem passar do limite
+    // padrão de 1 MB do execFile e truncar a saída.
+    { maxBuffer: 200 * 1024 * 1024 },
+  );
   const parsed = JSON.parse(stdout);
   // `wrangler d1 execute --json` retorna um array de resultados de query.
   const [firstResult] = parsed;
