@@ -2348,7 +2348,10 @@
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true">☺</span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
       </button>
-      <div class="nav-submenu" id="navRhSubmenu" aria-hidden="true"></div>
+      <div class="nav-submenu" id="navRhSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true">◷</span><span class="nav-label">Folgas</span></a>
+        <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true">▦</span><span class="nav-label">Escalas</span></a>
+      </div>
     </div>
     <div class="nav-group" data-permission="finance">
       <button class="nav-group-toggle" id="navFinanceiro" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
@@ -3437,6 +3440,30 @@
       </div>
     </section>
 
+    <!-- ================= RH / FOLGAS ================= -->
+    <section id="pageRhFolgas" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Folgas</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Controle de folgas da equipe.</p></div>
+      </header>
+      <div class="empty-state"><h4>Em construção</h4><p>Esta página ainda será detalhada.</p></div>
+    </section>
+
+    <!-- ================= RH / ESCALAS ================= -->
+    <section id="pageRhEscalas" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Escalas</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Escalas de trabalho da equipe.</p></div>
+      </header>
+      <div class="empty-state"><h4>Em construção</h4><p>Esta página ainda será detalhada.</p></div>
+    </section>
+
   </div>
 </div>
 
@@ -3929,7 +3956,9 @@
     saidas:'/saidas',
     insumos:'/insumos',
     instrucoes:'/instrucoes',
-    usuarios:'/cadastros/usuarios'
+    usuarios:'/cadastros/usuarios',
+    rhFolgas:'/rh/folgas',
+    rhEscalas:'/rh/escalas'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -3946,7 +3975,9 @@
     saidas:'SAÍDAS',
     insumos:'INSUMOS',
     instrucoes:'INSTRUÇÕES',
-    usuarios:'USUÁRIOS E ACESSOS'
+    usuarios:'USUÁRIOS E ACESSOS',
+    rhFolgas:'FOLGAS',
+    rhEscalas:'ESCALAS'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -3960,7 +3991,9 @@
     insumos:'supplies',
     cadastros:'database',
     lojas:'database',
-    dados:'database'
+    dados:'database',
+    rhFolgas:'hr',
+    rhEscalas:'hr'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -4263,11 +4296,16 @@
     navItem.classList.add('active');
     const isHome = name === 'inicio';
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'usuarios';
+    const isRh = name === 'rhFolgas' || name === 'rhEscalas';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
     if(isCadastros){
       navCadastrosToggle.classList.add('active');
+    }
+    setRhExpanded(isRh);
+    if(isRh){
+      navRhToggle.classList.add('active');
     }
     document.querySelectorAll('[data-mobile-page]').forEach(button => {
       const active = button.dataset.mobilePage === name;

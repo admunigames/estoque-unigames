@@ -91,6 +91,8 @@ const APP_ROUTE_PATHS = new Set([
   "/cadastros/lojas",
   "/cadastros/base-de-dados",
   "/cadastros/usuarios",
+  "/rh/folgas",
+  "/rh/escalas",
   "/administracao/usuarios",
   "/estoque.html",
 ]);
