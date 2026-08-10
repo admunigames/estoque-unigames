@@ -358,7 +358,7 @@ export async function GET(request: Request) {
            AND (
              frequency='daily'
              OR (frequency='once' AND start_date=?1)
-             OR (frequency='weekly' AND strftime('%w', start_date)=strftime('%w', ?1))
+             OR (frequency='weekly' AND EXTRACT(DOW FROM start_date::date)=EXTRACT(DOW FROM ?1::date))
            )
          ORDER BY CASE WHEN due_time='' THEN 1 ELSE 0 END, due_time, created_at`,
       )

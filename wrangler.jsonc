@@ -21,6 +21,13 @@
   "compatibility_date": "2026-08-04",
   "compatibility_flags": ["nodejs_compat"],
 
+  // Fase 2: corte de producao para o Supabase (Postgres), via Hyperdrive
+  // (ver binding "hyperdrive" abaixo). Reversivel a qualquer momento
+  // voltando para "d1" e fazendo novo deploy.
+  "vars": {
+    "DB_DRIVER": "postgres"
+  },
+
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist/client",
@@ -44,6 +51,20 @@
     {
       "binding": "UPLOADS",
       "bucket_name": "estoque-unigames-uploads"
+    }
+  ],
+
+  // Fase 2 (migracao Supabase): proxy de pooling da propria Cloudflare
+  // entre o Worker e o Postgres. Necessario porque conectar via TCP cru
+  // (postgres-js + cloudflare:sockets) direto no Supabase esbarra no
+  // limite de subrequests por invocacao do Worker. Aponta pro Supabase
+  // "Session pooler" (porta 5432) — id criado com
+  // `wrangler hyperdrive create estoque-unigames-supabase`. So e usado
+  // quando DB_DRIVER=postgres; producao continua em D1 por padrao.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "1a235ddaaa034cde8cbecacf12ac1ede"
     }
   ],
 

@@ -3,6 +3,7 @@ declare namespace Cloudflare {
     ASSETS: Fetcher;
     DB: D1Database;
     UPLOADS: R2Bucket;
+    HYPERDRIVE?: Hyperdrive;
     APP_LOGIN_USER?: string;
     APP_LOGIN_PASSWORD?: string;
     APP_SESSION_SECRET?: string;

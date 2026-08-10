@@ -370,10 +370,11 @@ export async function PATCH(request: Request) {
       const operations = (rows.results ?? []).map((item) =>
         database
           .prepare(
-            `INSERT OR IGNORE INTO supply_request_events
+            `INSERT INTO supply_request_events
               (id, supply_item_id, company_id, company_name, request_date,
                requested_by, requested_by_name, requested_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)`,
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)
+             ON CONFLICT (supply_item_id, request_date) DO NOTHING`,
           )
           .bind(
             crypto.randomUUID(),
