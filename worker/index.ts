@@ -192,6 +192,12 @@ function normalizeAccessGroup(value: unknown): AccessGroup {
     : "custom";
 }
 
+function resolveAccessGroup(storedValue: unknown, username: string): AccessGroup {
+  const normalized = username.trim().toLowerCase();
+  if (normalized === "assistencia") return "assistance";
+  return normalizeAccessGroup(storedValue);
+}
+
 function accessForGroup(group: AccessGroup, requested: unknown) {
   if (group === "custom") {
     return { role: "user" as const, permissions: normalizePermissions(requested) };
@@ -214,7 +220,7 @@ function storedUser(row: StoredUserRow): AuthenticatedUser {
   const role = row.role === "admin" ? "admin" : "user";
   const accessGroup = role === "admin"
     ? "administrator"
-    : normalizeAccessGroup(row.accessGroup);
+    : resolveAccessGroup(row.accessGroup, row.username);
   const permissions = role === "admin"
     ? [...ALL_PERMISSIONS]
     : accessGroup === "custom"
@@ -888,7 +894,7 @@ function sameOrigin(request: Request, url: URL): boolean {
 
 function publicUser(row: StoredUserRow) {
   const role = row.role === "admin" ? "admin" : "user";
-  const accessGroup = role === "admin" ? "administrator" : normalizeAccessGroup(row.accessGroup);
+  const accessGroup = role === "admin" ? "administrator" : resolveAccessGroup(row.accessGroup, row.username);
   return {
     id: row.id,
     username: row.username,
@@ -991,10 +997,11 @@ async function handleAdminUsers(
   const displayName = String(body.displayName ?? "").trim();
   const email = String(body.email ?? "").trim().toLowerCase().slice(0, 200);
   const password = String(body.password ?? "");
-  const companyId = /^c[a-z0-9]{6,40}$/i.test(String(body.companyId ?? "").trim())
+  const requestedCompanyId = /^c[a-z0-9]{6,40}$/i.test(String(body.companyId ?? "").trim())
     ? String(body.companyId ?? "").trim()
     : "";
-  const accessGroup = normalizeAccessGroup(body.accessGroup);
+  const accessGroup = resolveAccessGroup(body.accessGroup, username);
+  const companyId = accessGroup === "assistance" ? "" : requestedCompanyId;
   const access = accessForGroup(accessGroup, body.permissions);
   if (!validUsername(username)) {
     return jsonError("O USUÁRIO DEVE TER DE 3 A 40 CARACTERES: LETRAS, NÚMEROS, PONTO, HÍFEN OU _.", 400);

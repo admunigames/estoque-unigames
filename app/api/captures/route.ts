@@ -6,6 +6,7 @@ type CaptureStatus = "submitted" | "received" | "ready" | "assigned";
 type CaptureCategory = "console" | "controller" | "other";
 type Identity = {
   id: string;
+  username: string;
   displayName: string;
   role: "admin" | "user";
   accessGroup: string;
@@ -73,6 +74,7 @@ function decodedHeader(request: Request, name: string) {
 function identity(request: Request): Identity {
   return {
     id: safeText(request.headers.get("x-unigames-user-id"), 80),
+    username: safeText(request.headers.get("x-unigames-username"), 80).toLowerCase(),
     displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
     accessGroup: safeText(request.headers.get("x-unigames-access-group"), 40),
@@ -86,6 +88,16 @@ function identity(request: Request): Identity {
 
 function canAccessCaptures(actor: Identity) {
   return actor.role === "admin" || actor.permissions.includes("captures");
+}
+
+function isAssistanceActor(actor: Identity) {
+  const displayName = actor.displayName.toLowerCase();
+  return (
+    actor.accessGroup === "assistance" ||
+    actor.accessGroup === "assistencia" ||
+    actor.username.includes("assistencia") ||
+    displayName.includes("assistencia")
+  );
 }
 
 function sameOrigin(request: Request) {
@@ -162,8 +174,7 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const allStores =
-      actor.role === "admin" || actor.accessGroup === "assistance";
+    const allStores = actor.role === "admin" || isAssistanceActor(actor);
     if (!allStores && !COMPANY_PATTERN.test(actor.companyId)) {
       return jsonResponse(
         { error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA." },
@@ -215,7 +226,7 @@ export async function POST(request: Request) {
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
   }
-  if (actor.accessGroup === "assistance") {
+  if (isAssistanceActor(actor)) {
     return jsonResponse(
       { error: "A ASSISTÊNCIA NÃO PODE CADASTRAR PRODUTOS CAPTADOS." },
       403,
@@ -317,7 +328,7 @@ export async function PATCH(request: Request) {
     if (!existing) return jsonResponse({ error: "PRODUTO NÃO ENCONTRADO." }, 404);
 
     if (action === "receive" || action === "ready") {
-      if (actor.accessGroup !== "assistance" || actor.role === "admin") {
+      if (!isAssistanceActor(actor) || actor.role === "admin") {
         return jsonResponse(
           { error: "SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA." },
           403,
