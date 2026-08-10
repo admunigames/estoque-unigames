@@ -279,7 +279,11 @@ async function ensureAppUsersTable(database: D1Database): Promise<void> {
           "CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_unique ON app_users (username)",
         ),
       ]);
-      const columns = await database.prepare("PRAGMA table_info(app_users)").all<{ name: string }>();
+      const columns = await database
+        .prepare(
+          "SELECT column_name AS name FROM information_schema.columns WHERE table_name = 'app_users'",
+        )
+        .all<{ name: string }>();
       if (!(columns.results ?? []).some((column) => column.name === "company_id")) {
         await database.prepare(
           "ALTER TABLE app_users ADD COLUMN company_id TEXT NOT NULL DEFAULT ''",
@@ -926,11 +930,11 @@ async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
             permissions_json AS permissionsJson, company_id AS companyId,
             active, session_version AS sessionVersion, created_at AS createdAt,
             updated_at AS updatedAt,
-            EXISTS(
+            CASE WHEN EXISTS(
               SELECT 1 FROM password_reset_requests request
               WHERE request.user_id = app_users.id AND request.status = 'pending'
-            ) AS recoveryRequested
-     FROM app_users ORDER BY display_name COLLATE NOCASE`,
+            ) THEN 1 ELSE 0 END AS recoveryRequested
+     FROM app_users ORDER BY lower(display_name)`,
   ).all<StoredUserRow>();
   return Response.json({
     users: [{
@@ -1333,9 +1337,10 @@ async function dispatchDueTaskNotifications(env: Env) {
       if (sent) {
         await env.DB
           .prepare(
-            `INSERT OR IGNORE INTO push_delivery_log
+            `INSERT INTO push_delivery_log
               (id, user_id, task_key, task_id, scheduled_for, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)`,
+             VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)
+             ON CONFLICT (user_id, task_key, task_id, scheduled_for) DO NOTHING`,
           )
           .bind(crypto.randomUUID(), userId, row.stateKey, task.id, scheduledFor)
           .run();
@@ -1393,7 +1398,7 @@ async function dispatchDueMissionNotifications(env: Env) {
            AND (
              frequency='daily'
              OR (frequency='once' AND start_date=?1)
-             OR (frequency='weekly' AND strftime('%w', start_date)=strftime('%w', ?1))
+             OR (frequency='weekly' AND EXTRACT(DOW FROM start_date::date)=EXTRACT(DOW FROM ?1::date))
            )`,
       )
       .bind(occurrenceDate)
@@ -1486,9 +1491,10 @@ async function dispatchDueMissionNotifications(env: Env) {
         if (sent) {
           await env.DB
             .prepare(
-              `INSERT OR IGNORE INTO push_delivery_log
+              `INSERT INTO push_delivery_log
                 (id, user_id, task_key, task_id, scheduled_for, created_at)
-               VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)`,
+               VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)
+               ON CONFLICT (user_id, task_key, task_id, scheduled_for) DO NOTHING`,
             )
             .bind(
               crypto.randomUUID(),
@@ -1522,7 +1528,23 @@ function securityHeaders(response: Response): Response {
 }
 
 const worker = {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, rawEnv: Env, ctx: ExecutionContext): Promise<Response> {
+    // Este worker acessa `env.DB` diretamente (binding nativo do D1), ao
+    // contrário das rotas em app/api/*, que passam por getD1() em
+    // db/index.ts. Pra permitir testar este arquivo contra o Supabase com
+    // DB_DRIVER=postgres sem duplicar a lógica de escolha de driver,
+    // substituímos `env.DB` uma única vez aqui, na entrada — o resto do
+    // arquivo continua chamando `env.DB.prepare(...)` normalmente, sem
+    // mudar de forma.
+    const env: Env =
+      process.env.DB_DRIVER === "postgres"
+        ? {
+            ...rawEnv,
+            DB: (await import("../db/d1-compat")).createD1CompatFromPg(
+              (await import("../db/pg-client")).getSql(),
+            ) as unknown as D1Database,
+          }
+        : rawEnv;
     const url = new URL(request.url);
 
     if (url.pathname === "/login") return handleLogin(request, env, url);
