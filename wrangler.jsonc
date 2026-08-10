@@ -1,0 +1,63 @@
+{
+  // Configuração de deploy do Worker "Estoque Unigames" na SUA conta
+  // Cloudflare (Fase 1 da migração — infraestrutura própria).
+  //
+  // Este arquivo é usado apenas por `wrangler deploy` (produção/CI).
+  // O `pnpm dev` local continua usando o binding definido em
+  // vite.config.ts + .openai/hosting.json, que não foi alterado.
+  //
+  // Substitua os valores marcados com "<<PREENCHER...>>" pelos IDs reais
+  // da sua conta Cloudflare antes do primeiro deploy. Veja instruções no
+  // final da resposta do assistente / README.
+  //
+  // IMPORTANTE: sempre rode `wrangler deploy -c wrangler.jsonc` (nunca
+  // sem o `-c`). O `vinext build` gera automaticamente um
+  // dist/server/wrangler.json a partir dos bindings de DEV (derivados de
+  // .openai/hosting.json), e o Wrangler prioriza esse arquivo gerado se
+  // você não apontar explicitamente para este arquivo com `-c`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "estoque-unigames",
+  "main": "./dist/server/index.js",
+  "compatibility_date": "2026-08-04",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist/client",
+    "run_worker_first": true,
+    // Sem isso, o binding de assets redireciona automaticamente
+    // /estoque.html -> /estoque (307), criando um loop infinito com o
+    // handler do Worker, que serve estoque.html como "casca" da SPA
+    // para as rotas em APP_ROUTE_PATHS (ex: /estoque, /inicio).
+    "html_handling": "none"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "estoque-unigames-db",
+      "database_id": "d5a76e6d-95d2-4101-baae-3ab490c20276"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "estoque-unigames-uploads"
+    }
+  ],
+
+  // Binding nativo do Cloudflare Images, sem ID próprio — basta estar
+  // habilitado na conta.
+  "images": {
+    "binding": "IMAGES"
+  },
+
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

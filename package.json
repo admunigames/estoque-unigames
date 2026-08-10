@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "deploy": "vinext build && wrangler deploy -c wrangler.jsonc"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
