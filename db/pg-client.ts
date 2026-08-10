@@ -41,6 +41,21 @@ export function getSql(): ReturnType<typeof postgres> {
     max: 5,
     idle_timeout: 20,
     connect_timeout: 10,
+    types: {
+      // COUNT()/SUM() retornam bigint (OID 20) no Postgres. Por padrão o
+      // postgres-js devolve isso como string, pra evitar perda de precisão
+      // em valores fora do intervalo seguro de um `number`. Neste projeto
+      // os únicos bigints são resultados de agregação em queries de
+      // contagem (nunca IDs, que são sempre `text`/UUID), então convertê-los
+      // para number é seguro e evita quebrar código que espera um number
+      // (como no SQLite/D1, onde COUNT/SUM já vinham como number).
+      bigint: {
+        to: 20,
+        from: [20],
+        serialize: (value: number) => String(value),
+        parse: (value: string) => Number(value),
+      },
+    },
   });
   return cachedClient;
 }

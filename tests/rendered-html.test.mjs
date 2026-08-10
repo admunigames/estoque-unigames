@@ -769,7 +769,8 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
 
   assert.match(route, /actor\.role === "admin" \? requestedCompanyId : actor\.companyId/);
   assert.match(route, /actor\.role !== "admin" && existing\.companyId !== actor\.companyId/);
-  assert.match(route, /INSERT OR IGNORE INTO supply_request_events/);
+  assert.match(route, /INSERT INTO supply_request_events/);
+  assert.match(route, /ON CONFLICT \(supply_item_id, request_date\) DO NOTHING/);
   assert.match(route, /request_date/);
   assert.match(route, /SET status='received'/);
   assert.match(route, /received_at=CURRENT_TIMESTAMP/);

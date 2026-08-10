@@ -79,17 +79,18 @@ export async function PUT(request: Request) {
     const payload = (await request.json()) as JsonMap;
     const preferences = normalizePreferences(payload);
     const database = await getD1();
+    const now = new Date().toISOString();
     await database
       .prepare(
         `INSERT INTO user_preferences
           (user_id, theme, accent_color, logo_data_url, compact_mobile, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
          ON CONFLICT(user_id) DO UPDATE SET
            theme = excluded.theme,
            accent_color = excluded.accent_color,
            logo_data_url = excluded.logo_data_url,
            compact_mobile = excluded.compact_mobile,
-           updated_at = CURRENT_TIMESTAMP`,
+           updated_at = excluded.updated_at`,
       )
       .bind(
         id,
@@ -97,6 +98,7 @@ export async function PUT(request: Request) {
         preferences.accentColor,
         preferences.logoDataUrl,
         preferences.compactMobile ? 1 : 0,
+        now,
       )
       .run();
     return jsonResponse({ preferences });
