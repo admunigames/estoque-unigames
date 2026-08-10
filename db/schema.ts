@@ -1,14 +1,23 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-export const sharedState = sqliteTable("shared_state", {
+// NOTA (migração D1 -> Supabase/Postgres): os tipos de coluna foram mantidos
+// o mais próximo possível do schema SQLite original (text/integer, sem
+// boolean/timestamp nativos do Postgres) de propósito. O código da aplicação
+// não usa este arquivo como query builder em runtime — ele faz SQL cru via
+// env.DB.prepare(...)/o novo client Postgres, então trocar tipos aqui (ex.
+// integer 0/1 -> boolean nativo) quebraria essas queries até cada uma ser
+// revisada. Ajustes de tipo devem ser feitos módulo a módulo, junto da
+// reescrita/auditoria do SQL daquele módulo, não nesta conversão inicial.
+
+export const sharedState = pgTable("shared_state", {
   key: text("state_key").primaryKey(),
   value: text("value_json").notNull(),
   version: integer("version").notNull().default(1),
-  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
 
-export const appUsers = sqliteTable("app_users", {
+export const appUsers = pgTable("app_users", {
   id: text("id").primaryKey(),
   username: text("username").notNull().unique(),
   displayName: text("display_name").notNull(),
@@ -19,19 +28,19 @@ export const appUsers = sqliteTable("app_users", {
   accessGroup: text("access_group").notNull().default("operator"),
   permissions: text("permissions_json").notNull().default("[]"),
   companyId: text("company_id").notNull().default(""),
-  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  active: integer("active").notNull().default(1),
   sessionVersion: integer("session_version").notNull().default(1),
-  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text("created_at").notNull().default(sql`now()::text`),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
 
-export const passwordResetRequests = sqliteTable(
+export const passwordResetRequests = pgTable(
   "password_reset_requests",
   {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull(),
     status: text("status").notNull().default("pending"),
-    requestedAt: text("requested_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    requestedAt: text("requested_at").notNull().default(sql`now()::text`),
     resolvedAt: text("resolved_at"),
   },
   (table) => [
@@ -39,16 +48,16 @@ export const passwordResetRequests = sqliteTable(
   ],
 );
 
-export const userPreferences = sqliteTable("user_preferences", {
+export const userPreferences = pgTable("user_preferences", {
   userId: text("user_id").primaryKey(),
   theme: text("theme").notNull().default("dark"),
   accentColor: text("accent_color").notNull().default("#4f86bd"),
   logoDataUrl: text("logo_data_url").notNull().default(""),
-  compactMobile: integer("compact_mobile", { mode: "boolean" }).notNull().default(false),
-  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  compactMobile: integer("compact_mobile").notNull().default(0),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
 
-export const purchaseDeliveryRecords = sqliteTable(
+export const purchaseDeliveryRecords = pgTable(
   "purchase_delivery_records",
   {
     id: text("id").primaryKey(),
@@ -58,14 +67,14 @@ export const purchaseDeliveryRecords = sqliteTable(
     quantityNote: text("quantity_note").notNull().default(""),
     notes: text("notes").notNull().default(""),
     createdBy: text("created_by").notNull(),
-    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [
     index("purchase_delivery_records_purchase_idx").on(table.purchaseId, table.deliveredAt),
   ],
 );
 
-export const pushSubscriptions = sqliteTable(
+export const pushSubscriptions = pgTable(
   "push_subscriptions",
   {
     id: text("id").primaryKey(),
@@ -73,13 +82,13 @@ export const pushSubscriptions = sqliteTable(
     endpoint: text("endpoint").notNull().unique(),
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),
-    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [index("push_subscriptions_user_idx").on(table.userId)],
 );
 
-export const pushDeliveryLog = sqliteTable(
+export const pushDeliveryLog = pgTable(
   "push_delivery_log",
   {
     id: text("id").primaryKey(),
@@ -87,7 +96,7 @@ export const pushDeliveryLog = sqliteTable(
     taskKey: text("task_key").notNull(),
     taskId: text("task_id").notNull(),
     scheduledFor: text("scheduled_for").notNull(),
-    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [
     uniqueIndex("push_delivery_log_task_unique").on(
@@ -99,7 +108,7 @@ export const pushDeliveryLog = sqliteTable(
   ],
 );
 
-export const missions = sqliteTable(
+export const missions = pgTable(
   "missions",
   {
     id: text("id").primaryKey(),
@@ -113,8 +122,8 @@ export const missions = sqliteTable(
     dueTime: text("due_time").notNull().default(""),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
-    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [
     index("missions_scope_company_date_idx").on(
@@ -126,7 +135,7 @@ export const missions = sqliteTable(
   ],
 );
 
-export const missionCompletions = sqliteTable(
+export const missionCompletions = pgTable(
   "mission_completions",
   {
     id: text("id").primaryKey(),
@@ -136,7 +145,7 @@ export const missionCompletions = sqliteTable(
     companyName: text("company_name").notNull().default(""),
     completedBy: text("completed_by").notNull(),
     completedByName: text("completed_by_name").notNull().default(""),
-    completedAt: text("completed_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    completedAt: text("completed_at").notNull().default(sql`now()::text`),
     status: text("status").notNull().default("completed"),
     updatedAt: text("updated_at").notNull().default(""),
   },
@@ -153,7 +162,7 @@ export const missionCompletions = sqliteTable(
   ],
 );
 
-export const instructions = sqliteTable(
+export const instructions = pgTable(
   "instructions",
   {
     id: text("id").primaryKey(),
@@ -162,15 +171,15 @@ export const instructions = sqliteTable(
     dueDate: text("due_date").notNull(),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
-    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [
     index("instructions_due_date_created_idx").on(table.dueDate, table.createdAt),
   ],
 );
 
-export const capturedProducts = sqliteTable(
+export const capturedProducts = pgTable(
   "captured_products",
   {
     id: text("id").primaryKey(),
@@ -195,8 +204,8 @@ export const capturedProducts = sqliteTable(
     assignedBy: text("assigned_by").notNull().default(""),
     assignedByName: text("assigned_by_name").notNull().default(""),
     assignedAt: text("assigned_at").notNull().default(""),
-    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [
     index("captured_products_status_updated_idx").on(table.status, table.updatedAt),
@@ -207,7 +216,7 @@ export const capturedProducts = sqliteTable(
   ],
 );
 
-export const defectiveOutputs = sqliteTable(
+export const defectiveOutputs = pgTable(
   "defective_outputs",
   {
     id: text("id").primaryKey(),
@@ -219,11 +228,11 @@ export const defectiveOutputs = sqliteTable(
     status: text("status").notNull().default("requested"),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
-    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
     completedBy: text("completed_by").notNull().default(""),
     completedByName: text("completed_by_name").notNull().default(""),
     completedAt: text("completed_at").notNull().default(""),
-    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [
     index("defective_outputs_status_created_idx").on(table.status, table.createdAt),
@@ -231,7 +240,7 @@ export const defectiveOutputs = sqliteTable(
   ],
 );
 
-export const supplyItems = sqliteTable(
+export const supplyItems = pgTable(
   "supply_items",
   {
     id: text("id").primaryKey(),
@@ -242,11 +251,11 @@ export const supplyItems = sqliteTable(
     status: text("status").notNull().default("pending"),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
-    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
     receivedBy: text("received_by").notNull().default(""),
     receivedByName: text("received_by_name").notNull().default(""),
     receivedAt: text("received_at").notNull().default(""),
-    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [
     index("supply_items_company_status_created_idx").on(
@@ -258,7 +267,7 @@ export const supplyItems = sqliteTable(
   ],
 );
 
-export const supplyRequestEvents = sqliteTable(
+export const supplyRequestEvents = pgTable(
   "supply_request_events",
   {
     id: text("id").primaryKey(),
@@ -268,7 +277,7 @@ export const supplyRequestEvents = sqliteTable(
     requestDate: text("request_date").notNull(),
     requestedBy: text("requested_by").notNull(),
     requestedByName: text("requested_by_name").notNull().default(""),
-    requestedAt: text("requested_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    requestedAt: text("requested_at").notNull().default(sql`now()::text`),
   },
   (table) => [
     uniqueIndex("supply_request_events_item_date_unique").on(

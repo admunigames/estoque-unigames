@@ -14,11 +14,13 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "db:generate": "drizzle-kit generate",
+    "db:migrate-data": "node db/scripts/migrate-d1-to-supabase.mjs",
     "deploy": "vinext build && wrangler deploy -c wrangler.jsonc"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
     "next": "16.3.0",
+    "postgres": "3.4.5",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "web-push": "3.6.7"
