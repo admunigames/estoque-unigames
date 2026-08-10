@@ -16,7 +16,7 @@
   // .openai/hosting.json), e o Wrangler prioriza esse arquivo gerado se
   // você não apontar explicitamente para este arquivo com `-c`.
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "estoque-unigames",
+  "name": "unigames",
   "main": "./dist/server/index.js",
   "compatibility_date": "2026-08-04",
   "compatibility_flags": ["nodejs_compat"],
