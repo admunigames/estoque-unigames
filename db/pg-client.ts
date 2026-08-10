@@ -26,7 +26,14 @@ import postgres from "postgres";
 // em Node) cai para SUPABASE_DB_URL, conectando direto no Supabase — nesse
 // caso use a connection string do "Session pooler" (porta 5432).
 
-let cachedClient: ReturnType<typeof postgres> | undefined;
+// IMPORTANTE: NAO cacheie o client no escopo do modulo (ja foi tentado e
+// quebrou em producao). O Workers isola I/O por requisicao - um socket
+// aberto durante a requisicao A nao pode ter sua continuacao resolvida
+// durante a requisicao B; reusar um client assim entre requisicoes causa
+// "A promise was resolved or rejected from a different request context" e
+// a query trava/falha de forma intermitente. O padrao documentado pela
+// Cloudflare pro Hyperdrive e criar o client por requisicao - e pra isso
+// que o Hyperdrive existe: deixar esse "reconectar toda vez" barato.
 
 async function resolveConnectionString(): Promise<{ url: string; viaHyperdrive: boolean }> {
   try {
@@ -53,10 +60,8 @@ async function resolveConnectionString(): Promise<{ url: string; viaHyperdrive: 
 }
 
 export async function getSql(): Promise<ReturnType<typeof postgres>> {
-  if (cachedClient) return cachedClient;
-
   const { url, viaHyperdrive } = await resolveConnectionString();
-  cachedClient = postgres(url, {
+  return postgres(url, {
     prepare: false,
     // O Hyperdrive já cuida do TLS até o Supabase; a conexão do Worker até
     // o Hyperdrive não usa/exige SSL. No fallback direto (Node local),
@@ -81,5 +86,4 @@ export async function getSql(): Promise<ReturnType<typeof postgres>> {
       },
     },
   });
-  return cachedClient;
 }

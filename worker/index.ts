@@ -254,6 +254,15 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
 }
 
 async function ensureAppUsersTable(database: D1Database): Promise<void> {
+  // No Postgres o schema ja e criado/mantido via drizzle-kit migrate (ver
+  // db/schema.ts e drizzle/), entao esse bootstrap em runtime nao e
+  // necessario. Alem de redundante, cachear essa promise no escopo do
+  // modulo (como abaixo, para D1) e inseguro pra uma conexao Postgres:
+  // o Workers isola I/O por requisicao, e reusar essa promise/conexao
+  // entre requisicoes diferentes causa falhas intermitentes de "promise
+  // resolved in a different request context".
+  if (process.env.DB_DRIVER === "postgres") return;
+
   if (!appUsersReady) {
     appUsersReady = (async () => {
       await database.batch([
