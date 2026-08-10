@@ -286,7 +286,7 @@ test("configura o banco geral e conecta a interface à API compartilhada", async
   const [hosting, html, migration] = await Promise.all([
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0000_wild_magik.sql", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle-sqlite-legacy/0000_wild_magik.sql", import.meta.url), "utf8"),
   ]);
 
   assert.equal(JSON.parse(hosting).d1, "DB");
@@ -510,7 +510,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-      readFile(new URL("../drizzle/0002_square_sandman.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle-sqlite-legacy/0002_square_sandman.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
@@ -543,8 +543,8 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/missions/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-      readFile(new URL("../drizzle/0005_free_exodus.sql", import.meta.url), "utf8"),
-      readFile(new URL("../drizzle/0007_striped_magdalene.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle-sqlite-legacy/0005_free_exodus.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle-sqlite-legacy/0007_striped_magdalene.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
@@ -603,8 +603,8 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(route, /status === "completed" && existing\?\.status !== "completed"/);
   assert.match(route, /notifyMissionCreator/);
   assert.match(route, /Missão concluída — \$\{completedByStore\}/);
-  assert.match(schema, /export const missions = sqliteTable/);
-  assert.match(schema, /export const missionCompletions = sqliteTable/);
+  assert.match(schema, /export const missions = pgTable/);
+  assert.match(schema, /export const missionCompletions = pgTable/);
   assert.match(migration, /CREATE TABLE `missions`/);
   assert.match(migration, /CREATE TABLE `mission_completions`/);
   assert.match(migration, /mission_completions_occurrence_unique/);
@@ -621,7 +621,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/captures/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-      readFile(new URL("../drizzle/0008_luxuriant_killer_shrike.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle-sqlite-legacy/0008_luxuriant_killer_shrike.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
@@ -673,7 +673,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(route, /existing\.status !== "ready"/);
   assert.match(route, /origin_company_id=\?1/);
   assert.match(route, /destination_company_id=\?1/);
-  assert.match(schema, /export const capturedProducts = sqliteTable/);
+  assert.match(schema, /export const capturedProducts = pgTable/);
   assert.match(migration, /CREATE TABLE `captured_products`/);
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
@@ -688,7 +688,7 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/outputs/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-      readFile(new URL("../drizzle/0009_hard_young_avengers.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle-sqlite-legacy/0009_hard_young_avengers.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
@@ -719,7 +719,7 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(route, /existing\.status !== "requested"/);
   assert.match(route, /SET status='completed'/);
   assert.match(route, /completed_at=CURRENT_TIMESTAMP/);
-  assert.match(schema, /export const defectiveOutputs = sqliteTable/);
+  assert.match(schema, /export const defectiveOutputs = pgTable/);
   assert.match(migration, /CREATE TABLE `defective_outputs`/);
   assert.match(migration, /defective_outputs_status_created_idx/);
   assert.match(migration, /defective_outputs_company_created_idx/);
@@ -735,7 +735,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/supplies/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-      readFile(new URL("../drizzle/0010_flowery_la_nuit.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle-sqlite-legacy/0010_flowery_la_nuit.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
@@ -780,8 +780,8 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(route, /DELETE FROM supply_request_events WHERE supply_item_id=\?1/);
   assert.match(route, /DELETE FROM supply_items WHERE id=\?1/);
   assert.match(route, /timeZone: "America\/Recife"/);
-  assert.match(schema, /export const supplyItems = sqliteTable/);
-  assert.match(schema, /export const supplyRequestEvents = sqliteTable/);
+  assert.match(schema, /export const supplyItems = pgTable/);
+  assert.match(schema, /export const supplyRequestEvents = pgTable/);
   assert.match(migration, /CREATE TABLE `supply_items`/);
   assert.match(migration, /CREATE TABLE `supply_request_events`/);
   assert.match(migration, /supply_items_company_status_created_idx/);
@@ -798,7 +798,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/instructions/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-      readFile(new URL("../drizzle/0006_omniscient_spectrum.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle-sqlite-legacy/0006_omniscient_spectrum.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
@@ -827,7 +827,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(route, /due_date >= \?1/);
   assert.match(route, /America\/Recife/);
   assert.match(route, /INSERT INTO instructions/);
-  assert.match(schema, /export const instructions = sqliteTable/);
+  assert.match(schema, /export const instructions = pgTable/);
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
@@ -888,7 +888,7 @@ test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", 
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/shared-state/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0004_short_nighthawk.sql", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle-sqlite-legacy/0004_short_nighthawk.sql", import.meta.url), "utf8"),
   ]);
 
   assert.match(html, /id="navRelatorio41" data-page="relatorio41" data-permission="report41"/);

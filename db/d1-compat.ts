@@ -44,6 +44,21 @@ function toPgPlaceholders(queryText: string): string {
   });
 }
 
+// Identificadores não citados são normalizados para minúsculas pelo
+// Postgres (diferente do SQLite, que preserva a grafia como escrita). Como
+// o projeto inteiro usa `AS someCamelCaseAlias` esperando receber de volta
+// `row.someCamelCaseAlias`, isso quebraria silenciosamente quase toda
+// query (ex.: `AS updatedAt` viraria a chave `updatedat`). Em vez de
+// revisar centenas de aliases manualmente, citamos automaticamente todo
+// alias `AS xyz` que contenha letra maiúscula, preservando a grafia
+// original.
+function quoteCamelCaseAliases(queryText: string): string {
+  return queryText.replace(
+    /\bAS\s+([A-Za-z_][A-Za-z0-9_]*)/g,
+    (full: string, identifier: string) => (/[A-Z]/.test(identifier) ? `AS "${identifier}"` : full),
+  );
+}
+
 class PgPreparedStatement {
   constructor(
     private readonly sql: ReturnType<typeof postgres>,
@@ -58,7 +73,8 @@ class PgPreparedStatement {
   /** Só para uso interno do PgD1Compat.batch(). */
   toPgQuery(): { query: string; params: unknown[] } {
     assertPortable(this.originalQuery);
-    return { query: toPgPlaceholders(this.originalQuery), params: this.params };
+    const query = toPgPlaceholders(quoteCamelCaseAliases(this.originalQuery));
+    return { query, params: this.params };
   }
 
   private async execute(): Promise<Row[]> {

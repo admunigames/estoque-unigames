@@ -173,7 +173,9 @@ export async function PUT(request: Request) {
     if (ifAbsent) {
       await database
         .prepare(
-          "INSERT OR IGNORE INTO shared_state (state_key, value_json, version, updated_at) VALUES (?1, ?2, 1, ?3)",
+          `INSERT INTO shared_state (state_key, value_json, version, updated_at)
+           VALUES (?1, ?2, 1, ?3)
+           ON CONFLICT (state_key) DO NOTHING`,
         )
         .bind(resolvedKey, value, now)
         .run();
