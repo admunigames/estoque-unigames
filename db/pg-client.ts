@@ -15,29 +15,53 @@ import postgres from "postgres";
 // então o mesmo client serve tanto para o adapter de compatibilidade D1
 // (db/d1-compat.ts) quanto para uso futuro do drizzle como query builder.
 //
-// Use a connection string do "Transaction pooler" do Supabase (porta 6543),
-// não a conexão direta (porta 5432) — Workers abrem/fecham conexões por
-// requisição e o pooler em modo transaction é feito pra isso. Nesse modo o
-// pgbouncer não suporta prepared statements no protocolo estendido, por
-// isso `prepare: false` abaixo.
+// Conectar via TCP cru (cloudflare:sockets) direto no Supabase a partir de
+// um Worker esbarra no limite de subrequests por invocação — cada
+// connect()/round-trip do protocolo Postgres é contado, e uma única
+// requisição que abre a conexão e roda poucas queries já estoura o limite.
+// Por isso o client passa pelo Hyperdrive (binding HYPERDRIVE, ver
+// wrangler.jsonc) sempre que disponível: ele mantém o pool de conexões do
+// lado da Cloudflare e expõe uma connection string local ao Worker, sem
+// contar como subrequests. Fora do runtime Workers (scripts locais, testes
+// em Node) cai para SUPABASE_DB_URL, conectando direto no Supabase — nesse
+// caso use a connection string do "Session pooler" (porta 5432).
 
 let cachedClient: ReturnType<typeof postgres> | undefined;
 
-export function getSql(): ReturnType<typeof postgres> {
-  if (cachedClient) return cachedClient;
+async function resolveConnectionString(): Promise<{ url: string; viaHyperdrive: boolean }> {
+  try {
+    const { env } = await import("cloudflare:workers");
+    const hyperdrive = (env as { HYPERDRIVE?: { connectionString: string } }).HYPERDRIVE;
+    if (hyperdrive?.connectionString) {
+      return { url: hyperdrive.connectionString, viaHyperdrive: true };
+    }
+  } catch {
+    // Fora do runtime Workers (ex.: scripts locais/testes em Node) — segue
+    // para o fallback com SUPABASE_DB_URL abaixo.
+  }
 
   const url = process.env.SUPABASE_DB_URL;
   if (!url) {
     throw new Error(
-      "SUPABASE_DB_URL não está definida. Configure a connection string do " +
-        "Supabase (Transaction pooler, porta 6543) nas variáveis de ambiente " +
+      "Nem o binding HYPERDRIVE nem SUPABASE_DB_URL estão disponíveis. " +
+        "Configure o binding no wrangler.jsonc (produção/preview) ou a " +
+        "variável de ambiente SUPABASE_DB_URL (scripts/testes locais) " +
         "antes de usar o client Postgres.",
     );
   }
+  return { url, viaHyperdrive: false };
+}
 
+export async function getSql(): Promise<ReturnType<typeof postgres>> {
+  if (cachedClient) return cachedClient;
+
+  const { url, viaHyperdrive } = await resolveConnectionString();
   cachedClient = postgres(url, {
     prepare: false,
-    ssl: "require",
+    // O Hyperdrive já cuida do TLS até o Supabase; a conexão do Worker até
+    // o Hyperdrive não usa/exige SSL. No fallback direto (Node local),
+    // mantém SSL exigido.
+    ssl: viaHyperdrive ? undefined : "require",
     max: 5,
     idle_timeout: 20,
     connect_timeout: 10,

@@ -18,7 +18,7 @@ export async function getD1(): Promise<D1Database> {
       import("./d1-compat"),
       import("./pg-client"),
     ]);
-    return createD1CompatFromPg(getSql()) as unknown as D1Database;
+    return createD1CompatFromPg(await getSql()) as unknown as D1Database;
   }
 
   const { env } = await import("cloudflare:workers");
@@ -37,7 +37,7 @@ export async function getDb() {
       import("drizzle-orm/postgres-js"),
       import("./pg-client"),
     ]);
-    return drizzle(getSql(), { schema });
+    return drizzle(await getSql(), { schema });
   }
 
   const [{ drizzle }, database] = await Promise.all([

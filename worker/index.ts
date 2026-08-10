@@ -1541,7 +1541,7 @@ const worker = {
         ? {
             ...rawEnv,
             DB: (await import("../db/d1-compat")).createD1CompatFromPg(
-              (await import("../db/pg-client")).getSql(),
+              await (await import("../db/pg-client")).getSql(),
             ) as unknown as D1Database,
           }
         : rawEnv;

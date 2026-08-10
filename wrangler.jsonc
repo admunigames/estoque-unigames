@@ -47,6 +47,20 @@
     }
   ],
 
+  // Fase 2 (migracao Supabase): proxy de pooling da propria Cloudflare
+  // entre o Worker e o Postgres. Necessario porque conectar via TCP cru
+  // (postgres-js + cloudflare:sockets) direto no Supabase esbarra no
+  // limite de subrequests por invocacao do Worker. Aponta pro Supabase
+  // "Session pooler" (porta 5432) — id criado com
+  // `wrangler hyperdrive create estoque-unigames-supabase`. So e usado
+  // quando DB_DRIVER=postgres; producao continua em D1 por padrao.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "1a235ddaaa034cde8cbecacf12ac1ede"
+    }
+  ],
+
   // Binding nativo do Cloudflare Images, sem ID próprio — basta estar
   // habilitado na conta.
   "images": {
