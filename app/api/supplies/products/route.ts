@@ -2,7 +2,12 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 
 type JsonMap = Record<string, unknown>;
-type Identity = { id: string; displayName: string; role: "admin" | "user" };
+type Identity = {
+  id: string;
+  displayName: string;
+  role: "admin" | "user";
+  permissions: string[];
+};
 
 function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -26,7 +31,15 @@ function identity(request: Request): Identity {
       80,
     ),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    permissions: (request.headers.get("x-unigames-permissions") || "")
+      .split(",")
+      .map((permission) => permission.trim())
+      .filter(Boolean),
   };
+}
+
+function canAccessSupplies(actor: Identity) {
+  return actor.role === "admin" || actor.permissions.includes("supplies");
 }
 
 function sameOrigin(request: Request) {
@@ -90,10 +103,14 @@ const PRODUCT_SELECT = `
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canAccessSupplies(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO AOS INSUMOS." }, 403);
+  }
 
   try {
     const url = new URL(request.url);
-    const includeInactive = url.searchParams.get("all") === "1";
+    const includeInactive = actor.role === "admin" && url.searchParams.get("all") === "1";
     const database = await getD1();
     const query = includeInactive
       ? `${PRODUCT_SELECT} ORDER BY sc.name ASC, sp.name ASC`

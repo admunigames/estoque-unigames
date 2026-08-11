@@ -2,7 +2,12 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 
 type JsonMap = Record<string, unknown>;
-type Identity = { id: string; displayName: string; role: "admin" | "user" };
+type Identity = {
+  id: string;
+  displayName: string;
+  role: "admin" | "user";
+  permissions: string[];
+};
 type MovementType = "in" | "out";
 
 function jsonResponse(body: JsonMap, status = 200) {
@@ -27,7 +32,15 @@ function identity(request: Request): Identity {
       80,
     ),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    permissions: (request.headers.get("x-unigames-permissions") || "")
+      .split(",")
+      .map((permission) => permission.trim())
+      .filter(Boolean),
   };
+}
+
+function canAccessSupplies(actor: Identity) {
+  return actor.role === "admin" || actor.permissions.includes("supplies");
 }
 
 function sameOrigin(request: Request) {
@@ -78,19 +91,30 @@ export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
-    return jsonResponse({ error: "SOMENTE O ADMINISTRADOR PODE VER O ESTOQUE." }, 403);
+  if (!canAccessSupplies(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO AOS INSUMOS." }, 403);
   }
 
   try {
     const url = new URL(request.url);
     const productId = safeText(url.searchParams.get("productId"), 80);
     const database = await getD1();
-    const query = productId
-      ? `${MOVEMENT_SELECT} WHERE sm.product_id=?1 ORDER BY sm.created_at DESC LIMIT 100`
-      : `${MOVEMENT_SELECT} ORDER BY sm.created_at DESC LIMIT 50`;
-    const result = productId
-      ? await database.prepare(query).bind(productId).all<MovementRow>()
+    const isAdmin = actor.role === "admin";
+    const conditions: string[] = [];
+    const bindings: string[] = [];
+    if (productId) {
+      bindings.push(productId);
+      conditions.push(`sm.product_id=?${bindings.length}`);
+    }
+    if (!isAdmin) {
+      bindings.push(actor.id);
+      conditions.push(`sm.created_by=?${bindings.length}`);
+    }
+    const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
+    const limit = productId ? 100 : isAdmin ? 50 : 20;
+    const query = `${MOVEMENT_SELECT}${where} ORDER BY sm.created_at DESC LIMIT ${limit}`;
+    const result = bindings.length
+      ? await database.prepare(query).bind(...bindings).all<MovementRow>()
       : await database.prepare(query).all<MovementRow>();
     return jsonResponse({ items: result.results ?? [] });
   } catch (error) {
@@ -103,9 +127,9 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
+  if (!canAccessSupplies(actor)) {
     return jsonResponse(
-      { error: "SOMENTE O ADMINISTRADOR PODE REGISTRAR MOVIMENTAÇÕES DE ESTOQUE." },
+      { error: "VOCÊ NÃO TEM ACESSO PARA REGISTRAR MOVIMENTAÇÕES DE ESTOQUE." },
       403,
     );
   }
@@ -121,6 +145,12 @@ export async function POST(request: Request) {
     const reason = safeText(body.reason, 300);
     const responsibleName = safeText(body.responsibleName, 120);
 
+    if (actor.role !== "admin" && type === "in") {
+      return jsonResponse(
+        { error: "SOMENTE O ADMINISTRADOR PODE REGISTRAR ENTRADAS DE ESTOQUE." },
+        403,
+      );
+    }
     if (!productId) return jsonResponse({ error: "ESCOLHA O PRODUTO." }, 400);
     if (!Number.isFinite(quantity) || quantity <= 0) {
       return jsonResponse({ error: "INFORME UMA QUANTIDADE VÁLIDA." }, 400);

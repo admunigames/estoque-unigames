@@ -2941,6 +2941,30 @@
         <article class="supply-summary-card received"><span>HISTÓRICO RECEBIDO</span><strong id="supplyReceivedCount">0</strong></article>
       </section>
 
+      <section class="supply-register-panel" id="supplyExitPanel" hidden>
+        <div class="supply-panel-head">
+          <div><h3>SAÍDA DE INSUMOS</h3><p>Registre o uso interno de um produto já cadastrado. A baixa é aplicada direto no estoque.</p></div>
+        </div>
+        <form class="supply-product-form" id="supplyExitForm">
+          <div class="field full"><label for="supplyExitProduct">PRODUTO</label><select id="supplyExitProduct" required><option value="">SELECIONE</option></select></div>
+          <div class="field"><label for="supplyExitQuantity">QUANTIDADE</label><input id="supplyExitQuantity" type="number" step="1" min="1" required></div>
+          <div class="field"><label for="supplyExitResponsible">RESPONSÁVEL</label><input id="supplyExitResponsible" maxlength="120" required></div>
+          <div class="field full"><label for="supplyExitReason">MOTIVO DA SAÍDA</label><input id="supplyExitReason" maxlength="300" placeholder="Ex.: uso interno, reposição na loja" required></div>
+          <div class="field full" style="display:flex;justify-content:flex-end;"><button class="btn-accent" id="btnSaveSupplyExit" type="submit">REGISTRAR SAÍDA</button></div>
+        </form>
+        <div class="user-form-status" id="supplyExitFormStatus" role="status" aria-live="polite"></div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Produto</th><th style="text-align:right">Quantidade</th><th>Motivo</th><th>Data</th></tr>
+              </thead>
+              <tbody id="supplyExitHistoryBody"><tr><td colspan="4" class="responsive-empty">Nenhuma saída registrada por você ainda.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section class="supply-register-panel" id="supplyRegisterPanel">
         <div class="supply-panel-head">
           <div><h3>ANOTAR INSUMO FALTANTE</h3><p id="supplyRegisterDescription">Registre durante a semana tudo o que deverá entrar no próximo pedido.</p></div>
@@ -4513,7 +4537,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); }
+    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); }
     if(name === 'instrucoes') loadInstructions();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -4531,7 +4555,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); }
+    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); }
     if(name === 'instrucoes') loadInstructions();
   }
 
@@ -9410,6 +9434,7 @@ function renderHomeTasks(){
     el('supplyCompany').required = isAdmin;
     el('supplyFilterCompanyField').hidden = !isAdmin;
     el('supplyAdminPanel').hidden = !isAdmin;
+    el('supplyExitPanel').hidden = isAdmin;
     renderSupplyCompanyOptions();
     el('supplyRegisterDescription').textContent = isAdmin
       ? 'Registre o item e escolha a loja responsável.'
@@ -10082,6 +10107,72 @@ function renderHomeTasks(){
 
   el('supplyStockSearch').addEventListener('input',debounce(renderSupplyStockTable,120));
   el('supplyStockFilterCategory').addEventListener('change',renderSupplyStockTable);
+
+  function setSupplyExitFormStatus(message,type){
+    const status = el('supplyExitFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  function supplyExitHistoryRowHtml(movement){
+    const date = new Date(movement.createdAt);
+    const dateText = Number.isNaN(date.getTime()) ? movement.createdAt : date.toLocaleString('pt-BR');
+    return '<tr>'+
+      '<td>'+escapeHtml(movement.productName)+'</td>'+
+      '<td style="text-align:right">'+Number(movement.quantity || 0)+'</td>'+
+      '<td>'+escapeHtml(movement.reason || '—')+'</td>'+
+      '<td>'+escapeHtml(dateText)+'</td>'+
+    '</tr>';
+  }
+
+  async function loadSupplyExitData(){
+    if(currentSession.role === 'admin' || !canAccess('supplies')) return;
+    try{
+      const [productsData,movementsData] = await Promise.all([
+        supplyProductApiRequest(null),
+        supplyStockApiRequest(null)
+      ]);
+      const products = Array.isArray(productsData.items) ? productsData.items : [];
+      const select = el('supplyExitProduct');
+      const keepValue = select.value;
+      select.innerHTML = '<option value="">SELECIONE</option>'+
+        products.map(product => '<option value="'+escapeHtml(product.id)+'">'+escapeHtml(product.name)+' ('+escapeHtml(product.categoryName)+')</option>').join('');
+      select.value = keepValue;
+      const movements = Array.isArray(movementsData.items) ? movementsData.items : [];
+      el('supplyExitHistoryBody').innerHTML = movements.length
+        ? movements.map(supplyExitHistoryRowHtml).join('')
+        : '<tr><td colspan="4" class="responsive-empty">Nenhuma saída registrada por você ainda.</td></tr>';
+    }catch(error){
+      setSupplyExitFormStatus(error.message,'error');
+    }
+  }
+
+  el('supplyExitForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const button = el('btnSaveSupplyExit');
+    button.disabled = true;
+    setSupplyExitFormStatus('REGISTRANDO SAÍDA…','');
+    try{
+      await supplyStockApiRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          productId:el('supplyExitProduct').value,
+          type:'out',
+          quantity:el('supplyExitQuantity').value,
+          responsibleName:el('supplyExitResponsible').value,
+          reason:el('supplyExitReason').value
+        })
+      });
+      el('supplyExitForm').reset();
+      setSupplyExitFormStatus('SAÍDA REGISTRADA.','success');
+      await loadSupplyExitData();
+    }catch(error){
+      setSupplyExitFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
 
   async function instructionApiRequest(path,options){
     const response = await fetch(path,{
