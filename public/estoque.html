@@ -8824,34 +8824,89 @@ function renderHomeTasks(){
     el('capturePhotoFilename').textContent = file ? file.name : '';
   });
 
+  const CAPTURE_PHOTO_CHUNK_SIZE = 512*1024;
+
+  async function captureUploadRequest(options){
+    const response = await fetch('/api/captures/upload',{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL ENVIAR A FOTO.');
+    return payload;
+  }
+
+  async function uploadCapturePhoto(file){
+    const numberOfParts = Math.max(1,Math.ceil(file.size/CAPTURE_PHOTO_CHUNK_SIZE));
+    const created = await captureUploadRequest({
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'create',
+        fileName:file.name,
+        contentType:file.type,
+        fileSize:file.size,
+        numberOfParts
+      })
+    });
+    const sessionId = created.session.id;
+    try{
+      for(let partNumber=1;partNumber<=numberOfParts;partNumber++){
+        const start = (partNumber-1)*CAPTURE_PHOTO_CHUNK_SIZE;
+        const chunk = file.slice(start,Math.min(start+CAPTURE_PHOTO_CHUNK_SIZE,file.size));
+        await captureUploadRequest({
+          method:'POST',
+          headers:{
+            'Content-Type':'application/octet-stream',
+            'x-capture-upload-id':sessionId,
+            'x-capture-part-number':String(partNumber)
+          },
+          body:chunk
+        });
+      }
+      const completed = await captureUploadRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'complete',sessionId})
+      });
+      return completed.photoKey;
+    }catch(error){
+      captureUploadRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'cancel',sessionId})
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
   el('captureForm').addEventListener('submit',async event => {
     event.preventDefault();
     const button = el('btnSaveCapture');
     button.disabled = true;
-    setCaptureFormStatus('CADASTRANDO PRODUTO…','');
     try{
-      const fields = {
-        category:el('captureCategory').value,
-        originCompanyId:currentSession.role === 'admin' ? el('captureOriginCompany').value : '',
-        productName:el('captureProductName').value,
-        serialNumber:el('captureSerialNumber').value,
-        defects:el('captureDefects').value,
-        color:el('captureColor').value,
-        capturedValue:el('captureValue').value
-      };
       const photo = el('capturePhoto').files[0];
+      let photoKey = '';
       if(photo){
-        const formData = new FormData();
-        Object.keys(fields).forEach(key => formData.append(key,fields[key]));
-        formData.append('photo',photo,photo.name);
-        await captureApiRequest({method:'POST',body:formData});
-      }else{
-        await captureApiRequest({
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify(fields)
-        });
+        setCaptureFormStatus('ENVIANDO FOTO…','');
+        photoKey = await uploadCapturePhoto(photo);
       }
+      setCaptureFormStatus('CADASTRANDO PRODUTO…','');
+      await captureApiRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          category:el('captureCategory').value,
+          originCompanyId:currentSession.role === 'admin' ? el('captureOriginCompany').value : '',
+          productName:el('captureProductName').value,
+          serialNumber:el('captureSerialNumber').value,
+          defects:el('captureDefects').value,
+          color:el('captureColor').value,
+          capturedValue:el('captureValue').value,
+          photoKey
+        })
+      });
       el('captureForm').reset();
       el('capturePhotoFilename').textContent = '';
       setCaptureFormStatus('PRODUTO CADASTRADO E ENVIADO PARA A ASSISTÊNCIA.','success');

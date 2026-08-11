@@ -8,9 +8,8 @@ import {
   companyName,
   identity,
   isAssistanceActor,
+  isValidPhotoKey,
   jsonResponse,
-  photoKeyFor,
-  photoValidationError,
   safeText,
   sameOrigin,
   serializeCaptureRow,
@@ -74,31 +73,6 @@ export async function GET(request: Request) {
   }
 }
 
-async function parseCaptureBody(
-  request: Request,
-): Promise<{ body: JsonMap; photo: File | null } | Response> {
-  const contentType = request.headers.get("content-type") || "";
-  if (contentType.includes("multipart/form-data")) {
-    const formData = await request.formData();
-    const body: JsonMap = {};
-    let photo: File | null = null;
-    for (const [key, value] of formData.entries()) {
-      if (key === "photo") {
-        if (value instanceof File && value.size > 0) photo = value;
-        continue;
-      }
-      body[key] = value;
-    }
-    if (photo) {
-      const error = photoValidationError(photo);
-      if (error) return jsonResponse({ error }, 400);
-    }
-    return { body, photo };
-  }
-  const body = (await request.json()) as JsonMap;
-  return { body, photo: null };
-}
-
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -117,9 +91,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const parsed = await parseCaptureBody(request);
-    if (parsed instanceof Response) return parsed;
-    const { body, photo } = parsed;
+    const body = (await request.json()) as JsonMap;
 
     const requestedOriginCompanyId = safeText(body.originCompanyId, 80);
     const originCompanyId =
@@ -162,6 +134,19 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "VALOR CAPTADO INVÁLIDO." }, 400);
     }
     const capturedValueCents = Math.round(capturedValue * 100);
+    const requestedPhotoKey = safeText(body.photoKey, 200);
+    let photoKey = "";
+    if (requestedPhotoKey) {
+      if (!isValidPhotoKey(requestedPhotoKey)) {
+        return jsonResponse({ error: "FOTO INVÁLIDA. TENTE ENVIAR NOVAMENTE." }, 400);
+      }
+      const bucket = await uploadsBucket();
+      const exists = await bucket.head(requestedPhotoKey);
+      if (!exists) {
+        return jsonResponse({ error: "A FOTO ENVIADA EXPIROU. TENTE NOVAMENTE." }, 400);
+      }
+      photoKey = requestedPhotoKey;
+    }
 
     const database = await getD1();
     const originCompanyName = await companyName(database, originCompanyId);
@@ -170,15 +155,6 @@ export async function POST(request: Request) {
     }
 
     const id = crypto.randomUUID();
-    let photoKey = "";
-    if (photo) {
-      const bucket = await uploadsBucket();
-      photoKey = photoKeyFor(id, photo);
-      await bucket.put(photoKey, await photo.arrayBuffer(), {
-        httpMetadata: { contentType: photo.type || "application/octet-stream" },
-      });
-    }
-
     await database
       .prepare(
         `INSERT INTO captured_products

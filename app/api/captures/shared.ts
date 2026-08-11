@@ -188,27 +188,41 @@ export const CAPTURE_SELECT = `
          updated_at AS updatedAt
   FROM captured_products`;
 
-const ALLOWED_PHOTO_TYPES: Record<string, string> = {
+export const ALLOWED_PHOTO_TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
   "image/heic": "heic",
   "image/heif": "heif",
 };
-const MAX_PHOTO_SIZE = 8 * 1024 * 1024;
+export const MAX_PHOTO_SIZE = 8 * 1024 * 1024;
+// Mesmo tamanho de pedaço usado no upload de anexos de Compras
+// (app/api/compras/files/route.ts) — o corpo de uma requisição maior que
+// ~1-2MB direto pro Worker volta 413 antes mesmo de chegar no handler, então
+// fotos precisam ser enviadas em pedaços pequenos e remontadas no servidor.
+export const PHOTO_CHUNK_SIZE = 512 * 1024;
 
-export function photoValidationError(file: File) {
-  if (file.size <= 0) return "SELECIONE UMA FOTO VÁLIDA.";
-  if (file.size > MAX_PHOTO_SIZE) return "A FOTO DEVE TER NO MÁXIMO 8 MB.";
-  if (file.type && !ALLOWED_PHOTO_TYPES[file.type]) {
-    return "FORMATO DE FOTO NÃO SUPORTADO.";
+export function photoMetaValidationError(
+  fileName: string,
+  contentType: string,
+  fileSize: number,
+) {
+  if (!fileName || !Number.isInteger(fileSize) || fileSize <= 0) {
+    return "SELECIONE UMA FOTO VÁLIDA.";
   }
+  if (fileSize > MAX_PHOTO_SIZE) return "A FOTO DEVE TER NO MÁXIMO 8 MB.";
+  if (!ALLOWED_PHOTO_TYPES[contentType]) return "FORMATO DE FOTO NÃO SUPORTADO.";
   return "";
 }
 
-export function photoKeyFor(captureId: string, file: File) {
-  const extension = ALLOWED_PHOTO_TYPES[file.type] || "jpg";
-  return `captures/${captureId}/photo-${Date.now()}.${extension}`;
+export function photoExtension(contentType: string) {
+  return ALLOWED_PHOTO_TYPES[contentType] || "jpg";
+}
+
+const PHOTO_KEY_PATTERN = /^captures\/[0-9a-f-]{36}\/photo\.(jpg|png|webp|heic|heif)$/i;
+
+export function isValidPhotoKey(key: string) {
+  return PHOTO_KEY_PATTERN.test(key);
 }
 
 export async function uploadsBucket(): Promise<R2Bucket> {
