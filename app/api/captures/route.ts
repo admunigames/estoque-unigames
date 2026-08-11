@@ -356,3 +356,52 @@ export async function PATCH(request: Request) {
     return jsonResponse({ error: "NÃO FOI POSSÍVEL ATUALIZAR A CAPTAÇÃO." }, 500);
   }
 }
+
+export async function DELETE(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (actor.role !== "admin") {
+    return jsonResponse(
+      { error: "SOMENTE O ADMINISTRADOR PODE EXCLUIR CAPTAÇÕES." },
+      403,
+    );
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+
+  try {
+    const body = (await request.json()) as JsonMap;
+    const id = safeText(body.id, 80);
+    if (!id) return jsonResponse({ error: "PRODUTO INVÁLIDO." }, 400);
+
+    const database = await getD1();
+    const existing = await database
+      .prepare(`${CAPTURE_SELECT} WHERE id=?1 LIMIT 1`)
+      .bind(id)
+      .first<CaptureRow>();
+    if (!existing) {
+      return jsonResponse({ error: "PRODUTO NÃO ENCONTRADO." }, 404);
+    }
+
+    await database
+      .prepare("DELETE FROM captured_products WHERE id=?1")
+      .bind(id)
+      .run();
+
+    if (existing.photoKey && isValidPhotoKey(existing.photoKey)) {
+      try {
+        const bucket = await uploadsBucket();
+        await bucket.delete(existing.photoKey);
+      } catch (error) {
+        console.error("Não foi possível remover a foto da captação excluída.", error);
+      }
+    }
+
+    return jsonResponse({ deleted: true, id });
+  } catch (error) {
+    console.error("Não foi possível excluir a captação.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR A CAPTAÇÃO." }, 500);
+  }
+}

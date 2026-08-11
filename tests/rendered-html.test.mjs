@@ -736,6 +736,25 @@ test("cadastra jogos direto para separação e os remove da fila da assistência
   }
 });
 
+test("permite somente ao administrador excluir uma captação", async () => {
+  const [html, route] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/captures/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /data-capture-action="delete"/);
+  assert.match(html, /EXCLUIR CAPTAÇÃO/);
+  assert.match(html, /currentSession\.role === 'admin'/);
+  assert.match(html, /window\.confirm\('Excluir definitivamente a captação/);
+  assert.match(html, /method:action === 'delete' \? 'DELETE' : 'PATCH'/);
+
+  assert.match(route, /export async function DELETE\(request: Request\)/);
+  assert.match(route, /actor\.role !== "admin"/);
+  assert.match(route, /SOMENTE O ADMINISTRADOR PODE EXCLUIR CAPTAÇÕES/);
+  assert.match(route, /DELETE FROM captured_products WHERE id=\?1/);
+  assert.match(route, /await bucket\.delete\(existing\.photoKey\)/);
+});
+
 test("registra saídas por defeito por loja e preserva o histórico do administrador", async () => {
   const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
     await Promise.all([

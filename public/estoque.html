@@ -1872,12 +1872,14 @@
     background:rgba(79,134,189,.1);color:var(--ink);font:900 8px/1.25 var(--mono);
   }
   .capture-action.primary{border-color:rgba(66,166,119,.46);background:rgba(66,166,119,.13);color:#66d49e;}
+  .capture-action.danger{border-color:rgba(220,85,85,.48);background:rgba(220,85,85,.12);color:#ff8c8c;}
   .capture-destination{min-height:40px;font:800 9px/1.2 var(--mono);}
   html[data-theme="light"] .capture-summary-card,
   html[data-theme="light"] .capture-register-panel,
   html[data-theme="light"] .capture-board{background:#fff;border-color:#b8cad9;box-shadow:0 1px 4px rgba(28,67,102,.06);}
   html[data-theme="light"] .capture-card{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .capture-action.primary{color:#24714a;background:#e2f3e9;}
+  html[data-theme="light"] .capture-action.danger{color:#a52f2f;background:#fbe8e8;}
   .output-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-bottom:16px;}
   .output-summary-card,.output-register-panel,.output-board{
     border:1px solid rgba(39,69,97,.58);border-radius:16px;background:var(--bg-card);
@@ -9044,20 +9046,24 @@ function renderHomeTasks(){
   }
 
   function captureActionsHtml(row){
+    const actions = [];
     if(isAssistanceSession() && row.category !== 'jogo'){
       if(row.status === 'submitted'){
-        return '<button class="capture-action" type="button" data-capture-action="receive" data-capture-key="'+escapeHtml(row.id)+'">MARCAR COMO RECEBIDO</button>';
+        actions.push('<button class="capture-action" type="button" data-capture-action="receive" data-capture-key="'+escapeHtml(row.id)+'">MARCAR COMO RECEBIDO</button>');
       }
       if(row.status === 'received'){
-        return '<button class="capture-action primary" type="button" data-capture-action="ready" data-capture-key="'+escapeHtml(row.id)+'">DISPONÍVEL PARA SEPARAÇÃO</button>';
+        actions.push('<button class="capture-action primary" type="button" data-capture-action="ready" data-capture-key="'+escapeHtml(row.id)+'">DISPONÍVEL PARA SEPARAÇÃO</button>');
       }
     }
     if(currentSession.role === 'admin' && row.status === 'ready'){
-      return '<select class="capture-destination" data-capture-destination="'+escapeHtml(row.id)+'" aria-label="Loja de destino">'+
-        captureDestinationOptions()+'</select>'+
-        '<button class="capture-action primary" type="button" data-capture-action="assign" data-capture-key="'+escapeHtml(row.id)+'">CONFIRMAR DESTINO</button>';
+      actions.push('<select class="capture-destination" data-capture-destination="'+escapeHtml(row.id)+'" aria-label="Loja de destino">'+
+        captureDestinationOptions()+'</select>');
+      actions.push('<button class="capture-action primary" type="button" data-capture-action="assign" data-capture-key="'+escapeHtml(row.id)+'">CONFIRMAR DESTINO</button>');
     }
-    return '';
+    if(currentSession.role === 'admin'){
+      actions.push('<button class="capture-action danger" type="button" data-capture-action="delete" data-capture-key="'+escapeHtml(row.id)+'">EXCLUIR CAPTAÇÃO</button>');
+    }
+    return actions.join('');
   }
 
   function captureCardHtml(row){
@@ -9302,10 +9308,16 @@ function renderHomeTasks(){
     const id = button.dataset.captureKey;
     const card = button.closest('.capture-card');
     const destination = card && card.querySelector('[data-capture-destination]');
+    if(action === 'delete'){
+      if(currentSession.role !== 'admin') return;
+      const row = captureRows.find(item => item.id === id);
+      const name = row && (row.gameName || row.productName);
+      if(!window.confirm('Excluir definitivamente a captação'+(name ? ' de "'+name+'"' : '')+'? Esta ação não pode ser desfeita.')) return;
+    }
     button.disabled = true;
     try{
       await captureApiRequest({
-        method:'PATCH',
+        method:action === 'delete' ? 'DELETE' : 'PATCH',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           id,
@@ -9316,7 +9328,8 @@ function renderHomeTasks(){
       const messages = {
         receive:'Produto marcado como recebido pela assistência.',
         ready:'Produto disponível para separação. O administrador já pode definir o destino.',
-        assign:'Destino do produto confirmado.'
+        assign:'Destino do produto confirmado.',
+        delete:'Captação excluída definitivamente.'
       };
       showPurchaseToast(messages[action] || 'Captação atualizada.');
       await loadCaptures();
