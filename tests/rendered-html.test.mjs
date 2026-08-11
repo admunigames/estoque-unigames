@@ -516,6 +516,9 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
     ]);
 
   assert.match(workerSource, /ACCESS_GROUP_PERMISSIONS/);
+  assert.match(html, /id="userHierarchy"/);
+  assert.match(workerSource, /normalizeHierarchy/);
+  assert.match(schema, /hierarchy: text\("hierarchy"\)/);
   assert.match(workerSource, /\/recuperar-senha/);
   assert.match(workerSource, /DELETE FROM app_users WHERE id = \?1/);
   assert.match(workerSource, /automatic-backups\/\$\{date\}\.json\.aes/);

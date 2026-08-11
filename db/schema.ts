@@ -28,6 +28,7 @@ export const appUsers = pgTable("app_users", {
   accessGroup: text("access_group").notNull().default("operator"),
   permissions: text("permissions_json").notNull().default("[]"),
   companyId: text("company_id").notNull().default(""),
+  hierarchy: text("hierarchy").notNull().default("administrative"),
   active: integer("active").notNull().default(1),
   sessionVersion: integer("session_version").notNull().default(1),
   createdAt: text("created_at").notNull().default(sql`now()::text`),

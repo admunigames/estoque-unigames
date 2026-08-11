@@ -64,6 +64,13 @@
       "when": 1786469355637,
       "tag": "0008_purple_catseye",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786472544737,
+      "tag": "0009_supreme_hannibal_king",
+      "breakpoints": true
     }
   ]
 }

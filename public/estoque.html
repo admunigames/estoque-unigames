@@ -3716,6 +3716,15 @@
             <div class="field"><label for="userDisplayName">NOME DA PESSOA</label><input id="userDisplayName" maxlength="80" required></div>
             <div class="field"><label for="userUsername">USUÁRIO DE LOGIN</label><input id="userUsername" maxlength="40" autocomplete="off" required></div>
             <div class="field"><label for="userEmail">E-MAIL (OPCIONAL)</label><input id="userEmail" type="email" maxlength="200" autocomplete="off"></div>
+            <div class="field">
+              <label for="userHierarchy">HIERARQUIA</label>
+              <select id="userHierarchy">
+                <option value="director">DIRETOR</option>
+                <option value="supervisor">SUPERVISOR</option>
+                <option value="administrative" selected>ADMINISTRATIVO</option>
+              </select>
+              <span class="field-hint">Informação organizacional; não altera permissões de acesso.</span>
+            </div>
             <div class="field"><label for="userPassword">SENHA <span id="userPasswordHint">(MÍNIMO 8 CARACTERES)</span></label><input id="userPassword" type="password" minlength="8" maxlength="200" autocomplete="new-password"></div>
             <div class="field">
               <label for="userAccessGroup">GRUPO DE ACESSO</label>
@@ -10925,6 +10934,7 @@ function renderHomeTasks(){
     assistance:'Assistência',
     custom:'Personalizado'
   };
+  const hierarchyNames = {director:'Diretor',supervisor:'Supervisor',administrative:'Administrativo'};
   const accessGroupPermissions = {
     administrator:['tasks','missions','captures','outputs','supplies','supplies_in','supplies_out','supplies_delete','purchases','stock','database','pulls','report41'],
     purchases:['tasks','missions','captures','outputs','supplies','supplies_out','purchases'],
@@ -10954,6 +10964,7 @@ function renderHomeTasks(){
     el('userEditId').value = '';
     el('userAccessGroup').value = 'operator';
     el('userCompanyId').value = '';
+    el('userHierarchy').value = 'administrative';
     el('userActive').checked = true;
     el('userActiveWrap').hidden = true;
     el('btnCancelUserEdit').hidden = true;
@@ -10977,10 +10988,11 @@ function renderHomeTasks(){
     }
     list.innerHTML = managedUsers.map(user => {
       const groupBadge = '<span class="user-badge">'+escapeHtml(accessGroupNames[user.accessGroup] || 'Personalizado')+'</span>';
+      const hierarchyBadge = '<span class="user-badge">'+escapeHtml(hierarchyNames[user.hierarchy] || 'Administrativo')+'</span>';
       const recoveryBadge = user.recoveryRequested ? '<span class="user-badge" style="color:#ef8a55">RECUPERAÇÃO SOLICITADA</span>' : '';
       const company = companies.find(item => item.id === user.companyId);
       const companyBadge = company ? '<span class="user-badge">LOJA · '+escapeHtml(company.name)+'</span>' : '';
-      const badges = groupBadge + companyBadge + recoveryBadge + (user.role === 'admin'
+      const badges = groupBadge + hierarchyBadge + companyBadge + recoveryBadge + (user.role === 'admin'
         ? '<span class="user-badge">ACESSO COMPLETO</span>'
         : (user.permissions || []).map(permission => '<span class="user-badge">'+escapeHtml(permissionNames[permission] || permission)+'</span>').join('') || '<span class="user-badge">SEM MÓDULOS</span>');
       const actions = user.managed ? '<div class="user-actions"><button class="btn-outline" type="button" data-edit-user="'+escapeHtml(user.id)+'">ALTERAR</button><button class="btn-outline" type="button" data-toggle-user="'+escapeHtml(user.id)+'">'+(user.active ? 'BLOQUEAR' : 'REATIVAR')+'</button><button class="btn-danger-outline" type="button" data-delete-user="'+escapeHtml(user.id)+'">EXCLUIR</button></div>' : '<span class="user-badge">CONTA PRINCIPAL</span>';
@@ -11024,6 +11036,7 @@ function renderHomeTasks(){
       active: editId ? el('userActive').checked : true,
       accessGroup:el('userAccessGroup').value,
       companyId:el('userCompanyId').value,
+      hierarchy:el('userHierarchy').value,
       permissions: Array.from(document.querySelectorAll('[name="userPermission"]:checked')).map(input => input.value)
     };
     if(!editId && payload.password.length < 8){
@@ -11089,6 +11102,7 @@ function renderHomeTasks(){
       el('userPassword').value = '';
       el('userAccessGroup').value = user.accessGroup || (user.role === 'admin' ? 'administrator' : 'custom');
       el('userCompanyId').value = user.companyId || '';
+      el('userHierarchy').value = user.hierarchy || 'administrative';
       document.querySelectorAll('[name="userPermission"]').forEach(input => { input.checked = user.permissions.includes(input.value); });
       updateUserGroupFields();
       el('userActive').checked = user.active;
