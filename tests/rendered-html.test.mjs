@@ -1098,3 +1098,52 @@ test("aplica o sistema visual responsivo sem alterar os módulos existentes", as
   assert.match(html, /debounce\(renderCaptures,120\)/);
   assert.match(html, /function resumeTaskReminderMonitor\(\)/);
 });
+
+test("oferece documentos em PDF para todos os grupos e restringe a gestão ao administrador", async () => {
+  const [html, workerSource, route, shared, fileRoute, schema, migration, wrangler] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/documents/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/documents/shared.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/documents/file/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0012_documents.sql", import.meta.url), "utf8"),
+      readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(html, /id="navDocumentos"/);
+  assert.match(html, /data-document-folder="garantia-produto"/);
+  assert.match(html, /data-document-folder="garantia-estendida"/);
+  assert.match(html, /data-document-folder="documentos-avulsos"/);
+  assert.match(html, /id="pageDocumentos" class="page wrap"/);
+  assert.match(html, /id="documentsUploadForm"/);
+  assert.match(html, /class="documents-upload-panel" data-admin-only/);
+  assert.match(html, /accept="\.pdf,application\/pdf"/);
+  assert.match(html, /documentos:'\/documentos'/);
+  assert.match(html, /function navigateToDocumentFolder\(folder\)/);
+
+  assert.match(workerSource, /"documents_manage"/);
+  assert.match(workerSource, /ASSIGNABLE_PERMISSIONS/);
+  assert.match(workerSource, /path === "\/documentos" \|\| path\.startsWith\("\/documentos\/"\)/);
+  assert.match(workerSource, /path\.startsWith\("\/api\/documents"\)/);
+  assert.match(workerSource, /hasPermission\(user, "documents_manage"\)/);
+
+  assert.match(shared, /actor\.role === "admin"/);
+  assert.match(shared, /actor\.permissions\.includes\("documents_manage"\)/);
+  assert.match(shared, /const bucket = \(env as \{ UPLOADS\?: R2Bucket \}\)\.UPLOADS/);
+  assert.match(route, /\^%PDF-\[12\]/);
+  assert.match(route, /%%EOF/);
+  assert.match(route, /INSERT INTO documents/);
+  assert.match(route, /DELETE FROM documents WHERE id=\?1/);
+  assert.match(shared, /download \? "attachment" : "inline"/);
+  assert.match(fileRoute, /"content-type": row\.contentType \|\| "application\/pdf"/);
+
+  assert.match(schema, /export const documents = pgTable/);
+  assert.match(schema, /r2Key: text\("r2_key"\)/);
+  assert.match(migration, /CREATE TABLE "documents"/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /REVOKE ALL ON TABLE "documents" FROM anon, authenticated/);
+  assert.match(wrangler, /"binding": "UPLOADS"/);
+  assert.equal((wrangler.match(/"r2_buckets"/g) || []).length, 1);
+});

@@ -18,7 +18,7 @@ type LoginConfig = {
   sessionSecret: string;
 };
 
-type Permission = "tasks" | "missions" | "captures" | "outputs" | "supplies" | "supplies_in" | "supplies_out" | "supplies_delete" | "purchases" | "stock" | "database" | "pulls" | "report41";
+type Permission = "tasks" | "missions" | "captures" | "outputs" | "supplies" | "supplies_in" | "supplies_out" | "supplies_delete" | "purchases" | "stock" | "database" | "pulls" | "report41" | "documents_manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
 type UserSector = "" | "administrative" | "assistance";
@@ -67,7 +67,8 @@ const ACCESS_GROUP_HEADER = "x-unigames-access-group";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
 const COMPANY_ID_HEADER = "x-unigames-company-id";
 const SECTOR_HEADER = "x-unigames-sector";
-const ALL_PERMISSIONS: Permission[] = ["tasks", "missions", "captures", "outputs", "supplies", "supplies_in", "supplies_out", "supplies_delete", "purchases", "stock", "database", "pulls", "report41"];
+const ASSIGNABLE_PERMISSIONS: Permission[] = ["tasks", "missions", "captures", "outputs", "supplies", "supplies_in", "supplies_out", "supplies_delete", "purchases", "stock", "database", "pulls", "report41"];
+const ALL_PERMISSIONS: Permission[] = [...ASSIGNABLE_PERMISSIONS, "documents_manage"];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
   purchases: ["tasks", "missions", "captures", "outputs", "supplies", "supplies_out", "purchases"],
@@ -100,6 +101,10 @@ const APP_ROUTE_PATHS = new Set([
   "/cadastros/usuarios",
   "/rh/folgas",
   "/rh/escalas",
+  "/documentos",
+  "/documentos/certificados/garantia-de-produto",
+  "/documentos/certificados/garantia-estendida",
+  "/documentos/documentos-avulsos",
   "/administracao/usuarios",
   "/estoque.html",
 ]);
@@ -188,7 +193,9 @@ async function hmac(value: string, secret: string): Promise<string> {
 
 function normalizePermissions(value: unknown): Permission[] {
   if (!Array.isArray(value)) return [];
-  return ALL_PERMISSIONS.filter((permission) => value.includes(permission));
+  // documents_manage is deliberately administrator-only. Even a crafted
+  // user-management request cannot persist it for a regular/custom user.
+  return ASSIGNABLE_PERMISSIONS.filter((permission) => value.includes(permission));
 }
 
 function normalizeAccessGroup(value: unknown): AccessGroup {
@@ -862,6 +869,14 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
   }
   if (path === "/instrucoes" || path.startsWith("/api/instructions")) {
     return true;
+  }
+  if (path === "/documentos" || path.startsWith("/documentos/")) {
+    return true;
+  }
+  if (path.startsWith("/api/documents")) {
+    return request.method === "GET" || request.method === "HEAD"
+      ? true
+      : hasPermission(user, "documents_manage");
   }
   const directPermissions: Array<[boolean, Permission]> = [
     [path === "/tarefas", "tasks"],

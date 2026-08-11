@@ -749,6 +749,41 @@
   }
   .module-placeholder h3{margin:0 0 8px; font-family:var(--sans); font-size:18px;}
   .module-placeholder p{margin:0; color:var(--ink-soft); font-size:13.5px;}
+  .nav-submenu-label{display:block;padding:9px 14px 5px;color:var(--ink-faint);font:800 8px/1.2 var(--mono);letter-spacing:.14em;text-transform:uppercase;}
+  .documents-layout{display:grid;grid-template-columns:minmax(220px,280px) minmax(0,1fr);gap:18px;align-items:start;}
+  .documents-tree,.documents-panel,.documents-upload-panel{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow);}
+  .documents-tree{padding:18px;position:sticky;top:18px;}
+  .documents-tree>strong{display:block;margin-bottom:14px;color:var(--ink);font:900 11px/1.2 var(--mono);letter-spacing:.1em;}
+  .documents-tree-group{display:grid;gap:7px;margin-top:12px;}
+  .documents-tree-group>span{color:var(--ink-faint);font:800 8px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;}
+  .documents-folder-button{width:100%;display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--ink-soft);font:800 10px/1.3 var(--mono);text-align:left;cursor:pointer;}
+  .documents-folder-button::before{content:'□';color:var(--accent);font-size:14px;}
+  .documents-folder-button:hover,.documents-folder-button.active{border-color:rgba(79,134,189,.5);background:rgba(79,134,189,.12);color:var(--ink);}
+  .documents-workspace{display:grid;gap:16px;min-width:0;}
+  .documents-panel,.documents-upload-panel{padding:20px;}
+  .documents-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;}
+  .documents-panel-head h3{margin:0;font:900 17px/1.25 var(--sans);}
+  .documents-panel-head p{margin:6px 0 0;color:var(--ink-soft);font-size:12px;}
+  .documents-count{flex:0 0 auto;padding:7px 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink-soft);font:800 9px/1 var(--mono);}
+  .documents-list{display:grid;gap:9px;}
+  .document-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel-strong);}
+  .document-card-main{display:flex;align-items:flex-start;gap:12px;min-width:0;}
+  .document-pdf-icon{display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border-radius:10px;background:rgba(220,73,83,.12);color:#ed7880;font:900 10px/1 var(--mono);}
+  .document-card-copy{min-width:0;}
+  .document-card-copy strong{display:block;overflow:hidden;color:var(--ink);font:800 11px/1.35 var(--mono);text-overflow:ellipsis;white-space:nowrap;}
+  .document-card-copy span{display:block;margin-top:5px;color:var(--ink-faint);font:8.5px/1.45 var(--mono);}
+  .document-card-actions{display:flex;align-items:center;gap:7px;}
+  .document-card-actions a{text-decoration:none;}
+  .documents-empty{padding:34px 18px;border:1px dashed var(--line);border-radius:12px;color:var(--ink-soft);font:700 10px/1.55 var(--mono);text-align:center;}
+  .documents-upload-panel h3{margin:0;font:900 14px/1.25 var(--sans);}
+  .documents-upload-panel>p{margin:7px 0 16px;color:var(--ink-soft);font-size:12px;}
+  .documents-upload-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end;}
+  .documents-file-label{display:grid;gap:7px;color:var(--ink-soft);font:800 9px/1.2 var(--mono);letter-spacing:.08em;}
+  .documents-file-label input{width:100%;padding:10px;border:1px dashed var(--line);border-radius:10px;background:var(--panel-strong);color:var(--ink);}
+  .documents-upload-status{grid-column:1/-1;min-height:18px;margin:0;color:var(--ink-soft);font:800 9px/1.45 var(--mono);}
+  .documents-upload-status.error{color:#ef8a55;}.documents-upload-status.success{color:#6fd0a0;}
+  @media(max-width:900px){.documents-layout{grid-template-columns:1fr}.documents-tree{position:static}.documents-tree-group{grid-template-columns:1fr 1fr}.documents-tree-group>span{grid-column:1/-1}}
+  @media(max-width:620px){.documents-tree-group,.documents-upload-form{grid-template-columns:1fr}.document-card{grid-template-columns:1fr}.document-card-actions{flex-wrap:wrap}.documents-panel-head{display:block}.documents-count{display:inline-block;margin-top:10px}}
 
   /* PUXADAS / EQUILIBRIO DE ESTOQUE */
   .pull-panel{
@@ -2482,6 +2517,18 @@
         <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true">S</span><span class="nav-label">Saídas</span></a>
       </div>
     </div>
+    <div class="nav-group">
+      <button class="nav-group-toggle" id="navDocumentos" type="button" aria-expanded="false" aria-controls="navDocumentosSubmenu">
+        <span class="nav-icon" aria-hidden="true">D</span><span class="nav-label">Documentos</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div class="nav-submenu" id="navDocumentosSubmenu" aria-hidden="true">
+        <span class="nav-submenu-label">Certificados</span>
+        <a class="nav-item sub-item" id="navDocumentoGarantiaProduto" data-document-folder="garantia-produto" title="Garantia de Produto" href="/documentos/certificados/garantia-de-produto"><span class="nav-icon" aria-hidden="true">P</span><span class="nav-label">Garantia de Produto</span></a>
+        <a class="nav-item sub-item" id="navDocumentoGarantiaEstendida" data-document-folder="garantia-estendida" title="Garantia Estendida" href="/documentos/certificados/garantia-estendida"><span class="nav-icon" aria-hidden="true">E</span><span class="nav-label">Garantia Estendida</span></a>
+        <span class="nav-submenu-label">Pasta única</span>
+        <a class="nav-item sub-item" id="navDocumentoAvulso" data-document-folder="documentos-avulsos" title="Documentos Avulsos" href="/documentos/documentos-avulsos"><span class="nav-icon" aria-hidden="true">A</span><span class="nav-label">Documentos Avulsos</span></a>
+      </div>
+    </div>
     <div class="nav-group" data-permission="finance">
       <button class="nav-group-toggle" id="navFinanceiro" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
         <span class="nav-icon" aria-hidden="true">$</span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
@@ -2580,6 +2627,11 @@
           <a class="home-access-card" href="/instrucoes" data-home-target="instrucoes">
             <span class="home-access-icon" aria-hidden="true">!</span>
             <span class="home-access-copy"><strong>INSTRUÇÕES</strong><span>Orientações gerais com prazo para as lojas.</span></span>
+            <span class="home-access-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="home-access-card" href="/documentos" data-home-target="documentos">
+            <span class="home-access-icon" aria-hidden="true">D</span>
+            <span class="home-access-copy"><strong>DOCUMENTOS</strong><span>Certificados, garantias e documentos avulsos em PDF.</span></span>
             <span class="home-access-arrow" aria-hidden="true">→</span>
           </a>
           <a class="home-access-card" href="/cadastros" data-home-target="cadastros" data-permission="database">
@@ -3288,6 +3340,50 @@
         </div>
         <div class="instruction-list" id="instructionList" aria-live="polite"><div class="instruction-empty">Carregando instruções…</div></div>
       </section>
+    </section>
+
+<!-- ================= DOCUMENTOS ================= -->
+    <section id="pageDocumentos" class="page wrap">
+      <div class="section-header">
+        <div><div class="eyebrow">ARQUIVOS COMPARTILHADOS</div><h2>DOCUMENTOS</h2></div>
+        <button class="home-btn" type="button" data-home>← INÍCIO</button>
+      </div>
+      <div class="documents-layout">
+        <aside class="documents-tree" aria-label="Pastas de documentos">
+          <strong>PASTAS</strong>
+          <div class="documents-tree-group">
+            <span>Certificados</span>
+            <button class="documents-folder-button" type="button" data-document-folder="garantia-produto">Garantia de Produto</button>
+            <button class="documents-folder-button" type="button" data-document-folder="garantia-estendida">Garantia Estendida</button>
+          </div>
+          <div class="documents-tree-group">
+            <span>Documentos Avulsos</span>
+            <button class="documents-folder-button" type="button" data-document-folder="documentos-avulsos">Documentos Avulsos</button>
+          </div>
+        </aside>
+        <div class="documents-workspace">
+          <section class="documents-panel" aria-labelledby="documentsFolderTitle">
+            <div class="documents-panel-head">
+              <div><h3 id="documentsFolderTitle">GARANTIA DE PRODUTO</h3><p id="documentsFolderPath">CERTIFICADOS / GARANTIA DE PRODUTO</p></div>
+              <span class="documents-count" id="documentsCount">0 DOCUMENTOS</span>
+            </div>
+            <div class="documents-list" id="documentsList" aria-live="polite">
+              <div class="documents-empty">CARREGANDO DOCUMENTOS…</div>
+            </div>
+          </section>
+          <section class="documents-upload-panel" data-admin-only aria-labelledby="documentsUploadTitle">
+            <h3 id="documentsUploadTitle">ADICIONAR PDF</h3>
+            <p>Somente o administrador pode cadastrar ou excluir documentos. Limite de 25 MB por arquivo.</p>
+            <form class="documents-upload-form" id="documentsUploadForm">
+              <label class="documents-file-label">ARQUIVO PDF
+                <input id="documentsFile" type="file" accept=".pdf,application/pdf" required>
+              </label>
+              <button class="btn-accent" id="btnDocumentsUpload" type="submit">ENVIAR PDF</button>
+              <p class="documents-upload-status" id="documentsUploadStatus" aria-live="polite"></p>
+            </form>
+          </section>
+        </div>
+      </div>
     </section>
 
 <!-- ================= TAREFAS ================= -->
@@ -4297,6 +4393,8 @@
   const navFinanceiroSubmenu = el('navFinanceiroSubmenu');
   const navEstoqueToggle = el('navEstoque');
   const navEstoqueSubmenu = el('navEstoqueSubmenu');
+  const navDocumentosToggle = el('navDocumentos');
+  const navDocumentosSubmenu = el('navDocumentosSubmenu');
   const PAGE_ROUTES = Object.freeze({
     inicio:'/inicio',
     puxadas:'/puxadas',
@@ -4312,6 +4410,7 @@
     saidas:'/saidas',
     insumos:'/insumos',
     instrucoes:'/instrucoes',
+    documentos:'/documentos',
     usuarios:'/cadastros/usuarios',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas'
@@ -4363,6 +4462,7 @@
 
   function pageFromPath(pathname){
     const path = normalizeRoutePath(pathname);
+    if(path === '/documentos' || path.startsWith('/documentos/')) return 'documentos';
     const page = Object.keys(PAGE_ROUTES).find(name => PAGE_ROUTES[name] === path);
     return page || LEGACY_ROUTES[path] || 'inicio';
   }
@@ -4641,6 +4741,16 @@
     setEstoqueExpanded(!expanded);
   });
 
+  function setDocumentosExpanded(expanded){
+    navDocumentosToggle.setAttribute('aria-expanded', String(expanded));
+    navDocumentosSubmenu.setAttribute('aria-hidden', String(!expanded));
+  }
+
+  navDocumentosToggle.addEventListener('click', () => {
+    const expanded = navDocumentosToggle.getAttribute('aria-expanded') === 'true';
+    setDocumentosExpanded(!expanded);
+  });
+
   function setSidebarCompact(compact){
     document.body.classList.toggle('sidebar-compact', compact);
     btnSidebarCompact.setAttribute('aria-pressed', String(compact));
@@ -4657,7 +4767,9 @@
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item,.nav-group-toggle').forEach(b => b.classList.remove('active'));
     const page = el('page' + name.charAt(0).toUpperCase() + name.slice(1));
-    const navItem = el('nav' + name.charAt(0).toUpperCase() + name.slice(1));
+    const navItem = name === 'documentos'
+      ? navDocumentosToggle
+      : el('nav' + name.charAt(0).toUpperCase() + name.slice(1));
     if(!page || !navItem) return false;
     page.classList.add('active');
     navItem.classList.add('active');
@@ -4665,6 +4777,7 @@
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'usuarios';
     const isRh = name === 'rhFolgas' || name === 'rhEscalas';
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
+    const isDocumentos = name === 'documentos';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -4679,6 +4792,8 @@
     if(isEstoque){
       navEstoqueToggle.classList.add('active');
     }
+    setDocumentosExpanded(isDocumentos);
+    if(isDocumentos) navDocumentosToggle.classList.add('active');
     document.querySelectorAll('[data-mobile-page]').forEach(button => {
       const active = button.dataset.mobilePage === name;
       button.classList.toggle('active', active);
@@ -4704,6 +4819,7 @@
     if(name === 'saidas') loadOutputs();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
     if(name === 'instrucoes') loadInstructions();
+    if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -4713,7 +4829,7 @@
     let name = pageFromPath(location.pathname);
     if(!canAccessPage(name)) name = 'inicio';
     showPage(name);
-    if(replace || normalizeRoutePath(location.pathname) !== PAGE_ROUTES[name]){
+    if(replace || (name !== 'documentos' && normalizeRoutePath(location.pathname) !== PAGE_ROUTES[name])){
       history.replaceState({page:name}, '', PAGE_ROUTES[name]);
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
@@ -4722,6 +4838,7 @@
     if(name === 'saidas') loadOutputs();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
     if(name === 'instrucoes') loadInstructions();
+    if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
   }
 
   function isPlainClick(event){
@@ -4734,6 +4851,17 @@
       event.preventDefault();
       navigateToPage(btn.dataset.page);
       setSidebarOpen(false, true);
+    });
+  });
+
+  document.querySelectorAll('[data-document-folder]').forEach(button => {
+    button.addEventListener('click', event => {
+      if(button.tagName === 'A'){
+        if(!isPlainClick(event)) return;
+        event.preventDefault();
+      }
+      navigateToDocumentFolder(button.dataset.documentFolder);
+      setSidebarOpen(false, button.tagName === 'A');
     });
   });
 
@@ -4833,6 +4961,208 @@
   try{ setSidebarCompact(localStorage.getItem('estoque_sidebar_compact') === '1'); } catch{ setSidebarCompact(false); }
   try{ setTableDensity(localStorage.getItem('estoque_table_density') || 'comfortable'); } catch{ setTableDensity('comfortable'); }
   try{ setPurchaseDensity(localStorage.getItem('estoque_purchase_density') || 'comfortable'); } catch{ setPurchaseDensity('comfortable'); }
+
+  // ---------- DOCUMENTOS ----------
+  const DOCUMENT_FOLDERS = Object.freeze({
+    'garantia-produto':{
+      title:'GARANTIA DE PRODUTO',
+      path:'CERTIFICADOS / GARANTIA DE PRODUTO',
+      route:'/documentos/certificados/garantia-de-produto'
+    },
+    'garantia-estendida':{
+      title:'GARANTIA ESTENDIDA',
+      path:'CERTIFICADOS / GARANTIA ESTENDIDA',
+      route:'/documentos/certificados/garantia-estendida'
+    },
+    'documentos-avulsos':{
+      title:'DOCUMENTOS AVULSOS',
+      path:'DOCUMENTOS AVULSOS',
+      route:'/documentos/documentos-avulsos'
+    }
+  });
+  const DOCUMENT_CHUNK_SIZE = 512 * 1024;
+  const MAX_DOCUMENT_SIZE = 25 * 1024 * 1024;
+  let currentDocumentFolder = 'garantia-produto';
+
+  function documentFolderFromPath(pathname){
+    const path = normalizeRoutePath(pathname);
+    return Object.keys(DOCUMENT_FOLDERS).find(folder => DOCUMENT_FOLDERS[folder].route === path) || 'garantia-produto';
+  }
+
+  function navigateToDocumentFolder(folder){
+    if(!DOCUMENT_FOLDERS[folder]) return;
+    if(!showPage('documentos')) return;
+    const route = DOCUMENT_FOLDERS[folder].route;
+    if(normalizeRoutePath(location.pathname) !== route || location.search || location.hash){
+      history.pushState({page:'documentos',folder},'',route);
+    }
+    loadDocuments(folder);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function setDocumentsUploadStatus(message,type){
+    const status = el('documentsUploadStatus');
+    status.textContent = message || '';
+    status.className = 'documents-upload-status' + (type ? ' ' + type : '');
+  }
+
+  async function documentApiRequest(url,options){
+    const response = await fetch(url,Object.assign({
+      headers:{Accept:'application/json'},
+      cache:'no-store'
+    },options || {}));
+    let data = {};
+    if(response.status !== 204){
+      try{ data = await response.json(); }catch{ data = {}; }
+    }
+    if(response.status === 401){
+      location.assign('/login?next=' + encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return data;
+  }
+
+  function formatDocumentSize(bytes){
+    const size = Number(bytes) || 0;
+    if(size < 1024) return size + ' B';
+    if(size < 1024 * 1024) return (size / 1024).toFixed(1).replace('.',',') + ' KB';
+    return (size / (1024 * 1024)).toFixed(1).replace('.',',') + ' MB';
+  }
+
+  function formatDocumentDate(value){
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'DATA NÃO INFORMADA' : date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+  }
+
+  function renderDocuments(documents){
+    const list = el('documentsList');
+    el('documentsCount').textContent = documents.length + (documents.length === 1 ? ' DOCUMENTO' : ' DOCUMENTOS');
+    if(!documents.length){
+      list.innerHTML = '<div class="documents-empty">NENHUM PDF FOI ADICIONADO A ESTA PASTA.</div>';
+      return;
+    }
+    list.innerHTML = documents.map(document => {
+      const deleteButton = currentSession.role === 'admin'
+        ? '<button class="btn-danger-outline" type="button" data-document-delete="'+escapeHtml(document.id)+'">EXCLUIR</button>'
+        : '';
+      return '<article class="document-card">'+
+        '<div class="document-card-main"><span class="document-pdf-icon" aria-hidden="true">PDF</span><div class="document-card-copy">'+
+          '<strong title="'+escapeHtml(document.fileName)+'">'+escapeHtml(document.fileName)+'</strong>'+
+          '<span>'+escapeHtml(formatDocumentSize(document.sizeBytes))+' · ADICIONADO POR '+escapeHtml(document.uploadedByName || 'ADMINISTRADOR')+' · '+escapeHtml(formatDocumentDate(document.createdAt))+'</span>'+
+        '</div></div>'+
+        '<div class="document-card-actions">'+
+          '<a class="btn-outline" href="'+escapeHtml(document.viewUrl)+'" target="_blank" rel="noopener">VISUALIZAR</a>'+
+          '<a class="btn-accent" href="'+escapeHtml(document.downloadUrl)+'">BAIXAR</a>'+deleteButton+
+        '</div></article>';
+    }).join('');
+  }
+
+  async function loadDocuments(folder){
+    const selected = DOCUMENT_FOLDERS[folder] ? folder : 'garantia-produto';
+    currentDocumentFolder = selected;
+    const config = DOCUMENT_FOLDERS[selected];
+    el('documentsFolderTitle').textContent = config.title;
+    el('documentsFolderPath').textContent = config.path;
+    document.querySelectorAll('[data-document-folder]').forEach(button => {
+      button.classList.toggle('active',button.dataset.documentFolder === selected);
+      if(button.tagName === 'A') button.setAttribute('aria-current',button.dataset.documentFolder === selected ? 'page' : 'false');
+    });
+    el('documentsList').innerHTML = '<div class="documents-empty">CARREGANDO DOCUMENTOS…</div>';
+    el('documentsCount').textContent = '…';
+    setDocumentsUploadStatus('','');
+    try{
+      const data = await documentApiRequest('/api/documents?folder='+encodeURIComponent(selected));
+      renderDocuments(Array.isArray(data.documents) ? data.documents : []);
+    }catch(error){
+      el('documentsCount').textContent = 'INDISPONÍVEL';
+      el('documentsList').innerHTML = '<div class="documents-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  async function uploadDocument(file){
+    if(!file || !/\.pdf$/i.test(file.name)) throw new Error('SELECIONE UM ARQUIVO COM EXTENSÃO .PDF.');
+    if(file.size <= 0) throw new Error('O ARQUIVO PDF ESTÁ VAZIO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.');
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const create = await documentApiRequest('/api/documents',{
+      method:'POST',
+      headers:{Accept:'application/json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'create',
+        fileName:file.name,
+        contentType:file.type || 'application/pdf',
+        fileSize:file.size,
+        numberOfParts,
+        folder:currentDocumentFolder
+      })
+    });
+    const sessionId = create.session && create.session.id;
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO PDF.');
+    try{
+      for(let index=0;index<numberOfParts;index+=1){
+        const partNumber = index + 1;
+        setDocumentsUploadStatus('ENVIANDO PARTE '+partNumber+' DE '+numberOfParts+'…','');
+        await documentApiRequest('/api/documents',{
+          method:'POST',
+          headers:{
+            Accept:'application/json',
+            'Content-Type':'application/octet-stream',
+            'x-document-upload-id':sessionId,
+            'x-document-part-number':String(partNumber)
+          },
+          body:file.slice(index * DOCUMENT_CHUNK_SIZE,Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
+        });
+      }
+      setDocumentsUploadStatus('VALIDANDO E SALVANDO O PDF…','');
+      await documentApiRequest('/api/documents',{
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'complete',sessionId})
+      });
+    }catch(error){
+      documentApiRequest('/api/documents',{
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'cancel',sessionId})
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  el('documentsUploadForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    if(currentSession.role !== 'admin') return;
+    const button = el('btnDocumentsUpload');
+    const file = el('documentsFile').files && el('documentsFile').files[0];
+    button.disabled = true;
+    try{
+      await uploadDocument(file);
+      el('documentsFile').value = '';
+      setDocumentsUploadStatus('PDF ADICIONADO COM SUCESSO.','success');
+      await loadDocuments(currentDocumentFolder);
+      showPurchaseToast('Documento adicionado.');
+    }catch(error){
+      setDocumentsUploadStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('documentsList').addEventListener('click',async event => {
+    const button = event.target.closest('[data-document-delete]');
+    if(!button || currentSession.role !== 'admin') return;
+    if(!confirm('Excluir este documento definitivamente?')) return;
+    button.disabled = true;
+    try{
+      await documentApiRequest('/api/documents?id='+encodeURIComponent(button.dataset.documentDelete),{method:'DELETE'});
+      await loadDocuments(currentDocumentFolder);
+      showPurchaseToast('Documento excluído.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      button.disabled = false;
+    }
+  });
 
   function parseNumeroBR(str){
     if(str === undefined || str === null) return 0;

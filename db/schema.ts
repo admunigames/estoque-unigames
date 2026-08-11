@@ -181,6 +181,31 @@ export const instructions = pgTable(
   ],
 );
 
+export const documents = pgTable(
+  "documents",
+  {
+    id: text("id").primaryKey(),
+    fileName: text("file_name").notNull(),
+    category: text("category").notNull(),
+    folder: text("folder").notNull(),
+    subfolder: text("subfolder").notNull().default(""),
+    r2Key: text("r2_key").notNull().unique(),
+    contentType: text("content_type").notNull().default("application/pdf"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    uploadedBy: text("uploaded_by").notNull(),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("documents_folder_created_idx").on(
+      table.folder,
+      table.subfolder,
+      table.createdAt,
+    ),
+    index("documents_uploaded_by_idx").on(table.uploadedBy),
+  ],
+);
+
 export const capturedProducts = pgTable(
   "captured_products",
   {
