@@ -618,7 +618,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
 });
 
 test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
-  const [html, workerSource, route, captureShared, schema, migration, manifest, serviceWorker] =
+  const [html, workerSource, route, captureShared, schema, migration, sectorMigration, manifest, serviceWorker] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
@@ -626,6 +626,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
       readFile(new URL("../app/api/captures/shared.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
       readFile(new URL("../drizzle-sqlite-legacy/0008_luxuriant_killer_shrike.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0010_cultured_fabian_cortez.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
@@ -656,13 +657,15 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(workerSource, /"captures"/);
   assert.match(workerSource, /assistance: \["captures"\]/);
   assert.match(workerSource, /normalized === "assistencia"/);
-  assert.match(workerSource, /const companyId = accessGroup === "assistance" \? "" : requestedCompanyId/);
+  assert.match(workerSource, /const sector: UserSector = accessGroup === "assistance" \? "assistance" : requestedSector/);
+  assert.match(workerSource, /const companyId = sector \? "" : requestedCompanyId/);
   assert.match(workerSource, /path === "\/captacao" \|\| path\.startsWith\("\/api\/captures"\)/);
   assert.match(workerSource, /authenticatedHeaders\.set\(ACCESS_GROUP_HEADER, user\.accessGroup\)/);
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM captured_products"\)\.all\(\)/);
   assert.match(workerSource, /capturedProducts: capturedProducts\.results \?\? \[\]/);
 
   assert.match(captureShared, /accessGroup === "assistance"/);
+  assert.match(captureShared, /actor\.sector === "assistance"/);
   assert.match(captureShared, /accessGroup === "assistencia"/);
   assert.match(captureShared, /username\.includes\("assistencia"\)/);
   assert.match(captureShared, /displayName\.includes\("assistencia"\)/);
@@ -673,6 +676,9 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(route, /SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA/);
   assert.match(route, /SOMENTE O ADMINISTRADOR PODE DEFINIR O DESTINO/);
   assert.match(route, /existing\.status !== "submitted"/);
+  assert.match(html, /id="userSector"/);
+  assert.match(schema, /sector: text\("sector"\)/);
+  assert.match(sectorMigration, /SET "sector" = 'assistance', "company_id" = ''/);
   assert.match(route, /existing\.status !== "received"/);
   assert.match(route, /existing\.status !== "ready"/);
   assert.match(route, /origin_company_id=\?1/);

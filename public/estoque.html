@@ -3745,6 +3745,15 @@
               <span class="field-hint">Usuários com acesso ao Relatório 41 visualizarão somente esta loja.</span>
             </div>
             <div class="field">
+              <label for="userSector">SETOR</label>
+              <select id="userSector">
+                <option value="">SEM SETOR</option>
+                <option value="administrative">ADMINISTRATIVO</option>
+                <option value="assistance">ASSISTÊNCIA</option>
+              </select>
+              <span class="field-hint">Setores são áreas internas e não aparecem como lojas.</span>
+            </div>
+            <div class="field">
               <label>MÓDULOS LIBERADOS <span id="userPermissionHint">(DEFINIDOS PELO GRUPO)</span></label>
               <div class="permission-grid" id="userPermissionGrid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks"> Tarefas</label>
@@ -3900,7 +3909,7 @@
   let pageSize = 100;
   let searchTimer = null;
   let filteredRowsCache = null;
-  let currentSession = {role:'user', accessGroup:'custom', permissions:[], companyId:''};
+  let currentSession = {role:'user', accessGroup:'custom', permissions:[], companyId:'', sector:''};
   let managedUsers = [];
 
   let companies = [];              // [{id, name}]
@@ -4548,6 +4557,7 @@
     currentSession = await response.json();
     currentSession.permissions = Array.isArray(currentSession.permissions) ? currentSession.permissions : [];
     currentSession.companyId = String(currentSession.companyId || '');
+    currentSession.sector = String(currentSession.sector || '');
     await loadUserPreferences();
     applyAccessVisibility();
   }
@@ -8969,12 +8979,14 @@ function renderHomeTasks(){
   };
 
   function isAssistanceSession(){
+    const sector = normalizeHeader(currentSession.sector || '');
     const accessGroup = normalizeHeader(currentSession.accessGroup || '');
     const username = normalizeHeader(currentSession.username || '');
     const displayName = normalizeHeader(currentSession.displayName || '');
     return currentSession.role !== 'admin' &&
       canAccess('captures') &&
-      (accessGroup === 'assistance' ||
+      (sector === 'assistance' ||
+        accessGroup === 'assistance' ||
         accessGroup === 'assistencia' ||
         username.includes('assistencia') ||
         displayName.includes('assistencia'));
@@ -10935,6 +10947,7 @@ function renderHomeTasks(){
     custom:'Personalizado'
   };
   const hierarchyNames = {director:'Diretor',supervisor:'Supervisor',administrative:'Administrativo'};
+  const sectorNames = {administrative:'Administrativo',assistance:'Assistência'};
   const accessGroupPermissions = {
     administrator:['tasks','missions','captures','outputs','supplies','supplies_in','supplies_out','supplies_delete','purchases','stock','database','pulls','report41'],
     purchases:['tasks','missions','captures','outputs','supplies','supplies_out','purchases'],
@@ -10955,8 +10968,12 @@ function renderHomeTasks(){
     });
     el('userPermissionHint').textContent = custom ? '(ESCOLHA OS MÓDULOS)' : '(DEFINIDOS PELO GRUPO)';
     const assistance = group === 'assistance';
-    if(assistance) el('userCompanyId').value = '';
-    el('userCompanyId').disabled = assistance;
+    if(assistance){
+      el('userCompanyId').value = '';
+      el('userSector').value = 'assistance';
+    }
+    el('userCompanyId').disabled = assistance || Boolean(el('userSector').value);
+    el('userSector').disabled = assistance;
   }
 
   function resetUserForm(){
@@ -10965,6 +10982,7 @@ function renderHomeTasks(){
     el('userAccessGroup').value = 'operator';
     el('userCompanyId').value = '';
     el('userHierarchy').value = 'administrative';
+    el('userSector').value = '';
     el('userActive').checked = true;
     el('userActiveWrap').hidden = true;
     el('btnCancelUserEdit').hidden = true;
@@ -10992,7 +11010,8 @@ function renderHomeTasks(){
       const recoveryBadge = user.recoveryRequested ? '<span class="user-badge" style="color:#ef8a55">RECUPERAÇÃO SOLICITADA</span>' : '';
       const company = companies.find(item => item.id === user.companyId);
       const companyBadge = company ? '<span class="user-badge">LOJA · '+escapeHtml(company.name)+'</span>' : '';
-      const badges = groupBadge + hierarchyBadge + companyBadge + recoveryBadge + (user.role === 'admin'
+      const sectorBadge = user.sector ? '<span class="user-badge">SETOR · '+escapeHtml(sectorNames[user.sector] || user.sector)+'</span>' : '';
+      const badges = groupBadge + hierarchyBadge + companyBadge + sectorBadge + recoveryBadge + (user.role === 'admin'
         ? '<span class="user-badge">ACESSO COMPLETO</span>'
         : (user.permissions || []).map(permission => '<span class="user-badge">'+escapeHtml(permissionNames[permission] || permission)+'</span>').join('') || '<span class="user-badge">SEM MÓDULOS</span>');
       const actions = user.managed ? '<div class="user-actions"><button class="btn-outline" type="button" data-edit-user="'+escapeHtml(user.id)+'">ALTERAR</button><button class="btn-outline" type="button" data-toggle-user="'+escapeHtml(user.id)+'">'+(user.active ? 'BLOQUEAR' : 'REATIVAR')+'</button><button class="btn-danger-outline" type="button" data-delete-user="'+escapeHtml(user.id)+'">EXCLUIR</button></div>' : '<span class="user-badge">CONTA PRINCIPAL</span>';
@@ -11037,6 +11056,7 @@ function renderHomeTasks(){
       accessGroup:el('userAccessGroup').value,
       companyId:el('userCompanyId').value,
       hierarchy:el('userHierarchy').value,
+      sector:el('userSector').value,
       permissions: Array.from(document.querySelectorAll('[name="userPermission"]:checked')).map(input => input.value)
     };
     if(!editId && payload.password.length < 8){
@@ -11064,6 +11084,14 @@ function renderHomeTasks(){
 
   el('btnCancelUserEdit').addEventListener('click', resetUserForm);
   el('userAccessGroup').addEventListener('change',updateUserGroupFields);
+  el('userSector').addEventListener('change',() => {
+    if(el('userSector').value) el('userCompanyId').value = '';
+    updateUserGroupFields();
+  });
+  el('userCompanyId').addEventListener('change',() => {
+    if(el('userCompanyId').value) el('userSector').value = '';
+    updateUserGroupFields();
+  });
   updateUserGroupFields();
   el('userList').addEventListener('click', async event => {
     const editId = event.target.dataset.editUser;
@@ -11103,6 +11131,7 @@ function renderHomeTasks(){
       el('userAccessGroup').value = user.accessGroup || (user.role === 'admin' ? 'administrator' : 'custom');
       el('userCompanyId').value = user.companyId || '';
       el('userHierarchy').value = user.hierarchy || 'administrative';
+      el('userSector').value = user.sector || '';
       document.querySelectorAll('[name="userPermission"]').forEach(input => { input.checked = user.permissions.includes(input.value); });
       updateUserGroupFields();
       el('userActive').checked = user.active;

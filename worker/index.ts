@@ -21,12 +21,14 @@ type LoginConfig = {
 type Permission = "tasks" | "missions" | "captures" | "outputs" | "supplies" | "supplies_in" | "supplies_out" | "supplies_delete" | "purchases" | "stock" | "database" | "pulls" | "report41";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
+type UserSector = "" | "administrative" | "assistance";
 type AuthenticatedUser = {
   id: string;
   username: string;
   displayName: string;
   companyId: string;
   hierarchy: UserHierarchy;
+  sector: UserSector;
   accessGroup: AccessGroup;
   role: "admin" | "user";
   permissions: Permission[];
@@ -44,6 +46,7 @@ type StoredUserRow = {
   permissionsJson: string;
   companyId: string;
   hierarchy: string;
+  sector: string;
   active: number;
   sessionVersion: number;
   createdAt: string;
@@ -63,6 +66,7 @@ const ROLE_HEADER = "x-unigames-role";
 const ACCESS_GROUP_HEADER = "x-unigames-access-group";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
 const COMPANY_ID_HEADER = "x-unigames-company-id";
+const SECTOR_HEADER = "x-unigames-sector";
 const ALL_PERMISSIONS: Permission[] = ["tasks", "missions", "captures", "outputs", "supplies", "supplies_in", "supplies_out", "supplies_delete", "purchases", "stock", "database", "pulls", "report41"];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
@@ -201,6 +205,10 @@ function normalizeHierarchy(value: unknown): UserHierarchy {
   return value === "director" || value === "supervisor" ? value : "administrative";
 }
 
+function normalizeSector(value: unknown): UserSector {
+  return value === "administrative" || value === "assistance" ? value : "";
+}
+
 function resolveAccessGroup(storedValue: unknown, username: string): AccessGroup {
   const normalized = username.trim().toLowerCase();
   if (normalized === "assistencia") return "assistance";
@@ -241,6 +249,7 @@ function storedUser(row: StoredUserRow): AuthenticatedUser {
     displayName: row.displayName,
     companyId: row.companyId || "",
     hierarchy: normalizeHierarchy(row.hierarchy),
+    sector: normalizeSector(row.sector),
     accessGroup,
     role,
     permissions,
@@ -255,6 +264,7 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
     displayName: "Administrador principal",
     companyId: "",
     hierarchy: "director",
+    sector: "",
     accessGroup: "administrator",
     role: "admin",
     permissions: [...ALL_PERMISSIONS],
@@ -288,6 +298,7 @@ async function ensureAppUsersTable(database: D1Database): Promise<void> {
             permissions_json TEXT NOT NULL DEFAULT '[]',
             company_id TEXT NOT NULL DEFAULT '',
             hierarchy TEXT NOT NULL DEFAULT 'administrative',
+            sector TEXT NOT NULL DEFAULT '',
             active INTEGER NOT NULL DEFAULT 1,
             session_version INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -313,6 +324,14 @@ async function ensureAppUsersTable(database: D1Database): Promise<void> {
           "ALTER TABLE app_users ADD COLUMN hierarchy TEXT NOT NULL DEFAULT 'administrative'",
         ).run();
       }
+      if (!(columns.results ?? []).some((column) => column.name === "sector")) {
+        await database.prepare(
+          "ALTER TABLE app_users ADD COLUMN sector TEXT NOT NULL DEFAULT ''",
+        ).run();
+        await database.prepare(
+          "UPDATE app_users SET sector='assistance', company_id='' WHERE access_group='assistance' OR lower(username)='assistencia'",
+        ).run();
+      }
     })().catch((error) => {
       appUsersReady = null;
       throw error;
@@ -327,7 +346,7 @@ async function readUserByUsername(database: D1Database, username: string) {
     .prepare(
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
               email, password_salt AS passwordSalt, role, access_group AS accessGroup,
-              permissions_json AS permissionsJson, company_id AS companyId, hierarchy,
+              permissions_json AS permissionsJson, company_id AS companyId, hierarchy, sector,
               active, session_version AS sessionVersion, created_at AS createdAt,
               updated_at AS updatedAt
        FROM app_users WHERE lower(username) = lower(?1) LIMIT 1`,
@@ -342,7 +361,7 @@ async function readUserById(database: D1Database, id: string) {
     .prepare(
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
               email, password_salt AS passwordSalt, role, access_group AS accessGroup,
-              permissions_json AS permissionsJson, company_id AS companyId, hierarchy,
+              permissions_json AS permissionsJson, company_id AS companyId, hierarchy, sector,
               active, session_version AS sessionVersion, created_at AS createdAt,
               updated_at AS updatedAt
        FROM app_users WHERE id = ?1 LIMIT 1`,
@@ -885,6 +904,7 @@ function sessionResponse(user: AuthenticatedUser): Response {
     username: user.username,
     displayName: user.displayName,
     companyId: user.companyId,
+    sector: user.sector,
     accessGroup: user.accessGroup,
     role: user.role,
     permissions: user.permissions,
@@ -932,6 +952,7 @@ function publicUser(row: StoredUserRow) {
     email: row.email,
     companyId: row.companyId || "",
     hierarchy: normalizeHierarchy(row.hierarchy),
+    sector: normalizeSector(row.sector),
     role,
     accessGroup,
     permissions: role === "admin"
@@ -952,7 +973,7 @@ async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
   const result = await env.DB.prepare(
     `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
             email, password_salt AS passwordSalt, role, access_group AS accessGroup,
-            permissions_json AS permissionsJson, company_id AS companyId, hierarchy,
+            permissions_json AS permissionsJson, company_id AS companyId, hierarchy, sector,
             active, session_version AS sessionVersion, created_at AS createdAt,
             updated_at AS updatedAt,
             CASE WHEN EXISTS(
@@ -969,6 +990,7 @@ async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
       email: "",
       companyId: "",
       hierarchy: "director",
+      sector: "",
       role: "admin",
       accessGroup: "administrator",
       permissions: ALL_PERMISSIONS,
@@ -1034,7 +1056,9 @@ async function handleAdminUsers(
     : "";
   const accessGroup = resolveAccessGroup(body.accessGroup, username);
   const hierarchy = normalizeHierarchy(body.hierarchy);
-  const companyId = accessGroup === "assistance" ? "" : requestedCompanyId;
+  const requestedSector = normalizeSector(body.sector);
+  const sector: UserSector = accessGroup === "assistance" ? "assistance" : requestedSector;
+  const companyId = sector ? "" : requestedCompanyId;
   const access = accessForGroup(accessGroup, body.permissions);
   if (!validUsername(username)) {
     return jsonError("O USUÁRIO DEVE TER DE 3 A 40 CARACTERES: LETRAS, NÚMEROS, PONTO, HÍFEN OU _.", 400);
@@ -1056,8 +1080,8 @@ async function handleAdminUsers(
       await env.DB.prepare(
         `INSERT INTO app_users
           (id, username, display_name, email, password_hash, password_salt, role,
-           access_group, permissions_json, company_id, hierarchy, active, session_version)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 1, 1)`,
+           access_group, permissions_json, company_id, hierarchy, sector, active, session_version)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 1, 1)`,
       ).bind(
         id,
         username,
@@ -1070,6 +1094,7 @@ async function handleAdminUsers(
         JSON.stringify(access.permissions),
         companyId,
         hierarchy,
+        sector,
       ).run();
       const created = await readUserById(env.DB, id);
       return Response.json({ user: created ? publicUser(created) : null }, { status: 201 });
@@ -1088,9 +1113,9 @@ async function handleAdminUsers(
       await env.DB.batch([
         env.DB.prepare(
           `UPDATE app_users SET username=?1, display_name=?2, email=?3, role=?4,
-            access_group=?5, permissions_json=?6, company_id=?7, hierarchy=?8, active=?9, password_hash=?10,
-            password_salt=?11, session_version=session_version+1,
-            updated_at=CURRENT_TIMESTAMP WHERE id=?12`,
+            access_group=?5, permissions_json=?6, company_id=?7, hierarchy=?8, sector=?9, active=?10, password_hash=?11,
+            password_salt=?12, session_version=session_version+1,
+            updated_at=CURRENT_TIMESTAMP WHERE id=?13`,
         ).bind(
           username,
           displayName,
@@ -1100,6 +1125,7 @@ async function handleAdminUsers(
           JSON.stringify(access.permissions),
           companyId,
           hierarchy,
+          sector,
           active,
           credential.hash,
           credential.salt,
@@ -1113,8 +1139,8 @@ async function handleAdminUsers(
     } else {
       await env.DB.prepare(
         `UPDATE app_users SET username=?1, display_name=?2, email=?3, role=?4,
-          access_group=?5, permissions_json=?6, company_id=?7, hierarchy=?8, active=?9,
-          session_version=session_version+1, updated_at=CURRENT_TIMESTAMP WHERE id=?10`,
+          access_group=?5, permissions_json=?6, company_id=?7, hierarchy=?8, sector=?9, active=?10,
+          session_version=session_version+1, updated_at=CURRENT_TIMESTAMP WHERE id=?11`,
       ).bind(
         username,
         displayName,
@@ -1124,6 +1150,7 @@ async function handleAdminUsers(
         JSON.stringify(access.permissions),
         companyId,
         hierarchy,
+        sector,
         active,
         id,
       ).run();
@@ -1210,7 +1237,7 @@ async function createAutomaticBackup(env: Env, secret: string) {
       env.DB.prepare(
         `SELECT id, username, display_name AS displayName, email, password_hash AS passwordHash,
                 password_salt AS passwordSalt, role, access_group AS accessGroup,
-                permissions_json AS permissions, company_id AS companyId, hierarchy,
+                permissions_json AS permissions, company_id AS companyId, hierarchy, sector,
                 active, session_version AS sessionVersion,
                 created_at AS createdAt, updated_at AS updatedAt
          FROM app_users`,
@@ -1610,6 +1637,7 @@ const worker = {
     authenticatedHeaders.delete(ACCESS_GROUP_HEADER);
     authenticatedHeaders.delete(PERMISSIONS_HEADER);
     authenticatedHeaders.delete(COMPANY_ID_HEADER);
+    authenticatedHeaders.delete(SECTOR_HEADER);
     authenticatedHeaders.set(INTERNAL_AUTH_HEADER, "1");
     authenticatedHeaders.set(USER_ID_HEADER, user.id);
     authenticatedHeaders.set(USERNAME_HEADER, user.username);
@@ -1618,6 +1646,7 @@ const worker = {
     authenticatedHeaders.set(ACCESS_GROUP_HEADER, user.accessGroup);
     authenticatedHeaders.set(PERMISSIONS_HEADER, user.permissions.join(","));
     authenticatedHeaders.set(COMPANY_ID_HEADER, user.companyId);
+    authenticatedHeaders.set(SECTOR_HEADER, user.sector);
     const authenticatedRequest = new Request(request, {
       headers: authenticatedHeaders,
     });

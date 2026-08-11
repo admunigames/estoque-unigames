@@ -8,6 +8,7 @@ export type Identity = {
   role: "admin" | "user";
   accessGroup: string;
   companyId: string;
+  sector: string;
   permissions: string[];
 };
 export type CaptureRow = {
@@ -78,6 +79,7 @@ export function identity(request: Request): Identity {
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
     accessGroup: safeText(request.headers.get("x-unigames-access-group"), 40),
     companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
+    sector: safeText(request.headers.get("x-unigames-sector"), 40),
     permissions: (request.headers.get("x-unigames-permissions") || "")
       .split(",")
       .map((permission) => permission.trim())
@@ -95,6 +97,7 @@ export function canAccessCaptures(actor: Identity) {
 export function isAssistanceActor(actor: Identity) {
   const displayName = actor.displayName.toLowerCase();
   return (
+    actor.sector === "assistance" ||
     actor.accessGroup === "assistance" ||
     actor.accessGroup === "assistencia" ||
     actor.username.includes("assistencia") ||
