@@ -21,7 +21,7 @@ type LoginConfig = {
 type Permission = "tasks" | "missions" | "captures" | "outputs" | "supplies" | "supplies_in" | "supplies_out" | "supplies_delete" | "purchases" | "stock" | "database" | "pulls" | "report41" | "documents_manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
-type UserSector = "" | "administrative" | "assistance";
+type UserSector = "" | "administrative" | "assistance" | "deposit";
 type AuthenticatedUser = {
   id: string;
   username: string;
@@ -214,7 +214,7 @@ function normalizeHierarchy(value: unknown): UserHierarchy {
 }
 
 function normalizeSector(value: unknown): UserSector {
-  return value === "administrative" || value === "assistance" ? value : "";
+  return value === "administrative" || value === "assistance" || value === "deposit" ? value : "";
 }
 
 function resolveAccessGroup(storedValue: unknown, username: string): AccessGroup {

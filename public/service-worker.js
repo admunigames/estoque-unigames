@@ -1,4 +1,4 @@
-const CACHE_NAME = "estoque-unigames-v24";
+const CACHE_NAME = "estoque-unigames-v25";
 const APP_SHELL = [
   "/estoque.html",
   "/favicon.svg",

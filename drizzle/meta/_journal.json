@@ -92,6 +92,13 @@
       "when": 1786482618623,
       "tag": "0012_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786483000000,
+      "tag": "0013_deposit_sector",
+      "breakpoints": true
     }
   ]
 }

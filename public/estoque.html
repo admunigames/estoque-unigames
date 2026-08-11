@@ -3920,6 +3920,7 @@
                 <option value="">SEM SETOR</option>
                 <option value="administrative">ADMINISTRATIVO</option>
                 <option value="assistance">ASSISTÊNCIA</option>
+                <option value="deposit">DEPÓSITO</option>
               </select>
               <span class="field-hint">Setores são áreas internas e não aparecem como lojas.</span>
             </div>
@@ -8952,11 +8953,12 @@ function renderHomeTasks(){
     const select = el('missionCompany');
     if(!select) return;
     const selected = select.value;
+    const missionCompanies = pullStoreCompanies();
     select.innerHTML = '<option value="">SELECIONE A LOJA</option>' +
-      companies.map(company =>
+      missionCompanies.map(company =>
         '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
       ).join('');
-    select.value = companies.some(company => company.id === selected) ? selected : '';
+    select.value = missionCompanies.some(company => company.id === selected) ? selected : '';
   }
 
   function missionSelectedStoreName(){
@@ -8970,7 +8972,7 @@ function renderHomeTasks(){
     if(!tabs) return;
     const items = [{view:'general',companyId:'',label:'MISSÃO GERAL'}];
     if(currentSession.role === 'admin'){
-      companies.forEach(company => items.push({
+      pullStoreCompanies().forEach(company => items.push({
         view:'store',
         companyId:company.id,
         label:company.name
@@ -8994,7 +8996,7 @@ function renderHomeTasks(){
   }
 
   function missionTargetCompanies(mission){
-    if(mission.scope === 'general') return companies;
+    if(mission.scope === 'general') return pullStoreCompanies();
     const company = companies.find(item => item.id === mission.companyId);
     return [{id:mission.companyId,name:(company && company.name) || mission.companyName || 'Loja'}];
   }
