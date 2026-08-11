@@ -2094,6 +2094,23 @@
   .supply-separation-note{margin-top:8px;color:var(--ink-soft);font:700 10px/1.5 var(--sans);}
   html[data-theme="light"] .supply-separation-card{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .supply-separation-item{background:#fff;}
+  .supply-dashboard-week{margin-bottom:14px;color:var(--ink-soft);font:800 9px/1.4 var(--mono);}
+  .supply-dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+  .supply-dashboard-card{
+    border:1px solid rgba(39,69,97,.5);border-radius:13px;background:var(--bg-card-2);padding:16px;
+  }
+  .supply-dashboard-card span{display:block;color:var(--ink-soft);font:800 8px/1.4 var(--mono);letter-spacing:.4px;}
+  .supply-dashboard-card strong{display:block;margin-top:8px;color:var(--accent);font:900 26px/1 var(--sans);}
+  .supply-dashboard-card.alert strong{color:#e1ad49;}
+  .supply-dashboard-card.danger strong{color:#ef817b;}
+  .supply-dashboard-card.warning strong{color:#e1ad49;}
+  .supply-dashboard-list{margin-top:10px;display:grid;gap:5px;max-height:160px;overflow-y:auto;}
+  .supply-dashboard-list div{
+    padding:5px 8px;border-radius:7px;background:rgba(79,134,189,.06);
+    color:var(--ink-soft);font:700 9px/1.4 var(--mono);
+  }
+  .supply-dashboard-empty{color:var(--ink-faint);font:700 9px/1.4 var(--mono);margin-top:8px;}
+  html[data-theme="light"] .supply-dashboard-card{background:#f6f9fb;border-color:#c4d1dc;}
   .supply-admin-tabs{margin-bottom:16px;}
   .supply-admin-tab-panel{display:grid;gap:12px;}
   .supply-category-form{display:flex;gap:8px;max-width:420px;}
@@ -3058,13 +3075,40 @@
           <div><h3>ADMINISTRAÇÃO DE INSUMOS</h3><p>Cadastre o que as lojas podem marcar como faltante e controle entradas e saídas do estoque.</p></div>
         </div>
         <div class="supply-tabs supply-admin-tabs" role="tablist" aria-label="Seções de administração de insumos">
-          <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-supply-admin-tab="categorias">CATEGORIAS</button>
+          <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-supply-admin-tab="dashboard">DASHBOARD</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="categorias">CATEGORIAS</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="produtos">PRODUTOS</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="estoque">ESTOQUE</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="separacao">SEPARAÇÃO</button>
         </div>
 
-        <div class="supply-admin-tab-panel" id="supplyAdminCategorias">
+        <div class="supply-admin-tab-panel" id="supplyAdminDashboard">
+          <div class="supply-dashboard-week" id="supplyDashboardWeekLabel">—</div>
+          <div class="supply-dashboard-grid">
+            <article class="supply-dashboard-card alert">
+              <span>SOLICITAÇÕES PENDENTES DE SEPARAÇÃO</span>
+              <strong id="supplyDashboardPendingSeparation">0</strong>
+              <div class="supply-dashboard-list" id="supplyDashboardPendingSeparationList"></div>
+            </article>
+            <article class="supply-dashboard-card danger">
+              <span>PRODUTOS COM ESTOQUE ZERADO</span>
+              <strong id="supplyDashboardZeroStock">0</strong>
+              <div class="supply-dashboard-list" id="supplyDashboardZeroStockList"></div>
+            </article>
+            <article class="supply-dashboard-card warning">
+              <span>PRODUTOS COM ESTOQUE ABAIXO DE 10</span>
+              <strong id="supplyDashboardLowStock">0</strong>
+              <div class="supply-dashboard-list" id="supplyDashboardLowStockList"></div>
+            </article>
+            <article class="supply-dashboard-card">
+              <span>SOLICITAÇÕES DA SEMANA VIGENTE</span>
+              <strong id="supplyDashboardWeekRequests">0</strong>
+              <div class="supply-dashboard-list" id="supplyDashboardWeekRequestsNote"></div>
+            </article>
+          </div>
+        </div>
+
+        <div class="supply-admin-tab-panel" id="supplyAdminCategorias" hidden>
           <form class="supply-category-form" id="supplyCategoryForm">
             <input id="supplyNewCategoryName" maxlength="120" placeholder="NOVA CATEGORIA" required>
             <button class="btn-accent" type="submit">ADICIONAR</button>
@@ -9774,11 +9818,13 @@ function renderHomeTasks(){
       button.classList.toggle('active',active);
       button.setAttribute('aria-selected',String(active));
     });
+    el('supplyAdminDashboard').hidden = tab !== 'dashboard';
     el('supplyAdminCategorias').hidden = tab !== 'categorias';
     el('supplyAdminProdutos').hidden = tab !== 'produtos';
     el('supplyAdminEstoque').hidden = tab !== 'estoque';
     el('supplyAdminSeparacao').hidden = tab !== 'separacao';
     if(tab === 'separacao') loadSupplySeparationQueue();
+    if(tab === 'dashboard') loadSupplyDashboard();
   }
   document.querySelectorAll('[data-supply-admin-tab]').forEach(button => {
     button.addEventListener('click',() => setSupplyAdminTab(button.dataset.supplyAdminTab));
@@ -9909,6 +9955,7 @@ function renderHomeTasks(){
 
   async function loadSupplyAdminData(){
     if(currentSession.role !== 'admin') return;
+    loadSupplyDashboard();
     try{
       const [categoriesData,productsData,movementsData] = await Promise.all([
         supplyCategoryApiRequest(null),
@@ -10242,6 +10289,58 @@ function renderHomeTasks(){
   });
 
   el('btnRefreshSeparation').addEventListener('click',loadSupplySeparationQueue);
+
+  let supplyDashboardLoading = false;
+
+  async function supplyDashboardApiRequest(){
+    const response = await fetch('/api/supplies/dashboard',{
+      cache:'no-store',
+      headers:{Accept:'application/json'}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function supplyDashboardListHtml(items,emptyMessage){
+    if(!items.length) return '<div class="supply-dashboard-empty">'+emptyMessage+'</div>';
+    return items.map(text => '<div>'+escapeHtml(text)+'</div>').join('');
+  }
+
+  async function loadSupplyDashboard(){
+    if(currentSession.role !== 'admin' || supplyDashboardLoading) return;
+    supplyDashboardLoading = true;
+    try{
+      const data = await supplyDashboardApiRequest();
+      el('supplyDashboardWeekLabel').textContent = formatSupplyMissingWeek(data.weekStart);
+      el('supplyDashboardPendingSeparation').textContent = data.pendingSeparationCount || 0;
+      el('supplyDashboardPendingSeparationList').innerHTML = supplyDashboardListHtml(
+        (data.pendingSeparationRequests || []).map(row => row.companyName+' — '+row.pendingItems+' DE '+row.totalItems+' ITENS'),
+        'Nenhuma solicitação pendente de separação.',
+      );
+      el('supplyDashboardZeroStock').textContent = data.zeroStockCount || 0;
+      el('supplyDashboardZeroStockList').innerHTML = supplyDashboardListHtml(
+        (data.zeroStockProducts || []).map(product => product.name+' ('+product.categoryName+')'),
+        'Nenhum produto zerado.',
+      );
+      el('supplyDashboardLowStock').textContent = data.lowStockCount || 0;
+      el('supplyDashboardLowStockList').innerHTML = supplyDashboardListHtml(
+        (data.lowStockProducts || []).map(product => product.name+' — '+product.stockQty+' UN.'),
+        'Nenhum produto com estoque baixo.',
+      );
+      el('supplyDashboardWeekRequests').textContent = data.weekRequestsTotal || 0;
+      el('supplyDashboardWeekRequestsNote').innerHTML =
+        '<div>'+(data.weekRequestsUnfinished || 0)+' AINDA NÃO FINALIZADA(S) (SEPARAÇÃO OU RECEBIMENTO PENDENTE)</div>';
+    }catch(error){
+      el('supplyDashboardWeekLabel').textContent = error.message;
+    }finally{
+      supplyDashboardLoading = false;
+    }
+  }
 
   function setSupplyExitFormStatus(message,type){
     const status = el('supplyExitFormStatus');
