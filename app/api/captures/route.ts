@@ -4,6 +4,8 @@ import {
   CAPTURE_SELECT,
   CAPTURE_STATUSES,
   COMPANY_PATTERN,
+  GAME_CONDITIONS,
+  GAME_CONSOLES,
   canAccessCaptures,
   companyName,
   identity,
@@ -17,6 +19,8 @@ import {
   type CaptureCategory,
   type CaptureRow,
   type CaptureStatus,
+  type GameCondition,
+  type GameConsole,
   type JsonMap,
 } from "./shared";
 
@@ -37,7 +41,7 @@ export async function GET(request: Request) {
         403,
       );
     }
-    const result = allStores
+    const result = actor.role === "admin"
       ? await database
           .prepare(
             `${CAPTURE_SELECT}
@@ -47,6 +51,17 @@ export async function GET(request: Request) {
                updated_at DESC`,
           )
           .all<CaptureRow>()
+      : isAssistanceActor(actor)
+        ? await database
+            .prepare(
+              `${CAPTURE_SELECT}
+               WHERE category <> 'jogo'
+               ORDER BY CASE status
+                 WHEN 'ready' THEN 0 WHEN 'submitted' THEN 1
+                 WHEN 'received' THEN 2 ELSE 3 END,
+                 updated_at DESC`,
+            )
+            .all<CaptureRow>()
       : await database
           .prepare(
             `${CAPTURE_SELECT}
@@ -108,10 +123,15 @@ export async function POST(request: Request) {
       );
     }
     const category: CaptureCategory =
-      body.category === "console" || body.category === "controller"
+      body.category === "console" ||
+      body.category === "controller" ||
+      body.category === "jogo"
         ? body.category
         : "other";
     const productName = safeText(body.productName, 160);
+    const gameName = safeText(body.gameName, 160);
+    const gameConsole = safeText(body.gameConsole, 40) as GameConsole;
+    const gameCondition = safeText(body.gameCondition, 40) as GameCondition;
     const serialNumber = safeText(body.serialNumber, 160);
     const defects = safeText(body.defects, 1200);
     const color = safeText(body.color, 120);
@@ -134,6 +154,20 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "VALOR CAPTADO INVÁLIDO." }, 400);
     }
     const capturedValueCents = Math.round(capturedValue * 100);
+    if (category === "jogo") {
+      if (gameName.length < 2) {
+        return jsonResponse({ error: "INFORME O NOME DO JOGO." }, 400);
+      }
+      if (!GAME_CONSOLES.has(gameConsole)) {
+        return jsonResponse({ error: "ESCOLHA O CONSOLE DO JOGO." }, 400);
+      }
+      if (!GAME_CONDITIONS.has(gameCondition)) {
+        return jsonResponse({ error: "ESCOLHA O ESTADO DO JOGO." }, 400);
+      }
+      if (capturedValue <= 0) {
+        return jsonResponse({ error: "INFORME O VALOR CAPTADO DO JOGO." }, 400);
+      }
+    }
     const requestedPhotoKey = safeText(body.photoKey, 200);
     let photoKey = "";
     if (requestedPhotoKey) {
@@ -158,16 +192,21 @@ export async function POST(request: Request) {
     await database
       .prepare(
         `INSERT INTO captured_products
-          (id, category, product_name, serial_number, defects, color,
+          (id, category, product_name, game_name, game_console, game_condition,
+           serial_number, defects, color,
            origin_company_id, origin_company_name, captured_value_cents,
            photo_key, status, created_by, created_by_name, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'submitted',
-                 ?11, ?12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13,
+                 CASE WHEN ?2 = 'jogo' THEN 'ready' ELSE 'submitted' END,
+                 ?14, ?15, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       )
       .bind(
         id,
         category,
         productName,
+        category === "jogo" ? gameName : "",
+        category === "jogo" ? gameConsole : "",
+        category === "jogo" ? gameCondition : "",
         serialNumber,
         defects,
         color,
@@ -215,6 +254,12 @@ export async function PATCH(request: Request) {
         return jsonResponse(
           { error: "SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA." },
           403,
+        );
+      }
+      if (existing.category === "jogo") {
+        return jsonResponse(
+          { error: "JOGOS JÁ ENTRAM DISPONÍVEIS PARA SEPARAÇÃO." },
+          409,
         );
       }
       if (action === "receive" && existing.status !== "submitted") {

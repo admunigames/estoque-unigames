@@ -2925,13 +2925,22 @@
           <div class="capture-form-grid">
             <div class="field">
               <label for="captureCategory">CATEGORIA</label>
-              <select id="captureCategory"><option value="console">CONSOLE</option><option value="controller">CONTROLE</option><option value="other">OUTRO PRODUTO</option></select>
+              <select id="captureCategory"><option value="console">CONSOLE</option><option value="controller">CONTROLE</option><option value="other">OUTRO PRODUTO</option><option value="jogo">JOGOS</option></select>
             </div>
             <div class="field" id="captureOriginCompanyField" hidden>
               <label for="captureOriginCompany">LOJA DE ORIGEM</label>
               <select id="captureOriginCompany"><option value="">SELECIONE A LOJA</option></select>
             </div>
             <div class="field double"><label for="captureProductName">PRODUTO / MODELO</label><input id="captureProductName" maxlength="160" required placeholder="Ex.: PlayStation 5 Slim"></div>
+            <div class="field double" id="captureGameNameField" hidden><label for="captureGameName">NOME DO JOGO</label><input id="captureGameName" maxlength="160" placeholder="Ex.: EA Sports FC 26"></div>
+            <div class="field" id="captureGameConsoleField" hidden>
+              <label for="captureGameConsole">CONSOLE DO JOGO</label>
+              <select id="captureGameConsole"><option value="">SELECIONE O CONSOLE</option><option value="PS4">PS4</option><option value="PS3">PS3</option><option value="PS5">PS5</option><option value="Nintendo Switch">NINTENDO SWITCH</option><option value="Xbox One/Series">XBOX ONE/SERIES</option></select>
+            </div>
+            <div class="field" id="captureGameConditionField" hidden>
+              <label for="captureGameCondition">ESTADO DO JOGO</label>
+              <select id="captureGameCondition"><option value="">SELECIONE O ESTADO</option><option value="Novo">NOVO</option><option value="Semi Novo">SEMI NOVO</option></select>
+            </div>
             <div class="field"><label for="captureSerialNumber">SERIAL DO PRODUTO</label><input id="captureSerialNumber" maxlength="160" required placeholder="Digite o serial completo"></div>
             <div class="field"><label for="captureColor">COR DO PRODUTO</label><input id="captureColor" maxlength="120" required placeholder="Ex.: Preto"></div>
             <div class="field"><label for="captureValue">VALOR CAPTADO (R$)</label><input id="captureValue" type="number" min="0" max="999999.99" step="0.01" inputmode="decimal" placeholder="0,00"></div>
@@ -8975,7 +8984,8 @@ function renderHomeTasks(){
   const captureCategoryLabels = {
     console:'CONSOLE',
     controller:'CONTROLE',
-    other:'OUTRO PRODUTO'
+    other:'OUTRO PRODUTO',
+    jogo:'JOGO'
   };
 
   function isAssistanceSession(){
@@ -9034,7 +9044,7 @@ function renderHomeTasks(){
   }
 
   function captureActionsHtml(row){
-    if(isAssistanceSession()){
+    if(isAssistanceSession() && row.category !== 'jogo'){
       if(row.status === 'submitted'){
         return '<button class="capture-action" type="button" data-capture-action="receive" data-capture-key="'+escapeHtml(row.id)+'">MARCAR COMO RECEBIDO</button>';
       }
@@ -9051,11 +9061,19 @@ function renderHomeTasks(){
   }
 
   function captureCardHtml(row){
+    const captureTitle = row.category === 'jogo'
+      ? (row.gameName || row.productName)
+      : row.productName;
     const destination = row.status === 'assigned' && row.destinationCompanyName
       ? '<div class="capture-detail wide"><span>DESTINO DEFINIDO</span><strong>'+escapeHtml(row.destinationCompanyName)+'</strong></div>'
       : '';
     const capturedValue = typeof row.capturedValue === 'number'
       ? '<div class="capture-detail"><span>VALOR CAPTADO</span><strong>'+escapeHtml(captureValueLabel(row.capturedValue))+'</strong></div>'
+      : '';
+    const gameDetails = row.category === 'jogo'
+      ? '<div class="capture-detail"><span>PRODUTO / MODELO</span><strong>'+escapeHtml(row.productName || '—')+'</strong></div>'+
+        '<div class="capture-detail"><span>CONSOLE</span><strong>'+escapeHtml(row.gameConsole || '—')+'</strong></div>'+
+        '<div class="capture-detail"><span>ESTADO</span><strong>'+escapeHtml(row.gameCondition || '—')+'</strong></div>'
       : '';
     const photo = row.hasPhoto
       ? '<a class="capture-photo-link" href="/api/captures/photo?id='+encodeURIComponent(row.id)+'" target="_blank" rel="noopener">'+
@@ -9065,11 +9083,12 @@ function renderHomeTasks(){
       '<div class="capture-card-copy">'+
         '<div class="capture-card-title"><span class="capture-category">'+
           escapeHtml(captureCategoryLabels[row.category] || 'PRODUTO')+'</span>'+
-          '<strong>'+escapeHtml(row.productName || 'Produto sem nome')+'</strong></div>'+
+          '<strong>'+escapeHtml(captureTitle || 'Produto sem nome')+'</strong></div>'+
         '<div class="capture-details">'+
           '<div class="capture-detail"><span>SERIAL</span><strong>'+escapeHtml(row.serialNumber || '—')+'</strong></div>'+
           '<div class="capture-detail"><span>COR</span><strong>'+escapeHtml(row.color || '—')+'</strong></div>'+
           '<div class="capture-detail"><span>LOJA DE ORIGEM</span><strong>'+escapeHtml(row.originCompanyName || 'Loja')+'</strong></div>'+
+          gameDetails+
           capturedValue+
           '<div class="capture-detail wide"><span>DEFEITOS INFORMADOS</span><strong>'+escapeHtml(row.defects || '—')+'</strong></div>'+
           destination+
@@ -9087,10 +9106,12 @@ function renderHomeTasks(){
     const status = el('captureStatusFilter').value;
     const search = normalizeHeader(el('captureSearch').value || '');
     return captureRows.filter(row => {
+      if(isAssistanceSession() && row.category === 'jogo') return false;
       if(status && row.status !== status) return false;
       if(!search) return true;
       return normalizeHeader([
-        row.productName,row.serialNumber,row.color,row.defects,
+        row.productName,row.gameName,row.gameConsole,row.gameCondition,
+        row.serialNumber,row.color,row.defects,
         row.originCompanyName,row.destinationCompanyName
       ].join(' ')).includes(search);
     });
@@ -9121,7 +9142,7 @@ function renderHomeTasks(){
       ? 'Cadastre um produto por vez e escolha obrigatoriamente a loja de origem.'
       : 'Cadastre um produto por vez. A loja de origem será identificada automaticamente pelo usuário.';
     el('captureBoardDescription').textContent = currentSession.role === 'admin'
-      ? 'Visão completa para definir o destino dos produtos liberados pela assistência.'
+      ? 'Visão completa para definir o destino dos produtos liberados pela assistência e dos jogos disponíveis imediatamente.'
       : isAssistance
         ? 'Receba os produtos e libere-os quando estiverem disponíveis para separação.'
         : 'Acompanhe somente os produtos cadastrados pela sua loja.';
@@ -9153,6 +9174,20 @@ function renderHomeTasks(){
     status.textContent = message || '';
     status.className = 'user-form-status'+(type ? ' '+type : '');
   }
+
+  function toggleCaptureGameFields(){
+    const isGame = el('captureCategory').value === 'jogo';
+    ['captureGameNameField','captureGameConsoleField','captureGameConditionField'].forEach(id => {
+      el(id).hidden = !isGame;
+    });
+    el('captureGameName').required = isGame;
+    el('captureGameConsole').required = isGame;
+    el('captureGameCondition').required = isGame;
+    el('captureValue').required = isGame;
+  }
+
+  el('captureCategory').addEventListener('change',toggleCaptureGameFields);
+  toggleCaptureGameFields();
 
   el('capturePhoto').addEventListener('change',() => {
     const file = el('capturePhoto').files[0];
@@ -9221,6 +9256,7 @@ function renderHomeTasks(){
     const button = el('btnSaveCapture');
     button.disabled = true;
     try{
+      const isGame = el('captureCategory').value === 'jogo';
       const photo = el('capturePhoto').files[0];
       let photoKey = '';
       if(photo){
@@ -9235,6 +9271,9 @@ function renderHomeTasks(){
           category:el('captureCategory').value,
           originCompanyId:currentSession.role === 'admin' ? el('captureOriginCompany').value : '',
           productName:el('captureProductName').value,
+          gameName:el('captureGameName').value,
+          gameConsole:el('captureGameConsole').value,
+          gameCondition:el('captureGameCondition').value,
           serialNumber:el('captureSerialNumber').value,
           defects:el('captureDefects').value,
           color:el('captureColor').value,
@@ -9243,8 +9282,11 @@ function renderHomeTasks(){
         })
       });
       el('captureForm').reset();
+      toggleCaptureGameFields();
       el('capturePhotoFilename').textContent = '';
-      setCaptureFormStatus('PRODUTO CADASTRADO E ENVIADO PARA A ASSISTÊNCIA.','success');
+      setCaptureFormStatus(isGame
+        ? 'JOGO CADASTRADO E DISPONÍVEL PARA O ADMINISTRADOR DEFINIR O DESTINO.'
+        : 'PRODUTO CADASTRADO E ENVIADO PARA A ASSISTÊNCIA.','success');
       await loadCaptures();
     }catch(error){
       setCaptureFormStatus(error.message,'error');

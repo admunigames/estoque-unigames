@@ -1,6 +1,13 @@
 export type JsonMap = Record<string, unknown>;
 export type CaptureStatus = "submitted" | "received" | "ready" | "assigned";
-export type CaptureCategory = "console" | "controller" | "other";
+export type CaptureCategory = "console" | "controller" | "other" | "jogo";
+export type GameConsole =
+  | "PS4"
+  | "PS3"
+  | "PS5"
+  | "Nintendo Switch"
+  | "Xbox One/Series";
+export type GameCondition = "Novo" | "Semi Novo";
 export type Identity = {
   id: string;
   username: string;
@@ -15,6 +22,9 @@ export type CaptureRow = {
   id: string;
   category: CaptureCategory;
   productName: string;
+  gameName: string;
+  gameConsole: string;
+  gameCondition: string;
   serialNumber: string;
   defects: string;
   color: string;
@@ -47,6 +57,14 @@ export const CAPTURE_STATUSES = new Set<CaptureStatus>([
   "ready",
   "assigned",
 ]);
+export const GAME_CONSOLES = new Set<GameConsole>([
+  "PS4",
+  "PS3",
+  "PS5",
+  "Nintendo Switch",
+  "Xbox One/Series",
+]);
+export const GAME_CONDITIONS = new Set<GameCondition>(["Novo", "Semi Novo"]);
 
 export function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -175,6 +193,8 @@ export async function companyName(database: D1Database, companyId: string) {
 
 export const CAPTURE_SELECT = `
   SELECT id, category, product_name AS productName,
+         game_name AS gameName, game_console AS gameConsole,
+         game_condition AS gameCondition,
          serial_number AS serialNumber, defects, color,
          origin_company_id AS originCompanyId,
          origin_company_name AS originCompanyName,

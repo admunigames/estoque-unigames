@@ -693,6 +693,49 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v24"/);
 });
 
+test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
+  const [html, route, captureShared, schema, postgresMigration, sqliteMigration] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/captures/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/captures/shared.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0011_low_turbo.sql", import.meta.url), "utf8"),
+      readFile(
+        new URL("../drizzle-sqlite-legacy/0011_capture_games.sql", import.meta.url),
+        "utf8",
+      ),
+    ]);
+
+  assert.match(captureShared, /CaptureCategory = "console" \| "controller" \| "other" \| "jogo"/);
+  assert.match(captureShared, /"PS4",\s+"PS3",\s+"PS5",\s+"Nintendo Switch",\s+"Xbox One\/Series"/);
+  assert.match(captureShared, /GAME_CONDITIONS = new Set<GameCondition>\(\["Novo", "Semi Novo"\]\)/);
+  assert.match(captureShared, /game_name AS gameName/);
+  assert.match(captureShared, /actor\.role === "admin" \|\| actor\.companyId === row\.originCompanyId/);
+
+  assert.match(html, /<option value="jogo">JOGOS<\/option>/);
+  assert.match(html, /id="captureGameName"/);
+  assert.match(html, /id="captureGameConsole"[\s\S]*value="PS4"[\s\S]*value="PS3"[\s\S]*value="PS5"[\s\S]*value="Nintendo Switch"[\s\S]*value="Xbox One\/Series"/);
+  assert.match(html, /id="captureGameCondition"[\s\S]*value="Novo"[\s\S]*value="Semi Novo"/);
+  assert.match(html, /el\('captureValue'\)\.required = isGame/);
+  assert.match(html, /gameName:el\('captureGameName'\)\.value/);
+  assert.match(html, /isAssistanceSession\(\) && row\.category === 'jogo'/);
+
+  assert.match(route, /body\.category === "jogo"/);
+  assert.match(route, /WHERE category <> 'jogo'/);
+  assert.match(route, /CASE WHEN \?2 = 'jogo' THEN 'ready' ELSE 'submitted' END/);
+  assert.match(route, /existing\.category === "jogo"/);
+  assert.match(route, /GAME_CONSOLES\.has\(gameConsole\)/);
+  assert.match(route, /GAME_CONDITIONS\.has\(gameCondition\)/);
+  assert.match(route, /capturedValue <= 0/);
+
+  for (const source of [schema, postgresMigration, sqliteMigration]) {
+    assert.match(source, /game_name/);
+    assert.match(source, /game_console/);
+    assert.match(source, /game_condition/);
+  }
+});
+
 test("registra saídas por defeito por loja e preserva o histórico do administrador", async () => {
   const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
     await Promise.all([
