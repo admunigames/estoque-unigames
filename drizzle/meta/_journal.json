@@ -15,6 +15,13 @@
       "when": 1786456181297,
       "tag": "0001_wide_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786456751068,
+      "tag": "0002_stiff_swordsman",
+      "breakpoints": true
     }
   ]
 }

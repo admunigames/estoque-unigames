@@ -615,11 +615,12 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
 });
 
 test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
-  const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
+  const [html, workerSource, route, captureShared, schema, migration, manifest, serviceWorker] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/captures/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/captures/shared.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
       readFile(new URL("../drizzle-sqlite-legacy/0008_luxuriant_killer_shrike.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
@@ -658,10 +659,10 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM captured_products"\)\.all\(\)/);
   assert.match(workerSource, /capturedProducts: capturedProducts\.results \?\? \[\]/);
 
-  assert.match(route, /accessGroup === "assistance"/);
-  assert.match(route, /accessGroup === "assistencia"/);
-  assert.match(route, /username\.includes\("assistencia"\)/);
-  assert.match(route, /displayName\.includes\("assistencia"\)/);
+  assert.match(captureShared, /accessGroup === "assistance"/);
+  assert.match(captureShared, /accessGroup === "assistencia"/);
+  assert.match(captureShared, /username\.includes\("assistencia"\)/);
+  assert.match(captureShared, /displayName\.includes\("assistencia"\)/);
   assert.match(route, /const allStores = actor\.role === "admin" \|\| isAssistanceActor\(actor\)/);
   assert.match(route, /actor\.role === "admin" \? requestedOriginCompanyId : actor\.companyId/);
   assert.match(route, /ESCOLHA A LOJA DE ORIGEM/);

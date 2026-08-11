@@ -1,0 +1,1 @@
+ALTER TABLE "captured_products" ADD COLUMN "photo_key" text DEFAULT '' NOT NULL;

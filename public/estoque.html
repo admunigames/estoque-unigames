@@ -1854,6 +1854,9 @@
   .capture-detail span{display:block;color:var(--ink-soft);font:800 7px/1.25 var(--mono);letter-spacing:.4px;}
   .capture-detail strong{display:block;margin-top:5px;color:var(--ink);font:700 11px/1.45 var(--sans);overflow-wrap:anywhere;white-space:pre-wrap;}
   .capture-history{margin:10px 0 0;color:var(--ink-soft);font:700 8px/1.55 var(--mono);}
+  .capture-photo-link{display:inline-block;margin-top:10px;}
+  .capture-photo-thumb{display:block;width:96px;height:96px;object-fit:cover;border-radius:9px;border:1px solid rgba(79,134,189,.2);}
+  .capture-photo-filename{display:block;margin-top:4px;color:var(--ink-soft);font:700 10px/1.4 var(--mono);overflow-wrap:anywhere;}
   .capture-card-actions{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:190px;}
   .capture-state{
     padding:8px 10px;border-radius:9px;background:rgba(79,134,189,.09);
@@ -2811,6 +2814,11 @@
             <div class="field"><label for="captureColor">COR DO PRODUTO</label><input id="captureColor" maxlength="120" required placeholder="Ex.: Preto"></div>
             <div class="field"><label for="captureValue">VALOR CAPTADO (R$)</label><input id="captureValue" type="number" min="0" max="999999.99" step="0.01" inputmode="decimal" placeholder="0,00"></div>
             <div class="field double"><label for="captureDefects">DEFEITOS DO PRODUTO</label><textarea id="captureDefects" maxlength="1200" rows="3" required placeholder="Descreva os defeitos ou informe “Sem defeito”"></textarea></div>
+            <div class="field double">
+              <label for="capturePhoto">FOTO DO PRODUTO</label>
+              <input id="capturePhoto" type="file" accept="image/*" capture="environment">
+              <span class="capture-photo-filename" id="capturePhotoFilename"></span>
+            </div>
           </div>
           <div class="capture-form-actions"><button class="btn-accent" id="btnSaveCapture" type="submit">CADASTRAR PRODUTO</button></div>
           <div class="user-form-status" id="captureFormStatus" role="status" aria-live="polite"></div>
@@ -8714,6 +8722,10 @@ function renderHomeTasks(){
     const capturedValue = typeof row.capturedValue === 'number'
       ? '<div class="capture-detail"><span>VALOR CAPTADO</span><strong>'+escapeHtml(captureValueLabel(row.capturedValue))+'</strong></div>'
       : '';
+    const photo = row.hasPhoto
+      ? '<a class="capture-photo-link" href="/api/captures/photo?id='+encodeURIComponent(row.id)+'" target="_blank" rel="noopener">'+
+        '<img class="capture-photo-thumb" src="/api/captures/photo?id='+encodeURIComponent(row.id)+'" alt="Foto do produto captado" loading="lazy"></a>'
+      : '';
     return '<article class="capture-card '+escapeHtml(row.status || 'submitted')+'">'+
       '<div class="capture-card-copy">'+
         '<div class="capture-card-title"><span class="capture-category">'+
@@ -8726,7 +8738,7 @@ function renderHomeTasks(){
           capturedValue+
           '<div class="capture-detail wide"><span>DEFEITOS INFORMADOS</span><strong>'+escapeHtml(row.defects || '—')+'</strong></div>'+
           destination+
-        '</div>'+captureHistoryHtml(row)+
+        '</div>'+photo+captureHistoryHtml(row)+
       '</div>'+
       '<div class="capture-card-actions">'+
         '<span class="capture-state '+escapeHtml(row.status || 'submitted')+'">'+
@@ -8807,26 +8819,41 @@ function renderHomeTasks(){
     status.className = 'user-form-status'+(type ? ' '+type : '');
   }
 
+  el('capturePhoto').addEventListener('change',() => {
+    const file = el('capturePhoto').files[0];
+    el('capturePhotoFilename').textContent = file ? file.name : '';
+  });
+
   el('captureForm').addEventListener('submit',async event => {
     event.preventDefault();
     const button = el('btnSaveCapture');
     button.disabled = true;
     setCaptureFormStatus('CADASTRANDO PRODUTO…','');
     try{
-      await captureApiRequest({
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          category:el('captureCategory').value,
-          originCompanyId:currentSession.role === 'admin' ? el('captureOriginCompany').value : '',
-          productName:el('captureProductName').value,
-          serialNumber:el('captureSerialNumber').value,
-          defects:el('captureDefects').value,
-          color:el('captureColor').value,
-          capturedValue:el('captureValue').value
-        })
-      });
+      const fields = {
+        category:el('captureCategory').value,
+        originCompanyId:currentSession.role === 'admin' ? el('captureOriginCompany').value : '',
+        productName:el('captureProductName').value,
+        serialNumber:el('captureSerialNumber').value,
+        defects:el('captureDefects').value,
+        color:el('captureColor').value,
+        capturedValue:el('captureValue').value
+      };
+      const photo = el('capturePhoto').files[0];
+      if(photo){
+        const formData = new FormData();
+        Object.keys(fields).forEach(key => formData.append(key,fields[key]));
+        formData.append('photo',photo,photo.name);
+        await captureApiRequest({method:'POST',body:formData});
+      }else{
+        await captureApiRequest({
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(fields)
+        });
+      }
       el('captureForm').reset();
+      el('capturePhotoFilename').textContent = '';
       setCaptureFormStatus('PRODUTO CADASTRADO E ENVIADO PARA A ASSISTÊNCIA.','success');
       await loadCaptures();
     }catch(error){

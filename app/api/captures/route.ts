@@ -1,180 +1,25 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
-
-type JsonMap = Record<string, unknown>;
-type CaptureStatus = "submitted" | "received" | "ready" | "assigned";
-type CaptureCategory = "console" | "controller" | "other";
-type Identity = {
-  id: string;
-  username: string;
-  displayName: string;
-  role: "admin" | "user";
-  accessGroup: string;
-  companyId: string;
-  permissions: string[];
-};
-type CaptureRow = {
-  id: string;
-  category: CaptureCategory;
-  productName: string;
-  serialNumber: string;
-  defects: string;
-  color: string;
-  originCompanyId: string;
-  originCompanyName: string;
-  capturedValueCents: number;
-  status: CaptureStatus;
-  destinationCompanyId: string;
-  destinationCompanyName: string;
-  createdBy: string;
-  createdByName: string;
-  receivedBy: string;
-  receivedByName: string;
-  receivedAt: string;
-  readyBy: string;
-  readyByName: string;
-  readyAt: string;
-  assignedBy: string;
-  assignedByName: string;
-  assignedAt: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-const COMPANY_PATTERN = /^c[a-z0-9]{6,40}$/i;
-const CAPTURE_STATUSES = new Set<CaptureStatus>([
-  "submitted",
-  "received",
-  "ready",
-  "assigned",
-]);
-
-function jsonResponse(body: JsonMap, status = 200) {
-  return Response.json(body, {
-    status,
-    headers: {
-      "cache-control": "private, no-store",
-      "x-content-type-options": "nosniff",
-    },
-  });
-}
-
-function safeText(value: unknown, maxLength: number) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
-
-function decodedHeader(request: Request, name: string) {
-  const value = request.headers.get(name) || "";
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
-}
-
-function identity(request: Request): Identity {
-  return {
-    id: safeText(request.headers.get("x-unigames-user-id"), 80),
-    username: safeText(request.headers.get("x-unigames-username"), 80).toLowerCase(),
-    displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
-    role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
-    accessGroup: safeText(request.headers.get("x-unigames-access-group"), 40),
-    companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
-    permissions: (request.headers.get("x-unigames-permissions") || "")
-      .split(",")
-      .map((permission) => permission.trim())
-      .filter(Boolean),
-  };
-}
-
-function canAccessCaptures(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("captures");
-}
-
-function isAssistanceActor(actor: Identity) {
-  const displayName = actor.displayName.toLowerCase();
-  return (
-    actor.accessGroup === "assistance" ||
-    actor.accessGroup === "assistencia" ||
-    actor.username.includes("assistencia") ||
-    displayName.includes("assistencia")
-  );
-}
-
-function canSeeCapturedValue(actor: Identity, row: CaptureRow) {
-  return actor.role === "admin" || actor.companyId === row.originCompanyId;
-}
-
-function serializeCaptureRow(actor: Identity, row: CaptureRow) {
-  const { capturedValueCents, ...rest } = row;
-  if (!canSeeCapturedValue(actor, row)) return rest;
-  return { ...rest, capturedValue: capturedValueCents / 100 };
-}
-
-function sameOrigin(request: Request) {
-  const fetchSite = request.headers.get("sec-fetch-site");
-  if (fetchSite === "cross-site") return false;
-  if (fetchSite === "same-origin") return true;
-
-  const origin = request.headers.get("origin");
-  if (!origin) return !fetchSite || fetchSite === "none";
-  const url = new URL(request.url);
-  const allowedOrigins = new Set([url.origin]);
-  const forwardedHost =
-    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-    request.headers.get("host")?.trim() ||
-    "";
-  if (forwardedHost) {
-    const forwardedProtocol =
-      request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
-      (url.protocol === "http:" ? "http" : "https");
-    try {
-      allowedOrigins.add(new URL(`${forwardedProtocol}://${forwardedHost}`).origin);
-    } catch {
-      return false;
-    }
-  }
-  return allowedOrigins.has(origin);
-}
-
-async function companyName(database: D1Database, companyId: string) {
-  try {
-    const row = await database
-      .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
-      .first<{ value: string }>();
-    const parsed = row?.value ? JSON.parse(row.value) : [];
-    if (!Array.isArray(parsed)) return "";
-    const company = parsed.find(
-      (item): item is { id: string; name: string } =>
-        Boolean(item) &&
-        typeof item === "object" &&
-        "id" in item &&
-        item.id === companyId &&
-        "name" in item &&
-        typeof item.name === "string",
-    );
-    return company?.name?.trim().slice(0, 120) || "";
-  } catch {
-    return "";
-  }
-}
-
-const CAPTURE_SELECT = `
-  SELECT id, category, product_name AS productName,
-         serial_number AS serialNumber, defects, color,
-         origin_company_id AS originCompanyId,
-         origin_company_name AS originCompanyName,
-         captured_value_cents AS capturedValueCents, status,
-         destination_company_id AS destinationCompanyId,
-         destination_company_name AS destinationCompanyName,
-         created_by AS createdBy, created_by_name AS createdByName,
-         received_by AS receivedBy, received_by_name AS receivedByName,
-         received_at AS receivedAt, ready_by AS readyBy,
-         ready_by_name AS readyByName, ready_at AS readyAt,
-         assigned_by AS assignedBy, assigned_by_name AS assignedByName,
-         assigned_at AS assignedAt, created_at AS createdAt,
-         updated_at AS updatedAt
-  FROM captured_products`;
+import {
+  CAPTURE_SELECT,
+  CAPTURE_STATUSES,
+  COMPANY_PATTERN,
+  canAccessCaptures,
+  companyName,
+  identity,
+  isAssistanceActor,
+  jsonResponse,
+  photoKeyFor,
+  photoValidationError,
+  safeText,
+  sameOrigin,
+  serializeCaptureRow,
+  uploadsBucket,
+  type CaptureCategory,
+  type CaptureRow,
+  type CaptureStatus,
+  type JsonMap,
+} from "./shared";
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -229,6 +74,31 @@ export async function GET(request: Request) {
   }
 }
 
+async function parseCaptureBody(
+  request: Request,
+): Promise<{ body: JsonMap; photo: File | null } | Response> {
+  const contentType = request.headers.get("content-type") || "";
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+    const body: JsonMap = {};
+    let photo: File | null = null;
+    for (const [key, value] of formData.entries()) {
+      if (key === "photo") {
+        if (value instanceof File && value.size > 0) photo = value;
+        continue;
+      }
+      body[key] = value;
+    }
+    if (photo) {
+      const error = photoValidationError(photo);
+      if (error) return jsonResponse({ error }, 400);
+    }
+    return { body, photo };
+  }
+  const body = (await request.json()) as JsonMap;
+  return { body, photo: null };
+}
+
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -247,7 +117,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as JsonMap;
+    const parsed = await parseCaptureBody(request);
+    if (parsed instanceof Response) return parsed;
+    const { body, photo } = parsed;
+
     const requestedOriginCompanyId = safeText(body.originCompanyId, 80);
     const originCompanyId =
       actor.role === "admin" ? requestedOriginCompanyId : actor.companyId;
@@ -295,15 +168,25 @@ export async function POST(request: Request) {
     if (!originCompanyName) {
       return jsonResponse({ error: "LOJA DE ORIGEM NÃO ENCONTRADA." }, 400);
     }
+
     const id = crypto.randomUUID();
+    let photoKey = "";
+    if (photo) {
+      const bucket = await uploadsBucket();
+      photoKey = photoKeyFor(id, photo);
+      await bucket.put(photoKey, await photo.arrayBuffer(), {
+        httpMetadata: { contentType: photo.type || "application/octet-stream" },
+      });
+    }
+
     await database
       .prepare(
         `INSERT INTO captured_products
           (id, category, product_name, serial_number, defects, color,
-           origin_company_id, origin_company_name, captured_value_cents, status,
-           created_by, created_by_name, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'submitted',
-                 ?10, ?11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+           origin_company_id, origin_company_name, captured_value_cents,
+           photo_key, status, created_by, created_by_name, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'submitted',
+                 ?11, ?12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       )
       .bind(
         id,
@@ -315,6 +198,7 @@ export async function POST(request: Request) {
         originCompanyId,
         originCompanyName,
         capturedValueCents,
+        photoKey,
         actor.id,
         actor.displayName,
       )
