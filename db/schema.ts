@@ -288,6 +288,31 @@ export const supplyStockMovements = pgTable(
   ],
 );
 
+export const supplyMissingMarks = pgTable(
+  "supply_missing_marks",
+  {
+    id: text("id").primaryKey(),
+    productId: text("product_id").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    weekStart: text("week_start").notNull(),
+    markedBy: text("marked_by").notNull(),
+    markedByName: text("marked_by_name").notNull().default(""),
+    markedAt: text("marked_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("supply_missing_marks_unique").on(
+      table.productId,
+      table.companyId,
+      table.weekStart,
+    ),
+    index("supply_missing_marks_company_week_idx").on(
+      table.companyId,
+      table.weekStart,
+    ),
+  ],
+);
+
 export const supplyItems = pgTable(
   "supply_items",
   {

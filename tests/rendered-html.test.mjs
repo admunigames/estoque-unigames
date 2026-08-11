@@ -746,8 +746,8 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(html, /id="homeSuppliesAlert" data-permission="supplies" hidden/);
   assert.match(html, /LEMBRETE DE SEGUNDA-FEIRA/);
   assert.match(html, /id="pageInsumos" class="page wrap"/);
-  assert.match(html, /id="supplyProductName"/);
-  assert.match(html, /id="supplyQuantityText"/);
+  assert.match(html, /id="supplyMissingGroups"/);
+  assert.match(html, /data-missing-product=/);
   assert.match(html, /id="supplyCompany"/);
   assert.match(html, /data-supply-view="active"/);
   assert.match(html, /data-supply-view="history"/);

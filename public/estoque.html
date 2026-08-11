@@ -2033,6 +2033,27 @@
   .supply-admin-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;}
   .supply-admin-panel-head h3{margin:0;color:var(--ink);}
   .supply-admin-panel-head p{margin:5px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5;}
+  .supply-missing-week{
+    padding:10px 12px;border:1px solid rgba(79,134,189,.32);border-radius:9px;
+    color:var(--ink-soft);font:800 10px/1.4 var(--mono);background:rgba(79,134,189,.05);
+  }
+  .supply-missing-groups{display:grid;gap:12px;margin-top:14px;}
+  .supply-missing-group{
+    border:1px solid rgba(39,69,97,.42);border-radius:12px;background:var(--bg-card-2);padding:12px 14px;
+  }
+  .supply-missing-group h4{margin:0 0 9px;color:var(--ink);font:900 10px/1.3 var(--mono);letter-spacing:.4px;}
+  .supply-missing-item-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;}
+  .supply-missing-item{
+    display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(39,69,97,.32);
+    border-radius:9px;background:var(--bg-card);cursor:pointer;
+  }
+  .supply-missing-item input{flex:none;}
+  .supply-missing-item span{color:var(--ink);font:700 11px/1.35 var(--sans);overflow-wrap:anywhere;}
+  .supply-missing-item.marked{border-color:rgba(225,173,73,.5);background:rgba(225,173,73,.1);}
+  .supply-missing-item.marked span{color:#e1ad49;}
+  .supply-missing-item.out span::after{content:' (SEM ESTOQUE)';color:#ef817b;font-size:9px;}
+  html[data-theme="light"] .supply-missing-group{background:#f6f9fb;border-color:#c4d1dc;}
+  html[data-theme="light"] .supply-missing-item{background:#fff;}
   .supply-admin-tabs{margin-bottom:16px;}
   .supply-admin-tab-panel{display:grid;gap:12px;}
   .supply-category-form{display:flex;gap:8px;max-width:420px;}
@@ -2967,17 +2988,14 @@
 
       <section class="supply-register-panel" id="supplyRegisterPanel">
         <div class="supply-panel-head">
-          <div><h3>ANOTAR INSUMO FALTANTE</h3><p id="supplyRegisterDescription">Registre durante a semana tudo o que deverá entrar no próximo pedido.</p></div>
+          <div><h3 id="supplyMissingTitle">FALTANDO NA SEMANA</h3><p id="supplyRegisterDescription">Marque os produtos que estão faltando. Na segunda-feira isso vira a base da solicitação.</p></div>
         </div>
-        <form id="supplyForm">
-          <div class="supply-form-grid">
-            <div class="field"><label for="supplyProductName">PRODUTO / INSUMO</label><input id="supplyProductName" maxlength="180" required placeholder="Ex.: Bobina para impressora térmica"></div>
-            <div class="field"><label for="supplyQuantityText">QUANTIDADE</label><input id="supplyQuantityText" maxlength="100" required placeholder="Ex.: 2 caixas ou 10 unidades"></div>
-            <div class="field" id="supplyCompanyField" hidden><label for="supplyCompany">LOJA</label><select id="supplyCompany"><option value="">SELECIONE A LOJA</option></select></div>
-          </div>
-          <div class="supply-form-actions"><button class="btn-accent" id="btnSaveSupply" type="submit">ADICIONAR À LISTA</button></div>
-          <div class="user-form-status" id="supplyFormStatus" role="status" aria-live="polite"></div>
-        </form>
+        <div class="supply-form-grid">
+          <div class="field" id="supplyCompanyField" hidden><label for="supplyCompany">LOJA</label><select id="supplyCompany"><option value="">SELECIONE A LOJA</option></select></div>
+          <div class="field"><label>SEMANA DE SOLICITAÇÃO</label><div class="supply-missing-week" id="supplyMissingWeekLabel">—</div></div>
+        </div>
+        <div class="user-form-status" id="supplyFormStatus" role="status" aria-live="polite"></div>
+        <div class="supply-missing-groups" id="supplyMissingGroups"><div class="supply-empty">Carregando produtos…</div></div>
       </section>
 
       <section class="supply-board">
@@ -4537,7 +4555,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); }
+    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); }
     if(name === 'instrucoes') loadInstructions();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -4555,7 +4573,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); }
+    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); }
     if(name === 'instrucoes') loadInstructions();
   }
 
@@ -9437,8 +9455,8 @@ function renderHomeTasks(){
     el('supplyExitPanel').hidden = isAdmin;
     renderSupplyCompanyOptions();
     el('supplyRegisterDescription').textContent = isAdmin
-      ? 'Registre o item e escolha a loja responsável.'
-      : 'O item será vinculado automaticamente à sua loja.';
+      ? 'Escolha a loja para marcar os produtos que estão faltando.'
+      : 'Marque os produtos que estão faltando. Na segunda-feira isso vira a base da solicitação.';
     el('supplyBoardDescription').textContent = isAdmin
       ? 'Visualize os insumos de todas as lojas ou filtre uma unidade.'
       : 'Somente os registros da sua loja são exibidos.';
@@ -9533,31 +9551,109 @@ function renderHomeTasks(){
     status.className = 'user-form-status'+(type ? ' '+type : '');
   }
 
-  el('supplyForm').addEventListener('submit',async event => {
-    event.preventDefault();
-    const button = el('btnSaveSupply');
-    button.disabled = true;
-    setSupplyFormStatus('ADICIONANDO À LISTA…','');
+  let supplyMissingItems = [];
+  let supplyMissingWeekStart = '';
+  let supplyMissingLoading = false;
+
+  async function supplyMissingApiRequest(options,query){
+    const suffix = query ? '?'+query.toString() : '';
+    const response = await fetch('/api/supplies/missing'+suffix,{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function formatSupplyMissingWeek(weekStart){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(weekStart || '')) return '—';
+    return 'SEMANA DE '+weekStart.split('-').reverse().join('/');
+  }
+
+  function supplyMissingGroupsHtml(items){
+    const groups = new Map();
+    items.forEach(item => {
+      if(!groups.has(item.categoryName)) groups.set(item.categoryName,[]);
+      groups.get(item.categoryName).push(item);
+    });
+    return Array.from(groups.entries()).map(([category,products]) =>
+      '<div class="supply-missing-group"><h4>'+escapeHtml(category)+'</h4>'+
+      '<div class="supply-missing-item-list">'+products.map(product =>
+        '<label class="supply-missing-item'+(product.marked ? ' marked' : '')+(Number(product.stockQty || 0) <= 0 ? ' out' : '')+'">'+
+          '<input type="checkbox" data-missing-product="'+escapeHtml(product.id)+'"'+(product.marked ? ' checked' : '')+'>'+
+          '<span>'+escapeHtml(product.name)+'</span>'+
+        '</label>'
+      ).join('')+'</div></div>'
+    ).join('');
+  }
+
+  function renderSupplyMissingGroups(){
+    el('supplyMissingWeekLabel').textContent = formatSupplyMissingWeek(supplyMissingWeekStart);
+    el('supplyMissingGroups').innerHTML = supplyMissingItems.length
+      ? supplyMissingGroupsHtml(supplyMissingItems)
+      : '<div class="supply-empty">Nenhum produto de insumo ativo cadastrado ainda.</div>';
+  }
+
+  async function loadSupplyMissing(){
+    if(!canAccess('supplies') || supplyMissingLoading) return;
+    const isAdmin = currentSession.role === 'admin';
+    const companyId = isAdmin ? el('supplyCompany').value : currentSession.companyId;
+    if(!companyId){
+      el('supplyMissingGroups').innerHTML = isAdmin
+        ? '<div class="supply-empty">Escolha a loja para ver os produtos.</div>'
+        : '<div class="supply-empty">Seu usuário precisa estar vinculado a uma loja.</div>';
+      el('supplyMissingWeekLabel').textContent = '—';
+      return;
+    }
+    supplyMissingLoading = true;
+    el('supplyMissingGroups').innerHTML = '<div class="supply-empty">Carregando produtos…</div>';
     try{
-      await supplyApiRequest({
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          productName:el('supplyProductName').value,
-          quantityText:el('supplyQuantityText').value,
-          companyId:currentSession.role === 'admin' ? el('supplyCompany').value : ''
-        })
-      });
-      el('supplyForm').reset();
-      setSupplyFormStatus('INSUMO ADICIONADO À LISTA DA LOJA.','success');
-      supplyView = 'active';
-      await Promise.all([loadSupplies(),loadHomeSupplies()]);
+      const query = new URLSearchParams({companyId});
+      const data = await supplyMissingApiRequest(null,query);
+      supplyMissingItems = Array.isArray(data.items) ? data.items : [];
+      supplyMissingWeekStart = data.weekStart || '';
+      renderSupplyMissingGroups();
     }catch(error){
+      supplyMissingItems = [];
+      el('supplyMissingGroups').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
+    }finally{
+      supplyMissingLoading = false;
+    }
+  }
+
+  el('supplyMissingGroups').addEventListener('change',async event => {
+    const checkbox = event.target.closest('[data-missing-product]');
+    if(!checkbox) return;
+    const isAdmin = currentSession.role === 'admin';
+    const companyId = isAdmin ? el('supplyCompany').value : currentSession.companyId;
+    const productId = checkbox.dataset.missingProduct;
+    const marked = checkbox.checked;
+    checkbox.disabled = true;
+    try{
+      await supplyMissingApiRequest({
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({companyId,productId,marked,weekStart:supplyMissingWeekStart})
+      });
+      const item = supplyMissingItems.find(product => product.id === productId);
+      if(item) item.marked = marked ? 1 : 0;
+      checkbox.closest('.supply-missing-item').classList.toggle('marked',marked);
+      setSupplyFormStatus(marked ? 'PRODUTO MARCADO COMO FALTANDO.' : 'MARCAÇÃO REMOVIDA.','success');
+    }catch(error){
+      checkbox.checked = !marked;
       setSupplyFormStatus(error.message,'error');
     }finally{
-      button.disabled = false;
+      checkbox.disabled = false;
     }
   });
+
+  el('supplyCompany').addEventListener('change',loadSupplyMissing);
 
   async function requestSupplyItems(itemIds){
     if(!itemIds.length) return;
