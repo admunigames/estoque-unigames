@@ -2026,6 +2026,46 @@
   html[data-theme="light"] .supply-board{background:#fff;border-color:#b8cad9;box-shadow:0 1px 4px rgba(28,67,102,.06);}
   html[data-theme="light"] .supply-card{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .supply-action.receive{color:#24714a;background:#e2f3e9;}
+  .supply-admin-panel{
+    border:1px solid rgba(39,69,97,.58);border-radius:16px;background:var(--bg-card);
+    box-shadow:0 1px 5px rgba(0,0,0,.08);padding:20px;margin-bottom:16px;
+  }
+  .supply-admin-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;}
+  .supply-admin-panel-head h3{margin:0;color:var(--ink);}
+  .supply-admin-panel-head p{margin:5px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5;}
+  .supply-admin-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:18px;align-items:start;}
+  .supply-admin-categories{display:grid;gap:12px;}
+  .supply-category-form{display:flex;gap:8px;}
+  .supply-category-form input{flex:1;}
+  .supply-category-list{display:grid;gap:7px;}
+  .supply-category-row{
+    display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(39,69,97,.42);
+    border-radius:10px;background:var(--bg-card-2);
+  }
+  .supply-category-row span{flex:1;color:var(--ink);font:800 10px/1.4 var(--sans);overflow-wrap:anywhere;}
+  .supply-category-row input{flex:1;}
+  .supply-category-row button{
+    min-height:30px;padding:5px 9px;border:1px solid rgba(79,134,189,.42);border-radius:8px;
+    background:rgba(79,134,189,.1);color:var(--ink);font:800 8px/1 var(--mono);
+  }
+  .supply-category-row button.delete{border-color:rgba(210,76,68,.46);background:rgba(210,76,68,.12);color:#ef817b;}
+  .supply-product-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+  .supply-product-form .field.full{grid-column:1 / -1;}
+  .supply-product-form .field.checkbox{display:flex;align-items:center;gap:8px;flex-direction:row;}
+  .supply-product-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .supply-product-toolbar select{min-width:200px;}
+  .supply-product-status{padding:3px 7px;border-radius:999px;background:rgba(79,134,189,.1);color:var(--accent);font:800 7px/1.4 var(--mono);}
+  .supply-product-status.inactive{background:rgba(146,146,146,.15);color:var(--ink-faint);}
+  .supply-product-status.out{background:rgba(210,76,68,.13);color:#ef817b;margin-left:5px;}
+  .supply-product-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .supply-product-actions button{
+    min-height:28px;padding:5px 8px;border:1px solid rgba(79,134,189,.42);border-radius:8px;
+    background:rgba(79,134,189,.1);color:var(--ink);font:800 8px/1 var(--mono);
+  }
+  .supply-product-actions button.delete{border-color:rgba(210,76,68,.46);background:rgba(210,76,68,.12);color:#ef817b;}
+  .supply-product-actions button.save{border-color:rgba(66,166,119,.46);background:rgba(66,166,119,.13);color:#66d49e;}
+  .supply-product-edit-row input,.supply-product-edit-row select,.supply-product-edit-row textarea{width:100%;}
+  @media (max-width:820px){.supply-admin-grid{grid-template-columns:1fr;}.supply-product-form{grid-template-columns:1fr;}}
   html[data-theme="light"] .supply-action.delete{color:#a8322c;background:#fbe8e6;}
   .instruction-summary{
     display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;
@@ -2936,6 +2976,49 @@
           <button class="supply-request-all" id="btnRequestAllSupplies" type="button">REGISTRAR PEDIDO DOS ITENS EM ABERTO</button>
         </div>
         <div class="supply-list" id="supplyList" aria-live="polite"><div class="supply-empty">Carregando insumos…</div></div>
+      </section>
+
+      <section class="supply-admin-panel" id="supplyAdminPanel" hidden>
+        <div class="supply-admin-panel-head">
+          <div><h3>PRODUTOS E CATEGORIAS DE INSUMOS</h3><p>Cadastre o que as lojas podem marcar como faltante. Produtos sem estoque continuam ativos, mas ficam sinalizados.</p></div>
+        </div>
+        <div class="supply-admin-grid">
+          <div class="supply-admin-categories">
+            <h4 style="margin:0 0 4px;color:var(--ink);font:900 11px/1.3 var(--sans);">CATEGORIAS</h4>
+            <form class="supply-category-form" id="supplyCategoryForm">
+              <input id="supplyNewCategoryName" maxlength="120" placeholder="NOVA CATEGORIA" required>
+              <button class="btn-accent" type="submit">ADICIONAR</button>
+            </form>
+            <div class="supply-category-list" id="supplyCategoryList"><div class="supply-empty">Carregando categorias…</div></div>
+          </div>
+          <div class="supply-admin-products">
+            <h4 style="margin:0 0 10px;color:var(--ink);font:900 11px/1.3 var(--sans);">NOVO PRODUTO</h4>
+            <form class="supply-product-form" id="supplyProductForm">
+              <div class="field full"><label for="supplyNewProductName">NOME DO PRODUTO</label><input id="supplyNewProductName" maxlength="180" required></div>
+              <div class="field"><label for="supplyNewProductCategory">CATEGORIA</label><select id="supplyNewProductCategory" required><option value="">SELECIONE</option></select></div>
+              <div class="field"><label for="supplyNewProductStock">ESTOQUE FÍSICO INICIAL</label><input id="supplyNewProductStock" type="number" step="1" required></div>
+              <div class="field full"><label for="supplyNewProductNotes">OBSERVAÇÕES</label><input id="supplyNewProductNotes" maxlength="400"></div>
+              <div class="field checkbox full"><label for="supplyNewProductActive"><input id="supplyNewProductActive" type="checkbox" checked> PRODUTO ATIVO (VISÍVEL PARA AS LOJAS)</label></div>
+              <div class="field full" style="display:flex;justify-content:flex-end;"><button class="btn-accent" id="btnSaveSupplyProduct" type="submit">CADASTRAR PRODUTO</button></div>
+            </form>
+            <div class="user-form-status" id="supplyProductFormStatus" role="status" aria-live="polite"></div>
+            <div class="supply-product-toolbar">
+              <div class="field search"><label for="supplyProductSearch">BUSCAR</label><input id="supplyProductSearch" type="search" placeholder="Produto"></div>
+              <div class="field"><label for="supplyProductFilterCategory">CATEGORIA</label><select id="supplyProductFilterCategory"><option value="">TODAS</option></select></div>
+              <label style="display:flex;align-items:center;gap:6px;font:800 9px/1 var(--mono);color:var(--ink-soft);"><input id="supplyProductShowInactive" type="checkbox" checked> MOSTRAR INATIVOS</label>
+            </div>
+            <div class="table-panel responsive-table">
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr><th>Produto</th><th>Categoria</th><th style="text-align:right">Estoque</th><th>Status</th><th>Ações</th></tr>
+                  </thead>
+                  <tbody id="supplyProductTableBody"><tr><td colspan="5" class="responsive-empty">Carregando produtos…</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </section>
 
@@ -4376,7 +4459,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos') loadSupplies();
+    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); }
     if(name === 'instrucoes') loadInstructions();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -4394,7 +4477,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos') loadSupplies();
+    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); }
     if(name === 'instrucoes') loadInstructions();
   }
 
@@ -9272,6 +9355,7 @@ function renderHomeTasks(){
     el('supplyCompanyField').hidden = !isAdmin;
     el('supplyCompany').required = isAdmin;
     el('supplyFilterCompanyField').hidden = !isAdmin;
+    el('supplyAdminPanel').hidden = !isAdmin;
     renderSupplyCompanyOptions();
     el('supplyRegisterDescription').textContent = isAdmin
       ? 'Registre o item e escolha a loja responsável.'
@@ -9482,6 +9566,316 @@ function renderHomeTasks(){
     });
   });
   el('btnRefreshSupplies').addEventListener('click',loadSupplies);
+
+  let supplyCategories = [];
+  let supplyProducts = [];
+  let supplyAdminLoaded = false;
+  let supplyCategoryEditingId = '';
+  let supplyProductEditingId = '';
+
+  async function supplyCategoryApiRequest(options){
+    const response = await fetch('/api/supplies/categories',{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  async function supplyProductApiRequest(options,query){
+    const suffix = query ? '?'+query.toString() : '';
+    const response = await fetch('/api/supplies/products'+suffix,{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function renderSupplyCategoryOptions(){
+    const selects = [el('supplyNewProductCategory'),el('supplyProductFilterCategory')];
+    selects.forEach(select => {
+      if(!select) return;
+      const keepValue = select.value;
+      const isFilter = select.id === 'supplyProductFilterCategory';
+      select.innerHTML = (isFilter ? '<option value="">TODAS</option>' : '<option value="">SELECIONE</option>')+
+        supplyCategories.map(cat => '<option value="'+escapeHtml(cat.id)+'">'+escapeHtml(cat.name)+'</option>').join('');
+      select.value = keepValue;
+    });
+  }
+
+  function renderSupplyCategoryList(){
+    const list = el('supplyCategoryList');
+    if(!supplyCategories.length){
+      list.innerHTML = '<div class="supply-empty">Nenhuma categoria cadastrada.</div>';
+      return;
+    }
+    list.innerHTML = supplyCategories.map(cat => {
+      if(cat.id === supplyCategoryEditingId){
+        return '<div class="supply-category-row" data-category-row="'+escapeHtml(cat.id)+'">'+
+          '<input type="text" maxlength="120" value="'+escapeHtml(cat.name)+'" data-category-name-input>'+
+          '<button type="button" class="save" data-category-save="'+escapeHtml(cat.id)+'">SALVAR</button>'+
+          '<button type="button" data-category-cancel>CANCELAR</button>'+
+        '</div>';
+      }
+      return '<div class="supply-category-row"><span>'+escapeHtml(cat.name)+'</span>'+
+        '<button type="button" data-category-edit="'+escapeHtml(cat.id)+'">EDITAR</button>'+
+        '<button type="button" class="delete" data-category-delete="'+escapeHtml(cat.id)+'">EXCLUIR</button>'+
+      '</div>';
+    }).join('');
+  }
+
+  function filteredSupplyProducts(){
+    const search = (el('supplyProductSearch').value || '').trim().toLowerCase();
+    const categoryId = el('supplyProductFilterCategory').value;
+    const showInactive = el('supplyProductShowInactive').checked;
+    return supplyProducts.filter(product => {
+      if(!showInactive && !product.active) return false;
+      if(categoryId && product.categoryId !== categoryId) return false;
+      if(search && !product.name.toLowerCase().includes(search)) return false;
+      return true;
+    });
+  }
+
+  function supplyProductStatusHtml(product){
+    let html = '<span class="supply-product-status'+(product.active ? '' : ' inactive')+'">'+
+      (product.active ? 'ATIVO' : 'INATIVO')+'</span>';
+    if(Number(product.stockQty || 0) <= 0){
+      html += '<span class="supply-product-status out">SEM ESTOQUE</span>';
+    }
+    return html;
+  }
+
+  function supplyProductRowHtml(product){
+    if(product.id === supplyProductEditingId){
+      return '<tr class="supply-product-edit-row" data-product-row="'+escapeHtml(product.id)+'">'+
+        '<td><input type="text" maxlength="180" value="'+escapeHtml(product.name)+'" data-product-name-input></td>'+
+        '<td><select data-product-category-input>'+
+          supplyCategories.map(cat => '<option value="'+escapeHtml(cat.id)+'"'+(cat.id === product.categoryId ? ' selected' : '')+'>'+escapeHtml(cat.name)+'</option>').join('')+
+        '</select></td>'+
+        '<td style="text-align:right">'+Number(product.stockQty || 0)+'</td>'+
+        '<td><label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" data-product-active-input'+(product.active ? ' checked' : '')+'> ATIVO</label>'+
+          '<input type="text" maxlength="400" placeholder="Observações" value="'+escapeHtml(product.notes || '')+'" data-product-notes-input style="margin-top:6px;"></td>'+
+        '<td class="supply-product-actions">'+
+          '<button type="button" class="save" data-product-save="'+escapeHtml(product.id)+'">SALVAR</button>'+
+          '<button type="button" data-product-cancel>CANCELAR</button>'+
+        '</td>'+
+      '</tr>';
+    }
+    return '<tr>'+
+      '<td>'+escapeHtml(product.name)+(product.notes ? '<br><small style="color:var(--ink-faint);">'+escapeHtml(product.notes)+'</small>' : '')+'</td>'+
+      '<td>'+escapeHtml(product.categoryName)+'</td>'+
+      '<td style="text-align:right">'+Number(product.stockQty || 0)+'</td>'+
+      '<td>'+supplyProductStatusHtml(product)+'</td>'+
+      '<td class="supply-product-actions">'+
+        '<button type="button" data-product-edit="'+escapeHtml(product.id)+'">EDITAR</button>'+
+        '<button type="button" class="delete" data-product-delete="'+escapeHtml(product.id)+'">EXCLUIR</button>'+
+      '</td>'+
+    '</tr>';
+  }
+
+  function renderSupplyProductTable(){
+    const rows = filteredSupplyProducts();
+    el('supplyProductTableBody').innerHTML = rows.length
+      ? rows.map(supplyProductRowHtml).join('')
+      : '<tr><td colspan="5" class="responsive-empty">Nenhum produto encontrado.</td></tr>';
+  }
+
+  async function loadSupplyAdminData(){
+    if(currentSession.role !== 'admin') return;
+    try{
+      const [categoriesData,productsData] = await Promise.all([
+        supplyCategoryApiRequest(null),
+        supplyProductApiRequest(null,new URLSearchParams({all:'1'}))
+      ]);
+      supplyCategories = Array.isArray(categoriesData.items) ? categoriesData.items : [];
+      supplyProducts = Array.isArray(productsData.items) ? productsData.items : [];
+      supplyAdminLoaded = true;
+      renderSupplyCategoryOptions();
+      renderSupplyCategoryList();
+      renderSupplyProductTable();
+    }catch(error){
+      if(!supplyAdminLoaded){
+        el('supplyCategoryList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
+        el('supplyProductTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      }
+    }
+  }
+
+  el('supplyCategoryForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const input = el('supplyNewCategoryName');
+    const button = event.currentTarget.querySelector('button');
+    button.disabled = true;
+    try{
+      await supplyCategoryApiRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:input.value})
+      });
+      input.value = '';
+      await loadSupplyAdminData();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('supplyCategoryList').addEventListener('click',async event => {
+    const editButton = event.target.closest('[data-category-edit]');
+    if(editButton){
+      supplyCategoryEditingId = editButton.dataset.categoryEdit;
+      renderSupplyCategoryList();
+      return;
+    }
+    const cancelButton = event.target.closest('[data-category-cancel]');
+    if(cancelButton){
+      supplyCategoryEditingId = '';
+      renderSupplyCategoryList();
+      return;
+    }
+    const saveButton = event.target.closest('[data-category-save]');
+    if(saveButton){
+      const row = saveButton.closest('[data-category-row]');
+      const name = row.querySelector('[data-category-name-input]').value;
+      saveButton.disabled = true;
+      try{
+        await supplyCategoryApiRequest({
+          method:'PATCH',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:saveButton.dataset.categorySave,name})
+        });
+        supplyCategoryEditingId = '';
+        await loadSupplyAdminData();
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        saveButton.disabled = false;
+      }
+      return;
+    }
+    const deleteButton = event.target.closest('[data-category-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir esta categoria de insumos?')) return;
+      deleteButton.disabled = true;
+      try{
+        await supplyCategoryApiRequest({
+          method:'DELETE',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:deleteButton.dataset.categoryDelete})
+        });
+        await loadSupplyAdminData();
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        deleteButton.disabled = false;
+      }
+    }
+  });
+
+  el('supplyProductForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const button = el('btnSaveSupplyProduct');
+    button.disabled = true;
+    setSupplyProductFormStatus('CADASTRANDO PRODUTO…','');
+    try{
+      await supplyProductApiRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name:el('supplyNewProductName').value,
+          categoryId:el('supplyNewProductCategory').value,
+          notes:el('supplyNewProductNotes').value,
+          active:el('supplyNewProductActive').checked,
+          stockQty:el('supplyNewProductStock').value
+        })
+      });
+      el('supplyProductForm').reset();
+      el('supplyNewProductActive').checked = true;
+      setSupplyProductFormStatus('PRODUTO CADASTRADO.','success');
+      await loadSupplyAdminData();
+    }catch(error){
+      setSupplyProductFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  function setSupplyProductFormStatus(message,type){
+    const status = el('supplyProductFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  el('supplyProductTableBody').addEventListener('click',async event => {
+    const editButton = event.target.closest('[data-product-edit]');
+    if(editButton){
+      supplyProductEditingId = editButton.dataset.productEdit;
+      renderSupplyProductTable();
+      return;
+    }
+    const cancelButton = event.target.closest('[data-product-cancel]');
+    if(cancelButton){
+      supplyProductEditingId = '';
+      renderSupplyProductTable();
+      return;
+    }
+    const saveButton = event.target.closest('[data-product-save]');
+    if(saveButton){
+      const row = saveButton.closest('[data-product-row]');
+      saveButton.disabled = true;
+      try{
+        await supplyProductApiRequest({
+          method:'PATCH',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            id:saveButton.dataset.productSave,
+            name:row.querySelector('[data-product-name-input]').value,
+            categoryId:row.querySelector('[data-product-category-input]').value,
+            active:row.querySelector('[data-product-active-input]').checked,
+            notes:row.querySelector('[data-product-notes-input]').value
+          })
+        });
+        supplyProductEditingId = '';
+        await loadSupplyAdminData();
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        saveButton.disabled = false;
+      }
+      return;
+    }
+    const deleteButton = event.target.closest('[data-product-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir permanentemente este produto de insumo?')) return;
+      deleteButton.disabled = true;
+      try{
+        await supplyProductApiRequest({
+          method:'DELETE',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:deleteButton.dataset.productDelete})
+        });
+        await loadSupplyAdminData();
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        deleteButton.disabled = false;
+      }
+    }
+  });
+
+  el('supplyProductSearch').addEventListener('input',debounce(renderSupplyProductTable,120));
+  el('supplyProductFilterCategory').addEventListener('change',renderSupplyProductTable);
+  el('supplyProductShowInactive').addEventListener('change',renderSupplyProductTable);
 
   async function instructionApiRequest(path,options){
     const response = await fetch(path,{

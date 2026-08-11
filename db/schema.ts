@@ -242,6 +242,31 @@ export const defectiveOutputs = pgTable(
   ],
 );
 
+export const supplyCategories = pgTable("supply_categories", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  createdAt: text("created_at").notNull().default(sql`now()::text`),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+});
+
+export const supplyProducts = pgTable(
+  "supply_products",
+  {
+    id: text("id").primaryKey(),
+    categoryId: text("category_id").notNull(),
+    name: text("name").notNull(),
+    active: integer("active").notNull().default(1),
+    notes: text("notes").notNull().default(""),
+    stockQty: integer("stock_qty").notNull().default(0),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("supply_products_category_idx").on(table.categoryId, table.name),
+    index("supply_products_active_idx").on(table.active),
+  ],
+);
+
 export const supplyItems = pgTable(
   "supply_items",
   {
