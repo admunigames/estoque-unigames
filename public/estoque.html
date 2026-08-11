@@ -1605,7 +1605,8 @@
   html[data-theme="light"] .pull-table td:first-child,
   html[data-theme="light"] .report41-table td:first-child{background:#fff;}
   html[data-theme="light"] #inventoryTable tr:nth-child(even):not(.neg) td:first-child,
-  html[data-theme="light"] .pull-table tr:nth-child(even):not(.neg) td:first-child{background:#f5f8fb;}
+  html[data-theme="light"] .pull-table tr:nth-child(even):not(.neg) td:first-child,
+  html[data-theme="light"] .report41-table tr:nth-child(even):not(.neg) td:first-child{background:#f5f8fb;}
   html[data-theme="light"] #inventoryTable tr.neg td:first-child{background:#fff0ee;}
   html[data-theme="light"] .pagination{background:#e8eff5;border-color:#b7c8d8;}
   html[data-theme="light"] .tag-zerado{background:#dcecf8;color:#245f91;}
@@ -3590,6 +3591,7 @@
           <div><h3>PRODUTOS COM ESTOQUE BAIXO</h3><p>Produtos zerados aparecem com uma sirene. O arquivo TXT segue o modelo oficial do Relatório 41.</p></div>
           <div class="report41-download-actions">
             <button class="btn-accent" id="btnReport41Txt" type="button" disabled>BAIXAR RELATÓRIO TXT</button>
+            <button class="btn-outline" id="btnReport41Clear" type="button" disabled>LIMPAR RELATÓRIO</button>
             <span id="report41TxtHint">Carregue os arquivos da loja para liberar o TXT.</span>
           </div>
         </div>
@@ -5383,6 +5385,22 @@
     }));
   }
 
+  async function clearReport41Report(){
+    if(!report41StoreId) return;
+    report41StoreData = emptyReport41StoreData();
+    report41Rows = [];
+    el('fileReport41Sales').value = '';
+    el('fileReport41Stock').value = '';
+    showReport41Error('');
+    try{
+      await storage.delete(report41StateKey(report41StoreId));
+    }catch(error){
+      showReport41Error(error && error.message ? error.message : 'Não foi possível limpar os dados salvos desta loja.');
+    }
+    renderReport41();
+    showPurchaseToast('Relatório 41 limpo. Carregue novos arquivos para gerar outro relatório.');
+  }
+
   function showReport41Error(message){
     const box = el('report41Error');
     box.textContent = message || '';
@@ -5511,6 +5529,7 @@
     el('report41CardAvailable').textContent = availableCount.toLocaleString('pt-BR');
     el('report41ResultCount').textContent = rows.length.toLocaleString('pt-BR')+' PRODUTOS';
     el('btnReport41Txt').disabled = report41Rows.length === 0;
+    el('btnReport41Clear').disabled = !hasSales && !hasStock;
     el('report41TxtHint').textContent = report41Rows.length === 0
       ? 'Carregue os arquivos da loja para liberar o TXT.'
       : companyStockData.products.size === 0
@@ -7640,6 +7659,7 @@
     showPurchaseToast('Relatório 41 atualizado com os dados mais recentes.');
   });
   el('btnReport41Txt').addEventListener('click',exportReport41Txt);
+  el('btnReport41Clear').addEventListener('click',clearReport41Report);
 
   el('pullStoreList').addEventListener('click', event => {
     const button = event.target.closest('[data-pull-company][data-pull-kind]');
