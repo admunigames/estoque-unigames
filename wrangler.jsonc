@@ -21,9 +21,9 @@
   "compatibility_date": "2026-08-04",
   "compatibility_flags": ["nodejs_compat"],
 
-  // Fase 2: corte de producao para o Supabase (Postgres), via Hyperdrive
-  // (ver binding "hyperdrive" abaixo). Reversivel a qualquer momento
-  // voltando para "d1" e fazendo novo deploy.
+  // Fase 2: producao roda no Supabase (Postgres), via Hyperdrive (ver
+  // binding "hyperdrive" abaixo). O banco D1 foi descartado (nao existe
+  // mais binding "DB") - nao ha mais fallback automatico para SQLite.
   "vars": {
     "DB_DRIVER": "postgres"
   },
@@ -38,14 +38,6 @@
     // para as rotas em APP_ROUTE_PATHS (ex: /estoque, /inicio).
     "html_handling": "none"
   },
-
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "estoque-unigames-db",
-      "database_id": "d5a76e6d-95d2-4101-baae-3ab490c20276"
-    }
-  ],
 
   "r2_buckets": [
     {
