@@ -18,8 +18,13 @@ Este repositório é a fonte principal do Estoque Unigames:
 
 ## Hospedagem
 
-- Reutilize sempre o projeto Sites definido em `.openai/hosting.json`.
-- Não crie outro site, slug ou banco D1 para uma atualização normal.
-- Preserve o endereço publicado e o banco D1 existente.
-- O GitHub guarda o código-fonte; os dados operacionais continuam no D1 e no Notion.
+- Produção roda em Cloudflare própria (Worker + Assets), definida em
+  `wrangler.jsonc`; deploy automático via GitHub Actions a cada push em
+  `main`. `.openai/hosting.json` só é usado pelo `pnpm dev` local.
+- Não crie outro Worker, banco D1 ou projeto Supabase para uma atualização
+  normal.
+- Preserve o endereço publicado e os bindings existentes (D1, Hyperdrive, R2).
+- O GitHub guarda o código-fonte; os dados operacionais ficam no Supabase
+  (Postgres, via Hyperdrive — ver README) e no Notion. O binding D1 continua
+  presente só como rede de segurança para rollback (`DB_DRIVER=d1`).
 

@@ -38,9 +38,10 @@ pnpm check
 O código-fonte completo e atualizado é mantido em
 `https://github.com/admunigames/estoque-unigames`.
 
-Toda alteração deve ser validada e enviada ao GitHub antes da publicação no
-ChatGPT Sites. A hospedagem deve reutilizar o projeto definido em
-`.openai/hosting.json`, mantendo o mesmo endereço e o mesmo banco D1.
+A hospedagem roda em infraestrutura Cloudflare própria (Worker + Assets),
+configurada em `wrangler.jsonc`. Todo push na branch `main` dispara lint,
+tipos, testes, build e deploy automático via GitHub Actions
+(`.github/workflows/deploy.yml`).
 
 ## Configuração segura
 
@@ -69,6 +70,16 @@ temporário.
 ## Persistência
 
 Cadastros, usuários, tarefas, missões, instruções, preferências, bases de
-produtos, dados processados e relatórios são persistidos no banco D1
-compartilhado do site. O Controle de Compras permanece no Notion e seus anexos
+produtos, dados processados e relatórios são persistidos no **Supabase
+(Postgres)**, acessado pelo Worker através do **Cloudflare Hyperdrive**
+(binding `HYPERDRIVE` em `wrangler.jsonc`) — necessário porque uma conexão
+TCP direta do Worker ao Postgres esbarra no limite de subrequests por
+invocação. O binding D1 (`estoque-unigames-db`) continua presente como rede
+de segurança para rollback (`DB_DRIVER=d1` em `wrangler.jsonc`), mas não é
+mais o banco em uso; para reverter, basta trocar `DB_DRIVER` para `d1` e
+fazer novo deploy. O Controle de Compras permanece no Notion e seus anexos
 temporários usam o armazenamento R2.
+
+Para rodar comandos do `drizzle-kit` (gerar/aplicar migrations) contra o
+Supabase, defina `SUPABASE_DB_URL` no ambiente (ver `.env.example`) apontando
+para a connection string do "Session pooler" do projeto no Supabase.
