@@ -267,6 +267,27 @@ export const supplyProducts = pgTable(
   ],
 );
 
+export const supplyStockMovements = pgTable(
+  "supply_stock_movements",
+  {
+    id: text("id").primaryKey(),
+    productId: text("product_id").notNull(),
+    type: text("type").notNull(),
+    quantity: integer("quantity").notNull(),
+    reason: text("reason").notNull().default(""),
+    responsibleName: text("responsible_name").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("supply_stock_movements_product_created_idx").on(
+      table.productId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const supplyItems = pgTable(
   "supply_items",
   {

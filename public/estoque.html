@@ -2033,9 +2033,9 @@
   .supply-admin-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;}
   .supply-admin-panel-head h3{margin:0;color:var(--ink);}
   .supply-admin-panel-head p{margin:5px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5;}
-  .supply-admin-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:18px;align-items:start;}
-  .supply-admin-categories{display:grid;gap:12px;}
-  .supply-category-form{display:flex;gap:8px;}
+  .supply-admin-tabs{margin-bottom:16px;}
+  .supply-admin-tab-panel{display:grid;gap:12px;}
+  .supply-category-form{display:flex;gap:8px;max-width:420px;}
   .supply-category-form input{flex:1;}
   .supply-category-list{display:grid;gap:7px;}
   .supply-category-row{
@@ -2065,7 +2065,7 @@
   .supply-product-actions button.delete{border-color:rgba(210,76,68,.46);background:rgba(210,76,68,.12);color:#ef817b;}
   .supply-product-actions button.save{border-color:rgba(66,166,119,.46);background:rgba(66,166,119,.13);color:#66d49e;}
   .supply-product-edit-row input,.supply-product-edit-row select,.supply-product-edit-row textarea{width:100%;}
-  @media (max-width:820px){.supply-admin-grid{grid-template-columns:1fr;}.supply-product-form{grid-template-columns:1fr;}}
+  @media (max-width:820px){.supply-product-form{grid-template-columns:1fr;}}
   html[data-theme="light"] .supply-action.delete{color:#a8322c;background:#fbe8e6;}
   .instruction-summary{
     display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;
@@ -2980,42 +2980,96 @@
 
       <section class="supply-admin-panel" id="supplyAdminPanel" hidden>
         <div class="supply-admin-panel-head">
-          <div><h3>PRODUTOS E CATEGORIAS DE INSUMOS</h3><p>Cadastre o que as lojas podem marcar como faltante. Produtos sem estoque continuam ativos, mas ficam sinalizados.</p></div>
+          <div><h3>ADMINISTRAÇÃO DE INSUMOS</h3><p>Cadastre o que as lojas podem marcar como faltante e controle entradas e saídas do estoque.</p></div>
         </div>
-        <div class="supply-admin-grid">
-          <div class="supply-admin-categories">
-            <h4 style="margin:0 0 4px;color:var(--ink);font:900 11px/1.3 var(--sans);">CATEGORIAS</h4>
-            <form class="supply-category-form" id="supplyCategoryForm">
-              <input id="supplyNewCategoryName" maxlength="120" placeholder="NOVA CATEGORIA" required>
-              <button class="btn-accent" type="submit">ADICIONAR</button>
-            </form>
-            <div class="supply-category-list" id="supplyCategoryList"><div class="supply-empty">Carregando categorias…</div></div>
+        <div class="supply-tabs supply-admin-tabs" role="tablist" aria-label="Seções de administração de insumos">
+          <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-supply-admin-tab="categorias">CATEGORIAS</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="produtos">PRODUTOS</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="estoque">ESTOQUE</button>
+        </div>
+
+        <div class="supply-admin-tab-panel" id="supplyAdminCategorias">
+          <form class="supply-category-form" id="supplyCategoryForm">
+            <input id="supplyNewCategoryName" maxlength="120" placeholder="NOVA CATEGORIA" required>
+            <button class="btn-accent" type="submit">ADICIONAR</button>
+          </form>
+          <div class="supply-category-list" id="supplyCategoryList"><div class="supply-empty">Carregando categorias…</div></div>
+        </div>
+
+        <div class="supply-admin-tab-panel" id="supplyAdminProdutos" hidden>
+          <div class="supply-product-toolbar">
+            <div class="field search"><label for="supplyProductSearch">BUSCAR</label><input id="supplyProductSearch" type="search" placeholder="Produto"></div>
+            <div class="field"><label for="supplyProductFilterCategory">CATEGORIA</label><select id="supplyProductFilterCategory"><option value="">TODAS</option></select></div>
+            <label style="display:flex;align-items:center;gap:6px;font:800 9px/1 var(--mono);color:var(--ink-soft);"><input id="supplyProductShowInactive" type="checkbox" checked> MOSTRAR INATIVOS</label>
+            <button class="btn-accent" id="btnToggleNewProductForm" type="button" style="margin-left:auto;">+ NOVO PRODUTO</button>
           </div>
-          <div class="supply-admin-products">
-            <h4 style="margin:0 0 10px;color:var(--ink);font:900 11px/1.3 var(--sans);">NOVO PRODUTO</h4>
-            <form class="supply-product-form" id="supplyProductForm">
-              <div class="field full"><label for="supplyNewProductName">NOME DO PRODUTO</label><input id="supplyNewProductName" maxlength="180" required></div>
-              <div class="field"><label for="supplyNewProductCategory">CATEGORIA</label><select id="supplyNewProductCategory" required><option value="">SELECIONE</option></select></div>
-              <div class="field"><label for="supplyNewProductStock">ESTOQUE FÍSICO INICIAL</label><input id="supplyNewProductStock" type="number" step="1" required></div>
-              <div class="field full"><label for="supplyNewProductNotes">OBSERVAÇÕES</label><input id="supplyNewProductNotes" maxlength="400"></div>
-              <div class="field checkbox full"><label for="supplyNewProductActive"><input id="supplyNewProductActive" type="checkbox" checked> PRODUTO ATIVO (VISÍVEL PARA AS LOJAS)</label></div>
-              <div class="field full" style="display:flex;justify-content:flex-end;"><button class="btn-accent" id="btnSaveSupplyProduct" type="submit">CADASTRAR PRODUTO</button></div>
-            </form>
-            <div class="user-form-status" id="supplyProductFormStatus" role="status" aria-live="polite"></div>
-            <div class="supply-product-toolbar">
-              <div class="field search"><label for="supplyProductSearch">BUSCAR</label><input id="supplyProductSearch" type="search" placeholder="Produto"></div>
-              <div class="field"><label for="supplyProductFilterCategory">CATEGORIA</label><select id="supplyProductFilterCategory"><option value="">TODAS</option></select></div>
-              <label style="display:flex;align-items:center;gap:6px;font:800 9px/1 var(--mono);color:var(--ink-soft);"><input id="supplyProductShowInactive" type="checkbox" checked> MOSTRAR INATIVOS</label>
+          <form class="supply-product-form" id="supplyProductForm" hidden>
+            <div class="field full"><label for="supplyNewProductName">NOME DO PRODUTO</label><input id="supplyNewProductName" maxlength="180" required></div>
+            <div class="field"><label for="supplyNewProductCategory">CATEGORIA</label><select id="supplyNewProductCategory" required><option value="">SELECIONE</option></select></div>
+            <div class="field"><label for="supplyNewProductStock">ESTOQUE FÍSICO INICIAL</label><input id="supplyNewProductStock" type="number" step="1" required></div>
+            <div class="field full"><label for="supplyNewProductNotes">OBSERVAÇÕES</label><input id="supplyNewProductNotes" maxlength="400"></div>
+            <div class="field checkbox full"><label for="supplyNewProductActive"><input id="supplyNewProductActive" type="checkbox" checked> PRODUTO ATIVO (VISÍVEL PARA AS LOJAS)</label></div>
+            <div class="field full" style="display:flex;justify-content:flex-end;gap:8px;">
+              <button class="btn-outline" id="btnCancelNewProduct" type="button">CANCELAR</button>
+              <button class="btn-accent" id="btnSaveSupplyProduct" type="submit">CADASTRAR PRODUTO</button>
             </div>
-            <div class="table-panel responsive-table">
-              <div class="table-scroll">
-                <table>
-                  <thead>
-                    <tr><th>Produto</th><th>Categoria</th><th style="text-align:right">Estoque</th><th>Status</th><th>Ações</th></tr>
-                  </thead>
-                  <tbody id="supplyProductTableBody"><tr><td colspan="5" class="responsive-empty">Carregando produtos…</td></tr></tbody>
-                </table>
-              </div>
+          </form>
+          <div class="user-form-status" id="supplyProductFormStatus" role="status" aria-live="polite"></div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr><th>Nome</th><th>Categoria</th><th>Status</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="supplyProductTableBody"><tr><td colspan="4" class="responsive-empty">Carregando produtos…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="supply-admin-tab-panel" id="supplyAdminEstoque" hidden>
+          <form class="supply-product-form" id="supplyStockForm" hidden>
+            <input type="hidden" id="supplyStockProductId">
+            <div class="field full"><label id="supplyStockFormProductLabel">MOVIMENTAR ESTOQUE</label></div>
+            <div class="field">
+              <label for="supplyStockType">TIPO</label>
+              <select id="supplyStockType">
+                <option value="in">ENTRADA</option>
+                <option value="out">SAÍDA</option>
+              </select>
+            </div>
+            <div class="field"><label for="supplyStockQuantity">QUANTIDADE</label><input id="supplyStockQuantity" type="number" step="1" min="1" required></div>
+            <div class="field"><label for="supplyStockResponsible">RESPONSÁVEL</label><input id="supplyStockResponsible" maxlength="120" required></div>
+            <div class="field full"><label for="supplyStockReason">MOTIVO</label><input id="supplyStockReason" maxlength="300" placeholder="Ex.: compra recebida, uso interno, ajuste de contagem"></div>
+            <div class="field full" style="display:flex;justify-content:flex-end;gap:8px;">
+              <button class="btn-outline" id="btnCancelStockMovement" type="button">CANCELAR</button>
+              <button class="btn-accent" id="btnSaveStockMovement" type="submit">REGISTRAR MOVIMENTAÇÃO</button>
+            </div>
+          </form>
+          <div class="user-form-status" id="supplyStockFormStatus" role="status" aria-live="polite"></div>
+          <div class="supply-product-toolbar">
+            <div class="field search"><label for="supplyStockSearch">BUSCAR</label><input id="supplyStockSearch" type="search" placeholder="Produto"></div>
+            <div class="field"><label for="supplyStockFilterCategory">CATEGORIA</label><select id="supplyStockFilterCategory"><option value="">TODAS</option></select></div>
+          </div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr><th>Nome</th><th>Categoria</th><th style="text-align:right">Estoque</th><th>Status</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="supplyStockTableBody"><tr><td colspan="5" class="responsive-empty">Carregando estoque…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <h4 style="margin:18px 0 10px;color:var(--ink);font:900 11px/1.3 var(--sans);">ÚLTIMAS MOVIMENTAÇÕES</h4>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr><th>Produto</th><th>Tipo</th><th style="text-align:right">Quantidade</th><th>Responsável</th><th>Motivo</th><th>Data</th></tr>
+                </thead>
+                <tbody id="supplyStockMovementsBody"><tr><td colspan="6" class="responsive-empty">Nenhuma movimentação ainda.</td></tr></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -9569,9 +9623,11 @@ function renderHomeTasks(){
 
   let supplyCategories = [];
   let supplyProducts = [];
+  let supplyStockMovements = [];
   let supplyAdminLoaded = false;
   let supplyCategoryEditingId = '';
   let supplyProductEditingId = '';
+  let supplyAdminTab = 'categorias';
 
   async function supplyCategoryApiRequest(options){
     const response = await fetch('/api/supplies/categories',{
@@ -9604,17 +9660,48 @@ function renderHomeTasks(){
     return payload;
   }
 
+  async function supplyStockApiRequest(options,query){
+    const suffix = query ? '?'+query.toString() : '';
+    const response = await fetch('/api/supplies/stock'+suffix,{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
   function renderSupplyCategoryOptions(){
-    const selects = [el('supplyNewProductCategory'),el('supplyProductFilterCategory')];
+    const selects = [el('supplyNewProductCategory'),el('supplyProductFilterCategory'),el('supplyStockFilterCategory')];
     selects.forEach(select => {
       if(!select) return;
       const keepValue = select.value;
-      const isFilter = select.id === 'supplyProductFilterCategory';
+      const isFilter = select.id !== 'supplyNewProductCategory';
       select.innerHTML = (isFilter ? '<option value="">TODAS</option>' : '<option value="">SELECIONE</option>')+
         supplyCategories.map(cat => '<option value="'+escapeHtml(cat.id)+'">'+escapeHtml(cat.name)+'</option>').join('');
       select.value = keepValue;
     });
   }
+
+  function setSupplyAdminTab(tab){
+    supplyAdminTab = tab;
+    document.querySelectorAll('[data-supply-admin-tab]').forEach(button => {
+      const active = button.dataset.supplyAdminTab === tab;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+    el('supplyAdminCategorias').hidden = tab !== 'categorias';
+    el('supplyAdminProdutos').hidden = tab !== 'produtos';
+    el('supplyAdminEstoque').hidden = tab !== 'estoque';
+  }
+  document.querySelectorAll('[data-supply-admin-tab]').forEach(button => {
+    button.addEventListener('click',() => setSupplyAdminTab(button.dataset.supplyAdminTab));
+  });
 
   function renderSupplyCategoryList(){
     const list = el('supplyCategoryList');
@@ -9665,7 +9752,6 @@ function renderHomeTasks(){
         '<td><select data-product-category-input>'+
           supplyCategories.map(cat => '<option value="'+escapeHtml(cat.id)+'"'+(cat.id === product.categoryId ? ' selected' : '')+'>'+escapeHtml(cat.name)+'</option>').join('')+
         '</select></td>'+
-        '<td style="text-align:right">'+Number(product.stockQty || 0)+'</td>'+
         '<td><label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" data-product-active-input'+(product.active ? ' checked' : '')+'> ATIVO</label>'+
           '<input type="text" maxlength="400" placeholder="Observações" value="'+escapeHtml(product.notes || '')+'" data-product-notes-input style="margin-top:6px;"></td>'+
         '<td class="supply-product-actions">'+
@@ -9677,7 +9763,6 @@ function renderHomeTasks(){
     return '<tr>'+
       '<td>'+escapeHtml(product.name)+(product.notes ? '<br><small style="color:var(--ink-faint);">'+escapeHtml(product.notes)+'</small>' : '')+'</td>'+
       '<td>'+escapeHtml(product.categoryName)+'</td>'+
-      '<td style="text-align:right">'+Number(product.stockQty || 0)+'</td>'+
       '<td>'+supplyProductStatusHtml(product)+'</td>'+
       '<td class="supply-product-actions">'+
         '<button type="button" data-product-edit="'+escapeHtml(product.id)+'">EDITAR</button>'+
@@ -9690,26 +9775,79 @@ function renderHomeTasks(){
     const rows = filteredSupplyProducts();
     el('supplyProductTableBody').innerHTML = rows.length
       ? rows.map(supplyProductRowHtml).join('')
+      : '<tr><td colspan="4" class="responsive-empty">Nenhum produto encontrado.</td></tr>';
+  }
+
+  function filteredSupplyStockProducts(){
+    const search = (el('supplyStockSearch').value || '').trim().toLowerCase();
+    const categoryId = el('supplyStockFilterCategory').value;
+    return supplyProducts.filter(product => {
+      if(categoryId && product.categoryId !== categoryId) return false;
+      if(search && !product.name.toLowerCase().includes(search)) return false;
+      return true;
+    });
+  }
+
+  function supplyStockRowHtml(product){
+    return '<tr>'+
+      '<td>'+escapeHtml(product.name)+'</td>'+
+      '<td>'+escapeHtml(product.categoryName)+'</td>'+
+      '<td style="text-align:right">'+Number(product.stockQty || 0)+'</td>'+
+      '<td>'+supplyProductStatusHtml(product)+'</td>'+
+      '<td class="supply-product-actions">'+
+        '<button type="button" data-stock-move="'+escapeHtml(product.id)+'" data-stock-move-name="'+escapeHtml(product.name)+'">MOVIMENTAR</button>'+
+      '</td>'+
+    '</tr>';
+  }
+
+  function renderSupplyStockTable(){
+    const rows = filteredSupplyStockProducts();
+    el('supplyStockTableBody').innerHTML = rows.length
+      ? rows.map(supplyStockRowHtml).join('')
       : '<tr><td colspan="5" class="responsive-empty">Nenhum produto encontrado.</td></tr>';
+  }
+
+  function supplyStockMovementRowHtml(movement){
+    const date = new Date(movement.createdAt);
+    const dateText = Number.isNaN(date.getTime()) ? movement.createdAt : date.toLocaleString('pt-BR');
+    return '<tr>'+
+      '<td>'+escapeHtml(movement.productName)+'</td>'+
+      '<td>'+(movement.type === 'in' ? 'ENTRADA' : 'SAÍDA')+'</td>'+
+      '<td style="text-align:right">'+Number(movement.quantity || 0)+'</td>'+
+      '<td>'+escapeHtml(movement.responsibleName)+'</td>'+
+      '<td>'+escapeHtml(movement.reason || '—')+'</td>'+
+      '<td>'+escapeHtml(dateText)+'</td>'+
+    '</tr>';
+  }
+
+  function renderSupplyStockMovements(){
+    el('supplyStockMovementsBody').innerHTML = supplyStockMovements.length
+      ? supplyStockMovements.map(supplyStockMovementRowHtml).join('')
+      : '<tr><td colspan="6" class="responsive-empty">Nenhuma movimentação ainda.</td></tr>';
   }
 
   async function loadSupplyAdminData(){
     if(currentSession.role !== 'admin') return;
     try{
-      const [categoriesData,productsData] = await Promise.all([
+      const [categoriesData,productsData,movementsData] = await Promise.all([
         supplyCategoryApiRequest(null),
-        supplyProductApiRequest(null,new URLSearchParams({all:'1'}))
+        supplyProductApiRequest(null,new URLSearchParams({all:'1'})),
+        supplyStockApiRequest(null)
       ]);
       supplyCategories = Array.isArray(categoriesData.items) ? categoriesData.items : [];
       supplyProducts = Array.isArray(productsData.items) ? productsData.items : [];
+      supplyStockMovements = Array.isArray(movementsData.items) ? movementsData.items : [];
       supplyAdminLoaded = true;
       renderSupplyCategoryOptions();
       renderSupplyCategoryList();
       renderSupplyProductTable();
+      renderSupplyStockTable();
+      renderSupplyStockMovements();
     }catch(error){
       if(!supplyAdminLoaded){
         el('supplyCategoryList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
-        el('supplyProductTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+        el('supplyProductTableBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+        el('supplyStockTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
       }
     }
   }
@@ -9784,6 +9922,18 @@ function renderHomeTasks(){
     }
   });
 
+  el('btnToggleNewProductForm').addEventListener('click',() => {
+    el('supplyProductForm').hidden = false;
+    el('btnToggleNewProductForm').hidden = true;
+  });
+  el('btnCancelNewProduct').addEventListener('click',() => {
+    el('supplyProductForm').reset();
+    el('supplyNewProductActive').checked = true;
+    setSupplyProductFormStatus('','');
+    el('supplyProductForm').hidden = true;
+    el('btnToggleNewProductForm').hidden = false;
+  });
+
   el('supplyProductForm').addEventListener('submit',async event => {
     event.preventDefault();
     const button = el('btnSaveSupplyProduct');
@@ -9804,6 +9954,8 @@ function renderHomeTasks(){
       el('supplyProductForm').reset();
       el('supplyNewProductActive').checked = true;
       setSupplyProductFormStatus('PRODUTO CADASTRADO.','success');
+      el('supplyProductForm').hidden = true;
+      el('btnToggleNewProductForm').hidden = false;
       await loadSupplyAdminData();
     }catch(error){
       setSupplyProductFormStatus(error.message,'error');
@@ -9876,6 +10028,60 @@ function renderHomeTasks(){
   el('supplyProductSearch').addEventListener('input',debounce(renderSupplyProductTable,120));
   el('supplyProductFilterCategory').addEventListener('change',renderSupplyProductTable);
   el('supplyProductShowInactive').addEventListener('change',renderSupplyProductTable);
+
+  function setSupplyStockFormStatus(message,type){
+    const status = el('supplyStockFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  function closeSupplyStockForm(){
+    el('supplyStockForm').reset();
+    el('supplyStockForm').hidden = true;
+    el('supplyStockProductId').value = '';
+    setSupplyStockFormStatus('','');
+  }
+
+  el('supplyStockTableBody').addEventListener('click',event => {
+    const moveButton = event.target.closest('[data-stock-move]');
+    if(!moveButton) return;
+    el('supplyStockProductId').value = moveButton.dataset.stockMove;
+    el('supplyStockFormProductLabel').textContent = 'MOVIMENTAR ESTOQUE — '+moveButton.dataset.stockMoveName;
+    el('supplyStockForm').hidden = false;
+    el('supplyStockQuantity').focus();
+  });
+
+  el('btnCancelStockMovement').addEventListener('click',closeSupplyStockForm);
+
+  el('supplyStockForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const button = el('btnSaveStockMovement');
+    button.disabled = true;
+    setSupplyStockFormStatus('REGISTRANDO MOVIMENTAÇÃO…','');
+    try{
+      await supplyStockApiRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          productId:el('supplyStockProductId').value,
+          type:el('supplyStockType').value,
+          quantity:el('supplyStockQuantity').value,
+          responsibleName:el('supplyStockResponsible').value,
+          reason:el('supplyStockReason').value
+        })
+      });
+      closeSupplyStockForm();
+      showPurchaseToast('Movimentação de estoque registrada.');
+      await loadSupplyAdminData();
+    }catch(error){
+      setSupplyStockFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('supplyStockSearch').addEventListener('input',debounce(renderSupplyStockTable,120));
+  el('supplyStockFilterCategory').addEventListener('change',renderSupplyStockTable);
 
   async function instructionApiRequest(path,options){
     const response = await fetch(path,{
