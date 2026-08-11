@@ -110,6 +110,22 @@
   select:focus-visible{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent);}
   select:disabled{opacity:.5; cursor:not-allowed;}
 
+  /* CAMPOS DE TEXTO / OBSERVAÇÕES */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  textarea{
+    background:var(--bg-card-2); color:var(--ink); border:1px solid var(--border);
+    border-radius:8px; padding:8px 10px; font-family:var(--sans); font-size:12.5px;
+    transition:border-color .18s ease, box-shadow .18s ease;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):hover,
+  textarea:hover{border-color:var(--accent);}
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):focus-visible,
+  textarea:focus-visible{border-color:var(--accent);}
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):disabled,
+  textarea:disabled{opacity:.5; cursor:not-allowed;}
+  textarea{font-family:var(--sans); line-height:1.55;}
+  ::placeholder{color:var(--ink-faint); opacity:1;}
+
   /* SHELL / MENU LATERAL */
   body.menu-open{overflow:hidden;}
   .shell{min-height:100vh;}
@@ -832,10 +848,11 @@
   .pull-settings{display:grid; grid-template-columns:repeat(3,minmax(160px,1fr)); gap:12px;}
   .field{display:flex; flex-direction:column; gap:7px; min-width:0;}
   .field label{font-size:10px; color:var(--ink-soft); letter-spacing:.5px;}
-  .field input,.field select{
+  .field input,.field select,.field textarea{
     width:100%; min-height:40px; background:var(--bg-card-2); color:var(--ink); border:1px solid var(--border);
     border-radius:9px; padding:9px 11px; font-family:var(--sans); font-size:12px;
   }
+  .field textarea{min-height:78px; line-height:1.55; resize:vertical;}
   .pull-rule-note{
     display:flex; gap:10px; align-items:flex-start; margin-top:13px; padding:11px 13px; border-radius:9px;
     background:rgba(79,134,189,.09); border:1px solid rgba(79,134,189,.2); color:var(--ink-soft); font-size:10.5px; line-height:1.5;
