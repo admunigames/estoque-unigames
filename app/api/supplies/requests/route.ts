@@ -194,22 +194,37 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
 
+  function isRequestCompleted(itemRows: RequestItemRow[]) {
+    if (!itemRows.length) return true;
+    const separatedCount = itemRows.filter((item) => item.separated).length;
+    if (separatedCount !== itemRows.length) return false;
+    return itemRows.every((item) => item.receivedStatus === "received");
+  }
+
   if (actor.role === "admin" && url.searchParams.get("queue") === "1") {
+    const history = url.searchParams.get("view") === "history";
     const weekStart = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("weekStart") || "")
       ? String(url.searchParams.get("weekStart"))
       : upcomingMondayRecife();
     try {
       const database = await getD1();
-      const requests = await database
-        .prepare(
-          `SELECT id, company_id AS companyId, company_name AS companyName,
-                  week_start AS weekStart, responsible_name AS responsibleName,
-                  note, status, created_by_name AS createdByName, created_at AS createdAt
-           FROM supply_requests WHERE week_start=?1
-           ORDER BY created_at ASC`,
-        )
-        .bind(weekStart)
-        .all<RequestRow>();
+      const requests = await (history
+        ? database.prepare(
+            `SELECT id, company_id AS companyId, company_name AS companyName,
+                    week_start AS weekStart, responsible_name AS responsibleName,
+                    note, status, created_by_name AS createdByName, created_at AS createdAt
+             FROM supply_requests ORDER BY created_at DESC LIMIT 150`,
+          )
+        : database
+            .prepare(
+              `SELECT id, company_id AS companyId, company_name AS companyName,
+                      week_start AS weekStart, responsible_name AS responsibleName,
+                      note, status, created_by_name AS createdByName, created_at AS createdAt
+               FROM supply_requests WHERE week_start=?1
+               ORDER BY created_at ASC`,
+            )
+            .bind(weekStart)
+      ).all<RequestRow>();
       const requestRows = requests.results ?? [];
       const withItems = await Promise.all(
         requestRows.map(async (row) => {
@@ -219,10 +234,12 @@ export async function GET(request: Request) {
             ...row,
             items: itemRows,
             allSeparated: itemRows.length > 0 && itemRows.every((item) => item.separated),
+            completed: isRequestCompleted(itemRows),
           };
         }),
       );
-      return jsonResponse({ weekStart, requests: withItems });
+      const filtered = history ? withItems.filter((row) => row.completed) : withItems.filter((row) => !row.completed);
+      return jsonResponse({ weekStart, requests: filtered });
     } catch (error) {
       console.error("Não foi possível carregar a fila de separação.", error);
       return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR A FILA DE SEPARAÇÃO." }, 500);
@@ -242,6 +259,34 @@ export async function GET(request: Request) {
       400,
     );
   }
+
+  if (url.searchParams.get("view") === "history") {
+    try {
+      const database = await getD1();
+      const requests = await database
+        .prepare(
+          `SELECT id, company_id AS companyId, company_name AS companyName,
+                  week_start AS weekStart, responsible_name AS responsibleName,
+                  note, status, created_by_name AS createdByName, created_at AS createdAt
+           FROM supply_requests WHERE company_id=?1 ORDER BY created_at DESC LIMIT 100`,
+        )
+        .bind(companyId)
+        .all<RequestRow>();
+      const requestRows = requests.results ?? [];
+      const withItems = await Promise.all(
+        requestRows.map(async (row) => {
+          const items = await database.prepare(REQUEST_ITEM_SELECT).bind(row.id).all<RequestItemRow>();
+          const itemRows = items.results ?? [];
+          return { ...row, items: itemRows, completed: isRequestCompleted(itemRows) };
+        }),
+      );
+      return jsonResponse({ companyId, requests: withItems.filter((row) => row.completed) });
+    } catch (error) {
+      console.error("Não foi possível carregar o histórico de solicitações.", error);
+      return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O HISTÓRICO." }, 500);
+    }
+  }
+
   const weekStart = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("weekStart") || "")
     ? String(url.searchParams.get("weekStart"))
     : upcomingMondayRecife();
@@ -263,12 +308,14 @@ export async function GET(request: Request) {
         .prepare(REQUEST_ITEM_SELECT)
         .bind(existing.id)
         .all<RequestItemRow>();
+      const itemRows = items.results ?? [];
       return jsonResponse({
         weekStart,
         companyId,
         submitted: true,
         request: existing,
-        items: items.results ?? [],
+        items: itemRows,
+        completed: isRequestCompleted(itemRows),
       });
     }
 

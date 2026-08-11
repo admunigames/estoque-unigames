@@ -3048,7 +3048,7 @@
         </div>
         <div class="supply-form-grid">
           <div class="field" id="supplyCompanyField" hidden><label for="supplyCompany">LOJA</label><select id="supplyCompany"><option value="">SELECIONE A LOJA</option></select></div>
-          <div class="field"><label>SEMANA DE SOLICITAÇÃO</label><div class="supply-missing-week" id="supplyMissingWeekLabel">—</div></div>
+          <div class="field"><label for="supplyMissingWeekSelect">SEMANA DE SOLICITAÇÃO</label><select id="supplyMissingWeekSelect"></select></div>
         </div>
         <div class="user-form-status" id="supplyFormStatus" role="status" aria-live="polite"></div>
         <div class="supply-missing-groups" id="supplyMissingGroups"><div class="supply-empty">Carregando produtos…</div></div>
@@ -3057,6 +3057,10 @@
       <section class="supply-register-panel" id="supplyRequestPanel" hidden>
         <div class="supply-panel-head">
           <div><h3>SOLICITAÇÃO</h3><p id="supplyRequestDescription">Revise o que está marcado, informe o responsável e envie a solicitação da semana.</p></div>
+          <button class="btn-outline" id="btnToggleSupplyRequestHistory" type="button">HISTÓRICO</button>
+        </div>
+        <div id="supplyRequestHistory" hidden>
+          <div class="supply-separation-list" id="supplyRequestHistoryList"><div class="supply-empty">Carregando histórico…</div></div>
         </div>
         <div id="supplyRequestSubmitted" hidden>
           <div class="user-form-status success" id="supplyRequestSubmittedStatus"></div>
@@ -3085,6 +3089,7 @@
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="produtos">PRODUTOS</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="estoque">ESTOQUE</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="separacao">SEPARAÇÃO</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="historico">HISTÓRICO</button>
         </div>
 
         <div class="supply-admin-tab-panel" id="supplyAdminDashboard">
@@ -3218,6 +3223,14 @@
             <button class="btn-outline" id="btnRefreshSeparation" type="button" style="margin-left:auto;">ATUALIZAR</button>
           </div>
           <div class="supply-separation-list" id="supplySeparationList"><div class="supply-empty">Carregando solicitações…</div></div>
+        </div>
+
+        <div class="supply-admin-tab-panel" id="supplyAdminHistorico" hidden>
+          <div class="supply-product-toolbar">
+            <div class="field"><label for="supplyHistoryFilterCompany">LOJA</label><select id="supplyHistoryFilterCompany"><option value="">TODAS</option></select></div>
+            <button class="btn-outline" id="btnRefreshHistory" type="button" style="margin-left:auto;">ATUALIZAR</button>
+          </div>
+          <div class="supply-separation-list" id="supplyAdminHistoryList"><div class="supply-empty">Carregando histórico…</div></div>
         </div>
       </section>
     </section>
@@ -9534,6 +9547,34 @@ function renderHomeTasks(){
     return 'SEMANA DE '+weekStart.split('-').reverse().join('/');
   }
 
+  function supplyUpcomingMonday(date){
+    const parts = new Intl.DateTimeFormat('en-US',{
+      timeZone:'America/Recife',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'
+    }).formatToParts(date || new Date());
+    const value = type => (parts.find(part => part.type === type) || {}).value || '';
+    const weekdayMap = {Mon:0,Tue:6,Wed:5,Thu:4,Fri:3,Sat:2,Sun:1};
+    const daysUntilMonday = weekdayMap[value('weekday')] || 0;
+    const todayUtc = Date.UTC(Number(value('year')),Number(value('month'))-1,Number(value('day')));
+    return new Date(todayUtc+daysUntilMonday*86400000).toISOString().slice(0,10);
+  }
+
+  function supplyWeekOptions(count){
+    const firstUtc = Date.parse(supplyUpcomingMonday()+'T00:00:00Z');
+    const weeks = [];
+    for(let i=0;i<count;i++) weeks.push(new Date(firstUtc+i*7*86400000).toISOString().slice(0,10));
+    return weeks;
+  }
+
+  function renderSupplyMissingWeekOptions(){
+    const select = el('supplyMissingWeekSelect');
+    const weeks = supplyWeekOptions(8);
+    const keepValue = select.value;
+    select.innerHTML = weeks.map((week,index) =>
+      '<option value="'+week+'">'+formatSupplyMissingWeek(week)+(index === 0 ? ' (VIGENTE)' : '')+'</option>'
+    ).join('');
+    select.value = weeks.includes(keepValue) ? keepValue : weeks[0];
+  }
+
   function supplyMissingGroupsHtml(items){
     const groups = new Map();
     items.forEach(item => {
@@ -9552,7 +9593,6 @@ function renderHomeTasks(){
   }
 
   function renderSupplyMissingGroups(){
-    el('supplyMissingWeekLabel').textContent = formatSupplyMissingWeek(supplyMissingWeekStart);
     el('supplyMissingGroups').innerHTML = supplyMissingItems.length
       ? supplyMissingGroupsHtml(supplyMissingItems)
       : '<div class="supply-empty">Nenhum produto de insumo ativo cadastrado ainda.</div>';
@@ -9562,20 +9602,21 @@ function renderHomeTasks(){
     if(!canAccess('supplies') || supplyMissingLoading) return;
     const isAdmin = currentSession.role === 'admin';
     const companyId = isAdmin ? el('supplyCompany').value : currentSession.companyId;
+    if(!el('supplyMissingWeekSelect').options.length) renderSupplyMissingWeekOptions();
+    const weekStart = el('supplyMissingWeekSelect').value || supplyUpcomingMonday();
     if(!companyId){
       el('supplyMissingGroups').innerHTML = isAdmin
         ? '<div class="supply-empty">Escolha a loja para ver os produtos.</div>'
         : '<div class="supply-empty">Seu usuário precisa estar vinculado a uma loja.</div>';
-      el('supplyMissingWeekLabel').textContent = '—';
       return;
     }
     supplyMissingLoading = true;
     el('supplyMissingGroups').innerHTML = '<div class="supply-empty">Carregando produtos…</div>';
     try{
-      const query = new URLSearchParams({companyId});
+      const query = new URLSearchParams({companyId,weekStart});
       const data = await supplyMissingApiRequest(null,query);
       supplyMissingItems = Array.isArray(data.items) ? data.items : [];
-      supplyMissingWeekStart = data.weekStart || '';
+      supplyMissingWeekStart = data.weekStart || weekStart;
       renderSupplyMissingGroups();
     }catch(error){
       supplyMissingItems = [];
@@ -9584,6 +9625,11 @@ function renderHomeTasks(){
       supplyMissingLoading = false;
     }
   }
+
+  el('supplyMissingWeekSelect').addEventListener('change',() => {
+    loadSupplyMissing();
+    loadSupplyRequest();
+  });
 
   function syncSupplyRequestMark(productId,marked){
     if(el('supplyRequestPanel').hidden || el('supplyRequestForm').hidden) return;
@@ -9717,13 +9763,16 @@ function renderHomeTasks(){
     if(isAdmin || !canAccess('supplies') || supplyRequestLoading) return;
     supplyRequestLoading = true;
     try{
-      const data = await supplyRequestApiRequest(null);
+      const weekStart = el('supplyMissingWeekSelect').value || supplyUpcomingMonday();
+      const data = await supplyRequestApiRequest(null,new URLSearchParams({weekStart}));
       el('supplyRequestWeekLabel').textContent = formatSupplyMissingWeek(data.weekStart);
       if(data.submitted){
         el('supplyRequestForm').hidden = true;
         el('supplyRequestSubmitted').hidden = false;
         const request = data.request || {};
-        el('supplyRequestSubmittedStatus').textContent = 'SOLICITAÇÃO ENVIADA — AGUARDANDO SEPARAÇÃO.';
+        el('supplyRequestSubmittedStatus').textContent = data.completed
+          ? 'SOLICITAÇÃO CONCLUÍDA ✓ — SEPARADA E RECEBIDA.'
+          : 'SOLICITAÇÃO ENVIADA — AGUARDANDO SEPARAÇÃO.';
         el('supplyRequestSummaryMeta').innerHTML =
           '<div>RESPONSÁVEL<strong>'+escapeHtml(request.responsibleName || '—')+'</strong></div>'+
           '<div>ENVIADO POR<strong>'+escapeHtml(request.createdByName || '—')+'</strong></div>'+
@@ -9759,6 +9808,45 @@ function renderHomeTasks(){
     if(checkbox.checked && !quantityInput.value) quantityInput.value = '1';
   });
 
+  function supplyRequestHistoryCardHtml(row){
+    const items = Array.isArray(row.items) ? row.items : [];
+    return '<div class="supply-separation-card done">'+
+      '<div class="supply-separation-card-head">'+
+        '<div><strong>'+formatSupplyMissingWeek(row.weekStart)+'</strong>'+
+          '<span>RESPONSÁVEL: '+escapeHtml(row.responsibleName || '—')+' · ENVIADO EM '+
+            escapeHtml(new Date(row.createdAt).toLocaleString('pt-BR'))+'</span></div>'+
+        '<span class="supply-separation-badge done">CONCLUÍDA</span>'+
+      '</div>'+
+      '<div class="supply-separation-items">'+
+        (items.length
+          ? items.map(item => '<div class="supply-separation-item done"><span>'+escapeHtml(item.productName)+'</span>'+
+              '<small>PEDIDO: '+Number(item.quantity || 0)+' · SEPARADO: '+Number(item.quantitySeparated || 0)+'</small></div>').join('')
+          : '<div class="supply-empty">Nenhum produto — só observação.</div>')+
+      '</div>'+
+      (row.note ? '<div class="supply-separation-note">OBSERVAÇÃO: '+escapeHtml(row.note)+'</div>' : '')+
+    '</div>';
+  }
+
+  async function loadSupplyRequestHistory(){
+    el('supplyRequestHistoryList').innerHTML = '<div class="supply-empty">Carregando histórico…</div>';
+    try{
+      const data = await supplyRequestApiRequest(null,new URLSearchParams({view:'history'}));
+      const requests = Array.isArray(data.requests) ? data.requests : [];
+      el('supplyRequestHistoryList').innerHTML = requests.length
+        ? requests.map(supplyRequestHistoryCardHtml).join('')
+        : '<div class="supply-empty">Nenhuma solicitação concluída ainda.</div>';
+    }catch(error){
+      el('supplyRequestHistoryList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  el('btnToggleSupplyRequestHistory').addEventListener('click',() => {
+    const history = el('supplyRequestHistory');
+    history.hidden = !history.hidden;
+    el('btnToggleSupplyRequestHistory').textContent = history.hidden ? 'HISTÓRICO' : 'VOLTAR';
+    if(!history.hidden) loadSupplyRequestHistory();
+  });
+
   el('supplyRequestForm').addEventListener('submit',async event => {
     event.preventDefault();
     const items = Array.from(el('supplyRequestGroups').querySelectorAll('[data-request-check]:checked'))
@@ -9780,6 +9868,7 @@ function renderHomeTasks(){
         body:JSON.stringify({
           responsibleName:el('supplyRequestResponsible').value,
           note:el('supplyRequestNote').value,
+          weekStart:el('supplyMissingWeekSelect').value || supplyUpcomingMonday(),
           items
         })
       });
@@ -9871,8 +9960,10 @@ function renderHomeTasks(){
     el('supplyAdminProdutos').hidden = tab !== 'produtos';
     el('supplyAdminEstoque').hidden = tab !== 'estoque';
     el('supplyAdminSeparacao').hidden = tab !== 'separacao';
+    el('supplyAdminHistorico').hidden = tab !== 'historico';
     if(tab === 'separacao') loadSupplySeparationQueue();
     if(tab === 'dashboard') loadSupplyDashboard();
+    if(tab === 'historico') loadSupplyAdminHistory();
   }
   document.querySelectorAll('[data-supply-admin-tab]').forEach(button => {
     button.addEventListener('click',() => setSupplyAdminTab(button.dataset.supplyAdminTab));
@@ -10425,6 +10516,64 @@ function renderHomeTasks(){
   });
 
   el('btnRefreshSeparation').addEventListener('click',loadSupplySeparationQueue);
+
+  let supplyAdminHistoryRequests = [];
+  let supplyAdminHistoryLoading = false;
+
+  function renderSupplyHistoryFilterOptions(){
+    const select = el('supplyHistoryFilterCompany');
+    const keepValue = select.value;
+    select.innerHTML = '<option value="">TODAS</option>'+
+      companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    if(companies.some(company => company.id === keepValue)) select.value = keepValue;
+  }
+
+  function renderSupplyAdminHistory(){
+    const companyId = el('supplyHistoryFilterCompany').value;
+    const rows = companyId
+      ? supplyAdminHistoryRequests.filter(row => row.companyId === companyId)
+      : supplyAdminHistoryRequests;
+    el('supplyAdminHistoryList').innerHTML = rows.length
+      ? rows.map(supplySeparationCardHtml).join('')
+      : '<div class="supply-empty">Nenhuma solicitação concluída ainda.</div>';
+  }
+
+  async function loadSupplyAdminHistory(){
+    if(currentSession.role !== 'admin' || supplyAdminHistoryLoading) return;
+    supplyAdminHistoryLoading = true;
+    el('supplyAdminHistoryList').innerHTML = '<div class="supply-empty">Carregando histórico…</div>';
+    try{
+      renderSupplyHistoryFilterOptions();
+      const data = await supplyRequestApiRequest(null,new URLSearchParams({queue:'1',view:'history'}));
+      supplyAdminHistoryRequests = Array.isArray(data.requests) ? data.requests : [];
+      renderSupplyAdminHistory();
+    }catch(error){
+      el('supplyAdminHistoryList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
+    }finally{
+      supplyAdminHistoryLoading = false;
+    }
+  }
+
+  el('supplyHistoryFilterCompany').addEventListener('change',renderSupplyAdminHistory);
+  el('btnRefreshHistory').addEventListener('click',loadSupplyAdminHistory);
+  el('supplyAdminHistoryList').addEventListener('click',async event => {
+    const deleteButton = event.target.closest('[data-request-delete]');
+    if(!deleteButton) return;
+    if(!confirm('Excluir permanentemente esta solicitação do histórico?')) return;
+    deleteButton.disabled = true;
+    try{
+      await supplyRequestApiRequest({
+        method:'DELETE',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:deleteButton.dataset.requestDelete})
+      });
+      showPurchaseToast('Solicitação excluída.');
+      await loadSupplyAdminHistory();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      deleteButton.disabled = false;
+    }
+  });
 
   let supplyDashboardLoading = false;
 
