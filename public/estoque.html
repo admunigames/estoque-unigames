@@ -2096,6 +2096,8 @@
   html[data-theme="light"] .supply-separation-card{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .supply-separation-item{background:#fff;}
   .supply-dashboard-week{margin-bottom:14px;color:var(--ink-soft);font:800 9px/1.4 var(--mono);}
+  .supply-section-title{margin:18px 0 10px;color:var(--ink);font:900 11px/1.3 var(--sans);}
+  .supply-separation-actions{display:flex;justify-content:flex-end;margin-top:8px;}
   .supply-dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
   .supply-dashboard-card{
     border:1px solid rgba(39,69,97,.5);border-radius:13px;background:var(--bg-card-2);padding:16px;
@@ -3183,7 +3185,7 @@
               </table>
             </div>
           </div>
-          <h4 style="margin:18px 0 10px;color:var(--ink);font:900 11px/1.3 var(--sans);">ÚLTIMAS MOVIMENTAÇÕES</h4>
+          <h4 class="supply-section-title">ÚLTIMAS MOVIMENTAÇÕES</h4>
           <div class="supply-product-toolbar">
             <div class="field"><label for="supplyMovementFilterCompany">LOJA</label><select id="supplyMovementFilterCompany"><option value="">TODAS</option></select></div>
             <div class="field"><label for="supplyMovementFilterProduct">PRODUTO</label><select id="supplyMovementFilterProduct"><option value="">TODOS</option></select></div>
@@ -10325,7 +10327,7 @@ function renderHomeTasks(){
       '</div>'+
       (row.note ? '<div class="supply-separation-note">OBSERVAÇÃO: '+escapeHtml(row.note)+'</div>' : '')+
       (canAccess('supplies_delete')
-        ? '<div class="supply-separation-note" style="text-align:right;"><button type="button" class="delete" data-request-delete="'+escapeHtml(row.id)+'" style="min-height:30px;padding:5px 9px;border:1px solid rgba(210,76,68,.46);border-radius:8px;background:rgba(210,76,68,.12);color:#ef817b;font:800 8px/1 var(--mono);">EXCLUIR SOLICITAÇÃO</button></div>'
+        ? '<div class="supply-separation-actions supply-product-actions"><button type="button" class="delete" data-request-delete="'+escapeHtml(row.id)+'">EXCLUIR SOLICITAÇÃO</button></div>'
         : '')+
     '</div>';
   }
