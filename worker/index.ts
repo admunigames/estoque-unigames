@@ -18,7 +18,7 @@ type LoginConfig = {
   sessionSecret: string;
 };
 
-type Permission = "tasks" | "missions" | "captures" | "outputs" | "supplies" | "purchases" | "stock" | "database" | "pulls" | "report41";
+type Permission = "tasks" | "missions" | "captures" | "outputs" | "supplies" | "supplies_in" | "supplies_out" | "supplies_delete" | "purchases" | "stock" | "database" | "pulls" | "report41";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type AuthenticatedUser = {
   id: string;
@@ -60,12 +60,12 @@ const ROLE_HEADER = "x-unigames-role";
 const ACCESS_GROUP_HEADER = "x-unigames-access-group";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
 const COMPANY_ID_HEADER = "x-unigames-company-id";
-const ALL_PERMISSIONS: Permission[] = ["tasks", "missions", "captures", "outputs", "supplies", "purchases", "stock", "database", "pulls", "report41"];
+const ALL_PERMISSIONS: Permission[] = ["tasks", "missions", "captures", "outputs", "supplies", "supplies_in", "supplies_out", "supplies_delete", "purchases", "stock", "database", "pulls", "report41"];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
-  purchases: ["tasks", "missions", "captures", "outputs", "supplies", "purchases"],
-  fiscal: ["missions", "outputs", "supplies", "stock", "database", "pulls", "report41"],
-  operator: ["tasks", "missions", "captures", "outputs", "supplies"],
+  purchases: ["tasks", "missions", "captures", "outputs", "supplies", "supplies_out", "purchases"],
+  fiscal: ["missions", "outputs", "supplies", "supplies_out", "stock", "database", "pulls", "report41"],
+  operator: ["tasks", "missions", "captures", "outputs", "supplies", "supplies_out"],
   assistance: ["captures"],
   custom: [],
 };

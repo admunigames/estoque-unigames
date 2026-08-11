@@ -81,6 +81,17 @@ function requireAdmin(request: Request) {
   return { actor, error: null };
 }
 
+function canDeleteProducts(request: Request) {
+  const actor = identity(request);
+  if (actor.role !== "admin" && !actor.permissions.includes("supplies_delete")) {
+    return jsonResponse(
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR PRODUTOS DE INSUMOS." },
+      403,
+    );
+  }
+  return null;
+}
+
 type ProductRow = {
   id: string;
   categoryId: string;
@@ -250,8 +261,8 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
-  const { error } = requireAdmin(request);
-  if (error) return error;
+  const forbidden = canDeleteProducts(request);
+  if (forbidden) return forbidden;
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
   }

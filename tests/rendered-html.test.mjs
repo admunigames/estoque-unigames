@@ -761,6 +761,9 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(html, /value="supplies"> Insumos/);
 
   assert.match(workerSource, /"supplies"/);
+  assert.match(workerSource, /"supplies_in"/);
+  assert.match(workerSource, /"supplies_out"/);
+  assert.match(workerSource, /"supplies_delete"/);
   assert.match(workerSource, /path === "\/insumos" \|\| path\.startsWith\("\/api\/supplies"\)/);
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM supply_items"\)\.all\(\)/);
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM supply_request_events"\)\.all\(\)/);
@@ -926,7 +929,7 @@ test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", 
   assert.match(workerSource, /\[path === "\/relatorio-41", "report41"\]/);
   assert.match(workerSource, /reportStoreMatch[\s\S]*user\.companyId/);
   assert.match(workerSource, /company_id AS companyId/);
-  assert.match(workerSource, /fiscal: \["missions", "outputs", "supplies", "stock", "database", "pulls", "report41"\]/);
+  assert.match(workerSource, /fiscal: \["missions", "outputs", "supplies", "supplies_out", "stock", "database", "pulls", "report41"\]/);
   assert.match(sharedStateRoute, /key === "report41:company-stock"/);
   assert.match(sharedStateRoute, /report41:store:c\[a-z0-9\]/);
   assert.match(schema, /companyId: text\("company_id"\)/);

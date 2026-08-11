@@ -9471,10 +9471,16 @@ function renderHomeTasks(){
 
   function updateSupplyRoleVisibility(){
     const isAdmin = currentSession.role === 'admin';
+    const canDeleteProducts = canAccess('supplies_delete');
     el('supplyRegisterPanel').hidden = !isAdmin && !currentSession.companyId;
     el('supplyCompanyField').hidden = !isAdmin;
     el('supplyCompany').required = isAdmin;
-    el('supplyAdminPanel').hidden = !isAdmin;
+    el('supplyAdminPanel').hidden = !isAdmin && !canDeleteProducts;
+    document.querySelectorAll('[data-supply-admin-tab]').forEach(button => {
+      button.hidden = !isAdmin && button.dataset.supplyAdminTab !== 'produtos';
+    });
+    el('btnToggleNewProductForm').hidden = !isAdmin;
+    if(!isAdmin && canDeleteProducts) setSupplyAdminTab('produtos');
     renderSupplyCompanyOptions();
     el('supplyRegisterDescription').textContent = isAdmin
       ? 'Escolha a loja para marcar os produtos que estão faltando.'
@@ -10012,7 +10018,8 @@ function renderHomeTasks(){
   }
 
   function supplyProductRowHtml(product){
-    if(product.id === supplyProductEditingId){
+    const isAdmin = currentSession.role === 'admin';
+    if(isAdmin && product.id === supplyProductEditingId){
       return '<tr class="supply-product-edit-row" data-product-row="'+escapeHtml(product.id)+'">'+
         '<td><input type="text" maxlength="180" value="'+escapeHtml(product.name)+'" data-product-name-input></td>'+
         '<td><select data-product-category-input>'+
@@ -10031,8 +10038,8 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(product.categoryName)+'</td>'+
       '<td>'+supplyProductStatusHtml(product)+'</td>'+
       '<td class="supply-product-actions">'+
-        '<button type="button" data-product-edit="'+escapeHtml(product.id)+'">EDITAR</button>'+
-        '<button type="button" class="delete" data-product-delete="'+escapeHtml(product.id)+'">EXCLUIR</button>'+
+        (isAdmin ? '<button type="button" data-product-edit="'+escapeHtml(product.id)+'">EDITAR</button>' : '')+
+        (canAccess('supplies_delete') ? '<button type="button" class="delete" data-product-delete="'+escapeHtml(product.id)+'">EXCLUIR</button>' : '')+
       '</td>'+
     '</tr>';
   }
@@ -10161,22 +10168,25 @@ function renderHomeTasks(){
   });
 
   async function loadSupplyAdminData(){
-    if(currentSession.role !== 'admin') return;
-    loadSupplyDashboard();
+    const isAdmin = currentSession.role === 'admin';
+    if(!isAdmin && !canAccess('supplies_delete')) return;
+    if(isAdmin) loadSupplyDashboard();
     try{
       const [categoriesData,productsData] = await Promise.all([
         supplyCategoryApiRequest(null),
-        supplyProductApiRequest(null,new URLSearchParams({all:'1'}))
+        supplyProductApiRequest(null,isAdmin ? new URLSearchParams({all:'1'}) : null)
       ]);
       supplyCategories = Array.isArray(categoriesData.items) ? categoriesData.items : [];
       supplyProducts = Array.isArray(productsData.items) ? productsData.items : [];
       supplyAdminLoaded = true;
       renderSupplyCategoryOptions();
-      renderSupplyCategoryList();
+      if(isAdmin) renderSupplyCategoryList();
       renderSupplyProductTable();
-      renderSupplyStockTable();
-      renderSupplyMovementFilterOptions();
-      await loadSupplyStockMovements();
+      if(isAdmin){
+        renderSupplyStockTable();
+        renderSupplyMovementFilterOptions();
+        await loadSupplyStockMovements();
+      }
     }catch(error){
       if(!supplyAdminLoaded){
         el('supplyCategoryList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
