@@ -9777,14 +9777,42 @@ function renderHomeTasks(){
     return Array.from(groups.entries()).map(([category,rows]) =>
       '<div class="supply-missing-group"><h4>'+escapeHtml(category)+'</h4>'+
       '<div class="supply-missing-item-list">'+rows.map(row => {
-        const done = Number(row.separated || 0) === 1;
-        return '<div class="supply-request-item marked"><span>'+escapeHtml(row.productName)+'</span>'+
+        const separated = Number(row.separated || 0) === 1;
+        const received = row.receivedStatus === 'received';
+        let statusHtml;
+        if(!separated){
+          statusHtml = '<small style="width:100%;color:var(--ink-soft);font:800 8px/1.4 var(--mono);">AGUARDANDO SEPARAÇÃO</small>';
+        }else if(received){
+          statusHtml = '<label style="width:100%;display:flex;align-items:center;gap:6px;color:#66d49e;font:800 8px/1.4 var(--mono);">'+
+            '<input type="checkbox" checked data-receive-item="'+escapeHtml(row.id)+'"> RECEBIDO ✓</label>';
+        }else{
+          statusHtml = '<label style="width:100%;display:flex;align-items:center;gap:6px;color:#e1ad49;font:800 8px/1.4 var(--mono);">'+
+            '<input type="checkbox" data-receive-item="'+escapeHtml(row.id)+'"> CONFIRMAR RECEBIMENTO (SEPARADO: '+Number(row.quantitySeparated || 0)+')</label>';
+        }
+        return '<div class="supply-request-item marked'+(received ? ' received' : '')+'"><span>'+escapeHtml(row.productName)+'</span>'+
           '<strong style="color:var(--accent);font:900 11px/1 var(--mono);">'+Number(row.quantity || 0)+'</strong>'+
-          '<small style="width:100%;color:'+(done ? '#66d49e' : 'var(--ink-soft)')+';font:800 8px/1.4 var(--mono);">'+
-            (done ? 'SEPARADO ✓' : 'AGUARDANDO SEPARAÇÃO')+'</small></div>';
+          statusHtml+'</div>';
       }).join('')+'</div></div>'
     ).join('');
   }
+
+  el('supplyRequestSummaryGroups').addEventListener('change',async event => {
+    const checkbox = event.target.closest('[data-receive-item]');
+    if(!checkbox) return;
+    checkbox.disabled = true;
+    try{
+      await supplyRequestApiRequest({
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'receive',itemId:checkbox.dataset.receiveItem,received:checkbox.checked})
+      });
+      await loadSupplyRequest();
+    }catch(error){
+      checkbox.checked = !checkbox.checked;
+      checkbox.disabled = false;
+      showPurchaseToast(error.message,'error');
+    }
+  });
 
   async function loadSupplyRequest(){
     const isAdmin = currentSession.role === 'admin';
@@ -10426,7 +10454,9 @@ function renderHomeTasks(){
       '<span>'+escapeHtml(item.productName)+' <small>('+escapeHtml(item.categoryName)+')</small></span>'+
       '<small>PEDIDO: '+Number(item.quantity || 0)+'</small>'+
       (done
-        ? '<small>SEPARADO: '+Number(item.quantitySeparated || 0)+' POR '+escapeHtml(item.separatedByName || '—')+'</small>'
+        ? '<small>SEPARADO: '+Number(item.quantitySeparated || 0)+' POR '+escapeHtml(item.separatedByName || '—')+'</small>'+
+          '<small style="color:'+(item.receivedStatus === 'received' ? '#66d49e' : '#e1ad49')+';">'+
+            (item.receivedStatus === 'received' ? 'RECEBIDO PELA LOJA ✓' : 'AGUARDANDO CONFIRMAÇÃO DA LOJA')+'</small>'
         : '<input type="number" min="0" step="1" value="'+Number(item.quantity || 0)+'" data-separation-quantity="'+escapeHtml(item.id)+'"'+(requestDone ? ' disabled' : '')+'>'+
           '<button type="button" data-separation-confirm="'+escapeHtml(item.id)+'"'+(requestDone ? ' disabled' : '')+'>SEPARADO</button>')+
     '</div>';

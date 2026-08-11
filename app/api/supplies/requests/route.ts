@@ -165,13 +165,18 @@ type RequestItemRow = {
   separated: number;
   separatedByName: string;
   separatedAt: string;
+  receivedStatus: string;
+  receivedByName: string;
+  receivedAt: string;
 };
 
 const REQUEST_ITEM_SELECT = `
   SELECT id, product_id AS productId, product_name AS productName,
          category_name AS categoryName, quantity,
          quantity_separated AS quantitySeparated, separated,
-         separated_by_name AS separatedByName, separated_at AS separatedAt
+         separated_by_name AS separatedByName, separated_at AS separatedAt,
+         received_status AS receivedStatus, received_by_name AS receivedByName,
+         received_at AS receivedAt
   FROM supply_request_items WHERE request_id=?1
   ORDER BY category_name ASC, product_name ASC`;
 
@@ -432,18 +437,27 @@ export async function PATCH(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
+  if (!canAccessSupplies(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO AOS INSUMOS." }, 403);
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+
+  const body = (await request.json().catch(() => ({}))) as JsonMap;
+  const action = safeText(body.action, 20);
+  if (action === "receive") {
+    return handleReceiveAction(actor, body);
+  }
+
   if (actor.role !== "admin") {
     return jsonResponse(
       { error: "SOMENTE O ADMINISTRADOR PODE SEPARAR ITENS DA SOLICITAÇÃO." },
       403,
     );
   }
-  if (!sameOrigin(request)) {
-    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
-  }
 
   try {
-    const body = (await request.json()) as JsonMap;
     const itemId = safeText(body.itemId, 80);
     const quantitySeparated = Math.trunc(Number(body.quantitySeparated));
     if (!itemId) return jsonResponse({ error: "ITEM INVÁLIDO." }, 400);
@@ -513,5 +527,59 @@ export async function PATCH(request: Request) {
   } catch (error) {
     console.error("Não foi possível separar o item da solicitação.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL SEPARAR O ITEM." }, 500);
+  }
+}
+
+async function handleReceiveAction(actor: Identity, body: JsonMap) {
+  try {
+    const itemId = safeText(body.itemId, 80);
+    if (!itemId) return jsonResponse({ error: "ITEM INVÁLIDO." }, 400);
+    const received = Boolean(body.received);
+
+    const database = await getD1();
+    const item = await database
+      .prepare(
+        `SELECT sri.id, sri.separated, sr.company_id AS companyId
+         FROM supply_request_items sri
+         JOIN supply_requests sr ON sr.id = sri.request_id
+         WHERE sri.id=?1 LIMIT 1`,
+      )
+      .bind(itemId)
+      .first<{ id: string; separated: number; companyId: string }>();
+    if (!item) return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
+    if (actor.role !== "admin" && item.companyId !== actor.companyId) {
+      return jsonResponse({ error: "VOCÊ NÃO PODE ALTERAR OUTRA LOJA." }, 403);
+    }
+    if (!item.separated) {
+      return jsonResponse(
+        { error: "ESTE ITEM AINDA NÃO FOI SEPARADO." },
+        409,
+      );
+    }
+
+    if (received) {
+      await database
+        .prepare(
+          `UPDATE supply_request_items
+           SET received_status='received', received_by=?1, received_by_name=?2,
+               received_at=CURRENT_TIMESTAMP
+           WHERE id=?3`,
+        )
+        .bind(actor.id, actor.displayName, itemId)
+        .run();
+    } else {
+      await database
+        .prepare(
+          `UPDATE supply_request_items
+           SET received_status='pending', received_by='', received_by_name='', received_at=''
+           WHERE id=?1`,
+        )
+        .bind(itemId)
+        .run();
+    }
+    return jsonResponse({ updated: true, received });
+  } catch (error) {
+    console.error("Não foi possível confirmar o recebimento do item.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL CONFIRMAR O RECEBIMENTO." }, 500);
   }
 }
