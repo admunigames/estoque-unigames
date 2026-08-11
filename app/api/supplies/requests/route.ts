@@ -161,7 +161,19 @@ type RequestItemRow = {
   productName: string;
   categoryName: string;
   quantity: number;
+  quantitySeparated: number;
+  separated: number;
+  separatedByName: string;
+  separatedAt: string;
 };
+
+const REQUEST_ITEM_SELECT = `
+  SELECT id, product_id AS productId, product_name AS productName,
+         category_name AS categoryName, quantity,
+         quantity_separated AS quantitySeparated, separated,
+         separated_by_name AS separatedByName, separated_at AS separatedAt
+  FROM supply_request_items WHERE request_id=?1
+  ORDER BY category_name ASC, product_name ASC`;
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -172,6 +184,42 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
+
+  if (actor.role === "admin" && url.searchParams.get("queue") === "1") {
+    const weekStart = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("weekStart") || "")
+      ? String(url.searchParams.get("weekStart"))
+      : upcomingMondayRecife();
+    try {
+      const database = await getD1();
+      const requests = await database
+        .prepare(
+          `SELECT id, company_id AS companyId, company_name AS companyName,
+                  week_start AS weekStart, responsible_name AS responsibleName,
+                  note, status, created_by_name AS createdByName, created_at AS createdAt
+           FROM supply_requests WHERE week_start=?1
+           ORDER BY created_at ASC`,
+        )
+        .bind(weekStart)
+        .all<RequestRow>();
+      const requestRows = requests.results ?? [];
+      const withItems = await Promise.all(
+        requestRows.map(async (row) => {
+          const items = await database.prepare(REQUEST_ITEM_SELECT).bind(row.id).all<RequestItemRow>();
+          const itemRows = items.results ?? [];
+          return {
+            ...row,
+            items: itemRows,
+            allSeparated: itemRows.length > 0 && itemRows.every((item) => item.separated),
+          };
+        }),
+      );
+      return jsonResponse({ weekStart, requests: withItems });
+    } catch (error) {
+      console.error("Não foi possível carregar a fila de separação.", error);
+      return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR A FILA DE SEPARAÇÃO." }, 500);
+    }
+  }
+
   const requestedCompanyId = safeText(url.searchParams.get("companyId"), 80);
   const companyId = scopedCompany(actor, requestedCompanyId);
   if (!COMPANY_PATTERN.test(companyId)) {
@@ -203,12 +251,7 @@ export async function GET(request: Request) {
 
     if (existing) {
       const items = await database
-        .prepare(
-          `SELECT id, product_id AS productId, product_name AS productName,
-                  category_name AS categoryName, quantity
-           FROM supply_request_items WHERE request_id=?1
-           ORDER BY category_name ASC, product_name ASC`,
-        )
+        .prepare(REQUEST_ITEM_SELECT)
         .bind(existing.id)
         .all<RequestItemRow>();
       return jsonResponse({
@@ -382,5 +425,93 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Não foi possível enviar a solicitação de insumos.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL ENVIAR A SOLICITAÇÃO." }, 500);
+  }
+}
+
+export async function PATCH(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (actor.role !== "admin") {
+    return jsonResponse(
+      { error: "SOMENTE O ADMINISTRADOR PODE SEPARAR ITENS DA SOLICITAÇÃO." },
+      403,
+    );
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+
+  try {
+    const body = (await request.json()) as JsonMap;
+    const itemId = safeText(body.itemId, 80);
+    const quantitySeparated = Math.trunc(Number(body.quantitySeparated));
+    if (!itemId) return jsonResponse({ error: "ITEM INVÁLIDO." }, 400);
+    if (!Number.isFinite(quantitySeparated) || quantitySeparated < 0) {
+      return jsonResponse({ error: "INFORME UMA QUANTIDADE VÁLIDA." }, 400);
+    }
+
+    const database = await getD1();
+    const item = await database
+      .prepare(
+        `SELECT id, product_id AS productId, product_name AS productName,
+                quantity, separated
+         FROM supply_request_items WHERE id=?1 LIMIT 1`,
+      )
+      .bind(itemId)
+      .first<{
+        id: string;
+        productId: string;
+        productName: string;
+        quantity: number;
+        separated: number;
+      }>();
+    if (!item) return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
+    if (item.separated) {
+      return jsonResponse({ error: "ESTE ITEM JÁ FOI SEPARADO." }, 409);
+    }
+
+    const movementId = crypto.randomUUID();
+    const operations = [
+      database
+        .prepare(
+          `UPDATE supply_request_items
+           SET quantity_separated=?1, separated=1, separated_by=?2,
+               separated_by_name=?3, separated_at=CURRENT_TIMESTAMP
+           WHERE id=?4 AND separated=0`,
+        )
+        .bind(quantitySeparated, actor.id, actor.displayName, itemId),
+    ];
+    if (quantitySeparated > 0) {
+      operations.push(
+        database
+          .prepare(
+            `INSERT INTO supply_stock_movements
+              (id, product_id, type, quantity, reason, responsible_name,
+               created_by, created_by_name, created_at)
+             VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)`,
+          )
+          .bind(
+            movementId,
+            item.productId,
+            quantitySeparated,
+            "Separação de solicitação de insumos",
+            actor.displayName,
+            actor.id,
+            actor.displayName,
+          ),
+        database
+          .prepare(
+            `UPDATE supply_products SET stock_qty = stock_qty - ?1, updated_at=CURRENT_TIMESTAMP
+             WHERE id=?2`,
+          )
+          .bind(quantitySeparated, item.productId),
+      );
+    }
+    await database.batch(operations);
+    return jsonResponse({ updated: true, quantitySeparated });
+  } catch (error) {
+    console.error("Não foi possível separar o item da solicitação.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL SEPARAR O ITEM." }, 500);
   }
 }

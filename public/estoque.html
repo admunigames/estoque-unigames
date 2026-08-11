@@ -2055,7 +2055,7 @@
   html[data-theme="light"] .supply-missing-group{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .supply-missing-item{background:#fff;}
   .supply-request-item{
-    display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(39,69,97,.32);
+    display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 10px;border:1px solid rgba(39,69,97,.32);
     border-radius:9px;background:var(--bg-card);
   }
   .supply-request-item.marked{border-color:rgba(225,173,73,.5);background:rgba(225,173,73,.1);}
@@ -2068,6 +2068,32 @@
   .supply-request-summary div{color:var(--ink-soft);font:800 9px/1.5 var(--mono);}
   .supply-request-summary strong{display:block;color:var(--ink);font:900 12px/1.4 var(--sans);}
   html[data-theme="light"] .supply-request-item{background:#fff;}
+  .supply-separation-list{display:grid;gap:12px;}
+  .supply-separation-card{
+    border:1px solid rgba(39,69,97,.5);border-radius:13px;background:var(--bg-card-2);padding:14px 16px;
+  }
+  .supply-separation-card.done{opacity:.7;border-color:rgba(66,166,119,.4);}
+  .supply-separation-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .supply-separation-card-head strong{color:var(--ink);font:900 13px/1.3 var(--sans);}
+  .supply-separation-card-head span{display:block;margin-top:3px;color:var(--ink-soft);font:700 9px/1.4 var(--mono);}
+  .supply-separation-badge{padding:5px 9px;border-radius:999px;background:rgba(225,173,73,.11);color:#e1ad49;font:900 8px/1 var(--mono);}
+  .supply-separation-badge.done{background:rgba(66,166,119,.13);color:#66d49e;}
+  .supply-separation-items{display:grid;gap:6px;}
+  .supply-separation-item{
+    display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid rgba(39,69,97,.32);
+    border-radius:9px;background:var(--bg-card);flex-wrap:wrap;
+  }
+  .supply-separation-item.done{border-color:rgba(66,166,119,.4);background:rgba(66,166,119,.07);}
+  .supply-separation-item span{flex:1;color:var(--ink);font:700 11px/1.3 var(--sans);min-width:140px;}
+  .supply-separation-item small{color:var(--ink-soft);font:700 9px/1 var(--mono);}
+  .supply-separation-item input[type="number"]{width:64px;}
+  .supply-separation-item button{
+    min-height:30px;padding:5px 9px;border:1px solid rgba(66,166,119,.46);border-radius:8px;
+    background:rgba(66,166,119,.13);color:#66d49e;font:800 8px/1 var(--mono);
+  }
+  .supply-separation-note{margin-top:8px;color:var(--ink-soft);font:700 10px/1.5 var(--sans);}
+  html[data-theme="light"] .supply-separation-card{background:#f6f9fb;border-color:#c4d1dc;}
+  html[data-theme="light"] .supply-separation-item{background:#fff;}
   .supply-admin-tabs{margin-bottom:16px;}
   .supply-admin-tab-panel{display:grid;gap:12px;}
   .supply-category-form{display:flex;gap:8px;max-width:420px;}
@@ -3063,6 +3089,7 @@
           <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-supply-admin-tab="categorias">CATEGORIAS</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="produtos">PRODUTOS</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="estoque">ESTOQUE</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-admin-tab="separacao">SEPARAÇÃO</button>
         </div>
 
         <div class="supply-admin-tab-panel" id="supplyAdminCategorias">
@@ -3149,6 +3176,14 @@
               </table>
             </div>
           </div>
+        </div>
+
+        <div class="supply-admin-tab-panel" id="supplyAdminSeparacao" hidden>
+          <div class="supply-product-toolbar">
+            <div class="field"><label>SEMANA</label><div class="supply-missing-week" id="supplySeparationWeekLabel">—</div></div>
+            <button class="btn-outline" id="btnRefreshSeparation" type="button" style="margin-left:auto;">ATUALIZAR</button>
+          </div>
+          <div class="supply-separation-list" id="supplySeparationList"><div class="supply-empty">Carregando solicitações…</div></div>
         </div>
       </section>
     </section>
@@ -9741,10 +9776,13 @@ function renderHomeTasks(){
     });
     return Array.from(groups.entries()).map(([category,rows]) =>
       '<div class="supply-missing-group"><h4>'+escapeHtml(category)+'</h4>'+
-      '<div class="supply-missing-item-list">'+rows.map(row =>
-        '<div class="supply-request-item marked"><span>'+escapeHtml(row.productName)+'</span>'+
-          '<strong style="color:var(--accent);font:900 11px/1 var(--mono);">'+Number(row.quantity || 0)+'</strong></div>'
-      ).join('')+'</div></div>'
+      '<div class="supply-missing-item-list">'+rows.map(row => {
+        const done = Number(row.separated || 0) === 1;
+        return '<div class="supply-request-item marked"><span>'+escapeHtml(row.productName)+'</span>'+
+          '<strong style="color:var(--accent);font:900 11px/1 var(--mono);">'+Number(row.quantity || 0)+'</strong>'+
+          '<small style="width:100%;color:'+(done ? '#66d49e' : 'var(--ink-soft)')+';font:800 8px/1.4 var(--mono);">'+
+            (done ? 'SEPARADO ✓' : 'AGUARDANDO SEPARAÇÃO')+'</small></div>';
+      }).join('')+'</div></div>'
     ).join('');
   }
 
@@ -9993,6 +10031,8 @@ function renderHomeTasks(){
     el('supplyAdminCategorias').hidden = tab !== 'categorias';
     el('supplyAdminProdutos').hidden = tab !== 'produtos';
     el('supplyAdminEstoque').hidden = tab !== 'estoque';
+    el('supplyAdminSeparacao').hidden = tab !== 'separacao';
+    if(tab === 'separacao') loadSupplySeparationQueue();
   }
   document.querySelectorAll('[data-supply-admin-tab]').forEach(button => {
     button.addEventListener('click',() => setSupplyAdminTab(button.dataset.supplyAdminTab));
@@ -10377,6 +10417,83 @@ function renderHomeTasks(){
 
   el('supplyStockSearch').addEventListener('input',debounce(renderSupplyStockTable,120));
   el('supplyStockFilterCategory').addEventListener('change',renderSupplyStockTable);
+
+  let supplySeparationLoading = false;
+
+  function supplySeparationItemHtml(item,requestDone){
+    const done = Number(item.separated || 0) === 1;
+    return '<div class="supply-separation-item'+(done ? ' done' : '')+'">'+
+      '<span>'+escapeHtml(item.productName)+' <small>('+escapeHtml(item.categoryName)+')</small></span>'+
+      '<small>PEDIDO: '+Number(item.quantity || 0)+'</small>'+
+      (done
+        ? '<small>SEPARADO: '+Number(item.quantitySeparated || 0)+' POR '+escapeHtml(item.separatedByName || '—')+'</small>'
+        : '<input type="number" min="0" step="1" value="'+Number(item.quantity || 0)+'" data-separation-quantity="'+escapeHtml(item.id)+'"'+(requestDone ? ' disabled' : '')+'>'+
+          '<button type="button" data-separation-confirm="'+escapeHtml(item.id)+'"'+(requestDone ? ' disabled' : '')+'>SEPARADO</button>')+
+    '</div>';
+  }
+
+  function supplySeparationCardHtml(row){
+    const done = Boolean(row.allSeparated);
+    return '<div class="supply-separation-card'+(done ? ' done' : '')+'">'+
+      '<div class="supply-separation-card-head">'+
+        '<div><strong>'+escapeHtml(row.companyName)+'</strong>'+
+          '<span>RESPONSÁVEL: '+escapeHtml(row.responsibleName || '—')+' · ENVIADO EM '+
+            escapeHtml(new Date(row.createdAt).toLocaleString('pt-BR'))+'</span></div>'+
+        '<span class="supply-separation-badge'+(done ? ' done' : '')+'">'+(done ? 'SEPARADO' : 'PENDENTE')+'</span>'+
+      '</div>'+
+      '<div class="supply-separation-items">'+
+        (row.items.length ? row.items.map(item => supplySeparationItemHtml(item,done)).join('') : '<div class="supply-empty">Nenhum produto marcado — só observação.</div>')+
+      '</div>'+
+      (row.note ? '<div class="supply-separation-note">OBSERVAÇÃO: '+escapeHtml(row.note)+'</div>' : '')+
+    '</div>';
+  }
+
+  async function loadSupplySeparationQueue(){
+    if(currentSession.role !== 'admin' || supplySeparationLoading) return;
+    supplySeparationLoading = true;
+    el('supplySeparationList').innerHTML = '<div class="supply-empty">Carregando solicitações…</div>';
+    try{
+      const data = await supplyRequestApiRequest(null,new URLSearchParams({queue:'1'}));
+      el('supplySeparationWeekLabel').textContent = formatSupplyMissingWeek(data.weekStart);
+      const requests = Array.isArray(data.requests) ? data.requests : [];
+      el('supplySeparationList').innerHTML = requests.length
+        ? requests.map(supplySeparationCardHtml).join('')
+        : '<div class="supply-empty">Nenhuma solicitação enviada para esta semana ainda.</div>';
+    }catch(error){
+      el('supplySeparationList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
+    }finally{
+      supplySeparationLoading = false;
+    }
+  }
+
+  el('supplySeparationList').addEventListener('click',async event => {
+    const button = event.target.closest('[data-separation-confirm]');
+    if(!button) return;
+    const itemId = button.dataset.separationConfirm;
+    const quantityInput = document.querySelector('[data-separation-quantity="'+itemId+'"]');
+    const quantitySeparated = Number(quantityInput.value);
+    if(!Number.isFinite(quantitySeparated) || quantitySeparated < 0){
+      showPurchaseToast('Informe uma quantidade válida.','error');
+      return;
+    }
+    button.disabled = true;
+    quantityInput.disabled = true;
+    try{
+      await supplyRequestApiRequest({
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({itemId,quantitySeparated})
+      });
+      showPurchaseToast('Item separado e estoque atualizado.');
+      await loadSupplySeparationQueue();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      button.disabled = false;
+      quantityInput.disabled = false;
+    }
+  });
+
+  el('btnRefreshSeparation').addEventListener('click',loadSupplySeparationQueue);
 
   function setSupplyExitFormStatus(message,type){
     const status = el('supplyExitFormStatus');
