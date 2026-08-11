@@ -1515,6 +1515,7 @@
   .user-form-status{min-height:18px;font:800 11px/1.45 var(--mono)}
   .user-form-status.success{color:#8dd6a8}.user-form-status.error{color:#ff9b91}
   .permission-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.permission-option{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--line);border-radius:9px;font-size:12px}
+  .permission-option.sub{margin-left:14px;background:rgba(79,134,189,.05);font-size:11px;}
   .user-actions{display:flex;gap:8px;flex-wrap:wrap}.user-list{display:grid;gap:10px}.user-card{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
   .user-card.inactive{opacity:.58}.user-card h4{margin:0 0 3px}.user-card p{margin:0;color:var(--ink-soft);font-size:11px}.user-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
   @media(max-width:850px){.users-layout{grid-template-columns:1fr}.permission-grid{grid-template-columns:1fr}}
@@ -3015,23 +3016,24 @@
 
       <section class="supply-register-panel" id="supplyExitPanel" hidden>
         <div class="supply-panel-head">
-          <div><h3>SAÍDA DE INSUMOS</h3><p>Registre o uso interno de um produto já cadastrado. A baixa é aplicada direto no estoque.</p></div>
+          <div><h3>MOVIMENTAÇÃO DE ESTOQUE</h3><p id="supplyExitDescription">Registre a entrada ou saída de um produto já cadastrado. O estoque é atualizado na hora.</p></div>
         </div>
         <form class="supply-product-form" id="supplyExitForm">
-          <div class="field full"><label for="supplyExitProduct">PRODUTO</label><select id="supplyExitProduct" required><option value="">SELECIONE</option></select></div>
+          <div class="field"><label for="supplyExitType">TIPO</label><select id="supplyExitType"></select></div>
+          <div class="field"><label for="supplyExitProduct">PRODUTO</label><select id="supplyExitProduct" required><option value="">SELECIONE</option></select></div>
           <div class="field"><label for="supplyExitQuantity">QUANTIDADE</label><input id="supplyExitQuantity" type="number" step="1" min="1" required></div>
           <div class="field"><label for="supplyExitResponsible">RESPONSÁVEL</label><input id="supplyExitResponsible" maxlength="120" required></div>
-          <div class="field full"><label for="supplyExitReason">MOTIVO DA SAÍDA</label><input id="supplyExitReason" maxlength="300" placeholder="Ex.: uso interno, reposição na loja" required></div>
-          <div class="field full" style="display:flex;justify-content:flex-end;"><button class="btn-accent" id="btnSaveSupplyExit" type="submit">REGISTRAR SAÍDA</button></div>
+          <div class="field full"><label for="supplyExitReason">MOTIVO</label><input id="supplyExitReason" maxlength="300" placeholder="Ex.: uso interno, reposição na loja, compra recebida" required></div>
+          <div class="field full" style="display:flex;justify-content:flex-end;"><button class="btn-accent" id="btnSaveSupplyExit" type="submit">REGISTRAR</button></div>
         </form>
         <div class="user-form-status" id="supplyExitFormStatus" role="status" aria-live="polite"></div>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table>
               <thead>
-                <tr><th>Produto</th><th style="text-align:right">Quantidade</th><th>Motivo</th><th>Data</th></tr>
+                <tr><th>Produto</th><th>Tipo</th><th style="text-align:right">Quantidade</th><th>Motivo</th><th>Data</th></tr>
               </thead>
-              <tbody id="supplyExitHistoryBody"><tr><td colspan="4" class="responsive-empty">Nenhuma saída registrada por você ainda.</td></tr></tbody>
+              <tbody id="supplyExitHistoryBody"><tr><td colspan="5" class="responsive-empty">Nenhuma movimentação registrada por você ainda.</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -3182,13 +3184,26 @@
             </div>
           </div>
           <h4 style="margin:18px 0 10px;color:var(--ink);font:900 11px/1.3 var(--sans);">ÚLTIMAS MOVIMENTAÇÕES</h4>
+          <div class="supply-product-toolbar">
+            <div class="field"><label for="supplyMovementFilterCompany">LOJA</label><select id="supplyMovementFilterCompany"><option value="">TODAS</option></select></div>
+            <div class="field"><label for="supplyMovementFilterProduct">PRODUTO</label><select id="supplyMovementFilterProduct"><option value="">TODOS</option></select></div>
+            <div class="field"><label for="supplyMovementFilterDate">DATA</label><input id="supplyMovementFilterDate" type="date"></div>
+            <div class="field"><label for="supplyMovementFilterType">TIPO</label>
+              <select id="supplyMovementFilterType">
+                <option value="">TODOS</option>
+                <option value="in">ENTRADA</option>
+                <option value="out">SAÍDA</option>
+              </select>
+            </div>
+            <button class="btn-outline" id="btnClearMovementFilters" type="button">LIMPAR FILTROS</button>
+          </div>
           <div class="table-panel responsive-table">
             <div class="table-scroll">
               <table>
                 <thead>
-                  <tr><th>Produto</th><th>Tipo</th><th style="text-align:right">Quantidade</th><th>Responsável</th><th>Motivo</th><th>Data</th></tr>
+                  <tr><th>Produto</th><th>Loja</th><th>Tipo</th><th style="text-align:right">Quantidade</th><th>Responsável</th><th>Motivo</th><th>Data</th><th>Ações</th></tr>
                 </thead>
-                <tbody id="supplyStockMovementsBody"><tr><td colspan="6" class="responsive-empty">Nenhuma movimentação ainda.</td></tr></tbody>
+                <tbody id="supplyStockMovementsBody"><tr><td colspan="8" class="responsive-empty">Nenhuma movimentação ainda.</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -3711,6 +3726,9 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="captures"> Captação</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs"> Saídas</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies"> Insumos</label>
+                <label class="permission-option sub"><input type="checkbox" name="userPermission" value="supplies_in"> Insumos: dar entrada</label>
+                <label class="permission-option sub"><input type="checkbox" name="userPermission" value="supplies_out"> Insumos: dar saída</label>
+                <label class="permission-option sub"><input type="checkbox" name="userPermission" value="supplies_delete"> Insumos: excluir</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases"> Compras</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="stock"> Estoque Fiscal</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="database"> Base de Dados</label>
@@ -9422,7 +9440,6 @@ function renderHomeTasks(){
     el('supplyCompanyField').hidden = !isAdmin;
     el('supplyCompany').required = isAdmin;
     el('supplyAdminPanel').hidden = !isAdmin;
-    el('supplyExitPanel').hidden = isAdmin;
     renderSupplyCompanyOptions();
     el('supplyRegisterDescription').textContent = isAdmin
       ? 'Escolha a loja para marcar os produtos que estão faltando.'
@@ -9939,38 +9956,105 @@ function renderHomeTasks(){
     const dateText = Number.isNaN(date.getTime()) ? movement.createdAt : date.toLocaleString('pt-BR');
     return '<tr>'+
       '<td>'+escapeHtml(movement.productName)+'</td>'+
+      '<td>'+escapeHtml(movement.companyName || '—')+'</td>'+
       '<td>'+(movement.type === 'in' ? 'ENTRADA' : 'SAÍDA')+'</td>'+
       '<td style="text-align:right">'+Number(movement.quantity || 0)+'</td>'+
       '<td>'+escapeHtml(movement.responsibleName)+'</td>'+
       '<td>'+escapeHtml(movement.reason || '—')+'</td>'+
       '<td>'+escapeHtml(dateText)+'</td>'+
+      '<td class="supply-product-actions"><button type="button" class="delete" data-movement-delete="'+escapeHtml(movement.id)+'">EXCLUIR</button></td>'+
     '</tr>';
   }
 
   function renderSupplyStockMovements(){
     el('supplyStockMovementsBody').innerHTML = supplyStockMovements.length
       ? supplyStockMovements.map(supplyStockMovementRowHtml).join('')
-      : '<tr><td colspan="6" class="responsive-empty">Nenhuma movimentação ainda.</td></tr>';
+      : '<tr><td colspan="8" class="responsive-empty">Nenhuma movimentação encontrada.</td></tr>';
   }
+
+  function renderSupplyMovementFilterOptions(){
+    const companySelect = el('supplyMovementFilterCompany');
+    if(companySelect){
+      const selected = companySelect.value;
+      companySelect.innerHTML = '<option value="">TODAS</option>'+
+        companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+      if(companies.some(company => company.id === selected)) companySelect.value = selected;
+    }
+    const productSelect = el('supplyMovementFilterProduct');
+    if(productSelect){
+      const selected = productSelect.value;
+      productSelect.innerHTML = '<option value="">TODOS</option>'+
+        supplyProducts.map(product => '<option value="'+escapeHtml(product.id)+'">'+escapeHtml(product.name)+'</option>').join('');
+      if(supplyProducts.some(product => product.id === selected)) productSelect.value = selected;
+    }
+  }
+
+  async function loadSupplyStockMovements(){
+    try{
+      const query = new URLSearchParams();
+      const companyId = el('supplyMovementFilterCompany').value;
+      const productId = el('supplyMovementFilterProduct').value;
+      const date = el('supplyMovementFilterDate').value;
+      const type = el('supplyMovementFilterType').value;
+      if(companyId) query.set('companyId',companyId);
+      if(productId) query.set('productId',productId);
+      if(date) query.set('date',date);
+      if(type) query.set('type',type);
+      const movementsData = await supplyStockApiRequest(null,query);
+      supplyStockMovements = Array.isArray(movementsData.items) ? movementsData.items : [];
+      renderSupplyStockMovements();
+    }catch(error){
+      el('supplyStockMovementsBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  el('supplyMovementFilterCompany').addEventListener('change',loadSupplyStockMovements);
+  el('supplyMovementFilterProduct').addEventListener('change',loadSupplyStockMovements);
+  el('supplyMovementFilterDate').addEventListener('change',loadSupplyStockMovements);
+  el('supplyMovementFilterType').addEventListener('change',loadSupplyStockMovements);
+  el('btnClearMovementFilters').addEventListener('click',() => {
+    el('supplyMovementFilterCompany').value = '';
+    el('supplyMovementFilterProduct').value = '';
+    el('supplyMovementFilterDate').value = '';
+    el('supplyMovementFilterType').value = '';
+    loadSupplyStockMovements();
+  });
+  el('supplyStockMovementsBody').addEventListener('click',async event => {
+    const button = event.target.closest('[data-movement-delete]');
+    if(!button) return;
+    if(!confirm('Excluir esta movimentação? O estoque do produto será ajustado de volta.')) return;
+    button.disabled = true;
+    try{
+      await supplyStockApiRequest({
+        method:'DELETE',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:button.dataset.movementDelete})
+      });
+      showPurchaseToast('Movimentação excluída.');
+      await Promise.all([loadSupplyStockMovements(),loadSupplyAdminData()]);
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      button.disabled = false;
+    }
+  });
 
   async function loadSupplyAdminData(){
     if(currentSession.role !== 'admin') return;
     loadSupplyDashboard();
     try{
-      const [categoriesData,productsData,movementsData] = await Promise.all([
+      const [categoriesData,productsData] = await Promise.all([
         supplyCategoryApiRequest(null),
-        supplyProductApiRequest(null,new URLSearchParams({all:'1'})),
-        supplyStockApiRequest(null)
+        supplyProductApiRequest(null,new URLSearchParams({all:'1'}))
       ]);
       supplyCategories = Array.isArray(categoriesData.items) ? categoriesData.items : [];
       supplyProducts = Array.isArray(productsData.items) ? productsData.items : [];
-      supplyStockMovements = Array.isArray(movementsData.items) ? movementsData.items : [];
       supplyAdminLoaded = true;
       renderSupplyCategoryOptions();
       renderSupplyCategoryList();
       renderSupplyProductTable();
       renderSupplyStockTable();
-      renderSupplyStockMovements();
+      renderSupplyMovementFilterOptions();
+      await loadSupplyStockMovements();
     }catch(error){
       if(!supplyAdminLoaded){
         el('supplyCategoryList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
@@ -10240,6 +10324,9 @@ function renderHomeTasks(){
         (row.items.length ? row.items.map(item => supplySeparationItemHtml(item,done)).join('') : '<div class="supply-empty">Nenhum produto marcado — só observação.</div>')+
       '</div>'+
       (row.note ? '<div class="supply-separation-note">OBSERVAÇÃO: '+escapeHtml(row.note)+'</div>' : '')+
+      (canAccess('supplies_delete')
+        ? '<div class="supply-separation-note" style="text-align:right;"><button type="button" class="delete" data-request-delete="'+escapeHtml(row.id)+'" style="min-height:30px;padding:5px 9px;border:1px solid rgba(210,76,68,.46);border-radius:8px;background:rgba(210,76,68,.12);color:#ef817b;font:800 8px/1 var(--mono);">EXCLUIR SOLICITAÇÃO</button></div>'
+        : '')+
     '</div>';
   }
 
@@ -10262,6 +10349,24 @@ function renderHomeTasks(){
   }
 
   el('supplySeparationList').addEventListener('click',async event => {
+    const deleteButton = event.target.closest('[data-request-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir permanentemente esta solicitação? Itens já separados terão o estoque estornado.')) return;
+      deleteButton.disabled = true;
+      try{
+        await supplyRequestApiRequest({
+          method:'DELETE',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:deleteButton.dataset.requestDelete})
+        });
+        showPurchaseToast('Solicitação excluída.');
+        await Promise.all([loadSupplySeparationQueue(),loadSupplyDashboard()]);
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        deleteButton.disabled = false;
+      }
+      return;
+    }
     const button = event.target.closest('[data-separation-confirm]');
     if(!button) return;
     const itemId = button.dataset.separationConfirm;
@@ -10353,14 +10458,26 @@ function renderHomeTasks(){
     const dateText = Number.isNaN(date.getTime()) ? movement.createdAt : date.toLocaleString('pt-BR');
     return '<tr>'+
       '<td>'+escapeHtml(movement.productName)+'</td>'+
+      '<td>'+(movement.type === 'in' ? 'ENTRADA' : 'SAÍDA')+'</td>'+
       '<td style="text-align:right">'+Number(movement.quantity || 0)+'</td>'+
       '<td>'+escapeHtml(movement.reason || '—')+'</td>'+
       '<td>'+escapeHtml(dateText)+'</td>'+
     '</tr>';
   }
 
+  function supplyExitAvailableTypes(){
+    const types = [];
+    if(canAccess('supplies_out')) types.push({value:'out',label:'SAÍDA'});
+    if(canAccess('supplies_in')) types.push({value:'in',label:'ENTRADA'});
+    return types;
+  }
+
   async function loadSupplyExitData(){
-    if(currentSession.role === 'admin' || !canAccess('supplies')) return;
+    const isAdmin = currentSession.role === 'admin';
+    const types = supplyExitAvailableTypes();
+    el('supplyExitPanel').hidden = isAdmin || !types.length;
+    if(isAdmin || !types.length) return;
+    el('supplyExitType').innerHTML = types.map(type => '<option value="'+type.value+'">'+type.label+'</option>').join('');
     try{
       const [productsData,movementsData] = await Promise.all([
         supplyProductApiRequest(null),
@@ -10375,7 +10492,7 @@ function renderHomeTasks(){
       const movements = Array.isArray(movementsData.items) ? movementsData.items : [];
       el('supplyExitHistoryBody').innerHTML = movements.length
         ? movements.map(supplyExitHistoryRowHtml).join('')
-        : '<tr><td colspan="4" class="responsive-empty">Nenhuma saída registrada por você ainda.</td></tr>';
+        : '<tr><td colspan="5" class="responsive-empty">Nenhuma movimentação registrada por você ainda.</td></tr>';
     }catch(error){
       setSupplyExitFormStatus(error.message,'error');
     }
@@ -10384,22 +10501,23 @@ function renderHomeTasks(){
   el('supplyExitForm').addEventListener('submit',async event => {
     event.preventDefault();
     const button = el('btnSaveSupplyExit');
+    const type = el('supplyExitType').value;
     button.disabled = true;
-    setSupplyExitFormStatus('REGISTRANDO SAÍDA…','');
+    setSupplyExitFormStatus(type === 'in' ? 'REGISTRANDO ENTRADA…' : 'REGISTRANDO SAÍDA…','');
     try{
       await supplyStockApiRequest({
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           productId:el('supplyExitProduct').value,
-          type:'out',
+          type,
           quantity:el('supplyExitQuantity').value,
           responsibleName:el('supplyExitResponsible').value,
           reason:el('supplyExitReason').value
         })
       });
       el('supplyExitForm').reset();
-      setSupplyExitFormStatus('SAÍDA REGISTRADA.','success');
+      setSupplyExitFormStatus(type === 'in' ? 'ENTRADA REGISTRADA.' : 'SAÍDA REGISTRADA.','success');
       await loadSupplyExitData();
     }catch(error){
       setSupplyExitFormStatus(error.message,'error');
@@ -10600,6 +10718,9 @@ function renderHomeTasks(){
     captures:'Captação',
     outputs:'Saídas',
     supplies:'Insumos',
+    supplies_in:'Insumos: entrada',
+    supplies_out:'Insumos: saída',
+    supplies_delete:'Insumos: excluir',
     purchases:'Compras',
     stock:'Estoque Fiscal',
     database:'Base de Dados',
@@ -10615,10 +10736,10 @@ function renderHomeTasks(){
     custom:'Personalizado'
   };
   const accessGroupPermissions = {
-    administrator:['tasks','missions','captures','outputs','supplies','purchases','stock','database','pulls','report41'],
-    purchases:['tasks','missions','captures','outputs','supplies','purchases'],
-    fiscal:['missions','outputs','supplies','stock','database','pulls','report41'],
-    operator:['tasks','missions','captures','outputs','supplies'],
+    administrator:['tasks','missions','captures','outputs','supplies','supplies_in','supplies_out','supplies_delete','purchases','stock','database','pulls','report41'],
+    purchases:['tasks','missions','captures','outputs','supplies','supplies_out','purchases'],
+    fiscal:['missions','outputs','supplies','supplies_out','stock','database','pulls','report41'],
+    operator:['tasks','missions','captures','outputs','supplies','supplies_out'],
     assistance:['captures']
   };
 

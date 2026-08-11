@@ -276,6 +276,8 @@ export const supplyStockMovements = pgTable(
     quantity: integer("quantity").notNull(),
     reason: text("reason").notNull().default(""),
     responsibleName: text("responsible_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -285,6 +287,7 @@ export const supplyStockMovements = pgTable(
       table.productId,
       table.createdAt,
     ),
+    index("supply_stock_movements_company_idx").on(table.companyId),
   ],
 );
 

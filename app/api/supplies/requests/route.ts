@@ -53,6 +53,10 @@ function canAccessSupplies(actor: Identity) {
   return actor.role === "admin" || actor.permissions.includes("supplies");
 }
 
+function canDeleteSupplies(actor: Identity) {
+  return actor.role === "admin" || actor.permissions.includes("supplies_delete");
+}
+
 function sameOrigin(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") return false;
@@ -468,9 +472,12 @@ export async function PATCH(request: Request) {
     const database = await getD1();
     const item = await database
       .prepare(
-        `SELECT id, product_id AS productId, product_name AS productName,
-                quantity, separated
-         FROM supply_request_items WHERE id=?1 LIMIT 1`,
+        `SELECT sri.id, sri.product_id AS productId, sri.product_name AS productName,
+                sri.quantity, sri.separated,
+                sr.company_id AS companyId, sr.company_name AS companyName
+         FROM supply_request_items sri
+         JOIN supply_requests sr ON sr.id = sri.request_id
+         WHERE sri.id=?1 LIMIT 1`,
       )
       .bind(itemId)
       .first<{
@@ -479,6 +486,8 @@ export async function PATCH(request: Request) {
         productName: string;
         quantity: number;
         separated: number;
+        companyId: string;
+        companyName: string;
       }>();
     if (!item) return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
     if (item.separated) {
@@ -502,8 +511,8 @@ export async function PATCH(request: Request) {
           .prepare(
             `INSERT INTO supply_stock_movements
               (id, product_id, type, quantity, reason, responsible_name,
-               created_by, created_by_name, created_at)
-             VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)`,
+               company_id, company_name, created_by, created_by_name, created_at)
+             VALUES (?1, ?2, 'out', ?3, ?4, ?5, ?6, ?7, ?8, ?9, CURRENT_TIMESTAMP)`,
           )
           .bind(
             movementId,
@@ -511,6 +520,8 @@ export async function PATCH(request: Request) {
             quantitySeparated,
             "Separação de solicitação de insumos",
             actor.displayName,
+            item.companyId,
+            item.companyName,
             actor.id,
             actor.displayName,
           ),
@@ -581,5 +592,77 @@ async function handleReceiveAction(actor: Identity, body: JsonMap) {
   } catch (error) {
     console.error("Não foi possível confirmar o recebimento do item.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CONFIRMAR O RECEBIMENTO." }, 500);
+  }
+}
+
+export async function DELETE(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canDeleteSupplies(actor)) {
+    return jsonResponse(
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR SOLICITAÇÕES DE INSUMOS." },
+      403,
+    );
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+
+  try {
+    const body = (await request.json()) as JsonMap;
+    const id = safeText(body.id, 80);
+    if (!id) return jsonResponse({ error: "SOLICITAÇÃO INVÁLIDA." }, 400);
+
+    const database = await getD1();
+    const existing = await database
+      .prepare("SELECT id FROM supply_requests WHERE id=?1 LIMIT 1")
+      .bind(id)
+      .first<{ id: string }>();
+    if (!existing) {
+      return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
+    }
+
+    const separatedItems = await database
+      .prepare(
+        `SELECT id, product_id AS productId, quantity_separated AS quantitySeparated
+         FROM supply_request_items WHERE request_id=?1 AND separated=1 AND quantity_separated>0`,
+      )
+      .bind(id)
+      .all<{ id: string; productId: string; quantitySeparated: number }>();
+
+    const operations = (separatedItems.results ?? []).flatMap((item) => [
+      database
+        .prepare(
+          `INSERT INTO supply_stock_movements
+            (id, product_id, type, quantity, reason, responsible_name,
+             created_by, created_by_name, created_at)
+           VALUES (?1, ?2, 'in', ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          item.productId,
+          item.quantitySeparated,
+          "Estorno por exclusão de solicitação de insumos",
+          actor.displayName,
+          actor.id,
+          actor.displayName,
+        ),
+      database
+        .prepare(
+          `UPDATE supply_products SET stock_qty = stock_qty + ?1, updated_at=CURRENT_TIMESTAMP
+           WHERE id=?2`,
+        )
+        .bind(item.quantitySeparated, item.productId),
+    ]);
+    operations.push(
+      database.prepare("DELETE FROM supply_request_items WHERE request_id=?1").bind(id),
+      database.prepare("DELETE FROM supply_requests WHERE id=?1").bind(id),
+    );
+    await database.batch(operations);
+    return jsonResponse({ deleted: true, id });
+  } catch (error) {
+    console.error("Não foi possível excluir a solicitação de insumos.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR A SOLICITAÇÃO." }, 500);
   }
 }
