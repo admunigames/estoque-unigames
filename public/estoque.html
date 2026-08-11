@@ -95,6 +95,21 @@
   code,.codigo,.num,.saldo,.entrada,.saida,.qty,.company-meta,.pagination-info{font-family:var(--mono);}
   .wrap{max-width:1680px; margin:0 auto; padding:30px 26px calc(68px + env(safe-area-inset-bottom));}
 
+  /* SELECTS / DROPDOWNS */
+  :root{color-scheme:dark;}
+  html[data-theme="light"]{color-scheme:light;}
+  select{
+    -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f8498' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+    background-repeat:no-repeat !important; background-position:right 10px center !important; background-size:13px !important;
+    padding-right:30px !important;
+    cursor:pointer;
+    transition:border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+  }
+  select:hover{border-color:var(--accent);}
+  select:focus-visible{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent);}
+  select:disabled{opacity:.5; cursor:not-allowed;}
+
   /* SHELL / MENU LATERAL */
   body.menu-open{overflow:hidden;}
   .shell{min-height:100vh;}
@@ -182,22 +197,33 @@
     display:flex; align-items:center; gap:11px; width:100%; padding:10px 12px;
     border:1px solid transparent; border-radius:10px; background:transparent; color:var(--ink-soft); font-family:var(--sans);
     font-size:12.5px; font-weight:700; letter-spacing:.1px; text-transform:uppercase;
+    transition:background .18s ease,border-color .18s ease,color .18s ease;
   }
-  .nav-group-toggle:hover{opacity:1; color:var(--ink); background:rgba(79,134,189,.08);}
+  .nav-group-toggle:hover{opacity:1; color:var(--ink); background:rgba(79,134,189,.08); border-color:rgba(79,134,189,.16);}
   .nav-group-toggle.active{
     color:var(--accent-ink); border-color:rgba(114,167,216,.42);
     background:linear-gradient(90deg,rgba(29,72,126,.86),rgba(79,134,189,.48));
     box-shadow:0 1px 3px rgba(0,0,0,.1),inset 3px 0 var(--accent);
   }
   .nav-group-toggle .nav-label{flex:1; text-align:left;}
-  .nav-group-chevron{font-size:13px; transition:transform .22s ease;}
+  .nav-group-chevron{
+    display:grid; place-items:center; width:14px; height:14px; flex:0 0 14px; color:var(--ink-faint);
+    transition:transform .22s ease,color .18s ease;
+  }
+  .nav-group-chevron svg{width:14px; height:14px; stroke-width:2;}
+  .nav-group-toggle:hover .nav-group-chevron,
+  .nav-group-toggle.active .nav-group-chevron{color:currentColor;}
   .nav-group-toggle[aria-expanded="false"] .nav-group-chevron{transform:rotate(-90deg);}
   .nav-submenu{
-    display:flex; flex-direction:column; gap:4px; max-height:0; opacity:0; overflow:hidden;
-    transform:translateY(-6px); transition:max-height .24s ease,opacity .18s ease,transform .24s ease;
+    display:flex; flex-direction:column; gap:2px; max-height:0; opacity:0; overflow:hidden;
+    margin:0 0 0 22px; padding-left:10px; border-left:1px solid rgba(79,134,189,.22);
+    transform:translateY(-6px); transition:max-height .26s ease,opacity .2s ease,transform .26s ease,border-color .18s ease;
   }
-  .nav-group-toggle[aria-expanded="true"] + .nav-submenu{max-height:220px; opacity:1; transform:translateY(0);}
-  .nav-item.sub-item{position:relative; padding-left:25px;}
+  .nav-group-toggle[aria-expanded="true"] + .nav-submenu{
+    max-height:280px; opacity:1; transform:translateY(0); padding-top:4px; padding-bottom:2px;
+  }
+  body.sidebar-compact .nav-submenu{margin-left:0; padding-left:0; border-left:0;}
+  .nav-item.sub-item{position:relative; padding-left:12px;}
   body.sidebar-compact .sidebar{width:92px;}
   body.sidebar-compact .sidebar-brand{justify-content:center;}
   body.sidebar-compact .brand-copy,
@@ -962,19 +988,23 @@
     min-height:46px; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px;
     border:1px solid var(--border); border-radius:9px; background:var(--bg-card-2); color:var(--ink);
     cursor:pointer; list-style:none; font:700 10px/1.3 var(--mono);
+    transition:border-color .18s ease, box-shadow .18s ease;
   }
+  .purchase-status-filter > summary:hover{border-color:var(--accent);}
+  .purchase-status-filter[open] > summary{border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,134,189,.14);}
   .purchase-status-filter > summary::-webkit-details-marker{display:none;}
-  .purchase-status-filter > summary::after{content:'⌄'; color:var(--accent); font-size:16px; transition:transform .16s ease;}
+  .purchase-status-filter > summary::after{content:'⌄'; color:var(--accent); font-size:16px; transition:transform .18s ease;}
   .purchase-status-filter[open] > summary::after{transform:rotate(180deg);}
   .purchase-status-filter > summary strong{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink-soft);}
   .purchase-status-options{
     position:absolute; z-index:60; top:calc(100% + 7px); left:0; width:max(100%,250px); padding:10px;
-    border:1px solid rgba(114,167,216,.5); border-radius:11px; background:#0c1a29;
-    box-shadow:0 6px 15px rgba(0,0,0,.22);
+    border:1px solid rgba(114,167,216,.32); border-radius:11px; background:#0c1a29;
+    box-shadow:0 6px 18px rgba(0,0,0,.24);
   }
   .purchase-status-options label{
     display:flex; align-items:center; gap:9px; min-height:40px; padding:8px 9px; border-radius:8px;
     color:var(--ink-soft); font:700 10px/1.3 var(--mono); cursor:pointer;
+    transition:background .15s ease, color .15s ease;
   }
   .purchase-status-options label:hover{background:rgba(79,134,189,.12); color:var(--ink);}
   .purchase-status-options input{width:16px; height:16px; min-height:0; margin:0; accent-color:var(--accent);}
@@ -1297,7 +1327,8 @@
     body.sidebar-compact .ios-storage-box{display:block;}
     body.sidebar-compact .nav-item,
     body.sidebar-compact .nav-group-toggle{justify-content:flex-start; padding-inline:12px;}
-    body.sidebar-compact .nav-item.sub-item{padding-left:25px;}
+    body.sidebar-compact .nav-item.sub-item{padding-left:12px;}
+    body.sidebar-compact .nav-submenu{margin-left:22px; padding-left:10px; border-left:1px solid rgba(79,134,189,.22);}
     body.sidebar-compact .logout-button{font-size:10px; text-align:left;}
     body.sidebar-compact .logout-button::before{content:none;}
     .sidebar-brand{margin:50px 0 18px;}
@@ -2518,7 +2549,7 @@
     <span class="nav-section-label">Gestão</span>
     <div class="nav-group">
       <button class="nav-group-toggle" id="navEstoque" type="button" aria-expanded="false" aria-controls="navEstoqueSubmenu">
-        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="4.4" rx="1.2"/><path d="M5 8.4v9a1.6 1.6 0 0 0 1.6 1.6h10.8a1.6 1.6 0 0 0 1.6-1.6v-9"/><line x1="10" y1="12.3" x2="14" y2="12.3"/></svg></span><span class="nav-label">Estoque</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="4.4" rx="1.2"/><path d="M5 8.4v9a1.6 1.6 0 0 0 1.6 1.6h10.8a1.6 1.6 0 0 0 1.6-1.6v-9"/><line x1="10" y1="12.3" x2="14" y2="12.3"/></svg></span><span class="nav-label">Estoque</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navEstoqueSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navPuxadas" data-page="puxadas" data-permission="pulls" title="Puxadas" href="/puxadas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11l-3-3"/><path d="M18 16H7l3 3"/></svg></span><span class="nav-label">Puxadas</span></a>
@@ -2530,7 +2561,7 @@
     </div>
     <div class="nav-group">
       <button class="nav-group-toggle" id="navDocumentos" type="button" aria-expanded="false" aria-controls="navDocumentosSubmenu">
-        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.6a1.6 1.6 0 0 1 1.6-1.6h4.2l1.8 2.2h6.8A1.6 1.6 0 0 1 20 8.8v8.6a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 17.4z"/></svg></span><span class="nav-label">Documentos</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.6a1.6 1.6 0 0 1 1.6-1.6h4.2l1.8 2.2h6.8A1.6 1.6 0 0 1 20 8.8v8.6a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 17.4z"/></svg></span><span class="nav-label">Documentos</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navDocumentosSubmenu" aria-hidden="true">
         <span class="nav-submenu-label">Certificados</span>
@@ -2542,13 +2573,13 @@
     </div>
     <div class="nav-group" data-permission="finance">
       <button class="nav-group-toggle" id="navFinanceiro" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
-        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true"></div>
     </div>
     <div class="nav-group" data-permission="hr">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
-        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navRhSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
@@ -2557,7 +2588,7 @@
     </div>
     <div class="nav-group" data-permission="database">
       <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
-        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="1.7" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="1.7" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="10" cy="18" r="1.7" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="1.7" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="1.7" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="10" cy="18" r="1.7" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navCadastrosSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navLojas" data-page="lojas" title="Lojas" href="/cadastros/lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16l1.5 5a2.3 2.3 0 0 1-4.4 1 2.3 2.3 0 0 1-4.4 0 2.3 2.3 0 0 1-4.4 0 2.3 2.3 0 0 1-4.4-1z"/><path d="M5 10.2V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8.8"/><path d="M9.5 20v-5h5v5"/></svg></span><span class="nav-label">Lojas</span></a>
