@@ -1,0 +1,1 @@
+ALTER TABLE "captured_products" ADD COLUMN "captured_value_cents" integer DEFAULT 0 NOT NULL;

@@ -190,6 +190,7 @@ export const capturedProducts = pgTable(
     color: text("color").notNull(),
     originCompanyId: text("origin_company_id").notNull(),
     originCompanyName: text("origin_company_name").notNull().default(""),
+    capturedValueCents: integer("captured_value_cents").notNull().default(0),
     status: text("status").notNull().default("submitted"),
     destinationCompanyId: text("destination_company_id").notNull().default(""),
     destinationCompanyName: text("destination_company_name").notNull().default(""),

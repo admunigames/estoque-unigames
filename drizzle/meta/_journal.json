@@ -8,6 +8,13 @@
       "when": 1786384654519,
       "tag": "0000_nappy_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786456181297,
+      "tag": "0001_wide_gauntlet",
+      "breakpoints": true
     }
   ]
 }

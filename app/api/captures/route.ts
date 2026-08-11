@@ -22,6 +22,7 @@ type CaptureRow = {
   color: string;
   originCompanyId: string;
   originCompanyName: string;
+  capturedValueCents: number;
   status: CaptureStatus;
   destinationCompanyId: string;
   destinationCompanyName: string;
@@ -100,6 +101,16 @@ function isAssistanceActor(actor: Identity) {
   );
 }
 
+function canSeeCapturedValue(actor: Identity, row: CaptureRow) {
+  return actor.role === "admin" || actor.companyId === row.originCompanyId;
+}
+
+function serializeCaptureRow(actor: Identity, row: CaptureRow) {
+  const { capturedValueCents, ...rest } = row;
+  if (!canSeeCapturedValue(actor, row)) return rest;
+  return { ...rest, capturedValue: capturedValueCents / 100 };
+}
+
 function sameOrigin(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") return false;
@@ -152,7 +163,8 @@ const CAPTURE_SELECT = `
   SELECT id, category, product_name AS productName,
          serial_number AS serialNumber, defects, color,
          origin_company_id AS originCompanyId,
-         origin_company_name AS originCompanyName, status,
+         origin_company_name AS originCompanyName,
+         captured_value_cents AS capturedValueCents, status,
          destination_company_id AS destinationCompanyId,
          destination_company_name AS destinationCompanyName,
          created_by AS createdBy, created_by_name AS createdByName,
@@ -205,10 +217,11 @@ export async function GET(request: Request) {
       30,
     ) as CaptureStatus;
     const rows = result.results ?? [];
+    const filteredRows = CAPTURE_STATUSES.has(requestedStatus)
+      ? rows.filter((row) => row.status === requestedStatus)
+      : rows;
     return jsonResponse({
-      captures: CAPTURE_STATUSES.has(requestedStatus)
-        ? rows.filter((row) => row.status === requestedStatus)
-        : rows,
+      captures: filteredRows.map((row) => serializeCaptureRow(actor, row)),
     });
   } catch (error) {
     console.error("Não foi possível carregar as captações.", error);
@@ -267,6 +280,15 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "INFORME OS DEFEITOS OU ESCREVA “SEM DEFEITO”." }, 400);
     }
     if (!color) return jsonResponse({ error: "INFORME A COR DO PRODUTO." }, 400);
+    const rawCapturedValue = Number(body.capturedValue);
+    const capturedValue =
+      Number.isFinite(rawCapturedValue) && rawCapturedValue > 0
+        ? rawCapturedValue
+        : 0;
+    if (capturedValue > 999999.99) {
+      return jsonResponse({ error: "VALOR CAPTADO INVÁLIDO." }, 400);
+    }
+    const capturedValueCents = Math.round(capturedValue * 100);
 
     const database = await getD1();
     const originCompanyName = await companyName(database, originCompanyId);
@@ -278,10 +300,10 @@ export async function POST(request: Request) {
       .prepare(
         `INSERT INTO captured_products
           (id, category, product_name, serial_number, defects, color,
-           origin_company_id, origin_company_name, status,
+           origin_company_id, origin_company_name, captured_value_cents, status,
            created_by, created_by_name, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'submitted',
-                 ?9, ?10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'submitted',
+                 ?10, ?11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       )
       .bind(
         id,
@@ -292,6 +314,7 @@ export async function POST(request: Request) {
         color,
         originCompanyId,
         originCompanyName,
+        capturedValueCents,
         actor.id,
         actor.displayName,
       )

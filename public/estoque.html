@@ -2809,6 +2809,7 @@
             <div class="field double"><label for="captureProductName">PRODUTO / MODELO</label><input id="captureProductName" maxlength="160" required placeholder="Ex.: PlayStation 5 Slim"></div>
             <div class="field"><label for="captureSerialNumber">SERIAL DO PRODUTO</label><input id="captureSerialNumber" maxlength="160" required placeholder="Digite o serial completo"></div>
             <div class="field"><label for="captureColor">COR DO PRODUTO</label><input id="captureColor" maxlength="120" required placeholder="Ex.: Preto"></div>
+            <div class="field"><label for="captureValue">VALOR CAPTADO (R$)</label><input id="captureValue" type="number" min="0" max="999999.99" step="0.01" inputmode="decimal" placeholder="0,00"></div>
             <div class="field double"><label for="captureDefects">DEFEITOS DO PRODUTO</label><textarea id="captureDefects" maxlength="1200" rows="3" required placeholder="Descreva os defeitos ou informe “Sem defeito”"></textarea></div>
           </div>
           <div class="capture-form-actions"><button class="btn-accent" id="btnSaveCapture" type="submit">CADASTRAR PRODUTO</button></div>
@@ -8663,6 +8664,10 @@ function renderHomeTasks(){
     return payload;
   }
 
+  function captureValueLabel(value){
+    return 'R$ '+Number(value).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
   function captureDateTime(value){
     const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(value || ''));
     return match ? match[3]+'/'+match[2]+'/'+match[1]+' '+match[4]+':'+match[5] : '—';
@@ -8706,6 +8711,9 @@ function renderHomeTasks(){
     const destination = row.status === 'assigned' && row.destinationCompanyName
       ? '<div class="capture-detail wide"><span>DESTINO DEFINIDO</span><strong>'+escapeHtml(row.destinationCompanyName)+'</strong></div>'
       : '';
+    const capturedValue = typeof row.capturedValue === 'number'
+      ? '<div class="capture-detail"><span>VALOR CAPTADO</span><strong>'+escapeHtml(captureValueLabel(row.capturedValue))+'</strong></div>'
+      : '';
     return '<article class="capture-card '+escapeHtml(row.status || 'submitted')+'">'+
       '<div class="capture-card-copy">'+
         '<div class="capture-card-title"><span class="capture-category">'+
@@ -8715,6 +8723,7 @@ function renderHomeTasks(){
           '<div class="capture-detail"><span>SERIAL</span><strong>'+escapeHtml(row.serialNumber || '—')+'</strong></div>'+
           '<div class="capture-detail"><span>COR</span><strong>'+escapeHtml(row.color || '—')+'</strong></div>'+
           '<div class="capture-detail"><span>LOJA DE ORIGEM</span><strong>'+escapeHtml(row.originCompanyName || 'Loja')+'</strong></div>'+
+          capturedValue+
           '<div class="capture-detail wide"><span>DEFEITOS INFORMADOS</span><strong>'+escapeHtml(row.defects || '—')+'</strong></div>'+
           destination+
         '</div>'+captureHistoryHtml(row)+
@@ -8813,7 +8822,8 @@ function renderHomeTasks(){
           productName:el('captureProductName').value,
           serialNumber:el('captureSerialNumber').value,
           defects:el('captureDefects').value,
-          color:el('captureColor').value
+          color:el('captureColor').value,
+          capturedValue:el('captureValue').value
         })
       });
       el('captureForm').reset();
