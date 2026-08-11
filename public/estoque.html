@@ -9565,6 +9565,14 @@ function renderHomeTasks(){
     }
   }
 
+  function syncSupplyRequestMark(productId,marked){
+    if(el('supplyRequestPanel').hidden || el('supplyRequestForm').hidden) return;
+    const checkbox = document.querySelector('#supplyRequestGroups [data-request-check="'+productId+'"]');
+    if(!checkbox || checkbox.checked === marked) return;
+    checkbox.checked = marked;
+    checkbox.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+
   el('supplyMissingGroups').addEventListener('change',async event => {
     const checkbox = event.target.closest('[data-missing-product]');
     if(!checkbox) return;
@@ -9583,6 +9591,7 @@ function renderHomeTasks(){
       if(item) item.marked = marked ? 1 : 0;
       checkbox.closest('.supply-missing-item').classList.toggle('marked',marked);
       setSupplyFormStatus(marked ? 'PRODUTO MARCADO COMO FALTANDO.' : 'MARCAÇÃO REMOVIDA.','success');
+      syncSupplyRequestMark(productId,marked);
     }catch(error){
       checkbox.checked = !marked;
       setSupplyFormStatus(error.message,'error');
