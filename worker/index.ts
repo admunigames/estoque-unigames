@@ -109,6 +109,7 @@ const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 let appUsersReady: Promise<void> | null = null;
+let postgresAppUsersReady = false;
 let automaticBackupDate = "";
 
 function loginConfig(env: Env): LoginConfig | null {
@@ -273,14 +274,22 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
 }
 
 async function ensureAppUsersTable(database: D1Database): Promise<void> {
-  // No Postgres o schema ja e criado/mantido via drizzle-kit migrate (ver
-  // db/schema.ts e drizzle/), entao esse bootstrap em runtime nao e
-  // necessario. Alem de redundante, cachear essa promise no escopo do
-  // modulo (como abaixo, para D1) e inseguro pra uma conexao Postgres:
-  // o Workers isola I/O por requisicao, e reusar essa promise/conexao
-  // entre requisicoes diferentes causa falhas intermitentes de "promise
-  // resolved in a different request context".
-  if (process.env.DB_DRIVER === "postgres") return;
+  if (process.env.DB_DRIVER === "postgres") {
+    if (postgresAppUsersReady) return;
+    await database.batch([
+      database.prepare(
+        "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS hierarchy TEXT NOT NULL DEFAULT 'administrative'",
+      ),
+      database.prepare(
+        "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS sector TEXT NOT NULL DEFAULT ''",
+      ),
+      database.prepare(
+        "UPDATE app_users SET sector='assistance', company_id='' WHERE access_group='assistance' OR lower(username)='assistencia'",
+      ),
+    ]);
+    postgresAppUsersReady = true;
+    return;
+  }
 
   if (!appUsersReady) {
     appUsersReady = (async () => {
@@ -1602,6 +1611,7 @@ const worker = {
             ) as unknown as D1Database,
           }
         : rawEnv;
+    if (env.DB) await ensureAppUsersTable(env.DB);
     const url = new URL(request.url);
 
     if (url.pathname === "/login") return handleLogin(request, env, url);
