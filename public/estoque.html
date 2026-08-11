@@ -2324,25 +2324,28 @@
       <span aria-hidden="true">⇤</span><span class="compact-label">MENU COMPACTO</span>
     </button>
     <a class="nav-item active" id="navInicio" data-page="inicio" title="Início" href="/inicio"><span class="nav-icon" aria-hidden="true">⌂</span><span class="nav-label">Início</span></a>
-    <a class="nav-item" id="navPuxadas" data-page="puxadas" data-permission="pulls" title="Puxadas" href="/puxadas"><span class="nav-icon" aria-hidden="true">⇄</span><span class="nav-label">Puxadas</span></a>
-    <a class="nav-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" title="Relatório 41" href="/relatorio-41"><span class="nav-icon" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></a>
-    <a class="nav-item" id="navCompras" data-page="compras" data-permission="purchases" title="Controle de Compras" href="/compras"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Controle de Compras</span></a>
-    <a class="nav-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal" href="/estoque"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></a>
     <a class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas" href="/tarefas"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-label">Tarefas</span></a>
     <a class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" title="Missões" href="/missoes"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-label">Missões</span></a>
     <a class="nav-item" id="navCaptacao" data-page="captacao" data-permission="captures" title="Captação" href="/captacao"><span class="nav-icon" aria-hidden="true">C</span><span class="nav-label">Captação</span></a>
-    <a class="nav-item" id="navSaidas" data-page="saidas" data-permission="outputs" title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true">S</span><span class="nav-label">Saídas</span></a>
     <a class="nav-item" id="navInsumos" data-page="insumos" data-permission="supplies" title="Insumos" href="/insumos"><span class="nav-icon" aria-hidden="true">I</span><span class="nav-label">Insumos</span></a>
     <a class="nav-item" id="navInstrucoes" data-page="instrucoes" title="Instruções" href="/instrucoes"><span class="nav-icon" aria-hidden="true">!</span><span class="nav-label">Instruções</span></a>
-    <div class="nav-group" data-permission="database">
-      <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
-        <span class="nav-icon" aria-hidden="true">⬡</span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+    <div class="nav-group">
+      <button class="nav-group-toggle" id="navEstoque" type="button" aria-expanded="false" aria-controls="navEstoqueSubmenu">
+        <span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
       </button>
-      <div class="nav-submenu" id="navCadastrosSubmenu" aria-hidden="true">
-        <a class="nav-item sub-item" id="navLojas" data-page="lojas" title="Lojas" href="/cadastros/lojas"><span class="nav-icon" aria-hidden="true">◫</span><span class="nav-label">Lojas</span></a>
-        <a class="nav-item sub-item" id="navDados" data-page="dados" title="Base de Dados" href="/cadastros/base-de-dados"><span class="nav-icon" aria-hidden="true">⛁</span><span class="nav-label">Base de Dados</span></a>
-        <a class="nav-item sub-item" id="navUsuarios" data-page="usuarios" data-admin-only title="Usuários e acessos" href="/cadastros/usuarios"><span class="nav-icon" aria-hidden="true">⚿</span><span class="nav-label">Usuários e acessos</span></a>
+      <div class="nav-submenu" id="navEstoqueSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navPuxadas" data-page="puxadas" data-permission="pulls" title="Puxadas" href="/puxadas"><span class="nav-icon" aria-hidden="true">⇄</span><span class="nav-label">Puxadas</span></a>
+        <a class="nav-item sub-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" title="Relatório 41" href="/relatorio-41"><span class="nav-icon" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></a>
+        <a class="nav-item sub-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal" href="/estoque"><span class="nav-icon" aria-hidden="true">Σ</span><span class="nav-label">Estoque Fiscal</span></a>
+        <a class="nav-item sub-item" id="navCompras" data-page="compras" data-permission="purchases" title="Controle de Compras" href="/compras"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Controle de Compras</span></a>
+        <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true">S</span><span class="nav-label">Saídas</span></a>
       </div>
+    </div>
+    <div class="nav-group" data-permission="finance">
+      <button class="nav-group-toggle" id="navFinanceiro" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
+        <span class="nav-icon" aria-hidden="true">$</span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true"></div>
     </div>
     <div class="nav-group" data-permission="hr">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
@@ -2353,11 +2356,15 @@
         <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true">▦</span><span class="nav-label">Escalas</span></a>
       </div>
     </div>
-    <div class="nav-group" data-permission="finance">
-      <button class="nav-group-toggle" id="navFinanceiro" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
-        <span class="nav-icon" aria-hidden="true">$</span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
+    <div class="nav-group" data-permission="database">
+      <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu">
+        <span class="nav-icon" aria-hidden="true">⬡</span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true">⌄</span>
       </button>
-      <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true"></div>
+      <div class="nav-submenu" id="navCadastrosSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navLojas" data-page="lojas" title="Lojas" href="/cadastros/lojas"><span class="nav-icon" aria-hidden="true">◫</span><span class="nav-label">Lojas</span></a>
+        <a class="nav-item sub-item" id="navDados" data-page="dados" title="Base de Dados" href="/cadastros/base-de-dados"><span class="nav-icon" aria-hidden="true">⛁</span><span class="nav-label">Base de Dados</span></a>
+        <a class="nav-item sub-item" id="navUsuarios" data-page="usuarios" data-admin-only title="Usuários e acessos" href="/cadastros/usuarios"><span class="nav-icon" aria-hidden="true">⚿</span><span class="nav-label">Usuários e acessos</span></a>
+      </div>
     </div>
     <div class="ios-storage-box">
       <strong>DADOS COMPARTILHADOS</strong>
@@ -3941,6 +3948,8 @@
   const navRhSubmenu = el('navRhSubmenu');
   const navFinanceiroToggle = el('navFinanceiro');
   const navFinanceiroSubmenu = el('navFinanceiroSubmenu');
+  const navEstoqueToggle = el('navEstoque');
+  const navEstoqueSubmenu = el('navEstoqueSubmenu');
   const PAGE_ROUTES = Object.freeze({
     inicio:'/inicio',
     puxadas:'/puxadas',
@@ -4274,6 +4283,16 @@
     setFinanceiroExpanded(!expanded);
   });
 
+  function setEstoqueExpanded(expanded){
+    navEstoqueToggle.setAttribute('aria-expanded', String(expanded));
+    navEstoqueSubmenu.setAttribute('aria-hidden', String(!expanded));
+  }
+
+  navEstoqueToggle.addEventListener('click', () => {
+    const expanded = navEstoqueToggle.getAttribute('aria-expanded') === 'true';
+    setEstoqueExpanded(!expanded);
+  });
+
   function setSidebarCompact(compact){
     document.body.classList.toggle('sidebar-compact', compact);
     btnSidebarCompact.setAttribute('aria-pressed', String(compact));
@@ -4297,6 +4316,7 @@
     const isHome = name === 'inicio';
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'usuarios';
     const isRh = name === 'rhFolgas' || name === 'rhEscalas';
+    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -4306,6 +4326,10 @@
     setRhExpanded(isRh);
     if(isRh){
       navRhToggle.classList.add('active');
+    }
+    setEstoqueExpanded(isEstoque);
+    if(isEstoque){
+      navEstoqueToggle.classList.add('active');
     }
     document.querySelectorAll('[data-mobile-page]').forEach(button => {
       const active = button.dataset.mobilePage === name;
