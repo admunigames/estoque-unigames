@@ -1,6 +1,11 @@
 declare namespace Cloudflare {
   interface Env {
     ASSETS: Fetcher;
+    // Sem binding real em producao (banco D1 descartado na Fase 2) - o
+    // worker/index.ts substitui `env.DB` pelo adapter Postgres antes de
+    // qualquer uso (ver fetch() em worker/index.ts), entao continua sempre
+    // presente em runtime. No dev local (`pnpm dev`) e o binding real do D1
+    // de teste, via vite.config.ts + .openai/hosting.json.
     DB: D1Database;
     UPLOADS: R2Bucket;
     HYPERDRIVE?: Hyperdrive;
