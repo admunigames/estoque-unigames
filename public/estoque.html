@@ -2777,6 +2777,16 @@
             <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
           </div>
         </section>
+        <section class="home-missions" data-permission="missions" aria-labelledby="homeRoutinesTitle">
+          <div class="home-missions-head">
+            <div><span>ROTINA OPERACIONAL</span><h2 id="homeRoutinesTitle">Rotina do dia</h2></div>
+            <button class="home-missions-goto" type="button" data-home-target="missoes">VER ROTINA →</button>
+          </div>
+          <div class="home-mission-list" id="homeRoutineList" aria-live="polite">
+            <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
+            <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
+          </div>
+        </section>
         <section class="home-overview" data-any-permission="stock,database,pulls,report41" aria-labelledby="homeOverviewTitle">
           <div class="home-overview-head">
             <div><span>ESTOQUE FISCAL</span><h2 id="homeOverviewTitle">Atualizações das lojas</h2></div>
@@ -2964,58 +2974,108 @@
         <div class="page-header-meta"><p class="page-desc">Acompanhe as missões por loja. Os usuários destinatários informam se cada missão está a fazer, em andamento ou concluída.</p></div>
       </header>
 
-      <div class="mission-toolbar">
-        <div class="field">
-          <label for="missionDate">DATA DAS MISSÕES</label>
-          <input id="missionDate" type="date">
-        </div>
-        <div class="mission-notification-action">
-          <span id="missionNotificationStatus" role="status" aria-live="polite">Ative os avisos para receber lembretes 2 horas e 1 hora antes do limite.</span>
-          <button class="btn-outline" id="btnEnableMissionNotifications" type="button">ATIVAR NOTIFICAÇÕES</button>
-          <button class="btn-outline" id="btnTestMissionNotifications" type="button" hidden>TESTAR NOTIFICAÇÃO</button>
-        </div>
+      <div class="supply-tabs mission-section-tabs" role="tablist" aria-label="Seções de missões">
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-mission-section-tab="missoes">MISSÕES</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-mission-section-tab="rotina">ROTINA OPERACIONAL</button>
       </div>
 
-      <section class="mission-month-panel" id="missionMonthPanel">
-        <div class="mission-month-head">
-          <div><h3>AGENDA DO MÊS</h3><p>Visualização compacta das missões registradas e do histórico de execução.</p></div>
-          <div class="mission-month-actions">
-            <div class="field"><label for="missionMonth">MÊS</label><input id="missionMonth" type="month"></div>
-            <button class="btn-outline" id="btnRefreshMissionMonth" type="button">ATUALIZAR</button>
-            <button class="btn-accent" id="btnDownloadMissionMonthPdf" type="button">BAIXAR PDF</button>
+      <div class="mission-section-panel" id="missionSectionMissoes">
+        <div class="mission-toolbar">
+          <div class="field">
+            <label for="missionDate">DATA DAS MISSÕES</label>
+            <input id="missionDate" type="date">
+          </div>
+          <div class="mission-notification-action">
+            <span id="missionNotificationStatus" role="status" aria-live="polite">Ative os avisos para receber lembretes 2 horas e 1 hora antes do limite.</span>
+            <button class="btn-outline" id="btnEnableMissionNotifications" type="button">ATIVAR NOTIFICAÇÕES</button>
+            <button class="btn-outline" id="btnTestMissionNotifications" type="button" hidden>TESTAR NOTIFICAÇÃO</button>
           </div>
         </div>
-        <div id="missionMonthCalendar" class="mission-month-calendar" aria-live="polite"><div class="mission-month-empty">Selecione um mês para carregar a agenda.</div></div>
-      </section>
 
-      <section class="mission-admin-panel" data-admin-only>
-        <div class="mission-admin-head">
-          <div><h3>CADASTRAR NOVA MISSÃO</h3><p>Escolha se a missão será geral ou exclusiva para uma loja.</p></div>
-        </div>
-        <form id="missionForm">
-          <div class="mission-form-grid">
-            <div class="field double"><label for="missionTitle">TÍTULO DA MISSÃO</label><input id="missionTitle" maxlength="160" required placeholder="Ex.: Organizar a vitrine de acessórios"></div>
-            <div class="field"><label for="missionScope">DESTINO</label><select id="missionScope"><option value="general">MISSÃO GERAL — TODAS AS LOJAS</option><option value="store">MISSÃO PARA UMA LOJA</option></select></div>
-            <div class="field" id="missionCompanyField" hidden><label for="missionCompany">LOJA</label><select id="missionCompany"><option value="">SELECIONE A LOJA</option></select></div>
-            <div class="field full"><label for="missionDescription">DESCRIÇÃO E ORIENTAÇÕES</label><textarea id="missionDescription" maxlength="1200" rows="3" placeholder="Detalhes necessários para a loja concluir a missão..."></textarea></div>
-            <div class="field"><label for="missionStartDate">DATA INICIAL</label><input id="missionStartDate" type="date" required></div>
-            <div class="field"><label for="missionFrequency">REPETIÇÃO</label><select id="missionFrequency"><option value="once">SOMENTE NESTE DIA</option><option value="daily">DIÁRIA</option><option value="weekly">SEMANAL</option></select></div>
-            <div class="field"><label for="missionDeadlineMode">LIMITE DE HORÁRIO</label><select id="missionDeadlineMode"><option value="free">SEM LIMITE — LIVRE</option><option value="timed">COM HORÁRIO LIMITE</option></select></div>
-            <div class="field" id="missionDueTimeField" hidden><label for="missionDueTime">CONCLUIR ATÉ</label><input id="missionDueTime" type="time"></div>
+        <section class="mission-month-panel" id="missionMonthPanel">
+          <div class="mission-month-head">
+            <div><h3>AGENDA DO MÊS</h3><p>Visualização compacta das missões registradas e do histórico de execução.</p></div>
+            <div class="mission-month-actions">
+              <div class="field"><label for="missionMonth">MÊS</label><input id="missionMonth" type="month"></div>
+              <button class="btn-outline" id="btnRefreshMissionMonth" type="button">ATUALIZAR</button>
+              <button class="btn-accent" id="btnDownloadMissionMonthPdf" type="button">BAIXAR PDF</button>
+            </div>
           </div>
-          <div class="mission-form-actions"><button class="btn-accent" id="btnSaveMission" type="submit">CADASTRAR MISSÃO</button></div>
-          <div class="user-form-status" id="missionFormStatus" role="status" aria-live="polite"></div>
-        </form>
-      </section>
+          <div id="missionMonthCalendar" class="mission-month-calendar" aria-live="polite"><div class="mission-month-empty">Selecione um mês para carregar a agenda.</div></div>
+        </section>
 
-      <section class="mission-board">
-        <div class="mission-board-head">
-          <div><h3>MISSÕES PROGRAMADAS</h3><p id="missionBoardDescription">Selecione a visão que deseja acompanhar.</p></div>
-          <div class="mission-board-meta"><span class="mission-count" id="missionCount">0 MISSÕES</span></div>
+        <section class="mission-admin-panel" data-admin-only>
+          <div class="mission-admin-head">
+            <div><h3>CADASTRAR NOVA MISSÃO</h3><p>Escolha se a missão será geral ou exclusiva para uma loja.</p></div>
+          </div>
+          <form id="missionForm">
+            <div class="mission-form-grid">
+              <div class="field double"><label for="missionTitle">TÍTULO DA MISSÃO</label><input id="missionTitle" maxlength="160" required placeholder="Ex.: Organizar a vitrine de acessórios"></div>
+              <div class="field"><label for="missionScope">DESTINO</label><select id="missionScope"><option value="general">MISSÃO GERAL — TODAS AS LOJAS</option><option value="store">MISSÃO PARA UMA LOJA</option></select></div>
+              <div class="field" id="missionCompanyField" hidden><label for="missionCompany">LOJA</label><select id="missionCompany"><option value="">SELECIONE A LOJA</option></select></div>
+              <div class="field full"><label for="missionDescription">DESCRIÇÃO E ORIENTAÇÕES</label><textarea id="missionDescription" maxlength="1200" rows="3" placeholder="Detalhes necessários para a loja concluir a missão..."></textarea></div>
+              <div class="field"><label for="missionStartDate">DATA INICIAL</label><input id="missionStartDate" type="date" required></div>
+              <div class="field"><label for="missionFrequency">REPETIÇÃO</label><select id="missionFrequency"><option value="once">SOMENTE NESTE DIA</option><option value="daily">DIÁRIA</option><option value="weekly">SEMANAL</option></select></div>
+              <div class="field"><label for="missionDeadlineMode">LIMITE DE HORÁRIO</label><select id="missionDeadlineMode"><option value="free">SEM LIMITE — LIVRE</option><option value="timed">COM HORÁRIO LIMITE</option></select></div>
+              <div class="field" id="missionDueTimeField" hidden><label for="missionDueTime">CONCLUIR ATÉ</label><input id="missionDueTime" type="time"></div>
+            </div>
+            <div class="mission-form-actions"><button class="btn-accent" id="btnSaveMission" type="submit">CADASTRAR MISSÃO</button></div>
+            <div class="user-form-status" id="missionFormStatus" role="status" aria-live="polite"></div>
+          </form>
+        </section>
+
+        <section class="mission-board">
+          <div class="mission-board-head">
+            <div><h3>MISSÕES PROGRAMADAS</h3><p id="missionBoardDescription">Selecione a visão que deseja acompanhar.</p></div>
+            <div class="mission-board-meta"><span class="mission-count" id="missionCount">0 MISSÕES</span></div>
+          </div>
+          <div class="mission-tabs" id="missionTabs" aria-label="Visões de missões"></div>
+          <div class="mission-list" id="missionList" aria-live="polite"><div class="mission-empty">Carregando missões…</div></div>
+        </section>
+      </div>
+
+      <div class="mission-section-panel" id="missionSectionRotina" hidden>
+        <div class="mission-toolbar">
+          <div class="field">
+            <label for="routineDate">DATA DA ROTINA</label>
+            <input id="routineDate" type="date">
+          </div>
         </div>
-        <div class="mission-tabs" id="missionTabs" aria-label="Visões de missões"></div>
-        <div class="mission-list" id="missionList" aria-live="polite"><div class="mission-empty">Carregando missões…</div></div>
-      </section>
+
+        <section class="mission-admin-panel" data-admin-only>
+          <div class="mission-admin-head">
+            <div><h3>CADASTRAR ROTINA OPERACIONAL</h3><p>Rotinas se repetem toda semana no dia escolhido. Se não forem concluídas, migram automaticamente como pendência para o dia seguinte.</p></div>
+          </div>
+          <form id="routineForm">
+            <div class="mission-form-grid">
+              <div class="field double"><label for="routineTitle">TÍTULO DA ROTINA</label><input id="routineTitle" maxlength="160" required placeholder="Ex.: Conferir caixa da loja"></div>
+              <div class="field"><label for="routineWeekday">DIA DA SEMANA</label><select id="routineWeekday">
+                <option value="1">SEGUNDA-FEIRA</option>
+                <option value="2">TERÇA-FEIRA</option>
+                <option value="3">QUARTA-FEIRA</option>
+                <option value="4">QUINTA-FEIRA</option>
+                <option value="5">SEXTA-FEIRA</option>
+                <option value="6">SÁBADO</option>
+                <option value="0">DOMINGO</option>
+              </select></div>
+              <div class="field"><label for="routineScope">DESTINO</label><select id="routineScope"><option value="general">ROTINA GERAL — TODAS AS LOJAS</option><option value="store">ROTINA PARA UMA LOJA</option></select></div>
+              <div class="field" id="routineCompanyField" hidden><label for="routineCompany">LOJA</label><select id="routineCompany"><option value="">SELECIONE A LOJA</option></select></div>
+              <div class="field full"><label for="routineDescription">DESCRIÇÃO E ORIENTAÇÕES</label><textarea id="routineDescription" maxlength="1200" rows="3" placeholder="Detalhes da rotina..."></textarea></div>
+            </div>
+            <div class="mission-form-actions"><button class="btn-accent" id="btnSaveRoutine" type="submit">CADASTRAR ROTINA</button></div>
+            <div class="user-form-status" id="routineFormStatus" role="status" aria-live="polite"></div>
+          </form>
+          <div class="mission-list" id="routineDefinitionsList" aria-live="polite"></div>
+        </section>
+
+        <section class="mission-board">
+          <div class="mission-board-head">
+            <div><h3>ROTINA DO DIA</h3><p id="routineBoardDescription">Tarefas da rotina operacional para a data selecionada. Pendências não concluídas migram automaticamente para o dia seguinte.</p></div>
+            <div class="mission-board-meta"><span class="mission-count" id="routineCount">0 TAREFAS</span></div>
+          </div>
+          <div class="mission-list" id="routineList" aria-live="polite"><div class="mission-empty">Carregando rotina…</div></div>
+        </section>
+      </div>
     </section>
 
 <!-- ================= CAPTAÇÃO ================= -->
@@ -4116,6 +4176,10 @@
   let missionView = 'general';
   let missionCompanyId = '';
   let missionsLoading = false;
+  let missionSectionTab = 'missoes';
+  let routineRows = [];
+  let routineDefinitions = [];
+  let routinesLoading = false;
   let outputRows = [];
   let outputsLoading = false;
   let outputView = 'requested';
@@ -4878,7 +4942,7 @@
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
     if(name === 'usuarios') loadAdminUsers();
-    if(name === 'missoes') loadMissions();
+    if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
@@ -4897,7 +4961,7 @@
       history.replaceState({page:name}, '', PAGE_ROUTES[name]);
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
-    if(name === 'missoes') loadMissions();
+    if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
@@ -9193,6 +9257,237 @@ function renderHomeTasks(){
     }
   }
 
+  const routineWeekdayLabels = ['DOMINGO','SEGUNDA-FEIRA','TERÇA-FEIRA','QUARTA-FEIRA','QUINTA-FEIRA','SEXTA-FEIRA','SÁBADO'];
+
+  function setMissionSectionTab(tab){
+    missionSectionTab = tab;
+    document.querySelectorAll('[data-mission-section-tab]').forEach(button => {
+      const active = button.dataset.missionSectionTab === tab;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+    el('missionSectionMissoes').hidden = tab !== 'missoes';
+    el('missionSectionRotina').hidden = tab !== 'rotina';
+    if(tab === 'rotina') loadRoutines();
+  }
+
+  function routineTaskStatus(task){
+    return normalizedMissionStatus(task.status);
+  }
+
+  function routineCardHtml(task){
+    const status = routineTaskStatus(task);
+    const completed = status === 'completed';
+    const target = task.scope === 'general' ? 'GERAL · TODAS AS LOJAS' : (task.companyName || 'LOJA');
+    const marker = '<span class="mission-check '+status+'" aria-hidden="true">'+
+      (status === 'completed' ? '✓' : status === 'in_progress' ? '◐' : '○')+'</span>';
+    return '<article class="mission-card'+(completed ? ' completed' : status === 'in_progress' ? ' in-progress' : '')+'">'+
+      marker+
+      '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(task.title || '')+'</strong>'+
+        (task.description ? '<p class="mission-card-description">'+escapeHtml(task.description)+'</p>' : '')+
+        '<div class="mission-badges">'+
+          '<span class="mission-badge">'+escapeHtml(target)+'</span>'+
+          '<span class="mission-badge">↻ '+escapeHtml(routineWeekdayLabels[task.weekday] || '')+'</span>'+
+          (task.carriedOver ? '<span class="mission-badge overdue">MIGROU DE '+escapeHtml(task.originDate)+'</span>' : '')+
+        '</div></div>'+
+      '<div class="mission-card-actions"><span class="mission-status'+(completed ? ' done' : status === 'in_progress' ? ' progress' : '')+'">'+
+        escapeHtml(missionStatusLabels[status])+
+        (currentSession.role === 'admin' ? ' · '+escapeHtml(task.companyName || '') : '')+
+        '</span>'+
+        (currentSession.role === 'admin'
+          ? ''
+          : '<select class="mission-status-select status-'+status+'" data-routine-status="'+escapeHtml(task.id)+
+            '" data-current-status="'+status+'" aria-label="Status da tarefa">'+
+            '<option value="todo"'+(status === 'todo' ? ' selected' : '')+'>A FAZER</option>'+
+            '<option value="in_progress"'+(status === 'in_progress' ? ' selected' : '')+'>EM ANDAMENTO</option>'+
+            '<option value="completed"'+(status === 'completed' ? ' selected' : '')+'>CONCLUÍDO</option>'+
+            '</select>')+
+      '</div></article>';
+  }
+
+  function renderRoutineList(){
+    const list = el('routineList');
+    if(!list) return;
+    el('routineCount').textContent = routineRows.length+' TAREFA'+(routineRows.length === 1 ? '' : 'S');
+    list.innerHTML = routineRows.length
+      ? routineRows.map(routineCardHtml).join('')
+      : '<div class="mission-empty">Nenhuma tarefa de rotina para esta data.</div>';
+  }
+
+  function renderRoutineDefinitions(){
+    const list = el('routineDefinitionsList');
+    if(!list) return;
+    list.innerHTML = routineDefinitions.length
+      ? routineDefinitions.map(routine =>
+          '<article class="mission-card">'+
+            '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(routine.title)+'</strong>'+
+              '<div class="mission-badges">'+
+                '<span class="mission-badge">↻ '+escapeHtml(routineWeekdayLabels[routine.weekday] || '')+'</span>'+
+                '<span class="mission-badge">'+escapeHtml(routine.scope === 'general' ? 'GERAL · TODAS AS LOJAS' : (routine.companyName || 'LOJA'))+'</span>'+
+              '</div></div>'+
+            '<div class="mission-card-actions">'+
+              '<button class="mission-delete" type="button" data-routine-delete="'+escapeHtml(routine.id)+'">EXCLUIR</button>'+
+            '</div></article>'
+        ).join('')
+      : '<div class="mission-empty">Nenhuma rotina cadastrada.</div>';
+  }
+
+  async function loadRoutines(){
+    if(!canAccess('missions') || routinesLoading) return;
+    const list = el('routineList');
+    const date = el('routineDate').value || todayDateKey();
+    routinesLoading = true;
+    if(list) list.innerHTML = '<div class="mission-empty">Carregando rotina…</div>';
+    try{
+      const data = await missionApiRequest('/api/routines?'+new URLSearchParams({date}));
+      routineRows = Array.isArray(data.tasks) ? data.tasks : [];
+      routineDefinitions = Array.isArray(data.routines) ? data.routines : [];
+      renderRoutineList();
+      renderRoutineDefinitions();
+    }catch(error){
+      routineRows = [];
+      if(list) list.innerHTML = '<div class="mission-empty">'+escapeHtml(error.message)+'</div>';
+      el('routineCount').textContent = '0 TAREFAS';
+    }finally{
+      routinesLoading = false;
+    }
+  }
+
+  function homeRoutineRowHtml(task){
+    const status = routineTaskStatus(task);
+    const completed = status === 'completed';
+    const target = task.scope === 'general' ? 'ROTINA GERAL' : (task.companyName || 'MINHA LOJA');
+    const marker = '<span class="home-mission-check '+status+'" aria-hidden="true">'+
+      (status === 'completed' ? '✓' : status === 'in_progress' ? '◐' : '○')+'</span>';
+    return '<div class="home-mission-row'+(completed ? ' completed' : status === 'in_progress' ? ' in-progress' : '')+'">'+marker+
+      '<div class="home-mission-copy"><strong class="home-mission-title">'+escapeHtml(task.title || '')+'</strong>'+
+      '<span class="home-mission-meta">'+escapeHtml(target)+' · '+escapeHtml(missionStatusLabels[status])+'</span></div>'+
+      '<div class="home-mission-actions">'+
+      (currentSession.role === 'admin' ? '' :
+        '<select class="mission-status-select status-'+status+'" data-home-routine-status="'+escapeHtml(task.id)+
+        '" data-current-status="'+status+'" aria-label="Status da tarefa">'+
+        '<option value="todo"'+(status === 'todo' ? ' selected' : '')+'>A FAZER</option>'+
+        '<option value="in_progress"'+(status === 'in_progress' ? ' selected' : '')+'>EM ANDAMENTO</option>'+
+        '<option value="completed"'+(status === 'completed' ? ' selected' : '')+'>CONCLUÍDO</option>'+
+        '</select>')+
+      '</div></div>';
+  }
+
+  async function loadHomeRoutines(){
+    const list = el('homeRoutineList');
+    if(!list || !canAccess('missions')) return;
+    try{
+      const data = await missionApiRequest('/api/routines?'+new URLSearchParams({date:todayDateKey()}));
+      const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+      list.innerHTML = tasks.length
+        ? tasks.slice(0,8).map(homeRoutineRowHtml).join('')
+        : '<div class="home-tasks-empty">Nenhuma tarefa de rotina para hoje.</div>';
+    }catch{
+      list.innerHTML = '<div class="home-tasks-empty">Não foi possível carregar a rotina.</div>';
+    }
+  }
+
+  async function updateRoutineStatus(taskId,status){
+    await missionApiRequest('/api/routines',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({taskId,status})
+    });
+    await Promise.all([loadRoutines(),loadHomeRoutines()]);
+    if(status === 'completed'){
+      showPurchaseToast('Tarefa concluída. O administrador responsável foi avisado.');
+    }else if(status === 'in_progress'){
+      showPurchaseToast('Tarefa marcada como em andamento.');
+    }else{
+      showPurchaseToast('Tarefa marcada como a fazer.');
+    }
+  }
+
+  document.querySelectorAll('[data-mission-section-tab]').forEach(button => {
+    button.addEventListener('click',() => setMissionSectionTab(button.dataset.missionSectionTab));
+  });
+  el('routineDate').value = todayDateKey();
+  el('routineDate').addEventListener('change',() => loadRoutines());
+  el('routineScope').addEventListener('change',() => {
+    const storeRoutine = el('routineScope').value === 'store';
+    el('routineCompanyField').hidden = !storeRoutine;
+    el('routineCompany').required = storeRoutine;
+  });
+  el('routineForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const storeRoutine = el('routineScope').value === 'store';
+    const company = companies.find(item => item.id === el('routineCompany').value);
+    const button = el('btnSaveRoutine');
+    button.disabled = true;
+    el('routineFormStatus').textContent = 'SALVANDO ROTINA…';
+    el('routineFormStatus').className = 'user-form-status';
+    try{
+      await missionApiRequest('/api/routines',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          title:el('routineTitle').value,
+          description:el('routineDescription').value,
+          weekday:Number(el('routineWeekday').value),
+          scope:storeRoutine ? 'store' : 'general',
+          companyId:storeRoutine ? el('routineCompany').value : '',
+          companyName:storeRoutine && company ? company.name : ''
+        })
+      });
+      el('routineFormStatus').textContent = 'ROTINA CADASTRADA COM SUCESSO.';
+      el('routineFormStatus').className = 'user-form-status success';
+      el('routineTitle').value = '';
+      el('routineDescription').value = '';
+      await Promise.all([loadRoutines(),loadHomeRoutines()]);
+    }catch(error){
+      el('routineFormStatus').textContent = error.message;
+      el('routineFormStatus').className = 'user-form-status error';
+    }finally{
+      button.disabled = false;
+    }
+  });
+  el('routineList').addEventListener('change',async event => {
+    const taskId = event.target.dataset.routineStatus;
+    if(!taskId) return;
+    const previousStatus = event.target.dataset.currentStatus;
+    event.target.disabled = true;
+    try{
+      await updateRoutineStatus(taskId,event.target.value);
+    }catch(error){
+      event.target.value = previousStatus;
+      showPurchaseToast(error.message,'error');
+    }finally{
+      event.target.disabled = false;
+    }
+  });
+  el('routineDefinitionsList').addEventListener('click',async event => {
+    const button = event.target.closest('[data-routine-delete]');
+    if(!button || !confirm('Excluir esta rotina e todas as tarefas geradas por ela?')) return;
+    button.disabled = true;
+    try{
+      await missionApiRequest('/api/routines?id='+encodeURIComponent(button.dataset.routineDelete),{method:'DELETE'});
+      await Promise.all([loadRoutines(),loadHomeRoutines()]);
+      showPurchaseToast('Rotina excluída.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      button.disabled = false;
+    }
+  });
+  el('homeRoutineList').addEventListener('change',async event => {
+    const taskId = event.target.dataset.homeRoutineStatus;
+    if(!taskId) return;
+    const previousStatus = event.target.dataset.currentStatus;
+    event.target.disabled = true;
+    try{
+      await updateRoutineStatus(taskId,event.target.value);
+    }catch(error){
+      event.target.value = previousStatus;
+      showPurchaseToast(error.message,'error');
+    }finally{
+      event.target.disabled = false;
+    }
+  });
+
   function updateMissionNotificationStatus(){
     const button = el('btnEnableMissionNotifications');
     const status = el('missionNotificationStatus');
@@ -11645,7 +11940,7 @@ function renderHomeTasks(){
       startTaskReminderMonitor();
     })());
     if(canAccess('missions')) loaders.push((async () => {
-      await Promise.all([loadMissions(),loadHomeMissions(),loadMissionMonthAgenda()]);
+      await Promise.all([loadMissions(),loadHomeMissions(),loadMissionMonthAgenda(),loadHomeRoutines()]);
       if(!canAccess('tasks') && 'Notification' in window &&
         Notification.permission === 'granted'){
         await restorePushSubscription().catch(() => setPushNotificationsActive(false));

@@ -164,6 +164,58 @@ export const missionCompletions = pgTable(
   ],
 );
 
+export const operationalRoutines = pgTable(
+  "operational_routines",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    weekday: integer("weekday").notNull(),
+    scope: text("scope").notNull().default("store"),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    active: integer("active").notNull().default(1),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("operational_routines_weekday_idx").on(table.weekday),
+    index("operational_routines_created_by_idx").on(table.createdBy),
+  ],
+);
+
+export const operationalRoutineTasks = pgTable(
+  "operational_routine_tasks",
+  {
+    id: text("id").primaryKey(),
+    routineId: text("routine_id").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    originDate: text("origin_date").notNull(),
+    dueDate: text("due_date").notNull(),
+    status: text("status").notNull().default("todo"),
+    completedBy: text("completed_by").notNull().default(""),
+    completedByName: text("completed_by_name").notNull().default(""),
+    completedAt: text("completed_at").notNull().default(""),
+    carriedOver: integer("carried_over").notNull().default(0),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [
+    uniqueIndex("operational_routine_tasks_origin_unique").on(
+      table.routineId,
+      table.originDate,
+      table.companyId,
+    ),
+    index("operational_routine_tasks_due_company_idx").on(
+      table.dueDate,
+      table.companyId,
+    ),
+  ],
+);
+
 export const instructions = pgTable(
   "instructions",
   {

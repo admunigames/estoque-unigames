@@ -881,6 +881,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
   const directPermissions: Array<[boolean, Permission]> = [
     [path === "/tarefas", "tasks"],
     [path === "/missoes" || path.startsWith("/api/missions"), "missions"],
+    [path.startsWith("/api/routines"), "missions"],
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
     [path === "/insumos" || path.startsWith("/api/supplies"), "supplies"],
@@ -1591,6 +1592,99 @@ async function dispatchDueMissionNotifications(env: Env) {
   }
 }
 
+type RoutineCompanyRecord = { id: string; name: string };
+type DueRoutineRow = {
+  id: string;
+  scope: string;
+  companyId: string;
+  companyName: string;
+};
+
+const ROUTINE_DIACRITICS_PATTERN = new RegExp(
+  "[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + "]",
+  "g",
+);
+
+// Depósito e Assistência são setores internos, não lojas — não recebem rotinas gerais.
+function isNonStoreCompany(name: string) {
+  const normalized = name.toLowerCase().normalize("NFD").replace(ROUTINE_DIACRITICS_PATTERN, "").trim();
+  if (/\bassistencia\b/.test(normalized) || normalized.includes("assistance")) return true;
+  return (
+    /\bdeposito\b/.test(normalized) ||
+    normalized === "cd" ||
+    normalized.startsWith("cd ") ||
+    normalized.includes("centro de distribuicao")
+  );
+}
+
+async function routineStoreCompanies(env: Env): Promise<RoutineCompanyRecord[]> {
+  try {
+    const row = await env.DB
+      .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
+      .first<{ value: string }>();
+    const parsed = row?.value ? JSON.parse(row.value) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is RoutineCompanyRecord =>
+        Boolean(item) &&
+        typeof item === "object" &&
+        typeof item.id === "string" &&
+        typeof item.name === "string" &&
+        !isNonStoreCompany(item.name),
+    );
+  } catch {
+    return [];
+  }
+}
+
+// Roda a cada minuto (idempotente): migra pendências de rotina não concluídas
+// para a data de hoje e gera as tarefas de hoje para as rotinas cujo dia da
+// semana bate com hoje.
+async function advanceOperationalRoutines(env: Env): Promise<void> {
+  const today = recifeDateTime().date;
+
+  await env.DB
+    .prepare(
+      `UPDATE operational_routine_tasks
+       SET due_date=?1, carried_over=1, updated_at=CURRENT_TIMESTAMP
+       WHERE status <> 'completed' AND due_date < ?1`,
+    )
+    .bind(today)
+    .run();
+
+  const todayWeekday = new Date(`${today}T12:00:00Z`).getUTCDay();
+  const dueRoutines = await env.DB
+    .prepare(
+      `SELECT id, scope, company_id AS companyId, company_name AS companyName
+       FROM operational_routines WHERE active=1 AND weekday=?1`,
+    )
+    .bind(todayWeekday)
+    .all<DueRoutineRow>();
+
+  const generalCompanies = (dueRoutines.results ?? []).some((routine) => routine.scope === "general")
+    ? await routineStoreCompanies(env)
+    : [];
+
+  for (const routine of dueRoutines.results ?? []) {
+    const targets: RoutineCompanyRecord[] =
+      routine.scope === "general"
+        ? generalCompanies
+        : [{ id: routine.companyId, name: routine.companyName }];
+    for (const target of targets) {
+      if (!target.id) continue;
+      await env.DB
+        .prepare(
+          `INSERT INTO operational_routine_tasks
+            (id, routine_id, company_id, company_name, origin_date, due_date, status, created_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?5, 'todo', CURRENT_TIMESTAMP)
+           ON CONFLICT (routine_id, origin_date, company_id) DO NOTHING`,
+        )
+        .bind(crypto.randomUUID(), routine.id, target.id, target.name, today)
+        .run();
+    }
+  }
+}
+
 function securityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set("referrer-policy", "same-origin");
@@ -1740,6 +1834,7 @@ const worker = {
     ctx.waitUntil(Promise.all([
       dispatchDueTaskNotifications(env),
       dispatchDueMissionNotifications(env),
+      advanceOperationalRoutines(env),
       createAutomaticBackup(env, config.sessionSecret),
     ]));
   },
