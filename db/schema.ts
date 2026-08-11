@@ -313,6 +313,42 @@ export const supplyMissingMarks = pgTable(
   ],
 );
 
+export const supplyRequests = pgTable(
+  "supply_requests",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    weekStart: text("week_start").notNull(),
+    responsibleName: text("responsible_name").notNull().default(""),
+    note: text("note").notNull().default(""),
+    status: text("status").notNull().default("submitted"),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("supply_requests_company_week_unique").on(
+      table.companyId,
+      table.weekStart,
+    ),
+  ],
+);
+
+export const supplyRequestItems = pgTable(
+  "supply_request_items",
+  {
+    id: text("id").primaryKey(),
+    requestId: text("request_id").notNull(),
+    productId: text("product_id").notNull(),
+    productName: text("product_name").notNull(),
+    categoryName: text("category_name").notNull().default(""),
+    quantity: integer("quantity").notNull(),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("supply_request_items_request_idx").on(table.requestId)],
+);
+
 export const supplyItems = pgTable(
   "supply_items",
   {

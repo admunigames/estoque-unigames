@@ -2054,6 +2054,20 @@
   .supply-missing-item.out span::after{content:' (SEM ESTOQUE)';color:#ef817b;font-size:9px;}
   html[data-theme="light"] .supply-missing-group{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .supply-missing-item{background:#fff;}
+  .supply-request-item{
+    display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(39,69,97,.32);
+    border-radius:9px;background:var(--bg-card);
+  }
+  .supply-request-item.marked{border-color:rgba(225,173,73,.5);background:rgba(225,173,73,.1);}
+  .supply-request-item span{flex:1;color:var(--ink);font:700 11px/1.35 var(--sans);overflow-wrap:anywhere;}
+  .supply-request-item input[type="number"]{width:64px;flex:none;}
+  .supply-request-summary{
+    display:flex;flex-wrap:wrap;gap:16px;margin-bottom:14px;padding:12px 14px;border-radius:11px;
+    border:1px solid rgba(79,134,189,.32);background:rgba(79,134,189,.05);
+  }
+  .supply-request-summary div{color:var(--ink-soft);font:800 9px/1.5 var(--mono);}
+  .supply-request-summary strong{display:block;color:var(--ink);font:900 12px/1.4 var(--sans);}
+  html[data-theme="light"] .supply-request-item{background:#fff;}
   .supply-admin-tabs{margin-bottom:16px;}
   .supply-admin-tab-panel{display:grid;gap:12px;}
   .supply-category-form{display:flex;gap:8px;max-width:420px;}
@@ -2996,6 +3010,27 @@
         </div>
         <div class="user-form-status" id="supplyFormStatus" role="status" aria-live="polite"></div>
         <div class="supply-missing-groups" id="supplyMissingGroups"><div class="supply-empty">Carregando produtos…</div></div>
+      </section>
+
+      <section class="supply-register-panel" id="supplyRequestPanel" hidden>
+        <div class="supply-panel-head">
+          <div><h3>SOLICITAÇÃO</h3><p id="supplyRequestDescription">Revise o que está marcado, informe o responsável e envie a solicitação da semana.</p></div>
+        </div>
+        <div id="supplyRequestSubmitted" hidden>
+          <div class="user-form-status success" id="supplyRequestSubmittedStatus"></div>
+          <div class="supply-request-summary" id="supplyRequestSummaryMeta"></div>
+          <div class="supply-missing-groups" id="supplyRequestSummaryGroups"></div>
+        </div>
+        <form id="supplyRequestForm">
+          <div class="supply-form-grid">
+            <div class="field"><label for="supplyRequestResponsible">RESPONSÁVEL PELA SOLICITAÇÃO</label><input id="supplyRequestResponsible" maxlength="120" required></div>
+            <div class="field"><label>SEMANA DE SOLICITAÇÃO</label><div class="supply-missing-week" id="supplyRequestWeekLabel">—</div></div>
+          </div>
+          <div class="supply-missing-groups" id="supplyRequestGroups"><div class="supply-empty">Carregando produtos…</div></div>
+          <div class="field full" style="margin-top:14px;"><label for="supplyRequestNote">OBSERVAÇÃO (produto não cadastrado, etc.)</label><textarea id="supplyRequestNote" maxlength="600" rows="3"></textarea></div>
+          <div class="supply-form-actions"><button class="btn-accent" id="btnSubmitSupplyRequest" type="submit">ENVIAR SOLICITAÇÃO</button></div>
+          <div class="user-form-status" id="supplyRequestFormStatus" role="status" aria-live="polite"></div>
+        </form>
       </section>
 
       <section class="supply-board">
@@ -4555,7 +4590,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); }
+    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
     if(name === 'instrucoes') loadInstructions();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -4573,7 +4608,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); }
+    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
     if(name === 'instrucoes') loadInstructions();
   }
 
@@ -9654,6 +9689,145 @@ function renderHomeTasks(){
   });
 
   el('supplyCompany').addEventListener('change',loadSupplyMissing);
+
+  let supplyRequestLoading = false;
+
+  async function supplyRequestApiRequest(options,query){
+    const suffix = query ? '?'+query.toString() : '';
+    const response = await fetch('/api/supplies/requests'+suffix,{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function setSupplyRequestFormStatus(message,type){
+    const status = el('supplyRequestFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  function supplyRequestGroupsHtml(products){
+    const groups = new Map();
+    products.forEach(product => {
+      if(!groups.has(product.categoryName)) groups.set(product.categoryName,[]);
+      groups.get(product.categoryName).push(product);
+    });
+    return Array.from(groups.entries()).map(([category,items]) =>
+      '<div class="supply-missing-group"><h4>'+escapeHtml(category)+'</h4>'+
+      '<div class="supply-missing-item-list">'+items.map(product =>
+        '<label class="supply-request-item'+(product.marked ? ' marked' : '')+'">'+
+          '<input type="checkbox" data-request-check="'+escapeHtml(product.id)+'"'+(product.marked ? ' checked' : '')+'>'+
+          '<span>'+escapeHtml(product.name)+'</span>'+
+          '<input type="number" min="1" step="1" placeholder="QTD" data-request-quantity="'+escapeHtml(product.id)+'"'+
+            (product.marked ? ' value="1"' : ' disabled')+'>'+
+        '</label>'
+      ).join('')+'</div></div>'
+    ).join('');
+  }
+
+  function supplyRequestSummaryGroupsHtml(items){
+    const groups = new Map();
+    items.forEach(item => {
+      if(!groups.has(item.categoryName)) groups.set(item.categoryName,[]);
+      groups.get(item.categoryName).push(item);
+    });
+    return Array.from(groups.entries()).map(([category,rows]) =>
+      '<div class="supply-missing-group"><h4>'+escapeHtml(category)+'</h4>'+
+      '<div class="supply-missing-item-list">'+rows.map(row =>
+        '<div class="supply-request-item marked"><span>'+escapeHtml(row.productName)+'</span>'+
+          '<strong style="color:var(--accent);font:900 11px/1 var(--mono);">'+Number(row.quantity || 0)+'</strong></div>'
+      ).join('')+'</div></div>'
+    ).join('');
+  }
+
+  async function loadSupplyRequest(){
+    const isAdmin = currentSession.role === 'admin';
+    el('supplyRequestPanel').hidden = isAdmin || !canAccess('supplies');
+    if(isAdmin || !canAccess('supplies') || supplyRequestLoading) return;
+    supplyRequestLoading = true;
+    try{
+      const data = await supplyRequestApiRequest(null);
+      el('supplyRequestWeekLabel').textContent = formatSupplyMissingWeek(data.weekStart);
+      if(data.submitted){
+        el('supplyRequestForm').hidden = true;
+        el('supplyRequestSubmitted').hidden = false;
+        const request = data.request || {};
+        el('supplyRequestSubmittedStatus').textContent = 'SOLICITAÇÃO ENVIADA — AGUARDANDO SEPARAÇÃO.';
+        el('supplyRequestSummaryMeta').innerHTML =
+          '<div>RESPONSÁVEL<strong>'+escapeHtml(request.responsibleName || '—')+'</strong></div>'+
+          '<div>ENVIADO POR<strong>'+escapeHtml(request.createdByName || '—')+'</strong></div>'+
+          '<div>DATA<strong>'+escapeHtml(new Date(request.createdAt).toLocaleString('pt-BR'))+'</strong></div>'+
+          (request.note ? '<div>OBSERVAÇÃO<strong>'+escapeHtml(request.note)+'</strong></div>' : '');
+        const items = Array.isArray(data.items) ? data.items : [];
+        el('supplyRequestSummaryGroups').innerHTML = items.length
+          ? supplyRequestSummaryGroupsHtml(items)
+          : '<div class="supply-empty">Nenhum produto marcado — só a observação foi enviada.</div>';
+      }else{
+        el('supplyRequestSubmitted').hidden = true;
+        el('supplyRequestForm').hidden = false;
+        el('supplyRequestResponsible').value = currentSession.displayName || '';
+        const products = Array.isArray(data.products) ? data.products : [];
+        el('supplyRequestGroups').innerHTML = products.length
+          ? supplyRequestGroupsHtml(products)
+          : '<div class="supply-empty">Nenhum produto de insumo ativo cadastrado ainda.</div>';
+      }
+    }catch(error){
+      setSupplyRequestFormStatus(error.message,'error');
+    }finally{
+      supplyRequestLoading = false;
+    }
+  }
+
+  el('supplyRequestGroups').addEventListener('change',event => {
+    const checkbox = event.target.closest('[data-request-check]');
+    if(!checkbox) return;
+    const item = checkbox.closest('.supply-request-item');
+    const quantityInput = item.querySelector('[data-request-quantity]');
+    item.classList.toggle('marked',checkbox.checked);
+    quantityInput.disabled = !checkbox.checked;
+    if(checkbox.checked && !quantityInput.value) quantityInput.value = '1';
+  });
+
+  el('supplyRequestForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const items = Array.from(el('supplyRequestGroups').querySelectorAll('[data-request-check]:checked'))
+      .map(checkbox => ({
+        productId:checkbox.dataset.requestCheck,
+        quantity:Number(checkbox.closest('.supply-request-item').querySelector('[data-request-quantity]').value)
+      }));
+    if(items.some(item => !Number.isFinite(item.quantity) || item.quantity <= 0)){
+      setSupplyRequestFormStatus('INFORME UMA QUANTIDADE VÁLIDA PARA CADA PRODUTO MARCADO.','error');
+      return;
+    }
+    const button = el('btnSubmitSupplyRequest');
+    button.disabled = true;
+    setSupplyRequestFormStatus('ENVIANDO SOLICITAÇÃO…','');
+    try{
+      await supplyRequestApiRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          responsibleName:el('supplyRequestResponsible').value,
+          note:el('supplyRequestNote').value,
+          items
+        })
+      });
+      setSupplyRequestFormStatus('SOLICITAÇÃO ENVIADA.','success');
+      await loadSupplyRequest();
+    }catch(error){
+      setSupplyRequestFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
 
   async function requestSupplyItems(itemIds){
     if(!itemIds.length) return;
