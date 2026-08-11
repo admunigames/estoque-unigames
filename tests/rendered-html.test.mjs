@@ -749,15 +749,14 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(html, /id="supplyMissingGroups"/);
   assert.match(html, /data-missing-product=/);
   assert.match(html, /id="supplyCompany"/);
-  assert.match(html, /data-supply-view="active"/);
-  assert.match(html, /data-supply-view="history"/);
-  assert.match(html, /data-supply-request/);
-  assert.match(html, /data-supply-receive/);
-  assert.match(html, /data-supply-delete/);
+  assert.match(html, /id="supplyRequestPanel" hidden/);
+  assert.match(html, /data-request-check=/);
+  assert.match(html, /id="supplyAdminSeparacao" hidden/);
+  assert.match(html, /data-separation-confirm=/);
+  assert.match(html, /data-receive-item=/);
   assert.match(html, /currentSession\.role === 'admin'/);
   assert.match(html, /method:'DELETE'/);
-  assert.match(html, /EXCLUIR SOLICITAÇÃO/);
-  assert.match(html, /class="supply-history-group"/);
+  assert.match(html, /SEPARAÇÃO<\/button>/);
   assert.match(html, /insumos:'\/insumos'/);
   assert.match(html, /value="supplies"> Insumos/);
 

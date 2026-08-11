@@ -2996,12 +2996,6 @@
         <div class="page-header-meta"><p class="page-desc">Anote o que está faltando na loja, registre o pedido semanal e mantenha em aberto tudo o que ainda não chegou.</p></div>
       </header>
 
-      <section class="supply-summary" aria-label="Resumo dos insumos">
-        <article class="supply-summary-card"><span>ANOTADOS PARA PEDIR</span><strong id="supplyNotedCount">0</strong></article>
-        <article class="supply-summary-card awaiting"><span>AGUARDANDO CHEGADA</span><strong id="supplyAwaitingCount">0</strong></article>
-        <article class="supply-summary-card received"><span>HISTÓRICO RECEBIDO</span><strong id="supplyReceivedCount">0</strong></article>
-      </section>
-
       <section class="supply-register-panel" id="supplyExitPanel" hidden>
         <div class="supply-panel-head">
           <div><h3>SAÍDA DE INSUMOS</h3><p>Registre o uso interno de um produto já cadastrado. A baixa é aplicada direto no estoque.</p></div>
@@ -3057,28 +3051,6 @@
           <div class="supply-form-actions"><button class="btn-accent" id="btnSubmitSupplyRequest" type="submit">ENVIAR SOLICITAÇÃO</button></div>
           <div class="user-form-status" id="supplyRequestFormStatus" role="status" aria-live="polite"></div>
         </form>
-      </section>
-
-      <section class="supply-board">
-        <div class="supply-board-head">
-          <div><h3>LISTA DE INSUMOS</h3><p id="supplyBoardDescription">Acompanhe as anotações e os itens que ainda não chegaram.</p></div>
-          <button class="btn-outline" id="btnRefreshSupplies" type="button">ATUALIZAR</button>
-        </div>
-        <div class="supply-toolbar">
-          <div class="supply-toolbar-main">
-            <div class="field search"><label for="supplySearch">BUSCAR</label><input id="supplySearch" type="search" placeholder="Produto, quantidade ou loja"></div>
-            <div class="field store" id="supplyFilterCompanyField" hidden><label for="supplyFilterCompany">LOJA</label><select id="supplyFilterCompany"><option value="">TODAS AS LOJAS</option></select></div>
-          </div>
-          <div class="supply-tabs" role="tablist" aria-label="Situação dos insumos">
-            <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-supply-view="active">EM ABERTO</button>
-            <button class="supply-tab" type="button" role="tab" aria-selected="false" data-supply-view="history">HISTÓRICO</button>
-          </div>
-        </div>
-        <div class="supply-request-bar" id="supplyRequestBar">
-          <span>Na segunda-feira, confirme o pedido da lista. Itens não recebidos continuarão em aberto e poderão ser solicitados novamente.</span>
-          <button class="supply-request-all" id="btnRequestAllSupplies" type="button">REGISTRAR PEDIDO DOS ITENS EM ABERTO</button>
-        </div>
-        <div class="supply-list" id="supplyList" aria-live="polite"><div class="supply-empty">Carregando insumos…</div></div>
       </section>
 
       <section class="supply-admin-panel" id="supplyAdminPanel" hidden>
@@ -3879,10 +3851,6 @@
   let outputRows = [];
   let outputsLoading = false;
   let outputView = 'requested';
-  let supplyRows = [];
-  let suppliesLoading = false;
-  let supplyView = 'active';
-  let supplySummary = {noted:0,awaiting:0,received:0};
   let instructionRows = [];
   let instructionView = 'active';
   let instructionToday = '';
@@ -4625,7 +4593,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
+    if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
     if(name === 'instrucoes') loadInstructions();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -4643,7 +4611,7 @@
     if(name === 'missoes') loadMissions();
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ loadSupplies(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
+    if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
     if(name === 'instrucoes') loadInstructions();
   }
 
@@ -9392,223 +9360,60 @@ function renderHomeTasks(){
   });
   el('btnRefreshOutputs').addEventListener('click',loadOutputs);
 
-  async function supplyApiRequest(options,query){
-    const suffix = query ? '?'+query.toString() : '';
-    const response = await fetch('/api/supplies'+suffix,{
-      ...(options || {}),
-      cache:'no-store',
-      headers:{Accept:'application/json',...((options && options.headers) || {})}
-    });
-    const payload = await response.json().catch(() => ({}));
-    if(response.status === 401){
-      location.assign('/login?next='+encodeURIComponent(location.pathname));
-      throw new Error('SESSÃO EXPIRADA.');
-    }
-    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
-    return payload;
-  }
-
   function renderSupplyCompanyOptions(){
     const options = companies.map(company =>
       '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
     ).join('');
     const createSelect = el('supplyCompany');
-    const filterSelect = el('supplyFilterCompany');
     if(createSelect){
       const selected = createSelect.value;
       createSelect.innerHTML = '<option value="">SELECIONE A LOJA</option>'+options;
       if(companies.some(company => company.id === selected)) createSelect.value = selected;
     }
-    if(filterSelect){
-      const selected = filterSelect.value;
-      filterSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+options;
-      if(companies.some(company => company.id === selected)) filterSelect.value = selected;
-    }
   }
 
-  function supplyDateTime(value){
-    return outputDateTime(value);
-  }
-
-  function supplyCardHtml(row){
-    const received = row.status === 'received';
-    const requests = Number(row.requestCount || 0);
-    const stateClass = received ? ' received' : (requests ? ' awaiting' : '');
-    const stateLabel = received
-      ? 'RECEBIDO'
-      : (requests ? 'SOLICITADO • AGUARDANDO CHEGADA' : 'ANOTADO PARA O PRÓXIMO PEDIDO');
-    const requestHistory = requests
-      ? 'ÚLTIMO PEDIDO: '+escapeHtml(supplyDateTime(row.lastRequestedAt))+
-        ' POR '+escapeHtml(row.lastRequestedByName || 'LOJA')+
-        (requests > 1 ? ' • '+requests+' SOLICITAÇÕES' : '')
-      : 'AINDA NÃO FOI MARCADO COMO SOLICITADO';
-    const completedHistory = received
-      ? ' • RECEBIDO POR '+escapeHtml(row.receivedByName || 'LOJA')+
-        ' EM '+escapeHtml(supplyDateTime(row.receivedAt))
-      : '';
-    return '<article class="supply-card'+(received ? ' received' : '')+'">'+
-      '<div class="supply-card-copy">'+
-        '<div class="supply-card-title"><span class="supply-quantity">'+
-          escapeHtml(row.quantityText || '—')+'</span><strong>'+
-          escapeHtml(row.productName || 'Insumo sem nome')+'</strong></div>'+
-        '<p class="supply-store">LOJA: '+escapeHtml(row.companyName || 'Loja')+
-          ' • ANOTADO POR '+escapeHtml(row.createdByName || 'USUÁRIO')+
-          ' EM '+escapeHtml(supplyDateTime(row.createdAt))+'</p>'+
-        '<p class="supply-history">'+requestHistory+completedHistory+'</p>'+
-      '</div>'+
-      '<div class="supply-card-actions">'+
-        '<span class="supply-state'+stateClass+'">'+stateLabel+'</span>'+
-        (!received
-          ? '<button class="supply-action" type="button" data-supply-request="'+
-              escapeHtml(row.id)+'">'+(requests ? 'PEDIR NOVAMENTE' : 'REGISTRAR PEDIDO')+'</button>'+
-            (requests
-              ? '<button class="supply-action receive" type="button" data-supply-receive="'+
-                escapeHtml(row.id)+'">MARCAR COMO RECEBIDO</button>'
-              : '')
-          : '')+
-        (currentSession.role === 'admin'
-          ? '<button class="supply-action delete" type="button" data-supply-delete="'+
-            escapeHtml(row.id)+'">EXCLUIR SOLICITAÇÃO</button>'
-          : '')+
-      '</div>'+
-    '</article>';
-  }
-
-  function filteredSupplyRows(){
-    const search = normalizeHeader(el('supplySearch').value || '');
-    return supplyRows.filter(row => {
-      if(!search) return true;
-      return normalizeHeader([
-        row.productName,row.quantityText,row.companyName,row.createdByName,
-        row.receivedByName,row.lastRequestedByName
-      ].join(' ')).includes(search);
-    });
-  }
-
-  function supplyHistoryMonth(value){
-    const raw = String(value || '');
-    const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(raw)
-      ? raw.replace(' ','T')+'Z'
-      : raw;
-    const date = new Date(normalized);
-    if(Number.isNaN(date.getTime())) return 'OUTRAS DATAS';
-    return new Intl.DateTimeFormat('pt-BR',{
-      timeZone:'America/Recife',month:'long',year:'numeric'
-    }).format(date).toUpperCase();
-  }
-
-  function supplyHistoryHtml(rows){
-    const groups = new Map();
-    rows.forEach(row => {
-      const month = supplyHistoryMonth(row.receivedAt);
-      if(!groups.has(month)) groups.set(month,[]);
-      groups.get(month).push(row);
-    });
-    return '<div class="supply-history-groups">'+Array.from(groups.entries()).map(([month,items],index) =>
-      '<details class="supply-history-group"'+(index === 0 ? ' open' : '')+'>'+
-        '<summary>'+escapeHtml(month)+'<span>'+items.length+' ITEM'+(items.length === 1 ? '' : 'S')+'</span></summary>'+
-        '<div class="supply-history-group-list">'+items.map(supplyCardHtml).join('')+'</div>'+
-      '</details>'
-    ).join('')+'</div>';
-  }
-
-  function renderSupplies(){
-    el('supplyNotedCount').textContent = supplySummary.noted || 0;
-    el('supplyAwaitingCount').textContent = supplySummary.awaiting || 0;
-    el('supplyReceivedCount').textContent = supplySummary.received || 0;
+  function updateSupplyRoleVisibility(){
     const isAdmin = currentSession.role === 'admin';
     el('supplyRegisterPanel').hidden = !isAdmin && !currentSession.companyId;
     el('supplyCompanyField').hidden = !isAdmin;
     el('supplyCompany').required = isAdmin;
-    el('supplyFilterCompanyField').hidden = !isAdmin;
     el('supplyAdminPanel').hidden = !isAdmin;
     el('supplyExitPanel').hidden = isAdmin;
     renderSupplyCompanyOptions();
     el('supplyRegisterDescription').textContent = isAdmin
       ? 'Escolha a loja para marcar os produtos que estão faltando.'
       : 'Marque os produtos que estão faltando. Na segunda-feira isso vira a base da solicitação.';
-    el('supplyBoardDescription').textContent = isAdmin
-      ? 'Visualize os insumos de todas as lojas ou filtre uma unidade.'
-      : 'Somente os registros da sua loja são exibidos.';
-    document.querySelectorAll('[data-supply-view]').forEach(button => {
-      const active = button.dataset.supplyView === supplyView;
-      button.classList.toggle('active',active);
-      button.setAttribute('aria-selected',String(active));
-    });
-    const rows = filteredSupplyRows();
-    const activeView = supplyView === 'active';
-    el('supplyRequestBar').hidden = !activeView;
-    const bulkButton = el('btnRequestAllSupplies');
-    const needsStoreFilter = isAdmin && !el('supplyFilterCompany').value;
-    bulkButton.disabled = !activeView || !supplyRows.length || needsStoreFilter;
-    bulkButton.textContent = needsStoreFilter
-      ? 'ESCOLHA UMA LOJA PARA REGISTRAR O PEDIDO'
-      : 'REGISTRAR PEDIDO DOS ITENS EM ABERTO';
-    el('supplyList').innerHTML = rows.length
-      ? (activeView ? rows.map(supplyCardHtml).join('') : supplyHistoryHtml(rows))
-      : '<div class="supply-empty">'+
-        (activeView
-          ? 'Nenhum insumo em aberto para esta loja.'
-          : 'Nenhum recebimento registrado no histórico.')+
-        '</div>';
-  }
-
-  async function loadSupplies(){
-    if(!canAccess('supplies') || suppliesLoading) return;
-    suppliesLoading = true;
-    el('supplyList').innerHTML = '<div class="supply-empty">Carregando insumos…</div>';
-    const query = new URLSearchParams({view:supplyView});
-    if(currentSession.role === 'admin' && el('supplyFilterCompany').value){
-      query.set('companyId',el('supplyFilterCompany').value);
-    }
-    try{
-      const data = await supplyApiRequest(null,query);
-      supplyRows = Array.isArray(data.items) ? data.items : [];
-      supplySummary = {
-        noted:Number(data.summary && data.summary.noted || 0),
-        awaiting:Number(data.summary && data.summary.awaiting || 0),
-        received:Number(data.summary && data.summary.received || 0)
-      };
-      renderSupplies();
-    }catch(error){
-      supplyRows = [];
-      renderSupplies();
-      el('supplyList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
-    }finally{
-      suppliesLoading = false;
-    }
   }
 
   async function loadHomeSupplies(){
     const alert = el('homeSuppliesAlert');
-    if(!alert || !canAccess('supplies')){
-      if(alert) alert.hidden = true;
+    if(!alert) return;
+    if(currentSession.role === 'admin' || !canAccess('supplies')){
+      alert.hidden = true;
       return;
     }
     try{
-      const query = new URLSearchParams({view:'active'});
-      const data = await supplyApiRequest(null,query);
-      if(!data.isMonday){
+      const data = await supplyRequestApiRequest(null);
+      if(data.submitted){
         alert.hidden = true;
         return;
       }
-      const items = Array.isArray(data.items) ? data.items : [];
-      const shown = items.slice(0,8);
-      el('homeSuppliesList').innerHTML = shown.length
-        ? shown.map(row =>
-            '<div class="home-supply-row">'+
-              '<span class="home-supply-quantity">'+escapeHtml(row.quantityText || '—')+'</span>'+
-              '<div class="home-supply-copy"><strong>'+escapeHtml(row.productName || 'Insumo')+'</strong>'+
-                '<span>'+escapeHtml(row.companyName || 'Loja')+'</span></div>'+
-              '<span class="home-supply-state">'+
-                (Number(row.requestCount || 0) ? 'PEDIR NOVAMENTE' : 'SOLICITAR HOJE')+
-              '</span>'+
-            '</div>'
-          ).join('')+
-          (items.length > shown.length
-            ? '<div class="home-supplies-more">E MAIS '+(items.length-shown.length)+' ITEM(NS) EM ABERTO</div>'
-            : '')
-        : '<div class="home-supplies-more">NENHUM INSUMO ANOTADO PARA SOLICITAR HOJE.</div>';
+      const marked = (Array.isArray(data.products) ? data.products : []).filter(product => product.marked);
+      if(!marked.length){
+        alert.hidden = true;
+        return;
+      }
+      const shown = marked.slice(0,8);
+      el('homeSuppliesList').innerHTML = shown.map(product =>
+          '<div class="home-supply-row">'+
+            '<span class="home-supply-quantity">'+escapeHtml(product.categoryName || '—')+'</span>'+
+            '<div class="home-supply-copy"><strong>'+escapeHtml(product.name)+'</strong></div>'+
+            '<span class="home-supply-state">MARCADO</span>'+
+          '</div>'
+        ).join('')+
+        (marked.length > shown.length
+          ? '<div class="home-supplies-more">E MAIS '+(marked.length-shown.length)+' ITEM(NS) MARCADO(S)</div>'
+          : '');
       alert.hidden = false;
     }catch{
       alert.hidden = true;
@@ -9894,93 +9699,6 @@ function renderHomeTasks(){
       button.disabled = false;
     }
   });
-
-  async function requestSupplyItems(itemIds){
-    if(!itemIds.length) return;
-    try{
-      await supplyApiRequest({
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'request',itemIds})
-      });
-      showPurchaseToast(itemIds.length === 1
-        ? 'Pedido do insumo registrado.'
-        : 'Pedido semanal registrado para os itens em aberto.');
-      await Promise.all([loadSupplies(),loadHomeSupplies()]);
-    }catch(error){
-      showPurchaseToast(error.message,'error');
-      throw error;
-    }
-  }
-
-  el('supplyList').addEventListener('click',async event => {
-    const deleteButton = event.target.closest('[data-supply-delete]');
-    if(deleteButton){
-      if(currentSession.role !== 'admin') return;
-      if(!confirm('Excluir permanentemente esta solicitação de insumo e todo o histórico de pedidos dela?')) return;
-      deleteButton.disabled = true;
-      try{
-        await supplyApiRequest({
-          method:'DELETE',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({id:deleteButton.dataset.supplyDelete})
-        });
-        showPurchaseToast('Solicitação de insumo excluída.');
-        await Promise.all([loadSupplies(),loadHomeSupplies()]);
-      }catch(error){
-        showPurchaseToast(error.message,'error');
-        deleteButton.disabled = false;
-      }
-      return;
-    }
-    const requestButton = event.target.closest('[data-supply-request]');
-    if(requestButton){
-      if(!confirm('Registrar que este insumo foi solicitado hoje?')) return;
-      requestButton.disabled = true;
-      try{
-        await requestSupplyItems([requestButton.dataset.supplyRequest]);
-      }catch{
-        requestButton.disabled = false;
-      }
-      return;
-    }
-    const receiveButton = event.target.closest('[data-supply-receive]');
-    if(!receiveButton || !confirm('Confirmar que este insumo chegou à loja?')) return;
-    receiveButton.disabled = true;
-    try{
-      await supplyApiRequest({
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'receive',id:receiveButton.dataset.supplyReceive})
-      });
-      showPurchaseToast('Insumo recebido e enviado para o histórico.');
-      await Promise.all([loadSupplies(),loadHomeSupplies()]);
-    }catch(error){
-      showPurchaseToast(error.message,'error');
-      receiveButton.disabled = false;
-    }
-  });
-
-  el('btnRequestAllSupplies').addEventListener('click',async event => {
-    const ids = supplyRows.filter(row => row.status === 'pending').map(row => row.id);
-    if(!ids.length || !confirm('Registrar o pedido de todos os '+ids.length+' insumos em aberto desta loja?')) return;
-    event.currentTarget.disabled = true;
-    try{
-      await requestSupplyItems(ids);
-    }catch{
-      event.currentTarget.disabled = false;
-    }
-  });
-  el('supplySearch').addEventListener('input',debounce(renderSupplies,120));
-  el('supplyFilterCompany').addEventListener('change',loadSupplies);
-  document.querySelectorAll('[data-supply-view]').forEach(button => {
-    button.addEventListener('click',() => {
-      if(button.dataset.supplyView === supplyView) return;
-      supplyView = button.dataset.supplyView;
-      loadSupplies();
-    });
-  });
-  el('btnRefreshSupplies').addEventListener('click',loadSupplies);
 
   let supplyCategories = [];
   let supplyProducts = [];
@@ -11033,7 +10751,7 @@ function renderHomeTasks(){
     })());
     if(canAccess('captures')) loaders.push(loadCaptures());
     if(canAccess('outputs')) loaders.push(loadOutputs());
-    if(canAccess('supplies')) loaders.push(Promise.all([loadSupplies(),loadHomeSupplies()]));
+    if(canAccess('supplies')) loaders.push(loadHomeSupplies());
     loaders.push(Promise.all([loadInstructions(),loadHomeInstructions()]));
     await Promise.all(loaders);
     await verifyIosStorage();
