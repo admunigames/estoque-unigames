@@ -1902,24 +1902,28 @@ function securityHeaders(response: Response): Response {
   });
 }
 
+// Este worker acessa `env.DB` diretamente (binding nativo do D1), ao
+// contrário das rotas em app/api/*, que passam por getD1() em
+// db/index.ts. Pra permitir testar este arquivo contra o Supabase com
+// DB_DRIVER=postgres sem duplicar a lógica de escolha de driver,
+// substituímos `env.DB` uma única vez aqui, na entrada — o resto do
+// arquivo continua chamando `env.DB.prepare(...)` normalmente, sem
+// mudar de forma. Usado tanto por `fetch()` quanto por `scheduled()`
+// (o cron também chama `env.DB.prepare(...)` por baixo, ex.:
+// dispatchDueTaskNotifications).
+async function resolvePostgresBackedEnv(rawEnv: Env): Promise<Env> {
+  if (process.env.DB_DRIVER !== "postgres") return rawEnv;
+  return {
+    ...rawEnv,
+    DB: (await import("../db/d1-compat")).createD1CompatFromPg(
+      await (await import("../db/pg-client")).getSql(),
+    ) as unknown as D1Database,
+  };
+}
+
 const worker = {
   async fetch(request: Request, rawEnv: Env, ctx: ExecutionContext): Promise<Response> {
-    // Este worker acessa `env.DB` diretamente (binding nativo do D1), ao
-    // contrário das rotas em app/api/*, que passam por getD1() em
-    // db/index.ts. Pra permitir testar este arquivo contra o Supabase com
-    // DB_DRIVER=postgres sem duplicar a lógica de escolha de driver,
-    // substituímos `env.DB` uma única vez aqui, na entrada — o resto do
-    // arquivo continua chamando `env.DB.prepare(...)` normalmente, sem
-    // mudar de forma.
-    const env: Env =
-      process.env.DB_DRIVER === "postgres"
-        ? {
-            ...rawEnv,
-            DB: (await import("../db/d1-compat")).createD1CompatFromPg(
-              await (await import("../db/pg-client")).getSql(),
-            ) as unknown as D1Database,
-          }
-        : rawEnv;
+    const env = await resolvePostgresBackedEnv(rawEnv);
     if (env.DB) await ensureAppUsersTable(env.DB);
     const url = new URL(request.url);
 
@@ -2048,11 +2052,12 @@ const worker = {
   },
   async scheduled(
     _controller: ScheduledController,
-    env: Env,
+    rawEnv: Env,
     ctx: ExecutionContext,
   ): Promise<void> {
-    const config = loginConfig(env);
+    const config = loginConfig(rawEnv);
     if (!config) return;
+    const env = await resolvePostgresBackedEnv(rawEnv);
     ctx.waitUntil(Promise.all([
       dispatchDueTaskNotifications(env),
       dispatchDueMissionNotifications(env),
