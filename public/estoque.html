@@ -4309,6 +4309,101 @@
   };
   const errorBox = el('errorBox');
 
+  // O canal ao vivo carrega somente avisos de invalidacao. Os dados continuam
+  // sendo buscados pelas APIs existentes, que aplicam as permissoes da sessao.
+  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions'});
+  let livePageName = '';
+  let liveModule = '';
+  let liveSocket = null;
+  let liveSocketGeneration = 0;
+  let liveReconnectAttempt = 0;
+  let liveReconnectTimer = null;
+  let liveReauthenticateTimer = null;
+  let liveRefreshTimer = null;
+  let liveRefreshPromise = null;
+  let liveRefreshAgain = false;
+
+  function closeLiveSocket(){
+    liveSocketGeneration += 1;
+    clearTimeout(liveReconnectTimer);
+    clearTimeout(liveReauthenticateTimer);
+    liveReconnectTimer = null;
+    liveReauthenticateTimer = null;
+    if(liveSocket){
+      const socket = liveSocket;
+      liveSocket = null;
+      socket.onclose = null;
+      socket.close(1000,'page changed');
+    }
+  }
+
+  async function refreshLiveModule(module){
+    if(module !== liveModule || livePageName !== 'missoes') return;
+    const refreshes = [loadMissions(),loadMissionMonthAgenda()];
+    if(missionSectionTab === 'rotina') refreshes.push(loadRoutines());
+    await Promise.all(refreshes);
+  }
+
+  async function runLiveRefresh(module){
+    if(liveRefreshPromise){
+      liveRefreshAgain = true;
+      return liveRefreshPromise;
+    }
+    liveRefreshPromise = (async () => {
+      do{
+        liveRefreshAgain = false;
+        await refreshLiveModule(module);
+      }while(liveRefreshAgain && module === liveModule);
+    })().finally(() => { liveRefreshPromise = null; });
+    return liveRefreshPromise;
+  }
+
+  function scheduleLiveRefresh(module){
+    clearTimeout(liveRefreshTimer);
+    liveRefreshTimer = setTimeout(() => runLiveRefresh(module),120);
+  }
+
+  function connectLiveModule(module,generation){
+    if(!module || module !== liveModule || generation !== liveSocketGeneration) return;
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(protocol+'//'+location.host+'/api/live?module='+encodeURIComponent(module));
+    liveSocket = socket;
+    socket.addEventListener('open',() => {
+      if(socket !== liveSocket || generation !== liveSocketGeneration) return;
+      liveReconnectAttempt = 0;
+      clearTimeout(liveReauthenticateTimer);
+      // Revalida cookie, versao da sessao e permissoes periodicamente.
+      liveReauthenticateTimer = setTimeout(() => socket.close(1000,'reauthenticate'),5*60*1000);
+    });
+    socket.addEventListener('message',event => {
+      if(socket !== liveSocket || generation !== liveSocketGeneration) return;
+      try{
+        const message = JSON.parse(event.data);
+        if(message.type === 'invalidate' && message.module === module){
+          scheduleLiveRefresh(module);
+        }
+      }catch{ /* mensagens desconhecidas sao ignoradas */ }
+    });
+    socket.addEventListener('close',() => {
+      if(socket !== liveSocket || generation !== liveSocketGeneration || module !== liveModule) return;
+      liveSocket = null;
+      clearTimeout(liveReauthenticateTimer);
+      const delay = Math.min(1000 * (2 ** liveReconnectAttempt),15000);
+      liveReconnectAttempt += 1;
+      liveReconnectTimer = setTimeout(() => connectLiveModule(module,generation),delay);
+    });
+  }
+
+  function setLivePage(name){
+    livePageName = name;
+    const module = LIVE_PAGE_MODULES[name] || '';
+    if(module === liveModule && liveSocket) return;
+    closeLiveSocket();
+    liveModule = module;
+    liveReconnectAttempt = 0;
+    if(liveModule) connectLiveModule(liveModule,liveSocketGeneration);
+  }
+
   function fiscalViewOption(id){
     return FISCAL_VIEW_OPTIONS[id] || null;
   }
@@ -5025,6 +5120,7 @@
       button.setAttribute('aria-current', active ? 'page' : 'false');
     });
     document.title = 'UNIGAMES';
+    setLivePage(name);
     return true;
   }
 

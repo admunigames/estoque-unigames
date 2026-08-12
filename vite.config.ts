@@ -13,8 +13,21 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
 const localBindingConfig = {
   main: "./worker/index.ts",
-  compatibility_date: "2026-08-04",
+  // Limitado a data mais nova suportada pelo workerd fixado no lockfile.
+  compatibility_date: "2026-05-22",
   compatibility_flags: ["nodejs_compat_v2"],
+  vars: {
+    DB_DRIVER: "d1",
+    ...(process.env.APP_SESSION_SECRET
+      ? { APP_SESSION_SECRET: process.env.APP_SESSION_SECRET }
+      : {}),
+    ...(process.env.APP_LOGIN_USER
+      ? { APP_LOGIN_USER: process.env.APP_LOGIN_USER }
+      : {}),
+    ...(process.env.APP_LOGIN_PASSWORD
+      ? { APP_LOGIN_PASSWORD: process.env.APP_LOGIN_PASSWORD }
+      : {}),
+  },
   assets: {
     binding: "ASSETS",
     run_worker_first: true,
@@ -60,7 +73,11 @@ export default defineConfig(async () => {
       sites(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-        config: localBindingConfig,
+        config: (productionConfig) => {
+          // O dev usa D1 local; nao tenta abrir o Hyperdrive de producao.
+          productionConfig.hyperdrive = [];
+          return localBindingConfig;
+        },
       }),
     ],
   };

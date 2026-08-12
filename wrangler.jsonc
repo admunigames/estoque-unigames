@@ -66,6 +66,25 @@
     "binding": "IMAGES"
   },
 
+  // Canal autenticado de invalidacao para os quatro modulos operacionais.
+  // O Durable Object nao transporta linhas do banco: ele apenas avisa os
+  // navegadores, que recarregam os dados pelas APIs com permissao existente.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "LIVE_UPDATES",
+        "class_name": "LiveUpdates"
+      }
+    ]
+  },
+
+  "migrations": [
+    {
+      "tag": "v1_live_updates",
+      "new_sqlite_classes": ["LiveUpdates"]
+    }
+  ],
+
   "triggers": {
     "crons": ["* * * * *"]
   },

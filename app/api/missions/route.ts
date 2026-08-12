@@ -375,17 +375,12 @@ export async function GET(request: Request) {
                 updated_at AS updatedAt
          FROM missions
          WHERE start_date <= ?1
-           AND (
-             frequency='daily'
-             OR (frequency='once' AND start_date=?1)
-             OR (frequency='weekly' AND EXTRACT(DOW FROM start_date::date)=EXTRACT(DOW FROM ?1::date))
-           )
          ORDER BY CASE WHEN due_time='' THEN 1 ELSE 0 END, due_time, created_at`,
       )
       .bind(date)
       .all<MissionRow>();
 
-    let missions = result.results ?? [];
+    let missions = (result.results ?? []).filter((mission) => missionOccursOn(mission, date));
     if (actor.role !== "admin") {
       // Usuários sem loja vinculada (acessos personalizados, ex.: missions:view
       // sem companyId) ainda enxergam as missões gerais e as que criaram — só

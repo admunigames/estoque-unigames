@@ -6,6 +6,15 @@ import {
 } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import webPush from "web-push";
+import { liveInvalidationForRequest } from "./live-events";
+import {
+  LiveUpdates,
+  isLiveModule,
+  type LiveInvalidation,
+  type LiveModule,
+} from "./live-updates";
+
+export { LiveUpdates };
 
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
@@ -414,9 +423,7 @@ async function ensureAppUsersTable(database: D1Database): Promise<void> {
         ),
       ]);
       const columns = await database
-        .prepare(
-          "SELECT column_name AS name FROM information_schema.columns WHERE table_name = 'app_users'",
-        )
+        .prepare("PRAGMA table_info(app_users)")
         .all<{ name: string }>();
       if (!(columns.results ?? []).some((column) => column.name === "company_id")) {
         await database.prepare(
@@ -973,8 +980,23 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   database: ["database:view", "database:manage"],
 };
 
+const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_PERMISSIONS> = {
+  missions: "missions",
+  captures: "captures",
+  supplies: "supplies",
+  tasks: "tasks",
+};
+
 async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): Promise<boolean> {
   const path = url.pathname.replace(/\/+$/, "") || "/";
+  if (path === "/api/live") {
+    const liveModuleName = url.searchParams.get("module");
+    return isLiveModule(liveModuleName) &&
+      hasAnyPermission(
+        user,
+        MODULE_VIEW_PERMISSIONS[LIVE_MODULE_PERMISSION_KEYS[liveModuleName]],
+      );
+  }
   if (path === "/cadastros/usuarios" || path === "/administracao/usuarios" || path === "/api/admin/users") {
     return user.role === "admin" || hasPermission(user, "users:manage");
   }
@@ -1035,6 +1057,44 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     return Array.isArray(required) ? hasAnyPermission(user, required) : hasPermission(user, required);
   }
   return true;
+}
+
+function liveConnectionGroups(user: AuthenticatedUser): string[] {
+  const assistance =
+    user.sector === "assistance" ||
+    user.accessGroup === "assistance" ||
+    user.username.toLowerCase().includes("assistencia") ||
+    user.displayName.toLowerCase().includes("assistencia");
+  return assistance ? ["assistance"] : [];
+}
+
+function connectLiveUpdates(
+  request: Request,
+  env: Env,
+  user: AuthenticatedUser,
+  module: LiveModule,
+): Promise<Response> {
+  const headers = new Headers(request.headers);
+  headers.delete("authorization");
+  headers.delete("cookie");
+  headers.set("x-live-user-id", user.id);
+  headers.set("x-live-role", user.role);
+  headers.set("x-live-company-id", user.companyId);
+  headers.set("x-live-groups", liveConnectionGroups(user).join(","));
+  const liveRequest = new Request(request, { headers });
+  return env.LIVE_UPDATES.getByName(module).fetch(liveRequest);
+}
+
+async function publishLiveUpdate(env: Env, invalidation: LiveInvalidation): Promise<void> {
+  const response = await env.LIVE_UPDATES.getByName(invalidation.module).fetch(
+    "https://live.internal/publish",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(invalidation),
+    },
+  );
+  if (!response.ok) throw new Error(`Falha ao publicar atualizacao ao vivo: ${response.status}`);
 }
 
 function sessionResponse(user: AuthenticatedUser): Response {
@@ -1882,6 +1942,18 @@ const worker = {
     if (url.pathname === "/api/admin/users") {
       return securityHeaders(await handleAdminUsers(request, env, url, config, user));
     }
+    if (url.pathname === "/api/live") {
+      const liveModuleName = url.searchParams.get("module");
+      if (!isLiveModule(liveModuleName)) return jsonError("MODULO AO VIVO INVALIDO.", 400);
+      if (!sameOrigin(request, url)) return jsonError("ORIGEM NAO PERMITIDA.", 403);
+      if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+        return new Response("WebSocket upgrade required", {
+          status: 426,
+          headers: { "cache-control": "no-store" },
+        });
+      }
+      return connectLiveUpdates(request, env, user, liveModuleName);
+    }
 
     const authenticatedHeaders = new Headers(request.headers);
     authenticatedHeaders.delete(USER_ID_HEADER);
@@ -1957,7 +2029,12 @@ const worker = {
       return securityHeaders(response);
     }
 
-    return securityHeaders(await handler.fetch(authenticatedRequest, env, ctx));
+    const liveInvalidation = await liveInvalidationForRequest(authenticatedRequest, user);
+    const response = await handler.fetch(authenticatedRequest, env, ctx);
+    if (response.ok && liveInvalidation) {
+      ctx.waitUntil(publishLiveUpdate(env, liveInvalidation));
+    }
+    return securityHeaders(response);
   },
   async scheduled(
     _controller: ScheduledController,
