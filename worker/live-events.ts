@@ -84,6 +84,16 @@ export async function liveInvalidationForRequest(
     return { module: "supplies", audience: { kind: "all" } };
   }
 
+  if (path === "/api/shared-state") {
+    const body = request.method === "PUT" ? await requestBody(request) : {};
+    const key = request.method === "DELETE"
+      ? url.searchParams.get("key") ?? ""
+      : typeof body.key === "string" ? body.key : "";
+    if (/^tarefas:\d{4}-\d{2}-\d{2}$/.test(key)) {
+      return { module: "tasks", audience: { kind: "user", userId: actor.id } };
+    }
+  }
+
   return null;
 }
 

@@ -598,6 +598,13 @@ test("isola tarefas por usuário e oferece prioridade, recorrência e lembretes 
 
   assert.match(sharedState, /return `tarefas:\$\{userId\}:\$\{taskMatch\[1\]\}`/);
   assert.match(sharedState, /const prefix = `tarefas:\$\{userId\}:`/);
+  const liveEvents = await readFile(
+    new URL("../worker/live-events.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /tarefas:'tasks'/);
+  assert.match(html, /if\(livePageName === 'tarefas'\) await Promise\.all\(\[loadTasks\(\),loadTaskAgenda\(\)\]\)/);
+  assert.match(liveEvents, /module: "tasks", audience: \{ kind: "user", userId: actor\.id \}/);
   assert.match(html, /id="taskInputPriority"/);
   assert.match(html, /value="urgent">URGENTE/);
   assert.match(html, /id="taskInputRecurrence"/);
