@@ -1,5 +1,6 @@
 import {
   apiErrorResponse,
+  canPurchases,
   notionRequest,
   unauthorizedResponse,
 } from "../../../lib/notion";
@@ -15,6 +16,9 @@ function asRecord(value: unknown): JsonMap {
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
+  if (!canPurchases(request, "purchases:view")) {
+    return Response.json({ error: "VOCÊ NÃO TEM PERMISSÃO PARA VER AS COMPRAS." }, { status: 403 });
+  }
 
   try {
     const result = asRecord(await notionRequest("/users?page_size=100"));

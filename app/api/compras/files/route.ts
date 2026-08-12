@@ -1,5 +1,6 @@
 import {
   apiErrorResponse,
+  canPurchases,
   NotionApiError,
   notionRequest,
   unauthorizedResponse,
@@ -411,6 +412,9 @@ async function uploadLegacySinglePart(candidate: File) {
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
+  if (!canPurchases(request, "purchases:edit")) {
+    return Response.json({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ENVIAR ARQUIVOS." }, { status: 403 });
+  }
 
   try {
     const contentType = request.headers.get("content-type") ?? "";
