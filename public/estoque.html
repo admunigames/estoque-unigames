@@ -9457,7 +9457,7 @@ function renderHomeTasks(){
                 '<span class="mission-badge">'+escapeHtml(routine.scope === 'general' ? 'GERAL · TODAS AS LOJAS' : (routine.companyName || 'LOJA'))+'</span>'+
               '</div></div>'+
             '<div class="mission-card-actions">'+
-              '<button class="mission-delete" type="button" data-routine-delete="'+escapeHtml(routine.id)+'">EXCLUIR</button>'+
+              (canAccess('missions:delete') ? '<button class="mission-delete" type="button" data-routine-delete="'+escapeHtml(routine.id)+'">EXCLUIR</button>' : '')+
             '</div></article>'
         ).join('')
       : '<div class="mission-empty">Nenhuma rotina cadastrada.</div>';

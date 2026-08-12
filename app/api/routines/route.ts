@@ -291,7 +291,7 @@ export async function GET(request: Request) {
       tasks: tasks.map((task) => ({ ...task, completed: task.status === "completed" })),
     };
 
-    if (actor.role === "admin") {
+    if (can(actor, "missions:create") || can(actor, "missions:delete")) {
       const definitionsResult = await database
         .prepare(
           `SELECT id, title, description, weekday, scope, company_id AS companyId,

@@ -160,15 +160,18 @@ function missionsForDate(
 ) {
   let visible = missions.filter((mission) => missionOccursOn(mission, date));
   if (actor.role !== "admin") {
-    visible = !actor.companyId
-      ? []
-      : visible.filter((mission) =>
-          view === "general"
-            ? mission.scope === "general"
-            : view === "store"
-              ? mission.scope === "store" && mission.companyId === actor.companyId
-              : mission.scope === "general" || mission.companyId === actor.companyId,
-        );
+    // Usuários sem loja vinculada (acessos personalizados, ex.: missions:view
+    // sem companyId) ainda enxergam as missões gerais e as que criaram — só
+    // não têm como ver/comparar contra missões de uma loja específica.
+    visible = visible.filter((mission) =>
+      view === "general"
+        ? mission.scope === "general"
+        : view === "store"
+          ? Boolean(actor.companyId) && mission.scope === "store" && mission.companyId === actor.companyId
+          : mission.scope === "general" ||
+            (Boolean(actor.companyId) && mission.companyId === actor.companyId) ||
+            mission.createdBy === actor.id,
+    );
   } else if (view === "general") {
     visible = visible.filter((mission) => mission.scope === "general");
   } else if (view === "store") {
@@ -376,16 +379,20 @@ export async function GET(request: Request) {
 
     let missions = result.results ?? [];
     if (actor.role !== "admin") {
-      if (!actor.companyId) missions = [];
-      else {
-        missions = missions.filter((mission) => {
-          if (view === "general") return mission.scope === "general";
-          if (view === "store") {
-            return mission.scope === "store" && mission.companyId === actor.companyId;
-          }
-          return mission.scope === "general" || mission.companyId === actor.companyId;
-        });
-      }
+      // Usuários sem loja vinculada (acessos personalizados, ex.: missions:view
+      // sem companyId) ainda enxergam as missões gerais e as que criaram — só
+      // não têm como ver/comparar contra missões de uma loja específica.
+      missions = missions.filter((mission) => {
+        if (view === "general") return mission.scope === "general";
+        if (view === "store") {
+          return Boolean(actor.companyId) && mission.scope === "store" && mission.companyId === actor.companyId;
+        }
+        return (
+          mission.scope === "general" ||
+          (Boolean(actor.companyId) && mission.companyId === actor.companyId) ||
+          mission.createdBy === actor.id
+        );
+      });
     } else if (view === "general") {
       missions = missions.filter((mission) => mission.scope === "general");
     } else if (view === "store") {
