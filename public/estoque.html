@@ -1310,7 +1310,8 @@
   .mobile-tabbar{display:none;}
   body:not(.access-ready) [data-permission],
   body:not(.access-ready) [data-any-permission],
-  body:not(.access-ready) [data-admin-only]{display:none!important;}
+  body:not(.access-ready) [data-admin-only],
+  body:not(.access-ready) [data-env-admin-only]{display:none!important;}
 
   @media (max-width:1280px){
     .summary{grid-template-columns:repeat(3,1fr);}
@@ -2630,8 +2631,8 @@
       <strong>DADOS COMPARTILHADOS</strong>
       <p id="iosStorageStatus">VERIFICANDO A CONEXÃO COM O BANCO GERAL...</p>
       <div class="ios-storage-actions">
-        <button id="btnIosBackup" type="button">EXPORTAR BACKUP</button>
-        <button id="btnIosRestore" type="button">RESTAURAR BACKUP</button>
+        <button id="btnIosBackup" type="button" data-env-admin-only>EXPORTAR BACKUP</button>
+        <button id="btnIosRestore" type="button" data-env-admin-only>RESTAURAR BACKUP</button>
         <button id="btnAppearance" type="button">APARÊNCIA E APLICATIVO</button>
       </div>
       <input class="pull-hidden-input" id="iosRestoreInput" type="file" accept=".json,application/json">
@@ -4818,6 +4819,9 @@
     document.querySelectorAll('[data-admin-only]').forEach(node => {
       node.toggleAttribute('data-access-hidden', node.id === 'navUsuarios' || node.dataset.cadastroTarget === 'usuarios' ? !canManageUsers() : currentSession.role !== 'admin');
     });
+    document.querySelectorAll('[data-env-admin-only]').forEach(node => {
+      node.toggleAttribute('data-access-hidden', currentSession.id !== 'env-admin');
+    });
     el('sessionDisplayName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
     el('homeSessionName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
     const groupLabels = {administrator:'Administrador',purchases:'Compras',fiscal:'Fiscal',operator:'Operador',assistance:'Assistência',custom:'Personalizado'};
@@ -6884,42 +6888,6 @@
     }
   }
 
-  async function collectIosBackup(){
-    const keys = new Set([
-      'companies_list',
-      'products_catalog:standard',
-      'products_catalog:pa',
-      'products_catalog',
-      'puxadas:data',
-      'report41:company-stock'
-    ]);
-    const savedCompanies = await storage.get('companies_list');
-    if(savedCompanies && savedCompanies.value){
-      try{
-        const storedList = JSON.parse(savedCompanies.value);
-        for(const company of Array.isArray(storedList) ? storedList : []){
-          if(company && company.id) keys.add('estoque:' + company.id);
-        }
-      } catch{ /* a lista carregada abaixo continua disponível */ }
-    }
-    for(const company of companies){
-      keys.add('estoque:' + company.id);
-      keys.add(report41StateKey(company.id));
-    }
-
-    const values = {};
-    for(const key of keys){
-      const result = await storage.get(key);
-      if(result && result.value !== null) values[key] = result.value;
-    }
-    return {
-      app:'ESTOQUE_SHARED_BACKUP',
-      version:2,
-      exportedAt:new Date().toISOString(),
-      values
-    };
-  }
-
   async function deliverIosFile(blob, fileName, title){
     if(typeof File === 'function' && navigator.share && navigator.canShare){
       const file = new File([blob], fileName, {type:blob.type});
@@ -6938,9 +6906,15 @@
   }
 
   async function exportIosBackup(){
+    if(currentSession.id !== 'env-admin'){
+      setIosStorageStatus('SOMENTE O ADMINISTRADOR PRINCIPAL PODE EXPORTAR O BACKUP.', true);
+      return;
+    }
     try{
       setIosStorageStatus('PREPARANDO O BACKUP DO BANCO GERAL...');
-      const payload = await collectIosBackup();
+      const response = await fetch('/api/backup', {cache:'no-store', headers:{Accept:'application/json'}});
+      const payload = await response.json();
+      if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL EXPORTAR O BACKUP.');
       const date = new Date().toISOString().slice(0,10);
       const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json;charset=utf-8'});
       await deliverIosFile(blob, 'backup_estoque_geral_' + date + '.json');
@@ -6950,11 +6924,16 @@
         setIosStorageStatus('COMPARTILHAMENTO DO BACKUP CANCELADO.');
         return;
       }
-      setIosStorageStatus('NÃO FOI POSSÍVEL EXPORTAR O BACKUP.', true);
+      setIosStorageStatus(e && e.message ? e.message : 'NÃO FOI POSSÍVEL EXPORTAR O BACKUP.', true);
     }
   }
 
   async function restoreIosBackup(file){
+    if(currentSession.id !== 'env-admin'){
+      setIosStorageStatus('SOMENTE O ADMINISTRADOR PRINCIPAL PODE RESTAURAR O BACKUP.', true);
+      el('iosRestoreInput').value = '';
+      return;
+    }
     try{
       const text = typeof file.text === 'function' ? await file.text() : await readAsText(file, 'UTF-8');
       const payload = JSON.parse(text);
@@ -6964,9 +6943,13 @@
       }
       if(!confirm('RESTAURAR ESTE BACKUP? OS DADOS COM AS MESMAS CHAVES SERÃO SUBSTITUÍDOS.')) return;
       setIosStorageStatus('RESTAURANDO O BACKUP NO BANCO GERAL...');
-      for(const [key, value] of Object.entries(payload.values)){
-        if(typeof value === 'string') await storage.set(key, value);
-      }
+      const response = await fetch('/api/backup', {
+        method:'POST',
+        headers:{'Content-Type':'application/json', Accept:'application/json'},
+        body: text
+      });
+      const result = await response.json();
+      if(!response.ok) throw new Error(result.error || 'NÃO FOI POSSÍVEL RESTAURAR O BACKUP.');
       setIosStorageStatus('BACKUP RESTAURADO. RECARREGANDO O SISTEMA...');
       setTimeout(() => location.reload(), 350);
     } catch(e){

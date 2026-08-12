@@ -1032,6 +1032,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
   ];
   const direct = directPermissions.find(([matches]) => matches);
   if (direct) return hasAnyPermission(user, MODULE_VIEW_PERMISSIONS[direct[1]]);
+  if (path.startsWith("/api/backup")) {
+    // Exportar/restaurar backup mexe em todos os dados compartilhados de
+    // uma vez só, então fica restrito à conta raiz (env-admin) — nem
+    // mesmo outras contas com grupo "Administrador" podem usar.
+    return user.id === "env-admin";
+  }
   if (path === "/api/shared-state") {
     let key = url.searchParams.get("key") ?? "";
     let scope = url.searchParams.get("scope") ?? "";
