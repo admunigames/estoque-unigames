@@ -678,8 +678,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
 
-  assert.match(html, /id="navMissoes" data-page="missoes" data-permission="missions"/);
-  assert.match(html, /data-home-target="missoes" data-permission="missions"/);
+  assert.match(html, /id="navMissoes" data-page="missoes" data-permission="missions" data-home-desc=/);
   assert.match(html, /id="pageMissoes" class="page wrap"/);
   assert.match(html, /id="homeMissionList"/);
   assert.match(html, /id="missionScope"/);
@@ -904,8 +903,7 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
 
-  assert.match(html, /id="navSaidas" data-page="saidas" data-permission="outputs"/);
-  assert.match(html, /data-home-target="saidas" data-permission="outputs"/);
+  assert.match(html, /id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc=/);
   assert.match(html, /id="pageSaidas" class="page wrap"/);
   assert.match(html, /id="outputForm"/);
   assert.match(html, /id="outputQuantity" type="number" min="1" max="9999"/);
@@ -959,8 +957,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
     "utf8",
   );
 
-  assert.match(html, /id="navInsumos" data-page="insumos" data-permission="supplies"/);
-  assert.match(html, /data-home-target="insumos" data-permission="supplies"/);
+  assert.match(html, /id="navInsumos" data-page="insumos" data-permission="supplies" data-home-desc=/);
   assert.match(html, /id="homeSuppliesAlert" data-permission="supplies" hidden/);
   assert.match(html, /LEMBRETE DE SEGUNDA-FEIRA/);
   assert.match(html, /id="pageInsumos" class="page wrap"/);
@@ -1095,7 +1092,7 @@ test("registra e controla solicitações de Alterações PDV com permissões gra
   assert.match(html, /value="pdv_requests:status"> Alteração de status/);
   assert.match(
     html,
-    /<a class="home-access-card" href="\/solicitacoes\/alteracoes-pdv" data-home-target="alteracoesPdv" data-permission="pdv_requests">/,
+    /id="navAlteracoesPdv" data-page="alteracoesPdv" data-permission="pdv_requests" data-home-desc="[^"]+"/,
   );
   assert.match(html, /alteracoesPdv:'\/solicitacoes\/alteracoes-pdv'/);
 
@@ -1151,11 +1148,14 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /id="pageInicio" class="page wrap home-page active"/);
   assert.match(html, /class="home-lightglass"/);
   assert.match(html, /class="home-brand-logo" data-logo alt="LOGO UNIGAMES"/);
-  assert.match(html, /data-home-target="puxadas"/);
-  assert.match(html, /data-home-target="compras"/);
-  assert.match(html, /data-home-target="dashboard"/);
-  assert.match(html, /data-home-target="captacao" data-permission="captures"/);
-  assert.match(html, /data-home-target="cadastros"/);
+  assert.match(html, /id="navPuxadas"[^>]*data-home-desc=/);
+  assert.match(html, /id="navCompras"[^>]*data-home-desc=/);
+  assert.doesNotMatch(html, /id="navDashboard"[^>]*data-home-desc=/);
+  assert.match(html, /id="navCaptacao" data-page="captacao" data-permission="captures" data-home-desc=/);
+  assert.match(html, /id="navCadastros"[^>]*data-home-page="cadastros"/);
+  assert.match(html, /id="homeAccessGrid" aria-label="Acessos rápidos"><\/div>/);
+  assert.match(html, /function buildHomeAccessCards\(\)/);
+  assert.match(html, /document\.querySelectorAll\('#sidebar \[data-home-desc\]'\)/);
   assert.match(html, /Atividades diárias e semanais que precisam ser realizadas pela loja/);
   assert.match(html, /\.home-operation-head > div > span\{/);
   assert.match(html, /html\[data-theme="light"\] \.home-missions\{/);
@@ -1181,8 +1181,7 @@ test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", 
     readFile(new URL("../drizzle-sqlite-legacy/0004_short_nighthawk.sql", import.meta.url), "utf8"),
   ]);
 
-  assert.match(html, /id="navRelatorio41" data-page="relatorio41" data-permission="report41"/);
-  assert.match(html, /data-home-target="relatorio41" data-permission="report41"/);
+  assert.match(html, /id="navRelatorio41" data-page="relatorio41" data-permission="report41" data-home-desc=/);
   assert.match(html, /id="pageRelatorio41" class="page wrap"/);
   assert.match(html, /id="report41StoreSelect"/);
   assert.match(html, /id="btnReport41SalesUpload"/);
