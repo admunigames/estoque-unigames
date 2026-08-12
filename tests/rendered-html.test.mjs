@@ -662,7 +662,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v28"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v29"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -743,7 +743,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v28"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v29"/);
 });
 
 test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
@@ -827,7 +827,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v28"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v29"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -940,7 +940,7 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(migration, /defective_outputs_company_created_idx/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v28"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v29"/);
 });
 
 test("separa insumos por loja, registra pedidos recorrentes e preserva recebimentos", async () => {
@@ -1015,7 +1015,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v28"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v29"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1060,7 +1060,63 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v28"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v29"/);
+});
+
+test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
+  const [html, workerSource, route, schema, migration] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/pdv-requests/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0015_little_ronan.sql", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /id="navSolicitacoes"/);
+  assert.match(html, /id="navAlteracoesPdv" data-page="alteracoesPdv" data-permission="pdv_requests"/);
+  assert.match(html, /id="pageAlteracoesPdv" class="page wrap"/);
+  assert.match(html, /id="pdvRequestForm"/);
+  assert.match(html, /data-pdv-type-fields="observation"/);
+  assert.match(html, /data-pdv-type-fields="payment"/);
+  assert.match(html, /data-pdv-type-fields="seller"/);
+  assert.match(html, /data-pdv-type-fields="customer"/);
+  assert.match(html, /data-pdv-type-fields="product"/);
+  assert.match(html, /data-pdv-type-fields="markup"/);
+  assert.match(html, /data-pdv-type-fields="cancellation"/);
+  assert.match(html, /data-pdv-mode="search"/);
+  assert.match(html, /id="pdvSearchSaleId"/);
+  assert.match(html, /data-pdv-status="open"/);
+  assert.match(html, /data-pdv-status="done"/);
+  assert.match(html, /data-pdv-status="not_done"/);
+  assert.match(html, /data-pdv-status="doubt"/);
+  assert.match(html, /value="pdv_requests:view"> Visualização/);
+  assert.match(html, /value="pdv_requests:create"> Cadastro/);
+  assert.match(html, /value="pdv_requests:delete"> Exclusão/);
+  assert.match(html, /value="pdv_requests:status"> Alteração de status/);
+  assert.match(html, /alteracoesPdv:'\/solicitacoes\/alteracoes-pdv'/);
+
+  assert.match(
+    workerSource,
+    /"pdv_requests:view" \| "pdv_requests:create" \| "pdv_requests:delete" \| "pdv_requests:status"/,
+  );
+  assert.match(workerSource, /"\/solicitacoes\/alteracoes-pdv"/);
+  assert.match(
+    workerSource,
+    /path === "\/solicitacoes\/alteracoes-pdv" \|\| path\.startsWith\("\/api\/pdv-requests"\)/,
+  );
+
+  assert.match(route, /!can\(actor, "pdv_requests:create"\)/);
+  assert.match(route, /!can\(actor, "pdv_requests:status"\)/);
+  assert.match(route, /!can\(actor, "pdv_requests:delete"\)/);
+  assert.match(route, /VALUES \(\?1, \?2, \?3, \?4, \?5, 'open'/);
+  assert.match(route, /INSERT INTO pdv_change_requests/);
+  assert.match(route, /DELETE FROM pdv_change_requests WHERE id=\?1/);
+  assert.match(route, /REQUIRED_DETAIL_FIELDS/);
+
+  assert.match(schema, /export const pdvChangeRequests = pgTable/);
+  assert.match(migration, /CREATE TABLE "pdv_change_requests"/);
+  assert.match(migration, /pdv_change_requests_sale_idx/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
