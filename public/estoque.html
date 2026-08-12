@@ -4311,7 +4311,7 @@
 
   // O canal ao vivo carrega somente avisos de invalidacao. Os dados continuam
   // sendo buscados pelas APIs existentes, que aplicam as permissoes da sessao.
-  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions'});
+  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures'});
   let livePageName = '';
   let liveModule = '';
   let liveSocket = null;
@@ -4338,10 +4338,14 @@
   }
 
   async function refreshLiveModule(module){
-    if(module !== liveModule || livePageName !== 'missoes') return;
-    const refreshes = [loadMissions(),loadMissionMonthAgenda()];
-    if(missionSectionTab === 'rotina') refreshes.push(loadRoutines());
-    await Promise.all(refreshes);
+    if(module !== liveModule) return;
+    if(livePageName === 'missoes'){
+      const refreshes = [loadMissions(),loadMissionMonthAgenda()];
+      if(missionSectionTab === 'rotina') refreshes.push(loadRoutines());
+      await Promise.all(refreshes);
+      return;
+    }
+    if(livePageName === 'captacao') await loadCaptures();
   }
 
   async function runLiveRefresh(module){

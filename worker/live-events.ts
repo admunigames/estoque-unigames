@@ -65,3 +65,28 @@ export async function liveInvalidationForRequest(
 
   return null;
 }
+
+export function liveInvalidationForResponse(
+  request: Request,
+  response: Response,
+  requestInvalidation: LiveInvalidation | null,
+): LiveInvalidation | null {
+  if (requestInvalidation) return requestInvalidation;
+  const path = new URL(request.url).pathname.replace(/\/+$/, "");
+  if (path !== "/api/captures" || !["POST", "PATCH", "DELETE"].includes(request.method)) {
+    return null;
+  }
+
+  const companyId = safeCompanyId(response.headers.get("x-unigames-live-company-id"));
+  if (!companyId) return null;
+  const category = response.headers.get("x-unigames-live-capture-category");
+  return {
+    module: "captures",
+    audience: {
+      kind: "company",
+      companyId,
+      // A Assistencia ve todas as categorias, exceto jogos, na API atual.
+      groups: category === "jogo" ? [] : ["assistance"],
+    },
+  };
+}

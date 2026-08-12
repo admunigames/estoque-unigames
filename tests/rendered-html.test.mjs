@@ -752,6 +752,10 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
+  const liveEvents = await readFile(
+    new URL("../worker/live-events.ts", import.meta.url),
+    "utf8",
+  );
 
   assert.match(html, /id="navCaptacao" data-page="captacao" data-permission="captures"/);
   assert.match(html, /id="pageCaptacao" class="page wrap"/);
@@ -775,6 +779,8 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(html, /value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO/);
   assert.match(html, /value="captures:view"> Visualizar/);
   assert.match(html, /captacao:'\/captacao'/);
+  assert.match(html, /captacao:'captures'/);
+  assert.match(html, /if\(livePageName === 'captacao'\) await loadCaptures\(\)/);
 
   assert.match(workerSource, /"captures"/);
   assert.match(workerSource, /assistance: \["captures:view", "captures:create", "captures:receive"\]/);
@@ -785,6 +791,9 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(workerSource, /authenticatedHeaders\.set\(ACCESS_GROUP_HEADER, user\.accessGroup\)/);
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM captured_products"\)\.all\(\)/);
   assert.match(workerSource, /capturedProducts: capturedProducts\.results \?\? \[\]/);
+  assert.match(workerSource, /headers\.delete\("x-unigames-live-company-id"\)/);
+  assert.match(liveEvents, /module: "captures"/);
+  assert.match(liveEvents, /category === "jogo" \? \[\] : \["assistance"\]/);
 
   assert.match(captureShared, /accessGroup === "assistance"/);
   assert.match(captureShared, /actor\.sector === "assistance"/);
@@ -805,6 +814,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(route, /existing\.status !== "ready"/);
   assert.match(route, /origin_company_id=\?1/);
   assert.match(route, /destination_company_id=\?1/);
+  assert.match(route, /function liveCaptureResponse/);
   assert.match(schema, /export const capturedProducts = pgTable/);
   assert.match(migration, /CREATE TABLE `captured_products`/);
   assert.match(migration, /captured_products_status_updated_idx/);

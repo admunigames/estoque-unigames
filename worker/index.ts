@@ -6,7 +6,10 @@ import {
 } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import webPush from "web-push";
-import { liveInvalidationForRequest } from "./live-events";
+import {
+  liveInvalidationForRequest,
+  liveInvalidationForResponse,
+} from "./live-events";
 import {
   LiveUpdates,
   isLiveModule,
@@ -1882,6 +1885,8 @@ async function advanceOperationalRoutines(env: Env): Promise<void> {
 
 function securityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
+  headers.delete("x-unigames-live-company-id");
+  headers.delete("x-unigames-live-capture-category");
   headers.set("referrer-policy", "same-origin");
   headers.set("x-content-type-options", "nosniff");
   headers.set("x-frame-options", "DENY");
@@ -2029,8 +2034,13 @@ const worker = {
       return securityHeaders(response);
     }
 
-    const liveInvalidation = await liveInvalidationForRequest(authenticatedRequest, user);
+    const requestInvalidation = await liveInvalidationForRequest(authenticatedRequest, user);
     const response = await handler.fetch(authenticatedRequest, env, ctx);
+    const liveInvalidation = liveInvalidationForResponse(
+      authenticatedRequest,
+      response,
+      requestInvalidation,
+    );
     if (response.ok && liveInvalidation) {
       ctx.waitUntil(publishLiveUpdate(env, liveInvalidation));
     }

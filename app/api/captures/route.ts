@@ -25,6 +25,20 @@ import {
   type JsonMap,
 } from "./shared";
 
+function liveCaptureResponse(
+  body: JsonMap,
+  status: number,
+  capture: Pick<CaptureRow, "originCompanyId" | "category">,
+): Response {
+  const response = jsonResponse(body, status);
+  // Metadados internos consumidos e removidos pelo Worker antes da resposta ao
+  // navegador. Assim o aviso chega apenas a admin, origem e Assistencia quando
+  // a propria API permite, sem transportar o registro pelo WebSocket.
+  response.headers.set("x-unigames-live-company-id", capture.originCompanyId);
+  response.headers.set("x-unigames-live-capture-category", capture.category);
+  return response;
+}
+
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -219,7 +233,11 @@ export async function POST(request: Request) {
         actor.displayName,
       )
       .run();
-    return jsonResponse({ created: true, id }, 201);
+    return liveCaptureResponse(
+      { created: true, id },
+      201,
+      { originCompanyId, category },
+    );
   } catch (error) {
     console.error("Não foi possível cadastrar o produto captado.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CADASTRAR O PRODUTO." }, 500);
@@ -299,10 +317,14 @@ export async function PATCH(request: Request) {
           .bind(actor.id, actor.displayName, id)
           .run();
       }
-      return jsonResponse({
-        updated: true,
-        status: action === "receive" ? "received" : "ready",
-      });
+      return liveCaptureResponse(
+        {
+          updated: true,
+          status: action === "receive" ? "received" : "ready",
+        },
+        200,
+        existing,
+      );
     }
 
     if (action === "assign") {
@@ -346,12 +368,16 @@ export async function PATCH(request: Request) {
           id,
         )
         .run();
-      return jsonResponse({
-        updated: true,
-        status: "assigned",
-        destinationCompanyId,
-        destinationCompanyName,
-      });
+      return liveCaptureResponse(
+        {
+          updated: true,
+          status: "assigned",
+          destinationCompanyId,
+          destinationCompanyName,
+        },
+        200,
+        existing,
+      );
     }
 
     return jsonResponse({ error: "AÇÃO DE CAPTAÇÃO INVÁLIDA." }, 400);
@@ -403,7 +429,7 @@ export async function DELETE(request: Request) {
       }
     }
 
-    return jsonResponse({ deleted: true, id });
+    return liveCaptureResponse({ deleted: true, id }, 200, existing);
   } catch (error) {
     console.error("Não foi possível excluir a captação.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR A CAPTAÇÃO." }, 500);
