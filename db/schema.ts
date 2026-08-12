@@ -470,6 +470,28 @@ export const supplyItems = pgTable(
   ],
 );
 
+export const pdvChangeRequests = pgTable(
+  "pdv_change_requests",
+  {
+    id: text("id").primaryKey(),
+    type: text("type").notNull(),
+    saleId: text("sale_id").notNull(),
+    requesterName: text("requester_name").notNull().default(""),
+    detailsJson: text("details_json").notNull().default("{}"),
+    status: text("status").notNull().default("open"),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("pdv_change_requests_sale_idx").on(table.saleId),
+    index("pdv_change_requests_status_created_idx").on(table.status, table.createdAt),
+  ],
+);
+
 export const supplyRequestEvents = pgTable(
   "supply_request_events",
   {

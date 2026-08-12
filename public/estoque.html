@@ -2602,6 +2602,14 @@
         <a class="nav-item sub-item" id="navDocumentoAvulso" data-document-folder="documentos-avulsos" title="Documentos Avulsos" href="/documentos/documentos-avulsos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14 3.5V8h4"/></svg></span><span class="nav-label">Documentos Avulsos</span></a>
       </div>
     </div>
+    <div class="nav-group" data-permission="pdv_requests">
+      <button class="nav-group-toggle" id="navSolicitacoes" type="button" aria-expanded="false" aria-controls="navSolicitacoesSubmenu">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10l-2.6-2.6"/><path d="M17 17H7l2.6 2.6"/><line x1="9" y1="12" x2="15" y2="12"/></svg></span><span class="nav-label">Solicitações</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </button>
+      <div class="nav-submenu" id="navSolicitacoesSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navAlteracoesPdv" data-page="alteracoesPdv" data-permission="pdv_requests" title="Alterações PDV" href="/solicitacoes/alteracoes-pdv"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10l-2.6-2.6"/><path d="M17 17H7l2.6 2.6"/><line x1="9" y1="12" x2="15" y2="12"/></svg></span><span class="nav-label">Alterações PDV</span></a>
+      </div>
+    </div>
     <div class="nav-group" data-permission="finance">
       <button class="nav-group-toggle" id="navFinanceiro" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -3519,6 +3527,106 @@
       </div>
     </section>
 
+<!-- ================= ALTERAÇÕES PDV ================= -->
+    <section id="pageAlteracoesPdv" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Alterações PDV</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Registre pedidos da loja para alterações que precisam ser feitas manualmente no PDV de outro sistema. Este módulo só controla o pedido — a alteração não é feita automaticamente aqui.</p></div>
+      </header>
+
+      <section class="output-summary" aria-label="Resumo das solicitações">
+        <article class="output-summary-card"><span>EM ABERTO</span><strong id="pdvOpenCount">0</strong></article>
+        <article class="output-summary-card completed"><span>FINALIZADO</span><strong id="pdvDoneCount">0</strong></article>
+        <article class="output-summary-card"><span>NÃO FEITO</span><strong id="pdvNotDoneCount">0</strong></article>
+        <article class="output-summary-card"><span>DÚVIDA</span><strong id="pdvDoubtCount">0</strong></article>
+      </section>
+
+      <section class="output-register-panel" id="pdvRegisterPanel" data-permission="pdv_requests:create">
+        <div class="output-panel-head">
+          <div><h3>NOVA SOLICITAÇÃO</h3><p>Escolha o tipo de alteração — os campos mudam de acordo com o tipo escolhido.</p></div>
+        </div>
+        <form id="pdvRequestForm">
+          <div class="output-form-grid">
+            <div class="field"><label for="pdvType">TIPO DE ALTERAÇÃO</label>
+              <select id="pdvType" required>
+                <option value="observation">OBSERVAÇÃO</option>
+                <option value="payment">PAGAMENTO</option>
+                <option value="seller">VENDEDOR</option>
+                <option value="customer">CLIENTE</option>
+                <option value="product">PRODUTO</option>
+                <option value="markup">GORDURA</option>
+                <option value="cancellation">CANCELAMENTO</option>
+              </select>
+            </div>
+            <div class="field"><label for="pdvSaleId">ID DA VENDA</label><input id="pdvSaleId" maxlength="60" required placeholder="Ex.: 123456"></div>
+            <div class="field"><label for="pdvRequesterName">RESPONSÁVEL SOLICITANTE</label><input id="pdvRequesterName" maxlength="120" required placeholder="Quem está pedindo a alteração"></div>
+
+            <div class="field full" data-pdv-type-fields="observation">
+              <label for="pdvObservationNote">OBSERVAÇÃO A SER COLOCADA NA VENDA</label>
+              <textarea id="pdvObservationNote" maxlength="2000" rows="3" placeholder="Descreva a observação que deve constar na venda."></textarea>
+            </div>
+
+            <div class="field" data-pdv-type-fields="payment"><label for="pdvPaymentCurrentAmount">VALOR ATUAL</label><input id="pdvPaymentCurrentAmount" maxlength="40" placeholder="Ex.: R$ 150,00"></div>
+            <div class="field" data-pdv-type-fields="payment"><label for="pdvPaymentCurrentMethod">FORMA DE PAGAMENTO ATUAL</label><input id="pdvPaymentCurrentMethod" maxlength="80" placeholder="Ex.: Cartão de crédito"></div>
+            <div class="field" data-pdv-type-fields="payment"><label for="pdvPaymentNewAmount">NOVO VALOR</label><input id="pdvPaymentNewAmount" maxlength="40" placeholder="Ex.: R$ 150,00"></div>
+            <div class="field" data-pdv-type-fields="payment"><label for="pdvPaymentNewMethod">NOVA FORMA DE PAGAMENTO</label><input id="pdvPaymentNewMethod" maxlength="80" placeholder="Ex.: Pix"></div>
+
+            <div class="field full" data-pdv-type-fields="seller"><label for="pdvSellerName">VENDEDOR QUE DEVE CONSTAR NA VENDA</label><input id="pdvSellerName" maxlength="120"></div>
+
+            <div class="field full" data-pdv-type-fields="customer"><label for="pdvCustomerInfo">CLIENTE (NOME COMPLETO OU CÓDIGO)</label><input id="pdvCustomerInfo" maxlength="200"></div>
+
+            <div class="field" data-pdv-type-fields="product"><label for="pdvProductCurrent">PRODUTO ATUAL DA VENDA</label><input id="pdvProductCurrent" maxlength="200"></div>
+            <div class="field" data-pdv-type-fields="product"><label for="pdvProductNew">PRODUTO QUE PRECISA CONSTAR NO LUGAR</label><input id="pdvProductNew" maxlength="200"></div>
+            <div class="field full" data-pdv-type-fields="product"><label for="pdvProductNote">OBSERVAÇÃO (PAGAMENTO/GORDURA, SE HOUVER)</label><textarea id="pdvProductNote" maxlength="2000" rows="3"></textarea></div>
+
+            <div class="field" data-pdv-type-fields="markup"><label for="pdvMarkupProduct">PRODUTO DA VENDA COM VALOR ALTERADO</label><input id="pdvMarkupProduct" maxlength="200"></div>
+            <div class="field" data-pdv-type-fields="markup"><label for="pdvMarkupAmount">VALOR DA GORDURA</label><input id="pdvMarkupAmount" maxlength="40" placeholder="Ex.: R$ 20,00"></div>
+            <div class="field" data-pdv-type-fields="markup"><label for="pdvMarkupFinalAmount">VALOR FINAL DO PRODUTO</label><input id="pdvMarkupFinalAmount" maxlength="40" placeholder="Ex.: R$ 130,00"></div>
+
+            <div class="field full" data-pdv-type-fields="cancellation"><label for="pdvCancellationReason">MOTIVO DO CANCELAMENTO</label><textarea id="pdvCancellationReason" maxlength="2000" rows="3"></textarea></div>
+          </div>
+          <div class="output-form-actions"><button class="btn-accent" id="btnSavePdvRequest" type="submit">ENVIAR SOLICITAÇÃO</button></div>
+          <div class="user-form-status" id="pdvRequestFormStatus" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="output-board" data-permission="pdv_requests:view">
+        <div class="output-board-head">
+          <div><h3>ALTERAÇÕES PDV</h3><p id="pdvBoardDescription">Acompanhe as solicitações cadastradas e a situação de cada uma.</p></div>
+          <button class="btn-outline" id="btnRefreshPdvRequests" type="button">ATUALIZAR</button>
+        </div>
+        <div class="output-toolbar">
+          <div class="output-tabs" role="tablist" aria-label="Modo de visualização">
+            <button class="output-tab active" type="button" role="tab" aria-selected="true" data-pdv-mode="list">SOLICITAÇÕES</button>
+            <button class="output-tab" type="button" role="tab" aria-selected="false" data-pdv-mode="search">PESQUISA POR VENDA</button>
+          </div>
+        </div>
+        <div id="pdvListMode">
+          <div class="output-toolbar">
+            <div class="field search"><label for="pdvSearch">BUSCAR</label><input id="pdvSearch" type="search" placeholder="ID da venda, responsável ou tipo"></div>
+            <div class="output-tabs" role="tablist" aria-label="Situação das solicitações">
+              <button class="output-tab active" type="button" role="tab" aria-selected="true" data-pdv-status="">TODOS</button>
+              <button class="output-tab" type="button" role="tab" aria-selected="false" data-pdv-status="open">EM ABERTO</button>
+              <button class="output-tab" type="button" role="tab" aria-selected="false" data-pdv-status="done">FINALIZADO</button>
+              <button class="output-tab" type="button" role="tab" aria-selected="false" data-pdv-status="not_done">NÃO FEITO</button>
+              <button class="output-tab" type="button" role="tab" aria-selected="false" data-pdv-status="doubt">DÚVIDA</button>
+            </div>
+          </div>
+          <div class="output-list" id="pdvRequestList" aria-live="polite"><div class="output-empty">Carregando solicitações…</div></div>
+        </div>
+        <div id="pdvSearchMode" hidden>
+          <div class="output-toolbar">
+            <div class="field search"><label for="pdvSearchSaleId">ID DA VENDA</label><input id="pdvSearchSaleId" type="text" maxlength="60" placeholder="Informe o ID da venda para ver todas as solicitações dela"></div>
+            <button class="btn-accent" id="btnPdvSearchSale" type="button">BUSCAR</button>
+          </div>
+          <div class="output-list" id="pdvSearchResults" aria-live="polite"><div class="output-empty">Informe o ID da venda para buscar.</div></div>
+        </div>
+      </section>
+    </section>
+
 <!-- ================= TAREFAS ================= -->
     <section id="pageTarefas" class="page wrap">
       <header class="page-header">
@@ -4083,6 +4191,15 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>Solicitações · Alterações PDV</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:view"> Visualização</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:create"> Cadastro</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:delete"> Exclusão</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:status"> Alteração de status</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -4275,6 +4392,9 @@
   let instructionRows = [];
   let instructionView = 'active';
   let instructionToday = '';
+  let pdvRequestRows = [];
+  let pdvRequestsLoading = false;
+  let pdvRequestStatus = '';
 
   let purchaseRows = [];
   let purchaseCursor = null;
@@ -4718,6 +4838,8 @@
   const navEstoqueSubmenu = el('navEstoqueSubmenu');
   const navDocumentosToggle = el('navDocumentos');
   const navDocumentosSubmenu = el('navDocumentosSubmenu');
+  const navSolicitacoesToggle = el('navSolicitacoes');
+  const navSolicitacoesSubmenu = el('navSolicitacoesSubmenu');
   const PAGE_ROUTES = Object.freeze({
     inicio:'/inicio',
     puxadas:'/puxadas',
@@ -4733,6 +4855,7 @@
     saidas:'/saidas',
     insumos:'/insumos',
     instrucoes:'/instrucoes',
+    alteracoesPdv:'/solicitacoes/alteracoes-pdv',
     documentos:'/documentos',
     usuarios:'/cadastros/usuarios',
     rhFolgas:'/rh/folgas',
@@ -4753,6 +4876,7 @@
     saidas:'SAÍDAS',
     insumos:'INSUMOS',
     instrucoes:'INSTRUÇÕES',
+    alteracoesPdv:'ALTERAÇÕES PDV',
     usuarios:'USUÁRIOS E ACESSOS',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS'
@@ -4767,6 +4891,7 @@
     captacao:'captures',
     saidas:'outputs',
     insumos:'supplies',
+    alteracoesPdv:'pdv_requests',
     cadastros:'database',
     lojas:'database',
     dados:'database',
@@ -5086,6 +5211,16 @@
     setDocumentosExpanded(!expanded);
   });
 
+  function setSolicitacoesExpanded(expanded){
+    navSolicitacoesToggle.setAttribute('aria-expanded', String(expanded));
+    navSolicitacoesSubmenu.setAttribute('aria-hidden', String(!expanded));
+  }
+
+  navSolicitacoesToggle.addEventListener('click', () => {
+    const expanded = navSolicitacoesToggle.getAttribute('aria-expanded') === 'true';
+    setSolicitacoesExpanded(!expanded);
+  });
+
   function setSidebarCompact(compact){
     document.body.classList.toggle('sidebar-compact', compact);
     btnSidebarCompact.setAttribute('aria-pressed', String(compact));
@@ -5113,6 +5248,7 @@
     const isRh = name === 'rhFolgas' || name === 'rhEscalas';
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
+    const isSolicitacoes = name === 'alteracoesPdv';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -5129,6 +5265,8 @@
     }
     setDocumentosExpanded(isDocumentos);
     if(isDocumentos) navDocumentosToggle.classList.add('active');
+    setSolicitacoesExpanded(isSolicitacoes);
+    if(isSolicitacoes) navSolicitacoesToggle.classList.add('active');
     document.querySelectorAll('[data-mobile-page]').forEach(button => {
       const active = button.dataset.mobilePage === name;
       button.classList.toggle('active', active);
@@ -5155,6 +5293,7 @@
     if(name === 'saidas') loadOutputs();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
     if(name === 'instrucoes') loadInstructions();
+    if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -5174,6 +5313,7 @@
     if(name === 'saidas') loadOutputs();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
     if(name === 'instrucoes') loadInstructions();
+    if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
   }
 
@@ -11917,6 +12057,278 @@ function renderHomeTasks(){
   el('instructionDueDate').min = todayDateKey();
   el('instructionDueDate').value = instructionDefaultDueDate();
 
+  const PDV_TYPE_LABELS = {
+    observation:'OBSERVAÇÃO', payment:'PAGAMENTO', seller:'VENDEDOR', customer:'CLIENTE',
+    product:'PRODUTO', markup:'GORDURA', cancellation:'CANCELAMENTO'
+  };
+  const PDV_STATUS_LABELS = { open:'EM ABERTO', done:'FINALIZADO', not_done:'NÃO FEITO', doubt:'DÚVIDA' };
+
+  function updatePdvTypeFields(){
+    const type = el('pdvType').value;
+    document.querySelectorAll('[data-pdv-type-fields]').forEach(node => {
+      node.hidden = node.dataset.pdvTypeFields !== type;
+    });
+  }
+  el('pdvType').addEventListener('change', updatePdvTypeFields);
+  updatePdvTypeFields();
+
+  async function pdvApiRequest(query, options){
+    const response = await fetch('/api/pdv-requests'+(query || ''),{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function pdvRequestDetailsFromForm(type){
+    switch(type){
+      case 'observation': return { note: el('pdvObservationNote').value };
+      case 'payment': return {
+        currentAmount: el('pdvPaymentCurrentAmount').value,
+        currentMethod: el('pdvPaymentCurrentMethod').value,
+        newAmount: el('pdvPaymentNewAmount').value,
+        newMethod: el('pdvPaymentNewMethod').value
+      };
+      case 'seller': return { sellerName: el('pdvSellerName').value };
+      case 'customer': return { customerInfo: el('pdvCustomerInfo').value };
+      case 'product': return {
+        currentProduct: el('pdvProductCurrent').value,
+        newProduct: el('pdvProductNew').value,
+        note: el('pdvProductNote').value
+      };
+      case 'markup': return {
+        productName: el('pdvMarkupProduct').value,
+        markupAmount: el('pdvMarkupAmount').value,
+        finalAmount: el('pdvMarkupFinalAmount').value
+      };
+      case 'cancellation': return { reason: el('pdvCancellationReason').value };
+      default: return {};
+    }
+  }
+
+  function pdvDetailsSummary(row){
+    const details = row.details && typeof row.details === 'object' ? row.details : {};
+    switch(row.type){
+      case 'observation': return [['OBSERVAÇÃO', details.note]];
+      case 'payment': return [
+        ['PAGAMENTO ATUAL', [details.currentMethod,details.currentAmount].filter(Boolean).join(' · ')],
+        ['NOVO PAGAMENTO', [details.newMethod,details.newAmount].filter(Boolean).join(' · ')]
+      ];
+      case 'seller': return [['VENDEDOR', details.sellerName]];
+      case 'customer': return [['CLIENTE', details.customerInfo]];
+      case 'product': return [
+        ['PRODUTO ATUAL', details.currentProduct],
+        ['PRODUTO NOVO', details.newProduct],
+        ['OBSERVAÇÃO', details.note]
+      ];
+      case 'markup': return [
+        ['PRODUTO', details.productName],
+        ['GORDURA', details.markupAmount],
+        ['VALOR FINAL', details.finalAmount]
+      ];
+      case 'cancellation': return [['MOTIVO', details.reason]];
+      default: return [];
+    }
+  }
+
+  function pdvRequestCardHtml(row){
+    const statusKey = row.status || 'open';
+    const detailRows = pdvDetailsSummary(row).filter(([,value]) => value);
+    const detailsHtml = detailRows.length
+      ? '<div class="output-details">'+detailRows.map(([label,value]) =>
+          '<div class="output-detail"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(String(value))+'</strong></div>'
+        ).join('')+'</div>'
+      : '';
+    const history = 'CADASTRADA POR '+escapeHtml(row.createdByName || '—')+' EM '+escapeHtml(outputDateTime(row.createdAt))+
+      (row.updatedByName ? ' · ATUALIZADA POR '+escapeHtml(row.updatedByName)+' EM '+escapeHtml(outputDateTime(row.updatedAt)) : '');
+    const statusControl = canAccess('pdv_requests:status')
+      ? '<select class="pdv-status-select" data-pdv-status-select="'+escapeHtml(row.id)+'">'+
+          Object.keys(PDV_STATUS_LABELS).map(key =>
+            '<option value="'+key+'"'+(key === statusKey ? ' selected' : '')+'>'+PDV_STATUS_LABELS[key]+'</option>'
+          ).join('')+
+        '</select>'
+      : '<span class="output-state'+(statusKey === 'done' ? ' completed' : '')+'">'+escapeHtml(PDV_STATUS_LABELS[statusKey] || statusKey)+'</span>';
+    return '<article class="output-card'+(statusKey === 'done' ? ' completed' : '')+'">'+
+      '<div class="output-card-copy">'+
+        '<div class="output-card-title"><span class="output-quantity">'+escapeHtml(PDV_TYPE_LABELS[row.type] || row.type)+'</span>'+
+          '<strong>VENDA '+escapeHtml(row.saleId || '—')+'</strong></div>'+
+        detailsHtml+
+        '<p class="output-history">SOLICITANTE: '+escapeHtml(row.requesterName || '—')+' · '+history+'</p>'+
+      '</div>'+
+      '<div class="output-card-actions">'+
+        statusControl+
+        (canAccess('pdv_requests:delete') ? '<button class="output-complete" type="button" data-pdv-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+
+      '</div>'+
+    '</article>';
+  }
+
+  function filteredPdvRequestRows(){
+    const search = normalizeHeader(el('pdvSearch').value || '');
+    return pdvRequestRows.filter(row => {
+      if(pdvRequestStatus && row.status !== pdvRequestStatus) return false;
+      if(!search) return true;
+      return normalizeHeader([
+        row.saleId,row.requesterName,PDV_TYPE_LABELS[row.type],row.createdByName
+      ].join(' ')).includes(search);
+    });
+  }
+
+  function renderPdvRequestCounts(){
+    el('pdvOpenCount').textContent = pdvRequestRows.filter(row => row.status === 'open').length;
+    el('pdvDoneCount').textContent = pdvRequestRows.filter(row => row.status === 'done').length;
+    el('pdvNotDoneCount').textContent = pdvRequestRows.filter(row => row.status === 'not_done').length;
+    el('pdvDoubtCount').textContent = pdvRequestRows.filter(row => row.status === 'doubt').length;
+  }
+
+  function renderPdvRequestList(){
+    renderPdvRequestCounts();
+    document.querySelectorAll('[data-pdv-status]').forEach(button => {
+      const active = button.dataset.pdvStatus === pdvRequestStatus;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+    const rows = filteredPdvRequestRows();
+    el('pdvRequestList').innerHTML = rows.length
+      ? rows.map(pdvRequestCardHtml).join('')
+      : '<div class="output-empty">Nenhuma solicitação encontrada.</div>';
+  }
+
+  function renderPdvSearchResults(){
+    const saleId = (el('pdvSearchSaleId').value || '').trim();
+    if(!saleId){
+      el('pdvSearchResults').innerHTML = '<div class="output-empty">Informe o ID da venda para buscar.</div>';
+      return;
+    }
+    const rows = pdvRequestRows.filter(row => normalizeHeader(row.saleId || '') === normalizeHeader(saleId));
+    el('pdvSearchResults').innerHTML = rows.length
+      ? rows.map(pdvRequestCardHtml).join('')
+      : '<div class="output-empty">Nenhuma solicitação encontrada para a venda '+escapeHtml(saleId)+'.</div>';
+  }
+
+  async function loadPdvRequests(){
+    if(!canAccess('pdv_requests') || pdvRequestsLoading) return;
+    pdvRequestsLoading = true;
+    el('pdvRequestList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
+    try{
+      const data = await pdvApiRequest('');
+      pdvRequestRows = Array.isArray(data.requests) ? data.requests : [];
+      renderPdvRequestList();
+      renderPdvSearchResults();
+    }catch(error){
+      pdvRequestRows = [];
+      renderPdvRequestCounts();
+      el('pdvRequestList').innerHTML = '<div class="output-empty">'+escapeHtml(error.message)+'</div>';
+    }finally{
+      pdvRequestsLoading = false;
+    }
+  }
+
+  function setPdvRequestFormStatus(message,type){
+    const status = el('pdvRequestFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  el('pdvRequestForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnSavePdvRequest');
+    const type = el('pdvType').value;
+    button.disabled = true;
+    setPdvRequestFormStatus('ENVIANDO SOLICITAÇÃO…','');
+    try{
+      await pdvApiRequest('',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          type,
+          saleId: el('pdvSaleId').value,
+          requesterName: el('pdvRequesterName').value,
+          details: pdvRequestDetailsFromForm(type)
+        })
+      });
+      el('pdvRequestForm').reset();
+      updatePdvTypeFields();
+      setPdvRequestFormStatus('SOLICITAÇÃO CADASTRADA.','success');
+      await loadPdvRequests();
+    }catch(error){
+      setPdvRequestFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  function bindPdvListActions(containerId, afterChange){
+    const container = el(containerId);
+    container.addEventListener('click', async event => {
+      const button = event.target.closest('[data-pdv-delete]');
+      if(!button || !confirm('Excluir esta solicitação definitivamente?')) return;
+      button.disabled = true;
+      try{
+        await pdvApiRequest('?id='+encodeURIComponent(button.dataset.pdvDelete),{method:'DELETE'});
+        await loadPdvRequests();
+        afterChange();
+        showPurchaseToast('Solicitação excluída.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        button.disabled = false;
+      }
+    });
+    container.addEventListener('change', async event => {
+      const select = event.target.closest('[data-pdv-status-select]');
+      if(!select) return;
+      select.disabled = true;
+      try{
+        await pdvApiRequest('',{
+          method:'PATCH',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:select.dataset.pdvStatusSelect, status:select.value})
+        });
+        await loadPdvRequests();
+        afterChange();
+        showPurchaseToast('Status atualizado.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        select.disabled = false;
+      }
+    });
+  }
+  bindPdvListActions('pdvRequestList', renderPdvRequestList);
+  bindPdvListActions('pdvSearchResults', renderPdvSearchResults);
+
+  document.querySelectorAll('[data-pdv-mode]').forEach(button => {
+    button.addEventListener('click', () => {
+      const mode = button.dataset.pdvMode;
+      document.querySelectorAll('[data-pdv-mode]').forEach(btn => {
+        const active = btn === button;
+        btn.classList.toggle('active',active);
+        btn.setAttribute('aria-selected',String(active));
+      });
+      el('pdvListMode').hidden = mode !== 'list';
+      el('pdvSearchMode').hidden = mode !== 'search';
+    });
+  });
+
+  document.querySelectorAll('[data-pdv-status]').forEach(button => {
+    button.addEventListener('click', () => {
+      pdvRequestStatus = button.dataset.pdvStatus;
+      renderPdvRequestList();
+    });
+  });
+
+  el('pdvSearch').addEventListener('input', renderPdvRequestList);
+  el('btnRefreshPdvRequests').addEventListener('click', loadPdvRequests);
+  el('btnPdvSearchSale').addEventListener('click', renderPdvSearchResults);
+  el('pdvSearchSaleId').addEventListener('keydown', event => {
+    if(event.key === 'Enter'){ event.preventDefault(); renderPdvSearchResults(); }
+  });
+
   const permissionNames = {
     'tasks:view':'Tarefas: visualizar','tasks:manage':'Tarefas: cadastrar/editar/excluir',
     'missions:view':'Missões: visualizar','missions:create':'Missões: cadastrar','missions:delete':'Missões: excluir','missions:notify':'Missões: notificações',
@@ -11929,6 +12341,7 @@ function renderHomeTasks(){
     'pulls:view':'Puxadas',
     'report41:view':'Relatório 41',
     'instructions:manage':'Instruções: cadastrar/excluir',
+    'pdv_requests:view':'Alterações PDV: visualização','pdv_requests:create':'Alterações PDV: cadastro','pdv_requests:delete':'Alterações PDV: exclusão','pdv_requests:status':'Alterações PDV: alteração de status',
     'users:manage':'Usuários e acessos'
   };
   const accessGroupNames = {
