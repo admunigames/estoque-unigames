@@ -63,6 +63,27 @@ export async function liveInvalidationForRequest(
     }
   }
 
+  if (path === "/api/supplies" || path.startsWith("/api/supplies/")) {
+    // Catalogo e estoque fisico afetam a disponibilidade para todas as lojas.
+    if (
+      path === "/api/supplies/categories" ||
+      path === "/api/supplies/products" ||
+      path === "/api/supplies/stock"
+    ) {
+      return { module: "supplies", audience: { kind: "all" } };
+    }
+
+    const body = await requestBody(request);
+    const companyId = safeCompanyId(body.companyId) || safeCompanyId(actor.companyId);
+    if (companyId) {
+      return { module: "supplies", audience: { kind: "company", companyId } };
+    }
+
+    // Acoes administrativas por id (separar/excluir) nao trazem a loja no
+    // pedido. O aviso segue sem dados; cada sessao recarrega pela API filtrada.
+    return { module: "supplies", audience: { kind: "all" } };
+  }
+
   return null;
 }
 

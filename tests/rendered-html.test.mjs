@@ -947,6 +947,10 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
+  const liveEvents = await readFile(
+    new URL("../worker/live-events.ts", import.meta.url),
+    "utf8",
+  );
 
   assert.match(html, /id="navInsumos" data-page="insumos" data-permission="supplies"/);
   assert.match(html, /data-home-target="insumos" data-permission="supplies"/);
@@ -965,6 +969,9 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(html, /method:'DELETE'/);
   assert.match(html, /SEPARAÇÃO<\/button>/);
   assert.match(html, /insumos:'\/insumos'/);
+  assert.match(html, /insumos:'supplies'/);
+  assert.match(html, /if\(livePageName === 'insumos'\)/);
+  assert.match(html, /loadSupplySeparationQueue\(\)/);
   assert.match(html, /value="supplies:view"> Visualizar/);
 
   assert.match(workerSource, /"supplies"/);
@@ -976,6 +983,8 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM supply_request_events"\)\.all\(\)/);
   assert.match(workerSource, /supplyItems: supplyItems\.results \?\? \[\]/);
   assert.match(workerSource, /supplyRequestEvents: supplyRequestEvents\.results \?\? \[\]/);
+  assert.match(liveEvents, /path === "\/api\/supplies" \|\| path\.startsWith\("\/api\/supplies\/"\)/);
+  assert.match(liveEvents, /module: "supplies"/);
 
   assert.match(route, /actor\.role === "admin" \? requestedCompanyId : actor\.companyId/);
   assert.match(route, /actor\.role !== "admin" && existing\.companyId !== actor\.companyId/);
