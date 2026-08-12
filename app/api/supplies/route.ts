@@ -69,8 +69,12 @@ function identity(request: Request): Identity {
   };
 }
 
+function can(actor: Identity, permission: string) {
+  return actor.role === "admin" || actor.permissions.includes(permission);
+}
+
 function canAccessSupplies(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("supplies");
+  return can(actor, "supplies:view") || can(actor, "supplies:request") || can(actor, "supplies:receive");
 }
 
 function sameOrigin(request: Request) {
@@ -253,8 +257,8 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canAccessSupplies(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO AOS INSUMOS." }, 403);
+  if (!can(actor, "supplies:request")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA SOLICITAR INSUMOS." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
@@ -332,6 +336,9 @@ export async function PATCH(request: Request) {
     const action = safeText(body.action, 30);
     const database = await getD1();
     if (action === "request") {
+      if (!can(actor, "supplies:request")) {
+        return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA SOLICITAR INSUMOS." }, 403);
+      }
       const rawIds = Array.isArray(body.itemIds) ? body.itemIds : [];
       const itemIds = Array.from(
         new Set(
@@ -394,6 +401,9 @@ export async function PATCH(request: Request) {
     }
 
     if (action === "receive") {
+      if (!can(actor, "supplies:receive")) {
+        return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA RECEBER INSUMOS." }, 403);
+      }
       const id = safeText(body.id, 80);
       if (!id) return jsonResponse({ error: "INSUMO INVÁLIDO." }, 400);
       const existing = await database
@@ -449,9 +459,9 @@ export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
+  if (!can(actor, "supplies:delete")) {
     return jsonResponse(
-      { error: "SOMENTE O ADMINISTRADOR PODE EXCLUIR UMA SOLICITAÇÃO DE INSUMO." },
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR UMA SOLICITAÇÃO DE INSUMO." },
       403,
     );
   }

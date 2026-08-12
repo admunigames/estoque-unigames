@@ -49,7 +49,10 @@ function identity(request: Request): Identity {
 }
 
 function canAccessSupplies(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("supplies");
+  return (
+    actor.role === "admin" ||
+    actor.permissions.some((permission) => permission.startsWith("supplies:"))
+  );
 }
 
 function sameOrigin(request: Request) {
@@ -200,8 +203,8 @@ export async function PATCH(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canAccessSupplies(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO AOS INSUMOS." }, 403);
+  if (actor.role !== "admin" && !actor.permissions.includes("supplies:request")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA SOLICITAR INSUMOS." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);

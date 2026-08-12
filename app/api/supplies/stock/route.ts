@@ -44,19 +44,22 @@ function identity(request: Request): Identity {
 }
 
 function canAccessSupplies(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("supplies");
+  return (
+    actor.role === "admin" ||
+    actor.permissions.some((permission) => permission.startsWith("supplies:"))
+  );
 }
 
 function canStockIn(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("supplies_in");
+  return actor.role === "admin" || actor.permissions.includes("supplies:stock_in");
 }
 
 function canStockOut(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("supplies_out");
+  return actor.role === "admin" || actor.permissions.includes("supplies:stock_out");
 }
 
 function canDeleteSupplies(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("supplies_delete");
+  return actor.role === "admin" || actor.permissions.includes("supplies:delete");
 }
 
 function sameOrigin(request: Request) {
