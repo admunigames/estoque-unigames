@@ -39,7 +39,10 @@ function identity(request: Request): Identity {
 }
 
 function canAccessSupplies(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("supplies");
+  return (
+    actor.role === "admin" ||
+    actor.permissions.some((permission) => permission.startsWith("supplies:"))
+  );
 }
 
 function sameOrigin(request: Request) {
@@ -67,13 +70,13 @@ function sameOrigin(request: Request) {
   return allowedOrigins.has(origin);
 }
 
-function requireAdmin(request: Request) {
+function requireManageCatalog(request: Request) {
   const actor = identity(request);
-  if (actor.role !== "admin") {
+  if (actor.role !== "admin" && !actor.permissions.includes("supplies:manage_catalog")) {
     return {
       actor,
       error: jsonResponse(
-        { error: "SOMENTE O ADMINISTRADOR PODE GERENCIAR PRODUTOS DE INSUMOS." },
+        { error: "VOCÊ NÃO TEM PERMISSÃO PARA GERENCIAR PRODUTOS DE INSUMOS." },
         403,
       ),
     };
@@ -83,7 +86,11 @@ function requireAdmin(request: Request) {
 
 function canDeleteProducts(request: Request) {
   const actor = identity(request);
-  if (actor.role !== "admin" && !actor.permissions.includes("supplies_delete")) {
+  if (
+    actor.role !== "admin" &&
+    !actor.permissions.includes("supplies:delete") &&
+    !actor.permissions.includes("supplies:manage_catalog")
+  ) {
     return jsonResponse(
       { error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR PRODUTOS DE INSUMOS." },
       403,
@@ -137,7 +144,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
-  const { error } = requireAdmin(request);
+  const { error } = requireManageCatalog(request);
   if (error) return error;
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
@@ -188,7 +195,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
-  const { error } = requireAdmin(request);
+  const { error } = requireManageCatalog(request);
   if (error) return error;
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);

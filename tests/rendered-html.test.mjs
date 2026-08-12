@@ -855,8 +855,8 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(route, /received_at=CURRENT_TIMESTAMP/);
   assert.match(route, /REGISTRE O PEDIDO DESTE INSUMO ANTES DO RECEBIMENTO/);
   assert.match(route, /export async function DELETE/);
-  assert.match(route, /actor\.role !== "admin"/);
-  assert.match(route, /SOMENTE O ADMINISTRADOR PODE EXCLUIR UMA SOLICITAÇÃO DE INSUMO/);
+  assert.match(route, /!can\(actor, "supplies:delete"\)/);
+  assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR UMA SOLICITAÇÃO DE INSUMO/);
   assert.match(route, /DELETE FROM supply_request_events WHERE supply_item_id=\?1/);
   assert.match(route, /DELETE FROM supply_items WHERE id=\?1/);
   assert.match(route, /timeZone: "America\/Recife"/);

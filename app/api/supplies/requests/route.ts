@@ -50,11 +50,18 @@ function identity(request: Request): Identity {
 }
 
 function canAccessSupplies(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("supplies");
+  return (
+    actor.role === "admin" ||
+    actor.permissions.some((permission) => permission.startsWith("supplies:"))
+  );
 }
 
 function canDeleteSupplies(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("supplies_delete");
+  return actor.role === "admin" || actor.permissions.includes("supplies:delete");
+}
+
+function canStockOut(actor: Identity) {
+  return actor.role === "admin" || actor.permissions.includes("supplies:stock_out");
 }
 
 function sameOrigin(request: Request) {
@@ -349,8 +356,8 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canAccessSupplies(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO AOS INSUMOS." }, 403);
+  if (actor.role !== "admin" && !actor.permissions.includes("supplies:request")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA SOLICITAR INSUMOS." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
@@ -498,12 +505,15 @@ export async function PATCH(request: Request) {
   const body = (await request.json().catch(() => ({}))) as JsonMap;
   const action = safeText(body.action, 20);
   if (action === "receive") {
+    if (actor.role !== "admin" && !actor.permissions.includes("supplies:receive")) {
+      return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA RECEBER INSUMOS." }, 403);
+    }
     return handleReceiveAction(actor, body);
   }
 
-  if (actor.role !== "admin") {
+  if (!canStockOut(actor)) {
     return jsonResponse(
-      { error: "SOMENTE O ADMINISTRADOR PODE SEPARAR ITENS DA SOLICITAÇÃO." },
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA SEPARAR ITENS DA SOLICITAÇÃO." },
       403,
     );
   }

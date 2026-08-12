@@ -2,7 +2,7 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 
 type JsonMap = Record<string, unknown>;
-type Identity = { id: string; displayName: string; role: "admin" | "user" };
+type Identity = { id: string; displayName: string; role: "admin" | "user"; permissions: string[] };
 
 function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -26,7 +26,15 @@ function identity(request: Request): Identity {
       80,
     ),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    permissions: (request.headers.get("x-unigames-permissions") || "")
+      .split(",")
+      .map((permission) => permission.trim())
+      .filter(Boolean),
   };
+}
+
+function canManageCatalog(actor: Identity) {
+  return actor.role === "admin" || actor.permissions.includes("supplies:manage_catalog");
 }
 
 function sameOrigin(request: Request) {
@@ -77,8 +85,8 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
-    return jsonResponse({ error: "SOMENTE O ADMINISTRADOR PODE GERENCIAR CATEGORIAS." }, 403);
+  if (!canManageCatalog(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA GERENCIAR CATEGORIAS." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
@@ -117,8 +125,8 @@ export async function PATCH(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
-    return jsonResponse({ error: "SOMENTE O ADMINISTRADOR PODE GERENCIAR CATEGORIAS." }, 403);
+  if (!canManageCatalog(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA GERENCIAR CATEGORIAS." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
@@ -157,8 +165,8 @@ export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
-    return jsonResponse({ error: "SOMENTE O ADMINISTRADOR PODE GERENCIAR CATEGORIAS." }, 403);
+  if (!canManageCatalog(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA GERENCIAR CATEGORIAS." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
