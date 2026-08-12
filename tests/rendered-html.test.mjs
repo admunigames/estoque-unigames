@@ -905,8 +905,10 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(workerSource, /path === "\/instrucoes" \|\| \(path\.startsWith\("\/api\/instructions"\)/);
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM instructions"\)\.all\(\)/);
   assert.match(workerSource, /instructions: instructions\.results \?\? \[\]/);
-  assert.match(route, /actor\.role !== "admin"/);
-  assert.match(route, /SOMENTE O ADMINISTRADOR PODE CADASTRAR INSTRUÇÕES/);
+  assert.match(route, /!canManageInstructions\(actor\)/);
+  assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR INSTRUÇÕES/);
+  assert.match(html, /data-permission="instructions:manage"/);
+  assert.match(html, /canAccess\('instructions:manage'\)/);
   assert.match(route, /due_date < \?1/);
   assert.match(route, /due_date >= \?1/);
   assert.match(route, /America\/Recife/);

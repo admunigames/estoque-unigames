@@ -6,6 +6,7 @@ type Identity = {
   id: string;
   displayName: string;
   role: "admin" | "user";
+  permissions: string[];
 };
 type InstructionRow = {
   id: string;
@@ -48,7 +49,15 @@ function identity(request: Request): Identity {
     id: safeText(request.headers.get("x-unigames-user-id"), 80),
     displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    permissions: (request.headers.get("x-unigames-permissions") || "")
+      .split(",")
+      .map((permission) => permission.trim())
+      .filter(Boolean),
   };
+}
+
+function canManageInstructions(actor: Identity) {
+  return actor.role === "admin" || actor.permissions.includes("instructions:manage");
 }
 
 function sameOrigin(request: Request) {
@@ -150,9 +159,9 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
+  if (!canManageInstructions(actor)) {
     return jsonResponse(
-      { error: "SOMENTE O ADMINISTRADOR PODE CADASTRAR INSTRUÇÕES." },
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR INSTRUÇÕES." },
       403,
     );
   }
@@ -210,9 +219,9 @@ export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
+  if (!canManageInstructions(actor)) {
     return jsonResponse(
-      { error: "SOMENTE O ADMINISTRADOR PODE EXCLUIR INSTRUÇÕES." },
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR INSTRUÇÕES." },
       403,
     );
   }
