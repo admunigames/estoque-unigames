@@ -3446,7 +3446,7 @@
         <article class="instruction-summary-card"><span>PRÓXIMO PRAZO</span><strong class="date" id="instructionNearestDue">—</strong></article>
       </section>
 
-      <section class="instruction-admin-panel" data-admin-only>
+      <section class="instruction-admin-panel" data-permission="instructions:manage">
         <div class="instruction-admin-head">
           <div><h3>CADASTRAR NOVA INSTRUÇÃO</h3><p>A orientação será publicada imediatamente para todos os usuários e lojas.</p></div>
         </div>
@@ -11633,7 +11633,7 @@ function renderHomeTasks(){
       '</div>'+
       '<div class="instruction-card-actions">'+
         '<span class="instruction-state'+(history ? ' finished' : '')+'">'+(history ? 'NO HISTÓRICO' : 'VIGENTE PARA TODAS AS LOJAS')+'</span>'+
-        (currentSession.role === 'admin' ? '<button class="instruction-delete" type="button" data-instruction-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+
+        (canAccess('instructions:manage') ? '<button class="instruction-delete" type="button" data-instruction-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+
       '</div>'+
     '</article>';
   }
