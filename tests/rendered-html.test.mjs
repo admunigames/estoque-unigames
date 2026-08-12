@@ -316,7 +316,9 @@ test("gera um TXT comparativo por loja nas puxadas", async () => {
   );
 
   assert.match(html, /<details class="purchase-division">/);
-  assert.match(html, /UM ARQUIVO TXT POR LOJA/);
+  assert.match(html, /ARQUIVOS TXT POR LOJA/);
+  assert.match(html, /TXT REPOSIÇÃO/);
+  assert.match(html, /TXT PUXADA/);
   assert.match(html, /const PULL_MINIMUM_STOCK = 3/);
   assert.match(html, /row\.stock < PULL_MINIMUM_STOCK/);
   assert.match(html, /allocateIntegerTargets\(storeRows, totalStock, totalSales\)/);
@@ -330,7 +332,8 @@ test("gera um TXT comparativo por loja nas puxadas", async () => {
   assert.match(html, /return 'depot'/);
   assert.match(html, /const readyStores = pullStoreCompanies\(\)/);
   assert.match(html, /const readyDepots = pullDepotCompanies\(\)/);
-  assert.match(html, /const hasDepotStock = storeRows\.some/);
+  assert.match(html, /const reportType = pullTxtReportType\(storeRows\)/);
+  assert.match(html, /\.\.\.storeRows\.filter\(row => row\.isDepot\)/);
   assert.match(html, /Math\.floor\(row\.sales\)/);
   assert.match(html, /DEPÓSITO.*somente com estoque físico/i);
   assert.match(html, /SOMENTE ESTOQUE/);
@@ -340,34 +343,55 @@ test("gera um TXT comparativo por loja nas puxadas", async () => {
      ${extractNamedFunction(html, "pullTxtContent")}
      return pullTxtContent;`,
   )();
+  const makeFileName = new Function(
+    `${extractNamedFunction(html, "pullTxtFileName")}
+     return pullTxtFileName;`,
+  )();
+  const classifyTxt = new Function(
+    `${extractNamedFunction(html, "pullTxtReportType")}
+     return pullTxtReportType;`,
+  )();
   const stores = [
     "UNIGAMES GUARARAPES",
     "UNIGAMES-NORTH WAY",
     "UNIGAMES-RIOMAR",
     "UNIGAMES-TACARUNA",
   ];
+  const depot = "DEPÓSITO UNIGAMES";
+  assert.equal(classifyTxt([{ isDepot: true, stock: 9 }]), "replenishment");
+  assert.equal(classifyTxt([{ isDepot: true, stock: 0 }]), "pull");
+  const comparisonCompanies = [...stores, depot];
   const product = (name, owner, stock) => ({
     nome: name,
-    stocks: [owner, ...stores.filter((store) => store !== owner)].map((store) => ({
+    stocks: [owner, ...comparisonCompanies.filter((store) => store !== owner)].map((store) => ({
       store,
       group: "standard",
       stock: stock[store],
     })),
   });
-  const guararapesTxt = makeTxt({
+  const guararapesReposicaoTxt = makeTxt({
     store: stores[0],
+    type: "replenishment",
     items: [
       product("Cartas Pokemon", stores[0], {
         [stores[0]]: 0,
         [stores[1]]: 4,
         [stores[2]]: 1,
         [stores[3]]: 12,
+        [depot]: 9,
       }),
+    ],
+  });
+  const guararapesPuxadaTxt = makeTxt({
+    store: stores[0],
+    type: "pull",
+    items: [
       product("Mouse Pad Simples", stores[0], {
         [stores[0]]: 0,
         [stores[1]]: 7,
         [stores[2]]: 2,
         [stores[3]]: 5,
+        [depot]: 0,
       }),
     ],
   });
@@ -379,27 +403,38 @@ test("gera um TXT comparativo por loja nas puxadas", async () => {
         [stores[1]]: 4,
         [stores[2]]: 1,
         [stores[3]]: 12,
+        [depot]: 9,
       }),
     ],
   });
 
   assert.equal(
-    guararapesTxt,
+    guararapesReposicaoTxt,
     "CARTAS POKEMON\r\n\r\n" +
       "Empresa: UNIGAMES GUARARAPES\r\nLocal: PADRÃO - 0\r\n\r\n" +
       "Empresa: UNIGAMES-NORTH WAY\r\nLocal: PADRÃO - 4\r\n\r\n" +
       "Empresa: UNIGAMES-RIOMAR\r\nLocal: PADRÃO - 1\r\n\r\n" +
       "Empresa: UNIGAMES-TACARUNA\r\nLocal: PADRÃO - 12\r\n\r\n" +
-      "----\r\n\r\n" +
-      "MOUSE PAD SIMPLES\r\n\r\n" +
+      "Empresa: DEPÓSITO UNIGAMES\r\nLocal: PADRÃO - 9\r\n",
+  );
+  assert.equal(
+    guararapesPuxadaTxt,
+    "MOUSE PAD SIMPLES\r\n\r\n" +
       "Empresa: UNIGAMES GUARARAPES\r\nLocal: PADRÃO - 0\r\n\r\n" +
       "Empresa: UNIGAMES-NORTH WAY\r\nLocal: PADRÃO - 7\r\n\r\n" +
       "Empresa: UNIGAMES-RIOMAR\r\nLocal: PADRÃO - 2\r\n\r\n" +
-      "Empresa: UNIGAMES-TACARUNA\r\nLocal: PADRÃO - 5\r\n",
+      "Empresa: UNIGAMES-TACARUNA\r\nLocal: PADRÃO - 5\r\n\r\n" +
+      "Empresa: DEPÓSITO UNIGAMES\r\nLocal: PADRÃO - 0\r\n",
   );
   assert.match(
     riomarTxt,
     /^CARTAS POKEMON\r\n\r\nEmpresa: UNIGAMES-RIOMAR\r\nLocal: PADRÃO - 1\r\n\r\nEmpresa: UNIGAMES GUARARAPES/,
+  );
+  assert.match(riomarTxt, /Empresa: DEPÓSITO UNIGAMES\r\nLocal: PADRÃO - 9/);
+  assert.equal(makeFileName({ store: stores[0], type: "pull" }), "PUXADA_UNIGAMES_GUARARAPES.txt");
+  assert.equal(
+    makeFileName({ store: stores[0], type: "replenishment" }),
+    "REPOSICAO_UNIGAMES_GUARARAPES.txt",
   );
 });
 

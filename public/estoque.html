@@ -3777,7 +3777,7 @@
         </div>
         <div class="pull-txt-downloads" id="pullTxtDownloads" hidden>
           <div class="pull-txt-downloads-head">
-            <div><strong>UM ARQUIVO TXT POR LOJA</strong><span>CADA ARQUIVO REÚNE TODOS OS PRODUTOS COM ESTOQUE BAIXO NA LOJA E COMPARA O SALDO EM TODAS AS LOJAS.</span></div>
+            <div><strong>ARQUIVOS TXT POR LOJA</strong><span>PUXADA REÚNE PRODUTOS SEM SALDO NO DEPÓSITO; REPOSIÇÃO REÚNE PRODUTOS COM ESTOQUE FÍSICO NO DEPÓSITO. AMBOS COMPARAM TODAS AS LOJAS E O DEPÓSITO.</span></div>
           </div>
           <div class="pull-txt-download-list" id="pullTxtDownloadList"></div>
         </div>
@@ -6396,6 +6396,10 @@
     return allocations.map(item => item.target);
   }
 
+  function pullTxtReportType(storeRows){
+    return storeRows.some(row => row.isDepot && row.stock > 0) ? 'replenishment' : 'pull';
+  }
+
   function calculatePullBalance(){
     clearPullError();
     const readyStores = pullStoreCompanies().filter(company => {
@@ -6412,7 +6416,7 @@
     const minTransfer = Math.max(1, Math.round(Number(el('pullMinTransfer').value) || 1));
     el('pullMinTransfer').value = minTransfer;
     const transfers = [];
-    const lowStockByStore = new Map();
+    const lowStockReports = new Map();
     let productCount = 0;
 
     const productIndexes = new Map();
@@ -6443,10 +6447,11 @@
       const donors = [];
       const receivers = [];
       const alwaysBalance = ALWAYS_BALANCE_PRODUCT_KEYS.has(productKey);
+      const reportType = pullTxtReportType(storeRows);
+      const hasDepotStock = reportType === 'replenishment';
 
       if(alwaysBalance){
         const targets = allocateIntegerTargets(storeRows, totalStock, totalSales);
-        const hasDepotStock = storeRows.some(item => item.isDepot && item.stock > 0);
         storeRows.forEach((row, index) => {
           const difference = row.stock - targets[index];
           if(difference > 0 && (!hasDepotStock || row.isDepot)){
@@ -6456,7 +6461,6 @@
           if(difference < 0 && !row.isDepot) receivers.push({row, remaining:-difference});
         });
       } else {
-        const hasDepotStock = storeRows.some(item => item.isDepot && item.stock > 0);
         for(const row of storeRows){
           if((!hasDepotStock || row.isDepot) && row.stock > PULL_MINIMUM_STOCK){
             const capacity = row.stock - PULL_MINIMUM_STOCK;
@@ -6473,10 +6477,12 @@
 
       for(const receiver of receivers){
         const destination = receiver.row;
-        if(!lowStockByStore.has(destination.company.id)){
-          lowStockByStore.set(destination.company.id, {
+        const reportKey = destination.company.id + '::' + reportType;
+        if(!lowStockReports.has(reportKey)){
+          lowStockReports.set(reportKey, {
             storeId:destination.company.id,
             store:destination.company.name,
+            type:reportType,
             items:[]
           });
         }
@@ -6485,9 +6491,10 @@
         const product = destinationProduct || (fallbackProduct && fallbackProduct.product);
         const orderedStores = [
           destination,
-          ...storeRows.filter(row => !row.isDepot && row.company.id !== destination.company.id)
+          ...storeRows.filter(row => !row.isDepot && row.company.id !== destination.company.id),
+          ...storeRows.filter(row => row.isDepot)
         ];
-        lowStockByStore.get(destination.company.id).items.push({
+        lowStockReports.get(reportKey).items.push({
           productKey,
           codigo:product ? (product.salesCode || product.stockCode) : '',
           nome:product && product.nome ? product.nome : 'PRODUTO SEM DESCRIÇÃO',
@@ -6547,10 +6554,14 @@
       textCollator.compare(a.nome, b.nome) ||
       codeCollator.compare(a.codigo, b.codigo)
     );
-    pullLowStockReports = readyStores.map(company => lowStockByStore.get(company.id)).filter(Boolean).map(report => ({
-      ...report,
-      items:report.items.slice().sort((a,b) => textCollator.compare(a.nome,b.nome) || codeCollator.compare(a.codigo,b.codigo))
-    }));
+    pullLowStockReports = readyStores.flatMap(company => ['pull','replenishment']
+      .map(type => lowStockReports.get(company.id + '::' + type))
+      .filter(Boolean)
+      .map(report => ({
+        ...report,
+        items:report.items.slice().sort((a,b) => textCollator.compare(a.nome,b.nome) || codeCollator.compare(a.codigo,b.codigo))
+      }))
+    );
     pullProductCount = productCount;
     pullCalculated = true;
     renderPullAll();
@@ -6603,7 +6614,8 @@
     const clean = value => String(value || '')
       .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
       .replace(/[^A-Z0-9]+/gi,'_').replace(/^_+|_+$/g,'').toUpperCase();
-    return 'PUXADA_' + clean(report.store) + '.txt';
+    const prefix = report.type === 'replenishment' ? 'REPOSICAO' : 'PUXADA';
+    return prefix + '_' + clean(report.store) + '.txt';
   }
 
   function downloadPullTxtReport(report){
@@ -6628,11 +6640,12 @@
       list.innerHTML = '';
       return;
     }
-    list.innerHTML = pullTxtDownloadGroups.map((report,index) =>
-      '<button class="pull-txt-route" type="button" data-pull-txt-index="'+index+'">BAIXAR '+
+    list.innerHTML = pullTxtDownloadGroups.map((report,index) => {
+      const label = report.type === 'replenishment' ? 'TXT REPOSIÇÃO' : 'TXT PUXADA';
+      return '<button class="pull-txt-route" type="button" data-pull-txt-index="'+index+'">'+label+' · '+
       escapeHtml(report.store)+
       '<small>'+report.items.length.toLocaleString('pt-BR')+' PRODUTOS COM ESTOQUE BAIXO · ARQUIVO TXT</small></button>'
-    ).join('');
+    }).join('');
   }
 
   function renderPullResults(){
