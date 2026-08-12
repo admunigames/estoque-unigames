@@ -3730,8 +3730,7 @@
           <div class="field"><label for="pullMinTransfer">MÍNIMO POR TRANSFERÊNCIA</label><input type="number" id="pullMinTransfer" min="1" step="1" value="1"></div>
         </div>
         <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>REGRA DE EQUILÍBRIO:</b> Produtos compartilhados são identificados pelo nome, mesmo quando possuem códigos diferentes. Quando não há venda no período, não há transferência. A assistência não participa e são necessárias pelo menos 3 lojas prontas.</span></div>
-        <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>ESTOQUE MÍNIMO:</b> Produtos comuns não recebem transferência quando a loja já possui pelo menos 1 unidade. Exceções com equilíbrio proporcional: figurinhas da Copa do Mundo, chips de celular e grips personalizados, simples ou para Switch.</span></div>
-        <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>PROTEÇÃO DA ORIGEM:</b> Cada loja pode ceder no máximo 1/3 do estoque físico do produto, preservando pelo menos 2/3. Quando necessário, a transferência é dividida entre várias lojas de origem.</span></div>
+        <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>ESTOQUE MÍNIMO:</b> Produtos comuns recebem transferência quando a loja possui menos de 3 unidades. Exceções com equilíbrio proporcional: figurinhas da Copa do Mundo, chips de celular e grips personalizados, simples ou para Switch.</span></div>
         <div class="pull-rule-note"><span aria-hidden="true">◆</span><span><b>DEPÓSITO:</b> O depósito entra somente com estoque físico, nunca com vendas. Quando houver estoque do produto no depósito, nenhuma outra loja será usada como origem.</span></div>
       </section>
 
@@ -3778,7 +3777,7 @@
         </div>
         <div class="pull-txt-downloads" id="pullTxtDownloads" hidden>
           <div class="pull-txt-downloads-head">
-            <div><strong>ARQUIVOS TXT SEPARADOS POR ROTA</strong><span>CADA ARQUIVO REÚNE UMA LOJA DE ORIGEM E UMA LOJA DE DESTINO, RESPEITANDO OS FILTROS ACIMA.</span></div>
+            <div><strong>UM ARQUIVO TXT POR LOJA</strong><span>CADA ARQUIVO REÚNE TODOS OS PRODUTOS COM ESTOQUE BAIXO NA LOJA E COMPARA O SALDO EM TODAS AS LOJAS.</span></div>
           </div>
           <div class="pull-txt-download-list" id="pullTxtDownloadList"></div>
         </div>
@@ -4247,6 +4246,7 @@
   let pullStoreData = {};
   let pullProductNames = { standard:new Map(), pa:new Map() };
   let pullTransfers = [];
+  let pullLowStockReports = [];
   let pullProductCount = 0;
   let pullCalculated = false;
   let pendingPullUpload = null;
@@ -5435,6 +5435,7 @@
     'GRIP SIMPLES (PAR)',
     'GRIP SWITCH (PAR)'
   ].map(normalizeProductKey));
+  const PULL_MINIMUM_STOCK = 3;
 
   function parseHtmlRows(htmlText){
     const parser = new DOMParser();
@@ -6371,6 +6372,7 @@
       const group = catalogKeyForCompany(companyId);
       rememberPullProductNames(group, parsed);
       pullTransfers = [];
+      pullLowStockReports = [];
       pullProductCount = 0;
       pullCalculated = false;
       renderPullAll();
@@ -6394,10 +6396,6 @@
     return allocations.map(item => item.target);
   }
 
-  function protectedOriginCapacity(stock){
-    return Math.max(0, Math.floor(stock / 3));
-  }
-
   function calculatePullBalance(){
     clearPullError();
     const readyStores = pullStoreCompanies().filter(company => {
@@ -6414,6 +6412,7 @@
     const minTransfer = Math.max(1, Math.round(Number(el('pullMinTransfer').value) || 1));
     el('pullMinTransfer').value = minTransfer;
     const transfers = [];
+    const lowStockByStore = new Map();
     let productCount = 0;
 
     const productIndexes = new Map();
@@ -6451,7 +6450,7 @@
         storeRows.forEach((row, index) => {
           const difference = row.stock - targets[index];
           if(difference > 0 && (!hasDepotStock || row.isDepot)){
-            const capacity = Math.min(difference, protectedOriginCapacity(row.stock));
+            const capacity = difference;
             if(capacity > 0) donors.push({row, remaining:capacity});
           }
           if(difference < 0 && !row.isDepot) receivers.push({row, remaining:-difference});
@@ -6459,14 +6458,47 @@
       } else {
         const hasDepotStock = storeRows.some(item => item.isDepot && item.stock > 0);
         for(const row of storeRows){
-          if((!hasDepotStock || row.isDepot) && row.stock > 1){
-            const capacity = Math.min(row.stock - 1, protectedOriginCapacity(row.stock));
+          if((!hasDepotStock || row.isDepot) && row.stock > PULL_MINIMUM_STOCK){
+            const capacity = row.stock - PULL_MINIMUM_STOCK;
             if(capacity > 0) donors.push({row, remaining:capacity});
           }
-          if(!row.isDepot && row.sales > 0 && row.stock < 1){
-            receivers.push({row, remaining:Math.max(1, Math.floor(row.sales))});
+          if(!row.isDepot && row.sales > 0 && row.stock < PULL_MINIMUM_STOCK){
+            receivers.push({
+              row,
+              remaining:Math.max(PULL_MINIMUM_STOCK - row.stock, Math.floor(row.sales))
+            });
           }
         }
+      }
+
+      for(const receiver of receivers){
+        const destination = receiver.row;
+        if(!lowStockByStore.has(destination.company.id)){
+          lowStockByStore.set(destination.company.id, {
+            storeId:destination.company.id,
+            store:destination.company.name,
+            items:[]
+          });
+        }
+        const destinationProduct = destination.product;
+        const fallbackProduct = storeRows.find(row => row.product);
+        const product = destinationProduct || (fallbackProduct && fallbackProduct.product);
+        const orderedStores = [
+          destination,
+          ...storeRows.filter(row => !row.isDepot && row.company.id !== destination.company.id)
+        ];
+        lowStockByStore.get(destination.company.id).items.push({
+          productKey,
+          codigo:product ? (product.salesCode || product.stockCode) : '',
+          nome:product && product.nome ? product.nome : 'PRODUTO SEM DESCRIÇÃO',
+          group:destination.group,
+          stocks:orderedStores.map(row => ({
+            storeId:row.company.id,
+            store:row.company.name,
+            group:row.group,
+            stock:row.stock
+          }))
+        });
       }
       donors.sort((a,b) => b.remaining - a.remaining || textCollator.compare(a.row.company.name, b.row.company.name));
       receivers.sort((a,b) => b.row.sales - a.row.sales || b.remaining - a.remaining || textCollator.compare(a.row.company.name, b.row.company.name));
@@ -6515,14 +6547,21 @@
       textCollator.compare(a.nome, b.nome) ||
       codeCollator.compare(a.codigo, b.codigo)
     );
+    pullLowStockReports = readyStores.map(company => lowStockByStore.get(company.id)).filter(Boolean).map(report => ({
+      ...report,
+      items:report.items.slice().sort((a,b) => textCollator.compare(a.nome,b.nome) || codeCollator.compare(a.codigo,b.codigo))
+    }));
     pullProductCount = productCount;
     pullCalculated = true;
     renderPullAll();
     savePullData();
+    const lowStockCount = pullLowStockReports.reduce((sum, report) => sum + report.items.length, 0);
     showPurchaseToast(
       transfers.length
         ? transfers.length.toLocaleString('pt-BR')+' transferências calculadas com sucesso.'
-        : 'Cálculo concluído. O estoque já está equilibrado.'
+        : lowStockCount
+          ? 'Cálculo concluído. '+lowStockCount.toLocaleString('pt-BR')+' produtos com estoque baixo foram incluídos nos arquivos TXT.'
+          : 'Cálculo concluído. O estoque já está equilibrado.'
     );
   }
 
@@ -6540,61 +6579,48 @@
     });
   }
 
-  function buildPullTxtGroups(rows){
-    const routes = new Map();
-    for(const item of rows){
-      const key = (item.originId || item.origin) + '::' + (item.destinationId || item.destination);
-      if(!routes.has(key)){
-        routes.set(key, {
-          key,
-          origin:item.origin,
-          destination:item.destination,
-          items:[]
-        });
+  function buildPullTxtGroups(){
+    return pullLowStockReports;
+  }
+
+  function pullTxtContent(report){
+    const blocks = report.items.map(item => {
+      const lines = [String(item.nome || 'PRODUTO SEM DESCRIÇÃO').trim().toUpperCase(),''];
+      for(const stock of item.stocks){
+        lines.push(
+          'Empresa: ' + stock.store.toUpperCase(),
+          'Local: ' + pullBaseLabel(stock.group) + ' - ' + Math.max(0,Math.round(Number(stock.stock) || 0)),
+          ''
+        );
       }
-      routes.get(key).items.push(item);
-    }
-    return Array.from(routes.values()).map(route => ({
-      ...route,
-      items:route.items.slice().sort((a,b) => textCollator.compare(a.nome,b.nome) || codeCollator.compare(a.codigo,b.codigo))
-    })).sort((a,b) => textCollator.compare(a.origin,b.origin) || textCollator.compare(a.destination,b.destination));
+      lines.pop();
+      return lines.join('\r\n');
+    });
+    return blocks.join('\r\n\r\n----\r\n\r\n') + '\r\n';
   }
 
-  function pullTxtQuantity(value){
-    return String(Math.max(0,Math.round(Number(value) || 0))).padStart(2,'0');
-  }
-
-  function pullTxtContent(route){
-    const lines = ['*TRANSFERÊNCIA*',''];
-    for(const item of route.items){
-      lines.push(pullTxtQuantity(item.quantity) + ' - ' + String(item.nome || 'PRODUTO SEM DESCRIÇÃO').trim().toUpperCase(),'');
-    }
-    lines.push('*' + route.origin.toUpperCase() + ' >>>> ' + route.destination.toUpperCase() + '*','');
-    return lines.join('\r\n');
-  }
-
-  function pullTxtFileName(route){
+  function pullTxtFileName(report){
     const clean = value => String(value || '')
       .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
       .replace(/[^A-Z0-9]+/gi,'_').replace(/^_+|_+$/g,'').toUpperCase();
-    return 'TRANSFERENCIA_' + clean(route.origin) + '_PARA_' + clean(route.destination) + '.txt';
+    return 'PUXADA_' + clean(report.store) + '.txt';
   }
 
-  function downloadPullTxtRoute(route){
-    const blob = new Blob(['\uFEFF' + pullTxtContent(route)], {type:'text/plain;charset=utf-8;'});
+  function downloadPullTxtReport(report){
+    const blob = new Blob(['\uFEFF' + pullTxtContent(report)], {type:'text/plain;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = pullTxtFileName(route);
+    anchor.download = pullTxtFileName(report);
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
-  function renderPullTxtDownloads(rows){
+  function renderPullTxtDownloads(){
     const button = el('btnPullTxt');
     const panel = el('pullTxtDownloads');
     const list = el('pullTxtDownloadList');
-    pullTxtDownloadGroups = buildPullTxtGroups(rows);
+    pullTxtDownloadGroups = buildPullTxtGroups();
     button.disabled = pullTxtDownloadGroups.length === 0;
     if(pullTxtDownloadGroups.length === 0){
       panel.hidden = true;
@@ -6602,10 +6628,10 @@
       list.innerHTML = '';
       return;
     }
-    list.innerHTML = pullTxtDownloadGroups.map((route,index) =>
+    list.innerHTML = pullTxtDownloadGroups.map((report,index) =>
       '<button class="pull-txt-route" type="button" data-pull-txt-index="'+index+'">BAIXAR '+
-      escapeHtml(route.origin)+' &gt;&gt;&gt;&gt; '+escapeHtml(route.destination)+
-      '<small>'+route.items.length.toLocaleString('pt-BR')+' PRODUTOS · ARQUIVO TXT</small></button>'
+      escapeHtml(report.store)+
+      '<small>'+report.items.length.toLocaleString('pt-BR')+' PRODUTOS COM ESTOQUE BAIXO · ARQUIVO TXT</small></button>'
     ).join('');
   }
 
@@ -6618,7 +6644,7 @@
     el('pullCardUnits').textContent = totalUnits.toLocaleString('pt-BR');
     el('btnPullCsv').disabled = rows.length === 0;
     el('btnPullExcel').disabled = rows.length === 0;
-    renderPullTxtDownloads(rows);
+    renderPullTxtDownloads();
     el('pullResultCount').textContent = rows.length.toLocaleString('pt-BR') + ' TRANSFERÊNCIAS' +
       (rows.length > 250 ? ' · EXIBINDO 250' : '');
 
@@ -6626,8 +6652,13 @@
       let title = 'NENHUM CÁLCULO REALIZADO';
       let detail = 'Carregue os relatórios das lojas e calcule o equilíbrio.';
       if(pullCalculated && pullTransfers.length === 0){
-        title = 'ESTOQUE JÁ EQUILIBRADO';
-        detail = 'Nenhuma transferência atende à regra e ao mínimo definido.';
+        if(pullLowStockReports.length > 0){
+          title = 'ESTOQUE BAIXO IDENTIFICADO';
+          detail = 'Nenhuma transferência atende às regras atuais, mas os comparativos TXT estão disponíveis.';
+        } else {
+          title = 'ESTOQUE JÁ EQUILIBRADO';
+          detail = 'Nenhuma transferência atende à regra e ao mínimo definido.';
+        }
       } else if(pullTransfers.length > 0){
         title = 'NENHUM RESULTADO COM ESTE FILTRO';
         detail = 'Ajuste a busca ou selecione outra base.';
@@ -6658,6 +6689,7 @@
     pullStoreData = {};
     pullProductNames = { standard:new Map(), pa:new Map() };
     pullTransfers = [];
+    pullLowStockReports = [];
     pullProductCount = 0;
     pullCalculated = false;
     el('pullMinTransfer').value = '1';
@@ -7096,6 +7128,7 @@
     await saveCompaniesList();
     delete pullStoreData[id];
     pullTransfers = [];
+    pullLowStockReports = [];
     pullProductCount = 0;
     pullCalculated = false;
     await savePullData();
@@ -8278,6 +8311,7 @@
   ['pullMinTransfer'].forEach(id => {
     el(id).addEventListener('change', () => {
       pullTransfers = [];
+      pullLowStockReports = [];
       pullProductCount = 0;
       pullCalculated = false;
       clearPullError();
@@ -8302,8 +8336,8 @@
   el('pullTxtDownloadList').addEventListener('click', event => {
     const button = event.target.closest('[data-pull-txt-index]');
     if(!button) return;
-    const route = pullTxtDownloadGroups[Number(button.dataset.pullTxtIndex)];
-    if(route) downloadPullTxtRoute(route);
+    const report = pullTxtDownloadGroups[Number(button.dataset.pullTxtIndex)];
+    if(report) downloadPullTxtReport(report);
   });
   el('btnPullCsv').addEventListener('click', exportPullCsv);
   el('btnPullExcel').addEventListener('click', exportPullExcel);

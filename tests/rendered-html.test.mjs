@@ -22,6 +22,19 @@ async function worker() {
   return (await import(workerUrl.href)).default;
 }
 
+function extractNamedFunction(source, name) {
+  const start = source.indexOf(`function ${name}(`);
+  assert.notEqual(start, -1, `função ${name} não encontrada`);
+  const bodyStart = source.indexOf("{", start);
+  let depth = 0;
+  for (let index = bodyStart; index < source.length; index++) {
+    if (source[index] === "{") depth++;
+    if (source[index] === "}") depth--;
+    if (depth === 0) return source.slice(start, index + 1);
+  }
+  throw new Error(`função ${name} incompleta`);
+}
+
 test("redireciona visitantes sem sessão para o login", async () => {
   const response = await (await worker()).fetch(
     new Request("http://localhost/", { headers: { accept: "text/html" } }),
@@ -296,17 +309,19 @@ test("configura o banco geral e conecta a interface à API compartilhada", async
   assert.match(html, /ifAbsent:true/);
 });
 
-test("oferece divisao expansivel e TXT separado por rota nas puxadas", async () => {
+test("gera um TXT comparativo por loja nas puxadas", async () => {
   const html = await readFile(
     new URL("../public/estoque.html", import.meta.url),
     "utf8",
   );
 
   assert.match(html, /<details class="purchase-division">/);
-  assert.match(html, /ARQUIVOS TXT SEPARADOS POR ROTA/);
-  assert.match(html, /\*TRANSFERÊNCIA\*/);
-  assert.match(html, /route\.origin\.toUpperCase\(\) \+ ' >>>> ' \+ route\.destination\.toUpperCase\(\)/);
-  assert.match(html, /padStart\(2,'0'\)/);
+  assert.match(html, /UM ARQUIVO TXT POR LOJA/);
+  assert.match(html, /const PULL_MINIMUM_STOCK = 3/);
+  assert.match(html, /row\.stock < PULL_MINIMUM_STOCK/);
+  assert.match(html, /allocateIntegerTargets\(storeRows, totalStock, totalSales\)/);
+  assert.doesNotMatch(html, /protectedOriginCapacity/);
+  assert.doesNotMatch(html, /Math\.floor\(stock \/ 3\)/);
   assert.doesNotMatch(html, /Equilibre o estoque entre as lojas usando as vendas do período/);
   assert.doesNotMatch(html, /ETAPA 01/);
   assert.doesNotMatch(html, /class="pull-flow"/);
@@ -319,6 +334,73 @@ test("oferece divisao expansivel e TXT separado por rota nas puxadas", async () 
   assert.match(html, /Math\.floor\(row\.sales\)/);
   assert.match(html, /DEPÓSITO.*somente com estoque físico/i);
   assert.match(html, /SOMENTE ESTOQUE/);
+
+  const makeTxt = new Function(
+    `${extractNamedFunction(html, "pullBaseLabel")}
+     ${extractNamedFunction(html, "pullTxtContent")}
+     return pullTxtContent;`,
+  )();
+  const stores = [
+    "UNIGAMES GUARARAPES",
+    "UNIGAMES-NORTH WAY",
+    "UNIGAMES-RIOMAR",
+    "UNIGAMES-TACARUNA",
+  ];
+  const product = (name, owner, stock) => ({
+    nome: name,
+    stocks: [owner, ...stores.filter((store) => store !== owner)].map((store) => ({
+      store,
+      group: "standard",
+      stock: stock[store],
+    })),
+  });
+  const guararapesTxt = makeTxt({
+    store: stores[0],
+    items: [
+      product("Cartas Pokemon", stores[0], {
+        [stores[0]]: 0,
+        [stores[1]]: 4,
+        [stores[2]]: 1,
+        [stores[3]]: 12,
+      }),
+      product("Mouse Pad Simples", stores[0], {
+        [stores[0]]: 0,
+        [stores[1]]: 7,
+        [stores[2]]: 2,
+        [stores[3]]: 5,
+      }),
+    ],
+  });
+  const riomarTxt = makeTxt({
+    store: stores[2],
+    items: [
+      product("Cartas Pokemon", stores[2], {
+        [stores[0]]: 0,
+        [stores[1]]: 4,
+        [stores[2]]: 1,
+        [stores[3]]: 12,
+      }),
+    ],
+  });
+
+  assert.equal(
+    guararapesTxt,
+    "CARTAS POKEMON\r\n\r\n" +
+      "Empresa: UNIGAMES GUARARAPES\r\nLocal: PADRÃO - 0\r\n\r\n" +
+      "Empresa: UNIGAMES-NORTH WAY\r\nLocal: PADRÃO - 4\r\n\r\n" +
+      "Empresa: UNIGAMES-RIOMAR\r\nLocal: PADRÃO - 1\r\n\r\n" +
+      "Empresa: UNIGAMES-TACARUNA\r\nLocal: PADRÃO - 12\r\n\r\n" +
+      "----\r\n\r\n" +
+      "MOUSE PAD SIMPLES\r\n\r\n" +
+      "Empresa: UNIGAMES GUARARAPES\r\nLocal: PADRÃO - 0\r\n\r\n" +
+      "Empresa: UNIGAMES-NORTH WAY\r\nLocal: PADRÃO - 7\r\n\r\n" +
+      "Empresa: UNIGAMES-RIOMAR\r\nLocal: PADRÃO - 2\r\n\r\n" +
+      "Empresa: UNIGAMES-TACARUNA\r\nLocal: PADRÃO - 5\r\n",
+  );
+  assert.match(
+    riomarTxt,
+    /^CARTAS POKEMON\r\n\r\nEmpresa: UNIGAMES-RIOMAR\r\nLocal: PADRÃO - 1\r\n\r\nEmpresa: UNIGAMES GUARARAPES/,
+  );
 });
 
 test("oferece estoque fiscal consolidado e PDF em tema claro", async () => {
