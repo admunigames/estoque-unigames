@@ -1614,6 +1614,14 @@
   .user-form-status.success{color:#8dd6a8}.user-form-status.error{color:#ff9b91}
   .permission-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.permission-option{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--line);border-radius:9px;font-size:12px}
   .permission-option.sub{margin-left:14px;background:rgba(79,134,189,.05);font-size:11px;}
+  .permission-accordion{display:grid;gap:8px}
+  .permission-module{border:1px solid var(--line);border-radius:10px;padding:0;background:rgba(79,134,189,.03)}
+  .permission-module>summary{cursor:pointer;list-style:none;padding:10px 12px;font:800 11px var(--mono);letter-spacing:.05em;color:var(--ink);display:flex;align-items:center;justify-content:space-between}
+  .permission-module>summary::-webkit-details-marker{display:none}
+  .permission-module>summary::after{content:'+';font-size:14px;color:var(--ink-soft)}
+  .permission-module[open]>summary::after{content:'−'}
+  .permission-module>.permission-grid{padding:0 12px 12px;grid-template-columns:1fr}
+  .permission-module.has-checked>summary{color:var(--accent)}
   .user-actions{display:flex;gap:8px;flex-wrap:wrap}.user-list{display:grid;gap:10px}.user-card{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
   .user-card.inactive{opacity:.58}.user-card h4{margin:0 0 3px}.user-card p{margin:0;color:var(--ink-soft);font-size:11px}.user-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
   @media(max-width:850px){.users-layout{grid-template-columns:1fr}.permission-grid{grid-template-columns:1fr}}
@@ -1678,7 +1686,8 @@
   html[data-theme="light"] .btn-outline:hover{background:#e9f2f9;border-color:#2f6fa9;}
   html[data-theme="light"] .btn-danger-outline{background:#fff4f2;color:#a93428;border-color:#d9a29c;}
   html[data-theme="light"] .filters label,
-  html[data-theme="light"] .permission-option{background:#fff;color:#304b63;border-color:#aebfce;}
+  html[data-theme="light"] .permission-option,
+  html[data-theme="light"] .permission-module{background:#fff;color:#304b63;border-color:#aebfce;}
   html[data-theme="light"] .filters label:has(input:checked),
   html[data-theme="light"] .permission-option:has(input:checked){
     background:#dcecf8;color:#123b5f;border-color:#4b83b4;
@@ -3004,7 +3013,7 @@
           <div id="missionMonthCalendar" class="mission-month-calendar" aria-live="polite"><div class="mission-month-empty">Selecione um mês para carregar a agenda.</div></div>
         </section>
 
-        <section class="mission-admin-panel" data-admin-only>
+        <section class="mission-admin-panel" data-permission="missions:create">
           <div class="mission-admin-head">
             <div><h3>CADASTRAR NOVA MISSÃO</h3><p>Escolha se a missão será geral ou exclusiva para uma loja.</p></div>
           </div>
@@ -3042,7 +3051,7 @@
           </div>
         </div>
 
-        <section class="mission-admin-panel" data-admin-only>
+        <section class="mission-admin-panel" data-permission="missions:create">
           <div class="mission-admin-head">
             <div><h3>CADASTRAR ROTINA OPERACIONAL</h3><p>Rotinas se repetem toda semana no dia escolhido. Se não forem concluídas, migram automaticamente como pendência para o dia seguinte.</p></div>
           </div>
@@ -3985,21 +3994,100 @@
               <span class="field-hint">Setores são áreas internas e não aparecem como lojas.</span>
             </div>
             <div class="field">
-              <label>MÓDULOS LIBERADOS <span id="userPermissionHint">(DEFINIDOS PELO GRUPO)</span></label>
-              <div class="permission-grid" id="userPermissionGrid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks"> Tarefas</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions"> Missões</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="captures"> Captação</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs"> Saídas</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies"> Insumos</label>
-                <label class="permission-option sub"><input type="checkbox" name="userPermission" value="supplies_in"> Insumos: dar entrada</label>
-                <label class="permission-option sub"><input type="checkbox" name="userPermission" value="supplies_out"> Insumos: dar saída</label>
-                <label class="permission-option sub"><input type="checkbox" name="userPermission" value="supplies_delete"> Insumos: excluir</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases"> Compras</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="stock"> Estoque Fiscal</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="database"> Base de Dados</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="pulls"> Puxadas</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="report41"> Relatório 41</label>
+              <label>PERMISSÕES <span id="userPermissionHint">(DEFINIDAS PELO GRUPO)</span></label>
+              <div class="permission-accordion" id="userPermissionGrid">
+                <details class="permission-module" open>
+                  <summary>Tarefas</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:view"> Visualizar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:manage"> Cadastrar, editar e excluir</label>
+                  </div>
+                </details>
+                <details class="permission-module" open>
+                  <summary>Missões</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:view"> Visualizar missões</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:create"> Cadastrar missões</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:delete"> Excluir missões</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:notify"> Receber notificações (como administrador)</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Captação</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:view"> Visualizar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:create"> Cadastrar captações</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:receive"> Receber/preparar (assistência)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:assign"> Definir destino</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:delete"> Excluir</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Saídas</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:view"> Visualizar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:create"> Cadastrar saídas</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:complete"> Concluir saídas</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Insumos</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:view"> Visualizar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:request"> Solicitar insumos</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:receive"> Receber solicitações</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_in"> Dar entrada em estoque</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_out"> Dar saída em estoque</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:delete"> Excluir</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:manage_catalog"> Gerenciar produtos e categorias</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Compras</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:view"> Visualizar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:create"> Cadastrar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:edit"> Editar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:delete"> Excluir</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Estoque Fiscal</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="stock:view"> Visualizar</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Base de Dados</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="database:view"> Visualizar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="database:manage"> Cadastrar, editar e excluir</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Puxadas</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pulls:view"> Visualizar e registrar</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Relatório 41</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="report41:view"> Visualizar</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Instruções</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="instructions:manage"> Cadastrar e excluir</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Usuários e acessos</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
+                  </div>
+                </details>
               </div>
             </div>
             <label class="permission-option" id="userActiveWrap" hidden><input id="userActive" type="checkbox" checked> Usuário ativo</label>
@@ -4596,11 +4684,20 @@
   }
 
   function canAccess(permission){
-    return currentSession.role === 'admin' || currentSession.permissions.includes(permission);
+    if(currentSession.role === 'admin') return true;
+    // Uma permissão sem ":" é um módulo inteiro (formato antigo/atalho) —
+    // libera se o usuário tem QUALQUER ação granular daquele módulo. Uma
+    // permissão "modulo:acao" é checada de forma exata.
+    if(permission.includes(':')) return currentSession.permissions.includes(permission);
+    return currentSession.permissions.some(p => p === permission || p.indexOf(permission + ':') === 0);
+  }
+
+  function canManageUsers(){
+    return currentSession.role === 'admin' || canAccess('users:manage');
   }
 
   function canAccessPage(name){
-    if(name === 'usuarios') return currentSession.role === 'admin';
+    if(name === 'usuarios') return canManageUsers();
     return !PAGE_PERMISSIONS[name] || canAccess(PAGE_PERMISSIONS[name]);
   }
 
@@ -4613,7 +4710,7 @@
       node.toggleAttribute('data-access-hidden', !allowed);
     });
     document.querySelectorAll('[data-admin-only]').forEach(node => {
-      node.toggleAttribute('data-access-hidden', currentSession.role !== 'admin');
+      node.toggleAttribute('data-access-hidden', node.id === 'navUsuarios' || node.dataset.cadastroTarget === 'usuarios' ? !canManageUsers() : currentSession.role !== 'admin');
     });
     el('sessionDisplayName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
     el('homeSessionName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
@@ -9156,7 +9253,7 @@ function renderHomeTasks(){
         escapeHtml(missionCompletionCopy(mission))+'</span>'+
         (currentSession.role === 'admin'
           ? '<button class="mission-delete" type="button" data-mission-delete="'+escapeHtml(mission.id)+'">EXCLUIR</button>'
-          : missionStatusSelectHtml(mission,false))+
+          : (missionStatusSelectHtml(mission,false) + (canAccess('missions:delete') ? '<button class="mission-delete" type="button" data-mission-delete="'+escapeHtml(mission.id)+'">EXCLUIR</button>' : '')))+
       '</div></article>';
   }
 
@@ -11669,19 +11766,18 @@ function renderHomeTasks(){
   el('instructionDueDate').value = instructionDefaultDueDate();
 
   const permissionNames = {
-    tasks:'Tarefas',
-    missions:'Missões',
-    captures:'Captação',
-    outputs:'Saídas',
-    supplies:'Insumos',
-    supplies_in:'Insumos: entrada',
-    supplies_out:'Insumos: saída',
-    supplies_delete:'Insumos: excluir',
-    purchases:'Compras',
-    stock:'Estoque Fiscal',
-    database:'Base de Dados',
-    pulls:'Puxadas',
-    report41:'Relatório 41'
+    'tasks:view':'Tarefas: visualizar','tasks:manage':'Tarefas: cadastrar/editar/excluir',
+    'missions:view':'Missões: visualizar','missions:create':'Missões: cadastrar','missions:delete':'Missões: excluir','missions:notify':'Missões: notificações',
+    'captures:view':'Captação: visualizar','captures:create':'Captação: cadastrar','captures:receive':'Captação: receber/preparar','captures:assign':'Captação: definir destino','captures:delete':'Captação: excluir',
+    'outputs:view':'Saídas: visualizar','outputs:create':'Saídas: cadastrar','outputs:complete':'Saídas: concluir',
+    'supplies:view':'Insumos: visualizar','supplies:request':'Insumos: solicitar','supplies:receive':'Insumos: receber solicitação','supplies:stock_in':'Insumos: entrada','supplies:stock_out':'Insumos: saída','supplies:delete':'Insumos: excluir','supplies:manage_catalog':'Insumos: produtos/categorias',
+    'purchases:view':'Compras: visualizar','purchases:create':'Compras: cadastrar','purchases:edit':'Compras: editar','purchases:delete':'Compras: excluir',
+    'stock:view':'Estoque Fiscal',
+    'database:view':'Base de Dados: visualizar','database:manage':'Base de Dados: cadastrar/editar/excluir',
+    'pulls:view':'Puxadas',
+    'report41:view':'Relatório 41',
+    'instructions:manage':'Instruções: cadastrar/excluir',
+    'users:manage':'Usuários e acessos'
   };
   const accessGroupNames = {
     administrator:'Administrador',
@@ -11693,12 +11789,15 @@ function renderHomeTasks(){
   };
   const hierarchyNames = {director:'Diretor',supervisor:'Supervisor',administrative:'Administrativo'};
   const sectorNames = {administrative:'Administrativo',assistance:'Assistência'};
+  // Espelha ACCESS_GROUP_PERMISSIONS de worker/index.ts. Mantido em sincronia
+  // manualmente (o front-end estático não importa o worker) — qualquer
+  // mudança lá precisa ser replicada aqui.
   const accessGroupPermissions = {
-    administrator:['tasks','missions','captures','outputs','supplies','supplies_in','supplies_out','supplies_delete','purchases','stock','database','pulls','report41'],
-    purchases:['tasks','missions','captures','outputs','supplies','supplies_out','purchases'],
-    fiscal:['missions','outputs','supplies','supplies_out','stock','database','pulls','report41'],
-    operator:['tasks','missions','captures','outputs','supplies','supplies_out'],
-    assistance:['captures']
+    administrator: Object.keys(permissionNames).concat(['documents_manage']),
+    purchases:['tasks:view','tasks:manage','missions:view','missions:notify','captures:view','captures:create','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out','purchases:view','purchases:create','purchases:edit','purchases:delete'],
+    fiscal:['missions:view','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out','stock:view','database:view','database:manage','pulls:view','report41:view'],
+    operator:['tasks:view','tasks:manage','missions:view','missions:notify','captures:view','captures:create','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out'],
+    assistance:['captures:view','captures:create','captures:receive']
   };
 
   function updateUserGroupFields(){
@@ -11709,9 +11808,14 @@ function renderHomeTasks(){
       : (accessGroupPermissions[group] || []);
     document.querySelectorAll('[name="userPermission"]').forEach(input => {
       input.checked = selected.includes(input.value);
-      input.disabled = !custom;
+      input.disabled = !custom || (input.value === 'users:manage' && currentSession.role !== 'admin');
     });
-    el('userPermissionHint').textContent = custom ? '(ESCOLHA OS MÓDULOS)' : '(DEFINIDOS PELO GRUPO)';
+    document.querySelectorAll('.permission-module').forEach(module => {
+      const hasChecked = Array.from(module.querySelectorAll('[name="userPermission"]')).some(input => input.checked);
+      module.classList.toggle('has-checked', hasChecked);
+      if(hasChecked) module.open = true;
+    });
+    el('userPermissionHint').textContent = custom ? '(ESCOLHA AS AÇÕES DE CADA MÓDULO)' : '(DEFINIDAS PELO GRUPO)';
     const assistance = group === 'assistance';
     if(assistance){
       el('userCompanyId').value = '';
@@ -11777,7 +11881,7 @@ function renderHomeTasks(){
   }
 
   async function loadAdminUsers(){
-    if(currentSession.role !== 'admin') return;
+    if(!canManageUsers()) return;
     try{
       const data = await adminUserRequest();
       managedUsers = Array.isArray(data.users) ? data.users : [];
@@ -11837,6 +11941,22 @@ function renderHomeTasks(){
     if(el('userCompanyId').value) el('userSector').value = '';
     updateUserGroupFields();
   });
+  el('userPermissionGrid').addEventListener('change', event => {
+    if(event.target.name !== 'userPermission') return;
+    const module = event.target.closest('.permission-module');
+    if(!module) return;
+    module.classList.toggle('has-checked', Array.from(module.querySelectorAll('[name="userPermission"]')).some(input => input.checked));
+  });
+  if(currentSession.role !== 'admin'){
+    // Um usuário com "users:manage" delegado pode gerenciar outros usuários
+    // comuns, mas nunca conceder acesso de administrador nem essa mesma
+    // permissão a ninguém (o backend também trava isso — aqui é só para não
+    // oferecer uma opção que sempre vai ser rejeitada).
+    const adminOption = el('userAccessGroup').querySelector('option[value="administrator"]');
+    if(adminOption) adminOption.remove();
+    const usersManageInput = document.querySelector('[name="userPermission"][value="users:manage"]');
+    if(usersManageInput) usersManageInput.disabled = true;
+  }
   updateUserGroupFields();
   el('userList').addEventListener('click', async event => {
     const editId = event.target.dataset.editUser;

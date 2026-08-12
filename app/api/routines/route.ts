@@ -8,6 +8,7 @@ type Identity = {
   displayName: string;
   role: "admin" | "user";
   companyId: string;
+  permissions: string[];
 };
 type RoutineStatus = "todo" | "in_progress" | "completed";
 type RoutineDefinitionRow = {
@@ -104,7 +105,15 @@ function identity(request: Request): Identity {
     displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
     companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
+    permissions: (request.headers.get("x-unigames-permissions") || "")
+      .split(",")
+      .map((permission) => permission.trim())
+      .filter(Boolean),
   };
+}
+
+function can(actor: Identity, permission: string) {
+  return actor.role === "admin" || actor.permissions.includes(permission);
 }
 
 function sameOrigin(request: Request) {
@@ -306,7 +315,9 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") return jsonResponse({ error: "SOMENTE O ADMINISTRADOR PODE CRIAR ROTINAS." }, 403);
+  if (!can(actor, "missions:create")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CRIAR ROTINAS." }, 403);
+  }
   if (!sameOrigin(request)) return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
 
   try {
@@ -411,7 +422,9 @@ export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") return jsonResponse({ error: "SOMENTE O ADMINISTRADOR PODE EXCLUIR ROTINAS." }, 403);
+  if (!can(actor, "missions:delete")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR ROTINAS." }, 403);
+  }
   if (!sameOrigin(request)) return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
   const id = (new URL(request.url).searchParams.get("id") || "").trim();
   if (!id) return jsonResponse({ error: "ROTINA INVÁLIDA." }, 400);
