@@ -283,7 +283,13 @@ export async function GET(request: Request) {
 
     let tasks = taskResult.results ?? [];
     if (actor.role !== "admin") {
-      tasks = actor.companyId ? tasks.filter((task) => task.companyId === actor.companyId) : [];
+      // Usuário de loja só vê a própria tarefa. Usuário sem loja (acesso
+      // personalizado, ex.: quem cadastrou a rotina) acompanha as tarefas das
+      // rotinas gerais e das que ele mesmo criou, sem que elas virem tarefa
+      // pessoal dele — mesma regra aplicada às missões.
+      tasks = actor.companyId
+        ? tasks.filter((task) => task.companyId === actor.companyId)
+        : tasks.filter((task) => task.scope === "general" || task.createdBy === actor.id);
     }
 
     const payload: JsonMap = {

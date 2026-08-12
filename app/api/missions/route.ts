@@ -100,6 +100,14 @@ function can(actor: Identity, permission: string) {
   return actor.role === "admin" || actor.permissions.includes(permission);
 }
 
+// Quem cadastra missão cadastra para as lojas cumprirem — só quem tem loja
+// vinculada é "destinatário" (marca status). Admin e usuários sem loja
+// (acessos personalizados) são sempre espectadores: veem o status de cada
+// loja, mas a missão nunca vira uma tarefa pessoal deles.
+function isMissionViewer(actor: Identity) {
+  return actor.role === "admin" || !actor.companyId;
+}
+
 function sameOrigin(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") return false;
@@ -188,7 +196,7 @@ function missionsForDate(
     (completion) =>
       completion.occurrenceDate === date &&
       missionIds.has(completion.missionId) &&
-      (actor.role === "admin" || completion.companyId === actor.companyId),
+      (isMissionViewer(actor) || completion.companyId === actor.companyId),
   );
   return visible.map((mission) => {
     const missionCompletions = dayCompletions.filter(
@@ -201,7 +209,7 @@ function missionsForDate(
       ...mission,
       status: recipientStatus,
       completed: recipientStatus === "completed",
-      completions: actor.role === "admin" ? missionCompletions : [],
+      completions: isMissionViewer(actor) ? missionCompletions : [],
       completionCount: missionCompletions.filter((completion) => completion.status === "completed").length,
       inProgressCount: missionCompletions.filter((completion) => completion.status === "in_progress").length,
     };
@@ -420,7 +428,7 @@ export async function GET(request: Request) {
     const completions = (completionResult.results ?? []).filter(
       (completion) =>
         missionIds.has(completion.missionId) &&
-        (actor.role === "admin" || completion.companyId === actor.companyId),
+        (isMissionViewer(actor) || completion.companyId === actor.companyId),
     );
 
     return jsonResponse({
@@ -437,7 +445,7 @@ export async function GET(request: Request) {
           ...mission,
           status: recipientStatus,
           completed: recipientStatus === "completed",
-          completions: actor.role === "admin" ? missionCompletions : [],
+          completions: isMissionViewer(actor) ? missionCompletions : [],
           completionCount: missionCompletions.filter(
             (completion) => completion.status === "completed",
           ).length,

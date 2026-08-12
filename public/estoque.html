@@ -9190,6 +9190,14 @@ function renderHomeTasks(){
     return value === 'completed' || value === 'in_progress' ? value : 'todo';
   }
 
+  // Quem cadastra missão cadastra para as lojas cumprirem — só quem tem loja
+  // vinculada é destinatário (marca status). Admin e usuários sem loja
+  // (acessos personalizados, ex.: Victoria) só acompanham o status por loja,
+  // a missão nunca vira uma tarefa pessoal deles.
+  function isMissionRecipient(){
+    return currentSession.role !== 'admin' && Boolean(currentSession.companyId);
+  }
+
   function missionTargetCompanies(mission){
     if(mission.scope === 'general') return pullStoreCompanies();
     const company = companies.find(item => item.id === mission.companyId);
@@ -9208,7 +9216,7 @@ function renderHomeTasks(){
   }
 
   function missionVisualStatus(mission){
-    if(currentSession.role !== 'admin') return normalizedMissionStatus(mission.status);
+    if(isMissionRecipient()) return normalizedMissionStatus(mission.status);
     const statuses = missionStoreStatuses(mission);
     if(statuses.length && statuses.every(item => item.status === 'completed')) return 'completed';
     if(statuses.some(item => item.status === 'in_progress' || item.status === 'completed')) return 'in_progress';
@@ -9231,7 +9239,7 @@ function renderHomeTasks(){
   }
 
   function missionCompletionCopy(mission){
-    if(currentSession.role !== 'admin'){
+    if(isMissionRecipient()){
       const status = normalizedMissionStatus(mission.status);
       if(status === 'completed') return 'CONCLUÍDO · FOI FEITO';
       if(status === 'in_progress') return 'EM ANDAMENTO · FINALIZAR DEPOIS';
@@ -9246,7 +9254,7 @@ function renderHomeTasks(){
   }
 
   function missionCompletionsDetail(mission){
-    if(currentSession.role !== 'admin') return '';
+    if(isMissionRecipient()) return '';
     const statuses = missionStoreStatuses(mission);
     if(!statuses.length) return '';
     return '<span class="mission-completion-detail">STATUS DAS LOJAS: '+
@@ -9285,9 +9293,8 @@ function renderHomeTasks(){
         '</div>'+missionCompletionsDetail(mission)+'</div>'+
       '<div class="mission-card-actions"><span class="mission-status'+(completed ? ' done' : status === 'in_progress' ? ' progress' : '')+'">'+
         escapeHtml(missionCompletionCopy(mission))+'</span>'+
-        (currentSession.role === 'admin'
-          ? '<button class="mission-delete" type="button" data-mission-delete="'+escapeHtml(mission.id)+'">EXCLUIR</button>'
-          : (missionStatusSelectHtml(mission,false) + (canAccess('missions:delete') ? '<button class="mission-delete" type="button" data-mission-delete="'+escapeHtml(mission.id)+'">EXCLUIR</button>' : '')))+
+        (isMissionRecipient() ? missionStatusSelectHtml(mission,false) : '')+
+        (canAccess('missions:delete') ? '<button class="mission-delete" type="button" data-mission-delete="'+escapeHtml(mission.id)+'">EXCLUIR</button>' : '')+
       '</div></article>';
   }
 
@@ -9353,7 +9360,7 @@ function renderHomeTasks(){
       '<span class="home-mission-meta">'+escapeHtml(target)+' · '+escapeHtml(missionCompletionCopy(mission))+'</span></div>'+
       '<div class="home-mission-actions"><span class="home-mission-time">'+
       escapeHtml(mission.dueTime ? deadline.label : 'LIVRE')+'</span>'+
-      (currentSession.role === 'admin' ? '' : missionStatusSelectHtml(mission,true))+
+      (isMissionRecipient() ? missionStatusSelectHtml(mission,true) : '')+
       '</div></div>';
   }
 
@@ -9406,6 +9413,13 @@ function renderHomeTasks(){
     return normalizedMissionStatus(task.status);
   }
 
+  // Mesma regra das missões: só quem tem loja vinculada, e é dona daquela
+  // tarefa específica, marca status. Quem cadastrou a rotina (sem loja) só
+  // acompanha o status de cada loja.
+  function isRoutineTaskMine(task){
+    return currentSession.role !== 'admin' && Boolean(currentSession.companyId) && task.companyId === currentSession.companyId;
+  }
+
   function routineCardHtml(task){
     const status = routineTaskStatus(task);
     const completed = status === 'completed';
@@ -9423,16 +9437,16 @@ function renderHomeTasks(){
         '</div></div>'+
       '<div class="mission-card-actions"><span class="mission-status'+(completed ? ' done' : status === 'in_progress' ? ' progress' : '')+'">'+
         escapeHtml(missionStatusLabels[status])+
-        (currentSession.role === 'admin' ? ' · '+escapeHtml(task.companyName || '') : '')+
+        (isRoutineTaskMine(task) ? '' : ' · '+escapeHtml(task.companyName || ''))+
         '</span>'+
-        (currentSession.role === 'admin'
-          ? ''
-          : '<select class="mission-status-select status-'+status+'" data-routine-status="'+escapeHtml(task.id)+
+        (isRoutineTaskMine(task)
+          ? '<select class="mission-status-select status-'+status+'" data-routine-status="'+escapeHtml(task.id)+
             '" data-current-status="'+status+'" aria-label="Status da tarefa">'+
             '<option value="todo"'+(status === 'todo' ? ' selected' : '')+'>A FAZER</option>'+
             '<option value="in_progress"'+(status === 'in_progress' ? ' selected' : '')+'>EM ANDAMENTO</option>'+
             '<option value="completed"'+(status === 'completed' ? ' selected' : '')+'>CONCLUÍDO</option>'+
-            '</select>')+
+            '</select>'
+          : '')+
       '</div></article>';
   }
 
@@ -9494,13 +9508,13 @@ function renderHomeTasks(){
       '<div class="home-mission-copy"><strong class="home-mission-title">'+escapeHtml(task.title || '')+'</strong>'+
       '<span class="home-mission-meta">'+escapeHtml(target)+' · '+escapeHtml(missionStatusLabels[status])+'</span></div>'+
       '<div class="home-mission-actions">'+
-      (currentSession.role === 'admin' ? '' :
+      (isRoutineTaskMine(task) ?
         '<select class="mission-status-select status-'+status+'" data-home-routine-status="'+escapeHtml(task.id)+
         '" data-current-status="'+status+'" aria-label="Status da tarefa">'+
         '<option value="todo"'+(status === 'todo' ? ' selected' : '')+'>A FAZER</option>'+
         '<option value="in_progress"'+(status === 'in_progress' ? ' selected' : '')+'>EM ANDAMENTO</option>'+
         '<option value="completed"'+(status === 'completed' ? ' selected' : '')+'>CONCLUÍDO</option>'+
-        '</select>')+
+        '</select>' : '')+
       '</div></div>';
   }
 
