@@ -677,9 +677,9 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(route, /const allStores = actor\.role === "admin" \|\| isAssistanceActor\(actor\)/);
   assert.match(route, /actor\.role === "admin" \? requestedOriginCompanyId : actor\.companyId/);
   assert.match(route, /ESCOLHA A LOJA DE ORIGEM/);
-  assert.match(route, /!isAssistanceActor\(actor\)/);
+  assert.match(route, /isAssistanceActor\(actor\) \|\| actor\.permissions\.includes\("captures:receive"\)/);
   assert.match(route, /SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA/);
-  assert.match(route, /SOMENTE O ADMINISTRADOR PODE DEFINIR O DESTINO/);
+  assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA DEFINIR O DESTINO/);
   assert.match(route, /existing\.status !== "submitted"/);
   assert.match(html, /id="userSector"/);
   assert.match(schema, /sector: text\("sector"\)/);
@@ -739,7 +739,7 @@ test("cadastra jogos direto para separação e os remove da fila da assistência
   }
 });
 
-test("permite somente ao administrador excluir uma captação", async () => {
+test("permite excluir uma captação a quem tem a permissão captures:delete", async () => {
   const [html, route] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../app/api/captures/route.ts", import.meta.url), "utf8"),
@@ -747,13 +747,13 @@ test("permite somente ao administrador excluir uma captação", async () => {
 
   assert.match(html, /data-capture-action="delete"/);
   assert.match(html, /EXCLUIR CAPTAÇÃO/);
-  assert.match(html, /currentSession\.role === 'admin'/);
+  assert.match(html, /canAccess\('captures:delete'\)/);
   assert.match(html, /window\.confirm\('Excluir definitivamente a captação/);
   assert.match(html, /method:action === 'delete' \? 'DELETE' : 'PATCH'/);
 
   assert.match(route, /export async function DELETE\(request: Request\)/);
-  assert.match(route, /actor\.role !== "admin"/);
-  assert.match(route, /SOMENTE O ADMINISTRADOR PODE EXCLUIR CAPTAÇÕES/);
+  assert.match(route, /!can\(actor, "captures:delete"\)/);
+  assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR CAPTAÇÕES/);
   assert.match(route, /DELETE FROM captured_products WHERE id=\?1/);
   assert.match(route, /await bucket\.delete\(existing\.photoKey\)/);
 });

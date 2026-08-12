@@ -6,6 +6,7 @@ import {
   COMPANY_PATTERN,
   GAME_CONDITIONS,
   GAME_CONSOLES,
+  can,
   canAccessCaptures,
   companyName,
   identity,
@@ -92,8 +93,8 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canAccessCaptures(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO À CAPTAÇÃO." }, 403);
+  if (!can(actor, "captures:create")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR CAPTAÇÕES." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
@@ -250,7 +251,10 @@ export async function PATCH(request: Request) {
     if (!existing) return jsonResponse({ error: "PRODUTO NÃO ENCONTRADO." }, 404);
 
     if (action === "receive" || action === "ready") {
-      if (!isAssistanceActor(actor) || actor.role === "admin") {
+      const allowedToReceive =
+        actor.role !== "admin" &&
+        (isAssistanceActor(actor) || actor.permissions.includes("captures:receive"));
+      if (!allowedToReceive) {
         return jsonResponse(
           { error: "SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA." },
           403,
@@ -302,9 +306,9 @@ export async function PATCH(request: Request) {
     }
 
     if (action === "assign") {
-      if (actor.role !== "admin") {
+      if (!can(actor, "captures:assign")) {
         return jsonResponse(
-          { error: "SOMENTE O ADMINISTRADOR PODE DEFINIR O DESTINO." },
+          { error: "VOCÊ NÃO TEM PERMISSÃO PARA DEFINIR O DESTINO." },
           403,
         );
       }
@@ -361,9 +365,9 @@ export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
+  if (!can(actor, "captures:delete")) {
     return jsonResponse(
-      { error: "SOMENTE O ADMINISTRADOR PODE EXCLUIR CAPTAÇÕES." },
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR CAPTAÇÕES." },
       403,
     );
   }

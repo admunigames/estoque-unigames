@@ -105,8 +105,15 @@ export function identity(request: Request): Identity {
   };
 }
 
+export function can(actor: Identity, permission: string) {
+  return actor.role === "admin" || actor.permissions.includes(permission);
+}
+
 export function canAccessCaptures(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("captures");
+  return (
+    actor.role === "admin" ||
+    actor.permissions.some((permission) => permission.startsWith("captures:"))
+  );
 }
 
 // Helper central p/ identificar contas de assistência — reaproveitado por

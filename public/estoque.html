@@ -9834,7 +9834,8 @@ function renderHomeTasks(){
 
   function captureActionsHtml(row){
     const actions = [];
-    if(isAssistanceSession() && row.category !== 'jogo'){
+    const canReceive = currentSession.role !== 'admin' && (isAssistanceSession() || canAccess('captures:receive'));
+    if(canReceive && row.category !== 'jogo'){
       if(row.status === 'submitted'){
         actions.push('<button class="capture-action" type="button" data-capture-action="receive" data-capture-key="'+escapeHtml(row.id)+'">MARCAR COMO RECEBIDO</button>');
       }
@@ -9842,12 +9843,12 @@ function renderHomeTasks(){
         actions.push('<button class="capture-action primary" type="button" data-capture-action="ready" data-capture-key="'+escapeHtml(row.id)+'">DISPONÍVEL PARA SEPARAÇÃO</button>');
       }
     }
-    if(currentSession.role === 'admin' && row.status === 'ready'){
+    if(canAccess('captures:assign') && row.status === 'ready'){
       actions.push('<select class="capture-destination" data-capture-destination="'+escapeHtml(row.id)+'" aria-label="Loja de destino">'+
         captureDestinationOptions()+'</select>');
       actions.push('<button class="capture-action primary" type="button" data-capture-action="assign" data-capture-key="'+escapeHtml(row.id)+'">CONFIRMAR DESTINO</button>');
     }
-    if(currentSession.role === 'admin'){
+    if(canAccess('captures:delete')){
       actions.push('<button class="capture-action danger" type="button" data-capture-action="delete" data-capture-key="'+escapeHtml(row.id)+'">EXCLUIR CAPTAÇÃO</button>');
     }
     return actions.join('');
