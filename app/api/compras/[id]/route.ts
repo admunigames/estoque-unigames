@@ -2,6 +2,7 @@ import {
   apiErrorResponse,
   appendUploadedFiles,
   buildPurchaseProperties,
+  canPurchases,
   normalizePurchase,
   notionRequest,
   parsePurchaseInput,
@@ -14,6 +15,9 @@ export async function PATCH(
 ) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
+  if (!canPurchases(request, "purchases:edit")) {
+    return Response.json({ error: "VOCÊ NÃO TEM PERMISSÃO PARA EDITAR COMPRAS." }, { status: 403 });
+  }
 
   try {
     const { id } = await context.params;

@@ -1,5 +1,5 @@
 import { getD1 } from "../../../../db";
-import { unauthorizedResponse } from "../../../lib/notion";
+import { canPurchases, unauthorizedResponse } from "../../../lib/notion";
 
 type JsonMap = Record<string, unknown>;
 
@@ -21,6 +21,9 @@ function currentUserId(request: Request) {
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
+  if (!canPurchases(request, "purchases:view")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA VER AS COMPRAS." }, 403);
+  }
 
   const ids = Array.from(
     new Set(
@@ -55,6 +58,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
+  if (!canPurchases(request, "purchases:edit")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA REGISTRAR ENTREGAS." }, 403);
+  }
 
   try {
     const payload = (await request.json()) as JsonMap;
@@ -106,6 +112,9 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
+  if (!canPurchases(request, "purchases:delete")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR ENTREGAS." }, 403);
+  }
   const id = cleanText(new URL(request.url).searchParams.get("id"), 80);
   if (!id) return jsonResponse({ error: "REGISTRO INVÁLIDO." }, 400);
   try {

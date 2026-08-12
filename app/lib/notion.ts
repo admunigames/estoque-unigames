@@ -366,6 +366,14 @@ export function unauthorizedResponse(request: Request) {
   return Response.json({ error: "ACESSO NÃO AUTORIZADO." }, { status: 401 });
 }
 
+export function canPurchases(request: Request, permission: string) {
+  if (request.headers.get("x-unigames-role") === "admin") return true;
+  const permissions = (request.headers.get("x-unigames-permissions") || "")
+    .split(",")
+    .map((value) => value.trim());
+  return permissions.includes(permission);
+}
+
 export function apiErrorResponse(error: unknown) {
   if (error instanceof NotionApiError) {
     return Response.json({ error: error.message }, { status: error.status });

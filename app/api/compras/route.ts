@@ -1,6 +1,7 @@
 import {
   apiErrorResponse,
   buildPurchaseProperties,
+  canPurchases,
   normalizePurchase,
   notionDataSourceId,
   notionRequest,
@@ -24,6 +25,9 @@ function asRecord(value: unknown): JsonMap {
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
+  if (!canPurchases(request, "purchases:view")) {
+    return Response.json({ error: "VOCÊ NÃO TEM PERMISSÃO PARA VER AS COMPRAS." }, { status: 403 });
+  }
 
   try {
     const url = new URL(request.url);
@@ -95,6 +99,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
+  if (!canPurchases(request, "purchases:create")) {
+    return Response.json({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR COMPRAS." }, { status: 403 });
+  }
 
   try {
     const input = parsePurchaseInput(await request.json());
