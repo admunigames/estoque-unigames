@@ -18,7 +18,20 @@ type LoginConfig = {
   sessionSecret: string;
 };
 
-type Permission = "tasks" | "missions" | "captures" | "outputs" | "supplies" | "supplies_in" | "supplies_out" | "supplies_delete" | "purchases" | "stock" | "database" | "pulls" | "report41" | "documents_manage";
+type Permission =
+  | "tasks:view" | "tasks:manage"
+  | "missions:view" | "missions:create" | "missions:delete" | "missions:notify"
+  | "captures:view" | "captures:create" | "captures:receive" | "captures:assign" | "captures:delete"
+  | "outputs:view" | "outputs:create" | "outputs:complete"
+  | "supplies:view" | "supplies:request" | "supplies:receive" | "supplies:stock_in" | "supplies:stock_out" | "supplies:delete" | "supplies:manage_catalog"
+  | "purchases:view" | "purchases:create" | "purchases:edit" | "purchases:delete"
+  | "stock:view"
+  | "database:view" | "database:manage"
+  | "pulls:view"
+  | "report41:view"
+  | "documents_manage"
+  | "instructions:manage"
+  | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
 type UserSector = "" | "administrative" | "assistance" | "deposit";
@@ -67,16 +80,87 @@ const ACCESS_GROUP_HEADER = "x-unigames-access-group";
 const PERMISSIONS_HEADER = "x-unigames-permissions";
 const COMPANY_ID_HEADER = "x-unigames-company-id";
 const SECTOR_HEADER = "x-unigames-sector";
-const ASSIGNABLE_PERMISSIONS: Permission[] = ["tasks", "missions", "captures", "outputs", "supplies", "supplies_in", "supplies_out", "supplies_delete", "purchases", "stock", "database", "pulls", "report41"];
+const ASSIGNABLE_PERMISSIONS: Permission[] = [
+  "tasks:view", "tasks:manage",
+  "missions:view", "missions:create", "missions:delete", "missions:notify",
+  "captures:view", "captures:create", "captures:receive", "captures:assign", "captures:delete",
+  "outputs:view", "outputs:create", "outputs:complete",
+  "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
+  "purchases:view", "purchases:create", "purchases:edit", "purchases:delete",
+  "stock:view",
+  "database:view", "database:manage",
+  "pulls:view",
+  "report41:view",
+  "instructions:manage",
+  "users:manage",
+];
+// documents_manage continua exclusivo de administrador: nunca pode ser
+// atribuída a um usuário custom, mesmo pela tela de cadastro.
 const ALL_PERMISSIONS: Permission[] = [...ASSIGNABLE_PERMISSIONS, "documents_manage"];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
-  purchases: ["tasks", "missions", "captures", "outputs", "supplies", "supplies_out", "purchases"],
-  fiscal: ["missions", "outputs", "supplies", "supplies_out", "stock", "database", "pulls", "report41"],
-  operator: ["tasks", "missions", "captures", "outputs", "supplies", "supplies_out"],
-  assistance: ["captures"],
+  purchases: [
+    "tasks:view", "tasks:manage",
+    "missions:view", "missions:notify",
+    "captures:view", "captures:create",
+    "outputs:view", "outputs:create",
+    "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_out",
+    "purchases:view", "purchases:create", "purchases:edit", "purchases:delete",
+  ],
+  fiscal: [
+    "missions:view",
+    "outputs:view", "outputs:create",
+    "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_out",
+    "stock:view",
+    "database:view", "database:manage",
+    "pulls:view",
+    "report41:view",
+  ],
+  operator: [
+    "tasks:view", "tasks:manage",
+    "missions:view", "missions:notify",
+    "captures:view", "captures:create",
+    "outputs:view", "outputs:create",
+    "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_out",
+  ],
+  assistance: ["captures:view", "captures:create", "captures:receive"],
   custom: [],
 };
+// Mapa de compatibilidade: converte as chaves de permissão do formato antigo
+// (um valor por módulo inteiro) para o novo formato módulo:ação, preservando
+// só o que aquele valor já liberava de fato hoje (nunca expande privilégio
+// que o usuário não tinha antes da migração). Usado ao ler permissionsJson
+// de usuários custom já cadastrados.
+const LEGACY_PERMISSION_MAP: Record<string, Permission[]> = {
+  "tasks": ["tasks:view", "tasks:manage"],
+  // "missions" hoje conflava ver + receber lembretes de missão pendente
+  // (missionNotificationAllowed usava a mesma flag) — preserva as duas para
+  // não tirar notificação de quem já recebia. Criar/excluir sempre foi
+  // exclusivo do admin (hardcoded), então não migra para cá.
+  "missions": ["missions:view", "missions:notify"],
+  "captures": ["captures:view", "captures:create"],
+  "outputs": ["outputs:view", "outputs:create"],
+  "supplies": ["supplies:view", "supplies:request", "supplies:receive"],
+  "supplies_in": ["supplies:stock_in"],
+  "supplies_out": ["supplies:stock_out"],
+  "supplies_delete": ["supplies:delete"],
+  "purchases": ["purchases:view", "purchases:create", "purchases:edit", "purchases:delete"],
+  "stock": ["stock:view"],
+  "database": ["database:view", "database:manage"],
+  "pulls": ["pulls:view"],
+  "report41": ["report41:view"],
+};
+function expandLegacyPermissions(raw: unknown[]): unknown[] {
+  const expanded: unknown[] = [];
+  for (const value of raw) {
+    if (typeof value === "string" && LEGACY_PERMISSION_MAP[value]) {
+      expanded.push(...LEGACY_PERMISSION_MAP[value]);
+    } else {
+      expanded.push(value);
+    }
+  }
+  return expanded;
+}
 const PUBLIC_ASSET_PATHS = new Set([
   "/favicon.svg",
   "/unigames-logo.png",
@@ -193,9 +277,13 @@ async function hmac(value: string, secret: string): Promise<string> {
 
 function normalizePermissions(value: unknown): Permission[] {
   if (!Array.isArray(value)) return [];
-  // documents_manage is deliberately administrator-only. Even a crafted
-  // user-management request cannot persist it for a regular/custom user.
-  return ASSIGNABLE_PERMISSIONS.filter((permission) => value.includes(permission));
+  // Aceita tanto o formato antigo (um valor por módulo) quanto o novo
+  // (módulo:ação), expandindo chaves antigas para seus equivalentes
+  // granulares antes de filtrar. documents_manage continua deliberadamente
+  // exclusivo de administrador: uma requisição de cadastro de usuário
+  // manipulada não consegue persisti-la para um usuário comum/custom.
+  const expanded = expandLegacyPermissions(value);
+  return ASSIGNABLE_PERMISSIONS.filter((permission) => expanded.includes(permission));
 }
 
 function normalizeAccessGroup(value: unknown): AccessGroup {
@@ -855,20 +943,46 @@ function hasAnyPermission(user: AuthenticatedUser, permissions: Permission[]): b
 
 function sharedStatePermission(key: string, scope: string, write: boolean): Permission | Permission[] {
   const normalized = `${scope}:${key}`.toLowerCase();
-  if (normalized.includes("tarefa")) return "tasks";
-  if (normalized.includes("puxada")) return write ? "pulls" : ["pulls", "report41"];
-  if (key === "report41:company-stock") return write ? "database" : ["database", "report41"];
-  if (/^report41:store:c[a-z0-9]{6,40}$/i.test(key)) return "report41";
-  return write ? ["stock", "database", "pulls"] : ["stock", "database", "pulls", "report41"];
+  if (normalized.includes("tarefa")) return write ? "tasks:manage" : ["tasks:view", "tasks:manage"];
+  if (normalized.includes("puxada")) return write ? "pulls:view" : ["pulls:view", "report41:view"];
+  if (key === "report41:company-stock") {
+    return write ? "database:manage" : ["database:view", "report41:view"];
+  }
+  if (/^report41:store:c[a-z0-9]{6,40}$/i.test(key)) return "report41:view";
+  return write
+    ? ["stock:view", "database:manage", "pulls:view"]
+    : ["stock:view", "database:view", "pulls:view", "report41:view"];
 }
+
+// Chaves de permissão que, em conjunto, liberam a página/API grossa de cada
+// módulo — a checagem fina de qual ação (criar/editar/excluir/...) é feita
+// dentro do handler da rota correspondente em app/api/*.
+const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
+  tasks: ["tasks:view", "tasks:manage"],
+  missions: ["missions:view", "missions:create", "missions:delete", "missions:notify"],
+  captures: ["captures:view", "captures:create", "captures:receive", "captures:assign", "captures:delete"],
+  outputs: ["outputs:view", "outputs:create", "outputs:complete"],
+  supplies: [
+    "supplies:view", "supplies:request", "supplies:receive",
+    "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
+  ],
+  purchases: ["purchases:view", "purchases:create", "purchases:edit", "purchases:delete"],
+  stock: ["stock:view"],
+  pulls: ["pulls:view"],
+  report41: ["report41:view"],
+  database: ["database:view", "database:manage"],
+};
 
 async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): Promise<boolean> {
   const path = url.pathname.replace(/\/+$/, "") || "/";
   if (path === "/cadastros/usuarios" || path === "/administracao/usuarios" || path === "/api/admin/users") {
-    return user.role === "admin";
+    return user.role === "admin" || hasPermission(user, "users:manage");
   }
-  if (path === "/instrucoes" || path.startsWith("/api/instructions")) {
+  if (path === "/instrucoes" || (path.startsWith("/api/instructions") && (request.method === "GET" || request.method === "HEAD"))) {
     return true;
+  }
+  if (path.startsWith("/api/instructions")) {
+    return hasPermission(user, "instructions:manage");
   }
   if (path === "/documentos" || path.startsWith("/documentos/")) {
     return true;
@@ -878,7 +992,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
       ? true
       : hasPermission(user, "documents_manage");
   }
-  const directPermissions: Array<[boolean, Permission]> = [
+  const directPermissions: Array<[boolean, keyof typeof MODULE_VIEW_PERMISSIONS]> = [
     [path === "/tarefas", "tasks"],
     [path === "/missoes" || path.startsWith("/api/missions"), "missions"],
     [path.startsWith("/api/routines"), "missions"],
@@ -892,7 +1006,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/cadastros" || path.startsWith("/cadastros/"), "database"],
   ];
   const direct = directPermissions.find(([matches]) => matches);
-  if (direct) return hasPermission(user, direct[1]);
+  if (direct) return hasAnyPermission(user, MODULE_VIEW_PERMISSIONS[direct[1]]);
   if (path === "/api/shared-state") {
     let key = url.searchParams.get("key") ?? "";
     let scope = url.searchParams.get("scope") ?? "";
@@ -1031,6 +1145,7 @@ async function handleAdminUsers(
   env: Env,
   url: URL,
   config: LoginConfig,
+  actor: AuthenticatedUser,
 ): Promise<Response> {
   try {
     await ensureAppUsersTable(env.DB);
@@ -1043,6 +1158,12 @@ async function handleAdminUsers(
   if (request.method !== "POST" && request.method !== "PATCH" && request.method !== "DELETE") {
     return new Response("Método não permitido", { status: 405, headers: { allow: "GET, POST, PATCH, DELETE" } });
   }
+  // Só o administrador de verdade (role="admin") pode mexer com outro
+  // administrador ou com quem tem/vai ter "users:manage" — um titular de
+  // "users:manage" via permissão custom pode gerenciar usuários comuns, mas
+  // nunca se autopromover, promover outros a admin, ou conceder/alterar essa
+  // mesma permissão em ninguém (evita escalonamento de privilégio).
+  const actorIsSuperAdmin = actor.role === "admin";
 
   if (request.method === "DELETE") {
     const id = url.searchParams.get("id") ?? "";
@@ -1052,6 +1173,9 @@ async function handleAdminUsers(
     try {
       const existing = await readUserById(env.DB, id);
       if (!existing) return jsonError("USUÁRIO NÃO ENCONTRADO.", 404);
+      if (!actorIsSuperAdmin && (existing.role === "admin" || permissionsFromJson(existing.permissionsJson).includes("users:manage"))) {
+        return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE EXCLUIR ESTE USUÁRIO.", 403);
+      }
       await env.DB.batch([
         env.DB.prepare("DELETE FROM password_reset_requests WHERE user_id = ?1").bind(id),
         env.DB.prepare("DELETE FROM user_preferences WHERE user_id = ?1").bind(id),
@@ -1094,6 +1218,14 @@ async function handleAdminUsers(
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return jsonError("INFORME UM E-MAIL VÁLIDO OU DEIXE O CAMPO VAZIO.", 400);
   }
+  if (!actorIsSuperAdmin) {
+    if (accessGroup === "administrator") {
+      return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE CONCEDER ACESSO DE ADMINISTRADOR.", 403);
+    }
+    if (access.permissions.includes("users:manage")) {
+      return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE CONCEDER GERENCIAMENTO DE USUÁRIOS.", 403);
+    }
+  }
 
   try {
     if (request.method === "POST") {
@@ -1129,6 +1261,9 @@ async function handleAdminUsers(
     if (!id || id === "env-admin") return jsonError("O ADMINISTRADOR PRINCIPAL NÃO PODE SER ALTERADO AQUI.", 400);
     const existing = await readUserById(env.DB, id);
     if (!existing) return jsonError("USUÁRIO NÃO ENCONTRADO.", 404);
+    if (!actorIsSuperAdmin && (existing.role === "admin" || permissionsFromJson(existing.permissionsJson).includes("users:manage"))) {
+      return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE ALTERAR ESTE USUÁRIO.", 403);
+    }
     const active = body.active === false ? 0 : 1;
     if (password && (password.length < 8 || password.length > 200)) {
       return jsonError("A NOVA SENHA DEVE TER PELO MENOS 8 CARACTERES.", 400);
@@ -1456,7 +1591,7 @@ function addDateDays(value: string, days: number) {
 function missionNotificationAllowed(user: MissionNotificationUserRow) {
   if (!user.companyId) return false;
   if (user.role === "admin" || user.accessGroup !== "custom") return true;
-  return permissionsFromJson(user.permissionsJson).includes("missions");
+  return permissionsFromJson(user.permissionsJson).includes("missions:notify");
 }
 
 async function dispatchDueMissionNotifications(env: Env) {
@@ -1745,7 +1880,7 @@ const worker = {
     if (!(await isAllowed(request, url, user))) return forbidden(url);
     if (url.pathname === "/api/session") return sessionResponse(user);
     if (url.pathname === "/api/admin/users") {
-      return securityHeaders(await handleAdminUsers(request, env, url, config));
+      return securityHeaders(await handleAdminUsers(request, env, url, config, user));
     }
 
     const authenticatedHeaders = new Headers(request.headers);

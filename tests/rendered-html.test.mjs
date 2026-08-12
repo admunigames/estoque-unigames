@@ -583,9 +583,11 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(html, /CONCLUÍDO · FOI FEITO/);
   assert.match(html, /Missão concluída\. O administrador responsável foi avisado/);
   assert.match(html, /missoes:'\/missoes'/);
-  assert.match(html, /value="missions"> Missões/);
+  assert.match(html, /value="missions:view"> Visualizar missões/);
+  assert.match(html, /value="missions:create"> Cadastrar missões/);
+  assert.match(html, /value="missions:notify"> Receber notificações \(como administrador\)/);
 
-  assert.match(workerSource, /type Permission = "tasks" \| "missions"/);
+  assert.match(workerSource, /"missions:view" \| "missions:create" \| "missions:delete" \| "missions:notify"/);
   assert.match(workerSource, /"\/missoes"/);
   assert.match(workerSource, /path === "\/missoes" \|\| path\.startsWith\("\/api\/missions"\)/);
   assert.match(workerSource, /dispatchDueMissionNotifications/);
@@ -595,7 +597,8 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(workerSource, /completion\?\.status === "completed"/);
   assert.match(workerSource, /dispatchDueTaskNotifications\(env\),[\s\S]*dispatchDueMissionNotifications\(env\)/);
 
-  assert.match(route, /actor\.role !== "admin"/);
+  assert.match(route, /!can\(actor, "missions:create"\)/);
+  assert.match(route, /!can\(actor, "missions:delete"\)/);
   assert.match(route, /O ADMINISTRADOR NÃO PODE ALTERAR O STATUS DAS MISSÕES/);
   assert.match(route, /mission\.companyId !== actor\.companyId/);
   assert.match(route, /weekday >= 1 && weekday <= 5/);
@@ -653,11 +656,11 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(html, /username\.includes\('assistencia'\)/);
   assert.match(html, /displayName\.includes\('assistencia'\)/);
   assert.match(html, /value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO/);
-  assert.match(html, /value="captures"> Captação/);
+  assert.match(html, /value="captures:view"> Visualizar/);
   assert.match(html, /captacao:'\/captacao'/);
 
   assert.match(workerSource, /"captures"/);
-  assert.match(workerSource, /assistance: \["captures"\]/);
+  assert.match(workerSource, /assistance: \["captures:view", "captures:create", "captures:receive"\]/);
   assert.match(workerSource, /normalized === "assistencia"/);
   assert.match(workerSource, /const sector: UserSector = accessGroup === "assistance" \? "assistance" : requestedSector/);
   assert.match(workerSource, /const companyId = sector \? "" : requestedCompanyId/);
@@ -779,7 +782,7 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(html, /data-output-view="completed"/);
   assert.match(html, /data-output-complete/);
   assert.match(html, /timeZone:'America\/Recife'/);
-  assert.match(html, /value="outputs"> Saídas/);
+  assert.match(html, /value="outputs:view"> Visualizar/);
   assert.match(html, /saidas:'\/saidas'/);
 
   assert.match(workerSource, /"outputs"/);
@@ -831,7 +834,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(html, /method:'DELETE'/);
   assert.match(html, /SEPARAÇÃO<\/button>/);
   assert.match(html, /insumos:'\/insumos'/);
-  assert.match(html, /value="supplies"> Insumos/);
+  assert.match(html, /value="supplies:view"> Visualizar/);
 
   assert.match(workerSource, /"supplies"/);
   assert.match(workerSource, /"supplies_in"/);
@@ -895,7 +898,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(html, /loadHomeInstructions/);
 
   assert.match(workerSource, /"\/instrucoes"/);
-  assert.match(workerSource, /path === "\/instrucoes" \|\| path\.startsWith\("\/api\/instructions"\)/);
+  assert.match(workerSource, /path === "\/instrucoes" \|\| \(path\.startsWith\("\/api\/instructions"\)/);
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM instructions"\)\.all\(\)/);
   assert.match(workerSource, /instructions: instructions\.results \?\? \[\]/);
   assert.match(route, /actor\.role !== "admin"/);
@@ -997,12 +1000,12 @@ test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", 
   assert.match(html, /report41:company-stock/);
   assert.match(html, /report41:store:/);
   assert.match(html, /relatorio41:'\/relatorio-41'/);
-  assert.match(html, /value="report41"> Relatório 41/);
+  assert.match(html, /value="report41:view"> Visualizar/);
   assert.match(workerSource, /"\/relatorio-41"/);
   assert.match(workerSource, /\[path === "\/relatorio-41", "report41"\]/);
   assert.match(workerSource, /reportStoreMatch[\s\S]*user\.companyId/);
   assert.match(workerSource, /company_id AS companyId/);
-  assert.match(workerSource, /fiscal: \["missions", "outputs", "supplies", "supplies_out", "stock", "database", "pulls", "report41"\]/);
+  assert.match(workerSource, /fiscal: \[\s*"missions:view",\s*"outputs:view", "outputs:create",\s*"supplies:view", "supplies:request", "supplies:receive", "supplies:stock_out",\s*"stock:view",\s*"database:view", "database:manage",\s*"pulls:view",\s*"report41:view",\s*\]/);
   assert.match(sharedStateRoute, /key === "report41:company-stock"/);
   assert.match(sharedStateRoute, /report41:store:c\[a-z0-9\]/);
   assert.match(schema, /companyId: text\("company_id"\)/);
