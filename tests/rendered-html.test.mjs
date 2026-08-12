@@ -783,6 +783,9 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(html, /data-output-complete/);
   assert.match(html, /timeZone:'America\/Recife'/);
   assert.match(html, /value="outputs:view"> Visualizar/);
+  assert.match(html, /value="outputs:create"> Cadastrar saídas/);
+  assert.match(html, /value="outputs:complete"> Concluir saídas/);
+  assert.match(html, /canAccess\('outputs:complete'\)/);
   assert.match(html, /saidas:'\/saidas'/);
 
   assert.match(workerSource, /"outputs"/);
@@ -792,7 +795,8 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
 
   assert.match(route, /actor\.role === "admin" \? requestedCompanyId : actor\.companyId/);
   assert.match(route, /WHERE company_id=\?1/);
-  assert.match(route, /SOMENTE O ADMINISTRADOR PODE CONCLUIR UMA SAÍDA/);
+  assert.match(route, /!can\(actor, "outputs:complete"\)/);
+  assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA CONCLUIR UMA SAÍDA/);
   assert.match(route, /existing\.status !== "requested"/);
   assert.match(route, /SET status='completed'/);
   assert.match(route, /completed_at=CURRENT_TIMESTAMP/);

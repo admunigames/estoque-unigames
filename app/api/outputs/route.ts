@@ -65,8 +65,15 @@ function identity(request: Request): Identity {
   };
 }
 
+function can(actor: Identity, permission: string) {
+  return actor.role === "admin" || actor.permissions.includes(permission);
+}
+
 function canAccessOutputs(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("outputs");
+  return (
+    actor.role === "admin" ||
+    actor.permissions.some((permission) => permission.startsWith("outputs:"))
+  );
 }
 
 function sameOrigin(request: Request) {
@@ -173,8 +180,8 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canAccessOutputs(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO ÀS SAÍDAS." }, 403);
+  if (!can(actor, "outputs:create")) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR SAÍDAS." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
@@ -244,12 +251,9 @@ export async function PATCH(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canAccessOutputs(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO ÀS SAÍDAS." }, 403);
-  }
-  if (actor.role !== "admin") {
+  if (!can(actor, "outputs:complete")) {
     return jsonResponse(
-      { error: "SOMENTE O ADMINISTRADOR PODE CONCLUIR UMA SAÍDA." },
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA CONCLUIR UMA SAÍDA." },
       403,
     );
   }

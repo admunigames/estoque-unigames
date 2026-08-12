@@ -10193,7 +10193,7 @@ function renderHomeTasks(){
       '<div class="output-card-actions">'+
         '<span class="output-state'+(completed ? ' completed' : '')+'">'+
           (completed ? 'SAÍDA EFETUADA' : 'AGUARDANDO ADMINISTRADOR')+'</span>'+
-        (currentSession.role === 'admin' && !completed
+        (canAccess('outputs:complete') && !completed
           ? '<button class="output-complete" type="button" data-output-complete="'+
             escapeHtml(row.id)+'">MARCAR COMO FEITO</button>'
           : '')+
