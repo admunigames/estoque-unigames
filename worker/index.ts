@@ -1044,6 +1044,10 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
         return false;
       }
     }
+    // Autoteste de conexão exibido para qualquer usuário logado (caixa
+    // "DADOS COMPARTILHADOS" na sidebar, sem gate de módulo no HTML) — não
+    // deve depender de permissão de nenhum módulo específico.
+    if (key === "__shared_health__") return true;
     const required = sharedStatePermission(
       key,
       scope,
