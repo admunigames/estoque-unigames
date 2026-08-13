@@ -1,3 +1,5 @@
+import { canSeeAllStores } from "../../lib/access-scope";
+
 export type JsonMap = Record<string, unknown>;
 export type CaptureStatus = "submitted" | "received" | "ready" | "assigned";
 export type CaptureCategory = "console" | "controller" | "other" | "jogo";
@@ -137,14 +139,19 @@ export function isAssistanceActor(actor: Identity) {
 }
 
 export function canSeeCapturedValue(actor: Identity, row: CaptureRow) {
-  return actor.role === "admin" || actor.companyId === row.originCompanyId;
+  return (
+    actor.role === "admin" ||
+    actor.companyId === row.originCompanyId ||
+    canSeeAllStores(actor, "captures:view")
+  );
 }
 
 export function canSeePhoto(actor: Identity, row: CaptureRow) {
   return (
     actor.role === "admin" ||
     actor.companyId === row.originCompanyId ||
-    isAssistanceActor(actor)
+    isAssistanceActor(actor) ||
+    canSeeAllStores(actor, "captures:view")
   );
 }
 

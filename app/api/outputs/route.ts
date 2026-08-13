@@ -1,5 +1,6 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
+import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type OutputStatus = "requested" | "completed";
@@ -27,8 +28,6 @@ type OutputRow = {
   completedAt: string;
   updatedAt: string;
 };
-
-const COMPANY_PATTERN = /^c[a-z0-9]{6,40}$/i;
 
 function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -78,26 +77,13 @@ function canAccessOutputs(actor: Identity) {
   );
 }
 
-// Usuários do setor Administrativo não têm loja vinculada (companyId vazio),
-// mas assim como os admins precisam enxergar as saídas de todas as lojas —
-// mesma regra aplicada em isAssistanceActor() para o módulo de Captação.
+// Usuários do setor Administrativo não têm loja vinculada (companyId vazio)
+// e continuam vendo todas as lojas independente de quais permissões
+// granulares tenham — regra histórica mantida como reforço além da regra
+// genérica em canSeeAllStores() (que já cobre o caso comum de "sem loja,
+// mas com a permissão do módulo").
 function isAdministrativeActor(actor: Identity) {
   return actor.sector === "administrative";
-}
-
-const FULL_OUTPUTS_ACCESS = [
-  "outputs:view",
-  "outputs:create",
-  "outputs:complete",
-  "outputs:delete",
-];
-
-// Qualquer usuário sem loja vinculada (não só setor Administrativo) que
-// tenha o conjunto completo de permissões de Saídas também deve ver todas
-// as lojas — do contrário o filtro por company_id nunca retornaria nada
-// pra essa conta, já que ela não tem loja própria.
-function hasFullOutputsAccess(actor: Identity) {
-  return FULL_OUTPUTS_ACCESS.every((permission) => actor.permissions.includes(permission));
 }
 
 function sameOrigin(request: Request) {
@@ -167,16 +153,9 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const hasCompany = COMPANY_PATTERN.test(actor.companyId);
-    const allStores =
-      actor.role === "admin" ||
-      isAdministrativeActor(actor) ||
-      (!hasCompany && hasFullOutputsAccess(actor));
-    if (!allStores && !hasCompany) {
-      return jsonResponse(
-        { error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA." },
-        403,
-      );
+    const allStores = canSeeAllStores(actor, "outputs:view") || isAdministrativeActor(actor);
+    if (!allStores && !hasCompany(actor.companyId)) {
+      return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
     }
     const result = allStores
       ? await database
@@ -218,15 +197,11 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const requestedCompanyId = safeText(body.companyId, 80);
-    const companyId = actor.role === "admin" ? requestedCompanyId : actor.companyId;
-    if (!COMPANY_PATTERN.test(companyId)) {
+    const canChooseCompany = canSeeAllStores(actor, "outputs:create") || isAdministrativeActor(actor);
+    const companyId = canChooseCompany ? requestedCompanyId : actor.companyId;
+    if (!hasCompany(companyId)) {
       return jsonResponse(
-        {
-          error:
-            actor.role === "admin"
-              ? "ESCOLHA A LOJA."
-              : "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.",
-        },
+        { error: canChooseCompany ? "ESCOLHA A LOJA." : NO_COMPANY_ERROR },
         400,
       );
     }

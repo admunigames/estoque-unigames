@@ -1107,12 +1107,13 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
       request.method !== "GET" && request.method !== "HEAD",
     );
     const reportStoreMatch = /^report41:store:(c[a-z0-9]{6,40})$/i.exec(key);
-    if (
-      reportStoreMatch &&
-      user.role !== "admin" &&
-      (!user.companyId || reportStoreMatch[1] !== user.companyId)
-    ) {
-      return false;
+    if (reportStoreMatch && user.role !== "admin") {
+      // Usuário vinculado a uma loja só acessa o relatório da própria loja.
+      // Usuário SEM loja mas com report41:view acessa qualquer loja, igual
+      // ao administrador — mesma regra geral aplicada a todos os módulos.
+      const boundToOwnStore = Boolean(user.companyId) && reportStoreMatch[1] === user.companyId;
+      const hasFullAccessWithoutCompany = !user.companyId && hasPermission(user, "report41:view");
+      if (!boundToOwnStore && !hasFullAccessWithoutCompany) return false;
     }
     return Array.isArray(required) ? hasAnyPermission(user, required) : hasPermission(user, required);
   }

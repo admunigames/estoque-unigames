@@ -1,5 +1,6 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
+import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -75,6 +76,13 @@ function can(actor: Identity, permission: string) {
 
 function canAccessSupplies(actor: Identity) {
   return can(actor, "supplies:view") || can(actor, "supplies:request") || can(actor, "supplies:receive");
+}
+
+// Admin sempre vê todas as lojas. Usuário sem loja vinculada mas com
+// qualquer permissão de insumos também — a ausência de loja só bloqueia
+// quem também não tem a permissão do módulo.
+function canSeeAllSupplyStores(actor: Identity) {
+  return actor.role === "admin" || (!hasCompany(actor.companyId) && canAccessSupplies(actor));
 }
 
 function sameOrigin(request: Request) {
@@ -161,7 +169,7 @@ const SUPPLY_SELECT = `
   LEFT JOIN supply_request_events sre ON sre.supply_item_id=si.id`;
 
 function scopedCompany(actor: Identity, requestedCompanyId: string) {
-  if (actor.role !== "admin") return actor.companyId;
+  if (!canSeeAllSupplyStores(actor)) return actor.companyId;
   return COMPANY_PATTERN.test(requestedCompanyId) ? requestedCompanyId : "";
 }
 
@@ -177,11 +185,8 @@ export async function GET(request: Request) {
   const view = url.searchParams.get("view") === "history" ? "history" : "active";
   const requestedCompanyId = safeText(url.searchParams.get("companyId"), 80);
   const companyId = scopedCompany(actor, requestedCompanyId);
-  if (actor.role !== "admin" && !COMPANY_PATTERN.test(companyId)) {
-    return jsonResponse(
-      { error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA." },
-      403,
-    );
+  if (!canSeeAllSupplyStores(actor) && !hasCompany(companyId)) {
+    return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
   }
 
   try {
@@ -267,16 +272,11 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const requestedCompanyId = safeText(body.companyId, 80);
-    const companyId =
-      actor.role === "admin" ? requestedCompanyId : actor.companyId;
+    const canChooseCompany = canSeeAllStores(actor, "supplies:request");
+    const companyId = canChooseCompany ? requestedCompanyId : actor.companyId;
     if (!COMPANY_PATTERN.test(companyId)) {
       return jsonResponse(
-        {
-          error:
-            actor.role === "admin"
-              ? "ESCOLHA A LOJA."
-              : "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.",
-        },
+        { error: canChooseCompany ? "ESCOLHA A LOJA." : NO_COMPANY_ERROR },
         400,
       );
     }
@@ -356,12 +356,9 @@ export async function PATCH(request: Request) {
         "status='pending'",
       ];
       const bindings: string[] = [...itemIds];
-      if (actor.role !== "admin") {
-        if (!COMPANY_PATTERN.test(actor.companyId)) {
-          return jsonResponse(
-            { error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA." },
-            403,
-          );
+      if (!canSeeAllStores(actor, "supplies:request")) {
+        if (!hasCompany(actor.companyId)) {
+          return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
         }
         bindings.push(actor.companyId);
         conditions.push(`company_id=?${bindings.length}`);
@@ -424,7 +421,7 @@ export async function PATCH(request: Request) {
       if (!existing) {
         return jsonResponse({ error: "INSUMO NÃO ENCONTRADO." }, 404);
       }
-      if (actor.role !== "admin" && existing.companyId !== actor.companyId) {
+      if (!canSeeAllStores(actor, "supplies:receive") && existing.companyId !== actor.companyId) {
         return jsonResponse({ error: "VOCÊ NÃO PODE ALTERAR OUTRA LOJA." }, 403);
       }
       if (existing.status === "received") {
