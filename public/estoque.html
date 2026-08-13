@@ -4420,6 +4420,7 @@
       await Promise.all(refreshes);
     }
     if(livePageName === 'tarefas') await Promise.all([loadTasks(),loadTaskAgenda()]);
+    if(livePageName === 'inicio') await loadHomeSupplies();
   }
 
   async function runLiveRefresh(module){
@@ -4472,9 +4473,17 @@
     });
   }
 
+  function liveModuleForPage(name){
+    // A Início é aberta por qualquer usuário logado, mesmo sem acesso a
+    // Insumos — só conecta o canal ao vivo quando a permissão existe, senão
+    // toda sessão sem Insumos tentaria abrir e cair num loop de reconexão.
+    if(name === 'inicio') return canAccess('supplies') ? 'supplies' : '';
+    return LIVE_PAGE_MODULES[name] || '';
+  }
+
   function setLivePage(name){
     livePageName = name;
-    const module = LIVE_PAGE_MODULES[name] || '';
+    const module = liveModuleForPage(name);
     if(module === liveModule && liveSocket) return;
     closeLiveSocket();
     liveModule = module;
