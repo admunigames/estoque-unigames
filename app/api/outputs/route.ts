@@ -15,6 +15,7 @@ type OutputRow = {
   id: string;
   quantity: number;
   productName: string;
+  responsibleName: string;
   defect: string;
   companyId: string;
   companyName: string;
@@ -149,7 +150,7 @@ async function companyName(database: D1Database, companyId: string) {
 }
 
 const OUTPUT_SELECT = `
-  SELECT id, quantity, product_name AS productName, defect,
+  SELECT id, quantity, product_name AS productName, responsible_name AS responsibleName, defect,
          company_id AS companyId, company_name AS companyName, status,
          created_by AS createdBy, created_by_name AS createdByName,
          created_at AS createdAt, completed_by AS completedBy,
@@ -232,6 +233,7 @@ export async function POST(request: Request) {
     }
     const quantity = Number(body.quantity);
     const productName = safeText(body.productName, 180);
+    const responsibleName = safeText(body.responsibleName, 120);
     const defect = safeText(body.defect, 1200);
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 9999) {
       return jsonResponse({ error: "INFORME UMA QUANTIDADE VÁLIDA." }, 400);
@@ -239,8 +241,11 @@ export async function POST(request: Request) {
     if (productName.length < 2) {
       return jsonResponse({ error: "INFORME O PRODUTO." }, 400);
     }
+    if (responsibleName.length < 2) {
+      return jsonResponse({ error: "INFORME O RESPONSÁVEL PELA SAÍDA." }, 400);
+    }
     if (defect.length < 2) {
-      return jsonResponse({ error: "INFORME O DEFEITO DO PRODUTO." }, 400);
+      return jsonResponse({ error: "INFORME OS DEFEITOS/OBSERVAÇÕES DA SAÍDA." }, 400);
     }
 
     const database = await getD1();
@@ -252,15 +257,16 @@ export async function POST(request: Request) {
     await database
       .prepare(
         `INSERT INTO defective_outputs
-          (id, quantity, product_name, defect, company_id, company_name,
+          (id, quantity, product_name, responsible_name, defect, company_id, company_name,
            status, created_by, created_by_name, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'requested', ?7, ?8,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'requested', ?8, ?9,
                  CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       )
       .bind(
         id,
         quantity,
         productName,
+        responsibleName,
         defect,
         companyId,
         resolvedCompanyName,

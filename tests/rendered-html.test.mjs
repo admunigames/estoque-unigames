@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v35"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v36"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -859,7 +859,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v35"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v36"/);
 });
 
 test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
@@ -943,7 +943,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v35"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v36"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1008,24 +1008,33 @@ test("permite excluir uma captação a quem tem a permissão captures:delete", a
   assert.match(route, /await bucket\.delete\(existing\.photoKey\)/);
 });
 
-test("registra saídas por defeito por loja e preserva o histórico do administrador", async () => {
-  const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
+test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do administrador", async () => {
+  const [html, workerSource, route, schema, migration, addResponsibleMigration, manifest, serviceWorker] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/outputs/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
       readFile(new URL("../drizzle-sqlite-legacy/0009_hard_young_avengers.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0017_swift_warbird.sql", import.meta.url), "utf8"),
       readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
       readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
     ]);
 
   assert.match(html, /id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc=/);
   assert.match(html, /id="pageSaidas" class="page wrap"/);
+  assert.match(html, /Saídas Gerais Solicitadas/);
+  assert.doesNotMatch(html, /produtos com defeito/);
   assert.match(html, /id="outputForm"/);
   assert.match(html, /id="outputQuantity" type="number" min="1" max="9999"/);
   assert.match(html, /id="outputProductName"/);
+  assert.match(html, /id="outputResponsible" maxlength="120" required/);
+  assert.match(html, /for="outputResponsible">RESPONSÁVEL PELA SAÍDA</);
   assert.match(html, /id="outputDefect"/);
+  assert.match(html, /for="outputDefect">DEFEITOS \/ OBSERVAÇÕES</);
+  assert.match(html, /RESPONSÁVEL PELA SAÍDA<\/span><strong>/);
+  assert.match(html, /DEFEITOS \/ OBSERVAÇÕES<\/span><strong>/);
+  assert.match(html, /responsibleName:el\('outputResponsible'\)\.value/);
   assert.match(html, /id="outputCompany"/);
   assert.match(html, /data-output-view="requested"/);
   assert.match(html, /data-output-view="completed"/);
@@ -1042,6 +1051,10 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM defective_outputs"\)\.all\(\)/);
   assert.match(workerSource, /defectiveOutputs: defectiveOutputs\.results \?\? \[\]/);
 
+  assert.match(route, /responsible_name AS responsibleName/);
+  assert.match(route, /const responsibleName = safeText\(body\.responsibleName, 120\)/);
+  assert.match(route, /INFORME O RESPONSÁVEL PELA SAÍDA/);
+  assert.match(route, /INFORME OS DEFEITOS\/OBSERVAÇÕES DA SAÍDA/);
   assert.match(route, /actor\.role === "admin" \? requestedCompanyId : actor\.companyId/);
   assert.match(route, /WHERE company_id=\?1/);
   assert.match(route, /!can\(actor, "outputs:complete"\)/);
@@ -1050,12 +1063,17 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(route, /SET status='completed'/);
   assert.match(route, /completed_at=CURRENT_TIMESTAMP/);
   assert.match(schema, /export const defectiveOutputs = pgTable/);
+  assert.match(schema, /responsibleName: text\("responsible_name"\)\.notNull\(\)\.default\(""\)/);
   assert.match(migration, /CREATE TABLE `defective_outputs`/);
   assert.match(migration, /defective_outputs_status_created_idx/);
   assert.match(migration, /defective_outputs_company_created_idx/);
   assert.match(migration, /PRAGMA optimize/);
+  assert.match(
+    addResponsibleMigration,
+    /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
+  );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v35"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v36"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1186,7 +1204,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v35"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v36"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1231,7 +1249,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v35"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v36"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
