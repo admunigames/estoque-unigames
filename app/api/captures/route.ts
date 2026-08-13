@@ -6,6 +6,7 @@ import {
   COMPANY_PATTERN,
   GAME_CONDITIONS,
   GAME_CONSOLES,
+  MAX_CAPTURE_CONTROLLERS,
   can,
   canAccessCaptures,
   companyName,
@@ -24,6 +25,99 @@ import {
   type GameConsole,
   type JsonMap,
 } from "./shared";
+
+type ControllerInput = {
+  productName: string;
+  serialNumber: string;
+  color: string;
+  defects: string;
+  capturedValueCents: number;
+};
+
+function parseControllers(rawControllers: unknown): ControllerInput[] | string {
+  if (!Array.isArray(rawControllers) || rawControllers.length === 0) return [];
+  if (rawControllers.length > MAX_CAPTURE_CONTROLLERS) {
+    return `INFORME NO MÁXIMO ${MAX_CAPTURE_CONTROLLERS} CONTROLES POR CAPTAÇÃO.`;
+  }
+  const controllers: ControllerInput[] = [];
+  for (let index = 0; index < rawControllers.length; index += 1) {
+    const raw = rawControllers[index];
+    const item = raw && typeof raw === "object" ? (raw as JsonMap) : {};
+    const label = `CONTROLE ${index + 1}`;
+    const productName = safeText(item.productName, 160);
+    const serialNumber = safeText(item.serialNumber, 160);
+    const color = safeText(item.color, 120);
+    const defects = safeText(item.defects, 1200);
+    if (productName.length < 2) return `${label}: INFORME O MODELO/TIPO DO CONTROLE.`;
+    if (!serialNumber) return `${label}: INFORME O SERIAL DO CONTROLE.`;
+    if (!color) return `${label}: INFORME A COR DO CONTROLE.`;
+    const rawValue = Number(item.capturedValue);
+    const value = Number.isFinite(rawValue) && rawValue > 0 ? rawValue : 0;
+    if (value > 999999.99) return `${label}: VALOR CAPTADO INVÁLIDO.`;
+    controllers.push({
+      productName,
+      serialNumber,
+      color,
+      defects,
+      capturedValueCents: Math.round(value * 100),
+    });
+  }
+  return controllers;
+}
+
+async function insertCaptureRow(
+  database: D1Database,
+  params: {
+    id: string;
+    category: CaptureCategory;
+    productName: string;
+    gameName: string;
+    gameConsole: string;
+    gameCondition: string;
+    serialNumber: string;
+    defects: string;
+    color: string;
+    originCompanyId: string;
+    originCompanyName: string;
+    capturedValueCents: number;
+    photoKey: string;
+    parentCaptureId: string;
+    createdBy: string;
+    createdByName: string;
+  },
+) {
+  await database
+    .prepare(
+      `INSERT INTO captured_products
+        (id, category, product_name, game_name, game_console, game_condition,
+         serial_number, defects, color,
+         origin_company_id, origin_company_name, captured_value_cents,
+         photo_key, parent_capture_id, status, created_by, created_by_name,
+         created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
+               CASE WHEN ?2 = 'jogo' THEN 'ready' ELSE 'submitted' END,
+               ?15, ?16, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    )
+    .bind(
+      params.id,
+      params.category,
+      params.productName,
+      params.gameName,
+      params.gameConsole,
+      params.gameCondition,
+      params.serialNumber,
+      params.defects,
+      params.color,
+      params.originCompanyId,
+      params.originCompanyName,
+      params.capturedValueCents,
+      params.photoKey,
+      params.parentCaptureId,
+      params.createdBy,
+      params.createdByName,
+    )
+    .run();
+}
 
 function liveCaptureResponse(
   body: JsonMap,
@@ -197,6 +291,11 @@ export async function POST(request: Request) {
       photoKey = requestedPhotoKey;
     }
 
+    const controllers = category === "console" ? parseControllers(body.controllers) : [];
+    if (typeof controllers === "string") {
+      return jsonResponse({ error: controllers }, 400);
+    }
+
     const database = await getD1();
     const originCompanyName = await companyName(database, originCompanyId);
     if (!originCompanyName) {
@@ -204,35 +303,44 @@ export async function POST(request: Request) {
     }
 
     const id = crypto.randomUUID();
-    await database
-      .prepare(
-        `INSERT INTO captured_products
-          (id, category, product_name, game_name, game_console, game_condition,
-           serial_number, defects, color,
-           origin_company_id, origin_company_name, captured_value_cents,
-           photo_key, status, created_by, created_by_name, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13,
-                 CASE WHEN ?2 = 'jogo' THEN 'ready' ELSE 'submitted' END,
-                 ?14, ?15, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-      )
-      .bind(
-        id,
-        category,
-        productName,
-        category === "jogo" ? gameName : "",
-        category === "jogo" ? gameConsole : "",
-        category === "jogo" ? gameCondition : "",
-        serialNumber,
-        defects,
-        color,
+    await insertCaptureRow(database, {
+      id,
+      category,
+      productName,
+      gameName: category === "jogo" ? gameName : "",
+      gameConsole: category === "jogo" ? gameConsole : "",
+      gameCondition: category === "jogo" ? gameCondition : "",
+      serialNumber,
+      defects,
+      color,
+      originCompanyId,
+      originCompanyName,
+      capturedValueCents,
+      photoKey,
+      parentCaptureId: "",
+      createdBy: actor.id,
+      createdByName: actor.displayName,
+    });
+    for (const controller of controllers) {
+      await insertCaptureRow(database, {
+        id: crypto.randomUUID(),
+        category: "controller",
+        productName: controller.productName,
+        gameName: "",
+        gameConsole: "",
+        gameCondition: "",
+        serialNumber: controller.serialNumber,
+        defects: controller.defects,
+        color: controller.color,
         originCompanyId,
         originCompanyName,
-        capturedValueCents,
-        photoKey,
-        actor.id,
-        actor.displayName,
-      )
-      .run();
+        capturedValueCents: controller.capturedValueCents,
+        photoKey: "",
+        parentCaptureId: id,
+        createdBy: actor.id,
+        createdByName: actor.displayName,
+      });
+    }
     return liveCaptureResponse(
       { created: true, id },
       201,
@@ -284,6 +392,15 @@ export async function PATCH(request: Request) {
           409,
         );
       }
+      if (existing.parentCaptureId) {
+        return jsonResponse(
+          {
+            error:
+              "ESTE CONTROLE ACOMPANHA O STATUS DO CONSOLE. USE A AÇÃO NO CONSOLE.",
+          },
+          409,
+        );
+      }
       if (action === "receive" && existing.status !== "submitted") {
         return jsonResponse(
           { error: "O PRODUTO PRECISA ESTAR AGUARDANDO A ASSISTÊNCIA." },
@@ -297,12 +414,15 @@ export async function PATCH(request: Request) {
         );
       }
       if (action === "receive") {
+        // Cascateia pros controles vinculados (parent_capture_id=id): eles
+        // chegam e são testados junto com o console, então avançam de etapa
+        // juntos até a definição de destino (ver captures/shared.ts).
         await database
           .prepare(
             `UPDATE captured_products
              SET status='received', received_by=?1, received_by_name=?2,
                  received_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
-             WHERE id=?3`,
+             WHERE id=?3 OR parent_capture_id=?3`,
           )
           .bind(actor.id, actor.displayName, id)
           .run();
@@ -312,7 +432,7 @@ export async function PATCH(request: Request) {
             `UPDATE captured_products
              SET status='ready', ready_by=?1, ready_by_name=?2,
                  ready_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
-             WHERE id=?3`,
+             WHERE id=?3 OR parent_capture_id=?3`,
           )
           .bind(actor.id, actor.displayName, id)
           .run();
@@ -416,7 +536,7 @@ export async function DELETE(request: Request) {
     }
 
     await database
-      .prepare("DELETE FROM captured_products WHERE id=?1")
+      .prepare("DELETE FROM captured_products WHERE id=?1 OR parent_capture_id=?1")
       .bind(id)
       .run();
 

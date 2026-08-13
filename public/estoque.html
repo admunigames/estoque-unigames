@@ -1983,6 +1983,26 @@
   .capture-action.primary{border-color:rgba(66,166,119,.46);background:rgba(66,166,119,.13);color:#66d49e;}
   .capture-action.danger{border-color:rgba(220,85,85,.48);background:rgba(220,85,85,.12);color:#ff8c8c;}
   .capture-destination{min-height:40px;font:800 9px/1.2 var(--mono);}
+  .capture-checkbox{display:flex;align-items:center;gap:8px;color:var(--ink);font:800 10px/1.3 var(--mono);}
+  .capture-controller-block{
+    margin-top:12px;padding:12px;border:1px dashed rgba(79,134,189,.35);border-radius:11px;
+    background:rgba(79,134,189,.03);
+  }
+  .capture-controller-block-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+  .capture-controller-block-head strong{color:var(--ink-soft);font:900 9px/1.2 var(--mono);letter-spacing:.4px;}
+  .btn-outline.small{min-height:30px;padding:6px 10px;font-size:8px;}
+  .capture-controllers{margin-top:12px;padding-top:12px;border-top:1px dashed rgba(79,134,189,.3);}
+  .capture-controllers h4{margin:0 0 8px;color:var(--ink-soft);font:900 8px/1.3 var(--mono);letter-spacing:.5px;}
+  .capture-controller-card{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,auto);gap:12px;
+    padding:12px;margin-top:8px;border:1px solid rgba(79,134,189,.2);border-radius:11px;
+    background:rgba(79,134,189,.03);
+  }
+  .capture-controller-card.ready{border-color:rgba(66,166,119,.4);}
+  .capture-controller-card.received{border-color:rgba(225,173,73,.4);}
+  .capture-controller-card.assigned{opacity:.7;}
+  html[data-theme="light"] .capture-controller-block{background:#f2f7fb;}
+  html[data-theme="light"] .capture-controller-card{background:#f6f9fb;border-color:#c4d1dc;}
   html[data-theme="light"] .capture-summary-card,
   html[data-theme="light"] .capture-register-panel,
   html[data-theme="light"] .capture-board{background:#fff;border-color:#b8cad9;box-shadow:0 1px 4px rgba(28,67,102,.06);}
@@ -3090,6 +3110,13 @@
               <input id="capturePhoto" type="file" accept="image/*" capture="environment">
               <span class="capture-photo-filename" id="capturePhotoFilename"></span>
             </div>
+            <div class="field double" id="captureHasControllersField" hidden>
+              <label class="capture-checkbox"><input type="checkbox" id="captureHasControllers"> CAPTOU CONTROLE TAMBÉM?</label>
+            </div>
+          </div>
+          <div id="captureControllersContainer" hidden>
+            <div id="captureControllersList"></div>
+            <button class="btn-outline" type="button" id="btnAddController">+ ADICIONAR OUTRO CONTROLE</button>
           </div>
           <div class="capture-form-actions"><button class="btn-accent" id="btnSaveCapture" type="submit">CADASTRAR PRODUTO</button></div>
           <div class="user-form-status" id="captureFormStatus" role="status" aria-live="polite"></div>
@@ -10122,7 +10149,7 @@ function renderHomeTasks(){
   function captureActionsHtml(row){
     const actions = [];
     const canReceive = currentSession.role !== 'admin' && (isAssistanceSession() || canAccess('captures:receive'));
-    if(canReceive && row.category !== 'jogo'){
+    if(canReceive && row.category !== 'jogo' && !row.parentCaptureId){
       if(row.status === 'submitted'){
         actions.push('<button class="capture-action" type="button" data-capture-action="receive" data-capture-key="'+escapeHtml(row.id)+'">MARCAR COMO RECEBIDO</button>');
       }
@@ -10141,7 +10168,35 @@ function renderHomeTasks(){
     return actions.join('');
   }
 
-  function captureCardHtml(row){
+  function captureControllerCardHtml(child){
+    const capturedValue = typeof child.capturedValue === 'number'
+      ? '<div class="capture-detail"><span>VALOR</span><strong>'+escapeHtml(captureValueLabel(child.capturedValue))+'</strong></div>'
+      : '';
+    const destination = child.status === 'assigned' && child.destinationCompanyName
+      ? '<div class="capture-detail wide"><span>DESTINO DEFINIDO</span><strong>'+escapeHtml(child.destinationCompanyName)+'</strong></div>'
+      : '';
+    const defects = child.defects
+      ? '<div class="capture-detail wide"><span>DEFEITO</span><strong>'+escapeHtml(child.defects)+'</strong></div>'
+      : '';
+    return '<article class="capture-controller-card '+escapeHtml(child.status || 'submitted')+'">'+
+      '<div class="capture-card-copy">'+
+        '<div class="capture-card-title"><span class="capture-category">CONTROLE</span>'+
+          '<strong>'+escapeHtml(child.productName || 'Controle sem modelo')+'</strong></div>'+
+        '<div class="capture-details">'+
+          '<div class="capture-detail"><span>SERIAL</span><strong>'+escapeHtml(child.serialNumber || '—')+'</strong></div>'+
+          '<div class="capture-detail"><span>COR</span><strong>'+escapeHtml(child.color || '—')+'</strong></div>'+
+          capturedValue+defects+destination+
+        '</div>'+
+      '</div>'+
+      '<div class="capture-card-actions">'+
+        '<span class="capture-state '+escapeHtml(child.status || 'submitted')+'">'+
+          escapeHtml(captureStatusLabels[child.status] || 'AGUARDANDO ASSISTÊNCIA')+
+        '</span>'+captureActionsHtml(child)+
+      '</div>'+
+    '</article>';
+  }
+
+  function captureCardHtml(row,children){
     const captureTitle = row.category === 'jogo'
       ? (row.gameName || row.productName)
       : row.productName;
@@ -10160,6 +10215,9 @@ function renderHomeTasks(){
       ? '<a class="capture-photo-link" href="/api/captures/photo?id='+encodeURIComponent(row.id)+'" target="_blank" rel="noopener">'+
         '<img class="capture-photo-thumb" src="/api/captures/photo?id='+encodeURIComponent(row.id)+'" alt="Foto do produto captado" loading="lazy"></a>'
       : '';
+    const controllers = children && children.length
+      ? '<div class="capture-controllers"><h4>CONTROLES DESTA CAPTAÇÃO</h4>'+children.map(captureControllerCardHtml).join('')+'</div>'
+      : '';
     return '<article class="capture-card '+escapeHtml(row.status || 'submitted')+'">'+
       '<div class="capture-card-copy">'+
         '<div class="capture-card-title"><span class="capture-category">'+
@@ -10173,7 +10231,7 @@ function renderHomeTasks(){
           capturedValue+
           '<div class="capture-detail wide"><span>DEFEITOS INFORMADOS</span><strong>'+escapeHtml(row.defects || '—')+'</strong></div>'+
           destination+
-        '</div>'+photo+captureHistoryHtml(row)+
+        '</div>'+photo+controllers+captureHistoryHtml(row)+
       '</div>'+
       '<div class="capture-card-actions">'+
         '<span class="capture-state '+escapeHtml(row.status || 'submitted')+'">'+
@@ -10183,18 +10241,42 @@ function renderHomeTasks(){
     '</article>';
   }
 
-  function filteredCaptureRows(){
+  function captureTree(){
+    const childrenByParent = {};
+    const topLevel = [];
+    captureRows.forEach(row => {
+      if(row.parentCaptureId){
+        (childrenByParent[row.parentCaptureId] = childrenByParent[row.parentCaptureId] || []).push(row);
+      }
+    });
+    captureRows.forEach(row => {
+      if(!row.parentCaptureId) topLevel.push(row);
+    });
+    return {topLevel:topLevel,childrenByParent:childrenByParent};
+  }
+
+  function captureSearchText(row,children){
+    return normalizeHeader([
+      row.productName,row.gameName,row.gameConsole,row.gameCondition,
+      row.serialNumber,row.color,row.defects,
+      row.originCompanyName,row.destinationCompanyName
+    ].concat((children || []).flatMap(child => [
+      child.productName,child.serialNumber,child.color,child.defects,child.destinationCompanyName
+    ])).join(' '));
+  }
+
+  function filteredCaptureRows(topLevel,childrenByParent){
     const status = el('captureStatusFilter').value;
     const search = normalizeHeader(el('captureSearch').value || '');
-    return captureRows.filter(row => {
+    return topLevel.filter(row => {
       if(isAssistanceSession() && row.category === 'jogo') return false;
-      if(status && row.status !== status) return false;
+      const children = childrenByParent[row.id] || [];
+      if(status){
+        const statusMatches = row.status === status || children.some(child => child.status === status);
+        if(!statusMatches) return false;
+      }
       if(!search) return true;
-      return normalizeHeader([
-        row.productName,row.gameName,row.gameConsole,row.gameCondition,
-        row.serialNumber,row.color,row.defects,
-        row.originCompanyName,row.destinationCompanyName
-      ].join(' ')).includes(search);
+      return captureSearchText(row,children).includes(search);
     });
   }
 
@@ -10227,9 +10309,10 @@ function renderHomeTasks(){
       : isAssistance
         ? 'Receba os produtos e libere-os quando estiverem disponíveis para separação.'
         : 'Acompanhe somente os produtos cadastrados pela sua loja.';
-    const visibleRows = filteredCaptureRows();
+    const {topLevel,childrenByParent} = captureTree();
+    const visibleRows = filteredCaptureRows(topLevel,childrenByParent);
     el('captureList').innerHTML = visibleRows.length
-      ? visibleRows.map(captureCardHtml).join('')
+      ? visibleRows.map(row => captureCardHtml(row,childrenByParent[row.id] || [])).join('')
       : '<div class="mission-empty">Nenhum produto encontrado nesta visão.</div>';
   }
 
@@ -10269,6 +10352,67 @@ function renderHomeTasks(){
 
   el('captureCategory').addEventListener('change',toggleCaptureGameFields);
   toggleCaptureGameFields();
+
+  const MAX_CAPTURE_CONTROLLERS = 8;
+
+  function createControllerBlock(){
+    const wrap = document.createElement('div');
+    wrap.className = 'capture-controller-block';
+    wrap.innerHTML =
+      '<div class="capture-controller-block-head"><strong>CONTROLE</strong>'+
+      '<button class="btn-outline small" type="button" data-remove-controller>REMOVER</button></div>'+
+      '<div class="capture-form-grid">'+
+        '<div class="field"><label>MODELO/TIPO DO CONTROLE</label><input type="text" maxlength="160" data-controller-field="productName" placeholder="Ex.: DualSense"></div>'+
+        '<div class="field"><label>SERIAL DO CONTROLE</label><input type="text" maxlength="160" data-controller-field="serialNumber" placeholder="Digite o serial"></div>'+
+        '<div class="field"><label>COR DO CONTROLE</label><input type="text" maxlength="120" data-controller-field="color" placeholder="Ex.: Branco"></div>'+
+        '<div class="field"><label>VALOR DO CONTROLE (R$)</label><input type="number" min="0" max="999999.99" step="0.01" inputmode="decimal" data-controller-field="capturedValue" placeholder="0,00"></div>'+
+        '<div class="field double"><label>DEFEITO DO CONTROLE (SE HOUVER)</label><textarea maxlength="1200" rows="2" data-controller-field="defects" placeholder="Deixe em branco se não houver defeito"></textarea></div>'+
+      '</div>';
+    return wrap;
+  }
+
+  function addControllerBlock(){
+    const list = el('captureControllersList');
+    if(list.children.length >= MAX_CAPTURE_CONTROLLERS) return;
+    list.appendChild(createControllerBlock());
+  }
+
+  function resetControllerBlocks(){
+    el('captureControllersList').innerHTML = '';
+    addControllerBlock();
+  }
+
+  function toggleCaptureControllers(){
+    const isConsole = el('captureCategory').value === 'console';
+    el('captureHasControllersField').hidden = !isConsole;
+    if(!isConsole) el('captureHasControllers').checked = false;
+    const show = isConsole && el('captureHasControllers').checked;
+    el('captureControllersContainer').hidden = !show;
+  }
+
+  function collectControllers(){
+    if(el('captureCategory').value !== 'console' || !el('captureHasControllers').checked) return [];
+    return Array.from(el('captureControllersList').querySelectorAll('.capture-controller-block')).map(block => ({
+      productName: block.querySelector('[data-controller-field="productName"]').value,
+      serialNumber: block.querySelector('[data-controller-field="serialNumber"]').value,
+      color: block.querySelector('[data-controller-field="color"]').value,
+      capturedValue: block.querySelector('[data-controller-field="capturedValue"]').value,
+      defects: block.querySelector('[data-controller-field="defects"]').value
+    }));
+  }
+
+  el('captureCategory').addEventListener('change',toggleCaptureControllers);
+  el('captureHasControllers').addEventListener('change',toggleCaptureControllers);
+  el('btnAddController').addEventListener('click',addControllerBlock);
+  el('captureControllersList').addEventListener('click',event => {
+    const button = event.target.closest('[data-remove-controller]');
+    if(!button) return;
+    const list = el('captureControllersList');
+    if(list.children.length <= 1) return;
+    button.closest('.capture-controller-block').remove();
+  });
+  resetControllerBlocks();
+  toggleCaptureControllers();
 
   el('capturePhoto').addEventListener('change',() => {
     const file = el('capturePhoto').files[0];
@@ -10359,11 +10503,14 @@ function renderHomeTasks(){
           defects:el('captureDefects').value,
           color:el('captureColor').value,
           capturedValue:el('captureValue').value,
-          photoKey
+          photoKey,
+          controllers:collectControllers()
         })
       });
       el('captureForm').reset();
       toggleCaptureGameFields();
+      resetControllerBlocks();
+      toggleCaptureControllers();
       el('capturePhotoFilename').textContent = '';
       setCaptureFormStatus(isGame
         ? 'JOGO CADASTRADO E DISPONÍVEL PARA O ADMINISTRADOR DEFINIR O DESTINO.'

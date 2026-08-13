@@ -32,6 +32,7 @@ export type CaptureRow = {
   originCompanyName: string;
   capturedValueCents: number;
   photoKey: string;
+  parentCaptureId: string;
   status: CaptureStatus;
   destinationCompanyId: string;
   destinationCompanyName: string;
@@ -65,6 +66,11 @@ export const GAME_CONSOLES = new Set<GameConsole>([
   "Xbox One/Series",
 ]);
 export const GAME_CONDITIONS = new Set<GameCondition>(["Novo", "Semi Novo"]);
+// Controles captados junto com um console viram linhas-filhas nesta mesma
+// tabela (parent_capture_id apontando pro console) em vez de um objeto
+// embutido, pra reaproveitar sem duplicação toda a lógica de status/destino
+// que já existe por linha (ver PATCH em route.ts).
+export const MAX_CAPTURE_CONTROLLERS = 8;
 
 export function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -206,7 +212,8 @@ export const CAPTURE_SELECT = `
          origin_company_id AS originCompanyId,
          origin_company_name AS originCompanyName,
          captured_value_cents AS capturedValueCents,
-         photo_key AS photoKey, status,
+         photo_key AS photoKey,
+         parent_capture_id AS parentCaptureId, status,
          destination_company_id AS destinationCompanyId,
          destination_company_name AS destinationCompanyName,
          created_by AS createdBy, created_by_name AS createdByName,

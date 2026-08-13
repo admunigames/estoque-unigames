@@ -1,0 +1,2 @@
+ALTER TABLE "captured_products" ADD COLUMN "parent_capture_id" text DEFAULT '' NOT NULL;--> statement-breakpoint
+CREATE INDEX "captured_products_parent_idx" ON "captured_products" USING btree ("parent_capture_id");

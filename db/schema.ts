@@ -274,6 +274,7 @@ export const capturedProducts = pgTable(
     originCompanyName: text("origin_company_name").notNull().default(""),
     capturedValueCents: integer("captured_value_cents").notNull().default(0),
     photoKey: text("photo_key").notNull().default(""),
+    parentCaptureId: text("parent_capture_id").notNull().default(""),
     status: text("status").notNull().default("submitted"),
     destinationCompanyId: text("destination_company_id").notNull().default(""),
     destinationCompanyName: text("destination_company_name").notNull().default(""),
@@ -297,6 +298,7 @@ export const capturedProducts = pgTable(
       table.originCompanyId,
       table.createdAt,
     ),
+    index("captured_products_parent_idx").on(table.parentCaptureId),
   ],
 );
 
