@@ -4081,6 +4081,7 @@
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:view"> Visualizar</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:create"> Cadastrar saídas</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:complete"> Concluir saídas</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:delete"> Excluir saídas</label>
                   </div>
                 </details>
                 <details class="permission-module">
@@ -10474,6 +10475,10 @@ function renderHomeTasks(){
           ? '<button class="output-complete" type="button" data-output-complete="'+
             escapeHtml(row.id)+'">MARCAR COMO FEITO</button>'
           : '')+
+        (canAccess('outputs:delete')
+          ? '<button class="output-complete" type="button" data-output-delete="'+
+            escapeHtml(row.id)+'">EXCLUIR</button>'
+          : '')+
       '</div>'+
     '</article>';
   }
@@ -10496,6 +10501,7 @@ function renderHomeTasks(){
     el('outputCompletedCount').textContent = completed;
 
     const isAdmin = currentSession.role === 'admin';
+    const seesAllStores = isAdmin || normalizeHeader(currentSession.sector || '') === 'administrative';
     el('outputRegisterPanel').hidden = !isAdmin && !currentSession.companyId;
     el('outputCompanyField').hidden = !isAdmin;
     el('outputCompany').required = isAdmin;
@@ -10503,7 +10509,7 @@ function renderHomeTasks(){
     el('outputRegisterDescription').textContent = isAdmin
       ? 'Informe os dados e escolha a loja responsável pela solicitação.'
       : 'A solicitação será vinculada automaticamente à sua loja.';
-    el('outputBoardDescription').textContent = isAdmin
+    el('outputBoardDescription').textContent = seesAllStores
       ? 'Visualize todas as lojas e conclua a saída após efetuá-la no sistema.'
       : 'Acompanhe as solicitações registradas pela sua loja.';
     document.querySelectorAll('[data-output-view]').forEach(button => {
@@ -10573,20 +10579,40 @@ function renderHomeTasks(){
   });
 
   el('outputList').addEventListener('click',async event => {
-    const button = event.target.closest('[data-output-complete]');
-    if(!button || !confirm('Confirmar que esta saída já foi efetuada no sistema?')) return;
-    button.disabled = true;
-    try{
-      await outputApiRequest({
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:button.dataset.outputComplete})
-      });
-      showPurchaseToast('Saída efetuada e enviada para o histórico.');
-      await loadOutputs();
-    }catch(error){
-      showPurchaseToast(error.message,'error');
-      button.disabled = false;
+    const completeButton = event.target.closest('[data-output-complete]');
+    if(completeButton){
+      if(!confirm('Confirmar que esta saída já foi efetuada no sistema?')) return;
+      completeButton.disabled = true;
+      try{
+        await outputApiRequest({
+          method:'PATCH',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:completeButton.dataset.outputComplete})
+        });
+        showPurchaseToast('Saída efetuada e enviada para o histórico.');
+        await loadOutputs();
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        completeButton.disabled = false;
+      }
+      return;
+    }
+    const deleteButton = event.target.closest('[data-output-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir esta saída definitivamente?')) return;
+      deleteButton.disabled = true;
+      try{
+        await outputApiRequest({
+          method:'DELETE',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:deleteButton.dataset.outputDelete})
+        });
+        showPurchaseToast('Saída excluída.');
+        await loadOutputs();
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        deleteButton.disabled = false;
+      }
     }
   });
   el('outputSearch').addEventListener('input',debounce(renderOutputs,120));
@@ -12319,7 +12345,7 @@ function renderHomeTasks(){
     'tasks:view':'Tarefas: visualizar','tasks:manage':'Tarefas: cadastrar/editar/excluir',
     'missions:view':'Missões: visualizar','missions:create':'Missões: cadastrar','missions:delete':'Missões: excluir','missions:notify':'Missões: notificações',
     'captures:view':'Captação: visualizar','captures:create':'Captação: cadastrar','captures:receive':'Captação: receber/preparar','captures:assign':'Captação: definir destino','captures:delete':'Captação: excluir',
-    'outputs:view':'Saídas: visualizar','outputs:create':'Saídas: cadastrar','outputs:complete':'Saídas: concluir',
+    'outputs:view':'Saídas: visualizar','outputs:create':'Saídas: cadastrar','outputs:complete':'Saídas: concluir','outputs:delete':'Saídas: excluir',
     'supplies:view':'Insumos: visualizar','supplies:request':'Insumos: solicitar','supplies:receive':'Insumos: receber solicitação','supplies:stock_in':'Insumos: entrada','supplies:stock_out':'Insumos: saída','supplies:delete':'Insumos: excluir','supplies:manage_catalog':'Insumos: produtos/categorias',
     'purchases:view':'Compras: visualizar','purchases:create':'Compras: cadastrar','purchases:edit':'Compras: editar','purchases:delete':'Compras: excluir',
     'stock:view':'Estoque Fiscal',

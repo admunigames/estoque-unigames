@@ -8,6 +8,7 @@ type Identity = {
   displayName: string;
   role: "admin" | "user";
   companyId: string;
+  sector: string;
   permissions: string[];
 };
 type OutputRow = {
@@ -58,6 +59,7 @@ function identity(request: Request): Identity {
     displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
     companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
+    sector: safeText(request.headers.get("x-unigames-sector"), 40),
     permissions: (request.headers.get("x-unigames-permissions") || "")
       .split(",")
       .map((permission) => permission.trim())
@@ -74,6 +76,13 @@ function canAccessOutputs(actor: Identity) {
     actor.role === "admin" ||
     actor.permissions.some((permission) => permission.startsWith("outputs:"))
   );
+}
+
+// Usuários do setor Administrativo não têm loja vinculada (companyId vazio),
+// mas assim como os admins precisam enxergar as saídas de todas as lojas —
+// mesma regra aplicada em isAssistanceActor() para o módulo de Captação.
+function isAdministrativeActor(actor: Identity) {
+  return actor.sector === "administrative";
 }
 
 function sameOrigin(request: Request) {
@@ -143,32 +152,32 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    if (actor.role !== "admin" && !COMPANY_PATTERN.test(actor.companyId)) {
+    const allStores = actor.role === "admin" || isAdministrativeActor(actor);
+    if (!allStores && !COMPANY_PATTERN.test(actor.companyId)) {
       return jsonResponse(
         { error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA." },
         403,
       );
     }
-    const result =
-      actor.role === "admin"
-        ? await database
-            .prepare(
-              `${OUTPUT_SELECT}
-               ORDER BY CASE status WHEN 'requested' THEN 0 ELSE 1 END,
-                        CASE WHEN status='requested' THEN created_at END ASC,
-                        completed_at DESC`,
-            )
-            .all<OutputRow>()
-        : await database
-            .prepare(
-              `${OUTPUT_SELECT}
-               WHERE company_id=?1
-               ORDER BY CASE status WHEN 'requested' THEN 0 ELSE 1 END,
-                        CASE WHEN status='requested' THEN created_at END ASC,
-                        completed_at DESC`,
-            )
-            .bind(actor.companyId)
-            .all<OutputRow>();
+    const result = allStores
+      ? await database
+          .prepare(
+            `${OUTPUT_SELECT}
+             ORDER BY CASE status WHEN 'requested' THEN 0 ELSE 1 END,
+                      CASE WHEN status='requested' THEN created_at END ASC,
+                      completed_at DESC`,
+          )
+          .all<OutputRow>()
+      : await database
+          .prepare(
+            `${OUTPUT_SELECT}
+             WHERE company_id=?1
+             ORDER BY CASE status WHEN 'requested' THEN 0 ELSE 1 END,
+                      CASE WHEN status='requested' THEN created_at END ASC,
+                      completed_at DESC`,
+          )
+          .bind(actor.companyId)
+          .all<OutputRow>();
     return jsonResponse({ outputs: result.results ?? [] });
   } catch (error) {
     console.error("Não foi possível carregar as saídas.", error);
@@ -290,5 +299,40 @@ export async function PATCH(request: Request) {
   } catch (error) {
     console.error("Não foi possível concluir a saída.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CONCLUIR A SAÍDA." }, 500);
+  }
+}
+
+export async function DELETE(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!can(actor, "outputs:delete")) {
+    return jsonResponse(
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR SAÍDAS." },
+      403,
+    );
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+
+  try {
+    const body = (await request.json()) as JsonMap;
+    const id = safeText(body.id, 80);
+    if (!id) return jsonResponse({ error: "SOLICITAÇÃO INVÁLIDA." }, 400);
+    const database = await getD1();
+    const existing = await database
+      .prepare(`${OUTPUT_SELECT} WHERE id=?1 LIMIT 1`)
+      .bind(id)
+      .first<OutputRow>();
+    if (!existing) {
+      return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
+    }
+
+    await database.prepare("DELETE FROM defective_outputs WHERE id=?1").bind(id).run();
+    return jsonResponse({ deleted: true });
+  } catch (error) {
+    console.error("Não foi possível excluir a saída.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR A SAÍDA." }, 500);
   }
 }

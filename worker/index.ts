@@ -34,7 +34,7 @@ type Permission =
   | "tasks:view" | "tasks:manage"
   | "missions:view" | "missions:create" | "missions:delete" | "missions:notify"
   | "captures:view" | "captures:create" | "captures:receive" | "captures:assign" | "captures:delete"
-  | "outputs:view" | "outputs:create" | "outputs:complete"
+  | "outputs:view" | "outputs:create" | "outputs:complete" | "outputs:delete"
   | "supplies:view" | "supplies:request" | "supplies:receive" | "supplies:stock_in" | "supplies:stock_out" | "supplies:delete" | "supplies:manage_catalog"
   | "purchases:view" | "purchases:create" | "purchases:edit" | "purchases:delete"
   | "stock:view"
@@ -97,7 +97,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "tasks:view", "tasks:manage",
   "missions:view", "missions:create", "missions:delete", "missions:notify",
   "captures:view", "captures:create", "captures:receive", "captures:assign", "captures:delete",
-  "outputs:view", "outputs:create", "outputs:complete",
+  "outputs:view", "outputs:create", "outputs:complete", "outputs:delete",
   "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
   "purchases:view", "purchases:create", "purchases:edit", "purchases:delete",
   "stock:view",
@@ -974,7 +974,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   tasks: ["tasks:view", "tasks:manage"],
   missions: ["missions:view", "missions:create", "missions:delete", "missions:notify"],
   captures: ["captures:view", "captures:create", "captures:receive", "captures:assign", "captures:delete"],
-  outputs: ["outputs:view", "outputs:create", "outputs:complete"],
+  outputs: ["outputs:view", "outputs:create", "outputs:complete", "outputs:delete"],
   supplies: [
     "supplies:view", "supplies:request", "supplies:receive",
     "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
