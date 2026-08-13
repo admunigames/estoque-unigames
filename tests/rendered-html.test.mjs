@@ -1358,3 +1358,45 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
   assert.match(wrangler, /"binding": "UPLOADS"/);
   assert.equal((wrangler.match(/"r2_buckets"/g) || []).length, 1);
 });
+
+test("cron do worker sempre resolve o driver Postgres antes de rodar as rotinas agendadas", async () => {
+  // Bug real já corrigido: o handler scheduled() usava o env cru do
+  // Cloudflare (com binding D1) direto nas rotinas do cron. Como a
+  // produção não tem mais D1 (DB_DRIVER=postgres, ver PR "remove binding
+  // D1"), toda execução do cron quebrava silenciosamente logo no primeiro
+  // env.DB.prepare(...) — e como a geração diária das tarefas de Rotina
+  // Operacional (advanceOperationalRoutines) só acontece pelo cron, nenhuma
+  // rotina cadastrada para um dia da semana diferente do dia do cadastro
+  // chegava a aparecer para a loja. Este teste trava se alguma rotina do
+  // cron voltar a usar o env cru (rawEnv) em vez do resolvido.
+  const workerSource = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
+
+  const scheduledStart = workerSource.indexOf("async scheduled(");
+  assert.notEqual(scheduledStart, -1, "método scheduled não encontrado em worker/index.ts");
+  const bodyStart = workerSource.indexOf("{", workerSource.indexOf(")", scheduledStart));
+  let depth = 0;
+  let bodyEnd = -1;
+  for (let index = bodyStart; index < workerSource.length; index++) {
+    if (workerSource[index] === "{") depth++;
+    if (workerSource[index] === "}") depth--;
+    if (depth === 0) {
+      bodyEnd = index + 1;
+      break;
+    }
+  }
+  assert.notEqual(bodyEnd, -1, "corpo do método scheduled incompleto");
+  const scheduledBody = workerSource.slice(scheduledStart, bodyEnd);
+
+  assert.match(scheduledBody, /const env = await resolvePostgresBackedEnv\(rawEnv\)/);
+  assert.match(scheduledBody, /dispatchDueTaskNotifications\(env\)/);
+  assert.match(scheduledBody, /dispatchDueMissionNotifications\(env\)/);
+  assert.match(scheduledBody, /advanceOperationalRoutines\(env\)/);
+  assert.match(scheduledBody, /createAutomaticBackup\(env, config\.sessionSecret\)/);
+  assert.doesNotMatch(scheduledBody, /dispatchDueTaskNotifications\(rawEnv\)/);
+  assert.doesNotMatch(scheduledBody, /dispatchDueMissionNotifications\(rawEnv\)/);
+  assert.doesNotMatch(scheduledBody, /advanceOperationalRoutines\(rawEnv\)/);
+  assert.doesNotMatch(scheduledBody, /createAutomaticBackup\(rawEnv,/);
+
+  assert.match(workerSource, /async function resolvePostgresBackedEnv\(rawEnv: Env\): Promise<Env> \{/);
+  assert.match(workerSource, /if \(process\.env\.DB_DRIVER !== "postgres"\) return rawEnv;/);
+});
