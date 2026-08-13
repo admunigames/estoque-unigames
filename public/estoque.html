@@ -1983,7 +1983,24 @@
   .capture-action.primary{border-color:rgba(66,166,119,.46);background:rgba(66,166,119,.13);color:#66d49e;}
   .capture-action.danger{border-color:rgba(220,85,85,.48);background:rgba(220,85,85,.12);color:#ff8c8c;}
   .capture-destination{min-height:40px;font:800 9px/1.2 var(--mono);}
-  .capture-checkbox{display:flex;align-items:center;gap:8px;color:var(--ink);font:800 10px/1.3 var(--mono);}
+  .capture-toggle{
+    display:inline-flex;align-items:center;gap:10px;width:fit-content;height:44px;
+    cursor:pointer;color:var(--ink);font:800 10px/1.3 var(--mono);letter-spacing:.3px;
+  }
+  .capture-toggle input{
+    appearance:none;-webkit-appearance:none;margin:0;flex:0 0 auto;
+    width:38px;height:22px;border-radius:999px;position:relative;cursor:pointer;
+    background:rgba(79,134,189,.16);border:1px solid rgba(79,134,189,.4);
+    transition:background .15s ease,border-color .15s ease;
+  }
+  .capture-toggle input::after{
+    content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;
+    border-radius:50%;background:var(--ink-soft);
+    transition:transform .15s ease,background .15s ease;
+  }
+  .capture-toggle input:checked{background:rgba(66,166,119,.32);border-color:rgba(66,166,119,.62);}
+  .capture-toggle input:checked::after{transform:translateX(16px);background:#66d49e;}
+  .capture-toggle input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .capture-controller-block{
     margin-top:12px;padding:12px;border:1px dashed rgba(79,134,189,.35);border-radius:11px;
     background:rgba(79,134,189,.03);
@@ -3092,6 +3109,10 @@
               <label for="captureOriginCompany">LOJA DE ORIGEM</label>
               <select id="captureOriginCompany"><option value="">SELECIONE A LOJA</option></select>
             </div>
+            <div class="field" id="captureHasControllersField" hidden>
+              <label>&nbsp;</label>
+              <label class="capture-toggle"><input type="checkbox" id="captureHasControllers"><span>CAPTOU CONTROLE TAMBÉM?</span></label>
+            </div>
             <div class="field double"><label for="captureProductName">PRODUTO / MODELO</label><input id="captureProductName" maxlength="160" required placeholder="Ex.: PlayStation 5 Slim"></div>
             <div class="field double" id="captureGameNameField" hidden><label for="captureGameName">NOME DO JOGO</label><input id="captureGameName" maxlength="160" placeholder="Ex.: EA Sports FC 26"></div>
             <div class="field" id="captureGameConsoleField" hidden>
@@ -3110,9 +3131,6 @@
               <label for="capturePhoto">FOTO DO PRODUTO</label>
               <input id="capturePhoto" type="file" accept="image/*" capture="environment">
               <span class="capture-photo-filename" id="capturePhotoFilename"></span>
-            </div>
-            <div class="field double" id="captureHasControllersField" hidden>
-              <label class="capture-checkbox"><input type="checkbox" id="captureHasControllers"> CAPTOU CONTROLE TAMBÉM?</label>
             </div>
           </div>
           <div id="captureControllersContainer" hidden>
