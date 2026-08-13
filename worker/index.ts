@@ -213,7 +213,7 @@ const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 let appUsersReady: Promise<void> | null = null;
-let postgresAppUsersReady = false;
+let postgresAppUsersReady: Promise<void> | null = null;
 let automaticBackupDate = "";
 
 function loginConfig(env: Env): LoginConfig | null {
@@ -385,20 +385,23 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
 
 async function ensureAppUsersTable(database: D1Database): Promise<void> {
   if (process.env.DB_DRIVER === "postgres") {
-    if (postgresAppUsersReady) return;
-    await database.batch([
-      database.prepare(
-        "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS hierarchy TEXT NOT NULL DEFAULT 'administrative'",
-      ),
-      database.prepare(
-        "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS sector TEXT NOT NULL DEFAULT ''",
-      ),
-      database.prepare(
-        "UPDATE app_users SET sector='assistance', company_id='' WHERE access_group='assistance' OR lower(username)='assistencia'",
-      ),
-    ]);
-    postgresAppUsersReady = true;
-    return;
+    if (!postgresAppUsersReady) {
+      postgresAppUsersReady = database.batch([
+        database.prepare(
+          "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS hierarchy TEXT NOT NULL DEFAULT 'administrative'",
+        ),
+        database.prepare(
+          "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS sector TEXT NOT NULL DEFAULT ''",
+        ),
+        database.prepare(
+          "UPDATE app_users SET sector='assistance', company_id='' WHERE access_group='assistance' OR lower(username)='assistencia'",
+        ),
+      ]).then(() => undefined).catch((error) => {
+        postgresAppUsersReady = null;
+        throw error;
+      });
+    }
+    return postgresAppUsersReady;
   }
 
   if (!appUsersReady) {
@@ -538,6 +541,15 @@ function cookieValue(request: Request, name: string): string | null {
   return null;
 }
 
+// Erro distinto de "sessao invalida": sinaliza que o token em si e valido mas
+// a consulta ao banco falhou (ex.: pool do Postgres/Hyperdrive saturado sob
+// uma rajada de requisicoes paralelas logo apos o login). Nao deve ser
+// tratado como 401 pelo chamador — isso faria o cliente redirecionar para
+// /login mesmo com a sessao valida, e como o GET /login redireciona de volta
+// quando ve uma sessao valida, gera um loop de recarregamento ate a rajada
+// de requisicoes se resolver sozinha.
+class SessionLookupError extends Error {}
+
 async function authenticatedUser(
   request: Request,
   env: Env,
@@ -548,28 +560,33 @@ async function authenticatedUser(
   const [payload, signature, extra] = token.split(".");
   if (!payload || !signature || extra) return null;
 
+  let parsed: { sub?: unknown; ver?: unknown; exp?: unknown };
   try {
     const expected = await hmac(payload, config.sessionSecret);
     if (!constantTimeEqual(signature, expected)) return null;
-    const parsed = JSON.parse(decoder.decode(fromBase64Url(payload))) as {
-      sub?: unknown;
-      ver?: unknown;
-      exp?: unknown;
-    };
-    if (
-      typeof parsed.sub !== "string" ||
-      typeof parsed.ver !== "number" ||
-      typeof parsed.exp !== "number" ||
-      parsed.exp <= Date.now()
-    ) return null;
-    if (parsed.sub === "env-admin" && parsed.ver === 1) return envAdministrator(config);
-    if (!env.DB) return null;
-    const row = await readUserById(env.DB, parsed.sub);
-    if (!row || row.active !== 1 || row.sessionVersion !== parsed.ver) return null;
-    return storedUser(row);
+    parsed = JSON.parse(decoder.decode(fromBase64Url(payload)));
   } catch {
     return null;
   }
+  if (
+    typeof parsed.sub !== "string" ||
+    typeof parsed.ver !== "number" ||
+    typeof parsed.exp !== "number" ||
+    parsed.exp <= Date.now()
+  ) return null;
+  if (parsed.sub === "env-admin" && parsed.ver === 1) return envAdministrator(config);
+  if (!env.DB) return null;
+
+  let row: Awaited<ReturnType<typeof readUserById>>;
+  try {
+    row = await readUserById(env.DB, parsed.sub);
+  } catch (error) {
+    throw new SessionLookupError(
+      error instanceof Error ? error.message : "Falha ao consultar o usuario da sessao",
+    );
+  }
+  if (!row || row.active !== 1 || row.sessionVersion !== parsed.ver) return null;
+  return storedUser(row);
 }
 
 function clientKey(request: Request): string {
@@ -829,7 +846,15 @@ async function handleLogin(request: Request, env: Env, url: URL): Promise<Respon
   }
 
   if (request.method === "GET" || request.method === "HEAD") {
-    if (await authenticatedUser(request, env, config)) {
+    let existingUser: AuthenticatedUser | null = null;
+    try {
+      existingUser = await authenticatedUser(request, env, config);
+    } catch (error) {
+      if (!(error instanceof SessionLookupError)) throw error;
+      // Nao foi possivel confirmar a sessao (banco indisponivel/sobrecarregado).
+      // Mostra a tela de login normalmente em vez de assumir sessao invalida.
+    }
+    if (existingUser) {
       return Response.redirect(new URL(next, url.origin), 303);
     }
     return loginPage({ next, configured: true });
@@ -929,6 +954,18 @@ function unauthorized(request: Request, url: URL): Response {
     );
   }
   return Response.json({ error: "SESSÃO EXPIRADA OU NÃO AUTORIZADA." }, { status: 401 });
+}
+
+function serviceUnavailable(url: URL): Response {
+  const message = "NAO FOI POSSIVEL VALIDAR O ACESSO NO MOMENTO. TENTE NOVAMENTE.";
+  if (url.pathname.startsWith("/api/")) {
+    return Response.json({ error: message }, { status: 503 });
+  }
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Serviço indisponível</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#06111d;color:#f5f9ff;font-family:Arial,sans-serif;padding:24px}.card{max-width:520px;padding:32px;border:1px solid #2b5f8f;border-radius:18px;background:#0b1b2c;text-align:center}h1{font-size:24px}p{color:#a9bfd3;line-height:1.55}</style></head><body><main class="card"><h1>Serviço indisponível</h1><p>Não foi possível validar seu acesso agora. Aguarde alguns segundos e recarregue a página.</p></main></body></html>`;
+  return new Response(html, {
+    status: 503,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+  });
 }
 
 function forbidden(url: URL): Response {
@@ -1956,7 +1993,13 @@ const worker = {
 
     const config = loginConfig(env);
     if (!config) return unauthorized(request, url);
-    const user = await authenticatedUser(request, env, config);
+    let user: AuthenticatedUser | null;
+    try {
+      user = await authenticatedUser(request, env, config);
+    } catch (error) {
+      if (!(error instanceof SessionLookupError)) throw error;
+      return serviceUnavailable(url);
+    }
     if (!user) return unauthorized(request, url);
     const mutatingApiRequest =
       url.pathname.startsWith("/api/") &&

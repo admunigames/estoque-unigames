@@ -263,6 +263,123 @@ test("serve as rotas dos módulos sem alterar o endereço do navegador", async (
   assert.match(await response.text(), /ESTOQUE/);
 });
 
+function toBase64Url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return Buffer.from(binary, "binary").toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+async function signSession(secret, sub, ver) {
+  const payload = toBase64Url(
+    Buffer.from(JSON.stringify({ sub, ver, exp: Date.now() + 12 * 60 * 60 * 1000 }), "utf8"),
+  );
+  const key = await crypto.subtle.importKey(
+    "raw",
+    Buffer.from(secret, "utf8"),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, Buffer.from(payload, "utf8"));
+  return `${payload}.${toBase64Url(new Uint8Array(signature))}`;
+}
+
+// D1 falso mínimo: guarda um único usuário em memória e responde só às
+// consultas que worker/index.ts realmente executa (ensureAppUsersTable,
+// readUserByUsername, readUserById). `failReads: true` simula uma falha de
+// infraestrutura (ex.: pool do Postgres/Hyperdrive saturado) na consulta que
+// authenticatedUser() faz a cada requisição para revalidar a sessão.
+function createFakeD1(user, { failReads = false } = {}) {
+  return {
+    prepare(sql) {
+      const statement = {
+        _args: [],
+        bind(...args) {
+          statement._args = args;
+          return statement;
+        },
+        async first() {
+          if (sql.includes("FROM app_users WHERE id =")) {
+            if (failReads) throw new Error("conexão com o banco de dados falhou");
+            return statement._args[0] === user.id ? user : null;
+          }
+          if (sql.includes("FROM app_users WHERE lower(username)")) {
+            const username = String(statement._args[0]).toLowerCase();
+            return user.username.toLowerCase() === username ? user : null;
+          }
+          return null;
+        },
+        async all() {
+          if (sql.includes("PRAGMA table_info")) {
+            return { results: ["company_id", "hierarchy", "sector"].map((name) => ({ name })) };
+          }
+          return { results: [] };
+        },
+        async run() {
+          return {};
+        },
+      };
+      return statement;
+    },
+    async batch(statements) {
+      return statements.map(() => ({}));
+    },
+  };
+}
+
+test("não trata falha de infraestrutura no banco como sessão inválida (evita loop de reload)", async () => {
+  const user = {
+    id: "user-real-1",
+    username: "renato",
+    displayName: "Renato",
+    email: "",
+    passwordHash: "x",
+    passwordSalt: "x",
+    role: "user",
+    accessGroup: "custom",
+    permissionsJson: "[]",
+    companyId: "",
+    hierarchy: "administrative",
+    sector: "",
+    active: 1,
+    sessionVersion: 1,
+    createdAt: "",
+    updatedAt: "",
+  };
+  const cookie = `unigames_session=${await signSession(env.APP_SESSION_SECRET, user.id, user.sessionVersion)}`;
+
+  const workingEnv = { ...env, DB: createFakeD1(user) };
+  const runtime = await worker();
+  const okResponse = await runtime.fetch(
+    new Request("http://localhost/api/session", { headers: { accept: "application/json", cookie } }),
+    workingEnv,
+    ctx,
+  );
+  assert.equal(okResponse.status, 200);
+
+  const brokenEnv = { ...env, DB: createFakeD1(user, { failReads: true }) };
+  const brokenRuntime = await worker();
+  const failingResponse = await brokenRuntime.fetch(
+    new Request("http://localhost/api/session", { headers: { accept: "application/json", cookie } }),
+    brokenEnv,
+    ctx,
+  );
+  // Uma falha transitória no banco precisa virar 503 (tente de novo), nunca
+  // 401 — um 401 aqui faria o cliente redirecionar para /login mesmo com a
+  // sessão válida, e como GET /login manda de volta quando a sessão é válida,
+  // isso gera o loop de recarregamento reportado pelo usuário.
+  assert.equal(failingResponse.status, 503);
+  assert.notEqual(failingResponse.status, 401);
+
+  const failingPageResponse = await brokenRuntime.fetch(
+    new Request("http://localhost/inicio", { headers: { accept: "text/html", cookie } }),
+    brokenEnv,
+    ctx,
+  );
+  assert.equal(failingPageResponse.status, 503);
+  assert.equal(failingPageResponse.headers.get("location"), null);
+});
+
 test("mantém a interface sem referências quebradas ou identificadores duplicados", async () => {
   const [html, layout, workerSource, envExample] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
