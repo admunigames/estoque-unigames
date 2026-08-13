@@ -16,50 +16,56 @@
       "name": "Insumos",
       "short_name": "Insumos",
       "url": "/insumos",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Saídas",
       "short_name": "Saídas",
       "url": "/saidas",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Captação",
       "short_name": "Captação",
       "url": "/captacao",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Instruções",
       "short_name": "Instruções",
       "url": "/instrucoes",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Missões",
       "short_name": "Missões",
       "url": "/missoes",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Tarefas",
       "short_name": "Tarefas",
       "url": "/tarefas",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Compras",
       "short_name": "Compras",
       "url": "/compras",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     }
   ]

@@ -9,8 +9,10 @@
 <meta name="apple-mobile-web-app-title" content="ESTOQUE">
 <meta name="format-detection" content="telephone=no">
 <title>UNIGAMES</title>
-  <link rel="icon" type="image/png" id="appFavicon" href="">
-  <link rel="apple-touch-icon" id="appleTouchIcon" href="">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="icon" type="image/png" id="appFavicon" href="/icon-32.png">
+  <link rel="apple-touch-icon" id="appleTouchIcon" href="/icon-180.png">
   <link rel="manifest" href="/manifest.webmanifest">
 <style>
   :root{
@@ -2628,7 +2630,7 @@
         <a class="nav-item sub-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" data-home-desc="Vendas e estoque baixo da sua loja." title="Relatório 41" href="/relatorio-41"><span class="nav-icon nav-icon-text" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></a>
         <a class="nav-item sub-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal" href="/estoque"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/><line x1="3" y1="19" x2="21" y2="19"/></svg></span><span class="nav-label">Estoque Fiscal</span></a>
         <a class="nav-item sub-item" id="navCompras" data-page="compras" data-permission="purchases" data-home-desc="Pedidos, recebimentos e divisões." title="Controle de Compras" href="/compras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><path d="M3.5 4h2.2l2 11.2a1.8 1.8 0 0 0 1.8 1.5h8a1.8 1.8 0 0 0 1.76-1.44L20.8 8H6.4"/></svg></span><span class="nav-label">Controle de Compras</span></a>
-        <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc="Solicitações de saída por defeito enviadas pelas lojas." title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5"/><path d="M11 12h9.5"/><path d="m16.5 8 4 4-4 4"/></svg></span><span class="nav-label">Saídas</span></a>
+        <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc="Saídas Gerais Solicitadas pelas lojas." title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5"/><path d="M11 12h9.5"/><path d="m16.5 8 4 4-4 4"/></svg></span><span class="nav-label">Saídas</span></a>
       </div>
     </div>
     <div class="nav-group">
@@ -3164,7 +3166,7 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Saídas</h2>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Registre e acompanhe solicitações de saída de produtos com defeito. O administrador conclui a baixa e o registro permanece no histórico.</p></div>
+        <div class="page-header-meta"><p class="page-desc">Registre e acompanhe as Saídas Gerais Solicitadas pelas lojas. O administrador conclui a baixa e o registro permanece no histórico.</p></div>
       </header>
 
       <section class="output-summary" id="outputSummary" aria-label="Resumo das saídas">
@@ -3174,14 +3176,15 @@
 
       <section class="output-register-panel" id="outputRegisterPanel">
         <div class="output-panel-head">
-          <div><h3>REGISTRAR SOLICITAÇÃO DE SAÍDA</h3><p id="outputRegisterDescription">Informe os dados do produto com defeito.</p></div>
+          <div><h3>REGISTRAR SOLICITAÇÃO DE SAÍDA</h3><p id="outputRegisterDescription">Informe os dados da saída.</p></div>
         </div>
         <form id="outputForm">
           <div class="output-form-grid">
             <div class="field"><label for="outputQuantity">QUANTIDADE</label><input id="outputQuantity" type="number" min="1" max="9999" step="1" required value="1"></div>
             <div class="field" id="outputCompanyField" hidden><label for="outputCompany">LOJA</label><select id="outputCompany"><option value="">SELECIONE A LOJA</option></select></div>
             <div class="field double"><label for="outputProductName">PRODUTO</label><input id="outputProductName" maxlength="180" required placeholder="Ex.: Controle DualSense PS5"></div>
-            <div class="field full"><label for="outputDefect">DEFEITO DO PRODUTO</label><textarea id="outputDefect" maxlength="1200" rows="3" required placeholder="Descreva o defeito que motivou a saída."></textarea></div>
+            <div class="field"><label for="outputResponsible">RESPONSÁVEL PELA SAÍDA</label><input id="outputResponsible" maxlength="120" required placeholder="Nome de quem é responsável pela saída"></div>
+            <div class="field full"><label for="outputDefect">DEFEITOS / OBSERVAÇÕES</label><textarea id="outputDefect" maxlength="1200" rows="3" required placeholder="Descreva o defeito ou o motivo da saída."></textarea></div>
           </div>
           <div class="output-form-actions"><button class="btn-accent" id="btnSaveOutput" type="submit">ENVIAR SOLICITAÇÃO</button></div>
           <div class="user-form-status" id="outputFormStatus" role="status" aria-live="polite"></div>
@@ -3194,7 +3197,7 @@
           <button class="btn-outline" id="btnRefreshOutputs" type="button">ATUALIZAR</button>
         </div>
         <div class="output-toolbar">
-          <div class="field search"><label for="outputSearch">BUSCAR</label><input id="outputSearch" type="search" placeholder="Produto, loja ou defeito"></div>
+          <div class="field search"><label for="outputSearch">BUSCAR</label><input id="outputSearch" type="search" placeholder="Produto, loja, responsável ou observação"></div>
           <div class="output-tabs" role="tablist" aria-label="Situação das saídas">
             <button class="output-tab active" type="button" role="tab" aria-selected="true" data-output-view="requested">PENDENTES</button>
             <button class="output-tab" type="button" role="tab" aria-selected="false" data-output-view="completed">HISTÓRICO</button>
@@ -3901,7 +3904,7 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Relatório 41</h2>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Identifique os produtos vendidos no dia anterior que ficaram com apenas 0 ou 1 unidade na loja.</p></div>
+        <div class="page-header-meta"><p class="page-desc">Identifique os produtos vendidos que ficaram com apenas 0 ou 1 unidade na loja.</p></div>
       </header>
 
       <section class="report41-panel">
@@ -3919,7 +3922,7 @@
         <div class="report41-upload-grid">
           <button class="report41-upload-card" id="btnReport41SalesUpload" type="button">
             <span class="report41-upload-icon" aria-hidden="true">↗</span>
-            <span><b>VENDAS DO DIA ANTERIOR</b><small id="report41SalesStatus">CLIQUE PARA CARREGAR O ARQUIVO XLS</small></span>
+            <span><b>VENDAS</b><small id="report41SalesStatus">CLIQUE PARA CARREGAR O ARQUIVO XLS</small></span>
           </button>
           <button class="report41-upload-card" id="btnReport41StockUpload" type="button">
             <span class="report41-upload-icon" aria-hidden="true">▥</span>
@@ -3929,7 +3932,7 @@
           <input type="file" id="fileReport41Stock" accept=".xls,.xlsx,.csv,.html,.htm" hidden>
         </div>
         <div class="error-box pull-error" id="report41Error"></div>
-        <div class="report41-help"><span aria-hidden="true">◆</span><span><b>CRITÉRIO:</b> entram no Relatório 41 somente produtos vendidos no dia anterior cujo estoque atual da loja seja 0 ou 1. Produtos com “Indicação”, “Cortesia” ou “Garantia” no nome são ignorados. O saldo “Empresa” vem do arquivo carregado em Cadastros → Base de Dados.</span></div>
+        <div class="report41-help"><span aria-hidden="true">◆</span><span><b>CRITÉRIO:</b> entram no Relatório 41 somente produtos vendidos cujo estoque atual da loja seja 0 ou 1. Produtos com “Indicação”, “Cortesia”, “Garantia” ou “Frete” no nome são ignorados. O saldo “Empresa” vem do arquivo carregado em Cadastros → Base de Dados.</span></div>
       </section>
 
       <section class="summary report41-summary" aria-label="Resumo do Relatório 41">
@@ -3965,13 +3968,13 @@
                 <tr>
                   <th>CÓDIGO</th>
                   <th>PRODUTO</th>
-                  <th style="text-align:right">VENDIDO ONTEM</th>
+                  <th style="text-align:right">VENDIDO</th>
                   <th style="text-align:right">ESTOQUE DA LOJA</th>
                   <th style="text-align:right">ESTOQUE DA EMPRESA</th>
                 </tr>
               </thead>
               <tbody id="report41Body">
-                <tr><td class="responsive-empty" colspan="5"><div class="pull-result-empty"><strong>RELATÓRIO AINDA NÃO DISPONÍVEL</strong><span>Carregue as vendas do dia anterior e o estoque atual da loja.</span></div></td></tr>
+                <tr><td class="responsive-empty" colspan="5"><div class="pull-result-empty"><strong>RELATÓRIO AINDA NÃO DISPONÍVEL</strong><span>Carregue as vendas e o estoque atual da loja.</span></div></td></tr>
               </tbody>
             </table>
           </div>
@@ -5718,7 +5721,7 @@
       .trim();
   }
 
-  const REPORT41_EXCLUDED_PRODUCT_TERMS = new Set(['indicacao','cortesia','garantia']);
+  const REPORT41_EXCLUDED_PRODUCT_TERMS = new Set(['indicacao','cortesia','garantia','frete']);
 
   function report41ExcludedProduct(name){
     const words = normalizeHeader(String(name || ''))
@@ -6321,7 +6324,7 @@
       report41StoreData.updatedAt = new Date().toISOString();
       await saveReport41StoreData();
       renderReport41();
-      showPurchaseToast((kind === 'sales' ? 'Vendas do dia anterior' : 'Estoque atual da loja')+' carregado para '+company.name+'.');
+      showPurchaseToast((kind === 'sales' ? 'Vendas' : 'Estoque atual da loja')+' carregado para '+company.name+'.');
     }catch(error){
       showReport41Error(error && error.message ? error.message : 'Não foi possível interpretar o arquivo.');
     }
@@ -6447,7 +6450,7 @@
     }
     if(!hasSales || !hasStock){
       const missing = [];
-      if(!hasSales) missing.push('Vendas do dia anterior');
+      if(!hasSales) missing.push('Vendas');
       if(!hasStock) missing.push('Estoque atual da loja');
       el('report41Body').innerHTML = '<tr><td class="responsive-empty" colspan="5"><div class="pull-result-empty"><strong>ARQUIVOS DA LOJA INCOMPLETOS</strong><span>Carregue: '+escapeHtml(missing.join(' e '))+'.</span></div></td></tr>';
       return;
@@ -6461,7 +6464,7 @@
         '<td class="codigo" data-label="Código">'+escapeHtml(item.codigo)+'</td>'+
         '<td class="nome" data-label="Produto"><span class="report41-product-name">'+escapeHtml(item.nome)+(item.zero ? '<span class="report41-siren" title="Produto zerado" aria-label="Produto zerado">🚨</span>' : '')+'</span>'+
           '<span class="report41-status '+(item.zero ? 'zero' : 'low')+'">'+(item.zero ? 'ZERADO' : '1 UNIDADE')+'</span></td>'+
-        '<td class="number" data-label="Vendido ontem">'+fmt(item.sales)+'</td>'+
+        '<td class="number" data-label="Vendido">'+fmt(item.sales)+'</td>'+
         '<td class="number" data-label="Estoque da loja">'+fmt(item.mainStock)+'</td>'+
         '<td class="number" data-label="Estoque da empresa">'+(typeof item.companyStock === 'number' ? fmt(item.companyStock) : '—')+'</td>'+
       '</tr>'
@@ -10654,7 +10657,9 @@ function renderHomeTasks(){
         '<div class="output-details">'+
           '<div class="output-detail"><span>LOJA</span><strong>'+
             escapeHtml(row.companyName || 'Loja')+'</strong></div>'+
-          '<div class="output-detail"><span>DEFEITO INFORMADO</span><strong>'+
+          '<div class="output-detail"><span>RESPONSÁVEL PELA SAÍDA</span><strong>'+
+            escapeHtml(row.responsibleName || '—')+'</strong></div>'+
+          '<div class="output-detail"><span>DEFEITOS / OBSERVAÇÕES</span><strong>'+
             escapeHtml(row.defect || '—')+'</strong></div>'+
         '</div><p class="output-history">'+history+'</p>'+
       '</div>'+
@@ -10679,7 +10684,7 @@ function renderHomeTasks(){
       if(row.status !== outputView) return false;
       if(!search) return true;
       return normalizeHeader([
-        row.productName,row.defect,row.companyName,row.createdByName,row.completedByName
+        row.productName,row.defect,row.companyName,row.responsibleName,row.createdByName,row.completedByName
       ].join(' ')).includes(search);
     });
   }
@@ -10756,6 +10761,7 @@ function renderHomeTasks(){
         body:JSON.stringify({
           quantity:Number(el('outputQuantity').value),
           productName:el('outputProductName').value,
+          responsibleName:el('outputResponsible').value,
           defect:el('outputDefect').value,
           companyId:canActAcrossStores('outputs:create') ? el('outputCompany').value : ''
         })

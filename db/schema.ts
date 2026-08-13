@@ -308,6 +308,7 @@ export const defectiveOutputs = pgTable(
     id: text("id").primaryKey(),
     quantity: integer("quantity").notNull(),
     productName: text("product_name").notNull(),
+    responsibleName: text("responsible_name").notNull().default(""),
     defect: text("defect").notNull(),
     companyId: text("company_id").notNull(),
     companyName: text("company_name").notNull().default(""),

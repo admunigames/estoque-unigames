@@ -637,6 +637,8 @@ function loginPage(options: {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#050d18">
+  <link rel="icon" type="image/png" href="/icon-32.png">
+  <link rel="apple-touch-icon" href="/icon-180.png">
   <title>Entrar · Unigames</title>
   <style>
     :root{color-scheme:dark;--bg:#030914;--panel:#081625;--cyan:#66d9ff;--blue:#4b8dff;--violet:#8b6cff;--mint:#65f7ce;--ink:#f5fbff;--soft:#9eb5c9;--line:rgba(125,210,255,.23)}
@@ -741,7 +743,9 @@ function passwordRecoveryPage(message = "", success = false): Response {
     : "";
   const html = `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#050d18"><title>Recuperar senha · Central Unigames</title>
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#050d18">
+<link rel="icon" type="image/png" href="/icon-32.png"><link rel="apple-touch-icon" href="/icon-180.png">
+<title>Recuperar senha · Central Unigames</title>
 <style>
 :root{color-scheme:dark;--bg:#030914;--cyan:#66d9ff;--blue:#4b8dff;--violet:#8b6cff;--ink:#f5fbff;--soft:#9eb5c9}*{box-sizing:border-box}
 body{margin:0;min-height:100vh;display:grid;place-items:center;overflow-x:hidden;padding:24px;background:radial-gradient(circle at 12% 15%,rgba(64,122,211,.24),transparent 32%),radial-gradient(circle at 88% 84%,rgba(103,77,198,.2),transparent 32%),linear-gradient(145deg,#030914,#071625 55%,#020711);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}

@@ -1,0 +1,1 @@
+ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL;
