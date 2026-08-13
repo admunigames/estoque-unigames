@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v33"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v34"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -859,7 +859,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v33"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v34"/);
 });
 
 test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
@@ -943,7 +943,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v33"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v34"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1055,7 +1055,7 @@ test("registra saídas por defeito por loja e preserva o histórico do administr
   assert.match(migration, /defective_outputs_company_created_idx/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v33"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v34"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1065,7 +1065,6 @@ test("usuário sem loja do setor Administrativo vê, altera status e exclui saí
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(route, /const allStores = actor\.role === "admin" \|\| isAdministrativeActor\(actor\)/);
   assert.match(route, /function isAdministrativeActor\(actor: Identity\) \{\s*return actor\.sector === "administrative";/);
   assert.match(route, /const result = allStores/);
   assert.match(route, /!can\(actor, "outputs:delete"\)/);
@@ -1082,6 +1081,38 @@ test("usuário sem loja do setor Administrativo vê, altera status e exclui saí
   assert.match(html, /value="outputs:delete"> Excluir saídas/);
   assert.match(html, /data-output-delete/);
   assert.match(html, /'outputs:delete':'Saídas: excluir'/);
+});
+
+test("Saídas: loja vê só a própria, conta sem loja com permissões completas vê todas, resumo só pra quem conclui e loja aparece na listagem", async () => {
+  const [html, route] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/outputs/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Item 3: usuário de loja só vê as próprias solicitações — filtro por company_id.
+  assert.match(route, /WHERE company_id=\?1/);
+  assert.match(route, /\.bind\(actor\.companyId\)/);
+
+  // Item 4: sem loja vinculada + permissões completas de Saídas também vê tudo,
+  // não só quem é do setor Administrativo.
+  assert.match(route, /const FULL_OUTPUTS_ACCESS = \[/);
+  assert.match(
+    route,
+    /function hasFullOutputsAccess\(actor: Identity\) \{\s*return FULL_OUTPUTS_ACCESS\.every/,
+  );
+  assert.match(
+    route,
+    /const hasCompany = COMPANY_PATTERN\.test\(actor\.companyId\);\s*const allStores =\s*actor\.role === "admin" \|\|\s*isAdministrativeActor\(actor\) \|\|\s*\(!hasCompany && hasFullOutputsAccess\(actor\)\);/,
+  );
+
+  // Item 1: contadores/resumo só aparecem pra quem tem permissão de concluir.
+  assert.match(html, /<section class="output-summary" id="outputSummary"/);
+  assert.match(html, /el\('outputSummary'\)\.hidden = !canAccess\('outputs:complete'\)/);
+
+  // Item 2: a loja solicitante aparece claramente em cada card da listagem.
+  assert.match(html, /const companyLabel = row\.companyName \|\| 'Loja não identificada'/);
+  assert.match(html, /class="output-company-badge"/);
+  assert.match(html, /SOLICITADA POR '\+escapeHtml\(row\.createdByName \|\| 'LOJA'\)\+\s*' · '\+escapeHtml\(companyLabel\)/);
 });
 
 test("separa insumos por loja, registra pedidos recorrentes e preserva recebimentos", async () => {
@@ -1155,7 +1186,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v33"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v34"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1200,7 +1231,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v33"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v34"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {

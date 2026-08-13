@@ -2045,6 +2045,7 @@
   .output-card-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .output-card-title strong{color:var(--ink);font:900 14px/1.35 var(--sans);overflow-wrap:anywhere;}
   .output-quantity{padding:5px 8px;border-radius:999px;background:rgba(79,134,189,.1);color:var(--ink-soft);font:800 8px/1 var(--mono);}
+  .output-company-badge{padding:5px 8px;border-radius:999px;background:rgba(225,173,73,.14);color:#e1ad49;font:800 8px/1 var(--mono);letter-spacing:.3px;}
   .output-details{display:grid;grid-template-columns:minmax(120px,.35fr) minmax(0,1fr);gap:8px;margin-top:12px;}
   .output-detail{padding:9px 10px;border:1px solid rgba(79,134,189,.2);border-radius:9px;background:rgba(79,134,189,.045);}
   .output-detail span{display:block;color:var(--ink-soft);font:800 7px/1.25 var(--mono);letter-spacing:.4px;}
@@ -3146,7 +3147,7 @@
         <div class="page-header-meta"><p class="page-desc">Registre e acompanhe solicitações de saída de produtos com defeito. O administrador conclui a baixa e o registro permanece no histórico.</p></div>
       </header>
 
-      <section class="output-summary" aria-label="Resumo das saídas">
+      <section class="output-summary" id="outputSummary" aria-label="Resumo das saídas">
         <article class="output-summary-card"><span>AGUARDANDO EFETUAÇÃO</span><strong id="outputRequestedCount">0</strong></article>
         <article class="output-summary-card completed"><span>HISTÓRICO EFETUADO</span><strong id="outputCompletedCount">0</strong></article>
       </section>
@@ -10607,16 +10608,19 @@ function renderHomeTasks(){
 
   function outputCardHtml(row){
     const completed = row.status === 'completed';
+    const companyLabel = row.companyName || 'Loja não identificada';
     const history = completed
       ? 'EFETUADA POR '+escapeHtml(row.completedByName || 'ADMINISTRADOR')+
         ' EM '+escapeHtml(outputDateTime(row.completedAt))
       : 'SOLICITADA POR '+escapeHtml(row.createdByName || 'LOJA')+
+        ' · '+escapeHtml(companyLabel)+
         ' EM '+escapeHtml(outputDateTime(row.createdAt));
     return '<article class="output-card'+(completed ? ' completed' : '')+'">'+
       '<div class="output-card-copy">'+
         '<div class="output-card-title"><span class="output-quantity">'+
           escapeHtml(String(row.quantity || 0))+' UN.</span><strong>'+
-          escapeHtml(row.productName || 'Produto sem nome')+'</strong></div>'+
+          escapeHtml(row.productName || 'Produto sem nome')+'</strong>'+
+          '<span class="output-company-badge">'+escapeHtml(companyLabel)+'</span></div>'+
         '<div class="output-details">'+
           '<div class="output-detail"><span>LOJA</span><strong>'+
             escapeHtml(row.companyName || 'Loja')+'</strong></div>'+
@@ -10650,14 +10654,22 @@ function renderHomeTasks(){
     });
   }
 
+  function outputsHasFullAccess(){
+    return ['outputs:view','outputs:create','outputs:complete','outputs:delete']
+      .every(permission => canAccess(permission));
+  }
+
   function renderOutputs(){
     const requested = outputRows.filter(row => row.status === 'requested').length;
     const completed = outputRows.filter(row => row.status === 'completed').length;
     el('outputRequestedCount').textContent = requested;
     el('outputCompletedCount').textContent = completed;
+    el('outputSummary').hidden = !canAccess('outputs:complete');
 
     const isAdmin = currentSession.role === 'admin';
-    const seesAllStores = isAdmin || normalizeHeader(currentSession.sector || '') === 'administrative';
+    const seesAllStores = isAdmin ||
+      normalizeHeader(currentSession.sector || '') === 'administrative' ||
+      (!currentSession.companyId && outputsHasFullAccess());
     el('outputRegisterPanel').hidden = !isAdmin && !currentSession.companyId;
     el('outputCompanyField').hidden = !isAdmin;
     el('outputCompany').required = isAdmin;

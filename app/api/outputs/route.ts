@@ -85,6 +85,21 @@ function isAdministrativeActor(actor: Identity) {
   return actor.sector === "administrative";
 }
 
+const FULL_OUTPUTS_ACCESS = [
+  "outputs:view",
+  "outputs:create",
+  "outputs:complete",
+  "outputs:delete",
+];
+
+// Qualquer usuário sem loja vinculada (não só setor Administrativo) que
+// tenha o conjunto completo de permissões de Saídas também deve ver todas
+// as lojas — do contrário o filtro por company_id nunca retornaria nada
+// pra essa conta, já que ela não tem loja própria.
+function hasFullOutputsAccess(actor: Identity) {
+  return FULL_OUTPUTS_ACCESS.every((permission) => actor.permissions.includes(permission));
+}
+
 function sameOrigin(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") return false;
@@ -152,8 +167,12 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const allStores = actor.role === "admin" || isAdministrativeActor(actor);
-    if (!allStores && !COMPANY_PATTERN.test(actor.companyId)) {
+    const hasCompany = COMPANY_PATTERN.test(actor.companyId);
+    const allStores =
+      actor.role === "admin" ||
+      isAdministrativeActor(actor) ||
+      (!hasCompany && hasFullOutputsAccess(actor));
+    if (!allStores && !hasCompany) {
       return jsonResponse(
         { error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA." },
         403,
