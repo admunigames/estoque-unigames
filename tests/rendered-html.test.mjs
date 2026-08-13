@@ -1362,7 +1362,7 @@ test("separa o Relatório 41 por loja, usa estoque geral e gera o TXT oficial", 
   assert.match(html, /id="btnReport41StockUpload"/);
   assert.match(html, /id="btnCompanyStockUpload"/);
   assert.match(html, /id="userCompanyId"/);
-  assert.match(html, /REPORT41_EXCLUDED_PRODUCT_TERMS = new Set\(\['indicacao','cortesia','garantia'\]\)/);
+  assert.match(html, /REPORT41_EXCLUDED_PRODUCT_TERMS = new Set\(\['indicacao','cortesia','garantia','frete'\]\)/);
   assert.match(html, /function report41ExcludedProduct\(name\)/);
   assert.match(html, /if\(report41ExcludedProduct\(nome\)\) continue/);
   assert.match(html, /function buildReport41Rows\(\)/);

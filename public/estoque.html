@@ -3903,7 +3903,7 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Relatório 41</h2>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Identifique os produtos vendidos no dia anterior que ficaram com apenas 0 ou 1 unidade na loja.</p></div>
+        <div class="page-header-meta"><p class="page-desc">Identifique os produtos vendidos que ficaram com apenas 0 ou 1 unidade na loja.</p></div>
       </header>
 
       <section class="report41-panel">
@@ -3921,7 +3921,7 @@
         <div class="report41-upload-grid">
           <button class="report41-upload-card" id="btnReport41SalesUpload" type="button">
             <span class="report41-upload-icon" aria-hidden="true">↗</span>
-            <span><b>VENDAS DO DIA ANTERIOR</b><small id="report41SalesStatus">CLIQUE PARA CARREGAR O ARQUIVO XLS</small></span>
+            <span><b>VENDAS</b><small id="report41SalesStatus">CLIQUE PARA CARREGAR O ARQUIVO XLS</small></span>
           </button>
           <button class="report41-upload-card" id="btnReport41StockUpload" type="button">
             <span class="report41-upload-icon" aria-hidden="true">▥</span>
@@ -3931,7 +3931,7 @@
           <input type="file" id="fileReport41Stock" accept=".xls,.xlsx,.csv,.html,.htm" hidden>
         </div>
         <div class="error-box pull-error" id="report41Error"></div>
-        <div class="report41-help"><span aria-hidden="true">◆</span><span><b>CRITÉRIO:</b> entram no Relatório 41 somente produtos vendidos no dia anterior cujo estoque atual da loja seja 0 ou 1. Produtos com “Indicação”, “Cortesia” ou “Garantia” no nome são ignorados. O saldo “Empresa” vem do arquivo carregado em Cadastros → Base de Dados.</span></div>
+        <div class="report41-help"><span aria-hidden="true">◆</span><span><b>CRITÉRIO:</b> entram no Relatório 41 somente produtos vendidos cujo estoque atual da loja seja 0 ou 1. Produtos com “Indicação”, “Cortesia”, “Garantia” ou “Frete” no nome são ignorados. O saldo “Empresa” vem do arquivo carregado em Cadastros → Base de Dados.</span></div>
       </section>
 
       <section class="summary report41-summary" aria-label="Resumo do Relatório 41">
@@ -3967,13 +3967,13 @@
                 <tr>
                   <th>CÓDIGO</th>
                   <th>PRODUTO</th>
-                  <th style="text-align:right">VENDIDO ONTEM</th>
+                  <th style="text-align:right">VENDIDO</th>
                   <th style="text-align:right">ESTOQUE DA LOJA</th>
                   <th style="text-align:right">ESTOQUE DA EMPRESA</th>
                 </tr>
               </thead>
               <tbody id="report41Body">
-                <tr><td class="responsive-empty" colspan="5"><div class="pull-result-empty"><strong>RELATÓRIO AINDA NÃO DISPONÍVEL</strong><span>Carregue as vendas do dia anterior e o estoque atual da loja.</span></div></td></tr>
+                <tr><td class="responsive-empty" colspan="5"><div class="pull-result-empty"><strong>RELATÓRIO AINDA NÃO DISPONÍVEL</strong><span>Carregue as vendas e o estoque atual da loja.</span></div></td></tr>
               </tbody>
             </table>
           </div>
@@ -5711,7 +5711,7 @@
       .trim();
   }
 
-  const REPORT41_EXCLUDED_PRODUCT_TERMS = new Set(['indicacao','cortesia','garantia']);
+  const REPORT41_EXCLUDED_PRODUCT_TERMS = new Set(['indicacao','cortesia','garantia','frete']);
 
   function report41ExcludedProduct(name){
     const words = normalizeHeader(String(name || ''))
@@ -6314,7 +6314,7 @@
       report41StoreData.updatedAt = new Date().toISOString();
       await saveReport41StoreData();
       renderReport41();
-      showPurchaseToast((kind === 'sales' ? 'Vendas do dia anterior' : 'Estoque atual da loja')+' carregado para '+company.name+'.');
+      showPurchaseToast((kind === 'sales' ? 'Vendas' : 'Estoque atual da loja')+' carregado para '+company.name+'.');
     }catch(error){
       showReport41Error(error && error.message ? error.message : 'Não foi possível interpretar o arquivo.');
     }
@@ -6440,7 +6440,7 @@
     }
     if(!hasSales || !hasStock){
       const missing = [];
-      if(!hasSales) missing.push('Vendas do dia anterior');
+      if(!hasSales) missing.push('Vendas');
       if(!hasStock) missing.push('Estoque atual da loja');
       el('report41Body').innerHTML = '<tr><td class="responsive-empty" colspan="5"><div class="pull-result-empty"><strong>ARQUIVOS DA LOJA INCOMPLETOS</strong><span>Carregue: '+escapeHtml(missing.join(' e '))+'.</span></div></td></tr>';
       return;
@@ -6454,7 +6454,7 @@
         '<td class="codigo" data-label="Código">'+escapeHtml(item.codigo)+'</td>'+
         '<td class="nome" data-label="Produto"><span class="report41-product-name">'+escapeHtml(item.nome)+(item.zero ? '<span class="report41-siren" title="Produto zerado" aria-label="Produto zerado">🚨</span>' : '')+'</span>'+
           '<span class="report41-status '+(item.zero ? 'zero' : 'low')+'">'+(item.zero ? 'ZERADO' : '1 UNIDADE')+'</span></td>'+
-        '<td class="number" data-label="Vendido ontem">'+fmt(item.sales)+'</td>'+
+        '<td class="number" data-label="Vendido">'+fmt(item.sales)+'</td>'+
         '<td class="number" data-label="Estoque da loja">'+fmt(item.mainStock)+'</td>'+
         '<td class="number" data-label="Estoque da empresa">'+(typeof item.companyStock === 'number' ? fmt(item.companyStock) : '—')+'</td>'+
       '</tr>'
