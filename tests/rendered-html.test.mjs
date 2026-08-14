@@ -889,7 +889,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(html, /id="captureDefects"/);
   assert.match(html, /id="captureColor"/);
   assert.match(html, /id="captureOriginCompany"/);
-  assert.match(html, /currentSession\.role === 'admin' \? el\('captureOriginCompany'\)\.value : ''/);
+  assert.match(html, /canActAcrossStores\('captures:create'\) \? el\('captureOriginCompany'\)\.value : ''/);
   assert.match(html, /AGUARDANDO ASSISTÊNCIA/);
   assert.match(html, /RECEBIDO PELA ASSISTÊNCIA/);
   assert.match(html, /DISPONÍVEL PARA SEPARAÇÃO/);
@@ -923,8 +923,8 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(captureShared, /accessGroup === "assistencia"/);
   assert.match(captureShared, /username\.includes\("assistencia"\)/);
   assert.match(captureShared, /displayName\.includes\("assistencia"\)/);
-  assert.match(route, /const allStores = actor\.role === "admin" \|\| isAssistanceActor\(actor\)/);
-  assert.match(route, /actor\.role === "admin" \? requestedOriginCompanyId : actor\.companyId/);
+  assert.match(route, /const allStores = canSeeAllStores\(actor, "captures:view"\) \|\| isAssistanceActor\(actor\)/);
+  assert.match(route, /const canChooseCompany = canSeeAllStores\(actor, "captures:create"\)/);
   assert.match(route, /ESCOLHA A LOJA DE ORIGEM/);
   assert.match(route, /isAssistanceActor\(actor\) \|\| actor\.permissions\.includes\("captures:receive"\)/);
   assert.match(route, /SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA/);
@@ -964,7 +964,7 @@ test("cadastra jogos direto para separação e os remove da fila da assistência
   assert.match(captureShared, /"PS4",\s+"PS3",\s+"PS5",\s+"Nintendo Switch",\s+"Xbox One\/Series"/);
   assert.match(captureShared, /GAME_CONDITIONS = new Set<GameCondition>\(\["Novo", "Semi Novo"\]\)/);
   assert.match(captureShared, /game_name AS gameName/);
-  assert.match(captureShared, /actor\.role === "admin" \|\| actor\.companyId === row\.originCompanyId/);
+  assert.match(captureShared, /actor\.companyId === row\.originCompanyId \|\|\s*canSeeAllStores\(actor, "captures:view"\)/);
 
   assert.match(html, /<option value="jogo">JOGOS<\/option>/);
   assert.match(html, /id="captureGameName"/);
@@ -1083,11 +1083,11 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM defective_outputs"\)\.all\(\)/);
   assert.match(workerSource, /defectiveOutputs: defectiveOutputs\.results \?\? \[\]/);
 
+  assert.match(route, /const canChooseCompany = canSeeAllStores\(actor, "outputs:create"\) \|\| isAdministrativeActor\(actor\)/);
   assert.match(route, /responsible_name AS responsibleName/);
   assert.match(route, /const responsibleName = safeText\(body\.responsibleName, 120\)/);
   assert.match(route, /INFORME O RESPONSÁVEL PELA SAÍDA/);
   assert.match(route, /INFORME OS DEFEITOS\/OBSERVAÇÕES DA SAÍDA/);
-  assert.match(route, /actor\.role === "admin" \? requestedCompanyId : actor\.companyId/);
   assert.match(route, /WHERE company_id=\?1/);
   assert.match(route, /!can\(actor, "outputs:complete"\)/);
   assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA CONCLUIR UMA SAÍDA/);
@@ -1143,17 +1143,16 @@ test("Saídas: loja vê só a própria, conta sem loja com permissões completas
   assert.match(route, /WHERE company_id=\?1/);
   assert.match(route, /\.bind\(actor\.companyId\)/);
 
-  // Item 4: sem loja vinculada + permissões completas de Saídas também vê tudo,
-  // não só quem é do setor Administrativo.
-  assert.match(route, /const FULL_OUTPUTS_ACCESS = \[/);
+  // Item 4 (generalizado): sem loja vinculada + a permissão granular daquela
+  // ação também vê/age em todas as lojas — via o helper único
+  // canSeeAllStores() em app/lib/access-scope.ts, reaproveitado por todos os
+  // módulos (não mais uma checagem redundante por módulo).
+  assert.match(route, /import \{ canSeeAllStores, hasCompany, NO_COMPANY_ERROR \} from "\.\.\/\.\.\/lib\/access-scope"/);
   assert.match(
     route,
-    /function hasFullOutputsAccess\(actor: Identity\) \{\s*return FULL_OUTPUTS_ACCESS\.every/,
+    /const allStores = canSeeAllStores\(actor, "outputs:view"\) \|\| isAdministrativeActor\(actor\);/,
   );
-  assert.match(
-    route,
-    /const hasCompany = COMPANY_PATTERN\.test\(actor\.companyId\);\s*const allStores =\s*actor\.role === "admin" \|\|\s*isAdministrativeActor\(actor\) \|\|\s*\(!hasCompany && hasFullOutputsAccess\(actor\)\);/,
-  );
+  assert.doesNotMatch(route, /hasFullOutputsAccess/);
 
   // Item 1: contadores/resumo só aparecem pra quem tem permissão de concluir.
   assert.match(html, /<section class="output-summary" id="outputSummary"/);
@@ -1214,8 +1213,8 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(liveEvents, /path === "\/api\/supplies" \|\| path\.startsWith\("\/api\/supplies\/"\)/);
   assert.match(liveEvents, /module: "supplies"/);
 
-  assert.match(route, /actor\.role === "admin" \? requestedCompanyId : actor\.companyId/);
-  assert.match(route, /actor\.role !== "admin" && existing\.companyId !== actor\.companyId/);
+  assert.match(route, /const canChooseCompany = canSeeAllStores\(actor, "supplies:request"\)/);
+  assert.match(route, /!canSeeAllStores\(actor, "supplies:receive"\) && existing\.companyId !== actor\.companyId/);
   assert.match(route, /INSERT INTO supply_request_events/);
   assert.match(route, /ON CONFLICT \(supply_item_id, request_date\) DO NOTHING/);
   assert.match(route, /request_date/);
@@ -1623,4 +1622,104 @@ test("cron do worker sempre resolve o driver Postgres antes de rodar as rotinas 
 
   assert.match(workerSource, /async function resolvePostgresBackedEnv\(rawEnv: Env\): Promise<Env> \{/);
   assert.match(workerSource, /if \(process\.env\.DB_DRIVER !== "postgres"\) return rawEnv;/);
+});
+
+test("regra genérica: usuário sem loja com a permissão do módulo enxerga e age em todas as lojas", async () => {
+  const [
+    accessScope,
+    outputsRoute,
+    capturesRoute,
+    capturesShared,
+    missionsRoute,
+    routinesRoute,
+    suppliesRoute,
+    suppliesMissingRoute,
+    suppliesRequestsRoute,
+    workerSource,
+  ] = await Promise.all([
+    readFile(new URL("../app/lib/access-scope.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/outputs/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/captures/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/captures/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/missions/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/routines/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/missing/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/requests/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+  ]);
+
+  // O helper único existe e implementa a regra: admin sempre vê tudo; quem
+  // tem loja fica preso a ela mesmo com a permissão; só quem NÃO tem loja é
+  // que a permissão do módulo decide se vê/age em todas as lojas.
+  assert.match(accessScope, /export function canSeeAllStores\(actor: ScopeActor, requiredPermission: string\): boolean \{/);
+  assert.match(accessScope, /if \(actor\.role === "admin"\) return true;/);
+  assert.match(accessScope, /if \(hasCompany\(actor\.companyId\)\) return false;/);
+  assert.match(accessScope, /return actor\.permissions\.includes\(requiredPermission\);/);
+  assert.match(accessScope, /export const NO_COMPANY_ERROR = "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA\."/);
+
+  // Cada módulo afetado importa e reaproveita o helper central, em vez de
+  // reimplementar a própria checagem (raiz do bug em Captação/Saídas/etc.).
+  for (const [name, source] of [
+    ["outputs/route.ts", outputsRoute],
+    ["captures/route.ts", capturesRoute],
+    ["captures/shared.ts", capturesShared],
+    ["missions/route.ts", missionsRoute],
+    ["routines/route.ts", routinesRoute],
+    ["supplies/route.ts", suppliesRoute],
+    ["supplies/missing/route.ts", suppliesMissingRoute],
+    ["supplies/requests/route.ts", suppliesRequestsRoute],
+  ]) {
+    assert.match(source, /from ["'].*lib\/access-scope["']/, `${name} não importa o helper central`);
+    assert.match(source, /canSeeAllStores\(/, `${name} não usa canSeeAllStores()`);
+  }
+
+  // Saídas: sem loja + outputs:view enxerga todas (não precisa mais das 4
+  // permissões nem só do setor Administrativo).
+  assert.match(outputsRoute, /canSeeAllStores\(actor, "outputs:view"\) \|\| isAdministrativeActor\(actor\)/);
+  // Captação: idem para captures:view (view) e captures:create (cadastro).
+  assert.match(capturesRoute, /canSeeAllStores\(actor, "captures:view"\) \|\| isAssistanceActor\(actor\)/);
+  assert.match(capturesRoute, /canSeeAllStores\(actor, "captures:create"\)/);
+  // Missões: sem loja + missions:view passa a poder escolher a loja no
+  // filtro "store", igual ao administrador.
+  assert.match(missionsRoute, /canSeeAllStores\(actor, "missions:view"\)/);
+  assert.match(routinesRoute, /canSeeAllStores\(actor, "missions:view"\)/);
+  // Insumos: view/request/receive cobertos nos três arquivos de rota.
+  assert.match(suppliesRoute, /canSeeAllSupplyStores\(actor\)/);
+  assert.match(suppliesMissingRoute, /canSeeAllStores\(actor, "supplies:request"\)/);
+  assert.match(suppliesRequestsRoute, /canSeeAllStores\(actor, "supplies:request"\)/);
+  assert.match(suppliesRequestsRoute, /canSeeAllStores\(actor, "supplies:receive"\)/);
+  assert.match(suppliesRequestsRoute, /canSeeAllStores\(actor, "supplies:stock_out"\)/);
+
+  // Relatório 41: mesma regra aplicada ao acesso por loja dentro do worker
+  // (não é uma rota Next.js, então não importa o helper — a lógica vive
+  // direto no gate do shared-state).
+  assert.match(
+    workerSource,
+    /const hasFullAccessWithoutCompany = !user\.companyId && hasPermission\(user, "report41:view"\);/,
+  );
+  assert.match(workerSource, /if \(!boundToOwnStore && !hasFullAccessWithoutCompany\) return false;/);
+});
+
+test("regra genérica no front-end: canActAcrossStores() substitui os antigos gates isAdmin-only por módulo", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+
+  assert.match(html, /function canActAcrossStores\(permission\)\{/);
+  assert.match(html, /if\(currentSession\.role === 'admin'\) return true;/);
+  assert.match(html, /if\(currentSession\.companyId\) return false;/);
+  assert.match(html, /return canAccess\(permission\);/);
+
+  for (const permission of [
+    "captures:create",
+    "outputs:create",
+    "supplies:request",
+    "missions:view",
+    "report41:view",
+  ]) {
+    assert.match(
+      html,
+      new RegExp(`canActAcrossStores\\('${permission}'\\)`),
+      `nenhum uso de canActAcrossStores('${permission}') encontrado`,
+    );
+  }
 });

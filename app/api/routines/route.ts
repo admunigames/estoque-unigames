@@ -1,6 +1,7 @@
 import webPush from "web-push";
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
+import { canSeeAllStores } from "../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -282,11 +283,11 @@ export async function GET(request: Request) {
       .all<RoutineTaskRow>();
 
     let tasks = taskResult.results ?? [];
-    if (actor.role !== "admin") {
-      // Usuário de loja só vê a própria tarefa. Usuário sem loja (acesso
-      // personalizado, ex.: quem cadastrou a rotina) acompanha as tarefas das
-      // rotinas gerais e das que ele mesmo criou, sem que elas virem tarefa
-      // pessoal dele — mesma regra aplicada às missões.
+    if (!canSeeAllStores(actor, "missions:view") && actor.role !== "admin") {
+      // Usuário de loja só vê a própria tarefa. Usuário sem loja e sem a
+      // permissão de acesso geral acompanha só as rotinas gerais e as que
+      // ele mesmo criou, sem que elas virem tarefa pessoal dele — mesma
+      // regra aplicada às missões.
       tasks = actor.companyId
         ? tasks.filter((task) => task.companyId === actor.companyId)
         : tasks.filter((task) => task.scope === "general" || task.createdBy === actor.id);

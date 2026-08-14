@@ -1,5 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
+import { canSeeAllStores, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -119,7 +120,7 @@ function upcomingMondayRecife(date = new Date()) {
 }
 
 function scopedCompany(actor: Identity, requestedCompanyId: string) {
-  if (actor.role !== "admin") return actor.companyId;
+  if (!canSeeAllStores(actor, "supplies:request")) return actor.companyId;
   return COMPANY_PATTERN.test(requestedCompanyId) ? requestedCompanyId : "";
 }
 
@@ -208,7 +209,7 @@ export async function GET(request: Request) {
     return itemRows.every((item) => item.receivedStatus === "received");
   }
 
-  if (actor.role === "admin" && url.searchParams.get("queue") === "1") {
+  if ((actor.role === "admin" || canSeeAllStores(actor, "supplies:stock_out")) && url.searchParams.get("queue") === "1") {
     const history = url.searchParams.get("view") === "history";
     const weekStart = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("weekStart") || "")
       ? String(url.searchParams.get("weekStart"))
@@ -258,10 +259,7 @@ export async function GET(request: Request) {
   if (!COMPANY_PATTERN.test(companyId)) {
     return jsonResponse(
       {
-        error:
-          actor.role === "admin"
-            ? "ESCOLHA A LOJA."
-            : "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.",
+        error: canSeeAllStores(actor, "supplies:request") ? "ESCOLHA A LOJA." : NO_COMPANY_ERROR,
       },
       400,
     );
@@ -366,16 +364,11 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const requestedCompanyId = safeText(body.companyId, 80);
-    const companyId =
-      actor.role === "admin" ? requestedCompanyId : actor.companyId;
+    const canChooseCompany = canSeeAllStores(actor, "supplies:request");
+    const companyId = canChooseCompany ? requestedCompanyId : actor.companyId;
     if (!COMPANY_PATTERN.test(companyId)) {
       return jsonResponse(
-        {
-          error:
-            actor.role === "admin"
-              ? "ESCOLHA A LOJA."
-              : "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.",
-        },
+        { error: canChooseCompany ? "ESCOLHA A LOJA." : NO_COMPANY_ERROR },
         400,
       );
     }
@@ -615,7 +608,7 @@ async function handleReceiveAction(actor: Identity, body: JsonMap) {
       .bind(itemId)
       .first<{ id: string; separated: number; companyId: string }>();
     if (!item) return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
-    if (actor.role !== "admin" && item.companyId !== actor.companyId) {
+    if (!canSeeAllStores(actor, "supplies:receive") && item.companyId !== actor.companyId) {
       return jsonResponse({ error: "VOCÊ NÃO PODE ALTERAR OUTRA LOJA." }, 403);
     }
     if (!item.separated) {

@@ -1,5 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
+import { canSeeAllStores, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -114,7 +115,7 @@ function upcomingMondayRecife(date = new Date()) {
 }
 
 function scopedCompany(actor: Identity, requestedCompanyId: string) {
-  if (actor.role !== "admin") return actor.companyId;
+  if (!canSeeAllStores(actor, "supplies:request")) return actor.companyId;
   return COMPANY_PATTERN.test(requestedCompanyId) ? requestedCompanyId : "";
 }
 
@@ -164,10 +165,9 @@ export async function GET(request: Request) {
   if (!COMPANY_PATTERN.test(companyId)) {
     return jsonResponse(
       {
-        error:
-          actor.role === "admin"
-            ? "ESCOLHA A LOJA."
-            : "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.",
+        error: canSeeAllStores(actor, "supplies:request")
+          ? "ESCOLHA A LOJA."
+          : NO_COMPANY_ERROR,
       },
       400,
     );
@@ -213,16 +213,11 @@ export async function PATCH(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const requestedCompanyId = safeText(body.companyId, 80);
-    const companyId =
-      actor.role === "admin" ? requestedCompanyId : actor.companyId;
+    const canChooseCompany = canSeeAllStores(actor, "supplies:request");
+    const companyId = canChooseCompany ? requestedCompanyId : actor.companyId;
     if (!COMPANY_PATTERN.test(companyId)) {
       return jsonResponse(
-        {
-          error:
-            actor.role === "admin"
-              ? "ESCOLHA A LOJA."
-              : "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.",
-        },
+        { error: canChooseCompany ? "ESCOLHA A LOJA." : NO_COMPANY_ERROR },
         400,
       );
     }

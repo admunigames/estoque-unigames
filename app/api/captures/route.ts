@@ -1,5 +1,6 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
+import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
 import {
   CAPTURE_SELECT,
   CAPTURE_STATUSES,
@@ -143,28 +144,25 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const allStores = actor.role === "admin" || isAssistanceActor(actor);
-    if (!allStores && !COMPANY_PATTERN.test(actor.companyId)) {
-      return jsonResponse(
-        { error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA." },
-        403,
-      );
+    const allStores = canSeeAllStores(actor, "captures:view") || isAssistanceActor(actor);
+    if (!allStores && !hasCompany(actor.companyId)) {
+      return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
     }
-    const result = actor.role === "admin"
+    const result = isAssistanceActor(actor) && actor.role !== "admin"
       ? await database
           .prepare(
             `${CAPTURE_SELECT}
+             WHERE category <> 'jogo'
              ORDER BY CASE status
                WHEN 'ready' THEN 0 WHEN 'submitted' THEN 1
                WHEN 'received' THEN 2 ELSE 3 END,
                updated_at DESC`,
           )
           .all<CaptureRow>()
-      : isAssistanceActor(actor)
+      : allStores
         ? await database
             .prepare(
               `${CAPTURE_SELECT}
-               WHERE category <> 'jogo'
                ORDER BY CASE status
                  WHEN 'ready' THEN 0 WHEN 'submitted' THEN 1
                  WHEN 'received' THEN 2 ELSE 3 END,
@@ -218,16 +216,11 @@ export async function POST(request: Request) {
     const body = (await request.json()) as JsonMap;
 
     const requestedOriginCompanyId = safeText(body.originCompanyId, 80);
-    const originCompanyId =
-      actor.role === "admin" ? requestedOriginCompanyId : actor.companyId;
+    const canChooseCompany = canSeeAllStores(actor, "captures:create");
+    const originCompanyId = canChooseCompany ? requestedOriginCompanyId : actor.companyId;
     if (!COMPANY_PATTERN.test(originCompanyId)) {
       return jsonResponse(
-        {
-          error:
-            actor.role === "admin"
-              ? "ESCOLHA A LOJA DE ORIGEM."
-              : "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.",
-        },
+        { error: canChooseCompany ? "ESCOLHA A LOJA DE ORIGEM." : NO_COMPANY_ERROR },
         400,
       );
     }

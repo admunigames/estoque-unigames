@@ -4922,6 +4922,15 @@
     return currentSession.permissions.some(p => p === permission || p.indexOf(permission + ':') === 0);
   }
 
+  // Espelha canSeeAllStores() em app/lib/access-scope.ts: quem tem loja
+  // vinculada fica preso a ela; quem não tem só age em qualquer loja (feito
+  // "como admin") se tiver a permissão específica daquela ação.
+  function canActAcrossStores(permission){
+    if(currentSession.role === 'admin') return true;
+    if(currentSession.companyId) return false;
+    return canAccess(permission);
+  }
+
   function canManageUsers(){
     return currentSession.role === 'admin' || canAccess('users:manage');
   }
@@ -6143,7 +6152,7 @@
   }
 
   function ensureReport41StoreSelection(){
-    if(currentSession.role !== 'admin'){
+    if(!canActAcrossStores('report41:view')){
       report41StoreId = companies.some(company => company.id === currentSession.companyId)
         ? currentSession.companyId
         : '';
@@ -6169,7 +6178,7 @@
     ensureReport41StoreSelection();
     select.innerHTML = '<option value="">Selecione a loja</option>'+storeOptions;
     select.value = report41StoreId;
-    select.disabled = currentSession.role !== 'admin';
+    select.disabled = !canActAcrossStores('report41:view');
   }
 
   function renderCompanyStockStatus(){
@@ -8546,7 +8555,7 @@
     if(file) handleCompanyStockFile(file);
   });
   el('report41StoreSelect').addEventListener('change', async event => {
-    if(currentSession.role !== 'admin') return;
+    if(!canActAcrossStores('report41:view')) return;
     report41StoreId = event.target.value;
     await loadReport41StoreData();
   });
@@ -9448,7 +9457,7 @@ function renderHomeTasks(){
     const tabs = el('missionTabs');
     if(!tabs) return;
     const items = [{view:'general',companyId:'',label:'MISSÃO GERAL'}];
-    if(currentSession.role === 'admin'){
+    if(canActAcrossStores('missions:view')){
       pullStoreCompanies().forEach(company => items.push({
         view:'store',
         companyId:company.id,
@@ -10309,11 +10318,12 @@ function renderHomeTasks(){
 
     const isAdmin = currentSession.role === 'admin';
     const isAssistance = isAssistanceSession();
-    const canRegister = isAdmin ||
+    const canChooseOrigin = canActAcrossStores('captures:create');
+    const canRegister = canChooseOrigin ||
       (!isAssistance && Boolean(currentSession.companyId));
     el('captureRegisterPanel').hidden = !canRegister;
-    el('captureOriginCompanyField').hidden = !isAdmin;
-    el('captureOriginCompany').required = isAdmin;
+    el('captureOriginCompanyField').hidden = !canChooseOrigin;
+    el('captureOriginCompany').required = canChooseOrigin;
     el('captureOriginCompany').innerHTML = '<option value="">SELECIONE A LOJA</option>'+
       companies.map(company =>
         '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
@@ -10452,7 +10462,7 @@ function renderHomeTasks(){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           category:el('captureCategory').value,
-          originCompanyId:currentSession.role === 'admin' ? el('captureOriginCompany').value : '',
+          originCompanyId:canActAcrossStores('captures:create') ? el('captureOriginCompany').value : '',
           productName:el('captureProductName').value,
           gameName:el('captureGameName').value,
           gameConsole:el('captureGameConsole').value,
@@ -10611,11 +10621,6 @@ function renderHomeTasks(){
     });
   }
 
-  function outputsHasFullAccess(){
-    return ['outputs:view','outputs:create','outputs:complete','outputs:delete']
-      .every(permission => canAccess(permission));
-  }
-
   function renderOutputs(){
     const requested = outputRows.filter(row => row.status === 'requested').length;
     const completed = outputRows.filter(row => row.status === 'completed').length;
@@ -10624,14 +10629,15 @@ function renderHomeTasks(){
     el('outputSummary').hidden = !canAccess('outputs:complete');
 
     const isAdmin = currentSession.role === 'admin';
+    const canChooseCompany = canActAcrossStores('outputs:create');
     const seesAllStores = isAdmin ||
       normalizeHeader(currentSession.sector || '') === 'administrative' ||
-      (!currentSession.companyId && outputsHasFullAccess());
-    el('outputRegisterPanel').hidden = !isAdmin && !currentSession.companyId;
-    el('outputCompanyField').hidden = !isAdmin;
-    el('outputCompany').required = isAdmin;
+      canActAcrossStores('outputs:view');
+    el('outputRegisterPanel').hidden = !canChooseCompany && !currentSession.companyId;
+    el('outputCompanyField').hidden = !canChooseCompany;
+    el('outputCompany').required = canChooseCompany;
     renderOutputCompanyOptions();
-    el('outputRegisterDescription').textContent = isAdmin
+    el('outputRegisterDescription').textContent = canChooseCompany
       ? 'Informe os dados e escolha a loja responsável pela solicitação.'
       : 'A solicitação será vinculada automaticamente à sua loja.';
     el('outputBoardDescription').textContent = seesAllStores
@@ -10689,7 +10695,7 @@ function renderHomeTasks(){
           productName:el('outputProductName').value,
           responsibleName:el('outputResponsible').value,
           defect:el('outputDefect').value,
-          companyId:currentSession.role === 'admin' ? el('outputCompany').value : ''
+          companyId:canActAcrossStores('outputs:create') ? el('outputCompany').value : ''
         })
       });
       el('outputForm').reset();
@@ -10764,10 +10770,11 @@ function renderHomeTasks(){
 
   function updateSupplyRoleVisibility(){
     const isAdmin = currentSession.role === 'admin';
-    const canDeleteProducts = canAccess('supplies_delete');
-    el('supplyRegisterPanel').hidden = !isAdmin && !currentSession.companyId;
-    el('supplyCompanyField').hidden = !isAdmin;
-    el('supplyCompany').required = isAdmin;
+    const canDeleteProducts = canAccess('supplies:delete');
+    const canChooseCompany = canActAcrossStores('supplies:request');
+    el('supplyRegisterPanel').hidden = !canChooseCompany && !currentSession.companyId;
+    el('supplyCompanyField').hidden = !canChooseCompany;
+    el('supplyCompany').required = canChooseCompany;
     el('supplyAdminPanel').hidden = !isAdmin && !canDeleteProducts;
     document.querySelectorAll('[data-supply-admin-tab]').forEach(button => {
       button.hidden = !isAdmin && button.dataset.supplyAdminTab !== 'produtos';
@@ -10775,7 +10782,7 @@ function renderHomeTasks(){
     el('btnToggleNewProductForm').hidden = !isAdmin;
     if(!isAdmin && canDeleteProducts) setSupplyAdminTab('produtos');
     renderSupplyCompanyOptions();
-    el('supplyRegisterDescription').textContent = isAdmin
+    el('supplyRegisterDescription').textContent = canChooseCompany
       ? 'Escolha a loja para marcar os produtos que estão faltando.'
       : 'Marque os produtos que estão faltando. Na segunda-feira isso vira a base da solicitação.';
   }
@@ -10899,12 +10906,12 @@ function renderHomeTasks(){
 
   async function loadSupplyMissing(){
     if(!canAccess('supplies') || supplyMissingLoading) return;
-    const isAdmin = currentSession.role === 'admin';
-    const companyId = isAdmin ? el('supplyCompany').value : currentSession.companyId;
+    const canChooseCompany = canActAcrossStores('supplies:request');
+    const companyId = canChooseCompany ? el('supplyCompany').value : currentSession.companyId;
     if(!el('supplyMissingWeekSelect').options.length) renderSupplyMissingWeekOptions();
     const weekStart = el('supplyMissingWeekSelect').value || supplyUpcomingMonday();
     if(!companyId){
-      el('supplyMissingGroups').innerHTML = isAdmin
+      el('supplyMissingGroups').innerHTML = canChooseCompany
         ? '<div class="supply-empty">Escolha a loja para ver os produtos.</div>'
         : '<div class="supply-empty">Seu usuário precisa estar vinculado a uma loja.</div>';
       return;
@@ -10941,8 +10948,7 @@ function renderHomeTasks(){
   el('supplyMissingGroups').addEventListener('change',async event => {
     const checkbox = event.target.closest('[data-missing-product]');
     if(!checkbox) return;
-    const isAdmin = currentSession.role === 'admin';
-    const companyId = isAdmin ? el('supplyCompany').value : currentSession.companyId;
+    const companyId = canActAcrossStores('supplies:request') ? el('supplyCompany').value : currentSession.companyId;
     const productId = checkbox.dataset.missingProduct;
     const marked = checkbox.checked;
     checkbox.disabled = true;
@@ -11057,9 +11063,12 @@ function renderHomeTasks(){
   });
 
   async function loadSupplyRequest(){
-    const isAdmin = currentSession.role === 'admin';
-    el('supplyRequestPanel').hidden = isAdmin || !canAccess('supplies');
-    if(isAdmin || !canAccess('supplies') || supplyRequestLoading) return;
+    // Painel de "solicitação da semana" é uma lista pessoal da própria loja
+    // — não faz sentido pra quem enxerga todas as lojas sem ter uma própria
+    // (administrador ou acesso geral sem vínculo), mesma regra dos dois.
+    const managesAllStores = currentSession.role === 'admin' || canActAcrossStores('supplies:request');
+    el('supplyRequestPanel').hidden = managesAllStores || !canAccess('supplies');
+    if(managesAllStores || !canAccess('supplies') || supplyRequestLoading) return;
     supplyRequestLoading = true;
     try{
       const weekStart = el('supplyMissingWeekSelect').value || supplyUpcomingMonday();
@@ -11311,8 +11320,7 @@ function renderHomeTasks(){
   }
 
   function supplyProductRowHtml(product){
-    const isAdmin = currentSession.role === 'admin';
-    if(isAdmin && product.id === supplyProductEditingId){
+    if(canAccess('supplies:manage_catalog') && product.id === supplyProductEditingId){
       return '<tr class="supply-product-edit-row" data-product-row="'+escapeHtml(product.id)+'">'+
         '<td><input type="text" maxlength="180" value="'+escapeHtml(product.name)+'" data-product-name-input></td>'+
         '<td><select data-product-category-input>'+
@@ -11331,8 +11339,8 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(product.categoryName)+'</td>'+
       '<td>'+supplyProductStatusHtml(product)+'</td>'+
       '<td class="supply-product-actions">'+
-        (isAdmin ? '<button type="button" data-product-edit="'+escapeHtml(product.id)+'">EDITAR</button>' : '')+
-        (canAccess('supplies_delete') ? '<button type="button" class="delete" data-product-delete="'+escapeHtml(product.id)+'">EXCLUIR</button>' : '')+
+        (canAccess('supplies:manage_catalog') ? '<button type="button" data-product-edit="'+escapeHtml(product.id)+'">EDITAR</button>' : '')+
+        (canAccess('supplies:delete') ? '<button type="button" class="delete" data-product-delete="'+escapeHtml(product.id)+'">EXCLUIR</button>' : '')+
       '</td>'+
     '</tr>';
   }
@@ -11462,7 +11470,7 @@ function renderHomeTasks(){
 
   async function loadSupplyAdminData(){
     const isAdmin = currentSession.role === 'admin';
-    if(!isAdmin && !canAccess('supplies_delete')) return;
+    if(!isAdmin && !canAccess('supplies:delete') && !canAccess('supplies:manage_catalog')) return;
     if(isAdmin) loadSupplyDashboard();
     try{
       const [categoriesData,productsData] = await Promise.all([
@@ -11749,14 +11757,15 @@ function renderHomeTasks(){
         (row.items.length ? row.items.map(item => supplySeparationItemHtml(item,done)).join('') : '<div class="supply-empty">Nenhum produto marcado — só observação.</div>')+
       '</div>'+
       (row.note ? '<div class="supply-separation-note">OBSERVAÇÃO: '+escapeHtml(row.note)+'</div>' : '')+
-      (canAccess('supplies_delete')
+      (canAccess('supplies:delete')
         ? '<div class="supply-separation-actions supply-product-actions"><button type="button" class="delete" data-request-delete="'+escapeHtml(row.id)+'">EXCLUIR SOLICITAÇÃO</button></div>'
         : '')+
     '</div>';
   }
 
   async function loadSupplySeparationQueue(){
-    if(currentSession.role !== 'admin' || supplySeparationLoading) return;
+    const canSeeQueue = currentSession.role === 'admin' || canActAcrossStores('supplies:stock_out');
+    if(!canSeeQueue || supplySeparationLoading) return;
     supplySeparationLoading = true;
     el('supplySeparationList').innerHTML = '<div class="supply-empty">Carregando solicitações…</div>';
     try{
@@ -11950,8 +11959,8 @@ function renderHomeTasks(){
 
   function supplyExitAvailableTypes(){
     const types = [];
-    if(canAccess('supplies_out')) types.push({value:'out',label:'SAÍDA'});
-    if(canAccess('supplies_in')) types.push({value:'in',label:'ENTRADA'});
+    if(canAccess('supplies:stock_out')) types.push({value:'out',label:'SAÍDA'});
+    if(canAccess('supplies:stock_in')) types.push({value:'in',label:'ENTRADA'});
     return types;
   }
 

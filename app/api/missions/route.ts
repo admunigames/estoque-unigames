@@ -1,6 +1,7 @@
 import webPush from "web-push";
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
+import { canSeeAllStores } from "../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -167,10 +168,20 @@ function missionsForDate(
   selectedCompanyId: string,
 ) {
   let visible = missions.filter((mission) => missionOccursOn(mission, date));
-  if (actor.role !== "admin") {
-    // Usuários sem loja vinculada (acessos personalizados, ex.: missions:view
-    // sem companyId) ainda enxergam as missões gerais e as que criaram — só
-    // não têm como ver/comparar contra missões de uma loja específica.
+  if (canSeeAllStores(actor, "missions:view")) {
+    if (view === "general") {
+      visible = visible.filter((mission) => mission.scope === "general");
+    } else if (view === "store") {
+      visible = visible.filter(
+        (mission) =>
+          mission.scope === "store" &&
+          COMPANY_PATTERN.test(selectedCompanyId) &&
+          mission.companyId === selectedCompanyId,
+      );
+    }
+  } else if (actor.role !== "admin") {
+    // Usuários com loja vinculada só veem as missões gerais, as da própria
+    // loja e as que criaram.
     visible = visible.filter((mission) =>
       view === "general"
         ? mission.scope === "general"
@@ -179,15 +190,6 @@ function missionsForDate(
           : mission.scope === "general" ||
             (Boolean(actor.companyId) && mission.companyId === actor.companyId) ||
             mission.createdBy === actor.id,
-    );
-  } else if (view === "general") {
-    visible = visible.filter((mission) => mission.scope === "general");
-  } else if (view === "store") {
-    visible = visible.filter(
-      (mission) =>
-        mission.scope === "store" &&
-        COMPANY_PATTERN.test(selectedCompanyId) &&
-        mission.companyId === selectedCompanyId,
     );
   }
 
@@ -381,10 +383,20 @@ export async function GET(request: Request) {
       .all<MissionRow>();
 
     let missions = (result.results ?? []).filter((mission) => missionOccursOn(mission, date));
-    if (actor.role !== "admin") {
-      // Usuários sem loja vinculada (acessos personalizados, ex.: missions:view
-      // sem companyId) ainda enxergam as missões gerais e as que criaram — só
-      // não têm como ver/comparar contra missões de uma loja específica.
+    if (canSeeAllStores(actor, "missions:view")) {
+      if (view === "general") {
+        missions = missions.filter((mission) => mission.scope === "general");
+      } else if (view === "store") {
+        missions = missions.filter(
+          (mission) =>
+            mission.scope === "store" &&
+            COMPANY_PATTERN.test(selectedCompanyId) &&
+            mission.companyId === selectedCompanyId,
+        );
+      }
+    } else if (actor.role !== "admin") {
+      // Usuários com loja vinculada só veem as missões gerais, as da própria
+      // loja e as que criaram.
       missions = missions.filter((mission) => {
         if (view === "general") return mission.scope === "general";
         if (view === "store") {
@@ -396,15 +408,6 @@ export async function GET(request: Request) {
           mission.createdBy === actor.id
         );
       });
-    } else if (view === "general") {
-      missions = missions.filter((mission) => mission.scope === "general");
-    } else if (view === "store") {
-      missions = missions.filter(
-        (mission) =>
-          mission.scope === "store" &&
-          COMPANY_PATTERN.test(selectedCompanyId) &&
-          mission.companyId === selectedCompanyId,
-      );
     }
 
     const completionResult = await database
