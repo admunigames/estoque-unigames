@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v37"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -859,10 +859,10 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v37"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
 });
 
-test("implementa a captação por loja com fluxo protegido de assistência e destino", async () => {
+test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
   const [html, workerSource, route, captureShared, schema, migration, sectorMigration, manifest, serviceWorker] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
@@ -896,18 +896,18 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(html, /data-capture-action="receive"/);
   assert.match(html, /data-capture-action="ready"/);
   assert.match(html, /data-capture-action="assign"/);
-  assert.match(html, /function isAssistanceSession\(\)/);
-  assert.match(html, /username\.includes\('assistencia'\)/);
-  assert.match(html, /displayName\.includes\('assistencia'\)/);
+  assert.match(html, /function canReceiveCaptures\(\)\{/);
   assert.match(html, /value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO/);
   assert.match(html, /value="captures:view"> Visualizar/);
   assert.match(html, /captacao:'\/captacao'/);
   assert.match(html, /captacao:'captures'/);
   assert.match(html, /if\(livePageName === 'captacao'\) await loadCaptures\(\)/);
+  assert.doesNotMatch(html, /isAssistanceSession/);
+  assert.doesNotMatch(html, /username\.includes\('assistencia'\)/);
+  assert.doesNotMatch(html, /displayName\.includes\('assistencia'\)/);
 
   assert.match(workerSource, /"captures"/);
   assert.match(workerSource, /assistance: \["captures:view", "captures:create", "captures:receive"\]/);
-  assert.match(workerSource, /normalized === "assistencia"/);
   assert.match(workerSource, /const sector: UserSector = accessGroup === "assistance" \? "assistance" : requestedSector/);
   assert.match(workerSource, /const companyId = sector \? "" : requestedCompanyId/);
   assert.match(workerSource, /path === "\/captacao" \|\| path\.startsWith\("\/api\/captures"\)/);
@@ -915,21 +915,30 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM captured_products"\)\.all\(\)/);
   assert.match(workerSource, /capturedProducts: capturedProducts\.results \?\? \[\]/);
   assert.match(workerSource, /headers\.delete\("x-unigames-live-company-id"\)/);
+  // resolveAccessGroup (que forçava accessGroup="assistance" só por causa do
+  // username "assistencia", ignorando permissões custom concedidas) foi
+  // removido — accessGroup agora é sempre normalizeAccessGroup(valor salvo).
+  assert.doesNotMatch(workerSource, /normalized === "assistencia"/);
+  assert.doesNotMatch(workerSource, /function resolveAccessGroup/);
+  assert.match(workerSource, /const accessGroup = role === "admin"\s*\? "administrator"\s*: normalizeAccessGroup\(row\.accessGroup\)/);
+  assert.match(workerSource, /const accessGroup = normalizeAccessGroup\(body\.accessGroup\)/);
+  // Canal de aviso em tempo real de captação passa a ser calculado pela
+  // permissão captures:receive, não mais por setor/grupo/nome de usuário.
+  assert.match(workerSource, /return hasPermission\(user, "captures:receive"\) \? \["assistance"\] : \[\];/);
+  assert.doesNotMatch(workerSource, /user\.username\.toLowerCase\(\)\.includes\("assistencia"\)/);
   assert.match(liveEvents, /module: "captures"/);
   assert.match(liveEvents, /category === "jogo" \? \[\] : \["assistance"\]/);
 
-  assert.match(captureShared, /accessGroup === "assistance"/);
-  assert.match(captureShared, /actor\.sector === "assistance"/);
-  assert.match(captureShared, /accessGroup === "assistencia"/);
-  assert.match(captureShared, /username\.includes\("assistencia"\)/);
-  assert.match(captureShared, /displayName\.includes\("assistencia"\)/);
-  assert.match(route, /const allStores = canSeeAllStores\(actor, "captures:view"\) \|\| isAssistanceActor\(actor\)/);
+  assert.doesNotMatch(captureShared, /isAssistanceActor/);
+  assert.match(route, /const allStores =\s*canSeeAllStores\(actor, "captures:view"\) \|\|\s*canSeeAllStores\(actor, "captures:receive"\) \|\|\s*canSeeAllStores\(actor, "captures:assign"\)/);
   assert.match(route, /const canChooseCompany = canSeeAllStores\(actor, "captures:create"\)/);
   assert.match(route, /ESCOLHA A LOJA DE ORIGEM/);
-  assert.match(route, /isAssistanceActor\(actor\) \|\| actor\.permissions\.includes\("captures:receive"\)/);
-  assert.match(route, /SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA/);
+  assert.match(route, /actor\.role !== "admin" && actor\.permissions\.includes\("captures:receive"\)/);
+  assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA ALTERAR ESTA ETAPA/);
   assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA DEFINIR O DESTINO/);
   assert.match(route, /existing\.status !== "submitted"/);
+  assert.doesNotMatch(route, /isAssistanceActor/);
+  assert.doesNotMatch(route, /A ASSISTÊNCIA NÃO PODE CADASTRAR PRODUTOS CAPTADOS/);
   assert.match(html, /id="userSector"/);
   assert.match(schema, /sector: text\("sector"\)/);
   assert.match(sectorMigration, /SET "sector" = 'assistance', "company_id" = ''/);
@@ -943,7 +952,7 @@ test("implementa a captação por loja com fluxo protegido de assistência e des
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v37"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -972,7 +981,7 @@ test("cadastra jogos direto para separação e os remove da fila da assistência
   assert.match(html, /id="captureGameCondition"[\s\S]*value="Novo"[\s\S]*value="Semi Novo"/);
   assert.match(html, /el\('captureValue'\)\.required = isGame/);
   assert.match(html, /gameName:el\('captureGameName'\)\.value/);
-  assert.match(html, /isAssistanceSession\(\) && row\.category === 'jogo'/);
+  assert.match(html, /canReceiveCaptures\(\) && row\.category === 'jogo'/);
 
   assert.match(route, /body\.category === "jogo"/);
   assert.match(route, /WHERE category <> 'jogo'/);
@@ -1105,7 +1114,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v37"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1279,7 +1288,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v37"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1324,7 +1333,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v37"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -1721,8 +1730,8 @@ test("regra genérica: usuário sem loja com a permissão do módulo enxerga e a
   // Saídas: sem loja + outputs:view enxerga todas (não precisa mais das 4
   // permissões nem só do setor Administrativo).
   assert.match(outputsRoute, /canSeeAllStores\(actor, "outputs:view"\) \|\| isAdministrativeActor\(actor\)/);
-  // Captação: idem para captures:view (view) e captures:create (cadastro).
-  assert.match(capturesRoute, /canSeeAllStores\(actor, "captures:view"\) \|\| isAssistanceActor\(actor\)/);
+  // Captação: idem para captures:view/receive/assign (view) e captures:create (cadastro).
+  assert.match(capturesRoute, /canSeeAllStores\(actor, "captures:view"\) \|\|/);
   assert.match(capturesRoute, /canSeeAllStores\(actor, "captures:create"\)/);
   // Missões: sem loja + missions:view passa a poder escolher a loja no
   // filtro "store", igual ao administrador.
@@ -1831,4 +1840,73 @@ test("Insumos: usuário sem loja com acesso total ao módulo enxerga e age em to
   assert.match(stockRoute, /if \(isManager && COMPANY_PATTERN\.test\(requestedCompanyId\)\)/);
   assert.match(stockRoute, /if \(!isManager\) \{\s*\n\s*bindings\.push\(actor\.id\);/);
   assert.match(stockRoute, /const limit = isManager \? \(hasFilters \? 300 : 50\) : 20;/);
+});
+
+test("remove o fluxo especial de assistência: acesso 100% via permissões granulares", async () => {
+  const [
+    workerSource,
+    captureShared,
+    capturesRoute,
+    captureUploadRoute,
+    outputsRoute,
+    suppliesRoute,
+    suppliesRequestsRoute,
+    suppliesMissingRoute,
+    html,
+  ] = await Promise.all([
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/captures/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/captures/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/captures/upload/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/outputs/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/requests/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/missing/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+  ]);
+
+  // Bug relatado: resolveAccessGroup forçava accessGroup="assistance" (e o
+  // pacote fixo de permissões dessa preset) sempre que o username fosse
+  // literalmente "assistencia" — mesmo que o admin tivesse escolhido "custom"
+  // e concedido Insumos/Saídas manualmente no cadastro. Isso descartava
+  // silenciosamente a escolha do admin tanto ao salvar (handleAdminUsers)
+  // quanto ao resolver a sessão (storedUser/publicUser).
+  assert.doesNotMatch(workerSource, /function resolveAccessGroup/);
+  assert.doesNotMatch(workerSource, /if \(normalized === "assistencia"\) return "assistance";/);
+
+  // Nenhum módulo mais detecta "é assistência?" por setor/grupo/nome de
+  // usuário — nem em Captação (onde o fluxo existia) nem em Insumos/Saídas
+  // (onde nunca deveria ter influenciado nada, mas o usuário suspeitou que
+  // sim, já que a causa real — resolveAccessGroup — é global).
+  for (const [name, source] of [
+    ["worker/index.ts", workerSource],
+    ["captures/shared.ts", captureShared],
+    ["captures/route.ts", capturesRoute],
+    ["captures/upload/route.ts", captureUploadRoute],
+    ["outputs/route.ts", outputsRoute],
+    ["supplies/route.ts", suppliesRoute],
+    ["supplies/requests/route.ts", suppliesRequestsRoute],
+    ["supplies/missing/route.ts", suppliesMissingRoute],
+    ["estoque.html", html],
+  ]) {
+    assert.doesNotMatch(source, /isAssistanceActor/, `${name} ainda referencia isAssistanceActor`);
+    assert.doesNotMatch(source, /isAssistanceSession/, `${name} ainda referencia isAssistanceSession`);
+  }
+
+  // O setor "Assistência" continua existindo só como metadado organizacional
+  // (rótulo no cadastro), sem gate de acesso vinculado.
+  assert.match(html, /sectorNames = \{administrative:'Administrativo',assistance:'Assistência'\}/);
+  assert.match(html, /<option value="assistance">ASSISTÊNCIA<\/option>/);
+
+  // Captação: quem recebe/prepara e define destino passa a ser controlado só
+  // por captures:receive / captures:assign, sem bloqueio hardcoded pra criar.
+  assert.match(html, /function canReceiveCaptures\(\)\{/);
+  assert.match(html, /return currentSession\.role !== 'admin' && canAccess\('captures:receive'\);/);
+  assert.doesNotMatch(capturesRoute, /A ASSISTÊNCIA NÃO PODE CADASTRAR PRODUTOS CAPTADOS/);
+  assert.doesNotMatch(captureUploadRoute, /A ASSISTÊNCIA NÃO PODE CADASTRAR PRODUTOS CAPTADOS/);
+
+  // Canal de aviso em tempo real (WebSocket) também passa a ser calculado
+  // pela permissão granular, não mais por identidade.
+  assert.match(workerSource, /function liveConnectionGroups\(user: AuthenticatedUser\): string\[\] \{/);
+  assert.match(workerSource, /return hasPermission\(user, "captures:receive"\) \? \["assistance"\] : \[\];/);
 });

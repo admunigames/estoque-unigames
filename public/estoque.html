@@ -10116,18 +10116,10 @@ function renderHomeTasks(){
     jogo:'JOGO'
   };
 
-  function isAssistanceSession(){
-    const sector = normalizeHeader(currentSession.sector || '');
-    const accessGroup = normalizeHeader(currentSession.accessGroup || '');
-    const username = normalizeHeader(currentSession.username || '');
-    const displayName = normalizeHeader(currentSession.displayName || '');
-    return currentSession.role !== 'admin' &&
-      canAccess('captures') &&
-      (sector === 'assistance' ||
-        accessGroup === 'assistance' ||
-        accessGroup === 'assistencia' ||
-        username.includes('assistencia') ||
-        displayName.includes('assistencia'));
+  // Quem recebe/prepara captações (não-admin) — 100% baseado na permissão
+  // granular captures:receive, sem detecção especial por setor/nome.
+  function canReceiveCaptures(){
+    return currentSession.role !== 'admin' && canAccess('captures:receive');
   }
 
   async function captureApiRequest(options){
@@ -10173,7 +10165,7 @@ function renderHomeTasks(){
 
   function captureActionsHtml(row){
     const actions = [];
-    const canReceive = currentSession.role !== 'admin' && (isAssistanceSession() || canAccess('captures:receive'));
+    const canReceive = canReceiveCaptures();
     if(canReceive && row.category !== 'jogo' && !row.parentCaptureId){
       if(row.status === 'submitted'){
         actions.push('<button class="capture-action" type="button" data-capture-action="receive" data-capture-key="'+escapeHtml(row.id)+'">MARCAR COMO RECEBIDO</button>');
@@ -10295,7 +10287,7 @@ function renderHomeTasks(){
     const status = el('captureStatusFilter').value;
     const search = normalizeHeader(el('captureSearch').value || '');
     return topLevel.filter(row => {
-      if(isAssistanceSession() && row.category === 'jogo') return false;
+      if(canReceiveCaptures() && row.category === 'jogo') return false;
       const children = childrenByParent[row.id] || [];
       if(status){
         const statusMatches = row.status === status || children.some(child => child.status === status);
@@ -10317,10 +10309,9 @@ function renderHomeTasks(){
     el('captureAssignedCount').textContent = counts.assigned;
 
     const isAdmin = currentSession.role === 'admin';
-    const isAssistance = isAssistanceSession();
     const canChooseOrigin = canActAcrossStores('captures:create');
     const canRegister = canChooseOrigin ||
-      (!isAssistance && Boolean(currentSession.companyId));
+      (canAccess('captures:create') && Boolean(currentSession.companyId));
     el('captureRegisterPanel').hidden = !canRegister;
     el('captureOriginCompanyField').hidden = !canChooseOrigin;
     el('captureOriginCompany').required = canChooseOrigin;
@@ -10331,9 +10322,9 @@ function renderHomeTasks(){
     el('captureRegisterDescription').textContent = isAdmin
       ? 'Cadastre um produto por vez e escolha obrigatoriamente a loja de origem.'
       : 'Cadastre um produto por vez. A loja de origem será identificada automaticamente pelo usuário.';
-    el('captureBoardDescription').textContent = currentSession.role === 'admin'
-      ? 'Visão completa para definir o destino dos produtos liberados pela assistência e dos jogos disponíveis imediatamente.'
-      : isAssistance
+    el('captureBoardDescription').textContent = isAdmin
+      ? 'Visão completa para definir o destino dos produtos recebidos e dos jogos disponíveis imediatamente.'
+      : canReceiveCaptures()
         ? 'Receba os produtos e libere-os quando estiverem disponíveis para separação.'
         : 'Acompanhe somente os produtos cadastrados pela sua loja.';
     const {topLevel,childrenByParent} = captureTree();
