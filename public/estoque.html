@@ -12784,7 +12784,9 @@ function renderHomeTasks(){
     if(freshLogin) navigateToPage('inicio',{replace:true,scroll:false,smooth:false});
     else syncPageFromLocation(false);
     checkIntegrationHealth();
-    const needsCompanies = canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41');
+    const needsCompanies = canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41') ||
+      canActAcrossStores('outputs:create') || canActAcrossStores('captures:create') ||
+      canActAcrossStores('supplies:request') || canActAcrossStores('missions:view');
     if(needsCompanies){
       const companiesPromise = loadCompanies();
       const catalogPromise = loadCatalog();

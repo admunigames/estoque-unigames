@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v39"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -859,7 +859,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v39"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -952,7 +952,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v39"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1114,7 +1114,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v39"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1261,6 +1261,45 @@ test("Saídas: usuário sem loja e sem ser admin (ex.: Assistência com outputs:
   );
 });
 
+test("Saídas: a lista de lojas do seletor é carregada e liberada pro usuário sem loja com outputs:create (causa raiz real do 'campo vazio')", async () => {
+  // Causa raiz de verdade do bug repetido ("a Assistência não consegue
+  // escolher loja"): o campo de seleção SEMPRE apareceu corretamente pra
+  // ela (canActAcrossStores('outputs:create') já era true), mas o
+  // <select> ficava sem nenhuma opção porque:
+  // (1) o front-end só chamava loadCompanies() se o usuário tivesse
+  //     database/stock/pulls/report41 — nenhuma dessas é usada por quem
+  //     só tem permissões de Saídas/Captação/Insumos/Missões;
+  // (2) mesmo chamando, o worker bloqueava a LEITURA de "companies_list"
+  //     em /api/shared-state atrás desse mesmo grupo de permissões,
+  //     não relacionado a Saídas.
+  const [html, workerSource] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Front-end: loadCompanies() roda pra qualquer módulo que deixa um
+  // usuário sem loja escolher a loja de destino, não só database/stock/
+  // pulls/report41.
+  assert.match(
+    html,
+    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\);/,
+  );
+
+  // Back-end: leitura de companies_list liberada pra qualquer autenticado
+  // (não é dado sensível — é só a referência usada pelos seletores de
+  // loja de vários módulos); a escrita (Cadastros > Lojas) segue restrita
+  // pelo branch padrão de sharedStatePermission().
+  assert.match(
+    workerSource,
+    /if \(key === "companies_list" && \(request\.method === "GET" \|\| request\.method === "HEAD"\)\) \{\s*return true;\s*\}/,
+  );
+  // A checagem vem ANTES do cálculo de `required` (senão a exceção não
+  // bypassaria o gate de stock\/database\/pulls\/report41).
+  const bypassIndex = workerSource.indexOf('key === "companies_list"');
+  const requiredIndex = workerSource.indexOf("const required = sharedStatePermission(");
+  assert.ok(bypassIndex > -1 && requiredIndex > -1 && bypassIndex < requiredIndex);
+});
+
 test("separa insumos por loja, registra pedidos recorrentes e preserva recebimentos", async () => {
   const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
     await Promise.all([
@@ -1332,7 +1371,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v39"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1377,7 +1416,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v38"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v39"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {

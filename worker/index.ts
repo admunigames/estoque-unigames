@@ -1099,6 +1099,16 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     // "DADOS COMPARTILHADOS" na sidebar, sem gate de módulo no HTML) — não
     // deve depender de permissão de nenhum módulo específico.
     if (key === "__shared_health__") return true;
+    // A LEITURA da lista de lojas (id+nome, sem dado sensível) é usada por
+    // vários módulos pra deixar quem não tem loja escolher a loja de
+    // destino (Saídas, Captação, Missões, Insumos...) — gateá-la atrás de
+    // stock/database/pulls/report41 (só o que o branch padrão abaixo
+    // libera) deixava esses usuários com o seletor de loja sempre vazio,
+    // mesmo com a permissão certa do próprio módulo. A escrita (Cadastros
+    // > Lojas) continua restrita normalmente pelo branch padrão.
+    if (key === "companies_list" && (request.method === "GET" || request.method === "HEAD")) {
+      return true;
+    }
     const required = sharedStatePermission(
       key,
       scope,
