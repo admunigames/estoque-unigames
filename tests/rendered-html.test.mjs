@@ -1164,6 +1164,50 @@ test("Saídas: loja vê só a própria, conta sem loja com permissões completas
   assert.match(html, /SOLICITADA POR '\+escapeHtml\(row\.createdByName \|\| 'LOJA'\)\+\s*' · '\+escapeHtml\(companyLabel\)/);
 });
 
+test("Saídas — Regra 1 (usuário com loja só cadastra/visualiza/histórico da própria) e Regra 2 (sem loja + outputs:view vê todas)", async () => {
+  const [route, accessScope, html] = await Promise.all([
+    readFile(new URL("../app/api/outputs/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/access-scope.ts", import.meta.url), "utf8"),
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+  ]);
+
+  // Regra 1 — quem tem loja fica preso a ela mesmo com a permissão do
+  // módulo: canSeeAllStores() nega allStores antes de olhar permissões.
+  assert.match(
+    accessScope,
+    /if \(hasCompany\(actor\.companyId\)\) return false;/,
+  );
+  // GET (visualizar/histórico): filtra por company_id quando não é allStores.
+  assert.match(
+    route,
+    /const allStores = canSeeAllStores\(actor, "outputs:view"\) \|\| isAdministrativeActor\(actor\);/,
+  );
+  assert.match(route, /WHERE company_id=\?1/);
+  assert.match(route, /\.bind\(actor\.companyId\)/);
+  // POST (cadastrar): usuário com loja nunca escolhe outra empresa.
+  assert.match(
+    route,
+    /const canChooseCompany = canSeeAllStores\(actor, "outputs:create"\) \|\| isAdministrativeActor\(actor\);/,
+  );
+  assert.match(route, /const companyId = canChooseCompany \? requestedCompanyId : actor\.companyId;/);
+  // Concluir é restrito só pela permissão granular outputs:complete, nunca
+  // liberado automaticamente pra quem tem loja — regra já existente mantida.
+  assert.match(route, /!can\(actor, "outputs:complete"\)/);
+  assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA CONCLUIR UMA SAÍDA/);
+
+  // Regra 2 — sem loja vinculada + a permissão específica da ação (aqui,
+  // outputs:view) enxerga todas as lojas, igual a um administrador.
+  assert.match(
+    accessScope,
+    /return actor\.permissions\.includes\(requiredPermission\);/,
+  );
+
+  // Front-end: botão de concluir só aparece com a permissão específica,
+  // não por ter ou não loja vinculada.
+  assert.match(html, /canAccess\('outputs:complete'\) && !completed/);
+  assert.match(html, /MARCAR COMO FEITO<\/button>/);
+});
+
 test("separa insumos por loja, registra pedidos recorrentes e preserva recebimentos", async () => {
   const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
     await Promise.all([
