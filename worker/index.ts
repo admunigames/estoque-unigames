@@ -320,12 +320,6 @@ function normalizeSector(value: unknown): UserSector {
   return value === "administrative" || value === "assistance" || value === "deposit" ? value : "";
 }
 
-function resolveAccessGroup(storedValue: unknown, username: string): AccessGroup {
-  const normalized = username.trim().toLowerCase();
-  if (normalized === "assistencia") return "assistance";
-  return normalizeAccessGroup(storedValue);
-}
-
 function accessForGroup(group: AccessGroup, requested: unknown) {
   if (group === "custom") {
     return { role: "user" as const, permissions: normalizePermissions(requested) };
@@ -348,7 +342,7 @@ function storedUser(row: StoredUserRow): AuthenticatedUser {
   const role = row.role === "admin" ? "admin" : "user";
   const accessGroup = role === "admin"
     ? "administrator"
-    : resolveAccessGroup(row.accessGroup, row.username);
+    : normalizeAccessGroup(row.accessGroup);
   const permissions = role === "admin"
     ? [...ALL_PERMISSIONS]
     : accessGroup === "custom"
@@ -1125,12 +1119,10 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
 }
 
 function liveConnectionGroups(user: AuthenticatedUser): string[] {
-  const assistance =
-    user.sector === "assistance" ||
-    user.accessGroup === "assistance" ||
-    user.username.toLowerCase().includes("assistencia") ||
-    user.displayName.toLowerCase().includes("assistencia");
-  return assistance ? ["assistance"] : [];
+  // Canal de aviso em tempo real p/ quem pode receber/preparar captações —
+  // baseado só na permissão granular, não mais em setor/grupo/nome de
+  // usuário (o fluxo especial de "assistência" foi removido).
+  return hasPermission(user, "captures:receive") ? ["assistance"] : [];
 }
 
 function connectLiveUpdates(
@@ -1208,7 +1200,7 @@ function sameOrigin(request: Request, url: URL): boolean {
 
 function publicUser(row: StoredUserRow) {
   const role = row.role === "admin" ? "admin" : "user";
-  const accessGroup = role === "admin" ? "administrator" : resolveAccessGroup(row.accessGroup, row.username);
+  const accessGroup = role === "admin" ? "administrator" : normalizeAccessGroup(row.accessGroup);
   return {
     id: row.id,
     username: row.username,
@@ -1328,7 +1320,7 @@ async function handleAdminUsers(
   const requestedCompanyId = /^c[a-z0-9]{6,40}$/i.test(String(body.companyId ?? "").trim())
     ? String(body.companyId ?? "").trim()
     : "";
-  const accessGroup = resolveAccessGroup(body.accessGroup, username);
+  const accessGroup = normalizeAccessGroup(body.accessGroup);
   const hierarchy = normalizeHierarchy(body.hierarchy);
   const requestedSector = normalizeSector(body.sector);
   const sector: UserSector = accessGroup === "assistance" ? "assistance" : requestedSector;

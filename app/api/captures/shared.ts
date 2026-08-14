@@ -124,20 +124,6 @@ export function canAccessCaptures(actor: Identity) {
   );
 }
 
-// Helper central p/ identificar contas de assistência — reaproveitado por
-// todas as rotas de captação (lista, cadastro, ações de fluxo e foto) para
-// manter a mesma regra de negócio em um único lugar.
-export function isAssistanceActor(actor: Identity) {
-  const displayName = actor.displayName.toLowerCase();
-  return (
-    actor.sector === "assistance" ||
-    actor.accessGroup === "assistance" ||
-    actor.accessGroup === "assistencia" ||
-    actor.username.includes("assistencia") ||
-    displayName.includes("assistencia")
-  );
-}
-
 export function canSeeCapturedValue(actor: Identity, row: CaptureRow) {
   return (
     actor.role === "admin" ||
@@ -150,7 +136,7 @@ export function canSeePhoto(actor: Identity, row: CaptureRow) {
   return (
     actor.role === "admin" ||
     actor.companyId === row.originCompanyId ||
-    isAssistanceActor(actor) ||
+    actor.permissions.includes("captures:receive") ||
     canSeeAllStores(actor, "captures:view")
   );
 }

@@ -12,7 +12,6 @@ import {
   canAccessCaptures,
   companyName,
   identity,
-  isAssistanceActor,
   isValidPhotoKey,
   jsonResponse,
   safeText,
@@ -144,11 +143,17 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const allStores = canSeeAllStores(actor, "captures:view") || isAssistanceActor(actor);
+    const allStores =
+      canSeeAllStores(actor, "captures:view") ||
+      canSeeAllStores(actor, "captures:receive") ||
+      canSeeAllStores(actor, "captures:assign");
     if (!allStores && !hasCompany(actor.companyId)) {
       return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
     }
-    const result = isAssistanceActor(actor) && actor.role !== "admin"
+    // Quem só recebe/prepara (sem ver o quadro completo) não precisa ver
+    // jogos, que pulam direto essa etapa e já entram "disponíveis para
+    // separação".
+    const result = actor.role !== "admin" && actor.permissions.includes("captures:receive")
       ? await database
           .prepare(
             `${CAPTURE_SELECT}
@@ -204,12 +209,6 @@ export async function POST(request: Request) {
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
-  }
-  if (isAssistanceActor(actor)) {
-    return jsonResponse(
-      { error: "A ASSISTÊNCIA NÃO PODE CADASTRAR PRODUTOS CAPTADOS." },
-      403,
-    );
   }
 
   try {
@@ -376,11 +375,10 @@ export async function PATCH(request: Request) {
 
     if (action === "receive" || action === "ready") {
       const allowedToReceive =
-        actor.role !== "admin" &&
-        (isAssistanceActor(actor) || actor.permissions.includes("captures:receive"));
+        actor.role !== "admin" && actor.permissions.includes("captures:receive");
       if (!allowedToReceive) {
         return jsonResponse(
-          { error: "SOMENTE A ASSISTÊNCIA PODE ALTERAR ESTA ETAPA." },
+          { error: "VOCÊ NÃO TEM PERMISSÃO PARA ALTERAR ESTA ETAPA." },
           403,
         );
       }

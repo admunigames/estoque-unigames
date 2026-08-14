@@ -2,7 +2,6 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import {
   canAccessCaptures,
   identity,
-  isAssistanceActor,
   jsonResponse,
   photoExtension,
   photoMetaValidationError,
@@ -162,12 +161,6 @@ export async function POST(request: Request) {
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
-  }
-  if (isAssistanceActor(actor)) {
-    return jsonResponse(
-      { error: "A ASSISTÊNCIA NÃO PODE CADASTRAR PRODUTOS CAPTADOS." },
-      403,
-    );
   }
 
   try {
