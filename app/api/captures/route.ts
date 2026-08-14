@@ -237,23 +237,28 @@ export async function POST(request: Request) {
       body.category === "jogo"
         ? body.category
         : "other";
-    const productName = safeText(body.productName, 160);
     const gameName = safeText(body.gameName, 160);
     const gameConsole = safeText(body.gameConsole, 40) as GameConsole;
     const gameCondition = safeText(body.gameCondition, 40) as GameCondition;
-    const serialNumber = safeText(body.serialNumber, 160);
-    const defects = safeText(body.defects, 1200);
-    const color = safeText(body.color, 120);
-    if (productName.length < 2) {
-      return jsonResponse({ error: "INFORME O PRODUTO OU MODELO." }, 400);
+    // Jogos usam só os campos específicos de jogo (nome/console/estado/valor)
+    // — produto/modelo, serial, cor e defeitos não fazem sentido pra esse
+    // fluxo e nem aparecem mais no formulário, então não são exigidos aqui.
+    const productName = category === "jogo" ? "" : safeText(body.productName, 160);
+    const serialNumber = category === "jogo" ? "" : safeText(body.serialNumber, 160);
+    const defects = category === "jogo" ? "" : safeText(body.defects, 1200);
+    const color = category === "jogo" ? "" : safeText(body.color, 120);
+    if (category !== "jogo") {
+      if (productName.length < 2) {
+        return jsonResponse({ error: "INFORME O PRODUTO OU MODELO." }, 400);
+      }
+      if (!serialNumber) {
+        return jsonResponse({ error: "INFORME O SERIAL DO PRODUTO." }, 400);
+      }
+      if (!defects) {
+        return jsonResponse({ error: "INFORME OS DEFEITOS OU ESCREVA “SEM DEFEITO”." }, 400);
+      }
+      if (!color) return jsonResponse({ error: "INFORME A COR DO PRODUTO." }, 400);
     }
-    if (!serialNumber) {
-      return jsonResponse({ error: "INFORME O SERIAL DO PRODUTO." }, 400);
-    }
-    if (!defects) {
-      return jsonResponse({ error: "INFORME OS DEFEITOS OU ESCREVA “SEM DEFEITO”." }, 400);
-    }
-    if (!color) return jsonResponse({ error: "INFORME A COR DO PRODUTO." }, 400);
     const rawCapturedValue = Number(body.capturedValue);
     const capturedValue =
       Number.isFinite(rawCapturedValue) && rawCapturedValue > 0
