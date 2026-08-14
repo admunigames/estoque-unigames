@@ -1217,6 +1217,50 @@ test("Saídas — Regra 1 (usuário com loja só cadastra/visualiza/histórico d
   assert.match(html, /MARCAR COMO FEITO<\/button>/);
 });
 
+test("Saídas: usuário sem loja e sem ser admin (ex.: Assistência com outputs:create) escolhe a loja e a saída é registrada com ela", async () => {
+  // Bug relatado: um usuário sem companyId mas que também não é
+  // role==="admin" (ex.: a Assistência, com outputs:create concedido
+  // manualmente) não devia depender de ser admin pra ver o seletor de loja
+  // no cadastro de saída — só da permissão outputs:create.
+  const [route, html] = await Promise.all([
+    readFile(new URL("../app/api/outputs/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+  ]);
+
+  // Back-end: quem escolhe a loja é decidido por canSeeAllStores(), que
+  // (via app/lib/access-scope.ts) já libera qualquer actor sem companyId
+  // que tenha a permissão outputs:create — não checa actor.role==="admin"
+  // isoladamente em nenhum ponto desta decisão.
+  assert.match(
+    route,
+    /const canChooseCompany = canSeeAllStores\(actor, "outputs:create"\) \|\| isAdministrativeActor\(actor\);/,
+  );
+  assert.doesNotMatch(route, /actor\.role === "admin" \? requestedCompanyId/);
+  // A loja escolhida (requestedCompanyId) é a que efetivamente é gravada.
+  assert.match(
+    route,
+    /const companyId = canChooseCompany \? requestedCompanyId : actor\.companyId;/,
+  );
+  assert.match(route, /\.prepare\(\s*`INSERT INTO defective_outputs/);
+  assert.match(route, /company_id, company_name,/);
+
+  // Front-end: o campo LOJA aparece pra quem pode escolher — decidido por
+  // canActAcrossStores('outputs:create') (admin OU sem loja + permissão),
+  // nunca por currentSession.role==='admin' isolado.
+  assert.match(html, /const canChooseCompany = canActAcrossStores\('outputs:create'\);/);
+  assert.match(html, /el\('outputCompanyField'\)\.hidden = !canChooseCompany;/);
+  assert.match(html, /el\('outputCompany'\)\.required = canChooseCompany;/);
+  assert.doesNotMatch(
+    html,
+    /el\('outputCompanyField'\)\.hidden = !isAdmin;/,
+  );
+  // A loja escolhida no <select> é o que vai no corpo da requisição.
+  assert.match(
+    html,
+    /companyId:canActAcrossStores\('outputs:create'\) \? el\('outputCompany'\)\.value : ''/,
+  );
+});
+
 test("separa insumos por loja, registra pedidos recorrentes e preserva recebimentos", async () => {
   const [html, workerSource, route, schema, migration, manifest, serviceWorker] =
     await Promise.all([
