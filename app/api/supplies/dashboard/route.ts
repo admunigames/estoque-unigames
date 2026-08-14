@@ -2,7 +2,7 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 
 type JsonMap = Record<string, unknown>;
-type Identity = { role: "admin" | "user" };
+type Identity = { role: "admin" | "user"; permissions: string[] };
 
 function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -15,7 +15,28 @@ function jsonResponse(body: JsonMap, status = 200) {
 }
 
 function identity(request: Request): Identity {
-  return { role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user" };
+  return {
+    role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    permissions: (request.headers.get("x-unigames-permissions") || "")
+      .split(",")
+      .map((permission) => permission.trim())
+      .filter(Boolean),
+  };
+}
+
+/**
+ * O painel mostra dados agregados de todas as lojas (separações
+ * pendentes, estoque baixo, solicitações da semana) — qualquer
+ * permissão de gestão de Insumos concede esse alcance, não só admin.
+ */
+function isSuppliesManager(actor: Identity) {
+  return (
+    actor.role === "admin" ||
+    actor.permissions.includes("supplies:manage_catalog") ||
+    actor.permissions.includes("supplies:stock_in") ||
+    actor.permissions.includes("supplies:stock_out") ||
+    actor.permissions.includes("supplies:delete")
+  );
 }
 
 /** Semana vigente = próxima segunda-feira (ou hoje, se hoje já for segunda). */
@@ -66,8 +87,8 @@ export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (actor.role !== "admin") {
-    return jsonResponse({ error: "SOMENTE O ADMINISTRADOR PODE VER O PAINEL." }, 403);
+  if (!isSuppliesManager(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA VER O PAINEL." }, 403);
   }
 
   const url = new URL(request.url);

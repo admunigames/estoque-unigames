@@ -128,7 +128,9 @@ export async function GET(request: Request) {
 
   try {
     const url = new URL(request.url);
-    const includeInactive = actor.role === "admin" && url.searchParams.get("all") === "1";
+    const includeInactive =
+      (actor.role === "admin" || actor.permissions.includes("supplies:manage_catalog")) &&
+      url.searchParams.get("all") === "1";
     const database = await getD1();
     const query = includeInactive
       ? `${PRODUCT_SELECT} ORDER BY sc.name ASC, sp.name ASC`

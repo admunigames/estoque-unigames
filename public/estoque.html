@@ -10768,19 +10768,50 @@ function renderHomeTasks(){
     }
   }
 
+  // Visibilidade do painel administrativo de Insumos é decidida pelas
+  // permissões granulares reais do usuário, não pela role — um usuário
+  // "personalizado" com acesso total de Insumos precisa ver e fazer
+  // exatamente o que um admin vê e faz aqui, respeitando só as permissões
+  // que ele de fato tem marcadas (espelha isSuppliesManager() no backend).
+  function supplyAdminTabAccess(){
+    const canManageCatalog = canAccess('supplies:manage_catalog');
+    const canStockIn = canAccess('supplies:stock_in');
+    const canStockOut = canAccess('supplies:stock_out');
+    const canDeleteSupplies = canAccess('supplies:delete');
+    const canSeparationQueue = canActAcrossStores('supplies:stock_out');
+    const hasAdminAccess = canManageCatalog || canStockIn || canStockOut || canDeleteSupplies || canSeparationQueue;
+    return {
+      hasAdminAccess,
+      canManageCatalog,
+      canStockIn,
+      canStockOut,
+      canDeleteSupplies,
+      tabs: {
+        dashboard: hasAdminAccess,
+        categorias: canManageCatalog,
+        produtos: canManageCatalog,
+        estoque: canStockIn || canStockOut || canDeleteSupplies,
+        separacao: canSeparationQueue,
+        historico: canSeparationQueue,
+      },
+    };
+  }
+
   function updateSupplyRoleVisibility(){
-    const isAdmin = currentSession.role === 'admin';
-    const canDeleteProducts = canAccess('supplies:delete');
     const canChooseCompany = canActAcrossStores('supplies:request');
+    const access = supplyAdminTabAccess();
     el('supplyRegisterPanel').hidden = !canChooseCompany && !currentSession.companyId;
     el('supplyCompanyField').hidden = !canChooseCompany;
     el('supplyCompany').required = canChooseCompany;
-    el('supplyAdminPanel').hidden = !isAdmin && !canDeleteProducts;
+    el('supplyAdminPanel').hidden = !access.hasAdminAccess;
     document.querySelectorAll('[data-supply-admin-tab]').forEach(button => {
-      button.hidden = !isAdmin && button.dataset.supplyAdminTab !== 'produtos';
+      button.hidden = !access.tabs[button.dataset.supplyAdminTab];
     });
-    el('btnToggleNewProductForm').hidden = !isAdmin;
-    if(!isAdmin && canDeleteProducts) setSupplyAdminTab('produtos');
+    if(access.hasAdminAccess && !access.tabs[supplyAdminTab]){
+      const firstAvailable = Object.keys(access.tabs).find(tab => access.tabs[tab]);
+      if(firstAvailable) setSupplyAdminTab(firstAvailable);
+    }
+    el('btnToggleNewProductForm').hidden = !access.canManageCatalog;
     renderSupplyCompanyOptions();
     el('supplyRegisterDescription').textContent = canChooseCompany
       ? 'Escolha a loja para marcar os produtos que estão faltando.'
@@ -11392,7 +11423,9 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(movement.responsibleName)+'</td>'+
       '<td>'+escapeHtml(movement.reason || '—')+'</td>'+
       '<td>'+escapeHtml(dateText)+'</td>'+
-      '<td class="supply-product-actions"><button type="button" class="delete" data-movement-delete="'+escapeHtml(movement.id)+'">EXCLUIR</button></td>'+
+      '<td class="supply-product-actions">'+
+        (canAccess('supplies:delete') ? '<button type="button" class="delete" data-movement-delete="'+escapeHtml(movement.id)+'">EXCLUIR</button>' : '')+
+      '</td>'+
     '</tr>';
   }
 
@@ -11469,21 +11502,21 @@ function renderHomeTasks(){
   });
 
   async function loadSupplyAdminData(){
-    const isAdmin = currentSession.role === 'admin';
-    if(!isAdmin && !canAccess('supplies:delete') && !canAccess('supplies:manage_catalog')) return;
-    if(isAdmin) loadSupplyDashboard();
+    const access = supplyAdminTabAccess();
+    if(!access.hasAdminAccess) return;
+    loadSupplyDashboard();
     try{
       const [categoriesData,productsData] = await Promise.all([
         supplyCategoryApiRequest(null),
-        supplyProductApiRequest(null,isAdmin ? new URLSearchParams({all:'1'}) : null)
+        supplyProductApiRequest(null,access.canManageCatalog ? new URLSearchParams({all:'1'}) : null)
       ]);
       supplyCategories = Array.isArray(categoriesData.items) ? categoriesData.items : [];
       supplyProducts = Array.isArray(productsData.items) ? productsData.items : [];
       supplyAdminLoaded = true;
       renderSupplyCategoryOptions();
-      if(isAdmin) renderSupplyCategoryList();
+      if(access.canManageCatalog) renderSupplyCategoryList();
       renderSupplyProductTable();
-      if(isAdmin){
+      if(access.canStockIn || access.canStockOut || access.canDeleteSupplies){
         renderSupplyStockTable();
         renderSupplyMovementFilterOptions();
         await loadSupplyStockMovements();
@@ -11690,6 +11723,12 @@ function renderHomeTasks(){
   el('supplyStockTableBody').addEventListener('click',event => {
     const moveButton = event.target.closest('[data-stock-move]');
     if(!moveButton) return;
+    const types = supplyExitAvailableTypes();
+    if(!types.length){
+      showPurchaseToast('Você não tem permissão para registrar entrada ou saída de estoque.','error');
+      return;
+    }
+    el('supplyStockType').innerHTML = types.map(type => '<option value="'+type.value+'">'+type.label+'</option>').join('');
     el('supplyStockProductId').value = moveButton.dataset.stockMove;
     el('supplyStockFormProductLabel').textContent = 'MOVIMENTAR ESTOQUE — '+moveButton.dataset.stockMoveName;
     el('supplyStockForm').hidden = false;
@@ -11851,7 +11890,7 @@ function renderHomeTasks(){
   }
 
   async function loadSupplyAdminHistory(){
-    if(currentSession.role !== 'admin' || supplyAdminHistoryLoading) return;
+    if(!canActAcrossStores('supplies:stock_out') || supplyAdminHistoryLoading) return;
     supplyAdminHistoryLoading = true;
     el('supplyAdminHistoryList').innerHTML = '<div class="supply-empty">Carregando histórico…</div>';
     try{
@@ -11909,7 +11948,7 @@ function renderHomeTasks(){
   }
 
   async function loadSupplyDashboard(){
-    if(currentSession.role !== 'admin' || supplyDashboardLoading) return;
+    if(!supplyAdminTabAccess().hasAdminAccess || supplyDashboardLoading) return;
     supplyDashboardLoading = true;
     try{
       const data = await supplyDashboardApiRequest();

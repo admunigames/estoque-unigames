@@ -1767,3 +1767,68 @@ test("regra genérica no front-end: canActAcrossStores() substitui os antigos ga
     );
   }
 });
+
+test("Insumos: usuário sem loja com acesso total ao módulo enxerga e age em todas as abas do painel administrativo, como um admin", async () => {
+  // Bug relatado: o usuário "Renato" (sem loja vinculada), mesmo com todas
+  // as permissões de Insumos concedidas no cadastro, só conseguia
+  // visualizar produtos — o painel inteiro (Dashboard, Categorias,
+  // Produtos, Estoque, Separação, Histórico) e a maioria das ações
+  // continuavam checando `currentSession.role === 'admin'` hardcoded no
+  // front-end, e algumas rotas de API checavam `actor.role === "admin"`
+  // hardcoded no backend, em vez da permissão granular real do usuário.
+  const [html, stockRoute, productsRoute, dashboardRoute] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/stock/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/products/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/dashboard/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Front-end: visibilidade do painel e de cada aba vem das permissões
+  // granulares reais (espelha isSuppliesManager() do backend), não de uma
+  // checagem isolada de role.
+  assert.match(html, /function supplyAdminTabAccess\(\)\{/);
+  assert.match(html, /const canManageCatalog = canAccess\('supplies:manage_catalog'\);/);
+  assert.match(html, /const canStockIn = canAccess\('supplies:stock_in'\);/);
+  assert.match(html, /const canStockOut = canAccess\('supplies:stock_out'\);/);
+  assert.match(html, /const canDeleteSupplies = canAccess\('supplies:delete'\);/);
+  assert.match(html, /const canSeparationQueue = canActAcrossStores\('supplies:stock_out'\);/);
+  assert.match(
+    html,
+    /const hasAdminAccess = canManageCatalog \|\| canStockIn \|\| canStockOut \|\| canDeleteSupplies \|\| canSeparationQueue;/,
+  );
+  assert.match(html, /dashboard: hasAdminAccess,/);
+  assert.match(html, /categorias: canManageCatalog,/);
+  assert.match(html, /produtos: canManageCatalog,/);
+  assert.match(html, /estoque: canStockIn \|\| canStockOut \|\| canDeleteSupplies,/);
+  assert.match(html, /separacao: canSeparationQueue,/);
+  assert.match(html, /historico: canSeparationQueue,/);
+  assert.match(html, /el\('supplyAdminPanel'\)\.hidden = !access\.hasAdminAccess;/);
+  assert.match(html, /button\.hidden = !access\.tabs\[button\.dataset\.supplyAdminTab\];/);
+  assert.match(html, /if\(!supplyAdminTabAccess\(\)\.hasAdminAccess \|\| supplyDashboardLoading\) return;/);
+  assert.match(html, /if\(!canActAcrossStores\('supplies:stock_out'\) \|\| supplyAdminHistoryLoading\) return;/);
+
+  // O bug antigo era exatamente essas checagens isoladas de role — garante
+  // que não voltam.
+  assert.doesNotMatch(html, /el\('supplyAdminPanel'\)\.hidden = !isAdmin/);
+  assert.doesNotMatch(html, /button\.hidden = !isAdmin && button\.dataset\.supplyAdminTab/);
+  assert.doesNotMatch(html, /if\(currentSession\.role !== 'admin' \|\| supplyDashboardLoading\)/);
+  assert.doesNotMatch(html, /if\(currentSession\.role !== 'admin' \|\| supplyAdminHistoryLoading\)/);
+
+  // Backend: dashboard, produtos (lista com inativos) e movimentações de
+  // estoque (visão entre lojas) usam a permissão granular real, não
+  // `actor.role === "admin"` isolado.
+  assert.match(dashboardRoute, /function isSuppliesManager\(actor: Identity\)/);
+  assert.match(dashboardRoute, /if \(!isSuppliesManager\(actor\)\) \{/);
+  assert.doesNotMatch(dashboardRoute, /if \(actor\.role !== "admin"\) \{/);
+
+  assert.match(
+    productsRoute,
+    /\(actor\.role === "admin" \|\| actor\.permissions\.includes\("supplies:manage_catalog"\)\) &&/,
+  );
+
+  assert.match(stockRoute, /function isSuppliesManager\(actor: Identity\)/);
+  assert.match(stockRoute, /const isManager = isSuppliesManager\(actor\);/);
+  assert.match(stockRoute, /if \(isManager && COMPANY_PATTERN\.test\(requestedCompanyId\)\)/);
+  assert.match(stockRoute, /if \(!isManager\) \{\s*\n\s*bindings\.push\(actor\.id\);/);
+  assert.match(stockRoute, /const limit = isManager \? \(hasFilters \? 300 : 50\) : 20;/);
+});

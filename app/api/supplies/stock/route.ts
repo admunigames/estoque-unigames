@@ -62,6 +62,21 @@ function canDeleteSupplies(actor: Identity) {
   return actor.role === "admin" || actor.permissions.includes("supplies:delete");
 }
 
+/**
+ * Quem gerencia insumos "como admin" — vê todas as lojas nas movimentações
+ * de estoque, não só as que ela mesma criou. Qualquer uma das permissões
+ * de gestão de Insumos concede esse alcance, não só a role admin.
+ */
+function isSuppliesManager(actor: Identity) {
+  return (
+    actor.role === "admin" ||
+    actor.permissions.includes("supplies:manage_catalog") ||
+    actor.permissions.includes("supplies:stock_in") ||
+    actor.permissions.includes("supplies:stock_out") ||
+    actor.permissions.includes("supplies:delete")
+  );
+}
+
 function sameOrigin(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") return false;
@@ -142,7 +157,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const productId = safeText(url.searchParams.get("productId"), 80);
-    const isAdmin = actor.role === "admin";
+    const isManager = isSuppliesManager(actor);
     const requestedCompanyId = safeText(url.searchParams.get("companyId"), 80);
     const type = url.searchParams.get("type") === "in" || url.searchParams.get("type") === "out"
       ? url.searchParams.get("type")
@@ -158,7 +173,7 @@ export async function GET(request: Request) {
       bindings.push(productId);
       conditions.push(`sm.product_id=?${bindings.length}`);
     }
-    if (isAdmin && COMPANY_PATTERN.test(requestedCompanyId)) {
+    if (isManager && COMPANY_PATTERN.test(requestedCompanyId)) {
       bindings.push(requestedCompanyId);
       conditions.push(`sm.company_id=?${bindings.length}`);
     }
@@ -170,13 +185,13 @@ export async function GET(request: Request) {
       bindings.push(`${date} 00:00:00`, `${date} 23:59:59.999999`);
       conditions.push(`sm.created_at BETWEEN ?${bindings.length - 1} AND ?${bindings.length}`);
     }
-    if (!isAdmin) {
+    if (!isManager) {
       bindings.push(actor.id);
       conditions.push(`sm.created_by=?${bindings.length}`);
     }
     const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
     const hasFilters = Boolean(productId || requestedCompanyId || type || date);
-    const limit = isAdmin ? (hasFilters ? 300 : 50) : 20;
+    const limit = isManager ? (hasFilters ? 300 : 50) : 20;
     const query = `${MOVEMENT_SELECT}${where} ORDER BY sm.created_at DESC LIMIT ${limit}`;
     const result = bindings.length
       ? await database.prepare(query).bind(...bindings).all<MovementRow>()
