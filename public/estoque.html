@@ -2211,6 +2211,8 @@
     border-radius:9px;background:var(--bg-card);
   }
   .supply-request-item.marked{border-color:rgba(225,173,73,.5);background:rgba(225,173,73,.1);}
+  .supply-request-item.received{border-color:rgba(102,212,158,.5);background:rgba(102,212,158,.08);}
+  .supply-request-item.not-received{border-color:rgba(239,129,123,.5);background:rgba(239,129,123,.08);}
   .supply-request-item span{flex:1;color:var(--ink);font:700 11px/1.35 var(--sans);overflow-wrap:anywhere;}
   .supply-request-item input[type="number"]{width:64px;flex:none;}
   .supply-request-summary{
@@ -2239,6 +2241,7 @@
   .supply-separation-item span{flex:1;color:var(--ink);font:700 11px/1.3 var(--sans);min-width:140px;}
   .supply-separation-item small{color:var(--ink-soft);font:700 9px/1 var(--mono);}
   .supply-separation-item input[type="number"]{width:64px;}
+  .supply-separation-item input[type="text"]{flex:1;min-width:160px;}
   .supply-separation-item button{
     min-height:30px;padding:5px 9px;border:1px solid rgba(66,166,119,.46);border-radius:8px;
     background:rgba(66,166,119,.13);color:#66d49e;font:800 8px/1 var(--mono);
@@ -11038,6 +11041,14 @@ function renderHomeTasks(){
     ).join('');
   }
 
+  function supplyItemTimestampHtml(label,dateValue,byName){
+    if(!dateValue) return '';
+    const date = new Date(dateValue);
+    const dateText = Number.isNaN(date.getTime()) ? dateValue : date.toLocaleString('pt-BR');
+    return '<small style="width:100%;color:var(--ink-faint);font:700 8px/1.4 var(--mono);">'+
+      label+': '+escapeHtml(dateText)+(byName ? ' POR '+escapeHtml(byName) : '')+'</small>';
+  }
+
   function supplyRequestSummaryGroupsHtml(items){
     const groups = new Map();
     items.forEach(item => {
@@ -11048,18 +11059,24 @@ function renderHomeTasks(){
       '<div class="supply-missing-group"><h4>'+escapeHtml(category)+'</h4>'+
       '<div class="supply-missing-item-list">'+rows.map(row => {
         const separated = Number(row.separated || 0) === 1;
-        const received = row.receivedStatus === 'received';
+        const receivedStatus = row.receivedStatus || 'pending';
         let statusHtml;
         if(!separated){
           statusHtml = '<small style="width:100%;color:var(--ink-soft);font:800 8px/1.4 var(--mono);">AGUARDANDO SEPARAÇÃO</small>';
-        }else if(received){
-          statusHtml = '<label style="width:100%;display:flex;align-items:center;gap:6px;color:#66d49e;font:800 8px/1.4 var(--mono);">'+
-            '<input type="checkbox" checked data-receive-item="'+escapeHtml(row.id)+'"> RECEBIDO ✓</label>';
         }else{
-          statusHtml = '<label style="width:100%;display:flex;align-items:center;gap:6px;color:#e1ad49;font:800 8px/1.4 var(--mono);">'+
-            '<input type="checkbox" data-receive-item="'+escapeHtml(row.id)+'"> CONFIRMAR RECEBIMENTO (SEPARADO: '+Number(row.quantitySeparated || 0)+')</label>';
+          statusHtml = '<label style="width:100%;display:flex;align-items:center;gap:6px;font:800 8px/1.4 var(--mono);">'+
+            'SEPARADO: '+Number(row.quantitySeparated || 0)+
+            '<select data-receive-item="'+escapeHtml(row.id)+'" style="margin-left:auto;">'+
+              '<option value="pending"'+(receivedStatus === 'pending' ? ' selected' : '')+'>AGUARDANDO CONFIRMAÇÃO</option>'+
+              '<option value="received"'+(receivedStatus === 'received' ? ' selected' : '')+'>RECEBIDO</option>'+
+              '<option value="not_received"'+(receivedStatus === 'not_received' ? ' selected' : '')+'>NÃO RECEBIDO</option>'+
+            '</select></label>'+
+            supplyItemTimestampHtml('SEPARADO EM',row.separatedAt,row.separatedByName)+
+            (row.separationNote ? '<small style="width:100%;color:var(--ink-soft);font:700 8px/1.4 var(--mono);">MOTIVO DO SEPARADOR: '+escapeHtml(row.separationNote)+'</small>' : '')+
+            supplyItemTimestampHtml('RECEBIMENTO CONFIRMADO EM',row.receivedAt,row.receivedByName);
         }
-        return '<div class="supply-request-item marked'+(received ? ' received' : '')+'"><span>'+escapeHtml(row.productName)+'</span>'+
+        const stateClass = receivedStatus === 'received' ? ' received' : (receivedStatus === 'not_received' ? ' not-received' : '');
+        return '<div class="supply-request-item marked'+stateClass+'"><span>'+escapeHtml(row.productName)+'</span>'+
           '<strong style="color:var(--accent);font:900 11px/1 var(--mono);">'+Number(row.quantity || 0)+'</strong>'+
           statusHtml+'</div>';
       }).join('')+'</div></div>'
@@ -11067,20 +11084,19 @@ function renderHomeTasks(){
   }
 
   el('supplyRequestSummaryGroups').addEventListener('change',async event => {
-    const checkbox = event.target.closest('[data-receive-item]');
-    if(!checkbox) return;
-    checkbox.disabled = true;
+    const select = event.target.closest('[data-receive-item]');
+    if(!select) return;
+    select.disabled = true;
     try{
       await supplyRequestApiRequest({
         method:'PATCH',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'receive',itemId:checkbox.dataset.receiveItem,received:checkbox.checked})
+        body:JSON.stringify({action:'receive',itemId:select.dataset.receiveItem,status:select.value})
       });
       await loadSupplyRequest();
     }catch(error){
-      checkbox.checked = !checkbox.checked;
-      checkbox.disabled = false;
       showPurchaseToast(error.message,'error');
+      await loadSupplyRequest();
     }
   });
 
@@ -11149,8 +11165,16 @@ function renderHomeTasks(){
       '</div>'+
       '<div class="supply-separation-items">'+
         (items.length
-          ? items.map(item => '<div class="supply-separation-item done"><span>'+escapeHtml(item.productName)+'</span>'+
-              '<small>PEDIDO: '+Number(item.quantity || 0)+' · SEPARADO: '+Number(item.quantitySeparated || 0)+'</small></div>').join('')
+          ? items.map(item => {
+              const received = supplyReceivedStatusLabel(item.receivedStatus);
+              return '<div class="supply-separation-item done"><span>'+escapeHtml(item.productName)+'</span>'+
+                '<small>PEDIDO: '+Number(item.quantity || 0)+' · SEPARADO: '+Number(item.quantitySeparated || 0)+'</small>'+
+                supplyItemTimestampHtml('SEPARADO EM',item.separatedAt,item.separatedByName)+
+                (item.separationNote ? '<small>MOTIVO: '+escapeHtml(item.separationNote)+'</small>' : '')+
+                '<small style="color:'+received.color+';">'+received.text+'</small>'+
+                supplyItemTimestampHtml('RECEBIMENTO CONFIRMADO EM',item.receivedAt,item.receivedByName)+
+              '</div>';
+            }).join('')
           : '<div class="supply-empty">Nenhum produto — só observação.</div>')+
       '</div>'+
       (row.note ? '<div class="supply-separation-note">OBSERVAÇÃO: '+escapeHtml(row.note)+'</div>' : '')+
@@ -11760,16 +11784,26 @@ function renderHomeTasks(){
 
   let supplySeparationLoading = false;
 
+  function supplyReceivedStatusLabel(status){
+    if(status === 'received') return {text:'RECEBIDO PELA LOJA ✓',color:'#66d49e'};
+    if(status === 'not_received') return {text:'NÃO RECEBIDO PELA LOJA',color:'#ef817b'};
+    return {text:'AGUARDANDO CONFIRMAÇÃO DA LOJA',color:'#e1ad49'};
+  }
+
   function supplySeparationItemHtml(item,requestDone){
     const done = Number(item.separated || 0) === 1;
+    const received = supplyReceivedStatusLabel(item.receivedStatus);
     return '<div class="supply-separation-item'+(done ? ' done' : '')+'">'+
       '<span>'+escapeHtml(item.productName)+' <small>('+escapeHtml(item.categoryName)+')</small></span>'+
       '<small>PEDIDO: '+Number(item.quantity || 0)+'</small>'+
       (done
         ? '<small>SEPARADO: '+Number(item.quantitySeparated || 0)+' POR '+escapeHtml(item.separatedByName || '—')+'</small>'+
-          '<small style="color:'+(item.receivedStatus === 'received' ? '#66d49e' : '#e1ad49')+';">'+
-            (item.receivedStatus === 'received' ? 'RECEBIDO PELA LOJA ✓' : 'AGUARDANDO CONFIRMAÇÃO DA LOJA')+'</small>'
+          supplyItemTimestampHtml('SEPARADO EM',item.separatedAt,'')+
+          (item.separationNote ? '<small>MOTIVO: '+escapeHtml(item.separationNote)+'</small>' : '')+
+          '<small style="color:'+received.color+';">'+received.text+'</small>'+
+          supplyItemTimestampHtml('RECEBIMENTO CONFIRMADO EM',item.receivedAt,item.receivedByName)
         : '<input type="number" min="0" step="1" value="'+Number(item.quantity || 0)+'" data-separation-quantity="'+escapeHtml(item.id)+'"'+(requestDone ? ' disabled' : '')+'>'+
+          '<input type="text" maxlength="300" placeholder="Motivo (se não vier completo)" data-separation-note="'+escapeHtml(item.id)+'"'+(requestDone ? ' disabled' : '')+'>'+
           '<button type="button" data-separation-confirm="'+escapeHtml(item.id)+'"'+(requestDone ? ' disabled' : '')+'>SEPARADO</button>')+
     '</div>';
   }
@@ -11835,6 +11869,7 @@ function renderHomeTasks(){
     if(!button) return;
     const itemId = button.dataset.separationConfirm;
     const quantityInput = document.querySelector('[data-separation-quantity="'+itemId+'"]');
+    const noteInput = document.querySelector('[data-separation-note="'+itemId+'"]');
     const quantitySeparated = Number(quantityInput.value);
     if(!Number.isFinite(quantitySeparated) || quantitySeparated < 0){
       showPurchaseToast('Informe uma quantidade válida.','error');
@@ -11842,11 +11877,12 @@ function renderHomeTasks(){
     }
     button.disabled = true;
     quantityInput.disabled = true;
+    noteInput.disabled = true;
     try{
       await supplyRequestApiRequest({
         method:'PATCH',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({itemId,quantitySeparated})
+        body:JSON.stringify({itemId,quantitySeparated,note:noteInput.value})
       });
       showPurchaseToast('Item separado e estoque atualizado.');
       await loadSupplySeparationQueue();
@@ -11854,6 +11890,7 @@ function renderHomeTasks(){
       showPurchaseToast(error.message,'error');
       button.disabled = false;
       quantityInput.disabled = false;
+      noteInput.disabled = false;
     }
   });
 

@@ -104,7 +104,7 @@ export async function GET(request: Request) {
         `SELECT r.id, r.company_name AS companyName,
                 COUNT(i.id) AS totalItems,
                 SUM(CASE WHEN i.separated=1 THEN 1 ELSE 0 END) AS separatedItems,
-                SUM(CASE WHEN i.separated=1 AND i.received_status='received' THEN 1 ELSE 0 END) AS receivedItems
+                SUM(CASE WHEN i.separated=1 AND i.received_status IN ('received','not_received') THEN 1 ELSE 0 END) AS receivedItems
          FROM supply_requests r
          LEFT JOIN supply_request_items i ON i.request_id = r.id
          WHERE r.week_start=?1

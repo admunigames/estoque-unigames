@@ -437,6 +437,13 @@ export const supplyRequestItems = pgTable(
     separatedBy: text("separated_by").notNull().default(""),
     separatedByName: text("separated_by_name").notNull().default(""),
     separatedAt: text("separated_at").notNull().default(""),
+    // Motivo do separador quando o item não veio completo/não veio —
+    // preenchido junto da separação, distinto da observação única da
+    // solicitação inteira.
+    separationNote: text("separation_note").notNull().default(""),
+    // 'pending' | 'received' | 'not_received' — a loja confirma o que
+    // chegou; "not_received" é uma confirmação explícita de que não
+    // chegou, diferente de "pending" (ainda não confirmado).
     receivedStatus: text("received_status").notNull().default("pending"),
     receivedBy: text("received_by").notNull().default(""),
     receivedByName: text("received_by_name").notNull().default(""),

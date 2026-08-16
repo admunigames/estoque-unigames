@@ -177,6 +177,7 @@ type RequestItemRow = {
   separated: number;
   separatedByName: string;
   separatedAt: string;
+  separationNote: string;
   receivedStatus: string;
   receivedByName: string;
   receivedAt: string;
@@ -187,10 +188,13 @@ const REQUEST_ITEM_SELECT = `
          category_name AS categoryName, quantity,
          quantity_separated AS quantitySeparated, separated,
          separated_by_name AS separatedByName, separated_at AS separatedAt,
+         separation_note AS separationNote,
          received_status AS receivedStatus, received_by_name AS receivedByName,
          received_at AS receivedAt
   FROM supply_request_items WHERE request_id=?1
   ORDER BY category_name ASC, product_name ASC`;
+
+const RECEIVED_STATUSES = new Set(["pending", "received", "not_received"]);
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -206,7 +210,11 @@ export async function GET(request: Request) {
     if (!itemRows.length) return true;
     const separatedCount = itemRows.filter((item) => item.separated).length;
     if (separatedCount !== itemRows.length) return false;
-    return itemRows.every((item) => item.receivedStatus === "received");
+    // "not_received" também é uma confirmação definitiva da loja (diferente
+    // de "pending" = ainda não confirmou) — conta como resolvido.
+    return itemRows.every(
+      (item) => item.receivedStatus === "received" || item.receivedStatus === "not_received",
+    );
   }
 
   if ((actor.role === "admin" || canSeeAllStores(actor, "supplies:stock_out")) && url.searchParams.get("queue") === "1") {
@@ -514,6 +522,7 @@ export async function PATCH(request: Request) {
   try {
     const itemId = safeText(body.itemId, 80);
     const quantitySeparated = Math.trunc(Number(body.quantitySeparated));
+    const separationNote = safeText(body.note, 300);
     if (!itemId) return jsonResponse({ error: "ITEM INVÁLIDO." }, 400);
     if (!Number.isFinite(quantitySeparated) || quantitySeparated < 0) {
       return jsonResponse({ error: "INFORME UMA QUANTIDADE VÁLIDA." }, 400);
@@ -550,10 +559,10 @@ export async function PATCH(request: Request) {
         .prepare(
           `UPDATE supply_request_items
            SET quantity_separated=?1, separated=1, separated_by=?2,
-               separated_by_name=?3, separated_at=CURRENT_TIMESTAMP
-           WHERE id=?4 AND separated=0`,
+               separated_by_name=?3, separated_at=CURRENT_TIMESTAMP, separation_note=?4
+           WHERE id=?5 AND separated=0`,
         )
-        .bind(quantitySeparated, actor.id, actor.displayName, itemId),
+        .bind(quantitySeparated, actor.id, actor.displayName, separationNote, itemId),
     ];
     if (quantitySeparated > 0) {
       operations.push(
@@ -595,7 +604,15 @@ async function handleReceiveAction(actor: Identity, body: JsonMap) {
   try {
     const itemId = safeText(body.itemId, 80);
     if (!itemId) return jsonResponse({ error: "ITEM INVÁLIDO." }, 400);
-    const received = Boolean(body.received);
+
+    // Compatibilidade: além do novo `status` (pending/received/not_received),
+    // aceita o antigo `received` booleano (true -> received, false -> pending).
+    const rawStatus = typeof body.status === "string" ? body.status : "";
+    const status = RECEIVED_STATUSES.has(rawStatus)
+      ? rawStatus
+      : body.received
+        ? "received"
+        : "pending";
 
     const database = await getD1();
     const item = await database
@@ -618,15 +635,15 @@ async function handleReceiveAction(actor: Identity, body: JsonMap) {
       );
     }
 
-    if (received) {
+    if (status === "received" || status === "not_received") {
       await database
         .prepare(
           `UPDATE supply_request_items
-           SET received_status='received', received_by=?1, received_by_name=?2,
+           SET received_status=?1, received_by=?2, received_by_name=?3,
                received_at=CURRENT_TIMESTAMP
-           WHERE id=?3`,
+           WHERE id=?4`,
         )
-        .bind(actor.id, actor.displayName, itemId)
+        .bind(status, actor.id, actor.displayName, itemId)
         .run();
     } else {
       await database
@@ -638,7 +655,7 @@ async function handleReceiveAction(actor: Identity, body: JsonMap) {
         .bind(itemId)
         .run();
     }
-    return jsonResponse({ updated: true, received });
+    return jsonResponse({ updated: true, status });
   } catch (error) {
     console.error("Não foi possível confirmar o recebimento do item.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CONFIRMAR O RECEBIMENTO." }, 500);

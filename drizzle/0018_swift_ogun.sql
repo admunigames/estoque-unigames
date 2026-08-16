@@ -1,0 +1,1 @@
+ALTER TABLE "supply_request_items" ADD COLUMN IF NOT EXISTS "separation_note" text DEFAULT '' NOT NULL;
