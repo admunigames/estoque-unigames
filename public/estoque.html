@@ -11100,7 +11100,7 @@ function renderHomeTasks(){
     }
   });
 
-  async function loadSupplyRequest(){
+  async function loadSupplyRequest(skipCompletedJump){
     // Painel de "solicitação da semana" é uma lista pessoal da própria loja
     // — não faz sentido pra quem enxerga todas as lojas sem ter uma própria
     // (administrador ou acesso geral sem vínculo), mesma regra dos dois.
@@ -11111,6 +11111,20 @@ function renderHomeTasks(){
     try{
       const weekStart = el('supplyMissingWeekSelect').value || supplyUpcomingMonday();
       const data = await supplyRequestApiRequest(null,new URLSearchParams({weekStart}));
+      // Solicitação concluída (separada + recebida/não recebida em todos os
+      // itens): a tela pula direto pra semana vigente atual, em vez de
+      // continuar mostrando a solicitação já resolvida — se a semana vigente
+      // avançou, isso já abre o formulário em branco pra loja.
+      if(data.submitted && data.completed && !skipCompletedJump){
+        const currentVigente = supplyUpcomingMonday();
+        if(weekStart !== currentVigente){
+          renderSupplyMissingWeekOptions();
+          el('supplyMissingWeekSelect').value = currentVigente;
+          supplyRequestLoading = false;
+          await Promise.all([loadSupplyMissing(),loadSupplyRequest(true)]);
+          return;
+        }
+      }
       el('supplyRequestWeekLabel').textContent = formatSupplyMissingWeek(data.weekStart);
       if(data.submitted){
         el('supplyRequestForm').hidden = true;
