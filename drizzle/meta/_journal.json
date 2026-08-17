@@ -134,6 +134,13 @@
       "when": 1786881924737,
       "tag": "0018_swift_ogun",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786975128275,
+      "tag": "0019_natural_shiver_man",
+      "breakpoints": true
     }
   ]
 }

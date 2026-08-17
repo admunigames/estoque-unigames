@@ -437,6 +437,10 @@ export const supplyRequestItems = pgTable(
     separatedBy: text("separated_by").notNull().default(""),
     separatedByName: text("separated_by_name").notNull().default(""),
     separatedAt: text("separated_at").notNull().default(""),
+    // 'separated' | 'not_sent' — só relevante quando separated=1;
+    // diferencia um item de fato separado de um que o responsável
+    // marcou explicitamente como não enviado (com motivo obrigatório).
+    separationStatus: text("separation_status").notNull().default("separated"),
     // Motivo do separador quando o item não veio completo/não veio —
     // preenchido junto da separação, distinto da observação única da
     // solicitação inteira.

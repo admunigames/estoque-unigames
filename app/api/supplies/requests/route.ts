@@ -185,6 +185,7 @@ type RequestItemRow = {
   separated: number;
   separatedByName: string;
   separatedAt: string;
+  separationStatus: string;
   separationNote: string;
   receivedStatus: string;
   receivedByName: string;
@@ -196,7 +197,7 @@ const REQUEST_ITEM_SELECT = `
          category_name AS categoryName, quantity,
          quantity_separated AS quantitySeparated, separated,
          separated_by_name AS separatedByName, separated_at AS separatedAt,
-         separation_note AS separationNote,
+         separation_status AS separationStatus, separation_note AS separationNote,
          received_status AS receivedStatus, received_by_name AS receivedByName,
          received_at AS receivedAt
   FROM supply_request_items WHERE request_id=?1
@@ -530,10 +531,17 @@ export async function PATCH(request: Request) {
 
   try {
     const itemId = safeText(body.itemId, 80);
-    const quantitySeparated = Math.trunc(Number(body.quantitySeparated));
+    const notSent = Boolean(body.notSent);
     const separationNote = safeText(body.note, 300);
     if (!itemId) return jsonResponse({ error: "ITEM INVÁLIDO." }, 400);
-    if (!Number.isFinite(quantitySeparated) || quantitySeparated < 0) {
+    if (notSent && !separationNote) {
+      return jsonResponse(
+        { error: "INFORME O MOTIVO DE NÃO TER ENVIADO O PRODUTO." },
+        400,
+      );
+    }
+    const quantitySeparated = notSent ? 0 : Math.trunc(Number(body.quantitySeparated));
+    if (!notSent && (!Number.isFinite(quantitySeparated) || quantitySeparated < 0)) {
       return jsonResponse({ error: "INFORME UMA QUANTIDADE VÁLIDA." }, 400);
     }
 
@@ -563,17 +571,35 @@ export async function PATCH(request: Request) {
     }
 
     const movementId = crypto.randomUUID();
-    const operations = [
-      database
-        .prepare(
-          `UPDATE supply_request_items
-           SET quantity_separated=?1, separated=1, separated_by=?2,
-               separated_by_name=?3, separated_at=CURRENT_TIMESTAMP, separation_note=?4
-           WHERE id=?5 AND separated=0`,
-        )
-        .bind(quantitySeparated, actor.id, actor.displayName, separationNote, itemId),
-    ];
-    if (quantitySeparated > 0) {
+    const operations = notSent
+      ? [
+          // Não enviado: nada foi de fato separado, então não há estoque a
+          // debitar. Como não existe o que a loja confirme receber, o item
+          // já fecha direto como "not_received" — evita a loja precisar
+          // "confirmar" o recebimento de algo que nunca foi enviado.
+          database
+            .prepare(
+              `UPDATE supply_request_items
+               SET quantity_separated=0, separated=1, separated_by=?1,
+                   separated_by_name=?2, separated_at=CURRENT_TIMESTAMP,
+                   separation_status='not_sent', separation_note=?3,
+                   received_status='not_received', received_at=CURRENT_TIMESTAMP
+               WHERE id=?4 AND separated=0`,
+            )
+            .bind(actor.id, actor.displayName, separationNote, itemId),
+        ]
+      : [
+          database
+            .prepare(
+              `UPDATE supply_request_items
+               SET quantity_separated=?1, separated=1, separated_by=?2,
+                   separated_by_name=?3, separated_at=CURRENT_TIMESTAMP,
+                   separation_status='separated', separation_note=?4
+               WHERE id=?5 AND separated=0`,
+            )
+            .bind(quantitySeparated, actor.id, actor.displayName, separationNote, itemId),
+        ];
+    if (!notSent && quantitySeparated > 0) {
       operations.push(
         database
           .prepare(
@@ -602,7 +628,7 @@ export async function PATCH(request: Request) {
       );
     }
     await database.batch(operations);
-    return jsonResponse({ updated: true, quantitySeparated });
+    return jsonResponse({ updated: true, quantitySeparated, notSent });
   } catch (error) {
     console.error("Não foi possível separar o item da solicitação.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL SEPARAR O ITEM." }, 500);
