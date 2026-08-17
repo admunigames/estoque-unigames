@@ -137,7 +137,7 @@ const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
     "outputs:view", "outputs:create",
     "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_out",
   ],
-  assistance: ["captures:view", "captures:create", "captures:receive"],
+  assistance: ["captures:view", "captures:create", "captures:receive", "captures:delete"],
   custom: [],
 };
 // Mapa de compatibilidade: converte as chaves de permissão do formato antigo
