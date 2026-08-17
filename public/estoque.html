@@ -5562,8 +5562,7 @@
   }
 
   function formatDocumentDate(value){
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 'DATA NÃO INFORMADA' : date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+    return formatDateTimeBR(value) || 'DATA NÃO INFORMADA';
   }
 
   function renderDocuments(documents){
@@ -5710,6 +5709,44 @@
 
   function normalizeHeader(h){
     return h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  }
+
+  // Formata qualquer timestamp vindo do banco no horario de Brasilia/Recife
+  // (UTC-3), de forma legivel ("16/08/2026 as 20:27"). Unico ponto de
+  // conversao de fuso do app: todo lugar que exibe "cadastrado em"/
+  // "atualizado em"/etc. deve usar esta funcao, nunca formatar timestamp
+  // "na unha".
+  //
+  // Os timestamps do banco chegam em dois formatos possiveis:
+  // - Postgres/Supabase (atual): "YYYY-MM-DD HH:MM:SS[.ffffff]+00", ja com
+  //   o fuso (a sessao do banco usa UTC) - nao pode simplesmente virar ISO
+  //   e levar um "Z" no final, senao fica "...+00Z", que e uma data invalida.
+  // - D1/SQLite (legado, `CURRENT_TIMESTAMP`): "YYYY-MM-DD HH:MM:SS" sem
+  //   fuso nenhum, sempre UTC.
+  function formatDateTimeBR(value){
+    if(!value) return '';
+    let date;
+    if(value instanceof Date){
+      date = value;
+    }else{
+      const raw = String(value).trim();
+      if(!raw) return '';
+      const hasOffset = /(Z|[+-]\d{2}(:?\d{2})?)$/.test(raw);
+      const normalized = hasOffset
+        ? raw.replace(' ','T')
+        : /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(raw)
+          ? raw.replace(' ','T')+'Z'
+          : raw;
+      date = new Date(normalized);
+    }
+    if(Number.isNaN(date.getTime())) return String(value);
+    const parts = new Intl.DateTimeFormat('pt-BR',{
+      timeZone:'America/Recife',
+      day:'2-digit',month:'2-digit',year:'numeric',
+      hour:'2-digit',minute:'2-digit',hour12:false
+    }).formatToParts(date);
+    const part = type => (parts.find(p => p.type === type) || {}).value || '';
+    return part('day')+'/'+part('month')+'/'+part('year')+' às '+part('hour')+':'+part('minute');
   }
 
   function normalizeProductKey(name){
@@ -6199,8 +6236,7 @@
   }
 
   function report41DateTime(value){
-    const date = value ? new Date(value) : null;
-    return date && !Number.isNaN(date.getTime()) ? date.toLocaleString('pt-BR') : 'ATUALIZADO';
+    return formatDateTimeBR(value) || 'ATUALIZADO';
   }
 
   async function loadCompanyStock(){
@@ -7303,7 +7339,7 @@
             const text = item.unavailable
               ? 'Indisponível'
               : item.updatedAt
-                ? item.updatedAt.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})
+                ? formatDateTimeBR(item.updatedAt)
                 : 'Sem atualização';
             return '<div class="home-store-update"><strong>'+escapeHtml(item.company.name)+'</strong>'+
               (item.updatedAt
@@ -7509,7 +7545,7 @@
       fiscalOption.label,
       storesWithData + ' de ' + groupCompanies.length + ' lojas com dados'
     ];
-    if(latestUpdatedAt) parts.push('atualizado em ' + latestUpdatedAt.toLocaleString('pt-BR'));
+    if(latestUpdatedAt) parts.push('atualizado em ' + formatDateTimeBR(latestUpdatedAt));
     if(failedStores > 0) parts.push(failedStores + ' loja(s) indisponível(is)');
     setDashboardCompanyMeta(parts.join(' · '));
     renderAll();
@@ -7572,7 +7608,7 @@
         updateDropzoneBadge('saida', currentSaidaFileName, saidaMap.size);
         merged = (entradaMap.size > 0 || saidaMap.size > 0 || catalogMap.size > 0) ? mergeMaps() : [];
         setCompanyMeta(data.updatedAt
-          ? 'Atualizado em ' + new Date(data.updatedAt).toLocaleString('pt-BR')
+          ? 'Atualizado em ' + formatDateTimeBR(data.updatedAt)
           : 'Nenhum dado salvo ainda para esta empresa');
       } else {
         entradaMap = new Map();
@@ -7602,7 +7638,7 @@
     };
     try{
       await storage.set('estoque:' + activeCompanyId, JSON.stringify(payload));
-      setCompanyMeta('Atualizado em ' + new Date(payload.updatedAt).toLocaleString('pt-BR'));
+      setCompanyMeta('Atualizado em ' + formatDateTimeBR(payload.updatedAt));
       loadHomeOverview();
     } catch(e){
       showError('O resultado está na tela, mas não foi possível salvá-lo no banco geral: ' + e.message);
@@ -7654,7 +7690,7 @@
     } else {
       status.textContent = scope + ' — ' + catalogMap.size.toLocaleString('pt-BR') + ' produtos cadastrados' +
         (meta.fileName ? ' — ' + meta.fileName : '') +
-        (meta.updatedAt ? ' — atualizado em ' + new Date(meta.updatedAt).toLocaleString('pt-BR') : '');
+        (meta.updatedAt ? ' — atualizado em ' + formatDateTimeBR(meta.updatedAt) : '');
     }
   }
 
@@ -10149,8 +10185,7 @@ function renderHomeTasks(){
   }
 
   function captureDateTime(value){
-    const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(value || ''));
-    return match ? match[3]+'/'+match[2]+'/'+match[1]+' '+match[4]+':'+match[5] : '—';
+    return formatDateTimeBR(value) || '—';
   }
 
   function captureHistoryHtml(row){
@@ -10544,18 +10579,7 @@ function renderHomeTasks(){
   }
 
   function outputDateTime(value){
-    const raw = String(value || '').trim();
-    if(!raw) return '—';
-    const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(raw)
-      ? raw.replace(' ','T')+'Z'
-      : raw;
-    const date = new Date(normalized);
-    if(Number.isNaN(date.getTime())) return raw;
-    return new Intl.DateTimeFormat('pt-BR',{
-      timeZone:'America/Recife',
-      day:'2-digit',month:'2-digit',year:'numeric',
-      hour:'2-digit',minute:'2-digit',hour12:false
-    }).format(date).replace(',', '');
+    return formatDateTimeBR(value) || '—';
   }
 
   function renderOutputCompanyOptions(){
@@ -11062,8 +11086,7 @@ function renderHomeTasks(){
 
   function supplyItemTimestampHtml(label,dateValue,byName){
     if(!dateValue) return '';
-    const date = new Date(dateValue);
-    const dateText = Number.isNaN(date.getTime()) ? dateValue : date.toLocaleString('pt-BR');
+    const dateText = formatDateTimeBR(dateValue) || dateValue;
     return '<small style="width:100%;color:var(--ink-faint);font:700 8px/1.4 var(--mono);">'+
       label+': '+escapeHtml(dateText)+(byName ? ' POR '+escapeHtml(byName) : '')+'</small>';
   }
@@ -11163,7 +11186,7 @@ function renderHomeTasks(){
         el('supplyRequestSummaryMeta').innerHTML =
           '<div>RESPONSÁVEL<strong>'+escapeHtml(request.responsibleName || '—')+'</strong></div>'+
           '<div>ENVIADO POR<strong>'+escapeHtml(request.createdByName || '—')+'</strong></div>'+
-          '<div>DATA<strong>'+escapeHtml(new Date(request.createdAt).toLocaleString('pt-BR'))+'</strong></div>'+
+          '<div>DATA<strong>'+escapeHtml(formatDateTimeBR(request.createdAt))+'</strong></div>'+
           (request.note ? '<div>OBSERVAÇÃO<strong>'+escapeHtml(request.note)+'</strong></div>' : '');
         const items = Array.isArray(data.items) ? data.items : [];
         el('supplyRequestSummaryGroups').innerHTML = items.length
@@ -11201,7 +11224,7 @@ function renderHomeTasks(){
       '<div class="supply-separation-card-head">'+
         '<div><strong>'+formatSupplyMissingWeek(row.weekStart)+'</strong>'+
           '<span>RESPONSÁVEL: '+escapeHtml(row.responsibleName || '—')+' · ENVIADO EM '+
-            escapeHtml(new Date(row.createdAt).toLocaleString('pt-BR'))+'</span></div>'+
+            escapeHtml(formatDateTimeBR(row.createdAt))+'</span></div>'+
         '<span class="supply-separation-badge done">CONCLUÍDA</span>'+
       '</div>'+
       '<div class="supply-separation-items">'+
@@ -11460,8 +11483,7 @@ function renderHomeTasks(){
   }
 
   function supplyStockMovementRowHtml(movement){
-    const date = new Date(movement.createdAt);
-    const dateText = Number.isNaN(date.getTime()) ? movement.createdAt : date.toLocaleString('pt-BR');
+    const dateText = formatDateTimeBR(movement.createdAt) || movement.createdAt;
     return '<tr>'+
       '<td>'+escapeHtml(movement.productName)+'</td>'+
       '<td>'+escapeHtml(movement.companyName || '—')+'</td>'+
@@ -11852,7 +11874,7 @@ function renderHomeTasks(){
       '<div class="supply-separation-card-head">'+
         '<div><strong>'+escapeHtml(row.companyName)+'</strong>'+
           '<span>RESPONSÁVEL: '+escapeHtml(row.responsibleName || '—')+' · ENVIADO EM '+
-            escapeHtml(new Date(row.createdAt).toLocaleString('pt-BR'))+'</span></div>'+
+            escapeHtml(formatDateTimeBR(row.createdAt))+'</span></div>'+
         '<span class="supply-separation-badge'+(done ? ' done' : '')+'">'+(done ? 'SEPARADO' : 'PENDENTE')+'</span>'+
       '</div>'+
       '<div class="supply-separation-items">'+
@@ -12065,8 +12087,7 @@ function renderHomeTasks(){
   }
 
   function supplyExitHistoryRowHtml(movement){
-    const date = new Date(movement.createdAt);
-    const dateText = Number.isNaN(date.getTime()) ? movement.createdAt : date.toLocaleString('pt-BR');
+    const dateText = formatDateTimeBR(movement.createdAt) || movement.createdAt;
     return '<tr>'+
       '<td>'+escapeHtml(movement.productName)+'</td>'+
       '<td>'+(movement.type === 'in' ? 'ENTRADA' : 'SAÍDA')+'</td>'+

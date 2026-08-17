@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v40"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v41"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -859,7 +859,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v40"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v41"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -952,7 +952,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v40"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v41"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1114,7 +1114,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v40"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v41"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1371,7 +1371,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v40"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v41"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1416,7 +1416,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v40"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v41"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -1477,6 +1477,26 @@ test("registra e controla solicitações de Alterações PDV com permissões gra
   assert.match(migration, /CREATE TABLE "pdv_change_requests"/);
   assert.match(migration, /pdv_change_requests_sale_idx/);
   assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+});
+
+test("formata timestamps do banco no horário de Brasília/Recife em um único ponto do app", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /function formatDateTimeBR\(value\)/);
+  assert.match(html, /timeZone:'America\/Recife'/);
+
+  // As implementações antigas e duplicadas (uma por módulo) foram
+  // substituídas por chamadas à função central.
+  assert.match(html, /function outputDateTime\(value\)\{\s*return formatDateTimeBR\(value\) \|\| '—';\s*\}/);
+  assert.match(html, /function captureDateTime\(value\)\{\s*return formatDateTimeBR\(value\) \|\| '—';\s*\}/);
+  assert.match(html, /function report41DateTime\(value\)\{\s*return formatDateTimeBR\(value\) \|\| 'ATUALIZADO';\s*\}/);
+  assert.match(html, /function formatDocumentDate\(value\)\{\s*return formatDateTimeBR\(value\) \|\| 'DATA NÃO INFORMADA';\s*\}/);
+  assert.match(html, /supplyItemTimestampHtml[\s\S]{0,200}formatDateTimeBR\(dateValue\)/);
+  assert.match(html, /supplyStockMovementRowHtml[\s\S]{0,120}formatDateTimeBR\(movement\.createdAt\)/);
+  assert.match(html, /supplyExitHistoryRowHtml[\s\S]{0,120}formatDateTimeBR\(movement\.createdAt\)/);
 });
 
 test("simplifica os indicadores e filtros do estoque fiscal", async () => {
