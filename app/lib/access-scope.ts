@@ -54,3 +54,41 @@ export function resolveStoreScope(
 }
 
 export const NO_COMPANY_ERROR = "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.";
+
+/**
+ * Assistência é um setor, não uma loja — não deve existir em
+ * Cadastros > Lojas nem aparecer nos seletores de loja de outros
+ * módulos (Relatório 41, Puxadas, Estoque Fiscal etc.), que listam a
+ * partir de shared_state.companies_list. O fluxo de Insumos, porém, é
+ * organizado por company_id (uma solicitação semanal por unidade), e
+ * a Assistência precisa da própria solicitação, separada das lojas
+ * reais. Em vez de tocar na tabela/lista de lojas, usamos um
+ * company_id sintético reservado, só dentro das tabelas de Insumos —
+ * ele nunca é gravado em companies_list, então não vaza pra nenhum
+ * outro módulo.
+ */
+export const ASSISTANCE_SUPPLIES_COMPANY_ID = "cassistencia";
+export const ASSISTANCE_SUPPLIES_COMPANY_NAME = "ASSISTÊNCIA";
+
+export type SectorScopeActor = ScopeActor & { sector: string };
+
+/**
+ * Company_id que o ator deve usar/enxergar no fluxo de Insumos.
+ * Assistência sempre usa a própria unidade fixa — nunca "vê todas as
+ * lojas", mesmo se ganhar a permissão de alcance geral (diferente do
+ * usuário comum sem loja, que canSeeAllStores() trata como admin).
+ * Os demais casos seguem a regra genérica normalmente.
+ */
+export function suppliesActingCompanyId(
+  actor: SectorScopeActor,
+  requiredPermission: string,
+  requestedCompanyId: string,
+): string {
+  if (actor.role !== "admin" && actor.sector === "assistance") {
+    return ASSISTANCE_SUPPLIES_COMPANY_ID;
+  }
+  if (canSeeAllStores(actor, requiredPermission)) {
+    return hasCompany(requestedCompanyId) ? requestedCompanyId : "";
+  }
+  return actor.companyId;
+}

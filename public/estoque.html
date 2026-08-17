@@ -10791,10 +10791,25 @@ function renderHomeTasks(){
     };
   }
 
+  // Assistência é um setor, não uma loja — mas no fluxo de Insumos ela
+  // precisa se comportar como "uma loja a mais": marca, solicita e tem
+  // histórico próprio, nunca escolhendo entre lojas nem enxergando todas
+  // (diferente da regra genérica de canActAcrossStores para outros casos
+  // sem loja). Vale só aqui — os outros módulos continuam sem essa regra.
+  function supplyIsAssistance(){
+    return currentSession.role !== 'admin' && currentSession.sector === 'assistance';
+  }
+  function supplyCanChooseCompany(permission){
+    return !supplyIsAssistance() && canActAcrossStores(permission);
+  }
+  function supplyHasOwnUnit(){
+    return supplyIsAssistance() || Boolean(currentSession.companyId);
+  }
+
   function updateSupplyRoleVisibility(){
-    const canChooseCompany = canActAcrossStores('supplies:request');
+    const canChooseCompany = supplyCanChooseCompany('supplies:request');
     const access = supplyAdminTabAccess();
-    el('supplyRegisterPanel').hidden = !canChooseCompany && !currentSession.companyId;
+    el('supplyRegisterPanel').hidden = !canChooseCompany && !supplyHasOwnUnit();
     el('supplyCompanyField').hidden = !canChooseCompany;
     el('supplyCompany').required = canChooseCompany;
     el('supplyAdminPanel').hidden = !access.hasAdminAccess;
@@ -10931,11 +10946,11 @@ function renderHomeTasks(){
 
   async function loadSupplyMissing(){
     if(!canAccess('supplies') || supplyMissingLoading) return;
-    const canChooseCompany = canActAcrossStores('supplies:request');
+    const canChooseCompany = supplyCanChooseCompany('supplies:request');
     const companyId = canChooseCompany ? el('supplyCompany').value : currentSession.companyId;
     if(!el('supplyMissingWeekSelect').options.length) renderSupplyMissingWeekOptions();
     const weekStart = el('supplyMissingWeekSelect').value || supplyUpcomingMonday();
-    if(!companyId){
+    if(!companyId && !supplyIsAssistance()){
       el('supplyMissingGroups').innerHTML = canChooseCompany
         ? '<div class="supply-empty">Escolha a loja para ver os produtos.</div>'
         : '<div class="supply-empty">Seu usuário precisa estar vinculado a uma loja.</div>';
@@ -10973,7 +10988,7 @@ function renderHomeTasks(){
   el('supplyMissingGroups').addEventListener('change',async event => {
     const checkbox = event.target.closest('[data-missing-product]');
     if(!checkbox) return;
-    const companyId = canActAcrossStores('supplies:request') ? el('supplyCompany').value : currentSession.companyId;
+    const companyId = supplyCanChooseCompany('supplies:request') ? el('supplyCompany').value : currentSession.companyId;
     const productId = checkbox.dataset.missingProduct;
     const marked = checkbox.checked;
     checkbox.disabled = true;
@@ -11104,7 +11119,10 @@ function renderHomeTasks(){
     // Painel de "solicitação da semana" é uma lista pessoal da própria loja
     // — não faz sentido pra quem enxerga todas as lojas sem ter uma própria
     // (administrador ou acesso geral sem vínculo), mesma regra dos dois.
-    const managesAllStores = currentSession.role === 'admin' || canActAcrossStores('supplies:request');
+    // Assistência é a exceção: tem a própria "unidade" fixa nesse fluxo,
+    // então nunca cai no caso de "enxerga todas".
+    const managesAllStores = !supplyIsAssistance() &&
+      (currentSession.role === 'admin' || canActAcrossStores('supplies:request'));
     el('supplyRequestPanel').hidden = managesAllStores || !canAccess('supplies');
     if(managesAllStores || !canAccess('supplies') || supplyRequestLoading) return;
     supplyRequestLoading = true;

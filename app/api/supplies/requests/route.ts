@@ -1,6 +1,12 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { canSeeAllStores, NO_COMPANY_ERROR } from "../../../lib/access-scope";
+import {
+  ASSISTANCE_SUPPLIES_COMPANY_ID,
+  ASSISTANCE_SUPPLIES_COMPANY_NAME,
+  canSeeAllStores,
+  NO_COMPANY_ERROR,
+  suppliesActingCompanyId,
+} from "../../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -8,6 +14,7 @@ type Identity = {
   displayName: string;
   role: "admin" | "user";
   companyId: string;
+  sector: string;
   permissions: string[];
 };
 
@@ -43,6 +50,7 @@ function identity(request: Request): Identity {
     displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
     companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
+    sector: safeText(request.headers.get("x-unigames-sector"), 40),
     permissions: (request.headers.get("x-unigames-permissions") || "")
       .split(",")
       .map((permission) => permission.trim())
@@ -120,11 +128,11 @@ function upcomingMondayRecife(date = new Date()) {
 }
 
 function scopedCompany(actor: Identity, requestedCompanyId: string) {
-  if (!canSeeAllStores(actor, "supplies:request")) return actor.companyId;
-  return COMPANY_PATTERN.test(requestedCompanyId) ? requestedCompanyId : "";
+  return suppliesActingCompanyId(actor, "supplies:request", requestedCompanyId);
 }
 
 async function companyName(database: D1Database, companyId: string) {
+  if (companyId === ASSISTANCE_SUPPLIES_COMPANY_ID) return ASSISTANCE_SUPPLIES_COMPANY_NAME;
   try {
     const row = await database
       .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
@@ -372,11 +380,12 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const requestedCompanyId = safeText(body.companyId, 80);
-    const canChooseCompany = canSeeAllStores(actor, "supplies:request");
-    const companyId = canChooseCompany ? requestedCompanyId : actor.companyId;
+    const companyId = suppliesActingCompanyId(actor, "supplies:request", requestedCompanyId);
     if (!COMPANY_PATTERN.test(companyId)) {
       return jsonResponse(
-        { error: canChooseCompany ? "ESCOLHA A LOJA." : NO_COMPANY_ERROR },
+        {
+          error: canSeeAllStores(actor, "supplies:request") ? "ESCOLHA A LOJA." : NO_COMPANY_ERROR,
+        },
         400,
       );
     }
@@ -625,7 +634,8 @@ async function handleReceiveAction(actor: Identity, body: JsonMap) {
       .bind(itemId)
       .first<{ id: string; separated: number; companyId: string }>();
     if (!item) return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
-    if (!canSeeAllStores(actor, "supplies:receive") && item.companyId !== actor.companyId) {
+    const actingCompanyId = suppliesActingCompanyId(actor, "supplies:receive", item.companyId);
+    if (!canSeeAllStores(actor, "supplies:receive") && item.companyId !== actingCompanyId) {
       return jsonResponse({ error: "VOCÊ NÃO PODE ALTERAR OUTRA LOJA." }, 403);
     }
     if (!item.separated) {
