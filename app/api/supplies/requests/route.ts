@@ -228,9 +228,14 @@ export async function GET(request: Request) {
 
   if ((actor.role === "admin" || canSeeAllStores(actor, "supplies:stock_out")) && url.searchParams.get("queue") === "1") {
     const history = url.searchParams.get("view") === "history";
-    const weekStart = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("weekStart") || "")
-      ? String(url.searchParams.get("weekStart"))
-      : upcomingMondayRecife();
+    // Sem weekStart explícito, a fila ativa mostra TODAS as solicitações
+    // ainda pendentes, de qualquer semana — uma solicitação incompleta
+    // nunca pode "sumir" só porque a semana virou (bug relatado: itens
+    // faltando separar de uma semana anterior ficavam inacessíveis). Um
+    // weekStart explícito filtra pra uma semana específica (inclusive
+    // passada), pra quem quiser revisar uma semana em particular.
+    const requestedWeekStart = url.searchParams.get("weekStart") || "";
+    const weekStart = /^\d{4}-\d{2}-\d{2}$/.test(requestedWeekStart) ? requestedWeekStart : "";
     try {
       const database = await getD1();
       const requests = await (history
@@ -240,15 +245,22 @@ export async function GET(request: Request) {
                     note, status, created_by_name AS createdByName, created_at AS createdAt
              FROM supply_requests ORDER BY created_at DESC LIMIT 150`,
           )
-        : database
-            .prepare(
+        : weekStart
+          ? database
+              .prepare(
+                `SELECT id, company_id AS companyId, company_name AS companyName,
+                        week_start AS weekStart, responsible_name AS responsibleName,
+                        note, status, created_by_name AS createdByName, created_at AS createdAt
+                 FROM supply_requests WHERE week_start=?1
+                 ORDER BY created_at ASC`,
+              )
+              .bind(weekStart)
+          : database.prepare(
               `SELECT id, company_id AS companyId, company_name AS companyName,
                       week_start AS weekStart, responsible_name AS responsibleName,
                       note, status, created_by_name AS createdByName, created_at AS createdAt
-               FROM supply_requests WHERE week_start=?1
-               ORDER BY created_at ASC`,
+               FROM supply_requests ORDER BY week_start ASC, created_at ASC LIMIT 500`,
             )
-            .bind(weekStart)
       ).all<RequestRow>();
       const requestRows = requests.results ?? [];
       const withItems = await Promise.all(

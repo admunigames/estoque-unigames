@@ -3418,7 +3418,10 @@
 
         <div class="supply-admin-tab-panel" id="supplyAdminSeparacao" hidden>
           <div class="supply-product-toolbar">
-            <div class="field"><label>SEMANA</label><div class="supply-missing-week" id="supplySeparationWeekLabel">—</div></div>
+            <div class="field"><label>SITUAÇÃO</label><div class="supply-missing-week" id="supplySeparationWeekLabel">—</div></div>
+            <div class="field"><label for="supplySeparationWeekFilter">BUSCAR SEMANA ESPECÍFICA</label>
+              <select id="supplySeparationWeekFilter"><option value="">TODAS AS PENDENTES</option></select>
+            </div>
             <button class="btn-outline" id="btnRefreshSeparation" type="button" style="margin-left:auto;">ATUALIZAR</button>
           </div>
           <div class="supply-separation-list" id="supplySeparationList"><div class="supply-empty">Carregando solicitações…</div></div>
@@ -10939,6 +10942,21 @@ function renderHomeTasks(){
     return weeks;
   }
 
+  function supplySeparationWeekFilterOptions(){
+    const anchorUtc = Date.parse(supplyUpcomingMonday()+'T00:00:00Z');
+    const weeks = [];
+    for(let i=-12;i<=1;i++) weeks.push(new Date(anchorUtc+i*7*86400000).toISOString().slice(0,10));
+    return weeks.reverse();
+  }
+
+  function renderSupplySeparationWeekFilterOptions(){
+    const select = el('supplySeparationWeekFilter');
+    if(select.options.length > 1) return;
+    const weeks = supplySeparationWeekFilterOptions();
+    select.innerHTML = '<option value="">TODAS AS PENDENTES</option>'+
+      weeks.map(week => '<option value="'+week+'">'+formatSupplyMissingWeek(week)+'</option>').join('');
+  }
+
   function renderSupplyMissingWeekOptions(){
     const select = el('supplyMissingWeekSelect');
     const weeks = supplyWeekOptions(8);
@@ -11873,7 +11891,7 @@ function renderHomeTasks(){
     return '<div class="supply-separation-card'+(done ? ' done' : '')+'">'+
       '<div class="supply-separation-card-head">'+
         '<div><strong>'+escapeHtml(row.companyName)+'</strong>'+
-          '<span>RESPONSÁVEL: '+escapeHtml(row.responsibleName || '—')+' · ENVIADO EM '+
+          '<span>'+escapeHtml(formatSupplyMissingWeek(row.weekStart))+' · RESPONSÁVEL: '+escapeHtml(row.responsibleName || '—')+' · ENVIADO EM '+
             escapeHtml(formatDateTimeBR(row.createdAt))+'</span></div>'+
         '<span class="supply-separation-badge'+(done ? ' done' : '')+'">'+(done ? 'SEPARADO' : 'PENDENTE')+'</span>'+
       '</div>'+
@@ -11890,15 +11908,21 @@ function renderHomeTasks(){
   async function loadSupplySeparationQueue(){
     const canSeeQueue = currentSession.role === 'admin' || canActAcrossStores('supplies:stock_out');
     if(!canSeeQueue || supplySeparationLoading) return;
+    renderSupplySeparationWeekFilterOptions();
+    const weekFilter = el('supplySeparationWeekFilter').value;
     supplySeparationLoading = true;
     el('supplySeparationList').innerHTML = '<div class="supply-empty">Carregando solicitações…</div>';
     try{
-      const data = await supplyRequestApiRequest(null,new URLSearchParams({queue:'1'}));
-      el('supplySeparationWeekLabel').textContent = formatSupplyMissingWeek(data.weekStart);
+      const params = new URLSearchParams({queue:'1'});
+      if(weekFilter) params.set('weekStart',weekFilter);
+      const data = await supplyRequestApiRequest(null,params);
+      el('supplySeparationWeekLabel').textContent = data.weekStart
+        ? formatSupplyMissingWeek(data.weekStart)
+        : 'TODAS AS SEMANAS COM PENDÊNCIA';
       const requests = Array.isArray(data.requests) ? data.requests : [];
       el('supplySeparationList').innerHTML = requests.length
         ? requests.map(supplySeparationCardHtml).join('')
-        : '<div class="supply-empty">Nenhuma solicitação enviada para esta semana ainda.</div>';
+        : '<div class="supply-empty">Nenhuma solicitação pendente.</div>';
     }catch(error){
       el('supplySeparationList').innerHTML = '<div class="supply-empty">'+escapeHtml(error.message)+'</div>';
     }finally{
@@ -11969,6 +11993,7 @@ function renderHomeTasks(){
   });
 
   el('btnRefreshSeparation').addEventListener('click',loadSupplySeparationQueue);
+  el('supplySeparationWeekFilter').addEventListener('change',loadSupplySeparationQueue);
 
   let supplyAdminHistoryRequests = [];
   let supplyAdminHistoryLoading = false;
