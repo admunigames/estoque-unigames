@@ -3035,27 +3035,28 @@
             <label for="routineDate">DATA DA ROTINA</label>
             <input id="routineDate" type="date">
           </div>
+          <button class="btn-outline" id="btnDownloadRoutineTxt" type="button">BAIXAR TXT</button>
         </div>
 
         <section class="mission-admin-panel" data-permission="missions:create">
           <div class="mission-admin-head">
-            <div><h3>CADASTRAR ROTINA OPERACIONAL</h3><p>Rotinas se repetem toda semana no dia escolhido. Se não forem concluídas, migram automaticamente como pendência para o dia seguinte.</p></div>
+            <div><h3>CADASTRAR ROTINA OPERACIONAL</h3><p>Rotinas são gerais para todas as lojas e se repetem toda semana nos dias escolhidos. Se não forem concluídas, migram automaticamente como pendência para o dia seguinte.</p></div>
           </div>
           <form id="routineForm">
             <div class="mission-form-grid">
               <div class="field double"><label for="routineTitle">TÍTULO DA ROTINA</label><input id="routineTitle" maxlength="160" required placeholder="Ex.: Conferir caixa da loja"></div>
-              <div class="field"><label for="routineWeekday">DIA DA SEMANA</label><select id="routineWeekday">
-                <option value="1">SEGUNDA-FEIRA</option>
-                <option value="2">TERÇA-FEIRA</option>
-                <option value="3">QUARTA-FEIRA</option>
-                <option value="4">QUINTA-FEIRA</option>
-                <option value="5">SEXTA-FEIRA</option>
-                <option value="6">SÁBADO</option>
-                <option value="0">DOMINGO</option>
-              </select></div>
-              <div class="field"><label for="routineScope">DESTINO</label><select id="routineScope"><option value="general">ROTINA GERAL — TODAS AS LOJAS</option><option value="store">ROTINA PARA UMA LOJA</option></select></div>
-              <div class="field" id="routineCompanyField" hidden><label for="routineCompany">LOJA</label><select id="routineCompany"><option value="">SELECIONE A LOJA</option></select></div>
-              <div class="field full"><label for="routineDescription">DESCRIÇÃO E ORIENTAÇÕES</label><textarea id="routineDescription" maxlength="1200" rows="3" placeholder="Detalhes da rotina..."></textarea></div>
+              <div class="field full">
+                <label>DIAS DA SEMANA</label>
+                <div class="permission-grid" id="routineWeekdayGrid">
+                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="1"> SEGUNDA-FEIRA</label>
+                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="2"> TERÇA-FEIRA</label>
+                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="3"> QUARTA-FEIRA</label>
+                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="4"> QUINTA-FEIRA</label>
+                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="5"> SEXTA-FEIRA</label>
+                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="6"> SÁBADO</label>
+                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="0"> DOMINGO</label>
+                </div>
+              </div>
             </div>
             <div class="mission-form-actions"><button class="btn-accent" id="btnSaveRoutine" type="submit">CADASTRAR ROTINA</button></div>
             <div class="user-form-status" id="routineFormStatus" role="status" aria-live="polite"></div>
@@ -9744,43 +9745,49 @@ function renderHomeTasks(){
   }
 
   function routineTaskStatus(task){
-    return normalizedMissionStatus(task.status);
+    return task && task.status === 'completed' ? 'completed' : 'todo';
   }
 
-  // Mesma regra das missões: só quem tem loja vinculada, e é dona daquela
-  // tarefa específica, marca status. Quem cadastrou a rotina (sem loja) só
-  // acompanha o status de cada loja.
+  // Só quem tem loja vinculada, e é dona daquela tarefa específica, marca
+  // feita/não feita. Quem cadastrou a rotina (sem loja) só acompanha o
+  // status de cada loja — mesma regra aplicada às missões.
   function isRoutineTaskMine(task){
     return currentSession.role !== 'admin' && Boolean(currentSession.companyId) && task.companyId === currentSession.companyId;
+  }
+
+  function routineWeekdaysLabel(weekdays){
+    return (Array.isArray(weekdays) ? weekdays : [])
+      .slice()
+      .sort((a,b) => a - b)
+      .map(day => routineWeekdayLabels[day] || '')
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  function routineStatusToggleHtml(task,home){
+    const status = routineTaskStatus(task);
+    const completed = status === 'completed';
+    const dataAttribute = home ? 'data-home-routine-toggle' : 'data-routine-toggle';
+    return '<button class="'+(completed ? 'btn-outline' : 'btn-accent')+'" type="button" '+dataAttribute+'="'+escapeHtml(task.id)+
+      '" data-current-status="'+status+'">'+(completed ? 'DESFAZER' : 'MARCAR COMO FEITA')+'</button>';
   }
 
   function routineCardHtml(task){
     const status = routineTaskStatus(task);
     const completed = status === 'completed';
-    const target = task.scope === 'general' ? 'GERAL · TODAS AS LOJAS' : (task.companyName || 'LOJA');
-    const marker = '<span class="mission-check '+status+'" aria-hidden="true">'+
-      (status === 'completed' ? '✓' : status === 'in_progress' ? '◐' : '○')+'</span>';
-    return '<article class="mission-card'+(completed ? ' completed' : status === 'in_progress' ? ' in-progress' : '')+'">'+
+    const marker = '<span class="mission-check '+status+'" aria-hidden="true">'+(completed ? '✓' : '○')+'</span>';
+    return '<article class="mission-card'+(completed ? ' completed' : '')+'">'+
       marker+
       '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(task.title || '')+'</strong>'+
-        (task.description ? '<p class="mission-card-description">'+escapeHtml(task.description)+'</p>' : '')+
         '<div class="mission-badges">'+
-          '<span class="mission-badge">'+escapeHtml(target)+'</span>'+
-          '<span class="mission-badge">↻ '+escapeHtml(routineWeekdayLabels[task.weekday] || '')+'</span>'+
+          '<span class="mission-badge">'+escapeHtml(task.companyName || 'LOJA')+'</span>'+
           (task.carriedOver ? '<span class="mission-badge overdue">MIGROU DE '+escapeHtml(task.originDate)+'</span>' : '')+
         '</div></div>'+
-      '<div class="mission-card-actions"><span class="mission-status'+(completed ? ' done' : status === 'in_progress' ? ' progress' : '')+'">'+
-        escapeHtml(missionStatusLabels[status])+
+      '<div class="mission-card-actions"><span class="mission-status'+(completed ? ' done' : '')+'">'+
+        (completed ? 'FEITA' : 'NÃO FEITA')+
         (isRoutineTaskMine(task) ? '' : ' · '+escapeHtml(task.companyName || ''))+
         '</span>'+
-        (isRoutineTaskMine(task)
-          ? '<select class="mission-status-select status-'+status+'" data-routine-status="'+escapeHtml(task.id)+
-            '" data-current-status="'+status+'" aria-label="Status da tarefa">'+
-            '<option value="todo"'+(status === 'todo' ? ' selected' : '')+'>A FAZER</option>'+
-            '<option value="in_progress"'+(status === 'in_progress' ? ' selected' : '')+'>EM ANDAMENTO</option>'+
-            '<option value="completed"'+(status === 'completed' ? ' selected' : '')+'>CONCLUÍDO</option>'+
-            '</select>'
-          : '')+
+        (isRoutineTaskMine(task) ? routineStatusToggleHtml(task,false) : '')+
       '</div></article>';
   }
 
@@ -9801,8 +9808,7 @@ function renderHomeTasks(){
           '<article class="mission-card">'+
             '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(routine.title)+'</strong>'+
               '<div class="mission-badges">'+
-                '<span class="mission-badge">↻ '+escapeHtml(routineWeekdayLabels[routine.weekday] || '')+'</span>'+
-                '<span class="mission-badge">'+escapeHtml(routine.scope === 'general' ? 'GERAL · TODAS AS LOJAS' : (routine.companyName || 'LOJA'))+'</span>'+
+                '<span class="mission-badge">↻ '+escapeHtml(routineWeekdaysLabel(routine.weekdays))+'</span>'+
               '</div></div>'+
             '<div class="mission-card-actions">'+
               (canAccess('missions:delete') ? '<button class="mission-delete" type="button" data-routine-delete="'+escapeHtml(routine.id)+'">EXCLUIR</button>' : '')+
@@ -9835,20 +9841,12 @@ function renderHomeTasks(){
   function homeRoutineRowHtml(task){
     const status = routineTaskStatus(task);
     const completed = status === 'completed';
-    const target = task.scope === 'general' ? 'ROTINA GERAL' : (task.companyName || 'MINHA LOJA');
-    const marker = '<span class="home-mission-check '+status+'" aria-hidden="true">'+
-      (status === 'completed' ? '✓' : status === 'in_progress' ? '◐' : '○')+'</span>';
-    return '<div class="home-mission-row'+(completed ? ' completed' : status === 'in_progress' ? ' in-progress' : '')+'">'+marker+
+    const marker = '<span class="home-mission-check '+status+'" aria-hidden="true">'+(completed ? '✓' : '○')+'</span>';
+    return '<div class="home-mission-row'+(completed ? ' completed' : '')+'">'+marker+
       '<div class="home-mission-copy"><strong class="home-mission-title">'+escapeHtml(task.title || '')+'</strong>'+
-      '<span class="home-mission-meta">'+escapeHtml(target)+' · '+escapeHtml(missionStatusLabels[status])+'</span></div>'+
+      '<span class="home-mission-meta">'+escapeHtml(task.companyName || 'MINHA LOJA')+' · '+(completed ? 'FEITA' : 'NÃO FEITA')+'</span></div>'+
       '<div class="home-mission-actions">'+
-      (isRoutineTaskMine(task) ?
-        '<select class="mission-status-select status-'+status+'" data-home-routine-status="'+escapeHtml(task.id)+
-        '" data-current-status="'+status+'" aria-label="Status da tarefa">'+
-        '<option value="todo"'+(status === 'todo' ? ' selected' : '')+'>A FAZER</option>'+
-        '<option value="in_progress"'+(status === 'in_progress' ? ' selected' : '')+'>EM ANDAMENTO</option>'+
-        '<option value="completed"'+(status === 'completed' ? ' selected' : '')+'>CONCLUÍDO</option>'+
-        '</select>' : '')+
+      (isRoutineTaskMine(task) ? routineStatusToggleHtml(task,true) : '')+
       '</div></div>';
   }
 
@@ -9873,13 +9871,27 @@ function renderHomeTasks(){
       body:JSON.stringify({taskId,status})
     });
     await Promise.all([loadRoutines(),loadHomeRoutines()]);
-    if(status === 'completed'){
-      showPurchaseToast('Tarefa concluída. O administrador responsável foi avisado.');
-    }else if(status === 'in_progress'){
-      showPurchaseToast('Tarefa marcada como em andamento.');
-    }else{
-      showPurchaseToast('Tarefa marcada como a fazer.');
-    }
+    showPurchaseToast(status === 'completed'
+      ? 'Tarefa marcada como feita. O administrador responsável foi avisado.'
+      : 'Tarefa marcada como não feita.');
+  }
+
+  function routineTxtReport(date){
+    const byCompany = new Map();
+    routineRows.forEach(task => {
+      const key = task.companyName || 'LOJA';
+      if(!byCompany.has(key)) byCompany.set(key,[]);
+      byCompany.get(key).push(task.title || '');
+    });
+    const blocks = Array.from(byCompany.entries()).map(([companyName,titles]) => {
+      const lines = ['*ROTINA OPERACIONAL - '+companyName.toUpperCase()+'*',''];
+      titles.forEach((title,index) => {
+        if(index > 0) lines.push('');
+        lines.push('* '+title);
+      });
+      return lines.join('\n');
+    });
+    return blocks.length ? blocks.join('\n\n\n') : 'Nenhuma tarefa de rotina para '+date+'.';
   }
 
   document.querySelectorAll('[data-mission-section-tab]').forEach(button => {
@@ -9887,16 +9899,24 @@ function renderHomeTasks(){
   });
   el('routineDate').value = todayDateKey();
   el('routineDate').addEventListener('change',() => loadRoutines());
-  el('routineScope').addEventListener('change',() => {
-    const storeRoutine = el('routineScope').value === 'store';
-    el('routineCompanyField').hidden = !storeRoutine;
-    el('routineCompany').required = storeRoutine;
+  el('btnDownloadRoutineTxt').addEventListener('click',() => {
+    const date = el('routineDate').value || todayDateKey();
+    try{
+      const blob = new Blob(['﻿'+routineTxtReport(date)],{type:'text/plain;charset=utf-8;'});
+      downloadBlobFile(blob,'rotina-operacional-'+date+'.txt');
+    }catch(error){
+      showPurchaseToast(error.message || 'Não foi possível gerar o TXT.','error');
+    }
   });
   el('routineForm').addEventListener('submit',async event => {
     event.preventDefault();
-    const storeRoutine = el('routineScope').value === 'store';
-    const company = companies.find(item => item.id === el('routineCompany').value);
+    const weekdays = Array.from(document.querySelectorAll('[name="routineWeekday"]:checked')).map(input => Number(input.value));
     const button = el('btnSaveRoutine');
+    if(!weekdays.length){
+      el('routineFormStatus').textContent = 'ESCOLHA PELO MENOS UM DIA DA SEMANA.';
+      el('routineFormStatus').className = 'user-form-status error';
+      return;
+    }
     button.disabled = true;
     el('routineFormStatus').textContent = 'SALVANDO ROTINA…';
     el('routineFormStatus').className = 'user-form-status';
@@ -9906,17 +9926,13 @@ function renderHomeTasks(){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           title:el('routineTitle').value,
-          description:el('routineDescription').value,
-          weekday:Number(el('routineWeekday').value),
-          scope:storeRoutine ? 'store' : 'general',
-          companyId:storeRoutine ? el('routineCompany').value : '',
-          companyName:storeRoutine && company ? company.name : ''
+          weekdays
         })
       });
       el('routineFormStatus').textContent = 'ROTINA CADASTRADA COM SUCESSO.';
       el('routineFormStatus').className = 'user-form-status success';
       el('routineTitle').value = '';
-      el('routineDescription').value = '';
+      document.querySelectorAll('[name="routineWeekday"]:checked').forEach(input => { input.checked = false; });
       await Promise.all([loadRoutines(),loadHomeRoutines()]);
     }catch(error){
       el('routineFormStatus').textContent = error.message;
@@ -9925,18 +9941,17 @@ function renderHomeTasks(){
       button.disabled = false;
     }
   });
-  el('routineList').addEventListener('change',async event => {
-    const taskId = event.target.dataset.routineStatus;
-    if(!taskId) return;
-    const previousStatus = event.target.dataset.currentStatus;
-    event.target.disabled = true;
+  el('routineList').addEventListener('click',async event => {
+    const button = event.target.closest('[data-routine-toggle]');
+    if(!button) return;
+    const nextStatus = button.dataset.currentStatus === 'completed' ? 'todo' : 'completed';
+    button.disabled = true;
     try{
-      await updateRoutineStatus(taskId,event.target.value);
+      await updateRoutineStatus(button.dataset.routineToggle,nextStatus);
     }catch(error){
-      event.target.value = previousStatus;
       showPurchaseToast(error.message,'error');
     }finally{
-      event.target.disabled = false;
+      button.disabled = false;
     }
   });
   el('routineDefinitionsList').addEventListener('click',async event => {
@@ -9952,18 +9967,17 @@ function renderHomeTasks(){
       button.disabled = false;
     }
   });
-  el('homeRoutineList').addEventListener('change',async event => {
-    const taskId = event.target.dataset.homeRoutineStatus;
-    if(!taskId) return;
-    const previousStatus = event.target.dataset.currentStatus;
-    event.target.disabled = true;
+  el('homeRoutineList').addEventListener('click',async event => {
+    const button = event.target.closest('[data-home-routine-toggle]');
+    if(!button) return;
+    const nextStatus = button.dataset.currentStatus === 'completed' ? 'todo' : 'completed';
+    button.disabled = true;
     try{
-      await updateRoutineStatus(taskId,event.target.value);
+      await updateRoutineStatus(button.dataset.homeRoutineToggle,nextStatus);
     }catch(error){
-      event.target.value = previousStatus;
       showPurchaseToast(error.message,'error');
     }finally{
-      event.target.disabled = false;
+      button.disabled = false;
     }
   });
 

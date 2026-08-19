@@ -11,15 +11,11 @@ type Identity = {
   companyId: string;
   permissions: string[];
 };
-type RoutineStatus = "todo" | "in_progress" | "completed";
+type RoutineStatus = "todo" | "completed";
 type RoutineDefinitionRow = {
   id: string;
   title: string;
-  description: string;
-  weekday: number;
-  scope: "general" | "store";
-  companyId: string;
-  companyName: string;
+  weekdays: string;
   active: number;
   createdBy: string;
   createdByName: string;
@@ -34,9 +30,6 @@ type RoutineTaskRow = {
   status: RoutineStatus;
   carriedOver: number;
   title?: string;
-  description?: string;
-  weekday?: number;
-  scope?: "general" | "store";
   createdBy?: string;
 };
 type CompanyRecord = { id: string; name: string };
@@ -49,7 +42,7 @@ type PushSubscriptionRow = {
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const COMPANY_PATTERN = /^c[a-z0-9]{6,40}$/i;
-const ROUTINE_STATUSES = new Set<RoutineStatus>(["todo", "in_progress", "completed"]);
+const ROUTINE_STATUSES = new Set<RoutineStatus>(["todo", "completed"]);
 
 function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -71,9 +64,25 @@ function routineStatus(value: unknown): RoutineStatus | null {
     : null;
 }
 
-function routineWeekday(value: unknown): number | null {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 6 ? parsed : null;
+// Lê a lista de dias da semana enviada pelo formulário (0=domingo..6=sábado),
+// remove duplicadas/valores inválidos e ordena.
+function routineWeekdays(value: unknown): number[] | null {
+  if (!Array.isArray(value)) return null;
+  const unique = Array.from(
+    new Set(
+      value
+        .map((item) => Number(item))
+        .filter((item) => Number.isInteger(item) && item >= 0 && item <= 6),
+    ),
+  ).sort((a, b) => a - b);
+  return unique.length ? unique : null;
+}
+
+function parseWeekdaysText(text: string): number[] {
+  return text
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item >= 0 && item <= 6);
 }
 
 function recifeDateKey(now = new Date()) {
@@ -188,26 +197,52 @@ async function companyName(database: D1Database, companyId: string) {
   return companies.find((company) => company.id === companyId)?.name || "";
 }
 
-async function generateTodayTasks(
-  database: D1Database,
-  routine: { id: string; scope: string; companyId: string; companyName: string },
-  today: string,
-) {
-  const targets: CompanyRecord[] =
-    routine.scope === "general"
-      ? await storeCompanies(database)
-      : [{ id: routine.companyId, name: routine.companyName }];
-  for (const target of targets) {
-    if (!target.id) continue;
-    await database
-      .prepare(
-        `INSERT INTO operational_routine_tasks
-          (id, routine_id, company_id, company_name, origin_date, due_date, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?5, 'todo', CURRENT_TIMESTAMP)
-         ON CONFLICT (routine_id, origin_date, company_id) DO NOTHING`,
-      )
-      .bind(crypto.randomUUID(), routine.id, target.id, target.name, today)
-      .run();
+// Auto-suficiente: roda a cada GET/POST, não depende só do cron. Primeiro
+// empurra pra hoje qualquer pendência ainda não concluída (o mesmo que o
+// cron faz todo dia), depois garante que a data pedida tenha uma tarefa
+// por loja para cada rotina cujo dia da semana bate com ela — assim, tanto
+// olhar "hoje" quanto adiantar a data pra conferir a próxima ocorrência
+// sempre mostra o estado correto, mesmo se o cron atrasar ou falhar.
+async function ensureRoutineTasksForDate(database: D1Database, date: string) {
+  const today = recifeDateKey();
+  await database
+    .prepare(
+      `UPDATE operational_routine_tasks
+       SET due_date=?1, carried_over=1, updated_at=CURRENT_TIMESTAMP
+       WHERE status <> 'completed' AND due_date < ?1`,
+    )
+    .bind(today)
+    .run();
+
+  // Não recria ocorrência pra data já passada — só ajusta pendências reais.
+  if (date < today) return;
+
+  const weekday = dateWeekday(date);
+  const routinesResult = await database
+    .prepare(
+      `SELECT id, weekdays FROM operational_routines WHERE active=1`,
+    )
+    .all<{ id: string; weekdays: string }>();
+  const dueRoutineIds = (routinesResult.results ?? [])
+    .filter((routine) => parseWeekdaysText(routine.weekdays).includes(weekday))
+    .map((routine) => routine.id);
+  if (!dueRoutineIds.length) return;
+
+  const companies = await storeCompanies(database);
+  if (!companies.length) return;
+
+  for (const routineId of dueRoutineIds) {
+    for (const company of companies) {
+      await database
+        .prepare(
+          `INSERT INTO operational_routine_tasks
+            (id, routine_id, company_id, company_name, origin_date, due_date, status, created_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?5, 'todo', CURRENT_TIMESTAMP)
+           ON CONFLICT (routine_id, origin_date, company_id) DO NOTHING`,
+        )
+        .bind(crypto.randomUUID(), routineId, company.id, company.name, date)
+        .run();
+    }
   }
 }
 
@@ -267,30 +302,27 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
+    await ensureRoutineTasksForDate(database, date);
 
     const taskResult = await database
       .prepare(
         `SELECT t.id, t.routine_id AS routineId, t.company_id AS companyId,
                 t.company_name AS companyName, t.origin_date AS originDate,
                 t.due_date AS dueDate, t.status, t.carried_over AS carriedOver,
-                r.title, r.description, r.weekday, r.scope, r.created_by AS createdBy
+                r.title, r.created_by AS createdBy
          FROM operational_routine_tasks t
          JOIN operational_routines r ON r.id = t.routine_id
          WHERE t.due_date = ?1
-         ORDER BY t.updated_at DESC, t.created_at DESC`,
+         ORDER BY t.company_name, t.created_at`,
       )
       .bind(date)
       .all<RoutineTaskRow>();
 
     let tasks = taskResult.results ?? [];
-    if (!canSeeAllStores(actor, "missions:view") && actor.role !== "admin") {
-      // Usuário de loja só vê a própria tarefa. Usuário sem loja e sem a
-      // permissão de acesso geral acompanha só as rotinas gerais e as que
-      // ele mesmo criou, sem que elas virem tarefa pessoal dele — mesma
-      // regra aplicada às missões.
-      tasks = actor.companyId
-        ? tasks.filter((task) => task.companyId === actor.companyId)
-        : tasks.filter((task) => task.scope === "general" || task.createdBy === actor.id);
+    if (!canSeeAllStores(actor, "missions:view")) {
+      // Todas as rotinas são gerais — quem tem loja vinculada vê só a
+      // própria tarefa; sem loja e sem alcance geral não vê nada.
+      tasks = tasks.filter((task) => task.companyId === actor.companyId);
     }
 
     const payload: JsonMap = {
@@ -301,14 +333,16 @@ export async function GET(request: Request) {
     if (can(actor, "missions:create") || can(actor, "missions:delete")) {
       const definitionsResult = await database
         .prepare(
-          `SELECT id, title, description, weekday, scope, company_id AS companyId,
-                  company_name AS companyName, active, created_by AS createdBy,
+          `SELECT id, title, weekdays, active, created_by AS createdBy,
                   created_by_name AS createdByName
            FROM operational_routines
-           ORDER BY weekday, created_at`,
+           ORDER BY created_at`,
         )
         .all<RoutineDefinitionRow>();
-      payload.routines = definitionsResult.results ?? [];
+      payload.routines = (definitionsResult.results ?? []).map((routine) => ({
+        ...routine,
+        weekdays: parseWeekdaysText(routine.weekdays),
+      }));
     }
 
     return jsonResponse(payload);
@@ -330,35 +364,22 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const title = safeText(body.title, 160);
-    const description = safeText(body.description, 1200);
-    const scope = body.scope === "general" ? "general" : "store";
-    const weekday = routineWeekday(body.weekday);
-    const companyId = scope === "store" ? safeText(body.companyId, 80) : "";
-    const companyLabel = scope === "store" ? safeText(body.companyName, 120) : "Todas as lojas";
+    const weekdays = routineWeekdays(body.weekdays);
     if (title.length < 3) return jsonResponse({ error: "INFORME O TÍTULO DA ROTINA." }, 400);
-    if (weekday === null) return jsonResponse({ error: "ESCOLHA O DIA DA SEMANA DA ROTINA." }, 400);
-    if (scope === "store" && !COMPANY_PATTERN.test(companyId)) {
-      return jsonResponse({ error: "ESCOLHA A LOJA DA ROTINA." }, 400);
-    }
+    if (!weekdays) return jsonResponse({ error: "ESCOLHA AO MENOS UM DIA DA SEMANA." }, 400);
 
     const database = await getD1();
-    const trustedCompanyName =
-      scope === "store" ? (await companyName(database, companyId)) || companyLabel || "Loja" : "Todas as lojas";
     const id = crypto.randomUUID();
     await database
       .prepare(
         `INSERT INTO operational_routines
-          (id, title, description, weekday, scope, company_id, company_name,
-           created_by, created_by_name, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          (id, title, scope, weekdays, created_by, created_by_name, created_at, updated_at)
+         VALUES (?1, ?2, 'general', ?3, ?4, ?5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       )
-      .bind(id, title, description, weekday, scope, companyId, trustedCompanyName, actor.id, actor.displayName || "Administrador")
+      .bind(id, title, weekdays.join(","), actor.id, actor.displayName || "Administrador")
       .run();
 
-    const todayKey = recifeDateKey();
-    if (dateWeekday(todayKey) === weekday) {
-      await generateTodayTasks(database, { id, scope, companyId, companyName: trustedCompanyName }, todayKey);
-    }
+    await ensureRoutineTasksForDate(database, recifeDateKey());
 
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
@@ -384,7 +405,7 @@ export async function PATCH(request: Request) {
     const taskId = safeText(body.taskId, 80);
     const status = routineStatus(body.status);
     if (!taskId) return jsonResponse({ error: "TAREFA INVÁLIDA." }, 400);
-    if (!status) return jsonResponse({ error: "ESCOLHA: CONCLUÍDO, EM ANDAMENTO OU A FAZER." }, 400);
+    if (!status) return jsonResponse({ error: "ESCOLHA: FEITA OU NÃO FEITA." }, 400);
 
     const database = await getD1();
     const task = await database

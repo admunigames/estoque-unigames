@@ -1857,10 +1857,15 @@ async function dispatchDueMissionNotifications(env: Env) {
 type RoutineCompanyRecord = { id: string; name: string };
 type DueRoutineRow = {
   id: string;
-  scope: string;
-  companyId: string;
-  companyName: string;
+  weekdays: string;
 };
+
+function parseRoutineWeekdays(text: string): number[] {
+  return text
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item >= 0 && item <= 6);
+}
 
 const ROUTINE_DIACRITICS_PATTERN = new RegExp(
   "[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + "]",
@@ -1915,24 +1920,18 @@ async function advanceOperationalRoutines(env: Env): Promise<void> {
     .run();
 
   const todayWeekday = new Date(`${today}T12:00:00Z`).getUTCDay();
-  const dueRoutines = await env.DB
-    .prepare(
-      `SELECT id, scope, company_id AS companyId, company_name AS companyName
-       FROM operational_routines WHERE active=1 AND weekday=?1`,
-    )
-    .bind(todayWeekday)
+  const activeRoutines = await env.DB
+    .prepare(`SELECT id, weekdays FROM operational_routines WHERE active=1`)
     .all<DueRoutineRow>();
+  const dueRoutineIds = (activeRoutines.results ?? [])
+    .filter((routine) => parseRoutineWeekdays(routine.weekdays).includes(todayWeekday))
+    .map((routine) => routine.id);
+  if (!dueRoutineIds.length) return;
 
-  const generalCompanies = (dueRoutines.results ?? []).some((routine) => routine.scope === "general")
-    ? await routineStoreCompanies(env)
-    : [];
+  const companies = await routineStoreCompanies(env);
 
-  for (const routine of dueRoutines.results ?? []) {
-    const targets: RoutineCompanyRecord[] =
-      routine.scope === "general"
-        ? generalCompanies
-        : [{ id: routine.companyId, name: routine.companyName }];
-    for (const target of targets) {
+  for (const routineId of dueRoutineIds) {
+    for (const target of companies) {
       if (!target.id) continue;
       await env.DB
         .prepare(
@@ -1941,7 +1940,7 @@ async function advanceOperationalRoutines(env: Env): Promise<void> {
            VALUES (?1, ?2, ?3, ?4, ?5, ?5, 'todo', CURRENT_TIMESTAMP)
            ON CONFLICT (routine_id, origin_date, company_id) DO NOTHING`,
         )
-        .bind(crypto.randomUUID(), routine.id, target.id, target.name, today)
+        .bind(crypto.randomUUID(), routineId, target.id, target.name, today)
         .run();
     }
   }

@@ -169,11 +169,15 @@ export const operationalRoutines = pgTable(
   {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
+    // Descrição, destino por loja e escopo (geral/loja) não são mais
+    // usados pela aplicação — rotina é sempre geral para todas as lojas.
+    // Colunas mantidas sem uso para não descartar dados já cadastrados.
     description: text("description").notNull().default(""),
-    weekday: integer("weekday").notNull(),
-    scope: text("scope").notNull().default("store"),
+    scope: text("scope").notNull().default("general"),
     companyId: text("company_id").notNull().default(""),
     companyName: text("company_name").notNull().default(""),
+    // Dias da semana em que a rotina se repete, formato "1,3,5" (0=domingo).
+    weekdays: text("weekdays").notNull().default(""),
     active: integer("active").notNull().default(1),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
@@ -181,7 +185,6 @@ export const operationalRoutines = pgTable(
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [
-    index("operational_routines_weekday_idx").on(table.weekday),
     index("operational_routines_created_by_idx").on(table.createdBy),
   ],
 );

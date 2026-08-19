@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v42"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v43"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -859,7 +859,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v42"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v43"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -952,7 +952,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v42"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v43"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1114,7 +1114,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v42"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v43"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1371,7 +1371,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v42"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v43"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1416,7 +1416,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v42"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v43"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -2012,4 +2012,58 @@ test("remove o fluxo especial de assistência: acesso 100% via permissões granu
   // pela permissão granular, não mais por identidade.
   assert.match(workerSource, /function liveConnectionGroups\(user: AuthenticatedUser\): string\[\] \{/);
   assert.match(workerSource, /return hasPermission\(user, "captures:receive"\) \? \["assistance"\] : \[\];/);
+});
+
+test("Rotina Operacional: cadastro simplificado (sem descrição/loja específica, vários dias da semana) e geração auto-suficiente das tarefas", async () => {
+  const [html, route, schema, migration, workerSource] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/routines/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0020_routine_weekdays.sql", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Cadastro só pede título + dias da semana (checkbox, permite mais de um).
+  assert.match(html, /id="routineWeekdayGrid"/);
+  assert.match(html, /name="routineWeekday" value="1"/);
+  assert.match(html, /name="routineWeekday" value="0"/);
+  assert.doesNotMatch(html, /id="routineDescription"/);
+  assert.doesNotMatch(html, /id="routineScope"/);
+  assert.doesNotMatch(html, /id="routineCompanyField"/);
+  assert.doesNotMatch(html, /id="routineCompany"/);
+
+  // Status vira feita/não feita (sem "em andamento") com botão de alternar.
+  assert.match(html, /function routineStatusToggleHtml\(task,home\)\{/);
+  assert.match(html, /'data-routine-toggle'/);
+  assert.match(html, /'MARCAR COMO FEITA'/);
+  assert.doesNotMatch(html, /data-routine-status/);
+
+  // Exportar TXT da rotina do dia, formatado pra colar no WhatsApp.
+  assert.match(html, /id="btnDownloadRoutineTxt"/);
+  assert.match(html, /function routineTxtReport\(date\)\{/);
+  assert.match(html, /'\*ROTINA OPERACIONAL - '\+companyName\.toUpperCase\(\)\+'\*'/);
+  assert.match(html, /downloadBlobFile\(blob,'rotina-operacional-'\+date\+'\.txt'\)/);
+
+  // Backend: rotina sempre geral, dias da semana em texto ("1,3,5"), e a
+  // geração/migração de pendência roda a cada GET e POST — não depende só
+  // do cron rodar no dia certo (causa raiz do bug de rotinas não aparecerem
+  // pra loja quando cadastradas pra um dia futuro).
+  assert.match(route, /function routineWeekdays\(value: unknown\): number\[\] \| null/);
+  assert.match(route, /async function ensureRoutineTasksForDate\(database: D1Database, date: string\)/);
+  assert.match(route, /await ensureRoutineTasksForDate\(database, date\);/);
+  assert.match(route, /await ensureRoutineTasksForDate\(database, recifeDateKey\(\)\);/);
+  assert.match(route, /VALUES \(\?1, \?2, 'general', \?3, \?4, \?5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP\)/);
+  assert.match(route, /const ROUTINE_STATUSES = new Set<RoutineStatus>\(\["todo", "completed"\]\);/);
+  assert.match(route, /import \{ canSeeAllStores \} from "\.\.\/\.\.\/lib\/access-scope";/);
+
+  // Cron (rede de segurança, além da geração sob demanda no GET/POST) usa a
+  // mesma lista de dias da semana em vez de um único valor fixo.
+  assert.match(workerSource, /function parseRoutineWeekdays\(text: string\): number\[\]/);
+  assert.match(workerSource, /SELECT id, weekdays FROM operational_routines WHERE active=1/);
+  assert.match(workerSource, /parseRoutineWeekdays\(routine\.weekdays\)\.includes\(todayWeekday\)/);
+
+  assert.match(schema, /weekdays: text\("weekdays"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS "weekdays" text/);
+  assert.match(migration, /UPDATE "operational_routines" SET "weekdays" = "weekday"::text/);
+  assert.match(migration, /DROP COLUMN IF EXISTS "weekday"/);
 });
