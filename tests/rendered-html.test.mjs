@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v44"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v45"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -859,7 +859,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v44"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v45"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -952,7 +952,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v44"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v45"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1114,7 +1114,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v44"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v45"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1282,7 +1282,7 @@ test("Saídas: a lista de lojas do seletor é carregada e liberada pro usuário 
   // pulls/report41.
   assert.match(
     html,
-    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\);/,
+    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\| canAccess\('finance'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\);/,
   );
 
   // Back-end: leitura de companies_list liberada pra qualquer autenticado
@@ -1371,7 +1371,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v44"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v45"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1416,7 +1416,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v44"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v45"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -1736,6 +1736,57 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
   assert.match(migration, /REVOKE ALL ON TABLE "documents" FROM anon, authenticated/);
   assert.match(wrangler, /"binding": "UPLOADS"/);
   assert.equal((wrangler.match(/"r2_buckets"/g) || []).length, 1);
+});
+
+test("expõe o módulo Financeiro (DRE por Loja) e restringe o acesso a finance:manage", async () => {
+  const [html, workerSource, shared, categoriesRoute, itemsRoute, entriesRoute, revenueRoute, dreRoute, schema, migration] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/shared.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/categories/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/items/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/entries/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/revenue/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/dre/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0021_thin_lightspeed.sql", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(html, /id="navFinanceiro"/);
+  assert.match(html, /id="navDrePorLoja" data-page="drePorLoja"/);
+  assert.match(html, /id="pageDrePorLoja" class="page wrap"/);
+  assert.match(html, /drePorLoja:'\/financeiro\/dre\/por-loja'/);
+  assert.match(html, /drePorLoja:'finance'/);
+  assert.match(html, /function loadDrePorLoja\(\)/);
+  assert.match(html, /'finance:manage':'Financeiro: acessar módulo'/);
+  assert.match(html, /canAccess\('finance'\)/);
+  assert.match(html, /id="financeCatalogDialog"/);
+
+  assert.match(workerSource, /"finance:manage"/);
+  assert.match(workerSource, /finance: \["finance:manage"\]/);
+  assert.match(
+    workerSource,
+    /path === "\/financeiro" \|\| path\.startsWith\("\/financeiro\/"\) \|\| path\.startsWith\("\/api\/finance"\)/,
+  );
+
+  assert.match(shared, /canManageFinance/);
+  assert.match(shared, /actor\.permissions\.includes\("finance:manage"\)/);
+  assert.match(categoriesRoute, /INSERT INTO finance_categories/);
+  assert.match(itemsRoute, /INSERT INTO finance_items/);
+  assert.match(itemsRoute, /finance_store_entries WHERE item_id=\?1/);
+  assert.match(entriesRoute, /INSERT INTO finance_store_entries/);
+  assert.match(revenueRoute, /INSERT INTO finance_store_revenue/);
+  assert.match(dreRoute, /FROM finance_store_entries WHERE store_id=\?1 AND month=\?2/);
+
+  assert.match(schema, /export const financeCategories = pgTable/);
+  assert.match(schema, /export const financeItems = pgTable/);
+  assert.match(schema, /export const financeStoreEntries = pgTable/);
+  assert.match(schema, /export const financeStoreRevenue = pgTable/);
+  assert.match(migration, /CREATE TABLE "finance_categories"/);
+  assert.match(migration, /CREATE TABLE "finance_store_entries"/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /REVOKE ALL ON TABLE "finance_store_revenue" FROM anon, authenticated/);
 });
 
 test("cron do worker sempre resolve o driver Postgres antes de rodar as rotinas agendadas", async () => {

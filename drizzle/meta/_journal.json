@@ -148,6 +148,13 @@
       "when": 1786981000000,
       "tag": "0020_routine_weekdays",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1787171583845,
+      "tag": "0021_thin_lightspeed",
+      "breakpoints": true
     }
   ]
 }

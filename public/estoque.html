@@ -1615,6 +1615,36 @@
   .permission-module[open]>summary::after{content:'−'}
   .permission-module>.permission-grid{padding:0 12px 12px;grid-template-columns:1fr}
   .permission-module.has-checked>summary{color:var(--accent)}
+  .dre-toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:18px}
+  .dre-toolbar .field{min-width:170px}
+  .dre-toolbar-actions{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-left:auto}
+  .dre-categories{display:grid;gap:10px;margin-top:18px}
+  .dre-category{border:1px solid var(--line);border-radius:12px;padding:0;background:rgba(79,134,189,.03)}
+  .dre-category>summary{cursor:pointer;list-style:none;padding:14px 16px;font:800 12px var(--mono);letter-spacing:.05em;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .dre-category>summary::-webkit-details-marker{display:none}
+  .dre-category>summary::after{content:'+';font-size:16px;color:var(--ink-soft)}
+  .dre-category[open]>summary::after{content:'−'}
+  .dre-category-total{font:800 13px var(--mono);color:var(--accent)}
+  .dre-category-body{padding:0 16px 16px;display:grid;gap:8px}
+  .dre-item-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:9px}
+  .dre-item-name{font:700 12px var(--sans);color:var(--ink)}
+  .dre-item-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+  .dre-item-controls select{width:112px}
+  .dre-item-controls input{width:132px;text-align:right}
+  .dre-subgroup{border:1px solid var(--line);border-radius:10px;background:rgba(79,134,189,.06);margin-top:2px}
+  .dre-subgroup>summary{cursor:pointer;list-style:none;padding:10px 12px;font:800 11px var(--mono);letter-spacing:.05em;color:var(--ink-soft);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .dre-subgroup>summary::-webkit-details-marker{display:none}
+  .dre-subgroup>summary::after{content:'+';font-size:14px}
+  .dre-subgroup[open]>summary::after{content:'−'}
+  .dre-subgroup-total{font:800 12px var(--mono);color:var(--accent)}
+  .dre-subgroup-body{padding:0 12px 12px;display:grid;gap:8px}
+  .dre-empty{padding:14px;border:1px dashed var(--line);border-radius:10px;color:var(--ink-soft);font-size:12px;text-align:center}
+  .dre-catalog-list{display:grid;gap:8px;max-height:280px;overflow:auto;margin-bottom:14px}
+  .dre-catalog-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px}
+  .dre-catalog-row.sub{margin-left:18px;background:rgba(79,134,189,.05)}
+  .dre-catalog-row.item{margin-left:36px;color:var(--ink-soft)}
+  .dre-catalog-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+  .dre-catalog-form .field{min-width:160px;flex:1}
   .user-actions{display:flex;gap:8px;flex-wrap:wrap}.user-list{display:grid;gap:10px}.user-card{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
   .user-card.inactive{opacity:.58}.user-card h4{margin:0 0 3px}.user-card p{margin:0;color:var(--ink-soft);font-size:11px}.user-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
   @media(max-width:850px){.users-layout{grid-template-columns:1fr}.permission-grid{grid-template-columns:1fr}}
@@ -1680,6 +1710,9 @@
   html[data-theme="light"] .btn-danger-outline{background:#fff4f2;color:#a93428;border-color:#d9a29c;}
   html[data-theme="light"] .filters label,
   html[data-theme="light"] .permission-option,
+  html[data-theme="light"] .dre-category,
+  html[data-theme="light"] .dre-subgroup,
+  html[data-theme="light"] .dre-item-row,
   html[data-theme="light"] .permission-module{background:#fff;color:#304b63;border-color:#aebfce;}
   html[data-theme="light"] .filters label:has(input:checked),
   html[data-theme="light"] .permission-option:has(input:checked){
@@ -2647,7 +2680,9 @@
       <button class="nav-group-toggle" id="navFinanceiro" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
-      <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true"></div>
+      <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navDrePorLoja" data-page="drePorLoja" data-home-desc="Demonstrativo de resultado por loja, com receita, despesas e margem." title="DRE por Loja" href="/financeiro/dre/por-loja"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/><line x1="3" y1="19" x2="21" y2="19"/></svg></span><span class="nav-label">DRE por Loja</span></a>
+      </div>
     </div>
     <div class="nav-group" data-permission="hr">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
@@ -4193,6 +4228,12 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>Financeiro</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="finance:manage"> Acessar o módulo Financeiro</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -4240,8 +4281,65 @@
       <div class="empty-state"><h4>Em construção</h4><p>Esta página ainda será detalhada.</p></div>
     </section>
 
+    <!-- ================= FINANCEIRO / DRE POR LOJA ================= -->
+    <section id="pageDrePorLoja" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">DRE por Loja</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Receita, despesas por categoria e resultado do mês, loja a loja.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="dreLoja">LOJA</label><select id="dreLoja"><option value="">SELECIONE A LOJA</option></select></div>
+        <div class="field"><label for="dreMes">MÊS</label><input type="month" id="dreMes"></div>
+        <div class="field"><label for="dreRevenue">RECEITA DA LOJA (R$)</label><input type="number" id="dreRevenue" min="0" step="0.01" placeholder="0,00"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnSaveDreRevenue" type="button">SALVAR RECEITA</button>
+          <button class="btn-outline" id="btnOpenFinanceCatalog" type="button">GERENCIAR CATEGORIAS</button>
+        </div>
+      </div>
+
+      <section class="summary" aria-label="Resumo da DRE">
+        <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreSummaryRevenue">R$ 0,00</div></div>
+        <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreSummaryExpense">R$ 0,00</div></div>
+        <div class="card" id="dreSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreSummaryResult">R$ 0,00</div></div>
+        <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreSummaryMargin">0,00%</div></div>
+      </section>
+
+      <div class="dre-categories" id="dreCategoryList">
+        <div class="dre-empty">Selecione a loja e o mês para ver a DRE.</div>
+      </div>
+    </section>
+
   </div>
 </div>
+
+<dialog class="purchase-dialog" id="financeCatalogDialog" aria-labelledby="financeCatalogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="financeCatalogTitle">CATEGORIAS DO FINANCEIRO</h3>
+    <button class="purchase-dialog-close" id="btnCloseFinanceCatalog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
+    <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Cadastre categorias, subgrupos (opcional, até 1 nível) e itens. Um item só pode ser excluído se nunca teve valor lançado.</p>
+    <form class="dre-catalog-form" id="financeCategoryForm">
+      <div class="field"><label for="financeCategoryName">NOVA CATEGORIA</label><input id="financeCategoryName" maxlength="120" placeholder="Ex: IMPOSTOS" required></div>
+      <button class="btn-accent" type="submit">ADICIONAR CATEGORIA</button>
+    </form>
+    <form class="dre-catalog-form" id="financeSubgroupForm">
+      <div class="field"><label for="financeSubgroupParent">CATEGORIA</label><select id="financeSubgroupParent" required><option value="">SELECIONE</option></select></div>
+      <div class="field"><label for="financeSubgroupName">NOVO SUBGRUPO</label><input id="financeSubgroupName" maxlength="120" placeholder="Ex: LOJA" required></div>
+      <button class="btn-accent" type="submit">ADICIONAR SUBGRUPO</button>
+    </form>
+    <form class="dre-catalog-form" id="financeItemForm">
+      <div class="field"><label for="financeItemCategory">CATEGORIA / SUBGRUPO</label><select id="financeItemCategory" required><option value="">SELECIONE</option></select></div>
+      <div class="field"><label for="financeItemName">NOVO ITEM</label><input id="financeItemName" maxlength="120" placeholder="Ex: Imposto 1" required></div>
+      <button class="btn-accent" type="submit">ADICIONAR ITEM</button>
+    </form>
+    <div class="dre-catalog-list" id="financeCatalogList"></div>
+  </div>
+</dialog>
 
 <nav class="mobile-tabbar no-print" aria-label="Atalhos principais">
   <button class="mobile-tab active" type="button" data-mobile-page="inicio"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/></svg></span><small>INÍCIO</small></button>
@@ -4388,6 +4486,11 @@
   let pdvRequestRows = [];
   let pdvRequestsLoading = false;
   let pdvRequestStatus = '';
+
+  let financeCategories = [];
+  let financeItems = [];
+  let financeDre = null;
+  let financeLoading = false;
 
   let purchaseRows = [];
   let purchaseCursor = null;
@@ -4861,7 +4964,8 @@
     documentos:'/documentos',
     usuarios:'/cadastros/usuarios',
     rhFolgas:'/rh/folgas',
-    rhEscalas:'/rh/escalas'
+    rhEscalas:'/rh/escalas',
+    drePorLoja:'/financeiro/dre/por-loja'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -4881,7 +4985,8 @@
     alteracoesPdv:'ALTERAÇÕES PDV',
     usuarios:'USUÁRIOS E ACESSOS',
     rhFolgas:'FOLGAS',
-    rhEscalas:'ESCALAS'
+    rhEscalas:'ESCALAS',
+    drePorLoja:'DRE POR LOJA'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -4898,7 +5003,8 @@
     lojas:'database',
     dados:'database',
     rhFolgas:'hr',
-    rhEscalas:'hr'
+    rhEscalas:'hr',
+    drePorLoja:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -5301,6 +5407,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv';
+    const isFinanceiro = name === 'drePorLoja';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -5319,6 +5426,8 @@
     if(isDocumentos) navDocumentosToggle.classList.add('active');
     setSolicitacoesExpanded(isSolicitacoes);
     if(isSolicitacoes) navSolicitacoesToggle.classList.add('active');
+    setFinanceiroExpanded(isFinanceiro);
+    if(isFinanceiro) navFinanceiroToggle.classList.add('active');
     document.querySelectorAll('[data-mobile-page]').forEach(button => {
       const active = button.dataset.mobilePage === name;
       button.classList.toggle('active', active);
@@ -5347,6 +5456,7 @@
     if(name === 'instrucoes') loadInstructions();
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
+    if(name === 'drePorLoja') loadDrePorLoja();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -5367,6 +5477,7 @@
     if(name === 'instrucoes') loadInstructions();
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
+    if(name === 'drePorLoja') loadDrePorLoja();
   }
 
   function isPlainClick(event){
@@ -7242,6 +7353,7 @@
     renderMissionTabs();
     renderOutputCompanyOptions();
     renderSupplyCompanyOptions();
+    renderDreCompanyOptions();
   }
 
   function renderPullDestinationFilter(){
@@ -12691,6 +12803,364 @@ function renderHomeTasks(){
     if(event.key === 'Enter'){ event.preventDefault(); renderPdvSearchResults(); }
   });
 
+  async function financeApiRequest(path, options){
+    const response = await fetch('/api/finance'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function formatCentsBRL(cents){
+    return ((Number(cents) || 0) / 100).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+  }
+
+  function parseBRLToCents(value){
+    const num = Number(value);
+    if(!Number.isFinite(num) || num < 0) return null;
+    return Math.round(num * 100);
+  }
+
+  function financeCurrentMonthKey(){
+    const parts = new Intl.DateTimeFormat('en-US', {timeZone:'America/Recife', year:'numeric', month:'2-digit'}).formatToParts(new Date());
+    const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return value.year+'-'+value.month;
+  }
+
+  function renderDreCompanyOptions(){
+    const select = el('dreLoja');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">SELECIONE A LOJA</option>'+
+      companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    if(companies.some(company => company.id === selected)) select.value = selected;
+  }
+
+  function financeCategorySelectOptions(){
+    const top = financeCategories.filter(category => !category.parentId);
+    const options = [];
+    top.forEach(category => {
+      options.push({id:category.id, label:category.name});
+      financeCategories.filter(sub => sub.parentId === category.id).forEach(sub => {
+        options.push({id:sub.id, label:category.name+' › '+sub.name});
+      });
+    });
+    return options;
+  }
+
+  function renderFinanceCategorySelects(){
+    const parentSelect = el('financeSubgroupParent');
+    const itemSelect = el('financeItemCategory');
+    const topCategories = financeCategories.filter(category => !category.parentId);
+    if(parentSelect){
+      const selected = parentSelect.value;
+      parentSelect.innerHTML = '<option value="">SELECIONE</option>'+
+        topCategories.map(category => '<option value="'+escapeHtml(category.id)+'">'+escapeHtml(category.name)+'</option>').join('');
+      if(topCategories.some(category => category.id === selected)) parentSelect.value = selected;
+    }
+    if(itemSelect){
+      const selected = itemSelect.value;
+      const options = financeCategorySelectOptions();
+      itemSelect.innerHTML = '<option value="">SELECIONE</option>'+
+        options.map(option => '<option value="'+escapeHtml(option.id)+'">'+escapeHtml(option.label)+'</option>').join('');
+      if(options.some(option => option.id === selected)) itemSelect.value = selected;
+    }
+  }
+
+  function renderFinanceCatalogList(){
+    const container = el('financeCatalogList');
+    if(!container) return;
+    const topCategories = financeCategories.filter(category => !category.parentId);
+    if(!topCategories.length){
+      container.innerHTML = '<div class="dre-empty">Nenhuma categoria cadastrada ainda.</div>';
+      return;
+    }
+    let html = '';
+    topCategories.forEach(category => {
+      html += '<div class="dre-catalog-row"><strong>'+escapeHtml(category.name)+'</strong><button class="btn-outline" type="button" data-finance-delete-category="'+escapeHtml(category.id)+'">EXCLUIR</button></div>';
+      financeItems.filter(item => item.categoryId === category.id).forEach(item => {
+        html += '<div class="dre-catalog-row item">'+escapeHtml(item.name)+'<button class="btn-outline" type="button" data-finance-delete-item="'+escapeHtml(item.id)+'">EXCLUIR</button></div>';
+      });
+      financeCategories.filter(sub => sub.parentId === category.id).forEach(sub => {
+        html += '<div class="dre-catalog-row sub"><strong>'+escapeHtml(sub.name)+'</strong><button class="btn-outline" type="button" data-finance-delete-category="'+escapeHtml(sub.id)+'">EXCLUIR</button></div>';
+        financeItems.filter(item => item.categoryId === sub.id).forEach(item => {
+          html += '<div class="dre-catalog-row item">'+escapeHtml(item.name)+'<button class="btn-outline" type="button" data-finance-delete-item="'+escapeHtml(item.id)+'">EXCLUIR</button></div>';
+        });
+      });
+    });
+    container.innerHTML = html;
+  }
+
+  async function loadFinanceCatalog(){
+    try{
+      const [categoriesData, itemsData] = await Promise.all([
+        financeApiRequest('/categories'),
+        financeApiRequest('/items')
+      ]);
+      financeCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
+      financeItems = Array.isArray(itemsData.items) ? itemsData.items : [];
+    }catch(error){
+      financeCategories = [];
+      financeItems = [];
+    }
+    renderFinanceCategorySelects();
+    renderFinanceCatalogList();
+  }
+
+  function openFinanceCatalogDialog(){
+    renderFinanceCategorySelects();
+    renderFinanceCatalogList();
+    el('financeCatalogDialog').showModal();
+  }
+  function closeFinanceCatalogDialog(){
+    if(el('financeCatalogDialog').open) el('financeCatalogDialog').close();
+  }
+
+  function dreItemRowHtml(item){
+    const type = item.entryType || 'fixed';
+    const amount = item.entryType === 'fixed' && item.amountCents != null ? (item.amountCents/100).toFixed(2) : '';
+    const percent = item.entryType === 'percentage' && item.percentBasisPoints != null ? (item.percentBasisPoints/100).toFixed(2) : '';
+    return (
+      '<div class="dre-item-row" data-finance-item-id="'+escapeHtml(item.id)+'">'+
+        '<span class="dre-item-name">'+escapeHtml(item.name)+'</span>'+
+        '<span class="dre-item-controls">'+
+          '<select data-finance-entry-type>'+
+            '<option value="fixed"'+(type === 'fixed' ? ' selected' : '')+'>FIXO (R$)</option>'+
+            '<option value="percentage"'+(type === 'percentage' ? ' selected' : '')+'>PERCENTUAL (%)</option>'+
+          '</select>'+
+          '<input type="number" min="0" step="0.01" data-finance-entry-fixed placeholder="0,00" value="'+amount+'"'+(type === 'fixed' ? '' : ' hidden')+'>'+
+          '<input type="number" min="0" step="0.01" data-finance-entry-percent placeholder="0,00" value="'+percent+'"'+(type === 'percentage' ? '' : ' hidden')+'>'+
+        '</span>'+
+      '</div>'
+    );
+  }
+
+  function dreCategoryCardHtml(category){
+    const itemsHtml = category.items.map(item => dreItemRowHtml(item)).join('') ||
+      (category.subgroups.length ? '' : '<div class="dre-empty">Nenhum item nesta categoria.</div>');
+    const subgroupsHtml = category.subgroups.map(subgroup => (
+      '<details class="dre-subgroup"><summary><span>'+escapeHtml(subgroup.name)+'</span><span class="dre-subgroup-total">'+formatCentsBRL(subgroup.totalCents)+'</span></summary>'+
+      '<div class="dre-subgroup-body">'+(subgroup.items.map(item => dreItemRowHtml(item)).join('') || '<div class="dre-empty">Nenhum item neste subgrupo.</div>')+'</div>'+
+      '</details>'
+    )).join('');
+    return (
+      '<details class="dre-category"><summary><span>'+escapeHtml(category.name)+'</span><span class="dre-category-total">'+formatCentsBRL(category.totalCents)+'</span></summary>'+
+      '<div class="dre-category-body">'+itemsHtml+subgroupsHtml+'</div>'+
+      '</details>'
+    );
+  }
+
+  function renderDreSummary(){
+    const data = financeDre;
+    el('dreSummaryRevenue').textContent = formatCentsBRL(data ? data.revenueCents : 0);
+    el('dreSummaryExpense').textContent = formatCentsBRL(data ? data.expenseTotalCents : 0);
+    el('dreSummaryResult').textContent = formatCentsBRL(data ? data.resultCents : 0);
+    const marginPercent = ((data ? data.marginBasisPoints : 0)/100).toFixed(2);
+    el('dreSummaryMargin').textContent = marginPercent.replace('.',',')+'%';
+    el('dreSummaryResultCard').classList.toggle('neg', Boolean(data && data.resultCents < 0));
+  }
+
+  function renderDreCategories(){
+    const container = el('dreCategoryList');
+    if(!financeDre){
+      container.innerHTML = '<div class="dre-empty">Selecione a loja e o mês para ver a DRE.</div>';
+      return;
+    }
+    if(!financeDre.categories.length){
+      container.innerHTML = '<div class="dre-empty">Nenhuma categoria cadastrada. Use "GERENCIAR CATEGORIAS" para começar.</div>';
+      return;
+    }
+    container.innerHTML = financeDre.categories.map(category => dreCategoryCardHtml(category)).join('');
+  }
+
+  async function loadDrePorLoja(){
+    if(!canAccess('finance') || financeLoading) return;
+    if(!el('dreMes').value) el('dreMes').value = financeCurrentMonthKey();
+    if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
+    const storeId = el('dreLoja').value;
+    const month = el('dreMes').value;
+    if(!storeId){
+      financeDre = null;
+      renderDreSummary();
+      renderDreCategories();
+      el('dreRevenue').value = '';
+      return;
+    }
+    financeLoading = true;
+    el('dreCategoryList').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    try{
+      const [dreData, revenueData] = await Promise.all([
+        financeApiRequest('/dre?scope=store&storeId='+encodeURIComponent(storeId)+'&month='+encodeURIComponent(month)),
+        financeApiRequest('/revenue?storeId='+encodeURIComponent(storeId)+'&month='+encodeURIComponent(month))
+      ]);
+      financeDre = dreData;
+      el('dreRevenue').value = revenueData.revenue ? (revenueData.revenue.amountCents/100).toFixed(2) : '';
+      renderDreSummary();
+      renderDreCategories();
+    }catch(error){
+      financeDre = null;
+      el('dreCategoryList').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      renderDreSummary();
+    }finally{
+      financeLoading = false;
+    }
+  }
+
+  el('dreLoja').addEventListener('change', loadDrePorLoja);
+  el('dreMes').addEventListener('change', loadDrePorLoja);
+
+  el('btnSaveDreRevenue').addEventListener('click', async () => {
+    const storeId = el('dreLoja').value;
+    const month = el('dreMes').value;
+    if(!storeId){ showPurchaseToast('Selecione a loja.','error'); return; }
+    const amountCents = parseBRLToCents(el('dreRevenue').value || '0');
+    if(amountCents === null){ showPurchaseToast('Informe um valor de receita válido.','error'); return; }
+    const button = el('btnSaveDreRevenue');
+    button.disabled = true;
+    try{
+      await financeApiRequest('/revenue', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({storeId, month, amountCents})
+      });
+      showPurchaseToast('Receita salva.');
+      await loadDrePorLoja();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('dreCategoryList').addEventListener('change', async event => {
+    const row = event.target.closest('[data-finance-item-id]');
+    if(!row) return;
+    const itemId = row.dataset.financeItemId;
+    const storeId = el('dreLoja').value;
+    const month = el('dreMes').value;
+    if(!storeId) return;
+    if(event.target.matches('[data-finance-entry-type]')){
+      const type = event.target.value;
+      row.querySelector('[data-finance-entry-fixed]').hidden = type !== 'fixed';
+      row.querySelector('[data-finance-entry-percent]').hidden = type !== 'percentage';
+      return;
+    }
+    if(event.target.matches('[data-finance-entry-fixed],[data-finance-entry-percent]')){
+      const type = row.querySelector('[data-finance-entry-type]').value;
+      const body = {storeId, itemId, month, entryType: type};
+      if(type === 'fixed'){
+        const cents = parseBRLToCents(row.querySelector('[data-finance-entry-fixed]').value || '0');
+        if(cents === null){ showPurchaseToast('Informe um valor válido.','error'); return; }
+        body.amountCents = cents;
+      }else{
+        const raw = Number(row.querySelector('[data-finance-entry-percent]').value || '0');
+        if(!Number.isFinite(raw) || raw < 0){ showPurchaseToast('Informe um percentual válido.','error'); return; }
+        body.percentBasisPoints = Math.round(raw * 100);
+      }
+      try{
+        await financeApiRequest('/entries', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(body)
+        });
+        showPurchaseToast('Lançamento salvo.');
+        await loadDrePorLoja();
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
+  el('btnOpenFinanceCatalog').addEventListener('click', openFinanceCatalogDialog);
+  el('btnCloseFinanceCatalog').addEventListener('click', closeFinanceCatalogDialog);
+  el('financeCatalogDialog').addEventListener('click', event => {
+    if(event.target === el('financeCatalogDialog')) closeFinanceCatalogDialog();
+  });
+
+  el('financeCategoryForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const name = el('financeCategoryName').value.trim();
+    if(!name) return;
+    try{
+      await financeApiRequest('/categories', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name})
+      });
+      el('financeCategoryForm').reset();
+      await loadFinanceCatalog();
+      showPurchaseToast('Categoria cadastrada.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  el('financeSubgroupForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const parentId = el('financeSubgroupParent').value;
+    const name = el('financeSubgroupName').value.trim();
+    if(!parentId || !name) return;
+    try{
+      await financeApiRequest('/categories', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, parentId})
+      });
+      el('financeSubgroupForm').reset();
+      await loadFinanceCatalog();
+      showPurchaseToast('Subgrupo cadastrado.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  el('financeItemForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const categoryId = el('financeItemCategory').value;
+    const name = el('financeItemName').value.trim();
+    if(!categoryId || !name) return;
+    try{
+      await financeApiRequest('/items', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, categoryId})
+      });
+      el('financeItemForm').reset();
+      await loadFinanceCatalog();
+      showPurchaseToast('Item cadastrado.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  el('financeCatalogList').addEventListener('click', async event => {
+    const categoryButton = event.target.closest('[data-finance-delete-category]');
+    const itemButton = event.target.closest('[data-finance-delete-item]');
+    if(categoryButton){
+      if(!confirm('Excluir esta categoria/subgrupo?')) return;
+      try{
+        await financeApiRequest('/categories?id='+encodeURIComponent(categoryButton.dataset.financeDeleteCategory), {method:'DELETE'});
+        await loadFinanceCatalog();
+        showPurchaseToast('Excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }else if(itemButton){
+      if(!confirm('Excluir este item?')) return;
+      try{
+        await financeApiRequest('/items?id='+encodeURIComponent(itemButton.dataset.financeDeleteItem), {method:'DELETE'});
+        await loadFinanceCatalog();
+        showPurchaseToast('Excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
   const permissionNames = {
     'tasks:view':'Tarefas: visualizar','tasks:manage':'Tarefas: cadastrar/editar/excluir',
     'missions:view':'Missões: visualizar','missions:create':'Missões: cadastrar','missions:delete':'Missões: excluir','missions:notify':'Missões: notificações',
@@ -12704,6 +13174,7 @@ function renderHomeTasks(){
     'report41:view':'Relatório 41',
     'instructions:manage':'Instruções: cadastrar/excluir',
     'pdv_requests:view':'Alterações PDV: visualização','pdv_requests:create':'Alterações PDV: cadastro','pdv_requests:delete':'Alterações PDV: exclusão','pdv_requests:status':'Alterações PDV: alteração de status',
+    'finance:manage':'Financeiro: acessar módulo',
     'users:manage':'Usuários e acessos'
   };
   const accessGroupNames = {
@@ -12969,7 +13440,7 @@ function renderHomeTasks(){
     if(freshLogin) navigateToPage('inicio',{replace:true,scroll:false,smooth:false});
     else syncPageFromLocation(false);
     checkIntegrationHealth();
-    const needsCompanies = canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41') ||
+    const needsCompanies = canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41') || canAccess('finance') ||
       canActAcrossStores('outputs:create') || canActAcrossStores('captures:create') ||
       canActAcrossStores('supplies:request') || canActAcrossStores('missions:view');
     if(needsCompanies){

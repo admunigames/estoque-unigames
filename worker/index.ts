@@ -44,6 +44,7 @@ type Permission =
   | "documents_manage"
   | "instructions:manage"
   | "pdv_requests:view" | "pdv_requests:create" | "pdv_requests:delete" | "pdv_requests:status"
+  | "finance:manage"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
@@ -106,6 +107,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "report41:view",
   "instructions:manage",
   "pdv_requests:view", "pdv_requests:create", "pdv_requests:delete", "pdv_requests:status",
+  "finance:manage",
   "users:manage",
 ];
 // documents_manage continua exclusivo de administrador: nunca pode ser
@@ -200,6 +202,7 @@ const APP_ROUTE_PATHS = new Set([
   "/cadastros/usuarios",
   "/rh/folgas",
   "/rh/escalas",
+  "/financeiro/dre/por-loja",
   "/documentos",
   "/documentos/certificados/garantia-de-produto",
   "/documentos/certificados/garantia-estendida",
@@ -1022,6 +1025,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   pdvRequests: [
     "pdv_requests:view", "pdv_requests:create", "pdv_requests:delete", "pdv_requests:status",
   ],
+  finance: ["finance:manage"],
 };
 
 const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_PERMISSIONS> = {
@@ -1073,6 +1077,10 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/solicitacoes/alteracoes-pdv" || path.startsWith("/api/pdv-requests"),
       "pdvRequests",
+    ],
+    [
+      path === "/financeiro" || path.startsWith("/financeiro/") || path.startsWith("/api/finance"),
+      "finance",
     ],
   ];
   const direct = directPermissions.find(([matches]) => matches);
