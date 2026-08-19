@@ -294,6 +294,40 @@ export async function GET(request: Request) {
     );
   }
 
+  if (url.searchParams.get("pendingOld") === "1") {
+    // Solicitações da própria loja de semanas anteriores à vigente que
+    // ainda têm itens pendentes de separação ou de confirmação de
+    // recebimento — precisam continuar acessíveis mesmo depois que a
+    // semana vigente avança (mesmo bug já corrigido do lado da fila de
+    // separação do admin, agora do lado da loja).
+    try {
+      const database = await getD1();
+      const currentWeek = upcomingMondayRecife();
+      const requests = await database
+        .prepare(
+          `SELECT id, company_id AS companyId, company_name AS companyName,
+                  week_start AS weekStart, responsible_name AS responsibleName,
+                  note, status, created_by_name AS createdByName, created_at AS createdAt
+           FROM supply_requests WHERE company_id=?1 AND week_start<?2
+           ORDER BY week_start ASC`,
+        )
+        .bind(companyId, currentWeek)
+        .all<RequestRow>();
+      const requestRows = requests.results ?? [];
+      const withItems = await Promise.all(
+        requestRows.map(async (row) => {
+          const items = await database.prepare(REQUEST_ITEM_SELECT).bind(row.id).all<RequestItemRow>();
+          const itemRows = items.results ?? [];
+          return { ...row, items: itemRows, completed: isRequestCompleted(itemRows) };
+        }),
+      );
+      return jsonResponse({ companyId, requests: withItems.filter((row) => !row.completed) });
+    } catch (error) {
+      console.error("Não foi possível carregar as solicitações pendentes de semanas anteriores.", error);
+      return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR AS SOLICITAÇÕES PENDENTES." }, 500);
+    }
+  }
+
   if (url.searchParams.get("view") === "history") {
     try {
       const database = await getD1();

@@ -3239,6 +3239,13 @@
         <div class="supply-missing-groups" id="supplyMissingGroups"><div class="supply-empty">Carregando produtos…</div></div>
       </section>
 
+      <section class="supply-register-panel" id="supplyRequestPendingOldPanel" hidden>
+        <div class="supply-panel-head">
+          <div><h3>PENDENTE DE SEMANAS ANTERIORES</h3><p>Estas solicitações ainda têm itens aguardando separação ou confirmação de recebimento — continuam aqui até serem concluídas, mesmo depois da semana virar.</p></div>
+        </div>
+        <div class="supply-separation-list" id="supplyRequestPendingOldList"></div>
+      </section>
+
       <section class="supply-register-panel" id="supplyRequestPanel" hidden>
         <div class="supply-panel-head">
           <div><h3>SOLICITAÇÃO</h3><p id="supplyRequestDescription">Revise o que está marcado, informe o responsável e envie a solicitação da semana.</p></div>
@@ -4453,7 +4460,7 @@
     }
     if(livePageName === 'captacao') await loadCaptures();
     if(livePageName === 'insumos'){
-      const refreshes = [loadSupplyAdminData(),loadSupplyExitData(),loadSupplyMissing(),loadSupplyRequest()];
+      const refreshes = [loadSupplyAdminData(),loadSupplyExitData(),loadSupplyMissing(),loadSupplyRequest(),loadSupplyRequestPendingOld()];
       if(supplyAdminTab === 'separacao') refreshes.push(loadSupplySeparationQueue());
       if(supplyAdminTab === 'historico') refreshes.push(loadSupplyAdminHistory());
       await Promise.all(refreshes);
@@ -5335,7 +5342,7 @@
     if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
+    if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'instrucoes') loadInstructions();
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
@@ -5355,7 +5362,7 @@
     if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
-    if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); }
+    if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'instrucoes') loadInstructions();
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
@@ -11138,7 +11145,7 @@ function renderHomeTasks(){
     ).join('');
   }
 
-  el('supplyRequestSummaryGroups').addEventListener('change',async event => {
+  async function handleSupplyReceiveSelectChange(event){
     const select = event.target.closest('[data-receive-item]');
     if(!select) return;
     select.disabled = true;
@@ -11148,12 +11155,49 @@ function renderHomeTasks(){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({action:'receive',itemId:select.dataset.receiveItem,status:select.value})
       });
-      await loadSupplyRequest();
     }catch(error){
       showPurchaseToast(error.message,'error');
-      await loadSupplyRequest();
     }
-  });
+    await Promise.all([loadSupplyRequest(),loadSupplyRequestPendingOld()]);
+  }
+
+  el('supplyRequestSummaryGroups').addEventListener('change',handleSupplyReceiveSelectChange);
+  el('supplyRequestPendingOldList').addEventListener('change',handleSupplyReceiveSelectChange);
+
+  function supplyRequestPendingOldCardHtml(row){
+    const items = Array.isArray(row.items) ? row.items : [];
+    return '<div class="supply-separation-card">'+
+      '<div class="supply-separation-card-head">'+
+        '<div><strong>'+escapeHtml(formatSupplyMissingWeek(row.weekStart))+'</strong>'+
+          '<span>RESPONSÁVEL: '+escapeHtml(row.responsibleName || '—')+' · ENVIADO EM '+
+            escapeHtml(formatDateTimeBR(row.createdAt))+'</span></div>'+
+        '<span class="supply-separation-badge">PENDENTE</span>'+
+      '</div>'+
+      '<div class="supply-missing-groups">'+
+        (items.length
+          ? supplyRequestSummaryGroupsHtml(items)
+          : '<div class="supply-empty">Nenhum produto — só observação.</div>')+
+      '</div>'+
+      (row.note ? '<div class="supply-separation-note">OBSERVAÇÃO: '+escapeHtml(row.note)+'</div>' : '')+
+    '</div>';
+  }
+
+  async function loadSupplyRequestPendingOld(){
+    const managesAllStores = !supplyIsAssistance() &&
+      (currentSession.role === 'admin' || canActAcrossStores('supplies:request'));
+    if(managesAllStores || !canAccess('supplies')){
+      el('supplyRequestPendingOldPanel').hidden = true;
+      return;
+    }
+    try{
+      const data = await supplyRequestApiRequest(null,new URLSearchParams({pendingOld:'1'}));
+      const requests = Array.isArray(data.requests) ? data.requests : [];
+      el('supplyRequestPendingOldPanel').hidden = requests.length === 0;
+      el('supplyRequestPendingOldList').innerHTML = requests.map(supplyRequestPendingOldCardHtml).join('');
+    }catch(error){
+      el('supplyRequestPendingOldPanel').hidden = true;
+    }
+  }
 
   async function loadSupplyRequest(skipCompletedJump){
     // Painel de "solicitação da semana" é uma lista pessoal da própria loja
