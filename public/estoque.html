@@ -5722,10 +5722,14 @@
   //
   // Os timestamps do banco chegam em dois formatos possiveis:
   // - Postgres/Supabase (atual): "YYYY-MM-DD HH:MM:SS[.ffffff]+00", ja com
-  //   o fuso (a sessao do banco usa UTC) - nao pode simplesmente virar ISO
-  //   e levar um "Z" no final, senao fica "...+00Z", que e uma data invalida.
+  //   o fuso (a sessao do banco usa UTC). O parser de Date do navegador
+  //   aceita esse formato (com espaco, offset sem ":") direto — mas so
+  //   nesse formato "solto"; se a gente trocar o espaco por "T" pra
+  //   parecer ISO, o parser vira estrito e passa a exigir o offset com
+  //   minutos ("+00:00"), rejeitando "+00" como data invalida. Por isso,
+  //   quando ja tem offset, o valor NAO é tocado.
   // - D1/SQLite (legado, `CURRENT_TIMESTAMP`): "YYYY-MM-DD HH:MM:SS" sem
-  //   fuso nenhum, sempre UTC.
+  //   fuso nenhum, sempre UTC — esse sim vira ISO com "Z" no final.
   function formatDateTimeBR(value){
     if(!value) return '';
     let date;
@@ -5736,7 +5740,7 @@
       if(!raw) return '';
       const hasOffset = /(Z|[+-]\d{2}(:?\d{2})?)$/.test(raw);
       const normalized = hasOffset
-        ? raw.replace(' ','T')
+        ? raw
         : /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(raw)
           ? raw.replace(' ','T')+'Z'
           : raw;
