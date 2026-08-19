@@ -9783,11 +9783,11 @@ function renderHomeTasks(){
           '<span class="mission-badge">'+escapeHtml(task.companyName || 'LOJA')+'</span>'+
           (task.carriedOver ? '<span class="mission-badge overdue">MIGROU DE '+escapeHtml(task.originDate)+'</span>' : '')+
         '</div></div>'+
-      '<div class="mission-card-actions"><span class="mission-status'+(completed ? ' done' : '')+'">'+
-        (completed ? 'FEITA' : 'NÃO FEITA')+
-        (isRoutineTaskMine(task) ? '' : ' · '+escapeHtml(task.companyName || ''))+
-        '</span>'+
-        (isRoutineTaskMine(task) ? routineStatusToggleHtml(task,false) : '')+
+      '<div class="mission-card-actions">'+
+        (isRoutineTaskMine(task)
+          ? routineStatusToggleHtml(task,false)
+          : '<span class="mission-status'+(completed ? ' done' : '')+'">'+
+            (completed ? 'FEITA' : 'NÃO FEITA')+' · '+escapeHtml(task.companyName || '')+'</span>')+
       '</div></article>';
   }
 
@@ -9842,11 +9842,13 @@ function renderHomeTasks(){
     const status = routineTaskStatus(task);
     const completed = status === 'completed';
     const marker = '<span class="home-mission-check '+status+'" aria-hidden="true">'+(completed ? '✓' : '○')+'</span>';
+    const mine = isRoutineTaskMine(task);
     return '<div class="home-mission-row'+(completed ? ' completed' : '')+'">'+marker+
       '<div class="home-mission-copy"><strong class="home-mission-title">'+escapeHtml(task.title || '')+'</strong>'+
-      '<span class="home-mission-meta">'+escapeHtml(task.companyName || 'MINHA LOJA')+' · '+(completed ? 'FEITA' : 'NÃO FEITA')+'</span></div>'+
+      '<span class="home-mission-meta">'+escapeHtml(task.companyName || 'MINHA LOJA')+
+      (mine ? '' : ' · '+(completed ? 'FEITA' : 'NÃO FEITA'))+'</span></div>'+
       '<div class="home-mission-actions">'+
-      (isRoutineTaskMine(task) ? routineStatusToggleHtml(task,true) : '')+
+      (mine ? routineStatusToggleHtml(task,true) : '')+
       '</div></div>';
   }
 
