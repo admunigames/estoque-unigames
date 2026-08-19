@@ -1639,6 +1639,10 @@
   .dre-subgroup-total{font:800 12px var(--mono);color:var(--accent)}
   .dre-subgroup-body{padding:0 12px 12px;display:grid;gap:8px}
   .dre-empty{padding:14px;border:1px dashed var(--line);border-radius:10px;color:var(--ink-soft);font-size:12px;text-align:center}
+  .dre-flat-list{display:grid;gap:8px;margin-top:18px}
+  .dre-flat-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:rgba(79,134,189,.03)}
+  .dre-flat-row .dre-flat-name{font:800 12px var(--mono);letter-spacing:.05em;color:var(--ink)}
+  .dre-flat-row .dre-flat-total{font:800 13px var(--mono);color:var(--accent)}
   .dre-catalog-list{display:grid;gap:8px;max-height:280px;overflow:auto;margin-bottom:14px}
   .dre-catalog-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px}
   .dre-catalog-row.sub{margin-left:18px;background:rgba(79,134,189,.05)}
@@ -1713,6 +1717,7 @@
   html[data-theme="light"] .dre-category,
   html[data-theme="light"] .dre-subgroup,
   html[data-theme="light"] .dre-item-row,
+  html[data-theme="light"] .dre-flat-row,
   html[data-theme="light"] .permission-module{background:#fff;color:#304b63;border-color:#aebfce;}
   html[data-theme="light"] .filters label:has(input:checked),
   html[data-theme="light"] .permission-option:has(input:checked){
@@ -2682,6 +2687,7 @@
       </button>
       <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navDrePorLoja" data-page="drePorLoja" data-home-desc="Demonstrativo de resultado por loja, com receita, despesas e margem." title="DRE por Loja" href="/financeiro/dre/por-loja"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/><line x1="3" y1="19" x2="21" y2="19"/></svg></span><span class="nav-label">DRE por Loja</span></a>
+        <a class="nav-item sub-item" id="navDreConsolidada" data-page="dreConsolidada" title="DRE Consolidada" href="/financeiro/dre/consolidada"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.4"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.4"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.4"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.4"/></svg></span><span class="nav-label">DRE Consolidada</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="hr">
@@ -4313,6 +4319,32 @@
       </div>
     </section>
 
+    <!-- ================= FINANCEIRO / DRE CONSOLIDADA ================= -->
+    <section id="pageDreConsolidada" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">DRE Consolidada</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Soma de todas as lojas, agrupada só por categoria.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="dreConsolidadaMes">MÊS</label><input type="month" id="dreConsolidadaMes"></div>
+      </div>
+
+      <section class="summary" aria-label="Resumo da DRE Consolidada">
+        <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreConsolidadaSummaryRevenue">R$ 0,00</div></div>
+        <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreConsolidadaSummaryExpense">R$ 0,00</div></div>
+        <div class="card" id="dreConsolidadaSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreConsolidadaSummaryResult">R$ 0,00</div></div>
+        <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreConsolidadaSummaryMargin">0,00%</div></div>
+      </section>
+
+      <div class="dre-flat-list" id="dreConsolidadaCategoryList">
+        <div class="dre-empty">Selecione o mês para ver a DRE Consolidada.</div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -4491,6 +4523,8 @@
   let financeItems = [];
   let financeDre = null;
   let financeLoading = false;
+  let financeDreConsolidada = null;
+  let financeConsolidadaLoading = false;
 
   let purchaseRows = [];
   let purchaseCursor = null;
@@ -4965,7 +4999,8 @@
     usuarios:'/cadastros/usuarios',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
-    drePorLoja:'/financeiro/dre/por-loja'
+    drePorLoja:'/financeiro/dre/por-loja',
+    dreConsolidada:'/financeiro/dre/consolidada'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -4986,7 +5021,8 @@
     usuarios:'USUÁRIOS E ACESSOS',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
-    drePorLoja:'DRE POR LOJA'
+    drePorLoja:'DRE POR LOJA',
+    dreConsolidada:'DRE CONSOLIDADA'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -5004,7 +5040,8 @@
     dados:'database',
     rhFolgas:'hr',
     rhEscalas:'hr',
-    drePorLoja:'finance'
+    drePorLoja:'finance',
+    dreConsolidada:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -5407,7 +5444,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv';
-    const isFinanceiro = name === 'drePorLoja';
+    const isFinanceiro = name === 'drePorLoja' || name === 'dreConsolidada';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -5457,6 +5494,7 @@
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'drePorLoja') loadDrePorLoja();
+    if(name === 'dreConsolidada') loadDreConsolidada();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -5478,6 +5516,7 @@
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'drePorLoja') loadDrePorLoja();
+    if(name === 'dreConsolidada') loadDreConsolidada();
   }
 
   function isPlainClick(event){
@@ -13015,6 +13054,52 @@ function renderHomeTasks(){
 
   el('dreLoja').addEventListener('change', loadDrePorLoja);
   el('dreMes').addEventListener('change', loadDrePorLoja);
+
+  function renderDreConsolidadaSummary(){
+    const data = financeDreConsolidada;
+    el('dreConsolidadaSummaryRevenue').textContent = formatCentsBRL(data ? data.revenueCents : 0);
+    el('dreConsolidadaSummaryExpense').textContent = formatCentsBRL(data ? data.expenseTotalCents : 0);
+    el('dreConsolidadaSummaryResult').textContent = formatCentsBRL(data ? data.resultCents : 0);
+    const marginPercent = ((data ? data.marginBasisPoints : 0)/100).toFixed(2);
+    el('dreConsolidadaSummaryMargin').textContent = marginPercent.replace('.',',')+'%';
+    el('dreConsolidadaSummaryResultCard').classList.toggle('neg', Boolean(data && data.resultCents < 0));
+  }
+
+  function renderDreConsolidadaCategories(){
+    const container = el('dreConsolidadaCategoryList');
+    if(!financeDreConsolidada){
+      container.innerHTML = '<div class="dre-empty">Selecione o mês para ver a DRE Consolidada.</div>';
+      return;
+    }
+    if(!financeDreConsolidada.categories.length){
+      container.innerHTML = '<div class="dre-empty">Nenhuma categoria cadastrada ainda.</div>';
+      return;
+    }
+    container.innerHTML = financeDreConsolidada.categories.map(category => (
+      '<div class="dre-flat-row"><span class="dre-flat-name">'+escapeHtml(category.name)+'</span><span class="dre-flat-total">'+formatCentsBRL(category.totalCents)+'</span></div>'
+    )).join('');
+  }
+
+  async function loadDreConsolidada(){
+    if(!canAccess('finance') || financeConsolidadaLoading) return;
+    if(!el('dreConsolidadaMes').value) el('dreConsolidadaMes').value = financeCurrentMonthKey();
+    const month = el('dreConsolidadaMes').value;
+    financeConsolidadaLoading = true;
+    el('dreConsolidadaCategoryList').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    try{
+      financeDreConsolidada = await financeApiRequest('/dre?scope=consolidated&month='+encodeURIComponent(month));
+      renderDreConsolidadaSummary();
+      renderDreConsolidadaCategories();
+    }catch(error){
+      financeDreConsolidada = null;
+      el('dreConsolidadaCategoryList').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      renderDreConsolidadaSummary();
+    }finally{
+      financeConsolidadaLoading = false;
+    }
+  }
+
+  el('dreConsolidadaMes').addEventListener('change', loadDreConsolidada);
 
   el('btnSaveDreRevenue').addEventListener('click', async () => {
     const storeId = el('dreLoja').value;
