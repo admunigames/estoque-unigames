@@ -536,3 +536,77 @@ export const supplyRequestEvents = pgTable(
     ),
   ],
 );
+
+export const financeCategories = pgTable(
+  "finance_categories",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    parentId: text("parent_id"),
+    position: integer("position").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("finance_categories_parent_idx").on(table.parentId)],
+);
+
+export const financeItems = pgTable(
+  "finance_items",
+  {
+    id: text("id").primaryKey(),
+    categoryId: text("category_id").notNull(),
+    name: text("name").notNull(),
+    position: integer("position").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("finance_items_category_idx").on(table.categoryId)],
+);
+
+export const financeStoreEntries = pgTable(
+  "finance_store_entries",
+  {
+    id: text("id").primaryKey(),
+    storeId: text("store_id").notNull(),
+    itemId: text("item_id").notNull(),
+    month: text("month").notNull(),
+    entryType: text("entry_type").notNull(),
+    amountCents: integer("amount_cents"),
+    percentBasisPoints: integer("percent_basis_points"),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("finance_store_entries_store_item_month_idx").on(
+      table.storeId,
+      table.itemId,
+      table.month,
+    ),
+    index("finance_store_entries_store_month_idx").on(table.storeId, table.month),
+  ],
+);
+
+export const financeStoreRevenue = pgTable(
+  "finance_store_revenue",
+  {
+    id: text("id").primaryKey(),
+    storeId: text("store_id").notNull(),
+    month: text("month").notNull(),
+    amountCents: integer("amount_cents").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("finance_store_revenue_store_month_idx").on(table.storeId, table.month),
+  ],
+);
