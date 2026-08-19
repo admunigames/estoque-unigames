@@ -56,6 +56,25 @@ type ConsolidatedCategory = {
   totalCents: number;
 };
 
+type ManagerialItem = {
+  id: string;
+  name: string;
+  totalCents: number;
+};
+
+type ManagerialCategory = {
+  id: string;
+  name: string;
+  totalCents: number;
+  items: ManagerialItem[];
+  subgroups: Array<{
+    id: string;
+    name: string;
+    totalCents: number;
+    items: ManagerialItem[];
+  }>;
+};
+
 function itemTotal(entry: EntryRow | undefined): number {
   return entry?.entryType === "fixed" ? entry.amountCents ?? 0 : 0;
 }
@@ -162,7 +181,7 @@ async function buildStoreDre(
   return { revenueCents, expenseTotalCents, resultCents, marginBasisPoints, categories: dreCategories };
 }
 
-async function buildConsolidatedDre(database: Awaited<ReturnType<typeof getD1>>, month: string) {
+async function loadMonthWideTotals(database: Awaited<ReturnType<typeof getD1>>, month: string) {
   const [{ allCategories, allItems }, entries, revenue] = await Promise.all([
     loadCatalog(database),
     database
@@ -180,11 +199,22 @@ async function buildConsolidatedDre(database: Awaited<ReturnType<typeof getD1>>,
   ]);
 
   // Soma todos os lançamentos de todas as lojas por item (sem manter a
-  // quebra por loja) — a DRE Consolidada só mostra o total por categoria.
+  // quebra por loja) — usado tanto pela DRE Consolidada (só total por
+  // categoria) quanto pela Gerencial (total por item, dentro da categoria).
   const totalByItem = new Map<string, number>();
   for (const entry of entries.results ?? []) {
     totalByItem.set(entry.itemId, (totalByItem.get(entry.itemId) ?? 0) + itemTotal(entry));
   }
+  const revenueCents = (revenue.results ?? []).reduce((sum, row) => sum + (row.amountCents ?? 0), 0);
+
+  return { allCategories, allItems, totalByItem, revenueCents };
+}
+
+async function buildConsolidatedDre(database: Awaited<ReturnType<typeof getD1>>, month: string) {
+  const { allCategories, allItems, totalByItem, revenueCents } = await loadMonthWideTotals(
+    database,
+    month,
+  );
 
   const { topCategories, subcategoriesByParent } = groupCategories(allCategories);
   const itemsByCategory = groupItemsByCategory(allItems);
@@ -206,7 +236,39 @@ async function buildConsolidatedDre(database: Awaited<ReturnType<typeof getD1>>,
     return { id: category.id, name: category.name, totalCents: directTotal + subgroupsTotal };
   });
 
-  const revenueCents = (revenue.results ?? []).reduce((sum, row) => sum + (row.amountCents ?? 0), 0);
+  const expenseTotalCents = dreCategories.reduce((sum, category) => sum + category.totalCents, 0);
+  const resultCents = revenueCents - expenseTotalCents;
+  const marginBasisPoints = revenueCents > 0 ? Math.round((resultCents / revenueCents) * 10000) : 0;
+
+  return { revenueCents, expenseTotalCents, resultCents, marginBasisPoints, categories: dreCategories };
+}
+
+async function buildManagerialDre(database: Awaited<ReturnType<typeof getD1>>, month: string) {
+  const { allCategories, allItems, totalByItem, revenueCents } = await loadMonthWideTotals(
+    database,
+    month,
+  );
+
+  const { topCategories, subcategoriesByParent } = groupCategories(allCategories);
+  const itemsByCategory = groupItemsByCategory(allItems);
+
+  function buildManagerialItem(item: ItemRow): ManagerialItem {
+    return { id: item.id, name: item.name, totalCents: totalByItem.get(item.id) ?? 0 };
+  }
+
+  const dreCategories: ManagerialCategory[] = topCategories.map((category) => {
+    const directItems = (itemsByCategory.get(category.id) ?? []).map(buildManagerialItem);
+    const subgroups = (subcategoriesByParent.get(category.id) ?? []).map((subgroup) => {
+      const subgroupItems = (itemsByCategory.get(subgroup.id) ?? []).map(buildManagerialItem);
+      const totalCents = subgroupItems.reduce((sum, item) => sum + item.totalCents, 0);
+      return { id: subgroup.id, name: subgroup.name, totalCents, items: subgroupItems };
+    });
+    const totalCents =
+      directItems.reduce((sum, item) => sum + item.totalCents, 0) +
+      subgroups.reduce((sum, subgroup) => sum + subgroup.totalCents, 0);
+    return { id: category.id, name: category.name, totalCents, items: directItems, subgroups };
+  });
+
   const expenseTotalCents = dreCategories.reduce((sum, category) => sum + category.totalCents, 0);
   const resultCents = revenueCents - expenseTotalCents;
   const marginBasisPoints = revenueCents > 0 ? Math.round((resultCents / revenueCents) * 10000) : 0;
@@ -232,7 +294,7 @@ export async function GET(request: Request) {
     return jsonResponse({ error: "INFORME UM MÊS VÁLIDO (AAAA-MM)." }, 400);
   }
 
-  if (scope !== "store" && scope !== "consolidated") {
+  if (scope !== "store" && scope !== "consolidated" && scope !== "managerial") {
     return jsonResponse({ error: "ESCOPO DE DRE AINDA NÃO DISPONÍVEL." }, 400);
   }
 
@@ -241,6 +303,11 @@ export async function GET(request: Request) {
 
     if (scope === "consolidated") {
       const result = await buildConsolidatedDre(database, month);
+      return jsonResponse({ scope, month, ...result });
+    }
+
+    if (scope === "managerial") {
+      const result = await buildManagerialDre(database, month);
       return jsonResponse({ scope, month, ...result });
     }
 
