@@ -13000,6 +13000,9 @@ function renderHomeTasks(){
     const type = item.entryType || 'fixed';
     const amount = item.entryType === 'fixed' && item.amountCents != null ? (item.amountCents/100).toFixed(2) : '';
     const percent = item.entryType === 'percentage' && item.percentBasisPoints != null ? (item.percentBasisPoints/100).toFixed(2) : '';
+    const deleteButton = item.entryId
+      ? '<button class="btn-outline" type="button" data-finance-delete-entry="'+escapeHtml(item.entryId)+'" title="Excluir lançamento">EXCLUIR</button>'
+      : '';
     return (
       '<div class="dre-item-row" data-finance-item-id="'+escapeHtml(item.id)+'">'+
         '<span class="dre-item-name">'+escapeHtml(item.name)+'</span>'+
@@ -13010,6 +13013,7 @@ function renderHomeTasks(){
           '</select>'+
           '<input type="number" min="0" step="0.01" data-finance-entry-fixed placeholder="0,00" value="'+amount+'"'+(type === 'fixed' ? '' : ' hidden')+'>'+
           '<input type="number" min="0" step="0.01" data-finance-entry-percent placeholder="0,00" value="'+percent+'"'+(type === 'percentage' ? '' : ' hidden')+'>'+
+          deleteButton+
         '</span>'+
       '</div>'
     );
@@ -13019,12 +13023,12 @@ function renderHomeTasks(){
     const itemsHtml = category.items.map(item => dreItemRowHtml(item)).join('') ||
       (category.subgroups.length ? '' : '<div class="dre-empty">Nenhum item nesta categoria.</div>');
     const subgroupsHtml = category.subgroups.map(subgroup => (
-      '<details class="dre-subgroup"><summary><span>'+escapeHtml(subgroup.name)+'</span><span class="dre-subgroup-total">'+formatCentsBRL(subgroup.totalCents)+'</span></summary>'+
+      '<details class="dre-subgroup" data-finance-node-id="'+escapeHtml(subgroup.id)+'"><summary><span>'+escapeHtml(subgroup.name)+'</span><span class="dre-subgroup-total">'+formatCentsBRL(subgroup.totalCents)+'</span></summary>'+
       '<div class="dre-subgroup-body">'+(subgroup.items.map(item => dreItemRowHtml(item)).join('') || '<div class="dre-empty">Nenhum item neste subgrupo.</div>')+'</div>'+
       '</details>'
     )).join('');
     return (
-      '<details class="dre-category"><summary><span>'+escapeHtml(category.name)+'</span><span class="dre-category-total">'+formatCentsBRL(category.totalCents)+'</span></summary>'+
+      '<details class="dre-category" data-finance-node-id="'+escapeHtml(category.id)+'"><summary><span>'+escapeHtml(category.name)+'</span><span class="dre-category-total">'+formatCentsBRL(category.totalCents)+'</span></summary>'+
       '<div class="dre-category-body">'+itemsHtml+subgroupsHtml+'</div>'+
       '</details>'
     );
@@ -13042,6 +13046,11 @@ function renderHomeTasks(){
 
   function renderDreCategories(){
     const container = el('dreCategoryList');
+    const openIds = new Set(
+      Array.from(container.querySelectorAll('details[open]'))
+        .map(details => details.dataset.financeNodeId)
+        .filter(Boolean)
+    );
     if(!financeDre){
       container.innerHTML = '<div class="dre-empty">Selecione a loja e o mês para ver a DRE.</div>';
       return;
@@ -13051,6 +13060,9 @@ function renderHomeTasks(){
       return;
     }
     container.innerHTML = financeDre.categories.map(category => dreCategoryCardHtml(category)).join('');
+    container.querySelectorAll('details[data-finance-node-id]').forEach(details => {
+      if(openIds.has(details.dataset.financeNodeId)) details.open = true;
+    });
   }
 
   async function loadDrePorLoja(){
@@ -13257,6 +13269,21 @@ function renderHomeTasks(){
       }catch(error){
         showPurchaseToast(error.message,'error');
       }
+    }
+  });
+
+  el('dreCategoryList').addEventListener('click', async event => {
+    const button = event.target.closest('[data-finance-delete-entry]');
+    if(!button) return;
+    if(!confirm('Excluir este lançamento?')) return;
+    button.disabled = true;
+    try{
+      await financeApiRequest('/entries?id='+encodeURIComponent(button.dataset.financeDeleteEntry), {method:'DELETE'});
+      showPurchaseToast('Lançamento excluído.');
+      await loadDrePorLoja();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      button.disabled = false;
     }
   });
 

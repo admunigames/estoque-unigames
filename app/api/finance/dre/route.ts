@@ -23,6 +23,7 @@ type ItemRow = {
 };
 
 type EntryRow = {
+  id?: string;
   itemId: string;
   entryType: string;
   amountCents: number | null;
@@ -32,6 +33,7 @@ type EntryRow = {
 type DreItem = {
   id: string;
   name: string;
+  entryId: string | null;
   entryType: string | null;
   amountCents: number | null;
   percentBasisPoints: number | null;
@@ -126,7 +128,7 @@ async function buildStoreDre(
     loadCatalog(database),
     database
       .prepare(
-        `SELECT item_id AS itemId, entry_type AS entryType,
+        `SELECT id, item_id AS itemId, entry_type AS entryType,
                 amount_cents AS amountCents, percent_basis_points AS percentBasisPoints
          FROM finance_store_entries WHERE store_id=?1 AND month=?2`,
       )
@@ -148,6 +150,7 @@ async function buildStoreDre(
     return {
       id: item.id,
       name: item.name,
+      entryId: entry?.id ?? null,
       entryType: entry?.entryType ?? null,
       amountCents: entry?.amountCents ?? null,
       percentBasisPoints: entry?.percentBasisPoints ?? null,

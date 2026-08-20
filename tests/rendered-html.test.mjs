@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v47"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -859,7 +859,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v47"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -952,7 +952,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v47"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1114,7 +1114,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v47"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1371,7 +1371,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v47"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1416,7 +1416,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v47"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -1787,6 +1787,35 @@ test("expõe o módulo Financeiro (DRE por Loja) e restringe o acesso a finance:
   assert.match(migration, /CREATE TABLE "finance_store_entries"/);
   assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
   assert.match(migration, /REVOKE ALL ON TABLE "finance_store_revenue" FROM anon, authenticated/);
+});
+
+test("DRE por Loja permite excluir um lançamento e mantém os cards abertos após salvar/excluir", async () => {
+  const [html, dreRoute] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/dre/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Botão de excluir lançamento por item, só aparece quando já existe um
+  // lançamento (entryId presente).
+  assert.match(html, /data-finance-delete-entry="'\+escapeHtml\(item\.entryId\)\+'"/);
+  assert.match(
+    html,
+    /el\('dreCategoryList'\)\.addEventListener\('click', async event => \{[\s\S]{0,300}data-finance-delete-entry/,
+  );
+  assert.match(html, /financeApiRequest\('\/entries\?id='\+encodeURIComponent\(button\.dataset\.financeDeleteEntry\), \{method:'DELETE'\}\)/);
+
+  // Cards de categoria/subgrupo carregam um id estável (data-finance-node-id)
+  // e renderDreCategories() reabre os que já estavam abertos antes do
+  // recarregamento — sem isso, cada save/delete fechava tudo de novo.
+  assert.match(html, /data-finance-node-id="'\+escapeHtml\(category\.id\)\+'"/);
+  assert.match(html, /data-finance-node-id="'\+escapeHtml\(subgroup\.id\)\+'"/);
+  assert.match(
+    html,
+    /details\.dataset\.financeNodeId/,
+  );
+
+  assert.match(dreRoute, /entryId: entry\?\.id \?\? null/);
+  assert.match(dreRoute, /SELECT id, item_id AS itemId, entry_type AS entryType/);
 });
 
 test("expõe a DRE Consolidada (soma de todas as lojas, agrupada só por categoria)", async () => {
