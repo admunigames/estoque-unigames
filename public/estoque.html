@@ -2681,7 +2681,14 @@
         <a class="nav-item sub-item" id="navAlteracoesPdv" data-page="alteracoesPdv" data-permission="pdv_requests" data-home-desc="Peça alterações manuais no PDV e acompanhe o status de cada pedido." title="Alterações PDV" href="/solicitacoes/alteracoes-pdv"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10l-2.6-2.6"/><path d="M17 17H7l2.6 2.6"/><line x1="9" y1="12" x2="15" y2="12"/></svg></span><span class="nav-label">Alterações PDV</span></a>
       </div>
     </div>
-    <a class="nav-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="Financeiro" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span></a>
+    <div class="nav-group" data-permission="finance">
+      <button class="nav-group-toggle" id="navFinanceiroMenu" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </button>
+      <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
+      </div>
+    </div>
     <div class="nav-group" data-permission="hr">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -4989,6 +4996,8 @@
   const navDocumentosSubmenu = el('navDocumentosSubmenu');
   const navSolicitacoesToggle = el('navSolicitacoes');
   const navSolicitacoesSubmenu = el('navSolicitacoesSubmenu');
+  const navFinanceiroToggle = el('navFinanceiroMenu');
+  const navFinanceiroSubmenu = el('navFinanceiroSubmenu');
   const PAGE_ROUTES = Object.freeze({
     inicio:'/inicio',
     puxadas:'/puxadas',
@@ -5413,6 +5422,16 @@
     setSolicitacoesExpanded(!expanded);
   });
 
+  function setFinanceiroExpanded(expanded){
+    navFinanceiroToggle.setAttribute('aria-expanded', String(expanded));
+    navFinanceiroSubmenu.setAttribute('aria-hidden', String(!expanded));
+  }
+
+  navFinanceiroToggle.addEventListener('click', () => {
+    const expanded = navFinanceiroToggle.getAttribute('aria-expanded') === 'true';
+    setFinanceiroExpanded(!expanded);
+  });
+
   function setSidebarCompact(compact){
     document.body.classList.toggle('sidebar-compact', compact);
     btnSidebarCompact.setAttribute('aria-pressed', String(compact));
@@ -5441,6 +5460,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv';
+    const isFinanceiro = name === 'financeiro';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -5459,6 +5479,8 @@
     if(isDocumentos) navDocumentosToggle.classList.add('active');
     setSolicitacoesExpanded(isSolicitacoes);
     if(isSolicitacoes) navSolicitacoesToggle.classList.add('active');
+    setFinanceiroExpanded(isFinanceiro);
+    if(isFinanceiro) navFinanceiroToggle.classList.add('active');
     document.querySelectorAll('[data-mobile-page]').forEach(button => {
       const active = button.dataset.mobilePage === name;
       button.classList.toggle('active', active);
