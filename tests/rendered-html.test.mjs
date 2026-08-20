@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -859,7 +859,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -952,7 +952,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1114,7 +1114,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1371,7 +1371,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1416,7 +1416,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v48"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -1738,7 +1738,7 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
   assert.equal((wrangler.match(/"r2_buckets"/g) || []).length, 1);
 });
 
-test("expõe o módulo Financeiro (DRE por Loja) e restringe o acesso a finance:manage", async () => {
+test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", async () => {
   const [html, workerSource, shared, categoriesRoute, itemsRoute, entriesRoute, revenueRoute, dreRoute, schema, migration] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
@@ -1753,18 +1753,20 @@ test("expõe o módulo Financeiro (DRE por Loja) e restringe o acesso a finance:
       readFile(new URL("../drizzle/0021_thin_lightspeed.sql", import.meta.url), "utf8"),
     ]);
 
-  assert.match(html, /id="navFinanceiro"/);
-  assert.match(html, /id="navDrePorLoja" data-page="drePorLoja"/);
-  assert.match(html, /id="pageDrePorLoja" class="page wrap"/);
-  assert.match(html, /drePorLoja:'\/financeiro\/dre\/por-loja'/);
-  assert.match(html, /drePorLoja:'finance'/);
-  assert.match(html, /function loadDrePorLoja\(\)/);
+  // Item de menu único (não é mais um nav-group com submenu de 3 páginas):
+  // as 3 visões da DRE vivem dentro da mesma page/section, como abas.
+  assert.match(html, /id="navFinanceiro" data-page="financeiro" data-permission="finance"/);
+  assert.match(html, /id="pageFinanceiro" class="page wrap"/);
+  assert.match(html, /financeiro:'\/financeiro\/dre'/);
+  assert.match(html, /financeiro:'finance'/);
+  assert.match(html, /function loadFinanceiroTab\(\)/);
   assert.match(html, /'finance:manage':'Financeiro: acessar módulo'/);
   assert.match(html, /canAccess\('finance'\)/);
   assert.match(html, /id="financeCatalogDialog"/);
 
   assert.match(workerSource, /"finance:manage"/);
   assert.match(workerSource, /finance: \["finance:manage"\]/);
+  assert.match(workerSource, /"\/financeiro\/dre"/);
   assert.match(
     workerSource,
     /path === "\/financeiro" \|\| path\.startsWith\("\/financeiro\/"\) \|\| path\.startsWith\("\/api\/finance"\)/,
@@ -1818,16 +1820,28 @@ test("DRE por Loja permite excluir um lançamento e mantém os cards abertos ap�
   assert.match(dreRoute, /SELECT id, item_id AS itemId, entry_type AS entryType/);
 });
 
-test("expõe a DRE Consolidada (soma de todas as lojas, agrupada só por categoria)", async () => {
+test("DRE Por Loja/Consolidada/Gerencial vivem na mesma página, alternadas por abas", async () => {
   const [html, dreRoute] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/dre/route.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(html, /id="navDreConsolidada" data-page="dreConsolidada"/);
-  assert.match(html, /id="pageDreConsolidada" class="page wrap"/);
-  assert.match(html, /dreConsolidada:'\/financeiro\/dre\/consolidada'/);
-  assert.match(html, /dreConsolidada:'finance'/);
+  // Abas dentro de #pageFinanceiro, não páginas/itens de menu separados.
+  assert.match(html, /data-dre-tab="porLoja"/);
+  assert.match(html, /data-dre-tab="consolidada"/);
+  assert.match(html, /data-dre-tab="gerencial"/);
+  assert.match(html, /id="dreTabPorLoja"/);
+  assert.match(html, /id="dreTabConsolidada" hidden/);
+  assert.match(html, /id="dreTabGerencial" hidden/);
+  assert.match(html, /function setDreActiveTab\(tab\)/);
+  assert.doesNotMatch(html, /id="navDrePorLoja"/);
+  assert.doesNotMatch(html, /id="navDreConsolidada"/);
+  assert.doesNotMatch(html, /id="navDreGerencial"/);
+  assert.doesNotMatch(html, /id="pageDrePorLoja"/);
+  assert.doesNotMatch(html, /id="pageDreConsolidada"/);
+  assert.doesNotMatch(html, /id="pageDreGerencial"/);
+
+  assert.match(html, /function loadDrePorLoja\(\)/);
   assert.match(html, /function loadDreConsolidada\(\)/);
   // A Consolidada nunca abre itens individuais — só linhas por categoria.
   assert.match(html, /function renderDreConsolidadaCategories\(\)/);
@@ -1835,30 +1849,17 @@ test("expõe a DRE Consolidada (soma de todas as lojas, agrupada só por categor
     html,
     /renderDreConsolidadaCategories[\s\S]{0,400}dre-item-row/,
   );
-
-  assert.match(dreRoute, /scope === "consolidated"/);
-  assert.match(dreRoute, /FROM finance_store_entries WHERE month=\?1/);
-  assert.match(dreRoute, /FROM finance_store_revenue WHERE month=\?1/);
-  // Percentual continua fora da soma de despesa também na Consolidada.
-  assert.match(dreRoute, /entry\?\.entryType === "fixed" \? entry\.amountCents \?\? 0 : 0/);
-});
-
-test("expõe a DRE Gerencial (soma de todas as lojas, com cada item aberto dentro da categoria)", async () => {
-  const [html, dreRoute] = await Promise.all([
-    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/dre/route.ts", import.meta.url), "utf8"),
-  ]);
-
-  assert.match(html, /id="navDreGerencial" data-page="dreGerencial"/);
-  assert.match(html, /id="pageDreGerencial" class="page wrap"/);
-  assert.match(html, /dreGerencial:'\/financeiro\/dre\/gerencial'/);
-  assert.match(html, /dreGerencial:'finance'/);
   assert.match(html, /function loadDreGerencial\(\)/);
   // Diferente da Consolidada, a Gerencial abre os itens (soma entre lojas)
   // dentro de cada categoria/subgrupo.
   assert.match(html, /function dreGerencialCategoryCardHtml\(category\)/);
   assert.match(html, /function dreGerencialItemRowHtml\(item\)/);
 
+  assert.match(dreRoute, /scope === "consolidated"/);
+  assert.match(dreRoute, /FROM finance_store_entries WHERE month=\?1/);
+  assert.match(dreRoute, /FROM finance_store_revenue WHERE month=\?1/);
+  // Percentual continua fora da soma de despesa também na Consolidada.
+  assert.match(dreRoute, /entry\?\.entryType === "fixed" \? entry\.amountCents \?\? 0 : 0/);
   assert.match(dreRoute, /scope === "managerial"/);
   assert.match(dreRoute, /async function buildManagerialDre/);
   assert.match(dreRoute, /async function loadMonthWideTotals/);

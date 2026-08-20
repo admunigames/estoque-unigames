@@ -2681,16 +2681,7 @@
         <a class="nav-item sub-item" id="navAlteracoesPdv" data-page="alteracoesPdv" data-permission="pdv_requests" data-home-desc="Peça alterações manuais no PDV e acompanhe o status de cada pedido." title="Alterações PDV" href="/solicitacoes/alteracoes-pdv"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10l-2.6-2.6"/><path d="M17 17H7l2.6 2.6"/><line x1="9" y1="12" x2="15" y2="12"/></svg></span><span class="nav-label">Alterações PDV</span></a>
       </div>
     </div>
-    <div class="nav-group" data-permission="finance">
-      <button class="nav-group-toggle" id="navFinanceiro" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
-        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
-      </button>
-      <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true">
-        <a class="nav-item sub-item" id="navDrePorLoja" data-page="drePorLoja" data-home-desc="Demonstrativo de resultado por loja, com receita, despesas e margem." title="DRE por Loja" href="/financeiro/dre/por-loja"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/><line x1="3" y1="19" x2="21" y2="19"/></svg></span><span class="nav-label">DRE por Loja</span></a>
-        <a class="nav-item sub-item" id="navDreConsolidada" data-page="dreConsolidada" title="DRE Consolidada" href="/financeiro/dre/consolidada"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.4"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.4"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.4"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.4"/></svg></span><span class="nav-label">DRE Consolidada</span></a>
-        <a class="nav-item sub-item" id="navDreGerencial" data-page="dreGerencial" title="DRE Gerencial" href="/financeiro/dre/gerencial"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M8 15l3-4 3 2.5L18 8"/></svg></span><span class="nav-label">DRE Gerencial</span></a>
-      </div>
-    </div>
+    <a class="nav-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="Financeiro" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span></a>
     <div class="nav-group" data-permission="hr">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -4289,86 +4280,77 @@
     </section>
 
     <!-- ================= FINANCEIRO / DRE POR LOJA ================= -->
-    <section id="pageDrePorLoja" class="page wrap">
+    <!-- ================= FINANCEIRO / DRE ================= -->
+    <section id="pageFinanceiro" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">DRE por Loja</h2>
+          <h2 class="page-title">DRE</h2>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Receita, despesas por categoria e resultado do mês, loja a loja.</p></div>
+        <div class="page-header-meta"><p class="page-desc">Receita, despesas e resultado — por loja, consolidada ou gerencial.</p></div>
       </header>
 
-      <div class="dre-toolbar">
-        <div class="field"><label for="dreLoja">LOJA</label><select id="dreLoja"><option value="">SELECIONE A LOJA</option></select></div>
-        <div class="field"><label for="dreMes">MÊS</label><input type="month" id="dreMes"></div>
-        <div class="field"><label for="dreRevenue">RECEITA DA LOJA (R$)</label><input type="number" id="dreRevenue" min="0" step="0.01" placeholder="0,00"></div>
-        <div class="dre-toolbar-actions">
-          <button class="btn-accent" id="btnSaveDreRevenue" type="button">SALVAR RECEITA</button>
-          <button class="btn-outline" id="btnOpenFinanceCatalog" type="button">GERENCIAR CATEGORIAS</button>
+      <div class="output-tabs" role="tablist" aria-label="Visão da DRE">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-dre-tab="porLoja">POR LOJA</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="consolidada">CONSOLIDADA</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="gerencial">GERENCIAL</button>
+      </div>
+
+      <div id="dreTabPorLoja">
+        <div class="dre-toolbar">
+          <div class="field"><label for="dreLoja">LOJA</label><select id="dreLoja"><option value="">SELECIONE A LOJA</option></select></div>
+          <div class="field"><label for="dreMes">MÊS</label><input type="month" id="dreMes"></div>
+          <div class="field"><label for="dreRevenue">RECEITA DA LOJA (R$)</label><input type="number" id="dreRevenue" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnSaveDreRevenue" type="button">SALVAR RECEITA</button>
+            <button class="btn-outline" id="btnOpenFinanceCatalog" type="button">GERENCIAR CATEGORIAS</button>
+          </div>
+        </div>
+
+        <section class="summary" aria-label="Resumo da DRE">
+          <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreSummaryRevenue">R$ 0,00</div></div>
+          <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreSummaryExpense">R$ 0,00</div></div>
+          <div class="card" id="dreSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreSummaryResult">R$ 0,00</div></div>
+          <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreSummaryMargin">0,00%</div></div>
+        </section>
+
+        <div class="dre-categories" id="dreCategoryList">
+          <div class="dre-empty">Selecione a loja e o mês para ver a DRE.</div>
         </div>
       </div>
 
-      <section class="summary" aria-label="Resumo da DRE">
-        <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreSummaryRevenue">R$ 0,00</div></div>
-        <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreSummaryExpense">R$ 0,00</div></div>
-        <div class="card" id="dreSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreSummaryResult">R$ 0,00</div></div>
-        <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreSummaryMargin">0,00%</div></div>
-      </section>
-
-      <div class="dre-categories" id="dreCategoryList">
-        <div class="dre-empty">Selecione a loja e o mês para ver a DRE.</div>
-      </div>
-    </section>
-
-    <!-- ================= FINANCEIRO / DRE CONSOLIDADA ================= -->
-    <section id="pageDreConsolidada" class="page wrap">
-      <header class="page-header">
-        <div class="page-heading">
-          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">DRE Consolidada</h2>
+      <div id="dreTabConsolidada" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="dreConsolidadaMes">MÊS</label><input type="month" id="dreConsolidadaMes"></div>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Soma de todas as lojas, agrupada só por categoria.</p></div>
-      </header>
 
-      <div class="dre-toolbar">
-        <div class="field"><label for="dreConsolidadaMes">MÊS</label><input type="month" id="dreConsolidadaMes"></div>
-      </div>
+        <section class="summary" aria-label="Resumo da DRE Consolidada">
+          <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreConsolidadaSummaryRevenue">R$ 0,00</div></div>
+          <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreConsolidadaSummaryExpense">R$ 0,00</div></div>
+          <div class="card" id="dreConsolidadaSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreConsolidadaSummaryResult">R$ 0,00</div></div>
+          <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreConsolidadaSummaryMargin">0,00%</div></div>
+        </section>
 
-      <section class="summary" aria-label="Resumo da DRE Consolidada">
-        <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreConsolidadaSummaryRevenue">R$ 0,00</div></div>
-        <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreConsolidadaSummaryExpense">R$ 0,00</div></div>
-        <div class="card" id="dreConsolidadaSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreConsolidadaSummaryResult">R$ 0,00</div></div>
-        <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreConsolidadaSummaryMargin">0,00%</div></div>
-      </section>
-
-      <div class="dre-flat-list" id="dreConsolidadaCategoryList">
-        <div class="dre-empty">Selecione o mês para ver a DRE Consolidada.</div>
-      </div>
-    </section>
-
-    <!-- ================= FINANCEIRO / DRE GERENCIAL ================= -->
-    <section id="pageDreGerencial" class="page wrap">
-      <header class="page-header">
-        <div class="page-heading">
-          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">DRE Gerencial</h2>
+        <div class="dre-flat-list" id="dreConsolidadaCategoryList">
+          <div class="dre-empty">Selecione o mês para ver a DRE Consolidada.</div>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Soma de todas as lojas, com cada item aberto dentro da categoria.</p></div>
-      </header>
-
-      <div class="dre-toolbar">
-        <div class="field"><label for="dreGerencialMes">MÊS</label><input type="month" id="dreGerencialMes"></div>
       </div>
 
-      <section class="summary" aria-label="Resumo da DRE Gerencial">
-        <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreGerencialSummaryRevenue">R$ 0,00</div></div>
-        <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreGerencialSummaryExpense">R$ 0,00</div></div>
-        <div class="card" id="dreGerencialSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreGerencialSummaryResult">R$ 0,00</div></div>
-        <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreGerencialSummaryMargin">0,00%</div></div>
-      </section>
+      <div id="dreTabGerencial" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="dreGerencialMes">MÊS</label><input type="month" id="dreGerencialMes"></div>
+        </div>
 
-      <div class="dre-categories" id="dreGerencialCategoryList">
-        <div class="dre-empty">Selecione o mês para ver a DRE Gerencial.</div>
+        <section class="summary" aria-label="Resumo da DRE Gerencial">
+          <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreGerencialSummaryRevenue">R$ 0,00</div></div>
+          <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreGerencialSummaryExpense">R$ 0,00</div></div>
+          <div class="card" id="dreGerencialSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreGerencialSummaryResult">R$ 0,00</div></div>
+          <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreGerencialSummaryMargin">0,00%</div></div>
+        </section>
+
+        <div class="dre-categories" id="dreGerencialCategoryList">
+          <div class="dre-empty">Selecione o mês para ver a DRE Gerencial.</div>
+        </div>
       </div>
     </section>
 
@@ -4554,6 +4536,7 @@
   let financeConsolidadaLoading = false;
   let financeDreGerencial = null;
   let financeGerencialLoading = false;
+  let dreActiveTab = 'porLoja';
 
   let purchaseRows = [];
   let purchaseCursor = null;
@@ -5000,8 +4983,6 @@
   const navCadastrosSubmenu = el('navCadastrosSubmenu');
   const navRhToggle = el('navRh');
   const navRhSubmenu = el('navRhSubmenu');
-  const navFinanceiroToggle = el('navFinanceiro');
-  const navFinanceiroSubmenu = el('navFinanceiroSubmenu');
   const navEstoqueToggle = el('navEstoque');
   const navEstoqueSubmenu = el('navEstoqueSubmenu');
   const navDocumentosToggle = el('navDocumentos');
@@ -5028,9 +5009,7 @@
     usuarios:'/cadastros/usuarios',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
-    drePorLoja:'/financeiro/dre/por-loja',
-    dreConsolidada:'/financeiro/dre/consolidada',
-    dreGerencial:'/financeiro/dre/gerencial'
+    financeiro:'/financeiro/dre'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -5051,9 +5030,7 @@
     usuarios:'USUÁRIOS E ACESSOS',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
-    drePorLoja:'DRE POR LOJA',
-    dreConsolidada:'DRE CONSOLIDADA',
-    dreGerencial:'DRE GERENCIAL'
+    financeiro:'DRE'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -5071,9 +5048,7 @@
     dados:'database',
     rhFolgas:'hr',
     rhEscalas:'hr',
-    drePorLoja:'finance',
-    dreConsolidada:'finance',
-    dreGerencial:'finance'
+    financeiro:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -5408,16 +5383,6 @@
     setRhExpanded(!expanded);
   });
 
-  function setFinanceiroExpanded(expanded){
-    navFinanceiroToggle.setAttribute('aria-expanded', String(expanded));
-    navFinanceiroSubmenu.setAttribute('aria-hidden', String(!expanded));
-  }
-
-  navFinanceiroToggle.addEventListener('click', () => {
-    const expanded = navFinanceiroToggle.getAttribute('aria-expanded') === 'true';
-    setFinanceiroExpanded(!expanded);
-  });
-
   function setEstoqueExpanded(expanded){
     navEstoqueToggle.setAttribute('aria-expanded', String(expanded));
     navEstoqueSubmenu.setAttribute('aria-hidden', String(!expanded));
@@ -5476,7 +5441,6 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv';
-    const isFinanceiro = name === 'drePorLoja' || name === 'dreConsolidada' || name === 'dreGerencial';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -5495,8 +5459,6 @@
     if(isDocumentos) navDocumentosToggle.classList.add('active');
     setSolicitacoesExpanded(isSolicitacoes);
     if(isSolicitacoes) navSolicitacoesToggle.classList.add('active');
-    setFinanceiroExpanded(isFinanceiro);
-    if(isFinanceiro) navFinanceiroToggle.classList.add('active');
     document.querySelectorAll('[data-mobile-page]').forEach(button => {
       const active = button.dataset.mobilePage === name;
       button.classList.toggle('active', active);
@@ -5525,9 +5487,7 @@
     if(name === 'instrucoes') loadInstructions();
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
-    if(name === 'drePorLoja') loadDrePorLoja();
-    if(name === 'dreConsolidada') loadDreConsolidada();
-    if(name === 'dreGerencial') loadDreGerencial();
+    if(name === 'financeiro') loadFinanceiroTab();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -5548,9 +5508,7 @@
     if(name === 'instrucoes') loadInstructions();
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
-    if(name === 'drePorLoja') loadDrePorLoja();
-    if(name === 'dreConsolidada') loadDreConsolidada();
-    if(name === 'dreGerencial') loadDreGerencial();
+    if(name === 'financeiro') loadFinanceiroTab();
   }
 
   function isPlainClick(event){
@@ -13209,6 +13167,33 @@ function renderHomeTasks(){
   }
 
   el('dreGerencialMes').addEventListener('change', loadDreGerencial);
+
+  const DRE_TAB_LOADERS = {
+    porLoja: loadDrePorLoja,
+    consolidada: loadDreConsolidada,
+    gerencial: loadDreGerencial
+  };
+
+  function setDreActiveTab(tab){
+    dreActiveTab = DRE_TAB_LOADERS[tab] ? tab : 'porLoja';
+    document.querySelectorAll('[data-dre-tab]').forEach(button => {
+      const active = button.dataset.dreTab === dreActiveTab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    el('dreTabPorLoja').hidden = dreActiveTab !== 'porLoja';
+    el('dreTabConsolidada').hidden = dreActiveTab !== 'consolidada';
+    el('dreTabGerencial').hidden = dreActiveTab !== 'gerencial';
+    DRE_TAB_LOADERS[dreActiveTab]();
+  }
+
+  function loadFinanceiroTab(){
+    DRE_TAB_LOADERS[dreActiveTab]();
+  }
+
+  document.querySelectorAll('[data-dre-tab]').forEach(button => {
+    button.addEventListener('click', () => setDreActiveTab(button.dataset.dreTab));
+  });
 
   el('btnSaveDreRevenue').addEventListener('click', async () => {
     const storeId = el('dreLoja').value;
