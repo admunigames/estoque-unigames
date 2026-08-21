@@ -2194,3 +2194,55 @@ test("Rotina Operacional: cadastro simplificado (sem descrição/loja específic
   assert.match(migration, /UPDATE "operational_routines" SET "weekdays" = "weekday"::text/);
   assert.match(migration, /DROP COLUMN IF EXISTS "weekday"/);
 });
+
+test("tarefa marcada 'em andamento — próximo dia' aparece na agenda futura", async () => {
+  const html = await readFile(
+    new URL("../public/estoque.html", import.meta.url),
+    "utf8",
+  );
+
+  // Regressão: syncTaskCarryover criava a tarefa copiada no dia seguinte com
+  // outcome:'not_seen', mas loadTaskAgenda só lista na AGENDA FUTURA tarefas
+  // com outcome==='carryover' (ver linha do filtro abaixo) — por isso a
+  // tarefa nunca aparecia na agenda do dia seguinte mesmo sendo copiada.
+  assert.match(
+    html,
+    /tasks:day\.tasks\.filter\(task => Boolean\(task\.carriedFrom\) && task\.outcome === 'carryover'\)/,
+  );
+
+  const store = new Map();
+  const storage = {
+    async get(key) {
+      return store.has(key) ? { value: store.get(key) } : null;
+    },
+    async set(key, value) {
+      store.set(key, value);
+    },
+  };
+
+  const syncTaskCarryover = new Function(
+    "storage",
+    `${extractNamedFunction(html, "nextDateKey")}
+     ${extractNamedFunction(html, "normalizeTaskData")}
+     return async ${extractNamedFunction(html, "syncTaskCarryover")};`,
+  )(storage);
+
+  const sourceDate = "2026-08-21";
+  const task = {
+    id: "task-1",
+    time: "09:00",
+    text: "Conferir estoque",
+    priority: "high",
+  };
+
+  await syncTaskCarryover(sourceDate, task, true);
+
+  const nextDay = JSON.parse(store.get("tarefas:2026-08-22"));
+  const carried = nextDay.tasks.find((item) => item.carriedFrom === sourceDate);
+  assert.ok(carried, "tarefa copiada não encontrada no dia seguinte");
+  assert.equal(
+    carried.outcome,
+    "carryover",
+    "tarefa marcada como 'em andamento — próximo dia' deve manter outcome carryover para aparecer na agenda futura",
+  );
+});
