@@ -851,6 +851,19 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(route, /status === "completed" && existing\?\.status !== "completed"/);
   assert.match(route, /notifyMissionCreator/);
   assert.match(route, /Missão concluída — \$\{completedByStore\}/);
+
+  // Regressão: a conclusão já foi gravada em mission_completions ANTES de
+  // notifyMissionCreator rodar. Se a busca das inscrições de notificação (ou
+  // o envio do push) falhar de forma transitória e essa chamada não estiver
+  // isolada com .catch, o erro sobe pro catch geral do PATCH e o handler
+  // responde 500 mesmo com o status já salvo — o front-end trata esse erro
+  // revertendo o <select> pro valor anterior (ver listener de "change" de
+  // #missionList/#homeMissionList em estoque.html), fazendo a missão parecer
+  // que "desmarcou sozinha" mesmo já concluída no banco.
+  assert.match(
+    route,
+    /await notifyMissionCreator\(database, mission, storeName\)\.catch\(/,
+  );
   assert.match(schema, /export const missions = pgTable/);
   assert.match(schema, /export const missionCompletions = pgTable/);
   assert.match(migration, /CREATE TABLE `missions`/);

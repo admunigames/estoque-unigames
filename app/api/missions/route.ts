@@ -625,7 +625,12 @@ export async function PATCH(request: Request) {
       )
       .run();
     if (status === "completed" && existing?.status !== "completed") {
-      await notifyMissionCreator(database, mission, storeName);
+      // A conclusão já foi gravada acima — uma falha ao avisar o admin (push
+      // notification) não pode derrubar a resposta e fazer o cliente reverter
+      // o status que já está salvo no banco.
+      await notifyMissionCreator(database, mission, storeName).catch((error) => {
+        console.error("Não foi possível avisar o administrador sobre a missão.", error);
+      });
     }
     return jsonResponse({ status, completed: status === "completed" });
   } catch (error) {
