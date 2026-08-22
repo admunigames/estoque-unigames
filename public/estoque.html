@@ -1615,6 +1615,13 @@
   .permission-module[open]>summary::after{content:'−'}
   .permission-module>.permission-grid{padding:0 12px 12px;grid-template-columns:1fr}
   .permission-module.has-checked>summary{color:var(--accent)}
+  .routine-weekday-picker{display:flex;flex-wrap:wrap;gap:6px}
+  .routine-weekday-chip{
+    display:flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid var(--line);
+    border-radius:999px;font:800 11px var(--mono);letter-spacing:.03em;cursor:pointer;width:auto;
+  }
+  .routine-weekday-chip:has(input:checked){background:rgba(101,184,255,.14);border-color:var(--accent);color:var(--accent);}
+  .routine-weekday-chip input[type="checkbox"]{width:13px;height:13px;min-height:0;flex:0 0 auto;accent-color:var(--accent);cursor:pointer;}
   .dre-toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:18px}
   .dre-toolbar .field{min-width:170px}
   .dre-toolbar-actions{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-left:auto}
@@ -1714,13 +1721,15 @@
   html[data-theme="light"] .btn-danger-outline{background:#fff4f2;color:#a93428;border-color:#d9a29c;}
   html[data-theme="light"] .filters label,
   html[data-theme="light"] .permission-option,
+  html[data-theme="light"] .routine-weekday-chip,
   html[data-theme="light"] .dre-category,
   html[data-theme="light"] .dre-subgroup,
   html[data-theme="light"] .dre-item-row,
   html[data-theme="light"] .dre-flat-row,
   html[data-theme="light"] .permission-module{background:#fff;color:#304b63;border-color:#aebfce;}
   html[data-theme="light"] .filters label:has(input:checked),
-  html[data-theme="light"] .permission-option:has(input:checked){
+  html[data-theme="light"] .permission-option:has(input:checked),
+  html[data-theme="light"] .routine-weekday-chip:has(input:checked){
     background:#dcecf8;color:#123b5f;border-color:#4b83b4;
   }
   html[data-theme="light"] .density-toggle{background:#dfe9f2;border-color:#a5bacd;}
@@ -3090,14 +3099,14 @@
               <div class="field double"><label for="routineTitle">TÍTULO DA ROTINA</label><input id="routineTitle" maxlength="160" required placeholder="Ex.: Conferir caixa da loja"></div>
               <div class="field full">
                 <label>DIAS DA SEMANA</label>
-                <div class="permission-grid" id="routineWeekdayGrid">
-                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="1"> SEGUNDA-FEIRA</label>
-                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="2"> TERÇA-FEIRA</label>
-                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="3"> QUARTA-FEIRA</label>
-                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="4"> QUINTA-FEIRA</label>
-                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="5"> SEXTA-FEIRA</label>
-                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="6"> SÁBADO</label>
-                  <label class="permission-option"><input type="checkbox" name="routineWeekday" value="0"> DOMINGO</label>
+                <div class="routine-weekday-picker" id="routineWeekdayGrid">
+                  <label class="routine-weekday-chip" title="Segunda-feira"><input type="checkbox" name="routineWeekday" value="1"> SEG</label>
+                  <label class="routine-weekday-chip" title="Terça-feira"><input type="checkbox" name="routineWeekday" value="2"> TER</label>
+                  <label class="routine-weekday-chip" title="Quarta-feira"><input type="checkbox" name="routineWeekday" value="3"> QUA</label>
+                  <label class="routine-weekday-chip" title="Quinta-feira"><input type="checkbox" name="routineWeekday" value="4"> QUI</label>
+                  <label class="routine-weekday-chip" title="Sexta-feira"><input type="checkbox" name="routineWeekday" value="5"> SEX</label>
+                  <label class="routine-weekday-chip" title="Sábado"><input type="checkbox" name="routineWeekday" value="6"> SÁB</label>
+                  <label class="routine-weekday-chip" title="Domingo"><input type="checkbox" name="routineWeekday" value="0"> DOM</label>
                 </div>
               </div>
             </div>
