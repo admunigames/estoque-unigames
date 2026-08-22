@@ -10127,17 +10127,18 @@ function renderHomeTasks(){
       '</label>';
   }
 
-  function checklistStoresHtml(stores){
-    return stores.length
-      ? stores.map(store =>
-          '<article class="mission-card'+(store.doneCount >= store.totalCount ? ' completed' : '')+'">'+
-            '<span class="mission-check '+(store.doneCount >= store.totalCount ? 'completed' : 'todo')+'" aria-hidden="true">'+
-            (store.doneCount >= store.totalCount ? '✓' : '○')+'</span>'+
-            '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(store.companyName || 'LOJA')+'</strong></div>'+
-            '<div class="mission-card-actions"><span class="mission-status'+(store.doneCount >= store.totalCount ? ' done' : '')+'">'+
-            store.doneCount+'/'+store.totalCount+' ITENS</span></div></article>'
-        ).join('')
-      : '<div class="mission-empty">Nenhuma loja cadastrada.</div>';
+  // Quem não tem loja vinculada (admin ou acompanhamento geral) só
+  // acompanha — mesmo padrão da Rotina Operacional: lista plana com
+  // badge da loja e status feita/não feita, sem poder marcar.
+  function checklistOverviewRowHtml(item){
+    const marker = '<span class="mission-check '+(item.completed ? 'completed' : 'todo')+'" aria-hidden="true">'+
+      (item.completed ? '✓' : '○')+'</span>';
+    return '<article class="mission-card'+(item.completed ? ' completed' : '')+'">'+
+      marker+
+      '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(item.label)+'</strong>'+
+        '<div class="mission-badges"><span class="mission-badge">'+escapeHtml(item.companyName || 'LOJA')+'</span></div></div>'+
+      '<div class="mission-card-actions"><span class="mission-status'+(item.completed ? ' done' : '')+'">'+
+      (item.completed ? 'FEITO' : 'NÃO FEITO')+'</span></div></article>';
   }
 
   function renderChecklist(tab){
@@ -10145,17 +10146,18 @@ function renderHomeTasks(){
     const list = el(tab+'List');
     const count = el(tab+'Count');
     if(!list || !data) return;
-    if(data.mine === false && Array.isArray(data.stores)){
-      list.innerHTML = checklistStoresHtml(data.stores);
-      const totalDone = data.stores.filter(store => store.doneCount >= store.totalCount).length;
-      count.textContent = totalDone+'/'+data.stores.length+' LOJAS';
+    const items = Array.isArray(data.items) ? data.items : [];
+    const done = items.filter(item => item.completed).length;
+    if(data.mine === false){
+      list.innerHTML = items.length
+        ? items.map(checklistOverviewRowHtml).join('')
+        : '<div class="mission-empty">Nenhuma loja cadastrada.</div>';
+      count.textContent = done+'/'+items.length+' ITENS';
       return;
     }
-    const items = Array.isArray(data.items) ? data.items : [];
     list.innerHTML = items.length
       ? '<div class="permission-grid">'+items.map(item => checklistItemRowHtml(tab,item)).join('')+'</div>'
       : '<div class="mission-empty">Nenhum item nesta checklist.</div>';
-    const done = items.filter(item => item.completed).length;
     count.textContent = done+'/'+items.length+' ITENS';
   }
 

@@ -58,9 +58,11 @@ const CHECKLIST_ITEMS: Record<ChecklistKind, string[]> = {
 };
 
 // Ao completar 100% de uma checklist, o item equivalente na Rotina
-// Operacional daquele dia (se o admin tiver cadastrado uma rotina com esse
-// título) é marcado como concluído automaticamente — comparação normalizada
-// (sem acento/maiúsculas/pontuação) pra não depender de grafia exata.
+// Operacional daquele dia (se o admin tiver cadastrado uma rotina cujo
+// título contenha esse nome) é marcado como concluído automaticamente —
+// comparação normalizada (sem acento/maiúsculas/pontuação) por substring,
+// já que na prática o título costuma ser mais longo (ex.: "REALIZAR
+// CHECK-IN", não só "Check-in").
 const ROUTINE_TITLE_MATCH: Record<ChecklistKind, string> = {
   checkin: "checkin",
   checkout: "checkout",
@@ -260,7 +262,7 @@ async function completeLinkedRoutineTask(
     .all<{ id: string; status: string; title: string; createdBy: string }>();
 
   const match = (tasksResult.results ?? []).find(
-    (task) => task.status !== "completed" && normalizeTitle(task.title) === target,
+    (task) => task.status !== "completed" && normalizeTitle(task.title).includes(target),
   );
   if (!match) return false;
 
@@ -327,36 +329,46 @@ export async function GET(request: Request) {
     }
 
     if (canSeeAllStores(actor, "missions:view")) {
+      // Mesmo padrão da Rotina Operacional: lista plana de item x loja,
+      // ordenada por loja, pra quem acompanha (sem loja vinculada) ver o
+      // que cada loja já fez sem precisar abrir uma por uma.
       const companies = await storeCompanies(database);
       const rows = await database
         .prepare(
-          `SELECT company_id AS companyId, COUNT(*) AS doneCount, MAX(updated_at) AS lastUpdatedAt
+          `SELECT company_id AS companyId, item_key AS itemKey,
+                  completed_by_name AS completedByName, completed_at AS completedAt
            FROM daily_checklist_items
-           WHERE kind=?1 AND date=?2 AND completed=1
-           GROUP BY company_id`,
+           WHERE kind=?1 AND date=?2 AND completed=1`,
         )
         .bind(kind, date)
-        .all<{ companyId: string; doneCount: number; lastUpdatedAt: string }>();
-      const doneByCompany = new Map((rows.results ?? []).map((row) => [row.companyId, row]));
+        .all<{ companyId: string; itemKey: string; completedByName: string; completedAt: string }>();
+      const doneByCompanyItem = new Map(
+        (rows.results ?? []).map((row) => [`${row.companyId}:${row.itemKey}`, row]),
+      );
 
-      return jsonResponse({
-        date,
-        kind,
-        mine: false,
-        stores: companies.map((company) => {
-          const info = doneByCompany.get(company.id);
-          return {
-            companyId: company.id,
-            companyName: company.name,
-            doneCount: info ? Number(info.doneCount) : 0,
-            totalCount: items.length,
-            lastUpdatedAt: info?.lastUpdatedAt || "",
-          };
-        }),
-      });
+      const allItems = companies
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .flatMap((company) =>
+          items.map((label, index) => {
+            const key = String(index);
+            const done = doneByCompanyItem.get(`${company.id}:${key}`);
+            return {
+              key,
+              label,
+              companyId: company.id,
+              companyName: company.name,
+              completed: Boolean(done),
+              completedByName: done?.completedByName || "",
+              completedAt: done?.completedAt || "",
+            };
+          }),
+        );
+
+      return jsonResponse({ date, kind, mine: false, items: allItems });
     }
 
-    return jsonResponse({ date, kind, mine: false, items: [], stores: [] });
+    return jsonResponse({ date, kind, mine: false, items: [] });
   } catch (error) {
     console.error("Não foi possível carregar a checklist.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR A CHECKLIST." }, 500);

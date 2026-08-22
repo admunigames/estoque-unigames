@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v51"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v51"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v51"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1127,7 +1127,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v51"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1384,7 +1384,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v51"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1429,7 +1429,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v51"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -2306,14 +2306,26 @@ test("Missões: abas Check-in, Check-out e Troca de Turno com checklists fixas q
 
   // Integração: ao completar 100% da checklist do dia, marca a tarefa
   // correspondente na Rotina Operacional (por título normalizado) como
-  // concluída, sem reverter se a checklist for desmarcada depois.
+  // concluída, sem reverter se a checklist for desmarcada depois. Match por
+  // substring, não igualdade exata — o admin cadastra títulos mais longos
+  // na prática (ex.: "REALIZAR CHECK-IN", não só "Check-in").
   assert.match(route, /async function completeLinkedRoutineTask\(/);
+  assert.match(route, /normalizeTitle\(task\.title\)\.includes\(target\)/);
   assert.match(
     route,
     /const ROUTINE_TITLE_MATCH: Record<ChecklistKind, string> = \{\s*checkin: "checkin",\s*checkout: "checkout",\s*shift_change: "trocadeturno",\s*\};/,
   );
   assert.match(route, /checklistComplete = Number\(doneCountRow\?\.doneCount \|\| 0\) >= CHECKLIST_ITEMS\[kind\]\.length;/);
   assert.match(route, /if \(checklistComplete\) \{\s*linkedRoutineCompleted = await completeLinkedRoutineTask/);
+
+  // Quem não tem loja vinculada (admin ou acompanhamento geral) enxerga o
+  // status item x loja de todas as lojas, mesmo padrão da Rotina
+  // Operacional (lista plana com badge de loja), só que sem poder marcar.
+  assert.match(route, /canSeeAllStores\(actor, "missions:view"\)/);
+  assert.match(route, /allItems = companies\s*\.slice\(\)\s*\.sort\(\(a, b\) => a\.name\.localeCompare\(b\.name\)\)\s*\.flatMap\(/);
+  assert.match(html, /function checklistOverviewRowHtml\(item\)\{/);
+  assert.match(html, /data\.mine === false\)\{/);
+  assert.match(html, /'NÃO FEITO'/);
 
   // Schema/migration da tabela nova, com RLS habilitada como as demais.
   assert.match(schema, /export const dailyChecklistItems = pgTable\(\s*"daily_checklist_items",/);
