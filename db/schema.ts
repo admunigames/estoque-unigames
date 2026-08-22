@@ -219,6 +219,38 @@ export const operationalRoutineTasks = pgTable(
   ],
 );
 
+// Checklists diárias fixas (Check-in, Check-out, Troca de Turno) do módulo
+// Missões. Os itens de cada checklist são constantes no código (não
+// cadastráveis), então só existe linha aqui para o que já foi marcado como
+// concluído — item sem linha é considerado não feito. Reinicia sozinho todo
+// dia porque a chave inclui a data.
+export const dailyChecklistItems = pgTable(
+  "daily_checklist_items",
+  {
+    id: text("id").primaryKey(),
+    kind: text("kind").notNull(),
+    itemKey: text("item_key").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    date: text("date").notNull(),
+    completed: integer("completed").notNull().default(0),
+    completedBy: text("completed_by").notNull().default(""),
+    completedByName: text("completed_by_name").notNull().default(""),
+    completedAt: text("completed_at").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("daily_checklist_items_unique").on(
+      table.kind,
+      table.itemKey,
+      table.companyId,
+      table.date,
+    ),
+    index("daily_checklist_items_date_company_idx").on(table.date, table.companyId),
+  ],
+);
+
 export const instructions = pgTable(
   "instructions",
   {

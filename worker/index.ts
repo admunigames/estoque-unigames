@@ -1066,6 +1066,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/tarefas", "tasks"],
     [path === "/missoes" || path.startsWith("/api/missions"), "missions"],
     [path.startsWith("/api/routines"), "missions"],
+    [path.startsWith("/api/checklists"), "missions"],
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
     [path === "/insumos" || path.startsWith("/api/supplies"), "supplies"],

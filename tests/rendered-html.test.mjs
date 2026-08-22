@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1127,7 +1127,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1384,7 +1384,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1429,7 +1429,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v49"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v50"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -2258,4 +2258,66 @@ test("tarefa marcada 'em andamento — próximo dia' aparece na agenda futura", 
     "carryover",
     "tarefa marcada como 'em andamento — próximo dia' deve manter outcome carryover para aparecer na agenda futura",
   );
+});
+
+test("Missões: abas Check-in, Check-out e Troca de Turno com checklists fixas que reiniciam por dia e completam a Rotina Operacional correspondente", async () => {
+  const [html, route, schema, migration, workerSource] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/checklists/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0022_pale_marrow.sql", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Três abas novas ao lado de Rotina Operacional, nesta ordem.
+  assert.match(html, /data-mission-section-tab="rotina">ROTINA OPERACIONAL</);
+  assert.match(html, /data-mission-section-tab="checkin">CHECK-IN</);
+  assert.match(html, /data-mission-section-tab="checkout">CHECK-OUT</);
+  assert.match(html, /data-mission-section-tab="turno">TROCA DE TURNO</);
+  assert.match(html, /id="missionSectionCheckin" hidden/);
+  assert.match(html, /id="missionSectionCheckout" hidden/);
+  assert.match(html, /id="missionSectionTurno" hidden/);
+
+  // Itens marcáveis individualmente via checkbox, sem cadastro/edição.
+  assert.match(html, /data-checklist-toggle="'\+tab\+'"/);
+  assert.doesNotMatch(html, /checklistItemForm/);
+
+  // Worker: /api/checklists cai no mesmo gate de permissão do módulo Missões.
+  assert.match(workerSource, /\[path\.startsWith\("\/api\/checklists"\), "missions"\]/);
+
+  // Itens fixos das 3 checklists (conteúdo do print anexado pelo usuário).
+  assert.match(route, /checkin: \[/);
+  assert.match(route, /"Ligar computadores",/);
+  assert.match(route, /"Revisar Kanban",/);
+  assert.match(route, /checkout: \[/);
+  assert.match(route, /"Recolher lixo",/);
+  assert.match(route, /"Postagem do cumprimento da rotina",/);
+  assert.match(route, /shift_change: \["Atualizar o Kanban", "Bater o caixa"\]/);
+
+  // Admin não marca item (mesma regra da Rotina Operacional) e usuário sem
+  // loja vinculada também não pode.
+  assert.match(route, /O ADMINISTRADOR NÃO PODE ALTERAR A CHECKLIST\./);
+  assert.match(route, /SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA\./);
+
+  // Reinicia sozinho por dia: não há job de carryover/migração de pendência
+  // como em Rotina Operacional — a data faz parte da chave de unicidade.
+  assert.doesNotMatch(route, /carried_over|carriedOver/);
+  assert.match(migration, /daily_checklist_items_unique" ON "daily_checklist_items" USING btree \("kind","item_key","company_id","date"\)/);
+
+  // Integração: ao completar 100% da checklist do dia, marca a tarefa
+  // correspondente na Rotina Operacional (por título normalizado) como
+  // concluída, sem reverter se a checklist for desmarcada depois.
+  assert.match(route, /async function completeLinkedRoutineTask\(/);
+  assert.match(
+    route,
+    /const ROUTINE_TITLE_MATCH: Record<ChecklistKind, string> = \{\s*checkin: "checkin",\s*checkout: "checkout",\s*shift_change: "trocadeturno",\s*\};/,
+  );
+  assert.match(route, /checklistComplete = Number\(doneCountRow\?\.doneCount \|\| 0\) >= CHECKLIST_ITEMS\[kind\]\.length;/);
+  assert.match(route, /if \(checklistComplete\) \{\s*linkedRoutineCompleted = await completeLinkedRoutineTask/);
+
+  // Schema/migration da tabela nova, com RLS habilitada como as demais.
+  assert.match(schema, /export const dailyChecklistItems = pgTable\(\s*"daily_checklist_items",/);
+  assert.match(migration, /CREATE TABLE "daily_checklist_items"/);
+  assert.match(migration, /ALTER TABLE "daily_checklist_items" ENABLE ROW LEVEL SECURITY;/);
+  assert.match(migration, /REVOKE ALL ON TABLE "daily_checklist_items" FROM anon, authenticated;/);
 });

@@ -3012,6 +3012,9 @@
       <div class="supply-tabs mission-section-tabs" role="tablist" aria-label="Seções de missões">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-mission-section-tab="missoes">MISSÕES</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-mission-section-tab="rotina">ROTINA OPERACIONAL</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-mission-section-tab="checkin">CHECK-IN</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-mission-section-tab="checkout">CHECK-OUT</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-mission-section-tab="turno">TROCA DE TURNO</button>
       </div>
 
       <div class="mission-section-panel" id="missionSectionMissoes">
@@ -3110,6 +3113,54 @@
             <div class="mission-board-meta"><span class="mission-count" id="routineCount">0 TAREFAS</span></div>
           </div>
           <div class="mission-list" id="routineList" aria-live="polite"><div class="mission-empty">Carregando rotina…</div></div>
+        </section>
+      </div>
+
+      <div class="mission-section-panel" id="missionSectionCheckin" hidden>
+        <div class="mission-toolbar">
+          <div class="field">
+            <label for="checkinDate">DATA</label>
+            <input id="checkinDate" type="date">
+          </div>
+        </div>
+        <section class="mission-board">
+          <div class="mission-board-head">
+            <div><h3>CHECK-IN</h3><p>Checklist diária de abertura da loja. Reinicia todos os dias. Ao concluir todos os itens, a tarefa "Check-in" da Rotina Operacional do dia é marcada automaticamente.</p></div>
+            <div class="mission-board-meta"><span class="mission-count" id="checkinCount">0/0 ITENS</span></div>
+          </div>
+          <div class="mission-list" id="checkinList" aria-live="polite"><div class="mission-empty">Carregando checklist…</div></div>
+        </section>
+      </div>
+
+      <div class="mission-section-panel" id="missionSectionCheckout" hidden>
+        <div class="mission-toolbar">
+          <div class="field">
+            <label for="checkoutDate">DATA</label>
+            <input id="checkoutDate" type="date">
+          </div>
+        </div>
+        <section class="mission-board">
+          <div class="mission-board-head">
+            <div><h3>CHECK-OUT</h3><p>Checklist diária de fechamento da loja. Reinicia todos os dias. Ao concluir todos os itens, a tarefa "Check-out" da Rotina Operacional do dia é marcada automaticamente.</p></div>
+            <div class="mission-board-meta"><span class="mission-count" id="checkoutCount">0/0 ITENS</span></div>
+          </div>
+          <div class="mission-list" id="checkoutList" aria-live="polite"><div class="mission-empty">Carregando checklist…</div></div>
+        </section>
+      </div>
+
+      <div class="mission-section-panel" id="missionSectionTurno" hidden>
+        <div class="mission-toolbar">
+          <div class="field">
+            <label for="turnoDate">DATA</label>
+            <input id="turnoDate" type="date">
+          </div>
+        </div>
+        <section class="mission-board">
+          <div class="mission-board-head">
+            <div><h3>TROCA DE TURNO</h3><p>Checklist diária da troca de turno. Reinicia todos os dias. Ao concluir todos os itens, a tarefa "Troca de Turno" da Rotina Operacional do dia é marcada automaticamente.</p></div>
+            <div class="mission-board-meta"><span class="mission-count" id="turnoCount">0/0 ITENS</span></div>
+          </div>
+          <div class="mission-list" id="turnoList" aria-live="polite"><div class="mission-empty">Carregando checklist…</div></div>
         </section>
       </div>
     </section>
@@ -4525,6 +4576,9 @@
   let routineRows = [];
   let routineDefinitions = [];
   let routinesLoading = false;
+  const CHECKLIST_KIND = {checkin:'checkin', checkout:'checkout', turno:'shift_change'};
+  const CHECKLIST_LOADING = {checkin:false, checkout:false, turno:false};
+  const checklistState = {checkin:null, checkout:null, turno:null};
   let outputRows = [];
   let outputsLoading = false;
   let outputView = 'requested';
@@ -4612,6 +4666,7 @@
     if(livePageName === 'missoes'){
       const refreshes = [loadMissions(),loadMissionMonthAgenda()];
       if(missionSectionTab === 'rotina') refreshes.push(loadRoutines());
+      if(CHECKLIST_KIND[missionSectionTab]) refreshes.push(loadChecklist(missionSectionTab));
       await Promise.all(refreshes);
       return;
     }
@@ -5502,7 +5557,7 @@
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
     if(name === 'usuarios') loadAdminUsers();
-    if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); }
+    if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); if(CHECKLIST_KIND[missionSectionTab]) loadChecklist(missionSectionTab); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
@@ -5523,7 +5578,7 @@
       history.replaceState({page:name}, '', PAGE_ROUTES[name]);
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
-    if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); }
+    if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); if(CHECKLIST_KIND[missionSectionTab]) loadChecklist(missionSectionTab); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
@@ -9906,7 +9961,11 @@ function renderHomeTasks(){
     });
     el('missionSectionMissoes').hidden = tab !== 'missoes';
     el('missionSectionRotina').hidden = tab !== 'rotina';
+    el('missionSectionCheckin').hidden = tab !== 'checkin';
+    el('missionSectionCheckout').hidden = tab !== 'checkout';
+    el('missionSectionTurno').hidden = tab !== 'turno';
     if(tab === 'rotina') loadRoutines();
+    if(CHECKLIST_KIND[tab]) loadChecklist(tab);
   }
 
   function routineTaskStatus(task){
@@ -10061,6 +10120,81 @@ function renderHomeTasks(){
     return blocks.length ? blocks.join('\n\n\n') : 'Nenhuma tarefa de rotina para '+date+'.';
   }
 
+  function checklistItemRowHtml(tab,item){
+    return '<label class="permission-option">'+
+      '<input type="checkbox" data-checklist-toggle="'+tab+'" data-item-key="'+escapeHtml(item.key)+'"'+
+      (item.completed ? ' checked' : '')+'> '+escapeHtml(item.label)+
+      '</label>';
+  }
+
+  function checklistStoresHtml(stores){
+    return stores.length
+      ? stores.map(store =>
+          '<article class="mission-card'+(store.doneCount >= store.totalCount ? ' completed' : '')+'">'+
+            '<span class="mission-check '+(store.doneCount >= store.totalCount ? 'completed' : 'todo')+'" aria-hidden="true">'+
+            (store.doneCount >= store.totalCount ? '✓' : '○')+'</span>'+
+            '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(store.companyName || 'LOJA')+'</strong></div>'+
+            '<div class="mission-card-actions"><span class="mission-status'+(store.doneCount >= store.totalCount ? ' done' : '')+'">'+
+            store.doneCount+'/'+store.totalCount+' ITENS</span></div></article>'
+        ).join('')
+      : '<div class="mission-empty">Nenhuma loja cadastrada.</div>';
+  }
+
+  function renderChecklist(tab){
+    const data = checklistState[tab];
+    const list = el(tab+'List');
+    const count = el(tab+'Count');
+    if(!list || !data) return;
+    if(data.mine === false && Array.isArray(data.stores)){
+      list.innerHTML = checklistStoresHtml(data.stores);
+      const totalDone = data.stores.filter(store => store.doneCount >= store.totalCount).length;
+      count.textContent = totalDone+'/'+data.stores.length+' LOJAS';
+      return;
+    }
+    const items = Array.isArray(data.items) ? data.items : [];
+    list.innerHTML = items.length
+      ? '<div class="permission-grid">'+items.map(item => checklistItemRowHtml(tab,item)).join('')+'</div>'
+      : '<div class="mission-empty">Nenhum item nesta checklist.</div>';
+    const done = items.filter(item => item.completed).length;
+    count.textContent = done+'/'+items.length+' ITENS';
+  }
+
+  async function loadChecklist(tab){
+    const kind = CHECKLIST_KIND[tab];
+    if(!kind || !canAccess('missions') || CHECKLIST_LOADING[tab]) return;
+    const list = el(tab+'List');
+    const date = el(tab+'Date').value || todayDateKey();
+    CHECKLIST_LOADING[tab] = true;
+    if(list) list.innerHTML = '<div class="mission-empty">Carregando checklist…</div>';
+    try{
+      const data = await missionApiRequest('/api/checklists?'+new URLSearchParams({date,kind}));
+      checklistState[tab] = data;
+      renderChecklist(tab);
+    }catch(error){
+      checklistState[tab] = null;
+      if(list) list.innerHTML = '<div class="mission-empty">'+escapeHtml(error.message)+'</div>';
+      el(tab+'Count').textContent = '0/0 ITENS';
+    }finally{
+      CHECKLIST_LOADING[tab] = false;
+    }
+  }
+
+  async function updateChecklistItem(tab,itemKey,completed){
+    const kind = CHECKLIST_KIND[tab];
+    const date = el(tab+'Date').value || todayDateKey();
+    const result = await missionApiRequest('/api/checklists',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({kind,date,itemKey,completed})
+    });
+    await loadChecklist(tab);
+    if(result.checklistComplete){
+      showPurchaseToast(result.linkedRoutineCompleted
+        ? 'Checklist concluída! A tarefa correspondente na Rotina Operacional foi marcada como feita.'
+        : 'Checklist concluída!');
+    }
+  }
+
   document.querySelectorAll('[data-mission-section-tab]').forEach(button => {
     button.addEventListener('click',() => setMissionSectionTab(button.dataset.missionSectionTab));
   });
@@ -10074,6 +10208,25 @@ function renderHomeTasks(){
     }catch(error){
       showPurchaseToast(error.message || 'Não foi possível gerar o TXT.','error');
     }
+  });
+  Object.keys(CHECKLIST_KIND).forEach(tab => {
+    el(tab+'Date').value = todayDateKey();
+    el(tab+'Date').addEventListener('change',() => loadChecklist(tab));
+    el(tab+'List').addEventListener('change',async event => {
+      const input = event.target.closest('[data-checklist-toggle="'+tab+'"]');
+      if(!input) return;
+      const itemKey = input.dataset.itemKey;
+      const completed = input.checked;
+      input.disabled = true;
+      try{
+        await updateChecklistItem(tab,itemKey,completed);
+      }catch(error){
+        input.checked = !completed;
+        showPurchaseToast(error.message,'error');
+      }finally{
+        input.disabled = false;
+      }
+    });
   });
   el('routineForm').addEventListener('submit',async event => {
     event.preventDefault();
