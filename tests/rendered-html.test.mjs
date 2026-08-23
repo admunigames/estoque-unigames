@@ -1672,6 +1672,88 @@ test("registra, anexa e expira automaticamente o PDF das Notas de O.S. com permi
   assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
 });
 
+test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o selo de dias em atraso com permissões granulares", async () => {
+  const [html, workerSource, devicesRoute, requestsRoute, commentsRoute, schema, migration] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/loans/devices/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/loans/requests/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/loans/requests/comments/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0025_gigantic_diamondback.sql", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(
+    html,
+    /id="navAparelhosEmprestimo" data-page="aparelhosEmprestimo" data-permission="loans"/,
+  );
+  assert.match(html, /id="pageAparelhosEmprestimo" class="page wrap"/);
+  assert.match(html, /aparelhosEmprestimo:'\/aparelhos-emprestimo'/);
+  assert.match(html, /aparelhosEmprestimo:'loans'/);
+  assert.match(html, /value="loans:view"> Visualizar/);
+  assert.match(html, /value="loans:create"> Cadastrar aparelho/);
+  assert.match(html, /value="loans:edit"> Editar aparelho/);
+  assert.match(html, /value="loans:delete"> Excluir aparelho/);
+  assert.match(html, /value="loans:request"> Solicitar aparelho \(loja\)/);
+  assert.match(html, /value="loans:manage_requests"> Gerenciar solicitações/);
+  assert.match(html, /id="loanDeviceForm"/);
+  assert.match(html, /id="loanAvailableBody"/);
+  assert.match(html, /id="loanStoreRequestsBody"/);
+  assert.match(html, /id="loanDevicesBody"/);
+  assert.match(html, /id="loanRequestsBody"/);
+  assert.match(html, /id="loanRequestDetailsDialog"/);
+  assert.match(html, /id="btnMarkLoanLoaned" type="button" data-permission="loans:manage_requests"/);
+  assert.match(html, /id="btnDeleteLoanRequest" type="button" data-permission="loans:manage_requests"/);
+  assert.match(html, /id="loanRequestUpdateForm" data-permission="loans:manage_requests"/);
+  assert.match(html, /\.status-pill\.alert\{/);
+  assert.match(html, /const LOAN_ALERT_DAYS = 15;/);
+  assert.match(html, /operator:\[.*'loans:view','loans:request'\]/);
+
+  assert.match(
+    workerSource,
+    /"loans:view" \| "loans:create" \| "loans:edit" \| "loans:delete" \| "loans:request" \| "loans:manage_requests"/,
+  );
+  assert.match(workerSource, /"\/aparelhos-emprestimo"/);
+  assert.match(
+    workerSource,
+    /path === "\/aparelhos-emprestimo" \|\| path\.startsWith\("\/api\/loans"\), "loans"/,
+  );
+  assert.match(
+    workerSource,
+    /loans: \[\s*"loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",\s*\]/,
+  );
+  assert.match(workerSource, /"loans:view", "loans:request",\s*\],\s*\n\s*assistance:/);
+
+  assert.match(devicesRoute, /actor\.permissions\.includes\("loans:create"\)/);
+  assert.match(devicesRoute, /actor\.permissions\.includes\("loans:edit"\)/);
+  assert.match(devicesRoute, /actor\.permissions\.includes\("loans:delete"\)/);
+  assert.match(devicesRoute, /WHERE status='available' ORDER BY name ASC/);
+  assert.match(devicesRoute, /INSERT INTO loan_devices/);
+
+  assert.match(requestsRoute, /canManageRequests\(actor\)/);
+  assert.match(requestsRoute, /canRequest\(actor\)/);
+  assert.match(requestsRoute, /device\.status !== "available"/);
+  assert.match(requestsRoute, /action !== "loan"/);
+  assert.match(requestsRoute, /UPDATE loan_devices/);
+  assert.match(requestsRoute, /status='loaned', current_company_id=/);
+  assert.match(requestsRoute, /DELETE FROM loan_request_updates WHERE request_id=\?1/);
+
+  assert.match(commentsRoute, /canManageRequests\(actor\)/);
+  assert.match(commentsRoute, /INSERT INTO loan_request_updates/);
+
+  assert.match(schema, /export const loanDevices = pgTable/);
+  assert.match(schema, /export const loanRequests = pgTable/);
+  assert.match(schema, /export const loanRequestUpdates = pgTable/);
+  assert.match(migration, /CREATE TABLE "loan_devices"/);
+  assert.match(migration, /CREATE TABLE "loan_requests"/);
+  assert.match(migration, /CREATE TABLE "loan_request_updates"/);
+  assert.match(migration, /loan_requests_company_status_created_idx/);
+  assert.match(migration, /ALTER TABLE "loan_devices" ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /ALTER TABLE "loan_requests" ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /ALTER TABLE "loan_request_updates" ENABLE ROW LEVEL SECURITY/);
+});
+
 test("formata timestamps do banco no horário de Brasília/Recife em um único ponto do app", async () => {
   const html = await readFile(
     new URL("../public/estoque.html", import.meta.url),

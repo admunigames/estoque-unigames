@@ -47,6 +47,7 @@ type Permission =
   | "pdv_requests:view" | "pdv_requests:create" | "pdv_requests:delete" | "pdv_requests:status"
   | "os_notes:view" | "os_notes:create" | "os_notes:attach" | "os_notes:delete"
   | "finance:manage"
+  | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
@@ -112,6 +113,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "pdv_requests:view", "pdv_requests:create", "pdv_requests:delete", "pdv_requests:status",
   "os_notes:view", "os_notes:create", "os_notes:attach", "os_notes:delete",
   "finance:manage",
+  "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
   "users:manage",
 ];
 // documents_manage continua exclusivo de administrador: nunca pode ser
@@ -142,6 +144,7 @@ const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
     "captures:view", "captures:create",
     "outputs:view", "outputs:create",
     "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_out",
+    "loans:view", "loans:request",
   ],
   assistance: ["captures:view", "captures:create", "captures:receive", "captures:delete"],
   custom: [],
@@ -199,6 +202,7 @@ const APP_ROUTE_PATHS = new Set([
   "/saidas",
   "/entradas",
   "/insumos",
+  "/aparelhos-emprestimo",
   "/instrucoes",
   "/solicitacoes/alteracoes-pdv",
   "/solicitacoes/notas-os",
@@ -1036,6 +1040,9 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "os_notes:view", "os_notes:create", "os_notes:attach", "os_notes:delete",
   ],
   finance: ["finance:manage"],
+  loans: [
+    "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
+  ],
 };
 
 const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_PERMISSIONS> = {
@@ -1081,6 +1088,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
     [path === "/entradas" || path.startsWith("/api/inputs"), "inputs"],
     [path === "/insumos" || path.startsWith("/api/supplies"), "supplies"],
+    [path === "/aparelhos-emprestimo" || path.startsWith("/api/loans"), "loans"],
     [path === "/compras" || path.startsWith("/api/compras"), "purchases"],
     [path === "/estoque", "stock"],
     [path === "/puxadas", "pulls"],

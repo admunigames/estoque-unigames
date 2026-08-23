@@ -700,3 +700,76 @@ export const financeStoreRevenue = pgTable(
     uniqueIndex("finance_store_revenue_store_month_idx").on(table.storeId, table.month),
   ],
 );
+
+export const loanDevices = pgTable(
+  "loan_devices",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    imei: text("imei").notNull().default(""),
+    hasDefect: integer("has_defect").notNull().default(0),
+    defectDescription: text("defect_description").notNull().default(""),
+    // 'available' | 'loaned' | 'maintenance'
+    status: text("status").notNull().default("available"),
+    // Preenchidos automaticamente quando status='loaned', a partir da
+    // solicitação aprovada; usados para calcular há quantos dias está
+    // emprestado (selo de alerta) e para onde.
+    currentCompanyId: text("current_company_id").notNull().default(""),
+    currentCompanyName: text("current_company_name").notNull().default(""),
+    loanedAt: text("loaned_at").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("loan_devices_status_idx").on(table.status),
+    index("loan_devices_current_company_idx").on(table.currentCompanyId),
+  ],
+);
+
+export const loanRequests = pgTable(
+  "loan_requests",
+  {
+    id: text("id").primaryKey(),
+    deviceId: text("device_id").notNull(),
+    deviceName: text("device_name").notNull().default(""),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    responsibleName: text("responsible_name").notNull().default(""),
+    reason: text("reason").notNull().default(""),
+    // 'requested' | 'loaned'
+    status: text("status").notNull().default("requested"),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    // Preenchidos quando o admin marca "Marcar como Emprestado" (Data da
+    // Separação no print de referência).
+    separatedBy: text("separated_by").notNull().default(""),
+    separatedByName: text("separated_by_name").notNull().default(""),
+    separatedAt: text("separated_at").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("loan_requests_company_status_created_idx").on(
+      table.companyId,
+      table.status,
+      table.createdAt,
+    ),
+    index("loan_requests_device_idx").on(table.deviceId),
+    index("loan_requests_status_created_idx").on(table.status, table.createdAt),
+  ],
+);
+
+export const loanRequestUpdates = pgTable(
+  "loan_request_updates",
+  {
+    id: text("id").primaryKey(),
+    requestId: text("request_id").notNull(),
+    message: text("message").notNull(),
+    authorId: text("author_id").notNull(),
+    authorName: text("author_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("loan_request_updates_request_idx").on(table.requestId, table.createdAt)],
+);
