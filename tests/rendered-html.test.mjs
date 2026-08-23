@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1127,7 +1127,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1295,7 +1295,7 @@ test("Saídas: a lista de lojas do seletor é carregada e liberada pro usuário 
   // pulls/report41.
   assert.match(
     html,
-    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\| canAccess\('finance'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\);/,
+    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\| canAccess\('finance'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\) \|\|\s*canActAcrossStores\('inputs:create'\);/,
   );
 
   // Back-end: leitura de companies_list liberada pra qualquer autenticado
@@ -1311,6 +1311,123 @@ test("Saídas: a lista de lojas do seletor é carregada e liberada pro usuário 
   const bypassIndex = workerSource.indexOf('key === "companies_list"');
   const requiredIndex = workerSource.indexOf("const required = sharedStatePermission(");
   assert.ok(bypassIndex > -1 && requiredIndex > -1 && bypassIndex < requiredIndex);
+});
+
+test("registra Entradas Gerais Solicitadas por loja e preserva o histórico do administrador (espelho de Saídas)", async () => {
+  const [html, workerSource, route, schema, migration] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/inputs/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0023_modulo_entrada.sql", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /id="navEntradas" data-page="entradas" data-permission="inputs" data-home-desc=/);
+  assert.match(html, /id="pageEntradas" class="page wrap"/);
+  assert.match(html, /Entradas Gerais Solicitadas/);
+  assert.match(html, /id="inputForm"/);
+  assert.match(html, /id="inputQuantity" type="number" min="1" max="9999"/);
+  assert.match(html, /id="inputProductName"/);
+  assert.match(html, /id="inputResponsible" maxlength="120" required/);
+  assert.match(html, /for="inputResponsible">RESPONSÁVEL PELA ENTRADA</);
+  assert.match(html, /id="inputReason"/);
+  assert.match(html, /for="inputReason">MOTIVO DA ENTRADA</);
+  assert.match(html, /RESPONSÁVEL PELA ENTRADA<\/span><strong>/);
+  assert.match(html, /MOTIVO DA ENTRADA<\/span><strong>/);
+  assert.match(html, /responsibleName:el\('inputResponsible'\)\.value/);
+  assert.match(html, /reason:el\('inputReason'\)\.value/);
+  assert.match(html, /id="inputCompany"/);
+  assert.match(html, /data-input-view="requested"/);
+  assert.match(html, /data-input-view="completed"/);
+  assert.match(html, /data-input-complete/);
+  assert.match(html, /value="inputs:view"> Visualizar/);
+  assert.match(html, /value="inputs:create"> Cadastrar entradas/);
+  assert.match(html, /value="inputs:complete"> Concluir entradas/);
+  assert.match(html, /value="inputs:delete"> Excluir entradas/);
+  assert.match(html, /canAccess\('inputs:complete'\)/);
+  assert.match(html, /entradas:'\/entradas'/);
+  assert.match(html, /'inputs:delete':'Entrada: excluir'/);
+
+  assert.match(workerSource, /"inputs:view" \| "inputs:create" \| "inputs:complete" \| "inputs:delete"/);
+  assert.match(workerSource, /path === "\/entradas" \|\| path\.startsWith\("\/api\/inputs"\)/);
+  assert.match(
+    workerSource,
+    /inputs: \["inputs:view", "inputs:create", "inputs:complete", "inputs:delete"\]/,
+  );
+  assert.match(workerSource, /"\/entradas",/);
+  // Permissões de Entrada não entram nos grupos de acesso pré-definidos
+  // (purchases/fiscal/operator, inalterados) — são um módulo independente
+  // de Saídas, concedido só manualmente ou via grupo Administrador.
+  assert.match(
+    workerSource,
+    /fiscal: \[\s*"missions:view",\s*"outputs:view", "outputs:create",\s*"supplies:view", "supplies:request", "supplies:receive", "supplies:stock_out",\s*"stock:view",\s*"database:view", "database:manage",\s*"pulls:view",\s*"report41:view",\s*\]/,
+  );
+  assert.match(
+    workerSource,
+    /purchases: \[\s*"tasks:view", "tasks:manage",\s*"missions:view", "missions:notify",\s*"captures:view", "captures:create",\s*"outputs:view", "outputs:create",\s*"supplies:view", "supplies:request", "supplies:receive", "supplies:stock_out",\s*"purchases:view", "purchases:create", "purchases:edit", "purchases:delete",\s*\]/,
+  );
+
+  assert.match(route, /const canChooseCompany = canSeeAllStores\(actor, "inputs:create"\) \|\| isAdministrativeActor\(actor\)/);
+  assert.match(route, /const allStores = canSeeAllStores\(actor, "inputs:view"\) \|\| isAdministrativeActor\(actor\)/);
+  assert.match(route, /responsible_name AS responsibleName, reason/);
+  assert.match(route, /const responsibleName = safeText\(body\.responsibleName, 120\)/);
+  assert.match(route, /const reason = safeText\(body\.reason, 1200\)/);
+  assert.match(route, /INFORME O RESPONSÁVEL PELA ENTRADA/);
+  assert.match(route, /INFORME O MOTIVO DA ENTRADA/);
+  assert.match(route, /WHERE company_id=\?1/);
+  assert.match(route, /!can\(actor, "inputs:complete"\)/);
+  assert.match(route, /!can\(actor, "inputs:delete"\)/);
+  assert.match(route, /existing\.status !== "requested"/);
+  assert.match(route, /SET status='completed'/);
+  assert.match(route, /INSERT INTO requested_inputs/);
+  assert.match(route, /DELETE FROM requested_inputs WHERE id=\?1/);
+
+  assert.match(schema, /export const requestedInputs = pgTable\(\s*"requested_inputs"/);
+  assert.match(schema, /reason: text\("reason"\)\.notNull\(\)/);
+  assert.match(schema, /responsibleName: text\("responsible_name"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(migration, /CREATE TABLE "requested_inputs"/);
+  assert.match(migration, /requested_inputs_status_created_idx/);
+  assert.match(migration, /requested_inputs_company_created_idx/);
+  assert.match(migration, /ALTER TABLE "requested_inputs" ENABLE ROW LEVEL SECURITY/);
+});
+
+test("Entrada: loja vê só a própria, conta sem loja com permissões completas vê todas, resumo só pra quem conclui", async () => {
+  const [html, route] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/inputs/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Regra 1: usuário com loja vinculada fica sempre restrito à própria loja
+  // (canSeeAllStores nega antes de checar permissão), mesmo com inputs:view.
+  assert.match(
+    route,
+    /const allStores = canSeeAllStores\(actor, "inputs:view"\) \|\| isAdministrativeActor\(actor\);/,
+  );
+  // Regra 2: sem loja + permissão granular específica da ação vê/age em
+  // todas as lojas, igual a um administrador.
+  assert.match(
+    route,
+    /const canChooseCompany = canSeeAllStores\(actor, "inputs:create"\) \|\| isAdministrativeActor\(actor\);/,
+  );
+  // Concluir é restrito só pela permissão granular inputs:complete.
+  assert.match(route, /!can\(actor, "inputs:complete"\)/);
+  // Resumo (contadores) só aparece pra quem pode concluir.
+  assert.match(html, /el\('inputSummary'\)\.hidden = !canAccess\('inputs:complete'\)/);
+  assert.match(html, /canAccess\('inputs:complete'\) && !completed/);
+  // Front-end: mesma regra de canActAcrossStores espelhando o back-end.
+  assert.match(html, /const canChooseCompany = canActAcrossStores\('inputs:create'\);/);
+  assert.match(
+    html,
+    /companyId:canActAcrossStores\('inputs:create'\) \? el\('inputCompany'\)\.value : ''/,
+  );
+});
+
+test("Entrada: a lista de lojas do seletor é carregada pro usuário sem loja com inputs:create (mesma correção aplicada em Saídas)", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(
+    html,
+    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\| canAccess\('finance'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\) \|\|\s*canActAcrossStores\('inputs:create'\);/,
+  );
 });
 
 test("separa insumos por loja, registra pedidos recorrentes e preserva recebimentos", async () => {
@@ -1384,7 +1501,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1429,7 +1546,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
