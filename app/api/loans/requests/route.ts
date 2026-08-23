@@ -61,6 +61,28 @@ function canRequest(actor: Identity) {
   return actor.role === "admin" || actor.permissions.includes("loans:request");
 }
 
+async function companyName(database: D1Database, companyId: string) {
+  try {
+    const row = await database
+      .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
+      .first<{ value: string }>();
+    const parsed = row?.value ? JSON.parse(row.value) : [];
+    if (!Array.isArray(parsed)) return "";
+    const company = parsed.find(
+      (item): item is { id: string; name: string } =>
+        Boolean(item) &&
+        typeof item === "object" &&
+        "id" in item &&
+        item.id === companyId &&
+        "name" in item &&
+        typeof item.name === "string",
+    );
+    return company?.name?.trim().slice(0, 120) || "";
+  } catch {
+    return "";
+  }
+}
+
 function sameOrigin(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") return false;
@@ -179,9 +201,8 @@ export async function POST(request: Request) {
         400,
       );
     }
-    const companyName = safeText(body.companyName, 120);
-
     const database = await getD1();
+    const resolvedCompanyName = await companyName(database, companyId);
     const device = await database
       .prepare("SELECT id, name, status FROM loan_devices WHERE id=?1 LIMIT 1")
       .bind(deviceId)
@@ -201,7 +222,7 @@ export async function POST(request: Request) {
            status, created_by, created_by_name, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'requested', ?8, ?9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       )
-      .bind(id, deviceId, device.name, companyId, companyName, responsibleName, reason, actor.id, actor.displayName)
+      .bind(id, deviceId, device.name, companyId, resolvedCompanyName, responsibleName, reason, actor.id, actor.displayName)
       .run();
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {

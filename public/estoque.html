@@ -1105,6 +1105,20 @@
   .status-pill.done{color:#b7ead0; border-color:rgba(84,196,138,.38); background:rgba(84,196,138,.1);}
   .status-pill.waiting{color:#ffe0a1; border-color:rgba(228,184,95,.4); background:rgba(228,184,95,.1);}
   .status-pill.alert{color:#ffb4a8; border-color:rgba(239,106,85,.45); background:rgba(239,106,85,.12);}
+  .loan-details-dialog{width:min(460px,calc(100vw - 28px));}
+  .loan-details-dialog .purchase-form{padding-top:16px;}
+  .loan-details-dialog .purchase-card-details{grid-template-columns:1fr; gap:7px;}
+  .loan-details-dialog .purchase-card-detail{padding:8px 10px;}
+  .loan-details-dialog .purchase-form-section{margin-top:14px; padding-top:12px; font-size:9.5px;}
+  .loan-details-dialog .purchase-form-actions{margin-top:10px;}
+  .loan-actions-start{justify-content:flex-start;}
+  .loan-updates-list{gap:8px; margin-top:10px;}
+  .loan-updates-list .supply-empty{padding:12px; font-size:11px;}
+  .loan-update-item{padding:8px 10px; border-radius:9px; border:1px solid rgba(39,69,97,.75); background:rgba(4,12,21,.2);}
+  .loan-update-item-head{display:flex; justify-content:space-between; gap:10px; font:800 8.5px var(--mono); color:var(--ink-soft);}
+  .loan-update-item p{margin:5px 0 0; font-size:12px; line-height:1.5; white-space:pre-wrap;}
+  .loan-report-textarea{width:100%; margin-top:8px; font:11.5px/1.5 var(--mono); resize:vertical;}
+  .loan-delete-section{display:flex; justify-content:flex-end; border-top:1px solid var(--border);}
   .purchase-file-links{display:flex; flex-direction:column; gap:5px; min-width:130px;}
   .purchase-file-links a{color:var(--accent); font-size:9px; text-decoration:none; overflow-wrap:anywhere;}
   .purchase-file-links a:hover{text-decoration:underline;}
@@ -1777,7 +1791,8 @@
   html[data-theme="light"] .purchase-status-options label{color:#304b63;}
   html[data-theme="light"] .purchase-status-options label:hover{background:#e8f2f9;color:#10283f;}
   html[data-theme="light"] .purchase-card-dates,
-  html[data-theme="light"] .purchase-card-detail{
+  html[data-theme="light"] .purchase-card-detail,
+  html[data-theme="light"] .loan-update-item{
     background:#f1f5f8;border-color:#b9c9d7;
   }
   html[data-theme="light"] .purchase-card-field,
@@ -4739,37 +4754,35 @@
     </div>
   </form>
 </dialog>
-<dialog class="purchase-dialog" id="loanRequestDetailsDialog" aria-labelledby="loanRequestDetailsDialogTitle">
+<dialog class="purchase-dialog loan-details-dialog" id="loanRequestDetailsDialog" aria-labelledby="loanRequestDetailsDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="loanRequestDetailsDialogTitle">DETALHES DA SOLICITAÇÃO</h3>
     <button class="purchase-dialog-close" id="btnCloseLoanRequestDetailsDialog" type="button" aria-label="Fechar">×</button>
   </div>
-  <input type="hidden" id="loanRequestDetailsId">
-  <div class="purchase-card-details" id="loanRequestDetailsMeta"></div>
-  <div class="user-form-status" id="loanRequestDetailsStatus" role="status" aria-live="polite"></div>
-  <div class="purchase-form-actions" style="justify-content:flex-start;">
-    <button class="btn-accent" id="btnMarkLoanLoaned" type="button" data-permission="loans:manage_requests" hidden>MARCAR COMO EMPRESTADO</button>
-  </div>
+  <div class="purchase-form">
+    <input type="hidden" id="loanRequestDetailsId">
+    <div class="purchase-card-details" id="loanRequestDetailsMeta"></div>
+    <div class="user-form-status" id="loanRequestDetailsStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions loan-actions-start">
+      <button class="btn-accent" id="btnMarkLoanLoaned" type="button" data-permission="loans:manage_requests" hidden>MARCAR COMO EMPRESTADO</button>
+    </div>
 
-  <div class="supply-panel-head" id="loanReportPanel" style="margin-top:18px;" hidden>
-    <div><h3>RELATÓRIO PARA O WHATSAPP DA LOJA</h3><p>Copie o texto abaixo ou baixe como TXT.</p></div>
-  </div>
-  <textarea id="loanReportText" rows="8" readonly hidden style="width:100%;font:12px/1.5 var(--mono);"></textarea>
-  <div class="purchase-form-actions" id="loanReportActions" hidden>
-    <button class="btn-outline" id="btnDownloadLoanReport" type="button">BAIXAR TXT</button>
-  </div>
+    <div class="purchase-form-section" id="loanReportPanel" hidden>RELATÓRIO PARA O WHATSAPP DA LOJA</div>
+    <textarea id="loanReportText" class="loan-report-textarea" rows="6" readonly hidden></textarea>
+    <div class="purchase-form-actions" id="loanReportActions" hidden>
+      <button class="btn-outline" id="btnDownloadLoanReport" type="button">BAIXAR TXT</button>
+    </div>
 
-  <div class="supply-panel-head" style="margin-top:18px;">
-    <div><h3>ATUALIZAÇÕES</h3><p>Histórico de mensagens sobre esta solicitação.</p></div>
-  </div>
-  <div class="supply-separation-list" id="loanRequestUpdatesList"><div class="supply-empty">Nenhuma atualização ainda.</div></div>
-  <form id="loanRequestUpdateForm" data-permission="loans:manage_requests">
-    <div class="field full"><label for="loanRequestUpdateMessage">NOVA ATUALIZAÇÃO</label><textarea id="loanRequestUpdateMessage" rows="2" maxlength="2000" required></textarea></div>
-    <div class="purchase-form-actions"><button class="btn-accent" id="btnSendLoanRequestUpdate" type="submit">ENVIAR</button></div>
-  </form>
+    <div class="purchase-form-section">ATUALIZAÇÕES</div>
+    <div class="supply-separation-list loan-updates-list" id="loanRequestUpdatesList"><div class="supply-empty">Nenhuma atualização ainda.</div></div>
+    <form id="loanRequestUpdateForm" data-permission="loans:manage_requests">
+      <div class="purchase-field full"><label for="loanRequestUpdateMessage">NOVA ATUALIZAÇÃO</label><textarea id="loanRequestUpdateMessage" rows="2" maxlength="2000" required></textarea></div>
+      <div class="purchase-form-actions"><button class="btn-accent" id="btnSendLoanRequestUpdate" type="submit">ENVIAR</button></div>
+    </form>
 
-  <div class="purchase-form-actions" style="border-top:1px solid var(--border); margin-top:18px; padding-top:14px;">
-    <button class="btn-danger-outline" id="btnDeleteLoanRequest" type="button" data-permission="loans:manage_requests">APAGAR SOLICITAÇÃO</button>
+    <div class="purchase-form-section loan-delete-section">
+      <button class="btn-danger-outline" id="btnDeleteLoanRequest" type="button" data-permission="loans:manage_requests">APAGAR SOLICITAÇÃO</button>
+    </div>
   </div>
 </dialog>
 <dialog class="purchase-dialog" id="appearanceDialog" aria-labelledby="appearanceDialogTitle">
@@ -13504,11 +13517,11 @@ function renderHomeTasks(){
       return;
     }
     list.innerHTML = loanRequestUpdatesCache.map(update => (
-      '<div class="supply-register-panel" style="padding:10px 12px;">'+
-        '<div style="display:flex;justify-content:space-between;gap:10px;font:800 9px var(--mono);color:var(--ink-soft);">'+
+      '<div class="loan-update-item">'+
+        '<div class="loan-update-item-head">'+
           '<span>'+escapeHtml(update.authorName || '—')+'</span><span>'+escapeHtml(formatDateTimeBR(update.createdAt))+'</span>'+
         '</div>'+
-        '<p style="margin:6px 0 0;white-space:pre-wrap;">'+escapeHtml(update.message)+'</p>'+
+        '<p>'+escapeHtml(update.message)+'</p>'+
       '</div>'
     )).join('');
   }
