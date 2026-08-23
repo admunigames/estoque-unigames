@@ -90,6 +90,7 @@ type DeviceRow = {
   imei: string;
   hasDefect: number;
   defectDescription: string;
+  accessories: string;
   status: string;
   currentCompanyId: string;
   currentCompanyName: string;
@@ -101,7 +102,7 @@ type DeviceRow = {
 
 const DEVICE_SELECT = `
   SELECT id, name, imei, has_defect AS hasDefect, defect_description AS defectDescription,
-         status, current_company_id AS currentCompanyId, current_company_name AS currentCompanyName,
+         accessories, status, current_company_id AS currentCompanyId, current_company_name AS currentCompanyName,
          loaned_at AS loanedAt, created_by_name AS createdByName,
          created_at AS createdAt, updated_at AS updatedAt
   FROM loan_devices`;
@@ -144,6 +145,7 @@ export async function POST(request: Request) {
     const imei = safeText(body.imei, 60);
     const hasDefect = body.hasDefect === true ? 1 : 0;
     const defectDescription = hasDefect ? safeText(body.defectDescription, 400) : "";
+    const accessories = safeText(body.accessories, 400);
     const status = STATUSES.has(safeText(body.status, 20)) ? safeText(body.status, 20) : "available";
 
     if (name.length < 2) {
@@ -155,10 +157,10 @@ export async function POST(request: Request) {
     await database
       .prepare(
         `INSERT INTO loan_devices
-          (id, name, imei, has_defect, defect_description, status, created_by, created_by_name, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          (id, name, imei, has_defect, defect_description, accessories, status, created_by, created_by_name, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       )
-      .bind(id, name, imei, hasDefect, defectDescription, status, actor.id, actor.displayName)
+      .bind(id, name, imei, hasDefect, defectDescription, accessories, status, actor.id, actor.displayName)
       .run();
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
@@ -216,6 +218,10 @@ export async function PATCH(request: Request) {
     } else if (typeof body.defectDescription === "string") {
       sets.push(`defect_description=?${index++}`);
       bindings.push(safeText(body.defectDescription, 400));
+    }
+    if (typeof body.accessories === "string") {
+      sets.push(`accessories=?${index++}`);
+      bindings.push(safeText(body.accessories, 400));
     }
     if (typeof body.status === "string" && body.status) {
       const status = safeText(body.status, 20);

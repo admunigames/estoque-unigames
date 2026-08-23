@@ -709,6 +709,10 @@ export const loanDevices = pgTable(
     imei: text("imei").notNull().default(""),
     hasDefect: integer("has_defect").notNull().default(0),
     defectDescription: text("defect_description").notNull().default(""),
+    // Lista livre do que acompanha o aparelho (ex.: "carregador, capinha,
+    // fone") — visível pra loja na listagem, pra saber o que esperar antes
+    // de solicitar.
+    accessories: text("accessories").notNull().default(""),
     // 'available' | 'loaned' | 'maintenance'
     status: text("status").notNull().default("available"),
     // Preenchidos automaticamente quando status='loaned', a partir da

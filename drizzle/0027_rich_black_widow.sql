@@ -1,0 +1,1 @@
+ALTER TABLE "loan_devices" ADD COLUMN "accessories" text DEFAULT '' NOT NULL;

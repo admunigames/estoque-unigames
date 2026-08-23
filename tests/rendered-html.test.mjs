@@ -1673,7 +1673,7 @@ test("registra, anexa e expira automaticamente o PDF das Notas de O.S. com permi
 });
 
 test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o selo de dias em atraso com permissões granulares", async () => {
-  const [html, workerSource, devicesRoute, requestsRoute, commentsRoute, schema, migration, returnMigration] =
+  const [html, workerSource, devicesRoute, requestsRoute, commentsRoute, schema, migration, returnMigration, accessoriesMigration] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
@@ -1683,6 +1683,7 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
       readFile(new URL("../drizzle/0025_gigantic_diamondback.sql", import.meta.url), "utf8"),
       readFile(new URL("../drizzle/0026_purple_meggan.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0027_rich_black_widow.sql", import.meta.url), "utf8"),
     ]);
 
   assert.match(
@@ -1734,6 +1735,10 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(devicesRoute, /actor\.permissions\.includes\("loans:delete"\)/);
   assert.match(devicesRoute, /WHERE status='available' ORDER BY name ASC/);
   assert.match(devicesRoute, /INSERT INTO loan_devices/);
+  assert.match(devicesRoute, /accessories/);
+
+  assert.match(html, /id="loanDeviceAccessories"/);
+  assert.match(html, />Acessórios</);
 
   assert.match(requestsRoute, /canManageRequests\(actor\)/);
   assert.match(requestsRoute, /canRequest\(actor\)/);
@@ -1763,6 +1768,8 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(returnMigration, /ADD COLUMN "returned_by"/);
   assert.match(returnMigration, /ADD COLUMN "returned_by_name"/);
   assert.match(returnMigration, /ADD COLUMN "returned_at"/);
+  assert.match(accessoriesMigration, /ADD COLUMN "accessories"/);
+  assert.match(schema, /accessories: text\("accessories"\)/);
 });
 
 test("formata timestamps do banco no horário de Brasília/Recife em um único ponto do app", async () => {

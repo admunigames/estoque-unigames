@@ -3617,8 +3617,8 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Aparelho</th><th>IMEI/Série</th><th>Defeito</th><th></th></tr></thead>
-              <tbody id="loanAvailableBody"><tr><td colspan="4" class="responsive-empty">Carregando aparelhos…</td></tr></tbody>
+              <thead><tr><th>Aparelho</th><th>IMEI/Série</th><th>Defeito</th><th>Acessórios</th><th></th></tr></thead>
+              <tbody id="loanAvailableBody"><tr><td colspan="5" class="responsive-empty">Carregando aparelhos…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -3653,6 +3653,7 @@
             <div class="field"><label for="loanDeviceStatus">STATUS</label><select id="loanDeviceStatus"><option value="available">DISPONÍVEL</option><option value="maintenance">MANUTENÇÃO</option><option value="loaned">EMPRESTADO</option></select></div>
             <div class="field"><label for="loanDeviceHasDefect" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="loanDeviceHasDefect" style="width:auto;"> POSSUI DEFEITO</label></div>
             <div class="field full" id="loanDeviceDefectField" hidden><label for="loanDeviceDefectDescription">DESCRIÇÃO DO DEFEITO</label><textarea id="loanDeviceDefectDescription" maxlength="400" rows="2"></textarea></div>
+            <div class="field full"><label for="loanDeviceAccessories">ACESSÓRIOS QUE ACOMPANHAM</label><input id="loanDeviceAccessories" maxlength="400" placeholder="Ex.: CARREGADOR, CAPINHA, FONE"></div>
             <div class="field full" style="display:flex;justify-content:flex-end;gap:8px;">
               <button class="btn-outline" id="btnCancelLoanDevice" type="button" hidden>CANCELAR EDIÇÃO</button>
               <button class="btn-accent" id="btnSaveLoanDevice" type="submit">SALVAR APARELHO</button>
@@ -3662,8 +3663,8 @@
           <div class="table-panel responsive-table">
             <div class="table-scroll">
               <table>
-                <thead><tr><th>Aparelho</th><th>IMEI/Série</th><th>Defeito</th><th>Status</th><th>Loja atual</th><th></th></tr></thead>
-                <tbody id="loanDevicesBody"><tr><td colspan="6" class="responsive-empty">Carregando aparelhos…</td></tr></tbody>
+                <thead><tr><th>Aparelho</th><th>IMEI/Série</th><th>Defeito</th><th>Acessórios</th><th>Status</th><th>Loja atual</th><th></th></tr></thead>
+                <tbody id="loanDevicesBody"><tr><td colspan="7" class="responsive-empty">Carregando aparelhos…</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -13252,7 +13253,7 @@ function renderHomeTasks(){
     const tbody = el('loanAvailableBody');
     const items = loanDevicesCache.filter(device => device.status === 'available');
     if(!items.length){
-      tbody.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhum aparelho disponível no momento.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum aparelho disponível no momento.</td></tr>';
       return;
     }
     tbody.innerHTML = items.map(device => (
@@ -13260,6 +13261,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(device.name)+'</td>'+
         '<td>'+escapeHtml(device.imei || '—')+'</td>'+
         '<td>'+(device.hasDefect ? escapeHtml(device.defectDescription || 'SIM') : 'NÃO')+'</td>'+
+        '<td>'+escapeHtml(device.accessories || '—')+'</td>'+
         '<td style="text-align:right;"><button class="btn-accent" type="button" data-loan-request-device="'+escapeHtml(device.id)+'">SOLICITAR</button></td>'+
       '</tr>'
     )).join('');
@@ -13268,7 +13270,7 @@ function renderHomeTasks(){
   function renderLoanDevices(){
     const tbody = el('loanDevicesBody');
     if(!loanDevicesCache.length){
-      tbody.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum aparelho cadastrado ainda.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="responsive-empty">Nenhum aparelho cadastrado ainda.</td></tr>';
       return;
     }
     tbody.innerHTML = loanDevicesCache.map(device => {
@@ -13282,6 +13284,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(device.name)+'</td>'+
         '<td>'+escapeHtml(device.imei || '—')+'</td>'+
         '<td>'+(device.hasDefect ? escapeHtml(device.defectDescription || 'SIM') : 'NÃO')+'</td>'+
+        '<td>'+escapeHtml(device.accessories || '—')+'</td>'+
         '<td>'+loanDeviceStatusPill(device.status)+'</td>'+
         '<td>'+currentCompany+'</td>'+
         '<td style="text-align:right; white-space:nowrap;">'+actions+'</td>'+
@@ -13330,8 +13333,8 @@ function renderHomeTasks(){
       loanDevicesCache = Array.isArray(data.items) ? data.items : [];
     }catch(error){
       loanDevicesCache = [];
-      el('loanAvailableBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-      el('loanDevicesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('loanAvailableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('loanDevicesBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
       return;
     }
     renderLoanAvailable();
@@ -13387,6 +13390,7 @@ function renderHomeTasks(){
       imei:el('loanDeviceImei').value,
       hasDefect:el('loanDeviceHasDefect').checked,
       defectDescription:el('loanDeviceDefectDescription').value,
+      accessories:el('loanDeviceAccessories').value,
       status:el('loanDeviceStatus').value
     };
     if(id) body.id = id;
@@ -13413,6 +13417,7 @@ function renderHomeTasks(){
       el('loanDeviceHasDefect').checked = Boolean(device.hasDefect);
       el('loanDeviceDefectField').hidden = !device.hasDefect;
       el('loanDeviceDefectDescription').value = device.defectDescription;
+      el('loanDeviceAccessories').value = device.accessories;
       el('btnCancelLoanDevice').hidden = false;
       el('btnSaveLoanDevice').textContent = 'SALVAR ALTERAÇÕES';
       el('loanDeviceName').focus();
