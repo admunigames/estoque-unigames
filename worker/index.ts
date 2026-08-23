@@ -1359,17 +1359,17 @@ async function handleAdminUsers(
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return jsonError("INFORME UM E-MAIL VÁLIDO OU DEIXE O CAMPO VAZIO.", 400);
   }
-  if (!actorIsSuperAdmin) {
-    if (accessGroup === "administrator") {
-      return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE CONCEDER ACESSO DE ADMINISTRADOR.", 403);
-    }
-    if (access.permissions.includes("users:manage")) {
-      return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE CONCEDER GERENCIAMENTO DE USUÁRIOS.", 403);
-    }
+  if (!actorIsSuperAdmin && accessGroup === "administrator") {
+    return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE CONCEDER ACESSO DE ADMINISTRADOR.", 403);
   }
 
   try {
     if (request.method === "POST") {
+      // Usuário novo nunca "já tinha" users:manage — conceder essa
+      // permissão aqui é sempre uma escalação de privilégio nova.
+      if (!actorIsSuperAdmin && access.permissions.includes("users:manage")) {
+        return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE CONCEDER GERENCIAMENTO DE USUÁRIOS.", 403);
+      }
       if (password.length < 8 || password.length > 200) {
         return jsonError("A SENHA DEVE TER PELO MENOS 8 CARACTERES.", 400);
       }
@@ -1402,8 +1402,20 @@ async function handleAdminUsers(
     if (!id || id === "env-admin") return jsonError("O ADMINISTRADOR PRINCIPAL NÃO PODE SER ALTERADO AQUI.", 400);
     const existing = await readUserById(env.DB, id);
     if (!existing) return jsonError("USUÁRIO NÃO ENCONTRADO.", 404);
-    if (!actorIsSuperAdmin && (existing.role === "admin" || permissionsFromJson(existing.permissionsJson).includes("users:manage"))) {
-      return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE ALTERAR ESTE USUÁRIO.", 403);
+    if (!actorIsSuperAdmin) {
+      const isSelfEdit = existing.id === actor.id;
+      const existingHadUsersManage = permissionsFromJson(existing.permissionsJson).includes("users:manage");
+      // Conceder users:manage pra quem ainda não tinha é escalação — bloqueia.
+      // Manter (não mudar) uma permissão que a pessoa já tinha não é.
+      if (access.permissions.includes("users:manage") && !existingHadUsersManage) {
+        return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE CONCEDER GERENCIAMENTO DE USUÁRIOS.", 403);
+      }
+      // Mexer em outro admin/titular de users:manage é bloqueado — mas um
+      // titular de users:manage pode sempre editar a própria conta (ex.:
+      // trocar a própria senha), senão fica travado pra sempre.
+      if (!isSelfEdit && (existing.role === "admin" || existingHadUsersManage)) {
+        return jsonError("SOMENTE O ADMINISTRADOR PRINCIPAL PODE ALTERAR ESTE USUÁRIO.", 403);
+      }
     }
     const active = body.active === false ? 0 : 1;
     if (password && (password.length < 8 || password.length > 200)) {

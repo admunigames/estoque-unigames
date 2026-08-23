@@ -2450,3 +2450,46 @@ test("Missões: abas Check-in, Check-out e Troca de Turno com checklists fixas q
   assert.match(migration, /ALTER TABLE "daily_checklist_items" ENABLE ROW LEVEL SECURITY;/);
   assert.match(migration, /REVOKE ALL ON TABLE "daily_checklist_items" FROM anon, authenticated;/);
 });
+
+test("titular de users:manage consegue salvar a própria conta sem ser bloqueado como escalação", async () => {
+  const workerSource = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
+
+  // Bug relatado: usuário com users:manage delegado (ex.: Renato) não
+  // conseguia clicar em SALVAR no próprio cadastro — o checkbox
+  // "Gerenciar usuários" aparece marcado (mas desabilitado) no formulário,
+  // então o payload sempre reenvia users:manage=true, e a checagem antiga
+  // bloqueava qualquer edição de um usuário que já tivesse essa permissão,
+  // inclusive a própria conta de quem a possui.
+  assert.match(
+    workerSource,
+    /const isSelfEdit = existing\.id === actor\.id;/,
+  );
+  assert.match(
+    workerSource,
+    /const existingHadUsersManage = permissionsFromJson\(existing\.permissionsJson\)\.includes\("users:manage"\);/,
+  );
+  // Manter (não conceder de novo) uma permissão que a pessoa já tinha não é
+  // escalação — só bloqueia se for uma concessão NOVA (!existingHadUsersManage).
+  assert.match(
+    workerSource,
+    /if \(access\.permissions\.includes\("users:manage"\) && !existingHadUsersManage\) \{/,
+  );
+  // Autoedição sempre é permitida — só mexer na conta de OUTRO
+  // admin/titular de users:manage é que continua bloqueado.
+  assert.match(
+    workerSource,
+    /if \(!isSelfEdit && \(existing\.role === "admin" \|\| existingHadUsersManage\)\) \{/,
+  );
+  // A checagem de accessGroup==="administrator" não depende mais de existir
+  // (aplicada antes de saber se é POST ou PATCH), e a checagem de
+  // users:manage em POST é sempre escalação nova (usuário novo nunca "já
+  // tinha" nada).
+  assert.match(
+    workerSource,
+    /if \(!actorIsSuperAdmin && accessGroup === "administrator"\) \{/,
+  );
+  assert.match(
+    workerSource,
+    /if \(!actorIsSuperAdmin && access\.permissions\.includes\("users:manage"\)\) \{/,
+  );
+});
