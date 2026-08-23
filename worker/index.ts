@@ -45,6 +45,7 @@ type Permission =
   | "documents_manage"
   | "instructions:manage"
   | "pdv_requests:view" | "pdv_requests:create" | "pdv_requests:delete" | "pdv_requests:status"
+  | "os_notes:view" | "os_notes:create" | "os_notes:attach" | "os_notes:delete"
   | "finance:manage"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
@@ -109,6 +110,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "report41:view",
   "instructions:manage",
   "pdv_requests:view", "pdv_requests:create", "pdv_requests:delete", "pdv_requests:status",
+  "os_notes:view", "os_notes:create", "os_notes:attach", "os_notes:delete",
   "finance:manage",
   "users:manage",
 ];
@@ -199,6 +201,7 @@ const APP_ROUTE_PATHS = new Set([
   "/insumos",
   "/instrucoes",
   "/solicitacoes/alteracoes-pdv",
+  "/solicitacoes/notas-os",
   "/cadastros",
   "/cadastros/lojas",
   "/cadastros/base-de-dados",
@@ -1029,6 +1032,9 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   pdvRequests: [
     "pdv_requests:view", "pdv_requests:create", "pdv_requests:delete", "pdv_requests:status",
   ],
+  osNotes: [
+    "os_notes:view", "os_notes:create", "os_notes:attach", "os_notes:delete",
+  ],
   finance: ["finance:manage"],
 };
 
@@ -1083,6 +1089,10 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/solicitacoes/alteracoes-pdv" || path.startsWith("/api/pdv-requests"),
       "pdvRequests",
+    ],
+    [
+      path === "/solicitacoes/notas-os" || path.startsWith("/api/os-notes"),
+      "osNotes",
     ],
     [
       path === "/financeiro" || path.startsWith("/financeiro/") || path.startsWith("/api/finance"),
@@ -1602,6 +1612,48 @@ async function createAutomaticBackup(env: Env, secret: string) {
     if (expired.length) await bucket.delete(expired);
   } catch (error) {
     console.error("Não foi possível gerar o backup automático.", error);
+  }
+}
+
+// Remove do R2 (e da referência no banco) qualquer PDF de Nota de O.S.
+// anexado há mais de 30 dias, para não sobrecarregar o armazenamento. A
+// SOLICITAÇÃO em si nunca é apagada — só o arquivo e as colunas que
+// apontam para ele, preservando o histórico de quando foi pedida e
+// atendida (mesmo padrão de "só apagar o que precisa" de
+// createAutomaticBackup, que limpa backups velhos sem tocar nos dados).
+let osNotesPurgeDate = "";
+async function purgeOldOsNotes(env: Env): Promise<void> {
+  const bucket = (env as { UPLOADS?: R2Bucket }).UPLOADS;
+  if (!bucket) return;
+  const { date } = recifeDateTime();
+  if (osNotesPurgeDate === date) return;
+  try {
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - 30);
+    const cutoffIso = cutoff.toISOString();
+    const expired = await env.DB.prepare(
+      `SELECT id, r2_key AS r2Key FROM os_notes
+       WHERE r2_key <> '' AND attached_at <> '' AND attached_at < ?1`,
+    )
+      .bind(cutoffIso)
+      .all<{ id: string; r2Key: string }>();
+    const rows = expired.results ?? [];
+    if (rows.length) {
+      await bucket.delete(rows.map((row) => row.r2Key));
+      const removedAt = new Date().toISOString();
+      await env.DB.batch(
+        rows.map((row) =>
+          env.DB.prepare(
+            `UPDATE os_notes
+             SET r2_key='', file_name='', size_bytes=0, file_removed_at=?1
+             WHERE id=?2`,
+          ).bind(removedAt, row.id),
+        ),
+      );
+    }
+    osNotesPurgeDate = date;
+  } catch (error) {
+    console.error("Não foi possível remover anexos vencidos de Notas de O.S.", error);
   }
 }
 
@@ -2158,6 +2210,7 @@ const worker = {
       dispatchDueMissionNotifications(env),
       advanceOperationalRoutines(env),
       createAutomaticBackup(env, config.sessionSecret),
+      purgeOldOsNotes(env),
     ]));
   },
 };

@@ -2684,12 +2684,13 @@
         <a class="nav-item sub-item" id="navDocumentoAvulso" data-document-folder="documentos-avulsos" title="Documentos Avulsos" href="/documentos/documentos-avulsos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14 3.5V8h4"/></svg></span><span class="nav-label">Documentos Avulsos</span></a>
       </div>
     </div>
-    <div class="nav-group" data-permission="pdv_requests">
+    <div class="nav-group" data-any-permission="pdv_requests,os_notes">
       <button class="nav-group-toggle" id="navSolicitacoes" type="button" aria-expanded="false" aria-controls="navSolicitacoesSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10l-2.6-2.6"/><path d="M17 17H7l2.6 2.6"/><line x1="9" y1="12" x2="15" y2="12"/></svg></span><span class="nav-label">Solicitações</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navSolicitacoesSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navAlteracoesPdv" data-page="alteracoesPdv" data-permission="pdv_requests" data-home-desc="Peça alterações manuais no PDV e acompanhe o status de cada pedido." title="Alterações PDV" href="/solicitacoes/alteracoes-pdv"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10l-2.6-2.6"/><path d="M17 17H7l2.6 2.6"/><line x1="9" y1="12" x2="15" y2="12"/></svg></span><span class="nav-label">Alterações PDV</span></a>
+        <a class="nav-item sub-item" id="navNotasOs" data-page="notasOs" data-permission="os_notes" data-home-desc="Peça a nota de uma O.S. e acompanhe o anexo enviado pela administração." title="Notas de O.S." href="/solicitacoes/notas-os"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas de O.S.</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="finance">
@@ -3768,6 +3769,53 @@
       </section>
     </section>
 
+    <section id="pageNotasOs" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Notas de O.S.</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">A loja pede a nota de uma Ordem de Serviço e quem emite a nota anexa o PDF aqui. O anexo é removido automaticamente 30 dias após ser enviado — a solicitação continua no histórico.</p></div>
+      </header>
+
+      <section class="output-summary" aria-label="Resumo das solicitações">
+        <article class="output-summary-card"><span>AGUARDANDO NOTA</span><strong id="osNotePendingCount">0</strong></article>
+        <article class="output-summary-card completed"><span>NOTA ANEXADA</span><strong id="osNoteAttachedCount">0</strong></article>
+      </section>
+
+      <section class="output-register-panel" id="osNoteRegisterPanel" data-permission="os_notes:create">
+        <div class="output-panel-head">
+          <div><h3>NOVA SOLICITAÇÃO</h3><p id="osNoteRegisterDescription">Informe o ID da O.S. para pedir a nota correspondente.</p></div>
+        </div>
+        <form id="osNoteForm">
+          <div class="output-form-grid">
+            <div class="field"><label for="osNoteOsId">ID DA O.S.</label><input id="osNoteOsId" maxlength="60" required placeholder="Ex.: 123456"></div>
+            <div class="field" id="osNoteCompanyField" hidden><label for="osNoteCompany">LOJA</label><select id="osNoteCompany"><option value="">SELECIONE A LOJA</option></select></div>
+            <div class="field"><label for="osNoteRequesterName">RESPONSÁVEL SOLICITANTE</label><input id="osNoteRequesterName" maxlength="120" required placeholder="Quem está pedindo a nota"></div>
+          </div>
+          <div class="output-form-actions"><button class="btn-accent" id="btnSaveOsNote" type="submit">ENVIAR SOLICITAÇÃO</button></div>
+          <div class="user-form-status" id="osNoteFormStatus" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="output-board" data-permission="os_notes:view">
+        <div class="output-board-head">
+          <div><h3>NOTAS DE O.S.</h3><p id="osNoteBoardDescription">Acompanhe as solicitações e os anexos enviados.</p></div>
+          <button class="btn-outline" id="btnRefreshOsNotes" type="button">ATUALIZAR</button>
+        </div>
+        <div class="output-toolbar">
+          <div class="field search"><label for="osNoteSearch">BUSCAR</label><input id="osNoteSearch" type="search" placeholder="ID da O.S., loja ou responsável"></div>
+          <div class="output-tabs" role="tablist" aria-label="Situação das solicitações">
+            <button class="output-tab active" type="button" role="tab" aria-selected="true" data-os-note-status="">TODOS</button>
+            <button class="output-tab" type="button" role="tab" aria-selected="false" data-os-note-status="pending">AGUARDANDO NOTA</button>
+            <button class="output-tab" type="button" role="tab" aria-selected="false" data-os-note-status="attached">NOTA ANEXADA</button>
+          </div>
+        </div>
+        <div class="output-list" id="osNoteList" aria-live="polite"><div class="output-empty">Carregando solicitações…</div></div>
+      </section>
+      <input type="file" id="osNoteAttachInput" accept="application/pdf" hidden>
+    </section>
+
 <!-- ================= TAREFAS ================= -->
     <section id="pageTarefas" class="page wrap">
       <header class="page-header">
@@ -4351,6 +4399,15 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>Solicitações · Notas de O.S.</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:view"> Visualização</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:create"> Cadastro</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:attach"> Anexar nota (PDF)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:delete"> Exclusão</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Financeiro</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="finance:manage"> Acessar o módulo Financeiro</label>
@@ -4658,6 +4715,10 @@
   let pdvRequestRows = [];
   let pdvRequestsLoading = false;
   let pdvRequestStatus = '';
+  let osNoteRows = [];
+  let osNotesLoading = false;
+  let osNoteStatus = '';
+  let osNoteAttachTargetId = '';
 
   let financeCategories = [];
   let financeItems = [];
@@ -5140,6 +5201,7 @@
     insumos:'/insumos',
     instrucoes:'/instrucoes',
     alteracoesPdv:'/solicitacoes/alteracoes-pdv',
+    notasOs:'/solicitacoes/notas-os',
     documentos:'/documentos',
     usuarios:'/cadastros/usuarios',
     rhFolgas:'/rh/folgas',
@@ -5163,6 +5225,7 @@
     insumos:'INSUMOS',
     instrucoes:'INSTRUÇÕES',
     alteracoesPdv:'ALTERAÇÕES PDV',
+    notasOs:'NOTAS DE O.S.',
     usuarios:'USUÁRIOS E ACESSOS',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
@@ -5180,6 +5243,7 @@
     entradas:'inputs',
     insumos:'supplies',
     alteracoesPdv:'pdv_requests',
+    notasOs:'os_notes',
     cadastros:'database',
     lojas:'database',
     dados:'database',
@@ -5587,7 +5651,7 @@
     const isRh = name === 'rhFolgas' || name === 'rhEscalas';
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
-    const isSolicitacoes = name === 'alteracoesPdv';
+    const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isFinanceiro = name === 'financeiro';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
@@ -5636,6 +5700,7 @@
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'instrucoes') loadInstructions();
     if(name === 'alteracoesPdv') loadPdvRequests();
+    if(name === 'notasOs') loadOsNotes();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'financeiro') loadFinanceiroTab();
     if(settings.scroll !== false){
@@ -5657,6 +5722,7 @@
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'instrucoes') loadInstructions();
     if(name === 'alteracoesPdv') loadPdvRequests();
+    if(name === 'notasOs') loadOsNotes();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'financeiro') loadFinanceiroTab();
   }
@@ -13299,6 +13365,280 @@ function renderHomeTasks(){
     if(event.key === 'Enter'){ event.preventDefault(); renderPdvSearchResults(); }
   });
 
+  const OS_NOTE_STATUS_LABELS = { pending:'AGUARDANDO NOTA', attached:'NOTA ANEXADA' };
+
+  async function osNoteApiRequest(query, options){
+    const response = await fetch('/api/os-notes'+(query || ''),{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  async function osNoteAttachmentRequest(options){
+    const response = await fetch('/api/os-notes/attachment',{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    let data = {};
+    if(response.status !== 204){
+      try{ data = await response.json(); }catch{ data = {}; }
+    }
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return data;
+  }
+
+  function renderOsNoteCompanyOptions(){
+    const select = el('osNoteCompany');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">SELECIONE A LOJA</option>'+
+      companies.map(company =>
+        '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
+      ).join('');
+    if(companies.some(company => company.id === selected)) select.value = selected;
+  }
+
+  function osNoteCardHtml(row){
+    const attached = row.status === 'attached';
+    const history = 'SOLICITADA POR '+escapeHtml(row.createdByName || '—')+' · '+
+      escapeHtml(row.companyName || 'LOJA')+' EM '+escapeHtml(outputDateTime(row.createdAt))+
+      (attached && row.attachedByName
+        ? ' · NOTA ANEXADA POR '+escapeHtml(row.attachedByName)+' EM '+escapeHtml(outputDateTime(row.attachedAt))
+        : '');
+    let attachmentHtml;
+    if(row.hasFile){
+      attachmentHtml = '<div class="output-details">'+
+        '<div class="output-detail"><span>ARQUIVO</span><strong title="'+escapeHtml(row.fileName)+'">'+
+          escapeHtml(row.fileName)+' ('+escapeHtml(formatDocumentSize(row.sizeBytes))+')</strong></div>'+
+      '</div>';
+    }else if(attached){
+      attachmentHtml = '<p class="output-history">O ANEXO DESTA SOLICITAÇÃO FOI REMOVIDO AUTOMATICAMENTE 30 DIAS APÓS O ENVIO'+
+        (row.fileRemovedAt ? ' (EM '+escapeHtml(outputDateTime(row.fileRemovedAt))+')' : '')+'.</p>';
+    }else{
+      attachmentHtml = '';
+    }
+    const viewButtons = row.hasFile
+      ? '<a class="btn-outline" href="'+escapeHtml(row.viewUrl)+'" target="_blank" rel="noopener">VISUALIZAR</a>'+
+        '<a class="btn-accent" href="'+escapeHtml(row.downloadUrl)+'">BAIXAR</a>'
+      : '';
+    const attachButton = canAccess('os_notes:attach')
+      ? '<button class="btn-outline" type="button" data-os-note-attach="'+escapeHtml(row.id)+'">'+
+          (row.hasFile ? 'SUBSTITUIR PDF' : 'ANEXAR PDF')+'</button>'
+      : '';
+    const deleteButton = canAccess('os_notes:delete')
+      ? '<button class="output-delete" type="button" data-os-note-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'
+      : '';
+    return '<article class="output-card'+(attached ? ' completed' : '')+'">'+
+      '<div class="output-card-copy">'+
+        '<div class="output-card-title"><strong>O.S. '+escapeHtml(row.osId || '—')+'</strong>'+
+          '<span class="output-company-badge">'+escapeHtml(row.companyName || 'Loja')+'</span></div>'+
+        attachmentHtml+
+        '<p class="output-history">SOLICITANTE: '+escapeHtml(row.requesterName || '—')+' · '+history+'</p>'+
+      '</div>'+
+      '<div class="output-card-actions">'+
+        '<span class="output-state'+(attached ? ' completed' : '')+'">'+
+          escapeHtml(OS_NOTE_STATUS_LABELS[row.status] || row.status)+'</span>'+
+        viewButtons+attachButton+deleteButton+
+      '</div>'+
+    '</article>';
+  }
+
+  function filteredOsNoteRows(){
+    const search = normalizeHeader(el('osNoteSearch').value || '');
+    return osNoteRows.filter(row => {
+      if(osNoteStatus && row.status !== osNoteStatus) return false;
+      if(!search) return true;
+      return normalizeHeader([
+        row.osId,row.requesterName,row.companyName,row.createdByName
+      ].join(' ')).includes(search);
+    });
+  }
+
+  function renderOsNoteList(){
+    el('osNotePendingCount').textContent = osNoteRows.filter(row => row.status === 'pending').length;
+    el('osNoteAttachedCount').textContent = osNoteRows.filter(row => row.status === 'attached').length;
+    document.querySelectorAll('[data-os-note-status]').forEach(button => {
+      const active = button.dataset.osNoteStatus === osNoteStatus;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+    const canChooseCompany = canActAcrossStores('os_notes:create');
+    el('osNoteCompanyField').hidden = !canChooseCompany;
+    el('osNoteCompany').required = canChooseCompany;
+    renderOsNoteCompanyOptions();
+    el('osNoteRegisterDescription').textContent = canChooseCompany
+      ? 'Informe o ID da O.S. e escolha a loja responsável pela solicitação.'
+      : 'A solicitação será vinculada automaticamente à sua loja.';
+    const seesAllStores = canActAcrossStores('os_notes:view') || canActAcrossStores('os_notes:attach');
+    el('osNoteBoardDescription').textContent = seesAllStores
+      ? 'Visualize todas as lojas e anexe a nota assim que ela for emitida.'
+      : 'Acompanhe as solicitações registradas pela sua loja.';
+    const rows = filteredOsNoteRows();
+    el('osNoteList').innerHTML = rows.length
+      ? rows.map(osNoteCardHtml).join('')
+      : '<div class="output-empty">Nenhuma solicitação encontrada.</div>';
+  }
+
+  async function loadOsNotes(){
+    if(!canAccess('os_notes') || osNotesLoading) return;
+    osNotesLoading = true;
+    el('osNoteList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
+    try{
+      const data = await osNoteApiRequest('');
+      osNoteRows = Array.isArray(data.notes) ? data.notes : [];
+      renderOsNoteList();
+    }catch(error){
+      osNoteRows = [];
+      renderOsNoteList();
+      el('osNoteList').innerHTML = '<div class="output-empty">'+escapeHtml(error.message)+'</div>';
+    }finally{
+      osNotesLoading = false;
+    }
+  }
+
+  function setOsNoteFormStatus(message,type){
+    const status = el('osNoteFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  el('osNoteForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnSaveOsNote');
+    button.disabled = true;
+    setOsNoteFormStatus('ENVIANDO SOLICITAÇÃO…','');
+    try{
+      await osNoteApiRequest('',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          osId: el('osNoteOsId').value,
+          requesterName: el('osNoteRequesterName').value,
+          companyId: canActAcrossStores('os_notes:create') ? el('osNoteCompany').value : ''
+        })
+      });
+      el('osNoteForm').reset();
+      setOsNoteFormStatus('SOLICITAÇÃO CADASTRADA.','success');
+      await loadOsNotes();
+    }catch(error){
+      setOsNoteFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  async function uploadOsNoteAttachment(osNoteId, file){
+    if(!file || !/\.pdf$/i.test(file.name)) throw new Error('SELECIONE UM ARQUIVO COM EXTENSÃO .PDF.');
+    if(file.size <= 0) throw new Error('O ARQUIVO PDF ESTÁ VAZIO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.');
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const create = await osNoteAttachmentRequest({
+      method:'POST',
+      headers:{Accept:'application/json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'create',
+        id:osNoteId,
+        fileName:file.name,
+        contentType:file.type || 'application/pdf',
+        fileSize:file.size,
+        numberOfParts
+      })
+    });
+    const sessionId = create.session && create.session.id;
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO PDF.');
+    try{
+      for(let index=0;index<numberOfParts;index+=1){
+        const partNumber = index + 1;
+        showPurchaseToast('Enviando parte '+partNumber+' de '+numberOfParts+'…');
+        await osNoteAttachmentRequest({
+          method:'POST',
+          headers:{
+            Accept:'application/json',
+            'Content-Type':'application/octet-stream',
+            'x-os-note-upload-id':sessionId,
+            'x-os-note-part-number':String(partNumber)
+          },
+          body:file.slice(index * DOCUMENT_CHUNK_SIZE,Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
+        });
+      }
+      await osNoteAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'complete',sessionId})
+      });
+    }catch(error){
+      osNoteAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'cancel',sessionId})
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  el('osNoteList').addEventListener('click', async event => {
+    const attachButton = event.target.closest('[data-os-note-attach]');
+    if(attachButton){
+      osNoteAttachTargetId = attachButton.dataset.osNoteAttach;
+      el('osNoteAttachInput').value = '';
+      el('osNoteAttachInput').click();
+      return;
+    }
+    const deleteButton = event.target.closest('[data-os-note-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir esta solicitação definitivamente?')) return;
+      deleteButton.disabled = true;
+      try{
+        await osNoteApiRequest('?id='+encodeURIComponent(deleteButton.dataset.osNoteDelete),{method:'DELETE'});
+        await loadOsNotes();
+        showPurchaseToast('Solicitação excluída.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        deleteButton.disabled = false;
+      }
+    }
+  });
+
+  el('osNoteAttachInput').addEventListener('change', async () => {
+    const input = el('osNoteAttachInput');
+    const file = input.files && input.files[0];
+    const osNoteId = osNoteAttachTargetId;
+    if(!file || !osNoteId) return;
+    try{
+      await uploadOsNoteAttachment(osNoteId, file);
+      showPurchaseToast('Nota anexada com sucesso.');
+      await loadOsNotes();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }finally{
+      input.value = '';
+      osNoteAttachTargetId = '';
+    }
+  });
+
+  document.querySelectorAll('[data-os-note-status]').forEach(button => {
+    button.addEventListener('click', () => {
+      osNoteStatus = button.dataset.osNoteStatus;
+      renderOsNoteList();
+    });
+  });
+
+  el('osNoteSearch').addEventListener('input', renderOsNoteList);
+  el('btnRefreshOsNotes').addEventListener('click', loadOsNotes);
+
   async function financeApiRequest(path, options){
     const response = await fetch('/api/finance'+path, {
       ...(options || {}),
@@ -13834,6 +14174,7 @@ function renderHomeTasks(){
     'report41:view':'Relatório 41',
     'instructions:manage':'Instruções: cadastrar/excluir',
     'pdv_requests:view':'Alterações PDV: visualização','pdv_requests:create':'Alterações PDV: cadastro','pdv_requests:delete':'Alterações PDV: exclusão','pdv_requests:status':'Alterações PDV: alteração de status',
+    'os_notes:view':'Notas de O.S.: visualização','os_notes:create':'Notas de O.S.: cadastro','os_notes:attach':'Notas de O.S.: anexar nota','os_notes:delete':'Notas de O.S.: exclusão',
     'finance:manage':'Financeiro: acessar módulo',
     'users:manage':'Usuários e acessos'
   };

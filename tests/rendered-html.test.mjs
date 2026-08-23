@@ -1609,6 +1609,69 @@ test("registra e controla solicitações de Alterações PDV com permissões gra
   assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
 });
 
+test("registra, anexa e expira automaticamente o PDF das Notas de O.S. com permissões granulares por loja", async () => {
+  const [html, workerSource, route, attachmentRoute, fileRoute, shared, schema, migration] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/os-notes/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/os-notes/attachment/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/os-notes/file/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/documents/shared.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0024_tired_exiles.sql", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(html, /id="navNotasOs" data-page="notasOs" data-permission="os_notes"/);
+  assert.match(html, /id="pageNotasOs" class="page wrap"/);
+  assert.match(html, /id="osNoteForm"/);
+  assert.match(html, /id="osNoteCompanyField" hidden/);
+  assert.match(html, /id="osNoteAttachInput"/);
+  assert.match(html, /data-os-note-status="pending"/);
+  assert.match(html, /data-os-note-status="attached"/);
+  assert.match(html, /value="os_notes:view"> Visualização/);
+  assert.match(html, /value="os_notes:create"> Cadastro/);
+  assert.match(html, /value="os_notes:attach"> Anexar nota \(PDF\)/);
+  assert.match(html, /value="os_notes:delete"> Exclusão/);
+  assert.match(html, /notasOs:'\/solicitacoes\/notas-os'/);
+  assert.match(html, /data-any-permission="pdv_requests,os_notes"/);
+
+  assert.match(
+    workerSource,
+    /"os_notes:view" \| "os_notes:create" \| "os_notes:attach" \| "os_notes:delete"/,
+  );
+  assert.match(workerSource, /"\/solicitacoes\/notas-os"/);
+  assert.match(
+    workerSource,
+    /path === "\/solicitacoes\/notas-os" \|\| path\.startsWith\("\/api\/os-notes"\)/,
+  );
+  assert.match(workerSource, /async function purgeOldOsNotes\(env: Env\)/);
+  assert.match(workerSource, /purgeOldOsNotes\(env\)/);
+  assert.match(workerSource, /cutoff\.setUTCDate\(cutoff\.getUTCDate\(\) - 30\)/);
+
+  assert.match(route, /!can\(actor, "os_notes:create"\)/);
+  assert.match(route, /!can\(actor, "os_notes:delete"\)/);
+  assert.match(route, /canSeeAllOsNoteStores/);
+  assert.match(route, /INSERT INTO os_notes/);
+  assert.match(route, /'pending'/);
+
+  assert.match(attachmentRoute, /!can\(actor, "os_notes:attach"\)/);
+  assert.match(attachmentRoute, /looksLikePdf/);
+  assert.match(attachmentRoute, /status='attached'/);
+  assert.match(attachmentRoute, /file_removed_at=''/);
+
+  assert.match(fileRoute, /row\.companyId !== actor\.companyId/);
+  assert.match(fileRoute, /O ANEXO DESTA SOLICITAÇÃO JÁ FOI REMOVIDO/);
+
+  assert.match(shared, /export function looksLikePdf/);
+  assert.match(shared, /export function safeR2FileName/);
+
+  assert.match(schema, /export const osNotes = pgTable/);
+  assert.match(migration, /CREATE TABLE "os_notes"/);
+  assert.match(migration, /os_notes_os_id_idx/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+});
+
 test("formata timestamps do banco no horário de Brasília/Recife em um único ponto do app", async () => {
   const html = await readFile(
     new URL("../public/estoque.html", import.meta.url),
@@ -1852,8 +1915,8 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
   assert.match(shared, /actor\.role === "admin"/);
   assert.match(shared, /actor\.permissions\.includes\("documents_manage"\)/);
   assert.match(shared, /const bucket = \(env as \{ UPLOADS\?: R2Bucket \}\)\.UPLOADS/);
-  assert.match(route, /\^%PDF-\[12\]/);
-  assert.match(route, /%%EOF/);
+  assert.match(shared, /\^%PDF-\[12\]/);
+  assert.match(shared, /%%EOF/);
   assert.match(route, /INSERT INTO documents/);
   assert.match(route, /DELETE FROM documents WHERE id=\?1/);
   assert.match(shared, /download \? "attachment" : "inline"/);
