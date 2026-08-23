@@ -1,13 +1,19 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
 import {
+  MAX_PDF_SIZE,
+  PDF_CHUNK_SIZE,
+  PDF_CONTENT_TYPE,
   canManageDocuments,
   documentActor,
   documentFolder,
   documentJson,
   documentSameOrigin,
   documentsBucket,
+  looksLikePdf,
   safeDocumentText,
+  safeR2FileName,
+  validPdfName,
   type DocumentRow,
 } from "./shared";
 
@@ -21,9 +27,8 @@ type StagedDocument = {
 
 type JsonMap = Record<string, unknown>;
 
-const PDF_CONTENT_TYPE = "application/pdf";
-const DOCUMENT_CHUNK_SIZE = 512 * 1024;
-const MAX_DOCUMENT_SIZE = 25 * 1024 * 1024;
+const DOCUMENT_CHUNK_SIZE = PDF_CHUNK_SIZE;
+const MAX_DOCUMENT_SIZE = MAX_PDF_SIZE;
 
 function numberValue(value: unknown) {
   return typeof value === "number" ? value : Number(value);
@@ -45,17 +50,6 @@ function partKey(sessionId: string, partNumber: number) {
   return `${stagingPrefix(sessionId)}/parts/${String(partNumber).padStart(4, "0")}`;
 }
 
-function validPdfName(fileName: string) {
-  return (
-    fileName.length > 4 &&
-    fileName.length <= 180 &&
-    fileName.toLowerCase().endsWith(".pdf") &&
-    !fileName.includes("/") &&
-    !fileName.includes("\\") &&
-    !/[\u0000-\u001f\u007f]/.test(fileName)
-  );
-}
-
 function pdfMetadataError(metadata: StagedDocument) {
   if (!validPdfName(metadata.fileName)) return "SELECIONE UM ARQUIVO PDF VÁLIDO.";
   if (metadata.contentType !== PDF_CONTENT_TYPE) return "APENAS ARQUIVOS PDF SÃO ACEITOS.";
@@ -67,26 +61,6 @@ function pdfMetadataError(metadata: StagedDocument) {
   }
   if (!documentFolder(metadata.folderId)) return "PASTA DE DOCUMENTOS INVÁLIDA.";
   return "";
-}
-
-function looksLikePdf(bytes: Uint8Array) {
-  if (bytes.byteLength < 12) return false;
-  const decoder = new TextDecoder("latin1");
-  const header = decoder.decode(bytes.slice(0, 8));
-  if (!/^%PDF-[12]\.\d/.test(header)) return false;
-  const tail = decoder.decode(bytes.slice(Math.max(0, bytes.byteLength - 2048)));
-  return /%%EOF\s*$/.test(tail);
-}
-
-function safeR2FileName(fileName: string) {
-  const base = fileName
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\.pdf$/i, "")
-    .replace(/[^a-z0-9._-]+/gi, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 100);
-  return `${base || "documento"}.pdf`;
 }
 
 async function readMetadata(bucket: R2Bucket, sessionId: string) {

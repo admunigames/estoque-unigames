@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1127,7 +1127,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1384,7 +1384,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1429,7 +1429,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v53"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v54"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -1489,6 +1489,69 @@ test("registra e controla solicitações de Alterações PDV com permissões gra
   assert.match(schema, /export const pdvChangeRequests = pgTable/);
   assert.match(migration, /CREATE TABLE "pdv_change_requests"/);
   assert.match(migration, /pdv_change_requests_sale_idx/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+});
+
+test("registra, anexa e expira automaticamente o PDF das Notas de O.S. com permissões granulares por loja", async () => {
+  const [html, workerSource, route, attachmentRoute, fileRoute, shared, schema, migration] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/os-notes/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/os-notes/attachment/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/os-notes/file/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/documents/shared.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0023_closed_skrulls.sql", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(html, /id="navNotasOs" data-page="notasOs" data-permission="os_notes"/);
+  assert.match(html, /id="pageNotasOs" class="page wrap"/);
+  assert.match(html, /id="osNoteForm"/);
+  assert.match(html, /id="osNoteCompanyField" hidden/);
+  assert.match(html, /id="osNoteAttachInput"/);
+  assert.match(html, /data-os-note-status="pending"/);
+  assert.match(html, /data-os-note-status="attached"/);
+  assert.match(html, /value="os_notes:view"> Visualização/);
+  assert.match(html, /value="os_notes:create"> Cadastro/);
+  assert.match(html, /value="os_notes:attach"> Anexar nota \(PDF\)/);
+  assert.match(html, /value="os_notes:delete"> Exclusão/);
+  assert.match(html, /notasOs:'\/solicitacoes\/notas-os'/);
+  assert.match(html, /data-any-permission="pdv_requests,os_notes"/);
+
+  assert.match(
+    workerSource,
+    /"os_notes:view" \| "os_notes:create" \| "os_notes:attach" \| "os_notes:delete"/,
+  );
+  assert.match(workerSource, /"\/solicitacoes\/notas-os"/);
+  assert.match(
+    workerSource,
+    /path === "\/solicitacoes\/notas-os" \|\| path\.startsWith\("\/api\/os-notes"\)/,
+  );
+  assert.match(workerSource, /async function purgeOldOsNotes\(env: Env\)/);
+  assert.match(workerSource, /purgeOldOsNotes\(env\)/);
+  assert.match(workerSource, /cutoff\.setUTCDate\(cutoff\.getUTCDate\(\) - 30\)/);
+
+  assert.match(route, /!can\(actor, "os_notes:create"\)/);
+  assert.match(route, /!can\(actor, "os_notes:delete"\)/);
+  assert.match(route, /canSeeAllOsNoteStores/);
+  assert.match(route, /INSERT INTO os_notes/);
+  assert.match(route, /'pending'/);
+
+  assert.match(attachmentRoute, /!can\(actor, "os_notes:attach"\)/);
+  assert.match(attachmentRoute, /looksLikePdf/);
+  assert.match(attachmentRoute, /status='attached'/);
+  assert.match(attachmentRoute, /file_removed_at=''/);
+
+  assert.match(fileRoute, /row\.companyId !== actor\.companyId/);
+  assert.match(fileRoute, /O ANEXO DESTA SOLICITAÇÃO JÁ FOI REMOVIDO/);
+
+  assert.match(shared, /export function looksLikePdf/);
+  assert.match(shared, /export function safeR2FileName/);
+
+  assert.match(schema, /export const osNotes = pgTable/);
+  assert.match(migration, /CREATE TABLE "os_notes"/);
+  assert.match(migration, /os_notes_os_id_idx/);
   assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
 });
 
@@ -1735,8 +1798,8 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
   assert.match(shared, /actor\.role === "admin"/);
   assert.match(shared, /actor\.permissions\.includes\("documents_manage"\)/);
   assert.match(shared, /const bucket = \(env as \{ UPLOADS\?: R2Bucket \}\)\.UPLOADS/);
-  assert.match(route, /\^%PDF-\[12\]/);
-  assert.match(route, /%%EOF/);
+  assert.match(shared, /\^%PDF-\[12\]/);
+  assert.match(shared, /%%EOF/);
   assert.match(route, /INSERT INTO documents/);
   assert.match(route, /DELETE FROM documents WHERE id=\?1/);
   assert.match(shared, /download \? "attachment" : "inline"/);

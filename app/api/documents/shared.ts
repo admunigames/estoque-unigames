@@ -137,6 +137,53 @@ export async function documentsBucket(): Promise<R2Bucket> {
   return bucket;
 }
 
+export const PDF_CONTENT_TYPE = "application/pdf";
+export const PDF_CHUNK_SIZE = 512 * 1024;
+export const MAX_PDF_SIZE = 25 * 1024 * 1024;
+
+// Confere a assinatura real do arquivo (magic bytes + marcador de fim),
+// não apenas a extensão/Content-Type declarados pelo cliente — usado por
+// qualquer módulo que aceite upload de PDF (Documentos, Notas de O.S.).
+export function looksLikePdf(bytes: Uint8Array) {
+  if (bytes.byteLength < 12) return false;
+  const decoder = new TextDecoder("latin1");
+  const header = decoder.decode(bytes.slice(0, 8));
+  if (!/^%PDF-[12]\.\d/.test(header)) return false;
+  const tail = decoder.decode(bytes.slice(Math.max(0, bytes.byteLength - 2048)));
+  return /%%EOF\s*$/.test(tail);
+}
+
+
+function hasControlChar(value: string) {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code <= 31 || code === 127) return true;
+  }
+  return false;
+}
+
+export function safeR2FileName(fileName: string) {
+  const base = fileName
+    .normalize("NFKD")
+    .replace(/[^\x00-\x7f]/g, "")
+    .replace(/\.pdf$/i, "")
+    .replace(/[^a-z0-9._-]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 100);
+  return `${base || "documento"}.pdf`;
+}
+
+export function validPdfName(fileName: string) {
+  return (
+    fileName.length > 4 &&
+    fileName.length <= 180 &&
+    fileName.toLowerCase().endsWith(".pdf") &&
+    !fileName.includes("/") &&
+    !fileName.includes("\\") &&
+    !hasControlChar(fileName)
+  );
+}
+
 export function contentDisposition(fileName: string, download: boolean) {
   const fallback = fileName
     .normalize("NFKD")
