@@ -566,6 +566,39 @@ export const pdvChangeRequests = pgTable(
   ],
 );
 
+export const osNotes = pgTable(
+  "os_notes",
+  {
+    id: text("id").primaryKey(),
+    osId: text("os_id").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    requesterName: text("requester_name").notNull().default(""),
+    status: text("status").notNull().default("pending"),
+    fileName: text("file_name").notNull().default(""),
+    r2Key: text("r2_key").notNull().default(""),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    attachedBy: text("attached_by").notNull().default(""),
+    attachedByName: text("attached_by_name").notNull().default(""),
+    attachedAt: text("attached_at").notNull().default(""),
+    fileRemovedAt: text("file_removed_at").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("os_notes_company_status_created_idx").on(
+      table.companyId,
+      table.status,
+      table.createdAt,
+    ),
+    index("os_notes_os_id_idx").on(table.osId),
+  ],
+);
+
 export const supplyRequestEvents = pgTable(
   "supply_request_events",
   {
