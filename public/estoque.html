@@ -1104,6 +1104,7 @@
   .status-pill.progress{color:#a9d2ff; border-color:rgba(79,134,189,.55); background:rgba(79,134,189,.12);}
   .status-pill.done{color:#b7ead0; border-color:rgba(84,196,138,.38); background:rgba(84,196,138,.1);}
   .status-pill.waiting{color:#ffe0a1; border-color:rgba(228,184,95,.4); background:rgba(228,184,95,.1);}
+  .status-pill.alert{color:#ffb4a8; border-color:rgba(239,106,85,.45); background:rgba(239,106,85,.12);}
   .purchase-file-links{display:flex; flex-direction:column; gap:5px; min-width:130px;}
   .purchase-file-links a{color:var(--accent); font-size:9px; text-decoration:none; overflow-wrap:anywhere;}
   .purchase-file-links a:hover{text-decoration:underline;}
@@ -1789,6 +1790,7 @@
   html[data-theme="light"] .status-pill.progress{background:#dcecf8;color:#1f5f91;border-color:#70a0c8;}
   html[data-theme="light"] .status-pill.done{background:#e2f3e9;color:#236a47;border-color:#82b99d;}
   html[data-theme="light"] .status-pill.waiting{background:#fff2d8;color:#80570d;border-color:#d3ac62;}
+  html[data-theme="light"] .status-pill.alert{background:#fdecea;color:#a93428;border-color:#e0a79f;}
   html[data-theme="light"] .purchase-division summary{background:#e8f2f9;color:#245b88;border-color:#8fb1cd;}
   html[data-theme="light"] .purchase-division-content{
     background:#fff;color:#10283f;border-color:#9fb5c8;box-shadow:0 1px 3px rgba(28,67,102,.08);
@@ -2658,6 +2660,7 @@
     <a class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" data-home-desc="Atividades diárias e semanais que precisam ser realizadas pela loja." title="Missões" href="/missoes"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Missões</span></a>
     <a class="nav-item" id="navCaptacao" data-page="captacao" data-permission="captures" data-home-desc="Cadastro e acompanhamento dos produtos captados." title="Captação" href="/captacao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.3V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4.7"/><path d="M4 13.3h4.1l1.3 2h4.9l1.3-2H20"/><path d="M12 3.6v8"/><path d="m8.8 8.6 3.2 3 3.2-3"/></svg></span><span class="nav-label">Captação</span></a>
     <a class="nav-item" id="navInsumos" data-page="insumos" data-permission="supplies" data-home-desc="Anote faltas, solicite na segunda e confirme o recebimento." title="Insumos" href="/insumos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.3 20 7.6v8.8L12 20.7 4 16.4V7.6z"/><path d="M4 7.6 12 11.9l8-4.3"/><path d="M12 11.9v8.8"/></svg></span><span class="nav-label">Insumos</span></a>
+    <a class="nav-item" id="navAparelhosEmprestimo" data-page="aparelhosEmprestimo" data-permission="loans" data-home-desc="Solicite aparelhos disponíveis ou acompanhe empréstimos em andamento." title="Aparelhos de Empréstimo" href="/aparelhos-emprestimo"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Aparelhos de Empréstimo</span></a>
     <a class="nav-item" id="navInstrucoes" data-page="instrucoes" data-home-desc="Orientações gerais com prazo para as lojas." title="Instruções" href="/instrucoes"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.6" r=".9" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Instruções</span></a>
     <span class="nav-section-label">Gestão</span>
     <div class="nav-group">
@@ -3582,6 +3585,88 @@
       </section>
     </section>
 
+<!-- ================= APARELHOS DE EMPRÉSTIMO ================= -->
+    <section id="pageAparelhosEmprestimo" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Aparelhos de Empréstimo</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Solicite aparelhos disponíveis para empréstimo ou acompanhe e aprove solicitações das lojas.</p></div>
+      </header>
+
+      <section class="supply-register-panel" id="loanStorePanel" hidden>
+        <div class="supply-panel-head">
+          <div><h3>APARELHOS DISPONÍVEIS</h3><p>Aparelhos liberados para empréstimo no momento.</p></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Aparelho</th><th>IMEI/Série</th><th>Defeito</th><th></th></tr></thead>
+              <tbody id="loanAvailableBody"><tr><td colspan="4" class="responsive-empty">Carregando aparelhos…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="supply-panel-head" style="margin-top:22px;">
+          <div><h3>MINHAS SOLICITAÇÕES</h3><p>Acompanhe o andamento das solicitações feitas pela sua loja.</p></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Aparelho</th><th>Responsável</th><th>Status</th><th>Data da Solicitação</th><th>Emprestado há</th></tr></thead>
+              <tbody id="loanStoreRequestsBody"><tr><td colspan="5" class="responsive-empty">Nenhuma solicitação ainda.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="supply-admin-panel" id="loanAdminPanel" hidden>
+        <div class="supply-admin-panel-head">
+          <div><h3>ADMINISTRAÇÃO DE APARELHOS DE EMPRÉSTIMO</h3><p>Cadastre os aparelhos disponíveis e gerencie as solicitações das lojas.</p></div>
+        </div>
+        <div class="supply-tabs supply-admin-tabs" role="tablist" aria-label="Seções de aparelhos de empréstimo">
+          <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-loan-admin-tab="catalogo">CATÁLOGO</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-loan-admin-tab="solicitacoes">SOLICITAÇÕES</button>
+        </div>
+
+        <div class="supply-admin-tab-panel" id="loanAdminCatalogo">
+          <form class="supply-product-form" id="loanDeviceForm">
+            <input type="hidden" id="loanDeviceId">
+            <div class="field full"><label for="loanDeviceName">NOME/MODELO DO APARELHO</label><input id="loanDeviceName" maxlength="180" required placeholder="Ex.: CELULAR REALME NOTE 60X 3GB + 64GB PRETO"></div>
+            <div class="field"><label for="loanDeviceImei">IMEI/SÉRIE</label><input id="loanDeviceImei" maxlength="60"></div>
+            <div class="field"><label for="loanDeviceStatus">STATUS</label><select id="loanDeviceStatus"><option value="available">DISPONÍVEL</option><option value="maintenance">MANUTENÇÃO</option><option value="loaned">EMPRESTADO</option></select></div>
+            <div class="field"><label for="loanDeviceHasDefect" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="loanDeviceHasDefect" style="width:auto;"> POSSUI DEFEITO</label></div>
+            <div class="field full" id="loanDeviceDefectField" hidden><label for="loanDeviceDefectDescription">DESCRIÇÃO DO DEFEITO</label><textarea id="loanDeviceDefectDescription" maxlength="400" rows="2"></textarea></div>
+            <div class="field full" style="display:flex;justify-content:flex-end;gap:8px;">
+              <button class="btn-outline" id="btnCancelLoanDevice" type="button" hidden>CANCELAR EDIÇÃO</button>
+              <button class="btn-accent" id="btnSaveLoanDevice" type="submit">SALVAR APARELHO</button>
+            </div>
+          </form>
+          <div class="user-form-status" id="loanDeviceFormStatus" role="status" aria-live="polite"></div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Aparelho</th><th>IMEI/Série</th><th>Defeito</th><th>Status</th><th>Loja atual</th><th></th></tr></thead>
+                <tbody id="loanDevicesBody"><tr><td colspan="6" class="responsive-empty">Carregando aparelhos…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="supply-admin-tab-panel" id="loanAdminSolicitacoes" hidden>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Loja</th><th>Aparelho</th><th>Responsável</th><th>Status</th><th>Data da Solicitação</th><th></th></tr></thead>
+                <tbody id="loanRequestsBody"><tr><td colspan="6" class="responsive-empty">Carregando solicitações…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
 <!-- ================= INSTRUÇÕES ================= -->
     <section id="pageInstrucoes" class="page wrap">
       <header class="page-header">
@@ -4351,6 +4436,17 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>Aparelhos de Empréstimo</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:view"> Visualizar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:create"> Cadastrar aparelho</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:edit"> Editar aparelho</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:delete"> Excluir aparelho</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:request"> Solicitar aparelho (loja)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:manage_requests"> Gerenciar solicitações (marcar emprestado, responder, apagar)</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Compras</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:view"> Visualizar</label>
@@ -4623,6 +4719,58 @@
       <button class="btn-accent" id="btnSavePartialDelivery" type="submit">REGISTRAR ENTREGA</button>
     </div>
   </form>
+</dialog>
+<dialog class="purchase-dialog" id="loanRequestDialog" aria-labelledby="loanRequestDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="loanRequestDialogTitle">SOLICITAR APARELHO</h3>
+    <button class="purchase-dialog-close" id="btnCloseLoanRequestDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="loanRequestForm">
+    <input type="hidden" id="loanRequestDeviceId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label>APARELHO</label><div class="supply-missing-week" id="loanRequestDeviceName">—</div></div>
+      <div class="purchase-field"><label for="loanRequestResponsible">RESPONSÁVEL PELA SOLICITAÇÃO *</label><input id="loanRequestResponsible" maxlength="120" required></div>
+      <div class="purchase-field full"><label for="loanRequestReason">MOTIVO DA SOLICITAÇÃO *</label><textarea id="loanRequestReason" rows="3" maxlength="400" required></textarea></div>
+    </div>
+    <div class="user-form-status" id="loanRequestFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelLoanRequest" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSubmitLoanRequest" type="submit">ENVIAR SOLICITAÇÃO</button>
+    </div>
+  </form>
+</dialog>
+<dialog class="purchase-dialog" id="loanRequestDetailsDialog" aria-labelledby="loanRequestDetailsDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="loanRequestDetailsDialogTitle">DETALHES DA SOLICITAÇÃO</h3>
+    <button class="purchase-dialog-close" id="btnCloseLoanRequestDetailsDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <input type="hidden" id="loanRequestDetailsId">
+  <div class="purchase-card-details" id="loanRequestDetailsMeta"></div>
+  <div class="user-form-status" id="loanRequestDetailsStatus" role="status" aria-live="polite"></div>
+  <div class="purchase-form-actions" style="justify-content:flex-start;">
+    <button class="btn-accent" id="btnMarkLoanLoaned" type="button" data-permission="loans:manage_requests" hidden>MARCAR COMO EMPRESTADO</button>
+  </div>
+
+  <div class="supply-panel-head" id="loanReportPanel" style="margin-top:18px;" hidden>
+    <div><h3>RELATÓRIO PARA O WHATSAPP DA LOJA</h3><p>Copie o texto abaixo ou baixe como TXT.</p></div>
+  </div>
+  <textarea id="loanReportText" rows="8" readonly hidden style="width:100%;font:12px/1.5 var(--mono);"></textarea>
+  <div class="purchase-form-actions" id="loanReportActions" hidden>
+    <button class="btn-outline" id="btnDownloadLoanReport" type="button">BAIXAR TXT</button>
+  </div>
+
+  <div class="supply-panel-head" style="margin-top:18px;">
+    <div><h3>ATUALIZAÇÕES</h3><p>Histórico de mensagens sobre esta solicitação.</p></div>
+  </div>
+  <div class="supply-separation-list" id="loanRequestUpdatesList"><div class="supply-empty">Nenhuma atualização ainda.</div></div>
+  <form id="loanRequestUpdateForm" data-permission="loans:manage_requests">
+    <div class="field full"><label for="loanRequestUpdateMessage">NOVA ATUALIZAÇÃO</label><textarea id="loanRequestUpdateMessage" rows="2" maxlength="2000" required></textarea></div>
+    <div class="purchase-form-actions"><button class="btn-accent" id="btnSendLoanRequestUpdate" type="submit">ENVIAR</button></div>
+  </form>
+
+  <div class="purchase-form-actions" style="border-top:1px solid var(--border); margin-top:18px; padding-top:14px;">
+    <button class="btn-danger-outline" id="btnDeleteLoanRequest" type="button" data-permission="loans:manage_requests">APAGAR SOLICITAÇÃO</button>
+  </div>
 </dialog>
 <dialog class="purchase-dialog" id="appearanceDialog" aria-labelledby="appearanceDialogTitle">
   <div class="purchase-dialog-head">
@@ -5200,6 +5348,7 @@
     saidas:'/saidas',
     entradas:'/entradas',
     insumos:'/insumos',
+    aparelhosEmprestimo:'/aparelhos-emprestimo',
     instrucoes:'/instrucoes',
     alteracoesPdv:'/solicitacoes/alteracoes-pdv',
     notasOs:'/solicitacoes/notas-os',
@@ -5224,6 +5373,7 @@
     saidas:'SAÍDAS',
     entradas:'ENTRADA',
     insumos:'INSUMOS',
+    aparelhosEmprestimo:'APARELHOS DE EMPRÉSTIMO',
     instrucoes:'INSTRUÇÕES',
     alteracoesPdv:'ALTERAÇÕES PDV',
     notasOs:'NOTAS DE O.S.',
@@ -5243,6 +5393,7 @@
     saidas:'outputs',
     entradas:'inputs',
     insumos:'supplies',
+    aparelhosEmprestimo:'loans',
     alteracoesPdv:'pdv_requests',
     notasOs:'os_notes',
     cadastros:'database',
@@ -5699,6 +5850,7 @@
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
+    if(name === 'aparelhosEmprestimo') loadLoans();
     if(name === 'instrucoes') loadInstructions();
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'notasOs') loadOsNotes();
@@ -12995,6 +13147,463 @@ function renderHomeTasks(){
           : 'Nenhuma instrução vigente para as lojas neste momento.')+'</div>';
   }
 
+  // ================= APARELHOS DE EMPRÉSTIMO =================
+  const LOAN_ALERT_DAYS = 15;
+  const LOAN_STATUS_LABELS = {requested:'AGUARDANDO SEPARAÇÃO',loaned:'EMPRESTADO'};
+  const LOAN_DEVICE_STATUS_LABELS = {available:'DISPONÍVEL',loaned:'EMPRESTADO',maintenance:'MANUTENÇÃO'};
+  let loanDevicesCache = [];
+  let loanRequestsCache = [];
+  let loanAdminTab = 'catalogo';
+  let loanRequestUpdatesCache = [];
+
+  function loanCanManageCatalog(){
+    return canAccess('loans:create') || canAccess('loans:edit') || canAccess('loans:delete');
+  }
+  function loanCanManageRequests(){
+    return canAccess('loans:manage_requests');
+  }
+  function loanCanRequest(){
+    return canAccess('loans:request');
+  }
+
+  function loanDaysSince(value){
+    if(!value) return null;
+    const raw = String(value).trim();
+    if(!raw) return null;
+    const hasOffset = /(Z|[+-]\d{2}(:?\d{2})?)$/.test(raw);
+    const normalized = hasOffset ? raw : (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(raw) ? raw.replace(' ','T')+'Z' : raw);
+    const date = new Date(normalized);
+    if(Number.isNaN(date.getTime())) return null;
+    return Math.max(0,Math.floor((Date.now() - date.getTime()) / 86400000));
+  }
+
+  function loanDaysBadge(value){
+    const days = loanDaysSince(value);
+    if(days === null) return '';
+    const alert = days >= LOAN_ALERT_DAYS;
+    return '<span class="status-pill '+(alert ? 'alert' : 'waiting')+'">'+(alert ? '⚠ ' : '')+days+'d</span>';
+  }
+
+  function loanStatusPill(status){
+    const tone = status === 'loaned' ? 'done' : 'waiting';
+    return '<span class="status-pill '+tone+'">'+escapeHtml(LOAN_STATUS_LABELS[status] || String(status).toUpperCase())+'</span>';
+  }
+
+  function loanDeviceStatusPill(status){
+    const tone = status === 'available' ? 'done' : status === 'maintenance' ? 'waiting' : 'progress';
+    return '<span class="status-pill '+tone+'">'+escapeHtml(LOAN_DEVICE_STATUS_LABELS[status] || String(status).toUpperCase())+'</span>';
+  }
+
+  async function loanApiRequest(path,options){
+    const response = await fetch(path,{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json','Content-Type':'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function updateLoanRoleVisibility(){
+    const manageCatalog = loanCanManageCatalog();
+    const manageRequests = loanCanManageRequests();
+    el('loanStorePanel').hidden = !loanCanRequest();
+    el('loanAdminPanel').hidden = !(manageCatalog || manageRequests);
+    el('loanDeviceForm').hidden = !manageCatalog;
+    const requestsTabButton = document.querySelector('[data-loan-admin-tab="solicitacoes"]');
+    if(requestsTabButton) requestsTabButton.hidden = !manageRequests;
+    if(!manageRequests && loanAdminTab === 'solicitacoes') setLoanAdminTab('catalogo');
+  }
+
+  function setLoanAdminTab(tab){
+    loanAdminTab = tab;
+    document.querySelectorAll('[data-loan-admin-tab]').forEach(button => {
+      const active = button.dataset.loanAdminTab === tab;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',active ? 'true' : 'false');
+    });
+    el('loanAdminCatalogo').hidden = tab !== 'catalogo';
+    el('loanAdminSolicitacoes').hidden = tab !== 'solicitacoes';
+  }
+  document.querySelectorAll('[data-loan-admin-tab]').forEach(button => {
+    button.addEventListener('click',() => setLoanAdminTab(button.dataset.loanAdminTab));
+  });
+
+  function renderLoanAvailable(){
+    const tbody = el('loanAvailableBody');
+    const items = loanDevicesCache.filter(device => device.status === 'available');
+    if(!items.length){
+      tbody.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhum aparelho disponível no momento.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(device => (
+      '<tr>'+
+        '<td>'+escapeHtml(device.name)+'</td>'+
+        '<td>'+escapeHtml(device.imei || '—')+'</td>'+
+        '<td>'+(device.hasDefect ? escapeHtml(device.defectDescription || 'SIM') : 'NÃO')+'</td>'+
+        '<td style="text-align:right;"><button class="btn-accent" type="button" data-loan-request-device="'+escapeHtml(device.id)+'">SOLICITAR</button></td>'+
+      '</tr>'
+    )).join('');
+  }
+
+  function renderLoanDevices(){
+    const tbody = el('loanDevicesBody');
+    if(!loanDevicesCache.length){
+      tbody.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum aparelho cadastrado ainda.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = loanDevicesCache.map(device => {
+      const dayBadge = device.status === 'loaned' ? loanDaysBadge(device.loanedAt) : '';
+      const currentCompany = device.status === 'loaned'
+        ? escapeHtml(device.currentCompanyName || '—')+(dayBadge ? ' '+dayBadge : '')
+        : '—';
+      const actions = (canAccess('loans:edit') ? '<button class="btn-outline" type="button" data-loan-device-edit="'+escapeHtml(device.id)+'">EDITAR</button>' : '')+
+        (canAccess('loans:delete') ? '<button class="btn-danger-outline" type="button" data-loan-device-delete="'+escapeHtml(device.id)+'">EXCLUIR</button>' : '');
+      return '<tr>'+
+        '<td>'+escapeHtml(device.name)+'</td>'+
+        '<td>'+escapeHtml(device.imei || '—')+'</td>'+
+        '<td>'+(device.hasDefect ? escapeHtml(device.defectDescription || 'SIM') : 'NÃO')+'</td>'+
+        '<td>'+loanDeviceStatusPill(device.status)+'</td>'+
+        '<td>'+currentCompany+'</td>'+
+        '<td style="text-align:right; white-space:nowrap;">'+actions+'</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function renderLoanStoreRequests(){
+    const tbody = el('loanStoreRequestsBody');
+    if(!loanRequestsCache.length){
+      tbody.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhuma solicitação ainda.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = loanRequestsCache.map(request => (
+      '<tr>'+
+        '<td>'+escapeHtml(request.deviceName)+'</td>'+
+        '<td>'+escapeHtml(request.responsibleName || '—')+'</td>'+
+        '<td>'+loanStatusPill(request.status)+'</td>'+
+        '<td>'+escapeHtml(formatDateTimeBR(request.createdAt))+'</td>'+
+        '<td>'+(request.status === 'loaned' ? loanDaysBadge(request.separatedAt) : '—')+'</td>'+
+      '</tr>'
+    )).join('');
+  }
+
+  function renderLoanRequests(){
+    const tbody = el('loanRequestsBody');
+    if(!loanRequestsCache.length){
+      tbody.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhuma solicitação registrada ainda.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = loanRequestsCache.map(request => (
+      '<tr>'+
+        '<td>'+escapeHtml(request.companyName || '—')+'</td>'+
+        '<td>'+escapeHtml(request.deviceName)+'</td>'+
+        '<td>'+escapeHtml(request.responsibleName || '—')+'</td>'+
+        '<td>'+loanStatusPill(request.status)+'</td>'+
+        '<td>'+escapeHtml(formatDateTimeBR(request.createdAt))+'</td>'+
+        '<td style="text-align:right;"><button class="btn-outline" type="button" data-loan-request-details="'+escapeHtml(request.id)+'">DETALHES</button></td>'+
+      '</tr>'
+    )).join('');
+  }
+
+  async function loadLoanDevices(){
+    try{
+      const data = await loanApiRequest('/api/loans/devices');
+      loanDevicesCache = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      loanDevicesCache = [];
+      el('loanAvailableBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('loanDevicesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    renderLoanAvailable();
+    renderLoanDevices();
+  }
+
+  async function loadLoanRequests(){
+    try{
+      const data = await loanApiRequest('/api/loans/requests');
+      loanRequestsCache = Array.isArray(data.requests) ? data.requests : [];
+    }catch(error){
+      loanRequestsCache = [];
+      el('loanStoreRequestsBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('loanRequestsBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    renderLoanStoreRequests();
+    renderLoanRequests();
+  }
+
+  function loadLoans(){
+    if(!canAccess('loans')) return;
+    updateLoanRoleVisibility();
+    loadLoanDevices();
+    loadLoanRequests();
+  }
+
+  function setLoanDeviceFormStatus(message,type){
+    const status = el('loanDeviceFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  function resetLoanDeviceForm(){
+    el('loanDeviceId').value = '';
+    el('loanDeviceForm').reset();
+    el('loanDeviceStatus').value = 'available';
+    el('loanDeviceDefectField').hidden = true;
+    el('btnCancelLoanDevice').hidden = true;
+    el('btnSaveLoanDevice').textContent = 'SALVAR APARELHO';
+  }
+
+  el('loanDeviceHasDefect').addEventListener('change',() => {
+    el('loanDeviceDefectField').hidden = !el('loanDeviceHasDefect').checked;
+  });
+  el('btnCancelLoanDevice').addEventListener('click',resetLoanDeviceForm);
+
+  el('loanDeviceForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const id = el('loanDeviceId').value;
+    const body = {
+      name:el('loanDeviceName').value,
+      imei:el('loanDeviceImei').value,
+      hasDefect:el('loanDeviceHasDefect').checked,
+      defectDescription:el('loanDeviceDefectDescription').value,
+      status:el('loanDeviceStatus').value
+    };
+    if(id) body.id = id;
+    setLoanDeviceFormStatus('SALVANDO…');
+    try{
+      await loanApiRequest('/api/loans/devices',{method:id ? 'PATCH' : 'POST',body:JSON.stringify(body)});
+      setLoanDeviceFormStatus(id ? 'APARELHO ATUALIZADO.' : 'APARELHO CADASTRADO.','success');
+      resetLoanDeviceForm();
+      loadLoanDevices();
+    }catch(error){
+      setLoanDeviceFormStatus(error.message,'error');
+    }
+  });
+
+  el('loanDevicesBody').addEventListener('click',async event => {
+    const editButton = event.target.closest('[data-loan-device-edit]');
+    if(editButton){
+      const device = loanDevicesCache.find(item => item.id === editButton.dataset.loanDeviceEdit);
+      if(!device) return;
+      el('loanDeviceId').value = device.id;
+      el('loanDeviceName').value = device.name;
+      el('loanDeviceImei').value = device.imei;
+      el('loanDeviceStatus').value = device.status;
+      el('loanDeviceHasDefect').checked = Boolean(device.hasDefect);
+      el('loanDeviceDefectField').hidden = !device.hasDefect;
+      el('loanDeviceDefectDescription').value = device.defectDescription;
+      el('btnCancelLoanDevice').hidden = false;
+      el('btnSaveLoanDevice').textContent = 'SALVAR ALTERAÇÕES';
+      el('loanDeviceName').focus();
+      return;
+    }
+    const deleteButton = event.target.closest('[data-loan-device-delete]');
+    if(deleteButton){
+      const device = loanDevicesCache.find(item => item.id === deleteButton.dataset.loanDeviceDelete);
+      if(!device || !confirm('EXCLUIR O APARELHO "'+device.name+'"?')) return;
+      try{
+        await loanApiRequest('/api/loans/devices',{method:'DELETE',body:JSON.stringify({id:device.id})});
+        loadLoanDevices();
+      }catch(error){
+        alert(error.message);
+      }
+    }
+  });
+
+  function setLoanRequestFormStatus(message,type){
+    const status = el('loanRequestFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+  function closeLoanRequestDialog(){
+    if(el('loanRequestDialog').open) el('loanRequestDialog').close();
+  }
+  el('btnCloseLoanRequestDialog').addEventListener('click',closeLoanRequestDialog);
+  el('btnCancelLoanRequest').addEventListener('click',closeLoanRequestDialog);
+  el('loanRequestDialog').addEventListener('click',event => {
+    if(event.target === el('loanRequestDialog')) closeLoanRequestDialog();
+  });
+
+  el('loanAvailableBody').addEventListener('click',event => {
+    const button = event.target.closest('[data-loan-request-device]');
+    if(!button) return;
+    const device = loanDevicesCache.find(item => item.id === button.dataset.loanRequestDevice);
+    if(!device) return;
+    el('loanRequestForm').reset();
+    el('loanRequestDeviceId').value = device.id;
+    el('loanRequestDeviceName').textContent = device.name;
+    setLoanRequestFormStatus('');
+    el('loanRequestDialog').showModal();
+  });
+
+  el('loanRequestForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    setLoanRequestFormStatus('ENVIANDO…');
+    try{
+      await loanApiRequest('/api/loans/requests',{
+        method:'POST',
+        body:JSON.stringify({
+          deviceId:el('loanRequestDeviceId').value,
+          responsibleName:el('loanRequestResponsible').value,
+          reason:el('loanRequestReason').value
+        })
+      });
+      closeLoanRequestDialog();
+      loadLoanDevices();
+      loadLoanRequests();
+    }catch(error){
+      setLoanRequestFormStatus(error.message,'error');
+    }
+  });
+
+  function loanRequestDetailsMetaHtml(request){
+    const fields = [
+      ['LOJA',request.companyName || '—'],
+      ['RESPONSÁVEL',request.responsibleName || '—'],
+      ['APARELHO',request.deviceName || '—'],
+      ['STATUS',LOAN_STATUS_LABELS[request.status] || request.status],
+      ['DATA DA SOLICITAÇÃO',formatDateTimeBR(request.createdAt) || '—'],
+      ['DATA DA SEPARAÇÃO',request.separatedAt ? formatDateTimeBR(request.separatedAt) : '—']
+    ];
+    const detailBoxes = fields.map(([label,value]) =>
+      '<div class="purchase-card-detail"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong></div>'
+    ).join('');
+    return detailBoxes+'<div class="purchase-card-detail wide"><span>MOTIVO</span><strong>'+escapeHtml(request.reason || '—')+'</strong></div>';
+  }
+
+  function loanWhatsappReportText(request){
+    return [
+      '*APARELHO SEPARADO PARA EMPRÉSTIMO*',
+      '',
+      'Loja: '+(request.companyName || '—'),
+      'Aparelho: '+(request.deviceName || '—'),
+      'Responsável: '+(request.responsibleName || '—'),
+      'Data da separação: '+(formatDateTimeBR(request.separatedAt) || '—'),
+      '',
+      'O aparelho foi separado e seguirá pela logística.'
+    ].join('\r\n');
+  }
+
+  function setLoanRequestDetailsStatus(message,type){
+    const status = el('loanRequestDetailsStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  function renderLoanRequestUpdates(){
+    const list = el('loanRequestUpdatesList');
+    if(!loanRequestUpdatesCache.length){
+      list.innerHTML = '<div class="supply-empty">Nenhuma atualização ainda.</div>';
+      return;
+    }
+    list.innerHTML = loanRequestUpdatesCache.map(update => (
+      '<div class="supply-register-panel" style="padding:10px 12px;">'+
+        '<div style="display:flex;justify-content:space-between;gap:10px;font:800 9px var(--mono);color:var(--ink-soft);">'+
+          '<span>'+escapeHtml(update.authorName || '—')+'</span><span>'+escapeHtml(formatDateTimeBR(update.createdAt))+'</span>'+
+        '</div>'+
+        '<p style="margin:6px 0 0;white-space:pre-wrap;">'+escapeHtml(update.message)+'</p>'+
+      '</div>'
+    )).join('');
+  }
+
+  async function loadLoanRequestUpdates(requestId){
+    try{
+      const data = await loanApiRequest('/api/loans/requests/comments?requestId='+encodeURIComponent(requestId));
+      loanRequestUpdatesCache = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      loanRequestUpdatesCache = [];
+    }
+    renderLoanRequestUpdates();
+  }
+
+  function openLoanRequestDetailsDialog(requestId){
+    const request = loanRequestsCache.find(item => item.id === requestId);
+    if(!request) return;
+    el('loanRequestDetailsId').value = request.id;
+    el('loanRequestDetailsMeta').innerHTML = loanRequestDetailsMetaHtml(request);
+    setLoanRequestDetailsStatus('');
+    el('btnMarkLoanLoaned').hidden = request.status === 'loaned';
+    el('loanReportPanel').hidden = request.status !== 'loaned';
+    el('loanReportText').hidden = request.status !== 'loaned';
+    el('loanReportActions').hidden = request.status !== 'loaned';
+    if(request.status === 'loaned') el('loanReportText').value = loanWhatsappReportText(request);
+    el('loanRequestUpdateForm').reset();
+    loadLoanRequestUpdates(request.id);
+    el('loanRequestDetailsDialog').showModal();
+  }
+
+  el('loanRequestsBody').addEventListener('click',event => {
+    const button = event.target.closest('[data-loan-request-details]');
+    if(!button) return;
+    openLoanRequestDetailsDialog(button.dataset.loanRequestDetails);
+  });
+
+  function closeLoanRequestDetailsDialog(){
+    if(el('loanRequestDetailsDialog').open) el('loanRequestDetailsDialog').close();
+  }
+  el('btnCloseLoanRequestDetailsDialog').addEventListener('click',closeLoanRequestDetailsDialog);
+  el('loanRequestDetailsDialog').addEventListener('click',event => {
+    if(event.target === el('loanRequestDetailsDialog')) closeLoanRequestDetailsDialog();
+  });
+
+  el('btnMarkLoanLoaned').addEventListener('click',async () => {
+    const id = el('loanRequestDetailsId').value;
+    if(!id) return;
+    setLoanRequestDetailsStatus('ATUALIZANDO…');
+    try{
+      await loanApiRequest('/api/loans/requests',{method:'PATCH',body:JSON.stringify({id,action:'loan'})});
+      await loadLoanRequests();
+      await loadLoanDevices();
+      openLoanRequestDetailsDialog(id);
+      setLoanRequestDetailsStatus('SOLICITAÇÃO MARCADA COMO EMPRESTADA.','success');
+    }catch(error){
+      setLoanRequestDetailsStatus(error.message,'error');
+    }
+  });
+
+  el('btnDownloadLoanReport').addEventListener('click',() => {
+    const request = loanRequestsCache.find(item => item.id === el('loanRequestDetailsId').value);
+    if(!request) return;
+    const blob = new Blob(['﻿'+loanWhatsappReportText(request)],{type:'text/plain;charset=utf-8'});
+    downloadBlobFile(blob,'aparelho-emprestimo-'+request.id+'.txt');
+  });
+
+  el('loanRequestUpdateForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const requestId = el('loanRequestDetailsId').value;
+    const message = el('loanRequestUpdateMessage').value;
+    if(!requestId || !message.trim()) return;
+    setLoanRequestDetailsStatus('ENVIANDO…');
+    try{
+      await loanApiRequest('/api/loans/requests/comments',{method:'POST',body:JSON.stringify({requestId,message})});
+      el('loanRequestUpdateForm').reset();
+      await loadLoanRequestUpdates(requestId);
+      setLoanRequestDetailsStatus('ATUALIZAÇÃO REGISTRADA.','success');
+    }catch(error){
+      setLoanRequestDetailsStatus(error.message,'error');
+    }
+  });
+
+  el('btnDeleteLoanRequest').addEventListener('click',async () => {
+    const id = el('loanRequestDetailsId').value;
+    const request = loanRequestsCache.find(item => item.id === id);
+    if(!id || !request || !confirm('APAGAR ESTA SOLICITAÇÃO? ESTA AÇÃO NÃO PODE SER DESFEITA.')) return;
+    try{
+      await loanApiRequest('/api/loans/requests',{method:'DELETE',body:JSON.stringify({id})});
+      closeLoanRequestDetailsDialog();
+      loadLoanRequests();
+    }catch(error){
+      alert(error.message);
+    }
+  });
+
   async function loadInstructions(){
     el('instructionList').innerHTML = '<div class="instruction-empty">Carregando instruções…</div>';
     try{
@@ -14168,6 +14777,7 @@ function renderHomeTasks(){
     'outputs:view':'Saídas: visualizar','outputs:create':'Saídas: cadastrar','outputs:complete':'Saídas: concluir','outputs:delete':'Saídas: excluir',
     'inputs:view':'Entrada: visualizar','inputs:create':'Entrada: cadastrar','inputs:complete':'Entrada: concluir','inputs:delete':'Entrada: excluir',
     'supplies:view':'Insumos: visualizar','supplies:request':'Insumos: solicitar','supplies:receive':'Insumos: receber solicitação','supplies:stock_in':'Insumos: entrada','supplies:stock_out':'Insumos: saída','supplies:delete':'Insumos: excluir','supplies:manage_catalog':'Insumos: produtos/categorias',
+    'loans:view':'Aparelhos de Empréstimo: visualizar','loans:create':'Aparelhos de Empréstimo: cadastrar aparelho','loans:edit':'Aparelhos de Empréstimo: editar aparelho','loans:delete':'Aparelhos de Empréstimo: excluir aparelho','loans:request':'Aparelhos de Empréstimo: solicitar','loans:manage_requests':'Aparelhos de Empréstimo: gerenciar solicitações',
     'purchases:view':'Compras: visualizar','purchases:create':'Compras: cadastrar','purchases:edit':'Compras: editar','purchases:delete':'Compras: excluir',
     'stock:view':'Estoque Fiscal',
     'database:view':'Base de Dados: visualizar','database:manage':'Base de Dados: cadastrar/editar/excluir',
@@ -14196,7 +14806,7 @@ function renderHomeTasks(){
     administrator: Object.keys(permissionNames).concat(['documents_manage']),
     purchases:['tasks:view','tasks:manage','missions:view','missions:notify','captures:view','captures:create','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out','purchases:view','purchases:create','purchases:edit','purchases:delete'],
     fiscal:['missions:view','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out','stock:view','database:view','database:manage','pulls:view','report41:view'],
-    operator:['tasks:view','tasks:manage','missions:view','missions:notify','captures:view','captures:create','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out'],
+    operator:['tasks:view','tasks:manage','missions:view','missions:notify','captures:view','captures:create','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out','loans:view','loans:request'],
     assistance:['captures:view','captures:create','captures:receive','captures:delete']
   };
 

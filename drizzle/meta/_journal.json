@@ -176,6 +176,13 @@
       "when": 1787496716315,
       "tag": "0024_tired_exiles",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1787501377821,
+      "tag": "0025_gigantic_diamondback",
+      "breakpoints": true
     }
   ]
 }
