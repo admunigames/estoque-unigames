@@ -2669,6 +2669,7 @@
         <a class="nav-item sub-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal" href="/estoque"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/><line x1="3" y1="19" x2="21" y2="19"/></svg></span><span class="nav-label">Estoque Fiscal</span></a>
         <a class="nav-item sub-item" id="navCompras" data-page="compras" data-permission="purchases" data-home-desc="Pedidos, recebimentos e divisões." title="Controle de Compras" href="/compras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><path d="M3.5 4h2.2l2 11.2a1.8 1.8 0 0 0 1.8 1.5h8a1.8 1.8 0 0 0 1.76-1.44L20.8 8H6.4"/></svg></span><span class="nav-label">Controle de Compras</span></a>
         <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc="Saídas Gerais Solicitadas pelas lojas." title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5"/><path d="M11 12h9.5"/><path d="m16.5 8 4 4-4 4"/></svg></span><span class="nav-label">Saídas</span></a>
+        <a class="nav-item sub-item" id="navEntradas" data-page="entradas" data-permission="inputs" data-home-desc="Entradas Gerais Solicitadas pelas lojas." title="Entrada" href="/entradas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 4H17a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.5"/><path d="M13 12H3.5"/><path d="m7.5 8-4 4 4 4"/></svg></span><span class="nav-label">Entrada</span></a>
       </div>
     </div>
     <div class="nav-group">
@@ -3292,6 +3293,53 @@
           </div>
         </div>
         <div class="output-list" id="outputList" aria-live="polite"><div class="output-empty">Carregando solicitações…</div></div>
+      </section>
+    </section>
+
+    <section id="pageEntradas" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Entrada</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Registre e acompanhe as Entradas Gerais Solicitadas pelas lojas. O administrador conclui a baixa e o registro permanece no histórico.</p></div>
+      </header>
+
+      <section class="output-summary" id="inputSummary" aria-label="Resumo das entradas">
+        <article class="output-summary-card"><span>AGUARDANDO EFETUAÇÃO</span><strong id="inputRequestedCount">0</strong></article>
+        <article class="output-summary-card completed"><span>HISTÓRICO EFETUADO</span><strong id="inputCompletedCount">0</strong></article>
+      </section>
+
+      <section class="output-register-panel" id="inputRegisterPanel">
+        <div class="output-panel-head">
+          <div><h3>REGISTRAR SOLICITAÇÃO DE ENTRADA</h3><p id="inputRegisterDescription">Informe os dados da entrada.</p></div>
+        </div>
+        <form id="inputForm">
+          <div class="output-form-grid">
+            <div class="field"><label for="inputQuantity">QUANTIDADE</label><input id="inputQuantity" type="number" min="1" max="9999" step="1" required value="1"></div>
+            <div class="field" id="inputCompanyField" hidden><label for="inputCompany">LOJA</label><select id="inputCompany"><option value="">SELECIONE A LOJA</option></select></div>
+            <div class="field double"><label for="inputProductName">PRODUTO</label><input id="inputProductName" maxlength="180" required placeholder="Ex.: Controle DualSense PS5"></div>
+            <div class="field"><label for="inputResponsible">RESPONSÁVEL PELA ENTRADA</label><input id="inputResponsible" maxlength="120" required placeholder="Nome de quem é responsável pela entrada"></div>
+            <div class="field full"><label for="inputReason">MOTIVO DA ENTRADA</label><textarea id="inputReason" maxlength="1200" rows="3" required placeholder="Descreva o motivo da entrada."></textarea></div>
+          </div>
+          <div class="output-form-actions"><button class="btn-accent" id="btnSaveInput" type="submit">ENVIAR SOLICITAÇÃO</button></div>
+          <div class="user-form-status" id="inputFormStatus" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="output-board">
+        <div class="output-board-head">
+          <div><h3>SOLICITAÇÕES DE ENTRADA</h3><p id="inputBoardDescription">Acompanhe as solicitações registradas pela sua loja.</p></div>
+          <button class="btn-outline" id="btnRefreshInputs" type="button">ATUALIZAR</button>
+        </div>
+        <div class="output-toolbar">
+          <div class="field search"><label for="inputSearch">BUSCAR</label><input id="inputSearch" type="search" placeholder="Produto, loja, responsável ou motivo"></div>
+          <div class="output-tabs" role="tablist" aria-label="Situação das entradas">
+            <button class="output-tab active" type="button" role="tab" aria-selected="true" data-input-view="requested">PENDENTES</button>
+            <button class="output-tab" type="button" role="tab" aria-selected="false" data-input-view="completed">HISTÓRICO</button>
+          </div>
+        </div>
+        <div class="output-list" id="inputList" aria-live="polite"><div class="output-empty">Carregando solicitações…</div></div>
       </section>
     </section>
 
@@ -4281,6 +4329,15 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>Entrada</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:view"> Visualizar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:create"> Cadastrar entradas</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:complete"> Concluir entradas</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:delete"> Excluir entradas</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Insumos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:view"> Visualizar</label>
@@ -4649,6 +4706,9 @@
   let outputRows = [];
   let outputsLoading = false;
   let outputView = 'requested';
+  let inputRows = [];
+  let inputsLoading = false;
+  let inputView = 'requested';
   let instructionRows = [];
   let instructionView = 'active';
   let instructionToday = '';
@@ -5137,6 +5197,7 @@
     missoes:'/missoes',
     captacao:'/captacao',
     saidas:'/saidas',
+    entradas:'/entradas',
     insumos:'/insumos',
     instrucoes:'/instrucoes',
     alteracoesPdv:'/solicitacoes/alteracoes-pdv',
@@ -5160,6 +5221,7 @@
     missoes:'MISSÕES',
     captacao:'CAPTAÇÃO',
     saidas:'SAÍDAS',
+    entradas:'ENTRADA',
     insumos:'INSUMOS',
     instrucoes:'INSTRUÇÕES',
     alteracoesPdv:'ALTERAÇÕES PDV',
@@ -5178,6 +5240,7 @@
     missoes:'missions',
     captacao:'captures',
     saidas:'outputs',
+    entradas:'inputs',
     insumos:'supplies',
     alteracoesPdv:'pdv_requests',
     notasOs:'os_notes',
@@ -11190,6 +11253,221 @@ function renderHomeTasks(){
   });
   el('btnRefreshOutputs').addEventListener('click',loadOutputs);
 
+  async function inputApiRequest(options){
+    const response = await fetch('/api/inputs',{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function inputDateTime(value){
+    return formatDateTimeBR(value) || '—';
+  }
+
+  function renderInputCompanyOptions(){
+    const select = el('inputCompany');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">SELECIONE A LOJA</option>'+
+      companies.map(company =>
+        '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
+      ).join('');
+    if(companies.some(company => company.id === selected)) select.value = selected;
+  }
+
+  function inputCardHtml(row){
+    const completed = row.status === 'completed';
+    const companyLabel = row.companyName || 'Loja não identificada';
+    const history = completed
+      ? 'EFETUADA POR '+escapeHtml(row.completedByName || 'ADMINISTRADOR')+
+        ' EM '+escapeHtml(inputDateTime(row.completedAt))
+      : 'SOLICITADA POR '+escapeHtml(row.createdByName || 'LOJA')+
+        ' · '+escapeHtml(companyLabel)+
+        ' EM '+escapeHtml(inputDateTime(row.createdAt));
+    return '<article class="output-card'+(completed ? ' completed' : '')+'">'+
+      '<div class="output-card-copy">'+
+        '<div class="output-card-title"><span class="output-quantity">'+
+          escapeHtml(String(row.quantity || 0))+' UN.</span><strong>'+
+          escapeHtml(row.productName || 'Produto sem nome')+'</strong>'+
+          '<span class="output-company-badge">'+escapeHtml(companyLabel)+'</span></div>'+
+        '<div class="output-details">'+
+          '<div class="output-detail"><span>LOJA</span><strong>'+
+            escapeHtml(row.companyName || 'Loja')+'</strong></div>'+
+          '<div class="output-detail"><span>RESPONSÁVEL PELA ENTRADA</span><strong>'+
+            escapeHtml(row.responsibleName || '—')+'</strong></div>'+
+          '<div class="output-detail"><span>MOTIVO DA ENTRADA</span><strong>'+
+            escapeHtml(row.reason || '—')+'</strong></div>'+
+        '</div><p class="output-history">'+history+'</p>'+
+      '</div>'+
+      '<div class="output-card-actions">'+
+        '<span class="output-state'+(completed ? ' completed' : '')+'">'+
+          (completed ? 'ENTRADA EFETUADA' : 'AGUARDANDO ADMINISTRADOR')+'</span>'+
+        (canAccess('inputs:complete') && !completed
+          ? '<button class="output-complete" type="button" data-input-complete="'+
+            escapeHtml(row.id)+'">MARCAR COMO FEITO</button>'
+          : '')+
+        (canAccess('inputs:delete')
+          ? '<button class="output-delete" type="button" data-input-delete="'+
+            escapeHtml(row.id)+'">EXCLUIR</button>'
+          : '')+
+      '</div>'+
+    '</article>';
+  }
+
+  function filteredInputRows(){
+    const search = normalizeHeader(el('inputSearch').value || '');
+    return inputRows.filter(row => {
+      if(row.status !== inputView) return false;
+      if(!search) return true;
+      return normalizeHeader([
+        row.productName,row.reason,row.companyName,row.responsibleName,row.createdByName,row.completedByName
+      ].join(' ')).includes(search);
+    });
+  }
+
+  function renderInputs(){
+    const requested = inputRows.filter(row => row.status === 'requested').length;
+    const completed = inputRows.filter(row => row.status === 'completed').length;
+    el('inputRequestedCount').textContent = requested;
+    el('inputCompletedCount').textContent = completed;
+    el('inputSummary').hidden = !canAccess('inputs:complete');
+
+    const isAdmin = currentSession.role === 'admin';
+    const canChooseCompany = canActAcrossStores('inputs:create');
+    const seesAllStores = isAdmin ||
+      normalizeHeader(currentSession.sector || '') === 'administrative' ||
+      canActAcrossStores('inputs:view');
+    el('inputRegisterPanel').hidden = !canChooseCompany && !currentSession.companyId;
+    el('inputCompanyField').hidden = !canChooseCompany;
+    el('inputCompany').required = canChooseCompany;
+    renderInputCompanyOptions();
+    el('inputRegisterDescription').textContent = canChooseCompany
+      ? 'Informe os dados e escolha a loja responsável pela solicitação.'
+      : 'A solicitação será vinculada automaticamente à sua loja.';
+    el('inputBoardDescription').textContent = seesAllStores
+      ? 'Visualize todas as lojas e conclua a entrada após efetuá-la no sistema.'
+      : 'Acompanhe as solicitações registradas pela sua loja.';
+    document.querySelectorAll('[data-input-view]').forEach(button => {
+      const active = button.dataset.inputView === inputView;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+    const rows = filteredInputRows();
+    el('inputList').innerHTML = rows.length
+      ? rows.map(inputCardHtml).join('')
+      : '<div class="output-empty">'+
+        (inputView === 'completed'
+          ? 'Nenhuma entrada efetuada no histórico.'
+          : 'Nenhuma solicitação aguardando o administrador.')+
+        '</div>';
+  }
+
+  async function loadInputs(){
+    if(!canAccess('inputs') || inputsLoading) return;
+    inputsLoading = true;
+    el('inputList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
+    try{
+      const data = await inputApiRequest();
+      inputRows = Array.isArray(data.inputs) ? data.inputs : [];
+      renderInputs();
+    }catch(error){
+      inputRows = [];
+      renderInputs();
+      el('inputList').innerHTML = '<div class="output-empty">'+escapeHtml(error.message)+'</div>';
+    }finally{
+      inputsLoading = false;
+    }
+  }
+
+  function setInputFormStatus(message,type){
+    const status = el('inputFormStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  el('inputForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    const button = el('btnSaveInput');
+    button.disabled = true;
+    setInputFormStatus('ENVIANDO SOLICITAÇÃO…','');
+    try{
+      await inputApiRequest({
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          quantity:Number(el('inputQuantity').value),
+          productName:el('inputProductName').value,
+          responsibleName:el('inputResponsible').value,
+          reason:el('inputReason').value,
+          companyId:canActAcrossStores('inputs:create') ? el('inputCompany').value : ''
+        })
+      });
+      el('inputForm').reset();
+      el('inputQuantity').value = '1';
+      setInputFormStatus('SOLICITAÇÃO ENVIADA AO ADMINISTRADOR.','success');
+      inputView = 'requested';
+      await loadInputs();
+    }catch(error){
+      setInputFormStatus(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('inputList').addEventListener('click',async event => {
+    const completeButton = event.target.closest('[data-input-complete]');
+    if(completeButton){
+      if(!confirm('Confirmar que esta entrada já foi efetuada no sistema?')) return;
+      completeButton.disabled = true;
+      try{
+        await inputApiRequest({
+          method:'PATCH',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:completeButton.dataset.inputComplete})
+        });
+        showPurchaseToast('Entrada efetuada e enviada para o histórico.');
+        await loadInputs();
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        completeButton.disabled = false;
+      }
+      return;
+    }
+    const deleteButton = event.target.closest('[data-input-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir esta entrada definitivamente?')) return;
+      deleteButton.disabled = true;
+      try{
+        await inputApiRequest({
+          method:'DELETE',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:deleteButton.dataset.inputDelete})
+        });
+        showPurchaseToast('Entrada excluída.');
+        await loadInputs();
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        deleteButton.disabled = false;
+      }
+    }
+  });
+  el('inputSearch').addEventListener('input',debounce(renderInputs,120));
+  document.querySelectorAll('[data-input-view]').forEach(button => {
+    button.addEventListener('click',() => {
+      inputView = button.dataset.inputView;
+      renderInputs();
+    });
+  });
+  el('btnRefreshInputs').addEventListener('click',loadInputs);
+
   function renderSupplyCompanyOptions(){
     const options = companies.map(company =>
       '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
@@ -13887,6 +14165,7 @@ function renderHomeTasks(){
     'missions:view':'Missões: visualizar','missions:create':'Missões: cadastrar','missions:delete':'Missões: excluir','missions:notify':'Missões: notificações',
     'captures:view':'Captação: visualizar','captures:create':'Captação: cadastrar','captures:receive':'Captação: receber/preparar','captures:assign':'Captação: definir destino','captures:delete':'Captação: excluir',
     'outputs:view':'Saídas: visualizar','outputs:create':'Saídas: cadastrar','outputs:complete':'Saídas: concluir','outputs:delete':'Saídas: excluir',
+    'inputs:view':'Entrada: visualizar','inputs:create':'Entrada: cadastrar','inputs:complete':'Entrada: concluir','inputs:delete':'Entrada: excluir',
     'supplies:view':'Insumos: visualizar','supplies:request':'Insumos: solicitar','supplies:receive':'Insumos: receber solicitação','supplies:stock_in':'Insumos: entrada','supplies:stock_out':'Insumos: saída','supplies:delete':'Insumos: excluir','supplies:manage_catalog':'Insumos: produtos/categorias',
     'purchases:view':'Compras: visualizar','purchases:create':'Compras: cadastrar','purchases:edit':'Compras: editar','purchases:delete':'Compras: excluir',
     'stock:view':'Estoque Fiscal',
@@ -14164,7 +14443,8 @@ function renderHomeTasks(){
     checkIntegrationHealth();
     const needsCompanies = canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41') || canAccess('finance') ||
       canActAcrossStores('outputs:create') || canActAcrossStores('captures:create') ||
-      canActAcrossStores('supplies:request') || canActAcrossStores('missions:view');
+      canActAcrossStores('supplies:request') || canActAcrossStores('missions:view') ||
+      canActAcrossStores('inputs:create');
     if(needsCompanies){
       const companiesPromise = loadCompanies();
       const catalogPromise = loadCatalog();
@@ -14192,6 +14472,7 @@ function renderHomeTasks(){
     })());
     if(canAccess('captures')) loaders.push(loadCaptures());
     if(canAccess('outputs')) loaders.push(loadOutputs());
+    if(canAccess('inputs')) loaders.push(loadInputs());
     if(canAccess('supplies')) loaders.push(loadHomeSupplies());
     loaders.push(Promise.all([loadInstructions(),loadHomeInstructions()]));
     await Promise.all(loaders);

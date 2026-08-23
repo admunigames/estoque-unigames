@@ -362,6 +362,31 @@ export const defectiveOutputs = pgTable(
   ],
 );
 
+export const requestedInputs = pgTable(
+  "requested_inputs",
+  {
+    id: text("id").primaryKey(),
+    quantity: integer("quantity").notNull(),
+    productName: text("product_name").notNull(),
+    responsibleName: text("responsible_name").notNull().default(""),
+    reason: text("reason").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    status: text("status").notNull().default("requested"),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    completedBy: text("completed_by").notNull().default(""),
+    completedByName: text("completed_by_name").notNull().default(""),
+    completedAt: text("completed_at").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("requested_inputs_status_created_idx").on(table.status, table.createdAt),
+    index("requested_inputs_company_created_idx").on(table.companyId, table.createdAt),
+  ],
+);
+
 export const supplyCategories = pgTable("supply_categories", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),
