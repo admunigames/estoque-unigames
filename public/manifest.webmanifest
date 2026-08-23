@@ -25,6 +25,12 @@
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
+      "name": "Entrada",
+      "short_name": "Entrada",
+      "url": "/entradas",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
       "name": "Captação",
       "short_name": "Captação",
       "url": "/captacao",

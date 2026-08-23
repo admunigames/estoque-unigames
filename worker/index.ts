@@ -35,6 +35,7 @@ type Permission =
   | "missions:view" | "missions:create" | "missions:delete" | "missions:notify"
   | "captures:view" | "captures:create" | "captures:receive" | "captures:assign" | "captures:delete"
   | "outputs:view" | "outputs:create" | "outputs:complete" | "outputs:delete"
+  | "inputs:view" | "inputs:create" | "inputs:complete" | "inputs:delete"
   | "supplies:view" | "supplies:request" | "supplies:receive" | "supplies:stock_in" | "supplies:stock_out" | "supplies:delete" | "supplies:manage_catalog"
   | "purchases:view" | "purchases:create" | "purchases:edit" | "purchases:delete"
   | "stock:view"
@@ -99,6 +100,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "missions:view", "missions:create", "missions:delete", "missions:notify",
   "captures:view", "captures:create", "captures:receive", "captures:assign", "captures:delete",
   "outputs:view", "outputs:create", "outputs:complete", "outputs:delete",
+  "inputs:view", "inputs:create", "inputs:complete", "inputs:delete",
   "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
   "purchases:view", "purchases:create", "purchases:edit", "purchases:delete",
   "stock:view",
@@ -193,6 +195,7 @@ const APP_ROUTE_PATHS = new Set([
   "/missoes",
   "/captacao",
   "/saidas",
+  "/entradas",
   "/insumos",
   "/instrucoes",
   "/solicitacoes/alteracoes-pdv",
@@ -1013,6 +1016,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   missions: ["missions:view", "missions:create", "missions:delete", "missions:notify"],
   captures: ["captures:view", "captures:create", "captures:receive", "captures:assign", "captures:delete"],
   outputs: ["outputs:view", "outputs:create", "outputs:complete", "outputs:delete"],
+  inputs: ["inputs:view", "inputs:create", "inputs:complete", "inputs:delete"],
   supplies: [
     "supplies:view", "supplies:request", "supplies:receive",
     "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
@@ -1069,6 +1073,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path.startsWith("/api/checklists"), "missions"],
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
+    [path === "/entradas" || path.startsWith("/api/inputs"), "inputs"],
     [path === "/insumos" || path.startsWith("/api/supplies"), "supplies"],
     [path === "/compras" || path.startsWith("/api/compras"), "purchases"],
     [path === "/estoque", "stock"],
