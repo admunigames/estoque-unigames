@@ -4765,6 +4765,7 @@
     <div class="user-form-status" id="loanRequestDetailsStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions loan-actions-start">
       <button class="btn-accent" id="btnMarkLoanLoaned" type="button" data-permission="loans:manage_requests" hidden>MARCAR COMO EMPRESTADO</button>
+      <button class="btn-accent" id="btnMarkLoanReturned" type="button" data-permission="loans:manage_requests" hidden>MARCAR COMO DEVOLVIDO</button>
     </div>
 
     <div class="purchase-form-section" id="loanReportPanel" hidden>RELATÓRIO PARA O WHATSAPP DA LOJA</div>
@@ -13162,7 +13163,7 @@ function renderHomeTasks(){
 
   // ================= APARELHOS DE EMPRÉSTIMO =================
   const LOAN_ALERT_DAYS = 15;
-  const LOAN_STATUS_LABELS = {requested:'AGUARDANDO SEPARAÇÃO',loaned:'EMPRESTADO'};
+  const LOAN_STATUS_LABELS = {requested:'AGUARDANDO SEPARAÇÃO',loaned:'EMPRESTADO',returned:'DEVOLVIDO'};
   const LOAN_DEVICE_STATUS_LABELS = {available:'DISPONÍVEL',loaned:'EMPRESTADO',maintenance:'MANUTENÇÃO'};
   let loanDevicesCache = [];
   let loanRequestsCache = [];
@@ -13198,7 +13199,7 @@ function renderHomeTasks(){
   }
 
   function loanStatusPill(status){
-    const tone = status === 'loaned' ? 'done' : 'waiting';
+    const tone = status === 'loaned' ? 'progress' : status === 'returned' ? 'done' : 'waiting';
     return '<span class="status-pill '+tone+'">'+escapeHtml(LOAN_STATUS_LABELS[status] || String(status).toUpperCase())+'</span>';
   }
 
@@ -13483,7 +13484,8 @@ function renderHomeTasks(){
       ['APARELHO',request.deviceName || '—'],
       ['STATUS',LOAN_STATUS_LABELS[request.status] || request.status],
       ['DATA DA SOLICITAÇÃO',formatDateTimeBR(request.createdAt) || '—'],
-      ['DATA DA SEPARAÇÃO',request.separatedAt ? formatDateTimeBR(request.separatedAt) : '—']
+      ['DATA DA SEPARAÇÃO',request.separatedAt ? formatDateTimeBR(request.separatedAt) : '—'],
+      ['DATA DO RETORNO',request.returnedAt ? formatDateTimeBR(request.returnedAt) : '—']
     ];
     const detailBoxes = fields.map(([label,value]) =>
       '<div class="purchase-card-detail"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong></div>'
@@ -13542,7 +13544,8 @@ function renderHomeTasks(){
     el('loanRequestDetailsId').value = request.id;
     el('loanRequestDetailsMeta').innerHTML = loanRequestDetailsMetaHtml(request);
     setLoanRequestDetailsStatus('');
-    el('btnMarkLoanLoaned').hidden = request.status === 'loaned';
+    el('btnMarkLoanLoaned').hidden = request.status !== 'requested';
+    el('btnMarkLoanReturned').hidden = request.status !== 'loaned';
     el('loanReportPanel').hidden = request.status !== 'loaned';
     el('loanReportText').hidden = request.status !== 'loaned';
     el('loanReportActions').hidden = request.status !== 'loaned';
@@ -13576,6 +13579,21 @@ function renderHomeTasks(){
       await loadLoanDevices();
       openLoanRequestDetailsDialog(id);
       setLoanRequestDetailsStatus('SOLICITAÇÃO MARCADA COMO EMPRESTADA.','success');
+    }catch(error){
+      setLoanRequestDetailsStatus(error.message,'error');
+    }
+  });
+
+  el('btnMarkLoanReturned').addEventListener('click',async () => {
+    const id = el('loanRequestDetailsId').value;
+    if(!id) return;
+    setLoanRequestDetailsStatus('ATUALIZANDO…');
+    try{
+      await loanApiRequest('/api/loans/requests',{method:'PATCH',body:JSON.stringify({id,action:'return'})});
+      await loadLoanRequests();
+      await loadLoanDevices();
+      openLoanRequestDetailsDialog(id);
+      setLoanRequestDetailsStatus('APARELHO MARCADO COMO DEVOLVIDO E DISPONÍVEL NOVAMENTE.','success');
     }catch(error){
       setLoanRequestDetailsStatus(error.message,'error');
     }

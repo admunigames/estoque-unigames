@@ -121,6 +121,8 @@ type RequestRow = {
   createdAt: string;
   separatedByName: string;
   separatedAt: string;
+  returnedByName: string;
+  returnedAt: string;
 };
 
 const REQUEST_SELECT = `
@@ -128,7 +130,8 @@ const REQUEST_SELECT = `
          company_id AS companyId, company_name AS companyName,
          responsible_name AS responsibleName, reason, status,
          created_by_name AS createdByName, created_at AS createdAt,
-         separated_by_name AS separatedByName, separated_at AS separatedAt
+         separated_by_name AS separatedByName, separated_at AS separatedAt,
+         returned_by_name AS returnedByName, returned_at AS returnedAt
   FROM loan_requests`;
 
 export async function GET(request: Request) {
@@ -247,7 +250,9 @@ export async function PATCH(request: Request) {
     const id = safeText(body.id, 80);
     const action = safeText(body.action, 20);
     if (!id) return jsonResponse({ error: "SOLICITAÇÃO INVÁLIDA." }, 400);
-    if (action !== "loan") return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
+    if (action !== "loan" && action !== "return") {
+      return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
+    }
 
     const database = await getD1();
     const existing = await database
@@ -261,15 +266,42 @@ export async function PATCH(request: Request) {
     if (!existing) {
       return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
     }
-    if (existing.status === "loaned") {
-      return jsonResponse({ error: "ESTA SOLICITAÇÃO JÁ FOI MARCADA COMO EMPRESTADA." }, 409);
+
+    if (action === "loan") {
+      if (existing.status !== "requested") {
+        return jsonResponse({ error: "ESTA SOLICITAÇÃO JÁ FOI MARCADA COMO EMPRESTADA." }, 409);
+      }
+      await database
+        .prepare(
+          `UPDATE loan_requests
+           SET status='loaned', separated_by=?1, separated_by_name=?2,
+               separated_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
+           WHERE id=?3`,
+        )
+        .bind(actor.id, actor.displayName, id)
+        .run();
+      await database
+        .prepare(
+          `UPDATE loan_devices
+           SET status='loaned', current_company_id=?1, current_company_name=?2,
+               loaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
+           WHERE id=?3`,
+        )
+        .bind(existing.companyId, existing.companyName, existing.deviceId)
+        .run();
+      return jsonResponse({ updated: true, deviceName: existing.deviceName, companyName: existing.companyName });
     }
 
+    // action === "return": aparelho volta da loja pro local e fica
+    // disponível de novo para um novo empréstimo.
+    if (existing.status !== "loaned") {
+      return jsonResponse({ error: "ESTA SOLICITAÇÃO NÃO ESTÁ COM O APARELHO EMPRESTADO." }, 409);
+    }
     await database
       .prepare(
         `UPDATE loan_requests
-         SET status='loaned', separated_by=?1, separated_by_name=?2,
-             separated_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
+         SET status='returned', returned_by=?1, returned_by_name=?2,
+             returned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
          WHERE id=?3`,
       )
       .bind(actor.id, actor.displayName, id)
@@ -277,20 +309,15 @@ export async function PATCH(request: Request) {
     await database
       .prepare(
         `UPDATE loan_devices
-         SET status='loaned', current_company_id=?1, current_company_name=?2,
-             loaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
-         WHERE id=?3`,
+         SET status='available', current_company_id='', current_company_name='',
+             loaned_at='', updated_at=CURRENT_TIMESTAMP
+         WHERE id=?1`,
       )
-      .bind(existing.companyId, existing.companyName, existing.deviceId)
+      .bind(existing.deviceId)
       .run();
-
-    return jsonResponse({
-      updated: true,
-      deviceName: existing.deviceName,
-      companyName: existing.companyName,
-    });
+    return jsonResponse({ updated: true, deviceName: existing.deviceName, companyName: existing.companyName });
   } catch (error) {
-    console.error("Não foi possível marcar a solicitação como emprestada.", error);
+    console.error("Não foi possível atualizar a solicitação de aparelho.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL ATUALIZAR A SOLICITAÇÃO." }, 500);
   }
 }

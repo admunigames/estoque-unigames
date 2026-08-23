@@ -738,7 +738,7 @@ export const loanRequests = pgTable(
     companyName: text("company_name").notNull().default(""),
     responsibleName: text("responsible_name").notNull().default(""),
     reason: text("reason").notNull().default(""),
-    // 'requested' | 'loaned'
+    // 'requested' | 'loaned' | 'returned'
     status: text("status").notNull().default("requested"),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
@@ -748,6 +748,11 @@ export const loanRequests = pgTable(
     separatedBy: text("separated_by").notNull().default(""),
     separatedByName: text("separated_by_name").notNull().default(""),
     separatedAt: text("separated_at").notNull().default(""),
+    // Preenchidos quando o admin registra o retorno do aparelho (devolvido
+    // pela loja), o que também libera o aparelho para novo empréstimo.
+    returnedBy: text("returned_by").notNull().default(""),
+    returnedByName: text("returned_by_name").notNull().default(""),
+    returnedAt: text("returned_at").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [

@@ -1673,7 +1673,7 @@ test("registra, anexa e expira automaticamente o PDF das Notas de O.S. com permi
 });
 
 test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o selo de dias em atraso com permissões granulares", async () => {
-  const [html, workerSource, devicesRoute, requestsRoute, commentsRoute, schema, migration] =
+  const [html, workerSource, devicesRoute, requestsRoute, commentsRoute, schema, migration, returnMigration] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
@@ -1682,6 +1682,7 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
       readFile(new URL("../app/api/loans/requests/comments/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
       readFile(new URL("../drizzle/0025_gigantic_diamondback.sql", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0026_purple_meggan.sql", import.meta.url), "utf8"),
     ]);
 
   assert.match(
@@ -1704,7 +1705,10 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(html, /id="loanRequestsBody"/);
   assert.match(html, /id="loanRequestDetailsDialog"/);
   assert.match(html, /id="btnMarkLoanLoaned" type="button" data-permission="loans:manage_requests"/);
+  assert.match(html, /id="btnMarkLoanReturned" type="button" data-permission="loans:manage_requests"/);
   assert.match(html, /id="btnDeleteLoanRequest" type="button" data-permission="loans:manage_requests"/);
+  assert.match(html, /returned:'DEVOLVIDO'/);
+  assert.match(html, /DATA DO RETORNO/);
   assert.match(html, /id="loanRequestUpdateForm" data-permission="loans:manage_requests"/);
   assert.match(html, /\.status-pill\.alert\{/);
   assert.match(html, /const LOAN_ALERT_DAYS = 15;/);
@@ -1734,9 +1738,12 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(requestsRoute, /canManageRequests\(actor\)/);
   assert.match(requestsRoute, /canRequest\(actor\)/);
   assert.match(requestsRoute, /device\.status !== "available"/);
-  assert.match(requestsRoute, /action !== "loan"/);
+  assert.match(requestsRoute, /action !== "loan" && action !== "return"/);
   assert.match(requestsRoute, /UPDATE loan_devices/);
   assert.match(requestsRoute, /status='loaned', current_company_id=/);
+  assert.match(requestsRoute, /status='returned', returned_by=/);
+  assert.match(requestsRoute, /status='available', current_company_id=''/);
+  assert.match(requestsRoute, /existing\.status !== "loaned"/);
   assert.match(requestsRoute, /DELETE FROM loan_request_updates WHERE request_id=\?1/);
 
   assert.match(commentsRoute, /canManageRequests\(actor\)/);
@@ -1745,6 +1752,7 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(schema, /export const loanDevices = pgTable/);
   assert.match(schema, /export const loanRequests = pgTable/);
   assert.match(schema, /export const loanRequestUpdates = pgTable/);
+  assert.match(schema, /returnedAt: text\("returned_at"\)/);
   assert.match(migration, /CREATE TABLE "loan_devices"/);
   assert.match(migration, /CREATE TABLE "loan_requests"/);
   assert.match(migration, /CREATE TABLE "loan_request_updates"/);
@@ -1752,6 +1760,9 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(migration, /ALTER TABLE "loan_devices" ENABLE ROW LEVEL SECURITY/);
   assert.match(migration, /ALTER TABLE "loan_requests" ENABLE ROW LEVEL SECURITY/);
   assert.match(migration, /ALTER TABLE "loan_request_updates" ENABLE ROW LEVEL SECURITY/);
+  assert.match(returnMigration, /ADD COLUMN "returned_by"/);
+  assert.match(returnMigration, /ADD COLUMN "returned_by_name"/);
+  assert.match(returnMigration, /ADD COLUMN "returned_at"/);
 });
 
 test("formata timestamps do banco no horário de Brasília/Recife em um único ponto do app", async () => {
