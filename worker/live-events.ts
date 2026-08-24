@@ -84,6 +84,25 @@ export async function liveInvalidationForRequest(
     return { module: "supplies", audience: { kind: "all" } };
   }
 
+  if (path === "/api/loans/devices" || path.startsWith("/api/loans/requests")) {
+    // Catalogo (cadastrar/editar/excluir aparelho, mudar status) afeta a
+    // disponibilidade para todas as lojas.
+    if (path === "/api/loans/devices") {
+      return { module: "loans", audience: { kind: "all" } };
+    }
+
+    const body = await requestBody(request);
+    const companyId = safeCompanyId(body.companyId) || safeCompanyId(actor.companyId);
+    if (companyId) {
+      return { module: "loans", audience: { kind: "company", companyId } };
+    }
+
+    // Acoes administrativas por id (marcar emprestado/devolvido, apagar
+    // solicitacao, responder) nao trazem a loja no pedido. O aviso segue
+    // sem dados; cada sessao recarrega pela API filtrada.
+    return { module: "loans", audience: { kind: "all" } };
+  }
+
   if (path === "/api/shared-state") {
     const body = request.method === "PUT" ? await requestBody(request) : {};
     const key = request.method === "DELETE"

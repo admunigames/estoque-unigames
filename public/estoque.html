@@ -4935,7 +4935,7 @@
 
   // O canal ao vivo carrega somente avisos de invalidacao. Os dados continuam
   // sendo buscados pelas APIs existentes, que aplicam as permissoes da sessao.
-  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks'});
+  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans'});
   let livePageName = '';
   let liveModule = '';
   let liveSocket = null;
@@ -4978,6 +4978,11 @@
       await Promise.all(refreshes);
     }
     if(livePageName === 'tarefas') await Promise.all([loadTasks(),loadTaskAgenda()]);
+    if(livePageName === 'aparelhosEmprestimo'){
+      await loadLoans();
+      const openRequestId = el('loanRequestDetailsId').value;
+      if(openRequestId && el('loanRequestDetailsDialog').open) openLoanRequestDetailsDialog(openRequestId);
+    }
     if(livePageName === 'inicio') await loadHomeSupplies();
   }
 

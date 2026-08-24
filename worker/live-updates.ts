@@ -1,4 +1,4 @@
-export const LIVE_MODULES = ["missions", "captures", "supplies", "tasks"] as const;
+export const LIVE_MODULES = ["missions", "captures", "supplies", "tasks", "loans"] as const;
 
 export type LiveModule = (typeof LIVE_MODULES)[number];
 
