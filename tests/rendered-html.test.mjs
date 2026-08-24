@@ -1783,6 +1783,11 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(liveEvents, /path === "\/api\/loans\/devices" \|\| path\.startsWith\("\/api\/loans\/requests"\)/);
   assert.match(liveEvents, /return \{ module: "loans", audience: \{ kind: "all" \} \};/);
   assert.match(liveEvents, /return \{ module: "loans", audience: \{ kind: "company", companyId \} \};/);
+  // Precisa existir tanto em navigateToPage() (clique no menu) quanto em
+  // syncPageFromLocation() (URL direta/refresh) — só num dos dois já
+  // deixou a página travada em "Carregando..." ao abrir a URL direto.
+  const loadLoansOnPageEnter = html.match(/if\(name === 'aparelhosEmprestimo'\) loadLoans\(\);/g) || [];
+  assert.equal(loadLoansOnPageEnter.length, 2);
 });
 
 test("formata timestamps do banco no horário de Brasília/Recife em um único ponto do app", async () => {
