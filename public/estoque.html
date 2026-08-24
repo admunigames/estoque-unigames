@@ -1898,7 +1898,8 @@
     display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:13px;
     padding:15px;border:1px solid rgba(39,69,97,.48);border-radius:13px;background:var(--bg-card-2);
   }
-  .mission-card.completed{opacity:.58;}
+  .mission-card.completed .mission-check,
+  .mission-card.completed .mission-card-copy{opacity:.58;}
   .mission-card.completed .mission-card-title{text-decoration:line-through;}
   .mission-card.in-progress{border-color:rgba(225,173,73,.48);box-shadow:inset 3px 0 0 rgba(225,173,73,.72);}
   .mission-check{
@@ -1950,7 +1951,8 @@
     display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;
     padding:11px 12px;border:1px solid rgba(36,79,131,.16);border-radius:11px;background:rgba(255,255,255,.46);
   }
-  .home-mission-row.completed{opacity:.55;}
+  .home-mission-row.completed .home-mission-check,
+  .home-mission-row.completed .home-mission-copy{opacity:.55;}
   .home-mission-row.completed .home-mission-title{text-decoration:line-through;}
   .home-mission-row.in-progress{border-color:rgba(194,135,27,.35);box-shadow:inset 3px 0 0 rgba(194,135,27,.62);}
   .home-mission-check{
