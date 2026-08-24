@@ -427,7 +427,7 @@ export async function PATCH(request: Request) {
       .prepare(
         `UPDATE operational_routine_tasks SET
            status=?1, completed_by=?2, completed_by_name=?3,
-           completed_at=CASE WHEN ?1='completed' THEN CURRENT_TIMESTAMP ELSE '' END,
+           completed_at=CASE WHEN ?1='completed' THEN now()::text ELSE '' END,
            updated_at=CURRENT_TIMESTAMP
          WHERE id=?4`,
       )

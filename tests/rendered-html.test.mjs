@@ -2687,3 +2687,24 @@ test("Rotina Operacional: falha ao notificar o criador não derruba a marcação
   assert.match(html, /'SEM CONEXÃO COM O SERVIDOR\. VERIFIQUE SUA INTERNET E TENTE NOVAMENTE\.'/);
   assert.match(html, /'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO \(ERRO '\+response\.status\+'\)\.'/);
 });
+
+test("Rotina Operacional: marcar como feita não quebra mais com erro de tipo do Postgres no completed_at", async () => {
+  const routinesRoute = await readFile(new URL("../app/api/routines/route.ts", import.meta.url), "utf8");
+
+  // Causa raiz real (confirmada em produção via wrangler tail): o Postgres
+  // unifica os dois ramos de um CASE pelo tipo da expressão mais específica
+  // — CURRENT_TIMESTAMP é timestamptz, então o ramo ELSE '' era validado
+  // como timestamp mesmo quando não era o ramo escolhido, e toda tentativa
+  // de marcar como feita quebrava com "invalid input syntax for type
+  // timestamp with time zone: ''", mascarada como erro genérico pro
+  // usuário. completed_at é coluna text — os dois ramos do CASE precisam
+  // ser text também (now()::text), não CURRENT_TIMESTAMP cru.
+  assert.match(
+    routinesRoute,
+    /completed_at=CASE WHEN \?1='completed' THEN now\(\)::text ELSE '' END/,
+  );
+  assert.doesNotMatch(
+    routinesRoute,
+    /completed_at=CASE WHEN \?1='completed' THEN CURRENT_TIMESTAMP ELSE ''/,
+  );
+});
