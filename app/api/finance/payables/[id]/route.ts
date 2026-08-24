@@ -6,6 +6,7 @@ import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, MONTH_P
 import {
   DATE_PATTERN,
   assertAccess,
+  assertFinanceAccountBelongsToCompany,
   assertSlotAvailableForPayable,
   loadPayable,
   recalcPayableEntrySql,
@@ -142,6 +143,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       .bind(financeItemId)
       .first<{ id: string }>();
     if (!item) return jsonResponse({ error: "ITEM DE DESPESA NÃO ENCONTRADO NO CATÁLOGO FINANCEIRO." }, 400);
+
+    const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
+    if (accountError) return jsonResponse({ error: accountError }, 409);
 
     const slotChanged =
       companyId !== payable.companyId ||

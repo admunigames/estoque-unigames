@@ -69,11 +69,30 @@ export async function POST(request: Request) {
     const body = (await request.json()) as JsonMap;
     const name = safeText(body.name, 120);
     const parentId = safeText(body.parentId, 80);
+    const editId = safeText(body.id, 80);
     if (name.length < 2) {
       return jsonResponse({ error: "INFORME O NOME DA CATEGORIA." }, 400);
     }
 
     const database = await getD1();
+
+    // Renomear: só o nome é editável — mover de categoria pra subgrupo (ou
+    // vice-versa) depois de criada não é suportado, pra não arriscar violar
+    // a regra de 1 nível só de subgrupo; quem precisa disso exclui e
+    // recria.
+    if (editId) {
+      const existing = await database
+        .prepare("SELECT id FROM finance_categories WHERE id=?1")
+        .bind(editId)
+        .first<{ id: string }>();
+      if (!existing) return jsonResponse({ error: "CATEGORIA NÃO ENCONTRADA." }, 404);
+      await database
+        .prepare("UPDATE finance_categories SET name=?1 WHERE id=?2")
+        .bind(name, editId)
+        .run();
+      return jsonResponse({ updated: true, id: editId });
+    }
+
     if (parentId) {
       const parent = await database
         .prepare("SELECT id, parent_id AS parentId FROM finance_categories WHERE id=?1")

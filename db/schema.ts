@@ -714,12 +714,36 @@ export const financeSuppliers = pgTable(
   ],
 );
 
+// Conta bancária/financeira. Igual a finance_categories/finance_items,
+// não tinha empresa/loja nem os campos bancários no lançamento original —
+// esta é a extensão pra um cadastro completo (ver migration 0029).
+// company_id fica NOT NULL DEFAULT '' (não um NOT NULL puro) porque já
+// havia contas cadastradas em produção sem loja antes desta migration;
+// a obrigatoriedade de verdade é aplicada na validação da rota de escrita,
+// mesmo padrão do resto do projeto (texto vazio como sentinela, não NULL).
 export const financeAccounts = pgTable(
   "finance_accounts",
   {
     id: text("id").primaryKey(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
     name: text("name").notNull(),
-    type: text("type").notNull().default(""),
+    // 'checking' | 'savings' | 'cash' | 'wallet' | 'digital' | 'card' | 'investment' | 'other'
+    type: text("type").notNull().default("checking"),
+    bankName: text("bank_name").notNull().default(""),
+    bankCode: text("bank_code").notNull().default(""),
+    agency: text("agency").notNull().default(""),
+    agencyDigit: text("agency_digit").notNull().default(""),
+    accountNumber: text("account_number").notNull().default(""),
+    accountDigit: text("account_digit").notNull().default(""),
+    holderName: text("holder_name").notNull().default(""),
+    holderDocument: text("holder_document").notNull().default(""),
+    // 'cpf' | 'cnpj' | 'email' | 'phone' | 'random' | ''
+    pixKeyType: text("pix_key_type").notNull().default(""),
+    pixKey: text("pix_key").notNull().default(""),
+    openingBalanceCents: integer("opening_balance_cents").notNull().default(0),
+    openingBalanceDate: text("opening_balance_date").notNull().default(""),
+    notes: text("notes").notNull().default(""),
     active: integer("active").notNull().default(1),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
@@ -728,7 +752,10 @@ export const financeAccounts = pgTable(
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
-  (table) => [index("finance_accounts_active_name_idx").on(table.active, table.name)],
+  (table) => [
+    index("finance_accounts_active_name_idx").on(table.active, table.name),
+    index("finance_accounts_company_active_idx").on(table.companyId, table.active),
+  ],
 );
 
 // Obrigação financeira (contas a pagar). Cada parcela/ocorrência de

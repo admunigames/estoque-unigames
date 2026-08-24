@@ -13,6 +13,7 @@ import test from "node:test";
 
 const financeStatus = await import("../app/lib/finance-status.ts");
 const payablesShared = await import("../app/lib/payables-recurrence.ts");
+const brDocuments = await import("../app/lib/br-documents.ts");
 
 test("status calculado: conta vencida tem prioridade mesmo se parcialmente paga", () => {
   const status = financeStatus.computeDisplayStatus({
@@ -151,4 +152,96 @@ test("página Contas a Pagar existe no submenu Financeiro, gated por finance:man
   assert.match(html, /id="navFinanceiroPayables"[^>]*data-page="financeiroPayables"[^>]*data-permission="finance"/);
   assert.match(html, /id="pageFinanceiroPayables"/);
   assert.match(html, /financeiroPayables:\s*'\/financeiro\/contas-a-pagar'/);
+});
+
+// ---- Documentos brasileiros (CPF/CNPJ/Pix) — app/lib/br-documents.ts ----
+
+test("CPF: aceita dígitos verificadores corretos e rejeita sequência repetida", () => {
+  assert.equal(brDocuments.isValidCpf("111.444.777-35"), true);
+  assert.equal(brDocuments.isValidCpf("111.444.777-36"), false);
+  assert.equal(brDocuments.isValidCpf("111.111.111-11"), false);
+  assert.equal(brDocuments.isValidCpf("123"), false);
+});
+
+test("CNPJ: aceita dígitos verificadores corretos e rejeita sequência repetida", () => {
+  assert.equal(brDocuments.isValidCnpj("11.222.333/0001-81"), true);
+  assert.equal(brDocuments.isValidCnpj("11.222.333/0001-82"), false);
+  assert.equal(brDocuments.isValidCnpj("11.111.111/1111-11"), false);
+});
+
+test("CPF/CNPJ combinado: decide pelo tamanho do documento informado", () => {
+  assert.equal(brDocuments.isValidCpfOrCnpj("111.444.777-35"), true);
+  assert.equal(brDocuments.isValidCpfOrCnpj("11.222.333/0001-81"), true);
+  assert.equal(brDocuments.isValidCpfOrCnpj("12345"), false);
+});
+
+test("chave Pix: valida formato de acordo com o tipo selecionado", () => {
+  assert.equal(brDocuments.isValidPixKey("cliente@banco.com", "email"), true);
+  assert.equal(brDocuments.isValidPixKey("nao-e-email", "email"), false);
+  assert.equal(brDocuments.isValidPixKey("11999998888", "phone"), true);
+  assert.equal(brDocuments.isValidPixKey("123", "phone"), false);
+  assert.equal(brDocuments.isValidPixKey("111.444.777-35", "cpf"), true);
+  assert.equal(brDocuments.isValidPixKey("11.222.333/0001-81", "cpf"), false);
+  assert.equal(brDocuments.isValidPixKey("a1b2c3d4-e5f6-4789-a012-b3c4d5e6f789", "random"), true);
+  assert.equal(brDocuments.isValidPixKey("chave-qualquer", "random"), false);
+});
+
+// ---- Categoria/Item e conta financeira: estrutura da UI e migration ----
+
+test("formulário de Contas a Pagar tem categoria e item em cascata, com cadastro inline", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="payableCategory"/);
+  assert.match(html, /id="payableItem"/);
+  assert.match(html, /id="btnTogglePayableNewCategory"/);
+  assert.match(html, /id="btnTogglePayableNewItem"/);
+  assert.match(html, /id="payableItemSearch"/);
+  // Item filtrado pela categoria selecionada, nunca lista tudo de uma vez.
+  assert.match(html, /function renderPayableItemOptions\(/);
+});
+
+test("filtros de Contas a Pagar também têm categoria e item separados", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="payablesCategory"/);
+  assert.match(html, /id="payablesItem"/);
+});
+
+test("cadastro de conta financeira tem os campos bancários completos e é isolado por loja", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  [
+    "payableAccountCompany",
+    "payableAccountType",
+    "payableAccountBankName",
+    "payableAccountBankCode",
+    "payableAccountAgency",
+    "payableAccountAgencyDigit",
+    "payableAccountNumber",
+    "payableAccountDigit",
+    "payableAccountHolderName",
+    "payableAccountHolderDocument",
+    "payableAccountPixType",
+    "payableAccountPixKey",
+    "payableAccountOpeningBalance",
+    "payableAccountOpeningDate",
+    "payableAccountActive",
+  ].forEach((id) => assert.match(html, new RegExp('id="' + id + '"'), `campo ${id} ausente`));
+});
+
+test("migration 0029 adiciona empresa/loja e os campos bancários em finance_accounts", async () => {
+  const sql = await readFile(new URL("../drizzle/0029_unknown_silver_surfer.sql", import.meta.url), "utf8");
+  [
+    "company_id",
+    "bank_name",
+    "bank_code",
+    "agency",
+    "agency_digit",
+    "account_number",
+    "account_digit",
+    "holder_name",
+    "holder_document",
+    "pix_key_type",
+    "pix_key",
+    "opening_balance_cents",
+    "opening_balance_date",
+  ].forEach((column) => assert.match(sql, new RegExp('"' + column + '"'), `coluna ${column} ausente na migration`));
+  assert.match(sql, /finance_accounts_type_check/);
 });

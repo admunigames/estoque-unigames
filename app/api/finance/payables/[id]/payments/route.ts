@@ -2,7 +2,7 @@ import { getD1 } from "../../../../../../db";
 import { unauthorizedResponse } from "../../../../../lib/notion";
 import { computeStoredStatus } from "../../../../../lib/finance-status";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../../shared";
-import { DATE_PATTERN, assertAccess, loadPayable } from "../../shared";
+import { DATE_PATTERN, assertAccess, assertFinanceAccountBelongsToCompany, loadPayable } from "../../shared";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const unauthorized = unauthorizedResponse(request);
@@ -106,6 +106,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     const paymentMethod = safeText(body.paymentMethod, 40);
     const financeAccountId = safeText(body.financeAccountId, 80);
+    const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, payable.companyId);
+    if (accountError) return jsonResponse({ error: accountError }, 409);
+
     const notes = safeText(body.notes, 2000);
     const paymentId = crypto.randomUUID();
     const actorName = actor.displayName || "Administrador";

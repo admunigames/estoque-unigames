@@ -1694,6 +1694,12 @@
   .payables-pagination{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 0 4px;font-size:12px;}
   .payables-kind-tabs{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;}
   .payables-kind-tabs label{display:flex;align-items:center;gap:6px;}
+  .field-with-action{display:flex;gap:6px;align-items:stretch;}
+  .field-with-action select{flex:1;min-width:0;}
+  .field-with-action button{white-space:nowrap;padding-inline:10px;font-size:10px;}
+  .field-inline-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;border:1px dashed var(--line);border-radius:8px;background:rgba(79,134,189,.04);}
+  .field-inline-form select,.field-inline-form input{flex:1;min-width:140px;}
+  .field-inline-form button{white-space:nowrap;}
   .payable-detail-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 20px;margin:14px 0;font-size:12px;}
   .payable-detail-summary div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:4px;}
   .payable-detail-summary div span:first-child{color:var(--ink-soft);}
@@ -4716,7 +4722,8 @@
             </select>
           </div>
           <div class="field"><label for="payablesSupplier">FORNECEDOR</label><select id="payablesSupplier"><option value="">TODOS</option></select></div>
-          <div class="field"><label for="payablesItem">CATEGORIA/ITEM</label><select id="payablesItem"><option value="">TODOS</option></select></div>
+          <div class="field"><label for="payablesCategory">CATEGORIA</label><select id="payablesCategory"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="payablesItem">ITEM</label><select id="payablesItem"><option value="">TODOS</option></select></div>
           <div class="field"><label for="payablesAccount">CONTA FINANCEIRA</label><select id="payablesAccount"><option value="">TODAS</option></select></div>
           <div class="field"><label for="payablesDueFrom">VENCIMENTO DE</label><input type="date" id="payablesDueFrom"></div>
           <div class="field"><label for="payablesDueTo">VENCIMENTO ATÉ</label><input type="date" id="payablesDueTo"></div>
@@ -4792,7 +4799,40 @@
       <div class="purchase-field"><label for="payableCompany">EMPRESA/LOJA *</label><select id="payableCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="payableDescription">DESCRIÇÃO *</label><input id="payableDescription" maxlength="200" required></div>
       <div class="purchase-field"><label for="payableSupplier">FORNECEDOR</label><select id="payableSupplier"><option value="">SEM FORNECEDOR</option></select></div>
-      <div class="purchase-field"><label for="payableItem">CATEGORIA/ITEM DA DESPESA *</label><select id="payableItem" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field">
+        <label for="payableCategory">CATEGORIA *</label>
+        <div class="field-with-action">
+          <select id="payableCategory" required><option value="">SELECIONE</option></select>
+          <button class="btn-outline" type="button" id="btnTogglePayableNewCategory" title="Cadastrar nova categoria">+ NOVA</button>
+        </div>
+      </div>
+      <div class="purchase-field full" id="payableNewCategoryRow" hidden>
+        <label for="payableNewCategoryName">NOVA CATEGORIA/SUBGRUPO</label>
+        <div class="field-inline-form">
+          <select id="payableNewCategoryParent"><option value="">CATEGORIA (NÍVEL PRINCIPAL)</option></select>
+          <input id="payableNewCategoryName" maxlength="120" placeholder="Nome da categoria/subgrupo">
+          <button class="btn-accent" type="button" id="btnSavePayableNewCategory">SALVAR</button>
+          <button class="btn-outline" type="button" id="btnCancelPayableNewCategory">CANCELAR</button>
+        </div>
+        <div class="user-form-status" id="payableNewCategoryStatus" role="status" aria-live="polite"></div>
+      </div>
+      <div class="purchase-field full"><label for="payableItemSearch">BUSCAR ITEM</label><input id="payableItemSearch" placeholder="Digite pra filtrar os itens da categoria selecionada..."></div>
+      <div class="purchase-field">
+        <label for="payableItem">ITEM DA DESPESA *</label>
+        <div class="field-with-action">
+          <select id="payableItem" required><option value="">SELECIONE A CATEGORIA PRIMEIRO</option></select>
+          <button class="btn-outline" type="button" id="btnTogglePayableNewItem" title="Cadastrar novo item">+ NOVO</button>
+        </div>
+      </div>
+      <div class="purchase-field full" id="payableNewItemRow" hidden>
+        <label for="payableNewItemName">NOVO ITEM (NA CATEGORIA SELECIONADA ACIMA)</label>
+        <div class="field-inline-form">
+          <input id="payableNewItemName" maxlength="120" placeholder="Nome do item">
+          <button class="btn-accent" type="button" id="btnSavePayableNewItem">SALVAR</button>
+          <button class="btn-outline" type="button" id="btnCancelPayableNewItem">CANCELAR</button>
+        </div>
+        <div class="user-form-status" id="payableNewItemStatus" role="status" aria-live="polite"></div>
+      </div>
       <div class="purchase-field"><label for="payableAccount">CONTA FINANCEIRA</label><select id="payableAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="payablePaymentMethod">FORMA DE PAGAMENTO</label><input id="payablePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
       <div class="purchase-field"><label for="payableOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="number" id="payableOriginalAmount" min="0.01" step="0.01" required></div>
@@ -4875,19 +4915,108 @@
     <h3 id="payablesCatalogDialogTitle">FORNECEDORES E CONTAS FINANCEIRAS</h3>
     <button class="purchase-dialog-close" id="btnClosePayablesCatalogDialog" type="button" aria-label="Fechar">×</button>
   </div>
-  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
-    <form class="dre-catalog-form" id="payableSupplierForm">
-      <div class="field"><label for="payableSupplierName">NOVO FORNECEDOR</label><input id="payableSupplierName" maxlength="160" placeholder="Ex.: ENERGISA" required></div>
-      <div class="field"><label for="payableSupplierDocument">CNPJ/CPF</label><input id="payableSupplierDocument" maxlength="40"></div>
-      <button class="btn-accent" type="submit">ADICIONAR FORNECEDOR</button>
-    </form>
-    <div class="dre-catalog-list" id="payableSuppliersList"></div>
+  <div style="padding:0 20px 20px;max-height:80vh;overflow:auto;">
+    <div class="output-tabs" role="tablist" aria-label="Cadastro de fornecedores e contas">
+      <button class="output-tab active" type="button" role="tab" aria-selected="true" data-payables-catalog-tab="suppliers">FORNECEDORES</button>
+      <button class="output-tab" type="button" role="tab" aria-selected="false" data-payables-catalog-tab="accounts">CONTAS FINANCEIRAS</button>
+    </div>
 
-    <form class="dre-catalog-form" id="payableAccountForm" style="margin-top:18px;">
-      <div class="field"><label for="payableAccountName">NOVA CONTA FINANCEIRA</label><input id="payableAccountName" maxlength="160" placeholder="Ex.: CAIXA, BANCO X" required></div>
-      <button class="btn-accent" type="submit">ADICIONAR CONTA</button>
-    </form>
-    <div class="dre-catalog-list" id="payableAccountsList"></div>
+    <div id="payablesCatalogSuppliersTab">
+      <form class="dre-catalog-form" id="payableSupplierForm">
+        <input type="hidden" id="payableSupplierId">
+        <div class="field"><label for="payableSupplierName">NOME DO FORNECEDOR *</label><input id="payableSupplierName" maxlength="160" placeholder="Ex.: ENERGISA" required></div>
+        <div class="field"><label for="payableSupplierDocument">CNPJ/CPF</label><input id="payableSupplierDocument" maxlength="40"></div>
+        <button class="btn-outline" type="button" id="btnCancelSupplierEdit" hidden>CANCELAR EDIÇÃO</button>
+        <button class="btn-accent" type="submit" id="btnSaveSupplier">ADICIONAR FORNECEDOR</button>
+      </form>
+      <div class="user-form-status" id="payableSupplierFormStatus" role="status" aria-live="polite"></div>
+      <div class="field full" style="margin-bottom:12px;"><label for="payableSuppliersSearch">BUSCAR</label><input id="payableSuppliersSearch" placeholder="Nome ou documento..."></div>
+      <div class="dre-catalog-list" id="payableSuppliersList"></div>
+    </div>
+
+    <div id="payablesCatalogAccountsTab" hidden>
+      <form id="payableAccountForm">
+        <input type="hidden" id="payableAccountId">
+        <div class="purchase-form-grid">
+          <div class="purchase-field"><label for="payableAccountCompany">EMPRESA/LOJA *</label><select id="payableAccountCompany" required><option value="">SELECIONE</option></select></div>
+          <div class="purchase-field"><label for="payableAccountName">NOME/DESCRIÇÃO *</label><input id="payableAccountName" maxlength="160" placeholder="Ex.: CAIXA LOJA CENTRO" required></div>
+          <div class="purchase-field"><label for="payableAccountType">TIPO *</label>
+            <select id="payableAccountType" required>
+              <option value="checking">CONTA CORRENTE</option>
+              <option value="savings">CONTA POUPANÇA</option>
+              <option value="cash">CAIXA</option>
+              <option value="wallet">CARTEIRA</option>
+              <option value="digital">CONTA DIGITAL</option>
+              <option value="card">CARTÃO</option>
+              <option value="investment">INVESTIMENTO</option>
+              <option value="other">OUTROS</option>
+            </select>
+          </div>
+          <div class="purchase-field" id="payableAccountBankNameField"><label for="payableAccountBankName">BANCO/INSTITUIÇÃO</label><input id="payableAccountBankName" maxlength="120"></div>
+          <div class="purchase-field" id="payableAccountBankCodeField"><label for="payableAccountBankCode">CÓDIGO DO BANCO</label><input id="payableAccountBankCode" maxlength="10"></div>
+          <div class="purchase-field" id="payableAccountAgencyField"><label for="payableAccountAgency">AGÊNCIA</label><input id="payableAccountAgency" maxlength="20" inputmode="numeric"></div>
+          <div class="purchase-field" id="payableAccountAgencyDigitField"><label for="payableAccountAgencyDigit">DÍGITO DA AGÊNCIA</label><input id="payableAccountAgencyDigit" maxlength="5"></div>
+          <div class="purchase-field" id="payableAccountNumberField"><label for="payableAccountNumber">NÚMERO DA CONTA</label><input id="payableAccountNumber" maxlength="30" inputmode="numeric"></div>
+          <div class="purchase-field" id="payableAccountDigitField"><label for="payableAccountDigit">DÍGITO DA CONTA</label><input id="payableAccountDigit" maxlength="5"></div>
+          <div class="purchase-field"><label for="payableAccountHolderName">TITULAR</label><input id="payableAccountHolderName" maxlength="160"></div>
+          <div class="purchase-field"><label for="payableAccountHolderDocument">CPF/CNPJ DO TITULAR</label><input id="payableAccountHolderDocument" maxlength="20"></div>
+          <div class="purchase-field"><label for="payableAccountPixType">TIPO DA CHAVE PIX</label>
+            <select id="payableAccountPixType">
+              <option value="">SEM CHAVE PIX</option>
+              <option value="cpf">CPF</option>
+              <option value="cnpj">CNPJ</option>
+              <option value="email">E-MAIL</option>
+              <option value="phone">TELEFONE</option>
+              <option value="random">ALEATÓRIA</option>
+              <option value="other">OUTRA</option>
+            </select>
+          </div>
+          <div class="purchase-field" id="payableAccountPixKeyField"><label for="payableAccountPixKey">CHAVE PIX</label><input id="payableAccountPixKey" maxlength="140"></div>
+          <div class="purchase-field"><label for="payableAccountOpeningBalance">SALDO INICIAL (R$)</label><input type="number" id="payableAccountOpeningBalance" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="purchase-field"><label for="payableAccountOpeningDate">DATA DO SALDO INICIAL</label><input type="date" id="payableAccountOpeningDate"></div>
+          <div class="purchase-field"><label for="payableAccountActive" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="payableAccountActive" checked style="width:auto;"> CONTA ATIVA</label></div>
+          <div class="purchase-field full"><label for="payableAccountNotes">OBSERVAÇÕES</label><textarea id="payableAccountNotes" rows="2" maxlength="2000"></textarea></div>
+        </div>
+        <div class="user-form-status" id="payableAccountFormStatus" role="status" aria-live="polite"></div>
+        <div class="purchase-form-actions">
+          <button class="btn-outline" type="button" id="btnCancelAccountEdit" hidden>CANCELAR EDIÇÃO</button>
+          <button class="btn-accent" type="submit" id="btnSaveAccount">ADICIONAR CONTA</button>
+        </div>
+      </form>
+
+      <div class="dre-toolbar payables-filters" style="margin-top:20px;">
+        <div class="field"><label for="payableAccountsFilterCompany">EMPRESA/LOJA</label><select id="payableAccountsFilterCompany"><option value="">TODAS</option></select></div>
+        <div class="field"><label for="payableAccountsFilterType">TIPO</label>
+          <select id="payableAccountsFilterType">
+            <option value="">TODOS</option>
+            <option value="checking">CONTA CORRENTE</option>
+            <option value="savings">CONTA POUPANÇA</option>
+            <option value="cash">CAIXA</option>
+            <option value="wallet">CARTEIRA</option>
+            <option value="digital">CONTA DIGITAL</option>
+            <option value="card">CARTÃO</option>
+            <option value="investment">INVESTIMENTO</option>
+            <option value="other">OUTROS</option>
+          </select>
+        </div>
+        <div class="field"><label for="payableAccountsFilterStatus">STATUS</label>
+          <select id="payableAccountsFilterStatus">
+            <option value="">TODAS</option>
+            <option value="active">ATIVAS</option>
+            <option value="inactive">INATIVAS</option>
+          </select>
+        </div>
+        <div class="field full"><label for="payableAccountsSearch">BUSCAR</label><input id="payableAccountsSearch" placeholder="Nome, banco, titular..."></div>
+      </div>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Nome</th><th>Empresa/Loja</th><th>Tipo</th><th>Banco</th><th>Agência/Conta</th><th>Status</th><th></th></tr></thead>
+            <tbody id="payableAccountsBody"><tr><td colspan="7" class="responsive-empty">Carregando contas financeiras…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </dialog>
 
@@ -14604,15 +14733,20 @@ function renderHomeTasks(){
       return;
     }
     let html = '';
+    const actions = (renameAttr, renameId, deleteAttr, deleteId) =>
+      '<span style="display:flex;gap:6px;">'+
+        '<button class="btn-outline" type="button" data-'+renameAttr+'="'+escapeHtml(renameId)+'">RENOMEAR</button>'+
+        '<button class="btn-outline" type="button" data-'+deleteAttr+'="'+escapeHtml(deleteId)+'">EXCLUIR</button>'+
+      '</span>';
     topCategories.forEach(category => {
-      html += '<div class="dre-catalog-row"><strong>'+escapeHtml(category.name)+'</strong><button class="btn-outline" type="button" data-finance-delete-category="'+escapeHtml(category.id)+'">EXCLUIR</button></div>';
+      html += '<div class="dre-catalog-row"><strong>'+escapeHtml(category.name)+'</strong>'+actions('finance-rename-category', category.id, 'finance-delete-category', category.id)+'</div>';
       financeItems.filter(item => item.categoryId === category.id).forEach(item => {
-        html += '<div class="dre-catalog-row item">'+escapeHtml(item.name)+'<button class="btn-outline" type="button" data-finance-delete-item="'+escapeHtml(item.id)+'">EXCLUIR</button></div>';
+        html += '<div class="dre-catalog-row item">'+escapeHtml(item.name)+actions('finance-rename-item', item.id, 'finance-delete-item', item.id)+'</div>';
       });
       financeCategories.filter(sub => sub.parentId === category.id).forEach(sub => {
-        html += '<div class="dre-catalog-row sub"><strong>'+escapeHtml(sub.name)+'</strong><button class="btn-outline" type="button" data-finance-delete-category="'+escapeHtml(sub.id)+'">EXCLUIR</button></div>';
+        html += '<div class="dre-catalog-row sub"><strong>'+escapeHtml(sub.name)+'</strong>'+actions('finance-rename-category', sub.id, 'finance-delete-category', sub.id)+'</div>';
         financeItems.filter(item => item.categoryId === sub.id).forEach(item => {
-          html += '<div class="dre-catalog-row item">'+escapeHtml(item.name)+'<button class="btn-outline" type="button" data-finance-delete-item="'+escapeHtml(item.id)+'">EXCLUIR</button></div>';
+          html += '<div class="dre-catalog-row item">'+escapeHtml(item.name)+actions('finance-rename-item', item.id, 'finance-delete-item', item.id)+'</div>';
         });
       });
     });
@@ -15022,9 +15156,37 @@ function renderHomeTasks(){
   });
 
   el('financeCatalogList').addEventListener('click', async event => {
+    const renameCategoryButton = event.target.closest('[data-finance-rename-category]');
+    const renameItemButton = event.target.closest('[data-finance-rename-item]');
     const categoryButton = event.target.closest('[data-finance-delete-category]');
     const itemButton = event.target.closest('[data-finance-delete-item]');
-    if(categoryButton){
+    if(renameCategoryButton){
+      const id = renameCategoryButton.dataset.financeRenameCategory;
+      const current = financeCategories.find(c => c.id === id);
+      const name = prompt('Novo nome da categoria/subgrupo:', current ? current.name : '');
+      if(!name || !name.trim()) return;
+      try{
+        await financeApiRequest('/categories', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id, name:name.trim()})
+        });
+        await loadFinanceCatalog();
+        showPurchaseToast('Categoria renomeada.');
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }else if(renameItemButton){
+      const id = renameItemButton.dataset.financeRenameItem;
+      const current = financeItems.find(i => i.id === id);
+      const name = prompt('Novo nome do item:', current ? current.name : '');
+      if(!name || !name.trim()) return;
+      try{
+        await financeApiRequest('/items', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id, name:name.trim(), categoryId: current ? current.categoryId : ''})
+        });
+        await loadFinanceCatalog();
+        showPurchaseToast('Item renomeado.');
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }else if(categoryButton){
       if(!confirm('Excluir esta categoria/subgrupo?')) return;
       try{
         await financeApiRequest('/categories?id='+encodeURIComponent(categoryButton.dataset.financeDeleteCategory), {method:'DELETE'});
@@ -15101,42 +15263,153 @@ function renderHomeTasks(){
     }
   }
 
-  function payableItemSelectOptionsHtml(selectedId){
-    const categoryLabel = new Map();
-    financeCategories.forEach(category => {
-      if(category.parentId){
-        const parent = financeCategories.find(p => p.id === category.parentId);
-        categoryLabel.set(category.id, (parent ? parent.name+' › ' : '')+category.name);
-      }else{
-        categoryLabel.set(category.id, category.name);
-      }
+  // Popula os dois seletores de CATEGORIA (filtro e formulário) com a
+  // mesma lista achatada categoria/subgrupo já usada pela DRE.
+  function renderPayablesCategoryOptions(){
+    const options = financeCategorySelectOptions();
+    const optionsHtml = options.map(o => '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
+    [
+      {id:'payablesCategory', placeholder:'TODAS'},
+      {id:'payableCategory', placeholder:'SELECIONE'},
+      {id:'payableNewCategoryParent', placeholder:'CATEGORIA (NÍVEL PRINCIPAL)', onlyTop:true},
+    ].forEach(config => {
+      const select = el(config.id);
+      if(!select) return;
+      const selected = select.value;
+      const html = config.onlyTop
+        ? financeCategories.filter(c => !c.parentId).map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('')
+        : optionsHtml;
+      select.innerHTML = '<option value="">'+config.placeholder+'</option>'+html;
+      if(options.some(o => o.id === selected) || (config.onlyTop && financeCategories.some(c => c.id === selected && !c.parentId))) select.value = selected;
     });
-    return '<option value="">SELECIONE</option>'+financeItems.map(item =>
-      '<option value="'+escapeHtml(item.id)+'"'+(item.id === selectedId ? ' selected' : '')+'>'+
-        escapeHtml((categoryLabel.get(item.categoryId) || '')+' › '+item.name)+'</option>'
-    ).join('');
+  }
+
+  // Item filtrado pela categoria selecionada — usado tanto no formulário
+  // quanto no filtro da listagem. searchText filtra por nome (busca simples,
+  // sem biblioteca nova) quando há muitos itens na categoria.
+  function renderPayableItemOptions(selectId, categoryId, options){
+    const select = el(selectId);
+    if(!select) return;
+    const settings = options || {};
+    const selectedId = settings.selectedId !== undefined ? settings.selectedId : select.value;
+    const searchText = (settings.searchText || '').trim().toLowerCase();
+    const placeholder = settings.placeholder || (categoryId ? 'SELECIONE' : 'SELECIONE A CATEGORIA PRIMEIRO');
+    let items = categoryId ? financeItems.filter(item => item.categoryId === categoryId) : [];
+    if(searchText) items = items.filter(item => item.name.toLowerCase().includes(searchText));
+    select.innerHTML = '<option value="">'+placeholder+'</option>'+
+      items.map(item => '<option value="'+escapeHtml(item.id)+'"'+(item.id === selectedId ? ' selected' : '')+'>'+escapeHtml(item.name)+'</option>').join('');
+    if(items.some(item => item.id === selectedId)) select.value = selectedId;
+  }
+
+  // Só ativas, e só da loja informada — contas de outra loja nem aparecem
+  // pra escolher (o backend também recusa, isso é só a UX). companyId=''
+  // inclui as contas antigas sem loja (cadastradas antes da migration).
+  function renderPayableAccountOptionsForCompany(selectId, companyId, placeholder){
+    const select = el(selectId);
+    if(!select) return;
+    const selected = select.value;
+    const options = payableAccounts.filter(a => a.active && (!companyId || !a.companyId || a.companyId === companyId));
+    select.innerHTML = '<option value="">'+placeholder+'</option>'+
+      options.map(a => '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.displayLabel || a.name)+'</option>').join('');
+    if(options.some(a => a.id === selected)) select.value = selected;
   }
 
   function renderPayablesCatalogSelects(){
-    const supplierOptions = payableSuppliers.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
-    const accountOptions = payableAccounts.map(a => '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name)+'</option>').join('');
-    const itemOptions = payableItemSelectOptionsHtml('');
+    renderPayablesCategoryOptions();
+    const supplierOptions = payableSuppliers.filter(s => s.active).map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
 
     if(el('payablesSupplier')) el('payablesSupplier').innerHTML = '<option value="">TODOS</option>'+supplierOptions;
-    if(el('payablesAccount')) el('payablesAccount').innerHTML = '<option value="">TODAS</option>'+accountOptions;
-    if(el('payablesItem')) el('payablesItem').innerHTML = '<option value="">TODOS</option>'+itemOptions.replace('<option value="">SELECIONE</option>','');
     if(el('payableSupplier')) el('payableSupplier').innerHTML = '<option value="">SEM FORNECEDOR</option>'+supplierOptions;
-    if(el('payableAccount')) el('payableAccount').innerHTML = '<option value="">SEM CONTA</option>'+accountOptions;
-    if(el('payablePaymentAccount')) el('payablePaymentAccount').innerHTML = '<option value="">SEM CONTA</option>'+accountOptions;
-    if(el('payableItem')) el('payableItem').innerHTML = itemOptions;
+    renderPayableAccountOptionsForCompany('payablesAccount', el('payablesLoja') ? el('payablesLoja').value : '', 'TODAS');
+    renderPayableAccountOptionsForCompany('payableAccount', el('payableCompany') ? el('payableCompany').value : '', 'SEM CONTA');
+    renderPayableItemOptions('payablesItem', el('payablesCategory') ? el('payablesCategory').value : '', {placeholder:'TODOS'});
+    renderPayableItemOptions('payableItem', el('payableCategory') ? el('payableCategory').value : '');
   }
+
+  el('payableCompany') && el('payableCompany').addEventListener('change', () => {
+    renderPayableAccountOptionsForCompany('payableAccount', el('payableCompany').value, 'SEM CONTA');
+  });
+
+  el('payableCategory') && el('payableCategory').addEventListener('change', () => {
+    renderPayableItemOptions('payableItem', el('payableCategory').value, {selectedId:''});
+    el('payableItemSearch').value = '';
+  });
+  el('payableItemSearch') && el('payableItemSearch').addEventListener('input', () => {
+    renderPayableItemOptions('payableItem', el('payableCategory').value, {searchText: el('payableItemSearch').value, selectedId: el('payableItem').value});
+  });
+  el('payablesCategory') && el('payablesCategory').addEventListener('change', () => {
+    renderPayableItemOptions('payablesItem', el('payablesCategory').value, {placeholder:'TODOS', selectedId:''});
+  });
+
+  function togglePayableInlineForm(rowId, show){
+    const row = el(rowId);
+    if(!row) return;
+    row.hidden = !show;
+    if(show) row.querySelector('input,select')?.focus();
+  }
+  el('btnTogglePayableNewCategory') && el('btnTogglePayableNewCategory').addEventListener('click', () => {
+    togglePayableInlineForm('payableNewCategoryRow', el('payableNewCategoryRow').hidden);
+  });
+  el('btnCancelPayableNewCategory') && el('btnCancelPayableNewCategory').addEventListener('click', () => {
+    togglePayableInlineForm('payableNewCategoryRow', false);
+    el('payableNewCategoryName').value = '';
+    el('payableNewCategoryStatus').textContent = '';
+  });
+  el('btnSavePayableNewCategory') && el('btnSavePayableNewCategory').addEventListener('click', async () => {
+    const status = el('payableNewCategoryStatus');
+    const name = el('payableNewCategoryName').value.trim();
+    if(name.length < 2){ status.textContent = 'INFORME O NOME.'; return; }
+    try{
+      const data = await financeApiRequest('/categories', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, parentId: el('payableNewCategoryParent').value})
+      });
+      await loadFinanceCatalog();
+      renderPayablesCatalogSelects();
+      el('payableCategory').value = data.id;
+      renderPayableItemOptions('payableItem', data.id, {selectedId:''});
+      el('payableNewCategoryName').value = '';
+      status.textContent = '';
+      togglePayableInlineForm('payableNewCategoryRow', false);
+      showPurchaseToast('Categoria cadastrada.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  el('btnTogglePayableNewItem') && el('btnTogglePayableNewItem').addEventListener('click', () => {
+    if(!el('payableCategory').value){ showPurchaseToast('Selecione a categoria antes de cadastrar um item.','error'); return; }
+    togglePayableInlineForm('payableNewItemRow', el('payableNewItemRow').hidden);
+  });
+  el('btnCancelPayableNewItem') && el('btnCancelPayableNewItem').addEventListener('click', () => {
+    togglePayableInlineForm('payableNewItemRow', false);
+    el('payableNewItemName').value = '';
+    el('payableNewItemStatus').textContent = '';
+  });
+  el('btnSavePayableNewItem') && el('btnSavePayableNewItem').addEventListener('click', async () => {
+    const status = el('payableNewItemStatus');
+    const name = el('payableNewItemName').value.trim();
+    const categoryId = el('payableCategory').value;
+    if(!categoryId){ status.textContent = 'SELECIONE A CATEGORIA PRIMEIRO.'; return; }
+    if(name.length < 2){ status.textContent = 'INFORME O NOME.'; return; }
+    try{
+      const data = await financeApiRequest('/items', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, categoryId})
+      });
+      await loadFinanceCatalog();
+      renderPayableItemOptions('payableItem', categoryId, {selectedId:data.id});
+      el('payableNewItemName').value = '';
+      status.textContent = '';
+      togglePayableInlineForm('payableNewItemRow', false);
+      showPurchaseToast('Item cadastrado.');
+    }catch(error){ status.textContent = error.message; }
+  });
 
   async function loadPayablesCatalogData(){
     try{
       if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
       const [suppliersData, accountsData] = await Promise.all([
-        financeApiRequest('/suppliers'),
-        financeApiRequest('/accounts')
+        financeApiRequest('/suppliers?includeInactive=1'),
+        financeApiRequest('/accounts?includeInactive=1')
       ]);
       payableSuppliers = Array.isArray(suppliersData.suppliers) ? suppliersData.suppliers : [];
       payableAccounts = Array.isArray(accountsData.accounts) ? accountsData.accounts : [];
@@ -15350,7 +15623,9 @@ function renderHomeTasks(){
     el('payableCompany').value = row.companyId;
     el('payableDescription').value = row.description;
     el('payableSupplier').value = row.supplierId || '';
-    el('payableItem').value = row.financeItemId;
+    const itemForEdit = financeItems.find(i => i.id === row.financeItemId);
+    el('payableCategory').value = itemForEdit ? itemForEdit.categoryId : '';
+    renderPayableItemOptions('payableItem', itemForEdit ? itemForEdit.categoryId : '', {selectedId: row.financeItemId});
     el('payableAccount').value = row.financeAccountId || '';
     el('payablePaymentMethod').value = row.paymentMethod || '';
     el('payableOriginalAmount').value = (row.originalAmountCents / 100).toFixed(2);
@@ -15463,6 +15738,7 @@ function renderHomeTasks(){
   function renderPayableDetail(data){
     const payable = data.payable;
     const balance = payable.originalAmountCents - payable.paidAmountCents;
+    renderPayableAccountOptionsForCompany('payablePaymentAccount', payable.companyId, 'SEM CONTA');
     el('payableDetailDialogTitle').textContent = payable.description.toUpperCase();
     el('payableDetailSummary').innerHTML =
       '<div><span>EMPRESA/LOJA</span><span>'+escapeHtml(payable.companyName || payable.companyId)+'</span></div>'+
@@ -15611,7 +15887,12 @@ function renderHomeTasks(){
     loadPayablesList();
     renderPayablesQuickViews();
   });
-  el('payablesLoja').addEventListener('change', () => { payablesPage = 1; loadPayablesList(); renderPayablesQuickViews(); });
+  el('payablesLoja').addEventListener('change', () => {
+    payablesPage = 1;
+    renderPayableAccountOptionsForCompany('payablesAccount', el('payablesLoja').value, 'TODAS');
+    loadPayablesList();
+    renderPayablesQuickViews();
+  });
   document.querySelectorAll('[data-payables-sort]').forEach(th => {
     th.addEventListener('click', () => {
       const field = th.dataset.payablesSort;
@@ -15623,84 +15904,296 @@ function renderHomeTasks(){
     });
   });
 
+  const ACCOUNT_TYPE_LABELS = {
+    checking:'CONTA CORRENTE', savings:'CONTA POUPANÇA', cash:'CAIXA', wallet:'CARTEIRA',
+    digital:'CONTA DIGITAL', card:'CARTÃO', investment:'INVESTIMENTO', other:'OUTROS'
+  };
+  const ACCOUNT_TYPES_WITHOUT_BANK = new Set(['cash','wallet']);
+
+  function renderPayableSuppliersList(){
+    const search = (el('payableSuppliersSearch').value || '').trim().toLowerCase();
+    const filtered = payableSuppliers.filter(s =>
+      !search || s.name.toLowerCase().includes(search) || (s.document || '').toLowerCase().includes(search)
+    );
+    el('payableSuppliersList').innerHTML = filtered.length
+      ? filtered.map(s => '<div class="dre-catalog-row"><span>'+escapeHtml(s.name)+(s.document ? ' — '+escapeHtml(s.document) : '')+(s.active ? '' : ' (INATIVO)')+'</span>'+
+          '<span style="display:flex;gap:6px;">'+
+            '<button class="btn-outline" type="button" data-payable-edit-supplier="'+escapeHtml(s.id)+'">EDITAR</button>'+
+            '<button class="btn-outline" type="button" data-payable-toggle-supplier="'+escapeHtml(s.id)+'">'+(s.active ? 'DESATIVAR' : 'REATIVAR')+'</button>'+
+          '</span></div>').join('')
+      : '<div class="dre-empty">Nenhum fornecedor encontrado.</div>';
+  }
+
+  function accountFilteredList(){
+    const companyFilter = el('payableAccountsFilterCompany').value;
+    const typeFilter = el('payableAccountsFilterType').value;
+    const statusFilter = el('payableAccountsFilterStatus').value;
+    const search = (el('payableAccountsSearch').value || '').trim().toLowerCase();
+    return payableAccounts.filter(a => {
+      if(companyFilter && a.companyId !== companyFilter) return false;
+      if(typeFilter && a.type !== typeFilter) return false;
+      if(statusFilter === 'active' && !a.active) return false;
+      if(statusFilter === 'inactive' && a.active) return false;
+      if(search){
+        const haystack = (a.name+' '+a.bankName+' '+a.holderName).toLowerCase();
+        if(!haystack.includes(search)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderPayableAccountsTable(){
+    const rows = accountFilteredList();
+    el('payableAccountsBody').innerHTML = rows.length ? rows.map(a => {
+      const agencyAccount = [a.agency && ('ag. '+a.agency+(a.agencyDigit ? '-'+a.agencyDigit : '')), a.accountNumber && ('cc. '+a.accountNumber+(a.accountDigit ? '-'+a.accountDigit : ''))].filter(Boolean).join(' / ') || '—';
+      return '<tr>'+
+        '<td>'+escapeHtml(a.name)+'</td>'+
+        '<td>'+escapeHtml(a.companyName || '—')+'</td>'+
+        '<td>'+escapeHtml(ACCOUNT_TYPE_LABELS[a.type] || a.type)+'</td>'+
+        '<td>'+escapeHtml(a.bankName || '—')+'</td>'+
+        '<td>'+escapeHtml(agencyAccount)+'</td>'+
+        '<td>'+(a.active ? '<span class="status-pill done">ATIVA</span>' : '<span class="status-pill">INATIVA</span>')+'</td>'+
+        '<td style="display:flex;gap:6px;">'+
+          '<button class="btn-outline" type="button" data-payable-edit-account="'+escapeHtml(a.id)+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-payable-toggle-account="'+escapeHtml(a.id)+'">'+(a.active ? 'INATIVAR' : 'REATIVAR')+'</button>'+
+        '</td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="7" class="responsive-empty">Nenhuma conta financeira encontrada.</td></tr>';
+  }
+
+  function renderPayableAccountsFilterCompanyOptions(){
+    const select = el('payableAccountsFilterCompany');
+    const formSelect = el('payableAccountCompany');
+    const options = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    if(select){
+      const selected = select.value;
+      select.innerHTML = '<option value="">TODAS</option>'+options;
+      if(companies.some(c => c.id === selected)) select.value = selected;
+    }
+    if(formSelect){
+      const selected = formSelect.value;
+      formSelect.innerHTML = '<option value="">SELECIONE</option>'+options;
+      if(companies.some(c => c.id === selected)) formSelect.value = selected;
+    }
+  }
+
+  function updatePayableAccountBankFieldsVisibility(){
+    const type = el('payableAccountType').value;
+    const hideBankFields = ACCOUNT_TYPES_WITHOUT_BANK.has(type);
+    ['payableAccountBankNameField','payableAccountBankCodeField','payableAccountAgencyField','payableAccountAgencyDigitField','payableAccountNumberField','payableAccountDigitField'].forEach(id => {
+      el(id).style.display = hideBankFields ? 'none' : '';
+    });
+  }
+  el('payableAccountType').addEventListener('change', updatePayableAccountBankFieldsVisibility);
+
   function renderPayablesCatalogLists(){
-    el('payableSuppliersList').innerHTML = payableSuppliers.length
-      ? payableSuppliers.map(s => '<div class="dre-catalog-row"><span>'+escapeHtml(s.name)+(s.document ? ' — '+escapeHtml(s.document) : '')+'</span><button class="btn-outline" type="button" data-payable-deactivate-supplier="'+escapeHtml(s.id)+'">DESATIVAR</button></div>').join('')
-      : '<div class="dre-empty">Nenhum fornecedor cadastrado.</div>';
-    el('payableAccountsList').innerHTML = payableAccounts.length
-      ? payableAccounts.map(a => '<div class="dre-catalog-row"><span>'+escapeHtml(a.name)+'</span><button class="btn-outline" type="button" data-payable-deactivate-account="'+escapeHtml(a.id)+'">DESATIVAR</button></div>').join('')
-      : '<div class="dre-empty">Nenhuma conta financeira cadastrada.</div>';
+    renderPayableSuppliersList();
+    renderPayableAccountsFilterCompanyOptions();
+    renderPayableAccountsTable();
+  }
+
+  function resetPayableSupplierForm(){
+    el('payableSupplierForm').reset();
+    el('payableSupplierId').value = '';
+    el('btnCancelSupplierEdit').hidden = true;
+    el('btnSaveSupplier').textContent = 'ADICIONAR FORNECEDOR';
+    el('payableSupplierFormStatus').textContent = '';
+  }
+
+  function resetPayableAccountForm(){
+    el('payableAccountForm').reset();
+    el('payableAccountId').value = '';
+    el('payableAccountActive').checked = true;
+    el('btnCancelAccountEdit').hidden = true;
+    el('btnSaveAccount').textContent = 'ADICIONAR CONTA';
+    el('payableAccountFormStatus').textContent = '';
+    renderPayableAccountsFilterCompanyOptions();
+    if(!payablesCanActAcrossStores() && currentSession.companyId){
+      el('payableAccountCompany').value = currentSession.companyId;
+      el('payableAccountCompany').disabled = true;
+    }
+    updatePayableAccountBankFieldsVisibility();
   }
 
   el('btnManagePayablesCatalog').addEventListener('click', async () => {
     await loadPayablesCatalogData();
+    resetPayableSupplierForm();
+    resetPayableAccountForm();
     renderPayablesCatalogLists();
     el('payablesCatalogDialog').showModal();
   });
   el('btnClosePayablesCatalogDialog').addEventListener('click', () => { if(el('payablesCatalogDialog').open) el('payablesCatalogDialog').close(); });
 
+  document.querySelectorAll('[data-payables-catalog-tab]').forEach(button => {
+    button.addEventListener('click', () => {
+      const tab = button.dataset.payablesCatalogTab;
+      document.querySelectorAll('[data-payables-catalog-tab]').forEach(b => {
+        b.classList.toggle('active', b === button);
+        b.setAttribute('aria-selected', String(b === button));
+      });
+      el('payablesCatalogSuppliersTab').hidden = tab !== 'suppliers';
+      el('payablesCatalogAccountsTab').hidden = tab !== 'accounts';
+    });
+  });
+
   el('payableSupplierForm').addEventListener('submit', async event => {
     event.preventDefault();
+    const status = el('payableSupplierFormStatus');
     const name = el('payableSupplierName').value.trim();
-    if(!name) return;
+    if(!name){ status.textContent = 'INFORME O NOME DO FORNECEDOR.'; return; }
     try{
       await financeApiRequest('/suppliers', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name, document:el('payableSupplierDocument').value.trim()})
+        body:JSON.stringify({id: el('payableSupplierId').value, name, document:el('payableSupplierDocument').value.trim()})
       });
-      el('payableSupplierForm').reset();
+      resetPayableSupplierForm();
       await loadPayablesCatalogData();
       renderPayablesCatalogLists();
-      showPurchaseToast('Fornecedor cadastrado.');
-    }catch(error){ showPurchaseToast(error.message,'error'); }
+      showPurchaseToast('Fornecedor salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  el('btnCancelSupplierEdit').addEventListener('click', resetPayableSupplierForm);
+
+  el('payableSuppliersSearch').addEventListener('input', renderPayableSuppliersList);
+
+  el('payableSuppliersList').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-payable-edit-supplier]');
+    const toggleButton = event.target.closest('[data-payable-toggle-supplier]');
+    if(editButton){
+      const supplier = payableSuppliers.find(s => s.id === editButton.dataset.payableEditSupplier);
+      if(!supplier) return;
+      el('payableSupplierId').value = supplier.id;
+      el('payableSupplierName').value = supplier.name;
+      el('payableSupplierDocument').value = supplier.document || '';
+      el('btnCancelSupplierEdit').hidden = false;
+      el('btnSaveSupplier').textContent = 'SALVAR ALTERAÇÕES';
+      el('payableSupplierName').focus();
+    }else if(toggleButton){
+      const supplier = payableSuppliers.find(s => s.id === toggleButton.dataset.payableToggleSupplier);
+      if(!supplier) return;
+      try{
+        await financeApiRequest('/suppliers', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:supplier.id, name:supplier.name, document:supplier.document, active: !supplier.active})
+        });
+        await loadPayablesCatalogData();
+        renderPayablesCatalogLists();
+        showPurchaseToast(supplier.active ? 'Fornecedor desativado.' : 'Fornecedor reativado.');
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }
   });
 
   el('payableAccountForm').addEventListener('submit', async event => {
     event.preventDefault();
+    const status = el('payableAccountFormStatus');
+    status.textContent = '';
+    const companyId = el('payableAccountCompany').value;
+    const companySelect = el('payableAccountCompany');
+    const companyName = companySelect.options[companySelect.selectedIndex] ? companySelect.options[companySelect.selectedIndex].textContent : '';
+    if(!companyId){ status.textContent = 'SELECIONE A EMPRESA/LOJA.'; return; }
     const name = el('payableAccountName').value.trim();
-    if(!name) return;
+    if(!name){ status.textContent = 'INFORME O NOME/DESCRIÇÃO DA CONTA.'; return; }
+
+    const openingBalanceValue = el('payableAccountOpeningBalance').value;
+    let openingBalanceCents;
+    if(openingBalanceValue){
+      openingBalanceCents = parseBRLToCents(openingBalanceValue);
+      if(openingBalanceCents === null){ status.textContent = 'SALDO INICIAL INVÁLIDO.'; return; }
+    }
+
+    const button = el('btnSaveAccount');
+    button.disabled = true;
     try{
       await financeApiRequest('/accounts', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name})
+        body:JSON.stringify({
+          id: el('payableAccountId').value, companyId, companyName, name,
+          type: el('payableAccountType').value,
+          bankName: el('payableAccountBankName').value.trim(),
+          bankCode: el('payableAccountBankCode').value.trim(),
+          agency: el('payableAccountAgency').value.trim(),
+          agencyDigit: el('payableAccountAgencyDigit').value.trim(),
+          accountNumber: el('payableAccountNumber').value.trim(),
+          accountDigit: el('payableAccountDigit').value.trim(),
+          holderName: el('payableAccountHolderName').value.trim(),
+          holderDocument: el('payableAccountHolderDocument').value.trim(),
+          pixKeyType: el('payableAccountPixType').value,
+          pixKey: el('payableAccountPixKey').value.trim(),
+          openingBalanceCents,
+          openingBalanceDate: el('payableAccountOpeningDate').value,
+          notes: el('payableAccountNotes').value.trim(),
+          active: el('payableAccountActive').checked
+        })
       });
-      el('payableAccountForm').reset();
+      resetPayableAccountForm();
       await loadPayablesCatalogData();
       renderPayablesCatalogLists();
-      showPurchaseToast('Conta financeira cadastrada.');
-    }catch(error){ showPurchaseToast(error.message,'error'); }
+      showPurchaseToast('Conta financeira salva.');
+    }catch(error){
+      status.textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
   });
 
-  el('payableSuppliersList').addEventListener('click', async event => {
-    const button = event.target.closest('[data-payable-deactivate-supplier]');
-    if(!button) return;
-    const supplier = payableSuppliers.find(s => s.id === button.dataset.payableDeactivateSupplier);
-    if(!supplier) return;
-    try{
-      await financeApiRequest('/suppliers', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:supplier.id, name:supplier.name, document:supplier.document, active:false})
-      });
-      await loadPayablesCatalogData();
-      renderPayablesCatalogLists();
-      showPurchaseToast('Fornecedor desativado.');
-    }catch(error){ showPurchaseToast(error.message,'error'); }
-  });
+  el('btnCancelAccountEdit').addEventListener('click', resetPayableAccountForm);
 
-  el('payableAccountsList').addEventListener('click', async event => {
-    const button = event.target.closest('[data-payable-deactivate-account]');
-    if(!button) return;
-    const account = payableAccounts.find(a => a.id === button.dataset.payableDeactivateAccount);
-    if(!account) return;
-    try{
-      await financeApiRequest('/accounts', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:account.id, name:account.name, active:false})
-      });
-      await loadPayablesCatalogData();
-      renderPayablesCatalogLists();
-      showPurchaseToast('Conta financeira desativada.');
-    }catch(error){ showPurchaseToast(error.message,'error'); }
+  ['payableAccountsFilterCompany','payableAccountsFilterType','payableAccountsFilterStatus'].forEach(id => {
+    el(id).addEventListener('change', renderPayableAccountsTable);
+  });
+  el('payableAccountsSearch').addEventListener('input', renderPayableAccountsTable);
+
+  el('payableAccountsBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-payable-edit-account]');
+    const toggleButton = event.target.closest('[data-payable-toggle-account]');
+    if(editButton){
+      const account = payableAccounts.find(a => a.id === editButton.dataset.payableEditAccount);
+      if(!account) return;
+      el('payableAccountId').value = account.id;
+      el('payableAccountCompany').disabled = false;
+      el('payableAccountCompany').value = account.companyId;
+      el('payableAccountName').value = account.name;
+      el('payableAccountType').value = account.type;
+      el('payableAccountBankName').value = account.bankName || '';
+      el('payableAccountBankCode').value = account.bankCode || '';
+      el('payableAccountAgency').value = account.agency || '';
+      el('payableAccountAgencyDigit').value = account.agencyDigit || '';
+      el('payableAccountNumber').value = account.accountNumber || '';
+      el('payableAccountDigit').value = account.accountDigit || '';
+      el('payableAccountHolderName').value = account.holderName || '';
+      el('payableAccountHolderDocument').value = account.holderDocument || '';
+      el('payableAccountPixType').value = account.pixKeyType || '';
+      el('payableAccountPixKey').value = account.pixKey || '';
+      el('payableAccountOpeningBalance').value = account.openingBalanceCents ? (account.openingBalanceCents/100).toFixed(2) : '';
+      el('payableAccountOpeningDate').value = account.openingBalanceDate || '';
+      el('payableAccountNotes').value = account.notes || '';
+      el('payableAccountActive').checked = !!account.active;
+      updatePayableAccountBankFieldsVisibility();
+      el('btnCancelAccountEdit').hidden = false;
+      el('btnSaveAccount').textContent = 'SALVAR ALTERAÇÕES';
+      el('payableAccountName').focus();
+    }else if(toggleButton){
+      const account = payableAccounts.find(a => a.id === toggleButton.dataset.payableToggleAccount);
+      if(!account) return;
+      if(account.active && !confirm('Inativar esta conta financeira? Ela deixa de aparecer em novos lançamentos, mas o histórico é preservado.')) return;
+      try{
+        await financeApiRequest('/accounts', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            id:account.id, companyId:account.companyId, companyName:account.companyName, name:account.name,
+            type:account.type, bankName:account.bankName, bankCode:account.bankCode, agency:account.agency,
+            agencyDigit:account.agencyDigit, accountNumber:account.accountNumber, accountDigit:account.accountDigit,
+            holderName:account.holderName, holderDocument:account.holderDocument, pixKeyType:account.pixKeyType,
+            pixKey:account.pixKey, openingBalanceCents:account.openingBalanceCents, openingBalanceDate:account.openingBalanceDate,
+            notes:account.notes, active: !account.active
+          })
+        });
+        await loadPayablesCatalogData();
+        renderPayablesCatalogLists();
+        showPurchaseToast(account.active ? 'Conta financeira inativada.' : 'Conta financeira reativada.');
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }
   });
 
   const permissionNames = {
