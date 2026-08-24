@@ -132,7 +132,10 @@ export async function GET(request: Request) {
   // WHERE e o Postgres rejeita o bind ("supplies N parameters, but ...
   // requires N-1"). Mantém os dois SELECTs (totais e linhas) sempre com a
   // mesma contagem de parâmetros vinculados.
-  conditions.push(`?${todayIndex} IS NOT NULL`);
+  // Cast explícito: um parâmetro bind sozinho (`?N IS NOT NULL`) sem
+  // nenhum operador que dê contexto de tipo faz o Postgres recusar com
+  // "could not determine data type of parameter" — o cast resolve isso.
+  conditions.push(`?${todayIndex}::text IS NOT NULL`);
 
   const status = safeText(params.get("status"), 20);
   if (status) {
