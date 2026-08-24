@@ -115,6 +115,32 @@ export async function assertSlotAvailableForPayable(
   return null;
 }
 
+/**
+ * Confirma que a conta financeira selecionada é da MESMA empresa/loja da
+ * conta a pagar (ou global — company_id='' — pra registros antigos de
+ * antes da migration 0029) e está ativa. Nunca confia só no que o
+ * frontend já filtrou. Retorna mensagem de erro (409) ou null se ok.
+ */
+export async function assertFinanceAccountBelongsToCompany(
+  database: Awaited<ReturnType<typeof getD1>>,
+  financeAccountId: string,
+  companyId: string,
+): Promise<string | null> {
+  if (!financeAccountId) return null;
+  const account = await database
+    .prepare("SELECT company_id AS companyId, active FROM finance_accounts WHERE id=?1")
+    .bind(financeAccountId)
+    .first<{ companyId: string; active: number }>();
+  if (!account) return "CONTA FINANCEIRA NÃO ENCONTRADA.";
+  if (account.companyId && account.companyId !== companyId) {
+    return "ESSA CONTA FINANCEIRA PERTENCE A OUTRA EMPRESA/LOJA.";
+  }
+  if (!account.active) {
+    return "ESSA CONTA FINANCEIRA ESTÁ INATIVA E NÃO PODE SER USADA EM NOVOS LANÇAMENTOS.";
+  }
+  return null;
+}
+
 export type PayableStatusView = {
   storedStatus: StoredStatus;
   displayStatus: string;

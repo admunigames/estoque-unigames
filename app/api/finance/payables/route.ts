@@ -6,6 +6,7 @@ import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, MONTH_P
 import {
   DATE_PATTERN,
   RECURRENCE_FREQUENCIES,
+  assertFinanceAccountBelongsToCompany,
   assertSlotAvailableForPayable,
   competenceMonthOf,
   displayStatusCaseSql,
@@ -293,6 +294,9 @@ export async function POST(request: Request) {
       .bind(financeItemId)
       .first<{ id: string }>();
     if (!item) return jsonResponse({ error: "ITEM DE DESPESA NÃO ENCONTRADO NO CATÁLOGO FINANCEIRO." }, 400);
+
+    const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
+    if (accountError) return jsonResponse({ error: accountError }, 409);
 
     const existingByKey = await database
       .prepare("SELECT id FROM accounts_payable WHERE idempotency_key=?1")

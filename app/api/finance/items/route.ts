@@ -66,6 +66,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as JsonMap;
     const name = safeText(body.name, 120);
     const categoryId = safeText(body.categoryId, 80);
+    const editId = safeText(body.id, 80);
     if (name.length < 2) {
       return jsonResponse({ error: "INFORME O NOME DO ITEM." }, 400);
     }
@@ -80,6 +81,21 @@ export async function POST(request: Request) {
       .first<{ id: string }>();
     if (!category) {
       return jsonResponse({ error: "CATEGORIA NÃO ENCONTRADA." }, 400);
+    }
+
+    // Renomear + permitir mover de categoria (item não carrega a regra de
+    // "1 nível" que categoria tem, então mover é seguro).
+    if (editId) {
+      const existing = await database
+        .prepare("SELECT id FROM finance_items WHERE id=?1")
+        .bind(editId)
+        .first<{ id: string }>();
+      if (!existing) return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
+      await database
+        .prepare("UPDATE finance_items SET name=?1, category_id=?2 WHERE id=?3")
+        .bind(name, categoryId, editId)
+        .run();
+      return jsonResponse({ updated: true, id: editId });
     }
 
     const id = crypto.randomUUID();
