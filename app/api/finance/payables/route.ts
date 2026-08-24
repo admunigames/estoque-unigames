@@ -126,6 +126,13 @@ export async function GET(request: Request) {
   values.push(today);
   const todayIndex = values.length;
   const displayStatusSql = displayStatusCaseSql(todayIndex);
+  // A query de totais não seleciona displayStatusSql (só a de linhas usa,
+  // no SELECT) — sem essa condição neutra, quando nenhum filtro de status/
+  // quickView está ativo, o parâmetro "hoje" fica sem nenhuma referência no
+  // WHERE e o Postgres rejeita o bind ("supplies N parameters, but ...
+  // requires N-1"). Mantém os dois SELECTs (totais e linhas) sempre com a
+  // mesma contagem de parâmetros vinculados.
+  conditions.push(`?${todayIndex} IS NOT NULL`);
 
   const status = safeText(params.get("status"), 20);
   if (status) {

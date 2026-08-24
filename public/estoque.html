@@ -1674,13 +1674,17 @@
   .dre-catalog-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
   .dre-catalog-form .field{min-width:160px;flex:1}
 
-  .payables-quick-views{grid-template-columns:repeat(5,minmax(0,1fr));}
-  .payables-quick-views .card{cursor:pointer;text-align:left;border:1px solid var(--line);background:var(--surface,rgba(79,134,189,.03));transition:border-color .15s,box-shadow .15s;}
+  .payables-quick-views{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+  .payables-quick-views .card{cursor:pointer;text-align:left;padding:10px 12px;border:1px solid var(--line);background:var(--surface,rgba(79,134,189,.03));transition:border-color .15s,box-shadow .15s;}
   .payables-quick-views .card:hover{border-color:var(--accent);}
   .payables-quick-views .card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
   .payables-quick-views .card .lbl{font-size:10px;}
+  .payables-quick-views .card .num{font-size:20px;}
   .payables-quick-views .card .sub{font:700 10px var(--mono);color:var(--ink-soft);margin-top:2px;}
-  .payables-filters{align-items:flex-start;}
+  .payables-filters{align-items:flex-end;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px 14px;}
+  .payables-filters .field{min-width:0;}
+  .payables-filters .field.full{grid-column:1/-1;}
+  .payables-filters .dre-toolbar-actions{grid-column:1/-1;margin-left:0;justify-content:flex-end;}
   th.sortable{cursor:pointer;user-select:none;}
   th.sortable:hover{color:var(--accent);}
   th.sortable.sort-asc::after{content:' ▲';font-size:9px;}
