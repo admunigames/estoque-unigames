@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v56"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v57"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v56"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v57"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v56"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v57"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1127,7 +1127,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v56"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v57"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1501,7 +1501,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v56"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v57"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1546,7 +1546,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v56"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v57"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -2655,4 +2655,35 @@ test("titular de users:manage consegue salvar a própria conta sem ser bloqueado
     workerSource,
     /if \(!actorIsSuperAdmin && access\.permissions\.includes\("users:manage"\)\) \{/,
   );
+});
+
+test("Rotina Operacional: falha ao notificar o criador não derruba a marcação de feita/não feita", async () => {
+  const [routinesRoute, missionsRoute, html] = await Promise.all([
+    readFile(new URL("../app/api/routines/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/missions/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+  ]);
+
+  // Bug real: as 25 rotinas gerais migradas tinham created_by='env-admin',
+  // uma conta com inscrições push reais — qualquer loja marcando qualquer
+  // rotina como feita disparava notifyRoutineCreator, e uma falha ali (sem
+  // proteção própria) derrubava a resposta inteira com "NÃO FOI POSSÍVEL
+  // ATUALIZAR A ROTINA.", mesmo com a tarefa já salva como concluída no
+  // banco. app/api/missions/route.ts já protegia o equivalente
+  // (notifyMissionCreator) com .catch — routines/route.ts não tinha a
+  // mesma proteção.
+  assert.match(
+    routinesRoute,
+    /try \{\s*const storeName = \(await companyName\(database, actor\.companyId\)\) \|\| "Loja";\s*await notifyRoutineCreator\(database, \{ title: task\.title, createdBy: task\.createdBy \}, storeName\);\s*\} catch \(error\) \{\s*console\.error\("Não foi possível avisar o administrador sobre a rotina\.", error\);\s*\}/,
+  );
+  assert.match(
+    missionsRoute,
+    /await notifyMissionCreator\(database, mission, storeName\)\.catch\(\(error\) => \{/,
+  );
+
+  // Front-end: distingue falha de rede (fetch rejeitou) de erro real do
+  // servidor, em vez de um "Não foi possível concluir a operação"
+  // genérico pra qualquer caso — facilita diagnosticar da próxima vez.
+  assert.match(html, /'SEM CONEXÃO COM O SERVIDOR\. VERIFIQUE SUA INTERNET E TENTE NOVAMENTE\.'/);
+  assert.match(html, /'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO \(ERRO '\+response\.status\+'\)\.'/);
 });

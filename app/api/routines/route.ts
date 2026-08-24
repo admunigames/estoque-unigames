@@ -435,8 +435,15 @@ export async function PATCH(request: Request) {
       .run();
 
     if (status === "completed" && task.status !== "completed") {
-      const storeName = (await companyName(database, actor.companyId)) || "Loja";
-      await notifyRoutineCreator(database, { title: task.title, createdBy: task.createdBy }, storeName);
+      // A conclusão já foi gravada acima — uma falha ao avisar o admin (push
+      // notification) não pode derrubar a resposta e fazer a loja achar que a
+      // tarefa não foi marcada, quando na verdade já está salva no banco.
+      try {
+        const storeName = (await companyName(database, actor.companyId)) || "Loja";
+        await notifyRoutineCreator(database, { title: task.title, createdBy: task.createdBy }, storeName);
+      } catch (error) {
+        console.error("Não foi possível avisar o administrador sobre a rotina.", error);
+      }
     }
 
     return jsonResponse({ status, completed: status === "completed" });

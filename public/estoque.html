@@ -10178,14 +10178,21 @@ function renderHomeTasks(){
 
   async function missionApiRequest(path,options){
     const settings = options || {};
-    const response = await fetch(path,{
-      ...settings,
-      cache:'no-store',
-      headers:{Accept:'application/json',...(settings.headers || {})}
-    });
+    let response;
+    try{
+      response = await fetch(path,{
+        ...settings,
+        cache:'no-store',
+        headers:{Accept:'application/json',...(settings.headers || {})}
+      });
+    }catch{
+      // fetch só rejeita por falha de rede/conexão — nunca por resposta de
+      // erro do servidor (isso vem como response.ok=false abaixo).
+      throw new Error('SEM CONEXÃO COM O SERVIDOR. VERIFIQUE SUA INTERNET E TENTE NOVAMENTE.');
+    }
     let data = {};
     try{ data = await response.json(); }catch{ data = {}; }
-    if(!response.ok) throw new Error(data.error || 'Não foi possível concluir a operação.');
+    if(!response.ok) throw new Error(data.error || ('NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO (ERRO '+response.status+').'));
     return data;
   }
 
