@@ -94,7 +94,11 @@ export async function liveInvalidationForRequest(
     const body = await requestBody(request);
     const companyId = safeCompanyId(body.companyId) || safeCompanyId(actor.companyId);
     if (companyId) {
-      return { module: "loans", audience: { kind: "company", companyId } };
+      // "groups" garante que quem gerencia solicitações (permissão
+      // loans:manage_requests, não role="admin" literal) também receba o
+      // aviso de uma nova solicitação de outra loja — ver liveConnectionGroups
+      // em worker/index.ts.
+      return { module: "loans", audience: { kind: "company", companyId, groups: ["loans_manage"] } };
     }
 
     // Acoes administrativas por id (marcar emprestado/devolvido, apagar

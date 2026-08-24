@@ -1162,10 +1162,18 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
 }
 
 function liveConnectionGroups(user: AuthenticatedUser): string[] {
+  const groups: string[] = [];
   // Canal de aviso em tempo real p/ quem pode receber/preparar captações —
   // baseado só na permissão granular, não mais em setor/grupo/nome de
   // usuário (o fluxo especial de "assistência" foi removido).
-  return hasPermission(user, "captures:receive") ? ["assistance"] : [];
+  if (hasPermission(user, "captures:receive")) groups.push("assistance");
+  // Nenhuma conta real usa role="admin" literal (só a conta raiz/env-admin) —
+  // quem gerencia solicitações de aparelho é sempre um usuário "user" com
+  // permissão granular concedida. Sem essa tag, o aviso "company" de uma
+  // nova solicitação (que só alcança role:admin + a própria loja) nunca
+  // chegaria em quem de fato aprova as solicitações.
+  if (hasPermission(user, "loans:manage_requests")) groups.push("loans_manage");
+  return groups;
 }
 
 function connectLiveUpdates(

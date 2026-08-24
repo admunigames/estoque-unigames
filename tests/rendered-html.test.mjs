@@ -937,7 +937,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(workerSource, /const accessGroup = normalizeAccessGroup\(body\.accessGroup\)/);
   // Canal de aviso em tempo real de captação passa a ser calculado pela
   // permissão captures:receive, não mais por setor/grupo/nome de usuário.
-  assert.match(workerSource, /return hasPermission\(user, "captures:receive"\) \? \["assistance"\] : \[\];/);
+  assert.match(workerSource, /if \(hasPermission\(user, "captures:receive"\)\) groups\.push\("assistance"\);/);
   assert.doesNotMatch(workerSource, /user\.username\.toLowerCase\(\)\.includes\("assistencia"\)/);
   assert.match(liveEvents, /module: "captures"/);
   assert.match(liveEvents, /category === "jogo" \? \[\] : \["assistance"\]/);
@@ -1782,7 +1782,11 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   );
   assert.match(liveEvents, /path === "\/api\/loans\/devices" \|\| path\.startsWith\("\/api\/loans\/requests"\)/);
   assert.match(liveEvents, /return \{ module: "loans", audience: \{ kind: "all" \} \};/);
-  assert.match(liveEvents, /return \{ module: "loans", audience: \{ kind: "company", companyId \} \};/);
+  assert.match(
+    liveEvents,
+    /return \{ module: "loans", audience: \{ kind: "company", companyId, groups: \["loans_manage"\] \} \};/,
+  );
+  assert.match(workerSource, /if \(hasPermission\(user, "loans:manage_requests"\)\) groups\.push\("loans_manage"\);/);
   // Precisa existir tanto em navigateToPage() (clique no menu) quanto em
   // syncPageFromLocation() (URL direta/refresh) — só num dos dois já
   // deixou a página travada em "Carregando..." ao abrir a URL direto.
@@ -2449,7 +2453,7 @@ test("remove o fluxo especial de assistência: acesso 100% via permissões granu
   // Canal de aviso em tempo real (WebSocket) também passa a ser calculado
   // pela permissão granular, não mais por identidade.
   assert.match(workerSource, /function liveConnectionGroups\(user: AuthenticatedUser\): string\[\] \{/);
-  assert.match(workerSource, /return hasPermission\(user, "captures:receive"\) \? \["assistance"\] : \[\];/);
+  assert.match(workerSource, /if \(hasPermission\(user, "captures:receive"\)\) groups\.push\("assistance"\);/);
 });
 
 test("Rotina Operacional: cadastro simplificado (sem descrição/loja específica, vários dias da semana) e geração auto-suficiente das tarefas", async () => {
