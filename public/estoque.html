@@ -1673,6 +1673,28 @@
   .dre-catalog-row.item{margin-left:36px;color:var(--ink-soft)}
   .dre-catalog-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
   .dre-catalog-form .field{min-width:160px;flex:1}
+
+  .payables-quick-views{grid-template-columns:repeat(5,minmax(0,1fr));}
+  .payables-quick-views .card{cursor:pointer;text-align:left;border:1px solid var(--line);background:var(--surface,rgba(79,134,189,.03));transition:border-color .15s,box-shadow .15s;}
+  .payables-quick-views .card:hover{border-color:var(--accent);}
+  .payables-quick-views .card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .payables-quick-views .card .lbl{font-size:10px;}
+  .payables-quick-views .card .sub{font:700 10px var(--mono);color:var(--ink-soft);margin-top:2px;}
+  .payables-filters{align-items:flex-start;}
+  th.sortable{cursor:pointer;user-select:none;}
+  th.sortable:hover{color:var(--accent);}
+  th.sortable.sort-asc::after{content:' ▲';font-size:9px;}
+  th.sortable.sort-desc::after{content:' ▼';font-size:9px;}
+  .payables-totals{display:flex;flex-wrap:wrap;gap:18px;padding:12px 4px;font:800 12px var(--mono);color:var(--ink-soft);border-top:1px solid var(--line);margin-top:6px;}
+  .payables-totals strong{color:var(--ink);}
+  .payables-pagination{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 0 4px;font-size:12px;}
+  .payables-kind-tabs{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;}
+  .payables-kind-tabs label{display:flex;align-items:center;gap:6px;}
+  .payable-detail-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 20px;margin:14px 0;font-size:12px;}
+  .payable-detail-summary div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:4px;}
+  .payable-detail-summary div span:first-child{color:var(--ink-soft);}
+  .payable-origin-row{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:11px;margin-bottom:6px;}
+  @media(max-width:850px){.payables-quick-views{grid-template-columns:repeat(2,1fr);} .payable-detail-summary{grid-template-columns:1fr;}}
   .user-actions{display:flex;gap:8px;flex-wrap:wrap}.user-list{display:grid;gap:10px}.user-card{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
   .user-card.inactive{opacity:.58}.user-card h4{margin:0 0 3px}.user-card p{margin:0;color:var(--ink-soft);font-size:11px}.user-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
   @media(max-width:850px){.users-layout{grid-template-columns:1fr}.permission-grid{grid-template-columns:1fr}}
@@ -2720,6 +2742,7 @@
       </button>
       <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroPayables" data-page="financeiroPayables" data-permission="finance" data-home-desc="Contas a pagar: parcelas, recorrências e pagamentos por loja." title="Contas a Pagar" href="/financeiro/contas-a-pagar"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Contas a Pagar</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="hr">
@@ -4654,6 +4677,78 @@
       </div>
     </section>
 
+    <section id="pageFinanceiroPayables" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Contas a Pagar</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Obrigações financeiras por empresa/loja — pagamentos, agendamentos, recorrências e parcelamentos, integrados automaticamente à DRE.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="payablesLoja">EMPRESA/LOJA</label><select id="payablesLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnManagePayablesCatalog" type="button">FORNECEDORES E CONTAS</button>
+          <button class="btn-accent" id="btnNewPayable" type="button">NOVA CONTA</button>
+        </div>
+      </div>
+
+      <section class="summary payables-quick-views" id="payablesQuickViews" aria-label="Visões rápidas de contas a pagar"></section>
+
+      <div class="table-panel responsive-table">
+        <div class="dre-toolbar payables-filters">
+          <div class="field full"><label for="payablesSearch">BUSCAR</label><input id="payablesSearch" placeholder="Descrição, fornecedor, NF, pedido, boleto..."></div>
+          <div class="field"><label for="payablesStatus">STATUS</label>
+            <select id="payablesStatus">
+              <option value="">TODOS</option>
+              <option value="upcoming">A VENCER</option>
+              <option value="due_today">VENCENDO HOJE</option>
+              <option value="overdue">VENCIDO</option>
+              <option value="partially_paid">PARCIALMENTE PAGO</option>
+              <option value="paid">PAGO</option>
+              <option value="scheduled">AGENDADO</option>
+              <option value="canceled">CANCELADO</option>
+            </select>
+          </div>
+          <div class="field"><label for="payablesSupplier">FORNECEDOR</label><select id="payablesSupplier"><option value="">TODOS</option></select></div>
+          <div class="field"><label for="payablesItem">CATEGORIA/ITEM</label><select id="payablesItem"><option value="">TODOS</option></select></div>
+          <div class="field"><label for="payablesAccount">CONTA FINANCEIRA</label><select id="payablesAccount"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="payablesDueFrom">VENCIMENTO DE</label><input type="date" id="payablesDueFrom"></div>
+          <div class="field"><label for="payablesDueTo">VENCIMENTO ATÉ</label><input type="date" id="payablesDueTo"></div>
+          <div class="field"><label for="payablesCompetenceFrom">COMPETÊNCIA DE</label><input type="month" id="payablesCompetenceFrom"></div>
+          <div class="field"><label for="payablesCompetenceTo">COMPETÊNCIA ATÉ</label><input type="month" id="payablesCompetenceTo"></div>
+          <div class="field"><label for="payablesRecurringOnly" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="payablesRecurringOnly" style="width:auto;"> SÓ RECORRENTES</label></div>
+          <div class="field"><label for="payablesInstallmentOnly" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="payablesInstallmentOnly" style="width:auto;"> SÓ PARCELADAS</label></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnPayablesClearFilters" type="button">LIMPAR FILTROS</button>
+            <button class="btn-accent" id="btnPayablesApplyFilters" type="button">APLICAR FILTROS</button>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th data-payables-sort="description" class="sortable">Descrição</th>
+              <th>Empresa/Loja</th>
+              <th>Fornecedor</th>
+              <th>Categoria</th>
+              <th data-payables-sort="dueDate" class="sortable">Vencimento</th>
+              <th data-payables-sort="originalAmountCents" class="sortable">Valor Original</th>
+              <th data-payables-sort="paidAmountCents" class="sortable">Valor Pago</th>
+              <th>Saldo</th>
+              <th>Status</th>
+              <th>Parcela/Recorrência</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="payablesBody"><tr><td colspan="11" class="responsive-empty">Carregando contas…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="payables-totals" id="payablesTotals"></div>
+        <div class="payables-pagination" id="payablesPagination"></div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -4679,6 +4774,116 @@
       <button class="btn-accent" type="submit">ADICIONAR ITEM</button>
     </form>
     <div class="dre-catalog-list" id="financeCatalogList"></div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="payableDialog" aria-labelledby="payableDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="payableDialogTitle">NOVA CONTA A PAGAR</h3>
+    <button class="purchase-dialog-close" id="btnClosePayableDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="payableForm">
+    <input type="hidden" id="payableId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="payableCompany">EMPRESA/LOJA *</label><select id="payableCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="payableDescription">DESCRIÇÃO *</label><input id="payableDescription" maxlength="200" required></div>
+      <div class="purchase-field"><label for="payableSupplier">FORNECEDOR</label><select id="payableSupplier"><option value="">SEM FORNECEDOR</option></select></div>
+      <div class="purchase-field"><label for="payableItem">CATEGORIA/ITEM DA DESPESA *</label><select id="payableItem" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="payableAccount">CONTA FINANCEIRA</label><select id="payableAccount"><option value="">SEM CONTA</option></select></div>
+      <div class="purchase-field"><label for="payablePaymentMethod">FORMA DE PAGAMENTO</label><input id="payablePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
+      <div class="purchase-field"><label for="payableOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="number" id="payableOriginalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="payableIssueDate">DATA DE EMISSÃO</label><input type="date" id="payableIssueDate"></div>
+      <div class="purchase-field"><label for="payableDueDate">VENCIMENTO *</label><input type="date" id="payableDueDate" required></div>
+      <div class="purchase-field"><label for="payableCompetenceMonth">COMPETÊNCIA (SÓ CONTA ÚNICA)</label><input type="month" id="payableCompetenceMonth"></div>
+      <div class="purchase-field"><label for="payableInvoiceNumber">NOTA FISCAL</label><input id="payableInvoiceNumber" maxlength="60"></div>
+      <div class="purchase-field"><label for="payableOrderReference">PEDIDO</label><input id="payableOrderReference" maxlength="60"></div>
+      <div class="purchase-field"><label for="payableBillingCode">BOLETO/CÓDIGO DE COBRANÇA</label><input id="payableBillingCode" maxlength="80"></div>
+      <div class="purchase-field full"><label for="payableNotes">OBSERVAÇÕES</label><textarea id="payableNotes" rows="2" maxlength="2000"></textarea></div>
+
+      <div class="purchase-form-section">TIPO DE CONTA</div>
+      <div class="purchase-field full payables-kind-tabs">
+        <label><input type="radio" name="payableKind" value="single" checked> ÚNICA</label>
+        <label><input type="radio" name="payableKind" value="installment"> PARCELADA</label>
+        <label><input type="radio" name="payableKind" value="recurring"> RECORRENTE</label>
+      </div>
+      <div class="purchase-field" id="payableInstallmentTotalField" hidden><label for="payableInstallmentTotal">QUANTIDADE DE PARCELAS</label><input type="number" id="payableInstallmentTotal" min="2" max="360"></div>
+      <div class="purchase-field" id="payableRecurrenceFrequencyField" hidden><label for="payableRecurrenceFrequency">FREQUÊNCIA</label>
+        <select id="payableRecurrenceFrequency">
+          <option value="weekly">SEMANAL</option>
+          <option value="monthly" selected>MENSAL</option>
+          <option value="bimonthly">BIMESTRAL</option>
+          <option value="quarterly">TRIMESTRAL</option>
+          <option value="semiannual">SEMESTRAL</option>
+          <option value="annual">ANUAL</option>
+        </select>
+      </div>
+      <div class="purchase-field" id="payableRecurrenceCountField" hidden><label for="payableRecurrenceOccurrenceCount">QUANTIDADE DE OCORRÊNCIAS</label><input type="number" id="payableRecurrenceOccurrenceCount" min="1" max="260"></div>
+      <div class="purchase-field" id="payableRecurrenceEndField" hidden><label for="payableRecurrenceEndDate">OU DATA FINAL DA RECORRÊNCIA</label><input type="date" id="payableRecurrenceEndDate"></div>
+      <div class="purchase-field full" id="payableKindHelp" hidden><span class="purchase-field-help"></span></div>
+    </div>
+    <div class="user-form-status" id="payableFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelPayableDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSavePayable" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="payableDetailDialog" aria-labelledby="payableDetailDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="payableDetailDialogTitle">DETALHES DA CONTA</h3>
+    <button class="purchase-dialog-close" id="btnClosePayableDetailDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
+    <div id="payableDetailSummary" class="payable-detail-summary"></div>
+
+    <div class="purchase-form-section">REGISTRAR PAGAMENTO</div>
+    <form class="purchase-form-grid" id="payablePaymentForm" style="margin-bottom:14px;">
+      <div class="purchase-field"><label for="payablePaymentAmount">VALOR (R$) *</label><input type="number" id="payablePaymentAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="payablePaymentDate">DATA *</label><input type="date" id="payablePaymentDate" required></div>
+      <div class="purchase-field"><label for="payablePaymentMethodInput">FORMA DE PAGAMENTO</label><input id="payablePaymentMethodInput" maxlength="40"></div>
+      <div class="purchase-field"><label for="payablePaymentAccount">CONTA FINANCEIRA</label><select id="payablePaymentAccount"><option value="">SEM CONTA</option></select></div>
+      <div class="purchase-field"><label for="payablePaymentScheduled" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="payablePaymentScheduled" style="width:auto;"> É UM AGENDAMENTO (AINDA NÃO PAGO)</label></div>
+      <div class="purchase-field full"><label for="payablePaymentNotes">OBSERVAÇÕES</label><input id="payablePaymentNotes" maxlength="2000"></div>
+      <div class="purchase-field full" style="display:flex;justify-content:flex-end;">
+        <button class="btn-accent" id="btnSavePayablePayment" type="submit">REGISTRAR</button>
+      </div>
+    </form>
+    <div class="user-form-status" id="payablePaymentFormStatus" role="status" aria-live="polite"></div>
+
+    <div class="purchase-form-section">HISTÓRICO DE PAGAMENTOS</div>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Data</th><th>Valor</th><th>Forma</th><th>Situação</th><th>Responsável</th><th></th></tr></thead>
+          <tbody id="payableHistoryBody"><tr><td colspan="6" class="responsive-empty">Nenhum pagamento registrado.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="purchase-form-section" id="payableOriginSection" hidden>OUTRAS CONTAS NA MESMA COMPETÊNCIA DA DRE</div>
+    <div id="payableOriginList"></div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="payablesCatalogDialog" aria-labelledby="payablesCatalogDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="payablesCatalogDialogTitle">FORNECEDORES E CONTAS FINANCEIRAS</h3>
+    <button class="purchase-dialog-close" id="btnClosePayablesCatalogDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
+    <form class="dre-catalog-form" id="payableSupplierForm">
+      <div class="field"><label for="payableSupplierName">NOVO FORNECEDOR</label><input id="payableSupplierName" maxlength="160" placeholder="Ex.: ENERGISA" required></div>
+      <div class="field"><label for="payableSupplierDocument">CNPJ/CPF</label><input id="payableSupplierDocument" maxlength="40"></div>
+      <button class="btn-accent" type="submit">ADICIONAR FORNECEDOR</button>
+    </form>
+    <div class="dre-catalog-list" id="payableSuppliersList"></div>
+
+    <form class="dre-catalog-form" id="payableAccountForm" style="margin-top:18px;">
+      <div class="field"><label for="payableAccountName">NOVA CONTA FINANCEIRA</label><input id="payableAccountName" maxlength="160" placeholder="Ex.: CAIXA, BANCO X" required></div>
+      <button class="btn-accent" type="submit">ADICIONAR CONTA</button>
+    </form>
+    <div class="dre-catalog-list" id="payableAccountsList"></div>
   </div>
 </dialog>
 
@@ -5381,7 +5586,8 @@
     usuarios:'/cadastros/usuarios',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
-    financeiro:'/financeiro/dre'
+    financeiro:'/financeiro/dre',
+    financeiroPayables:'/financeiro/contas-a-pagar'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -5405,7 +5611,8 @@
     usuarios:'USUÁRIOS E ACESSOS',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
-    financeiro:'DRE'
+    financeiro:'DRE',
+    financeiroPayables:'CONTAS A PAGAR'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -5426,7 +5633,8 @@
     dados:'database',
     rhFolgas:'hr',
     rhEscalas:'hr',
-    financeiro:'finance'
+    financeiro:'finance',
+    financeiroPayables:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -5829,7 +6037,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiro';
+    const isFinanceiro = name === 'financeiro' || name === 'financeiroPayables';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -5881,6 +6089,7 @@
     if(name === 'notasOs') loadOsNotes();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'financeiro') loadFinanceiroTab();
+    if(name === 'financeiroPayables') loadPayablesPage();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -5903,6 +6112,7 @@
     if(name === 'notasOs') loadOsNotes();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'financeiro') loadFinanceiroTab();
+    if(name === 'financeiroPayables') loadPayablesPage();
   }
 
   function isPlainClick(event){
@@ -7779,6 +7989,7 @@
     renderOutputCompanyOptions();
     renderSupplyCompanyOptions();
     renderDreCompanyOptions();
+    renderPayablesCompanyOptions();
   }
 
   function renderPullDestinationFilter(){
@@ -14821,6 +15032,664 @@ function renderHomeTasks(){
         showPurchaseToast(error.message,'error');
       }
     }
+  });
+
+  // ================= CONTAS A PAGAR =================
+  let payableSuppliers = [];
+  let payableAccounts = [];
+  let payablesRows = [];
+  let payablesPage = 1;
+  const PAYABLES_PAGE_SIZE = 20;
+  let payablesTotal = 0;
+  let payablesSort = 'dueDate';
+  let payablesDir = 'asc';
+  let payablesQuickView = '';
+  let payablesCurrentDetailId = null;
+  let payableFormIdempotencyKey = '';
+  let payablePaymentIdempotencyKey = '';
+
+  const PAYABLES_DISPLAY_STATUS_LABELS = {
+    upcoming:'A VENCER', due_today:'VENCENDO HOJE', overdue:'VENCIDO',
+    partially_paid:'PARCIALMENTE PAGO', paid:'PAGO', scheduled:'AGENDADO', canceled:'CANCELADO'
+  };
+  const PAYABLES_DISPLAY_STATUS_TONE = {
+    upcoming:'progress', due_today:'waiting', overdue:'alert',
+    partially_paid:'waiting', paid:'done', scheduled:'progress', canceled:''
+  };
+  const PAYABLES_QUICK_VIEW_LABELS = [
+    {key:'today', label:'HOJE'}, {key:'tomorrow', label:'AMANHÃ'}, {key:'week', label:'ESTA SEMANA'},
+    {key:'next7', label:'PRÓXIMOS 7 DIAS'}, {key:'next30', label:'PRÓXIMOS 30 DIAS'}, {key:'month', label:'MÊS'},
+    {key:'year', label:'ANO'}, {key:'overdue', label:'VENCIDOS'}, {key:'paid', label:'PAGOS'}
+  ];
+
+  function payablesCanActAcrossStores(){
+    return canActAcrossStores('finance:manage');
+  }
+
+  function renderPayablesCompanyOptions(){
+    const filterSelect = el('payablesLoja');
+    const formSelect = el('payableCompany');
+    const options = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    if(filterSelect){
+      const selected = filterSelect.value;
+      filterSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+options;
+      if(companies.some(c => c.id === selected)) filterSelect.value = selected;
+      if(!payablesCanActAcrossStores() && currentSession.companyId){
+        filterSelect.value = currentSession.companyId;
+        filterSelect.disabled = true;
+      }
+    }
+    if(formSelect){
+      const selected = formSelect.value;
+      formSelect.innerHTML = '<option value="">SELECIONE</option>'+options;
+      if(companies.some(c => c.id === selected)) formSelect.value = selected;
+      if(!payablesCanActAcrossStores() && currentSession.companyId){
+        formSelect.value = currentSession.companyId;
+        formSelect.disabled = true;
+      }
+    }
+  }
+
+  function payableItemSelectOptionsHtml(selectedId){
+    const categoryLabel = new Map();
+    financeCategories.forEach(category => {
+      if(category.parentId){
+        const parent = financeCategories.find(p => p.id === category.parentId);
+        categoryLabel.set(category.id, (parent ? parent.name+' › ' : '')+category.name);
+      }else{
+        categoryLabel.set(category.id, category.name);
+      }
+    });
+    return '<option value="">SELECIONE</option>'+financeItems.map(item =>
+      '<option value="'+escapeHtml(item.id)+'"'+(item.id === selectedId ? ' selected' : '')+'>'+
+        escapeHtml((categoryLabel.get(item.categoryId) || '')+' › '+item.name)+'</option>'
+    ).join('');
+  }
+
+  function renderPayablesCatalogSelects(){
+    const supplierOptions = payableSuppliers.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
+    const accountOptions = payableAccounts.map(a => '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name)+'</option>').join('');
+    const itemOptions = payableItemSelectOptionsHtml('');
+
+    if(el('payablesSupplier')) el('payablesSupplier').innerHTML = '<option value="">TODOS</option>'+supplierOptions;
+    if(el('payablesAccount')) el('payablesAccount').innerHTML = '<option value="">TODAS</option>'+accountOptions;
+    if(el('payablesItem')) el('payablesItem').innerHTML = '<option value="">TODOS</option>'+itemOptions.replace('<option value="">SELECIONE</option>','');
+    if(el('payableSupplier')) el('payableSupplier').innerHTML = '<option value="">SEM FORNECEDOR</option>'+supplierOptions;
+    if(el('payableAccount')) el('payableAccount').innerHTML = '<option value="">SEM CONTA</option>'+accountOptions;
+    if(el('payablePaymentAccount')) el('payablePaymentAccount').innerHTML = '<option value="">SEM CONTA</option>'+accountOptions;
+    if(el('payableItem')) el('payableItem').innerHTML = itemOptions;
+  }
+
+  async function loadPayablesCatalogData(){
+    try{
+      if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
+      const [suppliersData, accountsData] = await Promise.all([
+        financeApiRequest('/suppliers'),
+        financeApiRequest('/accounts')
+      ]);
+      payableSuppliers = Array.isArray(suppliersData.suppliers) ? suppliersData.suppliers : [];
+      payableAccounts = Array.isArray(accountsData.accounts) ? accountsData.accounts : [];
+    }catch(error){
+      payableSuppliers = [];
+      payableAccounts = [];
+    }
+    renderPayablesCatalogSelects();
+  }
+
+  function payablesFilterParams(){
+    const params = new URLSearchParams();
+    const companyId = el('payablesLoja') ? el('payablesLoja').value : '';
+    if(companyId) params.set('companyId', companyId);
+    const search = el('payablesSearch') ? el('payablesSearch').value.trim() : '';
+    if(search) params.set('search', search);
+    const status = el('payablesStatus') ? el('payablesStatus').value : '';
+    if(status) params.set('status', status);
+    const supplierId = el('payablesSupplier') ? el('payablesSupplier').value : '';
+    if(supplierId) params.set('supplierId', supplierId);
+    const financeItemId = el('payablesItem') ? el('payablesItem').value : '';
+    if(financeItemId) params.set('financeItemId', financeItemId);
+    const financeAccountId = el('payablesAccount') ? el('payablesAccount').value : '';
+    if(financeAccountId) params.set('financeAccountId', financeAccountId);
+    const dueFrom = el('payablesDueFrom') ? el('payablesDueFrom').value : '';
+    if(dueFrom) params.set('dueFrom', dueFrom);
+    const dueTo = el('payablesDueTo') ? el('payablesDueTo').value : '';
+    if(dueTo) params.set('dueTo', dueTo);
+    const competenceFrom = el('payablesCompetenceFrom') ? el('payablesCompetenceFrom').value : '';
+    if(competenceFrom) params.set('competenceFrom', competenceFrom);
+    const competenceTo = el('payablesCompetenceTo') ? el('payablesCompetenceTo').value : '';
+    if(competenceTo) params.set('competenceTo', competenceTo);
+    if(el('payablesRecurringOnly') && el('payablesRecurringOnly').checked) params.set('recurring','1');
+    if(el('payablesInstallmentOnly') && el('payablesInstallmentOnly').checked) params.set('installment','1');
+    return params;
+  }
+
+  function payablesStatusPillHtml(displayStatus){
+    const label = PAYABLES_DISPLAY_STATUS_LABELS[displayStatus] || String(displayStatus || '').toUpperCase();
+    const tone = PAYABLES_DISPLAY_STATUS_TONE[displayStatus] || '';
+    return '<span class="status-pill '+tone+'">'+escapeHtml(label)+'</span>';
+  }
+
+  function payableInstallmentBadge(row){
+    if(row.installmentGroupId) return 'Parcela '+row.installmentNumber+'/'+row.installmentTotal;
+    if(row.recurrenceId){
+      const labels = {weekly:'Semanal', monthly:'Mensal', bimonthly:'Bimestral', quarterly:'Trimestral', semiannual:'Semestral', annual:'Anual'};
+      return 'Recorrente ('+(labels[row.recurrenceFrequency] || row.recurrenceFrequency)+')';
+    }
+    return '—';
+  }
+
+  function payableFinanceItemLabel(financeItemId){
+    const item = financeItems.find(i => i.id === financeItemId);
+    if(!item) return '—';
+    const category = financeCategories.find(c => c.id === item.categoryId);
+    return (category ? category.name+' › ' : '')+item.name;
+  }
+
+  function renderPayablesTable(){
+    const tbody = el('payablesBody');
+    if(!tbody) return;
+    if(!payablesRows.length){
+      tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhuma conta encontrada com os filtros atuais.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = payablesRows.map(row => {
+      const balance = row.originalAmountCents - row.paidAmountCents;
+      const canCancel = row.status !== 'canceled' && row.status !== 'paid';
+      return '<tr>'+
+        '<td>'+escapeHtml(row.description)+'</td>'+
+        '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+        '<td>'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
+        '<td>'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
+        '<td>'+escapeHtml(row.dueDate)+'</td>'+
+        '<td>'+formatCentsBRL(row.originalAmountCents)+'</td>'+
+        '<td>'+formatCentsBRL(row.paidAmountCents)+'</td>'+
+        '<td>'+formatCentsBRL(balance)+'</td>'+
+        '<td>'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
+        '<td>'+escapeHtml(payableInstallmentBadge(row))+'</td>'+
+        '<td style="display:flex;gap:6px;flex-wrap:wrap;">'+
+          '<button class="btn-outline" type="button" data-payable-open="'+escapeHtml(row.id)+'">ABRIR</button>'+
+          (row.status !== 'canceled' ? '<button class="btn-outline" type="button" data-payable-edit="'+escapeHtml(row.id)+'">EDITAR</button>' : '')+
+          (canCancel ? '<button class="btn-outline" type="button" data-payable-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
+        '</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function renderPayablesTotals(totals){
+    const el2 = el('payablesTotals');
+    if(!el2) return;
+    el2.innerHTML =
+      '<span>CONTAS: <strong>'+(totals.count || 0)+'</strong></span>'+
+      '<span>ORIGINAL: <strong>'+formatCentsBRL(totals.originalCents)+'</strong></span>'+
+      '<span>PAGO: <strong>'+formatCentsBRL(totals.paidCents)+'</strong></span>'+
+      '<span>SALDO: <strong>'+formatCentsBRL(totals.balanceCents)+'</strong></span>';
+  }
+
+  function renderPayablesPagination(){
+    const el2 = el('payablesPagination');
+    if(!el2) return;
+    const totalPages = Math.max(1, Math.ceil(payablesTotal / PAYABLES_PAGE_SIZE));
+    el2.innerHTML =
+      '<button class="btn-outline" type="button" id="btnPayablesPrevPage" '+(payablesPage <= 1 ? 'disabled' : '')+'>ANTERIOR</button>'+
+      '<span>PÁGINA '+payablesPage+' DE '+totalPages+'</span>'+
+      '<button class="btn-outline" type="button" id="btnPayablesNextPage" '+(payablesPage >= totalPages ? 'disabled' : '')+'>PRÓXIMA</button>';
+    const prevButton = el('btnPayablesPrevPage');
+    const nextButton = el('btnPayablesNextPage');
+    if(prevButton) prevButton.addEventListener('click', () => { if(payablesPage > 1){ payablesPage -= 1; loadPayablesList(); } });
+    if(nextButton) nextButton.addEventListener('click', () => { if(payablesPage < totalPages){ payablesPage += 1; loadPayablesList(); } });
+  }
+
+  async function loadPayablesList(){
+    const tbody = el('payablesBody');
+    if(tbody) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando contas…</td></tr>';
+    const params = payablesFilterParams();
+    if(payablesQuickView) params.set('quickView', payablesQuickView);
+    params.set('page', String(payablesPage));
+    params.set('pageSize', String(PAYABLES_PAGE_SIZE));
+    params.set('sort', payablesSort);
+    params.set('dir', payablesDir);
+    try{
+      const data = await financeApiRequest('/payables?'+params.toString());
+      payablesRows = Array.isArray(data.rows) ? data.rows : [];
+      payablesTotal = Number(data.total || 0);
+      renderPayablesTable();
+      renderPayablesTotals(data.totals || {});
+      renderPayablesPagination();
+    }catch(error){
+      if(tbody) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  async function renderPayablesQuickViews(){
+    const container = el('payablesQuickViews');
+    if(!container) return;
+    const companyId = el('payablesLoja') ? el('payablesLoja').value : '';
+    const params = new URLSearchParams();
+    if(companyId) params.set('companyId', companyId);
+    try{
+      const data = await financeApiRequest('/payables/summary?'+params.toString());
+      const cards = PAYABLES_QUICK_VIEW_LABELS.map(view => {
+        const stats = (data.quickViews && data.quickViews[view.key]) || {count:0, balanceCents:0};
+        const active = payablesQuickView === view.key;
+        return '<div class="card'+(active ? ' active' : '')+'" data-payable-quick-view="'+view.key+'">'+
+          '<div class="lbl">'+view.label+'</div>'+
+          '<div class="num">'+stats.count+'</div>'+
+          '<div class="sub">'+formatCentsBRL(stats.balanceCents)+'</div>'+
+        '</div>';
+      }).join('');
+      container.innerHTML = cards;
+    }catch(error){
+      container.innerHTML = '';
+    }
+  }
+
+  async function loadPayablesPage(){
+    if(!companies.length) await loadCompanies();
+    renderPayablesCompanyOptions();
+    await loadPayablesCatalogData();
+    payablesPage = 1;
+    await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+  }
+
+  function resetPayableForm(){
+    el('payableForm').reset();
+    el('payableId').value = '';
+    document.querySelectorAll('input[name="payableKind"]').forEach(input => { input.checked = input.value === 'single'; });
+    updatePayableKindFields();
+    renderPayablesCompanyOptions();
+    renderPayablesCatalogSelects();
+    payableFormIdempotencyKey = crypto.randomUUID();
+  }
+
+  function updatePayableKindFields(){
+    const kind = document.querySelector('input[name="payableKind"]:checked').value;
+    el('payableInstallmentTotalField').hidden = kind !== 'installment';
+    el('payableRecurrenceFrequencyField').hidden = kind !== 'recurring';
+    el('payableRecurrenceCountField').hidden = kind !== 'recurring';
+    el('payableRecurrenceEndField').hidden = kind !== 'recurring';
+    el('payableCompetenceMonth').closest('.purchase-field').style.display = kind === 'single' ? '' : 'none';
+    const help = el('payableKindHelp');
+    if(kind === 'installment'){
+      help.hidden = false;
+      help.querySelector('span').textContent = 'Cada parcela vira uma conta própria, com vencimento mensal a partir do informado acima, e lança sua própria competência na DRE.';
+    }else if(kind === 'recurring'){
+      help.hidden = false;
+      help.querySelector('span').textContent = 'Informe a quantidade de ocorrências OU uma data final. Cada ocorrência vira uma conta própria e lança sua própria competência na DRE.';
+    }else{
+      help.hidden = true;
+    }
+  }
+  document.querySelectorAll('input[name="payableKind"]').forEach(input => {
+    input.addEventListener('change', updatePayableKindFields);
+  });
+
+  function openNewPayableDialog(){
+    resetPayableForm();
+    document.querySelectorAll('input[name="payableKind"]').forEach(input => { input.disabled = false; });
+    el('payableDialogTitle').textContent = 'NOVA CONTA A PAGAR';
+    el('payableFormStatus').textContent = '';
+    el('payableDialog').showModal();
+  }
+
+  async function openEditPayableDialog(row){
+    resetPayableForm();
+    document.querySelectorAll('input[name="payableKind"]').forEach(input => { input.disabled = true; input.checked = input.value === 'single'; });
+    updatePayableKindFields();
+    el('payableId').value = row.id;
+    el('payableCompany').value = row.companyId;
+    el('payableDescription').value = row.description;
+    el('payableSupplier').value = row.supplierId || '';
+    el('payableItem').value = row.financeItemId;
+    el('payableAccount').value = row.financeAccountId || '';
+    el('payablePaymentMethod').value = row.paymentMethod || '';
+    el('payableOriginalAmount').value = (row.originalAmountCents / 100).toFixed(2);
+    el('payableIssueDate').value = row.issueDate || '';
+    el('payableDueDate').value = row.dueDate;
+    el('payableCompetenceMonth').value = row.competenceMonth;
+    el('payableCompetenceMonth').closest('.purchase-field').style.display = '';
+    el('payableInvoiceNumber').value = row.invoiceNumber || '';
+    el('payableOrderReference').value = row.orderReference || '';
+    el('payableBillingCode').value = row.billingCode || '';
+    el('payableNotes').value = row.notes || '';
+    el('payableDialogTitle').textContent = 'EDITAR CONTA A PAGAR';
+    el('payableFormStatus').textContent = '';
+    el('payableDialog').showModal();
+  }
+
+  function closePayableDialog(){
+    if(el('payableDialog').open) el('payableDialog').close();
+  }
+
+  el('btnNewPayable').addEventListener('click', openNewPayableDialog);
+  el('btnCancelPayableDialog').addEventListener('click', closePayableDialog);
+  el('btnClosePayableDialog').addEventListener('click', closePayableDialog);
+  el('payableDialog').addEventListener('click', event => { if(event.target === el('payableDialog')) closePayableDialog(); });
+
+  el('payableForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const id = el('payableId').value;
+    const statusEl = el('payableFormStatus');
+    statusEl.textContent = '';
+    const originalAmountCents = parseBRLToCents(el('payableOriginalAmount').value || '0');
+    if(originalAmountCents === null || originalAmountCents <= 0){
+      statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return;
+    }
+    const companyId = el('payableCompany').value;
+    const companySelect = el('payableCompany');
+    const companyName = companySelect.options[companySelect.selectedIndex] ? companySelect.options[companySelect.selectedIndex].textContent : '';
+    if(!companyId){ statusEl.textContent = 'SELECIONE A EMPRESA/LOJA.'; return; }
+    const financeItemId = el('payableItem').value;
+    if(!financeItemId){ statusEl.textContent = 'SELECIONE A CATEGORIA/ITEM DA DESPESA.'; return; }
+    const dueDate = el('payableDueDate').value;
+    if(!dueDate){ statusEl.textContent = 'INFORME O VENCIMENTO.'; return; }
+
+    const button = el('btnSavePayable');
+    button.disabled = true;
+    try{
+      if(id){
+        await financeApiRequest('/payables/'+encodeURIComponent(id), {
+          method:'PATCH', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            companyId, companyName, description:el('payableDescription').value.trim(),
+            supplierId:el('payableSupplier').value, financeItemId, financeAccountId:el('payableAccount').value,
+            paymentMethod:el('payablePaymentMethod').value.trim(), originalAmountCents,
+            issueDate:el('payableIssueDate').value, dueDate, competenceMonth:el('payableCompetenceMonth').value,
+            invoiceNumber:el('payableInvoiceNumber').value.trim(), orderReference:el('payableOrderReference').value.trim(),
+            billingCode:el('payableBillingCode').value.trim(), notes:el('payableNotes').value.trim()
+          })
+        });
+      }else{
+        const kind = document.querySelector('input[name="payableKind"]:checked').value;
+        const body = {
+          idempotencyKey:payableFormIdempotencyKey, kind, companyId, companyName,
+          description:el('payableDescription').value.trim(), supplierId:el('payableSupplier').value,
+          financeItemId, financeAccountId:el('payableAccount').value, paymentMethod:el('payablePaymentMethod').value.trim(),
+          originalAmountCents, issueDate:el('payableIssueDate').value, dueDate,
+          invoiceNumber:el('payableInvoiceNumber').value.trim(), orderReference:el('payableOrderReference').value.trim(),
+          billingCode:el('payableBillingCode').value.trim(), notes:el('payableNotes').value.trim()
+        };
+        if(kind === 'installment'){
+          body.installmentTotal = Number(el('payableInstallmentTotal').value);
+          if(!body.installmentTotal || body.installmentTotal < 2){ statusEl.textContent = 'INFORME A QUANTIDADE DE PARCELAS (MÍNIMO 2).'; button.disabled = false; return; }
+        }else if(kind === 'recurring'){
+          body.recurrenceFrequency = el('payableRecurrenceFrequency').value;
+          const count = el('payableRecurrenceOccurrenceCount').value;
+          const endDate = el('payableRecurrenceEndDate').value;
+          if(!count && !endDate){ statusEl.textContent = 'INFORME A QUANTIDADE DE OCORRÊNCIAS OU A DATA FINAL.'; button.disabled = false; return; }
+          if(count) body.recurrenceOccurrenceCount = Number(count);
+          if(endDate) body.recurrenceEndDate = endDate;
+        }
+        await financeApiRequest('/payables', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      }
+      showPurchaseToast('Conta salva.');
+      closePayableDialog();
+      await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+    }catch(error){
+      statusEl.textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  async function openPayableDetailDialog(id){
+    payablesCurrentDetailId = id;
+    el('payableDetailSummary').innerHTML = 'Carregando…';
+    el('payableHistoryBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    el('payableOriginSection').hidden = true;
+    el('payableOriginList').innerHTML = '';
+    el('payablePaymentForm').reset();
+    el('payablePaymentDate').value = new Date().toISOString().slice(0,10);
+    payablePaymentIdempotencyKey = crypto.randomUUID();
+    el('payableDetailDialog').showModal();
+    try{
+      const data = await financeApiRequest('/payables/'+encodeURIComponent(id));
+      renderPayableDetail(data);
+    }catch(error){
+      el('payableDetailSummary').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  function renderPayableDetail(data){
+    const payable = data.payable;
+    const balance = payable.originalAmountCents - payable.paidAmountCents;
+    el('payableDetailDialogTitle').textContent = payable.description.toUpperCase();
+    el('payableDetailSummary').innerHTML =
+      '<div><span>EMPRESA/LOJA</span><span>'+escapeHtml(payable.companyName || payable.companyId)+'</span></div>'+
+      '<div><span>STATUS</span><span>'+payablesStatusPillHtml(payable.displayStatus)+'</span></div>'+
+      '<div><span>CATEGORIA/ITEM</span><span>'+escapeHtml(payableFinanceItemLabel(payable.financeItemId))+'</span></div>'+
+      '<div><span>FORNECEDOR</span><span>'+escapeHtml((payableSuppliers.find(s => s.id === payable.supplierId) || {}).name || '—')+'</span></div>'+
+      '<div><span>VALOR ORIGINAL</span><span>'+formatCentsBRL(payable.originalAmountCents)+'</span></div>'+
+      '<div><span>VALOR PAGO</span><span>'+formatCentsBRL(payable.paidAmountCents)+'</span></div>'+
+      '<div><span>SALDO EM ABERTO</span><span>'+formatCentsBRL(balance)+'</span></div>'+
+      '<div><span>COMPETÊNCIA</span><span>'+escapeHtml(payable.competenceMonth)+'</span></div>'+
+      '<div><span>VENCIMENTO</span><span>'+escapeHtml(payable.dueDate)+'</span></div>'+
+      '<div><span>EMISSÃO</span><span>'+escapeHtml(payable.issueDate || '—')+'</span></div>'+
+      '<div><span>NOTA FISCAL</span><span>'+escapeHtml(payable.invoiceNumber || '—')+'</span></div>'+
+      '<div><span>PEDIDO</span><span>'+escapeHtml(payable.orderReference || '—')+'</span></div>'+
+      '<div><span>PARCELA/RECORRÊNCIA</span><span>'+escapeHtml(payableInstallmentBadge(payable))+'</span></div>'+
+      '<div><span>OBSERVAÇÕES</span><span>'+escapeHtml(payable.notes || '—')+'</span></div>';
+
+    el('payablePaymentAmount').max = (balance / 100).toFixed(2);
+    const paymentForm = el('payablePaymentForm');
+    const disablePayment = payable.status === 'canceled' || balance <= 0;
+    paymentForm.querySelectorAll('input,select,button').forEach(field => { field.disabled = disablePayment; });
+
+    const payments = data.payments || [];
+    el('payableHistoryBody').innerHTML = payments.length
+      ? payments.map(payment => {
+          const situacao = payment.scheduled && !payment.confirmedAt ? 'AGENDADO' : 'CONFIRMADO';
+          const actions = payment.scheduled && !payment.confirmedAt
+            ? '<button class="btn-outline" type="button" data-payment-confirm="'+escapeHtml(payment.id)+'">CONFIRMAR</button>'+
+              '<button class="btn-outline" type="button" data-payment-delete="'+escapeHtml(payment.id)+'">CANCELAR</button>'
+            : '';
+          return '<tr>'+
+            '<td>'+escapeHtml(payment.paymentDate)+'</td>'+
+            '<td>'+formatCentsBRL(payment.amountCents)+'</td>'+
+            '<td>'+escapeHtml(payment.paymentMethod || '—')+'</td>'+
+            '<td>'+escapeHtml(situacao)+'</td>'+
+            '<td>'+escapeHtml(payment.createdByName || '—')+'</td>'+
+            '<td style="display:flex;gap:6px;">'+actions+'</td>'+
+          '</tr>';
+        }).join('')
+      : '<tr><td colspan="6" class="responsive-empty">Nenhum pagamento registrado.</td></tr>';
+
+    const siblings = data.dreOriginSiblings || [];
+    if(siblings.length){
+      el('payableOriginSection').hidden = false;
+      el('payableOriginList').innerHTML = siblings.map(sibling =>
+        '<div class="payable-origin-row"><span>'+escapeHtml(sibling.description)+'</span><span>'+formatCentsBRL(sibling.originalAmountCents)+'</span></div>'
+      ).join('');
+    }
+  }
+
+  el('btnClosePayableDetailDialog').addEventListener('click', () => { if(el('payableDetailDialog').open) el('payableDetailDialog').close(); });
+
+  el('payablePaymentForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statusEl = el('payablePaymentFormStatus');
+    statusEl.textContent = '';
+    const amountCents = parseBRLToCents(el('payablePaymentAmount').value || '0');
+    if(amountCents === null || amountCents <= 0){ statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return; }
+    const paymentDate = el('payablePaymentDate').value;
+    if(!paymentDate){ statusEl.textContent = 'INFORME A DATA.'; return; }
+    const button = el('btnSavePayablePayment');
+    button.disabled = true;
+    try{
+      await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId)+'/payments', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          idempotencyKey:payablePaymentIdempotencyKey, amountCents, paymentDate,
+          paymentMethod:el('payablePaymentMethodInput').value.trim(), financeAccountId:el('payablePaymentAccount').value,
+          notes:el('payablePaymentNotes').value.trim(), scheduled:el('payablePaymentScheduled').checked
+        })
+      });
+      showPurchaseToast(el('payablePaymentScheduled').checked ? 'Agendamento registrado.' : 'Pagamento registrado.');
+      payablePaymentIdempotencyKey = crypto.randomUUID();
+      const data = await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId));
+      renderPayableDetail(data);
+      await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+    }catch(error){
+      statusEl.textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('payableHistoryBody').addEventListener('click', async event => {
+    const confirmButton = event.target.closest('[data-payment-confirm]');
+    const deleteButton = event.target.closest('[data-payment-delete]');
+    if(confirmButton){
+      try{
+        await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId)+'/payments/'+encodeURIComponent(confirmButton.dataset.paymentConfirm), {
+          method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'confirm'})
+        });
+        showPurchaseToast('Agendamento confirmado.');
+        const data = await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId));
+        renderPayableDetail(data);
+        await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }else if(deleteButton){
+      if(!confirm('Cancelar este agendamento?')) return;
+      try{
+        await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId)+'/payments/'+encodeURIComponent(deleteButton.dataset.paymentDelete), { method:'DELETE' });
+        showPurchaseToast('Agendamento cancelado.');
+        const data = await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId));
+        renderPayableDetail(data);
+        await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }
+  });
+
+  el('payablesBody').addEventListener('click', async event => {
+    const openButton = event.target.closest('[data-payable-open]');
+    const editButton = event.target.closest('[data-payable-edit]');
+    const cancelButton = event.target.closest('[data-payable-cancel]');
+    if(openButton){
+      openPayableDetailDialog(openButton.dataset.payableOpen);
+    }else if(editButton){
+      const row = payablesRows.find(r => r.id === editButton.dataset.payableEdit);
+      if(row) openEditPayableDialog(row);
+    }else if(cancelButton){
+      if(!confirm('Cancelar esta conta a pagar? O lançamento vinculado na DRE será removido dos totais.')) return;
+      try{
+        await financeApiRequest('/payables/'+encodeURIComponent(cancelButton.dataset.payableCancel)+'/cancel', { method:'POST' });
+        showPurchaseToast('Conta cancelada.');
+        await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }
+  });
+
+  el('payablesQuickViews').addEventListener('click', event => {
+    const card = event.target.closest('[data-payable-quick-view]');
+    if(!card) return;
+    const view = card.dataset.payableQuickView;
+    payablesQuickView = payablesQuickView === view ? '' : view;
+    payablesPage = 1;
+    loadPayablesList();
+    renderPayablesQuickViews();
+  });
+
+  el('btnPayablesApplyFilters').addEventListener('click', () => { payablesPage = 1; loadPayablesList(); renderPayablesQuickViews(); });
+  el('btnPayablesClearFilters').addEventListener('click', () => {
+    ['payablesSearch','payablesDueFrom','payablesDueTo','payablesCompetenceFrom','payablesCompetenceTo'].forEach(id => { el(id).value = ''; });
+    ['payablesStatus','payablesSupplier','payablesItem','payablesAccount'].forEach(id => { el(id).value = ''; });
+    el('payablesRecurringOnly').checked = false;
+    el('payablesInstallmentOnly').checked = false;
+    payablesQuickView = '';
+    payablesPage = 1;
+    loadPayablesList();
+    renderPayablesQuickViews();
+  });
+  el('payablesLoja').addEventListener('change', () => { payablesPage = 1; loadPayablesList(); renderPayablesQuickViews(); });
+  document.querySelectorAll('[data-payables-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.dataset.payablesSort;
+      if(payablesSort === field){ payablesDir = payablesDir === 'asc' ? 'desc' : 'asc'; }
+      else{ payablesSort = field; payablesDir = 'asc'; }
+      document.querySelectorAll('[data-payables-sort]').forEach(other => other.classList.remove('sort-asc','sort-desc'));
+      th.classList.add(payablesDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      loadPayablesList();
+    });
+  });
+
+  function renderPayablesCatalogLists(){
+    el('payableSuppliersList').innerHTML = payableSuppliers.length
+      ? payableSuppliers.map(s => '<div class="dre-catalog-row"><span>'+escapeHtml(s.name)+(s.document ? ' — '+escapeHtml(s.document) : '')+'</span><button class="btn-outline" type="button" data-payable-deactivate-supplier="'+escapeHtml(s.id)+'">DESATIVAR</button></div>').join('')
+      : '<div class="dre-empty">Nenhum fornecedor cadastrado.</div>';
+    el('payableAccountsList').innerHTML = payableAccounts.length
+      ? payableAccounts.map(a => '<div class="dre-catalog-row"><span>'+escapeHtml(a.name)+'</span><button class="btn-outline" type="button" data-payable-deactivate-account="'+escapeHtml(a.id)+'">DESATIVAR</button></div>').join('')
+      : '<div class="dre-empty">Nenhuma conta financeira cadastrada.</div>';
+  }
+
+  el('btnManagePayablesCatalog').addEventListener('click', async () => {
+    await loadPayablesCatalogData();
+    renderPayablesCatalogLists();
+    el('payablesCatalogDialog').showModal();
+  });
+  el('btnClosePayablesCatalogDialog').addEventListener('click', () => { if(el('payablesCatalogDialog').open) el('payablesCatalogDialog').close(); });
+
+  el('payableSupplierForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const name = el('payableSupplierName').value.trim();
+    if(!name) return;
+    try{
+      await financeApiRequest('/suppliers', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, document:el('payableSupplierDocument').value.trim()})
+      });
+      el('payableSupplierForm').reset();
+      await loadPayablesCatalogData();
+      renderPayablesCatalogLists();
+      showPurchaseToast('Fornecedor cadastrado.');
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  });
+
+  el('payableAccountForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const name = el('payableAccountName').value.trim();
+    if(!name) return;
+    try{
+      await financeApiRequest('/accounts', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name})
+      });
+      el('payableAccountForm').reset();
+      await loadPayablesCatalogData();
+      renderPayablesCatalogLists();
+      showPurchaseToast('Conta financeira cadastrada.');
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  });
+
+  el('payableSuppliersList').addEventListener('click', async event => {
+    const button = event.target.closest('[data-payable-deactivate-supplier]');
+    if(!button) return;
+    const supplier = payableSuppliers.find(s => s.id === button.dataset.payableDeactivateSupplier);
+    if(!supplier) return;
+    try{
+      await financeApiRequest('/suppliers', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:supplier.id, name:supplier.name, document:supplier.document, active:false})
+      });
+      await loadPayablesCatalogData();
+      renderPayablesCatalogLists();
+      showPurchaseToast('Fornecedor desativado.');
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  });
+
+  el('payableAccountsList').addEventListener('click', async event => {
+    const button = event.target.closest('[data-payable-deactivate-account]');
+    if(!button) return;
+    const account = payableAccounts.find(a => a.id === button.dataset.payableDeactivateAccount);
+    if(!account) return;
+    try{
+      await financeApiRequest('/accounts', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:account.id, name:account.name, active:false})
+      });
+      await loadPayablesCatalogData();
+      renderPayablesCatalogLists();
+      showPurchaseToast('Conta financeira desativada.');
+    }catch(error){ showPurchaseToast(error.message,'error'); }
   });
 
   const permissionNames = {
