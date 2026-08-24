@@ -665,6 +665,18 @@ export const financeStoreEntries = pgTable(
     entryType: text("entry_type").notNull(),
     amountCents: integer("amount_cents"),
     percentBasisPoints: integer("percent_basis_points"),
+    // Origem do lançamento: 'manual' (digitado por quem cadastra a DRE) ou
+    // 'payable' (soma de accounts_payable.original_amount_cents de todas
+    // as contas não canceladas daquele store+item+month — ver
+    // app/api/finance/payables/shared.ts#recalcPayableEntry). Uma célula
+    // 'payable' nunca convive com uma manual (bloqueado na escrita), mas
+    // várias contas a pagar podem somar na mesma célula 'payable' (ex.:
+    // recorrência semanal cai toda no mesmo mês de competência, ou duas
+    // notas fiscais diferentes do mesmo item/loja/mês) — por isso não há
+    // FK 1:1 pra uma conta específica aqui; a rastreabilidade é feita
+    // consultando accounts_payable por company_id+finance_item_id+
+    // competence_month.
+    source: text("source").notNull().default("manual"),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -679,6 +691,134 @@ export const financeStoreEntries = pgTable(
       table.month,
     ),
     index("finance_store_entries_store_month_idx").on(table.storeId, table.month),
+  ],
+);
+
+export const financeSuppliers = pgTable(
+  "finance_suppliers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    document: text("document").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    active: integer("active").notNull().default(1),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_suppliers_active_name_idx").on(table.active, table.name),
+  ],
+);
+
+export const financeAccounts = pgTable(
+  "finance_accounts",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    type: text("type").notNull().default(""),
+    active: integer("active").notNull().default(1),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("finance_accounts_active_name_idx").on(table.active, table.name)],
+);
+
+// Obrigação financeira (contas a pagar). Cada parcela/ocorrência de
+// recorrência é sua própria linha (com competenceMonth própria), agrupada
+// por installmentGroupId/recurrenceId — não existe um registro "pai"
+// separado. Ver [[estoque_modulo_financeiro_dre]] para a regra de
+// competência que rege quando o lançamento em finance_store_entries é
+// criado/atualizado/removido a partir daqui.
+export const accountsPayable = pgTable(
+  "accounts_payable",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    description: text("description").notNull(),
+    supplierId: text("supplier_id").notNull().default(""),
+    financeItemId: text("finance_item_id").notNull(),
+    financeAccountId: text("finance_account_id").notNull().default(""),
+    originalAmountCents: integer("original_amount_cents").notNull(),
+    paidAmountCents: integer("paid_amount_cents").notNull().default(0),
+    issueDate: text("issue_date").notNull().default(""),
+    competenceMonth: text("competence_month").notNull(),
+    dueDate: text("due_date").notNull(),
+    paymentMethod: text("payment_method").notNull().default(""),
+    invoiceNumber: text("invoice_number").notNull().default(""),
+    orderReference: text("order_reference").notNull().default(""),
+    billingCode: text("billing_code").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    // 'open' | 'scheduled' | 'partially_paid' | 'paid' | 'canceled'.
+    // Os estados derivados de data (vencido/vencendo hoje/a vencer) NÃO são
+    // armazenados — calculados em app/lib/finance-status.ts a partir de
+    // dueDate+saldo, pra nunca divergir do que está no banco.
+    status: text("status").notNull().default("open"),
+    recurrenceId: text("recurrence_id"),
+    recurrenceFrequency: text("recurrence_frequency").notNull().default(""),
+    recurrenceOccurrenceIndex: integer("recurrence_occurrence_index").notNull().default(0),
+    recurrenceOccurrenceCount: integer("recurrence_occurrence_count"),
+    recurrenceEndDate: text("recurrence_end_date").notNull().default(""),
+    installmentGroupId: text("installment_group_id"),
+    installmentNumber: integer("installment_number").notNull().default(0),
+    installmentTotal: integer("installment_total").notNull().default(0),
+    financeEntryId: text("finance_entry_id").notNull().default(""),
+    idempotencyKey: text("idempotency_key").notNull(),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    canceledBy: text("canceled_by").notNull().default(""),
+    canceledByName: text("canceled_by_name").notNull().default(""),
+    canceledAt: text("canceled_at").notNull().default(""),
+  },
+  (table) => [
+    index("accounts_payable_company_status_due_idx").on(
+      table.companyId,
+      table.status,
+      table.dueDate,
+    ),
+    index("accounts_payable_company_competence_idx").on(
+      table.companyId,
+      table.competenceMonth,
+    ),
+    index("accounts_payable_supplier_idx").on(table.supplierId),
+    index("accounts_payable_recurrence_idx").on(table.recurrenceId),
+    index("accounts_payable_installment_group_idx").on(table.installmentGroupId),
+    uniqueIndex("accounts_payable_idempotency_idx").on(table.idempotencyKey),
+  ],
+);
+
+export const accountsPayablePayments = pgTable(
+  "accounts_payable_payments",
+  {
+    id: text("id").primaryKey(),
+    payableId: text("payable_id").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    paymentDate: text("payment_date").notNull(),
+    paymentMethod: text("payment_method").notNull().default(""),
+    financeAccountId: text("finance_account_id").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    scheduled: integer("scheduled").notNull().default(0),
+    confirmedAt: text("confirmed_at").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    idempotencyKey: text("idempotency_key").notNull(),
+  },
+  (table) => [
+    index("accounts_payable_payments_payable_idx").on(table.payableId, table.createdAt),
+    uniqueIndex("accounts_payable_payments_idempotency_idx").on(table.idempotencyKey),
   ],
 );
 
