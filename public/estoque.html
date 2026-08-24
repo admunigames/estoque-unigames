@@ -2845,7 +2845,7 @@
             <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
           </div>
         </section>
-        <section class="home-missions" data-permission="missions" aria-labelledby="homeRoutinesTitle">
+        <section class="home-missions" id="homeRoutineSection" data-permission="missions" aria-labelledby="homeRoutinesTitle">
           <div class="home-missions-head">
             <div><span>ROTINA OPERACIONAL</span><h2 id="homeRoutinesTitle">Rotina do dia</h2></div>
             <button class="home-missions-goto" type="button" data-home-target="missoes">VER ROTINA →</button>
@@ -10397,7 +10397,13 @@ function renderHomeTasks(){
 
   async function loadHomeRoutines(){
     const list = el('homeRoutineList');
-    if(!list || !canAccess('missions')) return;
+    const section = el('homeRoutineSection');
+    // "Rotina do Dia" é destinada só a usuários de Loja (mesma regra de
+    // isMissionRecipient/isRoutineTaskMine: não-admin com loja vinculada) —
+    // outros perfis com a permissão "missions" não devem ver a seção.
+    const isStoreUser = isMissionRecipient();
+    if(section) section.hidden = !isStoreUser;
+    if(!list || !canAccess('missions') || !isStoreUser) return;
     try{
       const data = await missionApiRequest('/api/routines?'+new URLSearchParams({date:todayDateKey()}));
       const tasks = Array.isArray(data.tasks) ? data.tasks : [];
