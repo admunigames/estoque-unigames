@@ -1,0 +1,1 @@
+ALTER TABLE "accounts_payable" ADD COLUMN "dre_amount_cents" integer;

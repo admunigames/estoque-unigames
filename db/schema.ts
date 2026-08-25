@@ -776,6 +776,16 @@ export const accountsPayable = pgTable(
     financeAccountId: text("finance_account_id").notNull().default(""),
     originalAmountCents: integer("original_amount_cents").notNull(),
     paidAmountCents: integer("paid_amount_cents").notNull().default(0),
+    // NULL = não customizado, entra na DRE pelo valor cheio de
+    // originalAmountCents (comportamento anterior a esta coluna, preservado
+    // pra retrocompatibilidade). Valor não-nulo (incluindo 0) = valor
+    // customizado que substitui originalAmountCents na soma da célula da
+    // DRE (0 = excluído da DRE, mas continua sendo conta a pagar normal
+    // pra cobrança/pagamento). Ver app/lib/payables-recurrence.ts
+    // (computeDreAnchorAssignments) — em grupos de parcelas/recorrência a
+    // decisão fica inteira numa linha "âncora" (a primeira), as demais do
+    // grupo ficam com dreAmountCents=0 explícito.
+    dreAmountCents: integer("dre_amount_cents"),
     issueDate: text("issue_date").notNull().default(""),
     competenceMonth: text("competence_month").notNull(),
     dueDate: text("due_date").notNull(),

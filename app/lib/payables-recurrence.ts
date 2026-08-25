@@ -147,7 +147,7 @@ export function recalcPayableEntrySql(
        created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
      SELECT ?4, ?1, ?2, ?3, 'fixed', agg.total, NULL, 'payable', ?5, ?6, CURRENT_TIMESTAMP, ?5, ?6, CURRENT_TIMESTAMP
      FROM (
-       SELECT COALESCE(SUM(original_amount_cents), 0) AS total
+       SELECT COALESCE(SUM(COALESCE(dre_amount_cents, original_amount_cents)), 0) AS total
        FROM accounts_payable
        WHERE company_id=?1 AND finance_item_id=?2 AND competence_month=?3 AND status != 'canceled'
      ) AS agg
@@ -164,6 +164,85 @@ export function recalcPayableEntrySql(
   ] as [string, unknown[]];
 
   return [deleteStale, upsert];
+}
+
+/**
+ * Valor efetivo de uma linha de accounts_payable pra soma da DRE: o
+ * customizado (dre_amount_cents), quando presente, senão o valor original —
+ * mesma regra do COALESCE em recalcPayableEntrySql, só que em JS pra poder
+ * ser usada em cálculo/validação no backend sem rodar SQL.
+ */
+export function effectiveDreAmountCents(
+  dreAmountCents: number | null | undefined,
+  originalAmountCents: number,
+): number {
+  return dreAmountCents === null || dreAmountCents === undefined ? originalAmountCents : dreAmountCents;
+}
+
+/**
+ * NULL (não customizado) ou qualquer valor > 0 conta como "incluído na
+ * DRE" — só 0 explícito é exclusão. Usada pra derivar o estado do toggle
+ * "Incluir na DRE?" ao reabrir um registro.
+ */
+export function isDreIncluded(dreAmountCents: number | null | undefined): boolean {
+  return dreAmountCents === null || dreAmountCents === undefined || dreAmountCents > 0;
+}
+
+/**
+ * Mecanismo de "âncora": quando uma NF/Despesa/Conta a Pagar tem múltiplas
+ * linhas de accounts_payable (parcelas/ocorrências), a decisão de DRE
+ * (incluir + valor) do conjunto inteiro é sempre escrita em UMA única linha
+ * — a primeira de `orderedIds` (parcela 1, ou a 1ª ocorrência criada,
+ * conforme quem chama ordenou o array) — com as demais recebendo
+ * dre_amount_cents=0 explícito. A soma da célula da DRE (COALESCE +
+ * agregação em recalcPayableEntrySql) já cobre o grupo inteiro sem precisar
+ * ratear por linha.
+ *
+ * Retorna um Map id -> valor a gravar (sempre não-nulo: esta função só é
+ * chamada quando o usuário está customizando ativamente a decisão; se ele
+ * não mexeu no toggle, o chamador simplesmente não grava nada e o campo
+ * continua NULL = comportamento padrão).
+ */
+export function computeDreAnchorAssignments(
+  orderedIds: string[],
+  dreIncluded: boolean,
+  dreAmountCents: number,
+): Map<string, number> {
+  const assignments = new Map<string, number>();
+  orderedIds.forEach((id, index) => {
+    assignments.set(id, index === 0 ? (dreIncluded ? dreAmountCents : 0) : 0);
+  });
+  return assignments;
+}
+
+/**
+ * Distribui um valor total de DRE entre "fatias" (ex.: as lojas de uma
+ * despesa rateada), proporcional ao originalAmountCents de cada fatia —
+ * mesma técnica de splitIntoInstallments (arredondamento pra baixo em cada
+ * fatia, diferença de centavos jogada na ÚLTIMA fatia da lista), pra
+ * garantir soma exata sem viés de arredondamento acumulado.
+ */
+export function prorateDreAmountByShare(
+  shares: { key: string; originalAmountCents: number }[],
+  totalDreAmountCents: number,
+): Map<string, number> {
+  const totalOriginal = shares.reduce((sum, share) => sum + share.originalAmountCents, 0);
+  const assignments = new Map<string, number>();
+  if (totalOriginal <= 0 || shares.length === 0) {
+    shares.forEach((share) => assignments.set(share.key, 0));
+    return assignments;
+  }
+  let running = 0;
+  shares.forEach((share, index) => {
+    if (index === shares.length - 1) {
+      assignments.set(share.key, totalDreAmountCents - running);
+      return;
+    }
+    const amount = Math.floor((totalDreAmountCents * share.originalAmountCents) / totalOriginal);
+    assignments.set(share.key, amount);
+    running += amount;
+  });
+  return assignments;
 }
 
 /**

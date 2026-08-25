@@ -147,6 +147,81 @@ test("recalcPayableEntrySql nunca sobrescreve um lançamento manual da DRE (guar
   assert.match(upsertStatement[0], /WHERE finance_store_entries\.source = 'payable'/);
 });
 
+// ---- DRE por lançamento: dre_amount_cents / âncora de grupo ----
+
+test("recalcPayableEntrySql soma dre_amount_cents quando presente, senão cai no original", () => {
+  const [, upsertStatement] = payablesShared.recalcPayableEntrySql(
+    "entry-1",
+    "store-1",
+    "item-1",
+    "2026-08",
+    "user-1",
+    "Fulano",
+  );
+  assert.match(upsertStatement[0], /SUM\(COALESCE\(dre_amount_cents, original_amount_cents\)\)/);
+});
+
+test("effectiveDreAmountCents: usa o customizado quando presente (inclusive 0), senão o original", () => {
+  assert.equal(payablesShared.effectiveDreAmountCents(null, 5000), 5000);
+  assert.equal(payablesShared.effectiveDreAmountCents(undefined, 5000), 5000);
+  assert.equal(payablesShared.effectiveDreAmountCents(0, 5000), 0);
+  assert.equal(payablesShared.effectiveDreAmountCents(1234, 5000), 1234);
+});
+
+test("isDreIncluded: NULL ou >0 é incluído, só 0 explícito é excluído", () => {
+  assert.equal(payablesShared.isDreIncluded(null), true);
+  assert.equal(payablesShared.isDreIncluded(undefined), true);
+  assert.equal(payablesShared.isDreIncluded(1), true);
+  assert.equal(payablesShared.isDreIncluded(0), false);
+});
+
+test("computeDreAnchorAssignments: âncora (1ª linha) leva o valor inteiro, as demais ficam zeradas", () => {
+  const ids = ["p1", "p2", "p3"];
+  const included = payablesShared.computeDreAnchorAssignments(ids, true, 9000);
+  assert.deepEqual([...included.entries()], [
+    ["p1", 9000],
+    ["p2", 0],
+    ["p3", 0],
+  ]);
+});
+
+test("computeDreAnchorAssignments: excluído zera a âncora também (0 em todo o grupo)", () => {
+  const ids = ["p1", "p2"];
+  const excluded = payablesShared.computeDreAnchorAssignments(ids, false, 9000);
+  assert.deepEqual([...excluded.entries()], [
+    ["p1", 0],
+    ["p2", 0],
+  ]);
+});
+
+test("computeDreAnchorAssignments: grupo de uma linha só vira a própria âncora", () => {
+  const single = payablesShared.computeDreAnchorAssignments(["only"], true, 4200);
+  assert.deepEqual([...single.entries()], [["only", 4200]]);
+});
+
+test("prorateDreAmountByShare: distribui proporcional ao valor original, resto na última fatia", () => {
+  const shares = [
+    { key: "loja-a", originalAmountCents: 3000 },
+    { key: "loja-b", originalAmountCents: 7000 },
+  ];
+  const result = payablesShared.prorateDreAmountByShare(shares, 1000);
+  // 30% de 1000 = 300 (loja-a); resto (700) vai pra loja-b (a última).
+  assert.equal(result.get("loja-a"), 300);
+  assert.equal(result.get("loja-b"), 700);
+  assert.equal(result.get("loja-a") + result.get("loja-b"), 1000);
+});
+
+test("prorateDreAmountByShare: soma das fatias sempre bate com o total, mesmo com arredondamento feio", () => {
+  const shares = [
+    { key: "a", originalAmountCents: 1 },
+    { key: "b", originalAmountCents: 1 },
+    { key: "c", originalAmountCents: 1 },
+  ];
+  const result = payablesShared.prorateDreAmountByShare(shares, 100);
+  const total = [...result.values()].reduce((sum, v) => sum + v, 0);
+  assert.equal(total, 100);
+});
+
 test("página Contas a Pagar existe no submenu Financeiro, gated por finance:manage, com rota própria", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
   assert.match(html, /id="navFinanceiroPayables"[^>]*data-page="financeiroPayables"[^>]*data-permission="finance"/);

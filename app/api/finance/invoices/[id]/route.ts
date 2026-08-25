@@ -4,6 +4,7 @@ import { isValidCpfOrCnpj } from "../../../../lib/br-documents";
 import { todayInTimezone } from "../../../../lib/finance-status";
 import { computeInstallmentStatus, computeInstallmentTotals } from "../../../../lib/supplier-invoice-status";
 import { identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
+import { computeDreAnchorAssignments } from "../../../../lib/payables-recurrence";
 import { recalcPayableEntrySql } from "../../payables/shared";
 import {
   assertInvoiceAccess,
@@ -13,6 +14,7 @@ import {
   invoiceEventStatement,
   loadInstallments,
   loadInvoice,
+  loadInvoiceDreView,
   loadPendingScheduleIds,
   toInstallmentSnapshot,
 } from "../shared";
@@ -89,6 +91,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     }
 
     const totals = computeInstallmentTotals(invoice.totalAmountCents, installments);
+    const dre = await loadInvoiceDreView(database, installments);
 
     return jsonResponse({
       invoice,
@@ -98,6 +101,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       attachments: attachments.results ?? [],
       events: events.results ?? [],
       today,
+      dre,
     });
   } catch (error) {
     console.error("Não foi possível carregar a nota fiscal.", error);
@@ -256,31 +260,77 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       if (!item) return jsonResponse({ error: "ITEM DE DESPESA NÃO ENCONTRADO NO CATÁLOGO FINANCEIRO." }, 400);
     }
 
-    await database
-      .prepare(
+    const statements: [string, unknown[]][] = [
+      [
         `UPDATE supplier_invoices
          SET supplier_id=?1, supplier_document=?2, finance_category_id=?3, finance_item_id=?4, cost_center=?5,
              notes=?6, access_key=?7, entry_date=?8, total_amount_cents=?9,
              updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP
          WHERE id=?12`,
-      )
-      .bind(
-        supplierId,
-        supplierDocument,
-        financeCategoryId,
-        financeItemId,
-        costCenter,
-        notes,
-        accessKey,
-        entryDate,
-        totalAmountCents,
+        [
+          supplierId,
+          supplierDocument,
+          financeCategoryId,
+          financeItemId,
+          costCenter,
+          notes,
+          accessKey,
+          entryDate,
+          totalAmountCents,
+          actor.id,
+          actorName,
+          id,
+        ],
+      ],
+    ];
+
+    // Decisão de "Incluir na DRE?" (opcional, nível da NF inteira) — só faz
+    // sentido depois que já existem duplicatas cadastradas (é nelas que o
+    // valor é gravado, na âncora = 1ª duplicata). Ver installments/route.ts
+    // (POST) pra quando o toggle é definido junto da geração das duplicatas.
+    let dreWarning: string | null = null;
+    if (body.dreIncluded !== undefined) {
+      const installmentsForDre = await loadInstallments(database, id);
+      const activeInstallments = installmentsForDre.filter((installment) => !installment.canceled);
+      if (!activeInstallments.length) {
+        return jsonResponse(
+          { error: "GERE AS DUPLICATAS ANTES DE DEFINIR A INCLUSÃO NA DRE DESTA NOTA FISCAL." },
+          409,
+        );
+      }
+      const dreIncludedFlag = Boolean(body.dreIncluded);
+      const dreAmountCentsRaw = Number(body.dreAmountCents);
+      if (!Number.isFinite(dreAmountCentsRaw) || !Number.isInteger(dreAmountCentsRaw) || dreAmountCentsRaw < 0) {
+        return jsonResponse({ error: "INFORME UM VALOR VÁLIDO (EM CENTAVOS, NÃO NEGATIVO) PARA A DRE." }, 400);
+      }
+      const totalOriginal = activeInstallments.reduce((sum, installment) => sum + installment.originalAmountCents, 0);
+      if (dreIncludedFlag && dreAmountCentsRaw > totalOriginal) {
+        dreWarning = "O VALOR INFORMADO PARA A DRE É MAIOR QUE O VALOR TOTAL DA NOTA FISCAL.";
+      }
+      const orderedPayableIds = activeInstallments.map((installment) => installment.accountsPayableId).filter(Boolean);
+      const assignments = computeDreAnchorAssignments(orderedPayableIds, dreIncludedFlag, dreAmountCentsRaw);
+      for (const payableId of orderedPayableIds) {
+        statements.push([
+          `UPDATE accounts_payable SET dre_amount_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP WHERE id=?4`,
+          [assignments.get(payableId) ?? 0, actor.id, actorName, payableId],
+        ]);
+      }
+      const entryId = crypto.randomUUID();
+      for (const [sql, values] of recalcPayableEntrySql(
+        entryId,
+        invoice.companyId,
+        financeItemId || invoice.financeItemId,
+        invoice.competenceMonth,
         actor.id,
         actorName,
-        id,
-      )
-      .run();
+      )) {
+        statements.push([sql, values]);
+      }
+    }
 
-    return jsonResponse({ updated: true, id });
+    await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
+
+    return jsonResponse({ updated: true, id, dreWarning });
   } catch (error) {
     console.error("Não foi possível editar a nota fiscal.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL EDITAR A NOTA FISCAL." }, 500);

@@ -5,9 +5,12 @@ import {
   DATE_PATTERN,
   RECURRENCE_FREQUENCIES,
   competenceMonthOf,
+  computeDreAnchorAssignments,
   displayStatusCaseSql,
+  effectiveDreAmountCents,
   generateInstallmentDueDates,
   generateRecurrenceDueDates,
+  isDreIncluded,
   nextRecurrenceDueDate,
   recalcPayableEntrySql,
   splitIntoInstallments,
@@ -19,9 +22,12 @@ export {
   DATE_PATTERN,
   RECURRENCE_FREQUENCIES,
   competenceMonthOf,
+  computeDreAnchorAssignments,
   displayStatusCaseSql,
+  effectiveDreAmountCents,
   generateInstallmentDueDates,
   generateRecurrenceDueDates,
+  isDreIncluded,
   nextRecurrenceDueDate,
   recalcPayableEntrySql,
   splitIntoInstallments,
@@ -38,6 +44,7 @@ export type PayableRow = {
   financeAccountId: string;
   originalAmountCents: number;
   paidAmountCents: number;
+  dreAmountCents: number | null;
   issueDate: string;
   competenceMonth: string;
   dueDate: string;
@@ -67,6 +74,7 @@ export async function loadPayable(
       `SELECT id, company_id AS companyId, company_name AS companyName, description,
               supplier_id AS supplierId, finance_item_id AS financeItemId, finance_account_id AS financeAccountId,
               original_amount_cents AS originalAmountCents, paid_amount_cents AS paidAmountCents,
+              dre_amount_cents AS dreAmountCents,
               issue_date AS issueDate, competence_month AS competenceMonth, due_date AS dueDate,
               payment_method AS paymentMethod, invoice_number AS invoiceNumber, order_reference AS orderReference,
               billing_code AS billingCode, notes, status,
@@ -152,4 +160,70 @@ export type PayableStatusView = {
 export function statusView(storedStatus: StoredStatus, dueDate: string, today: string): PayableStatusView {
   const displayStatus = computeDisplayStatus({ storedStatus, dueDate, today });
   return { storedStatus, displayStatus, displayStatusLabel: DISPLAY_STATUS_LABELS[displayStatus] };
+}
+
+export type PayableGroupRow = {
+  id: string;
+  originalAmountCents: number;
+  dreAmountCents: number | null;
+  competenceMonth: string;
+};
+
+/**
+ * Carrega, em ordem estável (âncora sempre primeiro), todas as linhas de
+ * accounts_payable que formam o mesmo "conjunto lógico" de uma conta a
+ * pagar avulsa/parcelada/recorrente pra fins da decisão de DRE — ver
+ * computeDreAnchorAssignments. Um lançamento avulso sem grupo devolve só a
+ * própria linha.
+ */
+export async function loadPayableGroupRows(
+  database: Awaited<ReturnType<typeof getD1>>,
+  payable: Pick<PayableRow, "id" | "installmentGroupId" | "recurrenceId">,
+): Promise<PayableGroupRow[]> {
+  if (payable.installmentGroupId) {
+    const result = await database
+      .prepare(
+        `SELECT id, original_amount_cents AS originalAmountCents, dre_amount_cents AS dreAmountCents,
+                competence_month AS competenceMonth
+         FROM accounts_payable WHERE installment_group_id=?1
+         ORDER BY installment_number ASC, created_at ASC, id ASC`,
+      )
+      .bind(payable.installmentGroupId)
+      .all<PayableGroupRow>();
+    return result.results ?? [];
+  }
+  if (payable.recurrenceId) {
+    const result = await database
+      .prepare(
+        `SELECT id, original_amount_cents AS originalAmountCents, dre_amount_cents AS dreAmountCents,
+                competence_month AS competenceMonth
+         FROM accounts_payable WHERE recurrence_id=?1
+         ORDER BY recurrence_occurrence_index ASC, created_at ASC, id ASC`,
+      )
+      .bind(payable.recurrenceId)
+      .all<PayableGroupRow>();
+    return result.results ?? [];
+  }
+  const result = await database
+    .prepare(
+      `SELECT id, original_amount_cents AS originalAmountCents, dre_amount_cents AS dreAmountCents,
+              competence_month AS competenceMonth
+       FROM accounts_payable WHERE id=?1`,
+    )
+    .bind(payable.id)
+    .all<PayableGroupRow>();
+  return result.results ?? [];
+}
+
+export type DreView = { included: boolean; amountCents: number; isCustomized: boolean };
+
+/** Estado do toggle "Incluir na DRE?" pra exibição — derivado da linha âncora do grupo. */
+export function dreViewFromGroup(group: PayableGroupRow[]): DreView {
+  const anchor = group[0];
+  if (!anchor) return { included: true, amountCents: 0, isCustomized: false };
+  const totalOriginal = group.reduce((sum, row) => sum + row.originalAmountCents, 0);
+  if (anchor.dreAmountCents === null || anchor.dreAmountCents === undefined) {
+    return { included: true, amountCents: totalOriginal, isCustomized: false };
+  }
+  return { included: anchor.dreAmountCents > 0, amountCents: anchor.dreAmountCents, isCustomized: true };
 }

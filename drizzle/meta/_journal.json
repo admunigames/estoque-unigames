@@ -218,6 +218,20 @@
       "when": 1787660156634,
       "tag": "0030_round_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1787690877278,
+      "tag": "0031_supplier_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1787690909040,
+      "tag": "0032_accounts_payable_dre_amount",
+      "breakpoints": true
     }
   ]
 }
