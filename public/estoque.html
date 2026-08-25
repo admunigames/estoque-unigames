@@ -2746,13 +2746,14 @@
         <a class="nav-item sub-item" id="navNotasOs" data-page="notasOs" data-permission="os_notes" data-home-desc="Peça a nota de uma O.S. e acompanhe o anexo enviado pela administração." title="Notas de O.S." href="/solicitacoes/notas-os"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas de O.S.</span></a>
       </div>
     </div>
-    <div class="nav-group" data-permission="finance">
+    <div class="nav-group" data-any-permission="finance,payables">
       <button class="nav-group-toggle" id="navFinanceiroMenu" type="button" aria-expanded="false" aria-controls="navFinanceiroSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
         <a class="nav-item sub-item" id="navFinanceiroPayables" data-page="financeiroPayables" data-permission="finance" data-home-desc="Contas a pagar: parcelas, recorrências e pagamentos por loja." title="Contas a Pagar" href="/financeiro/contas-a-pagar"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Contas a Pagar</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroInvoices" data-page="financeiroInvoices" data-any-permission="finance,payables" data-home-desc="Notas fiscais e duplicatas de fornecedores, integradas a Compras." title="Notas Fiscais" href="/financeiro/notas-fiscais"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas Fiscais</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="hr">
@@ -4507,6 +4508,7 @@
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:create"> Cadastrar</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:edit"> Editar</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:delete"> Excluir</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:send_to_finance"> Enviar NF ao Financeiro</label>
                   </div>
                 </details>
                 <details class="permission-module">
@@ -4561,7 +4563,11 @@
                 <details class="permission-module">
                   <summary>Financeiro</summary>
                   <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="finance:manage"> Acessar o módulo Financeiro</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="finance:manage"> Acessar o módulo Financeiro (acesso total)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_view"> NF/Duplicatas: visualizar</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_reconcile"> NF/Duplicatas: conferir e cadastrar duplicatas/boletos</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:confirm_payment"> NF/Duplicatas: agendar/confirmar pagamento</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:return_to_purchases"> NF/Duplicatas: devolver para Compras</label>
                   </div>
                 </details>
                 <details class="permission-module">
@@ -4757,6 +4763,41 @@
         </div>
         <div class="payables-totals" id="payablesTotals"></div>
         <div class="payables-pagination" id="payablesPagination"></div>
+      </div>
+    </section>
+
+    <section id="pageFinanceiroInvoices" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Notas Fiscais e Duplicatas</h2>
+        </div>
+        <div class="page-header-meta">
+          <p class="page-desc">Fila de notas fiscais de fornecedores vindas de Compras (ou cadastradas manualmente), duplicatas, boletos, pagamentos e devoluções.</p>
+          <div class="page-header-actions purchases-heading-actions">
+            <button class="btn-outline" id="btnInvoicesRefresh" type="button">Atualizar</button>
+            <button class="btn-accent" id="btnNewInvoice" type="button" data-permission="payables:invoices_reconcile">+ NF MANUAL</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="invoicesLoja">EMPRESA/LOJA</label><select id="invoicesLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field full"><label for="invoicesSearch">BUSCAR</label><input id="invoicesSearch" placeholder="Nº da NF, chave de acesso, fornecedor..."></div>
+      </div>
+
+      <section class="summary payables-quick-views" id="invoicesStatusChips" aria-label="Filtro por status da NF"></section>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th>Nota Fiscal</th><th>Fornecedor</th><th>Empresa/Loja</th><th>Competência</th><th>Valor Total</th><th>Status</th><th>Origem</th><th></th>
+            </tr></thead>
+            <tbody id="invoicesBody"><tr><td colspan="8" class="responsive-empty">Carregando notas fiscais…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="payables-pagination" id="invoicesPagination"></div>
       </div>
     </section>
 
@@ -5020,6 +5061,115 @@
   </div>
 </dialog>
 
+<dialog class="purchase-dialog" id="invoiceFormDialog" aria-labelledby="invoiceFormDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="invoiceFormDialogTitle">NOVA NF MANUAL</h3>
+    <button class="purchase-dialog-close" id="btnCloseInvoiceFormDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="invoiceForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="invoiceCompany">EMPRESA/LOJA *</label><select id="invoiceCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="invoiceSupplier">FORNECEDOR</label><select id="invoiceSupplier"><option value="">SEM FORNECEDOR</option></select></div>
+      <div class="purchase-field"><label for="invoiceSupplierDocument">CNPJ/CPF DO FORNECEDOR</label><input id="invoiceSupplierDocument" maxlength="20"></div>
+      <div class="purchase-field"><label for="invoiceNumberInput">NÚMERO DA NF *</label><input id="invoiceNumberInput" maxlength="60" required></div>
+      <div class="purchase-field"><label for="invoiceSeries">SÉRIE</label><input id="invoiceSeries" maxlength="20"></div>
+      <div class="purchase-field"><label for="invoiceAccessKey">CHAVE DE ACESSO (NF-E)</label><input id="invoiceAccessKey" maxlength="44" pattern="\d{44}" title="44 dígitos"></div>
+      <div class="purchase-field"><label for="invoiceIssueDate">DATA DE EMISSÃO</label><input type="date" id="invoiceIssueDate"></div>
+      <div class="purchase-field"><label for="invoiceEntryDate">DATA DE ENTRADA</label><input type="date" id="invoiceEntryDate"></div>
+      <div class="purchase-field"><label for="invoiceCompetenceMonth">COMPETÊNCIA *</label><input type="month" id="invoiceCompetenceMonth" required></div>
+      <div class="purchase-field"><label for="invoiceTotalAmount">VALOR TOTAL (R$) *</label><input type="number" id="invoiceTotalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="invoiceCategory">CATEGORIA</label><select id="invoiceCategory"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="invoiceItem">ITEM DA DESPESA</label><select id="invoiceItem"><option value="">SELECIONE A CATEGORIA</option></select></div>
+      <div class="purchase-field"><label for="invoiceCostCenter">CENTRO DE CUSTO</label><input id="invoiceCostCenter" maxlength="120"></div>
+      <div class="purchase-field full"><label for="invoiceNotes">OBSERVAÇÕES</label><textarea id="invoiceNotes" rows="2" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="invoiceFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelInvoiceForm" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveInvoice" type="submit">CADASTRAR NF</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="invoiceDetailDialog" aria-labelledby="invoiceDetailDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="invoiceDetailDialogTitle">NOTA FISCAL</h3>
+    <button class="purchase-dialog-close" id="btnCloseInvoiceDetailDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:80vh;overflow:auto;">
+    <input type="hidden" id="invoiceDetailId">
+    <div id="invoiceDetailSummary" class="payable-detail-summary"></div>
+    <div class="user-form-status" id="invoiceDetailStatus" role="status" aria-live="polite"></div>
+
+    <div class="purchase-form-actions" id="invoiceDetailActions" style="flex-wrap:wrap;"></div>
+
+    <div class="purchase-form-section">GERAR/CADASTRAR DUPLICATAS</div>
+    <form class="purchase-form-grid" id="invoiceInstallmentForm" style="margin-bottom:10px;">
+      <div class="purchase-field full payables-kind-tabs">
+        <label><input type="radio" name="invoiceInstallmentMode" value="generate" checked> GERAR N PARCELAS IGUAIS</label>
+        <label><input type="radio" name="invoiceInstallmentMode" value="manual"> DUPLICATA ÚNICA</label>
+      </div>
+      <div class="purchase-field" id="invoiceInstallmentCountField"><label for="invoiceInstallmentCount">QUANTIDADE DE PARCELAS</label><input type="number" id="invoiceInstallmentCount" min="1" max="120" value="1"></div>
+      <div class="purchase-field" id="invoiceInstallmentFirstDueField"><label for="invoiceInstallmentFirstDue">1º VENCIMENTO</label><input type="date" id="invoiceInstallmentFirstDue"></div>
+      <div class="purchase-field" id="invoiceInstallmentSingleDueField" hidden><label for="invoiceInstallmentSingleDue">VENCIMENTO</label><input type="date" id="invoiceInstallmentSingleDue"></div>
+      <div class="purchase-field" id="invoiceInstallmentSingleAmountField" hidden><label for="invoiceInstallmentSingleAmount">VALOR (R$)</label><input type="number" id="invoiceInstallmentSingleAmount" min="0.01" step="0.01"></div>
+      <div class="purchase-field"><label for="invoiceInstallmentPaymentMethod">FORMA DE PAGAMENTO</label><input id="invoiceInstallmentPaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX"></div>
+      <div class="purchase-field"><label for="invoiceInstallmentAccount">CONTA FINANCEIRA</label><select id="invoiceInstallmentAccount"><option value="">SEM CONTA</option></select></div>
+      <div class="purchase-field"><label for="invoiceInstallmentBoleto">LINHA DIGITÁVEL (BOLETO)</label><input id="invoiceInstallmentBoleto" maxlength="80"></div>
+      <div class="purchase-field full" style="display:flex;justify-content:flex-end;"><button class="btn-accent" id="btnSaveInvoiceInstallments" type="submit">CADASTRAR</button></div>
+    </form>
+    <div class="user-form-status" id="invoiceInstallmentFormStatus" role="status" aria-live="polite"></div>
+
+    <div class="purchase-form-section">DUPLICATAS</div>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Parcela</th><th>Documento</th><th>Vencimento</th><th>Valor</th><th>Pago</th><th>Status</th><th></th></tr></thead>
+          <tbody id="invoiceInstallmentsBody"><tr><td colspan="7" class="responsive-empty">Nenhuma duplicata cadastrada.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="purchase-form-section">ANEXOS</div>
+    <div class="purchase-form-grid" style="margin-bottom:10px;">
+      <div class="purchase-field"><label for="invoiceAttachNfInput">ANEXAR NF (PDF)</label><input type="file" id="invoiceAttachNfInput" accept="application/pdf"></div>
+    </div>
+    <div id="invoiceAttachmentsList" class="dre-catalog-list"></div>
+
+    <div class="purchase-form-section">LINHA DO TEMPO</div>
+    <div class="supply-separation-list" id="invoiceEventsList"><div class="supply-empty">Sem eventos.</div></div>
+
+    <div class="purchase-form-section">DEVOLVER PARA COMPRAS</div>
+    <form class="purchase-form-grid" id="invoiceReturnForm">
+      <div class="purchase-field full"><label for="invoiceReturnReason">MOTIVO DA DEVOLUÇÃO *</label><textarea id="invoiceReturnReason" rows="2" maxlength="1000" required></textarea></div>
+      <div class="purchase-field full" style="display:flex;justify-content:flex-end;"><button class="btn-danger-outline" id="btnReturnInvoice" type="submit">DEVOLVER PARA COMPRAS</button></div>
+    </form>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="invoicePaymentDialog" aria-labelledby="invoicePaymentDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="invoicePaymentDialogTitle">PAGAMENTO DA DUPLICATA</h3>
+    <button class="purchase-dialog-close" id="btnCloseInvoicePaymentDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="invoicePaymentForm">
+    <input type="hidden" id="invoicePaymentInstallmentId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="invoicePaymentAmount">VALOR (R$) *</label><input type="number" id="invoicePaymentAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="invoicePaymentDate">DATA *</label><input type="date" id="invoicePaymentDate" required></div>
+      <div class="purchase-field"><label for="invoicePaymentMethodInput">FORMA DE PAGAMENTO</label><input id="invoicePaymentMethodInput" maxlength="40"></div>
+      <div class="purchase-field"><label for="invoicePaymentAccount">CONTA FINANCEIRA</label><select id="invoicePaymentAccount"><option value="">SEM CONTA</option></select></div>
+      <div class="purchase-field"><label for="invoicePaymentScheduled" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="invoicePaymentScheduled" style="width:auto;"> É UM AGENDAMENTO (AINDA NÃO PAGO)</label></div>
+      <div class="purchase-field full"><label for="invoicePaymentNotes">OBSERVAÇÕES</label><input id="invoicePaymentNotes" maxlength="2000"></div>
+    </div>
+    <div class="user-form-status" id="invoicePaymentFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelInvoicePayment" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveInvoicePayment" type="submit">REGISTRAR</button>
+    </div>
+  </form>
+</dialog>
+
 <nav class="mobile-tabbar no-print" aria-label="Atalhos principais">
   <button class="mobile-tab active" type="button" data-mobile-page="inicio"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/></svg></span><small>INÍCIO</small></button>
   <button class="mobile-tab" type="button" data-mobile-page="dashboard" data-permission="stock"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/><line x1="3" y1="19" x2="21" y2="19"/></svg></span><small>ESTOQUE</small></button>
@@ -5054,6 +5204,28 @@
       <div class="purchase-field"><label for="purchaseOrderFile">ARQUIVO DO PEDIDO</label><input type="file" id="purchaseOrderFile" accept=".pdf,.txt,.json,.doc,.docx,.xls,.xlsx"><span class="purchase-field-help">ATÉ 20 MB. EM EDIÇÕES, O NOVO ARQUIVO SERÁ ACRESCENTADO AOS EXISTENTES.</span></div>
       <div class="purchase-field"><label for="purchaseInvoiceFile">NOTA FISCAL</label><input type="file" id="purchaseInvoiceFile" accept=".pdf,.txt,.json,.doc,.docx,.xls,.xlsx"><span class="purchase-field-help">O DOCUMENTO SERÁ ARMAZENADO DIRETAMENTE NO NOTION.</span></div>
     </div>
+
+    <div class="purchase-form-section" id="purchaseInvoiceSection" hidden>NOTA FISCAL E FINANCEIRO</div>
+    <div id="purchaseInvoiceSummary" class="payable-detail-summary" hidden></div>
+    <div class="purchase-form-grid" id="purchaseInvoiceFormGrid" hidden>
+      <div class="purchase-field"><label for="pInvoiceCompany">EMPRESA/LOJA (FINANCEIRO) *</label><select id="pInvoiceCompany"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="pInvoiceSupplier">FORNECEDOR</label><select id="pInvoiceSupplier"><option value="">SEM FORNECEDOR</option></select></div>
+      <div class="purchase-field"><label for="pInvoiceSupplierDocument">CNPJ/CPF DO FORNECEDOR</label><input id="pInvoiceSupplierDocument" maxlength="20"></div>
+      <div class="purchase-field"><label for="pInvoiceNumber">NÚMERO DA NF *</label><input id="pInvoiceNumber" maxlength="60"></div>
+      <div class="purchase-field"><label for="pInvoiceSeries">SÉRIE</label><input id="pInvoiceSeries" maxlength="20"></div>
+      <div class="purchase-field"><label for="pInvoiceAccessKey">CHAVE DE ACESSO (NF-E)</label><input id="pInvoiceAccessKey" maxlength="44" pattern="\d{44}"></div>
+      <div class="purchase-field"><label for="pInvoiceIssueDate">DATA DE EMISSÃO</label><input type="date" id="pInvoiceIssueDate"></div>
+      <div class="purchase-field"><label for="pInvoiceCompetence">COMPETÊNCIA *</label><input type="month" id="pInvoiceCompetence"></div>
+      <div class="purchase-field"><label for="pInvoiceTotal">VALOR TOTAL (R$) *</label><input type="number" id="pInvoiceTotal" min="0.01" step="0.01"></div>
+      <div class="purchase-field"><label for="pInvoiceItem">ITEM FINANCEIRO *</label><select id="pInvoiceItem"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="pInvoiceFile">ARQUIVO DA NF (PDF)</label><input type="file" id="pInvoiceFile" accept="application/pdf"></div>
+      <div class="purchase-field full" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <button class="btn-outline" id="btnSavePurchaseInvoice" type="button">SALVAR NF</button>
+        <button class="btn-accent" id="btnSendPurchaseInvoiceToFinance" type="button" data-permission="purchases:send_to_finance" hidden>ENVIAR AO FINANCEIRO</button>
+      </div>
+    </div>
+    <div class="user-form-status" id="purchaseInvoiceFormStatus" role="status" aria-live="polite"></div>
+
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelPurchase" type="button">CANCELAR</button>
       <button class="btn-accent" id="btnSavePurchase" type="submit">SALVAR NO NOTION</button>
@@ -5720,7 +5892,8 @@
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
     financeiro:'/financeiro/dre',
-    financeiroPayables:'/financeiro/contas-a-pagar'
+    financeiroPayables:'/financeiro/contas-a-pagar',
+    financeiroInvoices:'/financeiro/notas-fiscais'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -5745,7 +5918,8 @@
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
     financeiro:'DRE',
-    financeiroPayables:'CONTAS A PAGAR'
+    financeiroPayables:'CONTAS A PAGAR',
+    financeiroInvoices:'NOTAS FISCAIS'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -5810,6 +5984,10 @@
 
   function canAccessPage(name){
     if(name === 'usuarios') return canManageUsers();
+    // NF/Duplicatas é acessível por finance:manage OU qualquer permissão
+    // granular payables:* (fallback já aplicado no backend, ver
+    // app/api/finance/invoices/shared.ts#canViewInvoices).
+    if(name === 'financeiroInvoices') return canAccess('finance') || canAccess('payables');
     return !PAGE_PERMISSIONS[name] || canAccess(PAGE_PERMISSIONS[name]);
   }
 
@@ -6170,7 +6348,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiro' || name === 'financeiroPayables';
+    const isFinanceiro = name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -6223,6 +6401,7 @@
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'financeiro') loadFinanceiroTab();
     if(name === 'financeiroPayables') loadPayablesPage();
+    if(name === 'financeiroInvoices') loadInvoicesPage();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -6247,6 +6426,7 @@
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'financeiro') loadFinanceiroTab();
     if(name === 'financeiroPayables') loadPayablesPage();
+    if(name === 'financeiroInvoices') loadInvoicesPage();
   }
 
   function isPlainClick(event){
@@ -9064,6 +9244,10 @@
     el('purchaseResponsible').value = responsibleId;
     el('purchaseDialog').showModal();
     requestAnimationFrame(() => el('purchaseSupplier').focus());
+    // Painel "Nota Fiscal e Financeiro" só existe pra pedido já salvo (tem
+    // id do Notion) — chamado de forma assíncrona depois do showModal() pra
+    // não atrasar a abertura do diálogo.
+    loadPurchaseInvoicePanel(item ? item.id : '').catch(() => undefined);
   }
 
   function closePurchaseDialog(){
@@ -16196,6 +16380,708 @@ function renderHomeTasks(){
     }
   });
 
+  // ============ NOTAS FISCAIS E DUPLICATAS DE FORNECEDORES ============
+  let invoiceRows = [];
+  let invoiceStatusFilter = '';
+  let invoicesSearchTimer = null;
+  let invoiceCurrentDetailId = null;
+  let invoiceCurrentDetail = null;
+  let invoicePaymentIdempotencyKey = '';
+  let purchaseInvoiceData = null;
+
+  const INVOICE_STATUS_LABELS = {
+    aguardando_envio:'AGUARDANDO ENVIO', aguardando_conferencia:'AGUARDANDO CONFERÊNCIA',
+    aguardando_duplicatas:'AGUARDANDO DUPLICATAS', aguardando_boletos:'AGUARDANDO BOLETOS',
+    pronto_pagamento:'PRONTO P/ PAGAMENTO', parcialmente_pago:'PARCIALMENTE PAGO', pago:'PAGO',
+    vencido:'VENCIDO', com_divergencia:'COM DIVERGÊNCIA', cancelado:'CANCELADO'
+  };
+  const INVOICE_STATUS_TONE = {
+    aguardando_envio:'', aguardando_conferencia:'waiting', aguardando_duplicatas:'waiting',
+    aguardando_boletos:'waiting', pronto_pagamento:'progress', parcialmente_pago:'waiting',
+    pago:'done', vencido:'alert', com_divergencia:'alert', cancelado:''
+  };
+  const INSTALLMENT_STATUS_LABELS = {
+    a_vencer:'A VENCER', vencendo_hoje:'VENCENDO HOJE', vencida:'VENCIDA',
+    parcialmente_paga:'PARCIALMENTE PAGA', paga:'PAGA', agendada:'AGENDADA', cancelada:'CANCELADA'
+  };
+  const INVOICE_STATUS_ORDER = [
+    'aguardando_envio','aguardando_conferencia','aguardando_duplicatas','aguardando_boletos',
+    'pronto_pagamento','vencido','parcialmente_pago','pago','com_divergencia','cancelado'
+  ];
+
+  async function invoicesApiRequest(path, options){
+    return financeApiRequest('/invoices'+(path || ''), options);
+  }
+
+  async function comprasInvoiceApiRequest(purchaseId, path, options){
+    const response = await fetch('/api/compras/'+encodeURIComponent(purchaseId)+'/invoice'+(path || ''), {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  async function invoiceAttachmentRequest(uploadUrl, options){
+    const response = await fetch(uploadUrl, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    let data = {};
+    if(response.status !== 204){
+      try{ data = await response.json(); }catch{ data = {}; }
+    }
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return data;
+  }
+
+  // Mesmo protocolo de upload em partes (create/parts/complete) já usado em
+  // Notas de O.S. (ver uploadOsNoteAttachment) — reaproveitado aqui pros
+  // anexos de NF/duplicata/pagamento, tanto pela tela de Compras quanto
+  // pela do Financeiro (a diferença é só a URL de destino).
+  async function uploadInvoiceFile(uploadUrl, file, extraFields){
+    if(!file || !/\.pdf$/i.test(file.name)) throw new Error('SELECIONE UM ARQUIVO PDF.');
+    if(file.size <= 0) throw new Error('O ARQUIVO PDF ESTÁ VAZIO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.');
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const create = await invoiceAttachmentRequest(uploadUrl, {
+      method:'POST',
+      headers:{Accept:'application/json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'create', fileName:file.name, contentType:file.type || 'application/pdf',
+        fileSize:file.size, numberOfParts, ...(extraFields || {})
+      })
+    });
+    const sessionId = create.session && create.session.id;
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO PDF.');
+    try{
+      for(let index=0; index<numberOfParts; index+=1){
+        const partNumber = index + 1;
+        await invoiceAttachmentRequest(uploadUrl, {
+          method:'POST',
+          headers:{
+            Accept:'application/json', 'Content-Type':'application/octet-stream',
+            'x-invoice-upload-id':sessionId, 'x-invoice-part-number':String(partNumber)
+          },
+          body:file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
+        });
+      }
+      await invoiceAttachmentRequest(uploadUrl, {
+        method:'POST', headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'complete', sessionId})
+      });
+    }catch(error){
+      invoiceAttachmentRequest(uploadUrl, {
+        method:'POST', headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'cancel', sessionId})
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  function invoiceStatusPillHtml(status){
+    const label = INVOICE_STATUS_LABELS[status] || String(status || '').toUpperCase();
+    const tone = INVOICE_STATUS_TONE[status] || '';
+    return '<span class="status-pill '+tone+'">'+escapeHtml(label)+'</span>';
+  }
+
+  function renderFlatFinanceItemOptions(selectId, placeholder){
+    const select = el(selectId);
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">'+placeholder+'</option>'+
+      financeItems.map(item => {
+        const category = financeCategories.find(c => c.id === item.categoryId);
+        const label = (category ? category.name+' › ' : '')+item.name;
+        return '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(label)+'</option>';
+      }).join('');
+    if(financeItems.some(item => item.id === selected)) select.value = selected;
+  }
+
+  function renderInvoiceFormSelects(){
+    const invoicesLojaSelect = el('invoicesLoja');
+    if(invoicesLojaSelect){
+      const selected = invoicesLojaSelect.value;
+      invoicesLojaSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+
+        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+      if(companies.some(c => c.id === selected)) invoicesLojaSelect.value = selected;
+    }
+    const invoiceCompanySelect = el('invoiceCompany');
+    if(invoiceCompanySelect){
+      const selected = invoiceCompanySelect.value;
+      invoiceCompanySelect.innerHTML = '<option value="">SELECIONE</option>'+
+        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+      if(companies.some(c => c.id === selected)) invoiceCompanySelect.value = selected;
+    }
+    const supplierOptions = payableSuppliers.filter(s => s.active).map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
+    if(el('invoiceSupplier')) el('invoiceSupplier').innerHTML = '<option value="">SEM FORNECEDOR</option>'+supplierOptions;
+    const categorySelect = el('invoiceCategory');
+    if(categorySelect){
+      const selected = categorySelect.value;
+      const options = financeCategorySelectOptions();
+      categorySelect.innerHTML = '<option value="">SELECIONE</option>'+
+        options.map(o => '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
+      if(options.some(o => o.id === selected)) categorySelect.value = selected;
+    }
+    renderPayableItemOptions('invoiceItem', categorySelect ? categorySelect.value : '');
+  }
+
+  function renderInvoiceStatusChips(){
+    const container = el('invoicesStatusChips');
+    if(!container) return;
+    const allActive = !invoiceStatusFilter;
+    container.innerHTML = '<div class="card'+(allActive ? ' active' : '')+'" data-invoice-status-chip="">'+
+        '<div class="lbl">TODOS</div></div>'+
+      INVOICE_STATUS_ORDER.map(status =>
+        '<div class="card'+(invoiceStatusFilter === status ? ' active' : '')+'" data-invoice-status-chip="'+status+'">'+
+          '<div class="lbl">'+escapeHtml(INVOICE_STATUS_LABELS[status])+'</div></div>'
+      ).join('');
+  }
+
+  function invoiceRowHtml(row){
+    const supplier = payableSuppliers.find(s => s.id === row.supplierId);
+    return '<tr>'+
+      '<td>'+escapeHtml(row.invoiceNumber)+(row.series ? '/'+escapeHtml(row.series) : '')+'</td>'+
+      '<td>'+escapeHtml((supplier && supplier.name) || row.supplierDocument || '—')+'</td>'+
+      '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+      '<td>'+escapeHtml(row.competenceMonth)+'</td>'+
+      '<td>'+formatCentsBRL(row.totalAmountCents)+'</td>'+
+      '<td>'+invoiceStatusPillHtml(row.financialStatus)+'</td>'+
+      '<td>'+(row.origin === 'purchase' ? 'COMPRAS' : 'MANUAL')+'</td>'+
+      '<td><button class="btn-outline" type="button" data-invoice-open="'+escapeHtml(row.id)+'">ABRIR</button></td>'+
+    '</tr>';
+  }
+
+  async function loadInvoicesList(){
+    const tbody = el('invoicesBody');
+    if(tbody) tbody.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando notas fiscais…</td></tr>';
+    const params = new URLSearchParams();
+    const companyId = el('invoicesLoja') ? el('invoicesLoja').value : '';
+    if(companyId) params.set('companyId', companyId);
+    if(invoiceStatusFilter) params.set('status', invoiceStatusFilter);
+    const search = el('invoicesSearch') ? el('invoicesSearch').value.trim() : '';
+    if(search) params.set('search', search);
+    try{
+      const data = await invoicesApiRequest('?'+params.toString());
+      invoiceRows = Array.isArray(data.rows) ? data.rows : [];
+      if(tbody){
+        tbody.innerHTML = invoiceRows.length
+          ? invoiceRows.map(invoiceRowHtml).join('')
+          : '<tr><td colspan="8" class="responsive-empty">Nenhuma nota fiscal encontrada.</td></tr>';
+      }
+    }catch(error){
+      invoiceRows = [];
+      if(tbody) tbody.innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  async function loadInvoicesPage(){
+    if(!companies.length) await loadCompanies();
+    await loadPayablesCatalogData();
+    renderInvoiceFormSelects();
+    renderInvoiceStatusChips();
+    await loadInvoicesList();
+  }
+
+  function invoiceDetailSummaryHtml(data){
+    const invoice = data.invoice;
+    const supplier = payableSuppliers.find(s => s.id === invoice.supplierId);
+    const totals = data.totals || {};
+    return '<div class="payable-detail-grid">'+
+      '<div><span>NF</span><strong>'+escapeHtml(invoice.invoiceNumber)+(invoice.series ? '/'+escapeHtml(invoice.series) : '')+'</strong></div>'+
+      '<div><span>FORNECEDOR</span><strong>'+escapeHtml((supplier && supplier.name) || invoice.supplierDocument || '—')+'</strong></div>'+
+      '<div><span>EMPRESA/LOJA</span><strong>'+escapeHtml(invoice.companyName || invoice.companyId)+'</strong></div>'+
+      '<div><span>COMPETÊNCIA</span><strong>'+escapeHtml(invoice.competenceMonth)+'</strong></div>'+
+      '<div><span>VALOR TOTAL</span><strong>'+formatCentsBRL(invoice.totalAmountCents)+'</strong></div>'+
+      '<div><span>DISTRIBUÍDO NAS DUPLICATAS</span><strong>'+formatCentsBRL(totals.totalDistributedCents || 0)+'</strong></div>'+
+      '<div><span>TOTAL PAGO</span><strong>'+formatCentsBRL(totals.totalPaidCents || 0)+'</strong></div>'+
+      '<div><span>SALDO EM ABERTO</span><strong>'+formatCentsBRL(totals.openBalanceCents || 0)+'</strong></div>'+
+      '<div><span>DIFERENÇA NÃO DISTRIBUÍDA</span><strong>'+formatCentsBRL(totals.undistributedDifferenceCents || 0)+'</strong></div>'+
+      '<div><span>STATUS</span>'+invoiceStatusPillHtml(invoice.financialStatus)+'</div>'+
+      '<div><span>ORIGEM</span><strong>'+(invoice.origin === 'purchase' ? 'COMPRAS' : 'MANUAL')+
+        (invoice.notionPurchaseUrl ? ' — <a href="'+escapeHtml(invoice.notionPurchaseUrl)+'" target="_blank" rel="noopener">VER PEDIDO</a>' : '')+'</strong></div>'+
+      (invoice.pendingCorrection
+        ? '<div class="purchase-field full"><span>DEVOLVIDA PARA CORREÇÃO</span><strong>'+escapeHtml(invoice.returnReason || '')+'</strong></div>'
+        : '')+
+    '</div>';
+  }
+
+  function invoiceDetailActionsHtml(invoice){
+    const buttons = [];
+    if(invoice.financialStatus === 'aguardando_conferencia' && canAccess('payables:invoices_reconcile')){
+      buttons.push('<button class="btn-accent" type="button" id="btnReviewInvoice">CONFERIR NF</button>');
+    }
+    if(invoice.financialStatus !== 'cancelado' && canAccess('payables:invoices_reconcile')){
+      buttons.push('<button class="btn-danger-outline" type="button" id="btnCancelInvoice">CANCELAR NF</button>');
+    }
+    return buttons.join('');
+  }
+
+  function installmentRowHtml(installment){
+    const balance = installment.originalAmountCents - installment.paidAmountCents;
+    const canAct = canAccess('payables:confirm_payment') && installment.status !== 'cancelada' && installment.status !== 'paga' && balance > 0;
+    const canEdit = canAccess('payables:invoices_reconcile') && installment.paidAmountCents === 0 && installment.status !== 'cancelada';
+    return '<tr>'+
+      '<td>'+installment.installmentNumber+'/'+installment.installmentTotal+'</td>'+
+      '<td>'+escapeHtml(installment.documentNumber || installment.boletoCode || '—')+'</td>'+
+      '<td>'+escapeHtml(installment.dueDate)+'</td>'+
+      '<td>'+formatCentsBRL(installment.originalAmountCents)+'</td>'+
+      '<td>'+formatCentsBRL(installment.paidAmountCents)+'</td>'+
+      '<td><span class="status-pill">'+escapeHtml(INSTALLMENT_STATUS_LABELS[installment.status] || installment.status)+'</span></td>'+
+      '<td style="display:flex;gap:6px;flex-wrap:wrap;">'+
+        (canAct ? '<button class="btn-outline" type="button" data-installment-pay="'+escapeHtml(installment.id)+'" data-balance="'+balance+'">PAGAR</button>' : '')+
+        (canEdit ? '<button class="btn-outline" type="button" data-installment-delete="'+escapeHtml(installment.id)+'">EXCLUIR</button>' : '')+
+      '</td>'+
+    '</tr>';
+  }
+
+  function renderInvoiceDetail(data){
+    const invoice = data.invoice;
+    el('invoiceDetailId').value = invoice.id;
+    el('invoiceDetailDialogTitle').textContent = 'NF '+invoice.invoiceNumber+(invoice.series ? '/'+invoice.series : '');
+    el('invoiceDetailSummary').innerHTML = invoiceDetailSummaryHtml(data);
+    el('invoiceDetailActions').innerHTML = invoiceDetailActionsHtml(invoice);
+    const reviewButton = el('btnReviewInvoice');
+    if(reviewButton) reviewButton.addEventListener('click', reviewInvoice);
+    const cancelButton = el('btnCancelInvoice');
+    if(cancelButton) cancelButton.addEventListener('click', cancelInvoiceAction);
+
+    const canReconcile = canAccess('payables:invoices_reconcile') && invoice.financialStatus !== 'cancelado';
+    el('invoiceInstallmentForm').hidden = !canReconcile;
+    el('invoiceReturnForm').hidden = !(
+      canAccess('payables:return_to_purchases') && invoice.origin === 'purchase' &&
+      invoice.financialStatus !== 'cancelado' && invoice.financialStatus !== 'pago'
+    );
+
+    renderPayableAccountOptionsForCompany('invoiceInstallmentAccount', invoice.companyId, 'SEM CONTA');
+    renderPayableAccountOptionsForCompany('invoicePaymentAccount', invoice.companyId, 'SEM CONTA');
+
+    const installments = data.installments || [];
+    el('invoiceInstallmentsBody').innerHTML = installments.length
+      ? installments.map(installmentRowHtml).join('')
+      : '<tr><td colspan="7" class="responsive-empty">Nenhuma duplicata cadastrada.</td></tr>';
+
+    const attachments = data.attachments || [];
+    el('invoiceAttachmentsList').innerHTML = attachments.length
+      ? attachments.map(attachment =>
+          '<div class="dre-catalog-row"><span>'+escapeHtml((attachment.attachmentType || '').toUpperCase())+' — '+
+            escapeHtml(attachment.fileName)+' ('+escapeHtml(formatDocumentSize(attachment.sizeBytes))+')</span></div>'
+        ).join('')
+      : '<div class="supply-empty">Nenhum anexo.</div>';
+
+    const events = data.events || [];
+    el('invoiceEventsList').innerHTML = events.length
+      ? events.map(event =>
+          '<div class="output-history">'+escapeHtml(outputDateTime(event.createdAt))+' — '+
+            escapeHtml(event.actorName || 'Sistema')+': '+escapeHtml(event.description)+'</div>'
+        ).join('')
+      : '<div class="supply-empty">Sem eventos.</div>';
+  }
+
+  async function openInvoiceDetailDialog(id){
+    invoiceCurrentDetailId = id;
+    el('invoiceDetailStatus').textContent = '';
+    try{
+      const data = await invoicesApiRequest('/'+encodeURIComponent(id));
+      invoiceCurrentDetail = data.invoice;
+      renderInvoiceDetail(data);
+      el('invoiceDetailDialog').showModal();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+    }
+  }
+
+  function closeInvoiceDetailDialog(){
+    if(el('invoiceDetailDialog').open) el('invoiceDetailDialog').close();
+    invoiceCurrentDetailId = null;
+    invoiceCurrentDetail = null;
+  }
+
+  async function reviewInvoice(){
+    if(!invoiceCurrentDetailId) return;
+    try{
+      await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'review'})
+      });
+      showPurchaseToast('NF conferida.');
+      await openInvoiceDetailDialog(invoiceCurrentDetailId);
+      await loadInvoicesList();
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  }
+
+  async function cancelInvoiceAction(){
+    const reason = prompt('Motivo do cancelamento (opcional):') || '';
+    if(!confirm('Cancelar esta nota fiscal e todas as duplicatas em aberto?')) return;
+    try{
+      await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'cancel', reason})
+      });
+      showPurchaseToast('NF cancelada.');
+      await openInvoiceDetailDialog(invoiceCurrentDetailId);
+      await loadInvoicesList();
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  }
+
+  function updateInvoiceInstallmentModeFields(){
+    const mode = (document.querySelector('input[name="invoiceInstallmentMode"]:checked') || {}).value || 'generate';
+    const isGenerate = mode === 'generate';
+    el('invoiceInstallmentCountField').hidden = !isGenerate;
+    el('invoiceInstallmentFirstDueField').hidden = !isGenerate;
+    el('invoiceInstallmentSingleDueField').hidden = isGenerate;
+    el('invoiceInstallmentSingleAmountField').hidden = isGenerate;
+  }
+  document.querySelectorAll('input[name="invoiceInstallmentMode"]').forEach(input => {
+    input.addEventListener('change', updateInvoiceInstallmentModeFields);
+  });
+
+  el('btnInvoicesRefresh') && el('btnInvoicesRefresh').addEventListener('click', loadInvoicesList);
+  el('invoicesLoja') && el('invoicesLoja').addEventListener('change', loadInvoicesList);
+  el('invoicesSearch') && el('invoicesSearch').addEventListener('input', () => {
+    clearTimeout(invoicesSearchTimer);
+    invoicesSearchTimer = setTimeout(loadInvoicesList, 350);
+  });
+  el('invoicesStatusChips') && el('invoicesStatusChips').addEventListener('click', event => {
+    const chip = event.target.closest('[data-invoice-status-chip]');
+    if(!chip) return;
+    invoiceStatusFilter = chip.dataset.invoiceStatusChip;
+    renderInvoiceStatusChips();
+    loadInvoicesList();
+  });
+  el('invoicesBody') && el('invoicesBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-invoice-open]');
+    if(button) openInvoiceDetailDialog(button.dataset.invoiceOpen);
+  });
+  el('btnCloseInvoiceDetailDialog') && el('btnCloseInvoiceDetailDialog').addEventListener('click', closeInvoiceDetailDialog);
+  el('invoiceDetailDialog') && el('invoiceDetailDialog').addEventListener('click', event => {
+    if(event.target === el('invoiceDetailDialog')) closeInvoiceDetailDialog();
+  });
+
+  el('btnNewInvoice') && el('btnNewInvoice').addEventListener('click', async () => {
+    el('invoiceForm').reset();
+    renderInvoiceFormSelects();
+    el('invoiceFormStatus').textContent = '';
+    if(!payablesCanActAcrossStores() && currentSession.companyId) el('invoiceCompany').value = currentSession.companyId;
+    el('invoiceFormDialog').showModal();
+  });
+  el('btnCloseInvoiceFormDialog') && el('btnCloseInvoiceFormDialog').addEventListener('click', () => el('invoiceFormDialog').close());
+  el('btnCancelInvoiceForm') && el('btnCancelInvoiceForm').addEventListener('click', () => el('invoiceFormDialog').close());
+  el('invoiceFormDialog') && el('invoiceFormDialog').addEventListener('click', event => {
+    if(event.target === el('invoiceFormDialog')) el('invoiceFormDialog').close();
+  });
+  el('invoiceCategory') && el('invoiceCategory').addEventListener('change', () => {
+    renderPayableItemOptions('invoiceItem', el('invoiceCategory').value, {selectedId:''});
+  });
+
+  el('invoiceForm') && el('invoiceForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnSaveInvoice');
+    button.disabled = true;
+    el('invoiceFormStatus').textContent = 'CADASTRANDO…';
+    try{
+      const totalAmountCents = parseBRLToCents(el('invoiceTotalAmount').value);
+      if(!totalAmountCents) throw new Error('INFORME UM VALOR TOTAL VÁLIDO.');
+      await invoicesApiRequest('', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          companyId: el('invoiceCompany').value,
+          companyName: (companies.find(c => c.id === el('invoiceCompany').value) || {}).name || '',
+          supplierId: el('invoiceSupplier').value,
+          supplierDocument: el('invoiceSupplierDocument').value,
+          invoiceNumber: el('invoiceNumberInput').value,
+          series: el('invoiceSeries').value,
+          accessKey: el('invoiceAccessKey').value,
+          issueDate: el('invoiceIssueDate').value,
+          entryDate: el('invoiceEntryDate').value,
+          competenceMonth: el('invoiceCompetenceMonth').value,
+          totalAmountCents,
+          financeCategoryId: el('invoiceCategory').value,
+          financeItemId: el('invoiceItem').value,
+          costCenter: el('invoiceCostCenter').value,
+          notes: el('invoiceNotes').value
+        })
+      });
+      el('invoiceFormDialog').close();
+      showPurchaseToast('Nota fiscal cadastrada.');
+      await loadInvoicesList();
+    }catch(error){
+      el('invoiceFormStatus').textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('invoiceInstallmentForm') && el('invoiceInstallmentForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!invoiceCurrentDetailId) return;
+    const mode = (document.querySelector('input[name="invoiceInstallmentMode"]:checked') || {}).value || 'generate';
+    const button = el('btnSaveInvoiceInstallments');
+    button.disabled = true;
+    el('invoiceInstallmentFormStatus').textContent = 'SALVANDO…';
+    try{
+      const body = {
+        mode,
+        paymentMethod: el('invoiceInstallmentPaymentMethod').value,
+        financeAccountId: el('invoiceInstallmentAccount').value,
+        boletoCode: el('invoiceInstallmentBoleto').value
+      };
+      if(mode === 'generate'){
+        body.installmentTotal = Number(el('invoiceInstallmentCount').value) || 1;
+        body.firstDueDate = el('invoiceInstallmentFirstDue').value;
+      }else{
+        body.dueDate = el('invoiceInstallmentSingleDue').value;
+        const amountCents = parseBRLToCents(el('invoiceInstallmentSingleAmount').value);
+        if(!amountCents) throw new Error('INFORME UM VALOR VÁLIDO PARA A DUPLICATA.');
+        body.originalAmountCents = amountCents;
+      }
+      await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+      });
+      showPurchaseToast('Duplicata(s) cadastrada(s).');
+      el('invoiceInstallmentForm').reset();
+      updateInvoiceInstallmentModeFields();
+      await openInvoiceDetailDialog(invoiceCurrentDetailId);
+      await loadInvoicesList();
+    }catch(error){
+      el('invoiceInstallmentFormStatus').textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('invoiceInstallmentsBody') && el('invoiceInstallmentsBody').addEventListener('click', async event => {
+    const payButton = event.target.closest('[data-installment-pay]');
+    if(payButton){
+      el('invoicePaymentForm').reset();
+      el('invoicePaymentInstallmentId').value = payButton.dataset.installmentPay;
+      el('invoicePaymentAmount').value = ((Number(payButton.dataset.balance) || 0) / 100).toFixed(2);
+      el('invoicePaymentDate').value = todayDateKey();
+      renderPayableAccountOptionsForCompany('invoicePaymentAccount', invoiceCurrentDetail ? invoiceCurrentDetail.companyId : '', 'SEM CONTA');
+      el('invoicePaymentFormStatus').textContent = '';
+      invoicePaymentIdempotencyKey = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random());
+      el('invoicePaymentDialog').showModal();
+      return;
+    }
+    const deleteButton = event.target.closest('[data-installment-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir esta duplicata?')) return;
+      try{
+        await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments/'+encodeURIComponent(deleteButton.dataset.installmentDelete), {method:'DELETE'});
+        showPurchaseToast('Duplicata excluída.');
+        await openInvoiceDetailDialog(invoiceCurrentDetailId);
+        await loadInvoicesList();
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }
+  });
+
+  el('btnCloseInvoicePaymentDialog') && el('btnCloseInvoicePaymentDialog').addEventListener('click', () => el('invoicePaymentDialog').close());
+  el('btnCancelInvoicePayment') && el('btnCancelInvoicePayment').addEventListener('click', () => el('invoicePaymentDialog').close());
+  el('invoicePaymentDialog') && el('invoicePaymentDialog').addEventListener('click', event => {
+    if(event.target === el('invoicePaymentDialog')) el('invoicePaymentDialog').close();
+  });
+
+  el('invoicePaymentForm') && el('invoicePaymentForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnSaveInvoicePayment');
+    button.disabled = true;
+    el('invoicePaymentFormStatus').textContent = 'REGISTRANDO…';
+    try{
+      const amountCents = parseBRLToCents(el('invoicePaymentAmount').value);
+      if(!amountCents) throw new Error('INFORME UM VALOR VÁLIDO.');
+      await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments/'+encodeURIComponent(el('invoicePaymentInstallmentId').value)+'/payments', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          idempotencyKey: invoicePaymentIdempotencyKey,
+          amountCents,
+          paymentDate: el('invoicePaymentDate').value,
+          paymentMethod: el('invoicePaymentMethodInput').value,
+          financeAccountId: el('invoicePaymentAccount').value,
+          scheduled: el('invoicePaymentScheduled').checked,
+          notes: el('invoicePaymentNotes').value
+        })
+      });
+      el('invoicePaymentDialog').close();
+      showPurchaseToast('Pagamento registrado.');
+      await openInvoiceDetailDialog(invoiceCurrentDetailId);
+      await loadInvoicesList();
+    }catch(error){
+      el('invoicePaymentFormStatus').textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('invoiceReturnForm') && el('invoiceReturnForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!invoiceCurrentDetailId) return;
+    const button = el('btnReturnInvoice');
+    button.disabled = true;
+    try{
+      await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/return', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reason: el('invoiceReturnReason').value})
+      });
+      showPurchaseToast('NF devolvida para Compras.');
+      closeInvoiceDetailDialog();
+      await loadInvoicesList();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('invoiceAttachNfInput') && el('invoiceAttachNfInput').addEventListener('change', async () => {
+    const file = el('invoiceAttachNfInput').files[0];
+    el('invoiceAttachNfInput').value = '';
+    if(!file || !invoiceCurrentDetailId) return;
+    try{
+      await uploadInvoiceFile('/api/finance/invoices/'+encodeURIComponent(invoiceCurrentDetailId)+'/attachments', file, {attachmentType:'nf'});
+      showPurchaseToast('Arquivo anexado.');
+      await openInvoiceDetailDialog(invoiceCurrentDetailId);
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  });
+
+  // ---- Painel "Nota Fiscal e Financeiro" dentro do diálogo de Compras ----
+
+  function purchaseInvoiceSummaryHtml(data){
+    const invoice = data.invoice;
+    return '<div class="payable-detail-grid">'+
+      '<div><span>STATUS</span>'+invoiceStatusPillHtml(invoice.financialStatus)+'</div>'+
+      '<div><span>DUPLICATAS CADASTRADAS</span><strong>'+(data.installmentsCount || 0)+'</strong></div>'+
+      '<div><span>TOTAL PAGO</span><strong>'+formatCentsBRL((data.totals && data.totals.totalPaidCents) || 0)+'</strong></div>'+
+      '<div><span>SALDO EM ABERTO</span><strong>'+formatCentsBRL((data.totals && data.totals.openBalanceCents) || 0)+'</strong></div>'+
+      (invoice.pendingCorrection
+        ? '<div class="purchase-field full"><span>DEVOLVIDA PELO FINANCEIRO</span><strong>'+escapeHtml(invoice.returnReason || '')+'</strong></div>'
+        : '')+
+    '</div>';
+  }
+
+  async function loadPurchaseInvoicePanel(purchaseId){
+    if(!el('purchaseInvoiceSection')) return;
+    el('purchaseInvoiceSection').hidden = !purchaseId;
+    el('purchaseInvoiceSummary').hidden = true;
+    el('purchaseInvoiceFormGrid').hidden = !purchaseId;
+    el('purchaseInvoiceFormStatus').textContent = '';
+    purchaseInvoiceData = null;
+    if(!purchaseId) return;
+    if(!companies.length) await loadCompanies();
+    await loadPayablesCatalogData();
+    const companySelect = el('pInvoiceCompany');
+    if(companySelect){
+      companySelect.innerHTML = '<option value="">SELECIONE</option>'+
+        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    }
+    const supplierOptions = payableSuppliers.filter(s => s.active).map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
+    if(el('pInvoiceSupplier')) el('pInvoiceSupplier').innerHTML = '<option value="">SEM FORNECEDOR</option>'+supplierOptions;
+    renderFlatFinanceItemOptions('pInvoiceItem', 'SELECIONE');
+
+    const fieldIds = ['pInvoiceCompany','pInvoiceSupplier','pInvoiceSupplierDocument','pInvoiceNumber','pInvoiceSeries',
+      'pInvoiceAccessKey','pInvoiceIssueDate','pInvoiceCompetence','pInvoiceTotal','pInvoiceItem'];
+    try{
+      const data = await comprasInvoiceApiRequest(purchaseId, '');
+      if(data.invoice){
+        purchaseInvoiceData = data.invoice;
+        el('purchaseInvoiceSummary').hidden = false;
+        el('purchaseInvoiceSummary').innerHTML = purchaseInvoiceSummaryHtml(data);
+        el('pInvoiceCompany').value = data.invoice.companyId;
+        el('pInvoiceSupplier').value = data.invoice.supplierId;
+        el('pInvoiceSupplierDocument').value = data.invoice.supplierDocument || '';
+        el('pInvoiceNumber').value = data.invoice.invoiceNumber || '';
+        el('pInvoiceSeries').value = data.invoice.series || '';
+        el('pInvoiceAccessKey').value = data.invoice.accessKey || '';
+        el('pInvoiceIssueDate').value = data.invoice.issueDate || '';
+        el('pInvoiceCompetence').value = data.invoice.competenceMonth || '';
+        el('pInvoiceTotal').value = data.invoice.totalAmountCents ? (data.invoice.totalAmountCents / 100).toFixed(2) : '';
+        el('pInvoiceItem').value = data.invoice.financeItemId || '';
+        const editable = !data.invoice.sentToFinanceAt || data.invoice.pendingCorrection;
+        fieldIds.forEach(id => { if(el(id)) el(id).disabled = !editable; });
+        el('btnSavePurchaseInvoice').hidden = !editable;
+        el('btnSendPurchaseInvoiceToFinance').hidden = !(editable && canAccess('purchases:send_to_finance'));
+      }else{
+        fieldIds.forEach(id => { if(el(id)){ el(id).disabled = false; el(id).value = ''; } });
+        el('btnSavePurchaseInvoice').hidden = false;
+        el('btnSendPurchaseInvoiceToFinance').hidden = true;
+      }
+    }catch(error){
+      el('purchaseInvoiceFormStatus').textContent = error.message;
+    }
+  }
+
+  el('btnSavePurchaseInvoice') && el('btnSavePurchaseInvoice').addEventListener('click', async () => {
+    const purchaseId = el('purchasePageId').value;
+    if(!purchaseId){ el('purchaseInvoiceFormStatus').textContent = 'SALVE O PEDIDO NO NOTION ANTES DE CADASTRAR A NF.'; return; }
+    const button = el('btnSavePurchaseInvoice');
+    button.disabled = true;
+    el('purchaseInvoiceFormStatus').textContent = 'SALVANDO…';
+    try{
+      const totalAmountCents = parseBRLToCents(el('pInvoiceTotal').value);
+      const body = {
+        companyId: el('pInvoiceCompany').value,
+        companyName: (companies.find(c => c.id === el('pInvoiceCompany').value) || {}).name || '',
+        supplierId: el('pInvoiceSupplier').value,
+        supplierDocument: el('pInvoiceSupplierDocument').value,
+        invoiceNumber: el('pInvoiceNumber').value,
+        series: el('pInvoiceSeries').value,
+        accessKey: el('pInvoiceAccessKey').value,
+        issueDate: el('pInvoiceIssueDate').value,
+        competenceMonth: el('pInvoiceCompetence').value,
+        totalAmountCents,
+        financeItemId: el('pInvoiceItem').value
+      };
+      if(purchaseInvoiceData){
+        await comprasInvoiceApiRequest(purchaseId, '', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      }else{
+        await comprasInvoiceApiRequest(purchaseId, '', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      }
+      showPurchaseToast('Nota fiscal salva.');
+      await loadPurchaseInvoicePanel(purchaseId);
+    }catch(error){
+      el('purchaseInvoiceFormStatus').textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('btnSendPurchaseInvoiceToFinance') && el('btnSendPurchaseInvoiceToFinance').addEventListener('click', async () => {
+    const purchaseId = el('purchasePageId').value;
+    if(!purchaseId) return;
+    if(!confirm('Enviar esta nota fiscal ao Financeiro? Depois disso ela só volta pra edição se for devolvida.')) return;
+    const button = el('btnSendPurchaseInvoiceToFinance');
+    button.disabled = true;
+    try{
+      await comprasInvoiceApiRequest(purchaseId, '/send', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({}) });
+      showPurchaseToast('NF enviada ao Financeiro.');
+      await loadPurchaseInvoicePanel(purchaseId);
+    }catch(error){
+      el('purchaseInvoiceFormStatus').textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('pInvoiceFile') && el('pInvoiceFile').addEventListener('change', async () => {
+    const file = el('pInvoiceFile').files[0];
+    el('pInvoiceFile').value = '';
+    const purchaseId = el('purchasePageId').value;
+    if(!file || !purchaseId) return;
+    try{
+      await uploadInvoiceFile('/api/compras/'+encodeURIComponent(purchaseId)+'/invoice/attachment', file, {attachmentType:'nf'});
+      showPurchaseToast('Arquivo da NF anexado.');
+    }catch(error){
+      el('purchaseInvoiceFormStatus').textContent = error.message;
+    }
+  });
+
   const permissionNames = {
     'tasks:view':'Tarefas: visualizar','tasks:manage':'Tarefas: cadastrar/editar/excluir',
     'missions:view':'Missões: visualizar','missions:create':'Missões: cadastrar','missions:delete':'Missões: excluir','missions:notify':'Missões: notificações',
@@ -16204,7 +17090,7 @@ function renderHomeTasks(){
     'inputs:view':'Entrada: visualizar','inputs:create':'Entrada: cadastrar','inputs:complete':'Entrada: concluir','inputs:delete':'Entrada: excluir',
     'supplies:view':'Insumos: visualizar','supplies:request':'Insumos: solicitar','supplies:receive':'Insumos: receber solicitação','supplies:stock_in':'Insumos: entrada','supplies:stock_out':'Insumos: saída','supplies:delete':'Insumos: excluir','supplies:manage_catalog':'Insumos: produtos/categorias',
     'loans:view':'Aparelhos de Empréstimo: visualizar','loans:create':'Aparelhos de Empréstimo: cadastrar aparelho','loans:edit':'Aparelhos de Empréstimo: editar aparelho','loans:delete':'Aparelhos de Empréstimo: excluir aparelho','loans:request':'Aparelhos de Empréstimo: solicitar','loans:manage_requests':'Aparelhos de Empréstimo: gerenciar solicitações',
-    'purchases:view':'Compras: visualizar','purchases:create':'Compras: cadastrar','purchases:edit':'Compras: editar','purchases:delete':'Compras: excluir',
+    'purchases:view':'Compras: visualizar','purchases:create':'Compras: cadastrar','purchases:edit':'Compras: editar','purchases:delete':'Compras: excluir','purchases:send_to_finance':'Compras: enviar NF ao financeiro',
     'stock:view':'Estoque Fiscal',
     'database:view':'Base de Dados: visualizar','database:manage':'Base de Dados: cadastrar/editar/excluir',
     'pulls:view':'Puxadas',
@@ -16213,6 +17099,7 @@ function renderHomeTasks(){
     'pdv_requests:view':'Alterações PDV: visualização','pdv_requests:create':'Alterações PDV: cadastro','pdv_requests:delete':'Alterações PDV: exclusão','pdv_requests:status':'Alterações PDV: alteração de status',
     'os_notes:view':'Notas de O.S.: visualização','os_notes:create':'Notas de O.S.: cadastro','os_notes:attach':'Notas de O.S.: anexar nota','os_notes:delete':'Notas de O.S.: exclusão',
     'finance:manage':'Financeiro: acessar módulo',
+    'payables:invoices_view':'Financeiro: ver notas fiscais/duplicatas','payables:invoices_reconcile':'Financeiro: conferir NF e cadastrar duplicatas','payables:confirm_payment':'Financeiro: agendar/confirmar pagamento de duplicata','payables:return_to_purchases':'Financeiro: devolver NF para Compras',
     'users:manage':'Usuários e acessos'
   };
   const accessGroupNames = {

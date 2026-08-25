@@ -868,6 +868,174 @@ export const financeStoreRevenue = pgTable(
   ],
 );
 
+// Módulo "Notas Fiscais e Duplicatas de Fornecedores" (Financeiro > Contas
+// a Pagar, integrado a Controle de Compras). Ver [[estoque_modulo_nf_duplicatas]]
+// para o desenho completo. Resumo das decisões principais:
+//  - Uma NF (supplier_invoices) é o elo entre o pedido do Notion (Compras) e
+//    o Financeiro. origin='purchase' quando veio de um pedido (notion_purchase_id
+//    preenchido, sem FK real — mesmo padrão já usado em purchase_delivery_records)
+//    ou 'manual' quando cadastrada direto no Financeiro.
+//  - Cada duplicata (supplier_invoice_installments) tem sua PRÓPRIA linha em
+//    accounts_payable (accounts_payable_id), reaproveitando 100% da lógica
+//    de status/pagamento/DRE já existente — não existe tabela de pagamento
+//    nova (accounts_payable_payments é reaproveitada por completo).
+//  - Para a DRE nunca reconhecer a despesa mais de uma vez: TODAS as parcelas
+//    de uma mesma NF são gravadas com o MESMO competence_month (o da NF, não
+//    o vencimento de cada parcela) e o MESMO finance_item_id/company_id — o
+//    mecanismo já existente (recalcPayableEntrySql, que soma por
+//    company+item+competence_month) então soma exatamente o valor total da
+//    NF, sem precisar de nenhum código novo de agregação nem de um novo
+//    valor de `source`.
+//  - due_date/original_amount_cents/paid_amount_cents/payment_method/
+//    finance_account_id ficam guardados TAMBÉM na duplicata (não só na
+//    accounts_payable ligada) de propósito — é uma denormalização
+//    deliberada para permitir listar/filtrar duplicatas sem join, sempre
+//    escrita na MESMA transação que a accounts_payable correspondente (a
+//    accounts_payable é a fonte da verdade; a duplicata é um espelho).
+//  - status da duplicata NUNCA é persistido (nem aqui, nem em
+//    accounts_payable) — sempre calculado em app/lib/supplier-invoice-status.ts
+//    a partir de paid/due/cancelado, mesmo padrão de finance-status.ts.
+
+export const supplierInvoices = pgTable(
+  "supplier_invoices",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    supplierId: text("supplier_id").notNull().default(""),
+    supplierDocument: text("supplier_document").notNull().default(""),
+    invoiceNumber: text("invoice_number").notNull(),
+    series: text("series").notNull().default(""),
+    // Chave de acesso da NF-e (44 dígitos) — text para preservar zeros à
+    // esquerda; vazio quando não informada (a maioria dos pedidos do Notion
+    // hoje não carrega XML de NFe, ver relatório final).
+    accessKey: text("access_key").notNull().default(""),
+    issueDate: text("issue_date").notNull().default(""),
+    entryDate: text("entry_date").notNull().default(""),
+    competenceMonth: text("competence_month").notNull(),
+    notionPurchaseId: text("notion_purchase_id").notNull().default(""),
+    notionPurchaseUrl: text("notion_purchase_url").notNull().default(""),
+    totalAmountCents: integer("total_amount_cents").notNull(),
+    financeCategoryId: text("finance_category_id").notNull().default(""),
+    financeItemId: text("finance_item_id").notNull().default(""),
+    costCenter: text("cost_center").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    // 'purchase' | 'manual'
+    origin: text("origin").notNull().default("manual"),
+    // Espelho textual do status operacional do pedido no Notion no momento
+    // do envio ao financeiro (não é a fonte da verdade — o Notion é; serve
+    // só de contexto na tela do Financeiro, que não consulta o Notion ao
+    // vivo). Vazio para NF manual.
+    operationalStatus: text("operational_status").notNull().default(""),
+    // aguardando_envio | aguardando_conferencia | aguardando_duplicatas |
+    // aguardando_boletos | pronto_pagamento | parcialmente_pago | pago |
+    // vencido | com_divergencia | cancelado — sempre recalculado em toda
+    // escrita relevante por app/lib/supplier-invoice-status.ts, nunca
+    // aceito do cliente.
+    financialStatus: text("financial_status").notNull().default("aguardando_envio"),
+    pendingCorrection: integer("pending_correction").notNull().default(0),
+    returnReason: text("return_reason").notNull().default(""),
+    canceled: integer("canceled").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    sentToFinanceBy: text("sent_to_finance_by").notNull().default(""),
+    sentToFinanceByName: text("sent_to_finance_by_name").notNull().default(""),
+    sentToFinanceAt: text("sent_to_finance_at").notNull().default(""),
+    returnedBy: text("returned_by").notNull().default(""),
+    returnedByName: text("returned_by_name").notNull().default(""),
+    returnedAt: text("returned_at").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("supplier_invoices_unique_doc_idx").on(
+      table.companyId,
+      table.supplierId,
+      table.invoiceNumber,
+      table.series,
+    ),
+    index("supplier_invoices_company_status_idx").on(table.companyId, table.financialStatus),
+    index("supplier_invoices_notion_purchase_idx").on(table.notionPurchaseId),
+  ],
+);
+
+export const supplierInvoiceInstallments = pgTable(
+  "supplier_invoice_installments",
+  {
+    id: text("id").primaryKey(),
+    invoiceId: text("invoice_id").notNull(),
+    companyId: text("company_id").notNull(),
+    installmentNumber: integer("installment_number").notNull().default(1),
+    installmentTotal: integer("installment_total").notNull().default(1),
+    documentNumber: text("document_number").notNull().default(""),
+    dueDate: text("due_date").notNull(),
+    originalAmountCents: integer("original_amount_cents").notNull(),
+    paidAmountCents: integer("paid_amount_cents").notNull().default(0),
+    paymentMethod: text("payment_method").notNull().default(""),
+    financeAccountId: text("finance_account_id").notNull().default(""),
+    boletoCode: text("boleto_code").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    // Vínculo com a accounts_payable "gêmea" desta duplicata — reaproveita
+    // toda a lógica de status/pagamento/DRE de lá. Nunca nulo depois de
+    // criada (a criação da duplicata e da accounts_payable acontece na
+    // mesma transação).
+    accountsPayableId: text("accounts_payable_id").notNull().default(""),
+    canceled: integer("canceled").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("supplier_invoice_installments_invoice_idx").on(table.invoiceId, table.installmentNumber),
+    index("supplier_invoice_installments_payable_idx").on(table.accountsPayableId),
+  ],
+);
+
+export const supplierInvoiceAttachments = pgTable(
+  "supplier_invoice_attachments",
+  {
+    id: text("id").primaryKey(),
+    // Exatamente um dos três preenchido (CHECK na migration SQL) — a
+    // referência mais específica disponível no momento do upload (NF ->
+    // invoice, boleto -> installment, comprovante -> payment).
+    invoiceId: text("invoice_id").notNull().default(""),
+    installmentId: text("installment_id").notNull().default(""),
+    paymentId: text("payment_id").notNull().default(""),
+    // 'nf' | 'boleto' | 'comprovante'
+    attachmentType: text("attachment_type").notNull(),
+    r2Key: text("r2_key").notNull().unique(),
+    fileName: text("file_name").notNull(),
+    contentType: text("content_type").notNull().default("application/pdf"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    uploadedBy: text("uploaded_by").notNull(),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("supplier_invoice_attachments_invoice_idx").on(table.invoiceId),
+    index("supplier_invoice_attachments_installment_idx").on(table.installmentId),
+    index("supplier_invoice_attachments_payment_idx").on(table.paymentId),
+  ],
+);
+
+export const supplierInvoiceEvents = pgTable(
+  "supplier_invoice_events",
+  {
+    id: text("id").primaryKey(),
+    invoiceId: text("invoice_id").notNull(),
+    eventType: text("event_type").notNull(),
+    description: text("description").notNull().default(""),
+    metadataJson: text("metadata_json").notNull().default("{}"),
+    actorId: text("actor_id").notNull().default(""),
+    actorName: text("actor_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("supplier_invoice_events_invoice_idx").on(table.invoiceId, table.createdAt)],
+);
+
 export const loanDevices = pgTable(
   "loan_devices",
   {
