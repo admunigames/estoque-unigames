@@ -4767,12 +4767,13 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Despesas</h2>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Cadastro completo de despesas — cada despesa gera automaticamente a(s) conta(s) a pagar correspondente(s). O rateio entre lojas é calculado numa etapa seguinte.</p></div>
+        <div class="page-header-meta"><p class="page-desc">Cadastro completo de despesas — cada despesa gera automaticamente a(s) conta(s) a pagar correspondente(s), já divididas por loja quando rateada.</p></div>
       </header>
 
       <div class="dre-toolbar">
         <div class="field"><label for="expensesLoja">EMPRESA/LOJA</label><select id="expensesLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnConfigureRateio" type="button">CONFIGURAR RATEIO</button>
           <button class="btn-accent" id="btnNewExpense" type="button">NOVA DESPESA</button>
         </div>
       </div>
@@ -5043,7 +5044,16 @@
           <option value="personalizado">RATEIO PERSONALIZADO</option>
         </select>
       </div>
-      <div class="purchase-field full" id="expenseRateioHelp" hidden><span class="purchase-field-help">O cálculo da divisão por loja de cada modelo será feito numa etapa seguinte — por ora a despesa é lançada inteira na loja selecionada acima, com essa classificação já salva.</span></div>
+      <div class="purchase-field full" id="expenseRateioHelp" hidden><span class="purchase-field-help">Rateio padrão/administrativo usam os percentuais configurados em "CONFIGURAR RATEIO". Faturamento e funcionários são calculados a partir dos dados já cadastrados. Personalizado é digitado manualmente abaixo.</span></div>
+      <div class="purchase-field full" id="expenseRateioSharesArea" hidden>
+        <label>DIVISÃO POR LOJA</label>
+        <div id="expenseRateioSharesList"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+          <button class="btn-outline" type="button" id="btnAddExpenseRateioShare" hidden>+ ADICIONAR LOJA</button>
+          <button class="btn-outline" type="button" id="btnPreviewExpenseRateio" hidden>PRÉ-VISUALIZAR RATEIO</button>
+          <span id="expenseRateioSharesTotal" style="font-size:12px;color:var(--ink-soft);"></span>
+        </div>
+      </div>
 
       <div class="purchase-form-section">VÍNCULOS (ESTRUTURA PREPARADA)</div>
       <div class="purchase-field"><label for="expenseCardId">CARTÃO</label><input id="expenseCardId" maxlength="80" placeholder="Módulo de cartões ainda não existe"></div>
@@ -5067,15 +5077,62 @@
   </div>
   <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
     <div id="expenseDetailSummary" class="payable-detail-summary"></div>
+    <div class="purchase-form-section" id="expenseDetailRateioSection" hidden>RATEIO ENTRE LOJAS</div>
+    <div class="table-panel responsive-table" id="expenseDetailRateioPanel" hidden>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Loja</th><th>Percentual</th><th>Valor</th></tr></thead>
+          <tbody id="expenseDetailRateioBody"></tbody>
+        </table>
+      </div>
+    </div>
     <div class="purchase-form-section">CONTAS A PAGAR GERADAS</div>
     <p style="color:var(--ink-soft);font-size:12px;margin:8px 0;">Agendamentos e cancelamento continuam sendo feitos em Contas a Pagar — abra a conta específica por lá pra esses casos. Anexos (boleto/NF/comprovante) entram numa etapa seguinte.</p>
     <div class="table-panel responsive-table">
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Competência</th><th>Vencimento</th><th>Valor</th><th>Pago</th><th>Status</th><th></th></tr></thead>
-          <tbody id="expenseDetailPayablesBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+          <thead><tr><th>Loja</th><th>Competência</th><th>Vencimento</th><th>Valor</th><th>Pago</th><th>Status</th><th></th></tr></thead>
+          <tbody id="expenseDetailPayablesBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
         </table>
       </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="rateioConfigDialog" aria-labelledby="rateioConfigDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rateioConfigDialogTitle">CONFIGURAR RATEIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRateioConfigDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:80vh;overflow:auto;">
+    <div class="output-tabs" role="tablist" aria-label="Configuração de rateio">
+      <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rateio-config-tab="padrao">RATEIO PADRÃO</button>
+      <button class="output-tab" type="button" role="tab" aria-selected="false" data-rateio-config-tab="administrativo">RATEIO ADMINISTRATIVO</button>
+      <button class="output-tab" type="button" role="tab" aria-selected="false" data-rateio-config-tab="funcionarios">FUNCIONÁRIOS POR LOJA</button>
+    </div>
+
+    <div data-rateio-config-panel="padrao">
+      <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Percentual fixo de cada loja no rateio "padrão". Precisa somar exatamente 100%.</p>
+      <div id="rateioModelSharesList-padrao"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+        <span id="rateioModelSharesTotal-padrao" style="font-size:12px;color:var(--ink-soft);"></span>
+        <button class="btn-accent" type="button" data-rateio-model-save="padrao">SALVAR</button>
+      </div>
+      <div class="user-form-status" id="rateioModelStatus-padrao" role="status" aria-live="polite"></div>
+    </div>
+    <div data-rateio-config-panel="administrativo" hidden>
+      <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Percentual fixo de cada loja no rateio "administrativo". Precisa somar exatamente 100%.</p>
+      <div id="rateioModelSharesList-administrativo"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+        <span id="rateioModelSharesTotal-administrativo" style="font-size:12px;color:var(--ink-soft);"></span>
+        <button class="btn-accent" type="button" data-rateio-model-save="administrativo">SALVAR</button>
+      </div>
+      <div class="user-form-status" id="rateioModelStatus-administrativo" role="status" aria-live="polite"></div>
+    </div>
+    <div data-rateio-config-panel="funcionarios" hidden>
+      <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Quantidade de funcionários por loja (cadastro manual, não conta usuários do sistema) — base do rateio "por quantidade de funcionários".</p>
+      <div id="rateioHeadcountList"></div>
+      <div class="user-form-status" id="rateioHeadcountStatus" role="status" aria-live="polite"></div>
     </div>
   </div>
 </dialog>
@@ -16330,13 +16387,116 @@ function renderHomeTasks(){
     input.addEventListener('change', updateExpenseKindFields);
   });
 
+  let expenseCustomRateioShares = [];
+
   function updateExpenseRateioFields(){
     const rateioType = document.querySelector('input[name="expenseRateioType"]:checked').value;
-    el('expenseRateioModelField').hidden = rateioType !== 'rateio';
-    el('expenseRateioHelp').hidden = rateioType !== 'rateio';
+    const isRateio = rateioType === 'rateio';
+    el('expenseRateioModelField').hidden = !isRateio;
+    el('expenseRateioHelp').hidden = !isRateio;
+    el('expenseRateioSharesArea').hidden = !isRateio;
+    if(!isRateio){
+      expenseCustomRateioShares = [];
+      el('expenseRateioSharesList').innerHTML = '';
+      el('expenseRateioSharesTotal').textContent = '';
+    }else{
+      updateExpenseRateioModelFields();
+    }
   }
   document.querySelectorAll('input[name="expenseRateioType"]').forEach(input => {
     input.addEventListener('change', updateExpenseRateioFields);
+  });
+
+  function updateExpenseRateioModelFields(){
+    const model = el('expenseRateioModel').value;
+    const isCustom = model === 'personalizado';
+    el('btnAddExpenseRateioShare').hidden = !isCustom;
+    el('btnPreviewExpenseRateio').hidden = isCustom;
+    if(isCustom){
+      if(!expenseCustomRateioShares.length) expenseCustomRateioShares = [{companyId:'', percent:''}, {companyId:'', percent:''}];
+      renderExpenseCustomRateioShares();
+    }else{
+      el('expenseRateioSharesList').innerHTML = '';
+      el('expenseRateioSharesTotal').textContent = '';
+    }
+  }
+  el('expenseRateioModel').addEventListener('change', updateExpenseRateioModelFields);
+
+  function renderExpenseCustomRateioShares(){
+    const companyOptions = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    el('expenseRateioSharesList').innerHTML = expenseCustomRateioShares.map((share, index) =>
+      '<div class="field-inline-form" style="margin-bottom:6px;">'+
+        '<select data-rateio-share-company="'+index+'"><option value="">SELECIONE A LOJA</option>'+companyOptions+'</select>'+
+        '<input type="number" min="0" max="100" step="0.01" data-rateio-share-percent="'+index+'" placeholder="%" value="'+escapeHtml(share.percent)+'" style="max-width:100px;">'+
+        '<button class="btn-outline" type="button" data-rateio-share-remove="'+index+'">REMOVER</button>'+
+      '</div>'
+    ).join('');
+    expenseCustomRateioShares.forEach((share, index) => {
+      const select = document.querySelector('[data-rateio-share-company="'+index+'"]');
+      if(select) select.value = share.companyId;
+    });
+    updateExpenseRateioSharesTotal();
+  }
+
+  function updateExpenseRateioSharesTotal(){
+    const total = expenseCustomRateioShares.reduce((sum, share) => sum + (Number(share.percent) || 0), 0);
+    const totalEl = el('expenseRateioSharesTotal');
+    totalEl.textContent = 'TOTAL: '+total.toFixed(2)+'%'+(Math.round(total*100) === 10000 ? ' ✓' : ' (precisa somar 100%)');
+    totalEl.style.color = Math.round(total*100) === 10000 ? 'var(--ok, #2e7d32)' : 'var(--ink-soft)';
+  }
+
+  el('expenseRateioSharesList').addEventListener('change', event => {
+    const companySelect = event.target.closest('[data-rateio-share-company]');
+    const percentInput = event.target.closest('[data-rateio-share-percent]');
+    if(companySelect){
+      const index = Number(companySelect.dataset.rateioShareCompany);
+      expenseCustomRateioShares[index].companyId = companySelect.value;
+    }else if(percentInput){
+      const index = Number(percentInput.dataset.rateioSharePercent);
+      expenseCustomRateioShares[index].percent = percentInput.value;
+      updateExpenseRateioSharesTotal();
+    }
+  });
+  el('expenseRateioSharesList').addEventListener('click', event => {
+    const removeButton = event.target.closest('[data-rateio-share-remove]');
+    if(!removeButton) return;
+    const index = Number(removeButton.dataset.rateioShareRemove);
+    expenseCustomRateioShares.splice(index, 1);
+    renderExpenseCustomRateioShares();
+  });
+  el('btnAddExpenseRateioShare').addEventListener('click', () => {
+    expenseCustomRateioShares.push({companyId:'', percent:''});
+    renderExpenseCustomRateioShares();
+  });
+
+  function expenseCompetenceMonthForPreview(){
+    const kind = document.querySelector('input[name="expenseKind"]:checked').value;
+    if(kind === 'single' && el('expenseCompetenceMonth').value) return el('expenseCompetenceMonth').value;
+    const dueDate = el('expenseDueDate').value;
+    return dueDate ? dueDate.slice(0,7) : '';
+  }
+
+  el('btnPreviewExpenseRateio').addEventListener('click', async () => {
+    const statusEl = el('expenseFormStatus');
+    statusEl.textContent = '';
+    const model = el('expenseRateioModel').value;
+    const competenceMonth = expenseCompetenceMonthForPreview();
+    const originalAmountCents = parseBRLToCents(el('expenseOriginalAmount').value || '0');
+    if(!competenceMonth){ statusEl.textContent = 'INFORME O VENCIMENTO ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
+    if(originalAmountCents === null || originalAmountCents <= 0){ statusEl.textContent = 'INFORME O VALOR ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
+    try{
+      const data = await financeApiRequest('/expenses/rateio-preview', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({rateioModel:model, competenceMonth, originalAmountCents})
+      });
+      const shares = Array.isArray(data.shares) ? data.shares : [];
+      el('expenseRateioSharesList').innerHTML = shares.length
+        ? '<table style="width:100%;"><thead><tr><th>Loja</th><th>%</th><th>Valor</th></tr></thead><tbody>'+
+            shares.map(s => '<tr><td>'+escapeHtml(s.companyName)+'</td><td>'+(s.percentBasisPoints/100).toFixed(2)+'%</td><td>'+formatCentsBRL(s.amountCents)+'</td></tr>').join('')+
+          '</tbody></table>'
+        : '<div class="dre-empty">Nenhuma loja retornada.</div>';
+      el('expenseRateioSharesTotal').textContent = '';
+    }catch(error){ statusEl.textContent = error.message; }
   });
 
   function openNewExpenseDialog(){
@@ -16374,6 +16534,14 @@ function renderHomeTasks(){
     const rateioType = document.querySelector('input[name="expenseRateioType"]:checked').value;
     const rateioModel = el('expenseRateioModel').value;
     if(rateioType === 'rateio' && !rateioModel){ statusEl.textContent = 'SELECIONE O MODELO DE RATEIO.'; return; }
+    let rateioShares;
+    if(rateioType === 'rateio' && rateioModel === 'personalizado'){
+      const validShares = expenseCustomRateioShares.filter(s => s.companyId && s.percent !== '');
+      if(validShares.length < 2){ statusEl.textContent = 'INFORME AO MENOS DUAS LOJAS COM PERCENTUAL NO RATEIO PERSONALIZADO.'; return; }
+      const totalBp = validShares.reduce((sum, s) => sum + Math.round(Number(s.percent) * 100), 0);
+      if(totalBp !== 10000){ statusEl.textContent = 'OS PERCENTUAIS DO RATEIO PERSONALIZADO PRECISAM SOMAR EXATAMENTE 100%.'; return; }
+      rateioShares = validShares.map(s => ({companyId:s.companyId, percentBasisPoints:Math.round(Number(s.percent) * 100)}));
+    }
 
     const kind = document.querySelector('input[name="expenseKind"]:checked').value;
     const body = {
@@ -16386,6 +16554,7 @@ function renderHomeTasks(){
       notes:el('expenseNotes').value.trim(), rateioType, rateioModel:rateioType === 'rateio' ? rateioModel : '',
       cardId:el('expenseCardId').value.trim(), bankReconciliationId:el('expenseBankReconciliationId').value.trim()
     };
+    if(rateioShares) body.rateioShares = rateioShares;
     if(kind === 'single'){
       if(el('expenseCompetenceMonth').value) body.competenceMonth = el('expenseCompetenceMonth').value;
     }else if(kind === 'installment'){
@@ -16420,6 +16589,7 @@ function renderHomeTasks(){
     const balance = payable.originalAmountCents - payable.paidAmountCents;
     const canMarkPaid = balance > 0 && payable.status !== 'canceled';
     return '<tr>'+
+      '<td>'+escapeHtml(payable.companyName || payable.companyId)+'</td>'+
       '<td>'+escapeHtml(payable.competenceMonth)+'</td>'+
       '<td>'+escapeHtml(payable.dueDate)+'</td>'+
       '<td>'+formatCentsBRL(payable.originalAmountCents)+'</td>'+
@@ -16431,7 +16601,9 @@ function renderHomeTasks(){
 
   async function openExpenseDetailDialog(id){
     el('expenseDetailSummary').innerHTML = 'Carregando…';
-    el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    el('expenseDetailRateioSection').hidden = true;
+    el('expenseDetailRateioPanel').hidden = true;
     el('expenseDetailDialog').showModal();
     try{
       const data = await financeApiRequest('/expenses/'+encodeURIComponent(id));
@@ -16448,13 +16620,21 @@ function renderHomeTasks(){
         '<div class="payable-detail-summary-row"><span>RATEIO</span><strong>'+escapeHtml(EXPENSE_RATEIO_TYPE_LABELS[expense.rateioType] || expense.rateioType)+(expense.rateioModel ? ' — '+escapeHtml(expense.rateioModel) : '')+'</strong></div>'+
         '<div class="payable-detail-summary-row"><span>NF / PEDIDO</span><strong>'+escapeHtml(expense.invoiceNumber || '—')+' / '+escapeHtml(expense.orderReference || '—')+'</strong></div>'+
         (expense.notes ? '<div class="payable-detail-summary-row"><span>OBSERVAÇÕES</span><strong>'+escapeHtml(expense.notes)+'</strong></div>' : '');
+      const rateioShares = Array.isArray(data.rateioShares) ? data.rateioShares : [];
+      if(rateioShares.length){
+        el('expenseDetailRateioSection').hidden = false;
+        el('expenseDetailRateioPanel').hidden = false;
+        el('expenseDetailRateioBody').innerHTML = rateioShares.map(s =>
+          '<tr><td>'+escapeHtml(s.companyName || s.companyId)+'</td><td>'+(s.percentBasisPoints/100).toFixed(2)+'%</td><td>'+formatCentsBRL(s.amountCents)+'</td></tr>'
+        ).join('');
+      }
       const payables = Array.isArray(data.payables) ? data.payables : [];
       el('expenseDetailPayablesBody').innerHTML = payables.length
         ? payables.map(expenseDetailPayableRowHtml).join('')
-        : '<tr><td colspan="5" class="responsive-empty">Nenhuma conta a pagar vinculada.</td></tr>';
+        : '<tr><td colspan="7" class="responsive-empty">Nenhuma conta a pagar vinculada.</td></tr>';
     }catch(error){
       el('expenseDetailSummary').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
-      el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">—</td></tr>';
+      el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">—</td></tr>';
     }
   }
 
@@ -16545,6 +16725,145 @@ function renderHomeTasks(){
       document.querySelectorAll('[data-expenses-sort]').forEach(other => other.classList.remove('sort-asc','sort-desc'));
       th.classList.add(expensesDir === 'asc' ? 'sort-asc' : 'sort-desc');
       loadExpensesList();
+    });
+  });
+
+  // ---- Configuração de rateio (padrão/administrativo/funcionários) ----
+  let rateioModelShares = {padrao:[], administrativo:[]};
+  let rateioHeadcountRows = [];
+
+  function renderRateioModelSharesEditor(model){
+    const companyOptions = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    const rows = rateioModelShares[model].length ? rateioModelShares[model] : companies.map(c => ({companyId:c.id, companyName:c.name, percentBasisPoints:0}));
+    el('rateioModelSharesList-'+model).innerHTML = rows.map((row, index) =>
+      '<div class="field-inline-form" style="margin-bottom:6px;">'+
+        '<select data-rateio-model-company="'+model+':'+index+'"><option value="">SELECIONE A LOJA</option>'+companyOptions+'</select>'+
+        '<input type="number" min="0" max="100" step="0.01" data-rateio-model-percent="'+model+':'+index+'" value="'+(row.percentBasisPoints/100)+'" style="max-width:100px;">'+
+        '<button class="btn-outline" type="button" data-rateio-model-remove="'+model+':'+index+'">REMOVER</button>'+
+      '</div>'
+    ).join('')+'<button class="btn-outline" type="button" data-rateio-model-add="'+model+'" style="margin-top:6px;">+ ADICIONAR LOJA</button>';
+    rows.forEach((row, index) => {
+      const select = document.querySelector('[data-rateio-model-company="'+model+':'+index+'"]');
+      if(select) select.value = row.companyId;
+    });
+    rateioModelShares[model] = rows;
+    updateRateioModelSharesTotal(model);
+  }
+
+  function updateRateioModelSharesTotal(model){
+    const total = rateioModelShares[model].reduce((sum, row) => sum + (Number(row.percentBasisPoints) || 0) / 100, 0);
+    const totalEl = el('rateioModelSharesTotal-'+model);
+    totalEl.textContent = 'TOTAL: '+total.toFixed(2)+'%'+(Math.round(total*100) === 10000 ? ' ✓' : ' (precisa somar 100%)');
+  }
+
+  document.querySelectorAll('[id^="rateioModelSharesList-"]').forEach(container => {
+    const model = container.id.replace('rateioModelSharesList-','');
+    container.addEventListener('input', event => {
+      const percentInput = event.target.closest('[data-rateio-model-percent]');
+      if(!percentInput) return;
+      const index = Number(percentInput.dataset.rateioModelPercent.split(':')[1]);
+      rateioModelShares[model][index].percentBasisPoints = Math.round(Number(percentInput.value) * 100) || 0;
+      updateRateioModelSharesTotal(model);
+    });
+    container.addEventListener('change', event => {
+      const companySelect = event.target.closest('[data-rateio-model-company]');
+      if(!companySelect) return;
+      const index = Number(companySelect.dataset.rateioModelCompany.split(':')[1]);
+      const company = companies.find(c => c.id === companySelect.value);
+      rateioModelShares[model][index].companyId = companySelect.value;
+      rateioModelShares[model][index].companyName = company ? company.name : '';
+    });
+    container.addEventListener('click', event => {
+      const removeButton = event.target.closest('[data-rateio-model-remove]');
+      const addButton = event.target.closest('[data-rateio-model-add]');
+      if(removeButton){
+        const index = Number(removeButton.dataset.rateioModelRemove.split(':')[1]);
+        rateioModelShares[model].splice(index, 1);
+        renderRateioModelSharesEditor(model);
+      }else if(addButton){
+        rateioModelShares[model].push({companyId:'', companyName:'', percentBasisPoints:0});
+        renderRateioModelSharesEditor(model);
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-rateio-model-save]').forEach(button => {
+    button.addEventListener('click', async () => {
+      const model = button.dataset.rateioModelSave;
+      const statusEl = el('rateioModelStatus-'+model);
+      statusEl.textContent = '';
+      const shares = rateioModelShares[model].filter(row => row.companyId);
+      const totalBp = shares.reduce((sum, row) => sum + row.percentBasisPoints, 0);
+      if(shares.length < 2){ statusEl.textContent = 'INFORME AO MENOS DUAS LOJAS.'; return; }
+      if(totalBp !== 10000){ statusEl.textContent = 'OS PERCENTUAIS PRECISAM SOMAR EXATAMENTE 100%.'; return; }
+      try{
+        await financeApiRequest('/rateio-models', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model, shares})
+        });
+        showPurchaseToast('Modelo de rateio salvo.');
+      }catch(error){ statusEl.textContent = error.message; }
+    });
+  });
+
+  function renderRateioHeadcountEditor(){
+    el('rateioHeadcountList').innerHTML = companies.map(company => {
+      const row = rateioHeadcountRows.find(r => r.companyId === company.id);
+      return '<div class="field-inline-form" style="margin-bottom:6px;">'+
+        '<span style="min-width:180px;display:inline-block;">'+escapeHtml(company.name)+'</span>'+
+        '<input type="number" min="0" step="1" data-rateio-headcount="'+escapeHtml(company.id)+'" value="'+(row ? row.employeeCount : 0)+'" style="max-width:100px;">'+
+      '</div>';
+    }).join('');
+  }
+
+  el('rateioHeadcountList').addEventListener('change', async event => {
+    const input = event.target.closest('[data-rateio-headcount]');
+    if(!input) return;
+    const companyId = input.dataset.rateioHeadcount;
+    const company = companies.find(c => c.id === companyId);
+    const employeeCount = Math.max(0, Math.trunc(Number(input.value) || 0));
+    const statusEl = el('rateioHeadcountStatus');
+    statusEl.textContent = '';
+    try{
+      await financeApiRequest('/store-headcount', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({companyId, companyName: company ? company.name : '', employeeCount})
+      });
+      showPurchaseToast('Quadro de funcionários salvo.');
+    }catch(error){ statusEl.textContent = error.message; }
+  });
+
+  async function loadRateioConfigData(){
+    if(!companies.length) await loadCompanies();
+    const [padraoData, administrativoData, headcountData] = await Promise.all([
+      financeApiRequest('/rateio-models?model=padrao'),
+      financeApiRequest('/rateio-models?model=administrativo'),
+      financeApiRequest('/store-headcount')
+    ]);
+    rateioModelShares.padrao = Array.isArray(padraoData.shares) ? padraoData.shares : [];
+    rateioModelShares.administrativo = Array.isArray(administrativoData.shares) ? administrativoData.shares : [];
+    rateioHeadcountRows = Array.isArray(headcountData.rows) ? headcountData.rows : [];
+    renderRateioModelSharesEditor('padrao');
+    renderRateioModelSharesEditor('administrativo');
+    renderRateioHeadcountEditor();
+  }
+
+  el('btnConfigureRateio').addEventListener('click', async () => {
+    el('rateioConfigDialog').showModal();
+    try{ await loadRateioConfigData(); }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('btnCloseRateioConfigDialog').addEventListener('click', () => { if(el('rateioConfigDialog').open) el('rateioConfigDialog').close(); });
+
+  document.querySelectorAll('[data-rateio-config-tab]').forEach(button => {
+    button.addEventListener('click', () => {
+      const tab = button.dataset.rateioConfigTab;
+      document.querySelectorAll('[data-rateio-config-tab]').forEach(b => {
+        b.classList.toggle('active', b === button);
+        b.setAttribute('aria-selected', String(b === button));
+      });
+      document.querySelectorAll('[data-rateio-config-panel]').forEach(panel => {
+        panel.hidden = panel.dataset.rateioConfigPanel !== tab;
+      });
     });
   });
 

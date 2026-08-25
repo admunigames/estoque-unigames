@@ -73,3 +73,29 @@ export function sameOrigin(request: Request) {
 }
 
 export const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+type CompanyRow = { id: string; name: string };
+
+/**
+ * Lê o cadastro de lojas/empresas — persistido em shared_state sob a chave
+ * 'companies_list' (o mesmo dado que o front-end lê via storage.get no
+ * cliente, ver loadCompanies() em public/estoque.html). Usado no rateio pra
+ * nomear cada loja e pra decidir quais lojas existem quando um modelo
+ * dinâmico ('faturamento'/'funcionarios') precisa varrer todas.
+ */
+export async function loadCompanyList(database: D1Database): Promise<CompanyRow[]> {
+  const row = await database
+    .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
+    .first<{ value: string }>();
+  if (!row?.value) return [];
+  try {
+    const parsed = JSON.parse(row.value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is CompanyRow =>
+        Boolean(item) && typeof item === "object" && typeof item.id === "string" && typeof item.name === "string",
+    );
+  } catch {
+    return [];
+  }
+}

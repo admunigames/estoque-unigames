@@ -31,17 +31,34 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const today = todayInTimezone();
     const payables = await database
       .prepare(
-        `SELECT id, original_amount_cents AS originalAmountCents, paid_amount_cents AS paidAmountCents,
+        `SELECT id, company_id AS companyId, company_name AS companyName,
+                original_amount_cents AS originalAmountCents, paid_amount_cents AS paidAmountCents,
                 competence_month AS competenceMonth, due_date AS dueDate, status,
                 installment_number AS installmentNumber, installment_total AS installmentTotal,
                 recurrence_frequency AS recurrenceFrequency,
                 ${displayStatusCaseSql(1)} AS displayStatus
-         FROM accounts_payable WHERE expense_id=?2 ORDER BY due_date ASC, id ASC`,
+         FROM accounts_payable WHERE expense_id=?2 ORDER BY company_id ASC, due_date ASC, id ASC`,
       )
       .bind(today, id)
       .all();
 
-    return jsonResponse({ expense, payables: payables.results ?? [] });
+    const rateioShares =
+      expense.rateioType === "rateio"
+        ? await database
+            .prepare(
+              `SELECT company_id AS companyId, company_name AS companyName,
+                      percent_basis_points AS percentBasisPoints, amount_cents AS amountCents
+               FROM expense_rateio_shares WHERE expense_id=?1 ORDER BY company_id ASC`,
+            )
+            .bind(id)
+            .all()
+        : null;
+
+    return jsonResponse({
+      expense,
+      payables: payables.results ?? [],
+      rateioShares: rateioShares?.results ?? [],
+    });
   } catch (error) {
     console.error("Não foi possível carregar a despesa.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR A DESPESA." }, 500);

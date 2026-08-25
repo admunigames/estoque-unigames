@@ -20,6 +20,7 @@ import {
   type RecurrenceFrequency,
   EXPENSE_SELECT_COLUMNS,
 } from "./shared";
+import { computeRateioShares } from "./rateio";
 
 type ListRow = Record<string, unknown>;
 
@@ -227,11 +228,14 @@ export async function POST(request: Request) {
       if (!rateioModel || !RATEIO_MODELS.includes(rateioModel)) {
         return jsonResponse({ error: "SELECIONE O MODELO DE RATEIO." }, 400);
       }
+      // Rateio gera obrigações em OUTRAS lojas além da selecionada acima —
+      // só quem enxerga todas as lojas pode fazer isso, senão um usuário
+      // restrito a uma loja criaria contas a pagar em lojas que ele não tem
+      // permissão de acessar.
+      if (!allStores) {
+        return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR DESPESAS RATEADAS ENTRE LOJAS." }, 403);
+      }
     }
-    // O cálculo/geração das divisões por loja (expense_rateio_shares) é
-    // implementado numa etapa seguinte — por ora a despesa é sempre gerada
-    // inteira na loja de companyId, mesmo quando marcada como rateável;
-    // a classificação já fica salva pra não exigir recadastro depois.
 
     const kind = (safeText(body.kind, 20) || "single") as "single" | "installment" | "recurring";
     const database = await getD1();
@@ -253,29 +257,29 @@ export async function POST(request: Request) {
       return jsonResponse({ created: true, alreadyProcessed: true, id: existingByKey.id });
     }
 
-    let plan: ExpensePlanRow[];
+    // dueDatesForPlan/recorrência/parcelamento são decididos uma vez só —
+    // NÃO dependem do valor, então valem igual pra cada loja quando a
+    // despesa é rateada (mesmas datas, valor de cada ocorrência
+    // proporcional à fatia da loja). buildPlanForAmount() aplica um valor
+    // (o total da despesa quando não é rateada, ou a fatia de cada loja
+    // quando é) sobre essas mesmas datas.
+    let dueDatesForPlan: string[];
     let recurrenceId: string | null = null;
     let installmentGroupId: string | null = null;
     let recurrenceFrequency = "";
     let recurrenceOccurrenceCount: number | null = null;
     let recurrenceEndDate = "";
+    let installmentTotalPlan = 0;
+    let singleCompetenceMonth = "";
 
     if (kind === "installment") {
       const installmentTotal = Math.trunc(Number(body.installmentTotal));
       if (!Number.isInteger(installmentTotal) || installmentTotal < 2 || installmentTotal > 360) {
         return jsonResponse({ error: "INFORME A QUANTIDADE DE PARCELAS (MÍNIMO 2)." }, 400);
       }
-      const amounts = splitIntoInstallments(totalAmountCents, installmentTotal);
-      const dueDates = generateInstallmentDueDates(firstDueDate, installmentTotal);
+      installmentTotalPlan = installmentTotal;
+      dueDatesForPlan = generateInstallmentDueDates(firstDueDate, installmentTotal);
       installmentGroupId = crypto.randomUUID();
-      plan = dueDates.map((dueDate, index) => ({
-        dueDate,
-        competenceMonth: competenceMonthOf(dueDate),
-        amountCents: amounts[index],
-        installmentNumber: index + 1,
-        installmentTotal,
-        recurrenceIndex: 0,
-      }));
     } else if (kind === "recurring") {
       const frequency = safeText(body.recurrenceFrequency, 20) as RecurrenceFrequency;
       if (!RECURRENCE_FREQUENCIES.includes(frequency)) {
@@ -296,33 +300,48 @@ export async function POST(request: Request) {
       if (occurrenceCount !== null && (!Number.isInteger(occurrenceCount) || occurrenceCount < 1 || occurrenceCount > 260)) {
         return jsonResponse({ error: "QUANTIDADE DE OCORRÊNCIAS INVÁLIDA." }, 400);
       }
-      const dueDates = generateRecurrenceDueDates({ firstDueDate, frequency, occurrenceCount, endDate });
+      dueDatesForPlan = generateRecurrenceDueDates({ firstDueDate, frequency, occurrenceCount, endDate });
       recurrenceId = crypto.randomUUID();
       recurrenceFrequency = frequency;
       recurrenceOccurrenceCount = occurrenceCount;
       recurrenceEndDate = endDate;
-      plan = dueDates.map((dueDate, index) => ({
-        dueDate,
-        competenceMonth: competenceMonthOf(dueDate),
-        amountCents: totalAmountCents,
-        installmentNumber: 0,
-        installmentTotal: 0,
-        recurrenceIndex: index,
-      }));
     } else {
       // Só a despesa avulsa aceita competência explícita (a mesma
       // possibilidade que Contas a Pagar já dá na edição) — parcelamento e
       // recorrência sempre derivam a competência de cada vencimento gerado,
       // pra cada ocorrência cair no mês certo da DRE.
       const competenceOverride = safeText(body.competenceMonth, 7);
-      const competenceMonth = MONTH_PATTERN.test(competenceOverride)
-        ? competenceOverride
-        : competenceMonthOf(firstDueDate);
-      plan = [
+      singleCompetenceMonth = MONTH_PATTERN.test(competenceOverride) ? competenceOverride : competenceMonthOf(firstDueDate);
+      dueDatesForPlan = [firstDueDate];
+    }
+
+    function buildPlanForAmount(amountCents: number): ExpensePlanRow[] {
+      if (kind === "installment") {
+        const amounts = splitIntoInstallments(amountCents, installmentTotalPlan);
+        return dueDatesForPlan.map((dueDate, index) => ({
+          dueDate,
+          competenceMonth: competenceMonthOf(dueDate),
+          amountCents: amounts[index],
+          installmentNumber: index + 1,
+          installmentTotal: installmentTotalPlan,
+          recurrenceIndex: 0,
+        }));
+      }
+      if (kind === "recurring") {
+        return dueDatesForPlan.map((dueDate, index) => ({
+          dueDate,
+          competenceMonth: competenceMonthOf(dueDate),
+          amountCents,
+          installmentNumber: 0,
+          installmentTotal: 0,
+          recurrenceIndex: index,
+        }));
+      }
+      return [
         {
           dueDate: firstDueDate,
-          competenceMonth,
-          amountCents: totalAmountCents,
+          competenceMonth: singleCompetenceMonth,
+          amountCents,
           installmentNumber: 0,
           installmentTotal: 0,
           recurrenceIndex: 0,
@@ -330,15 +349,44 @@ export async function POST(request: Request) {
       ];
     }
 
-    const distinctMonths = [...new Set(plan.map((entry) => entry.competenceMonth))];
-    for (const month of distinctMonths) {
-      const conflict = await assertSlotAvailableForPayable(database, companyId, financeItemId, month);
+    const primaryCompetenceMonth =
+      kind === "single" ? singleCompetenceMonth : competenceMonthOf(dueDatesForPlan[0]);
+
+    type ExpenseShare = { companyId: string; companyName: string; amountCents: number; percentBasisPoints: number };
+    let shares: ExpenseShare[];
+    if (rateioType === "rateio") {
+      const customShares = Array.isArray(body.rateioShares)
+        ? (body.rateioShares as JsonMap[]).map((entry) => ({
+            companyId: safeText(entry.companyId, 80),
+            percentBasisPoints: Math.round(Number(entry.percentBasisPoints)),
+          }))
+        : undefined;
+      const rateioResult = await computeRateioShares(database, {
+        model: rateioModel as RateioModel,
+        competenceMonth: primaryCompetenceMonth,
+        totalAmountCents,
+        customShares,
+      });
+      if ("error" in rateioResult) return jsonResponse({ error: rateioResult.error }, 409);
+      shares = rateioResult.shares;
+    } else {
+      shares = [{ companyId, companyName, amountCents: totalAmountCents, percentBasisPoints: 0 }];
+    }
+
+    const sharePlans = shares.map((share) => ({ share, plan: buildPlanForAmount(share.amountCents) }));
+
+    const distinctSlots = new Set<string>();
+    for (const { share, plan } of sharePlans) {
+      for (const occurrence of plan) distinctSlots.add(share.companyId + "::" + occurrence.competenceMonth);
+    }
+    for (const slot of distinctSlots) {
+      const [slotCompanyId, month] = slot.split("::");
+      const conflict = await assertSlotAvailableForPayable(database, slotCompanyId, financeItemId, month);
       if (conflict) return jsonResponse({ error: conflict }, 409);
     }
 
     const expenseId = crypto.randomUUID();
     const actorName = actor.displayName || "Administrador";
-    const primaryCompetenceMonth = plan[0].competenceMonth;
     const statements: [string, unknown[]][] = [];
 
     statements.push([
@@ -368,7 +416,7 @@ export async function POST(request: Request) {
         orderReference,
         notes,
         kind,
-        installmentGroupId ? plan[0].installmentTotal : 0,
+        installmentGroupId ? installmentTotalPlan : 0,
         recurrenceFrequency,
         recurrenceOccurrenceCount,
         recurrenceEndDate,
@@ -383,57 +431,76 @@ export async function POST(request: Request) {
     ]);
 
     const createdPayableIds: string[] = [];
-    for (const occurrence of plan) {
-      const payableId = crypto.randomUUID();
-      createdPayableIds.push(payableId);
-      statements.push([
-        `INSERT INTO accounts_payable
-          (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
-           cost_center, original_amount_cents, paid_amount_cents, issue_date, competence_month, due_date, payment_method,
-           invoice_number, order_reference, billing_code, notes, status,
-           recurrence_id, recurrence_frequency, recurrence_occurrence_index, recurrence_occurrence_count, recurrence_end_date,
-           installment_group_id, installment_number, installment_total, expense_id, idempotency_key,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,0,?10,?11,?12,?13,?14,?15,'',?16,'open',
-           ?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP)`,
-        [
-          payableId,
-          companyId,
-          companyName,
-          description,
-          supplierId,
-          financeItemId,
-          financeAccountId,
-          costCenter,
-          occurrence.amountCents,
-          issueDate,
-          occurrence.competenceMonth,
-          occurrence.dueDate,
-          paymentMethod,
-          invoiceNumber,
-          orderReference,
-          notes,
-          recurrenceId,
-          recurrenceFrequency,
-          occurrence.recurrenceIndex,
-          recurrenceOccurrenceCount,
-          recurrenceEndDate,
-          installmentGroupId,
-          occurrence.installmentNumber,
-          occurrence.installmentTotal,
-          expenseId,
-          // idempotencyKey própria por linha, derivada da despesa — não
-          // colide com contas criadas direto em Contas a Pagar.
-          `expense:${idempotencyKey}:${occurrence.recurrenceIndex}:${occurrence.installmentNumber}`,
-          actor.id,
-          actorName,
-        ],
-      ]);
+    for (let shareIndex = 0; shareIndex < sharePlans.length; shareIndex += 1) {
+      const { share, plan } = sharePlans[shareIndex];
+      if (rateioType === "rateio") {
+        statements.push([
+          `INSERT INTO expense_rateio_shares (id, expense_id, company_id, company_name, percent_basis_points, amount_cents, created_at)
+           VALUES (?1,?2,?3,?4,?5,?6,CURRENT_TIMESTAMP)`,
+          [
+            crypto.randomUUID(),
+            expenseId,
+            share.companyId,
+            share.companyName,
+            share.percentBasisPoints,
+            share.amountCents,
+          ],
+        ]);
+      }
+      for (const occurrence of plan) {
+        const payableId = crypto.randomUUID();
+        createdPayableIds.push(payableId);
+        statements.push([
+          `INSERT INTO accounts_payable
+            (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
+             cost_center, original_amount_cents, paid_amount_cents, issue_date, competence_month, due_date, payment_method,
+             invoice_number, order_reference, billing_code, notes, status,
+             recurrence_id, recurrence_frequency, recurrence_occurrence_index, recurrence_occurrence_count, recurrence_end_date,
+             installment_group_id, installment_number, installment_total, expense_id, idempotency_key,
+             created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+           VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,0,?10,?11,?12,?13,?14,?15,'',?16,'open',
+             ?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP)`,
+          [
+            payableId,
+            share.companyId,
+            share.companyName,
+            description,
+            supplierId,
+            financeItemId,
+            financeAccountId,
+            costCenter,
+            occurrence.amountCents,
+            issueDate,
+            occurrence.competenceMonth,
+            occurrence.dueDate,
+            paymentMethod,
+            invoiceNumber,
+            orderReference,
+            notes,
+            recurrenceId,
+            recurrenceFrequency,
+            occurrence.recurrenceIndex,
+            recurrenceOccurrenceCount,
+            recurrenceEndDate,
+            installmentGroupId,
+            occurrence.installmentNumber,
+            occurrence.installmentTotal,
+            expenseId,
+            // idempotencyKey própria por linha (loja + ocorrência) — não
+            // colide com contas criadas direto em Contas a Pagar nem entre
+            // lojas diferentes do mesmo rateio.
+            `expense:${idempotencyKey}:${shareIndex}:${occurrence.recurrenceIndex}:${occurrence.installmentNumber}`,
+            actor.id,
+            actorName,
+          ],
+        ]);
+      }
     }
 
-    for (const month of distinctMonths) {
+    for (const slot of distinctSlots) {
+      const [slotCompanyId, month] = slot.split(" ");
       const entryId = crypto.randomUUID();
-      for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, companyId, financeItemId, month, actor.id, actorName)) {
+      for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, slotCompanyId, financeItemId, month, actor.id, actorName)) {
         statements.push([sql, sqlValues]);
       }
     }
