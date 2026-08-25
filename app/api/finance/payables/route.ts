@@ -9,6 +9,7 @@ import {
   assertFinanceAccountBelongsToCompany,
   assertSlotAvailableForPayable,
   competenceMonthOf,
+  computeDreAnchorAssignments,
   displayStatusCaseSql,
   generateInstallmentDueDates,
   generateRecurrenceDueDates,
@@ -186,6 +187,7 @@ export async function GET(request: Request) {
         `SELECT id, company_id AS companyId, company_name AS companyName, description,
                 supplier_id AS supplierId, finance_item_id AS financeItemId, finance_account_id AS financeAccountId,
                 original_amount_cents AS originalAmountCents, paid_amount_cents AS paidAmountCents,
+                dre_amount_cents AS dreAmountCents,
                 issue_date AS issueDate, competence_month AS competenceMonth, due_date AS dueDate,
                 payment_method AS paymentMethod, invoice_number AS invoiceNumber, order_reference AS orderReference,
                 billing_code AS billingCode, notes, status,
@@ -284,6 +286,26 @@ export async function POST(request: Request) {
     const totalAmountCents = Number(body.originalAmountCents);
     if (!Number.isFinite(totalAmountCents) || !Number.isInteger(totalAmountCents) || totalAmountCents <= 0) {
       return jsonResponse({ error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." }, 400);
+    }
+
+    // Decisão de "Incluir na DRE?" (opcional) — quando o campo dreIncluded
+    // não vem na requisição, a conta é criada com dre_amount_cents=NULL em
+    // todas as linhas (comportamento padrão: entra na DRE pelo valor
+    // cheio), sem precisar de nenhum tratamento especial. Só quando o
+    // usuário mexeu ativamente no toggle é que a lógica de âncora entra em
+    // ação — ver computeDreAnchorAssignments.
+    const dreCustomized = body.dreIncluded !== undefined;
+    const dreIncluded = Boolean(body.dreIncluded);
+    let dreAmountCents = 0;
+    let dreWarning: string | null = null;
+    if (dreCustomized) {
+      dreAmountCents = Number(body.dreAmountCents);
+      if (!Number.isFinite(dreAmountCents) || !Number.isInteger(dreAmountCents) || dreAmountCents < 0) {
+        return jsonResponse({ error: "INFORME UM VALOR VÁLIDO (EM CENTAVOS, NÃO NEGATIVO) PARA A DRE." }, 400);
+      }
+      if (dreIncluded && dreAmountCents > totalAmountCents) {
+        dreWarning = "O VALOR INFORMADO PARA A DRE É MAIOR QUE O VALOR TOTAL DA CONTA.";
+      }
     }
 
     const kind = safeText(body.kind, 20) || "single"; // 'single' | 'installment' | 'recurring'
@@ -393,19 +415,28 @@ export async function POST(request: Request) {
     const createdIds: string[] = [];
     const actorName = actor.displayName || "Administrador";
 
-    for (const occurrence of plan) {
-      const id = crypto.randomUUID();
-      createdIds.push(id);
+    // plan já está na ordem estável (1ª parcela / 1ª ocorrência primeiro) —
+    // createdIds preserva essa ordem, então serve direto de entrada pra
+    // computeDreAnchorAssignments (a 1ª linha criada é a âncora).
+    for (let i = 0; i < plan.length; i += 1) {
+      createdIds.push(crypto.randomUUID());
+    }
+    const dreAssignments = dreCustomized
+      ? computeDreAnchorAssignments(createdIds, dreIncluded, dreAmountCents)
+      : null;
+
+    plan.forEach((occurrence, index) => {
+      const id = createdIds[index];
       statements.push([
         `INSERT INTO accounts_payable
           (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
-           original_amount_cents, paid_amount_cents, issue_date, competence_month, due_date, payment_method,
+           original_amount_cents, paid_amount_cents, dre_amount_cents, issue_date, competence_month, due_date, payment_method,
            invoice_number, order_reference, billing_code, notes, status,
            recurrence_id, recurrence_frequency, recurrence_occurrence_index, recurrence_occurrence_count, recurrence_end_date,
            installment_group_id, installment_number, installment_total, idempotency_key,
            created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,?9,?10,?11,?12,?13,?14,?15,?16,'open',
-           ?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,CURRENT_TIMESTAMP,?26,?27,CURRENT_TIMESTAMP)`,
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,?9,?10,?11,?12,?13,?14,?15,?16,?17,'open',
+           ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP)`,
         [
           id,
           companyId,
@@ -415,6 +446,7 @@ export async function POST(request: Request) {
           financeItemId,
           financeAccountId,
           occurrence.amountCents,
+          dreAssignments ? dreAssignments.get(id) ?? null : null,
           issueDate,
           occurrence.competenceMonth,
           occurrence.dueDate,
@@ -441,7 +473,7 @@ export async function POST(request: Request) {
           actorName,
         ],
       ]);
-    }
+    });
 
     for (const month of distinctMonths) {
       const entryId = crypto.randomUUID();
@@ -453,7 +485,7 @@ export async function POST(request: Request) {
     const prepared = statements.map(([sql, sqlValues]) => database.prepare(sql).bind(...sqlValues));
     await database.batch(prepared);
 
-    return jsonResponse({ created: true, ids: createdIds }, 201);
+    return jsonResponse({ created: true, ids: createdIds, dreWarning }, 201);
   } catch (error) {
     console.error("Não foi possível cadastrar a conta a pagar.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CADASTRAR A CONTA A PAGAR." }, 500);

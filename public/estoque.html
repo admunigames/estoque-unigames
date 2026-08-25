@@ -4972,6 +4972,15 @@
       <div class="purchase-field"><label for="payableBillingCode">BOLETO/CÓDIGO DE COBRANÇA</label><input id="payableBillingCode" maxlength="80"></div>
       <div class="purchase-field full"><label for="payableNotes">OBSERVAÇÕES</label><textarea id="payableNotes" rows="2" maxlength="2000"></textarea></div>
 
+      <div class="purchase-form-section">DRE</div>
+      <div class="purchase-field full" style="display:flex;align-items:center;gap:8px;">
+        <label for="payableDreIncluded" style="display:flex;align-items:center;gap:6px;width:auto;">
+          <input type="checkbox" id="payableDreIncluded" style="width:auto;" checked> INCLUIR NA DRE?
+        </label>
+      </div>
+      <div class="purchase-field"><label for="payableDreAmount">VALOR NA DRE (R$)</label><input type="number" id="payableDreAmount" min="0" step="0.01"></div>
+      <div class="purchase-field full" id="payableDreHelp"><span class="purchase-field-help">Por padrão, o valor total da conta entra inteiro na DRE. Em contas parceladas/recorrentes, essa decisão vale pro conjunto inteiro (não dá pra escolher por parcela).</span></div>
+
       <div class="purchase-form-section">TIPO DE CONTA</div>
       <div class="purchase-field full payables-kind-tabs">
         <label><input type="radio" name="payableKind" value="single" checked> ÚNICA</label>
@@ -5093,6 +5102,15 @@
       <div class="purchase-field"><label for="expenseOrderReference">NÚMERO DO PEDIDO</label><input id="expenseOrderReference" maxlength="60"></div>
       <div class="purchase-field full"><label for="expenseNotes">OBSERVAÇÕES</label><textarea id="expenseNotes" rows="2" maxlength="2000"></textarea></div>
 
+      <div class="purchase-form-section">DRE</div>
+      <div class="purchase-field full" style="display:flex;align-items:center;gap:8px;">
+        <label for="expenseDreIncludedNew" style="display:flex;align-items:center;gap:6px;width:auto;">
+          <input type="checkbox" id="expenseDreIncludedNew" style="width:auto;" checked> INCLUIR NA DRE?
+        </label>
+      </div>
+      <div class="purchase-field"><label for="expenseDreAmountNew">VALOR NA DRE (R$)</label><input type="number" id="expenseDreAmountNew" min="0" step="0.01"></div>
+      <div class="purchase-field full"><span class="purchase-field-help">Por padrão, o valor total da despesa entra inteiro na DRE. Vale pro conjunto inteiro (todas as parcelas/lojas do rateio), não dá pra escolher por parcela.</span></div>
+
       <div class="purchase-form-section">TIPO DE DESPESA</div>
       <div class="purchase-field full payables-kind-tabs">
         <label><input type="radio" name="expenseKind" value="single" checked> AVULSA</label>
@@ -5162,6 +5180,19 @@
   </div>
   <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
     <div id="expenseDetailSummary" class="payable-detail-summary"></div>
+    <div class="purchase-form-section">DRE</div>
+    <div class="purchase-form-grid" style="margin-bottom:14px;">
+      <div class="purchase-field full" style="display:flex;align-items:center;gap:8px;">
+        <label for="expenseDreIncluded" style="display:flex;align-items:center;gap:6px;width:auto;">
+          <input type="checkbox" id="expenseDreIncluded" style="width:auto;"> INCLUIR NA DRE?
+        </label>
+      </div>
+      <div class="purchase-field"><label for="expenseDreAmount">VALOR NA DRE (R$)</label><input type="number" id="expenseDreAmount" min="0" step="0.01"></div>
+      <div class="purchase-field full" style="display:flex;justify-content:flex-end;">
+        <button class="btn-accent" id="btnSaveExpenseDre" type="button">SALVAR DECISÃO DA DRE</button>
+      </div>
+    </div>
+    <div class="user-form-status" id="expenseDreFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-section" id="expenseDetailRateioSection" hidden>RATEIO ENTRE LOJAS</div>
     <div class="table-panel responsive-table" id="expenseDetailRateioPanel" hidden>
       <div class="table-scroll">
@@ -5387,7 +5418,17 @@
       <div class="purchase-field"><label for="invoiceInstallmentPaymentMethod">FORMA DE PAGAMENTO</label><input id="invoiceInstallmentPaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX"></div>
       <div class="purchase-field"><label for="invoiceInstallmentAccount">CONTA FINANCEIRA</label><select id="invoiceInstallmentAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="invoiceInstallmentBoleto">LINHA DIGITÁVEL (BOLETO)</label><input id="invoiceInstallmentBoleto" maxlength="80"></div>
-      <div class="purchase-field full" style="display:flex;justify-content:flex-end;"><button class="btn-accent" id="btnSaveInvoiceInstallments" type="submit">CADASTRAR</button></div>
+      <div class="purchase-field full" style="display:flex;align-items:center;gap:8px;">
+        <label for="invoiceDreIncluded" style="display:flex;align-items:center;gap:6px;width:auto;">
+          <input type="checkbox" id="invoiceDreIncluded" style="width:auto;" checked> INCLUIR NA DRE?
+        </label>
+      </div>
+      <div class="purchase-field"><label for="invoiceDreAmount">VALOR NA DRE (R$)</label><input type="number" id="invoiceDreAmount" min="0" step="0.01"></div>
+      <div class="purchase-field full"><span class="purchase-field-help">Vale pra NF inteira (todas as duplicatas juntas) — útil, por exemplo, pra NF de compra pra revenda, que vira estoque e não deveria entrar na DRE do mesmo jeito que uma nota de bem de consumo. "CADASTRAR" aplica junto da criação de novas duplicatas; se as duplicatas já existem e você só quer mudar essa decisão, use "SALVAR DECISÃO DA DRE".</span></div>
+      <div class="purchase-field full" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn-outline" id="btnSaveInvoiceDreOnly" type="button">SALVAR DECISÃO DA DRE</button>
+        <button class="btn-accent" id="btnSaveInvoiceInstallments" type="submit">CADASTRAR</button>
+      </div>
     </form>
     <div class="user-form-status" id="invoiceInstallmentFormStatus" role="status" aria-live="polite"></div>
 
@@ -16035,6 +16076,8 @@ function renderHomeTasks(){
     await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
   }
 
+  let payableDreTouched = false;
+
   function resetPayableForm(){
     el('payableForm').reset();
     el('payableId').value = '';
@@ -16043,7 +16086,33 @@ function renderHomeTasks(){
     renderPayablesCompanyOptions();
     renderPayablesCatalogSelects();
     payableFormIdempotencyKey = crypto.randomUUID();
+    el('payableDreIncluded').checked = true;
+    el('payableDreAmount').value = '';
+    el('payableDreAmount').disabled = false;
+    delete el('payableDreAmount').dataset.prevValue;
+    payableDreTouched = false;
   }
+
+  function updatePayableDreField(){
+    const included = el('payableDreIncluded').checked;
+    const amountEl = el('payableDreAmount');
+    if(!included){
+      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
+      amountEl.value = '0';
+      amountEl.disabled = true;
+    }else{
+      amountEl.disabled = false;
+      if(amountEl.dataset.prevValue !== undefined){
+        amountEl.value = amountEl.dataset.prevValue;
+        delete amountEl.dataset.prevValue;
+      }
+    }
+  }
+  el('payableDreIncluded').addEventListener('change', () => { payableDreTouched = true; updatePayableDreField(); });
+  el('payableDreAmount').addEventListener('input', () => { payableDreTouched = true; });
+  el('payableOriginalAmount').addEventListener('input', () => {
+    if(!payableDreTouched) el('payableDreAmount').value = el('payableOriginalAmount').value;
+  });
 
   function updatePayableKindFields(){
     const kind = document.querySelector('input[name="payableKind"]:checked').value;
@@ -16097,6 +16166,12 @@ function renderHomeTasks(){
     el('payableOrderReference').value = row.orderReference || '';
     el('payableBillingCode').value = row.billingCode || '';
     el('payableNotes').value = row.notes || '';
+    const rowDreIncluded = row.dreAmountCents === null || row.dreAmountCents === undefined || row.dreAmountCents > 0;
+    const rowDreAmountCents = row.dreAmountCents === null || row.dreAmountCents === undefined ? row.originalAmountCents : row.dreAmountCents;
+    el('payableDreIncluded').checked = rowDreIncluded;
+    el('payableDreAmount').value = (rowDreAmountCents / 100).toFixed(2);
+    el('payableDreAmount').disabled = !rowDreIncluded;
+    payableDreTouched = false;
     el('payableDialogTitle').textContent = 'EDITAR CONTA A PAGAR';
     el('payableFormStatus').textContent = '';
     el('payableDialog').showModal();
@@ -16132,8 +16207,14 @@ function renderHomeTasks(){
     const button = el('btnSavePayable');
     button.disabled = true;
     try{
+      const dreFields = {};
+      if(payableDreTouched){
+        dreFields.dreIncluded = el('payableDreIncluded').checked;
+        dreFields.dreAmountCents = parseBRLToCents(el('payableDreAmount').value || '0') || 0;
+      }
+      let response;
       if(id){
-        await financeApiRequest('/payables/'+encodeURIComponent(id), {
+        response = await financeApiRequest('/payables/'+encodeURIComponent(id), {
           method:'PATCH', headers:{'Content-Type':'application/json'},
           body:JSON.stringify({
             companyId, companyName, description:el('payableDescription').value.trim(),
@@ -16141,7 +16222,8 @@ function renderHomeTasks(){
             paymentMethod:el('payablePaymentMethod').value.trim(), originalAmountCents,
             issueDate:el('payableIssueDate').value, dueDate, competenceMonth:el('payableCompetenceMonth').value,
             invoiceNumber:el('payableInvoiceNumber').value.trim(), orderReference:el('payableOrderReference').value.trim(),
-            billingCode:el('payableBillingCode').value.trim(), notes:el('payableNotes').value.trim()
+            billingCode:el('payableBillingCode').value.trim(), notes:el('payableNotes').value.trim(),
+            ...dreFields
           })
         });
       }else{
@@ -16152,7 +16234,8 @@ function renderHomeTasks(){
           financeItemId, financeAccountId:el('payableAccount').value, paymentMethod:el('payablePaymentMethod').value.trim(),
           originalAmountCents, issueDate:el('payableIssueDate').value, dueDate,
           invoiceNumber:el('payableInvoiceNumber').value.trim(), orderReference:el('payableOrderReference').value.trim(),
-          billingCode:el('payableBillingCode').value.trim(), notes:el('payableNotes').value.trim()
+          billingCode:el('payableBillingCode').value.trim(), notes:el('payableNotes').value.trim(),
+          ...dreFields
         };
         if(kind === 'installment'){
           body.installmentTotal = Number(el('payableInstallmentTotal').value);
@@ -16165,9 +16248,9 @@ function renderHomeTasks(){
           if(count) body.recurrenceOccurrenceCount = Number(count);
           if(endDate) body.recurrenceEndDate = endDate;
         }
-        await financeApiRequest('/payables', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        response = await financeApiRequest('/payables', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
       }
-      showPurchaseToast('Conta salva.');
+      showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Conta salva.');
       closePayableDialog();
       await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
     }catch(error){
@@ -16646,6 +16729,8 @@ function renderHomeTasks(){
     await loadExpensesList();
   }
 
+  let expenseDreTouched = false;
+
   function resetExpenseForm(){
     el('expenseForm').reset();
     document.querySelectorAll('input[name="expenseKind"]').forEach(input => { input.checked = input.value === 'single'; });
@@ -16655,7 +16740,33 @@ function renderHomeTasks(){
     renderExpensesCompanyOptions();
     renderExpensesCatalogSelects();
     expenseFormIdempotencyKey = crypto.randomUUID();
+    el('expenseDreIncludedNew').checked = true;
+    el('expenseDreAmountNew').value = '';
+    el('expenseDreAmountNew').disabled = false;
+    delete el('expenseDreAmountNew').dataset.prevValue;
+    expenseDreTouched = false;
   }
+
+  el('expenseDreIncludedNew').addEventListener('change', () => {
+    expenseDreTouched = true;
+    const included = el('expenseDreIncludedNew').checked;
+    const amountEl = el('expenseDreAmountNew');
+    if(!included){
+      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
+      amountEl.value = '0';
+      amountEl.disabled = true;
+    }else{
+      amountEl.disabled = false;
+      if(amountEl.dataset.prevValue !== undefined){
+        amountEl.value = amountEl.dataset.prevValue;
+        delete amountEl.dataset.prevValue;
+      }
+    }
+  });
+  el('expenseDreAmountNew').addEventListener('input', () => { expenseDreTouched = true; });
+  el('expenseOriginalAmount').addEventListener('input', () => {
+    if(!expenseDreTouched) el('expenseDreAmountNew').value = el('expenseOriginalAmount').value;
+  });
 
   function updateExpenseKindFields(){
     const kind = document.querySelector('input[name="expenseKind"]:checked').value;
@@ -16847,6 +16958,10 @@ function renderHomeTasks(){
       cardId:el('expenseCardId').value.trim(), bankReconciliationId:el('expenseBankReconciliationId').value.trim()
     };
     if(rateioShares) body.rateioShares = rateioShares;
+    if(expenseDreTouched){
+      body.dreIncluded = el('expenseDreIncludedNew').checked;
+      body.dreAmountCents = parseBRLToCents(el('expenseDreAmountNew').value || '0') || 0;
+    }
     if(kind === 'single'){
       if(el('expenseCompetenceMonth').value) body.competenceMonth = el('expenseCompetenceMonth').value;
     }else if(kind === 'installment'){
@@ -16864,8 +16979,8 @@ function renderHomeTasks(){
     const button = el('btnSaveExpense');
     button.disabled = true;
     try{
-      await financeApiRequest('/expenses', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-      showPurchaseToast('Despesa salva.');
+      const response = await financeApiRequest('/expenses', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Despesa salva.');
       closeExpenseDialog();
       await loadExpensesList();
     }catch(error){
@@ -16902,6 +17017,11 @@ function renderHomeTasks(){
       const expense = data.expense;
       expenseDetailCurrentExpense = expense;
       el('expenseDetailDialogTitle').textContent = expense.description;
+      const dre = data.dre || { included: true, amountCents: expense.originalAmountCents };
+      el('expenseDreIncluded').checked = dre.included;
+      el('expenseDreAmount').value = (dre.amountCents / 100).toFixed(2);
+      el('expenseDreAmount').disabled = !dre.included;
+      el('expenseDreFormStatus').textContent = '';
       el('expenseDetailSummary').innerHTML =
         '<div class="payable-detail-summary-row"><span>EMPRESA/LOJA</span><strong>'+escapeHtml(expense.companyName || expense.companyId)+'</strong></div>'+
         '<div class="payable-detail-summary-row"><span>FORNECEDOR</span><strong>'+escapeHtml((payableSuppliers.find(s => s.id === expense.supplierId) || {}).name || '—')+'</strong></div>'+
@@ -16991,6 +17111,45 @@ function renderHomeTasks(){
 
   el('btnDuplicateExpense').addEventListener('click', () => {
     if(expenseDetailCurrentExpense) openDuplicateExpenseDialog(expenseDetailCurrentExpense);
+  });
+
+  el('expenseDreIncluded').addEventListener('change', () => {
+    const included = el('expenseDreIncluded').checked;
+    const amountEl = el('expenseDreAmount');
+    if(!included){
+      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
+      amountEl.value = '0';
+      amountEl.disabled = true;
+    }else{
+      amountEl.disabled = false;
+      if(amountEl.dataset.prevValue !== undefined){
+        amountEl.value = amountEl.dataset.prevValue;
+        delete amountEl.dataset.prevValue;
+      }
+    }
+  });
+
+  el('btnSaveExpenseDre').addEventListener('click', async () => {
+    if(!expenseDetailCurrentExpense) return;
+    const statusEl = el('expenseDreFormStatus');
+    statusEl.textContent = '';
+    const dreIncluded = el('expenseDreIncluded').checked;
+    const dreAmountCents = parseBRLToCents(el('expenseDreAmount').value || '0') || 0;
+    const button = el('btnSaveExpenseDre');
+    button.disabled = true;
+    try{
+      const response = await financeApiRequest('/expenses/'+encodeURIComponent(expenseDetailCurrentExpense.id), {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ dreIncluded, dreAmountCents })
+      });
+      statusEl.textContent = response && response.dreWarning ? response.dreWarning : 'DECISÃO DA DRE ATUALIZADA.';
+      showPurchaseToast('Decisão da DRE salva.');
+      await openExpenseDetailDialog(expenseDetailCurrentExpense.id);
+    }catch(error){
+      statusEl.textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
   });
 
   el('expensesBody').addEventListener('click', event => {
@@ -17456,6 +17615,24 @@ function renderHomeTasks(){
   let invoiceStatusFilter = '';
   let invoicesSearchTimer = null;
   let invoiceCurrentDetailId = null;
+  let invoiceDreTouched = false;
+  el('invoiceDreIncluded').addEventListener('change', () => {
+    invoiceDreTouched = true;
+    const included = el('invoiceDreIncluded').checked;
+    const amountEl = el('invoiceDreAmount');
+    if(!included){
+      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
+      amountEl.value = '0';
+      amountEl.disabled = true;
+    }else{
+      amountEl.disabled = false;
+      if(amountEl.dataset.prevValue !== undefined){
+        amountEl.value = amountEl.dataset.prevValue;
+        delete amountEl.dataset.prevValue;
+      }
+    }
+  });
+  el('invoiceDreAmount').addEventListener('input', () => { invoiceDreTouched = true; });
   let invoiceCurrentDetail = null;
   let invoicePaymentIdempotencyKey = '';
   let purchaseInvoiceData = null;
@@ -17743,6 +17920,12 @@ function renderHomeTasks(){
       ? installments.map(installmentRowHtml).join('')
       : '<tr><td colspan="7" class="responsive-empty">Nenhuma duplicata cadastrada.</td></tr>';
 
+    const dre = data.dre || { included: true, amountCents: invoice.totalAmountCents };
+    el('invoiceDreIncluded').checked = dre.included;
+    el('invoiceDreAmount').value = ((dre.amountCents || invoice.totalAmountCents) / 100).toFixed(2);
+    el('invoiceDreAmount').disabled = !dre.included;
+    invoiceDreTouched = false;
+
     const attachments = data.attachments || [];
     el('invoiceAttachmentsList').innerHTML = attachments.length
       ? attachments.map(attachment =>
@@ -17915,16 +18098,43 @@ function renderHomeTasks(){
         if(!amountCents) throw new Error('INFORME UM VALOR VÁLIDO PARA A DUPLICATA.');
         body.originalAmountCents = amountCents;
       }
-      await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments', {
+      if(invoiceDreTouched){
+        body.dreIncluded = el('invoiceDreIncluded').checked;
+        body.dreAmountCents = parseBRLToCents(el('invoiceDreAmount').value || '0') || 0;
+      }
+      const installmentsResponse = await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments', {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
       });
-      showPurchaseToast('Duplicata(s) cadastrada(s).');
+      showPurchaseToast(installmentsResponse && installmentsResponse.dreWarning ? installmentsResponse.dreWarning : 'Duplicata(s) cadastrada(s).');
       el('invoiceInstallmentForm').reset();
       updateInvoiceInstallmentModeFields();
       await openInvoiceDetailDialog(invoiceCurrentDetailId);
       await loadInvoicesList();
     }catch(error){
       el('invoiceInstallmentFormStatus').textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('btnSaveInvoiceDreOnly') && el('btnSaveInvoiceDreOnly').addEventListener('click', async () => {
+    if(!invoiceCurrentDetailId) return;
+    const statusEl = el('invoiceInstallmentFormStatus');
+    statusEl.textContent = '';
+    const button = el('btnSaveInvoiceDreOnly');
+    button.disabled = true;
+    try{
+      const response = await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId), {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          dreIncluded: el('invoiceDreIncluded').checked,
+          dreAmountCents: parseBRLToCents(el('invoiceDreAmount').value || '0') || 0
+        })
+      });
+      showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Decisão da DRE salva.');
+      await openInvoiceDetailDialog(invoiceCurrentDetailId);
+    }catch(error){
+      statusEl.textContent = error.message;
     }finally{
       button.disabled = false;
     }

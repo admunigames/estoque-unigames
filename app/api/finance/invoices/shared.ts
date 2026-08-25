@@ -1,5 +1,6 @@
 import type { getD1 } from "../../../../db";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR, type ScopeActor } from "../../../lib/access-scope";
+import { effectiveDreAmountCents } from "../../../lib/payables-recurrence";
 import {
   computeInvoiceFinancialStatus,
   type InstallmentSnapshot,
@@ -247,6 +248,35 @@ export function invoiceEventStatement(params: {
       params.actorName,
     ],
   ];
+}
+
+export type DreView = { included: boolean; amountCents: number; isCustomized: boolean };
+
+/**
+ * Estado do toggle "Incluir na DRE?" em nível de NF — soma o impacto
+ * EFETIVO (customizado ou original) de cada duplicata ativa vinculada,
+ * lendo dre_amount_cents das linhas de accounts_payable "gêmeas" (uma por
+ * duplicata, ligadas via accounts_payable_id). Duplicatas canceladas não
+ * entram na soma (já saem da DRE por outro caminho — status='canceled').
+ */
+export async function loadInvoiceDreView(
+  database: Awaited<ReturnType<typeof getD1>>,
+  installments: InstallmentRow[],
+): Promise<DreView> {
+  const activePayableIds = installments.filter((i) => !i.canceled).map((i) => i.accountsPayableId).filter(Boolean);
+  if (!activePayableIds.length) return { included: true, amountCents: 0, isCustomized: false };
+  const placeholders = activePayableIds.map((_, index) => `?${index + 1}`).join(",");
+  const result = await database
+    .prepare(
+      `SELECT id, original_amount_cents AS originalAmountCents, dre_amount_cents AS dreAmountCents
+       FROM accounts_payable WHERE id IN (${placeholders})`,
+    )
+    .bind(...activePayableIds)
+    .all<{ id: string; originalAmountCents: number; dreAmountCents: number | null }>();
+  const rows = result.results ?? [];
+  const totalDreImpact = rows.reduce((sum, row) => sum + effectiveDreAmountCents(row.dreAmountCents, row.originalAmountCents), 0);
+  const isCustomized = rows.some((row) => row.dreAmountCents !== null && row.dreAmountCents !== undefined);
+  return { included: !isCustomized || totalDreImpact > 0, amountCents: totalDreImpact, isCustomized };
 }
 
 export async function loadPendingScheduleIds(

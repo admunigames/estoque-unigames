@@ -7,6 +7,7 @@ import {
   DATE_PATTERN,
   assertFinanceAccountBelongsToCompany,
   assertSlotAvailableForPayable,
+  computeDreAnchorAssignments,
   recalcPayableEntrySql,
 } from "../../../payables/shared";
 import {
@@ -17,6 +18,7 @@ import {
   invoiceEventStatement,
   loadInstallments,
   loadInvoice,
+  loadInvoiceDreView,
   loadPendingScheduleIds,
   toInstallmentSnapshot,
 } from "../../shared";
@@ -48,11 +50,13 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       installments.map((installment) => installment.accountsPayableId),
     );
     const today = todayInTimezone();
+    const dre = await loadInvoiceDreView(database, installments);
     return jsonResponse({
       installments: installments.map((installment) => ({
         ...installment,
         status: computeInstallmentStatus(toInstallmentSnapshot(installment, pendingScheduleIds), today),
       })),
+      dre,
     });
   } catch (error) {
     console.error("Não foi possível carregar as duplicatas.", error);
@@ -138,6 +142,23 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const existingActive = existing.filter((installment) => !installment.canceled);
     const newInstallmentTotal = existingActive.length + plans.length;
 
+    // Decisão de "Incluir na DRE?" (opcional, nível da NF inteira) — quando
+    // não vem na requisição, as novas duplicatas ficam com
+    // dre_amount_cents=NULL (padrão) e as já existentes não são tocadas.
+    // Quando vem, a âncora é sempre a 1ª duplicata (existente ou nova, na
+    // ordem de installment_number) — reescreve TODAS as accounts_payable
+    // já vinculadas a esta NF, não só as recém-criadas.
+    const dreCustomized = body.dreIncluded !== undefined;
+    const dreIncludedFlag = Boolean(body.dreIncluded);
+    let dreAmountCentsTotal = 0;
+    let dreWarning: string | null = null;
+    if (dreCustomized) {
+      dreAmountCentsTotal = Number(body.dreAmountCents);
+      if (!Number.isFinite(dreAmountCentsTotal) || !Number.isInteger(dreAmountCentsTotal) || dreAmountCentsTotal < 0) {
+        return jsonResponse({ error: "INFORME UM VALOR VÁLIDO (EM CENTAVOS, NÃO NEGATIVO) PARA A DRE." }, 400);
+      }
+    }
+
     const conflict = await assertSlotAvailableForPayable(
       database,
       invoice.companyId,
@@ -161,9 +182,37 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       ]);
     }
 
+    // orderedPayableIds cobre a NF inteira (duplicatas já existentes + as
+    // novas desta chamada), na mesma ordem de installment_number — a 1ª
+    // linha é sempre a âncora, mesmo quando esta chamada só está
+    // adicionando duplicatas depois da 1ª já existir.
+    const newPayableIds = plans.map(() => crypto.randomUUID());
+    const orderedPayableIds = [
+      ...existingActive.map((installment) => installment.accountsPayableId),
+      ...newPayableIds,
+    ].filter(Boolean);
+    const dreAssignments = dreCustomized
+      ? computeDreAnchorAssignments(orderedPayableIds, dreIncludedFlag, dreAmountCentsTotal)
+      : null;
+    if (dreAssignments) {
+      const totalOriginal =
+        existingActive.reduce((sum, installment) => sum + installment.originalAmountCents, 0) +
+        plans.reduce((sum, plan) => sum + plan.amountCents, 0);
+      if (dreIncludedFlag && dreAmountCentsTotal > totalOriginal) {
+        dreWarning = "O VALOR INFORMADO PARA A DRE É MAIOR QUE O VALOR TOTAL DA NOTA FISCAL.";
+      }
+      for (const installment of existingActive) {
+        if (!installment.accountsPayableId) continue;
+        statements.push([
+          `UPDATE accounts_payable SET dre_amount_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP WHERE id=?4`,
+          [dreAssignments.get(installment.accountsPayableId) ?? 0, actor.id, actorName, installment.accountsPayableId],
+        ]);
+      }
+    }
+
     for (const [offset, plan] of plans.entries()) {
       const installmentNumber = existingActive.length + offset + 1;
-      const payableId = crypto.randomUUID();
+      const payableId = newPayableIds[offset];
       const installmentId = crypto.randomUUID();
       const description = `NF ${invoice.invoiceNumber}${invoice.series ? "/" + invoice.series : ""} - PARCELA ${installmentNumber}/${newInstallmentTotal}`;
       const idempotencyKey = `invoice-installment:${installmentId}`;
@@ -171,10 +220,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       statements.push([
         `INSERT INTO accounts_payable
           (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
-           original_amount_cents, paid_amount_cents, issue_date, competence_month, due_date, payment_method,
+           original_amount_cents, paid_amount_cents, dre_amount_cents, issue_date, competence_month, due_date, payment_method,
            invoice_number, order_reference, billing_code, notes, status, installment_number, installment_total,
            idempotency_key, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,0,?8,?9,?10,?11,?12,?13,?14,?15,'open',?16,?17,?18,?19,?20,CURRENT_TIMESTAMP,?19,?20,CURRENT_TIMESTAMP)`,
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,?9,?10,?11,?12,?13,?14,?15,?16,?17,'open',?18,?19,?20,?21,?22,CURRENT_TIMESTAMP,?21,?22,CURRENT_TIMESTAMP)`,
         [
           payableId,
           invoice.companyId,
@@ -183,6 +232,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
           invoice.supplierId,
           invoice.financeItemId,
           financeAccountId,
+          // FIX: a coluna original_amount_cents desta accounts_payable
+          // "gêmea" da duplicata NUNCA estava sendo preenchida com o valor
+          // real (o INSERT tinha uma coluna a mais que valores, gravando
+          // sempre 0 aqui) — bug pré-existente encontrado ao mexer nesta
+          // mesma INSERT pra adicionar dre_amount_cents; corrigido junto
+          // porque sem isso original_amount_cents (e por consequência a
+          // DRE, que soma essa coluna) nunca refletia o valor real da
+          // duplicata.
+          plan.amountCents,
+          dreAssignments ? dreAssignments.get(payableId) ?? null : null,
           invoice.issueDate,
           invoice.competenceMonth,
           plan.dueDate,
@@ -252,7 +311,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
 
-    return jsonResponse({ created: true, ids: createdIds }, 201);
+    return jsonResponse({ created: true, ids: createdIds, dreWarning }, 201);
   } catch (error) {
     console.error("Não foi possível cadastrar as duplicatas.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CADASTRAR AS DUPLICATAS." }, 500);

@@ -11,8 +11,10 @@ import {
   assertFinanceAccountBelongsToCompany,
   assertSlotAvailableForPayable,
   competenceMonthOf,
+  computeDreAnchorAssignments,
   generateInstallmentDueDates,
   generateRecurrenceDueDates,
+  prorateDreAmountByShare,
   recalcPayableEntrySql,
   splitIntoInstallments,
   type RateioModel,
@@ -217,6 +219,28 @@ export async function POST(request: Request) {
     const totalAmountCents = Number(body.originalAmountCents);
     if (!Number.isFinite(totalAmountCents) || !Number.isInteger(totalAmountCents) || totalAmountCents <= 0) {
       return jsonResponse({ error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." }, 400);
+    }
+
+    // Decisão de "Incluir na DRE?" (opcional, nível da despesa inteira) —
+    // quando dreIncluded não vem na requisição, todas as linhas de
+    // accounts_payable geradas ficam com dre_amount_cents=NULL
+    // (comportamento padrão). Numa despesa rateada entre lojas, o valor
+    // customizado é distribuído proporcionalmente ao valor original de
+    // cada loja (prorateDreAmountByShare) e a âncora fica na 1ª ocorrência
+    // de CADA loja — a decisão nunca é rateada por parcela/mês, só por
+    // loja (ver decisão de design no relatório da feature).
+    const dreCustomized = body.dreIncluded !== undefined;
+    const dreIncludedFlag = Boolean(body.dreIncluded);
+    let dreAmountCentsTotal = 0;
+    let dreWarning: string | null = null;
+    if (dreCustomized) {
+      dreAmountCentsTotal = Number(body.dreAmountCents);
+      if (!Number.isFinite(dreAmountCentsTotal) || !Number.isInteger(dreAmountCentsTotal) || dreAmountCentsTotal < 0) {
+        return jsonResponse({ error: "INFORME UM VALOR VÁLIDO (EM CENTAVOS, NÃO NEGATIVO) PARA A DRE." }, 400);
+      }
+      if (dreIncludedFlag && dreAmountCentsTotal > totalAmountCents) {
+        dreWarning = "O VALOR INFORMADO PARA A DRE É MAIOR QUE O VALOR TOTAL DA DESPESA.";
+      }
     }
 
     const rateioType = (safeText(body.rateioType, 20) || "single_store") as RateioType;
@@ -460,9 +484,25 @@ export async function POST(request: Request) {
       ],
     ]);
 
+    // Prorateia o valor de DRE customizado (nível despesa) entre as lojas
+    // do rateio, proporcional ao valor original de cada uma — despesa
+    // single-store é só uma "fatia" de 100%, então cai no mesmo código.
+    const shareDreTotals = dreCustomized
+      ? prorateDreAmountByShare(
+          shares.map((share) => ({ key: share.companyId, originalAmountCents: share.amountCents })),
+          dreIncludedFlag ? dreAmountCentsTotal : 0,
+        )
+      : null;
+
     const createdPayableIds: string[] = [];
     for (let shareIndex = 0; shareIndex < sharePlans.length; shareIndex += 1) {
       const { share, plan } = sharePlans[shareIndex];
+      // IDs pré-gerados na ordem do plano (1ª ocorrência primeiro) pra
+      // poder calcular a âncora ANTES de montar os INSERTs.
+      const planPayableIds = plan.map(() => crypto.randomUUID());
+      const shareDreAssignments = dreCustomized
+        ? computeDreAnchorAssignments(planPayableIds, true, shareDreTotals?.get(share.companyId) ?? 0)
+        : null;
       if (rateioType === "rateio") {
         statements.push([
           `INSERT INTO expense_rateio_shares (id, expense_id, company_id, company_name, percent_basis_points, amount_cents, created_at)
@@ -477,19 +517,19 @@ export async function POST(request: Request) {
           ],
         ]);
       }
-      for (const occurrence of plan) {
-        const payableId = crypto.randomUUID();
+      plan.forEach((occurrence, occurrenceIndex) => {
+        const payableId = planPayableIds[occurrenceIndex];
         createdPayableIds.push(payableId);
         statements.push([
           `INSERT INTO accounts_payable
             (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
-             cost_center, original_amount_cents, paid_amount_cents, issue_date, competence_month, due_date, payment_method,
+             cost_center, original_amount_cents, paid_amount_cents, dre_amount_cents, issue_date, competence_month, due_date, payment_method,
              invoice_number, order_reference, billing_code, notes, status,
              recurrence_id, recurrence_frequency, recurrence_occurrence_index, recurrence_occurrence_count, recurrence_end_date,
              installment_group_id, installment_number, installment_total, expense_id, idempotency_key,
              created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-           VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,0,?10,?11,?12,?13,?14,?15,'',?16,'open',
-             ?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP)`,
+           VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,0,?10,?11,?12,?13,?14,?15,?16,'',?17,'open',
+             ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29,CURRENT_TIMESTAMP,?28,?29,CURRENT_TIMESTAMP)`,
           [
             payableId,
             share.companyId,
@@ -500,6 +540,7 @@ export async function POST(request: Request) {
             financeAccountId,
             costCenter,
             occurrence.amountCents,
+            shareDreAssignments ? shareDreAssignments.get(payableId) ?? null : null,
             issueDate,
             occurrence.competenceMonth,
             occurrence.dueDate,
@@ -524,7 +565,7 @@ export async function POST(request: Request) {
             actorName,
           ],
         ]);
-      }
+      });
     }
 
     for (const slot of distinctSlots.values()) {
@@ -537,7 +578,7 @@ export async function POST(request: Request) {
     const prepared = statements.map(([sql, sqlValues]) => database.prepare(sql).bind(...sqlValues));
     await database.batch(prepared);
 
-    return jsonResponse({ created: true, id: expenseId, payableIds: createdPayableIds }, 201);
+    return jsonResponse({ created: true, id: expenseId, payableIds: createdPayableIds, dreWarning }, 201);
   } catch (error) {
     console.error("Não foi possível cadastrar a despesa.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CADASTRAR A DESPESA." }, 500);

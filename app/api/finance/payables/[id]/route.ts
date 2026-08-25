@@ -8,7 +8,10 @@ import {
   assertAccess,
   assertFinanceAccountBelongsToCompany,
   assertSlotAvailableForPayable,
+  computeDreAnchorAssignments,
+  dreViewFromGroup,
   loadPayable,
+  loadPayableGroupRows,
   recalcPayableEntrySql,
   statusView,
 } from "../shared";
@@ -56,10 +59,12 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     ]);
 
     const today = todayInTimezone();
+    const groupRows = await loadPayableGroupRows(database, payable);
     return jsonResponse({
       payable: { ...payable, ...statusView(payable.status, payable.dueDate, today) },
       payments: payments.results ?? [],
       dreOriginSiblings: siblings.results ?? [],
+      dre: dreViewFromGroup(groupRows),
     });
   } catch (error) {
     console.error("Não foi possível carregar a conta a pagar.", error);
@@ -202,14 +207,57 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       ],
     ];
 
-    const slotsToRecalc = slotChanged
-      ? [
-          { companyId: payable.companyId, financeItemId: payable.financeItemId, month: payable.competenceMonth },
-          { companyId, financeItemId, month: competenceMonth },
-        ]
-      : [{ companyId, financeItemId, month: competenceMonth }];
+    // Decisão de "Incluir na DRE?" — só mexe em dre_amount_cents quando o
+    // campo vem explicitamente na requisição (o usuário mexeu no toggle).
+    // Reescreve TODAS as linhas do grupo (âncora + demais zeradas) na
+    // mesma transação, e garante que a competência de CADA linha do grupo
+    // entra na lista de recálculo — não só a da linha editada — porque uma
+    // recorrência pode ter ocorrências em meses diferentes e todas
+    // precisam refletir a nova decisão (mesmo as que ficaram zeradas).
+    const slotKeySet = new Map<string, { companyId: string; financeItemId: string; month: string }>();
+    function addSlot(slotCompanyId: string, slotFinanceItemId: string, slotMonth: string) {
+      slotKeySet.set(`${slotCompanyId}::${slotFinanceItemId}::${slotMonth}`, {
+        companyId: slotCompanyId,
+        financeItemId: slotFinanceItemId,
+        month: slotMonth,
+      });
+    }
+    if (slotChanged) {
+      addSlot(payable.companyId, payable.financeItemId, payable.competenceMonth);
+    }
+    addSlot(companyId, financeItemId, competenceMonth);
 
-    for (const slot of slotsToRecalc) {
+    let dreWarning: string | null = null;
+    if (body.dreIncluded !== undefined) {
+      const dreIncluded = Boolean(body.dreIncluded);
+      const dreAmountCentsRaw = Number(body.dreAmountCents);
+      if (!Number.isFinite(dreAmountCentsRaw) || !Number.isInteger(dreAmountCentsRaw) || dreAmountCentsRaw < 0) {
+        return jsonResponse({ error: "INFORME UM VALOR VÁLIDO (EM CENTAVOS, NÃO NEGATIVO) PARA A DRE." }, 400);
+      }
+      const groupRows = await loadPayableGroupRows(database, payable);
+      const totalOriginal = groupRows.reduce((sum, row) => sum + row.originalAmountCents, 0);
+      if (dreIncluded && dreAmountCentsRaw > totalOriginal) {
+        dreWarning = "O VALOR INFORMADO PARA A DRE É MAIOR QUE O VALOR TOTAL DA CONTA.";
+      }
+      const orderedIds = groupRows.map((row) => row.id);
+      const assignments = computeDreAnchorAssignments(orderedIds, dreIncluded, dreAmountCentsRaw);
+      for (const row of groupRows) {
+        statements.push([
+          `UPDATE accounts_payable SET dre_amount_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP WHERE id=?4`,
+          [assignments.get(row.id) ?? 0, actor.id, actorName, row.id],
+        ]);
+        // A linha que está sendo editada agora já reflete companyId/
+        // financeItemId/competenceMonth NOVOS (statement acima na mesma
+        // transação); as demais do grupo mantêm seu próprio slot.
+        const rowSlot =
+          row.id === payable.id
+            ? { companyId, financeItemId, month: competenceMonth }
+            : { companyId: payable.companyId, financeItemId: payable.financeItemId, month: row.competenceMonth };
+        addSlot(rowSlot.companyId, rowSlot.financeItemId, rowSlot.month);
+      }
+    }
+
+    for (const slot of slotKeySet.values()) {
       const entryId = crypto.randomUUID();
       for (const [sql, sqlValues] of recalcPayableEntrySql(
         entryId,
@@ -226,7 +274,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const prepared = statements.map(([sql, sqlValues]) => database.prepare(sql).bind(...sqlValues));
     await database.batch(prepared);
 
-    return jsonResponse({ updated: true, id });
+    return jsonResponse({ updated: true, id, dreWarning });
   } catch (error) {
     console.error("Não foi possível editar a conta a pagar.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL EDITAR A CONTA A PAGAR." }, 500);
