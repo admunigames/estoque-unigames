@@ -228,13 +228,14 @@ export async function POST(request: Request) {
       if (!rateioModel || !RATEIO_MODELS.includes(rateioModel)) {
         return jsonResponse({ error: "SELECIONE O MODELO DE RATEIO." }, 400);
       }
-      // Rateio gera obrigações em OUTRAS lojas além da selecionada acima —
-      // só quem enxerga todas as lojas pode fazer isso, senão um usuário
-      // restrito a uma loja criaria contas a pagar em lojas que ele não tem
-      // permissão de acessar.
-      if (!allStores) {
-        return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR DESPESAS RATEADAS ENTRE LOJAS." }, 403);
-      }
+      // Rateio gera obrigações em outras lojas além da selecionada acima —
+      // isso é esperado e faz parte da regra de negócio (o rateio existe
+      // justamente pra dividir entre lojas). A trava de acesso é só
+      // canManageFinance (ter permissão de Financeiro), verificada no topo
+      // desta rota — o Financeiro é um módulo à parte cujo acesso já é
+      // concedido pelo administrador principal a quem precisar, então não
+      // faz sentido restringir rateio a quem "enxerga todas as lojas" em
+      // outros módulos (ver [[estoque_modulo_despesas_rateio]]).
     }
 
     const kind = (safeText(body.kind, 20) || "single") as "single" | "installment" | "recurring";
