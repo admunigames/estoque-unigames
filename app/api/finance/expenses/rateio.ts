@@ -55,14 +55,21 @@ export async function computeRateioShares(
     if (!customShares || customShares.length < 2) {
       return { error: "INFORME AO MENOS DUAS LOJAS COM PERCENTUAL NO RATEIO PERSONALIZADO." };
     }
+    if (new Set(customShares.map((share) => share.companyId)).size !== customShares.length) {
+      return { error: "CADA LOJA SÓ PODE APARECER UMA VEZ NO RATEIO PERSONALIZADO." };
+    }
     const totalBp = customShares.reduce((sum, share) => sum + share.percentBasisPoints, 0);
     if (totalBp !== BASIS_POINTS_TOTAL) {
       return { error: "OS PERCENTUAIS DO RATEIO PERSONALIZADO PRECISAM SOMAR EXATAMENTE 100%." };
     }
     const companies = await loadCompanyList(database);
+    const unknownCompanyId = customShares.find((share) => !companies.some((c) => c.id === share.companyId));
+    if (unknownCompanyId) {
+      return { error: `LOJA NÃO ENCONTRADA NO RATEIO PERSONALIZADO (ID "${unknownCompanyId.companyId}").` };
+    }
     const shares = customShares.map((share) => ({
       companyId: share.companyId,
-      companyName: companies.find((c) => c.id === share.companyId)?.name || share.companyId,
+      companyName: companies.find((c) => c.id === share.companyId)!.name,
       percentBasisPoints: share.percentBasisPoints,
     }));
     return { shares: distributeAmount(totalAmountCents, shares) };

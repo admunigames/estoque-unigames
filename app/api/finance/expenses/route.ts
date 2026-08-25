@@ -247,8 +247,27 @@ export async function POST(request: Request) {
       .first<{ id: string }>();
     if (!item) return jsonResponse({ error: "ITEM DE DESPESA NÃO ENCONTRADO NO CATÁLOGO FINANCEIRO." }, 400);
 
-    const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
-    if (accountError) return jsonResponse({ error: accountError }, 409);
+    // Numa despesa rateada, a mesma conta financeira vale pra todas as contas
+    // a pagar geradas (uma por loja) — só uma conta GLOBAL (sem loja própria)
+    // pode ser usada nesse caso, senão uma conta de uma loja específica
+    // ficaria vinculada a pagáveis de outras lojas, violando a mesma regra
+    // que assertFinanceAccountBelongsToCompany existe pra proteger.
+    const accountError = await assertFinanceAccountBelongsToCompany(
+      database,
+      financeAccountId,
+      rateioType === "rateio" ? "" : companyId,
+    );
+    if (accountError) {
+      return jsonResponse(
+        {
+          error:
+            rateioType === "rateio" && financeAccountId
+              ? "EM DESPESA RATEADA, A CONTA FINANCEIRA PRECISA SER UMA CONTA GLOBAL (SEM LOJA PRÓPRIA) — ESCOLHA OUTRA CONTA OU DEIXE SEM CONTA."
+              : accountError,
+        },
+        409,
+      );
+    }
 
     const existingByKey = await database
       .prepare("SELECT id FROM expenses WHERE idempotency_key=?1")
@@ -376,15 +395,25 @@ export async function POST(request: Request) {
 
     const sharePlans = shares.map((share) => ({ share, plan: buildPlanForAmount(share.amountCents) }));
 
-    const distinctSlots = new Set<string>();
+    // Mapa (não Set de string) pra nunca precisar re-parsear um delimitador
+    // — companyId/month ficam como valores de verdade, não codificados
+    // numa string só.
+    const distinctSlots = new Map<string, { companyId: string; month: string }>();
     for (const { share, plan } of sharePlans) {
-      for (const occurrence of plan) distinctSlots.add(share.companyId + "::" + occurrence.competenceMonth);
+      for (const occurrence of plan) {
+        distinctSlots.set(share.companyId + "::" + occurrence.competenceMonth, {
+          companyId: share.companyId,
+          month: occurrence.competenceMonth,
+        });
+      }
     }
-    for (const slot of distinctSlots) {
-      const [slotCompanyId, month] = slot.split("::");
-      const conflict = await assertSlotAvailableForPayable(database, slotCompanyId, financeItemId, month);
-      if (conflict) return jsonResponse({ error: conflict }, 409);
-    }
+    const conflicts = await Promise.all(
+      [...distinctSlots.values()].map((slot) =>
+        assertSlotAvailableForPayable(database, slot.companyId, financeItemId, slot.month),
+      ),
+    );
+    const firstConflict = conflicts.find((conflict) => conflict);
+    if (firstConflict) return jsonResponse({ error: firstConflict }, 409);
 
     const expenseId = crypto.randomUUID();
     const actorName = actor.displayName || "Administrador";
@@ -498,10 +527,9 @@ export async function POST(request: Request) {
       }
     }
 
-    for (const slot of distinctSlots) {
-      const [slotCompanyId, month] = slot.split(" ");
+    for (const slot of distinctSlots.values()) {
       const entryId = crypto.randomUUID();
-      for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, slotCompanyId, financeItemId, month, actor.id, actorName)) {
+      for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, slot.companyId, financeItemId, slot.month, actor.id, actorName)) {
         statements.push([sql, sqlValues]);
       }
     }

@@ -70,6 +70,9 @@ export async function POST(request: Request) {
       if (!Number.isFinite(percentBasisPoints) || percentBasisPoints < 0) {
         return jsonResponse({ error: "PERCENTUAL INVÁLIDO." }, 400);
       }
+      if (shares.some((share) => share.companyId === companyId)) {
+        return jsonResponse({ error: "CADA LOJA SÓ PODE APARECER UMA VEZ NA CONFIGURAÇÃO." }, 400);
+      }
       totalBp += percentBasisPoints;
       shares.push({ companyId, companyName, percentBasisPoints });
     }
