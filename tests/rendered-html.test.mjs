@@ -2080,7 +2080,10 @@ test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", 
   assert.match(html, /id="financeCatalogDialog"/);
 
   assert.match(workerSource, /"finance:manage"/);
-  assert.match(workerSource, /finance: \["finance:manage"\]/);
+  // finance: [...] agora inclui as permissões granulares do módulo NF/
+  // Duplicatas (payables:*) além de finance:manage — ver
+  // MODULE_VIEW_PERMISSIONS em worker/index.ts.
+  assert.match(workerSource, /finance: \[\s*"finance:manage",/);
   assert.match(workerSource, /"\/financeiro\/dre"/);
   assert.match(
     workerSource,

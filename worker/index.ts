@@ -37,7 +37,7 @@ type Permission =
   | "outputs:view" | "outputs:create" | "outputs:complete" | "outputs:delete"
   | "inputs:view" | "inputs:create" | "inputs:complete" | "inputs:delete"
   | "supplies:view" | "supplies:request" | "supplies:receive" | "supplies:stock_in" | "supplies:stock_out" | "supplies:delete" | "supplies:manage_catalog"
-  | "purchases:view" | "purchases:create" | "purchases:edit" | "purchases:delete"
+  | "purchases:view" | "purchases:create" | "purchases:edit" | "purchases:delete" | "purchases:send_to_finance"
   | "stock:view"
   | "database:view" | "database:manage"
   | "pulls:view"
@@ -47,6 +47,7 @@ type Permission =
   | "pdv_requests:view" | "pdv_requests:create" | "pdv_requests:delete" | "pdv_requests:status"
   | "os_notes:view" | "os_notes:create" | "os_notes:attach" | "os_notes:delete"
   | "finance:manage"
+  | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
@@ -104,7 +105,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "outputs:view", "outputs:create", "outputs:complete", "outputs:delete",
   "inputs:view", "inputs:create", "inputs:complete", "inputs:delete",
   "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
-  "purchases:view", "purchases:create", "purchases:edit", "purchases:delete",
+  "purchases:view", "purchases:create", "purchases:edit", "purchases:delete", "purchases:send_to_finance",
   "stock:view",
   "database:view", "database:manage",
   "pulls:view",
@@ -113,6 +114,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "pdv_requests:view", "pdv_requests:create", "pdv_requests:delete", "pdv_requests:status",
   "os_notes:view", "os_notes:create", "os_notes:attach", "os_notes:delete",
   "finance:manage",
+  "payables:invoices_view", "payables:invoices_reconcile", "payables:confirm_payment", "payables:return_to_purchases",
   "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
   "users:manage",
 ];
@@ -214,6 +216,7 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/escalas",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
+  "/financeiro/notas-fiscais",
   "/financeiro/despesas",
   "/documentos",
   "/documentos/certificados/garantia-de-produto",
@@ -1030,7 +1033,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "supplies:view", "supplies:request", "supplies:receive",
     "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
   ],
-  purchases: ["purchases:view", "purchases:create", "purchases:edit", "purchases:delete"],
+  purchases: ["purchases:view", "purchases:create", "purchases:edit", "purchases:delete", "purchases:send_to_finance"],
   stock: ["stock:view"],
   pulls: ["pulls:view"],
   report41: ["report41:view"],
@@ -1041,7 +1044,10 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   osNotes: [
     "os_notes:view", "os_notes:create", "os_notes:attach", "os_notes:delete",
   ],
-  finance: ["finance:manage"],
+  finance: [
+    "finance:manage",
+    "payables:invoices_view", "payables:invoices_reconcile", "payables:confirm_payment", "payables:return_to_purchases",
+  ],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
   ],
