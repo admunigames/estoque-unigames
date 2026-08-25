@@ -2753,6 +2753,7 @@
       <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
         <a class="nav-item sub-item" id="navFinanceiroPayables" data-page="financeiroPayables" data-permission="finance" data-home-desc="Contas a pagar: parcelas, recorrências e pagamentos por loja." title="Contas a Pagar" href="/financeiro/contas-a-pagar"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Contas a Pagar</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroExpenses" data-page="financeiroExpenses" data-permission="finance" data-home-desc="Cadastro completo de despesas, com rateio entre lojas." title="Despesas" href="/financeiro/despesas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14.5 3.5V7h3.5"/><path d="M8 12h8M8 15.5h8M8 18.5h5"/></svg></span><span class="nav-label">Despesas</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="hr">
@@ -4760,6 +4761,79 @@
       </div>
     </section>
 
+    <section id="pageFinanceiroExpenses" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Despesas</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Cadastro completo de despesas — cada despesa gera automaticamente a(s) conta(s) a pagar correspondente(s), já divididas por loja quando rateada.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="expensesLoja">EMPRESA/LOJA</label><select id="expensesLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnConfigureRateio" type="button">CONFIGURAR RATEIO</button>
+          <button class="btn-accent" id="btnNewExpense" type="button">NOVA DESPESA</button>
+        </div>
+      </div>
+
+      <div class="table-panel responsive-table">
+        <div class="dre-toolbar payables-filters">
+          <div class="field full"><label for="expensesSearch">BUSCAR</label><input id="expensesSearch" placeholder="Descrição, fornecedor, NF, pedido..."></div>
+          <div class="field"><label for="expensesSupplier">FORNECEDOR</label><select id="expensesSupplier"><option value="">TODOS</option></select></div>
+          <div class="field"><label for="expensesCategory">CATEGORIA</label><select id="expensesCategory"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="expensesItem">SUBCATEGORIA</label><select id="expensesItem"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="expensesCostCenter">CENTRO DE CUSTO</label><input id="expensesCostCenter" maxlength="120"></div>
+          <div class="field"><label for="expensesKind">TIPO</label>
+            <select id="expensesKind">
+              <option value="">TODOS</option>
+              <option value="single">AVULSA</option>
+              <option value="installment">PARCELADA</option>
+              <option value="recurring">RECORRENTE</option>
+            </select>
+          </div>
+          <div class="field"><label for="expensesRateioType">RATEIO</label>
+            <select id="expensesRateioType">
+              <option value="">TODOS</option>
+              <option value="single_store">LOJA ÚNICA</option>
+              <option value="rateio">RATEADA</option>
+              <option value="no_rateio">NÃO ENTRA EM RATEIO</option>
+            </select>
+          </div>
+          <div class="field"><label for="expensesDueFrom">VENCIMENTO DE</label><input type="date" id="expensesDueFrom"></div>
+          <div class="field"><label for="expensesDueTo">VENCIMENTO ATÉ</label><input type="date" id="expensesDueTo"></div>
+          <div class="field"><label for="expensesCompetenceFrom">COMPETÊNCIA DE</label><input type="month" id="expensesCompetenceFrom"></div>
+          <div class="field"><label for="expensesCompetenceTo">COMPETÊNCIA ATÉ</label><input type="month" id="expensesCompetenceTo"></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnExpensesClearFilters" type="button">LIMPAR FILTROS</button>
+            <button class="btn-accent" id="btnExpensesApplyFilters" type="button">APLICAR FILTROS</button>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th data-expenses-sort="description" class="sortable">Descrição</th>
+              <th>Empresa/Loja</th>
+              <th>Fornecedor</th>
+              <th>Categoria</th>
+              <th>Centro de custo</th>
+              <th data-expenses-sort="competenceMonth" class="sortable">Competência</th>
+              <th data-expenses-sort="dueDate" class="sortable">Vencimento</th>
+              <th data-expenses-sort="originalAmountCents" class="sortable">Valor</th>
+              <th>Rateio</th>
+              <th>Parcela/Recorrência</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="expensesBody"><tr><td colspan="11" class="responsive-empty">Carregando despesas…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="payables-totals" id="expensesTotals"></div>
+        <div class="payables-pagination" id="expensesPagination"></div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -4907,6 +4981,159 @@
 
     <div class="purchase-form-section" id="payableOriginSection" hidden>OUTRAS CONTAS NA MESMA COMPETÊNCIA DA DRE</div>
     <div id="payableOriginList"></div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="expenseDialog" aria-labelledby="expenseDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="expenseDialogTitle">NOVA DESPESA</h3>
+    <button class="purchase-dialog-close" id="btnCloseExpenseDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="expenseForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="expenseCompany">EMPRESA/LOJA *</label><select id="expenseCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="expenseDescription">DESCRIÇÃO *</label><input id="expenseDescription" maxlength="200" required></div>
+      <div class="purchase-field"><label for="expenseSupplier">FORNECEDOR</label><select id="expenseSupplier"><option value="">SEM FORNECEDOR</option></select></div>
+      <div class="purchase-field"><label for="expenseCategory">CATEGORIA *</label><select id="expenseCategory" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="expenseItemSearch">BUSCAR SUBCATEGORIA</label><input id="expenseItemSearch" placeholder="Digite pra filtrar as subcategorias da categoria selecionada..."></div>
+      <div class="purchase-field"><label for="expenseItem">SUBCATEGORIA *</label><select id="expenseItem" required><option value="">SELECIONE A CATEGORIA PRIMEIRO</option></select></div>
+      <div class="purchase-field"><label for="expenseCostCenter">CENTRO DE CUSTO</label><input id="expenseCostCenter" maxlength="120"></div>
+      <div class="purchase-field"><label for="expenseAccount">CONTA BANCÁRIA</label><select id="expenseAccount"><option value="">SEM CONTA</option></select></div>
+      <div class="purchase-field"><label for="expensePaymentMethod">FORMA DE PAGAMENTO</label><input id="expensePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
+      <div class="purchase-field"><label for="expenseOriginalAmount">VALOR (R$) *</label><input type="number" id="expenseOriginalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="expenseIssueDate">DATA</label><input type="date" id="expenseIssueDate"></div>
+      <div class="purchase-field"><label for="expenseDueDate">VENCIMENTO *</label><input type="date" id="expenseDueDate" required></div>
+      <div class="purchase-field" id="expenseCompetenceMonthField"><label for="expenseCompetenceMonth">COMPETÊNCIA (SÓ DESPESA AVULSA)</label><input type="month" id="expenseCompetenceMonth"></div>
+      <div class="purchase-field"><label for="expenseInvoiceNumber">NÚMERO DA NF</label><input id="expenseInvoiceNumber" maxlength="60"></div>
+      <div class="purchase-field"><label for="expenseOrderReference">NÚMERO DO PEDIDO</label><input id="expenseOrderReference" maxlength="60"></div>
+      <div class="purchase-field full"><label for="expenseNotes">OBSERVAÇÕES</label><textarea id="expenseNotes" rows="2" maxlength="2000"></textarea></div>
+
+      <div class="purchase-form-section">TIPO DE DESPESA</div>
+      <div class="purchase-field full payables-kind-tabs">
+        <label><input type="radio" name="expenseKind" value="single" checked> AVULSA</label>
+        <label><input type="radio" name="expenseKind" value="installment"> PARCELADA</label>
+        <label><input type="radio" name="expenseKind" value="recurring"> RECORRENTE</label>
+      </div>
+      <div class="purchase-field" id="expenseInstallmentTotalField" hidden><label for="expenseInstallmentTotal">QUANTIDADE DE PARCELAS</label><input type="number" id="expenseInstallmentTotal" min="2" max="360"></div>
+      <div class="purchase-field" id="expenseRecurrenceFrequencyField" hidden><label for="expenseRecurrenceFrequency">FREQUÊNCIA</label>
+        <select id="expenseRecurrenceFrequency">
+          <option value="weekly">SEMANAL</option>
+          <option value="monthly" selected>MENSAL</option>
+          <option value="bimonthly">BIMESTRAL</option>
+          <option value="quarterly">TRIMESTRAL</option>
+          <option value="semiannual">SEMESTRAL</option>
+          <option value="annual">ANUAL</option>
+        </select>
+      </div>
+      <div class="purchase-field" id="expenseRecurrenceCountField" hidden><label for="expenseRecurrenceOccurrenceCount">QUANTIDADE DE OCORRÊNCIAS</label><input type="number" id="expenseRecurrenceOccurrenceCount" min="1" max="260"></div>
+      <div class="purchase-field" id="expenseRecurrenceEndField" hidden><label for="expenseRecurrenceEndDate">OU DATA FINAL DA RECORRÊNCIA</label><input type="date" id="expenseRecurrenceEndDate"></div>
+      <div class="purchase-field full" id="expenseKindHelp" hidden><span class="purchase-field-help"></span></div>
+
+      <div class="purchase-form-section">RATEIO ENTRE LOJAS</div>
+      <div class="purchase-field full payables-kind-tabs">
+        <label><input type="radio" name="expenseRateioType" value="single_store" checked> LOJA ÚNICA</label>
+        <label><input type="radio" name="expenseRateioType" value="rateio"> RATEADA ENTRE LOJAS</label>
+        <label><input type="radio" name="expenseRateioType" value="no_rateio"> NÃO ENTRA EM RATEIO</label>
+      </div>
+      <div class="purchase-field" id="expenseRateioModelField" hidden><label for="expenseRateioModel">MODELO DE RATEIO</label>
+        <select id="expenseRateioModel">
+          <option value="padrao">RATEIO PADRÃO</option>
+          <option value="administrativo">RATEIO ADMINISTRATIVO</option>
+          <option value="faturamento">RATEIO POR FATURAMENTO</option>
+          <option value="funcionarios">RATEIO POR QUANTIDADE DE FUNCIONÁRIOS</option>
+          <option value="personalizado">RATEIO PERSONALIZADO</option>
+        </select>
+      </div>
+      <div class="purchase-field full" id="expenseRateioHelp" hidden><span class="purchase-field-help">Rateio padrão/administrativo usam os percentuais configurados em "CONFIGURAR RATEIO". Faturamento e funcionários são calculados a partir dos dados já cadastrados. Personalizado é digitado manualmente abaixo.</span></div>
+      <div class="purchase-field full" id="expenseRateioSharesArea" hidden>
+        <label>DIVISÃO POR LOJA</label>
+        <div id="expenseRateioSharesList"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+          <button class="btn-outline" type="button" id="btnAddExpenseRateioShare" hidden>+ ADICIONAR LOJA</button>
+          <button class="btn-outline" type="button" id="btnPreviewExpenseRateio" hidden>PRÉ-VISUALIZAR RATEIO</button>
+          <span id="expenseRateioSharesTotal" style="font-size:12px;color:var(--ink-soft);"></span>
+        </div>
+      </div>
+
+      <div class="purchase-form-section">VÍNCULOS (ESTRUTURA PREPARADA)</div>
+      <div class="purchase-field"><label for="expenseCardId">CARTÃO</label><input id="expenseCardId" maxlength="80" placeholder="Módulo de cartões ainda não existe"></div>
+      <div class="purchase-field"><label for="expenseBankReconciliationId">CONCILIAÇÃO BANCÁRIA</label><input id="expenseBankReconciliationId" maxlength="80" placeholder="Módulo de conciliação ainda não existe"></div>
+    </div>
+    <div class="user-form-status" id="expenseFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelExpenseDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveExpense" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="expenseDetailDialog" aria-labelledby="expenseDetailDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="expenseDetailDialogTitle">DETALHES DA DESPESA</h3>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-outline" id="btnDuplicateExpense" type="button">DUPLICAR</button>
+      <button class="purchase-dialog-close" id="btnCloseExpenseDetailDialog" type="button" aria-label="Fechar">×</button>
+    </div>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
+    <div id="expenseDetailSummary" class="payable-detail-summary"></div>
+    <div class="purchase-form-section" id="expenseDetailRateioSection" hidden>RATEIO ENTRE LOJAS</div>
+    <div class="table-panel responsive-table" id="expenseDetailRateioPanel" hidden>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Loja</th><th>Percentual</th><th>Valor</th></tr></thead>
+          <tbody id="expenseDetailRateioBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="purchase-form-section">CONTAS A PAGAR GERADAS</div>
+    <p style="color:var(--ink-soft);font-size:12px;margin:8px 0;">Agendamentos e cancelamento continuam sendo feitos em Contas a Pagar — abra a conta específica por lá pra esses casos. Anexos (boleto/NF/comprovante) entram numa etapa seguinte.</p>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Loja</th><th>Competência</th><th>Vencimento</th><th>Valor</th><th>Pago</th><th>Status</th><th></th></tr></thead>
+          <tbody id="expenseDetailPayablesBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="rateioConfigDialog" aria-labelledby="rateioConfigDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rateioConfigDialogTitle">CONFIGURAR RATEIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRateioConfigDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:80vh;overflow:auto;">
+    <div class="output-tabs" role="tablist" aria-label="Configuração de rateio">
+      <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rateio-config-tab="padrao">RATEIO PADRÃO</button>
+      <button class="output-tab" type="button" role="tab" aria-selected="false" data-rateio-config-tab="administrativo">RATEIO ADMINISTRATIVO</button>
+      <button class="output-tab" type="button" role="tab" aria-selected="false" data-rateio-config-tab="funcionarios">FUNCIONÁRIOS POR LOJA</button>
+    </div>
+
+    <div data-rateio-config-panel="padrao">
+      <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Percentual fixo de cada loja no rateio "padrão". Precisa somar exatamente 100%.</p>
+      <div id="rateioModelSharesList-padrao"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+        <span id="rateioModelSharesTotal-padrao" style="font-size:12px;color:var(--ink-soft);"></span>
+        <button class="btn-accent" type="button" data-rateio-model-save="padrao">SALVAR</button>
+      </div>
+      <div class="user-form-status" id="rateioModelStatus-padrao" role="status" aria-live="polite"></div>
+    </div>
+    <div data-rateio-config-panel="administrativo" hidden>
+      <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Percentual fixo de cada loja no rateio "administrativo". Precisa somar exatamente 100%.</p>
+      <div id="rateioModelSharesList-administrativo"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+        <span id="rateioModelSharesTotal-administrativo" style="font-size:12px;color:var(--ink-soft);"></span>
+        <button class="btn-accent" type="button" data-rateio-model-save="administrativo">SALVAR</button>
+      </div>
+      <div class="user-form-status" id="rateioModelStatus-administrativo" role="status" aria-live="polite"></div>
+    </div>
+    <div data-rateio-config-panel="funcionarios" hidden>
+      <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Quantidade de funcionários por loja (cadastro manual, não conta usuários do sistema) — base do rateio "por quantidade de funcionários".</p>
+      <div id="rateioHeadcountList"></div>
+      <div class="user-form-status" id="rateioHeadcountStatus" role="status" aria-live="polite"></div>
+    </div>
   </div>
 </dialog>
 
@@ -5720,7 +5947,8 @@
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
     financeiro:'/financeiro/dre',
-    financeiroPayables:'/financeiro/contas-a-pagar'
+    financeiroPayables:'/financeiro/contas-a-pagar',
+    financeiroExpenses:'/financeiro/despesas'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -5745,7 +5973,8 @@
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
     financeiro:'DRE',
-    financeiroPayables:'CONTAS A PAGAR'
+    financeiroPayables:'CONTAS A PAGAR',
+    financeiroExpenses:'DESPESAS'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -5767,7 +5996,8 @@
     rhFolgas:'hr',
     rhEscalas:'hr',
     financeiro:'finance',
-    financeiroPayables:'finance'
+    financeiroPayables:'finance',
+    financeiroExpenses:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -6170,7 +6400,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiro' || name === 'financeiroPayables';
+    const isFinanceiro = name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroExpenses';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -6223,6 +6453,7 @@
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'financeiro') loadFinanceiroTab();
     if(name === 'financeiroPayables') loadPayablesPage();
+    if(name === 'financeiroExpenses') loadExpensesPage();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -6247,6 +6478,7 @@
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
     if(name === 'financeiro') loadFinanceiroTab();
     if(name === 'financeiroPayables') loadPayablesPage();
+    if(name === 'financeiroExpenses') loadExpensesPage();
   }
 
   function isPlainClick(event){
@@ -15901,6 +16133,737 @@ function renderHomeTasks(){
       document.querySelectorAll('[data-payables-sort]').forEach(other => other.classList.remove('sort-asc','sort-desc'));
       th.classList.add(payablesDir === 'asc' ? 'sort-asc' : 'sort-desc');
       loadPayablesList();
+    });
+  });
+
+  // ---- Despesas (cadastro completo, gera Contas a Pagar por baixo) ----
+  let expensesRows = [];
+  let expensesPage = 1;
+  const EXPENSES_PAGE_SIZE = 20;
+  let expensesTotal = 0;
+  let expensesSort = 'dueDate';
+  let expensesDir = 'asc';
+  let expenseFormIdempotencyKey = '';
+
+  const EXPENSE_RATEIO_TYPE_LABELS = {
+    single_store:'LOJA ÚNICA', rateio:'RATEADA', no_rateio:'NÃO ENTRA EM RATEIO'
+  };
+  const EXPENSE_KIND_LABELS = { single:'AVULSA', installment:'PARCELADA', recurring:'RECORRENTE' };
+  const PAYABLES_RECURRENCE_LABELS = {weekly:'Semanal', monthly:'Mensal', bimonthly:'Bimestral', quarterly:'Trimestral', semiannual:'Semestral', annual:'Anual'};
+
+  function expensesCanActAcrossStores(){
+    return canActAcrossStores('finance:manage');
+  }
+
+  function renderExpensesCompanyOptions(){
+    const filterSelect = el('expensesLoja');
+    const formSelect = el('expenseCompany');
+    const options = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    if(filterSelect){
+      const selected = filterSelect.value;
+      filterSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+options;
+      if(companies.some(c => c.id === selected)) filterSelect.value = selected;
+      if(!expensesCanActAcrossStores() && currentSession.companyId){
+        filterSelect.value = currentSession.companyId;
+        filterSelect.disabled = true;
+      }
+    }
+    if(formSelect){
+      const selected = formSelect.value;
+      formSelect.innerHTML = '<option value="">SELECIONE</option>'+options;
+      if(companies.some(c => c.id === selected)) formSelect.value = selected;
+      if(!expensesCanActAcrossStores() && currentSession.companyId){
+        formSelect.value = currentSession.companyId;
+        formSelect.disabled = true;
+      }
+    }
+  }
+
+  function renderExpensesCategoryOptions(){
+    const options = financeCategorySelectOptions();
+    const optionsHtml = options.map(o => '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
+    [{id:'expensesCategory', placeholder:'TODAS'}, {id:'expenseCategory', placeholder:'SELECIONE'}].forEach(config => {
+      const select = el(config.id);
+      if(!select) return;
+      const selected = select.value;
+      select.innerHTML = '<option value="">'+config.placeholder+'</option>'+optionsHtml;
+      if(options.some(o => o.id === selected)) select.value = selected;
+    });
+  }
+
+  function renderExpenseItemOptions(selectId, categoryId, options){
+    const select = el(selectId);
+    if(!select) return;
+    const settings = options || {};
+    const selectedId = settings.selectedId !== undefined ? settings.selectedId : select.value;
+    const searchText = (settings.searchText || '').trim().toLowerCase();
+    const placeholder = settings.placeholder || (categoryId ? 'SELECIONE' : 'SELECIONE A CATEGORIA PRIMEIRO');
+    let items = categoryId ? financeItems.filter(item => item.categoryId === categoryId) : [];
+    if(searchText) items = items.filter(item => item.name.toLowerCase().includes(searchText));
+    select.innerHTML = '<option value="">'+placeholder+'</option>'+
+      items.map(item => '<option value="'+escapeHtml(item.id)+'"'+(item.id === selectedId ? ' selected' : '')+'>'+escapeHtml(item.name)+'</option>').join('');
+    if(items.some(item => item.id === selectedId)) select.value = selectedId;
+  }
+
+  function renderExpensesCatalogSelects(){
+    renderExpensesCategoryOptions();
+    const supplierOptions = payableSuppliers.filter(s => s.active).map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
+    if(el('expensesSupplier')) el('expensesSupplier').innerHTML = '<option value="">TODOS</option>'+supplierOptions;
+    if(el('expenseSupplier')) el('expenseSupplier').innerHTML = '<option value="">SEM FORNECEDOR</option>'+supplierOptions;
+    renderPayableAccountOptionsForCompany('expenseAccount', el('expenseCompany') ? el('expenseCompany').value : '', 'SEM CONTA');
+    renderExpenseItemOptions('expensesItem', el('expensesCategory') ? el('expensesCategory').value : '', {placeholder:'TODAS'});
+    renderExpenseItemOptions('expenseItem', el('expenseCategory') ? el('expenseCategory').value : '');
+  }
+
+  el('expenseCompany') && el('expenseCompany').addEventListener('change', () => {
+    renderPayableAccountOptionsForCompany('expenseAccount', el('expenseCompany').value, 'SEM CONTA');
+  });
+  el('expenseCategory') && el('expenseCategory').addEventListener('change', () => {
+    renderExpenseItemOptions('expenseItem', el('expenseCategory').value, {selectedId:''});
+    el('expenseItemSearch').value = '';
+  });
+  el('expenseItemSearch') && el('expenseItemSearch').addEventListener('input', () => {
+    renderExpenseItemOptions('expenseItem', el('expenseCategory').value, {searchText: el('expenseItemSearch').value, selectedId: el('expenseItem').value});
+  });
+  el('expensesCategory') && el('expensesCategory').addEventListener('change', () => {
+    renderExpenseItemOptions('expensesItem', el('expensesCategory').value, {selectedId:'', placeholder:'TODAS'});
+  });
+
+  async function loadExpensesCatalogData(){
+    try{
+      if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
+      if(!payableSuppliers.length && !payableAccounts.length){
+        const [suppliersData, accountsData] = await Promise.all([
+          financeApiRequest('/suppliers?includeInactive=1'),
+          financeApiRequest('/accounts?includeInactive=1')
+        ]);
+        payableSuppliers = Array.isArray(suppliersData.suppliers) ? suppliersData.suppliers : [];
+        payableAccounts = Array.isArray(accountsData.accounts) ? accountsData.accounts : [];
+      }
+    }catch(error){
+      payableSuppliers = payableSuppliers || [];
+      payableAccounts = payableAccounts || [];
+    }
+    renderExpensesCatalogSelects();
+  }
+
+  function expensesFilterParams(){
+    const params = new URLSearchParams();
+    const companyId = el('expensesLoja') ? el('expensesLoja').value : '';
+    if(companyId) params.set('companyId', companyId);
+    const search = el('expensesSearch') ? el('expensesSearch').value.trim() : '';
+    if(search) params.set('search', search);
+    const supplierId = el('expensesSupplier') ? el('expensesSupplier').value : '';
+    if(supplierId) params.set('supplierId', supplierId);
+    const financeItemId = el('expensesItem') ? el('expensesItem').value : '';
+    if(financeItemId) params.set('financeItemId', financeItemId);
+    const costCenter = el('expensesCostCenter') ? el('expensesCostCenter').value.trim() : '';
+    if(costCenter) params.set('costCenter', costCenter);
+    const kind = el('expensesKind') ? el('expensesKind').value : '';
+    if(kind) params.set('kind', kind);
+    const rateioType = el('expensesRateioType') ? el('expensesRateioType').value : '';
+    if(rateioType) params.set('rateioType', rateioType);
+    const dueFrom = el('expensesDueFrom') ? el('expensesDueFrom').value : '';
+    if(dueFrom) params.set('dueFrom', dueFrom);
+    const dueTo = el('expensesDueTo') ? el('expensesDueTo').value : '';
+    if(dueTo) params.set('dueTo', dueTo);
+    const competenceFrom = el('expensesCompetenceFrom') ? el('expensesCompetenceFrom').value : '';
+    if(competenceFrom) params.set('competenceFrom', competenceFrom);
+    const competenceTo = el('expensesCompetenceTo') ? el('expensesCompetenceTo').value : '';
+    if(competenceTo) params.set('competenceTo', competenceTo);
+    return params;
+  }
+
+  function expenseInstallmentBadge(row){
+    if(row.kind === 'installment') return 'Parcelada ('+row.installmentTotal+'x)';
+    if(row.kind === 'recurring') return 'Recorrente ('+(PAYABLES_RECURRENCE_LABELS[row.recurrenceFrequency] || row.recurrenceFrequency)+')';
+    return '—';
+  }
+
+  function renderExpensesTable(){
+    const tbody = el('expensesBody');
+    if(!tbody) return;
+    if(!expensesRows.length){
+      tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhuma despesa encontrada com os filtros atuais.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = expensesRows.map(row => {
+      return '<tr>'+
+        '<td>'+escapeHtml(row.description)+'</td>'+
+        '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+        '<td>'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
+        '<td>'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
+        '<td>'+escapeHtml(row.costCenter || '—')+'</td>'+
+        '<td>'+escapeHtml(row.competenceMonth)+'</td>'+
+        '<td>'+escapeHtml(row.dueDate)+'</td>'+
+        '<td>'+formatCentsBRL(row.originalAmountCents)+'</td>'+
+        '<td>'+escapeHtml(EXPENSE_RATEIO_TYPE_LABELS[row.rateioType] || row.rateioType)+'</td>'+
+        '<td>'+escapeHtml(expenseInstallmentBadge(row))+'</td>'+
+        '<td><button class="btn-outline" type="button" data-expense-open="'+escapeHtml(row.id)+'">ABRIR</button></td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function renderExpensesTotals(totals){
+    const el2 = el('expensesTotals');
+    if(!el2) return;
+    el2.innerHTML =
+      '<span>DESPESAS: <strong>'+(totals.count || 0)+'</strong></span>'+
+      '<span>TOTAL: <strong>'+formatCentsBRL(totals.originalCents)+'</strong></span>';
+  }
+
+  function renderExpensesPagination(){
+    const el2 = el('expensesPagination');
+    if(!el2) return;
+    const totalPages = Math.max(1, Math.ceil(expensesTotal / EXPENSES_PAGE_SIZE));
+    el2.innerHTML =
+      '<button class="btn-outline" type="button" id="btnExpensesPrevPage" '+(expensesPage <= 1 ? 'disabled' : '')+'>ANTERIOR</button>'+
+      '<span>PÁGINA '+expensesPage+' DE '+totalPages+'</span>'+
+      '<button class="btn-outline" type="button" id="btnExpensesNextPage" '+(expensesPage >= totalPages ? 'disabled' : '')+'>PRÓXIMA</button>';
+    const prevButton = el('btnExpensesPrevPage');
+    const nextButton = el('btnExpensesNextPage');
+    if(prevButton) prevButton.addEventListener('click', () => { if(expensesPage > 1){ expensesPage -= 1; loadExpensesList(); } });
+    if(nextButton) nextButton.addEventListener('click', () => { if(expensesPage < totalPages){ expensesPage += 1; loadExpensesList(); } });
+  }
+
+  async function loadExpensesList(){
+    const tbody = el('expensesBody');
+    if(tbody) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando despesas…</td></tr>';
+    const params = expensesFilterParams();
+    params.set('page', String(expensesPage));
+    params.set('pageSize', String(EXPENSES_PAGE_SIZE));
+    params.set('sort', expensesSort);
+    params.set('dir', expensesDir);
+    try{
+      const data = await financeApiRequest('/expenses?'+params.toString());
+      expensesRows = Array.isArray(data.rows) ? data.rows : [];
+      expensesTotal = Number(data.total || 0);
+      renderExpensesTable();
+      renderExpensesTotals(data.totals || {});
+      renderExpensesPagination();
+    }catch(error){
+      if(tbody) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  async function loadExpensesPage(){
+    if(!companies.length) await loadCompanies();
+    renderExpensesCompanyOptions();
+    await loadExpensesCatalogData();
+    expensesPage = 1;
+    await loadExpensesList();
+  }
+
+  function resetExpenseForm(){
+    el('expenseForm').reset();
+    document.querySelectorAll('input[name="expenseKind"]').forEach(input => { input.checked = input.value === 'single'; });
+    document.querySelectorAll('input[name="expenseRateioType"]').forEach(input => { input.checked = input.value === 'single_store'; });
+    updateExpenseKindFields();
+    updateExpenseRateioFields();
+    renderExpensesCompanyOptions();
+    renderExpensesCatalogSelects();
+    expenseFormIdempotencyKey = crypto.randomUUID();
+  }
+
+  function updateExpenseKindFields(){
+    const kind = document.querySelector('input[name="expenseKind"]:checked').value;
+    el('expenseInstallmentTotalField').hidden = kind !== 'installment';
+    el('expenseRecurrenceFrequencyField').hidden = kind !== 'recurring';
+    el('expenseRecurrenceCountField').hidden = kind !== 'recurring';
+    el('expenseRecurrenceEndField').hidden = kind !== 'recurring';
+    el('expenseCompetenceMonthField').style.display = kind === 'single' ? '' : 'none';
+    const help = el('expenseKindHelp');
+    if(kind === 'installment'){
+      help.hidden = false;
+      help.querySelector('span').textContent = 'Cada parcela gera sua própria conta a pagar, com vencimento mensal a partir do informado acima.';
+    }else if(kind === 'recurring'){
+      help.hidden = false;
+      help.querySelector('span').textContent = 'Informe a quantidade de ocorrências OU uma data final. Cada ocorrência gera sua própria conta a pagar.';
+    }else{
+      help.hidden = true;
+    }
+  }
+  document.querySelectorAll('input[name="expenseKind"]').forEach(input => {
+    input.addEventListener('change', updateExpenseKindFields);
+  });
+
+  let expenseCustomRateioShares = [];
+
+  function updateExpenseRateioFields(){
+    const rateioType = document.querySelector('input[name="expenseRateioType"]:checked').value;
+    const isRateio = rateioType === 'rateio';
+    el('expenseRateioModelField').hidden = !isRateio;
+    el('expenseRateioHelp').hidden = !isRateio;
+    el('expenseRateioSharesArea').hidden = !isRateio;
+    if(!isRateio){
+      expenseCustomRateioShares = [];
+      el('expenseRateioSharesList').innerHTML = '';
+      el('expenseRateioSharesTotal').textContent = '';
+    }else{
+      updateExpenseRateioModelFields();
+    }
+  }
+  document.querySelectorAll('input[name="expenseRateioType"]').forEach(input => {
+    input.addEventListener('change', updateExpenseRateioFields);
+  });
+
+  function updateExpenseRateioModelFields(){
+    const model = el('expenseRateioModel').value;
+    const isCustom = model === 'personalizado';
+    el('btnAddExpenseRateioShare').hidden = !isCustom;
+    el('btnPreviewExpenseRateio').hidden = isCustom;
+    if(isCustom){
+      if(!expenseCustomRateioShares.length) expenseCustomRateioShares = [{companyId:'', percent:''}, {companyId:'', percent:''}];
+      renderExpenseCustomRateioShares();
+    }else{
+      el('expenseRateioSharesList').innerHTML = '';
+      el('expenseRateioSharesTotal').textContent = '';
+    }
+  }
+  el('expenseRateioModel').addEventListener('change', updateExpenseRateioModelFields);
+
+  function renderExpenseCustomRateioShares(){
+    const companyOptions = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    el('expenseRateioSharesList').innerHTML = expenseCustomRateioShares.map((share, index) =>
+      '<div class="field-inline-form" style="margin-bottom:6px;">'+
+        '<select data-rateio-share-company="'+index+'"><option value="">SELECIONE A LOJA</option>'+companyOptions+'</select>'+
+        '<input type="number" min="0" max="100" step="0.01" data-rateio-share-percent="'+index+'" placeholder="%" value="'+escapeHtml(share.percent)+'" style="max-width:100px;">'+
+        '<button class="btn-outline" type="button" data-rateio-share-remove="'+index+'">REMOVER</button>'+
+      '</div>'
+    ).join('');
+    expenseCustomRateioShares.forEach((share, index) => {
+      const select = document.querySelector('[data-rateio-share-company="'+index+'"]');
+      if(select) select.value = share.companyId;
+    });
+    updateExpenseRateioSharesTotal();
+  }
+
+  function updateExpenseRateioSharesTotal(){
+    const total = expenseCustomRateioShares.reduce((sum, share) => sum + (Number(share.percent) || 0), 0);
+    const totalEl = el('expenseRateioSharesTotal');
+    totalEl.textContent = 'TOTAL: '+total.toFixed(2)+'%'+(Math.round(total*100) === 10000 ? ' ✓' : ' (precisa somar 100%)');
+    totalEl.style.color = Math.round(total*100) === 10000 ? 'var(--ok, #2e7d32)' : 'var(--ink-soft)';
+  }
+
+  el('expenseRateioSharesList').addEventListener('change', event => {
+    const companySelect = event.target.closest('[data-rateio-share-company]');
+    const percentInput = event.target.closest('[data-rateio-share-percent]');
+    if(companySelect){
+      const index = Number(companySelect.dataset.rateioShareCompany);
+      expenseCustomRateioShares[index].companyId = companySelect.value;
+    }else if(percentInput){
+      const index = Number(percentInput.dataset.rateioSharePercent);
+      expenseCustomRateioShares[index].percent = percentInput.value;
+      updateExpenseRateioSharesTotal();
+    }
+  });
+  el('expenseRateioSharesList').addEventListener('click', event => {
+    const removeButton = event.target.closest('[data-rateio-share-remove]');
+    if(!removeButton) return;
+    const index = Number(removeButton.dataset.rateioShareRemove);
+    expenseCustomRateioShares.splice(index, 1);
+    renderExpenseCustomRateioShares();
+  });
+  el('btnAddExpenseRateioShare').addEventListener('click', () => {
+    expenseCustomRateioShares.push({companyId:'', percent:''});
+    renderExpenseCustomRateioShares();
+  });
+
+  function expenseCompetenceMonthForPreview(){
+    const kind = document.querySelector('input[name="expenseKind"]:checked').value;
+    if(kind === 'single' && el('expenseCompetenceMonth').value) return el('expenseCompetenceMonth').value;
+    const dueDate = el('expenseDueDate').value;
+    return dueDate ? dueDate.slice(0,7) : '';
+  }
+
+  el('btnPreviewExpenseRateio').addEventListener('click', async () => {
+    const statusEl = el('expenseFormStatus');
+    statusEl.textContent = '';
+    const model = el('expenseRateioModel').value;
+    const competenceMonth = expenseCompetenceMonthForPreview();
+    const originalAmountCents = parseBRLToCents(el('expenseOriginalAmount').value || '0');
+    if(!competenceMonth){ statusEl.textContent = 'INFORME O VENCIMENTO ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
+    if(originalAmountCents === null || originalAmountCents <= 0){ statusEl.textContent = 'INFORME O VALOR ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
+    try{
+      const data = await financeApiRequest('/expenses/rateio-preview', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({rateioModel:model, competenceMonth, originalAmountCents})
+      });
+      const shares = Array.isArray(data.shares) ? data.shares : [];
+      el('expenseRateioSharesList').innerHTML = shares.length
+        ? '<table style="width:100%;"><thead><tr><th>Loja</th><th>%</th><th>Valor</th></tr></thead><tbody>'+
+            shares.map(s => '<tr><td>'+escapeHtml(s.companyName)+'</td><td>'+(s.percentBasisPoints/100).toFixed(2)+'%</td><td>'+formatCentsBRL(s.amountCents)+'</td></tr>').join('')+
+          '</tbody></table>'
+        : '<div class="dre-empty">Nenhuma loja retornada.</div>';
+      el('expenseRateioSharesTotal').textContent = '';
+    }catch(error){ statusEl.textContent = error.message; }
+  });
+
+  function openNewExpenseDialog(){
+    resetExpenseForm();
+    el('expenseDialogTitle').textContent = 'NOVA DESPESA';
+    el('expenseFormStatus').textContent = '';
+    el('expenseDialog').showModal();
+  }
+
+  function closeExpenseDialog(){
+    if(el('expenseDialog').open) el('expenseDialog').close();
+  }
+
+  el('btnNewExpense').addEventListener('click', openNewExpenseDialog);
+  el('btnCancelExpenseDialog').addEventListener('click', closeExpenseDialog);
+  el('btnCloseExpenseDialog').addEventListener('click', closeExpenseDialog);
+  el('expenseDialog').addEventListener('click', event => { if(event.target === el('expenseDialog')) closeExpenseDialog(); });
+
+  el('expenseForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statusEl = el('expenseFormStatus');
+    statusEl.textContent = '';
+    const originalAmountCents = parseBRLToCents(el('expenseOriginalAmount').value || '0');
+    if(originalAmountCents === null || originalAmountCents <= 0){
+      statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return;
+    }
+    const companyId = el('expenseCompany').value;
+    const companySelect = el('expenseCompany');
+    const companyName = companySelect.options[companySelect.selectedIndex] ? companySelect.options[companySelect.selectedIndex].textContent : '';
+    if(!companyId){ statusEl.textContent = 'SELECIONE A EMPRESA/LOJA.'; return; }
+    const financeItemId = el('expenseItem').value;
+    if(!financeItemId){ statusEl.textContent = 'SELECIONE A CATEGORIA/SUBCATEGORIA DA DESPESA.'; return; }
+    const dueDate = el('expenseDueDate').value;
+    if(!dueDate){ statusEl.textContent = 'INFORME O VENCIMENTO.'; return; }
+    const rateioType = document.querySelector('input[name="expenseRateioType"]:checked').value;
+    const rateioModel = el('expenseRateioModel').value;
+    if(rateioType === 'rateio' && !rateioModel){ statusEl.textContent = 'SELECIONE O MODELO DE RATEIO.'; return; }
+    let rateioShares;
+    if(rateioType === 'rateio' && rateioModel === 'personalizado'){
+      const validShares = expenseCustomRateioShares.filter(s => s.companyId && s.percent !== '');
+      if(validShares.length < 2){ statusEl.textContent = 'INFORME AO MENOS DUAS LOJAS COM PERCENTUAL NO RATEIO PERSONALIZADO.'; return; }
+      const totalBp = validShares.reduce((sum, s) => sum + Math.round(Number(s.percent) * 100), 0);
+      if(totalBp !== 10000){ statusEl.textContent = 'OS PERCENTUAIS DO RATEIO PERSONALIZADO PRECISAM SOMAR EXATAMENTE 100%.'; return; }
+      rateioShares = validShares.map(s => ({companyId:s.companyId, percentBasisPoints:Math.round(Number(s.percent) * 100)}));
+    }
+
+    const kind = document.querySelector('input[name="expenseKind"]:checked').value;
+    const body = {
+      idempotencyKey:expenseFormIdempotencyKey, kind, companyId, companyName,
+      description:el('expenseDescription').value.trim(), supplierId:el('expenseSupplier').value,
+      financeItemId, financeAccountId:el('expenseAccount').value, costCenter:el('expenseCostCenter').value.trim(),
+      paymentMethod:el('expensePaymentMethod').value.trim(), originalAmountCents,
+      issueDate:el('expenseIssueDate').value, dueDate,
+      invoiceNumber:el('expenseInvoiceNumber').value.trim(), orderReference:el('expenseOrderReference').value.trim(),
+      notes:el('expenseNotes').value.trim(), rateioType, rateioModel:rateioType === 'rateio' ? rateioModel : '',
+      cardId:el('expenseCardId').value.trim(), bankReconciliationId:el('expenseBankReconciliationId').value.trim()
+    };
+    if(rateioShares) body.rateioShares = rateioShares;
+    if(kind === 'single'){
+      if(el('expenseCompetenceMonth').value) body.competenceMonth = el('expenseCompetenceMonth').value;
+    }else if(kind === 'installment'){
+      body.installmentTotal = Number(el('expenseInstallmentTotal').value);
+      if(!body.installmentTotal || body.installmentTotal < 2){ statusEl.textContent = 'INFORME A QUANTIDADE DE PARCELAS (MÍNIMO 2).'; return; }
+    }else if(kind === 'recurring'){
+      body.recurrenceFrequency = el('expenseRecurrenceFrequency').value;
+      const count = el('expenseRecurrenceOccurrenceCount').value;
+      const endDate = el('expenseRecurrenceEndDate').value;
+      if(!count && !endDate){ statusEl.textContent = 'INFORME A QUANTIDADE DE OCORRÊNCIAS OU A DATA FINAL.'; return; }
+      if(count) body.recurrenceOccurrenceCount = Number(count);
+      if(endDate) body.recurrenceEndDate = endDate;
+    }
+
+    const button = el('btnSaveExpense');
+    button.disabled = true;
+    try{
+      await financeApiRequest('/expenses', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      showPurchaseToast('Despesa salva.');
+      closeExpenseDialog();
+      await loadExpensesList();
+    }catch(error){
+      statusEl.textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  let expenseDetailCurrentExpense = null;
+
+  function expenseDetailPayableRowHtml(payable){
+    const balance = payable.originalAmountCents - payable.paidAmountCents;
+    const canMarkPaid = balance > 0 && payable.status !== 'canceled';
+    return '<tr>'+
+      '<td>'+escapeHtml(payable.companyName || payable.companyId)+'</td>'+
+      '<td>'+escapeHtml(payable.competenceMonth)+'</td>'+
+      '<td>'+escapeHtml(payable.dueDate)+'</td>'+
+      '<td>'+formatCentsBRL(payable.originalAmountCents)+'</td>'+
+      '<td>'+formatCentsBRL(payable.paidAmountCents)+'</td>'+
+      '<td>'+payablesStatusPillHtml(payable.displayStatus)+'</td>'+
+      '<td>'+(canMarkPaid ? '<button class="btn-outline" type="button" data-expense-payable-mark-paid="'+escapeHtml(payable.id)+'" data-balance-cents="'+balance+'">MARCAR COMO PAGO</button>' : '')+'</td>'+
+    '</tr>';
+  }
+
+  async function openExpenseDetailDialog(id){
+    el('expenseDetailSummary').innerHTML = 'Carregando…';
+    el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    el('expenseDetailRateioSection').hidden = true;
+    el('expenseDetailRateioPanel').hidden = true;
+    el('expenseDetailDialog').showModal();
+    try{
+      const data = await financeApiRequest('/expenses/'+encodeURIComponent(id));
+      const expense = data.expense;
+      expenseDetailCurrentExpense = expense;
+      el('expenseDetailDialogTitle').textContent = expense.description;
+      el('expenseDetailSummary').innerHTML =
+        '<div class="payable-detail-summary-row"><span>EMPRESA/LOJA</span><strong>'+escapeHtml(expense.companyName || expense.companyId)+'</strong></div>'+
+        '<div class="payable-detail-summary-row"><span>FORNECEDOR</span><strong>'+escapeHtml((payableSuppliers.find(s => s.id === expense.supplierId) || {}).name || '—')+'</strong></div>'+
+        '<div class="payable-detail-summary-row"><span>CATEGORIA</span><strong>'+escapeHtml(payableFinanceItemLabel(expense.financeItemId))+'</strong></div>'+
+        '<div class="payable-detail-summary-row"><span>CENTRO DE CUSTO</span><strong>'+escapeHtml(expense.costCenter || '—')+'</strong></div>'+
+        '<div class="payable-detail-summary-row"><span>VALOR</span><strong>'+formatCentsBRL(expense.originalAmountCents)+'</strong></div>'+
+        '<div class="payable-detail-summary-row"><span>TIPO</span><strong>'+escapeHtml(EXPENSE_KIND_LABELS[expense.kind] || expense.kind)+'</strong></div>'+
+        '<div class="payable-detail-summary-row"><span>RATEIO</span><strong>'+escapeHtml(EXPENSE_RATEIO_TYPE_LABELS[expense.rateioType] || expense.rateioType)+(expense.rateioModel ? ' — '+escapeHtml(expense.rateioModel) : '')+'</strong></div>'+
+        '<div class="payable-detail-summary-row"><span>NF / PEDIDO</span><strong>'+escapeHtml(expense.invoiceNumber || '—')+' / '+escapeHtml(expense.orderReference || '—')+'</strong></div>'+
+        (expense.notes ? '<div class="payable-detail-summary-row"><span>OBSERVAÇÕES</span><strong>'+escapeHtml(expense.notes)+'</strong></div>' : '');
+      const rateioShares = Array.isArray(data.rateioShares) ? data.rateioShares : [];
+      if(rateioShares.length){
+        el('expenseDetailRateioSection').hidden = false;
+        el('expenseDetailRateioPanel').hidden = false;
+        el('expenseDetailRateioBody').innerHTML = rateioShares.map(s =>
+          '<tr><td>'+escapeHtml(s.companyName || s.companyId)+'</td><td>'+(s.percentBasisPoints/100).toFixed(2)+'%</td><td>'+formatCentsBRL(s.amountCents)+'</td></tr>'
+        ).join('');
+      }
+      const payables = Array.isArray(data.payables) ? data.payables : [];
+      el('expenseDetailPayablesBody').innerHTML = payables.length
+        ? payables.map(expenseDetailPayableRowHtml).join('')
+        : '<tr><td colspan="7" class="responsive-empty">Nenhuma conta a pagar vinculada.</td></tr>';
+    }catch(error){
+      el('expenseDetailSummary').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">—</td></tr>';
+    }
+  }
+
+  el('btnCloseExpenseDetailDialog').addEventListener('click', () => { if(el('expenseDetailDialog').open) el('expenseDetailDialog').close(); });
+
+  el('expenseDetailPayablesBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-expense-payable-mark-paid]');
+    if(!button) return;
+    const payableId = button.dataset.expensePayableMarkPaid;
+    const balanceCents = Number(button.dataset.balanceCents);
+    if(!confirm('Marcar esta conta como paga (valor integral: '+formatCentsBRL(balanceCents)+')?')) return;
+    button.disabled = true;
+    try{
+      await financeApiRequest('/payables/'+encodeURIComponent(payableId)+'/payments', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          idempotencyKey:crypto.randomUUID(), amountCents:balanceCents,
+          paymentDate:new Date().toISOString().slice(0,10), scheduled:false
+        })
+      });
+      showPurchaseToast('Conta marcada como paga.');
+      if(expenseDetailCurrentExpense) await openExpenseDetailDialog(expenseDetailCurrentExpense.id);
+      await loadExpensesList();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+      button.disabled = false;
+    }
+  });
+
+  function openDuplicateExpenseDialog(expense){
+    resetExpenseForm();
+    el('expenseCompany').value = expense.companyId;
+    el('expenseDescription').value = expense.description;
+    el('expenseSupplier').value = expense.supplierId || '';
+    const itemForDuplicate = financeItems.find(i => i.id === expense.financeItemId);
+    el('expenseCategory').value = itemForDuplicate ? itemForDuplicate.categoryId : '';
+    renderExpenseItemOptions('expenseItem', itemForDuplicate ? itemForDuplicate.categoryId : '', {selectedId: expense.financeItemId});
+    el('expenseCostCenter').value = expense.costCenter || '';
+    renderPayableAccountOptionsForCompany('expenseAccount', expense.companyId, 'SEM CONTA');
+    el('expenseAccount').value = expense.financeAccountId || '';
+    el('expensePaymentMethod').value = expense.paymentMethod || '';
+    el('expenseOriginalAmount').value = (expense.originalAmountCents / 100).toFixed(2);
+    el('expenseInvoiceNumber').value = expense.invoiceNumber || '';
+    el('expenseOrderReference').value = expense.orderReference || '';
+    el('expenseNotes').value = expense.notes || '';
+    el('expenseCardId').value = expense.cardId || '';
+    el('expenseBankReconciliationId').value = expense.bankReconciliationId || '';
+    document.querySelectorAll('input[name="expenseRateioType"]').forEach(input => { input.checked = input.value === expense.rateioType; });
+    if(expense.rateioType === 'rateio') el('expenseRateioModel').value = expense.rateioModel || 'padrao';
+    updateExpenseRateioFields();
+    // Data, vencimento e tipo (avulsa/parcelada/recorrente) ficam em branco/avulsa
+    // de propósito — o usuário decide a nova data ao duplicar.
+    el('expenseDialogTitle').textContent = 'DUPLICAR DESPESA';
+    el('expenseFormStatus').textContent = '';
+    closeExpenseDetailDialog();
+    el('expenseDialog').showModal();
+  }
+
+  function closeExpenseDetailDialog(){
+    if(el('expenseDetailDialog').open) el('expenseDetailDialog').close();
+  }
+
+  el('btnDuplicateExpense').addEventListener('click', () => {
+    if(expenseDetailCurrentExpense) openDuplicateExpenseDialog(expenseDetailCurrentExpense);
+  });
+
+  el('expensesBody').addEventListener('click', event => {
+    const openButton = event.target.closest('[data-expense-open]');
+    if(openButton) openExpenseDetailDialog(openButton.dataset.expenseOpen);
+  });
+
+  el('btnExpensesApplyFilters').addEventListener('click', () => { expensesPage = 1; loadExpensesList(); });
+  el('btnExpensesClearFilters').addEventListener('click', () => {
+    ['expensesSearch','expensesCostCenter','expensesDueFrom','expensesDueTo','expensesCompetenceFrom','expensesCompetenceTo'].forEach(id => { el(id).value = ''; });
+    ['expensesSupplier','expensesCategory','expensesItem','expensesKind','expensesRateioType'].forEach(id => { el(id).value = ''; });
+    expensesPage = 1;
+    loadExpensesList();
+  });
+  el('expensesLoja').addEventListener('change', () => {
+    expensesPage = 1;
+    loadExpensesList();
+  });
+  document.querySelectorAll('[data-expenses-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.dataset.expensesSort;
+      if(expensesSort === field){ expensesDir = expensesDir === 'asc' ? 'desc' : 'asc'; }
+      else{ expensesSort = field; expensesDir = 'asc'; }
+      document.querySelectorAll('[data-expenses-sort]').forEach(other => other.classList.remove('sort-asc','sort-desc'));
+      th.classList.add(expensesDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      loadExpensesList();
+    });
+  });
+
+  // ---- Configuração de rateio (padrão/administrativo/funcionários) ----
+  let rateioModelShares = {padrao:[], administrativo:[]};
+  let rateioHeadcountRows = [];
+
+  function renderRateioModelSharesEditor(model){
+    const companyOptions = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    const rows = rateioModelShares[model].length ? rateioModelShares[model] : companies.map(c => ({companyId:c.id, companyName:c.name, percentBasisPoints:0}));
+    el('rateioModelSharesList-'+model).innerHTML = rows.map((row, index) =>
+      '<div class="field-inline-form" style="margin-bottom:6px;">'+
+        '<select data-rateio-model-company="'+model+':'+index+'"><option value="">SELECIONE A LOJA</option>'+companyOptions+'</select>'+
+        '<input type="number" min="0" max="100" step="0.01" data-rateio-model-percent="'+model+':'+index+'" value="'+(row.percentBasisPoints/100)+'" style="max-width:100px;">'+
+        '<button class="btn-outline" type="button" data-rateio-model-remove="'+model+':'+index+'">REMOVER</button>'+
+      '</div>'
+    ).join('')+'<button class="btn-outline" type="button" data-rateio-model-add="'+model+'" style="margin-top:6px;">+ ADICIONAR LOJA</button>';
+    rows.forEach((row, index) => {
+      const select = document.querySelector('[data-rateio-model-company="'+model+':'+index+'"]');
+      if(select) select.value = row.companyId;
+    });
+    rateioModelShares[model] = rows;
+    updateRateioModelSharesTotal(model);
+  }
+
+  function updateRateioModelSharesTotal(model){
+    const total = rateioModelShares[model].reduce((sum, row) => sum + (Number(row.percentBasisPoints) || 0) / 100, 0);
+    const totalEl = el('rateioModelSharesTotal-'+model);
+    totalEl.textContent = 'TOTAL: '+total.toFixed(2)+'%'+(Math.round(total*100) === 10000 ? ' ✓' : ' (precisa somar 100%)');
+  }
+
+  document.querySelectorAll('[id^="rateioModelSharesList-"]').forEach(container => {
+    const model = container.id.replace('rateioModelSharesList-','');
+    container.addEventListener('input', event => {
+      const percentInput = event.target.closest('[data-rateio-model-percent]');
+      if(!percentInput) return;
+      const index = Number(percentInput.dataset.rateioModelPercent.split(':')[1]);
+      rateioModelShares[model][index].percentBasisPoints = Math.round(Number(percentInput.value) * 100) || 0;
+      updateRateioModelSharesTotal(model);
+    });
+    container.addEventListener('change', event => {
+      const companySelect = event.target.closest('[data-rateio-model-company]');
+      if(!companySelect) return;
+      const index = Number(companySelect.dataset.rateioModelCompany.split(':')[1]);
+      const company = companies.find(c => c.id === companySelect.value);
+      rateioModelShares[model][index].companyId = companySelect.value;
+      rateioModelShares[model][index].companyName = company ? company.name : '';
+    });
+    container.addEventListener('click', event => {
+      const removeButton = event.target.closest('[data-rateio-model-remove]');
+      const addButton = event.target.closest('[data-rateio-model-add]');
+      if(removeButton){
+        const index = Number(removeButton.dataset.rateioModelRemove.split(':')[1]);
+        rateioModelShares[model].splice(index, 1);
+        renderRateioModelSharesEditor(model);
+      }else if(addButton){
+        rateioModelShares[model].push({companyId:'', companyName:'', percentBasisPoints:0});
+        renderRateioModelSharesEditor(model);
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-rateio-model-save]').forEach(button => {
+    button.addEventListener('click', async () => {
+      const model = button.dataset.rateioModelSave;
+      const statusEl = el('rateioModelStatus-'+model);
+      statusEl.textContent = '';
+      const shares = rateioModelShares[model].filter(row => row.companyId);
+      const totalBp = shares.reduce((sum, row) => sum + row.percentBasisPoints, 0);
+      if(shares.length < 2){ statusEl.textContent = 'INFORME AO MENOS DUAS LOJAS.'; return; }
+      if(totalBp !== 10000){ statusEl.textContent = 'OS PERCENTUAIS PRECISAM SOMAR EXATAMENTE 100%.'; return; }
+      try{
+        await financeApiRequest('/rateio-models', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model, shares})
+        });
+        showPurchaseToast('Modelo de rateio salvo.');
+      }catch(error){ statusEl.textContent = error.message; }
+    });
+  });
+
+  function renderRateioHeadcountEditor(){
+    el('rateioHeadcountList').innerHTML = companies.map(company => {
+      const row = rateioHeadcountRows.find(r => r.companyId === company.id);
+      return '<div class="field-inline-form" style="margin-bottom:6px;">'+
+        '<span style="min-width:180px;display:inline-block;">'+escapeHtml(company.name)+'</span>'+
+        '<input type="number" min="0" step="1" data-rateio-headcount="'+escapeHtml(company.id)+'" value="'+(row ? row.employeeCount : 0)+'" style="max-width:100px;">'+
+      '</div>';
+    }).join('');
+  }
+
+  el('rateioHeadcountList').addEventListener('change', async event => {
+    const input = event.target.closest('[data-rateio-headcount]');
+    if(!input) return;
+    const companyId = input.dataset.rateioHeadcount;
+    const company = companies.find(c => c.id === companyId);
+    const employeeCount = Math.max(0, Math.trunc(Number(input.value) || 0));
+    const statusEl = el('rateioHeadcountStatus');
+    statusEl.textContent = '';
+    try{
+      await financeApiRequest('/store-headcount', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({companyId, companyName: company ? company.name : '', employeeCount})
+      });
+      showPurchaseToast('Quadro de funcionários salvo.');
+    }catch(error){ statusEl.textContent = error.message; }
+  });
+
+  async function loadRateioConfigData(){
+    if(!companies.length) await loadCompanies();
+    const [padraoData, administrativoData, headcountData] = await Promise.all([
+      financeApiRequest('/rateio-models?model=padrao'),
+      financeApiRequest('/rateio-models?model=administrativo'),
+      financeApiRequest('/store-headcount')
+    ]);
+    rateioModelShares.padrao = Array.isArray(padraoData.shares) ? padraoData.shares : [];
+    rateioModelShares.administrativo = Array.isArray(administrativoData.shares) ? administrativoData.shares : [];
+    rateioHeadcountRows = Array.isArray(headcountData.rows) ? headcountData.rows : [];
+    renderRateioModelSharesEditor('padrao');
+    renderRateioModelSharesEditor('administrativo');
+    renderRateioHeadcountEditor();
+  }
+
+  el('btnConfigureRateio').addEventListener('click', async () => {
+    el('rateioConfigDialog').showModal();
+    try{ await loadRateioConfigData(); }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('btnCloseRateioConfigDialog').addEventListener('click', () => { if(el('rateioConfigDialog').open) el('rateioConfigDialog').close(); });
+
+  document.querySelectorAll('[data-rateio-config-tab]').forEach(button => {
+    button.addEventListener('click', () => {
+      const tab = button.dataset.rateioConfigTab;
+      document.querySelectorAll('[data-rateio-config-tab]').forEach(b => {
+        b.classList.toggle('active', b === button);
+        b.setAttribute('aria-selected', String(b === button));
+      });
+      document.querySelectorAll('[data-rateio-config-panel]').forEach(panel => {
+        panel.hidden = panel.dataset.rateioConfigPanel !== tab;
+      });
     });
   });
 
