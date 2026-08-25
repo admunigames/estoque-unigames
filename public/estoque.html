@@ -1689,7 +1689,12 @@
      espaço solto. auto-fit faz o oposto (colapsa as colunas vazias e
      estica os campos existentes pra preencher tudo) — foi tentado antes e
      deixou campos de linhas parciais enormes/"estourados". */
-  .payables-filters{align-items:flex-end;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 14px;}
+  /* .payables-filters é o PRIMEIRO filho de .table-panel (que tem
+     border-radius:14px + overflow:hidden) — sem padding próprio, o campo
+     BUSCAR e os campos das pontas ficavam colados/cobertos pelos cantos
+     arredondados do painel. O padding aqui resolve isso (mesma escala
+     horizontal usada nas células da tabela logo abaixo, padding:15px 18px). */
+  .payables-filters{align-items:flex-end;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 14px;padding:20px 20px 18px;}
   .payables-filters .field{min-width:0;}
   .payables-filters .field.full{grid-column:1/-1;}
   .payables-filters .dre-toolbar-actions{grid-column:1/-1;margin-left:0;justify-content:flex-end;}
