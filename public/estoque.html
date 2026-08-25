@@ -5060,17 +5060,20 @@
 <dialog class="purchase-dialog" id="expenseDetailDialog" aria-labelledby="expenseDetailDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="expenseDetailDialogTitle">DETALHES DA DESPESA</h3>
-    <button class="purchase-dialog-close" id="btnCloseExpenseDetailDialog" type="button" aria-label="Fechar">×</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-outline" id="btnDuplicateExpense" type="button">DUPLICAR</button>
+      <button class="purchase-dialog-close" id="btnCloseExpenseDetailDialog" type="button" aria-label="Fechar">×</button>
+    </div>
   </div>
   <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
     <div id="expenseDetailSummary" class="payable-detail-summary"></div>
     <div class="purchase-form-section">CONTAS A PAGAR GERADAS</div>
-    <p style="color:var(--ink-soft);font-size:12px;margin:8px 0;">Pagamentos, agendamentos e cancelamento são feitos em Contas a Pagar — abra a conta específica por lá pra registrar.</p>
+    <p style="color:var(--ink-soft);font-size:12px;margin:8px 0;">Agendamentos e cancelamento continuam sendo feitos em Contas a Pagar — abra a conta específica por lá pra esses casos. Anexos (boleto/NF/comprovante) entram numa etapa seguinte.</p>
     <div class="table-panel responsive-table">
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Competência</th><th>Vencimento</th><th>Valor</th><th>Pago</th><th>Status</th></tr></thead>
-          <tbody id="expenseDetailPayablesBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+          <thead><tr><th>Competência</th><th>Vencimento</th><th>Valor</th><th>Pago</th><th>Status</th><th></th></tr></thead>
+          <tbody id="expenseDetailPayablesBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -16411,23 +16414,29 @@ function renderHomeTasks(){
     }
   });
 
+  let expenseDetailCurrentExpense = null;
+
   function expenseDetailPayableRowHtml(payable){
+    const balance = payable.originalAmountCents - payable.paidAmountCents;
+    const canMarkPaid = balance > 0 && payable.status !== 'canceled';
     return '<tr>'+
       '<td>'+escapeHtml(payable.competenceMonth)+'</td>'+
       '<td>'+escapeHtml(payable.dueDate)+'</td>'+
       '<td>'+formatCentsBRL(payable.originalAmountCents)+'</td>'+
       '<td>'+formatCentsBRL(payable.paidAmountCents)+'</td>'+
       '<td>'+payablesStatusPillHtml(payable.displayStatus)+'</td>'+
+      '<td>'+(canMarkPaid ? '<button class="btn-outline" type="button" data-expense-payable-mark-paid="'+escapeHtml(payable.id)+'" data-balance-cents="'+balance+'">MARCAR COMO PAGO</button>' : '')+'</td>'+
     '</tr>';
   }
 
   async function openExpenseDetailDialog(id){
     el('expenseDetailSummary').innerHTML = 'Carregando…';
-    el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
     el('expenseDetailDialog').showModal();
     try{
       const data = await financeApiRequest('/expenses/'+encodeURIComponent(id));
       const expense = data.expense;
+      expenseDetailCurrentExpense = expense;
       el('expenseDetailDialogTitle').textContent = expense.description;
       el('expenseDetailSummary').innerHTML =
         '<div class="payable-detail-summary-row"><span>EMPRESA/LOJA</span><strong>'+escapeHtml(expense.companyName || expense.companyId)+'</strong></div>'+
@@ -16445,11 +16454,72 @@ function renderHomeTasks(){
         : '<tr><td colspan="5" class="responsive-empty">Nenhuma conta a pagar vinculada.</td></tr>';
     }catch(error){
       el('expenseDetailSummary').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
-      el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">—</td></tr>';
+      el('expenseDetailPayablesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">—</td></tr>';
     }
   }
 
   el('btnCloseExpenseDetailDialog').addEventListener('click', () => { if(el('expenseDetailDialog').open) el('expenseDetailDialog').close(); });
+
+  el('expenseDetailPayablesBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-expense-payable-mark-paid]');
+    if(!button) return;
+    const payableId = button.dataset.expensePayableMarkPaid;
+    const balanceCents = Number(button.dataset.balanceCents);
+    if(!confirm('Marcar esta conta como paga (valor integral: '+formatCentsBRL(balanceCents)+')?')) return;
+    button.disabled = true;
+    try{
+      await financeApiRequest('/payables/'+encodeURIComponent(payableId)+'/payments', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          idempotencyKey:crypto.randomUUID(), amountCents:balanceCents,
+          paymentDate:new Date().toISOString().slice(0,10), scheduled:false
+        })
+      });
+      showPurchaseToast('Conta marcada como paga.');
+      if(expenseDetailCurrentExpense) await openExpenseDetailDialog(expenseDetailCurrentExpense.id);
+      await loadExpensesList();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+      button.disabled = false;
+    }
+  });
+
+  function openDuplicateExpenseDialog(expense){
+    resetExpenseForm();
+    el('expenseCompany').value = expense.companyId;
+    el('expenseDescription').value = expense.description;
+    el('expenseSupplier').value = expense.supplierId || '';
+    const itemForDuplicate = financeItems.find(i => i.id === expense.financeItemId);
+    el('expenseCategory').value = itemForDuplicate ? itemForDuplicate.categoryId : '';
+    renderExpenseItemOptions('expenseItem', itemForDuplicate ? itemForDuplicate.categoryId : '', {selectedId: expense.financeItemId});
+    el('expenseCostCenter').value = expense.costCenter || '';
+    renderPayableAccountOptionsForCompany('expenseAccount', expense.companyId, 'SEM CONTA');
+    el('expenseAccount').value = expense.financeAccountId || '';
+    el('expensePaymentMethod').value = expense.paymentMethod || '';
+    el('expenseOriginalAmount').value = (expense.originalAmountCents / 100).toFixed(2);
+    el('expenseInvoiceNumber').value = expense.invoiceNumber || '';
+    el('expenseOrderReference').value = expense.orderReference || '';
+    el('expenseNotes').value = expense.notes || '';
+    el('expenseCardId').value = expense.cardId || '';
+    el('expenseBankReconciliationId').value = expense.bankReconciliationId || '';
+    document.querySelectorAll('input[name="expenseRateioType"]').forEach(input => { input.checked = input.value === expense.rateioType; });
+    if(expense.rateioType === 'rateio') el('expenseRateioModel').value = expense.rateioModel || 'padrao';
+    updateExpenseRateioFields();
+    // Data, vencimento e tipo (avulsa/parcelada/recorrente) ficam em branco/avulsa
+    // de propósito — o usuário decide a nova data ao duplicar.
+    el('expenseDialogTitle').textContent = 'DUPLICAR DESPESA';
+    el('expenseFormStatus').textContent = '';
+    closeExpenseDetailDialog();
+    el('expenseDialog').showModal();
+  }
+
+  function closeExpenseDetailDialog(){
+    if(el('expenseDetailDialog').open) el('expenseDetailDialog').close();
+  }
+
+  el('btnDuplicateExpense').addEventListener('click', () => {
+    if(expenseDetailCurrentExpense) openDuplicateExpenseDialog(expenseDetailCurrentExpense);
+  });
 
   el('expensesBody').addEventListener('click', event => {
     const openButton = event.target.closest('[data-expense-open]');
