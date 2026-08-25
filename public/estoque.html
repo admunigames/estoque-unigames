@@ -1681,7 +1681,13 @@
   .payables-quick-views .card .lbl{font-size:10px;}
   .payables-quick-views .card .num{font-size:20px;}
   .payables-quick-views .card .sub{font:700 10px var(--mono);color:var(--ink-soft);margin-top:2px;}
-  .payables-filters{align-items:flex-end;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,190px));justify-content:start;gap:10px 14px;}
+  /* auto-fit + 1fr (não auto-fill + largura máxima fixa) pra cada linha da
+     grade esticar suas colunas até preencher 100% da largura disponível —
+     com auto-fill+190px fixo, uma linha que não fecha exatamente em
+     múltiplos de 190px sobra espaço vazio no final em vez de distribuído,
+     fazendo os campos daquela linha parecerem "grudados" à esquerda
+     enquanto linhas cheias pareciam certas. */
+  .payables-filters{align-items:flex-end;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px;}
   .payables-filters .field{min-width:0;}
   .payables-filters .field.full{grid-column:1/-1;}
   .payables-filters .dre-toolbar-actions{grid-column:1/-1;margin-left:0;justify-content:flex-end;}
