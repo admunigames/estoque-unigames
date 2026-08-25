@@ -4994,9 +4994,40 @@
       <div class="purchase-field"><label for="expenseCompany">EMPRESA/LOJA *</label><select id="expenseCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="expenseDescription">DESCRIÇÃO *</label><input id="expenseDescription" maxlength="200" required></div>
       <div class="purchase-field"><label for="expenseSupplier">FORNECEDOR</label><select id="expenseSupplier"><option value="">SEM FORNECEDOR</option></select></div>
-      <div class="purchase-field"><label for="expenseCategory">CATEGORIA *</label><select id="expenseCategory" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field">
+        <label for="expenseCategory">CATEGORIA *</label>
+        <div class="field-with-action">
+          <select id="expenseCategory" required><option value="">SELECIONE</option></select>
+          <button class="btn-outline" type="button" id="btnToggleExpenseNewCategory" title="Cadastrar nova categoria">+ NOVA</button>
+        </div>
+      </div>
+      <div class="purchase-field full" id="expenseNewCategoryRow" hidden>
+        <label for="expenseNewCategoryName">NOVA CATEGORIA/SUBGRUPO</label>
+        <div class="field-inline-form">
+          <select id="expenseNewCategoryParent"><option value="">CATEGORIA (NÍVEL PRINCIPAL)</option></select>
+          <input id="expenseNewCategoryName" maxlength="120" placeholder="Nome da categoria/subgrupo">
+          <button class="btn-accent" type="button" id="btnSaveExpenseNewCategory">SALVAR</button>
+          <button class="btn-outline" type="button" id="btnCancelExpenseNewCategory">CANCELAR</button>
+        </div>
+        <div class="user-form-status" id="expenseNewCategoryStatus" role="status" aria-live="polite"></div>
+      </div>
       <div class="purchase-field full"><label for="expenseItemSearch">BUSCAR SUBCATEGORIA</label><input id="expenseItemSearch" placeholder="Digite pra filtrar as subcategorias da categoria selecionada..."></div>
-      <div class="purchase-field"><label for="expenseItem">SUBCATEGORIA *</label><select id="expenseItem" required><option value="">SELECIONE A CATEGORIA PRIMEIRO</option></select></div>
+      <div class="purchase-field">
+        <label for="expenseItem">SUBCATEGORIA *</label>
+        <div class="field-with-action">
+          <select id="expenseItem" required><option value="">SELECIONE A CATEGORIA PRIMEIRO</option></select>
+          <button class="btn-outline" type="button" id="btnToggleExpenseNewItem" title="Cadastrar nova subcategoria">+ NOVA</button>
+        </div>
+      </div>
+      <div class="purchase-field full" id="expenseNewItemRow" hidden>
+        <label for="expenseNewItemName">NOVA SUBCATEGORIA (NA CATEGORIA SELECIONADA ACIMA)</label>
+        <div class="field-inline-form">
+          <input id="expenseNewItemName" maxlength="120" placeholder="Nome da subcategoria">
+          <button class="btn-accent" type="button" id="btnSaveExpenseNewItem">SALVAR</button>
+          <button class="btn-outline" type="button" id="btnCancelExpenseNewItem">CANCELAR</button>
+        </div>
+        <div class="user-form-status" id="expenseNewItemStatus" role="status" aria-live="polite"></div>
+      </div>
       <div class="purchase-field"><label for="expenseCostCenter">CENTRO DE CUSTO</label><input id="expenseCostCenter" maxlength="120"></div>
       <div class="purchase-field"><label for="expenseAccount">CONTA BANCÁRIA</label><select id="expenseAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="expensePaymentMethod">FORMA DE PAGAMENTO</label><input id="expensePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
@@ -16182,12 +16213,19 @@ function renderHomeTasks(){
   function renderExpensesCategoryOptions(){
     const options = financeCategorySelectOptions();
     const optionsHtml = options.map(o => '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
-    [{id:'expensesCategory', placeholder:'TODAS'}, {id:'expenseCategory', placeholder:'SELECIONE'}].forEach(config => {
+    [
+      {id:'expensesCategory', placeholder:'TODAS'},
+      {id:'expenseCategory', placeholder:'SELECIONE'},
+      {id:'expenseNewCategoryParent', placeholder:'CATEGORIA (NÍVEL PRINCIPAL)', onlyTop:true},
+    ].forEach(config => {
       const select = el(config.id);
       if(!select) return;
       const selected = select.value;
-      select.innerHTML = '<option value="">'+config.placeholder+'</option>'+optionsHtml;
-      if(options.some(o => o.id === selected)) select.value = selected;
+      const html = config.onlyTop
+        ? financeCategories.filter(c => !c.parentId).map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('')
+        : optionsHtml;
+      select.innerHTML = '<option value="">'+config.placeholder+'</option>'+html;
+      if(options.some(o => o.id === selected) || (config.onlyTop && financeCategories.some(c => c.id === selected && !c.parentId))) select.value = selected;
     });
   }
 
@@ -16227,6 +16265,63 @@ function renderHomeTasks(){
   });
   el('expensesCategory') && el('expensesCategory').addEventListener('change', () => {
     renderExpenseItemOptions('expensesItem', el('expensesCategory').value, {selectedId:'', placeholder:'TODAS'});
+  });
+
+  el('btnToggleExpenseNewCategory') && el('btnToggleExpenseNewCategory').addEventListener('click', () => {
+    togglePayableInlineForm('expenseNewCategoryRow', el('expenseNewCategoryRow').hidden);
+  });
+  el('btnCancelExpenseNewCategory') && el('btnCancelExpenseNewCategory').addEventListener('click', () => {
+    togglePayableInlineForm('expenseNewCategoryRow', false);
+    el('expenseNewCategoryName').value = '';
+    el('expenseNewCategoryStatus').textContent = '';
+  });
+  el('btnSaveExpenseNewCategory') && el('btnSaveExpenseNewCategory').addEventListener('click', async () => {
+    const status = el('expenseNewCategoryStatus');
+    const name = el('expenseNewCategoryName').value.trim();
+    if(name.length < 2){ status.textContent = 'INFORME O NOME.'; return; }
+    try{
+      const data = await financeApiRequest('/categories', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, parentId: el('expenseNewCategoryParent').value})
+      });
+      await loadFinanceCatalog();
+      renderExpensesCatalogSelects();
+      el('expenseCategory').value = data.id;
+      renderExpenseItemOptions('expenseItem', data.id, {selectedId:''});
+      el('expenseNewCategoryName').value = '';
+      status.textContent = '';
+      togglePayableInlineForm('expenseNewCategoryRow', false);
+      showPurchaseToast('Categoria cadastrada.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  el('btnToggleExpenseNewItem') && el('btnToggleExpenseNewItem').addEventListener('click', () => {
+    if(!el('expenseCategory').value){ showPurchaseToast('Selecione a categoria antes de cadastrar uma subcategoria.','error'); return; }
+    togglePayableInlineForm('expenseNewItemRow', el('expenseNewItemRow').hidden);
+  });
+  el('btnCancelExpenseNewItem') && el('btnCancelExpenseNewItem').addEventListener('click', () => {
+    togglePayableInlineForm('expenseNewItemRow', false);
+    el('expenseNewItemName').value = '';
+    el('expenseNewItemStatus').textContent = '';
+  });
+  el('btnSaveExpenseNewItem') && el('btnSaveExpenseNewItem').addEventListener('click', async () => {
+    const status = el('expenseNewItemStatus');
+    const name = el('expenseNewItemName').value.trim();
+    const categoryId = el('expenseCategory').value;
+    if(!categoryId){ status.textContent = 'SELECIONE A CATEGORIA PRIMEIRO.'; return; }
+    if(name.length < 2){ status.textContent = 'INFORME O NOME.'; return; }
+    try{
+      const data = await financeApiRequest('/items', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, categoryId})
+      });
+      await loadFinanceCatalog();
+      renderExpenseItemOptions('expenseItem', categoryId, {selectedId:data.id});
+      el('expenseNewItemName').value = '';
+      status.textContent = '';
+      togglePayableInlineForm('expenseNewItemRow', false);
+      showPurchaseToast('Subcategoria cadastrada.');
+    }catch(error){ status.textContent = error.message; }
   });
 
   async function loadExpensesCatalogData(){
