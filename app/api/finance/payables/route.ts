@@ -191,7 +191,7 @@ export async function GET(request: Request) {
                 billing_code AS billingCode, notes, status,
                 recurrence_id AS recurrenceId, recurrence_frequency AS recurrenceFrequency,
                 installment_group_id AS installmentGroupId, installment_number AS installmentNumber,
-                installment_total AS installmentTotal,
+                installment_total AS installmentTotal, expense_id AS expenseId, cost_center AS costCenter,
                 ${displayStatusSql} AS displayStatus,
                 created_at AS createdAt, updated_at AS updatedAt
          FROM accounts_payable

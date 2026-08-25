@@ -798,6 +798,11 @@ export const accountsPayable = pgTable(
     installmentNumber: integer("installment_number").notNull().default(0),
     installmentTotal: integer("installment_total").notNull().default(0),
     financeEntryId: text("finance_entry_id").notNull().default(""),
+    // Preenchido quando esta conta a pagar foi gerada a partir de uma
+    // despesa (ver expenses) — nulo pra contas criadas direto em Contas a
+    // Pagar, como sempre foi possível.
+    expenseId: text("expense_id"),
+    costCenter: text("cost_center").notNull().default(""),
     idempotencyKey: text("idempotency_key").notNull(),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
@@ -823,6 +828,7 @@ export const accountsPayable = pgTable(
     index("accounts_payable_recurrence_idx").on(table.recurrenceId),
     index("accounts_payable_installment_group_idx").on(table.installmentGroupId),
     uniqueIndex("accounts_payable_idempotency_idx").on(table.idempotencyKey),
+    index("accounts_payable_expense_idx").on(table.expenseId),
   ],
 );
 
@@ -847,6 +853,144 @@ export const accountsPayablePayments = pgTable(
     index("accounts_payable_payments_payable_idx").on(table.payableId, table.createdAt),
     uniqueIndex("accounts_payable_payments_idempotency_idx").on(table.idempotencyKey),
   ],
+);
+
+// Cadastro de Despesas — camada de captura mais rica que fica NA FRENTE do
+// Contas a Pagar (accounts_payable). Ao criar uma despesa, o sistema gera
+// automaticamente a(s) linha(s) correspondente(s) em accounts_payable
+// (1 linha se avulsa, N se parcelada/recorrente, reaproveitando o mesmo
+// gerador de plano de app/lib/payables-recurrence.ts) e marca cada uma com
+// expense_id — accounts_payable continua sendo o motor de pagamento/
+// vencimento/DRE (ver [[estoque_modulo_contas_a_pagar]]); expenses nunca é
+// lido por essas telas, só pela tela de Despesas em si e pelo rateio.
+export const expenses = pgTable(
+  "expenses",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    description: text("description").notNull(),
+    supplierId: text("supplier_id").notNull().default(""),
+    financeItemId: text("finance_item_id").notNull(),
+    financeAccountId: text("finance_account_id").notNull().default(""),
+    costCenter: text("cost_center").notNull().default(""),
+    originalAmountCents: integer("original_amount_cents").notNull(),
+    issueDate: text("issue_date").notNull().default(""),
+    competenceMonth: text("competence_month").notNull(),
+    dueDate: text("due_date").notNull(),
+    paymentMethod: text("payment_method").notNull().default(""),
+    invoiceNumber: text("invoice_number").notNull().default(""),
+    orderReference: text("order_reference").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    // 'single' | 'installment' | 'recurring' — mesmo vocabulário do Contas a Pagar.
+    kind: text("kind").notNull().default("single"),
+    installmentTotal: integer("installment_total").notNull().default(0),
+    recurrenceFrequency: text("recurrence_frequency").notNull().default(""),
+    recurrenceOccurrenceCount: integer("recurrence_occurrence_count"),
+    recurrenceEndDate: text("recurrence_end_date").notNull().default(""),
+    // 'single_store' (pertence só à loja em companyId) | 'rateio' (dividida
+    // entre lojas, ver expense_rateio_shares) | 'no_rateio' (nunca entra em
+    // rateio, mesmo que a loja mude).
+    rateioType: text("rateio_type").notNull().default("single_store"),
+    // 'padrao' | 'administrativo' | 'faturamento' | 'funcionarios' | 'personalizado' — só quando rateioType='rateio'.
+    rateioModel: text("rateio_model").notNull().default(""),
+    // Vínculos estruturais preparados pra módulos futuros (conciliação
+    // bancária e gestão de cartões) — nenhum dos dois módulos existe ainda,
+    // por decisão explícita de escopo; só o campo/relação fica pronto.
+    cardId: text("card_id").notNull().default(""),
+    bankReconciliationId: text("bank_reconciliation_id").notNull().default(""),
+    idempotencyKey: text("idempotency_key").notNull(),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("expenses_company_competence_idx").on(table.companyId, table.competenceMonth),
+    index("expenses_supplier_idx").on(table.supplierId),
+    index("expenses_finance_item_idx").on(table.financeItemId),
+    uniqueIndex("expenses_idempotency_idx").on(table.idempotencyKey),
+  ],
+);
+
+// Divisão calculada/escolhida de uma despesa rateada entre lojas — um
+// snapshot congelado no momento da criação (mesmo pra modelos dinâmicos como
+// "faturamento"/"funcionários": o percentual usado fica registrado aqui e
+// não muda retroativamente se o faturamento/quadro da loja mudar depois).
+export const expenseRateioShares = pgTable(
+  "expense_rateio_shares",
+  {
+    id: text("id").primaryKey(),
+    expenseId: text("expense_id").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    percentBasisPoints: integer("percent_basis_points").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("expense_rateio_shares_expense_idx").on(table.expenseId),
+    index("expense_rateio_shares_company_idx").on(table.companyId),
+  ],
+);
+
+// Percentuais fixos e editáveis dos modelos de rateio "padrão" e
+// "administrativo" (cadastrados manualmente uma vez numa tela de
+// configuração e reaproveitados em toda despesa que usa aquele modelo).
+// Os modelos "faturamento"/"funcionarios" NÃO usam esta tabela — são
+// calculados dinamicamente (finance_store_revenue / finance_store_headcount).
+export const financeRateioModelShares = pgTable(
+  "finance_rateio_model_shares",
+  {
+    id: text("id").primaryKey(),
+    model: text("model").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    percentBasisPoints: integer("percent_basis_points").notNull(),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("finance_rateio_model_shares_model_company_idx").on(table.model, table.companyId),
+  ],
+);
+
+// Quadro de funcionários por loja, cadastrado manualmente (não é uma
+// contagem automática de app_users — decisão explícita, pra poder incluir
+// terceirizados/pessoas fora do sistema de login). Base do rateio "por
+// quantidade de funcionários".
+export const financeStoreHeadcount = pgTable("finance_store_headcount", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull().unique(),
+  companyName: text("company_name").notNull().default(""),
+  employeeCount: integer("employee_count").notNull().default(0),
+  updatedBy: text("updated_by").notNull().default(""),
+  updatedByName: text("updated_by_name").notNull().default(""),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+});
+
+// Anexos de uma despesa (boleto/NF/comprovante/outro) — mesmo mecanismo de
+// upload em R2 de app/api/documents, generalizado pra aceitar imagem além de
+// PDF (ver app/api/finance/expenses/attachments).
+export const expenseAttachments = pgTable(
+  "expense_attachments",
+  {
+    id: text("id").primaryKey(),
+    expenseId: text("expense_id").notNull(),
+    // 'boleto' | 'nf' | 'comprovante' | 'other'.
+    kind: text("kind").notNull().default("other"),
+    fileName: text("file_name").notNull(),
+    r2Key: text("r2_key").notNull(),
+    contentType: text("content_type").notNull().default(""),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    uploadedBy: text("uploaded_by").notNull(),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    uploadedAt: text("uploaded_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("expense_attachments_expense_idx").on(table.expenseId)],
 );
 
 export const financeStoreRevenue = pgTable(
