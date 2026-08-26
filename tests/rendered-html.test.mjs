@@ -2054,7 +2054,7 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
 });
 
 test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", async () => {
-  const [html, workerSource, shared, categoriesRoute, itemsRoute, entriesRoute, revenueRoute, dreRoute, schema, migration] =
+  const [html, workerSource, shared, categoriesRoute, itemsRoute, entriesRoute, revenueRoute, dreShared, schema, migration] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
@@ -2063,7 +2063,11 @@ test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", 
       readFile(new URL("../app/api/finance/items/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/finance/entries/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/finance/revenue/route.ts", import.meta.url), "utf8"),
-      readFile(new URL("../app/api/finance/dre/route.ts", import.meta.url), "utf8"),
+      // A montagem da DRE (buildStoreDre/buildConsolidatedDre/etc.) foi
+      // extraída para dre/shared.ts na Fase 2 do Financeiro (Dashboard
+      // Geral), pra ser reaproveitada sem duplicar a fórmula de
+      // resultado/margem — route.ts ficou só com os handlers HTTP.
+      readFile(new URL("../app/api/finance/dre/shared.ts", import.meta.url), "utf8"),
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
       readFile(new URL("../drizzle/0021_thin_lightspeed.sql", import.meta.url), "utf8"),
     ]);
@@ -2097,7 +2101,7 @@ test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", 
   assert.match(itemsRoute, /finance_store_entries WHERE item_id=\?1/);
   assert.match(entriesRoute, /INSERT INTO finance_store_entries/);
   assert.match(revenueRoute, /INSERT INTO finance_store_revenue/);
-  assert.match(dreRoute, /FROM finance_store_entries WHERE store_id=\?1 AND month=\?2/);
+  assert.match(dreShared, /FROM finance_store_entries WHERE store_id=\?1 AND month=\?2/);
 
   assert.match(schema, /export const financeCategories = pgTable/);
   assert.match(schema, /export const financeItems = pgTable/);
@@ -2110,9 +2114,9 @@ test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", 
 });
 
 test("DRE por Loja permite excluir um lançamento e mantém os cards abertos após salvar/excluir", async () => {
-  const [html, dreRoute] = await Promise.all([
+  const [html, dreShared] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/dre/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/dre/shared.ts", import.meta.url), "utf8"),
   ]);
 
   // Botão de excluir lançamento por item, só aparece quando já existe um
@@ -2134,14 +2138,15 @@ test("DRE por Loja permite excluir um lançamento e mantém os cards abertos ap�
     /details\.dataset\.financeNodeId/,
   );
 
-  assert.match(dreRoute, /entryId: entry\?\.id \?\? null/);
-  assert.match(dreRoute, /SELECT id, item_id AS itemId, entry_type AS entryType/);
+  assert.match(dreShared, /entryId: entry\?\.id \?\? null/);
+  assert.match(dreShared, /SELECT id, item_id AS itemId, entry_type AS entryType/);
 });
 
 test("DRE Por Loja/Consolidada/Gerencial vivem na mesma página, alternadas por abas", async () => {
-  const [html, dreRoute] = await Promise.all([
+  const [html, dreRoute, dreShared] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/dre/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/dre/shared.ts", import.meta.url), "utf8"),
   ]);
 
   // Abas dentro de #pageFinanceiro, não páginas/itens de menu separados.
@@ -2174,13 +2179,13 @@ test("DRE Por Loja/Consolidada/Gerencial vivem na mesma página, alternadas por 
   assert.match(html, /function dreGerencialItemRowHtml\(item\)/);
 
   assert.match(dreRoute, /scope === "consolidated"/);
-  assert.match(dreRoute, /FROM finance_store_entries WHERE month=\?1/);
-  assert.match(dreRoute, /FROM finance_store_revenue WHERE month=\?1/);
+  assert.match(dreShared, /FROM finance_store_entries WHERE month=\?1/);
+  assert.match(dreShared, /FROM finance_store_revenue WHERE month=\?1/);
   // Percentual continua fora da soma de despesa também na Consolidada.
-  assert.match(dreRoute, /entry\?\.entryType === "fixed" \? entry\.amountCents \?\? 0 : 0/);
+  assert.match(dreShared, /entry\?\.entryType === "fixed" \? entry\.amountCents \?\? 0 : 0/);
   assert.match(dreRoute, /scope === "managerial"/);
-  assert.match(dreRoute, /async function buildManagerialDre/);
-  assert.match(dreRoute, /async function loadMonthWideTotals/);
+  assert.match(dreShared, /async function buildManagerialDre/);
+  assert.match(dreShared, /async function loadMonthWideTotals/);
 });
 
 test("cron do worker sempre resolve o driver Postgres antes de rodar as rotinas agendadas", async () => {

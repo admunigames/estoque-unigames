@@ -214,6 +214,7 @@ const APP_ROUTE_PATHS = new Set([
   "/cadastros/usuarios",
   "/rh/folgas",
   "/rh/escalas",
+  "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
   "/financeiro/notas-fiscais",

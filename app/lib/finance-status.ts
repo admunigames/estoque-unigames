@@ -97,11 +97,46 @@ export type QuickView =
   | "paid"
   | "open_suppliers";
 
-function addDays(dateText: string, days: number): string {
+export function addDays(dateText: string, days: number): string {
   const [year, month, day] = dateText.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+export type DashboardPeriod = "day" | "week" | "month" | "year";
+
+/**
+ * Intervalo [from, to] (inclusive, YYYY-MM-DD) pro filtro de período do
+ * Dashboard Geral do Financeiro (Dia/Semana/Mês/Ano) — parecido com
+ * quickViewDueRange, mas ancorado numa data ESCOLHIDA pelo usuário (não
+ * necessariamente "hoje"), então mantido como função separada em vez de
+ * generalizar quickViewDueRange (que é sempre relativo a "hoje" por
+ * definição dos atalhos de Contas a Pagar).
+ */
+export function periodDueRange(period: DashboardPeriod, referenceDate: string): { from: string; to: string } {
+  switch (period) {
+    case "day":
+      return { from: referenceDate, to: referenceDate };
+    case "week": {
+      const [year, month, day] = referenceDate.split("-").map(Number);
+      const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+      const startOffset = weekday === 0 ? -6 : 1 - weekday;
+      const start = addDays(referenceDate, startOffset);
+      const end = addDays(start, 6);
+      return { from: start, to: end };
+    }
+    case "year":
+      return { from: `${referenceDate.slice(0, 4)}-01-01`, to: `${referenceDate.slice(0, 4)}-12-31` };
+    case "month":
+    default: {
+      const [year, month] = referenceDate.split("-").map(Number);
+      const start = `${referenceDate.slice(0, 7)}-01`;
+      const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      const end = `${referenceDate.slice(0, 7)}-${String(lastDay).padStart(2, "0")}`;
+      return { from: start, to: end };
+    }
+  }
 }
 
 /**
