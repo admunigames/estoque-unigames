@@ -168,10 +168,20 @@ export async function POST(request: Request) {
 
     const financeCategoryId = safeText(body.financeCategoryId, 80);
     const financeItemId = safeText(body.financeItemId, 80);
-    const costCenter = safeText(body.costCenter, 120);
     const notes = safeText(body.notes, 2000);
 
     const database = await getD1();
+
+    const costCenterId = safeText(body.costCenterId, 80);
+    let costCenter = "";
+    if (costCenterId) {
+      const costCenterRow = await database
+        .prepare("SELECT name FROM finance_cost_centers WHERE id=?1")
+        .bind(costCenterId)
+        .first<{ name: string }>();
+      if (!costCenterRow) return jsonResponse({ error: "CENTRO DE CUSTO NÃO ENCONTRADO." }, 400);
+      costCenter = costCenterRow.name;
+    }
 
     const duplicate = await database
       .prepare(
@@ -216,9 +226,9 @@ export async function POST(request: Request) {
            issue_date, entry_date, competence_month, notion_purchase_id, notion_purchase_url, total_amount_cents,
            finance_category_id, finance_item_id, cost_center, notes, origin, financial_status,
            created_by, created_by_name, sent_to_finance_by, sent_to_finance_by_name, sent_to_finance_at,
-           created_at, updated_by, updated_by_name, updated_at)
+           created_at, updated_by, updated_by_name, updated_at, cost_center_id)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,'','',?12,?13,?14,?15,?16,'manual',?17,
-           ?18,?19,?18,?19,?20,CURRENT_TIMESTAMP,?18,?19,CURRENT_TIMESTAMP)`,
+           ?18,?19,?18,?19,?20,CURRENT_TIMESTAMP,?18,?19,CURRENT_TIMESTAMP,?21)`,
       )
       .bind(
         id,
@@ -241,6 +251,7 @@ export async function POST(request: Request) {
         actor.id,
         actorName,
         now,
+        costCenterId || null,
       )
       .run();
 

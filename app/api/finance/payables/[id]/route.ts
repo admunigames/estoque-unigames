@@ -149,6 +149,22 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       .first<{ id: string }>();
     if (!item) return jsonResponse({ error: "ITEM DE DESPESA NÃO ENCONTRADO NO CATÁLOGO FINANCEIRO." }, 400);
 
+    let costCenter = payable.costCenter;
+    let costCenterId = payable.costCenterId;
+    if (body.costCenterId !== undefined) {
+      costCenterId = safeText(body.costCenterId, 80) || null;
+      if (costCenterId) {
+        const costCenterRow = await database
+          .prepare("SELECT name FROM finance_cost_centers WHERE id=?1")
+          .bind(costCenterId)
+          .first<{ name: string }>();
+        if (!costCenterRow) return jsonResponse({ error: "CENTRO DE CUSTO NÃO ENCONTRADO." }, 400);
+        costCenter = costCenterRow.name;
+      } else {
+        costCenter = "";
+      }
+    }
+
     const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
     if (accountError) return jsonResponse({ error: accountError }, 409);
 
@@ -181,7 +197,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
          SET company_id=?1, company_name=?2, description=?3, supplier_id=?4, finance_item_id=?5, finance_account_id=?6,
              original_amount_cents=?7, issue_date=?8, competence_month=?9, due_date=?10, payment_method=?11,
              invoice_number=?12, order_reference=?13, billing_code=?14, notes=?15, status=?16,
-             updated_by=?17, updated_by_name=?18, updated_at=CURRENT_TIMESTAMP
+             updated_by=?17, updated_by_name=?18, updated_at=CURRENT_TIMESTAMP, cost_center=?20, cost_center_id=?21
          WHERE id=?19`,
         [
           companyId,
@@ -203,6 +219,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           actor.id,
           actorName,
           id,
+          costCenter,
+          costCenterId,
         ],
       ],
     ];

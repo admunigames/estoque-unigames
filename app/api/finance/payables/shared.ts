@@ -61,6 +61,7 @@ export type PayableRow = {
   installmentTotal: number;
   expenseId: string | null;
   costCenter: string;
+  costCenterId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -81,6 +82,7 @@ export async function loadPayable(
               recurrence_id AS recurrenceId, recurrence_frequency AS recurrenceFrequency,
               installment_group_id AS installmentGroupId, installment_number AS installmentNumber,
               installment_total AS installmentTotal, expense_id AS expenseId, cost_center AS costCenter,
+              cost_center_id AS costCenterId,
               created_at AS createdAt, updated_at AS updatedAt
        FROM accounts_payable WHERE id=?1`,
     )

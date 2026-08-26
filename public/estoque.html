@@ -1667,6 +1667,13 @@
   .dre-flat-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:rgba(79,134,189,.03)}
   .dre-flat-row .dre-flat-name{font:800 12px var(--mono);letter-spacing:.05em;color:var(--ink)}
   .dre-flat-row .dre-flat-total{font:800 13px var(--mono);color:var(--accent)}
+  .dre-bar-chart{display:grid;gap:10px;margin-top:16px}
+  .dre-bar-row{display:grid;grid-template-columns:180px 1fr auto;gap:10px;align-items:center;font-size:12px}
+  .dre-bar-row .dre-bar-label{font:800 11px var(--mono);letter-spacing:.04em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dre-bar-row .dre-bar-track{background:rgba(79,134,189,.08);border-radius:6px;height:18px;overflow:hidden}
+  .dre-bar-row .dre-bar-fill{background:var(--accent);height:100%;border-radius:6px}
+  .dre-bar-row .dre-bar-fill.neg{background:#c0392b}
+  .dre-bar-row .dre-bar-value{font:800 12px var(--mono);color:var(--ink-soft);white-space:nowrap}
   .dre-catalog-list{display:grid;gap:8px;max-height:280px;overflow:auto;margin-bottom:14px}
   .dre-catalog-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px}
   .dre-catalog-row.sub{margin-left:18px;background:rgba(79,134,189,.05)}
@@ -4647,6 +4654,11 @@
         <button class="output-tab active" type="button" role="tab" aria-selected="true" data-dre-tab="porLoja">POR LOJA</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="consolidada">CONSOLIDADA</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="gerencial">GERENCIAL</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="unidades">COMPARATIVO UNIDADES</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="temporal">COMPARATIVO MENSAL/ANUAL</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="vertical">ANÁLISE VERTICAL</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="horizontal">ANÁLISE HORIZONTAL</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="orcado">REALIZADO X ORÇADO</button>
       </div>
 
       <div id="dreTabPorLoja">
@@ -4705,6 +4717,73 @@
           <div class="dre-empty">Selecione o mês para ver a DRE Gerencial.</div>
         </div>
       </div>
+
+      <div id="dreTabUnidades" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="dreUnidadesMes">MÊS</label><input type="month" id="dreUnidadesMes"></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="dreUnidadesTable"><tbody><tr><td class="responsive-empty">Selecione o mês para comparar as lojas.</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div id="dreTabTemporal" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="dreTemporalScope">VISÃO</label>
+            <select id="dreTemporalScope">
+              <option value="consolidated">CONSOLIDADA (TODAS AS LOJAS)</option>
+              <option value="store">UMA LOJA</option>
+            </select>
+          </div>
+          <div class="field" id="dreTemporalLojaField" hidden><label for="dreTemporalLoja">LOJA</label><select id="dreTemporalLoja"><option value="">SELECIONE</option></select></div>
+          <div class="field"><label for="dreTemporalPeriodo">PERÍODO</label>
+            <select id="dreTemporalPeriodo">
+              <option value="mensal">COMPARATIVO MENSAL (ÚLTIMOS 6 MESES)</option>
+              <option value="anual">COMPARATIVO ANUAL (JAN-DEZ DE UM ANO)</option>
+            </select>
+          </div>
+          <div class="field" id="dreTemporalAnoField" hidden><label for="dreTemporalAno">ANO</label><input type="number" id="dreTemporalAno" min="2000" max="2100" step="1"></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="dreTemporalTable"><tbody><tr><td class="responsive-empty">Selecione o período para comparar.</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div id="dreTabVertical" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="dreVerticalScope">VISÃO</label>
+            <select id="dreVerticalScope">
+              <option value="consolidated">CONSOLIDADA (TODAS AS LOJAS)</option>
+              <option value="store">UMA LOJA</option>
+            </select>
+          </div>
+          <div class="field" id="dreVerticalLojaField" hidden><label for="dreVerticalLoja">LOJA</label><select id="dreVerticalLoja"><option value="">SELECIONE</option></select></div>
+          <div class="field"><label for="dreVerticalMes">MÊS</label><input type="month" id="dreVerticalMes"></div>
+        </div>
+        <div id="dreVerticalChart" class="dre-bar-chart"><div class="dre-empty">Selecione o mês para ver a análise vertical.</div></div>
+      </div>
+
+      <div id="dreTabHorizontal" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="dreHorizontalScope">VISÃO</label>
+            <select id="dreHorizontalScope">
+              <option value="consolidated">CONSOLIDADA (TODAS AS LOJAS)</option>
+              <option value="store">UMA LOJA</option>
+            </select>
+          </div>
+          <div class="field" id="dreHorizontalLojaField" hidden><label for="dreHorizontalLoja">LOJA</label><select id="dreHorizontalLoja"><option value="">SELECIONE</option></select></div>
+          <div class="field"><label for="dreHorizontalCategoria">CATEGORIA</label><select id="dreHorizontalCategoria"><option value="">SELECIONE</option></select></div>
+        </div>
+        <div id="dreHorizontalChart" class="dre-bar-chart"><div class="dre-empty">Selecione a categoria para ver a análise horizontal (últimos 6 meses).</div></div>
+      </div>
+
+      <div id="dreTabOrcado" hidden>
+        <div class="dre-empty">O comparativo Realizado x Orçado depende do módulo de Orçamento (fase futura do Financeiro) e ainda não está disponível. Esta aba já está preparada para exibir a comparação assim que o Orçamento for implementado.</div>
+      </div>
     </section>
 
     <section id="pageFinanceiroPayables" class="page wrap">
@@ -4745,6 +4824,7 @@
           <div class="field"><label for="payablesCategory">CATEGORIA</label><select id="payablesCategory"><option value="">TODAS</option></select></div>
           <div class="field"><label for="payablesItem">ITEM</label><select id="payablesItem"><option value="">TODOS</option></select></div>
           <div class="field"><label for="payablesAccount">CONTA FINANCEIRA</label><select id="payablesAccount"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="payablesCostCenter">CENTRO DE CUSTO</label><select id="payablesCostCenter"><option value="">TODOS</option></select></div>
           <div class="field"><label for="payablesDueFrom">VENCIMENTO DE</label><input type="date" id="payablesDueFrom"></div>
           <div class="field"><label for="payablesDueTo">VENCIMENTO ATÉ</label><input type="date" id="payablesDueTo"></div>
           <div class="field"><label for="payablesCompetenceFrom">COMPETÊNCIA DE</label><input type="month" id="payablesCompetenceFrom"></div>
@@ -4838,7 +4918,7 @@
           <div class="field"><label for="expensesSupplier">FORNECEDOR</label><select id="expensesSupplier"><option value="">TODOS</option></select></div>
           <div class="field"><label for="expensesCategory">CATEGORIA</label><select id="expensesCategory"><option value="">TODAS</option></select></div>
           <div class="field"><label for="expensesItem">SUBCATEGORIA</label><select id="expensesItem"><option value="">TODAS</option></select></div>
-          <div class="field"><label for="expensesCostCenter">CENTRO DE CUSTO</label><input id="expensesCostCenter" maxlength="120"></div>
+          <div class="field"><label for="expensesCostCenter">CENTRO DE CUSTO</label><select id="expensesCostCenter"><option value="">TODOS</option></select></div>
           <div class="field"><label for="expensesKind">TIPO</label>
             <select id="expensesKind">
               <option value="">TODOS</option>
@@ -4890,6 +4970,24 @@
 
   </div>
 </div>
+
+<dialog class="purchase-dialog" id="dreDetailDialog" aria-labelledby="dreDetailDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="dreDetailDialogTitle">DETALHAMENTO</h3>
+    <button class="purchase-dialog-close" id="btnCloseDreDetailDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
+    <div id="dreDetailSummary" style="color:var(--ink-soft);font-size:12px;margin:14px 0;"></div>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Data</th><th>Fornecedor</th><th>Unidade</th><th>Categoria</th><th>Subcategoria</th><th>Centro de custo</th><th>Descrição</th><th>Valor</th><th>Pagamento</th><th>Conta</th><th>Observações</th></tr></thead>
+          <tbody id="dreDetailBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</dialog>
 
 <dialog class="purchase-dialog" id="financeCatalogDialog" aria-labelledby="financeCatalogTitle">
   <div class="purchase-dialog-head">
@@ -4962,6 +5060,7 @@
         <div class="user-form-status" id="payableNewItemStatus" role="status" aria-live="polite"></div>
       </div>
       <div class="purchase-field"><label for="payableAccount">CONTA FINANCEIRA</label><select id="payableAccount"><option value="">SEM CONTA</option></select></div>
+      <div class="purchase-field"><label for="payableCostCenter">CENTRO DE CUSTO</label><select id="payableCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="payablePaymentMethod">FORMA DE PAGAMENTO</label><input id="payablePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
       <div class="purchase-field"><label for="payableOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="number" id="payableOriginalAmount" min="0.01" step="0.01" required></div>
       <div class="purchase-field"><label for="payableIssueDate">DATA DE EMISSÃO</label><input type="date" id="payableIssueDate"></div>
@@ -5091,7 +5190,7 @@
         </div>
         <div class="user-form-status" id="expenseNewItemStatus" role="status" aria-live="polite"></div>
       </div>
-      <div class="purchase-field"><label for="expenseCostCenter">CENTRO DE CUSTO</label><input id="expenseCostCenter" maxlength="120"></div>
+      <div class="purchase-field"><label for="expenseCostCenter">CENTRO DE CUSTO</label><select id="expenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="expenseAccount">CONTA BANCÁRIA</label><select id="expenseAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="expensePaymentMethod">FORMA DE PAGAMENTO</label><input id="expensePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
       <div class="purchase-field"><label for="expenseOriginalAmount">VALOR (R$) *</label><input type="number" id="expenseOriginalAmount" min="0.01" step="0.01" required></div>
@@ -5262,6 +5361,7 @@
     <div class="output-tabs" role="tablist" aria-label="Cadastro de fornecedores e contas">
       <button class="output-tab active" type="button" role="tab" aria-selected="true" data-payables-catalog-tab="suppliers">FORNECEDORES</button>
       <button class="output-tab" type="button" role="tab" aria-selected="false" data-payables-catalog-tab="accounts">CONTAS FINANCEIRAS</button>
+      <button class="output-tab" type="button" role="tab" aria-selected="false" data-payables-catalog-tab="costCenters">CENTROS DE CUSTO</button>
     </div>
 
     <div id="payablesCatalogSuppliersTab">
@@ -5360,6 +5460,17 @@
         </div>
       </div>
     </div>
+
+    <div id="payablesCatalogCostCentersTab" hidden>
+      <form class="dre-catalog-form" id="costCenterForm">
+        <input type="hidden" id="costCenterId">
+        <div class="field"><label for="costCenterName">NOME DO CENTRO DE CUSTO *</label><input id="costCenterName" maxlength="120" placeholder="Ex.: Comercial" required></div>
+        <button class="btn-outline" type="button" id="btnCancelCostCenterEdit" hidden>CANCELAR EDIÇÃO</button>
+        <button class="btn-accent" type="submit" id="btnSaveCostCenter">ADICIONAR CENTRO DE CUSTO</button>
+      </form>
+      <div class="user-form-status" id="costCenterFormStatus" role="status" aria-live="polite"></div>
+      <div class="dre-catalog-list" id="costCentersList"></div>
+    </div>
   </div>
 </dialog>
 
@@ -5382,7 +5493,7 @@
       <div class="purchase-field"><label for="invoiceTotalAmount">VALOR TOTAL (R$) *</label><input type="number" id="invoiceTotalAmount" min="0.01" step="0.01" required></div>
       <div class="purchase-field"><label for="invoiceCategory">CATEGORIA</label><select id="invoiceCategory"><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="invoiceItem">ITEM DA DESPESA</label><select id="invoiceItem"><option value="">SELECIONE A CATEGORIA</option></select></div>
-      <div class="purchase-field"><label for="invoiceCostCenter">CENTRO DE CUSTO</label><input id="invoiceCostCenter" maxlength="120"></div>
+      <div class="purchase-field"><label for="invoiceCostCenter">CENTRO DE CUSTO</label><select id="invoiceCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field full"><label for="invoiceNotes">OBSERVAÇÕES</label><textarea id="invoiceNotes" rows="2" maxlength="2000"></textarea></div>
     </div>
     <div class="user-form-status" id="invoiceFormStatus" role="status" aria-live="polite"></div>
@@ -15296,6 +15407,7 @@ function renderHomeTasks(){
           '</select>'+
           '<input type="number" min="0" step="0.01" data-finance-entry-fixed placeholder="0,00" value="'+amount+'"'+(type === 'fixed' ? '' : ' hidden')+'>'+
           '<input type="number" min="0" step="0.01" data-finance-entry-percent placeholder="0,00" value="'+percent+'"'+(type === 'percentage' ? '' : ' hidden')+'>'+
+          '<button class="btn-outline" type="button" data-dre-detail-item="'+escapeHtml(item.id)+'" title="Ver lançamentos deste item">DETALHES</button>'+
           deleteButton+
         '</span>'+
       '</div>'
@@ -15306,12 +15418,12 @@ function renderHomeTasks(){
     const itemsHtml = category.items.map(item => dreItemRowHtml(item)).join('') ||
       (category.subgroups.length ? '' : '<div class="dre-empty">Nenhum item nesta categoria.</div>');
     const subgroupsHtml = category.subgroups.map(subgroup => (
-      '<details class="dre-subgroup" data-finance-node-id="'+escapeHtml(subgroup.id)+'"><summary><span>'+escapeHtml(subgroup.name)+'</span><span class="dre-subgroup-total">'+formatCentsBRL(subgroup.totalCents)+'</span></summary>'+
+      '<details class="dre-subgroup" data-finance-node-id="'+escapeHtml(subgroup.id)+'"><summary><span>'+escapeHtml(subgroup.name)+'</span><span class="dre-subgroup-total">'+formatCentsBRL(subgroup.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-category="'+escapeHtml(subgroup.id)+'" title="Ver lançamentos deste subgrupo">DETALHES</button></summary>'+
       '<div class="dre-subgroup-body">'+(subgroup.items.map(item => dreItemRowHtml(item)).join('') || '<div class="dre-empty">Nenhum item neste subgrupo.</div>')+'</div>'+
       '</details>'
     )).join('');
     return (
-      '<details class="dre-category" data-finance-node-id="'+escapeHtml(category.id)+'"><summary><span>'+escapeHtml(category.name)+'</span><span class="dre-category-total">'+formatCentsBRL(category.totalCents)+'</span></summary>'+
+      '<details class="dre-category" data-finance-node-id="'+escapeHtml(category.id)+'"><summary><span>'+escapeHtml(category.name)+'</span><span class="dre-category-total">'+formatCentsBRL(category.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-category="'+escapeHtml(category.id)+'" title="Ver lançamentos desta categoria">DETALHES</button></summary>'+
       '<div class="dre-category-body">'+itemsHtml+subgroupsHtml+'</div>'+
       '</details>'
     );
@@ -15405,7 +15517,7 @@ function renderHomeTasks(){
       return;
     }
     container.innerHTML = financeDreConsolidada.categories.map(category => (
-      '<div class="dre-flat-row"><span class="dre-flat-name">'+escapeHtml(category.name)+'</span><span class="dre-flat-total">'+formatCentsBRL(category.totalCents)+'</span></div>'
+      '<div class="dre-flat-row"><span class="dre-flat-name">'+escapeHtml(category.name)+'</span><span class="dre-flat-total">'+formatCentsBRL(category.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-category="'+escapeHtml(category.id)+'" title="Ver lançamentos desta categoria">DETALHES</button></div>'
     )).join('');
   }
 
@@ -15431,19 +15543,19 @@ function renderHomeTasks(){
   el('dreConsolidadaMes').addEventListener('change', loadDreConsolidada);
 
   function dreGerencialItemRowHtml(item){
-    return '<div class="dre-flat-row"><span class="dre-flat-name">'+escapeHtml(item.name)+'</span><span class="dre-flat-total">'+formatCentsBRL(item.totalCents)+'</span></div>';
+    return '<div class="dre-flat-row"><span class="dre-flat-name">'+escapeHtml(item.name)+'</span><span class="dre-flat-total">'+formatCentsBRL(item.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-item="'+escapeHtml(item.id)+'" title="Ver lançamentos deste item">DETALHES</button></div>';
   }
 
   function dreGerencialCategoryCardHtml(category){
     const itemsHtml = category.items.map(item => dreGerencialItemRowHtml(item)).join('') ||
       (category.subgroups.length ? '' : '<div class="dre-empty">Nenhum item nesta categoria.</div>');
     const subgroupsHtml = category.subgroups.map(subgroup => (
-      '<details class="dre-subgroup"><summary><span>'+escapeHtml(subgroup.name)+'</span><span class="dre-subgroup-total">'+formatCentsBRL(subgroup.totalCents)+'</span></summary>'+
+      '<details class="dre-subgroup"><summary><span>'+escapeHtml(subgroup.name)+'</span><span class="dre-subgroup-total">'+formatCentsBRL(subgroup.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-category="'+escapeHtml(subgroup.id)+'" title="Ver lançamentos deste subgrupo">DETALHES</button></summary>'+
       '<div class="dre-subgroup-body">'+(subgroup.items.map(item => dreGerencialItemRowHtml(item)).join('') || '<div class="dre-empty">Nenhum item neste subgrupo.</div>')+'</div>'+
       '</details>'
     )).join('');
     return (
-      '<details class="dre-category"><summary><span>'+escapeHtml(category.name)+'</span><span class="dre-category-total">'+formatCentsBRL(category.totalCents)+'</span></summary>'+
+      '<details class="dre-category"><summary><span>'+escapeHtml(category.name)+'</span><span class="dre-category-total">'+formatCentsBRL(category.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-category="'+escapeHtml(category.id)+'" title="Ver lançamentos desta categoria">DETALHES</button></summary>'+
       '<div class="dre-category-body">'+itemsHtml+subgroupsHtml+'</div>'+
       '</details>'
     );
@@ -15493,10 +15605,304 @@ function renderHomeTasks(){
 
   el('dreGerencialMes').addEventListener('change', loadDreGerencial);
 
+  // ================= DRE: DETALHAMENTO DE LANÇAMENTOS =================
+  function dreCategoryLabel(categoryId){
+    const category = financeCategories.find(c => c.id === categoryId);
+    if(!category) return '';
+    if(category.parentId){
+      const parent = financeCategories.find(c => c.id === category.parentId);
+      return (parent ? parent.name+' › ' : '')+category.name;
+    }
+    return category.name;
+  }
+  function dreItemLabel(itemId){
+    const item = financeItems.find(i => i.id === itemId);
+    if(!item) return '';
+    return dreCategoryLabel(item.categoryId)+(item.categoryId ? ' › ' : '')+item.name;
+  }
+
+  async function openDreDetailDialog({itemId, categoryId, month, storeId}){
+    el('dreDetailDialogTitle').textContent = 'DETALHAMENTO — '+(itemId ? dreItemLabel(itemId) : dreCategoryLabel(categoryId));
+    el('dreDetailSummary').textContent = 'Competência: '+month+(storeId ? ' — Loja: '+((companies.find(c => c.id === storeId) || {}).name || storeId) : ' — Todas as lojas');
+    el('dreDetailBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    el('dreDetailDialog').showModal();
+    try{
+      const params = new URLSearchParams({month});
+      if(itemId) params.set('itemId', itemId); else params.set('categoryId', categoryId);
+      if(storeId) params.set('storeId', storeId);
+      const data = await financeApiRequest('/dre/detail?'+params.toString());
+      const rows = data.entries || [];
+      const manualRows = data.manualEntries || [];
+      if(!rows.length && !manualRows.length){
+        el('dreDetailBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhum lançamento encontrado.</td></tr>';
+        return;
+      }
+      const payableHtml = rows.map(row => (
+        '<tr>'+
+          '<td>'+escapeHtml(row.date || '—')+'</td>'+
+          '<td>'+escapeHtml(row.supplierName || '—')+'</td>'+
+          '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+          '<td>'+escapeHtml(row.parentCategoryName || row.categoryName || '—')+'</td>'+
+          '<td>'+escapeHtml(row.parentCategoryName ? row.categoryName : (row.itemName || '—'))+'</td>'+
+          '<td>'+escapeHtml(row.costCenter || '—')+'</td>'+
+          '<td>'+escapeHtml(row.description || '—')+'</td>'+
+          '<td>'+formatCentsBRL(row.amountCents)+'</td>'+
+          '<td>'+escapeHtml(row.paymentMethod || '—')+'</td>'+
+          '<td>'+escapeHtml(row.financeAccount || '—')+'</td>'+
+          '<td>'+escapeHtml(row.notes || '—')+'</td>'+
+        '</tr>'
+      )).join('');
+      const manualHtml = manualRows.map(row => (
+        '<tr>'+
+          '<td colspan="6">Lançamento manual — '+escapeHtml((companies.find(c => c.id === row.storeId) || {}).name || row.storeId)+'</td>'+
+          '<td>Valor digitado manualmente na DRE</td>'+
+          '<td>'+(row.entryType === 'fixed' ? formatCentsBRL(row.amountCents || 0) : ((row.percentBasisPoints || 0)/100).toFixed(2).replace('.',',')+'%')+'</td>'+
+          '<td colspan="3">—</td>'+
+        '</tr>'
+      )).join('');
+      el('dreDetailBody').innerHTML = manualHtml+payableHtml;
+    }catch(error){
+      el('dreDetailBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  el('btnCloseDreDetailDialog').addEventListener('click', () => { if(el('dreDetailDialog').open) el('dreDetailDialog').close(); });
+  el('dreDetailDialog').addEventListener('click', event => { if(event.target === el('dreDetailDialog')) el('dreDetailDialog').close(); });
+
+  function wireDreDetailButtons(containerId, monthGetter, storeGetter){
+    el(containerId).addEventListener('click', event => {
+      const itemButton = event.target.closest('[data-dre-detail-item]');
+      const categoryButton = event.target.closest('[data-dre-detail-category]');
+      if(!itemButton && !categoryButton) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const month = monthGetter();
+      if(!month) return;
+      openDreDetailDialog({
+        itemId: itemButton ? itemButton.dataset.dreDetailItem : undefined,
+        categoryId: categoryButton ? categoryButton.dataset.dreDetailCategory : undefined,
+        month,
+        storeId: storeGetter ? storeGetter() : ''
+      });
+    });
+  }
+  wireDreDetailButtons('dreCategoryList', () => el('dreMes').value, () => el('dreLoja').value);
+  wireDreDetailButtons('dreConsolidadaCategoryList', () => el('dreConsolidadaMes').value, null);
+  wireDreDetailButtons('dreGerencialCategoryList', () => el('dreGerencialMes').value, null);
+
+  // ================= DRE: COMPARATIVO ENTRE UNIDADES =================
+  function renderDreUnidadesTable(data){
+    const table = el('dreUnidadesTable');
+    if(!data || !data.stores.length){
+      table.innerHTML = '<tbody><tr><td class="responsive-empty">Nenhuma loja cadastrada.</td></tr></tbody>';
+      return;
+    }
+    const categoryNames = data.stores[0].categories.map(c => c.name);
+    const headRow = '<tr><th>Indicador</th>'+data.stores.map(s => '<th>'+escapeHtml(s.storeName)+'</th>').join('')+'</tr>';
+    function metricRow(label, getter){
+      return '<tr><td><strong>'+label+'</strong></td>'+data.stores.map(s => '<td>'+formatCentsBRL(getter(s))+'</td>').join('')+'</tr>';
+    }
+    const categoryRows = categoryNames.map((name, index) => (
+      '<tr><td>'+escapeHtml(name)+'</td>'+data.stores.map(s => '<td>'+formatCentsBRL((s.categories[index] || {totalCents:0}).totalCents)+'</td>').join('')+'</tr>'
+    )).join('');
+    table.innerHTML =
+      '<thead>'+headRow+'</thead><tbody>'+
+        metricRow('RECEITA', s => s.revenueCents)+
+        metricRow('DESPESA TOTAL', s => s.expenseTotalCents)+
+        metricRow('RESULTADO', s => s.resultCents)+
+        categoryRows+
+      '</tbody>';
+  }
+
+  async function loadDreUnidades(){
+    if(!canAccess('finance')) return;
+    if(!el('dreUnidadesMes').value) el('dreUnidadesMes').value = financeCurrentMonthKey();
+    const month = el('dreUnidadesMes').value;
+    el('dreUnidadesTable').innerHTML = '<tbody><tr><td class="responsive-empty">Carregando…</td></tr></tbody>';
+    try{
+      const data = await financeApiRequest('/dre?scope=by-store&month='+encodeURIComponent(month));
+      renderDreUnidadesTable(data);
+    }catch(error){
+      el('dreUnidadesTable').innerHTML = '<tbody><tr><td class="responsive-empty">'+escapeHtml(error.message)+'</td></tr></tbody>';
+    }
+  }
+  el('dreUnidadesMes').addEventListener('change', loadDreUnidades);
+
+  // ================= DRE: COMPARATIVO MENSAL/ANUAL =================
+  function renderDreScopedLojaSelect(selectId){
+    const select = el(selectId);
+    if(!select || select.options.length > 1) return;
+    select.innerHTML = '<option value="">SELECIONE</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+  }
+
+  function dreTemporalRange(){
+    const periodo = el('dreTemporalPeriodo').value;
+    if(periodo === 'anual'){
+      const year = Number(el('dreTemporalAno').value) || new Date().getFullYear();
+      return {monthFrom: year+'-01', monthTo: year+'-12'};
+    }
+    const now = new Date();
+    const to = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    const fromDate = new Date(now.getFullYear(), now.getMonth()-5, 1);
+    const from = fromDate.getFullYear()+'-'+String(fromDate.getMonth()+1).padStart(2,'0');
+    return {monthFrom: from, monthTo: to};
+  }
+
+  function renderDreTemporalTable(data){
+    const table = el('dreTemporalTable');
+    if(!data || !data.series.length){
+      table.innerHTML = '<tbody><tr><td class="responsive-empty">Sem dados para o período.</td></tr></tbody>';
+      return;
+    }
+    const categoryNames = data.series[0].categories.map(c => c.name);
+    const headRow = '<tr><th>Indicador</th>'+data.series.map(s => '<th>'+escapeHtml(s.month)+'</th>').join('')+'</tr>';
+    function metricRow(label, getter){
+      return '<tr><td><strong>'+label+'</strong></td>'+data.series.map(s => '<td>'+formatCentsBRL(getter(s))+'</td>').join('')+'</tr>';
+    }
+    const categoryRows = categoryNames.map((name, index) => (
+      '<tr><td>'+escapeHtml(name)+'</td>'+data.series.map(s => '<td>'+formatCentsBRL((s.categories[index] || {totalCents:0}).totalCents)+'</td>').join('')+'</tr>'
+    )).join('');
+    table.innerHTML =
+      '<thead>'+headRow+'</thead><tbody>'+
+        metricRow('RECEITA', s => s.revenueCents)+
+        metricRow('DESPESA TOTAL', s => s.expenseTotalCents)+
+        metricRow('RESULTADO', s => s.resultCents)+
+        categoryRows+
+      '</tbody>';
+  }
+
+  async function loadDreTemporal(){
+    if(!canAccess('finance')) return;
+    renderDreScopedLojaSelect('dreTemporalLoja');
+    const scope = el('dreTemporalScope').value;
+    el('dreTemporalLojaField').hidden = scope !== 'store';
+    if(!el('dreTemporalAno').value) el('dreTemporalAno').value = new Date().getFullYear();
+    el('dreTemporalAnoField').hidden = el('dreTemporalPeriodo').value !== 'anual';
+    if(scope === 'store' && !el('dreTemporalLoja').value){
+      el('dreTemporalTable').innerHTML = '<tbody><tr><td class="responsive-empty">Selecione a loja.</td></tr></tbody>';
+      return;
+    }
+    const {monthFrom, monthTo} = dreTemporalRange();
+    const params = new URLSearchParams({scope:'series', seriesScope:scope, monthFrom, monthTo});
+    if(scope === 'store') params.set('storeId', el('dreTemporalLoja').value);
+    el('dreTemporalTable').innerHTML = '<tbody><tr><td class="responsive-empty">Carregando…</td></tr></tbody>';
+    try{
+      const data = await financeApiRequest('/dre?'+params.toString());
+      renderDreTemporalTable(data);
+    }catch(error){
+      el('dreTemporalTable').innerHTML = '<tbody><tr><td class="responsive-empty">'+escapeHtml(error.message)+'</td></tr></tbody>';
+    }
+  }
+  el('dreTemporalScope').addEventListener('change', loadDreTemporal);
+  el('dreTemporalLoja').addEventListener('change', loadDreTemporal);
+  el('dreTemporalPeriodo').addEventListener('change', loadDreTemporal);
+  el('dreTemporalAno').addEventListener('change', loadDreTemporal);
+
+  // ================= DRE: ANÁLISE VERTICAL =================
+  function dreBarRowHtml(label, valueCents, maxCents, sublabel){
+    const pct = maxCents > 0 ? Math.min(100, Math.abs(valueCents) / maxCents * 100) : 0;
+    return '<div class="dre-bar-row">'+
+      '<span class="dre-bar-label" title="'+escapeHtml(label)+'">'+escapeHtml(label)+'</span>'+
+      '<span class="dre-bar-track"><span class="dre-bar-fill'+(valueCents < 0 ? ' neg' : '')+'" style="width:'+pct.toFixed(1)+'%"></span></span>'+
+      '<span class="dre-bar-value">'+(sublabel || formatCentsBRL(valueCents))+'</span>'+
+    '</div>';
+  }
+
+  async function loadDreVertical(){
+    if(!canAccess('finance')) return;
+    renderDreScopedLojaSelect('dreVerticalLoja');
+    const scope = el('dreVerticalScope').value;
+    el('dreVerticalLojaField').hidden = scope !== 'store';
+    if(!el('dreVerticalMes').value) el('dreVerticalMes').value = financeCurrentMonthKey();
+    const month = el('dreVerticalMes').value;
+    if(scope === 'store' && !el('dreVerticalLoja').value){
+      el('dreVerticalChart').innerHTML = '<div class="dre-empty">Selecione a loja.</div>';
+      return;
+    }
+    const params = new URLSearchParams({scope, month});
+    if(scope === 'store') params.set('storeId', el('dreVerticalLoja').value);
+    el('dreVerticalChart').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    try{
+      const data = await financeApiRequest('/dre?'+params.toString());
+      const revenueCents = data.revenueCents || 0;
+      if(!revenueCents){
+        el('dreVerticalChart').innerHTML = '<div class="dre-empty">Cadastre a receita do período para calcular a análise vertical.</div>';
+        return;
+      }
+      const rows = [dreBarRowHtml('RECEITA', revenueCents, revenueCents, '100,00%')].concat(
+        data.categories.map(category => {
+          const pct = (category.totalCents / revenueCents) * 100;
+          return dreBarRowHtml(category.name, category.totalCents, revenueCents, pct.toFixed(2).replace('.',',')+'%');
+        })
+      );
+      el('dreVerticalChart').innerHTML = rows.join('');
+    }catch(error){
+      el('dreVerticalChart').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+  el('dreVerticalScope').addEventListener('change', loadDreVertical);
+  el('dreVerticalLoja').addEventListener('change', loadDreVertical);
+  el('dreVerticalMes').addEventListener('change', loadDreVertical);
+
+  // ================= DRE: ANÁLISE HORIZONTAL =================
+  function renderDreHorizontalCategoryOptions(){
+    const select = el('dreHorizontalCategoria');
+    if(select.options.length > 1) return;
+    select.innerHTML = '<option value="">SELECIONE</option>'+
+      financeCategories.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(dreCategoryLabel(c.id))+'</option>').join('');
+  }
+
+  async function loadDreHorizontal(){
+    if(!canAccess('finance')) return;
+    if(!financeCategories.length) await loadFinanceCatalog();
+    renderDreScopedLojaSelect('dreHorizontalLoja');
+    renderDreHorizontalCategoryOptions();
+    const scope = el('dreHorizontalScope').value;
+    el('dreHorizontalLojaField').hidden = scope !== 'store';
+    const categoryId = el('dreHorizontalCategoria').value;
+    if(!categoryId || (scope === 'store' && !el('dreHorizontalLoja').value)){
+      el('dreHorizontalChart').innerHTML = '<div class="dre-empty">Selecione a categoria'+(scope === 'store' ? ' e a loja' : '')+'.</div>';
+      return;
+    }
+    const {monthFrom, monthTo} = {monthFrom: (() => { const d = new Date(); d.setMonth(d.getMonth()-5); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })(), monthTo: financeCurrentMonthKey()};
+    const params = new URLSearchParams({scope:'series', seriesScope:scope, monthFrom, monthTo});
+    if(scope === 'store') params.set('storeId', el('dreHorizontalLoja').value);
+    el('dreHorizontalChart').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    try{
+      const data = await financeApiRequest('/dre?'+params.toString());
+      const values = data.series.map(entry => ({
+        month: entry.month,
+        totalCents: (entry.categories.find(c => c.id === categoryId) || {totalCents:0}).totalCents
+      }));
+      const maxCents = Math.max(1, ...values.map(v => Math.abs(v.totalCents)));
+      const rows = values.map((v, index) => {
+        const prev = index > 0 ? values[index-1].totalCents : null;
+        const variation = prev ? (((v.totalCents - prev) / Math.abs(prev)) * 100) : null;
+        const sublabel = formatCentsBRL(v.totalCents)+(variation !== null ? ' ('+(variation >= 0 ? '+' : '')+variation.toFixed(1).replace('.',',')+'%)' : '');
+        return dreBarRowHtml(v.month, v.totalCents, maxCents, sublabel);
+      });
+      el('dreHorizontalChart').innerHTML = rows.join('');
+    }catch(error){
+      el('dreHorizontalChart').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+  el('dreHorizontalScope').addEventListener('change', loadDreHorizontal);
+  el('dreHorizontalLoja').addEventListener('change', loadDreHorizontal);
+  el('dreHorizontalCategoria').addEventListener('change', loadDreHorizontal);
+
+  function loadDreOrcado(){
+    // Aba preparada, sem funcionalidade até o módulo de Orçamento existir.
+  }
+
   const DRE_TAB_LOADERS = {
     porLoja: loadDrePorLoja,
     consolidada: loadDreConsolidada,
-    gerencial: loadDreGerencial
+    gerencial: loadDreGerencial,
+    unidades: loadDreUnidades,
+    temporal: loadDreTemporal,
+    vertical: loadDreVertical,
+    horizontal: loadDreHorizontal,
+    orcado: loadDreOrcado
   };
 
   function setDreActiveTab(tab){
@@ -15509,6 +15915,11 @@ function renderHomeTasks(){
     el('dreTabPorLoja').hidden = dreActiveTab !== 'porLoja';
     el('dreTabConsolidada').hidden = dreActiveTab !== 'consolidada';
     el('dreTabGerencial').hidden = dreActiveTab !== 'gerencial';
+    el('dreTabUnidades').hidden = dreActiveTab !== 'unidades';
+    el('dreTabTemporal').hidden = dreActiveTab !== 'temporal';
+    el('dreTabVertical').hidden = dreActiveTab !== 'vertical';
+    el('dreTabHorizontal').hidden = dreActiveTab !== 'horizontal';
+    el('dreTabOrcado').hidden = dreActiveTab !== 'orcado';
     DRE_TAB_LOADERS[dreActiveTab]();
   }
 
@@ -15711,6 +16122,7 @@ function renderHomeTasks(){
   // ================= CONTAS A PAGAR =================
   let payableSuppliers = [];
   let payableAccounts = [];
+  let financeCostCenters = [];
   let payablesRows = [];
   let payablesPage = 1;
   const PAYABLES_PAGE_SIZE = 20;
@@ -15733,7 +16145,11 @@ function renderHomeTasks(){
   const PAYABLES_QUICK_VIEW_LABELS = [
     {key:'today', label:'HOJE'}, {key:'tomorrow', label:'AMANHÃ'}, {key:'week', label:'ESTA SEMANA'},
     {key:'next7', label:'PRÓXIMOS 7 DIAS'}, {key:'next30', label:'PRÓXIMOS 30 DIAS'}, {key:'month', label:'MÊS'},
-    {key:'year', label:'ANO'}, {key:'overdue', label:'VENCIDOS'}, {key:'paid', label:'PAGOS'}
+    {key:'year', label:'ANO'}, {key:'overdue', label:'VENCIDOS'}, {key:'paid', label:'PAGOS'},
+    // Módulo "Fornecedores em Aberto" ainda não existe (fase futura do
+    // Financeiro) — o card fica visível como placeholder, sem clique, só
+    // pra reservar o espaço no layout desde já.
+    {key:'suppliersOpen', label:'FORNECEDORES EM ABERTO', comingSoon:true}
   ];
 
   function payablesCanActAcrossStores(){
@@ -15815,8 +16231,21 @@ function renderHomeTasks(){
     if(options.some(a => a.id === selected)) select.value = selected;
   }
 
+  function renderCostCenterOptionsFor(selectId, placeholder){
+    const select = el(selectId);
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">'+placeholder+'</option>'+
+      financeCostCenters.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    if(financeCostCenters.some(c => c.id === selected)) select.value = selected;
+  }
+
   function renderPayablesCatalogSelects(){
     renderPayablesCategoryOptions();
+    renderCostCenterOptionsFor('expensesCostCenter', 'TODOS');
+    renderCostCenterOptionsFor('expenseCostCenter', 'SEM CENTRO DE CUSTO');
+    renderCostCenterOptionsFor('payableCostCenter', 'SEM CENTRO DE CUSTO');
+    renderCostCenterOptionsFor('payablesCostCenter', 'TODOS');
     const supplierOptions = payableSuppliers.filter(s => s.active).map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
 
     if(el('payablesSupplier')) el('payablesSupplier').innerHTML = '<option value="">TODOS</option>'+supplierOptions;
@@ -15908,15 +16337,18 @@ function renderHomeTasks(){
   async function loadPayablesCatalogData(){
     try{
       if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
-      const [suppliersData, accountsData] = await Promise.all([
+      const [suppliersData, accountsData, costCentersData] = await Promise.all([
         financeApiRequest('/suppliers?includeInactive=1'),
-        financeApiRequest('/accounts?includeInactive=1')
+        financeApiRequest('/accounts?includeInactive=1'),
+        financeApiRequest('/cost-centers')
       ]);
       payableSuppliers = Array.isArray(suppliersData.suppliers) ? suppliersData.suppliers : [];
       payableAccounts = Array.isArray(accountsData.accounts) ? accountsData.accounts : [];
+      financeCostCenters = Array.isArray(costCentersData.costCenters) ? costCentersData.costCenters : [];
     }catch(error){
       payableSuppliers = [];
       payableAccounts = [];
+      financeCostCenters = [];
     }
     renderPayablesCatalogSelects();
   }
@@ -15935,6 +16367,8 @@ function renderHomeTasks(){
     if(financeItemId) params.set('financeItemId', financeItemId);
     const financeAccountId = el('payablesAccount') ? el('payablesAccount').value : '';
     if(financeAccountId) params.set('financeAccountId', financeAccountId);
+    const costCenterId = el('payablesCostCenter') ? el('payablesCostCenter').value : '';
+    if(costCenterId) params.set('costCenterId', costCenterId);
     const dueFrom = el('payablesDueFrom') ? el('payablesDueFrom').value : '';
     if(dueFrom) params.set('dueFrom', dueFrom);
     const dueTo = el('payablesDueTo') ? el('payablesDueTo').value : '';
@@ -16054,6 +16488,13 @@ function renderHomeTasks(){
     try{
       const data = await financeApiRequest('/payables/summary?'+params.toString());
       const cards = PAYABLES_QUICK_VIEW_LABELS.map(view => {
+        if(view.comingSoon){
+          return '<div class="card" style="opacity:.55;cursor:default;">'+
+            '<div class="lbl">'+view.label+'</div>'+
+            '<div class="num">—</div>'+
+            '<div class="sub">EM BREVE</div>'+
+          '</div>';
+        }
         const stats = (data.quickViews && data.quickViews[view.key]) || {count:0, balanceCents:0};
         const active = payablesQuickView === view.key;
         return '<div class="card'+(active ? ' active' : '')+'" data-payable-quick-view="'+view.key+'">'+
@@ -16156,6 +16597,7 @@ function renderHomeTasks(){
     el('payableCategory').value = itemForEdit ? itemForEdit.categoryId : '';
     renderPayableItemOptions('payableItem', itemForEdit ? itemForEdit.categoryId : '', {selectedId: row.financeItemId});
     el('payableAccount').value = row.financeAccountId || '';
+    el('payableCostCenter').value = row.costCenterId || '';
     el('payablePaymentMethod').value = row.paymentMethod || '';
     el('payableOriginalAmount').value = (row.originalAmountCents / 100).toFixed(2);
     el('payableIssueDate').value = row.issueDate || '';
@@ -16219,6 +16661,7 @@ function renderHomeTasks(){
           body:JSON.stringify({
             companyId, companyName, description:el('payableDescription').value.trim(),
             supplierId:el('payableSupplier').value, financeItemId, financeAccountId:el('payableAccount').value,
+            costCenterId:el('payableCostCenter').value,
             paymentMethod:el('payablePaymentMethod').value.trim(), originalAmountCents,
             issueDate:el('payableIssueDate').value, dueDate, competenceMonth:el('payableCompetenceMonth').value,
             invoiceNumber:el('payableInvoiceNumber').value.trim(), orderReference:el('payableOrderReference').value.trim(),
@@ -16231,7 +16674,8 @@ function renderHomeTasks(){
         const body = {
           idempotencyKey:payableFormIdempotencyKey, kind, companyId, companyName,
           description:el('payableDescription').value.trim(), supplierId:el('payableSupplier').value,
-          financeItemId, financeAccountId:el('payableAccount').value, paymentMethod:el('payablePaymentMethod').value.trim(),
+          financeItemId, financeAccountId:el('payableAccount').value, costCenterId:el('payableCostCenter').value,
+          paymentMethod:el('payablePaymentMethod').value.trim(),
           originalAmountCents, issueDate:el('payableIssueDate').value, dueDate,
           invoiceNumber:el('payableInvoiceNumber').value.trim(), orderReference:el('payableOrderReference').value.trim(),
           billingCode:el('payableBillingCode').value.trim(), notes:el('payableNotes').value.trim(),
@@ -16422,7 +16866,7 @@ function renderHomeTasks(){
   el('btnPayablesApplyFilters').addEventListener('click', () => { payablesPage = 1; loadPayablesList(); renderPayablesQuickViews(); });
   el('btnPayablesClearFilters').addEventListener('click', () => {
     ['payablesSearch','payablesDueFrom','payablesDueTo','payablesCompetenceFrom','payablesCompetenceTo'].forEach(id => { el(id).value = ''; });
-    ['payablesStatus','payablesSupplier','payablesItem','payablesAccount'].forEach(id => { el(id).value = ''; });
+    ['payablesStatus','payablesSupplier','payablesItem','payablesAccount','payablesCostCenter'].forEach(id => { el(id).value = ''; });
     el('payablesRecurringOnly').checked = false;
     el('payablesInstallmentOnly').checked = false;
     payablesQuickView = '';
@@ -16529,6 +16973,8 @@ function renderHomeTasks(){
     if(el('expensesSupplier')) el('expensesSupplier').innerHTML = '<option value="">TODOS</option>'+supplierOptions;
     if(el('expenseSupplier')) el('expenseSupplier').innerHTML = '<option value="">SEM FORNECEDOR</option>'+supplierOptions;
     renderPayableAccountOptionsForCompany('expenseAccount', el('expenseCompany') ? el('expenseCompany').value : '', 'SEM CONTA');
+    renderCostCenterOptionsFor('expensesCostCenter', 'TODOS');
+    renderCostCenterOptionsFor('expenseCostCenter', 'SEM CENTRO DE CUSTO');
     renderExpenseItemOptions('expensesItem', el('expensesCategory') ? el('expensesCategory').value : '', {placeholder:'TODAS'});
     renderExpenseItemOptions('expenseItem', el('expenseCategory') ? el('expenseCategory').value : '');
   }
@@ -16615,9 +17061,14 @@ function renderHomeTasks(){
         payableSuppliers = Array.isArray(suppliersData.suppliers) ? suppliersData.suppliers : [];
         payableAccounts = Array.isArray(accountsData.accounts) ? accountsData.accounts : [];
       }
+      if(!financeCostCenters.length){
+        const costCentersData = await financeApiRequest('/cost-centers');
+        financeCostCenters = Array.isArray(costCentersData.costCenters) ? costCentersData.costCenters : [];
+      }
     }catch(error){
       payableSuppliers = payableSuppliers || [];
       payableAccounts = payableAccounts || [];
+      financeCostCenters = financeCostCenters || [];
     }
     renderExpensesCatalogSelects();
   }
@@ -16632,8 +17083,8 @@ function renderHomeTasks(){
     if(supplierId) params.set('supplierId', supplierId);
     const financeItemId = el('expensesItem') ? el('expensesItem').value : '';
     if(financeItemId) params.set('financeItemId', financeItemId);
-    const costCenter = el('expensesCostCenter') ? el('expensesCostCenter').value.trim() : '';
-    if(costCenter) params.set('costCenter', costCenter);
+    const costCenterId = el('expensesCostCenter') ? el('expensesCostCenter').value : '';
+    if(costCenterId) params.set('costCenterId', costCenterId);
     const kind = el('expensesKind') ? el('expensesKind').value : '';
     if(kind) params.set('kind', kind);
     const rateioType = el('expensesRateioType') ? el('expensesRateioType').value : '';
@@ -16950,7 +17401,7 @@ function renderHomeTasks(){
     const body = {
       idempotencyKey:expenseFormIdempotencyKey, kind, companyId, companyName,
       description:el('expenseDescription').value.trim(), supplierId:el('expenseSupplier').value,
-      financeItemId, financeAccountId:el('expenseAccount').value, costCenter:el('expenseCostCenter').value.trim(),
+      financeItemId, financeAccountId:el('expenseAccount').value, costCenterId:el('expenseCostCenter').value,
       paymentMethod:el('expensePaymentMethod').value.trim(), originalAmountCents,
       issueDate:el('expenseIssueDate').value, dueDate,
       invoiceNumber:el('expenseInvoiceNumber').value.trim(), orderReference:el('expenseOrderReference').value.trim(),
@@ -17084,7 +17535,7 @@ function renderHomeTasks(){
     const itemForDuplicate = financeItems.find(i => i.id === expense.financeItemId);
     el('expenseCategory').value = itemForDuplicate ? itemForDuplicate.categoryId : '';
     renderExpenseItemOptions('expenseItem', itemForDuplicate ? itemForDuplicate.categoryId : '', {selectedId: expense.financeItemId});
-    el('expenseCostCenter').value = expense.costCenter || '';
+    el('expenseCostCenter').value = expense.costCenterId || '';
     renderPayableAccountOptionsForCompany('expenseAccount', expense.companyId, 'SEM CONTA');
     el('expenseAccount').value = expense.financeAccountId || '';
     el('expensePaymentMethod').value = expense.paymentMethod || '';
@@ -17404,6 +17855,7 @@ function renderHomeTasks(){
     renderPayableSuppliersList();
     renderPayableAccountsFilterCompanyOptions();
     renderPayableAccountsTable();
+    renderCostCentersList();
   }
 
   function resetPayableSupplierForm(){
@@ -17433,6 +17885,7 @@ function renderHomeTasks(){
     await loadPayablesCatalogData();
     resetPayableSupplierForm();
     resetPayableAccountForm();
+    resetCostCenterForm();
     renderPayablesCatalogLists();
     el('payablesCatalogDialog').showModal();
   });
@@ -17447,7 +17900,67 @@ function renderHomeTasks(){
       });
       el('payablesCatalogSuppliersTab').hidden = tab !== 'suppliers';
       el('payablesCatalogAccountsTab').hidden = tab !== 'accounts';
+      el('payablesCatalogCostCentersTab').hidden = tab !== 'costCenters';
     });
+  });
+
+  function renderCostCentersList(){
+    el('costCentersList').innerHTML = financeCostCenters.length
+      ? financeCostCenters.map(c => '<div class="dre-catalog-row"><span>'+escapeHtml(c.name)+'</span>'+
+          '<span style="display:flex;gap:6px;">'+
+            '<button class="btn-outline" type="button" data-cost-center-edit="'+escapeHtml(c.id)+'">EDITAR</button>'+
+            '<button class="btn-outline" type="button" data-cost-center-delete="'+escapeHtml(c.id)+'">EXCLUIR</button>'+
+          '</span></div>').join('')
+      : '<div class="dre-empty">Nenhum centro de custo cadastrado.</div>';
+  }
+
+  function resetCostCenterForm(){
+    el('costCenterForm').reset();
+    el('costCenterId').value = '';
+    el('btnCancelCostCenterEdit').hidden = true;
+    el('btnSaveCostCenter').textContent = 'ADICIONAR CENTRO DE CUSTO';
+    el('costCenterFormStatus').textContent = '';
+  }
+
+  el('costCenterForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('costCenterFormStatus');
+    const name = el('costCenterName').value.trim();
+    if(!name){ status.textContent = 'INFORME O NOME DO CENTRO DE CUSTO.'; return; }
+    try{
+      await financeApiRequest('/cost-centers', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id: el('costCenterId').value, name})
+      });
+      resetCostCenterForm();
+      await loadPayablesCatalogData();
+      renderCostCentersList();
+      showPurchaseToast('Centro de custo salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  el('btnCancelCostCenterEdit').addEventListener('click', resetCostCenterForm);
+
+  el('costCentersList').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-cost-center-edit]');
+    const deleteButton = event.target.closest('[data-cost-center-delete]');
+    if(editButton){
+      const costCenter = financeCostCenters.find(c => c.id === editButton.dataset.costCenterEdit);
+      if(!costCenter) return;
+      el('costCenterId').value = costCenter.id;
+      el('costCenterName').value = costCenter.name;
+      el('btnCancelCostCenterEdit').hidden = false;
+      el('btnSaveCostCenter').textContent = 'SALVAR ALTERAÇÕES';
+      el('costCenterName').focus();
+    }else if(deleteButton){
+      if(!confirm('Excluir este centro de custo?')) return;
+      try{
+        await financeApiRequest('/cost-centers?id='+encodeURIComponent(deleteButton.dataset.costCenterDelete), {method:'DELETE'});
+        await loadPayablesCatalogData();
+        renderCostCentersList();
+        showPurchaseToast('Centro de custo excluído.');
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }
   });
 
   el('payableSupplierForm').addEventListener('submit', async event => {
@@ -17774,6 +18287,7 @@ function renderHomeTasks(){
     }
     const supplierOptions = payableSuppliers.filter(s => s.active).map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
     if(el('invoiceSupplier')) el('invoiceSupplier').innerHTML = '<option value="">SEM FORNECEDOR</option>'+supplierOptions;
+    renderCostCenterOptionsFor('invoiceCostCenter', 'SEM CENTRO DE CUSTO');
     const categorySelect = el('invoiceCategory');
     if(categorySelect){
       const selected = categorySelect.value;
@@ -18061,7 +18575,7 @@ function renderHomeTasks(){
           totalAmountCents,
           financeCategoryId: el('invoiceCategory').value,
           financeItemId: el('invoiceItem').value,
-          costCenter: el('invoiceCostCenter').value,
+          costCenterId: el('invoiceCostCenter').value,
           notes: el('invoiceNotes').value
         })
       });

@@ -75,6 +75,8 @@ export async function GET(request: Request) {
   if (financeItemId) addCondition("finance_item_id = ?", financeItemId);
   const financeAccountId = safeText(params.get("financeAccountId"), 80);
   if (financeAccountId) addCondition("finance_account_id = ?", financeAccountId);
+  const costCenterId = safeText(params.get("costCenterId"), 80);
+  if (costCenterId) addCondition("cost_center_id = ?", costCenterId);
   const paymentMethod = safeText(params.get("paymentMethod"), 40);
   if (paymentMethod) addCondition("payment_method = ?", paymentMethod);
   const invoiceNumber = safeText(params.get("invoiceNumber"), 60);
@@ -194,6 +196,7 @@ export async function GET(request: Request) {
                 recurrence_id AS recurrenceId, recurrence_frequency AS recurrenceFrequency,
                 installment_group_id AS installmentGroupId, installment_number AS installmentNumber,
                 installment_total AS installmentTotal, expense_id AS expenseId, cost_center AS costCenter,
+                cost_center_id AS costCenterId,
                 ${displayStatusSql} AS displayStatus,
                 created_at AS createdAt, updated_at AS updatedAt
          FROM accounts_payable
@@ -317,6 +320,17 @@ export async function POST(request: Request) {
       .first<{ id: string }>();
     if (!item) return jsonResponse({ error: "ITEM DE DESPESA NÃO ENCONTRADO NO CATÁLOGO FINANCEIRO." }, 400);
 
+    const costCenterId = safeText(body.costCenterId, 80);
+    let costCenter = "";
+    if (costCenterId) {
+      const costCenterRow = await database
+        .prepare("SELECT name FROM finance_cost_centers WHERE id=?1")
+        .bind(costCenterId)
+        .first<{ name: string }>();
+      if (!costCenterRow) return jsonResponse({ error: "CENTRO DE CUSTO NÃO ENCONTRADO." }, 400);
+      costCenter = costCenterRow.name;
+    }
+
     const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
     if (accountError) return jsonResponse({ error: accountError }, 409);
 
@@ -434,9 +448,9 @@ export async function POST(request: Request) {
            invoice_number, order_reference, billing_code, notes, status,
            recurrence_id, recurrence_frequency, recurrence_occurrence_index, recurrence_occurrence_count, recurrence_end_date,
            installment_group_id, installment_number, installment_total, idempotency_key,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, cost_center, cost_center_id)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,?9,?10,?11,?12,?13,?14,?15,?16,?17,'open',
-           ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP)`,
+           ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP,?29,?30)`,
         [
           id,
           companyId,
@@ -471,6 +485,8 @@ export async function POST(request: Request) {
             : `${idempotencyKey}:${occurrence.recurrenceIndex}:${occurrence.installmentNumber}`,
           actor.id,
           actorName,
+          costCenter,
+          costCenterId || null,
         ],
       ]);
     });
