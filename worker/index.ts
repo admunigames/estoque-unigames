@@ -47,6 +47,7 @@ type Permission =
   | "pdv_requests:view" | "pdv_requests:create" | "pdv_requests:delete" | "pdv_requests:status"
   | "os_notes:view" | "os_notes:create" | "os_notes:attach" | "os_notes:delete"
   | "finance:manage"
+  | "payroll:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
   | "users:manage";
@@ -114,6 +115,10 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "pdv_requests:view", "pdv_requests:create", "pdv_requests:delete", "pdv_requests:status",
   "os_notes:view", "os_notes:create", "os_notes:attach", "os_notes:delete",
   "finance:manage",
+  // RH Financeiro (Folha, Benefícios, Comissionamento) — permissão única e
+  // independente de finance:manage, pra quem cuida do RH acessar só esses
+  // três módulos, e quem cuida do Financeiro não ganhar o RH de brinde.
+  "payroll:manage",
   "payables:invoices_view", "payables:invoices_reconcile", "payables:confirm_payment", "payables:return_to_purchases",
   "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
   "users:manage",
@@ -214,6 +219,10 @@ const APP_ROUTE_PATHS = new Set([
   "/cadastros/usuarios",
   "/rh/folgas",
   "/rh/escalas",
+  "/rh/funcionarios",
+  "/rh/folha",
+  "/rh/beneficios",
+  "/rh/comissionamento",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
@@ -1051,6 +1060,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "finance:manage",
     "payables:invoices_view", "payables:invoices_reconcile", "payables:confirm_payment", "payables:return_to_purchases",
   ],
+  payroll: ["payroll:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
   ],
@@ -1117,6 +1127,17 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/financeiro" || path.startsWith("/financeiro/") || path.startsWith("/api/finance"),
       "finance",
+    ],
+    // RH Financeiro: as quatro telas novas (Funcionários, Folha, Benefícios
+    // e Comissionamento) e a API delas só dependem de payroll:manage — nem
+    // do "hr" das telas de Folgas/Escalas, nem de finance:manage.
+    [
+      path === "/rh/funcionarios" ||
+        path === "/rh/folha" ||
+        path === "/rh/beneficios" ||
+        path === "/rh/comissionamento" ||
+        path.startsWith("/api/hr-payroll"),
+      "payroll",
     ],
   ];
   const direct = directPermissions.find(([matches]) => matches);
