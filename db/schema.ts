@@ -1584,3 +1584,114 @@ export const hrCommissionItems = pgTable(
   },
   (table) => [index("hr_commission_items_commission_idx").on(table.commissionId)],
 );
+
+// ---------------------------------------------------------------------------
+// Financeiro Fase 6 — Recebíveis, Fluxo de Caixa e configurações do módulo.
+// ---------------------------------------------------------------------------
+
+// Recebíveis (contas a receber). Espelha accounts_payable nas convenções de
+// nomeação/índices/auditoria, mas com o ciclo de vida simplificado: um
+// recebível ou está pendente (received_amount_cents NULL) ou foi recebido
+// (qualquer valor, INCLUSIVE 0 — 0 recebido é um caso real de estorno total,
+// não "ainda não recebido"; por isso NULL e não 0 é a sentinela de pendente).
+//
+// Não existe cadastro de adquirente/maquineta no projeto ainda, então a
+// operadora é texto livre (operator_text) — será formalizada numa Fase 7.
+//
+// O status NÃO é persistido: assim como em accounts_payable, tudo que dá pra
+// derivar de data/valor é calculado (ver app/lib/receivables-status.ts).
+export const accountsReceivable = pgTable(
+  "accounts_receivable",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    operatorText: text("operator_text").notNull().default(""),
+    competenceMonth: text("competence_month").notNull(),
+    expectedDate: text("expected_date").notNull(),
+    expectedAmountCents: integer("expected_amount_cents").notNull(),
+    // NULL = ainda não recebido. Qualquer valor não-nulo (incluindo 0) =
+    // recebido — ver comentário do bloco acima.
+    receivedAmountCents: integer("received_amount_cents"),
+    receivedDate: text("received_date").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    // Só o estado que depende de AÇÃO do usuário fica aqui: 'open' (o padrão)
+    // ou 'canceled'. "Recebido"/"pendente"/"vencido"/"divergente" saem de
+    // computeReceivableDisplayStatus (app/lib/receivables-status.ts).
+    canceled: integer("canceled").notNull().default(0),
+    idempotencyKey: text("idempotency_key").notNull(),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    canceledBy: text("canceled_by").notNull().default(""),
+    canceledByName: text("canceled_by_name").notNull().default(""),
+    canceledAt: text("canceled_at").notNull().default(""),
+  },
+  (table) => [
+    index("accounts_receivable_company_competence_idx").on(table.companyId, table.competenceMonth),
+    index("accounts_receivable_company_expected_idx").on(table.companyId, table.expectedDate),
+    index("accounts_receivable_operator_idx").on(table.operatorText),
+    uniqueIndex("accounts_receivable_idempotency_idx").on(table.idempotencyKey),
+  ],
+);
+
+// "Caixa Atual" do Fluxo de Caixa: saldo informado MANUALMENTE por conta
+// bancária/caixa, com a data de referência do extrato (as_of_date, que não é
+// necessariamente hoje). Um único registro "atual" por conta (unique index em
+// account_id, atualizado por upsert) — não há histórico de saldos, só a
+// auditoria mínima de quem informou e quando.
+//
+// De propósito NÃO reaproveita finance_accounts.opening_balance_cents/
+// opening_balance_date: aquele par é o saldo de ABERTURA do cadastro da conta
+// (dado histórico já preenchido em produção) e sobrescrevê-lo a cada
+// atualização de fluxo de caixa destruiria essa informação.
+export const financeAccountBalances = pgTable(
+  "finance_account_balances",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    // Copiado de finance_accounts.company_id na escrita, só pra permitir
+    // filtrar por loja sem join na consulta do fluxo de caixa.
+    companyId: text("company_id").notNull().default(""),
+    balanceCents: integer("balance_cents").notNull().default(0),
+    asOfDate: text("as_of_date").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("finance_account_balances_account_idx").on(table.accountId),
+    index("finance_account_balances_company_idx").on(table.companyId),
+  ],
+);
+
+// Configurações de Recebíveis/Fluxo de Caixa, uma linha por loja. company_id
+// vazio ('') é a linha GLOBAL, usada como fallback quando a loja não tem
+// configuração própria — mesma convenção de sentinela vazio já usada em
+// finance_accounts/finance_budgets/expenses. Nenhuma linha é criada
+// automaticamente: sem linha nenhuma, valem os padrões de código
+// (DEFAULT_CASH_FLOW_SETTINGS em app/lib/cash-flow.ts).
+export const financeCashFlowSettings = pgTable(
+  "finance_cash_flow_settings",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull().default(""),
+    // Tolerância de divergência dos Recebíveis: alerta quando a diferença
+    // absoluta passa do percentual OU do valor fixo (o que for atingido
+    // primeiro) — decisão confirmada com o usuário.
+    receivablesToleranceBps: integer("receivables_tolerance_bps").notNull().default(200),
+    receivablesToleranceFixedCents: integer("receivables_tolerance_fixed_cents").notNull().default(2000),
+    // Dia do mês SEGUINTE à competência usado como data prevista de saída de
+    // caixa da Folha/Benefícios/Comissões quando o lançamento não tem
+    // payment_date preenchido.
+    payrollDefaultPaymentDay: integer("payroll_default_payment_day").notNull().default(5),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [uniqueIndex("finance_cash_flow_settings_company_idx").on(table.companyId)],
+);
