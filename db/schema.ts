@@ -655,6 +655,19 @@ export const financeItems = pgTable(
   (table) => [index("finance_items_category_idx").on(table.categoryId)],
 );
 
+export const financeCostCenters = pgTable(
+  "finance_cost_centers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    position: integer("position").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [uniqueIndex("finance_cost_centers_name_idx").on(table.name)],
+);
+
 export const financeStoreEntries = pgTable(
   "finance_store_entries",
   {
@@ -813,6 +826,7 @@ export const accountsPayable = pgTable(
     // Pagar, como sempre foi possível.
     expenseId: text("expense_id"),
     costCenter: text("cost_center").notNull().default(""),
+    costCenterId: text("cost_center_id"),
     idempotencyKey: text("idempotency_key").notNull(),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
@@ -884,6 +898,7 @@ export const expenses = pgTable(
     financeItemId: text("finance_item_id").notNull(),
     financeAccountId: text("finance_account_id").notNull().default(""),
     costCenter: text("cost_center").notNull().default(""),
+    costCenterId: text("cost_center_id"),
     originalAmountCents: integer("original_amount_cents").notNull(),
     issueDate: text("issue_date").notNull().default(""),
     competenceMonth: text("competence_month").notNull(),
@@ -1073,6 +1088,7 @@ export const supplierInvoices = pgTable(
     financeCategoryId: text("finance_category_id").notNull().default(""),
     financeItemId: text("finance_item_id").notNull().default(""),
     costCenter: text("cost_center").notNull().default(""),
+    costCenterId: text("cost_center_id"),
     notes: text("notes").notNull().default(""),
     // 'purchase' | 'manual'
     origin: text("origin").notNull().default("manual"),

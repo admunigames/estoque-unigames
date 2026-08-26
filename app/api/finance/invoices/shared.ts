@@ -68,6 +68,7 @@ export type InvoiceRow = {
   financeCategoryId: string;
   financeItemId: string;
   costCenter: string;
+  costCenterId: string | null;
   notes: string;
   origin: "purchase" | "manual";
   operationalStatus: string;
@@ -93,7 +94,7 @@ export const INVOICE_ROW_SELECT = `id, company_id AS companyId, company_name AS 
   issue_date AS issueDate, entry_date AS entryDate, competence_month AS competenceMonth,
   notion_purchase_id AS notionPurchaseId, notion_purchase_url AS notionPurchaseUrl,
   total_amount_cents AS totalAmountCents, finance_category_id AS financeCategoryId,
-  finance_item_id AS financeItemId, cost_center AS costCenter, notes, origin,
+  finance_item_id AS financeItemId, cost_center AS costCenter, cost_center_id AS costCenterId, notes, origin,
   operational_status AS operationalStatus, financial_status AS financialStatus,
   pending_correction AS pendingCorrection, return_reason AS returnReason, canceled,
   created_by AS createdBy, created_by_name AS createdByName,

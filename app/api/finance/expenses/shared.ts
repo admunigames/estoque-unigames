@@ -53,6 +53,7 @@ export type ExpenseRow = {
   financeItemId: string;
   financeAccountId: string;
   costCenter: string;
+  costCenterId: string | null;
   originalAmountCents: number;
   issueDate: string;
   competenceMonth: string;
@@ -76,7 +77,7 @@ export type ExpenseRow = {
 
 export const EXPENSE_SELECT_COLUMNS = `id, company_id AS companyId, company_name AS companyName, description,
   supplier_id AS supplierId, finance_item_id AS financeItemId, finance_account_id AS financeAccountId,
-  cost_center AS costCenter, original_amount_cents AS originalAmountCents,
+  cost_center AS costCenter, cost_center_id AS costCenterId, original_amount_cents AS originalAmountCents,
   issue_date AS issueDate, competence_month AS competenceMonth, due_date AS dueDate,
   payment_method AS paymentMethod, invoice_number AS invoiceNumber, order_reference AS orderReference,
   notes, kind, installment_total AS installmentTotal,

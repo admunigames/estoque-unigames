@@ -230,7 +230,21 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         409,
       );
     }
-    const costCenter = body.costCenter === undefined ? invoice.costCenter : safeText(body.costCenter, 120);
+    let costCenter = invoice.costCenter;
+    let costCenterId = invoice.costCenterId;
+    if (body.costCenterId !== undefined) {
+      costCenterId = safeText(body.costCenterId, 80) || null;
+      if (costCenterId) {
+        const costCenterRow = await database
+          .prepare("SELECT name FROM finance_cost_centers WHERE id=?1")
+          .bind(costCenterId)
+          .first<{ name: string }>();
+        if (!costCenterRow) return jsonResponse({ error: "CENTRO DE CUSTO NÃO ENCONTRADO." }, 400);
+        costCenter = costCenterRow.name;
+      } else {
+        costCenter = "";
+      }
+    }
     const notes = body.notes === undefined ? invoice.notes : safeText(body.notes, 2000);
     const accessKey = body.accessKey === undefined ? invoice.accessKey : safeText(body.accessKey, 44);
     if (accessKey && !/^\d{44}$/.test(accessKey)) {
@@ -265,7 +279,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         `UPDATE supplier_invoices
          SET supplier_id=?1, supplier_document=?2, finance_category_id=?3, finance_item_id=?4, cost_center=?5,
              notes=?6, access_key=?7, entry_date=?8, total_amount_cents=?9,
-             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP
+             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP, cost_center_id=?13
          WHERE id=?12`,
         [
           supplierId,
@@ -280,6 +294,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           actor.id,
           actorName,
           id,
+          costCenterId,
         ],
       ],
     ];

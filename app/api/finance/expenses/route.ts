@@ -77,8 +77,8 @@ export async function GET(request: Request) {
   if (supplierId) addCondition("supplier_id = ?", supplierId);
   const financeItemId = safeText(params.get("financeItemId"), 80);
   if (financeItemId) addCondition("finance_item_id = ?", financeItemId);
-  const costCenter = safeText(params.get("costCenter"), 80);
-  if (costCenter) addCondition("cost_center = ?", costCenter);
+  const costCenterId = safeText(params.get("costCenterId"), 80);
+  if (costCenterId) addCondition("cost_center_id = ?", costCenterId);
   const kind = safeText(params.get("kind"), 20);
   if (kind) addCondition("kind = ?", kind);
   const rateioType = safeText(params.get("rateioType"), 20);
@@ -201,7 +201,17 @@ export async function POST(request: Request) {
 
     const supplierId = safeText(body.supplierId, 80);
     const financeAccountId = safeText(body.financeAccountId, 80);
-    const costCenter = safeText(body.costCenter, 120);
+    const database = await getD1();
+    const costCenterId = safeText(body.costCenterId, 80);
+    let costCenter = "";
+    if (costCenterId) {
+      const costCenterRow = await database
+        .prepare("SELECT name FROM finance_cost_centers WHERE id=?1")
+        .bind(costCenterId)
+        .first<{ name: string }>();
+      if (!costCenterRow) return jsonResponse({ error: "CENTRO DE CUSTO NÃO ENCONTRADO." }, 400);
+      costCenter = costCenterRow.name;
+    }
     const paymentMethod = safeText(body.paymentMethod, 40);
     const invoiceNumber = safeText(body.invoiceNumber, 60);
     const orderReference = safeText(body.orderReference, 60);
@@ -263,7 +273,6 @@ export async function POST(request: Request) {
     }
 
     const kind = (safeText(body.kind, 20) || "single") as "single" | "installment" | "recurring";
-    const database = await getD1();
 
     const item = await database
       .prepare("SELECT id FROM finance_items WHERE id=?1")
@@ -450,8 +459,8 @@ export async function POST(request: Request) {
          invoice_number, order_reference, notes, kind, installment_total,
          recurrence_frequency, recurrence_occurrence_count, recurrence_end_date,
          rateio_type, rateio_model, card_id, bank_reconciliation_id, idempotency_key,
-         created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP)`,
+         created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, cost_center_id)
+       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP,?29)`,
       [
         expenseId,
         companyId,
@@ -481,6 +490,7 @@ export async function POST(request: Request) {
         idempotencyKey,
         actor.id,
         actorName,
+        costCenterId || null,
       ],
     ]);
 
@@ -527,9 +537,9 @@ export async function POST(request: Request) {
              invoice_number, order_reference, billing_code, notes, status,
              recurrence_id, recurrence_frequency, recurrence_occurrence_index, recurrence_occurrence_count, recurrence_end_date,
              installment_group_id, installment_number, installment_total, expense_id, idempotency_key,
-             created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+             created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, cost_center_id)
            VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,0,?10,?11,?12,?13,?14,?15,?16,'',?17,'open',
-             ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29,CURRENT_TIMESTAMP,?28,?29,CURRENT_TIMESTAMP)`,
+             ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29,CURRENT_TIMESTAMP,?28,?29,CURRENT_TIMESTAMP,?30)`,
           [
             payableId,
             share.companyId,
@@ -563,6 +573,7 @@ export async function POST(request: Request) {
             `expense:${idempotencyKey}:${shareIndex}:${occurrence.recurrenceIndex}:${occurrence.installmentNumber}`,
             actor.id,
             actorName,
+            costCenterId || null,
           ],
         ]);
       });

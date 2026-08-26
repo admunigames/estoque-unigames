@@ -4,6 +4,7 @@ import {
   canManageFinance,
   identity,
   jsonResponse,
+  loadCompanyList,
   MONTH_PATTERN,
   safeText,
 } from "../shared";
@@ -279,6 +280,86 @@ async function buildManagerialDre(database: Awaited<ReturnType<typeof getD1>>, m
   return { revenueCents, expenseTotalCents, resultCents, marginBasisPoints, categories: dreCategories };
 }
 
+// Comparativo entre unidades: mesma DRE "Por Loja" rodada pra cada loja
+// cadastrada, mas só o total por categoria de topo (o detalhe de
+// subgrupo/item continua exclusivo da aba Por Loja — aqui o objetivo é
+// olhar lado a lado, não editar).
+async function buildByStoreDre(database: Awaited<ReturnType<typeof getD1>>, month: string) {
+  const companies = await loadCompanyList(database);
+  const stores = await Promise.all(
+    companies.map(async (company) => {
+      const result = await buildStoreDre(database, company.id, month);
+      return {
+        storeId: company.id,
+        storeName: company.name,
+        revenueCents: result.revenueCents,
+        expenseTotalCents: result.expenseTotalCents,
+        resultCents: result.resultCents,
+        marginBasisPoints: result.marginBasisPoints,
+        categories: result.categories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          totalCents: category.totalCents,
+        })),
+      };
+    }),
+  );
+  return { stores };
+}
+
+function monthsBetween(monthFrom: string, monthTo: string): string[] {
+  const [fromYear, fromMonth] = monthFrom.split("-").map(Number);
+  const [toYear, toMonth] = monthTo.split("-").map(Number);
+  const months: string[] = [];
+  let year = fromYear;
+  let monthIndex = fromMonth;
+  // Limite de 36 meses (3 anos) — cobre com folga tanto "comparativo
+  // mensal" (poucos meses) quanto "comparativo anual" (12 meses), sem
+  // deixar um range absurdo travar a rota com centenas de queries.
+  let guard = 0;
+  while ((year < toYear || (year === toYear && monthIndex <= toMonth)) && guard < 36) {
+    months.push(`${year}-${String(monthIndex).padStart(2, "0")}`);
+    monthIndex += 1;
+    if (monthIndex > 12) {
+      monthIndex = 1;
+      year += 1;
+    }
+    guard += 1;
+  }
+  return months;
+}
+
+// Comparativo mensal E anual usam a mesma série — a diferença é só o
+// tamanho do range que o front-end pede (poucos meses vs. 12).
+async function buildDreSeries(
+  database: Awaited<ReturnType<typeof getD1>>,
+  seriesScope: "store" | "consolidated",
+  storeId: string,
+  monthFrom: string,
+  monthTo: string,
+) {
+  const months = monthsBetween(monthFrom, monthTo);
+  const series = await Promise.all(
+    months.map(async (month) => {
+      const result =
+        seriesScope === "store" ? await buildStoreDre(database, storeId, month) : await buildConsolidatedDre(database, month);
+      return {
+        month,
+        revenueCents: result.revenueCents,
+        expenseTotalCents: result.expenseTotalCents,
+        resultCents: result.resultCents,
+        marginBasisPoints: result.marginBasisPoints,
+        categories: result.categories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          totalCents: category.totalCents,
+        })),
+      };
+    }),
+  );
+  return { months, series };
+}
+
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -292,17 +373,42 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const scope = safeText(url.searchParams.get("scope"), 20) || "store";
-  const month = safeText(url.searchParams.get("month"), 7);
-  if (!MONTH_PATTERN.test(month)) {
-    return jsonResponse({ error: "INFORME UM MÊS VÁLIDO (AAAA-MM)." }, 400);
-  }
 
-  if (scope !== "store" && scope !== "consolidated" && scope !== "managerial") {
+  const VALID_SCOPES = new Set(["store", "consolidated", "managerial", "by-store", "series"]);
+  if (!VALID_SCOPES.has(scope)) {
     return jsonResponse({ error: "ESCOPO DE DRE AINDA NÃO DISPONÍVEL." }, 400);
   }
 
   try {
     const database = await getD1();
+
+    if (scope === "series") {
+      const seriesScope = safeText(url.searchParams.get("seriesScope"), 20) === "store" ? "store" : "consolidated";
+      const monthFrom = safeText(url.searchParams.get("monthFrom"), 7);
+      const monthTo = safeText(url.searchParams.get("monthTo"), 7);
+      if (!MONTH_PATTERN.test(monthFrom) || !MONTH_PATTERN.test(monthTo)) {
+        return jsonResponse({ error: "INFORME UM PERÍODO VÁLIDO (AAAA-MM ATÉ AAAA-MM)." }, 400);
+      }
+      if (monthFrom > monthTo) {
+        return jsonResponse({ error: "O MÊS INICIAL NÃO PODE SER DEPOIS DO MÊS FINAL." }, 400);
+      }
+      const storeId = safeText(url.searchParams.get("storeId"), 80);
+      if (seriesScope === "store" && !storeId) {
+        return jsonResponse({ error: "SELECIONE A LOJA." }, 400);
+      }
+      const result = await buildDreSeries(database, seriesScope, storeId, monthFrom, monthTo);
+      return jsonResponse({ scope, seriesScope, storeId: seriesScope === "store" ? storeId : null, ...result });
+    }
+
+    const month = safeText(url.searchParams.get("month"), 7);
+    if (!MONTH_PATTERN.test(month)) {
+      return jsonResponse({ error: "INFORME UM MÊS VÁLIDO (AAAA-MM)." }, 400);
+    }
+
+    if (scope === "by-store") {
+      const result = await buildByStoreDre(database, month);
+      return jsonResponse({ scope, month, ...result });
+    }
 
     if (scope === "consolidated") {
       const result = await buildConsolidatedDre(database, month);
