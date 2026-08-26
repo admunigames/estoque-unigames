@@ -1391,3 +1391,196 @@ export const loanRequestUpdates = pgTable(
   },
   (table) => [index("loan_request_updates_request_idx").on(table.requestId, table.createdAt)],
 );
+
+// ============================ RH FINANCEIRO ============================
+// Folha de Pagamento, BenefÃ­cios e Comissionamento (Financeiro Fase 5).
+// Todo o mÃ³dulo Ã© liberado por uma Ãºnica permissÃ£o nova ("payroll:manage"),
+// independente de "finance:manage" â€” quem cuida do RH nÃ£o precisa (nem
+// ganha) acesso ao restante do Financeiro. Ver app/api/hr-payroll/shared.ts.
+//
+// NÃ£o existe tabela SQL de lojas neste projeto (o cadastro vive em
+// shared_state/'companies_list'), entÃ£o company_id/company_name sÃ£o
+// desnormalizados em cada linha, igual ao resto do Financeiro.
+
+// Cadastro de funcionÃ¡rios â€” base dos trÃªs mÃ³dulos. NÃƒO se confunde com
+// app_users (contas de login): a maioria dos funcionÃ¡rios nÃ£o tem acesso ao
+// sistema. user_id Ã© um vÃ­nculo OPCIONAL com app_users.id (sem FK, seguindo
+// a convenÃ§Ã£o do projeto de relacionar por convenÃ§Ã£o).
+export const hrEmployees = pgTable(
+  "hr_employees",
+  {
+    id: text("id").primaryKey(),
+    fullName: text("full_name").notNull(),
+    // SÃ³ dÃ­gitos (11 caracteres). Ãšnico quando preenchido â€” Ã­ndice parcial,
+    // jÃ¡ que '' (nÃ£o informado) pode se repetir Ã  vontade.
+    cpf: text("cpf").notNull().default(""),
+    admissionDate: text("admission_date").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    roleTitle: text("role_title").notNull().default(""),
+    salaryCents: integer("salary_cents").notNull().default(0),
+    pixKey: text("pix_key").notNull().default(""),
+    bankName: text("bank_name").notNull().default(""),
+    // 'active' | 'inactive'
+    status: text("status").notNull().default("active"),
+    userId: text("user_id").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_employees_cpf_idx").on(table.cpf).where(sql`cpf <> ''`),
+    index("hr_employees_company_idx").on(table.companyId),
+    index("hr_employees_status_idx").on(table.status),
+  ],
+);
+
+// Folha mensal. ComissÃ£o e BenefÃ­cios NÃƒO ficam aqui: sÃ£o sempre
+// recalculados ao vivo a partir de hr_commissions/hr_benefits (ver
+// computedCommissionCentsFor/computedBenefitsCentsFor em
+// app/api/hr-payroll/shared.ts), pra folha nunca divergir da fonte. O
+// comprovante (PDF) vai pro R2 sob hr-payroll/{id}/{arquivo}, mesmo fluxo
+// das Notas de O.S.
+export const hrPayrollEntries = pgTable(
+  "hr_payroll_entries",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    month: text("month").notNull(),
+    baseSalaryCents: integer("base_salary_cents").notNull().default(0),
+    bonusCents: integer("bonus_cents").notNull().default(0),
+    overtimeCents: integer("overtime_cents").notNull().default(0),
+    additionsCents: integer("additions_cents").notNull().default(0),
+    deductionsCents: integer("deductions_cents").notNull().default(0),
+    otherCents: integer("other_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    paymentDone: integer("payment_done").notNull().default(0),
+    paymentDate: text("payment_date").notNull().default(""),
+    attachmentFileName: text("attachment_file_name").notNull().default(""),
+    attachmentR2Key: text("attachment_r2_key").notNull().default(""),
+    attachmentSizeBytes: integer("attachment_size_bytes").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_payroll_entries_employee_month_idx").on(table.employeeId, table.month),
+    index("hr_payroll_entries_month_idx").on(table.month),
+    index("hr_payroll_entries_company_idx").on(table.companyId),
+  ],
+);
+
+// BenefÃ­cios pagos por competÃªncia. VÃ¡rios lanÃ§amentos por funcionÃ¡rio/mÃªs
+// sÃ£o permitidos de propÃ³sito (alimentaÃ§Ã£o + premiaÃ§Ã£o + ...), entÃ£o nÃ£o
+// existe Ã­ndice Ãºnico aqui.
+export const hrBenefits = pgTable(
+  "hr_benefits",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    month: text("month").notNull(),
+    // 'alimentacao' | 'mobilidade' | 'premiacao' | 'saldo_livre' | 'outros'
+    type: text("type").notNull().default("outros"),
+    // 'pix' | 'cartao' | 'plataforma' | 'outros'
+    paymentMethod: text("payment_method").notNull().default("outros"),
+    amountCents: integer("amount_cents").notNull().default(0),
+    paymentDate: text("payment_date").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("hr_benefits_employee_month_idx").on(table.employeeId, table.month),
+    index("hr_benefits_month_idx").on(table.month),
+  ],
+);
+
+// CatÃ¡logo de lanÃ§amentos recorrentes do comissionamento (ex: "BÃ´nus GAR"),
+// usado sÃ³ para prÃ©-preencher uma linha de hr_commission_items.
+export const hrCommissionPresets = pgTable("hr_commission_presets", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  // 'bonus' | 'premiacao' | 'desconto' | 'ajuste'
+  kind: text("kind").notNull().default("bonus"),
+  defaultAmountCents: integer("default_amount_cents").notNull().default(0),
+  active: integer("active").notNull().default(1),
+  createdBy: text("created_by").notNull(),
+  createdByName: text("created_by_name").notNull().default(""),
+  createdAt: text("created_at").notNull().default(sql`now()::text`),
+  updatedBy: text("updated_by").notNull().default(""),
+  updatedByName: text("updated_by_name").notNull().default(""),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+});
+
+// CabeÃ§alho do comissionamento (um por funcionÃ¡rio/mÃªs). Os quatro campos de
+// soma sÃ£o desnormalizados a partir de hr_commission_items e recalculados na
+// mesma transaÃ§Ã£o toda vez que os itens mudam. discounts_cents Ã© guardado
+// como MAGNITUDE positiva e subtraÃ­do na fÃ³rmula; adjustments_cents Ã© o
+// Ãºnico com sinal. Valor final (calculado na leitura, nunca gravado):
+//   commission + bonuses + premiums - discounts + adjustments
+export const hrCommissions = pgTable(
+  "hr_commissions",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    month: text("month").notNull(),
+    commissionCents: integer("commission_cents").notNull().default(0),
+    bonusesCents: integer("bonuses_cents").notNull().default(0),
+    premiumsCents: integer("premiums_cents").notNull().default(0),
+    discountsCents: integer("discounts_cents").notNull().default(0),
+    adjustmentsCents: integer("adjustments_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_commissions_employee_month_idx").on(table.employeeId, table.month),
+    index("hr_commissions_month_idx").on(table.month),
+    index("hr_commissions_company_idx").on(table.companyId),
+  ],
+);
+
+// Linhas que sustentam os totais do cabeÃ§alho e o recibo detalhado.
+// amount_cents Ã© sempre a MAGNITUDE (positiva) do lanÃ§amento, exceto em
+// 'ajuste', onde o sinal informado pelo usuÃ¡rio Ã© preservado â€” o sinal do
+// 'desconto' Ã© aplicado sÃ³ na fÃ³rmula do total. Sem FK (convenÃ§Ã£o do
+// projeto): a exclusÃ£o em cascata Ã© feita na aplicaÃ§Ã£o.
+export const hrCommissionItems = pgTable(
+  "hr_commission_items",
+  {
+    id: text("id").primaryKey(),
+    commissionId: text("commission_id").notNull(),
+    presetId: text("preset_id").notNull().default(""),
+    label: text("label").notNull().default(""),
+    // 'bonus' | 'premiacao' | 'desconto' | 'ajuste'
+    kind: text("kind").notNull().default("bonus"),
+    amountCents: integer("amount_cents").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("hr_commission_items_commission_idx").on(table.commissionId)],
+);

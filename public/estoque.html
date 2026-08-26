@@ -1502,6 +1502,16 @@
   }
 
   .print-report-header{display:none;}
+  /* Blocos que só existem no relatório impresso (RH Financeiro). */
+  .print-only{display:none;}
+  .rh-print-block{margin-top:16px;}
+  .rh-print-block h3{margin:0 0 6px;font:800 11px var(--mono);letter-spacing:.06em;color:var(--ink);}
+  .rh-print-table{width:100%;border-collapse:collapse;}
+  .rh-print-table th,.rh-print-table td{border:1px solid var(--line);padding:6px 8px;font-size:11px;text-align:left;}
+  .rh-print-table td.num,.rh-print-table th.num{text-align:right;}
+  #rhComissaoRecibo{color:var(--ink);}
+  .rh-recibo-meta{font-size:11px;color:var(--ink-soft);line-height:1.6;margin:8px 0 4px;}
+  .rh-recibo-total{margin-top:10px;font:800 13px var(--mono);}
 
   /* IMPRESSAO / PDF */
   @media print{
@@ -1529,6 +1539,11 @@
       display:block !important; margin:0 0 14px; padding:0 0 11px;
       border-bottom:2px solid #244f83; color:#111827;
     }
+    body.pdf-export .print-only{display:block !important;}
+    /* Recibo individual do comissionamento: esconde o resto da página. */
+    body.rh-recibo-only #rhComissaoMain{display:none !important;}
+    .rh-print-table th,.rh-print-table td{border:1px solid #cfd8e3 !important; font-size:8px !important;}
+    .rh-print-block{break-inside:avoid; page-break-inside:avoid;}
     .print-report-kicker{font-size:8px; font-weight:700; letter-spacing:1.2px; color:#244f83;}
     .print-report-header h1{margin:5px 0 4px; font:800 19px/1.2 var(--sans); color:#111827;}
     .print-report-meta{font-size:8px; line-height:1.45; color:#475569;}
@@ -2780,6 +2795,20 @@
         <a class="nav-item sub-item" id="navFinanceiroOrcamento" data-page="financeiroOrcamento" data-permission="finance" data-home-desc="Valor orçado por loja, categoria e centro de custo, comparado com o realizado." title="Orçamento" href="/financeiro/orcamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M11 20V4M18 20V13"/></svg></span><span class="nav-label">Orçamento</span></a>
       </div>
     </div>
+    <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
+         mesmas páginas do grupo RH (mesmo data-page), só que liberados por
+         payroll — nenhum dado ou seção é duplicado. -->
+    <div class="nav-group" data-permission="payroll">
+      <button class="nav-group-toggle" id="navRhFinanceiroMenu" type="button" aria-expanded="false" aria-controls="navRhFinanceiroSubmenu">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16.5 12.5h4"/><path d="M18.5 10.5v4"/></svg></span><span class="nav-label">RH Financeiro</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </button>
+      <div class="nav-submenu" id="navRhFinanceiroSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navFinanceiroRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroRhFolha" data-page="rhFolha" data-permission="payroll" title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroRhBeneficios" data-page="rhBeneficios" data-permission="payroll" title="Benefícios" href="/rh/beneficios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11" rx="1.8"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11"/></svg></span><span class="nav-label">Benefícios</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroRhComissionamento" data-page="rhComissionamento" data-permission="payroll" title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
+      </div>
+    </div>
     <div class="nav-group" data-permission="hr">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -2787,6 +2816,10 @@
       <div class="nav-submenu" id="navRhSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-home-desc="Solicitações e histórico de folgas da equipe." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
         <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" data-home-desc="Montagem e consulta das escalas de trabalho da equipe." title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="nav-label">Escalas</span></a>
+        <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
+        <a class="nav-item sub-item" id="navRhFolha" data-page="rhFolha" data-permission="payroll" data-home-desc="Folha de pagamento mensal, com comissão e benefícios calculados na hora." title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
+        <a class="nav-item sub-item" id="navRhBeneficios" data-page="rhBeneficios" data-permission="payroll" data-home-desc="Vales, premiações e demais benefícios pagos por competência." title="Benefícios" href="/rh/beneficios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11" rx="1.8"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11"/><path d="M12 8.5c-2.5 0-4-1-4-2.3S9.5 4 12 8.5Zm0 0c2.5 0 4-1 4-2.3S14.5 4 12 8.5Z"/></svg></span><span class="nav-label">Benefícios</span></a>
+        <a class="nav-item sub-item" id="navRhComissionamento" data-page="rhComissionamento" data-permission="payroll" data-home-desc="Comissão, bônus, premiações e recibo detalhado por funcionário." title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="database">
@@ -4595,6 +4628,12 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>RH Financeiro (Folha, Benefícios, Comissionamento)</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payroll:manage"> Cadastrar funcionários e gerenciar folha, benefícios e comissionamento</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -4640,6 +4679,189 @@
         <div class="page-header-meta"><p class="page-desc">Escalas de trabalho da equipe.</p></div>
       </header>
       <div class="empty-state"><h4>Em construção</h4><p>Esta página ainda será detalhada.</p></div>
+    </section>
+
+    <!-- ================= RH / FUNCIONÁRIOS ================= -->
+    <section id="pageRhFuncionarios" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Funcionários</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Cadastro de funcionários — base da folha de pagamento, dos benefícios e do comissionamento.</p></div>
+      </header>
+
+      <div class="dre-toolbar no-print">
+        <div class="field"><label for="rhEmployeeFiltroLoja">LOJA</label><select id="rhEmployeeFiltroLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field"><label for="rhEmployeeFiltroStatus">SITUAÇÃO</label><select id="rhEmployeeFiltroStatus"><option value="active">ATIVOS</option><option value="inactive">INATIVOS</option><option value="">TODOS</option></select></div>
+        <div class="field"><label for="rhEmployeeBusca">BUSCAR</label><input id="rhEmployeeBusca" placeholder="Nome, CPF ou cargo"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnNewRhEmployee" type="button">NOVO FUNCIONÁRIO</button>
+        </div>
+      </div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="rhEmployeesTable">
+            <thead><tr><th>Funcionário</th><th>CPF</th><th>Cargo</th><th>Loja</th><th>Admissão</th><th>Salário</th><th>Pagamento</th><th>Situação</th><th class="no-print"></th></tr></thead>
+            <tbody id="rhEmployeesTableBody"><tr><td colspan="9" class="responsive-empty">Carregando funcionários…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RH / FOLHA DE PAGAMENTO ================= -->
+    <section id="pageRhFolha" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Folha de Pagamento</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Folha mensal por funcionário. Comissão e benefícios são calculados na hora, a partir do Comissionamento e dos Benefícios da mesma competência.</p></div>
+      </header>
+
+      <div class="print-report-header" id="rhFolhaPrintHeader">
+        <div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div>
+        <h1>Folha de Pagamento</h1>
+        <div class="print-report-meta" id="rhFolhaPrintMeta"></div>
+      </div>
+
+      <div class="dre-toolbar no-print">
+        <div class="field"><label for="rhFolhaLoja">LOJA</label><select id="rhFolhaLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field"><label for="rhFolhaMes">COMPETÊNCIA</label><input type="month" id="rhFolhaMes"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnRhFolhaCopiar" type="button">COPIAR DO MÊS ANTERIOR</button>
+          <button class="btn-outline" id="btnRhFolhaPrint" type="button">RELATÓRIO / PDF</button>
+        </div>
+      </div>
+
+      <div class="table-panel" id="rhFolhaResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="rhFolhaTable">
+            <thead><tr><th>Funcionário</th><th>Loja</th><th>Salário base</th><th>Bonificação</th><th>Horas extras</th><th>Adicionais</th><th>Comissão</th><th>Benefícios</th><th>Descontos</th><th>Outros</th><th>Valor líquido</th><th>Pagamento</th><th>Comprovante</th><th class="no-print"></th></tr></thead>
+            <tbody id="rhFolhaTableBody"><tr><td colspan="14" class="responsive-empty">Selecione a competência para montar a folha.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="print-only" id="rhFolhaPrintPorLoja"></div>
+      <input type="file" id="rhFolhaAttachInput" accept="application/pdf,.pdf" hidden>
+    </section>
+
+    <!-- ================= RH / BENEFÍCIOS ================= -->
+    <section id="pageRhBeneficios" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Benefícios</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Vales, premiações e demais benefícios por competência. Vários lançamentos por funcionário no mesmo mês são permitidos.</p></div>
+      </header>
+
+      <div class="print-report-header" id="rhBeneficiosPrintHeader">
+        <div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div>
+        <h1>Benefícios</h1>
+        <div class="print-report-meta" id="rhBeneficiosPrintMeta"></div>
+      </div>
+
+      <div class="dre-toolbar no-print">
+        <div class="field"><label for="rhBeneficioFiltroLoja">LOJA</label><select id="rhBeneficioFiltroLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field"><label for="rhBeneficioFiltroFuncionario">FUNCIONÁRIO</label><select id="rhBeneficioFiltroFuncionario"><option value="">TODOS</option></select></div>
+        <div class="field"><label for="rhBeneficioFiltroTipo">BENEFÍCIO</label><select id="rhBeneficioFiltroTipo"><option value="">TODOS</option><option value="alimentacao">ALIMENTAÇÃO</option><option value="mobilidade">MOBILIDADE</option><option value="premiacao">PREMIAÇÃO</option><option value="saldo_livre">SALDO LIVRE</option><option value="outros">OUTROS</option></select></div>
+        <div class="field"><label for="rhBeneficioFiltroMes">COMPETÊNCIA</label><input type="month" id="rhBeneficioFiltroMes"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnNewRhBeneficio" type="button">NOVO BENEFÍCIO</button>
+          <button class="btn-outline" id="btnRhBeneficiosPrint" type="button">RELATÓRIO / PDF</button>
+        </div>
+      </div>
+
+      <div class="table-panel" id="rhBeneficiosResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="rhBeneficiosTable">
+            <thead><tr><th>Funcionário</th><th>Loja</th><th>Competência</th><th>Benefício</th><th>Forma</th><th>Data</th><th>Valor</th><th>Observações</th><th class="no-print"></th></tr></thead>
+            <tbody id="rhBeneficiosTableBody"><tr><td colspan="9" class="responsive-empty">Selecione a competência para ver os benefícios.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="print-only" id="rhBeneficiosPrintPorLoja"></div>
+    </section>
+
+    <!-- ================= RH / COMISSIONAMENTO ================= -->
+    <section id="pageRhComissionamento" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Comissionamento</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Comissão, bônus, premiações, descontos e ajustes por funcionário — com recibo detalhado.</p></div>
+      </header>
+
+      <div id="rhComissaoMain">
+        <div class="print-report-header" id="rhComissaoPrintHeader">
+          <div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div>
+          <h1>Comissionamento</h1>
+          <div class="print-report-meta" id="rhComissaoPrintMeta"></div>
+        </div>
+
+        <div class="output-tabs no-print" role="tablist" aria-label="Visão do comissionamento">
+          <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rh-comissao-tab="lancamentos">LANÇAMENTOS</button>
+          <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-comissao-tab="presets">LANÇAMENTOS PADRÃO</button>
+        </div>
+
+        <div id="rhComissaoTabLancamentos">
+          <div class="dre-toolbar no-print">
+            <div class="field"><label for="rhComissaoLoja">LOJA</label><select id="rhComissaoLoja"><option value="">TODAS AS LOJAS</option></select></div>
+            <div class="field"><label for="rhComissaoMes">COMPETÊNCIA</label><input type="month" id="rhComissaoMes"></div>
+            <div class="dre-toolbar-actions">
+              <button class="btn-accent" id="btnNewRhComissao" type="button">NOVA COMISSÃO</button>
+              <button class="btn-outline" id="btnRhComissaoPrint" type="button">RELATÓRIO / PDF</button>
+            </div>
+          </div>
+
+          <div class="table-panel" id="rhComissaoResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
+
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="rhComissaoTable">
+                <thead><tr><th>Funcionário</th><th>Loja</th><th>Comissão</th><th>Bônus</th><th>Premiações</th><th>Descontos</th><th>Ajustes</th><th>Valor final</th><th class="no-print"></th></tr></thead>
+                <tbody id="rhComissaoTableBody"><tr><td colspan="9" class="responsive-empty">Selecione a competência para ver o comissionamento.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="print-only" id="rhComissaoPrintPorLoja"></div>
+        </div>
+
+        <div id="rhComissaoTabPresets" hidden>
+          <form class="dre-catalog-form" id="rhComissaoPresetForm">
+            <input type="hidden" id="rhComissaoPresetId">
+            <div class="field"><label for="rhComissaoPresetNome">NOME</label><input id="rhComissaoPresetNome" maxlength="120" placeholder="Ex: Bônus GAR" required></div>
+            <div class="field"><label for="rhComissaoPresetTipo">TIPO</label><select id="rhComissaoPresetTipo"><option value="bonus">BÔNUS</option><option value="premiacao">PREMIAÇÃO</option><option value="desconto">DESCONTO</option><option value="ajuste">AJUSTE</option></select></div>
+            <div class="field"><label for="rhComissaoPresetValor">VALOR PADRÃO (R$)</label><input type="number" id="rhComissaoPresetValor" min="0" step="0.01" value="0"></div>
+            <label class="permission-option"><input type="checkbox" id="rhComissaoPresetAtivo" checked> Ativo</label>
+            <button class="btn-accent" id="btnSaveRhComissaoPreset" type="submit">SALVAR LANÇAMENTO PADRÃO</button>
+            <button class="btn-outline" id="btnCancelRhComissaoPreset" type="button" hidden>CANCELAR</button>
+          </form>
+          <div class="user-form-status" id="rhComissaoPresetStatus" role="status" aria-live="polite"></div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="rhComissaoPresetsTable">
+                <thead><tr><th>Nome</th><th>Tipo</th><th>Valor padrão</th><th>Situação</th><th></th></tr></thead>
+                <tbody id="rhComissaoPresetsTableBody"><tr><td colspan="5" class="responsive-empty">Nenhum lançamento padrão cadastrado.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recibo individual: só aparece na impressão do "RECIBO" de um
+           funcionário (body.rh-recibo-only esconde o resto da página). -->
+      <div id="rhComissaoRecibo" hidden></div>
     </section>
 
     <!-- ================= FINANCEIRO / DRE POR LOJA ================= -->
@@ -5262,6 +5484,146 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelBudgetDialog" type="button">CANCELAR</button>
       <button class="btn-accent" id="btnSaveBudget" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhEmployeeDialog" aria-labelledby="rhEmployeeDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhEmployeeDialogTitle">NOVO FUNCIONÁRIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhEmployeeDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhEmployeeForm">
+    <input type="hidden" id="rhEmployeeId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhEmployeeName">NOME COMPLETO *</label><input id="rhEmployeeName" maxlength="160" required></div>
+      <div class="purchase-field"><label for="rhEmployeeCpf">CPF</label><input id="rhEmployeeCpf" maxlength="20" inputmode="numeric" placeholder="Somente números"></div>
+      <div class="purchase-field"><label for="rhEmployeeAdmission">DATA DE ADMISSÃO</label><input type="date" id="rhEmployeeAdmission"></div>
+      <div class="purchase-field"><label for="rhEmployeeCompany">LOJA</label><select id="rhEmployeeCompany"><option value="">SEM LOJA DEFINIDA</option></select></div>
+      <div class="purchase-field"><label for="rhEmployeeRole">CARGO</label><input id="rhEmployeeRole" maxlength="120"></div>
+      <div class="purchase-field"><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="number" id="rhEmployeeSalary" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhEmployeeStatus">SITUAÇÃO</label><select id="rhEmployeeStatus"><option value="active">ATIVO</option><option value="inactive">INATIVO</option></select></div>
+      <div class="purchase-field"><label for="rhEmployeePix">CHAVE PIX</label><input id="rhEmployeePix" maxlength="160"></div>
+      <div class="purchase-field"><label for="rhEmployeeBank">BANCO</label><input id="rhEmployeeBank" maxlength="120"></div>
+      <div class="purchase-field full"><label for="rhEmployeeUser">CONTA DE ACESSO (OPCIONAL)</label><select id="rhEmployeeUser"><option value="">SEM CONTA VINCULADA</option></select></div>
+      <div class="purchase-field full"><label for="rhEmployeeNotes">OBSERVAÇÕES</label><textarea id="rhEmployeeNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="rhEmployeeFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhEmployeeDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhEmployee" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhFolhaDialog" aria-labelledby="rhFolhaDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhFolhaDialogTitle">FOLHA DO FUNCIONÁRIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhFolhaDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhFolhaForm">
+    <input type="hidden" id="rhFolhaEntryId">
+    <input type="hidden" id="rhFolhaEmployeeId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhFolhaEmployeeName">FUNCIONÁRIO</label><input id="rhFolhaEmployeeName" readonly></div>
+      <div class="purchase-field"><label for="rhFolhaCompetencia">COMPETÊNCIA</label><input id="rhFolhaCompetencia" readonly></div>
+      <div class="purchase-field"><label for="rhFolhaBase">SALÁRIO BASE (R$)</label><input type="number" id="rhFolhaBase" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhFolhaBonus">BONIFICAÇÃO (R$)</label><input type="number" id="rhFolhaBonus" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhFolhaOvertime">HORAS EXTRAS (R$)</label><input type="number" id="rhFolhaOvertime" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhFolhaAdditions">ADICIONAIS (R$)</label><input type="number" id="rhFolhaAdditions" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhFolhaDeductions">DESCONTOS (R$)</label><input type="number" id="rhFolhaDeductions" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhFolhaOther">OUTROS (R$)</label><input type="number" id="rhFolhaOther" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhFolhaCommission">COMISSÃO (CALCULADA)</label><input id="rhFolhaCommission" readonly></div>
+      <div class="purchase-field"><label for="rhFolhaBenefits">BENEFÍCIOS (CALCULADOS)</label><input id="rhFolhaBenefits" readonly></div>
+      <div class="purchase-field"><label for="rhFolhaNet">VALOR LÍQUIDO</label><input id="rhFolhaNet" readonly></div>
+      <div class="purchase-field full"><label for="rhFolhaNotes">OBSERVAÇÕES</label><textarea id="rhFolhaNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <p style="color:var(--ink-soft);font-size:11px;margin:10px 0 0;">Comissão e benefícios vêm do Comissionamento e dos Benefícios desta mesma competência — para alterá-los, edite o lançamento de origem.</p>
+    <div class="user-form-status" id="rhFolhaFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhFolhaDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhFolha" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhFolhaPagamentoDialog" aria-labelledby="rhFolhaPagamentoTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhFolhaPagamentoTitle">MARCAR PAGAMENTO COMO REALIZADO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhFolhaPagamento" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhFolhaPagamentoForm">
+    <input type="hidden" id="rhFolhaPagamentoEntryId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhFolhaPagamentoFuncionario">FUNCIONÁRIO</label><input id="rhFolhaPagamentoFuncionario" readonly></div>
+      <div class="purchase-field"><label for="rhFolhaPagamentoData">DATA DO PAGAMENTO *</label><input type="date" id="rhFolhaPagamentoData" required></div>
+    </div>
+    <div class="user-form-status" id="rhFolhaPagamentoStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhFolhaPagamento" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnConfirmRhFolhaPagamento" type="submit">CONFIRMAR PAGAMENTO</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhBeneficioDialog" aria-labelledby="rhBeneficioDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhBeneficioDialogTitle">NOVO BENEFÍCIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhBeneficioDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhBeneficioForm">
+    <input type="hidden" id="rhBeneficioId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhBeneficioFuncionario">FUNCIONÁRIO *</label><select id="rhBeneficioFuncionario" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="rhBeneficioMes">COMPETÊNCIA *</label><input type="month" id="rhBeneficioMes" required></div>
+      <div class="purchase-field"><label for="rhBeneficioTipo">BENEFÍCIO *</label><select id="rhBeneficioTipo"><option value="alimentacao">ALIMENTAÇÃO</option><option value="mobilidade">MOBILIDADE</option><option value="premiacao">PREMIAÇÃO</option><option value="saldo_livre">SALDO LIVRE</option><option value="outros">OUTROS</option></select></div>
+      <div class="purchase-field"><label for="rhBeneficioValor">VALOR (R$) *</label><input type="number" id="rhBeneficioValor" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="rhBeneficioForma">FORMA DE PAGAMENTO *</label><select id="rhBeneficioForma"><option value="pix">PIX</option><option value="cartao">CARTÃO</option><option value="plataforma">PLATAFORMA</option><option value="outros">OUTROS</option></select></div>
+      <div class="purchase-field"><label for="rhBeneficioData">DATA DO PAGAMENTO</label><input type="date" id="rhBeneficioData"></div>
+      <div class="purchase-field full"><label for="rhBeneficioObs">OBSERVAÇÕES</label><textarea id="rhBeneficioObs" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="rhBeneficioFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhBeneficioDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhBeneficio" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhComissaoDialog" aria-labelledby="rhComissaoDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhComissaoDialogTitle">NOVA COMISSÃO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhComissaoDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhComissaoForm">
+    <input type="hidden" id="rhComissaoId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhComissaoFuncionario">FUNCIONÁRIO *</label><select id="rhComissaoFuncionario" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="rhComissaoCompetencia">COMPETÊNCIA *</label><input type="month" id="rhComissaoCompetencia" required></div>
+      <div class="purchase-field"><label for="rhComissaoValor">COMISSÃO (R$)</label><input type="number" id="rhComissaoValor" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field full"><label for="rhComissaoObs">OBSERVAÇÕES</label><textarea id="rhComissaoObs" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <h4 style="margin:16px 0 8px;font:800 10px var(--mono);letter-spacing:.06em;">LANÇAMENTOS (BÔNUS, PREMIAÇÕES, DESCONTOS E AJUSTES)</h4>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhComissaoItemPreset">LANÇAMENTO PADRÃO</label><select id="rhComissaoItemPreset"><option value="">SEM PADRÃO (LIVRE)</option></select></div>
+      <div class="purchase-field"><label for="rhComissaoItemLabel">DESCRIÇÃO</label><input id="rhComissaoItemLabel" maxlength="120"></div>
+      <div class="purchase-field"><label for="rhComissaoItemKind">TIPO</label><select id="rhComissaoItemKind"><option value="bonus">BÔNUS</option><option value="premiacao">PREMIAÇÃO</option><option value="desconto">DESCONTO</option><option value="ajuste">AJUSTE</option></select></div>
+      <div class="purchase-field"><label for="rhComissaoItemValor">VALOR (R$)</label><input type="number" id="rhComissaoItemValor" step="0.01"></div>
+      <div class="purchase-field"><label for="btnAddRhComissaoItem">&nbsp;</label><button class="btn-outline" id="btnAddRhComissaoItem" type="button">ADICIONAR LANÇAMENTO</button></div>
+    </div>
+    <div class="table-panel responsive-table" style="margin-top:10px;">
+      <div class="table-scroll">
+        <table id="rhComissaoItensTable">
+          <thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th><th></th></tr></thead>
+          <tbody id="rhComissaoItensBody"><tr><td colspan="4" class="responsive-empty">Nenhum lançamento adicionado.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="rhComissaoItensTotal" style="margin-top:10px;font:800 11px var(--mono);color:var(--ink);"></div>
+    <div class="user-form-status" id="rhComissaoFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhComissaoDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhComissao" type="submit">SALVAR</button>
     </div>
   </form>
 </dialog>
@@ -6571,6 +6933,8 @@
   const navSolicitacoesSubmenu = el('navSolicitacoesSubmenu');
   const navFinanceiroToggle = el('navFinanceiroMenu');
   const navFinanceiroSubmenu = el('navFinanceiroSubmenu');
+  const navRhFinanceiroToggle = el('navRhFinanceiroMenu');
+  const navRhFinanceiroSubmenu = el('navRhFinanceiroSubmenu');
   const PAGE_ROUTES = Object.freeze({
     inicio:'/inicio',
     puxadas:'/puxadas',
@@ -6594,6 +6958,10 @@
     usuarios:'/cadastros/usuarios',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
+    rhFuncionarios:'/rh/funcionarios',
+    rhFolha:'/rh/folha',
+    rhBeneficios:'/rh/beneficios',
+    rhComissionamento:'/rh/comissionamento',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
     financeiroPayables:'/financeiro/contas-a-pagar',
@@ -6624,6 +6992,10 @@
     usuarios:'USUÁRIOS E ACESSOS',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
+    rhFuncionarios:'FUNCIONÁRIOS',
+    rhFolha:'FOLHA DE PAGAMENTO',
+    rhBeneficios:'BENEFÍCIOS',
+    rhComissionamento:'COMISSIONAMENTO',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
     financeiroPayables:'CONTAS A PAGAR',
@@ -6651,6 +7023,10 @@
     dados:'database',
     rhFolgas:'hr',
     rhEscalas:'hr',
+    rhFuncionarios:'payroll',
+    rhFolha:'payroll',
+    rhBeneficios:'payroll',
+    rhComissionamento:'payroll',
     financeiroDashboard:'finance',
     financeiro:'finance',
     financeiroPayables:'finance',
@@ -7035,6 +7411,16 @@
     setFinanceiroExpanded(!expanded);
   });
 
+  function setRhFinanceiroExpanded(expanded){
+    navRhFinanceiroToggle.setAttribute('aria-expanded', String(expanded));
+    navRhFinanceiroSubmenu.setAttribute('aria-hidden', String(!expanded));
+  }
+
+  navRhFinanceiroToggle.addEventListener('click', () => {
+    const expanded = navRhFinanceiroToggle.getAttribute('aria-expanded') === 'true';
+    setRhFinanceiroExpanded(!expanded);
+  });
+
   function setSidebarCompact(compact){
     document.body.classList.toggle('sidebar-compact', compact);
     btnSidebarCompact.setAttribute('aria-pressed', String(compact));
@@ -7059,7 +7445,8 @@
     navItem.classList.add('active');
     const isHome = name === 'inicio';
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'usuarios';
-    const isRh = name === 'rhFolgas' || name === 'rhEscalas';
+    const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento';
+    const isRh = name === 'rhFolgas' || name === 'rhEscalas' || isRhFinanceiro;
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
@@ -7084,6 +7471,10 @@
     if(isSolicitacoes) navSolicitacoesToggle.classList.add('active');
     setFinanceiroExpanded(isFinanceiro);
     if(isFinanceiro) navFinanceiroToggle.classList.add('active');
+    // O grupo-atalho "RH Financeiro" abre/destaca nas mesmas 4 páginas do
+    // grupo RH — são os mesmos destinos, com ids de link diferentes.
+    setRhFinanceiroExpanded(isRhFinanceiro);
+    if(isRhFinanceiro) navRhFinanceiroToggle.classList.add('active');
     document.querySelectorAll('[data-mobile-page]').forEach(button => {
       const active = button.dataset.mobilePage === name;
       button.classList.toggle('active', active);
@@ -7121,6 +7512,10 @@
     if(name === 'financeiroExpenses') loadExpensesPage();
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
+    if(name === 'rhFuncionarios') loadRhFuncionarios();
+    if(name === 'rhFolha') loadRhFolha();
+    if(name === 'rhBeneficios') loadRhBeneficios();
+    if(name === 'rhComissionamento') loadRhComissionamento();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -7150,6 +7545,10 @@
     if(name === 'financeiroExpenses') loadExpensesPage();
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
+    if(name === 'rhFuncionarios') loadRhFuncionarios();
+    if(name === 'rhFolha') loadRhFolha();
+    if(name === 'rhBeneficios') loadRhBeneficios();
+    if(name === 'rhComissionamento') loadRhComissionamento();
   }
 
   function isPlainClick(event){
@@ -20204,6 +20603,7 @@ function renderHomeTasks(){
     'os_notes:view':'Notas de O.S.: visualização','os_notes:create':'Notas de O.S.: cadastro','os_notes:attach':'Notas de O.S.: anexar nota','os_notes:delete':'Notas de O.S.: exclusão',
     'finance:manage':'Financeiro: acessar módulo',
     'payables:invoices_view':'Financeiro: ver notas fiscais/duplicatas','payables:invoices_reconcile':'Financeiro: conferir NF e cadastrar duplicatas','payables:confirm_payment':'Financeiro: agendar/confirmar pagamento de duplicata','payables:return_to_purchases':'Financeiro: devolver NF para Compras',
+    'payroll:manage':'RH Financeiro: folha, benefícios e comissionamento',
     'users:manage':'Usuários e acessos'
   };
   const accessGroupNames = {
@@ -20458,6 +20858,1241 @@ function renderHomeTasks(){
       event.target.disabled = false;
     }
   });
+
+  // ===================== RH FINANCEIRO (FASE 5) =====================
+  // Funcionários, Folha de Pagamento, Benefícios e Comissionamento. Tudo
+  // atrás de uma permissão única ('payroll:manage' -> canAccess('payroll')),
+  // independente do Financeiro. A Folha nunca guarda comissão/benefícios:
+  // os dois vêm calculados do backend a cada leitura.
+
+  const RH_BENEFIT_TYPE_LABELS = {alimentacao:'ALIMENTAÇÃO',mobilidade:'MOBILIDADE',premiacao:'PREMIAÇÃO',saldo_livre:'SALDO LIVRE',outros:'OUTROS'};
+  const RH_BENEFIT_METHOD_LABELS = {pix:'PIX',cartao:'CARTÃO',plataforma:'PLATAFORMA',outros:'OUTROS'};
+  const RH_COMMISSION_KIND_LABELS = {bonus:'BÔNUS',premiacao:'PREMIAÇÃO',desconto:'DESCONTO',ajuste:'AJUSTE'};
+  let rhEmployees = [];
+  let rhFolhaRows = [];
+  let rhBeneficiosRows = [];
+  let rhComissoes = [];
+  let rhComissaoPresets = [];
+  let rhComissaoDialogItems = [];
+  let rhFolhaAttachTargetId = '';
+  let rhPrintTitleBefore = '';
+  let rhComissaoTab = 'lancamentos';
+
+  async function rhApiRequest(path, options){
+    const response = await fetch('/api/hr-payroll'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  async function rhAttachmentRequest(options){
+    const response = await fetch('/api/hr-payroll/attachment',{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    let data = {};
+    if(response.status !== 204){
+      try{ data = await response.json(); }catch{ data = {}; }
+    }
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return data;
+  }
+
+  function rhFormatDate(value){
+    if(!value) return '—';
+    const parts = String(value).split('-');
+    return parts.length === 3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : String(value);
+  }
+
+  function rhFormatMonth(value){
+    if(!value) return '—';
+    const parts = String(value).split('-');
+    return parts.length >= 2 ? parts[1]+'/'+parts[0] : String(value);
+  }
+
+  function rhFormatCpf(value){
+    const digits = String(value || '').replace(/\D+/g,'');
+    if(digits.length !== 11) return digits || '—';
+    return digits.slice(0,3)+'.'+digits.slice(3,6)+'.'+digits.slice(6,9)+'-'+digits.slice(9);
+  }
+
+  function rhPreviousMonth(month){
+    if(!/^\d{4}-\d{2}$/.test(month || '')) return '';
+    const year = Number(month.slice(0,4));
+    const index = Number(month.slice(5,7));
+    const previous = index === 1 ? {year:year - 1, month:12} : {year, month:index - 1};
+    return previous.year+'-'+String(previous.month).padStart(2,'0');
+  }
+
+  function rhFillSelect(id, firstLabel, options){
+    const select = el(id);
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">'+escapeHtml(firstLabel)+'</option>'+
+      options.map(option => '<option value="'+escapeHtml(option.value)+'">'+escapeHtml(option.label)+'</option>').join('');
+    if(options.some(option => option.value === selected)) select.value = selected;
+  }
+
+  function rhCompanyOptions(){
+    return companies.map(company => ({value:company.id, label:company.name}));
+  }
+
+  function rhEmployeeOptions(){
+    return rhEmployees.map(employee => ({
+      value:employee.id,
+      label:employee.fullName+(employee.companyName ? ' · '+employee.companyName : '')+(employee.status === 'inactive' ? ' (INATIVO)' : '')
+    }));
+  }
+
+  function rhRenderCompanySelects(){
+    rhFillSelect('rhEmployeeFiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
+    rhFillSelect('rhEmployeeCompany','SEM LOJA DEFINIDA',rhCompanyOptions());
+    rhFillSelect('rhFolhaLoja','TODAS AS LOJAS',rhCompanyOptions());
+    rhFillSelect('rhBeneficioFiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
+    rhFillSelect('rhComissaoLoja','TODAS AS LOJAS',rhCompanyOptions());
+  }
+
+  function rhRenderEmployeeSelects(){
+    rhFillSelect('rhBeneficioFiltroFuncionario','TODOS',rhEmployeeOptions());
+    rhFillSelect('rhBeneficioFuncionario','SELECIONE',rhEmployeeOptions());
+    rhFillSelect('rhComissaoFuncionario','SELECIONE',rhEmployeeOptions());
+  }
+
+  async function loadRhEmployeeList(){
+    const data = await rhApiRequest('/employees');
+    rhEmployees = Array.isArray(data.employees) ? data.employees : [];
+    rhRenderEmployeeSelects();
+    return rhEmployees;
+  }
+
+  // Cada página do RH Financeiro precisa das lojas e da lista de
+  // funcionários (para selects e para montar a folha do mês).
+  async function rhEnsureBaseData(force){
+    if(!companies.length) await loadCompanies();
+    rhRenderCompanySelects();
+    if(force || !rhEmployees.length) await loadRhEmployeeList();
+    else rhRenderEmployeeSelects();
+  }
+
+  function rhStartPrint(title, extraClass){
+    rhPrintTitleBefore = document.title;
+    document.title = title;
+    document.body.classList.add('pdf-export');
+    if(extraClass) document.body.classList.add(extraClass);
+    window.print();
+  }
+
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('rh-recibo-only');
+    const recibo = el('rhComissaoRecibo');
+    if(recibo) recibo.hidden = true;
+    if(rhPrintTitleBefore){
+      document.title = rhPrintTitleBefore;
+      rhPrintTitleBefore = '';
+    }
+  });
+
+  // Monta um bloco "por loja" (só impressão) a partir de linhas já
+  // carregadas: agrupa pelo nome da loja e soma o valor escolhido.
+  function rhPrintByStoreHtml(title, rows, valueOf, storeOf){
+    const totals = new Map();
+    rows.forEach(row => {
+      const store = storeOf(row) || 'SEM LOJA DEFINIDA';
+      totals.set(store, (totals.get(store) || 0) + (Number(valueOf(row)) || 0));
+    });
+    if(!totals.size) return '';
+    const lines = [...totals.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    const grandTotal = lines.reduce((sum, line) => sum + line[1], 0);
+    return '<div class="rh-print-block"><h3>'+escapeHtml(title)+'</h3>'+
+      '<table class="rh-print-table"><thead><tr><th>Loja</th><th class="num">Total</th></tr></thead><tbody>'+
+      lines.map(line => '<tr><td>'+escapeHtml(line[0])+'</td><td class="num">'+formatCentsBRL(line[1])+'</td></tr>').join('')+
+      '<tr><td><strong>TOTAL GERAL</strong></td><td class="num"><strong>'+formatCentsBRL(grandTotal)+'</strong></td></tr>'+
+      '</tbody></table></div>';
+  }
+
+  // ---------------------- FUNCIONÁRIOS ----------------------
+
+  function rhFilteredEmployees(){
+    const companyId = el('rhEmployeeFiltroLoja') ? el('rhEmployeeFiltroLoja').value : '';
+    const status = el('rhEmployeeFiltroStatus') ? el('rhEmployeeFiltroStatus').value : '';
+    const search = (el('rhEmployeeBusca') ? el('rhEmployeeBusca').value : '').trim().toLowerCase();
+    return rhEmployees.filter(employee => {
+      if(companyId && employee.companyId !== companyId) return false;
+      if(status && employee.status !== status) return false;
+      if(!search) return true;
+      return [employee.fullName, employee.cpf, employee.roleTitle]
+        .some(field => String(field || '').toLowerCase().includes(search));
+    });
+  }
+
+  function renderRhEmployeesTable(){
+    const body = el('rhEmployeesTableBody');
+    if(!body) return;
+    const rows = rhFilteredEmployees();
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhum funcionário encontrado.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(employee => {
+      const payment = [employee.pixKey ? 'PIX: '+employee.pixKey : '', employee.bankName]
+        .filter(Boolean).join(' · ') || '—';
+      const statusPill = employee.status === 'active'
+        ? '<span class="status-pill done">ATIVO</span>'
+        : '<span class="status-pill alert">INATIVO</span>';
+      return '<tr>'+
+        '<td>'+escapeHtml(employee.fullName)+'</td>'+
+        '<td>'+escapeHtml(rhFormatCpf(employee.cpf))+'</td>'+
+        '<td>'+escapeHtml(employee.roleTitle || '—')+'</td>'+
+        '<td>'+escapeHtml(employee.companyName || '—')+'</td>'+
+        '<td>'+escapeHtml(rhFormatDate(employee.admissionDate))+'</td>'+
+        '<td>'+formatCentsBRL(employee.salaryCents)+'</td>'+
+        '<td>'+escapeHtml(payment)+'</td>'+
+        '<td>'+statusPill+'</td>'+
+        '<td class="no-print"><span style="display:flex;gap:6px;">'+
+          '<button class="btn-outline" type="button" data-rh-employee-edit="'+escapeHtml(employee.id)+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-rh-employee-delete="'+escapeHtml(employee.id)+'">EXCLUIR</button>'+
+        '</span></td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function rhRenderEmployeeUserOptions(){
+    const select = el('rhEmployeeUser');
+    if(!select) return;
+    if(!canManageUsers()){
+      // Sem users:manage não dá para listar contas — o vínculo continua
+      // opcional e simplesmente não é editável por esse usuário.
+      select.innerHTML = '<option value="">SEM CONTA VINCULADA</option>';
+      select.disabled = true;
+      return;
+    }
+    select.disabled = false;
+    rhFillSelect('rhEmployeeUser','SEM CONTA VINCULADA', managedUsers.map(user => ({
+      value:user.id,
+      label:user.displayName+' (@'+user.username+')'
+    })));
+  }
+
+  async function loadRhFuncionarios(){
+    if(!canAccess('payroll')) return;
+    const body = el('rhEmployeesTableBody');
+    if(body) body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando funcionários…</td></tr>';
+    try{
+      await rhEnsureBaseData(true);
+      if(canManageUsers() && !managedUsers.length) await loadAdminUsers();
+      rhRenderEmployeeUserOptions();
+      renderRhEmployeesTable();
+    }catch(error){
+      if(body) body.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  ['rhEmployeeFiltroLoja','rhEmployeeFiltroStatus'].forEach(id => {
+    if(el(id)) el(id).addEventListener('change', renderRhEmployeesTable);
+  });
+  if(el('rhEmployeeBusca')) el('rhEmployeeBusca').addEventListener('input', renderRhEmployeesTable);
+
+  function openRhEmployeeDialog(employee){
+    el('rhEmployeeForm').reset();
+    rhRenderCompanySelects();
+    rhRenderEmployeeUserOptions();
+    el('rhEmployeeId').value = employee ? employee.id : '';
+    el('rhEmployeeDialogTitle').textContent = employee ? 'EDITAR FUNCIONÁRIO' : 'NOVO FUNCIONÁRIO';
+    el('rhEmployeeName').value = employee ? employee.fullName : '';
+    el('rhEmployeeCpf').value = employee ? (employee.cpf || '') : '';
+    el('rhEmployeeAdmission').value = employee ? (employee.admissionDate || '') : '';
+    el('rhEmployeeCompany').value = employee ? (employee.companyId || '') : (el('rhEmployeeFiltroLoja').value || '');
+    el('rhEmployeeRole').value = employee ? (employee.roleTitle || '') : '';
+    el('rhEmployeeSalary').value = employee ? (Number(employee.salaryCents || 0)/100).toFixed(2) : '0.00';
+    el('rhEmployeeStatus').value = employee ? employee.status : 'active';
+    el('rhEmployeePix').value = employee ? (employee.pixKey || '') : '';
+    el('rhEmployeeBank').value = employee ? (employee.bankName || '') : '';
+    el('rhEmployeeUser').value = employee ? (employee.userId || '') : '';
+    el('rhEmployeeNotes').value = employee ? (employee.notes || '') : '';
+    el('rhEmployeeFormStatus').textContent = '';
+    el('rhEmployeeDialog').showModal();
+  }
+
+  function closeRhEmployeeDialog(){
+    if(el('rhEmployeeDialog').open) el('rhEmployeeDialog').close();
+  }
+
+  if(el('btnNewRhEmployee')) el('btnNewRhEmployee').addEventListener('click', () => openRhEmployeeDialog(null));
+  if(el('btnCloseRhEmployeeDialog')) el('btnCloseRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
+  if(el('btnCancelRhEmployeeDialog')) el('btnCancelRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
+
+  if(el('rhEmployeesTableBody')) el('rhEmployeesTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rh-employee-edit]');
+    const deleteButton = event.target.closest('[data-rh-employee-delete]');
+    if(editButton){
+      const employee = rhEmployees.find(item => item.id === editButton.dataset.rhEmployeeEdit);
+      if(employee) openRhEmployeeDialog(employee);
+      return;
+    }
+    if(deleteButton){
+      if(!confirm('Excluir este funcionário?')) return;
+      try{
+        await rhApiRequest('/employees?id='+encodeURIComponent(deleteButton.dataset.rhEmployeeDelete), {method:'DELETE'});
+        await loadRhFuncionarios();
+        showPurchaseToast('Funcionário excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
+  if(el('rhEmployeeForm')) el('rhEmployeeForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhEmployeeFormStatus');
+    status.textContent = '';
+    const salaryCents = parseBRLToCents(el('rhEmployeeSalary').value || '0');
+    if(salaryCents === null){
+      status.textContent = 'INFORME UM SALÁRIO VÁLIDO.';
+      return;
+    }
+    const payload = {
+      id: el('rhEmployeeId').value || undefined,
+      fullName: el('rhEmployeeName').value,
+      cpf: el('rhEmployeeCpf').value,
+      admissionDate: el('rhEmployeeAdmission').value,
+      companyId: el('rhEmployeeCompany').value,
+      roleTitle: el('rhEmployeeRole').value,
+      salaryCents,
+      pixKey: el('rhEmployeePix').value,
+      bankName: el('rhEmployeeBank').value,
+      status: el('rhEmployeeStatus').value,
+      userId: el('rhEmployeeUser').disabled ? '' : el('rhEmployeeUser').value,
+      notes: el('rhEmployeeNotes').value
+    };
+    try{
+      await rhApiRequest('/employees', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      closeRhEmployeeDialog();
+      await loadRhFuncionarios();
+      showPurchaseToast('Funcionário salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  // ---------------------- FOLHA DE PAGAMENTO ----------------------
+
+  function rhFolhaAttachmentCell(row){
+    if(!row.saved) return '—';
+    if(!row.attachmentFileName){
+      return '<button class="btn-outline no-print" type="button" data-rh-folha-attach="'+escapeHtml(row.id)+'">ANEXAR</button>';
+    }
+    return '<span style="display:flex;gap:6px;align-items:center;">'+
+      '<a class="btn-outline" href="/api/hr-payroll/file?id='+encodeURIComponent(row.id)+'" target="_blank" rel="noopener">VER</a>'+
+      '<button class="btn-outline no-print" type="button" data-rh-folha-attach-remove="'+escapeHtml(row.id)+'">REMOVER</button>'+
+    '</span>';
+  }
+
+  function renderRhFolhaTable(){
+    const body = el('rhFolhaTableBody');
+    if(!body) return;
+    if(!rhFolhaRows.length){
+      body.innerHTML = '<tr><td colspan="14" class="responsive-empty">Nenhum funcionário ativo para esta loja/competência.</td></tr>';
+      el('rhFolhaResumo').textContent = '';
+      el('rhFolhaPrintPorLoja').innerHTML = '';
+      return;
+    }
+    body.innerHTML = rhFolhaRows.map(row => {
+      const paymentCell = row.paymentDone
+        ? '<span class="status-pill done">PAGO'+(row.paymentDate ? ' · '+escapeHtml(rhFormatDate(row.paymentDate)) : '')+'</span>'
+        : '<span class="status-pill waiting">EM ABERTO</span>';
+      const paymentButton = row.saved
+        ? (row.paymentDone
+          ? '<button class="btn-outline" type="button" data-rh-folha-unpay="'+escapeHtml(row.id)+'">DESFAZER PAGAMENTO</button>'
+          : '<button class="btn-outline" type="button" data-rh-folha-pay="'+escapeHtml(row.id)+'">MARCAR PAGO</button>')
+        : '';
+      const deleteButton = row.saved
+        ? '<button class="btn-outline" type="button" data-rh-folha-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'
+        : '';
+      return '<tr>'+
+        '<td>'+escapeHtml(row.employeeName)+(row.employeeStatus === 'inactive' ? ' <span class="status-pill alert">INATIVO</span>' : '')+'</td>'+
+        '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+        '<td>'+formatCentsBRL(row.baseSalaryCents)+'</td>'+
+        '<td>'+formatCentsBRL(row.bonusCents)+'</td>'+
+        '<td>'+formatCentsBRL(row.overtimeCents)+'</td>'+
+        '<td>'+formatCentsBRL(row.additionsCents)+'</td>'+
+        '<td>'+formatCentsBRL(row.commissionCents)+'</td>'+
+        '<td>'+formatCentsBRL(row.benefitsCents)+'</td>'+
+        '<td>'+formatCentsBRL(row.deductionsCents)+'</td>'+
+        '<td>'+formatCentsBRL(row.otherCents)+'</td>'+
+        '<td><strong>'+formatCentsBRL(row.netCents)+'</strong></td>'+
+        '<td>'+paymentCell+'</td>'+
+        '<td>'+rhFolhaAttachmentCell(row)+'</td>'+
+        '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+          '<button class="btn-outline" type="button" data-rh-folha-edit="'+escapeHtml(row.employeeId)+'">EDITAR</button>'+
+          paymentButton+deleteButton+
+        '</span></td>'+
+      '</tr>';
+    }).join('');
+
+    const totalNet = rhFolhaRows.reduce((sum, row) => sum + Number(row.netCents || 0), 0);
+    const totalPago = rhFolhaRows.filter(row => row.paymentDone).reduce((sum, row) => sum + Number(row.netCents || 0), 0);
+    const lancados = rhFolhaRows.filter(row => row.saved).length;
+    el('rhFolhaResumo').innerHTML =
+      '<strong>'+rhFolhaRows.length+'</strong> funcionário(s) · <strong>'+lancados+'</strong> com folha lançada · '+
+      'Total líquido: <strong>'+formatCentsBRL(totalNet)+'</strong> · Já pago: <strong>'+formatCentsBRL(totalPago)+'</strong>';
+    el('rhFolhaPrintPorLoja').innerHTML = rhPrintByStoreHtml(
+      'Total líquido por loja',
+      rhFolhaRows,
+      row => row.netCents,
+      row => row.companyName
+    );
+  }
+
+  async function loadRhFolha(){
+    if(!canAccess('payroll')) return;
+    try{
+      await rhEnsureBaseData(false);
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      return;
+    }
+    if(!el('rhFolhaMes').value) el('rhFolhaMes').value = financeCurrentMonthKey();
+    const month = el('rhFolhaMes').value;
+    const companyId = el('rhFolhaLoja').value;
+    el('rhFolhaTableBody').innerHTML = '<tr><td colspan="14" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const params = new URLSearchParams({month});
+      if(companyId) params.set('companyId', companyId);
+      const data = await rhApiRequest('/entries?'+params.toString());
+      rhFolhaRows = Array.isArray(data.entries) ? data.entries : [];
+      el('rhFolhaPrintMeta').textContent = 'Competência '+rhFormatMonth(month)+
+        ' · '+(companyId ? (companies.find(company => company.id === companyId) || {name:'—'}).name : 'Todas as lojas');
+      renderRhFolhaTable();
+    }catch(error){
+      rhFolhaRows = [];
+      el('rhFolhaTableBody').innerHTML = '<tr><td colspan="14" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  if(el('rhFolhaMes')) el('rhFolhaMes').addEventListener('change', loadRhFolha);
+  if(el('rhFolhaLoja')) el('rhFolhaLoja').addEventListener('change', loadRhFolha);
+
+  function rhFolhaDialogNet(){
+    const values = ['rhFolhaBase','rhFolhaBonus','rhFolhaOvertime','rhFolhaAdditions','rhFolhaOther']
+      .map(id => parseBRLToCents(el(id).value || '0'));
+    const deductions = parseBRLToCents(el('rhFolhaDeductions').value || '0');
+    if(values.some(value => value === null) || deductions === null) return null;
+    const current = rhFolhaRows.find(row => row.employeeId === el('rhFolhaEmployeeId').value);
+    const commission = current ? Number(current.commissionCents || 0) : 0;
+    const benefits = current ? Number(current.benefitsCents || 0) : 0;
+    return values.reduce((sum, value) => sum + value, 0) + commission + benefits - deductions;
+  }
+
+  function rhFolhaUpdateDialogNet(){
+    const net = rhFolhaDialogNet();
+    el('rhFolhaNet').value = net === null ? '—' : formatCentsBRL(net);
+  }
+
+  ['rhFolhaBase','rhFolhaBonus','rhFolhaOvertime','rhFolhaAdditions','rhFolhaDeductions','rhFolhaOther'].forEach(id => {
+    if(el(id)) el(id).addEventListener('input', rhFolhaUpdateDialogNet);
+  });
+
+  function openRhFolhaDialog(row){
+    if(!row) return;
+    el('rhFolhaForm').reset();
+    el('rhFolhaEntryId').value = row.id || '';
+    el('rhFolhaEmployeeId').value = row.employeeId;
+    el('rhFolhaEmployeeName').value = row.employeeName;
+    el('rhFolhaCompetencia').value = rhFormatMonth(row.month);
+    el('rhFolhaBase').value = (Number(row.baseSalaryCents || 0)/100).toFixed(2);
+    el('rhFolhaBonus').value = (Number(row.bonusCents || 0)/100).toFixed(2);
+    el('rhFolhaOvertime').value = (Number(row.overtimeCents || 0)/100).toFixed(2);
+    el('rhFolhaAdditions').value = (Number(row.additionsCents || 0)/100).toFixed(2);
+    el('rhFolhaDeductions').value = (Number(row.deductionsCents || 0)/100).toFixed(2);
+    el('rhFolhaOther').value = (Number(row.otherCents || 0)/100).toFixed(2);
+    el('rhFolhaCommission').value = formatCentsBRL(row.commissionCents);
+    el('rhFolhaBenefits').value = formatCentsBRL(row.benefitsCents);
+    el('rhFolhaNotes').value = row.notes || '';
+    el('rhFolhaFormStatus').textContent = '';
+    rhFolhaUpdateDialogNet();
+    el('rhFolhaDialog').showModal();
+  }
+
+  function closeRhFolhaDialog(){
+    if(el('rhFolhaDialog').open) el('rhFolhaDialog').close();
+  }
+
+  if(el('btnCloseRhFolhaDialog')) el('btnCloseRhFolhaDialog').addEventListener('click', closeRhFolhaDialog);
+  if(el('btnCancelRhFolhaDialog')) el('btnCancelRhFolhaDialog').addEventListener('click', closeRhFolhaDialog);
+
+  if(el('rhFolhaForm')) el('rhFolhaForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhFolhaFormStatus');
+    status.textContent = '';
+    const amounts = {
+      baseSalaryCents: parseBRLToCents(el('rhFolhaBase').value || '0'),
+      bonusCents: parseBRLToCents(el('rhFolhaBonus').value || '0'),
+      overtimeCents: parseBRLToCents(el('rhFolhaOvertime').value || '0'),
+      additionsCents: parseBRLToCents(el('rhFolhaAdditions').value || '0'),
+      deductionsCents: parseBRLToCents(el('rhFolhaDeductions').value || '0'),
+      otherCents: parseBRLToCents(el('rhFolhaOther').value || '0')
+    };
+    if(Object.values(amounts).some(value => value === null)){
+      status.textContent = 'INFORME VALORES VÁLIDOS (NÃO NEGATIVOS).';
+      return;
+    }
+    const payload = {
+      id: el('rhFolhaEntryId').value || undefined,
+      employeeId: el('rhFolhaEmployeeId').value,
+      month: el('rhFolhaMes').value,
+      notes: el('rhFolhaNotes').value,
+      ...amounts
+    };
+    try{
+      await rhApiRequest('/entries', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      closeRhFolhaDialog();
+      await loadRhFolha();
+      showPurchaseToast('Folha salva.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  function openRhFolhaPagamentoDialog(row){
+    el('rhFolhaPagamentoForm').reset();
+    el('rhFolhaPagamentoEntryId').value = row.id;
+    el('rhFolhaPagamentoFuncionario').value = row.employeeName;
+    el('rhFolhaPagamentoData').value = row.paymentDate || financeCurrentDateKey();
+    el('rhFolhaPagamentoStatus').textContent = '';
+    el('rhFolhaPagamentoDialog').showModal();
+  }
+
+  function closeRhFolhaPagamentoDialog(){
+    if(el('rhFolhaPagamentoDialog').open) el('rhFolhaPagamentoDialog').close();
+  }
+
+  if(el('btnCloseRhFolhaPagamento')) el('btnCloseRhFolhaPagamento').addEventListener('click', closeRhFolhaPagamentoDialog);
+  if(el('btnCancelRhFolhaPagamento')) el('btnCancelRhFolhaPagamento').addEventListener('click', closeRhFolhaPagamentoDialog);
+
+  if(el('rhFolhaPagamentoForm')) el('rhFolhaPagamentoForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhFolhaPagamentoStatus');
+    status.textContent = '';
+    try{
+      await rhApiRequest('/entries', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'mark_paid', id:el('rhFolhaPagamentoEntryId').value, paymentDone:true, paymentDate:el('rhFolhaPagamentoData').value})
+      });
+      closeRhFolhaPagamentoDialog();
+      await loadRhFolha();
+      showPurchaseToast('Pagamento registrado.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  async function uploadRhFolhaAttachment(entryId, file){
+    if(!file || !/\.pdf$/i.test(file.name)) throw new Error('SELECIONE UM ARQUIVO COM EXTENSÃO .PDF.');
+    if(file.size <= 0) throw new Error('O ARQUIVO PDF ESTÁ VAZIO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O COMPROVANTE DEVE TER NO MÁXIMO 25 MB.');
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const create = await rhAttachmentRequest({
+      method:'POST',
+      headers:{Accept:'application/json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'create',
+        id:entryId,
+        fileName:file.name,
+        contentType:file.type || 'application/pdf',
+        fileSize:file.size,
+        numberOfParts
+      })
+    });
+    const sessionId = create.session && create.session.id;
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO PDF.');
+    try{
+      for(let index=0;index<numberOfParts;index+=1){
+        const partNumber = index + 1;
+        showPurchaseToast('Enviando parte '+partNumber+' de '+numberOfParts+'…');
+        await rhAttachmentRequest({
+          method:'POST',
+          headers:{
+            Accept:'application/json',
+            'Content-Type':'application/octet-stream',
+            'x-hr-payroll-upload-id':sessionId,
+            'x-hr-payroll-part-number':String(partNumber)
+          },
+          body:file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
+        });
+      }
+      await rhAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'complete', sessionId})
+      });
+    }catch(error){
+      rhAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'cancel', sessionId})
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  if(el('rhFolhaAttachInput')) el('rhFolhaAttachInput').addEventListener('change', async () => {
+    const input = el('rhFolhaAttachInput');
+    const file = input.files && input.files[0];
+    const entryId = rhFolhaAttachTargetId;
+    if(!file || !entryId){
+      input.value = '';
+      rhFolhaAttachTargetId = '';
+      return;
+    }
+    try{
+      await uploadRhFolhaAttachment(entryId, file);
+      showPurchaseToast('Comprovante anexado.');
+      await loadRhFolha();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }finally{
+      input.value = '';
+      rhFolhaAttachTargetId = '';
+    }
+  });
+
+  if(el('rhFolhaTableBody')) el('rhFolhaTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rh-folha-edit]');
+    if(editButton){
+      const row = rhFolhaRows.find(item => item.employeeId === editButton.dataset.rhFolhaEdit);
+      if(row) openRhFolhaDialog(row);
+      return;
+    }
+    const payButton = event.target.closest('[data-rh-folha-pay]');
+    if(payButton){
+      const row = rhFolhaRows.find(item => item.id === payButton.dataset.rhFolhaPay);
+      if(row) openRhFolhaPagamentoDialog(row);
+      return;
+    }
+    const unpayButton = event.target.closest('[data-rh-folha-unpay]');
+    if(unpayButton){
+      if(!confirm('Desfazer o pagamento desta folha?')) return;
+      try{
+        await rhApiRequest('/entries', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'mark_paid', id:unpayButton.dataset.rhFolhaUnpay, paymentDone:false})
+        });
+        await loadRhFolha();
+        showPurchaseToast('Pagamento desfeito.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+      return;
+    }
+    const attachButton = event.target.closest('[data-rh-folha-attach]');
+    if(attachButton){
+      rhFolhaAttachTargetId = attachButton.dataset.rhFolhaAttach;
+      el('rhFolhaAttachInput').value = '';
+      el('rhFolhaAttachInput').click();
+      return;
+    }
+    const removeButton = event.target.closest('[data-rh-folha-attach-remove]');
+    if(removeButton){
+      if(!confirm('Remover o comprovante anexado?')) return;
+      try{
+        await rhApiRequest('/attachment?id='+encodeURIComponent(removeButton.dataset.rhFolhaAttachRemove), {method:'DELETE'});
+        await loadRhFolha();
+        showPurchaseToast('Comprovante removido.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+      return;
+    }
+    const deleteButton = event.target.closest('[data-rh-folha-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir o lançamento de folha deste funcionário?')) return;
+      try{
+        await rhApiRequest('/entries?id='+encodeURIComponent(deleteButton.dataset.rhFolhaDelete), {method:'DELETE'});
+        await loadRhFolha();
+        showPurchaseToast('Lançamento excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
+  if(el('btnRhFolhaCopiar')) el('btnRhFolhaCopiar').addEventListener('click', async () => {
+    const month = el('rhFolhaMes').value;
+    const fromMonth = rhPreviousMonth(month);
+    if(!fromMonth){
+      showPurchaseToast('Selecione a competência primeiro.','error');
+      return;
+    }
+    if(!confirm('Copiar a folha de '+rhFormatMonth(fromMonth)+' para '+rhFormatMonth(month)+'? Quem já tem folha lançada no mês não será alterado.')) return;
+    try{
+      const data = await rhApiRequest('/entries', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'copy_previous_month', month, fromMonth, companyId:el('rhFolhaLoja').value})
+      });
+      await loadRhFolha();
+      showPurchaseToast('Copiados: '+(data.copied || 0)+' · mantidos: '+(data.skipped || 0)+'.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  if(el('btnRhFolhaPrint')) el('btnRhFolhaPrint').addEventListener('click', () => {
+    if(!rhFolhaRows.length){
+      showPurchaseToast('Nada para imprimir nesta competência.','error');
+      return;
+    }
+    rhStartPrint('folha-de-pagamento-'+(el('rhFolhaMes').value || ''));
+  });
+
+  // ---------------------- BENEFÍCIOS ----------------------
+
+  function renderRhBeneficiosTable(){
+    const body = el('rhBeneficiosTableBody');
+    if(!body) return;
+    if(!rhBeneficiosRows.length){
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhum benefício lançado para o filtro atual.</td></tr>';
+      el('rhBeneficiosResumo').textContent = '';
+      el('rhBeneficiosPrintPorLoja').innerHTML = '';
+      return;
+    }
+    body.innerHTML = rhBeneficiosRows.map(row => '<tr>'+
+      '<td>'+escapeHtml(row.employeeName)+'</td>'+
+      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+escapeHtml(rhFormatMonth(row.month))+'</td>'+
+      '<td>'+escapeHtml(RH_BENEFIT_TYPE_LABELS[row.type] || row.type)+'</td>'+
+      '<td>'+escapeHtml(RH_BENEFIT_METHOD_LABELS[row.paymentMethod] || row.paymentMethod)+'</td>'+
+      '<td>'+escapeHtml(rhFormatDate(row.paymentDate))+'</td>'+
+      '<td>'+formatCentsBRL(row.amountCents)+'</td>'+
+      '<td>'+escapeHtml(row.notes || '—')+'</td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;">'+
+        '<button class="btn-outline" type="button" data-rh-beneficio-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-rh-beneficio-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
+      '</span></td>'+
+    '</tr>').join('');
+
+    const total = rhBeneficiosRows.reduce((sum, row) => sum + Number(row.amountCents || 0), 0);
+    el('rhBeneficiosResumo').innerHTML = '<strong>'+rhBeneficiosRows.length+'</strong> lançamento(s) · Total: <strong>'+formatCentsBRL(total)+'</strong>';
+    el('rhBeneficiosPrintPorLoja').innerHTML = rhPrintByStoreHtml(
+      'Benefícios por loja',
+      rhBeneficiosRows,
+      row => row.amountCents,
+      row => row.companyName
+    );
+  }
+
+  async function loadRhBeneficios(){
+    if(!canAccess('payroll')) return;
+    try{
+      await rhEnsureBaseData(false);
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      return;
+    }
+    if(!el('rhBeneficioFiltroMes').value) el('rhBeneficioFiltroMes').value = financeCurrentMonthKey();
+    const params = new URLSearchParams();
+    const month = el('rhBeneficioFiltroMes').value;
+    if(month) params.set('month', month);
+    if(el('rhBeneficioFiltroLoja').value) params.set('companyId', el('rhBeneficioFiltroLoja').value);
+    if(el('rhBeneficioFiltroFuncionario').value) params.set('employeeId', el('rhBeneficioFiltroFuncionario').value);
+    if(el('rhBeneficioFiltroTipo').value) params.set('type', el('rhBeneficioFiltroTipo').value);
+    el('rhBeneficiosTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await rhApiRequest('/benefits?'+params.toString());
+      rhBeneficiosRows = Array.isArray(data.benefits) ? data.benefits : [];
+      el('rhBeneficiosPrintMeta').textContent = 'Competência '+rhFormatMonth(month)+
+        ' · '+(el('rhBeneficioFiltroLoja').value ? (companies.find(company => company.id === el('rhBeneficioFiltroLoja').value) || {name:'—'}).name : 'Todas as lojas');
+      renderRhBeneficiosTable();
+    }catch(error){
+      rhBeneficiosRows = [];
+      el('rhBeneficiosTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  ['rhBeneficioFiltroLoja','rhBeneficioFiltroFuncionario','rhBeneficioFiltroTipo','rhBeneficioFiltroMes'].forEach(id => {
+    if(el(id)) el(id).addEventListener('change', loadRhBeneficios);
+  });
+
+  function openRhBeneficioDialog(row){
+    el('rhBeneficioForm').reset();
+    rhRenderEmployeeSelects();
+    el('rhBeneficioId').value = row ? row.id : '';
+    el('rhBeneficioDialogTitle').textContent = row ? 'EDITAR BENEFÍCIO' : 'NOVO BENEFÍCIO';
+    el('rhBeneficioFuncionario').value = row ? row.employeeId : (el('rhBeneficioFiltroFuncionario').value || '');
+    el('rhBeneficioMes').value = row ? row.month : (el('rhBeneficioFiltroMes').value || financeCurrentMonthKey());
+    el('rhBeneficioTipo').value = row ? row.type : 'alimentacao';
+    el('rhBeneficioValor').value = row ? (Number(row.amountCents || 0)/100).toFixed(2) : '';
+    el('rhBeneficioForma').value = row ? row.paymentMethod : 'pix';
+    el('rhBeneficioData').value = row ? (row.paymentDate || '') : financeCurrentDateKey();
+    el('rhBeneficioObs').value = row ? (row.notes || '') : '';
+    el('rhBeneficioFormStatus').textContent = '';
+    el('rhBeneficioDialog').showModal();
+  }
+
+  function closeRhBeneficioDialog(){
+    if(el('rhBeneficioDialog').open) el('rhBeneficioDialog').close();
+  }
+
+  if(el('btnNewRhBeneficio')) el('btnNewRhBeneficio').addEventListener('click', () => openRhBeneficioDialog(null));
+  if(el('btnCloseRhBeneficioDialog')) el('btnCloseRhBeneficioDialog').addEventListener('click', closeRhBeneficioDialog);
+  if(el('btnCancelRhBeneficioDialog')) el('btnCancelRhBeneficioDialog').addEventListener('click', closeRhBeneficioDialog);
+
+  if(el('rhBeneficiosTableBody')) el('rhBeneficiosTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rh-beneficio-edit]');
+    const deleteButton = event.target.closest('[data-rh-beneficio-delete]');
+    if(editButton){
+      const row = rhBeneficiosRows.find(item => item.id === editButton.dataset.rhBeneficioEdit);
+      if(row) openRhBeneficioDialog(row);
+      return;
+    }
+    if(deleteButton){
+      if(!confirm('Excluir este benefício?')) return;
+      try{
+        await rhApiRequest('/benefits?id='+encodeURIComponent(deleteButton.dataset.rhBeneficioDelete), {method:'DELETE'});
+        await loadRhBeneficios();
+        showPurchaseToast('Benefício excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
+  if(el('rhBeneficioForm')) el('rhBeneficioForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhBeneficioFormStatus');
+    status.textContent = '';
+    const amountCents = parseBRLToCents(el('rhBeneficioValor').value);
+    if(amountCents === null || amountCents <= 0){
+      status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.';
+      return;
+    }
+    if(!el('rhBeneficioFuncionario').value){
+      status.textContent = 'SELECIONE O FUNCIONÁRIO.';
+      return;
+    }
+    const payload = {
+      id: el('rhBeneficioId').value || undefined,
+      employeeId: el('rhBeneficioFuncionario').value,
+      month: el('rhBeneficioMes').value,
+      type: el('rhBeneficioTipo').value,
+      paymentMethod: el('rhBeneficioForma').value,
+      paymentDate: el('rhBeneficioData').value,
+      amountCents,
+      notes: el('rhBeneficioObs').value
+    };
+    try{
+      await rhApiRequest('/benefits', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      closeRhBeneficioDialog();
+      await loadRhBeneficios();
+      showPurchaseToast('Benefício salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  if(el('btnRhBeneficiosPrint')) el('btnRhBeneficiosPrint').addEventListener('click', () => {
+    if(!rhBeneficiosRows.length){
+      showPurchaseToast('Nada para imprimir com este filtro.','error');
+      return;
+    }
+    rhStartPrint('beneficios-'+(el('rhBeneficioFiltroMes').value || ''));
+  });
+
+  // ---------------------- COMISSIONAMENTO ----------------------
+
+  function rhCommissionNet(row){
+    return Number(row.commissionCents || 0) + Number(row.bonusesCents || 0) + Number(row.premiumsCents || 0)
+      - Number(row.discountsCents || 0) + Number(row.adjustmentsCents || 0);
+  }
+
+  function renderRhComissaoTable(){
+    const body = el('rhComissaoTableBody');
+    if(!body) return;
+    if(!rhComissoes.length){
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma comissão lançada nesta competência.</td></tr>';
+      el('rhComissaoResumo').textContent = '';
+      el('rhComissaoPrintPorLoja').innerHTML = '';
+      return;
+    }
+    body.innerHTML = rhComissoes.map(row => '<tr>'+
+      '<td>'+escapeHtml(row.employeeName)+'</td>'+
+      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+formatCentsBRL(row.commissionCents)+'</td>'+
+      '<td>'+formatCentsBRL(row.bonusesCents)+'</td>'+
+      '<td>'+formatCentsBRL(row.premiumsCents)+'</td>'+
+      '<td>-'+formatCentsBRL(row.discountsCents)+'</td>'+
+      '<td>'+formatCentsBRL(row.adjustmentsCents)+'</td>'+
+      '<td><strong>'+formatCentsBRL(row.netCents)+'</strong></td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+        '<button class="btn-outline" type="button" data-rh-comissao-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-rh-comissao-recibo="'+escapeHtml(row.id)+'">RECIBO</button>'+
+        '<button class="btn-outline" type="button" data-rh-comissao-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
+      '</span></td>'+
+    '</tr>').join('');
+
+    const total = rhComissoes.reduce((sum, row) => sum + Number(row.netCents || 0), 0);
+    el('rhComissaoResumo').innerHTML = '<strong>'+rhComissoes.length+'</strong> funcionário(s) · Total final: <strong>'+formatCentsBRL(total)+'</strong>';
+    el('rhComissaoPrintPorLoja').innerHTML = rhPrintByStoreHtml(
+      'Comissionamento por loja',
+      rhComissoes,
+      row => row.netCents,
+      row => row.companyName
+    );
+  }
+
+  function renderRhComissaoPresetsTable(){
+    const body = el('rhComissaoPresetsTableBody');
+    if(!body) return;
+    if(!rhComissaoPresets.length){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum lançamento padrão cadastrado.</td></tr>';
+      return;
+    }
+    body.innerHTML = rhComissaoPresets.map(preset => '<tr>'+
+      '<td>'+escapeHtml(preset.name)+'</td>'+
+      '<td>'+escapeHtml(RH_COMMISSION_KIND_LABELS[preset.kind] || preset.kind)+'</td>'+
+      '<td>'+formatCentsBRL(preset.defaultAmountCents)+'</td>'+
+      '<td>'+(preset.active ? '<span class="status-pill done">ATIVO</span>' : '<span class="status-pill alert">INATIVO</span>')+'</td>'+
+      '<td><span style="display:flex;gap:6px;">'+
+        '<button class="btn-outline" type="button" data-rh-preset-edit="'+escapeHtml(preset.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-rh-preset-delete="'+escapeHtml(preset.id)+'">EXCLUIR</button>'+
+      '</span></td>'+
+    '</tr>').join('');
+  }
+
+  function renderRhComissaoPresetOptions(){
+    rhFillSelect('rhComissaoItemPreset','SEM PADRÃO (LIVRE)', rhComissaoPresets
+      .filter(preset => preset.active)
+      .map(preset => ({value:preset.id, label:preset.name})));
+  }
+
+  async function loadRhComissaoPresets(){
+    const data = await rhApiRequest('/commission-presets');
+    rhComissaoPresets = Array.isArray(data.presets) ? data.presets : [];
+    renderRhComissaoPresetsTable();
+    renderRhComissaoPresetOptions();
+  }
+
+  async function loadRhComissionamento(){
+    if(!canAccess('payroll')) return;
+    try{
+      await rhEnsureBaseData(false);
+      await loadRhComissaoPresets();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      return;
+    }
+    if(!el('rhComissaoMes').value) el('rhComissaoMes').value = financeCurrentMonthKey();
+    const month = el('rhComissaoMes').value;
+    const companyId = el('rhComissaoLoja').value;
+    el('rhComissaoTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const params = new URLSearchParams({month});
+      if(companyId) params.set('companyId', companyId);
+      const data = await rhApiRequest('/commissions?'+params.toString());
+      rhComissoes = Array.isArray(data.commissions) ? data.commissions : [];
+      el('rhComissaoPrintMeta').textContent = 'Competência '+rhFormatMonth(month)+
+        ' · '+(companyId ? (companies.find(company => company.id === companyId) || {name:'—'}).name : 'Todas as lojas');
+      renderRhComissaoTable();
+    }catch(error){
+      rhComissoes = [];
+      el('rhComissaoTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  if(el('rhComissaoMes')) el('rhComissaoMes').addEventListener('change', loadRhComissionamento);
+  if(el('rhComissaoLoja')) el('rhComissaoLoja').addEventListener('change', loadRhComissionamento);
+
+  document.querySelectorAll('[data-rh-comissao-tab]').forEach(button => {
+    button.addEventListener('click', () => {
+      rhComissaoTab = button.dataset.rhComissaoTab;
+      document.querySelectorAll('[data-rh-comissao-tab]').forEach(other => {
+        const active = other === button;
+        other.classList.toggle('active', active);
+        other.setAttribute('aria-selected', String(active));
+      });
+      el('rhComissaoTabLancamentos').hidden = rhComissaoTab !== 'lancamentos';
+      el('rhComissaoTabPresets').hidden = rhComissaoTab !== 'presets';
+    });
+  });
+
+  function renderRhComissaoDialogItems(){
+    const body = el('rhComissaoItensBody');
+    if(!body) return;
+    if(!rhComissaoDialogItems.length){
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhum lançamento adicionado.</td></tr>';
+    }else{
+      body.innerHTML = rhComissaoDialogItems.map((item, index) => '<tr>'+
+        '<td>'+escapeHtml(item.label)+'</td>'+
+        '<td>'+escapeHtml(RH_COMMISSION_KIND_LABELS[item.kind] || item.kind)+'</td>'+
+        '<td>'+(item.kind === 'desconto' ? '-' : '')+formatCentsBRL(item.amountCents)+'</td>'+
+        '<td><button class="btn-outline" type="button" data-rh-comissao-item-remove="'+index+'">REMOVER</button></td>'+
+      '</tr>').join('');
+    }
+    const base = parseBRLToCents(el('rhComissaoValor').value || '0') || 0;
+    const total = rhComissaoDialogItems.reduce((sum, item) => {
+      if(item.kind === 'desconto') return sum - item.amountCents;
+      return sum + item.amountCents;
+    }, base);
+    el('rhComissaoItensTotal').textContent = 'VALOR FINAL: '+formatCentsBRL(total);
+  }
+
+  if(el('rhComissaoValor')) el('rhComissaoValor').addEventListener('input', renderRhComissaoDialogItems);
+
+  if(el('rhComissaoItemPreset')) el('rhComissaoItemPreset').addEventListener('change', () => {
+    const preset = rhComissaoPresets.find(item => item.id === el('rhComissaoItemPreset').value);
+    if(!preset) return;
+    el('rhComissaoItemLabel').value = preset.name;
+    el('rhComissaoItemKind').value = preset.kind;
+    el('rhComissaoItemValor').value = (Number(preset.defaultAmountCents || 0)/100).toFixed(2);
+  });
+
+  if(el('btnAddRhComissaoItem')) el('btnAddRhComissaoItem').addEventListener('click', () => {
+    const status = el('rhComissaoFormStatus');
+    const label = el('rhComissaoItemLabel').value.trim();
+    const kind = el('rhComissaoItemKind').value;
+    const raw = Number(el('rhComissaoItemValor').value);
+    if(!label){
+      status.textContent = 'INFORME A DESCRIÇÃO DO LANÇAMENTO.';
+      return;
+    }
+    if(!Number.isFinite(raw) || raw === 0){
+      status.textContent = 'INFORME UM VALOR DIFERENTE DE ZERO.';
+      return;
+    }
+    if(kind !== 'ajuste' && raw < 0){
+      status.textContent = 'SÓ O AJUSTE PODE TER VALOR NEGATIVO.';
+      return;
+    }
+    status.textContent = '';
+    rhComissaoDialogItems.push({
+      presetId: el('rhComissaoItemPreset').value || '',
+      label,
+      kind,
+      amountCents: Math.round(raw * 100)
+    });
+    el('rhComissaoItemPreset').value = '';
+    el('rhComissaoItemLabel').value = '';
+    el('rhComissaoItemValor').value = '';
+    renderRhComissaoDialogItems();
+  });
+
+  if(el('rhComissaoItensBody')) el('rhComissaoItensBody').addEventListener('click', event => {
+    const removeButton = event.target.closest('[data-rh-comissao-item-remove]');
+    if(!removeButton) return;
+    rhComissaoDialogItems.splice(Number(removeButton.dataset.rhComissaoItemRemove), 1);
+    renderRhComissaoDialogItems();
+  });
+
+  function openRhComissaoDialog(row){
+    el('rhComissaoForm').reset();
+    rhRenderEmployeeSelects();
+    renderRhComissaoPresetOptions();
+    rhComissaoDialogItems = row ? (row.items || []).map(item => ({
+      presetId: item.presetId || '',
+      label: item.label,
+      kind: item.kind,
+      amountCents: Number(item.amountCents || 0)
+    })) : [];
+    el('rhComissaoId').value = row ? row.id : '';
+    el('rhComissaoDialogTitle').textContent = row ? 'EDITAR COMISSÃO' : 'NOVA COMISSÃO';
+    el('rhComissaoFuncionario').value = row ? row.employeeId : '';
+    el('rhComissaoCompetencia').value = row ? row.month : (el('rhComissaoMes').value || financeCurrentMonthKey());
+    el('rhComissaoValor').value = row ? (Number(row.commissionCents || 0)/100).toFixed(2) : '0.00';
+    el('rhComissaoObs').value = row ? (row.notes || '') : '';
+    el('rhComissaoFormStatus').textContent = '';
+    renderRhComissaoDialogItems();
+    el('rhComissaoDialog').showModal();
+  }
+
+  function closeRhComissaoDialog(){
+    if(el('rhComissaoDialog').open) el('rhComissaoDialog').close();
+  }
+
+  if(el('btnNewRhComissao')) el('btnNewRhComissao').addEventListener('click', () => openRhComissaoDialog(null));
+  if(el('btnCloseRhComissaoDialog')) el('btnCloseRhComissaoDialog').addEventListener('click', closeRhComissaoDialog);
+  if(el('btnCancelRhComissaoDialog')) el('btnCancelRhComissaoDialog').addEventListener('click', closeRhComissaoDialog);
+
+  if(el('rhComissaoForm')) el('rhComissaoForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhComissaoFormStatus');
+    status.textContent = '';
+    if(!el('rhComissaoFuncionario').value){
+      status.textContent = 'SELECIONE O FUNCIONÁRIO.';
+      return;
+    }
+    const commissionCents = parseBRLToCents(el('rhComissaoValor').value || '0');
+    if(commissionCents === null){
+      status.textContent = 'INFORME UM VALOR DE COMISSÃO VÁLIDO.';
+      return;
+    }
+    const payload = {
+      id: el('rhComissaoId').value || undefined,
+      employeeId: el('rhComissaoFuncionario').value,
+      month: el('rhComissaoCompetencia').value,
+      commissionCents,
+      notes: el('rhComissaoObs').value,
+      items: rhComissaoDialogItems
+    };
+    try{
+      await rhApiRequest('/commissions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      closeRhComissaoDialog();
+      await loadRhComissionamento();
+      showPurchaseToast('Comissão salva.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  // Recibo individual: monta o detalhamento do funcionário e imprime só ele
+  // (body.rh-recibo-only esconde o restante da página).
+  function printRhComissaoRecibo(row){
+    const container = el('rhComissaoRecibo');
+    if(!container) return;
+    const items = row.items || [];
+    const itemsHtml = items.length
+      ? items.map(item => '<tr>'+
+          '<td>'+escapeHtml(item.label)+'</td>'+
+          '<td>'+escapeHtml(RH_COMMISSION_KIND_LABELS[item.kind] || item.kind)+'</td>'+
+          '<td class="num">'+(item.kind === 'desconto' ? '-' : '')+formatCentsBRL(item.amountCents)+'</td>'+
+        '</tr>').join('')
+      : '<tr><td colspan="3">Nenhum lançamento adicional.</td></tr>';
+    container.innerHTML =
+      '<div class="print-report-header" style="display:block;">'+
+        '<div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div>'+
+        '<h1>Recibo de Comissionamento</h1>'+
+        '<div class="print-report-meta">'+escapeHtml(row.employeeName)+' · '+escapeHtml(row.companyName || 'Sem loja definida')+' · Competência '+escapeHtml(rhFormatMonth(row.month))+'</div>'+
+      '</div>'+
+      '<div class="rh-recibo-meta">Comissão base: <strong>'+formatCentsBRL(row.commissionCents)+'</strong></div>'+
+      '<table class="rh-print-table"><thead><tr><th>Descrição</th><th>Tipo</th><th class="num">Valor</th></tr></thead>'+
+      '<tbody>'+itemsHtml+'</tbody></table>'+
+      '<table class="rh-print-table" style="margin-top:10px;"><tbody>'+
+        '<tr><td>Bônus</td><td class="num">'+formatCentsBRL(row.bonusesCents)+'</td></tr>'+
+        '<tr><td>Premiações</td><td class="num">'+formatCentsBRL(row.premiumsCents)+'</td></tr>'+
+        '<tr><td>Descontos</td><td class="num">-'+formatCentsBRL(row.discountsCents)+'</td></tr>'+
+        '<tr><td>Ajustes</td><td class="num">'+formatCentsBRL(row.adjustmentsCents)+'</td></tr>'+
+      '</tbody></table>'+
+      '<div class="rh-recibo-total">VALOR FINAL: '+formatCentsBRL(row.netCents)+'</div>'+
+      (row.notes ? '<div class="rh-recibo-meta">Observações: '+escapeHtml(row.notes)+'</div>' : '');
+    container.hidden = false;
+    rhStartPrint('recibo-comissao-'+(row.employeeName || '').toLowerCase().replace(/\s+/g,'-')+'-'+row.month, 'rh-recibo-only');
+  }
+
+  if(el('rhComissaoTableBody')) el('rhComissaoTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rh-comissao-edit]');
+    if(editButton){
+      const row = rhComissoes.find(item => item.id === editButton.dataset.rhComissaoEdit);
+      if(row) openRhComissaoDialog(row);
+      return;
+    }
+    const reciboButton = event.target.closest('[data-rh-comissao-recibo]');
+    if(reciboButton){
+      const row = rhComissoes.find(item => item.id === reciboButton.dataset.rhComissaoRecibo);
+      if(row) printRhComissaoRecibo(row);
+      return;
+    }
+    const deleteButton = event.target.closest('[data-rh-comissao-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir esta comissão e todos os lançamentos dela?')) return;
+      try{
+        await rhApiRequest('/commissions?id='+encodeURIComponent(deleteButton.dataset.rhComissaoDelete), {method:'DELETE'});
+        await loadRhComissionamento();
+        showPurchaseToast('Comissão excluída.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
+  if(el('btnRhComissaoPrint')) el('btnRhComissaoPrint').addEventListener('click', () => {
+    if(!rhComissoes.length){
+      showPurchaseToast('Nada para imprimir nesta competência.','error');
+      return;
+    }
+    rhStartPrint('comissionamento-'+(el('rhComissaoMes').value || ''));
+  });
+
+  function resetRhComissaoPresetForm(){
+    el('rhComissaoPresetForm').reset();
+    el('rhComissaoPresetId').value = '';
+    el('rhComissaoPresetAtivo').checked = true;
+    el('btnSaveRhComissaoPreset').textContent = 'SALVAR LANÇAMENTO PADRÃO';
+    el('btnCancelRhComissaoPreset').hidden = true;
+  }
+
+  if(el('btnCancelRhComissaoPreset')) el('btnCancelRhComissaoPreset').addEventListener('click', () => {
+    resetRhComissaoPresetForm();
+    el('rhComissaoPresetStatus').textContent = '';
+  });
+
+  if(el('rhComissaoPresetForm')) el('rhComissaoPresetForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhComissaoPresetStatus');
+    status.textContent = '';
+    const defaultAmountCents = parseBRLToCents(el('rhComissaoPresetValor').value || '0');
+    if(defaultAmountCents === null){
+      status.textContent = 'INFORME UM VALOR PADRÃO VÁLIDO.';
+      return;
+    }
+    const payload = {
+      id: el('rhComissaoPresetId').value || undefined,
+      name: el('rhComissaoPresetNome').value,
+      kind: el('rhComissaoPresetTipo').value,
+      defaultAmountCents,
+      active: el('rhComissaoPresetAtivo').checked
+    };
+    try{
+      await rhApiRequest('/commission-presets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      resetRhComissaoPresetForm();
+      await loadRhComissaoPresets();
+      showPurchaseToast('Lançamento padrão salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  if(el('rhComissaoPresetsTableBody')) el('rhComissaoPresetsTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rh-preset-edit]');
+    const deleteButton = event.target.closest('[data-rh-preset-delete]');
+    if(editButton){
+      const preset = rhComissaoPresets.find(item => item.id === editButton.dataset.rhPresetEdit);
+      if(!preset) return;
+      el('rhComissaoPresetId').value = preset.id;
+      el('rhComissaoPresetNome').value = preset.name;
+      el('rhComissaoPresetTipo').value = preset.kind;
+      el('rhComissaoPresetValor').value = (Number(preset.defaultAmountCents || 0)/100).toFixed(2);
+      el('rhComissaoPresetAtivo').checked = Boolean(preset.active);
+      el('btnSaveRhComissaoPreset').textContent = 'ATUALIZAR LANÇAMENTO PADRÃO';
+      el('btnCancelRhComissaoPreset').hidden = false;
+      return;
+    }
+    if(deleteButton){
+      if(!confirm('Excluir este lançamento padrão? As comissões já lançadas não mudam.')) return;
+      try{
+        await rhApiRequest('/commission-presets?id='+encodeURIComponent(deleteButton.dataset.rhPresetDelete), {method:'DELETE'});
+        resetRhComissaoPresetForm();
+        await loadRhComissaoPresets();
+        showPurchaseToast('Lançamento padrão excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
 
   async function initializeApp(){
     setDropzonesDisabled(true);
