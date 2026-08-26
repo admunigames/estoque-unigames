@@ -1206,6 +1206,72 @@ export const supplierInvoiceEvents = pgTable(
   (table) => [index("supplier_invoice_events_invoice_idx").on(table.invoiceId, table.createdAt)],
 );
 
+// Módulo "Fornecedores em Aberto" (Financeiro Fase 3). Mesmo padrão de
+// supplier_invoice_installments: cada dívida cadastrada aqui tem sua
+// PRÓPRIA linha "gêmea" em accounts_payable (accountsPayableId), criada na
+// mesma transação — accounts_payable continua sendo o motor único de
+// status/pagamento/DRE, esta tabela guarda só os campos específicos da
+// dívida avulsa (fornecedor, pedido, NF opcional) e um espelho denormalizado
+// de paidAmountCents (fonte de verdade é sempre a accounts_payable ligada).
+// supplierInvoiceId é um vínculo textual opcional (sem FK real, mesmo
+// padrão do resto do projeto) para o caso raro de o usuário querer amarrar
+// a dívida a uma NF já cadastrada no módulo de Notas Fiscais.
+export const supplierOpenDebts = pgTable(
+  "supplier_open_debts",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    supplierId: text("supplier_id").notNull(),
+    supplierName: text("supplier_name").notNull().default(""),
+    invoiceNumber: text("invoice_number").notNull().default(""),
+    supplierInvoiceId: text("supplier_invoice_id").notNull().default(""),
+    orderReference: text("order_reference").notNull().default(""),
+    purchaseDate: text("purchase_date").notNull().default(""),
+    description: text("description").notNull(),
+    originalAmountCents: integer("original_amount_cents").notNull(),
+    paidAmountCents: integer("paid_amount_cents").notNull().default(0),
+    dueDate: text("due_date").notNull(),
+    notes: text("notes").notNull().default(""),
+    // Nunca vazio depois de criada — a criação da dívida e da accounts_payable
+    // acontece na mesma transação (ver app/api/finance/supplier-debts/route.ts).
+    accountsPayableId: text("accounts_payable_id").notNull().default(""),
+    canceled: integer("canceled").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("supplier_open_debts_company_idx").on(table.companyId),
+    index("supplier_open_debts_supplier_idx").on(table.supplierId),
+    index("supplier_open_debts_payable_idx").on(table.accountsPayableId),
+  ],
+);
+
+// Anexo de comprovante de UM pagamento de accounts_payable — genérico o
+// bastante para qualquer módulo que registre pagamento via
+// accounts_payable_payments (Fornecedores em Aberto é o primeiro a usar,
+// mas não é o único cabível no futuro). Mesmo padrão de
+// supplier_invoice_attachments (mesmo bucket R2, mesmo esquema de upload).
+export const accountsPayablePaymentAttachments = pgTable(
+  "accounts_payable_payment_attachments",
+  {
+    id: text("id").primaryKey(),
+    paymentId: text("payment_id").notNull(),
+    r2Key: text("r2_key").notNull().unique(),
+    fileName: text("file_name").notNull(),
+    contentType: text("content_type").notNull().default("application/pdf"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("accounts_payable_payment_attachments_payment_idx").on(table.paymentId)],
+);
+
 export const loanDevices = pgTable(
   "loan_devices",
   {

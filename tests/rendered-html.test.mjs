@@ -2759,3 +2759,122 @@ test("botão de desfazer feita/não feita permanece legível em item concluído 
     /\.home-mission-row\.completed \.home-mission-check,\s*\.home-mission-row\.completed \.home-mission-copy\{opacity:\.55;\}/,
   );
 });
+
+test("Financeiro Fase 3: Fornecedores em Aberto e Conta Corrente do Fornecedor", async () => {
+  const [
+    html,
+    workerSource,
+    schema,
+    migration,
+    supplierDebtsShared,
+    supplierDebtsRoute,
+    supplierDebtsIdRoute,
+    supplierDebtsCancelRoute,
+    supplierDebtsDashboardRoute,
+    suppliersStatementRoute,
+    payablesSummaryShared,
+    paymentAttachmentsRoute,
+  ] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0034_supplier_open_debts.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/supplier-debts/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/supplier-debts/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/supplier-debts/[id]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/supplier-debts/[id]/cancel/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/supplier-debts/dashboard/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/suppliers/[id]/statement/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/payables/summary/shared.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../app/api/finance/payables/[id]/payments/[paymentId]/attachments/route.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  // Nav: entrada nova dentro do submenu Financeiro, rota estática (o
+  // roteador só aceita paths fixos, sem parâmetro dinâmico).
+  assert.match(
+    html,
+    /id="navFinanceiroSupplierStatement" data-page="financeiroSupplierStatement" data-permission="finance"[^>]*href="\/financeiro\/fornecedores\/conta-corrente"/,
+  );
+  assert.match(html, /id="pageFinanceiroSupplierStatement" class="page wrap"/);
+  assert.match(html, /financeiroSupplierStatement:'\/financeiro\/fornecedores\/conta-corrente'/);
+  assert.match(html, /financeiroSupplierStatement:'finance'/);
+  assert.match(html, /function loadSupplierStatementPage\(\)/);
+  assert.match(
+    html,
+    /isFinanceiro = name === 'financeiroDashboard'[\s\S]{0,200}name === 'financeiroSupplierStatement'/,
+  );
+
+  // Rota estática liberada no allowlist do worker.
+  assert.match(workerSource, /"\/financeiro\/fornecedores\/conta-corrente"/);
+
+  // Aba "Fornecedores em Aberto" dentro de Contas a Pagar.
+  assert.match(html, /data-payables-section-tab="suppliers">FORNECEDORES EM ABERTO/);
+  assert.match(html, /id="payablesTabSuppliers" hidden/);
+  assert.match(html, /function setPayablesSectionTab\(tab\)/);
+  assert.match(html, /id="supplierDebtForm"/);
+  assert.match(html, /id="supplierDebtDialog"/);
+
+  // Card de acesso rápido "FORNECEDORES EM ABERTO" no lugar do antigo
+  // placeholder "EM BREVE".
+  assert.match(html, /\{key:'suppliersOpen', label:'FORNECEDORES EM ABERTO', switchTab:true\}/);
+  assert.doesNotMatch(html, /comingSoon:true/);
+
+  // Comprovante de pagamento: campo de arquivo no formulário de pagamento
+  // e upload disparado depois que o pagamento é registrado com sucesso.
+  assert.match(html, /id="payablePaymentReceipt"/);
+  assert.match(html, /async function uploadPaymentReceipt\(payableId, paymentId, file\)/);
+  assert.match(
+    html,
+    /const paymentResp = await financeApiRequest\('\/payables\/'\+encodeURIComponent\(payablesCurrentDetailId\)\+'\/payments', \{/,
+  );
+  assert.match(html, /await uploadPaymentReceipt\(payablesCurrentDetailId, paymentResp\.id, receiptFile\)/);
+
+  // Schema: tabelas novas — dívida avulsa com sua accounts_payable "gêmea",
+  // e anexo de comprovante genérico (não exclusivo desta feature).
+  assert.match(schema, /export const supplierOpenDebts = pgTable\(\s*"supplier_open_debts"/);
+  assert.match(schema, /export const accountsPayablePaymentAttachments = pgTable\(\s*"accounts_payable_payment_attachments"/);
+  assert.match(schema, /accountsPayableId: text\("accounts_payable_id"\)\.notNull\(\)\.default\(""\)/);
+
+  // Migration: tabelas, índices, seed idempotente da categoria/item
+  // genéricos (accounts_payable.finance_item_id é NOT NULL) e RLS.
+  assert.match(migration, /CREATE TABLE "supplier_open_debts"/);
+  assert.match(migration, /CREATE TABLE "accounts_payable_payment_attachments"/);
+  assert.match(
+    migration,
+    /INSERT INTO "finance_items" \("id", "category_id", "name"[\s\S]{0,120}'seed-supplier-open-debt-item'/,
+  );
+  assert.match(migration, /ON CONFLICT \("id"\) DO NOTHING/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /REVOKE ALL ON TABLE "supplier_open_debts" FROM anon, authenticated/);
+
+  // Backend: cada dívida cria sua accounts_payable gêmea na mesma
+  // transação (mesmo padrão de duplicatas de NF), reaproveitando o motor
+  // único de status/pagamento/DRE — sem tabela de pagamento própria.
+  assert.match(supplierDebtsShared, /DEFAULT_SUPPLIER_DEBT_FINANCE_ITEM_ID = "seed-supplier-open-debt-item"/);
+  assert.match(supplierDebtsRoute, /INSERT INTO accounts_payable/);
+  assert.match(supplierDebtsRoute, /INSERT INTO supplier_open_debts/);
+  assert.match(supplierDebtsRoute, /recalcPayableEntrySql/);
+  assert.match(supplierDebtsIdRoute, /UPDATE supplier_open_debts/);
+  assert.match(supplierDebtsIdRoute, /UPDATE accounts_payable/);
+  assert.match(supplierDebtsCancelRoute, /SET canceled=1/);
+  assert.match(supplierDebtsCancelRoute, /SET status='canceled'/);
+
+  // Dashboard de Fornecedores reaproveita buildOpenSuppliers em vez de
+  // duplicar a consulta de saldo em aberto por fornecedor.
+  assert.match(supplierDebtsDashboardRoute, /buildOpenSuppliers/);
+  assert.match(payablesSummaryShared, /export async function buildOpenSuppliersPaged/);
+
+  // Conta corrente do fornecedor: extrato agrega accounts_payable de
+  // qualquer origem (NF, duplicata, despesa ou dívida avulsa) via LEFT JOIN
+  // com as tabelas "gêmeas" conhecidas.
+  assert.match(suppliersStatementRoute, /LEFT JOIN supplier_invoice_installments sii ON sii\.accounts_payable_id = a\.id/);
+  assert.match(suppliersStatementRoute, /LEFT JOIN supplier_open_debts sod ON sod\.accounts_payable_id = a\.id/);
+
+  // Comprovante via rota HTTP dedicada (tabela genérica, mesmo bucket R2
+  // do resto do projeto), não uma tabela exclusiva de Fornecedores em
+  // Aberto.
+  assert.match(paymentAttachmentsRoute, /INSERT INTO accounts_payable_payment_attachments/);
+});

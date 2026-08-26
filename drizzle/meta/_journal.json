@@ -239,6 +239,13 @@
       "when": 1787744409061,
       "tag": "0033_finance_cost_centers",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1787753292068,
+      "tag": "0034_supplier_open_debts",
+      "breakpoints": true
     }
   ]
 }
