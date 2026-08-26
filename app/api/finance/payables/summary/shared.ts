@@ -93,3 +93,63 @@ export async function buildOpenSuppliers(
     .all<OpenSupplierRow>();
   return result.results ?? [];
 }
+
+export type OpenSuppliersPage = { rows: OpenSupplierRow[]; total: number };
+
+/**
+ * Mesma consulta-base de buildOpenSuppliers, generalizada com busca por
+ * nome e paginação — usada pela aba "Fornecedores em Aberto" (lista
+ * completa, não só top 10) e pelo bloco geral da tela de Conta Corrente do
+ * Fornecedor. buildOpenSuppliers continua intocada (mesma assinatura usada
+ * hoje pelo Dashboard Geral) pra não arriscar quebrar quem já a consome.
+ */
+export async function buildOpenSuppliersPaged(
+  database: Awaited<ReturnType<typeof getD1>>,
+  effectiveCompanyId: string,
+  options: { search?: string; page?: number; pageSize?: number } = {},
+): Promise<OpenSuppliersPage> {
+  const conditions = [effectiveCompanyId ? "a.company_id=?1" : "1=1"];
+  const params: unknown[] = effectiveCompanyId ? [effectiveCompanyId] : [];
+  conditions.push("a.status NOT IN ('canceled', 'paid')", "a.supplier_id != ''");
+  const search = (options.search || "").trim();
+  if (search) {
+    params.push(`%${search}%`);
+    conditions.push(`s.name ILIKE ?${params.length}`);
+  }
+  const whereSql = conditions.join(" AND ");
+
+  const page = Math.max(1, options.page || 1);
+  const pageSize = Math.min(100, Math.max(1, options.pageSize || 20));
+
+  const countRow = await database
+    .prepare(
+      `SELECT COUNT(*) AS total FROM (
+         SELECT s.id
+         FROM accounts_payable a JOIN finance_suppliers s ON s.id = a.supplier_id
+         WHERE ${whereSql}
+         GROUP BY s.id
+         HAVING COALESCE(SUM(a.original_amount_cents - a.paid_amount_cents), 0) > 0
+       ) counted`,
+    )
+    .bind(...params)
+    .first<{ total: number }>();
+
+  const rowsParams = [...params, pageSize, (page - 1) * pageSize];
+  const result = await database
+    .prepare(
+      `SELECT s.id AS supplierId, s.name AS supplierName,
+              COUNT(*) AS count,
+              COALESCE(SUM(a.original_amount_cents - a.paid_amount_cents), 0) AS balanceCents
+       FROM accounts_payable a
+       JOIN finance_suppliers s ON s.id = a.supplier_id
+       WHERE ${whereSql}
+       GROUP BY s.id, s.name
+       HAVING COALESCE(SUM(a.original_amount_cents - a.paid_amount_cents), 0) > 0
+       ORDER BY COALESCE(SUM(a.original_amount_cents - a.paid_amount_cents), 0) DESC
+       LIMIT ?${rowsParams.length - 1} OFFSET ?${rowsParams.length}`,
+    )
+    .bind(...rowsParams)
+    .all<OpenSupplierRow>();
+
+  return { rows: result.results ?? [], total: Number(countRow?.total ?? 0) };
+}

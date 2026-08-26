@@ -50,6 +50,24 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       ...recalcPayableEntrySql(entryId, payable.companyId, payable.financeItemId, payable.competenceMonth, actor.id, actorName),
     ];
 
+    // Se esta conta a pagar é a gêmea de uma dívida de Fornecedores em
+    // Aberto (supplier_open_debts), cancelar por aqui (a tela genérica de
+    // Contas a Pagar) precisa cancelar as duas juntas — senão a dívida
+    // continua aparecendo como aberta na aba de Fornecedores em Aberto
+    // (que filtra só por supplier_open_debts.canceled).
+    const twinDebt = await database
+      .prepare("SELECT id FROM supplier_open_debts WHERE accounts_payable_id=?1")
+      .bind(id)
+      .first<{ id: string }>();
+    if (twinDebt) {
+      statements.push([
+        `UPDATE supplier_open_debts
+         SET canceled=1, updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
+         WHERE id=?3`,
+        [actor.id, actorName, twinDebt.id],
+      ]);
+    }
+
     const prepared = statements.map(([sql, sqlValues]) => database.prepare(sql).bind(...sqlValues));
     await database.batch(prepared);
 

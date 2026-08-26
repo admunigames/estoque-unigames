@@ -2776,6 +2776,7 @@
         <a class="nav-item sub-item" id="navFinanceiroPayables" data-page="financeiroPayables" data-permission="finance" data-home-desc="Contas a pagar: parcelas, recorrências e pagamentos por loja." title="Contas a Pagar" href="/financeiro/contas-a-pagar"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Contas a Pagar</span></a>
         <a class="nav-item sub-item" id="navFinanceiroInvoices" data-page="financeiroInvoices" data-any-permission="finance,payables" data-home-desc="Notas fiscais e duplicatas de fornecedores, integradas a Compras." title="Notas Fiscais" href="/financeiro/notas-fiscais"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas Fiscais</span></a>
         <a class="nav-item sub-item" id="navFinanceiroExpenses" data-page="financeiroExpenses" data-permission="finance" data-home-desc="Cadastro completo de despesas, com rateio entre lojas." title="Despesas" href="/financeiro/despesas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14.5 3.5V7h3.5"/><path d="M8 12h8M8 15.5h8M8 18.5h5"/></svg></span><span class="nav-label">Despesas</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroSupplierStatement" data-page="financeiroSupplierStatement" data-permission="finance" data-home-desc="Resumo geral e extrato (conta corrente) de cada fornecedor." title="Fornecedores" href="/financeiro/fornecedores/conta-corrente"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="17" height="12" rx="2"/><path d="M3.5 10.5h17"/><circle cx="8" cy="14.2" r="1.3" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Fornecedores</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="hr">
@@ -4865,6 +4866,12 @@
         <div class="page-header-meta"><p class="page-desc">Obrigações financeiras por empresa/loja — pagamentos, agendamentos, recorrências e parcelamentos, integrados automaticamente à DRE.</p></div>
       </header>
 
+      <div class="supply-tabs payables-section-tabs" role="tablist" aria-label="Seções de Contas a Pagar">
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-payables-section-tab="payables">CONTAS A PAGAR</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-payables-section-tab="suppliers">FORNECEDORES EM ABERTO</button>
+      </div>
+
+      <div id="payablesTabPayables">
       <div class="dre-toolbar">
         <div class="field"><label for="payablesLoja">EMPRESA/LOJA</label><select id="payablesLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="dre-toolbar-actions">
@@ -4927,6 +4934,48 @@
         </div>
         <div class="payables-totals" id="payablesTotals"></div>
         <div class="payables-pagination" id="payablesPagination"></div>
+      </div>
+      </div>
+
+      <div id="payablesTabSuppliers" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="supplierDebtsLoja">EMPRESA/LOJA</label><select id="supplierDebtsLoja"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnNewSupplierDebt" type="button">+ NOVA DÍVIDA</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="dre-toolbar payables-filters">
+            <div class="field full"><label for="supplierDebtsSearch">BUSCAR</label><input id="supplierDebtsSearch" placeholder="Fornecedor, descrição, NF, pedido..."></div>
+            <div class="field"><label for="supplierDebtsSupplier">FORNECEDOR</label><select id="supplierDebtsSupplier"><option value="">TODOS</option></select></div>
+            <div class="field"><label for="supplierDebtsStatus">STATUS</label>
+              <select id="supplierDebtsStatus">
+                <option value="">TODOS (EM ABERTO)</option>
+                <option value="upcoming">A VENCER</option>
+                <option value="due_today">VENCENDO HOJE</option>
+                <option value="overdue">VENCIDO</option>
+                <option value="partially_paid">PARCIALMENTE PAGO</option>
+                <option value="paid">QUITADO</option>
+                <option value="canceled">CANCELADO</option>
+              </select>
+            </div>
+            <div class="dre-toolbar-actions">
+              <button class="btn-outline" id="btnSupplierDebtsClearFilters" type="button">LIMPAR FILTROS</button>
+              <button class="btn-accent" id="btnSupplierDebtsApplyFilters" type="button">APLICAR FILTROS</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr>
+                <th>Fornecedor</th><th>Empresa/Loja</th><th>Descrição</th><th>NF/Pedido</th>
+                <th>Vencimento</th><th>Valor Original</th><th>Saldo</th><th>Status</th><th></th>
+              </tr></thead>
+              <tbody id="supplierDebtsBody"><tr><td colspan="9" class="responsive-empty">Carregando dívidas…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="payables-totals" id="supplierDebtsTotals"></div>
+          <div class="payables-pagination" id="supplierDebtsPagination"></div>
+        </div>
       </div>
     </section>
 
@@ -5035,6 +5084,77 @@
         </div>
         <div class="payables-totals" id="expensesTotals"></div>
         <div class="payables-pagination" id="expensesPagination"></div>
+      </div>
+    </section>
+
+    <section id="pageFinanceiroSupplierStatement" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Conta Corrente de Fornecedores</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Visão geral da dívida com fornecedores e o extrato completo (compras, notas fiscais, duplicatas e pagamentos) de cada fornecedor.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="supplierStatementLoja">EMPRESA/LOJA</label><select id="supplierStatementLoja"><option value="">TODAS AS LOJAS</option></select></div>
+      </div>
+
+      <div class="purchase-form-section">RESUMO GERAL</div>
+      <section class="summary" id="supplierStatementDashboard" aria-label="Resumo geral de fornecedores"></section>
+      <div class="table-panel responsive-table" id="supplierStatementByStorePanel">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Loja</th><th>Saldo em Aberto</th></tr></thead>
+            <tbody id="supplierStatementByStoreBody"><tr><td colspan="2" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="table-panel responsive-table" id="supplierStatementBySupplierPanel">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Fornecedor</th><th>Qtd. de Contas</th><th>Saldo em Aberto</th><th></th></tr></thead>
+            <tbody id="supplierStatementBySupplierBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="purchase-form-section">FORNECEDOR SELECIONADO</div>
+      <div class="dre-toolbar">
+        <div class="field full"><label for="supplierStatementSupplier">FORNECEDOR</label><select id="supplierStatementSupplier"><option value="">SELECIONE UM FORNECEDOR</option></select></div>
+      </div>
+      <div id="supplierStatementDetail" hidden>
+        <section class="summary" id="supplierStatementDetailTotals" aria-label="Totais do fornecedor selecionado"></section>
+
+        <div class="purchase-form-section">PRÓXIMOS VENCIMENTOS</div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Vencimento</th><th>Documento</th><th>Pedido</th><th>Origem</th><th>Saldo</th></tr></thead>
+              <tbody id="supplierStatementUpcomingBody"><tr><td colspan="5" class="responsive-empty">Nenhum vencimento em aberto.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="purchase-form-section">EXTRATO</div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Data</th><th>Documento</th><th>Pedido</th><th>Movimento</th><th>Valor</th><th>Saldo Corrente</th></tr></thead>
+              <tbody id="supplierStatementExtractBody"><tr><td colspan="6" class="responsive-empty">Nenhum movimento.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="purchase-form-section">HISTÓRICO DE PAGAMENTOS</div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Data</th><th>Valor</th><th>Forma</th><th>Situação</th><th>Responsável</th></tr></thead>
+              <tbody id="supplierStatementPaymentsBody"><tr><td colspan="5" class="responsive-empty">Nenhum pagamento registrado.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -5195,6 +5315,7 @@
       <div class="purchase-field"><label for="payablePaymentAccount">CONTA FINANCEIRA</label><select id="payablePaymentAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="payablePaymentScheduled" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="payablePaymentScheduled" style="width:auto;"> É UM AGENDAMENTO (AINDA NÃO PAGO)</label></div>
       <div class="purchase-field full"><label for="payablePaymentNotes">OBSERVAÇÕES</label><input id="payablePaymentNotes" maxlength="2000"></div>
+      <div class="purchase-field full"><label for="payablePaymentReceipt">COMPROVANTE (PDF, OPCIONAL)</label><input type="file" id="payablePaymentReceipt" accept="application/pdf"></div>
       <div class="purchase-field full" style="display:flex;justify-content:flex-end;">
         <button class="btn-accent" id="btnSavePayablePayment" type="submit">REGISTRAR</button>
       </div>
@@ -5214,6 +5335,33 @@
     <div class="purchase-form-section" id="payableOriginSection" hidden>OUTRAS CONTAS NA MESMA COMPETÊNCIA DA DRE</div>
     <div id="payableOriginList"></div>
   </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="supplierDebtDialog" aria-labelledby="supplierDebtDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="supplierDebtDialogTitle">NOVA DÍVIDA DE FORNECEDOR</h3>
+    <button class="purchase-dialog-close" id="btnCloseSupplierDebtDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="supplierDebtForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="supplierDebtCompany">EMPRESA/LOJA *</label><select id="supplierDebtCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="supplierDebtSupplier">FORNECEDOR *</label><select id="supplierDebtSupplier" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="supplierDebtDescription">DESCRIÇÃO *</label><input id="supplierDebtDescription" maxlength="200" required></div>
+      <div class="purchase-field"><label for="supplierDebtInvoiceNumber">NOTA FISCAL (OPCIONAL)</label><input id="supplierDebtInvoiceNumber" maxlength="60"></div>
+      <div class="purchase-field"><label for="supplierDebtOrderReference">PEDIDO (OPCIONAL)</label><input id="supplierDebtOrderReference" maxlength="60"></div>
+      <div class="purchase-field"><label for="supplierDebtPurchaseDate">DATA DA COMPRA</label><input type="date" id="supplierDebtPurchaseDate"></div>
+      <div class="purchase-field"><label for="supplierDebtDueDate">DATA PREVISTA DE PAGAMENTO *</label><input type="date" id="supplierDebtDueDate" required></div>
+      <div class="purchase-field"><label for="supplierDebtOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="number" id="supplierDebtOriginalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="supplierDebtFinanceItem">CATEGORIA/ITEM FINANCEIRO (OPCIONAL)</label><select id="supplierDebtFinanceItem"><option value="">FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)</option></select></div>
+      <div class="purchase-field"><label for="supplierDebtAccount">CONTA FINANCEIRA</label><select id="supplierDebtAccount"><option value="">SEM CONTA</option></select></div>
+      <div class="purchase-field full"><label for="supplierDebtNotes">OBSERVAÇÕES</label><textarea id="supplierDebtNotes" rows="2" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="supplierDebtFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelSupplierDebtDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveSupplierDebt" type="submit">SALVAR</button>
+    </div>
+  </form>
 </dialog>
 
 <dialog class="purchase-dialog" id="expenseDialog" aria-labelledby="expenseDialogTitle">
@@ -6388,7 +6536,8 @@
     financeiro:'/financeiro/dre',
     financeiroPayables:'/financeiro/contas-a-pagar',
     financeiroInvoices:'/financeiro/notas-fiscais',
-    financeiroExpenses:'/financeiro/despesas'
+    financeiroExpenses:'/financeiro/despesas',
+    financeiroSupplierStatement:'/financeiro/fornecedores/conta-corrente'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -6416,7 +6565,8 @@
     financeiro:'DRE',
     financeiroPayables:'CONTAS A PAGAR',
     financeiroInvoices:'NOTAS FISCAIS',
-    financeiroExpenses:'DESPESAS'
+    financeiroExpenses:'DESPESAS',
+    financeiroSupplierStatement:'CONTA CORRENTE DE FORNECEDORES'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -6440,7 +6590,8 @@
     financeiroDashboard:'finance',
     financeiro:'finance',
     financeiroPayables:'finance',
-    financeiroExpenses:'finance'
+    financeiroExpenses:'finance',
+    financeiroSupplierStatement:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -6847,7 +6998,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -6903,6 +7054,7 @@
     if(name === 'financeiroPayables') loadPayablesPage();
     if(name === 'financeiroInvoices') loadInvoicesPage();
     if(name === 'financeiroExpenses') loadExpensesPage();
+    if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -6930,6 +7082,7 @@
     if(name === 'financeiroPayables') loadPayablesPage();
     if(name === 'financeiroInvoices') loadInvoicesPage();
     if(name === 'financeiroExpenses') loadExpensesPage();
+    if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
   }
 
   function isPlainClick(event){
@@ -16227,10 +16380,12 @@ function renderHomeTasks(){
     {key:'today', label:'HOJE'}, {key:'tomorrow', label:'AMANHÃ'}, {key:'week', label:'ESTA SEMANA'},
     {key:'next7', label:'PRÓXIMOS 7 DIAS'}, {key:'next30', label:'PRÓXIMOS 30 DIAS'}, {key:'month', label:'MÊS'},
     {key:'year', label:'ANO'}, {key:'overdue', label:'VENCIDOS'}, {key:'paid', label:'PAGOS'},
-    // Módulo "Fornecedores em Aberto" ainda não existe (fase futura do
-    // Financeiro) — o card fica visível como placeholder, sem clique, só
-    // pra reservar o espaço no layout desde já.
-    {key:'suppliersOpen', label:'FORNECEDORES EM ABERTO', comingSoon:true}
+    // Módulo "Fornecedores em Aberto" (Financeiro Fase 3) — o card usa os
+    // mesmos dados de buildOpenSuppliers já trazidos por /payables/summary
+    // (data.openSuppliers), mas em vez de filtrar a listagem de Contas a
+    // Pagar (não é um filtro de vencimento, é uma coleção própria), o clique
+    // troca pra aba "Fornecedores em Aberto" (ver setPayablesSectionTab).
+    {key:'suppliersOpen', label:'FORNECEDORES EM ABERTO', switchTab:true}
   ];
 
   function payablesCanActAcrossStores(){
@@ -16569,11 +16724,13 @@ function renderHomeTasks(){
     try{
       const data = await financeApiRequest('/payables/summary?'+params.toString());
       const cards = PAYABLES_QUICK_VIEW_LABELS.map(view => {
-        if(view.comingSoon){
-          return '<div class="card" style="opacity:.55;cursor:default;">'+
+        if(view.switchTab){
+          const openSuppliers = Array.isArray(data.openSuppliers) ? data.openSuppliers : [];
+          const stats = {count: openSuppliers.length, balanceCents: openSuppliers.reduce((sum,s) => sum + (s.balanceCents||0), 0)};
+          return '<div class="card" data-payables-switch-tab="suppliers">'+
             '<div class="lbl">'+view.label+'</div>'+
-            '<div class="num">—</div>'+
-            '<div class="sub">EM BREVE</div>'+
+            '<div class="num">'+stats.count+'</div>'+
+            '<div class="sub">'+formatCentsBRL(stats.balanceCents)+'</div>'+
           '</div>';
         }
         const stats = (data.quickViews && data.quickViews[view.key]) || {count:0, balanceCents:0};
@@ -16870,7 +17027,7 @@ function renderHomeTasks(){
     const button = el('btnSavePayablePayment');
     button.disabled = true;
     try{
-      await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId)+'/payments', {
+      const paymentResp = await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId)+'/payments', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           idempotencyKey:payablePaymentIdempotencyKey, amountCents, paymentDate,
@@ -16878,6 +17035,16 @@ function renderHomeTasks(){
           notes:el('payablePaymentNotes').value.trim(), scheduled:el('payablePaymentScheduled').checked
         })
       });
+      const receiptInput = el('payablePaymentReceipt');
+      const receiptFile = receiptInput && receiptInput.files ? receiptInput.files[0] : null;
+      if(receiptFile && paymentResp && paymentResp.id){
+        try{
+          await uploadPaymentReceipt(payablesCurrentDetailId, paymentResp.id, receiptFile);
+        }catch(uploadError){
+          showPurchaseToast('Pagamento registrado, mas o comprovante não pôde ser anexado: '+uploadError.message, 'error');
+        }
+      }
+      if(receiptInput) receiptInput.value = '';
       showPurchaseToast(el('payablePaymentScheduled').checked ? 'Agendamento registrado.' : 'Pagamento registrado.');
       payablePaymentIdempotencyKey = crypto.randomUUID();
       const data = await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId));
@@ -16935,6 +17102,8 @@ function renderHomeTasks(){
   });
 
   el('payablesQuickViews').addEventListener('click', event => {
+    const switchTabCard = event.target.closest('[data-payables-switch-tab]');
+    if(switchTabCard){ setPayablesSectionTab(switchTabCard.dataset.payablesSwitchTab); return; }
     const card = event.target.closest('[data-payable-quick-view]');
     if(!card) return;
     const view = card.dataset.payableQuickView;
@@ -16970,6 +17139,449 @@ function renderHomeTasks(){
       th.classList.add(payablesDir === 'asc' ? 'sort-asc' : 'sort-desc');
       loadPayablesList();
     });
+  });
+
+  // ================= FORNECEDORES EM ABERTO (aba de Contas a Pagar) =================
+  // Financeiro Fase 3 — cada dívida cadastrada aqui cria, no backend, uma
+  // linha gêmea em accounts_payable (ver app/api/finance/supplier-debts),
+  // então status/saldo/pagamento reaproveitam 100% os mesmos componentes já
+  // usados em Contas a Pagar (payableDetailDialog é reaberto direto com o
+  // accountsPayableId da dívida pra registrar pagamento).
+  let payablesSectionTab = 'payables';
+  let supplierDebtsRows = [];
+  let supplierDebtsPage = 1;
+  const SUPPLIER_DEBTS_PAGE_SIZE = 20;
+  let supplierDebtsTotal = 0;
+  let supplierDebtFormIdempotencyKey = '';
+
+  function setPayablesSectionTab(tab){
+    payablesSectionTab = tab === 'suppliers' ? 'suppliers' : 'payables';
+    document.querySelectorAll('[data-payables-section-tab]').forEach(button => {
+      const active = button.dataset.payablesSectionTab === payablesSectionTab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    el('payablesTabPayables').hidden = payablesSectionTab !== 'payables';
+    el('payablesTabSuppliers').hidden = payablesSectionTab !== 'suppliers';
+    if(payablesSectionTab === 'suppliers' && !supplierDebtsRows.length) loadSupplierDebtsList();
+  }
+  document.querySelectorAll('[data-payables-section-tab]').forEach(button => {
+    button.addEventListener('click', () => setPayablesSectionTab(button.dataset.payablesSectionTab));
+  });
+
+  function renderSupplierDebtsCompanyOptions(){
+    const select = el('supplierDebtsLoja');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">TODAS AS LOJAS</option>'+
+      companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    if(companies.some(c => c.id === selected)) select.value = selected;
+    if(!payablesCanActAcrossStores() && currentSession.companyId){
+      select.value = currentSession.companyId;
+      select.disabled = true;
+    }
+  }
+
+  function renderSupplierDebtsSupplierOptions(){
+    const select = el('supplierDebtsSupplier');
+    if(!select) return;
+    const selected = select.value;
+    const options = payableSuppliers.filter(s => s.active).map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
+    select.innerHTML = '<option value="">TODOS</option>'+options;
+    if(payableSuppliers.some(s => s.id === selected)) select.value = selected;
+  }
+
+  function supplierDebtsFilterParams(){
+    const params = new URLSearchParams();
+    const companyId = el('supplierDebtsLoja') ? el('supplierDebtsLoja').value : '';
+    if(companyId) params.set('companyId', companyId);
+    const supplierId = el('supplierDebtsSupplier') ? el('supplierDebtsSupplier').value : '';
+    if(supplierId) params.set('supplierId', supplierId);
+    const search = el('supplierDebtsSearch') ? el('supplierDebtsSearch').value.trim() : '';
+    if(search) params.set('search', search);
+    const status = el('supplierDebtsStatus') ? el('supplierDebtsStatus').value : '';
+    if(status) params.set('status', status);
+    return params;
+  }
+
+  function renderSupplierDebtsTable(){
+    const tbody = el('supplierDebtsBody');
+    if(!tbody) return;
+    if(!supplierDebtsRows.length){
+      tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma dívida encontrada com os filtros atuais.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = supplierDebtsRows.map(row => {
+      const balance = row.originalAmountCents - row.paidAmountCents;
+      const canPay = row.displayStatus !== 'canceled' && row.displayStatus !== 'paid';
+      const canCancel = canPay;
+      return '<tr>'+
+        '<td>'+escapeHtml(row.supplierName || '—')+'</td>'+
+        '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+        '<td>'+escapeHtml(row.description)+'</td>'+
+        '<td>'+escapeHtml(row.invoiceNumber || row.orderReference || '—')+'</td>'+
+        '<td>'+escapeHtml(row.dueDate)+'</td>'+
+        '<td>'+formatCentsBRL(row.originalAmountCents)+'</td>'+
+        '<td>'+formatCentsBRL(balance)+'</td>'+
+        '<td>'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
+        '<td style="display:flex;gap:6px;flex-wrap:wrap;">'+
+          (canPay ? '<button class="btn-outline" type="button" data-supplier-debt-pay="'+escapeHtml(row.accountsPayableId)+'">REGISTRAR PAGAMENTO</button>' : '')+
+          '<button class="btn-outline" type="button" data-supplier-debt-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+          (canCancel ? '<button class="btn-outline" type="button" data-supplier-debt-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
+        '</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function renderSupplierDebtsTotals(totals){
+    const el2 = el('supplierDebtsTotals');
+    if(!el2) return;
+    el2.innerHTML =
+      '<span>DÍVIDAS: <strong>'+(totals.count || 0)+'</strong></span>'+
+      '<span>ORIGINAL: <strong>'+formatCentsBRL(totals.originalCents)+'</strong></span>'+
+      '<span>PAGO: <strong>'+formatCentsBRL(totals.paidCents)+'</strong></span>'+
+      '<span>SALDO: <strong>'+formatCentsBRL(totals.balanceCents)+'</strong></span>';
+  }
+
+  function renderSupplierDebtsPagination(){
+    const el2 = el('supplierDebtsPagination');
+    if(!el2) return;
+    const totalPages = Math.max(1, Math.ceil(supplierDebtsTotal / SUPPLIER_DEBTS_PAGE_SIZE));
+    el2.innerHTML =
+      '<button class="btn-outline" type="button" id="btnSupplierDebtsPrevPage" '+(supplierDebtsPage <= 1 ? 'disabled' : '')+'>ANTERIOR</button>'+
+      '<span>PÁGINA '+supplierDebtsPage+' DE '+totalPages+'</span>'+
+      '<button class="btn-outline" type="button" id="btnSupplierDebtsNextPage" '+(supplierDebtsPage >= totalPages ? 'disabled' : '')+'>PRÓXIMA</button>';
+    const prevButton = el('btnSupplierDebtsPrevPage');
+    const nextButton = el('btnSupplierDebtsNextPage');
+    if(prevButton) prevButton.addEventListener('click', () => { if(supplierDebtsPage > 1){ supplierDebtsPage -= 1; loadSupplierDebtsList(); } });
+    if(nextButton) nextButton.addEventListener('click', () => { if(supplierDebtsPage < totalPages){ supplierDebtsPage += 1; loadSupplierDebtsList(); } });
+  }
+
+  async function loadSupplierDebtsList(){
+    const tbody = el('supplierDebtsBody');
+    if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando dívidas…</td></tr>';
+    renderSupplierDebtsCompanyOptions();
+    renderSupplierDebtsSupplierOptions();
+    const params = supplierDebtsFilterParams();
+    params.set('page', String(supplierDebtsPage));
+    params.set('pageSize', String(SUPPLIER_DEBTS_PAGE_SIZE));
+    try{
+      const data = await financeApiRequest('/supplier-debts?'+params.toString());
+      supplierDebtsRows = Array.isArray(data.rows) ? data.rows : [];
+      supplierDebtsTotal = Number(data.total || 0);
+      renderSupplierDebtsTable();
+      renderSupplierDebtsTotals(data.totals || {});
+      renderSupplierDebtsPagination();
+    }catch(error){
+      if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  el('btnSupplierDebtsApplyFilters').addEventListener('click', () => { supplierDebtsPage = 1; loadSupplierDebtsList(); });
+  el('btnSupplierDebtsClearFilters').addEventListener('click', () => {
+    el('supplierDebtsSearch').value = '';
+    el('supplierDebtsSupplier').value = '';
+    el('supplierDebtsStatus').value = '';
+    supplierDebtsPage = 1;
+    loadSupplierDebtsList();
+  });
+  el('supplierDebtsLoja').addEventListener('change', () => { supplierDebtsPage = 1; loadSupplierDebtsList(); });
+
+  function renderSupplierDebtFinanceItemOptions(){
+    const select = el('supplierDebtFinanceItem');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)</option>'+
+      financeItems.map(item => {
+        const category = financeCategories.find(c => c.id === item.categoryId);
+        const label = (category ? category.name+' › ' : '')+item.name;
+        return '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(label)+'</option>';
+      }).join('');
+    if(financeItems.some(i => i.id === selected)) select.value = selected;
+  }
+
+  function resetSupplierDebtForm(){
+    el('supplierDebtForm').reset();
+    el('supplierDebtForm').dataset.editId = '';
+    renderSupplierDebtsCompanyOptions();
+    el('supplierDebtCompany').innerHTML = '<option value="">SELECIONE</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    if(!payablesCanActAcrossStores() && currentSession.companyId){
+      el('supplierDebtCompany').value = currentSession.companyId;
+      el('supplierDebtCompany').disabled = true;
+    }
+    const supplierOptions = payableSuppliers.filter(s => s.active).map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
+    el('supplierDebtSupplier').innerHTML = '<option value="">SELECIONE</option>'+supplierOptions;
+    renderSupplierDebtFinanceItemOptions();
+    renderPayableAccountOptionsForCompany('supplierDebtAccount', el('supplierDebtCompany').value, 'SEM CONTA');
+    supplierDebtFormIdempotencyKey = crypto.randomUUID();
+  }
+
+  async function openNewSupplierDebtDialog(){
+    if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
+    if(!payableSuppliers.length) await loadPayablesCatalogData();
+    resetSupplierDebtForm();
+    el('supplierDebtDialogTitle').textContent = 'NOVA DÍVIDA DE FORNECEDOR';
+    el('supplierDebtFormStatus').textContent = '';
+    el('supplierDebtDialog').showModal();
+  }
+
+  function openEditSupplierDebtDialog(row){
+    resetSupplierDebtForm();
+    el('supplierDebtForm').dataset.editId = row.id;
+    el('supplierDebtCompany').value = row.companyId;
+    el('supplierDebtCompany').disabled = true;
+    el('supplierDebtSupplier').value = row.supplierId;
+    el('supplierDebtSupplier').disabled = true;
+    el('supplierDebtDescription').value = row.description;
+    el('supplierDebtInvoiceNumber').value = row.invoiceNumber || '';
+    el('supplierDebtOrderReference').value = row.orderReference || '';
+    el('supplierDebtPurchaseDate').value = row.purchaseDate || '';
+    el('supplierDebtDueDate').value = row.dueDate;
+    el('supplierDebtOriginalAmount').value = (row.originalAmountCents / 100).toFixed(2);
+    el('supplierDebtNotes').value = row.notes || '';
+    el('supplierDebtDialogTitle').textContent = 'EDITAR DÍVIDA DE FORNECEDOR';
+    el('supplierDebtFormStatus').textContent = '';
+    el('supplierDebtDialog').showModal();
+  }
+
+  function closeSupplierDebtDialog(){
+    if(el('supplierDebtDialog').open) el('supplierDebtDialog').close();
+    el('supplierDebtCompany').disabled = false;
+    el('supplierDebtSupplier').disabled = false;
+  }
+
+  el('btnNewSupplierDebt').addEventListener('click', openNewSupplierDebtDialog);
+  el('btnCancelSupplierDebtDialog').addEventListener('click', closeSupplierDebtDialog);
+  el('btnCloseSupplierDebtDialog').addEventListener('click', closeSupplierDebtDialog);
+  el('supplierDebtDialog').addEventListener('click', event => { if(event.target === el('supplierDebtDialog')) closeSupplierDebtDialog(); });
+
+  el('supplierDebtForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statusEl = el('supplierDebtFormStatus');
+    statusEl.textContent = '';
+    const originalAmountCents = parseBRLToCents(el('supplierDebtOriginalAmount').value || '0');
+    if(originalAmountCents === null || originalAmountCents <= 0){ statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return; }
+    const dueDate = el('supplierDebtDueDate').value;
+    if(!dueDate){ statusEl.textContent = 'INFORME A DATA PREVISTA DE PAGAMENTO.'; return; }
+    const description = el('supplierDebtDescription').value.trim();
+    if(description.length < 2){ statusEl.textContent = 'INFORME A DESCRIÇÃO DA DÍVIDA.'; return; }
+
+    const editId = el('supplierDebtForm').dataset.editId;
+    const button = el('btnSaveSupplierDebt');
+    button.disabled = true;
+    try{
+      if(editId){
+        await financeApiRequest('/supplier-debts/'+encodeURIComponent(editId), {
+          method:'PATCH', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            description, invoiceNumber:el('supplierDebtInvoiceNumber').value.trim(),
+            orderReference:el('supplierDebtOrderReference').value.trim(), purchaseDate:el('supplierDebtPurchaseDate').value,
+            dueDate, originalAmountCents, notes:el('supplierDebtNotes').value.trim()
+          })
+        });
+        showPurchaseToast('Dívida atualizada.');
+      }else{
+        const companyId = el('supplierDebtCompany').value;
+        if(!companyId){ statusEl.textContent = 'SELECIONE A EMPRESA/LOJA.'; button.disabled = false; return; }
+        const supplierId = el('supplierDebtSupplier').value;
+        if(!supplierId){ statusEl.textContent = 'SELECIONE O FORNECEDOR.'; button.disabled = false; return; }
+        const companySelect = el('supplierDebtCompany');
+        const companyName = companySelect.options[companySelect.selectedIndex] ? companySelect.options[companySelect.selectedIndex].textContent : '';
+        await financeApiRequest('/supplier-debts', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            idempotencyKey:supplierDebtFormIdempotencyKey, companyId, companyName, supplierId,
+            description, invoiceNumber:el('supplierDebtInvoiceNumber').value.trim(),
+            orderReference:el('supplierDebtOrderReference').value.trim(), purchaseDate:el('supplierDebtPurchaseDate').value,
+            dueDate, originalAmountCents, financeItemId:el('supplierDebtFinanceItem').value,
+            financeAccountId:el('supplierDebtAccount').value, notes:el('supplierDebtNotes').value.trim()
+          })
+        });
+        showPurchaseToast('Dívida cadastrada.');
+      }
+      closeSupplierDebtDialog();
+      await Promise.all([loadSupplierDebtsList(), renderPayablesQuickViews()]);
+    }catch(error){
+      statusEl.textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  el('supplierDebtsBody').addEventListener('click', async event => {
+    const payButton = event.target.closest('[data-supplier-debt-pay]');
+    const editButton = event.target.closest('[data-supplier-debt-edit]');
+    const cancelButton = event.target.closest('[data-supplier-debt-cancel]');
+    if(payButton){
+      openPayableDetailDialog(payButton.dataset.supplierDebtPay);
+    }else if(editButton){
+      const row = supplierDebtsRows.find(r => r.id === editButton.dataset.supplierDebtEdit);
+      if(row) openEditSupplierDebtDialog(row);
+    }else if(cancelButton){
+      if(!confirm('Cancelar esta dívida de fornecedor? A conta a pagar vinculada também será cancelada.')) return;
+      try{
+        await financeApiRequest('/supplier-debts/'+encodeURIComponent(cancelButton.dataset.supplierDebtCancel)+'/cancel', { method:'POST' });
+        showPurchaseToast('Dívida cancelada.');
+        await Promise.all([loadSupplierDebtsList(), renderPayablesQuickViews()]);
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }
+  });
+
+  // Comprovante de pagamento (upload PDF chunked, mesmo mecanismo das NFs) —
+  // disparado depois que o pagamento em si já foi criado com sucesso, então
+  // um comprovante que falhe no upload nunca impede o registro do pagamento.
+  async function uploadPaymentReceipt(payableId, paymentId, file){
+    const PART_SIZE = 512 * 1024;
+    const numberOfParts = Math.ceil(file.size / PART_SIZE);
+    const createResp = await financeApiRequest('/payables/'+encodeURIComponent(payableId)+'/payments/'+encodeURIComponent(paymentId)+'/attachments', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'create', fileName:file.name, contentType:file.type || 'application/pdf', fileSize:file.size, numberOfParts})
+    });
+    const sessionId = createResp.session.id;
+    for(let partNumber = 1; partNumber <= numberOfParts; partNumber += 1){
+      const start = (partNumber - 1) * PART_SIZE;
+      const chunk = file.slice(start, start + PART_SIZE);
+      const buffer = await chunk.arrayBuffer();
+      await fetch('/api/finance/payables/'+encodeURIComponent(payableId)+'/payments/'+encodeURIComponent(paymentId)+'/attachments', {
+        method:'POST', cache:'no-store',
+        headers:{'Content-Type':'application/octet-stream', 'x-payment-upload-id':sessionId, 'x-payment-part-number':String(partNumber)},
+        body:buffer
+      });
+    }
+    await financeApiRequest('/payables/'+encodeURIComponent(payableId)+'/payments/'+encodeURIComponent(paymentId)+'/attachments', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'complete', sessionId})
+    });
+  }
+
+  // ================= CONTA CORRENTE DE FORNECEDORES =================
+  let supplierStatementDashboardData = null;
+
+  function renderSupplierStatementCompanyOptions(){
+    const select = el('supplierStatementLoja');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">TODAS AS LOJAS</option>'+
+      companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    if(companies.some(c => c.id === selected)) select.value = selected;
+    if(!payablesCanActAcrossStores() && currentSession.companyId){
+      select.value = currentSession.companyId;
+      select.disabled = true;
+    }
+  }
+
+  function renderSupplierStatementSupplierOptions(){
+    const select = el('supplierStatementSupplier');
+    if(!select) return;
+    const selected = select.value;
+    const options = payableSuppliers.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
+    select.innerHTML = '<option value="">SELECIONE UM FORNECEDOR</option>'+options;
+    if(payableSuppliers.some(s => s.id === selected)) select.value = selected;
+  }
+
+  function statementCardHtml(label, valueHtml, sub){
+    return '<div class="card"><div class="lbl">'+label+'</div><div class="num">'+valueHtml+'</div>'+(sub ? '<div class="sub">'+sub+'</div>' : '')+'</div>';
+  }
+
+  async function loadSupplierStatementDashboard(){
+    const container = el('supplierStatementDashboard');
+    const companyId = el('supplierStatementLoja') ? el('supplierStatementLoja').value : '';
+    const byStoreBody = el('supplierStatementByStoreBody');
+    const bySupplierBody = el('supplierStatementBySupplierBody');
+    try{
+      const params = new URLSearchParams();
+      if(companyId) params.set('companyId', companyId);
+      const data = await financeApiRequest('/supplier-debts/dashboard?'+params.toString());
+      supplierStatementDashboardData = data;
+      container.innerHTML =
+        statementCardHtml('TOTAL EM ABERTO', formatCentsBRL(data.totalOpenCents)) +
+        statementCardHtml('VENCIDO', formatCentsBRL(data.overdueCents)) +
+        statementCardHtml('A VENCER', formatCentsBRL(data.upcomingCents)) +
+        statementCardHtml('PAGO NO MÊS', formatCentsBRL(data.paidThisMonthCents)) +
+        statementCardHtml('MAIOR DEVEDOR', data.biggestDebtor ? escapeHtml(data.biggestDebtor.supplierName) : '—', data.biggestDebtor ? formatCentsBRL(data.biggestDebtor.balanceCents) : '');
+
+      const byStore = data.byStore || [];
+      byStoreBody.innerHTML = byStore.length
+        ? byStore.map(row => '<tr><td>'+escapeHtml(row.companyName || row.companyId)+'</td><td>'+formatCentsBRL(row.balanceCents)+'</td></tr>').join('')
+        : '<tr><td colspan="2" class="responsive-empty">Nenhuma dívida em aberto.</td></tr>';
+
+      const bySupplier = data.bySupplier || [];
+      bySupplierBody.innerHTML = bySupplier.length
+        ? bySupplier.map(row => '<tr><td>'+escapeHtml(row.supplierName)+'</td><td>'+row.count+'</td><td>'+formatCentsBRL(row.balanceCents)+'</td>'+
+            '<td><button class="btn-outline" type="button" data-supplier-statement-select="'+escapeHtml(row.supplierId)+'">VER CONTA CORRENTE</button></td></tr>').join('')
+        : '<tr><td colspan="4" class="responsive-empty">Nenhuma dívida em aberto.</td></tr>';
+    }catch(error){
+      container.innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  const STATEMENT_ORIGIN_LABELS = {'compra':'COMPRA'};
+
+  async function loadSupplierStatementDetail(supplierId){
+    const detail = el('supplierStatementDetail');
+    if(!supplierId){ detail.hidden = true; return; }
+    detail.hidden = false;
+    const companyId = el('supplierStatementLoja') ? el('supplierStatementLoja').value : '';
+    el('supplierStatementDetailTotals').innerHTML = 'Carregando…';
+    try{
+      const params = new URLSearchParams();
+      if(companyId) params.set('companyId', companyId);
+      const data = await financeApiRequest('/suppliers/'+encodeURIComponent(supplierId)+'/statement?'+params.toString());
+      const totals = data.totals || {};
+      el('supplierStatementDetailTotals').innerHTML =
+        statementCardHtml('TOTAL COMPRADO', formatCentsBRL(totals.totalPurchasedCents)) +
+        statementCardHtml('TOTAL PAGO', formatCentsBRL(totals.totalPaidCents)) +
+        statementCardHtml('TOTAL EM ABERTO', formatCentsBRL(totals.totalOpenCents)) +
+        statementCardHtml('VENCIDO', formatCentsBRL(totals.overdueCents)) +
+        statementCardHtml('NFS EM ABERTO', String(totals.openInvoicesCount || 0)) +
+        statementCardHtml('DUPLICATAS EM ABERTO', String(totals.openInstallmentsCount || 0));
+
+      const upcoming = data.upcomingPayments || [];
+      el('supplierStatementUpcomingBody').innerHTML = upcoming.length
+        ? upcoming.map(row => '<tr><td>'+escapeHtml(row.dueDate)+'</td><td>'+escapeHtml(row.invoiceNumber || row.description)+'</td>'+
+            '<td>'+escapeHtml(row.orderReference || '—')+'</td><td>'+escapeHtml(row.origin)+'</td>'+
+            '<td>'+formatCentsBRL(row.originalAmountCents - row.paidAmountCents)+'</td></tr>').join('')
+        : '<tr><td colspan="5" class="responsive-empty">Nenhum vencimento em aberto.</td></tr>';
+
+      const statement = data.statement || [];
+      el('supplierStatementExtractBody').innerHTML = statement.length
+        ? statement.map(entry => '<tr><td>'+escapeHtml(entry.date)+'</td><td>'+escapeHtml(entry.document || '—')+'</td>'+
+            '<td>'+escapeHtml(entry.orderReference || '—')+'</td><td>'+escapeHtml(entry.movement === 'compra' ? entry.origin : 'PAGAMENTO')+'</td>'+
+            '<td>'+formatCentsBRL(entry.amountCents)+'</td><td>'+formatCentsBRL(entry.balanceCents)+'</td></tr>').join('')
+        : '<tr><td colspan="6" class="responsive-empty">Nenhum movimento.</td></tr>';
+
+      const payments = data.paymentHistory || [];
+      el('supplierStatementPaymentsBody').innerHTML = payments.length
+        ? payments.map(payment => {
+            const situacao = payment.scheduled && !payment.confirmedAt ? 'AGENDADO' : 'CONFIRMADO';
+            return '<tr><td>'+escapeHtml(payment.paymentDate)+'</td><td>'+formatCentsBRL(payment.amountCents)+'</td>'+
+              '<td>'+escapeHtml(payment.paymentMethod || '—')+'</td><td>'+escapeHtml(situacao)+'</td>'+
+              '<td>'+escapeHtml(payment.createdByName || '—')+'</td></tr>';
+          }).join('')
+        : '<tr><td colspan="5" class="responsive-empty">Nenhum pagamento registrado.</td></tr>';
+    }catch(error){
+      el('supplierStatementDetailTotals').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  async function loadSupplierStatementPage(){
+    if(!companies.length) await loadCompanies();
+    if(!payableSuppliers.length) await loadPayablesCatalogData();
+    renderSupplierStatementCompanyOptions();
+    renderSupplierStatementSupplierOptions();
+    await loadSupplierStatementDashboard();
+    const selected = el('supplierStatementSupplier').value;
+    if(selected) await loadSupplierStatementDetail(selected);
+    else el('supplierStatementDetail').hidden = true;
+  }
+
+  el('supplierStatementLoja').addEventListener('change', () => { loadSupplierStatementPage(); });
+  el('supplierStatementSupplier').addEventListener('change', () => { loadSupplierStatementDetail(el('supplierStatementSupplier').value); });
+  el('supplierStatementBySupplierBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-supplier-statement-select]');
+    if(!button) return;
+    el('supplierStatementSupplier').value = button.dataset.supplierStatementSelect;
+    loadSupplierStatementDetail(button.dataset.supplierStatementSelect);
   });
 
   // ================= DASHBOARD GERAL (PAINEL) =================
