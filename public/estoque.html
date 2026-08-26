@@ -12228,7 +12228,7 @@ function renderHomeTasks(){
     const card = button.closest('.capture-card');
     const destination = card && card.querySelector('[data-capture-destination]');
     if(action === 'delete'){
-      if(currentSession.role !== 'admin') return;
+      if(!canAccess('captures:delete')) return;
       const row = captureRows.find(item => item.id === id);
       const name = row && (row.gameName || row.productName);
       if(!window.confirm('Excluir definitivamente a captação'+(name ? ' de "'+name+'"' : '')+'? Esta ação não pode ser desfeita.')) return;
