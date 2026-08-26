@@ -2771,6 +2771,7 @@
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Financeiro</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navFinanceiroSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navFinanceiroDashboard" data-page="financeiroDashboard" data-permission="finance" data-home-desc="Painel geral: contas a pagar, despesas, faturamento e resultado num só lugar." title="Painel" href="/financeiro/painel"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.3"/><rect x="13" y="3.5" width="7.5" height="4.8" rx="1.3"/><rect x="13" y="10.4" width="7.5" height="10.1" rx="1.3"/><rect x="3.5" y="13.2" width="7.5" height="7.3" rx="1.3"/></svg></span><span class="nav-label">Painel</span></a>
         <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
         <a class="nav-item sub-item" id="navFinanceiroPayables" data-page="financeiroPayables" data-permission="finance" data-home-desc="Contas a pagar: parcelas, recorrências e pagamentos por loja." title="Contas a Pagar" href="/financeiro/contas-a-pagar"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Contas a Pagar</span></a>
         <a class="nav-item sub-item" id="navFinanceiroInvoices" data-page="financeiroInvoices" data-any-permission="finance,payables" data-home-desc="Notas fiscais e duplicatas de fornecedores, integradas a Compras." title="Notas Fiscais" href="/financeiro/notas-fiscais"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas Fiscais</span></a>
@@ -4641,6 +4642,75 @@
 
     <!-- ================= FINANCEIRO / DRE POR LOJA ================= -->
     <!-- ================= FINANCEIRO / DRE ================= -->
+    <section id="pageFinanceiroDashboard" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Painel</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Visão geral do Financeiro — contas a pagar, despesas, faturamento e resultado num só lugar.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="dashboardPeriod">PERÍODO</label>
+          <select id="dashboardPeriod">
+            <option value="day">DIA</option>
+            <option value="week">SEMANA</option>
+            <option value="month">MÊS</option>
+            <option value="year">ANO</option>
+          </select>
+        </div>
+        <div class="field"><label for="dashboardDate">DATA DE REFERÊNCIA</label><input type="date" id="dashboardDate"></div>
+        <div class="field"><label for="dashboardLoja">EMPRESA/LOJA</label><select id="dashboardLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+      </div>
+
+      <div id="dashboardContent">
+        <h3 class="supply-section-title">CONTAS A PAGAR</h3>
+        <section class="summary payables-quick-views" id="dashboardPayablesQuickViews" aria-label="Contas a pagar por vencimento">
+          <div class="dre-empty">Carregando…</div>
+        </section>
+
+        <h3 class="supply-section-title">DESPESAS DO PERÍODO</h3>
+        <section class="summary" id="dashboardExpensesSummary" aria-label="Despesas realizadas e projetadas">
+          <div class="dre-empty">Carregando…</div>
+        </section>
+
+        <h3 class="supply-section-title">FATURAMENTO E RESULTADO</h3>
+        <section class="summary" id="dashboardRevenueSummary" aria-label="Faturamento e resultado">
+          <div class="dre-empty">Carregando…</div>
+        </section>
+
+        <div class="supply-dashboard-grid">
+          <div>
+            <h3 class="supply-section-title">GASTOS POR UNIDADE</h3>
+            <div class="table-panel responsive-table">
+              <div class="table-scroll"><table id="dashboardByStoreTable"><tbody><tr><td class="responsive-empty">Carregando…</td></tr></tbody></table></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="supply-section-title">GASTOS POR CATEGORIA</h3>
+            <div class="dre-flat-list" id="dashboardByCategoryList"><div class="dre-empty">Carregando…</div></div>
+          </div>
+          <div>
+            <h3 class="supply-section-title">GASTOS POR CENTRO DE CUSTO</h3>
+            <div class="dre-flat-list" id="dashboardByCostCenterList"><div class="dre-empty">Carregando…</div></div>
+          </div>
+          <div>
+            <h3 class="supply-section-title">PRINCIPAIS FORNECEDORES EM ABERTO</h3>
+            <div class="dre-flat-list" id="dashboardTopSuppliersList"><div class="dre-empty">Carregando…</div></div>
+          </div>
+        </div>
+
+        <h3 class="supply-section-title">PRÓXIMOS PAGAMENTOS</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll"><table id="dashboardUpcomingTable"><tbody><tr><td class="responsive-empty">Carregando…</td></tr></tbody></table></div>
+        </div>
+
+        <h3 class="supply-section-title">EM BREVE — OUTROS MÓDULOS FINANCEIROS</h3>
+        <section class="summary payables-quick-views" id="dashboardComingSoon" aria-label="Indicadores de módulos ainda não implementados"></section>
+      </div>
+    </section>
+
     <section id="pageFinanceiro" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
@@ -6314,6 +6384,7 @@
     usuarios:'/cadastros/usuarios',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
+    financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
     financeiroPayables:'/financeiro/contas-a-pagar',
     financeiroInvoices:'/financeiro/notas-fiscais',
@@ -6341,6 +6412,7 @@
     usuarios:'USUÁRIOS E ACESSOS',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
+    financeiroDashboard:'PAINEL',
     financeiro:'DRE',
     financeiroPayables:'CONTAS A PAGAR',
     financeiroInvoices:'NOTAS FISCAIS',
@@ -6365,6 +6437,7 @@
     dados:'database',
     rhFolgas:'hr',
     rhEscalas:'hr',
+    financeiroDashboard:'finance',
     financeiro:'finance',
     financeiroPayables:'finance',
     financeiroExpenses:'finance'
@@ -6774,7 +6847,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -6825,6 +6898,7 @@
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'notasOs') loadOsNotes();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
+    if(name === 'financeiroDashboard') loadFinanceiroDashboard();
     if(name === 'financeiro') loadFinanceiroTab();
     if(name === 'financeiroPayables') loadPayablesPage();
     if(name === 'financeiroInvoices') loadInvoicesPage();
@@ -6851,6 +6925,7 @@
     if(name === 'alteracoesPdv') loadPdvRequests();
     if(name === 'notasOs') loadOsNotes();
     if(name === 'documentos') loadDocuments(documentFolderFromPath(location.pathname));
+    if(name === 'financeiroDashboard') loadFinanceiroDashboard();
     if(name === 'financeiro') loadFinanceiroTab();
     if(name === 'financeiroPayables') loadPayablesPage();
     if(name === 'financeiroInvoices') loadInvoicesPage();
@@ -15290,6 +15365,12 @@ function renderHomeTasks(){
     return Math.round(num * 100);
   }
 
+  function financeCurrentDateKey(){
+    const parts = new Intl.DateTimeFormat('en-US', {timeZone:'America/Recife', year:'numeric', month:'2-digit', day:'2-digit'}).formatToParts(new Date());
+    const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return value.year+'-'+value.month+'-'+value.day;
+  }
+
   function financeCurrentMonthKey(){
     const parts = new Intl.DateTimeFormat('en-US', {timeZone:'America/Recife', year:'numeric', month:'2-digit'}).formatToParts(new Date());
     const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
@@ -16889,6 +16970,360 @@ function renderHomeTasks(){
       th.classList.add(payablesDir === 'asc' ? 'sort-asc' : 'sort-desc');
       loadPayablesList();
     });
+  });
+
+  // ================= DASHBOARD GERAL (PAINEL) =================
+  // Fase 2 do módulo Financeiro — agrega, numa única chamada à API
+  // (/api/finance/dashboard), indicadores que já existem em DRE/Contas a
+  // Pagar/Fornecedores. Nenhum cálculo novo é feito aqui: o back-end já
+  // reaproveita buildStoreDre/buildConsolidatedDre/buildByStoreDre e a
+  // mesma lógica de quickViews/fornecedores em aberto de Contas a Pagar —
+  // este bloco só renderiza e liga cada card ao detalhamento já existente.
+  let financeDashboardData = null;
+  let financeDashboardLoading = false;
+
+  const DASHBOARD_COMING_SOON = [
+    'CAIXA ATUAL / SALDO BANCÁRIO', 'RECEBÍVEIS PREVISTOS', 'FLUXO DE CAIXA PROJETADO',
+    'FOLHA DE PAGAMENTO', 'COMISSÕES', 'BENEFÍCIOS', 'TAXAS DE CARTÃO'
+  ];
+
+  function dashboardFilters(){
+    return {
+      period: el('dashboardPeriod') ? el('dashboardPeriod').value : 'month',
+      date: el('dashboardDate') ? el('dashboardDate').value : financeCurrentDateKey(),
+      companyId: el('dashboardLoja') ? el('dashboardLoja').value : ''
+    };
+  }
+
+  function renderDashboardCompanyOptions(){
+    const select = el('dashboardLoja');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">TODAS AS LOJAS (CONSOLIDADO)</option>'+
+      companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    if(companies.some(company => company.id === selected)) select.value = selected;
+  }
+
+  function dashboardQuickViewCardHtml(key, label, stats){
+    const clickable = Boolean(stats);
+    const data = stats || {count:0, balanceCents:0};
+    return '<div class="card'+(clickable ? '' : '')+'" '+(clickable ? 'data-dashboard-payable-quick-view="'+key+'"' : '')+' style="'+(clickable ? 'cursor:pointer;' : 'opacity:.55;cursor:default;')+'">'+
+      '<div class="lbl">'+label+'</div>'+
+      '<div class="num">'+data.count+'</div>'+
+      '<div class="sub">'+formatCentsBRL(data.balanceCents)+'</div>'+
+    '</div>';
+  }
+
+  function renderDashboardPayablesQuickViews(){
+    const container = el('dashboardPayablesQuickViews');
+    if(!container) return;
+    const data = financeDashboardData;
+    if(!data){ container.innerHTML = '<div class="dre-empty">Selecione os filtros para ver o painel.</div>'; return; }
+    const views = data.payablesQuickViews || {};
+    container.innerHTML =
+      dashboardQuickViewCardHtml('today', 'VENCENDO HOJE', views.today)+
+      dashboardQuickViewCardHtml('week', 'NESTA SEMANA', views.week)+
+      dashboardQuickViewCardHtml('month', 'NESTE MÊS', views.month)+
+      dashboardQuickViewCardHtml('overdue', 'VENCIDAS', views.overdue);
+  }
+
+  function dashboardCardHtml(label, value, options){
+    const opts = options || {};
+    const neg = opts.neg ? ' neg' : '';
+    const clickAttr = opts.action ? ' data-dashboard-action="'+opts.action+'" style="cursor:pointer;"' : '';
+    return '<div class="card'+neg+'"'+clickAttr+'><div class="lbl">'+label+'</div><div class="num">'+value+'</div></div>';
+  }
+
+  function renderDashboardExpensesSummary(){
+    const container = el('dashboardExpensesSummary');
+    if(!container) return;
+    const data = financeDashboardData;
+    if(!data){ container.innerHTML = '<div class="dre-empty">Selecione os filtros para ver o painel.</div>'; return; }
+    container.innerHTML =
+      dashboardCardHtml('DESPESAS REALIZADAS', formatCentsBRL(data.expenses.realizedCents), {action:'expensesRealized'})+
+      dashboardCardHtml('DESPESAS PROJETADAS', formatCentsBRL(data.expenses.projectedCents), {action:'expensesProjected'});
+  }
+
+  function renderDashboardRevenueSummary(){
+    const container = el('dashboardRevenueSummary');
+    if(!container) return;
+    const data = financeDashboardData;
+    if(!data){ container.innerHTML = '<div class="dre-empty">Selecione os filtros para ver o painel.</div>'; return; }
+    const revenue = data.revenue || {revenueCents:0, expenseTotalCents:0, resultCents:0, marginBasisPoints:0};
+    const marginPercent = (revenue.marginBasisPoints/100).toFixed(2).replace('.',',');
+    container.innerHTML =
+      dashboardCardHtml('FATURAMENTO', formatCentsBRL(revenue.revenueCents), {action:'dre'})+
+      dashboardCardHtml('DESPESA TOTAL (DRE)', formatCentsBRL(revenue.expenseTotalCents), {action:'dre'})+
+      dashboardCardHtml('RESULTADO', formatCentsBRL(revenue.resultCents), {action:'dre', neg:revenue.resultCents < 0})+
+      dashboardCardHtml('MARGEM', marginPercent+'%', {action:'dre'});
+  }
+
+  function renderDashboardByStore(){
+    const table = el('dashboardByStoreTable');
+    if(!table) return;
+    const data = financeDashboardData;
+    const stores = (data && data.byStore) || [];
+    if(!stores.length){
+      table.innerHTML = '<tbody><tr><td class="responsive-empty">Nenhum dado de loja para o período.</td></tr></tbody>';
+      return;
+    }
+    table.innerHTML =
+      '<thead><tr><th>Loja</th><th>Receita</th><th>Despesa</th><th>Resultado</th><th>Margem</th></tr></thead>'+
+      '<tbody>'+stores.map(store => {
+        const marginPercent = (store.marginBasisPoints/100).toFixed(2).replace('.',',');
+        const name = store.storeName || (companies.find(c => c.id === store.storeId) || {}).name || store.storeId;
+        return '<tr class="dashboard-clickable-row" data-dashboard-store="'+escapeHtml(store.storeId)+'" style="cursor:pointer;">'+
+          '<td>'+escapeHtml(name)+'</td>'+
+          '<td>'+formatCentsBRL(store.revenueCents)+'</td>'+
+          '<td>'+formatCentsBRL(store.expenseTotalCents)+'</td>'+
+          '<td>'+formatCentsBRL(store.resultCents)+'</td>'+
+          '<td>'+marginPercent+'%</td>'+
+        '</tr>';
+      }).join('')+'</tbody>';
+  }
+
+  function renderDashboardByCategory(){
+    const container = el('dashboardByCategoryList');
+    if(!container) return;
+    const data = financeDashboardData;
+    const categories = (data && data.byCategory) || [];
+    if(!categories.length){ container.innerHTML = '<div class="dre-empty">Nenhuma categoria com lançamentos no período.</div>'; return; }
+    container.innerHTML = categories.map(category => (
+      '<div class="dre-flat-row dashboard-clickable-row" data-dashboard-category="'+escapeHtml(category.id)+'" style="cursor:pointer;">'+
+        '<span class="dre-flat-name">'+escapeHtml(category.name)+'</span>'+
+        '<span class="dre-flat-total">'+formatCentsBRL(category.totalCents)+'</span>'+
+      '</div>'
+    )).join('');
+  }
+
+  function renderDashboardByCostCenter(){
+    const container = el('dashboardByCostCenterList');
+    if(!container) return;
+    const data = financeDashboardData;
+    const costCenters = (data && data.byCostCenter) || [];
+    if(!costCenters.length){ container.innerHTML = '<div class="dre-empty">Nenhum centro de custo com lançamentos no período.</div>'; return; }
+    container.innerHTML = costCenters.map(row => (
+      '<div class="dre-flat-row dashboard-clickable-row" data-dashboard-cost-center="'+escapeHtml(row.costCenterId)+'" style="cursor:pointer;">'+
+        '<span class="dre-flat-name">'+escapeHtml(row.costCenterName)+'</span>'+
+        '<span class="dre-flat-total">'+formatCentsBRL(row.totalCents)+'</span>'+
+      '</div>'
+    )).join('');
+  }
+
+  function renderDashboardTopSuppliers(){
+    const container = el('dashboardTopSuppliersList');
+    if(!container) return;
+    const data = financeDashboardData;
+    const suppliers = (data && data.topSuppliers) || [];
+    if(!suppliers.length){ container.innerHTML = '<div class="dre-empty">Nenhum fornecedor com saldo em aberto.</div>'; return; }
+    container.innerHTML = suppliers.map(row => (
+      '<div class="dre-flat-row dashboard-clickable-row" data-dashboard-supplier="'+escapeHtml(row.supplierId)+'" style="cursor:pointer;">'+
+        '<span class="dre-flat-name">'+escapeHtml(row.supplierName)+'</span>'+
+        '<span class="dre-flat-total">'+formatCentsBRL(row.balanceCents)+'</span>'+
+      '</div>'
+    )).join('');
+  }
+
+  function renderDashboardUpcoming(){
+    const table = el('dashboardUpcomingTable');
+    if(!table) return;
+    const data = financeDashboardData;
+    const rows = (data && data.upcomingPayments) || [];
+    if(!rows.length){
+      table.innerHTML = '<tbody><tr><td class="responsive-empty">Nenhum pagamento em aberto.</td></tr></tbody>';
+      return;
+    }
+    table.innerHTML =
+      '<thead><tr><th>Descrição</th><th>Empresa/Loja</th><th>Vencimento</th><th>Saldo</th><th>Status</th></tr></thead>'+
+      '<tbody>'+rows.map(row => {
+        const balance = row.originalAmountCents - row.paidAmountCents;
+        return '<tr class="dashboard-clickable-row" data-dashboard-payable="'+escapeHtml(row.id)+'" style="cursor:pointer;">'+
+          '<td>'+escapeHtml(row.description)+'</td>'+
+          '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+          '<td>'+escapeHtml(row.dueDate)+'</td>'+
+          '<td>'+formatCentsBRL(balance)+'</td>'+
+          '<td>'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
+        '</tr>';
+      }).join('')+'</tbody>';
+  }
+
+  function renderDashboardComingSoon(){
+    const container = el('dashboardComingSoon');
+    if(!container || container.innerHTML) return;
+    container.innerHTML = DASHBOARD_COMING_SOON.map(label => (
+      '<div class="card" style="opacity:.55;cursor:default;">'+
+        '<div class="lbl">'+label+'</div>'+
+        '<div class="num">—</div>'+
+        '<div class="sub">EM BREVE</div>'+
+      '</div>'
+    )).join('');
+  }
+
+  function renderDashboard(){
+    renderDashboardPayablesQuickViews();
+    renderDashboardExpensesSummary();
+    renderDashboardRevenueSummary();
+    renderDashboardByStore();
+    renderDashboardByCategory();
+    renderDashboardByCostCenter();
+    renderDashboardTopSuppliers();
+    renderDashboardUpcoming();
+    renderDashboardComingSoon();
+  }
+
+  async function loadFinanceiroDashboard(){
+    if(!canAccess('finance') || financeDashboardLoading) return;
+    if(!companies.length) await loadCompanies();
+    renderDashboardCompanyOptions();
+    if(!el('dashboardDate').value) el('dashboardDate').value = financeCurrentDateKey();
+    const filters = dashboardFilters();
+    financeDashboardLoading = true;
+    try{
+      const params = new URLSearchParams();
+      params.set('period', filters.period);
+      params.set('date', filters.date);
+      if(filters.companyId) params.set('companyId', filters.companyId);
+      financeDashboardData = await financeApiRequest('/dashboard?'+params.toString());
+      renderDashboard();
+    }catch(error){
+      financeDashboardData = null;
+      el('dashboardPayablesQuickViews').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      el('dashboardExpensesSummary').innerHTML = '';
+      el('dashboardRevenueSummary').innerHTML = '';
+      renderDashboardComingSoon();
+    }finally{
+      financeDashboardLoading = false;
+    }
+  }
+
+  el('dashboardPeriod') && el('dashboardPeriod').addEventListener('change', loadFinanceiroDashboard);
+  el('dashboardDate') && el('dashboardDate').addEventListener('change', loadFinanceiroDashboard);
+  el('dashboardLoja') && el('dashboardLoja').addEventListener('change', loadFinanceiroDashboard);
+
+  // ---- Navegação do Painel pro detalhamento já existente (Contas a Pagar / DRE) ----
+  // Evita duplicar lógica de filtro/detalhamento: só ajusta os campos da
+  // página de destino e reaproveita as próprias funções de carregamento
+  // dela (loadPayablesList/setDreActiveTab), sem passar pelo loader
+  // genérico de navigateToPage (que recarregaria a página já sem os
+  // filtros que acabamos de aplicar).
+  async function dashboardGoToPayables(options){
+    const opts = options || {};
+    if(!companies.length) await loadCompanies();
+    await loadPayablesCatalogData();
+    if(!showPage('financeiroPayables')) return;
+    const route = PAGE_ROUTES.financeiroPayables;
+    if(normalizeRoutePath(location.pathname) !== route) history.pushState({page:'financeiroPayables'}, '', route);
+    renderPayablesCompanyOptions();
+    if(el('payablesLoja')) el('payablesLoja').value = opts.companyId || '';
+    if(el('payablesSupplier')) el('payablesSupplier').value = opts.supplierId || '';
+    if(el('payablesCostCenter')) el('payablesCostCenter').value = opts.costCenterId || '';
+    if(el('payablesDueFrom')) el('payablesDueFrom').value = opts.dueFrom || '';
+    if(el('payablesDueTo')) el('payablesDueTo').value = opts.dueTo || '';
+    if(el('payablesStatus')) el('payablesStatus').value = opts.status || '';
+    renderPayableAccountOptionsForCompany('payablesAccount', el('payablesLoja') ? el('payablesLoja').value : '', 'TODAS');
+    payablesQuickView = opts.quickView || '';
+    payablesPage = 1;
+    await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+    if(opts.openPayableId) openPayableDetailDialog(opts.openPayableId);
+  }
+
+  function dashboardGoToDre(target){
+    if(!showPage('financeiro')) return;
+    const route = PAGE_ROUTES.financeiro;
+    if(normalizeRoutePath(location.pathname) !== route) history.pushState({page:'financeiro'}, '', route);
+    renderDreCompanyOptions();
+    if(target.tab === 'porLoja'){
+      if(el('dreLoja')) el('dreLoja').value = target.storeId || '';
+      if(el('dreMes')) el('dreMes').value = target.month || '';
+    }else if(target.tab === 'consolidada'){
+      if(el('dreConsolidadaMes')) el('dreConsolidadaMes').value = target.month || '';
+    }else if(target.tab === 'gerencial'){
+      if(el('dreGerencialMes')) el('dreGerencialMes').value = target.month || '';
+    }else if(target.tab === 'temporal'){
+      if(el('dreTemporalScope')) el('dreTemporalScope').value = target.scope || 'consolidated';
+      if(el('dreTemporalPeriodo')) el('dreTemporalPeriodo').value = 'anual';
+      if(el('dreTemporalAno')) el('dreTemporalAno').value = String(target.year || new Date().getFullYear());
+    }
+    setDreActiveTab(target.tab);
+    if(target.tab === 'temporal' && target.scope === 'store'){
+      el('dreTemporalLoja').value = target.storeId || '';
+      loadDreTemporal();
+    }
+  }
+
+  // Decide se o clique em Faturamento/Resultado/Gastos por unidade leva pra
+  // aba mensal (Por Loja/Consolidada) ou pro Comparativo Anual — a DRE em si
+  // é sempre mensal (finance_store_entries/finance_store_revenue não têm
+  // granularidade diária/semanal), então pra período "Ano" o comparativo
+  // anual é a única visão que já soma os 12 meses igual ao card do Painel.
+  function dashboardDreTarget(storeId){
+    const data = financeDashboardData;
+    if(!data) return {tab:'consolidada', month: financeCurrentMonthKey()};
+    if(data.period === 'year'){
+      const year = (data.monthFrom || '').slice(0,4) || String(new Date().getFullYear());
+      return storeId ? {tab:'temporal', scope:'store', storeId, year} : {tab:'temporal', scope:'consolidated', year};
+    }
+    return storeId ? {tab:'porLoja', storeId, month:data.month} : {tab:'consolidada', month:data.month};
+  }
+
+  el('dashboardPayablesQuickViews') && el('dashboardPayablesQuickViews').addEventListener('click', event => {
+    const card = event.target.closest('[data-dashboard-payable-quick-view]');
+    if(!card || !financeDashboardData) return;
+    const key = card.dataset.dashboardPayableQuickView;
+    dashboardGoToPayables({companyId: financeDashboardData.companyId, quickView: key});
+  });
+
+  el('dashboardExpensesSummary') && el('dashboardExpensesSummary').addEventListener('click', event => {
+    const card = event.target.closest('[data-dashboard-action]');
+    if(!card || !financeDashboardData) return;
+    const data = financeDashboardData;
+    const action = card.dataset.dashboardAction;
+    if(action === 'expensesRealized'){
+      dashboardGoToPayables({companyId: data.companyId, status:'paid', dueFrom: data.from, dueTo: data.to});
+    }else if(action === 'expensesProjected'){
+      dashboardGoToPayables({companyId: data.companyId, dueFrom: data.from, dueTo: data.to});
+    }
+  });
+
+  el('dashboardRevenueSummary') && el('dashboardRevenueSummary').addEventListener('click', event => {
+    const card = event.target.closest('[data-dashboard-action]');
+    if(!card || card.dataset.dashboardAction !== 'dre' || !financeDashboardData) return;
+    dashboardGoToDre(dashboardDreTarget(financeDashboardData.companyId));
+  });
+
+  el('dashboardByStoreTable') && el('dashboardByStoreTable').addEventListener('click', event => {
+    const row = event.target.closest('[data-dashboard-store]');
+    if(!row) return;
+    dashboardGoToDre(dashboardDreTarget(row.dataset.dashboardStore));
+  });
+
+  el('dashboardByCategoryList') && el('dashboardByCategoryList').addEventListener('click', event => {
+    const row = event.target.closest('[data-dashboard-category]');
+    if(!row || !financeDashboardData) return;
+    const data = financeDashboardData;
+    // Gerencial é sempre mensal — num período "Ano" cai no último mês do
+    // intervalo (o mesmo usado pelo comparativo anual como referência).
+    const month = data.period === 'year' ? data.monthTo : data.month;
+    dashboardGoToDre({tab:'gerencial', month});
+  });
+
+  el('dashboardByCostCenterList') && el('dashboardByCostCenterList').addEventListener('click', event => {
+    const row = event.target.closest('[data-dashboard-cost-center]');
+    if(!row || !financeDashboardData) return;
+    const data = financeDashboardData;
+    dashboardGoToPayables({companyId: data.companyId, costCenterId: row.dataset.dashboardCostCenter, dueFrom: data.from, dueTo: data.to});
+  });
+
+  el('dashboardTopSuppliersList') && el('dashboardTopSuppliersList').addEventListener('click', event => {
+    const row = event.target.closest('[data-dashboard-supplier]');
+    if(!row || !financeDashboardData) return;
+    dashboardGoToPayables({companyId: financeDashboardData.companyId, supplierId: row.dataset.dashboardSupplier});
+  });
+
+  el('dashboardUpcomingTable') && el('dashboardUpcomingTable').addEventListener('click', event => {
+    const row = event.target.closest('[data-dashboard-payable]');
+    if(!row || !financeDashboardData) return;
+    dashboardGoToPayables({companyId: financeDashboardData.companyId, openPayableId: row.dataset.dashboardPayable});
   });
 
   // ---- Despesas (cadastro completo, gera Contas a Pagar por baixo) ----
