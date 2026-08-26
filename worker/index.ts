@@ -220,6 +220,7 @@ const APP_ROUTE_PATHS = new Set([
   "/financeiro/notas-fiscais",
   "/financeiro/despesas",
   "/financeiro/fornecedores/conta-corrente",
+  "/financeiro/orcamento",
   "/documentos",
   "/documentos/certificados/garantia-de-produto",
   "/documentos/certificados/garantia-estendida",

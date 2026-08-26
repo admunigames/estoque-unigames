@@ -668,6 +668,44 @@ export const financeCostCenters = pgTable(
   (table) => [uniqueIndex("finance_cost_centers_name_idx").on(table.name)],
 );
 
+// Orçamento (Financeiro Fase 4) — valor orçado por loja+categoria(ou
+// subcategoria)+centro de custo+competência, comparado com o Realizado já
+// calculado pela DRE (app/api/finance/dre/shared.ts) e por accounts_payable
+// (app/api/finance/budgets/shared.ts). company_id e cost_center_id seguem o
+// mesmo padrão de sentinela vazio ('') já usado em finance_accounts/expenses
+// pra representar "todas as lojas"/"todos os centros de custo" — decisão
+// confirmada com o usuário (opcionais, ver PR desta fase) em vez de NULL,
+// pra manter o índice único funcional (NULL não colide em unique index).
+export const financeBudgets = pgTable(
+  "finance_budgets",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    categoryId: text("category_id").notNull(),
+    costCenterId: text("cost_center_id").notNull().default(""),
+    month: text("month").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("finance_budgets_scope_idx").on(
+      table.companyId,
+      table.categoryId,
+      table.costCenterId,
+      table.month,
+    ),
+    index("finance_budgets_month_idx").on(table.month),
+    index("finance_budgets_category_idx").on(table.categoryId),
+  ],
+);
+
 export const financeStoreEntries = pgTable(
   "finance_store_entries",
   {
