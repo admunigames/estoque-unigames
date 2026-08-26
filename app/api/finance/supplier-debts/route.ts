@@ -2,7 +2,7 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { todayInTimezone } from "../../../lib/finance-status";
-import { DATE_PATTERN, recalcPayableEntrySql } from "../payables/shared";
+import { assertFinanceAccountBelongsToCompany, DATE_PATTERN, recalcPayableEntrySql } from "../payables/shared";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
 import { canManageSupplierDebts, DEFAULT_SUPPLIER_DEBT_FINANCE_ITEM_ID } from "./shared";
 
@@ -93,7 +93,8 @@ export async function GET(request: Request) {
     values.push(status);
     conditions.push(`${displayStatusSql} = ?${values.length}`);
   } else {
-    conditions.push("sod.canceled = 0");
+    // "TODOS (EM ABERTO)" no front — exclui canceladas E quitadas, não só canceladas.
+    conditions.push("sod.canceled = 0 AND ap.status != 'paid'");
   }
 
   const whereSql = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -226,6 +227,9 @@ export async function POST(request: Request) {
     ]);
     if (!supplier) return jsonResponse({ error: "FORNECEDOR NÃO ENCONTRADO NO CADASTRO." }, 400);
     if (!item) return jsonResponse({ error: "ITEM FINANCEIRO NÃO ENCONTRADO NO CATÁLOGO." }, 400);
+
+    const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
+    if (accountError) return jsonResponse({ error: accountError }, 409);
 
     if (supplierInvoiceId) {
       const invoice = await database
