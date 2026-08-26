@@ -112,7 +112,7 @@ export type ByStoreDreResult = {
   }>;
 };
 
-function itemTotal(entry: EntryRow | undefined): number {
+export function itemTotal(entry: EntryRow | undefined): number {
   return entry?.entryType === "fixed" ? entry.amountCents ?? 0 : 0;
 }
 

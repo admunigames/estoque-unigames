@@ -2777,6 +2777,7 @@
         <a class="nav-item sub-item" id="navFinanceiroInvoices" data-page="financeiroInvoices" data-any-permission="finance,payables" data-home-desc="Notas fiscais e duplicatas de fornecedores, integradas a Compras." title="Notas Fiscais" href="/financeiro/notas-fiscais"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas Fiscais</span></a>
         <a class="nav-item sub-item" id="navFinanceiroExpenses" data-page="financeiroExpenses" data-permission="finance" data-home-desc="Cadastro completo de despesas, com rateio entre lojas." title="Despesas" href="/financeiro/despesas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14.5 3.5V7h3.5"/><path d="M8 12h8M8 15.5h8M8 18.5h5"/></svg></span><span class="nav-label">Despesas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroSupplierStatement" data-page="financeiroSupplierStatement" data-permission="finance" data-home-desc="Resumo geral e extrato (conta corrente) de cada fornecedor." title="Fornecedores" href="/financeiro/fornecedores/conta-corrente"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="17" height="12" rx="2"/><path d="M3.5 10.5h17"/><circle cx="8" cy="14.2" r="1.3" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Fornecedores</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroOrcamento" data-page="financeiroOrcamento" data-permission="finance" data-home-desc="Valor orçado por loja, categoria e centro de custo, comparado com o realizado." title="Orçamento" href="/financeiro/orcamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M11 20V4M18 20V13"/></svg></span><span class="nav-label">Orçamento</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="hr">
@@ -4853,7 +4854,18 @@
       </div>
 
       <div id="dreTabOrcado" hidden>
-        <div class="dre-empty">O comparativo Realizado x Orçado depende do módulo de Orçamento (fase futura do Financeiro) e ainda não está disponível. Esta aba já está preparada para exibir a comparação assim que o Orçamento for implementado.</div>
+        <div class="dre-toolbar">
+          <div class="field" id="dreOrcadoLojaField"><label for="dreOrcadoLoja">LOJA</label><select id="dreOrcadoLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+          <div class="field"><label for="dreOrcadoMes">MÊS</label><input type="month" id="dreOrcadoMes"></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="dreOrcadoTable">
+              <thead><tr><th>Categoria</th><th>Centro de Custo</th><th>Orçado</th><th>Realizado</th><th>Diferença</th><th>Saldo</th><th>% Utilizado</th></tr></thead>
+              <tbody id="dreOrcadoTableBody"><tr><td colspan="7" class="responsive-empty">Selecione o mês para ver o comparativo.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -5158,6 +5170,33 @@
       </div>
     </section>
 
+    <section id="pageFinanceiroOrcamento" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Orçamento</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Valor orçado por loja, categoria e centro de custo, comparado com o realizado (DRE/Contas a Pagar).</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="budgetLoja">LOJA</label><select id="budgetLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+        <div class="field"><label for="budgetMes">MÊS</label><input type="month" id="budgetMes"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnNewBudget" type="button">NOVO ORÇAMENTO</button>
+        </div>
+      </div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="budgetsTable">
+            <thead><tr><th>Categoria</th><th>Centro de Custo</th><th>Orçado</th><th>Realizado</th><th>Diferença</th><th>Saldo</th><th>% Utilizado</th><th></th></tr></thead>
+            <tbody id="budgetsTableBody"><tr><td colspan="8" class="responsive-empty">Selecione o mês para ver o orçamento.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -5202,6 +5241,29 @@
     </form>
     <div class="dre-catalog-list" id="financeCatalogList"></div>
   </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="budgetDialog" aria-labelledby="budgetDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="budgetDialogTitle">NOVO ORÇAMENTO</h3>
+    <button class="purchase-dialog-close" id="btnCloseBudgetDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="budgetForm">
+    <input type="hidden" id="budgetId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="budgetCompany">LOJA</label><select id="budgetCompany"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+      <div class="purchase-field"><label for="budgetMonth">COMPETÊNCIA *</label><input type="month" id="budgetMonth" required></div>
+      <div class="purchase-field full"><label for="budgetCategory">CATEGORIA/SUBCATEGORIA *</label><select id="budgetCategory" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="budgetCostCenter">CENTRO DE CUSTO</label><select id="budgetCostCenter"><option value="">TODOS OS CENTROS DE CUSTO</option></select></div>
+      <div class="purchase-field"><label for="budgetAmount">VALOR ORÇADO (R$) *</label><input type="number" id="budgetAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field full"><label for="budgetNotes">OBSERVAÇÕES</label><textarea id="budgetNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="budgetFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelBudgetDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveBudget" type="submit">SALVAR</button>
+    </div>
+  </form>
 </dialog>
 
 <dialog class="purchase-dialog" id="payableDialog" aria-labelledby="payableDialogTitle">
@@ -6537,7 +6599,8 @@
     financeiroPayables:'/financeiro/contas-a-pagar',
     financeiroInvoices:'/financeiro/notas-fiscais',
     financeiroExpenses:'/financeiro/despesas',
-    financeiroSupplierStatement:'/financeiro/fornecedores/conta-corrente'
+    financeiroSupplierStatement:'/financeiro/fornecedores/conta-corrente',
+    financeiroOrcamento:'/financeiro/orcamento'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -6566,7 +6629,8 @@
     financeiroPayables:'CONTAS A PAGAR',
     financeiroInvoices:'NOTAS FISCAIS',
     financeiroExpenses:'DESPESAS',
-    financeiroSupplierStatement:'CONTA CORRENTE DE FORNECEDORES'
+    financeiroSupplierStatement:'CONTA CORRENTE DE FORNECEDORES',
+    financeiroOrcamento:'ORÇAMENTO'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -6591,7 +6655,8 @@
     financeiro:'finance',
     financeiroPayables:'finance',
     financeiroExpenses:'finance',
-    financeiroSupplierStatement:'finance'
+    financeiroSupplierStatement:'finance',
+    financeiroOrcamento:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -6998,7 +7063,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -7055,6 +7120,7 @@
     if(name === 'financeiroInvoices') loadInvoicesPage();
     if(name === 'financeiroExpenses') loadExpensesPage();
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
+    if(name === 'financeiroOrcamento') loadOrcamentoPage();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -7083,6 +7149,7 @@
     if(name === 'financeiroInvoices') loadInvoicesPage();
     if(name === 'financeiroExpenses') loadExpensesPage();
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
+    if(name === 'financeiroOrcamento') loadOrcamentoPage();
   }
 
   function isPlainClick(event){
@@ -16124,10 +16191,6 @@ function renderHomeTasks(){
   el('dreHorizontalLoja').addEventListener('change', loadDreHorizontal);
   el('dreHorizontalCategoria').addEventListener('change', loadDreHorizontal);
 
-  function loadDreOrcado(){
-    // Aba preparada, sem funcionalidade até o módulo de Orçamento existir.
-  }
-
   const DRE_TAB_LOADERS = {
     porLoja: loadDrePorLoja,
     consolidada: loadDreConsolidada,
@@ -17583,6 +17646,205 @@ function renderHomeTasks(){
     el('supplierStatementSupplier').value = button.dataset.supplierStatementSelect;
     loadSupplierStatementDetail(button.dataset.supplierStatementSelect);
   });
+
+  // ================= ORÇAMENTO (Financeiro Fase 4) =================
+  // Orçado x Realizado por loja+categoria(ou subcategoria)+centro de custo+
+  // competência (/api/finance/budgets). O Realizado já vem calculado do
+  // back-end (app/api/finance/budgets/shared.ts) — reaproveita a mesma fonte
+  // da DRE (finance_store_entries) quando o orçamento não tem centro de
+  // custo, ou soma accounts_payable quando tem. Esta tela SÓ cadastra/lista;
+  // a aba "REALIZADO X ORÇADO" da DRE (ver loadDreOrcado) usa a MESMA rota e
+  // o MESMO renderizador de tabela (renderBudgetsTable), só que somente
+  // leitura (sem botão de novo orçamento).
+  let budgetsCurrentRows = [];
+
+  const BUDGET_ALERT_TONE = {ok:'done', warning:'waiting', over:'alert'};
+  const BUDGET_ALERT_LABEL = {ok:'OK', warning:'PRÓXIMO DO LIMITE', over:'ORÇAMENTO ESTOURADO'};
+
+  function renderBudgetCategoryOptions(){
+    const select = el('budgetCategory');
+    if(!select) return;
+    const selected = select.value;
+    const options = financeCategorySelectOptions();
+    select.innerHTML = '<option value="">SELECIONE</option>'+
+      options.map(o => '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
+    if(options.some(o => o.id === selected)) select.value = selected;
+  }
+
+  function renderBudgetCompanyOptions(){
+    ['budgetLoja','budgetCompany'].forEach(id => {
+      const select = el(id);
+      if(!select) return;
+      const selected = select.value;
+      select.innerHTML = '<option value="">TODAS AS LOJAS (CONSOLIDADO)</option>'+
+        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+      if(companies.some(c => c.id === selected)) select.value = selected;
+    });
+  }
+
+  function budgetPercentLabel(row){
+    if(row.amountCents <= 0) return row.realizedCents > 0 ? '—' : '0,00%';
+    return (row.usedPercentBasisPoints/100).toFixed(2).replace('.',',')+'%';
+  }
+
+  function budgetRowHtml(row, options){
+    const settings = options || {};
+    const actions = settings.readOnly ? '' :
+      '<span style="display:flex;gap:6px;">'+
+        '<button class="btn-outline" type="button" data-budget-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-budget-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
+      '</span>';
+    return '<tr>'+
+      '<td>'+escapeHtml(row.categoryName)+'</td>'+
+      '<td>'+escapeHtml(row.costCenterName || 'TODOS')+'</td>'+
+      '<td>'+formatCentsBRL(row.amountCents)+'</td>'+
+      '<td>'+formatCentsBRL(row.realizedCents)+'</td>'+
+      '<td>'+formatCentsBRL(row.differenceCents)+'</td>'+
+      '<td>'+formatCentsBRL(row.balanceCents)+'</td>'+
+      '<td><span class="status-pill '+BUDGET_ALERT_TONE[row.alertLevel]+'">'+budgetPercentLabel(row)+' — '+BUDGET_ALERT_LABEL[row.alertLevel]+'</span></td>'+
+      (settings.readOnly ? '' : '<td>'+actions+'</td>')+
+    '</tr>';
+  }
+
+  function renderBudgetsTable(tableBodyId, rows, options){
+    const body = el(tableBodyId);
+    if(!body) return;
+    const columns = (options && options.readOnly) ? 7 : 8;
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="'+columns+'" class="responsive-empty">Nenhum orçamento cadastrado para este período.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(row => budgetRowHtml(row, options)).join('');
+  }
+
+  async function loadBudgetsFor(companyId, month){
+    const params = new URLSearchParams({month});
+    if(companyId) params.set('companyId', companyId);
+    const data = await financeApiRequest('/budgets?'+params.toString());
+    return Array.isArray(data.budgets) ? data.budgets : [];
+  }
+
+  async function loadOrcamentoPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
+    if(!financeCostCenters.length) await loadPayablesCatalogData();
+    renderBudgetCompanyOptions();
+    renderBudgetCategoryOptions();
+    renderCostCenterOptionsFor('budgetCostCenter', 'TODOS OS CENTROS DE CUSTO');
+    if(!el('budgetMes').value) el('budgetMes').value = financeCurrentMonthKey();
+    const companyId = el('budgetLoja').value;
+    const month = el('budgetMes').value;
+    el('budgetsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      budgetsCurrentRows = await loadBudgetsFor(companyId, month);
+      renderBudgetsTable('budgetsTableBody', budgetsCurrentRows);
+    }catch(error){
+      budgetsCurrentRows = [];
+      el('budgetsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  el('budgetLoja') && el('budgetLoja').addEventListener('change', loadOrcamentoPage);
+  el('budgetMes') && el('budgetMes').addEventListener('change', loadOrcamentoPage);
+
+  function openBudgetDialog(row){
+    el('budgetForm').reset();
+    el('budgetId').value = row ? row.id : '';
+    el('budgetDialogTitle').textContent = row ? 'EDITAR ORÇAMENTO' : 'NOVO ORÇAMENTO';
+    renderBudgetCompanyOptions();
+    renderBudgetCategoryOptions();
+    renderCostCenterOptionsFor('budgetCostCenter', 'TODOS OS CENTROS DE CUSTO');
+    el('budgetCompany').value = row ? row.companyId : (el('budgetLoja').value || '');
+    el('budgetMonth').value = row ? row.month : el('budgetMes').value;
+    el('budgetCategory').value = row ? row.categoryId : '';
+    el('budgetCostCenter').value = row ? row.costCenterId : '';
+    el('budgetAmount').value = row ? (row.amountCents/100).toFixed(2) : '';
+    el('budgetNotes').value = row ? (row.notes || '') : '';
+    el('budgetFormStatus').textContent = '';
+    el('budgetDialog').showModal();
+  }
+  function closeBudgetDialog(){
+    if(el('budgetDialog').open) el('budgetDialog').close();
+  }
+
+  el('btnNewBudget') && el('btnNewBudget').addEventListener('click', () => openBudgetDialog(null));
+  el('btnCloseBudgetDialog') && el('btnCloseBudgetDialog').addEventListener('click', closeBudgetDialog);
+  el('btnCancelBudgetDialog') && el('btnCancelBudgetDialog').addEventListener('click', closeBudgetDialog);
+
+  el('budgetsTableBody') && el('budgetsTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-budget-edit]');
+    const deleteButton = event.target.closest('[data-budget-delete]');
+    if(editButton){
+      const row = budgetsCurrentRows.find(r => r.id === editButton.dataset.budgetEdit);
+      if(row) openBudgetDialog(row);
+    }else if(deleteButton){
+      if(!confirm('Excluir este orçamento?')) return;
+      try{
+        await financeApiRequest('/budgets?id='+encodeURIComponent(deleteButton.dataset.budgetDelete), {method:'DELETE'});
+        await loadOrcamentoPage();
+        showPurchaseToast('Orçamento excluído.');
+      }catch(error){
+        showPurchaseToast(error.message, 'error');
+      }
+    }
+  });
+
+  el('budgetForm') && el('budgetForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('budgetFormStatus');
+    status.textContent = '';
+    const amountCents = parseBRLToCents(el('budgetAmount').value);
+    if(amountCents === null || amountCents <= 0){
+      status.textContent = 'INFORME UM VALOR ORÇADO MAIOR QUE ZERO.';
+      return;
+    }
+    if(!el('budgetCategory').value){
+      status.textContent = 'SELECIONE A CATEGORIA.';
+      return;
+    }
+    const payload = {
+      id: el('budgetId').value || undefined,
+      companyId: el('budgetCompany').value,
+      categoryId: el('budgetCategory').value,
+      costCenterId: el('budgetCostCenter').value,
+      month: el('budgetMonth').value,
+      amountCents,
+      notes: el('budgetNotes').value
+    };
+    try{
+      await financeApiRequest('/budgets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      closeBudgetDialog();
+      await loadOrcamentoPage();
+      showPurchaseToast('Orçamento salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  // Aba "REALIZADO X ORÇADO" da DRE — mesma rota/renderizador acima, só
+  // leitura (a gestão do cadastro fica só na tela de Orçamento).
+  async function loadDreOrcado(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    if(el('dreOrcadoLoja').options.length <= 1){
+      const selected = el('dreOrcadoLoja').value;
+      el('dreOrcadoLoja').innerHTML = '<option value="">TODAS AS LOJAS (CONSOLIDADO)</option>'+
+        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+      if(companies.some(c => c.id === selected)) el('dreOrcadoLoja').value = selected;
+    }
+    if(!el('dreOrcadoMes').value) el('dreOrcadoMes').value = financeCurrentMonthKey();
+    const companyId = el('dreOrcadoLoja').value;
+    const month = el('dreOrcadoMes').value;
+    el('dreOrcadoTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const rows = await loadBudgetsFor(companyId, month);
+      renderBudgetsTable('dreOrcadoTableBody', rows, {readOnly:true});
+    }catch(error){
+      el('dreOrcadoTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  el('dreOrcadoLoja') && el('dreOrcadoLoja').addEventListener('change', loadDreOrcado);
+  el('dreOrcadoMes') && el('dreOrcadoMes').addEventListener('change', loadDreOrcado);
 
   // ================= DASHBOARD GERAL (PAINEL) =================
   // Fase 2 do módulo Financeiro — agrega, numa única chamada à API
