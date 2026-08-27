@@ -1699,3 +1699,92 @@ export const financeCashFlowSettings = pgTable(
   },
   (table) => [uniqueIndex("finance_cash_flow_settings_company_idx").on(table.companyId)],
 );
+
+// ---------------------------------------------------------------------------
+// Financeiro Fase 7 — Maquinetas e cadastro de adquirentes.
+// ---------------------------------------------------------------------------
+
+// Cadastro enxuto de adquirente (Cielo, Rede, Stone…). É a peça que os
+// Recebíveis (Fase 6) prometeram: até agora a "operadora" era texto livre
+// (accountsReceivable.operatorText) por falta deste cadastro. Também será
+// consumido por Taxas de Cartão e Cartões Corporativos (Fase 7).
+// company_id vazio ('') = adquirente global, visível para todas as lojas —
+// mesma convenção de sentinela usada em finance_accounts/finance_budgets.
+export const financeAcquirers = pgTable(
+  "finance_acquirers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    // 'active' | 'inactive'
+    status: text("status").notNull().default("active"),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_acquirers_company_idx").on(table.companyId),
+    index("finance_acquirers_status_idx").on(table.status),
+  ],
+);
+
+// Maquineta física (POS). acquirer_name é snapshot do nome no momento do
+// cadastro — se a adquirente for renomeada depois, o histórico da maquineta
+// não muda. O status NÃO é derivado: 'transferred'/'canceled' vêm de uma
+// AÇÃO registrada no histórico (finance_card_machine_events).
+export const financeCardMachines = pgTable(
+  "finance_card_machines",
+  {
+    id: text("id").primaryKey(),
+    acquirerId: text("acquirer_id").notNull().default(""),
+    acquirerName: text("acquirer_name").notNull().default(""),
+    model: text("model").notNull().default(""),
+    serial: text("serial").notNull().default(""),
+    establishmentCode: text("establishment_code").notNull().default(""),
+    terminal: text("terminal").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    installedAt: text("installed_at").notNull().default(""),
+    // 'active' | 'inactive' | 'transferred' | 'canceled'
+    status: text("status").notNull().default("active"),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_card_machines_company_status_idx").on(table.companyId, table.status),
+    index("finance_card_machines_acquirer_idx").on(table.acquirerId),
+    index("finance_card_machines_serial_idx").on(table.serial),
+  ],
+);
+
+// Histórico por maquineta: transferência entre lojas, manutenção,
+// substituição de equipamento e cancelamento. Sem FK (convenção do projeto);
+// a maquineta é atualizada na aplicação, na mesma escrita do evento.
+export const financeCardMachineEvents = pgTable(
+  "finance_card_machine_events",
+  {
+    id: text("id").primaryKey(),
+    machineId: text("machine_id").notNull(),
+    // 'transfer' | 'maintenance' | 'replacement' | 'cancellation'
+    kind: text("kind").notNull(),
+    eventDate: text("event_date").notNull().default(""),
+    fromCompanyId: text("from_company_id").notNull().default(""),
+    fromCompanyName: text("from_company_name").notNull().default(""),
+    toCompanyId: text("to_company_id").notNull().default(""),
+    toCompanyName: text("to_company_name").notNull().default(""),
+    description: text("description").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("finance_card_machine_events_machine_idx").on(table.machineId, table.eventDate)],
+);

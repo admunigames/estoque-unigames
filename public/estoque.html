@@ -2815,6 +2815,7 @@
         <a class="nav-item sub-item" id="navFinanceiroOrcamento" data-page="financeiroOrcamento" data-permission="finance" data-home-desc="Valor orçado por loja, categoria e centro de custo, comparado com o realizado." title="Orçamento" href="/financeiro/orcamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M11 20V4M18 20V13"/></svg></span><span class="nav-label">Orçamento</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRecebiveis" data-page="financeiroRecebiveis" data-permission="finance" data-home-desc="Valores a receber por mês e operadora, com alerta de divergência entre previsto e recebido." title="Recebíveis" href="/financeiro/recebiveis"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M12 15.5V9"/><path d="M9 12l3-3 3 3"/></svg></span><span class="nav-label">Recebíveis</span></a>
         <a class="nav-item sub-item" id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance" data-home-desc="Projeção diária de caixa: caixa atual, entradas e saídas em 7, 15, 30, 60 e 90 dias." title="Fluxo de Caixa" href="/financeiro/fluxo-de-caixa"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 18.5L9 12l3.5 3.5L20.5 6"/><path d="M15.5 6h5v5"/></svg></span><span class="nav-label">Fluxo de Caixa</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroMaquinetas" data-page="financeiroMaquinetas" data-permission="finance" data-home-desc="Cadastro de maquinetas por adquirente e unidade, com histórico de transferência, manutenção e substituição." title="Maquinetas" href="/financeiro/maquinetas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><rect x="9" y="6" width="6" height="4"/><path d="M9 14h.01M12 14h.01M15 14h.01M9 17h.01M12 17h.01M15 17h.01"/></svg></span><span class="nav-label">Maquinetas</span></a>
       </div>
     </div>
     <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
@@ -5562,6 +5563,53 @@
       </div>
     </section>
 
+    <section id="pageFinanceiroMaquinetas" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Maquinetas</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Cadastro das maquinetas (POS) por adquirente e unidade, com histórico de transferência, manutenção, substituição e cancelamento.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="machineLoja">UNIDADE</label><select id="machineLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field"><label for="machineAcquirerFilter">ADQUIRENTE</label><select id="machineAcquirerFilter"><option value="">TODAS</option></select></div>
+        <div class="field"><label for="machineStatusFilter">SITUAÇÃO</label>
+          <select id="machineStatusFilter">
+            <option value="">TODAS</option>
+            <option value="active">ATIVA</option>
+            <option value="inactive">INATIVA</option>
+            <option value="transferred">TRANSFERIDA</option>
+            <option value="canceled">CANCELADA</option>
+          </select>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnNewAcquirer" type="button">NOVA ADQUIRENTE</button>
+          <button class="btn-accent" id="btnNewMachine" type="button">NOVA MAQUINETA</button>
+        </div>
+      </div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="machinesTable">
+            <thead><tr><th>Adquirente</th><th>Modelo</th><th>Serial</th><th>Cód. estab.</th><th>Terminal</th><th>Unidade</th><th>Instalação</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="machinesTableBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 class="supply-section-title">ADQUIRENTES CADASTRADAS</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="acquirersTable">
+            <thead><tr><th>Nome</th><th>Abrangência</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="acquirersTableBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -5654,6 +5702,88 @@
       <button class="btn-accent" id="btnSaveReceivable" type="submit">SALVAR</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="acquirerDialog" aria-labelledby="acquirerDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="acquirerDialogTitle">NOVA ADQUIRENTE</h3>
+    <button class="purchase-dialog-close" id="btnCloseAcquirerDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="acquirerForm">
+    <input type="hidden" id="acquirerId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="acquirerName">NOME *</label><input id="acquirerName" maxlength="120" placeholder="Ex: CIELO" required></div>
+      <div class="purchase-field"><label for="acquirerCompany">ABRANGÊNCIA</label><select id="acquirerCompany"><option value="">TODAS AS LOJAS (GLOBAL)</option></select></div>
+      <div class="purchase-field"><label for="acquirerStatus">SITUAÇÃO</label><select id="acquirerStatus"><option value="active">ATIVA</option><option value="inactive">INATIVA</option></select></div>
+      <div class="purchase-field full"><label for="acquirerNotes">OBSERVAÇÕES</label><textarea id="acquirerNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="acquirerFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelAcquirerDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="machineDialog" aria-labelledby="machineDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="machineDialogTitle">NOVA MAQUINETA</h3>
+    <button class="purchase-dialog-close" id="btnCloseMachineDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="machineForm">
+    <input type="hidden" id="machineId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="machineAcquirer">ADQUIRENTE *</label><select id="machineAcquirer" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="machineCompany">UNIDADE *</label><select id="machineCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="machineModel">MODELO</label><input id="machineModel" maxlength="120" placeholder="Ex: PAX D195"></div>
+      <div class="purchase-field"><label for="machineSerial">SERIAL</label><input id="machineSerial" maxlength="60"></div>
+      <div class="purchase-field"><label for="machineEstablishmentCode">CÓDIGO DO ESTABELECIMENTO</label><input id="machineEstablishmentCode" maxlength="60"></div>
+      <div class="purchase-field"><label for="machineTerminal">TERMINAL</label><input id="machineTerminal" maxlength="60"></div>
+      <div class="purchase-field"><label for="machineInstalledAt">DATA DA INSTALAÇÃO</label><input type="date" id="machineInstalledAt"></div>
+      <div class="purchase-field"><label for="machineStatus">SITUAÇÃO</label><select id="machineStatus"><option value="active">ATIVA</option><option value="inactive">INATIVA</option><option value="transferred">TRANSFERIDA</option><option value="canceled">CANCELADA</option></select></div>
+      <div class="purchase-field full"><label for="machineNotes">OBSERVAÇÕES</label><textarea id="machineNotes" rows="2" maxlength="1000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="machineFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelMachineDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="machineHistoryDialog" aria-labelledby="machineHistoryTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="machineHistoryTitle">HISTÓRICO DA MAQUINETA</h3>
+    <button class="purchase-dialog-close" id="btnCloseMachineHistoryDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <p class="page-desc" id="machineHistorySubtitle"></p>
+    <form id="machineEventForm">
+      <div class="purchase-form-grid">
+        <div class="purchase-field"><label for="machineEventKind">TIPO *</label><select id="machineEventKind" required>
+          <option value="transfer">TRANSFERÊNCIA</option>
+          <option value="maintenance">MANUTENÇÃO</option>
+          <option value="replacement">SUBSTITUIÇÃO</option>
+          <option value="cancellation">CANCELAMENTO</option>
+        </select></div>
+        <div class="purchase-field"><label for="machineEventDate">DATA *</label><input type="date" id="machineEventDate" required></div>
+        <div class="purchase-field" id="machineEventToCompanyField"><label for="machineEventToCompany">LOJA DE DESTINO *</label><select id="machineEventToCompany"><option value="">SELECIONE</option></select></div>
+        <div class="purchase-field full"><label for="machineEventDescription">DESCRIÇÃO</label><textarea id="machineEventDescription" rows="2" maxlength="1000"></textarea></div>
+      </div>
+      <div class="user-form-status" id="machineEventFormStatus" role="status" aria-live="polite"></div>
+      <div class="purchase-form-actions">
+        <button class="btn-accent" type="submit">REGISTRAR EVENTO</button>
+      </div>
+    </form>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table id="machineEventsTable">
+          <thead><tr><th>Data</th><th>Tipo</th><th>De</th><th>Para</th><th>Descrição</th><th>Registrado por</th></tr></thead>
+          <tbody id="machineEventsBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </dialog>
 
 <dialog class="purchase-dialog" id="cashFlowBalancesDialog" aria-labelledby="cashFlowBalancesTitle">
@@ -7203,7 +7333,8 @@
     financeiroSupplierStatement:'/financeiro/fornecedores/conta-corrente',
     financeiroOrcamento:'/financeiro/orcamento',
     financeiroRecebiveis:'/financeiro/recebiveis',
-    financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa'
+    financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa',
+    financeiroMaquinetas:'/financeiro/maquinetas'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -7239,7 +7370,8 @@
     financeiroSupplierStatement:'CONTA CORRENTE DE FORNECEDORES',
     financeiroOrcamento:'ORÇAMENTO',
     financeiroRecebiveis:'RECEBÍVEIS',
-    financeiroFluxoCaixa:'FLUXO DE CAIXA'
+    financeiroFluxoCaixa:'FLUXO DE CAIXA',
+    financeiroMaquinetas:'MAQUINETAS'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -7271,7 +7403,8 @@
     financeiroSupplierStatement:'finance',
     financeiroOrcamento:'finance',
     financeiroRecebiveis:'finance',
-    financeiroFluxoCaixa:'finance'
+    financeiroFluxoCaixa:'finance',
+    financeiroMaquinetas:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -7689,7 +7822,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -7753,6 +7886,7 @@
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
     if(name === 'financeiroRecebiveis') loadRecebiveisPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
+    if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -7788,6 +7922,7 @@
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
     if(name === 'financeiroRecebiveis') loadRecebiveisPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
+    if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -19079,6 +19214,294 @@ function renderHomeTasks(){
     }catch(error){
       status.textContent = error.message;
     }
+  });
+
+  // ---------------------------------------------------------------------
+  // Maquinetas e adquirentes (Financeiro Fase 7).
+  // ---------------------------------------------------------------------
+
+  let machinesRows = [];
+  let acquirersRows = [];
+  let machineHistoryId = '';
+
+  const MACHINE_STATUS_LABELS = {active:'ATIVA', inactive:'INATIVA', transferred:'TRANSFERIDA', canceled:'CANCELADA'};
+  const MACHINE_EVENT_LABELS = {transfer:'TRANSFERÊNCIA', maintenance:'MANUTENÇÃO', replacement:'SUBSTITUIÇÃO', cancellation:'CANCELAMENTO'};
+
+  function machineCompanyName(id){
+    const company = companies.find(c => c.id === id);
+    return company ? company.name : (id || '—');
+  }
+
+  function renderMachineCompanyOptions(){
+    ['machineLoja','machineCompany','acquirerCompany','machineAcquirerFilter','machineAcquirer','machineEventToCompany'].forEach(id => {
+      const select = el(id);
+      if(!select) return;
+      const selected = select.value;
+      if(id === 'machineAcquirerFilter' || id === 'machineAcquirer'){
+        const placeholder = id === 'machineAcquirer' ? '<option value="">SELECIONE</option>' : '<option value="">TODAS</option>';
+        select.innerHTML = placeholder + acquirersRows
+          .filter(a => id === 'machineAcquirerFilter' || a.status === 'active')
+          .map(a => '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name)+(a.companyId ? ' ('+escapeHtml(machineCompanyName(a.companyId))+')' : '')+'</option>').join('');
+      }else{
+        const placeholder = id === 'machineLoja'
+          ? '<option value="">TODAS AS LOJAS</option>'
+          : (id === 'acquirerCompany'
+            ? '<option value="">TODAS AS LOJAS (GLOBAL)</option>'
+            : '<option value="">SELECIONE</option>');
+        select.innerHTML = placeholder + companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+      }
+      if(Array.from(select.options).some(o => o.value === selected)) select.value = selected;
+    });
+  }
+
+  function renderAcquirersTable(){
+    const body = el('acquirersTableBody');
+    if(!body) return;
+    if(!acquirersRows.length){
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhuma adquirente cadastrada.</td></tr>';
+      return;
+    }
+    body.innerHTML = acquirersRows.map(a =>
+      '<tr>'+
+        '<td>'+escapeHtml(a.name)+'</td>'+
+        '<td>'+escapeHtml(a.companyId ? machineCompanyName(a.companyId) : 'Todas as lojas')+'</td>'+
+        '<td>'+escapeHtml(a.status === 'inactive' ? 'INATIVA' : 'ATIVA')+'</td>'+
+        '<td><button class="btn-outline btn-sm" type="button" data-acquirer-edit="'+escapeHtml(a.id)+'">EDITAR</button></td>'+
+      '</tr>').join('');
+  }
+
+  function renderMachinesTable(){
+    const body = el('machinesTableBody');
+    if(!body) return;
+    if(!machinesRows.length){
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma maquineta encontrada.</td></tr>';
+      return;
+    }
+    body.innerHTML = machinesRows.map(m =>
+      '<tr>'+
+        '<td>'+escapeHtml(m.acquirerName || '—')+'</td>'+
+        '<td>'+escapeHtml(m.model || '—')+'</td>'+
+        '<td>'+escapeHtml(m.serial || '—')+'</td>'+
+        '<td>'+escapeHtml(m.establishmentCode || '—')+'</td>'+
+        '<td>'+escapeHtml(m.terminal || '—')+'</td>'+
+        '<td>'+escapeHtml(m.companyName || machineCompanyName(m.companyId))+'</td>'+
+        '<td>'+escapeHtml(m.installedAt || '—')+'</td>'+
+        '<td>'+escapeHtml(MACHINE_STATUS_LABELS[m.status] || m.status)+'</td>'+
+        '<td>'+
+          '<button class="btn-outline btn-sm" type="button" data-machine-history="'+escapeHtml(m.id)+'">HISTÓRICO</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-machine-edit="'+escapeHtml(m.id)+'">EDITAR</button>'+
+        '</td>'+
+      '</tr>').join('');
+  }
+
+  async function loadMaquinetasPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    el('machinesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const acquirerParams = new URLSearchParams();
+      const machineParams = new URLSearchParams();
+      const loja = el('machineLoja').value;
+      const acq = el('machineAcquirerFilter').value;
+      const st = el('machineStatusFilter').value;
+      if(loja) machineParams.set('companyId', loja);
+      if(acq) machineParams.set('acquirerId', acq);
+      if(st) machineParams.set('status', st);
+      const [acquirers, machines] = await Promise.all([
+        financeApiRequest('/acquirers?'+acquirerParams.toString()),
+        financeApiRequest('/card-machines?'+machineParams.toString())
+      ]);
+      acquirersRows = Array.isArray(acquirers.acquirers) ? acquirers.acquirers : [];
+      machinesRows = Array.isArray(machines.machines) ? machines.machines : [];
+      renderMachineCompanyOptions();
+      renderAcquirersTable();
+      renderMachinesTable();
+    }catch(error){
+      machinesRows = [];
+      el('machinesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  ['machineLoja','machineAcquirerFilter','machineStatusFilter'].forEach(id => {
+    el(id) && el(id).addEventListener('change', loadMaquinetasPage);
+  });
+
+  // --- Adquirente ---
+  function openAcquirerDialog(row){
+    el('acquirerForm').reset();
+    renderMachineCompanyOptions();
+    el('acquirerId').value = row ? row.id : '';
+    el('acquirerDialogTitle').textContent = row ? 'EDITAR ADQUIRENTE' : 'NOVA ADQUIRENTE';
+    el('acquirerName').value = row ? row.name : '';
+    el('acquirerCompany').value = row ? (row.companyId || '') : '';
+    el('acquirerCompany').disabled = Boolean(row);
+    el('acquirerStatus').value = row ? (row.status || 'active') : 'active';
+    el('acquirerNotes').value = row ? (row.notes || '') : '';
+    el('acquirerFormStatus').textContent = '';
+    el('acquirerDialog').showModal();
+  }
+  el('btnNewAcquirer') && el('btnNewAcquirer').addEventListener('click', () => openAcquirerDialog(null));
+  el('btnCloseAcquirerDialog') && el('btnCloseAcquirerDialog').addEventListener('click', () => el('acquirerDialog').close());
+  el('btnCancelAcquirerDialog') && el('btnCancelAcquirerDialog').addEventListener('click', () => el('acquirerDialog').close());
+  el('acquirersTableBody') && el('acquirersTableBody').addEventListener('click', event => {
+    const editButton = event.target.closest('[data-acquirer-edit]');
+    if(!editButton) return;
+    const row = acquirersRows.find(a => a.id === editButton.dataset.acquirerEdit);
+    if(row) openAcquirerDialog(row);
+  });
+  el('acquirerForm') && el('acquirerForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('acquirerFormStatus');
+    status.textContent = '';
+    const payload = {
+      name: el('acquirerName').value.trim(),
+      companyId: el('acquirerCompany').value,
+      status: el('acquirerStatus').value,
+      notes: el('acquirerNotes').value
+    };
+    if(payload.name.length < 2){ status.textContent = 'INFORME O NOME DA ADQUIRENTE.'; return; }
+    const id = el('acquirerId').value;
+    if(id) payload.id = id;
+    try{
+      await financeApiRequest('/acquirers', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('acquirerDialog').close();
+      await loadMaquinetasPage();
+      showPurchaseToast('Adquirente salva.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // --- Maquineta ---
+  function openMachineDialog(row){
+    el('machineForm').reset();
+    renderMachineCompanyOptions();
+    el('machineId').value = row ? row.id : '';
+    el('machineDialogTitle').textContent = row ? 'EDITAR MAQUINETA' : 'NOVA MAQUINETA';
+    el('machineAcquirer').value = row ? row.acquirerId : '';
+    el('machineCompany').value = row ? row.companyId : (el('machineLoja').value || '');
+    el('machineModel').value = row ? (row.model || '') : '';
+    el('machineSerial').value = row ? (row.serial || '') : '';
+    el('machineEstablishmentCode').value = row ? (row.establishmentCode || '') : '';
+    el('machineTerminal').value = row ? (row.terminal || '') : '';
+    el('machineInstalledAt').value = row ? (row.installedAt || '') : '';
+    el('machineStatus').value = row ? (row.status || 'active') : 'active';
+    el('machineNotes').value = row ? (row.notes || '') : '';
+    el('machineFormStatus').textContent = '';
+    el('machineDialog').showModal();
+  }
+  el('btnNewMachine') && el('btnNewMachine').addEventListener('click', () => {
+    if(!acquirersRows.some(a => a.status === 'active')){
+      showPurchaseToast('Cadastre uma adquirente antes de cadastrar a maquineta.', 'error');
+      return;
+    }
+    openMachineDialog(null);
+  });
+  el('btnCloseMachineDialog') && el('btnCloseMachineDialog').addEventListener('click', () => el('machineDialog').close());
+  el('btnCancelMachineDialog') && el('btnCancelMachineDialog').addEventListener('click', () => el('machineDialog').close());
+  el('machinesTableBody') && el('machinesTableBody').addEventListener('click', event => {
+    const editButton = event.target.closest('[data-machine-edit]');
+    const historyButton = event.target.closest('[data-machine-history]');
+    if(editButton){
+      const row = machinesRows.find(m => m.id === editButton.dataset.machineEdit);
+      if(row) openMachineDialog(row);
+    }else if(historyButton){
+      const row = machinesRows.find(m => m.id === historyButton.dataset.machineHistory);
+      if(row) openMachineHistory(row);
+    }
+  });
+  el('machineForm') && el('machineForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('machineFormStatus');
+    status.textContent = '';
+    const payload = {
+      acquirerId: el('machineAcquirer').value,
+      companyId: el('machineCompany').value,
+      model: el('machineModel').value,
+      serial: el('machineSerial').value,
+      establishmentCode: el('machineEstablishmentCode').value,
+      terminal: el('machineTerminal').value,
+      installedAt: el('machineInstalledAt').value,
+      status: el('machineStatus').value,
+      notes: el('machineNotes').value
+    };
+    if(!payload.acquirerId){ status.textContent = 'SELECIONE A ADQUIRENTE.'; return; }
+    if(!payload.companyId){ status.textContent = 'SELECIONE A UNIDADE.'; return; }
+    const id = el('machineId').value;
+    if(id) payload.id = id;
+    try{
+      await financeApiRequest('/card-machines', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('machineDialog').close();
+      await loadMaquinetasPage();
+      showPurchaseToast('Maquineta salva.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // --- Histórico da maquineta ---
+  function syncMachineEventFields(){
+    const isTransfer = el('machineEventKind').value === 'transfer';
+    el('machineEventToCompanyField').style.display = isTransfer ? '' : 'none';
+    el('machineEventToCompany').required = isTransfer;
+  }
+  el('machineEventKind') && el('machineEventKind').addEventListener('change', syncMachineEventFields);
+
+  async function openMachineHistory(row){
+    machineHistoryId = row.id;
+    el('machineHistoryTitle').textContent = 'HISTÓRICO — '+(row.acquirerName || 'MAQUINETA');
+    el('machineHistorySubtitle').textContent = (row.model || 'Sem modelo')+' · '+(row.companyName || machineCompanyName(row.companyId))+' · '+(MACHINE_STATUS_LABELS[row.status] || row.status);
+    el('machineEventForm').reset();
+    renderMachineCompanyOptions();
+    syncMachineEventFields();
+    el('machineEventFormStatus').textContent = '';
+    el('machineEventsBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    el('machineHistoryDialog').showModal();
+    await loadMachineEvents();
+  }
+  el('btnCloseMachineHistoryDialog') && el('btnCloseMachineHistoryDialog').addEventListener('click', () => el('machineHistoryDialog').close());
+
+  async function loadMachineEvents(){
+    try{
+      const data = await financeApiRequest('/card-machines/'+encodeURIComponent(machineHistoryId)+'/events');
+      const events = Array.isArray(data.events) ? data.events : [];
+      el('machineEventsBody').innerHTML = events.length
+        ? events.map(e =>
+            '<tr>'+
+              '<td>'+escapeHtml(e.eventDate || '—')+'</td>'+
+              '<td>'+escapeHtml(MACHINE_EVENT_LABELS[e.kind] || e.kind)+'</td>'+
+              '<td>'+escapeHtml(e.fromCompanyName || '—')+'</td>'+
+              '<td>'+escapeHtml(e.toCompanyName || '—')+'</td>'+
+              '<td>'+escapeHtml(e.description || '—')+'</td>'+
+              '<td>'+escapeHtml(e.createdByName || '—')+'</td>'+
+            '</tr>').join('')
+        : '<tr><td colspan="6" class="responsive-empty">Nenhum evento registrado.</td></tr>';
+    }catch(error){
+      el('machineEventsBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  el('machineEventForm') && el('machineEventForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('machineEventFormStatus');
+    status.textContent = '';
+    const kind = el('machineEventKind').value;
+    const payload = {
+      kind,
+      eventDate: el('machineEventDate').value,
+      description: el('machineEventDescription').value
+    };
+    if(!payload.eventDate){ status.textContent = 'INFORME A DATA DO EVENTO.'; return; }
+    if(kind === 'transfer'){
+      payload.toCompanyId = el('machineEventToCompany').value;
+      if(!payload.toCompanyId){ status.textContent = 'SELECIONE A LOJA DE DESTINO.'; return; }
+    }
+    try{
+      await financeApiRequest('/card-machines/'+encodeURIComponent(machineHistoryId)+'/events', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+      });
+      el('machineEventForm').reset();
+      syncMachineEventFields();
+      await loadMachineEvents();
+      await loadMaquinetasPage();
+      showPurchaseToast('Evento registrado.');
+    }catch(error){ status.textContent = error.message; }
   });
 
   // --- Imagem pronta pra compartilhamento (PNG via canvas) --------------
