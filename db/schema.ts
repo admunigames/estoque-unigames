@@ -1633,6 +1633,10 @@ export const accountsReceivable = pgTable(
   (table) => [
     index("accounts_receivable_company_competence_idx").on(table.companyId, table.competenceMonth),
     index("accounts_receivable_company_expected_idx").on(table.companyId, table.expectedDate),
+    // O Fluxo de Caixa filtra e agrupa por received_date toda vez que a tela
+    // carrega (ver app/api/finance/cash-flow/route.ts) — sem este índice a
+    // consulta das entradas já recebidas vira varredura da tabela inteira.
+    index("accounts_receivable_company_received_idx").on(table.companyId, table.receivedDate),
     index("accounts_receivable_operator_idx").on(table.operatorText),
     uniqueIndex("accounts_receivable_idempotency_idx").on(table.idempotencyKey),
   ],

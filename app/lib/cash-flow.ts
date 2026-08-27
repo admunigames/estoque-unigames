@@ -1,8 +1,12 @@
 // Lógica pura (sem I/O) do Fluxo de Caixa — Financeiro Fase 6.
 //
-// Mesma convenção de app/lib/payables-recurrence.ts: módulo sem nenhum import
-// interno de propósito, pra poder ser testado direto (ver
-// tests/finance-cash-flow.test.mjs) sem o resolvedor de módulos do bundler.
+// Mesma convenção de app/lib/payables-recurrence.ts: sem NENHUM I/O, pra
+// poder ser testado direto (ver tests/finance-cash-flow.test.mjs). O único
+// import é o de app/lib/finance-status.ts (também puro, e já importado com
+// extensão explícita pra funcionar tanto no bundler quanto no
+// `node --experimental-strip-types` dos testes) — addDays estava duplicado
+// byte a byte aqui antes, e aritmética de data é exatamente o tipo de coisa
+// que não pode ter duas implementações que possam divergir.
 // O handler HTTP (app/api/finance/cash-flow/route.ts) faz TODA a busca no
 // banco e entrega aqui apenas os totais já agregados por dia.
 //
@@ -12,6 +16,8 @@
 // dias). O Caixa Final de um dia é o Caixa Inicial do dia seguinte; o Caixa
 // Inicial do primeiro dia é o "Caixa Atual" (soma dos saldos manuais
 // informados por conta em finance_account_balances).
+
+import { addDays } from "./finance-status.ts";
 
 /** Horizontes oferecidos na tela. A série é sempre construída no MAIOR deles. */
 export const CASH_FLOW_HORIZONS = [7, 15, 30, 60, 90] as const;
@@ -65,11 +71,27 @@ export type CashFlowSeries = {
   caixaAtualCents: number;
 };
 
-function addDaysToDate(dateText: string, days: number): string {
-  const [year, month, day] = dateText.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+/**
+ * Meses de competência (AAAA-MM) cobertos por um intervalo de datas,
+ * inclusive nas duas pontas — normalmente 3 ou 4 meses civis pro horizonte de
+ * 90 dias. Usado pra saber quais competências de RH precisam ser projetadas
+ * (inclusive as que ainda não têm lançamento salvo nenhum).
+ */
+export function monthsInRange(fromDate: string, toDate: string): string[] {
+  const months: string[] = [];
+  let [year, month] = fromDate.slice(0, 7).split("-").map(Number);
+  const last = toDate.slice(0, 7);
+  for (let guard = 0; guard < 60; guard += 1) {
+    const current = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}`;
+    months.push(current);
+    if (current >= last) break;
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  }
+  return months;
 }
 
 /** Soma, por data, uma lista de agregados (várias fontes podem cair no mesmo dia). */
@@ -131,7 +153,7 @@ export type BuildCashFlowSeriesInput = {
 export function buildCashFlowSeries(input: BuildCashFlowSeriesInput): CashFlowSeries {
   const totalDays = Math.max(1, Math.trunc(input.days) || 1);
   const firstDate = input.today;
-  const lastDate = addDaysToDate(firstDate, totalDays - 1);
+  const lastDate = addDays(firstDate, totalDays - 1);
 
   function bucketDate(date: string): string | null {
     if (!date) return null;
@@ -157,7 +179,7 @@ export function buildCashFlowSeries(input: BuildCashFlowSeriesInput): CashFlowSe
   const days: CashFlowDay[] = [];
   let running = Number(input.caixaAtualCents || 0);
   for (let index = 0; index < totalDays; index += 1) {
-    const date = addDaysToDate(firstDate, index);
+    const date = addDays(firstDate, index);
     const entradasCents = entradasByDate.get(date) ?? 0;
     const saidasPayableCents = payablesByDate.get(date) ?? 0;
     const saidasPayrollCents = payrollByDate.get(date) ?? 0;

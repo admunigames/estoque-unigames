@@ -5,7 +5,13 @@ import { todayInTimezone } from "../../../../lib/finance-status";
 import { canManageFinance, identity, jsonResponse, MONTH_PATTERN, safeText } from "../../shared";
 import { loadEffectiveCashFlowSettings } from "../../cash-flow-settings/shared";
 
-type TotalsRow = { expectedCents: number; receivedCents: number; pendingCents: number; count: number };
+type TotalsRow = {
+  expectedCents: number;
+  receivedCents: number;
+  pendingCents: number;
+  differenceCents: number;
+  count: number;
+};
 type GroupRow = TotalsRow & { key: string; label: string };
 type DivergentRow = {
   id: string;
@@ -67,16 +73,58 @@ export async function GET(request: Request) {
   const companyCondition = companyId ? "AND company_id = ?2" : "";
   const companyParams: unknown[] = companyId ? [companyId] : [];
 
+  // differenceCents é agregado direto no SQL (mesmo CASE de
+  // receivables/route.ts) em vez de deduzido por álgebra a partir de
+  // pendingCents — a dedução dava o mesmo número, mas duplicava a definição
+  // de "diferença" em dois lugares que podiam divergir na próxima mudança.
   const TOTALS = `COUNT(*) AS count,
     COALESCE(SUM(expected_amount_cents), 0) AS expectedCents,
     COALESCE(SUM(COALESCE(received_amount_cents, 0)), 0) AS receivedCents,
-    COALESCE(SUM(CASE WHEN received_amount_cents IS NULL THEN expected_amount_cents ELSE 0 END), 0) AS pendingCents`;
+    COALESCE(SUM(CASE WHEN received_amount_cents IS NULL THEN expected_amount_cents ELSE 0 END), 0) AS pendingCents,
+    COALESCE(SUM(CASE WHEN received_amount_cents IS NULL THEN 0
+                      ELSE received_amount_cents - expected_amount_cents END), 0) AS differenceCents`;
 
   try {
     const database = await getD1();
-    const settings = await loadEffectiveCashFlowSettings(database, companyId);
 
-    const [currentMonth, previous, byStore, byOperator, divergences] = await Promise.all([
+    // As quatro consultas de totais/agrupamento NÃO dependem das
+    // configurações, então disparam junto com a leitura delas em vez de
+    // esperar por ela. Só a de divergências precisa da tolerância, e por isso
+    // é encadeada na promise das configurações — o custo total passa a ser
+    // max(4 consultas, configurações + divergências) em vez de
+    // configurações + max(5 consultas).
+    const settingsPromise = loadEffectiveCashFlowSettings(database, companyId);
+    // Divergências acima da tolerância (percentual OU valor fixo, o que for
+    // atingido primeiro) — mesma regra de isReceivableDivergent, escrita em
+    // SQL pra não trazer a lista inteira pra JS.
+    const divergencesPromise = settingsPromise.then((settings) =>
+      database
+        .prepare(
+          `SELECT id, company_id AS companyId, company_name AS companyName, operator_text AS operatorText,
+                  competence_month AS competenceMonth, expected_date AS expectedDate,
+                  expected_amount_cents AS expectedAmountCents, received_amount_cents AS receivedAmountCents,
+                  received_date AS receivedDate,
+                  received_amount_cents - expected_amount_cents AS differenceCents
+           FROM accounts_receivable
+           WHERE canceled = 0 AND competence_month = ?1 ${companyId ? "AND company_id = ?4" : ""}
+             AND received_amount_cents IS NOT NULL
+             AND (ABS(received_amount_cents - expected_amount_cents) > ?2::numeric
+                  OR ABS(received_amount_cents - expected_amount_cents)
+                     > ABS(expected_amount_cents) * (?3::numeric / 10000))
+           ORDER BY ABS(received_amount_cents - expected_amount_cents) DESC
+           LIMIT 100`,
+        )
+        .bind(
+          month,
+          settings.receivablesToleranceFixedCents,
+          settings.receivablesToleranceBps,
+          ...(companyId ? [companyId] : []),
+        )
+        .all<DivergentRow>(),
+    );
+
+    const [settings, currentMonth, previous, byStore, byOperator, divergences] = await Promise.all([
+      settingsPromise,
       database
         .prepare(
           `SELECT ${TOTALS} FROM accounts_receivable
@@ -111,32 +159,7 @@ export async function GET(request: Request) {
         )
         .bind(month, ...companyParams)
         .all<GroupRow>(),
-      // Divergências acima da tolerância (percentual OU valor fixo, o que for
-      // atingido primeiro) — mesma regra de isReceivableDivergent, escrita em
-      // SQL pra não trazer a lista inteira pra JS.
-      database
-        .prepare(
-          `SELECT id, company_id AS companyId, company_name AS companyName, operator_text AS operatorText,
-                  competence_month AS competenceMonth, expected_date AS expectedDate,
-                  expected_amount_cents AS expectedAmountCents, received_amount_cents AS receivedAmountCents,
-                  received_date AS receivedDate,
-                  received_amount_cents - expected_amount_cents AS differenceCents
-           FROM accounts_receivable
-           WHERE canceled = 0 AND competence_month = ?1 ${companyId ? "AND company_id = ?4" : ""}
-             AND received_amount_cents IS NOT NULL
-             AND (ABS(received_amount_cents - expected_amount_cents) > ?2::numeric
-                  OR ABS(received_amount_cents - expected_amount_cents)
-                     > ABS(expected_amount_cents) * (?3::numeric / 10000))
-           ORDER BY ABS(received_amount_cents - expected_amount_cents) DESC
-           LIMIT 100`,
-        )
-        .bind(
-          month,
-          settings.receivablesToleranceFixedCents,
-          settings.receivablesToleranceBps,
-          ...(companyId ? [companyId] : []),
-        )
-        .all<DivergentRow>(),
+      divergencesPromise,
     ]);
 
     function normalize(row: TotalsRow | null): TotalsRow {
@@ -145,11 +168,9 @@ export async function GET(request: Request) {
         expectedCents: Number(row?.expectedCents ?? 0),
         receivedCents: Number(row?.receivedCents ?? 0),
         pendingCents: Number(row?.pendingCents ?? 0),
+        differenceCents: Number(row?.differenceCents ?? 0),
       };
     }
-
-    const current = normalize(currentMonth);
-    const prior = normalize(previous);
 
     return jsonResponse({
       month,
@@ -157,8 +178,8 @@ export async function GET(request: Request) {
       companyId,
       settings,
       today,
-      current: { ...current, differenceCents: current.receivedCents - (current.expectedCents - current.pendingCents) },
-      previous: { ...prior, differenceCents: prior.receivedCents - (prior.expectedCents - prior.pendingCents) },
+      current: normalize(currentMonth),
+      previous: normalize(previous),
       byStore: byStore.results ?? [],
       byOperator: byOperator.results ?? [],
       divergences: divergences.results ?? [],

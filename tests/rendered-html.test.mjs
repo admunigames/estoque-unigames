@@ -2893,16 +2893,27 @@ test("Financeiro Fase 3: Fornecedores em Aberto e Conta Corrente do Fornecedor",
 });
 
 test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
-  const [html, workerSource, schema, migration, receivablesRoute, cashFlowRoute, balancesRoute] =
-    await Promise.all([
-      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
-      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
-      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-      readFile(new URL("../drizzle/0037_finance_cash_flow.sql", import.meta.url), "utf8"),
-      readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
-      readFile(new URL("../app/api/finance/cash-flow/route.ts", import.meta.url), "utf8"),
-      readFile(new URL("../app/api/finance/account-balances/route.ts", import.meta.url), "utf8"),
-    ]);
+  const [
+    html,
+    workerSource,
+    schema,
+    migration,
+    receivedIndexMigration,
+    receivablesRoute,
+    cashFlowRoute,
+    balancesShared,
+    balancesRoute,
+  ] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0037_finance_cash_flow.sql", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0038_accounts_receivable_received_idx.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/cash-flow/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/account-balances/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/account-balances/route.ts", import.meta.url), "utf8"),
+  ]);
 
   // Nav + rotas: duas telas novas dentro do submenu Financeiro, liberadas
   // pela MESMA permissão do resto do módulo (nenhuma permissão nova).
@@ -2962,6 +2973,46 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
   assert.match(html, /Impostos e taxas de cartão: não incluídos ainda \(Fase 7\)/);
 
   // Conta ativa sem saldo informado fica FORA do Caixa Atual, mas visível.
-  assert.match(balancesRoute, /hasBalance/);
-  assert.match(balancesRoute, /accountsMissingBalance/);
+  // A regra vive num shared.ts único, consumido tanto pela tela de saldos
+  // quanto pela projeção do Fluxo de Caixa — as duas NÃO podem calcular
+  // "Caixa Atual" por conta própria e divergir.
+  assert.match(balancesShared, /export async function loadAccountBalances\(/);
+  assert.match(balancesShared, /hasBalance/);
+  assert.match(balancesShared, /accountsMissingBalance/);
+  assert.match(balancesRoute, /loadAccountBalances\(database, companyId\)/);
+  assert.match(cashFlowRoute, /loadAccountBalances\(database, companyId\)/);
+  assert.doesNotMatch(cashFlowRoute, /FROM finance_account_balances/);
+
+  // RH no Fluxo de Caixa: as três consultas precisam de LIMITE INFERIOR de
+  // competência, senão anos de folha já paga caem no dia 0 da série (toda
+  // data anterior a hoje é bucketizada no primeiro dia) e destroem a
+  // projeção. Folha e benefícios ainda excluem o que já foi pago no passado.
+  assert.match(cashFlowRoute, /FROM hr_payroll_entries[\s\S]{0,400}?month >= /);
+  assert.match(cashFlowRoute, /FROM hr_benefits[\s\S]{0,400}?month >= /);
+  assert.match(cashFlowRoute, /FROM hr_commissions[\s\S]{0,400}?month >= /);
+  assert.match(cashFlowRoute, /NOT \(payment_done = 1 AND payment_date <> '' AND payment_date < /);
+
+  // Funcionário ativo sem lançamento de folha no mês precisa entrar pelo
+  // salário-base do cadastro — senão o Fluxo de Caixa projeta R$ 0,00 de
+  // folha justamente nos meses futuros, que quase nunca estão lançados.
+  assert.match(cashFlowRoute, /FROM hr_employees e/);
+  assert.match(cashFlowRoute, /e\.status = 'active'/);
+  assert.match(cashFlowRoute, /SUM\(e\.salary_cents\)/);
+  assert.match(cashFlowRoute, /NOT EXISTS \(\s*SELECT 1 FROM hr_payroll_entries p/);
+
+  // Índice de received_date: o Fluxo de Caixa agrupa por essa coluna a cada
+  // carregamento da tela. Migration incremental — a 0037 não foi reescrita.
+  assert.match(schema, /accounts_receivable_company_received_idx/);
+  assert.match(receivedIndexMigration, /CREATE INDEX "accounts_receivable_company_received_idx"/);
+  assert.doesNotMatch(migration, /accounts_receivable_company_received_idx/);
+
+  // Saldo de conta negativo (cheque especial) precisa ser aceito no
+  // formulário: parseBRLToCents rejeita negativo e é reaproveitada em campos
+  // onde negativo não faz sentido, por isso a variante separada.
+  assert.match(html, /function parseBRLToCentsAllowNegative\(/);
+  assert.match(html, /parseBRLToCentsAllowNegative\(el\('cashFlowBalanceAmount'\)\.value\)/);
+
+  // O aviso de impostos no PNG segue a MESMA condição da tela — não pode
+  // ficar afirmado pra sempre depois que a Fase 7 chegar.
+  assert.match(html, /if\(cashFlowData\.taxesAndFeesIncluded === false\)\{\s*footerNotes\.push/);
 });

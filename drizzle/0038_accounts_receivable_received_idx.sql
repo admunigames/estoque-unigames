@@ -1,0 +1,1 @@
+CREATE INDEX "accounts_receivable_company_received_idx" ON "accounts_receivable" USING btree ("company_id","received_date");

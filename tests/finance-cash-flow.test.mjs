@@ -134,6 +134,22 @@ test("fluxo de caixa: impostos e taxas de cartão ficam zerados (Fase 7)", () =>
   for (const day of series.days) assert.equal(day.saidasImpostosTaxasCents, 0);
 });
 
+test("meses do horizonte: cobre as duas pontas e vira o ano", () => {
+  assert.deepEqual(cashFlow.monthsInRange("2026-08-26", "2026-11-23"), [
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11",
+  ]);
+  // Mesmo mês nas duas pontas devolve um mês só.
+  assert.deepEqual(cashFlow.monthsInRange("2026-08-01", "2026-08-31"), ["2026-08"]);
+  assert.deepEqual(cashFlow.monthsInRange("2026-12-05", "2027-02-10"), [
+    "2026-12",
+    "2027-01",
+    "2027-02",
+  ]);
+});
+
 test("folha sem data de pagamento: dia fixo do mês seguinte à competência", () => {
   assert.equal(cashFlow.payrollFallbackPaymentDate("2026-08", 5), "2026-09-05");
   assert.equal(cashFlow.payrollFallbackPaymentDate("2026-12", 5), "2027-01-05");

@@ -3,19 +3,7 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { DATE_PATTERN } from "../../../lib/payables-recurrence";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
-
-type BalanceRow = {
-  accountId: string;
-  accountName: string;
-  accountType: string;
-  companyId: string;
-  companyName: string;
-  balanceCents: number | null;
-  asOfDate: string | null;
-  notes: string | null;
-  updatedByName: string | null;
-  updatedAt: string | null;
-};
+import { loadAccountBalances } from "./shared";
 
 // "Caixa Atual" do Fluxo de Caixa (Financeiro Fase 6): saldo informado
 // MANUALMENTE por conta bancária/caixa, com data de referência própria —
@@ -49,42 +37,8 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const rows = await database
-      .prepare(
-        `SELECT a.id AS accountId, a.name AS accountName, a.type AS accountType,
-                a.company_id AS companyId, a.company_name AS companyName,
-                b.balance_cents AS balanceCents, b.as_of_date AS asOfDate, b.notes AS notes,
-                b.updated_by_name AS updatedByName, b.updated_at AS updatedAt
-         FROM finance_accounts a
-         LEFT JOIN finance_account_balances b ON b.account_id = a.id
-         WHERE a.active = 1 ${companyId ? "AND a.company_id = ?1" : ""}
-         ORDER BY a.company_name ASC, a.name ASC`,
-      )
-      .bind(...(companyId ? [companyId] : []))
-      .all<BalanceRow>();
-
-    const accounts = (rows.results ?? []).map((row) => ({
-      accountId: row.accountId,
-      accountName: row.accountName,
-      accountType: row.accountType,
-      companyId: row.companyId,
-      companyName: row.companyName,
-      hasBalance: row.balanceCents !== null && row.balanceCents !== undefined,
-      balanceCents: Number(row.balanceCents ?? 0),
-      asOfDate: row.asOfDate ?? "",
-      notes: row.notes ?? "",
-      updatedByName: row.updatedByName ?? "",
-      updatedAt: row.updatedAt ?? "",
-    }));
-
-    const withBalance = accounts.filter((account) => account.hasBalance);
-    return jsonResponse({
-      companyId,
-      accounts,
-      caixaAtualCents: withBalance.reduce((sum, account) => sum + account.balanceCents, 0),
-      accountsWithBalance: withBalance.length,
-      accountsMissingBalance: accounts.length - withBalance.length,
-    });
+    const snapshot = await loadAccountBalances(database, companyId);
+    return jsonResponse({ companyId, ...snapshot });
   } catch (error) {
     console.error("Não foi possível carregar os saldos das contas.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR OS SALDOS DAS CONTAS." }, 500);

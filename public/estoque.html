@@ -16227,6 +16227,19 @@ function renderHomeTasks(){
     return Math.round(num * 100);
   }
 
+  // Variante que ACEITA valor negativo. Existe separada de propósito: quase
+  // todo campo de dinheiro do sistema (conta a pagar, orçamento, recebível)
+  // não pode ser negativo, e afrouxar parseBRLToCents pra todos eles pra
+  // atender um caso só abriria a porta pra valor negativo entrar onde não
+  // deve. O único uso hoje é o saldo de conta do Fluxo de Caixa, onde
+  // negativo é legítimo (cheque especial) — e o backend
+  // (app/api/finance/account-balances/route.ts) valida do mesmo jeito.
+  function parseBRLToCentsAllowNegative(value){
+    const num = Number(value);
+    if(!Number.isFinite(num)) return null;
+    return Math.round(num * 100);
+  }
+
   function financeCurrentDateKey(){
     const parts = new Intl.DateTimeFormat('en-US', {timeZone:'America/Recife', year:'numeric', month:'2-digit', day:'2-digit'}).formatToParts(new Date());
     const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
@@ -18969,8 +18982,10 @@ function renderHomeTasks(){
     const status = el('cashFlowBalanceStatus');
     status.textContent = '';
     // Saldo negativo é legítimo (cheque especial), então só o formato é
-    // validado aqui — o backend faz a mesma checagem.
-    const balanceCents = parseBRLToCents(el('cashFlowBalanceAmount').value);
+    // validado aqui — o backend faz a mesma checagem. Daí a variante
+    // parseBRLToCentsAllowNegative: parseBRLToCents rejeita negativo, o que
+    // tornava impossível registrar uma conta no cheque especial.
+    const balanceCents = parseBRLToCentsAllowNegative(el('cashFlowBalanceAmount').value);
     if(balanceCents === null){
       status.textContent = 'INFORME UM SALDO VÁLIDO.';
       return;
@@ -19120,12 +19135,25 @@ function renderHomeTasks(){
       y += 96;
     });
 
+    // Rodapé: só as ressalvas que valem AGORA. O aviso de impostos segue a
+    // mesma condição da tela (renderCashFlowWarnings) — quando a Fase 7
+    // chegar e a API passar a devolver taxesAndFeesIncluded:true, a imagem
+    // para de afirmar isso junto com a tela, em vez de um PNG já compartilhado
+    // seguir repetindo a ressalva pra sempre.
+    const footerNotes = [];
+    if(cashFlowData.taxesAndFeesIncluded === false){
+      footerNotes.push('Impostos e taxas de cartão ainda não estão incluídos (Fase 7).');
+    }
+    if(cashFlowData.accountsMissingBalance > 0){
+      footerNotes.push(cashFlowData.accountsMissingBalance+' conta(s) sem saldo informado ficaram fora do caixa atual.');
+    }
     context.fillStyle = '#5c7187';
     context.font = '600 13px sans-serif';
-    context.fillText('Impostos e taxas de cartão ainda não estão incluídos (Fase 7).', 40, height - 56);
-    if(cashFlowData.accountsMissingBalance > 0){
-      context.fillText(cashFlowData.accountsMissingBalance+' conta(s) sem saldo informado ficaram fora do caixa atual.', 40, height - 34);
-    }
+    // Empilha de baixo pra cima: a última nota fica sempre na mesma linha de
+    // base, não importa quantas apareceram.
+    footerNotes.forEach((note, index) => {
+      context.fillText(note, 40, height - 34 - (footerNotes.length - 1 - index) * 22);
+    });
 
     const link = el('btnDownloadCashFlowImage');
     if(link) link.href = canvas.toDataURL('image/png');
