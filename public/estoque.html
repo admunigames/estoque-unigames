@@ -2818,6 +2818,7 @@
         <a class="nav-item sub-item" id="navFinanceiroMaquinetas" data-page="financeiroMaquinetas" data-permission="finance" data-home-desc="Cadastro de maquinetas por adquirente e unidade, com histórico de transferência, manutenção e substituição." title="Maquinetas" href="/financeiro/maquinetas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><rect x="9" y="6" width="6" height="4"/><path d="M9 14h.01M12 14h.01M15 14h.01M9 17h.01M12 17h.01M15 17h.01"/></svg></span><span class="nav-label">Maquinetas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroTaxasCartao" data-page="financeiroTaxasCartao" data-permission="finance" data-home-desc="Taxas por adquirente e bandeira, importação de vendas e repasse, relatório mensal do custo com taxas." title="Taxas de Cartão" href="/financeiro/taxas-cartao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><span class="nav-label">Taxas de Cartão</span></a>
         <a class="nav-item sub-item" id="navFinanceiroCartoesCorp" data-page="financeiroCartoesCorp" data-permission="finance" data-home-desc="Cartões de crédito corporativos: limite, fatura importada, parcelas futuras e lançamento como despesa." title="Cartões Corporativos" href="/financeiro/cartoes-corporativos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="M6 14.5h5"/></svg></span><span class="nav-label">Cartões Corporativos</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroConciliacao" data-page="financeiroConciliacao" data-permission="finance" data-home-desc="Importe o extrato bancário, classifique os lançamentos e deixe o sistema sugerir a classificação pelos nomes que se repetem." title="Conciliação Bancária" href="/financeiro/conciliacao-bancaria"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><path d="m16 16 2 2 4-4"/></svg></span><span class="nav-label">Conciliação Bancária</span></a>
       </div>
     </div>
     <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
@@ -5767,6 +5768,54 @@
       </section>
     </section>
 
+    <section id="pageFinanceiroConciliacao" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Conciliação Bancária</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Importe o extrato (OFX, XLS, XLSX ou CSV), classifique cada lançamento e confirme. O sistema aprende: um estabelecimento já classificado antes vem pré-preenchido nas próximas importações.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="reconAccount">CONTA BANCÁRIA</label><select id="reconAccount"><option value="">SELECIONE</option></select></div>
+        <div class="field"><label for="reconFile">EXTRATO (.ofx / .xls / .xlsx / .csv)</label><input type="file" id="reconFile" accept=".ofx,.xls,.xlsx,.csv,.htm,.html"></div>
+        <div class="field"><label for="reconMonth">MÊS</label><input type="month" id="reconMonth"></div>
+        <div class="field"><label for="reconStatusFilter">SITUAÇÃO</label>
+          <select id="reconStatusFilter">
+            <option value="">TODAS</option>
+            <option value="pending">A CLASSIFICAR</option>
+            <option value="classified">CLASSIFICADO</option>
+            <option value="confirmed">CONFIRMADO</option>
+            <option value="expensed">VIROU DESPESA</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="user-form-status" id="reconImportStatus" role="status" aria-live="polite"></div>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="reconPreviewTable" hidden>
+            <thead><tr><th>Data</th><th>Histórico</th><th>Valor</th><th></th></tr></thead>
+            <tbody id="reconPreviewBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="purchase-form-actions" id="reconImportActions" hidden>
+        <button class="btn-accent" id="btnConfirmReconImport" type="button">IMPORTAR EXTRATO</button>
+      </div>
+
+      <h3 class="supply-section-title">LANÇAMENTOS DO EXTRATO</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="reconEntriesTable">
+            <thead><tr><th>Data</th><th>Histórico</th><th>Valor</th><th>Categoria / Subcategoria</th><th>Unidade</th><th>Centro de custo</th><th>DRE</th><th>Rateio</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="reconEntriesBody"><tr><td colspan="10" class="responsive-empty">Selecione uma conta bancária.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -6015,6 +6064,29 @@
     <div class="user-form-status" id="corpEntryExpenseStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCorpEntryExpenseDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">CRIAR DESPESA</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="reconEntryExpenseDialog" aria-labelledby="reconEntryExpenseTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="reconEntryExpenseTitle">LANÇAR COMO DESPESA</h3>
+    <button class="purchase-dialog-close" id="btnCloseReconEntryExpenseDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="reconEntryExpenseForm">
+    <input type="hidden" id="reconEntryExpenseEntryId">
+    <p class="page-desc" id="reconEntryExpenseSummary"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="reconEntryExpenseItem">CATEGORIA / SUBCATEGORIA *</label><select id="reconEntryExpenseItem" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="reconEntryExpenseCompany">UNIDADE *</label><select id="reconEntryExpenseCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="reconEntryExpenseCostCenter">CENTRO DE CUSTO</label><select id="reconEntryExpenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
+      <div class="purchase-field"><label for="reconEntryExpenseDueDate">VENCIMENTO *</label><input type="date" id="reconEntryExpenseDueDate" required></div>
+      <div class="purchase-field full"><label for="reconEntryExpenseNotes">OBSERVAÇÃO</label><textarea id="reconEntryExpenseNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="reconEntryExpenseStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelReconEntryExpenseDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">CRIAR DESPESA</button>
     </div>
   </form>
@@ -7570,7 +7642,8 @@
     financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa',
     financeiroMaquinetas:'/financeiro/maquinetas',
     financeiroTaxasCartao:'/financeiro/taxas-cartao',
-    financeiroCartoesCorp:'/financeiro/cartoes-corporativos'
+    financeiroCartoesCorp:'/financeiro/cartoes-corporativos',
+    financeiroConciliacao:'/financeiro/conciliacao-bancaria'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -7609,7 +7682,8 @@
     financeiroFluxoCaixa:'FLUXO DE CAIXA',
     financeiroMaquinetas:'MAQUINETAS',
     financeiroTaxasCartao:'TAXAS DE CARTÃO',
-    financeiroCartoesCorp:'CARTÕES CORPORATIVOS'
+    financeiroCartoesCorp:'CARTÕES CORPORATIVOS',
+    financeiroConciliacao:'CONCILIAÇÃO BANCÁRIA'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -7644,7 +7718,8 @@
     financeiroFluxoCaixa:'finance',
     financeiroMaquinetas:'finance',
     financeiroTaxasCartao:'finance',
-    financeiroCartoesCorp:'finance'
+    financeiroCartoesCorp:'finance',
+    financeiroConciliacao:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -8062,7 +8137,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -8129,6 +8204,7 @@
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
+    if(name === 'financeiroConciliacao') loadConciliacaoPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -8167,6 +8243,7 @@
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
+    if(name === 'financeiroConciliacao') loadConciliacaoPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -20664,6 +20741,318 @@ function renderHomeTasks(){
       el('corpInvoiceImportStatus').textContent = error.message;
       el('btnConfirmCorpInvoice').disabled = false;
     }
+  });
+
+  // ---------------------------------------------------------------------
+  // Conciliação Bancária (Financeiro Fase 7).
+  // ---------------------------------------------------------------------
+
+  let reconAccounts = [];
+  let reconParsed = null;
+  let reconEntries = [];
+
+  const RECON_STATUS_LABELS = {pending:'A CLASSIFICAR', classified:'CLASSIFICADO', confirmed:'CONFIRMADO', expensed:'VIROU DESPESA'};
+
+  // OFX preservando o sinal (negativo = saída) — diferente do parser usado
+  // nos cartões, que usa o valor absoluto.
+  function parseReconOfx(text){
+    const out = [];
+    const blocks = text.split(/<STMTTRN>/i).slice(1);
+    for(const block of blocks){
+      const get = tag => { const m = block.match(new RegExp('<'+tag+'>([^<\\r\\n]*)','i')); return m ? m[1].trim() : ''; };
+      const dt = get('DTPOSTED').slice(0,8);
+      if(dt.length < 8) continue;
+      const amount = parseFloat(String(get('TRNAMT')).replace(',','.'));
+      if(!Number.isFinite(amount)) continue;
+      out.push({
+        entryDate: dt.slice(0,4)+'-'+dt.slice(4,6)+'-'+dt.slice(6,8),
+        description: get('NAME') || get('MEMO'),
+        amountCents: Math.round(amount*100),
+        fitId: get('FITID')
+      });
+    }
+    return out;
+  }
+
+  function reconItemLabel(itemId){
+    const item = financeItems.find(i => i.id === itemId);
+    if(!item) return '';
+    const category = financeCategories.find(c => c.id === item.categoryId);
+    return (category ? category.name+' › ' : '')+item.name;
+  }
+  function reconItemOptions(selected){
+    return '<option value="">—</option>'+financeItems.map(item =>
+      '<option value="'+escapeHtml(item.id)+'"'+(item.id === selected ? ' selected' : '')+'>'+escapeHtml(reconItemLabel(item.id))+'</option>').join('');
+  }
+  function reconCompanyOptions(selected){
+    return '<option value="">—</option>'+companies.map(c =>
+      '<option value="'+escapeHtml(c.id)+'"'+(c.id === selected ? ' selected' : '')+'>'+escapeHtml(c.name)+'</option>').join('');
+  }
+  function reconCostCenterOptions(selected){
+    return '<option value="">—</option>'+(financeCostCenters||[]).map(cc =>
+      '<option value="'+escapeHtml(cc.id)+'"'+(cc.id === selected ? ' selected' : '')+'>'+escapeHtml(cc.name)+'</option>').join('');
+  }
+
+  async function loadConciliacaoPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    if(!financeItems.length) await loadFinanceCatalog();
+    if(!financeCostCenters.length){
+      try{ const cc = await financeApiRequest('/cost-centers'); financeCostCenters = Array.isArray(cc.costCenters) ? cc.costCenters : []; }catch(_e){}
+    }
+    if(!reconAccounts.length){
+      try{ const data = await financeApiRequest('/accounts?includeInactive=1'); reconAccounts = Array.isArray(data.accounts) ? data.accounts : []; }catch(_e){}
+    }
+    const select = el('reconAccount');
+    const selected = select.value;
+    select.innerHTML = '<option value="">SELECIONE</option>'+reconAccounts.map(a =>
+      '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name+(a.companyName ? ' — '+a.companyName : ''))+'</option>').join('');
+    if(reconAccounts.some(a => a.id === selected)) select.value = selected;
+    if(!el('reconMonth').value) el('reconMonth').value = financeCurrentMonthKey();
+    if(select.value) await loadReconEntries();
+    else el('reconEntriesBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">Selecione uma conta bancária.</td></tr>';
+  }
+  ['reconAccount','reconMonth','reconStatusFilter'].forEach(id => {
+    el(id) && el(id).addEventListener('change', () => { if(el('reconAccount').value) loadReconEntries(); });
+  });
+
+  el('reconFile') && el('reconFile').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    reconParsed = null;
+    el('reconPreviewTable').hidden = true;
+    el('reconImportActions').hidden = true;
+    const status = el('reconImportStatus');
+    if(!file) return;
+    if(!el('reconAccount').value){ status.textContent = 'SELECIONE A CONTA BANCÁRIA ANTES DO ARQUIVO.'; el('reconFile').value = ''; return; }
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    status.textContent = 'Lendo arquivo…';
+    try{
+      let rows = [];
+      let sourceFormat = 'csv';
+      if(ext === 'ofx'){
+        sourceFormat = 'ofx';
+        rows = parseReconOfx(await readAsText(file, 'ISO-8859-1'));
+      }else{
+        sourceFormat = ext === 'xls' ? 'xls' : (ext === 'xlsx' ? 'xlsx' : 'csv');
+        const table = await extractRowsFromFile(file);
+        if(table.length < 2) throw new Error('ARQUIVO SEM DADOS.');
+        const header = table[0];
+        const col = {
+          date: findColumn(header, ['data','datalancamento','datamov']),
+          desc: findColumn(header, ['historico','descricao','lancamento','memo','detalhe']),
+          value: findColumn(header, ['valor','valorrs','montante']),
+          debit: findColumn(header, ['debito','saida','pagamento']),
+          credit: findColumn(header, ['credito','entrada','recebimento'])
+        };
+        if(col.date === -1 || (col.value === -1 && col.debit === -1 && col.credit === -1)){
+          throw new Error('NÃO ENCONTREI AS COLUNAS DE DATA E VALOR.');
+        }
+        for(let i = 1; i < table.length; i++){
+          const r = table[i];
+          const entryDate = parseDateISO(r[col.date]);
+          if(!entryDate) continue;
+          let amountCents = 0;
+          if(col.value !== -1){
+            amountCents = parseMoneyToCents(r[col.value]);
+            if(/^\s*-/.test(String(r[col.value]))) amountCents = -Math.abs(amountCents);
+          }
+          if(col.debit !== -1 && parseMoneyToCents(r[col.debit])) amountCents = -Math.abs(parseMoneyToCents(r[col.debit]));
+          if(col.credit !== -1 && parseMoneyToCents(r[col.credit])) amountCents = Math.abs(parseMoneyToCents(r[col.credit]));
+          if(amountCents === 0) continue;
+          rows.push({entryDate, description: col.desc !== -1 ? String(r[col.desc]||'').trim() : '', amountCents, fitId:''});
+        }
+      }
+      if(!rows.length) throw new Error('NENHUM LANÇAMENTO VÁLIDO.');
+      reconParsed = {rows, sourceFormat, sourceName: file.name};
+      el('reconPreviewBody').innerHTML = rows.slice(0, 300).map(r =>
+        '<tr><td>'+escapeHtml(r.entryDate)+'</td><td>'+escapeHtml(r.description || '—')+'</td><td>'+formatCentsBRL(r.amountCents)+'</td><td></td></tr>').join('');
+      el('reconPreviewTable').hidden = false;
+      el('reconImportActions').hidden = false;
+      status.textContent = rows.length+' lançamento(s) no arquivo. Revise e importe.';
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  el('btnConfirmReconImport') && el('btnConfirmReconImport').addEventListener('click', async () => {
+    if(!reconParsed) return;
+    const financeAccountId = el('reconAccount').value;
+    if(!financeAccountId){ el('reconImportStatus').textContent = 'SELECIONE A CONTA BANCÁRIA.'; return; }
+    el('btnConfirmReconImport').disabled = true;
+    try{
+      const res = await financeApiRequest('/bank-reconciliation', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({financeAccountId, sourceName: reconParsed.sourceName, sourceFormat: reconParsed.sourceFormat, rows: reconParsed.rows})
+      });
+      showPurchaseToast('Extrato importado: '+res.inserted+' novo(s), '+res.duplicates+' já existiam'+(res.suggestedCount ? ', '+res.suggestedCount+' pré-classificado(s)' : '')+'.');
+      el('reconFile').value = '';
+      reconParsed = null;
+      el('reconPreviewTable').hidden = true;
+      el('reconImportActions').hidden = true;
+      el('reconImportStatus').textContent = '';
+      await loadReconEntries();
+    }catch(error){
+      el('reconImportStatus').textContent = error.message;
+      el('btnConfirmReconImport').disabled = false;
+    }
+  });
+
+  function renderReconEntries(){
+    const body = el('reconEntriesBody');
+    if(!reconEntries.length){
+      body.innerHTML = '<tr><td colspan="10" class="responsive-empty">Nenhum lançamento. Importe um extrato.</td></tr>';
+      return;
+    }
+    body.innerHTML = reconEntries.map(e => {
+      const done = e.status === 'confirmed' || e.status === 'expensed';
+      const suggested = e.status === 'pending' && e.categoryItemId;
+      if(done){
+        return '<tr style="opacity:.65">'+
+          '<td>'+escapeHtml(e.entryDate)+'</td>'+
+          '<td>'+escapeHtml(e.description || '—')+'</td>'+
+          '<td>'+formatCentsBRL(e.amountCents)+'</td>'+
+          '<td>'+escapeHtml(reconItemLabel(e.categoryItemId) || '—')+'</td>'+
+          '<td>'+escapeHtml((companies.find(c => c.id === e.companyId)||{}).name || '—')+'</td>'+
+          '<td>'+escapeHtml((financeCostCenters.find(c => c.id === e.costCenterId)||{}).name || '—')+'</td>'+
+          '<td>'+(Number(e.inDre) ? 'sim' : 'não')+'</td>'+
+          '<td>'+(Number(e.inRateio) ? 'sim' : 'não')+'</td>'+
+          '<td>'+escapeHtml(RECON_STATUS_LABELS[e.status])+'</td>'+
+          '<td>'+(e.status === 'expensed' ? '' : '<button class="btn-outline btn-sm" type="button" data-recon-expense="'+escapeHtml(e.id)+'">DESPESA</button>')+'</td>'+
+        '</tr>';
+      }
+      return '<tr data-recon-row="'+escapeHtml(e.id)+'">'+
+        '<td>'+escapeHtml(e.entryDate)+'</td>'+
+        '<td>'+escapeHtml(e.description || '—')+(suggested ? ' <span class="receivable-tag received_ok">SUGERIDO</span>' : '')+'</td>'+
+        '<td>'+formatCentsBRL(e.amountCents)+'</td>'+
+        '<td><select data-recon-field="categoryItemId">'+reconItemOptions(e.categoryItemId)+'</select></td>'+
+        '<td><select data-recon-field="companyId">'+reconCompanyOptions(e.companyId)+'</select></td>'+
+        '<td><select data-recon-field="costCenterId">'+reconCostCenterOptions(e.costCenterId)+'</select></td>'+
+        '<td><input type="checkbox" data-recon-field="inDre"'+(Number(e.inDre) ? ' checked' : '')+'></td>'+
+        '<td><input type="checkbox" data-recon-field="inRateio"'+(Number(e.inRateio) ? ' checked' : '')+'></td>'+
+        '<td>'+escapeHtml(RECON_STATUS_LABELS[e.status])+'</td>'+
+        '<td>'+
+          '<button class="btn-accent btn-sm" type="button" data-recon-confirm="'+escapeHtml(e.id)+'">CONFIRMAR</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-recon-expense="'+escapeHtml(e.id)+'">DESPESA</button>'+
+        '</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  async function loadReconEntries(){
+    const financeAccountId = el('reconAccount').value;
+    if(!financeAccountId) return;
+    el('reconEntriesBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const params = new URLSearchParams({financeAccountId});
+      if(el('reconMonth').value) params.set('month', el('reconMonth').value);
+      if(el('reconStatusFilter').value) params.set('status', el('reconStatusFilter').value);
+      const data = await financeApiRequest('/bank-reconciliation?'+params.toString());
+      reconEntries = Array.isArray(data.entries) ? data.entries : [];
+      renderReconEntries();
+    }catch(error){
+      reconEntries = [];
+      el('reconEntriesBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function reconRowPayload(rowEl){
+    const payload = {};
+    rowEl.querySelectorAll('[data-recon-field]').forEach(input => {
+      const field = input.dataset.reconField;
+      payload[field] = input.type === 'checkbox' ? input.checked : input.value;
+    });
+    return payload;
+  }
+
+  el('reconEntriesBody') && el('reconEntriesBody').addEventListener('click', async event => {
+    const confirmBtn = event.target.closest('[data-recon-confirm]');
+    const expenseBtn = event.target.closest('[data-recon-expense]');
+    if(confirmBtn){
+      const rowEl = confirmBtn.closest('[data-recon-row]');
+      const payload = reconRowPayload(rowEl);
+      if(!payload.categoryItemId){ showPurchaseToast('Escolha a categoria antes de confirmar.', 'error'); return; }
+      payload.confirm = true;
+      confirmBtn.disabled = true;
+      try{
+        await financeApiRequest('/bank-reconciliation/'+encodeURIComponent(confirmBtn.dataset.reconConfirm), {
+          method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+        });
+        showPurchaseToast('Lançamento confirmado. Classificação aprendida para o próximo extrato.');
+        await loadReconEntries();
+      }catch(error){ showPurchaseToast(error.message, 'error'); confirmBtn.disabled = false; }
+      return;
+    }
+    if(expenseBtn){
+      const entry = reconEntries.find(e => e.id === expenseBtn.dataset.reconExpense);
+      if(entry) openReconEntryExpenseDialog(entry);
+    }
+  });
+
+  // Salva a classificação (sem confirmar) quando o usuário mexe num campo,
+  // pra não perder o trabalho se ele sair da linha.
+  el('reconEntriesBody') && el('reconEntriesBody').addEventListener('change', async event => {
+    const input = event.target.closest('[data-recon-field]');
+    const rowEl = event.target.closest('[data-recon-row]');
+    if(!input || !rowEl) return;
+    const id = rowEl.dataset.reconRow;
+    try{
+      await financeApiRequest('/bank-reconciliation/'+encodeURIComponent(id), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(reconRowPayload(rowEl))
+      });
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // --- Lançar lançamento do extrato como Despesa (reaproveita /expenses) ---
+  function openReconEntryExpenseDialog(entry){
+    el('reconEntryExpenseForm').reset();
+    el('reconEntryExpenseItem').innerHTML = reconItemOptions(entry.categoryItemId);
+    el('reconEntryExpenseCompany').innerHTML = reconCompanyOptions(entry.companyId);
+    el('reconEntryExpenseCostCenter').innerHTML = reconCostCenterOptions(entry.costCenterId);
+    el('reconEntryExpenseEntryId').value = entry.id;
+    el('reconEntryExpenseSummary').textContent = entry.entryDate+' · '+(entry.description || 'sem histórico')+' · '+formatCentsBRL(entry.amountCents);
+    el('reconEntryExpenseDueDate').value = entry.entryDate;
+    el('reconEntryExpenseStatus').textContent = '';
+    el('reconEntryExpenseDialog').showModal();
+  }
+  el('btnCloseReconEntryExpenseDialog') && el('btnCloseReconEntryExpenseDialog').addEventListener('click', () => el('reconEntryExpenseDialog').close());
+  el('btnCancelReconEntryExpenseDialog') && el('btnCancelReconEntryExpenseDialog').addEventListener('click', () => el('reconEntryExpenseDialog').close());
+  el('reconEntryExpenseForm') && el('reconEntryExpenseForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('reconEntryExpenseStatus');
+    status.textContent = '';
+    const entryId = el('reconEntryExpenseEntryId').value;
+    const entry = reconEntries.find(e => e.id === entryId);
+    if(!entry){ status.textContent = 'LANÇAMENTO NÃO ENCONTRADO.'; return; }
+    const financeItemId = el('reconEntryExpenseItem').value;
+    const companyId = el('reconEntryExpenseCompany').value;
+    const dueDate = el('reconEntryExpenseDueDate').value;
+    if(!financeItemId){ status.textContent = 'SELECIONE A CATEGORIA.'; return; }
+    if(!companyId){ status.textContent = 'SELECIONE A UNIDADE.'; return; }
+    if(!dueDate){ status.textContent = 'INFORME O VENCIMENTO.'; return; }
+    const company = companies.find(c => c.id === companyId);
+    try{
+      const created = await financeApiRequest('/expenses', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        idempotencyKey: 'bank-entry:'+entryId,
+        companyId,
+        companyName: company ? company.name : '',
+        description: (entry.description || 'Extrato bancário').slice(0, 200),
+        financeItemId,
+        costCenterId: el('reconEntryExpenseCostCenter').value || '',
+        originalAmountCents: Math.abs(entry.amountCents),
+        issueDate: entry.entryDate,
+        dueDate,
+        paymentMethod: 'DÉBITO EM CONTA',
+        bankReconciliationId: entryId,
+        notes: el('reconEntryExpenseNotes').value || ''
+      })});
+      const expenseId = created.id || created.expenseId || '';
+      await financeApiRequest('/bank-reconciliation/'+encodeURIComponent(entryId), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({expenseId})
+      });
+      el('reconEntryExpenseDialog').close();
+      await loadReconEntries();
+      showPurchaseToast('Despesa criada a partir do extrato.');
+    }catch(error){ status.textContent = error.message; }
   });
 
   // --- Imagem pronta pra compartilhamento (PNG via canvas) --------------
