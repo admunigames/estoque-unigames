@@ -1,0 +1,152 @@
+import { getD1 } from "../../../../../db";
+import { unauthorizedResponse } from "../../../../lib/notion";
+import { todayInTimezone } from "../../../../lib/finance-status";
+import { DATE_PATTERN } from "../../../../lib/payables-recurrence";
+import {
+  computeReceivableDisplayStatus,
+  receivableDifferenceCents,
+  toleranceFromSettings,
+} from "../../../../lib/receivables-status";
+import {
+  canManageFinance,
+  identity,
+  jsonResponse,
+  loadCompanyList,
+  MONTH_PATTERN,
+  safeText,
+  sameOrigin,
+  type JsonMap,
+} from "../../shared";
+import { loadEffectiveCashFlowSettings } from "../../cash-flow-settings/shared";
+import { assertReceivableAccess, loadReceivable, parseReceived } from "../shared";
+
+function scopeActorOf(request: Request, actor: ReturnType<typeof identity>) {
+  return {
+    role: actor.role,
+    companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
+    permissions: actor.permissions,
+  };
+}
+
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canManageFinance(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O FINANCEIRO." }, 403);
+  }
+  const { id } = await context.params;
+
+  try {
+    const database = await getD1();
+    const row = await loadReceivable(database, id);
+    if (!row) return jsonResponse({ error: "RECEBÍVEL NÃO ENCONTRADO." }, 404);
+    const accessError = assertReceivableAccess(scopeActorOf(request, actor), row);
+    if (accessError) return jsonResponse({ error: accessError }, 403);
+
+    const settings = await loadEffectiveCashFlowSettings(database, row.companyId);
+    const today = todayInTimezone();
+    return jsonResponse({
+      receivable: {
+        ...row,
+        differenceCents: receivableDifferenceCents(row.expectedAmountCents, row.receivedAmountCents),
+        displayStatus: computeReceivableDisplayStatus({
+          canceled: Number(row.canceled) === 1,
+          expectedDate: row.expectedDate,
+          expectedAmountCents: row.expectedAmountCents,
+          receivedAmountCents: row.receivedAmountCents,
+          tolerance: toleranceFromSettings(settings),
+          today,
+        }),
+      },
+      settings,
+      today,
+    });
+  } catch (error) {
+    console.error("Não foi possível carregar o recebível.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O RECEBÍVEL." }, 500);
+  }
+}
+
+export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canManageFinance(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA EDITAR RECEBÍVEIS." }, 403);
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+  const { id } = await context.params;
+
+  try {
+    const database = await getD1();
+    const existing = await loadReceivable(database, id);
+    if (!existing) return jsonResponse({ error: "RECEBÍVEL NÃO ENCONTRADO." }, 404);
+    const scopeActor = scopeActorOf(request, actor);
+    const accessError = assertReceivableAccess(scopeActor, existing);
+    if (accessError) return jsonResponse({ error: accessError }, 403);
+    if (Number(existing.canceled) === 1) {
+      return jsonResponse({ error: "ESTE RECEBÍVEL ESTÁ CANCELADO E NÃO PODE SER EDITADO." }, 409);
+    }
+
+    const body = (await request.json()) as JsonMap;
+    // A unidade de um recebível não muda por edição: trocar de loja mudaria o
+    // escopo de quem enxerga o registro e o caixa de qual unidade ele afeta.
+    // Se for o caso, cancela-se o recebível e cria-se outro — decisão tomada
+    // aqui sem confirmação prévia (ver descrição do PR da Fase 6).
+    const operatorText = safeText(body.operatorText, 120);
+    const competenceMonth = safeText(body.competenceMonth, 7);
+    const expectedDate = safeText(body.expectedDate, 10);
+    const notes = safeText(body.notes, 500);
+    const expectedAmountCents = Math.round(Number(body.expectedAmountCents));
+
+    if (!operatorText) return jsonResponse({ error: "INFORME A OPERADORA." }, 400);
+    if (!MONTH_PATTERN.test(competenceMonth)) {
+      return jsonResponse({ error: "INFORME UMA COMPETÊNCIA VÁLIDA (AAAA-MM)." }, 400);
+    }
+    if (!DATE_PATTERN.test(expectedDate)) {
+      return jsonResponse({ error: "INFORME UMA DATA PREVISTA VÁLIDA." }, 400);
+    }
+    if (!Number.isFinite(expectedAmountCents) || expectedAmountCents <= 0) {
+      return jsonResponse({ error: "INFORME UM VALOR PREVISTO MAIOR QUE ZERO." }, 400);
+    }
+
+    const received = parseReceived(body);
+    if (received.error) return jsonResponse({ error: received.error }, 400);
+
+    // O nome da loja é re-resolvido do cadastro a cada escrita (o registro
+    // guarda uma cópia só pra exibição, como em accounts_payable).
+    const companies = await loadCompanyList(database);
+    const companyName = companies.find((item) => item.id === existing.companyId)?.name ?? existing.companyName;
+
+    await database
+      .prepare(
+        `UPDATE accounts_receivable
+         SET company_name=?1, operator_text=?2, competence_month=?3, expected_date=?4,
+             expected_amount_cents=?5, received_amount_cents=?6, received_date=?7, notes=?8,
+             updated_by=?9, updated_by_name=?10, updated_at=CURRENT_TIMESTAMP
+         WHERE id=?11`,
+      )
+      .bind(
+        companyName,
+        operatorText,
+        competenceMonth,
+        expectedDate,
+        expectedAmountCents,
+        received.receivedAmountCents,
+        received.receivedDate,
+        notes,
+        actor.id,
+        actor.displayName || "Administrador",
+        id,
+      )
+      .run();
+
+    return jsonResponse({ updated: true, id });
+  } catch (error) {
+    console.error("Não foi possível editar o recebível.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EDITAR O RECEBÍVEL." }, 500);
+  }
+}

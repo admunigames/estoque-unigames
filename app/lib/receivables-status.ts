@@ -34,6 +34,21 @@ export type ReceivablesTolerance = {
 };
 
 /**
+ * Ponte entre a configuração persistida (finance_cash_flow_settings, com os
+ * nomes longos que também servem pra folha) e o par curto usado aqui — evita
+ * repetir a conversão em toda rota que precisa avaliar divergência.
+ */
+export function toleranceFromSettings(settings: {
+  receivablesToleranceBps: number;
+  receivablesToleranceFixedCents: number;
+}): ReceivablesTolerance {
+  return {
+    toleranceBps: Number(settings.receivablesToleranceBps),
+    toleranceFixedCents: Number(settings.receivablesToleranceFixedCents),
+  };
+}
+
+/**
  * Diferença entre o recebido e o previsto. NULL quando ainda não houve
  * recebimento (nunca 0 nesse caso — 0 significa "recebeu exatamente o
  * previsto", que é uma informação diferente de "ainda não recebeu").
