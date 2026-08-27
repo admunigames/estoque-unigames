@@ -15,7 +15,7 @@ import {
   type JsonMap,
 } from "../shared";
 import { loadEffectiveCashFlowSettings } from "../cash-flow-settings/shared";
-import { parseReceived } from "./shared";
+import { parseReceived, resolveReceivableOperator } from "./shared";
 
 type ListRow = Record<string, unknown>;
 
@@ -140,6 +140,7 @@ export async function GET(request: Request) {
     const rows = await database
       .prepare(
         `SELECT id, company_id AS companyId, company_name AS companyName, operator_text AS operatorText,
+                acquirer_id AS acquirerId,
                 competence_month AS competenceMonth, expected_date AS expectedDate,
                 expected_amount_cents AS expectedAmountCents, received_amount_cents AS receivedAmountCents,
                 received_date AS receivedDate, notes, canceled,
@@ -206,13 +207,11 @@ export async function POST(request: Request) {
     }
     if (!companyId) return jsonResponse({ error: "SELECIONE A UNIDADE." }, 400);
 
-    const operatorText = safeText(body.operatorText, 120);
     const competenceMonth = safeText(body.competenceMonth, 7);
     const expectedDate = safeText(body.expectedDate, 10);
     const notes = safeText(body.notes, 500);
     const expectedAmountCents = Math.round(Number(body.expectedAmountCents));
 
-    if (!operatorText) return jsonResponse({ error: "INFORME A OPERADORA." }, 400);
     if (!MONTH_PATTERN.test(competenceMonth)) {
       return jsonResponse({ error: "INFORME UMA COMPETÊNCIA VÁLIDA (AAAA-MM)." }, 400);
     }
@@ -232,6 +231,10 @@ export async function POST(request: Request) {
     const company = companies.find((item) => item.id === companyId);
     if (!company) return jsonResponse({ error: "LOJA NÃO ENCONTRADA." }, 400);
 
+    const operator = await resolveReceivableOperator(database, body, companyId);
+    if (operator.error) return jsonResponse({ error: operator.error }, 400);
+    const { operatorText } = operator;
+
     const idempotencyKey =
       safeText(body.idempotencyKey, 120) ||
       `receivable:${companyId}:${competenceMonth}:${expectedDate}:${operatorText}:${expectedAmountCents}:${crypto.randomUUID()}`;
@@ -246,16 +249,17 @@ export async function POST(request: Request) {
     await database
       .prepare(
         `INSERT INTO accounts_receivable
-          (id, company_id, company_name, operator_text, competence_month, expected_date,
+          (id, company_id, company_name, operator_text, acquirer_id, competence_month, expected_date,
            expected_amount_cents, received_amount_cents, received_date, notes, canceled, idempotency_key,
            created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 0, ?11, ?12, ?13, CURRENT_TIMESTAMP, ?12, ?13, CURRENT_TIMESTAMP)`,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 0, ?12, ?13, ?14, CURRENT_TIMESTAMP, ?13, ?14, CURRENT_TIMESTAMP)`,
       )
       .bind(
         id,
         companyId,
         company.name,
         operatorText,
+        operator.acquirerId,
         competenceMonth,
         expectedDate,
         expectedAmountCents,

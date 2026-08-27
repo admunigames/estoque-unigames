@@ -1606,7 +1606,12 @@ export const accountsReceivable = pgTable(
     id: text("id").primaryKey(),
     companyId: text("company_id").notNull(),
     companyName: text("company_name").notNull().default(""),
+    // operator_text continua sendo o SNAPSHOT do nome da operadora/adquirente
+    // (usado nos índices, agrupamentos e histórico). acquirer_id liga ao
+    // cadastro de finance_acquirers (Fase 7) — vazio nas linhas antigas, que
+    // seguem valendo pelo texto. Ver app/api/finance/receivables/shared.ts.
     operatorText: text("operator_text").notNull().default(""),
+    acquirerId: text("acquirer_id").notNull().default(""),
     competenceMonth: text("competence_month").notNull(),
     expectedDate: text("expected_date").notNull(),
     expectedAmountCents: integer("expected_amount_cents").notNull(),
@@ -1787,4 +1792,107 @@ export const financeCardMachineEvents = pgTable(
     createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [index("finance_card_machine_events_machine_idx").on(table.machineId, table.eventDate)],
+);
+
+// ---------------------------------------------------------------------------
+// Financeiro Fase 7 — Taxas de Cartão: tabela de taxas por adquirente/bandeira
+// e importação de vendas + repasse.
+// ---------------------------------------------------------------------------
+
+// Taxa cadastrada. modality: 'debit' | 'credit' | 'pix'. Para crédito,
+// installments distingue à vista (1) das parcelas (2..N); para débito/pix é
+// sempre 1. brand vazio ('') = curinga (vale para qualquer bandeira). fee_bps
+// e anticipation_bps em basis points (1% = 100). valid_to vazio = vigente.
+export const financeCardFees = pgTable(
+  "finance_card_fees",
+  {
+    id: text("id").primaryKey(),
+    acquirerId: text("acquirer_id").notNull(),
+    acquirerName: text("acquirer_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    brand: text("brand").notNull().default(""),
+    modality: text("modality").notNull().default("credit"),
+    installments: integer("installments").notNull().default(1),
+    feeBps: integer("fee_bps").notNull().default(0),
+    anticipationBps: integer("anticipation_bps").notNull().default(0),
+    validFrom: text("valid_from").notNull().default(""),
+    validTo: text("valid_to").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_card_fees_acquirer_idx").on(table.acquirerId),
+    index("finance_card_fees_lookup_idx").on(
+      table.acquirerId,
+      table.modality,
+      table.installments,
+      table.validFrom,
+    ),
+  ],
+);
+
+// Cabeçalho de cada importação. kind: 'sales' (relatório de vendas) |
+// 'settlement' (repasse/liquidação da adquirente). file_hash serve de
+// idempotência: reimportar o mesmo arquivo não duplica linhas.
+export const financeCardSalesImports = pgTable(
+  "finance_card_sales_imports",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    kind: text("kind").notNull().default("sales"),
+    referenceMonth: text("reference_month").notNull().default(""),
+    sourceName: text("source_name").notNull().default(""),
+    fileHash: text("file_hash").notNull().default(""),
+    rowCount: integer("row_count").notNull().default(0),
+    matchedCount: integer("matched_count").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_card_sales_imports_company_idx").on(table.companyId, table.referenceMonth),
+    index("finance_card_sales_imports_hash_idx").on(table.fileHash),
+  ],
+);
+
+// Uma linha por venda importada. received_amount_cents / divergence_cents
+// ficam NULL até o repasse ser importado e casar por nsu (fallback:
+// data+valor+adquirente). expected_fee_cents/net_cents são calculados da
+// tabela de taxas no momento da importação de vendas (não recalculados
+// depois — se a taxa mudar, a venda antiga mantém o cálculo do dia).
+export const financeCardSales = pgTable(
+  "finance_card_sales",
+  {
+    id: text("id").primaryKey(),
+    importId: text("import_id").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    saleDate: text("sale_date").notNull().default(""),
+    acquirerId: text("acquirer_id").notNull().default(""),
+    acquirerName: text("acquirer_name").notNull().default(""),
+    brand: text("brand").notNull().default(""),
+    modality: text("modality").notNull().default("credit"),
+    installments: integer("installments").notNull().default(1),
+    nsu: text("nsu").notNull().default(""),
+    grossCents: integer("gross_cents").notNull().default(0),
+    feeBps: integer("fee_bps").notNull().default(0),
+    expectedFeeCents: integer("expected_fee_cents").notNull().default(0),
+    netCents: integer("net_cents").notNull().default(0),
+    // 1 quando nenhuma taxa cadastrada cobriu a venda (fee entrou como 0).
+    feeMissing: integer("fee_missing").notNull().default(0),
+    receivedAmountCents: integer("received_amount_cents"),
+    divergenceCents: integer("divergence_cents"),
+    settlementImportId: text("settlement_import_id").notNull().default(""),
+    settledAt: text("settled_at").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_card_sales_company_date_idx").on(table.companyId, table.saleDate),
+    index("finance_card_sales_import_idx").on(table.importId),
+    index("finance_card_sales_nsu_idx").on(table.nsu),
+  ],
 );

@@ -18,7 +18,12 @@ import {
   type JsonMap,
 } from "../../shared";
 import { loadEffectiveCashFlowSettings } from "../../cash-flow-settings/shared";
-import { assertReceivableAccess, loadReceivable, parseReceived } from "../shared";
+import {
+  assertReceivableAccess,
+  loadReceivable,
+  parseReceived,
+  resolveReceivableOperator,
+} from "../shared";
 
 function scopeActorOf(request: Request, actor: ReturnType<typeof identity>) {
   return {
@@ -96,13 +101,14 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     // escopo de quem enxerga o registro e o caixa de qual unidade ele afeta.
     // Se for o caso, cancela-se o recebível e cria-se outro — decisão tomada
     // aqui sem confirmação prévia (ver descrição do PR da Fase 6).
-    const operatorText = safeText(body.operatorText, 120);
     const competenceMonth = safeText(body.competenceMonth, 7);
     const expectedDate = safeText(body.expectedDate, 10);
     const notes = safeText(body.notes, 500);
     const expectedAmountCents = Math.round(Number(body.expectedAmountCents));
 
-    if (!operatorText) return jsonResponse({ error: "INFORME A OPERADORA." }, 400);
+    const operator = await resolveReceivableOperator(database, body, existing.companyId);
+    if (operator.error) return jsonResponse({ error: operator.error }, 400);
+    const { operatorText } = operator;
     if (!MONTH_PATTERN.test(competenceMonth)) {
       return jsonResponse({ error: "INFORME UMA COMPETÊNCIA VÁLIDA (AAAA-MM)." }, 400);
     }
@@ -124,14 +130,15 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     await database
       .prepare(
         `UPDATE accounts_receivable
-         SET company_name=?1, operator_text=?2, competence_month=?3, expected_date=?4,
-             expected_amount_cents=?5, received_amount_cents=?6, received_date=?7, notes=?8,
-             updated_by=?9, updated_by_name=?10, updated_at=CURRENT_TIMESTAMP
-         WHERE id=?11`,
+         SET company_name=?1, operator_text=?2, acquirer_id=?3, competence_month=?4, expected_date=?5,
+             expected_amount_cents=?6, received_amount_cents=?7, received_date=?8, notes=?9,
+             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP
+         WHERE id=?12`,
       )
       .bind(
         companyName,
         operatorText,
+        operator.acquirerId,
         competenceMonth,
         expectedDate,
         expectedAmountCents,
