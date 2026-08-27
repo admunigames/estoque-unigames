@@ -288,6 +288,13 @@
       "when": 1787851603150,
       "tag": "0040_finance_card_fees",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1787852575690,
+      "tag": "0041_finance_corporate_cards",
+      "breakpoints": true
     }
   ]
 }
