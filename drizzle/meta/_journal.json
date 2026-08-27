@@ -281,6 +281,13 @@
       "when": 1787850097588,
       "tag": "0039_finance_card_machines",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787851603150,
+      "tag": "0040_finance_card_fees",
+      "breakpoints": true
     }
   ]
 }

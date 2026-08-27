@@ -10,6 +10,7 @@ export type ReceivableRow = {
   companyId: string;
   companyName: string;
   operatorText: string;
+  acquirerId: string;
   competenceMonth: string;
   expectedDate: string;
   expectedAmountCents: number;
@@ -29,7 +30,8 @@ export type ReceivableRow = {
 };
 
 export const RECEIVABLE_COLUMNS = `id, company_id AS companyId, company_name AS companyName,
-  operator_text AS operatorText, competence_month AS competenceMonth, expected_date AS expectedDate,
+  operator_text AS operatorText, acquirer_id AS acquirerId,
+  competence_month AS competenceMonth, expected_date AS expectedDate,
   expected_amount_cents AS expectedAmountCents, received_amount_cents AS receivedAmountCents,
   received_date AS receivedDate, notes, canceled,
   created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
@@ -78,4 +80,34 @@ export function parseReceived(body: JsonMap): {
     return { receivedAmountCents: null, receivedDate: "", error: "INFORME A DATA DO RECEBIMENTO." };
   }
   return { receivedAmountCents: parsed, receivedDate };
+}
+
+/**
+ * Resolve a "operadora" de um recebível a partir do corpo da requisição.
+ * Fase 7: se vier `acquirerId`, valida contra o cadastro de finance_acquirers
+ * (adquirente global '' ou da mesma loja) e usa o nome dela como
+ * operator_text (snapshot — os índices/agrupamentos continuam por texto).
+ * Sem acquirerId, aceita `operatorText` livre (compatibilidade com clientes
+ * antigos e com o histórico anterior ao cadastro).
+ */
+export async function resolveReceivableOperator(
+  database: Database,
+  body: JsonMap,
+  companyId: string,
+): Promise<{ acquirerId: string; operatorText: string; error?: string }> {
+  const acquirerId = safeText(body.acquirerId, 80);
+  if (acquirerId) {
+    const acquirer = await database
+      .prepare("SELECT name, company_id AS companyId, status FROM finance_acquirers WHERE id=?1")
+      .bind(acquirerId)
+      .first<{ name: string; companyId: string; status: string }>();
+    if (!acquirer) return { acquirerId: "", operatorText: "", error: "ADQUIRENTE NÃO ENCONTRADA." };
+    if (acquirer.companyId && acquirer.companyId !== companyId) {
+      return { acquirerId: "", operatorText: "", error: "ESSA ADQUIRENTE É DE OUTRA UNIDADE." };
+    }
+    return { acquirerId, operatorText: acquirer.name };
+  }
+  const operatorText = safeText(body.operatorText, 120);
+  if (!operatorText) return { acquirerId: "", operatorText: "", error: "INFORME A OPERADORA." };
+  return { acquirerId: "", operatorText };
 }
