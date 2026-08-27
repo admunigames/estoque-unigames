@@ -2891,3 +2891,77 @@ test("Financeiro Fase 3: Fornecedores em Aberto e Conta Corrente do Fornecedor",
   // Aberto.
   assert.match(paymentAttachmentsRoute, /INSERT INTO accounts_payable_payment_attachments/);
 });
+
+test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
+  const [html, workerSource, schema, migration, receivablesRoute, cashFlowRoute, balancesRoute] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0037_finance_cash_flow.sql", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/cash-flow/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/account-balances/route.ts", import.meta.url), "utf8"),
+    ]);
+
+  // Nav + rotas: duas telas novas dentro do submenu Financeiro, liberadas
+  // pela MESMA permissão do resto do módulo (nenhuma permissão nova).
+  assert.match(
+    html,
+    /id="navFinanceiroRecebiveis" data-page="financeiroRecebiveis" data-permission="finance"[^>]*href="\/financeiro\/recebiveis"/,
+  );
+  assert.match(
+    html,
+    /id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance"[^>]*href="\/financeiro\/fluxo-de-caixa"/,
+  );
+  assert.match(html, /id="pageFinanceiroRecebiveis" class="page wrap"/);
+  assert.match(html, /id="pageFinanceiroFluxoCaixa" class="page wrap"/);
+  assert.match(html, /financeiroRecebiveis:'\/financeiro\/recebiveis'/);
+  assert.match(html, /financeiroFluxoCaixa:'\/financeiro\/fluxo-de-caixa'/);
+  assert.match(html, /financeiroRecebiveis:'finance'/);
+  assert.match(html, /financeiroFluxoCaixa:'finance'/);
+  assert.match(workerSource, /"\/financeiro\/recebiveis"/);
+  assert.match(workerSource, /"\/financeiro\/fluxo-de-caixa"/);
+
+  // O dispatch on-enter precisa existir nos DOIS caminhos (clique no menu e
+  // navegação direta pela URL), como em todos os módulos anteriores.
+  assert.equal(html.split("if(name === 'financeiroRecebiveis') loadRecebiveisPage();").length - 1, 2);
+  assert.equal(html.split("if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();").length - 1, 2);
+
+  // Gráfico e imagem de compartilhamento sem dependência externa nova.
+  assert.match(html, /<svg viewBox="0 0 '\+width\+' '\+height\+'"/);
+  assert.match(html, /canvas\.toDataURL\('image\/png'\)/);
+  assert.doesNotMatch(html, /cdn\.jsdelivr|chart\.js|unpkg\.com/i);
+
+  // Schema/migration: status de recebível NUNCA é persistido (só o
+  // cancelamento), e o saldo manual do caixa não reaproveita as colunas de
+  // saldo de abertura de finance_accounts.
+  assert.match(schema, /export const accountsReceivable = pgTable\(\s*"accounts_receivable"/);
+  assert.match(schema, /export const financeAccountBalances = pgTable\(\s*"finance_account_balances"/);
+  assert.match(schema, /export const financeCashFlowSettings = pgTable\(\s*"finance_cash_flow_settings"/);
+  assert.doesNotMatch(schema, /accounts_receivable[\s\S]{0,2000}?display_status/);
+  assert.match(migration, /CREATE TABLE "accounts_receivable"/);
+  assert.match(migration, /CREATE UNIQUE INDEX "accounts_receivable_idempotency_idx"/);
+  assert.match(migration, /CREATE UNIQUE INDEX "finance_account_balances_account_idx"/);
+
+  // Escrita sempre com sameOrigin + idempotência, como no resto do módulo.
+  assert.match(receivablesRoute, /sameOrigin\(request\)/);
+  assert.match(receivablesRoute, /idempotency_key/);
+
+  // Saídas do fluxo de caixa vêm de UMA consulta unificada sobre
+  // accounts_payable + accounts_payable_payments (cobre Contas a Pagar,
+  // Fornecedores em Aberto e Despesas de uma vez) mais o RH Financeiro.
+  assert.match(cashFlowRoute, /FROM accounts_payable\b/);
+  assert.match(cashFlowRoute, /FROM accounts_payable_payments p/);
+  assert.match(cashFlowRoute, /FROM hr_payroll_entries/);
+  assert.match(cashFlowRoute, /FROM hr_benefits/);
+  assert.match(cashFlowRoute, /FROM hr_commissions/);
+  assert.match(cashFlowRoute, /buildCashFlowSeries\(/);
+  // Impostos/taxas de cartão só chegam na Fase 7 — a UI precisa dizer isso.
+  assert.match(cashFlowRoute, /taxesAndFeesIncluded: false/);
+  assert.match(html, /Impostos e taxas de cartão: não incluídos ainda \(Fase 7\)/);
+
+  // Conta ativa sem saldo informado fica FORA do Caixa Atual, mas visível.
+  assert.match(balancesRoute, /hasBalance/);
+  assert.match(balancesRoute, /accountsMissingBalance/);
+});
