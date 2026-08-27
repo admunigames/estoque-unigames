@@ -1896,3 +1896,96 @@ export const financeCardSales = pgTable(
     index("finance_card_sales_nsu_idx").on(table.nsu),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Financeiro Fase 7 — Cartões de Crédito Corporativos e importação de fatura.
+//
+// REGRA DE SEGURANÇA: NÃO existe coluna para senha nem CVV/código de
+// segurança — nem em texto puro, nem criptografado. Esse dado não é pedido,
+// não é aceito e é recusado (400) se aparecer num payload (ver
+// app/lib/corporate-cards.ts#hasForbiddenCardKey).
+// ---------------------------------------------------------------------------
+
+export const financeCorporateCards = pgTable(
+  "finance_corporate_cards",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    bank: text("bank").notNull().default(""),
+    brand: text("brand").notNull().default(""),
+    // Só os últimos 4 dígitos, para identificação. NUNCA o número completo.
+    last4: text("last4").notNull().default(""),
+    limitCents: integer("limit_cents").notNull().default(0),
+    bestPurchaseDay: integer("best_purchase_day").notNull().default(0),
+    closingDay: integer("closing_day").notNull().default(1),
+    dueDay: integer("due_day").notNull().default(10),
+    holderName: text("holder_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    // 'active' | 'blocked' | 'canceled'
+    status: text("status").notNull().default("active"),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_corporate_cards_company_idx").on(table.companyId, table.status),
+  ],
+);
+
+export const financeCardInvoiceImports = pgTable(
+  "finance_card_invoice_imports",
+  {
+    id: text("id").primaryKey(),
+    cardId: text("card_id").notNull(),
+    referenceMonth: text("reference_month").notNull().default(""),
+    sourceName: text("source_name").notNull().default(""),
+    // 'csv' | 'xlsx' | 'ofx' | 'pdf' | 'manual'
+    sourceFormat: text("source_format").notNull().default("csv"),
+    fileHash: text("file_hash").notNull().default(""),
+    rowCount: integer("row_count").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_card_invoice_imports_card_idx").on(table.cardId, table.referenceMonth),
+    index("finance_card_invoice_imports_hash_idx").on(table.fileHash),
+  ],
+);
+
+// Um lançamento da fatura. expense_id != '' quando o lançamento já virou uma
+// Despesa (reaproveitando o módulo de Despesas — nada de lógica duplicada
+// aqui). status: 'pending' | 'classified' | 'expensed'.
+export const financeCardInvoiceEntries = pgTable(
+  "finance_card_invoice_entries",
+  {
+    id: text("id").primaryKey(),
+    importId: text("import_id").notNull(),
+    cardId: text("card_id").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    entryDate: text("entry_date").notNull().default(""),
+    merchant: text("merchant").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    installmentLabel: text("installment_label").notNull().default(""),
+    installmentCurrent: integer("installment_current").notNull().default(1),
+    installmentTotal: integer("installment_total").notNull().default(1),
+    categoryItemId: text("category_item_id").notNull().default(""),
+    costCenterId: text("cost_center_id").notNull().default(""),
+    holderName: text("holder_name").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    expenseId: text("expense_id").notNull().default(""),
+    status: text("status").notNull().default("pending"),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_card_invoice_entries_card_date_idx").on(table.cardId, table.entryDate),
+    index("finance_card_invoice_entries_import_idx").on(table.importId),
+  ],
+);

@@ -86,7 +86,7 @@ test("Financeiro Fase 7: Taxas de Cartão registrado + religação dos Recebíve
 
   // Importação reaproveita o leitor de planilha já existente (nada de CDN novo).
   assert.match(html, /extractRowsFromFile\(file\)/);
-  assert.doesNotMatch(html, /cdn\.jsdelivr|unpkg\.com|pdfjs/i);
+  assert.doesNotMatch(html, /cdn\.jsdelivr|unpkg\.com/i);
 
   // Schema/migration das 3 tabelas + coluna acquirer_id nos Recebíveis.
   assert.match(schema, /export const financeCardFees = pgTable\(\s*"finance_card_fees"/);

@@ -234,6 +234,7 @@ const APP_ROUTE_PATHS = new Set([
   "/financeiro/fluxo-de-caixa",
   "/financeiro/maquinetas",
   "/financeiro/taxas-cartao",
+  "/financeiro/cartoes-corporativos",
   "/documentos",
   "/documentos/certificados/garantia-de-produto",
   "/documentos/certificados/garantia-estendida",

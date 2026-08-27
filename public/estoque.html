@@ -2817,6 +2817,7 @@
         <a class="nav-item sub-item" id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance" data-home-desc="Projeção diária de caixa: caixa atual, entradas e saídas em 7, 15, 30, 60 e 90 dias." title="Fluxo de Caixa" href="/financeiro/fluxo-de-caixa"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 18.5L9 12l3.5 3.5L20.5 6"/><path d="M15.5 6h5v5"/></svg></span><span class="nav-label">Fluxo de Caixa</span></a>
         <a class="nav-item sub-item" id="navFinanceiroMaquinetas" data-page="financeiroMaquinetas" data-permission="finance" data-home-desc="Cadastro de maquinetas por adquirente e unidade, com histórico de transferência, manutenção e substituição." title="Maquinetas" href="/financeiro/maquinetas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><rect x="9" y="6" width="6" height="4"/><path d="M9 14h.01M12 14h.01M15 14h.01M9 17h.01M12 17h.01M15 17h.01"/></svg></span><span class="nav-label">Maquinetas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroTaxasCartao" data-page="financeiroTaxasCartao" data-permission="finance" data-home-desc="Taxas por adquirente e bandeira, importação de vendas e repasse, relatório mensal do custo com taxas." title="Taxas de Cartão" href="/financeiro/taxas-cartao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><span class="nav-label">Taxas de Cartão</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroCartoesCorp" data-page="financeiroCartoesCorp" data-permission="finance" data-home-desc="Cartões de crédito corporativos: limite, fatura importada, parcelas futuras e lançamento como despesa." title="Cartões Corporativos" href="/financeiro/cartoes-corporativos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="M6 14.5h5"/></svg></span><span class="nav-label">Cartões Corporativos</span></a>
       </div>
     </div>
     <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
@@ -5697,6 +5698,75 @@
       </div>
     </section>
 
+    <section id="pageFinanceiroCartoesCorp" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Cartões Corporativos</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Cartões de crédito da empresa: limite e disponível, fatura importada, parcelamentos futuros e lançamento direto como despesa. Senha e CVV não são armazenados nem solicitados.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="corpCardLoja">UNIDADE</label><select id="corpCardLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="dre-toolbar-actions"><button class="btn-accent" id="btnNewCorpCard" type="button">NOVO CARTÃO</button></div>
+      </div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="corpCardsTable">
+            <thead><tr><th>Cartão</th><th>Banco</th><th>Final</th><th>Unidade</th><th>Responsável</th><th>Fech./Venc.</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="corpCardsTableBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <section id="corpCardDetail" hidden>
+        <h3 class="supply-section-title" id="corpCardDetailTitle">CARTÃO</h3>
+        <section class="summary" id="corpCardSummary" aria-label="Resumo do cartão"><div class="dre-empty">Carregando…</div></section>
+
+        <div class="output-tabs" role="tablist" aria-label="Seções do cartão">
+          <button class="output-tab active" type="button" role="tab" aria-selected="true" data-corp-tab="lancamentos">LANÇAMENTOS DA FATURA</button>
+          <button class="output-tab" type="button" role="tab" aria-selected="false" data-corp-tab="importar">IMPORTAR FATURA</button>
+        </div>
+
+        <div data-corp-panel="lancamentos">
+          <div class="dre-toolbar">
+            <div class="field"><label for="corpEntriesMonth">MÊS</label><input type="month" id="corpEntriesMonth"></div>
+          </div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="corpEntriesTable">
+                <thead><tr><th>Data</th><th>Estabelecimento</th><th>Valor</th><th>Parcela</th><th>Responsável</th><th>Categoria</th><th>Situação</th><th></th></tr></thead>
+                <tbody id="corpEntriesTableBody"><tr><td colspan="8" class="responsive-empty">Selecione um cartão.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div data-corp-panel="importar" hidden>
+          <div class="dre-toolbar">
+            <div class="field"><label for="corpInvoiceMonth">MÊS DA FATURA</label><input type="month" id="corpInvoiceMonth"></div>
+            <div class="field"><label for="corpInvoiceFile">ARQUIVO (.csv / .xlsx / .xls / .ofx / .pdf)</label><input type="file" id="corpInvoiceFile" accept=".csv,.xls,.xlsx,.ofx,.pdf,.htm,.html"></div>
+          </div>
+          <p class="page-desc">CSV/XLSX/OFX são lidos automaticamente. <strong>PDF é uma leitura aproximada</strong> — revise todas as linhas antes de confirmar. Colunas: data, estabelecimento, valor, parcela (ex.: 2/6).</p>
+          <div class="user-form-status" id="corpInvoiceImportStatus" role="status" aria-live="polite"></div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="corpInvoicePreviewTable">
+                <thead><tr><th>Data</th><th>Estabelecimento</th><th>Valor (R$)</th><th>Parcela</th><th></th></tr></thead>
+                <tbody id="corpInvoicePreviewBody"><tr><td colspan="5" class="responsive-empty">Selecione um arquivo.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="purchase-form-actions">
+            <button class="btn-outline" id="btnAddCorpInvoiceRow" type="button">+ LINHA MANUAL</button>
+            <button class="btn-accent" id="btnConfirmCorpInvoice" type="button" disabled>CONFIRMAR IMPORTAÇÃO</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
   </div>
 </div>
 
@@ -5894,6 +5964,58 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCardFeeDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="corpCardDialog" aria-labelledby="corpCardDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="corpCardDialogTitle">NOVO CARTÃO</h3>
+    <button class="purchase-dialog-close" id="btnCloseCorpCardDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="corpCardForm">
+    <input type="hidden" id="corpCardId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="corpCardName">NOME *</label><input id="corpCardName" maxlength="120" placeholder="Ex: NUBANK PJ — DIRETORIA" required></div>
+      <div class="purchase-field"><label for="corpCardBank">BANCO</label><input id="corpCardBank" maxlength="80"></div>
+      <div class="purchase-field"><label for="corpCardBrand">BANDEIRA</label><input id="corpCardBrand" maxlength="40"></div>
+      <div class="purchase-field"><label for="corpCardLast4">FINAL (4 DÍGITOS) *</label><input id="corpCardLast4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" required></div>
+      <div class="purchase-field"><label for="corpCardLimit">LIMITE (R$)</label><input type="number" id="corpCardLimit" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="corpCardBestDay">MELHOR DIA DE COMPRA</label><input type="number" id="corpCardBestDay" min="1" max="31"></div>
+      <div class="purchase-field"><label for="corpCardClosingDay">DIA DE FECHAMENTO *</label><input type="number" id="corpCardClosingDay" min="1" max="31" required></div>
+      <div class="purchase-field"><label for="corpCardDueDay">DIA DE VENCIMENTO *</label><input type="number" id="corpCardDueDay" min="1" max="31" required></div>
+      <div class="purchase-field"><label for="corpCardHolder">RESPONSÁVEL</label><input id="corpCardHolder" maxlength="120"></div>
+      <div class="purchase-field"><label for="corpCardCompany">UNIDADE *</label><select id="corpCardCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="corpCardStatus">SITUAÇÃO</label><select id="corpCardStatus"><option value="active">ATIVO</option><option value="blocked">BLOQUEADO</option><option value="canceled">CANCELADO</option></select></div>
+      <div class="purchase-field full"><label for="corpCardNotes">OBSERVAÇÕES</label><textarea id="corpCardNotes" rows="2" maxlength="1000"></textarea></div>
+    </div>
+    <p class="page-desc">⚠ Não informe senha nem código de segurança (CVV) — esses dados não têm campo e não são armazenados.</p>
+    <div class="user-form-status" id="corpCardFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCorpCardDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="corpEntryExpenseDialog" aria-labelledby="corpEntryExpenseTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="corpEntryExpenseTitle">LANÇAR COMO DESPESA</h3>
+    <button class="purchase-dialog-close" id="btnCloseCorpEntryExpenseDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="corpEntryExpenseForm">
+    <input type="hidden" id="corpEntryExpenseEntryId">
+    <p class="page-desc" id="corpEntryExpenseSummary"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="corpEntryExpenseItem">CATEGORIA / SUBCATEGORIA *</label><select id="corpEntryExpenseItem" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="corpEntryExpenseCostCenter">CENTRO DE CUSTO</label><select id="corpEntryExpenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
+      <div class="purchase-field"><label for="corpEntryExpenseDueDate">VENCIMENTO *</label><input type="date" id="corpEntryExpenseDueDate" required></div>
+      <div class="purchase-field full"><label for="corpEntryExpenseNotes">OBSERVAÇÃO</label><textarea id="corpEntryExpenseNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="corpEntryExpenseStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCorpEntryExpenseDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">CRIAR DESPESA</button>
     </div>
   </form>
 </dialog>
@@ -7447,7 +7569,8 @@
     financeiroRecebiveis:'/financeiro/recebiveis',
     financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa',
     financeiroMaquinetas:'/financeiro/maquinetas',
-    financeiroTaxasCartao:'/financeiro/taxas-cartao'
+    financeiroTaxasCartao:'/financeiro/taxas-cartao',
+    financeiroCartoesCorp:'/financeiro/cartoes-corporativos'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -7485,7 +7608,8 @@
     financeiroRecebiveis:'RECEBÍVEIS',
     financeiroFluxoCaixa:'FLUXO DE CAIXA',
     financeiroMaquinetas:'MAQUINETAS',
-    financeiroTaxasCartao:'TAXAS DE CARTÃO'
+    financeiroTaxasCartao:'TAXAS DE CARTÃO',
+    financeiroCartoesCorp:'CARTÕES CORPORATIVOS'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -7519,7 +7643,8 @@
     financeiroRecebiveis:'finance',
     financeiroFluxoCaixa:'finance',
     financeiroMaquinetas:'finance',
-    financeiroTaxasCartao:'finance'
+    financeiroTaxasCartao:'finance',
+    financeiroCartoesCorp:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -7937,7 +8062,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -8003,6 +8128,7 @@
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
+    if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -8040,6 +8166,7 @@
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
+    if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -20065,6 +20192,478 @@ function renderHomeTasks(){
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Taxas '+cardFeeReportData.month);
     XLSX.writeFile(wb, 'taxas-cartao-'+cardFeeReportData.month+'.xlsx');
+  });
+
+  // ---------------------------------------------------------------------
+  // Cartões de Crédito Corporativos (Financeiro Fase 7).
+  // SEGURANÇA: nenhum campo/variável de senha ou CVV — o cadastro não tem
+  // esses campos e o backend recusa se aparecerem no payload.
+  // ---------------------------------------------------------------------
+
+  let corpCardsRows = [];
+  let corpCardCurrent = null;
+  let corpInvoiceParsed = null;
+
+  const CORP_STATUS_LABELS = {active:'ATIVO', blocked:'BLOQUEADO', canceled:'CANCELADO'};
+  const CORP_ENTRY_STATUS_LABELS = {pending:'A CLASSIFICAR', classified:'CLASSIFICADO', expensed:'VIROU DESPESA'};
+
+  // pdf.js sob demanda, do mesmo CDN já usado para o leitor de Excel.
+  let pdfjsLoader = null;
+  function ensurePdfJs(){
+    if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if(pdfjsLoader) return pdfjsLoader;
+    pdfjsLoader = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.onload = () => {
+        if(!window.pdfjsLib) return reject(new Error('LEITOR DE PDF INDISPONÍVEL.'));
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        resolve(window.pdfjsLib);
+      };
+      script.onerror = () => reject(new Error('NÃO FOI POSSÍVEL CARREGAR O LEITOR DE PDF.'));
+      document.head.appendChild(script);
+    });
+    return pdfjsLoader;
+  }
+  async function extractPdfLines(file){
+    const pdfjsLib = await ensurePdfJs();
+    const buffer = await readAsArrayBuffer(file);
+    const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+    const lines = [];
+    for(let p = 1; p <= pdf.numPages; p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      let currentY = null; let parts = [];
+      for(const item of content.items){
+        const y = Math.round(item.transform[5]);
+        if(currentY === null || Math.abs(y - currentY) <= 2){ parts.push(item.str); currentY = y; }
+        else { lines.push(parts.join(' ').replace(/\s+/g,' ').trim()); parts = [item.str]; currentY = y; }
+      }
+      if(parts.length) lines.push(parts.join(' ').replace(/\s+/g,' ').trim());
+    }
+    return lines.filter(Boolean);
+  }
+  // Heurística: linhas "DD/MM  ESTABELECIMENTO ...  1.234,56" (com parcela
+  // opcional tipo "02/06"). É aproximada — o usuário revisa antes de gravar.
+  function parseInvoicePdfLines(lines, year){
+    const out = [];
+    const re = /^(\d{1,2}[\/.]\d{1,2}(?:[\/.]\d{2,4})?)\s+(.+?)\s+(-?\d{1,3}(?:\.\d{3})*,\d{2})\s*$/;
+    for(const line of lines){
+      const m = line.match(re);
+      if(!m) continue;
+      let dateISO = parseDateISO(m[1]);
+      if(!dateISO){
+        const dm = m[1].match(/^(\d{1,2})[\/.](\d{1,2})/);
+        if(dm) dateISO = year+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0');
+      }
+      if(!dateISO) continue;
+      let merchant = m[2].trim();
+      let installmentLabel = '';
+      const im = merchant.match(/(\d{1,2}\s*\/\s*\d{1,2})\s*$/);
+      if(im){ installmentLabel = im[1].replace(/\s/g,''); merchant = merchant.slice(0, im.index).trim(); }
+      out.push({entryDate: dateISO, merchant, amountCents: parseMoneyToCents(m[3]), installmentLabel});
+    }
+    return out;
+  }
+  function parseOfxTransactions(text){
+    const out = [];
+    const blocks = text.split(/<STMTTRN>/i).slice(1);
+    for(const block of blocks){
+      const get = tag => { const m = block.match(new RegExp('<'+tag+'>([^<\\r\\n]*)','i')); return m ? m[1].trim() : ''; };
+      const dt = get('DTPOSTED').slice(0,8);
+      if(dt.length < 8) continue;
+      const amount = parseFloat(get('TRNAMT'));
+      if(!Number.isFinite(amount)) continue;
+      out.push({
+        entryDate: dt.slice(0,4)+'-'+dt.slice(4,6)+'-'+dt.slice(6,8),
+        merchant: get('NAME') || get('MEMO'),
+        amountCents: Math.round(Math.abs(amount)*100),
+        installmentLabel: ''
+      });
+    }
+    return out;
+  }
+
+  function renderCorpCardCompanyOptions(){
+    ['corpCardLoja','corpCardCompany'].forEach(id => {
+      const select = el(id);
+      if(!select) return;
+      const selected = select.value;
+      const ph = id === 'corpCardLoja' ? '<option value="">TODAS AS LOJAS</option>' : '<option value="">SELECIONE</option>';
+      select.innerHTML = ph + companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+      if(Array.from(select.options).some(o => o.value === selected)) select.value = selected;
+    });
+  }
+
+  function renderCorpCardsTable(){
+    const body = el('corpCardsTableBody');
+    if(!body) return;
+    const loja = el('corpCardLoja').value;
+    const rows = corpCardsRows.filter(c => !loja || c.companyId === loja);
+    body.innerHTML = rows.length ? rows.map(c =>
+      '<tr>'+
+        '<td>'+escapeHtml(c.name)+'</td>'+
+        '<td>'+escapeHtml(c.bank || '—')+'</td>'+
+        '<td>•••• '+escapeHtml(c.last4 || '----')+'</td>'+
+        '<td>'+escapeHtml(c.companyName || '—')+'</td>'+
+        '<td>'+escapeHtml(c.holderName || '—')+'</td>'+
+        '<td>'+escapeHtml('dia '+c.closingDay+' / '+c.dueDay)+'</td>'+
+        '<td>'+escapeHtml(CORP_STATUS_LABELS[c.status] || c.status)+'</td>'+
+        '<td>'+
+          '<button class="btn-outline btn-sm" type="button" data-corp-open="'+escapeHtml(c.id)+'">ABRIR</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-corp-edit="'+escapeHtml(c.id)+'">EDITAR</button>'+
+        '</td>'+
+      '</tr>').join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum cartão cadastrado.</td></tr>';
+  }
+
+  async function loadCartoesCorpPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    if(!financeItems.length) await loadFinanceCatalog();
+    if(!financeCostCenters.length){
+      try{ const cc = await financeApiRequest('/cost-centers'); financeCostCenters = Array.isArray(cc.costCenters) ? cc.costCenters : []; }catch(_e){}
+    }
+    renderCorpCardCompanyOptions();
+    el('corpCardsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await financeApiRequest('/corporate-cards');
+      corpCardsRows = Array.isArray(data.cards) ? data.cards : [];
+      renderCorpCardsTable();
+    }catch(error){
+      el('corpCardsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  el('corpCardLoja') && el('corpCardLoja').addEventListener('change', renderCorpCardsTable);
+
+  // --- Cadastro do cartão ---
+  function openCorpCardDialog(row){
+    el('corpCardForm').reset();
+    renderCorpCardCompanyOptions();
+    el('corpCardId').value = row ? row.id : '';
+    el('corpCardDialogTitle').textContent = row ? 'EDITAR CARTÃO' : 'NOVO CARTÃO';
+    el('corpCardName').value = row ? row.name : '';
+    el('corpCardBank').value = row ? (row.bank || '') : '';
+    el('corpCardBrand').value = row ? (row.brand || '') : '';
+    el('corpCardLast4').value = row ? (row.last4 || '') : '';
+    el('corpCardLimit').value = row && row.limitCents ? (row.limitCents/100).toFixed(2) : '';
+    el('corpCardBestDay').value = row && row.bestPurchaseDay ? row.bestPurchaseDay : '';
+    el('corpCardClosingDay').value = row ? row.closingDay : '';
+    el('corpCardDueDay').value = row ? row.dueDay : '';
+    el('corpCardHolder').value = row ? (row.holderName || '') : '';
+    el('corpCardCompany').value = row ? row.companyId : (el('corpCardLoja').value || '');
+    el('corpCardStatus').value = row ? row.status : 'active';
+    el('corpCardNotes').value = row ? (row.notes || '') : '';
+    el('corpCardFormStatus').textContent = '';
+    el('corpCardDialog').showModal();
+  }
+  el('btnNewCorpCard') && el('btnNewCorpCard').addEventListener('click', () => openCorpCardDialog(null));
+  el('btnCloseCorpCardDialog') && el('btnCloseCorpCardDialog').addEventListener('click', () => el('corpCardDialog').close());
+  el('btnCancelCorpCardDialog') && el('btnCancelCorpCardDialog').addEventListener('click', () => el('corpCardDialog').close());
+  el('corpCardsTableBody') && el('corpCardsTableBody').addEventListener('click', event => {
+    const editBtn = event.target.closest('[data-corp-edit]');
+    const openBtn = event.target.closest('[data-corp-open]');
+    if(editBtn){
+      const row = corpCardsRows.find(c => c.id === editBtn.dataset.corpEdit);
+      if(row) openCorpCardDialog(row);
+    }else if(openBtn){
+      const row = corpCardsRows.find(c => c.id === openBtn.dataset.corpOpen);
+      if(row) openCorpCardDetail(row);
+    }
+  });
+  el('corpCardForm') && el('corpCardForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('corpCardFormStatus');
+    status.textContent = '';
+    const last4 = el('corpCardLast4').value.replace(/\D/g,'');
+    if(!/^\d{4}$/.test(last4)){ status.textContent = 'O FINAL DEVE TER 4 DÍGITOS.'; return; }
+    const payload = {
+      name: el('corpCardName').value.trim(),
+      bank: el('corpCardBank').value.trim(),
+      brand: el('corpCardBrand').value.trim(),
+      last4,
+      limitCents: el('corpCardLimit').value ? Math.round(Number(el('corpCardLimit').value)*100) : 0,
+      bestPurchaseDay: Number(el('corpCardBestDay').value) || 0,
+      closingDay: Number(el('corpCardClosingDay').value) || 0,
+      dueDay: Number(el('corpCardDueDay').value) || 0,
+      holderName: el('corpCardHolder').value.trim(),
+      companyId: el('corpCardCompany').value,
+      status: el('corpCardStatus').value,
+      notes: el('corpCardNotes').value
+    };
+    const id = el('corpCardId').value;
+    if(id) payload.id = id;
+    try{
+      await financeApiRequest('/corporate-cards', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('corpCardDialog').close();
+      await loadCartoesCorpPage();
+      if(corpCardCurrent && corpCardCurrent.id === id) await openCorpCardDetail(corpCardsRows.find(c => c.id === id));
+      showPurchaseToast('Cartão salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // --- Painel do cartão ---
+  async function openCorpCardDetail(card){
+    if(!card) return;
+    corpCardCurrent = card;
+    el('corpCardDetail').hidden = false;
+    el('corpCardDetailTitle').textContent = card.name.toUpperCase()+' — •••• '+card.last4;
+    if(!el('corpEntriesMonth').value) el('corpEntriesMonth').value = financeCurrentMonthKey();
+    if(!el('corpInvoiceMonth').value) el('corpInvoiceMonth').value = financeCurrentMonthKey();
+    document.querySelectorAll('[data-corp-tab]').forEach((b,i) => {
+      b.classList.toggle('active', i === 0); b.setAttribute('aria-selected', String(i === 0));
+    });
+    document.querySelectorAll('[data-corp-panel]').forEach(p => { p.hidden = p.dataset.corpPanel !== 'lancamentos'; });
+    el('corpCardDetail').scrollIntoView({behavior:'smooth', block:'start'});
+    await Promise.all([loadCorpCardSummary(), loadCorpEntries()]);
+  }
+  document.querySelectorAll('[data-corp-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.corpTab;
+      document.querySelectorAll('[data-corp-tab]').forEach(b => {
+        const active = b === btn; b.classList.toggle('active', active); b.setAttribute('aria-selected', String(active));
+      });
+      document.querySelectorAll('[data-corp-panel]').forEach(p => { p.hidden = p.dataset.corpPanel !== tab; });
+    });
+  });
+
+  async function loadCorpCardSummary(){
+    if(!corpCardCurrent) return;
+    const box = el('corpCardSummary');
+    box.innerHTML = '<div class="dre-empty">Carregando…</div>';
+    try{
+      const data = await financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/summary');
+      const s = data.summary;
+      box.innerHTML =
+        '<div class="card"><div class="lbl">LIMITE TOTAL</div><div class="num">'+formatCentsBRL(s.limitCents)+'</div></div>'+
+        '<div class="card"><div class="lbl">UTILIZADO</div><div class="num">'+formatCentsBRL(s.usedCents)+'</div><div class="sub">fatura em aberto + parcelas futuras</div></div>'+
+        '<div class="card'+(s.availableCents < 0 ? ' neg' : '')+'"><div class="lbl">DISPONÍVEL</div><div class="num">'+formatCentsBRL(s.availableCents)+'</div></div>'+
+        '<div class="card"><div class="lbl">PRÓXIMA FATURA</div><div class="num">'+formatCentsBRL(s.currentInvoiceCents)+'</div><div class="sub">fecha '+escapeHtml(s.closingDate)+' · vence '+escapeHtml(s.dueDate)+'</div></div>'+
+        '<div class="card"><div class="lbl">PARCELAMENTOS FUTUROS</div><div class="num">'+formatCentsBRL(s.futureInstallmentsCents)+'</div></div>';
+    }catch(error){
+      box.innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  function renderCorpEntryItemOptions(selectId){
+    const select = el(selectId);
+    if(!select) return;
+    const placeholder = selectId === 'corpEntryExpenseItem' ? '<option value="">SELECIONE</option>' : '<option value="">SEM CENTRO DE CUSTO</option>';
+    if(selectId === 'corpEntryExpenseItem'){
+      select.innerHTML = placeholder + financeItems.map(item => {
+        const category = financeCategories.find(c => c.id === item.categoryId);
+        return '<option value="'+escapeHtml(item.id)+'">'+escapeHtml((category ? category.name+' › ' : '')+item.name)+'</option>';
+      }).join('');
+    }else{
+      select.innerHTML = placeholder + (financeCostCenters||[]).map(cc => '<option value="'+escapeHtml(cc.id)+'">'+escapeHtml(cc.name)+'</option>').join('');
+    }
+  }
+
+  async function loadCorpEntries(){
+    if(!corpCardCurrent) return;
+    const body = el('corpEntriesTableBody');
+    body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const month = el('corpEntriesMonth').value;
+      const params = new URLSearchParams();
+      if(month) params.set('month', month);
+      const data = await financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/invoice?'+params.toString());
+      const entries = Array.isArray(data.entries) ? data.entries : [];
+      corpCardCurrent._entries = entries;
+      body.innerHTML = entries.length ? entries.map(e => {
+        const item = financeItems.find(i => i.id === e.categoryItemId);
+        const category = item && financeCategories.find(c => c.id === item.categoryId);
+        return '<tr'+(e.status === 'expensed' ? ' style="opacity:.6"' : '')+'>'+
+          '<td>'+escapeHtml(e.entryDate)+'</td>'+
+          '<td>'+escapeHtml(e.merchant || '—')+'</td>'+
+          '<td>'+formatCentsBRL(e.amountCents)+'</td>'+
+          '<td>'+escapeHtml(e.installmentLabel || '—')+'</td>'+
+          '<td>'+escapeHtml(e.holderName || '—')+'</td>'+
+          '<td>'+escapeHtml(item ? ((category ? category.name+' › ' : '')+item.name) : '—')+'</td>'+
+          '<td>'+escapeHtml(CORP_ENTRY_STATUS_LABELS[e.status] || e.status)+'</td>'+
+          '<td>'+(e.status === 'expensed' ? '' : '<button class="btn-outline btn-sm" type="button" data-corp-entry-expense="'+escapeHtml(e.id)+'">LANÇAR DESPESA</button>')+'</td>'+
+        '</tr>';
+      }).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum lançamento nesse mês.</td></tr>';
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  el('corpEntriesMonth') && el('corpEntriesMonth').addEventListener('change', loadCorpEntries);
+
+  el('corpEntriesTableBody') && el('corpEntriesTableBody').addEventListener('click', event => {
+    const btn = event.target.closest('[data-corp-entry-expense]');
+    if(!btn) return;
+    const entry = (corpCardCurrent && corpCardCurrent._entries || []).find(e => e.id === btn.dataset.corpEntryExpense);
+    if(entry) openCorpEntryExpenseDialog(entry);
+  });
+
+  // --- Lançar lançamento da fatura como Despesa (reaproveita /expenses) ---
+  function openCorpEntryExpenseDialog(entry){
+    el('corpEntryExpenseForm').reset();
+    renderCorpEntryItemOptions('corpEntryExpenseItem');
+    renderCorpEntryItemOptions('corpEntryExpenseCostCenter');
+    el('corpEntryExpenseEntryId').value = entry.id;
+    el('corpEntryExpenseSummary').textContent = entry.entryDate+' · '+(entry.merchant || 'sem estabelecimento')+' · '+formatCentsBRL(entry.amountCents)+(entry.installmentLabel ? ' · parcela '+entry.installmentLabel : '');
+    el('corpEntryExpenseItem').value = entry.categoryItemId || '';
+    el('corpEntryExpenseCostCenter').value = entry.costCenterId || '';
+    el('corpEntryExpenseDueDate').value = entry.entryDate;
+    el('corpEntryExpenseNotes').value = entry.notes || '';
+    el('corpEntryExpenseStatus').textContent = '';
+    el('corpEntryExpenseDialog').showModal();
+  }
+  el('btnCloseCorpEntryExpenseDialog') && el('btnCloseCorpEntryExpenseDialog').addEventListener('click', () => el('corpEntryExpenseDialog').close());
+  el('btnCancelCorpEntryExpenseDialog') && el('btnCancelCorpEntryExpenseDialog').addEventListener('click', () => el('corpEntryExpenseDialog').close());
+  el('corpEntryExpenseForm') && el('corpEntryExpenseForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('corpEntryExpenseStatus');
+    status.textContent = '';
+    const entryId = el('corpEntryExpenseEntryId').value;
+    const entry = (corpCardCurrent && corpCardCurrent._entries || []).find(e => e.id === entryId);
+    if(!entry || !corpCardCurrent){ status.textContent = 'LANÇAMENTO NÃO ENCONTRADO.'; return; }
+    const financeItemId = el('corpEntryExpenseItem').value;
+    const dueDate = el('corpEntryExpenseDueDate').value;
+    if(!financeItemId){ status.textContent = 'SELECIONE A CATEGORIA.'; return; }
+    if(!dueDate){ status.textContent = 'INFORME O VENCIMENTO.'; return; }
+    try{
+      // 1. Cria a Despesa pelo endpoint existente (sem duplicar lógica).
+      const expensePayload = {
+        idempotencyKey: 'card-entry:'+entryId,
+        companyId: corpCardCurrent.companyId,
+        companyName: corpCardCurrent.companyName || '',
+        description: (entry.merchant || 'Cartão '+corpCardCurrent.name).slice(0, 200),
+        financeItemId,
+        costCenterId: el('corpEntryExpenseCostCenter').value || '',
+        originalAmountCents: entry.amountCents,
+        issueDate: entry.entryDate,
+        dueDate,
+        paymentMethod: 'CARTÃO CORPORATIVO',
+        cardId: corpCardCurrent.id,
+        notes: (el('corpEntryExpenseNotes').value || '')+(entry.installmentLabel ? ' (parcela '+entry.installmentLabel+')' : '')
+      };
+      const created = await financeApiRequest('/expenses', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(expensePayload)});
+      const expenseId = created.id || created.expenseId || (created.expense && created.expense.id) || '';
+      // 2. Vincula o lançamento da fatura à despesa criada.
+      await financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/invoice', {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({entryId, expenseId, categoryItemId: financeItemId, costCenterId: el('corpEntryExpenseCostCenter').value || ''})
+      });
+      el('corpEntryExpenseDialog').close();
+      await Promise.all([loadCorpEntries(), loadCorpCardSummary()]);
+      showPurchaseToast('Despesa criada a partir da fatura.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // --- Importar fatura ---
+  el('btnAddCorpInvoiceRow') && el('btnAddCorpInvoiceRow').addEventListener('click', () => {
+    if(!corpInvoiceParsed) corpInvoiceParsed = {rows: [], sourceFormat: 'manual', sourceName: 'Manual', fileHash: ''};
+    corpInvoiceParsed.rows.push({entryDate: el('corpInvoiceMonth').value ? el('corpInvoiceMonth').value+'-01' : financeCurrentDateKey(), merchant: '', amountCents: 0, installmentLabel: ''});
+    renderCorpInvoicePreview();
+  });
+  function renderCorpInvoicePreview(){
+    const body = el('corpInvoicePreviewBody');
+    const rows = corpInvoiceParsed ? corpInvoiceParsed.rows : [];
+    body.innerHTML = rows.length ? rows.map((r, i) =>
+      '<tr>'+
+        '<td><input type="date" data-corp-row="'+i+'" data-corp-field="entryDate" value="'+escapeHtml(r.entryDate)+'"></td>'+
+        '<td><input data-corp-row="'+i+'" data-corp-field="merchant" value="'+escapeHtml(r.merchant)+'" maxlength="200"></td>'+
+        '<td><input type="number" step="0.01" data-corp-row="'+i+'" data-corp-field="amount" value="'+(r.amountCents/100).toFixed(2)+'"></td>'+
+        '<td><input data-corp-row="'+i+'" data-corp-field="installmentLabel" value="'+escapeHtml(r.installmentLabel)+'" maxlength="20" placeholder="2/6"></td>'+
+        '<td><button class="btn-outline btn-sm" type="button" data-corp-row-remove="'+i+'">×</button></td>'+
+      '</tr>').join('') : '<tr><td colspan="5" class="responsive-empty">Selecione um arquivo.</td></tr>';
+    el('btnConfirmCorpInvoice').disabled = !rows.length;
+  }
+  el('corpInvoicePreviewBody') && el('corpInvoicePreviewBody').addEventListener('input', event => {
+    const input = event.target.closest('[data-corp-row]');
+    if(!input || !corpInvoiceParsed) return;
+    const row = corpInvoiceParsed.rows[Number(input.dataset.corpRow)];
+    if(!row) return;
+    if(input.dataset.corpField === 'amount') row.amountCents = Math.round(Number(input.value)*100);
+    else row[input.dataset.corpField] = input.value;
+  });
+  el('corpInvoicePreviewBody') && el('corpInvoicePreviewBody').addEventListener('click', event => {
+    const btn = event.target.closest('[data-corp-row-remove]');
+    if(!btn || !corpInvoiceParsed) return;
+    corpInvoiceParsed.rows.splice(Number(btn.dataset.corpRowRemove), 1);
+    renderCorpInvoicePreview();
+  });
+  el('corpInvoiceFile') && el('corpInvoiceFile').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    corpInvoiceParsed = null;
+    el('btnConfirmCorpInvoice').disabled = true;
+    const status = el('corpInvoiceImportStatus');
+    if(!file) return;
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const year = (el('corpInvoiceMonth').value || financeCurrentMonthKey()).slice(0,4);
+    status.textContent = 'Lendo arquivo…';
+    try{
+      let rows = [];
+      let sourceFormat = 'csv';
+      if(ext === 'pdf'){
+        sourceFormat = 'pdf';
+        status.textContent = 'Lendo PDF (leitura aproximada)…';
+        rows = parseInvoicePdfLines(await extractPdfLines(file), year);
+        if(!rows.length) throw new Error('NÃO CONSEGUI EXTRAIR LANÇAMENTOS DESSE PDF — use "+ LINHA MANUAL" ou outro formato.');
+      }else if(ext === 'ofx'){
+        sourceFormat = 'ofx';
+        rows = parseOfxTransactions(await readAsText(file, 'ISO-8859-1'));
+      }else{
+        sourceFormat = ext === 'xls' || ext === 'xlsx' ? 'xlsx' : 'csv';
+        const table = await extractRowsFromFile(file);
+        if(table.length < 2) throw new Error('ARQUIVO SEM DADOS.');
+        const header = table[0];
+        const col = {
+          date: findColumn(header, ['data','datacompra','datalancamento']),
+          merchant: findColumn(header, ['estabelecimento','descricao','historico','lancamento','local']),
+          amount: findColumn(header, ['valor','valorbrl','montante','valorrs']),
+          installment: findColumn(header, ['parcela','parcelas'])
+        };
+        if(col.date === -1 || col.amount === -1) throw new Error('NÃO ENCONTREI AS COLUNAS DE DATA E VALOR.');
+        for(let i = 1; i < table.length; i++){
+          const r = table[i];
+          const entryDate = parseDateISO(r[col.date]);
+          const amountCents = parseMoneyToCents(r[col.amount]);
+          if(!entryDate || amountCents === 0) continue;
+          rows.push({
+            entryDate,
+            merchant: col.merchant !== -1 ? String(r[col.merchant]||'').trim() : '',
+            amountCents,
+            installmentLabel: col.installment !== -1 ? String(r[col.installment]||'').trim() : ''
+          });
+        }
+      }
+      if(!rows.length) throw new Error('NENHUM LANÇAMENTO VÁLIDO.');
+      corpInvoiceParsed = {rows, sourceFormat, sourceName: file.name, fileHash: cheapHash(file.name, [[rows.length, rows[0] && rows[0].entryDate]])};
+      renderCorpInvoicePreview();
+      status.textContent = rows.length+' lançamento(s).'+(sourceFormat === 'pdf' ? ' Revise cada linha — a leitura de PDF é aproximada.' : '');
+    }catch(error){
+      status.textContent = error.message;
+      el('corpInvoicePreviewBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  });
+  el('btnConfirmCorpInvoice') && el('btnConfirmCorpInvoice').addEventListener('click', async () => {
+    if(!corpInvoiceParsed || !corpCardCurrent) return;
+    const referenceMonth = el('corpInvoiceMonth').value;
+    if(!referenceMonth){ el('corpInvoiceImportStatus').textContent = 'INFORME O MÊS DA FATURA.'; return; }
+    const valid = corpInvoiceParsed.rows.filter(r => r.entryDate && r.amountCents !== 0);
+    if(!valid.length){ el('corpInvoiceImportStatus').textContent = 'NENHUMA LINHA VÁLIDA.'; return; }
+    el('btnConfirmCorpInvoice').disabled = true;
+    try{
+      const res = await financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/invoice', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({referenceMonth, sourceName: corpInvoiceParsed.sourceName, sourceFormat: corpInvoiceParsed.sourceFormat, fileHash: corpInvoiceParsed.fileHash, rows: valid})
+      });
+      if(res.alreadyProcessed) showPurchaseToast('Essa fatura já tinha sido importada.');
+      else showPurchaseToast('Importados '+res.inserted+' lançamento(s).');
+      el('corpInvoiceFile').value = '';
+      corpInvoiceParsed = null;
+      renderCorpInvoicePreview();
+      el('corpInvoiceImportStatus').textContent = '';
+      document.querySelector('[data-corp-tab="lancamentos"]').click();
+      el('corpEntriesMonth').value = referenceMonth;
+      await Promise.all([loadCorpEntries(), loadCorpCardSummary()]);
+    }catch(error){
+      el('corpInvoiceImportStatus').textContent = error.message;
+      el('btnConfirmCorpInvoice').disabled = false;
+    }
   });
 
   // --- Imagem pronta pra compartilhamento (PNG via canvas) --------------
