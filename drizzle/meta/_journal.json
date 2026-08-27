@@ -260,6 +260,20 @@
       "when": 1787771579688,
       "tag": "0036_hr_payroll",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1787788279875,
+      "tag": "0037_finance_cash_flow",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1787801028231,
+      "tag": "0038_accounts_receivable_received_idx",
+      "breakpoints": true
     }
   ]
 }

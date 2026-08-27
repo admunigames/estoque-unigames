@@ -1688,6 +1688,26 @@
   .dre-bar-row .dre-bar-track{background:rgba(79,134,189,.08);border-radius:6px;height:18px;overflow:hidden}
   .dre-bar-row .dre-bar-fill{background:var(--accent);height:100%;border-radius:6px}
   .dre-bar-row .dre-bar-fill.neg{background:#c0392b}
+  /* Gráfico do Fluxo de Caixa: SVG inline. O projeto não usa (e não vai
+     passar a usar) biblioteca de gráficos — o único gráfico que já existia,
+     o de Tarefas da Início, também é desenhado à mão com div/CSS. */
+  .cash-flow-chart{padding:16px;overflow-x:auto}
+  .cash-flow-chart svg{display:block;width:100%;min-width:560px;height:auto}
+  .cash-flow-chart .cf-axis{stroke:var(--line);stroke-width:1}
+  .cash-flow-chart .cf-zero{stroke:#c0392b;stroke-width:1;stroke-dasharray:4 4}
+  .cash-flow-chart .cf-line{fill:none;stroke:var(--accent);stroke-width:2}
+  .cash-flow-chart .cf-area{fill:var(--accent);opacity:.12}
+  .cash-flow-chart .cf-bar-in{fill:#66d49e;opacity:.75}
+  .cash-flow-chart .cf-bar-out{fill:#e1ad49;opacity:.75}
+  .cash-flow-chart .cf-label{fill:var(--ink-soft);font:700 9px var(--mono)}
+  .cash-flow-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;color:var(--ink-soft);font:700 10px var(--mono)}
+  .cash-flow-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .receivable-tag{display:inline-block;padding:2px 7px;border-radius:999px;font:800 9px var(--mono);letter-spacing:.04em;border:1px solid currentColor}
+  .receivable-tag.pending{color:#8aa4c0}
+  .receivable-tag.overdue{color:#c0392b}
+  .receivable-tag.received_ok{color:#66d49e}
+  .receivable-tag.received_divergent{color:#e1ad49}
+  .receivable-tag.canceled{color:var(--ink-soft)}
   .dre-bar-row .dre-bar-value{font:800 12px var(--mono);color:var(--ink-soft);white-space:nowrap}
   .dre-catalog-list{display:grid;gap:8px;max-height:280px;overflow:auto;margin-bottom:14px}
   .dre-catalog-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px}
@@ -2793,6 +2813,8 @@
         <a class="nav-item sub-item" id="navFinanceiroExpenses" data-page="financeiroExpenses" data-permission="finance" data-home-desc="Cadastro completo de despesas, com rateio entre lojas." title="Despesas" href="/financeiro/despesas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14.5 3.5V7h3.5"/><path d="M8 12h8M8 15.5h8M8 18.5h5"/></svg></span><span class="nav-label">Despesas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroSupplierStatement" data-page="financeiroSupplierStatement" data-permission="finance" data-home-desc="Resumo geral e extrato (conta corrente) de cada fornecedor." title="Fornecedores" href="/financeiro/fornecedores/conta-corrente"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="17" height="12" rx="2"/><path d="M3.5 10.5h17"/><circle cx="8" cy="14.2" r="1.3" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Fornecedores</span></a>
         <a class="nav-item sub-item" id="navFinanceiroOrcamento" data-page="financeiroOrcamento" data-permission="finance" data-home-desc="Valor orçado por loja, categoria e centro de custo, comparado com o realizado." title="Orçamento" href="/financeiro/orcamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M11 20V4M18 20V13"/></svg></span><span class="nav-label">Orçamento</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroRecebiveis" data-page="financeiroRecebiveis" data-permission="finance" data-home-desc="Valores a receber por mês e operadora, com alerta de divergência entre previsto e recebido." title="Recebíveis" href="/financeiro/recebiveis"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M12 15.5V9"/><path d="M9 12l3-3 3 3"/></svg></span><span class="nav-label">Recebíveis</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance" data-home-desc="Projeção diária de caixa: caixa atual, entradas e saídas em 7, 15, 30, 60 e 90 dias." title="Fluxo de Caixa" href="/financeiro/fluxo-de-caixa"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 18.5L9 12l3.5 3.5L20.5 6"/><path d="M15.5 6h5v5"/></svg></span><span class="nav-label">Fluxo de Caixa</span></a>
       </div>
     </div>
     <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
@@ -5419,6 +5441,127 @@
       </div>
     </section>
 
+    <section id="pageFinanceiroRecebiveis" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Recebíveis</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Valores a receber por competência e operadora, com comparativo entre previsto e recebido.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="receivableLoja">UNIDADE</label><select id="receivableLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+        <div class="field"><label for="receivableMes">COMPETÊNCIA</label><input type="month" id="receivableMes"></div>
+        <div class="field"><label for="receivableStatus">SITUAÇÃO</label>
+          <select id="receivableStatus">
+            <option value="">TODAS (EXCETO CANCELADOS)</option>
+            <option value="pending">PENDENTE</option>
+            <option value="overdue">ATRASADO</option>
+            <option value="received_ok">RECEBIDO</option>
+            <option value="received_divergent">RECEBIDO COM DIVERGÊNCIA</option>
+            <option value="canceled">CANCELADO</option>
+          </select>
+        </div>
+        <div class="field"><label for="receivableOperator">OPERADORA</label><input id="receivableOperator" maxlength="120" placeholder="Buscar operadora"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnNewReceivable" type="button">NOVO RECEBÍVEL</button>
+        </div>
+      </div>
+
+      <section class="summary" id="receivablesSummary" aria-label="Previsto x recebido no mês">
+        <div class="dre-empty">Carregando…</div>
+      </section>
+
+      <div id="receivablesDivergenceAlert" class="dre-empty" hidden></div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="receivablesTable">
+            <thead><tr><th>Data prevista</th><th>Competência</th><th>Unidade</th><th>Operadora</th><th>Previsto</th><th>Recebido</th><th>Diferença</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="receivablesTableBody"><tr><td colspan="9" class="responsive-empty">Selecione os filtros para ver os recebíveis.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 class="supply-section-title">COMPARATIVOS</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="receivablesByStoreTable">
+            <thead><tr><th>Unidade</th><th>Previsto</th><th>Recebido</th><th>Pendente</th></tr></thead>
+            <tbody id="receivablesByStoreBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="receivablesByOperatorTable">
+            <thead><tr><th>Operadora</th><th>Previsto</th><th>Recebido</th><th>Pendente</th></tr></thead>
+            <tbody id="receivablesByOperatorBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="pageFinanceiroFluxoCaixa" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Fluxo de Caixa</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Caixa Inicial + Entradas − Saídas = Caixa Final, projetado dia a dia a partir de hoje.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="cashFlowLoja">UNIDADE</label><select id="cashFlowLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+        <div class="field"><label for="cashFlowHorizon">HORIZONTE</label>
+          <select id="cashFlowHorizon">
+            <option value="7">7 DIAS</option>
+            <option value="15">15 DIAS</option>
+            <option value="30" selected>30 DIAS</option>
+            <option value="60">60 DIAS</option>
+            <option value="90">90 DIAS</option>
+          </select>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnCashFlowBalances" type="button">SALDOS DAS CONTAS</button>
+          <button class="btn-accent" id="btnCashFlowSettings" type="button">CONFIGURAÇÕES</button>
+          <button class="btn-accent" id="btnCashFlowShare" type="button">GERAR IMAGEM</button>
+        </div>
+      </div>
+
+      <section class="summary" id="cashFlowSummary" aria-label="Resumo do fluxo de caixa">
+        <div class="dre-empty">Carregando…</div>
+      </section>
+
+      <div id="cashFlowWarnings" class="dre-empty" hidden></div>
+
+      <h3 class="supply-section-title">PROJEÇÃO DIÁRIA</h3>
+      <div class="table-panel" id="cashFlowChartPanel">
+        <div id="cashFlowChart" class="cash-flow-chart"><div class="dre-empty">Carregando…</div></div>
+      </div>
+
+      <h3 class="supply-section-title">HORIZONTES</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="cashFlowHorizonsTable">
+            <thead><tr><th>Horizonte</th><th>Até</th><th>Entradas</th><th>Saídas</th><th>Caixa final</th><th>1º dia negativo</th></tr></thead>
+            <tbody id="cashFlowHorizonsBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 class="supply-section-title">DIA A DIA</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="cashFlowDaysTable">
+            <thead><tr><th>Data</th><th>Caixa inicial</th><th>Entradas</th><th>Saídas</th><th>Caixa final</th></tr></thead>
+            <tbody id="cashFlowDaysBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -5486,6 +5629,96 @@
       <button class="btn-accent" id="btnSaveBudget" type="submit">SALVAR</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="receivableDialog" aria-labelledby="receivableDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="receivableDialogTitle">NOVO RECEBÍVEL</h3>
+    <button class="purchase-dialog-close" id="btnCloseReceivableDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="receivableForm">
+    <input type="hidden" id="receivableId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="receivableCompany">UNIDADE *</label><select id="receivableCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="receivableCompetence">COMPETÊNCIA *</label><input type="month" id="receivableCompetence" required></div>
+      <div class="purchase-field full"><label for="receivableOperatorText">OPERADORA *</label><input id="receivableOperatorText" maxlength="120" placeholder="Ex: CIELO" required></div>
+      <div class="purchase-field"><label for="receivableExpectedDate">DATA PREVISTA *</label><input type="date" id="receivableExpectedDate" required></div>
+      <div class="purchase-field"><label for="receivableExpectedAmount">VALOR PREVISTO (R$) *</label><input type="number" id="receivableExpectedAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="receivableReceivedAmount">VALOR RECEBIDO (R$)</label><input type="number" id="receivableReceivedAmount" min="0" step="0.01" placeholder="Deixe vazio se ainda não recebeu"></div>
+      <div class="purchase-field"><label for="receivableReceivedDate">DATA DO RECEBIMENTO</label><input type="date" id="receivableReceivedDate"></div>
+      <div class="purchase-field full"><label for="receivableNotes">OBSERVAÇÕES</label><textarea id="receivableNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="receivableFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelReceivableDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveReceivable" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="cashFlowBalancesDialog" aria-labelledby="cashFlowBalancesTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cashFlowBalancesTitle">SALDOS DAS CONTAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseCashFlowBalances" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
+    <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">O <strong>Caixa Atual</strong> é a soma dos saldos informados aqui. Conta ativa sem saldo informado NÃO entra na soma e aparece destacada abaixo.</p>
+    <form class="purchase-form" id="cashFlowBalanceForm">
+      <div class="purchase-form-grid">
+        <div class="purchase-field full"><label for="cashFlowBalanceAccount">CONTA *</label><select id="cashFlowBalanceAccount" required><option value="">SELECIONE</option></select></div>
+        <div class="purchase-field"><label for="cashFlowBalanceAmount">SALDO (R$) *</label><input type="number" id="cashFlowBalanceAmount" step="0.01" required></div>
+        <div class="purchase-field"><label for="cashFlowBalanceDate">DATA DE REFERÊNCIA *</label><input type="date" id="cashFlowBalanceDate" required></div>
+        <div class="purchase-field full"><label for="cashFlowBalanceNotes">OBSERVAÇÕES</label><input id="cashFlowBalanceNotes" maxlength="500"></div>
+      </div>
+      <div class="user-form-status" id="cashFlowBalanceStatus" role="status" aria-live="polite"></div>
+      <div class="purchase-form-actions">
+        <button class="btn-accent" type="submit">SALVAR SALDO</button>
+      </div>
+    </form>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Conta</th><th>Unidade</th><th>Saldo</th><th>Referência</th><th>Atualizado por</th></tr></thead>
+          <tbody id="cashFlowBalancesBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="cashFlowSettingsDialog" aria-labelledby="cashFlowSettingsTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cashFlowSettingsTitle">CONFIGURAÇÕES DO FLUXO DE CAIXA</h3>
+    <button class="purchase-dialog-close" id="btnCloseCashFlowSettings" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cashFlowSettingsForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="cashFlowSettingsCompany">APLICAR EM</label><select id="cashFlowSettingsCompany"><option value="">PADRÃO GERAL (TODAS AS LOJAS)</option></select></div>
+      <div class="purchase-field"><label for="cashFlowSettingsBps">TOLERÂNCIA (%)</label><input type="number" id="cashFlowSettingsBps" min="0" max="100" step="0.01" required></div>
+      <div class="purchase-field"><label for="cashFlowSettingsFixed">TOLERÂNCIA (R$)</label><input type="number" id="cashFlowSettingsFixed" min="0" step="0.01" required></div>
+      <div class="purchase-field"><label for="cashFlowSettingsPayrollDay">DIA DE PAGAMENTO DA FOLHA</label><input type="number" id="cashFlowSettingsPayrollDay" min="1" max="31" step="1" required></div>
+    </div>
+    <p style="color:var(--ink-soft);font-size:11px;margin:0 20px 8px;">A divergência de um recebível é alertada quando a diferença passa do percentual <strong>ou</strong> do valor fixo — o que for atingido primeiro. O dia de pagamento é usado no mês seguinte à competência, para folha, benefícios e comissões sem data de pagamento informada.</p>
+    <div class="user-form-status" id="cashFlowSettingsStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCashFlowSettings" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="cashFlowShareDialog" aria-labelledby="cashFlowShareTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cashFlowShareTitle">IMAGEM DO FLUXO DE CAIXA</h3>
+    <button class="purchase-dialog-close" id="btnCloseCashFlowShare" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;text-align:center;">
+    <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Imagem compacta, pensada para compartilhar por mensagem.</p>
+    <canvas id="cashFlowShareCanvas" width="720" height="900" style="max-width:100%;border:1px solid var(--line);border-radius:10px;"></canvas>
+    <div class="purchase-form-actions" style="justify-content:center;">
+      <a class="btn-accent" id="btnDownloadCashFlowImage" download="fluxo-de-caixa.png" href="#">BAIXAR PNG</a>
+    </div>
+  </div>
 </dialog>
 
 <dialog class="purchase-dialog" id="rhEmployeeDialog" aria-labelledby="rhEmployeeDialogTitle">
@@ -6968,7 +7201,9 @@
     financeiroInvoices:'/financeiro/notas-fiscais',
     financeiroExpenses:'/financeiro/despesas',
     financeiroSupplierStatement:'/financeiro/fornecedores/conta-corrente',
-    financeiroOrcamento:'/financeiro/orcamento'
+    financeiroOrcamento:'/financeiro/orcamento',
+    financeiroRecebiveis:'/financeiro/recebiveis',
+    financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -7002,7 +7237,9 @@
     financeiroInvoices:'NOTAS FISCAIS',
     financeiroExpenses:'DESPESAS',
     financeiroSupplierStatement:'CONTA CORRENTE DE FORNECEDORES',
-    financeiroOrcamento:'ORÇAMENTO'
+    financeiroOrcamento:'ORÇAMENTO',
+    financeiroRecebiveis:'RECEBÍVEIS',
+    financeiroFluxoCaixa:'FLUXO DE CAIXA'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -7032,7 +7269,9 @@
     financeiroPayables:'finance',
     financeiroExpenses:'finance',
     financeiroSupplierStatement:'finance',
-    financeiroOrcamento:'finance'
+    financeiroOrcamento:'finance',
+    financeiroRecebiveis:'finance',
+    financeiroFluxoCaixa:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -7450,7 +7689,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -7512,6 +7751,8 @@
     if(name === 'financeiroExpenses') loadExpensesPage();
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
+    if(name === 'financeiroRecebiveis') loadRecebiveisPage();
+    if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -7545,6 +7786,8 @@
     if(name === 'financeiroExpenses') loadExpensesPage();
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
+    if(name === 'financeiroRecebiveis') loadRecebiveisPage();
+    if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -15984,6 +16227,19 @@ function renderHomeTasks(){
     return Math.round(num * 100);
   }
 
+  // Variante que ACEITA valor negativo. Existe separada de propósito: quase
+  // todo campo de dinheiro do sistema (conta a pagar, orçamento, recebível)
+  // não pode ser negativo, e afrouxar parseBRLToCents pra todos eles pra
+  // atender um caso só abriria a porta pra valor negativo entrar onde não
+  // deve. O único uso hoje é o saldo de conta do Fluxo de Caixa, onde
+  // negativo é legítimo (cheque especial) — e o backend
+  // (app/api/finance/account-balances/route.ts) valida do mesmo jeito.
+  function parseBRLToCentsAllowNegative(value){
+    const num = Number(value);
+    if(!Number.isFinite(num)) return null;
+    return Math.round(num * 100);
+  }
+
   function financeCurrentDateKey(){
     const parts = new Intl.DateTimeFormat('en-US', {timeZone:'America/Recife', year:'numeric', month:'2-digit', day:'2-digit'}).formatToParts(new Date());
     const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
@@ -18218,6 +18474,701 @@ function renderHomeTasks(){
     }catch(error){
       status.textContent = error.message;
     }
+  });
+
+  // ---------------------------------------------------------------------
+  // Recebíveis e Fluxo de Caixa (Financeiro Fase 6).
+  // Mesma estrutura das outras telas financeiras: fetch em /api/finance/...
+  // via financeApiRequest e montagem manual do DOM, sem framework.
+  // ---------------------------------------------------------------------
+
+  const RECEIVABLE_STATUS_LABELS = {
+    pending:'PENDENTE',
+    overdue:'ATRASADO',
+    received_ok:'RECEBIDO',
+    received_divergent:'RECEBIDO COM DIVERGÊNCIA',
+    canceled:'CANCELADO'
+  };
+
+  let receivablesCurrentRows = [];
+  let receivablesSettings = null;
+
+  function financeDateLabel(value){
+    return value ? String(value).split('-').reverse().join('/') : '—';
+  }
+
+  function financeSignedCents(cents){
+    const value = Number(cents) || 0;
+    return (value > 0 ? '+' : '')+formatCentsBRL(value);
+  }
+
+  function renderReceivableCompanyOptions(){
+    ['receivableLoja','receivableCompany','cashFlowLoja','cashFlowSettingsCompany'].forEach(id => {
+      const select = el(id);
+      if(!select) return;
+      const selected = select.value;
+      const placeholder = id === 'receivableCompany'
+        ? '<option value="">SELECIONE</option>'
+        : (id === 'cashFlowSettingsCompany'
+          ? '<option value="">PADRÃO GERAL (TODAS AS LOJAS)</option>'
+          : '<option value="">TODAS AS LOJAS (CONSOLIDADO)</option>');
+      select.innerHTML = placeholder+
+        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+      if(companies.some(c => c.id === selected)) select.value = selected;
+    });
+  }
+
+  function receivableStatusTag(status){
+    const key = RECEIVABLE_STATUS_LABELS[status] ? status : 'pending';
+    return '<span class="receivable-tag '+key+'">'+escapeHtml(RECEIVABLE_STATUS_LABELS[key])+'</span>';
+  }
+
+  function renderReceivablesTable(rows){
+    const body = el('receivablesTableBody');
+    if(!body) return;
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhum recebível para os filtros selecionados.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(row => {
+      const received = row.receivedAmountCents === null || row.receivedAmountCents === undefined
+        ? '—'
+        : formatCentsBRL(row.receivedAmountCents);
+      const difference = row.differenceCents === null || row.differenceCents === undefined
+        ? '—'
+        : financeSignedCents(row.differenceCents);
+      const canCancel = Number(row.canceled) !== 1;
+      return '<tr>'+
+        '<td data-label="Data prevista">'+escapeHtml(financeDateLabel(row.expectedDate))+'</td>'+
+        '<td data-label="Competência">'+escapeHtml(row.competenceMonth || '')+'</td>'+
+        '<td data-label="Unidade">'+escapeHtml(row.companyName || '')+'</td>'+
+        '<td data-label="Operadora">'+escapeHtml(row.operatorText || '')+'</td>'+
+        '<td data-label="Previsto">'+formatCentsBRL(row.expectedAmountCents)+'</td>'+
+        '<td data-label="Recebido">'+received+'</td>'+
+        '<td data-label="Diferença">'+difference+'</td>'+
+        '<td data-label="Situação">'+receivableStatusTag(row.displayStatus)+'</td>'+
+        '<td data-label="Ações">'+
+          '<button class="btn-outline" type="button" data-receivable-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+          (canCancel ? ' <button class="btn-outline" type="button" data-receivable-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
+        '</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function renderReceivablesSummary(summary, totals){
+    const container = el('receivablesSummary');
+    if(!container) return;
+    if(!summary){
+      container.innerHTML = '<div class="dre-empty">Não foi possível carregar os comparativos.</div>';
+      return;
+    }
+    const current = summary.current || {};
+    const previous = summary.previous || {};
+    const receivedDelta = Number(current.receivedCents || 0) - Number(previous.receivedCents || 0);
+    container.innerHTML =
+      '<div class="card"><div class="lbl">PREVISTO (MÊS)</div><div class="num">'+formatCentsBRL(current.expectedCents)+'</div></div>'+
+      '<div class="card"><div class="lbl">RECEBIDO (MÊS)</div><div class="num">'+formatCentsBRL(current.receivedCents)+'</div></div>'+
+      '<div class="card"><div class="lbl">AINDA PENDENTE</div><div class="num">'+formatCentsBRL(current.pendingCents)+'</div></div>'+
+      '<div class="card'+(receivedDelta < 0 ? ' neg' : '')+'"><div class="lbl">VS. MÊS ANTERIOR ('+escapeHtml(summary.previousMonth || '')+')</div>'+
+        '<div class="num">'+financeSignedCents(receivedDelta)+'</div>'+
+        '<div class="sub">'+formatCentsBRL(previous.receivedCents)+' recebidos</div></div>'+
+      (totals ? '<div class="card"><div class="lbl">DIFERENÇA ACUMULADA (FILTRO)</div><div class="num">'+financeSignedCents(totals.differenceCents)+'</div></div>' : '');
+  }
+
+  function renderReceivablesDivergences(summary){
+    const box = el('receivablesDivergenceAlert');
+    if(!box) return;
+    const rows = (summary && summary.divergences) || [];
+    if(!rows.length){ box.hidden = true; box.innerHTML = ''; return; }
+    const settings = (summary && summary.settings) || {};
+    const percent = ((Number(settings.receivablesToleranceBps) || 0)/100).toFixed(2).replace('.',',');
+    box.hidden = false;
+    box.innerHTML = '<strong>'+rows.length+' recebível(is) fora da tolerância</strong> ('+percent+'% ou '+
+      formatCentsBRL(settings.receivablesToleranceFixedCents)+', o que for atingido primeiro):<br>'+
+      rows.slice(0, 8).map(row =>
+        escapeHtml(financeDateLabel(row.expectedDate))+' · '+escapeHtml(row.operatorText || '')+' · '+
+        escapeHtml(row.companyName || '')+' — previsto '+formatCentsBRL(row.expectedAmountCents)+
+        ', recebido '+formatCentsBRL(row.receivedAmountCents)+' ('+financeSignedCents(row.differenceCents)+')'
+      ).join('<br>');
+  }
+
+  function renderReceivablesGroup(bodyId, rows, emptyText){
+    const body = el(bodyId);
+    if(!body) return;
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(emptyText)+'</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(row =>
+      '<tr>'+
+        '<td data-label="Grupo">'+escapeHtml(row.label || row.key || '—')+'</td>'+
+        '<td data-label="Previsto">'+formatCentsBRL(row.expectedCents)+'</td>'+
+        '<td data-label="Recebido">'+formatCentsBRL(row.receivedCents)+'</td>'+
+        '<td data-label="Pendente">'+formatCentsBRL(row.pendingCents)+'</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  async function loadRecebiveisPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    renderReceivableCompanyOptions();
+    if(!el('receivableMes').value) el('receivableMes').value = financeCurrentMonthKey();
+    const companyId = el('receivableLoja').value;
+    const month = el('receivableMes').value;
+    const status = el('receivableStatus').value;
+    const operatorText = el('receivableOperator').value.trim();
+
+    el('receivablesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    const listParams = new URLSearchParams({competenceFrom:month, competenceTo:month, pageSize:'100'});
+    if(companyId) listParams.set('companyId', companyId);
+    if(status) listParams.set('status', status);
+    if(operatorText) listParams.set('operatorText', operatorText);
+    const summaryParams = new URLSearchParams({month});
+    if(companyId) summaryParams.set('companyId', companyId);
+
+    try{
+      const [list, summary] = await Promise.all([
+        financeApiRequest('/receivables?'+listParams.toString()),
+        financeApiRequest('/receivables/summary?'+summaryParams.toString())
+      ]);
+      receivablesCurrentRows = Array.isArray(list.rows) ? list.rows : [];
+      receivablesSettings = list.settings || summary.settings || null;
+      renderReceivablesTable(receivablesCurrentRows);
+      renderReceivablesSummary(summary, list.totals);
+      renderReceivablesDivergences(summary);
+      renderReceivablesGroup('receivablesByStoreBody', summary.byStore || [], 'Nenhum recebível na competência.');
+      renderReceivablesGroup('receivablesByOperatorBody', summary.byOperator || [], 'Nenhum recebível na competência.');
+    }catch(error){
+      receivablesCurrentRows = [];
+      el('receivablesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      renderReceivablesSummary(null, null);
+    }
+  }
+
+  ['receivableLoja','receivableMes','receivableStatus'].forEach(id => {
+    el(id) && el(id).addEventListener('change', loadRecebiveisPage);
+  });
+  el('receivableOperator') && el('receivableOperator').addEventListener('change', loadRecebiveisPage);
+
+  function openReceivableDialog(row){
+    el('receivableForm').reset();
+    renderReceivableCompanyOptions();
+    el('receivableId').value = row ? row.id : '';
+    el('receivableDialogTitle').textContent = row ? 'EDITAR RECEBÍVEL' : 'NOVO RECEBÍVEL';
+    el('receivableCompany').value = row ? row.companyId : (el('receivableLoja').value || '');
+    el('receivableCompany').disabled = Boolean(row);
+    el('receivableCompetence').value = row ? row.competenceMonth : (el('receivableMes').value || financeCurrentMonthKey());
+    el('receivableOperatorText').value = row ? (row.operatorText || '') : '';
+    el('receivableExpectedDate').value = row ? row.expectedDate : '';
+    el('receivableExpectedAmount').value = row ? (row.expectedAmountCents/100).toFixed(2) : '';
+    const hasReceived = row && row.receivedAmountCents !== null && row.receivedAmountCents !== undefined;
+    el('receivableReceivedAmount').value = hasReceived ? (row.receivedAmountCents/100).toFixed(2) : '';
+    el('receivableReceivedDate').value = hasReceived ? (row.receivedDate || '') : '';
+    el('receivableNotes').value = row ? (row.notes || '') : '';
+    el('receivableFormStatus').textContent = '';
+    el('receivableDialog').showModal();
+  }
+  function closeReceivableDialog(){
+    if(el('receivableDialog').open) el('receivableDialog').close();
+  }
+
+  el('btnNewReceivable') && el('btnNewReceivable').addEventListener('click', () => openReceivableDialog(null));
+  el('btnCloseReceivableDialog') && el('btnCloseReceivableDialog').addEventListener('click', closeReceivableDialog);
+  el('btnCancelReceivableDialog') && el('btnCancelReceivableDialog').addEventListener('click', closeReceivableDialog);
+
+  el('receivablesTableBody') && el('receivablesTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-receivable-edit]');
+    const cancelButton = event.target.closest('[data-receivable-cancel]');
+    if(editButton){
+      const row = receivablesCurrentRows.find(item => item.id === editButton.dataset.receivableEdit);
+      if(row) openReceivableDialog(row);
+      return;
+    }
+    if(cancelButton){
+      if(!confirm('Cancelar este recebível? Ele deixa de contar no fluxo de caixa, mas continua no histórico.')) return;
+      try{
+        await financeApiRequest('/receivables/'+encodeURIComponent(cancelButton.dataset.receivableCancel)+'/cancel', {method:'POST'});
+        await loadRecebiveisPage();
+        showPurchaseToast('Recebível cancelado.');
+      }catch(error){
+        showPurchaseToast(error.message, 'error');
+      }
+    }
+  });
+
+  el('receivableForm') && el('receivableForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('receivableFormStatus');
+    status.textContent = '';
+    const expectedAmountCents = parseBRLToCents(el('receivableExpectedAmount').value);
+    if(expectedAmountCents === null || expectedAmountCents <= 0){
+      status.textContent = 'INFORME UM VALOR PREVISTO MAIOR QUE ZERO.';
+      return;
+    }
+    const receivedRaw = el('receivableReceivedAmount').value.trim();
+    const receivedAmountCents = receivedRaw === '' ? null : parseBRLToCents(receivedRaw);
+    if(receivedRaw !== '' && (receivedAmountCents === null || receivedAmountCents < 0)){
+      status.textContent = 'INFORME UM VALOR RECEBIDO VÁLIDO.';
+      return;
+    }
+    if(receivedAmountCents !== null && !el('receivableReceivedDate').value){
+      status.textContent = 'INFORME A DATA DO RECEBIMENTO.';
+      return;
+    }
+    const payload = {
+      companyId: el('receivableCompany').value,
+      operatorText: el('receivableOperatorText').value,
+      competenceMonth: el('receivableCompetence').value,
+      expectedDate: el('receivableExpectedDate').value,
+      expectedAmountCents,
+      receivedAmountCents,
+      receivedDate: receivedAmountCents === null ? '' : el('receivableReceivedDate').value,
+      notes: el('receivableNotes').value
+    };
+    const id = el('receivableId').value;
+    try{
+      await financeApiRequest(id ? '/receivables/'+encodeURIComponent(id) : '/receivables', {
+        method: id ? 'PUT' : 'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      closeReceivableDialog();
+      await loadRecebiveisPage();
+      showPurchaseToast('Recebível salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  // --- Fluxo de Caixa ---------------------------------------------------
+
+  let cashFlowData = null;
+
+  function cashFlowVisibleDays(){
+    if(!cashFlowData) return [];
+    const horizon = Number(el('cashFlowHorizon') && el('cashFlowHorizon').value) || 30;
+    return (cashFlowData.days || []).slice(0, horizon);
+  }
+
+  function renderCashFlowSummary(){
+    const container = el('cashFlowSummary');
+    if(!container) return;
+    if(!cashFlowData){
+      container.innerHTML = '<div class="dre-empty">Não foi possível carregar o fluxo de caixa.</div>';
+      return;
+    }
+    const days = cashFlowVisibleDays();
+    const last = days[days.length - 1];
+    const entradas = days.reduce((sum, day) => sum + day.entradasCents, 0);
+    const saidas = days.reduce((sum, day) => sum + day.saidasCents, 0);
+    const finalCents = last ? last.caixaFinalCents : cashFlowData.caixaAtualCents;
+    container.innerHTML =
+      '<div class="card'+(cashFlowData.caixaAtualCents < 0 ? ' neg' : '')+'"><div class="lbl">CAIXA ATUAL</div><div class="num">'+formatCentsBRL(cashFlowData.caixaAtualCents)+'</div>'+
+        '<div class="sub">'+cashFlowData.accountsWithBalance+' conta(s) com saldo informado</div></div>'+
+      '<div class="card"><div class="lbl">ENTRADAS NO PERÍODO</div><div class="num">'+formatCentsBRL(entradas)+'</div></div>'+
+      '<div class="card"><div class="lbl">SAÍDAS NO PERÍODO</div><div class="num">'+formatCentsBRL(saidas)+'</div></div>'+
+      '<div class="card'+(finalCents < 0 ? ' neg' : '')+'"><div class="lbl">CAIXA FINAL PROJETADO</div><div class="num">'+formatCentsBRL(finalCents)+'</div>'+
+        '<div class="sub">'+(last ? escapeHtml(financeDateLabel(last.date)) : '—')+'</div></div>';
+  }
+
+  function renderCashFlowWarnings(){
+    const box = el('cashFlowWarnings');
+    if(!box) return;
+    if(!cashFlowData){ box.hidden = true; box.innerHTML = ''; return; }
+    const warnings = [];
+    if(cashFlowData.accountsMissingBalance > 0){
+      warnings.push('<strong>'+cashFlowData.accountsMissingBalance+' conta(s) ativa(s) sem saldo informado</strong> — elas ficam de fora do Caixa Atual. Use "SALDOS DAS CONTAS" para preencher.');
+    }
+    if(cashFlowData.taxesAndFeesIncluded === false){
+      warnings.push('<strong>Impostos e taxas de cartão: não incluídos ainda (Fase 7)</strong> — entram como R$ 0,00 nos cálculos, então a projeção está incompleta nesse ponto.');
+    }
+    const negative = (cashFlowData.horizons || []).find(row => row.firstNegativeDate);
+    if(negative){
+      warnings.push('<strong>Caixa projetado fica negativo em '+escapeHtml(financeDateLabel(negative.firstNegativeDate))+'.</strong>');
+    }
+    box.hidden = warnings.length === 0;
+    box.innerHTML = warnings.join('<br>');
+  }
+
+  // Gráfico desenhado com SVG inline: barras de entrada/saída por dia e a
+  // linha do caixa final acumulado. Sem biblioteca externa (o projeto não
+  // tem nenhuma e não vai ganhar uma só por causa desta tela).
+  function renderCashFlowChart(){
+    const container = el('cashFlowChart');
+    if(!container) return;
+    const days = cashFlowVisibleDays();
+    if(!days.length){
+      container.innerHTML = '<div class="dre-empty">Sem dados para o horizonte selecionado.</div>';
+      return;
+    }
+    const width = 900;
+    const height = 260;
+    const padLeft = 12;
+    const padRight = 12;
+    const padTop = 14;
+    const padBottom = 26;
+    const plotWidth = width - padLeft - padRight;
+    const plotHeight = height - padTop - padBottom;
+    const slot = plotWidth / days.length;
+
+    const values = [];
+    days.forEach(day => {
+      values.push(day.caixaFinalCents, day.entradasCents, -day.saidasCents, 0);
+    });
+    const maxValue = Math.max.apply(null, values);
+    const minValue = Math.min.apply(null, values);
+    const span = (maxValue - minValue) || 1;
+    const y = value => padTop + plotHeight - ((value - minValue) / span) * plotHeight;
+
+    const bars = days.map((day, index) => {
+      const centerX = padLeft + slot * index + slot / 2;
+      const barWidth = Math.max(1.5, Math.min(9, slot * 0.34));
+      const zeroY = y(0);
+      const inTop = y(day.entradasCents);
+      const outBottom = y(-day.saidasCents);
+      return '<rect class="cf-bar-in" x="'+(centerX - barWidth - 1).toFixed(2)+'" y="'+inTop.toFixed(2)+'" width="'+barWidth.toFixed(2)+'" height="'+Math.max(0, zeroY - inTop).toFixed(2)+'"></rect>'+
+        '<rect class="cf-bar-out" x="'+(centerX + 1).toFixed(2)+'" y="'+zeroY.toFixed(2)+'" width="'+barWidth.toFixed(2)+'" height="'+Math.max(0, outBottom - zeroY).toFixed(2)+'"></rect>';
+    }).join('');
+
+    const points = days.map((day, index) => {
+      const centerX = padLeft + slot * index + slot / 2;
+      return centerX.toFixed(2)+','+y(day.caixaFinalCents).toFixed(2);
+    });
+    const areaPath = 'M'+points[0].split(',')[0]+','+y(0).toFixed(2)+' L'+points.join(' L')+
+      ' L'+points[points.length-1].split(',')[0]+','+y(0).toFixed(2)+' Z';
+
+    // No máximo 8 rótulos de data, senão o eixo vira uma mancha.
+    const labelStep = Math.max(1, Math.ceil(days.length / 8));
+    const labels = days.map((day, index) => {
+      if(index % labelStep !== 0 && index !== days.length - 1) return '';
+      const centerX = padLeft + slot * index + slot / 2;
+      return '<text class="cf-label" x="'+centerX.toFixed(2)+'" y="'+(height - 8)+'" text-anchor="middle">'+
+        escapeHtml(day.date.slice(8,10)+'/'+day.date.slice(5,7))+'</text>';
+    }).join('');
+
+    container.innerHTML =
+      '<svg viewBox="0 0 '+width+' '+height+'" role="img" aria-label="Projeção diária do caixa">'+
+        '<line class="cf-zero" x1="'+padLeft+'" y1="'+y(0).toFixed(2)+'" x2="'+(width-padRight)+'" y2="'+y(0).toFixed(2)+'"></line>'+
+        '<path class="cf-area" d="'+areaPath+'"></path>'+
+        bars+
+        '<polyline class="cf-line" points="'+points.join(' ')+'"></polyline>'+
+        '<line class="cf-axis" x1="'+padLeft+'" y1="'+(height-padBottom)+'" x2="'+(width-padRight)+'" y2="'+(height-padBottom)+'"></line>'+
+        labels+
+      '</svg>'+
+      '<div class="cash-flow-legend">'+
+        '<span><i style="background:#66d49e"></i>Entradas</span>'+
+        '<span><i style="background:#e1ad49"></i>Saídas</span>'+
+        '<span><i style="background:var(--accent)"></i>Caixa final acumulado</span>'+
+      '</div>';
+  }
+
+  function renderCashFlowHorizons(){
+    const body = el('cashFlowHorizonsBody');
+    if(!body) return;
+    const rows = (cashFlowData && cashFlowData.horizons) || [];
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Sem projeção disponível.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(row =>
+      '<tr>'+
+        '<td data-label="Horizonte">'+row.days+' dias</td>'+
+        '<td data-label="Até">'+escapeHtml(financeDateLabel(row.endDate))+'</td>'+
+        '<td data-label="Entradas">'+formatCentsBRL(row.entradasCents)+'</td>'+
+        '<td data-label="Saídas">'+formatCentsBRL(row.saidasCents)+'</td>'+
+        '<td data-label="Caixa final">'+formatCentsBRL(row.caixaFinalCents)+'</td>'+
+        '<td data-label="1º dia negativo">'+(row.firstNegativeDate ? escapeHtml(financeDateLabel(row.firstNegativeDate)) : '—')+'</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  function renderCashFlowDays(){
+    const body = el('cashFlowDaysBody');
+    if(!body) return;
+    const days = cashFlowVisibleDays();
+    if(!days.length){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Sem projeção disponível.</td></tr>';
+      return;
+    }
+    body.innerHTML = days.map(day =>
+      '<tr>'+
+        '<td data-label="Data">'+escapeHtml(financeDateLabel(day.date))+'</td>'+
+        '<td data-label="Caixa inicial">'+formatCentsBRL(day.caixaInicialCents)+'</td>'+
+        '<td data-label="Entradas">'+formatCentsBRL(day.entradasCents)+'</td>'+
+        '<td data-label="Saídas">'+formatCentsBRL(day.saidasCents)+'</td>'+
+        '<td data-label="Caixa final">'+formatCentsBRL(day.caixaFinalCents)+'</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  function renderCashFlowPage(){
+    renderCashFlowSummary();
+    renderCashFlowWarnings();
+    renderCashFlowChart();
+    renderCashFlowHorizons();
+    renderCashFlowDays();
+  }
+
+  async function loadFluxoCaixaPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    renderReceivableCompanyOptions();
+    const companyId = el('cashFlowLoja').value;
+    el('cashFlowChart').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    const params = new URLSearchParams();
+    if(companyId) params.set('companyId', companyId);
+    try{
+      cashFlowData = await financeApiRequest('/cash-flow'+(params.toString() ? '?'+params.toString() : ''));
+      renderCashFlowPage();
+    }catch(error){
+      cashFlowData = null;
+      el('cashFlowChart').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      renderCashFlowSummary();
+    }
+  }
+
+  el('cashFlowLoja') && el('cashFlowLoja').addEventListener('change', loadFluxoCaixaPage);
+  el('cashFlowHorizon') && el('cashFlowHorizon').addEventListener('change', renderCashFlowPage);
+
+  // --- Saldos das contas (fonte do Caixa Atual) -------------------------
+
+  async function loadCashFlowBalances(){
+    const body = el('cashFlowBalancesBody');
+    const select = el('cashFlowBalanceAccount');
+    if(!body || !select) return;
+    body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams();
+    const companyId = el('cashFlowLoja') ? el('cashFlowLoja').value : '';
+    if(companyId) params.set('companyId', companyId);
+    try{
+      const data = await financeApiRequest('/account-balances'+(params.toString() ? '?'+params.toString() : ''));
+      const accounts = data.accounts || [];
+      const selected = select.value;
+      select.innerHTML = '<option value="">SELECIONE</option>'+accounts.map(account =>
+        '<option value="'+escapeHtml(account.accountId)+'">'+escapeHtml(account.accountName)+
+        (account.companyName ? ' — '+escapeHtml(account.companyName) : '')+'</option>'
+      ).join('');
+      if(accounts.some(account => account.accountId === selected)) select.value = selected;
+      if(!accounts.length){
+        body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhuma conta ativa cadastrada.</td></tr>';
+        return;
+      }
+      body.innerHTML = accounts.map(account =>
+        '<tr'+(account.hasBalance ? '' : ' style="opacity:.7"')+'>'+
+          '<td data-label="Conta">'+escapeHtml(account.accountName)+'</td>'+
+          '<td data-label="Unidade">'+escapeHtml(account.companyName || '—')+'</td>'+
+          '<td data-label="Saldo">'+(account.hasBalance ? formatCentsBRL(account.balanceCents) : 'SEM SALDO INFORMADO')+'</td>'+
+          '<td data-label="Referência">'+(account.hasBalance ? escapeHtml(financeDateLabel(account.asOfDate)) : '—')+'</td>'+
+          '<td data-label="Atualizado por">'+escapeHtml(account.updatedByName || '—')+'</td>'+
+        '</tr>'
+      ).join('');
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  el('btnCashFlowBalances') && el('btnCashFlowBalances').addEventListener('click', async () => {
+    el('cashFlowBalanceStatus').textContent = '';
+    el('cashFlowBalancesDialog').showModal();
+    await loadCashFlowBalances();
+  });
+  el('btnCloseCashFlowBalances') && el('btnCloseCashFlowBalances').addEventListener('click', () => {
+    if(el('cashFlowBalancesDialog').open) el('cashFlowBalancesDialog').close();
+  });
+
+  el('cashFlowBalanceForm') && el('cashFlowBalanceForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('cashFlowBalanceStatus');
+    status.textContent = '';
+    // Saldo negativo é legítimo (cheque especial), então só o formato é
+    // validado aqui — o backend faz a mesma checagem. Daí a variante
+    // parseBRLToCentsAllowNegative: parseBRLToCents rejeita negativo, o que
+    // tornava impossível registrar uma conta no cheque especial.
+    const balanceCents = parseBRLToCentsAllowNegative(el('cashFlowBalanceAmount').value);
+    if(balanceCents === null){
+      status.textContent = 'INFORME UM SALDO VÁLIDO.';
+      return;
+    }
+    try{
+      await financeApiRequest('/account-balances', {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          accountId: el('cashFlowBalanceAccount').value,
+          balanceCents,
+          asOfDate: el('cashFlowBalanceDate').value,
+          notes: el('cashFlowBalanceNotes').value
+        })
+      });
+      status.textContent = '';
+      await loadCashFlowBalances();
+      await loadFluxoCaixaPage();
+      showPurchaseToast('Saldo atualizado.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  // --- Configurações ----------------------------------------------------
+
+  async function openCashFlowSettingsDialog(){
+    renderReceivableCompanyOptions();
+    el('cashFlowSettingsStatus').textContent = '';
+    el('cashFlowSettingsCompany').value = el('cashFlowLoja') ? el('cashFlowLoja').value : '';
+    await refreshCashFlowSettingsFields();
+    el('cashFlowSettingsDialog').showModal();
+  }
+
+  async function refreshCashFlowSettingsFields(){
+    const params = new URLSearchParams();
+    const companyId = el('cashFlowSettingsCompany').value;
+    if(companyId) params.set('companyId', companyId);
+    try{
+      const data = await financeApiRequest('/cash-flow-settings'+(params.toString() ? '?'+params.toString() : ''));
+      const settings = data.settings || {};
+      el('cashFlowSettingsBps').value = ((Number(settings.receivablesToleranceBps) || 0)/100).toFixed(2);
+      el('cashFlowSettingsFixed').value = ((Number(settings.receivablesToleranceFixedCents) || 0)/100).toFixed(2);
+      el('cashFlowSettingsPayrollDay').value = Number(settings.payrollDefaultPaymentDay) || 5;
+      el('cashFlowSettingsStatus').textContent = settings.source === 'default'
+        ? 'USANDO OS PADRÕES DO SISTEMA (NENHUMA CONFIGURAÇÃO SALVA AINDA).'
+        : (settings.source === 'global' ? 'USANDO O PADRÃO GERAL.' : '');
+    }catch(error){
+      el('cashFlowSettingsStatus').textContent = error.message;
+    }
+  }
+
+  el('btnCashFlowSettings') && el('btnCashFlowSettings').addEventListener('click', openCashFlowSettingsDialog);
+  el('btnCloseCashFlowSettings') && el('btnCloseCashFlowSettings').addEventListener('click', () => {
+    if(el('cashFlowSettingsDialog').open) el('cashFlowSettingsDialog').close();
+  });
+  el('btnCancelCashFlowSettings') && el('btnCancelCashFlowSettings').addEventListener('click', () => {
+    if(el('cashFlowSettingsDialog').open) el('cashFlowSettingsDialog').close();
+  });
+  el('cashFlowSettingsCompany') && el('cashFlowSettingsCompany').addEventListener('change', refreshCashFlowSettingsFields);
+
+  el('cashFlowSettingsForm') && el('cashFlowSettingsForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('cashFlowSettingsStatus');
+    status.textContent = '';
+    const percent = Number(el('cashFlowSettingsBps').value);
+    const fixedCents = parseBRLToCents(el('cashFlowSettingsFixed').value);
+    const payrollDay = Number(el('cashFlowSettingsPayrollDay').value);
+    if(!Number.isFinite(percent) || percent < 0 || percent > 100){
+      status.textContent = 'INFORME UMA TOLERÂNCIA PERCENTUAL ENTRE 0% E 100%.';
+      return;
+    }
+    if(fixedCents === null || fixedCents < 0){
+      status.textContent = 'INFORME UMA TOLERÂNCIA EM VALOR MAIOR OU IGUAL A ZERO.';
+      return;
+    }
+    try{
+      await financeApiRequest('/cash-flow-settings', {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          companyId: el('cashFlowSettingsCompany').value,
+          receivablesToleranceBps: Math.round(percent * 100),
+          receivablesToleranceFixedCents: fixedCents,
+          payrollDefaultPaymentDay: payrollDay
+        })
+      });
+      if(el('cashFlowSettingsDialog').open) el('cashFlowSettingsDialog').close();
+      await loadFluxoCaixaPage();
+      showPurchaseToast('Configurações salvas.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  // --- Imagem pronta pra compartilhamento (PNG via canvas) --------------
+  // Desenhada no cliente, sem backend e sem dependência nova: resumo do
+  // caixa atual + caixa final projetado em cada horizonte, num formato
+  // vertical que fica legível numa conversa de WhatsApp.
+  function drawCashFlowShareImage(){
+    const canvas = el('cashFlowShareCanvas');
+    if(!canvas || !cashFlowData) return;
+    const context = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    context.fillStyle = '#0d1a26';
+    context.fillRect(0, 0, width, height);
+
+    context.fillStyle = '#7fa8d0';
+    context.font = '700 20px sans-serif';
+    context.fillText('UNIGAMES · FLUXO DE CAIXA', 40, 56);
+    context.fillStyle = '#5c7187';
+    context.font = '600 16px sans-serif';
+    context.fillText('Projeção a partir de '+financeDateLabel(cashFlowData.today), 40, 84);
+
+    context.fillStyle = '#e6eef6';
+    context.font = '700 18px sans-serif';
+    context.fillText('CAIXA ATUAL', 40, 140);
+    context.fillStyle = cashFlowData.caixaAtualCents < 0 ? '#e07b6a' : '#66d49e';
+    context.font = '800 40px sans-serif';
+    context.fillText(formatCentsBRL(cashFlowData.caixaAtualCents), 40, 186);
+
+    const horizons = cashFlowData.horizons || [];
+    const maxAbs = Math.max(1, ...horizons.map(row => Math.abs(row.caixaFinalCents)));
+    let y = 250;
+    context.fillStyle = '#e6eef6';
+    context.font = '700 18px sans-serif';
+    context.fillText('CAIXA FINAL PROJETADO', 40, y);
+    y += 34;
+
+    horizons.forEach(row => {
+      context.fillStyle = '#5c7187';
+      context.font = '700 15px sans-serif';
+      context.fillText(row.days+' dias · até '+financeDateLabel(row.endDate), 40, y);
+      const barWidth = Math.max(4, (Math.abs(row.caixaFinalCents)/maxAbs) * (width - 90));
+      context.fillStyle = row.caixaFinalCents < 0 ? '#c0392b' : '#397cae';
+      context.fillRect(40, y + 12, barWidth, 16);
+      context.fillStyle = row.caixaFinalCents < 0 ? '#e07b6a' : '#e6eef6';
+      context.font = '800 20px sans-serif';
+      context.fillText(formatCentsBRL(row.caixaFinalCents), 40, y + 54);
+      if(row.firstNegativeDate){
+        context.fillStyle = '#e07b6a';
+        context.font = '700 13px sans-serif';
+        context.fillText('negativo a partir de '+financeDateLabel(row.firstNegativeDate), 40, y + 76);
+        y += 22;
+      }
+      y += 96;
+    });
+
+    // Rodapé: só as ressalvas que valem AGORA. O aviso de impostos segue a
+    // mesma condição da tela (renderCashFlowWarnings) — quando a Fase 7
+    // chegar e a API passar a devolver taxesAndFeesIncluded:true, a imagem
+    // para de afirmar isso junto com a tela, em vez de um PNG já compartilhado
+    // seguir repetindo a ressalva pra sempre.
+    const footerNotes = [];
+    if(cashFlowData.taxesAndFeesIncluded === false){
+      footerNotes.push('Impostos e taxas de cartão ainda não estão incluídos (Fase 7).');
+    }
+    if(cashFlowData.accountsMissingBalance > 0){
+      footerNotes.push(cashFlowData.accountsMissingBalance+' conta(s) sem saldo informado ficaram fora do caixa atual.');
+    }
+    context.fillStyle = '#5c7187';
+    context.font = '600 13px sans-serif';
+    // Empilha de baixo pra cima: a última nota fica sempre na mesma linha de
+    // base, não importa quantas apareceram.
+    footerNotes.forEach((note, index) => {
+      context.fillText(note, 40, height - 34 - (footerNotes.length - 1 - index) * 22);
+    });
+
+    const link = el('btnDownloadCashFlowImage');
+    if(link) link.href = canvas.toDataURL('image/png');
+  }
+
+  el('btnCashFlowShare') && el('btnCashFlowShare').addEventListener('click', () => {
+    if(!cashFlowData){
+      showPurchaseToast('Carregue o fluxo de caixa antes de gerar a imagem.', 'error');
+      return;
+    }
+    drawCashFlowShareImage();
+    el('cashFlowShareDialog').showModal();
+  });
+  el('btnCloseCashFlowShare') && el('btnCloseCashFlowShare').addEventListener('click', () => {
+    if(el('cashFlowShareDialog').open) el('cashFlowShareDialog').close();
   });
 
   // Aba "REALIZADO X ORÇADO" da DRE — mesma rota/renderizador acima, só

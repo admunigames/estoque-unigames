@@ -7,6 +7,7 @@
     "strict": true,
     "types": ["node", "@cloudflare/workers-types"],
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
