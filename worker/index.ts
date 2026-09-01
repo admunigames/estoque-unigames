@@ -236,6 +236,9 @@ const APP_ROUTE_PATHS = new Set([
   "/financeiro/taxas-cartao",
   "/financeiro/cartoes-corporativos",
   "/financeiro/conciliacao-bancaria",
+  "/financeiro/controle-reposicao",
+  "/financeiro/recargas-celular",
+  "/financeiro/declaracao-shopping",
   "/documentos",
   "/documentos/certificados/garantia-de-produto",
   "/documentos/certificados/garantia-estendida",
@@ -1987,6 +1990,128 @@ async function dispatchDueMissionNotifications(env: Env) {
   }
 }
 
+type DuePhoneRechargeRow = {
+  id: string;
+  phoneNumber: string;
+  carrier: string;
+  companyName: string;
+  nextRechargeDate: string;
+};
+
+// Lembrete da próxima recarga de celular (Financeiro — Fase 8). Avisa o
+// Financeiro por push 3 dias antes e no dia da próxima recarga. Não usa
+// nenhum outro módulo de tarefas — o controle é interno da Recarga.
+async function dispatchDuePhoneRechargeNotifications(env: Env) {
+  const publicKey = env.VAPID_PUBLIC_KEY?.trim() || "";
+  const privateKey = env.VAPID_PRIVATE_KEY?.trim() || "";
+  const subject = env.VAPID_SUBJECT?.trim() || "";
+  if (!publicKey || !privateKey || !subject) return;
+
+  const now = recifeDateTime();
+  // Roda a cada minuto — só dispara na primeira janela do dia (00:00–00:04)
+  // pra não varrer a tabela 1440x por dia.
+  const nowMinutes = Number(now.time.slice(0, 2)) * 60 + Number(now.time.slice(3, 5));
+  if (nowMinutes > 4) return;
+
+  const targetDates = new Map<string, number>([
+    [addDateDays(now.date, 3), 3],
+    [now.date, 0],
+  ]);
+
+  const rows = await env.DB
+    .prepare(
+      `SELECT id, phone_number AS phoneNumber, carrier, company_name AS companyName,
+              next_recharge_date AS nextRechargeDate
+       FROM finance_phone_recharges
+       WHERE active=1 AND next_recharge_date <= ?1`,
+    )
+    .bind(addDateDays(now.date, 3))
+    .all<DuePhoneRechargeRow>();
+  if (!(rows.results ?? []).length) return;
+
+  const userRows = await env.DB
+    .prepare(
+      `SELECT id FROM app_users
+       WHERE active=1 AND (role='admin' OR permissions_json LIKE '%finance:manage%')`,
+    )
+    .all<{ id: string }>();
+  const userIds = new Set<string>((userRows.results ?? []).map((row) => row.id));
+  userIds.add("env-admin");
+  if (!userIds.size) return;
+
+  webPush.setVapidDetails(subject, publicKey, privateKey);
+
+  for (const recharge of rows.results ?? []) {
+    // Dispara quando a data cai numa das janelas (3 dias antes ou no dia);
+    // recargas já vencidas caem na janela "no dia" e continuam avisando.
+    const offset = targetDates.get(recharge.nextRechargeDate) ?? (recharge.nextRechargeDate < now.date ? 0 : undefined);
+    if (offset === undefined) continue;
+
+    const scheduledFor = `${recharge.nextRechargeDate}|${offset}`;
+    const deliveryKey = `recarga:${recharge.id}`;
+    const deliveryId = String(offset);
+
+    for (const userId of userIds) {
+      const delivered = await env.DB
+        .prepare(
+          `SELECT id FROM push_delivery_log
+           WHERE user_id=?1 AND task_key=?2 AND task_id=?3 AND scheduled_for=?4 LIMIT 1`,
+        )
+        .bind(userId, deliveryKey, deliveryId, scheduledFor)
+        .first<{ id: string }>();
+      if (delivered) continue;
+
+      const subscriptions = await env.DB
+        .prepare("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?1")
+        .bind(userId)
+        .all<PushSubscriptionRow>();
+      let sent = false;
+      for (const subscription of subscriptions.results ?? []) {
+        try {
+          await webPush.sendNotification(
+            {
+              endpoint: subscription.endpoint,
+              keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+            },
+            JSON.stringify({
+              title:
+                offset === 0
+                  ? "Recarga de celular vence hoje"
+                  : "Recarga de celular em 3 dias",
+              body: `${recharge.phoneNumber} (${recharge.carrier || "operadora"}) — ${recharge.companyName || "unidade"}`,
+              url: "/financeiro/recargas-celular",
+              tag: `unigames-recharge-${recharge.id}-${recharge.nextRechargeDate}-${offset}`,
+            }),
+            { TTL: 60 * 60 * 6, urgency: "normal" },
+          );
+          sent = true;
+        } catch (error) {
+          const statusCode =
+            typeof error === "object" && error && "statusCode" in error
+              ? Number((error as { statusCode?: unknown }).statusCode)
+              : 0;
+          if (statusCode === 404 || statusCode === 410) {
+            await env.DB.prepare("DELETE FROM push_subscriptions WHERE id=?1").bind(subscription.id).run();
+          } else {
+            console.error("Falha ao enviar lembrete de recarga.", error);
+          }
+        }
+      }
+      if (sent) {
+        await env.DB
+          .prepare(
+            `INSERT INTO push_delivery_log
+              (id, user_id, task_key, task_id, scheduled_for, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)
+             ON CONFLICT (user_id, task_key, task_id, scheduled_for) DO NOTHING`,
+          )
+          .bind(crypto.randomUUID(), userId, deliveryKey, deliveryId, scheduledFor)
+          .run();
+      }
+    }
+  }
+}
+
 type RoutineCompanyRecord = { id: string; name: string };
 type DueRoutineRow = {
   id: string;
@@ -2263,6 +2388,7 @@ const worker = {
     ctx.waitUntil(Promise.all([
       dispatchDueTaskNotifications(env),
       dispatchDueMissionNotifications(env),
+      dispatchDuePhoneRechargeNotifications(env),
       advanceOperationalRoutines(env),
       createAutomaticBackup(env, config.sessionSecret),
       purgeOldOsNotes(env),

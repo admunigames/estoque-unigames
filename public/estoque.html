@@ -2819,6 +2819,9 @@
         <a class="nav-item sub-item" id="navFinanceiroTaxasCartao" data-page="financeiroTaxasCartao" data-permission="finance" data-home-desc="Taxas por adquirente e bandeira, importação de vendas e repasse, relatório mensal do custo com taxas." title="Taxas de Cartão" href="/financeiro/taxas-cartao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><span class="nav-label">Taxas de Cartão</span></a>
         <a class="nav-item sub-item" id="navFinanceiroCartoesCorp" data-page="financeiroCartoesCorp" data-permission="finance" data-home-desc="Cartões de crédito corporativos: limite, fatura importada, parcelas futuras e lançamento como despesa." title="Cartões Corporativos" href="/financeiro/cartoes-corporativos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="M6 14.5h5"/></svg></span><span class="nav-label">Cartões Corporativos</span></a>
         <a class="nav-item sub-item" id="navFinanceiroConciliacao" data-page="financeiroConciliacao" data-permission="finance" data-home-desc="Importe o extrato bancário, classifique os lançamentos e deixe o sistema sugerir a classificação pelos nomes que se repetem." title="Conciliação Bancária" href="/financeiro/conciliacao-bancaria"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><path d="m16 16 2 2 4-4"/></svg></span><span class="nav-label">Conciliação Bancária</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroReposicao" data-page="financeiroReposicao" data-permission="finance" data-home-desc="Valores repostos e gastos por Assistência, Logística e outros setores." title="Controle de Reposição" href="/financeiro/controle-reposicao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 14-4l2 2"/><path d="M20 16a8 8 0 0 1-14 4l-2-2"/><path d="M18 2v4h-4M6 22v-4h4"/></svg></span><span class="nav-label">Controle de Reposição</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroRecargas" data-page="financeiroRecargas" data-permission="finance" data-home-desc="Recargas de celulares por unidade, com lembrete da próxima recarga." title="Recargas de Celulares" href="/financeiro/recargas-celular"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Recargas de Celulares</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroDeclaracaoShopping" data-page="financeiroDeclaracaoShopping" data-permission="finance" data-home-desc="Declaração de faturamento por loja/shopping, com histórico e alerta de aluguel percentual." title="Declaração de Shopping" href="/financeiro/declaracao-shopping"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></span><span class="nav-label">Declaração de Shopping</span></a>
       </div>
     </div>
     <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
@@ -5816,8 +5819,270 @@
       </div>
     </section>
 
+    <section id="pageFinanceiroReposicao" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Controle de Reposição</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Valores repostos e gastos por Assistência, Logística e outros setores. Cada lançamento de saída pode virar uma Despesa, reaproveitando o módulo de Despesas.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="reposicaoLoja">UNIDADE</label><select id="reposicaoLoja"><option value="">TODAS AS UNIDADES</option></select></div>
+        <div class="field"><label for="reposicaoSetor">SETOR</label>
+          <select id="reposicaoSetor">
+            <option value="">TODOS OS SETORES</option>
+            <option value="assistencia">ASSISTÊNCIA</option>
+            <option value="logistica">LOGÍSTICA</option>
+            <option value="outros">OUTROS</option>
+          </select>
+        </div>
+        <div class="field"><label for="reposicaoTipo">TIPO</label>
+          <select id="reposicaoTipo">
+            <option value="">TODOS OS TIPOS</option>
+            <option value="entrada">ENTRADA</option>
+            <option value="saida">SAÍDA</option>
+            <option value="reposicao">REPOSIÇÃO</option>
+            <option value="ressarcimento">RESSARCIMENTO</option>
+            <option value="prejuizo">PREJUÍZO</option>
+            <option value="recuperacao">RECUPERAÇÃO</option>
+          </select>
+        </div>
+        <div class="field"><label for="reposicaoMesDe">DE</label><input type="month" id="reposicaoMesDe"></div>
+        <div class="field"><label for="reposicaoMesAte">ATÉ</label><input type="month" id="reposicaoMesAte"></div>
+        <div class="field"><label for="reposicaoBusca">BUSCAR</label><input id="reposicaoBusca" maxlength="120" placeholder="Produto, motivo ou responsável"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnFiltrarReposicao" type="button">FILTRAR</button>
+          <button class="btn-accent" id="btnNewReposicao" type="button">NOVO LANÇAMENTO</button>
+        </div>
+      </div>
+
+      <section class="summary" id="reposicaoSummary" aria-label="Totais por setor"><div class="dre-empty">Carregando…</div></section>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="reposicaoTable">
+            <thead><tr><th>Data</th><th>Unidade</th><th>Produto</th><th>Motivo</th><th>Setor</th><th>Responsável</th><th>Tipo</th><th>Valor</th><th>Despesa</th><th></th></tr></thead>
+            <tbody id="reposicaoTableBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="pageFinanceiroRecargas" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Recargas de Celulares</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Cadastro de linhas pré-pagas por unidade. A próxima recarga é sempre a última recarga + 3 meses, e o Financeiro recebe um lembrete por push 3 dias antes e no dia.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="recargaLoja">UNIDADE</label><select id="recargaLoja"><option value="">TODAS AS UNIDADES</option></select></div>
+        <div class="field"><label class="checkbox-inline"><input type="checkbox" id="recargaSomenteAtivas" checked> Somente ativas</label></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnNewRecarga" type="button">NOVA RECARGA</button>
+        </div>
+      </div>
+
+      <div id="recargaAlertaProximas" class="dre-empty" hidden></div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="recargaTable">
+            <thead><tr><th>Número</th><th>Operadora</th><th>Unidade</th><th>Responsável</th><th>Último valor</th><th>Última recarga</th><th>Próxima recarga</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="recargaTableBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="pageFinanceiroDeclaracaoShopping" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Declaração de Shopping</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Declaração de faturamento por loja/shopping e competência, com histórico mensal, comparativo e alerta de aluguel percentual (ponto de virada sobre o faturamento real).</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="declShoppingLoja">LOJA</label><select id="declShoppingLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field"><label for="declShoppingShopping">SHOPPING</label><select id="declShoppingShopping"><option value="">TODOS OS SHOPPINGS</option></select></div>
+        <div class="field"><label for="declShoppingMesDe">DE</label><input type="month" id="declShoppingMesDe"></div>
+        <div class="field"><label for="declShoppingMesAte">ATÉ</label><input type="month" id="declShoppingMesAte"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnFiltrarDeclShopping" type="button">FILTRAR</button>
+          <button class="btn-accent" id="btnNewDeclShopping" type="button">NOVA DECLARAÇÃO</button>
+        </div>
+      </div>
+
+      <div id="declShoppingAlertas"></div>
+
+      <h3 class="supply-section-title">HISTÓRICO E COMPARATIVO</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="declShoppingTable">
+            <thead><tr><th>Competência</th><th>Shopping / Loja</th><th>Faturamento real</th><th>Média declarada</th><th>Valor declarado</th><th>Variação</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Valor pago</th><th>Alerta</th><th></th></tr></thead>
+            <tbody id="declShoppingTableBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
+
+<dialog class="purchase-dialog" id="reposicaoDialog" aria-labelledby="reposicaoDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="reposicaoDialogTitle">NOVO LANÇAMENTO</h3>
+    <button class="purchase-dialog-close" id="btnCloseReposicaoDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="reposicaoForm">
+    <input type="hidden" id="reposicaoId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="reposicaoData">DATA *</label><input type="date" id="reposicaoData" required></div>
+      <div class="purchase-field"><label for="reposicaoUnidade">UNIDADE *</label><select id="reposicaoUnidade" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="reposicaoProduto">PRODUTO *</label><input id="reposicaoProduto" maxlength="200" required></div>
+      <div class="purchase-field full"><label for="reposicaoMotivo">MOTIVO</label><input id="reposicaoMotivo" maxlength="500"></div>
+      <div class="purchase-field"><label for="reposicaoSetorResp">SETOR RESPONSÁVEL *</label>
+        <select id="reposicaoSetorResp" required>
+          <option value="">SELECIONE</option>
+          <option value="assistencia">ASSISTÊNCIA</option>
+          <option value="logistica">LOGÍSTICA</option>
+          <option value="outros">OUTROS</option>
+        </select>
+      </div>
+      <div class="purchase-field"><label for="reposicaoResponsavel">RESPONSÁVEL</label><input id="reposicaoResponsavel" maxlength="160"></div>
+      <div class="purchase-field"><label for="reposicaoTipoForm">TIPO *</label>
+        <select id="reposicaoTipoForm" required>
+          <option value="">SELECIONE</option>
+          <option value="entrada">ENTRADA</option>
+          <option value="saida">SAÍDA</option>
+          <option value="reposicao">REPOSIÇÃO</option>
+          <option value="ressarcimento">RESSARCIMENTO</option>
+          <option value="prejuizo">PREJUÍZO</option>
+          <option value="recuperacao">RECUPERAÇÃO</option>
+        </select>
+      </div>
+      <div class="purchase-field"><label for="reposicaoValor">VALOR (R$) *</label><input type="number" id="reposicaoValor" min="0.01" step="0.01" required></div>
+      <div class="purchase-field full"><label for="reposicaoObs">OBSERVAÇÕES</label><textarea id="reposicaoObs" rows="2" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="reposicaoFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelReposicaoDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="reposicaoExpenseDialog" aria-labelledby="reposicaoExpenseTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="reposicaoExpenseTitle">ADICIONAR COMO DESPESA</h3>
+    <button class="purchase-dialog-close" id="btnCloseReposicaoExpenseDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="reposicaoExpenseForm">
+    <input type="hidden" id="reposicaoExpenseEntryId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="reposicaoExpenseItem">CATEGORIA/SUBCATEGORIA *</label><select id="reposicaoExpenseItem" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="reposicaoExpenseCostCenter">CENTRO DE CUSTO</label><select id="reposicaoExpenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
+      <div class="purchase-field"><label for="reposicaoExpenseDue">VENCIMENTO *</label><input type="date" id="reposicaoExpenseDue" required></div>
+    </div>
+    <p class="page-desc">A despesa é criada no módulo de Despesas (avulsa, valor e loja do lançamento) e vinculada a este lançamento.</p>
+    <div class="user-form-status" id="reposicaoExpenseStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelReposicaoExpenseDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">CRIAR DESPESA</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="recargaDialog" aria-labelledby="recargaDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="recargaDialogTitle">NOVA RECARGA</h3>
+    <button class="purchase-dialog-close" id="btnCloseRecargaDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="recargaForm">
+    <input type="hidden" id="recargaId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="recargaNumero">NÚMERO *</label><input id="recargaNumero" maxlength="40" required placeholder="(00) 00000-0000"></div>
+      <div class="purchase-field"><label for="recargaOperadora">OPERADORA *</label><input id="recargaOperadora" maxlength="60" required></div>
+      <div class="purchase-field"><label for="recargaUnidade">UNIDADE *</label><select id="recargaUnidade" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="recargaResponsavel">RESPONSÁVEL</label><input id="recargaResponsavel" maxlength="160"></div>
+      <div class="purchase-field"><label for="recargaValor">VALOR (R$) *</label><input type="number" id="recargaValor" min="0" step="0.01" required></div>
+      <div class="purchase-field"><label for="recargaUltima">DATA DA ÚLTIMA RECARGA *</label><input type="date" id="recargaUltima" required></div>
+      <div class="purchase-field"><label for="recargaProxima">PRÓXIMA RECARGA</label><input type="date" id="recargaProxima" disabled></div>
+      <div class="purchase-field"><label class="checkbox-inline"><input type="checkbox" id="recargaAtiva" checked> Linha ativa</label></div>
+      <div class="purchase-field full"><label for="recargaObs">OBSERVAÇÕES</label><textarea id="recargaObs" rows="2" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="recargaFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRecargaDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="recargaEventDialog" aria-labelledby="recargaEventTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="recargaEventTitle">REGISTRAR RECARGA</h3>
+    <button class="purchase-dialog-close" id="btnCloseRecargaEventDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="recargaEventForm">
+    <input type="hidden" id="recargaEventId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="recargaEventData">DATA DA RECARGA *</label><input type="date" id="recargaEventData" required></div>
+      <div class="purchase-field"><label for="recargaEventValor">VALOR (R$) *</label><input type="number" id="recargaEventValor" min="0.01" step="0.01" required></div>
+      <div class="purchase-field full"><label for="recargaEventObs">OBSERVAÇÕES</label><textarea id="recargaEventObs" rows="2" maxlength="1000"></textarea></div>
+    </div>
+    <div id="recargaEventHistorico" class="page-desc"></div>
+    <div class="user-form-status" id="recargaEventStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRecargaEventDialog" type="button">FECHAR</button>
+      <button class="btn-accent" type="submit">REGISTRAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="declShoppingDialog" aria-labelledby="declShoppingDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="declShoppingDialogTitle">NOVA DECLARAÇÃO</h3>
+    <button class="purchase-dialog-close" id="btnCloseDeclShoppingDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="declShoppingForm">
+    <input type="hidden" id="declShoppingId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="declShoppingNome">SHOPPING *</label><input id="declShoppingNome" maxlength="160" required list="declShoppingNomeList"></div>
+      <datalist id="declShoppingNomeList"></datalist>
+      <div class="purchase-field"><label for="declShoppingLojaForm">LOJA *</label><select id="declShoppingLojaForm" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="declShoppingCompetencia">COMPETÊNCIA *</label><input type="month" id="declShoppingCompetencia" required></div>
+      <div class="purchase-field"><label for="declShoppingDataDecl">DATA DA DECLARAÇÃO</label><input type="date" id="declShoppingDataDecl"></div>
+      <div class="purchase-field"><label for="declShoppingFatReal">FATURAMENTO REAL (R$) *</label><input type="number" id="declShoppingFatReal" min="0" step="0.01" required></div>
+      <div class="purchase-field"><label for="declShoppingMedia">MÉDIA QUE COSTUMA SER DECLARADA (R$)</label><input type="number" id="declShoppingMedia" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="number" id="declShoppingSugerido" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingDeclarado">VALOR EFETIVAMENTE DECLARADO (R$)</label><input type="number" id="declShoppingDeclarado" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingPercentual">PERCENTUAL CONTRATUAL (%)</label><input type="number" id="declShoppingPercentual" min="0" max="100" step="0.01" placeholder="Ex.: 7"></div>
+      <div class="purchase-field"><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="number" id="declShoppingMinimo" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="number" id="declShoppingAluguelPct" min="0" step="0.01"></div>
+      <div class="purchase-field"><label class="checkbox-inline"><input type="checkbox" id="declShoppingPctPago"> Houve pagamento de aluguel percentual</label></div>
+      <div class="purchase-field"><label for="declShoppingPago">VALOR EFETIVAMENTE PAGO (R$)</label><input type="number" id="declShoppingPago" min="0" step="0.01"></div>
+      <div class="purchase-field full"><label for="declShoppingObs">OBSERVAÇÕES</label><textarea id="declShoppingObs" rows="2" maxlength="2000"></textarea></div>
+    </div>
+    <div id="declShoppingCalcHint" class="page-desc"></div>
+    <div id="declShoppingAnexos" class="page-desc"></div>
+    <div class="purchase-form-actions" style="justify-content:flex-start">
+      <label class="btn-outline" for="declShoppingAnexoFile" id="declShoppingAnexoLabel" style="cursor:pointer">+ ANEXAR PDF</label>
+      <input type="file" id="declShoppingAnexoFile" accept=".pdf" hidden>
+    </div>
+    <div class="user-form-status" id="declShoppingFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelDeclShoppingDialog" type="button">FECHAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog class="purchase-dialog" id="dreDetailDialog" aria-labelledby="dreDetailDialogTitle">
   <div class="purchase-dialog-head">
@@ -7643,7 +7908,10 @@
     financeiroMaquinetas:'/financeiro/maquinetas',
     financeiroTaxasCartao:'/financeiro/taxas-cartao',
     financeiroCartoesCorp:'/financeiro/cartoes-corporativos',
-    financeiroConciliacao:'/financeiro/conciliacao-bancaria'
+    financeiroConciliacao:'/financeiro/conciliacao-bancaria',
+    financeiroReposicao:'/financeiro/controle-reposicao',
+    financeiroRecargas:'/financeiro/recargas-celular',
+    financeiroDeclaracaoShopping:'/financeiro/declaracao-shopping'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -7683,7 +7951,10 @@
     financeiroMaquinetas:'MAQUINETAS',
     financeiroTaxasCartao:'TAXAS DE CARTÃO',
     financeiroCartoesCorp:'CARTÕES CORPORATIVOS',
-    financeiroConciliacao:'CONCILIAÇÃO BANCÁRIA'
+    financeiroConciliacao:'CONCILIAÇÃO BANCÁRIA',
+    financeiroReposicao:'CONTROLE DE REPOSIÇÃO',
+    financeiroRecargas:'RECARGAS DE CELULARES',
+    financeiroDeclaracaoShopping:'DECLARAÇÃO DE SHOPPING'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -7719,7 +7990,10 @@
     financeiroMaquinetas:'finance',
     financeiroTaxasCartao:'finance',
     financeiroCartoesCorp:'finance',
-    financeiroConciliacao:'finance'
+    financeiroConciliacao:'finance',
+    financeiroReposicao:'finance',
+    financeiroRecargas:'finance',
+    financeiroDeclaracaoShopping:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -8137,7 +8411,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -8205,6 +8479,9 @@
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
+    if(name === 'financeiroReposicao') loadReposicaoPage();
+    if(name === 'financeiroRecargas') loadRecargasPage();
+    if(name === 'financeiroDeclaracaoShopping') loadDeclShoppingPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -8244,6 +8521,9 @@
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
+    if(name === 'financeiroReposicao') loadReposicaoPage();
+    if(name === 'financeiroRecargas') loadRecargasPage();
+    if(name === 'financeiroDeclaracaoShopping') loadDeclShoppingPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -21169,6 +21449,558 @@ function renderHomeTasks(){
   }
   el('dreOrcadoLoja') && el('dreOrcadoLoja').addEventListener('change', loadDreOrcado);
   el('dreOrcadoMes') && el('dreOrcadoMes').addEventListener('change', loadDreOrcado);
+
+  // ================= FINANCEIRO FASE 8: ITENS DIVERSOS =================
+
+  function fase8CompanyOptions(selectId, allLabel){
+    const select = el(selectId);
+    if(!select) return;
+    const selected = select.value;
+    const ph = allLabel ? '<option value="">'+allLabel+'</option>' : '<option value="">SELECIONE</option>';
+    select.innerHTML = ph + companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    if(Array.from(select.options).some(o => o.value === selected)) select.value = selected;
+  }
+  function fase8CompanyName(id){
+    const c = companies.find(x => x.id === id);
+    return c ? c.name : '';
+  }
+  function pctFromBps(bps){ return (Number(bps || 0) / 100).toFixed(2).replace('.', ',') + '%'; }
+
+  // ----- Controle de Reposição -----
+  const REPOSICAO_KIND_LABELS = {entrada:'ENTRADA', saida:'SAÍDA', reposicao:'REPOSIÇÃO', ressarcimento:'RESSARCIMENTO', prejuizo:'PREJUÍZO', recuperacao:'RECUPERAÇÃO'};
+  const REPOSICAO_SECTOR_LABELS = {assistencia:'ASSISTÊNCIA', logistica:'LOGÍSTICA', outros:'OUTROS'};
+  const REPOSICAO_EXPENSE_KINDS = new Set(['saida','reposicao','ressarcimento','prejuizo']);
+  let reposicaoRows = [];
+
+  async function loadReposicaoPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    if(!financeItems.length) await loadFinanceCatalog();
+    if(!financeCostCenters.length){
+      try{ const cc = await financeApiRequest('/cost-centers'); financeCostCenters = Array.isArray(cc.costCenters) ? cc.costCenters : []; }catch(_e){}
+    }
+    fase8CompanyOptions('reposicaoLoja', 'TODAS AS UNIDADES');
+    fase8CompanyOptions('reposicaoUnidade', '');
+    await reloadReposicao();
+  }
+  async function reloadReposicao(){
+    const body = el('reposicaoTableBody');
+    if(!body) return;
+    body.innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams();
+    const map = {companyId:'reposicaoLoja', sector:'reposicaoSetor', kind:'reposicaoTipo', search:'reposicaoBusca'};
+    Object.keys(map).forEach(k => { const v = (el(map[k]).value || '').trim(); if(v) params.set(k, v); });
+    if(el('reposicaoMesDe').value) params.set('monthFrom', el('reposicaoMesDe').value);
+    if(el('reposicaoMesAte').value) params.set('monthTo', el('reposicaoMesAte').value);
+    try{
+      const data = await financeApiRequest('/replacement-control?'+params.toString());
+      reposicaoRows = Array.isArray(data.rows) ? data.rows : [];
+      renderReposicaoSummary(Array.isArray(data.breakdown) ? data.breakdown : []);
+      renderReposicaoTable();
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function renderReposicaoSummary(breakdown){
+    const box = el('reposicaoSummary');
+    if(!box) return;
+    const bySector = {};
+    breakdown.forEach(b => {
+      const s = bySector[b.sector] || (bySector[b.sector] = {inflow:0, outflow:0});
+      const cents = Number(b.totalCents) || 0;
+      if(b.kind === 'entrada' || b.kind === 'recuperacao') s.inflow += cents; else s.outflow += cents;
+    });
+    const keys = Object.keys(bySector);
+    box.innerHTML = keys.length ? keys.map(s =>
+      '<div class="stat"><strong>'+escapeHtml(REPOSICAO_SECTOR_LABELS[s] || s)+'</strong>'+
+      '<span>Saídas '+formatCentsBRL(bySector[s].outflow)+' · Entradas '+formatCentsBRL(bySector[s].inflow)+'</span></div>'
+    ).join('') : '<div class="dre-empty">Nenhum lançamento no filtro atual.</div>';
+  }
+  function renderReposicaoTable(){
+    const body = el('reposicaoTableBody');
+    body.innerHTML = reposicaoRows.length ? reposicaoRows.map(r => {
+      const eligible = REPOSICAO_EXPENSE_KINDS.has(r.kind);
+      const despesaCell = r.expenseId
+        ? '<span class="status-pill ok">VINCULADA</span>'
+        : (eligible ? '<button class="btn-outline btn-sm" type="button" data-reposicao-expense="'+escapeHtml(r.id)+'">ADICIONAR</button>' : '—');
+      return '<tr>'+
+        '<td>'+escapeHtml(r.entryDate)+'</td>'+
+        '<td>'+escapeHtml(r.companyName || fase8CompanyName(r.companyId) || '—')+'</td>'+
+        '<td>'+escapeHtml(r.product || '—')+'</td>'+
+        '<td>'+escapeHtml(r.reason || '—')+'</td>'+
+        '<td>'+escapeHtml(REPOSICAO_SECTOR_LABELS[r.sector] || r.sector)+'</td>'+
+        '<td>'+escapeHtml(r.responsibleName || '—')+'</td>'+
+        '<td>'+escapeHtml(REPOSICAO_KIND_LABELS[r.kind] || r.kind)+'</td>'+
+        '<td>'+formatCentsBRL(r.amountCents)+'</td>'+
+        '<td>'+despesaCell+'</td>'+
+        '<td style="white-space:nowrap">'+
+          '<button class="btn-outline btn-sm" type="button" data-reposicao-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
+          (r.expenseId ? '' : '<button class="btn-outline btn-sm" type="button" data-reposicao-del="'+escapeHtml(r.id)+'">EXCLUIR</button>')+
+        '</td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="10" class="responsive-empty">Nenhum lançamento.</td></tr>';
+  }
+  function openReposicaoDialog(row){
+    el('reposicaoForm').reset();
+    fase8CompanyOptions('reposicaoUnidade', '');
+    el('reposicaoId').value = row ? row.id : '';
+    el('reposicaoDialogTitle').textContent = row ? 'EDITAR LANÇAMENTO' : 'NOVO LANÇAMENTO';
+    el('reposicaoData').value = row ? row.entryDate : new Date().toISOString().slice(0,10);
+    el('reposicaoUnidade').value = row ? row.companyId : '';
+    el('reposicaoProduto').value = row ? (row.product || '') : '';
+    el('reposicaoMotivo').value = row ? (row.reason || '') : '';
+    el('reposicaoSetorResp').value = row ? row.sector : '';
+    el('reposicaoResponsavel').value = row ? (row.responsibleName || '') : '';
+    el('reposicaoTipoForm').value = row ? row.kind : '';
+    el('reposicaoValor').value = row && row.amountCents ? (row.amountCents/100).toFixed(2) : '';
+    el('reposicaoObs').value = row ? (row.notes || '') : '';
+    el('reposicaoFormStatus').textContent = '';
+    el('reposicaoDialog').showModal();
+  }
+  el('btnNewReposicao') && el('btnNewReposicao').addEventListener('click', () => openReposicaoDialog(null));
+  el('btnFiltrarReposicao') && el('btnFiltrarReposicao').addEventListener('click', reloadReposicao);
+  el('btnCloseReposicaoDialog') && el('btnCloseReposicaoDialog').addEventListener('click', () => el('reposicaoDialog').close());
+  el('btnCancelReposicaoDialog') && el('btnCancelReposicaoDialog').addEventListener('click', () => el('reposicaoDialog').close());
+  el('reposicaoForm') && el('reposicaoForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('reposicaoFormStatus');
+    status.textContent = '';
+    const companyId = el('reposicaoUnidade').value;
+    const payload = {
+      entryDate: el('reposicaoData').value,
+      companyId, companyName: fase8CompanyName(companyId),
+      product: el('reposicaoProduto').value.trim(),
+      reason: el('reposicaoMotivo').value.trim(),
+      sector: el('reposicaoSetorResp').value,
+      responsibleName: el('reposicaoResponsavel').value.trim(),
+      kind: el('reposicaoTipoForm').value,
+      amountCents: Math.round(Number(el('reposicaoValor').value) * 100),
+      notes: el('reposicaoObs').value
+    };
+    const id = el('reposicaoId').value;
+    if(id) payload.id = id;
+    try{
+      await financeApiRequest('/replacement-control', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('reposicaoDialog').close();
+      await reloadReposicao();
+      showPurchaseToast('Lançamento salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+  el('reposicaoTableBody') && el('reposicaoTableBody').addEventListener('click', async event => {
+    const edit = event.target.closest('[data-reposicao-edit]');
+    const del = event.target.closest('[data-reposicao-del]');
+    const exp = event.target.closest('[data-reposicao-expense]');
+    if(edit){ const r = reposicaoRows.find(x => x.id === edit.dataset.reposicaoEdit); if(r) openReposicaoDialog(r); }
+    else if(del){
+      if(!confirm('Excluir este lançamento?')) return;
+      try{ await financeApiRequest('/replacement-control?id='+encodeURIComponent(del.dataset.reposicaoDel), {method:'DELETE'}); await reloadReposicao(); showPurchaseToast('Lançamento excluído.'); }
+      catch(error){ alert(error.message); }
+    }
+    else if(exp){ const r = reposicaoRows.find(x => x.id === exp.dataset.reposicaoExpense); if(r) openReposicaoExpenseDialog(r); }
+  });
+
+  function openReposicaoExpenseDialog(row){
+    el('reposicaoExpenseForm').reset();
+    renderFlatFinanceItemOptions('reposicaoExpenseItem', 'SELECIONE');
+    const cc = el('reposicaoExpenseCostCenter');
+    cc.innerHTML = '<option value="">SEM CENTRO DE CUSTO</option>' + (financeCostCenters||[]).map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    el('reposicaoExpenseEntryId').value = row.id;
+    el('reposicaoExpenseDue').value = row.entryDate;
+    el('reposicaoExpenseStatus').textContent = '';
+    el('reposicaoExpenseDialog').showModal();
+  }
+  el('btnCloseReposicaoExpenseDialog') && el('btnCloseReposicaoExpenseDialog').addEventListener('click', () => el('reposicaoExpenseDialog').close());
+  el('btnCancelReposicaoExpenseDialog') && el('btnCancelReposicaoExpenseDialog').addEventListener('click', () => el('reposicaoExpenseDialog').close());
+  el('reposicaoExpenseForm') && el('reposicaoExpenseForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('reposicaoExpenseStatus');
+    status.textContent = '';
+    const entryId = el('reposicaoExpenseEntryId').value;
+    const row = reposicaoRows.find(x => x.id === entryId);
+    if(!row){ status.textContent = 'LANÇAMENTO NÃO ENCONTRADO.'; return; }
+    const financeItemId = el('reposicaoExpenseItem').value;
+    const dueDate = el('reposicaoExpenseDue').value;
+    if(!financeItemId){ status.textContent = 'SELECIONE A CATEGORIA.'; return; }
+    if(!dueDate){ status.textContent = 'INFORME O VENCIMENTO.'; return; }
+    try{
+      const expensePayload = {
+        idempotencyKey: 'reposicao:'+entryId,
+        companyId: row.companyId,
+        companyName: row.companyName || fase8CompanyName(row.companyId),
+        description: ('Reposição: '+(row.product || REPOSICAO_KIND_LABELS[row.kind])).slice(0,200),
+        financeItemId,
+        costCenterId: el('reposicaoExpenseCostCenter').value || '',
+        originalAmountCents: row.amountCents,
+        issueDate: row.entryDate,
+        dueDate,
+        paymentMethod: 'CONTROLE DE REPOSIÇÃO',
+        notes: [REPOSICAO_SECTOR_LABELS[row.sector], row.responsibleName, row.reason].filter(Boolean).join(' — ')
+      };
+      const created = await financeApiRequest('/expenses', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(expensePayload)});
+      const expenseId = created.id || created.expenseId || '';
+      await financeApiRequest('/replacement-control', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:entryId, expenseId})});
+      el('reposicaoExpenseDialog').close();
+      await reloadReposicao();
+      showPurchaseToast('Despesa criada e vinculada.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // ----- Recargas de Celulares -----
+  let recargaRows = [];
+  async function loadRecargasPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    fase8CompanyOptions('recargaLoja', 'TODAS AS UNIDADES');
+    fase8CompanyOptions('recargaUnidade', '');
+    await reloadRecargas();
+  }
+  async function reloadRecargas(){
+    const body = el('recargaTableBody');
+    if(!body) return;
+    body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams();
+    if(el('recargaLoja').value) params.set('companyId', el('recargaLoja').value);
+    if(el('recargaSomenteAtivas').checked) params.set('active', '1');
+    try{
+      const data = await financeApiRequest('/phone-recharges?'+params.toString());
+      recargaRows = Array.isArray(data.rows) ? data.rows : [];
+      renderRecargaTable();
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function renderRecargaTable(){
+    const body = el('recargaTableBody');
+    const today = new Date().toISOString().slice(0,10);
+    const soon = new Date(Date.now() + 3*86400000).toISOString().slice(0,10);
+    let due = 0;
+    body.innerHTML = recargaRows.length ? recargaRows.map(r => {
+      const overdue = r.nextRechargeDate && r.nextRechargeDate < today;
+      const near = r.nextRechargeDate && r.nextRechargeDate <= soon;
+      if((overdue || near) && r.active) due += 1;
+      const nextCell = '<span class="'+(overdue ? 'status-pill danger' : (near ? 'status-pill warn' : ''))+'">'+escapeHtml(r.nextRechargeDate || '—')+'</span>';
+      return '<tr'+(r.active ? '' : ' style="opacity:.55"')+'>'+
+        '<td>'+escapeHtml(r.phoneNumber || '—')+'</td>'+
+        '<td>'+escapeHtml(r.carrier || '—')+'</td>'+
+        '<td>'+escapeHtml(r.companyName || fase8CompanyName(r.companyId) || '—')+'</td>'+
+        '<td>'+escapeHtml(r.responsibleName || '—')+'</td>'+
+        '<td>'+formatCentsBRL(r.lastAmountCents)+'</td>'+
+        '<td>'+escapeHtml(r.lastRechargeDate || '—')+'</td>'+
+        '<td>'+nextCell+'</td>'+
+        '<td>'+(r.active ? 'ATIVA' : 'INATIVA')+'</td>'+
+        '<td style="white-space:nowrap">'+
+          '<button class="btn-outline btn-sm" type="button" data-recarga-event="'+escapeHtml(r.id)+'">REGISTRAR RECARGA</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-recarga-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-recarga-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
+        '</td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="9" class="responsive-empty">Nenhuma linha cadastrada.</td></tr>';
+    const alerta = el('recargaAlertaProximas');
+    if(alerta){
+      alerta.hidden = due === 0;
+      alerta.textContent = due ? (due+' recarga(s) vencida(s) ou nos próximos 3 dias. O Financeiro é avisado por push automaticamente.') : '';
+    }
+  }
+  function recalcRecargaProxima(){
+    const d = el('recargaUltima').value;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ el('recargaProxima').value = ''; return; }
+    const base = new Date(d + 'T00:00:00Z');
+    const dm = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth()+3, 1));
+    const last = new Date(Date.UTC(dm.getUTCFullYear(), dm.getUTCMonth()+1, 0)).getUTCDate();
+    el('recargaProxima').value = dm.getUTCFullYear()+'-'+String(dm.getUTCMonth()+1).padStart(2,'0')+'-'+String(Math.min(base.getUTCDate(), last)).padStart(2,'0');
+  }
+  function openRecargaDialog(row){
+    el('recargaForm').reset();
+    fase8CompanyOptions('recargaUnidade', '');
+    el('recargaId').value = row ? row.id : '';
+    el('recargaDialogTitle').textContent = row ? 'EDITAR RECARGA' : 'NOVA RECARGA';
+    el('recargaNumero').value = row ? (row.phoneNumber || '') : '';
+    el('recargaOperadora').value = row ? (row.carrier || '') : '';
+    el('recargaUnidade').value = row ? row.companyId : '';
+    el('recargaResponsavel').value = row ? (row.responsibleName || '') : '';
+    el('recargaValor').value = row && row.lastAmountCents ? (row.lastAmountCents/100).toFixed(2) : '';
+    el('recargaUltima').value = row ? (row.lastRechargeDate || '') : '';
+    el('recargaAtiva').checked = row ? !!row.active : true;
+    el('recargaObs').value = row ? (row.notes || '') : '';
+    recalcRecargaProxima();
+    el('recargaFormStatus').textContent = '';
+    el('recargaDialog').showModal();
+  }
+  el('recargaUltima') && el('recargaUltima').addEventListener('change', recalcRecargaProxima);
+  el('btnNewRecarga') && el('btnNewRecarga').addEventListener('click', () => openRecargaDialog(null));
+  el('recargaLoja') && el('recargaLoja').addEventListener('change', reloadRecargas);
+  el('recargaSomenteAtivas') && el('recargaSomenteAtivas').addEventListener('change', reloadRecargas);
+  el('btnCloseRecargaDialog') && el('btnCloseRecargaDialog').addEventListener('click', () => el('recargaDialog').close());
+  el('btnCancelRecargaDialog') && el('btnCancelRecargaDialog').addEventListener('click', () => el('recargaDialog').close());
+  el('recargaForm') && el('recargaForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('recargaFormStatus');
+    status.textContent = '';
+    const companyId = el('recargaUnidade').value;
+    const payload = {
+      phoneNumber: el('recargaNumero').value.trim(),
+      carrier: el('recargaOperadora').value.trim(),
+      companyId, companyName: fase8CompanyName(companyId),
+      responsibleName: el('recargaResponsavel').value.trim(),
+      lastAmountCents: Math.round(Number(el('recargaValor').value || 0) * 100),
+      lastRechargeDate: el('recargaUltima').value,
+      notes: el('recargaObs').value,
+      active: el('recargaAtiva').checked
+    };
+    const id = el('recargaId').value;
+    if(id) payload.id = id;
+    try{
+      await financeApiRequest('/phone-recharges', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('recargaDialog').close();
+      await reloadRecargas();
+      showPurchaseToast('Recarga salva.');
+    }catch(error){ status.textContent = error.message; }
+  });
+  el('recargaTableBody') && el('recargaTableBody').addEventListener('click', async event => {
+    const edit = event.target.closest('[data-recarga-edit]');
+    const del = event.target.closest('[data-recarga-del]');
+    const ev = event.target.closest('[data-recarga-event]');
+    if(edit){ const r = recargaRows.find(x => x.id === edit.dataset.recargaEdit); if(r) openRecargaDialog(r); }
+    else if(del){
+      if(!confirm('Excluir esta linha e todo o histórico de recargas?')) return;
+      try{ await financeApiRequest('/phone-recharges?id='+encodeURIComponent(del.dataset.recargaDel), {method:'DELETE'}); await reloadRecargas(); showPurchaseToast('Linha excluída.'); }
+      catch(error){ alert(error.message); }
+    }
+    else if(ev){ const r = recargaRows.find(x => x.id === ev.dataset.recargaEvent); if(r) openRecargaEventDialog(r); }
+  });
+  async function openRecargaEventDialog(row){
+    el('recargaEventForm').reset();
+    el('recargaEventId').value = row.id;
+    el('recargaEventData').value = new Date().toISOString().slice(0,10);
+    el('recargaEventTitle').textContent = 'REGISTRAR RECARGA — ' + (row.phoneNumber || '');
+    el('recargaEventStatus').textContent = '';
+    el('recargaEventHistorico').textContent = 'Carregando histórico…';
+    el('recargaEventDialog').showModal();
+    try{
+      const data = await financeApiRequest('/phone-recharges?rechargeId='+encodeURIComponent(row.id));
+      const events = Array.isArray(data.events) ? data.events : [];
+      el('recargaEventHistorico').innerHTML = events.length
+        ? '<strong>Histórico:</strong><br>' + events.map(e => escapeHtml(e.rechargeDate) + ' — ' + formatCentsBRL(e.amountCents) + (e.notes ? ' (' + escapeHtml(e.notes) + ')' : '')).join('<br>')
+        : 'Sem recargas registradas ainda.';
+    }catch(_e){ el('recargaEventHistorico').textContent = ''; }
+  }
+  el('btnCloseRecargaEventDialog') && el('btnCloseRecargaEventDialog').addEventListener('click', () => el('recargaEventDialog').close());
+  el('btnCancelRecargaEventDialog') && el('btnCancelRecargaEventDialog').addEventListener('click', () => el('recargaEventDialog').close());
+  el('recargaEventForm') && el('recargaEventForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('recargaEventStatus');
+    status.textContent = '';
+    const id = el('recargaEventId').value;
+    const payload = {
+      rechargeDate: el('recargaEventData').value,
+      amountCents: Math.round(Number(el('recargaEventValor').value) * 100),
+      notes: el('recargaEventObs').value
+    };
+    try{
+      await financeApiRequest('/phone-recharges/'+encodeURIComponent(id)+'/recharge', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('recargaEventDialog').close();
+      await reloadRecargas();
+      showPurchaseToast('Recarga registrada.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // ----- Declaração de Shopping -----
+  let declShoppingRows = [];
+  let declShoppingMalls = [];
+  async function loadDeclShoppingPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    fase8CompanyOptions('declShoppingLoja', 'TODAS AS LOJAS');
+    fase8CompanyOptions('declShoppingLojaForm', '');
+    await reloadDeclShopping();
+  }
+  async function reloadDeclShopping(){
+    const body = el('declShoppingTableBody');
+    if(!body) return;
+    body.innerHTML = '<tr><td colspan="12" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams();
+    if(el('declShoppingLoja').value) params.set('companyId', el('declShoppingLoja').value);
+    if(el('declShoppingShopping').value) params.set('mallName', el('declShoppingShopping').value);
+    if(el('declShoppingMesDe').value) params.set('monthFrom', el('declShoppingMesDe').value);
+    if(el('declShoppingMesAte').value) params.set('monthTo', el('declShoppingMesAte').value);
+    try{
+      const data = await financeApiRequest('/mall-declarations?'+params.toString());
+      declShoppingRows = Array.isArray(data.rows) ? data.rows : [];
+      declShoppingMalls = Array.isArray(data.malls) ? data.malls : [];
+      const mallSel = el('declShoppingShopping');
+      const sel = mallSel.value;
+      mallSel.innerHTML = '<option value="">TODOS OS SHOPPINGS</option>' + declShoppingMalls.map(m => '<option value="'+escapeHtml(m)+'">'+escapeHtml(m)+'</option>').join('');
+      if(declShoppingMalls.includes(sel)) mallSel.value = sel;
+      el('declShoppingNomeList').innerHTML = declShoppingMalls.map(m => '<option value="'+escapeHtml(m)+'"></option>').join('');
+      renderDeclShopping();
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function renderDeclShopping(){
+    const body = el('declShoppingTableBody');
+    const alertas = el('declShoppingAlertas');
+    const alertRows = declShoppingRows.filter(r => r.derived && r.derived.alertLevel !== 'none');
+    alertas.innerHTML = alertRows.length
+      ? alertRows.map(r => '<div class="dre-empty" style="border-left:3px solid var(--danger,#c0392b)"><strong>'+escapeHtml(r.mallName)+' · '+escapeHtml(r.companyName || '')+' · '+escapeHtml(r.competenceMonth)+':</strong> '+escapeHtml(r.derived.alertMessage)+' Ponto de virada: '+formatCentsBRL(r.derived.breakpointCents)+'.</div>').join('')
+      : '';
+    body.innerHTML = declShoppingRows.length ? declShoppingRows.map(r => {
+      const d = r.derived || {};
+      const variacao = d.declaredVsAverageCents || 0;
+      return '<tr>'+
+        '<td>'+escapeHtml(r.competenceMonth)+'</td>'+
+        '<td>'+escapeHtml((r.mallName || '—')+' / '+(r.companyName || fase8CompanyName(r.companyId) || '—'))+'</td>'+
+        '<td>'+formatCentsBRL(r.realRevenueCents)+'</td>'+
+        '<td>'+formatCentsBRL(r.avgDeclaredCents)+'</td>'+
+        '<td>'+formatCentsBRL(r.declaredCents)+'</td>'+
+        '<td>'+(variacao >= 0 ? '+' : '')+formatCentsBRL(variacao)+'</td>'+
+        '<td>'+pctFromBps(d.declaredShareBps)+'</td>'+
+        '<td>'+formatCentsBRL(r.minimumRentCents)+'</td>'+
+        '<td>'+formatCentsBRL(r.percentageRentCents)+'</td>'+
+        '<td>'+formatCentsBRL(r.amountPaidCents)+(r.percentageRentPaid ? ' <span class="status-pill ok">%</span>' : '')+'</td>'+
+        '<td>'+(d.alertLevel && d.alertLevel !== 'none' ? '<span class="status-pill '+(d.alertLevel === 'declared' ? 'danger' : 'warn')+'">'+(d.alertLevel === 'declared' ? 'DECLARADO' : 'RISCO')+'</span>' : '—')+'</td>'+
+        '<td style="white-space:nowrap">'+
+          '<button class="btn-outline btn-sm" type="button" data-decl-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-decl-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
+        '</td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma declaração.</td></tr>';
+  }
+  function declShoppingReadForm(){
+    const num = id => { const v = el(id).value; return v === '' ? 0 : Math.round(Number(v) * 100); };
+    const companyId = el('declShoppingLojaForm').value;
+    return {
+      mallName: el('declShoppingNome').value.trim(),
+      companyId, companyName: fase8CompanyName(companyId),
+      competenceMonth: el('declShoppingCompetencia').value,
+      declarationDate: el('declShoppingDataDecl').value,
+      realRevenueCents: num('declShoppingFatReal'),
+      avgDeclaredCents: num('declShoppingMedia'),
+      suggestedDeclaredCents: num('declShoppingSugerido'),
+      declaredCents: num('declShoppingDeclarado'),
+      contractPercentBps: el('declShoppingPercentual').value === '' ? 0 : Math.round(Number(el('declShoppingPercentual').value) * 100),
+      minimumRentCents: num('declShoppingMinimo'),
+      percentageRentCents: num('declShoppingAluguelPct'),
+      percentageRentPaid: el('declShoppingPctPago').checked,
+      amountPaidCents: num('declShoppingPago'),
+      notes: el('declShoppingObs').value
+    };
+  }
+  function declShoppingUpdateHint(){
+    const f = declShoppingReadForm();
+    const percentFraction = f.contractPercentBps / 10000;
+    const breakpoint = percentFraction > 0 && f.minimumRentCents > 0 ? Math.round(f.minimumRentCents / percentFraction) : 0;
+    const hint = el('declShoppingCalcHint');
+    if(!breakpoint){ hint.textContent = 'Informe percentual contratual e aluguel mínimo para calcular o ponto de virada.'; return; }
+    const pctReal = Math.round(f.realRevenueCents * percentFraction);
+    let msg = 'Ponto de virada: ' + formatCentsBRL(breakpoint) + '. Aluguel percentual sobre o faturamento real: ' + formatCentsBRL(pctReal) + '.';
+    if(f.declaredCents > breakpoint) msg += ' ⚠️ O valor declarado já ultrapassa o ponto de virada.';
+    else if(f.realRevenueCents > breakpoint) msg += ' ⚠️ O faturamento real ultrapassa o ponto de virada.';
+    hint.textContent = msg;
+  }
+  let declShoppingCurrentId = '';
+  async function openDeclShoppingDialog(row){
+    el('declShoppingForm').reset();
+    fase8CompanyOptions('declShoppingLojaForm', '');
+    declShoppingCurrentId = row ? row.id : '';
+    el('declShoppingId').value = row ? row.id : '';
+    el('declShoppingDialogTitle').textContent = row ? 'EDITAR DECLARAÇÃO' : 'NOVA DECLARAÇÃO';
+    if(row){
+      const set = (id, cents) => { el(id).value = cents ? (cents/100).toFixed(2) : ''; };
+      el('declShoppingNome').value = row.mallName || '';
+      el('declShoppingLojaForm').value = row.companyId || '';
+      el('declShoppingCompetencia').value = row.competenceMonth || '';
+      el('declShoppingDataDecl').value = row.declarationDate || '';
+      set('declShoppingFatReal', row.realRevenueCents);
+      set('declShoppingMedia', row.avgDeclaredCents);
+      set('declShoppingSugerido', row.suggestedDeclaredCents);
+      set('declShoppingDeclarado', row.declaredCents);
+      el('declShoppingPercentual').value = row.contractPercentBps ? (row.contractPercentBps/100).toString() : '';
+      set('declShoppingMinimo', row.minimumRentCents);
+      set('declShoppingAluguelPct', row.percentageRentCents);
+      el('declShoppingPctPago').checked = !!row.percentageRentPaid;
+      set('declShoppingPago', row.amountPaidCents);
+      el('declShoppingObs').value = row.notes || '';
+    }
+    el('declShoppingFormStatus').textContent = '';
+    declShoppingUpdateHint();
+    renderDeclShoppingAttachments();
+    el('declShoppingDialog').showModal();
+  }
+  async function renderDeclShoppingAttachments(){
+    const box = el('declShoppingAnexos');
+    const label = el('declShoppingAnexoLabel');
+    if(!declShoppingCurrentId){ box.textContent = 'Salve a declaração para anexar documentos.'; label.style.display = 'none'; return; }
+    label.style.display = '';
+    box.textContent = 'Carregando anexos…';
+    try{
+      const data = await financeApiRequest('/mall-declarations/'+encodeURIComponent(declShoppingCurrentId)+'/attachments');
+      const list = Array.isArray(data.attachments) ? data.attachments : [];
+      box.innerHTML = '<strong>Documentos:</strong> ' + (list.length ? list.map(a =>
+        '<a href="/api/finance/mall-declarations/'+encodeURIComponent(declShoppingCurrentId)+'/attachments/file?attachmentId='+encodeURIComponent(a.id)+'" target="_blank" rel="noopener">'+escapeHtml(a.fileName)+'</a> '+
+        '<button class="btn-outline btn-sm" type="button" data-decl-anexo-del="'+escapeHtml(a.id)+'">×</button>'
+      ).join(' · ') : 'nenhum');
+    }catch(_e){ box.textContent = ''; }
+  }
+  el('declShoppingAnexos') && el('declShoppingAnexos').addEventListener('click', async event => {
+    const del = event.target.closest('[data-decl-anexo-del]');
+    if(!del || !declShoppingCurrentId) return;
+    if(!confirm('Remover este anexo?')) return;
+    try{
+      await financeApiRequest('/mall-declarations/'+encodeURIComponent(declShoppingCurrentId)+'/attachments?attachmentId='+encodeURIComponent(del.dataset.declAnexoDel), {method:'DELETE'});
+      renderDeclShoppingAttachments();
+    }catch(error){ alert(error.message); }
+  });
+  el('declShoppingAnexoFile') && el('declShoppingAnexoFile').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if(!file || !declShoppingCurrentId) return;
+    const status = el('declShoppingFormStatus');
+    status.textContent = 'Enviando anexo…';
+    try{
+      await uploadInvoiceFile('/api/finance/mall-declarations/'+encodeURIComponent(declShoppingCurrentId)+'/attachments', file, {});
+      status.textContent = '';
+      renderDeclShoppingAttachments();
+      showPurchaseToast('Anexo enviado.');
+    }catch(error){ status.textContent = error.message; }
+  });
+  ['declShoppingFatReal','declShoppingDeclarado','declShoppingPercentual','declShoppingMinimo'].forEach(id => {
+    const node = el(id);
+    if(node) node.addEventListener('input', declShoppingUpdateHint);
+  });
+  el('btnNewDeclShopping') && el('btnNewDeclShopping').addEventListener('click', () => openDeclShoppingDialog(null));
+  el('btnFiltrarDeclShopping') && el('btnFiltrarDeclShopping').addEventListener('click', reloadDeclShopping);
+  el('declShoppingLoja') && el('declShoppingLoja').addEventListener('change', reloadDeclShopping);
+  el('declShoppingShopping') && el('declShoppingShopping').addEventListener('change', reloadDeclShopping);
+  el('btnCloseDeclShoppingDialog') && el('btnCloseDeclShoppingDialog').addEventListener('click', () => el('declShoppingDialog').close());
+  el('btnCancelDeclShoppingDialog') && el('btnCancelDeclShoppingDialog').addEventListener('click', () => el('declShoppingDialog').close());
+  el('declShoppingForm') && el('declShoppingForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('declShoppingFormStatus');
+    status.textContent = '';
+    const payload = declShoppingReadForm();
+    if(declShoppingCurrentId) payload.id = declShoppingCurrentId;
+    try{
+      const res = await financeApiRequest('/mall-declarations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      declShoppingCurrentId = payload.id || res.id || declShoppingCurrentId;
+      el('declShoppingId').value = declShoppingCurrentId;
+      el('declShoppingDialogTitle').textContent = 'EDITAR DECLARAÇÃO';
+      await reloadDeclShopping();
+      renderDeclShoppingAttachments();
+      status.textContent = 'Declaração salva. Você já pode anexar documentos.';
+      showPurchaseToast('Declaração salva.');
+    }catch(error){ status.textContent = error.message; }
+  });
+  el('declShoppingTableBody') && el('declShoppingTableBody').addEventListener('click', async event => {
+    const edit = event.target.closest('[data-decl-edit]');
+    const del = event.target.closest('[data-decl-del]');
+    if(edit){ const r = declShoppingRows.find(x => x.id === edit.dataset.declEdit); if(r) openDeclShoppingDialog(r); }
+    else if(del){
+      if(!confirm('Excluir esta declaração e seus anexos?')) return;
+      try{ await financeApiRequest('/mall-declarations?id='+encodeURIComponent(del.dataset.declDel), {method:'DELETE'}); await reloadDeclShopping(); showPurchaseToast('Declaração excluída.'); }
+      catch(error){ alert(error.message); }
+    }
+  });
 
   // ================= DASHBOARD GERAL (PAINEL) =================
   // Fase 2 do módulo Financeiro — agrega, numa única chamada à API

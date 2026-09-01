@@ -2081,3 +2081,154 @@ export const financeBankClassificationRules = pgTable(
     uniqueIndex("finance_bank_classification_rules_key_idx").on(table.companyId, table.merchantKey),
   ],
 );
+
+// ===========================================================================
+// Financeiro — Fase 8 (Itens Diversos)
+// ===========================================================================
+
+// Controle de Reposição — registra valores repostos/gastos por Assistência,
+// Logística e outros setores. Cada lançamento pode virar uma Despesa
+// (reaproveitando o módulo de Despesas: o front chama POST /finance/expenses
+// e devolve o expense_id aqui, sem duplicar a lógica de despesa/DRE).
+// kind: 'entrada' | 'saida' | 'reposicao' | 'ressarcimento' | 'prejuizo' | 'recuperacao'.
+export const financeReplacementEntries = pgTable(
+  "finance_replacement_entries",
+  {
+    id: text("id").primaryKey(),
+    entryDate: text("entry_date").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    product: text("product").notNull().default(""),
+    reason: text("reason").notNull().default(""),
+    // 'assistencia' | 'logistica' | 'outros' — setor responsável pelo gasto.
+    sector: text("sector").notNull().default("outros"),
+    responsibleName: text("responsible_name").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    kind: text("kind").notNull().default("saida"),
+    notes: text("notes").notNull().default(""),
+    // != '' quando o lançamento já foi adicionado como Despesa.
+    expenseId: text("expense_id").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_replacement_entries_company_date_idx").on(table.companyId, table.entryDate),
+    index("finance_replacement_entries_sector_idx").on(table.sector),
+    index("finance_replacement_entries_kind_idx").on(table.kind),
+  ],
+);
+
+// Recargas de Celulares — cadastro de linhas pré-pagas por unidade.
+// next_recharge_date é sempre last_recharge_date + 3 meses (calculado no
+// servidor). O lembrete da próxima recarga é feito por push ao Financeiro
+// via cron (dispatchDuePhoneRechargeNotifications), sem depender de outro
+// módulo de tarefas.
+export const financePhoneRecharges = pgTable(
+  "finance_phone_recharges",
+  {
+    id: text("id").primaryKey(),
+    phoneNumber: text("phone_number").notNull().default(""),
+    carrier: text("carrier").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    responsibleName: text("responsible_name").notNull().default(""),
+    lastAmountCents: integer("last_amount_cents").notNull().default(0),
+    lastRechargeDate: text("last_recharge_date").notNull().default(""),
+    nextRechargeDate: text("next_recharge_date").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    active: integer("active").notNull().default(1),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_phone_recharges_next_idx").on(table.nextRechargeDate),
+    index("finance_phone_recharges_company_idx").on(table.companyId),
+  ],
+);
+
+// Histórico de recargas efetivadas de cada linha — cada "REGISTRAR RECARGA"
+// grava um evento aqui e atualiza last/next na linha do cadastro.
+export const financePhoneRechargeEvents = pgTable(
+  "finance_phone_recharge_events",
+  {
+    id: text("id").primaryKey(),
+    rechargeId: text("recharge_id").notNull(),
+    rechargeDate: text("recharge_date").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_phone_recharge_events_recharge_idx").on(table.rechargeId, table.rechargeDate),
+  ],
+);
+
+// Declaração de Shopping — um registro por loja/shopping/competência.
+// contract_percent_bps é o percentual contratual em pontos-base (ex.: 700 =
+// 7%). O alerta de aluguel percentual usa o ponto de virada
+// (minimum_rent_cents / percentual) comparado ao FATURAMENTO REAL.
+export const financeMallDeclarations = pgTable(
+  "finance_mall_declarations",
+  {
+    id: text("id").primaryKey(),
+    mallName: text("mall_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    competenceMonth: text("competence_month").notNull(),
+    realRevenueCents: integer("real_revenue_cents").notNull().default(0),
+    avgDeclaredCents: integer("avg_declared_cents").notNull().default(0),
+    suggestedDeclaredCents: integer("suggested_declared_cents").notNull().default(0),
+    declaredCents: integer("declared_cents").notNull().default(0),
+    declarationDate: text("declaration_date").notNull().default(""),
+    contractPercentBps: integer("contract_percent_bps").notNull().default(0),
+    minimumRentCents: integer("minimum_rent_cents").notNull().default(0),
+    percentageRentCents: integer("percentage_rent_cents").notNull().default(0),
+    percentageRentPaid: integer("percentage_rent_paid").notNull().default(0),
+    amountPaidCents: integer("amount_paid_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("finance_mall_declarations_unique").on(
+      table.companyId,
+      table.mallName,
+      table.competenceMonth,
+    ),
+    index("finance_mall_declarations_competence_idx").on(table.competenceMonth),
+  ],
+);
+
+// Anexos (documentos) de uma declaração de shopping — mesmo fluxo em partes
+// no R2 das Notas de O.S./Folha (só PDF).
+export const financeMallDeclarationAttachments = pgTable(
+  "finance_mall_declaration_attachments",
+  {
+    id: text("id").primaryKey(),
+    declarationId: text("declaration_id").notNull(),
+    fileName: text("file_name").notNull(),
+    r2Key: text("r2_key").notNull(),
+    contentType: text("content_type").notNull().default("application/pdf"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    uploadedBy: text("uploaded_by").notNull().default(""),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    uploadedAt: text("uploaded_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_mall_declaration_attachments_declaration_idx").on(table.declarationId),
+  ],
+);
