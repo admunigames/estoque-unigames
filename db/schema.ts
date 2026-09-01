@@ -1989,3 +1989,95 @@ export const financeCardInvoiceEntries = pgTable(
     index("finance_card_invoice_entries_import_idx").on(table.importId),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Financeiro Fase 7 — Conciliação Bancária: importação de extrato (OFX/XLS/
+// XLSX/CSV), classificação e aprendizado por repetição de nome.
+// ---------------------------------------------------------------------------
+
+export const financeBankStatementImports = pgTable(
+  "finance_bank_statement_imports",
+  {
+    id: text("id").primaryKey(),
+    financeAccountId: text("finance_account_id").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    sourceName: text("source_name").notNull().default(""),
+    // 'ofx' | 'xls' | 'xlsx' | 'csv'
+    sourceFormat: text("source_format").notNull().default("ofx"),
+    periodStart: text("period_start").notNull().default(""),
+    periodEnd: text("period_end").notNull().default(""),
+    rowCount: integer("row_count").notNull().default(0),
+    duplicateCount: integer("duplicate_count").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_bank_statement_imports_account_idx").on(table.financeAccountId, table.periodStart),
+  ],
+);
+
+// Um lançamento do extrato. amount_cents preserva o sinal (negativo =
+// saída). raw_merchant = nome normalizado (base do aprendizado). fit_id =
+// id único do OFX, usado para não reimportar a mesma transação.
+// status: 'pending' | 'classified' | 'confirmed' | 'expensed'.
+export const financeBankStatementEntries = pgTable(
+  "finance_bank_statement_entries",
+  {
+    id: text("id").primaryKey(),
+    importId: text("import_id").notNull(),
+    financeAccountId: text("finance_account_id").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    entryDate: text("entry_date").notNull().default(""),
+    description: text("description").notNull().default(""),
+    rawMerchant: text("raw_merchant").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    fitId: text("fit_id").notNull().default(""),
+    categoryItemId: text("category_item_id").notNull().default(""),
+    subcategory: text("subcategory").notNull().default(""),
+    costCenterId: text("cost_center_id").notNull().default(""),
+    inDre: integer("in_dre").notNull().default(1),
+    inRateio: integer("in_rateio").notNull().default(0),
+    status: text("status").notNull().default("pending"),
+    expenseId: text("expense_id").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_bank_statement_entries_account_date_idx").on(
+      table.financeAccountId,
+      table.entryDate,
+    ),
+    index("finance_bank_statement_entries_import_idx").on(table.importId),
+    index("finance_bank_statement_entries_fit_idx").on(table.financeAccountId, table.fitId),
+    index("finance_bank_statement_entries_merchant_idx").on(table.rawMerchant),
+  ],
+);
+
+// Aprendizado por repetição de nome: ao CONFIRMAR a classificação de um
+// lançamento, faz upsert aqui (merchant_key = nome normalizado). Na próxima
+// importação, um lançamento com o mesmo merchant_key já vem pré-classificado.
+export const financeBankClassificationRules = pgTable(
+  "finance_bank_classification_rules",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull().default(""),
+    merchantKey: text("merchant_key").notNull(),
+    categoryItemId: text("category_item_id").notNull().default(""),
+    subcategory: text("subcategory").notNull().default(""),
+    costCenterId: text("cost_center_id").notNull().default(""),
+    inDre: integer("in_dre").notNull().default(1),
+    inRateio: integer("in_rateio").notNull().default(0),
+    hits: integer("hits").notNull().default(1),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("finance_bank_classification_rules_key_idx").on(table.companyId, table.merchantKey),
+  ],
+);
