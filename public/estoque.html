@@ -4811,8 +4811,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="rhBeneficiosTable">
-            <thead><tr><th>Funcionário</th><th>Loja</th><th>Competência</th><th>Benefício</th><th>Forma</th><th>Data</th><th>Valor</th><th>Observações</th><th class="no-print"></th></tr></thead>
-            <tbody id="rhBeneficiosTableBody"><tr><td colspan="9" class="responsive-empty">Selecione a competência para ver os benefícios.</td></tr></tbody>
+            <thead><tr><th>Funcionário</th><th>Loja</th><th>Competência</th><th>Benefício</th><th>Forma</th><th>Data</th><th>Bruto</th><th>Desconto</th><th>Líquido</th><th>Observações</th><th class="no-print"></th></tr></thead>
+            <tbody id="rhBeneficiosTableBody"><tr><td colspan="11" class="responsive-empty">Selecione a competência para ver os benefícios.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -6510,12 +6510,26 @@
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="rhBeneficioFuncionario">FUNCIONÁRIO *</label><select id="rhBeneficioFuncionario" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="rhBeneficioMes">COMPETÊNCIA *</label><input type="month" id="rhBeneficioMes" required></div>
-      <div class="purchase-field"><label for="rhBeneficioTipo">BENEFÍCIO *</label><select id="rhBeneficioTipo"><option value="alimentacao">ALIMENTAÇÃO</option><option value="mobilidade">MOBILIDADE</option><option value="premiacao">PREMIAÇÃO</option><option value="saldo_livre">SALDO LIVRE</option><option value="outros">OUTROS</option></select></div>
-      <div class="purchase-field"><label for="rhBeneficioValor">VALOR (R$) *</label><input type="number" id="rhBeneficioValor" min="0.01" step="0.01" required></div>
       <div class="purchase-field"><label for="rhBeneficioForma">FORMA DE PAGAMENTO *</label><select id="rhBeneficioForma"><option value="pix">PIX</option><option value="cartao">CARTÃO</option><option value="plataforma">PLATAFORMA</option><option value="outros">OUTROS</option></select></div>
       <div class="purchase-field"><label for="rhBeneficioData">DATA DO PAGAMENTO</label><input type="date" id="rhBeneficioData"></div>
       <div class="purchase-field full"><label for="rhBeneficioObs">OBSERVAÇÕES</label><textarea id="rhBeneficioObs" rows="2" maxlength="500"></textarea></div>
     </div>
+    <h4 style="margin:16px 0 8px;font:800 10px var(--mono);letter-spacing:.06em;">BENEFÍCIOS DESTE LANÇAMENTO (UM OU VÁRIOS TIPOS)</h4>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhBeneficioItemTipo">TIPO</label><select id="rhBeneficioItemTipo"><option value="alimentacao">ALIMENTAÇÃO</option><option value="mobilidade">MOBILIDADE</option><option value="premiacao">PREMIAÇÃO</option><option value="saldo_livre">SALDO LIVRE</option><option value="outros">OUTROS</option></select></div>
+      <div class="purchase-field"><label for="rhBeneficioItemValor">VALOR (R$)</label><input type="number" id="rhBeneficioItemValor" min="0.01" step="0.01"></div>
+      <div class="purchase-field"><label for="rhBeneficioItemDesconto">DESCONTO (R$)</label><input type="number" id="rhBeneficioItemDesconto" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="btnAddRhBeneficioItem">&nbsp;</label><button class="btn-outline" id="btnAddRhBeneficioItem" type="button">ADICIONAR BENEFÍCIO</button></div>
+    </div>
+    <div class="table-panel responsive-table" style="margin-top:10px;">
+      <div class="table-scroll">
+        <table id="rhBeneficioItensTable">
+          <thead><tr><th>Tipo</th><th>Bruto</th><th>Desconto</th><th>Líquido</th><th></th></tr></thead>
+          <tbody id="rhBeneficioItensBody"><tr><td colspan="5" class="responsive-empty">Nenhum benefício adicionado.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="rhBeneficioItensTotal" style="margin-top:10px;font:800 11px var(--mono);color:var(--ink);"></div>
     <div class="user-form-status" id="rhBeneficioFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelRhBeneficioDialog" type="button">CANCELAR</button>
@@ -24622,12 +24636,13 @@ function renderHomeTasks(){
   // independente do Financeiro. A Folha nunca guarda comissão/benefícios:
   // os dois vêm calculados do backend a cada leitura.
 
-  const RH_BENEFIT_TYPE_LABELS = {alimentacao:'ALIMENTAÇÃO',mobilidade:'MOBILIDADE',premiacao:'PREMIAÇÃO',saldo_livre:'SALDO LIVRE',outros:'OUTROS'};
+  const RH_BENEFIT_TYPE_LABELS = {alimentacao:'ALIMENTAÇÃO',mobilidade:'MOBILIDADE',premiacao:'PREMIAÇÃO',saldo_livre:'SALDO LIVRE',outros:'OUTROS',multiplo:'MÚLTIPLOS'};
   const RH_BENEFIT_METHOD_LABELS = {pix:'PIX',cartao:'CARTÃO',plataforma:'PLATAFORMA',outros:'OUTROS'};
   const RH_COMMISSION_KIND_LABELS = {bonus:'BÔNUS',premiacao:'PREMIAÇÃO',desconto:'DESCONTO',ajuste:'AJUSTE'};
   let rhEmployees = [];
   let rhFolhaRows = [];
   let rhBeneficiosRows = [];
+  let rhBeneficioDialogItems = [];
   let rhComissoes = [];
   let rhComissaoPresets = [];
   let rhComissaoDialogItems = [];
@@ -25323,28 +25338,42 @@ function renderHomeTasks(){
     const body = el('rhBeneficiosTableBody');
     if(!body) return;
     if(!rhBeneficiosRows.length){
-      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhum benefício lançado para o filtro atual.</td></tr>';
+      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhum benefício lançado para o filtro atual.</td></tr>';
       el('rhBeneficiosResumo').textContent = '';
       el('rhBeneficiosPrintPorLoja').innerHTML = '';
       return;
     }
-    body.innerHTML = rhBeneficiosRows.map(row => '<tr>'+
+    body.innerHTML = rhBeneficiosRows.map(row => {
+      const items = Array.isArray(row.items) ? row.items : [];
+      const detail = items.length
+        ? items.map(item => (RH_BENEFIT_TYPE_LABELS[item.type] || item.type)
+            + ' ' + formatCentsBRL(item.amountCents)
+            + (Number(item.discountCents) > 0 ? ' (−'+formatCentsBRL(item.discountCents)+')' : '')).join(' · ')
+        : (RH_BENEFIT_TYPE_LABELS[row.type] || row.type);
+      const label = items.length > 1
+        ? items.map(item => RH_BENEFIT_TYPE_LABELS[item.type] || item.type).join(', ')
+        : (RH_BENEFIT_TYPE_LABELS[items[0] ? items[0].type : row.type] || row.type);
+      return '<tr>'+
       '<td>'+escapeHtml(row.employeeName)+'</td>'+
       '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
       '<td>'+escapeHtml(rhFormatMonth(row.month))+'</td>'+
-      '<td>'+escapeHtml(RH_BENEFIT_TYPE_LABELS[row.type] || row.type)+'</td>'+
+      '<td title="'+escapeHtml(detail)+'">'+escapeHtml(label)+'</td>'+
       '<td>'+escapeHtml(RH_BENEFIT_METHOD_LABELS[row.paymentMethod] || row.paymentMethod)+'</td>'+
       '<td>'+escapeHtml(rhFormatDate(row.paymentDate))+'</td>'+
+      '<td>'+formatCentsBRL(row.grossCents != null ? row.grossCents : row.amountCents)+'</td>'+
+      '<td>'+(Number(row.discountCents) > 0 ? '−'+formatCentsBRL(row.discountCents) : '—')+'</td>'+
       '<td>'+formatCentsBRL(row.amountCents)+'</td>'+
       '<td>'+escapeHtml(row.notes || '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;">'+
         '<button class="btn-outline" type="button" data-rh-beneficio-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
         '<button class="btn-outline" type="button" data-rh-beneficio-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span></td>'+
-    '</tr>').join('');
+    '</tr>';
+    }).join('');
 
     const total = rhBeneficiosRows.reduce((sum, row) => sum + Number(row.amountCents || 0), 0);
-    el('rhBeneficiosResumo').innerHTML = '<strong>'+rhBeneficiosRows.length+'</strong> lançamento(s) · Total: <strong>'+formatCentsBRL(total)+'</strong>';
+    const totalDesc = rhBeneficiosRows.reduce((sum, row) => sum + Number(row.discountCents || 0), 0);
+    el('rhBeneficiosResumo').innerHTML = '<strong>'+rhBeneficiosRows.length+'</strong> lançamento(s) · Descontos: <strong>'+formatCentsBRL(totalDesc)+'</strong> · Líquido: <strong>'+formatCentsBRL(total)+'</strong>';
     el('rhBeneficiosPrintPorLoja').innerHTML = rhPrintByStoreHtml(
       'Benefícios por loja',
       rhBeneficiosRows,
@@ -25392,14 +25421,77 @@ function renderHomeTasks(){
     el('rhBeneficioDialogTitle').textContent = row ? 'EDITAR BENEFÍCIO' : 'NOVO BENEFÍCIO';
     el('rhBeneficioFuncionario').value = row ? row.employeeId : (el('rhBeneficioFiltroFuncionario').value || '');
     el('rhBeneficioMes').value = row ? row.month : (el('rhBeneficioFiltroMes').value || financeCurrentMonthKey());
-    el('rhBeneficioTipo').value = row ? row.type : 'alimentacao';
-    el('rhBeneficioValor').value = row ? (Number(row.amountCents || 0)/100).toFixed(2) : '';
     el('rhBeneficioForma').value = row ? row.paymentMethod : 'pix';
     el('rhBeneficioData').value = row ? (row.paymentDate || '') : financeCurrentDateKey();
     el('rhBeneficioObs').value = row ? (row.notes || '') : '';
+    if(row && Array.isArray(row.items) && row.items.length){
+      rhBeneficioDialogItems = row.items.map(item => ({
+        type: item.type,
+        amountCents: Number(item.amountCents || 0),
+        discountCents: Number(item.discountCents || 0)
+      }));
+    }else if(row){
+      rhBeneficioDialogItems = [{ type: row.type === 'multiplo' ? 'alimentacao' : row.type, amountCents: Number(row.amountCents || 0), discountCents: 0 }];
+    }else{
+      rhBeneficioDialogItems = [];
+    }
+    el('rhBeneficioItemTipo').value = 'alimentacao';
+    el('rhBeneficioItemValor').value = '';
+    el('rhBeneficioItemDesconto').value = '0';
+    renderRhBeneficioDialogItems();
     el('rhBeneficioFormStatus').textContent = '';
     el('rhBeneficioDialog').showModal();
   }
+
+  function renderRhBeneficioDialogItems(){
+    const body = el('rhBeneficioItensBody');
+    if(!body) return;
+    if(!rhBeneficioDialogItems.length){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum benefício adicionado.</td></tr>';
+    }else{
+      body.innerHTML = rhBeneficioDialogItems.map((item, index) => '<tr>'+
+        '<td>'+escapeHtml(RH_BENEFIT_TYPE_LABELS[item.type] || item.type)+'</td>'+
+        '<td>'+formatCentsBRL(item.amountCents)+'</td>'+
+        '<td>'+(Number(item.discountCents) > 0 ? '−'+formatCentsBRL(item.discountCents) : '—')+'</td>'+
+        '<td>'+formatCentsBRL(item.amountCents - item.discountCents)+'</td>'+
+        '<td><button class="btn-outline" type="button" data-rh-beneficio-item-remove="'+index+'">REMOVER</button></td>'+
+      '</tr>').join('');
+    }
+    const gross = rhBeneficioDialogItems.reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
+    const disc = rhBeneficioDialogItems.reduce((sum, item) => sum + Number(item.discountCents || 0), 0);
+    el('rhBeneficioItensTotal').textContent = 'BRUTO: '+formatCentsBRL(gross)+'  ·  DESCONTO: '+formatCentsBRL(disc)+'  ·  LÍQUIDO: '+formatCentsBRL(gross - disc);
+  }
+
+  if(el('btnAddRhBeneficioItem')) el('btnAddRhBeneficioItem').addEventListener('click', () => {
+    const status = el('rhBeneficioFormStatus');
+    const type = el('rhBeneficioItemTipo').value;
+    const amountCents = parseBRLToCents(el('rhBeneficioItemValor').value);
+    const discountCents = parseBRLToCents(el('rhBeneficioItemDesconto').value || '0') || 0;
+    if(amountCents === null || amountCents <= 0){
+      status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO NO BENEFÍCIO.';
+      return;
+    }
+    if(discountCents < 0){
+      status.textContent = 'O DESCONTO NÃO PODE SER NEGATIVO.';
+      return;
+    }
+    if(discountCents > amountCents){
+      status.textContent = 'O DESCONTO NÃO PODE SER MAIOR QUE O VALOR DO BENEFÍCIO.';
+      return;
+    }
+    status.textContent = '';
+    rhBeneficioDialogItems.push({ type, amountCents, discountCents });
+    el('rhBeneficioItemValor').value = '';
+    el('rhBeneficioItemDesconto').value = '0';
+    renderRhBeneficioDialogItems();
+  });
+
+  if(el('rhBeneficioItensBody')) el('rhBeneficioItensBody').addEventListener('click', event => {
+    const removeButton = event.target.closest('[data-rh-beneficio-item-remove]');
+    if(!removeButton) return;
+    rhBeneficioDialogItems.splice(Number(removeButton.dataset.rhBeneficioItemRemove), 1);
+    renderRhBeneficioDialogItems();
+  });
 
   function closeRhBeneficioDialog(){
     if(el('rhBeneficioDialog').open) el('rhBeneficioDialog').close();
@@ -25433,23 +25525,30 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('rhBeneficioFormStatus');
     status.textContent = '';
-    const amountCents = parseBRLToCents(el('rhBeneficioValor').value);
-    if(amountCents === null || amountCents <= 0){
-      status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.';
-      return;
-    }
     if(!el('rhBeneficioFuncionario').value){
       status.textContent = 'SELECIONE O FUNCIONÁRIO.';
+      return;
+    }
+    if(!rhBeneficioDialogItems.length){
+      status.textContent = 'ADICIONE AO MENOS UM BENEFÍCIO AO LANÇAMENTO.';
+      return;
+    }
+    const netTotal = rhBeneficioDialogItems.reduce((sum, item) => sum + (Number(item.amountCents || 0) - Number(item.discountCents || 0)), 0);
+    if(netTotal <= 0){
+      status.textContent = 'O VALOR LÍQUIDO DO LANÇAMENTO PRECISA SER MAIOR QUE ZERO.';
       return;
     }
     const payload = {
       id: el('rhBeneficioId').value || undefined,
       employeeId: el('rhBeneficioFuncionario').value,
       month: el('rhBeneficioMes').value,
-      type: el('rhBeneficioTipo').value,
       paymentMethod: el('rhBeneficioForma').value,
       paymentDate: el('rhBeneficioData').value,
-      amountCents,
+      items: rhBeneficioDialogItems.map(item => ({
+        type: item.type,
+        amountCents: Number(item.amountCents || 0),
+        discountCents: Number(item.discountCents || 0)
+      })),
       notes: el('rhBeneficioObs').value
     };
     try{
