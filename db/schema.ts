@@ -1484,6 +1484,20 @@ export const hrPayrollEntries = pgTable(
   ],
 );
 
+// Parâmetros globais da Folha. Uma linha só (company_id = '' — reservado
+// para um override por loja no futuro). employer_charges_bps = encargos
+// patronais (INSS/FGTS pagos pela empresa, não descontados do funcionário)
+// em pontos-base sobre o salário base, somados ao "Custo Total por
+// Funcionário" que alimenta Despesas/DRE — nunca à "Folha Paga".
+export const hrPayrollSettings = pgTable("hr_payroll_settings", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull().default(""),
+  employerChargesBps: integer("employer_charges_bps").notNull().default(0),
+  updatedBy: text("updated_by").notNull().default(""),
+  updatedByName: text("updated_by_name").notNull().default(""),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+});
+
 // BenefÃ­cios pagos por competÃªncia. VÃ¡rios lanÃ§amentos por funcionÃ¡rio/mÃªs
 // sÃ£o permitidos de propÃ³sito (alimentaÃ§Ã£o + premiaÃ§Ã£o + ...), entÃ£o nÃ£o
 // existe Ã­ndice Ãºnico aqui.

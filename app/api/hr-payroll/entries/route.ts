@@ -5,19 +5,23 @@ import {
   canManagePayroll,
   centsValue,
   computedBenefitsCentsFor,
+  computedBenefitsSplitFor,
   computedCommissionCentsFor,
+  computedCommissionGrossCentsFor,
   DATE_PATTERN,
   MONTH_PATTERN,
   actorName,
   identity,
   jsonResponse,
   loadEmployee,
+  loadEmployerChargesBps,
   safeText,
   sameOrigin,
   type Database,
   type Identity,
   type JsonMap,
 } from "../shared";
+import { computePayrollBreakdown, legacyNetCents } from "../../../lib/hr-payroll";
 
 // Folha de Pagamento mensal.
 //
@@ -63,6 +67,7 @@ type EmployeeBasics = {
   companyId: string;
   companyName: string;
   roleTitle: string;
+  admissionDate: string;
   salaryCents: number;
   status: string;
 };
@@ -99,25 +104,12 @@ function manualValuesFrom(source: JsonMap | EntryRow): ManualValues | null {
   return values;
 }
 
-function netCentsFor(values: ManualValues, commissionCents: number, benefitsCents: number) {
-  return (
-    values.baseSalaryCents +
-    values.bonusCents +
-    values.overtimeCents +
-    values.additionsCents +
-    values.otherCents +
-    commissionCents +
-    benefitsCents -
-    values.deductionsCents
-  );
-}
-
 async function loadEmployeesFor(database: Database, companyId: string) {
   const where = companyId ? "WHERE company_id=?1" : "";
   const result = await database
     .prepare(
       `SELECT id, full_name AS fullName, company_id AS companyId, company_name AS companyName,
-              role_title AS roleTitle, salary_cents AS salaryCents, status
+              role_title AS roleTitle, admission_date AS admissionDate, salary_cents AS salaryCents, status
        FROM hr_employees ${where} ORDER BY full_name ASC`,
     )
     .bind(...(companyId ? [companyId] : []))
@@ -142,12 +134,13 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const [employees, entriesResult] = await Promise.all([
+    const [employees, entriesResult, employerChargesBps] = await Promise.all([
       loadEmployeesFor(database, companyId),
       database
         .prepare(`SELECT ${ENTRY_COLUMNS} FROM hr_payroll_entries WHERE month=?1`)
         .bind(month)
         .all<EntryRow>(),
+      loadEmployerChargesBps(database),
     ]);
     const entriesByEmployee = new Map(
       (entriesResult.results ?? []).map((entry) => [entry.employeeId, entry]),
@@ -177,10 +170,22 @@ export async function GET(request: Request) {
               deductionsCents: 0,
               otherCents: 0,
             };
-        const [commissionCents, benefitsCents] = await Promise.all([
-          computedCommissionCentsFor(database, employee.id, month),
-          computedBenefitsCentsFor(database, employee.id, month),
-        ]);
+        const [commissionCents, benefitsCents, commissionGrossCents, benefitsSplit] =
+          await Promise.all([
+            computedCommissionCentsFor(database, employee.id, month),
+            computedBenefitsCentsFor(database, employee.id, month),
+            computedCommissionGrossCentsFor(database, employee.id, month),
+            computedBenefitsSplitFor(database, employee.id, month),
+          ]);
+        const inputs = {
+          commissionNetCents: commissionCents,
+          commissionGrossCents,
+          benefitsNetCents: benefitsCents,
+          benefitsGrossCents: benefitsSplit.grossCents,
+          benefitsPixNetCents: benefitsSplit.pixNetCents,
+          employerChargesBps,
+        };
+        const breakdown = computePayrollBreakdown(values, inputs);
         return {
           id: entry?.id ?? "",
           saved: Boolean(entry),
@@ -188,13 +193,20 @@ export async function GET(request: Request) {
           employeeName: employee.fullName,
           employeeStatus: employee.status,
           roleTitle: employee.roleTitle,
+          admissionDate: employee.admissionDate,
           companyId: employee.companyId,
           companyName: employee.companyName,
           month,
           ...values,
           commissionCents,
           benefitsCents,
-          netCents: netCentsFor(values, commissionCents, benefitsCents),
+          commissionGrossCents,
+          benefitsGrossCents: benefitsSplit.grossCents,
+          employerChargesBps,
+          employerChargesCents: breakdown.employerChargesCents,
+          folhaPagaCents: breakdown.folhaPagaCents,
+          custoTotalCents: breakdown.custoTotalCents,
+          netCents: legacyNetCents(values, inputs),
           notes: entry?.notes ?? "",
           paymentDone: Number(entry?.paymentDone ?? 0),
           paymentDate: entry?.paymentDate ?? "",

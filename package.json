@@ -9,7 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "pnpm build && node --test --experimental-strip-types tests/rendered-html.test.mjs tests/finance-payables.test.mjs tests/finance-cash-flow.test.mjs tests/finance-card-machines.test.mjs tests/finance-card-fees.test.mjs tests/finance-corporate-cards.test.mjs tests/finance-bank-reconciliation.test.mjs tests/finance-fase8-itens-diversos.test.mjs tests/hr-benefits.test.mjs tests/hr-working-days.test.mjs",
+    "test": "pnpm build && node --test --experimental-strip-types tests/rendered-html.test.mjs tests/finance-payables.test.mjs tests/finance-cash-flow.test.mjs tests/finance-card-machines.test.mjs tests/finance-card-fees.test.mjs tests/finance-corporate-cards.test.mjs tests/finance-bank-reconciliation.test.mjs tests/finance-fase8-itens-diversos.test.mjs tests/hr-benefits.test.mjs tests/hr-working-days.test.mjs tests/hr-payroll.test.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "check": "pnpm lint && pnpm typecheck && pnpm test",

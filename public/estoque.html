@@ -4758,8 +4758,10 @@
       <div class="dre-toolbar no-print">
         <div class="field"><label for="rhFolhaLoja">LOJA</label><select id="rhFolhaLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="field"><label for="rhFolhaMes">COMPETÊNCIA</label><input type="month" id="rhFolhaMes"></div>
+        <div class="field"><label for="rhFolhaVisao">VISÃO</label><select id="rhFolhaVisao"><option value="paga">FOLHA PAGA (SAI DA CONTA)</option><option value="custo">CUSTO TOTAL (DESPESAS/DRE)</option></select></div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnRhFolhaCopiar" type="button">COPIAR DO MÊS ANTERIOR</button>
+          <button class="btn-outline" id="btnRhFolhaParametros" type="button">PARÂMETROS</button>
           <button class="btn-outline" id="btnRhFolhaPrint" type="button">RELATÓRIO / PDF</button>
         </div>
       </div>
@@ -4769,8 +4771,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="rhFolhaTable">
-            <thead><tr><th>Funcionário</th><th>Loja</th><th>Salário base</th><th>Bonificação</th><th>Horas extras</th><th>Adicionais</th><th>Comissão</th><th>Benefícios</th><th>Descontos</th><th>Outros</th><th>Valor líquido</th><th>Pagamento</th><th>Comprovante</th><th class="no-print"></th></tr></thead>
-            <tbody id="rhFolhaTableBody"><tr><td colspan="14" class="responsive-empty">Selecione a competência para montar a folha.</td></tr></tbody>
+            <thead><tr><th>Funcionário</th><th>Admissão</th><th>Unidade</th><th>Salário</th><th>Bonificação</th><th>Desconto</th><th id="rhFolhaValorFinalHead">Valor final a pagar</th><th>Observações</th><th>Pagamento</th><th>Comprovante</th><th class="no-print"></th></tr></thead>
+            <tbody id="rhFolhaTableBody"><tr><td colspan="11" class="responsive-empty">Selecione a competência para montar a folha.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -6498,6 +6500,24 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelRhFolhaPagamento" type="button">CANCELAR</button>
       <button class="btn-accent" id="btnConfirmRhFolhaPagamento" type="submit">CONFIRMAR PAGAMENTO</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhFolhaParametrosDialog" aria-labelledby="rhFolhaParametrosTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhFolhaParametrosTitle">PARÂMETROS DA FOLHA</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhFolhaParametros" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhFolhaParametrosForm">
+    <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Encargos patronais (INSS/FGTS pagos pela empresa, não descontados do funcionário). Aplicados como percentual sobre o salário base e somados ao <strong>Custo Total por Funcionário</strong> — nunca à Folha Paga.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhFolhaEncargos">ENCARGOS PATRONAIS (%)</label><input type="number" id="rhFolhaEncargos" min="0" max="1000" step="0.01" value="0"></div>
+    </div>
+    <div class="user-form-status" id="rhFolhaParametrosStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhFolhaParametros" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhFolhaParametros" type="submit">SALVAR</button>
     </div>
   </form>
 </dialog>
@@ -25018,11 +25038,16 @@ function renderHomeTasks(){
     const body = el('rhFolhaTableBody');
     if(!body) return;
     if(!rhFolhaRows.length){
-      body.innerHTML = '<tr><td colspan="14" class="responsive-empty">Nenhum funcionário ativo para esta loja/competência.</td></tr>';
+      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhum funcionário ativo para esta loja/competência.</td></tr>';
       el('rhFolhaResumo').textContent = '';
       el('rhFolhaPrintPorLoja').innerHTML = '';
       return;
     }
+    const visao = (el('rhFolhaVisao') && el('rhFolhaVisao').value) === 'custo' ? 'custo' : 'paga';
+    const valorFinalOf = row => visao === 'custo'
+      ? Number(row.custoTotalCents != null ? row.custoTotalCents : row.netCents || 0)
+      : Number(row.folhaPagaCents != null ? row.folhaPagaCents : row.netCents || 0);
+    if(el('rhFolhaValorFinalHead')) el('rhFolhaValorFinalHead').textContent = visao === 'custo' ? 'Custo total p/ empresa' : 'Valor final a pagar';
     body.innerHTML = rhFolhaRows.map(row => {
       const paymentCell = row.paymentDone
         ? '<span class="status-pill done">PAGO'+(row.paymentDate ? ' · '+escapeHtml(rhFormatDate(row.paymentDate)) : '')+'</span>'
@@ -25035,18 +25060,20 @@ function renderHomeTasks(){
       const deleteButton = row.saved
         ? '<button class="btn-outline" type="button" data-rh-folha-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'
         : '';
+      const valorFinal = valorFinalOf(row);
+      const detalhe = 'HE '+formatCentsBRL(row.overtimeCents)+' · Adic. '+formatCentsBRL(row.additionsCents)
+        +' · Comissão '+formatCentsBRL(row.commissionCents)+' · Benefícios '+formatCentsBRL(row.benefitsCents)
+        +' · Outros '+formatCentsBRL(row.otherCents)
+        + (visao === 'custo' ? ' · Encargos '+formatCentsBRL(row.employerChargesCents || 0) : '');
       return '<tr>'+
         '<td>'+escapeHtml(row.employeeName)+(row.employeeStatus === 'inactive' ? ' <span class="status-pill alert">INATIVO</span>' : '')+'</td>'+
+        '<td>'+escapeHtml(row.admissionDate ? rhFormatDate(row.admissionDate) : '—')+'</td>'+
         '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
         '<td>'+formatCentsBRL(row.baseSalaryCents)+'</td>'+
         '<td>'+formatCentsBRL(row.bonusCents)+'</td>'+
-        '<td>'+formatCentsBRL(row.overtimeCents)+'</td>'+
-        '<td>'+formatCentsBRL(row.additionsCents)+'</td>'+
-        '<td>'+formatCentsBRL(row.commissionCents)+'</td>'+
-        '<td>'+formatCentsBRL(row.benefitsCents)+'</td>'+
         '<td>'+formatCentsBRL(row.deductionsCents)+'</td>'+
-        '<td>'+formatCentsBRL(row.otherCents)+'</td>'+
-        '<td><strong>'+formatCentsBRL(row.netCents)+'</strong></td>'+
+        '<td title="'+escapeHtml(detalhe)+'"><strong>'+formatCentsBRL(valorFinal)+'</strong></td>'+
+        '<td>'+escapeHtml(row.notes || '—')+'</td>'+
         '<td>'+paymentCell+'</td>'+
         '<td>'+rhFolhaAttachmentCell(row)+'</td>'+
         '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
@@ -25056,19 +25083,51 @@ function renderHomeTasks(){
       '</tr>';
     }).join('');
 
-    const totalNet = rhFolhaRows.reduce((sum, row) => sum + Number(row.netCents || 0), 0);
-    const totalPago = rhFolhaRows.filter(row => row.paymentDone).reduce((sum, row) => sum + Number(row.netCents || 0), 0);
+    const totalFinal = rhFolhaRows.reduce((sum, row) => sum + valorFinalOf(row), 0);
+    const totalPago = rhFolhaRows.filter(row => row.paymentDone).reduce((sum, row) => sum + valorFinalOf(row), 0);
     const lancados = rhFolhaRows.filter(row => row.saved).length;
+    const rotulo = visao === 'custo' ? 'Custo total' : 'Total a pagar';
     el('rhFolhaResumo').innerHTML =
       '<strong>'+rhFolhaRows.length+'</strong> funcionário(s) · <strong>'+lancados+'</strong> com folha lançada · '+
-      'Total líquido: <strong>'+formatCentsBRL(totalNet)+'</strong> · Já pago: <strong>'+formatCentsBRL(totalPago)+'</strong>';
+      rotulo+': <strong>'+formatCentsBRL(totalFinal)+'</strong> · Já pago: <strong>'+formatCentsBRL(totalPago)+'</strong>';
     el('rhFolhaPrintPorLoja').innerHTML = rhPrintByStoreHtml(
-      'Total líquido por loja',
+      rotulo+' por loja',
       rhFolhaRows,
-      row => row.netCents,
+      valorFinalOf,
       row => row.companyName
     );
   }
+  if(el('rhFolhaVisao')) el('rhFolhaVisao').addEventListener('change', renderRhFolhaTable);
+
+  async function openRhFolhaParametros(){
+    el('rhFolhaParametrosStatus').textContent = '';
+    try{
+      const data = await rhApiRequest('/settings');
+      el('rhFolhaEncargos').value = (Number(data.employerChargesBps || 0)/100).toFixed(2);
+    }catch(error){
+      el('rhFolhaEncargos').value = '0.00';
+      el('rhFolhaParametrosStatus').textContent = error.message;
+    }
+    el('rhFolhaParametrosDialog').showModal();
+  }
+  if(el('btnRhFolhaParametros')) el('btnRhFolhaParametros').addEventListener('click', openRhFolhaParametros);
+  if(el('btnCloseRhFolhaParametros')) el('btnCloseRhFolhaParametros').addEventListener('click', () => el('rhFolhaParametrosDialog').close());
+  if(el('btnCancelRhFolhaParametros')) el('btnCancelRhFolhaParametros').addEventListener('click', () => el('rhFolhaParametrosDialog').close());
+  if(el('rhFolhaParametrosForm')) el('rhFolhaParametrosForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhFolhaParametrosStatus');
+    status.textContent = '';
+    const pct = Number(el('rhFolhaEncargos').value);
+    if(!Number.isFinite(pct) || pct < 0){ status.textContent = 'INFORME UM PERCENTUAL VÁLIDO.'; return; }
+    try{
+      await rhApiRequest('/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ employerChargesBps: Math.round(pct * 100) })});
+      el('rhFolhaParametrosDialog').close();
+      showPurchaseToast('Parâmetros salvos.');
+      await loadRhFolha();
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
 
   async function loadRhFolha(){
     if(!canAccess('payroll')) return;
@@ -25081,7 +25140,7 @@ function renderHomeTasks(){
     if(!el('rhFolhaMes').value) el('rhFolhaMes').value = financeCurrentMonthKey();
     const month = el('rhFolhaMes').value;
     const companyId = el('rhFolhaLoja').value;
-    el('rhFolhaTableBody').innerHTML = '<tr><td colspan="14" class="responsive-empty">Carregando…</td></tr>';
+    el('rhFolhaTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
     try{
       const params = new URLSearchParams({month});
       if(companyId) params.set('companyId', companyId);
@@ -25092,7 +25151,7 @@ function renderHomeTasks(){
       renderRhFolhaTable();
     }catch(error){
       rhFolhaRows = [];
-      el('rhFolhaTableBody').innerHTML = '<tr><td colspan="14" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('rhFolhaTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
