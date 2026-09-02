@@ -53,7 +53,9 @@ export async function loadPayrollDreContribution(
 
   const isStore = scope !== "stores";
   const companyId = isStore ? scope.companyId : "";
-  const companyCond = isStore ? "company_id = ?2" : "company_id <> ''";
+  // "stores" = todas as lojas reais: exclui RH sem loja e o da Assistência,
+  // que têm DRE própria (item 8).
+  const companyCond = isStore ? "company_id = ?2" : "company_id <> '' AND company_id <> 'assistencia'";
   const bind = (extra: unknown[]) => (isStore ? [month, companyId, ...extra] : [month, ...extra]);
 
   const chargesRow = await database

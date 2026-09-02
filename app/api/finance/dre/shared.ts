@@ -8,6 +8,12 @@ import { loadPayrollDreContribution } from "./payroll";
 // fórmula de resultado/margem. route.ts continua exportando só os handlers
 // HTTP (GET); toda a lógica de montagem mora aqui.
 
+// Assistência não é uma loja: é um setor interno tratado como "unidade"
+// própria no Financeiro. Despesas/Receita/RH marcados com esta unidade
+// entram só na "DRE Assistência" (scope=assistencia) e NUNCA na DRE das
+// lojas nem na Consolidada (item 8).
+export const ASSISTENCIA_STORE_ID = "assistencia";
+
 export type CategoryRow = {
   id: string;
   name: string;
@@ -235,13 +241,13 @@ export async function loadMonthWideTotals(database: Awaited<ReturnType<typeof ge
       .prepare(
         `SELECT item_id AS itemId, entry_type AS entryType,
                 amount_cents AS amountCents, percent_basis_points AS percentBasisPoints
-         FROM finance_store_entries WHERE month=?1`,
+         FROM finance_store_entries WHERE month=?1 AND store_id <> ?2`,
       )
-      .bind(month)
+      .bind(month, ASSISTENCIA_STORE_ID)
       .all<EntryRow>(),
     database
-      .prepare("SELECT amount_cents AS amountCents FROM finance_store_revenue WHERE month=?1")
-      .bind(month)
+      .prepare("SELECT amount_cents AS amountCents FROM finance_store_revenue WHERE month=?1 AND store_id <> ?2")
+      .bind(month, ASSISTENCIA_STORE_ID)
       .all<{ amountCents: number }>(),
     loadPayrollDreContribution(database, "stores", month),
   ]);
