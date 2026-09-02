@@ -105,5 +105,7 @@ export const OBRA_COLUMNS = `id, company_id AS companyId, company_name AS compan
   updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt`;
 
 export const OBRA_ENTRY_COLUMNS = `id, obra_id AS obraId, description, supplier, amount_cents AS amountCents,
-  entry_date AS entryDate, payment_method AS paymentMethod, notes, created_by AS createdBy,
+  entry_date AS entryDate, payment_method AS paymentMethod, notes,
+  attachment_file_name AS attachmentFileName, attachment_r2_key AS attachmentR2Key,
+  attachment_size_bytes AS attachmentSizeBytes, created_by AS createdBy,
   created_by_name AS createdByName, created_at AS createdAt`;

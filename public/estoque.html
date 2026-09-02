@@ -6235,15 +6235,16 @@
       </div>
       <div class="user-form-status" id="obraEntryStatus" role="status" aria-live="polite"></div>
     </form>
-    <p style="color:var(--ink-soft);font-size:10px;margin:2px 0 8px;">Anexo de nota/orçamento (PDF) por lançamento entra numa próxima atualização.</p>
+    <p style="color:var(--ink-soft);font-size:10px;margin:2px 0 8px;">Anexe a nota ou o orçamento (PDF, até 25 MB) na coluna "Anexo" de cada lançamento.</p>
     <div class="table-panel responsive-table">
       <div class="table-scroll">
         <table id="obraEntriesTable">
-          <thead><tr><th>Data</th><th>Descrição</th><th>Fornecedor</th><th>Forma</th><th>Valor</th><th></th></tr></thead>
-          <tbody id="obraEntriesBody"><tr><td colspan="6" class="responsive-empty">Nenhum lançamento.</td></tr></tbody>
+          <thead><tr><th>Data</th><th>Descrição</th><th>Fornecedor</th><th>Forma</th><th>Valor</th><th>Anexo (PDF)</th><th></th></tr></thead>
+          <tbody id="obraEntriesBody"><tr><td colspan="7" class="responsive-empty">Nenhum lançamento.</td></tr></tbody>
         </table>
       </div>
     </div>
+    <input type="file" id="obraEntryAttachInput" accept="application/pdf,.pdf" hidden>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelObraDetail" type="button">FECHAR</button>
     </div>
@@ -22314,16 +22315,66 @@ function renderHomeTasks(){
 
   function renderObraEntries(entries){
     const body = el('obraEntriesBody');
-    if(!entries.length){ body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum lançamento.</td></tr>'; return; }
-    body.innerHTML = entries.map(e => '<tr>'+
+    if(!entries.length){ body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Nenhum lançamento.</td></tr>'; return; }
+    body.innerHTML = entries.map(e => {
+      const anexo = e.attachmentR2Key
+        ? '<span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+            '<a class="btn-outline" href="/api/obras/file?id='+encodeURIComponent(e.id)+'" target="_blank" rel="noopener">VER PDF</a>'+
+            '<button class="btn-outline" type="button" data-obra-attach-remove="'+escapeHtml(e.id)+'">REMOVER</button>'+
+          '</span>'
+        : '<button class="btn-outline" type="button" data-obra-attach="'+escapeHtml(e.id)+'">ANEXAR PDF</button>';
+      return '<tr>'+
       '<td>'+escapeHtml(e.entryDate || '—')+'</td>'+
       '<td>'+escapeHtml(e.description)+'</td>'+
       '<td>'+escapeHtml(e.supplier || '—')+'</td>'+
       '<td>'+escapeHtml(OBRA_PGTO_LABELS[e.paymentMethod] || e.paymentMethod)+'</td>'+
       '<td>'+formatCentsBRL(e.amountCents)+'</td>'+
+      '<td class="no-print">'+anexo+'</td>'+
       '<td class="no-print"><button class="btn-outline" type="button" data-obra-entry-delete="'+escapeHtml(e.id)+'">EXCLUIR</button></td>'+
-    '</tr>').join('');
+    '</tr>';
+    }).join('');
   }
+
+  let obraAttachTargetEntryId = '';
+  async function uploadObraEntryAttachment(entryId, file){
+    const PART_SIZE = 512 * 1024;
+    if(file.size > 25 * 1024 * 1024) throw new Error('O ANEXO DEVE TER NO MÁXIMO 25 MB.');
+    const numberOfParts = Math.max(1, Math.ceil(file.size / PART_SIZE));
+    const createResp = await obraApiRequest('/attachment', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'create', id:entryId, fileName:file.name, contentType:file.type || 'application/pdf', fileSize:file.size, numberOfParts})
+    });
+    const sessionId = createResp.session.id;
+    try{
+      for(let partNumber = 1; partNumber <= numberOfParts; partNumber += 1){
+        const start = (partNumber - 1) * PART_SIZE;
+        const buffer = await file.slice(start, start + PART_SIZE).arrayBuffer();
+        const partResp = await fetch('/api/obras/attachment', {
+          method:'POST', cache:'no-store',
+          headers:{'Content-Type':'application/octet-stream', 'x-obra-upload-id':sessionId, 'x-obra-part-number':String(partNumber)},
+          body:buffer
+        });
+        if(!partResp.ok){ const p = await partResp.json().catch(() => ({})); throw new Error(p.error || 'FALHA AO ENVIAR O PDF.'); }
+      }
+      await obraApiRequest('/attachment', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'complete', sessionId})});
+    }catch(error){
+      await obraApiRequest('/attachment', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'cancel', sessionId})}).catch(() => {});
+      throw error;
+    }
+  }
+  if(el('obraEntryAttachInput')) el('obraEntryAttachInput').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if(!file || !obraAttachTargetEntryId) return;
+    const entryId = obraAttachTargetEntryId;
+    obraAttachTargetEntryId = '';
+    showPurchaseToast('Enviando anexo…');
+    try{
+      await uploadObraEntryAttachment(entryId, file);
+      if(obraDetailCurrent) await openObraDetail(obraDetailCurrent.id);
+      showPurchaseToast('Anexo enviado.');
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  });
 
   async function openObraDetail(obraId){
     try{
@@ -22376,6 +22427,22 @@ function renderHomeTasks(){
 
   if(el('obraEntriesBody')) el('obraEntriesBody').addEventListener('click', async event => {
     const del = event.target.closest('[data-obra-entry-delete]');
+    const attach = event.target.closest('[data-obra-attach]');
+    const attachRemove = event.target.closest('[data-obra-attach-remove]');
+    if(attach){
+      obraAttachTargetEntryId = attach.dataset.obraAttach;
+      el('obraEntryAttachInput').click();
+      return;
+    }
+    if(attachRemove){
+      if(!confirm('Remover o anexo deste lançamento?')) return;
+      try{
+        await obraApiRequest('/attachment?id='+encodeURIComponent(attachRemove.dataset.obraAttachRemove), {method:'DELETE'});
+        if(obraDetailCurrent) await openObraDetail(obraDetailCurrent.id);
+        showPurchaseToast('Anexo removido.');
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+      return;
+    }
     if(!del) return;
     if(!confirm('Excluir este lançamento?')) return;
     try{

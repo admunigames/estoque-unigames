@@ -1,5 +1,6 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
+import { documentsBucket } from "../documents/shared";
 import { loadCompanyList } from "../finance/shared";
 import {
   DATE_PATTERN,
@@ -323,14 +324,31 @@ export async function DELETE(request: Request) {
     const database = await getD1();
     if (entryId) {
       if (!UUID_PATTERN.test(entryId)) return jsonResponse({ error: "LANÇAMENTO INVÁLIDO." }, 400);
+      const entry = await database
+        .prepare("SELECT attachment_r2_key AS attachmentR2Key FROM obra_entries WHERE id=?1 LIMIT 1")
+        .bind(entryId)
+        .first<{ attachmentR2Key: string }>();
       await database.prepare("DELETE FROM obra_entries WHERE id=?1").bind(entryId).run();
+      if (entry?.attachmentR2Key) {
+        const bucket = await documentsBucket();
+        await bucket.delete(entry.attachmentR2Key).catch(() => undefined);
+      }
       return jsonResponse({ deleted: true });
     }
     if (!UUID_PATTERN.test(id)) return jsonResponse({ error: "OBRA INVÁLIDA." }, 400);
+    const attachments = await database
+      .prepare("SELECT attachment_r2_key AS attachmentR2Key FROM obra_entries WHERE obra_id=?1 AND attachment_r2_key <> ''")
+      .bind(id)
+      .all<{ attachmentR2Key: string }>();
     await database.batch([
       database.prepare("DELETE FROM obra_entries WHERE obra_id=?1").bind(id),
       database.prepare("DELETE FROM obras WHERE id=?1").bind(id),
     ]);
+    const keys = (attachments.results ?? []).map((row) => row.attachmentR2Key).filter(Boolean);
+    if (keys.length) {
+      const bucket = await documentsBucket();
+      await bucket.delete(keys).catch(() => undefined);
+    }
     return jsonResponse({ deleted: true });
   } catch (error) {
     console.error("Não foi possível excluir a obra.", error);

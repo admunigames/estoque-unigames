@@ -358,6 +358,13 @@
       "when": 1788368570389,
       "tag": "0050_modulo_obras",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1788372365085,
+      "tag": "0051_obra_entry_attachment",
+      "breakpoints": true
     }
   ]
 }
