@@ -669,6 +669,56 @@ export const hrDreMapping = pgTable("hr_dre_mapping", {
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
 
+// Módulo Obras (item 14) — reformas/construções em lojas. Tratado como
+// INVESTIMENTO/CAPEX: NÃO entra em Despesas nem na DRE. valor realizado é
+// sempre a soma dos lançamentos (obra_entries), calculada na leitura.
+export const obras = pgTable(
+  "obras",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    // 'reforma' | 'construcao' | 'manutencao' | 'outros'
+    kind: text("kind").notNull().default("reforma"),
+    responsible: text("responsible").notNull().default(""),
+    supplierId: text("supplier_id").notNull().default(""),
+    budgetCents: integer("budget_cents").notNull().default(0),
+    startDate: text("start_date").notNull().default(""),
+    expectedEndDate: text("expected_end_date").notNull().default(""),
+    endDate: text("end_date").notNull().default(""),
+    // 'planejada' | 'andamento' | 'concluida' | 'cancelada'
+    status: text("status").notNull().default("planejada"),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("obras_company_idx").on(table.companyId), index("obras_status_idx").on(table.status)],
+);
+
+export const obraEntries = pgTable(
+  "obra_entries",
+  {
+    id: text("id").primaryKey(),
+    obraId: text("obra_id").notNull(),
+    description: text("description").notNull().default(""),
+    supplier: text("supplier").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    entryDate: text("entry_date").notNull().default(""),
+    paymentMethod: text("payment_method").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("obra_entries_obra_idx").on(table.obraId)],
+);
+
 export const financeCostCenters = pgTable(
   "finance_cost_centers",
   {
