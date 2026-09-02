@@ -1492,11 +1492,21 @@ export const hrBenefits = pgTable(
     companyId: text("company_id").notNull().default(""),
     companyName: text("company_name").notNull().default(""),
     month: text("month").notNull(),
-    // 'alimentacao' | 'mobilidade' | 'premiacao' | 'saldo_livre' | 'outros'
+    // Tipo do lançamento. Com múltiplos benefícios num único lançamento
+    // (ver hr_benefit_items) passa a valer 'multiplo'; permanece com o tipo
+    // real quando o lançamento tem uma linha só. Mantido por
+    // compatibilidade e para o filtro rápido por tipo.
+    // 'alimentacao' | 'mobilidade' | 'premiacao' | 'saldo_livre' | 'outros' | 'multiplo'
     type: text("type").notNull().default("outros"),
     // 'pix' | 'cartao' | 'plataforma' | 'outros'
     paymentMethod: text("payment_method").notNull().default("outros"),
+    // amount_cents é sempre o valor LÍQUIDO do lançamento (bruto - desconto),
+    // desnormalizado a partir de hr_benefit_items — é o que a Folha e o
+    // Fluxo de Caixa leem. gross_cents/discount_cents guardam a quebra para
+    // a DRE (que usa o BRUTO) e para exibição.
     amountCents: integer("amount_cents").notNull().default(0),
+    grossCents: integer("gross_cents").notNull().default(0),
+    discountCents: integer("discount_cents").notNull().default(0),
     paymentDate: text("payment_date").notNull().default(""),
     notes: text("notes").notNull().default(""),
     createdBy: text("created_by").notNull(),
@@ -1510,6 +1520,28 @@ export const hrBenefits = pgTable(
     index("hr_benefits_employee_month_idx").on(table.employeeId, table.month),
     index("hr_benefits_month_idx").on(table.month),
   ],
+);
+
+// Linhas que compõem um lançamento de benefício — um ou vários tipos no
+// mesmo lançamento (alimentação + mobilidade + ...), cada um com valor
+// próprio e desconto próprio. amount_cents é a magnitude BRUTA (> 0);
+// discount_cents é a magnitude do desconto (>= 0). O líquido da linha é
+// amount_cents - discount_cents. Os totais do cabeçalho (hr_benefits) são
+// desnormalizados a partir daqui e regravados no mesmo batch. Sem FK
+// (convenção do projeto): a exclusão em cascata é feita na aplicação.
+export const hrBenefitItems = pgTable(
+  "hr_benefit_items",
+  {
+    id: text("id").primaryKey(),
+    benefitId: text("benefit_id").notNull(),
+    // 'alimentacao' | 'mobilidade' | 'premiacao' | 'saldo_livre' | 'outros'
+    type: text("type").notNull().default("outros"),
+    amountCents: integer("amount_cents").notNull().default(0),
+    discountCents: integer("discount_cents").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("hr_benefit_items_benefit_idx").on(table.benefitId)],
 );
 
 // CatÃ¡logo de lanÃ§amentos recorrentes do comissionamento (ex: "BÃ´nus GAR"),

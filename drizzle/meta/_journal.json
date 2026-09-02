@@ -309,6 +309,13 @@
       "when": 1788274252971,
       "tag": "0043_finance_fase8_itens_diversos",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1788362119965,
+      "tag": "0044_hr_benefit_items",
+      "breakpoints": true
     }
   ]
 }
