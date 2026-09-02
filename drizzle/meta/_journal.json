@@ -316,6 +316,13 @@
       "when": 1788362119965,
       "tag": "0044_hr_benefit_items",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1788365554625,
+      "tag": "0045_escala_feriados_beneficio_por_dia",
+      "breakpoints": true
     }
   ]
 }

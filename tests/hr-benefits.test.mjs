@@ -28,7 +28,11 @@ test("tipo do cabeçalho é o próprio quando há uma linha só", () => {
 test("compatibilidade: corpo antigo (sem items) monta uma linha única", () => {
   const { items, error } = parseBenefitItems(undefined, { type: "outros", amountCents: 5000 });
   assert.equal(error, "");
-  assert.deepEqual(items, [{ type: "outros", amountCents: 5000, discountCents: 0 }]);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].type, "outros");
+  assert.equal(items[0].amountCents, 5000);
+  assert.equal(items[0].discountCents, 0);
+  assert.equal(items[0].amountMode, "fixed");
 });
 
 test("rejeita desconto maior que o valor", () => {

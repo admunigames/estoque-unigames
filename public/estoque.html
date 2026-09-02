@@ -4802,6 +4802,7 @@
         <div class="field"><label for="rhBeneficioFiltroMes">COMPETÊNCIA</label><input type="month" id="rhBeneficioFiltroMes"></div>
         <div class="dre-toolbar-actions">
           <button class="btn-accent" id="btnNewRhBeneficio" type="button">NOVO BENEFÍCIO</button>
+          <button class="btn-outline" id="btnRhFeriados" type="button">FERIADOS</button>
           <button class="btn-outline" id="btnRhBeneficiosPrint" type="button">RELATÓRIO / PDF</button>
         </div>
       </div>
@@ -6437,6 +6438,7 @@
       <div class="purchase-field"><label for="rhEmployeeRole">CARGO</label><input id="rhEmployeeRole" maxlength="120"></div>
       <div class="purchase-field"><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="number" id="rhEmployeeSalary" min="0" step="0.01" value="0"></div>
       <div class="purchase-field"><label for="rhEmployeeStatus">SITUAÇÃO</label><select id="rhEmployeeStatus"><option value="active">ATIVO</option><option value="inactive">INATIVO</option></select></div>
+      <div class="purchase-field"><label for="rhEmployeeSchedule">ESCALA</label><select id="rhEmployeeSchedule"><option value="5x2">5x2 (SEG A SEX)</option><option value="6x1">6x1 (TRABALHA 6, FOLGA 1)</option></select></div>
       <div class="purchase-field"><label for="rhEmployeePix">CHAVE PIX</label><input id="rhEmployeePix" maxlength="160"></div>
       <div class="purchase-field"><label for="rhEmployeeBank">BANCO</label><input id="rhEmployeeBank" maxlength="120"></div>
       <div class="purchase-field full"><label for="rhEmployeeUser">CONTA DE ACESSO (OPCIONAL)</label><select id="rhEmployeeUser"><option value="">SEM CONTA VINCULADA</option></select></div>
@@ -6515,17 +6517,20 @@
       <div class="purchase-field full"><label for="rhBeneficioObs">OBSERVAÇÕES</label><textarea id="rhBeneficioObs" rows="2" maxlength="500"></textarea></div>
     </div>
     <h4 style="margin:16px 0 8px;font:800 10px var(--mono);letter-spacing:.06em;">BENEFÍCIOS DESTE LANÇAMENTO (UM OU VÁRIOS TIPOS)</h4>
+    <div id="rhBeneficioDiasUteis" style="margin:0 0 8px;font:700 11px var(--mono);color:var(--ink-soft);"></div>
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="rhBeneficioItemTipo">TIPO</label><select id="rhBeneficioItemTipo"><option value="alimentacao">ALIMENTAÇÃO</option><option value="mobilidade">MOBILIDADE</option><option value="premiacao">PREMIAÇÃO</option><option value="saldo_livre">SALDO LIVRE</option><option value="outros">OUTROS</option></select></div>
-      <div class="purchase-field"><label for="rhBeneficioItemValor">VALOR (R$)</label><input type="number" id="rhBeneficioItemValor" min="0.01" step="0.01"></div>
+      <div class="purchase-field"><label for="rhBeneficioItemModo">MODO</label><select id="rhBeneficioItemModo"><option value="fixed">VALOR FIXO</option><option value="per_day">POR DIA TRABALHADO</option></select></div>
+      <div class="purchase-field" id="rhBeneficioItemValorWrap"><label for="rhBeneficioItemValor">VALOR (R$)</label><input type="number" id="rhBeneficioItemValor" min="0.01" step="0.01"></div>
+      <div class="purchase-field" id="rhBeneficioItemPorDiaWrap" hidden><label for="rhBeneficioItemPorDia">VALOR POR DIA (R$)</label><input type="number" id="rhBeneficioItemPorDia" min="0.01" step="0.01"></div>
       <div class="purchase-field"><label for="rhBeneficioItemDesconto">DESCONTO (R$)</label><input type="number" id="rhBeneficioItemDesconto" min="0" step="0.01" value="0"></div>
       <div class="purchase-field"><label for="btnAddRhBeneficioItem">&nbsp;</label><button class="btn-outline" id="btnAddRhBeneficioItem" type="button">ADICIONAR BENEFÍCIO</button></div>
     </div>
     <div class="table-panel responsive-table" style="margin-top:10px;">
       <div class="table-scroll">
         <table id="rhBeneficioItensTable">
-          <thead><tr><th>Tipo</th><th>Bruto</th><th>Desconto</th><th>Líquido</th><th></th></tr></thead>
-          <tbody id="rhBeneficioItensBody"><tr><td colspan="5" class="responsive-empty">Nenhum benefício adicionado.</td></tr></tbody>
+          <thead><tr><th>Tipo</th><th>Cálculo</th><th>Bruto</th><th>Desconto</th><th>Líquido</th><th></th></tr></thead>
+          <tbody id="rhBeneficioItensBody"><tr><td colspan="6" class="responsive-empty">Nenhum benefício adicionado.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -6536,6 +6541,41 @@
       <button class="btn-accent" id="btnSaveRhBeneficio" type="submit">SALVAR</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhFeriadosDialog" aria-labelledby="rhFeriadosDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhFeriadosDialogTitle">FERIADOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhFeriadosDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Feriados são descontados dos dias úteis do mês no cálculo de benefícios pagos por dia trabalhado. "Nacional" vale para todas as lojas; "local" vale só para a loja escolhida.</p>
+    <form id="rhFeriadoForm">
+      <input type="hidden" id="rhFeriadoId">
+      <div class="purchase-form-grid">
+        <div class="purchase-field"><label for="rhFeriadoData">DATA *</label><input type="date" id="rhFeriadoData" required></div>
+        <div class="purchase-field"><label for="rhFeriadoNome">NOME</label><input id="rhFeriadoNome" maxlength="120" placeholder="Ex: Corpus Christi"></div>
+        <div class="purchase-field"><label for="rhFeriadoScope">ABRANGÊNCIA</label><select id="rhFeriadoScope"><option value="nacional">NACIONAL</option><option value="local">LOCAL (UMA LOJA)</option></select></div>
+        <div class="purchase-field" id="rhFeriadoLojaWrap" hidden><label for="rhFeriadoLoja">LOJA</label><select id="rhFeriadoLoja"><option value="">SELECIONE</option></select></div>
+        <div class="purchase-field"><label for="btnAddRhFeriado">&nbsp;</label><button class="btn-accent" id="btnAddRhFeriado" type="submit">ADICIONAR / SALVAR</button></div>
+      </div>
+      <div class="user-form-status" id="rhFeriadoFormStatus" role="status" aria-live="polite"></div>
+    </form>
+    <div class="purchase-form-grid" style="margin-top:6px;">
+      <div class="purchase-field"><label for="rhFeriadosFiltroAno">ANO</label><input type="number" id="rhFeriadosFiltroAno" min="2000" max="2100" step="1"></div>
+    </div>
+    <div class="table-panel responsive-table" style="margin-top:8px;">
+      <div class="table-scroll">
+        <table id="rhFeriadosTable">
+          <thead><tr><th>Data</th><th>Nome</th><th>Abrangência</th><th></th></tr></thead>
+          <tbody id="rhFeriadosTableBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhFeriadosDialog" type="button">FECHAR</button>
+    </div>
+  </div>
 </dialog>
 
 <dialog class="purchase-dialog" id="rhComissaoDialog" aria-labelledby="rhComissaoDialogTitle">
@@ -24890,6 +24930,7 @@ function renderHomeTasks(){
     el('rhEmployeeRole').value = employee ? (employee.roleTitle || '') : '';
     el('rhEmployeeSalary').value = employee ? (Number(employee.salaryCents || 0)/100).toFixed(2) : '0.00';
     el('rhEmployeeStatus').value = employee ? employee.status : 'active';
+    el('rhEmployeeSchedule').value = employee ? (employee.workSchedule || '5x2') : '5x2';
     el('rhEmployeePix').value = employee ? (employee.pixKey || '') : '';
     el('rhEmployeeBank').value = employee ? (employee.bankName || '') : '';
     el('rhEmployeeUser').value = employee ? (employee.userId || '') : '';
@@ -24946,6 +24987,7 @@ function renderHomeTasks(){
       pixKey: el('rhEmployeePix').value,
       bankName: el('rhEmployeeBank').value,
       status: el('rhEmployeeStatus').value,
+      workSchedule: el('rhEmployeeSchedule').value,
       userId: el('rhEmployeeUser').disabled ? '' : el('rhEmployeeUser').value,
       notes: el('rhEmployeeNotes').value
     };
@@ -25414,6 +25456,31 @@ function renderHomeTasks(){
     if(el(id)) el(id).addEventListener('change', loadRhBeneficios);
   });
 
+  let rhBeneficioWorkingDays = 0;
+  let rhBeneficioSchedule = '';
+
+  async function rhRefreshBeneficioDiasUteis(){
+    const info = el('rhBeneficioDiasUteis');
+    const employeeId = el('rhBeneficioFuncionario').value;
+    const month = el('rhBeneficioMes').value;
+    rhBeneficioWorkingDays = 0;
+    rhBeneficioSchedule = '';
+    if(!employeeId || !month){
+      if(info) info.textContent = 'Selecione funcionário e competência para calcular os dias úteis (benefício por dia).';
+      renderRhBeneficioDialogItems();
+      return;
+    }
+    try{
+      const data = await rhApiRequest('/working-days?employeeId='+encodeURIComponent(employeeId)+'&month='+encodeURIComponent(month));
+      rhBeneficioWorkingDays = Number(data.workingDays || 0);
+      rhBeneficioSchedule = data.workSchedule || '';
+      if(info) info.textContent = 'Dias úteis da competência (escala '+escapeHtml(rhBeneficioSchedule)+'): '+rhBeneficioWorkingDays;
+    }catch(error){
+      if(info) info.textContent = 'Não foi possível calcular os dias úteis: '+escapeHtml(error.message);
+    }
+    renderRhBeneficioDialogItems();
+  }
+
   function openRhBeneficioDialog(row){
     el('rhBeneficioForm').reset();
     rhRenderEmployeeSelects();
@@ -25427,35 +25494,58 @@ function renderHomeTasks(){
     if(row && Array.isArray(row.items) && row.items.length){
       rhBeneficioDialogItems = row.items.map(item => ({
         type: item.type,
+        amountMode: item.amountMode === 'per_day' ? 'per_day' : 'fixed',
+        perDayRateCents: Number(item.perDayRateCents || 0),
+        workingDays: Number(item.workingDays || 0),
         amountCents: Number(item.amountCents || 0),
         discountCents: Number(item.discountCents || 0)
       }));
     }else if(row){
-      rhBeneficioDialogItems = [{ type: row.type === 'multiplo' ? 'alimentacao' : row.type, amountCents: Number(row.amountCents || 0), discountCents: 0 }];
+      rhBeneficioDialogItems = [{ type: row.type === 'multiplo' ? 'alimentacao' : row.type, amountMode:'fixed', perDayRateCents:0, workingDays:0, amountCents: Number(row.amountCents || 0), discountCents: 0 }];
     }else{
       rhBeneficioDialogItems = [];
     }
     el('rhBeneficioItemTipo').value = 'alimentacao';
+    el('rhBeneficioItemModo').value = 'fixed';
     el('rhBeneficioItemValor').value = '';
+    el('rhBeneficioItemPorDia').value = '';
     el('rhBeneficioItemDesconto').value = '0';
+    rhSyncBeneficioItemModo();
     renderRhBeneficioDialogItems();
     el('rhBeneficioFormStatus').textContent = '';
     el('rhBeneficioDialog').showModal();
+    rhRefreshBeneficioDiasUteis();
   }
+
+  function rhSyncBeneficioItemModo(){
+    const perDay = el('rhBeneficioItemModo').value === 'per_day';
+    el('rhBeneficioItemValorWrap').hidden = perDay;
+    el('rhBeneficioItemPorDiaWrap').hidden = !perDay;
+  }
+  if(el('rhBeneficioItemModo')) el('rhBeneficioItemModo').addEventListener('change', rhSyncBeneficioItemModo);
+  ['rhBeneficioFuncionario','rhBeneficioMes'].forEach(id => {
+    if(el(id)) el(id).addEventListener('change', rhRefreshBeneficioDiasUteis);
+  });
 
   function renderRhBeneficioDialogItems(){
     const body = el('rhBeneficioItensBody');
     if(!body) return;
     if(!rhBeneficioDialogItems.length){
-      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum benefício adicionado.</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum benefício adicionado.</td></tr>';
     }else{
-      body.innerHTML = rhBeneficioDialogItems.map((item, index) => '<tr>'+
+      body.innerHTML = rhBeneficioDialogItems.map((item, index) => {
+        const calc = item.amountMode === 'per_day'
+          ? (item.workingDays || rhBeneficioWorkingDays)+' dias × '+formatCentsBRL(item.perDayRateCents)
+          : 'Valor fixo';
+        return '<tr>'+
         '<td>'+escapeHtml(RH_BENEFIT_TYPE_LABELS[item.type] || item.type)+'</td>'+
+        '<td>'+escapeHtml(calc)+'</td>'+
         '<td>'+formatCentsBRL(item.amountCents)+'</td>'+
         '<td>'+(Number(item.discountCents) > 0 ? '−'+formatCentsBRL(item.discountCents) : '—')+'</td>'+
         '<td>'+formatCentsBRL(item.amountCents - item.discountCents)+'</td>'+
         '<td><button class="btn-outline" type="button" data-rh-beneficio-item-remove="'+index+'">REMOVER</button></td>'+
-      '</tr>').join('');
+      '</tr>';
+      }).join('');
     }
     const gross = rhBeneficioDialogItems.reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
     const disc = rhBeneficioDialogItems.reduce((sum, item) => sum + Number(item.discountCents || 0), 0);
@@ -25465,11 +25555,27 @@ function renderHomeTasks(){
   if(el('btnAddRhBeneficioItem')) el('btnAddRhBeneficioItem').addEventListener('click', () => {
     const status = el('rhBeneficioFormStatus');
     const type = el('rhBeneficioItemTipo').value;
-    const amountCents = parseBRLToCents(el('rhBeneficioItemValor').value);
+    const mode = el('rhBeneficioItemModo').value === 'per_day' ? 'per_day' : 'fixed';
     const discountCents = parseBRLToCents(el('rhBeneficioItemDesconto').value || '0') || 0;
-    if(amountCents === null || amountCents <= 0){
-      status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO NO BENEFÍCIO.';
-      return;
+    let amountCents, perDayRateCents = 0, workingDays = 0;
+    if(mode === 'per_day'){
+      perDayRateCents = parseBRLToCents(el('rhBeneficioItemPorDia').value);
+      if(perDayRateCents === null || perDayRateCents <= 0){
+        status.textContent = 'INFORME UM VALOR POR DIA MAIOR QUE ZERO.';
+        return;
+      }
+      if(!rhBeneficioWorkingDays || rhBeneficioWorkingDays <= 0){
+        status.textContent = 'NÃO FOI POSSÍVEL CALCULAR OS DIAS ÚTEIS — VERIFIQUE FUNCIONÁRIO, COMPETÊNCIA E ESCALA.';
+        return;
+      }
+      workingDays = rhBeneficioWorkingDays;
+      amountCents = perDayRateCents * workingDays;
+    }else{
+      amountCents = parseBRLToCents(el('rhBeneficioItemValor').value);
+      if(amountCents === null || amountCents <= 0){
+        status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO NO BENEFÍCIO.';
+        return;
+      }
     }
     if(discountCents < 0){
       status.textContent = 'O DESCONTO NÃO PODE SER NEGATIVO.';
@@ -25480,8 +25586,9 @@ function renderHomeTasks(){
       return;
     }
     status.textContent = '';
-    rhBeneficioDialogItems.push({ type, amountCents, discountCents });
+    rhBeneficioDialogItems.push({ type, amountMode: mode, perDayRateCents, workingDays, amountCents, discountCents });
     el('rhBeneficioItemValor').value = '';
+    el('rhBeneficioItemPorDia').value = '';
     el('rhBeneficioItemDesconto').value = '0';
     renderRhBeneficioDialogItems();
   });
@@ -25491,6 +25598,117 @@ function renderHomeTasks(){
     if(!removeButton) return;
     rhBeneficioDialogItems.splice(Number(removeButton.dataset.rhBeneficioItemRemove), 1);
     renderRhBeneficioDialogItems();
+  });
+
+  // ---------------------- FERIADOS ----------------------
+  let rhFeriadosRows = [];
+  const RH_HOLIDAY_SCOPE_LABELS = { nacional:'NACIONAL', local:'LOCAL' };
+
+  function rhSyncFeriadoScope(){
+    el('rhFeriadoLojaWrap').hidden = el('rhFeriadoScope').value !== 'local';
+  }
+  if(el('rhFeriadoScope')) el('rhFeriadoScope').addEventListener('change', rhSyncFeriadoScope);
+
+  function renderRhFeriadosTable(){
+    const body = el('rhFeriadosTableBody');
+    if(!body) return;
+    if(!rhFeriadosRows.length){
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhum feriado cadastrado para o ano.</td></tr>';
+      return;
+    }
+    body.innerHTML = rhFeriadosRows.map(row => '<tr>'+
+      '<td>'+escapeHtml(rhFormatDate(row.date))+'</td>'+
+      '<td>'+escapeHtml(row.name || '—')+'</td>'+
+      '<td>'+escapeHtml((RH_HOLIDAY_SCOPE_LABELS[row.scope] || row.scope) + (row.scope === 'local' && row.companyName ? ' · '+row.companyName : ''))+'</td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;">'+
+        '<button class="btn-outline" type="button" data-rh-feriado-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-rh-feriado-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
+      '</span></td>'+
+    '</tr>').join('');
+  }
+
+  async function loadRhFeriados(){
+    const year = el('rhFeriadosFiltroAno').value || String(new Date().getFullYear());
+    el('rhFeriadosTableBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await rhApiRequest('/holidays?year='+encodeURIComponent(year));
+      rhFeriadosRows = Array.isArray(data.holidays) ? data.holidays : [];
+      renderRhFeriadosTable();
+    }catch(error){
+      rhFeriadosRows = [];
+      el('rhFeriadosTableBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function rhFeriadoResetForm(){
+    el('rhFeriadoForm').reset();
+    el('rhFeriadoId').value = '';
+    el('rhFeriadoScope').value = 'nacional';
+    rhSyncFeriadoScope();
+    el('rhFeriadoFormStatus').textContent = '';
+  }
+
+  function openRhFeriadosDialog(){
+    rhFillSelect('rhFeriadoLoja','SELECIONE',rhCompanyOptions());
+    if(!el('rhFeriadosFiltroAno').value) el('rhFeriadosFiltroAno').value = String(new Date().getFullYear());
+    rhFeriadoResetForm();
+    loadRhFeriados();
+    el('rhFeriadosDialog').showModal();
+  }
+
+  if(el('btnRhFeriados')) el('btnRhFeriados').addEventListener('click', openRhFeriadosDialog);
+  if(el('btnCloseRhFeriadosDialog')) el('btnCloseRhFeriadosDialog').addEventListener('click', () => el('rhFeriadosDialog').close());
+  if(el('btnCancelRhFeriadosDialog')) el('btnCancelRhFeriadosDialog').addEventListener('click', () => el('rhFeriadosDialog').close());
+  if(el('rhFeriadosFiltroAno')) el('rhFeriadosFiltroAno').addEventListener('change', loadRhFeriados);
+
+  if(el('rhFeriadoForm')) el('rhFeriadoForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhFeriadoFormStatus');
+    status.textContent = '';
+    const payload = {
+      id: el('rhFeriadoId').value || undefined,
+      date: el('rhFeriadoData').value,
+      name: el('rhFeriadoNome').value,
+      scope: el('rhFeriadoScope').value,
+      companyId: el('rhFeriadoScope').value === 'local' ? el('rhFeriadoLoja').value : ''
+    };
+    if(!payload.date){ status.textContent = 'INFORME A DATA.'; return; }
+    if(payload.scope === 'local' && !payload.companyId){ status.textContent = 'SELECIONE A LOJA DO FERIADO LOCAL.'; return; }
+    try{
+      await rhApiRequest('/holidays', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      rhFeriadoResetForm();
+      await loadRhFeriados();
+      showPurchaseToast('Feriado salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  if(el('rhFeriadosTableBody')) el('rhFeriadosTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rh-feriado-edit]');
+    const deleteButton = event.target.closest('[data-rh-feriado-delete]');
+    if(editButton){
+      const row = rhFeriadosRows.find(item => item.id === editButton.dataset.rhFeriadoEdit);
+      if(!row) return;
+      el('rhFeriadoId').value = row.id;
+      el('rhFeriadoData').value = row.date;
+      el('rhFeriadoNome').value = row.name || '';
+      el('rhFeriadoScope').value = row.scope;
+      rhSyncFeriadoScope();
+      if(row.scope === 'local') el('rhFeriadoLoja').value = row.companyId || '';
+      el('rhFeriadoFormStatus').textContent = '';
+      return;
+    }
+    if(deleteButton){
+      if(!confirm('Excluir este feriado?')) return;
+      try{
+        await rhApiRequest('/holidays?id='+encodeURIComponent(deleteButton.dataset.rhFeriadoDelete), {method:'DELETE'});
+        await loadRhFeriados();
+        showPurchaseToast('Feriado excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
   });
 
   function closeRhBeneficioDialog(){
@@ -25546,6 +25764,8 @@ function renderHomeTasks(){
       paymentDate: el('rhBeneficioData').value,
       items: rhBeneficioDialogItems.map(item => ({
         type: item.type,
+        amountMode: item.amountMode === 'per_day' ? 'per_day' : 'fixed',
+        perDayRateCents: Number(item.perDayRateCents || 0),
         amountCents: Number(item.amountCents || 0),
         discountCents: Number(item.discountCents || 0)
       })),

@@ -85,6 +85,7 @@ export async function POST(request: Request) {
     const pixKey = safeText(body.pixKey, 160);
     const bankName = safeText(body.bankName, 120);
     const status = safeText(body.status, 20) || "active";
+    const workSchedule = safeText(body.workSchedule, 10) || "5x2";
     const userId = safeText(body.userId, 80);
     const notes = safeText(body.notes, 500);
     const salaryCents = centsValue(body.salaryCents ?? 0);
@@ -96,6 +97,9 @@ export async function POST(request: Request) {
     }
     if (!isOneOf(EMPLOYEE_STATUSES, status)) {
       return jsonResponse({ error: "SITUAÇÃO INVÁLIDA." }, 400);
+    }
+    if (workSchedule !== "5x2" && workSchedule !== "6x1") {
+      return jsonResponse({ error: "ESCALA INVÁLIDA (USE 5x2 OU 6x1)." }, 400);
     }
     if (!Number.isFinite(salaryCents) || salaryCents < 0) {
       return jsonResponse({ error: "INFORME UM SALÁRIO VÁLIDO." }, 400);
@@ -140,9 +144,9 @@ export async function POST(request: Request) {
           `UPDATE hr_employees
            SET full_name=?1, cpf=?2, admission_date=?3, company_id=?4, company_name=?5,
                role_title=?6, salary_cents=?7, pix_key=?8, bank_name=?9, status=?10,
-               user_id=?11, notes=?12, updated_by=?13, updated_by_name=?14,
+               work_schedule=?11, user_id=?12, notes=?13, updated_by=?14, updated_by_name=?15,
                updated_at=CURRENT_TIMESTAMP
-           WHERE id=?15`,
+           WHERE id=?16`,
         )
         .bind(
           fullName,
@@ -155,6 +159,7 @@ export async function POST(request: Request) {
           pixKey,
           bankName,
           status,
+          workSchedule,
           userId,
           notes,
           actor.id,
@@ -183,10 +188,10 @@ export async function POST(request: Request) {
       .prepare(
         `INSERT INTO hr_employees
           (id, full_name, cpf, admission_date, company_id, company_name, role_title, salary_cents,
-           pix_key, bank_name, status, user_id, notes, created_by, created_by_name, created_at,
-           updated_by, updated_by_name, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, CURRENT_TIMESTAMP,
-                 ?14, ?15, CURRENT_TIMESTAMP)`,
+           pix_key, bank_name, status, work_schedule, user_id, notes, created_by, created_by_name,
+           created_at, updated_by, updated_by_name, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16,
+                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP)`,
       )
       .bind(
         id,
@@ -200,6 +205,7 @@ export async function POST(request: Request) {
         pixKey,
         bankName,
         status,
+        workSchedule,
         userId,
         notes,
         actor.id,

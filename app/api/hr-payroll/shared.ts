@@ -1,4 +1,5 @@
 import { getD1 } from "../../../db";
+import { isWorkSchedule, workingDaysInMonth } from "../../lib/working-days";
 
 // RH Financeiro (Financeiro Fase 5) — base compartilhada da Folha de
 // Pagamento, dos Benefícios e do Comissionamento.
@@ -154,6 +155,7 @@ export type EmployeeRow = {
   pixKey: string;
   bankName: string;
   status: string;
+  workSchedule: string;
   userId: string;
   notes: string;
   createdBy: string;
@@ -167,6 +169,7 @@ export type EmployeeRow = {
 export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, admission_date AS admissionDate,
   company_id AS companyId, company_name AS companyName, role_title AS roleTitle,
   salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName, status,
+  work_schedule AS workSchedule,
   user_id AS userId, notes, created_by AS createdBy, created_by_name AS createdByName,
   created_at AS createdAt, updated_by AS updatedBy, updated_by_name AS updatedByName,
   updated_at AS updatedAt`;
@@ -240,4 +243,38 @@ export async function computedBenefitsCentsFor(
     .bind(employeeId, month)
     .first<{ total: number }>();
   return Number(row?.total ?? 0);
+}
+
+/**
+ * Datas de feriado (AAAA-MM-DD) que valem para a loja informada numa
+ * competência: todos os 'nacional' + os 'local' daquela loja.
+ */
+export async function holidayDatesFor(
+  database: Database,
+  companyId: string,
+  month: string,
+): Promise<string[]> {
+  const result = await database
+    .prepare(
+      `SELECT date FROM hr_holidays
+       WHERE substr(date, 1, 7) = ?1
+         AND (scope = 'nacional' OR (scope = 'local' AND company_id = ?2))`,
+    )
+    .bind(month, companyId || "")
+    .all<{ date: string }>();
+  return (result.results ?? []).map((row) => row.date);
+}
+
+/**
+ * Dias úteis do funcionário na competência, pela escala cadastrada e pelos
+ * feriados da loja — usado para benefícios pagos por dia trabalhado.
+ */
+export async function workingDaysForEmployee(
+  database: Database,
+  employee: { companyId: string; workSchedule: string },
+  month: string,
+): Promise<number> {
+  const schedule = isWorkSchedule(employee.workSchedule) ? employee.workSchedule : "5x2";
+  const holidays = await holidayDatesFor(database, employee.companyId, month);
+  return workingDaysInMonth(month, schedule, holidays);
 }

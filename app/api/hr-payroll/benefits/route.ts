@@ -19,6 +19,7 @@ import {
   loadEmployee,
   safeText,
   sameOrigin,
+  workingDaysForEmployee,
   type JsonMap,
 } from "../shared";
 
@@ -56,6 +57,9 @@ type BenefitItemRow = {
   id: string;
   benefitId: string;
   type: string;
+  amountMode: string;
+  perDayRateCents: number;
+  workingDays: number;
   amountCents: number;
   discountCents: number;
 };
@@ -67,8 +71,9 @@ const BENEFIT_COLUMNS = `id, employee_id AS employeeId, employee_name AS employe
   notes, created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
   updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt`;
 
-const BENEFIT_ITEM_COLUMNS = `id, benefit_id AS benefitId, type, amount_cents AS amountCents,
-  discount_cents AS discountCents`;
+const BENEFIT_ITEM_COLUMNS = `id, benefit_id AS benefitId, type, amount_mode AS amountMode,
+  per_day_rate_cents AS perDayRateCents, working_days AS workingDays,
+  amount_cents AS amountCents, discount_cents AS discountCents`;
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -182,11 +187,19 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "INFORME UMA DATA DE PAGAMENTO VÁLIDA (AAAA-MM-DD)." }, 400);
     }
 
-    const { items, error: itemsError } = parseBenefitItems(body.items, {
-      type: body.type,
-      amountCents: body.amountCents,
-      discountCents: body.discountCents,
-    });
+    const database = await getD1();
+    const employee = await loadEmployee(database, employeeId);
+    if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
+
+    // Benefício pago por dia trabalhado: os dias úteis vêm da escala do
+    // funcionário e dos feriados da loja na competência.
+    const workingDays = await workingDaysForEmployee(database, employee, month);
+
+    const { items, error: itemsError } = parseBenefitItems(
+      body.items,
+      { type: body.type, amountCents: body.amountCents, discountCents: body.discountCents },
+      { workingDays },
+    );
     if (itemsError) return jsonResponse({ error: itemsError }, 400);
 
     const totals = benefitTotalsFromItems(items);
@@ -194,10 +207,6 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "O VALOR LÍQUIDO DO LANÇAMENTO PRECISA SER MAIOR QUE ZERO." }, 400);
     }
     const headerType = headerBenefitType(items);
-
-    const database = await getD1();
-    const employee = await loadEmployee(database, employeeId);
-    if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
 
     let benefitId = editId;
     if (editId) {
@@ -273,10 +282,21 @@ export async function POST(request: Request) {
         database
           .prepare(
             `INSERT INTO hr_benefit_items
-              (id, benefit_id, type, amount_cents, discount_cents, created_by, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, CURRENT_TIMESTAMP)`,
+              (id, benefit_id, type, amount_mode, per_day_rate_cents, working_days,
+               amount_cents, discount_cents, created_by, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, CURRENT_TIMESTAMP)`,
           )
-          .bind(crypto.randomUUID(), benefitId, item.type, item.amountCents, item.discountCents, actor.id),
+          .bind(
+            crypto.randomUUID(),
+            benefitId,
+            item.type,
+            item.amountMode,
+            item.perDayRateCents,
+            item.workingDays,
+            item.amountCents,
+            item.discountCents,
+            actor.id,
+          ),
       ),
     ]);
 
