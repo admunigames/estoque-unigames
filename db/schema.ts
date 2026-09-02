@@ -1484,6 +1484,44 @@ export const hrPayrollEntries = pgTable(
   ],
 );
 
+// 13º salário — anual, por funcionário. Lançado como parcela de
+// adiantamento, parcela final, ou lançamento único ('unico'). Independente
+// da folha mensal (hr_payroll_entries). gross_cents é o BRUTO; o líquido
+// (gross − deductions) é calculado na leitura.
+export const hrThirteenthSalary = pgTable(
+  "hr_thirteenth_salary",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    year: text("year").notNull(), // AAAA
+    // 'adiantamento' | 'final' | 'unico'
+    installment: text("installment").notNull().default("unico"),
+    grossCents: integer("gross_cents").notNull().default(0),
+    deductionsCents: integer("deductions_cents").notNull().default(0),
+    paymentDone: integer("payment_done").notNull().default(0),
+    paymentDate: text("payment_date").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_thirteenth_employee_year_installment_idx").on(
+      table.employeeId,
+      table.year,
+      table.installment,
+    ),
+    index("hr_thirteenth_year_idx").on(table.year),
+    index("hr_thirteenth_company_idx").on(table.companyId),
+  ],
+);
+
 // Parâmetros globais da Folha. Uma linha só (company_id = '' — reservado
 // para um override por loja no futuro). employer_charges_bps = encargos
 // patronais (INSS/FGTS pagos pela empresa, não descontados do funcionário)
