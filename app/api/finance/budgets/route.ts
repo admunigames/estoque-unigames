@@ -12,6 +12,7 @@ import {
 } from "../shared";
 import {
   buildComparisonRow,
+  buildRealizedOnlyRow,
   loadCategoryLabels,
   loadCompanyNameMap,
   loadCostCenterLabels,
@@ -54,6 +55,7 @@ export async function GET(request: Request) {
     ]);
 
     const budgets = budgetsResult.results ?? [];
+    const includeUnbudgeted = url.searchParams.get("includeUnbudgeted") !== "0";
     const comparisons = await Promise.all(
       budgets.map(async (budget) => {
         const realizedCents = await realizedCentsFor(
@@ -72,11 +74,43 @@ export async function GET(request: Request) {
       }),
     );
 
+    // Item 12: categorias de topo SEM orçamento cadastrado entram com só o
+    // Realizado (quando houver movimento), sem travar a tela nem cobrar
+    // cobertura total de orçamento.
+    let unbudgeted: typeof comparisons = [];
+    if (includeUnbudgeted) {
+      const budgetedCategoryIds = new Set(budgets.map((budget) => budget.categoryId));
+      const topCategoriesResult = await database
+        .prepare("SELECT id, name FROM finance_categories WHERE parent_id IS NULL ORDER BY position ASC, name ASC")
+        .all<{ id: string; name: string }>();
+      const pending = (topCategoriesResult.results ?? []).filter(
+        (category) => !budgetedCategoryIds.has(category.id),
+      );
+      const rows = await Promise.all(
+        pending.map(async (category) => {
+          const realizedCents = await realizedCentsFor(database, category.id, month, companyId, "");
+          return { category, realizedCents };
+        }),
+      );
+      unbudgeted = rows
+        .filter((row) => row.realizedCents !== 0)
+        .map((row) =>
+          buildRealizedOnlyRow(
+            row.category.id,
+            companyId,
+            companyId ? companyNames.get(companyId) ?? "" : "",
+            month,
+            row.realizedCents,
+            categoryLabels.get(row.category.id) ?? row.category.name,
+          ),
+        );
+    }
+
     return jsonResponse({
       month,
       companyId,
       companyName: companyId ? companyNames.get(companyId) ?? "" : "",
-      budgets: comparisons,
+      budgets: [...comparisons, ...unbudgeted],
     });
   } catch (error) {
     console.error("Não foi possível carregar o orçamento.", error);

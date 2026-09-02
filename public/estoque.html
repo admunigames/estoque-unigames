@@ -4982,7 +4982,7 @@
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="consolidada">CONSOLIDADA</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="gerencial">GERENCIAL</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="unidades">COMPARATIVO UNIDADES</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="temporal">COMPARATIVO MENSAL/ANUAL</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="temporal">DRE POR COMPETÊNCIA</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="vertical">ANÁLISE VERTICAL</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="horizontal">ANÁLISE HORIZONTAL</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="orcado">REALIZADO X ORÇADO</button>
@@ -17567,7 +17567,8 @@ function renderHomeTasks(){
       return;
     }
     const categoryNames = data.series[0].categories.map(c => c.name);
-    const headRow = '<tr><th>Indicador</th>'+data.series.map(s => '<th>'+escapeHtml(s.month)+'</th>').join('')+'</tr>';
+    const fmtMonth = m => { const p = String(m).split('-'); return p.length === 2 ? p[1]+'/'+p[0] : m; };
+    const headRow = '<tr><th>Competência</th>'+data.series.map(s => '<th>'+escapeHtml(fmtMonth(s.month))+'</th>').join('')+'</tr>';
     function metricRow(label, getter){
       return '<tr><td><strong>'+label+'</strong></td>'+data.series.map(s => '<td>'+formatCentsBRL(getter(s))+'</td>').join('')+'</tr>';
     }
@@ -19201,19 +19202,23 @@ function renderHomeTasks(){
 
   function budgetRowHtml(row, options){
     const settings = options || {};
-    const actions = settings.readOnly ? '' :
+    const noBudget = row.hasBudget === false;
+    const actions = (settings.readOnly || noBudget) ? '' :
       '<span style="display:flex;gap:6px;">'+
         '<button class="btn-outline" type="button" data-budget-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
         '<button class="btn-outline" type="button" data-budget-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span>';
-    return '<tr>'+
+    const statusCell = noBudget
+      ? '<td><span class="status-pill" style="opacity:.65;">SEM ORÇAMENTO · SÓ REALIZADO</span></td>'
+      : '<td><span class="status-pill '+BUDGET_ALERT_TONE[row.alertLevel]+'">'+budgetPercentLabel(row)+' — '+BUDGET_ALERT_LABEL[row.alertLevel]+'</span></td>';
+    return '<tr'+(noBudget ? ' style="color:var(--ink-soft);"' : '')+'>'+
       '<td>'+escapeHtml(row.categoryName)+'</td>'+
       '<td>'+escapeHtml(row.costCenterName || 'TODOS')+'</td>'+
-      '<td>'+formatCentsBRL(row.amountCents)+'</td>'+
+      '<td>'+(noBudget ? '—' : formatCentsBRL(row.amountCents))+'</td>'+
       '<td>'+formatCentsBRL(row.realizedCents)+'</td>'+
-      '<td>'+formatCentsBRL(row.differenceCents)+'</td>'+
-      '<td>'+formatCentsBRL(row.balanceCents)+'</td>'+
-      '<td><span class="status-pill '+BUDGET_ALERT_TONE[row.alertLevel]+'">'+budgetPercentLabel(row)+' — '+BUDGET_ALERT_LABEL[row.alertLevel]+'</span></td>'+
+      '<td>'+(noBudget ? '—' : formatCentsBRL(row.differenceCents))+'</td>'+
+      '<td>'+(noBudget ? '—' : formatCentsBRL(row.balanceCents))+'</td>'+
+      statusCell+
       (settings.readOnly ? '' : '<td>'+actions+'</td>')+
     '</tr>';
   }

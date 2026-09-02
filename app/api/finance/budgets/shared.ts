@@ -49,6 +49,9 @@ export type BudgetComparisonRow = BudgetRow & {
   balanceCents: number;
   usedPercentBasisPoints: number;
   alertLevel: "ok" | "warning" | "over";
+  // false quando a categoria não tem orçamento cadastrado — a tela mostra
+  // só o Realizado, sem cobrar 100% de cobertura de orçamento (item 12).
+  hasBudget: boolean;
 };
 
 const ITEMS_FOR_CATEGORY_SQL = `
@@ -178,5 +181,45 @@ export function buildComparisonRow(
     balanceCents,
     usedPercentBasisPoints,
     alertLevel: alertLevelFor(usedPercentBasisPoints),
+    hasBudget: true,
+  };
+}
+
+/**
+ * Linha de uma categoria SEM orçamento cadastrado: só o Realizado, sem
+ * alerta de estouro (item 12 — a tela não exige 100% de cobertura de
+ * orçamento).
+ */
+export function buildRealizedOnlyRow(
+  categoryId: string,
+  companyId: string,
+  companyName: string,
+  month: string,
+  realizedCents: number,
+  categoryName: string,
+): BudgetComparisonRow {
+  return {
+    id: `realized:${categoryId}`,
+    companyId,
+    companyName,
+    categoryId,
+    costCenterId: "",
+    month,
+    amountCents: 0,
+    notes: "",
+    createdBy: "",
+    createdByName: "",
+    createdAt: "",
+    updatedBy: "",
+    updatedByName: "",
+    updatedAt: "",
+    categoryName,
+    costCenterName: "",
+    realizedCents,
+    differenceCents: -realizedCents,
+    balanceCents: 0,
+    usedPercentBasisPoints: 0,
+    alertLevel: "ok",
+    hasBudget: false,
   };
 }
