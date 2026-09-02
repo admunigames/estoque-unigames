@@ -712,6 +712,11 @@ export const obraEntries = pgTable(
     entryDate: text("entry_date").notNull().default(""),
     paymentMethod: text("payment_method").notNull().default(""),
     notes: text("notes").notNull().default(""),
+    // Anexo de nota/orçamento (PDF) — mesmo fluxo em partes das Notas de
+    // O.S. / comprovante da Folha. Um por lançamento.
+    attachmentFileName: text("attachment_file_name").notNull().default(""),
+    attachmentR2Key: text("attachment_r2_key").notNull().default(""),
+    attachmentSizeBytes: integer("attachment_size_bytes").notNull().default(0),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
