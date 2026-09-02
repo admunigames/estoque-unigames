@@ -17,8 +17,13 @@ export const BENEFIT_TYPES = [
 
 export type BenefitType = (typeof BENEFIT_TYPES)[number];
 
+export type BenefitAmountMode = "fixed" | "per_day";
+
 export type ParsedBenefitItem = {
   type: BenefitType;
+  amountMode: BenefitAmountMode;
+  perDayRateCents: number;
+  workingDays: number;
   amountCents: number;
   discountCents: number;
 };
@@ -46,6 +51,7 @@ function toCents(value: unknown): number {
 export function parseBenefitItems(
   value: unknown,
   fallback?: { type?: unknown; amountCents?: unknown; discountCents?: unknown },
+  options?: { workingDays?: number },
 ): { items: ParsedBenefitItem[]; error: string } {
   let list: unknown[];
   if (Array.isArray(value)) {
@@ -59,6 +65,8 @@ export function parseBenefitItems(
   if (!list.length) return { items: [], error: "INFORME AO MENOS UM BENEFÍCIO NO LANÇAMENTO." };
   if (list.length > 20) return { items: [], error: "NO MÁXIMO 20 BENEFÍCIOS POR LANÇAMENTO." };
 
+  const workingDays = Math.max(0, Math.round(Number(options?.workingDays ?? 0)) || 0);
+
   const items: ParsedBenefitItem[] = [];
   for (const raw of list) {
     if (!raw || typeof raw !== "object") return { items: [], error: "LINHA DE BENEFÍCIO INVÁLIDA." };
@@ -67,10 +75,32 @@ export function parseBenefitItems(
     if (!isBenefitType(type)) {
       return { items: [], error: "SELECIONE UM TIPO DE BENEFÍCIO VÁLIDO EM CADA LINHA." };
     }
-    const amountCents = toCents(entry.amountCents);
-    if (!Number.isFinite(amountCents) || amountCents <= 0) {
-      return { items: [], error: "INFORME UM VALOR MAIOR QUE ZERO EM CADA BENEFÍCIO." };
+
+    const amountMode: BenefitAmountMode = entry.amountMode === "per_day" ? "per_day" : "fixed";
+    let perDayRateCents = 0;
+    let itemWorkingDays = 0;
+    let amountCents: number;
+
+    if (amountMode === "per_day") {
+      perDayRateCents = toCents(entry.perDayRateCents);
+      if (!Number.isFinite(perDayRateCents) || perDayRateCents <= 0) {
+        return { items: [], error: "INFORME UM VALOR POR DIA MAIOR QUE ZERO." };
+      }
+      if (workingDays <= 0) {
+        return {
+          items: [],
+          error: "NÃO FOI POSSÍVEL CALCULAR OS DIAS ÚTEIS DA COMPETÊNCIA — VERIFIQUE A ESCALA DO FUNCIONÁRIO.",
+        };
+      }
+      itemWorkingDays = workingDays;
+      amountCents = perDayRateCents * workingDays;
+    } else {
+      amountCents = toCents(entry.amountCents);
+      if (!Number.isFinite(amountCents) || amountCents <= 0) {
+        return { items: [], error: "INFORME UM VALOR MAIOR QUE ZERO EM CADA BENEFÍCIO." };
+      }
     }
+
     const discountCents = entry.discountCents === undefined || entry.discountCents === null || entry.discountCents === ""
       ? 0
       : toCents(entry.discountCents);
@@ -80,7 +110,7 @@ export function parseBenefitItems(
     if (discountCents > amountCents) {
       return { items: [], error: "O DESCONTO NÃO PODE SER MAIOR QUE O VALOR DO BENEFÍCIO." };
     }
-    items.push({ type, amountCents, discountCents });
+    items.push({ type, amountMode, perDayRateCents, workingDays: itemWorkingDays, amountCents, discountCents });
   }
   return { items, error: "" };
 }

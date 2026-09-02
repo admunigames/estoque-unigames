@@ -1423,6 +1423,10 @@ export const hrEmployees = pgTable(
     bankName: text("bank_name").notNull().default(""),
     // 'active' | 'inactive'
     status: text("status").notNull().default("active"),
+    // Escala de trabalho — base do cálculo de dias úteis do mês para
+    // benefícios pagos por dia trabalhado. '5x2' = semana padrão (seg–sex);
+    // '6x1' = trabalha 6, folga 1 (≈ dias do mês × 6/7).
+    workSchedule: text("work_schedule").notNull().default("5x2"),
     userId: text("user_id").notNull().default(""),
     notes: text("notes").notNull().default(""),
     createdBy: text("created_by").notNull(),
@@ -1536,12 +1540,47 @@ export const hrBenefitItems = pgTable(
     benefitId: text("benefit_id").notNull(),
     // 'alimentacao' | 'mobilidade' | 'premiacao' | 'saldo_livre' | 'outros'
     type: text("type").notNull().default("outros"),
+    // Modo de cálculo do valor bruto da linha:
+    // 'fixed'   → amount_cents é digitado direto.
+    // 'per_day' → amount_cents = per_day_rate_cents × working_days, onde
+    //             working_days vem da escala do funcionário e dos feriados
+    //             da competência (ver app/lib/working-days.ts). Os três
+    //             campos são gravados para manter o histórico auditável.
+    amountMode: text("amount_mode").notNull().default("fixed"),
+    perDayRateCents: integer("per_day_rate_cents").notNull().default(0),
+    workingDays: integer("working_days").notNull().default(0),
     amountCents: integer("amount_cents").notNull().default(0),
     discountCents: integer("discount_cents").notNull().default(0),
     createdBy: text("created_by").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [index("hr_benefit_items_benefit_idx").on(table.benefitId)],
+);
+
+// Feriados (nacionais ou por loja) — descontados do total de dias úteis do
+// mês no cálculo de benefícios pagos por dia trabalhado. scope 'nacional'
+// vale para todos; 'local' vale só para a loja em company_id.
+export const hrHolidays = pgTable(
+  "hr_holidays",
+  {
+    id: text("id").primaryKey(),
+    date: text("date").notNull(), // AAAA-MM-DD
+    name: text("name").notNull().default(""),
+    // 'nacional' | 'local'
+    scope: text("scope").notNull().default("nacional"),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_holidays_date_company_idx").on(table.date, table.companyId),
+    index("hr_holidays_date_idx").on(table.date),
+  ],
 );
 
 // CatÃ¡logo de lanÃ§amentos recorrentes do comissionamento (ex: "BÃ´nus GAR"),
