@@ -330,6 +330,13 @@
       "when": 1788366469294,
       "tag": "0046_hr_payroll_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1788366791970,
+      "tag": "0047_hr_thirteenth_salary",
+      "breakpoints": true
     }
   ]
 }

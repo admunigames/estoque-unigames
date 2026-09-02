@@ -4761,6 +4761,7 @@
         <div class="field"><label for="rhFolhaVisao">VISÃO</label><select id="rhFolhaVisao"><option value="paga">FOLHA PAGA (SAI DA CONTA)</option><option value="custo">CUSTO TOTAL (DESPESAS/DRE)</option></select></div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnRhFolhaCopiar" type="button">COPIAR DO MÊS ANTERIOR</button>
+          <button class="btn-outline" id="btnRhDecimoTerceiro" type="button">13º SALÁRIO</button>
           <button class="btn-outline" id="btnRhFolhaParametros" type="button">PARÂMETROS</button>
           <button class="btn-outline" id="btnRhFolhaPrint" type="button">RELATÓRIO / PDF</button>
         </div>
@@ -6520,6 +6521,45 @@
       <button class="btn-accent" id="btnSaveRhFolhaParametros" type="submit">SALVAR</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhDecimoTerceiroDialog" aria-labelledby="rhDecimoTerceiroTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhDecimoTerceiroTitle">13º SALÁRIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhDecimoTerceiro" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">13º por funcionário e ano. Pode lançar como <strong>adiantamento</strong> + <strong>parcela final</strong>, ou como um <strong>lançamento único</strong>. O líquido é o bruto menos o desconto.</p>
+    <form id="rhDecimoTerceiroForm">
+      <input type="hidden" id="rh13Id">
+      <div class="purchase-form-grid">
+        <div class="purchase-field full"><label for="rh13Funcionario">FUNCIONÁRIO *</label><select id="rh13Funcionario" required><option value="">SELECIONE</option></select></div>
+        <div class="purchase-field"><label for="rh13Ano">ANO *</label><input type="number" id="rh13Ano" min="2000" max="2100" step="1" required></div>
+        <div class="purchase-field"><label for="rh13Parcela">PARCELA *</label><select id="rh13Parcela"><option value="unico">LANÇAMENTO ÚNICO</option><option value="adiantamento">ADIANTAMENTO</option><option value="final">PARCELA FINAL</option></select></div>
+        <div class="purchase-field"><label for="rh13Bruto">VALOR BRUTO (R$) *</label><input type="number" id="rh13Bruto" min="0.01" step="0.01" required></div>
+        <div class="purchase-field"><label for="rh13Desconto">DESCONTO (R$)</label><input type="number" id="rh13Desconto" min="0" step="0.01" value="0"></div>
+        <div class="purchase-field full"><label for="rh13Obs">OBSERVAÇÕES</label><input id="rh13Obs" maxlength="500"></div>
+        <div class="purchase-field"><label for="btnSaveRh13">&nbsp;</label><button class="btn-accent" id="btnSaveRh13" type="submit">ADICIONAR / SALVAR</button></div>
+      </div>
+      <div class="user-form-status" id="rh13FormStatus" role="status" aria-live="polite"></div>
+    </form>
+    <div class="purchase-form-grid" style="margin-top:6px;">
+      <div class="purchase-field"><label for="rh13FiltroAno">ANO (LISTA)</label><input type="number" id="rh13FiltroAno" min="2000" max="2100" step="1"></div>
+      <div class="purchase-field"><label for="rh13FiltroLoja">LOJA</label><select id="rh13FiltroLoja"><option value="">TODAS AS LOJAS</option></select></div>
+    </div>
+    <div class="table-panel responsive-table" style="margin-top:8px;">
+      <div class="table-scroll">
+        <table id="rh13Table">
+          <thead><tr><th>Funcionário</th><th>Loja</th><th>Parcela</th><th>Bruto</th><th>Desconto</th><th>Líquido</th><th>Pagamento</th><th></th></tr></thead>
+          <tbody id="rh13TableBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="table-panel" id="rh13Resumo" style="padding:10px 12px;font-size:11px;color:var(--ink-soft);margin-top:8px;"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhDecimoTerceiro" type="button">FECHAR</button>
+    </div>
+  </div>
 </dialog>
 
 <dialog class="purchase-dialog" id="rhBeneficioDialog" aria-labelledby="rhBeneficioDialogTitle">
@@ -25126,6 +25166,145 @@ function renderHomeTasks(){
       await loadRhFolha();
     }catch(error){
       status.textContent = error.message;
+    }
+  });
+
+  // ---------------------- 13º SALÁRIO ----------------------
+  let rh13Rows = [];
+  const RH_13_INSTALLMENT_LABELS = { unico:'ÚNICO', adiantamento:'ADIANTAMENTO', final:'PARCELA FINAL' };
+
+  function renderRh13Table(){
+    const body = el('rh13TableBody');
+    if(!body) return;
+    if(!rh13Rows.length){
+      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Nenhum 13º lançado para o filtro.</td></tr>';
+      el('rh13Resumo').textContent = '';
+      return;
+    }
+    body.innerHTML = rh13Rows.map(row => {
+      const pgto = row.paymentDone
+        ? '<span class="status-pill done">PAGO'+(row.paymentDate ? ' · '+escapeHtml(rhFormatDate(row.paymentDate)) : '')+'</span>'
+        : '<span class="status-pill waiting">EM ABERTO</span>';
+      const toggle = row.paymentDone
+        ? '<button class="btn-outline" type="button" data-rh13-unpay="'+escapeHtml(row.id)+'">DESFAZER</button>'
+        : '<button class="btn-outline" type="button" data-rh13-pay="'+escapeHtml(row.id)+'">MARCAR PAGO</button>';
+      return '<tr>'+
+        '<td>'+escapeHtml(row.employeeName)+'</td>'+
+        '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+        '<td>'+escapeHtml(RH_13_INSTALLMENT_LABELS[row.installment] || row.installment)+'</td>'+
+        '<td>'+formatCentsBRL(row.grossCents)+'</td>'+
+        '<td>'+(Number(row.deductionsCents) > 0 ? '−'+formatCentsBRL(row.deductionsCents) : '—')+'</td>'+
+        '<td><strong>'+formatCentsBRL(row.netCents)+'</strong></td>'+
+        '<td>'+pgto+'</td>'+
+        '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+          '<button class="btn-outline" type="button" data-rh13-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+          toggle+
+          '<button class="btn-outline" type="button" data-rh13-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
+        '</span></td>'+
+      '</tr>';
+    }).join('');
+    const gross = rh13Rows.reduce((s, r) => s + Number(r.grossCents || 0), 0);
+    const net = rh13Rows.reduce((s, r) => s + Number(r.netCents || 0), 0);
+    el('rh13Resumo').innerHTML = '<strong>'+rh13Rows.length+'</strong> lançamento(s) · Bruto: <strong>'+formatCentsBRL(gross)+'</strong> · Líquido: <strong>'+formatCentsBRL(net)+'</strong>';
+  }
+
+  async function loadRh13(){
+    const year = el('rh13FiltroAno').value || String(new Date().getFullYear());
+    const params = new URLSearchParams({ year });
+    if(el('rh13FiltroLoja').value) params.set('companyId', el('rh13FiltroLoja').value);
+    el('rh13TableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await rhApiRequest('/thirteenth?'+params.toString());
+      rh13Rows = Array.isArray(data.entries) ? data.entries : [];
+      renderRh13Table();
+    }catch(error){
+      rh13Rows = [];
+      el('rh13TableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function rh13ResetForm(){
+    el('rhDecimoTerceiroForm').reset();
+    el('rh13Id').value = '';
+    el('rh13Parcela').value = 'unico';
+    el('rh13Desconto').value = '0';
+    el('rh13Ano').value = el('rh13FiltroAno').value || String(new Date().getFullYear());
+    el('rh13FormStatus').textContent = '';
+  }
+
+  function openRhDecimoTerceiro(){
+    rhFillSelect('rh13Funcionario','SELECIONE',rhEmployeeOptions());
+    rhFillSelect('rh13FiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
+    if(!el('rh13FiltroAno').value) el('rh13FiltroAno').value = String(new Date().getFullYear());
+    rh13ResetForm();
+    loadRh13();
+    el('rhDecimoTerceiroDialog').showModal();
+  }
+
+  if(el('btnRhDecimoTerceiro')) el('btnRhDecimoTerceiro').addEventListener('click', openRhDecimoTerceiro);
+  if(el('btnCloseRhDecimoTerceiro')) el('btnCloseRhDecimoTerceiro').addEventListener('click', () => el('rhDecimoTerceiroDialog').close());
+  if(el('btnCancelRhDecimoTerceiro')) el('btnCancelRhDecimoTerceiro').addEventListener('click', () => el('rhDecimoTerceiroDialog').close());
+  ['rh13FiltroAno','rh13FiltroLoja'].forEach(id => { if(el(id)) el(id).addEventListener('change', loadRh13); });
+
+  if(el('rhDecimoTerceiroForm')) el('rhDecimoTerceiroForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rh13FormStatus');
+    status.textContent = '';
+    const grossCents = parseBRLToCents(el('rh13Bruto').value);
+    const deductionsCents = parseBRLToCents(el('rh13Desconto').value || '0') || 0;
+    if(!el('rh13Funcionario').value){ status.textContent = 'SELECIONE O FUNCIONÁRIO.'; return; }
+    if(grossCents === null || grossCents <= 0){ status.textContent = 'INFORME UM VALOR BRUTO MAIOR QUE ZERO.'; return; }
+    if(deductionsCents > grossCents){ status.textContent = 'O DESCONTO NÃO PODE SER MAIOR QUE O VALOR BRUTO.'; return; }
+    const payload = {
+      id: el('rh13Id').value || undefined,
+      employeeId: el('rh13Funcionario').value,
+      year: el('rh13Ano').value,
+      installment: el('rh13Parcela').value,
+      grossCents,
+      deductionsCents,
+      notes: el('rh13Obs').value
+    };
+    try{
+      await rhApiRequest('/thirteenth', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      rh13ResetForm();
+      await loadRh13();
+      showPurchaseToast('13º salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  if(el('rh13TableBody')) el('rh13TableBody').addEventListener('click', async event => {
+    const edit = event.target.closest('[data-rh13-edit]');
+    const del = event.target.closest('[data-rh13-delete]');
+    const pay = event.target.closest('[data-rh13-pay]');
+    const unpay = event.target.closest('[data-rh13-unpay]');
+    if(edit){
+      const row = rh13Rows.find(r => r.id === edit.dataset.rh13Edit);
+      if(!row) return;
+      el('rh13Id').value = row.id;
+      el('rh13Funcionario').value = row.employeeId;
+      el('rh13Ano').value = row.year;
+      el('rh13Parcela').value = row.installment;
+      el('rh13Bruto').value = (Number(row.grossCents || 0)/100).toFixed(2);
+      el('rh13Desconto').value = (Number(row.deductionsCents || 0)/100).toFixed(2);
+      el('rh13Obs').value = row.notes || '';
+      el('rh13FormStatus').textContent = '';
+      return;
+    }
+    if(del){
+      if(!confirm('Excluir este lançamento de 13º?')) return;
+      try{ await rhApiRequest('/thirteenth?id='+encodeURIComponent(del.dataset.rh13Delete), {method:'DELETE'}); await loadRh13(); showPurchaseToast('13º excluído.'); }
+      catch(error){ showPurchaseToast(error.message,'error'); }
+      return;
+    }
+    if(pay || unpay){
+      const id = (pay || unpay).dataset.rh13Pay || (pay || unpay).dataset.rh13Unpay;
+      const paymentDone = Boolean(pay);
+      const body = { action:'mark_paid', id, paymentDone };
+      if(paymentDone) body.paymentDate = financeCurrentDateKey();
+      try{ await rhApiRequest('/thirteenth', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); await loadRh13(); }
+      catch(error){ showPurchaseToast(error.message,'error'); }
     }
   });
 
