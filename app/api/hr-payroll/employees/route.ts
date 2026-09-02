@@ -108,7 +108,10 @@ export async function POST(request: Request) {
     const database = await getD1();
 
     let companyName = "";
-    if (companyId) {
+    if (companyId === "assistencia") {
+      // Setor interno tratado como unidade própria na DRE (item 8).
+      companyName = "Assistência";
+    } else if (companyId) {
       const companies = await loadCompanyList(database);
       const company = companies.find((item) => item.id === companyId);
       if (!company) return jsonResponse({ error: "LOJA NÃO ENCONTRADA." }, 400);

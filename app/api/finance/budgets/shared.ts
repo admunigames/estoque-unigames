@@ -67,7 +67,9 @@ async function realizedNoCostCenter(
   month: string,
   companyId: string,
 ): Promise<number> {
-  const storeCondition = companyId ? "AND store_id=?3" : "";
+  // Sem loja no filtro (orçamento consolidado): exclui a Assistência, que
+  // tem DRE própria fora da consolidada (item 8).
+  const storeCondition = companyId ? "AND store_id=?3" : "AND store_id <> 'assistencia'";
   const params = companyId ? [month, categoryId, companyId] : [month, categoryId];
   const [result, categoryItems, payroll] = await Promise.all([
     database

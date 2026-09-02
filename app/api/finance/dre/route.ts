@@ -1,7 +1,14 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, MONTH_PATTERN, safeText } from "../shared";
-import { buildByStoreDre, buildConsolidatedDre, buildDreSeries, buildManagerialDre, buildStoreDre } from "./shared";
+import {
+  ASSISTENCIA_STORE_ID,
+  buildByStoreDre,
+  buildConsolidatedDre,
+  buildDreSeries,
+  buildManagerialDre,
+  buildStoreDre,
+} from "./shared";
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -17,7 +24,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const scope = safeText(url.searchParams.get("scope"), 20) || "store";
 
-  const VALID_SCOPES = new Set(["store", "consolidated", "managerial", "by-store", "series"]);
+  const VALID_SCOPES = new Set(["store", "consolidated", "managerial", "by-store", "series", "assistencia"]);
   if (!VALID_SCOPES.has(scope)) {
     return jsonResponse({ error: "ESCOPO DE DRE AINDA NÃO DISPONÍVEL." }, 400);
   }
@@ -61,6 +68,11 @@ export async function GET(request: Request) {
     if (scope === "managerial") {
       const result = await buildManagerialDre(database, month);
       return jsonResponse({ scope, month, ...result });
+    }
+
+    if (scope === "assistencia") {
+      const result = await buildStoreDre(database, ASSISTENCIA_STORE_ID, month);
+      return jsonResponse({ scope, storeId: ASSISTENCIA_STORE_ID, month, ...result });
     }
 
     const storeId = safeText(url.searchParams.get("storeId"), 80);

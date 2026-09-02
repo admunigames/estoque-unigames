@@ -4986,6 +4986,7 @@
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="vertical">ANÁLISE VERTICAL</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="horizontal">ANÁLISE HORIZONTAL</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="orcado">REALIZADO X ORÇADO</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="assistencia">DRE ASSISTÊNCIA</button>
       </div>
 
       <div id="dreTabPorLoja">
@@ -5123,6 +5124,25 @@
             </table>
           </div>
         </div>
+      </div>
+
+      <div id="dreTabAssistencia" hidden>
+        <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Assistência é tratada como uma unidade própria: despesas e receita marcadas com a unidade "Assistência" (e o custo de pessoal dos funcionários lotados na Assistência) entram só aqui — <strong>nunca</strong> nas lojas nem na DRE Consolidada.</p>
+        <div class="dre-toolbar">
+          <div class="field"><label for="dreAssistMes">MÊS</label><input type="month" id="dreAssistMes"></div>
+          <div class="field"><label for="dreAssistRevenueSales">RECEITA — VENDAS (R$)</label><input type="number" id="dreAssistRevenueSales" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="field"><label for="dreAssistRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="number" id="dreAssistRevenueServices" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnSaveDreAssistRevenue" type="button">SALVAR RECEITA</button>
+          </div>
+        </div>
+        <section class="summary" aria-label="Resumo da DRE Assistência">
+          <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreAssistSummaryRevenue">R$ 0,00</div></div>
+          <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreAssistSummaryExpense">R$ 0,00</div></div>
+          <div class="card" id="dreAssistSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreAssistSummaryResult">R$ 0,00</div></div>
+          <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreAssistSummaryMargin">0,00%</div></div>
+        </section>
+        <div class="dre-flat-list" id="dreAssistCategoryList"><div class="dre-empty">Selecione o mês para ver a DRE da Assistência.</div></div>
       </div>
     </section>
 
@@ -17375,6 +17395,67 @@ function renderHomeTasks(){
 
   el('dreConsolidadaMes').addEventListener('change', loadDreConsolidada);
 
+  // ================= DRE ASSISTÊNCIA (unidade própria, fora da consolidada) =================
+  let financeDreAssist = null, financeAssistLoading = false;
+  function renderDreAssistSummary(){
+    const d = financeDreAssist;
+    el('dreAssistSummaryRevenue').textContent = formatCentsBRL(d ? d.revenueCents : 0);
+    el('dreAssistSummaryExpense').textContent = formatCentsBRL(d ? d.expenseTotalCents : 0);
+    el('dreAssistSummaryResult').textContent = formatCentsBRL(d ? d.resultCents : 0);
+    el('dreAssistSummaryMargin').textContent = ((d ? d.marginBasisPoints : 0)/100).toFixed(2).replace('.',',')+'%';
+    el('dreAssistSummaryResultCard').classList.toggle('neg', Boolean(d && d.resultCents < 0));
+  }
+  function renderDreAssistCategories(){
+    const container = el('dreAssistCategoryList');
+    if(!financeDreAssist){ container.innerHTML = '<div class="dre-empty">Selecione o mês para ver a DRE da Assistência.</div>'; return; }
+    if(!financeDreAssist.categories.length){ container.innerHTML = '<div class="dre-empty">Nenhuma categoria cadastrada ainda.</div>'; return; }
+    container.innerHTML = financeDreAssist.categories.map(category => dreGerencialCategoryCardHtml(category)).join('');
+  }
+  async function loadDreAssistencia(){
+    if(!canAccess('finance') || financeAssistLoading) return;
+    if(!el('dreAssistMes').value) el('dreAssistMes').value = financeCurrentMonthKey();
+    const month = el('dreAssistMes').value;
+    financeAssistLoading = true;
+    el('dreAssistCategoryList').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    try{
+      const [dreData, revenueData] = await Promise.all([
+        financeApiRequest('/dre?scope=assistencia&month='+encodeURIComponent(month)),
+        financeApiRequest('/revenue?storeId=assistencia&month='+encodeURIComponent(month))
+      ]);
+      financeDreAssist = dreData;
+      const rev = revenueData.revenue;
+      el('dreAssistRevenueSales').value = rev ? (Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100).toFixed(2) : '';
+      el('dreAssistRevenueServices').value = rev ? (Number(rev.servicesAmountCents || 0)/100).toFixed(2) : '';
+      renderDreAssistSummary();
+      renderDreAssistCategories();
+    }catch(error){
+      financeDreAssist = null;
+      el('dreAssistCategoryList').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      renderDreAssistSummary();
+    }finally{
+      financeAssistLoading = false;
+    }
+  }
+  el('dreAssistMes').addEventListener('change', loadDreAssistencia);
+  el('btnSaveDreAssistRevenue').addEventListener('click', async () => {
+    const month = el('dreAssistMes').value;
+    const salesAmountCents = parseBRLToCents(el('dreAssistRevenueSales').value || '0');
+    const servicesAmountCents = parseBRLToCents(el('dreAssistRevenueServices').value || '0');
+    if(salesAmountCents === null || servicesAmountCents === null){ showPurchaseToast('Informe valores de receita válidos.','error'); return; }
+    const button = el('btnSaveDreAssistRevenue');
+    button.disabled = true;
+    try{
+      await financeApiRequest('/revenue', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({storeId:'assistencia', month, salesAmountCents, servicesAmountCents})});
+      showPurchaseToast('Receita salva.');
+      await loadDreAssistencia();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+  wireDreDetailButtons('dreAssistCategoryList', () => el('dreAssistMes').value, () => 'assistencia');
+
   function dreGerencialItemRowHtml(item){
     return '<div class="dre-flat-row"><span class="dre-flat-name">'+escapeHtml(item.name)+'</span><span class="dre-flat-total">'+formatCentsBRL(item.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-item="'+escapeHtml(item.id)+'" title="Ver lançamentos deste item">DETALHES</button></div>';
   }
@@ -17739,7 +17820,8 @@ function renderHomeTasks(){
     temporal: loadDreTemporal,
     vertical: loadDreVertical,
     horizontal: loadDreHorizontal,
-    orcado: loadDreOrcado
+    orcado: loadDreOrcado,
+    assistencia: loadDreAssistencia
   };
 
   function setDreActiveTab(tab){
@@ -17757,6 +17839,7 @@ function renderHomeTasks(){
     el('dreTabVertical').hidden = dreActiveTab !== 'vertical';
     el('dreTabHorizontal').hidden = dreActiveTab !== 'horizontal';
     el('dreTabOrcado').hidden = dreActiveTab !== 'orcado';
+    el('dreTabAssistencia').hidden = dreActiveTab !== 'assistencia';
     DRE_TAB_LOADERS[dreActiveTab]();
   }
 
@@ -22569,10 +22652,14 @@ function renderHomeTasks(){
     return canActAcrossStores('finance:manage');
   }
 
+  // Assistência não é loja, mas é uma "unidade" selecionável em Despesas —
+  // cai só na DRE Assistência (item 8).
+  const ASSISTENCIA_OPTION = '<option value="assistencia">ASSISTÊNCIA (SETOR)</option>';
+
   function renderExpensesCompanyOptions(){
     const filterSelect = el('expensesLoja');
     const formSelect = el('expenseCompany');
-    const options = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    const options = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('') + ASSISTENCIA_OPTION;
     if(filterSelect){
       const selected = filterSelect.value;
       filterSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+options;
@@ -24911,7 +24998,9 @@ function renderHomeTasks(){
 
   function rhRenderCompanySelects(){
     rhFillSelect('rhEmployeeFiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
-    rhFillSelect('rhEmployeeCompany','SEM LOJA DEFINIDA',rhCompanyOptions());
+    // Assistência: setor interno tratado como unidade — o custo de pessoal
+    // de quem está lotado aqui alimenta a DRE Assistência (item 8).
+    rhFillSelect('rhEmployeeCompany','SEM LOJA DEFINIDA',rhCompanyOptions().concat([{value:'assistencia',label:'ASSISTÊNCIA (SETOR)'}]));
     rhFillSelect('rhFolhaLoja','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhBeneficioFiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhComissaoLoja','TODAS AS LOJAS',rhCompanyOptions());
