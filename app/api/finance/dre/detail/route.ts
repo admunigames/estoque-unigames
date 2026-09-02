@@ -2,6 +2,7 @@ import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { effectiveDreAmountCents } from "../../../../lib/payables-recurrence";
 import { canManageFinance, identity, jsonResponse, MONTH_PATTERN, safeText } from "../../shared";
+import { loadPayrollDreContribution, PAYROLL_BLOCK_LABELS } from "../payroll";
 
 type EntryRow = {
   id: string;
@@ -147,6 +148,22 @@ export async function GET(request: Request) {
       notes: row.notes || "",
     }));
 
+    // Item 13: contribuição do RH mapeada para os itens desta célula.
+    const payroll = await loadPayrollDreContribution(
+      database,
+      storeId ? { companyId: storeId } : "stores",
+      month,
+    );
+    const itemIdSet = new Set(itemIds);
+    const payrollDetails = payroll.blocks
+      .filter((entry) => itemIdSet.has(entry.financeItemId))
+      .map((entry) => ({
+        kind: "payroll" as const,
+        id: `payroll:${entry.block}`,
+        description: PAYROLL_BLOCK_LABELS[entry.block],
+        amountCents: entry.amountCents,
+      }));
+
     const manualDetails = manualEntries.map((entry) => ({
       kind: "manual" as const,
       id: entry.id,
@@ -156,7 +173,10 @@ export async function GET(request: Request) {
       percentBasisPoints: entry.percentBasisPoints,
     }));
 
-    return jsonResponse({ entries: entryDetails, manualEntries: manualDetails });
+    return jsonResponse({
+      entries: [...entryDetails, ...payrollDetails],
+      manualEntries: manualDetails,
+    });
   } catch (error) {
     console.error("Não foi possível carregar o detalhamento da DRE.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O DETALHAMENTO." }, 500);

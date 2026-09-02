@@ -1,5 +1,6 @@
 import { getD1 } from "../../../../db";
 import { loadCompanyList } from "../shared";
+import { loadPayrollDreContribution } from "./payroll";
 
 // Lógica de cálculo da DRE (por loja, consolidada, gerencial, comparativo
 // entre unidades e série temporal) — extraída de route.ts pra poder ser
@@ -36,6 +37,9 @@ export type DreItem = {
   entryType: string | null;
   amountCents: number | null;
   percentBasisPoints: number | null;
+  // Parte do total do item que veio do RH (Folha/Benefícios/Comissões),
+  // quando esse item é destino de um bloco no mapeamento RH → DRE.
+  payrollCents?: number | null;
 };
 
 export type DreCategory = {
@@ -159,7 +163,7 @@ export async function buildStoreDre(
   storeId: string,
   month: string,
 ): Promise<StoreDreResult> {
-  const [{ allCategories, allItems }, entries, revenue] = await Promise.all([
+  const [{ allCategories, allItems }, entries, revenue, payroll] = await Promise.all([
     loadCatalog(database),
     database
       .prepare(
@@ -175,20 +179,28 @@ export async function buildStoreDre(
       )
       .bind(storeId, month)
       .first<{ amountCents: number }>(),
+    loadPayrollDreContribution(database, { companyId: storeId }, month),
   ]);
 
   const entryByItem = new Map<string, EntryRow>();
   for (const entry of entries.results ?? []) entryByItem.set(entry.itemId, entry);
 
+  // Total efetivo de um item na DRE: lançamento manual/despesa + contribuição
+  // do RH mapeada para esse item (item 13).
+  const itemCents = (itemId: string) =>
+    itemTotal(entryByItem.get(itemId)) + (payroll.byItem.get(itemId) ?? 0);
+
   function buildItem(item: ItemRow): DreItem {
     const entry = entryByItem.get(item.id);
+    const payrollCents = payroll.byItem.get(item.id) ?? 0;
     return {
       id: item.id,
       name: item.name,
       entryId: entry?.id ?? null,
       entryType: entry?.entryType ?? null,
-      amountCents: entry?.amountCents ?? null,
+      amountCents: entry?.amountCents ?? (payrollCents ? payrollCents : null),
       percentBasisPoints: entry?.percentBasisPoints ?? null,
+      payrollCents: payrollCents || null,
     };
   }
 
@@ -199,14 +211,11 @@ export async function buildStoreDre(
     const directItems = (itemsByCategory.get(category.id) ?? []).map(buildItem);
     const subgroups = (subcategoriesByParent.get(category.id) ?? []).map((subgroup) => {
       const subgroupItems = (itemsByCategory.get(subgroup.id) ?? []).map(buildItem);
-      const totalCents = subgroupItems.reduce(
-        (sum, item) => sum + itemTotal(entryByItem.get(item.id)),
-        0,
-      );
+      const totalCents = subgroupItems.reduce((sum, item) => sum + itemCents(item.id), 0);
       return { id: subgroup.id, name: subgroup.name, totalCents, items: subgroupItems };
     });
     const totalCents =
-      directItems.reduce((sum, item) => sum + itemTotal(entryByItem.get(item.id)), 0) +
+      directItems.reduce((sum, item) => sum + itemCents(item.id), 0) +
       subgroups.reduce((sum, subgroup) => sum + subgroup.totalCents, 0);
     return { id: category.id, name: category.name, totalCents, items: directItems, subgroups };
   });
@@ -220,7 +229,7 @@ export async function buildStoreDre(
 }
 
 export async function loadMonthWideTotals(database: Awaited<ReturnType<typeof getD1>>, month: string) {
-  const [{ allCategories, allItems }, entries, revenue] = await Promise.all([
+  const [{ allCategories, allItems }, entries, revenue, payroll] = await Promise.all([
     loadCatalog(database),
     database
       .prepare(
@@ -234,6 +243,7 @@ export async function loadMonthWideTotals(database: Awaited<ReturnType<typeof ge
       .prepare("SELECT amount_cents AS amountCents FROM finance_store_revenue WHERE month=?1")
       .bind(month)
       .all<{ amountCents: number }>(),
+    loadPayrollDreContribution(database, "stores", month),
   ]);
 
   // Soma todos os lançamentos de todas as lojas por item (sem manter a
@@ -242,6 +252,9 @@ export async function loadMonthWideTotals(database: Awaited<ReturnType<typeof ge
   const totalByItem = new Map<string, number>();
   for (const entry of entries.results ?? []) {
     totalByItem.set(entry.itemId, (totalByItem.get(entry.itemId) ?? 0) + itemTotal(entry));
+  }
+  for (const [itemId, cents] of payroll.byItem) {
+    totalByItem.set(itemId, (totalByItem.get(itemId) ?? 0) + cents);
   }
   const revenueCents = (revenue.results ?? []).reduce((sum, row) => sum + (row.amountCents ?? 0), 0);
 

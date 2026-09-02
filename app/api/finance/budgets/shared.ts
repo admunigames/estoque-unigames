@@ -1,6 +1,7 @@
 import { getD1 } from "../../../../db";
 import { loadCompanyList } from "../shared";
 import { itemTotal, type EntryRow } from "../dre/shared";
+import { loadPayrollDreContribution } from "../dre/payroll";
 
 // Orçamento (Financeiro Fase 4) — comparação Orçado x Realizado.
 //
@@ -68,17 +69,32 @@ async function realizedNoCostCenter(
 ): Promise<number> {
   const storeCondition = companyId ? "AND store_id=?3" : "";
   const params = companyId ? [month, categoryId, companyId] : [month, categoryId];
-  const result = await database
-    .prepare(
-      `SELECT entry_type AS entryType, amount_cents AS amountCents
-       FROM finance_store_entries
-       WHERE month=?1
-         AND item_id IN (${ITEMS_FOR_CATEGORY_SQL.replaceAll("?CAT", "?2")})
-         ${storeCondition}`,
-    )
-    .bind(...params)
-    .all<EntryRow>();
-  return (result.results ?? []).reduce((sum, entry) => sum + itemTotal(entry), 0);
+  const [result, categoryItems, payroll] = await Promise.all([
+    database
+      .prepare(
+        `SELECT entry_type AS entryType, amount_cents AS amountCents
+         FROM finance_store_entries
+         WHERE month=?1
+           AND item_id IN (${ITEMS_FOR_CATEGORY_SQL.replaceAll("?CAT", "?2")})
+           ${storeCondition}`,
+      )
+      .bind(...params)
+      .all<EntryRow>(),
+    database
+      .prepare(`SELECT id FROM finance_items WHERE ${ITEMS_FOR_CATEGORY_SQL.replaceAll("?CAT", "?1")}`)
+      .bind(categoryId)
+      .all<{ id: string }>(),
+    // Item 13: o Realizado da DRE inclui o custo de pessoal mapeado — o
+    // Orçado x Realizado precisa refletir a mesma base.
+    loadPayrollDreContribution(database, companyId ? { companyId } : "stores", month),
+  ]);
+  const entriesTotal = (result.results ?? []).reduce((sum, entry) => sum + itemTotal(entry), 0);
+  const categoryItemIds = new Set((categoryItems.results ?? []).map((row) => row.id));
+  let payrollTotal = 0;
+  for (const [itemId, cents] of payroll.byItem) {
+    if (categoryItemIds.has(itemId)) payrollTotal += cents;
+  }
+  return entriesTotal + payrollTotal;
 }
 
 async function realizedWithCostCenter(
