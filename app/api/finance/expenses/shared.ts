@@ -41,8 +41,7 @@ export {
 export const RATEIO_TYPES = ["single_store", "rateio", "no_rateio"] as const;
 export type RateioType = (typeof RATEIO_TYPES)[number];
 
-export const RATEIO_MODELS = ["padrao", "administrativo", "faturamento", "funcionarios", "personalizado"] as const;
-export type RateioModel = (typeof RATEIO_MODELS)[number];
+export { RATEIO_MODELS, REVENUE_RATEIO_MODELS, type RateioModel } from "../../../lib/rateio-models";
 
 export type ExpenseRow = {
   id: string;

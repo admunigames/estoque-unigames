@@ -1062,7 +1062,12 @@ export const financeStoreRevenue = pgTable(
     id: text("id").primaryKey(),
     storeId: text("store_id").notNull(),
     month: text("month").notNull(),
+    // amount_cents = sales_amount_cents + services_amount_cents. Mantido
+    // como total para a DRE (revenueCents) não mudar de comportamento; a
+    // quebra vendas/serviços é usada pelo Rateio por Faturamento.
     amountCents: integer("amount_cents").notNull().default(0),
+    salesAmountCents: integer("sales_amount_cents").notNull().default(0),
+    servicesAmountCents: integer("services_amount_cents").notNull().default(0),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),

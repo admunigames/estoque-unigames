@@ -337,6 +337,13 @@
       "when": 1788366791970,
       "tag": "0047_hr_thirteenth_salary",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788367084806,
+      "tag": "0048_revenue_sales_services",
+      "breakpoints": true
     }
   ]
 }

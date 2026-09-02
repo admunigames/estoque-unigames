@@ -15,6 +15,8 @@ type RevenueRow = {
   storeId: string;
   month: string;
   amountCents: number;
+  salesAmountCents: number;
+  servicesAmountCents: number;
   updatedBy: string;
   updatedByName: string;
   updatedAt: string;
@@ -44,6 +46,7 @@ export async function GET(request: Request) {
     const revenue = await database
       .prepare(
         `SELECT id, store_id AS storeId, month, amount_cents AS amountCents,
+                sales_amount_cents AS salesAmountCents, services_amount_cents AS servicesAmountCents,
                 updated_by AS updatedBy, updated_by_name AS updatedByName,
                 updated_at AS updatedAt
          FROM finance_store_revenue
@@ -76,14 +79,22 @@ export async function POST(request: Request) {
     const body = (await request.json()) as JsonMap;
     const storeId = safeText(body.storeId, 80);
     const month = safeText(body.month, 7);
-    const rawAmount = Number(body.amountCents);
     if (!storeId) return jsonResponse({ error: "SELECIONE A LOJA." }, 400);
     if (!MONTH_PATTERN.test(month)) {
       return jsonResponse({ error: "INFORME UM MÊS VÁLIDO (AAAA-MM)." }, 400);
     }
-    if (!Number.isFinite(rawAmount) || rawAmount < 0 || !Number.isInteger(rawAmount)) {
-      return jsonResponse({ error: "INFORME UM VALOR DE RECEITA VÁLIDO." }, 400);
+
+    // Novo formato: salesAmountCents + servicesAmountCents. Formato antigo
+    // (só amountCents) tratado como Vendas para não quebrar callers legados.
+    const hasSplit = body.salesAmountCents !== undefined || body.servicesAmountCents !== undefined;
+    const salesAmount = hasSplit ? Number(body.salesAmountCents ?? 0) : Number(body.amountCents ?? 0);
+    const servicesAmount = hasSplit ? Number(body.servicesAmountCents ?? 0) : 0;
+    for (const value of [salesAmount, servicesAmount]) {
+      if (!Number.isFinite(value) || value < 0 || !Number.isInteger(value)) {
+        return jsonResponse({ error: "INFORME VALORES DE RECEITA VÁLIDOS." }, 400);
+      }
     }
+    const totalAmount = salesAmount + servicesAmount;
 
     const database = await getD1();
     const existing = await database
@@ -95,10 +106,18 @@ export async function POST(request: Request) {
       await database
         .prepare(
           `UPDATE finance_store_revenue
-           SET amount_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP
-           WHERE id=?4`,
+           SET amount_cents=?1, sales_amount_cents=?2, services_amount_cents=?3,
+               updated_by=?4, updated_by_name=?5, updated_at=CURRENT_TIMESTAMP
+           WHERE id=?6`,
         )
-        .bind(rawAmount, actor.id, actor.displayName || "Administrador", existing.id)
+        .bind(
+          totalAmount,
+          salesAmount,
+          servicesAmount,
+          actor.id,
+          actor.displayName || "Administrador",
+          existing.id,
+        )
         .run();
       return jsonResponse({ updated: true, id: existing.id });
     }
@@ -107,11 +126,20 @@ export async function POST(request: Request) {
     await database
       .prepare(
         `INSERT INTO finance_store_revenue
-          (id, store_id, month, amount_cents, created_by, created_by_name, created_at,
-           updated_by, updated_by_name, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, CURRENT_TIMESTAMP, ?5, ?6, CURRENT_TIMESTAMP)`,
+          (id, store_id, month, amount_cents, sales_amount_cents, services_amount_cents,
+           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP, ?7, ?8, CURRENT_TIMESTAMP)`,
       )
-      .bind(id, storeId, month, rawAmount, actor.id, actor.displayName || "Administrador")
+      .bind(
+        id,
+        storeId,
+        month,
+        totalAmount,
+        salesAmount,
+        servicesAmount,
+        actor.id,
+        actor.displayName || "Administrador",
+      )
       .run();
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {

@@ -1,36 +1,12 @@
 import type { getD1 } from "../../../../db";
+import { BASIS_POINTS_TOTAL, distributeAmount, type RateioShare } from "../../../lib/rateio-distribute";
 import { loadCompanyList } from "../shared";
 import type { RateioModel } from "./shared";
 
-export const BASIS_POINTS_TOTAL = 10000;
-
-export type RateioShare = {
-  companyId: string;
-  companyName: string;
-  percentBasisPoints: number;
-  amountCents: number;
-};
+export { BASIS_POINTS_TOTAL, distributeAmount };
+export type { RateioShare };
 
 export type CustomShareInput = { companyId: string; percentBasisPoints: number };
-
-/**
- * Distribui totalAmountCents pelos percentuais informados (em pontos-base,
- * 10000 = 100%), arredondando cada fatia e jogando o resto do
- * arredondamento na ÚLTIMA fatia — mesma técnica de splitIntoInstallments
- * em payables-recurrence.ts, pra soma das fatias bater exatamente com o
- * total, centavo a centavo.
- */
-function distributeAmount(totalAmountCents: number, shares: { companyId: string; companyName: string; percentBasisPoints: number }[]): RateioShare[] {
-  let allocated = 0;
-  return shares.map((share, index) => {
-    const isLast = index === shares.length - 1;
-    const amountCents = isLast
-      ? totalAmountCents - allocated
-      : Math.round((totalAmountCents * share.percentBasisPoints) / BASIS_POINTS_TOTAL);
-    allocated += amountCents;
-    return { ...share, amountCents };
-  });
-}
 
 export type RateioCalcInput = {
   model: RateioModel;
@@ -91,11 +67,25 @@ export async function computeRateioShares(
     return { shares: distributeAmount(totalAmountCents, shares) };
   }
 
-  if (model === "faturamento") {
+  if (model === "faturamento" || model === "faturamento_vendas" || model === "faturamento_servicos") {
+    // Base do rateio: total (vendas+serviços), só vendas, ou só serviços.
+    // Recalculado a cada mês a partir do faturamento real da competência.
+    const column =
+      model === "faturamento_vendas"
+        ? "sales_amount_cents"
+        : model === "faturamento_servicos"
+          ? "services_amount_cents"
+          : "amount_cents";
+    const baseLabel =
+      model === "faturamento_vendas"
+        ? "FATURAMENTO DE VENDAS"
+        : model === "faturamento_servicos"
+          ? "FATURAMENTO DE SERVIÇOS"
+          : "FATURAMENTO";
     const rows = await database
       .prepare(
-        `SELECT store_id AS companyId, amount_cents AS amountCents FROM finance_store_revenue
-         WHERE month=?1 AND amount_cents > 0 ORDER BY store_id`,
+        `SELECT store_id AS companyId, ${column} AS amountCents FROM finance_store_revenue
+         WHERE month=?1 AND ${column} > 0 ORDER BY store_id`,
       )
       .bind(competenceMonth)
       .all<{ companyId: string; amountCents: number }>();
@@ -103,7 +93,7 @@ export async function computeRateioShares(
     const total = revenueRows.reduce((sum, row) => sum + row.amountCents, 0);
     if (!revenueRows.length || total <= 0) {
       return {
-        error: `NÃO HÁ FATURAMENTO CADASTRADO NA DRE PARA A COMPETÊNCIA ${competenceMonth} — CADASTRE O FATURAMENTO DAS LOJAS ANTES DE USAR O RATEIO POR FATURAMENTO NESSE MÊS.`,
+        error: `NÃO HÁ ${baseLabel} CADASTRADO NA DRE PARA A COMPETÊNCIA ${competenceMonth} — CADASTRE O FATURAMENTO DAS LOJAS ANTES DE USAR ESSE RATEIO NESSE MÊS.`,
       };
     }
     const companies = await loadCompanyList(database);
