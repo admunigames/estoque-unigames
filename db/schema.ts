@@ -655,6 +655,20 @@ export const financeItems = pgTable(
   (table) => [index("finance_items_category_idx").on(table.categoryId)],
 );
 
+// Mapeamento RH → DRE (item 13). Cada bloco de custo de pessoal
+// ('folha' | 'beneficios' | 'comissoes') aponta para um item da DRE
+// (finance_items). O valor lançado é sempre o CUSTO TOTAL (bruto + encargos
+// patronais no caso da folha), calculado ao vivo no build da DRE a partir
+// de hr_payroll_entries / hr_benefits / hr_commissions — nunca gravado.
+// Uma linha por bloco (config global). finance_item_id = '' desliga o bloco.
+export const hrDreMapping = pgTable("hr_dre_mapping", {
+  block: text("block").primaryKey(), // 'folha' | 'beneficios' | 'comissoes'
+  financeItemId: text("finance_item_id").notNull().default(""),
+  updatedBy: text("updated_by").notNull().default(""),
+  updatedByName: text("updated_by_name").notNull().default(""),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+});
+
 export const financeCostCenters = pgTable(
   "finance_cost_centers",
   {

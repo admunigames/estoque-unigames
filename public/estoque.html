@@ -4997,6 +4997,7 @@
           <div class="dre-toolbar-actions">
             <button class="btn-accent" id="btnSaveDreRevenue" type="button">SALVAR RECEITA</button>
             <button class="btn-outline" id="btnOpenFinanceCatalog" type="button">GERENCIAR CATEGORIAS</button>
+            <button class="btn-outline" id="btnOpenRhDreMapping" type="button">RH NA DRE</button>
           </div>
         </div>
 
@@ -6085,6 +6086,26 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelDeclShoppingDialog" type="button">FECHAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhDreMappingDialog" aria-labelledby="rhDreMappingTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhDreMappingTitle">RH NA DRE</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhDreMapping" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhDreMappingForm">
+    <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Escolha em qual item da DRE cada bloco de custo de pessoal entra. O valor lançado é sempre o <strong>Custo Total</strong> (valores brutos + encargos patronais no caso da folha), calculado na hora a partir do RH Financeiro. Deixe "NÃO LANÇAR NA DRE" para desligar um bloco.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhDreMapFolha">FOLHA DE PAGAMENTO →</label><select id="rhDreMapFolha"><option value="">NÃO LANÇAR NA DRE</option></select></div>
+      <div class="purchase-field full"><label for="rhDreMapBeneficios">BENEFÍCIOS →</label><select id="rhDreMapBeneficios"><option value="">NÃO LANÇAR NA DRE</option></select></div>
+      <div class="purchase-field full"><label for="rhDreMapComissoes">COMISSÕES →</label><select id="rhDreMapComissoes"><option value="">NÃO LANÇAR NA DRE</option></select></div>
+    </div>
+    <div class="user-form-status" id="rhDreMappingStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhDreMapping" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhDreMapping" type="submit">SALVAR</button>
     </div>
   </form>
 </dialog>
@@ -17450,7 +17471,14 @@ function renderHomeTasks(){
         return;
       }
       const payableHtml = rows.map(row => (
-        '<tr>'+
+        row.kind === 'payroll'
+        ? '<tr>'+
+            '<td colspan="6">RH — '+escapeHtml(row.description || '')+'</td>'+
+            '<td>Custo de pessoal (bruto + encargos) lançado na DRE</td>'+
+            '<td>'+formatCentsBRL(row.amountCents || 0)+'</td>'+
+            '<td colspan="3">—</td>'+
+          '</tr>'
+        : '<tr>'+
           '<td>'+escapeHtml(row.date || '—')+'</td>'+
           '<td>'+escapeHtml(row.supplierName || '—')+'</td>'+
           '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
@@ -17820,6 +17848,46 @@ function renderHomeTasks(){
 
   el('btnOpenFinanceCatalog').addEventListener('click', openFinanceCatalogDialog);
   el('btnCloseFinanceCatalog').addEventListener('click', closeFinanceCatalogDialog);
+
+  // ================= RH NA DRE (mapeamento) =================
+  async function openRhDreMappingDialog(){
+    el('rhDreMappingStatus').textContent = '';
+    try{
+      const data = await financeApiRequest('/payroll-dre-mapping');
+      const optionsHtml = '<option value="">NÃO LANÇAR NA DRE</option>'+
+        (data.items || []).map(item => '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(item.label)+'</option>').join('');
+      const byBlock = {};
+      (data.mapping || []).forEach(row => { byBlock[row.block] = row.financeItemId || ''; });
+      [['folha','rhDreMapFolha'],['beneficios','rhDreMapBeneficios'],['comissoes','rhDreMapComissoes']].forEach(([block, id]) => {
+        el(id).innerHTML = optionsHtml;
+        el(id).value = byBlock[block] || '';
+      });
+      el('rhDreMappingDialog').showModal();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  }
+  if(el('btnOpenRhDreMapping')) el('btnOpenRhDreMapping').addEventListener('click', openRhDreMappingDialog);
+  if(el('btnCloseRhDreMapping')) el('btnCloseRhDreMapping').addEventListener('click', () => el('rhDreMappingDialog').close());
+  if(el('btnCancelRhDreMapping')) el('btnCancelRhDreMapping').addEventListener('click', () => el('rhDreMappingDialog').close());
+  if(el('rhDreMappingForm')) el('rhDreMappingForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhDreMappingStatus');
+    status.textContent = '';
+    const mapping = [
+      { block:'folha', financeItemId: el('rhDreMapFolha').value },
+      { block:'beneficios', financeItemId: el('rhDreMapBeneficios').value },
+      { block:'comissoes', financeItemId: el('rhDreMapComissoes').value }
+    ];
+    try{
+      await financeApiRequest('/payroll-dre-mapping', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ mapping })});
+      el('rhDreMappingDialog').close();
+      showPurchaseToast('Mapeamento RH → DRE salvo.');
+      if(typeof loadDrePorLoja === 'function') loadDrePorLoja();
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
   el('financeCatalogDialog').addEventListener('click', event => {
     if(event.target === el('financeCatalogDialog')) closeFinanceCatalogDialog();
   });
