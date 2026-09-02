@@ -246,6 +246,74 @@ export async function computedBenefitsCentsFor(
 }
 
 /**
+ * Comissão BRUTA do funcionário no mês — sem subtrair os descontos
+ * (comissão + bônus + prêmios + ajustes). Usada pelo "Custo Total".
+ */
+export async function computedCommissionGrossCentsFor(
+  database: Database,
+  employeeId: string,
+  month: string,
+): Promise<number> {
+  const row = await database
+    .prepare(
+      `SELECT commission_cents AS commissionCents, bonuses_cents AS bonusesCents,
+              premiums_cents AS premiumsCents, adjustments_cents AS adjustmentsCents
+       FROM hr_commissions WHERE employee_id=?1 AND month=?2 LIMIT 1`,
+    )
+    .bind(employeeId, month)
+    .first<{
+      commissionCents: number;
+      bonusesCents: number;
+      premiumsCents: number;
+      adjustmentsCents: number;
+    }>();
+  if (!row) return 0;
+  return (
+    Number(row.commissionCents || 0) +
+    Number(row.bonusesCents || 0) +
+    Number(row.premiumsCents || 0) +
+    Number(row.adjustmentsCents || 0)
+  );
+}
+
+/**
+ * Benefícios BRUTOS do mês (Σ gross_cents) e a parte líquida paga via Pix
+ * (Σ amount_cents onde payment_method='pix') — a primeira alimenta o Custo
+ * Total, a segunda a Folha Paga.
+ */
+export async function computedBenefitsSplitFor(
+  database: Database,
+  employeeId: string,
+  month: string,
+): Promise<{ grossCents: number; pixNetCents: number }> {
+  const row = await database
+    .prepare(
+      `SELECT COALESCE(SUM(gross_cents), 0) AS grossCents,
+              COALESCE(SUM(CASE WHEN payment_method = 'pix' THEN amount_cents ELSE 0 END), 0) AS pixNetCents
+       FROM hr_benefits WHERE employee_id=?1 AND month=?2`,
+    )
+    .bind(employeeId, month)
+    .first<{ grossCents: number; pixNetCents: number }>();
+  return {
+    grossCents: Number(row?.grossCents ?? 0),
+    pixNetCents: Number(row?.pixNetCents ?? 0),
+  };
+}
+
+/**
+ * Encargos patronais (pontos-base sobre o salário base) da configuração
+ * global da Folha. Tabela pode estar vazia — devolve 0.
+ */
+export async function loadEmployerChargesBps(database: Database): Promise<number> {
+  const row = await database
+    .prepare(
+      "SELECT employer_charges_bps AS bps FROM hr_payroll_settings WHERE company_id='' LIMIT 1",
+    )
+    .first<{ bps: number }>();
+  return Math.max(0, Number(row?.bps ?? 0));
+}
+
+/**
  * Datas de feriado (AAAA-MM-DD) que valem para a loja informada numa
  * competência: todos os 'nacional' + os 'local' daquela loja.
  */
