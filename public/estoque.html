@@ -2822,6 +2822,7 @@
         <a class="nav-item sub-item" id="navFinanceiroReposicao" data-page="financeiroReposicao" data-permission="finance" data-home-desc="Valores repostos e gastos por Assistência, Logística e outros setores." title="Controle de Reposição" href="/financeiro/controle-reposicao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 14-4l2 2"/><path d="M20 16a8 8 0 0 1-14 4l-2-2"/><path d="M18 2v4h-4M6 22v-4h4"/></svg></span><span class="nav-label">Controle de Reposição</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRecargas" data-page="financeiroRecargas" data-permission="finance" data-home-desc="Recargas de celulares por unidade, com lembrete da próxima recarga." title="Recargas de Celulares" href="/financeiro/recargas-celular"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Recargas de Celulares</span></a>
         <a class="nav-item sub-item" id="navFinanceiroDeclaracaoShopping" data-page="financeiroDeclaracaoShopping" data-permission="finance" data-home-desc="Declaração de faturamento por loja/shopping, com histórico e alerta de aluguel percentual." title="Declaração de Shopping" href="/financeiro/declaracao-shopping"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></span><span class="nav-label">Declaração de Shopping</span></a>
+        <a class="nav-item sub-item" id="navObras" data-page="obras" data-permission="finance" data-home-desc="Reformas e construções nas lojas — investimento (CAPEX), fora de Despesas e da DRE." title="Obras" href="/obras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V10l6-4 6 4v11"/><path d="M10 21v-5h4v5"/><path d="m2 8 10-6 10 6"/></svg></span><span class="nav-label">Obras</span></a>
       </div>
     </div>
     <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
@@ -5958,6 +5959,36 @@
       </div>
     </section>
 
+    <!-- ================= OBRAS ================= -->
+    <section id="pageObras" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Obras</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">Reformas e construções nas lojas. Tratadas como investimento (CAPEX) — <strong>não</strong> entram em Despesas nem na DRE.</p></div>
+      </header>
+
+      <div class="dre-toolbar no-print">
+        <div class="field"><label for="obrasFiltroLoja">LOJA</label><select id="obrasFiltroLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field"><label for="obrasFiltroStatus">STATUS</label><select id="obrasFiltroStatus"><option value="">TODOS</option><option value="planejada">PLANEJADA</option><option value="andamento">EM ANDAMENTO</option><option value="concluida">CONCLUÍDA</option><option value="cancelada">CANCELADA</option></select></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnNewObra" type="button">NOVA OBRA</button>
+        </div>
+      </div>
+
+      <div class="table-panel" id="obrasResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="obrasTable">
+            <thead><tr><th>Obra</th><th>Loja</th><th>Tipo</th><th>Responsável</th><th>Orçado</th><th>Realizado</th><th>Início</th><th>Previsão</th><th>Status</th><th class="no-print"></th></tr></thead>
+            <tbody id="obrasTableBody"><tr><td colspan="10" class="responsive-empty">Carregando obras…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -6144,6 +6175,71 @@
           <tbody id="dreDetailBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
         </table>
       </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="obraDialog" aria-labelledby="obraDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="obraDialogTitle">NOVA OBRA</h3>
+    <button class="purchase-dialog-close" id="btnCloseObraDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="obraForm">
+    <input type="hidden" id="obraId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="obraTitulo">TÍTULO *</label><input id="obraTitulo" maxlength="160" required></div>
+      <div class="purchase-field"><label for="obraLoja">LOJA</label><select id="obraLoja"><option value="">SEM LOJA DEFINIDA</option></select></div>
+      <div class="purchase-field"><label for="obraTipo">TIPO</label><select id="obraTipo"><option value="reforma">REFORMA</option><option value="construcao">CONSTRUÇÃO</option><option value="manutencao">MANUTENÇÃO ESTRUTURAL</option><option value="outros">OUTROS</option></select></div>
+      <div class="purchase-field"><label for="obraStatus">STATUS</label><select id="obraStatus"><option value="planejada">PLANEJADA</option><option value="andamento">EM ANDAMENTO</option><option value="concluida">CONCLUÍDA</option><option value="cancelada">CANCELADA</option></select></div>
+      <div class="purchase-field"><label for="obraResponsavel">FORNECEDOR / RESPONSÁVEL</label><input id="obraResponsavel" maxlength="160"></div>
+      <div class="purchase-field"><label for="obraOrcado">VALOR ORÇADO (R$)</label><input type="number" id="obraOrcado" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="obraInicio">DATA DE INÍCIO</label><input type="date" id="obraInicio"></div>
+      <div class="purchase-field"><label for="obraPrevisao">PREVISÃO DE CONCLUSÃO</label><input type="date" id="obraPrevisao"></div>
+      <div class="purchase-field"><label for="obraConclusao">CONCLUSÃO REAL</label><input type="date" id="obraConclusao"></div>
+      <div class="purchase-field full"><label for="obraDescricao">DESCRIÇÃO DA OBRA</label><textarea id="obraDescricao" rows="2" maxlength="2000"></textarea></div>
+      <div class="purchase-field full"><label for="obraObs">OBSERVAÇÕES</label><textarea id="obraObs" rows="2" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="obraFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelObraDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveObra" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="obraDetailDialog" aria-labelledby="obraDetailTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="obraDetailTitle">OBRA</h3>
+    <button class="purchase-dialog-close" id="btnCloseObraDetail" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <div id="obraDetailInfo" style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;"></div>
+    <h4 style="margin:6px 0 8px;font:800 10px var(--mono);letter-spacing:.06em;">LANÇAMENTOS DA OBRA (CUSTOS)</h4>
+    <form id="obraEntryForm">
+      <input type="hidden" id="obraEntryId">
+      <input type="hidden" id="obraEntryObraId">
+      <div class="purchase-form-grid">
+        <div class="purchase-field full"><label for="obraEntryDescricao">DESCRIÇÃO *</label><input id="obraEntryDescricao" maxlength="300" required></div>
+        <div class="purchase-field"><label for="obraEntryFornecedor">FORNECEDOR</label><input id="obraEntryFornecedor" maxlength="160"></div>
+        <div class="purchase-field"><label for="obraEntryValor">VALOR (R$) *</label><input type="number" id="obraEntryValor" min="0.01" step="0.01" required></div>
+        <div class="purchase-field"><label for="obraEntryData">DATA</label><input type="date" id="obraEntryData"></div>
+        <div class="purchase-field"><label for="obraEntryPgto">FORMA DE PAGAMENTO</label><select id="obraEntryPgto"><option value="pix">PIX</option><option value="boleto">BOLETO</option><option value="cartao">CARTÃO</option><option value="dinheiro">DINHEIRO</option><option value="transferencia">TRANSFERÊNCIA</option><option value="outros">OUTROS</option></select></div>
+        <div class="purchase-field"><label for="btnAddObraEntry">&nbsp;</label><button class="btn-accent" id="btnAddObraEntry" type="submit">ADICIONAR / SALVAR</button></div>
+        <div class="purchase-field full"><label for="obraEntryObs">OBSERVAÇÕES</label><input id="obraEntryObs" maxlength="1000"></div>
+      </div>
+      <div class="user-form-status" id="obraEntryStatus" role="status" aria-live="polite"></div>
+    </form>
+    <p style="color:var(--ink-soft);font-size:10px;margin:2px 0 8px;">Anexo de nota/orçamento (PDF) por lançamento entra numa próxima atualização.</p>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table id="obraEntriesTable">
+          <thead><tr><th>Data</th><th>Descrição</th><th>Fornecedor</th><th>Forma</th><th>Valor</th><th></th></tr></thead>
+          <tbody id="obraEntriesBody"><tr><td colspan="6" class="responsive-empty">Nenhum lançamento.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelObraDetail" type="button">FECHAR</button>
     </div>
   </div>
 </dialog>
@@ -8069,7 +8165,8 @@
     financeiroConciliacao:'/financeiro/conciliacao-bancaria',
     financeiroReposicao:'/financeiro/controle-reposicao',
     financeiroRecargas:'/financeiro/recargas-celular',
-    financeiroDeclaracaoShopping:'/financeiro/declaracao-shopping'
+    financeiroDeclaracaoShopping:'/financeiro/declaracao-shopping',
+    obras:'/obras'
   });
   const PAGE_TITLES = Object.freeze({
     inicio:'INÍCIO',
@@ -8112,7 +8209,8 @@
     financeiroConciliacao:'CONCILIAÇÃO BANCÁRIA',
     financeiroReposicao:'CONTROLE DE REPOSIÇÃO',
     financeiroRecargas:'RECARGAS DE CELULARES',
-    financeiroDeclaracaoShopping:'DECLARAÇÃO DE SHOPPING'
+    financeiroDeclaracaoShopping:'DECLARAÇÃO DE SHOPPING',
+    obras:'OBRAS'
   });
   const PAGE_PERMISSIONS = Object.freeze({
     puxadas:'pulls',
@@ -8151,7 +8249,8 @@
     financeiroConciliacao:'finance',
     financeiroReposicao:'finance',
     financeiroRecargas:'finance',
-    financeiroDeclaracaoShopping:'finance'
+    financeiroDeclaracaoShopping:'finance',
+    obras:'finance'
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
@@ -8569,7 +8668,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -8640,6 +8739,7 @@
     if(name === 'financeiroReposicao') loadReposicaoPage();
     if(name === 'financeiroRecargas') loadRecargasPage();
     if(name === 'financeiroDeclaracaoShopping') loadDeclShoppingPage();
+    if(name === 'obras') loadObrasPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -8682,6 +8782,7 @@
     if(name === 'financeiroReposicao') loadReposicaoPage();
     if(name === 'financeiroRecargas') loadRecargasPage();
     if(name === 'financeiroDeclaracaoShopping') loadDeclShoppingPage();
+    if(name === 'obras') loadObrasPage();
     if(name === 'rhFuncionarios') loadRhFuncionarios();
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
@@ -22079,6 +22180,213 @@ function renderHomeTasks(){
       await reloadRecargas();
       showPurchaseToast('Recarga registrada.');
     }catch(error){ status.textContent = error.message; }
+  });
+
+  // ----- Obras (CAPEX — fora de Despesas/DRE) -----
+  async function obraApiRequest(path, options){
+    const response = await fetch('/api/obras'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){ location.assign('/login?next='+encodeURIComponent(location.pathname)); throw new Error('SESSÃO EXPIRADA.'); }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+  const OBRA_KIND_LABELS = { reforma:'REFORMA', construcao:'CONSTRUÇÃO', manutencao:'MANUTENÇÃO ESTRUTURAL', outros:'OUTROS' };
+  const OBRA_STATUS_LABELS = { planejada:'PLANEJADA', andamento:'EM ANDAMENTO', concluida:'CONCLUÍDA', cancelada:'CANCELADA' };
+  const OBRA_PGTO_LABELS = { pix:'PIX', boleto:'BOLETO', cartao:'CARTÃO', dinheiro:'DINHEIRO', transferencia:'TRANSFERÊNCIA', outros:'OUTROS' };
+  let obrasRows = [];
+  let obraDetailCurrent = null;
+
+  function obrasFillLojaSelects(){
+    const opts = '<option value="">SEM LOJA DEFINIDA</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    if(el('obraLoja')) el('obraLoja').innerHTML = opts;
+    if(el('obrasFiltroLoja')) el('obrasFiltroLoja').innerHTML = '<option value="">TODAS AS LOJAS</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+  }
+
+  function renderObrasTable(){
+    const body = el('obrasTableBody');
+    if(!body) return;
+    if(!obrasRows.length){
+      body.innerHTML = '<tr><td colspan="10" class="responsive-empty">Nenhuma obra cadastrada para o filtro.</td></tr>';
+      el('obrasResumo').textContent = '';
+      return;
+    }
+    body.innerHTML = obrasRows.map(row => '<tr>'+
+      '<td>'+escapeHtml(row.title)+'</td>'+
+      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+escapeHtml(OBRA_KIND_LABELS[row.kind] || row.kind)+'</td>'+
+      '<td>'+escapeHtml(row.responsible || '—')+'</td>'+
+      '<td>'+formatCentsBRL(row.budgetCents)+'</td>'+
+      '<td><strong>'+formatCentsBRL(row.realizedCents)+'</strong>'+(row.budgetCents > 0 && row.realizedCents > row.budgetCents ? ' <span class="status-pill alert">ACIMA DO ORÇADO</span>' : '')+'</td>'+
+      '<td>'+escapeHtml(row.startDate || '—')+'</td>'+
+      '<td>'+escapeHtml(row.expectedEndDate || '—')+'</td>'+
+      '<td>'+escapeHtml(OBRA_STATUS_LABELS[row.status] || row.status)+'</td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+        '<button class="btn-outline" type="button" data-obra-open="'+escapeHtml(row.id)+'">LANÇAMENTOS</button>'+
+        '<button class="btn-outline" type="button" data-obra-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-obra-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
+      '</span></td>'+
+    '</tr>').join('');
+    const orc = obrasRows.reduce((s, r) => s + Number(r.budgetCents || 0), 0);
+    const real = obrasRows.reduce((s, r) => s + Number(r.realizedCents || 0), 0);
+    el('obrasResumo').innerHTML = '<strong>'+obrasRows.length+'</strong> obra(s) · Orçado: <strong>'+formatCentsBRL(orc)+'</strong> · Realizado: <strong>'+formatCentsBRL(real)+'</strong>';
+  }
+
+  async function loadObrasPage(){
+    if(!canAccess('finance')) return;
+    obrasFillLojaSelects();
+    const params = new URLSearchParams();
+    if(el('obrasFiltroLoja').value) params.set('companyId', el('obrasFiltroLoja').value);
+    if(el('obrasFiltroStatus').value) params.set('status', el('obrasFiltroStatus').value);
+    el('obrasTableBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await obraApiRequest('?'+params.toString());
+      obrasRows = Array.isArray(data.obras) ? data.obras : [];
+      renderObrasTable();
+    }catch(error){
+      obrasRows = [];
+      el('obrasTableBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  ['obrasFiltroLoja','obrasFiltroStatus'].forEach(id => { if(el(id)) el(id).addEventListener('change', loadObrasPage); });
+
+  function openObraDialog(row){
+    el('obraForm').reset();
+    obrasFillLojaSelects();
+    el('obraId').value = row ? row.id : '';
+    el('obraDialogTitle').textContent = row ? 'EDITAR OBRA' : 'NOVA OBRA';
+    el('obraTitulo').value = row ? row.title : '';
+    el('obraLoja').value = row ? (row.companyId || '') : '';
+    el('obraTipo').value = row ? row.kind : 'reforma';
+    el('obraStatus').value = row ? row.status : 'planejada';
+    el('obraResponsavel').value = row ? (row.responsible || '') : '';
+    el('obraOrcado').value = row ? (Number(row.budgetCents || 0)/100).toFixed(2) : '0.00';
+    el('obraInicio').value = row ? (row.startDate || '') : '';
+    el('obraPrevisao').value = row ? (row.expectedEndDate || '') : '';
+    el('obraConclusao').value = row ? (row.endDate || '') : '';
+    el('obraDescricao').value = row ? (row.description || '') : '';
+    el('obraObs').value = row ? (row.notes || '') : '';
+    el('obraFormStatus').textContent = '';
+    el('obraDialog').showModal();
+  }
+  if(el('btnNewObra')) el('btnNewObra').addEventListener('click', () => openObraDialog(null));
+  if(el('btnCloseObraDialog')) el('btnCloseObraDialog').addEventListener('click', () => el('obraDialog').close());
+  if(el('btnCancelObraDialog')) el('btnCancelObraDialog').addEventListener('click', () => el('obraDialog').close());
+  if(el('obraForm')) el('obraForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('obraFormStatus');
+    status.textContent = '';
+    if(!el('obraTitulo').value.trim()){ status.textContent = 'INFORME O TÍTULO DA OBRA.'; return; }
+    const payload = {
+      action:'save_obra',
+      id: el('obraId').value || undefined,
+      title: el('obraTitulo').value,
+      companyId: el('obraLoja').value,
+      kind: el('obraTipo').value,
+      status: el('obraStatus').value,
+      responsible: el('obraResponsavel').value,
+      budgetCents: parseBRLToCents(el('obraOrcado').value || '0') || 0,
+      startDate: el('obraInicio').value,
+      expectedEndDate: el('obraPrevisao').value,
+      endDate: el('obraConclusao').value,
+      description: el('obraDescricao').value,
+      notes: el('obraObs').value
+    };
+    try{
+      await obraApiRequest('', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('obraDialog').close();
+      await loadObrasPage();
+      showPurchaseToast('Obra salva.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  function renderObraEntries(entries){
+    const body = el('obraEntriesBody');
+    if(!entries.length){ body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum lançamento.</td></tr>'; return; }
+    body.innerHTML = entries.map(e => '<tr>'+
+      '<td>'+escapeHtml(e.entryDate || '—')+'</td>'+
+      '<td>'+escapeHtml(e.description)+'</td>'+
+      '<td>'+escapeHtml(e.supplier || '—')+'</td>'+
+      '<td>'+escapeHtml(OBRA_PGTO_LABELS[e.paymentMethod] || e.paymentMethod)+'</td>'+
+      '<td>'+formatCentsBRL(e.amountCents)+'</td>'+
+      '<td class="no-print"><button class="btn-outline" type="button" data-obra-entry-delete="'+escapeHtml(e.id)+'">EXCLUIR</button></td>'+
+    '</tr>').join('');
+  }
+
+  async function openObraDetail(obraId){
+    try{
+      const data = await obraApiRequest('?id='+encodeURIComponent(obraId));
+      obraDetailCurrent = data.obra;
+      const o = data.obra;
+      el('obraDetailTitle').textContent = o.title;
+      el('obraDetailInfo').innerHTML =
+        (o.companyName ? escapeHtml(o.companyName)+' · ' : '')+escapeHtml(OBRA_KIND_LABELS[o.kind] || o.kind)+' · '+escapeHtml(OBRA_STATUS_LABELS[o.status] || o.status)+'<br>'+
+        'Orçado: <strong>'+formatCentsBRL(o.budgetCents)+'</strong> · Realizado: <strong>'+formatCentsBRL(o.realizedCents)+'</strong>'+
+        (o.startDate ? ' · Início '+escapeHtml(o.startDate) : '')+(o.expectedEndDate ? ' · Previsão '+escapeHtml(o.expectedEndDate) : '')+(o.endDate ? ' · Concluída '+escapeHtml(o.endDate) : '')+
+        (o.responsible ? '<br>Responsável: '+escapeHtml(o.responsible) : '')+
+        (o.description ? '<br>'+escapeHtml(o.description) : '');
+      el('obraEntryForm').reset();
+      el('obraEntryId').value = '';
+      el('obraEntryObraId').value = o.id;
+      el('obraEntryPgto').value = 'pix';
+      el('obraEntryStatus').textContent = '';
+      renderObraEntries(Array.isArray(data.entries) ? data.entries : []);
+      el('obraDetailDialog').showModal();
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  }
+  if(el('btnCloseObraDetail')) el('btnCloseObraDetail').addEventListener('click', () => el('obraDetailDialog').close());
+  if(el('btnCancelObraDetail')) el('btnCancelObraDetail').addEventListener('click', () => el('obraDetailDialog').close());
+
+  if(el('obraEntryForm')) el('obraEntryForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('obraEntryStatus');
+    status.textContent = '';
+    const amountCents = parseBRLToCents(el('obraEntryValor').value);
+    if(!el('obraEntryDescricao').value.trim()){ status.textContent = 'INFORME A DESCRIÇÃO.'; return; }
+    if(amountCents === null || amountCents <= 0){ status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.'; return; }
+    const payload = {
+      action:'save_entry',
+      obraId: el('obraEntryObraId').value,
+      description: el('obraEntryDescricao').value,
+      supplier: el('obraEntryFornecedor').value,
+      amountCents,
+      entryDate: el('obraEntryData').value,
+      paymentMethod: el('obraEntryPgto').value,
+      notes: el('obraEntryObs').value
+    };
+    try{
+      await obraApiRequest('', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      await openObraDetail(el('obraEntryObraId').value);
+      await loadObrasPage();
+      showPurchaseToast('Lançamento salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  if(el('obraEntriesBody')) el('obraEntriesBody').addEventListener('click', async event => {
+    const del = event.target.closest('[data-obra-entry-delete]');
+    if(!del) return;
+    if(!confirm('Excluir este lançamento?')) return;
+    try{
+      await obraApiRequest('?entryId='+encodeURIComponent(del.dataset.obraEntryDelete), {method:'DELETE'});
+      if(obraDetailCurrent) await openObraDetail(obraDetailCurrent.id);
+      await loadObrasPage();
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  });
+
+  if(el('obrasTableBody')) el('obrasTableBody').addEventListener('click', async event => {
+    const open = event.target.closest('[data-obra-open]');
+    const edit = event.target.closest('[data-obra-edit]');
+    const del = event.target.closest('[data-obra-delete]');
+    if(open){ openObraDetail(open.dataset.obraOpen); return; }
+    if(edit){ const row = obrasRows.find(r => r.id === edit.dataset.obraEdit); if(row) openObraDialog(row); return; }
+    if(del){
+      if(!confirm('Excluir esta obra e todos os seus lançamentos?')) return;
+      try{ await obraApiRequest('?id='+encodeURIComponent(del.dataset.obraDelete), {method:'DELETE'}); await loadObrasPage(); showPurchaseToast('Obra excluída.'); }
+      catch(error){ showPurchaseToast(error.message,'error'); }
+    }
   });
 
   // ----- Declaração de Shopping -----
