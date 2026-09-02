@@ -61,3 +61,43 @@ test("legacyNetCents mantém a fórmula histórica (líquido com comissão e ben
   };
   assert.equal(legacyNetCents(baseValues, inputs), 215000 + 40000 + 25000 - 30000);
 });
+
+// ---------------------------------------------------------------------------
+// Parcelamento de desconto do Comissionamento (item 2)
+// ---------------------------------------------------------------------------
+
+const {
+  addMonthsToCompetence,
+  competencesForInstallments,
+  normalizeInstallmentTotal,
+  MAX_INSTALLMENTS,
+} = await import("../app/lib/commission-installments.ts");
+
+test("addMonthsToCompetence vira o ano corretamente", () => {
+  assert.equal(addMonthsToCompetence("2026-01", 0), "2026-01");
+  assert.equal(addMonthsToCompetence("2026-11", 3), "2027-02");
+  assert.equal(addMonthsToCompetence("2026-03", 12), "2027-03");
+});
+
+test("competencesForInstallments repete o valor cheio nas competências seguintes", () => {
+  // 3x a partir de 2026-03 → março, abril, maio (mesmo valor em cada uma)
+  assert.deepEqual(competencesForInstallments("2026-03", 3), ["2026-03", "2026-04", "2026-05"]);
+});
+
+test("competencesForInstallments com total 1 devolve só a âncora", () => {
+  assert.deepEqual(competencesForInstallments("2026-03", 1), ["2026-03"]);
+});
+
+test("competencesForInstallments respeita a trava de segurança", () => {
+  assert.equal(competencesForInstallments("2026-03", 999).length, MAX_INSTALLMENTS);
+});
+
+test("normalizeInstallmentTotal só parcela desconto e exige >= 2", () => {
+  assert.equal(normalizeInstallmentTotal("desconto", 3), 3);
+  assert.equal(normalizeInstallmentTotal("desconto", 1), 1);
+  assert.equal(normalizeInstallmentTotal("desconto", 0), 1);
+  assert.equal(normalizeInstallmentTotal("desconto", "abc"), 1);
+  assert.equal(normalizeInstallmentTotal("bonus", 3), 1);
+  assert.equal(normalizeInstallmentTotal("ajuste", 5), 1);
+  assert.equal(normalizeInstallmentTotal("desconto", 999), MAX_INSTALLMENTS);
+});

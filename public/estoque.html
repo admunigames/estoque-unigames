@@ -6659,7 +6659,9 @@
     <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Encargos patronais (INSS/FGTS pagos pela empresa, não descontados do funcionário). Aplicados como percentual sobre o salário base e somados ao <strong>Custo Total por Funcionário</strong> — nunca à Folha Paga.</p>
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="rhFolhaEncargos">ENCARGOS PATRONAIS (%)</label><input type="number" id="rhFolhaEncargos" min="0" max="1000" step="0.01" value="0"></div>
+      <div class="purchase-field full"><label for="rhComissaoRegraTexto">REGRA DE CÁLCULO DA COMISSÃO</label><textarea id="rhComissaoRegraTexto" rows="4" maxlength="2000" placeholder="Ex: 1% sobre as vendas líquidas da loja no mês, rateado entre os vendedores ativos…"></textarea></div>
     </div>
+    <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">A regra acima explica como a comissão é apurada. Ela aparece na tela de lançamento e é impressa no recibo — <strong>não</strong> entra em nenhum cálculo automático; o comissionamento continua sendo lançado manualmente.</p>
     <div class="user-form-status" id="rhFolhaParametrosStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelRhFolhaParametros" type="button">CANCELAR</button>
@@ -6796,19 +6798,31 @@
       <div class="purchase-field"><label for="rhComissaoValor">COMISSÃO (R$)</label><input type="number" id="rhComissaoValor" min="0" step="0.01" value="0"></div>
       <div class="purchase-field full"><label for="rhComissaoObs">OBSERVAÇÕES</label><textarea id="rhComissaoObs" rows="2" maxlength="500"></textarea></div>
     </div>
+    <p id="rhComissaoRegraHint" class="no-print" style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;white-space:pre-wrap;" hidden></p>
     <h4 style="margin:16px 0 8px;font:800 10px var(--mono);letter-spacing:.06em;">LANÇAMENTOS (BÔNUS, PREMIAÇÕES, DESCONTOS E AJUSTES)</h4>
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="rhComissaoItemPreset">LANÇAMENTO PADRÃO</label><select id="rhComissaoItemPreset"><option value="">SEM PADRÃO (LIVRE)</option></select></div>
       <div class="purchase-field"><label for="rhComissaoItemLabel">DESCRIÇÃO</label><input id="rhComissaoItemLabel" maxlength="120"></div>
       <div class="purchase-field"><label for="rhComissaoItemKind">TIPO</label><select id="rhComissaoItemKind"><option value="bonus">BÔNUS</option><option value="premiacao">PREMIAÇÃO</option><option value="desconto">DESCONTO</option><option value="ajuste">AJUSTE</option></select></div>
       <div class="purchase-field"><label for="rhComissaoItemValor">VALOR (R$)</label><input type="number" id="rhComissaoItemValor" step="0.01"></div>
+      <div class="purchase-field" id="rhComissaoItemParcelaWrap" hidden><label for="rhComissaoItemParcelado" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="rhComissaoItemParcelado"> PARCELAR DESCONTO</label><input type="number" id="rhComissaoItemParcelas" min="2" max="60" step="1" placeholder="Nº de ocorrências" disabled></div>
       <div class="purchase-field"><label for="btnAddRhComissaoItem">&nbsp;</label><button class="btn-outline" id="btnAddRhComissaoItem" type="button">ADICIONAR LANÇAMENTO</button></div>
     </div>
+    <p class="no-print" style="color:var(--ink-soft);font-size:10px;margin:0 0 8px;">Desconto parcelado: o valor cheio é repetido nas competências seguintes até completar o número de ocorrências. As ocorrências futuras são geradas automaticamente e ficam somente-leitura.</p>
     <div class="table-panel responsive-table" style="margin-top:10px;">
       <div class="table-scroll">
         <table id="rhComissaoItensTable">
           <thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th><th></th></tr></thead>
           <tbody id="rhComissaoItensBody"><tr><td colspan="4" class="responsive-empty">Nenhum lançamento adicionado.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="table-panel responsive-table" id="rhComissaoParcelasHerdadasWrap" style="margin-top:10px;" hidden>
+      <p style="margin:8px 10px 4px;font:800 9px var(--mono);letter-spacing:.06em;color:var(--ink-soft);">DESCONTOS PARCELADOS VINDOS DE COMPETÊNCIAS ANTERIORES (SOMENTE LEITURA)</p>
+      <div class="table-scroll">
+        <table id="rhComissaoParcelasHerdadasTable">
+          <thead><tr><th>Descrição</th><th>Parcela</th><th>Valor</th></tr></thead>
+          <tbody id="rhComissaoParcelasHerdadasBody"></tbody>
         </table>
       </div>
     </div>
@@ -25298,6 +25312,8 @@ function renderHomeTasks(){
   let rhComissoes = [];
   let rhComissaoPresets = [];
   let rhComissaoDialogItems = [];
+  let rhComissaoInheritedItems = [];
+  let rhComissaoRuleText = '';
   let rhFolhaAttachTargetId = '';
   let rhPrintTitleBefore = '';
   let rhComissaoTab = 'lancamentos';
@@ -25698,6 +25714,7 @@ function renderHomeTasks(){
     try{
       const data = await rhApiRequest('/settings');
       el('rhFolhaEncargos').value = (Number(data.employerChargesBps || 0)/100).toFixed(2);
+      if(el('rhComissaoRegraTexto')) el('rhComissaoRegraTexto').value = data.commissionRuleText || '';
     }catch(error){
       el('rhFolhaEncargos').value = '0.00';
       el('rhFolhaParametrosStatus').textContent = error.message;
@@ -25714,7 +25731,7 @@ function renderHomeTasks(){
     const pct = Number(el('rhFolhaEncargos').value);
     if(!Number.isFinite(pct) || pct < 0){ status.textContent = 'INFORME UM PERCENTUAL VÁLIDO.'; return; }
     try{
-      await rhApiRequest('/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ employerChargesBps: Math.round(pct * 100) })});
+      await rhApiRequest('/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ employerChargesBps: Math.round(pct * 100), commissionRuleText: el('rhComissaoRegraTexto') ? el('rhComissaoRegraTexto').value : '' })});
       el('rhFolhaParametrosDialog').close();
       showPurchaseToast('Parâmetros salvos.');
       await loadRhFolha();
@@ -26673,6 +26690,7 @@ function renderHomeTasks(){
       if(companyId) params.set('companyId', companyId);
       const data = await rhApiRequest('/commissions?'+params.toString());
       rhComissoes = Array.isArray(data.commissions) ? data.commissions : [];
+      rhComissaoRuleText = data.commissionRuleText || '';
       el('rhComissaoPrintMeta').textContent = 'Competência '+rhFormatMonth(month)+
         ' · '+(companyId ? (companies.find(company => company.id === companyId) || {name:'—'}).name : 'Todas as lojas');
       renderRhComissaoTable();
@@ -26698,28 +26716,57 @@ function renderHomeTasks(){
     });
   });
 
+  // Mostra/esconde o bloco de parcelamento — só faz sentido para desconto.
+  function syncRhComissaoParcelaWrap(){
+    const wrap = el('rhComissaoItemParcelaWrap');
+    if(!wrap) return;
+    const isDesconto = el('rhComissaoItemKind').value === 'desconto';
+    wrap.hidden = !isDesconto;
+    if(!isDesconto){
+      el('rhComissaoItemParcelado').checked = false;
+    }
+    el('rhComissaoItemParcelas').disabled = !isDesconto || !el('rhComissaoItemParcelado').checked;
+  }
+
   function renderRhComissaoDialogItems(){
     const body = el('rhComissaoItensBody');
     if(!body) return;
     if(!rhComissaoDialogItems.length){
       body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhum lançamento adicionado.</td></tr>';
     }else{
-      body.innerHTML = rhComissaoDialogItems.map((item, index) => '<tr>'+
-        '<td>'+escapeHtml(item.label)+'</td>'+
-        '<td>'+escapeHtml(RH_COMMISSION_KIND_LABELS[item.kind] || item.kind)+'</td>'+
-        '<td>'+(item.kind === 'desconto' ? '-' : '')+formatCentsBRL(item.amountCents)+'</td>'+
-        '<td><button class="btn-outline" type="button" data-rh-comissao-item-remove="'+index+'">REMOVER</button></td>'+
-      '</tr>').join('');
+      body.innerHTML = rhComissaoDialogItems.map((item, index) => {
+        const parcela = Number(item.installmentTotal || 0) >= 2
+          ? ' <span style="font:800 9px var(--mono);color:var(--accent);">'+Number(item.installmentTotal)+'x</span>' : '';
+        return '<tr>'+
+          '<td>'+escapeHtml(item.label)+parcela+'</td>'+
+          '<td>'+escapeHtml(RH_COMMISSION_KIND_LABELS[item.kind] || item.kind)+'</td>'+
+          '<td>'+(item.kind === 'desconto' ? '-' : '')+formatCentsBRL(item.amountCents)+'</td>'+
+          '<td><button class="btn-outline" type="button" data-rh-comissao-item-remove="'+index+'">REMOVER</button></td>'+
+        '</tr>';
+      }).join('');
+    }
+    const inheritedWrap = el('rhComissaoParcelasHerdadasWrap');
+    if(inheritedWrap){
+      if(!rhComissaoInheritedItems.length){
+        inheritedWrap.hidden = true;
+      }else{
+        inheritedWrap.hidden = false;
+        el('rhComissaoParcelasHerdadasBody').innerHTML = rhComissaoInheritedItems.map(item => '<tr>'+
+          '<td>'+escapeHtml(item.label)+'</td>'+
+          '<td>'+Number(item.installmentNumber || 0)+'/'+Number(item.installmentTotal || 0)+'</td>'+
+          '<td>-'+formatCentsBRL(item.amountCents)+'</td>'+
+        '</tr>').join('');
+      }
     }
     const base = parseBRLToCents(el('rhComissaoValor').value || '0') || 0;
-    const total = rhComissaoDialogItems.reduce((sum, item) => {
-      if(item.kind === 'desconto') return sum - item.amountCents;
-      return sum + item.amountCents;
-    }, base);
+    const applyItem = (sum, item) => item.kind === 'desconto' ? sum - Number(item.amountCents || 0) : sum + Number(item.amountCents || 0);
+    const total = rhComissaoInheritedItems.reduce(applyItem, rhComissaoDialogItems.reduce(applyItem, base));
     el('rhComissaoItensTotal').textContent = 'VALOR FINAL: '+formatCentsBRL(total);
   }
 
   if(el('rhComissaoValor')) el('rhComissaoValor').addEventListener('input', renderRhComissaoDialogItems);
+  if(el('rhComissaoItemKind')) el('rhComissaoItemKind').addEventListener('change', syncRhComissaoParcelaWrap);
+  if(el('rhComissaoItemParcelado')) el('rhComissaoItemParcelado').addEventListener('change', syncRhComissaoParcelaWrap);
 
   if(el('rhComissaoItemPreset')) el('rhComissaoItemPreset').addEventListener('change', () => {
     const preset = rhComissaoPresets.find(item => item.id === el('rhComissaoItemPreset').value);
@@ -26727,6 +26774,7 @@ function renderHomeTasks(){
     el('rhComissaoItemLabel').value = preset.name;
     el('rhComissaoItemKind').value = preset.kind;
     el('rhComissaoItemValor').value = (Number(preset.defaultAmountCents || 0)/100).toFixed(2);
+    syncRhComissaoParcelaWrap();
   });
 
   if(el('btnAddRhComissaoItem')) el('btnAddRhComissaoItem').addEventListener('click', () => {
@@ -26746,16 +26794,29 @@ function renderHomeTasks(){
       status.textContent = 'SÓ O AJUSTE PODE TER VALOR NEGATIVO.';
       return;
     }
+    let installmentTotal = 0;
+    if(kind === 'desconto' && el('rhComissaoItemParcelado').checked){
+      installmentTotal = Math.trunc(Number(el('rhComissaoItemParcelas').value));
+      if(!Number.isFinite(installmentTotal) || installmentTotal < 2 || installmentTotal > 60){
+        status.textContent = 'INFORME UM NÚMERO DE OCORRÊNCIAS ENTRE 2 E 60.';
+        return;
+      }
+    }
     status.textContent = '';
     rhComissaoDialogItems.push({
       presetId: el('rhComissaoItemPreset').value || '',
       label,
       kind,
-      amountCents: Math.round(raw * 100)
+      amountCents: Math.round(raw * 100),
+      installmentGroupId: '',
+      installmentTotal
     });
     el('rhComissaoItemPreset').value = '';
     el('rhComissaoItemLabel').value = '';
     el('rhComissaoItemValor').value = '';
+    el('rhComissaoItemParcelado').checked = false;
+    el('rhComissaoItemParcelas').value = '';
+    syncRhComissaoParcelaWrap();
     renderRhComissaoDialogItems();
   });
 
@@ -26770,12 +26831,26 @@ function renderHomeTasks(){
     el('rhComissaoForm').reset();
     rhRenderEmployeeSelects();
     renderRhComissaoPresetOptions();
-    rhComissaoDialogItems = row ? (row.items || []).map(item => ({
+    const allItems = row ? (row.items || []) : [];
+    // Parcelas geradas de descontos (ocorrência 2..N) são somente-leitura
+    // aqui — quem as controla é a competência-âncora.
+    rhComissaoInheritedItems = allItems.filter(item => Number(item.installmentNumber || 0) >= 2);
+    rhComissaoDialogItems = allItems.filter(item => Number(item.installmentNumber || 0) < 2).map(item => ({
       presetId: item.presetId || '',
       label: item.label,
       kind: item.kind,
-      amountCents: Number(item.amountCents || 0)
-    })) : [];
+      amountCents: Number(item.amountCents || 0),
+      installmentGroupId: item.installmentGroupId || '',
+      installmentTotal: Number(item.installmentTotal || 0)
+    }));
+    const hint = el('rhComissaoRegraHint');
+    if(hint){
+      hint.textContent = rhComissaoRuleText ? ('Regra de cálculo da comissão: '+rhComissaoRuleText) : '';
+      hint.hidden = !rhComissaoRuleText;
+    }
+    if(el('rhComissaoItemParcelado')) el('rhComissaoItemParcelado').checked = false;
+    if(el('rhComissaoItemParcelas')) el('rhComissaoItemParcelas').value = '';
+    syncRhComissaoParcelaWrap();
     el('rhComissaoId').value = row ? row.id : '';
     el('rhComissaoDialogTitle').textContent = row ? 'EDITAR COMISSÃO' : 'NOVA COMISSÃO';
     el('rhComissaoFuncionario').value = row ? row.employeeId : '';
@@ -26833,12 +26908,19 @@ function renderHomeTasks(){
     if(!container) return;
     const items = row.items || [];
     const itemsHtml = items.length
-      ? items.map(item => '<tr>'+
-          '<td>'+escapeHtml(item.label)+'</td>'+
-          '<td>'+escapeHtml(RH_COMMISSION_KIND_LABELS[item.kind] || item.kind)+'</td>'+
-          '<td class="num">'+(item.kind === 'desconto' ? '-' : '')+formatCentsBRL(item.amountCents)+'</td>'+
-        '</tr>').join('')
+      ? items.map(item => {
+          const parcela = Number(item.installmentTotal || 0) >= 2
+            ? ' (parcela '+Number(item.installmentNumber || 0)+'/'+Number(item.installmentTotal)+')' : '';
+          return '<tr>'+
+            '<td>'+escapeHtml(item.label)+escapeHtml(parcela)+'</td>'+
+            '<td>'+escapeHtml(RH_COMMISSION_KIND_LABELS[item.kind] || item.kind)+'</td>'+
+            '<td class="num">'+(item.kind === 'desconto' ? '-' : '')+formatCentsBRL(item.amountCents)+'</td>'+
+          '</tr>';
+        }).join('')
       : '<tr><td colspan="3">Nenhum lançamento adicional.</td></tr>';
+    const ruleHtml = rhComissaoRuleText
+      ? '<div class="rh-recibo-meta" style="white-space:pre-wrap;">Como a comissão é apurada: '+escapeHtml(rhComissaoRuleText)+'</div>'
+      : '';
     container.innerHTML =
       '<div class="print-report-header" style="display:block;">'+
         '<div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div>'+
@@ -26846,6 +26928,7 @@ function renderHomeTasks(){
         '<div class="print-report-meta">'+escapeHtml(row.employeeName)+' · '+escapeHtml(row.companyName || 'Sem loja definida')+' · Competência '+escapeHtml(rhFormatMonth(row.month))+'</div>'+
       '</div>'+
       '<div class="rh-recibo-meta">Comissão base: <strong>'+formatCentsBRL(row.commissionCents)+'</strong></div>'+
+      ruleHtml+
       '<table class="rh-print-table"><thead><tr><th>Descrição</th><th>Tipo</th><th class="num">Valor</th></tr></thead>'+
       '<tbody>'+itemsHtml+'</tbody></table>'+
       '<table class="rh-print-table" style="margin-top:10px;"><tbody>'+

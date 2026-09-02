@@ -1,12 +1,17 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import {
+  competencesForInstallments,
+  normalizeInstallmentTotal,
+} from "../../../lib/commission-installments";
+import {
   COMMISSION_KINDS,
   MONTH_PATTERN,
   actorName,
   canManagePayroll,
   centsValue,
   commissionNetCents,
+  loadCommissionRuleText,
   identity,
   isOneOf,
   jsonResponse,
@@ -14,6 +19,7 @@ import {
   safeText,
   sameOrigin,
   type CommissionKind,
+  type Database,
   type JsonMap,
 } from "../shared";
 
@@ -26,6 +32,14 @@ import {
 // positiva, exceto em 'ajuste', que preserva o sinal informado; o sinal do
 // desconto entra só na fórmula do valor final:
 //   comissão + bônus + premiações - descontos + ajustes
+//
+// Parcelamento de desconto (item 2): uma linha de desconto pode ser
+// parcelada em N ocorrências. A linha da competência-âncora tem
+// installment_number = 1 (é a única enviada pelo cliente e a única
+// editável); as ocorrências 2..N são geradas neste POST nas competências
+// seguintes, com o VALOR CHEIO repetido, e reconciliadas sempre que a
+// âncora é salva de novo. O cabeçalho de cada competência futura é criado
+// se ainda não existir.
 
 type CommissionRow = {
   id: string;
@@ -55,6 +69,9 @@ type ItemRow = {
   label: string;
   kind: string;
   amountCents: number;
+  installmentGroupId: string;
+  installmentNumber: number;
+  installmentTotal: number;
   createdBy: string;
   createdAt: string;
 };
@@ -64,6 +81,8 @@ type ParsedItem = {
   label: string;
   kind: CommissionKind;
   amountCents: number;
+  installmentGroupId: string;
+  installmentTotal: number;
 };
 
 const COMMISSION_COLUMNS = `id, employee_id AS employeeId, employee_name AS employeeName,
@@ -75,18 +94,9 @@ const COMMISSION_COLUMNS = `id, employee_id AS employeeId, employee_name AS empl
   updated_by_name AS updatedByName, updated_at AS updatedAt`;
 
 const ITEM_COLUMNS = `id, commission_id AS commissionId, preset_id AS presetId, label, kind,
-  amount_cents AS amountCents, created_by AS createdBy, created_at AS createdAt`;
-
-function totalsFromItems(items: ParsedItem[]) {
-  const totals = { bonusesCents: 0, premiumsCents: 0, discountsCents: 0, adjustmentsCents: 0 };
-  for (const item of items) {
-    if (item.kind === "bonus") totals.bonusesCents += item.amountCents;
-    else if (item.kind === "premiacao") totals.premiumsCents += item.amountCents;
-    else if (item.kind === "desconto") totals.discountsCents += item.amountCents;
-    else totals.adjustmentsCents += item.amountCents;
-  }
-  return totals;
-}
+  amount_cents AS amountCents, installment_group_id AS installmentGroupId,
+  installment_number AS installmentNumber, installment_total AS installmentTotal,
+  created_by AS createdBy, created_at AS createdAt`;
 
 function parseItems(value: unknown): { items: ParsedItem[]; error: string } {
   if (value === undefined || value === null) return { items: [], error: "" };
@@ -114,14 +124,121 @@ function parseItems(value: unknown): { items: ParsedItem[]; error: string } {
     if (kind === "ajuste" && amount === 0) {
       return { items: [], error: "INFORME UM VALOR DIFERENTE DE ZERO NO AJUSTE." };
     }
+    const installmentTotal = normalizeInstallmentTotal(kind, entry.installmentTotal);
+    const providedGroupId = safeText(entry.installmentGroupId, 80);
     items.push({
       presetId: safeText(entry.presetId, 80),
       label,
       kind,
       amountCents: kind === "ajuste" ? amount : Math.abs(amount),
+      // Grupo preservado na edição, ou novo quando a série passa a existir.
+      installmentGroupId:
+        installmentTotal >= 2 ? providedGroupId || crypto.randomUUID() : "",
+      installmentTotal,
     });
   }
   return { items, error: "" };
+}
+
+/**
+ * Recalcula os quatro totais desnormalizados de um cabeçalho a partir de
+ * TODAS as linhas dele (inclusive as parcelas geradas de descontos). Roda
+ * uma vez por cabeçalho tocado — âncora e competências futuras.
+ */
+async function recalcCommissionTotals(
+  database: Database,
+  commissionId: string,
+  actorId: string,
+  actorDisplayName: string,
+): Promise<void> {
+  const result = await database
+    .prepare(
+      `SELECT kind, COALESCE(SUM(amount_cents), 0) AS total
+       FROM hr_commission_items WHERE commission_id=?1 GROUP BY kind`,
+    )
+    .bind(commissionId)
+    .all<{ kind: string; total: number }>();
+  const totals = { bonusesCents: 0, premiumsCents: 0, discountsCents: 0, adjustmentsCents: 0 };
+  for (const row of result.results ?? []) {
+    if (row.kind === "bonus") totals.bonusesCents = Number(row.total);
+    else if (row.kind === "premiacao") totals.premiumsCents = Number(row.total);
+    else if (row.kind === "desconto") totals.discountsCents = Number(row.total);
+    else if (row.kind === "ajuste") totals.adjustmentsCents = Number(row.total);
+  }
+  await database
+    .prepare(
+      `UPDATE hr_commissions
+       SET bonuses_cents=?1, premiums_cents=?2, discounts_cents=?3, adjustments_cents=?4,
+           updated_by=?5, updated_by_name=?6, updated_at=CURRENT_TIMESTAMP
+       WHERE id=?7`,
+    )
+    .bind(
+      totals.bonusesCents,
+      totals.premiumsCents,
+      totals.discountsCents,
+      totals.adjustmentsCents,
+      actorId,
+      actorDisplayName,
+      commissionId,
+    )
+    .run();
+}
+
+/**
+ * Garante que existe o cabeçalho de comissão do funcionário na competência
+ * informada e devolve o id. Cria zerado quando ainda não existe (uma
+ * competência futura que só recebe parcela de desconto).
+ */
+async function ensureCommissionHeader(
+  database: Database,
+  employee: { id: string; fullName: string; companyId: string; companyName: string },
+  month: string,
+  actorId: string,
+  actorDisplayName: string,
+): Promise<string> {
+  const existing = await database
+    .prepare("SELECT id FROM hr_commissions WHERE employee_id=?1 AND month=?2 LIMIT 1")
+    .bind(employee.id, month)
+    .first<{ id: string }>();
+  if (existing) return existing.id;
+  const id = crypto.randomUUID();
+  await database
+    .prepare(
+      `INSERT INTO hr_commissions
+        (id, employee_id, employee_name, company_id, company_name, month, commission_cents,
+         bonuses_cents, premiums_cents, discounts_cents, adjustments_cents, notes,
+         created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 0, 0, 0, 0, '', ?7, ?8,
+               CURRENT_TIMESTAMP, ?7, ?8, CURRENT_TIMESTAMP)`,
+    )
+    .bind(id, employee.id, employee.fullName, employee.companyId, employee.companyName, month, actorId, actorDisplayName)
+    .run();
+  return id;
+}
+
+/**
+ * Apaga as ocorrências futuras (installment_number >= 2) de um grupo de
+ * parcelamento e devolve os ids dos cabeçalhos afetados, para recálculo.
+ */
+async function deleteFutureInstallments(
+  database: Database,
+  groupId: string,
+): Promise<string[]> {
+  if (!groupId) return [];
+  const affected = await database
+    .prepare(
+      `SELECT DISTINCT commission_id AS commissionId FROM hr_commission_items
+       WHERE installment_group_id=?1 AND installment_number >= 2`,
+    )
+    .bind(groupId)
+    .all<{ commissionId: string }>();
+  await database
+    .prepare(
+      "DELETE FROM hr_commission_items WHERE installment_group_id=?1 AND installment_number >= 2",
+    )
+    .bind(groupId)
+    .run();
+  return (affected.results ?? []).map((row) => row.commissionId);
 }
 
 export async function GET(request: Request) {
@@ -174,9 +291,11 @@ export async function GET(request: Request) {
       netCents: commissionNetCents(row),
       items: itemsByCommission.get(row.id) ?? [],
     }));
+    const commissionRuleText = await loadCommissionRuleText(database);
     return jsonResponse({
       month,
       companyId,
+      commissionRuleText,
       commissions: rows,
       totalNetCents: rows.reduce((sum, row) => sum + row.netCents, 0),
     });
@@ -236,16 +355,29 @@ export async function POST(request: Request) {
       if (!byId) return jsonResponse({ error: "COMISSÃO NÃO ENCONTRADA." }, 404);
     }
 
-    const totals = totalsFromItems(items);
+    // Grupos de parcelamento que já existiam nesta competência-âncora, para
+    // detectar quais séries foram removidas/alteradas na edição.
+    const previousAnchors = isUpdate
+      ? await database
+          .prepare(
+            `SELECT installment_group_id AS groupId FROM hr_commission_items
+             WHERE commission_id=?1 AND installment_number = 1 AND installment_group_id <> ''`,
+          )
+          .bind(commissionId)
+          .all<{ groupId: string }>()
+      : { results: [] as { groupId: string }[] };
+    const previousGroupIds = new Set(
+      (previousAnchors.results ?? []).map((row) => row.groupId),
+    );
+
     const header = isUpdate
       ? database
           .prepare(
             `UPDATE hr_commissions
              SET employee_id=?1, employee_name=?2, company_id=?3, company_name=?4, month=?5,
-                 commission_cents=?6, bonuses_cents=?7, premiums_cents=?8, discounts_cents=?9,
-                 adjustments_cents=?10, notes=?11, updated_by=?12, updated_by_name=?13,
+                 commission_cents=?6, notes=?7, updated_by=?8, updated_by_name=?9,
                  updated_at=CURRENT_TIMESTAMP
-             WHERE id=?14`,
+             WHERE id=?10`,
           )
           .bind(
             employeeId,
@@ -254,10 +386,6 @@ export async function POST(request: Request) {
             employee.companyName,
             month,
             commissionCents,
-            totals.bonusesCents,
-            totals.premiumsCents,
-            totals.discountsCents,
-            totals.adjustmentsCents,
             notes,
             actor.id,
             actorName(actor),
@@ -269,8 +397,8 @@ export async function POST(request: Request) {
               (id, employee_id, employee_name, company_id, company_name, month, commission_cents,
                bonuses_cents, premiums_cents, discounts_cents, adjustments_cents, notes,
                created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
-                     CURRENT_TIMESTAMP, ?13, ?14, CURRENT_TIMESTAMP)`,
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, 0, 0, 0, ?8, ?9, ?10,
+                     CURRENT_TIMESTAMP, ?9, ?10, CURRENT_TIMESTAMP)`,
           )
           .bind(
             commissionId,
@@ -280,26 +408,29 @@ export async function POST(request: Request) {
             employee.companyName,
             month,
             commissionCents,
-            totals.bonusesCents,
-            totals.premiumsCents,
-            totals.discountsCents,
-            totals.adjustmentsCents,
             notes,
             actor.id,
             actorName(actor),
           );
 
-    // Cabeçalho + troca completa das linhas no mesmo batch: os totais
-    // desnormalizados e as linhas que os originam nunca divergem.
+    // Cabeçalho + troca das linhas NÃO geradas (installment_number < 2) da
+    // competência-âncora. As parcelas geradas de descontos (número >= 2)
+    // que porventura existam aqui são preservadas — quem as controla é a
+    // âncora da série, não esta tela.
     await database.batch([
       header,
-      database.prepare("DELETE FROM hr_commission_items WHERE commission_id=?1").bind(commissionId),
+      database
+        .prepare(
+          "DELETE FROM hr_commission_items WHERE commission_id=?1 AND installment_number < 2",
+        )
+        .bind(commissionId),
       ...items.map((item) =>
         database
           .prepare(
             `INSERT INTO hr_commission_items
-              (id, commission_id, preset_id, label, kind, amount_cents, created_by, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)`,
+              (id, commission_id, preset_id, label, kind, amount_cents, installment_group_id,
+               installment_number, installment_total, created_by, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, CURRENT_TIMESTAMP)`,
           )
           .bind(
             crypto.randomUUID(),
@@ -308,10 +439,73 @@ export async function POST(request: Request) {
             item.label,
             item.kind,
             item.amountCents,
+            item.installmentGroupId,
+            item.installmentTotal >= 2 ? 1 : 0,
+            item.installmentTotal >= 2 ? item.installmentTotal : 0,
             actor.id,
           ),
       ),
     ]);
+
+    // ---- Reconciliação das séries de desconto parcelado ----
+    const touchedHeaders = new Set<string>();
+    const activeSeries = items.filter((item) => item.installmentTotal >= 2);
+    const activeGroupIds = new Set(activeSeries.map((item) => item.installmentGroupId));
+
+    // Séries removidas na edição: some com todas as ocorrências futuras.
+    for (const groupId of previousGroupIds) {
+      if (!activeGroupIds.has(groupId)) {
+        for (const id of await deleteFutureInstallments(database, groupId)) {
+          touchedHeaders.add(id);
+        }
+      }
+    }
+
+    // Séries ativas: regenera as ocorrências 2..N do zero, com o valor
+    // cheio repetido nas competências seguintes.
+    for (const series of activeSeries) {
+      for (const id of await deleteFutureInstallments(database, series.installmentGroupId)) {
+        touchedHeaders.add(id);
+      }
+      const competences = competencesForInstallments(month, series.installmentTotal);
+      for (let index = 1; index < competences.length; index += 1) {
+        const targetMonth = competences[index];
+        const targetId = await ensureCommissionHeader(
+          database,
+          employee,
+          targetMonth,
+          actor.id,
+          actorName(actor),
+        );
+        await database
+          .prepare(
+            `INSERT INTO hr_commission_items
+              (id, commission_id, preset_id, label, kind, amount_cents, installment_group_id,
+               installment_number, installment_total, created_by, created_at)
+             VALUES (?1, ?2, ?3, ?4, 'desconto', ?5, ?6, ?7, ?8, ?9, CURRENT_TIMESTAMP)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            targetId,
+            series.presetId,
+            series.label,
+            series.amountCents,
+            series.installmentGroupId,
+            index + 1,
+            series.installmentTotal,
+            actor.id,
+          )
+          .run();
+        touchedHeaders.add(targetId);
+      }
+    }
+
+    // A âncora sempre recalcula; as competências futuras tocadas também.
+    touchedHeaders.delete(commissionId);
+    await recalcCommissionTotals(database, commissionId, actor.id, actorName(actor));
+    for (const id of touchedHeaders) {
+      await recalcCommissionTotals(database, id, actor.id, actorName(actor));
+    }
 
     return jsonResponse(
       isUpdate ? { updated: true, id: commissionId } : { created: true, id: commissionId },
@@ -338,11 +532,32 @@ export async function DELETE(request: Request) {
 
   try {
     const database = await getD1();
+    // Séries de desconto parcelado ancoradas nesta comissão: some com as
+    // ocorrências futuras antes de apagar o cabeçalho.
+    const anchors = await database
+      .prepare(
+        `SELECT installment_group_id AS groupId FROM hr_commission_items
+         WHERE commission_id=?1 AND installment_number = 1 AND installment_group_id <> ''`,
+      )
+      .bind(id)
+      .all<{ groupId: string }>();
+    const touchedHeaders = new Set<string>();
+    for (const row of anchors.results ?? []) {
+      for (const headerId of await deleteFutureInstallments(database, row.groupId)) {
+        touchedHeaders.add(headerId);
+      }
+    }
+
     // Sem FK no banco (convenção do projeto): a cascata é feita aqui.
     await database.batch([
       database.prepare("DELETE FROM hr_commission_items WHERE commission_id=?1").bind(id),
       database.prepare("DELETE FROM hr_commissions WHERE id=?1").bind(id),
     ]);
+
+    touchedHeaders.delete(id);
+    for (const headerId of touchedHeaders) {
+      await recalcCommissionTotals(database, headerId, actor.id, actorName(actor));
+    }
     return jsonResponse({ deleted: true });
   } catch (error) {
     console.error("Não foi possível excluir a comissão.", error);

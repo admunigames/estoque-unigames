@@ -314,6 +314,20 @@ export async function loadEmployerChargesBps(database: Database): Promise<number
 }
 
 /**
+ * Texto livre que descreve como a comissão é apurada (item 1). Só para
+ * exibição no lançamento e no recibo — nunca entra em cálculo. Tabela pode
+ * estar vazia: devolve "".
+ */
+export async function loadCommissionRuleText(database: Database): Promise<string> {
+  const row = await database
+    .prepare(
+      "SELECT commission_rule_text AS text FROM hr_payroll_settings WHERE company_id='' LIMIT 1",
+    )
+    .first<{ text: string }>();
+  return typeof row?.text === "string" ? row.text : "";
+}
+
+/**
  * Datas de feriado (AAAA-MM-DD) que valem para a loja informada numa
  * competência: todos os 'nacional' + os 'local' daquela loja.
  */
