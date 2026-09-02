@@ -4992,7 +4992,8 @@
         <div class="dre-toolbar">
           <div class="field"><label for="dreLoja">LOJA</label><select id="dreLoja"><option value="">SELECIONE A LOJA</option></select></div>
           <div class="field"><label for="dreMes">MÊS</label><input type="month" id="dreMes"></div>
-          <div class="field"><label for="dreRevenue">RECEITA DA LOJA (R$)</label><input type="number" id="dreRevenue" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="field"><label for="dreRevenueSales">RECEITA — VENDAS (R$)</label><input type="number" id="dreRevenueSales" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="field"><label for="dreRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="number" id="dreRevenueServices" min="0" step="0.01" placeholder="0,00"></div>
           <div class="dre-toolbar-actions">
             <button class="btn-accent" id="btnSaveDreRevenue" type="button">SALVAR RECEITA</button>
             <button class="btn-outline" id="btnOpenFinanceCatalog" type="button">GERENCIAR CATEGORIAS</button>
@@ -6931,7 +6932,9 @@
         <select id="expenseRateioModel">
           <option value="padrao">RATEIO PADRÃO</option>
           <option value="administrativo">RATEIO ADMINISTRATIVO</option>
-          <option value="faturamento">RATEIO POR FATURAMENTO</option>
+          <option value="faturamento">RATEIO POR FATURAMENTO (VENDAS + SERVIÇOS)</option>
+          <option value="faturamento_vendas">RATEIO POR FATURAMENTO DE VENDAS</option>
+          <option value="faturamento_servicos">RATEIO POR FATURAMENTO DE SERVIÇOS</option>
           <option value="funcionarios">RATEIO POR QUANTIDADE DE FUNCIONÁRIOS</option>
           <option value="personalizado">RATEIO PERSONALIZADO</option>
         </select>
@@ -17276,7 +17279,8 @@ function renderHomeTasks(){
       financeDre = null;
       renderDreSummary();
       renderDreCategories();
-      el('dreRevenue').value = '';
+      el('dreRevenueSales').value = '';
+      el('dreRevenueServices').value = '';
       return;
     }
     financeLoading = true;
@@ -17287,7 +17291,9 @@ function renderHomeTasks(){
         financeApiRequest('/revenue?storeId='+encodeURIComponent(storeId)+'&month='+encodeURIComponent(month))
       ]);
       financeDre = dreData;
-      el('dreRevenue').value = revenueData.revenue ? (revenueData.revenue.amountCents/100).toFixed(2) : '';
+      const rev = revenueData.revenue;
+      el('dreRevenueSales').value = rev ? (Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100).toFixed(2) : '';
+      el('dreRevenueServices').value = rev ? (Number(rev.servicesAmountCents || 0)/100).toFixed(2) : '';
       renderDreSummary();
       renderDreCategories();
     }catch(error){
@@ -17737,15 +17743,16 @@ function renderHomeTasks(){
     const storeId = el('dreLoja').value;
     const month = el('dreMes').value;
     if(!storeId){ showPurchaseToast('Selecione a loja.','error'); return; }
-    const amountCents = parseBRLToCents(el('dreRevenue').value || '0');
-    if(amountCents === null){ showPurchaseToast('Informe um valor de receita válido.','error'); return; }
+    const salesAmountCents = parseBRLToCents(el('dreRevenueSales').value || '0');
+    const servicesAmountCents = parseBRLToCents(el('dreRevenueServices').value || '0');
+    if(salesAmountCents === null || servicesAmountCents === null){ showPurchaseToast('Informe valores de receita válidos.','error'); return; }
     const button = el('btnSaveDreRevenue');
     button.disabled = true;
     try{
       await financeApiRequest('/revenue', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({storeId, month, amountCents})
+        body:JSON.stringify({storeId, month, salesAmountCents, servicesAmountCents})
       });
       showPurchaseToast('Receita salva.');
       await loadDrePorLoja();
