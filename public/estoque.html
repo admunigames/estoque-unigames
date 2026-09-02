@@ -2822,7 +2822,7 @@
         <a class="nav-item sub-item" id="navFinanceiroReposicao" data-page="financeiroReposicao" data-permission="finance" data-home-desc="Valores repostos e gastos por Assistência, Logística e outros setores." title="Controle de Reposição" href="/financeiro/controle-reposicao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 14-4l2 2"/><path d="M20 16a8 8 0 0 1-14 4l-2-2"/><path d="M18 2v4h-4M6 22v-4h4"/></svg></span><span class="nav-label">Controle de Reposição</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRecargas" data-page="financeiroRecargas" data-permission="finance" data-home-desc="Recargas de celulares por unidade, com lembrete da próxima recarga." title="Recargas de Celulares" href="/financeiro/recargas-celular"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Recargas de Celulares</span></a>
         <a class="nav-item sub-item" id="navFinanceiroDeclaracaoShopping" data-page="financeiroDeclaracaoShopping" data-permission="finance" data-home-desc="Declaração de faturamento por loja/shopping, com histórico e alerta de aluguel percentual." title="Declaração de Shopping" href="/financeiro/declaracao-shopping"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></span><span class="nav-label">Declaração de Shopping</span></a>
-        <a class="nav-item sub-item" id="navObras" data-page="obras" data-permission="finance" data-home-desc="Reformas e construções nas lojas — investimento (CAPEX), fora de Despesas e da DRE." title="Obras" href="/obras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V10l6-4 6 4v11"/><path d="M10 21v-5h4v5"/><path d="m2 8 10-6 10 6"/></svg></span><span class="nav-label">Obras</span></a>
+        <a class="nav-item sub-item" id="navObras" data-page="obras" data-any-permission="works,finance" data-home-desc="Reformas e construções nas lojas — investimento (CAPEX), fora de Despesas e da DRE." title="Obras" href="/obras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V10l6-4 6 4v11"/><path d="M10 21v-5h4v5"/><path d="m2 8 10-6 10 6"/></svg></span><span class="nav-label">Obras</span></a>
       </div>
     </div>
     <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
@@ -4655,6 +4655,12 @@
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_reconcile"> NF/Duplicatas: conferir e cadastrar duplicatas/boletos</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:confirm_payment"> NF/Duplicatas: agendar/confirmar pagamento</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:return_to_purchases"> NF/Duplicatas: devolver para Compras</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Obras</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="works:manage"> Cadastrar e gerenciar obras (reformas/construções). Já liberado por "Acessar o módulo Financeiro".</label>
                   </div>
                 </details>
                 <details class="permission-module">
@@ -8297,6 +8303,9 @@
     // granular payables:* (fallback já aplicado no backend, ver
     // app/api/finance/invoices/shared.ts#canViewInvoices).
     if(name === 'financeiroInvoices') return canAccess('finance') || canAccess('payables');
+    // Obras: works:manage OU finance:manage (fallback também no backend,
+    // ver app/api/obras/shared.ts#canManageWorks).
+    if(name === 'obras') return canAccess('works') || canAccess('finance');
     return !PAGE_PERMISSIONS[name] || canAccess(PAGE_PERMISSIONS[name]);
   }
 
@@ -24950,6 +24959,7 @@ function renderHomeTasks(){
     'finance:manage':'Financeiro: acessar módulo',
     'payables:invoices_view':'Financeiro: ver notas fiscais/duplicatas','payables:invoices_reconcile':'Financeiro: conferir NF e cadastrar duplicatas','payables:confirm_payment':'Financeiro: agendar/confirmar pagamento de duplicata','payables:return_to_purchases':'Financeiro: devolver NF para Compras',
     'payroll:manage':'RH Financeiro: folha, benefícios e comissionamento',
+    'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
   const accessGroupNames = {
