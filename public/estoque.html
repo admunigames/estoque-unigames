@@ -238,9 +238,13 @@
     display:flex; flex-direction:column; gap:2px; max-height:0; opacity:0; overflow:hidden;
     margin:0 0 0 22px; padding-left:10px; border-left:1px solid rgba(79,134,189,.22);
     transform:translateY(-6px); transition:max-height .26s ease,opacity .2s ease,transform .26s ease,border-color .18s ease;
+    scrollbar-width:thin; scrollbar-color:rgba(79,134,189,.45) transparent;
   }
+  .nav-submenu::-webkit-scrollbar{width:6px;}
+  .nav-submenu::-webkit-scrollbar-thumb{background:rgba(79,134,189,.45); border-radius:6px;}
+  .nav-submenu::-webkit-scrollbar-track{background:transparent;}
   .nav-group-toggle[aria-expanded="true"] + .nav-submenu{
-    max-height:280px; opacity:1; transform:translateY(0); padding-top:4px; padding-bottom:2px;
+    max-height:min(60vh, 620px); overflow-y:auto; opacity:1; transform:translateY(0); padding-top:4px; padding-bottom:2px;
   }
   body.sidebar-compact .nav-submenu{margin-left:0; padding-left:0; border-left:0;}
   .nav-item.sub-item{position:relative; padding-left:12px;}
