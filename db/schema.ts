@@ -1605,6 +1605,10 @@ export const hrPayrollSettings = pgTable("hr_payroll_settings", {
   id: text("id").primaryKey(),
   companyId: text("company_id").notNull().default(""),
   employerChargesBps: integer("employer_charges_bps").notNull().default(0),
+  // Texto livre explicando como a comissão é apurada (critério do negócio).
+  // Exibido no lançamento e impresso no recibo — NÃO entra em nenhum
+  // cálculo: o comissionamento continua sendo lançado manualmente.
+  commissionRuleText: text("commission_rule_text").notNull().default(""),
   updatedBy: text("updated_by").notNull().default(""),
   updatedByName: text("updated_by_name").notNull().default(""),
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
@@ -1776,10 +1780,22 @@ export const hrCommissionItems = pgTable(
     // 'bonus' | 'premiacao' | 'desconto' | 'ajuste'
     kind: text("kind").notNull().default("bonus"),
     amountCents: integer("amount_cents").notNull().default(0),
+    // Parcelamento de DESCONTO (item 2): quando > 1, o mesmo desconto é
+    // repetido com o VALOR CHEIO nas competências seguintes. A linha da
+    // competência-âncora (onde o usuário lançou) tem installment_number = 1
+    // e é a ÚNICA editável — as demais (2..N) são geradas/reconciliadas pelo
+    // POST da âncora e ficam somente-leitura. Grupos identificados por
+    // installment_group_id. Vazio/0 = lançamento avulso, sem parcelamento.
+    installmentGroupId: text("installment_group_id").notNull().default(""),
+    installmentNumber: integer("installment_number").notNull().default(0),
+    installmentTotal: integer("installment_total").notNull().default(0),
     createdBy: text("created_by").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
-  (table) => [index("hr_commission_items_commission_idx").on(table.commissionId)],
+  (table) => [
+    index("hr_commission_items_commission_idx").on(table.commissionId),
+    index("hr_commission_items_installment_group_idx").on(table.installmentGroupId),
+  ],
 );
 
 // ---------------------------------------------------------------------------
