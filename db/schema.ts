@@ -2101,12 +2101,27 @@ export const financeCardSales = pgTable(
     divergenceCents: integer("divergence_cents"),
     settlementImportId: text("settlement_import_id").notNull().default(""),
     settledAt: text("settled_at").notNull().default(""),
+    // Conciliação de vendas (itens 5 e 6). Cruzamento entre a taxa cadastrada
+    // e a taxa real cobrada pela adquirente (derivada do repasse):
+    //   'pending'   — ainda sem repasse casado
+    //   'ok'        — taxa real bate com a cadastrada (dentro da tolerância)
+    //   'attention' — taxa não bate OU não há taxa cadastrada (fee_missing);
+    //                 destacada na tela para revisão manual
+    //   'reviewed'  — marcada manualmente como revisada (reviewed_* preenchidos)
+    // Desnormalizado, recalculado toda vez que a venda ou o repasse muda —
+    // mesma convenção de fee_missing / divergence_cents.
+    reconStatus: text("recon_status").notNull().default("pending"),
+    reviewedAt: text("reviewed_at").notNull().default(""),
+    reviewedBy: text("reviewed_by").notNull().default(""),
+    reviewedByName: text("reviewed_by_name").notNull().default(""),
+    reviewedNote: text("reviewed_note").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [
     index("finance_card_sales_company_date_idx").on(table.companyId, table.saleDate),
     index("finance_card_sales_import_idx").on(table.importId),
     index("finance_card_sales_nsu_idx").on(table.nsu),
+    index("finance_card_sales_recon_idx").on(table.companyId, table.reconStatus),
   ],
 );
 

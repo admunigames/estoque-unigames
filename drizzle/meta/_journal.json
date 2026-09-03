@@ -372,6 +372,13 @@
       "when": 1788384953840,
       "tag": "0052_comissao_regra_e_parcelamento",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1788437868396,
+      "tag": "0053_card_sales_reconciliation",
+      "breakpoints": true
     }
   ]
 }

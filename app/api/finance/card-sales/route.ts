@@ -2,9 +2,11 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import {
+  computeCardReconStatus,
   computeDivergenceCents,
   computeSaleFinance,
   isCardModality,
+  isCardReconStatus,
   resolveCardFee,
   type CardModality,
 } from "../../../lib/card-fees";
@@ -55,6 +57,7 @@ export async function GET(request: Request) {
   const companyId = safeText(params.get("companyId"), 80);
   const acquirerId = safeText(params.get("acquirerId"), 80);
   const settlement = safeText(params.get("settlement"), 12); // '', 'pending', 'settled'
+  const recon = safeText(params.get("recon"), 12); // '', 'pending', 'ok', 'attention', 'reviewed'
 
   try {
     const database = await getD1();
@@ -77,6 +80,10 @@ export async function GET(request: Request) {
     }
     if (settlement === "pending") conditions.push("received_amount_cents IS NULL");
     else if (settlement === "settled") conditions.push("received_amount_cents IS NOT NULL");
+    if (isCardReconStatus(recon)) {
+      values.push(recon);
+      conditions.push(`recon_status=?${values.length}`);
+    }
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const rows = await database
@@ -85,9 +92,12 @@ export async function GET(request: Request) {
                 nsu, gross_cents AS grossCents, fee_bps AS feeBps, expected_fee_cents AS expectedFeeCents,
                 net_cents AS netCents, fee_missing AS feeMissing,
                 received_amount_cents AS receivedAmountCents, divergence_cents AS divergenceCents,
-                settled_at AS settledAt
+                settled_at AS settledAt, recon_status AS reconStatus, reviewed_at AS reviewedAt,
+                reviewed_by_name AS reviewedByName, reviewed_note AS reviewedNote
          FROM finance_card_sales ${where}
-         ORDER BY sale_date DESC, id ASC
+         ORDER BY
+           CASE recon_status WHEN 'attention' THEN 0 WHEN 'pending' THEN 1 WHEN 'reviewed' THEN 2 ELSE 3 END,
+           sale_date DESC, id ASC
          LIMIT 500`,
       )
       .bind(...values)
@@ -101,6 +111,8 @@ export async function GET(request: Request) {
                 COALESCE(SUM(net_cents),0) AS netCents,
                 COALESCE(SUM(COALESCE(received_amount_cents,0)),0) AS receivedCents,
                 COALESCE(SUM(CASE WHEN received_amount_cents IS NULL THEN 1 ELSE 0 END),0) AS pendingCount,
+                COALESCE(SUM(CASE WHEN recon_status = 'attention' THEN 1 ELSE 0 END),0) AS attentionCount,
+                COALESCE(SUM(CASE WHEN recon_status = 'reviewed' THEN 1 ELSE 0 END),0) AS reviewedCount,
                 COALESCE(SUM(COALESCE(divergence_cents,0)),0) AS divergenceCents
          FROM finance_card_sales ${where}`,
       )
@@ -236,13 +248,22 @@ export async function POST(request: Request) {
       const { expectedFeeCents, netCents } = computeSaleFinance({ grossCents, feeBps, anticipationBps });
       const feeMissing = fee ? 0 : 1;
       if (feeMissing) feeMissingCount += 1;
+      // Venda recém-importada ainda não tem repasse: 'attention' quando não
+      // há taxa cadastrada, senão 'pending' até o repasse casar.
+      const reconStatus = computeCardReconStatus({
+        feeMissing: Boolean(feeMissing),
+        grossCents,
+        expectedFeeCents,
+        receivedCents: null,
+      });
 
       await database
         .prepare(
           `INSERT INTO finance_card_sales
             (id, import_id, company_id, sale_date, acquirer_id, acquirer_name, brand, modality,
-             installments, nsu, gross_cents, fee_bps, expected_fee_cents, net_cents, fee_missing)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`,
+             installments, nsu, gross_cents, fee_bps, expected_fee_cents, net_cents, fee_missing,
+             recon_status)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)`,
         )
         .bind(
           crypto.randomUUID(),
@@ -260,6 +281,7 @@ export async function POST(request: Request) {
           expectedFeeCents,
           netCents,
           feeMissing,
+          reconStatus,
         )
         .run();
       inserted += 1;
@@ -289,10 +311,21 @@ export async function POST(request: Request) {
 async function importSettlement(
   database: Awaited<ReturnType<typeof getD1>>,
   input: { importId: string; companyId: string; rows: RawRow[] },
-): Promise<{ matched: number; unmatched: number; divergentCount: number }> {
+): Promise<{ matched: number; unmatched: number; divergentCount: number; attentionCount: number }> {
   let matched = 0;
   let unmatched = 0;
   let divergentCount = 0;
+  let attentionCount = 0;
+
+  const SALE_COLUMNS = `id, net_cents AS netCents, gross_cents AS grossCents,
+    expected_fee_cents AS expectedFeeCents, fee_missing AS feeMissing`;
+  type SaleMatch = {
+    id: string;
+    netCents: number;
+    grossCents: number;
+    expectedFeeCents: number;
+    feeMissing: number;
+  };
 
   for (const raw of input.rows) {
     const nsu = safeText(raw.nsu, 60);
@@ -301,26 +334,26 @@ async function importSettlement(
     const receivedCents = Math.round(num(raw.receivedCents));
     if (receivedCents <= 0 && grossCents <= 0) continue;
 
-    let sale: { id: string; netCents: number } | null = null;
+    let sale: SaleMatch | null = null;
     if (nsu) {
       sale = await database
         .prepare(
-          `SELECT id, net_cents AS netCents FROM finance_card_sales
+          `SELECT ${SALE_COLUMNS} FROM finance_card_sales
            WHERE company_id=?1 AND nsu=?2 AND received_amount_cents IS NULL
            ORDER BY sale_date ASC LIMIT 1`,
         )
         .bind(input.companyId, nsu)
-        .first<{ id: string; netCents: number }>();
+        .first<SaleMatch>();
     }
     if (!sale && DATE_RE.test(saleDate) && grossCents > 0) {
       sale = await database
         .prepare(
-          `SELECT id, net_cents AS netCents FROM finance_card_sales
+          `SELECT ${SALE_COLUMNS} FROM finance_card_sales
            WHERE company_id=?1 AND sale_date=?2 AND gross_cents=?3 AND received_amount_cents IS NULL
            ORDER BY id ASC LIMIT 1`,
         )
         .bind(input.companyId, saleDate, grossCents)
-        .first<{ id: string; netCents: number }>();
+        .first<SaleMatch>();
     }
     if (!sale) {
       unmatched += 1;
@@ -329,16 +362,27 @@ async function importSettlement(
 
     const divergence = computeDivergenceCents(sale.netCents, receivedCents);
     if (divergence !== null && divergence !== 0) divergentCount += 1;
+    // Conciliação: com o repasse casado, recalcula o status cruzando a taxa
+    // real cobrada com a cadastrada. Um repasse novo sempre reabre a revisão
+    // manual anterior (reviewedAt não é passado).
+    const reconStatus = computeCardReconStatus({
+      feeMissing: Boolean(sale.feeMissing),
+      grossCents: sale.grossCents,
+      expectedFeeCents: sale.expectedFeeCents,
+      receivedCents,
+    });
+    if (reconStatus === "attention") attentionCount += 1;
     await database
       .prepare(
         `UPDATE finance_card_sales
-         SET received_amount_cents=?1, divergence_cents=?2, settlement_import_id=?3, settled_at=now()::text
-         WHERE id=?4`,
+         SET received_amount_cents=?1, divergence_cents=?2, settlement_import_id=?3, settled_at=now()::text,
+             recon_status=?4, reviewed_at='', reviewed_by='', reviewed_by_name='', reviewed_note=''
+         WHERE id=?5`,
       )
-      .bind(receivedCents, divergence, input.importId, sale.id)
+      .bind(receivedCents, divergence, input.importId, reconStatus, sale.id)
       .run();
     matched += 1;
   }
 
-  return { matched, unmatched, divergentCount };
+  return { matched, unmatched, divergentCount, attentionCount };
 }

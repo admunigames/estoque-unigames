@@ -48,6 +48,42 @@ test("computeDivergenceCents: null até o repasse; recebido − líquido depois"
   assert.equal(fees.computeDivergenceCents(9700, 9650), -50);
 });
 
+test("computeCardReconStatus: pending → ok → attention conforme o cruzamento da taxa (itens 5 e 6)", () => {
+  assert.equal(
+    fees.computeCardReconStatus({ feeMissing: true, grossCents: 10000, expectedFeeCents: 0, receivedCents: null }),
+    "attention",
+  );
+  assert.equal(
+    fees.computeCardReconStatus({ feeMissing: false, grossCents: 10000, expectedFeeCents: 200, receivedCents: null }),
+    "pending",
+  );
+  assert.equal(
+    fees.computeCardReconStatus({ feeMissing: false, grossCents: 10000, expectedFeeCents: 200, receivedCents: 9800 }),
+    "ok",
+  );
+  assert.equal(
+    fees.computeCardReconStatus({ feeMissing: false, grossCents: 10000, expectedFeeCents: 200, receivedCents: 9799 }),
+    "ok",
+  );
+  assert.equal(
+    fees.computeCardReconStatus({ feeMissing: false, grossCents: 10000, expectedFeeCents: 200, receivedCents: 9650 }),
+    "attention",
+  );
+  assert.equal(
+    fees.computeCardReconStatus({
+      feeMissing: true, grossCents: 10000, expectedFeeCents: 0, receivedCents: null, reviewedAt: "2026-09-03",
+    }),
+    "reviewed",
+  );
+});
+
+test("actualFeeBps: taxa efetiva cobrada pela adquirente em basis points", () => {
+  assert.equal(fees.actualFeeBps(10000, null), null);
+  assert.equal(fees.actualFeeBps(10000, 9800), 200);
+  assert.equal(fees.actualFeeBps(10000, 9650), 350);
+  assert.equal(fees.actualFeeBps(0, 0), null);
+});
+
 test("summarizeMonthlyFees: agrega por adquirente+bandeira, custo real usa repasse quando existe", () => {
   const { rows, totals } = fees.summarizeMonthlyFees([
     { acquirerName: "Cielo", brand: "Visa", grossCents: 10000, expectedFeeCents: 200, netCents: 9800, receivedCents: 9750 },
