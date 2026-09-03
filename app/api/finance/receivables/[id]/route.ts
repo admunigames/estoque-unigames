@@ -4,6 +4,7 @@ import { todayInTimezone } from "../../../../lib/finance-status";
 import { DATE_PATTERN } from "../../../../lib/payables-recurrence";
 import {
   computeReceivableDisplayStatus,
+  expectedDateFromCompetence,
   receivableDifferenceCents,
   toleranceFromSettings,
 } from "../../../../lib/receivables-status";
@@ -102,9 +103,8 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     // Se for o caso, cancela-se o recebível e cria-se outro — decisão tomada
     // aqui sem confirmação prévia (ver descrição do PR da Fase 6).
     const competenceMonth = safeText(body.competenceMonth, 7);
-    const expectedDate = safeText(body.expectedDate, 10);
     const notes = safeText(body.notes, 500);
-    const expectedAmountCents = Math.round(Number(body.expectedAmountCents));
+    const expectedAmountCents = Math.round(Number(body.amountCents ?? body.expectedAmountCents));
 
     const operator = await resolveReceivableOperator(database, body, existing.companyId);
     if (operator.error) return jsonResponse({ error: operator.error }, 400);
@@ -112,11 +112,17 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     if (!MONTH_PATTERN.test(competenceMonth)) {
       return jsonResponse({ error: "INFORME UMA COMPETÊNCIA VÁLIDA (AAAA-MM)." }, 400);
     }
-    if (!DATE_PATTERN.test(expectedDate)) {
-      return jsonResponse({ error: "INFORME UMA DATA PREVISTA VÁLIDA." }, 400);
-    }
+    // Data prevista não é mais editável no cadastro simplificado (item 4):
+    // usa a que veio (compatibilidade), senão mantém a atual, senão deriva
+    // da competência.
+    const requestedExpectedDate = safeText(body.expectedDate, 10);
+    const expectedDate = DATE_PATTERN.test(requestedExpectedDate)
+      ? requestedExpectedDate
+      : DATE_PATTERN.test(existing.expectedDate)
+        ? existing.expectedDate
+        : expectedDateFromCompetence(competenceMonth);
     if (!Number.isFinite(expectedAmountCents) || expectedAmountCents <= 0) {
-      return jsonResponse({ error: "INFORME UM VALOR PREVISTO MAIOR QUE ZERO." }, 400);
+      return jsonResponse({ error: "INFORME UM VALOR MAIOR QUE ZERO." }, 400);
     }
 
     const received = parseReceived(body);

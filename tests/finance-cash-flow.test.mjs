@@ -236,3 +236,34 @@ function cashFlowDate(start, offset) {
   date.setUTCDate(date.getUTCDate() + offset);
   return date.toISOString().slice(0, 10);
 }
+
+// ---------------------------------------------------------------------------
+// Item 4 — cadastro simplificado de Recebíveis (Unidade, Adquirente,
+// Competência, Valor). expected_date deixa de ser pedido e passa a ser
+// derivado do último dia da competência — é o que o Fluxo de Caixa usa para
+// datar a entrada (item 3: Recebíveis já alimenta a projeção).
+// ---------------------------------------------------------------------------
+
+test("expectedDateFromCompetence: último dia da competência", () => {
+  assert.equal(receivables.expectedDateFromCompetence("2026-02"), "2026-02-28");
+  assert.equal(receivables.expectedDateFromCompetence("2028-02"), "2028-02-29");
+  assert.equal(receivables.expectedDateFromCompetence("2026-09"), "2026-09-30");
+  assert.equal(receivables.expectedDateFromCompetence("2026-12"), "2026-12-31");
+});
+
+test("recebível simplificado entra no fluxo de caixa na data derivada da competência", () => {
+  // Sem "data prevista" no cadastro, a entrada é datada pelo fim da
+  // competência e precisa aparecer como entrada naquele dia da projeção.
+  const entradaDate = receivables.expectedDateFromCompetence("2026-09");
+  const series = cashFlow.buildCashFlowSeries({
+    today: "2026-09-01",
+    days: 30,
+    caixaAtualCents: 0,
+    entradas: [{ date: entradaDate, amountCents: 500_00 }],
+    saidasPayables: [],
+    saidasPayroll: [],
+  });
+  const day = series.days.find((d) => d.date === entradaDate);
+  assert.equal(day.entradasCents, 500_00);
+  assert.equal(series.days[series.days.length - 1].caixaFinalCents, 500_00);
+});
