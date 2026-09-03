@@ -107,7 +107,11 @@ export async function GET(request: Request) {
       // usadas depois, em payrollToDaily, que é JS puro) — por isso a leitura
       // entra no mesmo Promise.all em vez de custar um round-trip sequencial.
       loadEffectiveCashFlowSettings(database, companyId),
-      // ENTRADAS — recebíveis ainda não recebidos, na data prevista.
+      // ENTRADAS — recebíveis ainda não recebidos, na data prevista. Com o
+      // cadastro simplificado (item 4) essa data é o último dia da
+      // competência (expectedDateFromCompetence) e received_amount_cents fica
+      // sempre NULL, então todo recebível não cancelado entra aqui — o Fluxo
+      // de Caixa já considera os Recebíveis na projeção (item 3).
       (() => {
         const q = queryParams();
         const dateLimit = q.bind(lastDate);

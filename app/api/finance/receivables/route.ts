@@ -3,7 +3,11 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { todayInTimezone } from "../../../lib/finance-status";
 import { DATE_PATTERN } from "../../../lib/payables-recurrence";
-import { isReceivableStatus, receivableStatusCaseSql } from "../../../lib/receivables-status";
+import {
+  expectedDateFromCompetence,
+  isReceivableStatus,
+  receivableStatusCaseSql,
+} from "../../../lib/receivables-status";
 import {
   canManageFinance,
   identity,
@@ -208,18 +212,22 @@ export async function POST(request: Request) {
     if (!companyId) return jsonResponse({ error: "SELECIONE A UNIDADE." }, 400);
 
     const competenceMonth = safeText(body.competenceMonth, 7);
-    const expectedDate = safeText(body.expectedDate, 10);
     const notes = safeText(body.notes, 500);
-    const expectedAmountCents = Math.round(Number(body.expectedAmountCents));
+    // Cadastro simplificado (item 4): o cliente manda só `amountCents`.
+    // `expectedAmountCents` continua aceito por compatibilidade.
+    const expectedAmountCents = Math.round(Number(body.amountCents ?? body.expectedAmountCents));
 
     if (!MONTH_PATTERN.test(competenceMonth)) {
       return jsonResponse({ error: "INFORME UMA COMPETÊNCIA VÁLIDA (AAAA-MM)." }, 400);
     }
-    if (!DATE_PATTERN.test(expectedDate)) {
-      return jsonResponse({ error: "INFORME UMA DATA PREVISTA VÁLIDA." }, 400);
-    }
+    // Data prevista não é mais pedida no cadastro — quando o cliente não
+    // manda uma data válida, cai no último dia da competência.
+    const requestedExpectedDate = safeText(body.expectedDate, 10);
+    const expectedDate = DATE_PATTERN.test(requestedExpectedDate)
+      ? requestedExpectedDate
+      : expectedDateFromCompetence(competenceMonth);
     if (!Number.isFinite(expectedAmountCents) || expectedAmountCents <= 0) {
-      return jsonResponse({ error: "INFORME UM VALOR PREVISTO MAIOR QUE ZERO." }, 400);
+      return jsonResponse({ error: "INFORME UM VALOR MAIOR QUE ZERO." }, 400);
     }
 
     // Recebimento já pode vir preenchido na criação (lançamento retroativo).

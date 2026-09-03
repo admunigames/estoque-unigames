@@ -5487,29 +5487,21 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Recebíveis</h2>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Valores a receber por competência e operadora, com comparativo entre previsto e recebido.</p></div>
+        <div class="page-header-meta"><p class="page-desc">Valores a receber por competência e adquirente.</p></div>
       </header>
 
       <div class="dre-toolbar">
         <div class="field"><label for="receivableLoja">UNIDADE</label><select id="receivableLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
         <div class="field"><label for="receivableMes">COMPETÊNCIA</label><input type="month" id="receivableMes"></div>
-        <div class="field"><label for="receivableStatus">SITUAÇÃO</label>
-          <select id="receivableStatus">
-            <option value="">TODAS (EXCETO CANCELADOS)</option>
-            <option value="pending">PENDENTE</option>
-            <option value="overdue">ATRASADO</option>
-            <option value="received_ok">RECEBIDO</option>
-            <option value="received_divergent">RECEBIDO COM DIVERGÊNCIA</option>
-            <option value="canceled">CANCELADO</option>
-          </select>
-        </div>
-        <div class="field"><label for="receivableOperator">OPERADORA</label><input id="receivableOperator" maxlength="120" placeholder="Buscar operadora"></div>
+        <div class="field"><label for="receivableOperator">ADQUIRENTE</label><input id="receivableOperator" maxlength="120" placeholder="Buscar adquirente"></div>
+        <div class="field"><label for="receivableShowCanceled" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="receivableShowCanceled"> MOSTRAR CANCELADOS</label></div>
+        <!-- Filtro de situação (previsto/recebido/divergente) removido no item 4. -->
         <div class="dre-toolbar-actions">
           <button class="btn-accent" id="btnNewReceivable" type="button">NOVO RECEBÍVEL</button>
         </div>
       </div>
 
-      <section class="summary" id="receivablesSummary" aria-label="Previsto x recebido no mês">
+      <section class="summary" id="receivablesSummary" aria-label="Total de recebíveis na competência">
         <div class="dre-empty">Carregando…</div>
       </section>
 
@@ -5518,26 +5510,26 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="receivablesTable">
-            <thead><tr><th>Data prevista</th><th>Competência</th><th>Unidade</th><th>Operadora</th><th>Previsto</th><th>Recebido</th><th>Diferença</th><th>Situação</th><th></th></tr></thead>
-            <tbody id="receivablesTableBody"><tr><td colspan="9" class="responsive-empty">Selecione os filtros para ver os recebíveis.</td></tr></tbody>
+            <thead><tr><th>Competência</th><th>Unidade</th><th>Adquirente</th><th>Valor</th><th></th></tr></thead>
+            <tbody id="receivablesTableBody"><tr><td colspan="5" class="responsive-empty">Selecione os filtros para ver os recebíveis.</td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <h3 class="supply-section-title">COMPARATIVOS</h3>
+      <h3 class="supply-section-title">TOTAIS</h3>
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="receivablesByStoreTable">
-            <thead><tr><th>Unidade</th><th>Previsto</th><th>Recebido</th><th>Pendente</th></tr></thead>
-            <tbody id="receivablesByStoreBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th>Unidade</th><th>Valor</th></tr></thead>
+            <tbody id="receivablesByStoreBody"><tr><td colspan="2" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="receivablesByOperatorTable">
-            <thead><tr><th>Operadora</th><th>Previsto</th><th>Recebido</th><th>Pendente</th></tr></thead>
-            <tbody id="receivablesByOperatorBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th>Adquirente</th><th>Valor</th></tr></thead>
+            <tbody id="receivablesByOperatorBody"><tr><td colspan="2" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -6310,11 +6302,15 @@
       <div class="purchase-field"><label for="receivableCompany">UNIDADE *</label><select id="receivableCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="receivableCompetence">COMPETÊNCIA *</label><input type="month" id="receivableCompetence" required></div>
       <div class="purchase-field full"><label for="receivableAcquirer">ADQUIRENTE *</label><select id="receivableAcquirer" required><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field"><label for="receivableExpectedDate">DATA PREVISTA *</label><input type="date" id="receivableExpectedDate" required></div>
-      <div class="purchase-field"><label for="receivableExpectedAmount">VALOR PREVISTO (R$) *</label><input type="number" id="receivableExpectedAmount" min="0.01" step="0.01" required></div>
-      <div class="purchase-field"><label for="receivableReceivedAmount">VALOR RECEBIDO (R$)</label><input type="number" id="receivableReceivedAmount" min="0" step="0.01" placeholder="Deixe vazio se ainda não recebeu"></div>
-      <div class="purchase-field"><label for="receivableReceivedDate">DATA DO RECEBIMENTO</label><input type="date" id="receivableReceivedDate"></div>
-      <div class="purchase-field full"><label for="receivableNotes">OBSERVAÇÕES</label><textarea id="receivableNotes" rows="2" maxlength="500"></textarea></div>
+      <div class="purchase-field"><label for="receivableExpectedAmount">VALOR (R$) *</label><input type="number" id="receivableExpectedAmount" min="0.01" step="0.01" required></div>
+      <!-- Campos previsto/recebido/data ocultos (item 4): o cadastro passou a
+           ter só unidade, adquirente, competência e valor. Os inputs seguem
+           no DOM para não quebrar o JS e para preservar dados de registros
+           antigos ao editá-los. -->
+      <input type="hidden" id="receivableExpectedDate">
+      <input type="hidden" id="receivableReceivedAmount">
+      <input type="hidden" id="receivableReceivedDate">
+      <input type="hidden" id="receivableNotes">
     </div>
     <div class="user-form-status" id="receivableFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -6544,11 +6540,14 @@
   <form class="purchase-form" id="cashFlowSettingsForm">
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="cashFlowSettingsCompany">APLICAR EM</label><select id="cashFlowSettingsCompany"><option value="">PADRÃO GERAL (TODAS AS LOJAS)</option></select></div>
-      <div class="purchase-field"><label for="cashFlowSettingsBps">TOLERÂNCIA (%)</label><input type="number" id="cashFlowSettingsBps" min="0" max="100" step="0.01" required></div>
-      <div class="purchase-field"><label for="cashFlowSettingsFixed">TOLERÂNCIA (R$)</label><input type="number" id="cashFlowSettingsFixed" min="0" step="0.01" required></div>
       <div class="purchase-field"><label for="cashFlowSettingsPayrollDay">DIA DE PAGAMENTO DA FOLHA</label><input type="number" id="cashFlowSettingsPayrollDay" min="1" max="31" step="1" required></div>
+      <!-- Tolerância de divergência de recebível oculta no item 4 (não há
+           mais comparação previsto x recebido). Os inputs seguem no DOM
+           para o form continuar mandando o valor guardado sem alteração. -->
+      <input type="hidden" id="cashFlowSettingsBps">
+      <input type="hidden" id="cashFlowSettingsFixed">
     </div>
-    <p style="color:var(--ink-soft);font-size:11px;margin:0 20px 8px;">A divergência de um recebível é alertada quando a diferença passa do percentual <strong>ou</strong> do valor fixo — o que for atingido primeiro. O dia de pagamento é usado no mês seguinte à competência, para folha, benefícios e comissões sem data de pagamento informada.</p>
+    <p style="color:var(--ink-soft);font-size:11px;margin:0 20px 8px;">O dia de pagamento é usado no mês seguinte à competência, para folha, benefícios e comissões sem data de pagamento informada.</p>
     <div class="user-form-status" id="cashFlowSettingsStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCashFlowSettings" type="button">CANCELAR</button>
@@ -19620,24 +19619,10 @@ function renderHomeTasks(){
   // via financeApiRequest e montagem manual do DOM, sem framework.
   // ---------------------------------------------------------------------
 
-  const RECEIVABLE_STATUS_LABELS = {
-    pending:'PENDENTE',
-    overdue:'ATRASADO',
-    received_ok:'RECEBIDO',
-    received_divergent:'RECEBIDO COM DIVERGÊNCIA',
-    canceled:'CANCELADO'
-  };
-
   let receivablesCurrentRows = [];
-  let receivablesSettings = null;
 
   function financeDateLabel(value){
     return value ? String(value).split('-').reverse().join('/') : '—';
-  }
-
-  function financeSignedCents(cents){
-    const value = Number(cents) || 0;
-    return (value > 0 ? '+' : '')+formatCentsBRL(value);
   }
 
   function renderReceivableCompanyOptions(){
@@ -19656,38 +19641,24 @@ function renderHomeTasks(){
     });
   }
 
-  function receivableStatusTag(status){
-    const key = RECEIVABLE_STATUS_LABELS[status] ? status : 'pending';
-    return '<span class="receivable-tag '+key+'">'+escapeHtml(RECEIVABLE_STATUS_LABELS[key])+'</span>';
-  }
-
   function renderReceivablesTable(rows){
     const body = el('receivablesTableBody');
     if(!body) return;
     if(!rows.length){
-      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhum recebível para os filtros selecionados.</td></tr>';
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum recebível para os filtros selecionados.</td></tr>';
       return;
     }
     body.innerHTML = rows.map(row => {
-      const received = row.receivedAmountCents === null || row.receivedAmountCents === undefined
-        ? '—'
-        : formatCentsBRL(row.receivedAmountCents);
-      const difference = row.differenceCents === null || row.differenceCents === undefined
-        ? '—'
-        : financeSignedCents(row.differenceCents);
-      const canCancel = Number(row.canceled) !== 1;
+      const canceled = Number(row.canceled) === 1;
+      const canceledTag = canceled ? ' <span class="receivable-tag canceled">CANCELADO</span>' : '';
       return '<tr>'+
-        '<td data-label="Data prevista">'+escapeHtml(financeDateLabel(row.expectedDate))+'</td>'+
-        '<td data-label="Competência">'+escapeHtml(row.competenceMonth || '')+'</td>'+
+        '<td data-label="Competência">'+escapeHtml(row.competenceMonth || '')+canceledTag+'</td>'+
         '<td data-label="Unidade">'+escapeHtml(row.companyName || '')+'</td>'+
-        '<td data-label="Operadora">'+escapeHtml(row.operatorText || '')+'</td>'+
-        '<td data-label="Previsto">'+formatCentsBRL(row.expectedAmountCents)+'</td>'+
-        '<td data-label="Recebido">'+received+'</td>'+
-        '<td data-label="Diferença">'+difference+'</td>'+
-        '<td data-label="Situação">'+receivableStatusTag(row.displayStatus)+'</td>'+
+        '<td data-label="Adquirente">'+escapeHtml(row.operatorText || '')+'</td>'+
+        '<td data-label="Valor">'+formatCentsBRL(row.expectedAmountCents)+'</td>'+
         '<td data-label="Ações">'+
-          '<button class="btn-outline" type="button" data-receivable-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
-          (canCancel ? ' <button class="btn-outline" type="button" data-receivable-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
+          (canceled ? '' : '<button class="btn-outline" type="button" data-receivable-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+          ' <button class="btn-outline" type="button" data-receivable-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>')+
         '</td>'+
       '</tr>';
     }).join('');
@@ -19700,49 +19671,32 @@ function renderHomeTasks(){
       container.innerHTML = '<div class="dre-empty">Não foi possível carregar os comparativos.</div>';
       return;
     }
+    // Item 4: sem distinção previsto x recebido — o resumo agora é só o
+    // total lançado na competência e a contagem.
     const current = summary.current || {};
-    const previous = summary.previous || {};
-    const receivedDelta = Number(current.receivedCents || 0) - Number(previous.receivedCents || 0);
+    const count = totals ? Number(totals.count || 0) : 0;
     container.innerHTML =
-      '<div class="card"><div class="lbl">PREVISTO (MÊS)</div><div class="num">'+formatCentsBRL(current.expectedCents)+'</div></div>'+
-      '<div class="card"><div class="lbl">RECEBIDO (MÊS)</div><div class="num">'+formatCentsBRL(current.receivedCents)+'</div></div>'+
-      '<div class="card"><div class="lbl">AINDA PENDENTE</div><div class="num">'+formatCentsBRL(current.pendingCents)+'</div></div>'+
-      '<div class="card'+(receivedDelta < 0 ? ' neg' : '')+'"><div class="lbl">VS. MÊS ANTERIOR ('+escapeHtml(summary.previousMonth || '')+')</div>'+
-        '<div class="num">'+financeSignedCents(receivedDelta)+'</div>'+
-        '<div class="sub">'+formatCentsBRL(previous.receivedCents)+' recebidos</div></div>'+
-      (totals ? '<div class="card"><div class="lbl">DIFERENÇA ACUMULADA (FILTRO)</div><div class="num">'+financeSignedCents(totals.differenceCents)+'</div></div>' : '');
+      '<div class="card"><div class="lbl">TOTAL NA COMPETÊNCIA</div><div class="num">'+formatCentsBRL(current.expectedCents)+'</div></div>'+
+      '<div class="card"><div class="lbl">LANÇAMENTOS (FILTRO)</div><div class="num">'+count+'</div></div>';
   }
 
   function renderReceivablesDivergences(summary){
+    // Alerta de divergência removido no item 4 (sem previsto x recebido).
     const box = el('receivablesDivergenceAlert');
-    if(!box) return;
-    const rows = (summary && summary.divergences) || [];
-    if(!rows.length){ box.hidden = true; box.innerHTML = ''; return; }
-    const settings = (summary && summary.settings) || {};
-    const percent = ((Number(settings.receivablesToleranceBps) || 0)/100).toFixed(2).replace('.',',');
-    box.hidden = false;
-    box.innerHTML = '<strong>'+rows.length+' recebível(is) fora da tolerância</strong> ('+percent+'% ou '+
-      formatCentsBRL(settings.receivablesToleranceFixedCents)+', o que for atingido primeiro):<br>'+
-      rows.slice(0, 8).map(row =>
-        escapeHtml(financeDateLabel(row.expectedDate))+' · '+escapeHtml(row.operatorText || '')+' · '+
-        escapeHtml(row.companyName || '')+' — previsto '+formatCentsBRL(row.expectedAmountCents)+
-        ', recebido '+formatCentsBRL(row.receivedAmountCents)+' ('+financeSignedCents(row.differenceCents)+')'
-      ).join('<br>');
+    if(box){ box.hidden = true; box.innerHTML = ''; }
   }
 
   function renderReceivablesGroup(bodyId, rows, emptyText){
     const body = el(bodyId);
     if(!body) return;
     if(!rows.length){
-      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(emptyText)+'</td></tr>';
+      body.innerHTML = '<tr><td colspan="2" class="responsive-empty">'+escapeHtml(emptyText)+'</td></tr>';
       return;
     }
     body.innerHTML = rows.map(row =>
       '<tr>'+
         '<td data-label="Grupo">'+escapeHtml(row.label || row.key || '—')+'</td>'+
-        '<td data-label="Previsto">'+formatCentsBRL(row.expectedCents)+'</td>'+
-        '<td data-label="Recebido">'+formatCentsBRL(row.receivedCents)+'</td>'+
-        '<td data-label="Pendente">'+formatCentsBRL(row.pendingCents)+'</td>'+
+        '<td data-label="Valor">'+formatCentsBRL(row.expectedCents)+'</td>'+
       '</tr>'
     ).join('');
   }
@@ -19777,13 +19731,13 @@ function renderHomeTasks(){
     if(!el('receivableMes').value) el('receivableMes').value = financeCurrentMonthKey();
     const companyId = el('receivableLoja').value;
     const month = el('receivableMes').value;
-    const status = el('receivableStatus').value;
+    const showCanceled = el('receivableShowCanceled') && el('receivableShowCanceled').checked;
     const operatorText = el('receivableOperator').value.trim();
 
-    el('receivablesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    el('receivablesTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
     const listParams = new URLSearchParams({competenceFrom:month, competenceTo:month, pageSize:'100'});
     if(companyId) listParams.set('companyId', companyId);
-    if(status) listParams.set('status', status);
+    if(showCanceled) listParams.set('includeCanceled', '1');
     if(operatorText) listParams.set('operatorText', operatorText);
     const summaryParams = new URLSearchParams({month});
     if(companyId) summaryParams.set('companyId', companyId);
@@ -19794,20 +19748,19 @@ function renderHomeTasks(){
         financeApiRequest('/receivables/summary?'+summaryParams.toString())
       ]);
       receivablesCurrentRows = Array.isArray(list.rows) ? list.rows : [];
-      receivablesSettings = list.settings || summary.settings || null;
       renderReceivablesTable(receivablesCurrentRows);
       renderReceivablesSummary(summary, list.totals);
-      renderReceivablesDivergences(summary);
+      renderReceivablesDivergences();
       renderReceivablesGroup('receivablesByStoreBody', summary.byStore || [], 'Nenhum recebível na competência.');
       renderReceivablesGroup('receivablesByOperatorBody', summary.byOperator || [], 'Nenhum recebível na competência.');
     }catch(error){
       receivablesCurrentRows = [];
-      el('receivablesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('receivablesTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
       renderReceivablesSummary(null, null);
     }
   }
 
-  ['receivableLoja','receivableMes','receivableStatus'].forEach(id => {
+  ['receivableLoja','receivableMes','receivableShowCanceled'].forEach(id => {
     el(id) && el(id).addEventListener('change', loadRecebiveisPage);
   });
   el('receivableOperator') && el('receivableOperator').addEventListener('change', loadRecebiveisPage);
@@ -19832,8 +19785,10 @@ function renderHomeTasks(){
     el('receivableCompany').disabled = Boolean(row);
     el('receivableCompetence').value = row ? row.competenceMonth : (el('receivableMes').value || financeCurrentMonthKey());
     el('receivableAcquirer').value = row ? (row.acquirerId || (row.operatorText ? 'legacy:'+row.operatorText : '')) : '';
-    el('receivableExpectedDate').value = row ? row.expectedDate : '';
     el('receivableExpectedAmount').value = row ? (row.expectedAmountCents/100).toFixed(2) : '';
+    // Campos ocultos (item 4): preservados apenas para não perder o dado
+    // histórico de registros antigos ao reeditá-los.
+    el('receivableExpectedDate').value = row ? (row.expectedDate || '') : '';
     const hasReceived = row && row.receivedAmountCents !== null && row.receivedAmountCents !== undefined;
     el('receivableReceivedAmount').value = hasReceived ? (row.receivedAmountCents/100).toFixed(2) : '';
     el('receivableReceivedDate').value = hasReceived ? (row.receivedDate || '') : '';
@@ -19875,17 +19830,7 @@ function renderHomeTasks(){
     status.textContent = '';
     const expectedAmountCents = parseBRLToCents(el('receivableExpectedAmount').value);
     if(expectedAmountCents === null || expectedAmountCents <= 0){
-      status.textContent = 'INFORME UM VALOR PREVISTO MAIOR QUE ZERO.';
-      return;
-    }
-    const receivedRaw = el('receivableReceivedAmount').value.trim();
-    const receivedAmountCents = receivedRaw === '' ? null : parseBRLToCents(receivedRaw);
-    if(receivedRaw !== '' && (receivedAmountCents === null || receivedAmountCents < 0)){
-      status.textContent = 'INFORME UM VALOR RECEBIDO VÁLIDO.';
-      return;
-    }
-    if(receivedAmountCents !== null && !el('receivableReceivedDate').value){
-      status.textContent = 'INFORME A DATA DO RECEBIMENTO.';
+      status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.';
       return;
     }
     const acquirerValue = el('receivableAcquirer').value;
@@ -19893,13 +19838,19 @@ function renderHomeTasks(){
       status.textContent = 'SELECIONE A ADQUIRENTE.';
       return;
     }
+    // Item 4: cadastro simplificado — só unidade, adquirente, competência e
+    // valor. Data prevista e recebimento não são mais editáveis; os campos
+    // ocultos carregam só o valor histórico de registros antigos.
+    const legacyExpectedDate = el('receivableExpectedDate').value;
+    const legacyReceivedRaw = el('receivableReceivedAmount').value.trim();
+    const legacyReceivedCents = legacyReceivedRaw === '' ? null : parseBRLToCents(legacyReceivedRaw);
     const payload = {
       companyId: el('receivableCompany').value,
       competenceMonth: el('receivableCompetence').value,
-      expectedDate: el('receivableExpectedDate').value,
-      expectedAmountCents,
-      receivedAmountCents,
-      receivedDate: receivedAmountCents === null ? '' : el('receivableReceivedDate').value,
+      amountCents: expectedAmountCents,
+      expectedDate: legacyExpectedDate || undefined,
+      receivedAmountCents: legacyReceivedCents,
+      receivedDate: legacyReceivedCents === null ? '' : el('receivableReceivedDate').value,
       notes: el('receivableNotes').value
     };
     if(acquirerValue.indexOf('legacy:') === 0){

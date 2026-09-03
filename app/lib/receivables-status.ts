@@ -132,3 +132,16 @@ export const RECEIVABLE_STATUSES: ReceivableDisplayStatus[] = [
 export function isReceivableStatus(value: string): value is ReceivableDisplayStatus {
   return (RECEIVABLE_STATUSES as string[]).includes(value);
 }
+
+/**
+ * Data prevista padrão de um recebível quando o cadastro simplificado (item
+ * 4) não pede mais esse campo: o último dia da competência. `expected_date`
+ * continua NOT NULL e é o que o Fluxo de Caixa usa para datar a entrada, o
+ * ordenamento e o CASE de status — então nunca pode ficar vazio.
+ */
+export function expectedDateFromCompetence(competenceMonth: string): string {
+  const [year, month] = competenceMonth.split("-").map(Number);
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return competenceMonth + "-01";
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return `${competenceMonth}-${String(lastDay).padStart(2, "0")}`;
+}
