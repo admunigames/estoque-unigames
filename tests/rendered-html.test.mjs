@@ -1862,7 +1862,13 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /id="navCadastros"[^>]*data-home-page="cadastros"/);
   assert.match(html, /id="homeAccessGrid" aria-label="Acessos rápidos"><\/div>/);
   assert.match(html, /function buildHomeAccessCards\(\)/);
-  assert.match(html, /document\.querySelectorAll\('#sidebar \[data-home-desc\]'\)/);
+  // Os acessos rápidos são agrupados seguindo as seções do menu lateral
+  // (OPERAÇÃO / GESTÃO) e os grupos de .nav-group.
+  assert.match(html, /node\.classList\.contains\('nav-section-label'\)/);
+  assert.match(html, /node\.classList\.contains\('nav-group'\)/);
+  assert.match(html, /heading\.className = 'home-access-section-label'/);
+  assert.match(html, /\.home-access-section-label\{/);
+  assert.match(html, /function orderHomeSections\(\)/);
   assert.match(html, /Atividades diárias e semanais que precisam ser realizadas pela loja/);
   assert.match(html, /\.home-operation-head > div > span\{/);
   assert.match(html, /html\[data-theme="light"\] \.home-missions\{/);
@@ -1871,8 +1877,8 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /document\.querySelectorAll\('\[data-home-target\]'\)/);
   assert.match(html, /\.page\.home-page\.active\{display:flex;\}/);
   assert.doesNotMatch(html, /\.home-page\{[^}]*display:flex/);
-  assert.match(html, /@media \(max-width:800px\)[\s\S]*\.home-access-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
-  assert.match(html, /@media \(max-width:520px\)[\s\S]*\.home-access-grid\{grid-template-columns:1fr;/);
+  assert.match(html, /@media \(max-width:800px\)[\s\S]*\.home-access-grid-inner\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
+  assert.match(html, /@media \(max-width:520px\)[\s\S]*\.home-access-grid-inner\{grid-template-columns:1fr;/);
   assert.doesNotMatch(html, /data-dashboard-home/);
   for (const pageId of ["pagePuxadas", "pageRelatorio41", "pageCompras", "pageDashboard", "pageMissoes", "pageSaidas", "pageInsumos", "pageInstrucoes", "pageLojas", "pageDados"]) {
     assert.match(html, new RegExp(`id="${pageId}" class="page wrap"`));
@@ -1977,7 +1983,7 @@ test("mantém uma URL por módulo e integra voltar e avançar do navegador", asy
   assert.match(html, /history\[method\]\(\{page:name\}, '', route\)/);
   assert.match(html, /window\.addEventListener\('popstate'/);
   assert.match(html, /href="\/manifest\.webmanifest"/);
-  assert.match(html, /register\('\/service-worker\.js'\)/);
+  assert.match(html, /register\('\/service-worker\.js', \{updateViaCache:'none'\}\)/);
   assert.equal(JSON.parse(manifest).start_url, "/inicio");
   assert.match(homePage, /redirect\("\/inicio"\)/);
   assert.match(workerSource, /APP_ROUTE_PATHS/);

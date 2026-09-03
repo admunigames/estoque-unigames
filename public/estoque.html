@@ -33,8 +33,18 @@
     --panel:var(--bg-card);
     --mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
     --sans:'Inter','Segoe UI',Helvetica,Arial,sans-serif;
+    /* Tokens de superfície — referência única para cards e painéis em
+       todos os módulos (antigos e novos). */
+    --radius-surface:15px;
+    --surface-border:rgba(39,69,97,.55);
+    --surface-shadow:0 1px 5px rgba(0,0,0,.09);
+    --surface-shadow-hover:0 4px 14px rgba(0,0,0,.14);
+    --space-block:24px;
   }
   html[data-theme="light"]{
+    --surface-border:#c4d4e2;
+    --surface-shadow:0 1px 4px rgba(29,72,126,.10);
+    --surface-shadow-hover:0 6px 16px rgba(29,72,126,.16);
     --bg:#eef4f9;
     --bg-card:#ffffff;
     --bg-card-2:#e7f0f8;
@@ -426,8 +436,22 @@
     max-width:700px; margin:16px auto 0; color:#49627b; font:600 clamp(12px,1.6vw,15px)/1.65 var(--sans);
   }
   .home-access-grid{
-    display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:13px; margin-top:clamp(26px,4vw,40px);
+    display:flex; flex-direction:column; gap:clamp(22px,3vw,32px); margin-top:clamp(26px,4vw,40px);
     text-align:left;
+  }
+  .home-access-grid-inner{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:13px;
+  }
+  .home-access-section{display:flex; flex-direction:column; gap:14px;}
+  .home-access-section-label{
+    margin:0; color:#2f5170; font:800 11px/1 var(--sans); letter-spacing:2.4px; text-transform:uppercase;
+    display:flex; align-items:center; gap:12px;
+  }
+  .home-access-section-label::after{content:""; flex:1; height:1px; background:rgba(47,81,112,.22);}
+  .home-access-groups{display:flex; flex-direction:column; gap:18px;}
+  .home-access-group{display:flex; flex-direction:column; gap:10px;}
+  .home-access-group-label{
+    margin:0; color:#5c7187; font:800 10.5px/1 var(--sans); letter-spacing:1.6px; text-transform:uppercase;
   }
   .home-access-card{
     min-height:150px; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between;
@@ -655,12 +679,12 @@
   .card{
     position:relative; min-width:0;
     background:linear-gradient(145deg,rgba(255,255,255,.026),transparent 52%),var(--bg-card);
-    border:1px solid rgba(39,69,97,.4);
-    border-radius:16px; padding:23px 24px; min-height:118px; overflow:hidden;
-    box-shadow:0 1px 5px rgba(0,0,0,.08);
+    border:1px solid var(--surface-border);
+    border-radius:var(--radius-surface); padding:23px 24px; min-height:118px; overflow:hidden;
+    box-shadow:var(--surface-shadow);
     transition:border-color .18s ease, box-shadow .18s ease;
   }
-  .card:hover{border-color:rgba(79,134,189,.5); box-shadow:0 4px 14px rgba(0,0,0,.14);}
+  .card:hover{border-color:rgba(79,134,189,.5); box-shadow:var(--surface-shadow-hover);}
   .card .lbl{font-size:11px; font-weight:600; letter-spacing:0.7px; text-transform:uppercase; color:var(--ink-faint); margin-bottom:13px;}
   .card .num{
     font-family:var(--mono); font-size:29px; font-weight:700; color:var(--ink);
@@ -744,8 +768,8 @@
 
   /* TABELA */
   .table-panel{
-    position:relative; background:var(--bg-card); border:1px solid rgba(39,69,97,.68);
-    border-radius:14px; overflow:hidden; box-shadow:0 1px 5px rgba(0,0,0,.1);
+    position:relative; background:var(--bg-card); border:1px solid var(--surface-border);
+    border-radius:var(--radius-surface); overflow:hidden; box-shadow:var(--surface-shadow);
   }
   .table-panel::after{
     content:''; position:absolute; z-index:8; top:0; right:0; bottom:0; width:20px;
@@ -1331,7 +1355,7 @@
   @media (max-width:800px){
     body{padding-bottom:calc(74px + env(safe-area-inset-bottom));}
     .home-page{align-items:flex-start;}
-    .home-access-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .home-access-grid-inner{grid-template-columns:repeat(2,minmax(0,1fr));}
     .home-operations{grid-template-columns:1fr;}
     .home-lightglass{border-radius:24px;}
     .page-header{
@@ -1439,7 +1463,8 @@
   @media (max-width:520px){
     .home-lightglass{padding:32px 18px 24px; border-radius:20px;}
     .home-title{letter-spacing:-1px;}
-    .home-access-grid{grid-template-columns:1fr; gap:12px; margin-top:30px;}
+    .home-access-grid{gap:22px; margin-top:30px;}
+    .home-access-grid-inner{grid-template-columns:1fr; gap:12px;}
     .home-access-card{min-height:132px; padding:18px;}
     .cadastros-menu{padding:28px 16px 18px; border-radius:20px;}
     .cadastros-menu-grid{grid-template-columns:1fr; gap:12px;}
@@ -2663,7 +2688,7 @@
   @media(max-width:1100px){
     .wrap{--wrap-pad-x:20px; padding-inline:var(--wrap-pad-x);}
     .home-lightglass{padding-inline:clamp(20px,4vw,48px);}
-    .home-access-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .home-access-grid-inner{grid-template-columns:repeat(3,minmax(0,1fr));}
     .page-header,.page-header-meta,.toolbar,.panel-head,.board-head{
       flex-wrap:wrap;
     }
@@ -2700,7 +2725,7 @@
       backdrop-filter:none;
       -webkit-backdrop-filter:none;
     }
-    .home-access-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .home-access-grid-inner{grid-template-columns:repeat(2,minmax(0,1fr));}
     .home-access-card{min-width:0;}
     .home-title,.page-title{overflow-wrap:anywhere;}
     .page-header-actions,.toolbar-actions,.form-actions{
@@ -2717,7 +2742,7 @@
   @media(max-width:480px){
     .wrap{--wrap-pad-x:10px; padding-inline:var(--wrap-pad-x);}
     .home-lightglass{padding:26px 12px 22px;border-radius:18px;}
-    .home-access-grid{grid-template-columns:1fr;}
+    .home-access-grid-inner{grid-template-columns:1fr;}
     .page-header-actions,.toolbar-actions,.form-actions{grid-template-columns:1fr;}
     .pagination{align-items:stretch;}
     .pagination-actions{width:100%;justify-content:space-between;}
@@ -2741,9 +2766,49 @@
       transition-duration:.01ms!important;
     }
   }
+
+  /* ---------- Indicador de carregamento global ---------- */
+  .app-loadbar{
+    position:fixed; top:0; left:0; right:0; height:3px; z-index:9999;
+    background:transparent; overflow:hidden; pointer-events:none;
+    opacity:0; transition:opacity .25s ease;
+  }
+  .app-loadbar.is-active{opacity:1;}
+  .app-loadbar::before{
+    content:""; position:absolute; inset:0; width:40%; border-radius:0 3px 3px 0;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent);
+    animation:appLoadbarSlide 1.15s ease-in-out infinite;
+  }
+  @keyframes appLoadbarSlide{
+    0%{transform:translateX(-100%);}
+    100%{transform:translateX(320%);}
+  }
+  .app-stall{
+    position:fixed; left:50%; bottom:calc(18px + env(safe-area-inset-bottom));
+    transform:translateX(-50%); z-index:9999; max-width:min(420px,92vw);
+    display:flex; gap:12px; align-items:center; padding:13px 16px;
+    border-radius:14px; border:1px solid var(--border);
+    background:var(--bg-card); color:var(--ink);
+    box-shadow:0 10px 30px rgba(0,0,0,.28); font:600 12.5px/1.4 var(--sans);
+  }
+  .app-stall span{flex:1; min-width:0;}
+  .app-stall button{
+    flex:none; padding:8px 14px; border-radius:9px; border:1px solid var(--accent);
+    background:var(--accent); color:var(--accent-ink); font:800 12px/1 var(--sans);
+    letter-spacing:.3px; cursor:pointer;
+  }
+  @media(prefers-reduced-motion:reduce){
+    .app-loadbar::before{animation:none; width:100%; opacity:.5;}
+  }
 </style>
 </head>
 <body class="home-active">
+
+<div class="app-loadbar" id="appLoadbar" role="progressbar" aria-label="Carregando" aria-hidden="true"></div>
+<div class="app-stall" id="appStall" role="status" hidden>
+  <span id="appStallText">O carregamento está demorando mais que o normal.</span>
+  <button type="button" id="appStallReload">RECARREGAR</button>
+</div>
 
 <button class="menu-toggle no-print" id="menuToggle" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menu">
   <span class="menu-toggle-icon" aria-hidden="true"><span></span><span></span><span></span></span>
@@ -7754,6 +7819,50 @@
   };
   const errorBox = el('errorBox');
 
+  // fetch com tempo limite: evita que uma conexão presa (ex.: pool do
+  // Hyperdrive/Postgres saturado no primeiro acesso) deixe a tela parada
+  // sem nenhum retorno. Faz uma nova tentativa automática antes de desistir.
+  async function fetchWithTimeout(resource, options = {}){
+    const {timeout = 15000, retries = 0, retryDelay = 600, ...rest} = options;
+    for(let attempt = 0; ; attempt++){
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+      try{
+        return await fetch(resource, {...rest, signal: controller.signal});
+      }catch(error){
+        if(attempt >= retries || rest.signal?.aborted) throw error;
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }finally{
+        clearTimeout(timer);
+      }
+    }
+  }
+
+  // Barra de progresso + aviso de "está demorando" durante o boot do app.
+  const appLoading = (() => {
+    let depth = 0;
+    let stallTimer = null;
+    const bar = el('appLoadbar');
+    const stall = el('appStall');
+    const showStall = () => { if(stall) stall.hidden = false; };
+    const hideStall = () => { if(stall) stall.hidden = true; };
+    return {
+      begin(){
+        depth++;
+        if(bar){ bar.classList.add('is-active'); bar.setAttribute('aria-hidden','false'); }
+        if(!stallTimer) stallTimer = setTimeout(showStall, 8000);
+      },
+      end(){
+        depth = Math.max(0, depth - 1);
+        if(depth > 0) return;
+        clearTimeout(stallTimer); stallTimer = null;
+        hideStall();
+        if(bar){ bar.classList.remove('is-active'); bar.setAttribute('aria-hidden','true'); }
+      },
+    };
+  })();
+  el('appStallReload')?.addEventListener('click', () => location.reload());
+
   // O canal ao vivo carrega somente avisos de invalidacao. Os dados continuam
   // sendo buscados pelas APIs existentes, que aplicam as permissoes da sessao.
   const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans'});
@@ -8361,44 +8470,154 @@
     return !PAGE_PERMISSIONS[name] || canAccess(PAGE_PERMISSIONS[name]);
   }
 
+  function homeAccessCardFrom(source){
+    const labelNode = source.querySelector('.nav-label');
+    const iconNode = source.querySelector('.nav-icon');
+    const page = source.dataset.homePage || source.dataset.page;
+    const href = (page && PAGE_ROUTES[page]) || source.getAttribute('href');
+    if(!labelNode || !iconNode || !href) return null;
+    const permissionSource = source.closest('[data-permission]');
+    const card = document.createElement('a');
+    card.className = 'home-access-card';
+    card.href = href;
+    if(permissionSource) card.dataset.permission = permissionSource.dataset.permission;
+    const icon = document.createElement('span');
+    icon.className = 'home-access-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = iconNode.innerHTML;
+    const copy = document.createElement('span');
+    copy.className = 'home-access-copy';
+    const title = document.createElement('strong');
+    title.textContent = labelNode.textContent;
+    const desc = document.createElement('span');
+    desc.textContent = source.dataset.homeDesc;
+    copy.append(title, desc);
+    const arrow = document.createElement('span');
+    arrow.className = 'home-access-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '→';
+    card.append(icon, copy, arrow);
+    if(page){
+      card.addEventListener('click', event => {
+        if(!isPlainClick(event)) return;
+        event.preventDefault();
+        navigateToPage(page);
+      });
+    }
+    return card;
+  }
+
+  // Os cards de acesso rápido seguem a MESMA hierarquia do menu lateral:
+  // percorre o #sidebar na ordem do DOM, abre uma seção a cada
+  // .nav-section-label (OPERAÇÃO / GESTÃO) e, dentro de GESTÃO, agrupa por
+  // .nav-group usando o mesmo rótulo do grupo (Estoque, Financeiro, ...).
   function buildHomeAccessCards(){
     const grid = el('homeAccessGrid');
     grid.innerHTML = '';
-    document.querySelectorAll('#sidebar [data-home-desc]').forEach(source => {
-      const labelNode = source.querySelector('.nav-label');
-      const iconNode = source.querySelector('.nav-icon');
-      const page = source.dataset.homePage || source.dataset.page;
-      const href = (page && PAGE_ROUTES[page]) || source.getAttribute('href');
-      if(!labelNode || !iconNode || !href) return;
-      const permissionSource = source.closest('[data-permission]');
-      const card = document.createElement('a');
-      card.className = 'home-access-card';
-      card.href = href;
-      if(permissionSource) card.dataset.permission = permissionSource.dataset.permission;
-      const icon = document.createElement('span');
-      icon.className = 'home-access-icon';
-      icon.setAttribute('aria-hidden', 'true');
-      icon.innerHTML = iconNode.innerHTML;
-      const copy = document.createElement('span');
-      copy.className = 'home-access-copy';
-      const title = document.createElement('strong');
-      title.textContent = labelNode.textContent;
-      const desc = document.createElement('span');
-      desc.textContent = source.dataset.homeDesc;
-      copy.append(title, desc);
-      const arrow = document.createElement('span');
-      arrow.className = 'home-access-arrow';
-      arrow.setAttribute('aria-hidden', 'true');
-      arrow.textContent = '→';
-      card.append(icon, copy, arrow);
-      if(page){
-        card.addEventListener('click', event => {
-          if(!isPlainClick(event)) return;
-          event.preventDefault();
-          navigateToPage(page);
-        });
+    const sidebar = el('sidebar');
+    if(!sidebar) return;
+    let sectionInner = null;
+
+    const openSection = label => {
+      const section = document.createElement('div');
+      section.className = 'home-access-section';
+      const heading = document.createElement('h3');
+      heading.className = 'home-access-section-label';
+      heading.textContent = label;
+      const inner = document.createElement('div');
+      inner.className = 'home-access-groups';
+      section.append(heading, inner);
+      grid.appendChild(section);
+      sectionInner = inner;
+    };
+
+    const addCluster = (cards, groupLabel) => {
+      if(!cards.length) return;
+      if(!sectionInner) openSection('Acesso rápido');
+      const cluster = document.createElement('div');
+      cluster.className = 'home-access-group';
+      if(groupLabel){
+        const head = document.createElement('h4');
+        head.className = 'home-access-group-label';
+        head.textContent = groupLabel;
+        cluster.appendChild(head);
       }
-      grid.appendChild(card);
+      const inner = document.createElement('div');
+      inner.className = 'home-access-grid-inner';
+      cards.forEach(card => inner.appendChild(card));
+      cluster.appendChild(inner);
+      sectionInner.appendChild(cluster);
+    };
+
+    let looseCards = [];
+    Array.from(sidebar.children).forEach(node => {
+      if(node.classList.contains('nav-section-label')){
+        addCluster(looseCards);
+        looseCards = [];
+        openSection(node.textContent.trim());
+        return;
+      }
+      if(node.matches('a.nav-item[data-home-desc]')){
+        const card = homeAccessCardFrom(node);
+        if(card) looseCards.push(card);
+        return;
+      }
+      if(node.classList.contains('nav-group')){
+        addCluster(looseCards);
+        looseCards = [];
+        const toggle = node.querySelector('.nav-group-toggle');
+        const groupLabel = toggle ? (toggle.querySelector('.nav-label')?.textContent.trim() || '') : '';
+        const sources = [];
+        if(toggle && toggle.dataset.homeDesc) sources.push(toggle);
+        node.querySelectorAll('.nav-submenu [data-home-desc]').forEach(sub => sources.push(sub));
+        addCluster(sources.map(homeAccessCardFrom).filter(Boolean), groupLabel);
+      }
+    });
+    addCluster(looseCards);
+    pruneHomeAccessGroups();
+    orderHomeSections();
+  }
+
+  // Hierarquia visual da Início: alertas e ações no topo, depois o "hoje"
+  // (tarefas, missões, rotina), depois panorama operacional, comunicados e,
+  // por último, as atualizações de bastidor das lojas.
+  function orderHomeSections(){
+    const glass = document.querySelector('#pageInicio .home-lightglass');
+    if(!glass) return;
+    const order = [
+      '.home-brand',
+      '#homeAccessGrid',
+      '#homeNoAccess',
+      '#homeHealthAlert',
+      '#homeSuppliesAlert',
+      '.home-quick-actions',
+      '.home-tasks',
+      '.home-missions:not(#homeRoutineSection)',
+      '#homeRoutineSection',
+      '.home-operations',
+      '.home-instructions',
+      '.home-overview',
+    ];
+    order.forEach(selector => {
+      glass.querySelectorAll(selector).forEach(node => {
+        if(node.parentElement === glass) glass.appendChild(node);
+      });
+    });
+  }
+
+  // Esconde clusters/seções de acesso rápido que ficaram sem nenhum card
+  // visível para o usuário (as permissões são aplicadas por card via
+  // data-permission em applyAccessVisibility).
+  function pruneHomeAccessGroups(){
+    document.querySelectorAll('#homeAccessGrid .home-access-group').forEach(group => {
+      const hasCard = Array.from(group.querySelectorAll('.home-access-card'))
+        .some(card => !card.hasAttribute('data-access-hidden'));
+      group.toggleAttribute('data-access-hidden', !hasCard);
+    });
+    document.querySelectorAll('#homeAccessGrid .home-access-section').forEach(section => {
+      const hasGroup = Array.from(section.querySelectorAll('.home-access-group'))
+        .some(group => !group.hasAttribute('data-access-hidden'));
+      section.toggleAttribute('data-access-hidden', !hasGroup);
     });
   }
 
@@ -8421,6 +8640,7 @@
     const groupLabels = {administrator:'Administrador',purchases:'Compras',fiscal:'Fiscal',operator:'Operador',assistance:'Assistência',custom:'Personalizado'};
     el('sessionAccessLabel').textContent = (groupLabels[currentSession.accessGroup] || 'Acesso limitado') + (currentSession.role === 'admin' ? ' · acesso completo' : '');
     el('homeNoAccess').hidden = true;
+    pruneHomeAccessGroups();
     document.body.classList.add('access-ready');
   }
 
@@ -8588,7 +8808,7 @@
   });
 
   async function loadSessionAccess(){
-    const response = await fetch('/api/session', {cache:'no-store', headers:{Accept:'application/json'}});
+    const response = await fetchWithTimeout('/api/session', {cache:'no-store', headers:{Accept:'application/json'}, timeout:15000, retries:1});
     if(response.status === 401){
       location.assign('/login?next=' + encodeURIComponent(location.pathname));
       throw new Error('SESSÃO EXPIRADA');
@@ -10689,7 +10909,7 @@
   function registerIosServiceWorker(){
     if(!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js').catch(() => { /* o app continua funcionando */ });
+      navigator.serviceWorker.register('/service-worker.js', {updateViaCache:'none'}).catch(() => { /* o app continua funcionando */ });
     });
   }
 
@@ -27136,8 +27356,17 @@ function renderHomeTasks(){
     setDropzonesDisabled(true);
     renderAll();
     buildHomeAccessCards();
-    await loadSessionAccess();
-    await flushOfflineMutations();
+    appLoading.begin();
+    try{
+      await loadSessionAccess();
+    }catch(error){
+      appLoading.end();
+      showError(error && error.message ? error.message : 'NÃO FOI POSSÍVEL CARREGAR O SISTEMA. RECARREGUE A PÁGINA.');
+      throw error;
+    }
+    // Sincronização de alterações offline é secundária — não deve segurar
+    // a primeira pintura útil da tela.
+    flushOfflineMutations().catch(() => {});
     const freshLogin = new URLSearchParams(location.search).get('entrada') === '1';
     if(freshLogin) navigateToPage('inicio',{replace:true,scroll:false,smooth:false});
     else syncPageFromLocation(false);
@@ -27154,6 +27383,10 @@ function renderHomeTasks(){
     } else if(canAccess('purchases')) {
       await loadHomeOverview();
     }
+    // A tela já está navegável e com os dados de base; os carregamentos por
+    // módulo abaixo seguem em segundo plano, cada um com seu próprio aviso
+    // de "Carregando…". Libera a barra de progresso global aqui.
+    appLoading.end();
     const loaders = [];
     if(canAccess('pulls')) loaders.push(loadPullData());
     if(canAccess('database') || canAccess('report41')) loaders.push(loadCompanyStock());
@@ -27181,7 +27414,7 @@ function renderHomeTasks(){
     prepareIosInstallHint();
   }
   registerIosServiceWorker();
-  initializeApp();
+  initializeApp().catch(() => { appLoading.end(); });
 })();
 </script>
 </body>
