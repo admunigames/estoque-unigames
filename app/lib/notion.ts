@@ -117,10 +117,17 @@ export function normalizePurchase(value: unknown) {
   };
 }
 
+// A API do Notion limita cada bloco de rich_text a 2000 caracteres.
+// Para campos que agora aceitam textos maiores (ex.: Divisão, até
+// 20000 caracteres), dividimos o conteúdo em vários blocos de até
+// 2000 caracteres cada, em vez de cortar o texto silenciosamente.
 function richText(content: string) {
-  return content
-    ? [{ type: "text", text: { content: content.slice(0, 2000) } }]
-    : [];
+  if (!content) return [];
+  const chunks: { type: "text"; text: { content: string } }[] = [];
+  for (let index = 0; index < content.length; index += 2000) {
+    chunks.push({ type: "text", text: { content: content.slice(index, index + 2000) } });
+  }
+  return chunks;
 }
 
 function title(content: string) {
