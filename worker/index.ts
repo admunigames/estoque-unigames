@@ -424,15 +424,17 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
 async function ensureAppUsersTable(database: D1Database): Promise<void> {
   if (process.env.DB_DRIVER === "postgres") {
     if (!postgresAppUsersReady) {
+      // Só garante as colunas (idempotente e barato quando já existem). O
+      // schema em produção já está migrado; qualquer normalização de dados
+      // pertence a uma migration, não ao caminho quente de toda requisição
+      // — rodar um UPDATE em transação a cada isolate frio era um dos
+      // motivos do atraso no primeiro carregamento.
       postgresAppUsersReady = database.batch([
         database.prepare(
           "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS hierarchy TEXT NOT NULL DEFAULT 'administrative'",
         ),
         database.prepare(
           "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS sector TEXT NOT NULL DEFAULT ''",
-        ),
-        database.prepare(
-          "UPDATE app_users SET sector='assistance', company_id='' WHERE access_group='assistance' OR lower(username)='assistencia'",
         ),
       ]).then(() => undefined).catch((error) => {
         postgresAppUsersReady = null;
