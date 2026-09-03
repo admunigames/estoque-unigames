@@ -1708,6 +1708,12 @@
   .receivable-tag.received_ok{color:#66d49e}
   .receivable-tag.received_divergent{color:#e1ad49}
   .receivable-tag.canceled{color:var(--ink-soft)}
+  .recon-tag{display:inline-block;padding:2px 7px;border-radius:999px;font:800 9px var(--mono);letter-spacing:.04em;border:1px solid currentColor}
+  .recon-tag.attention{color:#c0392b}
+  .recon-tag.pending{color:#8aa4c0}
+  .recon-tag.ok{color:#66d49e}
+  .recon-tag.reviewed{color:#e1ad49}
+  tr.recon-row-attention > td{background:rgba(192,57,43,.12)}
   .dre-bar-row .dre-bar-value{font:800 12px var(--mono);color:var(--ink-soft);white-space:nowrap}
   .dre-catalog-list{display:grid;gap:8px;max-height:280px;overflow:auto;margin-bottom:14px}
   .dre-catalog-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px}
@@ -5647,13 +5653,14 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Taxas de Cartão</h2>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Taxas por adquirente e bandeira, importação de vendas com cálculo automático de custo, casamento com o repasse da adquirente e relatório mensal.</p></div>
+        <div class="page-header-meta"><p class="page-desc">Taxas por adquirente e bandeira, importação de vendas e do repasse, conciliação de vendas (taxa real x cadastrada) e relatório mensal.</p></div>
       </header>
 
       <div class="output-tabs" role="tablist" aria-label="Seções de taxas de cartão">
         <button class="output-tab active" type="button" role="tab" aria-selected="true" data-tax-tab="taxas">TABELA DE TAXAS</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-tax-tab="vendas">IMPORTAR VENDAS</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-tax-tab="repasse">IMPORTAR REPASSE</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-tax-tab="conciliacao">CONCILIAÇÃO</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-tax-tab="relatorio">RELATÓRIO MENSAL</button>
       </div>
 
@@ -5708,6 +5715,33 @@
           </div>
         </div>
         <div class="purchase-form-actions"><button class="btn-accent" id="btnConfirmCardSettlement" type="button" disabled>CONFIRMAR REPASSE</button></div>
+      </div>
+
+      <div data-tax-panel="conciliacao" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="cardReconCompany">UNIDADE</label><select id="cardReconCompany"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="cardReconMonth">MÊS</label><input type="month" id="cardReconMonth"></div>
+          <div class="field"><label for="cardReconAcquirer">ADQUIRENTE</label><select id="cardReconAcquirer"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="cardReconStatus">SITUAÇÃO</label>
+            <select id="cardReconStatus">
+              <option value="">TODAS</option>
+              <option value="attention" selected>EM ATENÇÃO</option>
+              <option value="pending">SEM REPASSE</option>
+              <option value="ok">CONFERIDAS</option>
+              <option value="reviewed">REVISADAS</option>
+            </select>
+          </div>
+        </div>
+        <p class="page-desc">Cruzamento de cada venda com a taxa cadastrada por adquirente/bandeira. Quando a taxa real cobrada no repasse não bate com a cadastrada — ou não há taxa cadastrada — a venda fica <strong>Em Atenção</strong> para revisão manual.</p>
+        <div class="user-form-status" id="cardReconSummary" role="status" aria-live="polite"></div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="cardReconTable">
+              <thead><tr><th>Data</th><th>Adquirente</th><th>Bandeira</th><th>Modal.</th><th>Bruto</th><th>Taxa prev.</th><th>Taxa real</th><th>Situação</th><th></th></tr></thead>
+              <tbody id="cardReconBody"><tr><td colspan="9" class="responsive-empty">Selecione os filtros.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div data-tax-panel="relatorio" hidden>
@@ -20605,8 +20639,16 @@ function renderHomeTasks(){
     });
     renderAcquirerSelect('cardFeeAcquirer');
     renderAcquirerSelect('cardFeeAcquirerFilter', {placeholder:'<option value="">TODAS</option>', includeInactive:true});
+    renderAcquirerSelect('cardReconAcquirer', {placeholder:'<option value="">TODAS</option>', includeInactive:true});
+    if(el('cardReconCompany')){
+      const selected = el('cardReconCompany').value;
+      el('cardReconCompany').innerHTML = '<option value="">TODAS AS LOJAS</option>' +
+        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+      if(Array.from(el('cardReconCompany').options).some(o => o.value === selected)) el('cardReconCompany').value = selected;
+    }
     if(!el('cardSalesMonth').value) el('cardSalesMonth').value = financeCurrentMonthKey();
     if(!el('cardSettlementMonth').value) el('cardSettlementMonth').value = financeCurrentMonthKey();
+    if(!el('cardReconMonth').value) el('cardReconMonth').value = financeCurrentMonthKey();
     if(!el('cardFeeReportMonth').value) el('cardFeeReportMonth').value = financeCurrentMonthKey();
     el('cardFeesTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
     try{
@@ -20628,9 +20670,99 @@ function renderHomeTasks(){
       });
       document.querySelectorAll('[data-tax-panel]').forEach(p => { p.hidden = p.dataset.taxPanel !== tab; });
       if(tab === 'relatorio') loadCardFeeReport();
+      if(tab === 'conciliacao') loadCardReconciliation();
     });
   });
   el('cardFeeAcquirerFilter') && el('cardFeeAcquirerFilter').addEventListener('change', renderCardFeesTable);
+
+  // --- Conciliação de vendas (itens 5 e 6) ---
+  const CARD_RECON_LABELS = {attention:'EM ATENÇÃO', pending:'SEM REPASSE', ok:'CONFERIDA', reviewed:'REVISADA'};
+  let cardReconRows = [];
+
+  async function loadCardReconciliation(){
+    if(!canAccess('finance')) return;
+    const month = el('cardReconMonth').value || financeCurrentMonthKey();
+    el('cardReconMonth').value = month;
+    const params = new URLSearchParams({month});
+    if(el('cardReconCompany').value) params.set('companyId', el('cardReconCompany').value);
+    if(el('cardReconAcquirer').value) params.set('acquirerId', el('cardReconAcquirer').value);
+    if(el('cardReconStatus').value) params.set('recon', el('cardReconStatus').value);
+    el('cardReconBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    el('cardReconSummary').textContent = '';
+    try{
+      const data = await financeApiRequest('/card-sales?'+params.toString());
+      cardReconRows = Array.isArray(data.rows) ? data.rows : [];
+      const t = data.totals || {};
+      el('cardReconSummary').textContent = (Number(t.count)||0)+' venda(s) no filtro · '+
+        (Number(t.attentionCount)||0)+' em atenção · '+(Number(t.pendingCount)||0)+' sem repasse · '+
+        (Number(t.reviewedCount)||0)+' revisada(s).';
+      renderCardReconTable();
+    }catch(error){
+      el('cardReconBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function renderCardReconTable(){
+    const body = el('cardReconBody');
+    if(!body) return;
+    if(!cardReconRows.length){
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma venda para os filtros selecionados.</td></tr>';
+      return;
+    }
+    body.innerHTML = cardReconRows.map(row => {
+      const status = CARD_RECON_LABELS[row.reconStatus] ? row.reconStatus : 'pending';
+      const received = row.receivedAmountCents === null || row.receivedAmountCents === undefined;
+      const actualFee = received ? '—' : formatCentsBRL(Number(row.grossCents||0) - Number(row.receivedAmountCents||0));
+      const noteHtml = row.reconStatus === 'reviewed' && row.reviewedNote
+        ? '<br><span style="font-size:10px;color:var(--ink-soft);">'+escapeHtml(row.reviewedNote)+'</span>' : '';
+      const action = status === 'reviewed'
+        ? '<button class="btn-outline btn-sm" type="button" data-card-recon-reopen="'+escapeHtml(row.id)+'">REABRIR</button>'
+        : (status === 'attention'
+          ? '<button class="btn-outline btn-sm" type="button" data-card-recon-review="'+escapeHtml(row.id)+'">MARCAR COMO REVISADA</button>'
+          : '');
+      return '<tr'+(status === 'attention' ? ' class="recon-row-attention"' : '')+'>'+
+        '<td data-label="Data">'+escapeHtml(row.saleDate || '')+'</td>'+
+        '<td data-label="Adquirente">'+escapeHtml(row.acquirerName || '—')+'</td>'+
+        '<td data-label="Bandeira">'+escapeHtml(row.brand || '—')+'</td>'+
+        '<td data-label="Modal.">'+escapeHtml(CARD_MODALITY_LABELS[row.modality] || row.modality || '')+'</td>'+
+        '<td data-label="Bruto">'+formatCentsBRL(row.grossCents)+'</td>'+
+        '<td data-label="Taxa prev.">'+(Number(row.feeMissing) ? 'sem taxa' : formatCentsBRL(row.expectedFeeCents))+'</td>'+
+        '<td data-label="Taxa real">'+actualFee+'</td>'+
+        '<td data-label="Situação"><span class="recon-tag '+status+'">'+escapeHtml(CARD_RECON_LABELS[status])+'</span>'+noteHtml+'</td>'+
+        '<td data-label="Ações">'+action+'</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  ['cardReconCompany','cardReconMonth','cardReconAcquirer','cardReconStatus'].forEach(id => {
+    el(id) && el(id).addEventListener('change', loadCardReconciliation);
+  });
+
+  el('cardReconBody') && el('cardReconBody').addEventListener('click', async event => {
+    const reviewBtn = event.target.closest('[data-card-recon-review]');
+    const reopenBtn = event.target.closest('[data-card-recon-reopen]');
+    if(reviewBtn){
+      const note = prompt('Nota da revisão (opcional): por que essa taxa está ok ou o que foi ajustado?') ;
+      if(note === null) return;
+      try{
+        await financeApiRequest('/card-sales/'+encodeURIComponent(reviewBtn.dataset.cardReconReview), {
+          method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reviewed:true, note})
+        });
+        showPurchaseToast('Venda marcada como revisada.');
+        await loadCardReconciliation();
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      return;
+    }
+    if(reopenBtn){
+      try{
+        await financeApiRequest('/card-sales/'+encodeURIComponent(reopenBtn.dataset.cardReconReopen), {
+          method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reviewed:false})
+        });
+        showPurchaseToast('Revisão reaberta.');
+        await loadCardReconciliation();
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+    }
+  });
 
   // --- Cadastro de taxa ---
   function syncCardFeeInstallments(){
@@ -20850,7 +20982,7 @@ function renderHomeTasks(){
         body: JSON.stringify({kind:'settlement', companyId, referenceMonth, fileHash: cardSettlementParsed.fileHash, sourceName: cardSettlementParsed.sourceName, rows: cardSettlementParsed.rows})
       });
       if(res.alreadyProcessed){ showPurchaseToast('Esse repasse já tinha sido importado.'); }
-      else showPurchaseToast('Repasse: '+res.matched+' casada(s), '+res.unmatched+' sem venda, '+res.divergentCount+' com divergência.');
+      else showPurchaseToast('Repasse: '+res.matched+' casada(s), '+res.unmatched+' sem venda, '+(res.attentionCount||0)+' em atenção na conciliação.');
       el('cardSettlementFile').value = '';
       cardSettlementParsed = null;
       el('cardSettlementPreviewBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">Repasse processado.</td></tr>';
