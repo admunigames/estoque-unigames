@@ -6,6 +6,7 @@ import {
   isCorporateCardStatus,
   validateCorporateCardDraft,
 } from "../../../lib/corporate-cards";
+import { isCardKind } from "../../../lib/card-purchase-requests";
 import {
   canManageFinance,
   identity,
@@ -34,6 +35,7 @@ type CardRow = {
   companyId: string;
   companyName: string;
   status: string;
+  kind: string;
   notes: string;
   createdAt: string;
   updatedAt: string;
@@ -73,7 +75,7 @@ export async function GET(request: Request) {
         `SELECT id, name, bank, brand, last4, limit_cents AS limitCents,
                 best_purchase_day AS bestPurchaseDay, closing_day AS closingDay, due_day AS dueDay,
                 holder_name AS holderName, company_id AS companyId, company_name AS companyName,
-                status, notes, created_at AS createdAt, updated_at AS updatedAt
+                status, kind, notes, created_at AS createdAt, updated_at AS updatedAt
          FROM finance_corporate_cards ${where}
          ORDER BY
            CASE status WHEN 'active' THEN 0 WHEN 'blocked' THEN 1 ELSE 2 END ASC,
@@ -122,6 +124,7 @@ export async function POST(request: Request) {
     const holderName = safeText(body.holderName, 120);
     const notes = safeText(body.notes, 1000);
     const status = isCorporateCardStatus(body.status) ? body.status : "active";
+    const kind = isCardKind(body.kind) ? body.kind : "corporate";
     const limitCents = Math.max(0, Math.round(Number(body.limitCents) || 0));
     const bestPurchaseDay = Math.round(Number(body.bestPurchaseDay) || 0);
     const closingDay = Math.round(Number(body.closingDay) || 0);
@@ -160,8 +163,8 @@ export async function POST(request: Request) {
           `UPDATE finance_corporate_cards
            SET name=?1, bank=?2, brand=?3, last4=?4, limit_cents=?5, best_purchase_day=?6,
                closing_day=?7, due_day=?8, holder_name=?9, company_id=?10, company_name=?11,
-               status=?12, notes=?13, updated_by=?14, updated_by_name=?15, updated_at=now()::text
-           WHERE id=?16`,
+               status=?12, kind=?13, notes=?14, updated_by=?15, updated_by_name=?16, updated_at=now()::text
+           WHERE id=?17`,
         )
         .bind(
           name,
@@ -176,6 +179,7 @@ export async function POST(request: Request) {
           companyId,
           companyName,
           status,
+          kind,
           notes,
           actor.id,
           who,
@@ -190,9 +194,9 @@ export async function POST(request: Request) {
       .prepare(
         `INSERT INTO finance_corporate_cards
           (id, name, bank, brand, last4, limit_cents, best_purchase_day, closing_day, due_day,
-           holder_name, company_id, company_name, status, notes,
+           holder_name, company_id, company_name, status, kind, notes,
            created_by, created_by_name, updated_by, updated_by_name)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?15, ?16)`,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?16, ?17)`,
       )
       .bind(
         id,
@@ -208,6 +212,7 @@ export async function POST(request: Request) {
         companyId,
         companyName,
         status,
+        kind,
         notes,
         actor.id,
         who,

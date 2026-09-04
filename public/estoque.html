@@ -2904,6 +2904,7 @@
         <a class="nav-item sub-item" id="navFinanceiroMaquinetas" data-page="financeiroMaquinetas" data-permission="finance" data-home-desc="Cadastro de maquinetas por adquirente e unidade, com histórico de transferência, manutenção e substituição." title="Maquinetas" href="/financeiro/maquinetas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><rect x="9" y="6" width="6" height="4"/><path d="M9 14h.01M12 14h.01M15 14h.01M9 17h.01M12 17h.01M15 17h.01"/></svg></span><span class="nav-label">Maquinetas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroTaxasCartao" data-page="financeiroTaxasCartao" data-permission="finance" data-home-desc="Taxas por adquirente e bandeira, importação de vendas e repasse, relatório mensal do custo com taxas." title="Taxas de Cartão" href="/financeiro/taxas-cartao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><span class="nav-label">Taxas de Cartão</span></a>
         <a class="nav-item sub-item" id="navFinanceiroCartoesCorp" data-page="financeiroCartoesCorp" data-permission="finance" data-home-desc="Cartões de crédito corporativos: limite, fatura importada, parcelas futuras e lançamento como despesa." title="Cartões Corporativos" href="/financeiro/cartoes-corporativos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="M6 14.5h5"/></svg></span><span class="nav-label">Cartões Corporativos</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroComprasCartao" data-page="financeiroComprasCartao" data-any-permission="cards,finance" data-home-desc="A Assistência cadastra as compras feitas nos cartões; o administrador aprova e elas entram na fatura do cartão." title="Compras em Cartão" href="/financeiro/compras-cartao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="m14 15 2 2 4-4"/></svg></span><span class="nav-label">Compras em Cartão</span></a>
         <a class="nav-item sub-item" id="navFinanceiroConciliacao" data-page="financeiroConciliacao" data-permission="finance" data-home-desc="Importe o extrato bancário, classifique os lançamentos e deixe o sistema sugerir a classificação pelos nomes que se repetem." title="Conciliação Bancária" href="/financeiro/conciliacao-bancaria"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><path d="m16 16 2 2 4-4"/></svg></span><span class="nav-label">Conciliação Bancária</span></a>
         <a class="nav-item sub-item" id="navFinanceiroReposicao" data-page="financeiroReposicao" data-permission="finance" data-home-desc="Valores repostos e gastos por Assistência, Logística e outros setores." title="Controle de Reposição" href="/financeiro/controle-reposicao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 14-4l2 2"/><path d="M20 16a8 8 0 0 1-14 4l-2-2"/><path d="M18 2v4h-4M6 22v-4h4"/></svg></span><span class="nav-label">Controle de Reposição</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRecargas" data-page="financeiroRecargas" data-permission="finance" data-home-desc="Recargas de celulares por unidade, com lembrete da próxima recarga." title="Recargas de Celulares" href="/financeiro/recargas-celular"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Recargas de Celulares</span></a>
@@ -4751,6 +4752,13 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>Compras em Cartão (Assistência)</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="cards:request"> Cadastrar compras feitas nos cartões (entra como solicitação)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="cards:approve"> Aprovar/recusar as compras cadastradas. Já liberado por "Acessar o módulo Financeiro".</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>RH Financeiro (Folha, Benefícios, Comissionamento)</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="payroll:manage"> Cadastrar funcionários e gerenciar folha, benefícios e comissionamento</label>
@@ -5848,19 +5856,20 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Cartões Corporativos</h2>
         </div>
-        <div class="page-header-meta"><p class="page-desc">Cartões de crédito da empresa: limite e disponível, fatura importada, parcelamentos futuros e lançamento direto como despesa. Senha e CVV não são armazenados nem solicitados.</p></div>
+        <div class="page-header-meta"><p class="page-desc">Cartões corporativos da empresa e cartões pessoais de sócios usados para despesas da empresa: limite e disponível, fatura importada, parcelamentos futuros e lançamento direto como despesa. Senha e CVV não são armazenados nem solicitados.</p></div>
       </header>
 
       <div class="dre-toolbar">
         <div class="field"><label for="corpCardLoja">UNIDADE</label><select id="corpCardLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field"><label for="corpCardKindFilter">TIPO</label><select id="corpCardKindFilter"><option value="">TODOS</option><option value="corporate">CORPORATIVOS</option><option value="partner">SÓCIOS</option></select></div>
         <div class="dre-toolbar-actions"><button class="btn-accent" id="btnNewCorpCard" type="button">NOVO CARTÃO</button></div>
       </div>
 
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="corpCardsTable">
-            <thead><tr><th>Cartão</th><th>Banco</th><th>Final</th><th>Unidade</th><th>Responsável</th><th>Fech./Venc.</th><th>Situação</th><th></th></tr></thead>
-            <tbody id="corpCardsTableBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th>Cartão</th><th>Tipo</th><th>Banco</th><th>Final</th><th>Unidade</th><th>Responsável</th><th>Fech./Venc.</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="corpCardsTableBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -5909,6 +5918,38 @@
           </div>
         </div>
       </section>
+    </section>
+
+    <section id="pageFinanceiroComprasCartao" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Compras em Cartão</h2>
+        </div>
+        <div class="page-header-meta"><p class="page-desc">A Assistência cadastra aqui cada compra feita nos cartões de crédito. Cada compra entra como solicitação pendente; depois de aprovada pela administração, ela é lançada automaticamente na fatura do cartão.</p></div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="dre-toolbar-actions"><button class="btn-accent" id="btnNewCardPurchase" type="button">+ CADASTRAR COMPRA</button></div>
+        <div class="field"><label for="cardPurchaseStatusFilter">SITUAÇÃO</label>
+          <select id="cardPurchaseStatusFilter">
+            <option value="">TODAS</option>
+            <option value="pending" selected>PENDENTES</option>
+            <option value="approved">APROVADAS</option>
+            <option value="rejected">RECUSADAS</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="user-form-status" id="cardPurchaseSummary" role="status" aria-live="polite"></div>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="cardPurchaseTable">
+            <thead><tr><th>Data</th><th>Cartão</th><th>Estabelecimento</th><th>Valor</th><th>Parc.</th><th>Solicitante</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="cardPurchaseBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <section id="pageFinanceiroConciliacao" class="page wrap">
@@ -6551,6 +6592,7 @@
     <input type="hidden" id="corpCardId">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="corpCardName">NOME *</label><input id="corpCardName" maxlength="120" placeholder="Ex: NUBANK PJ — DIRETORIA" required></div>
+      <div class="purchase-field"><label for="corpCardKind">TIPO DE CARTÃO *</label><select id="corpCardKind"><option value="corporate">CORPORATIVO (DA EMPRESA)</option><option value="partner">SÓCIO (CARTÃO PESSOAL USADO PELA EMPRESA)</option></select></div>
       <div class="purchase-field"><label for="corpCardBank">BANCO</label><input id="corpCardBank" maxlength="80"></div>
       <div class="purchase-field"><label for="corpCardBrand">BANDEIRA</label><input id="corpCardBrand" maxlength="40"></div>
       <div class="purchase-field"><label for="corpCardLast4">FINAL (4 DÍGITOS) *</label><input id="corpCardLast4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" required></div>
@@ -6568,6 +6610,30 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCorpCardDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="cardPurchaseDialog" aria-labelledby="cardPurchaseDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cardPurchaseDialogTitle">CADASTRAR COMPRA</h3>
+    <button class="purchase-dialog-close" id="btnCloseCardPurchaseDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cardPurchaseForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="cardPurchaseCard">CARTÃO *</label><select id="cardPurchaseCard" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="cardPurchaseDate">DATA DA COMPRA *</label><input type="date" id="cardPurchaseDate" required></div>
+      <div class="purchase-field"><label for="cardPurchaseAmount">VALOR (R$) *</label><input type="number" id="cardPurchaseAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field full"><label for="cardPurchaseMerchant">ESTABELECIMENTO *</label><input id="cardPurchaseMerchant" maxlength="200" required></div>
+      <div class="purchase-field"><label for="cardPurchaseInstallmentCurrent">PARCELA ATUAL</label><input type="number" id="cardPurchaseInstallmentCurrent" min="1" max="48" value="1"></div>
+      <div class="purchase-field"><label for="cardPurchaseInstallmentTotal">TOTAL DE PARCELAS</label><input type="number" id="cardPurchaseInstallmentTotal" min="1" max="48" value="1"></div>
+      <div class="purchase-field"><label for="cardPurchaseHolder">PORTADOR DO CARTÃO</label><input id="cardPurchaseHolder" maxlength="120"></div>
+      <div class="purchase-field full"><label for="cardPurchaseNotes">OBSERVAÇÕES</label><textarea id="cardPurchaseNotes" rows="2" maxlength="1000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="cardPurchaseFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCardPurchaseDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveCardPurchase" type="submit">ENVIAR SOLICITAÇÃO</button>
     </div>
   </form>
 </dialog>
@@ -8341,6 +8407,7 @@
     financeiroMaquinetas:'/financeiro/maquinetas',
     financeiroTaxasCartao:'/financeiro/taxas-cartao',
     financeiroCartoesCorp:'/financeiro/cartoes-corporativos',
+    financeiroComprasCartao:'/financeiro/compras-cartao',
     financeiroConciliacao:'/financeiro/conciliacao-bancaria',
     financeiroReposicao:'/financeiro/controle-reposicao',
     financeiroRecargas:'/financeiro/recargas-celular',
@@ -8385,6 +8452,7 @@
     financeiroMaquinetas:'MAQUINETAS',
     financeiroTaxasCartao:'TAXAS DE CARTÃO',
     financeiroCartoesCorp:'CARTÕES CORPORATIVOS',
+    financeiroComprasCartao:'COMPRAS EM CARTÃO',
     financeiroConciliacao:'CONCILIAÇÃO BANCÁRIA',
     financeiroReposicao:'CONTROLE DE REPOSIÇÃO',
     financeiroRecargas:'RECARGAS DE CELULARES',
@@ -8425,6 +8493,7 @@
     financeiroMaquinetas:'finance',
     financeiroTaxasCartao:'finance',
     financeiroCartoesCorp:'finance',
+    financeiroComprasCartao:'cards',
     financeiroConciliacao:'finance',
     financeiroReposicao:'finance',
     financeiroRecargas:'finance',
@@ -8479,6 +8548,8 @@
     // Obras: works:manage OU finance:manage (fallback também no backend,
     // ver app/api/obras/shared.ts#canManageWorks).
     if(name === 'obras') return canAccess('works') || canAccess('finance');
+    // Compras em Cartão (Assistência): cards:request/cards:approve OU finance:manage.
+    if(name === 'financeiroComprasCartao') return canAccess('cards') || canAccess('finance');
     return !PAGE_PERMISSIONS[name] || canAccess(PAGE_PERMISSIONS[name]);
   }
 
@@ -8961,7 +9032,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroComprasCartao' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -9028,6 +9099,7 @@
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
+    if(name === 'financeiroComprasCartao') loadComprasCartaoPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
     if(name === 'financeiroReposicao') loadReposicaoPage();
     if(name === 'financeiroRecargas') loadRecargasPage();
@@ -9071,6 +9143,7 @@
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
+    if(name === 'financeiroComprasCartao') loadComprasCartaoPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
     if(name === 'financeiroReposicao') loadReposicaoPage();
     if(name === 'financeiroRecargas') loadRecargasPage();
@@ -21377,10 +21450,12 @@ function renderHomeTasks(){
     const body = el('corpCardsTableBody');
     if(!body) return;
     const loja = el('corpCardLoja').value;
-    const rows = corpCardsRows.filter(c => !loja || c.companyId === loja);
+    const kindFilter = el('corpCardKindFilter') ? el('corpCardKindFilter').value : '';
+    const rows = corpCardsRows.filter(c => (!loja || c.companyId === loja) && (!kindFilter || (c.kind || 'corporate') === kindFilter));
     body.innerHTML = rows.length ? rows.map(c =>
       '<tr>'+
         '<td>'+escapeHtml(c.name)+'</td>'+
+        '<td>'+((c.kind || 'corporate') === 'partner' ? 'Sócio' : 'Corporativo')+'</td>'+
         '<td>'+escapeHtml(c.bank || '—')+'</td>'+
         '<td>•••• '+escapeHtml(c.last4 || '----')+'</td>'+
         '<td>'+escapeHtml(c.companyName || '—')+'</td>'+
@@ -21391,7 +21466,7 @@ function renderHomeTasks(){
           '<button class="btn-outline btn-sm" type="button" data-corp-open="'+escapeHtml(c.id)+'">ABRIR</button> '+
           '<button class="btn-outline btn-sm" type="button" data-corp-edit="'+escapeHtml(c.id)+'">EDITAR</button>'+
         '</td>'+
-      '</tr>').join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum cartão cadastrado.</td></tr>';
+      '</tr>').join('') : '<tr><td colspan="9" class="responsive-empty">Nenhum cartão cadastrado.</td></tr>';
   }
 
   async function loadCartoesCorpPage(){
@@ -21402,16 +21477,150 @@ function renderHomeTasks(){
       try{ const cc = await financeApiRequest('/cost-centers'); financeCostCenters = Array.isArray(cc.costCenters) ? cc.costCenters : []; }catch(_e){}
     }
     renderCorpCardCompanyOptions();
-    el('corpCardsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    el('corpCardsTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
     try{
       const data = await financeApiRequest('/corporate-cards');
       corpCardsRows = Array.isArray(data.cards) ? data.cards : [];
       renderCorpCardsTable();
     }catch(error){
-      el('corpCardsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('corpCardsTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
   el('corpCardLoja') && el('corpCardLoja').addEventListener('change', renderCorpCardsTable);
+  el('corpCardKindFilter') && el('corpCardKindFilter').addEventListener('change', renderCorpCardsTable);
+
+  // ---------------------------------------------------------------------
+  // Compras em Cartão pela Assistência (itens 8-10).
+  // ---------------------------------------------------------------------
+  const CARD_PURCHASE_STATUS_LABELS = {pending:'PENDENTE', approved:'APROVADA', rejected:'RECUSADA'};
+  let cardPurchaseRows = [];
+  let cardPurchaseCards = [];
+  let cardPurchaseCanApprove = false;
+
+  async function loadComprasCartaoPage(){
+    if(!(canAccess('cards') || canAccess('finance'))) return;
+    const statusFilter = el('cardPurchaseStatusFilter') ? el('cardPurchaseStatusFilter').value : 'pending';
+    el('cardPurchaseBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    el('cardPurchaseSummary').textContent = '';
+    try{
+      const params = new URLSearchParams();
+      if(statusFilter) params.set('status', statusFilter);
+      const data = await financeApiRequest('/card-purchase-requests'+(params.toString() ? '?'+params.toString() : ''));
+      cardPurchaseRows = Array.isArray(data.requests) ? data.requests : [];
+      cardPurchaseCards = Array.isArray(data.availableCards) ? data.availableCards : [];
+      cardPurchaseCanApprove = Boolean(data.canApprove);
+      const c = data.counts || {};
+      el('cardPurchaseSummary').textContent = (Number(c.pending)||0)+' pendente(s) · '+(Number(c.approved)||0)+' aprovada(s) · '+(Number(c.rejected)||0)+' recusada(s).';
+      renderCardPurchaseCardOptions();
+      renderCardPurchaseTable();
+    }catch(error){
+      el('cardPurchaseBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function renderCardPurchaseCardOptions(){
+    const select = el('cardPurchaseCard');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">SELECIONE</option>' + cardPurchaseCards.map(card =>
+      '<option value="'+escapeHtml(card.id)+'">'+escapeHtml(card.name)+' •••• '+escapeHtml(card.last4 || '----')+
+      ((card.kind || 'corporate') === 'partner' ? ' (SÓCIO)' : '')+
+      (card.companyName ? ' — '+escapeHtml(card.companyName) : '')+'</option>').join('');
+    if(Array.from(select.options).some(o => o.value === selected)) select.value = selected;
+  }
+
+  function renderCardPurchaseTable(){
+    const body = el('cardPurchaseBody');
+    if(!body) return;
+    if(!cardPurchaseRows.length){
+      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Nenhuma compra para os filtros selecionados.</td></tr>';
+      return;
+    }
+    body.innerHTML = cardPurchaseRows.map(row => {
+      const card = cardPurchaseCards.find(c => c.id === row.cardId);
+      const cardLabel = card ? (card.name+' •••• '+(card.last4||'----')) : (row.cardId || '—');
+      const decision = cardPurchaseCanApprove && row.status === 'pending'
+        ? '<button class="btn-outline btn-sm" type="button" data-card-purchase-approve="'+escapeHtml(row.id)+'">APROVAR</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-card-purchase-reject="'+escapeHtml(row.id)+'">RECUSAR</button>'
+        : (row.status === 'rejected' && row.decisionNote ? '<span style="font-size:10px;color:var(--ink-soft);">'+escapeHtml(row.decisionNote)+'</span>' : '');
+      return '<tr>'+
+        '<td data-label="Data">'+escapeHtml(row.purchaseDate || '')+'</td>'+
+        '<td data-label="Cartão">'+escapeHtml(cardLabel)+'</td>'+
+        '<td data-label="Estabelecimento">'+escapeHtml(row.merchant || '')+'</td>'+
+        '<td data-label="Valor">'+formatCentsBRL(row.amountCents)+'</td>'+
+        '<td data-label="Parc.">'+escapeHtml(row.installmentLabel || 'à vista')+'</td>'+
+        '<td data-label="Solicitante">'+escapeHtml(row.requestedByName || '—')+'</td>'+
+        '<td data-label="Situação">'+escapeHtml(CARD_PURCHASE_STATUS_LABELS[row.status] || row.status)+'</td>'+
+        '<td data-label="Ações">'+decision+'</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  el('cardPurchaseStatusFilter') && el('cardPurchaseStatusFilter').addEventListener('change', loadComprasCartaoPage);
+
+  function openCardPurchaseDialog(){
+    el('cardPurchaseForm').reset();
+    renderCardPurchaseCardOptions();
+    el('cardPurchaseDate').value = financeCurrentMonthKey()+'-'+String(new Date().getDate()).padStart(2,'0');
+    el('cardPurchaseInstallmentCurrent').value = '1';
+    el('cardPurchaseInstallmentTotal').value = '1';
+    el('cardPurchaseFormStatus').textContent = '';
+    el('cardPurchaseDialog').showModal();
+  }
+  el('btnNewCardPurchase') && el('btnNewCardPurchase').addEventListener('click', openCardPurchaseDialog);
+  el('btnCloseCardPurchaseDialog') && el('btnCloseCardPurchaseDialog').addEventListener('click', () => el('cardPurchaseDialog').close());
+  el('btnCancelCardPurchaseDialog') && el('btnCancelCardPurchaseDialog').addEventListener('click', () => el('cardPurchaseDialog').close());
+
+  el('cardPurchaseForm') && el('cardPurchaseForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('cardPurchaseFormStatus');
+    status.textContent = '';
+    const amountCents = parseBRLToCents(el('cardPurchaseAmount').value);
+    if(amountCents === null || amountCents <= 0){ status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.'; return; }
+    const payload = {
+      cardId: el('cardPurchaseCard').value,
+      purchaseDate: el('cardPurchaseDate').value,
+      merchant: el('cardPurchaseMerchant').value.trim(),
+      amountCents,
+      installmentCurrent: Number(el('cardPurchaseInstallmentCurrent').value) || 1,
+      installmentTotal: Number(el('cardPurchaseInstallmentTotal').value) || 1,
+      holderName: el('cardPurchaseHolder').value.trim(),
+      notes: el('cardPurchaseNotes').value
+    };
+    try{
+      await financeApiRequest('/card-purchase-requests', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('cardPurchaseDialog').close();
+      showPurchaseToast('Compra enviada para aprovação.');
+      await loadComprasCartaoPage();
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  el('cardPurchaseBody') && el('cardPurchaseBody').addEventListener('click', async event => {
+    const approveBtn = event.target.closest('[data-card-purchase-approve]');
+    const rejectBtn = event.target.closest('[data-card-purchase-reject]');
+    if(approveBtn){
+      if(!confirm('Aprovar esta compra? Ela será lançada na fatura do cartão.')) return;
+      try{
+        await financeApiRequest('/card-purchase-requests/'+encodeURIComponent(approveBtn.dataset.cardPurchaseApprove), {
+          method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'approve'})
+        });
+        showPurchaseToast('Compra aprovada e lançada na fatura.');
+        await loadComprasCartaoPage();
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      return;
+    }
+    if(rejectBtn){
+      const note = prompt('Motivo da recusa (opcional):');
+      if(note === null) return;
+      try{
+        await financeApiRequest('/card-purchase-requests/'+encodeURIComponent(rejectBtn.dataset.cardPurchaseReject), {
+          method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'reject', note})
+        });
+        showPurchaseToast('Compra recusada.');
+        await loadComprasCartaoPage();
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+    }
+  });
 
   // --- Cadastro do cartão ---
   function openCorpCardDialog(row){
@@ -21420,6 +21629,7 @@ function renderHomeTasks(){
     el('corpCardId').value = row ? row.id : '';
     el('corpCardDialogTitle').textContent = row ? 'EDITAR CARTÃO' : 'NOVO CARTÃO';
     el('corpCardName').value = row ? row.name : '';
+    el('corpCardKind').value = row ? (row.kind || 'corporate') : 'corporate';
     el('corpCardBank').value = row ? (row.bank || '') : '';
     el('corpCardBrand').value = row ? (row.brand || '') : '';
     el('corpCardLast4').value = row ? (row.last4 || '') : '';
@@ -21456,6 +21666,7 @@ function renderHomeTasks(){
     if(!/^\d{4}$/.test(last4)){ status.textContent = 'O FINAL DEVE TER 4 DÍGITOS.'; return; }
     const payload = {
       name: el('corpCardName').value.trim(),
+      kind: el('corpCardKind').value,
       bank: el('corpCardBank').value.trim(),
       brand: el('corpCardBrand').value.trim(),
       last4,
@@ -25360,6 +25571,7 @@ function renderHomeTasks(){
     'payables:invoices_view':'Financeiro: ver notas fiscais/duplicatas','payables:invoices_reconcile':'Financeiro: conferir NF e cadastrar duplicatas','payables:confirm_payment':'Financeiro: agendar/confirmar pagamento de duplicata','payables:return_to_purchases':'Financeiro: devolver NF para Compras',
     'payroll:manage':'RH Financeiro: folha, benefícios e comissionamento',
     'works:manage':'Obras: cadastrar e gerenciar',
+    'cards:request':'Compras em Cartão: cadastrar (Assistência)','cards:approve':'Compras em Cartão: aprovar/recusar',
     'users:manage':'Usuários e acessos'
   };
   const accessGroupNames = {
