@@ -51,6 +51,7 @@ type Permission =
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
+  | "cards:request" | "cards:approve"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
@@ -126,6 +127,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "works:manage",
   "payables:invoices_view", "payables:invoices_reconcile", "payables:confirm_payment", "payables:return_to_purchases",
   "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
+  // Compras em cartão (item 8): quem cadastra (Assistência) x quem aprova.
+  "cards:request", "cards:approve",
   "users:manage",
 ];
 // documents_manage continua exclusivo de administrador: nunca pode ser
@@ -1078,6 +1081,10 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   ],
   payroll: ["payroll:manage"],
   works: ["works:manage", "finance:manage"],
+  // Compras em cartão pela Assistência (itens 8-10): página e API próprias,
+  // liberadas por cards:request (cadastra), cards:approve (aprova) ou
+  // finance:manage. NÃO dá acesso ao resto do Financeiro.
+  cards: ["cards:request", "cards:approve", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
   ],
@@ -1140,6 +1147,14 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/solicitacoes/notas-os" || path.startsWith("/api/os-notes"),
       "osNotes",
+    ],
+    // Compras em cartão pela Assistência — checada ANTES do gate geral de
+    // Financeiro, para liberar só esta página/API a quem tem cards:request
+    // ou cards:approve sem finance:manage.
+    [
+      path === "/financeiro/compras-cartao" ||
+        path.startsWith("/api/finance/card-purchase-requests"),
+      "cards",
     ],
     [
       path === "/financeiro" || path.startsWith("/financeiro/") || path.startsWith("/api/finance"),

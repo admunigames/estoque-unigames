@@ -2143,6 +2143,10 @@ export const financeCorporateCards = pgTable(
     brand: text("brand").notNull().default(""),
     // Só os últimos 4 dígitos, para identificação. NUNCA o número completo.
     last4: text("last4").notNull().default(""),
+    // Categoria do cartão (item 7):
+    //   'corporate' — cartão de crédito corporativo da empresa;
+    //   'partner'   — cartão pessoal de sócio usado para despesas da empresa.
+    kind: text("kind").notNull().default("corporate"),
     limitCents: integer("limit_cents").notNull().default(0),
     bestPurchaseDay: integer("best_purchase_day").notNull().default(0),
     closingDay: integer("closing_day").notNull().default(1),
@@ -2208,6 +2212,9 @@ export const financeCardInvoiceEntries = pgTable(
     notes: text("notes").notNull().default(""),
     expenseId: text("expense_id").notNull().default(""),
     status: text("status").notNull().default("pending"),
+    // != '' quando o lançamento veio de uma compra cadastrada pela
+    // Assistência (item 10): rastreia a solicitação aprovada que o gerou.
+    purchaseRequestId: text("purchase_request_id").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -2215,6 +2222,45 @@ export const financeCardInvoiceEntries = pgTable(
   (table) => [
     index("finance_card_invoice_entries_card_date_idx").on(table.cardId, table.entryDate),
     index("finance_card_invoice_entries_import_idx").on(table.importId),
+    index("finance_card_invoice_entries_request_idx").on(table.purchaseRequestId),
+  ],
+);
+
+// Compras em cartão cadastradas manualmente pela Assistência (itens 8-10).
+// É a FILA DE APROVAÇÃO — não um armazém paralelo de lançamentos: quando o
+// administrador aprova, a compra é copiada para finance_card_invoice_entries
+// (a mesma estrutura da fatura importada) e passa a valer lá.
+// status: 'pending' | 'approved' | 'rejected'.
+export const financeCardPurchaseRequests = pgTable(
+  "finance_card_purchase_requests",
+  {
+    id: text("id").primaryKey(),
+    cardId: text("card_id").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    purchaseDate: text("purchase_date").notNull().default(""),
+    merchant: text("merchant").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    installmentLabel: text("installment_label").notNull().default(""),
+    installmentCurrent: integer("installment_current").notNull().default(1),
+    installmentTotal: integer("installment_total").notNull().default(1),
+    holderName: text("holder_name").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    status: text("status").notNull().default("pending"),
+    // Lançamento gerado na fatura quando a solicitação é aprovada.
+    invoiceEntryId: text("invoice_entry_id").notNull().default(""),
+    decisionNote: text("decision_note").notNull().default(""),
+    requestedBy: text("requested_by").notNull().default(""),
+    requestedByName: text("requested_by_name").notNull().default(""),
+    requestedAt: text("requested_at").notNull().default(sql`now()::text`),
+    decidedBy: text("decided_by").notNull().default(""),
+    decidedByName: text("decided_by_name").notNull().default(""),
+    decidedAt: text("decided_at").notNull().default(""),
+  },
+  (table) => [
+    index("finance_card_purchase_requests_status_idx").on(table.status, table.companyId),
+    index("finance_card_purchase_requests_card_idx").on(table.cardId),
+    index("finance_card_purchase_requests_requester_idx").on(table.requestedBy),
   ],
 );
 

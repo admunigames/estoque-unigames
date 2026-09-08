@@ -379,6 +379,13 @@
       "when": 1788437868396,
       "tag": "0053_card_sales_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1788439954806,
+      "tag": "0054_cartoes_socios_e_compras_assistencia",
+      "breakpoints": true
     }
   ]
 }

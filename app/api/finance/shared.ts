@@ -46,6 +46,24 @@ export function canManageFinance(actor: Identity) {
   return actor.role === "admin" || actor.permissions.includes("finance:manage");
 }
 
+// Compras em cartão pela Assistência (itens 8-10). cadastrar != aprovar;
+// finance:manage cobre os dois.
+export function canRequestCardPurchases(actor: Identity) {
+  return (
+    actor.role === "admin" ||
+    actor.permissions.includes("cards:request") ||
+    actor.permissions.includes("finance:manage")
+  );
+}
+
+export function canApproveCardPurchases(actor: Identity) {
+  return (
+    actor.role === "admin" ||
+    actor.permissions.includes("cards:approve") ||
+    actor.permissions.includes("finance:manage")
+  );
+}
+
 export function sameOrigin(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") return false;

@@ -101,3 +101,73 @@ test("Financeiro Fase 7: módulo Cartões Corporativos registrado, sem campo de 
   assert.match(html, /cdnjs\.cloudflare\.com\/ajax\/libs\/pdf\.js/);
   assert.doesNotMatch(html, /<script[^>]+src="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/pdf\.js/);
 });
+
+// ---------------------------------------------------------------------------
+// Cartões Sócios + compras cadastradas pela Assistência (itens 7-10)
+// ---------------------------------------------------------------------------
+
+const purchases = await import("../app/lib/card-purchase-requests.ts");
+
+test("card-purchase-requests: validação do rascunho e normalização de parcelas", () => {
+  const base = { cardId: "c1", purchaseDate: "2026-09-03", merchant: "Loja X", amountCents: 5000, installmentTotal: 1 };
+  assert.equal(purchases.validateCardPurchaseDraft(base), null);
+  assert.equal(purchases.validateCardPurchaseDraft({ ...base, cardId: "" }), "SELECIONE O CARTÃO.");
+  assert.equal(purchases.validateCardPurchaseDraft({ ...base, purchaseDate: "03/09" }), "INFORME A DATA DA COMPRA.");
+  assert.equal(purchases.validateCardPurchaseDraft({ ...base, merchant: "  " }), "INFORME O ESTABELECIMENTO.");
+  assert.equal(purchases.validateCardPurchaseDraft({ ...base, amountCents: 0 }), "INFORME UM VALOR MAIOR QUE ZERO.");
+  assert.equal(purchases.validateCardPurchaseDraft({ ...base, installmentTotal: 60 }), "NÚMERO DE PARCELAS INVÁLIDO (1 A 48).");
+
+  assert.deepEqual(purchases.normalizeInstallments(1, 1), { current: 1, total: 1, label: "" });
+  assert.deepEqual(purchases.normalizeInstallments(2, 6), { current: 2, total: 6, label: "2/6" });
+  // parcela atual nunca maior que o total
+  assert.deepEqual(purchases.normalizeInstallments(9, 3), { current: 3, total: 3, label: "3/3" });
+});
+
+test("card-purchase-requests: status e tipos de cartão", () => {
+  assert.equal(purchases.isCardPurchaseRequestStatus("pending"), true);
+  assert.equal(purchases.isCardPurchaseRequestStatus("approved"), true);
+  assert.equal(purchases.isCardPurchaseRequestStatus("nope"), false);
+  assert.equal(purchases.isCardKind("corporate"), true);
+  assert.equal(purchases.isCardKind("partner"), true);
+  assert.equal(purchases.isCardKind("other"), false);
+});
+
+test("itens 7-10: cartões sócios + fluxo de compras da Assistência registrados", async () => {
+  const [html, workerSource, schema, migration, listRoute, decideRoute, cardRoute] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0054_cartoes_socios_e_compras_assistencia.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/card-purchase-requests/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/card-purchase-requests/[id]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/corporate-cards/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Item 7 — categoria de cartão.
+  assert.match(schema, /kind: text\("kind"\)\.notNull\(\)\.default\("corporate"\)/);
+  assert.match(migration, /ALTER TABLE "finance_corporate_cards" ADD COLUMN "kind"/);
+  assert.match(cardRoute, /isCardKind\(body\.kind\)/);
+  assert.match(html, /id="corpCardKind"/);
+
+  // Itens 8-10 — solicitação, aprovação e cópia para a fatura.
+  assert.match(schema, /export const financeCardPurchaseRequests = pgTable/);
+  assert.match(migration, /CREATE TABLE "finance_card_purchase_requests"/);
+  assert.match(migration, /ALTER TABLE "finance_card_invoice_entries" ADD COLUMN "purchase_request_id"/);
+  assert.match(decideRoute, /INSERT INTO finance_card_invoice_entries/);
+  assert.match(decideRoute, /purchase_request_id/);
+  assert.match(listRoute, /canRequestCardPurchases/);
+
+  // Permissões novas.
+  assert.match(workerSource, /"cards:request" \| "cards:approve"/);
+  assert.match(workerSource, /cards: \["cards:request", "cards:approve", "finance:manage"\]/);
+  assert.match(workerSource, /path\.startsWith\("\/api\/finance\/card-purchase-requests"\)/);
+  assert.match(html, /value="cards:request"/);
+  assert.match(html, /value="cards:approve"/);
+
+  // Página nova registrada.
+  assert.match(html, /id="pageFinanceiroComprasCartao" class="page wrap"/);
+  assert.match(html, /id="navFinanceiroComprasCartao" data-page="financeiroComprasCartao" data-any-permission="cards,finance"/);
+  assert.match(html, /financeiroComprasCartao:'\/financeiro\/compras-cartao'/);
+  assert.match(html, /financeiroComprasCartao:'cards'/);
+  assert.equal(html.split("if(name === 'financeiroComprasCartao') loadComprasCartaoPage();").length - 1, 2);
+});
