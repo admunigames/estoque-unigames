@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v59"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v60"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v59"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v60"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v59"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v60"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1140,7 +1140,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v59"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v60"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1324,6 +1324,48 @@ test("Saídas: a lista de lojas do seletor é carregada e liberada pro usuário 
   const bypassIndex = workerSource.indexOf('key === "companies_list"');
   const requiredIndex = workerSource.indexOf("const required = sharedStatePermission(");
   assert.ok(bypassIndex > -1 && requiredIndex > -1 && bypassIndex < requiredIndex);
+});
+
+test("Saídas: relatório em PDF por período (Loja, Produto, Quantidade, Observação, Data), reaproveitando o mecanismo window.print()", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+
+  // Filtro de período e botão de gerar o relatório, fora da área impressa.
+  assert.match(html, /<div class="dre-toolbar no-print">\s*<div class="field"><label for="outputReportFrom">DATA INICIAL<\/label><input id="outputReportFrom" type="date"><\/div>\s*<div class="field"><label for="outputReportTo">DATA FINAL<\/label><input id="outputReportTo" type="date"><\/div>/);
+  assert.match(html, /<button class="btn-outline" id="btnOutputReportPdf" type="button">RELATÓRIO \/ PDF<\/button>/);
+
+  // Cabeçalho e tabela de impressão seguem o mesmo padrão já usado em
+  // Estoque Fiscal/RH (classes print-report-header/print-report-kicker/
+  // print-report-meta/print-only) — nenhuma biblioteca nova.
+  assert.match(html, /<div class="print-report-header" id="outputPrintHeader">/);
+  assert.match(html, /<div class="print-report-kicker">UNIGAMES · SAÍDAS<\/div>/);
+  assert.match(html, /<div class="print-report-meta" id="outputPrintMeta"><\/div>/);
+  assert.match(html, /<div class="print-only" id="outputPrintTable"><\/div>/);
+  assert.doesNotMatch(html, /jspdf|jsPDF|pdfmake/i);
+
+  // Filtra outputRows (já contém só o que a própria sessão pode ver — a
+  // mesma regra de visibilidade de Saídas se aplica automaticamente, sem
+  // duplicar lógica de escopo por loja) pelo período, nos dois status.
+  assert.match(
+    html,
+    /function outputReportRows\(fromValue, toValue\)\{\s*return outputRows\s*\.filter\(row => \{\s*const date = String\(row\.createdAt \|\| ''\)\.slice\(0,10\);\s*return date && date >= fromValue && date <= toValue;\s*\}\)/,
+  );
+  assert.match(html, /if\(fromValue > toValue\)\{\s*showPurchaseToast\('A data inicial não pode ser depois da data final\.','error'\);/);
+  assert.match(html, /showPurchaseToast\('Nenhuma saída encontrada nesse período\.','error'\);/);
+
+  // A tabela impressa traz exatamente as 5 colunas pedidas, nessa ordem.
+  assert.match(
+    html,
+    /'<table class="rh-print-table"><thead><tr>'\+\s*'<th>Loja<\/th><th>Produto<\/th><th class="num">Quantidade<\/th><th>Observação<\/th><th>Data da solicitação<\/th>'\+/,
+  );
+  assert.match(html, /'<td>'\+escapeHtml\(row\.companyName \|\| 'Loja não identificada'\)\+'<\/td>'\+/);
+  assert.match(html, /'<td>'\+escapeHtml\(row\.productName \|\| '—'\)\+'<\/td>'\+/);
+  assert.match(html, /'<td class="num">'\+escapeHtml\(String\(row\.quantity \|\| 0\)\)\+'<\/td>'\+/);
+  assert.match(html, /'<td>'\+escapeHtml\(row\.defect \|\| '—'\)\+'<\/td>'\+/);
+  assert.match(html, /'<td>'\+escapeHtml\(outputDateTime\(row\.createdAt\)\)\+'<\/td>'\+/);
+
+  // Mesmo mecanismo de geração de PDF já usado (classe pdf-export +
+  // window.print(), sem lib nova) e limpeza no afterprint.
+  assert.match(html, /document\.body\.classList\.add\('pdf-export'\);\s*window\.print\(\);\s*\}\s*el\('btnOutputReportPdf'\)\.addEventListener\('click', outputPrintReport\);/);
 });
 
 test("registra Entradas Gerais Solicitadas por loja e preserva o histórico do administrador (espelho de Saídas)", async () => {
@@ -1514,7 +1556,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v59"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v60"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1559,7 +1601,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v59"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v60"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {

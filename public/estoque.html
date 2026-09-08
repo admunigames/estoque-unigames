@@ -3487,6 +3487,13 @@
         <div class="page-header-meta"><p class="page-desc">Registre e acompanhe as Saídas Gerais Solicitadas pelas lojas. O administrador conclui a baixa e o registro permanece no histórico.</p></div>
       </header>
 
+      <div class="print-report-header" id="outputPrintHeader">
+        <div class="print-report-kicker">UNIGAMES · SAÍDAS</div>
+        <h1>Relatório de Saídas</h1>
+        <div class="print-report-meta" id="outputPrintMeta"></div>
+      </div>
+      <div class="print-only" id="outputPrintTable"></div>
+
       <section class="output-summary" id="outputSummary" aria-label="Resumo das saídas">
         <article class="output-summary-card"><span>AGUARDANDO EFETUAÇÃO</span><strong id="outputRequestedCount">0</strong></article>
         <article class="output-summary-card completed"><span>HISTÓRICO EFETUADO</span><strong id="outputCompletedCount">0</strong></article>
@@ -3513,6 +3520,13 @@
         <div class="output-board-head">
           <div><h3>SOLICITAÇÕES DE SAÍDA</h3><p id="outputBoardDescription">Acompanhe as solicitações registradas pela sua loja.</p></div>
           <button class="btn-outline" id="btnRefreshOutputs" type="button">ATUALIZAR</button>
+        </div>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="outputReportFrom">DATA INICIAL</label><input id="outputReportFrom" type="date"></div>
+          <div class="field"><label for="outputReportTo">DATA FINAL</label><input id="outputReportTo" type="date"></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnOutputReportPdf" type="button">RELATÓRIO / PDF</button>
+          </div>
         </div>
         <div class="output-toolbar">
           <div class="field search"><label for="outputSearch">BUSCAR</label><input id="outputSearch" type="search" placeholder="Produto, loja, responsável ou observação"></div>
@@ -14625,6 +14639,70 @@ function renderHomeTasks(){
     });
   });
   el('btnRefreshOutputs').addEventListener('click',loadOutputs);
+
+  let outputPrintTitleBefore = '';
+
+  function outputFormatDateBR(isoDate){
+    const parts = String(isoDate || '').split('-');
+    return parts.length === 3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : (isoDate || '—');
+  }
+
+  function outputReportRows(fromValue, toValue){
+    return outputRows
+      .filter(row => {
+        const date = String(row.createdAt || '').slice(0,10);
+        return date && date >= fromValue && date <= toValue;
+      })
+      .sort((a,b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  }
+
+  function outputPrintReport(){
+    const fromValue = el('outputReportFrom').value;
+    const toValue = el('outputReportTo').value;
+    if(!fromValue || !toValue){
+      showPurchaseToast('Selecione a data inicial e a data final.','error');
+      return;
+    }
+    if(fromValue > toValue){
+      showPurchaseToast('A data inicial não pode ser depois da data final.','error');
+      return;
+    }
+    const rows = outputReportRows(fromValue, toValue);
+    if(!rows.length){
+      showPurchaseToast('Nenhuma saída encontrada nesse período.','error');
+      return;
+    }
+    const generatedAt = new Date().toLocaleString('pt-BR');
+    el('outputPrintMeta').textContent =
+      rows.length.toLocaleString('pt-BR')+' SAÍDA(S) · DE '+outputFormatDateBR(fromValue)+' A '+outputFormatDateBR(toValue)+
+      ' · GERADO EM '+generatedAt;
+    el('outputPrintTable').innerHTML =
+      '<table class="rh-print-table"><thead><tr>'+
+        '<th>Loja</th><th>Produto</th><th class="num">Quantidade</th><th>Observação</th><th>Data da solicitação</th>'+
+      '</tr></thead><tbody>'+
+      rows.map(row => '<tr>'+
+        '<td>'+escapeHtml(row.companyName || 'Loja não identificada')+'</td>'+
+        '<td>'+escapeHtml(row.productName || '—')+'</td>'+
+        '<td class="num">'+escapeHtml(String(row.quantity || 0))+'</td>'+
+        '<td>'+escapeHtml(row.defect || '—')+'</td>'+
+        '<td>'+escapeHtml(outputDateTime(row.createdAt))+'</td>'+
+      '</tr>').join('')+
+      '</tbody></table>';
+    outputPrintTitleBefore = document.title;
+    document.title = 'saidas-'+fromValue+'-a-'+toValue;
+    document.body.classList.add('pdf-export');
+    window.print();
+  }
+
+  el('btnOutputReportPdf').addEventListener('click', outputPrintReport);
+
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('pdf-export');
+    if(outputPrintTitleBefore){
+      document.title = outputPrintTitleBefore;
+      outputPrintTitleBefore = '';
+    }
+  });
 
   async function inputApiRequest(options){
     const response = await fetch('/api/inputs',{
