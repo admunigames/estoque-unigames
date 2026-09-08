@@ -3494,12 +3494,12 @@
       </div>
       <div class="print-only" id="outputPrintTable"></div>
 
-      <section class="output-summary" id="outputSummary" aria-label="Resumo das saídas">
+      <section class="output-summary no-print" id="outputSummary" aria-label="Resumo das saídas">
         <article class="output-summary-card"><span>AGUARDANDO EFETUAÇÃO</span><strong id="outputRequestedCount">0</strong></article>
         <article class="output-summary-card completed"><span>HISTÓRICO EFETUADO</span><strong id="outputCompletedCount">0</strong></article>
       </section>
 
-      <section class="output-register-panel" id="outputRegisterPanel">
+      <section class="output-register-panel no-print" id="outputRegisterPanel">
         <div class="output-panel-head">
           <div><h3>REGISTRAR SOLICITAÇÃO DE SAÍDA</h3><p id="outputRegisterDescription">Informe os dados da saída.</p></div>
         </div>
@@ -3516,12 +3516,12 @@
         </form>
       </section>
 
-      <section class="output-board">
+      <section class="output-board no-print">
         <div class="output-board-head">
           <div><h3>SOLICITAÇÕES DE SAÍDA</h3><p id="outputBoardDescription">Acompanhe as solicitações registradas pela sua loja.</p></div>
           <button class="btn-outline" id="btnRefreshOutputs" type="button">ATUALIZAR</button>
         </div>
-        <div class="dre-toolbar no-print">
+        <div class="dre-toolbar">
           <div class="field"><label for="outputReportFrom">DATA INICIAL</label><input id="outputReportFrom" type="date"></div>
           <div class="field"><label for="outputReportTo">DATA FINAL</label><input id="outputReportTo" type="date"></div>
           <div class="dre-toolbar-actions">
@@ -14656,6 +14656,19 @@ function renderHomeTasks(){
       .sort((a,b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
   }
 
+  // Agrupa as linhas por loja (ordem alfabética) — cada grupo vira um bloco
+  // próprio no relatório, com o nome da loja como título em vez de repetir
+  // numa coluna em toda linha.
+  function outputGroupRowsByCompany(rows){
+    const groups = new Map();
+    rows.forEach(row => {
+      const company = row.companyName || 'Loja não identificada';
+      if(!groups.has(company)) groups.set(company, []);
+      groups.get(company).push(row);
+    });
+    return [...groups.entries()].sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'));
+  }
+
   function outputPrintReport(){
     const fromValue = el('outputReportFrom').value;
     const toValue = el('outputReportTo').value;
@@ -14676,18 +14689,19 @@ function renderHomeTasks(){
     el('outputPrintMeta').textContent =
       rows.length.toLocaleString('pt-BR')+' SAÍDA(S) · DE '+outputFormatDateBR(fromValue)+' A '+outputFormatDateBR(toValue)+
       ' · GERADO EM '+generatedAt;
-    el('outputPrintTable').innerHTML =
+    el('outputPrintTable').innerHTML = outputGroupRowsByCompany(rows).map(([company, companyRows]) =>
+      '<div class="rh-print-block"><h3>'+escapeHtml(company)+'</h3>'+
       '<table class="rh-print-table"><thead><tr>'+
-        '<th>Loja</th><th>Produto</th><th class="num">Quantidade</th><th>Observação</th><th>Data da solicitação</th>'+
+        '<th>Produto</th><th class="num">Quantidade</th><th>Observação</th><th>Data da solicitação</th>'+
       '</tr></thead><tbody>'+
-      rows.map(row => '<tr>'+
-        '<td>'+escapeHtml(row.companyName || 'Loja não identificada')+'</td>'+
+      companyRows.map(row => '<tr>'+
         '<td>'+escapeHtml(row.productName || '—')+'</td>'+
         '<td class="num">'+escapeHtml(String(row.quantity || 0))+'</td>'+
         '<td>'+escapeHtml(row.defect || '—')+'</td>'+
         '<td>'+escapeHtml(outputDateTime(row.createdAt))+'</td>'+
       '</tr>').join('')+
-      '</tbody></table>';
+      '</tbody></table></div>'
+    ).join('');
     outputPrintTitleBefore = document.title;
     document.title = 'saidas-'+fromValue+'-a-'+toValue;
     document.body.classList.add('pdf-export');
