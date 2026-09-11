@@ -23711,16 +23711,26 @@ function renderHomeTasks(){
     loadInvoicesPage().then(() => openInvoiceDetailDialog(invoiceId));
   });
 
-  if(el('btnCreateInvoiceForOrder')) el('btnCreateInvoiceForOrder').addEventListener('click', () => {
+  // "CRIAR NOTA FISCAL PARA ESTE PEDIDO": abre o MESMO diálogo de NF manual
+  // (#invoiceFormDialog, um <dialog> fora da página Financeiro — showModal()
+  // funciona de qualquer tela) por cima do detalhe do pedido, sem navegar
+  // pra Notas Fiscais nem trocar a URL. Ao salvar (ou cancelar), o usuário
+  // continua exatamente onde estava, vendo o pedido — ver o submit do
+  // invoiceForm abaixo, que recarrega o detalhe do pedido em vez da lista
+  // de Notas Fiscais quando o diálogo foi aberto por aqui.
+  if(el('btnCreateInvoiceForOrder')) el('btnCreateInvoiceForOrder').addEventListener('click', async () => {
     if(!comprasCurrentOrderId) return;
     const order = comprasOrders.find(o => o.id === comprasCurrentOrderId);
-    const params = new URLSearchParams();
-    params.set('novoPedidoId', comprasCurrentOrderId);
-    if(order && order.supplierId) params.set('supplierId', order.supplierId);
-    if(order && order.companyId) params.set('companyId', order.companyId);
-    history.pushState({page:'financeiroInvoices'}, '', '/financeiro/notas-fiscais?'+params.toString());
-    showPage('financeiroInvoices');
-    loadInvoicesPage();
+    if(!companies.length) await loadCompanies();
+    await loadPayablesCatalogData();
+    invoicePendingPurchaseOrderId = comprasCurrentOrderId;
+    el('invoiceForm').reset();
+    renderInvoiceFormSelects();
+    el('invoiceFormStatus').textContent = '';
+    if(order && order.supplierId) el('invoiceSupplier').value = order.supplierId;
+    if(order && order.companyId) el('invoiceCompany').value = order.companyId;
+    else if(!payablesCanActAcrossStores() && currentSession.companyId) el('invoiceCompany').value = currentSession.companyId;
+    el('invoiceFormDialog').showModal();
   });
 
   if(el('btnLinkExistingInvoice')) el('btnLinkExistingInvoice').addEventListener('click', async () => {
@@ -26459,9 +26469,17 @@ function renderHomeTasks(){
         })
       });
       el('invoiceFormDialog').close();
+      const purchaseOrderId = invoicePendingPurchaseOrderId;
       invoicePendingPurchaseOrderId = '';
       showPurchaseToast('Nota fiscal cadastrada.');
-      await loadInvoicesList();
+      // Veio do botão "CRIAR NOTA FISCAL PARA ESTE PEDIDO" (aberto por cima
+      // do detalhe do pedido, sem navegar) — volta pro mesmo pedido em vez
+      // de recarregar a lista de Notas Fiscais, que nem está visível.
+      if(purchaseOrderId && comprasCurrentOrderId === purchaseOrderId){
+        await openComprasOrderDetail(purchaseOrderId);
+      }else{
+        await loadInvoicesList();
+      }
     }catch(error){
       el('invoiceFormStatus').textContent = error.message;
     }finally{
