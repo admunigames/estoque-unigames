@@ -84,6 +84,14 @@ export async function liveInvalidationForRequest(
     return { module: "supplies", audience: { kind: "all" } };
   }
 
+  if (path === "/api/compras-novo" || path.startsWith("/api/compras-novo/")) {
+    // Fase E, item 2: rascunhos, itens, conversao, pedidos, itens de pedido
+    // e anexos — volume de uso baixo e a lista ja e filtrada no client, entao
+    // nao vale a pena tentar escopar por loja (o pedido pode nao ter loja
+    // definida ainda). Qualquer escrita relevante avisa todo mundo.
+    return { module: "compras", audience: { kind: "all" } };
+  }
+
   if (path === "/api/loans/devices" || path.startsWith("/api/loans/requests")) {
     // Catalogo (cadastrar/editar/excluir aparelho, mudar status) afeta a
     // disponibilidade para todas as lojas.

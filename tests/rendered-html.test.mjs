@@ -1846,7 +1846,7 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(schema, /accessories: text\("accessories"\)/);
 
   assert.match(liveUpdates, /"missions", "captures", "supplies", "tasks", "loans"/);
-  assert.match(workerSource, /loans: "loans",\s*\n\s*\};/);
+  assert.match(workerSource, /loans: "loans",\s*\n\s*compras: "purchasesDraft",\s*\n\s*\};/);
   assert.match(html, /aparelhosEmprestimo:'loans'/);
   assert.match(
     html,
@@ -3469,4 +3469,55 @@ test("Módulo Compras nativo (Fase D): aba Divisão, preço por item e painel Po
   assert.match(html, /\/produtos\/historico\?produto='\+encodeURIComponent\(codigo\)/);
   assert.match(html, /\/estoque-saldo\?produto='\+encodeURIComponent\(codigo\)/);
   assert.doesNotMatch(html, /data-page="comprasNovoPorProduto"/);
+});
+
+test("Módulo Compras nativo (Fase E): accordion no detalhe, atualização ao vivo e badge de Status da Divisão", async () => {
+  const [html, liveUpdates, liveEvents, workerSource, convertRoute] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/live-updates.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/live-events.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/drafts/[id]/convert/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Item 1 — accordion: o mesmo nó de detalhe (#comprasDraftDetail /
+  // #comprasOrderDetail) é realocado pra dentro de uma <tr> logo após a
+  // linha clicada, em vez de renderizar fixo depois da tabela inteira.
+  assert.match(html, /let comprasDraftDetailOpenId = '';/);
+  assert.match(html, /let comprasOrderDetailOpenId = '';/);
+  assert.match(html, /data-compras-draft-row="'\+escapeHtml\(row\.id\)\+'"/);
+  assert.match(html, /data-compras-order-row="'\+escapeHtml\(order\.id\)\+'"/);
+  assert.match(html, /targetRow\.after\(tr\);/);
+  assert.match(html, /function closeComprasDraftDetail\(\)/);
+  assert.match(html, /function closeComprasOrderDetail\(\)/);
+  assert.match(html, /row\.id === comprasDraftDetailOpenId \? 'FECHAR' : 'ABRIR'/);
+  assert.match(html, /order\.id === comprasOrderDetailOpenId \? 'FECHAR' : 'ABRIR'/);
+
+  // Item 2 — atualização ao vivo: módulo "compras" novo, permissão
+  // purchasesDraft, invalidação em qualquer escrita de /api/compras-novo/*,
+  // e o cliente recarrega a aba ativa sem fechar um detalhe já aberto.
+  assert.match(liveUpdates, /"missions", "captures", "supplies", "tasks", "loans", "compras"/);
+  assert.match(liveEvents, /path === "\/api\/compras-novo" \|\| path\.startsWith\("\/api\/compras-novo\/"\)/);
+  assert.match(liveEvents, /module: "compras", audience: \{ kind: "all" \}/);
+  assert.match(workerSource, /compras: "purchasesDraft",/);
+  assert.match(html, /comprasNovo:'compras'/);
+  assert.match(
+    html,
+    /if\(livePageName === 'comprasNovo'\)\{[\s\S]*?if\(comprasSectionTab === 'pedidos'\)\{[\s\S]*?await loadComprasOrdersPage\(\);[\s\S]*?if\(comprasOrderDetailOpenId\) await openComprasOrderDetail\(comprasOrderDetailOpenId\);/,
+  );
+  assert.match(
+    html,
+    /\} else if\(comprasSectionTab === 'rascunhos'\)\{[\s\S]*?await loadComprasNovoPage\(\);[\s\S]*?if\(comprasDraftDetailOpenId\) await openComprasDraftDetail\(comprasDraftDetailOpenId\);/,
+  );
+
+  // Item 3 — badge de Status da Divisão: reflete os 5 valores + vazio,
+  // aparece na lista (mesma função de badges do Status) e no cabeçalho do
+  // detalhe (mesma comprasOrderBadges), e pedidos nativos novos nascem com
+  // "FALTA DIVISÃO" em vez de vazio.
+  assert.match(html, /function comprasDivisionStatusBadge\(divisionStatus\)/);
+  assert.match(html, /divisionStatus === 'CONCLUÍDO'/);
+  assert.match(html, /divisionStatus === 'FALTA DIVISÃO'/);
+  assert.match(html, /divisionStatus === 'FALTANDO ENVIO COMPLETO DA DIVISÃO'/);
+  assert.match(html, /const divisionBadge = comprasDivisionStatusBadge\(order\.divisionStatus\);/);
+  assert.match(convertRoute, /'FALTA DIVISÃO', 'em_andamento'/);
 });

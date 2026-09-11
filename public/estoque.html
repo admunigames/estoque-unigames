@@ -8221,7 +8221,7 @@
 
   // O canal ao vivo carrega somente avisos de invalidacao. Os dados continuam
   // sendo buscados pelas APIs existentes, que aplicam as permissoes da sessao.
-  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans'});
+  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans',comprasNovo:'compras'});
   let livePageName = '';
   let liveModule = '';
   let liveSocket = null;
@@ -8268,6 +8268,19 @@
       await loadLoans();
       const openRequestId = el('loanRequestDetailsId').value;
       if(openRequestId && el('loanRequestDetailsDialog').open) openLoanRequestDetailsDialog(openRequestId);
+    }
+    if(livePageName === 'comprasNovo'){
+      // Fase E, item 2: recarrega só a aba ativa (rascunhos ou pedidos) e,
+      // se houver um detalhe expandido (accordion), atualiza o conteúdo
+      // dele também — sem fechar — pra dois usuários no mesmo pedido verem
+      // a mudança um do outro sem precisar recarregar a página.
+      if(comprasSectionTab === 'pedidos'){
+        await loadComprasOrdersPage();
+        if(comprasOrderDetailOpenId) await openComprasOrderDetail(comprasOrderDetailOpenId);
+      } else if(comprasSectionTab === 'rascunhos'){
+        await loadComprasNovoPage();
+        if(comprasDraftDetailOpenId) await openComprasDraftDetail(comprasDraftDetailOpenId);
+      }
     }
     if(livePageName === 'inicio') await loadHomeSupplies();
   }
@@ -22987,6 +23000,15 @@ function renderHomeTasks(){
   let comprasDrafts = [];
   let comprasCurrentDraftId = '';
   let comprasCurrentDraftItems = [];
+  // Fase E, item 1: detalhe em accordion — o mesmo nó #comprasDraftDetail é
+  // realocado (appendChild, não recriado) pra dentro de uma <tr> logo após
+  // a linha clicada, em vez de ficar fixo depois da tabela inteira.
+  let comprasDraftDetailOpenId = '';
+  let comprasDraftDetailEl = null;
+  function comprasDraftDetailNode(){
+    if(!comprasDraftDetailEl) comprasDraftDetailEl = document.getElementById('comprasDraftDetail');
+    return comprasDraftDetailEl;
+  }
   let comprasSuppliersCache = [];
 
   async function comprasNovoSuppliers(){
@@ -23020,23 +23042,43 @@ function renderHomeTasks(){
   function renderComprasDraftsTable(){
     const body = el('comprasDraftsTableBody');
     if(!body) return;
+    // Destaca o nó de detalhe ANTES de reescrever o innerHTML do tbody —
+    // senão ele seria descartado junto com as linhas antigas.
+    const detailNode = comprasDraftDetailNode();
+    if(detailNode && detailNode.parentNode) detailNode.parentNode.removeChild(detailNode);
     if(!comprasDrafts.length){
       body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum rascunho encontrado.</td></tr>';
       return;
     }
-    body.innerHTML = comprasDrafts.map(row => '<tr'+(row.id === comprasCurrentDraftId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
+    body.innerHTML = comprasDrafts.map(row => '<tr data-compras-draft-row="'+escapeHtml(row.id)+'"'+(row.id === comprasCurrentDraftId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
       '<td>'+escapeHtml(row.name)+'</td>'+
       '<td>'+Number(row.itemCount || 0)+'</td>'+
       '<td>'+comprasDraftStatusBadge(row.status)+'</td>'+
       '<td>'+escapeHtml(row.createdByName || '—')+'</td>'+
       '<td>'+(row.createdAt ? formatDateTimeBR(row.createdAt) : '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
-        '<button class="btn-outline" type="button" data-compras-draft-open="'+escapeHtml(row.id)+'">ABRIR</button>'+
+        '<button class="btn-outline" type="button" data-compras-draft-open="'+escapeHtml(row.id)+'">'+(row.id === comprasDraftDetailOpenId ? 'FECHAR' : 'ABRIR')+'</button>'+
         (row.status === 'convertido' ? '' :
           '<button class="btn-outline" type="button" data-compras-draft-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
           '<button class="btn-outline" type="button" data-compras-draft-archive="'+escapeHtml(row.id)+'">'+(row.status === 'arquivado' ? 'REABRIR' : 'ARQUIVAR')+'</button>')+
       '</span></td>'+
     '</tr>').join('');
+    if(comprasDraftDetailOpenId){
+      const targetRow = body.querySelector('tr[data-compras-draft-row="'+CSS.escape(comprasDraftDetailOpenId)+'"]');
+      if(targetRow){
+        const tr = document.createElement('tr');
+        tr.className = 'compras-detail-row';
+        const td = document.createElement('td');
+        td.colSpan = 6;
+        td.style.padding = '0';
+        td.style.background = 'transparent';
+        td.appendChild(detailNode);
+        tr.appendChild(td);
+        targetRow.after(tr);
+      } else {
+        comprasDraftDetailOpenId = '';
+      }
+    }
   }
 
   async function loadComprasNovoPage(){
@@ -23050,7 +23092,8 @@ function renderHomeTasks(){
       renderComprasDraftsTable();
       if(comprasCurrentDraftId && !comprasDrafts.some(d => d.id === comprasCurrentDraftId)){
         comprasCurrentDraftId = '';
-        el('comprasDraftDetail').hidden = true;
+        comprasDraftDetailOpenId = '';
+        comprasDraftDetailNode().hidden = true;
       }
     }catch(error){
       comprasDrafts = [];
@@ -23105,9 +23148,14 @@ function renderHomeTasks(){
     try{
       const data = await comprasNovoApiRequest('/drafts/'+encodeURIComponent(draftId));
       comprasCurrentDraftId = draftId;
+      comprasDraftDetailOpenId = draftId;
       comprasCurrentDraftItems = Array.isArray(data.items) ? data.items : [];
       comprasCurrentDraftStatus = data.draft.status;
-      el('comprasDraftDetail').hidden = false;
+      // Reposiciona a linha de detalhe ANTES de popular os campos — os
+      // ids internos (comprasDraftDetailTitle etc.) só são achados por
+      // document.getElementById depois que o nó volta a ficar no DOM.
+      renderComprasDraftsTable();
+      comprasDraftDetailNode().hidden = false;
       el('comprasDraftDetailTitle').textContent = data.draft.name;
       el('comprasDraftDetailMeta').innerHTML =
         comprasDraftStatusBadge(data.draft.status)+
@@ -23118,15 +23166,26 @@ function renderHomeTasks(){
       el('btnEditComprasDraft').hidden = data.draft.status === 'convertido';
       el('btnConvertComprasDraft').hidden = !(isOpen && comprasCurrentDraftItems.length);
       renderComprasDraftItemsTable();
-      renderComprasDraftsTable();
     }catch(error){
       showPurchaseToast(error.message, 'error');
     }
   }
 
+  function closeComprasDraftDetail(){
+    comprasDraftDetailOpenId = '';
+    comprasCurrentDraftId = '';
+    comprasDraftDetailNode().hidden = true;
+    renderComprasDraftsTable();
+  }
+
   el('comprasDraftsTableBody').addEventListener('click', async event => {
     const openBtn = event.target.closest('[data-compras-draft-open]');
-    if(openBtn){ await openComprasDraftDetail(openBtn.dataset.comprasDraftOpen); return; }
+    if(openBtn){
+      const id = openBtn.dataset.comprasDraftOpen;
+      if(comprasDraftDetailOpenId === id) closeComprasDraftDetail();
+      else await openComprasDraftDetail(id);
+      return;
+    }
     const editBtn = event.target.closest('[data-compras-draft-edit]');
     if(editBtn){ openComprasDraftDialog(comprasDrafts.find(d => d.id === editBtn.dataset.comprasDraftEdit) || null); return; }
     const archiveBtn = event.target.closest('[data-compras-draft-archive]');
@@ -23246,8 +23305,7 @@ function renderHomeTasks(){
       const orderCount = Array.isArray(data.orderIds) ? data.orderIds.length : 0;
       showPurchaseToast(orderCount+' pedido(s) criado(s) a partir do rascunho.');
       await loadComprasNovoPage();
-      el('comprasDraftDetail').hidden = true;
-      comprasCurrentDraftId = '';
+      closeComprasDraftDetail();
       setComprasSectionTab('pedidos');
     }catch(error){ status.textContent = error.message; }
   });
@@ -23366,6 +23424,13 @@ function renderHomeTasks(){
   let comprasCurrentOrderId = '';
   let comprasCurrentOrderItems = [];
   let comprasCurrentOrderLinkedInvoice = null;
+  // Fase E, item 1: mesmo padrão de accordion usado nos rascunhos.
+  let comprasOrderDetailOpenId = '';
+  let comprasOrderDetailEl = null;
+  function comprasOrderDetailNode(){
+    if(!comprasOrderDetailEl) comprasOrderDetailEl = document.getElementById('comprasOrderDetail');
+    return comprasOrderDetailEl;
+  }
 
   function comprasOrderStatusBadge(status){
     if(status === 'concluido') return '<span class="status-pill done">CONCLUÍDO</span>';
@@ -23386,29 +23451,60 @@ function renderHomeTasks(){
     return order.expectedDate < new Date().toISOString().slice(0,10);
   }
 
+  // Fase E, item 3: badge de STATUS DA DIVISÃO — mesma paleta dos outros
+  // status-pill do módulo (neutro/aguardando/alerta/concluído).
+  function comprasDivisionStatusBadge(divisionStatus){
+    if(!divisionStatus) return '';
+    if(divisionStatus === 'CONCLUÍDO') return '<span class="status-pill done">'+escapeHtml(divisionStatus)+'</span>';
+    if(divisionStatus === 'FALTA DIVISÃO') return '<span class="status-pill" style="opacity:.65;">'+escapeHtml(divisionStatus)+'</span>';
+    if(divisionStatus === 'FALTANDO ENVIO COMPLETO DA DIVISÃO') return '<span class="status-pill alert">'+escapeHtml(divisionStatus)+'</span>';
+    // AGUARDANDO APROVAÇÃO / ENVIAR DIVISÃO A LOJA
+    return '<span class="status-pill waiting">'+escapeHtml(divisionStatus)+'</span>';
+  }
+
   function comprasOrderBadges(order){
     let html = comprasOrderStatusBadge(order.status);
     if(Number(order.canceled)) html += ' <span class="status-pill alert">CANCELADO</span>';
     else if(comprasOrderIsLate(order)) html += ' <span class="status-pill alert">ATRASADO</span>';
+    const divisionBadge = comprasDivisionStatusBadge(order.divisionStatus);
+    if(divisionBadge) html += ' '+divisionBadge;
     return html;
   }
 
   function renderComprasOrdersTable(){
     const body = el('comprasOrdersTableBody');
     if(!body) return;
+    const detailNode = comprasOrderDetailNode();
+    if(detailNode && detailNode.parentNode) detailNode.parentNode.removeChild(detailNode);
     if(!comprasOrders.length){
       body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Nenhum pedido encontrado.</td></tr>';
       return;
     }
-    body.innerHTML = comprasOrders.map(order => '<tr'+(order.id === comprasCurrentOrderId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
+    body.innerHTML = comprasOrders.map(order => '<tr data-compras-order-row="'+escapeHtml(order.id)+'"'+(order.id === comprasCurrentOrderId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
       '<td>'+escapeHtml(order.supplierName || order.supplierNameRaw || '—')+'</td>'+
       '<td>'+comprasOrderOriginLabel(order)+'</td>'+
       '<td>'+comprasOrderBadges(order)+'</td>'+
       '<td>'+(order.noItemsDetailed ? 'SEM ITENS DETALHADOS' : Number(order.itemCount || 0))+'</td>'+
       '<td>'+(order.orderDate || '—')+'</td>'+
       '<td>'+(order.expectedDate || '—')+'</td>'+
-      '<td class="no-print"><button class="btn-outline" type="button" data-compras-order-open="'+escapeHtml(order.id)+'">ABRIR</button></td>'+
+      '<td class="no-print"><button class="btn-outline" type="button" data-compras-order-open="'+escapeHtml(order.id)+'">'+(order.id === comprasOrderDetailOpenId ? 'FECHAR' : 'ABRIR')+'</button></td>'+
     '</tr>').join('');
+    if(comprasOrderDetailOpenId){
+      const targetRow = body.querySelector('tr[data-compras-order-row="'+CSS.escape(comprasOrderDetailOpenId)+'"]');
+      if(targetRow){
+        const tr = document.createElement('tr');
+        tr.className = 'compras-detail-row';
+        const td = document.createElement('td');
+        td.colSpan = 7;
+        td.style.padding = '0';
+        td.style.background = 'transparent';
+        td.appendChild(detailNode);
+        tr.appendChild(td);
+        targetRow.after(tr);
+      } else {
+        comprasOrderDetailOpenId = '';
+      }
+    }
   }
 
   async function loadComprasOrdersPage(){
@@ -23428,7 +23524,8 @@ function renderHomeTasks(){
       renderComprasOrdersTable();
       if(comprasCurrentOrderId && !comprasOrders.some(o => o.id === comprasCurrentOrderId)){
         comprasCurrentOrderId = '';
-        el('comprasOrderDetail').hidden = true;
+        comprasOrderDetailOpenId = '';
+        comprasOrderDetailNode().hidden = true;
       }
     }catch(error){
       comprasOrders = [];
@@ -23503,10 +23600,14 @@ function renderHomeTasks(){
     try{
       const data = await comprasNovoApiRequest('/orders/'+encodeURIComponent(orderId));
       comprasCurrentOrderId = orderId;
+      comprasOrderDetailOpenId = orderId;
       comprasCurrentOrderItems = Array.isArray(data.items) ? data.items : [];
       comprasCurrentOrderLinkedInvoice = data.linkedInvoice || null;
       const order = data.order;
-      el('comprasOrderDetail').hidden = false;
+      // Reposiciona a linha de detalhe ANTES de popular os campos (mesmo
+      // motivo do accordion de rascunhos, ver comprasDraftDetailNode).
+      renderComprasOrdersTable();
+      comprasOrderDetailNode().hidden = false;
       el('comprasOrderDetailTitle').textContent = order.supplierName || order.supplierNameRaw || 'Pedido sem fornecedor';
       el('comprasOrderDetailMeta').innerHTML =
         comprasOrderBadges(order)+' · '+comprasOrderOriginLabel(order)+
@@ -23671,9 +23772,20 @@ function renderHomeTasks(){
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
+  function closeComprasOrderDetail(){
+    comprasOrderDetailOpenId = '';
+    comprasCurrentOrderId = '';
+    comprasOrderDetailNode().hidden = true;
+    renderComprasOrdersTable();
+  }
+
   if(el('comprasOrdersTableBody')) el('comprasOrdersTableBody').addEventListener('click', async event => {
     const openBtn = event.target.closest('[data-compras-order-open]');
-    if(openBtn) await openComprasOrderDetail(openBtn.dataset.comprasOrderOpen);
+    if(openBtn){
+      const id = openBtn.dataset.comprasOrderOpen;
+      if(comprasOrderDetailOpenId === id) closeComprasOrderDetail();
+      else await openComprasOrderDetail(id);
+    }
   });
 
   if(el('comprasOrderItemsBody')) el('comprasOrderItemsBody').addEventListener('click', async event => {
