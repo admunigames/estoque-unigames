@@ -1097,6 +1097,7 @@ const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_P
   supplies: "supplies",
   tasks: "tasks",
   loans: "loans",
+  compras: "purchasesDraft",
 };
 
 async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): Promise<boolean> {

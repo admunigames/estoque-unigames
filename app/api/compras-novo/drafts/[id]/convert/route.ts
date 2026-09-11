@@ -116,7 +116,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
                  company_id, company_name, order_date, expected_date, received_date, division, division_status,
                  status, no_items_detailed, notes, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
               VALUES
-                (?1, 'native', '', '', ?2, ?3, '', '', '', '', '', '', '', 'em_andamento', 0, ?4, ?5, ?6, CURRENT_TIMESTAMP, ?5, ?6, CURRENT_TIMESTAMP)`,
+                -- Fase E, item 3: pedidos nativos nascem com "FALTA DIVISÃO"
+                -- (equivalente ao estado inicial do Notion), não vazio.
+                (?1, 'native', '', '', ?2, ?3, '', '', '', '', '', '', 'FALTA DIVISÃO', 'em_andamento', 0, ?4, ?5, ?6, CURRENT_TIMESTAMP, ?5, ?6, CURRENT_TIMESTAMP)`,
         values: [orderId, supplierId, supplierName, notes, actor.id, actorName],
       });
 
