@@ -2460,3 +2460,115 @@ export const financeMallDeclarationAttachments = pgTable(
     index("finance_mall_declaration_attachments_declaration_idx").on(table.declarationId),
   ],
 );
+
+// Módulo "Compras" nativo (Fase A) — convive em paralelo com o Controle de
+// Compras atual (Notion, app/lib/notion.ts + app/api/compras/*), que
+// continua funcionando sem nenhuma alteração. Ver [[estoque_compras_nativo]]
+// para o desenho completo. Resumo das decisões da Fase A:
+//  - purchase_drafts/purchase_draft_items cobrem só o rascunho colaborativo
+//    (o que precisa ser comprado, para quais lojas, com quais fornecedores
+//    candidatos) — SEM nenhum fluxo de pedido/recebimento ainda (isso é
+//    Fase B).
+//  - productCode/productName em purchase_draft_items são um SNAPSHOT do
+//    catálogo (products_catalog em shared_state) no momento em que o item
+//    foi adicionado — não existe tabela relacional de produtos no sistema,
+//    então não há FK possível aqui (mesmo padrão de supplierId, sem FK real
+//    para finance_suppliers).
+//  - targetStores/candidateSupplierIds ficam como texto JSON (arrays), no
+//    mesmo espírito de campos JSON já usados no projeto (ex. permissions_json
+//    em app_users) — evita uma tabela de junção só pra Fase A.
+//  - purchase_orders já nasce agora, mas só para a IMPORTAÇÃO do Notion
+//    (origin='notion_import', noItemsDetailed=1 para todo pedido importado),
+//    preparando o terreno pra Fase B (pedidos nativos, origin='native').
+//    notionPurchaseId é o dedupe (mesmo padrão de supplier_invoices,
+//    ver notionPurchaseId ~linha 1197) — permite rodar o script de
+//    importação (db/scripts/import-notion-purchases.mjs) mais de uma vez
+//    sem duplicar.
+export const purchaseDrafts = pgTable(
+  "purchase_drafts",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    // 'aberto' | 'arquivado'
+    status: text("status").notNull().default("aberto"),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("purchase_drafts_status_idx").on(table.status),
+  ],
+);
+
+export const purchaseDraftItems = pgTable(
+  "purchase_draft_items",
+  {
+    id: text("id").primaryKey(),
+    draftId: text("draft_id").notNull(),
+    productCode: text("product_code").notNull(),
+    // Snapshot do nome do produto no catálogo (products_catalog) no
+    // momento da adição — não é atualizado se o catálogo mudar depois.
+    productName: text("product_name").notNull().default(""),
+    quantity: integer("quantity").notNull().default(0),
+    // JSON: [{ "companyId": "...", "companyName": "..." }, ...]
+    targetStores: text("target_stores").notNull().default("[]"),
+    // JSON: ["<supplierId>", ...] — pode ter mais de um fornecedor candidato.
+    candidateSupplierIds: text("candidate_supplier_ids").notNull().default("[]"),
+    notes: text("notes").notNull().default(""),
+    // Snapshot opcional do saldo por loja (resultado de /estoque-saldo) no
+    // momento em que o item foi adicionado, só para referência futura.
+    stockSnapshotJson: text("stock_snapshot_json").notNull().default("{}"),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("purchase_draft_items_draft_idx").on(table.draftId),
+  ],
+);
+
+export const purchaseOrders = pgTable(
+  "purchase_orders",
+  {
+    id: text("id").primaryKey(),
+    // 'native' | 'notion_import'
+    origin: text("origin").notNull().default("native"),
+    notionPurchaseId: text("notion_purchase_id").notNull().default(""),
+    notionPurchaseUrl: text("notion_purchase_url").notNull().default(""),
+    supplierId: text("supplier_id").notNull().default(""),
+    // Nome cru do campo FORNECEDOR do Notion, preservado mesmo quando bate
+    // com um finance_suppliers (supplierId preenchido) — serve de auditoria
+    // caso o casamento por nome tenha errado.
+    supplierNameRaw: text("supplier_name_raw").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    orderDate: text("order_date").notNull().default(""),
+    expectedDate: text("expected_date").notNull().default(""),
+    receivedDate: text("received_date").notNull().default(""),
+    division: text("division").notNull().default(""),
+    divisionStatus: text("division_status").notNull().default(""),
+    // Mapeamento do STATUS do Notion: "Não iniciado" -> 'pendente',
+    // "Em andamento" -> 'em_andamento', "Concluído" -> 'concluido'.
+    status: text("status").notNull().default("pendente"),
+    // 1 para pedidos importados do Notion (que não têm itens detalhados
+    // nesta Fase A), 0 para pedidos nativos.
+    noItemsDetailed: integer("no_items_detailed").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("purchase_orders_notion_purchase_idx").on(table.notionPurchaseId),
+  ],
+);

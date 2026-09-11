@@ -38,6 +38,7 @@ type Permission =
   | "inputs:view" | "inputs:create" | "inputs:complete" | "inputs:delete"
   | "supplies:view" | "supplies:request" | "supplies:receive" | "supplies:stock_in" | "supplies:stock_out" | "supplies:delete" | "supplies:manage_catalog"
   | "purchases:view" | "purchases:create" | "purchases:edit" | "purchases:delete" | "purchases:send_to_finance"
+  | "purchases_draft:manage"
   | "stock:view"
   | "database:view" | "database:manage"
   | "pulls:view"
@@ -108,6 +109,11 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "inputs:view", "inputs:create", "inputs:complete", "inputs:delete",
   "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
   "purchases:view", "purchases:create", "purchases:edit", "purchases:delete", "purchases:send_to_finance",
+  // Módulo "Compras" nativo (Fase A) — rascunhos de compra, independente
+  // do "Controle de Compras" (Notion) acima, que continua com suas próprias
+  // permissões purchases:*. Uma permissão só nesta fase (visualizar e
+  // gerenciar juntos) — se um dia precisar granularidade, separa depois.
+  "purchases_draft:manage",
   "stock:view",
   "database:view", "database:manage",
   "pulls:view",
@@ -1062,6 +1068,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
   ],
   purchases: ["purchases:view", "purchases:create", "purchases:edit", "purchases:delete", "purchases:send_to_finance"],
+  purchasesDraft: ["purchases_draft:manage"],
   stock: ["stock:view"],
   pulls: ["pulls:view"],
   report41: ["report41:view"],
@@ -1128,6 +1135,11 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/entradas" || path.startsWith("/api/inputs"), "inputs"],
     [path === "/insumos" || path.startsWith("/api/supplies"), "supplies"],
     [path === "/aparelhos-emprestimo" || path.startsWith("/api/loans"), "loans"],
+    // Compras nativo (Fase A) — checado ANTES do Controle de Compras
+    // (Notion) abaixo: "/api/compras-novo" também bate em
+    // startsWith("/api/compras"), então a ordem no array importa aqui
+    // (Array.find pega o primeiro match).
+    [path === "/compras-novo" || path.startsWith("/api/compras-novo"), "purchasesDraft"],
     [path === "/compras" || path.startsWith("/api/compras"), "purchases"],
     [path === "/estoque", "stock"],
     [path === "/puxadas", "pulls"],

@@ -1308,7 +1308,7 @@ test("Saídas: a lista de lojas do seletor é carregada e liberada pro usuário 
   // pulls/report41.
   assert.match(
     html,
-    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\| canAccess\('finance'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\) \|\|\s*canActAcrossStores\('inputs:create'\);/,
+    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\| canAccess\('finance'\) \|\| canAccess\('purchases_draft'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\) \|\|\s*canActAcrossStores\('inputs:create'\);/,
   );
 
   // Back-end: leitura de companies_list liberada pra qualquer autenticado
@@ -1498,7 +1498,7 @@ test("Entrada: a lista de lojas do seletor é carregada pro usuário sem loja co
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
   assert.match(
     html,
-    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\| canAccess\('finance'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\) \|\|\s*canActAcrossStores\('inputs:create'\);/,
+    /const needsCompanies = canAccess\('database'\) \|\| canAccess\('stock'\) \|\| canAccess\('pulls'\) \|\| canAccess\('report41'\) \|\| canAccess\('finance'\) \|\| canAccess\('purchases_draft'\) \|\|\s*canActAcrossStores\('outputs:create'\) \|\| canActAcrossStores\('captures:create'\) \|\|\s*canActAcrossStores\('supplies:request'\) \|\| canActAcrossStores\('missions:view'\) \|\|\s*canActAcrossStores\('inputs:create'\);/,
   );
 });
 
@@ -3080,4 +3080,120 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
   // O aviso de impostos no PNG segue a MESMA condição da tela — não pode
   // ficar afirmado pra sempre depois que a Fase 7 chegar.
   assert.match(html, /if\(cashFlowData\.taxesAndFeesIncluded === false\)\{\s*footerNotes\.push/);
+});
+
+test("Módulo Compras nativo (Fase A): rascunhos de compra convivem com o Controle de Compras (Notion) sem alterá-lo", async () => {
+  const [
+    html,
+    workerSource,
+    schema,
+    migration,
+    draftsRoute,
+    draftDetailRoute,
+    itemsRoute,
+    itemDetailRoute,
+    stockBalanceRoute,
+    comprasNovoShared,
+    notionLib,
+    notionRoute,
+    importScript,
+  ] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0054_compras_nativo_fase_a.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/drafts/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/drafts/[id]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/drafts/[id]/items/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/drafts/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/estoque-saldo/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/notion.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/scripts/import-notion-purchases.mjs", import.meta.url), "utf8"),
+  ]);
+
+  // Nav: item novo dentro do mesmo submenu de Estoque > Controle de Compras,
+  // com id/permissão/rota próprios — não reaproveita nem altera navCompras.
+  assert.match(
+    html,
+    /id="navComprasNovo" data-page="comprasNovo" data-permission="purchases_draft"[^>]*href="\/compras-novo"/,
+  );
+  assert.match(html, /id="navCompras" data-page="compras" data-permission="purchases"[^>]*href="\/compras"/);
+  assert.match(html, /id="pageComprasNovo" class="page wrap"/);
+  assert.match(html, /comprasNovo:'\/compras-novo'/);
+  assert.match(html, /comprasNovo:'purchases_draft'/);
+  assert.equal(html.split("if(name === 'comprasNovo') loadComprasNovoPage();").length - 1, 2);
+
+  // Permissão nova e granular, sem misturar com purchases:* (Notion).
+  assert.match(html, /value="purchases_draft:manage"> Acessar módulo/);
+  assert.match(workerSource, /"purchases_draft:manage"/);
+  assert.match(
+    workerSource,
+    /\[path === "\/compras-novo" \|\| path\.startsWith\("\/api\/compras-novo"\), "purchasesDraft"\]/,
+  );
+  assert.match(workerSource, /purchasesDraft: \["purchases_draft:manage"\]/);
+  // A checagem de "/compras-novo" precisa vir ANTES da de "/compras" no
+  // array de rotas diretas, senão startsWith("/api/compras") engole
+  // "/api/compras-novo" e aplica a permissão errada.
+  const comprasNovoRouteIndex = workerSource.indexOf('"purchasesDraft"]');
+  const comprasNotionRouteIndex = workerSource.indexOf('path.startsWith("/api/compras"), "purchases"]');
+  assert.ok(comprasNovoRouteIndex > 0 && comprasNotionRouteIndex > 0);
+  assert.ok(comprasNovoRouteIndex < comprasNotionRouteIndex);
+
+  // Controle de Compras (Notion) intocado: nenhuma mudança nas rotas/lib
+  // existentes, e o módulo novo não importa nada de dentro de app/api/compras.
+  assert.match(notionRoute, /canPurchases\(request, "purchases:view"\)/);
+  assert.doesNotMatch(comprasNovoShared, /from ["'].*\/api\/compras\//);
+
+  // Schema: três tabelas novas, sem FK real para finance_suppliers (mesmo
+  // padrão de vínculo textual do resto do projeto).
+  assert.match(schema, /export const purchaseDrafts = pgTable\(\s*"purchase_drafts"/);
+  assert.match(schema, /export const purchaseDraftItems = pgTable\(\s*"purchase_draft_items"/);
+  assert.match(schema, /export const purchaseOrders = pgTable\(\s*"purchase_orders"/);
+  assert.match(schema, /notionPurchaseId: text\("notion_purchase_id"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(migration, /CREATE TABLE "purchase_drafts"/);
+  assert.match(migration, /CREATE TABLE "purchase_draft_items"/);
+  assert.match(migration, /CREATE TABLE "purchase_orders"/);
+  assert.match(migration, /CREATE INDEX "purchase_orders_notion_purchase_idx"/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+
+  // Endpoints: auth + permissão granular purchases_draft:manage + sameOrigin
+  // nas escritas, mesmo padrão do resto do Financeiro/Compras.
+  for (const route of [draftsRoute, draftDetailRoute, itemsRoute, itemDetailRoute, stockBalanceRoute]) {
+    assert.match(route, /canManageComprasDraft\(actor\)/);
+  }
+  assert.match(draftsRoute, /sameOrigin\(request\)/);
+  assert.match(itemsRoute, /sameOrigin\(request\)/);
+  assert.match(itemDetailRoute, /sameOrigin\(request\)/);
+  // Arquivamento é soft-delete (status='arquivado'), nunca DELETE físico.
+  assert.match(draftDetailRoute, /status='arquivado'/);
+  assert.doesNotMatch(draftDetailRoute, /DELETE FROM purchase_drafts/);
+  // Item removido é DELETE físico mesmo (não tem sentido de "histórico" no
+  // rascunho, ao contrário do cabeçalho).
+  assert.match(itemDetailRoute, /DELETE FROM purchase_draft_items/);
+
+  // Saldo por loja: agrega shared_state (estoque:c*) no servidor, mesma
+  // lógica entrada-saída que o cliente já fazia em loadFiscalView/
+  // addFiscalQuantities, e reaproveita loadCompanyList do Financeiro em vez
+  // de duplicar a leitura de companies_list.
+  assert.match(stockBalanceRoute, /state_key LIKE 'estoque:c%'/);
+  assert.match(stockBalanceRoute, /loadCompanyList/);
+  assert.match(stockBalanceRoute, /from "\.\.\/\.\.\/finance\/shared"/);
+
+  // Fornecedor: reaproveita o endpoint existente de finance/suppliers no
+  // cliente, sem endpoint de fornecedor duplicado.
+  assert.match(html, /financeApiRequest\('\/suppliers'\)/);
+  assert.doesNotMatch(html, /\/api\/compras-novo\/suppliers/);
+
+  // Script de importação do Notion: pagina com as funções já existentes em
+  // app/lib/notion.ts, faz dedupe por notionPurchaseId, casa fornecedor por
+  // nome (case-insensitive) e nunca roda contra produção sozinho.
+  assert.match(importScript, /notionRequest\(/);
+  assert.match(importScript, /notionDataSourceId\(/);
+  assert.match(importScript, /normalizePurchase\(/);
+  assert.match(importScript, /notion_purchase_id/);
+  assert.match(importScript, /origin.*notion_import/s);
+  assert.match(importScript, /noItemsDetailed|no_items_detailed/);
+  assert.match(notionLib, /export function normalizePurchase/);
 });
