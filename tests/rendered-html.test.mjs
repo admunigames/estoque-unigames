@@ -3197,3 +3197,100 @@ test("Módulo Compras nativo (Fase A): rascunhos de compra convivem com o Contro
   assert.match(importScript, /noItemsDetailed|no_items_detailed/);
   assert.match(notionLib, /export function normalizePurchase/);
 });
+
+test("Módulo Compras nativo (Fase B): pedidos, conversão de rascunho e recebimento", async () => {
+  const [
+    html,
+    schema,
+    migration,
+    convertRoute,
+    ordersRoute,
+    orderDetailRoute,
+    orderItemRoute,
+  ] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0055_compras_nativo_fase_b.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/drafts/[id]/convert/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Schema: nova tabela purchase_order_items, com FK textual pro draft item
+  // de origem (draftItemId) e mesma granularidade item x total do draft
+  // (sem split de quantidade por loja).
+  assert.match(schema, /export const purchaseOrderItems = pgTable\(\s*"purchase_order_items"/);
+  assert.match(schema, /draftItemId: text\("draft_item_id"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(schema, /receivedQuantity: integer\("received_quantity"\)\.notNull\(\)\.default\(0\)/);
+  // purchase_drafts.status ganhou um terceiro valor, documentado no comentário.
+  assert.match(schema, /'aberto' \| 'arquivado' \| 'convertido'/);
+
+  // Migration nova, com RLS habilitado e privilégios revogados (mesmo
+  // padrão da 0054).
+  assert.match(migration, /CREATE TABLE "purchase_order_items"/);
+  assert.match(migration, /CREATE INDEX "purchase_order_items_order_idx"/);
+  assert.match(migration, /ALTER TABLE "purchase_order_items" ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /REVOKE ALL ON TABLE "purchase_order_items" FROM anon, authenticated/);
+
+  // Endpoints novos: mesma auth/permissão/sameOrigin do resto do módulo.
+  for (const route of [convertRoute, ordersRoute, orderDetailRoute, orderItemRoute]) {
+    assert.match(route, /canManageComprasDraft\(actor\)/);
+  }
+  assert.match(convertRoute, /sameOrigin\(request\)/);
+  assert.match(orderDetailRoute, /sameOrigin\(request\)/);
+  assert.match(orderItemRoute, /sameOrigin\(request\)/);
+  // GET de lista não exige sameOrigin (só leitura, mesmo padrão do resto).
+  assert.doesNotMatch(ordersRoute, /sameOrigin\(request\)/);
+
+  // Conversão: só rascunho 'aberto', 1 pedido por fornecedor escolhido
+  // (agrupamento via Map), bloqueio explícito se faltar fornecedor em
+  // algum item, e marca o rascunho como 'convertido' ao final.
+  assert.match(convertRoute, /draft\.status !== "aberto"/);
+  assert.match(convertRoute, /itemsBySupplier = new Map/);
+  assert.match(convertRoute, /missingItem/);
+  assert.match(convertRoute, /status='convertido'/);
+  assert.match(convertRoute, /origin: text\("origin"\)|'native'/);
+  assert.match(convertRoute, /database\.batch\(prepared\)/);
+  // Granularidade preservada: quantity/targetStores copiados do item do
+  // rascunho, sem split por loja.
+  assert.match(convertRoute, /item\.quantity, item\.targetStores/);
+
+  // Lista de pedidos: origin='native' e 'notion_import' juntos na mesma
+  // consulta (sem WHERE fixo de origin, só filtro opcional via querystring).
+  assert.doesNotMatch(ordersRoute, /WHERE origin\s*=\s*'native'/);
+  assert.match(ordersRoute, /searchParams\.get\("status"\)/);
+  assert.match(ordersRoute, /searchParams\.get\("origin"\)/);
+
+  // Recebimento: valor absoluto (não incremento), bloqueia negativo/maior
+  // que a quantidade pedida, e recalcula o status do pedido pai.
+  assert.match(orderItemRoute, /receivedQuantity > item\.quantity/);
+  assert.match(orderItemRoute, /receivedQuantity < 0/);
+  assert.match(orderItemRoute, /allReceived = allItems\.length > 0 && allItems\.every/);
+  assert.match(orderItemRoute, /'concluido'/);
+  assert.match(orderItemRoute, /'em_andamento'/);
+
+  // Detalhe do pedido: PATCH não deixa editar origin/notionPurchaseId/supplierId.
+  assert.doesNotMatch(orderDetailRoute, /origin\s*=\s*\?/);
+  assert.doesNotMatch(orderDetailRoute, /supplier_id\s*=\s*\?/);
+
+  // UI: abas Rascunhos/Pedidos dentro da MESMA página comprasNovo (sem rota
+  // nova), botão de conversão no detalhe do rascunho, e campos de
+  // recebimento por item no detalhe do pedido.
+  assert.match(html, /id="pageComprasNovo" class="page wrap"/);
+  assert.match(html, /data-compras-section-tab="rascunhos"/);
+  assert.match(html, /data-compras-section-tab="pedidos"/);
+  assert.match(html, /id="comprasSectionRascunhos"/);
+  assert.match(html, /id="comprasSectionPedidos"/);
+  assert.match(html, /id="btnConvertComprasDraft"/);
+  assert.match(html, /id="comprasConvertDialog"/);
+  assert.match(html, /data-compras-convert-item/);
+  assert.match(html, /\/drafts\/'\+encodeURIComponent\(comprasCurrentDraftId\)\+'\/convert/);
+  assert.match(html, /id="comprasOrdersTable"/);
+  assert.match(html, /id="comprasOrderItemsTable"/);
+  assert.match(html, /data-compras-order-item-received/);
+  assert.match(html, /data-compras-order-item-save/);
+  assert.match(html, /'\/orders\/'\+encodeURIComponent\(comprasCurrentOrderId\)\+'\/items\/'/);
+  // Só 1 nova rota de página (não cria uma /compras-novo/pedidos separada).
+  assert.doesNotMatch(html, /data-page="comprasNovoPedidos"/);
+});
