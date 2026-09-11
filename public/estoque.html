@@ -4585,6 +4585,7 @@
       <div class="supply-tabs" role="tablist" aria-label="Seções de compras">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-compras-section-tab="rascunhos">RASCUNHOS</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="pedidos">PEDIDOS</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="porProduto">POR PRODUTO</button>
       </div>
 
       <section id="comprasSectionRascunhos">
@@ -4668,11 +4669,37 @@
           </div>
           <div class="table-scroll" id="comprasOrderItemsWrap">
             <table id="comprasOrderItemsTable">
-              <thead><tr><th>Produto</th><th>Lojas destino</th><th>Qtd pedida</th><th>Qtd recebida</th><th class="no-print">Registrar recebimento</th></tr></thead>
-              <tbody id="comprasOrderItemsBody"><tr><td colspan="5" class="responsive-empty">Nenhum item.</td></tr></tbody>
+              <thead><tr><th>Produto</th><th>Lojas destino</th><th>Qtd pedida</th><th>Qtd recebida</th><th>Preço unit.</th><th class="no-print">Registrar recebimento / preço</th></tr></thead>
+              <tbody id="comprasOrderItemsBody"><tr><td colspan="6" class="responsive-empty">Nenhum item.</td></tr></tbody>
             </table>
           </div>
           <p class="page-desc" id="comprasOrderNoItemsNotice" hidden>Este pedido foi importado do Notion e não tem itens detalhados — edite o status manualmente em "EDITAR PEDIDO".</p>
+
+          <!-- Fase D, item 1: aba "Divisão" — replica DIVISÃO/STATUS DA
+               DIVISÃO do Notion, editável pra pedidos nativos E importados. -->
+          <div class="table-panel" style="margin-top:16px;padding:16px;">
+            <h4 style="margin:0 0 8px;">DIVISÃO</h4>
+            <p class="page-desc" style="margin:0 0 8px;">Texto livre descrevendo como os produtos deste pedido foram divididos entre as lojas — preencha à mão depois que o pedido chegar.</p>
+            <div class="purchase-form-grid">
+              <div class="purchase-field full">
+                <label for="comprasOrderDivisionText">DIVISÃO</label>
+                <textarea id="comprasOrderDivisionText" rows="6" maxlength="20000"></textarea>
+              </div>
+              <div class="purchase-field">
+                <label for="comprasOrderDivisionStatus">STATUS DA DIVISÃO</label>
+                <select id="comprasOrderDivisionStatus">
+                  <option value="">SEM STATUS</option>
+                  <option value="FALTA DIVISÃO">FALTA DIVISÃO</option>
+                  <option value="AGUARDANDO APROVAÇÃO">AGUARDANDO APROVAÇÃO</option>
+                  <option value="ENVIAR DIVISÃO A LOJA">ENVIAR DIVISÃO A LOJA</option>
+                  <option value="FALTANDO ENVIO COMPLETO DA DIVISÃO">FALTANDO ENVIO COMPLETO DA DIVISÃO</option>
+                  <option value="CONCLUÍDO">CONCLUÍDO</option>
+                </select>
+              </div>
+            </div>
+            <div class="user-form-status" id="comprasOrderDivisionStatusMsg" role="status" aria-live="polite"></div>
+            <button class="btn-accent" id="btnSaveComprasOrderDivision" type="button" style="margin-top:8px;">SALVAR DIVISÃO</button>
+          </div>
 
           <div class="table-panel" style="margin-top:16px;padding:16px;">
             <h4 style="margin:0 0 8px;">NOTA FISCAL VINCULADA</h4>
@@ -4698,6 +4725,46 @@
             <label class="btn-outline" style="margin-top:8px;display:inline-block;cursor:pointer;">+ ANEXAR NOTA FISCAL<input type="file" id="comprasOrderAttachNotaInput" accept="application/pdf" hidden></label>
           </div>
         </section>
+      </section>
+
+      <!-- Fase D, item 3: "Compras por Produto" — busca simples, sem
+           varredura de todos os produtos nem filtros de período/loja. -->
+      <section id="comprasSectionPorProduto" hidden>
+        <p class="page-desc" style="margin:0 0 12px;">Busque um produto para ver quanto já foi comprado, de quais fornecedores (e por qual preço) e o saldo atual em cada loja.</p>
+        <div class="purchase-form-grid" style="margin-bottom:16px;">
+          <div class="purchase-field full">
+            <label for="comprasProdutoBusca">PRODUTO (CÓDIGO OU NOME)</label>
+            <input id="comprasProdutoBusca" maxlength="80" autocomplete="off" list="comprasProdutoBuscaList">
+            <datalist id="comprasProdutoBuscaList"></datalist>
+          </div>
+        </div>
+        <div id="comprasProdutoHistoricoWrap" hidden>
+          <div class="payable-detail-grid" style="margin-bottom:16px;">
+            <div><span>QUANTIDADE TOTAL COMPRADA</span><strong id="comprasProdutoTotalQtd">0</strong></div>
+            <div><span>PEDIDOS DISTINTOS</span><strong id="comprasProdutoTotalPedidos">0</strong></div>
+            <div><span>ÚLTIMA COMPRA</span><strong id="comprasProdutoUltimaCompra">—</strong></div>
+          </div>
+
+          <div class="table-panel" style="margin-bottom:16px;">
+            <h4 style="margin:0 0 8px;padding:16px 16px 0;">FORNECEDORES (ORDENADO PELO MAIS COMPRADO)</h4>
+            <div class="table-scroll">
+              <table id="comprasProdutoFornecedoresTable">
+                <thead><tr><th>Fornecedor</th><th>Qtd total comprada</th><th>Preço unit. mais recente</th><th>Pedido mais recente</th></tr></thead>
+                <tbody id="comprasProdutoFornecedoresBody"><tr><td colspan="4" class="responsive-empty">Busque um produto acima.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="table-panel">
+            <h4 style="margin:0 0 8px;padding:16px 16px 0;">SALDO ATUAL POR LOJA</h4>
+            <div class="table-scroll">
+              <table id="comprasProdutoSaldoTable">
+                <thead><tr><th>Loja</th><th>Saldo</th></tr></thead>
+                <tbody id="comprasProdutoSaldoBody"><tr><td colspan="2" class="responsive-empty">—</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </section>
     </section>
 
@@ -6340,7 +6407,7 @@
     <p class="page-desc">Escolha, para cada item, qual fornecedor vai receber o pedido. Itens do mesmo fornecedor viram um único pedido.</p>
     <div class="table-scroll">
       <table id="comprasConvertTable">
-        <thead><tr><th>Produto</th><th>Qtd</th><th>Fornecedor *</th></tr></thead>
+        <thead><tr><th>Produto</th><th>Qtd</th><th>Fornecedor *</th><th>Preço unit. (R$)</th></tr></thead>
         <tbody id="comprasConvertTableBody"></tbody>
       </table>
     </div>
@@ -22898,7 +22965,9 @@ function renderHomeTasks(){
     });
     el('comprasSectionRascunhos').hidden = tab !== 'rascunhos';
     el('comprasSectionPedidos').hidden = tab !== 'pedidos';
+    el('comprasSectionPorProduto').hidden = tab !== 'porProduto';
     if(tab === 'pedidos') loadComprasOrdersPage();
+    if(tab === 'porProduto') initComprasProdutoBusca();
   }
   document.querySelectorAll('[data-compras-section-tab]').forEach(button => {
     button.addEventListener('click',() => setComprasSectionTab(button.dataset.comprasSectionTab));
@@ -23142,6 +23211,9 @@ function renderHomeTasks(){
           '<option value="">-- SELECIONE --</option>'+
           options.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('')+
         '</select></td>'+
+        // Fase D, item 2: preço unitário opcional já na conversão (histórico
+        // de preço por fornecedor) — vazio = não informado (0 no banco).
+        '<td><input type="number" min="0" step="0.01" placeholder="OPCIONAL" data-compras-convert-price="'+escapeHtml(item.id)+'" style="width:110px;"></td>'+
       '</tr>';
     }).join('');
     document.querySelectorAll('#comprasConvertTableBody select[data-compras-convert-item]').forEach(select => {
@@ -23158,7 +23230,13 @@ function renderHomeTasks(){
     const status = el('comprasConvertFormStatus');
     status.textContent = '';
     const selects = Array.from(document.querySelectorAll('#comprasConvertTableBody select[data-compras-convert-item]'));
-    const itemSupplierChoices = selects.map(select => ({ itemId: select.dataset.comprasConvertItem, supplierId: select.value }));
+    const itemSupplierChoices = selects.map(select => {
+      const itemId = select.dataset.comprasConvertItem;
+      const priceInput = document.querySelector('[data-compras-convert-price="'+itemId+'"]');
+      const priceValue = priceInput ? priceInput.value.trim() : '';
+      const unitPriceCents = priceValue ? parseBRLToCents(priceValue) : null;
+      return { itemId, supplierId: select.value, unitPriceCents: unitPriceCents === null ? undefined : unitPriceCents };
+    });
     if(itemSupplierChoices.some(choice => !choice.supplierId)){ status.textContent = 'ESCOLHA UM FORNECEDOR PARA TODOS OS ITENS.'; return; }
     try{
       const data = await comprasNovoApiRequest('/drafts/'+encodeURIComponent(comprasCurrentDraftId)+'/convert', {
@@ -23365,7 +23443,7 @@ function renderHomeTasks(){
     const body = el('comprasOrderItemsBody');
     if(!body) return;
     if(!comprasCurrentOrderItems.length){
-      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum item neste pedido.</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum item neste pedido.</td></tr>';
       return;
     }
     body.innerHTML = comprasCurrentOrderItems.map(item => '<tr>'+
@@ -23373,12 +23451,53 @@ function renderHomeTasks(){
       '<td>'+comprasStoreNamesLabel(item.targetStores)+'</td>'+
       '<td>'+Number(item.quantity || 0)+'</td>'+
       '<td>'+Number(item.receivedQuantity || 0)+'</td>'+
-      '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;">'+
-        '<input type="number" min="0" max="'+Number(item.quantity || 0)+'" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;">'+
+      // Fase D, item 2: 0 = "não informado" (default do schema), não mostra R$ 0,00.
+      '<td>'+(Number(item.unitPriceCents || 0) > 0 ? formatCentsBRL(item.unitPriceCents) : '—')+'</td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+
+        '<input type="number" min="0" max="'+Number(item.quantity || 0)+'" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;" title="Quantidade recebida">'+
+        '<input type="number" min="0" step="0.01" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)">'+
         '<button class="btn-outline" type="button" data-compras-order-item-save="'+escapeHtml(item.id)+'">SALVAR</button>'+
       '</span></td>'+
     '</tr>').join('');
   }
+
+  // ----- Fase D, item 1: aba "Divisão" (division/divisionStatus) -----
+  // Se o campo ainda está vazio E o pedido tem itens, sugere um ponto de
+  // partida gerado a partir dos itens (só no client, não grava sozinho) —
+  // o usuário edita à mão a divisão por loja, texto livre, igual ao Notion.
+  function comprasDivisionSuggestion(){
+    return comprasCurrentOrderItems
+      .map(item => Number(item.quantity || 0)+'x '+(item.productName || item.productCode)+' ('+item.productCode+')')
+      .join('\n');
+  }
+  function comprasFillDivisionSection(order){
+    const textarea = el('comprasOrderDivisionText');
+    const select = el('comprasOrderDivisionStatus');
+    if(!textarea || !select) return;
+    if(order.division){
+      textarea.value = order.division;
+    }else if(comprasCurrentOrderItems.length){
+      textarea.value = comprasDivisionSuggestion();
+    }else{
+      textarea.value = '';
+    }
+    select.value = order.divisionStatus || '';
+    el('comprasOrderDivisionStatusMsg').textContent = '';
+  }
+  if(el('btnSaveComprasOrderDivision')) el('btnSaveComprasOrderDivision').addEventListener('click', async () => {
+    if(!comprasCurrentOrderId) return;
+    const status = el('comprasOrderDivisionStatusMsg');
+    status.textContent = '';
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId), {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ division: el('comprasOrderDivisionText').value, divisionStatus: el('comprasOrderDivisionStatus').value })
+      });
+      showPurchaseToast('Divisão salva.');
+      await openComprasOrderDetail(comprasCurrentOrderId);
+      await loadComprasOrdersPage();
+    }catch(error){ status.textContent = error.message; }
+  });
 
   async function openComprasOrderDetail(orderId){
     try{
@@ -23402,6 +23521,7 @@ function renderHomeTasks(){
       if(!order.noItemsDetailed) renderComprasOrderItemsTable();
       el('btnCancelComprasOrder').hidden = Boolean(order.canceled);
       el('btnReopenComprasOrder').hidden = !order.canceled;
+      comprasFillDivisionSection(order);
       if(!comprasCurrentOrderLinkedInvoice) await loadComprasOrderInvoiceCandidates();
       renderComprasOrderInvoiceLink();
       await Promise.all([renderComprasOrderAttachments('pedido'), renderComprasOrderAttachments('nota_fiscal')]);
@@ -23560,17 +23680,20 @@ function renderHomeTasks(){
     const saveBtn = event.target.closest('[data-compras-order-item-save]');
     if(!saveBtn) return;
     const itemId = saveBtn.dataset.comprasOrderItemSave;
-    const input = document.querySelector('[data-compras-order-item-received="'+itemId+'"]');
-    if(!input) return;
-    const receivedQuantity = Number(input.value);
+    const receivedInput = document.querySelector('[data-compras-order-item-received="'+itemId+'"]');
+    const priceInput = document.querySelector('[data-compras-order-item-price="'+itemId+'"]');
+    if(!receivedInput) return;
+    const receivedQuantity = Number(receivedInput.value);
     if(!Number.isFinite(receivedQuantity) || receivedQuantity < 0){ showPurchaseToast('INFORME UMA QUANTIDADE RECEBIDA VÁLIDA.', 'error'); return; }
+    const unitPriceCents = priceInput ? parseBRLToCents(priceInput.value || '0') : null;
+    if(priceInput && unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO UNITÁRIO VÁLIDO.', 'error'); return; }
     try{
       await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {
-        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ receivedQuantity })
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ receivedQuantity, unitPriceCents })
       });
       await openComprasOrderDetail(comprasCurrentOrderId);
       await loadComprasOrdersPage();
-      showPurchaseToast('Recebimento registrado.');
+      showPurchaseToast('Item atualizado.');
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
@@ -23606,6 +23729,53 @@ function renderHomeTasks(){
       await loadComprasOrdersPage();
       showPurchaseToast('Pedido atualizado.');
     }catch(error){ status.textContent = error.message; }
+  });
+
+  // ----- Fase D, item 3: aba "Por Produto" — busca simples (sem varredura
+  // de todos os produtos, sem filtro de período/loja), reaproveitando o
+  // mesmo catálogo carregado no cliente pro formulário de item de rascunho.
+  let comprasProdutoBuscaListLoaded = false;
+  function initComprasProdutoBusca(){
+    if(!comprasProdutoBuscaListLoaded){
+      el('comprasProdutoBuscaList').innerHTML = Array.from(comprasProductCatalogEntries().entries())
+        .slice(0, 500)
+        .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
+        .join('');
+      comprasProdutoBuscaListLoaded = true;
+    }
+  }
+  async function loadComprasProdutoHistorico(codigo){
+    if(!codigo){ el('comprasProdutoHistoricoWrap').hidden = true; return; }
+    try{
+      const [historico, saldo] = await Promise.all([
+        comprasNovoApiRequest('/produtos/historico?produto='+encodeURIComponent(codigo)),
+        comprasNovoApiRequest('/estoque-saldo?produto='+encodeURIComponent(codigo))
+      ]);
+      el('comprasProdutoHistoricoWrap').hidden = false;
+      el('comprasProdutoTotalQtd').textContent = Number(historico.totalQuantity || 0);
+      el('comprasProdutoTotalPedidos').textContent = Number(historico.distinctOrderCount || 0);
+      el('comprasProdutoUltimaCompra').textContent = historico.lastPurchaseDate || '—';
+
+      const suppliers = Array.isArray(historico.suppliers) ? historico.suppliers : [];
+      el('comprasProdutoFornecedoresBody').innerHTML = suppliers.length
+        ? suppliers.map(s => '<tr>'+
+            '<td>'+escapeHtml(s.supplierName || s.supplierId || 'Fornecedor não identificado')+'</td>'+
+            '<td>'+Number(s.totalQuantity || 0)+'</td>'+
+            '<td>'+(Number(s.lastUnitPriceCents || 0) > 0 ? formatCentsBRL(s.lastUnitPriceCents) : '—')+'</td>'+
+            '<td>'+(s.lastOrderDate || '—')+'</td>'+
+          '</tr>').join('')
+        : '<tr><td colspan="4" class="responsive-empty">Nenhuma compra nativa registrada para este produto.</td></tr>';
+
+      const balances = Array.isArray(saldo.balances) ? saldo.balances : [];
+      el('comprasProdutoSaldoBody').innerHTML = balances.length
+        ? balances.map(b => '<tr><td>'+escapeHtml(b.companyName)+'</td><td'+(b.saldo <= 0 ? ' style="color:var(--danger,#c0392b);font-weight:700;"' : '')+'>'+Number(b.saldo)+'</td></tr>').join('')
+        : '<tr><td colspan="2" class="responsive-empty">Nenhum lançamento de estoque fiscal para este produto.</td></tr>';
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+    }
+  }
+  if(el('comprasProdutoBusca')) el('comprasProdutoBusca').addEventListener('change', () => {
+    loadComprasProdutoHistorico(el('comprasProdutoBusca').value.trim());
   });
 
   // ----- Obras (CAPEX — fora de Despesas/DRE) -----

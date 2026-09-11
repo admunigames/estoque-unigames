@@ -3,23 +3,28 @@ import { unauthorizedResponse } from "../../../../../../lib/notion";
 import { canManageComprasDraft, identity, jsonResponse, sameOrigin, type JsonMap } from "../../../../shared";
 
 type OrderRow = { id: string; status: string; receivedDate: string; noItemsDetailed: number; canceled: number };
-type ItemRow = { id: string; orderId: string; quantity: number; receivedQuantity: number };
+type ItemRow = { id: string; orderId: string; quantity: number; receivedQuantity: number; unitPriceCents: number };
 
 async function loadItem(database: D1Database, orderId: string, itemId: string) {
   return database
     .prepare(
-      `SELECT id, order_id AS orderId, quantity, received_quantity AS receivedQuantity
+      `SELECT id, order_id AS orderId, quantity, received_quantity AS receivedQuantity,
+              unit_price_cents AS unitPriceCents
        FROM purchase_order_items WHERE id=?1 AND order_id=?2`,
     )
     .bind(itemId, orderId)
     .first<ItemRow>();
 }
 
-// PATCH { receivedQuantity }: valor ABSOLUTO (não incremento) — evita race
-// condition entre duas pessoas registrando recebimento do mesmo item ao
-// mesmo tempo. Depois de gravar, recalcula o status do pedido pai: todo
-// item com receivedQuantity >= quantity => 'concluido' (e receivedDate
-// preenchido com hoje, se ainda vazio); senão 'em_andamento'.
+// PATCH { receivedQuantity?, unitPriceCents? }: os dois campos são
+// independentes e opcionais (pelo menos um precisa vir no corpo).
+// receivedQuantity é valor ABSOLUTO (não incremento) — evita race condition
+// entre duas pessoas registrando recebimento do mesmo item ao mesmo tempo.
+// Depois de gravar, recalcula o status do pedido pai: todo item com
+// receivedQuantity >= quantity => 'concluido' (e receivedDate preenchido
+// com hoje, se ainda vazio); senão 'em_andamento'. unitPriceCents (Fase D,
+// item 2) é só o preço unitário praticado por aquele fornecedor, em
+// centavos — não afeta o status do pedido.
 export async function PATCH(request: Request, context: { params: Promise<{ id: string; itemId: string }> }) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -51,22 +56,39 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (!item) return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
 
     const body = (await request.json()) as JsonMap;
-    const receivedQuantity = Number(body.receivedQuantity);
-    if (!Number.isFinite(receivedQuantity) || !Number.isInteger(receivedQuantity) || receivedQuantity < 0) {
-      return jsonResponse({ error: "INFORME UMA QUANTIDADE RECEBIDA VÁLIDA." }, 400);
+    const hasReceivedQuantity = body.receivedQuantity !== undefined;
+    const hasUnitPriceCents = body.unitPriceCents !== undefined;
+    if (!hasReceivedQuantity && !hasUnitPriceCents) {
+      return jsonResponse({ error: "INFORME receivedQuantity OU unitPriceCents." }, 400);
     }
-    if (receivedQuantity > item.quantity) {
-      return jsonResponse({ error: "A QUANTIDADE RECEBIDA NÃO PODE SER MAIOR QUE A QUANTIDADE DO ITEM." }, 400);
+
+    let receivedQuantity = item.receivedQuantity;
+    if (hasReceivedQuantity) {
+      receivedQuantity = Number(body.receivedQuantity);
+      if (!Number.isFinite(receivedQuantity) || !Number.isInteger(receivedQuantity) || receivedQuantity < 0) {
+        return jsonResponse({ error: "INFORME UMA QUANTIDADE RECEBIDA VÁLIDA." }, 400);
+      }
+      if (receivedQuantity > item.quantity) {
+        return jsonResponse({ error: "A QUANTIDADE RECEBIDA NÃO PODE SER MAIOR QUE A QUANTIDADE DO ITEM." }, 400);
+      }
+    }
+
+    let unitPriceCents = item.unitPriceCents;
+    if (hasUnitPriceCents) {
+      unitPriceCents = Number(body.unitPriceCents);
+      if (!Number.isFinite(unitPriceCents) || !Number.isInteger(unitPriceCents) || unitPriceCents < 0) {
+        return jsonResponse({ error: "INFORME UM PREÇO UNITÁRIO VÁLIDO (EM CENTAVOS)." }, 400);
+      }
     }
 
     const actorName = actor.displayName || "Administrador";
     await database
       .prepare(
         `UPDATE purchase_order_items
-         SET received_quantity=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP
-         WHERE id=?4`,
+         SET received_quantity=?1, unit_price_cents=?2, updated_by=?3, updated_by_name=?4, updated_at=CURRENT_TIMESTAMP
+         WHERE id=?5`,
       )
-      .bind(receivedQuantity, actor.id, actorName, itemId)
+      .bind(receivedQuantity, unitPriceCents, actor.id, actorName, itemId)
       .run();
 
     const allItemsResult = await database

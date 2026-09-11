@@ -2561,6 +2561,11 @@ export const purchaseOrders = pgTable(
     orderDate: text("order_date").notNull().default(""),
     expectedDate: text("expected_date").notNull().default(""),
     receivedDate: text("received_date").notNull().default(""),
+    // Fase D, item 1: campos já existiam desde a Fase A (só preenchidos na
+    // importação do Notion) — ganham UI própria (aba "Divisão" no detalhe do
+    // pedido) pra pedidos nativos também. division é texto livre (até 20000
+    // caracteres, igual ao campo do Notion); divisionStatus é um dos 5
+    // valores de VALID_DIVISION_STATUSES ou "" (ainda não definido).
     division: text("division").notNull().default(""),
     divisionStatus: text("division_status").notNull().default(""),
     // Mapeamento do STATUS do Notion: "Não iniciado" -> 'pendente',
@@ -2610,6 +2615,11 @@ export const purchaseOrderItems = pgTable(
     productName: text("product_name").notNull().default(""),
     quantity: integer("quantity").notNull().default(0),
     receivedQuantity: integer("received_quantity").notNull().default(0),
+    // Fase D, item 2: preço unitário praticado por este fornecedor neste
+    // pedido, em centavos (mesmo padrão de dinheiro-em-centavos do resto do
+    // Financeiro, ex. supplier_invoices.totalAmountCents). Opcional — 0
+    // significa "não informado" e a UI não mostra como R$ 0,00 nesse caso.
+    unitPriceCents: integer("unit_price_cents").notNull().default(0),
     // JSON: [{ "companyId": "...", "companyName": "..." }, ...] — copiado do
     // purchase_draft_items de origem, só informativo.
     targetStores: text("target_stores").notNull().default("[]"),

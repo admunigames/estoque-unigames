@@ -57,11 +57,18 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const body = (await request.json()) as JsonMap;
     const choicesRaw = Array.isArray(body.itemSupplierChoices) ? body.itemSupplierChoices : [];
     const supplierIdByItemId = new Map<string, string>();
+    // Fase D, item 2: preço unitário opcional por item, informado já na
+    // conversão (default 0 = não informado, o mesmo default do schema).
+    const unitPriceCentsByItemId = new Map<string, number>();
     for (const entry of choicesRaw) {
       const record = entry && typeof entry === "object" ? (entry as JsonMap) : {};
       const itemId = safeText(record.itemId, 80);
       const supplierId = safeText(record.supplierId, 80);
       if (itemId && supplierId) supplierIdByItemId.set(itemId, supplierId);
+      const rawUnitPrice = Number(record.unitPriceCents);
+      if (itemId && Number.isFinite(rawUnitPrice) && Number.isInteger(rawUnitPrice) && rawUnitPrice >= 0) {
+        unitPriceCentsByItemId.set(itemId, rawUnitPrice);
+      }
     }
 
     const missingItem = items.find((item) => !supplierIdByItemId.get(item.id));
@@ -114,13 +121,14 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       });
 
       for (const item of groupItems) {
+        const unitPriceCents = unitPriceCentsByItemId.get(item.id) ?? 0;
         statements.push({
           sql: `INSERT INTO purchase_order_items
-                  (id, order_id, draft_item_id, product_code, product_name, quantity, received_quantity, target_stores,
-                   notes, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+                  (id, order_id, draft_item_id, product_code, product_name, quantity, received_quantity, unit_price_cents,
+                   target_stores, notes, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
                 VALUES
-                  (?1, ?2, ?3, ?4, ?5, ?6, 0, ?7, '', ?8, ?9, CURRENT_TIMESTAMP, ?8, ?9, CURRENT_TIMESTAMP)`,
-          values: [newId(), orderId, item.id, item.productCode, item.productName, item.quantity, item.targetStores, actor.id, actorName],
+                  (?1, ?2, ?3, ?4, ?5, ?6, 0, ?7, ?8, '', ?9, ?10, CURRENT_TIMESTAMP, ?9, ?10, CURRENT_TIMESTAMP)`,
+          values: [newId(), orderId, item.id, item.productCode, item.productName, item.quantity, unitPriceCents, item.targetStores, actor.id, actorName],
         });
       }
     }
