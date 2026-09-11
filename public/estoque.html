@@ -1205,6 +1205,7 @@
   .purchase-field-help{color:var(--ink-faint); font:10px/1.45 var(--sans);}
   .purchase-form-section{grid-column:1 / -1; margin-top:4px; padding-top:14px; border-top:1px solid var(--border); color:var(--accent); font:700 10px/1.3 var(--mono);}
   .purchase-form-actions{display:flex; justify-content:flex-end; gap:9px; margin-top:18px;}
+  .input-error{border-color:var(--danger,#c0392b) !important; box-shadow:0 0 0 1px var(--danger,#c0392b);}
   .purchase-toast{
     position:fixed; z-index:1500; right:18px; bottom:calc(18px + env(safe-area-inset-bottom)); max-width:430px;
     padding:13px 15px 13px 40px; border:1px solid rgba(114,167,216,.55); border-radius:12px;
@@ -4564,10 +4565,12 @@
       </section>
     </section>
 
-    <!-- ================= COMPRAS (NOVO — FASE A) ================= -->
-    <!-- Módulo nativo de rascunhos de compra. Convive com "Controle de
-         Compras" (Notion, seção acima) sem nenhuma relação entre eles nesta
-         fase — ver [[estoque_compras_nativo]]. -->
+    <!-- ================= COMPRAS (NOVO — FASE A + FASE B) ================= -->
+    <!-- Módulo nativo de rascunhos + pedidos de compra. Convive com "Controle
+         de Compras" (Notion, seção acima) sem nenhuma relação entre eles
+         nesta fase — ver [[estoque_compras_nativo]]. Fase B adiciona a aba
+         "Pedidos" (purchase_orders/purchase_order_items) e a conversão de
+         rascunho em pedido(s), um por fornecedor escolhido. -->
     <section id="pageComprasNovo" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
@@ -4575,40 +4578,99 @@
           <h2 class="page-title">Compras</h2>
         </div>
         <div class="page-header-meta">
-          <p class="page-desc">Rascunhos colaborativos do que precisa ser comprado, por loja e fornecedor candidato — independente do Controle de Compras.</p>
-          <div class="page-header-actions">
-            <label class="checkbox-inline"><input type="checkbox" id="comprasNovoIncludeArchived"> Mostrar arquivados</label>
-            <button class="btn-accent" id="btnNewComprasDraft" type="button">+ Novo Rascunho</button>
-          </div>
+          <p class="page-desc">Rascunhos colaborativos do que precisa ser comprado e os pedidos de compra gerados a partir deles — independente do Controle de Compras.</p>
         </div>
       </header>
 
-      <div class="table-panel responsive-table">
-        <div class="table-scroll">
-          <table id="comprasDraftsTable">
-            <thead><tr><th>Rascunho</th><th>Itens</th><th>Status</th><th>Criado por</th><th>Criado em</th><th class="no-print"></th></tr></thead>
-            <tbody id="comprasDraftsTableBody"><tr><td colspan="6" class="responsive-empty">Carregando rascunhos…</td></tr></tbody>
-          </table>
-        </div>
+      <div class="supply-tabs" role="tablist" aria-label="Seções de compras">
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-compras-section-tab="rascunhos">RASCUNHOS</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="pedidos">PEDIDOS</button>
       </div>
 
-      <section class="table-panel" id="comprasDraftDetail" hidden style="margin-top:16px;padding:16px;">
-        <div class="page-header-actions" style="justify-content:space-between;margin-bottom:10px;">
-          <div>
-            <h3 id="comprasDraftDetailTitle" style="margin:0 0 4px;">—</h3>
-            <p class="page-desc" id="comprasDraftDetailMeta" style="margin:0;"></p>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn-outline" id="btnEditComprasDraft" type="button">EDITAR RASCUNHO</button>
-            <button class="btn-outline" id="btnAddComprasDraftItem" type="button">+ ADICIONAR ITEM</button>
+      <section id="comprasSectionRascunhos">
+        <div class="page-header-actions" style="justify-content:flex-end;margin:12px 0;">
+          <label class="checkbox-inline"><input type="checkbox" id="comprasNovoIncludeArchived"> Mostrar arquivados/convertidos</label>
+          <button class="btn-accent" id="btnNewComprasDraft" type="button">+ Novo Rascunho</button>
+        </div>
+
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="comprasDraftsTable">
+              <thead><tr><th>Rascunho</th><th>Itens</th><th>Status</th><th>Criado por</th><th>Criado em</th><th class="no-print"></th></tr></thead>
+              <tbody id="comprasDraftsTableBody"><tr><td colspan="6" class="responsive-empty">Carregando rascunhos…</td></tr></tbody>
+            </table>
           </div>
         </div>
-        <div class="table-scroll">
-          <table id="comprasDraftItemsTable">
-            <thead><tr><th>Produto</th><th>Qtd</th><th>Lojas destino</th><th>Fornecedor(es) candidato(s)</th><th>Observação</th><th class="no-print"></th></tr></thead>
-            <tbody id="comprasDraftItemsBody"><tr><td colspan="6" class="responsive-empty">Nenhum item neste rascunho ainda.</td></tr></tbody>
-          </table>
+
+        <section class="table-panel" id="comprasDraftDetail" hidden style="margin-top:16px;padding:16px;">
+          <div class="page-header-actions" style="justify-content:space-between;margin-bottom:10px;">
+            <div>
+              <h3 id="comprasDraftDetailTitle" style="margin:0 0 4px;">—</h3>
+              <p class="page-desc" id="comprasDraftDetailMeta" style="margin:0;"></p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn-outline" id="btnEditComprasDraft" type="button">EDITAR RASCUNHO</button>
+              <button class="btn-outline" id="btnAddComprasDraftItem" type="button">+ ADICIONAR ITEM</button>
+              <button class="btn-accent" id="btnConvertComprasDraft" type="button" hidden>TRANSFORMAR EM PEDIDO</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table id="comprasDraftItemsTable">
+              <thead><tr><th>Produto</th><th>Qtd</th><th>Lojas destino</th><th>Fornecedor(es) candidato(s)</th><th>Observação</th><th class="no-print"></th></tr></thead>
+              <tbody id="comprasDraftItemsBody"><tr><td colspan="6" class="responsive-empty">Nenhum item neste rascunho ainda.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="comprasSectionPedidos" hidden>
+        <div class="page-header-actions" style="justify-content:flex-end;margin:12px 0;flex-wrap:wrap;gap:10px;">
+          <div class="field" style="min-width:180px;">
+            <label for="comprasOrdersStatusFilter">STATUS</label>
+            <select id="comprasOrdersStatusFilter">
+              <option value="">TODOS</option>
+              <option value="pendente">PENDENTE</option>
+              <option value="em_andamento">EM ANDAMENTO</option>
+              <option value="concluido">CONCLUÍDO</option>
+            </select>
+          </div>
+          <div class="field" style="min-width:180px;">
+            <label for="comprasOrdersOriginFilter">ORIGEM</label>
+            <select id="comprasOrdersOriginFilter">
+              <option value="">TODAS</option>
+              <option value="native">NATIVO</option>
+              <option value="notion_import">IMPORTADO DO NOTION</option>
+            </select>
+          </div>
         </div>
+
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="comprasOrdersTable">
+              <thead><tr><th>Fornecedor</th><th>Origem</th><th>Status</th><th>Itens</th><th>Data do pedido</th><th>Previsão</th><th class="no-print"></th></tr></thead>
+              <tbody id="comprasOrdersTableBody"><tr><td colspan="7" class="responsive-empty">Carregando pedidos…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <section class="table-panel" id="comprasOrderDetail" hidden style="margin-top:16px;padding:16px;">
+          <div class="page-header-actions" style="justify-content:space-between;margin-bottom:10px;">
+            <div>
+              <h3 id="comprasOrderDetailTitle" style="margin:0 0 4px;">—</h3>
+              <p class="page-desc" id="comprasOrderDetailMeta" style="margin:0;"></p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn-outline" id="btnEditComprasOrder" type="button">EDITAR PEDIDO</button>
+            </div>
+          </div>
+          <div class="table-scroll" id="comprasOrderItemsWrap">
+            <table id="comprasOrderItemsTable">
+              <thead><tr><th>Produto</th><th>Lojas destino</th><th>Qtd pedida</th><th>Qtd recebida</th><th class="no-print">Registrar recebimento</th></tr></thead>
+              <tbody id="comprasOrderItemsBody"><tr><td colspan="5" class="responsive-empty">Nenhum item.</td></tr></tbody>
+            </table>
+          </div>
+          <p class="page-desc" id="comprasOrderNoItemsNotice" hidden>Este pedido foi importado do Notion e não tem itens detalhados — edite o status manualmente em "EDITAR PEDIDO".</p>
+        </section>
       </section>
     </section>
 
@@ -6236,6 +6298,59 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelComprasDraftItemDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR ITEM</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Fase B: conversão do rascunho em pedido(s) — 1 fornecedor escolhido por
+     item, agrupados em 1 purchase_orders por fornecedor no servidor. -->
+<dialog class="purchase-dialog" id="comprasConvertDialog" aria-labelledby="comprasConvertDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="comprasConvertDialogTitle">TRANSFORMAR RASCUNHO EM PEDIDO</h3>
+    <button class="purchase-dialog-close" id="btnCloseComprasConvertDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="comprasConvertForm">
+    <p class="page-desc">Escolha, para cada item, qual fornecedor vai receber o pedido. Itens do mesmo fornecedor viram um único pedido.</p>
+    <div class="table-scroll">
+      <table id="comprasConvertTable">
+        <thead><tr><th>Produto</th><th>Qtd</th><th>Fornecedor *</th></tr></thead>
+        <tbody id="comprasConvertTableBody"></tbody>
+      </table>
+    </div>
+    <div class="user-form-status" id="comprasConvertFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelComprasConvertDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnConfirmComprasConvert" type="submit" disabled>CONFIRMAR CONVERSÃO</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Fase B: edição de campos do pedido (notes/status/datas) — status manual
+     é o único jeito de fechar um pedido importado do Notion, que não tem
+     itens pra calcular status automaticamente. -->
+<dialog class="purchase-dialog" id="comprasOrderEditDialog" aria-labelledby="comprasOrderEditDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="comprasOrderEditDialogTitle">EDITAR PEDIDO</h3>
+    <button class="purchase-dialog-close" id="btnCloseComprasOrderEditDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="comprasOrderEditForm">
+    <input type="hidden" id="comprasOrderEditId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="comprasOrderEditStatus">STATUS</label>
+        <select id="comprasOrderEditStatus">
+          <option value="pendente">PENDENTE</option>
+          <option value="em_andamento">EM ANDAMENTO</option>
+          <option value="concluido">CONCLUÍDO</option>
+        </select>
+      </div>
+      <div class="purchase-field"><label for="comprasOrderEditExpectedDate">PREVISÃO DE ENTREGA</label><input type="date" id="comprasOrderEditExpectedDate"></div>
+      <div class="purchase-field"><label for="comprasOrderEditReceivedDate">DATA DE RECEBIMENTO</label><input type="date" id="comprasOrderEditReceivedDate"></div>
+      <div class="purchase-field full"><label for="comprasOrderEditNotes">OBSERVAÇÕES</label><textarea id="comprasOrderEditNotes" rows="2" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="comprasOrderEditFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelComprasOrderEditDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
     </div>
   </form>
 </dialog>
@@ -22743,9 +22858,24 @@ function renderHomeTasks(){
     }catch(error){ status.textContent = error.message; }
   });
 
-  // ----- Compras (novo — Fase A: rascunhos de compra) -----
+  // ----- Compras (novo — Fase A: rascunhos + Fase B: pedidos/recebimento) -----
   // Módulo independente do Controle de Compras (Notion) acima — nenhum dado
   // é compartilhado entre os dois nesta fase.
+  let comprasSectionTab = 'rascunhos';
+  function setComprasSectionTab(tab){
+    comprasSectionTab = tab;
+    document.querySelectorAll('[data-compras-section-tab]').forEach(button => {
+      const active = button.dataset.comprasSectionTab === tab;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+    el('comprasSectionRascunhos').hidden = tab !== 'rascunhos';
+    el('comprasSectionPedidos').hidden = tab !== 'pedidos';
+    if(tab === 'pedidos') loadComprasOrdersPage();
+  }
+  document.querySelectorAll('[data-compras-section-tab]').forEach(button => {
+    button.addEventListener('click',() => setComprasSectionTab(button.dataset.comprasSectionTab));
+  });
   async function comprasNovoApiRequest(path, options){
     const response = await fetch('/api/compras-novo'+path, {
       ...(options || {}),
@@ -22785,6 +22915,12 @@ function renderHomeTasks(){
     return catalogMaps.standard.get(codigo)?.nome || catalogMaps.pa.get(codigo)?.nome || '';
   }
 
+  function comprasDraftStatusBadge(status){
+    if(status === 'convertido') return '<span class="status-pill done">CONVERTIDO</span>';
+    if(status === 'arquivado') return '<span class="status-pill" style="opacity:.65;">ARQUIVADO</span>';
+    return '<span class="status-pill done">ABERTO</span>';
+  }
+
   function renderComprasDraftsTable(){
     const body = el('comprasDraftsTableBody');
     if(!body) return;
@@ -22795,13 +22931,14 @@ function renderHomeTasks(){
     body.innerHTML = comprasDrafts.map(row => '<tr'+(row.id === comprasCurrentDraftId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
       '<td>'+escapeHtml(row.name)+'</td>'+
       '<td>'+Number(row.itemCount || 0)+'</td>'+
-      '<td>'+(row.status === 'arquivado' ? '<span class="status-pill" style="opacity:.65;">ARQUIVADO</span>' : '<span class="status-pill done">ABERTO</span>')+'</td>'+
+      '<td>'+comprasDraftStatusBadge(row.status)+'</td>'+
       '<td>'+escapeHtml(row.createdByName || '—')+'</td>'+
       '<td>'+(row.createdAt ? formatDateTimeBR(row.createdAt) : '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
         '<button class="btn-outline" type="button" data-compras-draft-open="'+escapeHtml(row.id)+'">ABRIR</button>'+
-        '<button class="btn-outline" type="button" data-compras-draft-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
-        '<button class="btn-outline" type="button" data-compras-draft-archive="'+escapeHtml(row.id)+'">'+(row.status === 'arquivado' ? 'REABRIR' : 'ARQUIVAR')+'</button>'+
+        (row.status === 'convertido' ? '' :
+          '<button class="btn-outline" type="button" data-compras-draft-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-compras-draft-archive="'+escapeHtml(row.id)+'">'+(row.status === 'arquivado' ? 'REABRIR' : 'ARQUIVAR')+'</button>')+
       '</span></td>'+
     '</tr>').join('');
   }
@@ -22850,6 +22987,7 @@ function renderHomeTasks(){
       body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum item neste rascunho ainda.</td></tr>';
       return;
     }
+    const canEditItems = comprasCurrentDraftStatus === 'aberto';
     body.innerHTML = comprasCurrentDraftItems.map(item => '<tr>'+
       '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
       '<td>'+Number(item.quantity || 0)+'</td>'+
@@ -22857,11 +22995,14 @@ function renderHomeTasks(){
       '<td>'+comprasSupplierNamesLabel(item.candidateSupplierIds)+'</td>'+
       '<td>'+escapeHtml(item.notes || '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
-        '<button class="btn-outline" type="button" data-compras-item-edit="'+escapeHtml(item.id)+'">EDITAR</button>'+
-        '<button class="btn-outline" type="button" data-compras-item-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>'+
+        (canEditItems ?
+          '<button class="btn-outline" type="button" data-compras-item-edit="'+escapeHtml(item.id)+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-compras-item-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>' : '—')+
       '</span></td>'+
     '</tr>').join('');
   }
+
+  let comprasCurrentDraftStatus = 'aberto';
 
   async function openComprasDraftDetail(draftId){
     await comprasNovoSuppliers();
@@ -22869,12 +23010,17 @@ function renderHomeTasks(){
       const data = await comprasNovoApiRequest('/drafts/'+encodeURIComponent(draftId));
       comprasCurrentDraftId = draftId;
       comprasCurrentDraftItems = Array.isArray(data.items) ? data.items : [];
+      comprasCurrentDraftStatus = data.draft.status;
       el('comprasDraftDetail').hidden = false;
       el('comprasDraftDetailTitle').textContent = data.draft.name;
-      el('comprasDraftDetailMeta').textContent =
-        (data.draft.status === 'arquivado' ? 'ARQUIVADO' : 'ABERTO')+
-        ' · Criado por '+(data.draft.createdByName || '—')+
-        (data.draft.notes ? ' · '+data.draft.notes : '');
+      el('comprasDraftDetailMeta').innerHTML =
+        comprasDraftStatusBadge(data.draft.status)+
+        ' · Criado por '+escapeHtml(data.draft.createdByName || '—')+
+        (data.draft.notes ? ' · '+escapeHtml(data.draft.notes) : '');
+      const isOpen = data.draft.status === 'aberto';
+      el('btnAddComprasDraftItem').hidden = !isOpen;
+      el('btnEditComprasDraft').hidden = data.draft.status === 'convertido';
+      el('btnConvertComprasDraft').hidden = !(isOpen && comprasCurrentDraftItems.length);
       renderComprasDraftItemsTable();
       renderComprasDraftsTable();
     }catch(error){
@@ -22942,6 +23088,63 @@ function renderHomeTasks(){
   if(el('btnEditComprasDraft')) el('btnEditComprasDraft').addEventListener('click', () => {
     if(!comprasCurrentDraftId) return;
     openComprasDraftDialog(comprasDrafts.find(d => d.id === comprasCurrentDraftId) || null);
+  });
+
+  // ----- Fase B: converter rascunho em pedido(s) -----
+  function comprasConvertUpdateConfirmState(){
+    const selects = Array.from(document.querySelectorAll('#comprasConvertTableBody select[data-compras-convert-item]'));
+    const allChosen = selects.length > 0 && selects.every(select => select.value);
+    el('btnConfirmComprasConvert').disabled = !allChosen;
+    selects.forEach(select => select.classList.toggle('input-error', !select.value));
+  }
+
+  async function openComprasConvertDialog(){
+    if(!comprasCurrentDraftId || !comprasCurrentDraftItems.length) return;
+    const suppliers = await comprasNovoSuppliers();
+    el('comprasConvertFormStatus').textContent = '';
+    el('comprasConvertTableBody').innerHTML = comprasCurrentDraftItems.map(item => {
+      let candidateIds = [];
+      try{ candidateIds = JSON.parse(item.candidateSupplierIds || '[]'); }catch{ candidateIds = []; }
+      // Sem candidato pré-definido: oferece todos os fornecedores cadastrados
+      // pra não travar a conversão, mas o select continua obrigatório.
+      const options = (candidateIds.length ? suppliers.filter(s => candidateIds.includes(s.id)) : suppliers);
+      return '<tr>'+
+        '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
+        '<td>'+Number(item.quantity || 0)+'</td>'+
+        '<td><select data-compras-convert-item="'+escapeHtml(item.id)+'" required>'+
+          '<option value="">-- SELECIONE --</option>'+
+          options.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('')+
+        '</select></td>'+
+      '</tr>';
+    }).join('');
+    document.querySelectorAll('#comprasConvertTableBody select[data-compras-convert-item]').forEach(select => {
+      select.addEventListener('change', comprasConvertUpdateConfirmState);
+    });
+    comprasConvertUpdateConfirmState();
+    el('comprasConvertDialog').showModal();
+  }
+  if(el('btnConvertComprasDraft')) el('btnConvertComprasDraft').addEventListener('click', openComprasConvertDialog);
+  if(el('btnCloseComprasConvertDialog')) el('btnCloseComprasConvertDialog').addEventListener('click', () => el('comprasConvertDialog').close());
+  if(el('btnCancelComprasConvertDialog')) el('btnCancelComprasConvertDialog').addEventListener('click', () => el('comprasConvertDialog').close());
+  if(el('comprasConvertForm')) el('comprasConvertForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasConvertFormStatus');
+    status.textContent = '';
+    const selects = Array.from(document.querySelectorAll('#comprasConvertTableBody select[data-compras-convert-item]'));
+    const itemSupplierChoices = selects.map(select => ({ itemId: select.dataset.comprasConvertItem, supplierId: select.value }));
+    if(itemSupplierChoices.some(choice => !choice.supplierId)){ status.textContent = 'ESCOLHA UM FORNECEDOR PARA TODOS OS ITENS.'; return; }
+    try{
+      const data = await comprasNovoApiRequest('/drafts/'+encodeURIComponent(comprasCurrentDraftId)+'/convert', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ itemSupplierChoices })
+      });
+      el('comprasConvertDialog').close();
+      const orderCount = Array.isArray(data.orderIds) ? data.orderIds.length : 0;
+      showPurchaseToast(orderCount+' pedido(s) criado(s) a partir do rascunho.');
+      await loadComprasNovoPage();
+      el('comprasDraftDetail').hidden = true;
+      comprasCurrentDraftId = '';
+      setComprasSectionTab('pedidos');
+    }catch(error){ status.textContent = error.message; }
   });
 
   async function openComprasItemDialog(item){
@@ -23048,6 +23251,167 @@ function renderHomeTasks(){
         showPurchaseToast('Item removido.');
       }catch(error){ showPurchaseToast(error.message, 'error'); }
     }
+  });
+
+  // ----- Fase B: aba "Pedidos" (purchase_orders + purchase_order_items) -----
+  let comprasOrders = [];
+  let comprasCurrentOrderId = '';
+  let comprasCurrentOrderItems = [];
+
+  function comprasOrderStatusBadge(status){
+    if(status === 'concluido') return '<span class="status-pill done">CONCLUÍDO</span>';
+    if(status === 'em_andamento') return '<span class="status-pill">EM ANDAMENTO</span>';
+    return '<span class="status-pill" style="opacity:.65;">PENDENTE</span>';
+  }
+
+  function comprasOrderOriginLabel(order){
+    return order.origin === 'notion_import'
+      ? '<span title="Importado do histórico do Controle de Compras (Notion)">IMPORTADO DO NOTION</span>'
+      : '<span title="Pedido criado a partir de um rascunho">NATIVO</span>';
+  }
+
+  function renderComprasOrdersTable(){
+    const body = el('comprasOrdersTableBody');
+    if(!body) return;
+    if(!comprasOrders.length){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Nenhum pedido encontrado.</td></tr>';
+      return;
+    }
+    body.innerHTML = comprasOrders.map(order => '<tr'+(order.id === comprasCurrentOrderId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
+      '<td>'+escapeHtml(order.supplierName || order.supplierNameRaw || '—')+'</td>'+
+      '<td>'+comprasOrderOriginLabel(order)+'</td>'+
+      '<td>'+comprasOrderStatusBadge(order.status)+'</td>'+
+      '<td>'+(order.noItemsDetailed ? 'SEM ITENS DETALHADOS' : Number(order.itemCount || 0))+'</td>'+
+      '<td>'+(order.orderDate || '—')+'</td>'+
+      '<td>'+(order.expectedDate || '—')+'</td>'+
+      '<td class="no-print"><button class="btn-outline" type="button" data-compras-order-open="'+escapeHtml(order.id)+'">ABRIR</button></td>'+
+    '</tr>').join('');
+  }
+
+  async function loadComprasOrdersPage(){
+    if(!canAccess('purchases_draft')) return;
+    const status = el('comprasOrdersStatusFilter').value;
+    const origin = el('comprasOrdersOriginFilter').value;
+    el('comprasOrdersTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando pedidos…</td></tr>';
+    try{
+      const query = new URLSearchParams();
+      if(status) query.set('status', status);
+      if(origin) query.set('origin', origin);
+      const qs = query.toString();
+      const data = await comprasNovoApiRequest('/orders'+(qs ? '?'+qs : ''));
+      comprasOrders = Array.isArray(data.orders) ? data.orders : [];
+      renderComprasOrdersTable();
+      if(comprasCurrentOrderId && !comprasOrders.some(o => o.id === comprasCurrentOrderId)){
+        comprasCurrentOrderId = '';
+        el('comprasOrderDetail').hidden = true;
+      }
+    }catch(error){
+      comprasOrders = [];
+      el('comprasOrdersTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  if(el('comprasOrdersStatusFilter')) el('comprasOrdersStatusFilter').addEventListener('change', loadComprasOrdersPage);
+  if(el('comprasOrdersOriginFilter')) el('comprasOrdersOriginFilter').addEventListener('change', loadComprasOrdersPage);
+
+  function renderComprasOrderItemsTable(){
+    const body = el('comprasOrderItemsBody');
+    if(!body) return;
+    if(!comprasCurrentOrderItems.length){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum item neste pedido.</td></tr>';
+      return;
+    }
+    body.innerHTML = comprasCurrentOrderItems.map(item => '<tr>'+
+      '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
+      '<td>'+comprasStoreNamesLabel(item.targetStores)+'</td>'+
+      '<td>'+Number(item.quantity || 0)+'</td>'+
+      '<td>'+Number(item.receivedQuantity || 0)+'</td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;">'+
+        '<input type="number" min="0" max="'+Number(item.quantity || 0)+'" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;">'+
+        '<button class="btn-outline" type="button" data-compras-order-item-save="'+escapeHtml(item.id)+'">SALVAR</button>'+
+      '</span></td>'+
+    '</tr>').join('');
+  }
+
+  async function openComprasOrderDetail(orderId){
+    try{
+      const data = await comprasNovoApiRequest('/orders/'+encodeURIComponent(orderId));
+      comprasCurrentOrderId = orderId;
+      comprasCurrentOrderItems = Array.isArray(data.items) ? data.items : [];
+      const order = data.order;
+      el('comprasOrderDetail').hidden = false;
+      el('comprasOrderDetailTitle').textContent = order.supplierName || order.supplierNameRaw || 'Pedido sem fornecedor';
+      el('comprasOrderDetailMeta').innerHTML =
+        comprasOrderStatusBadge(order.status)+' · '+comprasOrderOriginLabel(order)+
+        (order.companyName ? ' · Loja: '+escapeHtml(order.companyName) : '')+
+        (order.division ? ' · Divisão: '+escapeHtml(order.division) : '')+
+        (order.orderDate ? ' · Pedido em '+escapeHtml(order.orderDate) : '')+
+        (order.expectedDate ? ' · Previsão: '+escapeHtml(order.expectedDate) : '')+
+        (order.receivedDate ? ' · Recebido em '+escapeHtml(order.receivedDate) : '')+
+        (order.notes ? ' · '+escapeHtml(order.notes) : '');
+      el('comprasOrderItemsWrap').hidden = Boolean(order.noItemsDetailed);
+      el('comprasOrderNoItemsNotice').hidden = !order.noItemsDetailed;
+      if(!order.noItemsDetailed) renderComprasOrderItemsTable();
+      renderComprasOrdersTable();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+    }
+  }
+
+  if(el('comprasOrdersTableBody')) el('comprasOrdersTableBody').addEventListener('click', async event => {
+    const openBtn = event.target.closest('[data-compras-order-open]');
+    if(openBtn) await openComprasOrderDetail(openBtn.dataset.comprasOrderOpen);
+  });
+
+  if(el('comprasOrderItemsBody')) el('comprasOrderItemsBody').addEventListener('click', async event => {
+    const saveBtn = event.target.closest('[data-compras-order-item-save]');
+    if(!saveBtn) return;
+    const itemId = saveBtn.dataset.comprasOrderItemSave;
+    const input = document.querySelector('[data-compras-order-item-received="'+itemId+'"]');
+    if(!input) return;
+    const receivedQuantity = Number(input.value);
+    if(!Number.isFinite(receivedQuantity) || receivedQuantity < 0){ showPurchaseToast('INFORME UMA QUANTIDADE RECEBIDA VÁLIDA.', 'error'); return; }
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ receivedQuantity })
+      });
+      await openComprasOrderDetail(comprasCurrentOrderId);
+      await loadComprasOrdersPage();
+      showPurchaseToast('Recebimento registrado.');
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  if(el('btnEditComprasOrder')) el('btnEditComprasOrder').addEventListener('click', () => {
+    if(!comprasCurrentOrderId) return;
+    const order = comprasOrders.find(o => o.id === comprasCurrentOrderId);
+    if(!order) return;
+    el('comprasOrderEditId').value = order.id;
+    el('comprasOrderEditStatus').value = order.status;
+    el('comprasOrderEditExpectedDate').value = order.expectedDate || '';
+    el('comprasOrderEditReceivedDate').value = order.receivedDate || '';
+    el('comprasOrderEditNotes').value = order.notes || '';
+    el('comprasOrderEditFormStatus').textContent = '';
+    el('comprasOrderEditDialog').showModal();
+  });
+  if(el('btnCloseComprasOrderEditDialog')) el('btnCloseComprasOrderEditDialog').addEventListener('click', () => el('comprasOrderEditDialog').close());
+  if(el('btnCancelComprasOrderEditDialog')) el('btnCancelComprasOrderEditDialog').addEventListener('click', () => el('comprasOrderEditDialog').close());
+  if(el('comprasOrderEditForm')) el('comprasOrderEditForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasOrderEditFormStatus');
+    status.textContent = '';
+    const id = el('comprasOrderEditId').value;
+    const payload = {
+      status: el('comprasOrderEditStatus').value,
+      expectedDate: el('comprasOrderEditExpectedDate').value,
+      receivedDate: el('comprasOrderEditReceivedDate').value,
+      notes: el('comprasOrderEditNotes').value
+    };
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('comprasOrderEditDialog').close();
+      await openComprasOrderDetail(id);
+      await loadComprasOrdersPage();
+      showPurchaseToast('Pedido atualizado.');
+    }catch(error){ status.textContent = error.message; }
   });
 
   // ----- Obras (CAPEX — fora de Despesas/DRE) -----

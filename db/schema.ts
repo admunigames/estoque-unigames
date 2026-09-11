@@ -2489,7 +2489,9 @@ export const purchaseDrafts = pgTable(
   {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
-    // 'aberto' | 'arquivado'
+    // 'aberto' | 'arquivado' | 'convertido' (Fase B: rascunho que já virou
+    // pedido(s) de verdade via POST /drafts/:id/convert — não recebe mais
+    // itens nem pode ser convertido de novo).
     status: text("status").notNull().default("aberto"),
     notes: text("notes").notNull().default(""),
     createdBy: text("created_by").notNull(),
@@ -2570,5 +2572,44 @@ export const purchaseOrders = pgTable(
   },
   (table) => [
     index("purchase_orders_notion_purchase_idx").on(table.notionPurchaseId),
+  ],
+);
+
+// Fase B: itens de um purchase_orders nativo (origin='native'). Pedidos
+// importados do Notion (origin='notion_import') não têm linhas aqui —
+// continuam representados só por noItemsDetailed=1 em purchase_orders.
+//  - draftItemId rastreia de qual purchase_draft_items este item veio (via
+//    POST /drafts/:id/convert) — fica vazio se o pedido não nasceu de uma
+//    conversão de rascunho.
+//  - Mesma granularidade item×total do draft de origem: quantity é um total
+//    único e targetStores é só informativo (não existe split de quantidade
+//    por loja nesta fase).
+//  - receivedQuantity é atualizado como valor absoluto (não incremento) via
+//    PATCH /orders/:id/items/:itemId — quando todo item do pedido atinge
+//    receivedQuantity >= quantity, o status do purchase_orders pai muda
+//    automaticamente para 'concluido'.
+export const purchaseOrderItems = pgTable(
+  "purchase_order_items",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id").notNull(),
+    draftItemId: text("draft_item_id").notNull().default(""),
+    productCode: text("product_code").notNull(),
+    productName: text("product_name").notNull().default(""),
+    quantity: integer("quantity").notNull().default(0),
+    receivedQuantity: integer("received_quantity").notNull().default(0),
+    // JSON: [{ "companyId": "...", "companyName": "..." }, ...] — copiado do
+    // purchase_draft_items de origem, só informativo.
+    targetStores: text("target_stores").notNull().default("[]"),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("purchase_order_items_order_idx").on(table.orderId),
   ],
 );
