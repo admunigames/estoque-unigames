@@ -23478,8 +23478,10 @@ function renderHomeTasks(){
   // divisão longo. A nota "Convertido do rascunho: X (uuid)" mantém só o
   // nome do rascunho, sem o uuid, pra não poluir a tela.
   function comprasOrderDetailMetaHtml(order){
+    // "Origem" já vem como HTML (span com title) de comprasOrderOriginLabel
+    // — os demais campos são texto puro e precisam de escapeHtml.
     const fields = [
-      ['Origem', comprasOrderOriginLabel(order)],
+      ['Origem', comprasOrderOriginLabel(order), true],
       ['Loja', order.companyName || ''],
       ['Pedido em', order.orderDate || ''],
       ['Previsão', order.expectedDate || ''],
@@ -23487,9 +23489,9 @@ function renderHomeTasks(){
     ].filter(([, value]) => value);
     const fieldsHtml = fields.length
       ? '<div style="display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:10px;">'+
-        fields.map(([label, value]) =>
+        fields.map(([label, value, isHtml]) =>
           '<div><div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:2px;">'+escapeHtml(label)+'</div>'+
-          '<div>'+escapeHtml(value)+'</div></div>'
+          '<div>'+(isHtml ? value : escapeHtml(value))+'</div></div>'
         ).join('')+
         '</div>'
       : '';
