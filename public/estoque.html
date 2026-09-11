@@ -4658,8 +4658,8 @@
         <section class="table-panel" id="comprasOrderDetail" hidden style="margin-top:16px;padding:16px;">
           <div class="page-header-actions" style="justify-content:space-between;margin-bottom:10px;">
             <div>
-              <h3 id="comprasOrderDetailTitle" style="margin:0 0 4px;">—</h3>
-              <p class="page-desc" id="comprasOrderDetailMeta" style="margin:0;"></p>
+              <h3 id="comprasOrderDetailTitle" style="margin:0 0 8px;">—</h3>
+              <div id="comprasOrderDetailMeta"></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn-outline" id="btnEditComprasOrder" type="button">EDITAR PEDIDO</button>
@@ -23471,6 +23471,35 @@ function renderHomeTasks(){
     return html;
   }
 
+  // Cabeçalho do detalhe do pedido: badges numa linha, depois uma grade de
+  // campo/valor (só os campos preenchidos) em vez de uma frase única com
+  // tudo separado por "·" — inclui o dump da divisão inteira e o id bruto
+  // do rascunho de origem, o que ficava ilegível em pedidos com texto de
+  // divisão longo. A nota "Convertido do rascunho: X (uuid)" mantém só o
+  // nome do rascunho, sem o uuid, pra não poluir a tela.
+  function comprasOrderDetailMetaHtml(order){
+    const fields = [
+      ['Origem', comprasOrderOriginLabel(order)],
+      ['Loja', order.companyName || ''],
+      ['Pedido em', order.orderDate || ''],
+      ['Previsão', order.expectedDate || ''],
+      ['Recebido em', order.receivedDate || ''],
+    ].filter(([, value]) => value);
+    const fieldsHtml = fields.length
+      ? '<div style="display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:10px;">'+
+        fields.map(([label, value]) =>
+          '<div><div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:2px;">'+escapeHtml(label)+'</div>'+
+          '<div>'+escapeHtml(value)+'</div></div>'
+        ).join('')+
+        '</div>'
+      : '';
+    const cleanNotes = (order.notes || '').replace(/\s*\([0-9a-f-]{20,}\)\s*$/i, '');
+    const notesHtml = cleanNotes
+      ? '<p class="page-desc" style="margin:10px 0 0;">'+escapeHtml(cleanNotes)+'</p>'
+      : '';
+    return '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">'+comprasOrderBadges(order)+'</div>'+fieldsHtml+notesHtml;
+  }
+
   function renderComprasOrdersTable(){
     const body = el('comprasOrdersTableBody');
     if(!body) return;
@@ -23609,14 +23638,7 @@ function renderHomeTasks(){
       renderComprasOrdersTable();
       comprasOrderDetailNode().hidden = false;
       el('comprasOrderDetailTitle').textContent = order.supplierName || order.supplierNameRaw || 'Pedido sem fornecedor';
-      el('comprasOrderDetailMeta').innerHTML =
-        comprasOrderBadges(order)+' · '+comprasOrderOriginLabel(order)+
-        (order.companyName ? ' · Loja: '+escapeHtml(order.companyName) : '')+
-        (order.division ? ' · Divisão: '+escapeHtml(order.division) : '')+
-        (order.orderDate ? ' · Pedido em '+escapeHtml(order.orderDate) : '')+
-        (order.expectedDate ? ' · Previsão: '+escapeHtml(order.expectedDate) : '')+
-        (order.receivedDate ? ' · Recebido em '+escapeHtml(order.receivedDate) : '')+
-        (order.notes ? ' · '+escapeHtml(order.notes) : '');
+      el('comprasOrderDetailMeta').innerHTML = comprasOrderDetailMetaHtml(order);
       el('comprasOrderItemsWrap').hidden = Boolean(order.noItemsDetailed);
       el('comprasOrderNoItemsNotice').hidden = !order.noItemsDetailed;
       if(!order.noItemsDetailed) renderComprasOrderItemsTable();
