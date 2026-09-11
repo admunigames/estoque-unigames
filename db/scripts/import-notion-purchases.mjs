@@ -12,8 +12,14 @@
 //
 // Casamento de fornecedor: compara o texto de FORNECEDOR (Notion) com
 // finance_suppliers.name, case-insensitive e após trim. Quando não bate com
-// nada, supplierId fica vazio (mas supplierNameRaw é sempre preenchido) —
-// revisão manual depois, ver o resumo impresso ao final.
+// nada (nome novo ou só existem cadastros inativos), CRIA um finance_suppliers
+// novo (ativo, sem document/CNPJ — fica para completar depois) a partir do
+// nome cru do Notion, e vincula supplierId a ele. Isso popula o cadastro real
+// a partir do histórico em vez de deixar todo pedido com supplierId vazio —
+// decisão confirmada com o usuário após o dry-run mostrar 47 fornecedores
+// distintos e o cadastro praticamente vazio em produção. Nomes iguais (após
+// trim/lowercase) no próprio lote do Notion reaproveitam o mesmo fornecedor
+// recém-criado (cache em memória), nunca duplicam dentro de uma mesma run.
 //
 // Mapeamento de STATUS (Notion -> purchase_orders.status):
 //   "Não iniciado"  -> 'pendente'
@@ -43,6 +49,23 @@ function mapStatus(rawStatus) {
 
 function normalizeSupplierName(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+// Erros de digitação confirmados no texto livre do Notion (mesmo fornecedor,
+// nome diferente) — mesclados na hora de casar/criar em finance_suppliers
+// pra não gerar cadastro duplicado. supplierNameRaw em purchase_orders
+// continua guardando o texto original do Notion, só o nome usado pra
+// achar/criar o fornecedor é que vira o canônico.
+const SUPPLIER_NAME_ALIASES = new Map([
+  ["igram micro", "INGRAM MICRO"],
+  ["mercado livere - asus", "MERCADO LIVRE - ASUS"],
+  ["kinsale (tribotek)", "TRIBOTEK"],
+]);
+
+function canonicalSupplierName(rawName) {
+  const trimmed = String(rawName || "").trim();
+  const alias = SUPPLIER_NAME_ALIASES.get(normalizeSupplierName(trimmed));
+  return alias || trimmed;
 }
 
 async function fetchAllPurchases(limit) {
@@ -88,6 +111,8 @@ async function main() {
   let imported = 0;
   let skippedExisting = 0;
   let unmatchedSupplier = 0;
+  let suppliersCreated = 0;
+  const createdSupplierNames = new Set();
 
   try {
     const suppliers = await sql`SELECT id, name FROM finance_suppliers WHERE active = 1`;
@@ -109,8 +134,30 @@ async function main() {
         continue;
       }
 
-      const supplierId = suppliersByName.get(normalizeSupplierName(purchase.fornecedor)) || "";
-      if (!supplierId) unmatchedSupplier += 1;
+      const supplierNameRaw = String(purchase.fornecedor || "").trim();
+      const supplierNameCanonical = canonicalSupplierName(supplierNameRaw);
+      const normalizedSupplierName = normalizeSupplierName(supplierNameCanonical);
+      let supplierId = normalizedSupplierName ? suppliersByName.get(normalizedSupplierName) || "" : "";
+
+      if (!supplierId && normalizedSupplierName) {
+        unmatchedSupplier += 1;
+        if (dryRun) {
+          createdSupplierNames.add(supplierNameCanonical);
+        } else {
+          supplierId = crypto.randomUUID();
+          await sql`
+            INSERT INTO finance_suppliers (
+              id, name, document, notes, active,
+              created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at
+            ) VALUES (
+              ${supplierId}, ${supplierNameCanonical}, '', 'Criado automaticamente a partir do histórico do Notion (import-notion-purchases).', 1,
+              'import-notion-purchases', 'Importação Notion (script)', now()::text, '', '', now()::text
+            )
+          `;
+          suppliersByName.set(normalizedSupplierName, supplierId);
+          suppliersCreated += 1;
+        }
+      }
 
       if (dryRun) {
         imported += 1;
@@ -125,7 +172,7 @@ async function main() {
           division, division_status, status, no_items_detailed, notes,
           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at
         ) VALUES (
-          ${id}, 'notion_import', ${purchase.id}, ${purchase.url || ""}, ${supplierId}, ${purchase.fornecedor || ""},
+          ${id}, 'notion_import', ${purchase.id}, ${purchase.url || ""}, ${supplierId}, ${supplierNameRaw},
           '', ${purchase.loja || ""}, ${purchase.dataPedido || ""}, ${purchase.previsao || ""}, ${purchase.dataRecebimento || ""},
           ${purchase.divisao || ""}, ${purchase.statusDivisao || ""}, ${mapStatus(purchase.status)}, 1, '',
           'import-notion-purchases', 'Importação Notion (script)', now()::text, '', '', now()::text
@@ -141,7 +188,13 @@ async function main() {
   console.log(`Processados: ${processed}`);
   console.log(`Importados: ${imported}${dryRun ? " (simulado, --dry-run)" : ""}`);
   console.log(`Pulados (já existiam): ${skippedExisting}`);
-  console.log(`Sem fornecedor casado (revisar supplierId manualmente): ${unmatchedSupplier}`);
+  if (dryRun) {
+    console.log(`Fornecedores que seriam criados em finance_suppliers: ${createdSupplierNames.size}`);
+    for (const name of [...createdSupplierNames].sort()) console.log(`  - ${name}`);
+  } else {
+    console.log(`Fornecedores novos criados em finance_suppliers: ${suppliersCreated}`);
+  }
+  console.log(`Pedidos com fornecedor recém-criado (sem CNPJ/CPF, revisar depois): ${unmatchedSupplier}`);
 }
 
 main().catch((error) => {
