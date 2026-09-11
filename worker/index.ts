@@ -213,6 +213,7 @@ const APP_ROUTE_PATHS = new Set([
   "/puxadas",
   "/relatorio-41",
   "/compras",
+  "/compras-novo",
   "/estoque",
   "/tarefas",
   "/missoes",
