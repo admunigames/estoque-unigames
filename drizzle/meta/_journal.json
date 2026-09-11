@@ -379,6 +379,13 @@
       "when": 1788437868396,
       "tag": "0053_card_sales_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1789129991595,
+      "tag": "0054_compras_nativo_fase_a",
+      "breakpoints": true
     }
   ]
 }

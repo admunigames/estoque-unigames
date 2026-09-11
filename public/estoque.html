@@ -2862,6 +2862,7 @@
         <a class="nav-item sub-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" data-home-desc="Vendas e estoque baixo da sua loja." title="Relatório 41" href="/relatorio-41"><span class="nav-icon nav-icon-text" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></a>
         <a class="nav-item sub-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal" href="/estoque"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/><line x1="3" y1="19" x2="21" y2="19"/></svg></span><span class="nav-label">Estoque Fiscal</span></a>
         <a class="nav-item sub-item" id="navCompras" data-page="compras" data-permission="purchases" data-home-desc="Pedidos, recebimentos e divisões." title="Controle de Compras" href="/compras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><path d="M3.5 4h2.2l2 11.2a1.8 1.8 0 0 0 1.8 1.5h8a1.8 1.8 0 0 0 1.76-1.44L20.8 8H6.4"/></svg></span><span class="nav-label">Controle de Compras</span></a>
+        <a class="nav-item sub-item" id="navComprasNovo" data-page="comprasNovo" data-permission="purchases_draft" data-home-desc="Rascunhos de compra, fornecedores e sugestão por estoque baixo." title="Compras" href="/compras-novo"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h13l-1.5 9h-10z"/><path d="M6 3 5 1H2.5"/><circle cx="9" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><path d="M12 8v4M10 10h4"/></svg></span><span class="nav-label">Compras</span></a>
         <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc="Saídas Gerais Solicitadas pelas lojas." title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5"/><path d="M11 12h9.5"/><path d="m16.5 8 4 4-4 4"/></svg></span><span class="nav-label">Saídas</span></a>
         <a class="nav-item sub-item" id="navEntradas" data-page="entradas" data-permission="inputs" data-home-desc="Entradas Gerais Solicitadas pelas lojas." title="Entrada" href="/entradas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 4H17a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.5"/><path d="M13 12H3.5"/><path d="m7.5 8-4 4 4 4"/></svg></span><span class="nav-label">Entrada</span></a>
       </div>
@@ -4563,6 +4564,54 @@
       </section>
     </section>
 
+    <!-- ================= COMPRAS (NOVO — FASE A) ================= -->
+    <!-- Módulo nativo de rascunhos de compra. Convive com "Controle de
+         Compras" (Notion, seção acima) sem nenhuma relação entre eles nesta
+         fase — ver [[estoque_compras_nativo]]. -->
+    <section id="pageComprasNovo" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Compras</h2>
+        </div>
+        <div class="page-header-meta">
+          <p class="page-desc">Rascunhos colaborativos do que precisa ser comprado, por loja e fornecedor candidato — independente do Controle de Compras.</p>
+          <div class="page-header-actions">
+            <label class="checkbox-inline"><input type="checkbox" id="comprasNovoIncludeArchived"> Mostrar arquivados</label>
+            <button class="btn-accent" id="btnNewComprasDraft" type="button">+ Novo Rascunho</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="comprasDraftsTable">
+            <thead><tr><th>Rascunho</th><th>Itens</th><th>Status</th><th>Criado por</th><th>Criado em</th><th class="no-print"></th></tr></thead>
+            <tbody id="comprasDraftsTableBody"><tr><td colspan="6" class="responsive-empty">Carregando rascunhos…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <section class="table-panel" id="comprasDraftDetail" hidden style="margin-top:16px;padding:16px;">
+        <div class="page-header-actions" style="justify-content:space-between;margin-bottom:10px;">
+          <div>
+            <h3 id="comprasDraftDetailTitle" style="margin:0 0 4px;">—</h3>
+            <p class="page-desc" id="comprasDraftDetailMeta" style="margin:0;"></p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-outline" id="btnEditComprasDraft" type="button">EDITAR RASCUNHO</button>
+            <button class="btn-outline" id="btnAddComprasDraftItem" type="button">+ ADICIONAR ITEM</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table id="comprasDraftItemsTable">
+            <thead><tr><th>Produto</th><th>Qtd</th><th>Lojas destino</th><th>Fornecedor(es) candidato(s)</th><th>Observação</th><th class="no-print"></th></tr></thead>
+            <tbody id="comprasDraftItemsBody"><tr><td colspan="6" class="responsive-empty">Nenhum item neste rascunho ainda.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
     <!-- ================= ADMINISTRAÇÃO DE USUÁRIOS ================= -->
     <section id="pageUsuarios" class="page wrap">
       <header class="page-header">
@@ -4697,6 +4746,12 @@
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:edit"> Editar</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:delete"> Excluir</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:send_to_finance"> Enviar NF ao Financeiro</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Compras (novo)</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases_draft:manage"> Acessar módulo (rascunhos de compra)</label>
                   </div>
                 </details>
                 <details class="permission-module">
@@ -6118,6 +6173,72 @@
 
   </div>
 </div>
+
+<dialog class="purchase-dialog" id="comprasDraftDialog" aria-labelledby="comprasDraftDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="comprasDraftDialogTitle">NOVO RASCUNHO</h3>
+    <button class="purchase-dialog-close" id="btnCloseComprasDraftDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="comprasDraftForm">
+    <input type="hidden" id="comprasDraftId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="comprasDraftName">NOME DO RASCUNHO *</label><input id="comprasDraftName" maxlength="160" required placeholder="Ex.: Rascunho Loja Centro, Geral..."></div>
+      <div class="purchase-field"><label for="comprasDraftStatus">STATUS</label>
+        <select id="comprasDraftStatus">
+          <option value="aberto">ABERTO</option>
+          <option value="arquivado">ARQUIVADO</option>
+        </select>
+      </div>
+      <div class="purchase-field full"><label for="comprasDraftNotes">OBSERVAÇÕES</label><textarea id="comprasDraftNotes" rows="2" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="comprasDraftFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelComprasDraftDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="comprasDraftItemDialog" aria-labelledby="comprasDraftItemDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="comprasDraftItemDialogTitle">ADICIONAR ITEM</h3>
+    <button class="purchase-dialog-close" id="btnCloseComprasDraftItemDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="comprasDraftItemForm">
+    <input type="hidden" id="comprasItemId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full">
+        <label for="comprasItemProductCode">PRODUTO (CÓDIGO OU NOME) *</label>
+        <input id="comprasItemProductCode" maxlength="80" required autocomplete="off" list="comprasItemProductList">
+        <datalist id="comprasItemProductList"></datalist>
+      </div>
+      <div class="purchase-field"><label for="comprasItemQuantity">QUANTIDADE *</label><input type="number" id="comprasItemQuantity" min="0" step="1" required></div>
+      <div class="purchase-field full"><label for="comprasItemNotes">OBSERVAÇÃO</label><textarea id="comprasItemNotes" rows="2" maxlength="2000"></textarea></div>
+    </div>
+
+    <div class="purchase-form-actions" style="justify-content:flex-start;">
+      <button class="btn-outline" id="btnCheckComprasItemStock" type="button">VERIFICAR SALDO POR LOJA</button>
+    </div>
+    <div class="table-scroll" id="comprasItemStockWrap" hidden>
+      <table id="comprasItemStockTable">
+        <thead><tr><th>Loja</th><th>Saldo atual</th></tr></thead>
+        <tbody id="comprasItemStockBody"></tbody>
+      </table>
+    </div>
+
+    <p class="page-desc" style="margin:14px 0 6px;">LOJAS DESTINO</p>
+    <div class="permission-grid" id="comprasItemStoresGrid"></div>
+
+    <p class="page-desc" style="margin:14px 0 6px;">FORNECEDOR(ES) CANDIDATO(S)</p>
+    <div class="permission-grid" id="comprasItemSuppliersGrid"></div>
+
+    <div class="user-form-status" id="comprasDraftItemFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelComprasDraftItemDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR ITEM</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog class="purchase-dialog" id="reposicaoDialog" aria-labelledby="reposicaoDialogTitle">
   <div class="purchase-dialog-head">
@@ -8321,6 +8442,7 @@
     puxadas:'/puxadas',
     relatorio41:'/relatorio-41',
     compras:'/compras',
+    comprasNovo:'/compras-novo',
     dashboard:'/estoque',
     cadastros:'/cadastros',
     lojas:'/cadastros/lojas',
@@ -8366,6 +8488,7 @@
     puxadas:'PUXADAS',
     relatorio41:'RELATÓRIO 41',
     compras:'CONTROLE DE COMPRAS',
+    comprasNovo:'COMPRAS',
     dashboard:'ESTOQUE FISCAL',
     cadastros:'CADASTROS',
     lojas:'CADASTRO DE LOJAS',
@@ -8409,6 +8532,7 @@
     puxadas:'pulls',
     relatorio41:'report41',
     compras:'purchases',
+    comprasNovo:'purchases_draft',
     dashboard:'stock',
     tarefas:'tasks',
     missoes:'missions',
@@ -9020,6 +9144,7 @@
       history[method]({page:name}, '', route);
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
+    if(name === 'comprasNovo') loadComprasNovoPage();
     if(name === 'usuarios') loadAdminUsers();
     if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); if(CHECKLIST_KIND[missionSectionTab]) loadChecklist(missionSectionTab); }
     if(name === 'captacao') loadCaptures();
@@ -9064,6 +9189,7 @@
       history.replaceState({page:name}, '', PAGE_ROUTES[name]);
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
+    if(name === 'comprasNovo') loadComprasNovoPage();
     if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); if(CHECKLIST_KIND[missionSectionTab]) loadChecklist(missionSectionTab); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
@@ -22617,6 +22743,313 @@ function renderHomeTasks(){
     }catch(error){ status.textContent = error.message; }
   });
 
+  // ----- Compras (novo — Fase A: rascunhos de compra) -----
+  // Módulo independente do Controle de Compras (Notion) acima — nenhum dado
+  // é compartilhado entre os dois nesta fase.
+  async function comprasNovoApiRequest(path, options){
+    const response = await fetch('/api/compras-novo'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){ location.assign('/login?next='+encodeURIComponent(location.pathname)); throw new Error('SESSÃO EXPIRADA.'); }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  let comprasDrafts = [];
+  let comprasCurrentDraftId = '';
+  let comprasCurrentDraftItems = [];
+  let comprasSuppliersCache = [];
+
+  async function comprasNovoSuppliers(){
+    if(comprasSuppliersCache.length) return comprasSuppliersCache;
+    try{
+      const data = await financeApiRequest('/suppliers');
+      comprasSuppliersCache = Array.isArray(data.suppliers) ? data.suppliers : [];
+    }catch{
+      comprasSuppliersCache = [];
+    }
+    return comprasSuppliersCache;
+  }
+
+  function comprasProductCatalogEntries(){
+    const entries = new Map();
+    catalogMaps.standard.forEach((value, codigo) => entries.set(codigo, value.nome || ''));
+    catalogMaps.pa.forEach((value, codigo) => { if(!entries.has(codigo)) entries.set(codigo, value.nome || ''); });
+    return entries;
+  }
+
+  function comprasFindProductName(codigo){
+    return catalogMaps.standard.get(codigo)?.nome || catalogMaps.pa.get(codigo)?.nome || '';
+  }
+
+  function renderComprasDraftsTable(){
+    const body = el('comprasDraftsTableBody');
+    if(!body) return;
+    if(!comprasDrafts.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum rascunho encontrado.</td></tr>';
+      return;
+    }
+    body.innerHTML = comprasDrafts.map(row => '<tr'+(row.id === comprasCurrentDraftId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
+      '<td>'+escapeHtml(row.name)+'</td>'+
+      '<td>'+Number(row.itemCount || 0)+'</td>'+
+      '<td>'+(row.status === 'arquivado' ? '<span class="status-pill" style="opacity:.65;">ARQUIVADO</span>' : '<span class="status-pill done">ABERTO</span>')+'</td>'+
+      '<td>'+escapeHtml(row.createdByName || '—')+'</td>'+
+      '<td>'+(row.createdAt ? formatDateTimeBR(row.createdAt) : '—')+'</td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+        '<button class="btn-outline" type="button" data-compras-draft-open="'+escapeHtml(row.id)+'">ABRIR</button>'+
+        '<button class="btn-outline" type="button" data-compras-draft-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-compras-draft-archive="'+escapeHtml(row.id)+'">'+(row.status === 'arquivado' ? 'REABRIR' : 'ARQUIVAR')+'</button>'+
+      '</span></td>'+
+    '</tr>').join('');
+  }
+
+  async function loadComprasNovoPage(){
+    if(!canAccess('purchases_draft')) return;
+    if(!companies.length) await loadCompanies();
+    const includeArchived = el('comprasNovoIncludeArchived').checked ? '1' : '0';
+    el('comprasDraftsTableBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando rascunhos…</td></tr>';
+    try{
+      const data = await comprasNovoApiRequest('/drafts?includeArchived='+includeArchived);
+      comprasDrafts = Array.isArray(data.drafts) ? data.drafts : [];
+      renderComprasDraftsTable();
+      if(comprasCurrentDraftId && !comprasDrafts.some(d => d.id === comprasCurrentDraftId)){
+        comprasCurrentDraftId = '';
+        el('comprasDraftDetail').hidden = true;
+      }
+    }catch(error){
+      comprasDrafts = [];
+      el('comprasDraftsTableBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  if(el('comprasNovoIncludeArchived')) el('comprasNovoIncludeArchived').addEventListener('change', loadComprasNovoPage);
+
+  function comprasStoreNamesLabel(targetStores){
+    let list = [];
+    try{ list = JSON.parse(targetStores || '[]'); }catch{ list = []; }
+    if(!Array.isArray(list) || !list.length) return '—';
+    return list.map(s => escapeHtml(s.companyName || s.companyId)).join(', ');
+  }
+
+  function comprasSupplierNamesLabel(candidateSupplierIds){
+    let ids = [];
+    try{ ids = JSON.parse(candidateSupplierIds || '[]'); }catch{ ids = []; }
+    if(!Array.isArray(ids) || !ids.length) return '—';
+    return ids.map(id => {
+      const supplier = comprasSuppliersCache.find(s => s.id === id);
+      return escapeHtml(supplier ? supplier.name : id);
+    }).join(', ');
+  }
+
+  function renderComprasDraftItemsTable(){
+    const body = el('comprasDraftItemsBody');
+    if(!body) return;
+    if(!comprasCurrentDraftItems.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum item neste rascunho ainda.</td></tr>';
+      return;
+    }
+    body.innerHTML = comprasCurrentDraftItems.map(item => '<tr>'+
+      '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
+      '<td>'+Number(item.quantity || 0)+'</td>'+
+      '<td>'+comprasStoreNamesLabel(item.targetStores)+'</td>'+
+      '<td>'+comprasSupplierNamesLabel(item.candidateSupplierIds)+'</td>'+
+      '<td>'+escapeHtml(item.notes || '—')+'</td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+        '<button class="btn-outline" type="button" data-compras-item-edit="'+escapeHtml(item.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-compras-item-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>'+
+      '</span></td>'+
+    '</tr>').join('');
+  }
+
+  async function openComprasDraftDetail(draftId){
+    await comprasNovoSuppliers();
+    try{
+      const data = await comprasNovoApiRequest('/drafts/'+encodeURIComponent(draftId));
+      comprasCurrentDraftId = draftId;
+      comprasCurrentDraftItems = Array.isArray(data.items) ? data.items : [];
+      el('comprasDraftDetail').hidden = false;
+      el('comprasDraftDetailTitle').textContent = data.draft.name;
+      el('comprasDraftDetailMeta').textContent =
+        (data.draft.status === 'arquivado' ? 'ARQUIVADO' : 'ABERTO')+
+        ' · Criado por '+(data.draft.createdByName || '—')+
+        (data.draft.notes ? ' · '+data.draft.notes : '');
+      renderComprasDraftItemsTable();
+      renderComprasDraftsTable();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+    }
+  }
+
+  el('comprasDraftsTableBody').addEventListener('click', async event => {
+    const openBtn = event.target.closest('[data-compras-draft-open]');
+    if(openBtn){ await openComprasDraftDetail(openBtn.dataset.comprasDraftOpen); return; }
+    const editBtn = event.target.closest('[data-compras-draft-edit]');
+    if(editBtn){ openComprasDraftDialog(comprasDrafts.find(d => d.id === editBtn.dataset.comprasDraftEdit) || null); return; }
+    const archiveBtn = event.target.closest('[data-compras-draft-archive]');
+    if(archiveBtn){
+      const id = archiveBtn.dataset.comprasDraftArchive;
+      const row = comprasDrafts.find(d => d.id === id);
+      if(!row) return;
+      try{
+        if(row.status === 'arquivado'){
+          await comprasNovoApiRequest('/drafts/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:'aberto'})});
+          showPurchaseToast('Rascunho reaberto.');
+        } else {
+          await comprasNovoApiRequest('/drafts/'+encodeURIComponent(id), {method:'DELETE'});
+          showPurchaseToast('Rascunho arquivado.');
+        }
+        await loadComprasNovoPage();
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+    }
+  });
+
+  function openComprasDraftDialog(row){
+    el('comprasDraftForm').reset();
+    el('comprasDraftId').value = row ? row.id : '';
+    el('comprasDraftDialogTitle').textContent = row ? 'EDITAR RASCUNHO' : 'NOVO RASCUNHO';
+    el('comprasDraftName').value = row ? row.name : '';
+    el('comprasDraftStatus').value = row ? row.status : 'aberto';
+    el('comprasDraftNotes').value = row ? (row.notes || '') : '';
+    el('comprasDraftFormStatus').textContent = '';
+    el('comprasDraftDialog').showModal();
+  }
+  if(el('btnNewComprasDraft')) el('btnNewComprasDraft').addEventListener('click', () => openComprasDraftDialog(null));
+  if(el('btnCloseComprasDraftDialog')) el('btnCloseComprasDraftDialog').addEventListener('click', () => el('comprasDraftDialog').close());
+  if(el('btnCancelComprasDraftDialog')) el('btnCancelComprasDraftDialog').addEventListener('click', () => el('comprasDraftDialog').close());
+  if(el('comprasDraftForm')) el('comprasDraftForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasDraftFormStatus');
+    status.textContent = '';
+    const name = el('comprasDraftName').value.trim();
+    if(name.length < 2){ status.textContent = 'INFORME O NOME DO RASCUNHO.'; return; }
+    const id = el('comprasDraftId').value;
+    const payload = { name, notes: el('comprasDraftNotes').value };
+    if(id) payload.status = el('comprasDraftStatus').value;
+    try{
+      if(id){
+        await comprasNovoApiRequest('/drafts/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      } else {
+        await comprasNovoApiRequest('/drafts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      }
+      el('comprasDraftDialog').close();
+      await loadComprasNovoPage();
+      showPurchaseToast('Rascunho salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  if(el('btnEditComprasDraft')) el('btnEditComprasDraft').addEventListener('click', () => {
+    if(!comprasCurrentDraftId) return;
+    openComprasDraftDialog(comprasDrafts.find(d => d.id === comprasCurrentDraftId) || null);
+  });
+
+  async function openComprasItemDialog(item){
+    el('comprasDraftItemForm').reset();
+    el('comprasItemId').value = item ? item.id : '';
+    el('comprasDraftItemDialogTitle').textContent = item ? 'EDITAR ITEM' : 'ADICIONAR ITEM';
+    el('comprasItemProductCode').value = item ? item.productCode : '';
+    el('comprasItemQuantity').value = item ? item.quantity : '';
+    el('comprasItemNotes').value = item ? (item.notes || '') : '';
+    el('comprasItemStockWrap').hidden = true;
+    el('comprasItemStockBody').innerHTML = '';
+
+    const productList = el('comprasItemProductList');
+    productList.innerHTML = Array.from(comprasProductCatalogEntries().entries())
+      .slice(0, 500)
+      .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
+      .join('');
+
+    const suppliers = await comprasNovoSuppliers();
+    let selectedSupplierIds = [];
+    if(item){ try{ selectedSupplierIds = JSON.parse(item.candidateSupplierIds || '[]'); }catch{ selectedSupplierIds = []; } }
+    el('comprasItemSuppliersGrid').innerHTML = suppliers.length
+      ? suppliers.map(s => '<label class="permission-option"><input type="checkbox" name="comprasItemSupplier" value="'+escapeHtml(s.id)+'"'+(selectedSupplierIds.includes(s.id) ? ' checked' : '')+'> '+escapeHtml(s.name)+'</label>').join('')
+      : '<p class="page-desc">Nenhum fornecedor cadastrado no Financeiro ainda.</p>';
+
+    let selectedStoreIds = [];
+    if(item){ try{ selectedStoreIds = (JSON.parse(item.targetStores || '[]')).map(s => s.companyId); }catch{ selectedStoreIds = []; } }
+    el('comprasItemStoresGrid').innerHTML = companies.length
+      ? companies.map(c => '<label class="permission-option"><input type="checkbox" name="comprasItemStore" value="'+escapeHtml(c.id)+'" data-store-name="'+escapeHtml(c.name)+'"'+(selectedStoreIds.includes(c.id) ? ' checked' : '')+'> '+escapeHtml(c.name)+'</label>').join('')
+      : '<p class="page-desc">Nenhuma loja cadastrada.</p>';
+
+    el('comprasDraftItemFormStatus').textContent = '';
+    el('comprasDraftItemDialog').showModal();
+  }
+  if(el('btnAddComprasDraftItem')) el('btnAddComprasDraftItem').addEventListener('click', () => openComprasItemDialog(null));
+  if(el('btnCloseComprasDraftItemDialog')) el('btnCloseComprasDraftItemDialog').addEventListener('click', () => el('comprasDraftItemDialog').close());
+  if(el('btnCancelComprasDraftItemDialog')) el('btnCancelComprasDraftItemDialog').addEventListener('click', () => el('comprasDraftItemDialog').close());
+
+  if(el('btnCheckComprasItemStock')) el('btnCheckComprasItemStock').addEventListener('click', async () => {
+    const codigo = el('comprasItemProductCode').value.trim();
+    if(!codigo){ el('comprasDraftItemFormStatus').textContent = 'INFORME O CÓDIGO DO PRODUTO PARA VERIFICAR O SALDO.'; return; }
+    el('comprasDraftItemFormStatus').textContent = '';
+    try{
+      const data = await comprasNovoApiRequest('/estoque-saldo?produto='+encodeURIComponent(codigo));
+      const balances = Array.isArray(data.balances) ? data.balances : [];
+      el('comprasItemStockWrap').hidden = false;
+      el('comprasItemStockBody').innerHTML = balances.length
+        ? balances.map(b => '<tr><td>'+escapeHtml(b.companyName)+'</td><td'+(b.saldo <= 0 ? ' style="color:var(--danger,#c0392b);font-weight:700;"' : '')+'>'+Number(b.saldo)+'</td></tr>').join('')
+        : '<tr><td colspan="2" class="responsive-empty">Nenhum lançamento de estoque fiscal para este produto.</td></tr>';
+      const name = comprasFindProductName(codigo);
+      if(name) el('comprasItemProductCode').dataset.productName = name;
+    }catch(error){ el('comprasDraftItemFormStatus').textContent = error.message; }
+  });
+
+  if(el('comprasDraftItemForm')) el('comprasDraftItemForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasDraftItemFormStatus');
+    status.textContent = '';
+    if(!comprasCurrentDraftId) return;
+    const productCode = el('comprasItemProductCode').value.trim();
+    if(!productCode){ status.textContent = 'INFORME O CÓDIGO DO PRODUTO.'; return; }
+    const quantity = Number(el('comprasItemQuantity').value);
+    if(!Number.isFinite(quantity) || quantity < 0){ status.textContent = 'INFORME UMA QUANTIDADE VÁLIDA.'; return; }
+
+    const targetStores = Array.from(document.querySelectorAll('input[name="comprasItemStore"]:checked')).map(input => ({
+      companyId: input.value,
+      companyName: input.dataset.storeName || ''
+    }));
+    const candidateSupplierIds = Array.from(document.querySelectorAll('input[name="comprasItemSupplier"]:checked')).map(input => input.value);
+
+    const payload = {
+      productCode,
+      productName: comprasFindProductName(productCode) || el('comprasItemProductCode').dataset.productName || '',
+      quantity,
+      notes: el('comprasItemNotes').value,
+      targetStores,
+      candidateSupplierIds
+    };
+    const id = el('comprasItemId').value;
+    try{
+      if(id){
+        await comprasNovoApiRequest('/drafts/'+encodeURIComponent(comprasCurrentDraftId)+'/items/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      } else {
+        await comprasNovoApiRequest('/drafts/'+encodeURIComponent(comprasCurrentDraftId)+'/items', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      }
+      el('comprasDraftItemDialog').close();
+      await openComprasDraftDetail(comprasCurrentDraftId);
+      await loadComprasNovoPage();
+      showPurchaseToast('Item salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  if(el('comprasDraftItemsBody')) el('comprasDraftItemsBody').addEventListener('click', async event => {
+    const editBtn = event.target.closest('[data-compras-item-edit]');
+    if(editBtn){ await openComprasItemDialog(comprasCurrentDraftItems.find(i => i.id === editBtn.dataset.comprasItemEdit) || null); return; }
+    const deleteBtn = event.target.closest('[data-compras-item-delete]');
+    if(deleteBtn){
+      const itemId = deleteBtn.dataset.comprasItemDelete;
+      if(!confirm('EXCLUIR ESTE ITEM DO RASCUNHO?')) return;
+      try{
+        await comprasNovoApiRequest('/drafts/'+encodeURIComponent(comprasCurrentDraftId)+'/items/'+encodeURIComponent(itemId), {method:'DELETE'});
+        await openComprasDraftDetail(comprasCurrentDraftId);
+        await loadComprasNovoPage();
+        showPurchaseToast('Item removido.');
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+    }
+  });
+
   // ----- Obras (CAPEX — fora de Despesas/DRE) -----
   async function obraApiRequest(path, options){
     const response = await fetch('/api/obras'+path, {
@@ -25441,6 +25874,7 @@ function renderHomeTasks(){
     'supplies:view':'Insumos: visualizar','supplies:request':'Insumos: solicitar','supplies:receive':'Insumos: receber solicitação','supplies:stock_in':'Insumos: entrada','supplies:stock_out':'Insumos: saída','supplies:delete':'Insumos: excluir','supplies:manage_catalog':'Insumos: produtos/categorias',
     'loans:view':'Aparelhos de Empréstimo: visualizar','loans:create':'Aparelhos de Empréstimo: cadastrar aparelho','loans:edit':'Aparelhos de Empréstimo: editar aparelho','loans:delete':'Aparelhos de Empréstimo: excluir aparelho','loans:request':'Aparelhos de Empréstimo: solicitar','loans:manage_requests':'Aparelhos de Empréstimo: gerenciar solicitações',
     'purchases:view':'Compras: visualizar','purchases:create':'Compras: cadastrar','purchases:edit':'Compras: editar','purchases:delete':'Compras: excluir','purchases:send_to_finance':'Compras: enviar NF ao financeiro',
+    'purchases_draft:manage':'Compras (novo): acessar módulo',
     'stock:view':'Estoque Fiscal',
     'database:view':'Base de Dados: visualizar','database:manage':'Base de Dados: cadastrar/editar/excluir',
     'pulls:view':'Puxadas',
@@ -27475,7 +27909,7 @@ function renderHomeTasks(){
     if(freshLogin) navigateToPage('inicio',{replace:true,scroll:false,smooth:false});
     else syncPageFromLocation(false);
     checkIntegrationHealth();
-    const needsCompanies = canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41') || canAccess('finance') ||
+    const needsCompanies = canAccess('database') || canAccess('stock') || canAccess('pulls') || canAccess('report41') || canAccess('finance') || canAccess('purchases_draft') ||
       canActAcrossStores('outputs:create') || canActAcrossStores('captures:create') ||
       canActAcrossStores('supplies:request') || canActAcrossStores('missions:view') ||
       canActAcrossStores('inputs:create');
