@@ -3253,8 +3253,9 @@ test("Módulo Compras nativo (Fase B): pedidos, conversão de rascunho e recebim
   assert.match(convertRoute, /origin: text\("origin"\)|'native'/);
   assert.match(convertRoute, /database\.batch\(prepared\)/);
   // Granularidade preservada: quantity/targetStores copiados do item do
-  // rascunho, sem split por loja.
-  assert.match(convertRoute, /item\.quantity, item\.targetStores/);
+  // rascunho, sem split por loja (Fase D acrescenta unitPriceCents opcional
+  // entre os dois, ver values do INSERT em purchase_order_items).
+  assert.match(convertRoute, /item\.quantity, unitPriceCents, item\.targetStores/);
 
   // Lista de pedidos: origin='native' e 'notion_import' juntos na mesma
   // consulta (sem WHERE fixo de origin, só filtro opcional via querystring).
@@ -3391,4 +3392,81 @@ test("Módulo Compras nativo (Fase C): anexos do pedido, vínculo com NF, alerta
   // Reaproveita o mesmo helper de upload chunked já usado por NF/declarações
   // (uploadInvoiceFile), sem reimplementar o protocolo no client.
   assert.match(html, /uploadInvoiceFile\('\/api\/compras-novo\/orders\/'\+encodeURIComponent\(comprasCurrentOrderId\)\+'\/attachments'/);
+});
+
+test("Módulo Compras nativo (Fase D): aba Divisão, preço por item e painel Por Produto", async () => {
+  const [
+    html,
+    schema,
+    migration,
+    orderDetailRoute,
+    orderItemRoute,
+    convertRoute,
+    historicoRoute,
+  ] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0057_compras_nativo_fase_d.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/drafts/[id]/convert/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/produtos/historico/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Schema: unitPriceCents novo em purchase_order_items, default 0 (não
+  // informado); division/divisionStatus já existiam desde a Fase A.
+  assert.match(schema, /unitPriceCents: integer\("unit_price_cents"\)\.notNull\(\)\.default\(0\)/);
+
+  // Migration nova, só a coluna aditiva (sem tabela nova nesta fase).
+  assert.match(migration, /ALTER TABLE "purchase_order_items" ADD COLUMN "unit_price_cents"/);
+
+  // Item 1 — Divisão: PATCH do pedido aceita division/divisionStatus, com
+  // validação das 5 opções do Notion (mais "" pra limpar).
+  assert.match(orderDetailRoute, /VALID_DIVISION_STATUSES/);
+  assert.match(orderDetailRoute, /"FALTA DIVISÃO"/);
+  assert.match(orderDetailRoute, /"AGUARDANDO APROVAÇÃO"/);
+  assert.match(orderDetailRoute, /"ENVIAR DIVISÃO A LOJA"/);
+  assert.match(orderDetailRoute, /"FALTANDO ENVIO COMPLETO DA DIVISÃO"/);
+  assert.match(orderDetailRoute, /"CONCLUÍDO"/);
+  assert.match(orderDetailRoute, /body\.division === undefined/);
+  assert.match(orderDetailRoute, /body\.divisionStatus === undefined/);
+  assert.match(orderDetailRoute, /division=\?6, division_status=\?7/);
+
+  // Item 2 — preço por item: PATCH de item aceita receivedQuantity e
+  // unitPriceCents de forma independente (pelo menos um precisa vir), e a
+  // conversão de rascunho aceita preço unitário opcional por item.
+  assert.match(orderItemRoute, /hasReceivedQuantity = body\.receivedQuantity !== undefined/);
+  assert.match(orderItemRoute, /hasUnitPriceCents = body\.unitPriceCents !== undefined/);
+  assert.match(orderItemRoute, /unit_price_cents=\?2/);
+  assert.match(convertRoute, /unitPriceCentsByItemId/);
+  assert.match(convertRoute, /unit_price_cents/);
+
+  // Item 3 — histórico de compra por produto: endpoint novo, sem varredura
+  // de todos os produtos (sempre filtra por product_code=?1), só pedidos
+  // nativos não cancelados, agrupado por fornecedor e ordenado por
+  // quantidade total decrescente.
+  assert.match(historicoRoute, /product_code=\?1 AND po\.origin='native' AND po\.canceled=0/);
+  assert.match(historicoRoute, /ORDER BY po\.order_date DESC/);
+  assert.match(historicoRoute, /bySupplier\.get\(supplierId\)/);
+  assert.match(historicoRoute, /\.sort\(\(a, b\) => b\.totalQuantity - a\.totalQuantity\)/);
+  assert.match(historicoRoute, /distinctOrderCount/);
+  assert.match(historicoRoute, /lastPurchaseDate/);
+
+  // UI: aba "Divisão" no detalhe do pedido (textarea + select com as 5
+  // opções), colunas/edição de preço unitário nos itens do pedido e na
+  // conversão, e nova aba "Por Produto" na MESMA página comprasNovo (sem
+  // rota nova).
+  assert.match(html, /id="comprasOrderDivisionText"/);
+  assert.match(html, /id="comprasOrderDivisionStatus"/);
+  assert.match(html, /id="btnSaveComprasOrderDivision"/);
+  assert.match(html, /function comprasFillDivisionSection\(order\)/);
+  assert.match(html, /function comprasDivisionSuggestion\(\)/);
+  assert.match(html, /data-compras-order-item-price=/);
+  assert.match(html, /data-compras-convert-price=/);
+  assert.match(html, /data-compras-section-tab="porProduto"/);
+  assert.match(html, /id="comprasSectionPorProduto"/);
+  assert.match(html, /id="comprasProdutoBusca"/);
+  assert.match(html, /\/produtos\/historico\?produto='\+encodeURIComponent\(codigo\)/);
+  assert.match(html, /\/estoque-saldo\?produto='\+encodeURIComponent\(codigo\)/);
+  assert.doesNotMatch(html, /data-page="comprasNovoPorProduto"/);
 });

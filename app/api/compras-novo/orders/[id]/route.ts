@@ -36,6 +36,7 @@ type OrderItemRow = {
   productName: string;
   quantity: number;
   receivedQuantity: number;
+  unitPriceCents: number;
   targetStores: string;
   notes: string;
 };
@@ -51,6 +52,18 @@ type LinkedInvoiceRow = {
 };
 
 const VALID_STATUSES = new Set(["pendente", "em_andamento", "concluido"]);
+
+// Fase D, item 1: as 5 opções de STATUS DA DIVISÃO que o Notion já usa
+// (ver db/scripts/import-notion-purchases.mjs) — "" (não definido) também é
+// aceito, pra permitir limpar o campo.
+const VALID_DIVISION_STATUSES = new Set([
+  "",
+  "FALTA DIVISÃO",
+  "AGUARDANDO APROVAÇÃO",
+  "ENVIAR DIVISÃO A LOJA",
+  "FALTANDO ENVIO COMPLETO DA DIVISÃO",
+  "CONCLUÍDO",
+]);
 
 async function loadOrder(database: D1Database, id: string) {
   return database
@@ -98,7 +111,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
         .prepare(
           `SELECT id, order_id AS orderId, draft_item_id AS draftItemId, product_code AS productCode,
                   product_name AS productName, quantity, received_quantity AS receivedQuantity,
-                  target_stores AS targetStores, notes
+                  unit_price_cents AS unitPriceCents, target_stores AS targetStores, notes
            FROM purchase_order_items WHERE order_id=?1 ORDER BY created_at ASC`,
         )
         .bind(id)
@@ -124,10 +137,11 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   }
 }
 
-// PATCH: só notes, status (manual — útil pra pedidos importados do Notion,
-// que não têm itens pra calcular status automaticamente), expectedDate e
-// receivedDate. origin/notionPurchaseId/supplierId não são editáveis nesta
-// fase.
+// PATCH: notes, status (manual — útil pra pedidos importados do Notion,
+// que não têm itens pra calcular status automaticamente), expectedDate,
+// receivedDate, canceled e, desde a Fase D, division/divisionStatus (aba
+// "Divisão", mesma UI pra pedidos nativos e importados do Notion).
+// origin/notionPurchaseId/supplierId não são editáveis nesta fase.
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -153,6 +167,13 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (!VALID_STATUSES.has(status)) {
       return jsonResponse({ error: "STATUS INVÁLIDO." }, 400);
     }
+    // Fase D, item 1: aba "Divisão" — mesmo campo/select do Notion, agora
+    // editável também em pedidos nativos.
+    const division = body.division === undefined ? order.division : safeText(body.division, 20000);
+    const divisionStatus = body.divisionStatus === undefined ? order.divisionStatus : safeText(body.divisionStatus, 60);
+    if (!VALID_DIVISION_STATUSES.has(divisionStatus)) {
+      return jsonResponse({ error: "STATUS DA DIVISÃO INVÁLIDO." }, 400);
+    }
     // Cancelar/reabrir (Fase C, item 4) — ação explícita, independente do
     // status operacional. A confirmação extra pra cancelar um pedido já
     // 'concluido' é feita no client (confirm()); aqui só gravamos o que
@@ -163,10 +184,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     await database
       .prepare(
         `UPDATE purchase_orders
-         SET notes=?1, expected_date=?2, received_date=?3, status=?4, canceled=?5, updated_by=?6, updated_by_name=?7, updated_at=CURRENT_TIMESTAMP
-         WHERE id=?8`,
+         SET notes=?1, expected_date=?2, received_date=?3, status=?4, canceled=?5, division=?6, division_status=?7,
+             updated_by=?8, updated_by_name=?9, updated_at=CURRENT_TIMESTAMP
+         WHERE id=?10`,
       )
-      .bind(notes, expectedDate, receivedDate, status, canceled ? 1 : 0, actor.id, actorName, id)
+      .bind(notes, expectedDate, receivedDate, status, canceled ? 1 : 0, division, divisionStatus, actor.id, actorName, id)
       .run();
 
     return jsonResponse({ updated: true, id, canceled });

@@ -1,0 +1,1 @@
+ALTER TABLE "purchase_order_items" ADD COLUMN "unit_price_cents" integer DEFAULT 0 NOT NULL;

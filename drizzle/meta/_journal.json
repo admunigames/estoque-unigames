@@ -400,6 +400,13 @@
       "when": 1789146232557,
       "tag": "0056_compras_nativo_fase_c",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1789151128270,
+      "tag": "0057_compras_nativo_fase_d",
+      "breakpoints": true
     }
   ]
 }
