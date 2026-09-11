@@ -1196,6 +1196,12 @@ export const supplierInvoices = pgTable(
     competenceMonth: text("competence_month").notNull(),
     notionPurchaseId: text("notion_purchase_id").notNull().default(""),
     notionPurchaseUrl: text("notion_purchase_url").notNull().default(""),
+    // Fase C do Compras nativo: vínculo equivalente ao notionPurchaseId
+    // acima, mas para um purchase_orders NATIVO (id de purchase_orders,
+    // sem FK real, mesmo padrão do resto do projeto). Fica separado do
+    // notionPurchaseId de propósito — os dois mundos de pedido (Notion x
+    // nativo) não se misturam.
+    purchaseOrderId: text("purchase_order_id").notNull().default(""),
     totalAmountCents: integer("total_amount_cents").notNull(),
     financeCategoryId: text("finance_category_id").notNull().default(""),
     financeItemId: text("finance_item_id").notNull().default(""),
@@ -1240,6 +1246,7 @@ export const supplierInvoices = pgTable(
     ),
     index("supplier_invoices_company_status_idx").on(table.companyId, table.financialStatus),
     index("supplier_invoices_notion_purchase_idx").on(table.notionPurchaseId),
+    index("supplier_invoices_purchase_order_idx").on(table.purchaseOrderId),
   ],
 );
 
@@ -2563,6 +2570,11 @@ export const purchaseOrders = pgTable(
     // nesta Fase A), 0 para pedidos nativos.
     noItemsDetailed: integer("no_items_detailed").notNull().default(0),
     notes: text("notes").notNull().default(""),
+    // Fase C: cancelamento explícito (mesmo padrão booleano-como-integer de
+    // supplier_invoices.canceled). Pedido cancelado bloqueia PATCH de
+    // receivedQuantity nos itens e some da lista padrão de Pedidos (ver
+    // GET /orders?includeCanceled=1 pra reexibir).
+    canceled: integer("canceled").notNull().default(0),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -2611,5 +2623,30 @@ export const purchaseOrderItems = pgTable(
   },
   (table) => [
     index("purchase_order_items_order_idx").on(table.orderId),
+  ],
+);
+
+// Fase C: anexos do pedido nativo — "arquivo do pedido" e "nota fiscal",
+// equivalentes aos campos ARQUIVO DO PEDIDO/NOTA FISCAL que o Controle de
+// Compras (Notion) já tem hoje. Mesmo padrão estrutural e mesmo bucket R2
+// de supplier_invoice_attachments (ver ~linha 1279): upload chunked em 3
+// fases (create/complete/cancel) via app/api/documents/shared.ts.
+export const purchaseOrderAttachments = pgTable(
+  "purchase_order_attachments",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id").notNull(),
+    // 'pedido' | 'nota_fiscal'
+    attachmentType: text("attachment_type").notNull(),
+    r2Key: text("r2_key").notNull().unique(),
+    fileName: text("file_name").notNull(),
+    contentType: text("content_type").notNull().default("application/pdf"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    uploadedBy: text("uploaded_by").notNull(),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("purchase_order_attachments_order_idx").on(table.orderId),
   ],
 );

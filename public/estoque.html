@@ -4625,6 +4625,7 @@
 
       <section id="comprasSectionPedidos" hidden>
         <div class="page-header-actions" style="justify-content:flex-end;margin:12px 0;flex-wrap:wrap;gap:10px;">
+          <label class="checkbox-inline"><input type="checkbox" id="comprasOrdersShowCanceled"> Mostrar cancelados</label>
           <div class="field" style="min-width:180px;">
             <label for="comprasOrdersStatusFilter">STATUS</label>
             <select id="comprasOrdersStatusFilter">
@@ -4661,6 +4662,8 @@
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn-outline" id="btnEditComprasOrder" type="button">EDITAR PEDIDO</button>
+              <button class="btn-danger-outline" id="btnCancelComprasOrder" type="button">CANCELAR PEDIDO</button>
+              <button class="btn-outline" id="btnReopenComprasOrder" type="button" hidden>REABRIR PEDIDO</button>
             </div>
           </div>
           <div class="table-scroll" id="comprasOrderItemsWrap">
@@ -4670,6 +4673,30 @@
             </table>
           </div>
           <p class="page-desc" id="comprasOrderNoItemsNotice" hidden>Este pedido foi importado do Notion e não tem itens detalhados — edite o status manualmente em "EDITAR PEDIDO".</p>
+
+          <div class="table-panel" style="margin-top:16px;padding:16px;">
+            <h4 style="margin:0 0 8px;">NOTA FISCAL VINCULADA</h4>
+            <div id="comprasOrderInvoiceLinked" hidden></div>
+            <div id="comprasOrderInvoiceUnlinked" hidden>
+              <p class="page-desc" style="margin:0 0 8px;">Nenhuma nota fiscal vinculada a este pedido ainda.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button class="btn-accent" id="btnCreateInvoiceForOrder" type="button">CRIAR NOTA FISCAL PARA ESTE PEDIDO</button>
+                <select id="comprasOrderLinkInvoiceSelect" style="min-width:260px;"><option value="">VINCULAR NF JÁ EXISTENTE…</option></select>
+                <button class="btn-outline" id="btnLinkExistingInvoice" type="button">VINCULAR</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-panel" style="margin-top:16px;padding:16px;">
+            <h4 style="margin:0 0 8px;">ARQUIVO DO PEDIDO</h4>
+            <div id="comprasOrderAttachmentsPedido" class="page-desc">Carregando…</div>
+            <label class="btn-outline" style="margin-top:8px;display:inline-block;cursor:pointer;">+ ANEXAR ARQUIVO DO PEDIDO<input type="file" id="comprasOrderAttachPedidoInput" accept="application/pdf" hidden></label>
+          </div>
+          <div class="table-panel" style="margin-top:16px;padding:16px;">
+            <h4 style="margin:0 0 8px;">NOTA FISCAL (ARQUIVO)</h4>
+            <div id="comprasOrderAttachmentsNota" class="page-desc">Carregando…</div>
+            <label class="btn-outline" style="margin-top:8px;display:inline-block;cursor:pointer;">+ ANEXAR NOTA FISCAL<input type="file" id="comprasOrderAttachNotaInput" accept="application/pdf" hidden></label>
+          </div>
         </section>
       </section>
     </section>
@@ -23254,9 +23281,13 @@ function renderHomeTasks(){
   });
 
   // ----- Fase B: aba "Pedidos" (purchase_orders + purchase_order_items) -----
+  // Fase C acrescenta: anexos (arquivo do pedido/NF), vínculo com Nota
+  // Fiscal do Financeiro, alerta de atraso (calculado no client, sem campo
+  // novo no banco) e cancelamento de pedido.
   let comprasOrders = [];
   let comprasCurrentOrderId = '';
   let comprasCurrentOrderItems = [];
+  let comprasCurrentOrderLinkedInvoice = null;
 
   function comprasOrderStatusBadge(status){
     if(status === 'concluido') return '<span class="status-pill done">CONCLUÍDO</span>';
@@ -23270,6 +23301,20 @@ function renderHomeTasks(){
       : '<span title="Pedido criado a partir de um rascunho">NATIVO</span>';
   }
 
+  // Atraso: expectedDate preenchida, anterior a hoje, pedido não concluído
+  // e não cancelado — tudo calculado na hora de renderizar (sem job/cron).
+  function comprasOrderIsLate(order){
+    if(!order.expectedDate || order.status === 'concluido' || Number(order.canceled)) return false;
+    return order.expectedDate < new Date().toISOString().slice(0,10);
+  }
+
+  function comprasOrderBadges(order){
+    let html = comprasOrderStatusBadge(order.status);
+    if(Number(order.canceled)) html += ' <span class="status-pill alert">CANCELADO</span>';
+    else if(comprasOrderIsLate(order)) html += ' <span class="status-pill alert">ATRASADO</span>';
+    return html;
+  }
+
   function renderComprasOrdersTable(){
     const body = el('comprasOrdersTableBody');
     if(!body) return;
@@ -23280,7 +23325,7 @@ function renderHomeTasks(){
     body.innerHTML = comprasOrders.map(order => '<tr'+(order.id === comprasCurrentOrderId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
       '<td>'+escapeHtml(order.supplierName || order.supplierNameRaw || '—')+'</td>'+
       '<td>'+comprasOrderOriginLabel(order)+'</td>'+
-      '<td>'+comprasOrderStatusBadge(order.status)+'</td>'+
+      '<td>'+comprasOrderBadges(order)+'</td>'+
       '<td>'+(order.noItemsDetailed ? 'SEM ITENS DETALHADOS' : Number(order.itemCount || 0))+'</td>'+
       '<td>'+(order.orderDate || '—')+'</td>'+
       '<td>'+(order.expectedDate || '—')+'</td>'+
@@ -23292,11 +23337,13 @@ function renderHomeTasks(){
     if(!canAccess('purchases_draft')) return;
     const status = el('comprasOrdersStatusFilter').value;
     const origin = el('comprasOrdersOriginFilter').value;
+    const showCanceled = el('comprasOrdersShowCanceled') && el('comprasOrdersShowCanceled').checked;
     el('comprasOrdersTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando pedidos…</td></tr>';
     try{
       const query = new URLSearchParams();
       if(status) query.set('status', status);
       if(origin) query.set('origin', origin);
+      if(showCanceled) query.set('includeCanceled', '1');
       const qs = query.toString();
       const data = await comprasNovoApiRequest('/orders'+(qs ? '?'+qs : ''));
       comprasOrders = Array.isArray(data.orders) ? data.orders : [];
@@ -23312,6 +23359,7 @@ function renderHomeTasks(){
   }
   if(el('comprasOrdersStatusFilter')) el('comprasOrdersStatusFilter').addEventListener('change', loadComprasOrdersPage);
   if(el('comprasOrdersOriginFilter')) el('comprasOrdersOriginFilter').addEventListener('change', loadComprasOrdersPage);
+  if(el('comprasOrdersShowCanceled')) el('comprasOrdersShowCanceled').addEventListener('change', loadComprasOrdersPage);
 
   function renderComprasOrderItemsTable(){
     const body = el('comprasOrderItemsBody');
@@ -23337,11 +23385,12 @@ function renderHomeTasks(){
       const data = await comprasNovoApiRequest('/orders/'+encodeURIComponent(orderId));
       comprasCurrentOrderId = orderId;
       comprasCurrentOrderItems = Array.isArray(data.items) ? data.items : [];
+      comprasCurrentOrderLinkedInvoice = data.linkedInvoice || null;
       const order = data.order;
       el('comprasOrderDetail').hidden = false;
       el('comprasOrderDetailTitle').textContent = order.supplierName || order.supplierNameRaw || 'Pedido sem fornecedor';
       el('comprasOrderDetailMeta').innerHTML =
-        comprasOrderStatusBadge(order.status)+' · '+comprasOrderOriginLabel(order)+
+        comprasOrderBadges(order)+' · '+comprasOrderOriginLabel(order)+
         (order.companyName ? ' · Loja: '+escapeHtml(order.companyName) : '')+
         (order.division ? ' · Divisão: '+escapeHtml(order.division) : '')+
         (order.orderDate ? ' · Pedido em '+escapeHtml(order.orderDate) : '')+
@@ -23351,11 +23400,156 @@ function renderHomeTasks(){
       el('comprasOrderItemsWrap').hidden = Boolean(order.noItemsDetailed);
       el('comprasOrderNoItemsNotice').hidden = !order.noItemsDetailed;
       if(!order.noItemsDetailed) renderComprasOrderItemsTable();
+      el('btnCancelComprasOrder').hidden = Boolean(order.canceled);
+      el('btnReopenComprasOrder').hidden = !order.canceled;
+      if(!comprasCurrentOrderLinkedInvoice) await loadComprasOrderInvoiceCandidates();
+      renderComprasOrderInvoiceLink();
+      await Promise.all([renderComprasOrderAttachments('pedido'), renderComprasOrderAttachments('nota_fiscal')]);
       renderComprasOrdersTable();
     }catch(error){
       showPurchaseToast(error.message, 'error');
     }
   }
+
+  // ----- Fase C, item 2: NF vinculada ao pedido nativo -----
+  function renderComprasOrderInvoiceLink(){
+    const linked = el('comprasOrderInvoiceLinked');
+    const unlinked = el('comprasOrderInvoiceUnlinked');
+    if(!linked || !unlinked) return;
+    if(comprasCurrentOrderLinkedInvoice){
+      const invoice = comprasCurrentOrderLinkedInvoice;
+      linked.hidden = false;
+      unlinked.hidden = true;
+      linked.innerHTML = '<div class="payable-detail-grid">'+
+        '<div><span>NF</span><strong>'+escapeHtml(invoice.invoiceNumber)+(invoice.series ? '/'+escapeHtml(invoice.series) : '')+'</strong></div>'+
+        '<div><span>VALOR</span><strong>'+formatCentsBRL(invoice.totalAmountCents)+'</strong></div>'+
+        '<div><span>STATUS</span>'+invoiceStatusPillHtml(invoice.financialStatus)+'</div>'+
+        '<div><a class="btn-outline" href="/financeiro/notas-fiscais" data-compras-order-open-invoice="'+escapeHtml(invoice.id)+'">ABRIR NA TELA DE NOTAS FISCAIS</a></div>'+
+      '</div>';
+    }else{
+      linked.hidden = true;
+      unlinked.hidden = false;
+      const options = invoicesForCurrentOrderSupplier();
+      el('comprasOrderLinkInvoiceSelect').innerHTML = '<option value="">VINCULAR NF JÁ EXISTENTE…</option>'+
+        options.map(row => '<option value="'+escapeHtml(row.id)+'">'+escapeHtml(row.invoiceNumber)+(row.series ? '/'+escapeHtml(row.series) : '')+' — '+formatCentsBRL(row.totalAmountCents)+'</option>').join('');
+    }
+  }
+
+  // Lista simples de NFs candidatas pra "vincular NF já existente" — filtra
+  // pelo fornecedor do pedido (quando nativo) reaproveitando o cache já
+  // carregado pela tela de Notas Fiscais nesta sessão, sem endpoint novo.
+  let comprasOrderInvoiceCandidatesCache = [];
+  function invoicesForCurrentOrderSupplier(){
+    const order = comprasOrders.find(o => o.id === comprasCurrentOrderId);
+    if(!order) return comprasOrderInvoiceCandidatesCache;
+    if(!order.supplierId) return comprasOrderInvoiceCandidatesCache;
+    return comprasOrderInvoiceCandidatesCache.filter(row => row.supplierId === order.supplierId);
+  }
+  async function loadComprasOrderInvoiceCandidates(){
+    const order = comprasOrders.find(o => o.id === comprasCurrentOrderId);
+    if(!order || !order.supplierId){ comprasOrderInvoiceCandidatesCache = []; return; }
+    try{
+      const data = await invoicesApiRequest('?supplierId='+encodeURIComponent(order.supplierId)+'&pageSize=50');
+      comprasOrderInvoiceCandidatesCache = Array.isArray(data.rows) ? data.rows : [];
+    }catch{
+      comprasOrderInvoiceCandidatesCache = [];
+    }
+  }
+
+  if(el('comprasOrderInvoiceLinked')) el('comprasOrderInvoiceLinked').addEventListener('click', event => {
+    const link = event.target.closest('[data-compras-order-open-invoice]');
+    if(!link) return;
+    event.preventDefault();
+    const invoiceId = link.dataset.comprasOrderOpenInvoice;
+    history.pushState({page:'financeiroInvoices'}, '', '/financeiro/notas-fiscais');
+    showPage('financeiroInvoices');
+    loadInvoicesPage().then(() => openInvoiceDetailDialog(invoiceId));
+  });
+
+  if(el('btnCreateInvoiceForOrder')) el('btnCreateInvoiceForOrder').addEventListener('click', () => {
+    if(!comprasCurrentOrderId) return;
+    const order = comprasOrders.find(o => o.id === comprasCurrentOrderId);
+    const params = new URLSearchParams();
+    params.set('novoPedidoId', comprasCurrentOrderId);
+    if(order && order.supplierId) params.set('supplierId', order.supplierId);
+    if(order && order.companyId) params.set('companyId', order.companyId);
+    history.pushState({page:'financeiroInvoices'}, '', '/financeiro/notas-fiscais?'+params.toString());
+    showPage('financeiroInvoices');
+    loadInvoicesPage();
+  });
+
+  if(el('btnLinkExistingInvoice')) el('btnLinkExistingInvoice').addEventListener('click', async () => {
+    const invoiceId = el('comprasOrderLinkInvoiceSelect').value;
+    if(!invoiceId || !comprasCurrentOrderId) return;
+    try{
+      await invoicesApiRequest('/'+encodeURIComponent(invoiceId), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({purchaseOrderId: comprasCurrentOrderId})
+      });
+      showPurchaseToast('Nota fiscal vinculada ao pedido.');
+      await openComprasOrderDetail(comprasCurrentOrderId);
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // ----- Fase C, item 1: anexos (arquivo do pedido / nota fiscal) -----
+  async function renderComprasOrderAttachments(attachmentType){
+    const box = el(attachmentType === 'pedido' ? 'comprasOrderAttachmentsPedido' : 'comprasOrderAttachmentsNota');
+    if(!box || !comprasCurrentOrderId) return;
+    box.textContent = 'Carregando…';
+    try{
+      const data = await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/attachments');
+      const list = (Array.isArray(data.attachments) ? data.attachments : []).filter(a => a.attachmentType === attachmentType);
+      box.innerHTML = list.length ? list.map(a =>
+        '<div class="dre-catalog-row"><a href="/api/compras-novo/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/attachments/file?attachmentId='+encodeURIComponent(a.id)+'" target="_blank" rel="noopener">'+escapeHtml(a.fileName)+'</a>'+
+          ' <span style="opacity:.7;">('+escapeHtml(formatDocumentSize(a.sizeBytes))+')</span></div>'
+      ).join('') : 'Nenhum arquivo anexado.';
+    }catch(error){
+      box.textContent = error.message;
+    }
+  }
+
+  async function comprasOrderUploadAttachment(file, attachmentType){
+    if(!file || !comprasCurrentOrderId) return;
+    try{
+      await uploadInvoiceFile('/api/compras-novo/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/attachments', file, {attachmentType});
+      showPurchaseToast('Arquivo anexado.');
+      await renderComprasOrderAttachments(attachmentType);
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+  if(el('comprasOrderAttachPedidoInput')) el('comprasOrderAttachPedidoInput').addEventListener('change', async () => {
+    const file = el('comprasOrderAttachPedidoInput').files[0];
+    el('comprasOrderAttachPedidoInput').value = '';
+    await comprasOrderUploadAttachment(file, 'pedido');
+  });
+  if(el('comprasOrderAttachNotaInput')) el('comprasOrderAttachNotaInput').addEventListener('change', async () => {
+    const file = el('comprasOrderAttachNotaInput').files[0];
+    el('comprasOrderAttachNotaInput').value = '';
+    await comprasOrderUploadAttachment(file, 'nota_fiscal');
+  });
+
+  // ----- Fase C, item 4: cancelar/reabrir pedido -----
+  if(el('btnCancelComprasOrder')) el('btnCancelComprasOrder').addEventListener('click', async () => {
+    if(!comprasCurrentOrderId) return;
+    if(!confirm('CANCELAR ESTE PEDIDO? Itens deste pedido deixarão de poder receber mercadoria.')) return;
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({canceled:true})
+      });
+      showPurchaseToast('Pedido cancelado.');
+      await openComprasOrderDetail(comprasCurrentOrderId);
+      await loadComprasOrdersPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  if(el('btnReopenComprasOrder')) el('btnReopenComprasOrder').addEventListener('click', async () => {
+    if(!comprasCurrentOrderId) return;
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({canceled:false})
+      });
+      showPurchaseToast('Pedido reaberto.');
+      await openComprasOrderDetail(comprasCurrentOrderId);
+      await loadComprasOrdersPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
 
   if(el('comprasOrdersTableBody')) el('comprasOrdersTableBody').addEventListener('click', async event => {
     const openBtn = event.target.closest('[data-compras-order-open]');
@@ -25706,6 +25900,31 @@ function renderHomeTasks(){
     renderInvoiceFormSelects();
     renderInvoiceStatusChips();
     await loadInvoicesList();
+    handleInvoicesQueryParams();
+  }
+
+  // Fase C do Compras nativo, item 2: chegando de "CRIAR NOTA FISCAL PARA
+  // ESTE PEDIDO" no detalhe de um pedido nativo — abre o diálogo de NF
+  // manual já com fornecedor/loja pré-selecionados e lembra o purchaseOrderId
+  // pra mandar junto no POST de criação (ver invoiceForm submit abaixo).
+  // Os query params somem da URL depois de tratados pra não reabrir o
+  // diálogo numa navegação de volta a esta tela.
+  let invoicePendingPurchaseOrderId = '';
+  function handleInvoicesQueryParams(){
+    const params = new URLSearchParams(location.search);
+    const novoPedidoId = params.get('novoPedidoId');
+    if(!novoPedidoId) return;
+    invoicePendingPurchaseOrderId = novoPedidoId;
+    el('invoiceForm').reset();
+    renderInvoiceFormSelects();
+    el('invoiceFormStatus').textContent = '';
+    const supplierId = params.get('supplierId');
+    const companyId = params.get('companyId');
+    if(supplierId && el('invoiceSupplier')) el('invoiceSupplier').value = supplierId;
+    if(companyId && el('invoiceCompany')) el('invoiceCompany').value = companyId;
+    else if(!payablesCanActAcrossStores() && currentSession.companyId) el('invoiceCompany').value = currentSession.companyId;
+    el('invoiceFormDialog').showModal();
+    history.replaceState({page:'financeiroInvoices'}, '', '/financeiro/notas-fiscais');
   }
 
   function invoiceDetailSummaryHtml(data){
@@ -25888,6 +26107,7 @@ function renderHomeTasks(){
   });
 
   el('btnNewInvoice') && el('btnNewInvoice').addEventListener('click', async () => {
+    invoicePendingPurchaseOrderId = '';
     el('invoiceForm').reset();
     renderInvoiceFormSelects();
     el('invoiceFormStatus').textContent = '';
@@ -25928,10 +26148,12 @@ function renderHomeTasks(){
           financeCategoryId: el('invoiceCategory').value,
           financeItemId: el('invoiceItem').value,
           costCenterId: el('invoiceCostCenter').value,
-          notes: el('invoiceNotes').value
+          notes: el('invoiceNotes').value,
+          purchaseOrderId: invoicePendingPurchaseOrderId || undefined
         })
       });
       el('invoiceFormDialog').close();
+      invoicePendingPurchaseOrderId = '';
       showPurchaseToast('Nota fiscal cadastrada.');
       await loadInvoicesList();
     }catch(error){

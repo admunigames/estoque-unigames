@@ -19,6 +19,7 @@ type OrderRow = {
   status: string;
   noItemsDetailed: number;
   notes: string;
+  canceled: number;
   createdBy: string;
   createdByName: string;
   createdAt: string;
@@ -41,6 +42,14 @@ type OrderItemRow = {
 
 type SupplierRow = { id: string; name: string };
 
+type LinkedInvoiceRow = {
+  id: string;
+  invoiceNumber: string;
+  series: string;
+  totalAmountCents: number;
+  financialStatus: string;
+};
+
 const VALID_STATUSES = new Set(["pendente", "em_andamento", "concluido"]);
 
 async function loadOrder(database: D1Database, id: string) {
@@ -51,6 +60,7 @@ async function loadOrder(database: D1Database, id: string) {
               company_id AS companyId, company_name AS companyName,
               order_date AS orderDate, expected_date AS expectedDate, received_date AS receivedDate,
               division, division_status AS divisionStatus, status, no_items_detailed AS noItemsDetailed, notes,
+              canceled,
               created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
               updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt
        FROM purchase_orders WHERE id=?1`,
@@ -96,7 +106,18 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       items = itemsResult.results ?? [];
     }
 
-    return jsonResponse({ order: { ...order, supplierName }, items });
+    // NF já vinculada a este pedido nativo (Fase C, item 2) — usada pela UI
+    // pra decidir entre mostrar o resumo da NF ou os botões de criar/vincular.
+    const linkedInvoice = await database
+      .prepare(
+        `SELECT id, invoice_number AS invoiceNumber, series, total_amount_cents AS totalAmountCents,
+                financial_status AS financialStatus
+         FROM supplier_invoices WHERE purchase_order_id=?1 LIMIT 1`,
+      )
+      .bind(id)
+      .first<LinkedInvoiceRow>();
+
+    return jsonResponse({ order: { ...order, supplierName }, items, linkedInvoice: linkedInvoice || null });
   } catch (error) {
     console.error("Não foi possível carregar o pedido de compra.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O PEDIDO." }, 500);
@@ -132,18 +153,23 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (!VALID_STATUSES.has(status)) {
       return jsonResponse({ error: "STATUS INVÁLIDO." }, 400);
     }
+    // Cancelar/reabrir (Fase C, item 4) — ação explícita, independente do
+    // status operacional. A confirmação extra pra cancelar um pedido já
+    // 'concluido' é feita no client (confirm()); aqui só gravamos o que
+    // veio no corpo.
+    const canceled = body.canceled === undefined ? Boolean(order.canceled) : Boolean(body.canceled);
 
     const actorName = actor.displayName || "Administrador";
     await database
       .prepare(
         `UPDATE purchase_orders
-         SET notes=?1, expected_date=?2, received_date=?3, status=?4, updated_by=?5, updated_by_name=?6, updated_at=CURRENT_TIMESTAMP
-         WHERE id=?7`,
+         SET notes=?1, expected_date=?2, received_date=?3, status=?4, canceled=?5, updated_by=?6, updated_by_name=?7, updated_at=CURRENT_TIMESTAMP
+         WHERE id=?8`,
       )
-      .bind(notes, expectedDate, receivedDate, status, actor.id, actorName, id)
+      .bind(notes, expectedDate, receivedDate, status, canceled ? 1 : 0, actor.id, actorName, id)
       .run();
 
-    return jsonResponse({ updated: true, id });
+    return jsonResponse({ updated: true, id, canceled });
   } catch (error) {
     console.error("Não foi possível editar o pedido de compra.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL EDITAR O PEDIDO." }, 500);

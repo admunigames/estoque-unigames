@@ -19,6 +19,7 @@ type OrderRow = {
   status: string;
   noItemsDetailed: number;
   notes: string;
+  canceled: number;
   createdBy: string;
   createdByName: string;
   createdAt: string;
@@ -45,6 +46,10 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const status = safeText(url.searchParams.get("status"), 20);
   const origin = safeText(url.searchParams.get("origin"), 20);
+  // Cancelado some da visão padrão (mesmo padrão do checkbox "mostrar
+  // arquivados/convertidos" da aba Rascunhos) — só reaparece com
+  // includeCanceled=1.
+  const includeCanceled = url.searchParams.get("includeCanceled") === "1";
 
   try {
     const database = await getD1();
@@ -58,6 +63,9 @@ export async function GET(request: Request) {
       values.push(origin);
       conditions.push(`origin=?${values.length}`);
     }
+    if (!includeCanceled) {
+      conditions.push(`canceled=0`);
+    }
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const ordersResult = await database
@@ -67,6 +75,7 @@ export async function GET(request: Request) {
                 company_id AS companyId, company_name AS companyName,
                 order_date AS orderDate, expected_date AS expectedDate, received_date AS receivedDate,
                 division, division_status AS divisionStatus, status, no_items_detailed AS noItemsDetailed, notes,
+                canceled,
                 created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
                 updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt
          FROM purchase_orders

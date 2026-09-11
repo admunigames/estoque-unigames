@@ -3294,3 +3294,101 @@ test("Módulo Compras nativo (Fase B): pedidos, conversão de rascunho e recebim
   // Só 1 nova rota de página (não cria uma /compras-novo/pedidos separada).
   assert.doesNotMatch(html, /data-page="comprasNovoPedidos"/);
 });
+
+test("Módulo Compras nativo (Fase C): anexos do pedido, vínculo com NF, alerta de atraso e cancelamento", async () => {
+  const [
+    html,
+    schema,
+    migration,
+    attachmentsRoute,
+    attachmentsFileRoute,
+    orderDetailRoute,
+    orderItemRoute,
+    invoicesRoute,
+    invoiceDetailRoute,
+    invoicesShared,
+  ] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0056_compras_nativo_fase_c.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/attachments/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/attachments/file/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/invoices/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/invoices/[id]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/finance/invoices/shared.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Schema: nova tabela purchase_order_attachments (mesmo padrão estrutural
+  // de supplier_invoice_attachments), canceled em purchase_orders e
+  // purchase_order_id em supplier_invoices (vínculo separado do
+  // notion_purchase_id, exclusivo de pedidos nativos).
+  assert.match(schema, /export const purchaseOrderAttachments = pgTable\(\s*"purchase_order_attachments"/);
+  assert.match(schema, /attachmentType: text\("attachment_type"\)\.notNull\(\)/);
+  assert.match(schema, /r2Key: text\("r2_key"\)\.notNull\(\)\.unique\(\)/);
+  assert.match(schema, /canceled: integer\("canceled"\)\.notNull\(\)\.default\(0\)/);
+  assert.match(schema, /purchaseOrderId: text\("purchase_order_id"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(schema, /index\("supplier_invoices_purchase_order_idx"\)\.on\(table\.purchaseOrderId\)/);
+
+  // Migration nova, com RLS habilitado e privilégios revogados na tabela
+  // nova (mesmo padrão das anteriores) e as duas colunas novas via ALTER.
+  assert.match(migration, /CREATE TABLE "purchase_order_attachments"/);
+  assert.match(migration, /ALTER TABLE "purchase_orders" ADD COLUMN "canceled"/);
+  assert.match(migration, /ALTER TABLE "supplier_invoices" ADD COLUMN "purchase_order_id"/);
+  assert.match(migration, /CREATE INDEX "purchase_order_attachments_order_idx"/);
+  assert.match(migration, /CREATE INDEX "supplier_invoices_purchase_order_idx"/);
+  assert.match(migration, /ALTER TABLE "purchase_order_attachments" ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /REVOKE ALL ON TABLE "purchase_order_attachments" FROM anon, authenticated/);
+
+  // Anexos: reaproveita EXATAMENTE o mecanismo de upload/validação de PDF
+  // de app/api/documents/shared.ts (create/complete/cancel, chunking,
+  // looksLikePdf) — não reimplementa nada disso.
+  assert.match(attachmentsRoute, /from "\.\.\/\.\.\/\.\.\/\.\.\/documents\/shared"/);
+  assert.match(attachmentsRoute, /looksLikePdf\(bytes\)/);
+  assert.match(attachmentsRoute, /canManageComprasDraft\(actor\)/);
+  assert.match(attachmentsRoute, /sameOrigin\(request\)/);
+  assert.match(attachmentsRoute, /INSERT INTO purchase_order_attachments/);
+  assert.match(attachmentsRoute, /action === "create"/);
+  assert.match(attachmentsRoute, /action === "complete"/);
+  assert.match(attachmentsRoute, /action === "cancel"/);
+  assert.match(attachmentsFileRoute, /canManageComprasDraft\(actor\)/);
+  assert.match(attachmentsFileRoute, /FROM purchase_order_attachments WHERE id=\?1/);
+
+  // Cancelamento: PATCH aceita canceled (boolean), e o PATCH de
+  // receivedQuantity bloqueia explicitamente pedidos cancelados.
+  assert.match(orderDetailRoute, /body\.canceled === undefined/);
+  assert.match(orderDetailRoute, /canceled=\?/);
+  assert.match(orderItemRoute, /if \(order\.canceled\)/);
+  assert.match(orderItemRoute, /ESTE PEDIDO ESTÁ CANCELADO/);
+
+  // NF vinculada: GET do pedido busca supplier_invoices por purchase_order_id;
+  // POST/PATCH de NF aceitam purchaseOrderId sem exigi-lo no fluxo manual.
+  assert.match(orderDetailRoute, /FROM supplier_invoices WHERE purchase_order_id=\?1/);
+  assert.match(invoicesRoute, /purchaseOrderId = safeText\(body\.purchaseOrderId, 80\)/);
+  assert.match(invoicesRoute, /purchase_order_id = \?/);
+  assert.match(invoiceDetailRoute, /purchaseOrderId =\s*\n?\s*body\.purchaseOrderId === undefined \? invoice\.purchaseOrderId/);
+  assert.match(invoicesShared, /purchaseOrderId: string;/);
+  assert.match(invoicesShared, /purchase_order_id AS purchaseOrderId/);
+
+  // UI: filtro "mostrar cancelados", ações de cancelar/reabrir, seções de
+  // anexo e de NF vinculada no detalhe do pedido, e leitura de query params
+  // (novoPedidoId/supplierId) na tela de Notas Fiscais.
+  assert.match(html, /id="comprasOrdersShowCanceled"/);
+  assert.match(html, /id="btnCancelComprasOrder"/);
+  assert.match(html, /id="btnReopenComprasOrder"/);
+  assert.match(html, /id="comprasOrderAttachPedidoInput"/);
+  assert.match(html, /id="comprasOrderAttachNotaInput"/);
+  assert.match(html, /id="comprasOrderInvoiceLinked"/);
+  assert.match(html, /id="comprasOrderInvoiceUnlinked"/);
+  assert.match(html, /id="btnCreateInvoiceForOrder"/);
+  assert.match(html, /id="btnLinkExistingInvoice"/);
+  assert.match(html, /function comprasOrderIsLate\(order\)/);
+  assert.match(html, /ATRASADO/);
+  assert.match(html, /function handleInvoicesQueryParams\(\)/);
+  assert.match(html, /novoPedidoId/);
+  assert.match(html, /purchaseOrderId: invoicePendingPurchaseOrderId \|\| undefined/);
+  // Reaproveita o mesmo helper de upload chunked já usado por NF/declarações
+  // (uploadInvoiceFile), sem reimplementar o protocolo no client.
+  assert.match(html, /uploadInvoiceFile\('\/api\/compras-novo\/orders\/'\+encodeURIComponent\(comprasCurrentOrderId\)\+'\/attachments'/);
+});
