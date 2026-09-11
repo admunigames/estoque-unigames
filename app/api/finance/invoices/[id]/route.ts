@@ -246,6 +246,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       }
     }
     const notes = body.notes === undefined ? invoice.notes : safeText(body.notes, 2000);
+    // Vínculo com pedido nativo (Compras Fase C) — só gravado quando o
+    // botão "Vincular Nota Fiscal já existente" do detalhe do pedido chama
+    // este PATCH; não exigido/tocado no fluxo normal de edição da NF.
+    const purchaseOrderId =
+      body.purchaseOrderId === undefined ? invoice.purchaseOrderId : safeText(body.purchaseOrderId, 80);
     const accessKey = body.accessKey === undefined ? invoice.accessKey : safeText(body.accessKey, 44);
     if (accessKey && !/^\d{44}$/.test(accessKey)) {
       return jsonResponse({ error: "A CHAVE DE ACESSO DA NF-E DEVE TER 44 DÍGITOS." }, 400);
@@ -279,7 +284,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         `UPDATE supplier_invoices
          SET supplier_id=?1, supplier_document=?2, finance_category_id=?3, finance_item_id=?4, cost_center=?5,
              notes=?6, access_key=?7, entry_date=?8, total_amount_cents=?9,
-             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP, cost_center_id=?13
+             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP, cost_center_id=?13, purchase_order_id=?14
          WHERE id=?12`,
         [
           supplierId,
@@ -295,6 +300,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           actorName,
           id,
           costCenterId,
+          purchaseOrderId,
         ],
       ],
     ];

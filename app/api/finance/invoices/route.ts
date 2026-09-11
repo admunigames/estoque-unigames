@@ -61,6 +61,8 @@ export async function GET(request: Request) {
   if (supplierId) addCondition("supplier_id = ?", supplierId);
   const notionPurchaseId = safeText(params.get("notionPurchaseId"), 120);
   if (notionPurchaseId) addCondition("notion_purchase_id = ?", notionPurchaseId);
+  const purchaseOrderId = safeText(params.get("purchaseOrderId"), 80);
+  if (purchaseOrderId) addCondition("purchase_order_id = ?", purchaseOrderId);
   const origin = safeText(params.get("origin"), 20);
   if (origin === "purchase" || origin === "manual") addCondition("origin = ?", origin);
 
@@ -169,6 +171,10 @@ export async function POST(request: Request) {
     const financeCategoryId = safeText(body.financeCategoryId, 80);
     const financeItemId = safeText(body.financeItemId, 80);
     const notes = safeText(body.notes, 2000);
+    // Vínculo opcional com um pedido nativo (Compras Fase C) — só usado
+    // quando a NF nasce do botão "Criar Nota Fiscal para este pedido" no
+    // detalhe do pedido; fluxo manual normal segue sem preencher isto.
+    const purchaseOrderId = safeText(body.purchaseOrderId, 80);
 
     const database = await getD1();
 
@@ -223,12 +229,12 @@ export async function POST(request: Request) {
       .prepare(
         `INSERT INTO supplier_invoices
           (id, company_id, company_name, supplier_id, supplier_document, invoice_number, series, access_key,
-           issue_date, entry_date, competence_month, notion_purchase_id, notion_purchase_url, total_amount_cents,
-           finance_category_id, finance_item_id, cost_center, notes, origin, financial_status,
+           issue_date, entry_date, competence_month, notion_purchase_id, notion_purchase_url, purchase_order_id,
+           total_amount_cents, finance_category_id, finance_item_id, cost_center, notes, origin, financial_status,
            created_by, created_by_name, sent_to_finance_by, sent_to_finance_by_name, sent_to_finance_at,
            created_at, updated_by, updated_by_name, updated_at, cost_center_id)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,'','',?12,?13,?14,?15,?16,'manual',?17,
-           ?18,?19,?18,?19,?20,CURRENT_TIMESTAMP,?18,?19,CURRENT_TIMESTAMP,?21)`,
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,'','',?12,?13,?14,?15,?16,?17,'manual',?18,
+           ?19,?20,?19,?20,?21,CURRENT_TIMESTAMP,?19,?20,CURRENT_TIMESTAMP,?22)`,
       )
       .bind(
         id,
@@ -242,6 +248,7 @@ export async function POST(request: Request) {
         issueDate,
         entryDate,
         competenceMonth,
+        purchaseOrderId,
         totalAmountCents,
         financeCategoryId,
         financeItemId,

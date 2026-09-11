@@ -64,6 +64,7 @@ export type InvoiceRow = {
   competenceMonth: string;
   notionPurchaseId: string;
   notionPurchaseUrl: string;
+  purchaseOrderId: string;
   totalAmountCents: number;
   financeCategoryId: string;
   financeItemId: string;
@@ -93,6 +94,7 @@ export const INVOICE_ROW_SELECT = `id, company_id AS companyId, company_name AS 
   invoice_number AS invoiceNumber, series, access_key AS accessKey,
   issue_date AS issueDate, entry_date AS entryDate, competence_month AS competenceMonth,
   notion_purchase_id AS notionPurchaseId, notion_purchase_url AS notionPurchaseUrl,
+  purchase_order_id AS purchaseOrderId,
   total_amount_cents AS totalAmountCents, finance_category_id AS financeCategoryId,
   finance_item_id AS financeItemId, cost_center AS costCenter, cost_center_id AS costCenterId, notes, origin,
   operational_status AS operationalStatus, financial_status AS financialStatus,

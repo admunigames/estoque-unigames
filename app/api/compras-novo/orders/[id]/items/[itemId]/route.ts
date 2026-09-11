@@ -2,7 +2,7 @@ import { getD1 } from "../../../../../../../db";
 import { unauthorizedResponse } from "../../../../../../lib/notion";
 import { canManageComprasDraft, identity, jsonResponse, sameOrigin, type JsonMap } from "../../../../shared";
 
-type OrderRow = { id: string; status: string; receivedDate: string; noItemsDetailed: number };
+type OrderRow = { id: string; status: string; receivedDate: string; noItemsDetailed: number; canceled: number };
 type ItemRow = { id: string; orderId: string; quantity: number; receivedQuantity: number };
 
 async function loadItem(database: D1Database, orderId: string, itemId: string) {
@@ -35,12 +35,16 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   try {
     const database = await getD1();
     const order = await database
-      .prepare("SELECT id, status, received_date AS receivedDate, no_items_detailed AS noItemsDetailed FROM purchase_orders WHERE id=?1")
+      .prepare("SELECT id, status, received_date AS receivedDate, no_items_detailed AS noItemsDetailed, canceled FROM purchase_orders WHERE id=?1")
       .bind(orderId)
       .first<OrderRow>();
     if (!order) return jsonResponse({ error: "PEDIDO NÃO ENCONTRADO." }, 404);
     if (order.noItemsDetailed) {
       return jsonResponse({ error: "ESTE PEDIDO NÃO TEM ITENS DETALHADOS PARA RECEBER." }, 409);
+    }
+    // Fase C, item 4: pedido cancelado não recebe mais itens.
+    if (order.canceled) {
+      return jsonResponse({ error: "ESTE PEDIDO ESTÁ CANCELADO E NÃO PODE RECEBER ITENS." }, 400);
     }
 
     const item = await loadItem(database, orderId, itemId);
