@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v61"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v62"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v61"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v62"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v61"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v62"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1140,7 +1140,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v61"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v62"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1573,7 +1573,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v61"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v62"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1618,7 +1618,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v61"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v62"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -3520,4 +3520,85 @@ test("Módulo Compras nativo (Fase E): accordion no detalhe, atualização ao vi
   assert.match(html, /divisionStatus === 'FALTANDO ENVIO COMPLETO DA DIVISÃO'/);
   assert.match(html, /const divisionBadge = comprasDivisionStatusBadge\(order\.divisionStatus\);/);
   assert.match(convertRoute, /'FALTA DIVISÃO', 'em_andamento'/);
+});
+
+test("Cadastro de Produtos: catálogo geral único, com reconciliação e integração ao Compras nativo", async () => {
+  const [
+    html,
+    workerSource,
+    schema,
+    migration,
+    catalogShared,
+    catalogRoute,
+    uploadRoute,
+    reconcileRoute,
+    draftItemsRoute,
+  ] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0058_cadastro_produtos_geral.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/product-catalog/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/product-catalog/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/product-catalog/upload/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/product-catalog/reconcile/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/drafts/[id]/items/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Tabela: dois códigos possíveis por produto (Unigames/P.A Loja podem
+  // numerar o mesmo produto diferente), nome único unificado.
+  assert.match(schema, /export const productCatalog = pgTable\(\s*"product_catalog",/);
+  assert.match(schema, /codeUnigames: text\("code_unigames"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(schema, /codePa: text\("code_pa"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(migration, /CREATE TABLE "product_catalog"/);
+  assert.match(migration, /ALTER TABLE "product_catalog" ENABLE ROW LEVEL SECURITY;/);
+  assert.match(migration, /REVOKE ALL ON TABLE "product_catalog" FROM anon, authenticated;/);
+
+  // Gate no worker: leitura liberada pra quem tem Base de Dados OU Compras
+  // nativo (que consulta o catálogo pra sugerir produto); escrita exige
+  // database:manage.
+  assert.match(
+    workerSource,
+    /if \(path\.startsWith\("\/api\/product-catalog"\)\) \{[\s\S]*?hasAnyPermission\(user, \["database:view", "database:manage", "purchases_draft:manage"\]\)/,
+  );
+
+  // Reconciliação por nome normalizado (mesma função normalizeProductKey do
+  // client, portada pro servidor) — só atualiza nome de código já
+  // cadastrado quando vem do upload por loja/grupo (createIfMissing=false);
+  // a tela dedicada sempre pode cadastrar produto novo (createIfMissing=true).
+  assert.match(catalogShared, /export function normalizeProductKey\(name: string\): string \{/);
+  assert.match(catalogShared, /\.replace\(\/\\b\(da\|de\|do\|das\|dos\)\\b\/g, " "\)/);
+  assert.match(uploadRoute, /upsertProductCatalogEntries\(database, source, items, actor, true\)/);
+  assert.match(reconcileRoute, /upsertProductCatalogEntries\(database, source, items, actor, false\)/);
+  assert.match(catalogRoute, /canManageProductCatalog/);
+
+  // Compras nativo: nome do catálogo geral prevalece sobre o texto livre
+  // enviado no formulário quando o código já está cadastrado; itens antigos
+  // (sem correspondência no catálogo) continuam com o texto livre, sem
+  // quebrar histórico.
+  assert.match(
+    draftItemsRoute,
+    /SELECT name FROM product_catalog WHERE code_unigames=\?1 OR code_pa=\?1 LIMIT 1/,
+  );
+  assert.match(draftItemsRoute, /if \(catalogMatch\?\.name\) productName = catalogMatch\.name;/);
+
+  // Front-end: duas abas de upload (Unigames / P.A Loja), busca, edição
+  // manual, e a sugestão de produto do Compras nativo passa a vir do
+  // catálogo geral (productCatalogItems), não mais do merge standard/pa.
+  assert.match(html, /data-product-catalog-tab="unigames"/);
+  assert.match(html, /data-product-catalog-tab="pa"/);
+  assert.match(html, /id="fileProductCatalogUnigames"/);
+  assert.match(html, /id="fileProductCatalogPa"/);
+  assert.match(html, /id="productCatalogSearch"/);
+  assert.match(html, /async function reconcileProductCatalog\(source, parsedMap\)\{/);
+  assert.match(html, /async function handleProductCatalogUpload\(file, source\)\{/);
+  assert.match(
+    html,
+    /reconcileProductCatalog\(activeCatalogKey === 'pa' \? 'pa' : 'unigames', parsedMap\)\.catch\(\(\) => \{\}\);/,
+  );
+  assert.match(
+    html,
+    /for\(const item of productCatalogItems\)\{\s*if\(item\.codeUnigames\) entries\.set\(item\.codeUnigames, item\.name \|\| ''\);/,
+  );
+  assert.doesNotMatch(html, /catalogMaps\.standard\.get\(codigo\)\?\.nome \|\| catalogMaps\.pa\.get\(codigo\)\?\.nome/);
 });

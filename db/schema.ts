@@ -2660,3 +2660,39 @@ export const purchaseOrderAttachments = pgTable(
     index("purchase_order_attachments_order_idx").on(table.orderId),
   ],
 );
+
+// Catálogo geral de produtos (Cadastros > Base de Dados > Cadastro de
+// Produtos) — cadastro único da empresa toda, pensado pra alimentar o
+// Compras nativo (que hoje só grava productCode/productName como texto
+// livre, sem tabela nenhuma pra referenciar). NÃO substitui nem altera o
+// cadastro por grupo já existente (products_catalog:standard/:pa em
+// shared_state, que continua alimentando o Estoque Fiscal sem mudança).
+//
+// codeUnigames/codePa: os dois sistemas de origem usam numeração de
+// código DIFERENTE pro mesmo produto — por isso um produto pode ter só um
+// dos dois preenchidos, ou os dois (quando o upload de uma aba "encontra"
+// o produto da outra aba por nome normalizado e completa o código que
+// faltava). Nunca os dois vazios ao mesmo tempo (constraint aplicada na
+// camada de aplicação, não no banco).
+export const productCatalog = pgTable(
+  "product_catalog",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    // Unicidade de codeUnigames/codePa (quando preenchidos) é garantida pela
+    // aplicação no upsert do upload, não por constraint de banco — os dois
+    // ficam '' com frequência (produto só tem código de um dos sistemas),
+    // e um UNIQUE comum bloquearia mais de uma linha com ''.
+    codeUnigames: text("code_unigames").notNull().default(""),
+    codePa: text("code_pa").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("product_catalog_code_unigames_idx").on(table.codeUnigames),
+    index("product_catalog_code_pa_idx").on(table.codePa),
+    index("product_catalog_name_idx").on(table.name),
+  ],
+);
