@@ -23440,11 +23440,16 @@ function renderHomeTasks(){
   // Cards clicáveis da tela inicial (Por Produto) — cada um abre a aba
   // Pedidos já filtrada pro status correspondente.
   function comprasOpenPedidosFiltered(status, lateOnly){
-    setComprasSectionTab('pedidos');
+    // Os filtros precisam ser setados ANTES de trocar de aba — setComprasSectionTab
+    // já dispara um loadComprasOrdersPage() sozinho ao entrar em 'pedidos', e
+    // duas chamadas concorrentes (uma sem filtro, disparada pela troca de aba,
+    // outra já filtrada) corriam risco de a resposta sem filtro chegar depois
+    // e sobrescrever a lista filtrada na tela, mesmo com os <select> já
+    // mostrando o valor certo.
     el('comprasOrdersStatusFilter').value = status || '';
     el('comprasOrdersOriginFilter').value = 'native';
     comprasOrdersLateOnlyFilter = Boolean(lateOnly);
-    loadComprasOrdersPage();
+    setComprasSectionTab('pedidos');
   }
   if(el('comprasStatAbertosCard')) el('comprasStatAbertosCard').addEventListener('click', () => comprasOpenPedidosFiltered('aberto', false));
   if(el('comprasStatAguardandoCard')) el('comprasStatAguardandoCard').addEventListener('click', () => comprasOpenPedidosFiltered('aguardando_chegada', false));
