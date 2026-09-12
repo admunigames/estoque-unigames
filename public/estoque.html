@@ -4337,6 +4337,34 @@
       <div class="actions">
         <button class="btn-outline" id="btnLimpar">Limpar dados desta empresa</button>
       </div>
+
+      <section class="catalog-bar" style="flex-direction:column;align-items:stretch;">
+        <div class="catalog-info">
+          <h3>Cadastro de Produtos (Catálogo Geral)</h3>
+          <p class="page-desc" style="margin:2px 0 10px;">Código e nome oficiais do produto, únicos para a empresa toda — usados pelo Compras nativo. Não substitui a Base de Produtos por empresa acima (que continua alimentando o Estoque Fiscal normalmente).</p>
+          <span class="catalog-status" id="productCatalogStatus">Carregando…</span>
+        </div>
+        <div class="catalog-actions" style="gap:8px;flex-wrap:wrap;">
+          <button class="btn-outline" type="button" data-product-catalog-tab="unigames">CARREGAR BASE UNIGAMES</button>
+          <input type="file" id="fileProductCatalogUnigames" accept=".xls,.xlsx,.csv,.html,.htm" style="display:none">
+          <button class="btn-outline" type="button" data-product-catalog-tab="pa">CARREGAR BASE P.A LOJA</button>
+          <input type="file" id="fileProductCatalogPa" accept=".xls,.xlsx,.csv,.html,.htm" style="display:none">
+        </div>
+        <div class="field" style="margin-top:10px;max-width:360px;">
+          <label for="productCatalogSearch">BUSCAR (CÓDIGO OU NOME)</label>
+          <input type="search" id="productCatalogSearch" placeholder="Ex.: 12345 ou console">
+        </div>
+        <div class="table-panel responsive-table" style="margin-top:12px;">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Produto</th><th>Código Unigames</th><th>Código P.A Loja</th><th>Atualizado</th><th style="text-align:right">Ação</th></tr>
+              </thead>
+              <tbody id="productCatalogTableBody"><tr><td colspan="5" class="responsive-empty">Carregando catálogo…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </section>
 
     <!-- ================= PUXADAS ================= -->
@@ -11802,6 +11830,11 @@
         }
       }
 
+      // Reconcilia com o catálogo geral (Cadastro de Produtos): atualiza o
+      // nome de códigos que já estão cadastrados lá, mas nunca cadastra
+      // produto novo por essa via — isso é sempre a tela dedicada.
+      reconcileProductCatalog(activeCatalogKey === 'pa' ? 'pa' : 'unigames', parsedMap).catch(() => {});
+
       if(activeCompanyId){
         merged = mergeMaps();
         renderAll();
@@ -11812,6 +11845,166 @@
       showError('Erro ao ler a base de produtos: ' + err.message);
     }
   }
+
+  // ---------- CATÁLOGO GERAL DE PRODUTOS (Cadastro de Produtos) ----------
+
+  let productCatalogItems = [];
+  let productCatalogEditingId = '';
+  let productCatalogLoaded = false;
+
+  async function productCatalogApiRequest(path, options){
+    const response = await fetch('/api/product-catalog'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401) location.assign('/login?next='+encodeURIComponent(location.pathname));
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function mapCatalogItemsFromParsedMap(parsedMap){
+    return Array.from(parsedMap.entries()).map(([code, value]) => ({ code, name: value.nome || '' }));
+  }
+
+  async function reconcileProductCatalog(source, parsedMap){
+    if(!canAccess('database:manage') && !canAccess('purchases_draft:manage')) return;
+    const items = mapCatalogItemsFromParsedMap(parsedMap);
+    if(!items.length) return;
+    await productCatalogApiRequest('/reconcile', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ source, items })
+    });
+    if(productCatalogLoaded) await loadProductCatalog();
+  }
+
+  function productCatalogStatusText(){
+    if(!productCatalogItems.length) return 'Nenhum produto cadastrado ainda';
+    return productCatalogItems.length.toLocaleString('pt-BR')+' produtos cadastrados';
+  }
+
+  function productCatalogRowHtml(item){
+    if(item.id === productCatalogEditingId){
+      return '<tr data-product-catalog-row="'+escapeHtml(item.id)+'">'+
+        '<td><input type="text" maxlength="200" value="'+escapeHtml(item.name)+'" data-catalog-name-input></td>'+
+        '<td><input type="text" maxlength="80" value="'+escapeHtml(item.codeUnigames)+'" data-catalog-code-unigames-input></td>'+
+        '<td><input type="text" maxlength="80" value="'+escapeHtml(item.codePa)+'" data-catalog-code-pa-input></td>'+
+        '<td>—</td>'+
+        '<td style="text-align:right"><button type="button" class="save" data-catalog-save="'+escapeHtml(item.id)+'">SALVAR</button> '+
+        '<button type="button" data-catalog-cancel>CANCELAR</button></td>'+
+      '</tr>';
+    }
+    return '<tr>'+
+      '<td>'+escapeHtml(item.name)+'</td>'+
+      '<td>'+escapeHtml(item.codeUnigames || '—')+'</td>'+
+      '<td>'+escapeHtml(item.codePa || '—')+'</td>'+
+      '<td>'+(item.updatedAt ? formatDateTimeBR(item.updatedAt) : '—')+'</td>'+
+      '<td style="text-align:right"><button type="button" data-catalog-edit="'+escapeHtml(item.id)+'">EDITAR</button></td>'+
+    '</tr>';
+  }
+
+  function renderProductCatalogTable(){
+    el('productCatalogStatus').textContent = productCatalogStatusText();
+    const body = el('productCatalogTableBody');
+    if(!body) return;
+    body.innerHTML = productCatalogItems.length
+      ? productCatalogItems.map(productCatalogRowHtml).join('')
+      : '<tr><td colspan="5" class="responsive-empty">Nenhum produto cadastrado ainda.</td></tr>';
+  }
+
+  async function loadProductCatalog(query){
+    if(!canAccess('database:view') && !canAccess('purchases_draft:manage')) return;
+    try{
+      const data = await productCatalogApiRequest(query ? '?q='+encodeURIComponent(query) : '');
+      productCatalogItems = Array.isArray(data.items) ? data.items : [];
+      productCatalogLoaded = true;
+      renderProductCatalogTable();
+    }catch(error){
+      const body = el('productCatalogTableBody');
+      if(body) body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  async function handleProductCatalogUpload(file, source){
+    const status = el('productCatalogStatus');
+    status.textContent = 'Lendo base de produtos...';
+    try{
+      const rows = await extractRowsFromFile(file);
+      const parsedMap = parseCatalogRows(rows);
+      const items = mapCatalogItemsFromParsedMap(parsedMap);
+      const result = await productCatalogApiRequest('/upload', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ source, items })
+      });
+      showPurchaseToast('Catálogo atualizado: '+(result.created||0)+' novos, '+(result.updated||0)+' atualizados.');
+      await loadProductCatalog(el('productCatalogSearch') ? el('productCatalogSearch').value.trim() : '');
+    }catch(error){
+      showError('Erro ao carregar o catálogo de produtos: '+error.message);
+      renderProductCatalogTable();
+    }
+  }
+
+  document.querySelectorAll('[data-product-catalog-tab]').forEach(button => {
+    button.addEventListener('click', () => {
+      const source = button.dataset.productCatalogTab;
+      const input = source === 'pa' ? el('fileProductCatalogPa') : el('fileProductCatalogUnigames');
+      if(input) input.click();
+    });
+  });
+  if(el('fileProductCatalogUnigames')) el('fileProductCatalogUnigames').addEventListener('change', event => {
+    const file = event.target.files && event.target.files[0];
+    if(file) handleProductCatalogUpload(file, 'unigames');
+    event.target.value = '';
+  });
+  if(el('fileProductCatalogPa')) el('fileProductCatalogPa').addEventListener('change', event => {
+    const file = event.target.files && event.target.files[0];
+    if(file) handleProductCatalogUpload(file, 'pa');
+    event.target.value = '';
+  });
+  let productCatalogSearchTimer = null;
+  if(el('productCatalogSearch')) el('productCatalogSearch').addEventListener('input', event => {
+    clearTimeout(productCatalogSearchTimer);
+    const value = event.target.value.trim();
+    productCatalogSearchTimer = setTimeout(() => loadProductCatalog(value), 300);
+  });
+  if(el('productCatalogTableBody')) el('productCatalogTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-catalog-edit]');
+    if(editButton){
+      productCatalogEditingId = editButton.dataset.catalogEdit;
+      renderProductCatalogTable();
+      return;
+    }
+    const cancelButton = event.target.closest('[data-catalog-cancel]');
+    if(cancelButton){
+      productCatalogEditingId = '';
+      renderProductCatalogTable();
+      return;
+    }
+    const saveButton = event.target.closest('[data-catalog-save]');
+    if(saveButton){
+      const row = saveButton.closest('tr');
+      const id = saveButton.dataset.catalogSave;
+      const name = row.querySelector('[data-catalog-name-input]').value.trim();
+      const codeUnigames = row.querySelector('[data-catalog-code-unigames-input]').value.trim();
+      const codePa = row.querySelector('[data-catalog-code-pa-input]').value.trim();
+      saveButton.disabled = true;
+      try{
+        await productCatalogApiRequest('', {
+          method:'PATCH',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ id, name, codeUnigames, codePa })
+        });
+        productCatalogEditingId = '';
+        await loadProductCatalog(el('productCatalogSearch') ? el('productCatalogSearch').value.trim() : '');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        saveButton.disabled = false;
+      }
+    }
+  });
 
   function mergeMaps(){
     const codigos = new Set([...catalogMap.keys(), ...entradaMap.keys(), ...saidaMap.keys()]);
@@ -23022,15 +23215,21 @@ function renderHomeTasks(){
     return comprasSuppliersCache;
   }
 
+  // Compras nativo usa o catálogo GERAL de produtos (Cadastro de Produtos),
+  // não mais o merge de products_catalog:standard/:pa por grupo — um
+  // produto pode ter até dois códigos (Unigames/P.A Loja) com o mesmo nome.
   function comprasProductCatalogEntries(){
     const entries = new Map();
-    catalogMaps.standard.forEach((value, codigo) => entries.set(codigo, value.nome || ''));
-    catalogMaps.pa.forEach((value, codigo) => { if(!entries.has(codigo)) entries.set(codigo, value.nome || ''); });
+    for(const item of productCatalogItems){
+      if(item.codeUnigames) entries.set(item.codeUnigames, item.name || '');
+      if(item.codePa && item.codePa !== item.codeUnigames) entries.set(item.codePa, item.name || '');
+    }
     return entries;
   }
 
   function comprasFindProductName(codigo){
-    return catalogMaps.standard.get(codigo)?.nome || catalogMaps.pa.get(codigo)?.nome || '';
+    const item = productCatalogItems.find(p => p.codeUnigames === codigo || p.codePa === codigo);
+    return item ? (item.name || '') : '';
   }
 
   function comprasDraftStatusBadge(status){
@@ -28856,6 +29055,7 @@ function renderHomeTasks(){
     if(canAccess('outputs')) loaders.push(loadOutputs());
     if(canAccess('inputs')) loaders.push(loadInputs());
     if(canAccess('supplies')) loaders.push(loadHomeSupplies());
+    if(canAccess('database') || canAccess('purchases_draft')) loaders.push(loadProductCatalog());
     loaders.push(Promise.all([loadInstructions(),loadHomeInstructions()]));
     await Promise.all(loaders);
     await verifyIosStorage();

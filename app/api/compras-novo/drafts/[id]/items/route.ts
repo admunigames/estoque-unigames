@@ -48,7 +48,19 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     const body = (await request.json()) as JsonMap;
     const productCode = safeText(body.productCode, 80);
-    const productName = safeText(body.productName, 200);
+    let productName = safeText(body.productName, 200);
+    // Se o código já está no catálogo geral de produtos, o nome oficial de
+    // lá prevalece sobre o que veio do formulário (mesmo padrão do upload:
+    // o catálogo geral é a autoridade sobre o nome do produto).
+    const catalogMatch = productCode
+      ? await database
+          .prepare(
+            `SELECT name FROM product_catalog WHERE code_unigames=?1 OR code_pa=?1 LIMIT 1`,
+          )
+          .bind(productCode)
+          .first<{ name: string }>()
+      : null;
+    if (catalogMatch?.name) productName = catalogMatch.name;
     const quantity = Number(body.quantity);
     const notes = safeText(body.notes, 2000);
     const targetStores = safeStoreList(body.targetStores);

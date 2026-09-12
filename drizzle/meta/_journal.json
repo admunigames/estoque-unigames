@@ -407,6 +407,13 @@
       "when": 1789151128270,
       "tag": "0057_compras_nativo_fase_d",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1789217903392,
+      "tag": "0058_cadastro_produtos_geral",
+      "breakpoints": true
     }
   ]
 }

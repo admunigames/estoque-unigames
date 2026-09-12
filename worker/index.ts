@@ -1127,6 +1127,16 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
       ? true
       : hasPermission(user, "documents_manage");
   }
+  if (path.startsWith("/api/product-catalog")) {
+    // Leitura é liberada pra quem tem Base de Dados OU Compras nativo (que
+    // consulta o catálogo geral pra sugerir/validar produto) — cadastrar
+    // upload/editar continua exigindo database:manage (checado dentro da
+    // própria rota, não aqui).
+    if (request.method === "GET" || request.method === "HEAD") {
+      return hasAnyPermission(user, ["database:view", "database:manage", "purchases_draft:manage"]);
+    }
+    return hasPermission(user, "database:manage");
+  }
   const directPermissions: Array<[boolean, keyof typeof MODULE_VIEW_PERMISSIONS]> = [
     [path === "/tarefas", "tasks"],
     [path === "/missoes" || path.startsWith("/api/missions"), "missions"],
