@@ -20,6 +20,9 @@ type OrderRow = {
   noItemsDetailed: number;
   notes: string;
   canceled: number;
+  wonAt: string;
+  wonBy: string;
+  wonByName: string;
   createdBy: string;
   createdByName: string;
   createdAt: string;
@@ -38,10 +41,13 @@ type OrderItemRow = {
   receivedQuantity: number;
   unitPriceCents: number;
   targetStores: string;
+  candidateSupplierIds: string;
   notes: string;
 };
 
 type SupplierRow = { id: string; name: string };
+
+type QuoteRow = { itemId: string; supplierId: string; unitPriceCents: number; notes: string };
 
 type LinkedInvoiceRow = {
   id: string;
@@ -51,7 +57,10 @@ type LinkedInvoiceRow = {
   financialStatus: string;
 };
 
-const VALID_STATUSES = new Set(["pendente", "em_andamento", "concluido"]);
+// Fase F: 'aberto' e 'aguardando_chegada' são os valores do pipeline novo
+// (só pedidos nativos) — 'pendente'/'em_andamento' continuam válidos porque
+// pedidos importados do Notion (origin='notion_import') seguem usando eles.
+const VALID_STATUSES = new Set(["aberto", "aguardando_chegada", "pendente", "em_andamento", "concluido"]);
 
 // Fase D, item 1: as 5 opções de STATUS DA DIVISÃO que o Notion já usa
 // (ver db/scripts/import-notion-purchases.mjs) — "" (não definido) também é
@@ -73,7 +82,7 @@ async function loadOrder(database: D1Database, id: string) {
               company_id AS companyId, company_name AS companyName,
               order_date AS orderDate, expected_date AS expectedDate, received_date AS receivedDate,
               division, division_status AS divisionStatus, status, no_items_detailed AS noItemsDetailed, notes,
-              canceled,
+              canceled, won_at AS wonAt, won_by AS wonBy, won_by_name AS wonByName,
               created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
               updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt
        FROM purchase_orders WHERE id=?1`,
@@ -105,18 +114,68 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       supplierName = supplier?.name || "";
     }
 
-    let items: OrderItemRow[] = [];
+    let items: (OrderItemRow & { candidateSupplierIdsList: string[]; quotes: { supplierId: string; supplierName: string; unitPriceCents: number; notes: string }[] })[] = [];
     if (!order.noItemsDetailed) {
       const itemsResult = await database
         .prepare(
           `SELECT id, order_id AS orderId, draft_item_id AS draftItemId, product_code AS productCode,
                   product_name AS productName, quantity, received_quantity AS receivedQuantity,
-                  unit_price_cents AS unitPriceCents, target_stores AS targetStores, notes
+                  unit_price_cents AS unitPriceCents, target_stores AS targetStores,
+                  candidate_supplier_ids AS candidateSupplierIds, notes
            FROM purchase_order_items WHERE order_id=?1 ORDER BY created_at ASC`,
         )
         .bind(id)
         .all<OrderItemRow>();
-      items = itemsResult.results ?? [];
+      const rawItems = itemsResult.results ?? [];
+
+      // Fase F: cotações por item (purchase_order_item_quotes), com nome do
+      // fornecedor resolvido via finance_suppliers — junta tudo aqui pra UI
+      // não precisar de N requisições extras pra montar a seção de cotação.
+      const itemIds = rawItems.map((item) => item.id);
+      const quotesByItemId = new Map<string, QuoteRow[]>();
+      const supplierNameById = new Map<string, string>();
+      if (itemIds.length) {
+        const placeholders = itemIds.map((_, index) => `?${index + 1}`).join(",");
+        const quotesResult = await database
+          .prepare(
+            `SELECT item_id AS itemId, supplier_id AS supplierId, unit_price_cents AS unitPriceCents, notes
+             FROM purchase_order_item_quotes WHERE item_id IN (${placeholders})`,
+          )
+          .bind(...itemIds)
+          .all<QuoteRow>();
+        for (const row of quotesResult.results ?? []) {
+          const list = quotesByItemId.get(row.itemId) ?? [];
+          list.push(row);
+          quotesByItemId.set(row.itemId, list);
+        }
+        const supplierIds = Array.from(new Set((quotesResult.results ?? []).map((row) => row.supplierId)));
+        if (supplierIds.length) {
+          const supplierPlaceholders = supplierIds.map((_, index) => `?${index + 1}`).join(",");
+          const suppliersResult = await database
+            .prepare(`SELECT id, name FROM finance_suppliers WHERE id IN (${supplierPlaceholders})`)
+            .bind(...supplierIds)
+            .all<SupplierRow>();
+          for (const row of suppliersResult.results ?? []) supplierNameById.set(row.id, row.name);
+        }
+      }
+
+      items = rawItems.map((item) => ({
+        ...item,
+        candidateSupplierIdsList: (() => {
+          try {
+            const parsed = JSON.parse(item.candidateSupplierIds || "[]");
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })(),
+        quotes: (quotesByItemId.get(item.id) ?? []).map((quote) => ({
+          supplierId: quote.supplierId,
+          supplierName: supplierNameById.get(quote.supplierId) || "",
+          unitPriceCents: quote.unitPriceCents,
+          notes: quote.notes,
+        })),
+      }));
     }
 
     // NF já vinculada a este pedido nativo (Fase C, item 2) — usada pela UI
@@ -167,8 +226,15 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (!VALID_STATUSES.has(status)) {
       return jsonResponse({ error: "STATUS INVÁLIDO." }, 400);
     }
-    // Fase D, item 1: aba "Divisão" — mesmo campo/select do Notion, agora
-    // editável também em pedidos nativos.
+    // Fase F: Divisão só pode ser preenchida a partir de 'aguardando_chegada'
+    // (depois que o vencedor foi definido) — antes disso a seção fica oculta
+    // na UI, e o servidor bloqueia mesmo que a requisição venha direto.
+    // Pedidos importados do Notion (status pendente/em_andamento/concluido)
+    // sempre puderam editar Divisão, então só bloqueia quando o pedido está
+    // no status inicial do pipeline novo ('aberto').
+    if ((body.division !== undefined || body.divisionStatus !== undefined) && order.status === "aberto") {
+      return jsonResponse({ error: "DIVISÃO SÓ PODE SER PREENCHIDA A PARTIR DE 'AGUARDANDO CHEGADA'." }, 400);
+    }
     const division = body.division === undefined ? order.division : safeText(body.division, 20000);
     const divisionStatus = body.divisionStatus === undefined ? order.divisionStatus : safeText(body.divisionStatus, 60);
     if (!VALID_DIVISION_STATUSES.has(divisionStatus)) {

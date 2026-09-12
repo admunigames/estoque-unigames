@@ -105,6 +105,33 @@ export async function GET(request: Request) {
       .bind(produto)
       .first<{ total: number }>();
 
+    // Fase F: "em andamento" (a caminho) e "atrasado" — só olham pedidos
+    // NATIVOS já com vencedor definido (status='aguardando_chegada'), que é
+    // quando o item efetivamente está "a caminho".
+    const inProgressResult = await database
+      .prepare(
+        `SELECT COALESCE(SUM(poi.quantity - poi.received_quantity), 0) AS total
+         FROM purchase_order_items poi
+         JOIN purchase_orders po ON po.id = poi.order_id
+         WHERE poi.product_code=?1 AND po.origin='native' AND po.canceled=0 AND po.status='aguardando_chegada'`,
+      )
+      .bind(produto)
+      .first<{ total: number }>();
+
+    // Mesma regra de atraso que comprasOrderIsLate() usa no cliente:
+    // expectedDate preenchida, anterior a hoje, pedido não concluído/cancelado.
+    const today = new Date().toISOString().slice(0, 10);
+    const lateResult = await database
+      .prepare(
+        `SELECT COALESCE(SUM(poi.quantity - poi.received_quantity), 0) AS total
+         FROM purchase_order_items poi
+         JOIN purchase_orders po ON po.id = poi.order_id
+         WHERE poi.product_code=?1 AND po.origin='native' AND po.canceled=0
+           AND po.status != 'concluido' AND po.expected_date != '' AND po.expected_date < ?2`,
+      )
+      .bind(produto, today)
+      .first<{ total: number }>();
+
     const suppliers = Array.from(bySupplier.values()).sort((a, b) => b.totalQuantity - a.totalQuantity);
 
     return jsonResponse({
@@ -112,6 +139,8 @@ export async function GET(request: Request) {
       totalQuantity,
       distinctOrderCount: Number(orderCountResult?.total) || 0,
       lastPurchaseDate,
+      inProgressQuantity: Number(inProgressResult?.total) || 0,
+      lateQuantity: Number(lateResult?.total) || 0,
       suppliers,
     });
   } catch (error) {

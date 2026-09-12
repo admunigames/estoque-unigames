@@ -2863,7 +2863,7 @@
         <a class="nav-item sub-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" data-home-desc="Vendas e estoque baixo da sua loja." title="Relatório 41" href="/relatorio-41"><span class="nav-icon nav-icon-text" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></a>
         <a class="nav-item sub-item" id="navDashboard" data-page="dashboard" data-permission="stock" title="Estoque Fiscal" href="/estoque"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/><line x1="3" y1="19" x2="21" y2="19"/></svg></span><span class="nav-label">Estoque Fiscal</span></a>
         <a class="nav-item sub-item" id="navCompras" data-page="compras" data-permission="purchases" data-home-desc="Pedidos, recebimentos e divisões." title="Controle de Compras" href="/compras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><path d="M3.5 4h2.2l2 11.2a1.8 1.8 0 0 0 1.8 1.5h8a1.8 1.8 0 0 0 1.76-1.44L20.8 8H6.4"/></svg></span><span class="nav-label">Controle de Compras</span></a>
-        <a class="nav-item sub-item" id="navComprasNovo" data-page="comprasNovo" data-permission="purchases_draft" data-home-desc="Rascunhos de compra, fornecedores e sugestão por estoque baixo." title="Compras" href="/compras-novo"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h13l-1.5 9h-10z"/><path d="M6 3 5 1H2.5"/><circle cx="9" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><path d="M12 8v4M10 10h4"/></svg></span><span class="nav-label">Compras</span></a>
+        <a class="nav-item sub-item" id="navComprasNovo" data-page="comprasNovo" data-permission="purchases_draft" data-home-desc="Pedidos de compra, cotação de fornecedores e histórico por produto." title="Compras" href="/compras-novo"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h13l-1.5 9h-10z"/><path d="M6 3 5 1H2.5"/><circle cx="9" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><path d="M12 8v4M10 10h4"/></svg></span><span class="nav-label">Compras</span></a>
         <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc="Saídas Gerais Solicitadas pelas lojas." title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5"/><path d="M11 12h9.5"/><path d="m16.5 8 4 4-4 4"/></svg></span><span class="nav-label">Saídas</span></a>
         <a class="nav-item sub-item" id="navEntradas" data-page="entradas" data-permission="inputs" data-home-desc="Entradas Gerais Solicitadas pelas lojas." title="Entrada" href="/entradas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 4H17a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.5"/><path d="M13 12H3.5"/><path d="m7.5 8-4 4 4 4"/></svg></span><span class="nav-label">Entrada</span></a>
       </div>
@@ -4593,12 +4593,14 @@
       </section>
     </section>
 
-    <!-- ================= COMPRAS (NOVO — FASE A + FASE B) ================= -->
-    <!-- Módulo nativo de rascunhos + pedidos de compra. Convive com "Controle
-         de Compras" (Notion, seção acima) sem nenhuma relação entre eles
-         nesta fase — ver [[estoque_compras_nativo]]. Fase B adiciona a aba
-         "Pedidos" (purchase_orders/purchase_order_items) e a conversão de
-         rascunho em pedido(s), um por fornecedor escolhido. -->
+    <!-- ================= COMPRAS (NOVO — FASE F) ================= -->
+    <!-- Módulo nativo de pedidos de compra. Convive com "Controle de Compras"
+         (Notion, seção acima) sem nenhuma relação entre eles — ver
+         [[estoque_compras_nativo]]. Fase F fundiu rascunho+pedido numa
+         entidade só ("Pedido de Compra") com um pipeline de status
+         (aberto -> aguardando_chegada -> concluído) e cotação por
+         fornecedor candidato antes de definir o vencedor. "Por Produto"
+         virou a aba padrão/inicial do módulo. -->
     <section id="pageComprasNovo" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
@@ -4606,78 +4608,46 @@
           <h2 class="page-title">Compras</h2>
         </div>
         <div class="page-header-meta">
-          <p class="page-desc">Rascunhos colaborativos do que precisa ser comprado e os pedidos de compra gerados a partir deles — independente do Controle de Compras.</p>
+          <p class="page-desc">Pedidos de compra nativos — do orçamento com fornecedores candidatos até a chegada e divisão entre lojas — independente do Controle de Compras.</p>
         </div>
       </header>
 
       <div class="supply-tabs" role="tablist" aria-label="Seções de compras">
-        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-compras-section-tab="rascunhos">RASCUNHOS</button>
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-compras-section-tab="porProduto">POR PRODUTO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="pedidos">PEDIDOS</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="porProduto">POR PRODUTO</button>
       </div>
 
-      <section id="comprasSectionRascunhos">
-        <div class="page-header-actions" style="justify-content:flex-end;margin:12px 0;">
-          <label class="checkbox-inline"><input type="checkbox" id="comprasNovoIncludeArchived"> Mostrar arquivados/convertidos</label>
-          <button class="btn-accent" id="btnNewComprasDraft" type="button">+ Novo Rascunho</button>
-        </div>
-
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table id="comprasDraftsTable">
-              <thead><tr><th>Rascunho</th><th>Itens</th><th>Status</th><th>Criado por</th><th>Criado em</th><th class="no-print"></th></tr></thead>
-              <tbody id="comprasDraftsTableBody"><tr><td colspan="6" class="responsive-empty">Carregando rascunhos…</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <section class="table-panel" id="comprasDraftDetail" hidden style="margin-top:16px;padding:16px;">
-          <div class="page-header-actions" style="justify-content:space-between;margin-bottom:10px;">
-            <div>
-              <h3 id="comprasDraftDetailTitle" style="margin:0 0 4px;">—</h3>
-              <p class="page-desc" id="comprasDraftDetailMeta" style="margin:0;"></p>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-outline" id="btnEditComprasDraft" type="button">EDITAR RASCUNHO</button>
-              <button class="btn-outline" id="btnAddComprasDraftItem" type="button">+ ADICIONAR ITEM</button>
-              <button class="btn-accent" id="btnConvertComprasDraft" type="button" hidden>TRANSFORMAR EM PEDIDO</button>
-            </div>
-          </div>
-          <div class="table-scroll">
-            <table id="comprasDraftItemsTable">
-              <thead><tr><th>Produto</th><th>Qtd</th><th>Lojas destino</th><th>Fornecedor(es) candidato(s)</th><th>Observação</th><th class="no-print"></th></tr></thead>
-              <tbody id="comprasDraftItemsBody"><tr><td colspan="6" class="responsive-empty">Nenhum item neste rascunho ainda.</td></tr></tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-
       <section id="comprasSectionPedidos" hidden>
-        <div class="page-header-actions" style="justify-content:flex-end;margin:12px 0;flex-wrap:wrap;gap:10px;">
-          <label class="checkbox-inline"><input type="checkbox" id="comprasOrdersShowCanceled"> Mostrar cancelados</label>
-          <div class="field" style="min-width:180px;">
-            <label for="comprasOrdersStatusFilter">STATUS</label>
-            <select id="comprasOrdersStatusFilter">
-              <option value="">TODOS</option>
-              <option value="pendente">PENDENTE</option>
-              <option value="em_andamento">EM ANDAMENTO</option>
-              <option value="concluido">CONCLUÍDO</option>
-            </select>
-          </div>
-          <div class="field" style="min-width:180px;">
-            <label for="comprasOrdersOriginFilter">ORIGEM</label>
-            <select id="comprasOrdersOriginFilter">
-              <option value="">TODAS</option>
-              <option value="native">NATIVO</option>
-              <option value="notion_import">IMPORTADO DO NOTION</option>
-            </select>
+        <div class="page-header-actions" style="justify-content:space-between;margin:12px 0;flex-wrap:wrap;gap:10px;">
+          <button class="btn-accent" id="btnNewComprasDraft" type="button">+ NOVO PEDIDO DE COMPRA</button>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <label class="checkbox-inline"><input type="checkbox" id="comprasOrdersShowCanceled"> Mostrar cancelados</label>
+            <div class="field" style="min-width:200px;">
+              <label for="comprasOrdersStatusFilter">STATUS</label>
+              <select id="comprasOrdersStatusFilter">
+                <option value="">TODOS</option>
+                <option value="aberto">ABERTO</option>
+                <option value="aguardando_chegada">AGUARDANDO CHEGADA</option>
+                <option value="pendente">PENDENTE (NOTION)</option>
+                <option value="em_andamento">EM ANDAMENTO (NOTION)</option>
+                <option value="concluido">CONCLUÍDO</option>
+              </select>
+            </div>
+            <div class="field" style="min-width:180px;">
+              <label for="comprasOrdersOriginFilter">ORIGEM</label>
+              <select id="comprasOrdersOriginFilter">
+                <option value="">TODAS</option>
+                <option value="native">NATIVO</option>
+                <option value="notion_import">IMPORTADO DO NOTION</option>
+              </select>
+            </div>
           </div>
         </div>
 
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="comprasOrdersTable">
-              <thead><tr><th>Fornecedor</th><th>Origem</th><th>Status</th><th>Itens</th><th>Data do pedido</th><th>Previsão</th><th class="no-print"></th></tr></thead>
+              <thead><tr><th>Pedido / Fornecedor</th><th>Origem</th><th>Status</th><th>Itens</th><th>Data do pedido</th><th>Previsão</th><th class="no-print"></th></tr></thead>
               <tbody id="comprasOrdersTableBody"><tr><td colspan="7" class="responsive-empty">Carregando pedidos…</td></tr></tbody>
             </table>
           </div>
@@ -4695,6 +4665,37 @@
               <button class="btn-outline" id="btnReopenComprasOrder" type="button" hidden>REABRIR PEDIDO</button>
             </div>
           </div>
+
+          <!-- Fase F: status 'aberto' — montagem de itens, cotação por
+               fornecedor candidato e definição do vencedor. Some assim que
+               o vencedor é definido (pedido vai pra 'aguardando_chegada'). -->
+          <div id="comprasOrderAbertoWrap" hidden>
+            <div class="page-header-actions" style="justify-content:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+              <button class="btn-outline" id="btnAddComprasDraftItem" type="button">+ ADICIONAR ITEM</button>
+              <button class="btn-outline" id="btnGerarTxtOrcamento" type="button">GERAR TXT DE ORÇAMENTO</button>
+            </div>
+            <div id="comprasOrderAbertoItemsList"></div>
+
+            <div class="table-panel" style="margin-top:16px;padding:16px;">
+              <h4 style="margin:0 0 8px;">DEFINIR FORNECEDOR VENCEDOR</h4>
+              <p class="page-desc" style="margin:0 0 8px;">Fornecedores que cotaram ao menos um item deste pedido, com o total cotado (soma das cotações que cada um deu — pode não cobrir todos os itens).</p>
+              <div class="table-scroll">
+                <table id="comprasOrderWinnerTable">
+                  <thead><tr><th>Fornecedor</th><th>Itens cotados</th><th>Total cotado</th></tr></thead>
+                  <tbody id="comprasOrderWinnerBody"><tr><td colspan="3" class="responsive-empty">Nenhuma cotação registrada ainda.</td></tr></tbody>
+                </table>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;">
+                <select id="comprasOrderWinnerSelect" style="min-width:260px;"><option value="">-- ESCOLHA O FORNECEDOR VENCEDOR --</option></select>
+                <button class="btn-accent" id="btnConfirmComprasWinner" type="button">CONFIRMAR VENCEDOR — COMPRA EFETUADA</button>
+              </div>
+              <div class="user-form-status" id="comprasOrderWinnerStatus" role="status" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <!-- A partir de 'aguardando_chegada'/'concluido': recebimento,
+               Divisão, NF e anexos (ver comprasOrderAbertoWrap acima pro
+               fluxo anterior, enquanto o pedido está 'aberto'). -->
           <div class="table-scroll" id="comprasOrderItemsWrap">
             <table id="comprasOrderItemsTable">
               <thead><tr><th>Produto</th><th>Lojas destino</th><th>Qtd pedida</th><th>Qtd recebida</th><th>Preço unit.</th><th class="no-print">Registrar recebimento / preço</th></tr></thead>
@@ -4703,9 +4704,10 @@
           </div>
           <p class="page-desc" id="comprasOrderNoItemsNotice" hidden>Este pedido foi importado do Notion e não tem itens detalhados — edite o status manualmente em "EDITAR PEDIDO".</p>
 
-          <!-- Fase D, item 1: aba "Divisão" — replica DIVISÃO/STATUS DA
-               DIVISÃO do Notion, editável pra pedidos nativos E importados. -->
-          <div class="table-panel" style="margin-top:16px;padding:16px;">
+          <!-- Fase F: Divisão só aparece a partir de 'aguardando_chegada' —
+               antes disso ainda não existe vencedor/fornecedor pra compor o
+               cabeçalho "*ENTRADA* FORNECEDOR ..." sugerido. -->
+          <div class="table-panel" id="comprasOrderDivisionPanel" hidden style="margin-top:16px;padding:16px;">
             <h4 style="margin:0 0 8px;">DIVISÃO</h4>
             <p class="page-desc" style="margin:0 0 8px;">Texto livre descrevendo como os produtos deste pedido foram divididos entre as lojas — preencha à mão depois que o pedido chegar.</p>
             <div class="purchase-form-grid">
@@ -4755,10 +4757,11 @@
         </section>
       </section>
 
-      <!-- Fase D, item 3: "Compras por Produto" — busca simples, sem
-           varredura de todos os produtos nem filtros de período/loja. -->
-      <section id="comprasSectionPorProduto" hidden>
-        <p class="page-desc" style="margin:0 0 12px;">Busque um produto para ver quanto já foi comprado, de quais fornecedores (e por qual preço) e o saldo atual em cada loja.</p>
+      <!-- "Compras por Produto" — busca simples, sem varredura de todos os
+           produtos nem filtros de período/loja. Aba padrão/inicial do
+           módulo desde a Fase F. -->
+      <section id="comprasSectionPorProduto">
+        <p class="page-desc" style="margin:0 0 12px;">Busque um produto para ver quanto já foi comprado, de quais fornecedores (e por qual preço), o que está a caminho e o saldo atual em cada loja.</p>
         <div class="purchase-form-grid" style="margin-bottom:16px;">
           <div class="purchase-field full">
             <label for="comprasProdutoBusca">PRODUTO (CÓDIGO OU NOME)</label>
@@ -4771,6 +4774,8 @@
             <div><span>QUANTIDADE TOTAL COMPRADA</span><strong id="comprasProdutoTotalQtd">0</strong></div>
             <div><span>PEDIDOS DISTINTOS</span><strong id="comprasProdutoTotalPedidos">0</strong></div>
             <div><span>ÚLTIMA COMPRA</span><strong id="comprasProdutoUltimaCompra">—</strong></div>
+            <div><span>A CAMINHO (AGUARDANDO CHEGADA)</span><strong id="comprasProdutoEmAndamento">0</strong></div>
+            <div><span>ATRASADO</span><strong id="comprasProdutoAtrasado">0</strong></div>
           </div>
 
           <div class="table-panel" style="margin-bottom:16px;">
@@ -6358,31 +6363,29 @@
   </div>
 </div>
 
+<!-- Fase F: rascunho e pedido viram uma entidade só — este diálogo cria
+     direto um purchase_orders (origin='native', status='aberto'), sem
+     etapa intermediária de "converter em pedido". -->
 <dialog class="purchase-dialog" id="comprasDraftDialog" aria-labelledby="comprasDraftDialogTitle">
   <div class="purchase-dialog-head">
-    <h3 id="comprasDraftDialogTitle">NOVO RASCUNHO</h3>
+    <h3 id="comprasDraftDialogTitle">NOVO PEDIDO DE COMPRA</h3>
     <button class="purchase-dialog-close" id="btnCloseComprasDraftDialog" type="button" aria-label="Fechar">×</button>
   </div>
   <form class="purchase-form" id="comprasDraftForm">
-    <input type="hidden" id="comprasDraftId">
     <div class="purchase-form-grid">
-      <div class="purchase-field full"><label for="comprasDraftName">NOME DO RASCUNHO *</label><input id="comprasDraftName" maxlength="160" required placeholder="Ex.: Rascunho Loja Centro, Geral..."></div>
-      <div class="purchase-field"><label for="comprasDraftStatus">STATUS</label>
-        <select id="comprasDraftStatus">
-          <option value="aberto">ABERTO</option>
-          <option value="arquivado">ARQUIVADO</option>
-        </select>
-      </div>
+      <div class="purchase-field full"><label for="comprasDraftName">NOME DO PEDIDO (OPCIONAL)</label><input id="comprasDraftName" maxlength="160" placeholder="Ex.: Reposição Loja Centro..."></div>
       <div class="purchase-field full"><label for="comprasDraftNotes">OBSERVAÇÕES</label><textarea id="comprasDraftNotes" rows="2" maxlength="2000"></textarea></div>
     </div>
     <div class="user-form-status" id="comprasDraftFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelComprasDraftDialog" type="button">CANCELAR</button>
-      <button class="btn-accent" type="submit">SALVAR</button>
+      <button class="btn-accent" type="submit">CRIAR PEDIDO</button>
     </div>
   </form>
 </dialog>
 
+<!-- Reaproveitado da Fase A ("adicionar item ao rascunho") — só muda o
+     endpoint de destino (orders/:id/items em vez de drafts/:id/items). -->
 <dialog class="purchase-dialog" id="comprasDraftItemDialog" aria-labelledby="comprasDraftItemDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="comprasDraftItemDialogTitle">ADICIONAR ITEM</h3>
@@ -6424,29 +6427,6 @@
   </form>
 </dialog>
 
-<!-- Fase B: conversão do rascunho em pedido(s) — 1 fornecedor escolhido por
-     item, agrupados em 1 purchase_orders por fornecedor no servidor. -->
-<dialog class="purchase-dialog" id="comprasConvertDialog" aria-labelledby="comprasConvertDialogTitle">
-  <div class="purchase-dialog-head">
-    <h3 id="comprasConvertDialogTitle">TRANSFORMAR RASCUNHO EM PEDIDO</h3>
-    <button class="purchase-dialog-close" id="btnCloseComprasConvertDialog" type="button" aria-label="Fechar">×</button>
-  </div>
-  <form class="purchase-form" id="comprasConvertForm">
-    <p class="page-desc">Escolha, para cada item, qual fornecedor vai receber o pedido. Itens do mesmo fornecedor viram um único pedido.</p>
-    <div class="table-scroll">
-      <table id="comprasConvertTable">
-        <thead><tr><th>Produto</th><th>Qtd</th><th>Fornecedor *</th><th>Preço unit. (R$)</th></tr></thead>
-        <tbody id="comprasConvertTableBody"></tbody>
-      </table>
-    </div>
-    <div class="user-form-status" id="comprasConvertFormStatus" role="status" aria-live="polite"></div>
-    <div class="purchase-form-actions">
-      <button class="btn-outline" id="btnCancelComprasConvertDialog" type="button">CANCELAR</button>
-      <button class="btn-accent" id="btnConfirmComprasConvert" type="submit" disabled>CONFIRMAR CONVERSÃO</button>
-    </div>
-  </form>
-</dialog>
-
 <!-- Fase B: edição de campos do pedido (notes/status/datas) — status manual
      é o único jeito de fechar um pedido importado do Notion, que não tem
      itens pra calcular status automaticamente. -->
@@ -6458,7 +6438,12 @@
   <form class="purchase-form" id="comprasOrderEditForm">
     <input type="hidden" id="comprasOrderEditId">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="comprasOrderEditStatus">STATUS</label>
+      <!-- Fase F: pedidos NATIVOS têm o status controlado pelo pipeline
+           (aberto -> aguardando_chegada -> concluído automático) — este
+           campo só aparece pra pedidos IMPORTADOS DO NOTION, que não têm
+           itens detalhados pra calcular o status sozinhos. -->
+      <div class="purchase-field" id="comprasOrderEditStatusField">
+        <label for="comprasOrderEditStatus">STATUS</label>
         <select id="comprasOrderEditStatus">
           <option value="pendente">PENDENTE</option>
           <option value="em_andamento">EM ANDAMENTO</option>
@@ -8298,16 +8283,13 @@
       if(openRequestId && el('loanRequestDetailsDialog').open) openLoanRequestDetailsDialog(openRequestId);
     }
     if(livePageName === 'comprasNovo'){
-      // Fase E, item 2: recarrega só a aba ativa (rascunhos ou pedidos) e,
+      // Fase E, item 2: recarrega só a aba ativa (pedidos ou por produto) e,
       // se houver um detalhe expandido (accordion), atualiza o conteúdo
       // dele também — sem fechar — pra dois usuários no mesmo pedido verem
       // a mudança um do outro sem precisar recarregar a página.
       if(comprasSectionTab === 'pedidos'){
         await loadComprasOrdersPage();
         if(comprasOrderDetailOpenId) await openComprasOrderDetail(comprasOrderDetailOpenId);
-      } else if(comprasSectionTab === 'rascunhos'){
-        await loadComprasNovoPage();
-        if(comprasDraftDetailOpenId) await openComprasDraftDetail(comprasDraftDetailOpenId);
       }
     }
     if(livePageName === 'inicio') await loadHomeSupplies();
@@ -9394,7 +9376,7 @@
       history[method]({page:name}, '', route);
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
-    if(name === 'comprasNovo') loadComprasNovoPage();
+    if(name === 'comprasNovo') setComprasSectionTab(comprasSectionTab);
     if(name === 'usuarios') loadAdminUsers();
     if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); if(CHECKLIST_KIND[missionSectionTab]) loadChecklist(missionSectionTab); }
     if(name === 'captacao') loadCaptures();
@@ -9439,7 +9421,7 @@
       history.replaceState({page:name}, '', PAGE_ROUTES[name]);
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
-    if(name === 'comprasNovo') loadComprasNovoPage();
+    if(name === 'comprasNovo') setComprasSectionTab(comprasSectionTab);
     if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); if(CHECKLIST_KIND[missionSectionTab]) loadChecklist(missionSectionTab); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
@@ -23158,10 +23140,14 @@ function renderHomeTasks(){
     }catch(error){ status.textContent = error.message; }
   });
 
-  // ----- Compras (novo — Fase A: rascunhos + Fase B: pedidos/recebimento) -----
+  // ----- Compras (novo — Fase F: pedido único com pipeline de status) -----
   // Módulo independente do Controle de Compras (Notion) acima — nenhum dado
-  // é compartilhado entre os dois nesta fase.
-  let comprasSectionTab = 'rascunhos';
+  // é compartilhado entre os dois. Fase F fundiu rascunho+pedido numa
+  // entidade só: um pedido nasce 'aberto' (monta itens, cota fornecedores
+  // candidatos), vira 'aguardando_chegada' ao definir o vencedor (libera
+  // Divisão/recebimento) e 'concluido' automaticamente quando tudo chega.
+  // "Por Produto" é a aba padrão/inicial do módulo.
+  let comprasSectionTab = 'porProduto';
   function setComprasSectionTab(tab){
     comprasSectionTab = tab;
     document.querySelectorAll('[data-compras-section-tab]').forEach(button => {
@@ -23169,7 +23155,6 @@ function renderHomeTasks(){
       button.classList.toggle('active',active);
       button.setAttribute('aria-selected',String(active));
     });
-    el('comprasSectionRascunhos').hidden = tab !== 'rascunhos';
     el('comprasSectionPedidos').hidden = tab !== 'pedidos';
     el('comprasSectionPorProduto').hidden = tab !== 'porProduto';
     if(tab === 'pedidos') loadComprasOrdersPage();
@@ -23190,18 +23175,6 @@ function renderHomeTasks(){
     return payload;
   }
 
-  let comprasDrafts = [];
-  let comprasCurrentDraftId = '';
-  let comprasCurrentDraftItems = [];
-  // Fase E, item 1: detalhe em accordion — o mesmo nó #comprasDraftDetail é
-  // realocado (appendChild, não recriado) pra dentro de uma <tr> logo após
-  // a linha clicada, em vez de ficar fixo depois da tabela inteira.
-  let comprasDraftDetailOpenId = '';
-  let comprasDraftDetailEl = null;
-  function comprasDraftDetailNode(){
-    if(!comprasDraftDetailEl) comprasDraftDetailEl = document.getElementById('comprasDraftDetail');
-    return comprasDraftDetailEl;
-  }
   let comprasSuppliersCache = [];
 
   async function comprasNovoSuppliers(){
@@ -23213,6 +23186,11 @@ function renderHomeTasks(){
       comprasSuppliersCache = [];
     }
     return comprasSuppliersCache;
+  }
+
+  function comprasSupplierName(id){
+    const supplier = comprasSuppliersCache.find(s => s.id === id);
+    return supplier ? supplier.name : id;
   }
 
   // Compras nativo usa o catálogo GERAL de produtos (Cadastro de Produtos),
@@ -23232,398 +23210,14 @@ function renderHomeTasks(){
     return item ? (item.name || '') : '';
   }
 
-  function comprasDraftStatusBadge(status){
-    if(status === 'convertido') return '<span class="status-pill done">CONVERTIDO</span>';
-    if(status === 'arquivado') return '<span class="status-pill" style="opacity:.65;">ARQUIVADO</span>';
-    return '<span class="status-pill done">ABERTO</span>';
-  }
-
-  function renderComprasDraftsTable(){
-    const body = el('comprasDraftsTableBody');
-    if(!body) return;
-    // Destaca o nó de detalhe ANTES de reescrever o innerHTML do tbody —
-    // senão ele seria descartado junto com as linhas antigas.
-    const detailNode = comprasDraftDetailNode();
-    if(detailNode && detailNode.parentNode) detailNode.parentNode.removeChild(detailNode);
-    if(!comprasDrafts.length){
-      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum rascunho encontrado.</td></tr>';
-      return;
-    }
-    body.innerHTML = comprasDrafts.map(row => '<tr data-compras-draft-row="'+escapeHtml(row.id)+'"'+(row.id === comprasCurrentDraftId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
-      '<td>'+escapeHtml(row.name)+'</td>'+
-      '<td>'+Number(row.itemCount || 0)+'</td>'+
-      '<td>'+comprasDraftStatusBadge(row.status)+'</td>'+
-      '<td>'+escapeHtml(row.createdByName || '—')+'</td>'+
-      '<td>'+(row.createdAt ? formatDateTimeBR(row.createdAt) : '—')+'</td>'+
-      '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
-        '<button class="btn-outline" type="button" data-compras-draft-open="'+escapeHtml(row.id)+'">'+(row.id === comprasDraftDetailOpenId ? 'FECHAR' : 'ABRIR')+'</button>'+
-        (row.status === 'convertido' ? '' :
-          '<button class="btn-outline" type="button" data-compras-draft-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
-          '<button class="btn-outline" type="button" data-compras-draft-archive="'+escapeHtml(row.id)+'">'+(row.status === 'arquivado' ? 'REABRIR' : 'ARQUIVAR')+'</button>')+
-      '</span></td>'+
-    '</tr>').join('');
-    if(comprasDraftDetailOpenId){
-      const targetRow = body.querySelector('tr[data-compras-draft-row="'+CSS.escape(comprasDraftDetailOpenId)+'"]');
-      if(targetRow){
-        const tr = document.createElement('tr');
-        tr.className = 'compras-detail-row';
-        const td = document.createElement('td');
-        td.colSpan = 6;
-        td.style.padding = '0';
-        td.style.background = 'transparent';
-        td.appendChild(detailNode);
-        tr.appendChild(td);
-        targetRow.after(tr);
-      } else {
-        comprasDraftDetailOpenId = '';
-      }
-    }
-  }
-
-  async function loadComprasNovoPage(){
-    if(!canAccess('purchases_draft')) return;
-    if(!companies.length) await loadCompanies();
-    const includeArchived = el('comprasNovoIncludeArchived').checked ? '1' : '0';
-    el('comprasDraftsTableBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando rascunhos…</td></tr>';
-    try{
-      const data = await comprasNovoApiRequest('/drafts?includeArchived='+includeArchived);
-      comprasDrafts = Array.isArray(data.drafts) ? data.drafts : [];
-      renderComprasDraftsTable();
-      if(comprasCurrentDraftId && !comprasDrafts.some(d => d.id === comprasCurrentDraftId)){
-        comprasCurrentDraftId = '';
-        comprasDraftDetailOpenId = '';
-        comprasDraftDetailNode().hidden = true;
-      }
-    }catch(error){
-      comprasDrafts = [];
-      el('comprasDraftsTableBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-    }
-  }
-  if(el('comprasNovoIncludeArchived')) el('comprasNovoIncludeArchived').addEventListener('change', loadComprasNovoPage);
-
-  function comprasStoreNamesLabel(targetStores){
-    let list = [];
-    try{ list = JSON.parse(targetStores || '[]'); }catch{ list = []; }
-    if(!Array.isArray(list) || !list.length) return '—';
-    return list.map(s => escapeHtml(s.companyName || s.companyId)).join(', ');
-  }
-
-  function comprasSupplierNamesLabel(candidateSupplierIds){
-    let ids = [];
-    try{ ids = JSON.parse(candidateSupplierIds || '[]'); }catch{ ids = []; }
-    if(!Array.isArray(ids) || !ids.length) return '—';
-    return ids.map(id => {
-      const supplier = comprasSuppliersCache.find(s => s.id === id);
-      return escapeHtml(supplier ? supplier.name : id);
-    }).join(', ');
-  }
-
-  function renderComprasDraftItemsTable(){
-    const body = el('comprasDraftItemsBody');
-    if(!body) return;
-    if(!comprasCurrentDraftItems.length){
-      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum item neste rascunho ainda.</td></tr>';
-      return;
-    }
-    const canEditItems = comprasCurrentDraftStatus === 'aberto';
-    body.innerHTML = comprasCurrentDraftItems.map(item => '<tr>'+
-      '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
-      '<td>'+Number(item.quantity || 0)+'</td>'+
-      '<td>'+comprasStoreNamesLabel(item.targetStores)+'</td>'+
-      '<td>'+comprasSupplierNamesLabel(item.candidateSupplierIds)+'</td>'+
-      '<td>'+escapeHtml(item.notes || '—')+'</td>'+
-      '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
-        (canEditItems ?
-          '<button class="btn-outline" type="button" data-compras-item-edit="'+escapeHtml(item.id)+'">EDITAR</button>'+
-          '<button class="btn-outline" type="button" data-compras-item-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>' : '—')+
-      '</span></td>'+
-    '</tr>').join('');
-  }
-
-  let comprasCurrentDraftStatus = 'aberto';
-
-  async function openComprasDraftDetail(draftId){
-    await comprasNovoSuppliers();
-    try{
-      const data = await comprasNovoApiRequest('/drafts/'+encodeURIComponent(draftId));
-      comprasCurrentDraftId = draftId;
-      comprasDraftDetailOpenId = draftId;
-      comprasCurrentDraftItems = Array.isArray(data.items) ? data.items : [];
-      comprasCurrentDraftStatus = data.draft.status;
-      // Reposiciona a linha de detalhe ANTES de popular os campos — os
-      // ids internos (comprasDraftDetailTitle etc.) só são achados por
-      // document.getElementById depois que o nó volta a ficar no DOM.
-      renderComprasDraftsTable();
-      comprasDraftDetailNode().hidden = false;
-      el('comprasDraftDetailTitle').textContent = data.draft.name;
-      el('comprasDraftDetailMeta').innerHTML =
-        comprasDraftStatusBadge(data.draft.status)+
-        ' · Criado por '+escapeHtml(data.draft.createdByName || '—')+
-        (data.draft.notes ? ' · '+escapeHtml(data.draft.notes) : '');
-      const isOpen = data.draft.status === 'aberto';
-      el('btnAddComprasDraftItem').hidden = !isOpen;
-      el('btnEditComprasDraft').hidden = data.draft.status === 'convertido';
-      el('btnConvertComprasDraft').hidden = !(isOpen && comprasCurrentDraftItems.length);
-      renderComprasDraftItemsTable();
-    }catch(error){
-      showPurchaseToast(error.message, 'error');
-    }
-  }
-
-  function closeComprasDraftDetail(){
-    comprasDraftDetailOpenId = '';
-    comprasCurrentDraftId = '';
-    comprasDraftDetailNode().hidden = true;
-    renderComprasDraftsTable();
-  }
-
-  el('comprasDraftsTableBody').addEventListener('click', async event => {
-    const openBtn = event.target.closest('[data-compras-draft-open]');
-    if(openBtn){
-      const id = openBtn.dataset.comprasDraftOpen;
-      if(comprasDraftDetailOpenId === id) closeComprasDraftDetail();
-      else await openComprasDraftDetail(id);
-      return;
-    }
-    const editBtn = event.target.closest('[data-compras-draft-edit]');
-    if(editBtn){ openComprasDraftDialog(comprasDrafts.find(d => d.id === editBtn.dataset.comprasDraftEdit) || null); return; }
-    const archiveBtn = event.target.closest('[data-compras-draft-archive]');
-    if(archiveBtn){
-      const id = archiveBtn.dataset.comprasDraftArchive;
-      const row = comprasDrafts.find(d => d.id === id);
-      if(!row) return;
-      try{
-        if(row.status === 'arquivado'){
-          await comprasNovoApiRequest('/drafts/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:'aberto'})});
-          showPurchaseToast('Rascunho reaberto.');
-        } else {
-          await comprasNovoApiRequest('/drafts/'+encodeURIComponent(id), {method:'DELETE'});
-          showPurchaseToast('Rascunho arquivado.');
-        }
-        await loadComprasNovoPage();
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
-    }
-  });
-
-  function openComprasDraftDialog(row){
-    el('comprasDraftForm').reset();
-    el('comprasDraftId').value = row ? row.id : '';
-    el('comprasDraftDialogTitle').textContent = row ? 'EDITAR RASCUNHO' : 'NOVO RASCUNHO';
-    el('comprasDraftName').value = row ? row.name : '';
-    el('comprasDraftStatus').value = row ? row.status : 'aberto';
-    el('comprasDraftNotes').value = row ? (row.notes || '') : '';
-    el('comprasDraftFormStatus').textContent = '';
-    el('comprasDraftDialog').showModal();
-  }
-  if(el('btnNewComprasDraft')) el('btnNewComprasDraft').addEventListener('click', () => openComprasDraftDialog(null));
-  if(el('btnCloseComprasDraftDialog')) el('btnCloseComprasDraftDialog').addEventListener('click', () => el('comprasDraftDialog').close());
-  if(el('btnCancelComprasDraftDialog')) el('btnCancelComprasDraftDialog').addEventListener('click', () => el('comprasDraftDialog').close());
-  if(el('comprasDraftForm')) el('comprasDraftForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const status = el('comprasDraftFormStatus');
-    status.textContent = '';
-    const name = el('comprasDraftName').value.trim();
-    if(name.length < 2){ status.textContent = 'INFORME O NOME DO RASCUNHO.'; return; }
-    const id = el('comprasDraftId').value;
-    const payload = { name, notes: el('comprasDraftNotes').value };
-    if(id) payload.status = el('comprasDraftStatus').value;
-    try{
-      if(id){
-        await comprasNovoApiRequest('/drafts/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      } else {
-        await comprasNovoApiRequest('/drafts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      }
-      el('comprasDraftDialog').close();
-      await loadComprasNovoPage();
-      showPurchaseToast('Rascunho salvo.');
-    }catch(error){ status.textContent = error.message; }
-  });
-
-  if(el('btnEditComprasDraft')) el('btnEditComprasDraft').addEventListener('click', () => {
-    if(!comprasCurrentDraftId) return;
-    openComprasDraftDialog(comprasDrafts.find(d => d.id === comprasCurrentDraftId) || null);
-  });
-
-  // ----- Fase B: converter rascunho em pedido(s) -----
-  function comprasConvertUpdateConfirmState(){
-    const selects = Array.from(document.querySelectorAll('#comprasConvertTableBody select[data-compras-convert-item]'));
-    const allChosen = selects.length > 0 && selects.every(select => select.value);
-    el('btnConfirmComprasConvert').disabled = !allChosen;
-    selects.forEach(select => select.classList.toggle('input-error', !select.value));
-  }
-
-  async function openComprasConvertDialog(){
-    if(!comprasCurrentDraftId || !comprasCurrentDraftItems.length) return;
-    const suppliers = await comprasNovoSuppliers();
-    el('comprasConvertFormStatus').textContent = '';
-    el('comprasConvertTableBody').innerHTML = comprasCurrentDraftItems.map(item => {
-      let candidateIds = [];
-      try{ candidateIds = JSON.parse(item.candidateSupplierIds || '[]'); }catch{ candidateIds = []; }
-      // Sem candidato pré-definido: oferece todos os fornecedores cadastrados
-      // pra não travar a conversão, mas o select continua obrigatório.
-      const options = (candidateIds.length ? suppliers.filter(s => candidateIds.includes(s.id)) : suppliers);
-      return '<tr>'+
-        '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
-        '<td>'+Number(item.quantity || 0)+'</td>'+
-        '<td><select data-compras-convert-item="'+escapeHtml(item.id)+'" required>'+
-          '<option value="">-- SELECIONE --</option>'+
-          options.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('')+
-        '</select></td>'+
-        // Fase D, item 2: preço unitário opcional já na conversão (histórico
-        // de preço por fornecedor) — vazio = não informado (0 no banco).
-        '<td><input type="number" min="0" step="0.01" placeholder="OPCIONAL" data-compras-convert-price="'+escapeHtml(item.id)+'" style="width:110px;"></td>'+
-      '</tr>';
-    }).join('');
-    document.querySelectorAll('#comprasConvertTableBody select[data-compras-convert-item]').forEach(select => {
-      select.addEventListener('change', comprasConvertUpdateConfirmState);
-    });
-    comprasConvertUpdateConfirmState();
-    el('comprasConvertDialog').showModal();
-  }
-  if(el('btnConvertComprasDraft')) el('btnConvertComprasDraft').addEventListener('click', openComprasConvertDialog);
-  if(el('btnCloseComprasConvertDialog')) el('btnCloseComprasConvertDialog').addEventListener('click', () => el('comprasConvertDialog').close());
-  if(el('btnCancelComprasConvertDialog')) el('btnCancelComprasConvertDialog').addEventListener('click', () => el('comprasConvertDialog').close());
-  if(el('comprasConvertForm')) el('comprasConvertForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const status = el('comprasConvertFormStatus');
-    status.textContent = '';
-    const selects = Array.from(document.querySelectorAll('#comprasConvertTableBody select[data-compras-convert-item]'));
-    const itemSupplierChoices = selects.map(select => {
-      const itemId = select.dataset.comprasConvertItem;
-      const priceInput = document.querySelector('[data-compras-convert-price="'+itemId+'"]');
-      const priceValue = priceInput ? priceInput.value.trim() : '';
-      const unitPriceCents = priceValue ? parseBRLToCents(priceValue) : null;
-      return { itemId, supplierId: select.value, unitPriceCents: unitPriceCents === null ? undefined : unitPriceCents };
-    });
-    if(itemSupplierChoices.some(choice => !choice.supplierId)){ status.textContent = 'ESCOLHA UM FORNECEDOR PARA TODOS OS ITENS.'; return; }
-    try{
-      const data = await comprasNovoApiRequest('/drafts/'+encodeURIComponent(comprasCurrentDraftId)+'/convert', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ itemSupplierChoices })
-      });
-      el('comprasConvertDialog').close();
-      const orderCount = Array.isArray(data.orderIds) ? data.orderIds.length : 0;
-      showPurchaseToast(orderCount+' pedido(s) criado(s) a partir do rascunho.');
-      await loadComprasNovoPage();
-      closeComprasDraftDetail();
-      setComprasSectionTab('pedidos');
-    }catch(error){ status.textContent = error.message; }
-  });
-
-  async function openComprasItemDialog(item){
-    el('comprasDraftItemForm').reset();
-    el('comprasItemId').value = item ? item.id : '';
-    el('comprasDraftItemDialogTitle').textContent = item ? 'EDITAR ITEM' : 'ADICIONAR ITEM';
-    el('comprasItemProductCode').value = item ? item.productCode : '';
-    el('comprasItemQuantity').value = item ? item.quantity : '';
-    el('comprasItemNotes').value = item ? (item.notes || '') : '';
-    el('comprasItemStockWrap').hidden = true;
-    el('comprasItemStockBody').innerHTML = '';
-
-    const productList = el('comprasItemProductList');
-    productList.innerHTML = Array.from(comprasProductCatalogEntries().entries())
-      .slice(0, 500)
-      .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
-      .join('');
-
-    const suppliers = await comprasNovoSuppliers();
-    let selectedSupplierIds = [];
-    if(item){ try{ selectedSupplierIds = JSON.parse(item.candidateSupplierIds || '[]'); }catch{ selectedSupplierIds = []; } }
-    el('comprasItemSuppliersGrid').innerHTML = suppliers.length
-      ? suppliers.map(s => '<label class="permission-option"><input type="checkbox" name="comprasItemSupplier" value="'+escapeHtml(s.id)+'"'+(selectedSupplierIds.includes(s.id) ? ' checked' : '')+'> '+escapeHtml(s.name)+'</label>').join('')
-      : '<p class="page-desc">Nenhum fornecedor cadastrado no Financeiro ainda.</p>';
-
-    let selectedStoreIds = [];
-    if(item){ try{ selectedStoreIds = (JSON.parse(item.targetStores || '[]')).map(s => s.companyId); }catch{ selectedStoreIds = []; } }
-    el('comprasItemStoresGrid').innerHTML = companies.length
-      ? companies.map(c => '<label class="permission-option"><input type="checkbox" name="comprasItemStore" value="'+escapeHtml(c.id)+'" data-store-name="'+escapeHtml(c.name)+'"'+(selectedStoreIds.includes(c.id) ? ' checked' : '')+'> '+escapeHtml(c.name)+'</label>').join('')
-      : '<p class="page-desc">Nenhuma loja cadastrada.</p>';
-
-    el('comprasDraftItemFormStatus').textContent = '';
-    el('comprasDraftItemDialog').showModal();
-  }
-  if(el('btnAddComprasDraftItem')) el('btnAddComprasDraftItem').addEventListener('click', () => openComprasItemDialog(null));
-  if(el('btnCloseComprasDraftItemDialog')) el('btnCloseComprasDraftItemDialog').addEventListener('click', () => el('comprasDraftItemDialog').close());
-  if(el('btnCancelComprasDraftItemDialog')) el('btnCancelComprasDraftItemDialog').addEventListener('click', () => el('comprasDraftItemDialog').close());
-
-  if(el('btnCheckComprasItemStock')) el('btnCheckComprasItemStock').addEventListener('click', async () => {
-    const codigo = el('comprasItemProductCode').value.trim();
-    if(!codigo){ el('comprasDraftItemFormStatus').textContent = 'INFORME O CÓDIGO DO PRODUTO PARA VERIFICAR O SALDO.'; return; }
-    el('comprasDraftItemFormStatus').textContent = '';
-    try{
-      const data = await comprasNovoApiRequest('/estoque-saldo?produto='+encodeURIComponent(codigo));
-      const balances = Array.isArray(data.balances) ? data.balances : [];
-      el('comprasItemStockWrap').hidden = false;
-      el('comprasItemStockBody').innerHTML = balances.length
-        ? balances.map(b => '<tr><td>'+escapeHtml(b.companyName)+'</td><td'+(b.saldo <= 0 ? ' style="color:var(--danger,#c0392b);font-weight:700;"' : '')+'>'+Number(b.saldo)+'</td></tr>').join('')
-        : '<tr><td colspan="2" class="responsive-empty">Nenhum lançamento de estoque fiscal para este produto.</td></tr>';
-      const name = comprasFindProductName(codigo);
-      if(name) el('comprasItemProductCode').dataset.productName = name;
-    }catch(error){ el('comprasDraftItemFormStatus').textContent = error.message; }
-  });
-
-  if(el('comprasDraftItemForm')) el('comprasDraftItemForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const status = el('comprasDraftItemFormStatus');
-    status.textContent = '';
-    if(!comprasCurrentDraftId) return;
-    const productCode = el('comprasItemProductCode').value.trim();
-    if(!productCode){ status.textContent = 'INFORME O CÓDIGO DO PRODUTO.'; return; }
-    const quantity = Number(el('comprasItemQuantity').value);
-    if(!Number.isFinite(quantity) || quantity < 0){ status.textContent = 'INFORME UMA QUANTIDADE VÁLIDA.'; return; }
-
-    const targetStores = Array.from(document.querySelectorAll('input[name="comprasItemStore"]:checked')).map(input => ({
-      companyId: input.value,
-      companyName: input.dataset.storeName || ''
-    }));
-    const candidateSupplierIds = Array.from(document.querySelectorAll('input[name="comprasItemSupplier"]:checked')).map(input => input.value);
-
-    const payload = {
-      productCode,
-      productName: comprasFindProductName(productCode) || el('comprasItemProductCode').dataset.productName || '',
-      quantity,
-      notes: el('comprasItemNotes').value,
-      targetStores,
-      candidateSupplierIds
-    };
-    const id = el('comprasItemId').value;
-    try{
-      if(id){
-        await comprasNovoApiRequest('/drafts/'+encodeURIComponent(comprasCurrentDraftId)+'/items/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      } else {
-        await comprasNovoApiRequest('/drafts/'+encodeURIComponent(comprasCurrentDraftId)+'/items', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      }
-      el('comprasDraftItemDialog').close();
-      await openComprasDraftDetail(comprasCurrentDraftId);
-      await loadComprasNovoPage();
-      showPurchaseToast('Item salvo.');
-    }catch(error){ status.textContent = error.message; }
-  });
-
-  if(el('comprasDraftItemsBody')) el('comprasDraftItemsBody').addEventListener('click', async event => {
-    const editBtn = event.target.closest('[data-compras-item-edit]');
-    if(editBtn){ await openComprasItemDialog(comprasCurrentDraftItems.find(i => i.id === editBtn.dataset.comprasItemEdit) || null); return; }
-    const deleteBtn = event.target.closest('[data-compras-item-delete]');
-    if(deleteBtn){
-      const itemId = deleteBtn.dataset.comprasItemDelete;
-      if(!confirm('EXCLUIR ESTE ITEM DO RASCUNHO?')) return;
-      try{
-        await comprasNovoApiRequest('/drafts/'+encodeURIComponent(comprasCurrentDraftId)+'/items/'+encodeURIComponent(itemId), {method:'DELETE'});
-        await openComprasDraftDetail(comprasCurrentDraftId);
-        await loadComprasNovoPage();
-        showPurchaseToast('Item removido.');
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
-    }
-  });
-
-  // ----- Fase B: aba "Pedidos" (purchase_orders + purchase_order_items) -----
-  // Fase C acrescenta: anexos (arquivo do pedido/NF), vínculo com Nota
-  // Fiscal do Financeiro, alerta de atraso (calculado no client, sem campo
-  // novo no banco) e cancelamento de pedido.
+  // ----- Fase F: aba "Pedidos" (purchase_orders + purchase_order_items) -----
   let comprasOrders = [];
   let comprasCurrentOrderId = '';
   let comprasCurrentOrderItems = [];
   let comprasCurrentOrderLinkedInvoice = null;
-  // Fase E, item 1: mesmo padrão de accordion usado nos rascunhos.
+  // Detalhe em accordion — o mesmo nó #comprasOrderDetail é realocado
+  // (appendChild, não recriado) pra dentro de uma <tr> logo após a linha
+  // clicada, em vez de ficar fixo depois da tabela inteira.
   let comprasOrderDetailOpenId = '';
   let comprasOrderDetailEl = null;
   function comprasOrderDetailNode(){
@@ -23633,14 +23227,23 @@ function renderHomeTasks(){
 
   function comprasOrderStatusBadge(status){
     if(status === 'concluido') return '<span class="status-pill done">CONCLUÍDO</span>';
+    if(status === 'aguardando_chegada') return '<span class="status-pill waiting">AGUARDANDO CHEGADA</span>';
     if(status === 'em_andamento') return '<span class="status-pill">EM ANDAMENTO</span>';
+    if(status === 'aberto') return '<span class="status-pill" style="opacity:.65;">ABERTO</span>';
     return '<span class="status-pill" style="opacity:.65;">PENDENTE</span>';
+  }
+
+  // Marco "COMPRA EFETUADA" (wonAt preenchido) — separado do status, pode
+  // aparecer junto de qualquer status a partir de 'aguardando_chegada'.
+  function comprasOrderWonBadge(order){
+    if(!order.wonAt) return '';
+    return '<span class="status-pill done" title="Efetuada por '+escapeHtml(order.wonByName || '—')+'">COMPRA EFETUADA</span>';
   }
 
   function comprasOrderOriginLabel(order){
     return order.origin === 'notion_import'
       ? '<span title="Importado do histórico do Controle de Compras (Notion)">IMPORTADO DO NOTION</span>'
-      : '<span title="Pedido criado a partir de um rascunho">NATIVO</span>';
+      : '<span title="Pedido criado nativamente neste módulo">NATIVO</span>';
   }
 
   // Atraso: expectedDate preenchida, anterior a hoje, pedido não concluído
@@ -23650,8 +23253,17 @@ function renderHomeTasks(){
     return order.expectedDate < new Date().toISOString().slice(0,10);
   }
 
-  // Fase E, item 3: badge de STATUS DA DIVISÃO — mesma paleta dos outros
-  // status-pill do módulo (neutro/aguardando/alerta/concluído).
+  // Nome de exibição do pedido: fornecedor vencedor (nativo com vencedor
+  // definido) > nome cru (Notion) > primeira linha de notes (nome dado na
+  // criação, Fase F — ver POST /orders) > "PEDIDO SEM NOME".
+  function comprasOrderDisplayName(order){
+    if(order.supplierName || order.supplierNameRaw) return order.supplierName || order.supplierNameRaw;
+    const firstLine = (order.notes || '').split('\n')[0].trim();
+    return firstLine || 'PEDIDO SEM NOME';
+  }
+
+  // Badge de STATUS DA DIVISÃO — mesma paleta dos outros status-pill do módulo
+  // (neutro/aguardando/alerta/concluído).
   function comprasDivisionStatusBadge(divisionStatus){
     if(!divisionStatus) return '';
     if(divisionStatus === 'CONCLUÍDO') return '<span class="status-pill done">'+escapeHtml(divisionStatus)+'</span>';
@@ -23663,6 +23275,8 @@ function renderHomeTasks(){
 
   function comprasOrderBadges(order){
     let html = comprasOrderStatusBadge(order.status);
+    const wonBadge = comprasOrderWonBadge(order);
+    if(wonBadge) html += ' '+wonBadge;
     if(Number(order.canceled)) html += ' <span class="status-pill alert">CANCELADO</span>';
     else if(comprasOrderIsLate(order)) html += ' <span class="status-pill alert">ATRASADO</span>';
     const divisionBadge = comprasDivisionStatusBadge(order.divisionStatus);
@@ -23672,10 +23286,7 @@ function renderHomeTasks(){
 
   // Cabeçalho do detalhe do pedido: badges numa linha, depois uma grade de
   // campo/valor (só os campos preenchidos) em vez de uma frase única com
-  // tudo separado por "·" — inclui o dump da divisão inteira e o id bruto
-  // do rascunho de origem, o que ficava ilegível em pedidos com texto de
-  // divisão longo. A nota "Convertido do rascunho: X (uuid)" mantém só o
-  // nome do rascunho, sem o uuid, pra não poluir a tela.
+  // tudo separado por "·".
   function comprasOrderDetailMetaHtml(order){
     // "Origem" já vem como HTML (span com title) de comprasOrderOriginLabel
     // — os demais campos são texto puro e precisam de escapeHtml.
@@ -23694,7 +23305,7 @@ function renderHomeTasks(){
         ).join('')+
         '</div>'
       : '';
-    const cleanNotes = (order.notes || '').replace(/\s*\([0-9a-f-]{20,}\)\s*$/i, '');
+    const cleanNotes = order.origin === 'native' ? (order.notes || '').split('\n').slice(1).join('\n') : (order.notes || '');
     const notesHtml = cleanNotes
       ? '<p class="page-desc" style="margin:10px 0 0;">'+escapeHtml(cleanNotes)+'</p>'
       : '';
@@ -23711,7 +23322,7 @@ function renderHomeTasks(){
       return;
     }
     body.innerHTML = comprasOrders.map(order => '<tr data-compras-order-row="'+escapeHtml(order.id)+'"'+(order.id === comprasCurrentOrderId ? ' style="background:rgba(79,134,189,.08)"' : '')+'>'+
-      '<td>'+escapeHtml(order.supplierName || order.supplierNameRaw || '—')+'</td>'+
+      '<td>'+escapeHtml(comprasOrderDisplayName(order))+'</td>'+
       '<td>'+comprasOrderOriginLabel(order)+'</td>'+
       '<td>'+comprasOrderBadges(order)+'</td>'+
       '<td>'+(order.noItemsDetailed ? 'SEM ITENS DETALHADOS' : Number(order.itemCount || 0))+'</td>'+
@@ -23766,45 +23377,337 @@ function renderHomeTasks(){
   if(el('comprasOrdersOriginFilter')) el('comprasOrdersOriginFilter').addEventListener('change', loadComprasOrdersPage);
   if(el('comprasOrdersShowCanceled')) el('comprasOrdersShowCanceled').addEventListener('change', loadComprasOrdersPage);
 
-  function renderComprasOrderItemsTable(){
-    const body = el('comprasOrderItemsBody');
-    if(!body) return;
-    if(!comprasCurrentOrderItems.length){
-      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum item neste pedido.</td></tr>';
-      return;
-    }
-    body.innerHTML = comprasCurrentOrderItems.map(item => '<tr>'+
-      '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
-      '<td>'+comprasStoreNamesLabel(item.targetStores)+'</td>'+
-      '<td>'+Number(item.quantity || 0)+'</td>'+
-      '<td>'+Number(item.receivedQuantity || 0)+'</td>'+
-      // Fase D, item 2: 0 = "não informado" (default do schema), não mostra R$ 0,00.
-      '<td>'+(Number(item.unitPriceCents || 0) > 0 ? formatCentsBRL(item.unitPriceCents) : '—')+'</td>'+
-      '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+
-        '<input type="number" min="0" max="'+Number(item.quantity || 0)+'" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;" title="Quantidade recebida">'+
-        '<input type="number" min="0" step="0.01" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)">'+
-        '<button class="btn-outline" type="button" data-compras-order-item-save="'+escapeHtml(item.id)+'">SALVAR</button>'+
-      '</span></td>'+
-    '</tr>').join('');
+  // ----- "+ NOVO PEDIDO DE COMPRA" -----
+  function openComprasDraftDialog(){
+    el('comprasDraftForm').reset();
+    el('comprasDraftFormStatus').textContent = '';
+    el('comprasDraftDialog').showModal();
+  }
+  if(el('btnNewComprasDraft')) el('btnNewComprasDraft').addEventListener('click', openComprasDraftDialog);
+  if(el('btnCloseComprasDraftDialog')) el('btnCloseComprasDraftDialog').addEventListener('click', () => el('comprasDraftDialog').close());
+  if(el('btnCancelComprasDraftDialog')) el('btnCancelComprasDraftDialog').addEventListener('click', () => el('comprasDraftDialog').close());
+  if(el('comprasDraftForm')) el('comprasDraftForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasDraftFormStatus');
+    status.textContent = '';
+    const payload = { name: el('comprasDraftName').value, notes: el('comprasDraftNotes').value };
+    try{
+      const data = await comprasNovoApiRequest('/orders', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('comprasDraftDialog').close();
+      showPurchaseToast('Pedido de compra criado.');
+      await loadComprasOrdersPage();
+      await openComprasOrderDetail(data.id);
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  function comprasStoreNamesLabel(targetStores){
+    let list = [];
+    try{ list = JSON.parse(targetStores || '[]'); }catch{ list = []; }
+    if(!Array.isArray(list) || !list.length) return '—';
+    return list.map(s => escapeHtml(s.companyName || s.companyId)).join(', ');
   }
 
-  // ----- Fase D, item 1: aba "Divisão" (division/divisionStatus) -----
-  // Se o campo ainda está vazio E o pedido tem itens, sugere um ponto de
-  // partida gerado a partir dos itens (só no client, não grava sozinho) —
-  // o usuário edita à mão a divisão por loja, texto livre, igual ao Notion.
-  function comprasDivisionSuggestion(){
-    return comprasCurrentOrderItems
+  function comprasSupplierNamesLabel(candidateSupplierIds){
+    let ids = [];
+    try{ ids = JSON.parse(candidateSupplierIds || '[]'); }catch{ ids = []; }
+    if(!Array.isArray(ids) || !ids.length) return '—';
+    return ids.map(id => escapeHtml(comprasSupplierName(id))).join(', ');
+  }
+
+  // ----- Fase F: itens + cotação, enquanto o pedido está 'aberto' -----
+  function renderComprasOrderAbertoItems(){
+    const wrap = el('comprasOrderAbertoItemsList');
+    if(!wrap) return;
+    if(!comprasCurrentOrderItems.length){
+      wrap.innerHTML = '<p class="page-desc">Nenhum item neste pedido ainda — use "+ ADICIONAR ITEM".</p>';
+      return;
+    }
+    wrap.innerHTML = comprasCurrentOrderItems.map(item => {
+      const candidateIds = item.candidateSupplierIdsList || [];
+      const quotes = item.quotes || [];
+      const quotedSupplierIds = new Set(quotes.map(q => q.supplierId));
+      // União: candidatos marcados no item + quem já cotou (mesmo sem ter
+      // sido marcado candidato) — permite cotar qualquer fornecedor válido.
+      const supplierIdsToShow = Array.from(new Set([...candidateIds, ...quotes.map(q => q.supplierId)]));
+      const quoteRows = supplierIdsToShow.map(supplierId => {
+        const quote = quotes.find(q => q.supplierId === supplierId);
+        const supplierName = quote ? quote.supplierName : comprasSupplierName(supplierId);
+        return '<tr>'+
+          '<td>'+escapeHtml(supplierName)+'</td>'+
+          '<td><input type="number" min="0" step="0.01" style="width:110px;" value="'+(quote ? (Number(quote.unitPriceCents||0)/100).toFixed(2) : '')+'" placeholder="R$" data-compras-quote-price="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'"></td>'+
+          '<td class="no-print"><span style="display:flex;gap:6px;">'+
+            '<button class="btn-outline" type="button" data-compras-quote-save="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'">SALVAR</button>'+
+            (quote ? '<button class="btn-outline" type="button" data-compras-quote-delete="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'">REMOVER</button>' : '')+
+          '</span></td>'+
+        '</tr>';
+      }).join('');
+      const otherSuppliers = comprasSuppliersCache.filter(s => !supplierIdsToShow.includes(s.id));
+      const addSupplierSelect = otherSuppliers.length
+        ? '<div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">'+
+            '<select data-compras-quote-add-supplier="'+escapeHtml(item.id)+'" style="min-width:200px;"><option value="">+ COTAR OUTRO FORNECEDOR…</option>'+
+              otherSuppliers.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('')+
+            '</select>'+
+            '<input type="number" min="0" step="0.01" placeholder="R$" style="width:110px;" data-compras-quote-add-price="'+escapeHtml(item.id)+'">'+
+            '<button class="btn-outline" type="button" data-compras-quote-add="'+escapeHtml(item.id)+'">ADICIONAR COTAÇÃO</button>'+
+          '</div>'
+        : '';
+      return '<div class="table-panel" style="margin-bottom:12px;padding:14px;">'+
+        '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:baseline;">'+
+          '<strong>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</strong>'+
+          '<span>QTD: '+Number(item.quantity || 0)+' · LOJAS: '+comprasStoreNamesLabel(item.targetStores)+'</span>'+
+          '<button class="btn-outline" type="button" data-compras-item-delete="'+escapeHtml(item.id)+'">EXCLUIR ITEM</button>'+
+        '</div>'+
+        (item.notes ? '<p class="page-desc" style="margin:6px 0 0;">'+escapeHtml(item.notes)+'</p>' : '')+
+        '<div class="table-scroll" style="margin-top:10px;">'+
+          '<table><thead><tr><th>Fornecedor</th><th>Preço unit. cotado</th><th class="no-print"></th></tr></thead>'+
+          '<tbody>'+(quoteRows || '<tr><td colspan="3" class="responsive-empty">Nenhum fornecedor candidato/cotado ainda.</td></tr>')+'</tbody></table>'+
+        '</div>'+
+        addSupplierSelect+
+      '</div>';
+    }).join('');
+  }
+
+  if(el('comprasOrderAbertoItemsList')) el('comprasOrderAbertoItemsList').addEventListener('click', async event => {
+    const deleteItemBtn = event.target.closest('[data-compras-item-delete]');
+    if(deleteItemBtn){
+      const itemId = deleteItemBtn.dataset.comprasItemDelete;
+      if(!confirm('EXCLUIR ESTE ITEM DO PEDIDO?')) return;
+      try{
+        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {method:'DELETE'});
+        await openComprasOrderDetail(comprasCurrentOrderId);
+        showPurchaseToast('Item removido.');
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      return;
+    }
+    const saveQuoteBtn = event.target.closest('[data-compras-quote-save]');
+    if(saveQuoteBtn){
+      const [itemId, supplierId] = saveQuoteBtn.dataset.comprasQuoteSave.split('|');
+      const priceInput = document.querySelector('[data-compras-quote-price="'+itemId+'|'+supplierId+'"]');
+      const unitPriceCents = priceInput ? parseBRLToCents(priceInput.value || '0') : null;
+      if(unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO VÁLIDO.', 'error'); return; }
+      try{
+        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, unitPriceCents})
+        });
+        await openComprasOrderDetail(comprasCurrentOrderId);
+        showPurchaseToast('Cotação salva.');
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      return;
+    }
+    const deleteQuoteBtn = event.target.closest('[data-compras-quote-delete]');
+    if(deleteQuoteBtn){
+      const [itemId, supplierId] = deleteQuoteBtn.dataset.comprasQuoteDelete.split('|');
+      try{
+        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes?supplierId='+encodeURIComponent(supplierId), {method:'DELETE'});
+        await openComprasOrderDetail(comprasCurrentOrderId);
+        showPurchaseToast('Cotação removida.');
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      return;
+    }
+    const addQuoteBtn = event.target.closest('[data-compras-quote-add]');
+    if(addQuoteBtn){
+      const itemId = addQuoteBtn.dataset.comprasQuoteAdd;
+      const select = document.querySelector('[data-compras-quote-add-supplier="'+itemId+'"]');
+      const priceInput = document.querySelector('[data-compras-quote-add-price="'+itemId+'"]');
+      const supplierId = select ? select.value : '';
+      if(!supplierId){ showPurchaseToast('ESCOLHA UM FORNECEDOR.', 'error'); return; }
+      const unitPriceCents = priceInput ? parseBRLToCents(priceInput.value || '0') : null;
+      if(unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO VÁLIDO.', 'error'); return; }
+      try{
+        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, unitPriceCents})
+        });
+        await openComprasOrderDetail(comprasCurrentOrderId);
+        showPurchaseToast('Cotação adicionada.');
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+    }
+  });
+
+  // ----- "DEFINIR FORNECEDOR VENCEDOR" -----
+  function renderComprasOrderWinnerSection(){
+    const body = el('comprasOrderWinnerBody');
+    const select = el('comprasOrderWinnerSelect');
+    if(!body || !select) return;
+    const bySupplier = new Map();
+    for(const item of comprasCurrentOrderItems){
+      for(const quote of (item.quotes || [])){
+        const agg = bySupplier.get(quote.supplierId) || { supplierId: quote.supplierId, supplierName: quote.supplierName, itemCount: 0, totalCents: 0 };
+        agg.itemCount += 1;
+        agg.totalCents += Number(quote.unitPriceCents || 0) * Number(item.quantity || 0);
+        bySupplier.set(quote.supplierId, agg);
+      }
+    }
+    const rows = Array.from(bySupplier.values()).sort((a,b) => b.totalCents - a.totalCents);
+    body.innerHTML = rows.length
+      ? rows.map(row => '<tr>'+
+          '<td>'+escapeHtml(row.supplierName || row.supplierId)+'</td>'+
+          '<td>'+row.itemCount+' de '+comprasCurrentOrderItems.length+(row.itemCount < comprasCurrentOrderItems.length ? ' <span class="status-pill alert">INCOMPLETO</span>' : '')+'</td>'+
+          '<td>'+formatCentsBRL(row.totalCents)+'</td>'+
+        '</tr>').join('')
+      : '<tr><td colspan="3" class="responsive-empty">Nenhuma cotação registrada ainda.</td></tr>';
+    select.innerHTML = '<option value="">-- ESCOLHA O FORNECEDOR VENCEDOR --</option>'+
+      rows.map(row => '<option value="'+escapeHtml(row.supplierId)+'">'+escapeHtml(row.supplierName || row.supplierId)+'</option>').join('');
+  }
+  if(el('btnConfirmComprasWinner')) el('btnConfirmComprasWinner').addEventListener('click', async () => {
+    const status = el('comprasOrderWinnerStatus');
+    status.textContent = '';
+    const supplierId = el('comprasOrderWinnerSelect').value;
+    if(!supplierId){ status.textContent = 'ESCOLHA O FORNECEDOR VENCEDOR.'; return; }
+    if(!confirm('CONFIRMAR ESTE FORNECEDOR COMO VENCEDOR? O pedido vai para "AGUARDANDO CHEGADA" e não será mais possível adicionar/remover itens.')) return;
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/winner', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId})
+      });
+      showPurchaseToast('Compra efetuada — pedido aguardando chegada.');
+      await loadComprasOrdersPage();
+      await openComprasOrderDetail(comprasCurrentOrderId);
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // ----- "GERAR TXT DE ORÇAMENTO" -----
+  if(el('btnGerarTxtOrcamento')) el('btnGerarTxtOrcamento').addEventListener('click', () => {
+    const order = comprasOrders.find(o => o.id === comprasCurrentOrderId);
+    const linhas = ['SOLICITAÇÃO DE ORÇAMENTO', 'Pedido: '+(order ? comprasOrderDisplayName(order) : comprasCurrentOrderId), ''];
+    for(const item of comprasCurrentOrderItems){
+      linhas.push(Number(item.quantity || 0)+'x '+(item.productName || item.productCode)+' ('+item.productCode+')');
+    }
+    const blob = new Blob(['﻿'+linhas.join('\n')], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'orcamento-pedido-'+(order ? comprasOrderDisplayName(order).replace(/[^a-z0-9]+/gi,'-') : comprasCurrentOrderId)+'.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  async function openComprasItemDialog(item){
+    el('comprasDraftItemForm').reset();
+    el('comprasItemId').value = item ? item.id : '';
+    el('comprasDraftItemDialogTitle').textContent = item ? 'EDITAR ITEM' : 'ADICIONAR ITEM';
+    el('comprasItemProductCode').value = item ? item.productCode : '';
+    el('comprasItemQuantity').value = item ? item.quantity : '';
+    el('comprasItemNotes').value = item ? (item.notes || '') : '';
+    el('comprasItemStockWrap').hidden = true;
+    el('comprasItemStockBody').innerHTML = '';
+
+    const productList = el('comprasItemProductList');
+    productList.innerHTML = Array.from(comprasProductCatalogEntries().entries())
+      .slice(0, 500)
+      .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
+      .join('');
+
+    const suppliers = await comprasNovoSuppliers();
+    let selectedSupplierIds = [];
+    if(item) selectedSupplierIds = item.candidateSupplierIdsList || [];
+    el('comprasItemSuppliersGrid').innerHTML = suppliers.length
+      ? suppliers.map(s => '<label class="permission-option"><input type="checkbox" name="comprasItemSupplier" value="'+escapeHtml(s.id)+'"'+(selectedSupplierIds.includes(s.id) ? ' checked' : '')+'> '+escapeHtml(s.name)+'</label>').join('')
+      : '<p class="page-desc">Nenhum fornecedor cadastrado no Financeiro ainda.</p>';
+
+    let selectedStoreIds = [];
+    if(item){ try{ selectedStoreIds = (JSON.parse(item.targetStores || '[]')).map(s => s.companyId); }catch{ selectedStoreIds = []; } }
+    el('comprasItemStoresGrid').innerHTML = companies.length
+      ? companies.map(c => '<label class="permission-option"><input type="checkbox" name="comprasItemStore" value="'+escapeHtml(c.id)+'" data-store-name="'+escapeHtml(c.name)+'"'+(selectedStoreIds.includes(c.id) ? ' checked' : '')+'> '+escapeHtml(c.name)+'</label>').join('')
+      : '<p class="page-desc">Nenhuma loja cadastrada.</p>';
+
+    el('comprasDraftItemFormStatus').textContent = '';
+    el('comprasDraftItemDialog').showModal();
+  }
+  if(el('btnAddComprasDraftItem')) el('btnAddComprasDraftItem').addEventListener('click', () => openComprasItemDialog(null));
+  if(el('btnCloseComprasDraftItemDialog')) el('btnCloseComprasDraftItemDialog').addEventListener('click', () => el('comprasDraftItemDialog').close());
+  if(el('btnCancelComprasDraftItemDialog')) el('btnCancelComprasDraftItemDialog').addEventListener('click', () => el('comprasDraftItemDialog').close());
+
+  if(el('btnCheckComprasItemStock')) el('btnCheckComprasItemStock').addEventListener('click', async () => {
+    const codigo = el('comprasItemProductCode').value.trim();
+    if(!codigo){ el('comprasDraftItemFormStatus').textContent = 'INFORME O CÓDIGO DO PRODUTO PARA VERIFICAR O SALDO.'; return; }
+    el('comprasDraftItemFormStatus').textContent = '';
+    try{
+      const data = await comprasNovoApiRequest('/estoque-saldo?produto='+encodeURIComponent(codigo));
+      const balances = Array.isArray(data.balances) ? data.balances : [];
+      el('comprasItemStockWrap').hidden = false;
+      el('comprasItemStockBody').innerHTML = balances.length
+        ? balances.map(b => '<tr><td>'+escapeHtml(b.companyName)+'</td><td'+(b.saldo <= 0 ? ' style="color:var(--danger,#c0392b);font-weight:700;"' : '')+'>'+Number(b.saldo)+'</td></tr>').join('')
+        : '<tr><td colspan="2" class="responsive-empty">Nenhum lançamento de estoque fiscal para este produto.</td></tr>';
+      const name = comprasFindProductName(codigo);
+      if(name) el('comprasItemProductCode').dataset.productName = name;
+    }catch(error){ el('comprasDraftItemFormStatus').textContent = error.message; }
+  });
+
+  if(el('comprasDraftItemForm')) el('comprasDraftItemForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasDraftItemFormStatus');
+    status.textContent = '';
+    if(!comprasCurrentOrderId) return;
+    const productCode = el('comprasItemProductCode').value.trim();
+    if(!productCode){ status.textContent = 'INFORME O CÓDIGO DO PRODUTO.'; return; }
+    const quantity = Number(el('comprasItemQuantity').value);
+    if(!Number.isFinite(quantity) || quantity < 0){ status.textContent = 'INFORME UMA QUANTIDADE VÁLIDA.'; return; }
+
+    const targetStores = Array.from(document.querySelectorAll('input[name="comprasItemStore"]:checked')).map(input => ({
+      companyId: input.value,
+      companyName: input.dataset.storeName || ''
+    }));
+    const candidateSupplierIds = Array.from(document.querySelectorAll('input[name="comprasItemSupplier"]:checked')).map(input => input.value);
+
+    const payload = {
+      productCode,
+      productName: comprasFindProductName(productCode) || el('comprasItemProductCode').dataset.productName || '',
+      quantity,
+      notes: el('comprasItemNotes').value,
+      targetStores,
+      candidateSupplierIds
+    };
+    const id = el('comprasItemId').value;
+    try{
+      if(id){
+        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({candidateSupplierIds})});
+      } else {
+        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      }
+      el('comprasDraftItemDialog').close();
+      await openComprasOrderDetail(comprasCurrentOrderId);
+      showPurchaseToast('Item salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // ----- Divisão (Fase D, template novo desde a Fase F) -----
+  // Sugestão pré-preenchida (editável) no formato pedido pelo usuário:
+  //   *ENTRADA* FORNECEDOR <NOME>, ORIGEM <LOJA(S)>
+  //   <QTD>x <NOME DO PRODUTO> (<CÓDIGO>)
+  // <LOJA(S)>: order.companyName se preenchido, senão a união dos nomes de
+  // loja distintos encontrados nos targetStores dos itens.
+  function comprasDivisionSuggestion(order){
+    const supplierName = (order && (order.supplierName || order.supplierNameRaw)) || 'NÃO DEFINIDO';
+    let lojas = (order && order.companyName) || '';
+    if(!lojas){
+      const nomes = new Set();
+      for(const item of comprasCurrentOrderItems){
+        let stores = [];
+        try{ stores = JSON.parse(item.targetStores || '[]'); }catch{ stores = []; }
+        for(const s of stores) if(s.companyName) nomes.add(s.companyName);
+      }
+      lojas = Array.from(nomes).join('/');
+    }
+    const header = '*ENTRADA* FORNECEDOR '+supplierName+', ORIGEM '+(lojas || 'NÃO DEFINIDA');
+    const linhas = comprasCurrentOrderItems
       .map(item => Number(item.quantity || 0)+'x '+(item.productName || item.productCode)+' ('+item.productCode+')')
       .join('\n');
+    return header+'\n\n'+linhas;
   }
   function comprasFillDivisionSection(order){
+    const panel = el('comprasOrderDivisionPanel');
+    if(!panel) return;
+    // Fase F: Divisão só aparece a partir de 'aguardando_chegada'.
+    panel.hidden = order.status === 'aberto';
+    if(panel.hidden) return;
     const textarea = el('comprasOrderDivisionText');
     const select = el('comprasOrderDivisionStatus');
     if(!textarea || !select) return;
     if(order.division){
       textarea.value = order.division;
     }else if(comprasCurrentOrderItems.length){
-      textarea.value = comprasDivisionSuggestion();
+      textarea.value = comprasDivisionSuggestion(order);
     }else{
       textarea.value = '';
     }
@@ -23827,6 +23730,7 @@ function renderHomeTasks(){
   });
 
   async function openComprasOrderDetail(orderId){
+    await comprasNovoSuppliers();
     try{
       const data = await comprasNovoApiRequest('/orders/'+encodeURIComponent(orderId));
       comprasCurrentOrderId = orderId;
@@ -23834,15 +23738,23 @@ function renderHomeTasks(){
       comprasCurrentOrderItems = Array.isArray(data.items) ? data.items : [];
       comprasCurrentOrderLinkedInvoice = data.linkedInvoice || null;
       const order = data.order;
-      // Reposiciona a linha de detalhe ANTES de popular os campos (mesmo
-      // motivo do accordion de rascunhos, ver comprasDraftDetailNode).
+      // Reposiciona a linha de detalhe ANTES de popular os campos (o nó só
+      // é encontrado por document.getElementById depois de voltar ao DOM).
       renderComprasOrdersTable();
       comprasOrderDetailNode().hidden = false;
-      el('comprasOrderDetailTitle').textContent = order.supplierName || order.supplierNameRaw || 'Pedido sem fornecedor';
+      el('comprasOrderDetailTitle').textContent = comprasOrderDisplayName(order);
       el('comprasOrderDetailMeta').innerHTML = comprasOrderDetailMetaHtml(order);
-      el('comprasOrderItemsWrap').hidden = Boolean(order.noItemsDetailed);
+
+      const isAberto = order.status === 'aberto' && !order.noItemsDetailed;
+      el('comprasOrderAbertoWrap').hidden = !isAberto;
+      if(isAberto){
+        renderComprasOrderAbertoItems();
+        renderComprasOrderWinnerSection();
+      }
+      el('comprasOrderItemsWrap').hidden = Boolean(order.noItemsDetailed) || isAberto;
       el('comprasOrderNoItemsNotice').hidden = !order.noItemsDetailed;
-      if(!order.noItemsDetailed) renderComprasOrderItemsTable();
+      if(!order.noItemsDetailed && !isAberto) renderComprasOrderItemsTable();
+
       el('btnCancelComprasOrder').hidden = Boolean(order.canceled);
       el('btnReopenComprasOrder').hidden = !order.canceled;
       comprasFillDivisionSection(order);
@@ -23855,7 +23767,29 @@ function renderHomeTasks(){
     }
   }
 
-  // ----- Fase C, item 2: NF vinculada ao pedido nativo -----
+  function renderComprasOrderItemsTable(){
+    const body = el('comprasOrderItemsBody');
+    if(!body) return;
+    if(!comprasCurrentOrderItems.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum item neste pedido.</td></tr>';
+      return;
+    }
+    body.innerHTML = comprasCurrentOrderItems.map(item => '<tr>'+
+      '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
+      '<td>'+comprasStoreNamesLabel(item.targetStores)+'</td>'+
+      '<td>'+Number(item.quantity || 0)+'</td>'+
+      '<td>'+Number(item.receivedQuantity || 0)+'</td>'+
+      // 0 = "não informado" (default do schema), não mostra R$ 0,00.
+      '<td>'+(Number(item.unitPriceCents || 0) > 0 ? formatCentsBRL(item.unitPriceCents) : '—')+'</td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+
+        '<input type="number" min="0" max="'+Number(item.quantity || 0)+'" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;" title="Quantidade recebida">'+
+        '<input type="number" min="0" step="0.01" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)">'+
+        '<button class="btn-outline" type="button" data-compras-order-item-save="'+escapeHtml(item.id)+'">SALVAR</button>'+
+      '</span></td>'+
+    '</tr>').join('');
+  }
+
+  // ----- NF vinculada ao pedido nativo -----
   function renderComprasOrderInvoiceLink(){
     const linked = el('comprasOrderInvoiceLinked');
     const unlinked = el('comprasOrderInvoiceUnlinked');
@@ -23913,10 +23847,7 @@ function renderHomeTasks(){
   // "CRIAR NOTA FISCAL PARA ESTE PEDIDO": abre o MESMO diálogo de NF manual
   // (#invoiceFormDialog, um <dialog> fora da página Financeiro — showModal()
   // funciona de qualquer tela) por cima do detalhe do pedido, sem navegar
-  // pra Notas Fiscais nem trocar a URL. Ao salvar (ou cancelar), o usuário
-  // continua exatamente onde estava, vendo o pedido — ver o submit do
-  // invoiceForm abaixo, que recarrega o detalhe do pedido em vez da lista
-  // de Notas Fiscais quando o diálogo foi aberto por aqui.
+  // pra Notas Fiscais nem trocar a URL.
   if(el('btnCreateInvoiceForOrder')) el('btnCreateInvoiceForOrder').addEventListener('click', async () => {
     if(!comprasCurrentOrderId) return;
     const order = comprasOrders.find(o => o.id === comprasCurrentOrderId);
@@ -23944,7 +23875,7 @@ function renderHomeTasks(){
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
-  // ----- Fase C, item 1: anexos (arquivo do pedido / nota fiscal) -----
+  // ----- Anexos (arquivo do pedido / nota fiscal) -----
   async function renderComprasOrderAttachments(attachmentType){
     const box = el(attachmentType === 'pedido' ? 'comprasOrderAttachmentsPedido' : 'comprasOrderAttachmentsNota');
     if(!box || !comprasCurrentOrderId) return;
@@ -23980,7 +23911,7 @@ function renderHomeTasks(){
     await comprasOrderUploadAttachment(file, 'nota_fiscal');
   });
 
-  // ----- Fase C, item 4: cancelar/reabrir pedido -----
+  // ----- Cancelar/reabrir pedido -----
   if(el('btnCancelComprasOrder')) el('btnCancelComprasOrder').addEventListener('click', async () => {
     if(!comprasCurrentOrderId) return;
     if(!confirm('CANCELAR ESTE PEDIDO? Itens deste pedido deixarão de poder receber mercadoria.')) return;
@@ -24042,12 +23973,17 @@ function renderHomeTasks(){
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
+  // ----- "EDITAR PEDIDO" -----
+  // Fase F: pedidos nativos têm o status controlado pelo pipeline (ver
+  // #comprasOrderEditStatusField, oculto pra origin='native') — só notes,
+  // datas ficam editáveis livremente nesse caso.
   if(el('btnEditComprasOrder')) el('btnEditComprasOrder').addEventListener('click', () => {
     if(!comprasCurrentOrderId) return;
     const order = comprasOrders.find(o => o.id === comprasCurrentOrderId);
     if(!order) return;
     el('comprasOrderEditId').value = order.id;
-    el('comprasOrderEditStatus').value = order.status;
+    el('comprasOrderEditStatusField').hidden = order.origin === 'native';
+    el('comprasOrderEditStatus').value = order.origin === 'native' ? 'pendente' : order.status;
     el('comprasOrderEditExpectedDate').value = order.expectedDate || '';
     el('comprasOrderEditReceivedDate').value = order.receivedDate || '';
     el('comprasOrderEditNotes').value = order.notes || '';
@@ -24061,12 +23997,15 @@ function renderHomeTasks(){
     const status = el('comprasOrderEditFormStatus');
     status.textContent = '';
     const id = el('comprasOrderEditId').value;
+    const order = comprasOrders.find(o => o.id === id);
     const payload = {
-      status: el('comprasOrderEditStatus').value,
       expectedDate: el('comprasOrderEditExpectedDate').value,
       receivedDate: el('comprasOrderEditReceivedDate').value,
       notes: el('comprasOrderEditNotes').value
     };
+    // Só manda status pra pedidos importados do Notion — nativos têm o
+    // status controlado pelo pipeline (winner/recebimento automático).
+    if(order && order.origin !== 'native') payload.status = el('comprasOrderEditStatus').value;
     try{
       await comprasNovoApiRequest('/orders/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       el('comprasOrderEditDialog').close();
@@ -24076,9 +24015,9 @@ function renderHomeTasks(){
     }catch(error){ status.textContent = error.message; }
   });
 
-  // ----- Fase D, item 3: aba "Por Produto" — busca simples (sem varredura
-  // de todos os produtos, sem filtro de período/loja), reaproveitando o
-  // mesmo catálogo carregado no cliente pro formulário de item de rascunho.
+  // ----- Aba "Por Produto" — busca simples (sem varredura de todos os
+  // produtos, sem filtro de período/loja), reaproveitando o mesmo catálogo
+  // carregado no cliente pro formulário de item de pedido.
   let comprasProdutoBuscaListLoaded = false;
   function initComprasProdutoBusca(){
     if(!comprasProdutoBuscaListLoaded){
@@ -24100,6 +24039,8 @@ function renderHomeTasks(){
       el('comprasProdutoTotalQtd').textContent = Number(historico.totalQuantity || 0);
       el('comprasProdutoTotalPedidos').textContent = Number(historico.distinctOrderCount || 0);
       el('comprasProdutoUltimaCompra').textContent = historico.lastPurchaseDate || '—';
+      el('comprasProdutoEmAndamento').textContent = Number(historico.inProgressQuantity || 0);
+      el('comprasProdutoAtrasado').textContent = Number(historico.lateQuantity || 0);
 
       const suppliers = Array.isArray(historico.suppliers) ? historico.suppliers : [];
       el('comprasProdutoFornecedoresBody').innerHTML = suppliers.length

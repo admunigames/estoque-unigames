@@ -2468,81 +2468,29 @@ export const financeMallDeclarationAttachments = pgTable(
   ],
 );
 
-// Módulo "Compras" nativo (Fase A) — convive em paralelo com o Controle de
-// Compras atual (Notion, app/lib/notion.ts + app/api/compras/*), que
-// continua funcionando sem nenhuma alteração. Ver [[estoque_compras_nativo]]
-// para o desenho completo. Resumo das decisões da Fase A:
-//  - purchase_drafts/purchase_draft_items cobrem só o rascunho colaborativo
-//    (o que precisa ser comprado, para quais lojas, com quais fornecedores
-//    candidatos) — SEM nenhum fluxo de pedido/recebimento ainda (isso é
-//    Fase B).
-//  - productCode/productName em purchase_draft_items são um SNAPSHOT do
-//    catálogo (products_catalog em shared_state) no momento em que o item
-//    foi adicionado — não existe tabela relacional de produtos no sistema,
-//    então não há FK possível aqui (mesmo padrão de supplierId, sem FK real
-//    para finance_suppliers).
+// Módulo "Compras" nativo — convive em paralelo com o Controle de Compras
+// atual (Notion, app/lib/notion.ts + app/api/compras/*), que continua
+// funcionando sem nenhuma alteração. Ver [[estoque_compras_nativo]] para o
+// desenho completo.
+//  - Fase F fundiu rascunho + pedido numa única entidade ("Pedido de
+//    Compra"): purchase_drafts/purchase_draft_items (Fase A) foram
+//    REMOVIDAS — confirmado vazias em produção antes do DROP TABLE — e um
+//    pedido nativo (origin='native') já nasce como purchase_orders, sem
+//    etapa de "converter rascunho em pedido(s)".
+//  - productCode/productName em purchase_order_items são um SNAPSHOT do
+//    catálogo (product_catalog) no momento em que o item foi adicionado —
+//    não existe tabela relacional de produtos no sistema, então não há FK
+//    possível aqui (mesmo padrão de supplierId, sem FK real para
+//    finance_suppliers).
 //  - targetStores/candidateSupplierIds ficam como texto JSON (arrays), no
 //    mesmo espírito de campos JSON já usados no projeto (ex. permissions_json
-//    em app_users) — evita uma tabela de junção só pra Fase A.
-//  - purchase_orders já nasce agora, mas só para a IMPORTAÇÃO do Notion
-//    (origin='notion_import', noItemsDetailed=1 para todo pedido importado),
-//    preparando o terreno pra Fase B (pedidos nativos, origin='native').
+//    em app_users) — evita uma tabela de junção só pra isso.
+//  - purchase_orders também é usado para a IMPORTAÇÃO do Notion
+//    (origin='notion_import', noItemsDetailed=1 para todo pedido importado).
 //    notionPurchaseId é o dedupe (mesmo padrão de supplier_invoices,
 //    ver notionPurchaseId ~linha 1197) — permite rodar o script de
 //    importação (db/scripts/import-notion-purchases.mjs) mais de uma vez
 //    sem duplicar.
-export const purchaseDrafts = pgTable(
-  "purchase_drafts",
-  {
-    id: text("id").primaryKey(),
-    name: text("name").notNull(),
-    // 'aberto' | 'arquivado' | 'convertido' (Fase B: rascunho que já virou
-    // pedido(s) de verdade via POST /drafts/:id/convert — não recebe mais
-    // itens nem pode ser convertido de novo).
-    status: text("status").notNull().default("aberto"),
-    notes: text("notes").notNull().default(""),
-    createdBy: text("created_by").notNull(),
-    createdByName: text("created_by_name").notNull().default(""),
-    createdAt: text("created_at").notNull().default(sql`now()::text`),
-    updatedBy: text("updated_by").notNull().default(""),
-    updatedByName: text("updated_by_name").notNull().default(""),
-    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
-  },
-  (table) => [
-    index("purchase_drafts_status_idx").on(table.status),
-  ],
-);
-
-export const purchaseDraftItems = pgTable(
-  "purchase_draft_items",
-  {
-    id: text("id").primaryKey(),
-    draftId: text("draft_id").notNull(),
-    productCode: text("product_code").notNull(),
-    // Snapshot do nome do produto no catálogo (products_catalog) no
-    // momento da adição — não é atualizado se o catálogo mudar depois.
-    productName: text("product_name").notNull().default(""),
-    quantity: integer("quantity").notNull().default(0),
-    // JSON: [{ "companyId": "...", "companyName": "..." }, ...]
-    targetStores: text("target_stores").notNull().default("[]"),
-    // JSON: ["<supplierId>", ...] — pode ter mais de um fornecedor candidato.
-    candidateSupplierIds: text("candidate_supplier_ids").notNull().default("[]"),
-    notes: text("notes").notNull().default(""),
-    // Snapshot opcional do saldo por loja (resultado de /estoque-saldo) no
-    // momento em que o item foi adicionado, só para referência futura.
-    stockSnapshotJson: text("stock_snapshot_json").notNull().default("{}"),
-    createdBy: text("created_by").notNull(),
-    createdByName: text("created_by_name").notNull().default(""),
-    createdAt: text("created_at").notNull().default(sql`now()::text`),
-    updatedBy: text("updated_by").notNull().default(""),
-    updatedByName: text("updated_by_name").notNull().default(""),
-    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
-  },
-  (table) => [
-    index("purchase_draft_items_draft_idx").on(table.draftId),
-  ],
-);
-
 export const purchaseOrders = pgTable(
   "purchase_orders",
   {
@@ -2568,11 +2516,17 @@ export const purchaseOrders = pgTable(
     // valores de VALID_DIVISION_STATUSES ou "" (ainda não definido).
     division: text("division").notNull().default(""),
     divisionStatus: text("division_status").notNull().default(""),
-    // Mapeamento do STATUS do Notion: "Não iniciado" -> 'pendente',
-    // "Em andamento" -> 'em_andamento', "Concluído" -> 'concluido'.
+    // Valores válidos para pedidos NATIVOS (origin='native', pipeline da
+    // Fase F): 'aberto' (comprador monta itens/cotações, sem vencedor) ->
+    // 'aguardando_chegada' (vencedor definido, ver wonAt/wonBy abaixo;
+    // Divisão/recebimento liberados) -> 'concluido' (automático, todo item
+    // com receivedQuantity >= quantity). Pedidos importados do Notion
+    // (origin='notion_import') continuam usando os valores herdados do
+    // Notion: 'pendente' | 'em_andamento' | 'concluido'. Sem enum no
+    // banco — é texto livre, a validação fica no endpoint (VALID_STATUSES).
     status: text("status").notNull().default("pendente"),
-    // 1 para pedidos importados do Notion (que não têm itens detalhados
-    // nesta Fase A), 0 para pedidos nativos.
+    // 1 para pedidos importados do Notion (sem itens detalhados), 0 para
+    // pedidos nativos.
     noItemsDetailed: integer("no_items_detailed").notNull().default(0),
     notes: text("notes").notNull().default(""),
     // Fase C: cancelamento explícito (mesmo padrão booleano-como-integer de
@@ -2580,6 +2534,14 @@ export const purchaseOrders = pgTable(
     // receivedQuantity nos itens e some da lista padrão de Pedidos (ver
     // GET /orders?includeCanceled=1 pra reexibir).
     canceled: integer("canceled").notNull().default(0),
+    // Fase F: marco "COMPRA EFETUADA" — gravado no momento em que o
+    // comprador define o fornecedor vencedor (POST /orders/:id/winner),
+    // junto com a transição de status para 'aguardando_chegada'. É um
+    // marco (timestamp + quem definiu), não um status — fica sempre
+    // preenchido dali em diante, mesmo que o pedido depois seja cancelado.
+    wonAt: text("won_at").notNull().default(""),
+    wonBy: text("won_by").notNull().default(""),
+    wonByName: text("won_by_name").notNull().default(""),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -2592,19 +2554,28 @@ export const purchaseOrders = pgTable(
   ],
 );
 
-// Fase B: itens de um purchase_orders nativo (origin='native'). Pedidos
-// importados do Notion (origin='notion_import') não têm linhas aqui —
-// continuam representados só por noItemsDetailed=1 em purchase_orders.
-//  - draftItemId rastreia de qual purchase_draft_items este item veio (via
-//    POST /drafts/:id/convert) — fica vazio se o pedido não nasceu de uma
-//    conversão de rascunho.
-//  - Mesma granularidade item×total do draft de origem: quantity é um total
-//    único e targetStores é só informativo (não existe split de quantidade
-//    por loja nesta fase).
+// Itens de um purchase_orders nativo (origin='native'). Pedidos importados
+// do Notion (origin='notion_import') não têm linhas aqui — continuam
+// representados só por noItemsDetailed=1 em purchase_orders.
+//  - draftItemId era usado (Fase A/B) pra rastrear de qual rascunho um item
+//    veio via conversão — a Fase F fundiu rascunho+pedido numa entidade só,
+//    então esse fluxo não existe mais. Mantido na tabela (sempre vazio nos
+//    pedidos criados a partir de agora) por não valer o custo de uma
+//    migration de DROP COLUMN só por limpeza.
+//  - candidateSupplierIds (Fase F): JSON de supplierId candidatos a
+//    vencedor deste item — mesmo formato que existia em
+//    purchase_draft_items.candidateSupplierIds antes da fusão.
+//  - Mesma granularidade item×total: quantity é um total único e
+//    targetStores é só informativo (não existe split de quantidade por
+//    loja).
 //  - receivedQuantity é atualizado como valor absoluto (não incremento) via
 //    PATCH /orders/:id/items/:itemId — quando todo item do pedido atinge
 //    receivedQuantity >= quantity, o status do purchase_orders pai muda
 //    automaticamente para 'concluido'.
+//  - unitPriceCents: até a Fase E era só um valor informado manualmente;
+//    na Fase F, ao definir o vencedor (POST /orders/:id/winner), é
+//    sobrescrito com o preço da cotação (purchase_order_item_quotes) desse
+//    fornecedor pra este item, se existir uma.
 export const purchaseOrderItems = pgTable(
   "purchase_order_items",
   {
@@ -2615,14 +2586,12 @@ export const purchaseOrderItems = pgTable(
     productName: text("product_name").notNull().default(""),
     quantity: integer("quantity").notNull().default(0),
     receivedQuantity: integer("received_quantity").notNull().default(0),
-    // Fase D, item 2: preço unitário praticado por este fornecedor neste
-    // pedido, em centavos (mesmo padrão de dinheiro-em-centavos do resto do
-    // Financeiro, ex. supplier_invoices.totalAmountCents). Opcional — 0
-    // significa "não informado" e a UI não mostra como R$ 0,00 nesse caso.
     unitPriceCents: integer("unit_price_cents").notNull().default(0),
-    // JSON: [{ "companyId": "...", "companyName": "..." }, ...] — copiado do
-    // purchase_draft_items de origem, só informativo.
+    // JSON: [{ "companyId": "...", "companyName": "..." }, ...] — informativo.
     targetStores: text("target_stores").notNull().default("[]"),
+    // JSON: ["<supplierId>", ...] — fornecedores candidatos a cotar/vencer
+    // este item, enquanto o pedido está 'aberto'.
+    candidateSupplierIds: text("candidate_supplier_ids").notNull().default("[]"),
     notes: text("notes").notNull().default(""),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
@@ -2633,6 +2602,33 @@ export const purchaseOrderItems = pgTable(
   },
   (table) => [
     index("purchase_order_items_order_idx").on(table.orderId),
+  ],
+);
+
+// Fase F: cotação de um fornecedor candidato para um item específico,
+// registrada ENQUANTO o pedido está 'aberto' (antes de definir o
+// vencedor) — permite comparar preços entre os fornecedores candidatos
+// antes de fechar a compra. Uma linha por (itemId, supplierId); ao definir
+// o vencedor (POST /orders/:id/winner), a cotação do fornecedor vencedor
+// (se existir) é copiada pra purchase_order_items.unit_price_cents.
+export const purchaseOrderItemQuotes = pgTable(
+  "purchase_order_item_quotes",
+  {
+    id: text("id").primaryKey(),
+    itemId: text("item_id").notNull(),
+    supplierId: text("supplier_id").notNull(),
+    unitPriceCents: integer("unit_price_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("purchase_order_item_quotes_item_idx").on(table.itemId),
+    uniqueIndex("purchase_order_item_quotes_item_supplier_idx").on(table.itemId, table.supplierId),
   ],
 );
 
