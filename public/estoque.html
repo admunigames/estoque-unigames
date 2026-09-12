@@ -4612,9 +4612,6 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Compras</h2>
         </div>
-        <div class="page-header-meta">
-          <p class="page-desc">Pedidos de compra nativos — do orçamento com fornecedores candidatos até a chegada e divisão entre lojas — independente do Controle de Compras.</p>
-        </div>
       </header>
 
       <div class="supply-tabs" role="tablist" aria-label="Seções de compras">
@@ -4649,6 +4646,10 @@
           </div>
         </div>
 
+        <p class="page-header-actions" id="comprasOrdersLateOnlyNotice" hidden style="justify-content:flex-start;gap:8px;margin:0 0 10px;">
+          <span class="status-pill alert">MOSTRANDO SÓ ATRASADOS</span>
+          <button class="btn-outline" id="btnClearComprasLateFilter" type="button">LIMPAR FILTRO</button>
+        </p>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="comprasOrdersTable">
@@ -4766,28 +4767,28 @@
            produtos nem filtros de período/loja. Aba padrão/inicial do
            módulo desde a Fase F. -->
       <section id="comprasSectionPorProduto">
-        <div class="page-header-actions" style="justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-          <p class="page-desc" style="margin:0;">Busque um produto para ver quanto já foi comprado, de quais fornecedores (e por qual preço), o que está a caminho e o saldo atual em cada loja.</p>
+        <div class="page-header-actions" style="justify-content:flex-end;margin-bottom:12px;">
           <button class="btn-accent" id="btnNewComprasDraftPorProduto" type="button">+ NOVO PEDIDO DE COMPRA</button>
         </div>
 
         <!-- Números gerais do módulo, visíveis já na tela inicial (antes de
-             qualquer busca) — pedido do usuário depois de ver a tela em
-             branco. Sem gráfico por enquanto, só os totais. -->
+             qualquer busca) — sem gráfico por enquanto, só os totais. Cada
+             card é clicável e abre a aba Pedidos já filtrada pro status
+             correspondente. -->
         <div class="compras-stat-cards" id="comprasStatCards">
-          <div class="compras-stat-card">
+          <div class="compras-stat-card" id="comprasStatAbertosCard" role="button" tabindex="0" style="cursor:pointer;">
             <div class="compras-stat-value" id="comprasStatAbertos">—</div>
             <div class="compras-stat-label">Pedidos abertos</div>
           </div>
-          <div class="compras-stat-card">
+          <div class="compras-stat-card" id="comprasStatAguardandoCard" role="button" tabindex="0" style="cursor:pointer;">
             <div class="compras-stat-value" id="comprasStatAguardando">—</div>
             <div class="compras-stat-label">Aguardando chegada</div>
           </div>
-          <div class="compras-stat-card alert">
+          <div class="compras-stat-card alert" id="comprasStatAtrasadosCard" role="button" tabindex="0" style="cursor:pointer;">
             <div class="compras-stat-value" id="comprasStatAtrasados">—</div>
             <div class="compras-stat-label">Atrasados</div>
           </div>
-          <div class="compras-stat-card">
+          <div class="compras-stat-card" id="comprasStatConcluidosCard" role="button" tabindex="0" style="cursor:pointer;">
             <div class="compras-stat-value" id="comprasStatConcluidos">—</div>
             <div class="compras-stat-label">Concluídos</div>
           </div>
@@ -4803,9 +4804,7 @@
 
         <!-- Visível só ANTES de uma busca — sem isso a aba (que é a tela
              inicial do módulo desde a Fase F) ficava em branco até o
-             usuário digitar algo. "Últimos produtos comprados" também
-             estava no pedido original do item 1 e nunca tinha sido
-             implementado de verdade (só existia por produto, sob busca). -->
+             usuário digitar algo. -->
         <div id="comprasProdutoRecentesWrap">
           <div class="table-panel">
             <h4 style="margin:0 0 8px;padding:16px 16px 0;">ÚLTIMOS PRODUTOS COMPRADOS</h4>
@@ -23397,6 +23396,11 @@ function renderHomeTasks(){
     }
   }
 
+  // "Atrasado" não é um status de verdade (é aguardando_chegada + previsão
+  // vencida) — não dá pra filtrar no servidor com um valor simples de
+  // status, então filtra no cliente depois de buscar (ver card clicável
+  // "Atrasados" na tela inicial, comprasOpenPedidosFiltered abaixo).
+  let comprasOrdersLateOnlyFilter = false;
   async function loadComprasOrdersPage(){
     if(!canAccess('purchases_draft')) return;
     const status = el('comprasOrdersStatusFilter').value;
@@ -23411,7 +23415,9 @@ function renderHomeTasks(){
       const qs = query.toString();
       const data = await comprasNovoApiRequest('/orders'+(qs ? '?'+qs : ''));
       comprasOrders = Array.isArray(data.orders) ? data.orders : [];
+      if(comprasOrdersLateOnlyFilter) comprasOrders = comprasOrders.filter(comprasOrderIsLate);
       renderComprasOrdersTable();
+      el('comprasOrdersLateOnlyNotice').hidden = !comprasOrdersLateOnlyFilter;
       if(comprasCurrentOrderId && !comprasOrders.some(o => o.id === comprasCurrentOrderId)){
         comprasCurrentOrderId = '';
         comprasOrderDetailOpenId = '';
@@ -23422,9 +23428,28 @@ function renderHomeTasks(){
       el('comprasOrdersTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
-  if(el('comprasOrdersStatusFilter')) el('comprasOrdersStatusFilter').addEventListener('change', loadComprasOrdersPage);
-  if(el('comprasOrdersOriginFilter')) el('comprasOrdersOriginFilter').addEventListener('change', loadComprasOrdersPage);
-  if(el('comprasOrdersShowCanceled')) el('comprasOrdersShowCanceled').addEventListener('change', loadComprasOrdersPage);
+  function handleComprasOrdersFilterChange(){
+    comprasOrdersLateOnlyFilter = false;
+    loadComprasOrdersPage();
+  }
+  if(el('comprasOrdersStatusFilter')) el('comprasOrdersStatusFilter').addEventListener('change', handleComprasOrdersFilterChange);
+  if(el('comprasOrdersOriginFilter')) el('comprasOrdersOriginFilter').addEventListener('change', handleComprasOrdersFilterChange);
+  if(el('comprasOrdersShowCanceled')) el('comprasOrdersShowCanceled').addEventListener('change', handleComprasOrdersFilterChange);
+  if(el('btnClearComprasLateFilter')) el('btnClearComprasLateFilter').addEventListener('click', handleComprasOrdersFilterChange);
+
+  // Cards clicáveis da tela inicial (Por Produto) — cada um abre a aba
+  // Pedidos já filtrada pro status correspondente.
+  function comprasOpenPedidosFiltered(status, lateOnly){
+    setComprasSectionTab('pedidos');
+    el('comprasOrdersStatusFilter').value = status || '';
+    el('comprasOrdersOriginFilter').value = 'native';
+    comprasOrdersLateOnlyFilter = Boolean(lateOnly);
+    loadComprasOrdersPage();
+  }
+  if(el('comprasStatAbertosCard')) el('comprasStatAbertosCard').addEventListener('click', () => comprasOpenPedidosFiltered('aberto', false));
+  if(el('comprasStatAguardandoCard')) el('comprasStatAguardandoCard').addEventListener('click', () => comprasOpenPedidosFiltered('aguardando_chegada', false));
+  if(el('comprasStatAtrasadosCard')) el('comprasStatAtrasadosCard').addEventListener('click', () => comprasOpenPedidosFiltered('aguardando_chegada', true));
+  if(el('comprasStatConcluidosCard')) el('comprasStatConcluidosCard').addEventListener('click', () => comprasOpenPedidosFiltered('concluido', false));
 
   // ----- "+ NOVO PEDIDO DE COMPRA" -----
   function openComprasDraftDialog(){
@@ -24107,7 +24132,7 @@ function renderHomeTasks(){
             '<td>'+comprasOrderStatusBadge(item.orderStatus)+'</td>'+
             '<td>'+(item.createdAt ? escapeHtml(String(item.createdAt).slice(0,10)) : '—')+'</td>'+
           '</tr>').join('')
-        : '<tr><td colspan="5" class="responsive-empty">Nenhum produto comprado ainda — use "+ NOVO PEDIDO DE COMPRA" pra começar.</td></tr>';
+        : '<tr><td colspan="5" class="responsive-empty">Nenhum produto comprado ainda.</td></tr>';
     }catch(error){
       body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
