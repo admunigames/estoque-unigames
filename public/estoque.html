@@ -4761,7 +4761,10 @@
            produtos nem filtros de período/loja. Aba padrão/inicial do
            módulo desde a Fase F. -->
       <section id="comprasSectionPorProduto">
-        <p class="page-desc" style="margin:0 0 12px;">Busque um produto para ver quanto já foi comprado, de quais fornecedores (e por qual preço), o que está a caminho e o saldo atual em cada loja.</p>
+        <div class="page-header-actions" style="justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+          <p class="page-desc" style="margin:0;">Busque um produto para ver quanto já foi comprado, de quais fornecedores (e por qual preço), o que está a caminho e o saldo atual em cada loja.</p>
+          <button class="btn-accent" id="btnNewComprasDraftPorProduto" type="button">+ NOVO PEDIDO DE COMPRA</button>
+        </div>
         <div class="purchase-form-grid" style="margin-bottom:16px;">
           <div class="purchase-field full">
             <label for="comprasProdutoBusca">PRODUTO (CÓDIGO OU NOME)</label>
@@ -4769,6 +4772,24 @@
             <datalist id="comprasProdutoBuscaList"></datalist>
           </div>
         </div>
+
+        <!-- Visível só ANTES de uma busca — sem isso a aba (que é a tela
+             inicial do módulo desde a Fase F) ficava em branco até o
+             usuário digitar algo. "Últimos produtos comprados" também
+             estava no pedido original do item 1 e nunca tinha sido
+             implementado de verdade (só existia por produto, sob busca). -->
+        <div id="comprasProdutoRecentesWrap">
+          <div class="table-panel">
+            <h4 style="margin:0 0 8px;padding:16px 16px 0;">ÚLTIMOS PRODUTOS COMPRADOS</h4>
+            <div class="table-scroll">
+              <table id="comprasProdutoRecentesTable">
+                <thead><tr><th>Produto</th><th>Qtd</th><th>Fornecedor</th><th>Pedido</th><th>Data</th></tr></thead>
+                <tbody id="comprasProdutoRecentesBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div id="comprasProdutoHistoricoWrap" hidden>
           <div class="payable-detail-grid" style="margin-bottom:16px;">
             <div><span>QUANTIDADE TOTAL COMPRADA</span><strong id="comprasProdutoTotalQtd">0</strong></div>
@@ -24027,9 +24048,37 @@ function renderHomeTasks(){
         .join('');
       comprasProdutoBuscaListLoaded = true;
     }
+    if(!el('comprasProdutoBusca').value.trim()) loadComprasProdutoRecentes();
   }
+  // Tela inicial da aba (antes de qualquer busca) — sem isso a aba ficava
+  // em branco. "Últimos produtos comprados" já estava no pedido original.
+  async function loadComprasProdutoRecentes(){
+    const body = el('comprasProdutoRecentesBody');
+    body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await comprasNovoApiRequest('/produtos/recentes');
+      const items = Array.isArray(data.items) ? data.items : [];
+      body.innerHTML = items.length
+        ? items.map(item => '<tr>'+
+            '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
+            '<td>'+Number(item.quantity || 0)+'</td>'+
+            '<td>'+escapeHtml(item.supplierName || '—')+'</td>'+
+            '<td>'+comprasOrderStatusBadge(item.orderStatus)+'</td>'+
+            '<td>'+(item.createdAt ? escapeHtml(String(item.createdAt).slice(0,10)) : '—')+'</td>'+
+          '</tr>').join('')
+        : '<tr><td colspan="5" class="responsive-empty">Nenhum produto comprado ainda — use "+ NOVO PEDIDO DE COMPRA" pra começar.</td></tr>';
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  if(el('btnNewComprasDraftPorProduto')) el('btnNewComprasDraftPorProduto').addEventListener('click', openComprasDraftDialog);
   async function loadComprasProdutoHistorico(codigo){
-    if(!codigo){ el('comprasProdutoHistoricoWrap').hidden = true; return; }
+    if(!codigo){
+      el('comprasProdutoHistoricoWrap').hidden = true;
+      el('comprasProdutoRecentesWrap').hidden = false;
+      return;
+    }
+    el('comprasProdutoRecentesWrap').hidden = true;
     try{
       const [historico, saldo] = await Promise.all([
         comprasNovoApiRequest('/produtos/historico?produto='+encodeURIComponent(codigo)),
