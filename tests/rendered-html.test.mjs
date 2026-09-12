@@ -3140,10 +3140,15 @@ test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aber
   assert.match(schema, /export const purchaseOrderItemQuotes = pgTable\(\s*"purchase_order_item_quotes"/);
   assert.match(schema, /uniqueIndex\("purchase_order_item_quotes_item_supplier_idx"\)\.on\(table\.itemId, table\.supplierId\)/);
 
-  // Migration: DROP das tabelas de rascunho, ADD COLUMN aditivos e a
-  // tabela de cotações nova com RLS/REVOKE (mesmo padrão das anteriores).
-  assert.match(migration, /DROP TABLE "purchase_draft_items"/);
-  assert.match(migration, /DROP TABLE "purchase_drafts"/);
+  // Migration: ADD COLUMN aditivos e a tabela de cotações nova com
+  // RLS/REVOKE (mesmo padrão das anteriores). purchase_drafts/
+  // purchase_draft_items NÃO são apagadas por esta migration — havia um
+  // rascunho real em produção ("PREXX", RENATO) quando a Fase F ia ser
+  // aplicada; as tabelas antigas ficam preservadas (órfãs, sem código que
+  // as referencie mais) por decisão do usuário, ver nota no próprio arquivo
+  // de migration.
+  assert.doesNotMatch(migration, /DROP TABLE "purchase_draft_items"/);
+  assert.doesNotMatch(migration, /DROP TABLE "purchase_drafts"/);
   assert.match(migration, /ALTER TABLE "purchase_orders" ADD COLUMN "won_at"/);
   assert.match(migration, /ALTER TABLE "purchase_orders" ADD COLUMN "won_by"/);
   assert.match(migration, /ALTER TABLE "purchase_orders" ADD COLUMN "won_by_name"/);

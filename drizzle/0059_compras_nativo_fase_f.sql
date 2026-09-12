@@ -1,5 +1,10 @@
-DROP TABLE "purchase_draft_items";--> statement-breakpoint
-DROP TABLE "purchase_drafts";--> statement-breakpoint
+-- NOTA: os DROP TABLE de purchase_draft_items/purchase_drafts foram
+-- removidos deste arquivo por decisão do usuário — havia um rascunho real
+-- ("PREXX", criado por RENATO em 2026-09-12) em produção quando essa
+-- migration ia ser aplicada. As tabelas antigas ficam preservadas no banco
+-- (não são mais referenciadas pelo código, que agora usa só purchase_orders/
+-- purchase_order_items), e o rascunho foi recriado manualmente como um
+-- Pedido de Compra nativo (ver db/scripts/fase-f-migrate-prexx-draft.mjs).
 ALTER TABLE "purchase_orders" ADD COLUMN "won_at" text DEFAULT '' NOT NULL;--> statement-breakpoint
 ALTER TABLE "purchase_orders" ADD COLUMN "won_by" text DEFAULT '' NOT NULL;--> statement-breakpoint
 ALTER TABLE "purchase_orders" ADD COLUMN "won_by_name" text DEFAULT '' NOT NULL;--> statement-breakpoint
