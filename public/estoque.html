@@ -1144,6 +1144,11 @@
   .status-pill.done{color:#b7ead0; border-color:rgba(84,196,138,.38); background:rgba(84,196,138,.1);}
   .status-pill.waiting{color:#ffe0a1; border-color:rgba(228,184,95,.4); background:rgba(228,184,95,.1);}
   .status-pill.alert{color:#ffb4a8; border-color:rgba(239,106,85,.45); background:rgba(239,106,85,.12);}
+  .compras-stat-cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:18px;}
+  .compras-stat-card{border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:rgba(255,255,255,.02);}
+  .compras-stat-card .compras-stat-value{font:800 28px/1.1 var(--mono); color:var(--ink);}
+  .compras-stat-card.alert .compras-stat-value{color:#ffb4a8;}
+  .compras-stat-card .compras-stat-label{margin-top:6px; font:700 10px/1.3 var(--sans); letter-spacing:.6px; text-transform:uppercase; color:var(--ink-faint);}
   .loan-details-dialog{width:min(460px,calc(100vw - 28px));}
   .loan-details-dialog .purchase-form{padding-top:16px;}
   .loan-details-dialog .purchase-card-details{grid-template-columns:1fr; gap:7px;}
@@ -4765,6 +4770,29 @@
           <p class="page-desc" style="margin:0;">Busque um produto para ver quanto já foi comprado, de quais fornecedores (e por qual preço), o que está a caminho e o saldo atual em cada loja.</p>
           <button class="btn-accent" id="btnNewComprasDraftPorProduto" type="button">+ NOVO PEDIDO DE COMPRA</button>
         </div>
+
+        <!-- Números gerais do módulo, visíveis já na tela inicial (antes de
+             qualquer busca) — pedido do usuário depois de ver a tela em
+             branco. Sem gráfico por enquanto, só os totais. -->
+        <div class="compras-stat-cards" id="comprasStatCards">
+          <div class="compras-stat-card">
+            <div class="compras-stat-value" id="comprasStatAbertos">—</div>
+            <div class="compras-stat-label">Pedidos abertos</div>
+          </div>
+          <div class="compras-stat-card">
+            <div class="compras-stat-value" id="comprasStatAguardando">—</div>
+            <div class="compras-stat-label">Aguardando chegada</div>
+          </div>
+          <div class="compras-stat-card alert">
+            <div class="compras-stat-value" id="comprasStatAtrasados">—</div>
+            <div class="compras-stat-label">Atrasados</div>
+          </div>
+          <div class="compras-stat-card">
+            <div class="compras-stat-value" id="comprasStatConcluidos">—</div>
+            <div class="compras-stat-label">Concluídos</div>
+          </div>
+        </div>
+
         <div class="purchase-form-grid" style="margin-bottom:16px;">
           <div class="purchase-field full">
             <label for="comprasProdutoBusca">PRODUTO (CÓDIGO OU NOME)</label>
@@ -24049,6 +24077,19 @@ function renderHomeTasks(){
       comprasProdutoBuscaListLoaded = true;
     }
     if(!el('comprasProdutoBusca').value.trim()) loadComprasProdutoRecentes();
+    loadComprasStats();
+  }
+  async function loadComprasStats(){
+    try{
+      const data = await comprasNovoApiRequest('/stats');
+      el('comprasStatAbertos').textContent = Number(data.abertos || 0);
+      el('comprasStatAguardando').textContent = Number(data.aguardandoChegada || 0);
+      el('comprasStatAtrasados').textContent = Number(data.atrasados || 0);
+      el('comprasStatConcluidos').textContent = Number(data.concluidos || 0);
+    }catch{
+      // Números gerais são só um resumo visual — falha aqui não deve travar
+      // o resto da tela (busca/últimos produtos continuam funcionando).
+    }
   }
   // Tela inicial da aba (antes de qualquer busca) — sem isso a aba ficava
   // em branco. "Últimos produtos comprados" já estava no pedido original.
