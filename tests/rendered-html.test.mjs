@@ -3082,218 +3082,158 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
   assert.match(html, /if\(cashFlowData\.taxesAndFeesIncluded === false\)\{\s*footerNotes\.push/);
 });
 
-test("Módulo Compras nativo (Fase A): rascunhos de compra convivem com o Controle de Compras (Notion) sem alterá-lo", async () => {
+test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aberto -> aguardando_chegada -> concluído", async () => {
   const [
     html,
     workerSource,
     schema,
     migration,
-    draftsRoute,
-    draftDetailRoute,
+    ordersRoute,
+    orderDetailRoute,
+    winnerRoute,
     itemsRoute,
     itemDetailRoute,
+    quotesRoute,
     stockBalanceRoute,
     comprasNovoShared,
-    notionLib,
     notionRoute,
-    importScript,
   ] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0054_compras_nativo_fase_a.sql", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/drafts/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/drafts/[id]/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/drafts/[id]/items/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/drafts/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0059_compras_nativo_fase_f.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/winner/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/items/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/quotes/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/estoque-saldo/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/shared.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/notion.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../db/scripts/import-notion-purchases.mjs", import.meta.url), "utf8"),
   ]);
 
-  // Nav: item novo dentro do mesmo submenu de Estoque > Controle de Compras,
-  // com id/permissão/rota próprios — não reaproveita nem altera navCompras.
+  // Nav/rotas: nada muda em relação às fases anteriores (mesmo módulo,
+  // mesma permissão granular purchases_draft:manage).
   assert.match(
     html,
     /id="navComprasNovo" data-page="comprasNovo" data-permission="purchases_draft"[^>]*href="\/compras-novo"/,
   );
   assert.match(html, /id="navCompras" data-page="compras" data-permission="purchases"[^>]*href="\/compras"/);
   assert.match(html, /id="pageComprasNovo" class="page wrap"/);
-  assert.match(html, /comprasNovo:'\/compras-novo'/);
-  assert.match(html, /comprasNovo:'purchases_draft'/);
-  assert.equal(html.split("if(name === 'comprasNovo') loadComprasNovoPage();").length - 1, 2);
-
-  // Permissão nova e granular, sem misturar com purchases:* (Notion).
-  assert.match(html, /value="purchases_draft:manage"> Acessar módulo/);
   assert.match(workerSource, /"purchases_draft:manage"/);
-  assert.match(
-    workerSource,
-    /\[path === "\/compras-novo" \|\| path\.startsWith\("\/api\/compras-novo"\), "purchasesDraft"\]/,
-  );
-  assert.match(workerSource, /purchasesDraft: \["purchases_draft:manage"\]/);
-  // A checagem de "/compras-novo" precisa vir ANTES da de "/compras" no
-  // array de rotas diretas, senão startsWith("/api/compras") engole
-  // "/api/compras-novo" e aplica a permissão errada.
-  const comprasNovoRouteIndex = workerSource.indexOf('"purchasesDraft"]');
-  const comprasNotionRouteIndex = workerSource.indexOf('path.startsWith("/api/compras"), "purchases"]');
-  assert.ok(comprasNovoRouteIndex > 0 && comprasNotionRouteIndex > 0);
-  assert.ok(comprasNovoRouteIndex < comprasNotionRouteIndex);
 
-  // Controle de Compras (Notion) intocado: nenhuma mudança nas rotas/lib
-  // existentes, e o módulo novo não importa nada de dentro de app/api/compras.
+  // Controle de Compras (Notion) intocado.
   assert.match(notionRoute, /canPurchases\(request, "purchases:view"\)/);
   assert.doesNotMatch(comprasNovoShared, /from ["'].*\/api\/compras\//);
 
-  // Schema: três tabelas novas, sem FK real para finance_suppliers (mesmo
-  // padrão de vínculo textual do resto do projeto).
-  assert.match(schema, /export const purchaseDrafts = pgTable\(\s*"purchase_drafts"/);
-  assert.match(schema, /export const purchaseDraftItems = pgTable\(\s*"purchase_draft_items"/);
+  // Schema: purchase_drafts/purchase_draft_items foram REMOVIDAS — rascunho
+  // e pedido viraram uma entidade só (purchase_orders/purchase_order_items).
+  assert.doesNotMatch(schema, /export const purchaseDrafts/);
+  assert.doesNotMatch(schema, /export const purchaseDraftItems/);
   assert.match(schema, /export const purchaseOrders = pgTable\(\s*"purchase_orders"/);
-  assert.match(schema, /notionPurchaseId: text\("notion_purchase_id"\)\.notNull\(\)\.default\(""\)/);
-  assert.match(migration, /CREATE TABLE "purchase_drafts"/);
-  assert.match(migration, /CREATE TABLE "purchase_draft_items"/);
-  assert.match(migration, /CREATE TABLE "purchase_orders"/);
-  assert.match(migration, /CREATE INDEX "purchase_orders_notion_purchase_idx"/);
-  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
-
-  // Endpoints: auth + permissão granular purchases_draft:manage + sameOrigin
-  // nas escritas, mesmo padrão do resto do Financeiro/Compras.
-  for (const route of [draftsRoute, draftDetailRoute, itemsRoute, itemDetailRoute, stockBalanceRoute]) {
-    assert.match(route, /canManageComprasDraft\(actor\)/);
-  }
-  assert.match(draftsRoute, /sameOrigin\(request\)/);
-  assert.match(itemsRoute, /sameOrigin\(request\)/);
-  assert.match(itemDetailRoute, /sameOrigin\(request\)/);
-  // Arquivamento é soft-delete (status='arquivado'), nunca DELETE físico.
-  assert.match(draftDetailRoute, /status='arquivado'/);
-  assert.doesNotMatch(draftDetailRoute, /DELETE FROM purchase_drafts/);
-  // Item removido é DELETE físico mesmo (não tem sentido de "histórico" no
-  // rascunho, ao contrário do cabeçalho).
-  assert.match(itemDetailRoute, /DELETE FROM purchase_draft_items/);
-
-  // Saldo por loja: agrega shared_state (estoque:c*) no servidor, mesma
-  // lógica entrada-saída que o cliente já fazia em loadFiscalView/
-  // addFiscalQuantities, e reaproveita loadCompanyList do Financeiro em vez
-  // de duplicar a leitura de companies_list.
-  assert.match(stockBalanceRoute, /state_key LIKE 'estoque:c%'/);
-  assert.match(stockBalanceRoute, /loadCompanyList/);
-  assert.match(stockBalanceRoute, /from "\.\.\/\.\.\/finance\/shared"/);
-
-  // Fornecedor: reaproveita o endpoint existente de finance/suppliers no
-  // cliente, sem endpoint de fornecedor duplicado.
-  assert.match(html, /financeApiRequest\('\/suppliers'\)/);
-  assert.doesNotMatch(html, /\/api\/compras-novo\/suppliers/);
-
-  // Script de importação do Notion: pagina com as funções já existentes em
-  // app/lib/notion.ts, faz dedupe por notionPurchaseId, casa fornecedor por
-  // nome (case-insensitive) e nunca roda contra produção sozinho.
-  assert.match(importScript, /notionRequest\(/);
-  assert.match(importScript, /notionDataSourceId\(/);
-  assert.match(importScript, /normalizePurchase\(/);
-  assert.match(importScript, /notion_purchase_id/);
-  assert.match(importScript, /origin.*notion_import/s);
-  assert.match(importScript, /noItemsDetailed|no_items_detailed/);
-  assert.match(notionLib, /export function normalizePurchase/);
-});
-
-test("Módulo Compras nativo (Fase B): pedidos, conversão de rascunho e recebimento", async () => {
-  const [
-    html,
-    schema,
-    migration,
-    convertRoute,
-    ordersRoute,
-    orderDetailRoute,
-    orderItemRoute,
-  ] = await Promise.all([
-    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
-    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0055_compras_nativo_fase_b.sql", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/drafts/[id]/convert/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/orders/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/orders/[id]/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
-  ]);
-
-  // Schema: nova tabela purchase_order_items, com FK textual pro draft item
-  // de origem (draftItemId) e mesma granularidade item x total do draft
-  // (sem split de quantidade por loja).
   assert.match(schema, /export const purchaseOrderItems = pgTable\(\s*"purchase_order_items"/);
-  assert.match(schema, /draftItemId: text\("draft_item_id"\)\.notNull\(\)\.default\(""\)/);
-  assert.match(schema, /receivedQuantity: integer\("received_quantity"\)\.notNull\(\)\.default\(0\)/);
-  // purchase_drafts.status ganhou um terceiro valor, documentado no comentário.
-  assert.match(schema, /'aberto' \| 'arquivado' \| 'convertido'/);
+  assert.match(schema, /wonAt: text\("won_at"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(schema, /wonBy: text\("won_by"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(schema, /wonByName: text\("won_by_name"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(schema, /candidateSupplierIds: text\("candidate_supplier_ids"\)\.notNull\(\)\.default\("\[\]"\)/);
+  assert.match(schema, /export const purchaseOrderItemQuotes = pgTable\(\s*"purchase_order_item_quotes"/);
+  assert.match(schema, /uniqueIndex\("purchase_order_item_quotes_item_supplier_idx"\)\.on\(table\.itemId, table\.supplierId\)/);
 
-  // Migration nova, com RLS habilitado e privilégios revogados (mesmo
-  // padrão da 0054).
-  assert.match(migration, /CREATE TABLE "purchase_order_items"/);
-  assert.match(migration, /CREATE INDEX "purchase_order_items_order_idx"/);
-  assert.match(migration, /ALTER TABLE "purchase_order_items" ENABLE ROW LEVEL SECURITY/);
-  assert.match(migration, /REVOKE ALL ON TABLE "purchase_order_items" FROM anon, authenticated/);
+  // Migration: DROP das tabelas de rascunho, ADD COLUMN aditivos e a
+  // tabela de cotações nova com RLS/REVOKE (mesmo padrão das anteriores).
+  assert.match(migration, /DROP TABLE "purchase_draft_items"/);
+  assert.match(migration, /DROP TABLE "purchase_drafts"/);
+  assert.match(migration, /ALTER TABLE "purchase_orders" ADD COLUMN "won_at"/);
+  assert.match(migration, /ALTER TABLE "purchase_orders" ADD COLUMN "won_by"/);
+  assert.match(migration, /ALTER TABLE "purchase_orders" ADD COLUMN "won_by_name"/);
+  assert.match(migration, /ALTER TABLE "purchase_order_items" ADD COLUMN "candidate_supplier_ids"/);
+  assert.match(migration, /CREATE TABLE "purchase_order_item_quotes"/);
+  assert.match(migration, /CREATE UNIQUE INDEX "purchase_order_item_quotes_item_supplier_idx"/);
+  assert.match(migration, /ALTER TABLE "purchase_order_item_quotes" ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /REVOKE ALL ON TABLE "purchase_order_item_quotes" FROM anon, authenticated/);
 
-  // Endpoints novos: mesma auth/permissão/sameOrigin do resto do módulo.
-  for (const route of [convertRoute, ordersRoute, orderDetailRoute, orderItemRoute]) {
+  // Pasta drafts/ inteira removida.
+  await assert.rejects(readFile(new URL("../app/api/compras-novo/drafts/route.ts", import.meta.url), "utf8"));
+
+  // Endpoints: auth + permissão + sameOrigin nas escritas, mesmo padrão do
+  // resto do módulo.
+  for (const route of [ordersRoute, orderDetailRoute, winnerRoute, itemsRoute, itemDetailRoute, quotesRoute, stockBalanceRoute]) {
     assert.match(route, /canManageComprasDraft\(actor\)/);
   }
-  assert.match(convertRoute, /sameOrigin\(request\)/);
-  assert.match(orderDetailRoute, /sameOrigin\(request\)/);
-  assert.match(orderItemRoute, /sameOrigin\(request\)/);
-  // GET de lista não exige sameOrigin (só leitura, mesmo padrão do resto).
-  assert.doesNotMatch(ordersRoute, /sameOrigin\(request\)/);
+  assert.match(ordersRoute, /sameOrigin\(request\)/);
+  assert.match(winnerRoute, /sameOrigin\(request\)/);
+  assert.match(itemsRoute, /sameOrigin\(request\)/);
+  assert.match(quotesRoute, /sameOrigin\(request\)/);
 
-  // Conversão: só rascunho 'aberto', 1 pedido por fornecedor escolhido
-  // (agrupamento via Map), bloqueio explícito se faltar fornecedor em
-  // algum item, e marca o rascunho como 'convertido' ao final.
-  assert.match(convertRoute, /draft\.status !== "aberto"/);
-  assert.match(convertRoute, /itemsBySupplier = new Map/);
-  assert.match(convertRoute, /missingItem/);
-  assert.match(convertRoute, /status='convertido'/);
-  assert.match(convertRoute, /origin: text\("origin"\)|'native'/);
-  assert.match(convertRoute, /database\.batch\(prepared\)/);
-  // Granularidade preservada: quantity/targetStores copiados do item do
-  // rascunho, sem split por loja (Fase D acrescenta unitPriceCents opcional
-  // entre os dois, ver values do INSERT em purchase_order_items).
-  assert.match(convertRoute, /item\.quantity, unitPriceCents, item\.targetStores/);
+  // POST /orders cria direto como pedido nativo 'aberto', sem rascunho.
+  assert.match(ordersRoute, /status, no_items_detailed, notes, canceled, won_at, won_by, won_by_name/);
+  assert.match(ordersRoute, /'native', '', '', '', '', '', '', '', '', '', '', '', 'aberto'/);
 
-  // Lista de pedidos: origin='native' e 'notion_import' juntos na mesma
-  // consulta (sem WHERE fixo de origin, só filtro opcional via querystring).
-  assert.doesNotMatch(ordersRoute, /WHERE origin\s*=\s*'native'/);
-  assert.match(ordersRoute, /searchParams\.get\("status"\)/);
-  assert.match(ordersRoute, /searchParams\.get\("origin"\)/);
+  // POST /orders/:id/items só aceita item enquanto 'aberto'.
+  assert.match(itemsRoute, /order\.status !== "aberto"/);
 
-  // Recebimento: valor absoluto (não incremento), bloqueia negativo/maior
-  // que a quantidade pedida, e recalcula o status do pedido pai.
-  assert.match(orderItemRoute, /receivedQuantity > item\.quantity/);
-  assert.match(orderItemRoute, /receivedQuantity < 0/);
-  assert.match(orderItemRoute, /allReceived = allItems\.length > 0 && allItems\.every/);
-  assert.match(orderItemRoute, /'concluido'/);
-  assert.match(orderItemRoute, /'em_andamento'/);
+  // POST /orders/:id/winner: valida origin='native' + status='aberto',
+  // grava supplierId/wonAt/wonBy/wonByName, muda pra 'aguardando_chegada' e
+  // copia a cotação do vencedor pro preço travado do item (numa transação
+  // via database.batch, mesmo padrão usado no antigo convert).
+  assert.match(winnerRoute, /order\.origin !== "native"/);
+  assert.match(winnerRoute, /order\.status !== "aberto"/);
+  assert.match(winnerRoute, /won_at=\?3, won_by=\?4, won_by_name=\?5/);
+  assert.match(winnerRoute, /status='aguardando_chegada'/);
+  assert.match(winnerRoute, /FROM purchase_order_item_quotes WHERE item_id=\?1 AND supplier_id=\?2/);
+  assert.match(winnerRoute, /database\.batch\(prepared\)/);
 
-  // Detalhe do pedido: PATCH não deixa editar origin/notionPurchaseId/supplierId.
-  assert.doesNotMatch(orderDetailRoute, /origin\s*=\s*\?/);
-  assert.doesNotMatch(orderDetailRoute, /supplier_id\s*=\s*\?/);
+  // Cotação (quotes): upsert por (itemId, supplierId), bloqueado fora de
+  // 'aberto', com DELETE também disponível.
+  assert.match(quotesRoute, /order\.status !== "aberto"/);
+  assert.match(quotesRoute, /WHERE item_id=\?1 AND supplier_id=\?2/);
+  assert.match(quotesRoute, /export async function DELETE/);
 
-  // UI: abas Rascunhos/Pedidos dentro da MESMA página comprasNovo (sem rota
-  // nova), botão de conversão no detalhe do rascunho, e campos de
-  // recebimento por item no detalhe do pedido.
-  assert.match(html, /id="pageComprasNovo" class="page wrap"/);
-  assert.match(html, /data-compras-section-tab="rascunhos"/);
-  assert.match(html, /data-compras-section-tab="pedidos"/);
-  assert.match(html, /id="comprasSectionRascunhos"/);
-  assert.match(html, /id="comprasSectionPedidos"/);
-  assert.match(html, /id="btnConvertComprasDraft"/);
-  assert.match(html, /id="comprasConvertDialog"/);
-  assert.match(html, /data-compras-convert-item/);
-  assert.match(html, /\/drafts\/'\+encodeURIComponent\(comprasCurrentDraftId\)\+'\/convert/);
-  assert.match(html, /id="comprasOrdersTable"/);
-  assert.match(html, /id="comprasOrderItemsTable"/);
-  assert.match(html, /data-compras-order-item-received/);
-  assert.match(html, /data-compras-order-item-save/);
-  assert.match(html, /'\/orders\/'\+encodeURIComponent\(comprasCurrentOrderId\)\+'\/items\/'/);
-  // Só 1 nova rota de página (não cria uma /compras-novo/pedidos separada).
-  assert.doesNotMatch(html, /data-page="comprasNovoPedidos"/);
+  // Guardas do pipeline: receivedQuantity só a partir de 'aguardando_chegada'
+  // e exclusão de item só enquanto 'aberto'.
+  assert.match(itemDetailRoute, /hasReceivedQuantity && order\.status === "aberto"/);
+  assert.match(itemDetailRoute, /order\.status !== "aberto"/);
+  assert.match(itemDetailRoute, /export async function DELETE/);
+
+  // Divisão bloqueada em 'aberto' (só a partir de 'aguardando_chegada').
+  assert.match(orderDetailRoute, /order\.status === "aberto"/);
+  assert.match(orderDetailRoute, /DIVISÃO SÓ PODE SER PREENCHIDA A PARTIR DE 'AGUARDANDO CHEGADA'/);
+  assert.match(orderDetailRoute, /VALID_STATUSES = new Set\(\["aberto", "aguardando_chegada"/);
+
+  // Saldo por loja: sem mudança nesta fase.
+  assert.match(stockBalanceRoute, /state_key LIKE 'estoque:c%'/);
+
+  // UI: só 2 abas (Por Produto primeiro/padrão, Pedidos), sem Rascunhos.
+  assert.match(html, /data-compras-section-tab="porProduto">POR PRODUTO/);
+  assert.match(html, /data-compras-section-tab="pedidos">PEDIDOS/);
+  assert.doesNotMatch(html, /data-compras-section-tab="rascunhos"/);
+  assert.doesNotMatch(html, /id="comprasSectionRascunhos"/);
+  assert.doesNotMatch(html, /id="comprasConvertDialog"/);
+  assert.match(html, /let comprasSectionTab = 'porProduto';/);
+  assert.match(html, /id="comprasSectionPorProduto">/);
+  assert.match(html, /id="btnNewComprasDraft" type="button">\+ NOVO PEDIDO DE COMPRA/);
+
+  // UI: fluxo 'aberto' — adicionar item, cotar, gerar TXT, definir vencedor.
+  assert.match(html, /id="comprasOrderAbertoWrap"/);
+  assert.match(html, /id="btnGerarTxtOrcamento"/);
+  assert.match(html, /id="comprasOrderWinnerSelect"/);
+  assert.match(html, /id="btnConfirmComprasWinner"/);
+  assert.match(html, /'\/orders\/'\+encodeURIComponent\(comprasCurrentOrderId\)\+'\/winner'/);
+  assert.match(html, /'\/items\/'\+encodeURIComponent\(itemId\)\+'\/quotes'/);
+
+  // UI: Divisão só visível a partir de 'aguardando_chegada', com o novo
+  // template "*ENTRADA* FORNECEDOR ..., ORIGEM ...".
+  assert.match(html, /id="comprasOrderDivisionPanel"/);
+  assert.match(html, /panel\.hidden = order\.status === 'aberto'/);
+  assert.match(html, /\*ENTRADA\* FORNECEDOR /);
+  assert.match(html, /function comprasDivisionSuggestion\(order\)/);
+
+  // UI: badges reconhecem os status novos + o marco "COMPRA EFETUADA".
+  assert.match(html, /function comprasOrderStatusBadge\(status\)/);
+  assert.match(html, /status === 'aguardando_chegada'.*AGUARDANDO CHEGADA/);
+  assert.match(html, /function comprasOrderWonBadge\(order\)/);
+  assert.match(html, /COMPRA EFETUADA/);
 });
 
 test("Módulo Compras nativo (Fase C): anexos do pedido, vínculo com NF, alerta de atraso e cancelamento", async () => {
@@ -3394,34 +3334,26 @@ test("Módulo Compras nativo (Fase C): anexos do pedido, vínculo com NF, alerta
   assert.match(html, /uploadInvoiceFile\('\/api\/compras-novo\/orders\/'\+encodeURIComponent\(comprasCurrentOrderId\)\+'\/attachments'/);
 });
 
-test("Módulo Compras nativo (Fase D): aba Divisão, preço por item e painel Por Produto", async () => {
+test("Módulo Compras nativo (Fase F): Divisão com template novo e painel Por Produto com em-andamento/atrasado", async () => {
   const [
     html,
     schema,
-    migration,
     orderDetailRoute,
     orderItemRoute,
-    convertRoute,
     historicoRoute,
   ] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0057_compras_nativo_fase_d.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/orders/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/drafts/[id]/convert/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/produtos/historico/route.ts", import.meta.url), "utf8"),
   ]);
 
-  // Schema: unitPriceCents novo em purchase_order_items, default 0 (não
-  // informado); division/divisionStatus já existiam desde a Fase A.
+  // Schema: unitPriceCents em purchase_order_items, default 0 (não informado).
   assert.match(schema, /unitPriceCents: integer\("unit_price_cents"\)\.notNull\(\)\.default\(0\)/);
 
-  // Migration nova, só a coluna aditiva (sem tabela nova nesta fase).
-  assert.match(migration, /ALTER TABLE "purchase_order_items" ADD COLUMN "unit_price_cents"/);
-
-  // Item 1 — Divisão: PATCH do pedido aceita division/divisionStatus, com
-  // validação das 5 opções do Notion (mais "" pra limpar).
+  // Divisão: PATCH do pedido aceita division/divisionStatus, com validação
+  // das 5 opções do Notion (mais "" pra limpar), bloqueado em 'aberto'.
   assert.match(orderDetailRoute, /VALID_DIVISION_STATUSES/);
   assert.match(orderDetailRoute, /"FALTA DIVISÃO"/);
   assert.match(orderDetailRoute, /"AGUARDANDO APROVAÇÃO"/);
@@ -3432,70 +3364,66 @@ test("Módulo Compras nativo (Fase D): aba Divisão, preço por item e painel Po
   assert.match(orderDetailRoute, /body\.divisionStatus === undefined/);
   assert.match(orderDetailRoute, /division=\?6, division_status=\?7/);
 
-  // Item 2 — preço por item: PATCH de item aceita receivedQuantity e
-  // unitPriceCents de forma independente (pelo menos um precisa vir), e a
-  // conversão de rascunho aceita preço unitário opcional por item.
+  // Preço por item: PATCH de item aceita receivedQuantity e unitPriceCents
+  // de forma independente (pelo menos um precisa vir).
   assert.match(orderItemRoute, /hasReceivedQuantity = body\.receivedQuantity !== undefined/);
   assert.match(orderItemRoute, /hasUnitPriceCents = body\.unitPriceCents !== undefined/);
   assert.match(orderItemRoute, /unit_price_cents=\?2/);
-  assert.match(convertRoute, /unitPriceCentsByItemId/);
-  assert.match(convertRoute, /unit_price_cents/);
 
-  // Item 3 — histórico de compra por produto: endpoint novo, sem varredura
-  // de todos os produtos (sempre filtra por product_code=?1), só pedidos
-  // nativos não cancelados, agrupado por fornecedor e ordenado por
-  // quantidade total decrescente.
+  // Histórico de compra por produto: endpoint sem varredura de todos os
+  // produtos (sempre filtra por product_code=?1), só pedidos nativos não
+  // cancelados, agrupado por fornecedor, e agora com inProgressQuantity
+  // (itens de pedidos 'aguardando_chegada') e lateQuantity (atrasados).
   assert.match(historicoRoute, /product_code=\?1 AND po\.origin='native' AND po\.canceled=0/);
   assert.match(historicoRoute, /ORDER BY po\.order_date DESC/);
   assert.match(historicoRoute, /bySupplier\.get\(supplierId\)/);
   assert.match(historicoRoute, /\.sort\(\(a, b\) => b\.totalQuantity - a\.totalQuantity\)/);
   assert.match(historicoRoute, /distinctOrderCount/);
   assert.match(historicoRoute, /lastPurchaseDate/);
+  assert.match(historicoRoute, /po\.status='aguardando_chegada'/);
+  assert.match(historicoRoute, /inProgressQuantity/);
+  assert.match(historicoRoute, /lateQuantity/);
+  assert.match(historicoRoute, /po\.expected_date < \?2/);
 
-  // UI: aba "Divisão" no detalhe do pedido (textarea + select com as 5
-  // opções), colunas/edição de preço unitário nos itens do pedido e na
-  // conversão, e nova aba "Por Produto" na MESMA página comprasNovo (sem
-  // rota nova).
+  // UI: Divisão com o template novo, e painel "Por Produto" com os dois
+  // números novos (em andamento/atrasado) ao lado dos que já existiam.
   assert.match(html, /id="comprasOrderDivisionText"/);
   assert.match(html, /id="comprasOrderDivisionStatus"/);
   assert.match(html, /id="btnSaveComprasOrderDivision"/);
   assert.match(html, /function comprasFillDivisionSection\(order\)/);
-  assert.match(html, /function comprasDivisionSuggestion\(\)/);
   assert.match(html, /data-compras-order-item-price=/);
-  assert.match(html, /data-compras-convert-price=/);
   assert.match(html, /data-compras-section-tab="porProduto"/);
   assert.match(html, /id="comprasSectionPorProduto"/);
   assert.match(html, /id="comprasProdutoBusca"/);
+  assert.match(html, /id="comprasProdutoEmAndamento"/);
+  assert.match(html, /id="comprasProdutoAtrasado"/);
   assert.match(html, /\/produtos\/historico\?produto='\+encodeURIComponent\(codigo\)/);
   assert.match(html, /\/estoque-saldo\?produto='\+encodeURIComponent\(codigo\)/);
   assert.doesNotMatch(html, /data-page="comprasNovoPorProduto"/);
 });
 
-test("Módulo Compras nativo (Fase E): accordion no detalhe, atualização ao vivo e badge de Status da Divisão", async () => {
-  const [html, liveUpdates, liveEvents, workerSource, convertRoute] = await Promise.all([
+test("Módulo Compras nativo (Fase F): accordion no detalhe, atualização ao vivo e badge de Status da Divisão", async () => {
+  const [html, liveUpdates, liveEvents, workerSource] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../worker/live-updates.ts", import.meta.url), "utf8"),
     readFile(new URL("../worker/live-events.ts", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/drafts/[id]/convert/route.ts", import.meta.url), "utf8"),
   ]);
 
-  // Item 1 — accordion: o mesmo nó de detalhe (#comprasDraftDetail /
-  // #comprasOrderDetail) é realocado pra dentro de uma <tr> logo após a
-  // linha clicada, em vez de renderizar fixo depois da tabela inteira.
-  assert.match(html, /let comprasDraftDetailOpenId = '';/);
+  // Accordion: o mesmo nó de detalhe (#comprasOrderDetail) é realocado pra
+  // dentro de uma <tr> logo após a linha clicada, em vez de renderizar fixo
+  // depois da tabela inteira. Rascunho não existe mais (fundido no pedido).
   assert.match(html, /let comprasOrderDetailOpenId = '';/);
-  assert.match(html, /data-compras-draft-row="'\+escapeHtml\(row\.id\)\+'"/);
   assert.match(html, /data-compras-order-row="'\+escapeHtml\(order\.id\)\+'"/);
   assert.match(html, /targetRow\.after\(tr\);/);
-  assert.match(html, /function closeComprasDraftDetail\(\)/);
   assert.match(html, /function closeComprasOrderDetail\(\)/);
-  assert.match(html, /row\.id === comprasDraftDetailOpenId \? 'FECHAR' : 'ABRIR'/);
   assert.match(html, /order\.id === comprasOrderDetailOpenId \? 'FECHAR' : 'ABRIR'/);
 
-  // Item 2 — atualização ao vivo: módulo "compras" novo, permissão
-  // purchasesDraft, invalidação em qualquer escrita de /api/compras-novo/*,
-  // e o cliente recarrega a aba ativa sem fechar um detalhe já aberto.
+  // Atualização ao vivo: módulo "compras", permissão purchasesDraft,
+  // invalidação em qualquer escrita de /api/compras-novo/* (cobre os
+  // endpoints novos de winner/quotes sem precisar de mudança em
+  // worker/live-events.ts), e o cliente recarrega a aba "pedidos" sem
+  // fechar um detalhe já aberto.
   assert.match(liveUpdates, /"missions", "captures", "supplies", "tasks", "loans", "compras"/);
   assert.match(liveEvents, /path === "\/api\/compras-novo" \|\| path\.startsWith\("\/api\/compras-novo\/"\)/);
   assert.match(liveEvents, /module: "compras", audience: \{ kind: "all" \}/);
@@ -3505,21 +3433,14 @@ test("Módulo Compras nativo (Fase E): accordion no detalhe, atualização ao vi
     html,
     /if\(livePageName === 'comprasNovo'\)\{[\s\S]*?if\(comprasSectionTab === 'pedidos'\)\{[\s\S]*?await loadComprasOrdersPage\(\);[\s\S]*?if\(comprasOrderDetailOpenId\) await openComprasOrderDetail\(comprasOrderDetailOpenId\);/,
   );
-  assert.match(
-    html,
-    /\} else if\(comprasSectionTab === 'rascunhos'\)\{[\s\S]*?await loadComprasNovoPage\(\);[\s\S]*?if\(comprasDraftDetailOpenId\) await openComprasDraftDetail\(comprasDraftDetailOpenId\);/,
-  );
 
-  // Item 3 — badge de Status da Divisão: reflete os 5 valores + vazio,
-  // aparece na lista (mesma função de badges do Status) e no cabeçalho do
-  // detalhe (mesma comprasOrderBadges), e pedidos nativos novos nascem com
-  // "FALTA DIVISÃO" em vez de vazio.
+  // Badge de Status da Divisão: reflete os 5 valores + vazio, aparece na
+  // lista e no cabeçalho do detalhe (comprasOrderBadges).
   assert.match(html, /function comprasDivisionStatusBadge\(divisionStatus\)/);
   assert.match(html, /divisionStatus === 'CONCLUÍDO'/);
   assert.match(html, /divisionStatus === 'FALTA DIVISÃO'/);
   assert.match(html, /divisionStatus === 'FALTANDO ENVIO COMPLETO DA DIVISÃO'/);
   assert.match(html, /const divisionBadge = comprasDivisionStatusBadge\(order\.divisionStatus\);/);
-  assert.match(convertRoute, /'FALTA DIVISÃO', 'em_andamento'/);
 });
 
 test("Cadastro de Produtos: catálogo geral único, com reconciliação e integração ao Compras nativo", async () => {
@@ -3542,7 +3463,7 @@ test("Cadastro de Produtos: catálogo geral único, com reconciliação e integr
     readFile(new URL("../app/api/product-catalog/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/product-catalog/upload/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/product-catalog/reconcile/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/drafts/[id]/items/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/items/route.ts", import.meta.url), "utf8"),
   ]);
 
   // Tabela: dois códigos possíveis por produto (Unigames/P.A Loja podem

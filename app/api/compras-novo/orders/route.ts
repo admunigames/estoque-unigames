@@ -1,6 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { canManageComprasDraft, identity, jsonResponse, safeText } from "../shared";
+import { canManageComprasDraft, identity, jsonResponse, newId, safeText, sameOrigin, type JsonMap } from "../shared";
 
 type OrderRow = {
   id: string;
@@ -126,5 +126,56 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Não foi possível carregar os pedidos de compra.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR OS PEDIDOS." }, 500);
+  }
+}
+
+// Fase F: cria um pedido de compra nativo já como purchase_orders — não
+// existe mais a etapa de "rascunho" separada (fundida nesta fase). Nasce
+// em status='aberto', sem fornecedor definido (supplierId/supplierNameRaw
+// vazios até a definição do vencedor, ver POST /orders/:id/winner).
+export async function POST(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canManageComprasDraft(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CRIAR PEDIDOS DE COMPRA." }, 403);
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+
+  try {
+    const body = (await request.json()) as JsonMap;
+    // Nome é opcional (diferente do antigo rascunho, que exigia nome) — não
+    // existe coluna própria pra isso em purchase_orders (o "nome" de um
+    // pedido importado do Notion sempre foi o fornecedor), então guardamos
+    // como a primeira linha de notes, mesmo padrão já usado pra anotar a
+    // origem de conversão nas fases anteriores. A UI mostra o fornecedor
+    // como título assim que o vencedor é definido; até lá, mostra este nome
+    // (ou "PEDIDO SEM NOME").
+    const name = safeText(body.name, 160);
+    const extraNotes = safeText(body.notes, 2000);
+    const notes = name ? (extraNotes ? `${name}\n${extraNotes}` : name) : extraNotes;
+
+    const database = await getD1();
+    const id = newId();
+    const actorName = actor.displayName || "Administrador";
+    await database
+      .prepare(
+        `INSERT INTO purchase_orders
+          (id, origin, notion_purchase_id, notion_purchase_url, supplier_id, supplier_name_raw,
+           company_id, company_name, order_date, expected_date, received_date, division, division_status,
+           status, no_items_detailed, notes, canceled, won_at, won_by, won_by_name,
+           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+         VALUES
+          (?1, 'native', '', '', '', '', '', '', '', '', '', '', '', 'aberto', 0, ?2, 0, '', '', '',
+           ?3, ?4, CURRENT_TIMESTAMP, ?3, ?4, CURRENT_TIMESTAMP)`,
+      )
+      .bind(id, notes, actor.id, actorName)
+      .run();
+    return jsonResponse({ created: true, id }, 201);
+  } catch (error) {
+    console.error("Não foi possível criar o pedido de compra.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL CRIAR O PEDIDO." }, 500);
   }
 }
