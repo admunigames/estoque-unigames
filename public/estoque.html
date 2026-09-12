@@ -379,24 +379,15 @@
     letter-spacing:-.3px; text-align:right; overflow-wrap:anywhere;
   }
   .page-logo{
-    position:relative; isolation:isolate; flex:0 0 clamp(46px,4.3vw,56px);
+    position:relative; flex:0 0 clamp(46px,4.3vw,56px);
     display:grid; place-items:center; width:clamp(46px,4.3vw,56px); height:clamp(46px,4.3vw,56px);
-    min-height:0; padding:5px; overflow:hidden; border:1px solid rgba(114,167,216,.62); border-radius:16px;
-    background:
-      radial-gradient(circle at 28% 16%,rgba(255,255,255,.18),transparent 36%),
-      linear-gradient(145deg,rgba(79,134,189,.34),rgba(8,18,30,.9));
-    box-shadow:0 1px 3px rgba(0,0,0,.1),inset 0 1px rgba(255,255,255,.16),0 0 24px rgba(79,134,189,.13);
-    cursor:pointer; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+    min-height:0; padding:5px; overflow:hidden; border:none; border-radius:14px;
+    background:transparent;
+    cursor:pointer; transition:opacity .15s ease,transform .15s ease;
   }
-  .page-logo::after{
-    content:''; position:absolute; inset:auto -35% -58% 18%; height:70%; z-index:-1;
-    background:radial-gradient(circle,rgba(114,167,216,.42),transparent 68%); pointer-events:none;
-  }
-  .page-logo:hover{
-    opacity:1; transform:translateY(-2px) scale(1.02); border-color:rgba(157,207,252,.92);
-    box-shadow:0 1px 4px rgba(0,0,0,.1),0 0 28px rgba(79,134,189,.24),inset 0 1px rgba(255,255,255,.2);
-  }
-  .page-logo:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .page-logo:hover{opacity:.85;}
+  .page-logo:active{transform:scale(.97);}
+  .page-logo:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:14px;}
   .page-logo .brand-logo{width:100%; height:100%; object-fit:contain; border-radius:11px; padding:1px; background:rgba(255,255,255,.96);}
   .page-header-meta{display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding-left:62px;}
   .page-desc{max-width:880px; font-size:13.5px; font-weight:500; color:var(--ink-soft); margin:0; line-height:1.6; text-transform:none;}
