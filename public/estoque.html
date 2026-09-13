@@ -11384,7 +11384,11 @@
     renderHomeOverviewSkeletons();
     try{
       const shouldLoadStores = canAccess('stock') || canAccess('database') || canAccess('pulls');
-      const updatesPromise = shouldLoadStores ? Promise.all(companies.map(async company => {
+      // Uma requisição por loja cadastrada — escalonado em pequenos lotes
+      // (em vez de todas de uma vez) para não somar a mais uma rajada de
+      // conexões Postgres simultâneas ao boot da Início (ver
+      // HOME_LOADERS_BATCH_SIZE mais abaixo, mesmo motivo).
+      const updatesPromise = shouldLoadStores ? mapWithConcurrency(companies, 4, async company => {
           try{
             const result = await storage.get('estoque:' + company.id);
             if(!result || !result.value) return {company, updatedAt:null};
@@ -11394,7 +11398,7 @@
           } catch{
             return {company, updatedAt:null, unavailable:true};
           }
-        })) : Promise.resolve([]);
+        }) : Promise.resolve([]);
       const purchasesPromise = canAccess('purchases')
         ? fetchHomePurchaseSummary().catch(() => null)
         : Promise.resolve(null);
@@ -29003,6 +29007,25 @@ function renderHomeTasks(){
     }
   });
 
+
+  // Aplica `fn` a cada item de `items`, mas no máximo `limit` execuções em
+  // paralelo por vez. Usado para evitar rajadas de dezenas de requisições
+  // HTTP simultâneas (cada uma abre sua própria conexão Postgres no
+  // Worker — ver db/pg-client.ts) quando o número de itens (ex.: lojas
+  // cadastradas) varia e pode ser grande.
+  async function mapWithConcurrency(items, limit, fn){
+    const results = new Array(items.length);
+    let nextIndex = 0;
+    async function worker(){
+      while(true){
+        const i = nextIndex++;
+        if(i >= items.length) return;
+        results[i] = await fn(items[i], i);
+      }
+    }
+    await Promise.all(Array.from({length: Math.min(limit, items.length)}, worker));
+    return results;
+  }
 
   async function initializeApp(){
     setDropzonesDisabled(true);
