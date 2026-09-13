@@ -11855,6 +11855,7 @@
       const data = await productCatalogApiRequest('');
       productCatalogItems = Array.isArray(data.items) ? data.items : [];
       renderProductCatalogSearchDatalists();
+      renderComprasProdutoBuscaList();
     }catch{
       productCatalogItems = [];
     }
@@ -24032,16 +24033,23 @@ function renderHomeTasks(){
   // ----- Aba "Por Produto" — busca simples (sem varredura de todos os
   // produtos, sem filtro de período/loja), reaproveitando o mesmo catálogo
   // carregado no cliente pro formulário de item de pedido.
-  let comprasProdutoBuscaListLoaded = false;
+  // Reconstrói sempre que chamada, em vez de "só na primeira vez" — a
+  // versão antiga tinha uma flag "já carreguei uma vez" que corria contra o
+  // fetch assíncrono do catálogo: se a aba abrisse antes do catálogo
+  // terminar de chegar, a lista ficava vazia pro resto da sessão mesmo
+  // depois dos dados chegarem (bug real reportado: busca de produto em
+  // Compras não achava nada). renderComprasProdutoBuscaList também é
+  // chamada direto de loadProductCatalogItems (ver acima) pra cobrir esse
+  // caso sem esperar o usuário reabrir a aba.
+  function renderComprasProdutoBuscaList(){
+    const list = el('comprasProdutoBuscaList');
+    if(!list) return;
+    list.innerHTML = Array.from(comprasProductCatalogEntries().entries())
+      .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
+      .join('');
+  }
   function initComprasProdutoBusca(){
-    if(!comprasProdutoBuscaListLoaded){
-      // Sem slice — ver nota em openComprasItemDialog sobre o corte de 500
-      // esconder produtos com o catálogo geral grande.
-      el('comprasProdutoBuscaList').innerHTML = Array.from(comprasProductCatalogEntries().entries())
-        .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
-        .join('');
-      comprasProdutoBuscaListLoaded = true;
-    }
+    renderComprasProdutoBuscaList();
     if(!el('comprasProdutoBusca').value.trim()) loadComprasProdutoRecentes();
     loadComprasStats();
   }
