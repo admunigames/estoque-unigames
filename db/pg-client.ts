@@ -34,6 +34,34 @@ import postgres from "postgres";
 // a query trava/falha de forma intermitente. O padrao documentado pela
 // Cloudflare pro Hyperdrive e criar o client por requisicao - e pra isso
 // que o Hyperdrive existe: deixar esse "reconectar toda vez" barato.
+//
+// IMPORTANTE (max: 1): o client e criado por requisicao e nunca fechado
+// (sql.end() nunca e chamado — ver getD1() em db/index.ts), entao cada
+// requisicao HTTP pode abrir ate `max` conexoes reais contra o Supabase
+// (via Hyperdrive). Nenhum endpoint deste projeto roda queries
+// verdadeiramente concorrentes dentro da mesma requisicao (batch() usa
+// uma unica transacao), entao uma unica conexao por requisicao ja e
+// suficiente — postgres-js enfileira queries sequenciais na mesma conexao
+// sem problema. Baixar de 5 para 1 e defesa em profundidade (nao deixa
+// nenhum caminho de codigo futuro abrir mais de 1 conexao por requisicao
+// por engano); NAO foi a causa raiz confirmada dos 500 aleatorios na tela
+// Início.
+//
+// Causa raiz confirmada (ver public/estoque.html, initializeApp()): a
+// tela Início disparava ~30 chamadas de API em paralelo no boot, cada
+// uma abrindo sua propria conexao Postgres nova (nunca reaproveitada).
+// Reproduzido localmente com um script que abre N clients iguais a este
+// contra o SUPABASE_DB_URL do .env.local: uma rajada de ~30 conexoes por
+// "carregamento de pagina", repetida a cada poucos segundos (varios
+// reloads seguidos), gera falhas de conexao (ora
+// "(EMAXCONN) max client connections reached, limit: 200" contra o
+// pooler do Supabase quando a rajada e grande o bastante, ora
+// "write CONNECT_TIMEOUT" sob concorrencia moderada e reloads frequentes)
+// — exatamente o padrao observado em producao (endpoint aleatorio, sempre
+// uma fracao pequena da rajada). A correcao principal foi escalonar as
+// chamadas de boot da Início em lotes menores (ver
+// HOME_LOADERS_BATCH_SIZE em public/estoque.html), reduzindo o pico de
+// conexoes simultaneas por carregamento de pagina.
 
 async function resolveConnectionString(): Promise<{ url: string; viaHyperdrive: boolean }> {
   try {
@@ -67,7 +95,7 @@ export async function getSql(): Promise<ReturnType<typeof postgres>> {
     // o Hyperdrive não usa/exige SSL. No fallback direto (Node local),
     // mantém SSL exigido.
     ssl: viaHyperdrive ? undefined : "require",
-    max: 5,
+    max: 1,
     idle_timeout: 20,
     connect_timeout: 10,
     types: {

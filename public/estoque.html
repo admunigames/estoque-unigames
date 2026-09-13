@@ -29039,16 +29039,26 @@ function renderHomeTasks(){
     // módulo abaixo seguem em segundo plano, cada um com seu próprio aviso
     // de "Carregando…". Libera a barra de progresso global aqui.
     appLoading.end();
+    // Os carregamentos por módulo abaixo eram todos disparados de uma vez
+    // (Promise.all sobre ~10-12 promises já iniciadas, cada uma abrindo 1+
+    // requisições HTTP — chegando a ~30 chamadas simultâneas por
+    // carregamento de página). Cada requisição abre sua própria conexão
+    // Postgres no Worker (ver db/pg-client.ts) e uma rajada dessa
+    // magnitude, multiplicada por usuários concorrentes, pode esgotar o
+    // limite de conexões do pooler do Supabase e causar 500 aleatórios em
+    // qualquer endpoint do lote. Escalonar em pequenos grupos reduz o pico
+    // de conexões simultâneas por carregamento sem mudar o que é
+    // carregado nem a lógica de cada módulo.
     const loaders = [];
-    if(canAccess('pulls')) loaders.push(loadPullData());
-    if(canAccess('database') || canAccess('report41')) loaders.push(loadCompanyStock());
-    if(canAccess('report41')) loaders.push(loadReport41StoreData());
-    if(canAccess('tasks')) loaders.push((async () => {
+    if(canAccess('pulls')) loaders.push(() => loadPullData());
+    if(canAccess('database') || canAccess('report41')) loaders.push(() => loadCompanyStock());
+    if(canAccess('report41')) loaders.push(() => loadReport41StoreData());
+    if(canAccess('tasks')) loaders.push(() => (async () => {
       await Promise.all([loadTasks(),loadTaskAgenda()]);
       renderHomeTasks();
       startTaskReminderMonitor();
     })());
-    if(canAccess('missions')) loaders.push((async () => {
+    if(canAccess('missions')) loaders.push(() => (async () => {
       await Promise.all([loadMissions(),loadHomeMissions(),loadMissionMonthAgenda(),loadHomeRoutines()]);
       if(!canAccess('tasks') && 'Notification' in window &&
         Notification.permission === 'granted'){
@@ -29056,14 +29066,18 @@ function renderHomeTasks(){
       }
       updateMissionNotificationStatus();
     })());
-    if(canAccess('captures')) loaders.push(loadCaptures());
-    if(canAccess('outputs')) loaders.push(loadOutputs());
-    if(canAccess('inputs')) loaders.push(loadInputs());
-    if(canAccess('supplies')) loaders.push(loadHomeSupplies());
+    if(canAccess('captures')) loaders.push(() => loadCaptures());
+    if(canAccess('outputs')) loaders.push(() => loadOutputs());
+    if(canAccess('inputs')) loaders.push(() => loadInputs());
+    if(canAccess('supplies')) loaders.push(() => loadHomeSupplies());
     if(canAccess('database') || canAccess('purchases_draft') ||
-      canAccess('outputs:create') || canAccess('inputs:create') || canAccess('pdv_requests:create')) loaders.push(loadProductCatalog());
-    loaders.push(Promise.all([loadInstructions(),loadHomeInstructions()]));
-    await Promise.all(loaders);
+      canAccess('outputs:create') || canAccess('inputs:create') || canAccess('pdv_requests:create')) loaders.push(() => loadProductCatalog());
+    loaders.push(() => Promise.all([loadInstructions(),loadHomeInstructions()]));
+    const HOME_LOADERS_BATCH_SIZE = 4;
+    for(let start = 0; start < loaders.length; start += HOME_LOADERS_BATCH_SIZE){
+      const batch = loaders.slice(start, start + HOME_LOADERS_BATCH_SIZE);
+      await Promise.allSettled(batch.map((run) => run()));
+    }
     await verifyIosStorage();
     prepareIosInstallHint();
   }
