@@ -13,7 +13,12 @@ export function canViewProductCatalog(actor: Identity) {
     actor.permissions.includes("database:view") ||
     actor.permissions.includes("database:manage") ||
     // Compras nativo consulta o catálogo geral pra sugerir/validar produto.
-    actor.permissions.includes("purchases_draft:manage")
+    actor.permissions.includes("purchases_draft:manage") ||
+    // Saídas/Entrada/Alterações PDV também buscam no catálogo geral pra
+    // preencher o campo de produto desses formulários.
+    actor.permissions.includes("outputs:create") ||
+    actor.permissions.includes("inputs:create") ||
+    actor.permissions.includes("pdv_requests:create")
   );
 }
 

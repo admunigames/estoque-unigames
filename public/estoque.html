@@ -3500,7 +3500,7 @@
           <div class="output-form-grid">
             <div class="field"><label for="outputQuantity">QUANTIDADE</label><input id="outputQuantity" type="number" min="1" max="9999" step="1" required value="1"></div>
             <div class="field" id="outputCompanyField" hidden><label for="outputCompany">LOJA</label><select id="outputCompany"><option value="">SELECIONE A LOJA</option></select></div>
-            <div class="field double"><label for="outputProductName">PRODUTO</label><input id="outputProductName" maxlength="180" required placeholder="Ex.: Controle DualSense PS5"></div>
+            <div class="field double"><label for="outputProductName">PRODUTO</label><input id="outputProductName" maxlength="180" required autocomplete="off" list="outputProductList" placeholder="Busque no catálogo por código ou nome (ou digite livremente)"><datalist id="outputProductList"></datalist></div>
             <div class="field"><label for="outputResponsible">RESPONSÁVEL PELA SAÍDA</label><input id="outputResponsible" maxlength="120" required placeholder="Nome de quem é responsável pela saída"></div>
             <div class="field full"><label for="outputDefect">DEFEITOS / OBSERVAÇÕES</label><textarea id="outputDefect" maxlength="1200" rows="3" required placeholder="Descreva o defeito ou o motivo da saída."></textarea></div>
           </div>
@@ -3553,7 +3553,7 @@
           <div class="output-form-grid">
             <div class="field"><label for="inputQuantity">QUANTIDADE</label><input id="inputQuantity" type="number" min="1" max="9999" step="1" required value="1"></div>
             <div class="field" id="inputCompanyField" hidden><label for="inputCompany">LOJA</label><select id="inputCompany"><option value="">SELECIONE A LOJA</option></select></div>
-            <div class="field double"><label for="inputProductName">PRODUTO</label><input id="inputProductName" maxlength="180" required placeholder="Ex.: Controle DualSense PS5"></div>
+            <div class="field double"><label for="inputProductName">PRODUTO</label><input id="inputProductName" maxlength="180" required autocomplete="off" list="inputProductList" placeholder="Busque no catálogo por código ou nome (ou digite livremente)"><datalist id="inputProductList"></datalist></div>
             <div class="field"><label for="inputResponsible">RESPONSÁVEL PELA ENTRADA</label><input id="inputResponsible" maxlength="120" required placeholder="Nome de quem é responsável pela entrada"></div>
             <div class="field full"><label for="inputReason">MOTIVO DA ENTRADA</label><textarea id="inputReason" maxlength="1200" rows="3" required placeholder="Descreva o motivo da entrada."></textarea></div>
           </div>
@@ -4036,8 +4036,8 @@
 
             <div class="field full" data-pdv-type-fields="customer"><label for="pdvCustomerInfo">CLIENTE (NOME COMPLETO OU CÓDIGO)</label><input id="pdvCustomerInfo" maxlength="200"></div>
 
-            <div class="field" data-pdv-type-fields="product"><label for="pdvProductCurrent">PRODUTO ATUAL DA VENDA</label><input id="pdvProductCurrent" maxlength="200"></div>
-            <div class="field" data-pdv-type-fields="product"><label for="pdvProductNew">PRODUTO QUE PRECISA CONSTAR NO LUGAR</label><input id="pdvProductNew" maxlength="200"></div>
+            <div class="field" data-pdv-type-fields="product"><label for="pdvProductCurrent">PRODUTO ATUAL DA VENDA</label><input id="pdvProductCurrent" maxlength="200" autocomplete="off" list="pdvProductList" placeholder="Busque no catálogo por código ou nome"></div>
+            <div class="field" data-pdv-type-fields="product"><label for="pdvProductNew">PRODUTO QUE PRECISA CONSTAR NO LUGAR</label><input id="pdvProductNew" maxlength="200" autocomplete="off" list="pdvProductList" placeholder="Busque no catálogo por código ou nome"><datalist id="pdvProductList"></datalist></div>
             <div class="field full" data-pdv-type-fields="product"><label for="pdvProductNote">OBSERVAÇÃO (PAGAMENTO/GORDURA, SE HOUVER)</label><textarea id="pdvProductNote" maxlength="2000" rows="3"></textarea></div>
 
             <div class="field" data-pdv-type-fields="markup"><label for="pdvMarkupProduct">PRODUTO DA VENDA COM VALOR ALTERADO</label><input id="pdvMarkupProduct" maxlength="200"></div>
@@ -11892,17 +11892,66 @@
   }
 
   async function loadProductCatalog(query){
-    if(!canAccess('database:view') && !canAccess('purchases_draft:manage')) return;
+    if(!canAccess('database:view') && !canAccess('purchases_draft:manage') &&
+      !canAccess('outputs:create') && !canAccess('inputs:create') && !canAccess('pdv_requests:create')) return;
     try{
       const data = await productCatalogApiRequest(query ? '?q='+encodeURIComponent(query) : '');
       productCatalogItems = Array.isArray(data.items) ? data.items : [];
       productCatalogLoaded = true;
       renderProductCatalogTable();
+      renderProductCatalogSearchDatalists();
     }catch(error){
       const body = el('productCatalogTableBody');
       if(body) body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
+
+  // Datalists de busca no catálogo geral usadas fora do Compras nativo
+  // (Saídas/Entrada/Alterações PDV) — módulos que guardam só o NOME do
+  // produto como texto livre (sem coluna de código). Cada produto aparece
+  // como duas opções (nome e código), pra permitir buscar por qualquer um
+  // dos dois; ao selecionar um código, resolveProductNameFromCatalogInput
+  // troca o valor pelo nome antes de o formulário ser enviado.
+  function productCatalogSearchOptionsHtml(){
+    const seen = new Set();
+    const options = [];
+    for(const item of productCatalogItems){
+      const name = item.name || '';
+      if(name && !seen.has(name)){
+        seen.add(name);
+        options.push('<option value="'+escapeHtml(name)+'">'+escapeHtml(item.codeUnigames || item.codePa || '')+'</option>');
+      }
+      [item.codeUnigames, item.codePa].forEach(code => {
+        if(code && !seen.has(code)){
+          seen.add(code);
+          options.push('<option value="'+escapeHtml(code)+'">'+escapeHtml(name)+'</option>');
+        }
+      });
+    }
+    return options.slice(0, 900).join('');
+  }
+
+  function renderProductCatalogSearchDatalists(){
+    const html = productCatalogSearchOptionsHtml();
+    ['outputProductList','inputProductList','pdvProductList'].forEach(id => {
+      if(el(id)) el(id).innerHTML = html;
+    });
+  }
+
+  // Se o valor digitado/selecionado bater com um CÓDIGO do catálogo geral
+  // (Unigames ou P.A Loja), troca pelo NOME correspondente — os três campos
+  // abaixo só guardam nome como texto livre. comprasFindProductName já
+  // implementa essa busca (usada originalmente no Compras nativo).
+  function resolveProductNameFromCatalogInput(inputEl){
+    const value = inputEl.value.trim();
+    if(!value) return;
+    const resolved = comprasFindProductName(value);
+    if(resolved) inputEl.value = resolved;
+  }
+  ['outputProductName','inputProductName','pdvProductCurrent','pdvProductNew'].forEach(id => {
+    const input = el(id);
+    if(input) input.addEventListener('change', () => resolveProductNameFromCatalogInput(input));
+  });
 
   async function handleProductCatalogUpload(file, source){
     const status = el('productCatalogStatus');
@@ -29063,7 +29112,8 @@ function renderHomeTasks(){
     if(canAccess('outputs')) loaders.push(loadOutputs());
     if(canAccess('inputs')) loaders.push(loadInputs());
     if(canAccess('supplies')) loaders.push(loadHomeSupplies());
-    if(canAccess('database') || canAccess('purchases_draft')) loaders.push(loadProductCatalog());
+    if(canAccess('database') || canAccess('purchases_draft') ||
+      canAccess('outputs:create') || canAccess('inputs:create') || canAccess('pdv_requests:create')) loaders.push(loadProductCatalog());
     loaders.push(Promise.all([loadInstructions(),loadHomeInstructions()]));
     await Promise.all(loaders);
     await verifyIosStorage();
