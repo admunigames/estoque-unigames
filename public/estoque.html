@@ -11882,7 +11882,9 @@
         }
       });
     }
-    return options.slice(0, 900).join('');
+    // Sem slice — ver nota em openComprasItemDialog: com o catálogo geral
+    // grande, um corte fixo esconde produtos da busca (bug real reportado).
+    return options.join('');
   }
 
   function renderProductCatalogSearchDatalists(){
@@ -23603,8 +23605,10 @@ function renderHomeTasks(){
     el('comprasItemStockBody').innerHTML = '';
 
     const productList = el('comprasItemProductList');
+    // Sem slice: com o catálogo geral passando de 8 mil produtos, cortar em
+    // 500 escondia da busca tudo que viesse depois de "C" na ordenação por
+    // nome — bug real reportado (ex.: "controle ps5 preto" não aparecia).
     productList.innerHTML = Array.from(comprasProductCatalogEntries().entries())
-      .slice(0, 500)
       .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
       .join('');
 
@@ -24031,8 +24035,9 @@ function renderHomeTasks(){
   let comprasProdutoBuscaListLoaded = false;
   function initComprasProdutoBusca(){
     if(!comprasProdutoBuscaListLoaded){
+      // Sem slice — ver nota em openComprasItemDialog sobre o corte de 500
+      // esconder produtos com o catálogo geral grande.
       el('comprasProdutoBuscaList').innerHTML = Array.from(comprasProductCatalogEntries().entries())
-        .slice(0, 500)
         .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
         .join('');
       comprasProdutoBuscaListLoaded = true;

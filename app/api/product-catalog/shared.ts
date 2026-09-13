@@ -112,19 +112,24 @@ export async function upsertProductCatalogEntries(
     if (key && !byNormalizedName.has(key)) byNormalizedName.set(key, row);
   }
 
-  const operations: D1PreparedStatement[] = [];
+  // Classifica cada item em um dos 3 grupos abaixo SEM tocar o banco ainda —
+  // todo o upload sai em no máximo 3 statements em lote (um UPDATE/INSERT
+  // por grupo, via unnest de arrays), não um round-trip por item. Uploads
+  // grandes (catálogo geral já passa de 7 mil produtos) faziam milhares de
+  // statements sequenciais, cada um esperando o anterior responder — passava
+  // do tempo que o navegador aguarda uma resposta HTTP, o Worker acabava
+  // gravando tudo certo no banco mas a resposta nunca chegava no client, que
+  // ficava preso em "carregando" pra sempre (bug real visto no upload da
+  // base P.A Loja com esse volume).
+  const codeUpdates: Array<{ id: string; name: string }> = [];
+  const nameFillUpdates: Array<{ id: string; code: string; name: string }> = [];
+  const inserts: Array<{ id: string; name: string; codeUnigames: string; codePa: string }> = [];
 
   for (const item of cleanedItems) {
     const byCodeMatch = byCode.get(item.code);
     if (byCodeMatch) {
       if (byCodeMatch.name !== item.name) {
-        operations.push(
-          database
-            .prepare(
-              `UPDATE product_catalog SET name=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP WHERE id=?4`,
-            )
-            .bind(item.name, actor.id, actor.displayName, byCodeMatch.id),
-        );
+        codeUpdates.push({ id: byCodeMatch.id, name: item.name });
         byCodeMatch.name = item.name;
         result.updated += 1;
       } else {
@@ -139,14 +144,7 @@ export async function upsertProductCatalogEntries(
       ? Boolean(source === "unigames" ? byNameMatch.codeUnigames : byNameMatch.codePa)
       : true;
     if (byNameMatch && !nameMatchHasThisSourceCode) {
-      const codeColumn = source === "unigames" ? "code_unigames" : "code_pa";
-      operations.push(
-        database
-          .prepare(
-            `UPDATE product_catalog SET ${codeColumn}=?1, name=?2, updated_by=?3, updated_by_name=?4, updated_at=CURRENT_TIMESTAMP WHERE id=?5`,
-          )
-          .bind(item.code, item.name, actor.id, actor.displayName, byNameMatch.id),
-      );
+      nameFillUpdates.push({ id: byNameMatch.id, code: item.code, name: item.name });
       byCode.set(item.code, byNameMatch);
       if (source === "unigames") byNameMatch.codeUnigames = item.code;
       else byNameMatch.codePa = item.code;
@@ -163,6 +161,52 @@ export async function upsertProductCatalogEntries(
     const id = newId();
     const codeUnigames = source === "unigames" ? item.code : "";
     const codePa = source === "pa" ? item.code : "";
+    inserts.push({ id, name: item.name, codeUnigames, codePa });
+    const newRow: MatchRow = { id, name: item.name, codeUnigames, codePa };
+    byCode.set(item.code, newRow);
+    if (normalizedKey) byNormalizedName.set(normalizedKey, newRow);
+    result.created += 1;
+  }
+
+  const operations: D1PreparedStatement[] = [];
+
+  if (codeUpdates.length) {
+    operations.push(
+      database
+        .prepare(
+          `UPDATE product_catalog AS pc SET name=v.name, updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
+           FROM (SELECT * FROM unnest(?3::text[], ?4::text[]) AS t(id, name)) AS v
+           WHERE pc.id = v.id`,
+        )
+        .bind(
+          actor.id,
+          actor.displayName,
+          codeUpdates.map((u) => u.id),
+          codeUpdates.map((u) => u.name),
+        ),
+    );
+  }
+
+  if (nameFillUpdates.length) {
+    const codeColumn = source === "unigames" ? "code_unigames" : "code_pa";
+    operations.push(
+      database
+        .prepare(
+          `UPDATE product_catalog AS pc SET ${codeColumn}=v.code, name=v.name, updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
+           FROM (SELECT * FROM unnest(?3::text[], ?4::text[], ?5::text[]) AS t(id, code, name)) AS v
+           WHERE pc.id = v.id`,
+        )
+        .bind(
+          actor.id,
+          actor.displayName,
+          nameFillUpdates.map((u) => u.id),
+          nameFillUpdates.map((u) => u.code),
+          nameFillUpdates.map((u) => u.name),
+        ),
+    );
+  }
+
+  if (inserts.length) {
     const insertConflictColumn = source === "unigames" ? "code_unigames" : "code_pa";
     // ON CONFLICT no índice único parcial de codeUnigames/codePa (ver
     // db/schema.ts): se outra requisição concorrente (ex.: duplo clique em
@@ -174,17 +218,20 @@ export async function upsertProductCatalogEntries(
       database
         .prepare(
           `INSERT INTO product_catalog (id, name, code_unigames, code_pa, updated_by, updated_by_name)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+           SELECT * FROM unnest(?1::text[], ?2::text[], ?3::text[], ?4::text[], ?5::text[], ?6::text[])
            ON CONFLICT (${insertConflictColumn}) WHERE ${insertConflictColumn} <> '' DO UPDATE SET
              name=EXCLUDED.name, updated_by=EXCLUDED.updated_by,
              updated_by_name=EXCLUDED.updated_by_name, updated_at=CURRENT_TIMESTAMP`,
         )
-        .bind(id, item.name, codeUnigames, codePa, actor.id, actor.displayName),
+        .bind(
+          inserts.map((i) => i.id),
+          inserts.map((i) => i.name),
+          inserts.map((i) => i.codeUnigames),
+          inserts.map((i) => i.codePa),
+          inserts.map(() => actor.id),
+          inserts.map(() => actor.displayName),
+        ),
     );
-    const newRow: MatchRow = { id, name: item.name, codeUnigames, codePa };
-    byCode.set(item.code, newRow);
-    if (normalizedKey) byNormalizedName.set(normalizedKey, newRow);
-    result.created += 1;
   }
 
   if (operations.length) await database.batch(operations);
