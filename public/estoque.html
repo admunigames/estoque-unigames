@@ -4331,20 +4331,6 @@
           <button class="btn-outline" type="button" data-product-catalog-tab="pa">CARREGAR BASE P.A LOJA</button>
           <input type="file" id="fileProductCatalogPa" accept=".xls,.xlsx,.csv,.html,.htm" style="display:none">
         </div>
-        <div class="field" style="margin-top:10px;max-width:360px;">
-          <label for="productCatalogSearch">BUSCAR (CÓDIGO OU NOME)</label>
-          <input type="search" id="productCatalogSearch" placeholder="Ex.: 12345 ou console">
-        </div>
-        <div class="table-panel responsive-table" style="margin-top:12px;">
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr><th>Produto</th><th>Código Unigames</th><th>Código P.A Loja</th><th>Atualizado</th><th style="text-align:right">Ação</th></tr>
-              </thead>
-              <tbody id="productCatalogTableBody"><tr><td colspan="5" class="responsive-empty">Carregando catálogo…</td></tr></tbody>
-            </table>
-          </div>
-        </div>
       </section>
     </section>
 
@@ -11824,10 +11810,15 @@
   }
 
   // ---------- CATÁLOGO GERAL DE PRODUTOS (Cadastro de Produtos) ----------
+  // Esta tela serve só pra carregar as bases (upload) — sem listagem, busca
+  // ou edição por linha. O contador vem de um endpoint dedicado (?count=1)
+  // pra não precisar baixar o catálogo inteiro só pra mostrar um número.
 
+  let productCatalogUploadInFlight = false;
+  // Lista completa (não a tela de gestão, que foi removida) — usada pelo
+  // Compras nativo pra sugerir/validar produto por código (ver
+  // comprasProductCatalogEntries/comprasFindProductName).
   let productCatalogItems = [];
-  let productCatalogEditingId = '';
-  let productCatalogLoaded = false;
 
   async function productCatalogApiRequest(path, options){
     const response = await fetch('/api/product-catalog'+path, {
@@ -11854,55 +11845,18 @@
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({ source, items })
     });
-    if(productCatalogLoaded) await loadProductCatalog();
+    await loadProductCatalog();
   }
 
-  function productCatalogStatusText(){
-    if(!productCatalogItems.length) return 'Nenhum produto cadastrado ainda';
-    return productCatalogItems.length.toLocaleString('pt-BR')+' produtos cadastrados';
-  }
-
-  function productCatalogRowHtml(item){
-    if(item.id === productCatalogEditingId){
-      return '<tr data-product-catalog-row="'+escapeHtml(item.id)+'">'+
-        '<td><input type="text" maxlength="200" value="'+escapeHtml(item.name)+'" data-catalog-name-input></td>'+
-        '<td><input type="text" maxlength="80" value="'+escapeHtml(item.codeUnigames)+'" data-catalog-code-unigames-input></td>'+
-        '<td><input type="text" maxlength="80" value="'+escapeHtml(item.codePa)+'" data-catalog-code-pa-input></td>'+
-        '<td>—</td>'+
-        '<td style="text-align:right"><button type="button" class="save" data-catalog-save="'+escapeHtml(item.id)+'">SALVAR</button> '+
-        '<button type="button" data-catalog-cancel>CANCELAR</button></td>'+
-      '</tr>';
-    }
-    return '<tr>'+
-      '<td>'+escapeHtml(item.name)+'</td>'+
-      '<td>'+escapeHtml(item.codeUnigames || '—')+'</td>'+
-      '<td>'+escapeHtml(item.codePa || '—')+'</td>'+
-      '<td>'+(item.updatedAt ? formatDateTimeBR(item.updatedAt) : '—')+'</td>'+
-      '<td style="text-align:right"><button type="button" data-catalog-edit="'+escapeHtml(item.id)+'">EDITAR</button></td>'+
-    '</tr>';
-  }
-
-  function renderProductCatalogTable(){
-    el('productCatalogStatus').textContent = productCatalogStatusText();
-    const body = el('productCatalogTableBody');
-    if(!body) return;
-    body.innerHTML = productCatalogItems.length
-      ? productCatalogItems.map(productCatalogRowHtml).join('')
-      : '<tr><td colspan="5" class="responsive-empty">Nenhum produto cadastrado ainda.</td></tr>';
-  }
-
-  async function loadProductCatalog(query){
+  async function loadProductCatalogItems(){
     if(!canAccess('database:view') && !canAccess('purchases_draft:manage') &&
       !canAccess('outputs:create') && !canAccess('inputs:create') && !canAccess('pdv_requests:create')) return;
     try{
-      const data = await productCatalogApiRequest(query ? '?q='+encodeURIComponent(query) : '');
+      const data = await productCatalogApiRequest('');
       productCatalogItems = Array.isArray(data.items) ? data.items : [];
-      productCatalogLoaded = true;
-      renderProductCatalogTable();
       renderProductCatalogSearchDatalists();
-    }catch(error){
-      const body = el('productCatalogTableBody');
-      if(body) body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }catch{
+      productCatalogItems = [];
     }
   }
 
@@ -11953,7 +11907,25 @@
     if(input) input.addEventListener('change', () => resolveProductNameFromCatalogInput(input));
   });
 
+  async function loadProductCatalogCount(){
+    const status = el('productCatalogStatus');
+    if(!status || (!canAccess('database:view') && !canAccess('purchases_draft:manage'))) return;
+    try{
+      const data = await productCatalogApiRequest('?count=1');
+      const count = Number(data.count) || 0;
+      status.textContent = count ? count.toLocaleString('pt-BR')+' produtos cadastrados' : 'Nenhum produto cadastrado ainda';
+    }catch(error){
+      status.textContent = error.message;
+    }
+  }
+
+  async function loadProductCatalog(){
+    await Promise.all([loadProductCatalogItems(), loadProductCatalogCount()]);
+  }
   async function handleProductCatalogUpload(file, source){
+    if(productCatalogUploadInFlight) return;
+    productCatalogUploadInFlight = true;
+    document.querySelectorAll('[data-product-catalog-tab]').forEach(button => { button.disabled = true; });
     const status = el('productCatalogStatus');
     status.textContent = 'Lendo base de produtos...';
     try{
@@ -11966,15 +11938,19 @@
         body:JSON.stringify({ source, items })
       });
       showPurchaseToast('Catálogo atualizado: '+(result.created||0)+' novos, '+(result.updated||0)+' atualizados.');
-      await loadProductCatalog(el('productCatalogSearch') ? el('productCatalogSearch').value.trim() : '');
+      await loadProductCatalog();
     }catch(error){
       showError('Erro ao carregar o catálogo de produtos: '+error.message);
-      renderProductCatalogTable();
+      await loadProductCatalog();
+    }finally{
+      productCatalogUploadInFlight = false;
+      document.querySelectorAll('[data-product-catalog-tab]').forEach(button => { button.disabled = false; });
     }
   }
 
   document.querySelectorAll('[data-product-catalog-tab]').forEach(button => {
     button.addEventListener('click', () => {
+      if(productCatalogUploadInFlight) return;
       const source = button.dataset.productCatalogTab;
       const input = source === 'pa' ? el('fileProductCatalogPa') : el('fileProductCatalogUnigames');
       if(input) input.click();
@@ -11989,47 +11965,6 @@
     const file = event.target.files && event.target.files[0];
     if(file) handleProductCatalogUpload(file, 'pa');
     event.target.value = '';
-  });
-  let productCatalogSearchTimer = null;
-  if(el('productCatalogSearch')) el('productCatalogSearch').addEventListener('input', event => {
-    clearTimeout(productCatalogSearchTimer);
-    const value = event.target.value.trim();
-    productCatalogSearchTimer = setTimeout(() => loadProductCatalog(value), 300);
-  });
-  if(el('productCatalogTableBody')) el('productCatalogTableBody').addEventListener('click', async event => {
-    const editButton = event.target.closest('[data-catalog-edit]');
-    if(editButton){
-      productCatalogEditingId = editButton.dataset.catalogEdit;
-      renderProductCatalogTable();
-      return;
-    }
-    const cancelButton = event.target.closest('[data-catalog-cancel]');
-    if(cancelButton){
-      productCatalogEditingId = '';
-      renderProductCatalogTable();
-      return;
-    }
-    const saveButton = event.target.closest('[data-catalog-save]');
-    if(saveButton){
-      const row = saveButton.closest('tr');
-      const id = saveButton.dataset.catalogSave;
-      const name = row.querySelector('[data-catalog-name-input]').value.trim();
-      const codeUnigames = row.querySelector('[data-catalog-code-unigames-input]').value.trim();
-      const codePa = row.querySelector('[data-catalog-code-pa-input]').value.trim();
-      saveButton.disabled = true;
-      try{
-        await productCatalogApiRequest('', {
-          method:'PATCH',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ id, name, codeUnigames, codePa })
-        });
-        productCatalogEditingId = '';
-        await loadProductCatalog(el('productCatalogSearch') ? el('productCatalogSearch').value.trim() : '');
-      }catch(error){
-        showPurchaseToast(error.message,'error');
-        saveButton.disabled = false;
-      }
-    }
   });
 
   function mergeMaps(){

@@ -26,12 +26,29 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
+
+  // Contagem exata pro card "produtos cadastrados" (tela de Cadastro de
+  // Produtos), sem precisar baixar o catálogo inteiro só pra mostrar um
+  // número — o catálogo já passa de 5000 produtos.
+  if (url.searchParams.get("count") === "1") {
+    try {
+      const database = await getD1();
+      const row = await database
+        .prepare(`SELECT COUNT(*)::int AS count FROM product_catalog`)
+        .first<{ count: number }>();
+      return jsonResponse({ count: row?.count ?? 0 });
+    } catch (error) {
+      console.error("Não foi possível contar o catálogo de produtos.", error);
+      return jsonResponse({ error: "NÃO FOI POSSÍVEL CONTAR O CATÁLOGO DE PRODUTOS." }, 500);
+    }
+  }
+
   const query = safeText(url.searchParams.get("q"), 120);
   // Sem busca, devolve o catálogo inteiro de uma vez (usado pelo Compras
   // nativo pra montar a sugestão de produto no client, mesmo padrão que já
   // existia com o merge de products_catalog:standard/:pa). Com busca, um
-  // limite bem menor já basta pra tela de gestão do catálogo.
-  const limit = query ? 200 : 5000;
+  // limite bem menor já basta.
+  const limit = query ? 200 : 20000;
 
   try {
     const database = await getD1();

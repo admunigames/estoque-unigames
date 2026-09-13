@@ -2675,10 +2675,13 @@ export const productCatalog = pgTable(
   {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
-    // Unicidade de codeUnigames/codePa (quando preenchidos) é garantida pela
-    // aplicação no upsert do upload, não por constraint de banco — os dois
-    // ficam '' com frequência (produto só tem código de um dos sistemas),
-    // e um UNIQUE comum bloquearia mais de uma linha com ''.
+    // Índice único PARCIAL (só quando preenchido — mesmo padrão de
+    // hr_employees_cpf_idx): produto sem código de uma das origens fica com
+    // '' nessa coluna, então um UNIQUE comum bloquearia mais de uma linha
+    // com ''. Existe pra valer (não só na aplicação) desde o bug de
+    // triplicação do catálogo Unigames por upload concorrente — ver
+    // upsertProductCatalogEntries, que faz o INSERT com ON CONFLICT nesse
+    // índice pra converter a corrida em UPDATE em vez de linha duplicada.
     codeUnigames: text("code_unigames").notNull().default(""),
     codePa: text("code_pa").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -2687,8 +2690,8 @@ export const productCatalog = pgTable(
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [
-    index("product_catalog_code_unigames_idx").on(table.codeUnigames),
-    index("product_catalog_code_pa_idx").on(table.codePa),
+    uniqueIndex("product_catalog_code_unigames_idx").on(table.codeUnigames).where(sql`code_unigames <> ''`),
+    uniqueIndex("product_catalog_code_pa_idx").on(table.codePa).where(sql`code_pa <> ''`),
     index("product_catalog_name_idx").on(table.name),
   ],
 );

@@ -163,11 +163,21 @@ export async function upsertProductCatalogEntries(
     const id = newId();
     const codeUnigames = source === "unigames" ? item.code : "";
     const codePa = source === "pa" ? item.code : "";
+    const insertConflictColumn = source === "unigames" ? "code_unigames" : "code_pa";
+    // ON CONFLICT no índice único parcial de codeUnigames/codePa (ver
+    // db/schema.ts): se outra requisição concorrente (ex.: duplo clique em
+    // "carregar base", ou duas abas enviando o mesmo upload) já inseriu essa
+    // linha entre o SELECT no início desta função e este INSERT, vira UPDATE
+    // em vez de criar produto duplicado — causa raiz da triplicação do
+    // catálogo corrigida por este índice.
     operations.push(
       database
         .prepare(
           `INSERT INTO product_catalog (id, name, code_unigames, code_pa, updated_by, updated_by_name)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+           ON CONFLICT (${insertConflictColumn}) WHERE ${insertConflictColumn} <> '' DO UPDATE SET
+             name=EXCLUDED.name, updated_by=EXCLUDED.updated_by,
+             updated_by_name=EXCLUDED.updated_by_name, updated_at=CURRENT_TIMESTAMP`,
         )
         .bind(id, item.name, codeUnigames, codePa, actor.id, actor.displayName),
     );

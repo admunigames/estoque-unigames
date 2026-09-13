@@ -3509,14 +3509,18 @@ test("Cadastro de Produtos: catálogo geral único, com reconciliação e integr
   );
   assert.match(draftItemsRoute, /if \(catalogMatch\?\.name\) productName = catalogMatch\.name;/);
 
-  // Front-end: duas abas de upload (Unigames / P.A Loja), busca, edição
-  // manual, e a sugestão de produto do Compras nativo passa a vir do
-  // catálogo geral (productCatalogItems), não mais do merge standard/pa.
+  // Front-end: duas abas de upload (Unigames / P.A Loja) — a tela serve só
+  // pra carregar as bases, sem tabela de listagem/busca/edição por linha
+  // (removidas: a gestão fina de um produto é feita subindo a base de novo).
+  // A sugestão de produto do Compras nativo continua vindo do catálogo geral
+  // (productCatalogItems), carregado em segundo plano sem UI própria.
   assert.match(html, /data-product-catalog-tab="unigames"/);
   assert.match(html, /data-product-catalog-tab="pa"/);
   assert.match(html, /id="fileProductCatalogUnigames"/);
   assert.match(html, /id="fileProductCatalogPa"/);
-  assert.match(html, /id="productCatalogSearch"/);
+  assert.doesNotMatch(html, /id="productCatalogSearch"/);
+  assert.doesNotMatch(html, /id="productCatalogTableBody"/);
+  assert.doesNotMatch(html, /data-catalog-edit=/);
   assert.match(html, /async function reconcileProductCatalog\(source, parsedMap\)\{/);
   assert.match(html, /async function handleProductCatalogUpload\(file, source\)\{/);
   assert.match(
