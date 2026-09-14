@@ -1821,7 +1821,7 @@
   .payable-origin-row{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:11px;margin-bottom:6px;}
   @media(max-width:850px){.payables-quick-views{grid-template-columns:repeat(2,1fr);} .payable-detail-summary{grid-template-columns:1fr;}}
   .user-actions{display:flex;gap:8px;flex-wrap:wrap}.user-list{display:grid;gap:10px}.user-card{border:1px solid var(--inset-border);border-radius:var(--radius-inset);padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
-  .user-card.inactive{opacity:.58}.user-card h4{margin:0 0 3px}.user-card p{margin:0;color:var(--ink-soft);font-size:11px}.user-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
+  .user-card.inactive{opacity:.58}.user-card h4{margin:0 0 3px}.user-card p{margin:0;color:var(--ink-soft);font-size:11px}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
   @media(max-width:850px){.users-layout{grid-template-columns:1fr}.permission-grid{grid-template-columns:1fr}}
 
   /* CONTRASTE E LEGIBILIDADE DO TEMA CLARO */
@@ -27202,16 +27202,6 @@ function renderHomeTasks(){
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
-  const accessGroupNames = {
-    administrator:'Administrador',
-    purchases:'Compras',
-    fiscal:'Fiscal',
-    operator:'Operador',
-    assistance:'Assistência',
-    custom:'Personalizado'
-  };
-  const hierarchyNames = {director:'Diretor',supervisor:'Supervisor',administrative:'Administrativo'};
-  const sectorNames = {administrative:'Administrativo',assistance:'Assistência'};
   // Espelha ACCESS_GROUP_PERMISSIONS de worker/index.ts. Mantido em sincronia
   // manualmente (o front-end estático não importa o worker) — qualquer
   // mudança lá precisa ser replicada aqui.
@@ -27277,17 +27267,11 @@ function renderHomeTasks(){
       return;
     }
     list.innerHTML = managedUsers.map(user => {
-      const groupBadge = '<span class="user-badge">'+escapeHtml(accessGroupNames[user.accessGroup] || 'Personalizado')+'</span>';
-      const hierarchyBadge = '<span class="user-badge">'+escapeHtml(hierarchyNames[user.hierarchy] || 'Administrativo')+'</span>';
-      const recoveryBadge = user.recoveryRequested ? '<span class="user-badge" style="color:#ef8a55">RECUPERAÇÃO SOLICITADA</span>' : '';
-      const company = companies.find(item => item.id === user.companyId);
-      const companyBadge = company ? '<span class="user-badge">LOJA · '+escapeHtml(company.name)+'</span>' : '';
-      const sectorBadge = user.sector ? '<span class="user-badge">SETOR · '+escapeHtml(sectorNames[user.sector] || user.sector)+'</span>' : '';
-      const badges = groupBadge + hierarchyBadge + companyBadge + sectorBadge + recoveryBadge + (user.role === 'admin'
-        ? '<span class="user-badge">ACESSO COMPLETO</span>'
-        : (user.permissions || []).map(permission => '<span class="user-badge">'+escapeHtml(permissionNames[permission] || permission)+'</span>').join('') || '<span class="user-badge">SEM MÓDULOS</span>');
+      // Card compacto: nome, usuário de login e status só — o detalhamento
+      // de permissões, grupo, loja, setor etc. fica só na tela de ALTERAR
+      // (edição), não solto aqui na listagem (evita a "sopa de badges").
       const actions = user.managed ? '<div class="user-actions"><button class="btn-outline" type="button" data-edit-user="'+escapeHtml(user.id)+'">ALTERAR</button><button class="btn-outline" type="button" data-toggle-user="'+escapeHtml(user.id)+'">'+(user.active ? 'BLOQUEAR' : 'REATIVAR')+'</button><button class="btn-danger-outline" type="button" data-delete-user="'+escapeHtml(user.id)+'">EXCLUIR</button></div>' : '<span class="user-badge">CONTA PRINCIPAL</span>';
-      return '<article class="user-card'+(user.active ? '' : ' inactive')+'"><div><h4>'+escapeHtml(user.displayName)+'</h4><p>@'+escapeHtml(user.username)+(user.email ? ' · '+escapeHtml(user.email) : '')+' · '+(user.active ? 'ATIVO' : 'BLOQUEADO')+'</p><div class="user-badges">'+badges+'</div></div>'+actions+'</article>';
+      return '<article class="user-card'+(user.active ? '' : ' inactive')+'"><div><h4>'+escapeHtml(user.displayName)+'</h4><p>@'+escapeHtml(user.username)+(user.email ? ' · '+escapeHtml(user.email) : '')+' · '+(user.active ? 'ATIVO' : 'BLOQUEADO')+'</p></div>'+actions+'</article>';
     }).join('');
   }
 

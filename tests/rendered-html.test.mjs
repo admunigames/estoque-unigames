@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v64"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v64"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v64"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1140,7 +1140,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v64"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1573,7 +1573,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v64"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1618,7 +1618,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v64"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -2525,9 +2525,10 @@ test("remove o fluxo especial de assistência: acesso 100% via permissões granu
   }
 
   // O setor "Assistência" continua existindo só como metadado organizacional
-  // (rótulo no cadastro), sem gate de acesso vinculado.
-  assert.match(html, /sectorNames = \{administrative:'Administrativo',assistance:'Assistência'\}/);
+  // (rótulo no cadastro, submetido como texto simples), sem gate de acesso
+  // vinculado.
   assert.match(html, /<option value="assistance">ASSISTÊNCIA<\/option>/);
+  assert.match(html, /sector:el\('userSector'\)\.value,/);
 
   // Captação: quem recebe/prepara e define destino passa a ser controlado só
   // por captures:receive / captures:assign, sem bloqueio hardcoded pra criar.
@@ -3589,4 +3590,46 @@ test("Insumos: seletor de semana de solicitação permite semanas passadas, ent�
     .toISOString()
     .slice(0, 10);
   assert.equal(weeks[0], oldestWeek);
+});
+
+test("card de usuário em Cadastros > Usuários e Acessos fica compacto (sem a lista de badges de permissão)", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+
+  // Card mostra só nome, @usuário, status e os 3 botões de ação — o resto
+  // (grupo, hierarquia, loja, setor, recuperação de senha, permissões
+  // granulares) só aparece dentro da tela de ALTERAR (edição), não solto
+  // na listagem principal.
+  const renderStart = html.indexOf("function renderAdminUsers(){");
+  assert.notEqual(renderStart, -1, "renderAdminUsers não encontrada");
+  const renderEnd = html.indexOf("\n  }\n", renderStart);
+  const renderBody = html.slice(renderStart, renderEnd);
+
+  assert.match(renderBody, /escapeHtml\(user\.displayName\)/);
+  assert.match(renderBody, /@'\+escapeHtml\(user\.username\)/);
+  assert.match(renderBody, /user\.active \? 'ATIVO' : 'BLOQUEADO'/);
+  assert.match(renderBody, /data-edit-user=/);
+  assert.match(renderBody, /data-toggle-user=/);
+  assert.match(renderBody, /data-delete-user=/);
+  assert.doesNotMatch(renderBody, /user-badges/);
+  assert.doesNotMatch(renderBody, /permissionNames\[permission\]/);
+  assert.doesNotMatch(renderBody, /accessGroupNames/);
+  assert.doesNotMatch(renderBody, /hierarchyNames/);
+  assert.doesNotMatch(renderBody, /sectorNames/);
+  assert.doesNotMatch(renderBody, /recoveryRequested/);
+  assert.doesNotMatch(renderBody, /ACESSO COMPLETO/);
+  assert.doesNotMatch(renderBody, /SEM MÓDULOS/);
+
+  // As variáveis que só existiam pra rotular essas badges removidas viram
+  // código morto e saem do arquivo — permissionNames continua (ainda usada
+  // pra montar o pacote fixo do grupo "administrator" e os checkboxes de
+  // edição).
+  assert.doesNotMatch(html, /const accessGroupNames = \{/);
+  assert.doesNotMatch(html, /const hierarchyNames = \{/);
+  assert.doesNotMatch(html, /const sectorNames = \{/);
+  assert.match(html, /const permissionNames = \{/);
+
+  // A tela de ALTERAR continua populando grupo/loja/setor/permissões
+  // completos a partir do usuário selecionado — só a listagem que ficou
+  // enxuta, não a edição.
+  assert.match(html, /el\('userAccessGroup'\)\.value = user\.accessGroup \|\| \(user\.role === 'admin' \? 'administrator' : 'custom'\);/);
 });
