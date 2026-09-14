@@ -883,6 +883,23 @@
     border-radius:9px; padding:9px 11px; font-family:var(--sans); font-size:12px;
   }
   .field textarea{min-height:78px; line-height:1.55; resize:vertical;}
+  /* Busca com sugestões no catálogo geral de produtos (Saídas/Entrada/
+     Alterações PDV/Compras) — dropdown JS anexado como irmão do <input>,
+     por isso o campo pai precisa de position:relative. */
+  .product-search-field{position:relative;}
+  .product-search-menu{
+    position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:20;
+    max-height:260px; overflow-y:auto; background:var(--bg-card-2); color:var(--ink);
+    border:1px solid var(--border); border-radius:9px; box-shadow:var(--surface-shadow-hover);
+    padding:4px;
+  }
+  .product-search-option{
+    display:flex; flex-direction:column; gap:2px; width:100%; text-align:left; background:none; border:0;
+    border-radius:7px; padding:7px 9px; font-family:var(--sans); color:var(--ink); cursor:pointer;
+  }
+  .product-search-option .product-search-name{font-size:12px;}
+  .product-search-option .product-search-code{font-size:10px; color:var(--ink-faint); font-family:var(--mono);}
+  .product-search-option:hover,.product-search-option.active{background:rgba(79,134,189,.14);}
   .pull-rule-note{
     display:flex; gap:10px; align-items:flex-start; margin-top:13px; padding:11px 13px; border-radius:9px;
     background:rgba(79,134,189,.09); border:1px solid rgba(79,134,189,.2); color:var(--ink-soft); font-size:10.5px; line-height:1.5;
@@ -3509,7 +3526,7 @@
           <div class="output-form-grid">
             <div class="field"><label for="outputQuantity">QUANTIDADE</label><input id="outputQuantity" type="number" min="1" max="9999" step="1" required value="1"></div>
             <div class="field" id="outputCompanyField" hidden><label for="outputCompany">LOJA</label><select id="outputCompany"><option value="">SELECIONE A LOJA</option></select></div>
-            <div class="field double"><label for="outputProductName">PRODUTO</label><input id="outputProductName" maxlength="180" required autocomplete="off" list="outputProductList" placeholder="Busque no catálogo por código ou nome (ou digite livremente)"><datalist id="outputProductList"></datalist></div>
+            <div class="field double product-search-field"><label for="outputProductName">PRODUTO</label><input id="outputProductName" maxlength="180" required autocomplete="off" placeholder="Busque no catálogo por código ou nome (ou digite livremente)"></div>
             <div class="field"><label for="outputResponsible">RESPONSÁVEL PELA SAÍDA</label><input id="outputResponsible" maxlength="120" required placeholder="Nome de quem é responsável pela saída"></div>
             <div class="field full"><label for="outputDefect">DEFEITOS / OBSERVAÇÕES</label><textarea id="outputDefect" maxlength="1200" rows="3" required placeholder="Descreva o defeito ou o motivo da saída."></textarea></div>
           </div>
@@ -3562,7 +3579,7 @@
           <div class="output-form-grid">
             <div class="field"><label for="inputQuantity">QUANTIDADE</label><input id="inputQuantity" type="number" min="1" max="9999" step="1" required value="1"></div>
             <div class="field" id="inputCompanyField" hidden><label for="inputCompany">LOJA</label><select id="inputCompany"><option value="">SELECIONE A LOJA</option></select></div>
-            <div class="field double"><label for="inputProductName">PRODUTO</label><input id="inputProductName" maxlength="180" required autocomplete="off" list="inputProductList" placeholder="Busque no catálogo por código ou nome (ou digite livremente)"><datalist id="inputProductList"></datalist></div>
+            <div class="field double product-search-field"><label for="inputProductName">PRODUTO</label><input id="inputProductName" maxlength="180" required autocomplete="off" placeholder="Busque no catálogo por código ou nome (ou digite livremente)"></div>
             <div class="field"><label for="inputResponsible">RESPONSÁVEL PELA ENTRADA</label><input id="inputResponsible" maxlength="120" required placeholder="Nome de quem é responsável pela entrada"></div>
             <div class="field full"><label for="inputReason">MOTIVO DA ENTRADA</label><textarea id="inputReason" maxlength="1200" rows="3" required placeholder="Descreva o motivo da entrada."></textarea></div>
           </div>
@@ -4045,8 +4062,8 @@
 
             <div class="field full" data-pdv-type-fields="customer"><label for="pdvCustomerInfo">CLIENTE (NOME COMPLETO OU CÓDIGO)</label><input id="pdvCustomerInfo" maxlength="200"></div>
 
-            <div class="field" data-pdv-type-fields="product"><label for="pdvProductCurrent">PRODUTO ATUAL DA VENDA</label><input id="pdvProductCurrent" maxlength="200" autocomplete="off" list="pdvProductList" placeholder="Busque no catálogo por código ou nome"></div>
-            <div class="field" data-pdv-type-fields="product"><label for="pdvProductNew">PRODUTO QUE PRECISA CONSTAR NO LUGAR</label><input id="pdvProductNew" maxlength="200" autocomplete="off" list="pdvProductList" placeholder="Busque no catálogo por código ou nome"><datalist id="pdvProductList"></datalist></div>
+            <div class="field product-search-field" data-pdv-type-fields="product"><label for="pdvProductCurrent">PRODUTO ATUAL DA VENDA</label><input id="pdvProductCurrent" maxlength="200" autocomplete="off" placeholder="Busque no catálogo por código ou nome"></div>
+            <div class="field product-search-field" data-pdv-type-fields="product"><label for="pdvProductNew">PRODUTO QUE PRECISA CONSTAR NO LUGAR</label><input id="pdvProductNew" maxlength="200" autocomplete="off" placeholder="Busque no catálogo por código ou nome"></div>
             <div class="field full" data-pdv-type-fields="product"><label for="pdvProductNote">OBSERVAÇÃO (PAGAMENTO/GORDURA, SE HOUVER)</label><textarea id="pdvProductNote" maxlength="2000" rows="3"></textarea></div>
 
             <div class="field" data-pdv-type-fields="markup"><label for="pdvMarkupProduct">PRODUTO DA VENDA COM VALOR ALTERADO</label><input id="pdvMarkupProduct" maxlength="200"></div>
@@ -4762,10 +4779,9 @@
         </div>
 
         <div class="purchase-form-grid" style="margin-bottom:16px;">
-          <div class="purchase-field full">
+          <div class="purchase-field full product-search-field">
             <label for="comprasProdutoBusca">PRODUTO (CÓDIGO OU NOME)</label>
-            <input id="comprasProdutoBusca" maxlength="80" autocomplete="off" list="comprasProdutoBuscaList">
-            <datalist id="comprasProdutoBuscaList"></datalist>
+            <input id="comprasProdutoBusca" maxlength="80" autocomplete="off">
           </div>
         </div>
 
@@ -6384,10 +6400,9 @@
   <form class="purchase-form" id="comprasDraftItemForm">
     <input type="hidden" id="comprasItemId">
     <div class="purchase-form-grid">
-      <div class="purchase-field full">
+      <div class="purchase-field full product-search-field">
         <label for="comprasItemProductCode">PRODUTO (CÓDIGO OU NOME) *</label>
-        <input id="comprasItemProductCode" maxlength="80" required autocomplete="off" list="comprasItemProductList">
-        <datalist id="comprasItemProductList"></datalist>
+        <input id="comprasItemProductCode" maxlength="80" required autocomplete="off">
       </div>
       <div class="purchase-field"><label for="comprasItemQuantity">QUANTIDADE *</label><input type="number" id="comprasItemQuantity" min="0" step="1" required></div>
       <div class="purchase-field full"><label for="comprasItemNotes">OBSERVAÇÃO</label><textarea id="comprasItemNotes" rows="2" maxlength="2000"></textarea></div>
@@ -11867,60 +11882,148 @@
     try{
       const data = await productCatalogApiRequest('');
       productCatalogItems = Array.isArray(data.items) ? data.items : [];
-      renderProductCatalogSearchDatalists();
-      renderComprasProdutoBuscaList();
     }catch{
       productCatalogItems = [];
     }
   }
 
-  // Datalists de busca no catálogo geral usadas fora do Compras nativo
-  // (Saídas/Entrada/Alterações PDV) — módulos que guardam só o NOME do
-  // produto como texto livre (sem coluna de código). Cada produto aparece
-  // como duas opções (nome e código), pra permitir buscar por qualquer um
-  // dos dois; ao selecionar um código, resolveProductNameFromCatalogInput
-  // troca o valor pelo nome antes de o formulário ser enviado.
-  function productCatalogSearchOptionsHtml(){
-    const seen = new Set();
-    const options = [];
-    for(const item of productCatalogItems){
-      const name = item.name || '';
-      if(name && !seen.has(name)){
-        seen.add(name);
-        options.push('<option value="'+escapeHtml(name)+'">'+escapeHtml(item.codeUnigames || item.codePa || '')+'</option>');
-      }
-      [item.codeUnigames, item.codePa].forEach(code => {
-        if(code && !seen.has(code)){
-          seen.add(code);
-          options.push('<option value="'+escapeHtml(code)+'">'+escapeHtml(name)+'</option>');
-        }
-      });
-    }
-    // Sem slice — ver nota em openComprasItemDialog: com o catálogo geral
-    // grande, um corte fixo esconde produtos da busca (bug real reportado).
-    return options.join('');
+  // Busca com sugestões no catálogo geral de produtos — usada em
+  // Saídas/Entrada/Alterações PDV e no Compras nativo (diálogo de item e
+  // aba "Por Produto"). Substitui o <input list>+<datalist> nativo: com o
+  // catálogo geral passando de 8 mil produtos, o navegador travava
+  // renderizando/filtrando dezenas de milhares de <option> a cada tecla
+  // (Compras chegava a listar 2 opções por produto — uma por código — sem
+  // nenhum corte), e cada produto com 2 códigos aparecia como 2-3
+  // sugestões diferentes, parecendo produto duplicado.
+  //
+  // `getEntries()` devolve as opções JÁ no formato de exibição/busca —
+  // quem chama decide a granularidade (1 linha por PRODUTO, usado nos
+  // campos que só guardam nome; ou 1 linha por CÓDIGO, usado no Compras,
+  // que precisa que o usuário escolha entre Unigames/P.A Loja). Os dados
+  // em si (productCatalogItems) são sempre lidos ao vivo na hora da busca,
+  // sem lista pré-renderizada — por isso não há mais nada pra atualizar
+  // quando o catálogo termina de carregar.
+  function productCatalogEntryScore(entry, query){
+    const label = (entry.label || '').toLowerCase();
+    const search = (entry.search || label).toLowerCase();
+    if(label === query) return 0;
+    if(label.startsWith(query)) return 1;
+    if(search.startsWith(query)) return 2;
+    if(search.includes(query)) return 3;
+    return -1;
   }
 
-  function renderProductCatalogSearchDatalists(){
-    const html = productCatalogSearchOptionsHtml();
-    ['outputProductList','inputProductList','pdvProductList'].forEach(id => {
-      if(el(id)) el(id).innerHTML = html;
+  function attachProductCatalogSearch(input, config){
+    if(!input) return;
+    const getEntries = config.getEntries;
+    const maxResults = config.maxResults || 20;
+    const field = input.closest('.product-search-field') || input.parentElement;
+
+    const menu = document.createElement('div');
+    menu.className = 'product-search-menu';
+    menu.hidden = true;
+    field.appendChild(menu);
+
+    let matches = [];
+    let activeIndex = -1;
+    let debounceTimer = null;
+
+    function closeMenu(){
+      menu.hidden = true;
+      menu.innerHTML = '';
+      matches = [];
+      activeIndex = -1;
+    }
+
+    function renderMenu(){
+      if(!matches.length){ closeMenu(); return; }
+      menu.innerHTML = matches.map((entry, index) =>
+        '<button type="button" class="product-search-option'+(index === activeIndex ? ' active' : '')+'" data-index="'+index+'">'+
+        '<span class="product-search-name">'+escapeHtml(entry.label || '')+'</span>'+
+        (entry.sublabel ? '<span class="product-search-code">'+escapeHtml(entry.sublabel)+'</span>' : '')+
+        '</button>'
+      ).join('');
+      menu.hidden = false;
+    }
+
+    function selectEntry(entry){
+      input.value = entry.value;
+      closeMenu();
+      input.dispatchEvent(new Event('change', {bubbles:true}));
+      input.focus();
+    }
+
+    function runSearch(){
+      const query = input.value.trim().toLowerCase();
+      if(query.length < 2){ closeMenu(); return; }
+      const scored = [];
+      for(const entry of getEntries()){
+        const score = productCatalogEntryScore(entry, query);
+        if(score >= 0) scored.push({ entry, score });
+      }
+      scored.sort((a, b) => a.score - b.score || a.entry.label.localeCompare(b.entry.label));
+      matches = scored.slice(0, maxResults).map(s => s.entry);
+      activeIndex = -1;
+      renderMenu();
+    }
+
+    input.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(runSearch, 280);
+    });
+    input.addEventListener('keydown', event => {
+      if(menu.hidden) return;
+      if(event.key === 'ArrowDown'){
+        event.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, matches.length - 1);
+        renderMenu();
+      }else if(event.key === 'ArrowUp'){
+        event.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, 0);
+        renderMenu();
+      }else if(event.key === 'Enter'){
+        if(matches.length){
+          event.preventDefault();
+          selectEntry(matches[activeIndex >= 0 ? activeIndex : 0]);
+        }
+      }else if(event.key === 'Escape'){
+        closeMenu();
+      }
+    });
+    menu.addEventListener('mousedown', event => {
+      const button = event.target.closest('[data-index]');
+      if(!button) return;
+      event.preventDefault();
+      const entry = matches[Number(button.dataset.index)];
+      if(entry) selectEntry(entry);
+    });
+    document.addEventListener('click', event => {
+      if(event.target !== input && !menu.contains(event.target)) closeMenu();
     });
   }
 
-  // Se o valor digitado/selecionado bater com um CÓDIGO do catálogo geral
-  // (Unigames ou P.A Loja), troca pelo NOME correspondente — os três campos
-  // abaixo só guardam nome como texto livre. comprasFindProductName já
-  // implementa essa busca (usada originalmente no Compras nativo).
-  function resolveProductNameFromCatalogInput(inputEl){
-    const value = inputEl.value.trim();
-    if(!value) return;
-    const resolved = comprasFindProductName(value);
-    if(resolved) inputEl.value = resolved;
+  // Saídas/Entrada/Alterações PDV só guardam o NOME do produto como texto
+  // livre (sem coluna de código) — 1 linha por produto do catálogo geral,
+  // buscável por nome OU por qualquer um dos códigos.
+  function productCatalogNameEntries(){
+    return productCatalogItems.map(item => ({
+      label: item.name || '',
+      sublabel: [item.codeUnigames, item.codePa].filter(Boolean).join(' · '),
+      search: [item.name, item.codeUnigames, item.codePa].filter(Boolean).join(' '),
+      value: item.name || ''
+    }));
   }
+  // Reforço: se o usuário digitar o CÓDIGO inteiro e sair do campo sem
+  // clicar numa sugestão (colar, digitação rápida), troca pelo nome assim
+  // que perde o foco — mesma busca por código que o Compras já usava
+  // (comprasFindProductName, definida mais abaixo).
   ['outputProductName','inputProductName','pdvProductCurrent','pdvProductNew'].forEach(id => {
     const input = el(id);
-    if(input) input.addEventListener('change', () => resolveProductNameFromCatalogInput(input));
+    attachProductCatalogSearch(input, { getEntries: productCatalogNameEntries });
+    if(input) input.addEventListener('change', () => {
+      const resolved = comprasFindProductName(input.value.trim());
+      if(resolved) input.value = resolved;
+    });
   });
 
   async function loadProductCatalogCount(){
@@ -23294,6 +23397,21 @@ function renderHomeTasks(){
     return item ? (item.name || '') : '';
   }
 
+  // Compras precisa que o usuário escolha um CÓDIGO específico (Unigames ou
+  // P.A Loja) — diferente de Saídas/Entrada/PDV, aqui 1 linha por código
+  // (não por produto), reaproveitando o mesmo Map code->nome de sempre.
+  function comprasProductCodeEntries(){
+    return Array.from(comprasProductCatalogEntries().entries()).map(([codigo, nome]) => ({
+      label: nome || codigo,
+      sublabel: codigo,
+      search: nome+' '+codigo,
+      value: codigo
+    }));
+  }
+  ['comprasItemProductCode','comprasProdutoBusca'].forEach(id => {
+    attachProductCatalogSearch(el(id), { getEntries: comprasProductCodeEntries });
+  });
+
   // ----- Fase F: aba "Pedidos" (purchase_orders + purchase_order_items) -----
   let comprasOrders = [];
   let comprasCurrentOrderId = '';
@@ -23707,13 +23825,6 @@ function renderHomeTasks(){
     el('comprasItemStockWrap').hidden = true;
     el('comprasItemStockBody').innerHTML = '';
 
-    const productList = el('comprasItemProductList');
-    // Sem slice: com o catálogo geral passando de 8 mil produtos, cortar em
-    // 500 escondia da busca tudo que viesse depois de "C" na ordenação por
-    // nome — bug real reportado (ex.: "controle ps5 preto" não aparecia).
-    productList.innerHTML = Array.from(comprasProductCatalogEntries().entries())
-      .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
-      .join('');
 
     const suppliers = await comprasNovoSuppliers();
     let selectedSupplierIds = [];
@@ -24134,24 +24245,11 @@ function renderHomeTasks(){
 
   // ----- Aba "Por Produto" — busca simples (sem varredura de todos os
   // produtos, sem filtro de período/loja), reaproveitando o mesmo catálogo
-  // carregado no cliente pro formulário de item de pedido.
-  // Reconstrói sempre que chamada, em vez de "só na primeira vez" — a
-  // versão antiga tinha uma flag "já carreguei uma vez" que corria contra o
-  // fetch assíncrono do catálogo: se a aba abrisse antes do catálogo
-  // terminar de chegar, a lista ficava vazia pro resto da sessão mesmo
-  // depois dos dados chegarem (bug real reportado: busca de produto em
-  // Compras não achava nada). renderComprasProdutoBuscaList também é
-  // chamada direto de loadProductCatalogItems (ver acima) pra cobrir esse
-  // caso sem esperar o usuário reabrir a aba.
-  function renderComprasProdutoBuscaList(){
-    const list = el('comprasProdutoBuscaList');
-    if(!list) return;
-    list.innerHTML = Array.from(comprasProductCatalogEntries().entries())
-      .map(([codigo, nome]) => '<option value="'+escapeHtml(codigo)+'">'+escapeHtml(nome)+'</option>')
-      .join('');
-  }
+  // carregado no cliente pro formulário de item de pedido. A busca com
+  // sugestões (attachProductCatalogSearch) lê productCatalogItems ao vivo a
+  // cada tecla, então não há mais lista pra reconstruir quando o catálogo
+  // termina de carregar (bug antigo: aba abria antes do catálogo chegar).
   function initComprasProdutoBusca(){
-    renderComprasProdutoBuscaList();
     if(!el('comprasProdutoBusca').value.trim()) loadComprasProdutoRecentes();
     loadComprasStats();
   }
