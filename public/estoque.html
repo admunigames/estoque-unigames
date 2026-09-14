@@ -14878,8 +14878,12 @@ function renderHomeTasks(){
   }
 
   function captureGameReportRows(companyId){
+    // Só "disponível para separação": jogo já destinado a uma loja
+    // (status 'assigned') já seguiu pra lá e não deve mais aparecer no
+    // relatório de captação daquela loja de origem.
     return captureRows
-      .filter(row => row.category === 'jogo' && (!companyId || row.originCompanyId === companyId))
+      .filter(row => row.category === 'jogo' && row.status === 'ready' &&
+        (!companyId || row.originCompanyId === companyId))
       .slice()
       .sort((a,b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
   }
@@ -14899,7 +14903,7 @@ function renderHomeTasks(){
   function captureGameTxtReport(companyId){
     const rows = captureGameReportRows(companyId);
     if(companyId){
-      if(!rows.length) throw new Error('NENHUM JOGO CAPTADO PARA ESTA LOJA.');
+      if(!rows.length) throw new Error('NENHUM JOGO DISPONÍVEL PARA SEPARAÇÃO NESTA LOJA.');
       const companyName = rows[0].originCompanyName ||
         (companies.find(company => company.id === companyId) || {}).name || 'LOJA';
       return captureGameReportBlock(companyName,rows);
@@ -14910,7 +14914,7 @@ function renderHomeTasks(){
       if(!byCompany.has(key)) byCompany.set(key,{name:row.originCompanyName || 'LOJA',rows:[]});
       byCompany.get(key).rows.push(row);
     });
-    if(!byCompany.size) throw new Error('NENHUM JOGO CAPTADO ATÉ O MOMENTO.');
+    if(!byCompany.size) throw new Error('NENHUM JOGO DISPONÍVEL PARA SEPARAÇÃO NO MOMENTO.');
     const blocks = Array.from(byCompany.values())
       .sort((a,b) => a.name.localeCompare(b.name,'pt-BR'))
       .map(entry => captureGameReportBlock(entry.name,entry.rows));
