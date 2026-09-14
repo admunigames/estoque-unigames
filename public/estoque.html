@@ -12008,7 +12008,7 @@
   function productCatalogNameEntries(){
     return productCatalogItems.map(item => ({
       label: item.name || '',
-      sublabel: [item.codeUnigames, item.codePa].filter(Boolean).join(' · '),
+      sublabel: Array.from(new Set([item.codeUnigames, item.codePa].filter(Boolean))).join(' · '),
       search: [item.name, item.codeUnigames, item.codePa].filter(Boolean).join(' '),
       value: item.name || ''
     }));
