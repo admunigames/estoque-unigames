@@ -3533,3 +3533,60 @@ test("Cadastro de Produtos: catálogo geral único, com reconciliação e integr
   );
   assert.doesNotMatch(html, /catalogMaps\.standard\.get\(codigo\)\?\.nome \|\| catalogMaps\.pa\.get\(codigo\)\?\.nome/);
 });
+
+test("Insumos: seletor de semana de solicitação permite semanas passadas, então uma solicitação atrasada não ocupa por engano a semana vigente seguinte", async () => {
+  const [html, requestsRoute] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/supplies/requests/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // supplyWeekOptions agora recebe quantas semanas passadas incluir — antes
+  // só ia pra frente a partir da semana vigente, então uma loja que só abria
+  // o site depois de uma segunda-feira perdida (feriado, folga) nunca
+  // conseguia escolher aquela semana atrasada: o seletor pulava direto pra
+  // vigente seguinte, e a solicitação atrasada acabava gravada com a semana
+  // vigente errada, bloqueando a solicitação real daquela semana.
+  assert.match(html, /function supplyWeekOptions\(pastCount,futureCount\)\{/);
+  assert.match(html, /for\(let i=-pastCount;i<=futureCount;i\+\+\)/);
+  assert.match(html, /const weeks = supplyWeekOptions\(pastCount,7\);/);
+  assert.match(html, /const vigente = weeks\[pastCount\];/);
+  assert.match(html, /\(ATRASADA\)/);
+  assert.match(html, /select\.value = weeks\.includes\(keepValue\) \? keepValue : vigente;/);
+
+  // O backend nunca deve inferir a semana pela data de hoje quando o cliente
+  // manda um weekStart explícito — sempre confia no que foi selecionado.
+  assert.match(
+    requestsRoute,
+    /const weekStart = \/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(String\(body\.weekStart \|\| ""\)\)\s*\n\s*\? String\(body\.weekStart\)\s*\n\s*: upcomingMondayRecife\(\);/,
+  );
+
+  const supplyUpcomingMonday = new Function(
+    `${extractNamedFunction(html, "supplyUpcomingMonday")}
+     return supplyUpcomingMonday;`,
+  )();
+  const supplyWeekOptions = new Function(
+    `${extractNamedFunction(html, "supplyUpcomingMonday")}
+     ${extractNamedFunction(html, "supplyWeekOptions")}
+     return supplyWeekOptions;`,
+  )();
+
+  // Segunda 07/09/2026 é feriado (7 de Setembro); a loja só abre o site na
+  // terça 08/09 (dia seguinte) pra tentar registrar a solicitação daquela
+  // semana perdida — nesse ponto a "próxima segunda" já pulou pra 14/09.
+  const tuesdayAfterHoliday = new Date("2026-09-08T12:00:00-03:00");
+  assert.equal(supplyUpcomingMonday(tuesdayAfterHoliday), "2026-09-14");
+
+  // Mesmo assim, o seletor de semanas (calculado a partir de hoje de
+  // verdade) sempre inclui pastCount semanas pra trás a partir da semana
+  // vigente atual — cobrindo tanto uma semana perdida recente quanto a
+  // semana vigente real, cada uma com seu próprio slot de solicitação.
+  const weeks = supplyWeekOptions(6, 7);
+  assert.equal(weeks.length, 14);
+  const vigenteReal = supplyUpcomingMonday();
+  const vigenteIndex = weeks.indexOf(vigenteReal);
+  assert.equal(vigenteIndex, 6, "a semana vigente real precisa ficar no índice pastCount");
+  const oldestWeek = new Date(Date.parse(vigenteReal + "T00:00:00Z") - 6 * 7 * 86400000)
+    .toISOString()
+    .slice(0, 10);
+  assert.equal(weeks[0], oldestWeek);
+});

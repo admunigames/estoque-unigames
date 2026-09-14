@@ -15685,10 +15685,16 @@ function renderHomeTasks(){
     return new Date(todayUtc+daysUntilMonday*86400000).toISOString().slice(0,10);
   }
 
-  function supplyWeekOptions(count){
-    const firstUtc = Date.parse(supplyUpcomingMonday()+'T00:00:00Z');
+  function supplyWeekOptions(pastCount,futureCount){
+    // Inclui semanas passadas de propósito: se a loja não abre o site numa
+    // segunda-feira (feriado, folga etc.), supplyUpcomingMonday() já pula
+    // direto pra segunda seguinte — sem opções passadas aqui, a solicitação
+    // atrasada daquela semana era enviada com a data de HOJE em vez da
+    // semana a que realmente se refere, ocupando por engano o lugar da
+    // solicitação da semana vigente de verdade.
+    const anchorUtc = Date.parse(supplyUpcomingMonday()+'T00:00:00Z');
     const weeks = [];
-    for(let i=0;i<count;i++) weeks.push(new Date(firstUtc+i*7*86400000).toISOString().slice(0,10));
+    for(let i=-pastCount;i<=futureCount;i++) weeks.push(new Date(anchorUtc+i*7*86400000).toISOString().slice(0,10));
     return weeks;
   }
 
@@ -15709,12 +15715,15 @@ function renderHomeTasks(){
 
   function renderSupplyMissingWeekOptions(){
     const select = el('supplyMissingWeekSelect');
-    const weeks = supplyWeekOptions(8);
+    const pastCount = 6;
+    const weeks = supplyWeekOptions(pastCount,7);
+    const vigente = weeks[pastCount];
     const keepValue = select.value;
-    select.innerHTML = weeks.map((week,index) =>
-      '<option value="'+week+'">'+formatSupplyMissingWeek(week)+(index === 0 ? ' (VIGENTE)' : '')+'</option>'
+    select.innerHTML = weeks.map(week =>
+      '<option value="'+week+'">'+formatSupplyMissingWeek(week)+
+        (week === vigente ? ' (VIGENTE)' : (week < vigente ? ' (ATRASADA)' : ''))+'</option>'
     ).join('');
-    select.value = weeks.includes(keepValue) ? keepValue : weeks[0];
+    select.value = weeks.includes(keepValue) ? keepValue : vigente;
   }
 
   function supplyMissingGroupsHtml(items){
