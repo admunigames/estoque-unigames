@@ -3596,75 +3596,6 @@
         </div>
       </header>
 
-      <section class="supply-register-panel" id="supplyExitPanel" hidden>
-        <div class="supply-panel-head">
-          <div><h3>MOVIMENTAÇÃO DE ESTOQUE</h3><p id="supplyExitDescription">Registre a entrada ou saída de um produto já cadastrado. O estoque é atualizado na hora.</p></div>
-        </div>
-        <form class="supply-product-form" id="supplyExitForm">
-          <div class="field"><label for="supplyExitType">TIPO</label><select id="supplyExitType"></select></div>
-          <div class="field"><label for="supplyExitProduct">PRODUTO</label><select id="supplyExitProduct" required><option value="">SELECIONE</option></select></div>
-          <div class="field"><label for="supplyExitQuantity">QUANTIDADE</label><input id="supplyExitQuantity" type="number" step="1" min="1" required></div>
-          <div class="field"><label for="supplyExitResponsible">RESPONSÁVEL</label><input id="supplyExitResponsible" maxlength="120" required></div>
-          <div class="field full"><label for="supplyExitReason">MOTIVO</label><input id="supplyExitReason" maxlength="300" placeholder="Ex.: uso interno, reposição na loja, compra recebida" required></div>
-          <div class="field full" style="display:flex;justify-content:flex-end;"><button class="btn-accent" id="btnSaveSupplyExit" type="submit">REGISTRAR</button></div>
-        </form>
-        <div class="user-form-status" id="supplyExitFormStatus" role="status" aria-live="polite"></div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr><th>Produto</th><th>Tipo</th><th style="text-align:right">Quantidade</th><th>Motivo</th><th>Data</th></tr>
-              </thead>
-              <tbody id="supplyExitHistoryBody"><tr><td colspan="5" class="responsive-empty">Nenhuma movimentação registrada por você ainda.</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="supply-register-panel" id="supplyRegisterPanel">
-        <div class="supply-panel-head">
-          <div><h3 id="supplyMissingTitle">FALTANDO NA SEMANA</h3><p id="supplyRegisterDescription">Marque os produtos que estão faltando. Na segunda-feira isso vira a base da solicitação.</p></div>
-        </div>
-        <div class="supply-form-grid">
-          <div class="field" id="supplyCompanyField" hidden><label for="supplyCompany">LOJA</label><select id="supplyCompany"><option value="">SELECIONE A LOJA</option></select></div>
-          <div class="field"><label for="supplyMissingWeekSelect">SEMANA DE SOLICITAÇÃO</label><select id="supplyMissingWeekSelect"></select></div>
-        </div>
-        <div class="user-form-status" id="supplyFormStatus" role="status" aria-live="polite"></div>
-        <div class="supply-missing-groups" id="supplyMissingGroups"><div class="supply-empty">Carregando produtos…</div></div>
-      </section>
-
-      <section class="supply-register-panel" id="supplyRequestPendingOldPanel" hidden>
-        <div class="supply-panel-head">
-          <div><h3>PENDENTE DE SEMANAS ANTERIORES</h3><p>Estas solicitações ainda têm itens aguardando separação ou confirmação de recebimento — continuam aqui até serem concluídas, mesmo depois da semana virar.</p></div>
-        </div>
-        <div class="supply-separation-list" id="supplyRequestPendingOldList"></div>
-      </section>
-
-      <section class="supply-register-panel" id="supplyRequestPanel" hidden>
-        <div class="supply-panel-head">
-          <div><h3>SOLICITAÇÃO</h3><p id="supplyRequestDescription">Revise o que está marcado, informe o responsável e envie a solicitação da semana.</p></div>
-          <button class="btn-outline" id="btnToggleSupplyRequestHistory" type="button">HISTÓRICO</button>
-        </div>
-        <div id="supplyRequestHistory" hidden>
-          <div class="supply-separation-list" id="supplyRequestHistoryList"><div class="supply-empty">Carregando histórico…</div></div>
-        </div>
-        <div id="supplyRequestSubmitted" hidden>
-          <div class="user-form-status success" id="supplyRequestSubmittedStatus"></div>
-          <div class="supply-request-summary" id="supplyRequestSummaryMeta"></div>
-          <div class="supply-missing-groups" id="supplyRequestSummaryGroups"></div>
-        </div>
-        <form id="supplyRequestForm">
-          <div class="supply-form-grid">
-            <div class="field"><label for="supplyRequestResponsible">RESPONSÁVEL PELA SOLICITAÇÃO</label><input id="supplyRequestResponsible" maxlength="120" required></div>
-            <div class="field"><label>SEMANA DE SOLICITAÇÃO</label><div class="supply-missing-week" id="supplyRequestWeekLabel">—</div></div>
-          </div>
-          <div class="supply-missing-groups" id="supplyRequestGroups"><div class="supply-empty">Carregando produtos…</div></div>
-          <div class="field full" style="margin-top:14px;"><label for="supplyRequestNote">OBSERVAÇÃO (produto não cadastrado, etc.)</label><textarea id="supplyRequestNote" maxlength="600" rows="3"></textarea></div>
-          <div class="supply-form-actions"><button class="btn-accent" id="btnSubmitSupplyRequest" type="submit">ENVIAR SOLICITAÇÃO</button></div>
-          <div class="user-form-status" id="supplyRequestFormStatus" role="status" aria-live="polite"></div>
-        </form>
-      </section>
-
       <section class="supply-admin-panel" id="supplyAdminPanel" hidden>
         <div class="supply-admin-panel-head">
           <div><h3>ADMINISTRAÇÃO DE INSUMOS</h3><p>Cadastre o que as lojas podem marcar como faltante e controle entradas e saídas do estoque.</p></div>
@@ -3820,6 +3751,75 @@
             <button class="btn-outline" id="btnRefreshHistory" type="button" style="margin-left:auto;">ATUALIZAR</button>
           </div>
           <div class="supply-separation-list" id="supplyAdminHistoryList"><div class="supply-empty">Carregando histórico…</div></div>
+        </div>
+      </section>
+
+      <section class="supply-register-panel" id="supplyRegisterPanel">
+        <div class="supply-panel-head">
+          <div><h3 id="supplyMissingTitle">FALTANDO NA SEMANA</h3><p id="supplyRegisterDescription">Marque os produtos que estão faltando. Na segunda-feira isso vira a base da solicitação.</p></div>
+        </div>
+        <div class="supply-form-grid">
+          <div class="field" id="supplyCompanyField" hidden><label for="supplyCompany">LOJA</label><select id="supplyCompany"><option value="">SELECIONE A LOJA</option></select></div>
+          <div class="field"><label for="supplyMissingWeekSelect">SEMANA DE SOLICITAÇÃO</label><select id="supplyMissingWeekSelect"></select></div>
+        </div>
+        <div class="user-form-status" id="supplyFormStatus" role="status" aria-live="polite"></div>
+        <div class="supply-missing-groups" id="supplyMissingGroups"><div class="supply-empty">Carregando produtos…</div></div>
+      </section>
+
+      <section class="supply-register-panel" id="supplyRequestPendingOldPanel" hidden>
+        <div class="supply-panel-head">
+          <div><h3>PENDENTE DE SEMANAS ANTERIORES</h3><p>Estas solicitações ainda têm itens aguardando separação ou confirmação de recebimento — continuam aqui até serem concluídas, mesmo depois da semana virar.</p></div>
+        </div>
+        <div class="supply-separation-list" id="supplyRequestPendingOldList"></div>
+      </section>
+
+      <section class="supply-register-panel" id="supplyRequestPanel" hidden>
+        <div class="supply-panel-head">
+          <div><h3>SOLICITAÇÃO</h3><p id="supplyRequestDescription">Revise o que está marcado, informe o responsável e envie a solicitação da semana.</p></div>
+          <button class="btn-outline" id="btnToggleSupplyRequestHistory" type="button">HISTÓRICO</button>
+        </div>
+        <div id="supplyRequestHistory" hidden>
+          <div class="supply-separation-list" id="supplyRequestHistoryList"><div class="supply-empty">Carregando histórico…</div></div>
+        </div>
+        <div id="supplyRequestSubmitted" hidden>
+          <div class="user-form-status success" id="supplyRequestSubmittedStatus"></div>
+          <div class="supply-request-summary" id="supplyRequestSummaryMeta"></div>
+          <div class="supply-missing-groups" id="supplyRequestSummaryGroups"></div>
+        </div>
+        <form id="supplyRequestForm">
+          <div class="supply-form-grid">
+            <div class="field"><label for="supplyRequestResponsible">RESPONSÁVEL PELA SOLICITAÇÃO</label><input id="supplyRequestResponsible" maxlength="120" required></div>
+            <div class="field"><label>SEMANA DE SOLICITAÇÃO</label><div class="supply-missing-week" id="supplyRequestWeekLabel">—</div></div>
+          </div>
+          <div class="supply-missing-groups" id="supplyRequestGroups"><div class="supply-empty">Carregando produtos…</div></div>
+          <div class="field full" style="margin-top:14px;"><label for="supplyRequestNote">OBSERVAÇÃO (produto não cadastrado, etc.)</label><textarea id="supplyRequestNote" maxlength="600" rows="3"></textarea></div>
+          <div class="supply-form-actions"><button class="btn-accent" id="btnSubmitSupplyRequest" type="submit">ENVIAR SOLICITAÇÃO</button></div>
+          <div class="user-form-status" id="supplyRequestFormStatus" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="supply-register-panel" id="supplyExitPanel" hidden>
+        <div class="supply-panel-head">
+          <div><h3>MOVIMENTAÇÃO DE ESTOQUE</h3><p id="supplyExitDescription">Registre a entrada ou saída de um produto já cadastrado. O estoque é atualizado na hora.</p></div>
+        </div>
+        <form class="supply-product-form" id="supplyExitForm">
+          <div class="field"><label for="supplyExitType">TIPO</label><select id="supplyExitType"></select></div>
+          <div class="field"><label for="supplyExitProduct">PRODUTO</label><select id="supplyExitProduct" required><option value="">SELECIONE</option></select></div>
+          <div class="field"><label for="supplyExitQuantity">QUANTIDADE</label><input id="supplyExitQuantity" type="number" step="1" min="1" required></div>
+          <div class="field"><label for="supplyExitResponsible">RESPONSÁVEL</label><input id="supplyExitResponsible" maxlength="120" required></div>
+          <div class="field full"><label for="supplyExitReason">MOTIVO</label><input id="supplyExitReason" maxlength="300" placeholder="Ex.: uso interno, reposição na loja, compra recebida" required></div>
+          <div class="field full" style="display:flex;justify-content:flex-end;"><button class="btn-accent" id="btnSaveSupplyExit" type="submit">REGISTRAR</button></div>
+        </form>
+        <div class="user-form-status" id="supplyExitFormStatus" role="status" aria-live="polite"></div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Produto</th><th>Tipo</th><th style="text-align:right">Quantidade</th><th>Motivo</th><th>Data</th></tr>
+              </thead>
+              <tbody id="supplyExitHistoryBody"><tr><td colspan="5" class="responsive-empty">Nenhuma movimentação registrada por você ainda.</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </section>
     </section>
