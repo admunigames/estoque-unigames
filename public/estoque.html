@@ -23397,16 +23397,24 @@ function renderHomeTasks(){
     return item ? (item.name || '') : '';
   }
 
-  // Compras precisa que o usuário escolha um CÓDIGO específico (Unigames ou
-  // P.A Loja) — diferente de Saídas/Entrada/PDV, aqui 1 linha por código
-  // (não por produto), reaproveitando o mesmo Map code->nome de sempre.
+  // 1 linha por PRODUTO (igual Saídas/Entrada/PDV) — mostrar 2 linhas pro
+  // mesmo produto (uma por código) parecia duplicata pro usuário, e nenhuma
+  // rota do servidor diferencia mais qual dos dois códigos foi escolhido
+  // (estoque-saldo e produtos/historico já casam por QUALQUER código do
+  // catálogo geral). Prioriza o código Unigames como valor salvo — sem
+  // efeito prático na busca de saldo/histórico, só precisa ser UM valor.
   function comprasProductCodeEntries(){
-    return Array.from(comprasProductCatalogEntries().entries()).map(([codigo, nome]) => ({
-      label: nome || codigo,
-      sublabel: codigo,
-      search: nome+' '+codigo,
-      value: codigo
-    }));
+    return productCatalogItems
+      .map(item => {
+        const codes = Array.from(new Set([item.codeUnigames, item.codePa].filter(Boolean)));
+        return {
+          label: item.name || codes[0] || '',
+          sublabel: codes.join(' · '),
+          search: [item.name, item.codeUnigames, item.codePa].filter(Boolean).join(' '),
+          value: item.codeUnigames || item.codePa || ''
+        };
+      })
+      .filter(entry => entry.value);
   }
   ['comprasItemProductCode','comprasProdutoBusca'].forEach(id => {
     attachProductCatalogSearch(el(id), { getEntries: comprasProductCodeEntries });

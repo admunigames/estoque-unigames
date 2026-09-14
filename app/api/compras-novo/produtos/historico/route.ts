@@ -10,6 +10,7 @@ type ItemRow = {
 };
 
 type SupplierRow = { id: string; name: string };
+type CatalogMatchRow = { name: string; codeUnigames: string; codePa: string };
 
 // Fase D, item 3: "Compras por Produto" — busca (não varredura de todos os
 // produtos) por productCode, olhando só purchase_order_items de pedidos
@@ -30,16 +31,33 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
+    // Resolve o produto no catálogo geral (por qualquer código OU pelo nome
+    // exato) pra casar por QUALQUER código conhecido (Unigames/P.A Loja) —
+    // a busca "Por Produto" mostra 1 linha por produto e guarda só UM dos
+    // códigos, então sem isso o histórico perderia pedidos registrados com
+    // o código do outro sistema.
+    const catalogMatch = await database
+      .prepare(
+        `SELECT name, code_unigames AS codeUnigames, code_pa AS codePa
+         FROM product_catalog WHERE code_unigames=?1 OR code_pa=?1 OR name=?1 LIMIT 1`,
+      )
+      .bind(produto)
+      .first<CatalogMatchRow>();
+    const matchCodes = Array.from(
+      new Set([produto, catalogMatch?.codeUnigames, catalogMatch?.codePa].filter((code): code is string => Boolean(code))),
+    );
+    const codePlaceholders = matchCodes.map((_, index) => `?${index + 1}`).join(",");
+
     const itemsResult = await database
       .prepare(
         `SELECT po.supplier_id AS supplierId, po.order_date AS orderDate,
                 poi.quantity AS quantity, poi.unit_price_cents AS unitPriceCents
          FROM purchase_order_items poi
          JOIN purchase_orders po ON po.id = poi.order_id
-         WHERE poi.product_code=?1 AND po.origin='native' AND po.canceled=0
+         WHERE poi.product_code IN (${codePlaceholders}) AND po.origin='native' AND po.canceled=0
          ORDER BY po.order_date DESC`,
       )
-      .bind(produto)
+      .bind(...matchCodes)
       .all<ItemRow>();
     const items = itemsResult.results ?? [];
 
@@ -100,9 +118,9 @@ export async function GET(request: Request) {
         `SELECT COUNT(DISTINCT poi.order_id) AS total
          FROM purchase_order_items poi
          JOIN purchase_orders po ON po.id = poi.order_id
-         WHERE poi.product_code=?1 AND po.origin='native' AND po.canceled=0`,
+         WHERE poi.product_code IN (${codePlaceholders}) AND po.origin='native' AND po.canceled=0`,
       )
-      .bind(produto)
+      .bind(...matchCodes)
       .first<{ total: number }>();
 
     // Fase F: "em andamento" (a caminho) e "atrasado" — só olham pedidos
@@ -113,9 +131,9 @@ export async function GET(request: Request) {
         `SELECT COALESCE(SUM(poi.quantity - poi.received_quantity), 0) AS total
          FROM purchase_order_items poi
          JOIN purchase_orders po ON po.id = poi.order_id
-         WHERE poi.product_code=?1 AND po.origin='native' AND po.canceled=0 AND po.status='aguardando_chegada'`,
+         WHERE poi.product_code IN (${codePlaceholders}) AND po.origin='native' AND po.canceled=0 AND po.status='aguardando_chegada'`,
       )
-      .bind(produto)
+      .bind(...matchCodes)
       .first<{ total: number }>();
 
     // Mesma regra de atraso que comprasOrderIsLate() usa no cliente:
@@ -126,10 +144,10 @@ export async function GET(request: Request) {
         `SELECT COALESCE(SUM(poi.quantity - poi.received_quantity), 0) AS total
          FROM purchase_order_items poi
          JOIN purchase_orders po ON po.id = poi.order_id
-         WHERE poi.product_code=?1 AND po.origin='native' AND po.canceled=0
-           AND po.status != 'concluido' AND po.expected_date != '' AND po.expected_date < ?2`,
+         WHERE poi.product_code IN (${codePlaceholders}) AND po.origin='native' AND po.canceled=0
+           AND po.status != 'concluido' AND po.expected_date != '' AND po.expected_date < ?${matchCodes.length + 1}`,
       )
-      .bind(produto, today)
+      .bind(...matchCodes, today)
       .first<{ total: number }>();
 
     const suppliers = Array.from(bySupplier.values()).sort((a, b) => b.totalQuantity - a.totalQuantity);

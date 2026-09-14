@@ -3377,10 +3377,13 @@ test("Módulo Compras nativo (Fase F): Divisão com template novo e painel Por P
   assert.match(orderItemRoute, /unit_price_cents=\?2/);
 
   // Histórico de compra por produto: endpoint sem varredura de todos os
-  // produtos (sempre filtra por product_code=?1), só pedidos nativos não
-  // cancelados, agrupado por fornecedor, e agora com inProgressQuantity
-  // (itens de pedidos 'aguardando_chegada') e lateQuantity (atrasados).
-  assert.match(historicoRoute, /product_code=\?1 AND po\.origin='native' AND po\.canceled=0/);
+  // produtos (sempre filtra por product_code, resolvido via catálogo geral
+  // pra casar por QUALQUER código conhecido do produto — Unigames ou P.A
+  // Loja), só pedidos nativos não cancelados, agrupado por fornecedor, e
+  // agora com inProgressQuantity (itens de pedidos 'aguardando_chegada') e
+  // lateQuantity (atrasados).
+  assert.match(historicoRoute, /product_code IN \(\$\{codePlaceholders\}\) AND po\.origin='native' AND po\.canceled=0/);
+  assert.match(historicoRoute, /FROM product_catalog WHERE code_unigames=\?1 OR code_pa=\?1 OR name=\?1/);
   assert.match(historicoRoute, /ORDER BY po\.order_date DESC/);
   assert.match(historicoRoute, /bySupplier\.get\(supplierId\)/);
   assert.match(historicoRoute, /\.sort\(\(a, b\) => b\.totalQuantity - a\.totalQuantity\)/);
@@ -3389,7 +3392,7 @@ test("Módulo Compras nativo (Fase F): Divisão com template novo e painel Por P
   assert.match(historicoRoute, /po\.status='aguardando_chegada'/);
   assert.match(historicoRoute, /inProgressQuantity/);
   assert.match(historicoRoute, /lateQuantity/);
-  assert.match(historicoRoute, /po\.expected_date < \?2/);
+  assert.match(historicoRoute, /po\.expected_date < \?\$\{matchCodes\.length \+ 1\}/);
 
   // UI: Divisão com o template novo, e painel "Por Produto" com os dois
   // números novos (em andamento/atrasado) ao lado dos que já existiam.
