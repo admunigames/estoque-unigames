@@ -2122,6 +2122,8 @@
   }
   .capture-panel-head h3,.capture-board-head h3{margin:0;color:var(--ink);}
   .capture-panel-head p,.capture-board-head p{margin:5px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5;}
+  .capture-board-actions{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
+  .capture-board-actions .field{min-width:170px;margin-bottom:0;}
   .capture-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
   .capture-form-grid .field.double{grid-column:span 2;}
   .capture-form-actions{display:flex;justify-content:flex-end;margin-top:14px;}
@@ -3461,7 +3463,14 @@
       <section class="capture-board">
         <div class="capture-board-head">
           <div><h3>FLUXO DOS PRODUTOS</h3><p id="captureBoardDescription">Produtos captados e andamento na assistência.</p></div>
-          <button class="btn-outline" id="btnRefreshCaptures" type="button">ATUALIZAR</button>
+          <div class="capture-board-actions">
+            <div class="field" id="captureGameReportStoreField" hidden>
+              <label for="captureGameReportStore">LOJA DO RELATÓRIO</label>
+              <select id="captureGameReportStore"><option value="">TODAS AS LOJAS</option></select>
+            </div>
+            <button class="btn-outline" id="btnCaptureGameReport" type="button" hidden>RELATÓRIO TXT · JOGOS</button>
+            <button class="btn-outline" id="btnRefreshCaptures" type="button">ATUALIZAR</button>
+          </div>
         </div>
         <div class="capture-toolbar">
           <div class="field search"><label for="captureSearch">BUSCAR PRODUTO OU SERIAL</label><input id="captureSearch" type="search" placeholder="Digite produto, serial, loja ou cor"></div>
@@ -14745,7 +14754,87 @@ function renderHomeTasks(){
     el('captureList').innerHTML = visibleRows.length
       ? visibleRows.map(row => captureCardHtml(row,childrenByParent[row.id] || [])).join('')
       : '<div class="mission-empty">Nenhum produto encontrado nesta visão.</div>';
+
+    // Espelha a regra "allStores" de app/api/captures/route.ts (GET): quem
+    // enxerga captações de qualquer loja por view/receive/assign pode
+    // escolher a loja do relatório (ou baixar de todas); quem tem loja
+    // vinculada só baixa a própria.
+    const canChooseReportStore = canActAcrossStores('captures:view') ||
+      canActAcrossStores('captures:receive') || canActAcrossStores('captures:assign');
+    const canDownloadGameReport = canChooseReportStore || Boolean(currentSession.companyId);
+    el('captureGameReportStoreField').hidden = !canChooseReportStore;
+    el('btnCaptureGameReport').hidden = !canDownloadGameReport;
+    if(canChooseReportStore){
+      const previousValue = el('captureGameReportStore').value;
+      el('captureGameReportStore').innerHTML = '<option value="">TODAS AS LOJAS</option>'+
+        companies.map(company =>
+          '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
+        ).join('');
+      el('captureGameReportStore').value = previousValue;
+    }
   }
+
+  function captureGameReportRows(companyId){
+    return captureRows
+      .filter(row => row.category === 'jogo' && (!companyId || row.originCompanyId === companyId))
+      .slice()
+      .sort((a,b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  }
+
+  function captureGameReportBlock(companyName,rows){
+    const lines = ['CAPTAÇÃO, ORIGEM '+String(companyName || 'LOJA').toUpperCase(),''];
+    rows.forEach((row,index) => {
+      if(index > 0) lines.push('');
+      const name = String(row.gameName || row.productName || 'JOGO SEM NOME').trim().toUpperCase();
+      const gameConsole = String(row.gameConsole || '').trim();
+      const condition = String(row.gameCondition || '').trim().toLowerCase();
+      lines.push('01 - '+name+'-'+gameConsole+' '+condition);
+    });
+    return lines.join('\r\n');
+  }
+
+  function captureGameTxtReport(companyId){
+    const rows = captureGameReportRows(companyId);
+    if(companyId){
+      if(!rows.length) throw new Error('NENHUM JOGO CAPTADO PARA ESTA LOJA.');
+      const companyName = rows[0].originCompanyName ||
+        (companies.find(company => company.id === companyId) || {}).name || 'LOJA';
+      return captureGameReportBlock(companyName,rows);
+    }
+    const byCompany = new Map();
+    rows.forEach(row => {
+      const key = row.originCompanyId;
+      if(!byCompany.has(key)) byCompany.set(key,{name:row.originCompanyName || 'LOJA',rows:[]});
+      byCompany.get(key).rows.push(row);
+    });
+    if(!byCompany.size) throw new Error('NENHUM JOGO CAPTADO ATÉ O MOMENTO.');
+    const blocks = Array.from(byCompany.values())
+      .sort((a,b) => a.name.localeCompare(b.name,'pt-BR'))
+      .map(entry => captureGameReportBlock(entry.name,entry.rows));
+    return blocks.join('\r\n\r\n\r\n');
+  }
+
+  function captureGameReportFileName(companyName){
+    const clean = value => String(value || '')
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^A-Z0-9]+/gi,'_').replace(/^_+|_+$/g,'').toUpperCase();
+    return 'CAPTACAO_JOGOS_'+clean(companyName)+'.txt';
+  }
+
+  el('btnCaptureGameReport').addEventListener('click',() => {
+    try{
+      const canChooseReportStore = !el('captureGameReportStoreField').hidden;
+      const companyId = canChooseReportStore ? el('captureGameReportStore').value : currentSession.companyId;
+      const content = captureGameTxtReport(companyId);
+      const companyName = companyId
+        ? ((companies.find(company => company.id === companyId) || {}).name || 'LOJA')
+        : 'TODAS AS LOJAS';
+      const blob = new Blob(['﻿'+content],{type:'text/plain;charset=utf-8;'});
+      downloadBlobFile(blob,captureGameReportFileName(companyName));
+    }catch(error){
+      showPurchaseToast(error.message || 'Não foi possível gerar o TXT.','error');
+    }
+  });
 
   async function loadCaptures(){
     if(!canAccess('captures') || capturesLoading) return;
