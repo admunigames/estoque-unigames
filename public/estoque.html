@@ -900,6 +900,19 @@
   .product-search-option .product-search-name{font-size:12px;}
   .product-search-option .product-search-code{font-size:10px; color:var(--ink-faint); font-family:var(--mono);}
   .product-search-option:hover,.product-search-option.active{background:rgba(79,134,189,.14);}
+  .product-search-option.create-option{color:var(--accent); font-weight:700;}
+  .multi-select-chips{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 0;}
+  .multi-select-chip{
+    display:inline-flex; align-items:center; gap:6px; padding:5px 6px 5px 10px; border-radius:20px;
+    border:1px solid var(--border); background:rgba(79,134,189,.12); color:var(--ink);
+    font:700 11px/1.2 var(--sans);
+  }
+  .multi-select-chip button{
+    display:flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%;
+    border:0; background:rgba(255,255,255,.08); color:var(--ink-soft); cursor:pointer; font-size:12px; line-height:1;
+    padding:0;
+  }
+  .multi-select-chip button:hover{background:rgba(239,106,85,.25); color:#ffb4a8;}
   .pull-rule-note{
     display:flex; gap:10px; align-items:flex-start; margin-top:13px; padding:11px 13px; border-radius:9px;
     background:rgba(79,134,189,.09); border:1px solid rgba(79,134,189,.2); color:var(--ink-soft); font-size:10.5px; line-height:1.5;
@@ -6436,13 +6449,16 @@
     </div>
 
     <p class="page-desc" style="margin:14px 0 6px;">LOJAS DESTINO</p>
-    <input id="comprasItemStoresFilter" type="text" placeholder="Buscar loja..." autocomplete="off" style="margin-bottom:8px;">
-    <div class="permission-grid" id="comprasItemStoresGrid"></div>
+    <div class="product-search-field">
+      <input id="comprasItemStoresFilter" type="text" placeholder="Buscar loja..." autocomplete="off">
+    </div>
+    <div class="multi-select-chips" id="comprasItemStoresChips"></div>
 
     <p class="page-desc" style="margin:14px 0 6px;">FORNECEDOR(ES) CANDIDATO(S)</p>
-    <input id="comprasItemSuppliersFilter" type="text" placeholder="Buscar fornecedor..." autocomplete="off" style="margin-bottom:8px;">
-    <div class="permission-grid" id="comprasItemSuppliersGrid"></div>
-    <button class="btn-outline" type="button" id="btnComprasItemQuickAddSupplier" hidden style="margin-top:8px;"></button>
+    <div class="product-search-field">
+      <input id="comprasItemSuppliersFilter" type="text" placeholder="Buscar fornecedor..." autocomplete="off">
+    </div>
+    <div class="multi-select-chips" id="comprasItemSuppliersChips"></div>
 
     <div class="user-form-status" id="comprasDraftItemFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -23999,66 +24015,136 @@ function renderHomeTasks(){
     URL.revokeObjectURL(url);
   });
 
-  // Filtra as opções (labels de checkbox) de uma permission-grid conforme o
-  // texto digitado no campo de busca acima dela — usado nas grades de
-  // "LOJAS DESTINO" e "FORNECEDOR(ES) CANDIDATO(S)" do item de Compras, que
-  // podem ter muitas opções. Mantém a seleção múltipla existente (checkbox),
-  // só esconde/mostra as linhas; não é o mesmo componente de autocomplete de
-  // produto (que seleciona um valor único num input de texto).
-  function attachChecklistFilter(inputEl, gridEl){
-    if(!inputEl || !gridEl || inputEl.dataset.checklistFilterAttached) return;
-    inputEl.dataset.checklistFilterAttached = '1';
-    inputEl.addEventListener('input', () => {
-      const term = normalizeHeader(inputEl.value.trim());
-      gridEl.querySelectorAll('.permission-option').forEach(label => {
-        const matches = !term || normalizeHeader(label.textContent).includes(term);
-        label.style.display = matches ? '' : 'none';
-      });
-    });
-  }
+  // Busca com menu suspenso + seleção múltipla por "chips" (mesmo padrão
+  // visual/interação do attachProductCatalogSearch usado em produto — o
+  // usuário digita, escolhe UMA opção do menu por vez, ela vira um chip
+  // removível, e pode escolher outra em seguida). Substitui a grade de
+  // checkboxes anterior (o usuário achou confuso ver a lista inteira em vez
+  // de um menu que filtra). Usado em "LOJAS DESTINO" e "FORNECEDOR(ES)
+  // CANDIDATO(S)" do item de Compras.
+  function createMultiSelectAutocomplete(input, chipsEl, config){
+    if(!input || !chipsEl) return null;
+    const field = input.closest('.product-search-field') || input.parentElement;
+    const menu = document.createElement('div');
+    menu.className = 'product-search-menu';
+    menu.hidden = true;
+    field.appendChild(menu);
 
-  // Reaproveitada tanto na abertura normal do diálogo de item quanto depois
-  // do cadastro rápido de fornecedor (item 3), que precisa re-render a
-  // grade com o fornecedor novo já marcado sem fechar/reabrir o diálogo.
-  async function renderComprasItemSuppliersGrid(selectedSupplierIds, forceRefresh){
-    if(forceRefresh) comprasSuppliersCache = [];
-    const suppliers = await comprasNovoSuppliers();
-    el('comprasItemSuppliersGrid').innerHTML = suppliers.length
-      ? suppliers.map(s => '<label class="permission-option"><input type="checkbox" name="comprasItemSupplier" value="'+escapeHtml(s.id)+'"'+(selectedSupplierIds.includes(s.id) ? ' checked' : '')+'> '+escapeHtml(s.name)+'</label>').join('')
-      : '<p class="page-desc">Nenhum fornecedor cadastrado no Financeiro ainda.</p>';
-    applyComprasItemSuppliersFilter();
-  }
+    let selected = new Map(); // id -> label
+    let matches = [];
+    let activeIndex = -1;
 
-  // Igual attachChecklistFilter, mas também mostra "+ CADASTRAR NOVO
-  // FORNECEDOR: <termo>" quando a busca não encontra ninguém — só faz
-  // sentido pra fornecedor (lojas não têm cadastro rápido pedido).
-  function applyComprasItemSuppliersFilter(){
-    const input = el('comprasItemSuppliersFilter');
-    const grid = el('comprasItemSuppliersGrid');
-    const rawTerm = input.value.trim();
-    const term = normalizeHeader(rawTerm);
-    let anyVisible = false;
-    grid.querySelectorAll('.permission-option').forEach(label => {
-      const matches = !term || normalizeHeader(label.textContent).includes(term);
-      label.style.display = matches ? '' : 'none';
-      if(matches) anyVisible = true;
-    });
-    const quickAddBtn = el('btnComprasItemQuickAddSupplier');
-    if(rawTerm && !anyVisible){
-      quickAddBtn.hidden = false;
-      quickAddBtn.textContent = '+ CADASTRAR NOVO FORNECEDOR: '+rawTerm.toUpperCase();
-    }else{
-      quickAddBtn.hidden = true;
+    function notifyChange(){
+      if(config.onChange) config.onChange(Array.from(selected.keys()));
     }
-  }
-  if(el('comprasItemSuppliersFilter')) el('comprasItemSuppliersFilter').addEventListener('input', applyComprasItemSuppliersFilter);
 
-  if(el('btnComprasItemQuickAddSupplier')) el('btnComprasItemQuickAddSupplier').addEventListener('click', () => {
-    el('comprasQuickSupplierForm').reset();
-    el('comprasQuickSupplierName').value = el('comprasItemSuppliersFilter').value.trim();
-    el('comprasQuickSupplierFormStatus').textContent = '';
-    el('comprasQuickSupplierDialog').showModal();
-  });
+    function renderChips(){
+      chipsEl.innerHTML = Array.from(selected.entries()).map(([id, label]) =>
+        '<span class="multi-select-chip">'+escapeHtml(label)+'<button type="button" data-remove-id="'+escapeHtml(id)+'" aria-label="Remover">×</button></span>'
+      ).join('');
+    }
+
+    function closeMenu(){ menu.hidden = true; menu.innerHTML = ''; matches = []; activeIndex = -1; }
+
+    function renderMenu(){
+      if(!matches.length){ closeMenu(); return; }
+      menu.innerHTML = matches.map((m, index) => m.type === 'create'
+        ? '<button type="button" class="product-search-option create-option'+(index === activeIndex ? ' active' : '')+'" data-index="'+index+'">+ CADASTRAR NOVO FORNECEDOR: '+escapeHtml(m.term.toUpperCase())+'</button>'
+        : '<button type="button" class="product-search-option'+(index === activeIndex ? ' active' : '')+'" data-index="'+index+'">'+
+          '<span class="product-search-name">'+escapeHtml(m.entry.label || '')+'</span>'+
+          (m.entry.sublabel ? '<span class="product-search-code">'+escapeHtml(m.entry.sublabel)+'</span>' : '')+
+          '</button>'
+      ).join('');
+      menu.hidden = false;
+    }
+
+    function addSelection(id, label){
+      selected.set(id, label);
+      renderChips();
+      notifyChange();
+      input.value = '';
+      closeMenu();
+      input.focus();
+    }
+
+    async function chooseMatch(m){
+      if(m.type === 'create'){
+        if(config.onCreate) await config.onCreate(m.term);
+        return;
+      }
+      addSelection(m.entry.id, m.entry.label);
+    }
+
+    function runSearch(){
+      const query = input.value.trim().toLowerCase();
+      if(!query){ closeMenu(); return; }
+      const scored = [];
+      for(const entry of config.getEntries()){
+        if(selected.has(entry.id)) continue;
+        const score = productCatalogEntryScore(entry, query);
+        if(score >= 0) scored.push({ entry, score });
+      }
+      scored.sort((a, b) => a.score - b.score || a.entry.label.localeCompare(b.entry.label));
+      matches = scored.slice(0, config.maxResults || 20).map(s => ({ type:'entry', entry:s.entry }));
+      if(config.allowCreate && !matches.some(m => m.entry.label.toLowerCase() === query)){
+        matches.push({ type:'create', term: input.value.trim() });
+      }
+      activeIndex = -1;
+      renderMenu();
+    }
+
+    let debounceTimer = null;
+    input.addEventListener('input', () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(runSearch, 280); });
+    input.addEventListener('keydown', event => {
+      if(menu.hidden) return;
+      if(event.key === 'ArrowDown'){ event.preventDefault(); activeIndex = Math.min(activeIndex + 1, matches.length - 1); renderMenu(); }
+      else if(event.key === 'ArrowUp'){ event.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); renderMenu(); }
+      else if(event.key === 'Enter'){ if(matches.length){ event.preventDefault(); chooseMatch(matches[activeIndex >= 0 ? activeIndex : 0]); } }
+      else if(event.key === 'Escape'){ closeMenu(); }
+    });
+    menu.addEventListener('mousedown', event => {
+      const button = event.target.closest('[data-index]');
+      if(!button) return;
+      event.preventDefault();
+      const m = matches[Number(button.dataset.index)];
+      if(m) chooseMatch(m);
+    });
+    document.addEventListener('click', event => {
+      if(event.target !== input && !menu.contains(event.target)) closeMenu();
+    });
+    chipsEl.addEventListener('click', event => {
+      const button = event.target.closest('[data-remove-id]');
+      if(!button) return;
+      selected.delete(button.dataset.removeId);
+      renderChips();
+      notifyChange();
+    });
+
+    return {
+      setSelected(idLabelPairs){ selected = new Map(idLabelPairs); renderChips(); },
+      getSelectedIds(){ return Array.from(selected.keys()); },
+      addSelection
+    };
+  }
+
+  const comprasItemStoresSelect = createMultiSelectAutocomplete(
+    el('comprasItemStoresFilter'), el('comprasItemStoresChips'),
+    { getEntries: () => companies.map(c => ({ id:c.id, label:c.name, search:c.name })) }
+  );
+  const comprasItemSuppliersSelect = createMultiSelectAutocomplete(
+    el('comprasItemSuppliersFilter'), el('comprasItemSuppliersChips'),
+    {
+      getEntries: () => comprasSuppliersCache.map(s => ({ id:s.id, label:s.name, search:s.name })),
+      allowCreate: true,
+      onCreate: async term => {
+        el('comprasQuickSupplierForm').reset();
+        el('comprasQuickSupplierName').value = term;
+        el('comprasQuickSupplierFormStatus').textContent = '';
+        el('comprasQuickSupplierDialog').showModal();
+      }
+    }
+  );
+
   if(el('btnCloseComprasQuickSupplierDialog')) el('btnCloseComprasQuickSupplierDialog').addEventListener('click', () => el('comprasQuickSupplierDialog').close());
   if(el('btnCancelComprasQuickSupplierDialog')) el('btnCancelComprasQuickSupplierDialog').addEventListener('click', () => el('comprasQuickSupplierDialog').close());
   if(el('comprasQuickSupplierForm')) el('comprasQuickSupplierForm').addEventListener('submit', async event => {
@@ -24072,9 +24158,9 @@ function renderHomeTasks(){
         method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({name, document: el('comprasQuickSupplierDocument').value.trim()})
       });
-      const currentlyChecked = Array.from(document.querySelectorAll('input[name="comprasItemSupplier"]:checked')).map(input => input.value);
-      el('comprasItemSuppliersFilter').value = '';
-      await renderComprasItemSuppliersGrid([...currentlyChecked, result.id], true);
+      comprasSuppliersCache = []; // cache invalidada — próxima comprasNovoSuppliers() busca de novo
+      await comprasNovoSuppliers();
+      comprasItemSuppliersSelect.addSelection(result.id, name);
       el('comprasQuickSupplierDialog').close();
       showPurchaseToast('Fornecedor cadastrado e selecionado.');
     }catch(error){ status.textContent = error.message; }
@@ -24091,18 +24177,15 @@ function renderHomeTasks(){
     el('comprasItemStockBody').innerHTML = '';
     el('comprasItemStoresFilter').value = '';
     el('comprasItemSuppliersFilter').value = '';
-    el('btnComprasItemQuickAddSupplier').hidden = true;
 
-    let selectedSupplierIds = [];
-    if(item) selectedSupplierIds = item.candidateSupplierIdsList || [];
-    await renderComprasItemSuppliersGrid(selectedSupplierIds, true);
+    comprasSuppliersCache = [];
+    await comprasNovoSuppliers();
+    const selectedSupplierIds = item ? (item.candidateSupplierIdsList || []) : [];
+    comprasItemSuppliersSelect.setSelected(selectedSupplierIds.map(id => [id, comprasSupplierName(id)]));
 
-    let selectedStoreIds = [];
-    if(item){ try{ selectedStoreIds = (JSON.parse(item.targetStores || '[]')).map(s => s.companyId); }catch{ selectedStoreIds = []; } }
-    el('comprasItemStoresGrid').innerHTML = companies.length
-      ? companies.map(c => '<label class="permission-option"><input type="checkbox" name="comprasItemStore" value="'+escapeHtml(c.id)+'" data-store-name="'+escapeHtml(c.name)+'"'+(selectedStoreIds.includes(c.id) ? ' checked' : '')+'> '+escapeHtml(c.name)+'</label>').join('')
-      : '<p class="page-desc">Nenhuma loja cadastrada.</p>';
-    attachChecklistFilter(el('comprasItemStoresFilter'), el('comprasItemStoresGrid'));
+    let selectedStores = [];
+    if(item){ try{ selectedStores = JSON.parse(item.targetStores || '[]'); }catch{ selectedStores = []; } }
+    comprasItemStoresSelect.setSelected(selectedStores.map(s => [s.companyId, s.companyName || (companies.find(c => c.id === s.companyId) || {}).name || s.companyId]));
 
     el('comprasDraftItemFormStatus').textContent = '';
     el('comprasDraftItemDialog').showModal();
@@ -24137,11 +24220,11 @@ function renderHomeTasks(){
     const quantity = Number(el('comprasItemQuantity').value);
     if(!Number.isFinite(quantity) || quantity < 0){ status.textContent = 'INFORME UMA QUANTIDADE VÁLIDA.'; return; }
 
-    const targetStores = Array.from(document.querySelectorAll('input[name="comprasItemStore"]:checked')).map(input => ({
-      companyId: input.value,
-      companyName: input.dataset.storeName || ''
+    const targetStores = comprasItemStoresSelect.getSelectedIds().map(id => ({
+      companyId: id,
+      companyName: (companies.find(c => c.id === id) || {}).name || ''
     }));
-    const candidateSupplierIds = Array.from(document.querySelectorAll('input[name="comprasItemSupplier"]:checked')).map(input => input.value);
+    const candidateSupplierIds = comprasItemSuppliersSelect.getSelectedIds();
 
     const payload = {
       productCode,
