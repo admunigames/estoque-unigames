@@ -17920,10 +17920,10 @@ function renderHomeTasks(){
       : '<div class="output-empty">Nenhuma solicitação encontrada para a venda '+escapeHtml(saleId)+'.</div>';
   }
 
-  async function loadPdvRequests(){
+  async function loadPdvRequests(opts){
     if(!canAccess('pdv_requests') || pdvRequestsLoading) return;
     pdvRequestsLoading = true;
-    el('pdvRequestList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
+    if(!opts || !opts.silent) el('pdvRequestList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
     try{
       const data = await pdvApiRequest('');
       pdvRequestRows = Array.isArray(data.requests) ? data.requests : [];
@@ -17964,7 +17964,7 @@ function renderHomeTasks(){
       el('pdvRequestForm').reset();
       updatePdvTypeFields();
       setPdvRequestFormStatus('SOLICITAÇÃO CADASTRADA.','success');
-      await loadPdvRequests();
+      await refreshAfterAction(loadPdvRequests);
     }catch(error){
       setPdvRequestFormStatus(error.message,'error');
     }finally{
@@ -17980,7 +17980,7 @@ function renderHomeTasks(){
       button.disabled = true;
       try{
         await pdvApiRequest('?id='+encodeURIComponent(button.dataset.pdvDelete),{method:'DELETE'});
-        await loadPdvRequests();
+        await refreshAfterAction(loadPdvRequests);
         afterChange();
         showPurchaseToast('Solicitação excluída.');
       }catch(error){
@@ -17998,7 +17998,7 @@ function renderHomeTasks(){
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({id:select.dataset.pdvStatusSelect, status:select.value})
         });
-        await loadPdvRequests();
+        await refreshAfterAction(loadPdvRequests);
         afterChange();
         showPurchaseToast('Status atualizado.');
       }catch(error){
@@ -18164,10 +18164,10 @@ function renderHomeTasks(){
       : '<div class="output-empty">Nenhuma solicitação encontrada.</div>';
   }
 
-  async function loadOsNotes(){
+  async function loadOsNotes(opts){
     if(!canAccess('os_notes') || osNotesLoading) return;
     osNotesLoading = true;
-    el('osNoteList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
+    if(!opts || !opts.silent) el('osNoteList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
     try{
       const data = await osNoteApiRequest('');
       osNoteRows = Array.isArray(data.notes) ? data.notes : [];
@@ -18204,7 +18204,7 @@ function renderHomeTasks(){
       });
       el('osNoteForm').reset();
       setOsNoteFormStatus('SOLICITAÇÃO CADASTRADA.','success');
-      await loadOsNotes();
+      await refreshAfterAction(loadOsNotes);
     }catch(error){
       setOsNoteFormStatus(error.message,'error');
     }finally{
@@ -18275,7 +18275,7 @@ function renderHomeTasks(){
       deleteButton.disabled = true;
       try{
         await osNoteApiRequest('?id='+encodeURIComponent(deleteButton.dataset.osNoteDelete),{method:'DELETE'});
-        await loadOsNotes();
+        await refreshAfterAction(loadOsNotes);
         showPurchaseToast('Solicitação excluída.');
       }catch(error){
         showPurchaseToast(error.message,'error');
@@ -18292,7 +18292,7 @@ function renderHomeTasks(){
     try{
       await uploadOsNoteAttachment(osNoteId, file);
       showPurchaseToast('Nota anexada com sucesso.');
-      await loadOsNotes();
+      await refreshAfterAction(loadOsNotes);
     }catch(error){
       showPurchaseToast(error.message,'error');
     }finally{
