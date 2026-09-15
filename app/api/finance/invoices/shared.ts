@@ -230,6 +230,66 @@ export async function buildInvoiceStatusRecalcStatement(
   };
 }
 
+/**
+ * Reaproveita o anexo de NF já enviado no pedido nativo de Compras (Fase C)
+ * no momento do handoff pro Financeiro — mesma r2_key (mesmo bucket UPLOADS,
+ * sem duplicar o arquivo físico), só grava a referência em
+ * supplier_invoice_attachments. Dedup por r2_key: pode ser chamada tanto na
+ * criação quanto num PATCH que vincula/revincula o pedido sem duplicar linha.
+ */
+export async function purchaseOrderNfAttachmentCopyStatements(
+  database: Awaited<ReturnType<typeof getD1>>,
+  orderId: string,
+  invoiceId: string,
+): Promise<[string, unknown[]][]> {
+  if (!orderId || !invoiceId) return [];
+  const sourceRows = await database
+    .prepare(
+      `SELECT r2_key AS r2Key, file_name AS fileName, content_type AS contentType, size_bytes AS sizeBytes,
+              uploaded_by AS uploadedBy, uploaded_by_name AS uploadedByName
+       FROM purchase_order_attachments WHERE order_id=?1 AND attachment_type='nota_fiscal'`,
+    )
+    .bind(orderId)
+    .all<{
+      r2Key: string;
+      fileName: string;
+      contentType: string;
+      sizeBytes: number;
+      uploadedBy: string;
+      uploadedByName: string;
+    }>();
+  const sources = sourceRows.results ?? [];
+  if (!sources.length) return [];
+
+  const existingRows = await database
+    .prepare(`SELECT r2_key AS r2Key FROM supplier_invoice_attachments WHERE invoice_id=?1`)
+    .bind(invoiceId)
+    .all<{ r2Key: string }>();
+  const existingKeys = new Set((existingRows.results ?? []).map((row) => row.r2Key));
+
+  const statements: [string, unknown[]][] = [];
+  for (const source of sources) {
+    if (existingKeys.has(source.r2Key)) continue;
+    statements.push([
+      `INSERT INTO supplier_invoice_attachments
+        (id, invoice_id, installment_id, payment_id, attachment_type, r2_key, file_name, content_type,
+         size_bytes, uploaded_by, uploaded_by_name, created_at)
+       VALUES (?1,?2,'','','nf',?3,?4,?5,?6,?7,?8,CURRENT_TIMESTAMP)`,
+      [
+        crypto.randomUUID(),
+        invoiceId,
+        source.r2Key,
+        source.fileName,
+        source.contentType,
+        source.sizeBytes,
+        source.uploadedBy,
+        source.uploadedByName,
+      ],
+    ]);
+  }
+  return statements;
+}
+
 export function invoiceEventStatement(params: {
   invoiceId: string;
   eventType: string;

@@ -5,7 +5,7 @@ import { isValidCpfOrCnpj } from "../../../lib/br-documents";
 import { computeInvoiceFinancialStatus } from "../../../lib/supplier-invoice-status";
 import { identity, jsonResponse, safeText, sameOrigin, MONTH_PATTERN, type JsonMap } from "../shared";
 import { DATE_PATTERN } from "../payables/shared";
-import { canViewInvoices, INVOICE_ROW_SELECT } from "./shared";
+import { canViewInvoices, INVOICE_ROW_SELECT, purchaseOrderNfAttachmentCopyStatements } from "./shared";
 
 type ListRow = Record<string, unknown>;
 
@@ -269,6 +269,30 @@ export async function POST(request: Request) {
       )
       .bind(crypto.randomUUID(), id, actor.id, actorName)
       .run();
+
+    // Reaproveita o anexo da NF já enviado no pedido de Compras (Fase C),
+    // sem exigir novo upload no Financeiro — ver purchaseOrderNfAttachmentCopyStatements.
+    if (purchaseOrderId) {
+      const attachmentStatements = await purchaseOrderNfAttachmentCopyStatements(database, purchaseOrderId, id);
+      for (const [sql, values] of attachmentStatements) {
+        await database.prepare(sql).bind(...values).run();
+      }
+      if (attachmentStatements.length) {
+        await database
+          .prepare(
+            `INSERT INTO supplier_invoice_events (id, invoice_id, event_type, description, metadata_json, actor_id, actor_name, created_at)
+             VALUES (?1,?2,'attachment_added',?3,'{}',?4,?5,CURRENT_TIMESTAMP)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            id,
+            `ANEXO DA NF REAPROVEITADO AUTOMATICAMENTE DO PEDIDO DE COMPRAS (${attachmentStatements.length} ARQUIVO(S)).`,
+            actor.id,
+            actorName,
+          )
+          .run();
+      }
+    }
 
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {

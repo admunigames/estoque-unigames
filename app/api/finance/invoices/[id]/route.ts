@@ -16,6 +16,7 @@ import {
   loadInvoice,
   loadInvoiceDreView,
   loadPendingScheduleIds,
+  purchaseOrderNfAttachmentCopyStatements,
   toInstallmentSnapshot,
 } from "../shared";
 
@@ -251,6 +252,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     // este PATCH; não exigido/tocado no fluxo normal de edição da NF.
     const purchaseOrderId =
       body.purchaseOrderId === undefined ? invoice.purchaseOrderId : safeText(body.purchaseOrderId, 80);
+    // Reaproveita o anexo da NF já enviado no pedido de Compras (Fase C),
+    // sem exigir novo upload no Financeiro — ver purchaseOrderNfAttachmentCopyStatements.
+    const attachmentCopyStatements = purchaseOrderId
+      ? await purchaseOrderNfAttachmentCopyStatements(database, purchaseOrderId, id)
+      : [];
     const accessKey = body.accessKey === undefined ? invoice.accessKey : safeText(body.accessKey, 44);
     if (accessKey && !/^\d{44}$/.test(accessKey)) {
       return jsonResponse({ error: "A CHAVE DE ACESSO DA NF-E DEVE TER 44 DÍGITOS." }, 400);
@@ -304,6 +310,19 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         ],
       ],
     ];
+
+    statements.push(...attachmentCopyStatements);
+    if (attachmentCopyStatements.length) {
+      statements.push(
+        invoiceEventStatement({
+          invoiceId: id,
+          eventType: "attachment_added",
+          description: `ANEXO DA NF REAPROVEITADO AUTOMATICAMENTE DO PEDIDO DE COMPRAS (${attachmentCopyStatements.length} ARQUIVO(S)).`,
+          actorId: actor.id,
+          actorName,
+        }),
+      );
+    }
 
     // Decisão de "Incluir na DRE?" (opcional, nível da NF inteira) — só faz
     // sentido depois que já existem duplicatas cadastradas (é nelas que o

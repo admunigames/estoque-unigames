@@ -27078,7 +27078,8 @@ function renderHomeTasks(){
     el('invoiceAttachmentsList').innerHTML = attachments.length
       ? attachments.map(attachment =>
           '<div class="dre-catalog-row"><span>'+escapeHtml((attachment.attachmentType || '').toUpperCase())+' — '+
-            escapeHtml(attachment.fileName)+' ('+escapeHtml(formatDocumentSize(attachment.sizeBytes))+')</span></div>'
+            '<a href="/api/finance/invoices/'+encodeURIComponent(invoice.id)+'/attachments/file?attachmentId='+encodeURIComponent(attachment.id)+'" target="_blank" rel="noopener">'+
+            escapeHtml(attachment.fileName)+'</a> ('+escapeHtml(formatDocumentSize(attachment.sizeBytes))+')</span></div>'
         ).join('')
       : '<div class="supply-empty">Nenhum anexo.</div>';
 
