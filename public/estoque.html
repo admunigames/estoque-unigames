@@ -9863,6 +9863,24 @@
     return part('day')+'/'+part('month')+'/'+part('year')+' às '+part('hour')+':'+part('minute');
   }
 
+  // Formata um valor de data pura (sem hora), tipicamente "YYYY-MM-DD" vindo
+  // do banco, para "DD/MM/AAAA". Não faz conversão de fuso (não há hora a
+  // converter) — usar para campos como "pedido em"/"previsão"/"recebido em".
+  // Único ponto de formatação de data pura do app: reaproveitar aqui em vez
+  // de formatar "na unha" em cada módulo.
+  function formatDateBR(value){
+    if(!value) return '';
+    if(value instanceof Date){
+      if(Number.isNaN(value.getTime())) return '';
+      return formatDateTimeBR(value).split(' às ')[0];
+    }
+    const raw = String(value).trim();
+    if(!raw) return '';
+    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) return m[3]+'/'+m[2]+'/'+m[1];
+    return raw;
+  }
+
   function normalizeProductKey(name){
     return normalizeHeader(String(name || ''))
       .replace(/[^a-z0-9]+/g, ' ')
@@ -12235,7 +12253,7 @@
   function preparePrintReport(rows){
     const title = currentViewLabel();
     const filters = currentFilterLabels();
-    const generatedAt = new Date().toLocaleString('pt-BR');
+    const generatedAt = formatDateTimeBR(new Date());
     el('printReportTitle').textContent = title;
     el('printReportMeta').textContent =
       rows.length.toLocaleString('pt-BR') + ' PRODUTOS · ' +
@@ -12313,10 +12331,8 @@
 
   function purchaseDate(value){
     if(!value) return '—';
-    const dateOnly = String(value).slice(0,10);
-    const parts = dateOnly.split('-');
-    if(parts.length !== 3) return escapeHtml(value);
-    return parts[2] + '/' + parts[1] + '/' + parts[0];
+    const formatted = formatDateBR(value);
+    return /^\d{2}\/\d{2}\/\d{4}$/.test(formatted) ? formatted : escapeHtml(value);
   }
 
   function purchaseDateInput(value){
@@ -13059,6 +13075,17 @@
     const day = String(today.getDate()).padStart(2,'0');
     return year+'-'+month+'-'+day;
   }
+
+  // "Hoje" (YYYY-MM-DD) fixado no fuso de Recife, para comparações de data
+  // que não podem depender do fuso do navegador (ex.: marcar pedido como
+  // atrasado perto da meia-noite).
+  function todayDateKeyRecife(){
+    const parts = new Intl.DateTimeFormat('en-CA',{
+      timeZone:'America/Recife', year:'numeric', month:'2-digit', day:'2-digit'
+    }).formatToParts(new Date());
+    const part = type => (parts.find(p => p.type === type) || {}).value || '';
+    return part('year')+'-'+part('month')+'-'+part('day');
+  }
   function nextDateKey(dateKey){
     const date = new Date(dateKey+'T12:00:00');
     date.setDate(date.getDate()+1);
@@ -13085,7 +13112,7 @@
     return dates;
   }
   function formatTaskDate(dateKey){
-    return dateKey ? dateKey.split('-').reverse().join('/') : 'SEM DATA';
+    return formatDateBR(dateKey) || 'SEM DATA';
   }
   function taskStorageKey(){ return 'tarefas:' + el('taskDate').value; }
   function normalizeTaskData(data){
@@ -13698,7 +13725,7 @@ function renderHomeTasks(){
 
     const today = new Date();
     const dateKey = todayDateKey();
-    const dateFormatted = today.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+    const dateFormatted = today.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', timeZone:'America/Recife'});
     if(dateEl) dateEl.textContent = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
 
     storage.get('tarefas:' + dateKey).then(result => {
@@ -14167,7 +14194,7 @@ function renderHomeTasks(){
       '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(task.title || '')+'</strong>'+
         '<div class="mission-badges">'+
           '<span class="mission-badge">'+escapeHtml(task.companyName || 'LOJA')+'</span>'+
-          (task.carriedOver ? '<span class="mission-badge overdue">MIGROU DE '+escapeHtml(task.originDate)+'</span>' : '')+
+          (task.carriedOver ? '<span class="mission-badge overdue">MIGROU DE '+escapeHtml(formatDateBR(task.originDate))+'</span>' : '')+
         '</div></div>'+
       '<div class="mission-card-actions">'+
         (isRoutineTaskMine(task)
@@ -15369,8 +15396,7 @@ function renderHomeTasks(){
   let outputPrintTitleBefore = '';
 
   function outputFormatDateBR(isoDate){
-    const parts = String(isoDate || '').split('-');
-    return parts.length === 3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : (isoDate || '—');
+    return formatDateBR(isoDate) || (isoDate || '—');
   }
 
   function outputReportRows(fromValue, toValue){
@@ -15411,7 +15437,7 @@ function renderHomeTasks(){
       showPurchaseToast('Nenhuma saída encontrada nesse período.','error');
       return;
     }
-    const generatedAt = new Date().toLocaleString('pt-BR');
+    const generatedAt = formatDateTimeBR(new Date());
     el('outputPrintMeta').textContent =
       rows.length.toLocaleString('pt-BR')+' SAÍDA(S) · DE '+outputFormatDateBR(fromValue)+' A '+outputFormatDateBR(toValue)+
       ' · GERADO EM '+generatedAt;
@@ -15798,8 +15824,8 @@ function renderHomeTasks(){
   }
 
   function formatSupplyMissingWeek(weekStart){
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(weekStart || '')) return '—';
-    return 'SEMANA DE '+weekStart.split('-').reverse().join('/');
+    const formatted = formatDateBR(weekStart);
+    return formatted ? 'SEMANA DE '+formatted : '—';
   }
 
   function supplyUpcomingMonday(date){
@@ -17123,9 +17149,7 @@ function renderHomeTasks(){
   }
 
   function formatInstructionDate(dateKey){
-    return /^\d{4}-\d{2}-\d{2}$/.test(dateKey || '')
-      ? dateKey.split('-').reverse().join('/')
-      : '—';
+    return formatDateBR(dateKey) || '—';
   }
 
   function instructionDayDifference(dateKey,today){
@@ -18778,7 +18802,7 @@ function renderHomeTasks(){
             '<td colspan="3">—</td>'+
           '</tr>'
         : '<tr>'+
-          '<td>'+escapeHtml(row.date || '—')+'</td>'+
+          '<td>'+escapeHtml(formatDateBR(row.date) || '—')+'</td>'+
           '<td>'+escapeHtml(row.supplierName || '—')+'</td>'+
           '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
           '<td>'+escapeHtml(row.parentCategoryName || row.categoryName || '—')+'</td>'+
@@ -19600,7 +19624,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
         '<td>'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
         '<td>'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
-        '<td>'+escapeHtml(row.dueDate)+'</td>'+
+        '<td>'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
         '<td>'+formatCentsBRL(row.originalAmountCents)+'</td>'+
         '<td>'+formatCentsBRL(row.paidAmountCents)+'</td>'+
         '<td>'+formatCentsBRL(balance)+'</td>'+
@@ -19919,8 +19943,8 @@ function renderHomeTasks(){
       '<div><span>VALOR PAGO</span><span>'+formatCentsBRL(payable.paidAmountCents)+'</span></div>'+
       '<div><span>SALDO EM ABERTO</span><span>'+formatCentsBRL(balance)+'</span></div>'+
       '<div><span>COMPETÊNCIA</span><span>'+escapeHtml(payable.competenceMonth)+'</span></div>'+
-      '<div><span>VENCIMENTO</span><span>'+escapeHtml(payable.dueDate)+'</span></div>'+
-      '<div><span>EMISSÃO</span><span>'+escapeHtml(payable.issueDate || '—')+'</span></div>'+
+      '<div><span>VENCIMENTO</span><span>'+escapeHtml(formatDateBR(payable.dueDate))+'</span></div>'+
+      '<div><span>EMISSÃO</span><span>'+escapeHtml(formatDateBR(payable.issueDate) || '—')+'</span></div>'+
       '<div><span>NOTA FISCAL</span><span>'+escapeHtml(payable.invoiceNumber || '—')+'</span></div>'+
       '<div><span>PEDIDO</span><span>'+escapeHtml(payable.orderReference || '—')+'</span></div>'+
       '<div><span>PARCELA/RECORRÊNCIA</span><span>'+escapeHtml(payableInstallmentBadge(payable))+'</span></div>'+
@@ -19940,7 +19964,7 @@ function renderHomeTasks(){
               '<button class="btn-outline" type="button" data-payment-delete="'+escapeHtml(payment.id)+'">CANCELAR</button>'
             : '';
           return '<tr>'+
-            '<td>'+escapeHtml(payment.paymentDate)+'</td>'+
+            '<td>'+escapeHtml(formatDateBR(payment.paymentDate))+'</td>'+
             '<td>'+formatCentsBRL(payment.amountCents)+'</td>'+
             '<td>'+escapeHtml(payment.paymentMethod || '—')+'</td>'+
             '<td>'+escapeHtml(situacao)+'</td>'+
@@ -20165,7 +20189,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
         '<td>'+escapeHtml(row.description)+'</td>'+
         '<td>'+escapeHtml(row.invoiceNumber || row.orderReference || '—')+'</td>'+
-        '<td>'+escapeHtml(row.dueDate)+'</td>'+
+        '<td>'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
         '<td>'+formatCentsBRL(row.originalAmountCents)+'</td>'+
         '<td>'+formatCentsBRL(balance)+'</td>'+
         '<td>'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
@@ -20483,14 +20507,14 @@ function renderHomeTasks(){
 
       const upcoming = data.upcomingPayments || [];
       el('supplierStatementUpcomingBody').innerHTML = upcoming.length
-        ? upcoming.map(row => '<tr><td>'+escapeHtml(row.dueDate)+'</td><td>'+escapeHtml(row.invoiceNumber || row.description)+'</td>'+
+        ? upcoming.map(row => '<tr><td>'+escapeHtml(formatDateBR(row.dueDate))+'</td><td>'+escapeHtml(row.invoiceNumber || row.description)+'</td>'+
             '<td>'+escapeHtml(row.orderReference || '—')+'</td><td>'+escapeHtml(row.origin)+'</td>'+
             '<td>'+formatCentsBRL(row.originalAmountCents - row.paidAmountCents)+'</td></tr>').join('')
         : '<tr><td colspan="5" class="responsive-empty">Nenhum vencimento em aberto.</td></tr>';
 
       const statement = data.statement || [];
       el('supplierStatementExtractBody').innerHTML = statement.length
-        ? statement.map(entry => '<tr><td>'+escapeHtml(entry.date)+'</td><td>'+escapeHtml(entry.document || '—')+'</td>'+
+        ? statement.map(entry => '<tr><td>'+escapeHtml(formatDateBR(entry.date))+'</td><td>'+escapeHtml(entry.document || '—')+'</td>'+
             '<td>'+escapeHtml(entry.orderReference || '—')+'</td><td>'+escapeHtml(entry.movement === 'compra' ? entry.origin : 'PAGAMENTO')+'</td>'+
             '<td>'+formatCentsBRL(entry.amountCents)+'</td><td>'+formatCentsBRL(entry.balanceCents)+'</td></tr>').join('')
         : '<tr><td colspan="6" class="responsive-empty">Nenhum movimento.</td></tr>';
@@ -20499,7 +20523,7 @@ function renderHomeTasks(){
       el('supplierStatementPaymentsBody').innerHTML = payments.length
         ? payments.map(payment => {
             const situacao = payment.scheduled && !payment.confirmedAt ? 'AGENDADO' : 'CONFIRMADO';
-            return '<tr><td>'+escapeHtml(payment.paymentDate)+'</td><td>'+formatCentsBRL(payment.amountCents)+'</td>'+
+            return '<tr><td>'+escapeHtml(formatDateBR(payment.paymentDate))+'</td><td>'+formatCentsBRL(payment.amountCents)+'</td>'+
               '<td>'+escapeHtml(payment.paymentMethod || '—')+'</td><td>'+escapeHtml(situacao)+'</td>'+
               '<td>'+escapeHtml(payment.createdByName || '—')+'</td></tr>';
           }).join('')
@@ -20717,7 +20741,7 @@ function renderHomeTasks(){
   let receivablesCurrentRows = [];
 
   function financeDateLabel(value){
-    return value ? String(value).split('-').reverse().join('/') : '—';
+    return formatDateBR(value) || '—';
   }
 
   function renderReceivableCompanyOptions(){
@@ -21557,7 +21581,7 @@ function renderHomeTasks(){
       el('machineEventsBody').innerHTML = events.length
         ? events.map(e =>
             '<tr>'+
-              '<td>'+escapeHtml(e.eventDate || '—')+'</td>'+
+              '<td>'+escapeHtml(formatDateBR(e.eventDate) || '—')+'</td>'+
               '<td>'+escapeHtml(MACHINE_EVENT_LABELS[e.kind] || e.kind)+'</td>'+
               '<td>'+escapeHtml(e.fromCompanyName || '—')+'</td>'+
               '<td>'+escapeHtml(e.toCompanyName || '—')+'</td>'+
@@ -21782,7 +21806,7 @@ function renderHomeTasks(){
           ? '<button class="btn-outline btn-sm" type="button" data-card-recon-review="'+escapeHtml(row.id)+'">MARCAR COMO REVISADA</button>'
           : '');
       return '<tr'+(status === 'attention' ? ' class="recon-row-attention"' : '')+'>'+
-        '<td data-label="Data">'+escapeHtml(row.saleDate || '')+'</td>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(row.saleDate) || '')+'</td>'+
         '<td data-label="Adquirente">'+escapeHtml(row.acquirerName || '—')+'</td>'+
         '<td data-label="Bandeira">'+escapeHtml(row.brand || '—')+'</td>'+
         '<td data-label="Modal.">'+escapeHtml(CARD_MODALITY_LABELS[row.modality] || row.modality || '')+'</td>'+
@@ -21949,7 +21973,7 @@ function renderHomeTasks(){
       const missing = parsed.filter(p => p.feeMissing).length;
       el('cardSalesPreviewBody').innerHTML = parsed.slice(0, 200).map(p =>
         '<tr'+(p.feeMissing ? ' style="opacity:.6"' : '')+'>'+
-          '<td>'+escapeHtml(p.saleDate)+'</td>'+
+          '<td>'+escapeHtml(formatDateBR(p.saleDate))+'</td>'+
           '<td>'+escapeHtml(p.acquirerName || '—')+(p.acquirerId ? '' : ' ⚠')+'</td>'+
           '<td>'+escapeHtml(p.brand || '—')+'</td>'+
           '<td>'+escapeHtml(CARD_MODALITY_LABELS[p.modality])+'</td>'+
@@ -22022,7 +22046,7 @@ function renderHomeTasks(){
       if(!parsed.length) throw new Error('NENHUMA LINHA VÁLIDA.');
       cardSettlementParsed = {rows: parsed, fileHash: cheapHash(file.name, rows), sourceName: file.name};
       el('cardSettlementPreviewBody').innerHTML = parsed.slice(0, 200).map(p =>
-        '<tr><td>'+escapeHtml(p.nsu || '—')+'</td><td>'+escapeHtml(p.saleDate || '—')+'</td><td>'+formatCentsBRL(p.grossCents)+'</td><td>'+formatCentsBRL(p.receivedCents)+'</td></tr>').join('');
+        '<tr><td>'+escapeHtml(p.nsu || '—')+'</td><td>'+escapeHtml(formatDateBR(p.saleDate) || '—')+'</td><td>'+formatCentsBRL(p.grossCents)+'</td><td>'+formatCentsBRL(p.receivedCents)+'</td></tr>').join('');
       status.textContent = parsed.length+' linha(s) prontas para casar com as vendas.';
       el('btnConfirmCardSettlement').disabled = false;
     }catch(error){
@@ -22340,7 +22364,7 @@ function renderHomeTasks(){
         '<div class="card"><div class="lbl">LIMITE TOTAL</div><div class="num">'+formatCentsBRL(s.limitCents)+'</div></div>'+
         '<div class="card"><div class="lbl">UTILIZADO</div><div class="num">'+formatCentsBRL(s.usedCents)+'</div><div class="sub">fatura em aberto + parcelas futuras</div></div>'+
         '<div class="card'+(s.availableCents < 0 ? ' neg' : '')+'"><div class="lbl">DISPONÍVEL</div><div class="num">'+formatCentsBRL(s.availableCents)+'</div></div>'+
-        '<div class="card"><div class="lbl">PRÓXIMA FATURA</div><div class="num">'+formatCentsBRL(s.currentInvoiceCents)+'</div><div class="sub">fecha '+escapeHtml(s.closingDate)+' · vence '+escapeHtml(s.dueDate)+'</div></div>'+
+        '<div class="card"><div class="lbl">PRÓXIMA FATURA</div><div class="num">'+formatCentsBRL(s.currentInvoiceCents)+'</div><div class="sub">fecha '+escapeHtml(formatDateBR(s.closingDate))+' · vence '+escapeHtml(formatDateBR(s.dueDate))+'</div></div>'+
         '<div class="card"><div class="lbl">PARCELAMENTOS FUTUROS</div><div class="num">'+formatCentsBRL(s.futureInstallmentsCents)+'</div></div>';
     }catch(error){
       box.innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
@@ -22376,7 +22400,7 @@ function renderHomeTasks(){
         const item = financeItems.find(i => i.id === e.categoryItemId);
         const category = item && financeCategories.find(c => c.id === item.categoryId);
         return '<tr'+(e.status === 'expensed' ? ' style="opacity:.6"' : '')+'>'+
-          '<td>'+escapeHtml(e.entryDate)+'</td>'+
+          '<td>'+escapeHtml(formatDateBR(e.entryDate))+'</td>'+
           '<td>'+escapeHtml(e.merchant || '—')+'</td>'+
           '<td>'+formatCentsBRL(e.amountCents)+'</td>'+
           '<td>'+escapeHtml(e.installmentLabel || '—')+'</td>'+
@@ -22405,7 +22429,7 @@ function renderHomeTasks(){
     renderCorpEntryItemOptions('corpEntryExpenseItem');
     renderCorpEntryItemOptions('corpEntryExpenseCostCenter');
     el('corpEntryExpenseEntryId').value = entry.id;
-    el('corpEntryExpenseSummary').textContent = entry.entryDate+' · '+(entry.merchant || 'sem estabelecimento')+' · '+formatCentsBRL(entry.amountCents)+(entry.installmentLabel ? ' · parcela '+entry.installmentLabel : '');
+    el('corpEntryExpenseSummary').textContent = formatDateBR(entry.entryDate)+' · '+(entry.merchant || 'sem estabelecimento')+' · '+formatCentsBRL(entry.amountCents)+(entry.installmentLabel ? ' · parcela '+entry.installmentLabel : '');
     el('corpEntryExpenseItem').value = entry.categoryItemId || '';
     el('corpEntryExpenseCostCenter').value = entry.costCenterId || '';
     el('corpEntryExpenseDueDate').value = entry.entryDate;
@@ -22691,7 +22715,7 @@ function renderHomeTasks(){
       if(!rows.length) throw new Error('NENHUM LANÇAMENTO VÁLIDO.');
       reconParsed = {rows, sourceFormat, sourceName: file.name};
       el('reconPreviewBody').innerHTML = rows.slice(0, 300).map(r =>
-        '<tr><td>'+escapeHtml(r.entryDate)+'</td><td>'+escapeHtml(r.description || '—')+'</td><td>'+formatCentsBRL(r.amountCents)+'</td><td></td></tr>').join('');
+        '<tr><td>'+escapeHtml(formatDateBR(r.entryDate))+'</td><td>'+escapeHtml(r.description || '—')+'</td><td>'+formatCentsBRL(r.amountCents)+'</td><td></td></tr>').join('');
       el('reconPreviewTable').hidden = false;
       el('reconImportActions').hidden = false;
       status.textContent = rows.length+' lançamento(s) no arquivo. Revise e importe.';
@@ -22734,7 +22758,7 @@ function renderHomeTasks(){
       const suggested = e.status === 'pending' && e.categoryItemId;
       if(done){
         return '<tr style="opacity:.65">'+
-          '<td>'+escapeHtml(e.entryDate)+'</td>'+
+          '<td>'+escapeHtml(formatDateBR(e.entryDate))+'</td>'+
           '<td>'+escapeHtml(e.description || '—')+'</td>'+
           '<td>'+formatCentsBRL(e.amountCents)+'</td>'+
           '<td>'+escapeHtml(reconItemLabel(e.categoryItemId) || '—')+'</td>'+
@@ -22747,7 +22771,7 @@ function renderHomeTasks(){
         '</tr>';
       }
       return '<tr data-recon-row="'+escapeHtml(e.id)+'">'+
-        '<td>'+escapeHtml(e.entryDate)+'</td>'+
+        '<td>'+escapeHtml(formatDateBR(e.entryDate))+'</td>'+
         '<td>'+escapeHtml(e.description || '—')+(suggested ? ' <span class="receivable-tag received_ok">SUGERIDO</span>' : '')+'</td>'+
         '<td>'+formatCentsBRL(e.amountCents)+'</td>'+
         '<td><select data-recon-field="categoryItemId">'+reconItemOptions(e.categoryItemId)+'</select></td>'+
@@ -22835,7 +22859,7 @@ function renderHomeTasks(){
     el('reconEntryExpenseCompany').innerHTML = reconCompanyOptions(entry.companyId);
     el('reconEntryExpenseCostCenter').innerHTML = reconCostCenterOptions(entry.costCenterId);
     el('reconEntryExpenseEntryId').value = entry.id;
-    el('reconEntryExpenseSummary').textContent = entry.entryDate+' · '+(entry.description || 'sem histórico')+' · '+formatCentsBRL(entry.amountCents);
+    el('reconEntryExpenseSummary').textContent = formatDateBR(entry.entryDate)+' · '+(entry.description || 'sem histórico')+' · '+formatCentsBRL(entry.amountCents);
     el('reconEntryExpenseDueDate').value = entry.entryDate;
     el('reconEntryExpenseStatus').textContent = '';
     el('reconEntryExpenseDialog').showModal();
@@ -23070,7 +23094,7 @@ function renderHomeTasks(){
         ? '<span class="status-pill ok">VINCULADA</span>'
         : (eligible ? '<button class="btn-outline btn-sm" type="button" data-reposicao-expense="'+escapeHtml(r.id)+'">ADICIONAR</button>' : '—');
       return '<tr>'+
-        '<td>'+escapeHtml(r.entryDate)+'</td>'+
+        '<td>'+escapeHtml(formatDateBR(r.entryDate))+'</td>'+
         '<td>'+escapeHtml(r.companyName || fase8CompanyName(r.companyId) || '—')+'</td>'+
         '<td>'+escapeHtml(r.product || '—')+'</td>'+
         '<td>'+escapeHtml(r.reason || '—')+'</td>'+
@@ -23217,21 +23241,21 @@ function renderHomeTasks(){
   }
   function renderRecargaTable(){
     const body = el('recargaTableBody');
-    const today = new Date().toISOString().slice(0,10);
+    const today = todayDateKeyRecife();
     const soon = new Date(Date.now() + 3*86400000).toISOString().slice(0,10);
     let due = 0;
     body.innerHTML = recargaRows.length ? recargaRows.map(r => {
       const overdue = r.nextRechargeDate && r.nextRechargeDate < today;
       const near = r.nextRechargeDate && r.nextRechargeDate <= soon;
       if((overdue || near) && r.active) due += 1;
-      const nextCell = '<span class="'+(overdue ? 'status-pill danger' : (near ? 'status-pill warn' : ''))+'">'+escapeHtml(r.nextRechargeDate || '—')+'</span>';
+      const nextCell = '<span class="'+(overdue ? 'status-pill danger' : (near ? 'status-pill warn' : ''))+'">'+escapeHtml(formatDateBR(r.nextRechargeDate) || '—')+'</span>';
       return '<tr'+(r.active ? '' : ' style="opacity:.55"')+'>'+
         '<td>'+escapeHtml(r.phoneNumber || '—')+'</td>'+
         '<td>'+escapeHtml(r.carrier || '—')+'</td>'+
         '<td>'+escapeHtml(r.companyName || fase8CompanyName(r.companyId) || '—')+'</td>'+
         '<td>'+escapeHtml(r.responsibleName || '—')+'</td>'+
         '<td>'+formatCentsBRL(r.lastAmountCents)+'</td>'+
-        '<td>'+escapeHtml(r.lastRechargeDate || '—')+'</td>'+
+        '<td>'+escapeHtml(formatDateBR(r.lastRechargeDate) || '—')+'</td>'+
         '<td>'+nextCell+'</td>'+
         '<td>'+(r.active ? 'ATIVA' : 'INATIVA')+'</td>'+
         '<td style="white-space:nowrap">'+
@@ -23326,7 +23350,7 @@ function renderHomeTasks(){
       const data = await financeApiRequest('/phone-recharges?rechargeId='+encodeURIComponent(row.id));
       const events = Array.isArray(data.events) ? data.events : [];
       el('recargaEventHistorico').innerHTML = events.length
-        ? '<strong>Histórico:</strong><br>' + events.map(e => escapeHtml(e.rechargeDate) + ' — ' + formatCentsBRL(e.amountCents) + (e.notes ? ' (' + escapeHtml(e.notes) + ')' : '')).join('<br>')
+        ? '<strong>Histórico:</strong><br>' + events.map(e => escapeHtml(formatDateBR(e.rechargeDate)) + ' — ' + formatCentsBRL(e.amountCents) + (e.notes ? ' (' + escapeHtml(e.notes) + ')' : '')).join('<br>')
         : 'Sem recargas registradas ainda.';
     }catch(_e){ el('recargaEventHistorico').textContent = ''; }
   }
@@ -23483,7 +23507,7 @@ function renderHomeTasks(){
   // e não cancelado — tudo calculado na hora de renderizar (sem job/cron).
   function comprasOrderIsLate(order){
     if(!order.expectedDate || order.status === 'concluido' || Number(order.canceled)) return false;
-    return order.expectedDate < new Date().toISOString().slice(0,10);
+    return order.expectedDate < todayDateKeyRecife();
   }
 
   // Nome de exibição do pedido: fornecedor vencedor (nativo com vencedor
@@ -23526,9 +23550,9 @@ function renderHomeTasks(){
     const fields = [
       ['Origem', comprasOrderOriginLabel(order), true],
       ['Loja', order.companyName || ''],
-      ['Pedido em', order.orderDate || ''],
-      ['Previsão', order.expectedDate || ''],
-      ['Recebido em', order.receivedDate || ''],
+      ['Pedido em', formatDateBR(order.orderDate)],
+      ['Previsão', formatDateBR(order.expectedDate)],
+      ['Recebido em', formatDateBR(order.receivedDate)],
     ].filter(([, value]) => value);
     const fieldsHtml = fields.length
       ? '<div style="display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:10px;">'+
@@ -23559,8 +23583,8 @@ function renderHomeTasks(){
       '<td>'+comprasOrderOriginLabel(order)+'</td>'+
       '<td>'+comprasOrderBadges(order)+'</td>'+
       '<td>'+(order.noItemsDetailed ? 'SEM ITENS DETALHADOS' : Number(order.itemCount || 0))+'</td>'+
-      '<td>'+(order.orderDate || '—')+'</td>'+
-      '<td>'+(order.expectedDate || '—')+'</td>'+
+      '<td>'+(formatDateBR(order.orderDate) || '—')+'</td>'+
+      '<td>'+(formatDateBR(order.expectedDate) || '—')+'</td>'+
       '<td class="no-print"><button class="btn-outline" type="button" data-compras-order-open="'+escapeHtml(order.id)+'">'+(order.id === comprasOrderDetailOpenId ? 'FECHAR' : 'ABRIR')+'</button></td>'+
     '</tr>').join('');
     if(comprasOrderDetailOpenId){
@@ -24326,7 +24350,7 @@ function renderHomeTasks(){
       el('comprasProdutoHistoricoWrap').hidden = false;
       el('comprasProdutoTotalQtd').textContent = Number(historico.totalQuantity || 0);
       el('comprasProdutoTotalPedidos').textContent = Number(historico.distinctOrderCount || 0);
-      el('comprasProdutoUltimaCompra').textContent = historico.lastPurchaseDate || '—';
+      el('comprasProdutoUltimaCompra').textContent = formatDateBR(historico.lastPurchaseDate) || '—';
       el('comprasProdutoEmAndamento').textContent = Number(historico.inProgressQuantity || 0);
       el('comprasProdutoAtrasado').textContent = Number(historico.lateQuantity || 0);
 
@@ -24391,8 +24415,8 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(row.responsible || '—')+'</td>'+
       '<td>'+formatCentsBRL(row.budgetCents)+'</td>'+
       '<td><strong>'+formatCentsBRL(row.realizedCents)+'</strong>'+(row.budgetCents > 0 && row.realizedCents > row.budgetCents ? ' <span class="status-pill alert">ACIMA DO ORÇADO</span>' : '')+'</td>'+
-      '<td>'+escapeHtml(row.startDate || '—')+'</td>'+
-      '<td>'+escapeHtml(row.expectedEndDate || '—')+'</td>'+
+      '<td>'+escapeHtml(formatDateBR(row.startDate) || '—')+'</td>'+
+      '<td>'+escapeHtml(formatDateBR(row.expectedEndDate) || '—')+'</td>'+
       '<td>'+escapeHtml(OBRA_STATUS_LABELS[row.status] || row.status)+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
         '<button class="btn-outline" type="button" data-obra-open="'+escapeHtml(row.id)+'">LANÇAMENTOS</button>'+
@@ -24484,7 +24508,7 @@ function renderHomeTasks(){
           '</span>'
         : '<button class="btn-outline" type="button" data-obra-attach="'+escapeHtml(e.id)+'">ANEXAR PDF</button>';
       return '<tr>'+
-      '<td>'+escapeHtml(e.entryDate || '—')+'</td>'+
+      '<td>'+escapeHtml(formatDateBR(e.entryDate) || '—')+'</td>'+
       '<td>'+escapeHtml(e.description)+'</td>'+
       '<td>'+escapeHtml(e.supplier || '—')+'</td>'+
       '<td>'+escapeHtml(OBRA_PGTO_LABELS[e.paymentMethod] || e.paymentMethod)+'</td>'+
@@ -24545,7 +24569,7 @@ function renderHomeTasks(){
       el('obraDetailInfo').innerHTML =
         (o.companyName ? escapeHtml(o.companyName)+' · ' : '')+escapeHtml(OBRA_KIND_LABELS[o.kind] || o.kind)+' · '+escapeHtml(OBRA_STATUS_LABELS[o.status] || o.status)+'<br>'+
         'Orçado: <strong>'+formatCentsBRL(o.budgetCents)+'</strong> · Realizado: <strong>'+formatCentsBRL(o.realizedCents)+'</strong>'+
-        (o.startDate ? ' · Início '+escapeHtml(o.startDate) : '')+(o.expectedEndDate ? ' · Previsão '+escapeHtml(o.expectedEndDate) : '')+(o.endDate ? ' · Concluída '+escapeHtml(o.endDate) : '')+
+        (o.startDate ? ' · Início '+escapeHtml(formatDateBR(o.startDate)) : '')+(o.expectedEndDate ? ' · Previsão '+escapeHtml(formatDateBR(o.expectedEndDate)) : '')+(o.endDate ? ' · Concluída '+escapeHtml(formatDateBR(o.endDate)) : '')+
         (o.responsible ? '<br>Responsável: '+escapeHtml(o.responsible) : '')+
         (o.description ? '<br>'+escapeHtml(o.description) : '');
       el('obraEntryForm').reset();
@@ -24991,7 +25015,7 @@ function renderHomeTasks(){
         return '<tr class="dashboard-clickable-row" data-dashboard-payable="'+escapeHtml(row.id)+'" style="cursor:pointer;">'+
           '<td>'+escapeHtml(row.description)+'</td>'+
           '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
-          '<td>'+escapeHtml(row.dueDate)+'</td>'+
+          '<td>'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
           '<td>'+formatCentsBRL(balance)+'</td>'+
           '<td>'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
         '</tr>';
@@ -25411,7 +25435,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
         '<td>'+escapeHtml(row.costCenter || '—')+'</td>'+
         '<td>'+escapeHtml(row.competenceMonth)+'</td>'+
-        '<td>'+escapeHtml(row.dueDate)+'</td>'+
+        '<td>'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
         '<td>'+formatCentsBRL(row.originalAmountCents)+'</td>'+
         '<td>'+escapeHtml(EXPENSE_RATEIO_TYPE_LABELS[row.rateioType] || row.rateioType)+'</td>'+
         '<td>'+escapeHtml(expenseInstallmentBadge(row))+'</td>'+
@@ -25739,7 +25763,7 @@ function renderHomeTasks(){
     return '<tr>'+
       '<td>'+escapeHtml(payable.companyName || payable.companyId)+'</td>'+
       '<td>'+escapeHtml(payable.competenceMonth)+'</td>'+
-      '<td>'+escapeHtml(payable.dueDate)+'</td>'+
+      '<td>'+escapeHtml(formatDateBR(payable.dueDate))+'</td>'+
       '<td>'+formatCentsBRL(payable.originalAmountCents)+'</td>'+
       '<td>'+formatCentsBRL(payable.paidAmountCents)+'</td>'+
       '<td>'+payablesStatusPillHtml(payable.displayStatus)+'</td>'+
@@ -26712,7 +26736,7 @@ function renderHomeTasks(){
     return '<tr>'+
       '<td>'+installment.installmentNumber+'/'+installment.installmentTotal+'</td>'+
       '<td>'+escapeHtml(installment.documentNumber || installment.boletoCode || '—')+'</td>'+
-      '<td>'+escapeHtml(installment.dueDate)+'</td>'+
+      '<td>'+escapeHtml(formatDateBR(installment.dueDate))+'</td>'+
       '<td>'+formatCentsBRL(installment.originalAmountCents)+'</td>'+
       '<td>'+formatCentsBRL(installment.paidAmountCents)+'</td>'+
       '<td><span class="status-pill">'+escapeHtml(INSTALLMENT_STATUS_LABELS[installment.status] || installment.status)+'</span></td>'+

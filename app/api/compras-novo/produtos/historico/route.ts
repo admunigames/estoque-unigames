@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../../db";
+import { todayInTimezone } from "../../../../lib/finance-status";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { canManageComprasDraft, identity, jsonResponse } from "../../shared";
 
@@ -138,7 +139,7 @@ export async function GET(request: Request) {
 
     // Mesma regra de atraso que comprasOrderIsLate() usa no cliente:
     // expectedDate preenchida, anterior a hoje, pedido não concluído/cancelado.
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayInTimezone();
     const lateResult = await database
       .prepare(
         `SELECT COALESCE(SUM(poi.quantity - poi.received_quantity), 0) AS total

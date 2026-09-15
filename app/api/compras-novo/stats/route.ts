@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { todayInTimezone } from "../../../lib/finance-status";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canManageComprasDraft, identity, jsonResponse } from "../shared";
 
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayInTimezone();
 
     const counts = await database
       .prepare(
