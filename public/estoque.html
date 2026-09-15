@@ -8193,6 +8193,21 @@
   };
   const errorBox = el('errorBox');
 
+  // Reexecuta uma função de load/refresh sem o "pisca" e a perda de posição
+  // de rolagem que um reload completo da seção causa: a função de load deve
+  // aceitar {silent:true} pra pular o placeholder "Carregando…" quando essa
+  // chamada vem de uma ação do próprio usuário (salvar/excluir/status etc.),
+  // e esta função aqui guarda a posição da página e restaura depois.
+  async function refreshAfterAction(loadFn){
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    try{
+      await loadFn({silent:true});
+    }finally{
+      window.scrollTo(scrollX, scrollY);
+    }
+  }
+
   // fetch com tempo limite: evita que uma conexão presa (ex.: pool do
   // Hyperdrive/Postgres saturado no primeiro acesso) deixe a tela parada
   // sem nenhum retorno. Faz uma nova tentativa automática antes de desistir.
@@ -15247,10 +15262,10 @@ function renderHomeTasks(){
         '</div>';
   }
 
-  async function loadOutputs(){
+  async function loadOutputs(opts){
     if(!canAccess('outputs') || outputsLoading) return;
     outputsLoading = true;
-    el('outputList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
+    if(!opts || !opts.silent) el('outputList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
     try{
       const data = await outputApiRequest();
       outputRows = Array.isArray(data.outputs) ? data.outputs : [];
@@ -15291,7 +15306,7 @@ function renderHomeTasks(){
       el('outputQuantity').value = '1';
       setOutputFormStatus('SOLICITAÇÃO ENVIADA AO ADMINISTRADOR.','success');
       outputView = 'requested';
-      await loadOutputs();
+      await refreshAfterAction(loadOutputs);
     }catch(error){
       setOutputFormStatus(error.message,'error');
     }finally{
@@ -15311,7 +15326,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:completeButton.dataset.outputComplete})
         });
         showPurchaseToast('Saída efetuada e enviada para o histórico.');
-        await loadOutputs();
+        await refreshAfterAction(loadOutputs);
       }catch(error){
         showPurchaseToast(error.message,'error');
         completeButton.disabled = false;
@@ -15329,7 +15344,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:deleteButton.dataset.outputDelete})
         });
         showPurchaseToast('Saída excluída.');
-        await loadOutputs();
+        await refreshAfterAction(loadOutputs);
       }catch(error){
         showPurchaseToast(error.message,'error');
         deleteButton.disabled = false;
@@ -15540,10 +15555,10 @@ function renderHomeTasks(){
         '</div>';
   }
 
-  async function loadInputs(){
+  async function loadInputs(opts){
     if(!canAccess('inputs') || inputsLoading) return;
     inputsLoading = true;
-    el('inputList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
+    if(!opts || !opts.silent) el('inputList').innerHTML = '<div class="output-empty">Carregando solicitações…</div>';
     try{
       const data = await inputApiRequest();
       inputRows = Array.isArray(data.inputs) ? data.inputs : [];
@@ -15584,7 +15599,7 @@ function renderHomeTasks(){
       el('inputQuantity').value = '1';
       setInputFormStatus('SOLICITAÇÃO ENVIADA AO ADMINISTRADOR.','success');
       inputView = 'requested';
-      await loadInputs();
+      await refreshAfterAction(loadInputs);
     }catch(error){
       setInputFormStatus(error.message,'error');
     }finally{
@@ -15604,7 +15619,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:completeButton.dataset.inputComplete})
         });
         showPurchaseToast('Entrada efetuada e enviada para o histórico.');
-        await loadInputs();
+        await refreshAfterAction(loadInputs);
       }catch(error){
         showPurchaseToast(error.message,'error');
         completeButton.disabled = false;
@@ -15622,7 +15637,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:deleteButton.dataset.inputDelete})
         });
         showPurchaseToast('Entrada excluída.');
-        await loadInputs();
+        await refreshAfterAction(loadInputs);
       }catch(error){
         showPurchaseToast(error.message,'error');
         deleteButton.disabled = false;
