@@ -8194,15 +8194,15 @@
   const errorBox = el('errorBox');
 
   // Reexecuta uma função de load/refresh sem o "pisca" e a perda de posição
-  // de rolagem que um reload completo da seção causa: a função de load deve
-  // aceitar {silent:true} pra pular o placeholder "Carregando…" quando essa
-  // chamada vem de uma ação do próprio usuário (salvar/excluir/status etc.),
+  // de rolagem que um reload completo da seção causa: chame passando uma
+  // função sem argumentos que dispare o load com {silent:true} (pulando o
+  // placeholder "Carregando…", que deve ficar só pro carregamento inicial),
   // e esta função aqui guarda a posição da página e restaura depois.
   async function refreshAfterAction(loadFn){
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
     try{
-      await loadFn({silent:true});
+      await loadFn();
     }finally{
       window.scrollTo(scrollX, scrollY);
     }
@@ -9690,7 +9690,7 @@
     }).join('');
   }
 
-  async function loadDocuments(folder){
+  async function loadDocuments(folder, opts){
     const selected = DOCUMENT_FOLDERS[folder] ? folder : 'garantia-produto';
     currentDocumentFolder = selected;
     const config = DOCUMENT_FOLDERS[selected];
@@ -9700,8 +9700,10 @@
       button.classList.toggle('active',button.dataset.documentFolder === selected);
       if(button.tagName === 'A') button.setAttribute('aria-current',button.dataset.documentFolder === selected ? 'page' : 'false');
     });
-    el('documentsList').innerHTML = '<div class="documents-empty">CARREGANDO DOCUMENTOS…</div>';
-    el('documentsCount').textContent = '…';
+    if(!opts || !opts.silent){
+      el('documentsList').innerHTML = '<div class="documents-empty">CARREGANDO DOCUMENTOS…</div>';
+      el('documentsCount').textContent = '…';
+    }
     setDocumentsUploadStatus('','');
     try{
       const data = await documentApiRequest('/api/documents?folder='+encodeURIComponent(selected));
@@ -9772,7 +9774,7 @@
       await uploadDocument(file);
       el('documentsFile').value = '';
       setDocumentsUploadStatus('PDF ADICIONADO COM SUCESSO.','success');
-      await loadDocuments(currentDocumentFolder);
+      await refreshAfterAction(() => loadDocuments(currentDocumentFolder, {silent:true}));
       showPurchaseToast('Documento adicionado.');
     }catch(error){
       setDocumentsUploadStatus(error.message,'error');
@@ -9788,7 +9790,7 @@
     button.disabled = true;
     try{
       await documentApiRequest('/api/documents?id='+encodeURIComponent(button.dataset.documentDelete),{method:'DELETE'});
-      await loadDocuments(currentDocumentFolder);
+      await refreshAfterAction(() => loadDocuments(currentDocumentFolder, {silent:true}));
       showPurchaseToast('Documento excluído.');
     }catch(error){
       showPurchaseToast(error.message,'error');
@@ -12474,13 +12476,13 @@
     }).join('');
   }
 
-  async function loadPurchases(reset){
+  async function loadPurchases(reset, opts){
     if(purchasesLoading) return;
     purchasesLoading = true;
     if(reset){
       purchaseRows = [];
       purchaseCursor = null;
-      renderPurchaseSkeletons();
+      if(!opts || !opts.silent) renderPurchaseSkeletons();
     }
     setPurchaseSync('Sincronizando com o Notion…', 'loading');
     el('btnPurchasesRefresh').disabled = true;
@@ -12590,8 +12592,7 @@
       const data = await response.json();
       if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL REGISTRAR A ENTREGA.');
       closePartialDeliveryDialog();
-      await loadPurchaseDeliveries();
-      renderPurchaseCards();
+      await refreshAfterAction(async () => { await loadPurchaseDeliveries(); renderPurchaseCards(); });
       showPurchaseToast('Entrega parcial registrada.');
     }catch(error){
       showPurchaseToast(error.message || 'Não foi possível registrar a entrega parcial.','error');
@@ -12609,8 +12610,7 @@
     });
     const data = await response.json().catch(() => ({}));
     if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL EXCLUIR A ENTREGA.');
-    await loadPurchaseDeliveries();
-    renderPurchaseCards();
+    await refreshAfterAction(async () => { await loadPurchaseDeliveries(); renderPurchaseCards(); });
     showPurchaseToast('Registro de entrega parcial excluído.');
   }
 
@@ -12748,7 +12748,7 @@
       if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL SALVAR O PEDIDO.');
       closePurchaseDialog();
       showPurchaseToast(pageId ? 'Pedido atualizado no Notion.' : 'Pedido criado no Notion.');
-      await loadPurchases(true);
+      await refreshAfterAction(() => loadPurchases(true, {silent:true}));
     } catch(error){
       showPurchaseToast(error && error.message ? error.message : 'Erro ao salvar o pedido.', 'error');
     } finally {
@@ -15306,7 +15306,7 @@ function renderHomeTasks(){
       el('outputQuantity').value = '1';
       setOutputFormStatus('SOLICITAÇÃO ENVIADA AO ADMINISTRADOR.','success');
       outputView = 'requested';
-      await refreshAfterAction(loadOutputs);
+      await refreshAfterAction(() => loadOutputs({silent:true}));
     }catch(error){
       setOutputFormStatus(error.message,'error');
     }finally{
@@ -15326,7 +15326,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:completeButton.dataset.outputComplete})
         });
         showPurchaseToast('Saída efetuada e enviada para o histórico.');
-        await refreshAfterAction(loadOutputs);
+        await refreshAfterAction(() => loadOutputs({silent:true}));
       }catch(error){
         showPurchaseToast(error.message,'error');
         completeButton.disabled = false;
@@ -15344,7 +15344,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:deleteButton.dataset.outputDelete})
         });
         showPurchaseToast('Saída excluída.');
-        await refreshAfterAction(loadOutputs);
+        await refreshAfterAction(() => loadOutputs({silent:true}));
       }catch(error){
         showPurchaseToast(error.message,'error');
         deleteButton.disabled = false;
@@ -15599,7 +15599,7 @@ function renderHomeTasks(){
       el('inputQuantity').value = '1';
       setInputFormStatus('SOLICITAÇÃO ENVIADA AO ADMINISTRADOR.','success');
       inputView = 'requested';
-      await refreshAfterAction(loadInputs);
+      await refreshAfterAction(() => loadInputs({silent:true}));
     }catch(error){
       setInputFormStatus(error.message,'error');
     }finally{
@@ -15619,7 +15619,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:completeButton.dataset.inputComplete})
         });
         showPurchaseToast('Entrada efetuada e enviada para o histórico.');
-        await refreshAfterAction(loadInputs);
+        await refreshAfterAction(() => loadInputs({silent:true}));
       }catch(error){
         showPurchaseToast(error.message,'error');
         completeButton.disabled = false;
@@ -15637,7 +15637,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:deleteButton.dataset.inputDelete})
         });
         showPurchaseToast('Entrada excluída.');
-        await refreshAfterAction(loadInputs);
+        await refreshAfterAction(() => loadInputs({silent:true}));
       }catch(error){
         showPurchaseToast(error.message,'error');
         deleteButton.disabled = false;
@@ -17964,7 +17964,7 @@ function renderHomeTasks(){
       el('pdvRequestForm').reset();
       updatePdvTypeFields();
       setPdvRequestFormStatus('SOLICITAÇÃO CADASTRADA.','success');
-      await refreshAfterAction(loadPdvRequests);
+      await refreshAfterAction(() => loadPdvRequests({silent:true}));
     }catch(error){
       setPdvRequestFormStatus(error.message,'error');
     }finally{
@@ -17980,7 +17980,7 @@ function renderHomeTasks(){
       button.disabled = true;
       try{
         await pdvApiRequest('?id='+encodeURIComponent(button.dataset.pdvDelete),{method:'DELETE'});
-        await refreshAfterAction(loadPdvRequests);
+        await refreshAfterAction(() => loadPdvRequests({silent:true}));
         afterChange();
         showPurchaseToast('Solicitação excluída.');
       }catch(error){
@@ -17998,7 +17998,7 @@ function renderHomeTasks(){
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({id:select.dataset.pdvStatusSelect, status:select.value})
         });
-        await refreshAfterAction(loadPdvRequests);
+        await refreshAfterAction(() => loadPdvRequests({silent:true}));
         afterChange();
         showPurchaseToast('Status atualizado.');
       }catch(error){
@@ -18204,7 +18204,7 @@ function renderHomeTasks(){
       });
       el('osNoteForm').reset();
       setOsNoteFormStatus('SOLICITAÇÃO CADASTRADA.','success');
-      await refreshAfterAction(loadOsNotes);
+      await refreshAfterAction(() => loadOsNotes({silent:true}));
     }catch(error){
       setOsNoteFormStatus(error.message,'error');
     }finally{
@@ -18275,7 +18275,7 @@ function renderHomeTasks(){
       deleteButton.disabled = true;
       try{
         await osNoteApiRequest('?id='+encodeURIComponent(deleteButton.dataset.osNoteDelete),{method:'DELETE'});
-        await refreshAfterAction(loadOsNotes);
+        await refreshAfterAction(() => loadOsNotes({silent:true}));
         showPurchaseToast('Solicitação excluída.');
       }catch(error){
         showPurchaseToast(error.message,'error');
@@ -18292,7 +18292,7 @@ function renderHomeTasks(){
     try{
       await uploadOsNoteAttachment(osNoteId, file);
       showPurchaseToast('Nota anexada com sucesso.');
-      await refreshAfterAction(loadOsNotes);
+      await refreshAfterAction(() => loadOsNotes({silent:true}));
     }catch(error){
       showPurchaseToast(error.message,'error');
     }finally{
