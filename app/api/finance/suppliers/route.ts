@@ -1,6 +1,15 @@
 import { getD1 } from "../../../../db";
+import { canManageComprasDraft } from "../../compras-novo/shared";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
+import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type Identity, type JsonMap } from "../shared";
+
+// Cadastro de fornecedor é único (finance_suppliers) e compartilhado entre o
+// Financeiro (Notas Fiscais/Duplicatas) e o Compras nativo — qualquer um dos
+// dois módulos dá acesso de leitura/escrita a este cadastro, sem duplicar a
+// permissão em cada lugar que o usa.
+function canManageSuppliers(actor: Identity) {
+  return canManageFinance(actor) || canManageComprasDraft(actor);
+}
 
 type SupplierRow = {
   id: string;
@@ -17,8 +26,8 @@ export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManageFinance(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O FINANCEIRO." }, 403);
+  if (!canManageSuppliers(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O CADASTRO DE FORNECEDORES." }, 403);
   }
 
   const url = new URL(request.url);
@@ -46,7 +55,7 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManageFinance(actor)) {
+  if (!canManageSuppliers(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR FORNECEDORES." }, 403);
   }
   if (!sameOrigin(request)) {

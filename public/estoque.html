@@ -4601,6 +4601,7 @@
       <div class="supply-tabs" role="tablist" aria-label="Seções de compras">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-compras-section-tab="porProduto">POR PRODUTO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="pedidos">PEDIDOS</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="fornecedores">CADASTRO DE FORNECEDOR</button>
       </div>
 
       <section id="comprasSectionPedidos" hidden>
@@ -4829,6 +4830,22 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Cadastro de Fornecedor — mesma tabela/API do Financeiro
+           (finance_suppliers via /api/finance/suppliers), só exposta aqui
+           também: um único cadastro de fornecedor pro sistema todo. -->
+      <section id="comprasSectionFornecedores" hidden>
+        <form class="dre-catalog-form" id="comprasFornecedorForm">
+          <input type="hidden" id="comprasFornecedorId">
+          <div class="field"><label for="comprasFornecedorName">NOME DO FORNECEDOR *</label><input id="comprasFornecedorName" maxlength="160" placeholder="Ex.: ODERCO" required></div>
+          <div class="field"><label for="comprasFornecedorDocument">CNPJ/CPF</label><input id="comprasFornecedorDocument" maxlength="40"></div>
+          <button class="btn-outline" type="button" id="btnCancelComprasFornecedorEdit" hidden>CANCELAR EDIÇÃO</button>
+          <button class="btn-accent" type="submit" id="btnSaveComprasFornecedor">ADICIONAR FORNECEDOR</button>
+        </form>
+        <div class="user-form-status" id="comprasFornecedorFormStatus" role="status" aria-live="polite"></div>
+        <div class="field full" style="margin-bottom:12px;"><label for="comprasFornecedoresSearch">BUSCAR</label><input id="comprasFornecedoresSearch" placeholder="Nome ou documento..."></div>
+        <div class="dre-catalog-list" id="comprasFornecedoresList"></div>
       </section>
     </section>
 
@@ -6425,11 +6442,35 @@
     <p class="page-desc" style="margin:14px 0 6px;">FORNECEDOR(ES) CANDIDATO(S)</p>
     <input id="comprasItemSuppliersFilter" type="text" placeholder="Buscar fornecedor..." autocomplete="off" style="margin-bottom:8px;">
     <div class="permission-grid" id="comprasItemSuppliersGrid"></div>
+    <button class="btn-outline" type="button" id="btnComprasItemQuickAddSupplier" hidden style="margin-top:8px;"></button>
 
     <div class="user-form-status" id="comprasDraftItemFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelComprasDraftItemDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR ITEM</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Cadastro rápido de fornecedor, aberto de dentro do diálogo de item
+     (quando o comprador digita um nome que não existe ainda) — grava no
+     MESMO cadastro unificado (finance_suppliers) da aba "Cadastro de
+     Fornecedor" e do Financeiro; ao salvar, volta pro diálogo de item com o
+     fornecedor novo já marcado, sem perder o que já estava preenchido. -->
+<dialog class="purchase-dialog" id="comprasQuickSupplierDialog" aria-labelledby="comprasQuickSupplierDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="comprasQuickSupplierDialogTitle">CADASTRAR NOVO FORNECEDOR</h3>
+    <button class="purchase-dialog-close" id="btnCloseComprasQuickSupplierDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="comprasQuickSupplierForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="comprasQuickSupplierName">NOME DO FORNECEDOR *</label><input id="comprasQuickSupplierName" maxlength="160" required></div>
+      <div class="purchase-field full"><label for="comprasQuickSupplierDocument">CNPJ/CPF</label><input id="comprasQuickSupplierDocument" maxlength="40"></div>
+    </div>
+    <div class="user-form-status" id="comprasQuickSupplierFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelComprasQuickSupplierDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">CADASTRAR E SELECIONAR</button>
     </div>
   </form>
 </dialog>
@@ -23393,8 +23434,10 @@ function renderHomeTasks(){
     });
     el('comprasSectionPedidos').hidden = tab !== 'pedidos';
     el('comprasSectionPorProduto').hidden = tab !== 'porProduto';
+    el('comprasSectionFornecedores').hidden = tab !== 'fornecedores';
     if(tab === 'pedidos') loadComprasOrdersPage();
     if(tab === 'porProduto') initComprasProdutoBusca();
+    if(tab === 'fornecedores') loadComprasFornecedoresTab();
   }
   document.querySelectorAll('[data-compras-section-tab]').forEach(button => {
     button.addEventListener('click',() => setComprasSectionTab(button.dataset.comprasSectionTab));
@@ -23428,6 +23471,92 @@ function renderHomeTasks(){
     const supplier = comprasSuppliersCache.find(s => s.id === id);
     return supplier ? supplier.name : id;
   }
+
+  // ----- Aba "Cadastro de Fornecedor" do Compras nativo -----
+  // Mesmo cadastro (finance_suppliers / /api/finance/suppliers) já usado
+  // pelo Financeiro em Contas a Pagar — listar/criar/editar aqui grava no
+  // mesmo lugar, sem duplicar fornecedor entre os dois módulos.
+  let comprasFornecedoresData = [];
+
+  async function loadComprasFornecedoresTab(){
+    try{
+      const data = await financeApiRequest('/suppliers?includeInactive=1');
+      comprasFornecedoresData = Array.isArray(data.suppliers) ? data.suppliers : [];
+    }catch(error){
+      comprasFornecedoresData = [];
+      showPurchaseToast(error.message, 'error');
+    }
+    renderComprasFornecedoresList();
+  }
+
+  function renderComprasFornecedoresList(){
+    const search = (el('comprasFornecedoresSearch').value || '').trim().toLowerCase();
+    const filtered = comprasFornecedoresData.filter(s =>
+      !search || s.name.toLowerCase().includes(search) || (s.document || '').toLowerCase().includes(search)
+    );
+    el('comprasFornecedoresList').innerHTML = filtered.length
+      ? filtered.map(s => '<div class="dre-catalog-row"><span>'+escapeHtml(s.name)+(s.document ? ' — '+escapeHtml(s.document) : '')+(s.active ? '' : ' (INATIVO)')+'</span>'+
+          '<span style="display:flex;gap:6px;">'+
+            '<button class="btn-outline" type="button" data-compras-edit-fornecedor="'+escapeHtml(s.id)+'">EDITAR</button>'+
+            '<button class="btn-outline" type="button" data-compras-toggle-fornecedor="'+escapeHtml(s.id)+'">'+(s.active ? 'DESATIVAR' : 'REATIVAR')+'</button>'+
+          '</span></div>').join('')
+      : '<div class="dre-empty">Nenhum fornecedor encontrado.</div>';
+  }
+
+  function resetComprasFornecedorForm(){
+    el('comprasFornecedorForm').reset();
+    el('comprasFornecedorId').value = '';
+    el('btnCancelComprasFornecedorEdit').hidden = true;
+    el('btnSaveComprasFornecedor').textContent = 'ADICIONAR FORNECEDOR';
+    el('comprasFornecedorFormStatus').textContent = '';
+  }
+
+  if(el('comprasFornecedorForm')) el('comprasFornecedorForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasFornecedorFormStatus');
+    const name = el('comprasFornecedorName').value.trim();
+    if(!name){ status.textContent = 'INFORME O NOME DO FORNECEDOR.'; return; }
+    try{
+      await financeApiRequest('/suppliers', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id: el('comprasFornecedorId').value, name, document: el('comprasFornecedorDocument').value.trim()})
+      });
+      resetComprasFornecedorForm();
+      comprasSuppliersCache = [];
+      await loadComprasFornecedoresTab();
+      showPurchaseToast('Fornecedor salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  if(el('btnCancelComprasFornecedorEdit')) el('btnCancelComprasFornecedorEdit').addEventListener('click', resetComprasFornecedorForm);
+  if(el('comprasFornecedoresSearch')) el('comprasFornecedoresSearch').addEventListener('input', renderComprasFornecedoresList);
+
+  if(el('comprasFornecedoresList')) el('comprasFornecedoresList').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-compras-edit-fornecedor]');
+    const toggleButton = event.target.closest('[data-compras-toggle-fornecedor]');
+    if(editButton){
+      const supplier = comprasFornecedoresData.find(s => s.id === editButton.dataset.comprasEditFornecedor);
+      if(!supplier) return;
+      el('comprasFornecedorId').value = supplier.id;
+      el('comprasFornecedorName').value = supplier.name;
+      el('comprasFornecedorDocument').value = supplier.document || '';
+      el('btnCancelComprasFornecedorEdit').hidden = false;
+      el('btnSaveComprasFornecedor').textContent = 'SALVAR ALTERAÇÕES';
+      el('comprasFornecedorName').focus();
+    }else if(toggleButton){
+      const supplier = comprasFornecedoresData.find(s => s.id === toggleButton.dataset.comprasToggleFornecedor);
+      if(!supplier) return;
+      try{
+        await financeApiRequest('/suppliers', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:supplier.id, name:supplier.name, document:supplier.document, active: !supplier.active})
+        });
+        comprasSuppliersCache = [];
+        await loadComprasFornecedoresTab();
+        showPurchaseToast(supplier.active ? 'Fornecedor desativado.' : 'Fornecedor reativado.');
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+    }
+  });
 
   // Compras nativo usa o catálogo GERAL de produtos (Cadastro de Produtos),
   // não mais o merge de products_catalog:standard/:pa por grupo — um
@@ -23888,6 +24017,69 @@ function renderHomeTasks(){
     });
   }
 
+  // Reaproveitada tanto na abertura normal do diálogo de item quanto depois
+  // do cadastro rápido de fornecedor (item 3), que precisa re-render a
+  // grade com o fornecedor novo já marcado sem fechar/reabrir o diálogo.
+  async function renderComprasItemSuppliersGrid(selectedSupplierIds, forceRefresh){
+    if(forceRefresh) comprasSuppliersCache = [];
+    const suppliers = await comprasNovoSuppliers();
+    el('comprasItemSuppliersGrid').innerHTML = suppliers.length
+      ? suppliers.map(s => '<label class="permission-option"><input type="checkbox" name="comprasItemSupplier" value="'+escapeHtml(s.id)+'"'+(selectedSupplierIds.includes(s.id) ? ' checked' : '')+'> '+escapeHtml(s.name)+'</label>').join('')
+      : '<p class="page-desc">Nenhum fornecedor cadastrado no Financeiro ainda.</p>';
+    applyComprasItemSuppliersFilter();
+  }
+
+  // Igual attachChecklistFilter, mas também mostra "+ CADASTRAR NOVO
+  // FORNECEDOR: <termo>" quando a busca não encontra ninguém — só faz
+  // sentido pra fornecedor (lojas não têm cadastro rápido pedido).
+  function applyComprasItemSuppliersFilter(){
+    const input = el('comprasItemSuppliersFilter');
+    const grid = el('comprasItemSuppliersGrid');
+    const rawTerm = input.value.trim();
+    const term = normalizeHeader(rawTerm);
+    let anyVisible = false;
+    grid.querySelectorAll('.permission-option').forEach(label => {
+      const matches = !term || normalizeHeader(label.textContent).includes(term);
+      label.style.display = matches ? '' : 'none';
+      if(matches) anyVisible = true;
+    });
+    const quickAddBtn = el('btnComprasItemQuickAddSupplier');
+    if(rawTerm && !anyVisible){
+      quickAddBtn.hidden = false;
+      quickAddBtn.textContent = '+ CADASTRAR NOVO FORNECEDOR: '+rawTerm.toUpperCase();
+    }else{
+      quickAddBtn.hidden = true;
+    }
+  }
+  if(el('comprasItemSuppliersFilter')) el('comprasItemSuppliersFilter').addEventListener('input', applyComprasItemSuppliersFilter);
+
+  if(el('btnComprasItemQuickAddSupplier')) el('btnComprasItemQuickAddSupplier').addEventListener('click', () => {
+    el('comprasQuickSupplierForm').reset();
+    el('comprasQuickSupplierName').value = el('comprasItemSuppliersFilter').value.trim();
+    el('comprasQuickSupplierFormStatus').textContent = '';
+    el('comprasQuickSupplierDialog').showModal();
+  });
+  if(el('btnCloseComprasQuickSupplierDialog')) el('btnCloseComprasQuickSupplierDialog').addEventListener('click', () => el('comprasQuickSupplierDialog').close());
+  if(el('btnCancelComprasQuickSupplierDialog')) el('btnCancelComprasQuickSupplierDialog').addEventListener('click', () => el('comprasQuickSupplierDialog').close());
+  if(el('comprasQuickSupplierForm')) el('comprasQuickSupplierForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasQuickSupplierFormStatus');
+    const name = el('comprasQuickSupplierName').value.trim();
+    if(!name){ status.textContent = 'INFORME O NOME DO FORNECEDOR.'; return; }
+    status.textContent = '';
+    try{
+      const result = await financeApiRequest('/suppliers', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, document: el('comprasQuickSupplierDocument').value.trim()})
+      });
+      const currentlyChecked = Array.from(document.querySelectorAll('input[name="comprasItemSupplier"]:checked')).map(input => input.value);
+      el('comprasItemSuppliersFilter').value = '';
+      await renderComprasItemSuppliersGrid([...currentlyChecked, result.id], true);
+      el('comprasQuickSupplierDialog').close();
+      showPurchaseToast('Fornecedor cadastrado e selecionado.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
   async function openComprasItemDialog(item){
     el('comprasDraftItemForm').reset();
     el('comprasItemId').value = item ? item.id : '';
@@ -23899,15 +24091,11 @@ function renderHomeTasks(){
     el('comprasItemStockBody').innerHTML = '';
     el('comprasItemStoresFilter').value = '';
     el('comprasItemSuppliersFilter').value = '';
+    el('btnComprasItemQuickAddSupplier').hidden = true;
 
-
-    const suppliers = await comprasNovoSuppliers();
     let selectedSupplierIds = [];
     if(item) selectedSupplierIds = item.candidateSupplierIdsList || [];
-    el('comprasItemSuppliersGrid').innerHTML = suppliers.length
-      ? suppliers.map(s => '<label class="permission-option"><input type="checkbox" name="comprasItemSupplier" value="'+escapeHtml(s.id)+'"'+(selectedSupplierIds.includes(s.id) ? ' checked' : '')+'> '+escapeHtml(s.name)+'</label>').join('')
-      : '<p class="page-desc">Nenhum fornecedor cadastrado no Financeiro ainda.</p>';
-    attachChecklistFilter(el('comprasItemSuppliersFilter'), el('comprasItemSuppliersGrid'));
+    await renderComprasItemSuppliersGrid(selectedSupplierIds, true);
 
     let selectedStoreIds = [];
     if(item){ try{ selectedStoreIds = (JSON.parse(item.targetStores || '[]')).map(s => s.companyId); }catch{ selectedStoreIds = []; } }
