@@ -6419,9 +6419,11 @@
     </div>
 
     <p class="page-desc" style="margin:14px 0 6px;">LOJAS DESTINO</p>
+    <input id="comprasItemStoresFilter" type="text" placeholder="Buscar loja..." autocomplete="off" style="margin-bottom:8px;">
     <div class="permission-grid" id="comprasItemStoresGrid"></div>
 
     <p class="page-desc" style="margin:14px 0 6px;">FORNECEDOR(ES) CANDIDATO(S)</p>
+    <input id="comprasItemSuppliersFilter" type="text" placeholder="Buscar fornecedor..." autocomplete="off" style="margin-bottom:8px;">
     <div class="permission-grid" id="comprasItemSuppliersGrid"></div>
 
     <div class="user-form-status" id="comprasDraftItemFormStatus" role="status" aria-live="polite"></div>
@@ -23868,6 +23870,24 @@ function renderHomeTasks(){
     URL.revokeObjectURL(url);
   });
 
+  // Filtra as opções (labels de checkbox) de uma permission-grid conforme o
+  // texto digitado no campo de busca acima dela — usado nas grades de
+  // "LOJAS DESTINO" e "FORNECEDOR(ES) CANDIDATO(S)" do item de Compras, que
+  // podem ter muitas opções. Mantém a seleção múltipla existente (checkbox),
+  // só esconde/mostra as linhas; não é o mesmo componente de autocomplete de
+  // produto (que seleciona um valor único num input de texto).
+  function attachChecklistFilter(inputEl, gridEl){
+    if(!inputEl || !gridEl || inputEl.dataset.checklistFilterAttached) return;
+    inputEl.dataset.checklistFilterAttached = '1';
+    inputEl.addEventListener('input', () => {
+      const term = normalizeHeader(inputEl.value.trim());
+      gridEl.querySelectorAll('.permission-option').forEach(label => {
+        const matches = !term || normalizeHeader(label.textContent).includes(term);
+        label.style.display = matches ? '' : 'none';
+      });
+    });
+  }
+
   async function openComprasItemDialog(item){
     el('comprasDraftItemForm').reset();
     el('comprasItemId').value = item ? item.id : '';
@@ -23877,6 +23897,8 @@ function renderHomeTasks(){
     el('comprasItemNotes').value = item ? (item.notes || '') : '';
     el('comprasItemStockWrap').hidden = true;
     el('comprasItemStockBody').innerHTML = '';
+    el('comprasItemStoresFilter').value = '';
+    el('comprasItemSuppliersFilter').value = '';
 
 
     const suppliers = await comprasNovoSuppliers();
@@ -23885,12 +23907,14 @@ function renderHomeTasks(){
     el('comprasItemSuppliersGrid').innerHTML = suppliers.length
       ? suppliers.map(s => '<label class="permission-option"><input type="checkbox" name="comprasItemSupplier" value="'+escapeHtml(s.id)+'"'+(selectedSupplierIds.includes(s.id) ? ' checked' : '')+'> '+escapeHtml(s.name)+'</label>').join('')
       : '<p class="page-desc">Nenhum fornecedor cadastrado no Financeiro ainda.</p>';
+    attachChecklistFilter(el('comprasItemSuppliersFilter'), el('comprasItemSuppliersGrid'));
 
     let selectedStoreIds = [];
     if(item){ try{ selectedStoreIds = (JSON.parse(item.targetStores || '[]')).map(s => s.companyId); }catch{ selectedStoreIds = []; } }
     el('comprasItemStoresGrid').innerHTML = companies.length
       ? companies.map(c => '<label class="permission-option"><input type="checkbox" name="comprasItemStore" value="'+escapeHtml(c.id)+'" data-store-name="'+escapeHtml(c.name)+'"'+(selectedStoreIds.includes(c.id) ? ' checked' : '')+'> '+escapeHtml(c.name)+'</label>').join('')
       : '<p class="page-desc">Nenhuma loja cadastrada.</p>';
+    attachChecklistFilter(el('comprasItemStoresFilter'), el('comprasItemStoresGrid'));
 
     el('comprasDraftItemFormStatus').textContent = '';
     el('comprasDraftItemDialog').showModal();
