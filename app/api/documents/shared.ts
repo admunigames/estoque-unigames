@@ -137,22 +137,13 @@ export async function documentsBucket(): Promise<R2Bucket> {
   return bucket;
 }
 
-export const PDF_CONTENT_TYPE = "application/pdf";
+// Mantidos com o nome histórico "PDF" porque é assim que o restante do
+// projeto (rotas de anexo, staging em R2) importa estas constantes — o
+// conteúdo aceito deixou de ser exclusivo de PDF, só o tamanho/tamanho de
+// pedaço do upload em partes continuam os mesmos.
+export const DEFAULT_ATTACHMENT_CONTENT_TYPE = "application/octet-stream";
 export const PDF_CHUNK_SIZE = 512 * 1024;
 export const MAX_PDF_SIZE = 25 * 1024 * 1024;
-
-// Confere a assinatura real do arquivo (magic bytes + marcador de fim),
-// não apenas a extensão/Content-Type declarados pelo cliente — usado por
-// qualquer módulo que aceite upload de PDF (Documentos, Notas de O.S.).
-export function looksLikePdf(bytes: Uint8Array) {
-  if (bytes.byteLength < 12) return false;
-  const decoder = new TextDecoder("latin1");
-  const header = decoder.decode(bytes.slice(0, 8));
-  if (!/^%PDF-[12]\.\d/.test(header)) return false;
-  const tail = decoder.decode(bytes.slice(Math.max(0, bytes.byteLength - 2048)));
-  return /%%EOF\s*$/.test(tail);
-}
-
 
 function hasControlChar(value: string) {
   for (let index = 0; index < value.length; index += 1) {
@@ -162,22 +153,30 @@ function hasControlChar(value: string) {
   return false;
 }
 
+function safeExtension(fileName: string) {
+  const match = /\.([a-z0-9]{1,10})$/i.exec(fileName);
+  return match ? match[1].toLowerCase() : "";
+}
+
+// Sanitiza o nome do arquivo para uso como chave no R2 (sem path traversal,
+// sem caracteres fora de a-z0-9._-), preservando a extensão original em vez
+// de forçar ".pdf" — qualquer tipo de anexo passa por aqui.
 export function safeR2FileName(fileName: string) {
-  const base = fileName
+  const extension = safeExtension(fileName);
+  const withoutExtension = extension ? fileName.slice(0, -(extension.length + 1)) : fileName;
+  const base = withoutExtension
     .normalize("NFKD")
     .replace(/[^\x00-\x7f]/g, "")
-    .replace(/\.pdf$/i, "")
     .replace(/[^a-z0-9._-]+/gi, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 100);
-  return `${base || "documento"}.pdf`;
+  return extension ? `${base || "arquivo"}.${extension}` : base || "arquivo";
 }
 
-export function validPdfName(fileName: string) {
+export function validAttachmentName(fileName: string) {
   return (
-    fileName.length > 4 &&
+    fileName.length > 0 &&
     fileName.length <= 180 &&
-    fileName.toLowerCase().endsWith(".pdf") &&
     !fileName.includes("/") &&
     !fileName.includes("\\") &&
     !hasControlChar(fileName)
@@ -189,7 +188,7 @@ export function contentDisposition(fileName: string, download: boolean) {
     .normalize("NFKD")
     .replace(/[^\x20-\x7e]/g, "")
     .replace(/["\\]/g, "_")
-    .slice(0, 160) || "documento.pdf";
+    .slice(0, 160) || "arquivo";
   const encoded = encodeURIComponent(fileName).replace(/[!'()*]/g, (character) =>
     `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
   );

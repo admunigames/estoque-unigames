@@ -1,16 +1,23 @@
 import { getD1 } from "../../../../../../../db";
 import { unauthorizedResponse } from "../../../../../../lib/notion";
-import { contentDisposition, documentsBucket } from "../../../../../documents/shared";
+import { DEFAULT_ATTACHMENT_CONTENT_TYPE, contentDisposition, documentsBucket } from "../../../../../documents/shared";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../../../../lib/access-scope";
 import { identity, safeText } from "../../../../shared";
 import { assertInvoiceAccess, canViewInvoices, loadInvoice } from "../../../shared";
 
-// Abre/baixa um anexo PDF de uma NF do Financeiro (upload manual ou
+// Abre/baixa um anexo de uma NF do Financeiro (upload manual ou
 // reaproveitado do pedido de Compras no handoff) — mesmo padrão de resposta
 // binária das demais rotas de arquivo do projeto (ver
 // app/api/compras-novo/orders/[id]/attachments/file/route.ts).
 
-type FileRow = { fileName: string; r2Key: string; invoiceId: string; installmentId: string; paymentId: string };
+type FileRow = {
+  fileName: string;
+  r2Key: string;
+  invoiceId: string;
+  installmentId: string;
+  paymentId: string;
+  contentType: string;
+};
 
 function fileError(message: string, status: number) {
   return new Response(message, {
@@ -47,7 +54,7 @@ async function serve(request: Request, invoiceId: string, head = false) {
     const row = await database
       .prepare(
         `SELECT file_name AS fileName, r2_key AS r2Key, invoice_id AS invoiceId,
-                installment_id AS installmentId, payment_id AS paymentId
+                installment_id AS installmentId, payment_id AS paymentId, content_type AS contentType
          FROM supplier_invoice_attachments WHERE id=?1 LIMIT 1`,
       )
       .bind(attachmentId)
@@ -65,12 +72,12 @@ async function serve(request: Request, invoiceId: string, head = false) {
 
     const bucket = await documentsBucket();
     const object = head ? await bucket.head(row.r2Key) : await bucket.get(row.r2Key);
-    if (!object) return fileError("ARQUIVO PDF NÃO ENCONTRADO.", 404);
+    if (!object) return fileError("ARQUIVO NÃO ENCONTRADO.", 404);
 
     const headers = new Headers({
-      "content-type": "application/pdf",
+      "content-type": row.contentType || DEFAULT_ATTACHMENT_CONTENT_TYPE,
       "content-disposition": contentDisposition(
-        row.fileName || "documento.pdf",
+        row.fileName || "arquivo",
         url.searchParams.get("download") === "1",
       ),
       "content-length": String(object.size),

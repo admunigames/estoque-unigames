@@ -1,13 +1,12 @@
 import { getD1 } from "../../../../../../../../db";
 import { unauthorizedResponse } from "../../../../../../../lib/notion";
 import {
+  DEFAULT_ATTACHMENT_CONTENT_TYPE,
   MAX_PDF_SIZE,
   PDF_CHUNK_SIZE,
-  PDF_CONTENT_TYPE,
   documentsBucket,
-  looksLikePdf,
   safeR2FileName,
-  validPdfName,
+  validAttachmentName,
 } from "../../../../../../documents/shared";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../../../../shared";
 import { assertAccess, loadPayable } from "../../../../shared";
@@ -50,9 +49,8 @@ function partKey(sessionId: string, partNumber: number) {
 }
 
 function metadataError(metadata: StagedPaymentAttachment) {
-  if (!validPdfName(metadata.fileName)) return "SELECIONE UM ARQUIVO PDF VÁLIDO.";
-  if (metadata.contentType !== PDF_CONTENT_TYPE) return "APENAS ARQUIVOS PDF SÃO ACEITOS.";
-  if (!Number.isInteger(metadata.fileSize) || metadata.fileSize <= 0) return "O ARQUIVO PDF ESTÁ VAZIO OU É INVÁLIDO.";
+  if (!validAttachmentName(metadata.fileName)) return "SELECIONE UM ARQUIVO VÁLIDO.";
+  if (!Number.isInteger(metadata.fileSize) || metadata.fileSize <= 0) return "O ARQUIVO ESTÁ VAZIO OU É INVÁLIDO.";
   if (metadata.fileSize > MAX_PDF_SIZE) return "O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.";
   return "";
 }
@@ -94,7 +92,7 @@ async function createSession(payload: JsonMap) {
 
   const expectedParts = Math.ceil(metadata.fileSize / PDF_CHUNK_SIZE);
   if (!Number.isInteger(metadata.numberOfParts) || metadata.numberOfParts !== expectedParts) {
-    return jsonResponse({ error: "A DIVISÃO DO PDF É INVÁLIDA. SELECIONE-O NOVAMENTE." }, 400);
+    return jsonResponse({ error: "A DIVISÃO DO ARQUIVO É INVÁLIDA. SELECIONE-O NOVAMENTE." }, 400);
   }
 
   const sessionId = crypto.randomUUID();
@@ -109,13 +107,13 @@ async function storeChunk(request: Request) {
   const sessionId = safeText(request.headers.get("x-payment-upload-id"), 80);
   const partNumber = numberValue(request.headers.get("x-payment-part-number"));
   if (!sessionIdIsValid(sessionId) || !Number.isInteger(partNumber) || partNumber < 1) {
-    return jsonResponse({ error: "UMA PARTE DO PDF É INVÁLIDA. TENTE NOVAMENTE." }, 400);
+    return jsonResponse({ error: "UMA PARTE DO ARQUIVO É INVÁLIDA. TENTE NOVAMENTE." }, 400);
   }
   const bucket = await documentsBucket();
   const metadata = await readMetadata(bucket, sessionId);
-  if (!metadata) return jsonResponse({ error: "O ENVIO DO PDF EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
+  if (!metadata) return jsonResponse({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
   if (partNumber > metadata.numberOfParts) {
-    return jsonResponse({ error: "UMA PARTE DO PDF É INVÁLIDA. TENTE NOVAMENTE." }, 400);
+    return jsonResponse({ error: "UMA PARTE DO ARQUIVO É INVÁLIDA. TENTE NOVAMENTE." }, 400);
   }
   const bytes = await request.arrayBuffer();
   const expectedSize =
@@ -123,7 +121,7 @@ async function storeChunk(request: Request) {
       ? metadata.fileSize - (metadata.numberOfParts - 1) * PDF_CHUNK_SIZE
       : PDF_CHUNK_SIZE;
   if (bytes.byteLength !== expectedSize || bytes.byteLength > PDF_CHUNK_SIZE) {
-    return jsonResponse({ error: "UMA PARTE DO PDF CHEGOU INCOMPLETA. TENTE NOVAMENTE." }, 400);
+    return jsonResponse({ error: "UMA PARTE DO ARQUIVO CHEGOU INCOMPLETA. TENTE NOVAMENTE." }, 400);
   }
   await bucket.put(partKey(sessionId, partNumber), bytes, {
     httpMetadata: { contentType: "application/octet-stream" },
@@ -134,12 +132,12 @@ async function storeChunk(request: Request) {
 async function completeSession(payload: JsonMap, actor: { id: string; displayName: string }) {
   const sessionId = safeText(payload.sessionId, 80);
   if (!sessionIdIsValid(sessionId)) {
-    return jsonResponse({ error: "O ENVIO DO PDF EXPIROU. SELECIONE-O NOVAMENTE." }, 400);
+    return jsonResponse({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 400);
   }
   const bucket = await documentsBucket();
   try {
     const metadata = await readMetadata(bucket, sessionId);
-    if (!metadata) return jsonResponse({ error: "O ENVIO DO PDF EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
+    if (!metadata) return jsonResponse({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
     const error = metadataError(metadata);
     if (error) return jsonResponse({ error }, 400);
 
@@ -154,24 +152,22 @@ async function completeSession(payload: JsonMap, actor: { id: string; displayNam
     let receivedSize = 0;
     for (let partNumber = 1; partNumber <= metadata.numberOfParts; partNumber += 1) {
       const object = await bucket.get(partKey(sessionId, partNumber));
-      if (!object) return jsonResponse({ error: "O ENVIO DO PDF FICOU INCOMPLETO. TENTE NOVAMENTE." }, 400);
+      if (!object) return jsonResponse({ error: "O ENVIO DO ARQUIVO FICOU INCOMPLETO. TENTE NOVAMENTE." }, 400);
       const part = await object.arrayBuffer();
       receivedSize += part.byteLength;
       parts.push(part);
     }
     if (receivedSize !== metadata.fileSize) {
-      return jsonResponse({ error: "O TAMANHO FINAL DO PDF NÃO CONFERE. TENTE NOVAMENTE." }, 400);
+      return jsonResponse({ error: "O TAMANHO FINAL DO ARQUIVO NÃO CONFERE. TENTE NOVAMENTE." }, 400);
     }
     const bytes = new Uint8Array(await new Blob(parts).arrayBuffer());
-    if (!looksLikePdf(bytes)) {
-      return jsonResponse({ error: "O ARQUIVO NÃO POSSUI UMA ESTRUTURA PDF VÁLIDA." }, 400);
-    }
 
     const attachmentId = crypto.randomUUID();
     const r2Key = `payable-payments/${metadata.payableId}/${metadata.paymentId}/${attachmentId}-${safeR2FileName(metadata.fileName)}`;
+    const contentType = metadata.contentType || DEFAULT_ATTACHMENT_CONTENT_TYPE;
 
     await bucket.put(r2Key, bytes, {
-      httpMetadata: { contentType: PDF_CONTENT_TYPE },
+      httpMetadata: { contentType },
       customMetadata: { paymentId: metadata.paymentId, uploadedBy: actor.id, uploadedAt: new Date().toISOString() },
     });
 
@@ -187,7 +183,7 @@ async function completeSession(payload: JsonMap, actor: { id: string; displayNam
           metadata.paymentId,
           r2Key,
           metadata.fileName,
-          PDF_CONTENT_TYPE,
+          contentType,
           metadata.fileSize,
           actor.id,
           actor.displayName || "Usuário",

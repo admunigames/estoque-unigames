@@ -1,6 +1,7 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import {
+  DEFAULT_ATTACHMENT_CONTENT_TYPE,
   contentDisposition,
   documentsBucket,
   safeDocumentText,
@@ -42,10 +43,10 @@ async function documentFile(request: Request, head = false) {
 
     const bucket = await documentsBucket();
     const object = head ? await bucket.head(row.r2Key) : await bucket.get(row.r2Key);
-    if (!object) return fileError("ARQUIVO PDF NÃO ENCONTRADO.", 404);
+    if (!object) return fileError("ARQUIVO NÃO ENCONTRADO.", 404);
 
     const headers = new Headers({
-      "content-type": row.contentType || "application/pdf",
+      "content-type": row.contentType || DEFAULT_ATTACHMENT_CONTENT_TYPE,
       "content-disposition": contentDisposition(row.fileName, url.searchParams.get("download") === "1"),
       "content-length": String(object.size),
       "cache-control": "private, no-store",

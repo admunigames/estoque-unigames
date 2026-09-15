@@ -1703,7 +1703,7 @@ test("registra, anexa e expira automaticamente o PDF das Notas de O.S. com permi
   assert.match(html, /data-os-note-status="attached"/);
   assert.match(html, /value="os_notes:view"> Visualização/);
   assert.match(html, /value="os_notes:create"> Cadastro/);
-  assert.match(html, /value="os_notes:attach"> Anexar nota \(PDF\)/);
+  assert.match(html, /value="os_notes:attach"> Anexar nota/);
   assert.match(html, /value="os_notes:delete"> Exclusão/);
   assert.match(html, /notasOs:'\/solicitacoes\/notas-os'/);
   assert.match(html, /data-any-permission="pdv_requests,os_notes"/);
@@ -1728,14 +1728,14 @@ test("registra, anexa e expira automaticamente o PDF das Notas de O.S. com permi
   assert.match(route, /'pending'/);
 
   assert.match(attachmentRoute, /!can\(actor, "os_notes:attach"\)/);
-  assert.match(attachmentRoute, /looksLikePdf/);
+  assert.match(attachmentRoute, /validAttachmentName/);
   assert.match(attachmentRoute, /status='attached'/);
   assert.match(attachmentRoute, /file_removed_at=''/);
 
   assert.match(fileRoute, /row\.companyId !== actor\.companyId/);
   assert.match(fileRoute, /O ANEXO DESTA SOLICITAÇÃO JÁ FOI REMOVIDO/);
 
-  assert.match(shared, /export function looksLikePdf/);
+  assert.match(shared, /export function validAttachmentName/);
   assert.match(shared, /export function safeR2FileName/);
 
   assert.match(schema, /export const osNotes = pgTable/);
@@ -2102,7 +2102,7 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
   assert.match(html, /id="pageDocumentos" class="page wrap"/);
   assert.match(html, /id="documentsUploadForm"/);
   assert.match(html, /class="documents-upload-panel" data-admin-only/);
-  assert.match(html, /accept="\.pdf,application\/pdf"/);
+  assert.match(html, /id="documentsFile" type="file" required/);
   assert.match(html, /documentos:'\/documentos'/);
   assert.match(html, /function navigateToDocumentFolder\(folder\)/);
 
@@ -2115,12 +2115,11 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
   assert.match(shared, /actor\.role === "admin"/);
   assert.match(shared, /actor\.permissions\.includes\("documents_manage"\)/);
   assert.match(shared, /const bucket = \(env as \{ UPLOADS\?: R2Bucket \}\)\.UPLOADS/);
-  assert.match(shared, /\^%PDF-\[12\]/);
-  assert.match(shared, /%%EOF/);
+  assert.match(shared, /export function validAttachmentName/);
   assert.match(route, /INSERT INTO documents/);
   assert.match(route, /DELETE FROM documents WHERE id=\?1/);
   assert.match(shared, /download \? "attachment" : "inline"/);
-  assert.match(fileRoute, /"content-type": row\.contentType \|\| "application\/pdf"/);
+  assert.match(fileRoute, /"content-type": row\.contentType \|\| DEFAULT_ATTACHMENT_CONTENT_TYPE/);
 
   assert.match(schema, /export const documents = pgTable/);
   assert.match(schema, /r2Key: text\("r2_key"\)/);
@@ -3291,11 +3290,11 @@ test("Módulo Compras nativo (Fase C): anexos do pedido, vínculo com NF, alerta
   assert.match(migration, /ALTER TABLE "purchase_order_attachments" ENABLE ROW LEVEL SECURITY/);
   assert.match(migration, /REVOKE ALL ON TABLE "purchase_order_attachments" FROM anon, authenticated/);
 
-  // Anexos: reaproveita EXATAMENTE o mecanismo de upload/validação de PDF
-  // de app/api/documents/shared.ts (create/complete/cancel, chunking,
-  // looksLikePdf) — não reimplementa nada disso.
+  // Anexos: reaproveita EXATAMENTE o mecanismo de upload/validação de
+  // arquivo de app/api/documents/shared.ts (create/complete/cancel,
+  // chunking) — não reimplementa nada disso.
   assert.match(attachmentsRoute, /from "\.\.\/\.\.\/\.\.\/\.\.\/documents\/shared"/);
-  assert.match(attachmentsRoute, /looksLikePdf\(bytes\)/);
+  assert.match(attachmentsRoute, /validAttachmentName\(metadata\.fileName\)/);
   assert.match(attachmentsRoute, /canManageComprasDraft\(actor\)/);
   assert.match(attachmentsRoute, /sameOrigin\(request\)/);
   assert.match(attachmentsRoute, /INSERT INTO purchase_order_attachments/);

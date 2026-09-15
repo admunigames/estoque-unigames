@@ -1,13 +1,13 @@
 import { getD1 } from "../../../../../../../db";
 import { unauthorizedResponse } from "../../../../../../lib/notion";
-import { contentDisposition, documentsBucket } from "../../../../../documents/shared";
+import { DEFAULT_ATTACHMENT_CONTENT_TYPE, contentDisposition, documentsBucket } from "../../../../../documents/shared";
 import { canManageComprasDraft, identity, safeText } from "../../../../shared";
 
-// Abre/baixa um anexo PDF de um pedido nativo (arquivo do pedido ou nota
+// Abre/baixa um anexo de um pedido nativo (arquivo do pedido ou nota
 // fiscal) — mesmo padrão de resposta binária das demais rotas de arquivo do
 // projeto (ver app/api/finance/mall-declarations/[id]/attachments/file/route.ts).
 
-type FileRow = { fileName: string; r2Key: string; orderId: string };
+type FileRow = { fileName: string; r2Key: string; orderId: string; contentType: string };
 
 function fileError(message: string, status: number) {
   return new Response(message, {
@@ -30,7 +30,7 @@ async function serve(request: Request, orderId: string, head = false) {
     const database = await getD1();
     const row = await database
       .prepare(
-        "SELECT file_name AS fileName, r2_key AS r2Key, order_id AS orderId FROM purchase_order_attachments WHERE id=?1 LIMIT 1",
+        "SELECT file_name AS fileName, r2_key AS r2Key, order_id AS orderId, content_type AS contentType FROM purchase_order_attachments WHERE id=?1 LIMIT 1",
       )
       .bind(attachmentId)
       .first<FileRow>();
@@ -38,12 +38,12 @@ async function serve(request: Request, orderId: string, head = false) {
 
     const bucket = await documentsBucket();
     const object = head ? await bucket.head(row.r2Key) : await bucket.get(row.r2Key);
-    if (!object) return fileError("ARQUIVO PDF NÃO ENCONTRADO.", 404);
+    if (!object) return fileError("ARQUIVO NÃO ENCONTRADO.", 404);
 
     const headers = new Headers({
-      "content-type": "application/pdf",
+      "content-type": row.contentType || DEFAULT_ATTACHMENT_CONTENT_TYPE,
       "content-disposition": contentDisposition(
-        row.fileName || "documento.pdf",
+        row.fileName || "arquivo",
         url.searchParams.get("download") === "1",
       ),
       "content-length": String(object.size),

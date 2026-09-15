@@ -1,19 +1,18 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
 import {
+  DEFAULT_ATTACHMENT_CONTENT_TYPE,
   MAX_PDF_SIZE,
   PDF_CHUNK_SIZE,
-  PDF_CONTENT_TYPE,
   canManageDocuments,
   documentActor,
   documentFolder,
   documentJson,
   documentSameOrigin,
   documentsBucket,
-  looksLikePdf,
   safeDocumentText,
   safeR2FileName,
-  validPdfName,
+  validAttachmentName,
   type DocumentRow,
 } from "./shared";
 
@@ -50,11 +49,10 @@ function partKey(sessionId: string, partNumber: number) {
   return `${stagingPrefix(sessionId)}/parts/${String(partNumber).padStart(4, "0")}`;
 }
 
-function pdfMetadataError(metadata: StagedDocument) {
-  if (!validPdfName(metadata.fileName)) return "SELECIONE UM ARQUIVO PDF VÁLIDO.";
-  if (metadata.contentType !== PDF_CONTENT_TYPE) return "APENAS ARQUIVOS PDF SÃO ACEITOS.";
+function documentMetadataError(metadata: StagedDocument) {
+  if (!validAttachmentName(metadata.fileName)) return "SELECIONE UM ARQUIVO VÁLIDO.";
   if (!Number.isInteger(metadata.fileSize) || metadata.fileSize <= 0) {
-    return "O ARQUIVO PDF ESTÁ VAZIO OU É INVÁLIDO.";
+    return "O ARQUIVO ESTÁ VAZIO OU É INVÁLIDO.";
   }
   if (metadata.fileSize > MAX_DOCUMENT_SIZE) {
     return "O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.";
@@ -91,12 +89,12 @@ async function createSession(payload: JsonMap) {
     numberOfParts: numberValue(payload.numberOfParts),
     folderId: safeDocumentText(payload.folder, 80),
   };
-  const error = pdfMetadataError(metadata);
+  const error = documentMetadataError(metadata);
   if (error) return documentJson({ error }, 400);
 
   const expectedParts = Math.ceil(metadata.fileSize / DOCUMENT_CHUNK_SIZE);
   if (!Number.isInteger(metadata.numberOfParts) || metadata.numberOfParts !== expectedParts) {
-    return documentJson({ error: "A DIVISÃO DO PDF É INVÁLIDA. SELECIONE-O NOVAMENTE." }, 400);
+    return documentJson({ error: "A DIVISÃO DO ARQUIVO É INVÁLIDA. SELECIONE-O NOVAMENTE." }, 400);
   }
 
   const sessionId = crypto.randomUUID();
@@ -111,16 +109,16 @@ async function storeChunk(request: Request) {
   const sessionId = safeDocumentText(request.headers.get("x-document-upload-id"), 80);
   const partNumber = numberValue(request.headers.get("x-document-part-number"));
   if (!sessionIdIsValid(sessionId) || !Number.isInteger(partNumber) || partNumber < 1) {
-    return documentJson({ error: "UMA PARTE DO PDF É INVÁLIDA. TENTE NOVAMENTE." }, 400);
+    return documentJson({ error: "UMA PARTE DO ARQUIVO É INVÁLIDA. TENTE NOVAMENTE." }, 400);
   }
 
   const bucket = await documentsBucket();
   const metadata = await readMetadata(bucket, sessionId);
   if (!metadata) {
-    return documentJson({ error: "O ENVIO DO PDF EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
+    return documentJson({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
   }
   if (partNumber > metadata.numberOfParts) {
-    return documentJson({ error: "UMA PARTE DO PDF É INVÁLIDA. TENTE NOVAMENTE." }, 400);
+    return documentJson({ error: "UMA PARTE DO ARQUIVO É INVÁLIDA. TENTE NOVAMENTE." }, 400);
   }
 
   const bytes = await request.arrayBuffer();
@@ -129,7 +127,7 @@ async function storeChunk(request: Request) {
       ? metadata.fileSize - (metadata.numberOfParts - 1) * DOCUMENT_CHUNK_SIZE
       : DOCUMENT_CHUNK_SIZE;
   if (bytes.byteLength !== expectedSize || bytes.byteLength > DOCUMENT_CHUNK_SIZE) {
-    return documentJson({ error: "UMA PARTE DO PDF CHEGOU INCOMPLETA. TENTE NOVAMENTE." }, 400);
+    return documentJson({ error: "UMA PARTE DO ARQUIVO CHEGOU INCOMPLETA. TENTE NOVAMENTE." }, 400);
   }
 
   await bucket.put(partKey(sessionId, partNumber), bytes, {
@@ -141,16 +139,16 @@ async function storeChunk(request: Request) {
 async function completeSession(request: Request, payload: JsonMap) {
   const sessionId = safeDocumentText(payload.sessionId, 80);
   if (!sessionIdIsValid(sessionId)) {
-    return documentJson({ error: "O ENVIO DO PDF EXPIROU. SELECIONE-O NOVAMENTE." }, 400);
+    return documentJson({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 400);
   }
 
   const bucket = await documentsBucket();
   try {
     const metadata = await readMetadata(bucket, sessionId);
     if (!metadata) {
-      return documentJson({ error: "O ENVIO DO PDF EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
+      return documentJson({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
     }
-    const metadataError = pdfMetadataError(metadata);
+    const metadataError = documentMetadataError(metadata);
     if (metadataError) return documentJson({ error: metadataError }, 400);
 
     const parts: ArrayBuffer[] = [];
@@ -158,20 +156,17 @@ async function completeSession(request: Request, payload: JsonMap) {
     for (let partNumber = 1; partNumber <= metadata.numberOfParts; partNumber += 1) {
       const object = await bucket.get(partKey(sessionId, partNumber));
       if (!object) {
-        return documentJson({ error: "O ENVIO DO PDF FICOU INCOMPLETO. TENTE NOVAMENTE." }, 400);
+        return documentJson({ error: "O ENVIO DO ARQUIVO FICOU INCOMPLETO. TENTE NOVAMENTE." }, 400);
       }
       const part = await object.arrayBuffer();
       receivedSize += part.byteLength;
       parts.push(part);
     }
     if (receivedSize !== metadata.fileSize) {
-      return documentJson({ error: "O TAMANHO FINAL DO PDF NÃO CONFERE. TENTE NOVAMENTE." }, 400);
+      return documentJson({ error: "O TAMANHO FINAL DO ARQUIVO NÃO CONFERE. TENTE NOVAMENTE." }, 400);
     }
 
     const bytes = new Uint8Array(await new Blob(parts).arrayBuffer());
-    if (!looksLikePdf(bytes)) {
-      return documentJson({ error: "O ARQUIVO NÃO POSSUI UMA ESTRUTURA PDF VÁLIDA." }, 400);
-    }
 
     const folder = documentFolder(metadata.folderId);
     if (!folder) return documentJson({ error: "PASTA DE DOCUMENTOS INVÁLIDA." }, 400);
@@ -179,9 +174,10 @@ async function completeSession(request: Request, payload: JsonMap) {
     const id = crypto.randomUUID();
     const r2Key = `documents/${folder.id}/${id}/${safeR2FileName(metadata.fileName)}`;
     const createdAt = new Date().toISOString();
+    const contentType = metadata.contentType || DEFAULT_ATTACHMENT_CONTENT_TYPE;
 
     await bucket.put(r2Key, bytes, {
-      httpMetadata: { contentType: PDF_CONTENT_TYPE },
+      httpMetadata: { contentType },
       customMetadata: {
         documentId: id,
         uploadedBy: actor.id,
@@ -205,7 +201,7 @@ async function completeSession(request: Request, payload: JsonMap) {
           folder.folder,
           folder.subfolder,
           r2Key,
-          PDF_CONTENT_TYPE,
+          contentType,
           metadata.fileSize,
           actor.id,
           actor.displayName || actor.username,

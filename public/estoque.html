@@ -2897,7 +2897,7 @@
       </div>
     </div>
     <div class="nav-group">
-      <button class="nav-group-toggle" id="navDocumentos" type="button" aria-expanded="false" aria-controls="navDocumentosSubmenu" data-home-page="documentos" data-home-desc="Certificados, garantias e documentos avulsos em PDF.">
+      <button class="nav-group-toggle" id="navDocumentos" type="button" aria-expanded="false" aria-controls="navDocumentosSubmenu" data-home-page="documentos" data-home-desc="Certificados, garantias e documentos avulsos.">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.6a1.6 1.6 0 0 1 1.6-1.6h4.2l1.8 2.2h6.8A1.6 1.6 0 0 1 20 8.8v8.6a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 17.4z"/></svg></span><span class="nav-label">Documentos</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navDocumentosSubmenu" aria-hidden="true">
@@ -4011,13 +4011,13 @@
             </div>
           </section>
           <section class="documents-upload-panel" data-admin-only aria-labelledby="documentsUploadTitle">
-            <h3 id="documentsUploadTitle">ADICIONAR PDF</h3>
+            <h3 id="documentsUploadTitle">ADICIONAR ARQUIVO</h3>
             <p>Somente o administrador pode cadastrar ou excluir documentos. Limite de 25 MB por arquivo.</p>
             <form class="documents-upload-form" id="documentsUploadForm">
-              <label class="documents-file-label">ARQUIVO PDF
-                <input id="documentsFile" type="file" accept=".pdf,application/pdf" required>
+              <label class="documents-file-label">ARQUIVO
+                <input id="documentsFile" type="file" required>
               </label>
-              <button class="btn-accent" id="btnDocumentsUpload" type="submit">ENVIAR PDF</button>
+              <button class="btn-accent" id="btnDocumentsUpload" type="submit">ENVIAR ARQUIVO</button>
               <p class="documents-upload-status" id="documentsUploadStatus" aria-live="polite"></p>
             </form>
           </section>
@@ -4167,7 +4167,7 @@
         </div>
         <div class="output-list" id="osNoteList" aria-live="polite"><div class="output-empty">Carregando solicitações…</div></div>
       </section>
-      <input type="file" id="osNoteAttachInput" accept="application/pdf" hidden>
+      <input type="file" id="osNoteAttachInput" hidden>
     </section>
 
 <!-- ================= TAREFAS ================= -->
@@ -4751,12 +4751,12 @@
           <div class="table-panel" style="margin-top:16px;padding:16px;">
             <h4 style="margin:0 0 8px;">ARQUIVO DO PEDIDO</h4>
             <div id="comprasOrderAttachmentsPedido" class="page-desc">Carregando…</div>
-            <label class="btn-outline" style="margin-top:8px;display:inline-block;cursor:pointer;">+ ANEXAR ARQUIVO DO PEDIDO<input type="file" id="comprasOrderAttachPedidoInput" accept="application/pdf" hidden></label>
+            <label class="btn-outline" style="margin-top:8px;display:inline-block;cursor:pointer;">+ ANEXAR ARQUIVO DO PEDIDO<input type="file" id="comprasOrderAttachPedidoInput" hidden></label>
           </div>
           <div class="table-panel" style="margin-top:16px;padding:16px;">
             <h4 style="margin:0 0 8px;">NOTA FISCAL (ARQUIVO)</h4>
             <div id="comprasOrderAttachmentsNota" class="page-desc">Carregando…</div>
-            <label class="btn-outline" style="margin-top:8px;display:inline-block;cursor:pointer;">+ ANEXAR NOTA FISCAL<input type="file" id="comprasOrderAttachNotaInput" accept="application/pdf" hidden></label>
+            <label class="btn-outline" style="margin-top:8px;display:inline-block;cursor:pointer;">+ ANEXAR NOTA FISCAL<input type="file" id="comprasOrderAttachNotaInput" hidden></label>
           </div>
         </section>
       </section>
@@ -5048,7 +5048,7 @@
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:view"> Visualização</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:create"> Cadastro</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:attach"> Anexar nota (PDF)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:attach"> Anexar nota</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:delete"> Exclusão</label>
                   </div>
                 </details>
@@ -5187,7 +5187,7 @@
       </div>
 
       <div class="print-only" id="rhFolhaPrintPorLoja"></div>
-      <input type="file" id="rhFolhaAttachInput" accept="application/pdf,.pdf" hidden>
+      <input type="file" id="rhFolhaAttachInput" hidden>
     </section>
 
     <!-- ================= RH / BENEFÍCIOS ================= -->
@@ -6664,8 +6664,8 @@
     <div id="declShoppingCalcHint" class="page-desc"></div>
     <div id="declShoppingAnexos" class="page-desc"></div>
     <div class="purchase-form-actions" style="justify-content:flex-start">
-      <label class="btn-outline" for="declShoppingAnexoFile" id="declShoppingAnexoLabel" style="cursor:pointer">+ ANEXAR PDF</label>
-      <input type="file" id="declShoppingAnexoFile" accept=".pdf" hidden>
+      <label class="btn-outline" for="declShoppingAnexoFile" id="declShoppingAnexoLabel" style="cursor:pointer">+ ANEXAR ARQUIVO</label>
+      <input type="file" id="declShoppingAnexoFile" hidden>
     </div>
     <div class="user-form-status" id="declShoppingFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -6763,16 +6763,16 @@
       </div>
       <div class="user-form-status" id="obraEntryStatus" role="status" aria-live="polite"></div>
     </form>
-    <p style="color:var(--ink-soft);font-size:10px;margin:2px 0 8px;">Anexe a nota ou o orçamento (PDF, até 25 MB) na coluna "Anexo" de cada lançamento.</p>
+    <p style="color:var(--ink-soft);font-size:10px;margin:2px 0 8px;">Anexe a nota ou o orçamento (até 25 MB) na coluna "Anexo" de cada lançamento.</p>
     <div class="table-panel responsive-table">
       <div class="table-scroll">
         <table id="obraEntriesTable">
-          <thead><tr><th>Data</th><th>Descrição</th><th>Fornecedor</th><th>Forma</th><th>Valor</th><th>Anexo (PDF)</th><th></th></tr></thead>
+          <thead><tr><th>Data</th><th>Descrição</th><th>Fornecedor</th><th>Forma</th><th>Valor</th><th>Anexo</th><th></th></tr></thead>
           <tbody id="obraEntriesBody"><tr><td colspan="7" class="responsive-empty">Nenhum lançamento.</td></tr></tbody>
         </table>
       </div>
     </div>
-    <input type="file" id="obraEntryAttachInput" accept="application/pdf,.pdf" hidden>
+    <input type="file" id="obraEntryAttachInput" hidden>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelObraDetail" type="button">FECHAR</button>
     </div>
@@ -7481,7 +7481,7 @@
       <div class="purchase-field"><label for="payablePaymentAccount">CONTA FINANCEIRA</label><select id="payablePaymentAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="payablePaymentScheduled" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="payablePaymentScheduled" style="width:auto;"> É UM AGENDAMENTO (AINDA NÃO PAGO)</label></div>
       <div class="purchase-field full"><label for="payablePaymentNotes">OBSERVAÇÕES</label><input id="payablePaymentNotes" maxlength="2000"></div>
-      <div class="purchase-field full"><label for="payablePaymentReceipt">COMPROVANTE (PDF, OPCIONAL)</label><input type="file" id="payablePaymentReceipt" accept="application/pdf"></div>
+      <div class="purchase-field full"><label for="payablePaymentReceipt">COMPROVANTE (OPCIONAL)</label><input type="file" id="payablePaymentReceipt"></div>
       <div class="purchase-field full" style="display:flex;justify-content:flex-end;">
         <button class="btn-accent" id="btnSavePayablePayment" type="submit">REGISTRAR</button>
       </div>
@@ -7941,7 +7941,7 @@
 
     <div class="purchase-form-section">ANEXOS</div>
     <div class="purchase-form-grid" style="margin-bottom:10px;">
-      <div class="purchase-field"><label for="invoiceAttachNfInput">ANEXAR NF (PDF)</label><input type="file" id="invoiceAttachNfInput" accept="application/pdf"></div>
+      <div class="purchase-field"><label for="invoiceAttachNfInput">ANEXAR NF</label><input type="file" id="invoiceAttachNfInput"></div>
     </div>
     <div id="invoiceAttachmentsList" class="dre-catalog-list"></div>
 
@@ -8027,7 +8027,7 @@
       <div class="purchase-field"><label for="pInvoiceCompetence">COMPETÊNCIA *</label><input type="month" id="pInvoiceCompetence"></div>
       <div class="purchase-field"><label for="pInvoiceTotal">VALOR TOTAL (R$) *</label><input type="number" id="pInvoiceTotal" min="0.01" step="0.01"></div>
       <div class="purchase-field"><label for="pInvoiceItem">ITEM FINANCEIRO *</label><select id="pInvoiceItem"><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field"><label for="pInvoiceFile">ARQUIVO DA NF (PDF)</label><input type="file" id="pInvoiceFile" accept="application/pdf"></div>
+      <div class="purchase-field"><label for="pInvoiceFile">ARQUIVO DA NF</label><input type="file" id="pInvoiceFile"></div>
       <div class="purchase-field full" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
         <button class="btn-outline" id="btnSavePurchaseInvoice" type="button">SALVAR NF</button>
         <button class="btn-accent" id="btnSendPurchaseInvoiceToFinance" type="button" data-permission="purchases:send_to_finance" hidden>ENVIAR AO FINANCEIRO</button>
@@ -9736,7 +9736,7 @@
     const list = el('documentsList');
     el('documentsCount').textContent = documents.length + (documents.length === 1 ? ' DOCUMENTO' : ' DOCUMENTOS');
     if(!documents.length){
-      list.innerHTML = '<div class="documents-empty">NENHUM PDF FOI ADICIONADO A ESTA PASTA.</div>';
+      list.innerHTML = '<div class="documents-empty">NENHUM ARQUIVO FOI ADICIONADO A ESTA PASTA.</div>';
       return;
     }
     list.innerHTML = documents.map(document => {
@@ -9744,7 +9744,7 @@
         ? '<button class="btn-danger-outline" type="button" data-document-delete="'+escapeHtml(document.id)+'">EXCLUIR</button>'
         : '';
       return '<article class="document-card">'+
-        '<div class="document-card-main"><span class="document-pdf-icon" aria-hidden="true">PDF</span><div class="document-card-copy">'+
+        '<div class="document-card-main"><span class="document-pdf-icon" aria-hidden="true">'+escapeHtml((document.fileName.split('.').pop() || 'ARQ').slice(0,4).toUpperCase())+'</span><div class="document-card-copy">'+
           '<strong title="'+escapeHtml(document.fileName)+'">'+escapeHtml(document.fileName)+'</strong>'+
           '<span>'+escapeHtml(formatDocumentSize(document.sizeBytes))+' · ADICIONADO POR '+escapeHtml(document.uploadedByName || 'ADMINISTRADOR')+' · '+escapeHtml(formatDocumentDate(document.createdAt))+'</span>'+
         '</div></div>'+
@@ -9780,8 +9780,8 @@
   }
 
   async function uploadDocument(file){
-    if(!file || !/\.pdf$/i.test(file.name)) throw new Error('SELECIONE UM ARQUIVO COM EXTENSÃO .PDF.');
-    if(file.size <= 0) throw new Error('O ARQUIVO PDF ESTÁ VAZIO.');
+    if(!file) throw new Error('SELECIONE UM ARQUIVO.');
+    if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.');
     const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
     const create = await documentApiRequest('/api/documents',{
@@ -9790,14 +9790,14 @@
       body:JSON.stringify({
         action:'create',
         fileName:file.name,
-        contentType:file.type || 'application/pdf',
+        contentType:file.type || 'application/octet-stream',
         fileSize:file.size,
         numberOfParts,
         folder:currentDocumentFolder
       })
     });
     const sessionId = create.session && create.session.id;
-    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO PDF.');
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO ARQUIVO.');
     try{
       for(let index=0;index<numberOfParts;index+=1){
         const partNumber = index + 1;
@@ -9813,7 +9813,7 @@
           body:file.slice(index * DOCUMENT_CHUNK_SIZE,Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
         });
       }
-      setDocumentsUploadStatus('VALIDANDO E SALVANDO O PDF…','');
+      setDocumentsUploadStatus('VALIDANDO E SALVANDO O ARQUIVO…','');
       await documentApiRequest('/api/documents',{
         method:'POST',
         headers:{Accept:'application/json','Content-Type':'application/json'},
@@ -9838,7 +9838,7 @@
     try{
       await uploadDocument(file);
       el('documentsFile').value = '';
-      setDocumentsUploadStatus('PDF ADICIONADO COM SUCESSO.','success');
+      setDocumentsUploadStatus('ARQUIVO ADICIONADO COM SUCESSO.','success');
       await refreshAfterAction(() => loadDocuments(currentDocumentFolder, {silent:true}));
       showPurchaseToast('Documento adicionado.');
     }catch(error){
@@ -18194,7 +18194,7 @@ function renderHomeTasks(){
       : '';
     const attachButton = canAccess('os_notes:attach')
       ? '<button class="btn-outline" type="button" data-os-note-attach="'+escapeHtml(row.id)+'">'+
-          (row.hasFile ? 'SUBSTITUIR PDF' : 'ANEXAR PDF')+'</button>'
+          (row.hasFile ? 'SUBSTITUIR ARQUIVO' : 'ANEXAR ARQUIVO')+'</button>'
       : '';
     const deleteButton = canAccess('os_notes:delete')
       ? '<button class="output-delete" type="button" data-os-note-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'
@@ -18299,8 +18299,8 @@ function renderHomeTasks(){
   });
 
   async function uploadOsNoteAttachment(osNoteId, file){
-    if(!file || !/\.pdf$/i.test(file.name)) throw new Error('SELECIONE UM ARQUIVO COM EXTENSÃO .PDF.');
-    if(file.size <= 0) throw new Error('O ARQUIVO PDF ESTÁ VAZIO.');
+    if(!file) throw new Error('SELECIONE UM ARQUIVO.');
+    if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.');
     const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
     const create = await osNoteAttachmentRequest({
@@ -18310,13 +18310,13 @@ function renderHomeTasks(){
         action:'create',
         id:osNoteId,
         fileName:file.name,
-        contentType:file.type || 'application/pdf',
+        contentType:file.type || 'application/octet-stream',
         fileSize:file.size,
         numberOfParts
       })
     });
     const sessionId = create.session && create.session.id;
-    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO PDF.');
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO ARQUIVO.');
     try{
       for(let index=0;index<numberOfParts;index+=1){
         const partNumber = index + 1;
@@ -20463,7 +20463,7 @@ function renderHomeTasks(){
     const numberOfParts = Math.ceil(file.size / PART_SIZE);
     const createResp = await financeApiRequest('/payables/'+encodeURIComponent(payableId)+'/payments/'+encodeURIComponent(paymentId)+'/attachments', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'create', fileName:file.name, contentType:file.type || 'application/pdf', fileSize:file.size, numberOfParts})
+      body:JSON.stringify({action:'create', fileName:file.name, contentType:file.type || 'application/octet-stream', fileSize:file.size, numberOfParts})
     });
     const sessionId = createResp.session.id;
     for(let partNumber = 1; partNumber <= numberOfParts; partNumber += 1){
@@ -24806,10 +24806,10 @@ function renderHomeTasks(){
     body.innerHTML = entries.map(e => {
       const anexo = e.attachmentR2Key
         ? '<span style="display:flex;gap:6px;flex-wrap:wrap;">'+
-            '<a class="btn-outline" href="/api/obras/file?id='+encodeURIComponent(e.id)+'" target="_blank" rel="noopener">VER PDF</a>'+
+            '<a class="btn-outline" href="/api/obras/file?id='+encodeURIComponent(e.id)+'" target="_blank" rel="noopener">VER ARQUIVO</a>'+
             '<button class="btn-outline" type="button" data-obra-attach-remove="'+escapeHtml(e.id)+'">REMOVER</button>'+
           '</span>'
-        : '<button class="btn-outline" type="button" data-obra-attach="'+escapeHtml(e.id)+'">ANEXAR PDF</button>';
+        : '<button class="btn-outline" type="button" data-obra-attach="'+escapeHtml(e.id)+'">ANEXAR ARQUIVO</button>';
       return '<tr>'+
       '<td>'+escapeHtml(formatDateBR(e.entryDate) || '—')+'</td>'+
       '<td>'+escapeHtml(e.description)+'</td>'+
@@ -24829,7 +24829,7 @@ function renderHomeTasks(){
     const numberOfParts = Math.max(1, Math.ceil(file.size / PART_SIZE));
     const createResp = await obraApiRequest('/attachment', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'create', id:entryId, fileName:file.name, contentType:file.type || 'application/pdf', fileSize:file.size, numberOfParts})
+      body:JSON.stringify({action:'create', id:entryId, fileName:file.name, contentType:file.type || 'application/octet-stream', fileSize:file.size, numberOfParts})
     });
     const sessionId = createResp.session.id;
     try{
@@ -24841,7 +24841,7 @@ function renderHomeTasks(){
           headers:{'Content-Type':'application/octet-stream', 'x-obra-upload-id':sessionId, 'x-obra-part-number':String(partNumber)},
           body:buffer
         });
-        if(!partResp.ok){ const p = await partResp.json().catch(() => ({})); throw new Error(p.error || 'FALHA AO ENVIAR O PDF.'); }
+        if(!partResp.ok){ const p = await partResp.json().catch(() => ({})); throw new Error(p.error || 'FALHA AO ENVIAR O ARQUIVO.'); }
       }
       await obraApiRequest('/attachment', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'complete', sessionId})});
     }catch(error){
@@ -26829,20 +26829,20 @@ function renderHomeTasks(){
   // anexos de NF/duplicata/pagamento, tanto pela tela de Compras quanto
   // pela do Financeiro (a diferença é só a URL de destino).
   async function uploadInvoiceFile(uploadUrl, file, extraFields){
-    if(!file || !/\.pdf$/i.test(file.name)) throw new Error('SELECIONE UM ARQUIVO PDF.');
-    if(file.size <= 0) throw new Error('O ARQUIVO PDF ESTÁ VAZIO.');
+    if(!file) throw new Error('SELECIONE UM ARQUIVO.');
+    if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.');
     const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
     const create = await invoiceAttachmentRequest(uploadUrl, {
       method:'POST',
       headers:{Accept:'application/json','Content-Type':'application/json'},
       body:JSON.stringify({
-        action:'create', fileName:file.name, contentType:file.type || 'application/pdf',
+        action:'create', fileName:file.name, contentType:file.type || 'application/octet-stream',
         fileSize:file.size, numberOfParts, ...(extraFields || {})
       })
     });
     const sessionId = create.session && create.session.id;
-    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO PDF.');
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO ARQUIVO.');
     try{
       for(let index=0; index<numberOfParts; index+=1){
         const partNumber = index + 1;
@@ -28519,8 +28519,8 @@ function renderHomeTasks(){
   });
 
   async function uploadRhFolhaAttachment(entryId, file){
-    if(!file || !/\.pdf$/i.test(file.name)) throw new Error('SELECIONE UM ARQUIVO COM EXTENSÃO .PDF.');
-    if(file.size <= 0) throw new Error('O ARQUIVO PDF ESTÁ VAZIO.');
+    if(!file) throw new Error('SELECIONE UM ARQUIVO.');
+    if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O COMPROVANTE DEVE TER NO MÁXIMO 25 MB.');
     const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
     const create = await rhAttachmentRequest({
@@ -28530,13 +28530,13 @@ function renderHomeTasks(){
         action:'create',
         id:entryId,
         fileName:file.name,
-        contentType:file.type || 'application/pdf',
+        contentType:file.type || 'application/octet-stream',
         fileSize:file.size,
         numberOfParts
       })
     });
     const sessionId = create.session && create.session.id;
-    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO PDF.');
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO ARQUIVO.');
     try{
       for(let index=0;index<numberOfParts;index+=1){
         const partNumber = index + 1;
