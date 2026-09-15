@@ -8283,22 +8283,26 @@
   async function refreshLiveModule(module){
     if(module !== liveModule) return;
     if(livePageName === 'missoes'){
-      const refreshes = [loadMissions(),loadMissionMonthAgenda()];
-      if(missionSectionTab === 'rotina') refreshes.push(loadRoutines());
-      if(CHECKLIST_KIND[missionSectionTab]) refreshes.push(loadChecklist(missionSectionTab));
-      await Promise.all(refreshes);
+      await refreshAfterAction(() => {
+        const refreshes = [loadMissions({silent:true}),loadMissionMonthAgenda({silent:true})];
+        if(missionSectionTab === 'rotina') refreshes.push(loadRoutines({silent:true}));
+        if(CHECKLIST_KIND[missionSectionTab]) refreshes.push(loadChecklist(missionSectionTab,{silent:true}));
+        return Promise.all(refreshes);
+      });
       return;
     }
-    if(livePageName === 'captacao') await loadCaptures();
+    if(livePageName === 'captacao') await refreshAfterAction(() => loadCaptures({silent:true}));
     if(livePageName === 'insumos'){
-      const refreshes = [loadSupplyAdminData(),loadSupplyExitData(),loadSupplyMissing(),loadSupplyRequest(),loadSupplyRequestPendingOld()];
-      if(supplyAdminTab === 'separacao') refreshes.push(loadSupplySeparationQueue());
-      if(supplyAdminTab === 'historico') refreshes.push(loadSupplyAdminHistory());
-      await Promise.all(refreshes);
+      await refreshAfterAction(() => {
+        const refreshes = [loadSupplyAdminData(),loadSupplyExitData(),loadSupplyMissing({silent:true}),loadSupplyRequest(),loadSupplyRequestPendingOld()];
+        if(supplyAdminTab === 'separacao') refreshes.push(loadSupplySeparationQueue({silent:true}));
+        if(supplyAdminTab === 'historico') refreshes.push(loadSupplyAdminHistory({silent:true}));
+        return Promise.all(refreshes);
+      });
     }
-    if(livePageName === 'tarefas') await Promise.all([loadTasks(),loadTaskAgenda()]);
+    if(livePageName === 'tarefas') await refreshAfterAction(() => Promise.all([loadTasks(),loadTaskAgenda()]));
     if(livePageName === 'aparelhosEmprestimo'){
-      await loadLoans();
+      await refreshAfterAction(() => Promise.all([loadLoanDevices(),loadLoanRequests()]));
       const openRequestId = el('loanRequestDetailsId').value;
       if(openRequestId && el('loanRequestDetailsDialog').open) openLoanRequestDetailsDialog(openRequestId);
     }
@@ -13822,12 +13826,12 @@ function renderHomeTasks(){
     while(cells.length % 7) cells.push('<div class="mission-month-day is-empty" aria-hidden="true"></div>');
     calendar.innerHTML = cells.join('');
   }
-  async function loadMissionMonthAgenda(){
+  async function loadMissionMonthAgenda(opts){
     const calendar = el('missionMonthCalendar');
     const bounds = missionMonthBounds(el('missionMonth').value);
     if(!calendar || !bounds || missionMonthLoading) return;
     missionMonthLoading = true;
-    calendar.innerHTML = '<div class="mission-month-empty">Carregando agenda do mês…</div>';
+    if(!opts || !opts.silent) calendar.innerHTML = '<div class="mission-month-empty">Carregando agenda do mês…</div>';
     try{
       const data = await missionApiRequest('/api/missions?'+new URLSearchParams({from:bounds.from,to:bounds.to,view:'dashboard'}));
       renderMissionMonthAgenda(data);
@@ -14037,12 +14041,12 @@ function renderHomeTasks(){
     return data;
   }
 
-  async function loadMissions(){
+  async function loadMissions(opts){
     if(!canAccess('missions') || missionsLoading) return;
     const list = el('missionList');
     const date = el('missionDate').value || todayDateKey();
     missionsLoading = true;
-    if(list) list.innerHTML = '<div class="mission-empty">Carregando missões…</div>';
+    if(list && (!opts || !opts.silent)) list.innerHTML = '<div class="mission-empty">Carregando missões…</div>';
     try{
       const params = new URLSearchParams({date,view:missionView});
       if(missionView === 'store'){
@@ -14098,7 +14102,7 @@ function renderHomeTasks(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({missionId,date,status})
     });
-    await Promise.all([loadMissions(),loadHomeMissions()]);
+    await refreshAfterAction(() => Promise.all([loadMissions({silent:true}),loadHomeMissions()]));
     if(status === 'completed'){
       showPurchaseToast('Missão concluída. O administrador responsável foi avisado.');
     }else if(status === 'in_progress'){
@@ -14199,12 +14203,12 @@ function renderHomeTasks(){
       : '<div class="mission-empty">Nenhuma rotina cadastrada.</div>';
   }
 
-  async function loadRoutines(){
+  async function loadRoutines(opts){
     if(!canAccess('missions') || routinesLoading) return;
     const list = el('routineList');
     const date = el('routineDate').value || todayDateKey();
     routinesLoading = true;
-    if(list) list.innerHTML = '<div class="mission-empty">Carregando rotina…</div>';
+    if(list && (!opts || !opts.silent)) list.innerHTML = '<div class="mission-empty">Carregando rotina…</div>';
     try{
       const data = await missionApiRequest('/api/routines?'+new URLSearchParams({date}));
       routineRows = Array.isArray(data.tasks) ? data.tasks : [];
@@ -14260,7 +14264,7 @@ function renderHomeTasks(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({taskId,status})
     });
-    await Promise.all([loadRoutines(),loadHomeRoutines()]);
+    await refreshAfterAction(() => Promise.all([loadRoutines({silent:true}),loadHomeRoutines()]));
     showPurchaseToast(status === 'completed'
       ? 'Tarefa marcada como feita. O administrador responsável foi avisado.'
       : 'Tarefa marcada como não feita.');
@@ -14325,13 +14329,13 @@ function renderHomeTasks(){
     count.textContent = done+'/'+items.length+' ITENS';
   }
 
-  async function loadChecklist(tab){
+  async function loadChecklist(tab,opts){
     const kind = CHECKLIST_KIND[tab];
     if(!kind || !canAccess('missions') || CHECKLIST_LOADING[tab]) return;
     const list = el(tab+'List');
     const date = el(tab+'Date').value || todayDateKey();
     CHECKLIST_LOADING[tab] = true;
-    if(list) list.innerHTML = '<div class="mission-empty">Carregando checklist…</div>';
+    if(list && (!opts || !opts.silent)) list.innerHTML = '<div class="mission-empty">Carregando checklist…</div>';
     try{
       const data = await missionApiRequest('/api/checklists?'+new URLSearchParams({date,kind}));
       checklistState[tab] = data;
@@ -14353,7 +14357,7 @@ function renderHomeTasks(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({kind,date,itemKey,completed})
     });
-    await loadChecklist(tab);
+    await refreshAfterAction(() => loadChecklist(tab,{silent:true}));
     if(result.checklistComplete){
       showPurchaseToast(result.linkedRoutineCompleted
         ? 'Checklist concluída! A tarefa correspondente na Rotina Operacional foi marcada como feita.'
@@ -14419,7 +14423,7 @@ function renderHomeTasks(){
       el('routineFormStatus').className = 'user-form-status success';
       el('routineTitle').value = '';
       document.querySelectorAll('[name="routineWeekday"]:checked').forEach(input => { input.checked = false; });
-      await Promise.all([loadRoutines(),loadHomeRoutines()]);
+      await refreshAfterAction(() => Promise.all([loadRoutines({silent:true}),loadHomeRoutines()]));
     }catch(error){
       el('routineFormStatus').textContent = error.message;
       el('routineFormStatus').className = 'user-form-status error';
@@ -14446,7 +14450,7 @@ function renderHomeTasks(){
     button.disabled = true;
     try{
       await missionApiRequest('/api/routines?id='+encodeURIComponent(button.dataset.routineDelete),{method:'DELETE'});
-      await Promise.all([loadRoutines(),loadHomeRoutines()]);
+      await refreshAfterAction(() => Promise.all([loadRoutines({silent:true}),loadHomeRoutines()]));
       showPurchaseToast('Rotina excluída.');
     }catch(error){
       showPurchaseToast(error.message,'error');
@@ -14587,7 +14591,7 @@ function renderHomeTasks(){
       missionCompanyId = storeMission ? el('missionCompany').value : '';
       el('missionDate').value = el('missionStartDate').value;
       renderMissionTabs();
-      await Promise.all([loadMissions(),loadHomeMissions()]);
+      await refreshAfterAction(() => Promise.all([loadMissions({silent:true}),loadHomeMissions()]));
     }catch(error){
       setMissionFormStatus(error.message,'error');
     }finally{
@@ -14614,7 +14618,7 @@ function renderHomeTasks(){
     button.disabled = true;
     try{
       await missionApiRequest('/api/missions?id='+encodeURIComponent(button.dataset.missionDelete),{method:'DELETE'});
-      await Promise.all([loadMissions(),loadHomeMissions()]);
+      await refreshAfterAction(() => Promise.all([loadMissions({silent:true}),loadHomeMissions()]));
       showPurchaseToast('Missão excluída.');
     }catch(error){
       showPurchaseToast(error.message,'error');
@@ -14960,10 +14964,10 @@ function renderHomeTasks(){
     }
   });
 
-  async function loadCaptures(){
+  async function loadCaptures(opts){
     if(!canAccess('captures') || capturesLoading) return;
     capturesLoading = true;
-    el('captureList').innerHTML = '<div class="mission-empty">Carregando captações…</div>';
+    if(!opts || !opts.silent) el('captureList').innerHTML = '<div class="mission-empty">Carregando captações…</div>';
     try{
       const data = await captureApiRequest();
       captureRows = Array.isArray(data.captures) ? data.captures : [];
@@ -15098,7 +15102,7 @@ function renderHomeTasks(){
       setCaptureFormStatus(isGame
         ? 'JOGO CADASTRADO E DISPONÍVEL PARA O ADMINISTRADOR DEFINIR O DESTINO.'
         : 'PRODUTO CADASTRADO E ENVIADO PARA A ASSISTÊNCIA.','success');
-      await loadCaptures();
+      await refreshAfterAction(() => loadCaptures({silent:true}));
     }catch(error){
       setCaptureFormStatus(error.message,'error');
     }finally{
@@ -15137,7 +15141,7 @@ function renderHomeTasks(){
         delete:'Captação excluída definitivamente.'
       };
       showPurchaseToast(messages[action] || 'Captação atualizada.');
-      await loadCaptures();
+      await refreshAfterAction(() => loadCaptures({silent:true}));
     }catch(error){
       showPurchaseToast(error.message,'error');
       button.disabled = false;
@@ -15873,7 +15877,7 @@ function renderHomeTasks(){
       : '<div class="supply-empty">Nenhum produto de insumo ativo cadastrado ainda.</div>';
   }
 
-  async function loadSupplyMissing(){
+  async function loadSupplyMissing(opts){
     if(!canAccess('supplies') || supplyMissingLoading) return;
     const canChooseCompany = supplyCanChooseCompany('supplies:request');
     const companyId = canChooseCompany ? el('supplyCompany').value : currentSession.companyId;
@@ -15886,7 +15890,7 @@ function renderHomeTasks(){
       return;
     }
     supplyMissingLoading = true;
-    el('supplyMissingGroups').innerHTML = '<div class="supply-empty">Carregando produtos…</div>';
+    if(!opts || !opts.silent) el('supplyMissingGroups').innerHTML = '<div class="supply-empty">Carregando produtos…</div>';
     try{
       const query = new URLSearchParams({companyId,weekStart});
       const data = await supplyMissingApiRequest(null,query);
@@ -16220,7 +16224,7 @@ function renderHomeTasks(){
         })
       });
       setSupplyRequestFormStatus('SOLICITAÇÃO ENVIADA.','success');
-      await loadSupplyRequest();
+      await refreshAfterAction(() => loadSupplyRequest());
     }catch(error){
       setSupplyRequestFormStatus(error.message,'error');
     }finally{
@@ -16501,7 +16505,7 @@ function renderHomeTasks(){
         body:JSON.stringify({id:button.dataset.movementDelete})
       });
       showPurchaseToast('Movimentação excluída.');
-      await Promise.all([loadSupplyStockMovements(),loadSupplyAdminData()]);
+      await refreshAfterAction(() => Promise.all([loadSupplyStockMovements(),loadSupplyAdminData()]));
     }catch(error){
       showPurchaseToast(error.message,'error');
       button.disabled = false;
@@ -16582,7 +16586,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:saveButton.dataset.categorySave,name})
         });
         supplyCategoryEditingId = '';
-        await loadSupplyAdminData();
+        await refreshAfterAction(() => loadSupplyAdminData());
       }catch(error){
         showPurchaseToast(error.message,'error');
         saveButton.disabled = false;
@@ -16599,7 +16603,7 @@ function renderHomeTasks(){
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({id:deleteButton.dataset.categoryDelete})
         });
-        await loadSupplyAdminData();
+        await refreshAfterAction(() => loadSupplyAdminData());
       }catch(error){
         showPurchaseToast(error.message,'error');
         deleteButton.disabled = false;
@@ -16641,7 +16645,7 @@ function renderHomeTasks(){
       setSupplyProductFormStatus('PRODUTO CADASTRADO.','success');
       el('supplyProductForm').hidden = true;
       el('btnToggleNewProductForm').hidden = false;
-      await loadSupplyAdminData();
+      await refreshAfterAction(() => loadSupplyAdminData());
     }catch(error){
       setSupplyProductFormStatus(error.message,'error');
     }finally{
@@ -16685,7 +16689,7 @@ function renderHomeTasks(){
           })
         });
         supplyProductEditingId = '';
-        await loadSupplyAdminData();
+        await refreshAfterAction(() => loadSupplyAdminData());
       }catch(error){
         showPurchaseToast(error.message,'error');
         saveButton.disabled = false;
@@ -16702,7 +16706,7 @@ function renderHomeTasks(){
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({id:deleteButton.dataset.productDelete})
         });
-        await loadSupplyAdminData();
+        await refreshAfterAction(() => loadSupplyAdminData());
       }catch(error){
         showPurchaseToast(error.message,'error');
         deleteButton.disabled = false;
@@ -16763,7 +16767,7 @@ function renderHomeTasks(){
       });
       closeSupplyStockForm();
       showPurchaseToast('Movimentação de estoque registrada.');
-      await loadSupplyAdminData();
+      await refreshAfterAction(() => loadSupplyAdminData());
     }catch(error){
       setSupplyStockFormStatus(error.message,'error');
     }finally{
@@ -16825,13 +16829,13 @@ function renderHomeTasks(){
     '</div>';
   }
 
-  async function loadSupplySeparationQueue(){
+  async function loadSupplySeparationQueue(opts){
     const canSeeQueue = currentSession.role === 'admin' || canActAcrossStores('supplies:stock_out');
     if(!canSeeQueue || supplySeparationLoading) return;
     renderSupplySeparationWeekFilterOptions();
     const weekFilter = el('supplySeparationWeekFilter').value;
     supplySeparationLoading = true;
-    el('supplySeparationList').innerHTML = '<div class="supply-empty">Carregando solicitações…</div>';
+    if(!opts || !opts.silent) el('supplySeparationList').innerHTML = '<div class="supply-empty">Carregando solicitações…</div>';
     try{
       const params = new URLSearchParams({queue:'1'});
       if(weekFilter) params.set('weekStart',weekFilter);
@@ -16862,7 +16866,7 @@ function renderHomeTasks(){
           body:JSON.stringify({id:deleteButton.dataset.requestDelete})
         });
         showPurchaseToast('Solicitação excluída.');
-        await Promise.all([loadSupplySeparationQueue(),loadSupplyDashboard()]);
+        await refreshAfterAction(() => Promise.all([loadSupplySeparationQueue({silent:true}),loadSupplyDashboard()]));
       }catch(error){
         showPurchaseToast(error.message,'error');
         deleteButton.disabled = false;
@@ -16902,7 +16906,7 @@ function renderHomeTasks(){
         body:JSON.stringify({itemId,quantitySeparated,note:noteInput.value,notSent})
       });
       showPurchaseToast(notSent ? 'Item marcado como não enviado.' : 'Item separado e estoque atualizado.');
-      await loadSupplySeparationQueue();
+      await refreshAfterAction(() => loadSupplySeparationQueue({silent:true}));
     }catch(error){
       showPurchaseToast(error.message,'error');
       button.disabled = false;
@@ -16936,10 +16940,10 @@ function renderHomeTasks(){
       : '<div class="supply-empty">Nenhuma solicitação concluída ainda.</div>';
   }
 
-  async function loadSupplyAdminHistory(){
+  async function loadSupplyAdminHistory(opts){
     if(!canActAcrossStores('supplies:stock_out') || supplyAdminHistoryLoading) return;
     supplyAdminHistoryLoading = true;
-    el('supplyAdminHistoryList').innerHTML = '<div class="supply-empty">Carregando histórico…</div>';
+    if(!opts || !opts.silent) el('supplyAdminHistoryList').innerHTML = '<div class="supply-empty">Carregando histórico…</div>';
     try{
       renderSupplyHistoryFilterOptions();
       const data = await supplyRequestApiRequest(null,new URLSearchParams({queue:'1',view:'history'}));
@@ -16966,7 +16970,7 @@ function renderHomeTasks(){
         body:JSON.stringify({id:deleteButton.dataset.requestDelete})
       });
       showPurchaseToast('Solicitação excluída.');
-      await loadSupplyAdminHistory();
+      await refreshAfterAction(() => loadSupplyAdminHistory({silent:true}));
     }catch(error){
       showPurchaseToast(error.message,'error');
       deleteButton.disabled = false;
@@ -17095,7 +17099,7 @@ function renderHomeTasks(){
       });
       el('supplyExitForm').reset();
       setSupplyExitFormStatus(type === 'in' ? 'ENTRADA REGISTRADA.' : 'SAÍDA REGISTRADA.','success');
-      await loadSupplyExitData();
+      await refreshAfterAction(() => loadSupplyExitData());
     }catch(error){
       setSupplyExitFormStatus(error.message,'error');
     }finally{
@@ -17427,7 +17431,7 @@ function renderHomeTasks(){
       await loanApiRequest('/api/loans/devices',{method:id ? 'PATCH' : 'POST',body:JSON.stringify(body)});
       setLoanDeviceFormStatus(id ? 'APARELHO ATUALIZADO.' : 'APARELHO CADASTRADO.','success');
       resetLoanDeviceForm();
-      loadLoanDevices();
+      refreshAfterAction(() => loadLoanDevices());
     }catch(error){
       setLoanDeviceFormStatus(error.message,'error');
     }
@@ -17457,7 +17461,7 @@ function renderHomeTasks(){
       if(!device || !confirm('EXCLUIR O APARELHO "'+device.name+'"?')) return;
       try{
         await loanApiRequest('/api/loans/devices',{method:'DELETE',body:JSON.stringify({id:device.id})});
-        loadLoanDevices();
+        refreshAfterAction(() => loadLoanDevices());
       }catch(error){
         alert(error.message);
       }
@@ -17503,8 +17507,7 @@ function renderHomeTasks(){
         })
       });
       closeLoanRequestDialog();
-      loadLoanDevices();
-      loadLoanRequests();
+      refreshAfterAction(() => Promise.all([loadLoanDevices(),loadLoanRequests()]));
     }catch(error){
       setLoanRequestFormStatus(error.message,'error');
     }
@@ -17608,8 +17611,7 @@ function renderHomeTasks(){
     setLoanRequestDetailsStatus('ATUALIZANDO…');
     try{
       await loanApiRequest('/api/loans/requests',{method:'PATCH',body:JSON.stringify({id,action:'loan'})});
-      await loadLoanRequests();
-      await loadLoanDevices();
+      await refreshAfterAction(() => Promise.all([loadLoanRequests(),loadLoanDevices()]));
       openLoanRequestDetailsDialog(id);
       setLoanRequestDetailsStatus('SOLICITAÇÃO MARCADA COMO EMPRESTADA.','success');
     }catch(error){
@@ -17623,8 +17625,7 @@ function renderHomeTasks(){
     setLoanRequestDetailsStatus('ATUALIZANDO…');
     try{
       await loanApiRequest('/api/loans/requests',{method:'PATCH',body:JSON.stringify({id,action:'return'})});
-      await loadLoanRequests();
-      await loadLoanDevices();
+      await refreshAfterAction(() => Promise.all([loadLoanRequests(),loadLoanDevices()]));
       openLoanRequestDetailsDialog(id);
       setLoanRequestDetailsStatus('APARELHO MARCADO COMO DEVOLVIDO E DISPONÍVEL NOVAMENTE.','success');
     }catch(error){
@@ -17662,7 +17663,7 @@ function renderHomeTasks(){
     try{
       await loanApiRequest('/api/loans/requests',{method:'DELETE',body:JSON.stringify({id})});
       closeLoanRequestDetailsDialog();
-      loadLoanRequests();
+      refreshAfterAction(() => loadLoanRequests());
     }catch(error){
       alert(error.message);
     }

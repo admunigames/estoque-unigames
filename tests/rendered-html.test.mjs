@@ -720,7 +720,7 @@ test("isola tarefas por usuário e oferece prioridade, recorrência e lembretes 
     "utf8",
   );
   assert.match(html, /tarefas:'tasks'/);
-  assert.match(html, /if\(livePageName === 'tarefas'\) await Promise\.all\(\[loadTasks\(\),loadTaskAgenda\(\)\]\)/);
+  assert.match(html, /if\(livePageName === 'tarefas'\) await refreshAfterAction\(\(\) => Promise\.all\(\[loadTasks\(\),loadTaskAgenda\(\)\]\)\)/);
   assert.match(liveEvents, /module: "tasks", audience: \{ kind: "user", userId: actor\.id \}/);
   assert.match(html, /id="taskInputPriority"/);
   assert.match(html, /value="urgent">URGENTE/);
@@ -810,7 +810,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(html, /id="missionMonth"/);
   assert.match(html, /id="missionMonthCalendar"/);
   assert.match(html, /btnDownloadMissionMonthPdf/);
-  assert.match(html, /function loadMissionMonthAgenda\(\)/);
+  assert.match(html, /function loadMissionMonthAgenda\(opts\)/);
   assert.match(html, /id="btnTestMissionNotifications"/);
   assert.match(html, /Aparelho inscrito\. Os lembretes de 2 horas e 1 hora estão ativos/);
   assert.match(html, /data-mission-status/);
@@ -914,7 +914,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(html, /value="captures:view"> Visualizar/);
   assert.match(html, /captacao:'\/captacao'/);
   assert.match(html, /captacao:'captures'/);
-  assert.match(html, /if\(livePageName === 'captacao'\) await loadCaptures\(\)/);
+  assert.match(html, /if\(livePageName === 'captacao'\) await refreshAfterAction\(\(\) => loadCaptures\(\{silent:true\}\)\)/);
   assert.doesNotMatch(html, /isAssistanceSession/);
   assert.doesNotMatch(html, /username\.includes\('assistencia'\)/);
   assert.doesNotMatch(html, /displayName\.includes\('assistencia'\)/);
@@ -1850,7 +1850,7 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(html, /aparelhosEmprestimo:'loans'/);
   assert.match(
     html,
-    /if\(livePageName === 'aparelhosEmprestimo'\)\{\s*\n\s*await loadLoans\(\);/,
+    /if\(livePageName === 'aparelhosEmprestimo'\)\{\s*\n\s*await refreshAfterAction\(\(\) => Promise\.all\(\[loadLoanDevices\(\),loadLoanRequests\(\)\]\)\);/,
   );
   assert.match(liveEvents, /path === "\/api\/loans\/devices" \|\| path\.startsWith\("\/api\/loans\/requests"\)/);
   assert.match(liveEvents, /return \{ module: "loans", audience: \{ kind: "all" \} \};/);
