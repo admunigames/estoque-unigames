@@ -8308,8 +8308,10 @@
       // dele também — sem fechar — pra dois usuários no mesmo pedido verem
       // a mudança um do outro sem precisar recarregar a página.
       if(comprasSectionTab === 'pedidos'){
-        await loadComprasOrdersPage();
-        if(comprasOrderDetailOpenId) await openComprasOrderDetail(comprasOrderDetailOpenId);
+        await refreshAfterAction(async () => {
+          await loadComprasOrdersPage({silent:true});
+          if(comprasOrderDetailOpenId) await openComprasOrderDetail(comprasOrderDetailOpenId);
+        });
       }
     }
     if(livePageName === 'inicio') await loadHomeSupplies();
@@ -23583,12 +23585,12 @@ function renderHomeTasks(){
   // status, então filtra no cliente depois de buscar (ver card clicável
   // "Atrasados" na tela inicial, comprasOpenPedidosFiltered abaixo).
   let comprasOrdersLateOnlyFilter = false;
-  async function loadComprasOrdersPage(){
+  async function loadComprasOrdersPage(opts){
     if(!canAccess('purchases_draft')) return;
     const status = el('comprasOrdersStatusFilter').value;
     const origin = el('comprasOrdersOriginFilter').value;
     const showCanceled = el('comprasOrdersShowCanceled') && el('comprasOrdersShowCanceled').checked;
-    el('comprasOrdersTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando pedidos…</td></tr>';
+    if(!opts || !opts.silent) el('comprasOrdersTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando pedidos…</td></tr>';
     try{
       const query = new URLSearchParams();
       if(status) query.set('status', status);
@@ -23656,8 +23658,7 @@ function renderHomeTasks(){
       const data = await comprasNovoApiRequest('/orders', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       el('comprasDraftDialog').close();
       showPurchaseToast('Pedido de compra criado.');
-      await loadComprasOrdersPage();
-      await openComprasOrderDetail(data.id);
+      await refreshAfterAction(async () => { await loadComprasOrdersPage({silent:true}); await openComprasOrderDetail(data.id); });
     }catch(error){ status.textContent = error.message; }
   });
 
@@ -23735,7 +23736,7 @@ function renderHomeTasks(){
       if(!confirm('EXCLUIR ESTE ITEM DO PEDIDO?')) return;
       try{
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {method:'DELETE'});
-        await openComprasOrderDetail(comprasCurrentOrderId);
+        await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
         showPurchaseToast('Item removido.');
       }catch(error){ showPurchaseToast(error.message, 'error'); }
       return;
@@ -23750,7 +23751,7 @@ function renderHomeTasks(){
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
           method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, unitPriceCents})
         });
-        await openComprasOrderDetail(comprasCurrentOrderId);
+        await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
         showPurchaseToast('Cotação salva.');
       }catch(error){ showPurchaseToast(error.message, 'error'); }
       return;
@@ -23760,7 +23761,7 @@ function renderHomeTasks(){
       const [itemId, supplierId] = deleteQuoteBtn.dataset.comprasQuoteDelete.split('|');
       try{
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes?supplierId='+encodeURIComponent(supplierId), {method:'DELETE'});
-        await openComprasOrderDetail(comprasCurrentOrderId);
+        await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
         showPurchaseToast('Cotação removida.');
       }catch(error){ showPurchaseToast(error.message, 'error'); }
       return;
@@ -23778,7 +23779,7 @@ function renderHomeTasks(){
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
           method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, unitPriceCents})
         });
-        await openComprasOrderDetail(comprasCurrentOrderId);
+        await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
         showPurchaseToast('Cotação adicionada.');
       }catch(error){ showPurchaseToast(error.message, 'error'); }
     }
@@ -23820,8 +23821,7 @@ function renderHomeTasks(){
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId})
       });
       showPurchaseToast('Compra efetuada — pedido aguardando chegada.');
-      await loadComprasOrdersPage();
-      await openComprasOrderDetail(comprasCurrentOrderId);
+      await refreshAfterAction(async () => { await loadComprasOrdersPage({silent:true}); await openComprasOrderDetail(comprasCurrentOrderId); });
     }catch(error){ status.textContent = error.message; }
   });
 
@@ -23922,7 +23922,7 @@ function renderHomeTasks(){
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       }
       el('comprasDraftItemDialog').close();
-      await openComprasOrderDetail(comprasCurrentOrderId);
+      await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
       showPurchaseToast('Item salvo.');
     }catch(error){ status.textContent = error.message; }
   });
@@ -23980,8 +23980,7 @@ function renderHomeTasks(){
         body:JSON.stringify({ division: el('comprasOrderDivisionText').value, divisionStatus: el('comprasOrderDivisionStatus').value })
       });
       showPurchaseToast('Divisão salva.');
-      await openComprasOrderDetail(comprasCurrentOrderId);
-      await loadComprasOrdersPage();
+      await refreshAfterAction(async () => { await openComprasOrderDetail(comprasCurrentOrderId); await loadComprasOrdersPage({silent:true}); });
     }catch(error){ status.textContent = error.message; }
   });
 
@@ -24127,7 +24126,7 @@ function renderHomeTasks(){
         method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({purchaseOrderId: comprasCurrentOrderId})
       });
       showPurchaseToast('Nota fiscal vinculada ao pedido.');
-      await openComprasOrderDetail(comprasCurrentOrderId);
+      await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
@@ -24176,8 +24175,7 @@ function renderHomeTasks(){
         method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({canceled:true})
       });
       showPurchaseToast('Pedido cancelado.');
-      await openComprasOrderDetail(comprasCurrentOrderId);
-      await loadComprasOrdersPage();
+      await refreshAfterAction(async () => { await openComprasOrderDetail(comprasCurrentOrderId); await loadComprasOrdersPage({silent:true}); });
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
   if(el('btnReopenComprasOrder')) el('btnReopenComprasOrder').addEventListener('click', async () => {
@@ -24187,8 +24185,7 @@ function renderHomeTasks(){
         method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({canceled:false})
       });
       showPurchaseToast('Pedido reaberto.');
-      await openComprasOrderDetail(comprasCurrentOrderId);
-      await loadComprasOrdersPage();
+      await refreshAfterAction(async () => { await openComprasOrderDetail(comprasCurrentOrderId); await loadComprasOrdersPage({silent:true}); });
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
@@ -24223,8 +24220,7 @@ function renderHomeTasks(){
       await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {
         method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ receivedQuantity, unitPriceCents })
       });
-      await openComprasOrderDetail(comprasCurrentOrderId);
-      await loadComprasOrdersPage();
+      await refreshAfterAction(async () => { await openComprasOrderDetail(comprasCurrentOrderId); await loadComprasOrdersPage({silent:true}); });
       showPurchaseToast('Item atualizado.');
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
@@ -24265,8 +24261,7 @@ function renderHomeTasks(){
     try{
       await comprasNovoApiRequest('/orders/'+encodeURIComponent(id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       el('comprasOrderEditDialog').close();
-      await openComprasOrderDetail(id);
-      await loadComprasOrdersPage();
+      await refreshAfterAction(async () => { await openComprasOrderDetail(id); await loadComprasOrdersPage({silent:true}); });
       showPurchaseToast('Pedido atualizado.');
     }catch(error){ status.textContent = error.message; }
   });

@@ -3440,7 +3440,7 @@ test("Módulo Compras nativo (Fase F): accordion no detalhe, atualização ao vi
   assert.match(html, /comprasNovo:'compras'/);
   assert.match(
     html,
-    /if\(livePageName === 'comprasNovo'\)\{[\s\S]*?if\(comprasSectionTab === 'pedidos'\)\{[\s\S]*?await loadComprasOrdersPage\(\);[\s\S]*?if\(comprasOrderDetailOpenId\) await openComprasOrderDetail\(comprasOrderDetailOpenId\);/,
+    /if\(livePageName === 'comprasNovo'\)\{[\s\S]*?if\(comprasSectionTab === 'pedidos'\)\{[\s\S]*?await loadComprasOrdersPage\(\{silent:true\}\);[\s\S]*?if\(comprasOrderDetailOpenId\) await openComprasOrderDetail\(comprasOrderDetailOpenId\);/,
   );
 
   // Badge de Status da Divisão: reflete os 5 valores + vazio, aparece na
