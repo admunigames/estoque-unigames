@@ -23688,6 +23688,14 @@ function renderHomeTasks(){
     return html;
   }
 
+  // order_date só passou a ser gravado na criação do pedido recentemente —
+  // pedidos nativos mais antigos ficaram com order_date="" pra sempre (não
+  // dá pra "voltar no tempo" sem editar o banco). Cai pro created_at (já
+  // sempre existiu) pra esses casos, em vez de mostrar "—".
+  function comprasOrderDateLabel(order){
+    return formatDateBR(order.orderDate) || formatDateBR(order.createdAt);
+  }
+
   // Cabeçalho do detalhe do pedido: badges numa linha, depois uma grade de
   // campo/valor (só os campos preenchidos) em vez de uma frase única com
   // tudo separado por "·".
@@ -23697,7 +23705,7 @@ function renderHomeTasks(){
     const fields = [
       ['Origem', comprasOrderOriginLabel(order), true],
       ['Loja', order.companyName || ''],
-      ['Pedido em', formatDateBR(order.orderDate)],
+      ['Pedido em', comprasOrderDateLabel(order)],
       ['Previsão', formatDateBR(order.expectedDate)],
       ['Recebido em', formatDateBR(order.receivedDate)],
     ].filter(([, value]) => value);
@@ -23730,7 +23738,7 @@ function renderHomeTasks(){
       '<td>'+comprasOrderOriginLabel(order)+'</td>'+
       '<td>'+comprasOrderBadges(order)+'</td>'+
       '<td>'+(order.noItemsDetailed ? 'SEM ITENS DETALHADOS' : Number(order.itemCount || 0))+'</td>'+
-      '<td>'+(formatDateBR(order.orderDate) || '—')+'</td>'+
+      '<td>'+(comprasOrderDateLabel(order) || '—')+'</td>'+
       '<td>'+(formatDateBR(order.expectedDate) || '—')+'</td>'+
       '<td class="no-print"><button class="btn-outline" type="button" data-compras-order-open="'+escapeHtml(order.id)+'">'+(order.id === comprasOrderDetailOpenId ? 'FECHAR' : 'ABRIR')+'</button></td>'+
     '</tr>').join('');
@@ -24622,7 +24630,7 @@ function renderHomeTasks(){
             '<td>'+Number(item.quantity || 0)+'</td>'+
             '<td>'+escapeHtml(item.supplierName || '—')+'</td>'+
             '<td>'+comprasOrderStatusBadge(item.orderStatus)+'</td>'+
-            '<td>'+(item.createdAt ? escapeHtml(String(item.createdAt).slice(0,10)) : '—')+'</td>'+
+            '<td>'+(formatDateBR(item.createdAt) || '—')+'</td>'+
           '</tr>').join('')
         : '<tr><td colspan="5" class="responsive-empty">Nenhum produto comprado ainda.</td></tr>';
     }catch(error){
@@ -24655,7 +24663,7 @@ function renderHomeTasks(){
             '<td>'+escapeHtml(s.supplierName || s.supplierId || 'Fornecedor não identificado')+'</td>'+
             '<td>'+Number(s.totalQuantity || 0)+'</td>'+
             '<td>'+(Number(s.lastUnitPriceCents || 0) > 0 ? formatCentsBRL(s.lastUnitPriceCents) : '—')+'</td>'+
-            '<td>'+(s.lastOrderDate || '—')+'</td>'+
+            '<td>'+(formatDateBR(s.lastOrderDate) || '—')+'</td>'+
           '</tr>').join('')
         : '<tr><td colspan="4" class="responsive-empty">Nenhuma compra nativa registrada para este produto.</td></tr>';
 

@@ -3173,8 +3173,11 @@ test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aber
   assert.match(quotesRoute, /sameOrigin\(request\)/);
 
   // POST /orders cria direto como pedido nativo 'aberto', sem rascunho.
+  // order_date vem preenchido (hoje, fuso Recife) via bind param — antes
+  // ficava sempre "" e "DATA DO PEDIDO" nunca aparecia pra pedido nativo.
   assert.match(ordersRoute, /status, no_items_detailed, notes, canceled, won_at, won_by, won_by_name/);
-  assert.match(ordersRoute, /'native', '', '', '', '', '', '', '', '', '', '', '', 'aberto'/);
+  assert.match(ordersRoute, /'native', '', '', '', '', '', '', \?2, '', '', '', '', 'aberto'/);
+  assert.match(ordersRoute, /const orderDate = todayInTimezone\(\);/);
 
   // POST /orders/:id/items só aceita item enquanto 'aberto'.
   assert.match(itemsRoute, /order\.status !== "aberto"/);

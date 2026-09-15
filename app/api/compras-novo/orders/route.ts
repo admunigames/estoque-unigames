@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { todayInTimezone } from "../../../lib/finance-status";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canManageComprasDraft, identity, jsonResponse, newId, safeText, sameOrigin, type JsonMap } from "../shared";
 
@@ -160,6 +161,10 @@ export async function POST(request: Request) {
     const database = await getD1();
     const id = newId();
     const actorName = actor.displayName || "Administrador";
+    // order_date = hoje (fuso Recife) no momento da criação — antes ficava
+    // sempre "" (nunca setado por nenhum fluxo), então "DATA DO PEDIDO"
+    // nunca aparecia pra pedido nativo nenhum.
+    const orderDate = todayInTimezone();
     await database
       .prepare(
         `INSERT INTO purchase_orders
@@ -168,10 +173,10 @@ export async function POST(request: Request) {
            status, no_items_detailed, notes, canceled, won_at, won_by, won_by_name,
            created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
          VALUES
-          (?1, 'native', '', '', '', '', '', '', '', '', '', '', '', 'aberto', 0, ?2, 0, '', '', '',
-           ?3, ?4, CURRENT_TIMESTAMP, ?3, ?4, CURRENT_TIMESTAMP)`,
+          (?1, 'native', '', '', '', '', '', '', ?2, '', '', '', '', 'aberto', 0, ?3, 0, '', '', '',
+           ?4, ?5, CURRENT_TIMESTAMP, ?4, ?5, CURRENT_TIMESTAMP)`,
       )
-      .bind(id, notes, actor.id, actorName)
+      .bind(id, orderDate, notes, actor.id, actorName)
       .run();
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
