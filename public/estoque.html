@@ -19636,9 +19636,9 @@ function renderHomeTasks(){
     if(nextButton) nextButton.addEventListener('click', () => { if(payablesPage < totalPages){ payablesPage += 1; loadPayablesList(); } });
   }
 
-  async function loadPayablesList(){
+  async function loadPayablesList(opts){
     const tbody = el('payablesBody');
-    if(tbody) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando contas…</td></tr>';
+    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando contas…</td></tr>';
     const params = payablesFilterParams();
     if(payablesQuickView) params.set('quickView', payablesQuickView);
     params.set('page', String(payablesPage));
@@ -19876,7 +19876,7 @@ function renderHomeTasks(){
       }
       showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Conta salva.');
       closePayableDialog();
-      await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+      await refreshAfterAction(async () => { await Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]); });
     }catch(error){
       statusEl.textContent = error.message;
     }finally{
@@ -19991,7 +19991,7 @@ function renderHomeTasks(){
       payablePaymentIdempotencyKey = crypto.randomUUID();
       const data = await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId));
       renderPayableDetail(data);
-      await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+      await refreshAfterAction(async () => { await Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]); });
     }catch(error){
       statusEl.textContent = error.message;
     }finally{
@@ -20010,7 +20010,7 @@ function renderHomeTasks(){
         showPurchaseToast('Agendamento confirmado.');
         const data = await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId));
         renderPayableDetail(data);
-        await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+        await refreshAfterAction(async () => { await Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]); });
       }catch(error){ showPurchaseToast(error.message,'error'); }
     }else if(deleteButton){
       if(!confirm('Cancelar este agendamento?')) return;
@@ -20019,7 +20019,7 @@ function renderHomeTasks(){
         showPurchaseToast('Agendamento cancelado.');
         const data = await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId));
         renderPayableDetail(data);
-        await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+        await refreshAfterAction(async () => { await Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]); });
       }catch(error){ showPurchaseToast(error.message,'error'); }
     }
   });
@@ -20038,7 +20038,7 @@ function renderHomeTasks(){
       try{
         await financeApiRequest('/payables/'+encodeURIComponent(cancelButton.dataset.payableCancel)+'/cancel', { method:'POST' });
         showPurchaseToast('Conta cancelada.');
-        await Promise.all([loadPayablesList(), renderPayablesQuickViews()]);
+        await refreshAfterAction(async () => { await Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]); });
       }catch(error){ showPurchaseToast(error.message,'error'); }
     }
   });
@@ -20199,9 +20199,9 @@ function renderHomeTasks(){
     if(nextButton) nextButton.addEventListener('click', () => { if(supplierDebtsPage < totalPages){ supplierDebtsPage += 1; loadSupplierDebtsList(); } });
   }
 
-  async function loadSupplierDebtsList(){
+  async function loadSupplierDebtsList(opts){
     const tbody = el('supplierDebtsBody');
-    if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando dívidas…</td></tr>';
+    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando dívidas…</td></tr>';
     renderSupplierDebtsCompanyOptions();
     renderSupplierDebtsSupplierOptions();
     const params = supplierDebtsFilterParams();
@@ -20342,7 +20342,7 @@ function renderHomeTasks(){
         showPurchaseToast('Dívida cadastrada.');
       }
       closeSupplierDebtDialog();
-      await Promise.all([loadSupplierDebtsList(), renderPayablesQuickViews()]);
+      await refreshAfterAction(async () => { await Promise.all([loadSupplierDebtsList({silent:true}), renderPayablesQuickViews()]); });
     }catch(error){
       statusEl.textContent = error.message;
     }finally{
@@ -20364,7 +20364,7 @@ function renderHomeTasks(){
       try{
         await financeApiRequest('/supplier-debts/'+encodeURIComponent(cancelButton.dataset.supplierDebtCancel)+'/cancel', { method:'POST' });
         showPurchaseToast('Dívida cancelada.');
-        await Promise.all([loadSupplierDebtsList(), renderPayablesQuickViews()]);
+        await refreshAfterAction(async () => { await Promise.all([loadSupplierDebtsList({silent:true}), renderPayablesQuickViews()]); });
       }catch(error){ showPurchaseToast(error.message,'error'); }
     }
   });
@@ -20607,7 +20607,7 @@ function renderHomeTasks(){
     return Array.isArray(data.budgets) ? data.budgets : [];
   }
 
-  async function loadOrcamentoPage(){
+  async function loadOrcamentoPage(opts){
     if(!canAccess('finance')) return;
     if(!companies.length) await loadCompanies();
     if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
@@ -20618,7 +20618,8 @@ function renderHomeTasks(){
     if(!el('budgetMes').value) el('budgetMes').value = financeCurrentMonthKey();
     const companyId = el('budgetLoja').value;
     const month = el('budgetMes').value;
-    el('budgetsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    const silent = opts && opts.silent;
+    if(!silent) el('budgetsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
     try{
       budgetsCurrentRows = await loadBudgetsFor(companyId, month);
       renderBudgetsTable('budgetsTableBody', budgetsCurrentRows);
@@ -20664,7 +20665,7 @@ function renderHomeTasks(){
       if(!confirm('Excluir este orçamento?')) return;
       try{
         await financeApiRequest('/budgets?id='+encodeURIComponent(deleteButton.dataset.budgetDelete), {method:'DELETE'});
-        await loadOrcamentoPage();
+        await refreshAfterAction(() => loadOrcamentoPage({silent:true}));
         showPurchaseToast('Orçamento excluído.');
       }catch(error){
         showPurchaseToast(error.message, 'error');
@@ -20697,7 +20698,7 @@ function renderHomeTasks(){
     try{
       await financeApiRequest('/budgets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       closeBudgetDialog();
-      await loadOrcamentoPage();
+      await refreshAfterAction(() => loadOrcamentoPage({silent:true}));
       showPurchaseToast('Orçamento salvo.');
     }catch(error){
       status.textContent = error.message;
@@ -20813,7 +20814,7 @@ function renderHomeTasks(){
     if(Array.from(select.options).some(o => o.value === selected)) select.value = selected;
   }
 
-  async function loadRecebiveisPage(){
+  async function loadRecebiveisPage(opts){
     if(!canAccess('finance')) return;
     if(!companies.length) await loadCompanies();
     renderReceivableCompanyOptions();
@@ -20825,7 +20826,7 @@ function renderHomeTasks(){
     const showCanceled = el('receivableShowCanceled') && el('receivableShowCanceled').checked;
     const operatorText = el('receivableOperator').value.trim();
 
-    el('receivablesTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    if(!opts || !opts.silent) el('receivablesTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
     const listParams = new URLSearchParams({competenceFrom:month, competenceTo:month, pageSize:'100'});
     if(companyId) listParams.set('companyId', companyId);
     if(showCanceled) listParams.set('includeCanceled', '1');
@@ -20907,7 +20908,7 @@ function renderHomeTasks(){
       if(!confirm('Cancelar este recebível? Ele deixa de contar no fluxo de caixa, mas continua no histórico.')) return;
       try{
         await financeApiRequest('/receivables/'+encodeURIComponent(cancelButton.dataset.receivableCancel)+'/cancel', {method:'POST'});
-        await loadRecebiveisPage();
+        await refreshAfterAction(() => loadRecebiveisPage({silent:true}));
         showPurchaseToast('Recebível cancelado.');
       }catch(error){
         showPurchaseToast(error.message, 'error');
@@ -20958,7 +20959,7 @@ function renderHomeTasks(){
         body: JSON.stringify(payload)
       });
       closeReceivableDialog();
-      await loadRecebiveisPage();
+      await refreshAfterAction(() => loadRecebiveisPage({silent:true}));
       showPurchaseToast('Recebível salvo.');
     }catch(error){
       status.textContent = error.message;
@@ -22760,10 +22761,10 @@ function renderHomeTasks(){
     }).join('');
   }
 
-  async function loadReconEntries(){
+  async function loadReconEntries(opts){
     const financeAccountId = el('reconAccount').value;
     if(!financeAccountId) return;
-    el('reconEntriesBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
+    if(!opts || !opts.silent) el('reconEntriesBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
     try{
       const params = new URLSearchParams({financeAccountId});
       if(el('reconMonth').value) params.set('month', el('reconMonth').value);
@@ -22800,7 +22801,7 @@ function renderHomeTasks(){
           method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
         });
         showPurchaseToast('Lançamento confirmado. Classificação aprendida para o próximo extrato.');
-        await loadReconEntries();
+        await refreshAfterAction(() => loadReconEntries({silent:true}));
       }catch(error){ showPurchaseToast(error.message, 'error'); confirmBtn.disabled = false; }
       return;
     }
@@ -22872,7 +22873,7 @@ function renderHomeTasks(){
         method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({expenseId})
       });
       el('reconEntryExpenseDialog').close();
-      await loadReconEntries();
+      await refreshAfterAction(() => loadReconEntries({silent:true}));
       showPurchaseToast('Despesa criada a partir do extrato.');
     }catch(error){ status.textContent = error.message; }
   });
@@ -25445,9 +25446,9 @@ function renderHomeTasks(){
     if(nextButton) nextButton.addEventListener('click', () => { if(expensesPage < totalPages){ expensesPage += 1; loadExpensesList(); } });
   }
 
-  async function loadExpensesList(){
+  async function loadExpensesList(opts){
     const tbody = el('expensesBody');
-    if(tbody) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando despesas…</td></tr>';
+    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando despesas…</td></tr>';
     const params = expensesFilterParams();
     params.set('page', String(expensesPage));
     params.set('pageSize', String(EXPENSES_PAGE_SIZE));
@@ -25726,7 +25727,7 @@ function renderHomeTasks(){
       const response = await financeApiRequest('/expenses', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
       showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Despesa salva.');
       closeExpenseDialog();
-      await loadExpensesList();
+      await refreshAfterAction(() => loadExpensesList({silent:true}));
     }catch(error){
       statusEl.textContent = error.message;
     }finally{
@@ -25813,7 +25814,7 @@ function renderHomeTasks(){
       });
       showPurchaseToast('Conta marcada como paga.');
       if(expenseDetailCurrentExpense) await openExpenseDetailDialog(expenseDetailCurrentExpense.id);
-      await loadExpensesList();
+      await refreshAfterAction(() => loadExpensesList({silent:true}));
     }catch(error){
       showPurchaseToast(error.message, 'error');
       button.disabled = false;
@@ -26618,9 +26619,9 @@ function renderHomeTasks(){
     '</tr>';
   }
 
-  async function loadInvoicesList(){
+  async function loadInvoicesList(opts){
     const tbody = el('invoicesBody');
-    if(tbody) tbody.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando notas fiscais…</td></tr>';
+    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando notas fiscais…</td></tr>';
     const params = new URLSearchParams();
     const companyId = el('invoicesLoja') ? el('invoicesLoja').value : '';
     if(companyId) params.set('companyId', companyId);
@@ -26802,7 +26803,7 @@ function renderHomeTasks(){
       });
       showPurchaseToast('NF conferida.');
       await openInvoiceDetailDialog(invoiceCurrentDetailId);
-      await loadInvoicesList();
+      await refreshAfterAction(() => loadInvoicesList({silent:true}));
     }catch(error){ showPurchaseToast(error.message,'error'); }
   }
 
@@ -26815,7 +26816,7 @@ function renderHomeTasks(){
       });
       showPurchaseToast('NF cancelada.');
       await openInvoiceDetailDialog(invoiceCurrentDetailId);
-      await loadInvoicesList();
+      await refreshAfterAction(() => loadInvoicesList({silent:true}));
     }catch(error){ showPurchaseToast(error.message,'error'); }
   }
 
@@ -26909,7 +26910,7 @@ function renderHomeTasks(){
       if(purchaseOrderId && comprasCurrentOrderId === purchaseOrderId){
         await openComprasOrderDetail(purchaseOrderId);
       }else{
-        await loadInvoicesList();
+        await refreshAfterAction(() => loadInvoicesList({silent:true}));
       }
     }catch(error){
       el('invoiceFormStatus').textContent = error.message;
@@ -26952,7 +26953,7 @@ function renderHomeTasks(){
       el('invoiceInstallmentForm').reset();
       updateInvoiceInstallmentModeFields();
       await openInvoiceDetailDialog(invoiceCurrentDetailId);
-      await loadInvoicesList();
+      await refreshAfterAction(() => loadInvoicesList({silent:true}));
     }catch(error){
       el('invoiceInstallmentFormStatus').textContent = error.message;
     }finally{
@@ -27003,7 +27004,7 @@ function renderHomeTasks(){
         await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments/'+encodeURIComponent(deleteButton.dataset.installmentDelete), {method:'DELETE'});
         showPurchaseToast('Duplicata excluída.');
         await openInvoiceDetailDialog(invoiceCurrentDetailId);
-        await loadInvoicesList();
+        await refreshAfterAction(() => loadInvoicesList({silent:true}));
       }catch(error){ showPurchaseToast(error.message,'error'); }
     }
   });
@@ -27037,7 +27038,7 @@ function renderHomeTasks(){
       el('invoicePaymentDialog').close();
       showPurchaseToast('Pagamento registrado.');
       await openInvoiceDetailDialog(invoiceCurrentDetailId);
-      await loadInvoicesList();
+      await refreshAfterAction(() => loadInvoicesList({silent:true}));
     }catch(error){
       el('invoicePaymentFormStatus').textContent = error.message;
     }finally{
@@ -27056,7 +27057,7 @@ function renderHomeTasks(){
       });
       showPurchaseToast('NF devolvida para Compras.');
       closeInvoiceDetailDialog();
-      await loadInvoicesList();
+      await refreshAfterAction(() => loadInvoicesList({silent:true}));
     }catch(error){
       showPurchaseToast(error.message,'error');
     }finally{
@@ -27698,10 +27699,10 @@ function renderHomeTasks(){
     })));
   }
 
-  async function loadRhFuncionarios(){
+  async function loadRhFuncionarios(opts){
     if(!canAccess('payroll')) return;
     const body = el('rhEmployeesTableBody');
-    if(body) body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando funcionários…</td></tr>';
+    if(body && (!opts || !opts.silent)) body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando funcionários…</td></tr>';
     try{
       await rhEnsureBaseData(true);
       if(canManageUsers() && !managedUsers.length) await loadAdminUsers();
@@ -27759,7 +27760,7 @@ function renderHomeTasks(){
       if(!confirm('Excluir este funcionário?')) return;
       try{
         await rhApiRequest('/employees?id='+encodeURIComponent(deleteButton.dataset.rhEmployeeDelete), {method:'DELETE'});
-        await loadRhFuncionarios();
+        await refreshAfterAction(() => loadRhFuncionarios({silent:true}));
         showPurchaseToast('Funcionário excluído.');
       }catch(error){
         showPurchaseToast(error.message,'error');
@@ -27794,7 +27795,7 @@ function renderHomeTasks(){
     try{
       await rhApiRequest('/employees', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       closeRhEmployeeDialog();
-      await loadRhFuncionarios();
+      await refreshAfterAction(() => loadRhFuncionarios({silent:true}));
       showPurchaseToast('Funcionário salvo.');
     }catch(error){
       status.textContent = error.message;
@@ -27904,7 +27905,7 @@ function renderHomeTasks(){
       await rhApiRequest('/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ employerChargesBps: Math.round(pct * 100), commissionRuleText: el('rhComissaoRegraTexto') ? el('rhComissaoRegraTexto').value : '' })});
       el('rhFolhaParametrosDialog').close();
       showPurchaseToast('Parâmetros salvos.');
-      await loadRhFolha();
+      await refreshAfterAction(() => loadRhFolha({silent:true}));
     }catch(error){
       status.textContent = error.message;
     }
@@ -28049,7 +28050,7 @@ function renderHomeTasks(){
     }
   });
 
-  async function loadRhFolha(){
+  async function loadRhFolha(opts){
     if(!canAccess('payroll')) return;
     try{
       await rhEnsureBaseData(false);
@@ -28060,7 +28061,7 @@ function renderHomeTasks(){
     if(!el('rhFolhaMes').value) el('rhFolhaMes').value = financeCurrentMonthKey();
     const month = el('rhFolhaMes').value;
     const companyId = el('rhFolhaLoja').value;
-    el('rhFolhaTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    if(!opts || !opts.silent) el('rhFolhaTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
     try{
       const params = new URLSearchParams({month});
       if(companyId) params.set('companyId', companyId);
@@ -28152,7 +28153,7 @@ function renderHomeTasks(){
     try{
       await rhApiRequest('/entries', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       closeRhFolhaDialog();
-      await loadRhFolha();
+      await refreshAfterAction(() => loadRhFolha({silent:true}));
       showPurchaseToast('Folha salva.');
     }catch(error){
       status.textContent = error.message;
@@ -28186,7 +28187,7 @@ function renderHomeTasks(){
         body:JSON.stringify({action:'mark_paid', id:el('rhFolhaPagamentoEntryId').value, paymentDone:true, paymentDate:el('rhFolhaPagamentoData').value})
       });
       closeRhFolhaPagamentoDialog();
-      await loadRhFolha();
+      await refreshAfterAction(() => loadRhFolha({silent:true}));
       showPurchaseToast('Pagamento registrado.');
     }catch(error){
       status.textContent = error.message;
@@ -28254,7 +28255,7 @@ function renderHomeTasks(){
     try{
       await uploadRhFolhaAttachment(entryId, file);
       showPurchaseToast('Comprovante anexado.');
-      await loadRhFolha();
+      await refreshAfterAction(() => loadRhFolha({silent:true}));
     }catch(error){
       showPurchaseToast(error.message,'error');
     }finally{
@@ -28285,7 +28286,7 @@ function renderHomeTasks(){
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({action:'mark_paid', id:unpayButton.dataset.rhFolhaUnpay, paymentDone:false})
         });
-        await loadRhFolha();
+        await refreshAfterAction(() => loadRhFolha({silent:true}));
         showPurchaseToast('Pagamento desfeito.');
       }catch(error){
         showPurchaseToast(error.message,'error');
@@ -28304,7 +28305,7 @@ function renderHomeTasks(){
       if(!confirm('Remover o comprovante anexado?')) return;
       try{
         await rhApiRequest('/attachment?id='+encodeURIComponent(removeButton.dataset.rhFolhaAttachRemove), {method:'DELETE'});
-        await loadRhFolha();
+        await refreshAfterAction(() => loadRhFolha({silent:true}));
         showPurchaseToast('Comprovante removido.');
       }catch(error){
         showPurchaseToast(error.message,'error');
@@ -28316,7 +28317,7 @@ function renderHomeTasks(){
       if(!confirm('Excluir o lançamento de folha deste funcionário?')) return;
       try{
         await rhApiRequest('/entries?id='+encodeURIComponent(deleteButton.dataset.rhFolhaDelete), {method:'DELETE'});
-        await loadRhFolha();
+        await refreshAfterAction(() => loadRhFolha({silent:true}));
         showPurchaseToast('Lançamento excluído.');
       }catch(error){
         showPurchaseToast(error.message,'error');
