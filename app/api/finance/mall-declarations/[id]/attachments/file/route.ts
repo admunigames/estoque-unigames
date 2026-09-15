@@ -1,12 +1,12 @@
 import { getD1 } from "../../../../../../../db";
 import { unauthorizedResponse } from "../../../../../../lib/notion";
-import { contentDisposition, documentsBucket } from "../../../../../documents/shared";
+import { DEFAULT_ATTACHMENT_CONTENT_TYPE, contentDisposition, documentsBucket } from "../../../../../documents/shared";
 import { canManageFinance, identity, safeText } from "../../../../shared";
 
-// Abre/baixa um anexo PDF de uma declaração de shopping. Resposta binária
+// Abre/baixa um anexo de uma declaração de shopping. Resposta binária
 // com content-security-policy: sandbox, igual às demais rotas de arquivo.
 
-type FileRow = { fileName: string; r2Key: string };
+type FileRow = { fileName: string; r2Key: string; contentType: string };
 
 function fileError(message: string, status: number) {
   return new Response(message, {
@@ -29,7 +29,7 @@ async function serve(request: Request, head = false) {
     const database = await getD1();
     const row = await database
       .prepare(
-        "SELECT file_name AS fileName, r2_key AS r2Key FROM finance_mall_declaration_attachments WHERE id=?1 LIMIT 1",
+        "SELECT file_name AS fileName, r2_key AS r2Key, content_type AS contentType FROM finance_mall_declaration_attachments WHERE id=?1 LIMIT 1",
       )
       .bind(attachmentId)
       .first<FileRow>();
@@ -37,12 +37,12 @@ async function serve(request: Request, head = false) {
 
     const bucket = await documentsBucket();
     const object = head ? await bucket.head(row.r2Key) : await bucket.get(row.r2Key);
-    if (!object) return fileError("ARQUIVO PDF NÃO ENCONTRADO.", 404);
+    if (!object) return fileError("ARQUIVO NÃO ENCONTRADO.", 404);
 
     const headers = new Headers({
-      "content-type": "application/pdf",
+      "content-type": row.contentType || DEFAULT_ATTACHMENT_CONTENT_TYPE,
       "content-disposition": contentDisposition(
-        row.fileName || "documento.pdf",
+        row.fileName || "arquivo",
         url.searchParams.get("download") === "1",
       ),
       "content-length": String(object.size),

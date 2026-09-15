@@ -1,7 +1,7 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { hasCompany } from "../../../lib/access-scope";
-import { contentDisposition, documentsBucket } from "../../documents/shared";
+import { DEFAULT_ATTACHMENT_CONTENT_TYPE, contentDisposition, documentsBucket } from "../../documents/shared";
 
 type Identity = {
   role: "admin" | "user";
@@ -81,10 +81,10 @@ async function osNoteFile(request: Request, head = false) {
 
     const bucket = await documentsBucket();
     const object = head ? await bucket.head(row.r2Key) : await bucket.get(row.r2Key);
-    if (!object) return fileError("ARQUIVO PDF NÃO ENCONTRADO.", 404);
+    if (!object) return fileError("ARQUIVO NÃO ENCONTRADO.", 404);
 
     const headers = new Headers({
-      "content-type": "application/pdf",
+      "content-type": object.httpMetadata?.contentType || DEFAULT_ATTACHMENT_CONTENT_TYPE,
       "content-disposition": contentDisposition(row.fileName, url.searchParams.get("download") === "1"),
       "content-length": String(object.size),
       "cache-control": "private, no-store",

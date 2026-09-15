@@ -1,11 +1,11 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { contentDisposition, documentsBucket } from "../../documents/shared";
+import { DEFAULT_ATTACHMENT_CONTENT_TYPE, contentDisposition, documentsBucket } from "../../documents/shared";
 import { UUID_PATTERN, canManageWorks, identity, safeText } from "../shared";
 
-// Abre/baixa o anexo (nota/orçamento em PDF) de um lançamento de obra.
-// Mesmo formato binário das Notas de O.S. (content-security-policy:
-// sandbox), gateado por works:manage / finance:manage.
+// Abre/baixa o anexo (nota/orçamento) de um lançamento de obra. Mesmo
+// formato binário das Notas de O.S. (content-security-policy: sandbox),
+// gateado por works:manage / finance:manage.
 
 type FileRow = { attachmentFileName: string; attachmentR2Key: string };
 
@@ -40,12 +40,12 @@ async function obraFile(request: Request, head = false) {
 
     const bucket = await documentsBucket();
     const object = head ? await bucket.head(row.attachmentR2Key) : await bucket.get(row.attachmentR2Key);
-    if (!object) return fileError("ARQUIVO PDF NÃO ENCONTRADO.", 404);
+    if (!object) return fileError("ARQUIVO NÃO ENCONTRADO.", 404);
 
     const headers = new Headers({
-      "content-type": "application/pdf",
+      "content-type": object.httpMetadata?.contentType || DEFAULT_ATTACHMENT_CONTENT_TYPE,
       "content-disposition": contentDisposition(
-        row.attachmentFileName || "anexo-obra.pdf",
+        row.attachmentFileName || "anexo-obra",
         url.searchParams.get("download") === "1",
       ),
       "content-length": String(object.size),
