@@ -50,6 +50,7 @@ type Permission =
   | "finance:manage"
   | "payroll:manage"
   | "rh_acompanhamento:view" | "rh_acompanhamento:manage"
+  | "rh_ponto_logistica:view" | "rh_ponto_logistica:manage"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -131,6 +132,10 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // loja) — permissão própria, independente de payroll:manage (ver
   // MODULE_VIEW_PERMISSIONS.storeTracking).
   "rh_acompanhamento:view", "rh_acompanhamento:manage",
+  // RH > Controle de Horas - Logística — permissão própria, independente
+  // de payroll:manage e de rh_acompanhamento:* (ver
+  // MODULE_VIEW_PERMISSIONS.timeTracking).
+  "rh_ponto_logistica:view", "rh_ponto_logistica:manage",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -241,6 +246,7 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/beneficios",
   "/rh/comissionamento",
   "/rh/acompanhamento-lojas",
+  "/rh/controle-horas-logistica",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
@@ -1092,6 +1098,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   ],
   payroll: ["payroll:manage"],
   storeTracking: ["rh_acompanhamento:view", "rh_acompanhamento:manage"],
+  timeTracking: ["rh_ponto_logistica:view", "rh_ponto_logistica:manage"],
   works: ["works:manage", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
@@ -1202,6 +1209,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/rh/acompanhamento-lojas" || path.startsWith("/api/hr-store-tracking"),
       "storeTracking",
+    ],
+    // RH > Controle de Horas - Logística — permissão própria
+    // (rh_ponto_logistica:*), independente do payroll acima.
+    [
+      path === "/rh/controle-horas-logistica" || path.startsWith("/api/hr-time-tracking"),
+      "timeTracking",
     ],
   ];
   const direct = directPermissions.find(([matches]) => matches);

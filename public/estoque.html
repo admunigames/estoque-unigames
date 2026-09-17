@@ -2956,7 +2956,7 @@
         <a class="nav-item sub-item" id="navFinanceiroRhAcompanhamentoLojas" data-page="rhAcompanhamentoLojas" data-permission="rh_acompanhamento" title="Acompanhamento - Lojas" href="/rh/acompanhamento-lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M6 19V10l5-3 5 3v9"/><path d="M10 19v-5h4v5"/></svg></span><span class="nav-label">Acompanhamento - Lojas</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="hr,rh_acompanhamento">
+    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -2968,6 +2968,7 @@
         <a class="nav-item sub-item" id="navRhBeneficios" data-page="rhBeneficios" data-permission="payroll" data-home-desc="Vales, premiações e demais benefícios pagos por competência." title="Benefícios" href="/rh/beneficios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11" rx="1.8"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11"/><path d="M12 8.5c-2.5 0-4-1-4-2.3S9.5 4 12 8.5Zm0 0c2.5 0 4-1 4-2.3S14.5 4 12 8.5Z"/></svg></span><span class="nav-label">Benefícios</span></a>
         <a class="nav-item sub-item" id="navRhComissionamento" data-page="rhComissionamento" data-permission="payroll" data-home-desc="Comissão, bônus, premiações e recibo detalhado por funcionário." title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
         <a class="nav-item sub-item" id="navRhAcompanhamentoLojas" data-page="rhAcompanhamentoLojas" data-permission="rh_acompanhamento" data-home-desc="PDI de líderes e acompanhamento semanal por loja." title="Acompanhamento - Lojas" href="/rh/acompanhamento-lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M6 19V10l5-3 5 3v9"/><path d="M10 19v-5h4v5"/></svg></span><span class="nav-label">Acompanhamento - Lojas</span></a>
+        <a class="nav-item sub-item" id="navRhControleHoras" data-page="rhControleHoras" data-permission="rh_ponto_logistica" data-home-desc="Registro manual do ponto da logística, horas extras e banco de horas." title="Controle de Horas - Logística" href="/rh/controle-horas-logistica"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="nav-label">Controle de Horas - Logística</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="database">
@@ -5084,6 +5085,13 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>RH - Controle de Horas - Logística</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:view"> Ver registros de ponto, horas extras e banco de horas</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:manage"> Lançar ponto, configurar jornada e registrar horas pagas</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -5355,6 +5363,62 @@
         </div>
       </div>
       <input type="file" id="rhStoreTrackAttachInput" hidden accept="application/pdf,image/*">
+    </section>
+
+    <!-- ================= RH / CONTROLE DE HORAS - LOGÍSTICA ================= -->
+    <section id="pageRhControleHoras" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Controle de Horas - Logística</h2>
+        </div>
+      </header>
+
+      <div class="dre-toolbar no-print">
+        <div class="field">
+          <label for="rhTimeTrackEmployeeSelect">Colaborador</label>
+          <select id="rhTimeTrackEmployeeSelect"><option value="">SELECIONE</option></select>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnRhTimeTrackSettings" type="button" hidden>JORNADA POR COLABORADOR</button>
+        </div>
+      </div>
+
+      <div class="output-tabs no-print" role="tablist" aria-label="Aba do controle de horas" id="rhTimeTrackTabs">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rh-time-track-tab="entries">REGISTRO DE PONTO</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-time-track-tab="balance">SALDO</button>
+      </div>
+
+      <div id="rhTimeTrackEntriesPanel">
+        <div class="dre-toolbar no-print">
+          <div class="field">
+            <label for="rhTimeTrackMonth">Mês</label>
+            <input type="month" id="rhTimeTrackMonth">
+          </div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnNewRhTimeTrackEntry" type="button" hidden>NOVO REGISTRO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhTimeTrackEntriesTable">
+              <thead><tr><th>Data</th><th>Marcações</th><th>Horas trabalhadas</th><th>Jornada</th><th>Saldo do dia</th><th></th></tr></thead>
+              <tbody id="rhTimeTrackEntriesTableBody"><tr><td colspan="6" class="responsive-empty">Selecione um colaborador.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="rhTimeTrackBalancePanel" hidden>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhTimeTrackBalanceTable">
+              <thead><tr><th>Mês</th><th>Horas trabalhadas</th><th>Jornada esperada</th><th>Horas extras no mês</th><th>Horas pagas</th><th>Saldo restante</th></tr></thead>
+              <tbody id="rhTimeTrackBalanceTableBody"><tr><td colspan="6" class="responsive-empty">Selecione um colaborador.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ================= FINANCEIRO / DRE POR LOJA ================= -->
@@ -7477,6 +7541,49 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="rhTimeTrackEntryDialog" aria-labelledby="rhTimeTrackEntryDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhTimeTrackEntryDialogTitle">NOVO REGISTRO DE PONTO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhTimeTrackEntryDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhTimeTrackEntryForm">
+    <input type="hidden" id="rhTimeTrackEntryId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhTimeTrackEntryData">DATA *</label><input type="date" id="rhTimeTrackEntryData" required></div>
+      <div class="purchase-field full">
+        <label>MARCAÇÕES (ENTRADA/SAÍDA, NA ORDEM) *</label>
+        <div id="rhTimeTrackPunchesList"></div>
+        <button class="btn-outline" id="btnAddRhTimeTrackPunch" type="button">+ ADICIONAR MARCAÇÃO</button>
+      </div>
+      <div class="purchase-field full"><label for="rhTimeTrackEntryNotes">OBSERVAÇÕES</label><textarea id="rhTimeTrackEntryNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="rhTimeTrackEntryFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhTimeTrackEntryDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhTimeTrackEntry" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhTimeTrackSettingsDialog" aria-labelledby="rhTimeTrackSettingsDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhTimeTrackSettingsDialogTitle">JORNADA CONTRATADA POR COLABORADOR</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhTimeTrackSettingsDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhTimeTrackSettingsForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhTimeTrackSettingsEmployee">COLABORADOR *</label><select id="rhTimeTrackSettingsEmployee" required></select></div>
+      <div class="purchase-field"><label for="rhTimeTrackSettingsHours">JORNADA DIÁRIA (HORAS) *</label><input type="number" id="rhTimeTrackSettingsHours" min="0" max="24" step="0.25" required></div>
+      <div class="purchase-field full"><label for="rhTimeTrackSettingsNotes">OBSERVAÇÕES</label><textarea id="rhTimeTrackSettingsNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="rhTimeTrackSettingsFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhTimeTrackSettingsDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhTimeTrackSettings" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="payableDialog" aria-labelledby="payableDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="payableDialogTitle">NOVA CONTA A PAGAR</h3>
@@ -8890,6 +8997,7 @@
     rhBeneficios:'/rh/beneficios',
     rhComissionamento:'/rh/comissionamento',
     rhAcompanhamentoLojas:'/rh/acompanhamento-lojas',
+    rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
     financeiroPayables:'/financeiro/contas-a-pagar',
@@ -8936,6 +9044,7 @@
     rhBeneficios:'BENEFÍCIOS',
     rhComissionamento:'COMISSIONAMENTO',
     rhAcompanhamentoLojas:'ACOMPANHAMENTO - LOJAS',
+    rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
     financeiroPayables:'CONTAS A PAGAR',
@@ -8979,6 +9088,7 @@
     rhBeneficios:'payroll',
     rhComissionamento:'payroll',
     rhAcompanhamentoLojas:'rh_acompanhamento',
+    rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
     financeiroPayables:'finance',
@@ -9604,6 +9714,7 @@
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
+    if(name === 'rhControleHoras') loadRhControleHoras();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -9649,6 +9760,7 @@
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
+    if(name === 'rhControleHoras') loadRhControleHoras();
   }
 
   function isPlainClick(event){
@@ -27664,6 +27776,7 @@ function renderHomeTasks(){
     'payables:invoices_view':'Financeiro: ver notas fiscais/duplicatas','payables:invoices_reconcile':'Financeiro: conferir NF e cadastrar duplicatas','payables:confirm_payment':'Financeiro: agendar/confirmar pagamento de duplicata','payables:return_to_purchases':'Financeiro: devolver NF para Compras',
     'payroll:manage':'RH Financeiro: folha, benefícios e comissionamento',
     'rh_acompanhamento:view':'RH - Acompanhamento de Lojas: visualizar','rh_acompanhamento:manage':'RH - Acompanhamento de Lojas: cadastrar/editar/excluir',
+    'rh_ponto_logistica:view':'RH - Controle de Horas - Logística: visualizar','rh_ponto_logistica:manage':'RH - Controle de Horas - Logística: lançar/configurar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
@@ -30000,6 +30113,351 @@ function renderHomeTasks(){
       }catch(error){
         showPurchaseToast(error.message,'error');
       }
+    }
+  });
+
+  // ================= RH / CONTROLE DE HORAS - LOGÍSTICA =================
+  // Lançamento manual do ponto de papel (transcrição, não integração com
+  // relógio de ponto). Marcações e jornada contratada VARIAM por
+  // colaborador/dia — sem campos fixos de entrada/almoço/retorno/saída.
+  // Permissão própria (rh_ponto_logistica:view/:manage), independente de
+  // "payroll" e de "hr" — por isso usa seu próprio endpoint de
+  // colaboradores em vez de rhEmployees (carregado só com payroll).
+  let rhTimeTrackEmployees = [];
+  let rhTimeTrackTab = 'entries'; // 'entries' | 'balance'
+  let rhTimeTrackEntries = [];
+  let rhTimeTrackBalanceMonths = [];
+
+  function rhTimeTrackCanManage(){
+    return canAccess('rh_ponto_logistica:manage');
+  }
+
+  async function rhTimeTrackApiRequest(path, options){
+    const response = await fetch('/api/hr-time-tracking'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function rhTimeTrackFormatMinutes(totalMinutes){
+    const value = Number(totalMinutes) || 0;
+    const sign = value < 0 ? '-' : '';
+    const absolute = Math.abs(value);
+    const hours = Math.floor(absolute / 60);
+    const minutes = absolute % 60;
+    return sign+hours+'h'+String(minutes).padStart(2,'0');
+  }
+
+  function rhTimeTrackEmployeeOptions(){
+    return rhTimeTrackEmployees.map(employee => ({
+      value: employee.id,
+      label: employee.fullName + (employee.companyName ? ' — '+employee.companyName : '')
+    }));
+  }
+
+  async function loadRhTimeTrackEmployees(){
+    if(rhTimeTrackEmployees.length) return;
+    try{
+      const data = await rhTimeTrackApiRequest('/employees');
+      rhTimeTrackEmployees = Array.isArray(data.employees) ? data.employees : [];
+    }catch(error){
+      rhTimeTrackEmployees = [];
+    }
+    rhFillSelect('rhTimeTrackEmployeeSelect', 'SELECIONE', rhTimeTrackEmployeeOptions());
+  }
+
+  function renderRhTimeTrackTabs(){
+    const tabs = el('rhTimeTrackTabs');
+    if(!tabs) return;
+    tabs.querySelectorAll('[data-rh-time-track-tab]').forEach(button => {
+      const active = button.dataset.rhTimeTrackTab === rhTimeTrackTab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    el('rhTimeTrackEntriesPanel').hidden = rhTimeTrackTab !== 'entries';
+    el('rhTimeTrackBalancePanel').hidden = rhTimeTrackTab !== 'balance';
+  }
+
+  if(el('rhTimeTrackTabs')) el('rhTimeTrackTabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-time-track-tab]');
+    if(!button) return;
+    rhTimeTrackTab = button.dataset.rhTimeTrackTab;
+    renderRhTimeTrackTabs();
+    rhTimeTrackReloadActiveTab();
+  });
+
+  function renderRhTimeTrackEntriesTable(){
+    const body = el('rhTimeTrackEntriesTableBody');
+    if(!body) return;
+    const manage = rhTimeTrackCanManage();
+    if(!rhTimeTrackEntries.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum registro neste período.</td></tr>';
+      return;
+    }
+    body.innerHTML = rhTimeTrackEntries.map(row =>
+      '<tr>'+
+      '<td>'+rhFormatDate(row.entryDate)+'</td>'+
+      '<td>'+escapeHtml((row.punches || '').split(',').filter(Boolean).join(' / '))+'</td>'+
+      '<td>'+rhTimeTrackFormatMinutes(row.workedMinutes)+'</td>'+
+      '<td>'+rhTimeTrackFormatMinutes(row.targetMinutes)+'</td>'+
+      '<td>'+rhTimeTrackFormatMinutes(row.balanceMinutes)+'</td>'+
+      '<td>'+(manage ?
+        '<button class="btn-outline" type="button" data-rh-time-track-entry-edit="'+row.id+'">EDITAR</button> '+
+        '<button class="btn-outline" type="button" data-rh-time-track-entry-delete="'+row.id+'">EXCLUIR</button>'
+        : '')+'</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  function renderRhTimeTrackBalanceTable(){
+    const body = el('rhTimeTrackBalanceTableBody');
+    if(!body) return;
+    const manage = rhTimeTrackCanManage();
+    if(!rhTimeTrackBalanceMonths.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum lançamento para este colaborador.</td></tr>';
+      return;
+    }
+    body.innerHTML = rhTimeTrackBalanceMonths.slice().reverse().map(month =>
+      '<tr>'+
+      '<td>'+rhFormatMonth(month.yearMonth)+'</td>'+
+      '<td>'+rhTimeTrackFormatMinutes(month.workedMinutes)+'</td>'+
+      '<td>'+rhTimeTrackFormatMinutes(month.targetMinutes)+'</td>'+
+      '<td>'+rhTimeTrackFormatMinutes(month.overtimeMinutes)+'</td>'+
+      '<td>'+rhTimeTrackFormatMinutes(month.paidMinutes)+
+        (manage ? ' <button class="btn-outline" type="button" data-rh-time-track-payout="'+month.yearMonth+'">EDITAR</button>' : '')+
+      '</td>'+
+      '<td>'+rhTimeTrackFormatMinutes(month.cumulativeBalanceMinutes)+'</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  async function loadRhTimeTrackEntries(){
+    const employeeId = el('rhTimeTrackEmployeeSelect').value;
+    const body = el('rhTimeTrackEntriesTableBody');
+    if(!employeeId){
+      rhTimeTrackEntries = [];
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Selecione um colaborador.</td></tr>';
+      return;
+    }
+    body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const month = el('rhTimeTrackMonth').value;
+      const query = '?employeeId='+encodeURIComponent(employeeId)+(month ? '&month='+encodeURIComponent(month) : '');
+      const data = await rhTimeTrackApiRequest('/entries'+query);
+      rhTimeTrackEntries = Array.isArray(data.entries) ? data.entries : [];
+      renderRhTimeTrackEntriesTable();
+    }catch(error){
+      rhTimeTrackEntries = [];
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  async function loadRhTimeTrackBalance(){
+    const employeeId = el('rhTimeTrackEmployeeSelect').value;
+    const body = el('rhTimeTrackBalanceTableBody');
+    if(!employeeId){
+      rhTimeTrackBalanceMonths = [];
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Selecione um colaborador.</td></tr>';
+      return;
+    }
+    body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await rhTimeTrackApiRequest('/balance?employeeId='+encodeURIComponent(employeeId));
+      rhTimeTrackBalanceMonths = Array.isArray(data.months) ? data.months : [];
+      renderRhTimeTrackBalanceTable();
+    }catch(error){
+      rhTimeTrackBalanceMonths = [];
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function rhTimeTrackReloadActiveTab(){
+    if(rhTimeTrackTab === 'entries') loadRhTimeTrackEntries();
+    else loadRhTimeTrackBalance();
+  }
+
+  if(el('rhTimeTrackEmployeeSelect')) el('rhTimeTrackEmployeeSelect').addEventListener('change', () => rhTimeTrackReloadActiveTab());
+  if(el('rhTimeTrackMonth')) el('rhTimeTrackMonth').addEventListener('change', () => { if(rhTimeTrackTab === 'entries') loadRhTimeTrackEntries(); });
+
+  async function loadRhControleHoras(){
+    if(!canAccess('rh_ponto_logistica')) return;
+    await loadRhTimeTrackEmployees();
+    if(el('btnRhTimeTrackSettings')) el('btnRhTimeTrackSettings').hidden = !rhTimeTrackCanManage();
+    if(el('btnNewRhTimeTrackEntry')) el('btnNewRhTimeTrackEntry').hidden = !rhTimeTrackCanManage();
+    if(el('rhTimeTrackMonth') && !el('rhTimeTrackMonth').value){
+      const now = new Date();
+      el('rhTimeTrackMonth').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    }
+    renderRhTimeTrackTabs();
+    rhTimeTrackReloadActiveTab();
+  }
+
+  // --- Diálogo de lançamento de ponto (marcações dinâmicas) ---
+
+  function rhTimeTrackAddPunchRow(value){
+    const list = el('rhTimeTrackPunchesList');
+    if(!list) return;
+    const row = document.createElement('div');
+    row.className = 'rh-time-track-punch-row';
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.alignItems = 'center';
+    row.style.marginBottom = '6px';
+    row.innerHTML = '<input type="time" class="rh-time-track-punch-input" value="'+escapeHtml(value || '')+'">'+
+      '<button class="btn-outline" type="button" data-rh-time-track-punch-remove>REMOVER</button>';
+    list.appendChild(row);
+  }
+
+  if(el('btnAddRhTimeTrackPunch')) el('btnAddRhTimeTrackPunch').addEventListener('click', () => rhTimeTrackAddPunchRow(''));
+
+  if(el('rhTimeTrackPunchesList')) el('rhTimeTrackPunchesList').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-time-track-punch-remove]');
+    if(!button) return;
+    button.closest('.rh-time-track-punch-row').remove();
+  });
+
+  function rhTimeTrackCollectPunches(){
+    return Array.from(el('rhTimeTrackPunchesList').querySelectorAll('.rh-time-track-punch-input'))
+      .map(input => input.value)
+      .filter(Boolean);
+  }
+
+  function openRhTimeTrackEntryDialog(row){
+    el('rhTimeTrackEntryForm').reset();
+    el('rhTimeTrackEntryId').value = row ? row.id : '';
+    el('rhTimeTrackEntryDialogTitle').textContent = row ? 'EDITAR REGISTRO DE PONTO' : 'NOVO REGISTRO DE PONTO';
+    el('rhTimeTrackEntryData').value = row ? row.entryDate : '';
+    el('rhTimeTrackEntryNotes').value = row ? (row.notes || '') : '';
+    el('rhTimeTrackPunchesList').innerHTML = '';
+    const punches = row ? (row.punches || '').split(',').filter(Boolean) : ['', '', '', ''];
+    (punches.length ? punches : ['', '', '', '']).forEach(value => rhTimeTrackAddPunchRow(value));
+    el('rhTimeTrackEntryFormStatus').textContent = '';
+    el('rhTimeTrackEntryDialog').showModal();
+  }
+
+  if(el('btnNewRhTimeTrackEntry')) el('btnNewRhTimeTrackEntry').addEventListener('click', () => {
+    if(!el('rhTimeTrackEmployeeSelect').value){
+      showPurchaseToast('SELECIONE UM COLABORADOR ANTES DE LANÇAR O PONTO.', 'error');
+      return;
+    }
+    openRhTimeTrackEntryDialog(null);
+  });
+  if(el('btnCloseRhTimeTrackEntryDialog')) el('btnCloseRhTimeTrackEntryDialog').addEventListener('click', () => el('rhTimeTrackEntryDialog').close());
+  if(el('btnCancelRhTimeTrackEntryDialog')) el('btnCancelRhTimeTrackEntryDialog').addEventListener('click', () => el('rhTimeTrackEntryDialog').close());
+
+  if(el('rhTimeTrackEntryForm')) el('rhTimeTrackEntryForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhTimeTrackEntryFormStatus');
+    status.textContent = '';
+    const employeeId = el('rhTimeTrackEmployeeSelect').value;
+    if(!employeeId){ status.textContent = 'SELECIONE UM COLABORADOR.'; return; }
+    const payload = {
+      id: el('rhTimeTrackEntryId').value,
+      employeeId,
+      entryDate: el('rhTimeTrackEntryData').value,
+      punches: rhTimeTrackCollectPunches().join(','),
+      notes: el('rhTimeTrackEntryNotes').value
+    };
+    try{
+      await rhTimeTrackApiRequest('/entries', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('rhTimeTrackEntryDialog').close();
+      await refreshAfterAction(() => loadRhTimeTrackEntries());
+      showPurchaseToast('Registro de ponto salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  if(el('rhTimeTrackEntriesTableBody')) el('rhTimeTrackEntriesTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rh-time-track-entry-edit]');
+    if(editButton){
+      const row = rhTimeTrackEntries.find(item => item.id === editButton.dataset.rhTimeTrackEntryEdit);
+      if(row) openRhTimeTrackEntryDialog(row);
+      return;
+    }
+    const deleteButton = event.target.closest('[data-rh-time-track-entry-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir este registro de ponto?')) return;
+      try{
+        await rhTimeTrackApiRequest('/entries?id='+encodeURIComponent(deleteButton.dataset.rhTimeTrackEntryDelete), {method:'DELETE'});
+        await loadRhTimeTrackEntries();
+        showPurchaseToast('Registro excluído.');
+      }catch(error){
+        showPurchaseToast(error.message, 'error');
+      }
+    }
+  });
+
+  // --- Diálogo de jornada contratada por colaborador ---
+
+  if(el('btnRhTimeTrackSettings')) el('btnRhTimeTrackSettings').addEventListener('click', () => {
+    el('rhTimeTrackSettingsForm').reset();
+    rhFillSelect('rhTimeTrackSettingsEmployee', 'SELECIONE', rhTimeTrackEmployeeOptions());
+    const employeeId = el('rhTimeTrackEmployeeSelect').value;
+    if(employeeId) el('rhTimeTrackSettingsEmployee').value = employeeId;
+    el('rhTimeTrackSettingsHours').value = '';
+    el('rhTimeTrackSettingsNotes').value = '';
+    el('rhTimeTrackSettingsFormStatus').textContent = '';
+    el('rhTimeTrackSettingsDialog').showModal();
+  });
+  if(el('btnCloseRhTimeTrackSettingsDialog')) el('btnCloseRhTimeTrackSettingsDialog').addEventListener('click', () => el('rhTimeTrackSettingsDialog').close());
+  if(el('btnCancelRhTimeTrackSettingsDialog')) el('btnCancelRhTimeTrackSettingsDialog').addEventListener('click', () => el('rhTimeTrackSettingsDialog').close());
+
+  if(el('rhTimeTrackSettingsForm')) el('rhTimeTrackSettingsForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhTimeTrackSettingsFormStatus');
+    status.textContent = '';
+    const employeeId = el('rhTimeTrackSettingsEmployee').value;
+    const hours = Number(el('rhTimeTrackSettingsHours').value);
+    if(!employeeId){ status.textContent = 'SELECIONE O COLABORADOR.'; return; }
+    if(!Number.isFinite(hours) || hours < 0){ status.textContent = 'INFORME UMA JORNADA VÁLIDA.'; return; }
+    const payload = {
+      employeeId,
+      dailyTargetMinutes: Math.round(hours * 60),
+      notes: el('rhTimeTrackSettingsNotes').value
+    };
+    try{
+      await rhTimeTrackApiRequest('/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('rhTimeTrackSettingsDialog').close();
+      showPurchaseToast('Jornada contratada salva.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  // --- Horas pagas (aba Saldo) ---
+
+  if(el('rhTimeTrackBalanceTableBody')) el('rhTimeTrackBalanceTableBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-rh-time-track-payout]');
+    if(!button) return;
+    const yearMonth = button.dataset.rhTimeTrackPayout;
+    const month = rhTimeTrackBalanceMonths.find(item => item.yearMonth === yearMonth);
+    const currentHours = month ? (month.paidMinutes / 60) : 0;
+    const input = prompt('Horas pagas em contracheque na competência '+rhFormatMonth(yearMonth)+':', String(currentHours));
+    if(input === null) return;
+    const hours = Number(input.replace(',', '.'));
+    if(!Number.isFinite(hours) || hours < 0){
+      showPurchaseToast('INFORME UM VALOR VÁLIDO DE HORAS.', 'error');
+      return;
+    }
+    try{
+      await rhTimeTrackApiRequest('/payouts', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({employeeId: el('rhTimeTrackEmployeeSelect').value, yearMonth, paidMinutes: Math.round(hours * 60)})
+      });
+      await loadRhTimeTrackBalance();
+      showPurchaseToast('Horas pagas atualizadas.');
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
     }
   });
 
