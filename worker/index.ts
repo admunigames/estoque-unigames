@@ -49,6 +49,7 @@ type Permission =
   | "os_notes:view" | "os_notes:create" | "os_notes:attach" | "os_notes:delete"
   | "finance:manage"
   | "payroll:manage"
+  | "rh_acompanhamento:view" | "rh_acompanhamento:manage"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -126,6 +127,10 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // independente de finance:manage, pra quem cuida do RH acessar só esses
   // três módulos, e quem cuida do Financeiro não ganhar o RH de brinde.
   "payroll:manage",
+  // RH > Acompanhamento - Lojas (PDI de líderes + acompanhamento semanal por
+  // loja) — permissão própria, independente de payroll:manage (ver
+  // MODULE_VIEW_PERMISSIONS.storeTracking).
+  "rh_acompanhamento:view", "rh_acompanhamento:manage",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -235,6 +240,7 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/folha",
   "/rh/beneficios",
   "/rh/comissionamento",
+  "/rh/acompanhamento-lojas",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
@@ -1085,6 +1091,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "payables:invoices_view", "payables:invoices_reconcile", "payables:confirm_payment", "payables:return_to_purchases",
   ],
   payroll: ["payroll:manage"],
+  storeTracking: ["rh_acompanhamento:view", "rh_acompanhamento:manage"],
   works: ["works:manage", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
@@ -1189,6 +1196,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
         path === "/rh/comissionamento" ||
         path.startsWith("/api/hr-payroll"),
       "payroll",
+    ],
+    // RH > Acompanhamento - Lojas — permissão própria (rh_acompanhamento:*),
+    // independente do payroll acima.
+    [
+      path === "/rh/acompanhamento-lojas" || path.startsWith("/api/hr-store-tracking"),
+      "storeTracking",
     ],
   ];
   const direct = directPermissions.find(([matches]) => matches);
