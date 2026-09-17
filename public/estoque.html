@@ -7584,6 +7584,25 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="rhTimeTrackPayoutDialog" aria-labelledby="rhTimeTrackPayoutDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhTimeTrackPayoutDialogTitle">HORAS PAGAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhTimeTrackPayoutDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhTimeTrackPayoutForm">
+    <input type="hidden" id="rhTimeTrackPayoutMonth">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label>COMPETÊNCIA</label><p id="rhTimeTrackPayoutMonthLabel"></p></div>
+      <div class="purchase-field"><label for="rhTimeTrackPayoutHours">HORAS PAGAS EM CONTRACHEQUE *</label><input type="number" id="rhTimeTrackPayoutHours" min="0" step="0.25" required></div>
+    </div>
+    <div class="user-form-status" id="rhTimeTrackPayoutFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhTimeTrackPayoutDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhTimeTrackPayout" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="payableDialog" aria-labelledby="payableDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="payableDialogTitle">NOVA CONTA A PAGAR</h3>
@@ -30435,29 +30454,49 @@ function renderHomeTasks(){
 
   // --- Horas pagas (aba Saldo) ---
 
-  if(el('rhTimeTrackBalanceTableBody')) el('rhTimeTrackBalanceTableBody').addEventListener('click', async event => {
+  function openRhTimeTrackPayoutDialog(yearMonth){
+    const month = rhTimeTrackBalanceMonths.find(item => item.yearMonth === yearMonth);
+    el('rhTimeTrackPayoutForm').reset();
+    el('rhTimeTrackPayoutMonth').value = yearMonth;
+    el('rhTimeTrackPayoutMonthLabel').textContent = rhFormatMonth(yearMonth);
+    el('rhTimeTrackPayoutHours').value = month ? String(month.paidMinutes / 60) : '0';
+    el('rhTimeTrackPayoutFormStatus').textContent = '';
+    el('rhTimeTrackPayoutDialog').showModal();
+  }
+
+  if(el('rhTimeTrackBalanceTableBody')) el('rhTimeTrackBalanceTableBody').addEventListener('click', event => {
     const button = event.target.closest('[data-rh-time-track-payout]');
     if(!button) return;
-    const yearMonth = button.dataset.rhTimeTrackPayout;
-    const month = rhTimeTrackBalanceMonths.find(item => item.yearMonth === yearMonth);
-    const currentHours = month ? (month.paidMinutes / 60) : 0;
-    const input = prompt('Horas pagas em contracheque na competência '+rhFormatMonth(yearMonth)+':', String(currentHours));
-    if(input === null) return;
-    const hours = Number(input.replace(',', '.'));
+    openRhTimeTrackPayoutDialog(button.dataset.rhTimeTrackPayout);
+  });
+
+  if(el('btnCloseRhTimeTrackPayoutDialog')) el('btnCloseRhTimeTrackPayoutDialog').addEventListener('click', () => el('rhTimeTrackPayoutDialog').close());
+  if(el('btnCancelRhTimeTrackPayoutDialog')) el('btnCancelRhTimeTrackPayoutDialog').addEventListener('click', () => el('rhTimeTrackPayoutDialog').close());
+
+  if(el('rhTimeTrackPayoutForm')) el('rhTimeTrackPayoutForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhTimeTrackPayoutFormStatus');
+    status.textContent = '';
+    const hours = Number(el('rhTimeTrackPayoutHours').value);
     if(!Number.isFinite(hours) || hours < 0){
-      showPurchaseToast('INFORME UM VALOR VÁLIDO DE HORAS.', 'error');
+      status.textContent = 'INFORME UM VALOR VÁLIDO DE HORAS.';
       return;
     }
     try{
       await rhTimeTrackApiRequest('/payouts', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({employeeId: el('rhTimeTrackEmployeeSelect').value, yearMonth, paidMinutes: Math.round(hours * 60)})
+        body:JSON.stringify({
+          employeeId: el('rhTimeTrackEmployeeSelect').value,
+          yearMonth: el('rhTimeTrackPayoutMonth').value,
+          paidMinutes: Math.round(hours * 60)
+        })
       });
+      el('rhTimeTrackPayoutDialog').close();
       await loadRhTimeTrackBalance();
       showPurchaseToast('Horas pagas atualizadas.');
     }catch(error){
-      showPurchaseToast(error.message, 'error');
+      status.textContent = error.message;
     }
   });
 
