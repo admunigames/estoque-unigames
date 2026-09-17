@@ -2740,6 +2740,85 @@ export const hrLeaderPdi = pgTable(
   ],
 );
 
+// RH > Controle de Horas - Logística — lançamento manual do ponto de papel
+// (transcrição, não integração com relógio de ponto), por colaborador e
+// dia. A jornada (quantidade de marcações) e a jornada contratada (meta de
+// hora extra) VARIAM por colaborador — ver hr_time_tracking_settings.
+// Permissão própria (rh_ponto_logistica:view/:manage), independente de
+// payroll/hr. Ver app/lib/hr-time-tracking.ts para as regras de cálculo.
+
+// Jornada diária contratada por colaborador — referência para calcular
+// hora extra. Uma linha por colaborador (histórico de mudança de jornada
+// não é necessário: o valor vigente no momento do lançamento é congelado
+// em hr_time_tracking_entries.target_minutes).
+export const hrTimeTrackingSettings = pgTable(
+  "hr_time_tracking_settings",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    dailyTargetMinutes: integer("daily_target_minutes").notNull().default(480),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [uniqueIndex("hr_time_tracking_settings_employee_idx").on(table.employeeId)],
+);
+
+// Lançamento diário do ponto de um colaborador. `punches` é uma lista de
+// horários "HH:MM" separados por vírgula, em ordem crescente, alternando
+// entrada/saída (2, 4, 6… marcações — nunca fixo). worked/target/balance
+// são calculados no backend ao salvar (ver computeDailyBalance).
+export const hrTimeTrackingEntries = pgTable(
+  "hr_time_tracking_entries",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    entryDate: text("entry_date").notNull(),
+    punches: text("punches").notNull().default(""),
+    workedMinutes: integer("worked_minutes").notNull().default(0),
+    targetMinutes: integer("target_minutes").notNull().default(0),
+    balanceMinutes: integer("balance_minutes").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_time_tracking_entries_employee_date_idx").on(table.employeeId, table.entryDate),
+    index("hr_time_tracking_entries_date_idx").on(table.entryDate),
+  ],
+);
+
+// Horas extras pagas em contracheque, por colaborador e competência —
+// lançamento manual (não vem da Folha) usado só para abater o banco de
+// horas na aba "Saldo".
+export const hrTimeTrackingPayouts = pgTable(
+  "hr_time_tracking_payouts",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    yearMonth: text("year_month").notNull(),
+    paidMinutes: integer("paid_minutes").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_time_tracking_payouts_employee_month_idx").on(table.employeeId, table.yearMonth),
+  ],
+);
+
 // Acompanhamento semanal da equipe de UMA loja — tabela única para todas as
 // lojas (a loja é sempre a aba em que o usuário está na tela, não um select
 // no formulário). "Retorno presencial" é só anotação manual de texto livre —
