@@ -2944,7 +2944,7 @@
     <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
          mesmas páginas do grupo RH (mesmo data-page), só que liberados por
          payroll — nenhum dado ou seção é duplicado. -->
-    <div class="nav-group" data-permission="payroll">
+    <div class="nav-group" data-any-permission="payroll,rh_acompanhamento">
       <button class="nav-group-toggle" id="navRhFinanceiroMenu" type="button" aria-expanded="false" aria-controls="navRhFinanceiroSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16.5 12.5h4"/><path d="M18.5 10.5v4"/></svg></span><span class="nav-label">RH Financeiro</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -2953,19 +2953,21 @@
         <a class="nav-item sub-item" id="navFinanceiroRhFolha" data-page="rhFolha" data-permission="payroll" title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRhBeneficios" data-page="rhBeneficios" data-permission="payroll" title="Benefícios" href="/rh/beneficios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11" rx="1.8"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11"/></svg></span><span class="nav-label">Benefícios</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRhComissionamento" data-page="rhComissionamento" data-permission="payroll" title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroRhAcompanhamentoLojas" data-page="rhAcompanhamentoLojas" data-permission="rh_acompanhamento" title="Acompanhamento - Lojas" href="/rh/acompanhamento-lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M6 19V10l5-3 5 3v9"/><path d="M10 19v-5h4v5"/></svg></span><span class="nav-label">Acompanhamento - Lojas</span></a>
       </div>
     </div>
-    <div class="nav-group" data-permission="hr">
+    <div class="nav-group" data-any-permission="hr,rh_acompanhamento">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navRhSubmenu" aria-hidden="true">
-        <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-home-desc="Solicitações e histórico de folgas da equipe." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
-        <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" data-home-desc="Montagem e consulta das escalas de trabalho da equipe." title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="nav-label">Escalas</span></a>
+        <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-permission="hr" data-home-desc="Solicitações e histórico de folgas da equipe." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
+        <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" data-permission="hr" data-home-desc="Montagem e consulta das escalas de trabalho da equipe." title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="nav-label">Escalas</span></a>
         <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
         <a class="nav-item sub-item" id="navRhFolha" data-page="rhFolha" data-permission="payroll" data-home-desc="Folha de pagamento mensal, com comissão e benefícios calculados na hora." title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
         <a class="nav-item sub-item" id="navRhBeneficios" data-page="rhBeneficios" data-permission="payroll" data-home-desc="Vales, premiações e demais benefícios pagos por competência." title="Benefícios" href="/rh/beneficios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11" rx="1.8"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11"/><path d="M12 8.5c-2.5 0-4-1-4-2.3S9.5 4 12 8.5Zm0 0c2.5 0 4-1 4-2.3S14.5 4 12 8.5Z"/></svg></span><span class="nav-label">Benefícios</span></a>
         <a class="nav-item sub-item" id="navRhComissionamento" data-page="rhComissionamento" data-permission="payroll" data-home-desc="Comissão, bônus, premiações e recibo detalhado por funcionário." title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
+        <a class="nav-item sub-item" id="navRhAcompanhamentoLojas" data-page="rhAcompanhamentoLojas" data-permission="rh_acompanhamento" data-home-desc="PDI de líderes e acompanhamento semanal por loja." title="Acompanhamento - Lojas" href="/rh/acompanhamento-lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M6 19V10l5-3 5 3v9"/><path d="M10 19v-5h4v5"/></svg></span><span class="nav-label">Acompanhamento - Lojas</span></a>
       </div>
     </div>
     <div class="nav-group" data-permission="database">
@@ -5075,6 +5077,13 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>RH - Acompanhamento de Lojas</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:view"> Ver PDI de líderes e acompanhamento por loja</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:manage"> Cadastrar, editar e excluir PDI de líderes e acompanhamento por loja</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -5301,6 +5310,51 @@
       <!-- Recibo individual: só aparece na impressão do "RECIBO" de um
            funcionário (body.rh-recibo-only esconde o resto da página). -->
       <div id="rhComissaoRecibo" hidden></div>
+    </section>
+
+    <!-- ================= RH / ACOMPANHAMENTO - LOJAS ================= -->
+    <section id="pageRhAcompanhamentoLojas" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Acompanhamento - Lojas</h2>
+        </div>
+      </header>
+
+      <div class="output-tabs no-print" role="tablist" aria-label="Aba do acompanhamento" id="rhStoreTrackTabs"></div>
+
+      <div id="rhStoreTrackPdiPanel">
+        <div class="dre-toolbar no-print">
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnNewRhLeaderPdi" type="button">NOVO PDI</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhLeaderPdiTable">
+              <thead><tr><th>Líder</th><th>Loja</th><th>Data do encontro</th><th>Ata assinada</th><th>Anexo</th><th></th></tr></thead>
+              <tbody id="rhLeaderPdiTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="rhStoreTrackStorePanel" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnNewRhStoreTrack" type="button">NOVO ACOMPANHAMENTO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhStoreTrackTable">
+              <thead><tr><th>Semana</th><th>Data do encontro</th><th>Ata assinada</th><th>Anexo</th><th></th></tr></thead>
+              <tbody id="rhStoreTrackTableBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="rhStoreTrackAttachInput" hidden accept="application/pdf,image/*">
     </section>
 
     <!-- ================= FINANCEIRO / DRE POR LOJA ================= -->
@@ -7370,6 +7424,59 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="rhLeaderPdiDialog" aria-labelledby="rhLeaderPdiDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhLeaderPdiDialogTitle">NOVO PDI</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhLeaderPdiDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhLeaderPdiForm">
+    <input type="hidden" id="rhLeaderPdiId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhLeaderPdiNome">NOME DO LÍDER *</label><input id="rhLeaderPdiNome" maxlength="160" required></div>
+      <div class="purchase-field"><label for="rhLeaderPdiLoja">LOJA *</label><select id="rhLeaderPdiLoja" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="rhLeaderPdiData">DATA DO ENCONTRO *</label><input type="date" id="rhLeaderPdiData" required></div>
+      <div class="purchase-field"><label for="rhLeaderPdiAtaAssinada">ATA DE PRESENÇA ASSINADA?</label><select id="rhLeaderPdiAtaAssinada"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field full"><label for="rhLeaderPdiLiderados">LIDERADOS (UM POR LINHA)</label><textarea id="rhLeaderPdiLiderados" rows="3" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhLeaderPdiPonto">PONTO ABORDADO</label><textarea id="rhLeaderPdiPonto" rows="2" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhLeaderPdiAtividade">ATIVIDADE SUGERIDA</label><textarea id="rhLeaderPdiAtividade" rows="2" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhLeaderPdiFeedback">FEEDBACK DA GESTÃO</label><textarea id="rhLeaderPdiFeedback" rows="2" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhLeaderPdiAnexo">ATA DE PRESENÇA (PDF OU IMAGEM)</label><input type="file" id="rhLeaderPdiAnexo" accept="application/pdf,image/*"></div>
+    </div>
+    <div class="user-form-status" id="rhLeaderPdiFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhLeaderPdiDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhLeaderPdi" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhStoreTrackDialog" aria-labelledby="rhStoreTrackDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhStoreTrackDialogTitle">NOVO ACOMPANHAMENTO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhStoreTrackDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhStoreTrackForm">
+    <input type="hidden" id="rhStoreTrackId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhStoreTrackSemana">SEMANA DO ACOMPANHAMENTO</label><input id="rhStoreTrackSemana" maxlength="80" placeholder="Ex: Semana 1"></div>
+      <div class="purchase-field"><label for="rhStoreTrackData">DATA DO ENCONTRO *</label><input type="date" id="rhStoreTrackData" required></div>
+      <div class="purchase-field"><label for="rhStoreTrackAtaAssinada">ATA DE PRESENÇA ASSINADA?</label><select id="rhStoreTrackAtaAssinada"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field full"><label for="rhStoreTrackEquipe">INTEGRANTES DA EQUIPE (UM POR LINHA)</label><textarea id="rhStoreTrackEquipe" rows="3" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhStoreTrackPonto">PONTO ABORDADO</label><textarea id="rhStoreTrackPonto" rows="2" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhStoreTrackAtividade">ATIVIDADE SUGERIDA</label><textarea id="rhStoreTrackAtividade" rows="2" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhStoreTrackFeedback">FEEDBACK DA DIREÇÃO</label><textarea id="rhStoreTrackFeedback" rows="2" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhStoreTrackRetornoPresencial">RETORNO PRESENCIAL (ANOTAÇÃO LIVRE)</label><textarea id="rhStoreTrackRetornoPresencial" rows="2" maxlength="2000"></textarea></div>
+      <div class="purchase-field full"><label for="rhStoreTrackRetornos">RETORNO DE CADA UM (UM POR LINHA, MESMA ORDEM DA EQUIPE)</label><textarea id="rhStoreTrackRetornos" rows="3" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhStoreTrackAnexo">ATA DE PRESENÇA (PDF OU IMAGEM)</label><input type="file" id="rhStoreTrackAnexo" accept="application/pdf,image/*"></div>
+    </div>
+    <div class="user-form-status" id="rhStoreTrackFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhStoreTrackDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhStoreTrack" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="payableDialog" aria-labelledby="payableDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="payableDialogTitle">NOVA CONTA A PAGAR</h3>
@@ -8782,6 +8889,7 @@
     rhFolha:'/rh/folha',
     rhBeneficios:'/rh/beneficios',
     rhComissionamento:'/rh/comissionamento',
+    rhAcompanhamentoLojas:'/rh/acompanhamento-lojas',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
     financeiroPayables:'/financeiro/contas-a-pagar',
@@ -8827,6 +8935,7 @@
     rhFolha:'FOLHA DE PAGAMENTO',
     rhBeneficios:'BENEFÍCIOS',
     rhComissionamento:'COMISSIONAMENTO',
+    rhAcompanhamentoLojas:'ACOMPANHAMENTO - LOJAS',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
     financeiroPayables:'CONTAS A PAGAR',
@@ -8869,6 +8978,7 @@
     rhFolha:'payroll',
     rhBeneficios:'payroll',
     rhComissionamento:'payroll',
+    rhAcompanhamentoLojas:'rh_acompanhamento',
     financeiroDashboard:'finance',
     financeiro:'finance',
     financeiroPayables:'finance',
@@ -9493,6 +9603,7 @@
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
+    if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -9537,6 +9648,7 @@
     if(name === 'rhFolha') loadRhFolha();
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
+    if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
   }
 
   function isPlainClick(event){
@@ -27551,6 +27663,7 @@ function renderHomeTasks(){
     'finance:manage':'Financeiro: acessar módulo',
     'payables:invoices_view':'Financeiro: ver notas fiscais/duplicatas','payables:invoices_reconcile':'Financeiro: conferir NF e cadastrar duplicatas','payables:confirm_payment':'Financeiro: agendar/confirmar pagamento de duplicata','payables:return_to_purchases':'Financeiro: devolver NF para Compras',
     'payroll:manage':'RH Financeiro: folha, benefícios e comissionamento',
+    'rh_acompanhamento:view':'RH - Acompanhamento de Lojas: visualizar','rh_acompanhamento:manage':'RH - Acompanhamento de Lojas: cadastrar/editar/excluir',
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
@@ -29539,6 +29652,356 @@ function renderHomeTasks(){
     }
   });
 
+  // ================= RH / ACOMPANHAMENTO - LOJAS =================
+  // "PDI Líderes" + uma aba por loja cadastrada (dinâmica, gerada a partir
+  // de `companies`, mesmo padrão de renderMissionTabs()). Permissão própria
+  // (rh_acompanhamento:view/:manage), independente de "payroll".
+  let rhStoreTrackTab = 'pdi'; // 'pdi' | companyId da loja ativa
+  let rhLeaderPdiRows = [];
+  let rhStoreTrackRows = [];
+  let rhStoreTrackAttachTarget = null; // {kind:'leader'|'store', id}
+
+  function rhStoreTrackCanManage(){
+    return canAccess('rh_acompanhamento:manage');
+  }
+
+  async function rhStoreTrackApiRequest(path, options){
+    const response = await fetch('/api/hr-store-tracking'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  async function rhStoreTrackAttachmentRequest(options){
+    const response = await fetch('/api/hr-store-tracking/attachment',{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    let data = {};
+    if(response.status !== 204){
+      try{ data = await response.json(); }catch{ data = {}; }
+    }
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return data;
+  }
+
+  function renderRhStoreTrackTabs(){
+    const tabs = el('rhStoreTrackTabs');
+    if(!tabs) return;
+    const items = [{id:'pdi', label:'PDI LÍDERES'}].concat(
+      companies.map(company => ({id:company.id, label:company.name}))
+    );
+    if(!items.some(item => item.id === rhStoreTrackTab)) rhStoreTrackTab = 'pdi';
+    tabs.innerHTML = items.map(item =>
+      '<button class="output-tab'+(rhStoreTrackTab === item.id ? ' active' : '')+
+      '" type="button" role="tab" aria-selected="'+(rhStoreTrackTab === item.id)+
+      '" data-rh-store-track-tab="'+escapeHtml(item.id)+'">'+escapeHtml(item.label)+'</button>'
+    ).join('');
+    el('rhStoreTrackPdiPanel').hidden = rhStoreTrackTab !== 'pdi';
+    el('rhStoreTrackStorePanel').hidden = rhStoreTrackTab === 'pdi';
+  }
+
+  if(el('rhStoreTrackTabs')) el('rhStoreTrackTabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-store-track-tab]');
+    if(!button) return;
+    rhStoreTrackTab = button.dataset.rhStoreTrackTab;
+    renderRhStoreTrackTabs();
+    loadRhAcompanhamentoLojas();
+  });
+
+  function rhStoreTrackAttachmentCell(row, kind){
+    if(!row.attachmentR2Key) return '—';
+    const href = '/api/hr-store-tracking/file?kind='+kind+'&id='+encodeURIComponent(row.id);
+    return '<a href="'+href+'" target="_blank" rel="noopener">'+escapeHtml(row.attachmentFileName || 'ARQUIVO')+'</a>';
+  }
+
+  function renderRhLeaderPdiTable(){
+    const body = el('rhLeaderPdiTableBody');
+    if(!body) return;
+    const manage = rhStoreTrackCanManage();
+    if(!rhLeaderPdiRows.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum PDI cadastrado.</td></tr>';
+      return;
+    }
+    body.innerHTML = rhLeaderPdiRows.map(row =>
+      '<tr>'+
+      '<td>'+escapeHtml(row.leaderName)+'</td>'+
+      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+rhFormatDate(row.meetingDate)+'</td>'+
+      '<td>'+(row.attendanceSigned ? 'SIM' : 'NÃO')+'</td>'+
+      '<td>'+rhStoreTrackAttachmentCell(row,'leader')+'</td>'+
+      '<td>'+(manage ?
+        '<button class="btn-outline" type="button" data-rh-leader-pdi-edit="'+row.id+'">EDITAR</button> '+
+        '<button class="btn-outline" type="button" data-rh-leader-pdi-delete="'+row.id+'">EXCLUIR</button>'
+        : '')+'</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  function renderRhStoreTrackTable(){
+    const body = el('rhStoreTrackTableBody');
+    if(!body) return;
+    const manage = rhStoreTrackCanManage();
+    if(!rhStoreTrackRows.length){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum acompanhamento cadastrado para esta loja.</td></tr>';
+      return;
+    }
+    body.innerHTML = rhStoreTrackRows.map(row =>
+      '<tr>'+
+      '<td>'+escapeHtml(row.week || '—')+'</td>'+
+      '<td>'+rhFormatDate(row.meetingDate)+'</td>'+
+      '<td>'+(row.attendanceSigned ? 'SIM' : 'NÃO')+'</td>'+
+      '<td>'+rhStoreTrackAttachmentCell(row,'store')+'</td>'+
+      '<td>'+(manage ?
+        '<button class="btn-outline" type="button" data-rh-store-track-edit="'+row.id+'">EDITAR</button> '+
+        '<button class="btn-outline" type="button" data-rh-store-track-delete="'+row.id+'">EXCLUIR</button>'
+        : '')+'</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  async function loadRhAcompanhamentoLojas(){
+    if(!canAccess('rh_acompanhamento')) return;
+    if(!companies.length) await loadCompanies();
+    renderRhStoreTrackTabs();
+    if(el('btnNewRhLeaderPdi')) el('btnNewRhLeaderPdi').hidden = !rhStoreTrackCanManage();
+    if(el('btnNewRhStoreTrack')) el('btnNewRhStoreTrack').hidden = !rhStoreTrackCanManage();
+    if(rhStoreTrackTab === 'pdi'){
+      el('rhLeaderPdiTableBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+      try{
+        const data = await rhStoreTrackApiRequest('/leader-pdi');
+        rhLeaderPdiRows = Array.isArray(data.records) ? data.records : [];
+        renderRhLeaderPdiTable();
+      }catch(error){
+        rhLeaderPdiRows = [];
+        el('rhLeaderPdiTableBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      }
+    }else{
+      el('rhStoreTrackTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+      try{
+        const data = await rhStoreTrackApiRequest('/store?companyId='+encodeURIComponent(rhStoreTrackTab));
+        rhStoreTrackRows = Array.isArray(data.records) ? data.records : [];
+        renderRhStoreTrackTable();
+      }catch(error){
+        rhStoreTrackRows = [];
+        el('rhStoreTrackTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      }
+    }
+  }
+
+  function rhStoreTrackLinesFromTextarea(value){
+    return String(value || '').split('\n').map(line => line.trim()).filter(Boolean);
+  }
+
+  function openRhLeaderPdiDialog(row){
+    el('rhLeaderPdiForm').reset();
+    rhFillSelect('rhLeaderPdiLoja','SELECIONE',rhCompanyOptions());
+    el('rhLeaderPdiId').value = row ? row.id : '';
+    el('rhLeaderPdiDialogTitle').textContent = row ? 'EDITAR PDI' : 'NOVO PDI';
+    el('rhLeaderPdiNome').value = row ? row.leaderName : '';
+    el('rhLeaderPdiLoja').value = row ? row.companyId : '';
+    el('rhLeaderPdiData').value = row ? (row.meetingDate || '') : '';
+    el('rhLeaderPdiAtaAssinada').value = row && row.attendanceSigned ? 'sim' : 'nao';
+    el('rhLeaderPdiLiderados').value = row ? row.teamMembers : '';
+    el('rhLeaderPdiPonto').value = row ? row.topicDiscussed : '';
+    el('rhLeaderPdiAtividade').value = row ? row.suggestedActivity : '';
+    el('rhLeaderPdiFeedback').value = row ? row.managementFeedback : '';
+    el('rhLeaderPdiAnexo').value = '';
+    el('rhLeaderPdiFormStatus').textContent = '';
+    el('rhLeaderPdiDialog').showModal();
+  }
+
+  if(el('btnNewRhLeaderPdi')) el('btnNewRhLeaderPdi').addEventListener('click', () => openRhLeaderPdiDialog(null));
+  if(el('btnCloseRhLeaderPdiDialog')) el('btnCloseRhLeaderPdiDialog').addEventListener('click', () => el('rhLeaderPdiDialog').close());
+  if(el('btnCancelRhLeaderPdiDialog')) el('btnCancelRhLeaderPdiDialog').addEventListener('click', () => el('rhLeaderPdiDialog').close());
+
+  async function uploadRhStoreTrackAttachment(kind, id, file){
+    if(!file) return;
+    if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('A ATA DEVE TER NO MÁXIMO 25 MB.');
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const create = await rhStoreTrackAttachmentRequest({
+      method:'POST',
+      headers:{Accept:'application/json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'create', kind, id,
+        fileName:file.name,
+        contentType:file.type || 'application/octet-stream',
+        fileSize:file.size,
+        numberOfParts
+      })
+    });
+    const sessionId = create.session && create.session.id;
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO ARQUIVO.');
+    try{
+      for(let index=0;index<numberOfParts;index+=1){
+        const partNumber = index + 1;
+        await rhStoreTrackAttachmentRequest({
+          method:'POST',
+          headers:{
+            Accept:'application/json',
+            'Content-Type':'application/octet-stream',
+            'x-hr-store-tracking-upload-id':sessionId,
+            'x-hr-store-tracking-part-number':String(partNumber)
+          },
+          body:file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
+        });
+      }
+      await rhStoreTrackAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'complete', sessionId})
+      });
+    }catch(error){
+      rhStoreTrackAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'cancel', sessionId})
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  if(el('rhLeaderPdiForm')) el('rhLeaderPdiForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhLeaderPdiFormStatus');
+    status.textContent = '';
+    const payload = {
+      id: el('rhLeaderPdiId').value || undefined,
+      leaderName: el('rhLeaderPdiNome').value,
+      companyId: el('rhLeaderPdiLoja').value,
+      companyName: (companies.find(company => company.id === el('rhLeaderPdiLoja').value) || {}).name || '',
+      meetingDate: el('rhLeaderPdiData').value,
+      topicDiscussed: el('rhLeaderPdiPonto').value,
+      suggestedActivity: el('rhLeaderPdiAtividade').value,
+      managementFeedback: el('rhLeaderPdiFeedback').value,
+      teamMembers: rhStoreTrackLinesFromTextarea(el('rhLeaderPdiLiderados').value).join('\n'),
+      attendanceSigned: el('rhLeaderPdiAtaAssinada').value === 'sim'
+    };
+    try{
+      const result = await rhStoreTrackApiRequest('/leader-pdi', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      const file = el('rhLeaderPdiAnexo').files && el('rhLeaderPdiAnexo').files[0];
+      if(file) await uploadRhStoreTrackAttachment('leader', result.id, file);
+      el('rhLeaderPdiDialog').close();
+      await refreshAfterAction(() => loadRhAcompanhamentoLojas());
+      showPurchaseToast('PDI salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  if(el('rhLeaderPdiTableBody')) el('rhLeaderPdiTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rh-leader-pdi-edit]');
+    if(editButton){
+      const row = rhLeaderPdiRows.find(item => item.id === editButton.dataset.rhLeaderPdiEdit);
+      if(row) openRhLeaderPdiDialog(row);
+      return;
+    }
+    const deleteButton = event.target.closest('[data-rh-leader-pdi-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir este PDI?')) return;
+      try{
+        await rhStoreTrackApiRequest('/leader-pdi?id='+encodeURIComponent(deleteButton.dataset.rhLeaderPdiDelete), {method:'DELETE'});
+        await loadRhAcompanhamentoLojas();
+        showPurchaseToast('PDI excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
+  function openRhStoreTrackDialog(row){
+    el('rhStoreTrackForm').reset();
+    el('rhStoreTrackId').value = row ? row.id : '';
+    el('rhStoreTrackDialogTitle').textContent = row ? 'EDITAR ACOMPANHAMENTO' : 'NOVO ACOMPANHAMENTO';
+    el('rhStoreTrackSemana').value = row ? row.week : '';
+    el('rhStoreTrackData').value = row ? (row.meetingDate || '') : '';
+    el('rhStoreTrackAtaAssinada').value = row && row.attendanceSigned ? 'sim' : 'nao';
+    el('rhStoreTrackEquipe').value = row ? row.teamMembers : '';
+    el('rhStoreTrackPonto').value = row ? row.topicDiscussed : '';
+    el('rhStoreTrackAtividade').value = row ? row.suggestedActivity : '';
+    el('rhStoreTrackFeedback').value = row ? row.managementFeedback : '';
+    el('rhStoreTrackRetornoPresencial').value = row ? row.inPersonReturn : '';
+    el('rhStoreTrackRetornos').value = row ? row.memberReturns : '';
+    el('rhStoreTrackAnexo').value = '';
+    el('rhStoreTrackFormStatus').textContent = '';
+    el('rhStoreTrackDialog').showModal();
+  }
+
+  if(el('btnNewRhStoreTrack')) el('btnNewRhStoreTrack').addEventListener('click', () => {
+    if(rhStoreTrackTab === 'pdi') return;
+    openRhStoreTrackDialog(null);
+  });
+  if(el('btnCloseRhStoreTrackDialog')) el('btnCloseRhStoreTrackDialog').addEventListener('click', () => el('rhStoreTrackDialog').close());
+  if(el('btnCancelRhStoreTrackDialog')) el('btnCancelRhStoreTrackDialog').addEventListener('click', () => el('rhStoreTrackDialog').close());
+
+  if(el('rhStoreTrackForm')) el('rhStoreTrackForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhStoreTrackFormStatus');
+    status.textContent = '';
+    if(rhStoreTrackTab === 'pdi'){
+      status.textContent = 'SELECIONE UMA LOJA NAS ABAS ACIMA.';
+      return;
+    }
+    const companyId = rhStoreTrackTab;
+    const payload = {
+      id: el('rhStoreTrackId').value || undefined,
+      companyId,
+      companyName: (companies.find(company => company.id === companyId) || {}).name || '',
+      teamMembers: rhStoreTrackLinesFromTextarea(el('rhStoreTrackEquipe').value).join('\n'),
+      week: el('rhStoreTrackSemana').value,
+      meetingDate: el('rhStoreTrackData').value,
+      managementFeedback: el('rhStoreTrackFeedback').value,
+      topicDiscussed: el('rhStoreTrackPonto').value,
+      suggestedActivity: el('rhStoreTrackAtividade').value,
+      inPersonReturn: el('rhStoreTrackRetornoPresencial').value,
+      memberReturns: rhStoreTrackLinesFromTextarea(el('rhStoreTrackRetornos').value).join('\n'),
+      attendanceSigned: el('rhStoreTrackAtaAssinada').value === 'sim'
+    };
+    try{
+      const result = await rhStoreTrackApiRequest('/store', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      const file = el('rhStoreTrackAnexo').files && el('rhStoreTrackAnexo').files[0];
+      if(file) await uploadRhStoreTrackAttachment('store', result.id, file);
+      el('rhStoreTrackDialog').close();
+      await refreshAfterAction(() => loadRhAcompanhamentoLojas());
+      showPurchaseToast('Acompanhamento salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  if(el('rhStoreTrackTableBody')) el('rhStoreTrackTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rh-store-track-edit]');
+    if(editButton){
+      const row = rhStoreTrackRows.find(item => item.id === editButton.dataset.rhStoreTrackEdit);
+      if(row) openRhStoreTrackDialog(row);
+      return;
+    }
+    const deleteButton = event.target.closest('[data-rh-store-track-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir este acompanhamento?')) return;
+      try{
+        await rhStoreTrackApiRequest('/store?id='+encodeURIComponent(deleteButton.dataset.rhStoreTrackDelete), {method:'DELETE'});
+        await loadRhAcompanhamentoLojas();
+        showPurchaseToast('Acompanhamento excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
 
   // Aplica `fn` a cada item de `items`, mas no máximo `limit` execuções em
   // paralelo por vez. Usado para evitar rajadas de dezenas de requisições

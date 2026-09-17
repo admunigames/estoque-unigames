@@ -2695,3 +2695,87 @@ export const productCatalog = pgTable(
     index("product_catalog_name_idx").on(table.name),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// RH > Acompanhamento - Lojas — PDI de líderes + acompanhamento semanal por
+// loja. Módulo independente de "payroll" (Folha/Benefícios/Comissionamento):
+// permissão própria (rh_acompanhamento:view/:manage — ver Permission em
+// worker/index.ts) pra quem cuida do acompanhamento de equipe não precisar
+// ganhar acesso à Folha, e vice-versa. Anexo (ata de presença assinada) usa
+// o mesmo fluxo chunked via R2 do restante do projeto (ver
+// app/api/hr-store-tracking/attachment/route.ts, espelho de
+// app/api/hr-payroll/attachment/route.ts).
+
+// PDI (Plano de Desenvolvimento Individual) de um líder de loja — um
+// registro por encontro. company_id/company_name é a loja do líder,
+// escolhida no formulário (não vem de aba, diferente de hr_store_tracking).
+export const hrLeaderPdi = pgTable(
+  "hr_leader_pdi",
+  {
+    id: text("id").primaryKey(),
+    leaderName: text("leader_name").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    meetingDate: text("meeting_date").notNull().default(""),
+    topicDiscussed: text("topic_discussed").notNull().default(""),
+    suggestedActivity: text("suggested_activity").notNull().default(""),
+    managementFeedback: text("management_feedback").notNull().default(""),
+    // Lista de nomes em texto livre — uma linha por liderado (sem UI
+    // dinâmica por pessoa, convenção do módulo).
+    teamMembers: text("team_members").notNull().default(""),
+    attendanceSigned: integer("attendance_signed").notNull().default(0),
+    attachmentFileName: text("attachment_file_name").notNull().default(""),
+    attachmentR2Key: text("attachment_r2_key").notNull().default(""),
+    attachmentSizeBytes: integer("attachment_size_bytes").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("hr_leader_pdi_company_idx").on(table.companyId),
+    index("hr_leader_pdi_meeting_date_idx").on(table.meetingDate),
+  ],
+);
+
+// Acompanhamento semanal da equipe de UMA loja — tabela única para todas as
+// lojas (a loja é sempre a aba em que o usuário está na tela, não um select
+// no formulário). "Retorno presencial" é só anotação manual de texto livre —
+// SEM cálculo automático de data (decisão confirmada com o usuário).
+export const hrStoreTracking = pgTable(
+  "hr_store_tracking",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    // Lista de nomes em texto livre — uma linha por integrante da equipe.
+    teamMembers: text("team_members").notNull().default(""),
+    // Texto livre (ex.: "Semana 1") — sem numeração automática.
+    week: text("week").notNull().default(""),
+    meetingDate: text("meeting_date").notNull().default(""),
+    managementFeedback: text("management_feedback").notNull().default(""),
+    topicDiscussed: text("topic_discussed").notNull().default(""),
+    suggestedActivity: text("suggested_activity").notNull().default(""),
+    // Anotação manual de retorno presencial — NUNCA calculada.
+    inPersonReturn: text("in_person_return").notNull().default(""),
+    // Retorno de cada integrante, um por linha, na mesma ordem de
+    // team_members (texto livre, sem UI dinâmica por pessoa).
+    memberReturns: text("member_returns").notNull().default(""),
+    attendanceSigned: integer("attendance_signed").notNull().default(0),
+    attachmentFileName: text("attachment_file_name").notNull().default(""),
+    attachmentR2Key: text("attachment_r2_key").notNull().default(""),
+    attachmentSizeBytes: integer("attachment_size_bytes").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("hr_store_tracking_company_idx").on(table.companyId),
+    index("hr_store_tracking_meeting_date_idx").on(table.meetingDate),
+  ],
+);
