@@ -2960,11 +2960,12 @@
         <a class="nav-item sub-item" id="navFinanceiroRhAcompanhamentoLojas" data-page="rhAcompanhamentoLojas" data-permission="rh_acompanhamento" title="Acompanhamento - Lojas" href="/rh/acompanhamento-lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M6 19V10l5-3 5 3v9"/><path d="M10 19v-5h4v5"/></svg></span><span class="nav-label">Acompanhamento - Lojas</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica">
+    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navRhSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navRhRecrutamento" data-page="rhRecrutamento" data-permission="rh_recrutamento" data-home-desc="Pipeline de Recrutamento e Seleção: entrevista, teste, treinamento, contratação e integração." title="Recrutamento e Seleção" href="/rh/recrutamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/><path d="m17 4 2 2-2 2"/><path d="M19 6h-4"/></svg></span><span class="nav-label">Recrutamento e Seleção</span></a>
         <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-permission="hr" data-home-desc="Solicitações e histórico de folgas da equipe." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
         <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" data-permission="hr" data-home-desc="Montagem e consulta das escalas de trabalho da equipe." title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="nav-label">Escalas</span></a>
         <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
@@ -5098,6 +5099,13 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>RH - Recrutamento e Seleção</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:view"> Ver candidatos, pipeline e acompanhamento de padrinhos</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:manage"> Cadastrar, editar e excluir candidatos e padrinhos</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -5324,6 +5332,65 @@
       <!-- Recibo individual: só aparece na impressão do "RECIBO" de um
            funcionário (body.rh-recibo-only esconde o resto da página). -->
       <div id="rhComissaoRecibo" hidden></div>
+    </section>
+
+    <!-- ================= RH / RECRUTAMENTO E SELEÇÃO ================= -->
+    <section id="pageRhRecrutamento" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Recrutamento e Seleção</h2>
+        </div>
+      </header>
+
+      <div class="output-tabs no-print" role="tablist" aria-label="Seção do recrutamento" id="recSectionTabs">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rec-section-tab="candidates">CANDIDATOS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rec-section-tab="sponsors">ACOMPANHAMENTO DE PADRINHOS</button>
+      </div>
+
+      <div id="recCandidatesPanel">
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="recFilterStatus">STATUS</label>
+            <select id="recFilterStatus">
+              <option value="">TODOS</option>
+              <option value="selecionado_entrevista">SELECIONADO ENTREVISTA</option>
+              <option value="em_teste">EM TESTE</option>
+              <option value="em_treinamento">EM TREINAMENTO</option>
+              <option value="contratado">CONTRATADO</option>
+              <option value="integracao">INTEGRAÇÃO</option>
+              <option value="cancelado">CANCELADO</option>
+            </select>
+          </div>
+          <div class="field full"><label for="recFilterSearch">BUSCAR POR NOME</label><input id="recFilterSearch" placeholder="Nome do candidato..."></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnNewRecCandidate" type="button">NOVO CANDIDATO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="recCandidatesTable">
+              <thead><tr><th>Semana da entrevista</th><th>Nome</th><th>Cargo pretendido</th><th>Data da entrevista</th><th>Status</th><th>Loja de admissão</th><th></th></tr></thead>
+              <tbody id="recCandidatesTableBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="recSponsorsPanel" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnNewRecSponsor" type="button">NOVO PADRINHO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="recSponsorsTable">
+              <thead><tr><th>Apadrinhado</th><th>Loja</th><th>Padrinho</th><th>Padrinho informado em</th><th></th></tr></thead>
+              <tbody id="recSponsorsTableBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ================= RH / ACOMPANHAMENTO - LOJAS ================= -->
@@ -7547,6 +7614,159 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="recCandidateDialog" aria-labelledby="recCandidateDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="recCandidateDialogTitle">NOVO CANDIDATO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRecCandidateDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="recCandidateForm">
+    <input type="hidden" id="recCandidateId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="recFullName">NOME DO CANDIDATO *</label><input id="recFullName" maxlength="160" required></div>
+      <div class="purchase-field"><label for="recDesiredRole">CARGO PRETENDIDO</label><input id="recDesiredRole" maxlength="120"></div>
+      <div class="purchase-field"><label for="recStatus">STATUS *</label>
+        <select id="recStatus" required>
+          <option value="selecionado_entrevista">SELECIONADO ENTREVISTA</option>
+          <option value="em_teste">EM TESTE</option>
+          <option value="em_treinamento">EM TREINAMENTO</option>
+          <option value="contratado">CONTRATADO</option>
+          <option value="integracao">INTEGRAÇÃO</option>
+          <option value="cancelado">CANCELADO</option>
+        </select>
+      </div>
+      <div class="purchase-field full"><label for="recStatusNote">JUSTIFICATIVA/OBSERVAÇÃO DESTA ATUALIZAÇÃO</label><textarea id="recStatusNote" rows="2" maxlength="2000" placeholder="Visível no histórico do candidato, em qualquer etapa."></textarea></div>
+
+      <div class="purchase-form-section">ETAPA 1 — SELECIONADO ENTREVISTA</div>
+      <div class="purchase-field"><label for="recInterviewDate">DATA DA ENTREVISTA</label><input type="date" id="recInterviewDate"></div>
+      <div class="purchase-field"><label for="recInterviewTime">HORÁRIO DA ENTREVISTA</label><input type="time" id="recInterviewTime"></div>
+      <div class="purchase-field"><label for="recScriptSent">SCRIPT ENVIADO?</label><select id="recScriptSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field"><label for="recInterviewResult">APROVADO/REPROVADO</label>
+        <select id="recInterviewResult"><option value="">AINDA NÃO AVALIADO</option><option value="aprovado">APROVADO</option><option value="reprovado">REPROVADO</option></select>
+      </div>
+      <div class="purchase-field full"><label for="recInterviewResultReason">MOTIVO</label><textarea id="recInterviewResultReason" rows="2" maxlength="2000"></textarea></div>
+
+      <div class="purchase-form-section">ETAPA 2 — AGENDAMENTO DE TESTE</div>
+      <div class="purchase-field"><label for="recTestScriptSent">SCRIPT DE AGENDAMENTO ENVIADO?</label><select id="recTestScriptSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field"><label for="recTestConfirmed">CONFIRMADO?</label><select id="recTestConfirmed"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field full" id="recCancelFieldset" hidden>
+        <label>CANCELAMENTO</label>
+        <div class="purchase-form-grid" style="padding:0;">
+          <div class="purchase-field"><label for="recCancelledAt">CANCELADO EM</label><input type="date" id="recCancelledAt"></div>
+          <div class="purchase-field full"><label for="recCancelledReason">MOTIVO DO CANCELAMENTO</label><textarea id="recCancelledReason" rows="2" maxlength="2000"></textarea></div>
+        </div>
+      </div>
+      <div class="purchase-field full" id="recPaymentsSection" hidden>
+        <label>PAGAMENTOS DE TESTE/TREINAMENTO</label>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="recPaymentsTable">
+              <thead><tr><th>Data</th><th>Valor</th><th>Observação</th><th></th></tr></thead>
+              <tbody id="recPaymentsTableBody"><tr><td colspan="4" class="responsive-empty">Nenhum pagamento lançado.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="purchase-form-grid" style="padding:8px 0 0;">
+          <div class="purchase-field"><label for="recNewPaymentDate">DATA DO PAGAMENTO</label><input type="date" id="recNewPaymentDate"></div>
+          <div class="purchase-field"><label for="recNewPaymentAmount">VALOR (R$)</label><input type="number" id="recNewPaymentAmount" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="purchase-field"><label for="recNewPaymentNote">OBSERVAÇÃO</label><input id="recNewPaymentNote" maxlength="500"></div>
+          <div class="purchase-field" style="align-self:end;"><button class="btn-outline" id="btnAddRecPayment" type="button">+ LANÇAR PAGAMENTO</button></div>
+        </div>
+      </div>
+
+      <div class="purchase-form-section" id="recStage3Section" hidden>ETAPA 3 — CHECKLIST ADMISSIONAL</div>
+      <div class="purchase-field" id="recAdmissionDateField" hidden><label for="recAdmissionDate">DATA DE ADMISSÃO *</label><input type="date" id="recAdmissionDate"></div>
+      <div class="purchase-field" id="recAdmissionCompanyField" hidden><label for="recAdmissionCompanyId">LOJA DE ADMISSÃO *</label><select id="recAdmissionCompanyId"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field" id="recFixedUnitField" hidden><label for="recFixedUnitId">UNIDADE FIXA</label><select id="recFixedUnitId"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field" id="recTrainingStartField" hidden><label for="recTrainingStartDate">DATA DE INÍCIO DO TREINAMENTO</label><input type="date" id="recTrainingStartDate"></div>
+      <div class="purchase-field" id="recKitField" hidden><label for="recKitDelivered">KIT ADMISSIONAL ENTREGUE?</label><select id="recKitDelivered"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recKitDateField" hidden><label for="recKitDeliveredDate">DATA DA ENTREGA DO KIT</label><input type="date" id="recKitDeliveredDate"></div>
+      <div class="purchase-field" id="recUniformField" hidden><label for="recUniformSent">FARDAS/CASACO ENVIADOS?</label><select id="recUniformSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recUniformDateField" hidden><label for="recUniformSentDate">DATA DO ENVIO</label><input type="date" id="recUniformSentDate"></div>
+      <div class="purchase-field" id="recSystem1Field" hidden><label for="recSystem1Done">SISTEMA 1 CADASTRADO?</label><select id="recSystem1Done"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recSystem1DateField" hidden><label for="recSystem1Date">DATA — SISTEMA 1</label><input type="date" id="recSystem1Date"></div>
+      <div class="purchase-field" id="recSystem2Field" hidden><label for="recSystem2Done">SISTEMA 2 CADASTRADO?</label><select id="recSystem2Done"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recSystem2DateField" hidden><label for="recSystem2Date">DATA — SISTEMA 2</label><input type="date" id="recSystem2Date"></div>
+      <div class="purchase-field" id="recSystem3Field" hidden><label for="recSystem3Done">SISTEMA 3 CADASTRADO?</label><select id="recSystem3Done"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recSystem3DateField" hidden><label for="recSystem3Date">DATA — SISTEMA 3</label><input type="date" id="recSystem3Date"></div>
+      <div class="purchase-field" id="recIfoodField" hidden><label for="recIfoodDone">IFOOD CADASTRADO?</label><select id="recIfoodDone"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recIfoodDateField" hidden><label for="recIfoodDate">DATA — IFOOD</label><input type="date" id="recIfoodDate"></div>
+      <div class="purchase-field" id="recBenefitsIncludedField" hidden><label for="recBenefitsIncluded">INCLUSO NA PLANILHA DE BENEFÍCIOS?</label><select id="recBenefitsIncluded"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recBenefitsCalculatedField" hidden><label for="recBenefitsCalculated">CÁLCULO FEITO/PAGO?</label><select id="recBenefitsCalculated"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recBenefitsDateField" hidden><label for="recBenefitsDate">DATA — BENEFÍCIOS</label><input type="date" id="recBenefitsDate"></div>
+      <div class="purchase-field" id="recFacepontoField" hidden><label for="recFacepontoDone">FACEPONTO CADASTRADO?</label><select id="recFacepontoDone"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recFacepontoDateField" hidden><label for="recFacepontoDate">DATA — FACEPONTO</label><input type="date" id="recFacepontoDate"></div>
+      <div class="purchase-field" id="recPayjoyField" hidden><label for="recPayjoyDone">PAYJOY CADASTRADO?</label><select id="recPayjoyDone"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recPayjoyDateField" hidden><label for="recPayjoyDate">DATA — PAYJOY</label><input type="date" id="recPayjoyDate"></div>
+      <div class="purchase-field" id="recBirthdayField" hidden><label for="recBirthdayListAdded">ADICIONADO NO CONTROLE DE ANIVERSÁRIO?</label><select id="recBirthdayListAdded"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recBirthdayDateField" hidden><label for="recBirthdayListDate">DATA — ANIVERSÁRIO</label><input type="date" id="recBirthdayListDate"></div>
+      <div class="purchase-field" id="recPhotoField" hidden><label for="recPhotoTaken">FOTO FEITA?</label><select id="recPhotoTaken"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recAsoRequestedField" hidden><label for="recAsoRequested">ASO SOLICITADO?</label><select id="recAsoRequested"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recAsoClinicField" hidden><label for="recAsoClinic">CLÍNICA DO ASO</label><input id="recAsoClinic" maxlength="160"></div>
+      <div class="purchase-field" id="recAsoValueField" hidden><label for="recAsoValue">VALOR DO EXAME (R$)</label><input type="number" id="recAsoValue" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="purchase-field" id="recShoppingField" hidden><label for="recShoppingRegistered">CADASTRADO NO SHOPPING FIXO?</label><select id="recShoppingRegistered"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field full" id="recDriveLinkField" hidden><label for="recAdmissionDocsDriveLink">LINK DOS DOCUMENTOS ADMISSIONAIS NO GOOGLE DRIVE</label><input id="recAdmissionDocsDriveLink" maxlength="500" placeholder="https://drive.google.com/..."></div>
+      <div class="purchase-field" id="recDentalField" hidden><label for="recDentalPlanIncluded">INCLUSO NO PLANO ODONTOLÓGICO?</label><select id="recDentalPlanIncluded"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recDentalDateField" hidden><label for="recDentalPlanDate">DATA — ODONTOLÓGICO</label><input type="date" id="recDentalPlanDate"></div>
+      <div class="purchase-field" id="recReferencesField" hidden><label for="recReferencesChecked">REFERÊNCIAS BUSCADAS?</label><select id="recReferencesChecked"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+
+      <div class="purchase-form-section" id="recStage4Section" hidden>ETAPA 4 — INTEGRAÇÃO</div>
+      <div class="purchase-field" id="recIntegrationMeetingField" hidden><label for="recIntegrationMeetingDone">REUNIÃO DE INTEGRAÇÃO FEITA?</label><select id="recIntegrationMeetingDone"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recIntegrationTermSignedField" hidden><label for="recIntegrationTermSigned">TERMO ASSINADO?</label><select id="recIntegrationTermSigned"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field full" id="recIntegrationTermFileField" hidden><label for="recIntegrationTermFile">UPLOAD DO TERMO ASSINADO (PDF OU IMAGEM)</label><input type="file" id="recIntegrationTermFile" accept="application/pdf,image/*"><div id="recIntegrationTermCurrent" class="user-form-status"></div></div>
+      <div class="purchase-field full" id="recIntegrationPrintFileField" hidden><label for="recIntegrationPrintFile">UPLOAD DO PRINT DA REUNIÃO (PDF OU IMAGEM)</label><input type="file" id="recIntegrationPrintFile" accept="application/pdf,image/*"><div id="recIntegrationPrintCurrent" class="user-form-status"></div></div>
+      <div class="purchase-field full" id="recIntegrationTranscriptField" hidden><label for="recIntegrationMeetingTranscript">TRANSCRIÇÃO DA REUNIÃO</label><textarea id="recIntegrationMeetingTranscript" rows="4" maxlength="20000"></textarea></div>
+
+      <div class="purchase-form-section" id="recHistorySection" hidden>HISTÓRICO DE STATUS</div>
+      <div class="purchase-field full" id="recHistoryField" hidden><div id="recHistoryList" class="dre-flat-list"></div></div>
+    </div>
+    <div class="user-form-status" id="recCandidateFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRecCandidateDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRecCandidate" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="recSponsorDialog" aria-labelledby="recSponsorDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="recSponsorDialogTitle">NOVO PADRINHO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRecSponsorDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="recSponsorForm">
+    <input type="hidden" id="recSponsorId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="recSponsorEmployeeName">FUNCIONÁRIO (APADRINHADO) *</label><input id="recSponsorEmployeeName" maxlength="160" required></div>
+      <div class="purchase-field"><label for="recSponsorCompanyId">LOJA</label><select id="recSponsorCompanyId"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="recSponsorName">PADRINHO</label><input id="recSponsorName" maxlength="160"></div>
+      <div class="purchase-field"><label for="recSponsorInformedDate">DATA EM QUE O PADRINHO FOI INFORMADO</label><input type="date" id="recSponsorInformedDate"></div>
+    </div>
+    <div class="user-form-status" id="recSponsorFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRecSponsorDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRecSponsor" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="recSponsorUpdatesDialog" aria-labelledby="recSponsorUpdatesDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="recSponsorUpdatesDialogTitle">ATUALIZAÇÕES DO PADRINHO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRecSponsorUpdatesDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <input type="hidden" id="recSponsorUpdatesSponsorId">
+  <div id="recSponsorUpdatesList" class="dre-flat-list"></div>
+  <form class="purchase-form" id="recSponsorUpdateForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="recNewSponsorUpdateText">NOVA ATUALIZAÇÃO SEMANAL</label><textarea id="recNewSponsorUpdateText" rows="3" maxlength="4000" required></textarea></div>
+    </div>
+    <div class="user-form-status" id="recSponsorUpdateFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCloseRecSponsorUpdatesDialog2" type="button">FECHAR</button>
+      <button class="btn-accent" id="btnAddRecSponsorUpdate" type="submit">ADICIONAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="rhTimeTrackEntryDialog" aria-labelledby="rhTimeTrackEntryDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="rhTimeTrackEntryDialogTitle">NOVO REGISTRO DE PONTO</h3>
@@ -9017,6 +9237,7 @@
     notasOs:'/solicitacoes/notas-os',
     documentos:'/documentos',
     usuarios:'/cadastros/usuarios',
+    rhRecrutamento:'/rh/recrutamento',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
     rhFuncionarios:'/rh/funcionarios',
@@ -9064,6 +9285,7 @@
     alteracoesPdv:'ALTERAÇÕES PDV',
     notasOs:'NOTAS DE O.S.',
     usuarios:'USUÁRIOS E ACESSOS',
+    rhRecrutamento:'RECRUTAMENTO E SELEÇÃO',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
     rhFuncionarios:'FUNCIONÁRIOS',
@@ -9108,6 +9330,7 @@
     cadastros:'database',
     lojas:'database',
     dados:'database',
+    rhRecrutamento:'rh_recrutamento',
     rhFolgas:'hr',
     rhEscalas:'hr',
     rhFuncionarios:'payroll',
@@ -9742,6 +9965,7 @@
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
+    if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -9788,6 +10012,7 @@
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
+    if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhControleHoras') loadRhControleHoras();
   }
 
@@ -27820,6 +28045,7 @@ function renderHomeTasks(){
     'payroll:manage':'RH Financeiro: folha, benefícios e comissionamento',
     'rh_acompanhamento:view':'RH - Acompanhamento de Lojas: visualizar','rh_acompanhamento:manage':'RH - Acompanhamento de Lojas: cadastrar/editar/excluir',
     'rh_ponto_logistica:view':'RH - Controle de Horas - Logística: visualizar','rh_ponto_logistica:manage':'RH - Controle de Horas - Logística: lançar/configurar',
+    'rh_recrutamento:view':'RH - Recrutamento e Seleção: visualizar','rh_recrutamento:manage':'RH - Recrutamento e Seleção: cadastrar/editar/excluir',
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
@@ -30156,6 +30382,689 @@ function renderHomeTasks(){
       }catch(error){
         showPurchaseToast(error.message,'error');
       }
+    }
+  });
+
+  // ================= RH / RECRUTAMENTO E SELEÇÃO =================
+  // Candidato é uma entidade única que carrega o status e os dados de TODAS
+  // as etapas do pipeline (Selecionado Entrevista > Em Teste > Em
+  // Treinamento > Contratado > Integração > Cancelado) — o formulário
+  // inteiro é sempre reenviado ao salvar (mesmo padrão de Acompanhamento -
+  // Lojas), e o backend decide sozinho se a mudança de status exige criar o
+  // hr_employees e/ou gravar o histórico. Permissão própria
+  // (rh_recrutamento:view/:manage).
+  let recSectionTab = 'candidates'; // 'candidates' | 'sponsors'
+  let recCandidates = [];
+  let recSponsors = [];
+  let recCurrentPayments = [];
+  let recCurrentHistory = [];
+
+  const REC_STATUS_LABELS = {
+    selecionado_entrevista: 'SELECIONADO ENTREVISTA',
+    em_teste: 'EM TESTE',
+    em_treinamento: 'EM TREINAMENTO',
+    contratado: 'CONTRATADO',
+    integracao: 'INTEGRAÇÃO',
+    cancelado: 'CANCELADO'
+  };
+
+  function recCanManage(){
+    return canAccess('rh_recrutamento:manage');
+  }
+
+  function recBoolValue(select){
+    return select === 'sim';
+  }
+
+  function recBoolOption(value){
+    return value ? 'sim' : 'nao';
+  }
+
+  async function recApiRequest(path, options){
+    const response = await fetch('/api/hr-recruitment'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  async function recAttachmentRequest(options){
+    const response = await fetch('/api/hr-recruitment/attachment',{
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    let data = {};
+    if(response.status !== 204){
+      try{ data = await response.json(); }catch{ data = {}; }
+    }
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return data;
+  }
+
+  function recWeekLabel(dateStr){
+    if(!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return '—';
+    const date = new Date(dateStr+'T00:00:00');
+    const weekday = (date.getDay() + 6) % 7; // 0 = segunda
+    const monday = new Date(date);
+    monday.setDate(date.getDate() - weekday);
+    const dd = String(monday.getDate()).padStart(2,'0');
+    const mm = String(monday.getMonth() + 1).padStart(2,'0');
+    return 'SEMANA DE '+dd+'/'+mm;
+  }
+
+  function renderRecSectionTabs(){
+    el('recCandidatesPanel').hidden = recSectionTab !== 'candidates';
+    el('recSponsorsPanel').hidden = recSectionTab !== 'sponsors';
+    document.querySelectorAll('#recSectionTabs [data-rec-section-tab]').forEach(button => {
+      const active = button.dataset.recSectionTab === recSectionTab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+  }
+
+  if(el('recSectionTabs')) el('recSectionTabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-rec-section-tab]');
+    if(!button) return;
+    recSectionTab = button.dataset.recSectionTab;
+    renderRecSectionTabs();
+    if(recSectionTab === 'candidates') loadRecCandidates(); else loadRecSponsors();
+  });
+
+  function renderRecCandidatesTable(){
+    const body = el('recCandidatesTableBody');
+    if(!body) return;
+    const manage = recCanManage();
+    const search = (el('recFilterSearch').value || '').trim().toLowerCase();
+    const rows = recCandidates.filter(row => !search || row.fullName.toLowerCase().includes(search));
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Nenhum candidato encontrado.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(row =>
+      '<tr>'+
+      '<td>'+recWeekLabel(row.interviewDate)+'</td>'+
+      '<td>'+escapeHtml(row.fullName)+'</td>'+
+      '<td>'+escapeHtml(row.desiredRole || '—')+'</td>'+
+      '<td>'+rhFormatDate(row.interviewDate)+'</td>'+
+      '<td>'+escapeHtml(REC_STATUS_LABELS[row.status] || row.status)+'</td>'+
+      '<td>'+escapeHtml(row.admissionCompanyName || '—')+'</td>'+
+      '<td>'+(manage ?
+        '<button class="btn-outline" type="button" data-rec-candidate-edit="'+row.id+'">EDITAR</button> '+
+        '<button class="btn-outline" type="button" data-rec-candidate-delete="'+row.id+'">EXCLUIR</button>'
+        : '<button class="btn-outline" type="button" data-rec-candidate-edit="'+row.id+'">VER</button>')+'</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  async function loadRecCandidates(){
+    if(!canAccess('rh_recrutamento')) return;
+    if(!companies.length) await loadCompanies();
+    rhFillSelect('recAdmissionCompanyId','SELECIONE',rhCompanyOptions());
+    rhFillSelect('recFixedUnitId','SELECIONE',rhCompanyOptions());
+    rhFillSelect('recSponsorCompanyId','SELECIONE',rhCompanyOptions());
+    if(el('btnNewRecCandidate')) el('btnNewRecCandidate').hidden = !recCanManage();
+    el('recCandidatesTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const status = el('recFilterStatus').value;
+      const data = await recApiRequest('/candidates'+(status ? '?status='+encodeURIComponent(status) : ''));
+      recCandidates = Array.isArray(data.candidates) ? data.candidates : [];
+      renderRecCandidatesTable();
+    }catch(error){
+      recCandidates = [];
+      el('recCandidatesTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  if(el('recFilterStatus')) el('recFilterStatus').addEventListener('change', loadRecCandidates);
+  if(el('recFilterSearch')) el('recFilterSearch').addEventListener('input', debounce(renderRecCandidatesTable, 150));
+
+  async function loadRhRecrutamento(){
+    if(!canAccess('rh_recrutamento')) return;
+    renderRecSectionTabs();
+    if(recSectionTab === 'candidates') await loadRecCandidates(); else await loadRecSponsors();
+  }
+
+  function recToggleStageFields(status){
+    const isCancelled = status === 'cancelado';
+    el('recCancelFieldset').hidden = !isCancelled;
+    const stage3 = status === 'contratado' || status === 'integracao';
+    const stage3Ids = [
+      'recStage3Section','recAdmissionDateField','recAdmissionCompanyField','recFixedUnitField',
+      'recTrainingStartField','recKitField','recKitDateField','recUniformField','recUniformDateField',
+      'recSystem1Field','recSystem1DateField','recSystem2Field','recSystem2DateField',
+      'recSystem3Field','recSystem3DateField','recIfoodField','recIfoodDateField',
+      'recBenefitsIncludedField','recBenefitsCalculatedField','recBenefitsDateField',
+      'recFacepontoField','recFacepontoDateField','recPayjoyField','recPayjoyDateField',
+      'recBirthdayField','recBirthdayDateField','recPhotoField','recAsoRequestedField',
+      'recAsoClinicField','recAsoValueField','recShoppingField','recDriveLinkField',
+      'recDentalField','recDentalDateField','recReferencesField'
+    ];
+    stage3Ids.forEach(id => { el(id).hidden = !stage3; });
+    const stage4 = status === 'integracao';
+    ['recStage4Section','recIntegrationMeetingField','recIntegrationTermSignedField',
+      'recIntegrationTermFileField','recIntegrationPrintFileField','recIntegrationTranscriptField']
+      .forEach(id => { el(id).hidden = !stage4; });
+    el('recPaymentsSection').hidden = !el('recCandidateId').value;
+  }
+
+  if(el('recStatus')) el('recStatus').addEventListener('change', () => recToggleStageFields(el('recStatus').value));
+
+  function renderRecPaymentsTable(){
+    const body = el('recPaymentsTableBody');
+    if(!body) return;
+    if(!recCurrentPayments.length){
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhum pagamento lançado.</td></tr>';
+      return;
+    }
+    body.innerHTML = recCurrentPayments.map(payment =>
+      '<tr>'+
+      '<td>'+rhFormatDate(payment.paidDate)+'</td>'+
+      '<td>'+formatCentsBRL(payment.amountCents)+'</td>'+
+      '<td>'+escapeHtml(payment.note || '—')+'</td>'+
+      '<td>'+(recCanManage() ? '<button class="btn-outline" type="button" data-rec-payment-delete="'+payment.id+'">EXCLUIR</button>' : '')+'</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  async function loadRecPayments(candidateId){
+    try{
+      const data = await recApiRequest('/payments?candidateId='+encodeURIComponent(candidateId));
+      recCurrentPayments = Array.isArray(data.payments) ? data.payments : [];
+    }catch{
+      recCurrentPayments = [];
+    }
+    renderRecPaymentsTable();
+  }
+
+  if(el('recPaymentsTableBody')) el('recPaymentsTableBody').addEventListener('click', async event => {
+    const deleteButton = event.target.closest('[data-rec-payment-delete]');
+    if(!deleteButton) return;
+    if(!confirm('Excluir este pagamento?')) return;
+    try{
+      await recApiRequest('/payments?id='+encodeURIComponent(deleteButton.dataset.recPaymentDelete), {method:'DELETE'});
+      await loadRecPayments(el('recCandidateId').value);
+      showPurchaseToast('Pagamento excluído.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  if(el('btnAddRecPayment')) el('btnAddRecPayment').addEventListener('click', async () => {
+    const candidateId = el('recCandidateId').value;
+    if(!candidateId) return;
+    const paidDate = el('recNewPaymentDate').value;
+    const amountCents = Math.round(Number(el('recNewPaymentAmount').value || 0) * 100);
+    const note = el('recNewPaymentNote').value;
+    if(!paidDate || !amountCents){
+      showPurchaseToast('INFORME A DATA E O VALOR DO PAGAMENTO.','error');
+      return;
+    }
+    try{
+      await recApiRequest('/payments', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({candidateId, paidDate, amountCents, note})
+      });
+      el('recNewPaymentDate').value = '';
+      el('recNewPaymentAmount').value = '';
+      el('recNewPaymentNote').value = '';
+      await loadRecPayments(candidateId);
+      showPurchaseToast('Pagamento lançado.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  function renderRecHistoryList(){
+    const container = el('recHistoryList');
+    if(!container) return;
+    if(!recCurrentHistory.length){
+      container.innerHTML = '<div class="dre-empty">Sem histórico.</div>';
+      return;
+    }
+    container.innerHTML = recCurrentHistory.slice().reverse().map(entry =>
+      '<div style="border:1px solid var(--line);border-radius:9px;padding:9px 10px;">'+
+      '<div><strong>'+escapeHtml(REC_STATUS_LABELS[entry.toStatus] || entry.toStatus)+'</strong>'+
+      (entry.fromStatus ? ' <span style="color:var(--ink-soft);">(de '+escapeHtml(REC_STATUS_LABELS[entry.fromStatus] || entry.fromStatus)+')</span>' : '')+
+      ' — '+escapeHtml(entry.changedByName || 'Usuário')+' em '+rhFormatDate((entry.changedAt || '').slice(0,10))+'</div>'+
+      (entry.note ? '<div style="color:var(--ink-soft);">'+escapeHtml(entry.note)+'</div>' : '')+
+      '</div>'
+    ).join('');
+  }
+
+  async function loadRecHistory(candidateId){
+    try{
+      const data = await recApiRequest('/status-history?candidateId='+encodeURIComponent(candidateId));
+      recCurrentHistory = Array.isArray(data.history) ? data.history : [];
+    }catch{
+      recCurrentHistory = [];
+    }
+    renderRecHistoryList();
+  }
+
+  function recSetAttachmentStatus(kind, row){
+    const container = el(kind === 'term' ? 'recIntegrationTermCurrent' : 'recIntegrationPrintCurrent');
+    if(!container) return;
+    const fileName = kind === 'term' ? row?.integrationTermFileName : row?.integrationPrintFileName;
+    const r2Key = kind === 'term' ? row?.integrationTermR2Key : row?.integrationPrintR2Key;
+    if(!row || !r2Key){
+      container.textContent = 'Nenhum arquivo enviado ainda.';
+      return;
+    }
+    container.innerHTML = 'Arquivo atual: <a href="/api/hr-recruitment/file?kind='+kind+'&id='+encodeURIComponent(row.id)+'" target="_blank" rel="noopener">'+escapeHtml(fileName || 'ARQUIVO')+'</a>';
+  }
+
+  function openRecCandidateDialog(row){
+    el('recCandidateForm').reset();
+    el('recCandidateId').value = row ? row.id : '';
+    el('recCandidateDialogTitle').textContent = row ? 'EDITAR CANDIDATO' : 'NOVO CANDIDATO';
+    el('recFullName').value = row ? row.fullName : '';
+    el('recDesiredRole').value = row ? row.desiredRole : '';
+    el('recStatus').value = row ? row.status : 'selecionado_entrevista';
+    el('recStatusNote').value = '';
+    el('recInterviewDate').value = row ? row.interviewDate : '';
+    el('recInterviewTime').value = row ? row.interviewTime : '';
+    el('recScriptSent').value = recBoolOption(row && row.scriptSent);
+    el('recInterviewResult').value = row ? row.interviewResult : '';
+    el('recInterviewResultReason').value = row ? row.interviewResultReason : '';
+    el('recTestScriptSent').value = recBoolOption(row && row.testScriptSent);
+    el('recTestConfirmed').value = recBoolOption(row && row.testConfirmed);
+    el('recCancelledAt').value = row ? row.cancelledAt : '';
+    el('recCancelledReason').value = row ? row.cancelledReason : '';
+    el('recKitDelivered').value = recBoolOption(row && row.kitDelivered);
+    el('recKitDeliveredDate').value = row ? row.kitDeliveredDate : '';
+    el('recTrainingStartDate').value = row ? row.trainingStartDate : '';
+    el('recAdmissionDate').value = row ? row.admissionDate : '';
+    el('recAdmissionCompanyId').value = row ? row.admissionCompanyId : '';
+    el('recFixedUnitId').value = row ? row.fixedUnitId : '';
+    el('recUniformSent').value = recBoolOption(row && row.uniformSent);
+    el('recUniformSentDate').value = row ? row.uniformSentDate : '';
+    el('recSystem1Done').value = recBoolOption(row && row.system1Done);
+    el('recSystem1Date').value = row ? row.system1Date : '';
+    el('recSystem2Done').value = recBoolOption(row && row.system2Done);
+    el('recSystem2Date').value = row ? row.system2Date : '';
+    el('recSystem3Done').value = recBoolOption(row && row.system3Done);
+    el('recSystem3Date').value = row ? row.system3Date : '';
+    el('recIfoodDone').value = recBoolOption(row && row.ifoodDone);
+    el('recIfoodDate').value = row ? row.ifoodDate : '';
+    el('recBenefitsIncluded').value = recBoolOption(row && row.benefitsIncluded);
+    el('recBenefitsCalculated').value = recBoolOption(row && row.benefitsCalculated);
+    el('recBenefitsDate').value = row ? row.benefitsDate : '';
+    el('recFacepontoDone').value = recBoolOption(row && row.facepontoDone);
+    el('recFacepontoDate').value = row ? row.facepontoDate : '';
+    el('recPayjoyDone').value = recBoolOption(row && row.payjoyDone);
+    el('recPayjoyDate').value = row ? row.payjoyDate : '';
+    el('recBirthdayListAdded').value = recBoolOption(row && row.birthdayListAdded);
+    el('recBirthdayListDate').value = row ? row.birthdayListDate : '';
+    el('recPhotoTaken').value = recBoolOption(row && row.photoTaken);
+    el('recAsoRequested').value = recBoolOption(row && row.asoRequested);
+    el('recAsoClinic').value = row ? row.asoClinic : '';
+    el('recAsoValue').value = row && row.asoValueCents ? (row.asoValueCents / 100).toFixed(2) : '';
+    el('recShoppingRegistered').value = recBoolOption(row && row.shoppingRegistered);
+    el('recAdmissionDocsDriveLink').value = row ? row.admissionDocsDriveLink : '';
+    el('recDentalPlanIncluded').value = recBoolOption(row && row.dentalPlanIncluded);
+    el('recDentalPlanDate').value = row ? row.dentalPlanDate : '';
+    el('recReferencesChecked').value = recBoolOption(row && row.referencesChecked);
+    el('recIntegrationMeetingDone').value = recBoolOption(row && row.integrationMeetingDone);
+    el('recIntegrationTermSigned').value = recBoolOption(row && row.integrationTermSigned);
+    el('recIntegrationTermFile').value = '';
+    el('recIntegrationPrintFile').value = '';
+    el('recIntegrationMeetingTranscript').value = row ? row.integrationMeetingTranscript : '';
+    recSetAttachmentStatus('term', row);
+    recSetAttachmentStatus('print', row);
+    recToggleStageFields(el('recStatus').value);
+    const manage = recCanManage();
+    el('recCandidateForm').querySelectorAll('input, select, textarea, button[type=submit]').forEach(field => {
+      if(field.id === 'recCandidateId') return;
+      field.disabled = !manage;
+    });
+    el('recCandidateFormStatus').textContent = '';
+    recCurrentPayments = [];
+    recCurrentHistory = [];
+    renderRecPaymentsTable();
+    renderRecHistoryList();
+    el('recHistorySection').hidden = !row;
+    el('recHistoryField').hidden = !row;
+    if(row){
+      loadRecPayments(row.id);
+      loadRecHistory(row.id);
+    }
+    el('recCandidateDialog').showModal();
+  }
+
+  if(el('btnNewRecCandidate')) el('btnNewRecCandidate').addEventListener('click', () => openRecCandidateDialog(null));
+  if(el('btnCloseRecCandidateDialog')) el('btnCloseRecCandidateDialog').addEventListener('click', () => el('recCandidateDialog').close());
+  if(el('btnCancelRecCandidateDialog')) el('btnCancelRecCandidateDialog').addEventListener('click', () => el('recCandidateDialog').close());
+
+  async function uploadRecAttachment(kind, candidateId, file){
+    if(!file) return;
+    if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O ARQUIVO DEVE TER NO MÁXIMO 25 MB.');
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const create = await recAttachmentRequest({
+      method:'POST',
+      headers:{Accept:'application/json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'create', kind, id:candidateId,
+        fileName:file.name,
+        contentType:file.type || 'application/octet-stream',
+        fileSize:file.size,
+        numberOfParts
+      })
+    });
+    const sessionId = create.session && create.session.id;
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO ARQUIVO.');
+    try{
+      for(let index=0;index<numberOfParts;index+=1){
+        const partNumber = index + 1;
+        await recAttachmentRequest({
+          method:'POST',
+          headers:{
+            Accept:'application/json',
+            'Content-Type':'application/octet-stream',
+            'x-hr-recruitment-upload-id':sessionId,
+            'x-hr-recruitment-part-number':String(partNumber)
+          },
+          body:file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
+        });
+      }
+      await recAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'complete', sessionId})
+      });
+    }catch(error){
+      recAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'cancel', sessionId})
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  if(el('recCandidateForm')) el('recCandidateForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const saveButton = el('btnSaveRecCandidate');
+    if(saveButton.disabled) return; // evita duplo envio (ex.: duplo clique) criando o funcionário 2x ao contratar
+    saveButton.disabled = true;
+    const status = el('recCandidateFormStatus');
+    status.textContent = '';
+    const companyId = el('recAdmissionCompanyId').value;
+    const payload = {
+      id: el('recCandidateId').value || undefined,
+      fullName: el('recFullName').value,
+      desiredRole: el('recDesiredRole').value,
+      status: el('recStatus').value,
+      statusNote: el('recStatusNote').value,
+      interviewDate: el('recInterviewDate').value,
+      interviewTime: el('recInterviewTime').value,
+      scriptSent: recBoolValue(el('recScriptSent').value),
+      interviewResult: el('recInterviewResult').value,
+      interviewResultReason: el('recInterviewResultReason').value,
+      testScriptSent: recBoolValue(el('recTestScriptSent').value),
+      testConfirmed: recBoolValue(el('recTestConfirmed').value),
+      cancelledAt: el('recCancelledAt').value,
+      cancelledReason: el('recCancelledReason').value,
+      kitDelivered: recBoolValue(el('recKitDelivered').value),
+      kitDeliveredDate: el('recKitDeliveredDate').value,
+      trainingStartDate: el('recTrainingStartDate').value,
+      admissionDate: el('recAdmissionDate').value,
+      admissionCompanyId: companyId,
+      admissionCompanyName: (companies.find(company => company.id === companyId) || {}).name || '',
+      fixedUnitId: el('recFixedUnitId').value,
+      fixedUnitName: (companies.find(company => company.id === el('recFixedUnitId').value) || {}).name || '',
+      uniformSent: recBoolValue(el('recUniformSent').value),
+      uniformSentDate: el('recUniformSentDate').value,
+      system1Done: recBoolValue(el('recSystem1Done').value),
+      system1Date: el('recSystem1Date').value,
+      system2Done: recBoolValue(el('recSystem2Done').value),
+      system2Date: el('recSystem2Date').value,
+      system3Done: recBoolValue(el('recSystem3Done').value),
+      system3Date: el('recSystem3Date').value,
+      ifoodDone: recBoolValue(el('recIfoodDone').value),
+      ifoodDate: el('recIfoodDate').value,
+      benefitsIncluded: recBoolValue(el('recBenefitsIncluded').value),
+      benefitsCalculated: recBoolValue(el('recBenefitsCalculated').value),
+      benefitsDate: el('recBenefitsDate').value,
+      facepontoDone: recBoolValue(el('recFacepontoDone').value),
+      facepontoDate: el('recFacepontoDate').value,
+      payjoyDone: recBoolValue(el('recPayjoyDone').value),
+      payjoyDate: el('recPayjoyDate').value,
+      birthdayListAdded: recBoolValue(el('recBirthdayListAdded').value),
+      birthdayListDate: el('recBirthdayListDate').value,
+      photoTaken: recBoolValue(el('recPhotoTaken').value),
+      asoRequested: recBoolValue(el('recAsoRequested').value),
+      asoClinic: el('recAsoClinic').value,
+      asoValueCents: Math.round(Number(el('recAsoValue').value || 0) * 100),
+      shoppingRegistered: recBoolValue(el('recShoppingRegistered').value),
+      admissionDocsDriveLink: el('recAdmissionDocsDriveLink').value,
+      dentalPlanIncluded: recBoolValue(el('recDentalPlanIncluded').value),
+      dentalPlanDate: el('recDentalPlanDate').value,
+      referencesChecked: recBoolValue(el('recReferencesChecked').value),
+      integrationMeetingDone: recBoolValue(el('recIntegrationMeetingDone').value),
+      integrationTermSigned: recBoolValue(el('recIntegrationTermSigned').value),
+      integrationMeetingTranscript: el('recIntegrationMeetingTranscript').value
+    };
+    try{
+      const result = await recApiRequest('/candidates', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      const termFile = el('recIntegrationTermFile').files && el('recIntegrationTermFile').files[0];
+      if(termFile) await uploadRecAttachment('term', result.id, termFile);
+      const printFile = el('recIntegrationPrintFile').files && el('recIntegrationPrintFile').files[0];
+      if(printFile) await uploadRecAttachment('print', result.id, printFile);
+      el('recCandidateDialog').close();
+      await refreshAfterAction(() => loadRecCandidates());
+      showPurchaseToast('Candidato salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }finally{
+      saveButton.disabled = false;
+    }
+  });
+
+  if(el('recCandidatesTableBody')) el('recCandidatesTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rec-candidate-edit]');
+    if(editButton){
+      const row = recCandidates.find(item => item.id === editButton.dataset.recCandidateEdit);
+      if(row) openRecCandidateDialog(row);
+      return;
+    }
+    const deleteButton = event.target.closest('[data-rec-candidate-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir este candidato?')) return;
+      try{
+        await recApiRequest('/candidates?id='+encodeURIComponent(deleteButton.dataset.recCandidateDelete), {method:'DELETE'});
+        await loadRecCandidates();
+        showPurchaseToast('Candidato excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
+  // ---------------- Acompanhamento de Padrinhos ----------------
+
+  function renderRecSponsorsTable(){
+    const body = el('recSponsorsTableBody');
+    if(!body) return;
+    const manage = recCanManage();
+    if(!recSponsors.length){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum padrinho cadastrado.</td></tr>';
+      return;
+    }
+    body.innerHTML = recSponsors.map(row =>
+      '<tr>'+
+      '<td>'+escapeHtml(row.employeeName)+'</td>'+
+      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+escapeHtml(row.sponsorName || '—')+'</td>'+
+      '<td>'+rhFormatDate(row.informedDate)+'</td>'+
+      '<td>'+
+        '<button class="btn-outline" type="button" data-rec-sponsor-updates="'+row.id+'">ATUALIZAÇÕES</button> '+
+        (manage ?
+          '<button class="btn-outline" type="button" data-rec-sponsor-edit="'+row.id+'">EDITAR</button> '+
+          '<button class="btn-outline" type="button" data-rec-sponsor-delete="'+row.id+'">EXCLUIR</button>'
+          : '')+
+      '</td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  async function loadRecSponsors(){
+    if(!canAccess('rh_recrutamento')) return;
+    if(!companies.length) await loadCompanies();
+    rhFillSelect('recSponsorCompanyId','SELECIONE',rhCompanyOptions());
+    if(el('btnNewRecSponsor')) el('btnNewRecSponsor').hidden = !recCanManage();
+    el('recSponsorsTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await recApiRequest('/sponsors');
+      recSponsors = Array.isArray(data.sponsors) ? data.sponsors : [];
+      renderRecSponsorsTable();
+    }catch(error){
+      recSponsors = [];
+      el('recSponsorsTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function openRecSponsorDialog(row){
+    el('recSponsorForm').reset();
+    el('recSponsorId').value = row ? row.id : '';
+    el('recSponsorDialogTitle').textContent = row ? 'EDITAR PADRINHO' : 'NOVO PADRINHO';
+    el('recSponsorEmployeeName').value = row ? row.employeeName : '';
+    el('recSponsorCompanyId').value = row ? row.companyId : '';
+    el('recSponsorName').value = row ? row.sponsorName : '';
+    el('recSponsorInformedDate').value = row ? row.informedDate : '';
+    el('recSponsorFormStatus').textContent = '';
+    el('recSponsorDialog').showModal();
+  }
+
+  if(el('btnNewRecSponsor')) el('btnNewRecSponsor').addEventListener('click', () => openRecSponsorDialog(null));
+  if(el('btnCloseRecSponsorDialog')) el('btnCloseRecSponsorDialog').addEventListener('click', () => el('recSponsorDialog').close());
+  if(el('btnCancelRecSponsorDialog')) el('btnCancelRecSponsorDialog').addEventListener('click', () => el('recSponsorDialog').close());
+
+  if(el('recSponsorForm')) el('recSponsorForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('recSponsorFormStatus');
+    status.textContent = '';
+    const companyId = el('recSponsorCompanyId').value;
+    const payload = {
+      id: el('recSponsorId').value || undefined,
+      employeeName: el('recSponsorEmployeeName').value,
+      companyId,
+      companyName: (companies.find(company => company.id === companyId) || {}).name || '',
+      sponsorName: el('recSponsorName').value,
+      informedDate: el('recSponsorInformedDate').value
+    };
+    try{
+      await recApiRequest('/sponsors', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('recSponsorDialog').close();
+      await refreshAfterAction(() => loadRecSponsors());
+      showPurchaseToast('Padrinho salvo.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  if(el('recSponsorsTableBody')) el('recSponsorsTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-rec-sponsor-edit]');
+    if(editButton){
+      const row = recSponsors.find(item => item.id === editButton.dataset.recSponsorEdit);
+      if(row) openRecSponsorDialog(row);
+      return;
+    }
+    const deleteButton = event.target.closest('[data-rec-sponsor-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir este padrinho?')) return;
+      try{
+        await recApiRequest('/sponsors?id='+encodeURIComponent(deleteButton.dataset.recSponsorDelete), {method:'DELETE'});
+        await loadRecSponsors();
+        showPurchaseToast('Padrinho excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+      return;
+    }
+    const updatesButton = event.target.closest('[data-rec-sponsor-updates]');
+    if(updatesButton) openRecSponsorUpdatesDialog(updatesButton.dataset.recSponsorUpdates);
+  });
+
+  function renderRecSponsorUpdatesList(updates){
+    const container = el('recSponsorUpdatesList');
+    if(!updates.length){
+      container.innerHTML = '<div class="dre-empty">Nenhuma atualização registrada ainda.</div>';
+      return;
+    }
+    container.innerHTML = updates.slice().reverse().map(update =>
+      '<div style="border:1px solid var(--line);border-radius:9px;padding:9px 10px;">'+
+      '<div>'+escapeHtml(update.updateText)+'</div>'+
+      '<div style="color:var(--ink-soft);">'+escapeHtml(update.createdByName || 'Usuário')+' em '+rhFormatDate((update.createdAt || '').slice(0,10))+
+      (recCanManage() ? ' · <button class="btn-outline" type="button" data-rec-sponsor-update-delete="'+update.id+'">EXCLUIR</button>' : '')+
+      '</div>'+
+      '</div>'
+    ).join('');
+  }
+
+  async function openRecSponsorUpdatesDialog(sponsorId){
+    el('recSponsorUpdatesSponsorId').value = sponsorId;
+    el('recNewSponsorUpdateText').value = '';
+    el('recSponsorUpdateFormStatus').textContent = '';
+    el('recSponsorUpdatesList').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    el('recSponsorUpdatesDialog').showModal();
+    try{
+      const data = await recApiRequest('/sponsor-updates?sponsorId='+encodeURIComponent(sponsorId));
+      renderRecSponsorUpdatesList(Array.isArray(data.updates) ? data.updates : []);
+    }catch(error){
+      el('recSponsorUpdatesList').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  if(el('btnCloseRecSponsorUpdatesDialog')) el('btnCloseRecSponsorUpdatesDialog').addEventListener('click', () => el('recSponsorUpdatesDialog').close());
+  if(el('btnCloseRecSponsorUpdatesDialog2')) el('btnCloseRecSponsorUpdatesDialog2').addEventListener('click', event => {
+    event.preventDefault();
+    el('recSponsorUpdatesDialog').close();
+  });
+
+  if(el('recSponsorUpdateForm')) el('recSponsorUpdateForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('recSponsorUpdateFormStatus');
+    status.textContent = '';
+    const sponsorId = el('recSponsorUpdatesSponsorId').value;
+    const updateText = el('recNewSponsorUpdateText').value;
+    try{
+      await recApiRequest('/sponsor-updates', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({sponsorId, updateText})
+      });
+      el('recNewSponsorUpdateText').value = '';
+      const data = await recApiRequest('/sponsor-updates?sponsorId='+encodeURIComponent(sponsorId));
+      renderRecSponsorUpdatesList(Array.isArray(data.updates) ? data.updates : []);
+      showPurchaseToast('Atualização adicionada.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  if(el('recSponsorUpdatesList')) el('recSponsorUpdatesList').addEventListener('click', async event => {
+    const deleteButton = event.target.closest('[data-rec-sponsor-update-delete]');
+    if(!deleteButton) return;
+    if(!confirm('Excluir esta atualização?')) return;
+    const sponsorId = el('recSponsorUpdatesSponsorId').value;
+    try{
+      await recApiRequest('/sponsor-updates?id='+encodeURIComponent(deleteButton.dataset.recSponsorUpdateDelete), {method:'DELETE'});
+      const data = await recApiRequest('/sponsor-updates?sponsorId='+encodeURIComponent(sponsorId));
+      renderRecSponsorUpdatesList(Array.isArray(data.updates) ? data.updates : []);
+    }catch(error){
+      showPurchaseToast(error.message,'error');
     }
   });
 
