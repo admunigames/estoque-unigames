@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v66"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v66"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v66"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1140,7 +1140,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v66"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1573,7 +1573,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v66"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1594,7 +1594,11 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(html, /id="homeInstructionList"/);
   assert.match(html, /id="pageInstrucoes" class="page wrap"/);
   assert.match(html, /id="instructionForm"/);
-  assert.match(html, /id="instructionDueDate" type="date" required/);
+  assert.match(html, /id="instructionDueDate" type="date">/);
+  assert.doesNotMatch(html, /id="instructionDueDate" type="date" required/);
+  assert.match(html, /id="instructionCategory" required/);
+  assert.match(html, /id="instructionCategoryFilter"/);
+  assert.match(html, /instruction-badge category-'\+category/);
   assert.match(html, /PUBLICAR PARA TODAS AS LOJAS/);
   assert.match(html, /data-instruction-view="active"/);
   assert.match(html, /data-instruction-view="history"/);
@@ -1610,15 +1614,17 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR INSTRUÇÕES/);
   assert.match(html, /data-permission="instructions:manage"/);
   assert.match(html, /canAccess\('instructions:manage'\)/);
-  assert.match(route, /due_date < \?1/);
-  assert.match(route, /due_date >= \?1/);
+  assert.match(route, /due_date IS NOT NULL AND due_date < \?1/);
+  assert.match(route, /due_date IS NULL OR due_date >= \?1/);
+  assert.match(route, /INSTRUCTION_CATEGORIES = new Set\(\["geral", "operacional", "comercial"\]\)/);
   assert.match(route, /America\/Recife/);
   assert.match(route, /INSERT INTO instructions/);
   assert.match(schema, /export const instructions = pgTable/);
+  assert.match(schema, /category: text\("category"\)\.notNull\(\)\.default\("geral"\)/);
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v65"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v66"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {

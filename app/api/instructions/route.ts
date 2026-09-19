@@ -12,7 +12,8 @@ type InstructionRow = {
   id: string;
   title: string;
   description: string;
-  dueDate: string;
+  category: string;
+  dueDate: string | null;
   createdBy: string;
   createdByName: string;
   createdAt: string;
@@ -20,6 +21,7 @@ type InstructionRow = {
 };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const INSTRUCTION_CATEGORIES = new Set(["geral", "operacional", "comercial"]);
 
 function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -107,14 +109,16 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const condition = status === "history" ? "due_date < ?1" : "due_date >= ?1";
+    const condition = status === "history"
+      ? "due_date IS NOT NULL AND due_date < ?1"
+      : "due_date IS NULL OR due_date >= ?1";
     const order = status === "history"
       ? "due_date DESC, created_at DESC"
-      : "due_date ASC, created_at DESC";
+      : "due_date IS NULL DESC, due_date ASC, created_at DESC";
     const [result, summary] = await Promise.all([
       database
         .prepare(
-          `SELECT id, title, description, due_date AS dueDate,
+          `SELECT id, title, description, category, due_date AS dueDate,
                   created_by AS createdBy, created_by_name AS createdByName,
                   created_at AS createdAt, updated_at AS updatedAt
            FROM instructions
@@ -126,9 +130,9 @@ export async function GET(request: Request) {
       database
         .prepare(
           `SELECT
-             SUM(CASE WHEN due_date >= ?1 THEN 1 ELSE 0 END) AS activeCount,
-             SUM(CASE WHEN due_date < ?1 THEN 1 ELSE 0 END) AS historyCount,
-             MIN(CASE WHEN due_date >= ?1 THEN due_date ELSE NULL END) AS nearestDueDate
+             SUM(CASE WHEN due_date IS NULL OR due_date >= ?1 THEN 1 ELSE 0 END) AS activeCount,
+             SUM(CASE WHEN due_date IS NOT NULL AND due_date < ?1 THEN 1 ELSE 0 END) AS historyCount,
+             MIN(CASE WHEN due_date IS NOT NULL AND due_date >= ?1 THEN due_date ELSE NULL END) AS nearestDueDate
            FROM instructions`,
         )
         .bind(today)
@@ -173,21 +177,28 @@ export async function POST(request: Request) {
     const body = (await request.json()) as JsonMap;
     const title = safeText(body.title, 160);
     const description = safeText(body.description, 3000);
-    const dueDate = safeText(body.dueDate, 10);
+    const category = safeText(body.category, 20).toLowerCase();
+    const dueDateInput = safeText(body.dueDate, 10);
     if (title.length < 3) {
       return jsonResponse({ error: "INFORME O TÍTULO DA INSTRUÇÃO." }, 400);
     }
     if (description.length < 3) {
       return jsonResponse({ error: "DESCREVA A INSTRUÇÃO PARA AS LOJAS." }, 400);
     }
-    if (!DATE_PATTERN.test(dueDate)) {
-      return jsonResponse({ error: "INFORME UM PRAZO VÁLIDO." }, 400);
+    if (!INSTRUCTION_CATEGORIES.has(category)) {
+      return jsonResponse({ error: "SELECIONE UMA CATEGORIA VÁLIDA." }, 400);
     }
-    if (dueDate < recifeDateKey()) {
-      return jsonResponse(
-        { error: "O PRAZO NÃO PODE SER ANTERIOR À DATA DE HOJE." },
-        400,
-      );
+    const dueDate = dueDateInput ? dueDateInput : null;
+    if (dueDate !== null) {
+      if (!DATE_PATTERN.test(dueDate)) {
+        return jsonResponse({ error: "INFORME UM PRAZO VÁLIDO." }, 400);
+      }
+      if (dueDate < recifeDateKey()) {
+        return jsonResponse(
+          { error: "O PRAZO NÃO PODE SER ANTERIOR À DATA DE HOJE." },
+          400,
+        );
+      }
     }
 
     const database = await getD1();
@@ -195,14 +206,15 @@ export async function POST(request: Request) {
     await database
       .prepare(
         `INSERT INTO instructions
-          (id, title, description, due_date, created_by, created_by_name,
+          (id, title, description, category, due_date, created_by, created_by_name,
            created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       )
       .bind(
         id,
         title,
         description,
+        category,
         dueDate,
         actor.id,
         actor.displayName || "Administrador",

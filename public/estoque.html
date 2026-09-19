@@ -2541,7 +2541,7 @@
   .instruction-admin-head p,.instruction-board-head p,.home-instructions-head p{
     margin:5px 0 0;color:var(--ink-soft);font-size:11px;line-height:1.5;
   }
-  .instruction-form-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(180px,.7fr);gap:12px;}
+  .instruction-form-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(160px,.8fr) minmax(160px,.8fr);gap:12px;}
   .instruction-form-grid .field.full{grid-column:1 / -1;}
   .instruction-form-actions{display:flex;justify-content:flex-end;margin-top:14px;}
   .instruction-board{padding:20px;}
@@ -2569,6 +2569,9 @@
   .instruction-badge.deadline{color:#e1ad49;border-color:rgba(225,173,73,.38);background:rgba(225,173,73,.08);}
   .instruction-badge.today{color:#ff7667;border-color:rgba(255,118,103,.42);background:rgba(255,118,103,.09);}
   .instruction-badge.finished{color:#66d49e;border-color:rgba(66,166,119,.35);background:rgba(66,166,119,.1);}
+  .instruction-badge.category-geral{color:var(--ink-soft);border-color:rgba(88,113,138,.32);background:rgba(88,113,138,.08);}
+  .instruction-badge.category-operacional{color:#e1ad49;border-color:rgba(225,173,73,.38);background:rgba(225,173,73,.08);}
+  .instruction-badge.category-comercial{color:var(--accent);border-color:rgba(79,134,189,.4);background:rgba(79,134,189,.1);}
   .instruction-card-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
   .instruction-state{
     min-width:126px;padding:8px 10px;border-radius:9px;background:rgba(79,134,189,.08);
@@ -2601,6 +2604,7 @@
     background:#244f83;color:#fff;font:800 14px/1 var(--mono);
   }
   .home-instruction-copy{min-width:0;}
+  .home-instruction-copy .instruction-badge{margin-bottom:5px;}
   .home-instruction-copy strong{display:block;color:#10233a;font:800 12px/1.4 var(--sans);overflow-wrap:anywhere;}
   .home-instruction-copy span{
     display:-webkit-box;margin-top:3px;overflow:hidden;color:#5c7187;font:600 10px/1.4 var(--sans);
@@ -3010,6 +3014,16 @@
           <h1 class="home-title">UNIGAMES</h1>
           <p class="home-subtitle">Acesse rapidamente as áreas disponíveis para o seu usuário.</p>
         </div>
+        <section class="home-instructions" aria-labelledby="homeInstructionsTitle">
+          <div class="home-instructions-head">
+            <div><span>COMUNICADOS GERAIS</span><h2 id="homeInstructionsTitle">Instruções vigentes</h2></div>
+            <button class="home-instructions-goto" type="button" data-home-target="instrucoes">VER INSTRUÇÕES →</button>
+          </div>
+          <div class="home-instruction-list" id="homeInstructionList" aria-live="polite">
+            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
+            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
+          </div>
+        </section>
         <div class="home-access-grid" id="homeAccessGrid" aria-label="Acessos rápidos"></div>
         <div class="home-no-access" id="homeNoAccess" hidden><strong>NENHUM MÓDULO LIBERADO</strong><span>Solicite ao administrador a liberação das áreas necessárias.</span></div>
         <div class="home-health-alert" id="homeHealthAlert" hidden>
@@ -3028,16 +3042,6 @@
           <button class="home-quick-action" type="button" data-quick-action="purchase" data-permission="purchases">+ NOVA COMPRA</button>
           <button class="home-quick-action" type="button" data-quick-action="register" data-permission="database">+ NOVO CADASTRO</button>
         </div>
-        <section class="home-instructions" aria-labelledby="homeInstructionsTitle">
-          <div class="home-instructions-head">
-            <div><span>COMUNICADOS GERAIS</span><h2 id="homeInstructionsTitle">Instruções vigentes</h2></div>
-            <button class="home-instructions-goto" type="button" data-home-target="instrucoes">VER INSTRUÇÕES →</button>
-          </div>
-          <div class="home-instruction-list" id="homeInstructionList" aria-live="polite">
-            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
-            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
-          </div>
-        </section>
         <section class="home-operations" aria-label="Operações do dia">
           <article class="home-operation-card" data-permission="purchases" aria-labelledby="homePurchasesTitle">
             <header class="home-operation-head">
@@ -3961,7 +3965,8 @@
         <form id="instructionForm">
           <div class="instruction-form-grid">
             <div class="field"><label for="instructionTitle">TÍTULO DA INSTRUÇÃO</label><input id="instructionTitle" maxlength="160" required placeholder="Ex.: Aumentar o fluxo de emissão de notas"></div>
-            <div class="field"><label for="instructionDueDate">PRAZO FINAL</label><input id="instructionDueDate" type="date" required></div>
+            <div class="field"><label for="instructionCategory">CATEGORIA</label><select id="instructionCategory" required><option value="geral">GERAL</option><option value="operacional">OPERACIONAL</option><option value="comercial">COMERCIAL</option></select></div>
+            <div class="field"><label for="instructionDueDate">PRAZO FINAL (OPCIONAL)</label><input id="instructionDueDate" type="date"></div>
             <div class="field full"><label for="instructionDescription">ORIENTAÇÃO PARA AS LOJAS</label><textarea id="instructionDescription" maxlength="3000" rows="4" required placeholder="Descreva claramente o que todas as lojas precisam seguir até o prazo informado."></textarea></div>
           </div>
           <div class="instruction-form-actions"><button class="btn-accent" id="btnSaveInstruction" type="submit">PUBLICAR PARA TODAS AS LOJAS</button></div>
@@ -3978,6 +3983,7 @@
           <button class="instruction-tab active" type="button" role="tab" aria-selected="true" data-instruction-view="active">VIGENTES <span id="instructionActiveTabCount">0</span></button>
           <button class="instruction-tab" type="button" role="tab" aria-selected="false" data-instruction-view="history">HISTÓRICO <span id="instructionHistoryTabCount">0</span></button>
         </div>
+        <div class="field" style="max-width:240px;margin-bottom:14px;"><label for="instructionCategoryFilter">CATEGORIA</label><select id="instructionCategoryFilter"><option value="">TODAS AS CATEGORIAS</option><option value="geral">GERAL</option><option value="operacional">OPERACIONAL</option><option value="comercial">COMERCIAL</option></select></div>
         <div class="instruction-list" id="instructionList" aria-live="polite"><div class="instruction-empty">Carregando instruções…</div></div>
       </section>
     </section>
@@ -8433,6 +8439,8 @@
   let instructionRows = [];
   let instructionView = 'active';
   let instructionToday = '';
+  let instructionCategoryFilter = '';
+  const INSTRUCTION_CATEGORY_LABELS = {geral:'GERAL', operacional:'OPERACIONAL', comercial:'COMERCIAL'};
   let pdvRequestRows = [];
   let pdvRequestsLoading = false;
   let pdvRequestStatus = '';
@@ -9284,14 +9292,16 @@
     orderHomeSections();
   }
 
-  // Hierarquia visual da Início: alertas e ações no topo, depois o "hoje"
-  // (tarefas, missões, rotina), depois panorama operacional, comunicados e,
-  // por último, as atualizações de bastidor das lojas.
+  // Hierarquia visual da Início: marca, comunicados (instruções) logo em
+  // seguida, depois alertas e ações no topo, o "hoje" (tarefas, missões,
+  // rotina), panorama operacional e, por último, as atualizações de
+  // bastidor das lojas.
   function orderHomeSections(){
     const glass = document.querySelector('#pageInicio .home-lightglass');
     if(!glass) return;
     const order = [
       '.home-brand',
+      '.home-instructions',
       '#homeAccessGrid',
       '#homeNoAccess',
       '#homeHealthAlert',
@@ -9301,7 +9311,6 @@
       '.home-missions:not(#homeRoutineSection)',
       '#homeRoutineSection',
       '.home-operations',
-      '.home-instructions',
       '.home-overview',
     ];
     order.forEach(selector => {
@@ -17462,6 +17471,7 @@ function renderHomeTasks(){
 
   function instructionDeadlineCopy(row){
     if(instructionView === 'history') return 'FINALIZADA EM '+formatInstructionDate(row.dueDate);
+    if(!row.dueDate) return 'SEM PRAZO DEFINIDO';
     const remaining = instructionDayDifference(row.dueDate,instructionToday || todayDateKey());
     if(remaining <= 0) return 'FINALIZA HOJE';
     if(remaining === 1) return '1 DIA RESTANTE';
@@ -17470,16 +17480,18 @@ function renderHomeTasks(){
 
   function instructionCardHtml(row){
     const history = instructionView === 'history';
-    const remaining = instructionDayDifference(row.dueDate,instructionToday || todayDateKey());
-    const deadlineClass = history ? 'finished' : (remaining <= 0 ? 'today' : 'deadline');
+    const remaining = row.dueDate ? instructionDayDifference(row.dueDate,instructionToday || todayDateKey()) : null;
+    const deadlineClass = history ? 'finished' : (remaining !== null && remaining <= 0 ? 'today' : 'deadline');
     const published = formatInstructionDate(String(row.createdAt || '').slice(0,10));
+    const category = INSTRUCTION_CATEGORY_LABELS[row.category] ? row.category : 'geral';
     return '<article class="instruction-card'+(history ? ' history' : '')+'">'+
       '<div class="instruction-card-copy">'+
         '<strong class="instruction-card-title">'+escapeHtml(row.title || '')+'</strong>'+
         '<p class="instruction-card-description">'+escapeHtml(row.description || '')+'</p>'+
         '<div class="instruction-card-meta">'+
+          '<span class="instruction-badge category-'+category+'">'+escapeHtml(INSTRUCTION_CATEGORY_LABELS[category])+'</span>'+
           '<span class="instruction-badge '+deadlineClass+'">'+escapeHtml(instructionDeadlineCopy(row))+'</span>'+
-          '<span class="instruction-badge">PRAZO: '+escapeHtml(formatInstructionDate(row.dueDate))+'</span>'+
+          '<span class="instruction-badge">'+(row.dueDate ? 'PRAZO: '+escapeHtml(formatInstructionDate(row.dueDate)) : 'SEM PRAZO')+'</span>'+
           '<span class="instruction-badge">PUBLICADA EM '+escapeHtml(published)+'</span>'+
           '<span class="instruction-badge">POR '+escapeHtml(row.createdByName || 'ADMINISTRADOR')+'</span>'+
         '</div>'+
@@ -17512,9 +17524,16 @@ function renderHomeTasks(){
     instructionRows = Array.isArray(data.instructions) ? data.instructions : [];
     instructionToday = data.today || todayDateKey();
     renderInstructionTabs(data.summary || {});
-    el('instructionCount').textContent = instructionRows.length+' INSTRUÇ'+(instructionRows.length === 1 ? 'ÃO' : 'ÕES');
-    el('instructionList').innerHTML = instructionRows.length
-      ? instructionRows.map(instructionCardHtml).join('')
+    renderInstructionList();
+  }
+
+  function renderInstructionList(){
+    const rows = instructionCategoryFilter
+      ? instructionRows.filter(row => row.category === instructionCategoryFilter)
+      : instructionRows;
+    el('instructionCount').textContent = rows.length+' INSTRUÇ'+(rows.length === 1 ? 'ÃO' : 'ÕES');
+    el('instructionList').innerHTML = rows.length
+      ? rows.map(instructionCardHtml).join('')
       : '<div class="instruction-empty">'+(instructionView === 'history'
           ? 'Nenhuma instrução foi finalizada ainda. Quando um prazo terminar, ela aparecerá automaticamente aqui.'
           : 'Nenhuma instrução vigente para as lojas neste momento.')+'</div>';
@@ -18006,11 +18025,16 @@ function renderHomeTasks(){
   }
 
   function homeInstructionRowHtml(row,today){
-    const remaining = instructionDayDifference(row.dueDate,today);
-    const deadline = remaining <= 0 ? 'FINALIZA HOJE' : 'ATÉ '+formatInstructionDate(row.dueDate);
+    const deadline = !row.dueDate
+      ? 'SEM PRAZO'
+      : (instructionDayDifference(row.dueDate,today) <= 0 ? 'FINALIZA HOJE' : 'ATÉ '+formatInstructionDate(row.dueDate));
+    const category = INSTRUCTION_CATEGORY_LABELS[row.category] ? row.category : 'geral';
     return '<article class="home-instruction-row">'+
       '<span class="home-instruction-icon" aria-hidden="true">!</span>'+
-      '<div class="home-instruction-copy"><strong>'+escapeHtml(row.title || '')+'</strong><span>'+escapeHtml(row.description || '')+'</span></div>'+
+      '<div class="home-instruction-copy">'+
+        '<span class="instruction-badge category-'+category+'">'+escapeHtml(INSTRUCTION_CATEGORY_LABELS[category])+'</span>'+
+        '<strong>'+escapeHtml(row.title || '')+'</strong><span>'+escapeHtml(row.description || '')+'</span>'+
+      '</div>'+
       '<span class="home-instruction-due">'+escapeHtml(deadline)+'</span>'+
     '</article>';
   }
@@ -18035,12 +18059,6 @@ function renderHomeTasks(){
     status.className = 'user-form-status'+(tone ? ' '+tone : '');
   }
 
-  function instructionDefaultDueDate(){
-    const date = new Date(todayDateKey()+'T12:00:00');
-    date.setDate(date.getDate()+7);
-    return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
-  }
-
   el('instructionForm').addEventListener('submit',async event => {
     event.preventDefault();
     const button = el('btnSaveInstruction');
@@ -18053,12 +18071,14 @@ function renderHomeTasks(){
         body:JSON.stringify({
           title:el('instructionTitle').value,
           description:el('instructionDescription').value,
+          category:el('instructionCategory').value,
           dueDate:el('instructionDueDate').value
         })
       });
       el('instructionTitle').value = '';
       el('instructionDescription').value = '';
-      el('instructionDueDate').value = instructionDefaultDueDate();
+      el('instructionCategory').value = 'geral';
+      el('instructionDueDate').value = '';
       instructionView = 'active';
       setInstructionFormStatus('INSTRUÇÃO PUBLICADA PARA TODAS AS LOJAS.','success');
       await Promise.all([loadInstructions(),loadHomeInstructions()]);
@@ -18077,6 +18097,11 @@ function renderHomeTasks(){
     loadInstructions();
   });
 
+  el('instructionCategoryFilter').addEventListener('change',() => {
+    instructionCategoryFilter = el('instructionCategoryFilter').value;
+    renderInstructionList();
+  });
+
   el('instructionList').addEventListener('click',async event => {
     const button = event.target.closest('[data-instruction-delete]');
     if(!button || !confirm('Excluir esta instrução definitivamente? Ela também será removida do histórico.')) return;
@@ -18092,7 +18117,6 @@ function renderHomeTasks(){
   });
 
   el('instructionDueDate').min = todayDateKey();
-  el('instructionDueDate').value = instructionDefaultDueDate();
 
   const PDV_TYPE_LABELS = {
     observation:'OBSERVAÇÃO', payment:'PAGAMENTO', seller:'VENDEDOR', customer:'CLIENTE',
