@@ -1913,10 +1913,10 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
 
   assert.match(
     html,
-    /id="navInicio"[\s\S]*class="nav-label">Início<[\s\S]*id="navEstoque"[\s\S]*id="navPuxadas"[\s\S]*id="navDashboard"[\s\S]*class="nav-label">Estoque Fiscal<[\s\S]*id="navCompras"[\s\S]*id="navSaidas"[\s\S]*id="navCadastros"/,
+    /id="navInicio"[\s\S]*class="nav-label">Início<[\s\S]*id="navEstoque"[\s\S]*id="navDashboard"[\s\S]*class="nav-label">Estoque Fiscal<[\s\S]*id="navPuxadas"[\s\S]*id="navSaidas"[\s\S]*id="navCadastros"/,
   );
   assert.match(html, /class="nav-item sub-item" id="navPuxadas"[\s\S]*class="nav-item sub-item" id="navSaidas"/);
-  assert.match(html, /id="navLojas"[\s\S]*class="nav-item sub-item" id="navDados"/);
+  assert.match(html, /id="navDados"[\s\S]*class="nav-item sub-item" id="navLojas"/);
   assert.match(html, /id="pageInicio" class="page wrap home-page active"/);
   assert.match(html, /class="home-lightglass"/);
   assert.match(html, /class="home-brand-logo" data-logo alt="LOGO UNIGAMES"/);

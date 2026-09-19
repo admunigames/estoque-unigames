@@ -43,3 +43,6 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# local tooling
+/.claude/
