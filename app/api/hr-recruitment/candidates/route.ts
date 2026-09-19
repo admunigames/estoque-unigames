@@ -62,7 +62,14 @@ function dateOrEmpty(value: unknown) {
   return text && DATE_PATTERN.test(text) ? text : "";
 }
 
-async function createHiredEmployee(
+// Só MONTA o INSERT (não executa) — quem chama precisa rodar esse statement
+// no mesmo database.batch() do UPDATE do candidato que grava o vínculo
+// (hr_employee_id), pra que a criação do funcionário e a gravação do
+// vínculo sejam atômicas. Sem isso, uma falha no UPDATE logo após o INSERT
+// (ou um duplo clique em "Salvar") deixaria um hr_employees órfão e criaria
+// outro a cada nova tentativa, já que hr_employee_id nunca teria sido
+// persistido no candidato.
+async function buildHiredEmployeeInsert(
   database: Database,
   candidate: { fullName: string; desiredRole: string; admissionDate: string; admissionCompanyId: string },
   actor: Identity,
@@ -76,7 +83,7 @@ async function createHiredEmployee(
     companyName = company ? company.name : "";
   }
   const employeeId = crypto.randomUUID();
-  await database
+  const statement = database
     .prepare(
       `INSERT INTO hr_employees
         (id, full_name, admission_date, company_id, company_name, role_title, status,
@@ -92,9 +99,8 @@ async function createHiredEmployee(
       candidate.desiredRole,
       actor.id,
       actorName(actor),
-    )
-    .run();
-  return employeeId;
+    );
+  return { employeeId, statement };
 }
 
 type Database = Awaited<ReturnType<typeof getD1>>;
@@ -192,8 +198,9 @@ export async function POST(request: Request) {
       if (!existing) return jsonResponse({ error: "CANDIDATO NÃO ENCONTRADO." }, 404);
 
       let hrEmployeeId = existing.hrEmployeeId;
+      let hiredEmployeeInsert: Awaited<ReturnType<typeof buildHiredEmployeeInsert>>["statement"] | null = null;
       if (status === "contratado" && !hrEmployeeId) {
-        hrEmployeeId = await createHiredEmployee(
+        const built = await buildHiredEmployeeInsert(
           database,
           {
             fullName,
@@ -203,9 +210,11 @@ export async function POST(request: Request) {
           },
           actor,
         );
+        hrEmployeeId = built.employeeId;
+        hiredEmployeeInsert = built.statement;
       }
 
-      await database
+      const updateCandidateStatement = database
         .prepare(
           `UPDATE hr_recruitment_candidates SET
             full_name=?1, desired_role=?2, status=?3,
@@ -285,19 +294,27 @@ export async function POST(request: Request) {
           actor.id,
           actorName(actor),
           editId,
-        )
-        .run();
+        );
 
+      const statements = [];
+      if (hiredEmployeeInsert) statements.push(hiredEmployeeInsert);
+      statements.push(updateCandidateStatement);
       if (status !== existing.status) {
-        await database
-          .prepare(
-            `INSERT INTO hr_recruitment_status_history
-              (id, candidate_id, from_status, to_status, note, changed_by, changed_by_name, changed_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)`,
-          )
-          .bind(crypto.randomUUID(), editId, existing.status, status, statusNote, actor.id, actorName(actor))
-          .run();
+        statements.push(
+          database
+            .prepare(
+              `INSERT INTO hr_recruitment_status_history
+                (id, candidate_id, from_status, to_status, note, changed_by, changed_by_name, changed_at)
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)`,
+            )
+            .bind(crypto.randomUUID(), editId, existing.status, status, statusNote, actor.id, actorName(actor)),
+        );
       }
+      // Uma única transação: se a criação do hr_employees, a gravação do
+      // vínculo (hr_employee_id) no candidato ou o histórico falharem, TUDO
+      // é revertido junto — evita funcionário órfão ou duplicado em caso de
+      // erro parcial ou nova tentativa (ver buildHiredEmployeeInsert).
+      await database.batch(statements);
 
       return jsonResponse({ updated: true, id: editId, hrEmployeeId });
     }

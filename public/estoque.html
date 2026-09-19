@@ -30772,6 +30772,9 @@ function renderHomeTasks(){
 
   if(el('recCandidateForm')) el('recCandidateForm').addEventListener('submit', async event => {
     event.preventDefault();
+    const saveButton = el('btnSaveRecCandidate');
+    if(saveButton.disabled) return; // evita duplo envio (ex.: duplo clique) criando o funcionário 2x ao contratar
+    saveButton.disabled = true;
     const status = el('recCandidateFormStatus');
     status.textContent = '';
     const companyId = el('recAdmissionCompanyId').value;
@@ -30841,6 +30844,8 @@ function renderHomeTasks(){
       showPurchaseToast('Candidato salvo.');
     }catch(error){
       status.textContent = error.message;
+    }finally{
+      saveButton.disabled = false;
     }
   });
 
