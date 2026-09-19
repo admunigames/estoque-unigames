@@ -51,6 +51,7 @@ type Permission =
   | "payroll:manage"
   | "rh_acompanhamento:view" | "rh_acompanhamento:manage"
   | "rh_ponto_logistica:view" | "rh_ponto_logistica:manage"
+  | "rh_recrutamento:view" | "rh_recrutamento:manage"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -136,6 +137,9 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // de payroll:manage e de rh_acompanhamento:* (ver
   // MODULE_VIEW_PERMISSIONS.timeTracking).
   "rh_ponto_logistica:view", "rh_ponto_logistica:manage",
+  // RH > Recrutamento e Seleção — permissão própria, independente das
+  // demais (ver MODULE_VIEW_PERMISSIONS.recruitment).
+  "rh_recrutamento:view", "rh_recrutamento:manage",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -1099,6 +1103,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   payroll: ["payroll:manage"],
   storeTracking: ["rh_acompanhamento:view", "rh_acompanhamento:manage"],
   timeTracking: ["rh_ponto_logistica:view", "rh_ponto_logistica:manage"],
+  recruitment: ["rh_recrutamento:view", "rh_recrutamento:manage"],
   works: ["works:manage", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
@@ -1215,6 +1220,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/rh/controle-horas-logistica" || path.startsWith("/api/hr-time-tracking"),
       "timeTracking",
+    ],
+    // RH > Recrutamento e Seleção — permissão própria (rh_recrutamento:*),
+    // independente das demais permissões de RH acima.
+    [
+      path === "/rh/recrutamento" || path.startsWith("/api/hr-recruitment"),
+      "recruitment",
     ],
   ];
   const direct = directPermissions.find(([matches]) => matches);

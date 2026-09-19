@@ -2858,3 +2858,179 @@ export const hrStoreTracking = pgTable(
     index("hr_store_tracking_meeting_date_idx").on(table.meetingDate),
   ],
 );
+
+// RH > Recrutamento e Seleção — pipeline único (Selecionado Entrevista > Em
+// Teste > Em Treinamento > Contratado > Integração > Cancelado). Uma
+// entidade única "candidato" que carrega os dados de TODAS as etapas (não
+// tabelas separadas por etapa) — o histórico de mudança de status fica em
+// hr_recruitment_status_history. Ao mudar para "contratado", o backend cria
+// automaticamente um hr_employees vinculado (hr_employee_id), decisão
+// confirmada com o usuário para não duplicar cadastro.
+export const hrRecruitmentCandidates = pgTable(
+  "hr_recruitment_candidates",
+  {
+    id: text("id").primaryKey(),
+    fullName: text("full_name").notNull(),
+    desiredRole: text("desired_role").notNull().default(""),
+    status: text("status").notNull().default("selecionado_entrevista"),
+
+    // Etapa 1 — Selecionado Entrevista.
+    interviewDate: text("interview_date").notNull().default(""),
+    interviewTime: text("interview_time").notNull().default(""),
+    scriptSent: integer("script_sent").notNull().default(0),
+    // '' | 'aprovado' | 'reprovado'.
+    interviewResult: text("interview_result").notNull().default(""),
+    interviewResultReason: text("interview_result_reason").notNull().default(""),
+
+    // Etapa 2 — Agendamento de Teste.
+    testScriptSent: integer("test_script_sent").notNull().default(0),
+    testConfirmed: integer("test_confirmed").notNull().default(0),
+    cancelledAt: text("cancelled_at").notNull().default(""),
+    cancelledReason: text("cancelled_reason").notNull().default(""),
+
+    // Etapa 3 — checklist admissional (aberto ao marcar "Contratado").
+    kitDelivered: integer("kit_delivered").notNull().default(0),
+    kitDeliveredDate: text("kit_delivered_date").notNull().default(""),
+    trainingStartDate: text("training_start_date").notNull().default(""),
+    admissionDate: text("admission_date").notNull().default(""),
+    admissionCompanyId: text("admission_company_id").notNull().default(""),
+    admissionCompanyName: text("admission_company_name").notNull().default(""),
+    fixedUnitId: text("fixed_unit_id").notNull().default(""),
+    fixedUnitName: text("fixed_unit_name").notNull().default(""),
+    // Preparado para integrar com o módulo de Fardamento quando existir —
+    // hoje é só um check manual de "enviado".
+    uniformSent: integer("uniform_sent").notNull().default(0),
+    uniformSentDate: text("uniform_sent_date").notNull().default(""),
+    // 3 sistemas de cadastro genéricos (nome exato a definir depois na UI).
+    system1Done: integer("system1_done").notNull().default(0),
+    system1Date: text("system1_date").notNull().default(""),
+    system2Done: integer("system2_done").notNull().default(0),
+    system2Date: text("system2_date").notNull().default(""),
+    system3Done: integer("system3_done").notNull().default(0),
+    system3Date: text("system3_date").notNull().default(""),
+    ifoodDone: integer("ifood_done").notNull().default(0),
+    ifoodDate: text("ifood_date").notNull().default(""),
+    benefitsIncluded: integer("benefits_included").notNull().default(0),
+    benefitsCalculated: integer("benefits_calculated").notNull().default(0),
+    benefitsDate: text("benefits_date").notNull().default(""),
+    facepontoDone: integer("faceponto_done").notNull().default(0),
+    facepontoDate: text("faceponto_date").notNull().default(""),
+    payjoyDone: integer("payjoy_done").notNull().default(0),
+    payjoyDate: text("payjoy_date").notNull().default(""),
+    // Preparado para integrar com o módulo de Aniversariantes quando existir.
+    birthdayListAdded: integer("birthday_list_added").notNull().default(0),
+    birthdayListDate: text("birthday_list_date").notNull().default(""),
+    photoTaken: integer("photo_taken").notNull().default(0),
+    asoRequested: integer("aso_requested").notNull().default(0),
+    asoClinic: text("aso_clinic").notNull().default(""),
+    asoValueCents: integer("aso_value_cents").notNull().default(0),
+    shoppingRegistered: integer("shopping_registered").notNull().default(0),
+    // "Frive" do pedido original = Google Drive (confirmado com o usuário) —
+    // aqui é só o link da pasta, sem upload direto.
+    admissionDocsDriveLink: text("admission_docs_drive_link").notNull().default(""),
+    // Preparado para integrar com o módulo de plano odontológico quando existir.
+    dentalPlanIncluded: integer("dental_plan_included").notNull().default(0),
+    dentalPlanDate: text("dental_plan_date").notNull().default(""),
+    referencesChecked: integer("references_checked").notNull().default(0),
+
+    // Etapa 4 — Integração. Print da reunião + transcrição ficam guardados
+    // no próprio registro do candidato (não existe um conceito de "pasta do
+    // funcionário" no projeto ainda — decisão confirmada com o usuário).
+    integrationMeetingDone: integer("integration_meeting_done").notNull().default(0),
+    integrationTermSigned: integer("integration_term_signed").notNull().default(0),
+    integrationTermFileName: text("integration_term_file_name").notNull().default(""),
+    integrationTermR2Key: text("integration_term_r2_key").notNull().default(""),
+    integrationTermSizeBytes: integer("integration_term_size_bytes").notNull().default(0),
+    integrationPrintFileName: text("integration_print_file_name").notNull().default(""),
+    integrationPrintR2Key: text("integration_print_r2_key").notNull().default(""),
+    integrationPrintSizeBytes: integer("integration_print_size_bytes").notNull().default(0),
+    integrationMeetingTranscript: text("integration_meeting_transcript").notNull().default(""),
+
+    // Vínculo OPCIONAL com hr_employees, preenchido automaticamente quando o
+    // status muda para "contratado" (sem FK real, convenção do projeto).
+    hrEmployeeId: text("hr_employee_id").notNull().default(""),
+
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("hr_recruitment_candidates_status_idx").on(table.status),
+    index("hr_recruitment_candidates_interview_date_idx").on(table.interviewDate),
+  ],
+);
+
+// Histórico timestamped de mudança de status — é aqui que fica a
+// justificativa/observação de cada transição, visível a qualquer momento
+// independente da etapa atual do candidato.
+export const hrRecruitmentStatusHistory = pgTable(
+  "hr_recruitment_status_history",
+  {
+    id: text("id").primaryKey(),
+    candidateId: text("candidate_id").notNull(),
+    fromStatus: text("from_status").notNull().default(""),
+    toStatus: text("to_status").notNull(),
+    note: text("note").notNull().default(""),
+    changedBy: text("changed_by").notNull().default(""),
+    changedByName: text("changed_by_name").notNull().default(""),
+    changedAt: text("changed_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("hr_recruitment_status_history_candidate_idx").on(table.candidateId)],
+);
+
+// Múltiplos lançamentos de pagamento de teste/treinamento por candidato
+// (Etapa 2) — quanto foi pago e em quais dias.
+export const hrRecruitmentTestPayments = pgTable(
+  "hr_recruitment_test_payments",
+  {
+    id: text("id").primaryKey(),
+    candidateId: text("candidate_id").notNull(),
+    amountCents: integer("amount_cents").notNull().default(0),
+    paidDate: text("paid_date").notNull().default(""),
+    note: text("note").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("hr_recruitment_test_payments_candidate_idx").on(table.candidateId)],
+);
+
+// Acompanhamento de Padrinhos — lista separada, vinculada ao funcionário já
+// contratado (hr_employees), com atualizações semanais em log/timeline.
+export const hrRecruitmentSponsors = pgTable(
+  "hr_recruitment_sponsors",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull().default(""),
+    employeeName: text("employee_name").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    sponsorName: text("sponsor_name").notNull().default(""),
+    informedDate: text("informed_date").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("hr_recruitment_sponsors_employee_idx").on(table.employeeId)],
+);
+
+// Log/timeline de atualizações semanais do padrinho sobre o apadrinhado —
+// múltiplos lançamentos ao longo do tempo.
+export const hrRecruitmentSponsorUpdates = pgTable(
+  "hr_recruitment_sponsor_updates",
+  {
+    id: text("id").primaryKey(),
+    sponsorId: text("sponsor_id").notNull(),
+    updateText: text("update_text").notNull(),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("hr_recruitment_sponsor_updates_sponsor_idx").on(table.sponsorId)],
+);

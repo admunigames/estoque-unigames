@@ -2956,11 +2956,12 @@
         <a class="nav-item sub-item" id="navFinanceiroRhAcompanhamentoLojas" data-page="rhAcompanhamentoLojas" data-permission="rh_acompanhamento" title="Acompanhamento - Lojas" href="/rh/acompanhamento-lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M6 19V10l5-3 5 3v9"/><path d="M10 19v-5h4v5"/></svg></span><span class="nav-label">Acompanhamento - Lojas</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica">
+    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navRhSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navRhRecrutamento" data-page="rhRecrutamento" data-permission="rh_recrutamento" data-home-desc="Pipeline de Recrutamento e Seleção: entrevista, teste, treinamento, contratação e integração." title="Recrutamento e Seleção" href="/rh/recrutamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/><path d="m17 4 2 2-2 2"/><path d="M19 6h-4"/></svg></span><span class="nav-label">Recrutamento e Seleção</span></a>
         <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-permission="hr" data-home-desc="Solicitações e histórico de folgas da equipe." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
         <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" data-permission="hr" data-home-desc="Montagem e consulta das escalas de trabalho da equipe." title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="nav-label">Escalas</span></a>
         <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
@@ -5089,6 +5090,13 @@
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:view"> Ver registros de ponto, horas extras e banco de horas</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:manage"> Lançar ponto, configurar jornada e registrar horas pagas</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>RH - Recrutamento e Seleção</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:view"> Ver candidatos, pipeline e acompanhamento de padrinhos</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:manage"> Cadastrar, editar e excluir candidatos e padrinhos</label>
                   </div>
                 </details>
                 <details class="permission-module">
@@ -9009,6 +9017,7 @@
     notasOs:'/solicitacoes/notas-os',
     documentos:'/documentos',
     usuarios:'/cadastros/usuarios',
+    rhRecrutamento:'/rh/recrutamento',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
     rhFuncionarios:'/rh/funcionarios',
@@ -9056,6 +9065,7 @@
     alteracoesPdv:'ALTERAÇÕES PDV',
     notasOs:'NOTAS DE O.S.',
     usuarios:'USUÁRIOS E ACESSOS',
+    rhRecrutamento:'RECRUTAMENTO E SELEÇÃO',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
     rhFuncionarios:'FUNCIONÁRIOS',
@@ -9100,6 +9110,7 @@
     cadastros:'database',
     lojas:'database',
     dados:'database',
+    rhRecrutamento:'rh_recrutamento',
     rhFolgas:'hr',
     rhEscalas:'hr',
     rhFuncionarios:'payroll',
@@ -9733,6 +9744,7 @@
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
+    if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -9779,6 +9791,7 @@
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
+    if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhControleHoras') loadRhControleHoras();
   }
 
@@ -27796,6 +27809,7 @@ function renderHomeTasks(){
     'payroll:manage':'RH Financeiro: folha, benefícios e comissionamento',
     'rh_acompanhamento:view':'RH - Acompanhamento de Lojas: visualizar','rh_acompanhamento:manage':'RH - Acompanhamento de Lojas: cadastrar/editar/excluir',
     'rh_ponto_logistica:view':'RH - Controle de Horas - Logística: visualizar','rh_ponto_logistica:manage':'RH - Controle de Horas - Logística: lançar/configurar',
+    'rh_recrutamento:view':'RH - Recrutamento e Seleção: visualizar','rh_recrutamento:manage':'RH - Recrutamento e Seleção: cadastrar/editar/excluir',
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
