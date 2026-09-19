@@ -251,6 +251,7 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/comissionamento",
   "/rh/acompanhamento-lojas",
   "/rh/controle-horas-logistica",
+  "/rh/recrutamento",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
