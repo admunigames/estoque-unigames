@@ -3644,3 +3644,67 @@ test("card de usuário em Cadastros > Usuários e Acessos fica compacto (sem a l
   // enxuta, não a edição.
   assert.match(html, /el\('userAccessGroup'\)\.value = user\.accessGroup \|\| \(user\.role === 'admin' \? 'administrator' : 'custom'\);/);
 });
+
+test("expõe o módulo RH > Fardamento e restringe o acesso a rh_fardamento:view/:manage", async () => {
+  const [html, workerSource, lib, shared, stockRoute, movementsRoute, employeesRoute, termsRoute, schema, migration] =
+    await Promise.all([
+      readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+      readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/hr-uniform-stock.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/hr-uniform-stock/shared.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/hr-uniform-stock/stock/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/hr-uniform-stock/movements/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/hr-uniform-stock/employees/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/hr-uniform-stock/terms/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+      readFile(new URL("../drizzle/0065_hr_uniform_stock.sql", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(html, /id="navRhFardamento" data-page="rhFardamento" data-permission="rh_fardamento"/);
+  assert.match(html, /id="pageRhFardamento" class="page wrap"/);
+  assert.match(html, /rhFardamento:'\/rh\/fardamento'/);
+  assert.match(html, /rhFardamento:'rh_fardamento'/);
+  assert.match(html, /function loadRhFardamento\(\)/);
+  assert.match(html, /'rh_fardamento:view':'RH - Fardamento: visualizar'/);
+  assert.match(html, /value="rh_fardamento:manage"/);
+  assert.match(html, /id="fardMovementDialog"/);
+  assert.match(html, /id="fardTermDialog"/);
+
+  assert.match(workerSource, /"rh_fardamento:view" \| "rh_fardamento:manage"/);
+  assert.match(workerSource, /uniformStock: \["rh_fardamento:view", "rh_fardamento:manage"\]/);
+  assert.match(workerSource, /"\/rh\/fardamento"/);
+  assert.match(
+    workerSource,
+    /path === "\/rh\/fardamento" \|\| path\.startsWith\("\/api\/hr-uniform-stock"\)/,
+  );
+
+  // Catálogo (tipos de peça/tamanhos) e o cálculo do delta de estoque são
+  // lógica pura em app/lib, sem dependência de banco — testados
+  // isoladamente em tests/hr-uniform-stock.test.mjs.
+  assert.match(lib, /"unitec", "unigames", "pa", "lider", "adm", "casacos"/);
+  assert.match(lib, /export function resolveMovementDelta/);
+
+  assert.match(shared, /canViewUniformStock/);
+  assert.match(shared, /canManageUniformStock/);
+  assert.match(stockRoute, /FROM uniform_stock_items/);
+  assert.match(movementsRoute, /INSERT INTO uniform_stock_movements/);
+  // Todo lançamento aplica um UPDATE relativo (stock_qty + delta), nunca
+  // grava um valor absoluto — evita condição de corrida em lançamentos
+  // simultâneos (mesma técnica de app/api/supplies/stock/route.ts).
+  assert.match(movementsRoute, /SET stock_qty = stock_qty \+ \?1, updated_at=CURRENT_TIMESTAMP WHERE id=\?2/);
+  // 1 Termo de Responsabilidade criado automaticamente por saída de casaco.
+  assert.match(movementsRoute, /INSERT INTO uniform_coat_terms/);
+  assert.match(employeesRoute, /FROM hr_employees WHERE status='active'/);
+  assert.match(termsRoute, /UPDATE uniform_coat_terms/);
+
+  assert.match(schema, /export const uniformStockItems = pgTable/);
+  assert.match(schema, /export const uniformStockMovements = pgTable/);
+  assert.match(schema, /export const uniformCoatTerms = pgTable/);
+  assert.match(migration, /CREATE TABLE "uniform_stock_items"/);
+  assert.match(migration, /CREATE TABLE "uniform_stock_movements"/);
+  assert.match(migration, /CREATE TABLE "uniform_coat_terms"/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /REVOKE ALL ON TABLE "uniform_coat_terms" FROM anon, authenticated/);
+  // As 36 combinações (6 tipos × 6 tamanhos) já nascem semeadas com saldo 0.
+  assert.match(migration, /INSERT INTO "uniform_stock_items"/);
+});

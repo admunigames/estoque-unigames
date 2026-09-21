@@ -52,6 +52,7 @@ type Permission =
   | "rh_acompanhamento:view" | "rh_acompanhamento:manage"
   | "rh_ponto_logistica:view" | "rh_ponto_logistica:manage"
   | "rh_recrutamento:view" | "rh_recrutamento:manage"
+  | "rh_fardamento:view" | "rh_fardamento:manage"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -140,6 +141,10 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // RH > Recrutamento e Seleção — permissão própria, independente das
   // demais (ver MODULE_VIEW_PERMISSIONS.recruitment).
   "rh_recrutamento:view", "rh_recrutamento:manage",
+  // RH > Fardamento — controle de estoque de uniformes/casacos por tipo de
+  // peça + tamanho, permissão própria, independente das demais (ver
+  // MODULE_VIEW_PERMISSIONS.uniformStock).
+  "rh_fardamento:view", "rh_fardamento:manage",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -252,6 +257,7 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/acompanhamento-lojas",
   "/rh/controle-horas-logistica",
   "/rh/recrutamento",
+  "/rh/fardamento",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
@@ -1105,6 +1111,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   storeTracking: ["rh_acompanhamento:view", "rh_acompanhamento:manage"],
   timeTracking: ["rh_ponto_logistica:view", "rh_ponto_logistica:manage"],
   recruitment: ["rh_recrutamento:view", "rh_recrutamento:manage"],
+  uniformStock: ["rh_fardamento:view", "rh_fardamento:manage"],
   works: ["works:manage", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
@@ -1227,6 +1234,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/rh/recrutamento" || path.startsWith("/api/hr-recruitment"),
       "recruitment",
+    ],
+    // RH > Fardamento — permissão própria (rh_fardamento:*), independente
+    // das demais permissões de RH acima.
+    [
+      path === "/rh/fardamento" || path.startsWith("/api/hr-uniform-stock"),
+      "uniformStock",
     ],
   ];
   const direct = directPermissions.find(([matches]) => matches);
