@@ -1229,6 +1229,7 @@
   .purchase-field.full{grid-column:1 / -1;}
   .purchase-field label{color:var(--ink-soft); font:700 9.5px/1.3 var(--mono); letter-spacing:.45px;}
   .purchase-field-help{color:var(--ink-faint); font:10px/1.45 var(--sans);}
+  .purchase-field-static{padding:8px 0; font:600 13px/1.3 var(--sans); color:var(--ink);}
   .purchase-form-section{grid-column:1 / -1; margin-top:4px; padding-top:14px; border-top:1px solid var(--border); color:var(--accent); font:700 10px/1.3 var(--mono);}
   .purchase-form-actions{display:flex; justify-content:flex-end; gap:9px; margin-top:18px;}
   .input-error{border-color:var(--danger,#c0392b) !important; box-shadow:0 0 0 1px var(--danger,#c0392b);}
@@ -2960,7 +2961,7 @@
         <a class="nav-item sub-item" id="navFinanceiroRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento">
+    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -2970,6 +2971,7 @@
         <a class="nav-item sub-item" id="navRhComissionamento" data-page="rhComissionamento" data-permission="payroll" data-home-desc="Comissão, bônus, premiações e recibo detalhado por funcionário." title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
         <a class="nav-item sub-item" id="navRhControleHoras" data-page="rhControleHoras" data-permission="rh_ponto_logistica" data-home-desc="Registro manual do ponto da logística, horas extras e banco de horas." title="Controle de Horas - Logística" href="/rh/controle-horas-logistica"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="nav-label">Controle de Horas - Logística</span></a>
         <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" data-permission="hr" data-home-desc="Montagem e consulta das escalas de trabalho da equipe." title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="nav-label">Escalas</span></a>
+        <a class="nav-item sub-item" id="navRhFardamento" data-page="rhFardamento" data-permission="rh_fardamento" data-home-desc="Controle de estoque de fardamento e casacos por tipo de peça e tamanho." title="Fardamento" href="/rh/fardamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l1 2 4 2-2 4-2-1v11H8V10l-2 1-2-4 4-2 1-2Z"/></svg></span><span class="nav-label">Fardamento</span></a>
         <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-permission="hr" data-home-desc="Solicitações e histórico de folgas da equipe." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
         <a class="nav-item sub-item" id="navRhFolha" data-page="rhFolha" data-permission="payroll" data-home-desc="Folha de pagamento mensal, com comissão e benefícios calculados na hora." title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
         <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
@@ -5106,6 +5108,13 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>RH - Fardamento</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:view"> Ver estoque, lançamentos e termos de responsabilidade de fardamento</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:manage"> Lançar saídas, devoluções, ajustes e gerenciar termos de casacos</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -5387,6 +5396,100 @@
             <table id="recSponsorsTable">
               <thead><tr><th>Apadrinhado</th><th>Loja</th><th>Padrinho</th><th>Padrinho informado em</th><th></th></tr></thead>
               <tbody id="recSponsorsTableBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RH / FARDAMENTO ================= -->
+    <section id="pageRhFardamento" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Fardamento</h2>
+        </div>
+      </header>
+
+      <div class="output-tabs no-print" role="tablist" aria-label="Aba do fardamento" id="fardTabs">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-fard-tab="unitec">UNITEC</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-fard-tab="unigames">UNIGAMES</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-fard-tab="pa">P.A</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-fard-tab="lider">LÍDER (PRETA)</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-fard-tab="adm">ADM</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-fard-tab="casacos">CASACOS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-fard-tab="termos">TERMO DE RESPONSABILIDADE</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-fard-tab="status">STATUS</button>
+      </div>
+
+      <div id="fardPiecePanel">
+        <div class="table-panel">
+          <div class="table-scroll">
+            <table id="fardStockTable">
+              <thead><tr><th>Tamanho</th><th>Em estoque</th></tr></thead>
+              <tbody id="fardStockTableBody"><tr><td colspan="2" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="dre-toolbar no-print">
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnFardSaida" type="button">+ SAÍDA</button>
+            <button class="btn-accent" id="btnFardEntrada" type="button">+ DEVOLUÇÃO</button>
+            <button class="btn-outline" id="btnFardAjuste" type="button">AJUSTAR ESTOQUE</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="fardMovementsTable">
+              <thead><tr><th>Data</th><th>Tipo</th><th>Colaborador</th><th>Tamanho</th><th>Loja</th><th>Observação</th><th></th></tr></thead>
+              <tbody id="fardMovementsTableBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="fardTermsPanel" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="fardTermFiltroStatus">SITUAÇÃO</label>
+            <select id="fardTermFiltroStatus">
+              <option value="">TODAS</option>
+              <option value="aguardando_assinatura">AGUARDANDO ASSINATURA</option>
+              <option value="enviado">ENVIADO</option>
+              <option value="assinado">ASSINADO</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="fardTermsTable">
+              <thead><tr><th>Data da saída</th><th>Colaborador</th><th>Loja</th><th>Tamanho</th><th>Situação</th><th>Arquivo</th><th></th></tr></thead>
+              <tbody id="fardTermsTableBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="fardStatusPanel" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="fardStatusPieceType">TIPO DE PEÇA</label>
+            <select id="fardStatusPieceType">
+              <option value="">TODOS</option>
+              <option value="unitec">UNITEC</option>
+              <option value="unigames">UNIGAMES</option>
+              <option value="pa">P.A</option>
+              <option value="lider">LÍDER (PRETA)</option>
+              <option value="adm">ADM</option>
+              <option value="casacos">CASACOS</option>
+            </select>
+          </div>
+          <div class="field"><label for="fardStatusEmployee">COLABORADOR</label><select id="fardStatusEmployee"><option value="">TODOS</option></select></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="fardStatusTable">
+              <thead><tr><th>Data</th><th>Tipo de peça</th><th>Lançamento</th><th>Colaborador</th><th>Tamanho</th><th>Loja</th></tr></thead>
+              <tbody id="fardStatusTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -7614,6 +7717,90 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="fardMovementDialog" aria-labelledby="fardMovementDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="fardMovementDialogTitle">NOVA SAÍDA</h3>
+    <button class="purchase-dialog-close" id="btnCloseFardMovementDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="fardMovementForm">
+    <input type="hidden" id="fardMovementType">
+    <input type="hidden" id="fardMovementPieceType">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="fardMovementSize">TAMANHO *</label>
+        <select id="fardMovementSize" required>
+          <option value="P">P</option><option value="M">M</option><option value="G">G</option>
+          <option value="GG">GG</option><option value="XGG">XGG</option><option value="XXGG">XXGG</option>
+        </select>
+      </div>
+      <div class="purchase-field"><label for="fardMovementEmployee">COLABORADOR *</label><select id="fardMovementEmployee" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="fardMovementDate">DATA *</label><input type="date" id="fardMovementDate" required></div>
+      <div class="purchase-field" id="fardMovementCompanyField" hidden><label for="fardMovementCompany">LOJA *</label><select id="fardMovementCompany"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="fardMovementNote">OBSERVAÇÃO</label><textarea id="fardMovementNote" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="fardMovementFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelFardMovementDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveFardMovement" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="fardAdjustDialog" aria-labelledby="fardAdjustDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="fardAdjustDialogTitle">AJUSTAR ESTOQUE</h3>
+    <button class="purchase-dialog-close" id="btnCloseFardAdjustDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="fardAdjustForm">
+    <input type="hidden" id="fardAdjustPieceType">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="fardAdjustSize">TAMANHO *</label>
+        <select id="fardAdjustSize" required>
+          <option value="P">P</option><option value="M">M</option><option value="G">G</option>
+          <option value="GG">GG</option><option value="XGG">XGG</option><option value="XXGG">XXGG</option>
+        </select>
+      </div>
+      <div class="purchase-field"><label>ESTOQUE ATUAL</label><div id="fardAdjustCurrentQty" class="purchase-field-static">—</div></div>
+      <div class="purchase-field"><label for="fardAdjustNewQty">NOVA QUANTIDADE EM ESTOQUE *</label><input type="number" id="fardAdjustNewQty" min="0" step="1" required></div>
+      <div class="purchase-field"><label for="fardAdjustDate">DATA *</label><input type="date" id="fardAdjustDate" required></div>
+      <div class="purchase-field full"><label for="fardAdjustNote">OBSERVAÇÃO</label><textarea id="fardAdjustNote" rows="2" maxlength="500" placeholder="Ex: carga inicial de estoque"></textarea></div>
+    </div>
+    <div class="user-form-status" id="fardAdjustFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelFardAdjustDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveFardAdjust" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="fardTermDialog" aria-labelledby="fardTermDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="fardTermDialogTitle">TERMO DE RESPONSABILIDADE</h3>
+    <button class="purchase-dialog-close" id="btnCloseFardTermDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="fardTermForm">
+    <input type="hidden" id="fardTermId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label>COLABORADOR</label><div id="fardTermEmployeeLabel" class="purchase-field-static">—</div></div>
+      <div class="purchase-field"><label>LOJA</label><div id="fardTermCompanyLabel" class="purchase-field-static">—</div></div>
+      <div class="purchase-field"><label>TAMANHO</label><div id="fardTermSizeLabel" class="purchase-field-static">—</div></div>
+      <div class="purchase-field"><label for="fardTermStatus">SITUAÇÃO</label>
+        <select id="fardTermStatus">
+          <option value="aguardando_assinatura">AGUARDANDO ASSINATURA</option>
+          <option value="enviado">ENVIADO</option>
+          <option value="assinado">ASSINADO</option>
+        </select>
+      </div>
+      <div class="purchase-field full"><label for="fardTermFile">TERMO ASSINADO (PDF OU IMAGEM)</label><input type="file" id="fardTermFile" accept="application/pdf,image/*"></div>
+      <div class="purchase-field full" id="fardTermCurrentFile" hidden></div>
+    </div>
+    <div class="user-form-status" id="fardTermFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelFardTermDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveFardTerm" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="recCandidateDialog" aria-labelledby="recCandidateDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="recCandidateDialogTitle">NOVO CANDIDATO</h3>
@@ -9238,6 +9425,7 @@
     documentos:'/documentos',
     usuarios:'/cadastros/usuarios',
     rhRecrutamento:'/rh/recrutamento',
+    rhFardamento:'/rh/fardamento',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
     rhFuncionarios:'/rh/funcionarios',
@@ -9286,6 +9474,7 @@
     notasOs:'NOTAS DE O.S.',
     usuarios:'USUÁRIOS E ACESSOS',
     rhRecrutamento:'RECRUTAMENTO E SELEÇÃO',
+    rhFardamento:'FARDAMENTO',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
     rhFuncionarios:'FUNCIONÁRIOS',
@@ -9331,6 +9520,7 @@
     lojas:'database',
     dados:'database',
     rhRecrutamento:'rh_recrutamento',
+    rhFardamento:'rh_fardamento',
     rhFolgas:'hr',
     rhEscalas:'hr',
     rhFuncionarios:'payroll',
@@ -9966,6 +10156,7 @@
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
     if(name === 'rhRecrutamento') loadRhRecrutamento();
+    if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -10013,6 +10204,7 @@
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
     if(name === 'rhRecrutamento') loadRhRecrutamento();
+    if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhControleHoras') loadRhControleHoras();
   }
 
@@ -28046,6 +28238,7 @@ function renderHomeTasks(){
     'rh_acompanhamento:view':'RH - Acompanhamento de Lojas: visualizar','rh_acompanhamento:manage':'RH - Acompanhamento de Lojas: cadastrar/editar/excluir',
     'rh_ponto_logistica:view':'RH - Controle de Horas - Logística: visualizar','rh_ponto_logistica:manage':'RH - Controle de Horas - Logística: lançar/configurar',
     'rh_recrutamento:view':'RH - Recrutamento e Seleção: visualizar','rh_recrutamento:manage':'RH - Recrutamento e Seleção: cadastrar/editar/excluir',
+    'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
@@ -31067,6 +31260,465 @@ function renderHomeTasks(){
       showPurchaseToast(error.message,'error');
     }
   });
+
+  // ================= RH / FARDAMENTO =================
+  // Controle de estoque de fardamento/casacos por tipo de peça + tamanho.
+  // Estoque ÚNICO para a empresa toda (decisão confirmada com o usuário).
+  // Permissão própria (rh_fardamento:view/:manage), independente de
+  // "payroll" e de "hr" — por isso usa seu próprio endpoint de
+  // colaboradores em vez de rhEmployees (carregado só com payroll), mesmo
+  // padrão de app/api/hr-time-tracking acima. O saldo em si nunca é
+  // calculado no cliente: cada lançamento manda um delta pro back-end e
+  // recarrega /stock depois, pra sempre refletir o valor real do banco.
+  const FARD_PIECE_TABS = ['unitec','unigames','pa','lider','adm','casacos'];
+  const FARD_SIZES = ['P','M','G','GG','XGG','XXGG'];
+  const FARD_MOVEMENT_LABELS = {saida:'SAÍDA', entrada:'DEVOLUÇÃO', ajuste:'AJUSTE'};
+  const FARD_TERM_STATUS_LABELS = {aguardando_assinatura:'AGUARDANDO ASSINATURA', enviado:'ENVIADO', assinado:'ASSINADO'};
+  const FARD_TERM_STATUS_TONE = {aguardando_assinatura:'waiting', enviado:'progress', assinado:'done'};
+  let fardTab = 'unitec';
+  let fardStock = [];
+  let fardMovements = [];
+  let fardEmployees = [];
+  let fardTerms = [];
+
+  function fardCanManage(){
+    return canAccess('rh_fardamento:manage');
+  }
+
+  async function fardApiRequest(path, options){
+    const response = await fetch('/api/hr-uniform-stock'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  async function fardAttachmentRequest(options){
+    const response = await fetch('/api/hr-uniform-stock/terms/attachment', {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    let data = {};
+    if(response.status !== 204){
+      try{ data = await response.json(); }catch{ data = {}; }
+    }
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return data;
+  }
+
+  function fardEmployeeOptions(){
+    return fardEmployees.map(employee => ({
+      value: employee.id,
+      label: employee.fullName + (employee.companyName ? ' — '+employee.companyName : '')
+    }));
+  }
+
+  async function loadFardEmployees(){
+    if(fardEmployees.length) return;
+    try{
+      const data = await fardApiRequest('/employees');
+      fardEmployees = Array.isArray(data.employees) ? data.employees : [];
+    }catch(error){
+      fardEmployees = [];
+    }
+    rhFillSelect('fardMovementEmployee','SELECIONE',fardEmployeeOptions());
+    rhFillSelect('fardStatusEmployee','TODOS',fardEmployeeOptions());
+  }
+
+  function renderFardTabs(){
+    document.querySelectorAll('#fardTabs [data-fard-tab]').forEach(button => {
+      const active = button.dataset.fardTab === fardTab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    if(el('fardPiecePanel')) el('fardPiecePanel').hidden = !FARD_PIECE_TABS.includes(fardTab);
+    if(el('fardTermsPanel')) el('fardTermsPanel').hidden = fardTab !== 'termos';
+    if(el('fardStatusPanel')) el('fardStatusPanel').hidden = fardTab !== 'status';
+  }
+
+  async function loadFardActiveTab(){
+    if(FARD_PIECE_TABS.includes(fardTab)){
+      await Promise.all([loadFardStock(), loadFardMovements()]);
+    }else if(fardTab === 'termos'){
+      await loadFardTerms();
+    }else if(fardTab === 'status'){
+      await loadFardStatus();
+    }
+  }
+
+  if(el('fardTabs')) el('fardTabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-fard-tab]');
+    if(!button) return;
+    fardTab = button.dataset.fardTab;
+    renderFardTabs();
+    loadFardActiveTab();
+  });
+
+  function fardStockQty(pieceType, size){
+    const item = fardStock.find(row => row.pieceType === pieceType && row.size === size);
+    return item ? item.stockQty : 0;
+  }
+
+  async function loadFardStock(){
+    const body = el('fardStockTableBody');
+    try{
+      const data = await fardApiRequest('/stock');
+      fardStock = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      if(body) body.innerHTML = '<tr><td colspan="2" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    if(!body) return;
+    body.innerHTML = FARD_SIZES.map(size => '<tr><td>'+size+'</td><td>'+fardStockQty(fardTab,size)+'</td></tr>').join('');
+  }
+
+  async function loadFardMovements(){
+    const body = el('fardMovementsTableBody');
+    if(body) body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      await loadFardEmployees();
+      const data = await fardApiRequest('/movements?pieceType='+encodeURIComponent(fardTab));
+      fardMovements = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      if(body) body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    if(!body) return;
+    if(!fardMovements.length){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Nenhum lançamento.</td></tr>';
+      return;
+    }
+    const manage = fardCanManage();
+    body.innerHTML = fardMovements.map(row => (
+      '<tr>'+
+      '<td>'+formatDateBR(row.movementDate)+'</td>'+
+      '<td>'+escapeHtml(FARD_MOVEMENT_LABELS[row.movementType] || row.movementType.toUpperCase())+'</td>'+
+      '<td>'+escapeHtml(row.employeeName || '—')+'</td>'+
+      '<td>'+escapeHtml(row.size)+'</td>'+
+      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+escapeHtml(row.note || '')+'</td>'+
+      '<td>'+(manage ? '<button class="btn-outline" type="button" data-fard-movement-delete="'+row.id+'">EXCLUIR</button>' : '')+'</td>'+
+      '</tr>'
+    )).join('');
+  }
+
+  if(el('fardMovementsTableBody')) el('fardMovementsTableBody').addEventListener('click', async event => {
+    const deleteButton = event.target.closest('[data-fard-movement-delete]');
+    if(!deleteButton) return;
+    if(!confirm('Excluir este lançamento? O estoque será revertido.')) return;
+    try{
+      await fardApiRequest('/movements?id='+encodeURIComponent(deleteButton.dataset.fardMovementDelete), {method:'DELETE'});
+      await refreshAfterAction(() => Promise.all([loadFardStock(), loadFardMovements()]));
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  function openFardMovementDialog(movementType){
+    if(!fardCanManage()) return;
+    el('fardMovementForm').reset();
+    el('fardMovementType').value = movementType;
+    el('fardMovementPieceType').value = fardTab;
+    el('fardMovementDialogTitle').textContent = movementType === 'saida' ? 'NOVA SAÍDA — '+fardTab.toUpperCase() : 'NOVA DEVOLUÇÃO — '+fardTab.toUpperCase();
+    el('fardMovementDate').value = new Date().toISOString().slice(0,10);
+    const showCompany = fardTab === 'casacos';
+    el('fardMovementCompanyField').hidden = !showCompany;
+    el('fardMovementCompany').required = showCompany;
+    if(showCompany) rhFillSelect('fardMovementCompany','SELECIONE',rhCompanyOptions());
+    el('fardMovementFormStatus').textContent = '';
+    el('fardMovementDialog').showModal();
+  }
+
+  if(el('btnFardSaida')) el('btnFardSaida').addEventListener('click', () => openFardMovementDialog('saida'));
+  if(el('btnFardEntrada')) el('btnFardEntrada').addEventListener('click', () => openFardMovementDialog('entrada'));
+  if(el('btnCloseFardMovementDialog')) el('btnCloseFardMovementDialog').addEventListener('click', () => el('fardMovementDialog').close());
+  if(el('btnCancelFardMovementDialog')) el('btnCancelFardMovementDialog').addEventListener('click', () => el('fardMovementDialog').close());
+
+  if(el('fardMovementForm')) el('fardMovementForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const saveButton = el('btnSaveFardMovement');
+    if(saveButton.disabled) return;
+    saveButton.disabled = true;
+    const status = el('fardMovementFormStatus');
+    status.textContent = '';
+    try{
+      await fardApiRequest('/movements', {
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({
+          movementType: el('fardMovementType').value,
+          pieceType: el('fardMovementPieceType').value,
+          size: el('fardMovementSize').value,
+          employeeId: el('fardMovementEmployee').value,
+          employeeName: (fardEmployees.find(e => e.id === el('fardMovementEmployee').value) || {}).fullName || '',
+          companyId: el('fardMovementCompany').value,
+          companyName: (rhCompanyOptions().find(c => c.value === el('fardMovementCompany').value) || {}).label || '',
+          movementDate: el('fardMovementDate').value,
+          note: el('fardMovementNote').value
+        })
+      });
+      el('fardMovementDialog').close();
+      await refreshAfterAction(() => Promise.all([loadFardStock(), loadFardMovements()]));
+    }catch(error){
+      status.textContent = error.message;
+    }finally{
+      saveButton.disabled = false;
+    }
+  });
+
+  function openFardAdjustDialog(){
+    if(!fardCanManage()) return;
+    el('fardAdjustForm').reset();
+    el('fardAdjustPieceType').value = fardTab;
+    el('fardAdjustDialogTitle').textContent = 'AJUSTAR ESTOQUE — '+fardTab.toUpperCase();
+    el('fardAdjustDate').value = new Date().toISOString().slice(0,10);
+    el('fardAdjustSize').value = 'P';
+    el('fardAdjustCurrentQty').textContent = String(fardStockQty(fardTab, el('fardAdjustSize').value));
+    el('fardAdjustNewQty').value = String(fardStockQty(fardTab, el('fardAdjustSize').value));
+    el('fardAdjustFormStatus').textContent = '';
+    el('fardAdjustDialog').showModal();
+  }
+
+  if(el('btnFardAjuste')) el('btnFardAjuste').addEventListener('click', openFardAdjustDialog);
+  if(el('btnCloseFardAdjustDialog')) el('btnCloseFardAdjustDialog').addEventListener('click', () => el('fardAdjustDialog').close());
+  if(el('btnCancelFardAdjustDialog')) el('btnCancelFardAdjustDialog').addEventListener('click', () => el('fardAdjustDialog').close());
+  if(el('fardAdjustSize')) el('fardAdjustSize').addEventListener('change', () => {
+    const qty = fardStockQty(el('fardAdjustPieceType').value, el('fardAdjustSize').value);
+    el('fardAdjustCurrentQty').textContent = String(qty);
+    el('fardAdjustNewQty').value = String(qty);
+  });
+
+  if(el('fardAdjustForm')) el('fardAdjustForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const saveButton = el('btnSaveFardAdjust');
+    if(saveButton.disabled) return;
+    saveButton.disabled = true;
+    const status = el('fardAdjustFormStatus');
+    status.textContent = '';
+    try{
+      const pieceType = el('fardAdjustPieceType').value;
+      const size = el('fardAdjustSize').value;
+      const currentQty = fardStockQty(pieceType, size);
+      const newQty = Math.trunc(Number(el('fardAdjustNewQty').value));
+      const delta = newQty - currentQty;
+      if(!Number.isFinite(newQty) || newQty < 0){
+        throw new Error('INFORME UMA QUANTIDADE VÁLIDA.');
+      }
+      if(delta === 0){
+        el('fardAdjustDialog').close();
+        return;
+      }
+      await fardApiRequest('/movements', {
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({
+          movementType:'ajuste',
+          pieceType, size,
+          quantity: delta,
+          movementDate: el('fardAdjustDate').value,
+          note: el('fardAdjustNote').value
+        })
+      });
+      el('fardAdjustDialog').close();
+      await refreshAfterAction(() => Promise.all([loadFardStock(), loadFardMovements()]));
+    }catch(error){
+      status.textContent = error.message;
+    }finally{
+      saveButton.disabled = false;
+    }
+  });
+
+  function fardTermStatusPill(status){
+    return '<span class="status-pill '+(FARD_TERM_STATUS_TONE[status] || '')+'">'+escapeHtml(FARD_TERM_STATUS_LABELS[status] || status)+'</span>';
+  }
+
+  async function loadFardTerms(){
+    const body = el('fardTermsTableBody');
+    if(body) body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      await loadFardEmployees();
+      const statusFilter = el('fardTermFiltroStatus').value;
+      const data = await fardApiRequest('/terms'+(statusFilter ? '?status='+encodeURIComponent(statusFilter) : ''));
+      fardTerms = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      if(body) body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    if(!body) return;
+    if(!fardTerms.length){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Nenhum termo de responsabilidade.</td></tr>';
+      return;
+    }
+    body.innerHTML = fardTerms.map(row => (
+      '<tr>'+
+      '<td>'+formatDateBR(row.createdAt)+'</td>'+
+      '<td>'+escapeHtml(row.employeeName || '—')+'</td>'+
+      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+escapeHtml(row.size)+'</td>'+
+      '<td>'+fardTermStatusPill(row.status)+'</td>'+
+      '<td>'+(row.fileName ? '<a href="/api/hr-uniform-stock/terms/file?id='+encodeURIComponent(row.id)+'" target="_blank" rel="noopener">'+escapeHtml(row.fileName)+'</a>' : '—')+'</td>'+
+      '<td><button class="btn-outline" type="button" data-fard-term-open="'+row.id+'">'+(fardCanManage() ? 'GERENCIAR' : 'VER')+'</button></td>'+
+      '</tr>'
+    )).join('');
+  }
+
+  if(el('fardTermFiltroStatus')) el('fardTermFiltroStatus').addEventListener('change', loadFardTerms);
+
+  if(el('fardTermsTableBody')) el('fardTermsTableBody').addEventListener('click', event => {
+    const openButton = event.target.closest('[data-fard-term-open]');
+    if(!openButton) return;
+    const term = fardTerms.find(row => row.id === openButton.dataset.fardTermOpen);
+    if(!term) return;
+    el('fardTermForm').reset();
+    el('fardTermId').value = term.id;
+    el('fardTermEmployeeLabel').textContent = term.employeeName || '—';
+    el('fardTermCompanyLabel').textContent = term.companyName || '—';
+    el('fardTermSizeLabel').textContent = term.size;
+    el('fardTermStatus').value = term.status;
+    el('fardTermStatus').disabled = !fardCanManage();
+    el('fardTermFile').disabled = !fardCanManage();
+    const currentFile = el('fardTermCurrentFile');
+    if(term.fileName){
+      currentFile.hidden = false;
+      currentFile.innerHTML = 'Arquivo atual: <a href="/api/hr-uniform-stock/terms/file?id='+encodeURIComponent(term.id)+'" target="_blank" rel="noopener">'+escapeHtml(term.fileName)+'</a>';
+    }else{
+      currentFile.hidden = true;
+      currentFile.innerHTML = '';
+    }
+    el('btnSaveFardTerm').hidden = !fardCanManage();
+    el('fardTermFormStatus').textContent = '';
+    el('fardTermDialog').showModal();
+  });
+
+  if(el('btnCloseFardTermDialog')) el('btnCloseFardTermDialog').addEventListener('click', () => el('fardTermDialog').close());
+  if(el('btnCancelFardTermDialog')) el('btnCancelFardTermDialog').addEventListener('click', () => el('fardTermDialog').close());
+
+  async function uploadFardTermFile(termId, file){
+    if(!file) return;
+    if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O ARQUIVO DEVE TER NO MÁXIMO 25 MB.');
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const create = await fardAttachmentRequest({
+      method:'POST',
+      headers:{Accept:'application/json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'create', termId,
+        fileName:file.name,
+        contentType:file.type || 'application/octet-stream',
+        fileSize:file.size,
+        numberOfParts
+      })
+    });
+    const sessionId = create.session && create.session.id;
+    if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO ARQUIVO.');
+    try{
+      for(let index=0;index<numberOfParts;index+=1){
+        const partNumber = index + 1;
+        await fardAttachmentRequest({
+          method:'POST',
+          headers:{
+            Accept:'application/json',
+            'Content-Type':'application/octet-stream',
+            'x-hr-uniform-upload-id':sessionId,
+            'x-hr-uniform-part-number':String(partNumber)
+          },
+          body:file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
+        });
+      }
+      await fardAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'complete', sessionId})
+      });
+    }catch(error){
+      fardAttachmentRequest({
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({action:'cancel', sessionId})
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  if(el('fardTermForm')) el('fardTermForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const saveButton = el('btnSaveFardTerm');
+    if(saveButton.disabled) return;
+    saveButton.disabled = true;
+    const status = el('fardTermFormStatus');
+    status.textContent = '';
+    try{
+      const termId = el('fardTermId').value;
+      const file = el('fardTermFile').files[0];
+      if(file) await uploadFardTermFile(termId, file);
+      await fardApiRequest('/terms', {
+        method:'PUT',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({id:termId, status: el('fardTermStatus').value})
+      });
+      el('fardTermDialog').close();
+      await refreshAfterAction(loadFardTerms);
+    }catch(error){
+      status.textContent = error.message;
+    }finally{
+      saveButton.disabled = false;
+    }
+  });
+
+  async function loadFardStatus(){
+    const body = el('fardStatusTableBody');
+    if(body) body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      await loadFardEmployees();
+      const params = new URLSearchParams();
+      const pieceType = el('fardStatusPieceType').value;
+      const employeeId = el('fardStatusEmployee').value;
+      if(pieceType) params.set('pieceType', pieceType);
+      if(employeeId) params.set('employeeId', employeeId);
+      const query = params.toString();
+      const data = await fardApiRequest('/movements'+(query ? '?'+query : ''));
+      const items = Array.isArray(data.items) ? data.items : [];
+      if(!body) return;
+      if(!items.length){
+        body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum lançamento encontrado.</td></tr>';
+        return;
+      }
+      body.innerHTML = items.map(row => (
+        '<tr>'+
+        '<td>'+formatDateBR(row.movementDate)+'</td>'+
+        '<td>'+escapeHtml((row.pieceType || '').toUpperCase())+'</td>'+
+        '<td>'+escapeHtml(FARD_MOVEMENT_LABELS[row.movementType] || row.movementType.toUpperCase())+'</td>'+
+        '<td>'+escapeHtml(row.employeeName || '—')+'</td>'+
+        '<td>'+escapeHtml(row.size)+'</td>'+
+        '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+        '</tr>'
+      )).join('');
+    }catch(error){
+      if(body) body.innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  if(el('fardStatusPieceType')) el('fardStatusPieceType').addEventListener('change', loadFardStatus);
+  if(el('fardStatusEmployee')) el('fardStatusEmployee').addEventListener('change', loadFardStatus);
+
+  async function loadRhFardamento(){
+    if(!canAccess('rh_fardamento')) return;
+    if(!companies.length) await loadCompanies();
+    renderFardTabs();
+    await loadFardActiveTab();
+  }
 
   // ================= RH / CONTROLE DE HORAS - LOGÍSTICA =================
   // Lançamento manual do ponto de papel (transcrição, não integração com

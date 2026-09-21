@@ -3035,3 +3035,93 @@ export const hrRecruitmentSponsorUpdates = pgTable(
   },
   (table) => [index("hr_recruitment_sponsor_updates_sponsor_idx").on(table.sponsorId)],
 );
+
+// ============================ RH FARDAMENTO ============================
+// Controle de estoque de fardamento/casacos por tipo de peça + tamanho.
+// Estoque ÚNICO para a empresa toda (não segmentado por loja — decisão
+// confirmada com o usuário), permissão própria rh_fardamento:view/:manage,
+// independente das demais permissões de RH.
+
+// Saldo atual por combinação tipo+tamanho. Usa uma PK natural
+// "{pieceType}:{size}" em vez de UUID — evita uma tabela de lookup separada
+// e garante que a linha já existe (pré-semeada pela migration com
+// stock_qty=0) para o UPDATE relativo de todo lançamento sempre ter uma
+// linha pra incrementar.
+export const uniformStockItems = pgTable("uniform_stock_items", {
+  id: text("id").primaryKey(),
+  pieceType: text("piece_type").notNull(),
+  size: text("size").notNull(),
+  stockQty: integer("stock_qty").notNull().default(0),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+});
+
+// Histórico de lançamentos (saída/entrada/ajuste). "quantity" é sempre o
+// DELTA assinado já aplicado ao saldo (-1 numa saída, +1 numa devolução,
+// qualquer valor num ajuste manual) — nunca um valor absoluto. Isso permite
+// que todo lançamento aplique `stock_qty = stock_qty + quantity` no mesmo
+// UPDATE relativo (ver app/api/hr-uniform-stock/movements/route.ts), sem
+// precisar ler o saldo antes de gravar — a mesma técnica usada em
+// supply_stock_movements para evitar condição de corrida em lançamentos
+// simultâneos.
+export const uniformStockMovements = pgTable(
+  "uniform_stock_movements",
+  {
+    id: text("id").primaryKey(),
+    // 'saida' | 'entrada' | 'ajuste'
+    movementType: text("movement_type").notNull(),
+    pieceType: text("piece_type").notNull(),
+    size: text("size").notNull(),
+    quantity: integer("quantity").notNull().default(0),
+    // Vínculo OPCIONAL com hr_employees (sem FK real, convenção do
+    // projeto) — vazio em lançamentos de ajuste de estoque.
+    employeeId: text("employee_id").notNull().default(""),
+    employeeName: text("employee_name").notNull().default(""),
+    // Loja — só é exigida pelo front-end para peças do tipo "casacos"
+    // (pedido explícito do usuário), mas a coluna é genérica.
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    movementDate: text("movement_date").notNull().default(""),
+    note: text("note").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("uniform_stock_movements_piece_idx").on(table.pieceType, table.size),
+    index("uniform_stock_movements_employee_idx").on(table.employeeId),
+    index("uniform_stock_movements_date_idx").on(table.movementDate),
+  ],
+);
+
+// Termo de Responsabilidade de casacos — 1 termo por lançamento de SAÍDA de
+// um casaco (decisão confirmada com o usuário), vinculado por movement_id
+// (sem FK real). Criado automaticamente junto do lançamento de saída
+// (status inicial "aguardando_assinatura") e depois atualizado à parte
+// (status + upload do termo assinado).
+export const uniformCoatTerms = pgTable(
+  "uniform_coat_terms",
+  {
+    id: text("id").primaryKey(),
+    movementId: text("movement_id").notNull(),
+    employeeId: text("employee_id").notNull().default(""),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    size: text("size").notNull().default(""),
+    // 'aguardando_assinatura' | 'enviado' | 'assinado'
+    status: text("status").notNull().default("aguardando_assinatura"),
+    fileName: text("file_name").notNull().default(""),
+    r2Key: text("r2_key").notNull().default(""),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("uniform_coat_terms_movement_idx").on(table.movementId),
+    index("uniform_coat_terms_status_idx").on(table.status),
+  ],
+);
