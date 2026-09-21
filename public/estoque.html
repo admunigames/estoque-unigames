@@ -418,6 +418,18 @@
     background:linear-gradient(115deg,rgba(255,255,255,.42),transparent 36%,rgba(255,255,255,.2));
     pointer-events:none;
   }
+  .home-search{position:relative; margin-bottom:16px;}
+  .home-search-box{display:flex; align-items:center; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:11px 15px;}
+  .home-search-icon{width:18px; height:18px; flex:none; color:var(--ink-faint);}
+  .home-search-box input{flex:1; min-width:0; border:0; background:transparent; color:var(--ink); font:600 14px/1.3 var(--sans); outline:none;}
+  .home-search-box input::placeholder{color:var(--ink-faint);}
+  .home-search-box:focus-within{border-color:rgba(79,134,189,.45);}
+  .home-search-results{position:absolute; left:0; right:0; top:calc(100% + 8px); z-index:40; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:6px; box-shadow:0 18px 40px rgba(0,0,0,.28); max-height:320px; overflow-y:auto;}
+  .home-search-result{display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border:0; border-radius:9px; background:transparent; color:var(--ink); font:600 13.5px/1.3 var(--sans); text-align:left; cursor:pointer;}
+  .home-search-result:hover,.home-search-result.active{background:rgba(79,134,189,.1);}
+  .home-search-result .nav-icon{display:flex; flex:none; width:18px; height:18px; color:var(--ink-faint);}
+  .home-search-result .nav-icon svg{width:16px; height:16px;}
+  .home-search-empty{padding:14px 12px; color:var(--ink-faint); font:600 13px/1.3 var(--sans); text-align:center;}
   .home-account{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:18px;color:#49627b;font:800 10px/1.4 var(--mono)}
   .home-account form{margin:0}.home-account button{min-height:34px;padding:7px 11px;border:1px solid rgba(173,55,55,.32);border-radius:9px;background:rgba(173,55,55,.08);color:#8a2d2d;font:800 9px/1 var(--mono)}
   .home-no-access{margin-top:24px;padding:18px;border:1px solid rgba(36,79,131,.22);border-radius:14px;background:rgba(79,134,189,.08);text-align:center}
@@ -3011,6 +3023,13 @@
     <!-- ================= INÍCIO ================= -->
     <section id="pageInicio" class="page wrap home-page active">
       <div class="home-lightglass">
+        <div class="home-search" id="homeSearchWrap">
+          <div class="home-search-box">
+            <svg class="home-search-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="homeSearchInput" placeholder="Buscar módulo ou menu..." autocomplete="off" aria-label="Buscar módulo ou menu">
+          </div>
+          <div class="home-search-results" id="homeSearchResults" role="listbox" hidden></div>
+        </div>
         <div class="home-account"><span id="homeSessionName">Carregando usuário…</span><form method="post" action="/logout"><button type="submit">SAIR</button></form></div>
         <div class="home-brand">
           <img class="home-brand-logo" data-logo alt="LOGO UNIGAMES">
@@ -10317,6 +10336,81 @@
         navigateToPage('cadastros');
       }
     });
+  });
+
+  // Busca da Início: reaproveita os mesmos .nav-item da barra lateral (e a
+  // mesma checagem de permissão via [data-access-hidden], já mantida por
+  // applyAccessVisibility) para listar só módulos que o usuário pode abrir.
+  function normalizeSearchText(text){
+    return String(text || '')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  function collectHomeSearchItems(){
+    if(!document.body.classList.contains('access-ready')) return [];
+    const sidebar = el('sidebar');
+    if(!sidebar) return [];
+    const items = [];
+    sidebar.querySelectorAll('a.nav-item[data-page], button.nav-group-toggle[data-home-page]').forEach(node => {
+      if(node.closest('[data-access-hidden]')) return;
+      const labelNode = node.querySelector('.nav-label');
+      const page = node.dataset.page || node.dataset.homePage;
+      const label = labelNode ? labelNode.textContent.trim() : '';
+      if(!page || !label) return;
+      const iconNode = node.querySelector('.nav-icon');
+      items.push({page, label, iconHtml: iconNode ? iconNode.innerHTML : '', normalized: normalizeSearchText(label)});
+    });
+    return items;
+  }
+
+  function closeHomeSearchResults(){
+    const results = el('homeSearchResults');
+    results.hidden = true;
+    results.innerHTML = '';
+  }
+
+  function renderHomeSearchResults(query){
+    const results = el('homeSearchResults');
+    const normalizedQuery = normalizeSearchText(query);
+    if(!normalizedQuery){ closeHomeSearchResults(); return; }
+    const matches = collectHomeSearchItems().filter(item => item.normalized.includes(normalizedQuery));
+    results.innerHTML = '';
+    if(!matches.length){
+      const empty = document.createElement('div');
+      empty.className = 'home-search-empty';
+      empty.textContent = 'Nenhum módulo encontrado';
+      results.appendChild(empty);
+    }else{
+      matches.forEach(match => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'home-search-result';
+        button.setAttribute('role', 'option');
+        button.innerHTML = '<span class="nav-icon" aria-hidden="true">'+match.iconHtml+'</span><span>'+escapeHtml(match.label)+'</span>';
+        button.addEventListener('click', () => {
+          el('homeSearchInput').value = '';
+          closeHomeSearchResults();
+          navigateToPage(match.page);
+        });
+        results.appendChild(button);
+      });
+    }
+    results.hidden = false;
+  }
+
+  const homeSearchInput = el('homeSearchInput');
+  homeSearchInput.addEventListener('input', () => renderHomeSearchResults(homeSearchInput.value));
+  homeSearchInput.addEventListener('focus', () => {
+    if(homeSearchInput.value.trim()) renderHomeSearchResults(homeSearchInput.value);
+  });
+  document.addEventListener('click', event => {
+    if(!el('homeSearchWrap').contains(event.target)) closeHomeSearchResults();
+  });
+  homeSearchInput.addEventListener('keydown', event => {
+    if(event.key === 'Escape'){ homeSearchInput.value = ''; closeHomeSearchResults(); homeSearchInput.blur(); }
   });
 
   async function checkIntegrationHealth(){
