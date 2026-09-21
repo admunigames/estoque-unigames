@@ -7320,7 +7320,7 @@
       <div class="purchase-field"><label for="corpCardBank">BANCO</label><input id="corpCardBank" maxlength="80"></div>
       <div class="purchase-field"><label for="corpCardBrand">BANDEIRA</label><input id="corpCardBrand" maxlength="40"></div>
       <div class="purchase-field"><label for="corpCardLast4">FINAL (4 DÍGITOS) *</label><input id="corpCardLast4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" required></div>
-      <div class="purchase-field"><label for="corpCardLimit">LIMITE (R$)</label><input type="number" id="corpCardLimit" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="corpCardLimit">LIMITE (R$)</label><input type="text" inputmode="decimal" id="corpCardLimit" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="corpCardBestDay">MELHOR DIA DE COMPRA</label><input type="number" id="corpCardBestDay" min="1" max="31"></div>
       <div class="purchase-field"><label for="corpCardClosingDay">DIA DE FECHAMENTO *</label><input type="number" id="corpCardClosingDay" min="1" max="31" required></div>
       <div class="purchase-field"><label for="corpCardDueDay">DIA DE VENCIMENTO *</label><input type="number" id="corpCardDueDay" min="1" max="31" required></div>
@@ -23262,6 +23262,7 @@ function renderHomeTasks(){
     }
   }
   el('corpCardLoja') && el('corpCardLoja').addEventListener('change', renderCorpCardsTable);
+  if(el('corpCardLimit')) attachCurrencyMask(el('corpCardLimit'));
 
   // --- Cadastro do cartão ---
   function openCorpCardDialog(row){
@@ -23273,7 +23274,7 @@ function renderHomeTasks(){
     el('corpCardBank').value = row ? (row.bank || '') : '';
     el('corpCardBrand').value = row ? (row.brand || '') : '';
     el('corpCardLast4').value = row ? (row.last4 || '') : '';
-    el('corpCardLimit').value = row && row.limitCents ? (row.limitCents/100).toFixed(2) : '';
+    setCurrencyValue(el('corpCardLimit'), row && row.limitCents ? row.limitCents/100 : '');
     el('corpCardBestDay').value = row && row.bestPurchaseDay ? row.bestPurchaseDay : '';
     el('corpCardClosingDay').value = row ? row.closingDay : '';
     el('corpCardDueDay').value = row ? row.dueDay : '';
@@ -23309,7 +23310,7 @@ function renderHomeTasks(){
       bank: el('corpCardBank').value.trim(),
       brand: el('corpCardBrand').value.trim(),
       last4,
-      limitCents: el('corpCardLimit').value ? Math.round(Number(el('corpCardLimit').value)*100) : 0,
+      limitCents: getCurrencyValue(el('corpCardLimit')) ? Math.round(Number(getCurrencyValue(el('corpCardLimit')))*100) : 0,
       bestPurchaseDay: Number(el('corpCardBestDay').value) || 0,
       closingDay: Number(el('corpCardClosingDay').value) || 0,
       dueDay: Number(el('corpCardDueDay').value) || 0,
@@ -23493,10 +23494,11 @@ function renderHomeTasks(){
       '<tr>'+
         '<td><input type="date" data-corp-row="'+i+'" data-corp-field="entryDate" value="'+escapeHtml(r.entryDate)+'"></td>'+
         '<td><input data-corp-row="'+i+'" data-corp-field="merchant" value="'+escapeHtml(r.merchant)+'" maxlength="200"></td>'+
-        '<td><input type="number" step="0.01" data-corp-row="'+i+'" data-corp-field="amount" value="'+(r.amountCents/100).toFixed(2)+'"></td>'+
+        '<td><input type="text" inputmode="decimal" data-corp-row="'+i+'" data-corp-field="amount" value="'+(r.amountCents/100).toFixed(2)+'"></td>'+
         '<td><input data-corp-row="'+i+'" data-corp-field="installmentLabel" value="'+escapeHtml(r.installmentLabel)+'" maxlength="20" placeholder="2/6"></td>'+
         '<td><button class="btn-outline btn-sm" type="button" data-corp-row-remove="'+i+'">×</button></td>'+
       '</tr>').join('') : '<tr><td colspan="5" class="responsive-empty">Selecione um arquivo.</td></tr>';
+    body.querySelectorAll('[data-corp-field="amount"]').forEach(attachCurrencyMask);
     el('btnConfirmCorpInvoice').disabled = !rows.length;
   }
   el('corpInvoicePreviewBody') && el('corpInvoicePreviewBody').addEventListener('input', event => {
@@ -23504,7 +23506,7 @@ function renderHomeTasks(){
     if(!input || !corpInvoiceParsed) return;
     const row = corpInvoiceParsed.rows[Number(input.dataset.corpRow)];
     if(!row) return;
-    if(input.dataset.corpField === 'amount') row.amountCents = Math.round(Number(input.value)*100);
+    if(input.dataset.corpField === 'amount') row.amountCents = Math.round(Number(getCurrencyValue(input))*100);
     else row[input.dataset.corpField] = input.value;
   });
   el('corpInvoicePreviewBody') && el('corpInvoicePreviewBody').addEventListener('click', event => {
@@ -24818,7 +24820,7 @@ function renderHomeTasks(){
         const supplierName = quote ? quote.supplierName : comprasSupplierName(supplierId);
         return '<tr>'+
           '<td>'+escapeHtml(supplierName)+'</td>'+
-          '<td><input type="number" min="0" step="0.01" style="width:110px;" value="'+(quote ? (Number(quote.unitPriceCents||0)/100).toFixed(2) : '')+'" placeholder="R$" data-compras-quote-price="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'"></td>'+
+          '<td><input type="text" inputmode="decimal" style="width:110px;" value="'+(quote ? (Number(quote.unitPriceCents||0)/100).toFixed(2) : '')+'" placeholder="R$ 0,00" data-compras-quote-price="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'"></td>'+
           '<td class="no-print"><span style="display:flex;gap:6px;">'+
             '<button class="btn-outline" type="button" data-compras-quote-save="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'">SALVAR</button>'+
             (quote ? '<button class="btn-outline" type="button" data-compras-quote-delete="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'">REMOVER</button>' : '')+
@@ -24831,7 +24833,7 @@ function renderHomeTasks(){
             '<select data-compras-quote-add-supplier="'+escapeHtml(item.id)+'" style="min-width:200px;"><option value="">+ COTAR OUTRO FORNECEDOR…</option>'+
               otherSuppliers.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('')+
             '</select>'+
-            '<input type="number" min="0" step="0.01" placeholder="R$" style="width:110px;" data-compras-quote-add-price="'+escapeHtml(item.id)+'">'+
+            '<input type="text" inputmode="decimal" placeholder="R$ 0,00" style="width:110px;" data-compras-quote-add-price="'+escapeHtml(item.id)+'">'+
             '<button class="btn-outline" type="button" data-compras-quote-add="'+escapeHtml(item.id)+'">ADICIONAR COTAÇÃO</button>'+
           '</div>'
         : '';
@@ -24849,6 +24851,7 @@ function renderHomeTasks(){
         addSupplierSelect+
       '</div>';
     }).join('');
+    wrap.querySelectorAll('[data-compras-quote-price],[data-compras-quote-add-price]').forEach(attachCurrencyMask);
   }
 
   if(el('comprasOrderAbertoItemsList')) el('comprasOrderAbertoItemsList').addEventListener('click', async event => {
@@ -24867,7 +24870,7 @@ function renderHomeTasks(){
     if(saveQuoteBtn){
       const [itemId, supplierId] = saveQuoteBtn.dataset.comprasQuoteSave.split('|');
       const priceInput = document.querySelector('[data-compras-quote-price="'+itemId+'|'+supplierId+'"]');
-      const unitPriceCents = priceInput ? parseBRLToCents(priceInput.value || '0') : null;
+      const unitPriceCents = priceInput ? parseBRLToCents(getCurrencyValue(priceInput) || '0') : null;
       if(unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO VÁLIDO.', 'error'); return; }
       try{
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
@@ -24895,7 +24898,7 @@ function renderHomeTasks(){
       const priceInput = document.querySelector('[data-compras-quote-add-price="'+itemId+'"]');
       const supplierId = select ? select.value : '';
       if(!supplierId){ showPurchaseToast('ESCOLHA UM FORNECEDOR.', 'error'); return; }
-      const unitPriceCents = priceInput ? parseBRLToCents(priceInput.value || '0') : null;
+      const unitPriceCents = priceInput ? parseBRLToCents(getCurrencyValue(priceInput) || '0') : null;
       if(unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO VÁLIDO.', 'error'); return; }
       try{
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
@@ -25308,10 +25311,11 @@ function renderHomeTasks(){
       '<td>'+(Number(item.unitPriceCents || 0) > 0 ? formatCentsBRL(item.unitPriceCents) : '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+
         '<input type="number" min="0" max="'+Number(item.quantity || 0)+'" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;" title="Quantidade recebida">'+
-        '<input type="number" min="0" step="0.01" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)">'+
+        '<input type="text" inputmode="decimal" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)">'+
         '<button class="btn-outline" type="button" data-compras-order-item-save="'+escapeHtml(item.id)+'">SALVAR</button>'+
       '</span></td>'+
     '</tr>').join('');
+    body.querySelectorAll('[data-compras-order-item-price]').forEach(attachCurrencyMask);
   }
 
   // ----- NF vinculada ao pedido nativo -----
@@ -25485,7 +25489,7 @@ function renderHomeTasks(){
     if(!receivedInput) return;
     const receivedQuantity = Number(receivedInput.value);
     if(!Number.isFinite(receivedQuantity) || receivedQuantity < 0){ showPurchaseToast('INFORME UMA QUANTIDADE RECEBIDA VÁLIDA.', 'error'); return; }
-    const unitPriceCents = priceInput ? parseBRLToCents(priceInput.value || '0') : null;
+    const unitPriceCents = priceInput ? parseBRLToCents(getCurrencyValue(priceInput) || '0') : null;
     if(priceInput && unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO UNITÁRIO VÁLIDO.', 'error'); return; }
     try{
       await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {
