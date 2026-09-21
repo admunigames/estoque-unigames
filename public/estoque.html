@@ -418,7 +418,9 @@
     background:linear-gradient(115deg,rgba(255,255,255,.42),transparent 36%,rgba(255,255,255,.2));
     pointer-events:none;
   }
-  .home-search{position:relative; flex:none;}
+  .home-account-user{display:flex; align-items:center; gap:10px;}
+  .home-search{position:relative; flex:0 0 auto;}
+  .home-search.is-open{flex:1 1 auto; min-width:0;}
   .home-search-icon-btn{
     display:grid; place-items:center; width:34px; height:34px; flex:0 0 34px; border:1px solid transparent; border-radius:9px;
     background:rgba(79,134,189,.07); color:var(--ink-faint); cursor:pointer; transition:background .15s ease,color .15s ease;
@@ -427,7 +429,7 @@
   .home-search-icon-btn:hover,.home-search-icon-btn:focus-visible{background:rgba(79,134,189,.14); color:var(--accent);}
   .home-search-icon-btn[hidden],.home-search-box[hidden]{display:none;}
   .home-search-box{
-    position:absolute; top:50%; right:0; transform:translateY(-50%); z-index:41; width:min(300px,70vw);
+    width:100%; box-sizing:border-box;
     display:flex; align-items:center; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:8px 10px 8px 13px;
     box-shadow:0 14px 30px rgba(0,0,0,.22);
   }
@@ -438,7 +440,7 @@
   .home-search-close{display:grid; place-items:center; width:30px; height:30px; flex:none; border:0; border-radius:8px; background:transparent; color:var(--ink-faint); cursor:pointer;}
   .home-search-close svg{width:17px; height:17px; stroke-width:2.2;}
   .home-search-close:hover{background:rgba(79,134,189,.1); color:var(--accent);}
-  .home-search-results{position:absolute; right:0; top:calc(100% + 8px); z-index:40; width:min(300px,70vw); background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:6px; box-shadow:0 18px 40px rgba(0,0,0,.28); max-height:320px; overflow-y:auto;}
+  .home-search-results{position:absolute; left:0; right:0; top:calc(100% + 8px); z-index:40; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:6px; box-shadow:0 18px 40px rgba(0,0,0,.28); max-height:320px; overflow-y:auto;}
   .home-search-result{display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border:0; border-radius:9px; background:transparent; color:var(--ink); font:600 13.5px/1.3 var(--sans); text-align:left; cursor:pointer;}
   .home-search-result:hover,.home-search-result.active{background:rgba(79,134,189,.1);}
   .home-search-result .nav-icon{display:flex; flex:none; width:18px; height:18px; color:var(--ink-faint);}
@@ -3051,7 +3053,9 @@
             </div>
             <div class="home-search-results" id="homeSearchResults" role="listbox" hidden></div>
           </div>
-          <span id="homeSessionName">Carregando usuário…</span><form method="post" action="/logout"><button type="submit">SAIR</button></form>
+          <div class="home-account-user" id="homeAccountUser">
+            <span id="homeSessionName">Carregando usuário…</span><form method="post" action="/logout"><button type="submit">SAIR</button></form>
+          </div>
         </div>
         <div class="home-brand">
           <img class="home-brand-logo" data-logo alt="LOGO UNIGAMES">
@@ -10426,11 +10430,15 @@
   const homeSearchInput = el('homeSearchInput');
   const homeSearchToggle = el('homeSearchToggle');
   const homeSearchBox = el('homeSearchBox');
+  const homeSearchWrap = el('homeSearchWrap');
+  const homeAccountUser = el('homeAccountUser');
 
   function openHomeSearch(){
     homeSearchToggle.hidden = true;
     homeSearchToggle.setAttribute('aria-expanded', 'true');
     homeSearchBox.hidden = false;
+    homeSearchWrap.classList.add('is-open');
+    homeAccountUser.hidden = true;
     homeSearchInput.focus();
   }
 
@@ -10438,6 +10446,8 @@
     homeSearchBox.hidden = true;
     homeSearchToggle.hidden = false;
     homeSearchToggle.setAttribute('aria-expanded', 'false');
+    homeSearchWrap.classList.remove('is-open');
+    homeAccountUser.hidden = false;
     homeSearchInput.value = '';
     closeHomeSearchResults();
   }
