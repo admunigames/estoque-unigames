@@ -6903,7 +6903,7 @@
           <option value="recuperacao">RECUPERAÇÃO</option>
         </select>
       </div>
-      <div class="purchase-field"><label for="reposicaoValor">VALOR (R$) *</label><input type="number" id="reposicaoValor" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="reposicaoValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="reposicaoValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="reposicaoObs">OBSERVAÇÕES</label><textarea id="reposicaoObs" rows="2" maxlength="2000"></textarea></div>
     </div>
     <div class="user-form-status" id="reposicaoFormStatus" role="status" aria-live="polite"></div>
@@ -6947,7 +6947,7 @@
       <div class="purchase-field"><label for="recargaOperadora">OPERADORA *</label><input id="recargaOperadora" maxlength="60" required></div>
       <div class="purchase-field"><label for="recargaUnidade">UNIDADE *</label><select id="recargaUnidade" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="recargaResponsavel">RESPONSÁVEL</label><input id="recargaResponsavel" maxlength="160"></div>
-      <div class="purchase-field"><label for="recargaValor">VALOR (R$) *</label><input type="number" id="recargaValor" min="0" step="0.01" required></div>
+      <div class="purchase-field"><label for="recargaValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="recargaUltima">DATA DA ÚLTIMA RECARGA *</label><input type="date" id="recargaUltima" required></div>
       <div class="purchase-field"><label for="recargaProxima">PRÓXIMA RECARGA</label><input type="date" id="recargaProxima" disabled></div>
       <div class="purchase-field"><label class="checkbox-inline"><input type="checkbox" id="recargaAtiva" checked> Linha ativa</label></div>
@@ -6970,7 +6970,7 @@
     <input type="hidden" id="recargaEventId">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="recargaEventData">DATA DA RECARGA *</label><input type="date" id="recargaEventData" required></div>
-      <div class="purchase-field"><label for="recargaEventValor">VALOR (R$) *</label><input type="number" id="recargaEventValor" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="recargaEventValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaEventValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="recargaEventObs">OBSERVAÇÕES</label><textarea id="recargaEventObs" rows="2" maxlength="1000"></textarea></div>
     </div>
     <div id="recargaEventHistorico" class="page-desc"></div>
@@ -6995,15 +6995,15 @@
       <div class="purchase-field"><label for="declShoppingLojaForm">LOJA *</label><select id="declShoppingLojaForm" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="declShoppingCompetencia">COMPETÊNCIA *</label><input type="month" id="declShoppingCompetencia" required></div>
       <div class="purchase-field"><label for="declShoppingDataDecl">DATA DA DECLARAÇÃO</label><input type="date" id="declShoppingDataDecl"></div>
-      <div class="purchase-field"><label for="declShoppingFatReal">FATURAMENTO REAL (R$) *</label><input type="number" id="declShoppingFatReal" min="0" step="0.01" required></div>
-      <div class="purchase-field"><label for="declShoppingMedia">MÉDIA QUE COSTUMA SER DECLARADA (R$)</label><input type="number" id="declShoppingMedia" min="0" step="0.01"></div>
-      <div class="purchase-field"><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="number" id="declShoppingSugerido" min="0" step="0.01"></div>
-      <div class="purchase-field"><label for="declShoppingDeclarado">VALOR EFETIVAMENTE DECLARADO (R$)</label><input type="number" id="declShoppingDeclarado" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingFatReal">FATURAMENTO REAL (R$) *</label><input type="text" inputmode="decimal" id="declShoppingFatReal" placeholder="R$ 0,00" required></div>
+      <div class="purchase-field"><label for="declShoppingMedia">MÉDIA QUE COSTUMA SER DECLARADA (R$)</label><input type="text" inputmode="decimal" id="declShoppingMedia" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="text" inputmode="decimal" id="declShoppingSugerido" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="declShoppingDeclarado">VALOR EFETIVAMENTE DECLARADO (R$)</label><input type="text" inputmode="decimal" id="declShoppingDeclarado" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="declShoppingPercentual">PERCENTUAL CONTRATUAL (%)</label><input type="number" id="declShoppingPercentual" min="0" max="100" step="0.01" placeholder="Ex.: 7"></div>
-      <div class="purchase-field"><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="number" id="declShoppingMinimo" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="text" inputmode="decimal" id="declShoppingMinimo" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="number" id="declShoppingAluguelPct" min="0" step="0.01"></div>
       <div class="purchase-field"><label class="checkbox-inline"><input type="checkbox" id="declShoppingPctPago"> Houve pagamento de aluguel percentual</label></div>
-      <div class="purchase-field"><label for="declShoppingPago">VALOR EFETIVAMENTE PAGO (R$)</label><input type="number" id="declShoppingPago" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingPago">VALOR EFETIVAMENTE PAGO (R$)</label><input type="text" inputmode="decimal" id="declShoppingPago" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><label for="declShoppingObs">OBSERVAÇÕES</label><textarea id="declShoppingObs" rows="2" maxlength="2000"></textarea></div>
     </div>
     <div id="declShoppingCalcHint" class="page-desc"></div>
@@ -24125,11 +24125,12 @@ function renderHomeTasks(){
     el('reposicaoSetorResp').value = row ? row.sector : '';
     el('reposicaoResponsavel').value = row ? (row.responsibleName || '') : '';
     el('reposicaoTipoForm').value = row ? row.kind : '';
-    el('reposicaoValor').value = row && row.amountCents ? (row.amountCents/100).toFixed(2) : '';
+    setCurrencyValue(el('reposicaoValor'), row && row.amountCents ? row.amountCents/100 : '');
     el('reposicaoObs').value = row ? (row.notes || '') : '';
     el('reposicaoFormStatus').textContent = '';
     el('reposicaoDialog').showModal();
   }
+  el('reposicaoValor') && attachCurrencyMask(el('reposicaoValor'));
   el('btnNewReposicao') && el('btnNewReposicao').addEventListener('click', () => openReposicaoDialog(null));
   el('btnFiltrarReposicao') && el('btnFiltrarReposicao').addEventListener('click', reloadReposicao);
   el('btnCloseReposicaoDialog') && el('btnCloseReposicaoDialog').addEventListener('click', () => el('reposicaoDialog').close());
@@ -24147,7 +24148,7 @@ function renderHomeTasks(){
       sector: el('reposicaoSetorResp').value,
       responsibleName: el('reposicaoResponsavel').value.trim(),
       kind: el('reposicaoTipoForm').value,
-      amountCents: Math.round(Number(el('reposicaoValor').value) * 100),
+      amountCents: Math.round(Number(getCurrencyValue(el('reposicaoValor'))) * 100),
       notes: el('reposicaoObs').value
     };
     const id = el('reposicaoId').value;
@@ -24291,7 +24292,7 @@ function renderHomeTasks(){
     el('recargaOperadora').value = row ? (row.carrier || '') : '';
     el('recargaUnidade').value = row ? row.companyId : '';
     el('recargaResponsavel').value = row ? (row.responsibleName || '') : '';
-    el('recargaValor').value = row && row.lastAmountCents ? (row.lastAmountCents/100).toFixed(2) : '';
+    setCurrencyValue(el('recargaValor'), row && row.lastAmountCents ? row.lastAmountCents/100 : '');
     el('recargaUltima').value = row ? (row.lastRechargeDate || '') : '';
     el('recargaAtiva').checked = row ? !!row.active : true;
     el('recargaObs').value = row ? (row.notes || '') : '';
@@ -24299,6 +24300,8 @@ function renderHomeTasks(){
     el('recargaFormStatus').textContent = '';
     el('recargaDialog').showModal();
   }
+  el('recargaValor') && attachCurrencyMask(el('recargaValor'));
+  el('recargaEventValor') && attachCurrencyMask(el('recargaEventValor'));
   el('recargaUltima') && el('recargaUltima').addEventListener('change', recalcRecargaProxima);
   el('btnNewRecarga') && el('btnNewRecarga').addEventListener('click', () => openRecargaDialog(null));
   el('recargaLoja') && el('recargaLoja').addEventListener('change', reloadRecargas);
@@ -24315,7 +24318,7 @@ function renderHomeTasks(){
       carrier: el('recargaOperadora').value.trim(),
       companyId, companyName: fase8CompanyName(companyId),
       responsibleName: el('recargaResponsavel').value.trim(),
-      lastAmountCents: Math.round(Number(el('recargaValor').value || 0) * 100),
+      lastAmountCents: Math.round(Number(getCurrencyValue(el('recargaValor')) || 0) * 100),
       lastRechargeDate: el('recargaUltima').value,
       notes: el('recargaObs').value,
       active: el('recargaAtiva').checked
@@ -24343,6 +24346,7 @@ function renderHomeTasks(){
   });
   async function openRecargaEventDialog(row){
     el('recargaEventForm').reset();
+    setCurrencyValue(el('recargaEventValor'), '');
     el('recargaEventId').value = row.id;
     el('recargaEventData').value = new Date().toISOString().slice(0,10);
     el('recargaEventTitle').textContent = 'REGISTRAR RECARGA — ' + (row.phoneNumber || '');
@@ -24366,7 +24370,7 @@ function renderHomeTasks(){
     const id = el('recargaEventId').value;
     const payload = {
       rechargeDate: el('recargaEventData').value,
-      amountCents: Math.round(Number(el('recargaEventValor').value) * 100),
+      amountCents: Math.round(Number(getCurrencyValue(el('recargaEventValor'))) * 100),
       notes: el('recargaEventObs').value
     };
     try{
@@ -25961,8 +25965,15 @@ function renderHomeTasks(){
       '</tr>';
     }).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma declaração.</td></tr>';
   }
+  // declShoppingAluguelPct tem "(R$)" no rótulo mas guarda um PERCENTUAL
+  // (confirmado com o usuário), não dinheiro — por isso fica fora da máscara
+  // de moeda e continua lendo/escrevendo .value bruto, diferente dos outros.
+  const DECL_SHOPPING_MONEY_FIELDS = ['declShoppingFatReal','declShoppingMedia','declShoppingSugerido','declShoppingDeclarado','declShoppingMinimo','declShoppingPago'];
   function declShoppingReadForm(){
-    const num = id => { const v = el(id).value; return v === '' ? 0 : Math.round(Number(v) * 100); };
+    const num = id => {
+      const v = DECL_SHOPPING_MONEY_FIELDS.includes(id) ? getCurrencyValue(el(id)) : el(id).value;
+      return v === '' ? 0 : Math.round(Number(v) * 100);
+    };
     const companyId = el('declShoppingLojaForm').value;
     return {
       mallName: el('declShoppingNome').value.trim(),
@@ -25996,12 +26007,17 @@ function renderHomeTasks(){
   let declShoppingCurrentId = '';
   async function openDeclShoppingDialog(row){
     el('declShoppingForm').reset();
+    DECL_SHOPPING_MONEY_FIELDS.forEach(id => setCurrencyValue(el(id), ''));
     fase8CompanyOptions('declShoppingLojaForm', '');
     declShoppingCurrentId = row ? row.id : '';
     el('declShoppingId').value = row ? row.id : '';
     el('declShoppingDialogTitle').textContent = row ? 'EDITAR DECLARAÇÃO' : 'NOVA DECLARAÇÃO';
     if(row){
-      const set = (id, cents) => { el(id).value = cents ? (cents/100).toFixed(2) : ''; };
+      const set = (id, cents) => {
+        const value = cents ? cents/100 : '';
+        if(DECL_SHOPPING_MONEY_FIELDS.includes(id)) setCurrencyValue(el(id), value);
+        else el(id).value = cents ? (cents/100).toFixed(2) : '';
+      };
       el('declShoppingNome').value = row.mallName || '';
       el('declShoppingLojaForm').value = row.companyId || '';
       el('declShoppingCompetencia').value = row.competenceMonth || '';
@@ -26063,6 +26079,7 @@ function renderHomeTasks(){
     const node = el(id);
     if(node) node.addEventListener('input', declShoppingUpdateHint);
   });
+  DECL_SHOPPING_MONEY_FIELDS.forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
   el('btnNewDeclShopping') && el('btnNewDeclShopping').addEventListener('click', () => openDeclShoppingDialog(null));
   el('btnFiltrarDeclShopping') && el('btnFiltrarDeclShopping').addEventListener('click', reloadDeclShopping);
   el('declShoppingLoja') && el('declShoppingLoja').addEventListener('change', reloadDeclShopping);
