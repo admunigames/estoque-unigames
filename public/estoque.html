@@ -3489,7 +3489,7 @@
             </div>
             <div class="field" id="captureSerialNumberField"><label for="captureSerialNumber">SERIAL DO PRODUTO</label><input id="captureSerialNumber" maxlength="160" required placeholder="Digite o serial completo"></div>
             <div class="field" id="captureColorField"><label for="captureColor">COR DO PRODUTO</label><input id="captureColor" maxlength="120" required placeholder="Ex.: Preto"></div>
-            <div class="field"><label for="captureValue">VALOR CAPTADO (R$)</label><input id="captureValue" type="number" min="0" max="999999.99" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+            <div class="field"><label for="captureValue">VALOR CAPTADO (R$)</label><input id="captureValue" type="text" inputmode="decimal" placeholder="R$ 0,00"></div>
             <div class="field double" id="captureDefectsField"><label for="captureDefects">DEFEITOS DO PRODUTO</label><textarea id="captureDefects" maxlength="1200" rows="3" required placeholder="Descreva os defeitos ou informe “Sem defeito”"></textarea></div>
           </div>
           <div id="captureControllersContainer" hidden>
@@ -8950,6 +8950,165 @@
     };
   };
   const errorBox = el('errorBox');
+
+  // Máscara de campo monetário (R$ 1.000,00): dígitos digitados entram na
+  // parte inteira e o campo cresce como reais (não como centavos "caixa
+  // eletrônico"). Vírgula/ponto digitados manualmente, ou um valor colado já
+  // formatado, chaveiam para os centavos. O valor numérico real (formato
+  // "1000.00", igual ao que <input type="number"> sempre mandou) fica em
+  // input.dataset.rawValue — use getCurrencyValue()/setCurrencyValue() para
+  // ler/escrever, nunca leia input.value direto num campo com essa máscara.
+  function formatCurrencyDigits(intDigits, decDigits){
+    const intStr = (intDigits || '0').replace(/^0+(?=\d)/, '') || '0';
+    const grouped = intStr.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const dec = (decDigits + '00').slice(0, 2);
+    return grouped + ',' + dec;
+  }
+
+  function attachCurrencyMask(input){
+    if(input._currencyMask) return input._currencyMask;
+    input.type = 'text';
+    input.setAttribute('inputmode', 'decimal');
+    input.removeAttribute('step');
+    let intDigits = '';
+    let decDigits = '';
+    let decimalMode = false;
+
+    function render(){
+      if(intDigits === '' && decDigits === '' && !decimalMode){
+        input.value = '';
+        input.dataset.rawValue = '';
+        return;
+      }
+      input.value = 'R$ ' + formatCurrencyDigits(intDigits, decDigits);
+      input.dataset.rawValue = (intDigits || '0') + '.' + (decDigits + '00').slice(0, 2);
+    }
+
+    function placeCursorAtEnd(){
+      requestAnimationFrame(() => {
+        const length = input.value.length;
+        try{ input.setSelectionRange(length, length); }catch(e){}
+      });
+    }
+
+    // Interpreta uma string inteira digitada/colada de uma vez (ex.: colar
+    // "1.234,56"). Vírgula é sempre decimal; um único ponto só é tratado
+    // como decimal (não milhar) se tiver no máx. 2 dígitos depois dele.
+    function parseFullString(str){
+      str = String(str == null ? '' : str);
+      const commaIdx = str.lastIndexOf(',');
+      const dotIdx = str.lastIndexOf('.');
+      let sepIdx = -1;
+      if(commaIdx > dotIdx){
+        sepIdx = commaIdx;
+      }else if(dotIdx > commaIdx && (str.match(/\./g) || []).length === 1){
+        const after = str.slice(dotIdx + 1).replace(/\D/g, '');
+        if(after.length <= 2) sepIdx = dotIdx;
+      }
+      if(sepIdx >= 0){
+        intDigits = str.slice(0, sepIdx).replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+        decDigits = str.slice(sepIdx + 1).replace(/\D/g, '').slice(0, 2);
+        decimalMode = true;
+      }else{
+        intDigits = str.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+        decDigits = '';
+        decimalMode = false;
+      }
+    }
+
+    input.addEventListener('beforeinput', event => {
+      const type = event.inputType;
+      // Selecionar tudo (Ctrl+A) e digitar ou apagar deve começar do zero,
+      // não continuar somando dígitos ao valor anterior.
+      if(input.selectionStart === 0 && input.selectionEnd === input.value.length && input.value.length > 0){
+        intDigits = '';
+        decDigits = '';
+        decimalMode = false;
+      }
+      if(type === 'insertText' || type === 'insertCompositionText'){
+        event.preventDefault();
+        const data = event.data || '';
+        for(const ch of data){
+          if(/\d/.test(ch)){
+            if(decimalMode){
+              if(decDigits.length < 2) decDigits += ch;
+            }else{
+              intDigits = (intDigits + ch).replace(/^0+(?=\d)/, '');
+            }
+          }else if(ch === ',' || ch === '.'){
+            decimalMode = true;
+          }
+        }
+        render();
+        placeCursorAtEnd();
+      }else if(type === 'insertFromPaste' || type === 'insertFromDrop'){
+        event.preventDefault();
+        const data = event.data || (event.dataTransfer && event.dataTransfer.getData('text')) || '';
+        parseFullString(data);
+        render();
+        placeCursorAtEnd();
+      }else if(type === 'deleteContentBackward' || type === 'deleteContentForward' || type === 'deleteWordBackward' || type === 'deleteSoftLineBackward'){
+        event.preventDefault();
+        if(decimalMode){
+          if(decDigits.length > 0) decDigits = decDigits.slice(0, -1);
+          else decimalMode = false;
+        }else if(intDigits.length > 0){
+          intDigits = intDigits.slice(0, -1);
+        }
+        render();
+        placeCursorAtEnd();
+      }else if(type === 'deleteContent' || type === 'deleteByCut'){
+        event.preventDefault();
+        intDigits = '';
+        decDigits = '';
+        decimalMode = false;
+        render();
+        placeCursorAtEnd();
+      }
+    });
+
+    // Rede de segurança: se algum navegador não suportar beforeinput (ou o
+    // preventDefault não pegar), reinterpreta o texto inteiro que sobrou no
+    // campo em vez de deixá-lo fora de sincronia com o estado da máscara.
+    input.addEventListener('input', () => {
+      const expected = (intDigits === '' && decDigits === '' && !decimalMode)
+        ? ''
+        : 'R$ ' + formatCurrencyDigits(intDigits, decDigits);
+      if(input.value !== expected){
+        parseFullString(input.value);
+        render();
+        placeCursorAtEnd();
+      }
+    });
+
+    if(input.value) parseFullString(input.value);
+    render();
+
+    const api = {
+      getValue(){ return input.dataset.rawValue || ''; },
+      setValue(value){
+        if(value === null || value === undefined || value === ''){
+          intDigits = '';
+          decDigits = '';
+          decimalMode = false;
+        }else{
+          parseFullString(String(value).replace('.', ','));
+        }
+        render();
+      }
+    };
+    input._currencyMask = api;
+    return api;
+  }
+
+  function getCurrencyValue(input){
+    return (typeof input === 'string' ? el(input) : input).dataset.rawValue || '';
+  }
+
+  function setCurrencyValue(input, value){
+    const node = typeof input === 'string' ? el(input) : input;
+    (node._currencyMask || attachCurrencyMask(node)).setValue(value);
+  }
 
   // Reexecuta uma função de load/refresh sem o "pisca" e a perda de posição
   // de rolagem que um reload completo da seção causa: chame passando uma
@@ -15820,6 +15979,7 @@ function renderHomeTasks(){
 
   el('captureCategory').addEventListener('change',toggleCaptureGameFields);
   toggleCaptureGameFields();
+  attachCurrencyMask(el('captureValue'));
 
   const MAX_CAPTURE_CONTROLLERS = 8;
 
@@ -15833,9 +15993,10 @@ function renderHomeTasks(){
         '<div class="field"><label>MODELO/TIPO DO CONTROLE</label><input type="text" maxlength="160" data-controller-field="productName" placeholder="Ex.: DualSense"></div>'+
         '<div class="field"><label>SERIAL DO CONTROLE</label><input type="text" maxlength="160" data-controller-field="serialNumber" placeholder="Digite o serial"></div>'+
         '<div class="field"><label>COR DO CONTROLE</label><input type="text" maxlength="120" data-controller-field="color" placeholder="Ex.: Branco"></div>'+
-        '<div class="field"><label>VALOR DO CONTROLE (R$)</label><input type="number" min="0" max="999999.99" step="0.01" inputmode="decimal" data-controller-field="capturedValue" placeholder="0,00"></div>'+
+        '<div class="field"><label>VALOR DO CONTROLE (R$)</label><input type="text" inputmode="decimal" data-controller-field="capturedValue" placeholder="R$ 0,00"></div>'+
         '<div class="field double"><label>DEFEITO DO CONTROLE (SE HOUVER)</label><textarea maxlength="1200" rows="2" data-controller-field="defects" placeholder="Deixe em branco se não houver defeito"></textarea></div>'+
       '</div>';
+    attachCurrencyMask(wrap.querySelector('[data-controller-field="capturedValue"]'));
     return wrap;
   }
 
@@ -15864,7 +16025,7 @@ function renderHomeTasks(){
       productName: block.querySelector('[data-controller-field="productName"]').value,
       serialNumber: block.querySelector('[data-controller-field="serialNumber"]').value,
       color: block.querySelector('[data-controller-field="color"]').value,
-      capturedValue: block.querySelector('[data-controller-field="capturedValue"]').value,
+      capturedValue: getCurrencyValue(block.querySelector('[data-controller-field="capturedValue"]')),
       defects: block.querySelector('[data-controller-field="defects"]').value
     }));
   }
@@ -15902,11 +16063,12 @@ function renderHomeTasks(){
           serialNumber:el('captureSerialNumber').value,
           defects:el('captureDefects').value,
           color:el('captureColor').value,
-          capturedValue:el('captureValue').value,
+          capturedValue:getCurrencyValue(el('captureValue')),
           controllers:collectControllers()
         })
       });
       el('captureForm').reset();
+      setCurrencyValue(el('captureValue'), '');
       toggleCaptureGameFields();
       resetControllerBlocks();
       toggleCaptureControllers();
