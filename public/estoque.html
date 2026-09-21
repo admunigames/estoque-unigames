@@ -7464,7 +7464,7 @@
       <div class="purchase-field"><label for="rhEmployeeAdmission">DATA DE ADMISSÃO</label><input type="date" id="rhEmployeeAdmission"></div>
       <div class="purchase-field"><label for="rhEmployeeCompany">LOJA</label><select id="rhEmployeeCompany"><option value="">SEM LOJA DEFINIDA</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeRole">CARGO</label><input id="rhEmployeeRole" maxlength="120"></div>
-      <div class="purchase-field"><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="number" id="rhEmployeeSalary" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeSalary" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhEmployeeStatus">SITUAÇÃO</label><select id="rhEmployeeStatus"><option value="active">ATIVO</option><option value="inactive">INATIVO</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeSchedule">ESCALA</label><select id="rhEmployeeSchedule"><option value="5x2">5x2 (SEG A SEX)</option><option value="6x1">6x1 (TRABALHA 6, FOLGA 1)</option></select></div>
       <div class="purchase-field"><label for="rhEmployeePix">CHAVE PIX</label><input id="rhEmployeePix" maxlength="160"></div>
@@ -7491,12 +7491,12 @@
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="rhFolhaEmployeeName">FUNCIONÁRIO</label><input id="rhFolhaEmployeeName" readonly></div>
       <div class="purchase-field"><label for="rhFolhaCompetencia">COMPETÊNCIA</label><input id="rhFolhaCompetencia" readonly></div>
-      <div class="purchase-field"><label for="rhFolhaBase">SALÁRIO BASE (R$)</label><input type="number" id="rhFolhaBase" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaBonus">BONIFICAÇÃO (R$)</label><input type="number" id="rhFolhaBonus" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaOvertime">HORAS EXTRAS (R$)</label><input type="number" id="rhFolhaOvertime" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaAdditions">ADICIONAIS (R$)</label><input type="number" id="rhFolhaAdditions" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaDeductions">DESCONTOS (R$)</label><input type="number" id="rhFolhaDeductions" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaOther">OUTROS (R$)</label><input type="number" id="rhFolhaOther" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhFolhaBase">SALÁRIO BASE (R$)</label><input type="text" inputmode="decimal" id="rhFolhaBase" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaBonus">BONIFICAÇÃO (R$)</label><input type="text" inputmode="decimal" id="rhFolhaBonus" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaOvertime">HORAS EXTRAS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaOvertime" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaAdditions">ADICIONAIS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaAdditions" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaDeductions">DESCONTOS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaDeductions" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaOther">OUTROS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaOther" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhFolhaCommission">COMISSÃO (CALCULADA)</label><input id="rhFolhaCommission" readonly></div>
       <div class="purchase-field"><label for="rhFolhaBenefits">BENEFÍCIOS (CALCULADOS)</label><input id="rhFolhaBenefits" readonly></div>
       <div class="purchase-field"><label for="rhFolhaNet">VALOR LÍQUIDO</label><input id="rhFolhaNet" readonly></div>
@@ -7563,8 +7563,8 @@
         <div class="purchase-field full"><label for="rh13Funcionario">FUNCIONÁRIO *</label><select id="rh13Funcionario" required><option value="">SELECIONE</option></select></div>
         <div class="purchase-field"><label for="rh13Ano">ANO *</label><input type="number" id="rh13Ano" min="2000" max="2100" step="1" required></div>
         <div class="purchase-field"><label for="rh13Parcela">PARCELA *</label><select id="rh13Parcela"><option value="unico">LANÇAMENTO ÚNICO</option><option value="adiantamento">ADIANTAMENTO</option><option value="final">PARCELA FINAL</option></select></div>
-        <div class="purchase-field"><label for="rh13Bruto">VALOR BRUTO (R$) *</label><input type="number" id="rh13Bruto" min="0.01" step="0.01" required></div>
-        <div class="purchase-field"><label for="rh13Desconto">DESCONTO (R$)</label><input type="number" id="rh13Desconto" min="0" step="0.01" value="0"></div>
+        <div class="purchase-field"><label for="rh13Bruto">VALOR BRUTO (R$) *</label><input type="text" inputmode="decimal" id="rh13Bruto" placeholder="R$ 0,00" required></div>
+        <div class="purchase-field"><label for="rh13Desconto">DESCONTO (R$)</label><input type="text" inputmode="decimal" id="rh13Desconto" placeholder="R$ 0,00"></div>
         <div class="purchase-field full"><label for="rh13Obs">OBSERVAÇÕES</label><input id="rh13Obs" maxlength="500"></div>
         <div class="purchase-field"><label for="btnSaveRh13">&nbsp;</label><button class="btn-accent" id="btnSaveRh13" type="submit">ADICIONAR / SALVAR</button></div>
       </div>
@@ -7608,9 +7608,9 @@
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="rhBeneficioItemTipo">TIPO</label><select id="rhBeneficioItemTipo"><option value="alimentacao">ALIMENTAÇÃO</option><option value="mobilidade">MOBILIDADE</option><option value="premiacao">PREMIAÇÃO</option><option value="saldo_livre">SALDO LIVRE</option><option value="outros">OUTROS</option></select></div>
       <div class="purchase-field"><label for="rhBeneficioItemModo">MODO</label><select id="rhBeneficioItemModo"><option value="fixed">VALOR FIXO</option><option value="per_day">POR DIA TRABALHADO</option></select></div>
-      <div class="purchase-field" id="rhBeneficioItemValorWrap"><label for="rhBeneficioItemValor">VALOR (R$)</label><input type="number" id="rhBeneficioItemValor" min="0.01" step="0.01"></div>
-      <div class="purchase-field" id="rhBeneficioItemPorDiaWrap" hidden><label for="rhBeneficioItemPorDia">VALOR POR DIA (R$)</label><input type="number" id="rhBeneficioItemPorDia" min="0.01" step="0.01"></div>
-      <div class="purchase-field"><label for="rhBeneficioItemDesconto">DESCONTO (R$)</label><input type="number" id="rhBeneficioItemDesconto" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field" id="rhBeneficioItemValorWrap"><label for="rhBeneficioItemValor">VALOR (R$)</label><input type="text" inputmode="decimal" id="rhBeneficioItemValor" placeholder="R$ 0,00"></div>
+      <div class="purchase-field" id="rhBeneficioItemPorDiaWrap" hidden><label for="rhBeneficioItemPorDia">VALOR POR DIA (R$)</label><input type="text" inputmode="decimal" id="rhBeneficioItemPorDia" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhBeneficioItemDesconto">DESCONTO (R$)</label><input type="text" inputmode="decimal" id="rhBeneficioItemDesconto" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="btnAddRhBeneficioItem">&nbsp;</label><button class="btn-outline" id="btnAddRhBeneficioItem" type="button">ADICIONAR BENEFÍCIO</button></div>
     </div>
     <div class="table-panel responsive-table" style="margin-top:10px;">
@@ -7675,7 +7675,7 @@
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="rhComissaoFuncionario">FUNCIONÁRIO *</label><select id="rhComissaoFuncionario" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="rhComissaoCompetencia">COMPETÊNCIA *</label><input type="month" id="rhComissaoCompetencia" required></div>
-      <div class="purchase-field"><label for="rhComissaoValor">COMISSÃO (R$)</label><input type="number" id="rhComissaoValor" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhComissaoValor">COMISSÃO (R$)</label><input type="text" inputmode="decimal" id="rhComissaoValor" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><label for="rhComissaoObs">OBSERVAÇÕES</label><textarea id="rhComissaoObs" rows="2" maxlength="500"></textarea></div>
     </div>
     <p id="rhComissaoRegraHint" class="no-print" style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;white-space:pre-wrap;" hidden></p>
@@ -7684,7 +7684,7 @@
       <div class="purchase-field"><label for="rhComissaoItemPreset">LANÇAMENTO PADRÃO</label><select id="rhComissaoItemPreset"><option value="">SEM PADRÃO (LIVRE)</option></select></div>
       <div class="purchase-field"><label for="rhComissaoItemLabel">DESCRIÇÃO</label><input id="rhComissaoItemLabel" maxlength="120"></div>
       <div class="purchase-field"><label for="rhComissaoItemKind">TIPO</label><select id="rhComissaoItemKind"><option value="bonus">BÔNUS</option><option value="premiacao">PREMIAÇÃO</option><option value="desconto">DESCONTO</option><option value="ajuste">AJUSTE</option></select></div>
-      <div class="purchase-field"><label for="rhComissaoItemValor">VALOR (R$)</label><input type="number" id="rhComissaoItemValor" step="0.01"></div>
+      <div class="purchase-field"><label for="rhComissaoItemValor">VALOR (R$)</label><input type="text" inputmode="decimal" id="rhComissaoItemValor" placeholder="R$ 0,00"></div>
       <div class="purchase-field" id="rhComissaoItemParcelaWrap" hidden><label for="rhComissaoItemParcelado" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="rhComissaoItemParcelado"> PARCELAR DESCONTO</label><input type="number" id="rhComissaoItemParcelas" min="2" max="60" step="1" placeholder="Nº de ocorrências" disabled></div>
       <div class="purchase-field"><label for="btnAddRhComissaoItem">&nbsp;</label><button class="btn-outline" id="btnAddRhComissaoItem" type="button">ADICIONAR LANÇAMENTO</button></div>
     </div>
@@ -7905,7 +7905,7 @@
         </div>
         <div class="purchase-form-grid" style="padding:8px 0 0;">
           <div class="purchase-field"><label for="recNewPaymentDate">DATA DO PAGAMENTO</label><input type="date" id="recNewPaymentDate"></div>
-          <div class="purchase-field"><label for="recNewPaymentAmount">VALOR (R$)</label><input type="number" id="recNewPaymentAmount" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="purchase-field"><label for="recNewPaymentAmount">VALOR (R$)</label><input type="text" inputmode="decimal" id="recNewPaymentAmount" placeholder="R$ 0,00"></div>
           <div class="purchase-field"><label for="recNewPaymentNote">OBSERVAÇÃO</label><input id="recNewPaymentNote" maxlength="500"></div>
           <div class="purchase-field" style="align-self:end;"><button class="btn-outline" id="btnAddRecPayment" type="button">+ LANÇAR PAGAMENTO</button></div>
         </div>
@@ -7940,7 +7940,7 @@
       <div class="purchase-field" id="recPhotoField" hidden><label for="recPhotoTaken">FOTO FEITA?</label><select id="recPhotoTaken"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field" id="recAsoRequestedField" hidden><label for="recAsoRequested">ASO SOLICITADO?</label><select id="recAsoRequested"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field" id="recAsoClinicField" hidden><label for="recAsoClinic">CLÍNICA DO ASO</label><input id="recAsoClinic" maxlength="160"></div>
-      <div class="purchase-field" id="recAsoValueField" hidden><label for="recAsoValue">VALOR DO EXAME (R$)</label><input type="number" id="recAsoValue" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="purchase-field" id="recAsoValueField" hidden><label for="recAsoValue">VALOR DO EXAME (R$)</label><input type="text" inputmode="decimal" id="recAsoValue" placeholder="R$ 0,00"></div>
       <div class="purchase-field" id="recShoppingField" hidden><label for="recShoppingRegistered">CADASTRADO NO SHOPPING FIXO?</label><select id="recShoppingRegistered"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field full" id="recDriveLinkField" hidden><label for="recAdmissionDocsDriveLink">LINK DOS DOCUMENTOS ADMISSIONAIS NO GOOGLE DRIVE</label><input id="recAdmissionDocsDriveLink" maxlength="500" placeholder="https://drive.google.com/..."></div>
       <div class="purchase-field" id="recDentalField" hidden><label for="recDentalPlanIncluded">INCLUSO NO PLANO ODONTOLÓGICO?</label><select id="recDentalPlanIncluded"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
@@ -29048,7 +29048,7 @@ function renderHomeTasks(){
     el('rhEmployeeAdmission').value = employee ? (employee.admissionDate || '') : '';
     el('rhEmployeeCompany').value = employee ? (employee.companyId || '') : (el('rhEmployeeFiltroLoja').value || '');
     el('rhEmployeeRole').value = employee ? (employee.roleTitle || '') : '';
-    el('rhEmployeeSalary').value = employee ? (Number(employee.salaryCents || 0)/100).toFixed(2) : '0.00';
+    setCurrencyValue(el('rhEmployeeSalary'), employee ? Number(employee.salaryCents || 0)/100 : 0);
     el('rhEmployeeStatus').value = employee ? employee.status : 'active';
     el('rhEmployeeSchedule').value = employee ? (employee.workSchedule || '5x2') : '5x2';
     el('rhEmployeePix').value = employee ? (employee.pixKey || '') : '';
@@ -29063,6 +29063,7 @@ function renderHomeTasks(){
     if(el('rhEmployeeDialog').open) el('rhEmployeeDialog').close();
   }
 
+  if(el('rhEmployeeSalary')) attachCurrencyMask(el('rhEmployeeSalary'));
   if(el('btnNewRhEmployee')) el('btnNewRhEmployee').addEventListener('click', () => openRhEmployeeDialog(null));
   if(el('btnCloseRhEmployeeDialog')) el('btnCloseRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
   if(el('btnCancelRhEmployeeDialog')) el('btnCancelRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
@@ -29091,7 +29092,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('rhEmployeeFormStatus');
     status.textContent = '';
-    const salaryCents = parseBRLToCents(el('rhEmployeeSalary').value || '0');
+    const salaryCents = parseBRLToCents(getCurrencyValue(el('rhEmployeeSalary')) || '0');
     if(salaryCents === null){
       status.textContent = 'INFORME UM SALÁRIO VÁLIDO.';
       return;
@@ -29288,7 +29289,8 @@ function renderHomeTasks(){
     el('rhDecimoTerceiroForm').reset();
     el('rh13Id').value = '';
     el('rh13Parcela').value = 'unico';
-    el('rh13Desconto').value = '0';
+    setCurrencyValue(el('rh13Bruto'), '');
+    setCurrencyValue(el('rh13Desconto'), 0);
     el('rh13Ano').value = el('rh13FiltroAno').value || String(new Date().getFullYear());
     el('rh13FormStatus').textContent = '';
   }
@@ -29302,6 +29304,8 @@ function renderHomeTasks(){
     el('rhDecimoTerceiroDialog').showModal();
   }
 
+  if(el('rh13Bruto')) attachCurrencyMask(el('rh13Bruto'));
+  if(el('rh13Desconto')) attachCurrencyMask(el('rh13Desconto'));
   if(el('btnRhDecimoTerceiro')) el('btnRhDecimoTerceiro').addEventListener('click', openRhDecimoTerceiro);
   if(el('btnCloseRhDecimoTerceiro')) el('btnCloseRhDecimoTerceiro').addEventListener('click', () => el('rhDecimoTerceiroDialog').close());
   if(el('btnCancelRhDecimoTerceiro')) el('btnCancelRhDecimoTerceiro').addEventListener('click', () => el('rhDecimoTerceiroDialog').close());
@@ -29311,8 +29315,8 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('rh13FormStatus');
     status.textContent = '';
-    const grossCents = parseBRLToCents(el('rh13Bruto').value);
-    const deductionsCents = parseBRLToCents(el('rh13Desconto').value || '0') || 0;
+    const grossCents = parseBRLToCents(getCurrencyValue(el('rh13Bruto')));
+    const deductionsCents = parseBRLToCents(getCurrencyValue(el('rh13Desconto')) || '0') || 0;
     if(!el('rh13Funcionario').value){ status.textContent = 'SELECIONE O FUNCIONÁRIO.'; return; }
     if(grossCents === null || grossCents <= 0){ status.textContent = 'INFORME UM VALOR BRUTO MAIOR QUE ZERO.'; return; }
     if(deductionsCents > grossCents){ status.textContent = 'O DESCONTO NÃO PODE SER MAIOR QUE O VALOR BRUTO.'; return; }
@@ -29347,8 +29351,8 @@ function renderHomeTasks(){
       el('rh13Funcionario').value = row.employeeId;
       el('rh13Ano').value = row.year;
       el('rh13Parcela').value = row.installment;
-      el('rh13Bruto').value = (Number(row.grossCents || 0)/100).toFixed(2);
-      el('rh13Desconto').value = (Number(row.deductionsCents || 0)/100).toFixed(2);
+      setCurrencyValue(el('rh13Bruto'), Number(row.grossCents || 0)/100);
+      setCurrencyValue(el('rh13Desconto'), Number(row.deductionsCents || 0)/100);
       el('rh13Obs').value = row.notes || '';
       el('rh13FormStatus').textContent = '';
       return;
@@ -29400,8 +29404,8 @@ function renderHomeTasks(){
 
   function rhFolhaDialogNet(){
     const values = ['rhFolhaBase','rhFolhaBonus','rhFolhaOvertime','rhFolhaAdditions','rhFolhaOther']
-      .map(id => parseBRLToCents(el(id).value || '0'));
-    const deductions = parseBRLToCents(el('rhFolhaDeductions').value || '0');
+      .map(id => parseBRLToCents(getCurrencyValue(el(id)) || '0'));
+    const deductions = parseBRLToCents(getCurrencyValue(el('rhFolhaDeductions')) || '0');
     if(values.some(value => value === null) || deductions === null) return null;
     const current = rhFolhaRows.find(row => row.employeeId === el('rhFolhaEmployeeId').value);
     const commission = current ? Number(current.commissionCents || 0) : 0;
@@ -29415,6 +29419,7 @@ function renderHomeTasks(){
   }
 
   ['rhFolhaBase','rhFolhaBonus','rhFolhaOvertime','rhFolhaAdditions','rhFolhaDeductions','rhFolhaOther'].forEach(id => {
+    if(el(id)) attachCurrencyMask(el(id));
     if(el(id)) el(id).addEventListener('input', rhFolhaUpdateDialogNet);
   });
 
@@ -29425,12 +29430,12 @@ function renderHomeTasks(){
     el('rhFolhaEmployeeId').value = row.employeeId;
     el('rhFolhaEmployeeName').value = row.employeeName;
     el('rhFolhaCompetencia').value = rhFormatMonth(row.month);
-    el('rhFolhaBase').value = (Number(row.baseSalaryCents || 0)/100).toFixed(2);
-    el('rhFolhaBonus').value = (Number(row.bonusCents || 0)/100).toFixed(2);
-    el('rhFolhaOvertime').value = (Number(row.overtimeCents || 0)/100).toFixed(2);
-    el('rhFolhaAdditions').value = (Number(row.additionsCents || 0)/100).toFixed(2);
-    el('rhFolhaDeductions').value = (Number(row.deductionsCents || 0)/100).toFixed(2);
-    el('rhFolhaOther').value = (Number(row.otherCents || 0)/100).toFixed(2);
+    setCurrencyValue(el('rhFolhaBase'), Number(row.baseSalaryCents || 0)/100);
+    setCurrencyValue(el('rhFolhaBonus'), Number(row.bonusCents || 0)/100);
+    setCurrencyValue(el('rhFolhaOvertime'), Number(row.overtimeCents || 0)/100);
+    setCurrencyValue(el('rhFolhaAdditions'), Number(row.additionsCents || 0)/100);
+    setCurrencyValue(el('rhFolhaDeductions'), Number(row.deductionsCents || 0)/100);
+    setCurrencyValue(el('rhFolhaOther'), Number(row.otherCents || 0)/100);
     el('rhFolhaCommission').value = formatCentsBRL(row.commissionCents);
     el('rhFolhaBenefits').value = formatCentsBRL(row.benefitsCents);
     el('rhFolhaNotes').value = row.notes || '';
@@ -29451,12 +29456,12 @@ function renderHomeTasks(){
     const status = el('rhFolhaFormStatus');
     status.textContent = '';
     const amounts = {
-      baseSalaryCents: parseBRLToCents(el('rhFolhaBase').value || '0'),
-      bonusCents: parseBRLToCents(el('rhFolhaBonus').value || '0'),
-      overtimeCents: parseBRLToCents(el('rhFolhaOvertime').value || '0'),
-      additionsCents: parseBRLToCents(el('rhFolhaAdditions').value || '0'),
-      deductionsCents: parseBRLToCents(el('rhFolhaDeductions').value || '0'),
-      otherCents: parseBRLToCents(el('rhFolhaOther').value || '0')
+      baseSalaryCents: parseBRLToCents(getCurrencyValue(el('rhFolhaBase')) || '0'),
+      bonusCents: parseBRLToCents(getCurrencyValue(el('rhFolhaBonus')) || '0'),
+      overtimeCents: parseBRLToCents(getCurrencyValue(el('rhFolhaOvertime')) || '0'),
+      additionsCents: parseBRLToCents(getCurrencyValue(el('rhFolhaAdditions')) || '0'),
+      deductionsCents: parseBRLToCents(getCurrencyValue(el('rhFolhaDeductions')) || '0'),
+      otherCents: parseBRLToCents(getCurrencyValue(el('rhFolhaOther')) || '0')
     };
     if(Object.values(amounts).some(value => value === null)){
       status.textContent = 'INFORME VALORES VÁLIDOS (NÃO NEGATIVOS).';
@@ -29806,9 +29811,9 @@ function renderHomeTasks(){
     }
     el('rhBeneficioItemTipo').value = 'alimentacao';
     el('rhBeneficioItemModo').value = 'fixed';
-    el('rhBeneficioItemValor').value = '';
-    el('rhBeneficioItemPorDia').value = '';
-    el('rhBeneficioItemDesconto').value = '0';
+    setCurrencyValue(el('rhBeneficioItemValor'), '');
+    setCurrencyValue(el('rhBeneficioItemPorDia'), '');
+    setCurrencyValue(el('rhBeneficioItemDesconto'), 0);
     rhSyncBeneficioItemModo();
     renderRhBeneficioDialogItems();
     el('rhBeneficioFormStatus').textContent = '';
@@ -29822,6 +29827,7 @@ function renderHomeTasks(){
     el('rhBeneficioItemPorDiaWrap').hidden = !perDay;
   }
   if(el('rhBeneficioItemModo')) el('rhBeneficioItemModo').addEventListener('change', rhSyncBeneficioItemModo);
+  ['rhBeneficioItemValor','rhBeneficioItemPorDia','rhBeneficioItemDesconto'].forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
   ['rhBeneficioFuncionario','rhBeneficioMes'].forEach(id => {
     if(el(id)) el(id).addEventListener('change', rhRefreshBeneficioDiasUteis);
   });
@@ -29855,10 +29861,10 @@ function renderHomeTasks(){
     const status = el('rhBeneficioFormStatus');
     const type = el('rhBeneficioItemTipo').value;
     const mode = el('rhBeneficioItemModo').value === 'per_day' ? 'per_day' : 'fixed';
-    const discountCents = parseBRLToCents(el('rhBeneficioItemDesconto').value || '0') || 0;
+    const discountCents = parseBRLToCents(getCurrencyValue(el('rhBeneficioItemDesconto')) || '0') || 0;
     let amountCents, perDayRateCents = 0, workingDays = 0;
     if(mode === 'per_day'){
-      perDayRateCents = parseBRLToCents(el('rhBeneficioItemPorDia').value);
+      perDayRateCents = parseBRLToCents(getCurrencyValue(el('rhBeneficioItemPorDia')));
       if(perDayRateCents === null || perDayRateCents <= 0){
         status.textContent = 'INFORME UM VALOR POR DIA MAIOR QUE ZERO.';
         return;
@@ -29870,7 +29876,7 @@ function renderHomeTasks(){
       workingDays = rhBeneficioWorkingDays;
       amountCents = perDayRateCents * workingDays;
     }else{
-      amountCents = parseBRLToCents(el('rhBeneficioItemValor').value);
+      amountCents = parseBRLToCents(getCurrencyValue(el('rhBeneficioItemValor')));
       if(amountCents === null || amountCents <= 0){
         status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO NO BENEFÍCIO.';
         return;
@@ -29886,9 +29892,9 @@ function renderHomeTasks(){
     }
     status.textContent = '';
     rhBeneficioDialogItems.push({ type, amountMode: mode, perDayRateCents, workingDays, amountCents, discountCents });
-    el('rhBeneficioItemValor').value = '';
-    el('rhBeneficioItemPorDia').value = '';
-    el('rhBeneficioItemDesconto').value = '0';
+    setCurrencyValue(el('rhBeneficioItemValor'), '');
+    setCurrencyValue(el('rhBeneficioItemPorDia'), '');
+    setCurrencyValue(el('rhBeneficioItemDesconto'), 0);
     renderRhBeneficioDialogItems();
   });
 
@@ -30248,12 +30254,14 @@ function renderHomeTasks(){
         '</tr>').join('');
       }
     }
-    const base = parseBRLToCents(el('rhComissaoValor').value || '0') || 0;
+    const base = parseBRLToCents(getCurrencyValue(el('rhComissaoValor')) || '0') || 0;
     const applyItem = (sum, item) => item.kind === 'desconto' ? sum - Number(item.amountCents || 0) : sum + Number(item.amountCents || 0);
     const total = rhComissaoInheritedItems.reduce(applyItem, rhComissaoDialogItems.reduce(applyItem, base));
     el('rhComissaoItensTotal').textContent = 'VALOR FINAL: '+formatCentsBRL(total);
   }
 
+  if(el('rhComissaoValor')) attachCurrencyMask(el('rhComissaoValor'));
+  if(el('rhComissaoItemValor')) attachCurrencyMask(el('rhComissaoItemValor'), {allowNegative:true});
   if(el('rhComissaoValor')) el('rhComissaoValor').addEventListener('input', renderRhComissaoDialogItems);
   if(el('rhComissaoItemKind')) el('rhComissaoItemKind').addEventListener('change', syncRhComissaoParcelaWrap);
   if(el('rhComissaoItemParcelado')) el('rhComissaoItemParcelado').addEventListener('change', syncRhComissaoParcelaWrap);
@@ -30263,7 +30271,7 @@ function renderHomeTasks(){
     if(!preset) return;
     el('rhComissaoItemLabel').value = preset.name;
     el('rhComissaoItemKind').value = preset.kind;
-    el('rhComissaoItemValor').value = (Number(preset.defaultAmountCents || 0)/100).toFixed(2);
+    setCurrencyValue(el('rhComissaoItemValor'), Number(preset.defaultAmountCents || 0)/100);
     syncRhComissaoParcelaWrap();
   });
 
@@ -30271,7 +30279,7 @@ function renderHomeTasks(){
     const status = el('rhComissaoFormStatus');
     const label = el('rhComissaoItemLabel').value.trim();
     const kind = el('rhComissaoItemKind').value;
-    const raw = Number(el('rhComissaoItemValor').value);
+    const raw = Number(getCurrencyValue(el('rhComissaoItemValor')));
     if(!label){
       status.textContent = 'INFORME A DESCRIÇÃO DO LANÇAMENTO.';
       return;
@@ -30303,7 +30311,7 @@ function renderHomeTasks(){
     });
     el('rhComissaoItemPreset').value = '';
     el('rhComissaoItemLabel').value = '';
-    el('rhComissaoItemValor').value = '';
+    setCurrencyValue(el('rhComissaoItemValor'), '');
     el('rhComissaoItemParcelado').checked = false;
     el('rhComissaoItemParcelas').value = '';
     syncRhComissaoParcelaWrap();
@@ -30345,7 +30353,7 @@ function renderHomeTasks(){
     el('rhComissaoDialogTitle').textContent = row ? 'EDITAR COMISSÃO' : 'NOVA COMISSÃO';
     el('rhComissaoFuncionario').value = row ? row.employeeId : '';
     el('rhComissaoCompetencia').value = row ? row.month : (el('rhComissaoMes').value || financeCurrentMonthKey());
-    el('rhComissaoValor').value = row ? (Number(row.commissionCents || 0)/100).toFixed(2) : '0.00';
+    setCurrencyValue(el('rhComissaoValor'), row ? Number(row.commissionCents || 0)/100 : 0);
     el('rhComissaoObs').value = row ? (row.notes || '') : '';
     el('rhComissaoFormStatus').textContent = '';
     renderRhComissaoDialogItems();
@@ -30368,7 +30376,7 @@ function renderHomeTasks(){
       status.textContent = 'SELECIONE O FUNCIONÁRIO.';
       return;
     }
-    const commissionCents = parseBRLToCents(el('rhComissaoValor').value || '0');
+    const commissionCents = parseBRLToCents(getCurrencyValue(el('rhComissaoValor')) || '0');
     if(commissionCents === null){
       status.textContent = 'INFORME UM VALOR DE COMISSÃO VÁLIDO.';
       return;
@@ -31104,11 +31112,13 @@ function renderHomeTasks(){
     }
   });
 
+  if(el('recNewPaymentAmount')) attachCurrencyMask(el('recNewPaymentAmount'));
+  if(el('recAsoValue')) attachCurrencyMask(el('recAsoValue'));
   if(el('btnAddRecPayment')) el('btnAddRecPayment').addEventListener('click', async () => {
     const candidateId = el('recCandidateId').value;
     if(!candidateId) return;
     const paidDate = el('recNewPaymentDate').value;
-    const amountCents = Math.round(Number(el('recNewPaymentAmount').value || 0) * 100);
+    const amountCents = Math.round(Number(getCurrencyValue(el('recNewPaymentAmount')) || 0) * 100);
     const note = el('recNewPaymentNote').value;
     if(!paidDate || !amountCents){
       showPurchaseToast('INFORME A DATA E O VALOR DO PAGAMENTO.','error');
@@ -31120,7 +31130,7 @@ function renderHomeTasks(){
         body:JSON.stringify({candidateId, paidDate, amountCents, note})
       });
       el('recNewPaymentDate').value = '';
-      el('recNewPaymentAmount').value = '';
+      setCurrencyValue(el('recNewPaymentAmount'), '');
       el('recNewPaymentNote').value = '';
       await loadRecPayments(candidateId);
       showPurchaseToast('Pagamento lançado.');
@@ -31213,7 +31223,7 @@ function renderHomeTasks(){
     el('recPhotoTaken').value = recBoolOption(row && row.photoTaken);
     el('recAsoRequested').value = recBoolOption(row && row.asoRequested);
     el('recAsoClinic').value = row ? row.asoClinic : '';
-    el('recAsoValue').value = row && row.asoValueCents ? (row.asoValueCents / 100).toFixed(2) : '';
+    setCurrencyValue(el('recAsoValue'), row && row.asoValueCents ? row.asoValueCents / 100 : '');
     el('recShoppingRegistered').value = recBoolOption(row && row.shoppingRegistered);
     el('recAdmissionDocsDriveLink').value = row ? row.admissionDocsDriveLink : '';
     el('recDentalPlanIncluded').value = recBoolOption(row && row.dentalPlanIncluded);
@@ -31350,7 +31360,7 @@ function renderHomeTasks(){
       photoTaken: recBoolValue(el('recPhotoTaken').value),
       asoRequested: recBoolValue(el('recAsoRequested').value),
       asoClinic: el('recAsoClinic').value,
-      asoValueCents: Math.round(Number(el('recAsoValue').value || 0) * 100),
+      asoValueCents: Math.round(Number(getCurrencyValue(el('recAsoValue')) || 0) * 100),
       shoppingRegistered: recBoolValue(el('recShoppingRegistered').value),
       admissionDocsDriveLink: el('recAdmissionDocsDriveLink').value,
       dentalPlanIncluded: recBoolValue(el('recDentalPlanIncluded').value),
