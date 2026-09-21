@@ -7071,7 +7071,7 @@
       <div class="purchase-field"><label for="obraTipo">TIPO</label><select id="obraTipo"><option value="reforma">REFORMA</option><option value="construcao">CONSTRUÇÃO</option><option value="manutencao">MANUTENÇÃO ESTRUTURAL</option><option value="outros">OUTROS</option></select></div>
       <div class="purchase-field"><label for="obraStatus">STATUS</label><select id="obraStatus"><option value="planejada">PLANEJADA</option><option value="andamento">EM ANDAMENTO</option><option value="concluida">CONCLUÍDA</option><option value="cancelada">CANCELADA</option></select></div>
       <div class="purchase-field"><label for="obraResponsavel">FORNECEDOR / RESPONSÁVEL</label><input id="obraResponsavel" maxlength="160"></div>
-      <div class="purchase-field"><label for="obraOrcado">VALOR ORÇADO (R$)</label><input type="number" id="obraOrcado" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="obraOrcado">VALOR ORÇADO (R$)</label><input type="text" inputmode="decimal" id="obraOrcado" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="obraInicio">DATA DE INÍCIO</label><input type="date" id="obraInicio"></div>
       <div class="purchase-field"><label for="obraPrevisao">PREVISÃO DE CONCLUSÃO</label><input type="date" id="obraPrevisao"></div>
       <div class="purchase-field"><label for="obraConclusao">CONCLUSÃO REAL</label><input type="date" id="obraConclusao"></div>
@@ -7100,7 +7100,7 @@
       <div class="purchase-form-grid">
         <div class="purchase-field full"><label for="obraEntryDescricao">DESCRIÇÃO *</label><input id="obraEntryDescricao" maxlength="300" required></div>
         <div class="purchase-field"><label for="obraEntryFornecedor">FORNECEDOR</label><input id="obraEntryFornecedor" maxlength="160"></div>
-        <div class="purchase-field"><label for="obraEntryValor">VALOR (R$) *</label><input type="number" id="obraEntryValor" min="0.01" step="0.01" required></div>
+        <div class="purchase-field"><label for="obraEntryValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="obraEntryValor" placeholder="R$ 0,00" required></div>
         <div class="purchase-field"><label for="obraEntryData">DATA</label><input type="date" id="obraEntryData"></div>
         <div class="purchase-field"><label for="obraEntryPgto">FORMA DE PAGAMENTO</label><select id="obraEntryPgto"><option value="pix">PIX</option><option value="boleto">BOLETO</option><option value="cartao">CARTÃO</option><option value="dinheiro">DINHEIRO</option><option value="transferencia">TRANSFERÊNCIA</option><option value="outros">OUTROS</option></select></div>
         <div class="purchase-field"><label for="btnAddObraEntry">&nbsp;</label><button class="btn-accent" id="btnAddObraEntry" type="submit">ADICIONAR / SALVAR</button></div>
@@ -25711,7 +25711,7 @@ function renderHomeTasks(){
     el('obraTipo').value = row ? row.kind : 'reforma';
     el('obraStatus').value = row ? row.status : 'planejada';
     el('obraResponsavel').value = row ? (row.responsible || '') : '';
-    el('obraOrcado').value = row ? (Number(row.budgetCents || 0)/100).toFixed(2) : '0.00';
+    setCurrencyValue(el('obraOrcado'), row ? Number(row.budgetCents || 0)/100 : 0);
     el('obraInicio').value = row ? (row.startDate || '') : '';
     el('obraPrevisao').value = row ? (row.expectedEndDate || '') : '';
     el('obraConclusao').value = row ? (row.endDate || '') : '';
@@ -25720,6 +25720,7 @@ function renderHomeTasks(){
     el('obraFormStatus').textContent = '';
     el('obraDialog').showModal();
   }
+  if(el('obraOrcado')) attachCurrencyMask(el('obraOrcado'));
   if(el('btnNewObra')) el('btnNewObra').addEventListener('click', () => openObraDialog(null));
   if(el('btnCloseObraDialog')) el('btnCloseObraDialog').addEventListener('click', () => el('obraDialog').close());
   if(el('btnCancelObraDialog')) el('btnCancelObraDialog').addEventListener('click', () => el('obraDialog').close());
@@ -25736,7 +25737,7 @@ function renderHomeTasks(){
       kind: el('obraTipo').value,
       status: el('obraStatus').value,
       responsible: el('obraResponsavel').value,
-      budgetCents: parseBRLToCents(el('obraOrcado').value || '0') || 0,
+      budgetCents: parseBRLToCents(getCurrencyValue(el('obraOrcado')) || '0') || 0,
       startDate: el('obraInicio').value,
       expectedEndDate: el('obraPrevisao').value,
       endDate: el('obraConclusao').value,
@@ -25827,6 +25828,7 @@ function renderHomeTasks(){
         (o.responsible ? '<br>Responsável: '+escapeHtml(o.responsible) : '')+
         (o.description ? '<br>'+escapeHtml(o.description) : '');
       el('obraEntryForm').reset();
+      setCurrencyValue(el('obraEntryValor'), '');
       el('obraEntryId').value = '';
       el('obraEntryObraId').value = o.id;
       el('obraEntryPgto').value = 'pix';
@@ -25835,6 +25837,7 @@ function renderHomeTasks(){
       el('obraDetailDialog').showModal();
     }catch(error){ showPurchaseToast(error.message,'error'); }
   }
+  if(el('obraEntryValor')) attachCurrencyMask(el('obraEntryValor'));
   if(el('btnCloseObraDetail')) el('btnCloseObraDetail').addEventListener('click', () => el('obraDetailDialog').close());
   if(el('btnCancelObraDetail')) el('btnCancelObraDetail').addEventListener('click', () => el('obraDetailDialog').close());
 
@@ -25842,7 +25845,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('obraEntryStatus');
     status.textContent = '';
-    const amountCents = parseBRLToCents(el('obraEntryValor').value);
+    const amountCents = parseBRLToCents(getCurrencyValue(el('obraEntryValor')));
     if(!el('obraEntryDescricao').value.trim()){ status.textContent = 'INFORME A DESCRIÇÃO.'; return; }
     if(amountCents === null || amountCents <= 0){ status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.'; return; }
     const payload = {
