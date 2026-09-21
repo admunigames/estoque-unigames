@@ -8499,7 +8499,7 @@
             </select>
           </div>
           <div class="purchase-field" id="payableAccountPixKeyField"><label for="payableAccountPixKey">CHAVE PIX</label><input id="payableAccountPixKey" maxlength="140"></div>
-          <div class="purchase-field"><label for="payableAccountOpeningBalance">SALDO INICIAL (R$)</label><input type="number" id="payableAccountOpeningBalance" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="purchase-field"><label for="payableAccountOpeningBalance">SALDO INICIAL (R$)</label><input type="text" inputmode="decimal" id="payableAccountOpeningBalance" placeholder="R$ 0,00"></div>
           <div class="purchase-field"><label for="payableAccountOpeningDate">DATA DO SALDO INICIAL</label><input type="date" id="payableAccountOpeningDate"></div>
           <div class="purchase-field"><label for="payableAccountActive" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="payableAccountActive" checked style="width:auto;"> CONTA ATIVA</label></div>
           <div class="purchase-field full"><label for="payableAccountNotes">OBSERVAÇÕES</label><textarea id="payableAccountNotes" rows="2" maxlength="2000"></textarea></div>
@@ -8574,7 +8574,7 @@
       <div class="purchase-field"><label for="invoiceIssueDate">DATA DE EMISSÃO</label><input type="date" id="invoiceIssueDate"></div>
       <div class="purchase-field"><label for="invoiceEntryDate">DATA DE ENTRADA</label><input type="date" id="invoiceEntryDate"></div>
       <div class="purchase-field"><label for="invoiceCompetenceMonth">COMPETÊNCIA *</label><input type="month" id="invoiceCompetenceMonth" required></div>
-      <div class="purchase-field"><label for="invoiceTotalAmount">VALOR TOTAL (R$) *</label><input type="number" id="invoiceTotalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="invoiceTotalAmount">VALOR TOTAL (R$) *</label><input type="text" inputmode="decimal" id="invoiceTotalAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="invoiceCategory">CATEGORIA</label><select id="invoiceCategory"><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="invoiceItem">ITEM DA DESPESA</label><select id="invoiceItem"><option value="">SELECIONE A CATEGORIA</option></select></div>
       <div class="purchase-field"><label for="invoiceCostCenter">CENTRO DE CUSTO</label><select id="invoiceCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
@@ -8609,7 +8609,7 @@
       <div class="purchase-field" id="invoiceInstallmentCountField"><label for="invoiceInstallmentCount">QUANTIDADE DE PARCELAS</label><input type="number" id="invoiceInstallmentCount" min="1" max="120" value="1"></div>
       <div class="purchase-field" id="invoiceInstallmentFirstDueField"><label for="invoiceInstallmentFirstDue">1º VENCIMENTO</label><input type="date" id="invoiceInstallmentFirstDue"></div>
       <div class="purchase-field" id="invoiceInstallmentSingleDueField" hidden><label for="invoiceInstallmentSingleDue">VENCIMENTO</label><input type="date" id="invoiceInstallmentSingleDue"></div>
-      <div class="purchase-field" id="invoiceInstallmentSingleAmountField" hidden><label for="invoiceInstallmentSingleAmount">VALOR (R$)</label><input type="number" id="invoiceInstallmentSingleAmount" min="0.01" step="0.01"></div>
+      <div class="purchase-field" id="invoiceInstallmentSingleAmountField" hidden><label for="invoiceInstallmentSingleAmount">VALOR (R$)</label><input type="text" inputmode="decimal" id="invoiceInstallmentSingleAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="invoiceInstallmentPaymentMethod">FORMA DE PAGAMENTO</label><input id="invoiceInstallmentPaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX"></div>
       <div class="purchase-field"><label for="invoiceInstallmentAccount">CONTA FINANCEIRA</label><select id="invoiceInstallmentAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="invoiceInstallmentBoleto">LINHA DIGITÁVEL (BOLETO)</label><input id="invoiceInstallmentBoleto" maxlength="80"></div>
@@ -8618,7 +8618,7 @@
           <input type="checkbox" id="invoiceDreIncluded" style="width:auto;" checked> INCLUIR NA DRE?
         </label>
       </div>
-      <div class="purchase-field"><label for="invoiceDreAmount">VALOR NA DRE (R$)</label><input type="number" id="invoiceDreAmount" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="invoiceDreAmount">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="invoiceDreAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><span class="purchase-field-help">Vale pra NF inteira (todas as duplicatas juntas) — útil, por exemplo, pra NF de compra pra revenda, que vira estoque e não deveria entrar na DRE do mesmo jeito que uma nota de bem de consumo. "CADASTRAR" aplica junto da criação de novas duplicatas; se as duplicatas já existem e você só quer mudar essa decisão, use "SALVAR DECISÃO DA DRE".</span></div>
       <div class="purchase-field full" style="display:flex;justify-content:flex-end;gap:8px;">
         <button class="btn-outline" id="btnSaveInvoiceDreOnly" type="button">SALVAR DECISÃO DA DRE</button>
@@ -8662,7 +8662,7 @@
   <form class="purchase-form" id="invoicePaymentForm">
     <input type="hidden" id="invoicePaymentInstallmentId">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="invoicePaymentAmount">VALOR (R$) *</label><input type="number" id="invoicePaymentAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="invoicePaymentAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="invoicePaymentAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="invoicePaymentDate">DATA *</label><input type="date" id="invoicePaymentDate" required></div>
       <div class="purchase-field"><label for="invoicePaymentMethodInput">FORMA DE PAGAMENTO</label><input id="invoicePaymentMethodInput" maxlength="40"></div>
       <div class="purchase-field"><label for="invoicePaymentAccount">CONTA FINANCEIRA</label><select id="invoicePaymentAccount"><option value="">SEM CONTA</option></select></div>
@@ -8723,7 +8723,7 @@
       <div class="purchase-field"><label for="pInvoiceAccessKey">CHAVE DE ACESSO (NF-E)</label><input id="pInvoiceAccessKey" maxlength="44" pattern="\d{44}"></div>
       <div class="purchase-field"><label for="pInvoiceIssueDate">DATA DE EMISSÃO</label><input type="date" id="pInvoiceIssueDate"></div>
       <div class="purchase-field"><label for="pInvoiceCompetence">COMPETÊNCIA *</label><input type="month" id="pInvoiceCompetence"></div>
-      <div class="purchase-field"><label for="pInvoiceTotal">VALOR TOTAL (R$) *</label><input type="number" id="pInvoiceTotal" min="0.01" step="0.01"></div>
+      <div class="purchase-field"><label for="pInvoiceTotal">VALOR TOTAL (R$) *</label><input type="text" inputmode="decimal" id="pInvoiceTotal" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="pInvoiceItem">ITEM FINANCEIRO *</label><select id="pInvoiceItem"><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="pInvoiceFile">ARQUIVO DA NF</label><input type="file" id="pInvoiceFile"></div>
       <div class="purchase-field full" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
@@ -25380,6 +25380,7 @@ function renderHomeTasks(){
     await loadPayablesCatalogData();
     invoicePendingPurchaseOrderId = comprasCurrentOrderId;
     el('invoiceForm').reset();
+    setCurrencyValue(el('invoiceTotalAmount'), '');
     renderInvoiceFormSelects();
     el('invoiceFormStatus').textContent = '';
     if(order && order.supplierId) el('invoiceSupplier').value = order.supplierId;
@@ -27433,6 +27434,7 @@ function renderHomeTasks(){
 
   function resetPayableAccountForm(){
     el('payableAccountForm').reset();
+    setCurrencyValue(el('payableAccountOpeningBalance'), '');
     el('payableAccountId').value = '';
     el('payableAccountActive').checked = true;
     el('btnCancelAccountEdit').hidden = true;
@@ -27446,6 +27448,7 @@ function renderHomeTasks(){
     updatePayableAccountBankFieldsVisibility();
   }
 
+  attachCurrencyMask(el('payableAccountOpeningBalance'));
   el('btnManagePayablesCatalog').addEventListener('click', async () => {
     await loadPayablesCatalogData();
     resetPayableSupplierForm();
@@ -27587,7 +27590,7 @@ function renderHomeTasks(){
     const name = el('payableAccountName').value.trim();
     if(!name){ status.textContent = 'INFORME O NOME/DESCRIÇÃO DA CONTA.'; return; }
 
-    const openingBalanceValue = el('payableAccountOpeningBalance').value;
+    const openingBalanceValue = getCurrencyValue(el('payableAccountOpeningBalance'));
     let openingBalanceCents;
     if(openingBalanceValue){
       openingBalanceCents = parseBRLToCents(openingBalanceValue);
@@ -27657,7 +27660,7 @@ function renderHomeTasks(){
       el('payableAccountHolderDocument').value = account.holderDocument || '';
       el('payableAccountPixType').value = account.pixKeyType || '';
       el('payableAccountPixKey').value = account.pixKey || '';
-      el('payableAccountOpeningBalance').value = account.openingBalanceCents ? (account.openingBalanceCents/100).toFixed(2) : '';
+      setCurrencyValue(el('payableAccountOpeningBalance'), account.openingBalanceCents ? account.openingBalanceCents/100 : '');
       el('payableAccountOpeningDate').value = account.openingBalanceDate || '';
       el('payableAccountNotes').value = account.notes || '';
       el('payableAccountActive').checked = !!account.active;
@@ -27694,18 +27697,23 @@ function renderHomeTasks(){
   let invoicesSearchTimer = null;
   let invoiceCurrentDetailId = null;
   let invoiceDreTouched = false;
+  attachCurrencyMask(el('invoiceTotalAmount'));
+  attachCurrencyMask(el('invoiceInstallmentSingleAmount'));
+  attachCurrencyMask(el('invoiceDreAmount'));
+  attachCurrencyMask(el('invoicePaymentAmount'));
   el('invoiceDreIncluded').addEventListener('change', () => {
     invoiceDreTouched = true;
     const included = el('invoiceDreIncluded').checked;
     const amountEl = el('invoiceDreAmount');
     if(!included){
-      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
-      amountEl.value = '0';
+      const current = getCurrencyValue(amountEl);
+      if(current && current !== '0.00') amountEl.dataset.prevValue = current;
+      setCurrencyValue(amountEl, 0);
       amountEl.disabled = true;
     }else{
       amountEl.disabled = false;
       if(amountEl.dataset.prevValue !== undefined){
-        amountEl.value = amountEl.dataset.prevValue;
+        setCurrencyValue(amountEl, amountEl.dataset.prevValue);
         delete amountEl.dataset.prevValue;
       }
     }
@@ -27935,6 +27943,7 @@ function renderHomeTasks(){
     if(!novoPedidoId) return;
     invoicePendingPurchaseOrderId = novoPedidoId;
     el('invoiceForm').reset();
+    setCurrencyValue(el('invoiceTotalAmount'), '');
     renderInvoiceFormSelects();
     el('invoiceFormStatus').textContent = '';
     const supplierId = params.get('supplierId');
@@ -28026,7 +28035,7 @@ function renderHomeTasks(){
 
     const dre = data.dre || { included: true, amountCents: invoice.totalAmountCents };
     el('invoiceDreIncluded').checked = dre.included;
-    el('invoiceDreAmount').value = ((dre.amountCents || invoice.totalAmountCents) / 100).toFixed(2);
+    setCurrencyValue(el('invoiceDreAmount'), (dre.amountCents || invoice.totalAmountCents) / 100);
     el('invoiceDreAmount').disabled = !dre.included;
     invoiceDreTouched = false;
 
@@ -28129,6 +28138,7 @@ function renderHomeTasks(){
   el('btnNewInvoice') && el('btnNewInvoice').addEventListener('click', async () => {
     invoicePendingPurchaseOrderId = '';
     el('invoiceForm').reset();
+    setCurrencyValue(el('invoiceTotalAmount'), '');
     renderInvoiceFormSelects();
     el('invoiceFormStatus').textContent = '';
     if(!payablesCanActAcrossStores() && currentSession.companyId) el('invoiceCompany').value = currentSession.companyId;
@@ -28149,7 +28159,7 @@ function renderHomeTasks(){
     button.disabled = true;
     el('invoiceFormStatus').textContent = 'CADASTRANDO…';
     try{
-      const totalAmountCents = parseBRLToCents(el('invoiceTotalAmount').value);
+      const totalAmountCents = parseBRLToCents(getCurrencyValue(el('invoiceTotalAmount')));
       if(!totalAmountCents) throw new Error('INFORME UM VALOR TOTAL VÁLIDO.');
       await invoicesApiRequest('', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -28210,19 +28220,20 @@ function renderHomeTasks(){
         body.firstDueDate = el('invoiceInstallmentFirstDue').value;
       }else{
         body.dueDate = el('invoiceInstallmentSingleDue').value;
-        const amountCents = parseBRLToCents(el('invoiceInstallmentSingleAmount').value);
+        const amountCents = parseBRLToCents(getCurrencyValue(el('invoiceInstallmentSingleAmount')));
         if(!amountCents) throw new Error('INFORME UM VALOR VÁLIDO PARA A DUPLICATA.');
         body.originalAmountCents = amountCents;
       }
       if(invoiceDreTouched){
         body.dreIncluded = el('invoiceDreIncluded').checked;
-        body.dreAmountCents = parseBRLToCents(el('invoiceDreAmount').value || '0') || 0;
+        body.dreAmountCents = parseBRLToCents(getCurrencyValue(el('invoiceDreAmount')) || '0') || 0;
       }
       const installmentsResponse = await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments', {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
       });
       showPurchaseToast(installmentsResponse && installmentsResponse.dreWarning ? installmentsResponse.dreWarning : 'Duplicata(s) cadastrada(s).');
       el('invoiceInstallmentForm').reset();
+      setCurrencyValue(el('invoiceInstallmentSingleAmount'), '');
       updateInvoiceInstallmentModeFields();
       await openInvoiceDetailDialog(invoiceCurrentDetailId);
       await refreshAfterAction(() => loadInvoicesList({silent:true}));
@@ -28244,7 +28255,7 @@ function renderHomeTasks(){
         method:'PATCH', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           dreIncluded: el('invoiceDreIncluded').checked,
-          dreAmountCents: parseBRLToCents(el('invoiceDreAmount').value || '0') || 0
+          dreAmountCents: parseBRLToCents(getCurrencyValue(el('invoiceDreAmount')) || '0') || 0
         })
       });
       showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Decisão da DRE salva.');
@@ -28261,7 +28272,7 @@ function renderHomeTasks(){
     if(payButton){
       el('invoicePaymentForm').reset();
       el('invoicePaymentInstallmentId').value = payButton.dataset.installmentPay;
-      el('invoicePaymentAmount').value = ((Number(payButton.dataset.balance) || 0) / 100).toFixed(2);
+      setCurrencyValue(el('invoicePaymentAmount'), (Number(payButton.dataset.balance) || 0) / 100);
       el('invoicePaymentDate').value = todayDateKey();
       renderPayableAccountOptionsForCompany('invoicePaymentAccount', invoiceCurrentDetail ? invoiceCurrentDetail.companyId : '', 'SEM CONTA');
       el('invoicePaymentFormStatus').textContent = '';
@@ -28293,7 +28304,7 @@ function renderHomeTasks(){
     button.disabled = true;
     el('invoicePaymentFormStatus').textContent = 'REGISTRANDO…';
     try{
-      const amountCents = parseBRLToCents(el('invoicePaymentAmount').value);
+      const amountCents = parseBRLToCents(getCurrencyValue(el('invoicePaymentAmount')));
       if(!amountCents) throw new Error('INFORME UM VALOR VÁLIDO.');
       await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments/'+encodeURIComponent(el('invoicePaymentInstallmentId').value)+'/payments', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -28363,6 +28374,8 @@ function renderHomeTasks(){
     '</div>';
   }
 
+  if(el('pInvoiceTotal')) attachCurrencyMask(el('pInvoiceTotal'));
+
   async function loadPurchaseInvoicePanel(purchaseId){
     if(!el('purchaseInvoiceSection')) return;
     el('purchaseInvoiceSection').hidden = !purchaseId;
@@ -28398,14 +28411,19 @@ function renderHomeTasks(){
         el('pInvoiceAccessKey').value = data.invoice.accessKey || '';
         el('pInvoiceIssueDate').value = data.invoice.issueDate || '';
         el('pInvoiceCompetence').value = data.invoice.competenceMonth || '';
-        el('pInvoiceTotal').value = data.invoice.totalAmountCents ? (data.invoice.totalAmountCents / 100).toFixed(2) : '';
+        setCurrencyValue(el('pInvoiceTotal'), data.invoice.totalAmountCents ? data.invoice.totalAmountCents / 100 : '');
         el('pInvoiceItem').value = data.invoice.financeItemId || '';
         const editable = !data.invoice.sentToFinanceAt || data.invoice.pendingCorrection;
         fieldIds.forEach(id => { if(el(id)) el(id).disabled = !editable; });
         el('btnSavePurchaseInvoice').hidden = !editable;
         el('btnSendPurchaseInvoiceToFinance').hidden = !(editable && canAccess('purchases:send_to_finance'));
       }else{
-        fieldIds.forEach(id => { if(el(id)){ el(id).disabled = false; el(id).value = ''; } });
+        fieldIds.forEach(id => {
+          if(!el(id)) return;
+          el(id).disabled = false;
+          if(id === 'pInvoiceTotal') setCurrencyValue(el(id), '');
+          else el(id).value = '';
+        });
         el('btnSavePurchaseInvoice').hidden = false;
         el('btnSendPurchaseInvoiceToFinance').hidden = true;
       }
@@ -28421,7 +28439,7 @@ function renderHomeTasks(){
     button.disabled = true;
     el('purchaseInvoiceFormStatus').textContent = 'SALVANDO…';
     try{
-      const totalAmountCents = parseBRLToCents(el('pInvoiceTotal').value);
+      const totalAmountCents = parseBRLToCents(getCurrencyValue(el('pInvoiceTotal')));
       const body = {
         companyId: el('pInvoiceCompany').value,
         companyName: (companies.find(c => c.id === el('pInvoiceCompany').value) || {}).name || '',
