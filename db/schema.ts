@@ -1511,6 +1511,12 @@ export const hrEmployees = pgTable(
     workSchedule: text("work_schedule").notNull().default("5x2"),
     userId: text("user_id").notNull().default(""),
     notes: text("notes").notNull().default(""),
+    // RH > Aniversariantes — data de nascimento ('' = não cadastrada) e o
+    // ano em que o chocolate já foi entregue (0 = nunca). Reaproveita este
+    // cadastro em vez de duplicar nome/loja numa tabela própria (decisão
+    // confirmada com o usuário).
+    birthDate: text("birth_date").notNull().default(""),
+    birthdayAcknowledgedYear: integer("birthday_acknowledged_year").notNull().default(0),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
