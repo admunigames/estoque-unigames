@@ -8115,7 +8115,7 @@
       <div class="purchase-field"><label for="payableAccount">CONTA FINANCEIRA</label><select id="payableAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="payableCostCenter">CENTRO DE CUSTO</label><select id="payableCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="payablePaymentMethod">FORMA DE PAGAMENTO</label><input id="payablePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
-      <div class="purchase-field"><label for="payableOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="number" id="payableOriginalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="payableOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="text" inputmode="decimal" id="payableOriginalAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="payableIssueDate">DATA DE EMISSÃO</label><input type="date" id="payableIssueDate"></div>
       <div class="purchase-field"><label for="payableDueDate">VENCIMENTO *</label><input type="date" id="payableDueDate" required></div>
       <div class="purchase-field"><label for="payableCompetenceMonth">COMPETÊNCIA (SÓ CONTA ÚNICA)</label><input type="month" id="payableCompetenceMonth"></div>
@@ -8130,7 +8130,7 @@
           <input type="checkbox" id="payableDreIncluded" style="width:auto;" checked> INCLUIR NA DRE?
         </label>
       </div>
-      <div class="purchase-field"><label for="payableDreAmount">VALOR NA DRE (R$)</label><input type="number" id="payableDreAmount" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="payableDreAmount">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="payableDreAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field full" id="payableDreHelp"><span class="purchase-field-help">Por padrão, o valor total da conta entra inteiro na DRE. Em contas parceladas/recorrentes, essa decisão vale pro conjunto inteiro (não dá pra escolher por parcela).</span></div>
 
       <div class="purchase-form-section">TIPO DE CONTA</div>
@@ -8172,7 +8172,8 @@
 
     <div class="purchase-form-section">REGISTRAR PAGAMENTO</div>
     <form class="purchase-form-grid" id="payablePaymentForm" style="margin-bottom:14px;">
-      <div class="purchase-field"><label for="payablePaymentAmount">VALOR (R$) *</label><input type="number" id="payablePaymentAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="payablePaymentAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="payablePaymentAmount" placeholder="R$ 0,00" required></div>
+      <!-- limite de saldo validado manualmente no submit (dataset.balanceCents); type=text não suporta max nativo -->
       <div class="purchase-field"><label for="payablePaymentDate">DATA *</label><input type="date" id="payablePaymentDate" required></div>
       <div class="purchase-field"><label for="payablePaymentMethodInput">FORMA DE PAGAMENTO</label><input id="payablePaymentMethodInput" maxlength="40"></div>
       <div class="purchase-field"><label for="payablePaymentAccount">CONTA FINANCEIRA</label><select id="payablePaymentAccount"><option value="">SEM CONTA</option></select></div>
@@ -8214,7 +8215,7 @@
       <div class="purchase-field"><label for="supplierDebtOrderReference">PEDIDO (OPCIONAL)</label><input id="supplierDebtOrderReference" maxlength="60"></div>
       <div class="purchase-field"><label for="supplierDebtPurchaseDate">DATA DA COMPRA</label><input type="date" id="supplierDebtPurchaseDate"></div>
       <div class="purchase-field"><label for="supplierDebtDueDate">DATA PREVISTA DE PAGAMENTO *</label><input type="date" id="supplierDebtDueDate" required></div>
-      <div class="purchase-field"><label for="supplierDebtOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="number" id="supplierDebtOriginalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="supplierDebtOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="text" inputmode="decimal" id="supplierDebtOriginalAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="supplierDebtFinanceItem">CATEGORIA/ITEM FINANCEIRO (OPCIONAL)</label><select id="supplierDebtFinanceItem"><option value="">FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)</option></select></div>
       <div class="purchase-field"><label for="supplierDebtAccount">CONTA FINANCEIRA</label><select id="supplierDebtAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field full"><label for="supplierDebtNotes">OBSERVAÇÕES</label><textarea id="supplierDebtNotes" rows="2" maxlength="2000"></textarea></div>
@@ -8994,6 +8995,17 @@
       });
     }
 
+    // preventDefault() no beforeinput impede o navegador de disparar o
+    // 'input' nativo — então quem depende de ouvir 'input' nesse campo
+    // (sincronizar outro campo, recalcular algo) nunca mais seria avisado.
+    // Redispara manualmente só quando a mudança veio de digitação real do
+    // usuário (não em setValue()/attach inicial, que também nunca disparava
+    // 'input' no <input type="number"> original).
+    function renderAndNotify(){
+      render();
+      input.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+
     // Interpreta uma string inteira digitada/colada de uma vez (ex.: colar
     // "1.234,56"). Vírgula é sempre decimal; um único ponto só é tratado
     // como decimal (não milhar) se tiver no máx. 2 dígitos depois dele.
@@ -9047,13 +9059,13 @@
             negative = !negative;
           }
         }
-        render();
+        renderAndNotify();
         placeCursorAtEnd();
       }else if(type === 'insertFromPaste' || type === 'insertFromDrop'){
         event.preventDefault();
         const data = event.data || (event.dataTransfer && event.dataTransfer.getData('text')) || '';
         parseFullString(data);
-        render();
+        renderAndNotify();
         placeCursorAtEnd();
       }else if(type === 'deleteContentBackward' || type === 'deleteContentForward' || type === 'deleteWordBackward' || type === 'deleteSoftLineBackward'){
         event.preventDefault();
@@ -9063,7 +9075,7 @@
         }else if(intDigits.length > 0){
           intDigits = intDigits.slice(0, -1);
         }
-        render();
+        renderAndNotify();
         placeCursorAtEnd();
       }else if(type === 'deleteContent' || type === 'deleteByCut'){
         event.preventDefault();
@@ -9071,7 +9083,7 @@
         decDigits = '';
         decimalMode = false;
         negative = false;
-        render();
+        renderAndNotify();
         placeCursorAtEnd();
       }
     });
@@ -20711,7 +20723,8 @@ function renderHomeTasks(){
     renderPayablesCatalogSelects();
     payableFormIdempotencyKey = crypto.randomUUID();
     el('payableDreIncluded').checked = true;
-    el('payableDreAmount').value = '';
+    setCurrencyValue(el('payableOriginalAmount'), '');
+    setCurrencyValue(el('payableDreAmount'), '');
     el('payableDreAmount').disabled = false;
     delete el('payableDreAmount').dataset.prevValue;
     payableDreTouched = false;
@@ -20721,21 +20734,24 @@ function renderHomeTasks(){
     const included = el('payableDreIncluded').checked;
     const amountEl = el('payableDreAmount');
     if(!included){
-      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
-      amountEl.value = '0';
+      const current = getCurrencyValue(amountEl);
+      if(current && current !== '0.00') amountEl.dataset.prevValue = current;
+      setCurrencyValue(amountEl, 0);
       amountEl.disabled = true;
     }else{
       amountEl.disabled = false;
       if(amountEl.dataset.prevValue !== undefined){
-        amountEl.value = amountEl.dataset.prevValue;
+        setCurrencyValue(amountEl, amountEl.dataset.prevValue);
         delete amountEl.dataset.prevValue;
       }
     }
   }
+  attachCurrencyMask(el('payableOriginalAmount'));
+  attachCurrencyMask(el('payableDreAmount'));
   el('payableDreIncluded').addEventListener('change', () => { payableDreTouched = true; updatePayableDreField(); });
   el('payableDreAmount').addEventListener('input', () => { payableDreTouched = true; });
   el('payableOriginalAmount').addEventListener('input', () => {
-    if(!payableDreTouched) el('payableDreAmount').value = el('payableOriginalAmount').value;
+    if(!payableDreTouched) setCurrencyValue(el('payableDreAmount'), getCurrencyValue(el('payableOriginalAmount')));
   });
 
   function updatePayableKindFields(){
@@ -20782,7 +20798,7 @@ function renderHomeTasks(){
     el('payableAccount').value = row.financeAccountId || '';
     el('payableCostCenter').value = row.costCenterId || '';
     el('payablePaymentMethod').value = row.paymentMethod || '';
-    el('payableOriginalAmount').value = (row.originalAmountCents / 100).toFixed(2);
+    setCurrencyValue(el('payableOriginalAmount'), row.originalAmountCents / 100);
     el('payableIssueDate').value = row.issueDate || '';
     el('payableDueDate').value = row.dueDate;
     el('payableCompetenceMonth').value = row.competenceMonth;
@@ -20794,7 +20810,7 @@ function renderHomeTasks(){
     const rowDreIncluded = row.dreAmountCents === null || row.dreAmountCents === undefined || row.dreAmountCents > 0;
     const rowDreAmountCents = row.dreAmountCents === null || row.dreAmountCents === undefined ? row.originalAmountCents : row.dreAmountCents;
     el('payableDreIncluded').checked = rowDreIncluded;
-    el('payableDreAmount').value = (rowDreAmountCents / 100).toFixed(2);
+    setCurrencyValue(el('payableDreAmount'), rowDreAmountCents / 100);
     el('payableDreAmount').disabled = !rowDreIncluded;
     payableDreTouched = false;
     el('payableDialogTitle').textContent = 'EDITAR CONTA A PAGAR';
@@ -20816,7 +20832,7 @@ function renderHomeTasks(){
     const id = el('payableId').value;
     const statusEl = el('payableFormStatus');
     statusEl.textContent = '';
-    const originalAmountCents = parseBRLToCents(el('payableOriginalAmount').value || '0');
+    const originalAmountCents = parseBRLToCents(getCurrencyValue(el('payableOriginalAmount')) || '0');
     if(originalAmountCents === null || originalAmountCents <= 0){
       statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return;
     }
@@ -20835,7 +20851,7 @@ function renderHomeTasks(){
       const dreFields = {};
       if(payableDreTouched){
         dreFields.dreIncluded = el('payableDreIncluded').checked;
-        dreFields.dreAmountCents = parseBRLToCents(el('payableDreAmount').value || '0') || 0;
+        dreFields.dreAmountCents = parseBRLToCents(getCurrencyValue(el('payableDreAmount')) || '0') || 0;
       }
       let response;
       if(id){
@@ -20894,6 +20910,8 @@ function renderHomeTasks(){
     el('payableOriginSection').hidden = true;
     el('payableOriginList').innerHTML = '';
     el('payablePaymentForm').reset();
+    attachCurrencyMask(el('payablePaymentAmount'));
+    setCurrencyValue(el('payablePaymentAmount'), '');
     el('payablePaymentDate').value = new Date().toISOString().slice(0,10);
     payablePaymentIdempotencyKey = crypto.randomUUID();
     el('payableDetailDialog').showModal();
@@ -20926,7 +20944,7 @@ function renderHomeTasks(){
       '<div><span>PARCELA/RECORRÊNCIA</span><span>'+escapeHtml(payableInstallmentBadge(payable))+'</span></div>'+
       '<div><span>OBSERVAÇÕES</span><span>'+escapeHtml(payable.notes || '—')+'</span></div>';
 
-    el('payablePaymentAmount').max = (balance / 100).toFixed(2);
+    el('payablePaymentAmount').dataset.balanceCents = String(balance);
     const paymentForm = el('payablePaymentForm');
     const disablePayment = payable.status === 'canceled' || balance <= 0;
     paymentForm.querySelectorAll('input,select,button').forEach(field => { field.disabled = disablePayment; });
@@ -20965,8 +20983,10 @@ function renderHomeTasks(){
     event.preventDefault();
     const statusEl = el('payablePaymentFormStatus');
     statusEl.textContent = '';
-    const amountCents = parseBRLToCents(el('payablePaymentAmount').value || '0');
+    const amountCents = parseBRLToCents(getCurrencyValue(el('payablePaymentAmount')) || '0');
     if(amountCents === null || amountCents <= 0){ statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return; }
+    const balanceCents = Number(el('payablePaymentAmount').dataset.balanceCents || 0);
+    if(amountCents > balanceCents){ statusEl.textContent = 'O VALOR NÃO PODE SER MAIOR QUE O SALDO EM ABERTO ('+formatCentsBRL(balanceCents)+').'; return; }
     const paymentDate = el('payablePaymentDate').value;
     if(!paymentDate){ statusEl.textContent = 'INFORME A DATA.'; return; }
     const button = el('btnSavePayablePayment');
@@ -21247,6 +21267,7 @@ function renderHomeTasks(){
 
   function resetSupplierDebtForm(){
     el('supplierDebtForm').reset();
+    setCurrencyValue(el('supplierDebtOriginalAmount'), '');
     el('supplierDebtForm').dataset.editId = '';
     renderSupplierDebtsCompanyOptions();
     el('supplierDebtCompany').innerHTML = '<option value="">SELECIONE</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
@@ -21282,7 +21303,7 @@ function renderHomeTasks(){
     el('supplierDebtOrderReference').value = row.orderReference || '';
     el('supplierDebtPurchaseDate').value = row.purchaseDate || '';
     el('supplierDebtDueDate').value = row.dueDate;
-    el('supplierDebtOriginalAmount').value = (row.originalAmountCents / 100).toFixed(2);
+    setCurrencyValue(el('supplierDebtOriginalAmount'), row.originalAmountCents / 100);
     el('supplierDebtNotes').value = row.notes || '';
     el('supplierDebtDialogTitle').textContent = 'EDITAR DÍVIDA DE FORNECEDOR';
     el('supplierDebtFormStatus').textContent = '';
@@ -21295,6 +21316,7 @@ function renderHomeTasks(){
     el('supplierDebtSupplier').disabled = false;
   }
 
+  attachCurrencyMask(el('supplierDebtOriginalAmount'));
   el('btnNewSupplierDebt').addEventListener('click', openNewSupplierDebtDialog);
   el('btnCancelSupplierDebtDialog').addEventListener('click', closeSupplierDebtDialog);
   el('btnCloseSupplierDebtDialog').addEventListener('click', closeSupplierDebtDialog);
@@ -21304,7 +21326,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const statusEl = el('supplierDebtFormStatus');
     statusEl.textContent = '';
-    const originalAmountCents = parseBRLToCents(el('supplierDebtOriginalAmount').value || '0');
+    const originalAmountCents = parseBRLToCents(getCurrencyValue(el('supplierDebtOriginalAmount')) || '0');
     if(originalAmountCents === null || originalAmountCents <= 0){ statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return; }
     const dueDate = el('supplierDebtDueDate').value;
     if(!dueDate){ statusEl.textContent = 'INFORME A DATA PREVISTA DE PAGAMENTO.'; return; }
