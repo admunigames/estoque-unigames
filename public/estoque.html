@@ -8275,7 +8275,7 @@
       <div class="purchase-field"><label for="expenseCostCenter">CENTRO DE CUSTO</label><select id="expenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="expenseAccount">CONTA BANCÁRIA</label><select id="expenseAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="expensePaymentMethod">FORMA DE PAGAMENTO</label><input id="expensePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
-      <div class="purchase-field"><label for="expenseOriginalAmount">VALOR (R$) *</label><input type="number" id="expenseOriginalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="expenseOriginalAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="expenseOriginalAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="expenseIssueDate">DATA</label><input type="date" id="expenseIssueDate"></div>
       <div class="purchase-field"><label for="expenseDueDate">VENCIMENTO *</label><input type="date" id="expenseDueDate" required></div>
       <div class="purchase-field" id="expenseCompetenceMonthField"><label for="expenseCompetenceMonth">COMPETÊNCIA (SÓ DESPESA AVULSA)</label><input type="month" id="expenseCompetenceMonth"></div>
@@ -8289,7 +8289,7 @@
           <input type="checkbox" id="expenseDreIncludedNew" style="width:auto;" checked> INCLUIR NA DRE?
         </label>
       </div>
-      <div class="purchase-field"><label for="expenseDreAmountNew">VALOR NA DRE (R$)</label><input type="number" id="expenseDreAmountNew" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="expenseDreAmountNew">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="expenseDreAmountNew" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><span class="purchase-field-help">Por padrão, o valor total da despesa entra inteiro na DRE. Vale pro conjunto inteiro (todas as parcelas/lojas do rateio), não dá pra escolher por parcela.</span></div>
 
       <div class="purchase-form-section">TIPO DE DESPESA</div>
@@ -8370,7 +8370,7 @@
           <input type="checkbox" id="expenseDreIncluded" style="width:auto;"> INCLUIR NA DRE?
         </label>
       </div>
-      <div class="purchase-field"><label for="expenseDreAmount">VALOR NA DRE (R$)</label><input type="number" id="expenseDreAmount" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="expenseDreAmount">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="expenseDreAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field full" style="display:flex;justify-content:flex-end;">
         <button class="btn-accent" id="btnSaveExpenseDre" type="button">SALVAR DECISÃO DA DRE</button>
       </div>
@@ -26751,31 +26751,35 @@ function renderHomeTasks(){
     renderExpensesCatalogSelects();
     expenseFormIdempotencyKey = crypto.randomUUID();
     el('expenseDreIncludedNew').checked = true;
-    el('expenseDreAmountNew').value = '';
+    setCurrencyValue(el('expenseOriginalAmount'), '');
+    setCurrencyValue(el('expenseDreAmountNew'), '');
     el('expenseDreAmountNew').disabled = false;
     delete el('expenseDreAmountNew').dataset.prevValue;
     expenseDreTouched = false;
   }
 
+  attachCurrencyMask(el('expenseOriginalAmount'));
+  attachCurrencyMask(el('expenseDreAmountNew'));
   el('expenseDreIncludedNew').addEventListener('change', () => {
     expenseDreTouched = true;
     const included = el('expenseDreIncludedNew').checked;
     const amountEl = el('expenseDreAmountNew');
     if(!included){
-      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
-      amountEl.value = '0';
+      const current = getCurrencyValue(amountEl);
+      if(current && current !== '0.00') amountEl.dataset.prevValue = current;
+      setCurrencyValue(amountEl, 0);
       amountEl.disabled = true;
     }else{
       amountEl.disabled = false;
       if(amountEl.dataset.prevValue !== undefined){
-        amountEl.value = amountEl.dataset.prevValue;
+        setCurrencyValue(amountEl, amountEl.dataset.prevValue);
         delete amountEl.dataset.prevValue;
       }
     }
   });
   el('expenseDreAmountNew').addEventListener('input', () => { expenseDreTouched = true; });
   el('expenseOriginalAmount').addEventListener('input', () => {
-    if(!expenseDreTouched) el('expenseDreAmountNew').value = el('expenseOriginalAmount').value;
+    if(!expenseDreTouched) setCurrencyValue(el('expenseDreAmountNew'), getCurrencyValue(el('expenseOriginalAmount')));
   });
 
   function updateExpenseKindFields(){
@@ -26894,7 +26898,7 @@ function renderHomeTasks(){
     statusEl.textContent = '';
     const model = el('expenseRateioModel').value;
     const competenceMonth = expenseCompetenceMonthForPreview();
-    const originalAmountCents = parseBRLToCents(el('expenseOriginalAmount').value || '0');
+    const originalAmountCents = parseBRLToCents(getCurrencyValue(el('expenseOriginalAmount')) || '0');
     if(!competenceMonth){ statusEl.textContent = 'INFORME O VENCIMENTO ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
     if(originalAmountCents === null || originalAmountCents <= 0){ statusEl.textContent = 'INFORME O VALOR ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
     try{
@@ -26932,7 +26936,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const statusEl = el('expenseFormStatus');
     statusEl.textContent = '';
-    const originalAmountCents = parseBRLToCents(el('expenseOriginalAmount').value || '0');
+    const originalAmountCents = parseBRLToCents(getCurrencyValue(el('expenseOriginalAmount')) || '0');
     if(originalAmountCents === null || originalAmountCents <= 0){
       statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return;
     }
@@ -26970,7 +26974,7 @@ function renderHomeTasks(){
     if(rateioShares) body.rateioShares = rateioShares;
     if(expenseDreTouched){
       body.dreIncluded = el('expenseDreIncludedNew').checked;
-      body.dreAmountCents = parseBRLToCents(el('expenseDreAmountNew').value || '0') || 0;
+      body.dreAmountCents = parseBRLToCents(getCurrencyValue(el('expenseDreAmountNew')) || '0') || 0;
     }
     if(kind === 'single'){
       if(el('expenseCompetenceMonth').value) body.competenceMonth = el('expenseCompetenceMonth').value;
@@ -27029,7 +27033,8 @@ function renderHomeTasks(){
       el('expenseDetailDialogTitle').textContent = expense.description;
       const dre = data.dre || { included: true, amountCents: expense.originalAmountCents };
       el('expenseDreIncluded').checked = dre.included;
-      el('expenseDreAmount').value = (dre.amountCents / 100).toFixed(2);
+      attachCurrencyMask(el('expenseDreAmount'));
+      setCurrencyValue(el('expenseDreAmount'), dre.amountCents / 100);
       el('expenseDreAmount').disabled = !dre.included;
       el('expenseDreFormStatus').textContent = '';
       el('expenseDetailSummary').innerHTML =
@@ -27098,7 +27103,7 @@ function renderHomeTasks(){
     renderPayableAccountOptionsForCompany('expenseAccount', expense.companyId, 'SEM CONTA');
     el('expenseAccount').value = expense.financeAccountId || '';
     el('expensePaymentMethod').value = expense.paymentMethod || '';
-    el('expenseOriginalAmount').value = (expense.originalAmountCents / 100).toFixed(2);
+    setCurrencyValue(el('expenseOriginalAmount'), expense.originalAmountCents / 100);
     el('expenseInvoiceNumber').value = expense.invoiceNumber || '';
     el('expenseOrderReference').value = expense.orderReference || '';
     el('expenseNotes').value = expense.notes || '';
@@ -27127,13 +27132,14 @@ function renderHomeTasks(){
     const included = el('expenseDreIncluded').checked;
     const amountEl = el('expenseDreAmount');
     if(!included){
-      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
-      amountEl.value = '0';
+      const current = getCurrencyValue(amountEl);
+      if(current && current !== '0.00') amountEl.dataset.prevValue = current;
+      setCurrencyValue(amountEl, 0);
       amountEl.disabled = true;
     }else{
       amountEl.disabled = false;
       if(amountEl.dataset.prevValue !== undefined){
-        amountEl.value = amountEl.dataset.prevValue;
+        setCurrencyValue(amountEl, amountEl.dataset.prevValue);
         delete amountEl.dataset.prevValue;
       }
     }
@@ -27144,7 +27150,7 @@ function renderHomeTasks(){
     const statusEl = el('expenseDreFormStatus');
     statusEl.textContent = '';
     const dreIncluded = el('expenseDreIncluded').checked;
-    const dreAmountCents = parseBRLToCents(el('expenseDreAmount').value || '0') || 0;
+    const dreAmountCents = parseBRLToCents(getCurrencyValue(el('expenseDreAmount')) || '0') || 0;
     const button = el('btnSaveExpenseDre');
     button.disabled = true;
     try{
