@@ -5329,7 +5329,7 @@
             <input type="hidden" id="rhComissaoPresetId">
             <div class="field"><label for="rhComissaoPresetNome">NOME</label><input id="rhComissaoPresetNome" maxlength="120" placeholder="Ex: Bônus GAR" required></div>
             <div class="field"><label for="rhComissaoPresetTipo">TIPO</label><select id="rhComissaoPresetTipo"><option value="bonus">BÔNUS</option><option value="premiacao">PREMIAÇÃO</option><option value="desconto">DESCONTO</option><option value="ajuste">AJUSTE</option></select></div>
-            <div class="field"><label for="rhComissaoPresetValor">VALOR PADRÃO (R$)</label><input type="number" id="rhComissaoPresetValor" min="0" step="0.01" value="0"></div>
+            <div class="field"><label for="rhComissaoPresetValor">VALOR PADRÃO (R$)</label><input type="text" inputmode="decimal" id="rhComissaoPresetValor" placeholder="R$ 0,00"></div>
             <label class="permission-option"><input type="checkbox" id="rhComissaoPresetAtivo" checked> Ativo</label>
             <button class="btn-accent" id="btnSaveRhComissaoPreset" type="submit">SALVAR LANÇAMENTO PADRÃO</button>
             <button class="btn-outline" id="btnCancelRhComissaoPreset" type="button" hidden>CANCELAR</button>
@@ -5742,8 +5742,8 @@
         <div class="dre-toolbar">
           <div class="field"><label for="dreLoja">LOJA</label><select id="dreLoja"><option value="">SELECIONE A LOJA</option></select></div>
           <div class="field"><label for="dreMes">MÊS</label><input type="month" id="dreMes"></div>
-          <div class="field"><label for="dreRevenueSales">RECEITA — VENDAS (R$)</label><input type="number" id="dreRevenueSales" min="0" step="0.01" placeholder="0,00"></div>
-          <div class="field"><label for="dreRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="number" id="dreRevenueServices" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="field"><label for="dreRevenueSales">RECEITA — VENDAS (R$)</label><input type="text" inputmode="decimal" id="dreRevenueSales" placeholder="R$ 0,00"></div>
+          <div class="field"><label for="dreRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="text" inputmode="decimal" id="dreRevenueServices" placeholder="R$ 0,00"></div>
           <div class="dre-toolbar-actions">
             <button class="btn-accent" id="btnSaveDreRevenue" type="button">SALVAR RECEITA</button>
             <button class="btn-outline" id="btnOpenFinanceCatalog" type="button">GERENCIAR CATEGORIAS</button>
@@ -5879,8 +5879,8 @@
         <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Assistência é tratada como uma unidade própria: despesas e receita marcadas com a unidade "Assistência" (e o custo de pessoal dos funcionários lotados na Assistência) entram só aqui — <strong>nunca</strong> nas lojas nem na DRE Consolidada.</p>
         <div class="dre-toolbar">
           <div class="field"><label for="dreAssistMes">MÊS</label><input type="month" id="dreAssistMes"></div>
-          <div class="field"><label for="dreAssistRevenueSales">RECEITA — VENDAS (R$)</label><input type="number" id="dreAssistRevenueSales" min="0" step="0.01" placeholder="0,00"></div>
-          <div class="field"><label for="dreAssistRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="number" id="dreAssistRevenueServices" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="field"><label for="dreAssistRevenueSales">RECEITA — VENDAS (R$)</label><input type="text" inputmode="decimal" id="dreAssistRevenueSales" placeholder="R$ 0,00"></div>
+          <div class="field"><label for="dreAssistRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="text" inputmode="decimal" id="dreAssistRevenueServices" placeholder="R$ 0,00"></div>
           <div class="dre-toolbar-actions">
             <button class="btn-accent" id="btnSaveDreAssistRevenue" type="button">SALVAR RECEITA</button>
           </div>
@@ -7161,7 +7161,7 @@
       <div class="purchase-field"><label for="budgetMonth">COMPETÊNCIA *</label><input type="month" id="budgetMonth" required></div>
       <div class="purchase-field full"><label for="budgetCategory">CATEGORIA/SUBCATEGORIA *</label><select id="budgetCategory" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="budgetCostCenter">CENTRO DE CUSTO</label><select id="budgetCostCenter"><option value="">TODOS OS CENTROS DE CUSTO</option></select></div>
-      <div class="purchase-field"><label for="budgetAmount">VALOR ORÇADO (R$) *</label><input type="number" id="budgetAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="budgetAmount">VALOR ORÇADO (R$) *</label><input type="text" inputmode="decimal" id="budgetAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="budgetNotes">OBSERVAÇÕES</label><textarea id="budgetNotes" rows="2" maxlength="500"></textarea></div>
     </div>
     <div class="user-form-status" id="budgetFormStatus" role="status" aria-live="polite"></div>
@@ -7183,7 +7183,7 @@
       <div class="purchase-field"><label for="receivableCompany">UNIDADE *</label><select id="receivableCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="receivableCompetence">COMPETÊNCIA *</label><input type="month" id="receivableCompetence" required></div>
       <div class="purchase-field full"><label for="receivableAcquirer">ADQUIRENTE *</label><select id="receivableAcquirer" required><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field"><label for="receivableExpectedAmount">VALOR (R$) *</label><input type="number" id="receivableExpectedAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="receivableExpectedAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="receivableExpectedAmount" placeholder="R$ 0,00" required></div>
       <!-- Campos previsto/recebido/data ocultos (item 4): o cadastro passou a
            ter só unidade, adquirente, competência e valor. Os inputs seguem
            no DOM para não quebrar o JS e para preservar dados de registros
@@ -7393,7 +7393,7 @@
     <form class="purchase-form" id="cashFlowBalanceForm">
       <div class="purchase-form-grid">
         <div class="purchase-field full"><label for="cashFlowBalanceAccount">CONTA *</label><select id="cashFlowBalanceAccount" required><option value="">SELECIONE</option></select></div>
-        <div class="purchase-field"><label for="cashFlowBalanceAmount">SALDO (R$) *</label><input type="number" id="cashFlowBalanceAmount" step="0.01" required></div>
+        <div class="purchase-field"><label for="cashFlowBalanceAmount">SALDO (R$) *</label><input type="text" inputmode="decimal" id="cashFlowBalanceAmount" placeholder="R$ 0,00" required></div>
         <div class="purchase-field"><label for="cashFlowBalanceDate">DATA DE REFERÊNCIA *</label><input type="date" id="cashFlowBalanceDate" required></div>
         <div class="purchase-field full"><label for="cashFlowBalanceNotes">OBSERVAÇÕES</label><input id="cashFlowBalanceNotes" maxlength="500"></div>
       </div>
@@ -8965,14 +8965,16 @@
     return grouped + ',' + dec;
   }
 
-  function attachCurrencyMask(input){
+  function attachCurrencyMask(input, options){
     if(input._currencyMask) return input._currencyMask;
+    const allowNegative = Boolean(options && options.allowNegative);
     input.type = 'text';
     input.setAttribute('inputmode', 'decimal');
     input.removeAttribute('step');
     let intDigits = '';
     let decDigits = '';
     let decimalMode = false;
+    let negative = false;
 
     function render(){
       if(intDigits === '' && decDigits === '' && !decimalMode){
@@ -8980,8 +8982,9 @@
         input.dataset.rawValue = '';
         return;
       }
-      input.value = 'R$ ' + formatCurrencyDigits(intDigits, decDigits);
-      input.dataset.rawValue = (intDigits || '0') + '.' + (decDigits + '00').slice(0, 2);
+      const sign = negative ? '-' : '';
+      input.value = (sign ? '-R$ ' : 'R$ ') + formatCurrencyDigits(intDigits, decDigits);
+      input.dataset.rawValue = sign + (intDigits || '0') + '.' + (decDigits + '00').slice(0, 2);
     }
 
     function placeCursorAtEnd(){
@@ -8996,6 +8999,8 @@
     // como decimal (não milhar) se tiver no máx. 2 dígitos depois dele.
     function parseFullString(str){
       str = String(str == null ? '' : str);
+      negative = allowNegative && /^\s*-/.test(str);
+      if(negative) str = str.replace(/^\s*-/, '');
       const commaIdx = str.lastIndexOf(',');
       const dotIdx = str.lastIndexOf('.');
       let sepIdx = -1;
@@ -9024,6 +9029,7 @@
         intDigits = '';
         decDigits = '';
         decimalMode = false;
+        negative = false;
       }
       if(type === 'insertText' || type === 'insertCompositionText'){
         event.preventDefault();
@@ -9037,6 +9043,8 @@
             }
           }else if(ch === ',' || ch === '.'){
             decimalMode = true;
+          }else if(ch === '-' && allowNegative){
+            negative = !negative;
           }
         }
         render();
@@ -9062,6 +9070,7 @@
         intDigits = '';
         decDigits = '';
         decimalMode = false;
+        negative = false;
         render();
         placeCursorAtEnd();
       }
@@ -9073,7 +9082,7 @@
     input.addEventListener('input', () => {
       const expected = (intDigits === '' && decDigits === '' && !decimalMode)
         ? ''
-        : 'R$ ' + formatCurrencyDigits(intDigits, decDigits);
+        : (negative ? '-R$ ' : 'R$ ') + formatCurrencyDigits(intDigits, decDigits);
       if(input.value !== expected){
         parseFullString(input.value);
         render();
@@ -9091,6 +9100,7 @@
           intDigits = '';
           decDigits = '';
           decimalMode = false;
+          negative = false;
         }else{
           parseFullString(String(value).replace('.', ','));
         }
@@ -19458,7 +19468,7 @@ function renderHomeTasks(){
             '<option value="fixed"'+(type === 'fixed' ? ' selected' : '')+'>FIXO (R$)</option>'+
             '<option value="percentage"'+(type === 'percentage' ? ' selected' : '')+'>PERCENTUAL (%)</option>'+
           '</select>'+
-          '<input type="number" min="0" step="0.01" data-finance-entry-fixed placeholder="0,00" value="'+amount+'"'+(type === 'fixed' ? '' : ' hidden')+'>'+
+          '<input type="text" inputmode="decimal" data-finance-entry-fixed placeholder="R$ 0,00" value="'+amount+'"'+(type === 'fixed' ? '' : ' hidden')+'>'+
           '<input type="number" min="0" step="0.01" data-finance-entry-percent placeholder="0,00" value="'+percent+'"'+(type === 'percentage' ? '' : ' hidden')+'>'+
           '<button class="btn-outline" type="button" data-dre-detail-item="'+escapeHtml(item.id)+'" title="Ver lançamentos deste item">DETALHES</button>'+
           deleteButton+
@@ -19511,6 +19521,7 @@ function renderHomeTasks(){
     container.querySelectorAll('details[data-finance-node-id]').forEach(details => {
       if(openIds.has(details.dataset.financeNodeId)) details.open = true;
     });
+    container.querySelectorAll('[data-finance-entry-fixed]').forEach(attachCurrencyMask);
   }
 
   async function loadDrePorLoja(){
@@ -19523,8 +19534,8 @@ function renderHomeTasks(){
       financeDre = null;
       renderDreSummary();
       renderDreCategories();
-      el('dreRevenueSales').value = '';
-      el('dreRevenueServices').value = '';
+      setCurrencyValue(el('dreRevenueSales'), '');
+      setCurrencyValue(el('dreRevenueServices'), '');
       return;
     }
     financeLoading = true;
@@ -19536,8 +19547,8 @@ function renderHomeTasks(){
       ]);
       financeDre = dreData;
       const rev = revenueData.revenue;
-      el('dreRevenueSales').value = rev ? (Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100).toFixed(2) : '';
-      el('dreRevenueServices').value = rev ? (Number(rev.servicesAmountCents || 0)/100).toFixed(2) : '';
+      setCurrencyValue(el('dreRevenueSales'), rev ? Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100 : '');
+      setCurrencyValue(el('dreRevenueServices'), rev ? Number(rev.servicesAmountCents || 0)/100 : '');
       renderDreSummary();
       renderDreCategories();
     }catch(error){
@@ -19551,6 +19562,8 @@ function renderHomeTasks(){
 
   el('dreLoja').addEventListener('change', loadDrePorLoja);
   el('dreMes').addEventListener('change', loadDrePorLoja);
+  attachCurrencyMask(el('dreRevenueSales'));
+  attachCurrencyMask(el('dreRevenueServices'));
 
   function renderDreConsolidadaSummary(){
     const data = financeDreConsolidada;
@@ -19627,8 +19640,8 @@ function renderHomeTasks(){
       ]);
       financeDreAssist = dreData;
       const rev = revenueData.revenue;
-      el('dreAssistRevenueSales').value = rev ? (Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100).toFixed(2) : '';
-      el('dreAssistRevenueServices').value = rev ? (Number(rev.servicesAmountCents || 0)/100).toFixed(2) : '';
+      setCurrencyValue(el('dreAssistRevenueSales'), rev ? Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100 : '');
+      setCurrencyValue(el('dreAssistRevenueServices'), rev ? Number(rev.servicesAmountCents || 0)/100 : '');
       renderDreAssistSummary();
       renderDreAssistCategories();
     }catch(error){
@@ -19640,6 +19653,8 @@ function renderHomeTasks(){
     }
   }
   el('dreAssistMes').addEventListener('change', loadDreAssistencia);
+  attachCurrencyMask(el('dreAssistRevenueSales'));
+  attachCurrencyMask(el('dreAssistRevenueServices'));
   el('btnSaveDreAssistRevenue').addEventListener('click', async () => {
     const month = el('dreAssistMes').value;
     const salesAmountCents = parseBRLToCents(el('dreAssistRevenueSales').value || '0');
@@ -20058,8 +20073,8 @@ function renderHomeTasks(){
     const storeId = el('dreLoja').value;
     const month = el('dreMes').value;
     if(!storeId){ showPurchaseToast('Selecione a loja.','error'); return; }
-    const salesAmountCents = parseBRLToCents(el('dreRevenueSales').value || '0');
-    const servicesAmountCents = parseBRLToCents(el('dreRevenueServices').value || '0');
+    const salesAmountCents = parseBRLToCents(getCurrencyValue(el('dreRevenueSales')) || '0');
+    const servicesAmountCents = parseBRLToCents(getCurrencyValue(el('dreRevenueServices')) || '0');
     if(salesAmountCents === null || servicesAmountCents === null){ showPurchaseToast('Informe valores de receita válidos.','error'); return; }
     const button = el('btnSaveDreRevenue');
     button.disabled = true;
@@ -20095,7 +20110,7 @@ function renderHomeTasks(){
       const type = row.querySelector('[data-finance-entry-type]').value;
       const body = {storeId, itemId, month, entryType: type};
       if(type === 'fixed'){
-        const cents = parseBRLToCents(row.querySelector('[data-finance-entry-fixed]').value || '0');
+        const cents = parseBRLToCents(getCurrencyValue(row.querySelector('[data-finance-entry-fixed]')) || '0');
         if(cents === null){ showPurchaseToast('Informe um valor válido.','error'); return; }
         body.amountCents = cents;
       }else{
@@ -21618,6 +21633,7 @@ function renderHomeTasks(){
   }
   el('budgetLoja') && el('budgetLoja').addEventListener('change', loadOrcamentoPage);
   el('budgetMes') && el('budgetMes').addEventListener('change', loadOrcamentoPage);
+  el('budgetAmount') && attachCurrencyMask(el('budgetAmount'));
 
   function openBudgetDialog(row){
     el('budgetForm').reset();
@@ -21630,7 +21646,7 @@ function renderHomeTasks(){
     el('budgetMonth').value = row ? row.month : el('budgetMes').value;
     el('budgetCategory').value = row ? row.categoryId : '';
     el('budgetCostCenter').value = row ? row.costCenterId : '';
-    el('budgetAmount').value = row ? (row.amountCents/100).toFixed(2) : '';
+    setCurrencyValue(el('budgetAmount'), row ? row.amountCents/100 : '');
     el('budgetNotes').value = row ? (row.notes || '') : '';
     el('budgetFormStatus').textContent = '';
     el('budgetDialog').showModal();
@@ -21665,7 +21681,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('budgetFormStatus');
     status.textContent = '';
-    const amountCents = parseBRLToCents(el('budgetAmount').value);
+    const amountCents = parseBRLToCents(getCurrencyValue(el('budgetAmount')));
     if(amountCents === null || amountCents <= 0){
       status.textContent = 'INFORME UM VALOR ORÇADO MAIOR QUE ZERO.';
       return;
@@ -21844,6 +21860,7 @@ function renderHomeTasks(){
     el(id) && el(id).addEventListener('change', loadRecebiveisPage);
   });
   el('receivableOperator') && el('receivableOperator').addEventListener('change', loadRecebiveisPage);
+  el('receivableExpectedAmount') && attachCurrencyMask(el('receivableExpectedAmount'));
 
   function openReceivableDialog(row){
     el('receivableForm').reset();
@@ -21865,7 +21882,7 @@ function renderHomeTasks(){
     el('receivableCompany').disabled = Boolean(row);
     el('receivableCompetence').value = row ? row.competenceMonth : (el('receivableMes').value || financeCurrentMonthKey());
     el('receivableAcquirer').value = row ? (row.acquirerId || (row.operatorText ? 'legacy:'+row.operatorText : '')) : '';
-    el('receivableExpectedAmount').value = row ? (row.expectedAmountCents/100).toFixed(2) : '';
+    setCurrencyValue(el('receivableExpectedAmount'), row ? row.expectedAmountCents/100 : '');
     // Campos ocultos (item 4): preservados apenas para não perder o dado
     // histórico de registros antigos ao reeditá-los.
     el('receivableExpectedDate').value = row ? (row.expectedDate || '') : '';
@@ -21908,7 +21925,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('receivableFormStatus');
     status.textContent = '';
-    const expectedAmountCents = parseBRLToCents(el('receivableExpectedAmount').value);
+    const expectedAmountCents = parseBRLToCents(getCurrencyValue(el('receivableExpectedAmount')));
     if(expectedAmountCents === null || expectedAmountCents <= 0){
       status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.';
       return;
@@ -22143,6 +22160,7 @@ function renderHomeTasks(){
 
   el('cashFlowLoja') && el('cashFlowLoja').addEventListener('change', loadFluxoCaixaPage);
   el('cashFlowHorizon') && el('cashFlowHorizon').addEventListener('change', renderCashFlowPage);
+  el('cashFlowBalanceAmount') && attachCurrencyMask(el('cashFlowBalanceAmount'), {allowNegative:true});
 
   // --- Saldos das contas (fonte do Caixa Atual) -------------------------
 
@@ -22198,7 +22216,7 @@ function renderHomeTasks(){
     // validado aqui — o backend faz a mesma checagem. Daí a variante
     // parseBRLToCentsAllowNegative: parseBRLToCents rejeita negativo, o que
     // tornava impossível registrar uma conta no cheque especial.
-    const balanceCents = parseBRLToCentsAllowNegative(el('cashFlowBalanceAmount').value);
+    const balanceCents = parseBRLToCentsAllowNegative(getCurrencyValue(el('cashFlowBalanceAmount')));
     if(balanceCents === null){
       status.textContent = 'INFORME UM SALDO VÁLIDO.';
       return;
@@ -30379,8 +30397,11 @@ function renderHomeTasks(){
     rhStartPrint('comissionamento-'+(el('rhComissaoMes').value || ''));
   });
 
+  if(el('rhComissaoPresetValor')) attachCurrencyMask(el('rhComissaoPresetValor'));
+
   function resetRhComissaoPresetForm(){
     el('rhComissaoPresetForm').reset();
+    setCurrencyValue(el('rhComissaoPresetValor'), '');
     el('rhComissaoPresetId').value = '';
     el('rhComissaoPresetAtivo').checked = true;
     el('btnSaveRhComissaoPreset').textContent = 'SALVAR LANÇAMENTO PADRÃO';
@@ -30396,7 +30417,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('rhComissaoPresetStatus');
     status.textContent = '';
-    const defaultAmountCents = parseBRLToCents(el('rhComissaoPresetValor').value || '0');
+    const defaultAmountCents = parseBRLToCents(getCurrencyValue(el('rhComissaoPresetValor')) || '0');
     if(defaultAmountCents === null){
       status.textContent = 'INFORME UM VALOR PADRÃO VÁLIDO.';
       return;
@@ -30427,7 +30448,7 @@ function renderHomeTasks(){
       el('rhComissaoPresetId').value = preset.id;
       el('rhComissaoPresetNome').value = preset.name;
       el('rhComissaoPresetTipo').value = preset.kind;
-      el('rhComissaoPresetValor').value = (Number(preset.defaultAmountCents || 0)/100).toFixed(2);
+      setCurrencyValue(el('rhComissaoPresetValor'), Number(preset.defaultAmountCents || 0)/100);
       el('rhComissaoPresetAtivo').checked = Boolean(preset.active);
       el('btnSaveRhComissaoPreset').textContent = 'ATUALIZAR LANÇAMENTO PADRÃO';
       el('btnCancelRhComissaoPreset').hidden = false;
