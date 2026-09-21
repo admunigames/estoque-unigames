@@ -3081,7 +3081,7 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
   // formulário: parseBRLToCents rejeita negativo e é reaproveitada em campos
   // onde negativo não faz sentido, por isso a variante separada.
   assert.match(html, /function parseBRLToCentsAllowNegative\(/);
-  assert.match(html, /parseBRLToCentsAllowNegative\(el\('cashFlowBalanceAmount'\)\.value\)/);
+  assert.match(html, /parseBRLToCentsAllowNegative\(getCurrencyValue\(el\('cashFlowBalanceAmount'\)\)\)/);
 
   // O aviso de impostos no PNG segue a MESMA condição da tela — não pode
   // ficar afirmado pra sempre depois que a Fase 7 chegar.

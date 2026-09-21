@@ -3534,7 +3534,7 @@
             </div>
             <div class="field" id="captureSerialNumberField"><label for="captureSerialNumber">SERIAL DO PRODUTO</label><input id="captureSerialNumber" maxlength="160" required placeholder="Digite o serial completo"></div>
             <div class="field" id="captureColorField"><label for="captureColor">COR DO PRODUTO</label><input id="captureColor" maxlength="120" required placeholder="Ex.: Preto"></div>
-            <div class="field"><label for="captureValue">VALOR CAPTADO (R$)</label><input id="captureValue" type="number" min="0" max="999999.99" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+            <div class="field"><label for="captureValue">VALOR CAPTADO (R$)</label><input id="captureValue" type="text" inputmode="decimal" placeholder="R$ 0,00"></div>
             <div class="field double" id="captureDefectsField"><label for="captureDefects">DEFEITOS DO PRODUTO</label><textarea id="captureDefects" maxlength="1200" rows="3" required placeholder="Descreva os defeitos ou informe “Sem defeito”"></textarea></div>
           </div>
           <div id="captureControllersContainer" hidden>
@@ -5374,7 +5374,7 @@
             <input type="hidden" id="rhComissaoPresetId">
             <div class="field"><label for="rhComissaoPresetNome">NOME</label><input id="rhComissaoPresetNome" maxlength="120" placeholder="Ex: Bônus GAR" required></div>
             <div class="field"><label for="rhComissaoPresetTipo">TIPO</label><select id="rhComissaoPresetTipo"><option value="bonus">BÔNUS</option><option value="premiacao">PREMIAÇÃO</option><option value="desconto">DESCONTO</option><option value="ajuste">AJUSTE</option></select></div>
-            <div class="field"><label for="rhComissaoPresetValor">VALOR PADRÃO (R$)</label><input type="number" id="rhComissaoPresetValor" min="0" step="0.01" value="0"></div>
+            <div class="field"><label for="rhComissaoPresetValor">VALOR PADRÃO (R$)</label><input type="text" inputmode="decimal" id="rhComissaoPresetValor" placeholder="R$ 0,00"></div>
             <label class="permission-option"><input type="checkbox" id="rhComissaoPresetAtivo" checked> Ativo</label>
             <button class="btn-accent" id="btnSaveRhComissaoPreset" type="submit">SALVAR LANÇAMENTO PADRÃO</button>
             <button class="btn-outline" id="btnCancelRhComissaoPreset" type="button" hidden>CANCELAR</button>
@@ -5787,8 +5787,8 @@
         <div class="dre-toolbar">
           <div class="field"><label for="dreLoja">LOJA</label><select id="dreLoja"><option value="">SELECIONE A LOJA</option></select></div>
           <div class="field"><label for="dreMes">MÊS</label><input type="month" id="dreMes"></div>
-          <div class="field"><label for="dreRevenueSales">RECEITA — VENDAS (R$)</label><input type="number" id="dreRevenueSales" min="0" step="0.01" placeholder="0,00"></div>
-          <div class="field"><label for="dreRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="number" id="dreRevenueServices" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="field"><label for="dreRevenueSales">RECEITA — VENDAS (R$)</label><input type="text" inputmode="decimal" id="dreRevenueSales" placeholder="R$ 0,00"></div>
+          <div class="field"><label for="dreRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="text" inputmode="decimal" id="dreRevenueServices" placeholder="R$ 0,00"></div>
           <div class="dre-toolbar-actions">
             <button class="btn-accent" id="btnSaveDreRevenue" type="button">SALVAR RECEITA</button>
             <button class="btn-outline" id="btnOpenFinanceCatalog" type="button">GERENCIAR CATEGORIAS</button>
@@ -5924,8 +5924,8 @@
         <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Assistência é tratada como uma unidade própria: despesas e receita marcadas com a unidade "Assistência" (e o custo de pessoal dos funcionários lotados na Assistência) entram só aqui — <strong>nunca</strong> nas lojas nem na DRE Consolidada.</p>
         <div class="dre-toolbar">
           <div class="field"><label for="dreAssistMes">MÊS</label><input type="month" id="dreAssistMes"></div>
-          <div class="field"><label for="dreAssistRevenueSales">RECEITA — VENDAS (R$)</label><input type="number" id="dreAssistRevenueSales" min="0" step="0.01" placeholder="0,00"></div>
-          <div class="field"><label for="dreAssistRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="number" id="dreAssistRevenueServices" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="field"><label for="dreAssistRevenueSales">RECEITA — VENDAS (R$)</label><input type="text" inputmode="decimal" id="dreAssistRevenueSales" placeholder="R$ 0,00"></div>
+          <div class="field"><label for="dreAssistRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="text" inputmode="decimal" id="dreAssistRevenueServices" placeholder="R$ 0,00"></div>
           <div class="dre-toolbar-actions">
             <button class="btn-accent" id="btnSaveDreAssistRevenue" type="button">SALVAR RECEITA</button>
           </div>
@@ -6948,7 +6948,7 @@
           <option value="recuperacao">RECUPERAÇÃO</option>
         </select>
       </div>
-      <div class="purchase-field"><label for="reposicaoValor">VALOR (R$) *</label><input type="number" id="reposicaoValor" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="reposicaoValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="reposicaoValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="reposicaoObs">OBSERVAÇÕES</label><textarea id="reposicaoObs" rows="2" maxlength="2000"></textarea></div>
     </div>
     <div class="user-form-status" id="reposicaoFormStatus" role="status" aria-live="polite"></div>
@@ -6992,7 +6992,7 @@
       <div class="purchase-field"><label for="recargaOperadora">OPERADORA *</label><input id="recargaOperadora" maxlength="60" required></div>
       <div class="purchase-field"><label for="recargaUnidade">UNIDADE *</label><select id="recargaUnidade" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="recargaResponsavel">RESPONSÁVEL</label><input id="recargaResponsavel" maxlength="160"></div>
-      <div class="purchase-field"><label for="recargaValor">VALOR (R$) *</label><input type="number" id="recargaValor" min="0" step="0.01" required></div>
+      <div class="purchase-field"><label for="recargaValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="recargaUltima">DATA DA ÚLTIMA RECARGA *</label><input type="date" id="recargaUltima" required></div>
       <div class="purchase-field"><label for="recargaProxima">PRÓXIMA RECARGA</label><input type="date" id="recargaProxima" disabled></div>
       <div class="purchase-field"><label class="checkbox-inline"><input type="checkbox" id="recargaAtiva" checked> Linha ativa</label></div>
@@ -7015,7 +7015,7 @@
     <input type="hidden" id="recargaEventId">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="recargaEventData">DATA DA RECARGA *</label><input type="date" id="recargaEventData" required></div>
-      <div class="purchase-field"><label for="recargaEventValor">VALOR (R$) *</label><input type="number" id="recargaEventValor" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="recargaEventValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaEventValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="recargaEventObs">OBSERVAÇÕES</label><textarea id="recargaEventObs" rows="2" maxlength="1000"></textarea></div>
     </div>
     <div id="recargaEventHistorico" class="page-desc"></div>
@@ -7040,15 +7040,15 @@
       <div class="purchase-field"><label for="declShoppingLojaForm">LOJA *</label><select id="declShoppingLojaForm" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="declShoppingCompetencia">COMPETÊNCIA *</label><input type="month" id="declShoppingCompetencia" required></div>
       <div class="purchase-field"><label for="declShoppingDataDecl">DATA DA DECLARAÇÃO</label><input type="date" id="declShoppingDataDecl"></div>
-      <div class="purchase-field"><label for="declShoppingFatReal">FATURAMENTO REAL (R$) *</label><input type="number" id="declShoppingFatReal" min="0" step="0.01" required></div>
-      <div class="purchase-field"><label for="declShoppingMedia">MÉDIA QUE COSTUMA SER DECLARADA (R$)</label><input type="number" id="declShoppingMedia" min="0" step="0.01"></div>
-      <div class="purchase-field"><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="number" id="declShoppingSugerido" min="0" step="0.01"></div>
-      <div class="purchase-field"><label for="declShoppingDeclarado">VALOR EFETIVAMENTE DECLARADO (R$)</label><input type="number" id="declShoppingDeclarado" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingFatReal">FATURAMENTO REAL (R$) *</label><input type="text" inputmode="decimal" id="declShoppingFatReal" placeholder="R$ 0,00" required></div>
+      <div class="purchase-field"><label for="declShoppingMedia">MÉDIA QUE COSTUMA SER DECLARADA (R$)</label><input type="text" inputmode="decimal" id="declShoppingMedia" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="text" inputmode="decimal" id="declShoppingSugerido" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="declShoppingDeclarado">VALOR EFETIVAMENTE DECLARADO (R$)</label><input type="text" inputmode="decimal" id="declShoppingDeclarado" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="declShoppingPercentual">PERCENTUAL CONTRATUAL (%)</label><input type="number" id="declShoppingPercentual" min="0" max="100" step="0.01" placeholder="Ex.: 7"></div>
-      <div class="purchase-field"><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="number" id="declShoppingMinimo" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="text" inputmode="decimal" id="declShoppingMinimo" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="number" id="declShoppingAluguelPct" min="0" step="0.01"></div>
       <div class="purchase-field"><label class="checkbox-inline"><input type="checkbox" id="declShoppingPctPago"> Houve pagamento de aluguel percentual</label></div>
-      <div class="purchase-field"><label for="declShoppingPago">VALOR EFETIVAMENTE PAGO (R$)</label><input type="number" id="declShoppingPago" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="declShoppingPago">VALOR EFETIVAMENTE PAGO (R$)</label><input type="text" inputmode="decimal" id="declShoppingPago" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><label for="declShoppingObs">OBSERVAÇÕES</label><textarea id="declShoppingObs" rows="2" maxlength="2000"></textarea></div>
     </div>
     <div id="declShoppingCalcHint" class="page-desc"></div>
@@ -7116,7 +7116,7 @@
       <div class="purchase-field"><label for="obraTipo">TIPO</label><select id="obraTipo"><option value="reforma">REFORMA</option><option value="construcao">CONSTRUÇÃO</option><option value="manutencao">MANUTENÇÃO ESTRUTURAL</option><option value="outros">OUTROS</option></select></div>
       <div class="purchase-field"><label for="obraStatus">STATUS</label><select id="obraStatus"><option value="planejada">PLANEJADA</option><option value="andamento">EM ANDAMENTO</option><option value="concluida">CONCLUÍDA</option><option value="cancelada">CANCELADA</option></select></div>
       <div class="purchase-field"><label for="obraResponsavel">FORNECEDOR / RESPONSÁVEL</label><input id="obraResponsavel" maxlength="160"></div>
-      <div class="purchase-field"><label for="obraOrcado">VALOR ORÇADO (R$)</label><input type="number" id="obraOrcado" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="obraOrcado">VALOR ORÇADO (R$)</label><input type="text" inputmode="decimal" id="obraOrcado" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="obraInicio">DATA DE INÍCIO</label><input type="date" id="obraInicio"></div>
       <div class="purchase-field"><label for="obraPrevisao">PREVISÃO DE CONCLUSÃO</label><input type="date" id="obraPrevisao"></div>
       <div class="purchase-field"><label for="obraConclusao">CONCLUSÃO REAL</label><input type="date" id="obraConclusao"></div>
@@ -7145,7 +7145,7 @@
       <div class="purchase-form-grid">
         <div class="purchase-field full"><label for="obraEntryDescricao">DESCRIÇÃO *</label><input id="obraEntryDescricao" maxlength="300" required></div>
         <div class="purchase-field"><label for="obraEntryFornecedor">FORNECEDOR</label><input id="obraEntryFornecedor" maxlength="160"></div>
-        <div class="purchase-field"><label for="obraEntryValor">VALOR (R$) *</label><input type="number" id="obraEntryValor" min="0.01" step="0.01" required></div>
+        <div class="purchase-field"><label for="obraEntryValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="obraEntryValor" placeholder="R$ 0,00" required></div>
         <div class="purchase-field"><label for="obraEntryData">DATA</label><input type="date" id="obraEntryData"></div>
         <div class="purchase-field"><label for="obraEntryPgto">FORMA DE PAGAMENTO</label><select id="obraEntryPgto"><option value="pix">PIX</option><option value="boleto">BOLETO</option><option value="cartao">CARTÃO</option><option value="dinheiro">DINHEIRO</option><option value="transferencia">TRANSFERÊNCIA</option><option value="outros">OUTROS</option></select></div>
         <div class="purchase-field"><label for="btnAddObraEntry">&nbsp;</label><button class="btn-accent" id="btnAddObraEntry" type="submit">ADICIONAR / SALVAR</button></div>
@@ -7206,7 +7206,7 @@
       <div class="purchase-field"><label for="budgetMonth">COMPETÊNCIA *</label><input type="month" id="budgetMonth" required></div>
       <div class="purchase-field full"><label for="budgetCategory">CATEGORIA/SUBCATEGORIA *</label><select id="budgetCategory" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="budgetCostCenter">CENTRO DE CUSTO</label><select id="budgetCostCenter"><option value="">TODOS OS CENTROS DE CUSTO</option></select></div>
-      <div class="purchase-field"><label for="budgetAmount">VALOR ORÇADO (R$) *</label><input type="number" id="budgetAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="budgetAmount">VALOR ORÇADO (R$) *</label><input type="text" inputmode="decimal" id="budgetAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="budgetNotes">OBSERVAÇÕES</label><textarea id="budgetNotes" rows="2" maxlength="500"></textarea></div>
     </div>
     <div class="user-form-status" id="budgetFormStatus" role="status" aria-live="polite"></div>
@@ -7228,7 +7228,7 @@
       <div class="purchase-field"><label for="receivableCompany">UNIDADE *</label><select id="receivableCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="receivableCompetence">COMPETÊNCIA *</label><input type="month" id="receivableCompetence" required></div>
       <div class="purchase-field full"><label for="receivableAcquirer">ADQUIRENTE *</label><select id="receivableAcquirer" required><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field"><label for="receivableExpectedAmount">VALOR (R$) *</label><input type="number" id="receivableExpectedAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="receivableExpectedAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="receivableExpectedAmount" placeholder="R$ 0,00" required></div>
       <!-- Campos previsto/recebido/data ocultos (item 4): o cadastro passou a
            ter só unidade, adquirente, competência e valor. Os inputs seguem
            no DOM para não quebrar o JS e para preservar dados de registros
@@ -7365,7 +7365,7 @@
       <div class="purchase-field"><label for="corpCardBank">BANCO</label><input id="corpCardBank" maxlength="80"></div>
       <div class="purchase-field"><label for="corpCardBrand">BANDEIRA</label><input id="corpCardBrand" maxlength="40"></div>
       <div class="purchase-field"><label for="corpCardLast4">FINAL (4 DÍGITOS) *</label><input id="corpCardLast4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" required></div>
-      <div class="purchase-field"><label for="corpCardLimit">LIMITE (R$)</label><input type="number" id="corpCardLimit" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="corpCardLimit">LIMITE (R$)</label><input type="text" inputmode="decimal" id="corpCardLimit" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="corpCardBestDay">MELHOR DIA DE COMPRA</label><input type="number" id="corpCardBestDay" min="1" max="31"></div>
       <div class="purchase-field"><label for="corpCardClosingDay">DIA DE FECHAMENTO *</label><input type="number" id="corpCardClosingDay" min="1" max="31" required></div>
       <div class="purchase-field"><label for="corpCardDueDay">DIA DE VENCIMENTO *</label><input type="number" id="corpCardDueDay" min="1" max="31" required></div>
@@ -7438,7 +7438,7 @@
     <form class="purchase-form" id="cashFlowBalanceForm">
       <div class="purchase-form-grid">
         <div class="purchase-field full"><label for="cashFlowBalanceAccount">CONTA *</label><select id="cashFlowBalanceAccount" required><option value="">SELECIONE</option></select></div>
-        <div class="purchase-field"><label for="cashFlowBalanceAmount">SALDO (R$) *</label><input type="number" id="cashFlowBalanceAmount" step="0.01" required></div>
+        <div class="purchase-field"><label for="cashFlowBalanceAmount">SALDO (R$) *</label><input type="text" inputmode="decimal" id="cashFlowBalanceAmount" placeholder="R$ 0,00" required></div>
         <div class="purchase-field"><label for="cashFlowBalanceDate">DATA DE REFERÊNCIA *</label><input type="date" id="cashFlowBalanceDate" required></div>
         <div class="purchase-field full"><label for="cashFlowBalanceNotes">OBSERVAÇÕES</label><input id="cashFlowBalanceNotes" maxlength="500"></div>
       </div>
@@ -7509,7 +7509,7 @@
       <div class="purchase-field"><label for="rhEmployeeAdmission">DATA DE ADMISSÃO</label><input type="date" id="rhEmployeeAdmission"></div>
       <div class="purchase-field"><label for="rhEmployeeCompany">LOJA</label><select id="rhEmployeeCompany"><option value="">SEM LOJA DEFINIDA</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeRole">CARGO</label><input id="rhEmployeeRole" maxlength="120"></div>
-      <div class="purchase-field"><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="number" id="rhEmployeeSalary" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeSalary" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhEmployeeStatus">SITUAÇÃO</label><select id="rhEmployeeStatus"><option value="active">ATIVO</option><option value="inactive">INATIVO</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeSchedule">ESCALA</label><select id="rhEmployeeSchedule"><option value="5x2">5x2 (SEG A SEX)</option><option value="6x1">6x1 (TRABALHA 6, FOLGA 1)</option></select></div>
       <div class="purchase-field"><label for="rhEmployeePix">CHAVE PIX</label><input id="rhEmployeePix" maxlength="160"></div>
@@ -7536,12 +7536,12 @@
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="rhFolhaEmployeeName">FUNCIONÁRIO</label><input id="rhFolhaEmployeeName" readonly></div>
       <div class="purchase-field"><label for="rhFolhaCompetencia">COMPETÊNCIA</label><input id="rhFolhaCompetencia" readonly></div>
-      <div class="purchase-field"><label for="rhFolhaBase">SALÁRIO BASE (R$)</label><input type="number" id="rhFolhaBase" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaBonus">BONIFICAÇÃO (R$)</label><input type="number" id="rhFolhaBonus" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaOvertime">HORAS EXTRAS (R$)</label><input type="number" id="rhFolhaOvertime" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaAdditions">ADICIONAIS (R$)</label><input type="number" id="rhFolhaAdditions" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaDeductions">DESCONTOS (R$)</label><input type="number" id="rhFolhaDeductions" min="0" step="0.01" value="0"></div>
-      <div class="purchase-field"><label for="rhFolhaOther">OUTROS (R$)</label><input type="number" id="rhFolhaOther" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhFolhaBase">SALÁRIO BASE (R$)</label><input type="text" inputmode="decimal" id="rhFolhaBase" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaBonus">BONIFICAÇÃO (R$)</label><input type="text" inputmode="decimal" id="rhFolhaBonus" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaOvertime">HORAS EXTRAS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaOvertime" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaAdditions">ADICIONAIS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaAdditions" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaDeductions">DESCONTOS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaDeductions" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaOther">OUTROS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaOther" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhFolhaCommission">COMISSÃO (CALCULADA)</label><input id="rhFolhaCommission" readonly></div>
       <div class="purchase-field"><label for="rhFolhaBenefits">BENEFÍCIOS (CALCULADOS)</label><input id="rhFolhaBenefits" readonly></div>
       <div class="purchase-field"><label for="rhFolhaNet">VALOR LÍQUIDO</label><input id="rhFolhaNet" readonly></div>
@@ -7608,8 +7608,8 @@
         <div class="purchase-field full"><label for="rh13Funcionario">FUNCIONÁRIO *</label><select id="rh13Funcionario" required><option value="">SELECIONE</option></select></div>
         <div class="purchase-field"><label for="rh13Ano">ANO *</label><input type="number" id="rh13Ano" min="2000" max="2100" step="1" required></div>
         <div class="purchase-field"><label for="rh13Parcela">PARCELA *</label><select id="rh13Parcela"><option value="unico">LANÇAMENTO ÚNICO</option><option value="adiantamento">ADIANTAMENTO</option><option value="final">PARCELA FINAL</option></select></div>
-        <div class="purchase-field"><label for="rh13Bruto">VALOR BRUTO (R$) *</label><input type="number" id="rh13Bruto" min="0.01" step="0.01" required></div>
-        <div class="purchase-field"><label for="rh13Desconto">DESCONTO (R$)</label><input type="number" id="rh13Desconto" min="0" step="0.01" value="0"></div>
+        <div class="purchase-field"><label for="rh13Bruto">VALOR BRUTO (R$) *</label><input type="text" inputmode="decimal" id="rh13Bruto" placeholder="R$ 0,00" required></div>
+        <div class="purchase-field"><label for="rh13Desconto">DESCONTO (R$)</label><input type="text" inputmode="decimal" id="rh13Desconto" placeholder="R$ 0,00"></div>
         <div class="purchase-field full"><label for="rh13Obs">OBSERVAÇÕES</label><input id="rh13Obs" maxlength="500"></div>
         <div class="purchase-field"><label for="btnSaveRh13">&nbsp;</label><button class="btn-accent" id="btnSaveRh13" type="submit">ADICIONAR / SALVAR</button></div>
       </div>
@@ -7653,9 +7653,9 @@
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="rhBeneficioItemTipo">TIPO</label><select id="rhBeneficioItemTipo"><option value="alimentacao">ALIMENTAÇÃO</option><option value="mobilidade">MOBILIDADE</option><option value="premiacao">PREMIAÇÃO</option><option value="saldo_livre">SALDO LIVRE</option><option value="outros">OUTROS</option></select></div>
       <div class="purchase-field"><label for="rhBeneficioItemModo">MODO</label><select id="rhBeneficioItemModo"><option value="fixed">VALOR FIXO</option><option value="per_day">POR DIA TRABALHADO</option></select></div>
-      <div class="purchase-field" id="rhBeneficioItemValorWrap"><label for="rhBeneficioItemValor">VALOR (R$)</label><input type="number" id="rhBeneficioItemValor" min="0.01" step="0.01"></div>
-      <div class="purchase-field" id="rhBeneficioItemPorDiaWrap" hidden><label for="rhBeneficioItemPorDia">VALOR POR DIA (R$)</label><input type="number" id="rhBeneficioItemPorDia" min="0.01" step="0.01"></div>
-      <div class="purchase-field"><label for="rhBeneficioItemDesconto">DESCONTO (R$)</label><input type="number" id="rhBeneficioItemDesconto" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field" id="rhBeneficioItemValorWrap"><label for="rhBeneficioItemValor">VALOR (R$)</label><input type="text" inputmode="decimal" id="rhBeneficioItemValor" placeholder="R$ 0,00"></div>
+      <div class="purchase-field" id="rhBeneficioItemPorDiaWrap" hidden><label for="rhBeneficioItemPorDia">VALOR POR DIA (R$)</label><input type="text" inputmode="decimal" id="rhBeneficioItemPorDia" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhBeneficioItemDesconto">DESCONTO (R$)</label><input type="text" inputmode="decimal" id="rhBeneficioItemDesconto" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="btnAddRhBeneficioItem">&nbsp;</label><button class="btn-outline" id="btnAddRhBeneficioItem" type="button">ADICIONAR BENEFÍCIO</button></div>
     </div>
     <div class="table-panel responsive-table" style="margin-top:10px;">
@@ -7720,7 +7720,7 @@
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="rhComissaoFuncionario">FUNCIONÁRIO *</label><select id="rhComissaoFuncionario" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="rhComissaoCompetencia">COMPETÊNCIA *</label><input type="month" id="rhComissaoCompetencia" required></div>
-      <div class="purchase-field"><label for="rhComissaoValor">COMISSÃO (R$)</label><input type="number" id="rhComissaoValor" min="0" step="0.01" value="0"></div>
+      <div class="purchase-field"><label for="rhComissaoValor">COMISSÃO (R$)</label><input type="text" inputmode="decimal" id="rhComissaoValor" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><label for="rhComissaoObs">OBSERVAÇÕES</label><textarea id="rhComissaoObs" rows="2" maxlength="500"></textarea></div>
     </div>
     <p id="rhComissaoRegraHint" class="no-print" style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;white-space:pre-wrap;" hidden></p>
@@ -7729,7 +7729,7 @@
       <div class="purchase-field"><label for="rhComissaoItemPreset">LANÇAMENTO PADRÃO</label><select id="rhComissaoItemPreset"><option value="">SEM PADRÃO (LIVRE)</option></select></div>
       <div class="purchase-field"><label for="rhComissaoItemLabel">DESCRIÇÃO</label><input id="rhComissaoItemLabel" maxlength="120"></div>
       <div class="purchase-field"><label for="rhComissaoItemKind">TIPO</label><select id="rhComissaoItemKind"><option value="bonus">BÔNUS</option><option value="premiacao">PREMIAÇÃO</option><option value="desconto">DESCONTO</option><option value="ajuste">AJUSTE</option></select></div>
-      <div class="purchase-field"><label for="rhComissaoItemValor">VALOR (R$)</label><input type="number" id="rhComissaoItemValor" step="0.01"></div>
+      <div class="purchase-field"><label for="rhComissaoItemValor">VALOR (R$)</label><input type="text" inputmode="decimal" id="rhComissaoItemValor" placeholder="R$ 0,00"></div>
       <div class="purchase-field" id="rhComissaoItemParcelaWrap" hidden><label for="rhComissaoItemParcelado" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="rhComissaoItemParcelado"> PARCELAR DESCONTO</label><input type="number" id="rhComissaoItemParcelas" min="2" max="60" step="1" placeholder="Nº de ocorrências" disabled></div>
       <div class="purchase-field"><label for="btnAddRhComissaoItem">&nbsp;</label><button class="btn-outline" id="btnAddRhComissaoItem" type="button">ADICIONAR LANÇAMENTO</button></div>
     </div>
@@ -7950,7 +7950,7 @@
         </div>
         <div class="purchase-form-grid" style="padding:8px 0 0;">
           <div class="purchase-field"><label for="recNewPaymentDate">DATA DO PAGAMENTO</label><input type="date" id="recNewPaymentDate"></div>
-          <div class="purchase-field"><label for="recNewPaymentAmount">VALOR (R$)</label><input type="number" id="recNewPaymentAmount" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="purchase-field"><label for="recNewPaymentAmount">VALOR (R$)</label><input type="text" inputmode="decimal" id="recNewPaymentAmount" placeholder="R$ 0,00"></div>
           <div class="purchase-field"><label for="recNewPaymentNote">OBSERVAÇÃO</label><input id="recNewPaymentNote" maxlength="500"></div>
           <div class="purchase-field" style="align-self:end;"><button class="btn-outline" id="btnAddRecPayment" type="button">+ LANÇAR PAGAMENTO</button></div>
         </div>
@@ -7985,7 +7985,7 @@
       <div class="purchase-field" id="recPhotoField" hidden><label for="recPhotoTaken">FOTO FEITA?</label><select id="recPhotoTaken"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field" id="recAsoRequestedField" hidden><label for="recAsoRequested">ASO SOLICITADO?</label><select id="recAsoRequested"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field" id="recAsoClinicField" hidden><label for="recAsoClinic">CLÍNICA DO ASO</label><input id="recAsoClinic" maxlength="160"></div>
-      <div class="purchase-field" id="recAsoValueField" hidden><label for="recAsoValue">VALOR DO EXAME (R$)</label><input type="number" id="recAsoValue" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="purchase-field" id="recAsoValueField" hidden><label for="recAsoValue">VALOR DO EXAME (R$)</label><input type="text" inputmode="decimal" id="recAsoValue" placeholder="R$ 0,00"></div>
       <div class="purchase-field" id="recShoppingField" hidden><label for="recShoppingRegistered">CADASTRADO NO SHOPPING FIXO?</label><select id="recShoppingRegistered"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field full" id="recDriveLinkField" hidden><label for="recAdmissionDocsDriveLink">LINK DOS DOCUMENTOS ADMISSIONAIS NO GOOGLE DRIVE</label><input id="recAdmissionDocsDriveLink" maxlength="500" placeholder="https://drive.google.com/..."></div>
       <div class="purchase-field" id="recDentalField" hidden><label for="recDentalPlanIncluded">INCLUSO NO PLANO ODONTOLÓGICO?</label><select id="recDentalPlanIncluded"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
@@ -8160,7 +8160,7 @@
       <div class="purchase-field"><label for="payableAccount">CONTA FINANCEIRA</label><select id="payableAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="payableCostCenter">CENTRO DE CUSTO</label><select id="payableCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="payablePaymentMethod">FORMA DE PAGAMENTO</label><input id="payablePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
-      <div class="purchase-field"><label for="payableOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="number" id="payableOriginalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="payableOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="text" inputmode="decimal" id="payableOriginalAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="payableIssueDate">DATA DE EMISSÃO</label><input type="date" id="payableIssueDate"></div>
       <div class="purchase-field"><label for="payableDueDate">VENCIMENTO *</label><input type="date" id="payableDueDate" required></div>
       <div class="purchase-field"><label for="payableCompetenceMonth">COMPETÊNCIA (SÓ CONTA ÚNICA)</label><input type="month" id="payableCompetenceMonth"></div>
@@ -8175,7 +8175,7 @@
           <input type="checkbox" id="payableDreIncluded" style="width:auto;" checked> INCLUIR NA DRE?
         </label>
       </div>
-      <div class="purchase-field"><label for="payableDreAmount">VALOR NA DRE (R$)</label><input type="number" id="payableDreAmount" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="payableDreAmount">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="payableDreAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field full" id="payableDreHelp"><span class="purchase-field-help">Por padrão, o valor total da conta entra inteiro na DRE. Em contas parceladas/recorrentes, essa decisão vale pro conjunto inteiro (não dá pra escolher por parcela).</span></div>
 
       <div class="purchase-form-section">TIPO DE CONTA</div>
@@ -8217,7 +8217,8 @@
 
     <div class="purchase-form-section">REGISTRAR PAGAMENTO</div>
     <form class="purchase-form-grid" id="payablePaymentForm" style="margin-bottom:14px;">
-      <div class="purchase-field"><label for="payablePaymentAmount">VALOR (R$) *</label><input type="number" id="payablePaymentAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="payablePaymentAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="payablePaymentAmount" placeholder="R$ 0,00" required></div>
+      <!-- limite de saldo validado manualmente no submit (dataset.balanceCents); type=text não suporta max nativo -->
       <div class="purchase-field"><label for="payablePaymentDate">DATA *</label><input type="date" id="payablePaymentDate" required></div>
       <div class="purchase-field"><label for="payablePaymentMethodInput">FORMA DE PAGAMENTO</label><input id="payablePaymentMethodInput" maxlength="40"></div>
       <div class="purchase-field"><label for="payablePaymentAccount">CONTA FINANCEIRA</label><select id="payablePaymentAccount"><option value="">SEM CONTA</option></select></div>
@@ -8259,7 +8260,7 @@
       <div class="purchase-field"><label for="supplierDebtOrderReference">PEDIDO (OPCIONAL)</label><input id="supplierDebtOrderReference" maxlength="60"></div>
       <div class="purchase-field"><label for="supplierDebtPurchaseDate">DATA DA COMPRA</label><input type="date" id="supplierDebtPurchaseDate"></div>
       <div class="purchase-field"><label for="supplierDebtDueDate">DATA PREVISTA DE PAGAMENTO *</label><input type="date" id="supplierDebtDueDate" required></div>
-      <div class="purchase-field"><label for="supplierDebtOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="number" id="supplierDebtOriginalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="supplierDebtOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="text" inputmode="decimal" id="supplierDebtOriginalAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="supplierDebtFinanceItem">CATEGORIA/ITEM FINANCEIRO (OPCIONAL)</label><select id="supplierDebtFinanceItem"><option value="">FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)</option></select></div>
       <div class="purchase-field"><label for="supplierDebtAccount">CONTA FINANCEIRA</label><select id="supplierDebtAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field full"><label for="supplierDebtNotes">OBSERVAÇÕES</label><textarea id="supplierDebtNotes" rows="2" maxlength="2000"></textarea></div>
@@ -8319,7 +8320,7 @@
       <div class="purchase-field"><label for="expenseCostCenter">CENTRO DE CUSTO</label><select id="expenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="expenseAccount">CONTA BANCÁRIA</label><select id="expenseAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="expensePaymentMethod">FORMA DE PAGAMENTO</label><input id="expensePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
-      <div class="purchase-field"><label for="expenseOriginalAmount">VALOR (R$) *</label><input type="number" id="expenseOriginalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="expenseOriginalAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="expenseOriginalAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="expenseIssueDate">DATA</label><input type="date" id="expenseIssueDate"></div>
       <div class="purchase-field"><label for="expenseDueDate">VENCIMENTO *</label><input type="date" id="expenseDueDate" required></div>
       <div class="purchase-field" id="expenseCompetenceMonthField"><label for="expenseCompetenceMonth">COMPETÊNCIA (SÓ DESPESA AVULSA)</label><input type="month" id="expenseCompetenceMonth"></div>
@@ -8333,7 +8334,7 @@
           <input type="checkbox" id="expenseDreIncludedNew" style="width:auto;" checked> INCLUIR NA DRE?
         </label>
       </div>
-      <div class="purchase-field"><label for="expenseDreAmountNew">VALOR NA DRE (R$)</label><input type="number" id="expenseDreAmountNew" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="expenseDreAmountNew">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="expenseDreAmountNew" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><span class="purchase-field-help">Por padrão, o valor total da despesa entra inteiro na DRE. Vale pro conjunto inteiro (todas as parcelas/lojas do rateio), não dá pra escolher por parcela.</span></div>
 
       <div class="purchase-form-section">TIPO DE DESPESA</div>
@@ -8414,7 +8415,7 @@
           <input type="checkbox" id="expenseDreIncluded" style="width:auto;"> INCLUIR NA DRE?
         </label>
       </div>
-      <div class="purchase-field"><label for="expenseDreAmount">VALOR NA DRE (R$)</label><input type="number" id="expenseDreAmount" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="expenseDreAmount">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="expenseDreAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field full" style="display:flex;justify-content:flex-end;">
         <button class="btn-accent" id="btnSaveExpenseDre" type="button">SALVAR DECISÃO DA DRE</button>
       </div>
@@ -8543,7 +8544,7 @@
             </select>
           </div>
           <div class="purchase-field" id="payableAccountPixKeyField"><label for="payableAccountPixKey">CHAVE PIX</label><input id="payableAccountPixKey" maxlength="140"></div>
-          <div class="purchase-field"><label for="payableAccountOpeningBalance">SALDO INICIAL (R$)</label><input type="number" id="payableAccountOpeningBalance" min="0" step="0.01" placeholder="0,00"></div>
+          <div class="purchase-field"><label for="payableAccountOpeningBalance">SALDO INICIAL (R$)</label><input type="text" inputmode="decimal" id="payableAccountOpeningBalance" placeholder="R$ 0,00"></div>
           <div class="purchase-field"><label for="payableAccountOpeningDate">DATA DO SALDO INICIAL</label><input type="date" id="payableAccountOpeningDate"></div>
           <div class="purchase-field"><label for="payableAccountActive" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="payableAccountActive" checked style="width:auto;"> CONTA ATIVA</label></div>
           <div class="purchase-field full"><label for="payableAccountNotes">OBSERVAÇÕES</label><textarea id="payableAccountNotes" rows="2" maxlength="2000"></textarea></div>
@@ -8618,7 +8619,7 @@
       <div class="purchase-field"><label for="invoiceIssueDate">DATA DE EMISSÃO</label><input type="date" id="invoiceIssueDate"></div>
       <div class="purchase-field"><label for="invoiceEntryDate">DATA DE ENTRADA</label><input type="date" id="invoiceEntryDate"></div>
       <div class="purchase-field"><label for="invoiceCompetenceMonth">COMPETÊNCIA *</label><input type="month" id="invoiceCompetenceMonth" required></div>
-      <div class="purchase-field"><label for="invoiceTotalAmount">VALOR TOTAL (R$) *</label><input type="number" id="invoiceTotalAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="invoiceTotalAmount">VALOR TOTAL (R$) *</label><input type="text" inputmode="decimal" id="invoiceTotalAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="invoiceCategory">CATEGORIA</label><select id="invoiceCategory"><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="invoiceItem">ITEM DA DESPESA</label><select id="invoiceItem"><option value="">SELECIONE A CATEGORIA</option></select></div>
       <div class="purchase-field"><label for="invoiceCostCenter">CENTRO DE CUSTO</label><select id="invoiceCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
@@ -8653,7 +8654,7 @@
       <div class="purchase-field" id="invoiceInstallmentCountField"><label for="invoiceInstallmentCount">QUANTIDADE DE PARCELAS</label><input type="number" id="invoiceInstallmentCount" min="1" max="120" value="1"></div>
       <div class="purchase-field" id="invoiceInstallmentFirstDueField"><label for="invoiceInstallmentFirstDue">1º VENCIMENTO</label><input type="date" id="invoiceInstallmentFirstDue"></div>
       <div class="purchase-field" id="invoiceInstallmentSingleDueField" hidden><label for="invoiceInstallmentSingleDue">VENCIMENTO</label><input type="date" id="invoiceInstallmentSingleDue"></div>
-      <div class="purchase-field" id="invoiceInstallmentSingleAmountField" hidden><label for="invoiceInstallmentSingleAmount">VALOR (R$)</label><input type="number" id="invoiceInstallmentSingleAmount" min="0.01" step="0.01"></div>
+      <div class="purchase-field" id="invoiceInstallmentSingleAmountField" hidden><label for="invoiceInstallmentSingleAmount">VALOR (R$)</label><input type="text" inputmode="decimal" id="invoiceInstallmentSingleAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="invoiceInstallmentPaymentMethod">FORMA DE PAGAMENTO</label><input id="invoiceInstallmentPaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX"></div>
       <div class="purchase-field"><label for="invoiceInstallmentAccount">CONTA FINANCEIRA</label><select id="invoiceInstallmentAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="invoiceInstallmentBoleto">LINHA DIGITÁVEL (BOLETO)</label><input id="invoiceInstallmentBoleto" maxlength="80"></div>
@@ -8662,7 +8663,7 @@
           <input type="checkbox" id="invoiceDreIncluded" style="width:auto;" checked> INCLUIR NA DRE?
         </label>
       </div>
-      <div class="purchase-field"><label for="invoiceDreAmount">VALOR NA DRE (R$)</label><input type="number" id="invoiceDreAmount" min="0" step="0.01"></div>
+      <div class="purchase-field"><label for="invoiceDreAmount">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="invoiceDreAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><span class="purchase-field-help">Vale pra NF inteira (todas as duplicatas juntas) — útil, por exemplo, pra NF de compra pra revenda, que vira estoque e não deveria entrar na DRE do mesmo jeito que uma nota de bem de consumo. "CADASTRAR" aplica junto da criação de novas duplicatas; se as duplicatas já existem e você só quer mudar essa decisão, use "SALVAR DECISÃO DA DRE".</span></div>
       <div class="purchase-field full" style="display:flex;justify-content:flex-end;gap:8px;">
         <button class="btn-outline" id="btnSaveInvoiceDreOnly" type="button">SALVAR DECISÃO DA DRE</button>
@@ -8706,7 +8707,7 @@
   <form class="purchase-form" id="invoicePaymentForm">
     <input type="hidden" id="invoicePaymentInstallmentId">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="invoicePaymentAmount">VALOR (R$) *</label><input type="number" id="invoicePaymentAmount" min="0.01" step="0.01" required></div>
+      <div class="purchase-field"><label for="invoicePaymentAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="invoicePaymentAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="invoicePaymentDate">DATA *</label><input type="date" id="invoicePaymentDate" required></div>
       <div class="purchase-field"><label for="invoicePaymentMethodInput">FORMA DE PAGAMENTO</label><input id="invoicePaymentMethodInput" maxlength="40"></div>
       <div class="purchase-field"><label for="invoicePaymentAccount">CONTA FINANCEIRA</label><select id="invoicePaymentAccount"><option value="">SEM CONTA</option></select></div>
@@ -8767,7 +8768,7 @@
       <div class="purchase-field"><label for="pInvoiceAccessKey">CHAVE DE ACESSO (NF-E)</label><input id="pInvoiceAccessKey" maxlength="44" pattern="\d{44}"></div>
       <div class="purchase-field"><label for="pInvoiceIssueDate">DATA DE EMISSÃO</label><input type="date" id="pInvoiceIssueDate"></div>
       <div class="purchase-field"><label for="pInvoiceCompetence">COMPETÊNCIA *</label><input type="month" id="pInvoiceCompetence"></div>
-      <div class="purchase-field"><label for="pInvoiceTotal">VALOR TOTAL (R$) *</label><input type="number" id="pInvoiceTotal" min="0.01" step="0.01"></div>
+      <div class="purchase-field"><label for="pInvoiceTotal">VALOR TOTAL (R$) *</label><input type="text" inputmode="decimal" id="pInvoiceTotal" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="pInvoiceItem">ITEM FINANCEIRO *</label><select id="pInvoiceItem"><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="pInvoiceFile">ARQUIVO DA NF</label><input type="file" id="pInvoiceFile"></div>
       <div class="purchase-field full" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
@@ -8995,6 +8996,186 @@
     };
   };
   const errorBox = el('errorBox');
+
+  // Máscara de campo monetário (R$ 1.000,00): dígitos digitados entram na
+  // parte inteira e o campo cresce como reais (não como centavos "caixa
+  // eletrônico"). Vírgula/ponto digitados manualmente, ou um valor colado já
+  // formatado, chaveiam para os centavos. O valor numérico real (formato
+  // "1000.00", igual ao que <input type="number"> sempre mandou) fica em
+  // input.dataset.rawValue — use getCurrencyValue()/setCurrencyValue() para
+  // ler/escrever, nunca leia input.value direto num campo com essa máscara.
+  function formatCurrencyDigits(intDigits, decDigits){
+    const intStr = (intDigits || '0').replace(/^0+(?=\d)/, '') || '0';
+    const grouped = intStr.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const dec = (decDigits + '00').slice(0, 2);
+    return grouped + ',' + dec;
+  }
+
+  function attachCurrencyMask(input, options){
+    if(input._currencyMask) return input._currencyMask;
+    const allowNegative = Boolean(options && options.allowNegative);
+    input.type = 'text';
+    input.setAttribute('inputmode', 'decimal');
+    input.removeAttribute('step');
+    let intDigits = '';
+    let decDigits = '';
+    let decimalMode = false;
+    let negative = false;
+
+    function render(){
+      if(intDigits === '' && decDigits === '' && !decimalMode){
+        input.value = '';
+        input.dataset.rawValue = '';
+        return;
+      }
+      const sign = negative ? '-' : '';
+      input.value = (sign ? '-R$ ' : 'R$ ') + formatCurrencyDigits(intDigits, decDigits);
+      input.dataset.rawValue = sign + (intDigits || '0') + '.' + (decDigits + '00').slice(0, 2);
+    }
+
+    function placeCursorAtEnd(){
+      requestAnimationFrame(() => {
+        const length = input.value.length;
+        try{ input.setSelectionRange(length, length); }catch(e){}
+      });
+    }
+
+    // preventDefault() no beforeinput impede o navegador de disparar o
+    // 'input' nativo — então quem depende de ouvir 'input' nesse campo
+    // (sincronizar outro campo, recalcular algo) nunca mais seria avisado.
+    // Redispara manualmente só quando a mudança veio de digitação real do
+    // usuário (não em setValue()/attach inicial, que também nunca disparava
+    // 'input' no <input type="number"> original).
+    function renderAndNotify(){
+      render();
+      input.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+
+    // Interpreta uma string inteira digitada/colada de uma vez (ex.: colar
+    // "1.234,56"). Vírgula é sempre decimal; um único ponto só é tratado
+    // como decimal (não milhar) se tiver no máx. 2 dígitos depois dele.
+    function parseFullString(str){
+      str = String(str == null ? '' : str);
+      negative = allowNegative && /^\s*-/.test(str);
+      if(negative) str = str.replace(/^\s*-/, '');
+      const commaIdx = str.lastIndexOf(',');
+      const dotIdx = str.lastIndexOf('.');
+      let sepIdx = -1;
+      if(commaIdx > dotIdx){
+        sepIdx = commaIdx;
+      }else if(dotIdx > commaIdx && (str.match(/\./g) || []).length === 1){
+        const after = str.slice(dotIdx + 1).replace(/\D/g, '');
+        if(after.length <= 2) sepIdx = dotIdx;
+      }
+      if(sepIdx >= 0){
+        intDigits = str.slice(0, sepIdx).replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+        decDigits = str.slice(sepIdx + 1).replace(/\D/g, '').slice(0, 2);
+        decimalMode = true;
+      }else{
+        intDigits = str.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+        decDigits = '';
+        decimalMode = false;
+      }
+    }
+
+    input.addEventListener('beforeinput', event => {
+      const type = event.inputType;
+      // Selecionar tudo (Ctrl+A) e digitar ou apagar deve começar do zero,
+      // não continuar somando dígitos ao valor anterior.
+      if(input.selectionStart === 0 && input.selectionEnd === input.value.length && input.value.length > 0){
+        intDigits = '';
+        decDigits = '';
+        decimalMode = false;
+        negative = false;
+      }
+      if(type === 'insertText' || type === 'insertCompositionText'){
+        event.preventDefault();
+        const data = event.data || '';
+        for(const ch of data){
+          if(/\d/.test(ch)){
+            if(decimalMode){
+              if(decDigits.length < 2) decDigits += ch;
+            }else{
+              intDigits = (intDigits + ch).replace(/^0+(?=\d)/, '');
+            }
+          }else if(ch === ',' || ch === '.'){
+            decimalMode = true;
+          }else if(ch === '-' && allowNegative){
+            negative = !negative;
+          }
+        }
+        renderAndNotify();
+        placeCursorAtEnd();
+      }else if(type === 'insertFromPaste' || type === 'insertFromDrop'){
+        event.preventDefault();
+        const data = event.data || (event.dataTransfer && event.dataTransfer.getData('text')) || '';
+        parseFullString(data);
+        renderAndNotify();
+        placeCursorAtEnd();
+      }else if(type === 'deleteContentBackward' || type === 'deleteContentForward' || type === 'deleteWordBackward' || type === 'deleteSoftLineBackward'){
+        event.preventDefault();
+        if(decimalMode){
+          if(decDigits.length > 0) decDigits = decDigits.slice(0, -1);
+          else decimalMode = false;
+        }else if(intDigits.length > 0){
+          intDigits = intDigits.slice(0, -1);
+        }
+        renderAndNotify();
+        placeCursorAtEnd();
+      }else if(type === 'deleteContent' || type === 'deleteByCut'){
+        event.preventDefault();
+        intDigits = '';
+        decDigits = '';
+        decimalMode = false;
+        negative = false;
+        renderAndNotify();
+        placeCursorAtEnd();
+      }
+    });
+
+    // Rede de segurança: se algum navegador não suportar beforeinput (ou o
+    // preventDefault não pegar), reinterpreta o texto inteiro que sobrou no
+    // campo em vez de deixá-lo fora de sincronia com o estado da máscara.
+    input.addEventListener('input', () => {
+      const expected = (intDigits === '' && decDigits === '' && !decimalMode)
+        ? ''
+        : (negative ? '-R$ ' : 'R$ ') + formatCurrencyDigits(intDigits, decDigits);
+      if(input.value !== expected){
+        parseFullString(input.value);
+        render();
+        placeCursorAtEnd();
+      }
+    });
+
+    if(input.value) parseFullString(input.value);
+    render();
+
+    const api = {
+      getValue(){ return input.dataset.rawValue || ''; },
+      setValue(value){
+        if(value === null || value === undefined || value === ''){
+          intDigits = '';
+          decDigits = '';
+          decimalMode = false;
+          negative = false;
+        }else{
+          parseFullString(String(value).replace('.', ','));
+        }
+        render();
+      }
+    };
+    input._currencyMask = api;
+    return api;
+  }
+
+  function getCurrencyValue(input){
+    return (typeof input === 'string' ? el(input) : input).dataset.rawValue || '';
+  }
+
+  function setCurrencyValue(input, value){
+    const node = typeof input === 'string' ? el(input) : input;
+    (node._currencyMask || attachCurrencyMask(node)).setValue(value);
+  }
 
   // Reexecuta uma função de load/refresh sem o "pisca" e a perda de posição
   // de rolagem que um reload completo da seção causa: chame passando uma
@@ -15966,6 +16147,7 @@ function renderHomeTasks(){
 
   el('captureCategory').addEventListener('change',toggleCaptureGameFields);
   toggleCaptureGameFields();
+  attachCurrencyMask(el('captureValue'));
 
   const MAX_CAPTURE_CONTROLLERS = 8;
 
@@ -15979,9 +16161,10 @@ function renderHomeTasks(){
         '<div class="field"><label>MODELO/TIPO DO CONTROLE</label><input type="text" maxlength="160" data-controller-field="productName" placeholder="Ex.: DualSense"></div>'+
         '<div class="field"><label>SERIAL DO CONTROLE</label><input type="text" maxlength="160" data-controller-field="serialNumber" placeholder="Digite o serial"></div>'+
         '<div class="field"><label>COR DO CONTROLE</label><input type="text" maxlength="120" data-controller-field="color" placeholder="Ex.: Branco"></div>'+
-        '<div class="field"><label>VALOR DO CONTROLE (R$)</label><input type="number" min="0" max="999999.99" step="0.01" inputmode="decimal" data-controller-field="capturedValue" placeholder="0,00"></div>'+
+        '<div class="field"><label>VALOR DO CONTROLE (R$)</label><input type="text" inputmode="decimal" data-controller-field="capturedValue" placeholder="R$ 0,00"></div>'+
         '<div class="field double"><label>DEFEITO DO CONTROLE (SE HOUVER)</label><textarea maxlength="1200" rows="2" data-controller-field="defects" placeholder="Deixe em branco se não houver defeito"></textarea></div>'+
       '</div>';
+    attachCurrencyMask(wrap.querySelector('[data-controller-field="capturedValue"]'));
     return wrap;
   }
 
@@ -16010,7 +16193,7 @@ function renderHomeTasks(){
       productName: block.querySelector('[data-controller-field="productName"]').value,
       serialNumber: block.querySelector('[data-controller-field="serialNumber"]').value,
       color: block.querySelector('[data-controller-field="color"]').value,
-      capturedValue: block.querySelector('[data-controller-field="capturedValue"]').value,
+      capturedValue: getCurrencyValue(block.querySelector('[data-controller-field="capturedValue"]')),
       defects: block.querySelector('[data-controller-field="defects"]').value
     }));
   }
@@ -16048,11 +16231,12 @@ function renderHomeTasks(){
           serialNumber:el('captureSerialNumber').value,
           defects:el('captureDefects').value,
           color:el('captureColor').value,
-          capturedValue:el('captureValue').value,
+          capturedValue:getCurrencyValue(el('captureValue')),
           controllers:collectControllers()
         })
       });
       el('captureForm').reset();
+      setCurrencyValue(el('captureValue'), '');
       toggleCaptureGameFields();
       resetControllerBlocks();
       toggleCaptureControllers();
@@ -19442,7 +19626,7 @@ function renderHomeTasks(){
             '<option value="fixed"'+(type === 'fixed' ? ' selected' : '')+'>FIXO (R$)</option>'+
             '<option value="percentage"'+(type === 'percentage' ? ' selected' : '')+'>PERCENTUAL (%)</option>'+
           '</select>'+
-          '<input type="number" min="0" step="0.01" data-finance-entry-fixed placeholder="0,00" value="'+amount+'"'+(type === 'fixed' ? '' : ' hidden')+'>'+
+          '<input type="text" inputmode="decimal" data-finance-entry-fixed placeholder="R$ 0,00" value="'+amount+'"'+(type === 'fixed' ? '' : ' hidden')+'>'+
           '<input type="number" min="0" step="0.01" data-finance-entry-percent placeholder="0,00" value="'+percent+'"'+(type === 'percentage' ? '' : ' hidden')+'>'+
           '<button class="btn-outline" type="button" data-dre-detail-item="'+escapeHtml(item.id)+'" title="Ver lançamentos deste item">DETALHES</button>'+
           deleteButton+
@@ -19495,6 +19679,7 @@ function renderHomeTasks(){
     container.querySelectorAll('details[data-finance-node-id]').forEach(details => {
       if(openIds.has(details.dataset.financeNodeId)) details.open = true;
     });
+    container.querySelectorAll('[data-finance-entry-fixed]').forEach(attachCurrencyMask);
   }
 
   async function loadDrePorLoja(){
@@ -19507,8 +19692,8 @@ function renderHomeTasks(){
       financeDre = null;
       renderDreSummary();
       renderDreCategories();
-      el('dreRevenueSales').value = '';
-      el('dreRevenueServices').value = '';
+      setCurrencyValue(el('dreRevenueSales'), '');
+      setCurrencyValue(el('dreRevenueServices'), '');
       return;
     }
     financeLoading = true;
@@ -19520,8 +19705,8 @@ function renderHomeTasks(){
       ]);
       financeDre = dreData;
       const rev = revenueData.revenue;
-      el('dreRevenueSales').value = rev ? (Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100).toFixed(2) : '';
-      el('dreRevenueServices').value = rev ? (Number(rev.servicesAmountCents || 0)/100).toFixed(2) : '';
+      setCurrencyValue(el('dreRevenueSales'), rev ? Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100 : '');
+      setCurrencyValue(el('dreRevenueServices'), rev ? Number(rev.servicesAmountCents || 0)/100 : '');
       renderDreSummary();
       renderDreCategories();
     }catch(error){
@@ -19535,6 +19720,8 @@ function renderHomeTasks(){
 
   el('dreLoja').addEventListener('change', loadDrePorLoja);
   el('dreMes').addEventListener('change', loadDrePorLoja);
+  attachCurrencyMask(el('dreRevenueSales'));
+  attachCurrencyMask(el('dreRevenueServices'));
 
   function renderDreConsolidadaSummary(){
     const data = financeDreConsolidada;
@@ -19611,8 +19798,8 @@ function renderHomeTasks(){
       ]);
       financeDreAssist = dreData;
       const rev = revenueData.revenue;
-      el('dreAssistRevenueSales').value = rev ? (Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100).toFixed(2) : '';
-      el('dreAssistRevenueServices').value = rev ? (Number(rev.servicesAmountCents || 0)/100).toFixed(2) : '';
+      setCurrencyValue(el('dreAssistRevenueSales'), rev ? Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100 : '');
+      setCurrencyValue(el('dreAssistRevenueServices'), rev ? Number(rev.servicesAmountCents || 0)/100 : '');
       renderDreAssistSummary();
       renderDreAssistCategories();
     }catch(error){
@@ -19624,6 +19811,8 @@ function renderHomeTasks(){
     }
   }
   el('dreAssistMes').addEventListener('change', loadDreAssistencia);
+  attachCurrencyMask(el('dreAssistRevenueSales'));
+  attachCurrencyMask(el('dreAssistRevenueServices'));
   el('btnSaveDreAssistRevenue').addEventListener('click', async () => {
     const month = el('dreAssistMes').value;
     const salesAmountCents = parseBRLToCents(el('dreAssistRevenueSales').value || '0');
@@ -20042,8 +20231,8 @@ function renderHomeTasks(){
     const storeId = el('dreLoja').value;
     const month = el('dreMes').value;
     if(!storeId){ showPurchaseToast('Selecione a loja.','error'); return; }
-    const salesAmountCents = parseBRLToCents(el('dreRevenueSales').value || '0');
-    const servicesAmountCents = parseBRLToCents(el('dreRevenueServices').value || '0');
+    const salesAmountCents = parseBRLToCents(getCurrencyValue(el('dreRevenueSales')) || '0');
+    const servicesAmountCents = parseBRLToCents(getCurrencyValue(el('dreRevenueServices')) || '0');
     if(salesAmountCents === null || servicesAmountCents === null){ showPurchaseToast('Informe valores de receita válidos.','error'); return; }
     const button = el('btnSaveDreRevenue');
     button.disabled = true;
@@ -20079,7 +20268,7 @@ function renderHomeTasks(){
       const type = row.querySelector('[data-finance-entry-type]').value;
       const body = {storeId, itemId, month, entryType: type};
       if(type === 'fixed'){
-        const cents = parseBRLToCents(row.querySelector('[data-finance-entry-fixed]').value || '0');
+        const cents = parseBRLToCents(getCurrencyValue(row.querySelector('[data-finance-entry-fixed]')) || '0');
         if(cents === null){ showPurchaseToast('Informe um valor válido.','error'); return; }
         body.amountCents = cents;
       }else{
@@ -20680,7 +20869,8 @@ function renderHomeTasks(){
     renderPayablesCatalogSelects();
     payableFormIdempotencyKey = crypto.randomUUID();
     el('payableDreIncluded').checked = true;
-    el('payableDreAmount').value = '';
+    setCurrencyValue(el('payableOriginalAmount'), '');
+    setCurrencyValue(el('payableDreAmount'), '');
     el('payableDreAmount').disabled = false;
     delete el('payableDreAmount').dataset.prevValue;
     payableDreTouched = false;
@@ -20690,21 +20880,24 @@ function renderHomeTasks(){
     const included = el('payableDreIncluded').checked;
     const amountEl = el('payableDreAmount');
     if(!included){
-      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
-      amountEl.value = '0';
+      const current = getCurrencyValue(amountEl);
+      if(current && current !== '0.00') amountEl.dataset.prevValue = current;
+      setCurrencyValue(amountEl, 0);
       amountEl.disabled = true;
     }else{
       amountEl.disabled = false;
       if(amountEl.dataset.prevValue !== undefined){
-        amountEl.value = amountEl.dataset.prevValue;
+        setCurrencyValue(amountEl, amountEl.dataset.prevValue);
         delete amountEl.dataset.prevValue;
       }
     }
   }
+  attachCurrencyMask(el('payableOriginalAmount'));
+  attachCurrencyMask(el('payableDreAmount'));
   el('payableDreIncluded').addEventListener('change', () => { payableDreTouched = true; updatePayableDreField(); });
   el('payableDreAmount').addEventListener('input', () => { payableDreTouched = true; });
   el('payableOriginalAmount').addEventListener('input', () => {
-    if(!payableDreTouched) el('payableDreAmount').value = el('payableOriginalAmount').value;
+    if(!payableDreTouched) setCurrencyValue(el('payableDreAmount'), getCurrencyValue(el('payableOriginalAmount')));
   });
 
   function updatePayableKindFields(){
@@ -20751,7 +20944,7 @@ function renderHomeTasks(){
     el('payableAccount').value = row.financeAccountId || '';
     el('payableCostCenter').value = row.costCenterId || '';
     el('payablePaymentMethod').value = row.paymentMethod || '';
-    el('payableOriginalAmount').value = (row.originalAmountCents / 100).toFixed(2);
+    setCurrencyValue(el('payableOriginalAmount'), row.originalAmountCents / 100);
     el('payableIssueDate').value = row.issueDate || '';
     el('payableDueDate').value = row.dueDate;
     el('payableCompetenceMonth').value = row.competenceMonth;
@@ -20763,7 +20956,7 @@ function renderHomeTasks(){
     const rowDreIncluded = row.dreAmountCents === null || row.dreAmountCents === undefined || row.dreAmountCents > 0;
     const rowDreAmountCents = row.dreAmountCents === null || row.dreAmountCents === undefined ? row.originalAmountCents : row.dreAmountCents;
     el('payableDreIncluded').checked = rowDreIncluded;
-    el('payableDreAmount').value = (rowDreAmountCents / 100).toFixed(2);
+    setCurrencyValue(el('payableDreAmount'), rowDreAmountCents / 100);
     el('payableDreAmount').disabled = !rowDreIncluded;
     payableDreTouched = false;
     el('payableDialogTitle').textContent = 'EDITAR CONTA A PAGAR';
@@ -20785,7 +20978,7 @@ function renderHomeTasks(){
     const id = el('payableId').value;
     const statusEl = el('payableFormStatus');
     statusEl.textContent = '';
-    const originalAmountCents = parseBRLToCents(el('payableOriginalAmount').value || '0');
+    const originalAmountCents = parseBRLToCents(getCurrencyValue(el('payableOriginalAmount')) || '0');
     if(originalAmountCents === null || originalAmountCents <= 0){
       statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return;
     }
@@ -20804,7 +20997,7 @@ function renderHomeTasks(){
       const dreFields = {};
       if(payableDreTouched){
         dreFields.dreIncluded = el('payableDreIncluded').checked;
-        dreFields.dreAmountCents = parseBRLToCents(el('payableDreAmount').value || '0') || 0;
+        dreFields.dreAmountCents = parseBRLToCents(getCurrencyValue(el('payableDreAmount')) || '0') || 0;
       }
       let response;
       if(id){
@@ -20863,6 +21056,8 @@ function renderHomeTasks(){
     el('payableOriginSection').hidden = true;
     el('payableOriginList').innerHTML = '';
     el('payablePaymentForm').reset();
+    attachCurrencyMask(el('payablePaymentAmount'));
+    setCurrencyValue(el('payablePaymentAmount'), '');
     el('payablePaymentDate').value = new Date().toISOString().slice(0,10);
     payablePaymentIdempotencyKey = crypto.randomUUID();
     el('payableDetailDialog').showModal();
@@ -20895,7 +21090,7 @@ function renderHomeTasks(){
       '<div><span>PARCELA/RECORRÊNCIA</span><span>'+escapeHtml(payableInstallmentBadge(payable))+'</span></div>'+
       '<div><span>OBSERVAÇÕES</span><span>'+escapeHtml(payable.notes || '—')+'</span></div>';
 
-    el('payablePaymentAmount').max = (balance / 100).toFixed(2);
+    el('payablePaymentAmount').dataset.balanceCents = String(balance);
     const paymentForm = el('payablePaymentForm');
     const disablePayment = payable.status === 'canceled' || balance <= 0;
     paymentForm.querySelectorAll('input,select,button').forEach(field => { field.disabled = disablePayment; });
@@ -20934,8 +21129,10 @@ function renderHomeTasks(){
     event.preventDefault();
     const statusEl = el('payablePaymentFormStatus');
     statusEl.textContent = '';
-    const amountCents = parseBRLToCents(el('payablePaymentAmount').value || '0');
+    const amountCents = parseBRLToCents(getCurrencyValue(el('payablePaymentAmount')) || '0');
     if(amountCents === null || amountCents <= 0){ statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return; }
+    const balanceCents = Number(el('payablePaymentAmount').dataset.balanceCents || 0);
+    if(amountCents > balanceCents){ statusEl.textContent = 'O VALOR NÃO PODE SER MAIOR QUE O SALDO EM ABERTO ('+formatCentsBRL(balanceCents)+').'; return; }
     const paymentDate = el('payablePaymentDate').value;
     if(!paymentDate){ statusEl.textContent = 'INFORME A DATA.'; return; }
     const button = el('btnSavePayablePayment');
@@ -21216,6 +21413,7 @@ function renderHomeTasks(){
 
   function resetSupplierDebtForm(){
     el('supplierDebtForm').reset();
+    setCurrencyValue(el('supplierDebtOriginalAmount'), '');
     el('supplierDebtForm').dataset.editId = '';
     renderSupplierDebtsCompanyOptions();
     el('supplierDebtCompany').innerHTML = '<option value="">SELECIONE</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
@@ -21251,7 +21449,7 @@ function renderHomeTasks(){
     el('supplierDebtOrderReference').value = row.orderReference || '';
     el('supplierDebtPurchaseDate').value = row.purchaseDate || '';
     el('supplierDebtDueDate').value = row.dueDate;
-    el('supplierDebtOriginalAmount').value = (row.originalAmountCents / 100).toFixed(2);
+    setCurrencyValue(el('supplierDebtOriginalAmount'), row.originalAmountCents / 100);
     el('supplierDebtNotes').value = row.notes || '';
     el('supplierDebtDialogTitle').textContent = 'EDITAR DÍVIDA DE FORNECEDOR';
     el('supplierDebtFormStatus').textContent = '';
@@ -21264,6 +21462,7 @@ function renderHomeTasks(){
     el('supplierDebtSupplier').disabled = false;
   }
 
+  attachCurrencyMask(el('supplierDebtOriginalAmount'));
   el('btnNewSupplierDebt').addEventListener('click', openNewSupplierDebtDialog);
   el('btnCancelSupplierDebtDialog').addEventListener('click', closeSupplierDebtDialog);
   el('btnCloseSupplierDebtDialog').addEventListener('click', closeSupplierDebtDialog);
@@ -21273,7 +21472,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const statusEl = el('supplierDebtFormStatus');
     statusEl.textContent = '';
-    const originalAmountCents = parseBRLToCents(el('supplierDebtOriginalAmount').value || '0');
+    const originalAmountCents = parseBRLToCents(getCurrencyValue(el('supplierDebtOriginalAmount')) || '0');
     if(originalAmountCents === null || originalAmountCents <= 0){ statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return; }
     const dueDate = el('supplierDebtDueDate').value;
     if(!dueDate){ statusEl.textContent = 'INFORME A DATA PREVISTA DE PAGAMENTO.'; return; }
@@ -21602,6 +21801,7 @@ function renderHomeTasks(){
   }
   el('budgetLoja') && el('budgetLoja').addEventListener('change', loadOrcamentoPage);
   el('budgetMes') && el('budgetMes').addEventListener('change', loadOrcamentoPage);
+  el('budgetAmount') && attachCurrencyMask(el('budgetAmount'));
 
   function openBudgetDialog(row){
     el('budgetForm').reset();
@@ -21614,7 +21814,7 @@ function renderHomeTasks(){
     el('budgetMonth').value = row ? row.month : el('budgetMes').value;
     el('budgetCategory').value = row ? row.categoryId : '';
     el('budgetCostCenter').value = row ? row.costCenterId : '';
-    el('budgetAmount').value = row ? (row.amountCents/100).toFixed(2) : '';
+    setCurrencyValue(el('budgetAmount'), row ? row.amountCents/100 : '');
     el('budgetNotes').value = row ? (row.notes || '') : '';
     el('budgetFormStatus').textContent = '';
     el('budgetDialog').showModal();
@@ -21649,7 +21849,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('budgetFormStatus');
     status.textContent = '';
-    const amountCents = parseBRLToCents(el('budgetAmount').value);
+    const amountCents = parseBRLToCents(getCurrencyValue(el('budgetAmount')));
     if(amountCents === null || amountCents <= 0){
       status.textContent = 'INFORME UM VALOR ORÇADO MAIOR QUE ZERO.';
       return;
@@ -21828,6 +22028,7 @@ function renderHomeTasks(){
     el(id) && el(id).addEventListener('change', loadRecebiveisPage);
   });
   el('receivableOperator') && el('receivableOperator').addEventListener('change', loadRecebiveisPage);
+  el('receivableExpectedAmount') && attachCurrencyMask(el('receivableExpectedAmount'));
 
   function openReceivableDialog(row){
     el('receivableForm').reset();
@@ -21849,7 +22050,7 @@ function renderHomeTasks(){
     el('receivableCompany').disabled = Boolean(row);
     el('receivableCompetence').value = row ? row.competenceMonth : (el('receivableMes').value || financeCurrentMonthKey());
     el('receivableAcquirer').value = row ? (row.acquirerId || (row.operatorText ? 'legacy:'+row.operatorText : '')) : '';
-    el('receivableExpectedAmount').value = row ? (row.expectedAmountCents/100).toFixed(2) : '';
+    setCurrencyValue(el('receivableExpectedAmount'), row ? row.expectedAmountCents/100 : '');
     // Campos ocultos (item 4): preservados apenas para não perder o dado
     // histórico de registros antigos ao reeditá-los.
     el('receivableExpectedDate').value = row ? (row.expectedDate || '') : '';
@@ -21892,7 +22093,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('receivableFormStatus');
     status.textContent = '';
-    const expectedAmountCents = parseBRLToCents(el('receivableExpectedAmount').value);
+    const expectedAmountCents = parseBRLToCents(getCurrencyValue(el('receivableExpectedAmount')));
     if(expectedAmountCents === null || expectedAmountCents <= 0){
       status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.';
       return;
@@ -22127,6 +22328,7 @@ function renderHomeTasks(){
 
   el('cashFlowLoja') && el('cashFlowLoja').addEventListener('change', loadFluxoCaixaPage);
   el('cashFlowHorizon') && el('cashFlowHorizon').addEventListener('change', renderCashFlowPage);
+  el('cashFlowBalanceAmount') && attachCurrencyMask(el('cashFlowBalanceAmount'), {allowNegative:true});
 
   // --- Saldos das contas (fonte do Caixa Atual) -------------------------
 
@@ -22182,7 +22384,7 @@ function renderHomeTasks(){
     // validado aqui — o backend faz a mesma checagem. Daí a variante
     // parseBRLToCentsAllowNegative: parseBRLToCents rejeita negativo, o que
     // tornava impossível registrar uma conta no cheque especial.
-    const balanceCents = parseBRLToCentsAllowNegative(el('cashFlowBalanceAmount').value);
+    const balanceCents = parseBRLToCentsAllowNegative(getCurrencyValue(el('cashFlowBalanceAmount')));
     if(balanceCents === null){
       status.textContent = 'INFORME UM SALDO VÁLIDO.';
       return;
@@ -23206,6 +23408,7 @@ function renderHomeTasks(){
     }
   }
   el('corpCardLoja') && el('corpCardLoja').addEventListener('change', renderCorpCardsTable);
+  if(el('corpCardLimit')) attachCurrencyMask(el('corpCardLimit'));
 
   // --- Cadastro do cartão ---
   function openCorpCardDialog(row){
@@ -23217,7 +23420,7 @@ function renderHomeTasks(){
     el('corpCardBank').value = row ? (row.bank || '') : '';
     el('corpCardBrand').value = row ? (row.brand || '') : '';
     el('corpCardLast4').value = row ? (row.last4 || '') : '';
-    el('corpCardLimit').value = row && row.limitCents ? (row.limitCents/100).toFixed(2) : '';
+    setCurrencyValue(el('corpCardLimit'), row && row.limitCents ? row.limitCents/100 : '');
     el('corpCardBestDay').value = row && row.bestPurchaseDay ? row.bestPurchaseDay : '';
     el('corpCardClosingDay').value = row ? row.closingDay : '';
     el('corpCardDueDay').value = row ? row.dueDay : '';
@@ -23253,7 +23456,7 @@ function renderHomeTasks(){
       bank: el('corpCardBank').value.trim(),
       brand: el('corpCardBrand').value.trim(),
       last4,
-      limitCents: el('corpCardLimit').value ? Math.round(Number(el('corpCardLimit').value)*100) : 0,
+      limitCents: getCurrencyValue(el('corpCardLimit')) ? Math.round(Number(getCurrencyValue(el('corpCardLimit')))*100) : 0,
       bestPurchaseDay: Number(el('corpCardBestDay').value) || 0,
       closingDay: Number(el('corpCardClosingDay').value) || 0,
       dueDay: Number(el('corpCardDueDay').value) || 0,
@@ -23437,10 +23640,11 @@ function renderHomeTasks(){
       '<tr>'+
         '<td><input type="date" data-corp-row="'+i+'" data-corp-field="entryDate" value="'+escapeHtml(r.entryDate)+'"></td>'+
         '<td><input data-corp-row="'+i+'" data-corp-field="merchant" value="'+escapeHtml(r.merchant)+'" maxlength="200"></td>'+
-        '<td><input type="number" step="0.01" data-corp-row="'+i+'" data-corp-field="amount" value="'+(r.amountCents/100).toFixed(2)+'"></td>'+
+        '<td><input type="text" inputmode="decimal" data-corp-row="'+i+'" data-corp-field="amount" value="'+(r.amountCents/100).toFixed(2)+'"></td>'+
         '<td><input data-corp-row="'+i+'" data-corp-field="installmentLabel" value="'+escapeHtml(r.installmentLabel)+'" maxlength="20" placeholder="2/6"></td>'+
         '<td><button class="btn-outline btn-sm" type="button" data-corp-row-remove="'+i+'">×</button></td>'+
       '</tr>').join('') : '<tr><td colspan="5" class="responsive-empty">Selecione um arquivo.</td></tr>';
+    body.querySelectorAll('[data-corp-field="amount"]').forEach(attachCurrencyMask);
     el('btnConfirmCorpInvoice').disabled = !rows.length;
   }
   el('corpInvoicePreviewBody') && el('corpInvoicePreviewBody').addEventListener('input', event => {
@@ -23448,7 +23652,7 @@ function renderHomeTasks(){
     if(!input || !corpInvoiceParsed) return;
     const row = corpInvoiceParsed.rows[Number(input.dataset.corpRow)];
     if(!row) return;
-    if(input.dataset.corpField === 'amount') row.amountCents = Math.round(Number(input.value)*100);
+    if(input.dataset.corpField === 'amount') row.amountCents = Math.round(Number(getCurrencyValue(input))*100);
     else row[input.dataset.corpField] = input.value;
   });
   el('corpInvoicePreviewBody') && el('corpInvoicePreviewBody').addEventListener('click', event => {
@@ -24067,11 +24271,12 @@ function renderHomeTasks(){
     el('reposicaoSetorResp').value = row ? row.sector : '';
     el('reposicaoResponsavel').value = row ? (row.responsibleName || '') : '';
     el('reposicaoTipoForm').value = row ? row.kind : '';
-    el('reposicaoValor').value = row && row.amountCents ? (row.amountCents/100).toFixed(2) : '';
+    setCurrencyValue(el('reposicaoValor'), row && row.amountCents ? row.amountCents/100 : '');
     el('reposicaoObs').value = row ? (row.notes || '') : '';
     el('reposicaoFormStatus').textContent = '';
     el('reposicaoDialog').showModal();
   }
+  el('reposicaoValor') && attachCurrencyMask(el('reposicaoValor'));
   el('btnNewReposicao') && el('btnNewReposicao').addEventListener('click', () => openReposicaoDialog(null));
   el('btnFiltrarReposicao') && el('btnFiltrarReposicao').addEventListener('click', reloadReposicao);
   el('btnCloseReposicaoDialog') && el('btnCloseReposicaoDialog').addEventListener('click', () => el('reposicaoDialog').close());
@@ -24089,7 +24294,7 @@ function renderHomeTasks(){
       sector: el('reposicaoSetorResp').value,
       responsibleName: el('reposicaoResponsavel').value.trim(),
       kind: el('reposicaoTipoForm').value,
-      amountCents: Math.round(Number(el('reposicaoValor').value) * 100),
+      amountCents: Math.round(Number(getCurrencyValue(el('reposicaoValor'))) * 100),
       notes: el('reposicaoObs').value
     };
     const id = el('reposicaoId').value;
@@ -24233,7 +24438,7 @@ function renderHomeTasks(){
     el('recargaOperadora').value = row ? (row.carrier || '') : '';
     el('recargaUnidade').value = row ? row.companyId : '';
     el('recargaResponsavel').value = row ? (row.responsibleName || '') : '';
-    el('recargaValor').value = row && row.lastAmountCents ? (row.lastAmountCents/100).toFixed(2) : '';
+    setCurrencyValue(el('recargaValor'), row && row.lastAmountCents ? row.lastAmountCents/100 : '');
     el('recargaUltima').value = row ? (row.lastRechargeDate || '') : '';
     el('recargaAtiva').checked = row ? !!row.active : true;
     el('recargaObs').value = row ? (row.notes || '') : '';
@@ -24241,6 +24446,8 @@ function renderHomeTasks(){
     el('recargaFormStatus').textContent = '';
     el('recargaDialog').showModal();
   }
+  el('recargaValor') && attachCurrencyMask(el('recargaValor'));
+  el('recargaEventValor') && attachCurrencyMask(el('recargaEventValor'));
   el('recargaUltima') && el('recargaUltima').addEventListener('change', recalcRecargaProxima);
   el('btnNewRecarga') && el('btnNewRecarga').addEventListener('click', () => openRecargaDialog(null));
   el('recargaLoja') && el('recargaLoja').addEventListener('change', reloadRecargas);
@@ -24257,7 +24464,7 @@ function renderHomeTasks(){
       carrier: el('recargaOperadora').value.trim(),
       companyId, companyName: fase8CompanyName(companyId),
       responsibleName: el('recargaResponsavel').value.trim(),
-      lastAmountCents: Math.round(Number(el('recargaValor').value || 0) * 100),
+      lastAmountCents: Math.round(Number(getCurrencyValue(el('recargaValor')) || 0) * 100),
       lastRechargeDate: el('recargaUltima').value,
       notes: el('recargaObs').value,
       active: el('recargaAtiva').checked
@@ -24285,6 +24492,7 @@ function renderHomeTasks(){
   });
   async function openRecargaEventDialog(row){
     el('recargaEventForm').reset();
+    setCurrencyValue(el('recargaEventValor'), '');
     el('recargaEventId').value = row.id;
     el('recargaEventData').value = new Date().toISOString().slice(0,10);
     el('recargaEventTitle').textContent = 'REGISTRAR RECARGA — ' + (row.phoneNumber || '');
@@ -24308,7 +24516,7 @@ function renderHomeTasks(){
     const id = el('recargaEventId').value;
     const payload = {
       rechargeDate: el('recargaEventData').value,
-      amountCents: Math.round(Number(el('recargaEventValor').value) * 100),
+      amountCents: Math.round(Number(getCurrencyValue(el('recargaEventValor'))) * 100),
       notes: el('recargaEventObs').value
     };
     try{
@@ -24762,7 +24970,7 @@ function renderHomeTasks(){
         const supplierName = quote ? quote.supplierName : comprasSupplierName(supplierId);
         return '<tr>'+
           '<td>'+escapeHtml(supplierName)+'</td>'+
-          '<td><input type="number" min="0" step="0.01" style="width:110px;" value="'+(quote ? (Number(quote.unitPriceCents||0)/100).toFixed(2) : '')+'" placeholder="R$" data-compras-quote-price="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'"></td>'+
+          '<td><input type="text" inputmode="decimal" style="width:110px;" value="'+(quote ? (Number(quote.unitPriceCents||0)/100).toFixed(2) : '')+'" placeholder="R$ 0,00" data-compras-quote-price="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'"></td>'+
           '<td class="no-print"><span style="display:flex;gap:6px;">'+
             '<button class="btn-outline" type="button" data-compras-quote-save="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'">SALVAR</button>'+
             (quote ? '<button class="btn-outline" type="button" data-compras-quote-delete="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'">REMOVER</button>' : '')+
@@ -24775,7 +24983,7 @@ function renderHomeTasks(){
             '<select data-compras-quote-add-supplier="'+escapeHtml(item.id)+'" style="min-width:200px;"><option value="">+ COTAR OUTRO FORNECEDOR…</option>'+
               otherSuppliers.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('')+
             '</select>'+
-            '<input type="number" min="0" step="0.01" placeholder="R$" style="width:110px;" data-compras-quote-add-price="'+escapeHtml(item.id)+'">'+
+            '<input type="text" inputmode="decimal" placeholder="R$ 0,00" style="width:110px;" data-compras-quote-add-price="'+escapeHtml(item.id)+'">'+
             '<button class="btn-outline" type="button" data-compras-quote-add="'+escapeHtml(item.id)+'">ADICIONAR COTAÇÃO</button>'+
           '</div>'
         : '';
@@ -24793,6 +25001,7 @@ function renderHomeTasks(){
         addSupplierSelect+
       '</div>';
     }).join('');
+    wrap.querySelectorAll('[data-compras-quote-price],[data-compras-quote-add-price]').forEach(attachCurrencyMask);
   }
 
   if(el('comprasOrderAbertoItemsList')) el('comprasOrderAbertoItemsList').addEventListener('click', async event => {
@@ -24811,7 +25020,7 @@ function renderHomeTasks(){
     if(saveQuoteBtn){
       const [itemId, supplierId] = saveQuoteBtn.dataset.comprasQuoteSave.split('|');
       const priceInput = document.querySelector('[data-compras-quote-price="'+itemId+'|'+supplierId+'"]');
-      const unitPriceCents = priceInput ? parseBRLToCents(priceInput.value || '0') : null;
+      const unitPriceCents = priceInput ? parseBRLToCents(getCurrencyValue(priceInput) || '0') : null;
       if(unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO VÁLIDO.', 'error'); return; }
       try{
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
@@ -24839,7 +25048,7 @@ function renderHomeTasks(){
       const priceInput = document.querySelector('[data-compras-quote-add-price="'+itemId+'"]');
       const supplierId = select ? select.value : '';
       if(!supplierId){ showPurchaseToast('ESCOLHA UM FORNECEDOR.', 'error'); return; }
-      const unitPriceCents = priceInput ? parseBRLToCents(priceInput.value || '0') : null;
+      const unitPriceCents = priceInput ? parseBRLToCents(getCurrencyValue(priceInput) || '0') : null;
       if(unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO VÁLIDO.', 'error'); return; }
       try{
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
@@ -25252,10 +25461,11 @@ function renderHomeTasks(){
       '<td>'+(Number(item.unitPriceCents || 0) > 0 ? formatCentsBRL(item.unitPriceCents) : '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+
         '<input type="number" min="0" max="'+Number(item.quantity || 0)+'" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;" title="Quantidade recebida">'+
-        '<input type="number" min="0" step="0.01" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)">'+
+        '<input type="text" inputmode="decimal" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)">'+
         '<button class="btn-outline" type="button" data-compras-order-item-save="'+escapeHtml(item.id)+'">SALVAR</button>'+
       '</span></td>'+
     '</tr>').join('');
+    body.querySelectorAll('[data-compras-order-item-price]').forEach(attachCurrencyMask);
   }
 
   // ----- NF vinculada ao pedido nativo -----
@@ -25324,6 +25534,7 @@ function renderHomeTasks(){
     await loadPayablesCatalogData();
     invoicePendingPurchaseOrderId = comprasCurrentOrderId;
     el('invoiceForm').reset();
+    setCurrencyValue(el('invoiceTotalAmount'), '');
     renderInvoiceFormSelects();
     el('invoiceFormStatus').textContent = '';
     if(order && order.supplierId) el('invoiceSupplier').value = order.supplierId;
@@ -25428,7 +25639,7 @@ function renderHomeTasks(){
     if(!receivedInput) return;
     const receivedQuantity = Number(receivedInput.value);
     if(!Number.isFinite(receivedQuantity) || receivedQuantity < 0){ showPurchaseToast('INFORME UMA QUANTIDADE RECEBIDA VÁLIDA.', 'error'); return; }
-    const unitPriceCents = priceInput ? parseBRLToCents(priceInput.value || '0') : null;
+    const unitPriceCents = priceInput ? parseBRLToCents(getCurrencyValue(priceInput) || '0') : null;
     if(priceInput && unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO UNITÁRIO VÁLIDO.', 'error'); return; }
     try{
       await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {
@@ -25646,7 +25857,7 @@ function renderHomeTasks(){
     el('obraTipo').value = row ? row.kind : 'reforma';
     el('obraStatus').value = row ? row.status : 'planejada';
     el('obraResponsavel').value = row ? (row.responsible || '') : '';
-    el('obraOrcado').value = row ? (Number(row.budgetCents || 0)/100).toFixed(2) : '0.00';
+    setCurrencyValue(el('obraOrcado'), row ? Number(row.budgetCents || 0)/100 : 0);
     el('obraInicio').value = row ? (row.startDate || '') : '';
     el('obraPrevisao').value = row ? (row.expectedEndDate || '') : '';
     el('obraConclusao').value = row ? (row.endDate || '') : '';
@@ -25655,6 +25866,7 @@ function renderHomeTasks(){
     el('obraFormStatus').textContent = '';
     el('obraDialog').showModal();
   }
+  if(el('obraOrcado')) attachCurrencyMask(el('obraOrcado'));
   if(el('btnNewObra')) el('btnNewObra').addEventListener('click', () => openObraDialog(null));
   if(el('btnCloseObraDialog')) el('btnCloseObraDialog').addEventListener('click', () => el('obraDialog').close());
   if(el('btnCancelObraDialog')) el('btnCancelObraDialog').addEventListener('click', () => el('obraDialog').close());
@@ -25671,7 +25883,7 @@ function renderHomeTasks(){
       kind: el('obraTipo').value,
       status: el('obraStatus').value,
       responsible: el('obraResponsavel').value,
-      budgetCents: parseBRLToCents(el('obraOrcado').value || '0') || 0,
+      budgetCents: parseBRLToCents(getCurrencyValue(el('obraOrcado')) || '0') || 0,
       startDate: el('obraInicio').value,
       expectedEndDate: el('obraPrevisao').value,
       endDate: el('obraConclusao').value,
@@ -25762,6 +25974,7 @@ function renderHomeTasks(){
         (o.responsible ? '<br>Responsável: '+escapeHtml(o.responsible) : '')+
         (o.description ? '<br>'+escapeHtml(o.description) : '');
       el('obraEntryForm').reset();
+      setCurrencyValue(el('obraEntryValor'), '');
       el('obraEntryId').value = '';
       el('obraEntryObraId').value = o.id;
       el('obraEntryPgto').value = 'pix';
@@ -25770,6 +25983,7 @@ function renderHomeTasks(){
       el('obraDetailDialog').showModal();
     }catch(error){ showPurchaseToast(error.message,'error'); }
   }
+  if(el('obraEntryValor')) attachCurrencyMask(el('obraEntryValor'));
   if(el('btnCloseObraDetail')) el('btnCloseObraDetail').addEventListener('click', () => el('obraDetailDialog').close());
   if(el('btnCancelObraDetail')) el('btnCancelObraDetail').addEventListener('click', () => el('obraDetailDialog').close());
 
@@ -25777,7 +25991,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('obraEntryStatus');
     status.textContent = '';
-    const amountCents = parseBRLToCents(el('obraEntryValor').value);
+    const amountCents = parseBRLToCents(getCurrencyValue(el('obraEntryValor')));
     if(!el('obraEntryDescricao').value.trim()){ status.textContent = 'INFORME A DESCRIÇÃO.'; return; }
     if(amountCents === null || amountCents <= 0){ status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.'; return; }
     const payload = {
@@ -25900,8 +26114,15 @@ function renderHomeTasks(){
       '</tr>';
     }).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma declaração.</td></tr>';
   }
+  // declShoppingAluguelPct tem "(R$)" no rótulo mas guarda um PERCENTUAL
+  // (confirmado com o usuário), não dinheiro — por isso fica fora da máscara
+  // de moeda e continua lendo/escrevendo .value bruto, diferente dos outros.
+  const DECL_SHOPPING_MONEY_FIELDS = ['declShoppingFatReal','declShoppingMedia','declShoppingSugerido','declShoppingDeclarado','declShoppingMinimo','declShoppingPago'];
   function declShoppingReadForm(){
-    const num = id => { const v = el(id).value; return v === '' ? 0 : Math.round(Number(v) * 100); };
+    const num = id => {
+      const v = DECL_SHOPPING_MONEY_FIELDS.includes(id) ? getCurrencyValue(el(id)) : el(id).value;
+      return v === '' ? 0 : Math.round(Number(v) * 100);
+    };
     const companyId = el('declShoppingLojaForm').value;
     return {
       mallName: el('declShoppingNome').value.trim(),
@@ -25935,12 +26156,17 @@ function renderHomeTasks(){
   let declShoppingCurrentId = '';
   async function openDeclShoppingDialog(row){
     el('declShoppingForm').reset();
+    DECL_SHOPPING_MONEY_FIELDS.forEach(id => setCurrencyValue(el(id), ''));
     fase8CompanyOptions('declShoppingLojaForm', '');
     declShoppingCurrentId = row ? row.id : '';
     el('declShoppingId').value = row ? row.id : '';
     el('declShoppingDialogTitle').textContent = row ? 'EDITAR DECLARAÇÃO' : 'NOVA DECLARAÇÃO';
     if(row){
-      const set = (id, cents) => { el(id).value = cents ? (cents/100).toFixed(2) : ''; };
+      const set = (id, cents) => {
+        const value = cents ? cents/100 : '';
+        if(DECL_SHOPPING_MONEY_FIELDS.includes(id)) setCurrencyValue(el(id), value);
+        else el(id).value = cents ? (cents/100).toFixed(2) : '';
+      };
       el('declShoppingNome').value = row.mallName || '';
       el('declShoppingLojaForm').value = row.companyId || '';
       el('declShoppingCompetencia').value = row.competenceMonth || '';
@@ -26002,6 +26228,7 @@ function renderHomeTasks(){
     const node = el(id);
     if(node) node.addEventListener('input', declShoppingUpdateHint);
   });
+  DECL_SHOPPING_MONEY_FIELDS.forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
   el('btnNewDeclShopping') && el('btnNewDeclShopping').addEventListener('click', () => openDeclShoppingDialog(null));
   el('btnFiltrarDeclShopping') && el('btnFiltrarDeclShopping').addEventListener('click', reloadDeclShopping);
   el('declShoppingLoja') && el('declShoppingLoja').addEventListener('change', reloadDeclShopping);
@@ -26695,31 +26922,35 @@ function renderHomeTasks(){
     renderExpensesCatalogSelects();
     expenseFormIdempotencyKey = crypto.randomUUID();
     el('expenseDreIncludedNew').checked = true;
-    el('expenseDreAmountNew').value = '';
+    setCurrencyValue(el('expenseOriginalAmount'), '');
+    setCurrencyValue(el('expenseDreAmountNew'), '');
     el('expenseDreAmountNew').disabled = false;
     delete el('expenseDreAmountNew').dataset.prevValue;
     expenseDreTouched = false;
   }
 
+  attachCurrencyMask(el('expenseOriginalAmount'));
+  attachCurrencyMask(el('expenseDreAmountNew'));
   el('expenseDreIncludedNew').addEventListener('change', () => {
     expenseDreTouched = true;
     const included = el('expenseDreIncludedNew').checked;
     const amountEl = el('expenseDreAmountNew');
     if(!included){
-      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
-      amountEl.value = '0';
+      const current = getCurrencyValue(amountEl);
+      if(current && current !== '0.00') amountEl.dataset.prevValue = current;
+      setCurrencyValue(amountEl, 0);
       amountEl.disabled = true;
     }else{
       amountEl.disabled = false;
       if(amountEl.dataset.prevValue !== undefined){
-        amountEl.value = amountEl.dataset.prevValue;
+        setCurrencyValue(amountEl, amountEl.dataset.prevValue);
         delete amountEl.dataset.prevValue;
       }
     }
   });
   el('expenseDreAmountNew').addEventListener('input', () => { expenseDreTouched = true; });
   el('expenseOriginalAmount').addEventListener('input', () => {
-    if(!expenseDreTouched) el('expenseDreAmountNew').value = el('expenseOriginalAmount').value;
+    if(!expenseDreTouched) setCurrencyValue(el('expenseDreAmountNew'), getCurrencyValue(el('expenseOriginalAmount')));
   });
 
   function updateExpenseKindFields(){
@@ -26838,7 +27069,7 @@ function renderHomeTasks(){
     statusEl.textContent = '';
     const model = el('expenseRateioModel').value;
     const competenceMonth = expenseCompetenceMonthForPreview();
-    const originalAmountCents = parseBRLToCents(el('expenseOriginalAmount').value || '0');
+    const originalAmountCents = parseBRLToCents(getCurrencyValue(el('expenseOriginalAmount')) || '0');
     if(!competenceMonth){ statusEl.textContent = 'INFORME O VENCIMENTO ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
     if(originalAmountCents === null || originalAmountCents <= 0){ statusEl.textContent = 'INFORME O VALOR ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
     try{
@@ -26876,7 +27107,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const statusEl = el('expenseFormStatus');
     statusEl.textContent = '';
-    const originalAmountCents = parseBRLToCents(el('expenseOriginalAmount').value || '0');
+    const originalAmountCents = parseBRLToCents(getCurrencyValue(el('expenseOriginalAmount')) || '0');
     if(originalAmountCents === null || originalAmountCents <= 0){
       statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return;
     }
@@ -26914,7 +27145,7 @@ function renderHomeTasks(){
     if(rateioShares) body.rateioShares = rateioShares;
     if(expenseDreTouched){
       body.dreIncluded = el('expenseDreIncludedNew').checked;
-      body.dreAmountCents = parseBRLToCents(el('expenseDreAmountNew').value || '0') || 0;
+      body.dreAmountCents = parseBRLToCents(getCurrencyValue(el('expenseDreAmountNew')) || '0') || 0;
     }
     if(kind === 'single'){
       if(el('expenseCompetenceMonth').value) body.competenceMonth = el('expenseCompetenceMonth').value;
@@ -26973,7 +27204,8 @@ function renderHomeTasks(){
       el('expenseDetailDialogTitle').textContent = expense.description;
       const dre = data.dre || { included: true, amountCents: expense.originalAmountCents };
       el('expenseDreIncluded').checked = dre.included;
-      el('expenseDreAmount').value = (dre.amountCents / 100).toFixed(2);
+      attachCurrencyMask(el('expenseDreAmount'));
+      setCurrencyValue(el('expenseDreAmount'), dre.amountCents / 100);
       el('expenseDreAmount').disabled = !dre.included;
       el('expenseDreFormStatus').textContent = '';
       el('expenseDetailSummary').innerHTML =
@@ -27042,7 +27274,7 @@ function renderHomeTasks(){
     renderPayableAccountOptionsForCompany('expenseAccount', expense.companyId, 'SEM CONTA');
     el('expenseAccount').value = expense.financeAccountId || '';
     el('expensePaymentMethod').value = expense.paymentMethod || '';
-    el('expenseOriginalAmount').value = (expense.originalAmountCents / 100).toFixed(2);
+    setCurrencyValue(el('expenseOriginalAmount'), expense.originalAmountCents / 100);
     el('expenseInvoiceNumber').value = expense.invoiceNumber || '';
     el('expenseOrderReference').value = expense.orderReference || '';
     el('expenseNotes').value = expense.notes || '';
@@ -27071,13 +27303,14 @@ function renderHomeTasks(){
     const included = el('expenseDreIncluded').checked;
     const amountEl = el('expenseDreAmount');
     if(!included){
-      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
-      amountEl.value = '0';
+      const current = getCurrencyValue(amountEl);
+      if(current && current !== '0.00') amountEl.dataset.prevValue = current;
+      setCurrencyValue(amountEl, 0);
       amountEl.disabled = true;
     }else{
       amountEl.disabled = false;
       if(amountEl.dataset.prevValue !== undefined){
-        amountEl.value = amountEl.dataset.prevValue;
+        setCurrencyValue(amountEl, amountEl.dataset.prevValue);
         delete amountEl.dataset.prevValue;
       }
     }
@@ -27088,7 +27321,7 @@ function renderHomeTasks(){
     const statusEl = el('expenseDreFormStatus');
     statusEl.textContent = '';
     const dreIncluded = el('expenseDreIncluded').checked;
-    const dreAmountCents = parseBRLToCents(el('expenseDreAmount').value || '0') || 0;
+    const dreAmountCents = parseBRLToCents(getCurrencyValue(el('expenseDreAmount')) || '0') || 0;
     const button = el('btnSaveExpenseDre');
     button.disabled = true;
     try{
@@ -27371,6 +27604,7 @@ function renderHomeTasks(){
 
   function resetPayableAccountForm(){
     el('payableAccountForm').reset();
+    setCurrencyValue(el('payableAccountOpeningBalance'), '');
     el('payableAccountId').value = '';
     el('payableAccountActive').checked = true;
     el('btnCancelAccountEdit').hidden = true;
@@ -27384,6 +27618,7 @@ function renderHomeTasks(){
     updatePayableAccountBankFieldsVisibility();
   }
 
+  attachCurrencyMask(el('payableAccountOpeningBalance'));
   el('btnManagePayablesCatalog').addEventListener('click', async () => {
     await loadPayablesCatalogData();
     resetPayableSupplierForm();
@@ -27525,7 +27760,7 @@ function renderHomeTasks(){
     const name = el('payableAccountName').value.trim();
     if(!name){ status.textContent = 'INFORME O NOME/DESCRIÇÃO DA CONTA.'; return; }
 
-    const openingBalanceValue = el('payableAccountOpeningBalance').value;
+    const openingBalanceValue = getCurrencyValue(el('payableAccountOpeningBalance'));
     let openingBalanceCents;
     if(openingBalanceValue){
       openingBalanceCents = parseBRLToCents(openingBalanceValue);
@@ -27595,7 +27830,7 @@ function renderHomeTasks(){
       el('payableAccountHolderDocument').value = account.holderDocument || '';
       el('payableAccountPixType').value = account.pixKeyType || '';
       el('payableAccountPixKey').value = account.pixKey || '';
-      el('payableAccountOpeningBalance').value = account.openingBalanceCents ? (account.openingBalanceCents/100).toFixed(2) : '';
+      setCurrencyValue(el('payableAccountOpeningBalance'), account.openingBalanceCents ? account.openingBalanceCents/100 : '');
       el('payableAccountOpeningDate').value = account.openingBalanceDate || '';
       el('payableAccountNotes').value = account.notes || '';
       el('payableAccountActive').checked = !!account.active;
@@ -27632,18 +27867,23 @@ function renderHomeTasks(){
   let invoicesSearchTimer = null;
   let invoiceCurrentDetailId = null;
   let invoiceDreTouched = false;
+  attachCurrencyMask(el('invoiceTotalAmount'));
+  attachCurrencyMask(el('invoiceInstallmentSingleAmount'));
+  attachCurrencyMask(el('invoiceDreAmount'));
+  attachCurrencyMask(el('invoicePaymentAmount'));
   el('invoiceDreIncluded').addEventListener('change', () => {
     invoiceDreTouched = true;
     const included = el('invoiceDreIncluded').checked;
     const amountEl = el('invoiceDreAmount');
     if(!included){
-      if(amountEl.value && amountEl.value !== '0') amountEl.dataset.prevValue = amountEl.value;
-      amountEl.value = '0';
+      const current = getCurrencyValue(amountEl);
+      if(current && current !== '0.00') amountEl.dataset.prevValue = current;
+      setCurrencyValue(amountEl, 0);
       amountEl.disabled = true;
     }else{
       amountEl.disabled = false;
       if(amountEl.dataset.prevValue !== undefined){
-        amountEl.value = amountEl.dataset.prevValue;
+        setCurrencyValue(amountEl, amountEl.dataset.prevValue);
         delete amountEl.dataset.prevValue;
       }
     }
@@ -27873,6 +28113,7 @@ function renderHomeTasks(){
     if(!novoPedidoId) return;
     invoicePendingPurchaseOrderId = novoPedidoId;
     el('invoiceForm').reset();
+    setCurrencyValue(el('invoiceTotalAmount'), '');
     renderInvoiceFormSelects();
     el('invoiceFormStatus').textContent = '';
     const supplierId = params.get('supplierId');
@@ -27964,7 +28205,7 @@ function renderHomeTasks(){
 
     const dre = data.dre || { included: true, amountCents: invoice.totalAmountCents };
     el('invoiceDreIncluded').checked = dre.included;
-    el('invoiceDreAmount').value = ((dre.amountCents || invoice.totalAmountCents) / 100).toFixed(2);
+    setCurrencyValue(el('invoiceDreAmount'), (dre.amountCents || invoice.totalAmountCents) / 100);
     el('invoiceDreAmount').disabled = !dre.included;
     invoiceDreTouched = false;
 
@@ -28067,6 +28308,7 @@ function renderHomeTasks(){
   el('btnNewInvoice') && el('btnNewInvoice').addEventListener('click', async () => {
     invoicePendingPurchaseOrderId = '';
     el('invoiceForm').reset();
+    setCurrencyValue(el('invoiceTotalAmount'), '');
     renderInvoiceFormSelects();
     el('invoiceFormStatus').textContent = '';
     if(!payablesCanActAcrossStores() && currentSession.companyId) el('invoiceCompany').value = currentSession.companyId;
@@ -28087,7 +28329,7 @@ function renderHomeTasks(){
     button.disabled = true;
     el('invoiceFormStatus').textContent = 'CADASTRANDO…';
     try{
-      const totalAmountCents = parseBRLToCents(el('invoiceTotalAmount').value);
+      const totalAmountCents = parseBRLToCents(getCurrencyValue(el('invoiceTotalAmount')));
       if(!totalAmountCents) throw new Error('INFORME UM VALOR TOTAL VÁLIDO.');
       await invoicesApiRequest('', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -28148,19 +28390,20 @@ function renderHomeTasks(){
         body.firstDueDate = el('invoiceInstallmentFirstDue').value;
       }else{
         body.dueDate = el('invoiceInstallmentSingleDue').value;
-        const amountCents = parseBRLToCents(el('invoiceInstallmentSingleAmount').value);
+        const amountCents = parseBRLToCents(getCurrencyValue(el('invoiceInstallmentSingleAmount')));
         if(!amountCents) throw new Error('INFORME UM VALOR VÁLIDO PARA A DUPLICATA.');
         body.originalAmountCents = amountCents;
       }
       if(invoiceDreTouched){
         body.dreIncluded = el('invoiceDreIncluded').checked;
-        body.dreAmountCents = parseBRLToCents(el('invoiceDreAmount').value || '0') || 0;
+        body.dreAmountCents = parseBRLToCents(getCurrencyValue(el('invoiceDreAmount')) || '0') || 0;
       }
       const installmentsResponse = await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments', {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
       });
       showPurchaseToast(installmentsResponse && installmentsResponse.dreWarning ? installmentsResponse.dreWarning : 'Duplicata(s) cadastrada(s).');
       el('invoiceInstallmentForm').reset();
+      setCurrencyValue(el('invoiceInstallmentSingleAmount'), '');
       updateInvoiceInstallmentModeFields();
       await openInvoiceDetailDialog(invoiceCurrentDetailId);
       await refreshAfterAction(() => loadInvoicesList({silent:true}));
@@ -28182,7 +28425,7 @@ function renderHomeTasks(){
         method:'PATCH', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           dreIncluded: el('invoiceDreIncluded').checked,
-          dreAmountCents: parseBRLToCents(el('invoiceDreAmount').value || '0') || 0
+          dreAmountCents: parseBRLToCents(getCurrencyValue(el('invoiceDreAmount')) || '0') || 0
         })
       });
       showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Decisão da DRE salva.');
@@ -28199,7 +28442,7 @@ function renderHomeTasks(){
     if(payButton){
       el('invoicePaymentForm').reset();
       el('invoicePaymentInstallmentId').value = payButton.dataset.installmentPay;
-      el('invoicePaymentAmount').value = ((Number(payButton.dataset.balance) || 0) / 100).toFixed(2);
+      setCurrencyValue(el('invoicePaymentAmount'), (Number(payButton.dataset.balance) || 0) / 100);
       el('invoicePaymentDate').value = todayDateKey();
       renderPayableAccountOptionsForCompany('invoicePaymentAccount', invoiceCurrentDetail ? invoiceCurrentDetail.companyId : '', 'SEM CONTA');
       el('invoicePaymentFormStatus').textContent = '';
@@ -28231,7 +28474,7 @@ function renderHomeTasks(){
     button.disabled = true;
     el('invoicePaymentFormStatus').textContent = 'REGISTRANDO…';
     try{
-      const amountCents = parseBRLToCents(el('invoicePaymentAmount').value);
+      const amountCents = parseBRLToCents(getCurrencyValue(el('invoicePaymentAmount')));
       if(!amountCents) throw new Error('INFORME UM VALOR VÁLIDO.');
       await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments/'+encodeURIComponent(el('invoicePaymentInstallmentId').value)+'/payments', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -28301,6 +28544,8 @@ function renderHomeTasks(){
     '</div>';
   }
 
+  if(el('pInvoiceTotal')) attachCurrencyMask(el('pInvoiceTotal'));
+
   async function loadPurchaseInvoicePanel(purchaseId){
     if(!el('purchaseInvoiceSection')) return;
     el('purchaseInvoiceSection').hidden = !purchaseId;
@@ -28336,14 +28581,19 @@ function renderHomeTasks(){
         el('pInvoiceAccessKey').value = data.invoice.accessKey || '';
         el('pInvoiceIssueDate').value = data.invoice.issueDate || '';
         el('pInvoiceCompetence').value = data.invoice.competenceMonth || '';
-        el('pInvoiceTotal').value = data.invoice.totalAmountCents ? (data.invoice.totalAmountCents / 100).toFixed(2) : '';
+        setCurrencyValue(el('pInvoiceTotal'), data.invoice.totalAmountCents ? data.invoice.totalAmountCents / 100 : '');
         el('pInvoiceItem').value = data.invoice.financeItemId || '';
         const editable = !data.invoice.sentToFinanceAt || data.invoice.pendingCorrection;
         fieldIds.forEach(id => { if(el(id)) el(id).disabled = !editable; });
         el('btnSavePurchaseInvoice').hidden = !editable;
         el('btnSendPurchaseInvoiceToFinance').hidden = !(editable && canAccess('purchases:send_to_finance'));
       }else{
-        fieldIds.forEach(id => { if(el(id)){ el(id).disabled = false; el(id).value = ''; } });
+        fieldIds.forEach(id => {
+          if(!el(id)) return;
+          el(id).disabled = false;
+          if(id === 'pInvoiceTotal') setCurrencyValue(el(id), '');
+          else el(id).value = '';
+        });
         el('btnSavePurchaseInvoice').hidden = false;
         el('btnSendPurchaseInvoiceToFinance').hidden = true;
       }
@@ -28359,7 +28609,7 @@ function renderHomeTasks(){
     button.disabled = true;
     el('purchaseInvoiceFormStatus').textContent = 'SALVANDO…';
     try{
-      const totalAmountCents = parseBRLToCents(el('pInvoiceTotal').value);
+      const totalAmountCents = parseBRLToCents(getCurrencyValue(el('pInvoiceTotal')));
       const body = {
         companyId: el('pInvoiceCompany').value,
         companyName: (companies.find(c => c.id === el('pInvoiceCompany').value) || {}).name || '',
@@ -28944,7 +29194,7 @@ function renderHomeTasks(){
     el('rhEmployeeAdmission').value = employee ? (employee.admissionDate || '') : '';
     el('rhEmployeeCompany').value = employee ? (employee.companyId || '') : (el('rhEmployeeFiltroLoja').value || '');
     el('rhEmployeeRole').value = employee ? (employee.roleTitle || '') : '';
-    el('rhEmployeeSalary').value = employee ? (Number(employee.salaryCents || 0)/100).toFixed(2) : '0.00';
+    setCurrencyValue(el('rhEmployeeSalary'), employee ? Number(employee.salaryCents || 0)/100 : 0);
     el('rhEmployeeStatus').value = employee ? employee.status : 'active';
     el('rhEmployeeSchedule').value = employee ? (employee.workSchedule || '5x2') : '5x2';
     el('rhEmployeePix').value = employee ? (employee.pixKey || '') : '';
@@ -28959,6 +29209,7 @@ function renderHomeTasks(){
     if(el('rhEmployeeDialog').open) el('rhEmployeeDialog').close();
   }
 
+  if(el('rhEmployeeSalary')) attachCurrencyMask(el('rhEmployeeSalary'));
   if(el('btnNewRhEmployee')) el('btnNewRhEmployee').addEventListener('click', () => openRhEmployeeDialog(null));
   if(el('btnCloseRhEmployeeDialog')) el('btnCloseRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
   if(el('btnCancelRhEmployeeDialog')) el('btnCancelRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
@@ -28987,7 +29238,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('rhEmployeeFormStatus');
     status.textContent = '';
-    const salaryCents = parseBRLToCents(el('rhEmployeeSalary').value || '0');
+    const salaryCents = parseBRLToCents(getCurrencyValue(el('rhEmployeeSalary')) || '0');
     if(salaryCents === null){
       status.textContent = 'INFORME UM SALÁRIO VÁLIDO.';
       return;
@@ -29184,7 +29435,8 @@ function renderHomeTasks(){
     el('rhDecimoTerceiroForm').reset();
     el('rh13Id').value = '';
     el('rh13Parcela').value = 'unico';
-    el('rh13Desconto').value = '0';
+    setCurrencyValue(el('rh13Bruto'), '');
+    setCurrencyValue(el('rh13Desconto'), 0);
     el('rh13Ano').value = el('rh13FiltroAno').value || String(new Date().getFullYear());
     el('rh13FormStatus').textContent = '';
   }
@@ -29198,6 +29450,8 @@ function renderHomeTasks(){
     el('rhDecimoTerceiroDialog').showModal();
   }
 
+  if(el('rh13Bruto')) attachCurrencyMask(el('rh13Bruto'));
+  if(el('rh13Desconto')) attachCurrencyMask(el('rh13Desconto'));
   if(el('btnRhDecimoTerceiro')) el('btnRhDecimoTerceiro').addEventListener('click', openRhDecimoTerceiro);
   if(el('btnCloseRhDecimoTerceiro')) el('btnCloseRhDecimoTerceiro').addEventListener('click', () => el('rhDecimoTerceiroDialog').close());
   if(el('btnCancelRhDecimoTerceiro')) el('btnCancelRhDecimoTerceiro').addEventListener('click', () => el('rhDecimoTerceiroDialog').close());
@@ -29207,8 +29461,8 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('rh13FormStatus');
     status.textContent = '';
-    const grossCents = parseBRLToCents(el('rh13Bruto').value);
-    const deductionsCents = parseBRLToCents(el('rh13Desconto').value || '0') || 0;
+    const grossCents = parseBRLToCents(getCurrencyValue(el('rh13Bruto')));
+    const deductionsCents = parseBRLToCents(getCurrencyValue(el('rh13Desconto')) || '0') || 0;
     if(!el('rh13Funcionario').value){ status.textContent = 'SELECIONE O FUNCIONÁRIO.'; return; }
     if(grossCents === null || grossCents <= 0){ status.textContent = 'INFORME UM VALOR BRUTO MAIOR QUE ZERO.'; return; }
     if(deductionsCents > grossCents){ status.textContent = 'O DESCONTO NÃO PODE SER MAIOR QUE O VALOR BRUTO.'; return; }
@@ -29243,8 +29497,8 @@ function renderHomeTasks(){
       el('rh13Funcionario').value = row.employeeId;
       el('rh13Ano').value = row.year;
       el('rh13Parcela').value = row.installment;
-      el('rh13Bruto').value = (Number(row.grossCents || 0)/100).toFixed(2);
-      el('rh13Desconto').value = (Number(row.deductionsCents || 0)/100).toFixed(2);
+      setCurrencyValue(el('rh13Bruto'), Number(row.grossCents || 0)/100);
+      setCurrencyValue(el('rh13Desconto'), Number(row.deductionsCents || 0)/100);
       el('rh13Obs').value = row.notes || '';
       el('rh13FormStatus').textContent = '';
       return;
@@ -29296,8 +29550,8 @@ function renderHomeTasks(){
 
   function rhFolhaDialogNet(){
     const values = ['rhFolhaBase','rhFolhaBonus','rhFolhaOvertime','rhFolhaAdditions','rhFolhaOther']
-      .map(id => parseBRLToCents(el(id).value || '0'));
-    const deductions = parseBRLToCents(el('rhFolhaDeductions').value || '0');
+      .map(id => parseBRLToCents(getCurrencyValue(el(id)) || '0'));
+    const deductions = parseBRLToCents(getCurrencyValue(el('rhFolhaDeductions')) || '0');
     if(values.some(value => value === null) || deductions === null) return null;
     const current = rhFolhaRows.find(row => row.employeeId === el('rhFolhaEmployeeId').value);
     const commission = current ? Number(current.commissionCents || 0) : 0;
@@ -29311,6 +29565,7 @@ function renderHomeTasks(){
   }
 
   ['rhFolhaBase','rhFolhaBonus','rhFolhaOvertime','rhFolhaAdditions','rhFolhaDeductions','rhFolhaOther'].forEach(id => {
+    if(el(id)) attachCurrencyMask(el(id));
     if(el(id)) el(id).addEventListener('input', rhFolhaUpdateDialogNet);
   });
 
@@ -29321,12 +29576,12 @@ function renderHomeTasks(){
     el('rhFolhaEmployeeId').value = row.employeeId;
     el('rhFolhaEmployeeName').value = row.employeeName;
     el('rhFolhaCompetencia').value = rhFormatMonth(row.month);
-    el('rhFolhaBase').value = (Number(row.baseSalaryCents || 0)/100).toFixed(2);
-    el('rhFolhaBonus').value = (Number(row.bonusCents || 0)/100).toFixed(2);
-    el('rhFolhaOvertime').value = (Number(row.overtimeCents || 0)/100).toFixed(2);
-    el('rhFolhaAdditions').value = (Number(row.additionsCents || 0)/100).toFixed(2);
-    el('rhFolhaDeductions').value = (Number(row.deductionsCents || 0)/100).toFixed(2);
-    el('rhFolhaOther').value = (Number(row.otherCents || 0)/100).toFixed(2);
+    setCurrencyValue(el('rhFolhaBase'), Number(row.baseSalaryCents || 0)/100);
+    setCurrencyValue(el('rhFolhaBonus'), Number(row.bonusCents || 0)/100);
+    setCurrencyValue(el('rhFolhaOvertime'), Number(row.overtimeCents || 0)/100);
+    setCurrencyValue(el('rhFolhaAdditions'), Number(row.additionsCents || 0)/100);
+    setCurrencyValue(el('rhFolhaDeductions'), Number(row.deductionsCents || 0)/100);
+    setCurrencyValue(el('rhFolhaOther'), Number(row.otherCents || 0)/100);
     el('rhFolhaCommission').value = formatCentsBRL(row.commissionCents);
     el('rhFolhaBenefits').value = formatCentsBRL(row.benefitsCents);
     el('rhFolhaNotes').value = row.notes || '';
@@ -29347,12 +29602,12 @@ function renderHomeTasks(){
     const status = el('rhFolhaFormStatus');
     status.textContent = '';
     const amounts = {
-      baseSalaryCents: parseBRLToCents(el('rhFolhaBase').value || '0'),
-      bonusCents: parseBRLToCents(el('rhFolhaBonus').value || '0'),
-      overtimeCents: parseBRLToCents(el('rhFolhaOvertime').value || '0'),
-      additionsCents: parseBRLToCents(el('rhFolhaAdditions').value || '0'),
-      deductionsCents: parseBRLToCents(el('rhFolhaDeductions').value || '0'),
-      otherCents: parseBRLToCents(el('rhFolhaOther').value || '0')
+      baseSalaryCents: parseBRLToCents(getCurrencyValue(el('rhFolhaBase')) || '0'),
+      bonusCents: parseBRLToCents(getCurrencyValue(el('rhFolhaBonus')) || '0'),
+      overtimeCents: parseBRLToCents(getCurrencyValue(el('rhFolhaOvertime')) || '0'),
+      additionsCents: parseBRLToCents(getCurrencyValue(el('rhFolhaAdditions')) || '0'),
+      deductionsCents: parseBRLToCents(getCurrencyValue(el('rhFolhaDeductions')) || '0'),
+      otherCents: parseBRLToCents(getCurrencyValue(el('rhFolhaOther')) || '0')
     };
     if(Object.values(amounts).some(value => value === null)){
       status.textContent = 'INFORME VALORES VÁLIDOS (NÃO NEGATIVOS).';
@@ -29702,9 +29957,9 @@ function renderHomeTasks(){
     }
     el('rhBeneficioItemTipo').value = 'alimentacao';
     el('rhBeneficioItemModo').value = 'fixed';
-    el('rhBeneficioItemValor').value = '';
-    el('rhBeneficioItemPorDia').value = '';
-    el('rhBeneficioItemDesconto').value = '0';
+    setCurrencyValue(el('rhBeneficioItemValor'), '');
+    setCurrencyValue(el('rhBeneficioItemPorDia'), '');
+    setCurrencyValue(el('rhBeneficioItemDesconto'), 0);
     rhSyncBeneficioItemModo();
     renderRhBeneficioDialogItems();
     el('rhBeneficioFormStatus').textContent = '';
@@ -29718,6 +29973,7 @@ function renderHomeTasks(){
     el('rhBeneficioItemPorDiaWrap').hidden = !perDay;
   }
   if(el('rhBeneficioItemModo')) el('rhBeneficioItemModo').addEventListener('change', rhSyncBeneficioItemModo);
+  ['rhBeneficioItemValor','rhBeneficioItemPorDia','rhBeneficioItemDesconto'].forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
   ['rhBeneficioFuncionario','rhBeneficioMes'].forEach(id => {
     if(el(id)) el(id).addEventListener('change', rhRefreshBeneficioDiasUteis);
   });
@@ -29751,10 +30007,10 @@ function renderHomeTasks(){
     const status = el('rhBeneficioFormStatus');
     const type = el('rhBeneficioItemTipo').value;
     const mode = el('rhBeneficioItemModo').value === 'per_day' ? 'per_day' : 'fixed';
-    const discountCents = parseBRLToCents(el('rhBeneficioItemDesconto').value || '0') || 0;
+    const discountCents = parseBRLToCents(getCurrencyValue(el('rhBeneficioItemDesconto')) || '0') || 0;
     let amountCents, perDayRateCents = 0, workingDays = 0;
     if(mode === 'per_day'){
-      perDayRateCents = parseBRLToCents(el('rhBeneficioItemPorDia').value);
+      perDayRateCents = parseBRLToCents(getCurrencyValue(el('rhBeneficioItemPorDia')));
       if(perDayRateCents === null || perDayRateCents <= 0){
         status.textContent = 'INFORME UM VALOR POR DIA MAIOR QUE ZERO.';
         return;
@@ -29766,7 +30022,7 @@ function renderHomeTasks(){
       workingDays = rhBeneficioWorkingDays;
       amountCents = perDayRateCents * workingDays;
     }else{
-      amountCents = parseBRLToCents(el('rhBeneficioItemValor').value);
+      amountCents = parseBRLToCents(getCurrencyValue(el('rhBeneficioItemValor')));
       if(amountCents === null || amountCents <= 0){
         status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO NO BENEFÍCIO.';
         return;
@@ -29782,9 +30038,9 @@ function renderHomeTasks(){
     }
     status.textContent = '';
     rhBeneficioDialogItems.push({ type, amountMode: mode, perDayRateCents, workingDays, amountCents, discountCents });
-    el('rhBeneficioItemValor').value = '';
-    el('rhBeneficioItemPorDia').value = '';
-    el('rhBeneficioItemDesconto').value = '0';
+    setCurrencyValue(el('rhBeneficioItemValor'), '');
+    setCurrencyValue(el('rhBeneficioItemPorDia'), '');
+    setCurrencyValue(el('rhBeneficioItemDesconto'), 0);
     renderRhBeneficioDialogItems();
   });
 
@@ -30144,12 +30400,14 @@ function renderHomeTasks(){
         '</tr>').join('');
       }
     }
-    const base = parseBRLToCents(el('rhComissaoValor').value || '0') || 0;
+    const base = parseBRLToCents(getCurrencyValue(el('rhComissaoValor')) || '0') || 0;
     const applyItem = (sum, item) => item.kind === 'desconto' ? sum - Number(item.amountCents || 0) : sum + Number(item.amountCents || 0);
     const total = rhComissaoInheritedItems.reduce(applyItem, rhComissaoDialogItems.reduce(applyItem, base));
     el('rhComissaoItensTotal').textContent = 'VALOR FINAL: '+formatCentsBRL(total);
   }
 
+  if(el('rhComissaoValor')) attachCurrencyMask(el('rhComissaoValor'));
+  if(el('rhComissaoItemValor')) attachCurrencyMask(el('rhComissaoItemValor'), {allowNegative:true});
   if(el('rhComissaoValor')) el('rhComissaoValor').addEventListener('input', renderRhComissaoDialogItems);
   if(el('rhComissaoItemKind')) el('rhComissaoItemKind').addEventListener('change', syncRhComissaoParcelaWrap);
   if(el('rhComissaoItemParcelado')) el('rhComissaoItemParcelado').addEventListener('change', syncRhComissaoParcelaWrap);
@@ -30159,7 +30417,7 @@ function renderHomeTasks(){
     if(!preset) return;
     el('rhComissaoItemLabel').value = preset.name;
     el('rhComissaoItemKind').value = preset.kind;
-    el('rhComissaoItemValor').value = (Number(preset.defaultAmountCents || 0)/100).toFixed(2);
+    setCurrencyValue(el('rhComissaoItemValor'), Number(preset.defaultAmountCents || 0)/100);
     syncRhComissaoParcelaWrap();
   });
 
@@ -30167,7 +30425,7 @@ function renderHomeTasks(){
     const status = el('rhComissaoFormStatus');
     const label = el('rhComissaoItemLabel').value.trim();
     const kind = el('rhComissaoItemKind').value;
-    const raw = Number(el('rhComissaoItemValor').value);
+    const raw = Number(getCurrencyValue(el('rhComissaoItemValor')));
     if(!label){
       status.textContent = 'INFORME A DESCRIÇÃO DO LANÇAMENTO.';
       return;
@@ -30199,7 +30457,7 @@ function renderHomeTasks(){
     });
     el('rhComissaoItemPreset').value = '';
     el('rhComissaoItemLabel').value = '';
-    el('rhComissaoItemValor').value = '';
+    setCurrencyValue(el('rhComissaoItemValor'), '');
     el('rhComissaoItemParcelado').checked = false;
     el('rhComissaoItemParcelas').value = '';
     syncRhComissaoParcelaWrap();
@@ -30241,7 +30499,7 @@ function renderHomeTasks(){
     el('rhComissaoDialogTitle').textContent = row ? 'EDITAR COMISSÃO' : 'NOVA COMISSÃO';
     el('rhComissaoFuncionario').value = row ? row.employeeId : '';
     el('rhComissaoCompetencia').value = row ? row.month : (el('rhComissaoMes').value || financeCurrentMonthKey());
-    el('rhComissaoValor').value = row ? (Number(row.commissionCents || 0)/100).toFixed(2) : '0.00';
+    setCurrencyValue(el('rhComissaoValor'), row ? Number(row.commissionCents || 0)/100 : 0);
     el('rhComissaoObs').value = row ? (row.notes || '') : '';
     el('rhComissaoFormStatus').textContent = '';
     renderRhComissaoDialogItems();
@@ -30264,7 +30522,7 @@ function renderHomeTasks(){
       status.textContent = 'SELECIONE O FUNCIONÁRIO.';
       return;
     }
-    const commissionCents = parseBRLToCents(el('rhComissaoValor').value || '0');
+    const commissionCents = parseBRLToCents(getCurrencyValue(el('rhComissaoValor')) || '0');
     if(commissionCents === null){
       status.textContent = 'INFORME UM VALOR DE COMISSÃO VÁLIDO.';
       return;
@@ -30363,8 +30621,11 @@ function renderHomeTasks(){
     rhStartPrint('comissionamento-'+(el('rhComissaoMes').value || ''));
   });
 
+  if(el('rhComissaoPresetValor')) attachCurrencyMask(el('rhComissaoPresetValor'));
+
   function resetRhComissaoPresetForm(){
     el('rhComissaoPresetForm').reset();
+    setCurrencyValue(el('rhComissaoPresetValor'), '');
     el('rhComissaoPresetId').value = '';
     el('rhComissaoPresetAtivo').checked = true;
     el('btnSaveRhComissaoPreset').textContent = 'SALVAR LANÇAMENTO PADRÃO';
@@ -30380,7 +30641,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('rhComissaoPresetStatus');
     status.textContent = '';
-    const defaultAmountCents = parseBRLToCents(el('rhComissaoPresetValor').value || '0');
+    const defaultAmountCents = parseBRLToCents(getCurrencyValue(el('rhComissaoPresetValor')) || '0');
     if(defaultAmountCents === null){
       status.textContent = 'INFORME UM VALOR PADRÃO VÁLIDO.';
       return;
@@ -30411,7 +30672,7 @@ function renderHomeTasks(){
       el('rhComissaoPresetId').value = preset.id;
       el('rhComissaoPresetNome').value = preset.name;
       el('rhComissaoPresetTipo').value = preset.kind;
-      el('rhComissaoPresetValor').value = (Number(preset.defaultAmountCents || 0)/100).toFixed(2);
+      setCurrencyValue(el('rhComissaoPresetValor'), Number(preset.defaultAmountCents || 0)/100);
       el('rhComissaoPresetAtivo').checked = Boolean(preset.active);
       el('btnSaveRhComissaoPreset').textContent = 'ATUALIZAR LANÇAMENTO PADRÃO';
       el('btnCancelRhComissaoPreset').hidden = false;
@@ -30997,11 +31258,13 @@ function renderHomeTasks(){
     }
   });
 
+  if(el('recNewPaymentAmount')) attachCurrencyMask(el('recNewPaymentAmount'));
+  if(el('recAsoValue')) attachCurrencyMask(el('recAsoValue'));
   if(el('btnAddRecPayment')) el('btnAddRecPayment').addEventListener('click', async () => {
     const candidateId = el('recCandidateId').value;
     if(!candidateId) return;
     const paidDate = el('recNewPaymentDate').value;
-    const amountCents = Math.round(Number(el('recNewPaymentAmount').value || 0) * 100);
+    const amountCents = Math.round(Number(getCurrencyValue(el('recNewPaymentAmount')) || 0) * 100);
     const note = el('recNewPaymentNote').value;
     if(!paidDate || !amountCents){
       showPurchaseToast('INFORME A DATA E O VALOR DO PAGAMENTO.','error');
@@ -31013,7 +31276,7 @@ function renderHomeTasks(){
         body:JSON.stringify({candidateId, paidDate, amountCents, note})
       });
       el('recNewPaymentDate').value = '';
-      el('recNewPaymentAmount').value = '';
+      setCurrencyValue(el('recNewPaymentAmount'), '');
       el('recNewPaymentNote').value = '';
       await loadRecPayments(candidateId);
       showPurchaseToast('Pagamento lançado.');
@@ -31106,7 +31369,7 @@ function renderHomeTasks(){
     el('recPhotoTaken').value = recBoolOption(row && row.photoTaken);
     el('recAsoRequested').value = recBoolOption(row && row.asoRequested);
     el('recAsoClinic').value = row ? row.asoClinic : '';
-    el('recAsoValue').value = row && row.asoValueCents ? (row.asoValueCents / 100).toFixed(2) : '';
+    setCurrencyValue(el('recAsoValue'), row && row.asoValueCents ? row.asoValueCents / 100 : '');
     el('recShoppingRegistered').value = recBoolOption(row && row.shoppingRegistered);
     el('recAdmissionDocsDriveLink').value = row ? row.admissionDocsDriveLink : '';
     el('recDentalPlanIncluded').value = recBoolOption(row && row.dentalPlanIncluded);
@@ -31243,7 +31506,7 @@ function renderHomeTasks(){
       photoTaken: recBoolValue(el('recPhotoTaken').value),
       asoRequested: recBoolValue(el('recAsoRequested').value),
       asoClinic: el('recAsoClinic').value,
-      asoValueCents: Math.round(Number(el('recAsoValue').value || 0) * 100),
+      asoValueCents: Math.round(Number(getCurrencyValue(el('recAsoValue')) || 0) * 100),
       shoppingRegistered: recBoolValue(el('recShoppingRegistered').value),
       admissionDocsDriveLink: el('recAdmissionDocsDriveLink').value,
       dentalPlanIncluded: recBoolValue(el('recDentalPlanIncluded').value),
