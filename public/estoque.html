@@ -2961,12 +2961,13 @@
         <a class="nav-item sub-item" id="navFinanceiroRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento">
+    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento,rh_aniversariantes">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navRhSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navRhAcompanhamentoLojas" data-page="rhAcompanhamentoLojas" data-permission="rh_acompanhamento" data-home-desc="PDI de líderes e acompanhamento semanal por loja." title="Acompanhamento - Lojas" href="/rh/acompanhamento-lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M6 19V10l5-3 5 3v9"/><path d="M10 19v-5h4v5"/></svg></span><span class="nav-label">Acompanhamento - Lojas</span></a>
+        <a class="nav-item sub-item" id="navRhAniversariantes" data-page="rhAniversariantes" data-permission="rh_aniversariantes" data-home-desc="Lista de aniversariantes do mês com status de chocolate entregue." title="Aniversariantes" href="/rh/aniversariantes"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20v-6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 20h16"/><path d="M4 14a2 2 0 0 1-1.4-3.4l1.4-2 2 2 2-2 2 2 2-2 2 2 2-2 1.4 2A2 2 0 0 1 20 14"/><path d="M12 8V5"/><path d="M12 5c-.8 0-1.5-.6-1.5-1.5S12 2 12 2s1.5.6 1.5 1.5S12.8 5 12 5Z"/></svg></span><span class="nav-label">Aniversariantes</span></a>
         <a class="nav-item sub-item" id="navRhBeneficios" data-page="rhBeneficios" data-permission="payroll" data-home-desc="Vales, premiações e demais benefícios pagos por competência." title="Benefícios" href="/rh/beneficios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11" rx="1.8"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11"/><path d="M12 8.5c-2.5 0-4-1-4-2.3S9.5 4 12 8.5Zm0 0c2.5 0 4-1 4-2.3S14.5 4 12 8.5Z"/></svg></span><span class="nav-label">Benefícios</span></a>
         <a class="nav-item sub-item" id="navRhComissionamento" data-page="rhComissionamento" data-permission="payroll" data-home-desc="Comissão, bônus, premiações e recibo detalhado por funcionário." title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
         <a class="nav-item sub-item" id="navRhControleHoras" data-page="rhControleHoras" data-permission="rh_ponto_logistica" data-home-desc="Registro manual do ponto da logística, horas extras e banco de horas." title="Controle de Horas - Logística" href="/rh/controle-horas-logistica"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="nav-label">Controle de Horas - Logística</span></a>
@@ -5115,6 +5116,13 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>RH - Aniversariantes</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:view"> Ver a lista de aniversariantes do mês e o status de cada um</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:manage"> Cadastrar data de nascimento e marcar aniversariante como "Feito"</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -5593,6 +5601,49 @@
               <tbody id="rhTimeTrackBalanceTableBody"><tr><td colspan="6" class="responsive-empty">Selecione um colaborador.</td></tr></tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RH / ANIVERSARIANTES ================= -->
+    <section id="pageRhAniversariantes" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Aniversariantes</h2>
+        </div>
+      </header>
+
+      <div class="dre-toolbar no-print">
+        <div class="field">
+          <label for="rhAnivMonthFilter">Mês</label>
+          <select id="rhAnivMonthFilter"><option value="">TODOS OS MESES</option></select>
+        </div>
+        <div class="field">
+          <label for="rhAnivLojaFilter">Loja</label>
+          <select id="rhAnivLojaFilter"><option value="">TODAS AS LOJAS</option></select>
+        </div>
+        <div class="field">
+          <label for="rhAnivStatusFilter">Status</label>
+          <select id="rhAnivStatusFilter">
+            <option value="">TODOS</option>
+            <option value="faltando">FALTANDO</option>
+            <option value="passou">PASSOU</option>
+            <option value="feito">FEITO</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="rhAnivSearch">Buscar</label>
+          <input type="search" id="rhAnivSearch" placeholder="Nome do colaborador">
+        </div>
+      </div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="rhAnivTable">
+            <thead><tr><th>Nome</th><th>Unidade</th><th>Data de Nascimento</th><th>Mês</th><th>Status</th><th></th></tr></thead>
+            <tbody id="rhAnivTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -9433,6 +9484,7 @@
     rhBeneficios:'/rh/beneficios',
     rhComissionamento:'/rh/comissionamento',
     rhAcompanhamentoLojas:'/rh/acompanhamento-lojas',
+    rhAniversariantes:'/rh/aniversariantes',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
@@ -9482,6 +9534,7 @@
     rhBeneficios:'BENEFÍCIOS',
     rhComissionamento:'COMISSIONAMENTO',
     rhAcompanhamentoLojas:'ACOMPANHAMENTO - LOJAS',
+    rhAniversariantes:'ANIVERSARIANTES',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
@@ -9528,6 +9581,7 @@
     rhBeneficios:'payroll',
     rhComissionamento:'payroll',
     rhAcompanhamentoLojas:'rh_acompanhamento',
+    rhAniversariantes:'rh_aniversariantes',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
@@ -10157,6 +10211,7 @@
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
     if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhFardamento') loadRhFardamento();
+    if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -10205,6 +10260,7 @@
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
     if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhFardamento') loadRhFardamento();
+    if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhControleHoras') loadRhControleHoras();
   }
 
@@ -28239,6 +28295,7 @@ function renderHomeTasks(){
     'rh_ponto_logistica:view':'RH - Controle de Horas - Logística: visualizar','rh_ponto_logistica:manage':'RH - Controle de Horas - Logística: lançar/configurar',
     'rh_recrutamento:view':'RH - Recrutamento e Seleção: visualizar','rh_recrutamento:manage':'RH - Recrutamento e Seleção: cadastrar/editar/excluir',
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
+    'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
@@ -31719,6 +31776,163 @@ function renderHomeTasks(){
     renderFardTabs();
     await loadFardActiveTab();
   }
+
+  // ================= RH / ANIVERSARIANTES =================
+  // Lista de aniversariantes com status Feito/Passou/Faltando calculado no
+  // back-end a partir de hr_employees.birth_date (mesmo cadastro usado por
+  // Folha/Benefícios/Comissionamento — sem tabela própria, decisão
+  // confirmada com o usuário). Permissão própria (rh_aniversariantes:*),
+  // independente de "payroll". "Feito" fica válido só para o ano corrente
+  // (birthday_acknowledged_year) — no ano seguinte volta a valer a
+  // comparação de data automaticamente, sem precisar resetar nada.
+  const RH_ANIV_MONTH_NAMES = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+  const RH_ANIV_STATUS_LABELS = {feito:'FEITO', passou:'PASSOU', faltando:'FALTANDO'};
+  const RH_ANIV_STATUS_TONE = {feito:'done', passou:'alert', faltando:'waiting'};
+  let rhAnivEmployees = [];
+
+  function rhAnivCanManage(){
+    return canAccess('rh_aniversariantes:manage');
+  }
+
+  async function rhAnivApiRequest(path, options){
+    const response = await fetch('/api/hr-birthdays'+(path || ''), {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function rhAnivRenderMonthFilter(){
+    const select = el('rhAnivMonthFilter');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">TODOS OS MESES</option>'+
+      RH_ANIV_MONTH_NAMES.map((label, index) => '<option value="'+(index+1)+'">'+label+'</option>').join('');
+    select.value = selected;
+  }
+
+  function rhAnivStatusBadge(status){
+    if(!status) return '<span class="status-pill">SEM DATA</span>';
+    return '<span class="status-pill '+RH_ANIV_STATUS_TONE[status]+'">'+RH_ANIV_STATUS_LABELS[status]+'</span>';
+  }
+
+  function rhAnivRenderTable(){
+    const body = el('rhAnivTableBody');
+    if(!body) return;
+    const month = el('rhAnivMonthFilter') ? el('rhAnivMonthFilter').value : '';
+    const companyId = el('rhAnivLojaFilter') ? el('rhAnivLojaFilter').value : '';
+    const status = el('rhAnivStatusFilter') ? el('rhAnivStatusFilter').value : '';
+    const search = el('rhAnivSearch') ? el('rhAnivSearch').value.trim().toLowerCase() : '';
+    const canManage = rhAnivCanManage();
+
+    let rows = rhAnivEmployees.slice();
+    if(month) rows = rows.filter(row => String(row.birthMonth) === month);
+    if(companyId) rows = rows.filter(row => row.companyId === companyId);
+    if(status) rows = rows.filter(row => row.status === status);
+    if(search) rows = rows.filter(row => row.fullName.toLowerCase().includes(search));
+    rows.sort((a,b) => {
+      if(a.birthMonth !== b.birthMonth) return (a.birthMonth || 99) - (b.birthMonth || 99);
+      const dayA = a.birthDate ? Number(a.birthDate.slice(8,10)) : 99;
+      const dayB = b.birthDate ? Number(b.birthDate.slice(8,10)) : 99;
+      return dayA - dayB;
+    });
+
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum aniversariante encontrado.</td></tr>';
+      return;
+    }
+
+    body.innerHTML = rows.map(row => {
+      const dateCell = canManage
+        ? '<input type="date" class="rh-aniv-date-input" data-rh-aniv-date="'+row.id+'" value="'+escapeHtml(row.birthDate || '')+'">'
+        : escapeHtml(formatDateBR(row.birthDate) || '—');
+      const monthLabel = row.birthMonth ? RH_ANIV_MONTH_NAMES[row.birthMonth-1] : '—';
+      let actionCell = '';
+      if(canManage && row.status === 'feito'){
+        actionCell = '<button type="button" class="btn-outline" data-rh-aniv-undo="'+row.id+'">DESFAZER</button>';
+      }else if(canManage && row.status){
+        actionCell = '<button type="button" class="btn-accent" data-rh-aniv-done="'+row.id+'">MARCAR FEITO</button>';
+      }
+      return '<tr>'+
+        '<td>'+escapeHtml(row.fullName)+'</td>'+
+        '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+        '<td>'+dateCell+'</td>'+
+        '<td>'+monthLabel+'</td>'+
+        '<td>'+rhAnivStatusBadge(row.status)+'</td>'+
+        '<td>'+actionCell+'</td>'+
+        '</tr>';
+    }).join('');
+  }
+
+  async function loadRhAnivEmployees(opts){
+    const options = opts || {};
+    const body = el('rhAnivTableBody');
+    if(!options.silent && body) body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await rhAnivApiRequest('');
+      rhAnivEmployees = Array.isArray(data.employees) ? data.employees : [];
+    }catch(error){
+      rhAnivEmployees = [];
+      if(body) body.innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    rhAnivRenderTable();
+  }
+
+  async function loadRhAniversariantes(){
+    if(!canAccess('rh_aniversariantes')) return;
+    if(!companies.length) await loadCompanies();
+    rhAnivRenderMonthFilter();
+    rhFillSelect('rhAnivLojaFilter','TODAS AS LOJAS',rhCompanyOptions());
+    await loadRhAnivEmployees();
+  }
+
+  ['rhAnivMonthFilter','rhAnivLojaFilter','rhAnivStatusFilter'].forEach(id => {
+    if(el(id)) el(id).addEventListener('change', rhAnivRenderTable);
+  });
+  if(el('rhAnivSearch')) el('rhAnivSearch').addEventListener('input', rhAnivRenderTable);
+
+  if(el('rhAnivTableBody')) el('rhAnivTableBody').addEventListener('change', async event => {
+    const input = event.target.closest('[data-rh-aniv-date]');
+    if(!input) return;
+    const employeeId = input.dataset.rhAnivDate;
+    try{
+      await rhAnivApiRequest('', {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({employeeId, birthDate: input.value})
+      });
+      await refreshAfterAction(() => loadRhAnivEmployees({silent:true}));
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  if(el('rhAnivTableBody')) el('rhAnivTableBody').addEventListener('click', async event => {
+    const doneButton = event.target.closest('[data-rh-aniv-done]');
+    const undoButton = event.target.closest('[data-rh-aniv-undo]');
+    const button = doneButton || undoButton;
+    if(!button) return;
+    button.disabled = true;
+    try{
+      await rhAnivApiRequest('', {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({employeeId: button.dataset.rhAnivDone || button.dataset.rhAnivUndo, acknowledge: Boolean(doneButton)})
+      });
+      await refreshAfterAction(() => loadRhAnivEmployees({silent:true}));
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      button.disabled = false;
+    }
+  });
 
   // ================= RH / CONTROLE DE HORAS - LOGÍSTICA =================
   // Lançamento manual do ponto de papel (transcrição, não integração com

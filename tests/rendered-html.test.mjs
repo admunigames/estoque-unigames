@@ -3708,3 +3708,49 @@ test("expõe o módulo RH > Fardamento e restringe o acesso a rh_fardamento:view
   // As 36 combinações (6 tipos × 6 tamanhos) já nascem semeadas com saldo 0.
   assert.match(migration, /INSERT INTO "uniform_stock_items"/);
 });
+
+test("expõe o módulo RH > Aniversariantes e restringe o acesso a rh_aniversariantes:view/:manage", async () => {
+  const [html, workerSource, schema, migration, lib, shared, route] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0066_hr_employees_birthday.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/hr-birthdays.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/hr-birthdays/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/hr-birthdays/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /id="navRhAniversariantes" data-page="rhAniversariantes" data-permission="rh_aniversariantes"/);
+  assert.match(html, /id="pageRhAniversariantes" class="page wrap"/);
+  assert.match(html, /rhAniversariantes:'\/rh\/aniversariantes'/);
+  assert.match(html, /rhAniversariantes:'rh_aniversariantes'/);
+  assert.match(html, /function loadRhAniversariantes\(\)/);
+  assert.match(html, /'rh_aniversariantes:view':'RH - Aniversariantes: visualizar'/);
+  assert.match(html, /value="rh_aniversariantes:manage"/);
+
+  assert.match(workerSource, /"rh_aniversariantes:view" \| "rh_aniversariantes:manage"/);
+  assert.match(workerSource, /birthdays: \["rh_aniversariantes:view", "rh_aniversariantes:manage"\]/);
+  assert.match(workerSource, /"\/rh\/aniversariantes"/);
+  assert.match(
+    workerSource,
+    /path === "\/rh\/aniversariantes" \|\| path\.startsWith\("\/api\/hr-birthdays"\)/,
+  );
+
+  // Sem tabela nova: reaproveita hr_employees (birth_date +
+  // birthday_acknowledged_year), decisão confirmada com o usuário.
+  assert.match(schema, /birthDate: text\("birth_date"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(schema, /birthdayAcknowledgedYear: integer\("birthday_acknowledged_year"\)\.notNull\(\)\.default\(0\)/);
+  assert.match(migration, /ALTER TABLE "hr_employees" ADD COLUMN "birth_date" text DEFAULT '' NOT NULL/);
+  assert.match(
+    migration,
+    /ALTER TABLE "hr_employees" ADD COLUMN "birthday_acknowledged_year" integer DEFAULT 0 NOT NULL/,
+  );
+
+  // Status Feito/Passou/Faltando é lógica pura, testada isoladamente em
+  // tests/hr-birthdays.test.mjs.
+  assert.match(lib, /export function resolveBirthdayStatus/);
+  assert.match(shared, /canViewBirthdays/);
+  assert.match(shared, /canManageBirthdays/);
+  assert.match(route, /FROM hr_employees WHERE status='active'/);
+  assert.match(route, /UPDATE hr_employees SET/);
+});
