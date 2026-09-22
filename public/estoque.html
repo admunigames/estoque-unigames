@@ -844,6 +844,23 @@
     font-family:var(--sans); font-size:10.5px; padding:2px 8px; border-radius:20px;
     background:var(--neg-bg); color:var(--neg); margin-left:6px;
   }
+  .rh-sched-store-block{margin-bottom:22px;}
+  .rh-sched-store-head{
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:0 0 8px;
+    font-family:var(--sans); font-weight:800; font-size:14px; color:var(--ink);
+  }
+  .rh-sched-store-head .rh-sched-store-period{font-weight:600; font-size:12px; color:var(--ink-soft);}
+  .rh-sched-day-cell{display:flex; flex-wrap:wrap; gap:6px;}
+  .rh-sched-chip{
+    display:inline-flex; align-items:center; gap:4px; font-family:var(--sans); font-size:11.5px;
+    padding:3px 9px; border-radius:20px; background:rgba(79,134,189,0.16); color:#8db8df; white-space:nowrap;
+  }
+  .rh-sched-chip-off{
+    background:rgba(230,168,49,0.18); color:#e6b94f;
+  }
+  .rh-sched-obs-cell{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  html[data-theme="light"] .rh-sched-chip{background:#dcecf8; color:#245f91;}
+  html[data-theme="light"] .rh-sched-chip-off{background:#fbecc8; color:#8a6410;}
   .empty-state{padding:70px 20px; text-align:center;}
   .empty-state h4{margin:0 0 8px; font:800 17px/1.3 var(--sans); color:var(--ink);}
   .empty-state p{max-width:520px; margin:0 auto; font-size:13.5px; line-height:1.55; color:var(--ink-soft); text-transform:none;}
@@ -5223,14 +5240,15 @@
       <div class="dre-toolbar no-print">
         <div class="field"><label for="rhFolgasMonth">MÊS DE REFERÊNCIA</label><input type="month" id="rhFolgasMonth"></div>
         <div class="field"><label for="rhFolgasWeek">SEMANA</label><select id="rhFolgasWeek"><option value="">MÊS INTEIRO</option></select></div>
+        <div class="field"><label for="rhFolgasCompany">LOJA</label><select id="rhFolgasCompany"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" type="button" id="btnPrintRhFolgas">IMPRIMIR RELATÓRIO</button>
         </div>
       </div>
 
       <div id="rhFolgasReport">
-        <h3 class="supply-section-title">ESCALA DE FOLGAS</h3>
-        <div class="dre-flat-list" id="rhFolgasDaysList"><div class="dre-empty">Carregando…</div></div>
+        <h3 class="supply-section-title">ESCALA DE FOLGAS POR LOJA</h3>
+        <div id="rhFolgasStores"><div class="dre-empty">Carregando…</div></div>
 
         <h3 class="supply-section-title">RESUMO POR COLABORADOR</h3>
         <ul class="dre-flat-list" id="rhFolgasSummaryList"><li class="dre-empty">Carregando…</li></ul>
@@ -5270,8 +5288,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="rhSchedSundayTable">
-            <thead><tr><th>Colaborador</th><th>Domingo</th><th></th></tr></thead>
-            <tbody id="rhSchedSundayTableBody"><tr><td colspan="3" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th>Colaborador</th><th>Domingo</th><th>Horário</th><th></th></tr></thead>
+            <tbody id="rhSchedSundayTableBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -7168,6 +7186,9 @@
       <div class="purchase-field full"><label for="rhSchedSundayDate">DOMINGO *</label>
         <select id="rhSchedSundayDate" required><option value="">SELECIONE</option></select>
       </div>
+      <div class="purchase-field full"><label for="rhSchedSundayWorkTime">HORÁRIO</label>
+        <input type="text" id="rhSchedSundayWorkTime" maxlength="10" placeholder="Ex: 12:00 (opcional)">
+      </div>
     </div>
     <p class="page-desc">Só é possível lançar colaboradores com loja cadastrada neste mês.</p>
     <div class="user-form-status" id="rhSchedSundayFormStatus" role="status" aria-live="polite"></div>
@@ -7196,6 +7217,29 @@
     <div class="user-form-status" id="rhSchedWeekdayFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelRhSchedWeekdayDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhSchedDayNoteDialog" aria-labelledby="rhSchedDayNoteDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhSchedDayNoteDialogTitle">OBSERVAÇÃO DO DIA</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhSchedDayNoteDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhSchedDayNoteForm">
+    <input type="hidden" id="rhSchedDayNoteCompanyId">
+    <input type="hidden" id="rhSchedDayNoteCompanyName">
+    <input type="hidden" id="rhSchedDayNoteDate">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label id="rhSchedDayNoteLabel">Loja — Data</label></div>
+      <div class="purchase-field full"><label for="rhSchedDayNoteText">OBSERVAÇÃO</label>
+        <textarea id="rhSchedDayNoteText" rows="3" maxlength="2000"></textarea>
+      </div>
+    </div>
+    <div class="user-form-status" id="rhSchedDayNoteFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhSchedDayNoteDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
     </div>
   </form>
@@ -29292,6 +29336,7 @@ function renderHomeTasks(){
     // de quem está lotado aqui alimenta a DRE Assistência (item 8).
     rhFillSelect('rhEmployeeCompany','SEM LOJA DEFINIDA',rhCompanyOptions().concat([{value:'assistencia',label:'ASSISTÊNCIA (SETOR)'}]));
     rhFillSelect('rhFolhaLoja','TODAS AS LOJAS',rhCompanyOptions());
+    rhFillSelect('rhFolgasCompany','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhBeneficioFiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhComissaoLoja','TODAS AS LOJAS',rhCompanyOptions());
   }
@@ -32924,12 +32969,12 @@ function renderHomeTasks(){
     if(!body) return;
     const manage = rhSchedCanManage();
     if(!rhSchedSundays.length){
-      body.innerHTML = '<tr><td colspan="3" class="responsive-empty">Nenhum registro neste mês.</td></tr>';
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhum registro neste mês.</td></tr>';
       return;
     }
     body.innerHTML = rhSchedSundays.map(row => {
       const actions = manage ? '<button class="btn-outline btn-sm" type="button" data-rh-sched-sunday-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '';
-      return '<tr><td>'+escapeHtml(row.employeeName)+'</td><td>'+rhFormatDate(row.workDate)+'</td><td style="white-space:nowrap">'+actions+'</td></tr>';
+      return '<tr><td>'+escapeHtml(row.employeeName)+'</td><td>'+rhFormatDate(row.workDate)+'</td><td>'+escapeHtml(row.workTime || '—')+'</td><td style="white-space:nowrap">'+actions+'</td></tr>';
     }).join('');
   }
 
@@ -32972,10 +33017,10 @@ function renderHomeTasks(){
     const options = opts || {};
     const month = el('rhSchedAssignMonth') ? el('rhSchedAssignMonth').value : '';
     const body = el('rhSchedSundayTableBody');
-    if(!options.silent && body) body.innerHTML = '<tr><td colspan="3" class="responsive-empty">Carregando…</td></tr>';
+    if(!options.silent && body) body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Carregando…</td></tr>';
     if(!month){
       rhSchedSundays = [];
-      if(body) body.innerHTML = '<tr><td colspan="3" class="responsive-empty">Selecione o mês.</td></tr>';
+      if(body) body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Selecione o mês.</td></tr>';
       return;
     }
     try{
@@ -32983,7 +33028,7 @@ function renderHomeTasks(){
       rhSchedSundays = Array.isArray(data.items) ? data.items : [];
     }catch(error){
       rhSchedSundays = [];
-      if(body) body.innerHTML = '<tr><td colspan="3" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(body) body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
       return;
     }
     rhSchedRenderSundayTable();
@@ -33089,7 +33134,8 @@ function renderHomeTasks(){
       employeeId,
       employeeName: employee.employeeName,
       referenceMonth: el('rhSchedAssignMonth').value,
-      workDate
+      workDate,
+      workTime: el('rhSchedSundayWorkTime') ? el('rhSchedSundayWorkTime').value : ''
     };
     try{
       await rhSchedApiRequest('/sundays', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
@@ -33191,20 +33237,52 @@ function renderHomeTasks(){
     if(rhFolgasWeeks.some(week => week.weekStart === selected)) select.value = selected;
   }
 
-  function rhFolgasRenderDays(days){
-    const container = el('rhFolgasDaysList');
+  // Tabela por loja/dia no estilo da planilha legada (DIA / ESCALADOS /
+  // DE FOLGA / OBS). Substitui a antiga lista simples agrupada por dia —
+  // essa é mais completa (cobre quem trabalha também, não só quem folga).
+  function rhSchedChip(name, extra, off){
+    const cls = off ? 'rh-sched-chip rh-sched-chip-off' : 'rh-sched-chip';
+    return '<span class="'+cls+'">'+escapeHtml(name)+(extra ? ' · '+escapeHtml(extra) : '')+'</span>';
+  }
+
+  function rhFolgasRenderStores(stores){
+    const container = el('rhFolgasStores');
     if(!container) return;
-    if(!days.length){ container.innerHTML = '<div class="dre-empty">Nenhuma folga neste período.</div>'; return; }
-    container.innerHTML = days.map(day => {
-      const employees = day.employees.map(employee =>
-        escapeHtml(employee.employeeName) + (employee.companyName ? ' ('+escapeHtml(employee.companyName)+')' : '')
-      ).join(', ');
-      return '<div class="dre-flat-row"><span class="dre-flat-name">'+rhFormatDate(day.date)+' — '+escapeHtml(day.weekday).toUpperCase()+'</span><span>'+employees+'</span></div>';
+    if(!stores.length){ container.innerHTML = '<div class="dre-empty">Nenhuma loja com colaborador cadastrado neste período.</div>'; return; }
+    const manage = rhSchedCanManage();
+    container.innerHTML = stores.map(store => {
+      const period = store.periodStart && store.periodEnd
+        ? 'Período: '+rhFormatDate(store.periodStart)+' a '+rhFormatDate(store.periodEnd) : '';
+      const rows = store.days.map(day => {
+        const escalados = day.escalados.length
+          ? day.escalados.map(employee => rhSchedChip(employee.employeeName, employee.workTime, false)).join('')
+          : '—';
+        const deFolga = day.deFolga.length
+          ? day.deFolga.map(employee => rhSchedChip(employee.employeeName, '', true)).join('')
+          : '—';
+        const editButton = manage
+          ? '<button class="btn-outline btn-sm" type="button" data-rh-sched-day-note-edit="1" data-company-id="'+escapeHtml(store.companyId)+'" data-company-name="'+escapeHtml(store.companyName)+'" data-date="'+escapeHtml(day.date)+'" data-notes="'+escapeHtml(day.obs || '')+'">EDITAR</button>'
+          : '';
+        return '<tr>'+
+          '<td>'+escapeHtml(day.weekday)+' '+rhFormatDate(day.date)+'</td>'+
+          '<td><div class="rh-sched-day-cell">'+escalados+'</div></td>'+
+          '<td><div class="rh-sched-day-cell">'+deFolga+'</div></td>'+
+          '<td><div class="rh-sched-obs-cell"><span>'+escapeHtml(day.obs || '—')+'</span>'+editButton+'</div></td>'+
+        '</tr>';
+      }).join('');
+      return '<div class="rh-sched-store-block">'+
+        '<h4 class="rh-sched-store-head">'+escapeHtml(store.companyName.toUpperCase())+(period ? ' <span class="rh-sched-store-period">— '+escapeHtml(period)+'</span>' : '')+'</h4>'+
+        '<div class="table-panel responsive-table"><div class="table-scroll"><table>'+
+          '<thead><tr><th>Dia</th><th>Escalados</th><th>De folga</th><th>Obs</th></tr></thead>'+
+          '<tbody>'+rows+'</tbody>'+
+        '</table></div></div>'+
+      '</div>';
     }).join('');
   }
 
   // Formato exato pedido: "{Nome}, Unidade {Loja}, folgou {dia} dia {n}, ...
-  // e {dia} dia {n}. Total: {N} folgas." — dia da semana em minúsculo.
+  // e {dia} dia {n}. Total: {N} folgas." — dia da semana em minúsculo,
+  // singular quando total=1.
   function rhFolgasSummaryPhrase(row){
     const unit = row.companyName || '—';
     if(!row.offs.length){
@@ -33212,7 +33290,8 @@ function renderHomeTasks(){
     }
     const parts = row.offs.map(off => off.weekday.toLowerCase()+' dia '+Number(off.date.slice(8,10)));
     const joined = parts.length === 1 ? parts[0] : parts.slice(0,-1).join(', ')+' e '+parts[parts.length-1];
-    return escapeHtml(row.employeeName)+', Unidade '+escapeHtml(unit)+', folgou '+escapeHtml(joined)+'. Total: '+row.total+' folgas.';
+    const totalLabel = row.total === 1 ? ' folga.' : ' folgas.';
+    return escapeHtml(row.employeeName)+', Unidade '+escapeHtml(unit)+', folgou '+escapeHtml(joined)+'. Total: '+row.total+totalLabel;
   }
 
   function rhFolgasRenderSummary(summary){
@@ -33224,25 +33303,28 @@ function renderHomeTasks(){
 
   async function rhFolgasLoadReport(){
     const month = el('rhFolgasMonth') ? el('rhFolgasMonth').value : '';
-    const daysList = el('rhFolgasDaysList');
+    const storesList = el('rhFolgasStores');
     const summaryList = el('rhFolgasSummaryList');
     if(!month){
-      if(daysList) daysList.innerHTML = '<div class="dre-empty">Selecione o mês.</div>';
+      if(storesList) storesList.innerHTML = '<div class="dre-empty">Selecione o mês.</div>';
       if(summaryList) summaryList.innerHTML = '<li class="dre-empty">Selecione o mês.</li>';
       return;
     }
-    if(daysList) daysList.innerHTML = '<div class="dre-empty">Carregando…</div>';
+    if(storesList) storesList.innerHTML = '<div class="dre-empty">Carregando…</div>';
     if(summaryList) summaryList.innerHTML = '<li class="dre-empty">Carregando…</li>';
     try{
       const week = el('rhFolgasWeek') ? el('rhFolgasWeek').value : '';
-      const query = '?referenceMonth='+encodeURIComponent(month)+(week ? '&week='+encodeURIComponent(week) : '');
+      const companyId = el('rhFolgasCompany') ? el('rhFolgasCompany').value : '';
+      let query = '?referenceMonth='+encodeURIComponent(month);
+      if(week) query += '&week='+encodeURIComponent(week);
+      if(companyId) query += '&companyId='+encodeURIComponent(companyId);
       const data = await rhSchedApiRequest('/report'+query);
       rhFolgasWeeks = Array.isArray(data.weeks) ? data.weeks : [];
       rhFolgasRenderWeekSelect();
-      rhFolgasRenderDays(Array.isArray(data.days) ? data.days : []);
+      rhFolgasRenderStores(Array.isArray(data.stores) ? data.stores : []);
       rhFolgasRenderSummary(Array.isArray(data.summary) ? data.summary : []);
     }catch(error){
-      if(daysList) daysList.innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      if(storesList) storesList.innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
       if(summaryList) summaryList.innerHTML = '<li class="dre-empty">'+escapeHtml(error.message)+'</li>';
     }
   }
@@ -33252,7 +33334,47 @@ function renderHomeTasks(){
     rhFolgasLoadReport();
   });
   if(el('rhFolgasWeek')) el('rhFolgasWeek').addEventListener('change', () => rhFolgasLoadReport());
+  if(el('rhFolgasCompany')) el('rhFolgasCompany').addEventListener('change', () => rhFolgasLoadReport());
   if(el('btnPrintRhFolgas')) el('btnPrintRhFolgas').addEventListener('click', () => window.print());
+
+  function openRhSchedDayNoteDialog(companyId, companyName, date, currentNotes){
+    el('rhSchedDayNoteForm').reset();
+    el('rhSchedDayNoteCompanyId').value = companyId;
+    el('rhSchedDayNoteCompanyName').value = companyName;
+    el('rhSchedDayNoteDate').value = date;
+    el('rhSchedDayNoteLabel').textContent = companyName+' — '+rhFormatDate(date);
+    el('rhSchedDayNoteText').value = currentNotes || '';
+    el('rhSchedDayNoteFormStatus').textContent = '';
+    el('rhSchedDayNoteDialog').showModal();
+  }
+
+  if(el('rhFolgasStores')) el('rhFolgasStores').addEventListener('click', event => {
+    const editButton = event.target.closest('[data-rh-sched-day-note-edit]');
+    if(!editButton) return;
+    openRhSchedDayNoteDialog(editButton.dataset.companyId, editButton.dataset.companyName, editButton.dataset.date, editButton.dataset.notes);
+  });
+
+  if(el('btnCloseRhSchedDayNoteDialog')) el('btnCloseRhSchedDayNoteDialog').addEventListener('click', () => el('rhSchedDayNoteDialog').close());
+  if(el('btnCancelRhSchedDayNoteDialog')) el('btnCancelRhSchedDayNoteDialog').addEventListener('click', () => el('rhSchedDayNoteDialog').close());
+
+  if(el('rhSchedDayNoteForm')) el('rhSchedDayNoteForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statusEl = el('rhSchedDayNoteFormStatus');
+    statusEl.textContent = '';
+    const payload = {
+      companyId: el('rhSchedDayNoteCompanyId').value,
+      companyName: el('rhSchedDayNoteCompanyName').value,
+      referenceMonth: el('rhFolgasMonth').value,
+      noteDate: el('rhSchedDayNoteDate').value,
+      notes: el('rhSchedDayNoteText').value
+    };
+    try{
+      await rhSchedApiRequest('/day-notes', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('rhSchedDayNoteDialog').close();
+      await refreshAfterAction(() => rhFolgasLoadReport());
+      showPurchaseToast('Observação salva.');
+    }catch(error){ statusEl.textContent = error.message; }
+  });
 
   async function loadRhFolgas(){
     if(!canAccess('rh_escalas')) return;

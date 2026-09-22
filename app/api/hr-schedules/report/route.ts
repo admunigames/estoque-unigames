@@ -13,8 +13,9 @@ import { canViewSchedules, identity, isValidDate, isValidMonth, jsonResponse, sa
 const WEEKDAY_LABELS_PT = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 type AssignmentRow = { employeeId: string; employeeName: string; companyId: string; companyName: string };
-type SundayWorkRow = { employeeId: string; workDate: string };
+type SundayWorkRow = { employeeId: string; workDate: string; workTime: string };
 type WeekdayOffRow = { employeeId: string; employeeName: string; offDate: string };
+type DayNoteRow = { companyId: string; noteDate: string; notes: string };
 
 function pad2(value: number) {
   return String(value).padStart(2, "0");
@@ -51,6 +52,16 @@ function sundaysOfMonth(referenceMonth: string) {
   return sundays;
 }
 
+/** Todos os dias do mês (não só domingos) — usado pra montar `stores` quando não há semana filtrada. */
+function daysOfMonth(referenceMonth: string) {
+  const year = Number(referenceMonth.slice(0, 4));
+  const month = Number(referenceMonth.slice(5, 7));
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const days: string[] = [];
+  for (let day = 1; day <= lastDay; day++) days.push(formatDate(year, month, day));
+  return days;
+}
+
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -62,6 +73,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const referenceMonth = safeText(url.searchParams.get("referenceMonth"), 7);
   const week = safeText(url.searchParams.get("week"), 10);
+  const companyIdFilter = safeText(url.searchParams.get("companyId"), 80);
   if (!isValidMonth(referenceMonth)) {
     return jsonResponse({ error: "MÊS DE REFERÊNCIA INVÁLIDO." }, 400);
   }
@@ -83,13 +95,18 @@ export async function GET(request: Request) {
     const assignments = assignmentsResult.results ?? [];
 
     const sundayWorkResult = await database
-      .prepare(`SELECT employee_id AS employeeId, work_date AS workDate FROM hr_schedule_sunday_work WHERE reference_month=?1`)
+      .prepare(
+        `SELECT employee_id AS employeeId, work_date AS workDate, work_time AS workTime
+         FROM hr_schedule_sunday_work WHERE reference_month=?1`,
+      )
       .bind(referenceMonth)
       .all<SundayWorkRow>();
     const sundayWorkByEmployee = new Map<string, Set<string>>();
+    const sundayWorkTimeByKey = new Map<string, string>();
     for (const row of sundayWorkResult.results ?? []) {
       if (!sundayWorkByEmployee.has(row.employeeId)) sundayWorkByEmployee.set(row.employeeId, new Set());
       sundayWorkByEmployee.get(row.employeeId)!.add(row.workDate);
+      sundayWorkTimeByKey.set(`${row.employeeId}|${row.workDate}`, row.workTime || "");
     }
 
     const weekdayOffResult = await database
@@ -100,9 +117,20 @@ export async function GET(request: Request) {
       .bind(referenceMonth)
       .all<WeekdayOffRow>();
     const weekdayOffByEmployee = new Map<string, string[]>();
+    const weekdayOffSet = new Set<string>();
     for (const row of weekdayOffResult.results ?? []) {
       if (!weekdayOffByEmployee.has(row.employeeId)) weekdayOffByEmployee.set(row.employeeId, []);
       weekdayOffByEmployee.get(row.employeeId)!.push(row.offDate);
+      weekdayOffSet.add(`${row.employeeId}|${row.offDate}`);
+    }
+
+    const dayNotesResult = await database
+      .prepare(`SELECT company_id AS companyId, note_date AS noteDate, notes FROM hr_schedule_day_notes WHERE reference_month=?1`)
+      .bind(referenceMonth)
+      .all<DayNoteRow>();
+    const dayNoteByKey = new Map<string, string>();
+    for (const row of dayNotesResult.results ?? []) {
+      dayNoteByKey.set(`${row.companyId}|${row.noteDate}`, row.notes || "");
     }
 
     const sundays = sundaysOfMonth(referenceMonth);
@@ -175,7 +203,71 @@ export async function GET(request: Request) {
 
     summary.sort((a, b) => a.employeeName.localeCompare(b.employeeName));
 
-    return jsonResponse({ weeks, days, summary });
+    // "stores" — tabela por loja/dia no estilo da planilha legada (item 5 do
+    // pedido). Independente de days/summary (que cobrem todo mundo): filtra
+    // só por companyId quando informado, e cobre a semana ou o mês inteiro.
+    type StoreEmployee = { employeeId: string; employeeName: string };
+    const storeEmployeesByCompany = new Map<string, { companyName: string; employees: StoreEmployee[] }>();
+    for (const assignment of assignments) {
+      if (companyIdFilter && assignment.companyId !== companyIdFilter) continue;
+      if (!assignment.companyId) continue;
+      if (!storeEmployeesByCompany.has(assignment.companyId)) {
+        storeEmployeesByCompany.set(assignment.companyId, { companyName: assignment.companyName, employees: [] });
+      }
+      storeEmployeesByCompany.get(assignment.companyId)!.employees.push({
+        employeeId: assignment.employeeId,
+        employeeName: assignment.employeeName,
+      });
+    }
+
+    const dayRange = week ? Array.from({ length: 7 }, (_, index) => addDays(week, index)) : daysOfMonth(referenceMonth);
+    const periodStart = dayRange[0] ?? "";
+    const periodEnd = dayRange[dayRange.length - 1] ?? "";
+
+    const stores = Array.from(storeEmployeesByCompany.entries())
+      .map(([companyId, store]) => {
+        const employees = store.employees.slice().sort((a, b) => a.employeeName.localeCompare(b.employeeName));
+        const storeDays = dayRange.map((date) => {
+          const sunday = weekdayOf(date) === 0;
+          let escalados: { employeeName: string; workTime?: string }[];
+          let deFolga: { employeeName: string }[];
+          if (sunday) {
+            escalados = employees
+              .filter((employee) => (sundayWorkByEmployee.get(employee.employeeId) ?? new Set()).has(date))
+              .map((employee) => {
+                const workTime = sundayWorkTimeByKey.get(`${employee.employeeId}|${date}`) || "";
+                return workTime ? { employeeName: employee.employeeName, workTime } : { employeeName: employee.employeeName };
+              });
+            deFolga = employees
+              .filter((employee) => !(sundayWorkByEmployee.get(employee.employeeId) ?? new Set()).has(date))
+              .map((employee) => ({ employeeName: employee.employeeName }));
+          } else {
+            deFolga = employees
+              .filter((employee) => weekdayOffSet.has(`${employee.employeeId}|${date}`))
+              .map((employee) => ({ employeeName: employee.employeeName }));
+            escalados = employees
+              .filter((employee) => !weekdayOffSet.has(`${employee.employeeId}|${date}`))
+              .map((employee) => ({ employeeName: employee.employeeName }));
+          }
+          return {
+            date,
+            weekday: WEEKDAY_LABELS_PT[weekdayOf(date)],
+            escalados,
+            deFolga,
+            obs: dayNoteByKey.get(`${companyId}|${date}`) || "",
+          };
+        });
+        return {
+          companyId,
+          companyName: store.companyName,
+          periodStart,
+          periodEnd,
+          days: storeDays,
+        };
+      })
+      .sort((a, b) => a.companyName.localeCompare(b.companyName));
+
+    return jsonResponse({ weeks, days, summary, stores });
   } catch (error) {
     console.error("Não foi possível calcular a escala de folgas.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CALCULAR A ESCALA DE FOLGAS." }, 500);

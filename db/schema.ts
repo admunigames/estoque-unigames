@@ -3214,6 +3214,7 @@ export const hrScheduleSundayWork = pgTable(
     employeeName: text("employee_name").notNull(),
     referenceMonth: text("reference_month").notNull(),
     workDate: text("work_date").notNull(),
+    workTime: text("work_time").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -3247,5 +3248,31 @@ export const hrScheduleWeekdayOff = pgTable(
     uniqueIndex("hr_schedule_weekday_off_employee_date_idx").on(table.employeeId, table.offDate),
     index("hr_schedule_weekday_off_month_idx").on(table.referenceMonth),
     index("hr_schedule_weekday_off_date_idx").on(table.offDate),
+  ],
+);
+
+// Observação livre por (loja, dia) — não por colaborador. Cobre casos como
+// troca de loja ou saída antecipada que não justificam virar um registro de
+// auditoria formal, só um lembrete visível na tabela de escala (estilo da
+// planilha legada que este módulo substitui).
+export const hrScheduleDayNotes = pgTable(
+  "hr_schedule_day_notes",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    referenceMonth: text("reference_month").notNull(),
+    noteDate: text("note_date").notNull(),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_schedule_day_notes_company_date_idx").on(table.companyId, table.noteDate),
+    index("hr_schedule_day_notes_month_idx").on(table.referenceMonth),
   ],
 );
