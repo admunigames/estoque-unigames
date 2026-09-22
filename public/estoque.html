@@ -2989,7 +2989,7 @@
         <a class="nav-item sub-item" id="navFinanceiroRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento,rh_aniversariantes">
+    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento,rh_aniversariantes,rh_odontologico">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -3004,6 +3004,7 @@
         <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-permission="hr" data-home-desc="Solicitações e histórico de folgas da equipe." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
         <a class="nav-item sub-item" id="navRhFolha" data-page="rhFolha" data-permission="payroll" data-home-desc="Folha de pagamento mensal, com comissão e benefícios calculados na hora." title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
         <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
+        <a class="nav-item sub-item" id="navRhOdontologico" data-page="rhOdontologico" data-permission="rh_odontologico" data-home-desc="Controle de inclusão e exclusão de colaboradores no plano odontológico." title="Plano Odontológico" href="/rh/odontologico"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-3 0-5 2-5 5 0 2.5 1 3.5 1 6.5 0 2 1 4.5 2.5 4.5S12 17 12 14c0-1 .5-1 .5 0 0 3 1 5 2.5 5s2.5-2.5 2.5-4.5c0-3 1-4 1-6.5 0-3-2-5-5-5-1 0-1 .8-1.5.8S13 3 12 3Z"/></svg></span><span class="nav-label">Plano Odontológico</span></a>
         <a class="nav-item sub-item" id="navRhRecrutamento" data-page="rhRecrutamento" data-permission="rh_recrutamento" data-home-desc="Pipeline de Recrutamento e Seleção: entrevista, teste, treinamento, contratação e integração." title="Recrutamento e Seleção" href="/rh/recrutamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/><path d="m17 4 2 2-2 2"/><path d="M19 6h-4"/></svg></span><span class="nav-label">Recrutamento e Seleção</span></a>
       </div>
     </div>
@@ -5168,6 +5169,13 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>RH - Plano Odontológico</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:view"> Ver a lista do plano odontológico (dado sensível: CPF e saúde)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:manage"> Cadastrar, editar e excluir registros do plano odontológico</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -5688,6 +5696,60 @@
           <table id="rhAnivTable">
             <thead><tr><th>Nome</th><th>Unidade</th><th>Data de Nascimento</th><th>Mês</th><th>Status</th><th></th></tr></thead>
             <tbody id="rhAnivTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RH / PLANO ODONTOLÓGICO ================= -->
+    <section id="pageRhOdontologico" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Plano Odontológico</h2>
+        </div>
+      </header>
+
+      <div class="dre-toolbar no-print">
+        <div class="field">
+          <label for="dentalPlanStatusFilter">Status</label>
+          <select id="dentalPlanStatusFilter">
+            <option value="">TODOS</option>
+            <option value="incluso">INCLUSO</option>
+            <option value="faltando_incluir_excluir">FALTANDO INCLUIR/EXCLUIR</option>
+            <option value="inclusao_exclusao_solicitada">INCLUSÃO/EXCLUSÃO SOLICITADA</option>
+            <option value="desligado">DESLIGADO</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="dentalPlanReasonFilter">Motivo</label>
+          <select id="dentalPlanReasonFilter">
+            <option value="">TODOS</option>
+            <option value="inclusao">INCLUSÃO</option>
+            <option value="exclusao">EXCLUSÃO</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="dentalPlanCnpjFilter">Unidade/CNPJ</label>
+          <select id="dentalPlanCnpjFilter"><option value="">TODAS</option></select>
+        </div>
+        <div class="field">
+          <label for="dentalPlanSearch">Buscar</label>
+          <input type="search" id="dentalPlanSearch" placeholder="Nome do colaborador">
+        </div>
+        <div class="dre-toolbar-actions" id="dentalPlanActions" hidden>
+          <button class="btn-accent" type="button" id="btnNewDentalPlan">NOVO REGISTRO</button>
+        </div>
+      </div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="dentalPlanTable">
+            <thead><tr>
+              <th>Colaborador</th><th>CPF</th><th>Data de Nascimento</th><th>Unidade de Inclusão</th>
+              <th>CNPJ</th><th>Status</th><th>Motivo</th><th>N° do Processo</th><th>Observações</th><th></th>
+            </tr></thead>
+            <tbody id="dentalPlanTableBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -6954,6 +7016,47 @@
     <div class="user-form-status" id="reposicaoFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelReposicaoDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="dentalPlanDialog" aria-labelledby="dentalPlanDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="dentalPlanDialogTitle">NOVO REGISTRO</h3>
+    <button class="purchase-dialog-close" id="btnCloseDentalPlanDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="dentalPlanForm">
+    <input type="hidden" id="dentalPlanId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="dentalPlanEmployee">COLABORADOR *</label>
+        <select id="dentalPlanEmployee" required><option value="">SELECIONE</option></select>
+      </div>
+      <div class="purchase-field"><label for="dentalPlanCpf">CPF</label><input id="dentalPlanCpf" readonly placeholder="PUXADO DO CADASTRO"></div>
+      <div class="purchase-field"><label for="dentalPlanBirthDate">DATA DE NASCIMENTO</label><input id="dentalPlanBirthDate" readonly placeholder="PUXADO DO CADASTRO"></div>
+      <div class="purchase-field"><label for="dentalPlanUnitName">UNIDADE DE INCLUSÃO (RAZÃO SOCIAL)</label><input id="dentalPlanUnitName" maxlength="200"></div>
+      <div class="purchase-field"><label for="dentalPlanCnpj">CNPJ</label><input id="dentalPlanCnpj" maxlength="32" placeholder="00.000.000/0000-00"></div>
+      <div class="purchase-field"><label for="dentalPlanStatus">STATUS *</label>
+        <select id="dentalPlanStatus" required>
+          <option value="incluso">INCLUSO</option>
+          <option value="faltando_incluir_excluir">FALTANDO INCLUIR/EXCLUIR</option>
+          <option value="inclusao_exclusao_solicitada">INCLUSÃO/EXCLUSÃO SOLICITADA</option>
+          <option value="desligado">DESLIGADO</option>
+        </select>
+      </div>
+      <div class="purchase-field"><label for="dentalPlanReason">MOTIVO</label>
+        <select id="dentalPlanReason">
+          <option value="">NÃO SE APLICA</option>
+          <option value="inclusao">INCLUSÃO</option>
+          <option value="exclusao">EXCLUSÃO</option>
+        </select>
+      </div>
+      <div class="purchase-field"><label for="dentalPlanProcessNumber">N° DO PROCESSO</label><input id="dentalPlanProcessNumber" maxlength="80"></div>
+      <div class="purchase-field full"><label for="dentalPlanNotes">OBSERVAÇÕES</label><textarea id="dentalPlanNotes" rows="3" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="dentalPlanFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelDentalPlanDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
     </div>
   </form>
@@ -9711,6 +9814,7 @@
     rhComissionamento:'/rh/comissionamento',
     rhAcompanhamentoLojas:'/rh/acompanhamento-lojas',
     rhAniversariantes:'/rh/aniversariantes',
+    rhOdontologico:'/rh/odontologico',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
@@ -9761,6 +9865,7 @@
     rhComissionamento:'COMISSIONAMENTO',
     rhAcompanhamentoLojas:'ACOMPANHAMENTO - LOJAS',
     rhAniversariantes:'ANIVERSARIANTES',
+    rhOdontologico:'PLANO ODONTOLÓGICO',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
@@ -9808,6 +9913,7 @@
     rhComissionamento:'payroll',
     rhAcompanhamentoLojas:'rh_acompanhamento',
     rhAniversariantes:'rh_aniversariantes',
+    rhOdontologico:'rh_odontologico',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
@@ -10438,6 +10544,7 @@
     if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
+    if(name === 'rhOdontologico') loadRhOdontologico();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
@@ -10487,6 +10594,7 @@
     if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
+    if(name === 'rhOdontologico') loadRhOdontologico();
     if(name === 'rhControleHoras') loadRhControleHoras();
   }
 
@@ -28692,6 +28800,7 @@ function renderHomeTasks(){
     'rh_recrutamento:view':'RH - Recrutamento e Seleção: visualizar','rh_recrutamento:manage':'RH - Recrutamento e Seleção: cadastrar/editar/excluir',
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
+    'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
@@ -32342,6 +32451,236 @@ function renderHomeTasks(){
       button.disabled = false;
     }
   });
+
+  // ================= RH / PLANO ODONTOLÓGICO =================
+  // Controle de inclusão/exclusão de colaboradores no plano odontológico.
+  // Permissão própria (rh_odontologico:view/:manage), independente das
+  // demais permissões de RH — dado sensível (CPF + saúde). CPF e data de
+  // nascimento NUNCA são digitados aqui: vêm sempre do cadastro de
+  // colaboradores (hr_employees), auto-preenchidos ao selecionar o
+  // colaborador no formulário (decisão confirmada com o usuário) — o
+  // back-end também faz o lookup ao vivo no GET, então os valores exibidos
+  // na tabela nunca divergem do cadastro oficial. Unidade/CNPJ de inclusão é
+  // texto livre: não existe cadastro de CNPJ jurídico no sistema hoje.
+  const DENTAL_STATUS_LABELS = {
+    incluso:'INCLUSO',
+    faltando_incluir_excluir:'FALTANDO INCLUIR/EXCLUIR',
+    inclusao_exclusao_solicitada:'INCLUSÃO/EXCLUSÃO SOLICITADA',
+    desligado:'DESLIGADO'
+  };
+  const DENTAL_STATUS_TONE = {
+    incluso:'done',
+    faltando_incluir_excluir:'alert',
+    inclusao_exclusao_solicitada:'progress',
+    desligado:'waiting'
+  };
+  const DENTAL_REASON_LABELS = {inclusao:'INCLUSÃO', exclusao:'EXCLUSÃO'};
+  let dentalPlanRows = [];
+  let dentalPlanEmployees = [];
+
+  async function dentalPlanApiRequest(path, options){
+    const response = await fetch('/api/hr-dental-plan'+(path || ''), {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function dentalPlanEmployeeOptions(){
+    return dentalPlanEmployees.map(employee => ({
+      value: employee.id,
+      label: employee.fullName + (employee.companyName ? ' — '+employee.companyName : '')
+    }));
+  }
+
+  async function loadDentalPlanEmployees(){
+    if(dentalPlanEmployees.length) return;
+    try{
+      const data = await dentalPlanApiRequest('/employees');
+      dentalPlanEmployees = Array.isArray(data.employees) ? data.employees : [];
+    }catch(error){
+      dentalPlanEmployees = [];
+    }
+    rhFillSelect('dentalPlanEmployee','SELECIONE',dentalPlanEmployeeOptions());
+  }
+
+  // Garante que o colaborador do registro apareça no seletor mesmo se ele já
+  // não estiver mais ativo (ex.: registro "Desligado" antigo) — sem isso o
+  // <select> ficaria em branco ao editar e o vínculo se perderia ao salvar.
+  function ensureDentalPlanEmployeeOption(id, fallbackName){
+    if(!id || dentalPlanEmployees.some(employee => employee.id === id)) return;
+    dentalPlanEmployees = dentalPlanEmployees.concat([{
+      id, fullName: fallbackName || '(colaborador inativo)', cpf:'', birthDate:'', companyId:'', companyName:''
+    }]);
+    rhFillSelect('dentalPlanEmployee','SELECIONE',dentalPlanEmployeeOptions());
+  }
+
+  function dentalPlanSetReadonly(cpf, birthDate){
+    el('dentalPlanCpf').value = cpf ? rhFormatCpf(cpf) : '';
+    el('dentalPlanBirthDate').value = birthDate ? (formatDateBR(birthDate) || '') : '';
+  }
+
+  function dentalPlanStatusBadge(status){
+    return '<span class="status-pill '+(DENTAL_STATUS_TONE[status] || '')+'">'+(DENTAL_STATUS_LABELS[status] || status)+'</span>';
+  }
+
+  function dentalPlanRenderCnpjFilter(){
+    const select = el('dentalPlanCnpjFilter');
+    if(!select) return;
+    const seen = new Map();
+    dentalPlanRows.forEach(row => {
+      if(row.cnpj && !seen.has(row.cnpj)) seen.set(row.cnpj, row.unitName ? row.unitName+' — '+row.cnpj : row.cnpj);
+    });
+    rhFillSelect('dentalPlanCnpjFilter','TODAS',Array.from(seen.entries()).map(([value,label]) => ({value, label})));
+  }
+
+  function dentalPlanRenderTable(){
+    const body = el('dentalPlanTableBody');
+    if(!body) return;
+    const status = el('dentalPlanStatusFilter') ? el('dentalPlanStatusFilter').value : '';
+    const reason = el('dentalPlanReasonFilter') ? el('dentalPlanReasonFilter').value : '';
+    const cnpj = el('dentalPlanCnpjFilter') ? el('dentalPlanCnpjFilter').value : '';
+    const search = el('dentalPlanSearch') ? el('dentalPlanSearch').value.trim().toLowerCase() : '';
+    const canManage = canAccess('rh_odontologico:manage');
+
+    let rows = dentalPlanRows.slice();
+    if(status) rows = rows.filter(row => row.status === status);
+    if(reason) rows = rows.filter(row => row.reason === reason);
+    if(cnpj) rows = rows.filter(row => row.cnpj === cnpj);
+    if(search) rows = rows.filter(row => row.employeeName.toLowerCase().includes(search));
+
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="10" class="responsive-empty">Nenhum registro encontrado.</td></tr>';
+      return;
+    }
+
+    body.innerHTML = rows.map(row => {
+      const actions = canManage
+        ? '<button class="btn-outline btn-sm" type="button" data-dental-edit="'+escapeHtml(row.id)+'">EDITAR</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-dental-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'
+        : '';
+      return '<tr>'+
+        '<td>'+escapeHtml(row.employeeName)+'</td>'+
+        '<td>'+escapeHtml(rhFormatCpf(row.cpf))+'</td>'+
+        '<td>'+escapeHtml(formatDateBR(row.birthDate) || '—')+'</td>'+
+        '<td>'+escapeHtml(row.unitName || '—')+'</td>'+
+        '<td>'+escapeHtml(row.cnpj || '—')+'</td>'+
+        '<td>'+dentalPlanStatusBadge(row.status)+'</td>'+
+        '<td>'+escapeHtml(DENTAL_REASON_LABELS[row.reason] || '—')+'</td>'+
+        '<td>'+escapeHtml(row.processNumber || '—')+'</td>'+
+        '<td>'+escapeHtml(row.notes || '—')+'</td>'+
+        '<td style="white-space:nowrap">'+actions+'</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  async function loadDentalPlanRows(opts){
+    const options = opts || {};
+    const body = el('dentalPlanTableBody');
+    if(!options.silent && body) body.innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await dentalPlanApiRequest('');
+      dentalPlanRows = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      dentalPlanRows = [];
+      if(body) body.innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    dentalPlanRenderCnpjFilter();
+    dentalPlanRenderTable();
+  }
+
+  function openDentalPlanDialog(row){
+    el('dentalPlanForm').reset();
+    el('dentalPlanId').value = row ? row.id : '';
+    el('dentalPlanDialogTitle').textContent = row ? 'EDITAR REGISTRO' : 'NOVO REGISTRO';
+    if(row && row.employeeId) ensureDentalPlanEmployeeOption(row.employeeId, row.employeeName);
+    el('dentalPlanEmployee').value = row ? row.employeeId : '';
+    dentalPlanSetReadonly(row ? row.cpf : '', row ? row.birthDate : '');
+    el('dentalPlanUnitName').value = row ? (row.unitName || '') : '';
+    el('dentalPlanCnpj').value = row ? (row.cnpj || '') : '';
+    el('dentalPlanStatus').value = row ? row.status : 'faltando_incluir_excluir';
+    el('dentalPlanReason').value = row ? (row.reason || '') : '';
+    el('dentalPlanProcessNumber').value = row ? (row.processNumber || '') : '';
+    el('dentalPlanNotes').value = row ? (row.notes || '') : '';
+    el('dentalPlanFormStatus').textContent = '';
+    el('dentalPlanDialog').showModal();
+  }
+
+  if(el('dentalPlanEmployee')) el('dentalPlanEmployee').addEventListener('change', () => {
+    const employee = dentalPlanEmployees.find(item => item.id === el('dentalPlanEmployee').value);
+    dentalPlanSetReadonly(employee ? employee.cpf : '', employee ? employee.birthDate : '');
+  });
+
+  if(el('btnNewDentalPlan')) el('btnNewDentalPlan').addEventListener('click', () => openDentalPlanDialog(null));
+  if(el('btnCloseDentalPlanDialog')) el('btnCloseDentalPlanDialog').addEventListener('click', () => el('dentalPlanDialog').close());
+  if(el('btnCancelDentalPlanDialog')) el('btnCancelDentalPlanDialog').addEventListener('click', () => el('dentalPlanDialog').close());
+
+  if(el('dentalPlanForm')) el('dentalPlanForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statusEl = el('dentalPlanFormStatus');
+    statusEl.textContent = '';
+    const employeeId = el('dentalPlanEmployee').value;
+    const employee = dentalPlanEmployees.find(item => item.id === employeeId);
+    if(!employee){ statusEl.textContent = 'SELECIONE UM COLABORADOR.'; return; }
+    const payload = {
+      employeeId,
+      employeeName: employee.fullName,
+      unitName: el('dentalPlanUnitName').value.trim(),
+      cnpj: el('dentalPlanCnpj').value.trim(),
+      status: el('dentalPlanStatus').value,
+      reason: el('dentalPlanReason').value,
+      processNumber: el('dentalPlanProcessNumber').value.trim(),
+      notes: el('dentalPlanNotes').value
+    };
+    const id = el('dentalPlanId').value;
+    if(id) payload.id = id;
+    try{
+      await dentalPlanApiRequest('', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('dentalPlanDialog').close();
+      await refreshAfterAction(() => loadDentalPlanRows({silent:true}));
+      showPurchaseToast('Registro salvo.');
+    }catch(error){ statusEl.textContent = error.message; }
+  });
+
+  if(el('dentalPlanTableBody')) el('dentalPlanTableBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-dental-edit]');
+    if(editButton){
+      const row = dentalPlanRows.find(item => item.id === editButton.dataset.dentalEdit);
+      if(row) openDentalPlanDialog(row);
+      return;
+    }
+    const deleteButton = event.target.closest('[data-dental-delete]');
+    if(deleteButton){
+      if(!confirm('Excluir este registro do plano odontológico?')) return;
+      try{
+        await dentalPlanApiRequest('?id='+encodeURIComponent(deleteButton.dataset.dentalDelete), {method:'DELETE'});
+        await refreshAfterAction(() => loadDentalPlanRows({silent:true}));
+        showPurchaseToast('Registro excluído.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+
+  ['dentalPlanStatusFilter','dentalPlanReasonFilter','dentalPlanCnpjFilter'].forEach(id => {
+    if(el(id)) el(id).addEventListener('change', dentalPlanRenderTable);
+  });
+  if(el('dentalPlanSearch')) el('dentalPlanSearch').addEventListener('input', dentalPlanRenderTable);
+
+  async function loadRhOdontologico(){
+    if(!canAccess('rh_odontologico')) return;
+    if(el('dentalPlanActions')) el('dentalPlanActions').hidden = !canAccess('rh_odontologico:manage');
+    await loadDentalPlanEmployees();
+    await loadDentalPlanRows();
+  }
 
   // ================= RH / CONTROLE DE HORAS - LOGÍSTICA =================
   // Lançamento manual do ponto de papel (transcrição, não integração com

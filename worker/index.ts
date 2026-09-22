@@ -54,6 +54,7 @@ type Permission =
   | "rh_recrutamento:view" | "rh_recrutamento:manage"
   | "rh_fardamento:view" | "rh_fardamento:manage"
   | "rh_aniversariantes:view" | "rh_aniversariantes:manage"
+  | "rh_odontologico:view" | "rh_odontologico:manage"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -150,6 +151,10 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // Feito/Passou/Faltando, permissão própria, independente das demais (ver
   // MODULE_VIEW_PERMISSIONS.birthdays).
   "rh_aniversariantes:view", "rh_aniversariantes:manage",
+  // RH > Plano Odontológico — controle de inclusão/exclusão de colaboradores
+  // no plano, permissão própria, independente das demais (dado sensível:
+  // CPF + saúde, ver MODULE_VIEW_PERMISSIONS.dentalPlan).
+  "rh_odontologico:view", "rh_odontologico:manage",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -264,6 +269,7 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/recrutamento",
   "/rh/fardamento",
   "/rh/aniversariantes",
+  "/rh/odontologico",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
@@ -1119,6 +1125,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   recruitment: ["rh_recrutamento:view", "rh_recrutamento:manage"],
   uniformStock: ["rh_fardamento:view", "rh_fardamento:manage"],
   birthdays: ["rh_aniversariantes:view", "rh_aniversariantes:manage"],
+  dentalPlan: ["rh_odontologico:view", "rh_odontologico:manage"],
   works: ["works:manage", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
@@ -1253,6 +1260,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/rh/aniversariantes" || path.startsWith("/api/hr-birthdays"),
       "birthdays",
+    ],
+    // RH > Plano Odontológico — permissão própria (rh_odontologico:*),
+    // independente das demais permissões de RH acima.
+    [
+      path === "/rh/odontologico" || path.startsWith("/api/hr-dental-plan"),
+      "dentalPlan",
     ],
   ];
   const direct = directPermissions.find(([matches]) => matches);

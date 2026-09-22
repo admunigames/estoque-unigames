@@ -3131,3 +3131,42 @@ export const uniformCoatTerms = pgTable(
     index("uniform_coat_terms_status_idx").on(table.status),
   ],
 );
+
+// ========================= RH ODONTOLÓGICO =========================
+// Controle de inclusão/exclusão de colaboradores no plano odontológico.
+// Permissão própria rh_odontologico:view/:manage, independente das demais
+// permissões de RH (dado sensível: CPF + saúde). CPF e data de nascimento
+// NUNCA são copiados pra cá — sempre lookup ao vivo em hr_employees por
+// employee_id (mesma convenção do RH Financeiro, ver app/api/hr-payroll),
+// pra nunca divergir do cadastro oficial. Unidade/CNPJ de inclusão é texto
+// livre (decisão confirmada com o usuário): não existe cadastro de CNPJ
+// jurídico no sistema hoje — só o cadastro de "loja" (shared_state
+// 'companies_list'), que é outra coisa.
+export const hrDentalPlan = pgTable(
+  "hr_dental_plan",
+  {
+    id: text("id").primaryKey(),
+    // Vínculo com hr_employees (sem FK real, convenção do projeto).
+    employeeId: text("employee_id").notNull().default(""),
+    employeeName: text("employee_name").notNull(),
+    unitName: text("unit_name").notNull().default(""),
+    cnpj: text("cnpj").notNull().default(""),
+    // 'incluso' | 'faltando_incluir_excluir' | 'inclusao_exclusao_solicitada' | 'desligado'
+    status: text("status").notNull().default("faltando_incluir_excluir"),
+    // 'inclusao' | 'exclusao' | '' (nem sempre se aplica, ex: já incluso há muito tempo)
+    reason: text("reason").notNull().default(""),
+    processNumber: text("process_number").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("hr_dental_plan_employee_idx").on(table.employeeId),
+    index("hr_dental_plan_status_idx").on(table.status),
+    index("hr_dental_plan_reason_idx").on(table.reason),
+  ],
+);
