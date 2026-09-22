@@ -55,6 +55,7 @@ type Permission =
   | "rh_fardamento:view" | "rh_fardamento:manage"
   | "rh_aniversariantes:view" | "rh_aniversariantes:manage"
   | "rh_odontologico:view" | "rh_odontologico:manage"
+  | "rh_escalas:view" | "rh_escalas:manage"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -155,6 +156,11 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // no plano, permissão própria, independente das demais (dado sensível:
   // CPF + saúde, ver MODULE_VIEW_PERMISSIONS.dentalPlan).
   "rh_odontologico:view", "rh_odontologico:manage",
+  // RH > Escalas e Folgas — cadastro de loja fixa do colaborador no mês +
+  // escala de domingos trabalhados + folga semanal (seg-sáb), com escala de
+  // folgas e resumo por colaborador calculados ao vivo. Permissão própria,
+  // independente das demais (ver MODULE_VIEW_PERMISSIONS.schedules).
+  "rh_escalas:view", "rh_escalas:manage",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -1126,6 +1132,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   uniformStock: ["rh_fardamento:view", "rh_fardamento:manage"],
   birthdays: ["rh_aniversariantes:view", "rh_aniversariantes:manage"],
   dentalPlan: ["rh_odontologico:view", "rh_odontologico:manage"],
+  schedules: ["rh_escalas:view", "rh_escalas:manage"],
   works: ["works:manage", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
@@ -1266,6 +1273,13 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/rh/odontologico" || path.startsWith("/api/hr-dental-plan"),
       "dentalPlan",
+    ],
+    // RH > Escalas e Folgas — permissão própria (rh_escalas:*), independente
+    // das demais permissões de RH acima. Cobre as duas telas (Escalas e
+    // Folgas), que são vistas do mesmo módulo.
+    [
+      path === "/rh/escalas" || path === "/rh/folgas" || path.startsWith("/api/hr-schedules"),
+      "schedules",
     ],
   ];
   const direct = directPermissions.find(([matches]) => matches);

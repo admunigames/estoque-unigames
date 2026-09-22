@@ -3170,3 +3170,82 @@ export const hrDentalPlan = pgTable(
     index("hr_dental_plan_reason_idx").on(table.reason),
   ],
 );
+
+// ========================= RH ESCALAS E FOLGAS =========================
+// Substitui uma planilha externa mantida manualmente. Jornada 6x1
+// (colaborador trabalha 6 dias, folga 1 por semana). O cálculo de folgas em
+// si NÃO é persistido: é feito ao vivo em app/api/hr-schedules/report a
+// partir de dois lançamentos manuais por mês — hrScheduleSundayWork (quem
+// TRABALHA em cada domingo) e hrScheduleWeekdayOff (folga de segunda a
+// sábado, lançada dia a dia, pois não é fixa por colaborador). A folga de
+// domingo de cada colaborador é inferida: domingos do mês em que ele tem
+// hrScheduleAssignments (loja no mês) e NÃO está no sunday_work daquele
+// domingo. "Loja fixa do colaborador no mês" é conceito novo — hr_employees
+// só guarda a loja ATUAL (companyId/companyName), sem histórico mensal.
+export const hrScheduleAssignments = pgTable(
+  "hr_schedule_assignments",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull().default(""),
+    employeeName: text("employee_name").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    referenceMonth: text("reference_month").notNull(),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_schedule_assignments_employee_month_idx").on(table.employeeId, table.referenceMonth),
+    index("hr_schedule_assignments_month_idx").on(table.referenceMonth),
+    index("hr_schedule_assignments_company_idx").on(table.companyId),
+  ],
+);
+
+export const hrScheduleSundayWork = pgTable(
+  "hr_schedule_sunday_work",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull().default(""),
+    employeeName: text("employee_name").notNull(),
+    referenceMonth: text("reference_month").notNull(),
+    workDate: text("work_date").notNull(),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_schedule_sunday_work_employee_date_idx").on(table.employeeId, table.workDate),
+    index("hr_schedule_sunday_work_month_idx").on(table.referenceMonth),
+    index("hr_schedule_sunday_work_date_idx").on(table.workDate),
+  ],
+);
+
+export const hrScheduleWeekdayOff = pgTable(
+  "hr_schedule_weekday_off",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull().default(""),
+    employeeName: text("employee_name").notNull(),
+    referenceMonth: text("reference_month").notNull(),
+    offDate: text("off_date").notNull(),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_schedule_weekday_off_employee_date_idx").on(table.employeeId, table.offDate),
+    index("hr_schedule_weekday_off_month_idx").on(table.referenceMonth),
+    index("hr_schedule_weekday_off_date_idx").on(table.offDate),
+  ],
+);
