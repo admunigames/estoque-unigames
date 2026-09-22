@@ -844,6 +844,23 @@
     font-family:var(--sans); font-size:10.5px; padding:2px 8px; border-radius:20px;
     background:var(--neg-bg); color:var(--neg); margin-left:6px;
   }
+  .rh-sched-store-block{margin-bottom:22px;}
+  .rh-sched-store-head{
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:0 0 8px;
+    font-family:var(--sans); font-weight:800; font-size:14px; color:var(--ink);
+  }
+  .rh-sched-store-head .rh-sched-store-period{font-weight:600; font-size:12px; color:var(--ink-soft);}
+  .rh-sched-day-cell{display:flex; flex-wrap:wrap; gap:6px;}
+  .rh-sched-chip{
+    display:inline-flex; align-items:center; gap:4px; font-family:var(--sans); font-size:11.5px;
+    padding:3px 9px; border-radius:20px; background:rgba(79,134,189,0.16); color:#8db8df; white-space:nowrap;
+  }
+  .rh-sched-chip-off{
+    background:rgba(230,168,49,0.18); color:#e6b94f;
+  }
+  .rh-sched-obs-cell{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  html[data-theme="light"] .rh-sched-chip{background:#dcecf8; color:#245f91;}
+  html[data-theme="light"] .rh-sched-chip-off{background:#fbecc8; color:#8a6410;}
   .empty-state{padding:70px 20px; text-align:center;}
   .empty-state h4{margin:0 0 8px; font:800 17px/1.3 var(--sans); color:var(--ink);}
   .empty-state p{max-width:520px; margin:0 auto; font-size:13.5px; line-height:1.55; color:var(--ink-soft); text-transform:none;}
@@ -2994,7 +3011,7 @@
         <a class="nav-item sub-item" id="navFinanceiroRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="hr,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento,rh_aniversariantes,rh_odontologico">
+    <div class="nav-group" data-any-permission="rh_escalas,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento,rh_aniversariantes,rh_odontologico">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -3004,9 +3021,9 @@
         <a class="nav-item sub-item" id="navRhBeneficios" data-page="rhBeneficios" data-permission="payroll" data-home-desc="Vales, premiações e demais benefícios pagos por competência." title="Benefícios" href="/rh/beneficios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11" rx="1.8"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11"/><path d="M12 8.5c-2.5 0-4-1-4-2.3S9.5 4 12 8.5Zm0 0c2.5 0 4-1 4-2.3S14.5 4 12 8.5Z"/></svg></span><span class="nav-label">Benefícios</span></a>
         <a class="nav-item sub-item" id="navRhComissionamento" data-page="rhComissionamento" data-permission="payroll" data-home-desc="Comissão, bônus, premiações e recibo detalhado por funcionário." title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
         <a class="nav-item sub-item" id="navRhControleHoras" data-page="rhControleHoras" data-permission="rh_ponto_logistica" data-home-desc="Registro manual do ponto da logística, horas extras e banco de horas." title="Controle de Horas - Logística" href="/rh/controle-horas-logistica"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="nav-label">Controle de Horas - Logística</span></a>
-        <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" data-permission="hr" data-home-desc="Montagem e consulta das escalas de trabalho da equipe." title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="nav-label">Escalas</span></a>
+        <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" data-permission="rh_escalas" data-home-desc="Cadastro de loja fixa do mês e lançamento das escalas de trabalho." title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="nav-label">Escalas</span></a>
         <a class="nav-item sub-item" id="navRhFardamento" data-page="rhFardamento" data-permission="rh_fardamento" data-home-desc="Controle de estoque de fardamento e casacos por tipo de peça e tamanho." title="Fardamento" href="/rh/fardamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l1 2 4 2-2 4-2-1v11H8V10l-2 1-2-4 4-2 1-2Z"/></svg></span><span class="nav-label">Fardamento</span></a>
-        <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-permission="hr" data-home-desc="Solicitações e histórico de folgas da equipe." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
+        <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-permission="rh_escalas" data-home-desc="Escala de folgas gerada automaticamente e resumo por colaborador." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
         <a class="nav-item sub-item" id="navRhFolha" data-page="rhFolha" data-permission="payroll" data-home-desc="Folha de pagamento mensal, com comissão e benefícios calculados na hora." title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
         <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
         <a class="nav-item sub-item" id="navRhOdontologico" data-page="rhOdontologico" data-permission="rh_odontologico" data-home-desc="Controle de inclusão e exclusão de colaboradores no plano odontológico." title="Plano Odontológico" href="/rh/odontologico"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-3 0-5 2-5 5 0 2.5 1 3.5 1 6.5 0 2 1 4.5 2.5 4.5S12 17 12 14c0-1 .5-1 .5 0 0 3 1 5 2.5 5s2.5-2.5 2.5-4.5c0-3 1-4 1-6.5 0-3-2-5-5-5-1 0-1 .8-1.5.8S13 3 12 3Z"/></svg></span><span class="nav-label">Plano Odontológico</span></a>
@@ -5181,6 +5198,13 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>RH - Escalas e Folgas</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:view"> Ver a loja fixa do mês, a escala de domingos e a escala de folgas calculada</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:manage"> Cadastrar loja fixa do mês e lançar domingos trabalhados e folgas de segunda a sábado</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -5212,7 +5236,23 @@
           <h2 class="page-title">Folgas</h2>
         </div>
       </header>
-      <div class="empty-state"><h4>Em construção</h4><p>Esta página ainda será detalhada.</p></div>
+
+      <div class="dre-toolbar no-print">
+        <div class="field"><label for="rhFolgasMonth">MÊS DE REFERÊNCIA</label><input type="month" id="rhFolgasMonth"></div>
+        <div class="field"><label for="rhFolgasWeek">SEMANA</label><select id="rhFolgasWeek"><option value="">MÊS INTEIRO</option></select></div>
+        <div class="field"><label for="rhFolgasCompany">LOJA</label><select id="rhFolgasCompany"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" type="button" id="btnPrintRhFolgas">IMPRIMIR RELATÓRIO</button>
+        </div>
+      </div>
+
+      <div id="rhFolgasReport">
+        <h3 class="supply-section-title">ESCALA DE FOLGAS POR LOJA</h3>
+        <div id="rhFolgasStores"><div class="dre-empty">Carregando…</div></div>
+
+        <h3 class="supply-section-title">RESUMO POR COLABORADOR</h3>
+        <ul class="dre-flat-list" id="rhFolgasSummaryList"><li class="dre-empty">Carregando…</li></ul>
+      </div>
     </section>
 
     <!-- ================= RH / ESCALAS ================= -->
@@ -5223,7 +5263,49 @@
           <h2 class="page-title">Escalas</h2>
         </div>
       </header>
-      <div class="empty-state"><h4>Em construção</h4><p>Esta página ainda será detalhada.</p></div>
+
+      <div class="dre-toolbar no-print">
+        <div class="field"><label for="rhSchedAssignMonth">MÊS DE REFERÊNCIA</label><input type="month" id="rhSchedAssignMonth"></div>
+      </div>
+
+      <h3 class="supply-section-title">LOJA FIXA DOS COLABORADORES NO MÊS</h3>
+      <div class="dre-toolbar-actions" id="rhSchedAssignActions" hidden>
+        <button class="btn-accent" type="button" id="btnNewRhSchedAssign">NOVO</button>
+      </div>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="rhSchedAssignTable">
+            <thead><tr><th>Colaborador</th><th>Loja</th><th></th></tr></thead>
+            <tbody id="rhSchedAssignTableBody"><tr><td colspan="3" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 class="supply-section-title">ESCALA DE DOMINGOS TRABALHADOS</h3>
+      <div class="dre-toolbar-actions" id="rhSchedSundayActions" hidden>
+        <button class="btn-accent" type="button" id="btnNewRhSchedSunday">NOVO</button>
+      </div>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="rhSchedSundayTable">
+            <thead><tr><th>Colaborador</th><th>Domingo</th><th>Horário</th><th></th></tr></thead>
+            <tbody id="rhSchedSundayTableBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 class="supply-section-title">FOLGA DA SEMANA (SEGUNDA A SÁBADO)</h3>
+      <div class="dre-toolbar-actions" id="rhSchedWeekdayActions" hidden>
+        <button class="btn-accent" type="button" id="btnNewRhSchedWeekday">NOVO</button>
+      </div>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="rhSchedWeekdayTable">
+            <thead><tr><th>Colaborador</th><th>Data</th><th>Dia da semana</th><th></th></tr></thead>
+            <tbody id="rhSchedWeekdayTableBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <!-- ================= RH / FUNCIONÁRIOS ================= -->
@@ -7062,6 +7144,102 @@
     <div class="user-form-status" id="dentalPlanFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelDentalPlanDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhSchedAssignDialog" aria-labelledby="rhSchedAssignDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhSchedAssignDialogTitle">NOVA LOJA FIXA DO MÊS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhSchedAssignDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhSchedAssignForm">
+    <input type="hidden" id="rhSchedAssignId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhSchedAssignEmployee">COLABORADOR *</label>
+        <select id="rhSchedAssignEmployee" required><option value="">SELECIONE</option></select>
+      </div>
+      <div class="purchase-field full"><label for="rhSchedAssignCompany">LOJA *</label>
+        <select id="rhSchedAssignCompany" required><option value="">SELECIONE</option></select>
+      </div>
+      <div class="purchase-field full"><label for="rhSchedAssignNotes">OBSERVAÇÕES</label><textarea id="rhSchedAssignNotes" rows="3" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="rhSchedAssignFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhSchedAssignDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhSchedSundayDialog" aria-labelledby="rhSchedSundayDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhSchedSundayDialogTitle">NOVO DOMINGO TRABALHADO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhSchedSundayDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhSchedSundayForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhSchedSundayEmployee">COLABORADOR *</label>
+        <select id="rhSchedSundayEmployee" required><option value="">SELECIONE</option></select>
+      </div>
+      <div class="purchase-field full"><label for="rhSchedSundayDate">DOMINGO *</label>
+        <select id="rhSchedSundayDate" required><option value="">SELECIONE</option></select>
+      </div>
+      <div class="purchase-field full"><label for="rhSchedSundayWorkTime">HORÁRIO</label>
+        <input type="text" id="rhSchedSundayWorkTime" maxlength="10" placeholder="Ex: 12:00 (opcional)">
+      </div>
+    </div>
+    <p class="page-desc">Só é possível lançar colaboradores com loja cadastrada neste mês.</p>
+    <div class="user-form-status" id="rhSchedSundayFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhSchedSundayDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhSchedWeekdayDialog" aria-labelledby="rhSchedWeekdayDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhSchedWeekdayDialogTitle">NOVA FOLGA (SEGUNDA A SÁBADO)</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhSchedWeekdayDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhSchedWeekdayForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhSchedWeekdayEmployee">COLABORADOR *</label>
+        <select id="rhSchedWeekdayEmployee" required><option value="">SELECIONE</option></select>
+      </div>
+      <div class="purchase-field full"><label for="rhSchedWeekdayDate">DATA (SEGUNDA A SÁBADO) *</label>
+        <input type="date" id="rhSchedWeekdayDate" required>
+      </div>
+    </div>
+    <p class="page-desc">Só é possível lançar colaboradores com loja cadastrada neste mês. Domingos não são aceitos aqui — use "Escala de domingos trabalhados".</p>
+    <div class="user-form-status" id="rhSchedWeekdayFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhSchedWeekdayDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhSchedDayNoteDialog" aria-labelledby="rhSchedDayNoteDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhSchedDayNoteDialogTitle">OBSERVAÇÃO DO DIA</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhSchedDayNoteDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhSchedDayNoteForm">
+    <input type="hidden" id="rhSchedDayNoteCompanyId">
+    <input type="hidden" id="rhSchedDayNoteCompanyName">
+    <input type="hidden" id="rhSchedDayNoteDate">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label id="rhSchedDayNoteLabel">Loja — Data</label></div>
+      <div class="purchase-field full"><label for="rhSchedDayNoteText">OBSERVAÇÃO</label>
+        <textarea id="rhSchedDayNoteText" rows="3" maxlength="2000"></textarea>
+      </div>
+    </div>
+    <div class="user-form-status" id="rhSchedDayNoteFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhSchedDayNoteDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
     </div>
   </form>
@@ -9910,8 +10088,8 @@
     dados:'database',
     rhRecrutamento:'rh_recrutamento',
     rhFardamento:'rh_fardamento',
-    rhFolgas:'hr',
-    rhEscalas:'hr',
+    rhFolgas:'rh_escalas',
+    rhEscalas:'rh_escalas',
     rhFuncionarios:'payroll',
     rhFolha:'payroll',
     rhBeneficios:'payroll',
@@ -10551,6 +10729,8 @@
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
     if(name === 'rhControleHoras') loadRhControleHoras();
+    if(name === 'rhEscalas') loadRhEscalas();
+    if(name === 'rhFolgas') loadRhFolgas();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -10601,6 +10781,8 @@
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
     if(name === 'rhControleHoras') loadRhControleHoras();
+    if(name === 'rhEscalas') loadRhEscalas();
+    if(name === 'rhFolgas') loadRhFolgas();
   }
 
   function isPlainClick(event){
@@ -28806,6 +28988,7 @@ function renderHomeTasks(){
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
     'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
+    'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
   };
@@ -29153,6 +29336,7 @@ function renderHomeTasks(){
     // de quem está lotado aqui alimenta a DRE Assistência (item 8).
     rhFillSelect('rhEmployeeCompany','SEM LOJA DEFINIDA',rhCompanyOptions().concat([{value:'assistencia',label:'ASSISTÊNCIA (SETOR)'}]));
     rhFillSelect('rhFolhaLoja','TODAS AS LOJAS',rhCompanyOptions());
+    rhFillSelect('rhFolgasCompany','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhBeneficioFiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhComissaoLoja','TODAS AS LOJAS',rhCompanyOptions());
   }
@@ -32685,6 +32869,517 @@ function renderHomeTasks(){
     if(el('dentalPlanActions')) el('dentalPlanActions').hidden = !canAccess('rh_odontologico:manage');
     await loadDentalPlanEmployees();
     await loadDentalPlanRows();
+  }
+
+  // ================= RH / ESCALAS E FOLGAS =================
+  // Substitui uma planilha externa. Jornada 6x1. O cálculo de folgas é
+  // sempre ao vivo (GET /api/hr-schedules/report) a partir de dois
+  // lançamentos manuais por mês: escala de domingos trabalhados e folga de
+  // segunda a sábado. "Loja fixa do colaborador no mês" é cadastro novo,
+  // independente de hr_employees.companyId (que só guarda a loja ATUAL).
+  let rhSchedEmployees = [];
+  let rhSchedAssignments = [];
+  let rhSchedSundays = [];
+  let rhSchedWeekdays = [];
+
+  function rhSchedCanManage(){
+    return canAccess('rh_escalas:manage');
+  }
+
+  function rhSchedCurrentMonth(){
+    const now = new Date();
+    return now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  }
+
+  async function rhSchedApiRequest(path, options){
+    const response = await fetch('/api/hr-schedules'+(path || ''), {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  // Mesma lógica UTC do backend (app/api/hr-schedules/report/route.ts) —
+  // domingos do mês pra popular o select de "Escala de domingos".
+  function rhSchedMonthSundays(month){
+    if(!/^\d{4}-\d{2}$/.test(month || '')) return [];
+    const year = Number(month.slice(0,4));
+    const monthIndex = Number(month.slice(5,7));
+    const lastDay = new Date(Date.UTC(year, monthIndex, 0)).getUTCDate();
+    const sundays = [];
+    for(let day = 1; day <= lastDay; day++){
+      const date = new Date(Date.UTC(year, monthIndex - 1, day));
+      if(date.getUTCDay() === 0) sundays.push(year+'-'+String(monthIndex).padStart(2,'0')+'-'+String(day).padStart(2,'0'));
+    }
+    return sundays;
+  }
+
+  const RH_SCHED_WEEKDAY_NAMES = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  function rhSchedWeekdayName(dateStr){
+    return RH_SCHED_WEEKDAY_NAMES[new Date(dateStr+'T00:00:00Z').getUTCDay()];
+  }
+
+  function rhSchedEmployeeOptions(){
+    return rhSchedEmployees.map(employee => ({
+      value: employee.id,
+      label: employee.fullName + (employee.companyName ? ' — '+employee.companyName : '')
+    }));
+  }
+
+  function rhSchedAssignedEmployeeOptions(){
+    return rhSchedAssignments.map(assignment => ({
+      value: assignment.employeeId,
+      label: assignment.employeeName + (assignment.companyName ? ' — '+assignment.companyName : '')
+    }));
+  }
+
+  async function loadRhSchedEmployees(){
+    if(rhSchedEmployees.length) return;
+    try{
+      const data = await rhSchedApiRequest('/employees');
+      rhSchedEmployees = Array.isArray(data.employees) ? data.employees : [];
+    }catch(error){
+      rhSchedEmployees = [];
+    }
+  }
+
+  function rhSchedRenderAssignTable(){
+    const body = el('rhSchedAssignTableBody');
+    if(!body) return;
+    const manage = rhSchedCanManage();
+    if(!rhSchedAssignments.length){
+      body.innerHTML = '<tr><td colspan="3" class="responsive-empty">Nenhum registro neste mês.</td></tr>';
+      return;
+    }
+    body.innerHTML = rhSchedAssignments.map(row => {
+      const actions = manage ? '<button class="btn-outline btn-sm" type="button" data-rh-sched-assign-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '';
+      return '<tr><td>'+escapeHtml(row.employeeName)+'</td><td>'+escapeHtml(row.companyName || '—')+'</td><td style="white-space:nowrap">'+actions+'</td></tr>';
+    }).join('');
+  }
+
+  function rhSchedRenderSundayTable(){
+    const body = el('rhSchedSundayTableBody');
+    if(!body) return;
+    const manage = rhSchedCanManage();
+    if(!rhSchedSundays.length){
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhum registro neste mês.</td></tr>';
+      return;
+    }
+    body.innerHTML = rhSchedSundays.map(row => {
+      const actions = manage ? '<button class="btn-outline btn-sm" type="button" data-rh-sched-sunday-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '';
+      return '<tr><td>'+escapeHtml(row.employeeName)+'</td><td>'+rhFormatDate(row.workDate)+'</td><td>'+escapeHtml(row.workTime || '—')+'</td><td style="white-space:nowrap">'+actions+'</td></tr>';
+    }).join('');
+  }
+
+  function rhSchedRenderWeekdayTable(){
+    const body = el('rhSchedWeekdayTableBody');
+    if(!body) return;
+    const manage = rhSchedCanManage();
+    if(!rhSchedWeekdays.length){
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhum registro neste mês.</td></tr>';
+      return;
+    }
+    body.innerHTML = rhSchedWeekdays.map(row => {
+      const actions = manage ? '<button class="btn-outline btn-sm" type="button" data-rh-sched-weekday-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '';
+      return '<tr><td>'+escapeHtml(row.employeeName)+'</td><td>'+rhFormatDate(row.offDate)+'</td><td>'+escapeHtml(rhSchedWeekdayName(row.offDate))+'</td><td style="white-space:nowrap">'+actions+'</td></tr>';
+    }).join('');
+  }
+
+  async function loadRhSchedAssignments(opts){
+    const options = opts || {};
+    const month = el('rhSchedAssignMonth') ? el('rhSchedAssignMonth').value : '';
+    const body = el('rhSchedAssignTableBody');
+    if(!options.silent && body) body.innerHTML = '<tr><td colspan="3" class="responsive-empty">Carregando…</td></tr>';
+    if(!month){
+      rhSchedAssignments = [];
+      if(body) body.innerHTML = '<tr><td colspan="3" class="responsive-empty">Selecione o mês.</td></tr>';
+      return;
+    }
+    try{
+      const data = await rhSchedApiRequest('/assignments?referenceMonth='+encodeURIComponent(month));
+      rhSchedAssignments = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      rhSchedAssignments = [];
+      if(body) body.innerHTML = '<tr><td colspan="3" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    rhSchedRenderAssignTable();
+  }
+
+  async function loadRhSchedSundays(opts){
+    const options = opts || {};
+    const month = el('rhSchedAssignMonth') ? el('rhSchedAssignMonth').value : '';
+    const body = el('rhSchedSundayTableBody');
+    if(!options.silent && body) body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Carregando…</td></tr>';
+    if(!month){
+      rhSchedSundays = [];
+      if(body) body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Selecione o mês.</td></tr>';
+      return;
+    }
+    try{
+      const data = await rhSchedApiRequest('/sundays?referenceMonth='+encodeURIComponent(month));
+      rhSchedSundays = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      rhSchedSundays = [];
+      if(body) body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    rhSchedRenderSundayTable();
+  }
+
+  async function loadRhSchedWeekdays(opts){
+    const options = opts || {};
+    const month = el('rhSchedAssignMonth') ? el('rhSchedAssignMonth').value : '';
+    const body = el('rhSchedWeekdayTableBody');
+    if(!options.silent && body) body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Carregando…</td></tr>';
+    if(!month){
+      rhSchedWeekdays = [];
+      if(body) body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Selecione o mês.</td></tr>';
+      return;
+    }
+    try{
+      const data = await rhSchedApiRequest('/weekday-off?referenceMonth='+encodeURIComponent(month));
+      rhSchedWeekdays = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      rhSchedWeekdays = [];
+      if(body) body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    rhSchedRenderWeekdayTable();
+  }
+
+  function openRhSchedAssignDialog(){
+    el('rhSchedAssignForm').reset();
+    el('rhSchedAssignId').value = '';
+    rhFillSelect('rhSchedAssignEmployee','SELECIONE', rhSchedEmployeeOptions());
+    rhFillSelect('rhSchedAssignCompany','SELECIONE', rhCompanyOptions());
+    el('rhSchedAssignFormStatus').textContent = '';
+    el('rhSchedAssignDialog').showModal();
+  }
+
+  if(el('btnNewRhSchedAssign')) el('btnNewRhSchedAssign').addEventListener('click', () => openRhSchedAssignDialog());
+  if(el('btnCloseRhSchedAssignDialog')) el('btnCloseRhSchedAssignDialog').addEventListener('click', () => el('rhSchedAssignDialog').close());
+  if(el('btnCancelRhSchedAssignDialog')) el('btnCancelRhSchedAssignDialog').addEventListener('click', () => el('rhSchedAssignDialog').close());
+
+  if(el('rhSchedAssignForm')) el('rhSchedAssignForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statusEl = el('rhSchedAssignFormStatus');
+    statusEl.textContent = '';
+    const employeeId = el('rhSchedAssignEmployee').value;
+    const employee = rhSchedEmployees.find(item => item.id === employeeId);
+    const companyId = el('rhSchedAssignCompany').value;
+    const company = companies.find(item => item.id === companyId);
+    if(!employee){ statusEl.textContent = 'SELECIONE UM COLABORADOR.'; return; }
+    if(!company){ statusEl.textContent = 'SELECIONE UMA LOJA.'; return; }
+    const payload = {
+      employeeId,
+      employeeName: employee.fullName,
+      companyId,
+      companyName: company.name,
+      referenceMonth: el('rhSchedAssignMonth').value,
+      notes: el('rhSchedAssignNotes').value
+    };
+    try{
+      await rhSchedApiRequest('/assignments', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('rhSchedAssignDialog').close();
+      await refreshAfterAction(() => loadRhSchedAssignments({silent:true}));
+      showPurchaseToast('Registro salvo.');
+    }catch(error){ statusEl.textContent = error.message; }
+  });
+
+  if(el('rhSchedAssignTableBody')) el('rhSchedAssignTableBody').addEventListener('click', async event => {
+    const deleteButton = event.target.closest('[data-rh-sched-assign-delete]');
+    if(!deleteButton) return;
+    if(!confirm('Excluir esta loja fixa do mês? Isso também impede novos lançamentos de domingo/folga para este colaborador neste mês.')) return;
+    try{
+      await rhSchedApiRequest('/assignments?id='+encodeURIComponent(deleteButton.dataset.rhSchedAssignDelete), {method:'DELETE'});
+      await refreshAfterAction(() => loadRhSchedAssignments({silent:true}));
+      showPurchaseToast('Registro excluído.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  function openRhSchedSundayDialog(){
+    el('rhSchedSundayForm').reset();
+    rhFillSelect('rhSchedSundayEmployee','SELECIONE', rhSchedAssignedEmployeeOptions());
+    const month = el('rhSchedAssignMonth').value;
+    const sundays = rhSchedMonthSundays(month);
+    rhFillSelect('rhSchedSundayDate','SELECIONE', sundays.map(date => ({value:date, label:rhFormatDate(date)+' ('+rhSchedWeekdayName(date)+')'})));
+    el('rhSchedSundayFormStatus').textContent = '';
+    el('rhSchedSundayDialog').showModal();
+  }
+
+  if(el('btnNewRhSchedSunday')) el('btnNewRhSchedSunday').addEventListener('click', () => openRhSchedSundayDialog());
+  if(el('btnCloseRhSchedSundayDialog')) el('btnCloseRhSchedSundayDialog').addEventListener('click', () => el('rhSchedSundayDialog').close());
+  if(el('btnCancelRhSchedSundayDialog')) el('btnCancelRhSchedSundayDialog').addEventListener('click', () => el('rhSchedSundayDialog').close());
+
+  if(el('rhSchedSundayForm')) el('rhSchedSundayForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statusEl = el('rhSchedSundayFormStatus');
+    statusEl.textContent = '';
+    const employeeId = el('rhSchedSundayEmployee').value;
+    const employee = rhSchedAssignments.find(item => item.employeeId === employeeId);
+    const workDate = el('rhSchedSundayDate').value;
+    if(!employee){ statusEl.textContent = 'SELECIONE UM COLABORADOR.'; return; }
+    if(!workDate){ statusEl.textContent = 'SELECIONE O DOMINGO.'; return; }
+    const payload = {
+      employeeId,
+      employeeName: employee.employeeName,
+      referenceMonth: el('rhSchedAssignMonth').value,
+      workDate,
+      workTime: el('rhSchedSundayWorkTime') ? el('rhSchedSundayWorkTime').value : ''
+    };
+    try{
+      await rhSchedApiRequest('/sundays', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('rhSchedSundayDialog').close();
+      await refreshAfterAction(() => loadRhSchedSundays({silent:true}));
+      showPurchaseToast('Registro salvo.');
+    }catch(error){ statusEl.textContent = error.message; }
+  });
+
+  if(el('rhSchedSundayTableBody')) el('rhSchedSundayTableBody').addEventListener('click', async event => {
+    const deleteButton = event.target.closest('[data-rh-sched-sunday-delete]');
+    if(!deleteButton) return;
+    if(!confirm('Excluir este registro da escala de domingos trabalhados?')) return;
+    try{
+      await rhSchedApiRequest('/sundays?id='+encodeURIComponent(deleteButton.dataset.rhSchedSundayDelete), {method:'DELETE'});
+      await refreshAfterAction(() => loadRhSchedSundays({silent:true}));
+      showPurchaseToast('Registro excluído.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  function openRhSchedWeekdayDialog(){
+    el('rhSchedWeekdayForm').reset();
+    rhFillSelect('rhSchedWeekdayEmployee','SELECIONE', rhSchedAssignedEmployeeOptions());
+    el('rhSchedWeekdayFormStatus').textContent = '';
+    el('rhSchedWeekdayDialog').showModal();
+  }
+
+  if(el('btnNewRhSchedWeekday')) el('btnNewRhSchedWeekday').addEventListener('click', () => openRhSchedWeekdayDialog());
+  if(el('btnCloseRhSchedWeekdayDialog')) el('btnCloseRhSchedWeekdayDialog').addEventListener('click', () => el('rhSchedWeekdayDialog').close());
+  if(el('btnCancelRhSchedWeekdayDialog')) el('btnCancelRhSchedWeekdayDialog').addEventListener('click', () => el('rhSchedWeekdayDialog').close());
+
+  if(el('rhSchedWeekdayForm')) el('rhSchedWeekdayForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statusEl = el('rhSchedWeekdayFormStatus');
+    statusEl.textContent = '';
+    const employeeId = el('rhSchedWeekdayEmployee').value;
+    const employee = rhSchedAssignments.find(item => item.employeeId === employeeId);
+    const offDate = el('rhSchedWeekdayDate').value;
+    if(!employee){ statusEl.textContent = 'SELECIONE UM COLABORADOR.'; return; }
+    if(!offDate){ statusEl.textContent = 'SELECIONE A DATA.'; return; }
+    if(new Date(offDate+'T00:00:00Z').getUTCDay() === 0){ statusEl.textContent = 'A DATA INFORMADA É UM DOMINGO. USE A ESCALA DE DOMINGOS TRABALHADOS.'; return; }
+    const payload = {
+      employeeId,
+      employeeName: employee.employeeName,
+      referenceMonth: el('rhSchedAssignMonth').value,
+      offDate
+    };
+    try{
+      await rhSchedApiRequest('/weekday-off', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('rhSchedWeekdayDialog').close();
+      await refreshAfterAction(() => loadRhSchedWeekdays({silent:true}));
+      showPurchaseToast('Registro salvo.');
+    }catch(error){ statusEl.textContent = error.message; }
+  });
+
+  if(el('rhSchedWeekdayTableBody')) el('rhSchedWeekdayTableBody').addEventListener('click', async event => {
+    const deleteButton = event.target.closest('[data-rh-sched-weekday-delete]');
+    if(!deleteButton) return;
+    if(!confirm('Excluir este registro de folga?')) return;
+    try{
+      await rhSchedApiRequest('/weekday-off?id='+encodeURIComponent(deleteButton.dataset.rhSchedWeekdayDelete), {method:'DELETE'});
+      await refreshAfterAction(() => loadRhSchedWeekdays({silent:true}));
+      showPurchaseToast('Registro excluído.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+
+  if(el('rhSchedAssignMonth')) el('rhSchedAssignMonth').addEventListener('change', () => {
+    loadRhSchedAssignments();
+    loadRhSchedSundays();
+    loadRhSchedWeekdays();
+  });
+
+  async function loadRhEscalas(){
+    if(!canAccess('rh_escalas')) return;
+    const manage = rhSchedCanManage();
+    if(el('rhSchedAssignActions')) el('rhSchedAssignActions').hidden = !manage;
+    if(el('rhSchedSundayActions')) el('rhSchedSundayActions').hidden = !manage;
+    if(el('rhSchedWeekdayActions')) el('rhSchedWeekdayActions').hidden = !manage;
+    if(el('rhSchedAssignMonth') && !el('rhSchedAssignMonth').value) el('rhSchedAssignMonth').value = rhSchedCurrentMonth();
+    await loadRhSchedEmployees();
+    await loadRhSchedAssignments();
+    await loadRhSchedSundays();
+    await loadRhSchedWeekdays();
+  }
+
+  // --- RH / Folgas (visão calculada) ---
+  let rhFolgasWeeks = [];
+
+  function rhFolgasRenderWeekSelect(){
+    const select = el('rhFolgasWeek');
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">MÊS INTEIRO</option>'+
+      rhFolgasWeeks.map(week => '<option value="'+escapeHtml(week.weekStart)+'">Semana de '+rhFormatDate(week.weekStart)+' a '+rhFormatDate(week.weekEnd)+'</option>').join('');
+    if(rhFolgasWeeks.some(week => week.weekStart === selected)) select.value = selected;
+  }
+
+  // Tabela por loja/dia no estilo da planilha legada (DIA / ESCALADOS /
+  // DE FOLGA / OBS). Substitui a antiga lista simples agrupada por dia —
+  // essa é mais completa (cobre quem trabalha também, não só quem folga).
+  function rhSchedChip(name, extra, off){
+    const cls = off ? 'rh-sched-chip rh-sched-chip-off' : 'rh-sched-chip';
+    return '<span class="'+cls+'">'+escapeHtml(name)+(extra ? ' · '+escapeHtml(extra) : '')+'</span>';
+  }
+
+  function rhFolgasRenderStores(stores){
+    const container = el('rhFolgasStores');
+    if(!container) return;
+    if(!stores.length){ container.innerHTML = '<div class="dre-empty">Nenhuma loja com colaborador cadastrado neste período.</div>'; return; }
+    const manage = rhSchedCanManage();
+    container.innerHTML = stores.map(store => {
+      const period = store.periodStart && store.periodEnd
+        ? 'Período: '+rhFormatDate(store.periodStart)+' a '+rhFormatDate(store.periodEnd) : '';
+      const rows = store.days.map(day => {
+        const escalados = day.escalados.length
+          ? day.escalados.map(employee => rhSchedChip(employee.employeeName, employee.workTime, false)).join('')
+          : '—';
+        const deFolga = day.deFolga.length
+          ? day.deFolga.map(employee => rhSchedChip(employee.employeeName, '', true)).join('')
+          : '—';
+        const editButton = manage
+          ? '<button class="btn-outline btn-sm" type="button" data-rh-sched-day-note-edit="1" data-company-id="'+escapeHtml(store.companyId)+'" data-company-name="'+escapeHtml(store.companyName)+'" data-date="'+escapeHtml(day.date)+'" data-notes="'+escapeHtml(day.obs || '')+'">EDITAR</button>'
+          : '';
+        return '<tr>'+
+          '<td>'+escapeHtml(day.weekday)+' '+rhFormatDate(day.date)+'</td>'+
+          '<td><div class="rh-sched-day-cell">'+escalados+'</div></td>'+
+          '<td><div class="rh-sched-day-cell">'+deFolga+'</div></td>'+
+          '<td><div class="rh-sched-obs-cell"><span>'+escapeHtml(day.obs || '—')+'</span>'+editButton+'</div></td>'+
+        '</tr>';
+      }).join('');
+      return '<div class="rh-sched-store-block">'+
+        '<h4 class="rh-sched-store-head">'+escapeHtml(store.companyName.toUpperCase())+(period ? ' <span class="rh-sched-store-period">— '+escapeHtml(period)+'</span>' : '')+'</h4>'+
+        '<div class="table-panel responsive-table"><div class="table-scroll"><table>'+
+          '<thead><tr><th>Dia</th><th>Escalados</th><th>De folga</th><th>Obs</th></tr></thead>'+
+          '<tbody>'+rows+'</tbody>'+
+        '</table></div></div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // Formato exato pedido: "{Nome}, Unidade {Loja}, folgou {dia} dia {n}, ...
+  // e {dia} dia {n}. Total: {N} folgas." — dia da semana em minúsculo,
+  // singular quando total=1.
+  function rhFolgasSummaryPhrase(row){
+    const unit = row.companyName || '—';
+    if(!row.offs.length){
+      return escapeHtml(row.employeeName)+', Unidade '+escapeHtml(unit)+', sem folgas neste período. Total: 0 folgas.';
+    }
+    const parts = row.offs.map(off => off.weekday.toLowerCase()+' dia '+Number(off.date.slice(8,10)));
+    const joined = parts.length === 1 ? parts[0] : parts.slice(0,-1).join(', ')+' e '+parts[parts.length-1];
+    const totalLabel = row.total === 1 ? ' folga.' : ' folgas.';
+    return escapeHtml(row.employeeName)+', Unidade '+escapeHtml(unit)+', folgou '+escapeHtml(joined)+'. Total: '+row.total+totalLabel;
+  }
+
+  function rhFolgasRenderSummary(summary){
+    const list = el('rhFolgasSummaryList');
+    if(!list) return;
+    if(!summary.length){ list.innerHTML = '<li class="dre-empty">Nenhum colaborador com loja cadastrada neste mês.</li>'; return; }
+    list.innerHTML = summary.map(row => '<li>'+rhFolgasSummaryPhrase(row)+'</li>').join('');
+  }
+
+  async function rhFolgasLoadReport(){
+    const month = el('rhFolgasMonth') ? el('rhFolgasMonth').value : '';
+    const storesList = el('rhFolgasStores');
+    const summaryList = el('rhFolgasSummaryList');
+    if(!month){
+      if(storesList) storesList.innerHTML = '<div class="dre-empty">Selecione o mês.</div>';
+      if(summaryList) summaryList.innerHTML = '<li class="dre-empty">Selecione o mês.</li>';
+      return;
+    }
+    if(storesList) storesList.innerHTML = '<div class="dre-empty">Carregando…</div>';
+    if(summaryList) summaryList.innerHTML = '<li class="dre-empty">Carregando…</li>';
+    try{
+      const week = el('rhFolgasWeek') ? el('rhFolgasWeek').value : '';
+      const companyId = el('rhFolgasCompany') ? el('rhFolgasCompany').value : '';
+      let query = '?referenceMonth='+encodeURIComponent(month);
+      if(week) query += '&week='+encodeURIComponent(week);
+      if(companyId) query += '&companyId='+encodeURIComponent(companyId);
+      const data = await rhSchedApiRequest('/report'+query);
+      rhFolgasWeeks = Array.isArray(data.weeks) ? data.weeks : [];
+      rhFolgasRenderWeekSelect();
+      rhFolgasRenderStores(Array.isArray(data.stores) ? data.stores : []);
+      rhFolgasRenderSummary(Array.isArray(data.summary) ? data.summary : []);
+    }catch(error){
+      if(storesList) storesList.innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      if(summaryList) summaryList.innerHTML = '<li class="dre-empty">'+escapeHtml(error.message)+'</li>';
+    }
+  }
+
+  if(el('rhFolgasMonth')) el('rhFolgasMonth').addEventListener('change', () => {
+    if(el('rhFolgasWeek')) el('rhFolgasWeek').value = '';
+    rhFolgasLoadReport();
+  });
+  if(el('rhFolgasWeek')) el('rhFolgasWeek').addEventListener('change', () => rhFolgasLoadReport());
+  if(el('rhFolgasCompany')) el('rhFolgasCompany').addEventListener('change', () => rhFolgasLoadReport());
+  if(el('btnPrintRhFolgas')) el('btnPrintRhFolgas').addEventListener('click', () => window.print());
+
+  function openRhSchedDayNoteDialog(companyId, companyName, date, currentNotes){
+    el('rhSchedDayNoteForm').reset();
+    el('rhSchedDayNoteCompanyId').value = companyId;
+    el('rhSchedDayNoteCompanyName').value = companyName;
+    el('rhSchedDayNoteDate').value = date;
+    el('rhSchedDayNoteLabel').textContent = companyName+' — '+rhFormatDate(date);
+    el('rhSchedDayNoteText').value = currentNotes || '';
+    el('rhSchedDayNoteFormStatus').textContent = '';
+    el('rhSchedDayNoteDialog').showModal();
+  }
+
+  if(el('rhFolgasStores')) el('rhFolgasStores').addEventListener('click', event => {
+    const editButton = event.target.closest('[data-rh-sched-day-note-edit]');
+    if(!editButton) return;
+    openRhSchedDayNoteDialog(editButton.dataset.companyId, editButton.dataset.companyName, editButton.dataset.date, editButton.dataset.notes);
+  });
+
+  if(el('btnCloseRhSchedDayNoteDialog')) el('btnCloseRhSchedDayNoteDialog').addEventListener('click', () => el('rhSchedDayNoteDialog').close());
+  if(el('btnCancelRhSchedDayNoteDialog')) el('btnCancelRhSchedDayNoteDialog').addEventListener('click', () => el('rhSchedDayNoteDialog').close());
+
+  if(el('rhSchedDayNoteForm')) el('rhSchedDayNoteForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statusEl = el('rhSchedDayNoteFormStatus');
+    statusEl.textContent = '';
+    const payload = {
+      companyId: el('rhSchedDayNoteCompanyId').value,
+      companyName: el('rhSchedDayNoteCompanyName').value,
+      referenceMonth: el('rhFolgasMonth').value,
+      noteDate: el('rhSchedDayNoteDate').value,
+      notes: el('rhSchedDayNoteText').value
+    };
+    try{
+      await rhSchedApiRequest('/day-notes', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('rhSchedDayNoteDialog').close();
+      await refreshAfterAction(() => rhFolgasLoadReport());
+      showPurchaseToast('Observação salva.');
+    }catch(error){ statusEl.textContent = error.message; }
+  });
+
+  async function loadRhFolgas(){
+    if(!canAccess('rh_escalas')) return;
+    if(el('rhFolgasMonth') && !el('rhFolgasMonth').value) el('rhFolgasMonth').value = rhSchedCurrentMonth();
+    await rhFolgasLoadReport();
   }
 
   // ================= RH / CONTROLE DE HORAS - LOGÍSTICA =================
