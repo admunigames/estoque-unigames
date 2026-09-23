@@ -89,6 +89,9 @@ export async function POST(request: Request) {
     const userId = safeText(body.userId, 80);
     const notes = safeText(body.notes, 500);
     const salaryCents = centsValue(body.salaryCents ?? 0);
+    const foodPerDayCents = centsValue(body.foodPerDayCents ?? 0);
+    const transportPerDayCents = centsValue(body.transportPerDayCents ?? 0);
+    const benefitNotes = safeText(body.benefitNotes, 500);
 
     if (!fullName) return jsonResponse({ error: "INFORME O NOME DO FUNCIONÁRIO." }, 400);
     if (cpf && !isValidCpf(cpf)) return jsonResponse({ error: "INFORME UM CPF VÁLIDO." }, 400);
@@ -103,6 +106,12 @@ export async function POST(request: Request) {
     }
     if (!Number.isFinite(salaryCents) || salaryCents < 0) {
       return jsonResponse({ error: "INFORME UM SALÁRIO VÁLIDO." }, 400);
+    }
+    if (!Number.isFinite(foodPerDayCents) || foodPerDayCents < 0) {
+      return jsonResponse({ error: "INFORME UM VALOR DE ALIMENTAÇÃO POR DIA VÁLIDO." }, 400);
+    }
+    if (!Number.isFinite(transportPerDayCents) || transportPerDayCents < 0) {
+      return jsonResponse({ error: "INFORME UM VALOR DE TRANSPORTE POR DIA VÁLIDO." }, 400);
     }
 
     const database = await getD1();
@@ -148,6 +157,7 @@ export async function POST(request: Request) {
            SET full_name=?1, cpf=?2, admission_date=?3, company_id=?4, company_name=?5,
                role_title=?6, salary_cents=?7, pix_key=?8, bank_name=?9, status=?10,
                work_schedule=?11, user_id=?12, notes=?13, updated_by=?14, updated_by_name=?15,
+               food_per_day_cents=?17, transport_per_day_cents=?18, benefit_notes=?19,
                updated_at=CURRENT_TIMESTAMP
            WHERE id=?16`,
         )
@@ -168,6 +178,9 @@ export async function POST(request: Request) {
           actor.id,
           actorName(actor),
           editId,
+          foodPerDayCents,
+          transportPerDayCents,
+          benefitNotes,
         )
         .run();
       // O nome/loja do funcionário são desnormalizados nos lançamentos —
@@ -183,6 +196,12 @@ export async function POST(request: Request) {
           .prepare("UPDATE hr_commissions SET employee_name=?1, company_id=?2, company_name=?3 WHERE employee_id=?4")
           .bind(fullName, companyId, companyName, editId),
       ]);
+      // Rescisão e ASO guardam a loja DA ÉPOCA (histórico do DRE Funcionário);
+      // só o nome acompanha a correção do cadastro.
+      await database.batch([
+        database.prepare("UPDATE hr_terminations SET employee_name=?1 WHERE employee_id=?2").bind(fullName, editId),
+        database.prepare("UPDATE hr_aso_exams SET employee_name=?1 WHERE employee_id=?2").bind(fullName, editId),
+      ]);
       return jsonResponse({ updated: true, id: editId });
     }
 
@@ -192,9 +211,10 @@ export async function POST(request: Request) {
         `INSERT INTO hr_employees
           (id, full_name, cpf, admission_date, company_id, company_name, role_title, salary_cents,
            pix_key, bank_name, status, work_schedule, user_id, notes, created_by, created_by_name,
-           created_at, updated_by, updated_by_name, updated_at)
+           created_at, updated_by, updated_by_name, updated_at,
+           food_per_day_cents, transport_per_day_cents, benefit_notes)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16,
-                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP)`,
+                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP, ?17, ?18, ?19)`,
       )
       .bind(
         id,
@@ -213,6 +233,9 @@ export async function POST(request: Request) {
         notes,
         actor.id,
         actorName(actor),
+        foodPerDayCents,
+        transportPerDayCents,
+        benefitNotes,
       )
       .run();
     return jsonResponse({ created: true, id }, 201);
@@ -244,7 +267,9 @@ export async function DELETE(request: Request) {
         `SELECT
            (SELECT COUNT(*) FROM hr_payroll_entries WHERE employee_id=?1)
          + (SELECT COUNT(*) FROM hr_benefits WHERE employee_id=?1)
-         + (SELECT COUNT(*) FROM hr_commissions WHERE employee_id=?1) AS total`,
+         + (SELECT COUNT(*) FROM hr_commissions WHERE employee_id=?1)
+         + (SELECT COUNT(*) FROM hr_terminations WHERE employee_id=?1)
+         + (SELECT COUNT(*) FROM hr_aso_exams WHERE employee_id=?1) AS total`,
       )
       .bind(id)
       .first<{ total: number }>();
@@ -252,7 +277,7 @@ export async function DELETE(request: Request) {
       return jsonResponse(
         {
           error:
-            "ESTE FUNCIONÁRIO JÁ TEM LANÇAMENTOS DE FOLHA, BENEFÍCIOS OU COMISSÃO. MARQUE-O COMO INATIVO EM VEZ DE EXCLUIR.",
+            "ESTE FUNCIONÁRIO JÁ TEM LANÇAMENTOS DE FOLHA, BENEFÍCIOS, COMISSÃO, RESCISÃO OU ASO. MARQUE-O COMO INATIVO EM VEZ DE EXCLUIR.",
         },
         409,
       );

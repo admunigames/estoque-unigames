@@ -144,6 +144,7 @@ export const CANDIDATE_COLUMNS = `
   birthday_list_added AS birthdayListAdded, birthday_list_date AS birthdayListDate,
   photo_taken AS photoTaken,
   aso_requested AS asoRequested, aso_clinic AS asoClinic, aso_value_cents AS asoValueCents,
+  aso_date AS asoDate, aso_clinic_cnpj AS asoClinicCnpj,
   shopping_registered AS shoppingRegistered, admission_docs_drive_link AS admissionDocsDriveLink,
   dental_plan_included AS dentalPlanIncluded, dental_plan_date AS dentalPlanDate,
   references_checked AS referencesChecked,
@@ -203,6 +204,8 @@ export type CandidateRow = {
   asoRequested: number;
   asoClinic: string;
   asoValueCents: number;
+  asoDate: string;
+  asoClinicCnpj: string;
   shoppingRegistered: number;
   admissionDocsDriveLink: string;
   dentalPlanIncluded: number;

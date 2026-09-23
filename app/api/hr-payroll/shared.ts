@@ -1,5 +1,12 @@
 import { getD1 } from "../../../db";
-import { isWorkSchedule, workingDaysInMonth } from "../../lib/working-days";
+import {
+  benefitCycle,
+  workingDaysInCycle,
+  type BenefitCycle,
+  type CycleWorkingDays,
+  type ScheduleData,
+} from "../../lib/hr-benefit-cycle";
+import { isWorkSchedule } from "../../lib/working-days";
 
 // RH Financeiro (Financeiro Fase 5) — base compartilhada da Folha de
 // Pagamento, dos Benefícios e do Comissionamento.
@@ -156,6 +163,9 @@ export type EmployeeRow = {
   bankName: string;
   status: string;
   workSchedule: string;
+  foodPerDayCents: number;
+  transportPerDayCents: number;
+  benefitNotes: string;
   userId: string;
   notes: string;
   createdBy: string;
@@ -169,7 +179,8 @@ export type EmployeeRow = {
 export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, admission_date AS admissionDate,
   company_id AS companyId, company_name AS companyName, role_title AS roleTitle,
   salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName, status,
-  work_schedule AS workSchedule,
+  work_schedule AS workSchedule, food_per_day_cents AS foodPerDayCents,
+  transport_per_day_cents AS transportPerDayCents, benefit_notes AS benefitNotes,
   user_id AS userId, notes, created_by AS createdBy, created_by_name AS createdByName,
   created_at AS createdAt, updated_by AS updatedBy, updated_by_name AS updatedByName,
   updated_at AS updatedAt`;
@@ -328,35 +339,99 @@ export async function loadCommissionRuleText(database: Database): Promise<string
 }
 
 /**
- * Datas de feriado (AAAA-MM-DD) que valem para a loja informada numa
- * competência: todos os 'nacional' + os 'local' daquela loja.
+ * Datas de feriado (AAAA-MM-DD) entre `start` e `end` (inclusive) que valem
+ * para a loja informada: todos os 'nacional' + os 'local' daquela loja.
  */
-export async function holidayDatesFor(
+export async function holidayDatesBetween(
   database: Database,
   companyId: string,
-  month: string,
+  start: string,
+  end: string,
 ): Promise<string[]> {
   const result = await database
     .prepare(
       `SELECT date FROM hr_holidays
-       WHERE substr(date, 1, 7) = ?1
-         AND (scope = 'nacional' OR (scope = 'local' AND company_id = ?2))`,
+       WHERE date >= ?1 AND date <= ?2
+         AND (scope = 'nacional' OR (scope = 'local' AND company_id = ?3))`,
     )
-    .bind(month, companyId || "")
+    .bind(start, end, companyId || "")
     .all<{ date: string }>();
   return (result.results ?? []).map((row) => row.date);
 }
 
 /**
- * Dias úteis do funcionário na competência, pela escala cadastrada e pelos
- * feriados da loja — usado para benefícios pagos por dia trabalhado.
+ * Lançamentos do módulo Escalas e Folgas (só leitura) dos funcionários
+ * informados nos meses que o ciclo toca — base dos dias trabalhados reais
+ * de quem é 6x1. Uma consulta por tabela, para o ciclo inteiro de uma vez.
+ */
+export async function loadScheduleDataForCycle(
+  database: Database,
+  cycle: BenefitCycle,
+): Promise<Map<string, ScheduleData>> {
+  const [first, second] = cycle.months;
+  const [assignments, sundays, weekdayOffs] = await Promise.all([
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, reference_month AS referenceMonth
+         FROM hr_schedule_assignments WHERE reference_month IN (?1, ?2)`,
+      )
+      .bind(first, second)
+      .all<{ employeeId: string; referenceMonth: string }>(),
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, work_date AS date
+         FROM hr_schedule_sunday_work WHERE work_date >= ?1 AND work_date <= ?2`,
+      )
+      .bind(cycle.start, cycle.end)
+      .all<{ employeeId: string; date: string }>(),
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, off_date AS date
+         FROM hr_schedule_weekday_off WHERE off_date >= ?1 AND off_date <= ?2`,
+      )
+      .bind(cycle.start, cycle.end)
+      .all<{ employeeId: string; date: string }>(),
+  ]);
+  const byEmployee = new Map<string, ScheduleData>();
+  const entry = (employeeId: string) => {
+    let data = byEmployee.get(employeeId);
+    if (!data) {
+      data = { assignedMonths: [], sundayWorkDates: [], weekdayOffDates: [] };
+      byEmployee.set(employeeId, data);
+    }
+    return data;
+  };
+  for (const row of assignments.results ?? []) entry(row.employeeId).assignedMonths.push(row.referenceMonth);
+  for (const row of sundays.results ?? []) entry(row.employeeId).sundayWorkDates.push(row.date);
+  for (const row of weekdayOffs.results ?? []) entry(row.employeeId).weekdayOffDates.push(row.date);
+  return byEmployee;
+}
+
+/**
+ * Dias trabalhados do funcionário no CICLO de benefícios da competência
+ * (20 do mês → 19 do mês seguinte), pela escala cadastrada, pelos feriados
+ * da loja e — para 6x1 — pelas folgas reais do módulo Escalas quando elas
+ * cobrem o ciclo inteiro. Usado nos benefícios pagos por dia trabalhado.
  */
 export async function workingDaysForEmployee(
   database: Database,
-  employee: { companyId: string; workSchedule: string },
+  employee: { id: string; companyId: string; workSchedule: string },
   month: string,
-): Promise<number> {
+  preloaded?: { holidays?: Map<string, string[]>; schedules?: Map<string, ScheduleData> },
+): Promise<CycleWorkingDays & { cycle: BenefitCycle | null; schedule: "5x2" | "6x1" }> {
   const schedule = isWorkSchedule(employee.workSchedule) ? employee.workSchedule : "5x2";
-  const holidays = await holidayDatesFor(database, employee.companyId, month);
-  return workingDaysInMonth(month, schedule, holidays);
+  const cycle = benefitCycle(month);
+  if (!cycle) return { workingDays: 0, source: "formula", offDays: 0, holidays: 0, cycle, schedule };
+  const companyKey = employee.companyId || "";
+  let holidays = preloaded?.holidays?.get(companyKey);
+  if (!holidays) {
+    holidays = await holidayDatesBetween(database, companyKey, cycle.start, cycle.end);
+    preloaded?.holidays?.set(companyKey, holidays);
+  }
+  let scheduleData: ScheduleData | null = null;
+  if (schedule === "6x1") {
+    const schedules = preloaded?.schedules ?? (await loadScheduleDataForCycle(database, cycle));
+    scheduleData = schedules.get(employee.id) ?? null;
+  }
+  return { ...workingDaysInCycle(cycle, schedule, holidays, scheduleData), cycle, schedule };
 }
