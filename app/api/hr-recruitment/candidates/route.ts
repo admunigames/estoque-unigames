@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { isValidCnpj } from "../../../lib/br-documents";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { loadCompanyList } from "../../finance/shared";
 import {
@@ -168,6 +169,8 @@ export async function POST(request: Request) {
       asoRequested: boolToInt(body.asoRequested),
       asoClinic: safeText(body.asoClinic, 160),
       asoValueCents: centsValue(body.asoValueCents ?? 0),
+      asoDate: dateOrEmpty(body.asoDate),
+      asoClinicCnpj: safeText(body.asoClinicCnpj, 30).replace(/\D+/g, ""),
       shoppingRegistered: boolToInt(body.shoppingRegistered),
       admissionDocsDriveLink: safeText(body.admissionDocsDriveLink, 500),
       dentalPlanIncluded: boolToInt(body.dentalPlanIncluded),
@@ -180,6 +183,9 @@ export async function POST(request: Request) {
 
     if (fields.interviewResult && !["aprovado", "reprovado"].includes(fields.interviewResult)) {
       return jsonResponse({ error: "RESULTADO DA ENTREVISTA INVÁLIDO." }, 400);
+    }
+    if (fields.asoClinicCnpj && !isValidCnpj(fields.asoClinicCnpj)) {
+      return jsonResponse({ error: "INFORME UM CNPJ VÁLIDO PARA A CLÍNICA DO ASO." }, 400);
     }
     if (status === "contratado" && !fields.admissionDate) {
       return jsonResponse({ error: "INFORME A DATA DE ADMISSÃO PARA CONTRATAR O CANDIDATO." }, 400);
@@ -235,7 +241,8 @@ export async function POST(request: Request) {
             dental_plan_included=?46, dental_plan_date=?47, references_checked=?48,
             integration_meeting_done=?49, integration_term_signed=?50, integration_meeting_transcript=?51,
             hr_employee_id=?52,
-            updated_by=?53, updated_by_name=?54, updated_at=CURRENT_TIMESTAMP
+            updated_by=?53, updated_by_name=?54, updated_at=CURRENT_TIMESTAMP,
+            aso_date=?56, aso_clinic_cnpj=?57
            WHERE id=?55`,
         )
         .bind(
@@ -294,6 +301,8 @@ export async function POST(request: Request) {
           actor.id,
           actorName(actor),
           editId,
+          fields.asoDate,
+          fields.asoClinicCnpj,
         );
 
       const statements = [];

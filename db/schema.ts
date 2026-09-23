@@ -1517,6 +1517,11 @@ export const hrEmployees = pgTable(
     // confirmada com o usuário).
     birthDate: text("birth_date").notNull().default(""),
     birthdayAcknowledgedYear: integer("birthday_acknowledged_year").notNull().default(0),
+    // Benefícios — valores padrão por dia trabalhado, multiplicados pelos
+    // dias do ciclo 20→19 na geração automática (ver app/lib/hr-benefit-cycle.ts).
+    foodPerDayCents: integer("food_per_day_cents").notNull().default(0),
+    transportPerDayCents: integer("transport_per_day_cents").notNull().default(0),
+    benefitNotes: text("benefit_notes").notNull().default(""),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -1657,6 +1662,9 @@ export const hrBenefits = pgTable(
     discountCents: integer("discount_cents").notNull().default(0),
     paymentDate: text("payment_date").notNull().default(""),
     notes: text("notes").notNull().default(""),
+    // 'manual' | 'ciclo' — 'ciclo' = criado pela geração automática do
+    // ciclo 20→19 (no máximo um por funcionário/competência).
+    origin: text("origin").notNull().default("manual"),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -1667,6 +1675,11 @@ export const hrBenefits = pgTable(
   (table) => [
     index("hr_benefits_employee_month_idx").on(table.employeeId, table.month),
     index("hr_benefits_month_idx").on(table.month),
+    // No máximo UM lançamento gerado pelo ciclo por funcionário/competência
+    // — protege a geração contra duplo clique/requisições simultâneas.
+    uniqueIndex("hr_benefits_cycle_employee_month_idx")
+      .on(table.employeeId, table.month)
+      .where(sql`origin = 'ciclo'`),
   ],
 );
 
@@ -2931,6 +2944,9 @@ export const hrRecruitmentCandidates = pgTable(
     asoRequested: integer("aso_requested").notNull().default(0),
     asoClinic: text("aso_clinic").notNull().default(""),
     asoValueCents: integer("aso_value_cents").notNull().default(0),
+    // Data do exame e CNPJ da clínica — entram no DRE Funcionário do mês.
+    asoDate: text("aso_date").notNull().default(""),
+    asoClinicCnpj: text("aso_clinic_cnpj").notNull().default(""),
     shoppingRegistered: integer("shopping_registered").notNull().default(0),
     // "Frive" do pedido original = Google Drive (confirmado com o usuário) —
     // aqui é só o link da pasta, sem upload direto.
@@ -3274,5 +3290,65 @@ export const hrScheduleDayNotes = pgTable(
   (table) => [
     uniqueIndex("hr_schedule_day_notes_company_date_idx").on(table.companyId, table.noteDate),
     index("hr_schedule_day_notes_month_idx").on(table.referenceMonth),
+  ],
+);
+
+// DRE Funcionário — rescisões (valor da rescisão + FGTS) dos desligados. Ao
+// registrar, o funcionário passa a inativo. Não é único por funcionário: a
+// mesma pessoa pode ser recontratada e desligada de novo.
+export const hrTerminations = pgTable(
+  "hr_terminations",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    terminationDate: text("termination_date").notNull(),
+    severanceCents: integer("severance_cents").notNull().default(0),
+    fgtsCents: integer("fgts_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("hr_terminations_date_idx").on(table.terminationDate),
+    index("hr_terminations_employee_idx").on(table.employeeId),
+  ],
+);
+
+// DRE Funcionário — exames ASO de colaboradores já contratados (periódico,
+// demissional, retorno, mudança de função). O ASO admissional fica no
+// candidato do Recrutamento (aso_date/aso_clinic/aso_clinic_cnpj) e é lido
+// de lá, sem duplicar.
+export const hrAsoExams = pgTable(
+  "hr_aso_exams",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    // 'admissional' | 'periodico' | 'demissional' | 'retorno' | 'mudanca_funcao'
+    examType: text("exam_type").notNull().default("periodico"),
+    examDate: text("exam_date").notNull(),
+    clinicName: text("clinic_name").notNull().default(""),
+    clinicCnpj: text("clinic_cnpj").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("hr_aso_exams_date_idx").on(table.examDate),
+    index("hr_aso_exams_employee_idx").on(table.employeeId),
   ],
 );

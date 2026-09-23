@@ -44,6 +44,7 @@ type BenefitRow = {
   grossCents: number;
   discountCents: number;
   paymentDate: string;
+  origin: string;
   notes: string;
   createdBy: string;
   createdByName: string;
@@ -67,7 +68,7 @@ type BenefitItemRow = {
 const BENEFIT_COLUMNS = `id, employee_id AS employeeId, employee_name AS employeeName,
   company_id AS companyId, company_name AS companyName, month, type,
   payment_method AS paymentMethod, amount_cents AS amountCents, gross_cents AS grossCents,
-  discount_cents AS discountCents, payment_date AS paymentDate,
+  discount_cents AS discountCents, payment_date AS paymentDate, origin,
   notes, created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
   updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt`;
 
@@ -191,9 +192,10 @@ export async function POST(request: Request) {
     const employee = await loadEmployee(database, employeeId);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
 
-    // Benefício pago por dia trabalhado: os dias úteis vêm da escala do
-    // funcionário e dos feriados da loja na competência.
-    const workingDays = await workingDaysForEmployee(database, employee, month);
+    // Benefício pago por dia trabalhado: os dias vêm do ciclo 20→19 da
+    // competência, pela escala do funcionário, feriados da loja e (6x1) as
+    // folgas reais do módulo Escalas.
+    const { workingDays } = await workingDaysForEmployee(database, employee, month);
 
     const { items, error: itemsError } = parseBenefitItems(
       body.items,

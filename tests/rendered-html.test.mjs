@@ -3821,3 +3821,29 @@ test("expõe o módulo RH > Aniversariantes e restringe o acesso a rh_aniversari
   assert.match(route, /FROM hr_employees WHERE status='active'/);
   assert.match(route, /UPDATE hr_employees SET/);
 });
+
+test("RH Financeiro: ciclo 20→19 de Benefícios e DRE Funcionário ligados a payroll", async () => {
+  const [html, workerSource, migration] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0070_hr_benefit_cycle_employee_dre.sql", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /id="navRhDreFuncionario" data-page="rhDreFuncionario" data-permission="payroll"/);
+  assert.match(html, /id="navFinanceiroRhDreFuncionario" data-page="rhDreFuncionario" data-permission="payroll"/);
+  assert.match(html, /id="pageRhDreFuncionario" class="page wrap"/);
+  assert.match(html, /rhDreFuncionario:'\/rh\/dre-funcionario'/);
+  assert.match(html, /rhDreFuncionario:'payroll'/);
+  assert.match(html, /data-rh-beneficio-tab="ciclo"/);
+  assert.match(html, /rhApiRequest\('\/benefit-cycle\?'/);
+  assert.match(html, /id="rhEmployeeFoodPerDay"/);
+  assert.match(html, /id="recAsoDate"/);
+
+  assert.match(workerSource, /"\/rh\/dre-funcionario"/);
+  assert.match(workerSource, /path === "\/rh\/dre-funcionario" \|\|/);
+
+  assert.match(migration, /CREATE TABLE "hr_terminations"/);
+  assert.match(migration, /CREATE TABLE "hr_aso_exams"/);
+  assert.match(migration, /hr_benefits_cycle_employee_month_idx[\s\S]*WHERE origin = 'ciclo'/);
+  assert.doesNotMatch(migration, /REFERENCES/);
+});

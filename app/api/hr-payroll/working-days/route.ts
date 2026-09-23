@@ -10,9 +10,9 @@ import {
   workingDaysForEmployee,
 } from "../shared";
 
-// Prévia dos dias úteis de um funcionário numa competência — usado pela
-// tela de Benefícios para calcular ao vivo o valor de um benefício pago
-// por dia trabalhado.
+// Prévia dos dias trabalhados de um funcionário no ciclo 20→19 da
+// competência — usado pela tela de Benefícios para calcular ao vivo o valor
+// de um benefício pago por dia trabalhado.
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -34,12 +34,17 @@ export async function GET(request: Request) {
     const database = await getD1();
     const employee = await loadEmployee(database, employeeId);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
-    const workingDays = await workingDaysForEmployee(database, employee, month);
+    const result = await workingDaysForEmployee(database, employee, month);
     return jsonResponse({
       employeeId,
       month,
-      workSchedule: employee.workSchedule || "5x2",
-      workingDays,
+      workSchedule: result.schedule,
+      workingDays: result.workingDays,
+      source: result.source,
+      offDays: result.offDays,
+      holidays: result.holidays,
+      cycleStart: result.cycle?.start ?? "",
+      cycleEnd: result.cycle?.end ?? "",
     });
   } catch (error) {
     console.error("Não foi possível calcular os dias úteis.", error);
