@@ -4716,7 +4716,7 @@
         </div>
 
         <p class="page-header-actions" id="comprasOrdersLateOnlyNotice" hidden style="justify-content:flex-start;gap:8px;margin:0 0 10px;">
-          <span class="status-pill alert">MOSTRANDO SÓ ATRASADOS</span>
+          <span class="status-pill alert" id="comprasOrdersLateOnlyNoticeText">MOSTRANDO SÓ ATRASADOS</span>
           <button class="btn-outline" id="btnClearComprasLateFilter" type="button">LIMPAR FILTRO</button>
         </p>
         <!-- Cards no mesmo estilo do Controle de Compras (Notion) — .purchase-card
@@ -4876,10 +4876,10 @@
         <div id="comprasProdutoHistoricoWrap" hidden>
           <section class="purchase-metrics" aria-label="Resumo do produto buscado">
             <div class="purchase-metric"><small>QTD. TOTAL COMPRADA</small><strong id="comprasProdutoTotalQtd">0</strong></div>
-            <div class="purchase-metric"><small>PEDIDOS DISTINTOS</small><strong id="comprasProdutoTotalPedidos">0</strong></div>
+            <div class="purchase-metric clickable" id="comprasProdutoTotalPedidosCard" role="button" tabindex="0" title="Ver pedidos com este produto"><small>PEDIDOS DISTINTOS</small><strong id="comprasProdutoTotalPedidos">0</strong></div>
             <div class="purchase-metric"><small>ÚLTIMA COMPRA</small><strong id="comprasProdutoUltimaCompra">—</strong></div>
-            <div class="purchase-metric"><small>A CAMINHO</small><strong id="comprasProdutoEmAndamento">0</strong></div>
-            <div class="purchase-metric alert"><small>ATRASADO</small><strong id="comprasProdutoAtrasado">0</strong></div>
+            <div class="purchase-metric clickable" id="comprasProdutoEmAndamentoCard" role="button" tabindex="0" title="Ver pedidos deste produto aguardando chegada"><small>A CAMINHO</small><strong id="comprasProdutoEmAndamento">0</strong></div>
+            <div class="purchase-metric alert clickable" id="comprasProdutoAtrasadoCard" role="button" tabindex="0" title="Ver pedidos atrasados deste produto"><small>ATRASADO</small><strong id="comprasProdutoAtrasado">0</strong></div>
           </section>
 
           <div class="table-panel" style="margin-bottom:16px;">
@@ -25157,6 +25157,11 @@ function renderHomeTasks(){
   // status, então filtra no cliente depois de buscar (ver card clicável
   // "Atrasados" na tela inicial, comprasOpenPedidosFiltered abaixo).
   let comprasOrdersLateOnlyFilter = false;
+  // Filtro "Pedidos Distintos"/"A Caminho"/"Atrasado" clicáveis no resultado
+  // da busca "Por Produto" — pedidos que contêm aquele produto (código OU
+  // nome, mesma resolução Unigames/P.A Loja do histórico), ver
+  // comprasOpenPedidosFiltered abaixo. '' = sem filtro por produto.
+  let comprasOrdersProdutoFilter = '';
   async function loadComprasOrdersPage(opts){
     if(!canAccess('purchases_draft')) return;
     const status = el('comprasOrdersStatusFilter').value;
@@ -25168,12 +25173,16 @@ function renderHomeTasks(){
       if(status) query.set('status', status);
       if(origin) query.set('origin', origin);
       if(showCanceled) query.set('includeCanceled', '1');
+      if(comprasOrdersProdutoFilter) query.set('produto', comprasOrdersProdutoFilter);
       const qs = query.toString();
       const data = await comprasNovoApiRequest('/orders'+(qs ? '?'+qs : ''));
       comprasOrders = Array.isArray(data.orders) ? data.orders : [];
       if(comprasOrdersLateOnlyFilter) comprasOrders = comprasOrders.filter(comprasOrderIsLate);
       renderComprasOrdersTable();
-      el('comprasOrdersLateOnlyNotice').hidden = !comprasOrdersLateOnlyFilter;
+      el('comprasOrdersLateOnlyNotice').hidden = !(comprasOrdersLateOnlyFilter || comprasOrdersProdutoFilter);
+      el('comprasOrdersLateOnlyNoticeText').textContent = comprasOrdersProdutoFilter
+        ? 'MOSTRANDO SÓ PEDIDOS COM O PRODUTO "'+comprasOrdersProdutoFilter.toUpperCase()+'"'+(comprasOrdersLateOnlyFilter ? ' (ATRASADOS)' : '')
+        : 'MOSTRANDO SÓ ATRASADOS';
       if(comprasCurrentOrderId && !comprasOrders.some(o => o.id === comprasCurrentOrderId)){
         comprasCurrentOrderId = '';
         comprasOrderDetailOpenId = '';
@@ -25186,6 +25195,7 @@ function renderHomeTasks(){
   }
   function handleComprasOrdersFilterChange(){
     comprasOrdersLateOnlyFilter = false;
+    comprasOrdersProdutoFilter = '';
     loadComprasOrdersPage();
   }
   if(el('comprasOrdersStatusFilter')) el('comprasOrdersStatusFilter').addEventListener('change', handleComprasOrdersFilterChange);
@@ -25195,7 +25205,7 @@ function renderHomeTasks(){
 
   // Cards clicáveis da tela inicial (Por Produto) — cada um abre a aba
   // Pedidos já filtrada pro status correspondente.
-  function comprasOpenPedidosFiltered(status, lateOnly){
+  function comprasOpenPedidosFiltered(status, lateOnly, produto){
     // Os filtros precisam ser setados ANTES de trocar de aba — setComprasSectionTab
     // já dispara um loadComprasOrdersPage() sozinho ao entrar em 'pedidos', e
     // duas chamadas concorrentes (uma sem filtro, disparada pela troca de aba,
@@ -25205,12 +25215,21 @@ function renderHomeTasks(){
     el('comprasOrdersStatusFilter').value = status || '';
     el('comprasOrdersOriginFilter').value = 'native';
     comprasOrdersLateOnlyFilter = Boolean(lateOnly);
+    comprasOrdersProdutoFilter = produto || '';
     setComprasSectionTab('pedidos');
   }
   if(el('comprasStatAbertosCard')) el('comprasStatAbertosCard').addEventListener('click', () => comprasOpenPedidosFiltered('aberto', false));
   if(el('comprasStatAguardandoCard')) el('comprasStatAguardandoCard').addEventListener('click', () => comprasOpenPedidosFiltered('aguardando_chegada', false));
   if(el('comprasStatAtrasadosCard')) el('comprasStatAtrasadosCard').addEventListener('click', () => comprasOpenPedidosFiltered('aguardando_chegada', true));
   if(el('comprasStatConcluidosCard')) el('comprasStatConcluidosCard').addEventListener('click', () => comprasOpenPedidosFiltered('concluido', false));
+
+  // Cards clicáveis do resultado da busca "Por Produto" — "Pedidos
+  // Distintos"/"A Caminho"/"Atrasado" abrem a aba Pedidos já filtrada pelo
+  // produto buscado (todos os status, aguardando_chegada, e
+  // aguardando_chegada+atrasado, respectivamente).
+  if(el('comprasProdutoTotalPedidosCard')) el('comprasProdutoTotalPedidosCard').addEventListener('click', () => comprasOpenPedidosFiltered('', false, comprasCurrentProdutoCodigo));
+  if(el('comprasProdutoEmAndamentoCard')) el('comprasProdutoEmAndamentoCard').addEventListener('click', () => comprasOpenPedidosFiltered('aguardando_chegada', false, comprasCurrentProdutoCodigo));
+  if(el('comprasProdutoAtrasadoCard')) el('comprasProdutoAtrasadoCard').addEventListener('click', () => comprasOpenPedidosFiltered('aguardando_chegada', true, comprasCurrentProdutoCodigo));
 
   // ----- "+ NOVO PEDIDO DE COMPRA" -----
   function openComprasDraftDialog(){
@@ -26049,7 +26068,11 @@ function renderHomeTasks(){
     }
   }
   if(el('btnNewComprasDraftPorProduto')) el('btnNewComprasDraftPorProduto').addEventListener('click', openComprasDraftDialog);
+  // Código do produto buscado agora, usado pelos cards clicáveis
+  // (Pedidos Distintos/A Caminho/Atrasado) pra filtrar a aba Pedidos.
+  let comprasCurrentProdutoCodigo = '';
   async function loadComprasProdutoHistorico(codigo){
+    comprasCurrentProdutoCodigo = codigo || '';
     if(!codigo){
       el('comprasProdutoHistoricoWrap').hidden = true;
       el('comprasProdutoRecentesWrap').hidden = false;
