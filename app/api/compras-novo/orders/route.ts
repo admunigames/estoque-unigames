@@ -1,7 +1,16 @@
 import { getD1 } from "../../../../db";
 import { todayInTimezone } from "../../../lib/finance-status";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { canManageComprasDraft, identity, jsonResponse, newId, safeText, sameOrigin, type JsonMap } from "../shared";
+import {
+  canManageComprasDraft,
+  identity,
+  jsonResponse,
+  newId,
+  resolveProductCodes,
+  safeText,
+  sameOrigin,
+  type JsonMap,
+} from "../shared";
 
 type OrderRow = {
   id: string;
@@ -48,6 +57,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const status = safeText(url.searchParams.get("status"), 20);
   const origin = safeText(url.searchParams.get("origin"), 20);
+  const produto = safeText(url.searchParams.get("produto"), 80);
   // Cancelado some da visão padrão (mesmo padrão do checkbox "mostrar
   // arquivados/convertidos" da aba Rascunhos) — só reaparece com
   // includeCanceled=1.
@@ -67,6 +77,18 @@ export async function GET(request: Request) {
     }
     if (!includeCanceled) {
       conditions.push(`canceled=0`);
+    }
+    // Filtro "Pedidos Distintos"/"A Caminho"/"Atrasado" clicáveis no painel
+    // Por Produto — mesma resolução de código (Unigames/P.A Loja) do
+    // histórico, senão o filtro perderia pedidos lançados com o código do
+    // outro sistema.
+    if (produto) {
+      const matchCodes = await resolveProductCodes(database, produto);
+      const placeholders = matchCodes.map((_, index) => `?${values.length + index + 1}`).join(",");
+      values.push(...matchCodes);
+      conditions.push(
+        `id IN (SELECT order_id FROM purchase_order_items WHERE product_code IN (${placeholders}))`,
+      );
     }
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 

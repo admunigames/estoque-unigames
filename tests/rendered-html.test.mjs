@@ -3499,6 +3499,34 @@ test("Compras nativo: lista de pedidos em cards (estilo Controle de Compras), lo
   assert.match(html, /data-compras-order-item-edit="'\+escapeHtml\(item\.id\)\+'"/);
 });
 
+test("Compras nativo: cards do painel Por Produto (Pedidos Distintos/A Caminho/Atrasado) filtram a aba Pedidos pelo produto buscado", async () => {
+  const [html, sharedSource, ordersRoute] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // resolveProductCodes compartilhado entre o histórico (já existia) e o
+  // filtro novo de /orders — mesma resolução Unigames/P.A Loja pelo
+  // catálogo geral, senão o filtro perderia pedidos do outro código.
+  assert.match(sharedSource, /export async function resolveProductCodes/);
+  assert.match(sharedSource, /code_unigames=\?1 OR code_pa=\?1 OR name=\?1/);
+  assert.match(ordersRoute, /resolveProductCodes/);
+  assert.match(ordersRoute, /id IN \(SELECT order_id FROM purchase_order_items WHERE product_code IN/);
+
+  // Os 3 cards (Pedidos Distintos = todos os status; A Caminho =
+  // aguardando_chegada; Atrasado = aguardando_chegada + filtro client-side
+  // de atraso) chamam comprasOpenPedidosFiltered com o código buscado.
+  assert.match(html, /id="comprasProdutoTotalPedidosCard"/);
+  assert.match(html, /id="comprasProdutoEmAndamentoCard"/);
+  assert.match(html, /id="comprasProdutoAtrasadoCard"/);
+  assert.match(html, /comprasOpenPedidosFiltered\('', false, comprasCurrentProdutoCodigo\)/);
+  assert.match(html, /comprasOpenPedidosFiltered\('aguardando_chegada', false, comprasCurrentProdutoCodigo\)/);
+  assert.match(html, /comprasOpenPedidosFiltered\('aguardando_chegada', true, comprasCurrentProdutoCodigo\)/);
+  assert.match(html, /comprasCurrentProdutoCodigo = codigo \|\| '';/);
+  assert.match(html, /if\(comprasOrdersProdutoFilter\) query\.set\('produto', comprasOrdersProdutoFilter\);/);
+});
+
 test("Cadastro de Produtos: catálogo geral único, com reconciliação e integração ao Compras nativo", async () => {
   const [
     html,
