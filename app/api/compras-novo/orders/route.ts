@@ -31,6 +31,7 @@ type OrderRow = {
 
 type SupplierRow = { id: string; name: string };
 type ItemCountRow = { orderId: string; itemCount: number };
+type ItemStoresRow = { orderId: string; targetStores: string };
 
 // Fase B: lista pedidos nativos (origin='native') e importados do Notion
 // (origin='notion_import') JUNTOS — a importação do Notion existe
@@ -117,10 +118,47 @@ export async function GET(request: Request) {
       for (const row of countsResult.results ?? []) itemCountByOrderId.set(row.orderId, Number(row.itemCount));
     }
 
+    // Loja de destino pra exibir na lista (antes de abrir o pedido) — pedido
+    // nativo não tem companyName no cabeçalho (fica vazio até "aguardando_
+    // chegada" ser um dado de item, não do pedido), então agrega os nomes
+    // distintos encontrados nos target_stores de cada item.
+    const storeNamesByOrderId = new Map<string, Set<string>>();
+    if (orderIds.length) {
+      const placeholders = orderIds.map((_, index) => `?${index + 1}`).join(",");
+      const storesResult = await database
+        .prepare(
+          `SELECT order_id AS orderId, target_stores AS targetStores
+           FROM purchase_order_items WHERE order_id IN (${placeholders})`,
+        )
+        .bind(...orderIds)
+        .all<ItemStoresRow>();
+      for (const row of storesResult.results ?? []) {
+        let stores: Array<{ companyName?: unknown }> = [];
+        try {
+          const parsed = JSON.parse(row.targetStores || "[]");
+          if (Array.isArray(parsed)) stores = parsed;
+        } catch {
+          stores = [];
+        }
+        const set = storeNamesByOrderId.get(row.orderId) || new Set<string>();
+        for (const store of stores) {
+          const name = typeof store.companyName === "string" ? store.companyName.trim() : "";
+          if (name) set.add(name);
+        }
+        storeNamesByOrderId.set(row.orderId, set);
+      }
+    }
+
     const enriched = orders.map((order) => ({
       ...order,
       supplierName: order.origin === "native" ? supplierNameById.get(order.supplierId) || "" : order.supplierNameRaw,
       itemCount: itemCountByOrderId.get(order.id) || 0,
+      targetStoreNames:
+        order.origin === "native"
+          ? Array.from(storeNamesByOrderId.get(order.id) || [])
+          : order.companyName
+            ? [order.companyName]
+            : [],
     }));
 
     return jsonResponse({ orders: enriched });

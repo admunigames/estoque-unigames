@@ -3379,10 +3379,16 @@ test("Módulo Compras nativo (Fase F): Divisão com template novo e painel Por P
   assert.match(orderDetailRoute, /division=\?6, division_status=\?7/);
 
   // Preço por item: PATCH de item aceita receivedQuantity e unitPriceCents
-  // de forma independente (pelo menos um precisa vir).
+  // de forma independente (pelo menos um precisa vir) — e também
+  // productCode/productName/quantity/targetStores, editáveis em QUALQUER
+  // status do pedido (corrigir um produto errado mesmo depois de "Compra
+  // Efetuada" — bug relatado pelo usuário).
   assert.match(orderItemRoute, /hasReceivedQuantity = body\.receivedQuantity !== undefined/);
   assert.match(orderItemRoute, /hasUnitPriceCents = body\.unitPriceCents !== undefined/);
-  assert.match(orderItemRoute, /unit_price_cents=\?2/);
+  assert.match(orderItemRoute, /hasProductCode = body\.productCode !== undefined/);
+  assert.match(orderItemRoute, /hasQuantity = body\.quantity !== undefined/);
+  assert.match(orderItemRoute, /quantity < item\.receivedQuantity/);
+  assert.match(orderItemRoute, /unit_price_cents=\?7/);
 
   // Histórico de compra por produto: endpoint sem varredura de todos os
   // produtos (sempre filtra por product_code, resolvido via catálogo geral
@@ -3428,11 +3434,12 @@ test("Módulo Compras nativo (Fase F): accordion no detalhe, atualização ao vi
   ]);
 
   // Accordion: o mesmo nó de detalhe (#comprasOrderDetail) é realocado pra
-  // dentro de uma <tr> logo após a linha clicada, em vez de renderizar fixo
-  // depois da tabela inteira. Rascunho não existe mais (fundido no pedido).
+  // logo depois do card clicado (grid de cards, estilo Controle de Compras),
+  // em vez de renderizar fixo depois da lista inteira. Rascunho não existe
+  // mais (fundido no pedido).
   assert.match(html, /let comprasOrderDetailOpenId = '';/);
   assert.match(html, /data-compras-order-row="'\+escapeHtml\(order\.id\)\+'"/);
-  assert.match(html, /targetRow\.after\(tr\);/);
+  assert.match(html, /targetCard\.after\(wrap\);/);
   assert.match(html, /function closeComprasOrderDetail\(\)/);
   assert.match(html, /order\.id === comprasOrderDetailOpenId \? 'FECHAR' : 'ABRIR'/);
 
@@ -3458,6 +3465,38 @@ test("Módulo Compras nativo (Fase F): accordion no detalhe, atualização ao vi
   assert.match(html, /divisionStatus === 'FALTA DIVISÃO'/);
   assert.match(html, /divisionStatus === 'FALTANDO ENVIO COMPLETO DA DIVISÃO'/);
   assert.match(html, /const divisionBadge = comprasDivisionStatusBadge\(order\.divisionStatus\);/);
+});
+
+test("Compras nativo: lista de pedidos em cards (estilo Controle de Compras), loja de destino na lista e edição de produto em qualquer status", async () => {
+  const [html, ordersRoute, itemRoute] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Lista de pedidos: cards (.purchase-card, mesmo estilo do Controle de
+  // Compras/Notion) em vez de tabela — pedido do usuário depois de comparar
+  // visualmente os dois módulos.
+  assert.match(html, /id="comprasOrdersCardGrid"/);
+  assert.doesNotMatch(html, /id="comprasOrdersTable"/);
+  assert.doesNotMatch(html, /id="comprasOrdersTableBody"/);
+  assert.match(html, /class="purchase-card'\+\(tone \? ' tone-'\+tone : ''\)\+'"/);
+  assert.match(html, /class="purchase-card-store">LOJA · '\+escapeHtml\(stores\.join\(' \/ '\) \|\| '—'\)/);
+  assert.match(html, /STATUS DA DIVISÃO<\/span>'\+\(divisionBadge \|\| '—'\)/);
+
+  // Loja de destino: agregada no servidor (orders GET) a partir dos
+  // target_stores dos itens (pedido nativo não tem companyName no
+  // cabeçalho) — Notion import usa companyName direto.
+  assert.match(ordersRoute, /targetStoreNames:/);
+  assert.match(ordersRoute, /FROM purchase_order_items WHERE order_id IN/);
+
+  // Edição de item (produto/quantidade/loja) em QUALQUER status — bug
+  // relatado: não existia como corrigir um item errado depois de "Compra
+  // Efetuada". Backend aceita os campos sem checar order.status (só
+  // receivedQuantity continua gated a partir de 'aguardando_chegada').
+  assert.match(itemRoute, /product_code=\?1, product_name=\?2, quantity=\?3, notes=\?4, target_stores=\?5/);
+  assert.match(html, /data-compras-item-edit="'\+escapeHtml\(item\.id\)\+'"/);
+  assert.match(html, /data-compras-order-item-edit="'\+escapeHtml\(item\.id\)\+'"/);
 });
 
 test("Cadastro de Produtos: catálogo geral único, com reconciliação e integração ao Compras nativo", async () => {
