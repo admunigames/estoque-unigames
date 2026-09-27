@@ -4768,6 +4768,7 @@
               <div id="comprasOrderDetailMeta"></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn-outline" id="btnCloneComprasOrder" type="button" hidden>CLONAR PEDIDO</button>
               <button class="btn-outline" id="btnEditComprasOrder" type="button">EDITAR PEDIDO</button>
               <button class="btn-danger-outline" id="btnCancelComprasOrder" type="button">CANCELAR PEDIDO</button>
               <button class="btn-outline" id="btnReopenComprasOrder" type="button" hidden>REABRIR PEDIDO</button>
@@ -7165,6 +7166,38 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelComprasOrderEditDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Clonar pedido: mesmo fornecedor do original (já "Compra Efetuada"),
+     itens editáveis (produto/quantidade/preço, com opção de remover),
+     loja de destino única pro pedido inteiro. Sem cotação/anexos/divisão —
+     o clone nasce do zero nesses campos. -->
+<dialog class="purchase-dialog" id="comprasCloneOrderDialog" aria-labelledby="comprasCloneOrderDialogTitle" style="max-width:720px;">
+  <div class="purchase-dialog-head">
+    <h3 id="comprasCloneOrderDialogTitle">CLONAR PEDIDO</h3>
+    <button class="purchase-dialog-close" id="btnCloseComprasCloneOrderDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="comprasCloneOrderForm">
+    <input type="hidden" id="comprasCloneOrderSourceId">
+    <p class="page-desc" id="comprasCloneOrderSupplierInfo" style="margin:0 0 12px;"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full">
+        <label for="comprasCloneOrderCompany">LOJA DE DESTINO *</label>
+        <select id="comprasCloneOrderCompany" required><option value="">SELECIONE</option></select>
+      </div>
+    </div>
+    <div class="table-scroll" style="margin-top:10px;">
+      <table>
+        <thead><tr><th>Produto</th><th>Quantidade</th><th>Preço unit.</th><th class="no-print"></th></tr></thead>
+        <tbody id="comprasCloneOrderItemsBody"></tbody>
+      </table>
+    </div>
+    <div class="user-form-status" id="comprasCloneOrderFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelComprasCloneOrderDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">CRIAR PEDIDO CLONADO</button>
     </div>
   </form>
 </dialog>
@@ -25203,6 +25236,7 @@ function renderHomeTasks(){
   // ----- Fase F: aba "Pedidos" (purchase_orders + purchase_order_items) -----
   let comprasOrders = [];
   let comprasCurrentOrderId = '';
+  let comprasCurrentOrder = null;
   let comprasCurrentOrderItems = [];
   let comprasCurrentOrderLinkedInvoice = null;
   // Detalhe em accordion — o mesmo nó #comprasOrderDetail é realocado
@@ -25961,6 +25995,7 @@ function renderHomeTasks(){
       comprasCurrentOrderItems = Array.isArray(data.items) ? data.items : [];
       comprasCurrentOrderLinkedInvoice = data.linkedInvoice || null;
       const order = data.order;
+      comprasCurrentOrder = order;
       // Reposiciona a linha de detalhe ANTES de popular os campos (o nó só
       // é encontrado por document.getElementById depois de voltar ao DOM).
       renderComprasOrdersTable();
@@ -25980,6 +26015,11 @@ function renderHomeTasks(){
 
       el('btnCancelComprasOrder').hidden = Boolean(order.canceled);
       el('btnReopenComprasOrder').hidden = !order.canceled;
+      // Clonar: só pedidos nativos (Notion import não tem itens pra
+      // clonar), não cancelados, e com fornecedor vencedor já definido
+      // (o clone nasce com o mesmo fornecedor — um pedido 'aberto' sem
+      // vencedor ainda não tem o que copiar como "já definido").
+      el('btnCloneComprasOrder').hidden = order.origin !== 'native' || Boolean(order.canceled) || !order.supplierId;
       comprasFillDivisionSection(order);
       if(!comprasCurrentOrderLinkedInvoice) await loadComprasOrderInvoiceCandidates();
       renderComprasOrderInvoiceLink();
@@ -26240,6 +26280,82 @@ function renderHomeTasks(){
       el('comprasOrderEditDialog').close();
       await refreshAfterAction(async () => { await openComprasOrderDetail(id); await loadComprasOrdersPage({silent:true}); });
       showPurchaseToast('Pedido atualizado.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // ----- "CLONAR PEDIDO" -----
+  // Mesmo fornecedor (já definido), itens editáveis (produto/qtd/preço,
+  // com opção de remover), loja de destino única pro pedido inteiro. Ver
+  // decisões confirmadas no comentário de app/api/compras-novo/orders/[id]/clone/route.ts.
+  function comprasCloneItemRowHtml(item, index){
+    return '<tr data-clone-item-row="'+index+'">'+
+      '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+
+        '<input type="hidden" data-clone-item-code="'+index+'" value="'+escapeHtml(item.productCode)+'">'+
+        '<input type="hidden" data-clone-item-name="'+index+'" value="'+escapeHtml(item.productName || '')+'">'+
+      '</td>'+
+      '<td><input type="number" min="1" step="1" value="'+Number(item.quantity || 0)+'" data-clone-item-qty="'+index+'" style="width:90px;"></td>'+
+      '<td><input type="text" inputmode="decimal" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-clone-item-price="'+index+'" style="width:110px;"></td>'+
+      '<td class="no-print"><button class="btn-outline" type="button" data-clone-item-remove="'+index+'">REMOVER</button></td>'+
+    '</tr>';
+  }
+  function openComprasCloneOrderDialog(){
+    if(!comprasCurrentOrder || !comprasCurrentOrderItems.length) return;
+    el('comprasCloneOrderSourceId').value = comprasCurrentOrder.id;
+    el('comprasCloneOrderSupplierInfo').textContent = 'Fornecedor: '+(comprasCurrentOrder.supplierName || comprasCurrentOrder.supplierNameRaw || '—')+' (mesmo do pedido original — o clone já nasce com "Compra Efetuada").';
+    el('comprasCloneOrderCompany').innerHTML = '<option value="">SELECIONE</option>'+
+      companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    el('comprasCloneOrderItemsBody').innerHTML = comprasCurrentOrderItems.map((item, index) => comprasCloneItemRowHtml(item, index)).join('');
+    el('comprasCloneOrderItemsBody').querySelectorAll('[data-clone-item-price]').forEach(attachCurrencyMask);
+    el('comprasCloneOrderFormStatus').textContent = '';
+    el('comprasCloneOrderDialog').showModal();
+  }
+  if(el('btnCloneComprasOrder')) el('btnCloneComprasOrder').addEventListener('click', openComprasCloneOrderDialog);
+  if(el('btnCloseComprasCloneOrderDialog')) el('btnCloseComprasCloneOrderDialog').addEventListener('click', () => el('comprasCloneOrderDialog').close());
+  if(el('btnCancelComprasCloneOrderDialog')) el('btnCancelComprasCloneOrderDialog').addEventListener('click', () => el('comprasCloneOrderDialog').close());
+  if(el('comprasCloneOrderItemsBody')) el('comprasCloneOrderItemsBody').addEventListener('click', event => {
+    const removeBtn = event.target.closest('[data-clone-item-remove]');
+    if(!removeBtn) return;
+    removeBtn.closest('tr').remove();
+  });
+  if(el('comprasCloneOrderForm')) el('comprasCloneOrderForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasCloneOrderFormStatus');
+    status.textContent = '';
+    const sourceId = el('comprasCloneOrderSourceId').value;
+    const companySelect = el('comprasCloneOrderCompany');
+    const companyId = companySelect.value;
+    if(!companyId){ status.textContent = 'SELECIONE A LOJA DE DESTINO.'; return; }
+    const companyName = (companies.find(c => c.id === companyId) || {}).name || '';
+    const rows = Array.from(el('comprasCloneOrderItemsBody').querySelectorAll('tr[data-clone-item-row]'));
+    if(!rows.length){ status.textContent = 'O PEDIDO CLONADO PRECISA DE PELO MENOS UM ITEM.'; return; }
+    const items = [];
+    for(const row of rows){
+      const index = row.dataset.cloneItemRow;
+      const qtyInput = row.querySelector('[data-clone-item-qty="'+index+'"]');
+      const priceInput = row.querySelector('[data-clone-item-price="'+index+'"]');
+      const quantity = Number(qtyInput.value);
+      if(!Number.isFinite(quantity) || quantity <= 0){ status.textContent = 'INFORME UMA QUANTIDADE VÁLIDA PARA CADA ITEM.'; return; }
+      const unitPriceCents = parseBRLToCents(getCurrencyValue(priceInput) || '0');
+      if(unitPriceCents === null){ status.textContent = 'INFORME UM PREÇO UNITÁRIO VÁLIDO PARA CADA ITEM.'; return; }
+      items.push({
+        productCode: row.querySelector('[data-clone-item-code="'+index+'"]').value,
+        productName: row.querySelector('[data-clone-item-name="'+index+'"]').value,
+        quantity,
+        unitPriceCents
+      });
+    }
+    try{
+      const result = await comprasNovoApiRequest('/orders/'+encodeURIComponent(sourceId)+'/clone', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({companyId, companyName, items})
+      });
+      el('comprasCloneOrderDialog').close();
+      showPurchaseToast('Pedido clonado — abrindo o novo pedido…');
+      el('comprasOrdersStatusFilter').value = '';
+      el('comprasOrdersOriginFilter').value = 'native';
+      comprasOrdersLateOnlyFilter = false;
+      comprasOrdersProdutoFilter = '';
+      await loadComprasOrdersPage();
+      await openComprasOrderDetail(result.id);
     }catch(error){ status.textContent = error.message; }
   });
 
