@@ -10293,11 +10293,16 @@
     const page = source.dataset.homePage || source.dataset.page;
     const href = (page && PAGE_ROUTES[page]) || source.getAttribute('href');
     if(!labelNode || !iconNode || !href) return null;
-    const permissionSource = source.closest('[data-permission]');
+    // O card herda a regra de permissão mais próxima do item de origem —
+    // data-permission OU data-any-permission (Obras e Notas Fiscais só têm
+    // data-any-permission; sem copiá-lo o card ficava sem checagem nenhuma
+    // e aparecia para qualquer usuário).
+    const permissionSource = source.closest('[data-permission],[data-any-permission]');
     const card = document.createElement('a');
     card.className = 'home-access-card';
     card.href = href;
-    if(permissionSource) card.dataset.permission = permissionSource.dataset.permission;
+    if(permissionSource?.dataset.permission) card.dataset.permission = permissionSource.dataset.permission;
+    else if(permissionSource?.dataset.anyPermission) card.dataset.anyPermission = permissionSource.dataset.anyPermission;
     const icon = document.createElement('span');
     icon.className = 'home-access-icon';
     icon.setAttribute('aria-hidden', 'true');
