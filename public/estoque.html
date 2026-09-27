@@ -3022,13 +3022,14 @@
         <a class="nav-item sub-item" id="navRhRecrutamento" data-page="rhRecrutamento" data-permission="rh_recrutamento" data-home-desc="Pipeline de Recrutamento e Seleção: entrevista, teste, treinamento, contratação e integração." title="Recrutamento e Seleção" href="/rh/recrutamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/><path d="m17 4 2 2-2 2"/><path d="M19 6h-4"/></svg></span><span class="nav-label">Recrutamento e Seleção</span></a>
       </div>
     </div>
-    <div class="nav-group" data-permission="database">
-      <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu" data-home-page="cadastros" data-home-desc="Lojas, bases e envio de dados.">
+    <div class="nav-group" data-any-permission="database,suppliers,finance:manage,purchases_draft">
+      <button class="nav-group-toggle" id="navCadastros" type="button" aria-expanded="false" aria-controls="navCadastrosSubmenu" data-home-page="cadastros" data-home-permission="database" data-home-desc="Lojas, bases e envio de dados.">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="1.7" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="1.7" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="10" cy="18" r="1.7" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Cadastros</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navCadastrosSubmenu" aria-hidden="true">
-        <a class="nav-item sub-item" id="navDados" data-page="dados" title="Base de Dados" href="/cadastros/base-de-dados"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.8" rx="7.5" ry="2.8"/><path d="M4.5 5.8v6c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-6"/><path d="M4.5 11.8v6c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-6"/></svg></span><span class="nav-label">Base de Dados</span></a>
-        <a class="nav-item sub-item" id="navLojas" data-page="lojas" title="Lojas" href="/cadastros/lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16l1.5 5a2.3 2.3 0 0 1-4.4 1 2.3 2.3 0 0 1-4.4 0 2.3 2.3 0 0 1-4.4 0 2.3 2.3 0 0 1-4.4-1z"/><path d="M5 10.2V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8.8"/><path d="M9.5 20v-5h5v5"/></svg></span><span class="nav-label">Lojas</span></a>
+        <a class="nav-item sub-item" id="navDados" data-page="dados" data-permission="database" title="Base de Dados" href="/cadastros/base-de-dados"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.8" rx="7.5" ry="2.8"/><path d="M4.5 5.8v6c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-6"/><path d="M4.5 11.8v6c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-6"/></svg></span><span class="nav-label">Base de Dados</span></a>
+        <a class="nav-item sub-item" id="navFornecedores" data-page="fornecedores" data-any-permission="suppliers,finance:manage,purchases_draft" data-home-desc="Cadastre, edite ou desative fornecedores." title="Fornecedores" href="/cadastros/fornecedores"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="12" height="10" rx="1"/><path d="M14 9h4l3 3.5V16h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg></span><span class="nav-label">Fornecedores</span></a>
+        <a class="nav-item sub-item" id="navLojas" data-page="lojas" data-permission="database" title="Lojas" href="/cadastros/lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16l1.5 5a2.3 2.3 0 0 1-4.4 1 2.3 2.3 0 0 1-4.4 0 2.3 2.3 0 0 1-4.4 0 2.3 2.3 0 0 1-4.4-1z"/><path d="M5 10.2V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8.8"/><path d="M9.5 20v-5h5v5"/></svg></span><span class="nav-label">Lojas</span></a>
         <a class="nav-item sub-item" id="navUsuarios" data-page="usuarios" data-admin-only title="Usuários e acessos" href="/cadastros/usuarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15.5" r="3.5"/><path d="m10.3 13.2 8.2-8.2"/><path d="m15.5 8 2.5 2.5"/><path d="m17.7 5.8 2.5 2.5"/></svg></span><span class="nav-label">Usuários e acessos</span></a>
       </div>
     </div>
@@ -3217,6 +3218,11 @@
             <span class="cadastros-option-copy"><strong>BASE DE DADOS</strong><span>Carregue catálogos, entradas e saídas das lojas.</span></span>
             <span class="cadastros-option-arrow" aria-hidden="true">→</span>
           </button>
+          <button class="cadastros-option" type="button" data-cadastro-target="fornecedores" data-any-permission="suppliers,finance:manage,purchases_draft">
+            <span class="cadastros-option-icon" aria-hidden="true">F</span>
+            <span class="cadastros-option-copy"><strong>FORNECEDORES</strong><span>Cadastre, edite ou desative fornecedores.</span></span>
+            <span class="cadastros-option-arrow" aria-hidden="true">→</span>
+          </button>
           <button class="cadastros-option" type="button" data-cadastro-target="usuarios" data-admin-only>
             <span class="cadastros-option-icon" aria-hidden="true">U</span>
             <span class="cadastros-option-copy"><strong>USUÁRIOS E ACESSOS</strong><span>Crie contas, bloqueie usuários e escolha os módulos liberados.</span></span>
@@ -3224,6 +3230,31 @@
           </button>
         </div>
       </div>
+    </section>
+
+    <!-- ================= CADASTRO DE FORNECEDORES =================
+         Mesmo cadastro da aba "Cadastro de Fornecedor" do Compras nativo
+         (finance_suppliers via /api/finance/suppliers), aberto também para
+         quem só tem suppliers:manage, sem Financeiro nem Compras nativo. -->
+    <section id="pageFornecedores" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Cadastro de Fornecedores</h2>
+        </div>
+      </header>
+      <section class="panel">
+        <form class="dre-catalog-form" id="cadastroFornecedorForm" data-supplier-form>
+          <input type="hidden" id="cadastroFornecedorId" data-supplier-field="id">
+          <div class="field"><label for="cadastroFornecedorName">NOME DO FORNECEDOR *</label><input id="cadastroFornecedorName" data-supplier-field="name" maxlength="160" placeholder="Ex.: ODERCO" required></div>
+          <div class="field"><label for="cadastroFornecedorDocument">CNPJ/CPF</label><input id="cadastroFornecedorDocument" data-supplier-field="document" maxlength="40"></div>
+          <button class="btn-outline" type="button" id="btnCancelCadastroFornecedorEdit" data-supplier-cancel hidden>CANCELAR EDIÇÃO</button>
+          <button class="btn-accent" type="submit" id="btnSaveCadastroFornecedor" data-supplier-save>ADICIONAR FORNECEDOR</button>
+        </form>
+        <div class="user-form-status" id="cadastroFornecedorFormStatus" data-supplier-status role="status" aria-live="polite"></div>
+        <div class="field full" style="margin-bottom:12px;"><label for="cadastroFornecedoresSearch">BUSCAR</label><input id="cadastroFornecedoresSearch" data-supplier-search placeholder="Nome ou documento..."></div>
+        <div class="dre-catalog-list" id="cadastroFornecedoresList" data-supplier-list></div>
+      </section>
     </section>
 
     <!-- ================= ESTOQUE FISCAL ================= -->
@@ -4910,16 +4941,16 @@
            (finance_suppliers via /api/finance/suppliers), só exposta aqui
            também: um único cadastro de fornecedor pro sistema todo. -->
       <section id="comprasSectionFornecedores" hidden>
-        <form class="dre-catalog-form" id="comprasFornecedorForm">
-          <input type="hidden" id="comprasFornecedorId">
-          <div class="field"><label for="comprasFornecedorName">NOME DO FORNECEDOR *</label><input id="comprasFornecedorName" maxlength="160" placeholder="Ex.: ODERCO" required></div>
-          <div class="field"><label for="comprasFornecedorDocument">CNPJ/CPF</label><input id="comprasFornecedorDocument" maxlength="40"></div>
-          <button class="btn-outline" type="button" id="btnCancelComprasFornecedorEdit" hidden>CANCELAR EDIÇÃO</button>
-          <button class="btn-accent" type="submit" id="btnSaveComprasFornecedor">ADICIONAR FORNECEDOR</button>
+        <form class="dre-catalog-form" id="comprasFornecedorForm" data-supplier-form>
+          <input type="hidden" id="comprasFornecedorId" data-supplier-field="id">
+          <div class="field"><label for="comprasFornecedorName">NOME DO FORNECEDOR *</label><input id="comprasFornecedorName" data-supplier-field="name" maxlength="160" placeholder="Ex.: ODERCO" required></div>
+          <div class="field"><label for="comprasFornecedorDocument">CNPJ/CPF</label><input id="comprasFornecedorDocument" data-supplier-field="document" maxlength="40"></div>
+          <button class="btn-outline" type="button" id="btnCancelComprasFornecedorEdit" data-supplier-cancel hidden>CANCELAR EDIÇÃO</button>
+          <button class="btn-accent" type="submit" id="btnSaveComprasFornecedor" data-supplier-save>ADICIONAR FORNECEDOR</button>
         </form>
-        <div class="user-form-status" id="comprasFornecedorFormStatus" role="status" aria-live="polite"></div>
-        <div class="field full" style="margin-bottom:12px;"><label for="comprasFornecedoresSearch">BUSCAR</label><input id="comprasFornecedoresSearch" placeholder="Nome ou documento..."></div>
-        <div class="dre-catalog-list" id="comprasFornecedoresList"></div>
+        <div class="user-form-status" id="comprasFornecedorFormStatus" data-supplier-status role="status" aria-live="polite"></div>
+        <div class="field full" style="margin-bottom:12px;"><label for="comprasFornecedoresSearch">BUSCAR</label><input id="comprasFornecedoresSearch" data-supplier-search placeholder="Nome ou documento..."></div>
+        <div class="dre-catalog-list" id="comprasFornecedoresList" data-supplier-list></div>
       </section>
     </section>
 
@@ -5075,6 +5106,12 @@
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="database:view"> Visualizar</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="database:manage"> Cadastrar, editar e excluir</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Fornecedores</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="suppliers:manage"> Cadastrar, editar e desativar fornecedores (sem abrir Financeiro nem Compras)</label>
                   </div>
                 </details>
                 <details class="permission-module">
@@ -10093,6 +10130,7 @@
     cadastros:'/cadastros',
     lojas:'/cadastros/lojas',
     dados:'/cadastros/base-de-dados',
+    fornecedores:'/cadastros/fornecedores',
     tarefas:'/tarefas',
     missoes:'/missoes',
     captacao:'/captacao',
@@ -10146,6 +10184,7 @@
     cadastros:'CADASTROS',
     lojas:'CADASTRO DE LOJAS',
     dados:'BASE DE DADOS',
+    fornecedores:'CADASTRO DE FORNECEDORES',
     tarefas:'TAREFAS',
     missoes:'MISSÕES',
     captacao:'CAPTAÇÃO',
@@ -10284,6 +10323,10 @@
     // Obras: works:manage OU finance:manage (fallback também no backend,
     // ver app/api/obras/shared.ts#canManageWorks).
     if(name === 'obras') return canAccess('works') || canAccess('finance');
+    // Fornecedores: suppliers:manage OU Financeiro OU Compras nativo (mesmo
+    // critério do worker e de canManageSuppliers em
+    // app/api/finance/suppliers/route.ts).
+    if(name === 'fornecedores') return canAccess('suppliers') || canAccess('finance:manage') || canAccess('purchases_draft');
     return !PAGE_PERMISSIONS[name] || canAccess(PAGE_PERMISSIONS[name]);
   }
 
@@ -10297,11 +10340,15 @@
     // data-permission OU data-any-permission (Obras e Notas Fiscais só têm
     // data-any-permission; sem copiá-lo o card ficava sem checagem nenhuma
     // e aparecia para qualquer usuário).
+    // data-home-permission no próprio item tem prioridade: o toggle de
+    // Cadastros leva a /cadastros (Base de Dados), mas o grupo também abre
+    // para quem só tem acesso a Fornecedores.
     const permissionSource = source.closest('[data-permission],[data-any-permission]');
     const card = document.createElement('a');
     card.className = 'home-access-card';
     card.href = href;
-    if(permissionSource?.dataset.permission) card.dataset.permission = permissionSource.dataset.permission;
+    if(source.dataset.homePermission) card.dataset.permission = source.dataset.homePermission;
+    else if(permissionSource?.dataset.permission) card.dataset.permission = permissionSource.dataset.permission;
     else if(permissionSource?.dataset.anyPermission) card.dataset.anyPermission = permissionSource.dataset.anyPermission;
     const icon = document.createElement('span');
     icon.className = 'home-access-icon';
@@ -10766,7 +10813,7 @@
     page.classList.add('active');
     navItem.classList.add('active');
     const isHome = name === 'inicio';
-    const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'usuarios';
+    const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'fornecedores' || name === 'usuarios';
     const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento' || name === 'rhDreFuncionario';
     const isRh = name === 'rhFolgas' || name === 'rhEscalas' || isRhFinanceiro;
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
@@ -10858,6 +10905,7 @@
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
+    if(name === 'fornecedores') loadCadastroFornecedoresPage();
     if(settings.scroll !== false){
       window.scrollTo({top:0, behavior:settings.smooth === false ? 'auto' : 'smooth'});
     }
@@ -10911,6 +10959,7 @@
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
+    if(name === 'fornecedores') loadCadastroFornecedoresPage();
   }
 
   function isPlainClick(event){
@@ -25005,91 +25054,111 @@ function renderHomeTasks(){
     return supplier ? supplier.name : id;
   }
 
-  // ----- Aba "Cadastro de Fornecedor" do Compras nativo -----
+  // ----- Cadastro de Fornecedor (aba do Compras nativo + Cadastros > Fornecedores) -----
   // Mesmo cadastro (finance_suppliers / /api/finance/suppliers) já usado
-  // pelo Financeiro em Contas a Pagar — listar/criar/editar aqui grava no
-  // mesmo lugar, sem duplicar fornecedor entre os dois módulos.
-  let comprasFornecedoresData = [];
+  // pelo Financeiro em Contas a Pagar — as duas telas montam o MESMO
+  // formulário/lista (marcados com data-supplier-*) sobre raízes
+  // diferentes e gravam no mesmo lugar, sem duplicar fornecedor.
+  function createSupplierRegistry(root){
+    const q = selector => root.querySelector(selector);
+    const form = q('[data-supplier-form]');
+    const idInput = q('[data-supplier-field="id"]');
+    const nameInput = q('[data-supplier-field="name"]');
+    const documentInput = q('[data-supplier-field="document"]');
+    const cancelButton = q('[data-supplier-cancel]');
+    const saveButton = q('[data-supplier-save]');
+    const status = q('[data-supplier-status]');
+    const searchInput = q('[data-supplier-search]');
+    const list = q('[data-supplier-list]');
+    let rows = [];
 
-  async function loadComprasFornecedoresTab(){
-    try{
-      const data = await financeApiRequest('/suppliers?includeInactive=1');
-      comprasFornecedoresData = Array.isArray(data.suppliers) ? data.suppliers : [];
-    }catch(error){
-      comprasFornecedoresData = [];
-      showPurchaseToast(error.message, 'error');
+    async function load(){
+      try{
+        const data = await financeApiRequest('/suppliers?includeInactive=1');
+        rows = Array.isArray(data.suppliers) ? data.suppliers : [];
+      }catch(error){
+        rows = [];
+        showPurchaseToast(error.message, 'error');
+      }
+      render();
     }
-    renderComprasFornecedoresList();
-  }
 
-  function renderComprasFornecedoresList(){
-    const search = (el('comprasFornecedoresSearch').value || '').trim().toLowerCase();
-    const filtered = comprasFornecedoresData.filter(s =>
-      !search || s.name.toLowerCase().includes(search) || (s.document || '').toLowerCase().includes(search)
-    );
-    el('comprasFornecedoresList').innerHTML = filtered.length
-      ? filtered.map(s => '<div class="dre-catalog-row"><span>'+escapeHtml(s.name)+(s.document ? ' — '+escapeHtml(s.document) : '')+(s.active ? '' : ' (INATIVO)')+'</span>'+
-          '<span style="display:flex;gap:6px;">'+
-            '<button class="btn-outline" type="button" data-compras-edit-fornecedor="'+escapeHtml(s.id)+'">EDITAR</button>'+
-            '<button class="btn-outline" type="button" data-compras-toggle-fornecedor="'+escapeHtml(s.id)+'">'+(s.active ? 'DESATIVAR' : 'REATIVAR')+'</button>'+
-          '</span></div>').join('')
-      : '<div class="dre-empty">Nenhum fornecedor encontrado.</div>';
-  }
+    function render(){
+      const search = (searchInput.value || '').trim().toLowerCase();
+      const filtered = rows.filter(s =>
+        !search || s.name.toLowerCase().includes(search) || (s.document || '').toLowerCase().includes(search)
+      );
+      list.innerHTML = filtered.length
+        ? filtered.map(s => '<div class="dre-catalog-row"><span>'+escapeHtml(s.name)+(s.document ? ' — '+escapeHtml(s.document) : '')+(s.active ? '' : ' (INATIVO)')+'</span>'+
+            '<span style="display:flex;gap:6px;">'+
+              '<button class="btn-outline" type="button" data-supplier-edit="'+escapeHtml(s.id)+'">EDITAR</button>'+
+              '<button class="btn-outline" type="button" data-supplier-toggle="'+escapeHtml(s.id)+'">'+(s.active ? 'DESATIVAR' : 'REATIVAR')+'</button>'+
+            '</span></div>').join('')
+        : '<div class="dre-empty">Nenhum fornecedor encontrado.</div>';
+    }
 
-  function resetComprasFornecedorForm(){
-    el('comprasFornecedorForm').reset();
-    el('comprasFornecedorId').value = '';
-    el('btnCancelComprasFornecedorEdit').hidden = true;
-    el('btnSaveComprasFornecedor').textContent = 'ADICIONAR FORNECEDOR';
-    el('comprasFornecedorFormStatus').textContent = '';
-  }
+    function reset(){
+      form.reset();
+      idInput.value = '';
+      cancelButton.hidden = true;
+      saveButton.textContent = 'ADICIONAR FORNECEDOR';
+      status.textContent = '';
+    }
 
-  if(el('comprasFornecedorForm')) el('comprasFornecedorForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const status = el('comprasFornecedorFormStatus');
-    const name = el('comprasFornecedorName').value.trim();
-    if(!name){ status.textContent = 'INFORME O NOME DO FORNECEDOR.'; return; }
-    try{
-      await financeApiRequest('/suppliers', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id: el('comprasFornecedorId').value, name, document: el('comprasFornecedorDocument').value.trim()})
-      });
-      resetComprasFornecedorForm();
-      comprasSuppliersCache = [];
-      await loadComprasFornecedoresTab();
-      showPurchaseToast('Fornecedor salvo.');
-    }catch(error){ status.textContent = error.message; }
-  });
-
-  if(el('btnCancelComprasFornecedorEdit')) el('btnCancelComprasFornecedorEdit').addEventListener('click', resetComprasFornecedorForm);
-  if(el('comprasFornecedoresSearch')) el('comprasFornecedoresSearch').addEventListener('input', renderComprasFornecedoresList);
-
-  if(el('comprasFornecedoresList')) el('comprasFornecedoresList').addEventListener('click', async event => {
-    const editButton = event.target.closest('[data-compras-edit-fornecedor]');
-    const toggleButton = event.target.closest('[data-compras-toggle-fornecedor]');
-    if(editButton){
-      const supplier = comprasFornecedoresData.find(s => s.id === editButton.dataset.comprasEditFornecedor);
-      if(!supplier) return;
-      el('comprasFornecedorId').value = supplier.id;
-      el('comprasFornecedorName').value = supplier.name;
-      el('comprasFornecedorDocument').value = supplier.document || '';
-      el('btnCancelComprasFornecedorEdit').hidden = false;
-      el('btnSaveComprasFornecedor').textContent = 'SALVAR ALTERAÇÕES';
-      el('comprasFornecedorName').focus();
-    }else if(toggleButton){
-      const supplier = comprasFornecedoresData.find(s => s.id === toggleButton.dataset.comprasToggleFornecedor);
-      if(!supplier) return;
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const name = nameInput.value.trim();
+      if(!name){ status.textContent = 'INFORME O NOME DO FORNECEDOR.'; return; }
       try{
         await financeApiRequest('/suppliers', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({id:supplier.id, name:supplier.name, document:supplier.document, active: !supplier.active})
+          body:JSON.stringify({id: idInput.value, name, document: documentInput.value.trim()})
         });
+        reset();
         comprasSuppliersCache = [];
-        await loadComprasFornecedoresTab();
-        showPurchaseToast(supplier.active ? 'Fornecedor desativado.' : 'Fornecedor reativado.');
-      }catch(error){ showPurchaseToast(error.message,'error'); }
-    }
-  });
+        await load();
+        showPurchaseToast('Fornecedor salvo.');
+      }catch(error){ status.textContent = error.message; }
+    });
+
+    cancelButton.addEventListener('click', reset);
+    searchInput.addEventListener('input', render);
+
+    list.addEventListener('click', async event => {
+      const editButton = event.target.closest('[data-supplier-edit]');
+      const toggleButton = event.target.closest('[data-supplier-toggle]');
+      if(editButton){
+        const supplier = rows.find(s => s.id === editButton.dataset.supplierEdit);
+        if(!supplier) return;
+        idInput.value = supplier.id;
+        nameInput.value = supplier.name;
+        documentInput.value = supplier.document || '';
+        cancelButton.hidden = false;
+        saveButton.textContent = 'SALVAR ALTERAÇÕES';
+        nameInput.focus();
+      }else if(toggleButton){
+        const supplier = rows.find(s => s.id === toggleButton.dataset.supplierToggle);
+        if(!supplier) return;
+        try{
+          await financeApiRequest('/suppliers', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({id:supplier.id, name:supplier.name, document:supplier.document, active: !supplier.active})
+          });
+          comprasSuppliersCache = [];
+          await load();
+          showPurchaseToast(supplier.active ? 'Fornecedor desativado.' : 'Fornecedor reativado.');
+        }catch(error){ showPurchaseToast(error.message,'error'); }
+      }
+    });
+
+    return {load};
+  }
+
+  const comprasFornecedoresRegistry = createSupplierRegistry(el('comprasSectionFornecedores'));
+  const cadastroFornecedoresRegistry = createSupplierRegistry(el('pageFornecedores'));
+
+  function loadComprasFornecedoresTab(){ comprasFornecedoresRegistry.load(); }
+  function loadCadastroFornecedoresPage(){ cadastroFornecedoresRegistry.load(); }
 
   // Compras nativo usa o catálogo GERAL de produtos (Cadastro de Produtos),
   // não mais o merge de products_catalog:standard/:pa por grupo — um
@@ -29164,6 +29233,7 @@ function renderHomeTasks(){
     'loans:view':'Aparelhos de Empréstimo: visualizar','loans:create':'Aparelhos de Empréstimo: cadastrar aparelho','loans:edit':'Aparelhos de Empréstimo: editar aparelho','loans:delete':'Aparelhos de Empréstimo: excluir aparelho','loans:request':'Aparelhos de Empréstimo: solicitar','loans:manage_requests':'Aparelhos de Empréstimo: gerenciar solicitações',
     'purchases:view':'Compras: visualizar','purchases:create':'Compras: cadastrar','purchases:edit':'Compras: editar','purchases:delete':'Compras: excluir','purchases:send_to_finance':'Compras: enviar NF ao financeiro',
     'purchases_draft:manage':'Compras (novo): acessar módulo',
+    'suppliers:manage':'Fornecedores: cadastrar/editar/desativar',
     'stock:view':'Estoque Fiscal',
     'database:view':'Base de Dados: visualizar','database:manage':'Base de Dados: cadastrar/editar/excluir',
     'pulls:view':'Puxadas',

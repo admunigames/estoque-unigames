@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v67"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v67"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v67"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1140,7 +1140,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v67"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1573,7 +1573,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v67"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1624,7 +1624,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v67"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -3883,4 +3883,44 @@ test("cards de acesso rápido herdam data-any-permission (Obras e Notas Fiscais 
   const dre = buildCard(makeSource({ page: "financeiroDre", permission: "finance", homeDesc: "x" }, [group]));
   assert.equal(dre.dataset.permission, "finance");
   assert.equal(dre.dataset.anyPermission, undefined);
+});
+
+test("permissão própria suppliers:manage libera só o Cadastro de Fornecedores", async () => {
+  const workerSource = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
+  const suppliersRoute = await readFile(new URL("../app/api/finance/suppliers/route.ts", import.meta.url), "utf8");
+  const statementRoute = await readFile(new URL("../app/api/finance/suppliers/[id]/statement/route.ts", import.meta.url), "utf8");
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+
+  assert.match(workerSource, /\| "suppliers:manage"/);
+  assert.match(workerSource, /const ASSIGNABLE_PERMISSIONS: Permission\[\] = \[[\s\S]*?"suppliers:manage",/);
+  assert.match(workerSource, /"\/cadastros\/fornecedores",/);
+
+  // Gate exato (não prefixo) e ANTES dos prefixos "/cadastros/" (Base de
+  // Dados) e "/api/finance" (Financeiro): o extrato do fornecedor continua
+  // exigindo o Financeiro.
+  const gate = workerSource.indexOf('if (path === "/cadastros/fornecedores" || path === "/api/finance/suppliers") {');
+  assert.notEqual(gate, -1);
+  assert.ok(gate < workerSource.indexOf("const directPermissions"));
+  assert.match(
+    workerSource.slice(gate),
+    /^[^\n]*\n\s*return hasAnyPermission\(user, \["suppliers:manage", "purchases_draft:manage", "finance:manage"\]\);/,
+  );
+  assert.match(suppliersRoute, /canManageFinance\(actor\) \|\| canManageComprasDraft\(actor\) \|\| actor\.permissions\.includes\("suppliers:manage"\)/);
+  assert.match(statementRoute, /actor\.role !== "admin" && !actor\.permissions\.includes\("finance:manage"\)/);
+  assert.doesNotMatch(statementRoute, /suppliers:manage/);
+
+  // Edição sem o campo "notes" preserva as observações já salvas.
+  assert.match(suppliersRoute, /notesProvided \? notes : existing\.notes \|\| ""/);
+
+  // UI: checkbox no cadastro de usuário, item no grupo Cadastros e as duas
+  // telas (aba do Compras nativo + página nova) montadas pela mesma função.
+  assert.match(html, /name="userPermission" value="suppliers:manage"/);
+  assert.match(html, /<div class="nav-group" data-any-permission="database,suppliers,finance:manage,purchases_draft">/);
+  assert.match(html, /id="navFornecedores" data-page="fornecedores" data-any-permission="suppliers,finance:manage,purchases_draft"[^>]*href="\/cadastros\/fornecedores"/);
+  assert.match(html, /id="navDados" data-page="dados" data-permission="database"/);
+  assert.match(html, /id="navLojas" data-page="lojas" data-permission="database"/);
+  assert.match(html, /if\(name === 'fornecedores'\) return canAccess\('suppliers'\) \|\| canAccess\('finance:manage'\) \|\| canAccess\('purchases_draft'\);/);
+  assert.match(html, /createSupplierRegistry\(el\('comprasSectionFornecedores'\)\)/);
+  assert.match(html, /createSupplierRegistry\(el\('pageFornecedores'\)\)/);
+  assert.equal((html.match(/data-supplier-form/g) || []).length, 3); // 2 formulários + seletor no JS
 });

@@ -39,6 +39,7 @@ type Permission =
   | "supplies:view" | "supplies:request" | "supplies:receive" | "supplies:stock_in" | "supplies:stock_out" | "supplies:delete" | "supplies:manage_catalog"
   | "purchases:view" | "purchases:create" | "purchases:edit" | "purchases:delete" | "purchases:send_to_finance"
   | "purchases_draft:manage"
+  | "suppliers:manage"
   | "stock:view"
   | "database:view" | "database:manage"
   | "pulls:view"
@@ -121,6 +122,10 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // permissões purchases:*. Uma permissão só nesta fase (visualizar e
   // gerenciar juntos) — se um dia precisar granularidade, separa depois.
   "purchases_draft:manage",
+  // Cadastro de Fornecedor (finance_suppliers) — permissão própria,
+  // independente de Financeiro e de Compras nativo, pra liberar só o
+  // cadastro/edição de fornecedor sem abrir nenhum dos dois módulos.
+  "suppliers:manage",
   "stock:view",
   "database:view", "database:manage",
   "pulls:view",
@@ -263,6 +268,7 @@ const APP_ROUTE_PATHS = new Set([
   "/cadastros",
   "/cadastros/lojas",
   "/cadastros/base-de-dados",
+  "/cadastros/fornecedores",
   "/cadastros/usuarios",
   "/rh/folgas",
   "/rh/escalas",
@@ -1193,6 +1199,14 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
       ]);
     }
     return hasPermission(user, "database:manage");
+  }
+  // Cadastro de Fornecedor — checado ANTES dos prefixos "/cadastros/"
+  // (Base de Dados) e "/api/finance" (Financeiro) abaixo. Só a rota exata
+  // de listar/salvar fornecedor: o extrato /api/finance/suppliers/:id/
+  // statement expõe contas a pagar e pagamentos, então continua exigindo
+  // o Financeiro. A checagem fina fica em canManageSuppliers() da rota.
+  if (path === "/cadastros/fornecedores" || path === "/api/finance/suppliers") {
+    return hasAnyPermission(user, ["suppliers:manage", "purchases_draft:manage", "finance:manage"]);
   }
   const directPermissions: Array<[boolean, keyof typeof MODULE_VIEW_PERMISSIONS]> = [
     [path === "/tarefas", "tasks"],

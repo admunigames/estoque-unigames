@@ -6,9 +6,10 @@ import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type Id
 // Cadastro de fornecedor é único (finance_suppliers) e compartilhado entre o
 // Financeiro (Notas Fiscais/Duplicatas) e o Compras nativo — qualquer um dos
 // dois módulos dá acesso de leitura/escrita a este cadastro, sem duplicar a
-// permissão em cada lugar que o usa.
+// permissão em cada lugar que o usa. suppliers:manage libera SÓ o cadastro
+// (Cadastros > Fornecedores), sem abrir nenhum dos dois módulos.
 function canManageSuppliers(actor: Identity) {
-  return canManageFinance(actor) || canManageComprasDraft(actor);
+  return canManageFinance(actor) || canManageComprasDraft(actor) || actor.permissions.includes("suppliers:manage");
 }
 
 type SupplierRow = {
@@ -67,6 +68,10 @@ export async function POST(request: Request) {
     const id = safeText(body.id, 80);
     const name = safeText(body.name, 160);
     const document = safeText(body.document, 40);
+    // Telas que não têm campo de observações (ex.: Cadastro de Fornecedor)
+    // não mandam "notes" — nesse caso a edição preserva o valor atual em
+    // vez de apagá-lo.
+    const notesProvided = body.notes !== undefined;
     const notes = safeText(body.notes, 2000);
     const active = body.active === false ? 0 : 1;
     if (name.length < 2) return jsonResponse({ error: "INFORME O NOME DO FORNECEDOR." }, 400);
@@ -75,9 +80,9 @@ export async function POST(request: Request) {
 
     if (id) {
       const existing = await database
-        .prepare("SELECT id FROM finance_suppliers WHERE id=?1")
+        .prepare("SELECT id, notes FROM finance_suppliers WHERE id=?1")
         .bind(id)
-        .first<{ id: string }>();
+        .first<{ id: string; notes: string }>();
       if (!existing) return jsonResponse({ error: "FORNECEDOR NÃO ENCONTRADO." }, 404);
       await database
         .prepare(
@@ -86,7 +91,7 @@ export async function POST(request: Request) {
                updated_by=?5, updated_by_name=?6, updated_at=CURRENT_TIMESTAMP
            WHERE id=?7`,
         )
-        .bind(name, document, notes, active, actor.id, actor.displayName || "Administrador", id)
+        .bind(name, document, notesProvided ? notes : existing.notes || "", active, actor.id, actor.displayName || "Administrador", id)
         .run();
       return jsonResponse({ updated: true, id });
     }
