@@ -26354,6 +26354,15 @@ function renderHomeTasks(){
       el('comprasOrdersOriginFilter').value = 'native';
       comprasOrdersLateOnlyFilter = false;
       comprasOrdersProdutoFilter = '';
+      // Seta o id ANTES de recarregar a lista — a própria criação do clone
+      // dispara uma invalidação ao vivo (Fase E) que pode chegar por
+      // WebSocket enquanto este await ainda está em andamento; se ela
+      // disparar seu próprio refresh usando o id ANTIGO (ainda não
+      // atualizado), o resultado dela pode "vencer" e reabrir o pedido
+      // original em vez do clone — mesma classe de corrida já corrigida
+      // antes nos cards de filtro.
+      comprasOrderDetailOpenId = result.id;
+      comprasCurrentOrderId = result.id;
       await loadComprasOrdersPage();
       await openComprasOrderDetail(result.id);
     }catch(error){ status.textContent = error.message; }
