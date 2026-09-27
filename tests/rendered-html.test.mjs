@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v69"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v69"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v69"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1075,6 +1075,52 @@ test("permite excluir uma captação a quem tem a permissão captures:delete", a
   assert.match(route, /await bucket\.delete\(existing\.photoKey\)/);
 });
 
+test("relatório visual de Consoles em Captação: aba própria, filtro de período/loja e exportação em PDF", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+
+  // Aba dentro de Captação, ao lado de FLUXO DOS PRODUTOS — sem endpoint novo,
+  // reaproveita captureRows já carregado no cliente (dataset pequeno).
+  assert.match(html, /data-capture-view="board"/);
+  assert.match(html, /data-capture-view="console-report"/);
+  assert.match(html, /id="captureBoardView"/);
+  assert.match(html, /id="captureConsoleReportView"/);
+  assert.match(html, /el\('captureBoardView'\)\.hidden = view !== 'board'/);
+  assert.match(html, /el\('captureConsoleReportView'\)\.hidden = view !== 'console-report'/);
+
+  // Filtro de loja reaproveita a mesma regra de escopo do relatório de jogos
+  // (canActAcrossStores), extraída para uma função compartilhada.
+  assert.match(html, /function captureCanChooseReportStore\(\)\{/);
+  assert.match(html, /id="captureConsoleReportStoreField"/);
+  assert.match(html, /el\('captureConsoleReportStoreField'\)\.hidden = !canChooseReportStore/);
+
+  // Filtro de período: soma/exclui corretamente na borda de fuso horário
+  // (America/Recife), não faz slice ingênuo do timestamp UTC.
+  assert.match(html, /function captureRecifeDateKey\(value\)\{/);
+  assert.match(html, /const formatted = formatDateTimeBR\(value\)/);
+  assert.match(html, /id="captureConsoleReportFrom"/);
+  assert.match(html, /id="captureConsoleReportTo"/);
+  assert.match(html, /btnCaptureConsoleReportThisMonth/);
+  assert.match(html, /btnCaptureConsoleReportLastMonth/);
+
+  // Só consoles (não jogos/controles/outros).
+  assert.match(html, /function captureConsoleReportRows\(\)\{/);
+  assert.match(html, /\.filter\(row => row\.category === 'console'\)/);
+
+  // Resumo (quantidade + valor total) no topo.
+  assert.match(html, /id="captureConsoleReportCount"/);
+  assert.match(html, /id="captureConsoleReportTotal"/);
+
+  // PDF via window.print() reaproveitando o mesmo padrão de impressão do
+  // site (print-report-header/print-only), não um sistema próprio — e
+  // exporta exatamente as linhas filtradas na tela (mesma função de dados).
+  assert.match(html, /id="captureConsoleReportPrintHeader"/);
+  assert.match(html, /id="captureConsoleReportPrintTable"/);
+  assert.match(html, /function captureConsolePrintReport\(\)\{/);
+  assert.match(html, /const rows = captureConsoleReportRows\(\);\s*\n\s*if\(!rows\.length\)/);
+  assert.match(html, /document\.body\.classList\.add\('pdf-export'\)/);
+  assert.match(html, /el\('btnCaptureConsoleReportPdf'\)\.addEventListener\('click', captureConsolePrintReport\)/);
+});
+
 test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do administrador", async () => {
   const [html, workerSource, route, schema, migration, addResponsibleMigration, manifest, serviceWorker] =
     await Promise.all([
@@ -1140,7 +1186,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v69"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1573,7 +1619,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v69"/);
 });
 
 test("publica instruções para todas as lojas e preserva o histórico automático", async () => {
@@ -1624,7 +1670,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v68"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v69"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {

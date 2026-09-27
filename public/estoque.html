@@ -2175,6 +2175,8 @@
   html[data-theme="light"] .home-missions{background:rgba(255,255,255,.64);border-color:rgba(255,255,255,.9);}
   html[data-theme="light"] .mission-card{background:#f6f9fb;border-color:var(--inset-border);}
   html[data-theme="light"] .mission-status.done{color:#24714a;background:#e2f3e9;}
+  .capture-view-tabs{margin-bottom:16px;}
+  #captureConsoleReportView .capture-summary{grid-template-columns:repeat(2,minmax(0,240px));}
   .capture-summary{
     display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:16px;
   }
@@ -3543,14 +3545,28 @@
         </div>
       </header>
 
-      <section class="capture-summary" aria-label="Resumo das captações">
+      <div class="print-report-header" id="captureConsoleReportPrintHeader">
+        <div class="print-report-kicker">UNIGAMES · CAPTAÇÃO</div>
+        <h1>Relatório · Consoles</h1>
+        <div class="print-report-meta" id="captureConsoleReportPrintMeta"></div>
+      </div>
+      <div class="print-only" id="captureConsoleReportPrintTable"></div>
+
+      <div class="capture-view-tabs no-print">
+        <div class="output-tabs" role="tablist" aria-label="Visão da Captação">
+          <button class="output-tab active" type="button" role="tab" aria-selected="true" data-capture-view="board">FLUXO DOS PRODUTOS</button>
+          <button class="output-tab" type="button" role="tab" aria-selected="false" data-capture-view="console-report">RELATÓRIO · CONSOLES</button>
+        </div>
+      </div>
+
+      <section class="capture-summary no-print" aria-label="Resumo das captações">
         <article class="capture-summary-card"><span>AGUARDANDO ASSISTÊNCIA</span><strong id="captureSubmittedCount">0</strong></article>
         <article class="capture-summary-card received"><span>RECEBIDOS</span><strong id="captureReceivedCount">0</strong></article>
         <article class="capture-summary-card ready"><span>DISPONÍVEIS PARA SEPARAÇÃO</span><strong id="captureReadyCount">0</strong></article>
         <article class="capture-summary-card"><span>DESTINADOS</span><strong id="captureAssignedCount">0</strong></article>
       </section>
 
-      <section class="capture-register-panel" id="captureRegisterPanel">
+      <section class="capture-register-panel no-print" id="captureRegisterPanel">
         <div class="capture-panel-head">
           <div><h3>CADASTRAR PRODUTO CAPTADO</h3><p id="captureRegisterDescription">Cadastre um produto por vez. A loja de origem será identificada automaticamente pelo usuário.</p></div>
         </div>
@@ -3592,7 +3608,7 @@
         </form>
       </section>
 
-      <section class="capture-board">
+      <section class="capture-board no-print" id="captureBoardView">
         <div class="capture-board-head">
           <div><h3>FLUXO DOS PRODUTOS</h3><p id="captureBoardDescription">Produtos captados e andamento na assistência.</p></div>
           <div class="capture-board-actions">
@@ -3609,6 +3625,38 @@
           <div class="field"><label for="captureStatusFilter">STATUS</label><select id="captureStatusFilter"><option value="">TODOS OS STATUS</option><option value="submitted">AGUARDANDO ASSISTÊNCIA</option><option value="received">RECEBIDO</option><option value="ready">DISPONÍVEL PARA SEPARAÇÃO</option><option value="assigned">DESTINADO</option></select></div>
         </div>
         <div class="capture-list" id="captureList" aria-live="polite"><div class="mission-empty">Carregando captações…</div></div>
+      </section>
+
+      <section class="capture-board no-print" id="captureConsoleReportView" hidden>
+        <div class="capture-board-head">
+          <div><h3>RELATÓRIO · CONSOLES</h3><p>Consoles captados no período e na loja selecionados.</p></div>
+        </div>
+        <div class="dre-toolbar">
+          <div class="field" id="captureConsoleReportStoreField" hidden>
+            <label for="captureConsoleReportStore">LOJA</label>
+            <select id="captureConsoleReportStore"><option value="">TODAS AS LOJAS</option></select>
+          </div>
+          <div class="field"><label for="captureConsoleReportFrom">DATA INICIAL</label><input id="captureConsoleReportFrom" type="date"></div>
+          <div class="field"><label for="captureConsoleReportTo">DATA FINAL</label><input id="captureConsoleReportTo" type="date"></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline small" type="button" id="btnCaptureConsoleReportThisMonth">ESTE MÊS</button>
+            <button class="btn-outline small" type="button" id="btnCaptureConsoleReportLastMonth">MÊS PASSADO</button>
+            <button class="btn-outline small" type="button" id="btnCaptureConsoleReportClear">LIMPAR</button>
+            <button class="btn-outline" type="button" id="btnCaptureConsoleReportPdf">RELATÓRIO / PDF</button>
+          </div>
+        </div>
+        <section class="capture-summary" aria-label="Resumo do relatório de consoles">
+          <article class="capture-summary-card"><span>CONSOLES NO FILTRO</span><strong id="captureConsoleReportCount">0</strong></article>
+          <article class="capture-summary-card ready"><span>VALOR TOTAL CAPTADO</span><strong id="captureConsoleReportTotal">R$ 0,00</strong></article>
+        </section>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Console</th><th>Loja de origem</th><th style="text-align:right">Valor captado</th><th>Data de captação</th></tr></thead>
+              <tbody id="captureConsoleReportBody"><tr><td colspan="4" class="responsive-empty">Carregando consoles…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </section>
     </section>
 
@@ -16522,12 +16570,7 @@ function renderHomeTasks(){
       ? visibleRows.map(row => captureCardHtml(row,childrenByParent[row.id] || [])).join('')
       : '<div class="mission-empty">Nenhum produto encontrado nesta visão.</div>';
 
-    // Espelha a regra "allStores" de app/api/captures/route.ts (GET): quem
-    // enxerga captações de qualquer loja por view/receive/assign pode
-    // escolher a loja do relatório (ou baixar de todas); quem tem loja
-    // vinculada só baixa a própria.
-    const canChooseReportStore = canActAcrossStores('captures:view') ||
-      canActAcrossStores('captures:receive') || canActAcrossStores('captures:assign');
+    const canChooseReportStore = captureCanChooseReportStore();
     const canDownloadGameReport = canChooseReportStore || Boolean(currentSession.companyId);
     el('captureGameReportStoreField').hidden = !canChooseReportStore;
     el('btnCaptureGameReport').hidden = !canDownloadGameReport;
@@ -16539,6 +16582,25 @@ function renderHomeTasks(){
         ).join('');
       el('captureGameReportStore').value = previousValue;
     }
+    el('captureConsoleReportStoreField').hidden = !canChooseReportStore;
+    if(canChooseReportStore){
+      const previousReportStoreValue = el('captureConsoleReportStore').value;
+      el('captureConsoleReportStore').innerHTML = '<option value="">TODAS AS LOJAS</option>'+
+        companies.map(company =>
+          '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>'
+        ).join('');
+      el('captureConsoleReportStore').value = previousReportStoreValue;
+    }
+    if(!el('captureConsoleReportView').hidden) captureConsoleReportRender();
+  }
+
+  // Espelha a regra "allStores" de app/api/captures/route.ts (GET): quem
+  // enxerga captações de qualquer loja por view/receive/assign pode
+  // escolher a loja do relatório (jogos em TXT ou consoles em PDF), ou ver
+  // de todas; quem tem loja vinculada só enxerga a própria.
+  function captureCanChooseReportStore(){
+    return canActAcrossStores('captures:view') ||
+      canActAcrossStores('captures:receive') || canActAcrossStores('captures:assign');
   }
 
   function captureGameReportRows(companyId){
@@ -16605,6 +16667,151 @@ function renderHomeTasks(){
     }catch(error){
       showPurchaseToast(error.message || 'Não foi possível gerar o TXT.','error');
     }
+  });
+
+  // Extrai só a data (America/Recife) de um timestamp UTC do banco, em
+  // "AAAA-MM-DD" — formato comparável direto com os <input type="date">
+  // dos filtros de período. Reaproveita formatDateTimeBR (já faz a
+  // conversão de fuso) e só reordena a string.
+  function captureRecifeDateKey(value){
+    const formatted = formatDateTimeBR(value);
+    if(!formatted) return '';
+    const [datePart] = formatted.split(' às ');
+    const [day,month,year] = datePart.split('/');
+    return year+'-'+month+'-'+day;
+  }
+
+  function captureConsoleReportRows(){
+    const canChooseReportStore = !el('captureConsoleReportStoreField').hidden;
+    const companyId = canChooseReportStore ? el('captureConsoleReportStore').value : currentSession.companyId;
+    const from = el('captureConsoleReportFrom').value;
+    const to = el('captureConsoleReportTo').value;
+    return captureRows
+      .filter(row => row.category === 'console')
+      .filter(row => !companyId || row.originCompanyId === companyId)
+      .filter(row => {
+        if(!from && !to) return true;
+        const dateKey = captureRecifeDateKey(row.createdAt);
+        if(!dateKey) return false;
+        if(from && dateKey < from) return false;
+        if(to && dateKey > to) return false;
+        return true;
+      })
+      .slice()
+      .sort((a,b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  }
+
+  function captureConsoleReportTableRowsHtml(rows){
+    return rows.map(row => '<tr>'+
+      '<td data-label="Console">'+escapeHtml(row.productName || '—')+'</td>'+
+      '<td data-label="Loja de origem">'+escapeHtml(row.originCompanyName || '—')+'</td>'+
+      '<td data-label="Valor captado" style="text-align:right">'+escapeHtml(typeof row.capturedValue === 'number' ? captureValueLabel(row.capturedValue) : '—')+'</td>'+
+      '<td data-label="Data de captação">'+escapeHtml(captureDateTime(row.createdAt))+'</td>'+
+    '</tr>').join('');
+  }
+
+  function captureConsoleReportRender(){
+    const rows = captureConsoleReportRows();
+    const total = rows.reduce((sum,row) => sum + (typeof row.capturedValue === 'number' ? row.capturedValue : 0),0);
+    el('captureConsoleReportCount').textContent = rows.length.toLocaleString('pt-BR');
+    el('captureConsoleReportTotal').textContent = captureValueLabel(total);
+    el('captureConsoleReportBody').innerHTML = rows.length
+      ? captureConsoleReportTableRowsHtml(rows)
+      : '<tr><td colspan="4" class="responsive-empty">Nenhum console encontrado com os filtros atuais.</td></tr>';
+  }
+
+  function captureConsoleReportPeriodLabel(){
+    const from = el('captureConsoleReportFrom').value;
+    const to = el('captureConsoleReportTo').value;
+    if(!from && !to) return 'TODO O PERÍODO';
+    if(from && to) return 'DE '+formatDateBR(from)+' A '+formatDateBR(to);
+    if(from) return 'A PARTIR DE '+formatDateBR(from);
+    return 'ATÉ '+formatDateBR(to);
+  }
+
+  function captureConsoleReportStoreLabel(){
+    const canChooseReportStore = !el('captureConsoleReportStoreField').hidden;
+    if(!canChooseReportStore) {
+      return (companies.find(company => company.id === currentSession.companyId) || {}).name || 'MINHA LOJA';
+    }
+    const companyId = el('captureConsoleReportStore').value;
+    if(!companyId) return 'TODAS AS LOJAS';
+    return (companies.find(company => company.id === companyId) || {}).name || 'LOJA';
+  }
+
+  let captureConsolePrintTitleBefore = '';
+
+  function captureConsolePrintReport(){
+    const rows = captureConsoleReportRows();
+    if(!rows.length){
+      showPurchaseToast('Nenhum console encontrado com os filtros atuais.','error');
+      return;
+    }
+    const total = rows.reduce((sum,row) => sum + (typeof row.capturedValue === 'number' ? row.capturedValue : 0),0);
+    const generatedAt = formatDateTimeBR(new Date());
+    el('captureConsoleReportPrintMeta').textContent =
+      rows.length.toLocaleString('pt-BR')+' CONSOLE(S) · '+captureConsoleReportStoreLabel()+' · '+
+      captureConsoleReportPeriodLabel()+' · TOTAL '+captureValueLabel(total)+' · GERADO EM '+generatedAt;
+    el('captureConsoleReportPrintTable').innerHTML =
+      '<table class="rh-print-table"><thead><tr>'+
+        '<th>Console</th><th>Loja de origem</th><th class="num">Valor captado</th><th>Data de captação</th>'+
+      '</tr></thead><tbody>'+captureConsoleReportTableRowsHtml(rows)+'</tbody></table>';
+    captureConsolePrintTitleBefore = document.title;
+    document.title = 'relatorio-consoles-'+(el('captureConsoleReportFrom').value || 'inicio')+'-a-'+(el('captureConsoleReportTo').value || 'hoje');
+    document.body.classList.add('pdf-export');
+    window.print();
+  }
+
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('pdf-export');
+    if(captureConsolePrintTitleBefore){
+      document.title = captureConsolePrintTitleBefore;
+      captureConsolePrintTitleBefore = '';
+    }
+  });
+
+  el('btnCaptureConsoleReportPdf').addEventListener('click', captureConsolePrintReport);
+  el('captureConsoleReportFrom').addEventListener('change', captureConsoleReportRender);
+  el('captureConsoleReportTo').addEventListener('change', captureConsoleReportRender);
+  el('captureConsoleReportStore').addEventListener('change', captureConsoleReportRender);
+
+  el('btnCaptureConsoleReportThisMonth').addEventListener('click', () => {
+    const todayKey = financeCurrentDateKey();
+    const [year,month] = todayKey.split('-');
+    el('captureConsoleReportFrom').value = year+'-'+month+'-01';
+    el('captureConsoleReportTo').value = todayKey;
+    captureConsoleReportRender();
+  });
+
+  el('btnCaptureConsoleReportLastMonth').addEventListener('click', () => {
+    const [year,month] = financeCurrentDateKey().split('-').map(Number);
+    const firstOfThisMonth = new Date(Date.UTC(year,month - 1,1));
+    const lastMonthEnd = new Date(firstOfThisMonth.getTime() - 86400000);
+    const lastMonthStart = new Date(Date.UTC(lastMonthEnd.getUTCFullYear(),lastMonthEnd.getUTCMonth(),1));
+    const fmt = date => date.getUTCFullYear()+'-'+String(date.getUTCMonth() + 1).padStart(2,'0')+'-'+String(date.getUTCDate()).padStart(2,'0');
+    el('captureConsoleReportFrom').value = fmt(lastMonthStart);
+    el('captureConsoleReportTo').value = fmt(lastMonthEnd);
+    captureConsoleReportRender();
+  });
+
+  el('btnCaptureConsoleReportClear').addEventListener('click', () => {
+    el('captureConsoleReportFrom').value = '';
+    el('captureConsoleReportTo').value = '';
+    captureConsoleReportRender();
+  });
+
+  document.querySelectorAll('[data-capture-view]').forEach(button => {
+    button.addEventListener('click', () => {
+      const view = button.dataset.captureView;
+      document.querySelectorAll('[data-capture-view]').forEach(btn => {
+        const active = btn === button;
+        btn.classList.toggle('active',active);
+        btn.setAttribute('aria-selected',String(active));
+      });
+      el('captureBoardView').hidden = view !== 'board';
+      el('captureConsoleReportView').hidden = view !== 'console-report';
+      if(view === 'console-report') captureConsoleReportRender();
+    });
   });
 
   async function loadCaptures(opts){
