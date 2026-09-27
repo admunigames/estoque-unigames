@@ -16811,6 +16811,11 @@ function renderHomeTasks(){
       el('captureBoardView').hidden = view !== 'board';
       el('captureConsoleReportView').hidden = view !== 'console-report';
       if(view === 'console-report') captureConsoleReportRender();
+      // O cadastro e os cards de resumo do topo continuam visíveis nas duas
+      // abas (não fazem parte do que alterna), então sem isso a troca de aba
+      // parece não ter feito nada até o usuário rolar a página manualmente.
+      const target = view === 'board' ? el('captureBoardView') : el('captureConsoleReportView');
+      target.scrollIntoView({behavior:'smooth',block:'start'});
     });
   });
 
