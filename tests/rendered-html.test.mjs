@@ -3527,6 +3527,35 @@ test("Compras nativo: cards do painel Por Produto (Pedidos Distintos/A Caminho/A
   assert.match(html, /if\(comprasOrdersProdutoFilter\) query\.set\('produto', comprasOrdersProdutoFilter\);/);
 });
 
+test("Compras nativo: clonar pedido (mesmo fornecedor, itens editáveis, loja de destino nova)", async () => {
+  const [html, cloneRoute] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/orders/[id]/clone/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  // Backend: só pedido nativo, não cancelado, com fornecedor já definido
+  // (won_at preenchido via supplier_id) — clone nasce direto em
+  // 'aguardando_chegada' com o mesmo fornecedor, sem repetir cotação.
+  assert.match(cloneRoute, /if \(source\.origin !== "native"\)/);
+  assert.match(cloneRoute, /if \(source\.canceled\)/);
+  assert.match(cloneRoute, /if \(!source\.supplierId\)/);
+  assert.match(cloneRoute, /'aguardando_chegada', 0, \?4, 0, \?5, \?6, \?7/);
+  assert.match(cloneRoute, /candidate_supplier_ids.*VALUES \(\?1, \?2, '', \?3, \?4, \?5, 0, \?6, \?7, '\[\]', ''/s);
+
+  // Frontend: botão só visível com vencedor definido, diálogo com loja
+  // única + itens editáveis (qtd/preço/remover), redireciona pro pedido
+  // novo criado ao confirmar.
+  assert.match(html, /id="btnCloneComprasOrder" type="button" hidden>CLONAR PEDIDO/);
+  assert.match(html, /el\('btnCloneComprasOrder'\)\.hidden = order\.origin !== 'native' \|\| Boolean\(order\.canceled\) \|\| !order\.supplierId;/);
+  assert.match(html, /id="comprasCloneOrderDialog"/);
+  assert.match(html, /id="comprasCloneOrderCompany"/);
+  assert.match(html, /data-clone-item-qty=/);
+  assert.match(html, /data-clone-item-price=/);
+  assert.match(html, /data-clone-item-remove=/);
+  assert.match(html, /\/orders\/'\+encodeURIComponent\(sourceId\)\+'\/clone/);
+  assert.match(html, /await openComprasOrderDetail\(result\.id\);/);
+});
+
 test("Cadastro de Produtos: catálogo geral único, com reconciliação e integração ao Compras nativo", async () => {
   const [
     html,
