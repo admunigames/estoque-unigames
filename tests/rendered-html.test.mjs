@@ -4009,3 +4009,17 @@ test("permissão própria suppliers:manage libera só o Cadastro de Fornecedores
   assert.match(html, /createSupplierRegistry\(el\('pageFornecedores'\)\)/);
   assert.equal((html.match(/data-supplier-form/g) || []).length, 3); // 2 formulários + seletor no JS
 });
+
+test("Compras nativo: anexar arquivo (pedido/nota fiscal) não dispara atualização ao vivo em cada etapa do envio em partes", async () => {
+  const liveEvents = await readFile(new URL("../worker/live-events.ts", import.meta.url), "utf8");
+
+  // Antes, CADA etapa do upload em partes (create, cada parte, complete)
+  // disparava um aviso "compras" pra todo mundo — inclusive quem estava
+  // enviando — fazendo o próprio cliente recarregar o detalhe do pedido
+  // aberto no meio do envio (tela "piscando"/bugando algumas vezes até o
+  // arquivo aparecer). Só a etapa final (complete) deve avisar; create,
+  // cancel e as partes binárias (octet-stream) ficam de fora.
+  assert.match(liveEvents, /path\.endsWith\("\/attachments"\)/);
+  assert.match(liveEvents, /contentType\.includes\("application\/octet-stream"\)\) return null;/);
+  assert.match(liveEvents, /action === "create" \|\| action === "cancel"\) return null;/);
+});
