@@ -85,6 +85,22 @@ export async function liveInvalidationForRequest(
   }
 
   if (path === "/api/compras-novo" || path.startsWith("/api/compras-novo/")) {
+    // Anexos (arquivo do pedido / nota fiscal) sao enviados em varias
+    // requisicoes (create -> 1+ partes -> complete), e so a ultima
+    // (complete) muda algo visivel (GET /attachments so retorna o arquivo
+    // depois dela). Antes, CADA etapa disparava um aviso "compras" pra todo
+    // mundo, inclusive quem estava enviando — o cliente reagia recarregando
+    // o detalhe do pedido aberto no meio do proprio envio, e a tela
+    // "piscava"/re-renderizava varias vezes ate o arquivo aparecer. Só a
+    // etapa final (ou o cancelamento, que so limpa staging e nao precisa
+    // avisar ninguem) fica de fora do aviso.
+    if (path.endsWith("/attachments")) {
+      const contentType = request.headers.get("content-type") || "";
+      if (contentType.includes("application/octet-stream")) return null;
+      const body = await requestBody(request);
+      const action = typeof body.action === "string" ? body.action : "";
+      if (action === "create" || action === "cancel") return null;
+    }
     // Fase E, item 2: rascunhos, itens, conversao, pedidos, itens de pedido
     // e anexos — volume de uso baixo e a lista ja e filtrada no client, entao
     // nao vale a pena tentar escopar por loja (o pedido pode nao ter loja
