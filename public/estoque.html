@@ -17596,7 +17596,11 @@ function renderHomeTasks(){
   async function loadHomeSupplies(){
     const alert = el('homeSuppliesAlert');
     if(!alert) return;
-    if(currentSession.role === 'admin' || !canAccess('supplies')){
+    // Mesma regra de loadSupplyRequest: quem enxerga todas as lojas sem ter
+    // uma própria não tem lembrete — a API responderia 400 (ESCOLHA A LOJA).
+    const managesAllStores = !supplyIsAssistance() &&
+      (currentSession.role === 'admin' || canActAcrossStores('supplies:request'));
+    if(managesAllStores || !canAccess('supplies')){
       alert.hidden = true;
       return;
     }
