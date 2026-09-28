@@ -259,6 +259,7 @@ export const instructions = pgTable(
     description: text("description").notNull().default(""),
     category: text("category").notNull().default("geral"),
     dueDate: text("due_date"),
+    deactivatedAt: text("deactivated_at").notNull().default(""),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -266,6 +267,26 @@ export const instructions = pgTable(
   },
   (table) => [
     index("instructions_due_date_created_idx").on(table.dueDate, table.createdAt),
+  ],
+);
+
+// Até 4 imagens de comunicado em carrossel no topo da página de Instruções
+// (mesma permissão instructions:manage cuida de cadastrar/excluir/reordenar).
+export const instructionCarouselImages = pgTable(
+  "instruction_carousel_images",
+  {
+    id: text("id").primaryKey(),
+    r2Key: text("r2_key").notNull(),
+    fileName: text("file_name").notNull(),
+    contentType: text("content_type").notNull().default("image/jpeg"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    position: integer("position").notNull().default(0),
+    createdBy: text("created_by").notNull(),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("instruction_carousel_images_position_idx").on(table.position),
   ],
 );
 

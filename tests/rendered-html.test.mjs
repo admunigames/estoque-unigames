@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v71"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v71"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v71"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1191,7 +1191,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v71"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1624,7 +1624,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v71"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
   // Lembrete da Início não chama a API para quem enxerga todas as lojas sem ter uma própria (evita 400).
   assert.match(
     html,
@@ -1662,6 +1662,23 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(html, /instrucoes:'\/instrucoes'/);
   assert.match(html, /loadHomeInstructions/);
 
+  // Botão DESATIVAR (só aparece pra instruções sem prazo, na aba Vigentes).
+  assert.match(html, /data-instruction-deactivate="'\+escapeHtml\(row\.id\)/);
+  assert.match(html, /canAccess\('instructions:manage'\) && !history && !row\.dueDate/);
+  assert.match(html, /'DESATIVADA EM '\+deactivatedDate/);
+  assert.match(html, /el\('instructionList'\)\.addEventListener\('click',async event => \{[\s\S]{0,200}data-instruction-deactivate/);
+
+  // Carrossel de imagens no topo da página (até 4, permissão instructions:manage).
+  assert.match(html, /id="instructionCarousel" aria-label="Comunicados em destaque" hidden/);
+  assert.match(html, /id="instructionCarouselTrack"/);
+  assert.match(html, /id="instructionCarouselPrev"/);
+  assert.match(html, /id="instructionCarouselNext"/);
+  assert.match(html, /id="instructionCarouselManageList"/);
+  assert.match(html, /id="instructionCarouselForm"/);
+  assert.match(html, /INSTRUCTION_CAROUSEL_AUTOPLAY_MS = 10000/);
+  assert.match(html, /stopInstructionCarouselAutoplay\);/);
+  assert.match(html, /\/api\/instructions\/carousel/);
+
   assert.match(workerSource, /"\/instrucoes"/);
   assert.match(workerSource, /path === "\/instrucoes" \|\| \(path\.startsWith\("\/api\/instructions"\)/);
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM instructions"\)\.all\(\)/);
@@ -1670,17 +1687,45 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR INSTRUÇÕES/);
   assert.match(html, /data-permission="instructions:manage"/);
   assert.match(html, /canAccess\('instructions:manage'\)/);
-  assert.match(route, /due_date IS NOT NULL AND due_date < \?1/);
-  assert.match(route, /due_date IS NULL OR due_date >= \?1/);
+  assert.match(route, /\(due_date IS NOT NULL AND due_date < \?1\) OR deactivated_at <> ''/);
+  assert.match(route, /\(due_date IS NULL OR due_date >= \?1\) AND deactivated_at = ''/);
   assert.match(route, /INSTRUCTION_CATEGORIES = new Set\(\["geral", "operacional", "comercial"\]\)/);
+  assert.match(route, /export async function PATCH/);
+  assert.match(route, /SÓ É POSSÍVEL DESATIVAR INSTRUÇÕES SEM PRAZO DEFINIDO/);
+  assert.match(route, /SET deactivated_at=CURRENT_TIMESTAMP/);
   assert.match(route, /America\/Recife/);
   assert.match(route, /INSERT INTO instructions/);
   assert.match(schema, /export const instructions = pgTable/);
   assert.match(schema, /category: text\("category"\)\.notNull\(\)\.default\("geral"\)/);
+  assert.match(schema, /deactivatedAt: text\("deactivated_at"\)\.notNull\(\)\.default\(""\)/);
+  assert.match(schema, /export const instructionCarouselImages = pgTable/);
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v71"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
+});
+
+test("carrossel de imagens de Instruções: rotas de upload em partes, servir arquivo e reordenar", async () => {
+  const [carouselRoute, fileRoute, migration] = await Promise.all([
+    readFile(new URL("../app/api/instructions/carousel/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/instructions/carousel/file/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0071_instructions_carousel_deactivate.sql", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(carouselRoute, /MAX_IMAGES = 4/);
+  assert.match(carouselRoute, /MAX_IMAGE_SIZE = 10 \* 1024 \* 1024/);
+  assert.match(carouselRoute, /ACCEPTED_CONTENT_TYPES = new Set\(\["image\/png", "image\/jpeg", "image\/jpg", "image\/webp"\]\)/);
+  assert.match(carouselRoute, /canManageInstructions\(actor\)/);
+  assert.match(carouselRoute, /export async function GET/);
+  assert.match(carouselRoute, /export async function POST/);
+  assert.match(carouselRoute, /export async function PATCH/);
+  assert.match(carouselRoute, /export async function DELETE/);
+  assert.match(carouselRoute, /O CARROSSEL JÁ TEM O MÁXIMO DE/);
+  assert.match(carouselRoute, /INSERT INTO instruction_carousel_images/);
+  assert.match(carouselRoute, /UPDATE instruction_carousel_images SET position=\?1 WHERE id=\?2/);
+  assert.match(fileRoute, /instruction_carousel_images WHERE id=\?1/);
+  assert.match(migration, /ADD COLUMN "deactivated_at"/);
+  assert.match(migration, /CREATE TABLE "instruction_carousel_images"/);
 });
 
 test("registra e controla solicitações de Alterações PDV com permissões granulares", async () => {
@@ -1975,7 +2020,7 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /id="navDados"[\s\S]*class="nav-item sub-item" id="navLojas"/);
   assert.match(html, /id="pageInicio" class="page wrap home-page active"/);
   assert.match(html, /class="home-lightglass"/);
-  assert.match(html, /class="home-brand-logo" data-logo alt="LOGO UNIGAMES"/);
+  assert.match(html, /class="home-brand-compact">[\s\S]{0,120}?class="brand-logo" data-logo alt="LOGO UNIGAMES"/);
   assert.match(html, /id="navPuxadas"[^>]*data-home-desc=/);
   assert.match(html, /id="navCompras"[^>]*data-home-desc=/);
   assert.doesNotMatch(html, /id="navDashboard"[^>]*data-home-desc=/);

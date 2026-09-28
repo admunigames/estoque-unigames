@@ -14,6 +14,7 @@ type InstructionRow = {
   description: string;
   category: string;
   dueDate: string | null;
+  deactivatedAt: string;
   createdBy: string;
   createdByName: string;
   createdAt: string;
@@ -109,16 +110,17 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const condition = status === "history"
-      ? "due_date IS NOT NULL AND due_date < ?1"
-      : "due_date IS NULL OR due_date >= ?1";
+    const isHistory = "(due_date IS NOT NULL AND due_date < ?1) OR deactivated_at <> ''";
+    const isActive = "(due_date IS NULL OR due_date >= ?1) AND deactivated_at = ''";
+    const condition = status === "history" ? isHistory : isActive;
     const order = status === "history"
-      ? "due_date DESC, created_at DESC"
+      ? "due_date DESC, deactivated_at DESC, created_at DESC"
       : "due_date IS NULL DESC, due_date ASC, created_at DESC";
     const [result, summary] = await Promise.all([
       database
         .prepare(
           `SELECT id, title, description, category, due_date AS dueDate,
+                  deactivated_at AS deactivatedAt,
                   created_by AS createdBy, created_by_name AS createdByName,
                   created_at AS createdAt, updated_at AS updatedAt
            FROM instructions
@@ -130,9 +132,10 @@ export async function GET(request: Request) {
       database
         .prepare(
           `SELECT
-             SUM(CASE WHEN due_date IS NULL OR due_date >= ?1 THEN 1 ELSE 0 END) AS activeCount,
-             SUM(CASE WHEN due_date IS NOT NULL AND due_date < ?1 THEN 1 ELSE 0 END) AS historyCount,
-             MIN(CASE WHEN due_date IS NOT NULL AND due_date >= ?1 THEN due_date ELSE NULL END) AS nearestDueDate
+             SUM(CASE WHEN ${isActive} THEN 1 ELSE 0 END) AS activeCount,
+             SUM(CASE WHEN ${isHistory} THEN 1 ELSE 0 END) AS historyCount,
+             MIN(CASE WHEN due_date IS NOT NULL AND due_date >= ?1 AND deactivated_at = ''
+                       THEN due_date ELSE NULL END) AS nearestDueDate
            FROM instructions`,
         )
         .bind(today)
@@ -224,6 +227,57 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Não foi possível cadastrar a instrução.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CADASTRAR A INSTRUÇÃO." }, 500);
+  }
+}
+
+export async function PATCH(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canManageInstructions(actor)) {
+    return jsonResponse(
+      { error: "VOCÊ NÃO TEM PERMISSÃO PARA DESATIVAR INSTRUÇÕES." },
+      403,
+    );
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+
+  try {
+    const body = (await request.json()) as JsonMap;
+    const id = safeText(body.id, 80);
+    const action = safeText(body.action, 40);
+    if (!id) return jsonResponse({ error: "INSTRUÇÃO INVÁLIDA." }, 400);
+    if (action !== "deactivate") {
+      return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
+    }
+
+    const database = await getD1();
+    const existing = await database
+      .prepare("SELECT id, due_date AS dueDate FROM instructions WHERE id=?1 LIMIT 1")
+      .bind(id)
+      .first<{ id: string; dueDate: string | null }>();
+    if (!existing) return jsonResponse({ error: "INSTRUÇÃO NÃO ENCONTRADA." }, 404);
+    if (existing.dueDate) {
+      return jsonResponse(
+        { error: "SÓ É POSSÍVEL DESATIVAR INSTRUÇÕES SEM PRAZO DEFINIDO." },
+        400,
+      );
+    }
+
+    await database
+      .prepare(
+        `UPDATE instructions
+         SET deactivated_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
+         WHERE id=?1`,
+      )
+      .bind(id)
+      .run();
+    return jsonResponse({ deactivated: true, id });
+  } catch (error) {
+    console.error("Não foi possível desativar a instrução.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL DESATIVAR A INSTRUÇÃO." }, 500);
   }
 }
 
