@@ -2550,11 +2550,11 @@
   .supply-product-edit-row input,.supply-product-edit-row select,.supply-product-edit-row textarea{width:100%;}
   @media (max-width:820px){.supply-product-form{grid-template-columns:1fr;}}
   .instruction-carousel{
-    position:relative;margin-bottom:16px;border-radius:var(--radius-surface);overflow:hidden;
+    position:relative;margin:0 auto 16px;max-width:640px;border-radius:var(--radius-surface);overflow:hidden;
     box-shadow:var(--surface-shadow);background:var(--bg-card-2);
   }
   .instruction-carousel[hidden]{display:none;}
-  .instruction-carousel-viewport{position:relative;width:100%;aspect-ratio:1.1/1;max-height:420px;overflow:hidden;}
+  .instruction-carousel-viewport{position:relative;width:100%;aspect-ratio:1.1/1;overflow:hidden;}
   .instruction-carousel-track{display:flex;height:100%;transition:transform .45s ease;}
   .instruction-carousel-slide{flex:0 0 100%;height:100%;}
   .instruction-carousel-slide img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -3107,6 +3107,14 @@
             <span id="homeSessionName">Carregando usuário…</span><form method="post" action="/logout"><button type="submit">SAIR</button></form>
           </div>
         </div>
+        <section class="instruction-carousel" id="homeInstructionCarousel" aria-label="Comunicados em destaque" hidden>
+          <div class="instruction-carousel-viewport">
+            <div class="instruction-carousel-track" id="homeInstructionCarouselTrack"></div>
+          </div>
+          <button class="instruction-carousel-arrow prev" type="button" id="homeInstructionCarouselPrev" aria-label="Imagem anterior">‹</button>
+          <button class="instruction-carousel-arrow next" type="button" id="homeInstructionCarouselNext" aria-label="Próxima imagem">›</button>
+          <div class="instruction-carousel-dots" id="homeInstructionCarouselDots"></div>
+        </section>
         <section class="home-instructions" aria-labelledby="homeInstructionsTitle">
           <div class="home-instructions-head">
             <div><span>COMUNICADOS GERAIS</span><h2 id="homeInstructionsTitle">Instruções vigentes</h2></div>
@@ -10576,14 +10584,15 @@
   }
 
   // Hierarquia visual da Início: marca compacta fica fixa na barra de conta
-  // (fora deste reordenamento); comunicados (instruções) vêm em seguida,
-  // depois alertas e ações no topo, o "hoje" (tarefas, missões, rotina),
-  // panorama operacional e, por último, as atualizações de bastidor das
-  // lojas.
+  // (fora deste reordenamento); carrossel de imagens e comunicados
+  // (instruções) vêm em seguida, depois alertas e ações no topo, o "hoje"
+  // (tarefas, missões, rotina), panorama operacional e, por último, as
+  // atualizações de bastidor das lojas.
   function orderHomeSections(){
     const glass = document.querySelector('#pageInicio .home-lightglass');
     if(!glass) return;
     const order = [
+      '#homeInstructionCarousel',
       '.home-instructions',
       '#homeAccessGrid',
       '#homeNoAccess',
@@ -19634,20 +19643,35 @@ function renderHomeTasks(){
   }
 
   // ================= CARROSSEL DE INSTRUÇÕES =================
+  // Aparece tanto na página de Instruções quanto na Início (mesmos dados,
+  // um único índice/timer compartilhado — os dois alvos são só espelhos
+  // visuais um do outro).
   const INSTRUCTION_CAROUSEL_MAX_IMAGES = 4;
   const INSTRUCTION_CAROUSEL_CHUNK_SIZE = 512 * 1024;
   const INSTRUCTION_CAROUSEL_MAX_SIZE = 10 * 1024 * 1024;
   const INSTRUCTION_CAROUSEL_AUTOPLAY_MS = 10000;
+  const INSTRUCTION_CAROUSEL_TARGETS = [
+    {
+      section:'instructionCarousel', track:'instructionCarouselTrack',
+      prev:'instructionCarouselPrev', next:'instructionCarouselNext', dots:'instructionCarouselDots',
+    },
+    {
+      section:'homeInstructionCarousel', track:'homeInstructionCarouselTrack',
+      prev:'homeInstructionCarouselPrev', next:'homeInstructionCarouselNext', dots:'homeInstructionCarouselDots',
+    },
+  ];
   let instructionCarouselImages = [];
   let instructionCarouselIndex = 0;
   let instructionCarouselTimer = null;
 
   function updateInstructionCarouselPosition(){
-    const track = el('instructionCarouselTrack');
-    if(!track) return;
-    track.style.transform = 'translateX(-'+(instructionCarouselIndex * 100)+'%)';
-    document.querySelectorAll('#instructionCarouselDots [data-carousel-dot]').forEach((dot,index) => {
-      dot.classList.toggle('active', index === instructionCarouselIndex);
+    INSTRUCTION_CAROUSEL_TARGETS.forEach(target => {
+      const track = el(target.track);
+      if(!track) return;
+      track.style.transform = 'translateX(-'+(instructionCarouselIndex * 100)+'%)';
+      document.querySelectorAll('#'+target.dots+' [data-carousel-dot]').forEach((dot,index) => {
+        dot.classList.toggle('active', index === instructionCarouselIndex);
+      });
     });
   }
 
@@ -19671,27 +19695,35 @@ function renderHomeTasks(){
   }
 
   function renderInstructionCarousel(){
-    const section = el('instructionCarousel');
-    const track = el('instructionCarouselTrack');
-    const dots = el('instructionCarouselDots');
-    if(!section || !track || !dots) return;
+    if(instructionCarouselIndex >= instructionCarouselImages.length) instructionCarouselIndex = 0;
+    let renderedAny = false;
+    INSTRUCTION_CAROUSEL_TARGETS.forEach(target => {
+      const section = el(target.section);
+      const track = el(target.track);
+      const dots = el(target.dots);
+      if(!section || !track || !dots) return;
+      renderedAny = true;
+      if(!instructionCarouselImages.length){
+        section.hidden = true;
+        track.innerHTML = '';
+        dots.innerHTML = '';
+        return;
+      }
+      section.hidden = false;
+      track.innerHTML = instructionCarouselImages.map(image =>
+        '<div class="instruction-carousel-slide"><img src="'+escapeHtml(image.viewUrl)+'" alt=""></div>',
+      ).join('');
+      dots.innerHTML = instructionCarouselImages.length > 1
+        ? instructionCarouselImages.map((image,index) =>
+            '<button type="button" class="instruction-carousel-dot'+(index === instructionCarouselIndex ? ' active' : '')+'" data-carousel-dot="'+index+'" aria-label="Ir para imagem '+(index + 1)+'"></button>',
+          ).join('')
+        : '';
+    });
+    if(!renderedAny) return;
     if(!instructionCarouselImages.length){
-      section.hidden = true;
-      track.innerHTML = '';
-      dots.innerHTML = '';
       stopInstructionCarouselAutoplay();
       return;
     }
-    section.hidden = false;
-    if(instructionCarouselIndex >= instructionCarouselImages.length) instructionCarouselIndex = 0;
-    track.innerHTML = instructionCarouselImages.map(image =>
-      '<div class="instruction-carousel-slide"><img src="'+escapeHtml(image.viewUrl)+'" alt=""></div>',
-    ).join('');
-    dots.innerHTML = instructionCarouselImages.length > 1
-      ? instructionCarouselImages.map((image,index) =>
-          '<button type="button" class="instruction-carousel-dot'+(index === instructionCarouselIndex ? ' active' : '')+'" data-carousel-dot="'+index+'" aria-label="Ir para imagem '+(index + 1)+'"></button>',
-        ).join('')
-      : '';
     updateInstructionCarouselPosition();
     startInstructionCarouselAutoplay();
   }
@@ -19731,26 +19763,31 @@ function renderHomeTasks(){
     if(el('instructionCarouselManageList')) renderInstructionCarouselManageList();
   }
 
-  if(el('instructionCarouselPrev')){
-    el('instructionCarouselPrev').addEventListener('click',() => {
+  INSTRUCTION_CAROUSEL_TARGETS.forEach(target => {
+    const section = el(target.section);
+    if(!section) return;
+    const prevButton = el(target.prev);
+    const nextButton = el(target.next);
+    const dots = el(target.dots);
+    if(prevButton) prevButton.addEventListener('click',() => {
       goToInstructionCarouselSlide(instructionCarouselIndex - 1);
       startInstructionCarouselAutoplay();
     });
-    el('instructionCarouselNext').addEventListener('click',() => {
+    if(nextButton) nextButton.addEventListener('click',() => {
       goToInstructionCarouselSlide(instructionCarouselIndex + 1);
       startInstructionCarouselAutoplay();
     });
-    el('instructionCarouselDots').addEventListener('click',event => {
+    if(dots) dots.addEventListener('click',event => {
       const dot = event.target.closest('[data-carousel-dot]');
       if(!dot) return;
       goToInstructionCarouselSlide(Number(dot.dataset.carouselDot));
       startInstructionCarouselAutoplay();
     });
-    el('instructionCarousel').addEventListener('mouseenter', stopInstructionCarouselAutoplay);
-    el('instructionCarousel').addEventListener('mouseleave', startInstructionCarouselAutoplay);
-    el('instructionCarousel').addEventListener('focusin', stopInstructionCarouselAutoplay);
-    el('instructionCarousel').addEventListener('focusout', startInstructionCarouselAutoplay);
-  }
+    section.addEventListener('mouseenter', stopInstructionCarouselAutoplay);
+    section.addEventListener('mouseleave', startInstructionCarouselAutoplay);
+    section.addEventListener('focusin', stopInstructionCarouselAutoplay);
+    section.addEventListener('focusout', startInstructionCarouselAutoplay);
+  });
 
   function setInstructionCarouselStatus(message,tone){
     const status = el('instructionCarouselStatus');
@@ -35266,7 +35303,7 @@ function renderHomeTasks(){
     if(canAccess('supplies')) loaders.push(() => loadHomeSupplies());
     if(canAccess('database') || canAccess('purchases_draft') ||
       canAccess('outputs:create') || canAccess('inputs:create') || canAccess('pdv_requests:create')) loaders.push(() => loadProductCatalog());
-    loaders.push(() => Promise.all([loadInstructions(),loadHomeInstructions()]));
+    loaders.push(() => Promise.all([loadInstructions(),loadHomeInstructions(),loadInstructionCarousel()]));
     const HOME_LOADERS_BATCH_SIZE = 4;
     for(let start = 0; start < loaders.length; start += HOME_LOADERS_BATCH_SIZE){
       const batch = loaders.slice(start, start + HOME_LOADERS_BATCH_SIZE);
