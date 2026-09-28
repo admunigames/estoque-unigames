@@ -779,7 +779,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v73"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +872,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v73"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +965,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v73"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1191,7 +1191,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v73"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1624,7 +1624,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v73"/);
   // Lembrete da Início não chama a API para quem enxerga todas as lojas sem ter uma própria (evita 400).
   assert.match(
     html,
@@ -1668,16 +1668,33 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(html, /'DESATIVADA EM '\+deactivatedDate/);
   assert.match(html, /el\('instructionList'\)\.addEventListener\('click',async event => \{[\s\S]{0,200}data-instruction-deactivate/);
 
-  // Carrossel de imagens no topo da página (até 4, permissão instructions:manage).
+  // Carrossel de imagens no topo da página (até 4, permissão instructions:manage)
+  // e espelhado também na Início, acima de "Comunicados Gerais".
   assert.match(html, /id="instructionCarousel" aria-label="Comunicados em destaque" hidden/);
   assert.match(html, /id="instructionCarouselTrack"/);
   assert.match(html, /id="instructionCarouselPrev"/);
   assert.match(html, /id="instructionCarouselNext"/);
   assert.match(html, /id="instructionCarouselManageList"/);
   assert.match(html, /id="instructionCarouselForm"/);
+  assert.match(html, /id="homeInstructionCarousel" aria-label="Comunicados em destaque" hidden/);
+  assert.match(html, /id="homeInstructionCarouselTrack"/);
+  assert.match(html, /id="homeInstructionCarouselPrev"/);
+  assert.match(html, /id="homeInstructionCarouselNext"/);
+  assert.match(html, /id="homeInstructionCarouselDots"/);
+  assert.match(
+    html,
+    /id="homeInstructionCarousel"[\s\S]{0,800}?section class="home-instructions"/,
+  );
+  assert.match(html, /'#homeInstructionCarousel',\s*\n\s*'\.home-instructions',/);
   assert.match(html, /INSTRUCTION_CAROUSEL_AUTOPLAY_MS = 10000/);
+  assert.match(html, /INSTRUCTION_CAROUSEL_TARGETS = \[/);
+  assert.match(html, /section:'homeInstructionCarousel'/);
   assert.match(html, /stopInstructionCarouselAutoplay\);/);
   assert.match(html, /\/api\/instructions\/carousel/);
+  // Proporção quase quadrada precisa valer em qualquer largura: max-width
+  // fixo (não max-height), sem herdar 100% da página inteira.
+  assert.match(html, /\.instruction-carousel\{[^}]*max-width:640px/);
+  assert.doesNotMatch(html, /\.instruction-carousel-viewport\{[^}]*max-height/);
 
   assert.match(workerSource, /"\/instrucoes"/);
   assert.match(workerSource, /path === "\/instrucoes" \|\| \(path\.startsWith\("\/api\/instructions"\)/);
@@ -1702,7 +1719,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v72"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v73"/);
 });
 
 test("carrossel de imagens de Instruções: rotas de upload em partes, servir arquivo e reordenar", async () => {
