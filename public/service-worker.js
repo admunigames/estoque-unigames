@@ -1,4 +1,4 @@
-const CACHE_NAME = "estoque-unigames-v70";
+const CACHE_NAME = "estoque-unigames-v71";
 const APP_SHELL = [
   "/estoque.html",
   "/favicon.svg",
@@ -44,19 +44,33 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Stale-while-revalidate. `refresh` nunca rejeita: falha de rede vira
+  // `undefined`, e falha ao gravar no cache não descarta a resposta obtida.
   const refresh = fetch(request)
     .then(async (response) => {
       if (response.ok && response.type !== "opaque") {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(request, response.clone());
+        try {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
+        } catch {
+          /* cache cheio/indisponível: segue com a resposta da rede */
+        }
       }
       return response;
-    });
+    })
+    .catch(() => undefined);
 
   event.respondWith(
-    caches.match(request).then((cached) => cached || refresh),
+    caches
+      .match(request)
+      .catch(() => undefined)
+      .then((cached) => cached || refresh)
+      .then(
+        (response) =>
+          response || new Response(null, { status: 504, statusText: "Sem conexao" }),
+      ),
   );
-  event.waitUntil(refresh.then(() => undefined).catch(() => undefined));
+  event.waitUntil(refresh);
 });
 
 self.addEventListener("push", (event) => {
