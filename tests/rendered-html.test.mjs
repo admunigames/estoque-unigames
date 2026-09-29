@@ -4129,8 +4129,8 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
   assert.match(workerSource, /commercial: \["comercial:view", "comercial:manage"\],/);
   assert.match(workerSource, /path\.startsWith\("\/comercial\/"\) \|\| path\.startsWith\("\/api\/commercial"\),\s*"commercial",/);
 
-  // Aviso fixo de que não é o fechamento oficial da folha.
-  assert.match(html, /Os valores são para acompanhamento diário e não representam o fechamento oficial da folha\./);
+  // Legendas/avisos das abas removidos a pedido do usuário.
+  assert.doesNotMatch(html, /class="com-notice"/);
 
   // Escopo por loja reaproveita o helper central (sem lógica nova).
   assert.match(shared, /from "\.\.\/\.\.\/lib\/access-scope"/);
