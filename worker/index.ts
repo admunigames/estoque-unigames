@@ -57,6 +57,7 @@ type Permission =
   | "rh_aniversariantes:view" | "rh_aniversariantes:manage"
   | "rh_odontologico:view" | "rh_odontologico:manage"
   | "rh_escalas:view" | "rh_escalas:manage"
+  | "comercial:view" | "comercial:manage"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -166,6 +167,11 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // folgas e resumo por colaborador calculados ao vivo. Permissão própria,
   // independente das demais (ver MODULE_VIEW_PERMISSIONS.schedules).
   "rh_escalas:view", "rh_escalas:manage",
+  // Comercial — metas e comissionamento dos vendedores (Dashboard, Comissão,
+  // Ranking e Cadastro de Metas). Permissão própria, independente do
+  // Financeiro e do RH Financeiro (ver MODULE_VIEW_PERMISSIONS.commercial e
+  // app/api/commercial/shared.ts).
+  "comercial:view", "comercial:manage",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -283,6 +289,10 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/fardamento",
   "/rh/aniversariantes",
   "/rh/odontologico",
+  "/comercial/dashboard",
+  "/comercial/comissao",
+  "/comercial/ranking",
+  "/comercial/metas",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
@@ -1140,6 +1150,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   birthdays: ["rh_aniversariantes:view", "rh_aniversariantes:manage"],
   dentalPlan: ["rh_odontologico:view", "rh_odontologico:manage"],
   schedules: ["rh_escalas:view", "rh_escalas:manage"],
+  commercial: ["comercial:view", "comercial:manage"],
   works: ["works:manage", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
@@ -1296,6 +1307,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/rh/escalas" || path === "/rh/folgas" || path.startsWith("/api/hr-schedules"),
       "schedules",
+    ],
+    // Comercial — permissão própria (comercial:*). O escopo por loja e a
+    // distinção view/manage ficam em app/api/commercial/shared.ts.
+    [
+      path.startsWith("/comercial/") || path.startsWith("/api/commercial"),
+      "commercial",
     ],
   ];
   const direct = directPermissions.find(([matches]) => matches);

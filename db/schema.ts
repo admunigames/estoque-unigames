@@ -3373,3 +3373,70 @@ export const hrAsoExams = pgTable(
     index("hr_aso_exams_employee_idx").on(table.employeeId),
   ],
 );
+
+// Comercial — metas mensais de cada vendedor (Faturamento, Itens,
+// Garantia Estendida). Módulo independente do Financeiro/RH Financeiro.
+// "Vendedor" não tem cadastro próprio: é todo hr_employees cujo CARGO
+// contém "vendedor" (ver isSellerRole em app/lib/commercial.ts); a loja é
+// o company_id do funcionário, copiado aqui no momento do cadastro da meta
+// (a meta é "por loja"). Percentual, faixa de comissão e ranking NUNCA são
+// persistidos — sempre calculados ao vivo a partir desta tabela e de
+// commercial_entries.
+export const commercialGoals = pgTable(
+  "commercial_goals",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    // YYYY-MM
+    month: text("month").notNull(),
+    targetRevenueCents: integer("target_revenue_cents").notNull().default(0),
+    targetItems: integer("target_items").notNull().default(0),
+    targetWarrantyCents: integer("target_warranty_cents").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("commercial_goals_employee_month_idx").on(table.employeeId, table.month),
+    index("commercial_goals_month_idx").on(table.month),
+    index("commercial_goals_company_idx").on(table.companyId),
+  ],
+);
+
+// Comercial — lançamentos ACUMULADOS do realizado: cada linha é o total do
+// mês até entry_date para um vendedor/canal/tipo. O realizado vigente é o
+// lançamento mais recente; os anteriores ficam como histórico (ver
+// realizedFromEntries em app/lib/commercial.ts).
+export const commercialEntries = pgTable(
+  "commercial_entries",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    // YYYY-MM (sempre o mês de entry_date)
+    month: text("month").notNull(),
+    // 'loja' | 'online'
+    channel: text("channel").notNull(),
+    // 'faturamento' | 'itens' | 'garantia'
+    kind: text("kind").notNull(),
+    // Centavos (faturamento/garantia) ou quantidade (itens).
+    value: integer("value").notNull().default(0),
+    // YYYY-MM-DD
+    entryDate: text("entry_date").notNull(),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("commercial_entries_month_idx").on(table.month),
+    index("commercial_entries_employee_month_idx").on(table.employeeId, table.month),
+  ],
+);

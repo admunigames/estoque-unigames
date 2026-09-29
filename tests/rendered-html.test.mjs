@@ -4086,3 +4086,70 @@ test("Compras nativo: anexar arquivo (pedido/nota fiscal) não dispara atualiza�
   assert.match(liveEvents, /contentType\.includes\("application\/octet-stream"\)\) return null;/);
   assert.match(liveEvents, /action === "create" \|\| action === "cancel"\) return null;/);
 });
+
+test("Comercial: menu próprio, permissões comercial:view/manage, escopo por loja e Ranking sem valores em R$", async () => {
+  const [html, workerSource, shared, overviewRoute, rankingRoute, goalsRoute, entriesRoute, migration] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/overview/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/ranking/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/goals/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/entries/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0072_commercial_goals_entries.sql", import.meta.url), "utf8"),
+  ]);
+
+  // Seção própria no menu lateral (fora de Financeiro e RH), com as 4 telas.
+  assert.match(html, /<div class="nav-group" data-any-permission="comercial">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
+  for (const [page, route] of [
+    ["comercialDashboard", "/comercial/dashboard"],
+    ["comercialComissao", "/comercial/comissao"],
+    ["comercialRanking", "/comercial/ranking"],
+    ["comercialMetas", "/comercial/metas"],
+  ]) {
+    assert.match(html, new RegExp(`data-page="${page}"`));
+    assert.match(html, new RegExp(`${page}:'${route}'`));
+    assert.match(workerSource, new RegExp(`"${route}",`));
+  }
+  assert.match(html, /id="navComercialMetas" data-page="comercialMetas" data-permission="comercial:manage"/);
+  assert.match(html, /comercialMetas:'comercial:manage',/);
+  for (const id of ["pageComercialDashboard", "pageComercialComissao", "pageComercialRanking", "pageComercialMetas"]) {
+    assert.match(html, new RegExp(`<section id="${id}" class="page wrap">`));
+  }
+
+  // Checkboxes no Cadastro de Usuários, no mesmo padrão das demais permissões.
+  assert.match(html, /name="userPermission" value="comercial:view"/);
+  assert.match(html, /name="userPermission" value="comercial:manage"/);
+  assert.match(workerSource, /"comercial:view", "comercial:manage",/);
+  assert.match(workerSource, /commercial: \["comercial:view", "comercial:manage"\],/);
+  assert.match(workerSource, /path\.startsWith\("\/comercial\/"\) \|\| path\.startsWith\("\/api\/commercial"\),\s*"commercial",/);
+
+  // Aviso fixo de que não é o fechamento oficial da folha.
+  assert.match(html, /Os valores são para acompanhamento diário e não representam o fechamento oficial da folha\./);
+
+  // Escopo por loja reaproveita o helper central (sem lógica nova).
+  assert.match(shared, /from "\.\.\/\.\.\/lib\/access-scope"/);
+  assert.match(shared, /canSeeAllStores\(actor, "comercial:view"\) \|\| canSeeAllStores\(actor, "comercial:manage"\)/);
+  assert.match(overviewRoute, /scope\.allStores \? sellers : sellers\.filter\(\(seller\) => seller\.companyId === scope\.companyId\)/);
+  assert.match(entriesRoute, /VOCÊ SÓ PODE EXCLUIR LANÇAMENTOS DA SUA LOJA\./);
+  assert.match(shared, /VOCÊ SÓ PODE LANÇAR DADOS DE VENDEDORES DA SUA LOJA\./);
+
+  // Escrita só com comercial:manage.
+  assert.match(goalsRoute, /if \(!canManageCommercial\(actor\)\)/);
+  assert.match(entriesRoute, /if \(!canManageCommercial\(actor\)\)/);
+
+  // Ranking: empresa inteira, mas a resposta só leva nome, loja e percentual.
+  const rankingItem = rankingRoute.slice(rankingRoute.indexOf("sellers.map("), rankingRoute.indexOf("}));"));
+  assert.match(rankingItem, /revenuePercent: seller\.metrics\.revenue\.percent/);
+  assert.doesNotMatch(rankingItem, /Cents|realized|commission|goal|target/);
+  assert.doesNotMatch(rankingRoute, /commercialScope/);
+
+  // Vendedor = cargo contendo "vendedor" (texto livre normalizado).
+  assert.match(shared, /isSellerRole\(employee\.roleTitle\)/);
+
+  // Tabelas novas, sem relação com o schema do Financeiro.
+  assert.match(migration, /CREATE TABLE "commercial_goals"/);
+  assert.match(migration, /CREATE TABLE "commercial_entries"/);
+  assert.match(migration, /CREATE UNIQUE INDEX "commercial_goals_employee_month_idx"/);
+  assert.doesNotMatch(migration, /finance_/);
+});
