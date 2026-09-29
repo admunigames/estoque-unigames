@@ -2934,7 +2934,6 @@
     color:var(--ink-soft);font:800 12.5px/1 var(--sans);text-transform:none;cursor:pointer;white-space:nowrap;
   }
   .com-view-tab:hover{color:var(--ink)}
-  .com-sub-tabs .com-view-tab{min-height:32px;padding:7px 13px;font-size:12px}
   /* No celular as abas quebram de linha (nunca ficam escondidas na rolagem). */
   @media(max-width:560px){
     /* "ACOMPANHAMENTO" é uma palavra só e, no tamanho padrão do título,
@@ -2947,7 +2946,7 @@
   html[data-theme="light"] .com-view-tabs{background:#fff}
   html[data-theme="light"] .com-view-tab.active{background:var(--accent);border-color:var(--accent-deep)}
   .com-seller-list{display:flex;flex-direction:column;gap:16px}
-  .com-seller,.com-commission,.com-goal-card,.com-entry-form,.com-rule,.com-total{
+  .com-seller,.com-commission,.com-rule,.com-total{
     border:1px solid var(--surface-border);border-radius:var(--radius-surface);background:var(--bg-card);
     box-shadow:var(--surface-shadow);min-width:0;
   }
@@ -3023,8 +3022,8 @@
   .com-total{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 14px;padding:14px 16px;margin-bottom:16px}
   .com-total span{font:800 10px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase}
   .com-total strong{font:900 22px/1.15 var(--sans);color:#54c48a;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-  .com-commission-grid,.com-goal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px}
-  .com-commission,.com-goal-card{display:flex;flex-direction:column;gap:12px;padding:15px}
+  .com-commission-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px}
+  .com-commission{display:flex;flex-direction:column;gap:12px;padding:15px}
   .com-commission-rows{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
   .com-commission-rows li{
     display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:start;padding:10px 11px;
@@ -3068,37 +3067,65 @@
   .com-rank-row.tier-red .com-rank-bar i{background:#ef6a55}
   .com-rank-row.tier-yellow .com-rank-bar i{background:#e1ad49}
   .com-rank-row.tier-green .com-rank-bar i{background:#54c48a}
-  /* Cadastro de metas e lançamentos */
-  .com-goal-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,130px),1fr));gap:10px}
-  .com-goal-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
-  .com-goal-actions small{color:var(--ink-faint);font:600 11px/1.4 var(--sans);min-width:0}
-  .com-entry-form{padding:16px;margin-bottom:6px}
-  .com-entry-top{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:12px;margin-bottom:12px}
-  .com-entry-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px}
-  .com-entry-group{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:10px;min-width:0;margin:0;padding:12px;
+  .com-extra{
+    display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin:0;padding:8px 10px;border:1px dashed var(--inset-border);
+    border-radius:8px;color:var(--ink-soft);font:700 12px/1.4 var(--sans);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+  }
+  .com-extra b{font:800 9px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-faint)}
+  .com-extra.reached{border-style:solid;border-color:rgba(84,196,138,.45);color:var(--ink)}
+  .com-extra.reached b{color:#54c48a}
+  /* Importação da planilha */
+  .com-import-card,.com-import-preview{
+    padding:16px;margin-bottom:16px;border:1px solid var(--surface-border);border-radius:var(--radius-surface);
+    background:var(--bg-card);box-shadow:var(--surface-shadow);min-width:0;
+  }
+  .com-import-card .com-section-title{margin-top:0}
+  .com-import-controls{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+  .com-import-controls input,.com-import-controls select,.com-import-map select{width:100%;min-width:0}
+  .com-import-status[data-tone="error"]{color:var(--neg)}
+  .com-import-summary{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .com-import-errors{margin:0 0 12px;padding:10px 12px 10px 28px;border:1px solid rgba(239,106,85,.45);border-radius:10px;color:var(--neg);font:600 12px/1.5 var(--sans)}
+  .com-import-rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:10px;margin:0;padding:0;list-style:none}
+  .com-import-row{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:start;min-width:0;padding:12px;
     border:1px solid var(--inset-border);border-radius:var(--radius-inset);background:var(--bg-card-2);
   }
-  .com-entry-group legend{padding:0 6px;font:800 10px/1.3 var(--mono);letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase}
-  .com-entry-group .field small{color:var(--ink-faint);font:600 10.5px/1.3 var(--sans);overflow-wrap:anywhere}
-  .com-entry-actions{display:flex;justify-content:flex-end;margin-top:12px}
-  .com-seller input,.com-goal-card input,.com-entry-form input,.com-entry-form select{width:100%;min-width:0}
+  .com-import-row.status-unmatched,.com-import-row.status-duplicate{border-color:rgba(239,106,85,.55)}
+  .com-import-row.status-ignored,.com-import-row.status-out_of_scope{opacity:.65}
+  .com-import-who{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .com-import-who strong{font:800 14px/1.3 var(--sans);color:var(--ink);overflow-wrap:anywhere}
+  .com-import-who span{font:700 9.5px/1.3 var(--mono);letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase;overflow-wrap:anywhere}
+  .com-import-row .status-pill{white-space:nowrap}
+  .com-import-map{grid-column:1/-1}
+  .com-import-values{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin:0}
+  .com-import-values div{min-width:0}
+  .com-import-values dt{font:800 8.5px/1.3 var(--mono);letter-spacing:.04em;color:var(--ink-faint);text-transform:uppercase}
+  .com-import-values dd{margin:2px 0 0;font:700 12px/1.3 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .com-import-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:14px}
+  .com-import-actions button{min-width:0;white-space:normal;line-height:1.3}
+  .com-history{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+  .com-history-row{
+    display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--surface-border);border-radius:10px;
+    background:var(--bg-card);font:600 12px/1.45 var(--sans);color:var(--ink-soft);overflow-wrap:anywhere;
+  }
+  .com-history-row strong{color:var(--ink);font-weight:800}
   @media(max-width:680px){
     .com-toolbar .field{max-width:none}
     .com-seller{padding:13px}
     .com-block{padding:12px}
     .com-pct{font-size:20px}
-    .com-entry-actions .btn-accent{width:100%}
+    .com-import-actions button{flex:1 1 100%}
   }
   html[data-theme="light"] .com-seller,
   html[data-theme="light"] .com-commission,
-  html[data-theme="light"] .com-goal-card,
-  html[data-theme="light"] .com-entry-form,
+  html[data-theme="light"] .com-import-card,
+  html[data-theme="light"] .com-import-preview,
+  html[data-theme="light"] .com-history-row,
   html[data-theme="light"] .com-rule,
   html[data-theme="light"] .com-total,
   html[data-theme="light"] .com-rank-row{background:#fff;border-color:var(--surface-border);box-shadow:var(--surface-shadow)}
   html[data-theme="light"] .com-block,
-  html[data-theme="light"] .com-entry-group,
+  html[data-theme="light"] .com-import-row,
   html[data-theme="light"] .com-commission-rows li{background:#f6f9fb;border-color:var(--inset-border)}
   html[data-theme="light"] .com-block.tier-red .com-pct,
   html[data-theme="light"] .com-rank-row.tier-red .com-rank-pct{color:#c44735}
@@ -3193,7 +3220,7 @@
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 16.5 9 11 13 14.5 20.5 7"/><polyline points="15.5 7 20.5 7 20.5 12"/></svg></span><span class="nav-label">Comercial</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navComercialSubmenu" aria-hidden="true">
-        <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e cadastro de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
+        <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e importação da planilha de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="finance,payables">
@@ -6227,13 +6254,17 @@
           <label for="comAcompMonth">Mês</label>
           <input type="month" id="comAcompMonth" data-com-month>
         </div>
-        <div class="field" data-com-all-stores data-com-scope-filter hidden>
-          <label for="comAcompStore">Loja</label>
-          <select id="comAcompStore" data-com-store><option value="">TODAS</option></select>
+        <div class="field" id="comStoreField" hidden>
+          <label for="comStoreFilter">Loja</label>
+          <select id="comStoreFilter"><option value="">TODAS</option></select>
         </div>
-        <div class="field" data-com-scope-filter hidden>
-          <label for="comAcompSeller">Vendedor</label>
-          <select id="comAcompSeller" data-com-seller><option value="">TODOS</option></select>
+        <div class="field" id="comZoneField" hidden>
+          <label for="comZoneFilter">Zona</label>
+          <select id="comZoneFilter"><option value="">TODAS</option></select>
+        </div>
+        <div class="field" id="comSellerField" hidden>
+          <label for="comSellerFilter">Vendedor</label>
+          <select id="comSellerFilter"><option value="">TODOS</option></select>
         </div>
         <div class="field" id="comRankMetricField" hidden>
           <label for="comRankMetric">Rankear por</label>
@@ -6241,6 +6272,7 @@
             <option value="revenuePercent">FATURAMENTO</option>
             <option value="itemsPercent">ITENS VENDIDOS</option>
             <option value="warrantyPercent">GARANTIA ESTENDIDA</option>
+            <option value="realmePercent">REALMES</option>
           </select>
         </div>
       </div>
@@ -6264,56 +6296,31 @@
       </div>
 
       <div class="com-view-panel" id="comViewMetas" hidden>
-        <!-- Cadastro de Metas: só comercial:manage (aba escondida por data-permission;
-             o back-end também recusa escrita sem a permissão). Sempre no escopo
-             de loja do usuário, mesmo que a conta seja de um vendedor. -->
-        <div class="com-view-tabs com-sub-tabs" role="tablist" aria-label="Seções do cadastro de metas">
-          <button class="com-view-tab active" type="button" role="tab" aria-selected="true" data-com-tab="metas">Metas do mês</button>
-          <button class="com-view-tab" type="button" role="tab" aria-selected="false" data-com-tab="lancamentos">Lançar realizado</button>
-        </div>
-
-        <div class="com-tab-panel" id="comTabMetas">
-          <div class="com-goal-grid" id="comGoalList"><p class="com-empty">Carregando…</p></div>
-        </div>
-
-        <div class="com-tab-panel" id="comTabLancamentos" hidden>
-          <form class="com-entry-form" id="comEntryForm">
-            <div class="com-entry-top">
-              <div class="field"><label for="comEntrySeller">Vendedor *</label><select id="comEntrySeller" required><option value="">SELECIONE</option></select></div>
-              <div class="field"><label for="comEntryDate">Acumulado até *</label><input type="date" id="comEntryDate" required></div>
-            </div>
-            <p class="com-hint">Informe o total <strong>ACUMULADO no mês</strong> até a data escolhida (não só a venda do dia). O último lançamento substitui o anterior — os anteriores ficam no histórico abaixo.</p>
-            <div class="com-entry-grid">
-              <fieldset class="com-entry-group">
-                <legend>Faturamento</legend>
-                <div class="field"><label for="comEntryRevenueLoja">Loja</label><input id="comEntryRevenueLoja" data-com-entry="faturamento:loja"></div>
-                <div class="field"><label for="comEntryRevenueOnline">Online</label><input id="comEntryRevenueOnline" data-com-entry="faturamento:online"></div>
-              </fieldset>
-              <fieldset class="com-entry-group">
-                <legend>Itens vendidos</legend>
-                <div class="field"><label for="comEntryItemsLoja">Loja</label><input type="number" inputmode="numeric" min="0" step="1" id="comEntryItemsLoja" data-com-entry="itens:loja"></div>
-                <div class="field"><label for="comEntryItemsOnline">Online</label><input type="number" inputmode="numeric" min="0" step="1" id="comEntryItemsOnline" data-com-entry="itens:online"></div>
-              </fieldset>
-              <fieldset class="com-entry-group">
-                <legend>Garantia estendida</legend>
-                <div class="field"><label for="comEntryWarrantyLoja">Loja</label><input id="comEntryWarrantyLoja" data-com-entry="garantia:loja"></div>
-                <div class="field"><label for="comEntryWarrantyOnline">Online</label><input id="comEntryWarrantyOnline" data-com-entry="garantia:online"></div>
-              </fieldset>
-            </div>
-            <div class="user-form-status" id="comEntryStatus" role="status" aria-live="polite"></div>
-            <div class="com-entry-actions"><button class="btn-accent" type="submit">SALVAR LANÇAMENTO</button></div>
-          </form>
-
-          <h3 class="com-section-title">Histórico de lançamentos do mês</h3>
-          <div class="table-panel responsive-table">
-            <div class="table-scroll">
-              <table id="comEntryTable">
-                <thead><tr><th>Data</th><th>Vendedor</th><th>Loja</th><th>Tipo</th><th>Canal</th><th>Acumulado</th><th>Lançado por</th><th></th></tr></thead>
-                <tbody id="comEntryTableBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
-              </table>
-            </div>
+        <!-- Cadastro de Metas: só comercial:manage (aba escondida por
+             data-permission; o back-end também recusa). Os números vêm SÓ da
+             planilha "ACOMPANHAMENTO LOJAS_VENDEDORES", aba "VENDEDORES <MÊS>". -->
+        <section class="com-import-card">
+          <h3 class="com-section-title">Importar planilha do mês</h3>
+          <p class="com-hint" id="comManageSummary"></p>
+          <div class="com-import-controls">
+            <div class="field"><label for="comImportFile">Arquivo (.xlsx, .xls ou .csv)</label><input type="file" id="comImportFile" accept=".xlsx,.xls,.csv"></div>
+            <div class="field" id="comImportSheetField" hidden><label for="comImportSheet">Aba da planilha</label><select id="comImportSheet"><option value="">—</option></select></div>
           </div>
-        </div>
+          <div class="user-form-status com-import-status" id="comImportStatus" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="com-import-preview" id="comImportPreview" hidden>
+          <div class="com-import-summary" id="comImportSummary"></div>
+          <ul class="com-import-errors" id="comImportErrors" hidden></ul>
+          <ul class="com-import-rows" id="comImportRows"></ul>
+          <div class="com-import-actions">
+            <button class="btn-outline" type="button" id="btnComImportCancel">CANCELAR</button>
+            <button class="btn-accent" type="button" id="btnComImportConfirm">CONFIRMAR IMPORTAÇÃO</button>
+          </div>
+        </section>
+
+        <h3 class="com-section-title">Importações deste mês</h3>
+        <ul class="com-history" id="comImportHistory"><li class="com-empty">Carregando…</li></ul>
       </div>
     </section>
 
@@ -34655,28 +34662,31 @@ function renderHomeTasks(){
   // ================= COMERCIAL =================
   // Metas e comissionamento dos vendedores — módulo independente do
   // Financeiro. Permissões comercial:view (Dashboard, Comissão, Ranking) e
-  // comercial:manage (+ Cadastro de Metas). Percentual, alvo seguinte,
-  // média diária e comissão vêm SEMPRE calculados pelo servidor a partir de
-  // metas + lançamentos (app/lib/commercial.ts) — nada é persistido.
-  // O escopo por loja também é do servidor (app/api/commercial/shared.ts):
-  // o front só filtra dentro do que já recebeu. O Ranking é da empresa
-  // inteira, mas a API dele só devolve nome, loja e percentual.
+  // comercial:manage (+ aba Cadastro de Metas = importação da planilha).
+  // A ÚNICA fonte dos números é a planilha "ACOMPANHAMENTO
+  // LOJAS_VENDEDORES", aba "VENDEDORES <MÊS>" (decisão confirmada: sem
+  // digitação manual). Percentual, alvo seguinte, média diária e comissão
+  // vêm SEMPRE calculados pelo servidor (app/lib/commercial.ts). O escopo
+  // por loja e o "só o próprio vendedor" também são do servidor
+  // (app/api/commercial/*): o front só filtra dentro do que já recebeu.
   const COM_TARGETS = [80, 100, 110, 120];
   // Posição fixa de cada alvo na barra (escala por trechos 0-80-100-110-120%),
   // pra os 4 rótulos nunca se sobreporem em tela de celular.
   const COM_TARGET_POS = [40, 60, 80, 100];
-  const COM_KIND_LABELS = {faturamento:'FATURAMENTO', itens:'ITENS', garantia:'GARANTIA'};
-  const COM_CHANNEL_LABELS = {loja:'LOJA', online:'ONLINE'};
+  const COM_MONTH_NAMES = ['JANEIRO','FEVEREIRO','MARCO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
   let comMonth = '';
   let comOverview = null;
-  // Dados do Cadastro de Metas: escopo de loja do gestor, nunca "só o próprio".
+  // Dados da aba Cadastro de Metas: escopo de loja do gestor, nunca "só o próprio".
   let comManage = null;
   let comRanking = null;
-  let comEntries = [];
+  let comImports = [];
   let comStoreFilter = '';
+  let comZoneFilter = '';
   let comSellerFilter = '';
   let comCurrentPage = '';
   let comView = 'dashboard';
+  // Importação em andamento: arquivo lido, aba escolhida, escolhas manuais e prévia.
+  let comImport = null;
 
   async function comApi(path, options){
     const response = await fetch('/api/commercial'+path, {
@@ -34698,17 +34708,16 @@ function renderHomeTasks(){
     return Number(percent).toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1})+'%';
   }
 
-  function comFormatItems(value){
+  function comFormatQty(value, singular, plural){
     const number = Number(value) || 0;
-    return number.toLocaleString('pt-BR')+(number === 1 ? ' item' : ' itens');
+    return number.toLocaleString('pt-BR')+' '+(number === 1 ? singular : plural);
   }
 
+  // kind: 'money' (centavos), 'items' ou 'units' (Realmes)
   function comFormatValue(kind, value){
-    return kind === 'itens' ? comFormatItems(value) : formatCentsBRL(value);
-  }
-
-  function comTodayKey(){
-    return new Intl.DateTimeFormat('en-CA', {timeZone:'America/Recife'}).format(new Date());
+    if(kind === 'money') return formatCentsBRL(value);
+    if(kind === 'items') return comFormatQty(value, 'item', 'itens');
+    return comFormatQty(value, 'unidade', 'unidades');
   }
 
   function comTargetValue(target, percent){
@@ -34735,10 +34744,13 @@ function renderHomeTasks(){
     return 100;
   }
 
-  function comIncentive(kind, block, clock){
-    const simple = kind === 'garantia';
+  function comNormalize(value){
+    return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  }
+
+  function comIncentive(kind, block, clock, simple){
     const fmt = value => comFormatValue(kind, value);
-    if(!(block.target > 0)) return {text:'Meta do mês ainda não cadastrada.', sub:''};
+    if(!(block.target > 0)) return {text:'Sem meta neste mês.', sub:''};
     const next = block.next;
     if(!next) return {text:simple ? 'Meta batida!' : 'Todos os 4 alvos atingidos!', sub:''};
     const goalName = simple ? 'a meta' : 'o Alvo '+next.index+' ('+next.percent+'%)';
@@ -34752,8 +34764,8 @@ function renderHomeTasks(){
     return {text:'Venda '+fmt(next.perDay)+' '+when+' para atingir '+goalName+'.', sub:'Faltam '+fmt(next.missing)+' no mês · '+daysText};
   }
 
-  function comBlockHtml(kind, title, block, clock){
-    const simple = kind === 'garantia';
+  // extraHtml: linha adicional no fim do bloco (Super itens, anexo de garantia)
+  function comBlockHtml(kind, title, block, clock, simple, extraHtml){
     const percent = block.percent;
     const tier = comTier(percent);
     const ariaLabel = title+': '+comFormatPct(percent)+' da meta';
@@ -34778,29 +34790,26 @@ function renderHomeTasks(){
         '<li class="'+(block.reachedTargets > index ? 'reached' : '')+'"><b>ALVO '+(index+1)+' · '+target+'%</b>'+
         escapeHtml(comFormatValue(kind, comTargetValue(block.target, target)))+'</li>'
       ).join('')+'</ul>';
-    const incentive = comIncentive(kind, block, clock);
+    const incentive = comIncentive(kind, block, clock, simple);
     return '<section class="com-block tier-'+tier+'">'+
       '<div class="com-block-head"><span class="com-block-title">'+escapeHtml(title)+'</span><strong class="com-pct">'+(block.target > 0 ? comFormatPct(percent) : 'SEM META')+'</strong></div>'+
       bar+
       '<dl class="com-figures">'+
         '<div><dt>Meta do mês</dt><dd>'+(block.target > 0 ? escapeHtml(comFormatValue(kind, block.target)) : '—')+'</dd></div>'+
-        '<div><dt>Realizado</dt><dd>'+escapeHtml(comFormatValue(kind, block.realized.total))+'</dd></div>'+
-        '<div class="com-sub"><dt>Loja</dt><dd>'+escapeHtml(comFormatValue(kind, block.realized.loja))+'</dd></div>'+
-        '<div class="com-sub"><dt>Online</dt><dd>'+escapeHtml(comFormatValue(kind, block.realized.online))+'</dd></div>'+
+        '<div><dt>Realizado</dt><dd>'+escapeHtml(comFormatValue(kind, block.realized))+'</dd></div>'+
       '</dl>'+
       '<p class="com-incentive">'+escapeHtml(incentive.text)+(incentive.sub ? '<small>'+escapeHtml(incentive.sub)+'</small>' : '')+'</p>'+
-      targets+
+      targets+(extraHtml || '')+
     '</section>';
   }
 
   function comSellerHeadHtml(seller){
+    const updated = seller.updatedAt ? 'Atualizado em '+formatDateTimeBR(seller.updatedAt) : '';
     return '<header class="com-seller-head"><div class="com-seller-name"><strong>'+escapeHtml(seller.name)+'</strong>'+
-      '<span>'+escapeHtml(seller.companyName || 'SEM LOJA')+'</span></div>'+
-      '<span class="com-seller-meta">'+(seller.lastEntryDate ? 'Lançado até '+escapeHtml(formatDateBR(seller.lastEntryDate)) : 'Sem lançamentos no mês')+'</span></header>';
+      '<span>'+escapeHtml(seller.companyName || 'SEM LOJA')+(seller.zone ? ' · ZONA '+escapeHtml(seller.zone) : '')+'</span></div>'+
+      (updated ? '<span class="com-seller-meta">'+escapeHtml(updated)+'</span>' : '')+'</header>';
   }
 
-  // Fonte dos filtros/listas: Cadastro de Metas usa comManage; as demais
-  // abas usam comOverview.
   function comData(){
     return comView === 'metas' ? comManage : comOverview;
   }
@@ -34810,53 +34819,56 @@ function renderHomeTasks(){
     const sellers = data ? data.sellers : [];
     return sellers.filter(seller =>
       (!comStoreFilter || seller.companyId === comStoreFilter) &&
+      (!comZoneFilter || seller.zone === comZoneFilter) &&
       (!(options && options.ignoreSeller) && comSellerFilter ? seller.employeeId === comSellerFilter : true)
     );
   }
 
   function comEmptyHtml(){
-    return '<p class="com-empty">Nenhum vendedor encontrado. O vendedor aparece aqui quando o CARGO dele em RH &gt; Funcionários contém “vendedor”.</p>';
+    const data = comData();
+    if(data && data.ownOnly) return '<p class="com-empty">Os seus números deste mês ainda não foram importados.</p>';
+    return '<p class="com-empty">Nenhum vendedor importado neste mês. A importação da planilha fica na aba Cadastro de Metas.</p>';
   }
 
-  // Loja/Vendedor só fazem sentido pra gestor (visão ampla) e fora do
-  // Ranking; conta vinculada a um vendedor (ownOnly) só vê o próprio.
+  // Loja/Zona/Vendedor só fazem sentido pra gestor (visão ampla); conta
+  // vinculada a um vendedor (ownOnly) só vê o próprio. No Ranking (sempre
+  // geral) só o filtro de Zona continua.
   function comApplyFilterVisibility(){
-    const data = comData();
-    const allStores = Boolean(data && data.allStores);
-    const ownOnly = Boolean(data && data.ownOnly);
-    document.querySelectorAll('#pageComercialAcompanhamento [data-com-scope-filter]').forEach(node => {
-      const isStore = node.hasAttribute('data-com-all-stores');
-      node.hidden = ownOnly || comView === 'ranking' || !data || (isStore ? !allStores : comView === 'metas');
-    });
+    const data = comView === 'ranking' ? comRanking : comData();
+    const ownOnly = comView !== 'ranking' && Boolean(data && data.ownOnly);
+    const allStores = comView === 'ranking' || Boolean(data && data.allStores);
+    if(el('comStoreField')) el('comStoreField').hidden = !data || ownOnly || comView === 'ranking' || comView === 'metas' || !allStores;
+    if(el('comZoneField')) el('comZoneField').hidden = !data || ownOnly || comView === 'metas';
+    if(el('comSellerField')) el('comSellerField').hidden = !data || ownOnly || comView === 'ranking' || comView === 'metas';
     if(el('comRankMetricField')) el('comRankMetricField').hidden = comView !== 'ranking';
+  }
+
+  function comFillFilter(id, firstLabel, options, current){
+    rhFillSelect(id, firstLabel, options);
+    const select = el(id);
+    if(select) select.value = options.some(option => option.value === current) ? current : '';
+    return select ? select.value : '';
   }
 
   function comRenderFilters(){
     comApplyFilterVisibility();
-    const data = comData();
+    const data = comView === 'ranking' ? comRanking : comData();
     if(!data) return;
-    const allStores = data.allStores;
+    const rows = comView === 'ranking' ? data.items : data.sellers;
+    const zones = Array.from(new Set(rows.map(row => row.zone).filter(Boolean))).sort();
+    comZoneFilter = comFillFilter('comZoneFilter', 'TODAS', zones.map(zone => ({value:zone, label:zone})), comZoneFilter);
+    if(comView === 'ranking') return;
     const stores = new Map();
     data.sellers.forEach(seller => {
       if(seller.companyId && !stores.has(seller.companyId)) stores.set(seller.companyId, seller.companyName || seller.companyId);
     });
-    if(!stores.has(comStoreFilter)) comStoreFilter = '';
-    const storeOptions = Array.from(stores.entries())
+    comStoreFilter = comFillFilter('comStoreFilter', 'TODAS', Array.from(stores.entries())
       .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'))
-      .map(([value, label]) => ({value, label}));
-    const sellerOptions = comFilteredSellers({ignoreSeller:true}).map(seller => ({
+      .map(([value, label]) => ({value, label})), comStoreFilter);
+    comSellerFilter = comFillFilter('comSellerFilter', 'TODOS', comFilteredSellers({ignoreSeller:true}).map(seller => ({
       value: seller.employeeId,
-      label: seller.name + (allStores && !comStoreFilter && seller.companyName ? ' — '+seller.companyName : '')
-    }));
-    if(!sellerOptions.some(option => option.value === comSellerFilter)) comSellerFilter = '';
-    document.querySelectorAll('[data-com-store]').forEach(select => {
-      rhFillSelect(select.id, 'TODAS', storeOptions);
-      select.value = comStoreFilter;
-    });
-    document.querySelectorAll('[data-com-seller]').forEach(select => {
-      rhFillSelect(select.id, 'TODOS', sellerOptions);
-      select.value = comSellerFilter;
-    });
+      label: seller.name + (data.allStores && !comStoreFilter && seller.companyName ? ' — '+seller.companyName : '')
+    })), comSellerFilter);
   }
 
   function comRenderDashboard(){
@@ -34865,15 +34877,26 @@ function renderHomeTasks(){
     const sellers = comFilteredSellers();
     if(!sellers.length){ list.innerHTML = comEmptyHtml(); return; }
     const clock = comOverview.clock;
-    list.innerHTML = sellers.map(seller =>
-      '<article class="com-seller">'+comSellerHeadHtml(seller)+
+    list.innerHTML = sellers.map(seller => {
+      const m = seller.metrics;
+      const superLine = m.items.superTarget > 0
+        ? '<p class="com-extra'+(m.items.superReached ? ' reached' : '')+'"><b>SUPER ITENS</b>'+
+          escapeHtml(comFormatValue('items', m.items.superTarget))+' · '+
+          escapeHtml(m.items.superReached ? 'atingido' : 'faltam '+comFormatValue('items', m.items.superTarget - m.items.realized))+'</p>'
+        : '';
+      const attachLine = '<p class="com-extra"><b>ANEXO DE GARANTIA</b>'+
+        (m.attachPercent === null
+          ? 'Nenhum notebook/PC vendido'
+          : escapeHtml(seller.realized.warrantyQty+' de '+comFormatQty(seller.realized.notebookQty, 'notebook/PC', 'notebooks/PC')+' ('+comFormatPct(m.attachPercent)+')'))+'</p>';
+      return '<article class="com-seller">'+comSellerHeadHtml(seller)+
         '<div class="com-blocks">'+
-          comBlockHtml('faturamento', 'Faturamento', seller.metrics.revenue, clock)+
-          comBlockHtml('itens', 'Itens vendidos', seller.metrics.items, clock)+
-          comBlockHtml('garantia', 'Garantia estendida', seller.metrics.warranty, clock)+
+          comBlockHtml('money', 'Faturamento', m.revenue, clock, false)+
+          comBlockHtml('items', 'Itens vendidos', m.items, clock, false, superLine)+
+          comBlockHtml('money', 'Garantia estendida', m.warranty, clock, true, attachLine)+
+          comBlockHtml('units', 'Realmes', m.realme, clock, true)+
         '</div>'+
-      '</article>'
-    ).join('');
+      '</article>';
+    }).join('');
   }
 
   function comCommissionCardHtml(seller){
@@ -34884,31 +34907,30 @@ function renderHomeTasks(){
     const warranty = metrics.warranty;
 
     let revenueDetail;
-    if(!(revenue.target > 0)) revenueDetail = 'Sem meta de faturamento cadastrada no mês.';
+    if(!(revenue.target > 0)) revenueDetail = 'Sem meta de faturamento no mês.';
     else if(commission.revenueRate === 0){
       revenueDetail = comFormatPct(revenue.percent)+' da meta — abaixo de 80%, ainda sem comissão. Faltam '+
-        formatCentsBRL(comTargetValue(revenue.target, 80) - revenue.realized.total)+' para a faixa de 0,4%.';
+        formatCentsBRL(comTargetValue(revenue.target, 80) - revenue.realized)+' para a faixa de 0,4%.';
     }else if(commission.revenueRate < 0.006){
-      revenueDetail = comFormatPct(revenue.percent)+' da meta — faixa de 0,4% sobre '+formatCentsBRL(revenue.realized.total)+
-        '. Faltam '+formatCentsBRL(comTargetValue(revenue.target, 100) - revenue.realized.total)+' para a faixa de 0,6%.';
+      revenueDetail = comFormatPct(revenue.percent)+' da meta — faixa de 0,4% sobre '+formatCentsBRL(revenue.realized)+
+        '. Faltam '+formatCentsBRL(comTargetValue(revenue.target, 100) - revenue.realized)+' para a faixa de 0,6%.';
     }else{
-      revenueDetail = comFormatPct(revenue.percent)+' da meta — faixa máxima de 0,6% sobre '+formatCentsBRL(revenue.realized.total)+'.';
+      revenueDetail = comFormatPct(revenue.percent)+' da meta — faixa máxima de 0,6% sobre '+formatCentsBRL(revenue.realized)+'.';
     }
 
     let itemsDetail;
-    if(!(items.target > 0)) itemsDetail = 'Sem meta de itens cadastrada no mês.';
+    if(!(items.target > 0)) itemsDetail = 'Sem meta de itens no mês.';
     else if(commission.itemsPremiumCents === 0){
       itemsDetail = comFormatPct(items.percent)+' da meta — a premiação destrava em 110%. Faltam '+
-        comFormatItems(comTargetValue(items.target, 110) - items.realized.total)+' para R$ 500,00.';
+        comFormatValue('items', comTargetValue(items.target, 110) - items.realized)+' para R$ 500,00.';
     }else if(commission.itemsPremiumCents < 150000){
       itemsDetail = comFormatPct(items.percent)+' da meta — R$ 500,00 destravado. Faltam '+
-        comFormatItems(comTargetValue(items.target, 120) - items.realized.total)+' para R$ 1.500,00.';
+        comFormatValue('items', comTargetValue(items.target, 120) - items.realized)+' para R$ 1.500,00.';
     }else{
       itemsDetail = comFormatPct(items.percent)+' da meta — premiação máxima de R$ 1.500,00 destravada.';
     }
 
-    const warrantyDetail = '4% sobre '+formatCentsBRL(warranty.realized.total)+' vendidos (Loja '+
-      formatCentsBRL(warranty.realized.loja)+' · Online '+formatCentsBRL(warranty.realized.online)+').';
+    const warrantyDetail = '4% sobre '+formatCentsBRL(warranty.realized)+' vendidos em garantia estendida.';
 
     const row = (label, cents, detail) =>
       '<li class="'+(cents > 0 ? 'on' : '')+'"><span class="label">'+escapeHtml(label)+'</span>'+
@@ -34939,7 +34961,7 @@ function renderHomeTasks(){
       const sum = sellers.reduce((acc, seller) => acc + seller.metrics.commission.totalCents, 0);
       total.innerHTML = '<span>Total estimado · '+sellers.length+(sellers.length === 1 ? ' vendedor' : ' vendedores')+'</span>'+
         '<strong>'+escapeHtml(formatCentsBRL(sum))+'</strong>';
-      total.hidden = false;
+      total.hidden = sellers.length < 2;
     }
   }
 
@@ -34947,8 +34969,8 @@ function renderHomeTasks(){
     const list = el('comRankList');
     if(!list) return;
     const metric = el('comRankMetric') ? el('comRankMetric').value : 'revenuePercent';
-    const items = comRanking ? comRanking.items.slice() : [];
-    if(!items.length){ list.innerHTML = '<li class="com-empty">Nenhum vendedor encontrado no mês.</li>'; return; }
+    const items = comRanking ? comRanking.items.filter(item => !comZoneFilter || item.zone === comZoneFilter) : [];
+    if(!items.length){ list.innerHTML = '<li class="com-empty">Nenhum vendedor importado neste mês.</li>'; return; }
     items.sort((a, b) => {
       const pa = a[metric];
       const pb = b[metric];
@@ -34966,210 +34988,216 @@ function renderHomeTasks(){
       const barWidth = ranked ? Math.min(100, percent / 1.2) : 0;
       return '<li class="com-rank-row tier-'+comTier(percent)+top+'">'+
         '<span class="com-rank-pos">'+(ranked ? position+'º' : '–')+'</span>'+
-        '<span class="com-rank-who"><strong>'+escapeHtml(item.name)+'</strong><span>'+escapeHtml(item.companyName || 'SEM LOJA')+'</span></span>'+
+        '<span class="com-rank-who"><strong>'+escapeHtml(item.name)+'</strong><span>'+escapeHtml(item.companyName || 'SEM LOJA')+(item.zone ? ' · '+escapeHtml(item.zone) : '')+'</span></span>'+
         '<span class="com-rank-pct">'+(ranked ? comFormatPct(percent) : 'SEM META')+'</span>'+
         '<span class="com-rank-bar" aria-hidden="true"><i style="width:'+barWidth+'%"></i></span>'+
       '</li>';
     }).join('');
   }
 
-  // ---------- Cadastro de Metas ----------
-  function comGoalSellers(){
-    return comManage ? comManage.sellers.filter(seller => !comStoreFilter || seller.companyId === comStoreFilter) : [];
-  }
+  // ---------- Cadastro de Metas = importação da planilha ----------
+  const COM_ROW_STATUS = {
+    ok:['done','PRONTO'],
+    unmatched:['alert','ESCOLHA O FUNCIONÁRIO'],
+    duplicate:['alert','FUNCIONÁRIO REPETIDO'],
+    out_of_scope:['waiting','FORA DA SUA LOJA'],
+    ignored:['waiting','IGNORADA']
+  };
 
-  function comRenderGoals(){
-    const list = el('comGoalList');
-    if(!list || !comManage) return;
-    const sellers = comGoalSellers().filter(seller => seller.active || seller.goal);
-    if(!sellers.length){ list.innerHTML = comEmptyHtml(); return; }
-    list.innerHTML = sellers.map((seller, index) => {
-      const goal = seller.goal;
-      const updated = goal && goal.updatedAt
-        ? 'Atualizada por '+(goal.updatedByName || '—')+' em '+formatDateBR(String(goal.updatedAt).slice(0, 10))
-        : 'Meta ainda não cadastrada';
-      return '<form class="com-goal-card" data-com-goal="'+escapeHtml(seller.employeeId)+'">'+
-        comSellerHeadHtml(seller)+
-        '<div class="com-goal-fields">'+
-          '<div class="field"><label for="comGoalRev'+index+'">Faturamento</label><input id="comGoalRev'+index+'" data-goal-field="revenue"></div>'+
-          '<div class="field"><label for="comGoalItems'+index+'">Itens</label><input id="comGoalItems'+index+'" type="number" inputmode="numeric" min="0" step="1" data-goal-field="items" value="'+(goal ? goal.targetItems : '')+'"></div>'+
-          '<div class="field"><label for="comGoalWar'+index+'">Garantia</label><input id="comGoalWar'+index+'" data-goal-field="warranty"></div>'+
-        '</div>'+
-        '<div class="com-goal-actions"><small>'+escapeHtml(updated)+'</small><button class="btn-accent" type="submit">SALVAR META</button></div>'+
-      '</form>';
-    }).join('');
-    list.querySelectorAll('[data-com-goal]').forEach(form => {
-      const seller = comManage.sellers.find(item => item.employeeId === form.dataset.comGoal);
-      ['revenue', 'warranty'].forEach(field => {
-        const input = form.querySelector('[data-goal-field="'+field+'"]');
-        attachCurrencyMask(input);
-        const cents = seller && seller.goal ? (field === 'revenue' ? seller.goal.targetRevenueCents : seller.goal.targetWarrantyCents) : null;
-        setCurrencyValue(input, cents === null ? '' : (cents / 100).toFixed(2));
-      });
+  function comSuggestSheet(sheetNames){
+    const [year, monthNumber] = comMonth.split('-');
+    const monthName = COM_MONTH_NAMES[Number(monthNumber) - 1];
+    const ofMonth = sheetNames.filter(name => {
+      const normalized = comNormalize(name);
+      return /^VENDEDO/.test(normalized) && normalized.split(' ').includes(monthName);
     });
+    return ofMonth.find(name => comNormalize(name).includes(year)) ||
+      ofMonth.find(name => !/\b20\d\d\b/.test(comNormalize(name))) || ofMonth[0] || '';
   }
 
-  function comCentsFromInput(input){
-    const raw = getCurrencyValue(input);
-    if(raw === '') return null;
-    const number = Number(raw);
-    return Number.isFinite(number) ? Math.round(number * 100) : null;
+  function comSheetCells(sheetName){
+    const sheet = comImport.workbook.Sheets[sheetName];
+    const rows = window.XLSX.utils.sheet_to_json(sheet, {header:1, raw:true, defval:''});
+    // Corta linhas/colunas vazias do fim (a aba real vai até a linha ~1000).
+    const filled = rows.map(row => {
+      let end = row.length;
+      while(end > 0 && (row[end-1] === '' || row[end-1] === null)) end--;
+      return row.slice(0, end);
+    });
+    let last = filled.length;
+    while(last > 0 && !filled[last-1].length) last--;
+    return filled.slice(0, last);
   }
 
-  function comItemsFromInput(input){
-    if(input.value.trim() === '') return null;
-    const number = Number(input.value);
-    return Number.isFinite(number) ? Math.round(number) : NaN;
+  function comImportStatus(message, tone){
+    const node = el('comImportStatus');
+    if(!node) return;
+    node.textContent = message || '';
+    node.dataset.tone = tone || '';
   }
 
-  if(el('comGoalList')) el('comGoalList').addEventListener('submit', async event => {
-    const form = event.target.closest('[data-com-goal]');
-    if(!form) return;
-    event.preventDefault();
-    const items = comItemsFromInput(form.querySelector('[data-goal-field="items"]'));
-    if(Number.isNaN(items) || (items !== null && items < 0)){ showPurchaseToast('INFORME UMA META DE ITENS VÁLIDA.', 'error'); return; }
+  function comResetImport(){
+    comImport = null;
+    if(el('comImportFile')) el('comImportFile').value = '';
+    if(el('comImportSheet')) el('comImportSheet').innerHTML = '<option value="">—</option>';
+    if(el('comImportSheetField')) el('comImportSheetField').hidden = true;
+    if(el('comImportPreview')) el('comImportPreview').hidden = true;
+    comImportStatus('');
+  }
+
+  async function comRequestPreview(confirm){
     const payload = {
-      employeeId: form.dataset.comGoal,
       month: comMonth,
-      targetRevenueCents: comCentsFromInput(form.querySelector('[data-goal-field="revenue"]')) || 0,
-      targetItems: items || 0,
-      targetWarrantyCents: comCentsFromInput(form.querySelector('[data-goal-field="warranty"]')) || 0
+      fileName: comImport.fileName,
+      sheetName: comImport.sheetName,
+      cells: comImport.cells,
+      mappings: comImport.mappings,
+      confirm: Boolean(confirm)
     };
-    const button = form.querySelector('button[type="submit"]');
-    button.disabled = true;
+    return comApi('/import', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+  }
+
+  async function comLoadPreview(){
+    if(!comImport || !comImport.sheetName) return;
+    comImport.cells = comSheetCells(comImport.sheetName);
+    comImportStatus('LENDO A ABA '+comImport.sheetName+'…');
     try{
-      await comApi('/goals', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      comOverview = null;
-      await refreshAfterAction(() => comLoadManage({silent:true}));
-      showPurchaseToast('Meta salva.');
+      comImport.preview = await comRequestPreview(false);
     }catch(error){
-      showPurchaseToast(error.message, 'error');
-    }finally{
-      button.disabled = false;
-    }
-  });
-
-  // ---------- Lançamento do realizado (acumulado) ----------
-  function comEntryInputs(){
-    return Array.from(document.querySelectorAll('[data-com-entry]'));
-  }
-
-  function comEntryDateBounds(){
-    const today = comTodayKey();
-    const [year, month] = comMonth.split('-').map(Number);
-    const last = comMonth+'-'+String(new Date(Date.UTC(year, month, 0)).getUTCDate()).padStart(2, '0');
-    return {min: comMonth+'-01', max: last < today ? last : today, today};
-  }
-
-  function comFillEntryForm(){
-    const select = el('comEntrySeller');
-    if(!select || !comManage) return;
-    const sellers = comGoalSellers().filter(seller => seller.active);
-    rhFillSelect('comEntrySeller', 'SELECIONE', sellers.map(seller => ({
-      value: seller.employeeId,
-      label: seller.name + (comManage.allStores && !comStoreFilter && seller.companyName ? ' — '+seller.companyName : '')
-    })));
-    const bounds = comEntryDateBounds();
-    const dateInput = el('comEntryDate');
-    const future = bounds.min > bounds.today;
-    dateInput.min = bounds.min;
-    dateInput.max = bounds.max;
-    if(!dateInput.value || dateInput.value < bounds.min || dateInput.value > bounds.max) dateInput.value = future ? '' : bounds.max;
-    dateInput.disabled = future;
-    comPrefillEntryValues();
-    if(future) el('comEntryStatus').textContent = 'NÃO DÁ PARA LANÇAR REALIZADO EM UM MÊS QUE AINDA NÃO COMEÇOU.';
-  }
-
-  // Preenche os campos com o acumulado atual do vendedor, pra quem lança só
-  // ajustar o que mudou. Só os campos alterados viram lançamento novo.
-  function comPrefillEntryValues(){
-    const seller = comManage ? comManage.sellers.find(item => item.employeeId === el('comEntrySeller').value) : null;
-    comEntryInputs().forEach(input => {
-      const [kind, channel] = input.dataset.comEntry.split(':');
-      const current = seller ? seller.realized[kind][channel] : null;
-      input.dataset.current = current === null ? '' : String(current);
-      if(kind === 'itens') input.value = current === null ? '' : String(current);
-      else setCurrencyValue(input, current === null ? '' : (current / 100).toFixed(2));
-    });
-    el('comEntryStatus').textContent = '';
-  }
-
-  if(el('comEntrySeller')) el('comEntrySeller').addEventListener('change', comPrefillEntryValues);
-
-  if(el('comEntryForm')) el('comEntryForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const status = el('comEntryStatus');
-    status.textContent = '';
-    const employeeId = el('comEntrySeller').value;
-    const entryDate = el('comEntryDate').value;
-    if(!employeeId){ status.textContent = 'SELECIONE O VENDEDOR.'; return; }
-    if(!entryDate){ status.textContent = 'INFORME A DATA.'; return; }
-    const values = {faturamento:{}, itens:{}, garantia:{}};
-    let changed = 0;
-    for(const input of comEntryInputs()){
-      const [kind, channel] = input.dataset.comEntry.split(':');
-      const value = kind === 'itens' ? comItemsFromInput(input) : comCentsFromInput(input);
-      if(value === null) continue;
-      if(Number.isNaN(value) || value < 0){ status.textContent = 'INFORME VALORES VÁLIDOS (ZERO OU MAIS).'; return; }
-      if(String(value) === input.dataset.current) continue;
-      values[kind][channel] = value;
-      changed++;
-    }
-    if(!changed){ status.textContent = 'NENHUM VALOR FOI ALTERADO EM RELAÇÃO AO ACUMULADO ATUAL.'; return; }
-    try{
-      await comApi('/entries', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({employeeId, entryDate, values})});
-      comOverview = null;
-      await refreshAfterAction(async () => {
-        await comLoadManage({silent:true});
-        await comLoadEntries({silent:true});
-      });
-      el('comEntrySeller').value = employeeId;
-      comPrefillEntryValues();
-      showPurchaseToast(changed === 1 ? 'Lançamento salvo.' : changed+' lançamentos salvos.');
-    }catch(error){
-      status.textContent = error.message;
-    }
-  });
-
-  function comRenderEntries(){
-    const body = el('comEntryTableBody');
-    if(!body) return;
-    const rows = comEntries.filter(row => !comStoreFilter || row.companyId === comStoreFilter);
-    if(!rows.length){
-      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Nenhum lançamento neste mês.</td></tr>';
+      comImport.preview = null;
+      el('comImportPreview').hidden = true;
+      comImportStatus(error.message, 'error');
       return;
     }
-    body.innerHTML = rows.map(row =>
-      '<tr>'+
-        '<td data-label="Data">'+escapeHtml(formatDateBR(row.entryDate))+'</td>'+
-        '<td data-label="Vendedor">'+escapeHtml(row.employeeName)+'</td>'+
-        '<td data-label="Loja">'+escapeHtml(row.companyName || '—')+'</td>'+
-        '<td data-label="Tipo">'+escapeHtml(COM_KIND_LABELS[row.kind] || row.kind)+'</td>'+
-        '<td data-label="Canal">'+escapeHtml(COM_CHANNEL_LABELS[row.channel] || row.channel)+'</td>'+
-        '<td data-label="Acumulado">'+escapeHtml(comFormatValue(row.kind, row.value))+'</td>'+
-        '<td data-label="Lançado por">'+escapeHtml(row.createdByName || '—')+'</td>'+
-        '<td><button class="btn-outline btn-sm" type="button" data-com-entry-delete="'+escapeHtml(row.id)+'">EXCLUIR</button></td>'+
-      '</tr>'
+    comImportStatus('');
+    comRenderPreview();
+  }
+
+  function comRenderPreview(){
+    const box = el('comImportPreview');
+    const preview = comImport && comImport.preview;
+    if(!box || !preview) return;
+    const s = preview.summary;
+    const pending = s.unmatched + s.duplicate;
+    el('comImportSummary').innerHTML =
+      '<span class="status-pill done">'+s.ok+' PRONTO'+(s.ok === 1 ? '' : 'S')+'</span>'+
+      (pending ? '<span class="status-pill alert">'+pending+' PENDENTE'+(pending === 1 ? '' : 'S')+'</span>' : '')+
+      (s.ignored ? '<span class="status-pill waiting">'+s.ignored+' IGNORADA'+(s.ignored === 1 ? '' : 'S')+'</span>' : '')+
+      (s.outOfScope ? '<span class="status-pill waiting">'+s.outOfScope+' FORA DA SUA LOJA</span>' : '');
+    el('comImportErrors').innerHTML = preview.errors.map(error => '<li>'+escapeHtml(error)+'</li>').join('');
+    el('comImportErrors').hidden = !preview.errors.length;
+    const options = '<option value="__none">ESCOLHA O FUNCIONÁRIO</option><option value="">IGNORAR ESTA LINHA</option>'+
+      preview.employees.map(employee => '<option value="'+escapeHtml(employee.id)+'">'+escapeHtml(employee.fullName+(employee.companyName ? ' — '+employee.companyName : ''))+'</option>').join('');
+    el('comImportRows').innerHTML = preview.rows.map(row => {
+      const [tone, label] = COM_ROW_STATUS[row.status] || ['', row.status];
+      return '<li class="com-import-row status-'+row.status+'">'+
+        '<div class="com-import-who"><strong>'+escapeHtml(row.sellerLabel)+'</strong><span>'+escapeHtml(row.storeLabel || '—')+(row.zone ? ' · '+escapeHtml(row.zone) : '')+' · linha '+row.rowNumber+'</span></div>'+
+        '<span class="status-pill '+tone+'">'+escapeHtml(label)+'</span>'+
+        '<div class="field com-import-map"><label>Funcionário no RH</label><select data-com-alias="'+escapeHtml(row.aliasKey)+'">'+options+'</select></div>'+
+        '<dl class="com-import-values">'+
+          '<div><dt>Faturado / Meta</dt><dd>'+escapeHtml(formatCentsBRL(row.revenueCents)+' / '+formatCentsBRL(row.targetRevenueCents))+'</dd></div>'+
+          '<div><dt>Itens / Meta</dt><dd>'+escapeHtml(row.items+' / '+row.targetItems)+'</dd></div>'+
+          '<div><dt>Garantia / Meta</dt><dd>'+escapeHtml(formatCentsBRL(row.warrantyCents)+' / '+formatCentsBRL(row.targetWarrantyCents))+'</dd></div>'+
+          '<div><dt>Realmes / Meta</dt><dd>'+escapeHtml(row.realme+' / '+row.targetRealme)+'</dd></div>'+
+        '</dl>'+
+      '</li>';
+    }).join('');
+    el('comImportRows').querySelectorAll('[data-com-alias]').forEach(select => {
+      const row = preview.rows.find(item => item.aliasKey === select.dataset.comAlias);
+      select.value = row.status === 'ignored' ? '' : (row.employeeId || '__none');
+    });
+    const confirmButton = el('btnComImportConfirm');
+    confirmButton.disabled = pending > 0 || s.ok === 0;
+    confirmButton.textContent = pending ? 'RESOLVA AS PENDÊNCIAS PARA CONFIRMAR' : 'CONFIRMAR IMPORTAÇÃO ('+s.ok+(s.ok === 1 ? ' VENDEDOR' : ' VENDEDORES')+')';
+    box.hidden = false;
+  }
+
+  if(el('comImportFile')) el('comImportFile').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    if(!file) return;
+    comImportStatus('LENDO O ARQUIVO…');
+    el('comImportPreview').hidden = true;
+    try{
+      const XLSX = await ensureXlsx();
+      const workbook = XLSX.read(await readAsArrayBuffer(file), {type:'array'});
+      comImport = {fileName:file.name, workbook, sheetName:'', cells:[], mappings:{}, preview:null};
+      const names = workbook.SheetNames;
+      el('comImportSheet').innerHTML = names.map(name => '<option value="'+escapeHtml(name)+'">'+escapeHtml(name.trim())+'</option>').join('');
+      el('comImportSheetField').hidden = names.length < 2;
+      const suggestion = comSuggestSheet(names) || (names.length === 1 ? names[0] : '');
+      if(!suggestion){
+        el('comImportSheet').insertAdjacentHTML('afterbegin', '<option value="">ESCOLHA A ABA</option>');
+        el('comImportSheet').value = '';
+        comImportStatus('NÃO ACHEI A ABA "VENDEDORES" DO MÊS SELECIONADO — ESCOLHA A ABA.', 'error');
+        return;
+      }
+      el('comImportSheet').value = suggestion;
+      comImport.sheetName = suggestion;
+      await comLoadPreview();
+    }catch(error){
+      comResetImport();
+      comImportStatus(error.message || 'NÃO FOI POSSÍVEL LER O ARQUIVO.', 'error');
+    }
+  });
+
+  if(el('comImportSheet')) el('comImportSheet').addEventListener('change', async () => {
+    if(!comImport) return;
+    comImport.sheetName = el('comImportSheet').value;
+    comImport.mappings = {};
+    if(comImport.sheetName) await comLoadPreview();
+  });
+
+  if(el('comImportRows')) el('comImportRows').addEventListener('change', async event => {
+    const select = event.target.closest('[data-com-alias]');
+    if(!select || !comImport) return;
+    if(select.value === '__none') delete comImport.mappings[select.dataset.comAlias];
+    else comImport.mappings[select.dataset.comAlias] = select.value;
+    await comLoadPreview();
+  });
+
+  if(el('btnComImportCancel')) el('btnComImportCancel').addEventListener('click', comResetImport);
+
+  if(el('btnComImportConfirm')) el('btnComImportConfirm').addEventListener('click', async () => {
+    if(!comImport || !comImport.preview) return;
+    const button = el('btnComImportConfirm');
+    button.disabled = true;
+    try{
+      const result = await comRequestPreview(true);
+      comResetImport();
+      comOverview = null;
+      comRanking = null;
+      await refreshAfterAction(async () => {
+        await comLoadManage({silent:true});
+        await comLoadImports();
+      });
+      showPurchaseToast(result.imported+(result.imported === 1 ? ' vendedor importado.' : ' vendedores importados.'));
+    }catch(error){
+      button.disabled = false;
+      comImportStatus(error.message, 'error');
+    }
+  });
+
+  function comRenderImports(){
+    const list = el('comImportHistory');
+    if(!list) return;
+    if(!comImports.length){ list.innerHTML = '<li class="com-empty">Nenhuma importação neste mês.</li>'; return; }
+    list.innerHTML = comImports.map(item =>
+      '<li class="com-history-row"><strong>'+escapeHtml(formatDateTimeBR(item.createdAt))+'</strong>'+
+      '<span>'+escapeHtml((item.createdByName || '—')+' · '+(item.fileName || 'arquivo')+' · aba '+(item.sheetName || '—').trim())+'</span>'+
+      '<span>'+escapeHtml(item.rowsImported+' importado'+(item.rowsImported === 1 ? '' : 's')+(item.rowsIgnored ? ' · '+item.rowsIgnored+' não importado'+(item.rowsIgnored === 1 ? '' : 's') : ''))+'</span></li>'
     ).join('');
   }
 
-  if(el('comEntryTableBody')) el('comEntryTableBody').addEventListener('click', async event => {
-    const button = event.target.closest('[data-com-entry-delete]');
-    if(!button) return;
-    if(!confirm('Excluir este lançamento? O realizado volta ao lançamento anterior.')) return;
-    try{
-      await comApi('/entries?id='+encodeURIComponent(button.dataset.comEntryDelete), {method:'DELETE'});
-      comOverview = null;
-      await refreshAfterAction(async () => {
-        await comLoadManage({silent:true});
-        await comLoadEntries({silent:true});
-      });
-      showPurchaseToast('Lançamento excluído.');
-    }catch(error){
-      showPurchaseToast(error.message, 'error');
-    }
-  });
+  function comRenderManageSummary(){
+    const node = el('comManageSummary');
+    if(!node || !comManage) return;
+    const count = comManage.sellers.length;
+    node.textContent = count
+      ? count+(count === 1 ? ' vendedor importado' : ' vendedores importados')+' neste mês'+(comManage.allStores ? '' : ' na sua loja')+'. Uma nova importação substitui todos os números do mês.'
+      : 'Nenhum vendedor importado neste mês ainda.';
+  }
 
+  // ---------- Abas, carregamento e filtros ----------
   document.querySelectorAll('[data-com-view]').forEach(button => {
     button.addEventListener('click', () => {
       comView = button.dataset.comView;
@@ -35178,39 +35206,26 @@ function renderHomeTasks(){
         tab.classList.toggle('active', active);
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
       });
-      el('comViewDashboard').hidden = comView !== 'dashboard';
-      el('comViewComissao').hidden = comView !== 'comissao';
-      el('comViewRanking').hidden = comView !== 'ranking';
-      el('comViewMetas').hidden = comView !== 'metas';
+      ['Dashboard','Comissao','Ranking','Metas'].forEach(name => {
+        el('comView'+name).hidden = comView !== name.toLowerCase();
+      });
       comStoreFilter = '';
+      comZoneFilter = '';
       comSellerFilter = '';
-      const data = comData();
-      if(comView !== 'ranking' && data && data.month === comMonth) comRenderCurrent();
+      const data = comView === 'ranking' ? comRanking : comData();
+      if(data && data.month === comMonth) comRenderCurrent();
       else loadComercialPage('comercialAcompanhamento');
     });
   });
 
-  document.querySelectorAll('[data-com-tab]').forEach(button => {
-    button.addEventListener('click', () => {
-      document.querySelectorAll('[data-com-tab]').forEach(tab => {
-        const active = tab === button;
-        tab.classList.toggle('active', active);
-        tab.setAttribute('aria-selected', active ? 'true' : 'false');
-      });
-      el('comTabMetas').hidden = button.dataset.comTab !== 'metas';
-      el('comTabLancamentos').hidden = button.dataset.comTab !== 'lancamentos';
-    });
-  });
-
-  // ---------- Carregamento e filtros ----------
   function comRenderCurrent(){
     comRenderFilters();
     if(comView === 'dashboard') comRenderDashboard();
     if(comView === 'comissao') comRenderCommission();
+    if(comView === 'ranking') comRenderRanking();
     if(comView === 'metas'){
-      comRenderGoals();
-      comFillEntryForm();
-      comRenderEntries();
+      comRenderManageSummary();
+      comRenderImports();
     }
   }
 
@@ -35228,33 +35243,25 @@ function renderHomeTasks(){
     comRenderCurrent();
   }
 
-  async function comLoadManage(opts){
-    const options = opts || {};
-    const list = el('comGoalList');
-    if(!options.silent && list) list.innerHTML = '<p class="com-empty">Carregando…</p>';
+  async function comLoadManage(){
     try{
       comManage = await comApi('/overview?month='+encodeURIComponent(comMonth)+'&for=cadastro');
     }catch(error){
       comManage = null;
-      if(list) list.innerHTML = '<p class="com-empty">'+escapeHtml(error.message)+'</p>';
+      if(el('comManageSummary')) el('comManageSummary').textContent = error.message;
       return;
     }
     comRenderCurrent();
   }
 
-  async function comLoadEntries(opts){
-    const options = opts || {};
-    const body = el('comEntryTableBody');
-    if(!options.silent && body) body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+  async function comLoadImports(){
     try{
-      const data = await comApi('/entries?month='+encodeURIComponent(comMonth));
-      comEntries = Array.isArray(data.items) ? data.items : [];
+      const data = await comApi('/import?month='+encodeURIComponent(comMonth));
+      comImports = Array.isArray(data.items) ? data.items : [];
     }catch(error){
-      comEntries = [];
-      if(body) body.innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-      return;
+      comImports = [];
     }
-    comRenderEntries();
+    comRenderImports();
   }
 
   async function comLoadRanking(opts){
@@ -35268,7 +35275,7 @@ function renderHomeTasks(){
       if(list) list.innerHTML = '<li class="com-empty">'+escapeHtml(error.message)+'</li>';
       return;
     }
-    comRenderRanking();
+    comRenderCurrent();
   }
 
   async function loadComercialPage(name, opts){
@@ -35288,8 +35295,7 @@ function renderHomeTasks(){
       return;
     }
     if(comView === 'metas'){
-      await comLoadManage(opts);
-      await comLoadEntries(opts);
+      await Promise.all([comLoadManage(opts), comLoadImports()]);
       return;
     }
     await comLoadOverview(opts);
@@ -35301,27 +35307,26 @@ function renderHomeTasks(){
       comMonth = input.value;
       comOverview = null;
       comManage = null;
-      if(el('comEntryDate')) el('comEntryDate').value = '';
+      comRanking = null;
+      comResetImport();
       loadComercialPage(comCurrentPage);
     });
   });
-  document.querySelectorAll('[data-com-store]').forEach(select => {
-    select.addEventListener('change', () => {
-      comStoreFilter = select.value;
-      comSellerFilter = '';
-      comRenderCurrent();
-    });
+  if(el('comStoreFilter')) el('comStoreFilter').addEventListener('change', () => {
+    comStoreFilter = el('comStoreFilter').value;
+    comSellerFilter = '';
+    comRenderCurrent();
   });
-  document.querySelectorAll('[data-com-seller]').forEach(select => {
-    select.addEventListener('change', () => {
-      comSellerFilter = select.value;
-      comRenderCurrent();
-    });
+  if(el('comZoneFilter')) el('comZoneFilter').addEventListener('change', () => {
+    comZoneFilter = el('comZoneFilter').value;
+    comSellerFilter = '';
+    comRenderCurrent();
+  });
+  if(el('comSellerFilter')) el('comSellerFilter').addEventListener('change', () => {
+    comSellerFilter = el('comSellerFilter').value;
+    comRenderCurrent();
   });
   if(el('comRankMetric')) el('comRankMetric').addEventListener('change', comRenderRanking);
-  comEntryInputs().forEach(input => {
-    if(input.dataset.comEntry.split(':')[0] !== 'itens') attachCurrencyMask(input);
-  });
 
   // ================= RH / ESCALAS E FOLGAS =================
   // Substitui uma planilha externa. Jornada 6x1. O cálculo de folgas é

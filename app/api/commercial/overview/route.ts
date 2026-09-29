@@ -11,12 +11,13 @@ import {
   commercialScope,
   identity,
   jsonResponse,
+  linkedEmployeeIds,
   loadSellers,
   safeText,
 } from "../shared";
 
-// Dashboard + Comissão: vendedores do mês com meta, realizado (Loja/Online)
-// e as métricas já calculadas (percentual, alvo seguinte, média diária
+// Dashboard + Comissão: vendedores do mês (importados da planilha) com meta,
+// realizado e as métricas já calculadas (percentual, alvo seguinte, média diária
 // necessária e comissão estimada).
 //
 // Quem vê o quê (decisão confirmada com o usuário):
@@ -46,11 +47,15 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const { sellers, clock } = await loadSellers(database, month);
-    const own = actor.id && !forCadastro ? sellers.filter((seller) => seller.userId === actor.id) : [];
-    const ownOnly = own.length > 0;
+    const [{ sellers, clock }, linked] = await Promise.all([
+      loadSellers(database, month),
+      forCadastro ? Promise.resolve([] as string[]) : linkedEmployeeIds(database, actor.id),
+    ]);
+    // Conta vinculada a um vendedor: só ele, mesmo que o mês ainda não
+    // tenha sido importado (a tela mostra "ainda não importado").
+    const ownOnly = linked.length > 0;
     const visible = ownOnly
-      ? own
+      ? sellers.filter((seller) => linked.includes(seller.employeeId))
       : scope.allStores ? sellers : sellers.filter((seller) => seller.companyId === scope.companyId);
     return jsonResponse({
       month,
@@ -59,8 +64,7 @@ export async function GET(request: Request) {
       allStores: !ownOnly && scope.allStores,
       companyId: scope.companyId,
       canManage: canManageCommercial(actor),
-      // userId é só interno (undefined some do JSON).
-      sellers: visible.map((seller) => ({ ...seller, userId: undefined })),
+      sellers: visible,
     });
   } catch (error) {
     console.error("Não foi possível carregar o Comercial.", error);

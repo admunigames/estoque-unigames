@@ -26,9 +26,11 @@ export async function GET(request: Request) {
       employeeId: seller.employeeId,
       name: seller.name,
       companyName: seller.companyName,
+      zone: seller.zone,
       revenuePercent: seller.metrics.revenue.percent,
       itemsPercent: seller.metrics.items.percent,
       warrantyPercent: seller.metrics.warranty.percent,
+      realmePercent: seller.metrics.realme.percent,
     }));
     return jsonResponse({ month, items });
   } catch (error) {

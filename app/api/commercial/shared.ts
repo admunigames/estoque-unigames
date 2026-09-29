@@ -3,13 +3,10 @@ import { canSeeAllStores, hasCompany, type ScopeActor } from "../../lib/access-s
 import { todayInTimezone } from "../../lib/finance-status";
 import {
   computeSellerMetrics,
-  isSellerRole,
   monthClock,
-  realizedFromEntries,
-  type EntryLike,
   type Goal,
   type MonthClock,
-  type RealizedTotals,
+  type Realized,
   type SellerMetrics,
 } from "../../lib/commercial";
 
@@ -17,7 +14,7 @@ import {
 // (MODULE_VIEW_PERMISSIONS.commercial em worker/index.ts), independentes do
 // Financeiro e do RH Financeiro:
 //   comercial:view   → Dashboard, Comissão e Ranking (só leitura)
-//   comercial:manage → tudo acima + cadastro de metas e lançamento do realizado
+//   comercial:manage → tudo acima + importação da planilha de metas/realizado
 //
 // Escopo por loja: mesma regra de canSeeAllStores() (app/lib/access-scope.ts)
 // — admin vê todas; usuário com loja vinculada fica preso à própria loja;
@@ -144,156 +141,105 @@ export async function loadCompanyNames(database: Database): Promise<Map<string, 
   return names;
 }
 
-type EmployeeRow = {
-  id: string;
-  fullName: string;
-  userId?: string;
-  roleTitle: string;
-  companyId: string;
-  companyName: string;
-  status: string;
-};
-
-type GoalRow = Goal & {
-  id: string;
+export type MonthlyRow = Goal & Realized & {
   employeeId: string;
   employeeName: string;
   companyId: string;
   companyName: string;
+  sheetSellerName: string;
+  sheetStoreName: string;
+  zone: string;
   updatedAt: string;
   updatedByName: string;
 };
 
-type EntryRow = EntryLike & { employeeId: string };
-
 export type Seller = {
   employeeId: string;
-  // Conta de acesso vinculada em RH > Funcionários ('' = sem vínculo).
-  // Uso interno (define "o próprio vendedor"); nunca vai na resposta.
-  userId: string;
   name: string;
   companyId: string;
   companyName: string;
-  active: boolean;
-  goal: (Goal & { id: string; updatedAt: string; updatedByName: string }) | null;
-  realized: RealizedTotals;
-  lastEntryDate: string;
+  zone: string;
+  sheetSellerName: string;
+  goal: Goal;
+  realized: Realized;
+  updatedAt: string;
+  updatedByName: string;
   metrics: SellerMetrics;
 };
 
+const MONTHLY_COLUMNS = `
+  m.employee_id AS employeeId, m.employee_name AS employeeName, m.company_id AS companyId,
+  m.company_name AS companyName, m.sheet_seller_name AS sheetSellerName,
+  m.sheet_store_name AS sheetStoreName, m.zone,
+  m.target_revenue_cents AS targetRevenueCents, m.target_items AS targetItems,
+  m.target_super_items AS targetSuperItems, m.target_warranty_cents AS targetWarrantyCents,
+  m.target_realme AS targetRealme, m.revenue_cents AS revenueCents, m.items,
+  m.warranty_cents AS warrantyCents, m.realme, m.warranty_qty AS warrantyQty,
+  m.notebook_qty AS notebookQty, m.updated_at AS updatedAt, m.updated_by_name AS updatedByName,
+  e.full_name AS currentName
+`;
+
+const n = (value: unknown) => Number(value) || 0;
+
 /**
- * Vendedores do mês + meta + realizado + métricas calculadas ao vivo.
- *
- * Entram: todo funcionário ATIVO cujo cargo contém "vendedor" e, além
- * deles, quem já tem meta ou lançamento no mês (ex.: desligado no meio do
- * mês, ou cargo alterado depois) — pra não sumir número já lançado.
- * A loja do vendedor no mês é a da meta, quando existe (meta é "por
- * loja"); senão, a loja atual do cadastro do funcionário.
+ * Vendedores do mês = linhas importadas da planilha, com as métricas já
+ * calculadas. Nome atual e loja vêm do cadastro do RH quando o funcionário
+ * ainda existe (a loja do RH é a oficial para o escopo).
  */
 export async function loadSellers(database: Database, month: string): Promise<{ sellers: Seller[]; clock: MonthClock }> {
-  const [employeesResult, goalsResult, entriesResult, companyNames] = await Promise.all([
+  const [result, companyNames] = await Promise.all([
     database
       .prepare(
-        `SELECT id, full_name AS fullName, user_id AS userId, role_title AS roleTitle,
-                company_id AS companyId, company_name AS companyName, status
-         FROM hr_employees`,
-      )
-      .all<EmployeeRow>(),
-    database
-      .prepare(
-        `SELECT id, employee_id AS employeeId, employee_name AS employeeName, company_id AS companyId,
-                company_name AS companyName, target_revenue_cents AS targetRevenueCents,
-                target_items AS targetItems, target_warranty_cents AS targetWarrantyCents,
-                updated_at AS updatedAt, updated_by_name AS updatedByName
-         FROM commercial_goals WHERE month=?1`,
+        `SELECT ${MONTHLY_COLUMNS}, e.company_id AS currentCompanyId
+         FROM commercial_monthly m LEFT JOIN hr_employees e ON e.id = m.employee_id
+         WHERE m.month=?1`,
       )
       .bind(month)
-      .all<GoalRow>(),
-    database
-      .prepare(
-        `SELECT employee_id AS employeeId, channel, kind, value, entry_date AS entryDate, created_at AS createdAt
-         FROM commercial_entries WHERE month=?1`,
-      )
-      .bind(month)
-      .all<EntryRow>(),
+      .all<MonthlyRow & { currentName: string | null; currentCompanyId: string | null }>(),
     loadCompanyNames(database),
   ]);
-
-  const employees = new Map((employeesResult.results ?? []).map((row) => [row.id, row]));
-  const goals = new Map((goalsResult.results ?? []).map((row) => [row.employeeId, row]));
-  const entriesByEmployee = new Map<string, EntryRow[]>();
-  for (const entry of entriesResult.results ?? []) {
-    const list = entriesByEmployee.get(entry.employeeId) ?? [];
-    list.push(entry);
-    entriesByEmployee.set(entry.employeeId, list);
-  }
-
-  const ids = new Set<string>();
-  for (const employee of employees.values()) {
-    if (employee.status === "active" && isSellerRole(employee.roleTitle)) ids.add(employee.id);
-  }
-  for (const id of goals.keys()) ids.add(id);
-  for (const id of entriesByEmployee.keys()) ids.add(id);
-
   const clock = monthClock(month, todayInTimezone());
-  const sellers: Seller[] = [];
-  for (const id of ids) {
-    const employee = employees.get(id);
-    const goal = goals.get(id) ?? null;
-    const entries = entriesByEmployee.get(id) ?? [];
-    const companyId = goal?.companyId || employee?.companyId || "";
-    const companyName = companyNames.get(companyId) || goal?.companyName || employee?.companyName || "";
-    const realized = realizedFromEntries(entries);
-    const normalizedGoal = goal
-      ? {
-          id: goal.id,
-          targetRevenueCents: Number(goal.targetRevenueCents) || 0,
-          targetItems: Number(goal.targetItems) || 0,
-          targetWarrantyCents: Number(goal.targetWarrantyCents) || 0,
-          updatedAt: goal.updatedAt,
-          updatedByName: goal.updatedByName,
-        }
-      : null;
-    sellers.push({
-      employeeId: id,
-      userId: employee?.userId || "",
-      name: employee?.fullName || goal?.employeeName || "(funcionário removido)",
+  const sellers = (result.results ?? []).map((row): Seller => {
+    const goal: Goal = {
+      targetRevenueCents: n(row.targetRevenueCents),
+      targetItems: n(row.targetItems),
+      targetSuperItems: n(row.targetSuperItems),
+      targetWarrantyCents: n(row.targetWarrantyCents),
+      targetRealme: n(row.targetRealme),
+    };
+    const realized: Realized = {
+      revenueCents: n(row.revenueCents),
+      items: n(row.items),
+      warrantyCents: n(row.warrantyCents),
+      realme: n(row.realme),
+      warrantyQty: n(row.warrantyQty),
+      notebookQty: n(row.notebookQty),
+    };
+    const companyId = row.currentCompanyId || row.companyId;
+    return {
+      employeeId: row.employeeId,
+      name: row.currentName || row.employeeName,
       companyId,
-      companyName,
-      active: employee?.status === "active",
-      goal: normalizedGoal,
+      companyName: companyNames.get(companyId) || row.companyName,
+      zone: row.zone,
+      sheetSellerName: row.sheetSellerName,
+      goal,
       realized,
-      lastEntryDate: entries.reduce((latest, entry) => (entry.entryDate > latest ? entry.entryDate : latest), ""),
-      metrics: computeSellerMetrics(normalizedGoal, realized, clock),
-    });
-  }
+      updatedAt: row.updatedAt,
+      updatedByName: row.updatedByName,
+      metrics: computeSellerMetrics(goal, realized, clock),
+    };
+  });
   sellers.sort((a, b) => a.companyName.localeCompare(b.companyName, "pt-BR") || a.name.localeCompare(b.name, "pt-BR"));
   return { sellers, clock };
 }
 
-/** Funcionário apto a receber meta/lançamento, respeitando o escopo de loja do ator. */
-export async function loadSellerForWrite(
-  database: Database,
-  actor: Identity,
-  employeeId: string,
-): Promise<{ error: string; status: number } | { employee: EmployeeRow; companyName: string }> {
-  const scope = commercialScope(actor);
-  if (!scope) return { error: "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.", status: 403 };
-  const employee = await database
-    .prepare(
-      `SELECT id, full_name AS fullName, role_title AS roleTitle, company_id AS companyId,
-              company_name AS companyName, status
-       FROM hr_employees WHERE id=?1 LIMIT 1`,
-    )
-    .bind(employeeId)
-    .first<EmployeeRow>();
-  if (!employee) return { error: "VENDEDOR NÃO ENCONTRADO.", status: 404 };
-  if (!isSellerRole(employee.roleTitle)) {
-    return { error: "ESSE FUNCIONÁRIO NÃO TEM CARGO DE VENDEDOR EM RH > FUNCIONÁRIOS.", status: 400 };
-  }
-  if (!scope.allStores && employee.companyId !== scope.companyId) {
-    return { error: "VOCÊ SÓ PODE LANÇAR DADOS DE VENDEDORES DA SUA LOJA.", status: 403 };
-  }
-  const companyNames = await loadCompanyNames(database);
-  return { employee, companyName: companyNames.get(employee.companyId) || employee.companyName };
+/** Funcionários vinculados à conta logada (RH > Funcionários > Conta de acesso). */
+export async function linkedEmployeeIds(database: Database, userId: string): Promise<string[]> {
+  if (!userId) return [];
+  const result = await database
+    .prepare("SELECT id FROM hr_employees WHERE user_id=?1")
+    .bind(userId)
+    .all<{ id: string }>();
+  return (result.results ?? []).map((row) => row.id);
 }
