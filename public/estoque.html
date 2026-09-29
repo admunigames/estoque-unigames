@@ -2937,6 +2937,9 @@
   .com-sub-tabs .com-view-tab{min-height:32px;padding:7px 13px;font-size:12px}
   /* No celular as abas quebram de linha (nunca ficam escondidas na rolagem). */
   @media(max-width:560px){
+    /* "ACOMPANHAMENTO" é uma palavra só e, no tamanho padrão do título,
+       passava por baixo do botão de tema (canto superior direito). */
+    #pageComercialAcompanhamento .page-title{font-size:clamp(13px,3.7vw,18px)}
     .com-view-tabs{display:flex;flex-wrap:wrap;width:100%;overflow:visible}
     .com-view-tab{flex:1 1 auto;padding-inline:12px}
   }
