@@ -147,6 +147,7 @@ export async function loadCompanyNames(database: Database): Promise<Map<string, 
 type EmployeeRow = {
   id: string;
   fullName: string;
+  userId?: string;
   roleTitle: string;
   companyId: string;
   companyName: string;
@@ -167,6 +168,9 @@ type EntryRow = EntryLike & { employeeId: string };
 
 export type Seller = {
   employeeId: string;
+  // Conta de acesso vinculada em RH > Funcionários ('' = sem vínculo).
+  // Uso interno (define "o próprio vendedor"); nunca vai na resposta.
+  userId: string;
   name: string;
   companyId: string;
   companyName: string;
@@ -190,8 +194,8 @@ export async function loadSellers(database: Database, month: string): Promise<{ 
   const [employeesResult, goalsResult, entriesResult, companyNames] = await Promise.all([
     database
       .prepare(
-        `SELECT id, full_name AS fullName, role_title AS roleTitle, company_id AS companyId,
-                company_name AS companyName, status
+        `SELECT id, full_name AS fullName, user_id AS userId, role_title AS roleTitle,
+                company_id AS companyId, company_name AS companyName, status
          FROM hr_employees`,
       )
       .all<EmployeeRow>(),
@@ -252,6 +256,7 @@ export async function loadSellers(database: Database, month: string): Promise<{ 
       : null;
     sellers.push({
       employeeId: id,
+      userId: employee?.userId || "",
       name: employee?.fullName || goal?.employeeName || "(funcionário removido)",
       companyId,
       companyName,

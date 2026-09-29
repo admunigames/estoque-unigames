@@ -4102,9 +4102,7 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
   // Seção própria no menu lateral (fora de Financeiro e RH), com as 4 telas.
   assert.match(html, /<div class="nav-group" data-any-permission="comercial">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
   for (const [page, route] of [
-    ["comercialDashboard", "/comercial/dashboard"],
-    ["comercialComissao", "/comercial/comissao"],
-    ["comercialRanking", "/comercial/ranking"],
+    ["comercialAcompanhamento", "/comercial/acompanhamento"],
     ["comercialMetas", "/comercial/metas"],
   ]) {
     assert.match(html, new RegExp(`data-page="${page}"`));
@@ -4113,8 +4111,15 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
   }
   assert.match(html, /id="navComercialMetas" data-page="comercialMetas" data-permission="comercial:manage"/);
   assert.match(html, /comercialMetas:'comercial:manage',/);
-  for (const id of ["pageComercialDashboard", "pageComercialComissao", "pageComercialRanking", "pageComercialMetas"]) {
+  for (const id of ["pageComercialAcompanhamento", "pageComercialMetas"]) {
     assert.match(html, new RegExp(`<section id="${id}" class="page wrap">`));
+  }
+  // Acompanhamento Metas é UM item de menu, com Dashboard/Comissão/Ranking
+  // como abas internas (não três itens soltos no menu).
+  assert.match(html, /id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial"/);
+  assert.doesNotMatch(html, /id="navComercial(Dashboard|Comissao|Ranking)"/);
+  for (const view of ["dashboard", "comissao", "ranking"]) {
+    assert.match(html, new RegExp(`class="com-view-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-com-view="${view}"`));
   }
 
   // Checkboxes no Cadastro de Usuários, no mesmo padrão das demais permissões.
@@ -4131,6 +4136,10 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
   assert.match(shared, /from "\.\.\/\.\.\/lib\/access-scope"/);
   assert.match(shared, /canSeeAllStores\(actor, "comercial:view"\) \|\| canSeeAllStores\(actor, "comercial:manage"\)/);
   assert.match(overviewRoute, /scope\.allStores \? sellers : sellers\.filter\(\(seller\) => seller\.companyId === scope\.companyId\)/);
+  // Conta vinculada a um vendedor vê só o próprio no Dashboard/Comissão.
+  assert.match(overviewRoute, /sellers\.filter\(\(seller\) => seller\.userId === actor\.id\)/);
+  assert.match(overviewRoute, /const visible = ownOnly\s*\?\s*own/);
+  assert.match(overviewRoute, /userId: undefined/);
   assert.match(entriesRoute, /VOCÊ SÓ PODE EXCLUIR LANÇAMENTOS DA SUA LOJA\./);
   assert.match(shared, /VOCÊ SÓ PODE LANÇAR DADOS DE VENDEDORES DA SUA LOJA\./);
 

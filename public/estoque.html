@@ -2921,7 +2921,22 @@
   .com-hint{margin:0 0 14px;color:var(--ink-soft);font:500 12px/1.5 var(--sans)}
   .com-empty{margin:0;padding:22px 16px;border:1px dashed var(--surface-border);border-radius:var(--radius-surface);color:var(--ink-soft);font:600 12.5px/1.5 var(--sans);text-align:center;list-style:none}
   .com-section-title{margin:26px 0 12px;font:800 11px/1.3 var(--mono);letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase}
-  .com-tabs{margin-bottom:16px}
+  /* Abas internas do Comercial: barra única, aba ativa preenchida, demais
+     só texto (modelo pedido pelo usuário). Rolagem horizontal se faltar
+     espaço, sem quebrar a página. */
+  .com-view-tabs{
+    display:inline-flex;max-width:100%;gap:4px;margin-bottom:16px;padding:4px;overflow-x:auto;
+    border:1px solid var(--surface-border);border-radius:12px;background:var(--bg-card);scrollbar-width:none;
+  }
+  .com-view-tabs::-webkit-scrollbar{display:none}
+  .com-view-tab{
+    flex:none;min-height:36px;padding:8px 16px;border:1px solid transparent;border-radius:9px;background:transparent;
+    color:var(--ink-soft);font:800 12.5px/1 var(--sans);text-transform:none;cursor:pointer;white-space:nowrap;
+  }
+  .com-view-tab:hover{color:var(--ink)}
+  .com-view-tab.active{background:var(--accent-deep);border-color:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  html[data-theme="light"] .com-view-tabs{background:#fff}
+  html[data-theme="light"] .com-view-tab.active{background:var(--accent);border-color:var(--accent-deep)}
   .com-seller-list{display:flex;flex-direction:column;gap:16px}
   .com-seller,.com-commission,.com-goal-card,.com-entry-form,.com-rule,.com-total{
     border:1px solid var(--surface-border);border-radius:var(--radius-surface);background:var(--bg-card);
@@ -3169,10 +3184,8 @@
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 16.5 9 11 13 14.5 20.5 7"/><polyline points="15.5 7 20.5 7 20.5 12"/></svg></span><span class="nav-label">Comercial</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navComercialSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário e ranking geral de vendedores (só percentual)." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
         <a class="nav-item sub-item" id="navComercialMetas" data-page="comercialMetas" data-permission="comercial:manage" data-home-desc="Cadastro da meta mensal de cada vendedor e lançamento do realizado acumulado (Loja/Online)." title="Cadastro de Metas" href="/comercial/metas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Cadastro de Metas</span></a>
-        <a class="nav-item sub-item" id="navComercialComissao" data-page="comercialComissao" data-permission="comercial" data-home-desc="Comissão estimada do mês por vendedor: faixa de faturamento, premiação por itens e garantia estendida." title="Comissão" href="/comercial/comissao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M14.6 9.2c-.5-.8-1.4-1.2-2.6-1.2-1.6 0-2.6.8-2.6 1.9 0 2.6 5.4 1.3 5.4 4.1 0 1.1-1.1 2-2.8 2-1.3 0-2.3-.5-2.8-1.4"/><path d="M12 6.5V8"/><path d="M12 16v1.5"/></svg></span><span class="nav-label">Comissão</span></a>
-        <a class="nav-item sub-item" id="navComercialDashboard" data-page="comercialDashboard" data-permission="comercial" data-home-desc="Progresso de cada vendedor nas metas de Faturamento, Itens e Garantia Estendida." title="Dashboard" href="/comercial/dashboard"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Dashboard</span></a>
-        <a class="nav-item sub-item" id="navComercialRanking" data-page="comercialRanking" data-permission="comercial" data-home-desc="Ranking de todos os vendedores da empresa pelo percentual da meta." title="Ranking" href="/comercial/ranking"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="7" width="6" height="13" rx="1"/><rect x="3.5" y="11" width="5.5" height="9" rx="1"/><rect x="15" y="13.5" width="5.5" height="6.5" rx="1"/></svg></span><span class="nav-label">Ranking</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="finance,payables">
@@ -6182,81 +6195,38 @@
       </div>
     </section>
 
-    <!-- ================= COMERCIAL / DASHBOARD ================= -->
-    <section id="pageComercialDashboard" class="page wrap">
+    <!-- ================= COMERCIAL / ACOMPANHAMENTO METAS ================= -->
+    <!-- Dashboard e Comissão mostram só o próprio vendedor quando a conta está
+         vinculada a um vendedor (RH > Funcionários > Conta de acesso); gestor
+         sem vínculo vê a loja dele ou todas. Ranking é sempre geral, só %. -->
+    <section id="pageComercialAcompanhamento" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">Dashboard Comercial</h2>
+          <h2 class="page-title">Acompanhamento Metas</h2>
         </div>
       </header>
 
-      <div class="dre-toolbar com-toolbar no-print">
-        <div class="field">
-          <label for="comDashMonth">Mês</label>
-          <input type="month" id="comDashMonth" data-com-month>
-        </div>
-        <div class="field" data-com-all-stores hidden>
-          <label for="comDashStore">Loja</label>
-          <select id="comDashStore" data-com-store><option value="">TODAS</option></select>
-        </div>
-        <div class="field">
-          <label for="comDashSeller">Vendedor</label>
-          <select id="comDashSeller" data-com-seller><option value="">TODOS</option></select>
-        </div>
+      <div class="com-view-tabs" role="tablist" aria-label="Acompanhamento de metas">
+        <button class="com-view-tab active" type="button" role="tab" aria-selected="true" data-com-view="dashboard">Dashboard</button>
+        <button class="com-view-tab" type="button" role="tab" aria-selected="false" data-com-view="comissao">Comissão</button>
+        <button class="com-view-tab" type="button" role="tab" aria-selected="false" data-com-view="ranking">Ranking</button>
       </div>
-      <p class="com-notice" role="note">Os valores são para acompanhamento diário e não representam o fechamento oficial da folha.</p>
-      <div class="com-seller-list" id="comDashList"><p class="com-empty">Carregando…</p></div>
-    </section>
-
-    <!-- ================= COMERCIAL / COMISSÃO ================= -->
-    <section id="pageComercialComissao" class="page wrap">
-      <header class="page-header">
-        <div class="page-heading">
-          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">Comissão Estimada</h2>
-        </div>
-      </header>
 
       <div class="dre-toolbar com-toolbar no-print">
         <div class="field">
-          <label for="comComMonth">Mês</label>
-          <input type="month" id="comComMonth" data-com-month>
+          <label for="comAcompMonth">Mês</label>
+          <input type="month" id="comAcompMonth" data-com-month>
         </div>
-        <div class="field" data-com-all-stores hidden>
-          <label for="comComStore">Loja</label>
-          <select id="comComStore" data-com-store><option value="">TODAS</option></select>
+        <div class="field" data-com-all-stores data-com-scope-filter hidden>
+          <label for="comAcompStore">Loja</label>
+          <select id="comAcompStore" data-com-store><option value="">TODAS</option></select>
         </div>
-        <div class="field">
-          <label for="comComSeller">Vendedor</label>
-          <select id="comComSeller" data-com-seller><option value="">TODOS</option></select>
+        <div class="field" data-com-scope-filter hidden>
+          <label for="comAcompSeller">Vendedor</label>
+          <select id="comAcompSeller" data-com-seller><option value="">TODOS</option></select>
         </div>
-      </div>
-      <p class="com-notice" role="note">Os valores são para acompanhamento diário e não representam o fechamento oficial da folha.</p>
-      <div class="com-rules" aria-label="Regras de comissão">
-        <div class="com-rule"><span>Comissão por vendas (Faturamento)</span><strong>0,4% / 0,6%</strong><small>0,4% entre 80% e 99,9% da meta; 0,6% ao atingir 100%</small></div>
-        <div class="com-rule"><span>Premiação por vendas (Itens)</span><strong>R$ 500 / R$ 1.500</strong><small>R$ 500 ao atingir 110% da meta; R$ 1.500 ao atingir 120% (não cumulativa)</small></div>
-        <div class="com-rule"><span>Comissão por garantia estendida</span><strong>4%</strong><small>Percentual fixo sobre o valor vendido, sem faixa de meta</small></div>
-      </div>
-      <div class="com-total" id="comComTotal" hidden></div>
-      <div class="com-commission-grid" id="comComList"><p class="com-empty">Carregando…</p></div>
-    </section>
-
-    <!-- ================= COMERCIAL / RANKING ================= -->
-    <section id="pageComercialRanking" class="page wrap">
-      <header class="page-header">
-        <div class="page-heading">
-          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">Ranking de Vendedores</h2>
-        </div>
-      </header>
-
-      <div class="dre-toolbar com-toolbar no-print">
-        <div class="field">
-          <label for="comRankMonth">Mês</label>
-          <input type="month" id="comRankMonth" data-com-month>
-        </div>
-        <div class="field">
+        <div class="field" id="comRankMetricField" hidden>
           <label for="comRankMetric">Rankear por</label>
           <select id="comRankMetric">
             <option value="revenuePercent">FATURAMENTO</option>
@@ -6265,8 +6235,27 @@
           </select>
         </div>
       </div>
-      <p class="com-notice" role="note">Todos os vendedores da empresa, de todas as lojas. Só o percentual da meta é exibido — nenhum valor vendido ou de comissão.</p>
-      <ol class="com-ranking" id="comRankList"><li class="com-empty">Carregando…</li></ol>
+
+      <div class="com-view-panel" id="comViewDashboard">
+        <p class="com-notice" role="note">Os valores são para acompanhamento diário e não representam o fechamento oficial da folha.</p>
+        <div class="com-seller-list" id="comDashList"><p class="com-empty">Carregando…</p></div>
+      </div>
+
+      <div class="com-view-panel" id="comViewComissao" hidden>
+        <p class="com-notice" role="note">Os valores são para acompanhamento diário e não representam o fechamento oficial da folha.</p>
+        <div class="com-rules" aria-label="Regras de comissão">
+          <div class="com-rule"><span>Comissão por vendas (Faturamento)</span><strong>0,4% / 0,6%</strong><small>0,4% entre 80% e 99,9% da meta; 0,6% ao atingir 100%</small></div>
+          <div class="com-rule"><span>Premiação por vendas (Itens)</span><strong>R$ 500 / R$ 1.500</strong><small>R$ 500 ao atingir 110% da meta; R$ 1.500 ao atingir 120% (não cumulativa)</small></div>
+          <div class="com-rule"><span>Comissão por garantia estendida</span><strong>4%</strong><small>Percentual fixo sobre o valor vendido, sem faixa de meta</small></div>
+        </div>
+        <div class="com-total" id="comComTotal" hidden></div>
+        <div class="com-commission-grid" id="comComList"><p class="com-empty">Carregando…</p></div>
+      </div>
+
+      <div class="com-view-panel" id="comViewRanking" hidden>
+        <p class="com-notice" role="note">Todos os vendedores da empresa, de todas as lojas. Só o percentual da meta é exibido — nenhum valor vendido ou de comissão.</p>
+        <ol class="com-ranking" id="comRankList"><li class="com-empty">Carregando…</li></ol>
+      </div>
     </section>
 
     <!-- ================= COMERCIAL / CADASTRO DE METAS ================= -->
@@ -6288,9 +6277,9 @@
           <select id="comGoalStore" data-com-store><option value="">TODAS</option></select>
         </div>
       </div>
-      <div class="supply-tabs com-tabs" role="tablist" aria-label="Seções do cadastro comercial">
-        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-com-tab="metas">METAS DO MÊS</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-tab="lancamentos">LANÇAR REALIZADO</button>
+      <div class="com-view-tabs" role="tablist" aria-label="Seções do cadastro comercial">
+        <button class="com-view-tab active" type="button" role="tab" aria-selected="true" data-com-tab="metas">Metas do mês</button>
+        <button class="com-view-tab" type="button" role="tab" aria-selected="false" data-com-tab="lancamentos">Lançar realizado</button>
       </div>
 
       <div class="com-tab-panel" id="comTabMetas">
@@ -10633,9 +10622,7 @@
     rhAcompanhamentoLojas:'/rh/acompanhamento-lojas',
     rhAniversariantes:'/rh/aniversariantes',
     rhOdontologico:'/rh/odontologico',
-    comercialDashboard:'/comercial/dashboard',
-    comercialComissao:'/comercial/comissao',
-    comercialRanking:'/comercial/ranking',
+    comercialAcompanhamento:'/comercial/acompanhamento',
     comercialMetas:'/comercial/metas',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
@@ -10690,9 +10677,7 @@
     rhAcompanhamentoLojas:'ACOMPANHAMENTO - LOJAS',
     rhAniversariantes:'ANIVERSARIANTES',
     rhOdontologico:'PLANO ODONTOLÓGICO',
-    comercialDashboard:'DASHBOARD COMERCIAL',
-    comercialComissao:'COMISSÃO',
-    comercialRanking:'RANKING',
+    comercialAcompanhamento:'ACOMPANHAMENTO METAS',
     comercialMetas:'CADASTRO DE METAS',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
@@ -10743,9 +10728,7 @@
     rhAcompanhamentoLojas:'rh_acompanhamento',
     rhAniversariantes:'rh_aniversariantes',
     rhOdontologico:'rh_odontologico',
-    comercialDashboard:'comercial',
-    comercialComissao:'comercial',
-    comercialRanking:'comercial',
+    comercialAcompanhamento:'comercial',
     comercialMetas:'comercial:manage',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
@@ -34703,6 +34686,7 @@ function renderHomeTasks(){
   let comStoreFilter = '';
   let comSellerFilter = '';
   let comCurrentPage = '';
+  let comView = 'dashboard';
 
   async function comApi(path, options){
     const response = await fetch('/api/commercial'+path, {
@@ -34837,10 +34821,22 @@ function renderHomeTasks(){
     return '<p class="com-empty">Nenhum vendedor encontrado. O vendedor aparece aqui quando o CARGO dele em RH &gt; Funcionários contém “vendedor”.</p>';
   }
 
+  // Loja/Vendedor só fazem sentido pra gestor (visão ampla) e fora do
+  // Ranking; conta vinculada a um vendedor (ownOnly) só vê o próprio.
+  function comApplyFilterVisibility(){
+    const allStores = Boolean(comOverview && comOverview.allStores);
+    const ownOnly = Boolean(comOverview && comOverview.ownOnly);
+    document.querySelectorAll('[data-com-all-stores]').forEach(node => { node.hidden = !allStores || ownOnly; });
+    document.querySelectorAll('#pageComercialAcompanhamento [data-com-scope-filter]').forEach(node => {
+      node.hidden = ownOnly || comView === 'ranking' || !comOverview || (node.hasAttribute('data-com-all-stores') && !allStores);
+    });
+    if(el('comRankMetricField')) el('comRankMetricField').hidden = comView !== 'ranking';
+  }
+
   function comRenderFilters(){
+    comApplyFilterVisibility();
     if(!comOverview) return;
     const allStores = comOverview.allStores;
-    document.querySelectorAll('[data-com-all-stores]').forEach(node => { node.hidden = !allStores; });
     const stores = new Map();
     comOverview.sellers.forEach(seller => {
       if(seller.companyId && !stores.has(seller.companyId)) stores.set(seller.companyId, seller.companyName || seller.companyId);
@@ -35172,6 +35168,28 @@ function renderHomeTasks(){
     }
   });
 
+  document.querySelectorAll('[data-com-view]').forEach(button => {
+    button.addEventListener('click', () => {
+      comView = button.dataset.comView;
+      document.querySelectorAll('[data-com-view]').forEach(tab => {
+        const active = tab === button;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      el('comViewDashboard').hidden = comView !== 'dashboard';
+      el('comViewComissao').hidden = comView !== 'comissao';
+      el('comViewRanking').hidden = comView !== 'ranking';
+      if(comView === 'ranking'){
+        comApplyFilterVisibility();
+        comLoadRanking();
+      }else if(comOverview && comOverview.month === comMonth){
+        comRenderCurrent();
+      }else{
+        loadComercialPage('comercialAcompanhamento');
+      }
+    });
+  });
+
   document.querySelectorAll('[data-com-tab]').forEach(button => {
     button.addEventListener('click', () => {
       document.querySelectorAll('[data-com-tab]').forEach(tab => {
@@ -35187,8 +35205,10 @@ function renderHomeTasks(){
   // ---------- Carregamento e filtros ----------
   function comRenderCurrent(){
     comRenderFilters();
-    if(comCurrentPage === 'comercialDashboard') comRenderDashboard();
-    if(comCurrentPage === 'comercialComissao') comRenderCommission();
+    if(comCurrentPage === 'comercialAcompanhamento'){
+      if(comView === 'dashboard') comRenderDashboard();
+      if(comView === 'comissao') comRenderCommission();
+    }
     if(comCurrentPage === 'comercialMetas'){
       comRenderGoals();
       comFillEntryForm();
@@ -35244,7 +35264,8 @@ function renderHomeTasks(){
     comCurrentPage = name;
     if(!comMonth) comMonth = financeCurrentMonthKey();
     document.querySelectorAll('[data-com-month]').forEach(input => { input.value = comMonth; });
-    if(name === 'comercialRanking'){
+    comApplyFilterVisibility();
+    if(name === 'comercialAcompanhamento' && comView === 'ranking'){
       await comLoadRanking(opts);
       return;
     }

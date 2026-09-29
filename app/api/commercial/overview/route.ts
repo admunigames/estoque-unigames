@@ -15,9 +15,15 @@ import {
   safeText,
 } from "../shared";
 
-// Dashboard + Comissão: vendedores do mês, dentro do escopo de loja do
-// ator, com meta, realizado (Loja/Online) e as métricas já calculadas
-// (percentual, alvo seguinte, média diária necessária e comissão estimada).
+// Dashboard + Comissão: vendedores do mês com meta, realizado (Loja/Online)
+// e as métricas já calculadas (percentual, alvo seguinte, média diária
+// necessária e comissão estimada).
+//
+// Quem vê o quê (decisão confirmada com o usuário):
+//   - conta vinculada a um vendedor (RH > Funcionários > Conta de acesso)
+//     → SÓ o próprio vendedor (ownOnly), independente da loja/permissão;
+//   - conta sem vínculo (gestor/admin/diretoria) → escopo por loja de
+//     sempre (commercialScope): a própria loja, ou todas.
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -34,14 +40,20 @@ export async function GET(request: Request) {
   try {
     const database = await getD1();
     const { sellers, clock } = await loadSellers(database, month);
-    const visible = scope.allStores ? sellers : sellers.filter((seller) => seller.companyId === scope.companyId);
+    const own = actor.id ? sellers.filter((seller) => seller.userId === actor.id) : [];
+    const ownOnly = own.length > 0;
+    const visible = ownOnly
+      ? own
+      : scope.allStores ? sellers : sellers.filter((seller) => seller.companyId === scope.companyId);
     return jsonResponse({
       month,
       clock,
-      allStores: scope.allStores,
+      ownOnly,
+      allStores: !ownOnly && scope.allStores,
       companyId: scope.companyId,
       canManage: canManageCommercial(actor),
-      sellers: visible,
+      // userId é só interno (undefined some do JSON).
+      sellers: visible.map((seller) => ({ ...seller, userId: undefined })),
     });
   } catch (error) {
     console.error("Não foi possível carregar o Comercial.", error);
