@@ -290,7 +290,6 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/aniversariantes",
   "/rh/odontologico",
   "/comercial/acompanhamento",
-  "/comercial/metas",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",

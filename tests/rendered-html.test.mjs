@@ -4103,22 +4103,22 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
   assert.match(html, /<div class="nav-group" data-any-permission="comercial">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
   for (const [page, route] of [
     ["comercialAcompanhamento", "/comercial/acompanhamento"],
-    ["comercialMetas", "/comercial/metas"],
   ]) {
     assert.match(html, new RegExp(`data-page="${page}"`));
     assert.match(html, new RegExp(`${page}:'${route}'`));
     assert.match(workerSource, new RegExp(`"${route}",`));
   }
-  assert.match(html, /id="navComercialMetas" data-page="comercialMetas" data-permission="comercial:manage"/);
-  assert.match(html, /comercialMetas:'comercial:manage',/);
-  for (const id of ["pageComercialAcompanhamento", "pageComercialMetas"]) {
-    assert.match(html, new RegExp(`<section id="${id}" class="page wrap">`));
-  }
+  assert.match(html, /<section id="pageComercialAcompanhamento" class="page wrap">/);
+  // Cadastro de Metas é a 4ª aba do Acompanhamento, só para comercial:manage.
+  assert.doesNotMatch(html, /id="navComercialMetas"|pageComercialMetas|comercialMetas:/);
+  assert.match(html, /data-com-view="metas" data-permission="comercial:manage">Cadastro de Metas</);
+  assert.match(html, /<div class="com-view-panel" id="comViewMetas" hidden>/);
+  assert.match(overviewRoute, /forCadastro && !canManageCommercial\(actor\)/);
   // Acompanhamento Metas é UM item de menu, com Dashboard/Comissão/Ranking
   // como abas internas (não três itens soltos no menu).
   assert.match(html, /id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial"/);
   assert.doesNotMatch(html, /id="navComercial(Dashboard|Comissao|Ranking)"/);
-  for (const view of ["dashboard", "comissao", "ranking"]) {
+  for (const view of ["dashboard", "comissao", "ranking", "metas"]) {
     assert.match(html, new RegExp(`class="com-view-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-com-view="${view}"`));
   }
 

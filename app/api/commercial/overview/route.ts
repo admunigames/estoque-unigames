@@ -24,6 +24,8 @@ import {
 //     → SÓ o próprio vendedor (ownOnly), independente da loja/permissão;
 //   - conta sem vínculo (gestor/admin/diretoria) → escopo por loja de
 //     sempre (commercialScope): a própria loja, ou todas.
+// `?for=cadastro` (aba Cadastro de Metas, só comercial:manage) ignora o
+// "só o próprio": quem cadastra metas precisa ver os vendedores da loja.
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -34,13 +36,18 @@ export async function GET(request: Request) {
   const scope = commercialScope(actor);
   if (!scope) return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
 
-  const requested = safeText(new URL(request.url).searchParams.get("month"), 7);
+  const url = new URL(request.url);
+  const requested = safeText(url.searchParams.get("month"), 7);
+  const forCadastro = url.searchParams.get("for") === "cadastro";
+  if (forCadastro && !canManageCommercial(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR METAS." }, 403);
+  }
   const month = MONTH_PATTERN.test(requested) ? requested : todayInTimezone().slice(0, 7);
 
   try {
     const database = await getD1();
     const { sellers, clock } = await loadSellers(database, month);
-    const own = actor.id ? sellers.filter((seller) => seller.userId === actor.id) : [];
+    const own = actor.id && !forCadastro ? sellers.filter((seller) => seller.userId === actor.id) : [];
     const ownOnly = own.length > 0;
     const visible = ownOnly
       ? own

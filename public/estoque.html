@@ -2934,6 +2934,12 @@
     color:var(--ink-soft);font:800 12.5px/1 var(--sans);text-transform:none;cursor:pointer;white-space:nowrap;
   }
   .com-view-tab:hover{color:var(--ink)}
+  .com-sub-tabs .com-view-tab{min-height:32px;padding:7px 13px;font-size:12px}
+  /* No celular as abas quebram de linha (nunca ficam escondidas na rolagem). */
+  @media(max-width:560px){
+    .com-view-tabs{display:flex;flex-wrap:wrap;width:100%;overflow:visible}
+    .com-view-tab{flex:1 1 auto;padding-inline:12px}
+  }
   .com-view-tab.active{background:var(--accent-deep);border-color:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
   html[data-theme="light"] .com-view-tabs{background:#fff}
   html[data-theme="light"] .com-view-tab.active{background:var(--accent);border-color:var(--accent-deep)}
@@ -3184,8 +3190,7 @@
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 16.5 9 11 13 14.5 20.5 7"/><polyline points="15.5 7 20.5 7 20.5 12"/></svg></span><span class="nav-label">Comercial</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navComercialSubmenu" aria-hidden="true">
-        <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário e ranking geral de vendedores (só percentual)." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
-        <a class="nav-item sub-item" id="navComercialMetas" data-page="comercialMetas" data-permission="comercial:manage" data-home-desc="Cadastro da meta mensal de cada vendedor e lançamento do realizado acumulado (Loja/Online)." title="Cadastro de Metas" href="/comercial/metas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Cadastro de Metas</span></a>
+        <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e cadastro de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="finance,payables">
@@ -6211,6 +6216,7 @@
         <button class="com-view-tab active" type="button" role="tab" aria-selected="true" data-com-view="dashboard">Dashboard</button>
         <button class="com-view-tab" type="button" role="tab" aria-selected="false" data-com-view="comissao">Comissão</button>
         <button class="com-view-tab" type="button" role="tab" aria-selected="false" data-com-view="ranking">Ranking</button>
+        <button class="com-view-tab" type="button" role="tab" aria-selected="false" data-com-view="metas" data-permission="comercial:manage">Cadastro de Metas</button>
       </div>
 
       <div class="dre-toolbar com-toolbar no-print">
@@ -6256,76 +6262,62 @@
         <p class="com-notice" role="note">Todos os vendedores da empresa, de todas as lojas. Só o percentual da meta é exibido — nenhum valor vendido ou de comissão.</p>
         <ol class="com-ranking" id="comRankList"><li class="com-empty">Carregando…</li></ol>
       </div>
-    </section>
 
-    <!-- ================= COMERCIAL / CADASTRO DE METAS ================= -->
-    <section id="pageComercialMetas" class="page wrap">
-      <header class="page-header">
-        <div class="page-heading">
-          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">Cadastro de Metas</h2>
+      <div class="com-view-panel" id="comViewMetas" hidden>
+        <!-- Cadastro de Metas: só comercial:manage (aba escondida por data-permission;
+             o back-end também recusa escrita sem a permissão). Sempre no escopo
+             de loja do usuário, mesmo que a conta seja de um vendedor. -->
+        <div class="com-view-tabs com-sub-tabs" role="tablist" aria-label="Seções do cadastro de metas">
+          <button class="com-view-tab active" type="button" role="tab" aria-selected="true" data-com-tab="metas">Metas do mês</button>
+          <button class="com-view-tab" type="button" role="tab" aria-selected="false" data-com-tab="lancamentos">Lançar realizado</button>
         </div>
-      </header>
 
-      <div class="dre-toolbar com-toolbar no-print">
-        <div class="field">
-          <label for="comGoalMonth">Mês</label>
-          <input type="month" id="comGoalMonth" data-com-month>
+        <div class="com-tab-panel" id="comTabMetas">
+          <p class="com-hint">Meta mensal de cada vendedor. A loja é a cadastrada no funcionário (RH &gt; Funcionários) e o vendedor aparece aqui quando o CARGO dele contém “vendedor”.</p>
+          <div class="com-goal-grid" id="comGoalList"><p class="com-empty">Carregando…</p></div>
         </div>
-        <div class="field" data-com-all-stores hidden>
-          <label for="comGoalStore">Loja</label>
-          <select id="comGoalStore" data-com-store><option value="">TODAS</option></select>
-        </div>
-      </div>
-      <div class="com-view-tabs" role="tablist" aria-label="Seções do cadastro comercial">
-        <button class="com-view-tab active" type="button" role="tab" aria-selected="true" data-com-tab="metas">Metas do mês</button>
-        <button class="com-view-tab" type="button" role="tab" aria-selected="false" data-com-tab="lancamentos">Lançar realizado</button>
-      </div>
 
-      <div class="com-tab-panel" id="comTabMetas">
-        <p class="com-hint">Meta mensal de cada vendedor. A loja é a cadastrada no funcionário (RH &gt; Funcionários) e o vendedor aparece aqui quando o CARGO dele contém “vendedor”.</p>
-        <div class="com-goal-grid" id="comGoalList"><p class="com-empty">Carregando…</p></div>
-      </div>
+        <div class="com-tab-panel" id="comTabLancamentos" hidden>
+          <form class="com-entry-form" id="comEntryForm">
+            <div class="com-entry-top">
+              <div class="field"><label for="comEntrySeller">Vendedor *</label><select id="comEntrySeller" required><option value="">SELECIONE</option></select></div>
+              <div class="field"><label for="comEntryDate">Acumulado até *</label><input type="date" id="comEntryDate" required></div>
+            </div>
+            <p class="com-hint">Informe o total <strong>ACUMULADO no mês</strong> até a data escolhida (não só a venda do dia). O último lançamento substitui o anterior — os anteriores ficam no histórico abaixo.</p>
+            <div class="com-entry-grid">
+              <fieldset class="com-entry-group">
+                <legend>Faturamento</legend>
+                <div class="field"><label for="comEntryRevenueLoja">Loja</label><input id="comEntryRevenueLoja" data-com-entry="faturamento:loja"></div>
+                <div class="field"><label for="comEntryRevenueOnline">Online</label><input id="comEntryRevenueOnline" data-com-entry="faturamento:online"></div>
+              </fieldset>
+              <fieldset class="com-entry-group">
+                <legend>Itens vendidos</legend>
+                <div class="field"><label for="comEntryItemsLoja">Loja</label><input type="number" inputmode="numeric" min="0" step="1" id="comEntryItemsLoja" data-com-entry="itens:loja"></div>
+                <div class="field"><label for="comEntryItemsOnline">Online</label><input type="number" inputmode="numeric" min="0" step="1" id="comEntryItemsOnline" data-com-entry="itens:online"></div>
+              </fieldset>
+              <fieldset class="com-entry-group">
+                <legend>Garantia estendida</legend>
+                <div class="field"><label for="comEntryWarrantyLoja">Loja</label><input id="comEntryWarrantyLoja" data-com-entry="garantia:loja"></div>
+                <div class="field"><label for="comEntryWarrantyOnline">Online</label><input id="comEntryWarrantyOnline" data-com-entry="garantia:online"></div>
+              </fieldset>
+            </div>
+            <div class="user-form-status" id="comEntryStatus" role="status" aria-live="polite"></div>
+            <div class="com-entry-actions"><button class="btn-accent" type="submit">SALVAR LANÇAMENTO</button></div>
+          </form>
 
-      <div class="com-tab-panel" id="comTabLancamentos" hidden>
-        <form class="com-entry-form" id="comEntryForm">
-          <div class="com-entry-top">
-            <div class="field"><label for="comEntrySeller">Vendedor *</label><select id="comEntrySeller" required><option value="">SELECIONE</option></select></div>
-            <div class="field"><label for="comEntryDate">Acumulado até *</label><input type="date" id="comEntryDate" required></div>
-          </div>
-          <p class="com-hint">Informe o total <strong>ACUMULADO no mês</strong> até a data escolhida (não só a venda do dia). O último lançamento substitui o anterior — os anteriores ficam no histórico abaixo.</p>
-          <div class="com-entry-grid">
-            <fieldset class="com-entry-group">
-              <legend>Faturamento</legend>
-              <div class="field"><label for="comEntryRevenueLoja">Loja</label><input id="comEntryRevenueLoja" data-com-entry="faturamento:loja"></div>
-              <div class="field"><label for="comEntryRevenueOnline">Online</label><input id="comEntryRevenueOnline" data-com-entry="faturamento:online"></div>
-            </fieldset>
-            <fieldset class="com-entry-group">
-              <legend>Itens vendidos</legend>
-              <div class="field"><label for="comEntryItemsLoja">Loja</label><input type="number" inputmode="numeric" min="0" step="1" id="comEntryItemsLoja" data-com-entry="itens:loja"></div>
-              <div class="field"><label for="comEntryItemsOnline">Online</label><input type="number" inputmode="numeric" min="0" step="1" id="comEntryItemsOnline" data-com-entry="itens:online"></div>
-            </fieldset>
-            <fieldset class="com-entry-group">
-              <legend>Garantia estendida</legend>
-              <div class="field"><label for="comEntryWarrantyLoja">Loja</label><input id="comEntryWarrantyLoja" data-com-entry="garantia:loja"></div>
-              <div class="field"><label for="comEntryWarrantyOnline">Online</label><input id="comEntryWarrantyOnline" data-com-entry="garantia:online"></div>
-            </fieldset>
-          </div>
-          <div class="user-form-status" id="comEntryStatus" role="status" aria-live="polite"></div>
-          <div class="com-entry-actions"><button class="btn-accent" type="submit">SALVAR LANÇAMENTO</button></div>
-        </form>
-
-        <h3 class="com-section-title">Histórico de lançamentos do mês</h3>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table id="comEntryTable">
-              <thead><tr><th>Data</th><th>Vendedor</th><th>Loja</th><th>Tipo</th><th>Canal</th><th>Acumulado</th><th>Lançado por</th><th></th></tr></thead>
-              <tbody id="comEntryTableBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
-            </table>
+          <h3 class="com-section-title">Histórico de lançamentos do mês</h3>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="comEntryTable">
+                <thead><tr><th>Data</th><th>Vendedor</th><th>Loja</th><th>Tipo</th><th>Canal</th><th>Acumulado</th><th>Lançado por</th><th></th></tr></thead>
+                <tbody id="comEntryTableBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </section>
+
 
     <!-- ================= RH / PLANO ODONTOLÓGICO ================= -->
     <section id="pageRhOdontologico" class="page wrap">
@@ -10623,7 +10615,6 @@
     rhAniversariantes:'/rh/aniversariantes',
     rhOdontologico:'/rh/odontologico',
     comercialAcompanhamento:'/comercial/acompanhamento',
-    comercialMetas:'/comercial/metas',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
@@ -10678,7 +10669,6 @@
     rhAniversariantes:'ANIVERSARIANTES',
     rhOdontologico:'PLANO ODONTOLÓGICO',
     comercialAcompanhamento:'ACOMPANHAMENTO METAS',
-    comercialMetas:'CADASTRO DE METAS',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
@@ -10729,7 +10719,6 @@
     rhAniversariantes:'rh_aniversariantes',
     rhOdontologico:'rh_odontologico',
     comercialAcompanhamento:'comercial',
-    comercialMetas:'comercial:manage',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
@@ -34681,6 +34670,8 @@ function renderHomeTasks(){
   const COM_CHANNEL_LABELS = {loja:'LOJA', online:'ONLINE'};
   let comMonth = '';
   let comOverview = null;
+  // Dados do Cadastro de Metas: escopo de loja do gestor, nunca "só o próprio".
+  let comManage = null;
   let comRanking = null;
   let comEntries = [];
   let comStoreFilter = '';
@@ -34809,8 +34800,15 @@ function renderHomeTasks(){
       '<span class="com-seller-meta">'+(seller.lastEntryDate ? 'Lançado até '+escapeHtml(formatDateBR(seller.lastEntryDate)) : 'Sem lançamentos no mês')+'</span></header>';
   }
 
+  // Fonte dos filtros/listas: Cadastro de Metas usa comManage; as demais
+  // abas usam comOverview.
+  function comData(){
+    return comView === 'metas' ? comManage : comOverview;
+  }
+
   function comFilteredSellers(options){
-    const sellers = comOverview ? comOverview.sellers : [];
+    const data = comData();
+    const sellers = data ? data.sellers : [];
     return sellers.filter(seller =>
       (!comStoreFilter || seller.companyId === comStoreFilter) &&
       (!(options && options.ignoreSeller) && comSellerFilter ? seller.employeeId === comSellerFilter : true)
@@ -34824,21 +34822,23 @@ function renderHomeTasks(){
   // Loja/Vendedor só fazem sentido pra gestor (visão ampla) e fora do
   // Ranking; conta vinculada a um vendedor (ownOnly) só vê o próprio.
   function comApplyFilterVisibility(){
-    const allStores = Boolean(comOverview && comOverview.allStores);
-    const ownOnly = Boolean(comOverview && comOverview.ownOnly);
-    document.querySelectorAll('[data-com-all-stores]').forEach(node => { node.hidden = !allStores || ownOnly; });
+    const data = comData();
+    const allStores = Boolean(data && data.allStores);
+    const ownOnly = Boolean(data && data.ownOnly);
     document.querySelectorAll('#pageComercialAcompanhamento [data-com-scope-filter]').forEach(node => {
-      node.hidden = ownOnly || comView === 'ranking' || !comOverview || (node.hasAttribute('data-com-all-stores') && !allStores);
+      const isStore = node.hasAttribute('data-com-all-stores');
+      node.hidden = ownOnly || comView === 'ranking' || !data || (isStore ? !allStores : comView === 'metas');
     });
     if(el('comRankMetricField')) el('comRankMetricField').hidden = comView !== 'ranking';
   }
 
   function comRenderFilters(){
     comApplyFilterVisibility();
-    if(!comOverview) return;
-    const allStores = comOverview.allStores;
+    const data = comData();
+    if(!data) return;
+    const allStores = data.allStores;
     const stores = new Map();
-    comOverview.sellers.forEach(seller => {
+    data.sellers.forEach(seller => {
       if(seller.companyId && !stores.has(seller.companyId)) stores.set(seller.companyId, seller.companyName || seller.companyId);
     });
     if(!stores.has(comStoreFilter)) comStoreFilter = '';
@@ -34976,12 +34976,12 @@ function renderHomeTasks(){
 
   // ---------- Cadastro de Metas ----------
   function comGoalSellers(){
-    return comOverview ? comOverview.sellers.filter(seller => !comStoreFilter || seller.companyId === comStoreFilter) : [];
+    return comManage ? comManage.sellers.filter(seller => !comStoreFilter || seller.companyId === comStoreFilter) : [];
   }
 
   function comRenderGoals(){
     const list = el('comGoalList');
-    if(!list || !comOverview) return;
+    if(!list || !comManage) return;
     const sellers = comGoalSellers().filter(seller => seller.active || seller.goal);
     if(!sellers.length){ list.innerHTML = comEmptyHtml(); return; }
     list.innerHTML = sellers.map((seller, index) => {
@@ -35000,7 +35000,7 @@ function renderHomeTasks(){
       '</form>';
     }).join('');
     list.querySelectorAll('[data-com-goal]').forEach(form => {
-      const seller = comOverview.sellers.find(item => item.employeeId === form.dataset.comGoal);
+      const seller = comManage.sellers.find(item => item.employeeId === form.dataset.comGoal);
       ['revenue', 'warranty'].forEach(field => {
         const input = form.querySelector('[data-goal-field="'+field+'"]');
         attachCurrencyMask(input);
@@ -35040,7 +35040,8 @@ function renderHomeTasks(){
     button.disabled = true;
     try{
       await comApi('/goals', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      await refreshAfterAction(() => comLoadOverview({silent:true}));
+      comOverview = null;
+      await refreshAfterAction(() => comLoadManage({silent:true}));
       showPurchaseToast('Meta salva.');
     }catch(error){
       showPurchaseToast(error.message, 'error');
@@ -35063,11 +35064,11 @@ function renderHomeTasks(){
 
   function comFillEntryForm(){
     const select = el('comEntrySeller');
-    if(!select || !comOverview) return;
+    if(!select || !comManage) return;
     const sellers = comGoalSellers().filter(seller => seller.active);
     rhFillSelect('comEntrySeller', 'SELECIONE', sellers.map(seller => ({
       value: seller.employeeId,
-      label: seller.name + (comOverview.allStores && !comStoreFilter && seller.companyName ? ' — '+seller.companyName : '')
+      label: seller.name + (comManage.allStores && !comStoreFilter && seller.companyName ? ' — '+seller.companyName : '')
     })));
     const bounds = comEntryDateBounds();
     const dateInput = el('comEntryDate');
@@ -35083,7 +35084,7 @@ function renderHomeTasks(){
   // Preenche os campos com o acumulado atual do vendedor, pra quem lança só
   // ajustar o que mudou. Só os campos alterados viram lançamento novo.
   function comPrefillEntryValues(){
-    const seller = comOverview ? comOverview.sellers.find(item => item.employeeId === el('comEntrySeller').value) : null;
+    const seller = comManage ? comManage.sellers.find(item => item.employeeId === el('comEntrySeller').value) : null;
     comEntryInputs().forEach(input => {
       const [kind, channel] = input.dataset.comEntry.split(':');
       const current = seller ? seller.realized[kind][channel] : null;
@@ -35118,8 +35119,9 @@ function renderHomeTasks(){
     if(!changed){ status.textContent = 'NENHUM VALOR FOI ALTERADO EM RELAÇÃO AO ACUMULADO ATUAL.'; return; }
     try{
       await comApi('/entries', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({employeeId, entryDate, values})});
+      comOverview = null;
       await refreshAfterAction(async () => {
-        await comLoadOverview({silent:true});
+        await comLoadManage({silent:true});
         await comLoadEntries({silent:true});
       });
       el('comEntrySeller').value = employeeId;
@@ -35158,8 +35160,9 @@ function renderHomeTasks(){
     if(!confirm('Excluir este lançamento? O realizado volta ao lançamento anterior.')) return;
     try{
       await comApi('/entries?id='+encodeURIComponent(button.dataset.comEntryDelete), {method:'DELETE'});
+      comOverview = null;
       await refreshAfterAction(async () => {
-        await comLoadOverview({silent:true});
+        await comLoadManage({silent:true});
         await comLoadEntries({silent:true});
       });
       showPurchaseToast('Lançamento excluído.');
@@ -35179,14 +35182,12 @@ function renderHomeTasks(){
       el('comViewDashboard').hidden = comView !== 'dashboard';
       el('comViewComissao').hidden = comView !== 'comissao';
       el('comViewRanking').hidden = comView !== 'ranking';
-      if(comView === 'ranking'){
-        comApplyFilterVisibility();
-        comLoadRanking();
-      }else if(comOverview && comOverview.month === comMonth){
-        comRenderCurrent();
-      }else{
-        loadComercialPage('comercialAcompanhamento');
-      }
+      el('comViewMetas').hidden = comView !== 'metas';
+      comStoreFilter = '';
+      comSellerFilter = '';
+      const data = comData();
+      if(comView !== 'ranking' && data && data.month === comMonth) comRenderCurrent();
+      else loadComercialPage('comercialAcompanhamento');
     });
   });
 
@@ -35205,11 +35206,9 @@ function renderHomeTasks(){
   // ---------- Carregamento e filtros ----------
   function comRenderCurrent(){
     comRenderFilters();
-    if(comCurrentPage === 'comercialAcompanhamento'){
-      if(comView === 'dashboard') comRenderDashboard();
-      if(comView === 'comissao') comRenderCommission();
-    }
-    if(comCurrentPage === 'comercialMetas'){
+    if(comView === 'dashboard') comRenderDashboard();
+    if(comView === 'comissao') comRenderCommission();
+    if(comView === 'metas'){
       comRenderGoals();
       comFillEntryForm();
       comRenderEntries();
@@ -35218,13 +35217,27 @@ function renderHomeTasks(){
 
   async function comLoadOverview(opts){
     const options = opts || {};
-    const targets = ['comDashList', 'comComList', 'comGoalList'].map(el).filter(Boolean);
+    const targets = ['comDashList', 'comComList'].map(el).filter(Boolean);
     if(!options.silent) targets.forEach(node => { node.innerHTML = '<p class="com-empty">Carregando…</p>'; });
     try{
       comOverview = await comApi('/overview?month='+encodeURIComponent(comMonth));
     }catch(error){
       comOverview = null;
       targets.forEach(node => { node.innerHTML = '<p class="com-empty">'+escapeHtml(error.message)+'</p>'; });
+      return;
+    }
+    comRenderCurrent();
+  }
+
+  async function comLoadManage(opts){
+    const options = opts || {};
+    const list = el('comGoalList');
+    if(!options.silent && list) list.innerHTML = '<p class="com-empty">Carregando…</p>';
+    try{
+      comManage = await comApi('/overview?month='+encodeURIComponent(comMonth)+'&for=cadastro');
+    }catch(error){
+      comManage = null;
+      if(list) list.innerHTML = '<p class="com-empty">'+escapeHtml(error.message)+'</p>';
       return;
     }
     comRenderCurrent();
@@ -35264,19 +35277,31 @@ function renderHomeTasks(){
     comCurrentPage = name;
     if(!comMonth) comMonth = financeCurrentMonthKey();
     document.querySelectorAll('[data-com-month]').forEach(input => { input.value = comMonth; });
+    // Sem comercial:manage a aba Cadastro de Metas some; volta pro Dashboard.
+    if(comView === 'metas' && !canAccess('comercial:manage')){
+      const dashTab = document.querySelector('[data-com-view="dashboard"]');
+      if(dashTab) dashTab.click();
+      return;
+    }
     comApplyFilterVisibility();
-    if(name === 'comercialAcompanhamento' && comView === 'ranking'){
+    if(comView === 'ranking'){
       await comLoadRanking(opts);
       return;
     }
+    if(comView === 'metas'){
+      await comLoadManage(opts);
+      await comLoadEntries(opts);
+      return;
+    }
     await comLoadOverview(opts);
-    if(name === 'comercialMetas' && canAccess('comercial:manage')) await comLoadEntries(opts);
   }
 
   document.querySelectorAll('[data-com-month]').forEach(input => {
     input.addEventListener('change', () => {
       if(!/^\d{4}-\d{2}$/.test(input.value)) return;
       comMonth = input.value;
+      comOverview = null;
+      comManage = null;
       if(el('comEntryDate')) el('comEntryDate').value = '';
       loadComercialPage(comCurrentPage);
     });
