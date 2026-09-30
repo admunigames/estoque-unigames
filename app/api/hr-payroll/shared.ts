@@ -187,6 +187,25 @@ export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, rg, telefone, a
   created_at AS createdAt, updated_by AS updatedBy, updated_by_name AS updatedByName,
   updated_at AS updatedAt`;
 
+/**
+ * Desligamento → bloqueia o login vinculado ao funcionário (RH ›
+ * Funcionários › Conta de acesso): active=0 e session_version+1, o que
+ * derruba na hora todas as sessões abertas (o Worker confere os dois a cada
+ * requisição). Contas de administrador não são bloqueadas automaticamente,
+ * para um lançamento errado no RH não trancar a administração do sistema.
+ * Reativar o funcionário NÃO reativa o login — isso é feito em Cadastro de
+ * Usuários, de propósito.
+ */
+export function deactivateLinkedLogin(database: Database, employeeId: string) {
+  return database
+    .prepare(
+      `UPDATE app_users SET active=0, session_version=session_version+1, updated_at=CURRENT_TIMESTAMP
+       WHERE active=1 AND role<>'admin'
+         AND id=(SELECT user_id FROM hr_employees WHERE id=?1 AND user_id<>'')`,
+    )
+    .bind(employeeId);
+}
+
 export async function loadEmployee(database: Database, employeeId: string) {
   return await database
     .prepare(`SELECT ${EMPLOYEE_COLUMNS} FROM hr_employees WHERE id=?1 LIMIT 1`)

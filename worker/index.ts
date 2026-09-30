@@ -17,6 +17,8 @@ import {
   type LiveModule,
 } from "./live-updates";
 
+import { isSellerRole } from "../app/lib/commercial";
+
 export { LiveUpdates };
 
 interface ExecutionContext {
@@ -76,6 +78,9 @@ type AuthenticatedUser = {
   role: "admin" | "user";
   permissions: Permission[];
   sessionVersion: number;
+  // Conta criada com senha inicial padrão: só entra no sistema depois de
+  // trocar a senha em /trocar-senha (ver handleChangePassword).
+  mustChangePassword: boolean;
 };
 type StoredUserRow = {
   id: string;
@@ -92,6 +97,7 @@ type StoredUserRow = {
   sector: string;
   active: number;
   sessionVersion: number;
+  mustChangePassword?: number;
   createdAt: string;
   updatedAt: string;
   recoveryRequested?: number;
@@ -465,6 +471,7 @@ function storedUser(row: StoredUserRow): AuthenticatedUser {
     role,
     permissions,
     sessionVersion: row.sessionVersion,
+    mustChangePassword: Number(row.mustChangePassword) === 1,
   };
 }
 
@@ -480,6 +487,7 @@ function envAdministrator(config: LoginConfig): AuthenticatedUser {
     role: "admin",
     permissions: [...ALL_PERMISSIONS],
     sessionVersion: 1,
+    mustChangePassword: false,
   };
 }
 
@@ -497,6 +505,9 @@ async function ensureAppUsersTable(database: D1Database): Promise<void> {
         ),
         database.prepare(
           "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS sector TEXT NOT NULL DEFAULT ''",
+        ),
+        database.prepare(
+          "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS must_change_password INTEGER NOT NULL DEFAULT 0",
         ),
       ]).then(() => undefined).catch((error) => {
         postgresAppUsersReady = null;
@@ -525,6 +536,7 @@ async function ensureAppUsersTable(database: D1Database): Promise<void> {
             sector TEXT NOT NULL DEFAULT '',
             active INTEGER NOT NULL DEFAULT 1,
             session_version INTEGER NOT NULL DEFAULT 1,
+            must_change_password INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
           )`,
@@ -554,6 +566,11 @@ async function ensureAppUsersTable(database: D1Database): Promise<void> {
           "UPDATE app_users SET sector='assistance', company_id='' WHERE access_group='assistance' OR lower(username)='assistencia'",
         ).run();
       }
+      if (!(columns.results ?? []).some((column) => column.name === "must_change_password")) {
+        await database.prepare(
+          "ALTER TABLE app_users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0",
+        ).run();
+      }
     })().catch((error) => {
       appUsersReady = null;
       throw error;
@@ -569,7 +586,8 @@ async function readUserByUsername(database: D1Database, username: string) {
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
               email, password_salt AS passwordSalt, role, access_group AS accessGroup,
               permissions_json AS permissionsJson, company_id AS companyId, hierarchy, sector,
-              active, session_version AS sessionVersion, created_at AS createdAt,
+              active, session_version AS sessionVersion,
+              must_change_password AS mustChangePassword, created_at AS createdAt,
               updated_at AS updatedAt
        FROM app_users WHERE lower(username) = lower(?1) LIMIT 1`,
     )
@@ -584,7 +602,8 @@ async function readUserById(database: D1Database, id: string) {
       `SELECT id, username, display_name AS displayName, password_hash AS passwordHash,
               email, password_salt AS passwordSalt, role, access_group AS accessGroup,
               permissions_json AS permissionsJson, company_id AS companyId, hierarchy, sector,
-              active, session_version AS sessionVersion, created_at AS createdAt,
+              active, session_version AS sessionVersion,
+              must_change_password AS mustChangePassword, created_at AS createdAt,
               updated_at AS updatedAt
        FROM app_users WHERE id = ?1 LIMIT 1`,
     )
@@ -882,6 +901,112 @@ ${notice}
   });
 }
 
+function changePasswordPage(displayName: string, message = "", status = 200): Response {
+  const notice = message ? `<div class="notice" role="alert">${escapeHtml(message)}</div>` : "";
+  const html = `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#050d18">
+<link rel="icon" type="image/png" href="/icon-32.png"><link rel="apple-touch-icon" href="/icon-180.png">
+<title>Criar sua senha · Central Unigames</title>
+<style>
+:root{color-scheme:dark;--ink:#f5fbff;--soft:#9eb5c9;--cyan:#66d9ff}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#030914,#071625 55%,#020711);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+main{width:min(460px,100%);padding:34px;border:1px solid rgba(135,215,255,.24);border-radius:24px;background:linear-gradient(145deg,rgba(13,34,53,.92),rgba(4,15,28,.96));box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.kicker{margin:0 0 6px;color:var(--cyan);font-size:9px;font-weight:900;letter-spacing:.18em}h1{margin:0;font-size:24px;letter-spacing:-.02em}
+.intro{margin:14px 0 6px;color:var(--soft);font-size:13px;line-height:1.6}
+label{display:block;margin:16px 0 8px;color:#ccecff;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+input{width:100%;min-height:50px;padding:13px 14px;border:1px solid rgba(125,210,255,.21);border-radius:12px;background:rgba(2,12,23,.78);color:var(--ink);font:inherit;font-size:16px;outline:none}
+input:focus{border-color:rgba(102,217,255,.74);box-shadow:0 0 0 3px rgba(102,217,255,.09)}
+button{width:100%;min-height:50px;margin-top:22px;border:0;border-radius:12px;background:linear-gradient(110deg,#55c9f3,#5f9cff 56%,#8170f5);color:#03101d;font-weight:900;font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.notice{margin:16px 0 0;padding:12px 13px;border:1px solid rgba(255,112,140,.38);border-radius:12px;background:rgba(126,28,58,.2);color:#ffd6df;font-size:12px;line-height:1.45}
+.hint{margin:8px 0 0;color:#718da3;font-size:11px}.out{display:block;margin-top:18px;text-align:center;color:#9fdfff;font-size:11px;font-weight:800;background:none;border:0;min-height:0;box-shadow:none;text-transform:none;letter-spacing:0}
+</style></head><body><main>
+<p class="kicker">PRIMEIRO ACESSO</p><h1>Crie sua senha</h1>
+<p class="intro">Olá, ${escapeHtml(displayName)}. Você entrou com a senha inicial. Para continuar, crie uma senha só sua — ela não pode ser igual à senha inicial.</p>
+${notice}
+<form method="post" action="/trocar-senha">
+<label for="newPassword">Nova senha</label>
+<input id="newPassword" name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="200" required>
+<p class="hint">Mínimo de 8 caracteres.</p>
+<label for="confirmPassword">Repita a nova senha</label>
+<input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="200" required>
+<button type="submit">Salvar e entrar&nbsp;&nbsp;→</button>
+</form>
+<form method="post" action="/logout"><button class="out" type="submit">Sair</button></form>
+</main></body></html>`;
+  return new Response(html, {
+    status,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "content-security-policy":
+        "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "x-robots-tag": "noindex, nofollow",
+    },
+  });
+}
+
+/**
+ * Troca obrigatória da senha inicial (contas criadas em lote para os
+ * vendedores). Grava a senha nova, desliga a obrigação, invalida as demais
+ * sessões (session_version+1) e já entrega um cookie novo, válido.
+ */
+async function handleChangePassword(
+  request: Request,
+  env: Env,
+  url: URL,
+  config: LoginConfig,
+  user: AuthenticatedUser,
+): Promise<Response> {
+  if (!user.mustChangePassword || user.id === "env-admin" || !env.DB) {
+    return Response.redirect(new URL(LOGIN_SUCCESS_PATH, url.origin), 303);
+  }
+  if (request.method === "GET" || request.method === "HEAD") {
+    return changePasswordPage(user.displayName);
+  }
+  if (request.method !== "POST") {
+    return new Response("Método não permitido", { status: 405, headers: { allow: "GET, HEAD, POST" } });
+  }
+  if (!sameOrigin(request, url)) return jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403);
+  const form = await request.formData();
+  const newPassword = String(form.get("newPassword") ?? "");
+  const confirmPassword = String(form.get("confirmPassword") ?? "");
+  if (newPassword.length < 8 || newPassword.length > 200) {
+    return changePasswordPage(user.displayName, "A nova senha precisa ter entre 8 e 200 caracteres.", 400);
+  }
+  if (newPassword !== confirmPassword) {
+    return changePasswordPage(user.displayName, "As duas senhas não são iguais. Digite de novo.", 400);
+  }
+  const row = await readUserById(env.DB, user.id);
+  if (!row || row.active !== 1) return unauthorized(request, url);
+  if (await verifyPassword(newPassword, row)) {
+    return changePasswordPage(user.displayName, "Escolha uma senha diferente da senha inicial.", 400);
+  }
+  const password = await hashPassword(newPassword);
+  await env.DB
+    .prepare(
+      `UPDATE app_users SET password_hash=?1, password_salt=?2, must_change_password=0,
+         session_version=session_version+1, updated_at=CURRENT_TIMESTAMP WHERE id=?3`,
+    )
+    .bind(password.hash, password.salt, user.id)
+    .run();
+  const token = await createSession(
+    { ...user, sessionVersion: row.sessionVersion + 1, mustChangePassword: false },
+    config.sessionSecret,
+  );
+  const secure = url.protocol === "https:" ? "; Secure" : "";
+  return new Response(null, {
+    status: 303,
+    headers: {
+      location: LOGIN_SUCCESS_PATH,
+      "cache-control": "no-store",
+      "set-cookie": `${SESSION_COOKIE}=${token}; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=${SESSION_TTL_SECONDS}`,
+    },
+  });
+}
+
 async function handlePasswordRecovery(
   request: Request,
   env: Env,
@@ -1168,7 +1293,10 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
         MODULE_VIEW_PERMISSIONS[LIVE_MODULE_PERMISSION_KEYS[liveModuleName]],
       );
   }
-  if (path === "/cadastros/usuarios" || path === "/administracao/usuarios" || path === "/api/admin/users") {
+  if (
+    path === "/cadastros/usuarios" || path === "/administracao/usuarios" || path === "/api/admin/users" ||
+    path === "/api/admin/users/sellers"
+  ) {
     return user.role === "admin" || hasPermission(user, "users:manage");
   }
   if (path === "/instrucoes" || (path.startsWith("/api/instructions") && (request.method === "GET" || request.method === "HEAD"))) {
@@ -1178,9 +1306,10 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     return hasPermission(user, "instructions:manage");
   }
   if (path === "/documentos" || path.startsWith("/documentos/")) {
-    return true;
+    return !isCommercialOnlyUser(user);
   }
   if (path.startsWith("/api/documents")) {
+    if (isCommercialOnlyUser(user)) return false;
     return request.method === "GET" || request.method === "HEAD"
       ? true
       : hasPermission(user, "documents_manage");
@@ -1404,6 +1533,20 @@ async function publishLiveUpdate(env: Env, invalidation: LiveInvalidation): Prom
   if (!response.ok) throw new Error(`Falha ao publicar atualizacao ao vivo: ${response.status}`);
 }
 
+/**
+ * Login de vendedor: todas as permissões são do módulo Comercial. Esse
+ * usuário vê só Início, Instruções e Comercial — Documentos (liberado para
+ * qualquer outro usuário logado) fica escondido para ele (decisão do
+ * usuário, 2026-09-30). Mesma regra em isCommercialOnlySession() no front.
+ */
+function isCommercialOnlyUser(user: AuthenticatedUser): boolean {
+  return (
+    user.role !== "admin" &&
+    user.permissions.length > 0 &&
+    user.permissions.every((permission) => permission.startsWith("comercial:"))
+  );
+}
+
 function sessionResponse(user: AuthenticatedUser): Response {
   return Response.json({
     id: user.id,
@@ -1472,6 +1615,143 @@ function publicUser(row: StoredUserRow) {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Acessos dos vendedores (Cadastro de Usuários › "Criar acessos dos
+// vendedores"). Vendedor = funcionário ATIVO com "vendedor" no cargo, ou que
+// esteja na última importação do Comercial (ex.: líderes comerciais que
+// aparecem na aba VENDEDORES). Cada acesso nasce com: usuário nome.sobrenome,
+// só a permissão comercial:view (vê os próprios números e o ranking), loja
+// do RH, vínculo com o cadastro do funcionário e troca de senha obrigatória
+// no primeiro acesso. Um funcionário por requisição: cada senha passa por
+// PBKDF2 (100 mil iterações) e várias numa requisição só poderiam estourar
+// o limite de CPU do Worker — a tela chama em sequência.
+// ---------------------------------------------------------------------------
+type SellerCandidateRow = {
+  id: string;
+  fullName: string;
+  roleTitle: string;
+  companyId: string;
+  companyName: string;
+  userId: string;
+  inLastImport: number;
+  linkedUserActive: number | null;
+};
+
+function sellerUsernameBase(fullName: string): string {
+  const base = fullName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "");
+  if (base.length > 36) {
+    const parts = base.split(".");
+    return `${parts[0]}.${parts[parts.length - 1]}`.slice(0, 36);
+  }
+  return base.length >= 3 ? base : `${base}.vendedor`;
+}
+
+async function sellerCandidates(database: D1Database) {
+  await ensureAppUsersTable(database);
+  const [rows, users] = await Promise.all([
+    database
+      .prepare(
+        `SELECT e.id, e.full_name AS fullName, e.role_title AS roleTitle, e.company_id AS companyId,
+                e.company_name AS companyName, e.user_id AS userId,
+                CASE WHEN e.id IN (
+                  SELECT employee_id FROM commercial_monthly
+                  WHERE month = (SELECT max(month) FROM commercial_monthly)
+                ) THEN 1 ELSE 0 END AS inLastImport,
+                u.active AS linkedUserActive
+         FROM hr_employees e LEFT JOIN app_users u ON u.id = e.user_id AND e.user_id <> ''
+         WHERE e.status='active'
+         ORDER BY e.full_name ASC`,
+      )
+      .all<SellerCandidateRow>(),
+    database.prepare("SELECT lower(username) AS username FROM app_users").all<{ username: string }>(),
+  ]);
+  const taken = new Set((users.results ?? []).map((row) => row.username));
+  return (rows.results ?? [])
+    .filter((row) => isSellerRole(row.roleTitle) || Number(row.inLastImport) === 1)
+    .map((row) => {
+      const hasAccount = row.linkedUserActive !== null && row.linkedUserActive !== undefined;
+      let username = "";
+      if (!hasAccount) {
+        const base = sellerUsernameBase(row.fullName);
+        username = base;
+        for (let n = 2; taken.has(username); n++) username = `${base}.${n}`;
+        taken.add(username);
+      }
+      return {
+        employeeId: row.id,
+        fullName: row.fullName,
+        roleTitle: row.roleTitle,
+        companyId: row.companyId,
+        companyName: row.companyName,
+        hasAccount,
+        accountActive: Number(row.linkedUserActive) === 1,
+        suggestedUsername: username,
+      };
+    });
+}
+
+async function handleSellerAccounts(
+  request: Request,
+  env: Env,
+  url: URL,
+  actor: AuthenticatedUser,
+): Promise<Response> {
+  if (actor.role !== "admin" && !hasPermission(actor, "users:manage")) {
+    return jsonError("VOCÊ NÃO TEM PERMISSÃO PARA GERENCIAR USUÁRIOS.", 403);
+  }
+  if (!env.DB) return jsonError("BANCO INDISPONÍVEL.", 503);
+  if (request.method === "GET") {
+    return Response.json({ items: await sellerCandidates(env.DB) }, { headers: { "cache-control": "no-store" } });
+  }
+  if (request.method !== "POST") {
+    return new Response("Método não permitido", { status: 405, headers: { allow: "GET, POST" } });
+  }
+  if (!sameOrigin(request, url)) return jsonError("ORIGEM DA SOLICITAÇÃO NÃO PERMITIDA.", 403);
+  let body: { employeeId?: unknown; password?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return jsonError("DADOS INVÁLIDOS.", 400);
+  }
+  const employeeId = String(body.employeeId ?? "").trim();
+  const initialPassword = String(body.password ?? "");
+  if (initialPassword.length < 8 || initialPassword.length > 200) {
+    return jsonError("A SENHA INICIAL PRECISA TER ENTRE 8 E 200 CARACTERES.", 400);
+  }
+  const candidate = (await sellerCandidates(env.DB)).find((item) => item.employeeId === employeeId);
+  if (!candidate) return jsonError("FUNCIONÁRIO NÃO É VENDEDOR ATIVO.", 400);
+  if (candidate.hasAccount) return jsonError(`${candidate.fullName} JÁ TEM ACESSO.`, 409);
+  if (!validUsername(candidate.suggestedUsername)) {
+    return jsonError(`NÃO FOI POSSÍVEL GERAR UM USUÁRIO VÁLIDO PARA ${candidate.fullName}.`, 400);
+  }
+
+  const id = crypto.randomUUID();
+  const password = await hashPassword(initialPassword);
+  const companyId = /^c[a-z0-9]{6,40}$/i.test(candidate.companyId) ? candidate.companyId : "";
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO app_users
+        (id, username, display_name, email, password_hash, password_salt, role,
+         access_group, permissions_json, company_id, hierarchy, sector, active, session_version,
+         must_change_password)
+       VALUES (?1, ?2, ?3, '', ?4, ?5, 'user', 'custom', ?6, ?7, 'administrative', '', 1, 1, 1)`,
+    ).bind(id, candidate.suggestedUsername, candidate.fullName, password.hash, password.salt,
+      JSON.stringify(["comercial:view"]), companyId),
+    env.DB.prepare(
+      "UPDATE hr_employees SET user_id=?1, updated_at=CURRENT_TIMESTAMP WHERE id=?2",
+    ).bind(id, candidate.employeeId),
+  ]);
+  return Response.json(
+    { created: true, id, username: candidate.suggestedUsername, fullName: candidate.fullName },
+    { status: 201, headers: { "cache-control": "no-store" } },
+  );
 }
 
 async function listUsers(env: Env, config: LoginConfig): Promise<Response> {
@@ -2423,6 +2703,14 @@ const worker = {
       return serviceUnavailable(url);
     }
     if (!user) return unauthorized(request, url);
+    if (url.pathname === "/trocar-senha") return handleChangePassword(request, env, url, config, user);
+    if (user.mustChangePassword) {
+      // Conta com senha inicial padrão: nenhuma tela ou API até trocar a senha.
+      if (url.pathname.startsWith("/api/")) {
+        return jsonError("TROQUE SUA SENHA INICIAL ANTES DE CONTINUAR.", 403);
+      }
+      return Response.redirect(new URL("/trocar-senha", url.origin), 303);
+    }
     const mutatingApiRequest =
       url.pathname.startsWith("/api/") &&
       !["GET", "HEAD", "OPTIONS"].includes(request.method);
@@ -2435,6 +2723,9 @@ const worker = {
     if (url.pathname === "/api/session") return sessionResponse(user);
     if (url.pathname === "/api/admin/users") {
       return securityHeaders(await handleAdminUsers(request, env, url, config, user));
+    }
+    if (url.pathname === "/api/admin/users/sellers") {
+      return securityHeaders(await handleSellerAccounts(request, env, url, user));
     }
     if (url.pathname === "/api/live") {
       const liveModuleName = url.searchParams.get("module");

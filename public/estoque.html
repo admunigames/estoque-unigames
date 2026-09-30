@@ -2795,6 +2795,21 @@
   @media(prefers-reduced-motion:reduce){
     .app-loadbar::before{animation:none; width:100%; opacity:.5;}
   }
+  /* Cadastro de Usuários › Criar acessos dos vendedores */
+  .seller-accounts-open{margin:0 0 14px;width:100%}
+  .seller-accounts-hint{margin:0 0 12px;color:var(--ink-soft);font:600 13px/1.5 var(--sans)}
+  .seller-accounts-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 8px;font:700 11px/1.3 var(--mono);color:var(--ink-soft)}
+  .seller-accounts-list{display:grid;gap:8px;max-height:min(52vh,460px);overflow-y:auto;margin:0;padding:0;list-style:none}
+  .seller-accounts-list li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 10px;padding:10px 12px;border:1px solid var(--inset-border);border-radius:10px;background:var(--bg-card-2)}
+  .seller-accounts-list li.done{border-color:rgba(84,196,138,.45)}
+  .seller-accounts-list li.has-account{opacity:.6}
+  .seller-accounts-list input[type="checkbox"]{width:auto;min-height:0}
+  .seller-accounts-list .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .seller-accounts-list .who strong{font:800 13.5px/1.3 var(--sans);color:var(--ink);overflow-wrap:anywhere}
+  .seller-accounts-list .who span{font:700 10px/1.3 var(--mono);color:var(--ink-soft);letter-spacing:.04em;overflow-wrap:anywhere}
+  .seller-accounts-list .login{font:700 12px/1.3 var(--mono);color:var(--ink);text-align:right;overflow-wrap:anywhere}
+  .seller-accounts-list .login small{display:block;color:var(--ink-faint);font-size:10px}
+  html[data-theme="light"] .seller-accounts-list li{background:#f6f9fb}
   /* ================= COMERCIAL ================= */
   /* Tela usada principalmente no celular: tudo em grid/flex com gap, sem
      float nem largura fixa em px; números longos quebram dentro do card
@@ -3065,7 +3080,7 @@
         <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc="Saídas Gerais Solicitadas pelas lojas." title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5"/><path d="M11 12h9.5"/><path d="m16.5 8 4 4-4 4"/></svg></span><span class="nav-label">Saídas</span></a>
       </div>
     </div>
-    <div class="nav-group">
+    <div class="nav-group" data-hide-for-commercial-only>
       <button class="nav-group-toggle" id="navDocumentos" type="button" aria-expanded="false" aria-controls="navDocumentosSubmenu" data-home-page="documentos" data-home-desc="Certificados, garantias e documentos avulsos.">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.6a1.6 1.6 0 0 1 1.6-1.6h4.2l1.8 2.2h6.8A1.6 1.6 0 0 1 20 8.8v8.6a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 17.4z"/></svg></span><span class="nav-label">Documentos</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -5396,6 +5411,7 @@
         <section class="user-panel">
           <h3>CONTAS CADASTRADAS</h3>
           <p>Bloquear ou alterar uma conta encerra imediatamente as sessões existentes dela.</p>
+          <button class="btn-accent seller-accounts-open" type="button" id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES</button>
           <div class="user-list" id="userList"><div class="task-empty">Carregando usuários…</div></div>
         </section>
       </div>
@@ -7491,6 +7507,29 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelReposicaoDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="sellerAccountsDialog" aria-labelledby="sellerAccountsTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="sellerAccountsTitle">CRIAR ACESSOS DOS VENDEDORES</h3>
+    <button class="purchase-dialog-close" id="btnCloseSellerAccounts" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="sellerAccountsForm">
+    <p class="seller-accounts-hint">Cada vendedor recebe um login só com o <strong>Comercial</strong> (vê os próprios números e o ranking) e as Instruções. Na primeira entrada, o sistema obriga a criar uma senha própria.</p>
+    <div class="purchase-field full"><label for="sellerAccountsPassword">SENHA INICIAL (IGUAL PARA TODOS, MÍNIMO 8 CARACTERES) *</label>
+      <input id="sellerAccountsPassword" type="text" minlength="8" maxlength="200" autocomplete="off" required>
+    </div>
+    <div class="seller-accounts-toolbar">
+      <label class="permission-option"><input type="checkbox" id="sellerAccountsAll" checked> Marcar todos sem acesso</label>
+      <span id="sellerAccountsCount"></span>
+    </div>
+    <ul class="seller-accounts-list" id="sellerAccountsList"><li class="task-empty">Carregando vendedores…</li></ul>
+    <div class="user-form-status" id="sellerAccountsStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelSellerAccounts" type="button">FECHAR</button>
+      <button class="btn-accent" id="btnSubmitSellerAccounts" type="submit">CRIAR ACESSOS</button>
     </div>
   </form>
 </dialog>
@@ -10603,6 +10642,7 @@
 
   function canAccessPage(name){
     if(name === 'usuarios') return canManageUsers();
+    if(name === 'documentos' && isCommercialOnlySession()) return false;
     // NF/Duplicatas é acessível por finance:manage OU qualquer permissão
     // granular payables:* (fallback já aplicado no backend, ver
     // app/api/finance/invoices/shared.ts#canViewInvoices).
@@ -10634,6 +10674,7 @@
     const card = document.createElement('a');
     card.className = 'home-access-card';
     card.href = href;
+    if(source.closest('[data-hide-for-commercial-only]')) card.setAttribute('data-hide-for-commercial-only', '');
     if(source.dataset.homePermission) card.dataset.permission = source.dataset.homePermission;
     else if(permissionSource?.dataset.permission) card.dataset.permission = permissionSource.dataset.permission;
     else if(permissionSource?.dataset.anyPermission) card.dataset.anyPermission = permissionSource.dataset.anyPermission;
@@ -10776,7 +10817,19 @@
     });
   }
 
+  // Login de vendedor: todas as permissões são do Comercial. Ele vê só
+  // Início, Instruções e Comercial — Documentos fica escondido (mesma regra de
+  // isCommercialOnlyUser() no worker, que também bloqueia a rota).
+  function isCommercialOnlySession(){
+    return currentSession.role !== 'admin' &&
+      currentSession.permissions.length > 0 &&
+      currentSession.permissions.every(permission => permission.indexOf('comercial:') === 0);
+  }
+
   function applyAccessVisibility(){
+    document.querySelectorAll('[data-hide-for-commercial-only]').forEach(node => {
+      node.toggleAttribute('data-access-hidden', isCommercialOnlySession());
+    });
     document.querySelectorAll('[data-permission]').forEach(node => {
       node.toggleAttribute('data-access-hidden', !canAccess(node.dataset.permission));
     });
@@ -10789,6 +10842,17 @@
     });
     document.querySelectorAll('[data-env-admin-only]').forEach(node => {
       node.toggleAttribute('data-access-hidden', currentSession.id !== 'env-admin');
+    });
+    // Grupo do menu sem regra própria (ex.: Estoque): some quando todos os
+    // itens dele estão escondidos, em vez de mostrar só o título vazio. Grupo
+    // cujo botão abre uma página própria (data-home-page) fica como está.
+    document.querySelectorAll('#sidebar .nav-group').forEach(group => {
+      if(group.hasAttribute('data-permission') || group.hasAttribute('data-any-permission') || group.hasAttribute('data-hide-for-commercial-only')) return;
+      const toggle = group.querySelector('.nav-group-toggle');
+      if(toggle && toggle.dataset.homePage) return;
+      const items = Array.from(group.querySelectorAll('a.nav-item'));
+      if(!items.length) return;
+      group.toggleAttribute('data-access-hidden', items.every(item => item.hasAttribute('data-access-hidden')));
     });
     el('sessionDisplayName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
     el('homeSessionName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
@@ -29950,6 +30014,104 @@ function renderHomeTasks(){
     if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL SALVAR O USUÁRIO.');
     return data;
   }
+
+
+  // ---------- Criar acessos dos vendedores (em lote) ----------
+  // Um vendedor por requisição (cada senha passa por PBKDF2 no servidor);
+  // a lista mostra o progresso e o login criado de cada um.
+  let sellerAccountItems = [];
+
+  async function sellerAccountsRequest(options){
+    const response = await fetch('/api/admin/users/sellers', Object.assign({headers:{Accept:'application/json'}, cache:'no-store'}, options || {}));
+    let data = {};
+    try{ data = await response.json(); }catch{}
+    if(response.status === 401) location.assign('/login?next=' + encodeURIComponent(location.pathname));
+    if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return data;
+  }
+
+  function renderSellerAccounts(){
+    const list = el('sellerAccountsList');
+    if(!sellerAccountItems.length){ list.innerHTML = '<li class="task-empty">Nenhum vendedor ativo encontrado em RH › Funcionários.</li>'; return; }
+    list.innerHTML = sellerAccountItems.map(item => {
+      const state = item.created ? ' done' : item.hasAccount ? ' has-account' : '';
+      const login = item.created
+        ? '@'+escapeHtml(item.createdUsername)+'<small>ACESSO CRIADO</small>'
+        : item.hasAccount
+          ? 'JÁ TEM ACESSO<small>'+(item.accountActive ? 'ATIVO' : 'BLOQUEADO')+'</small>'
+          : '@'+escapeHtml(item.suggestedUsername)+'<small>'+escapeHtml(item.error || 'USUÁRIO QUE SERÁ CRIADO')+'</small>';
+      const checkbox = item.hasAccount || item.created ? '<span></span>'
+        : '<input type="checkbox" data-seller-account="'+escapeHtml(item.employeeId)+'"'+(item.selected ? ' checked' : '')+' aria-label="Criar acesso para '+escapeHtml(item.fullName)+'">';
+      return '<li class="'+state.trim()+'">'+checkbox+
+        '<span class="who"><strong>'+escapeHtml(item.fullName)+'</strong><span>'+escapeHtml((item.companyName || 'SEM LOJA')+' · '+(item.roleTitle || 'SEM CARGO'))+'</span></span>'+
+        '<span class="login">'+login+'</span></li>';
+    }).join('');
+    const pending = sellerAccountItems.filter(item => item.selected && !item.hasAccount && !item.created).length;
+    el('sellerAccountsCount').textContent = pending+(pending === 1 ? ' selecionado' : ' selecionados');
+    el('btnSubmitSellerAccounts').textContent = pending ? 'CRIAR ACESSOS ('+pending+')' : 'CRIAR ACESSOS';
+    el('btnSubmitSellerAccounts').disabled = !pending;
+  }
+
+  async function openSellerAccounts(){
+    el('sellerAccountsForm').reset();
+    el('sellerAccountsStatus').textContent = '';
+    el('sellerAccountsList').innerHTML = '<li class="task-empty">Carregando vendedores…</li>';
+    el('sellerAccountsDialog').showModal();
+    try{
+      const data = await sellerAccountsRequest();
+      sellerAccountItems = (data.items || []).map(item => Object.assign({}, item, {selected: !item.hasAccount}));
+    }catch(error){
+      sellerAccountItems = [];
+      el('sellerAccountsStatus').textContent = error.message;
+    }
+    el('sellerAccountsAll').checked = true;
+    renderSellerAccounts();
+  }
+
+  if(el('btnSellerAccounts')) el('btnSellerAccounts').addEventListener('click', openSellerAccounts);
+  if(el('btnCloseSellerAccounts')) el('btnCloseSellerAccounts').addEventListener('click', () => el('sellerAccountsDialog').close());
+  if(el('btnCancelSellerAccounts')) el('btnCancelSellerAccounts').addEventListener('click', () => el('sellerAccountsDialog').close());
+  if(el('sellerAccountsAll')) el('sellerAccountsAll').addEventListener('change', () => {
+    sellerAccountItems.forEach(item => { if(!item.hasAccount && !item.created) item.selected = el('sellerAccountsAll').checked; });
+    renderSellerAccounts();
+  });
+  if(el('sellerAccountsList')) el('sellerAccountsList').addEventListener('change', event => {
+    const box = event.target.closest('[data-seller-account]');
+    if(!box) return;
+    const item = sellerAccountItems.find(entry => entry.employeeId === box.dataset.sellerAccount);
+    if(item) item.selected = box.checked;
+    renderSellerAccounts();
+  });
+
+  if(el('sellerAccountsForm')) el('sellerAccountsForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const password = el('sellerAccountsPassword').value;
+    const status = el('sellerAccountsStatus');
+    if(password.length < 8){ status.textContent = 'A SENHA INICIAL PRECISA TER NO MÍNIMO 8 CARACTERES.'; return; }
+    const queue = sellerAccountItems.filter(item => item.selected && !item.hasAccount && !item.created);
+    el('btnSubmitSellerAccounts').disabled = true;
+    let created = 0;
+    for(const [index, item] of queue.entries()){
+      status.textContent = 'CRIANDO '+(index + 1)+' DE '+queue.length+'…';
+      try{
+        const result = await sellerAccountsRequest({
+          method:'POST',
+          headers:{Accept:'application/json','Content-Type':'application/json'},
+          body: JSON.stringify({employeeId: item.employeeId, password})
+        });
+        item.created = true;
+        item.createdUsername = result.username;
+        item.error = '';
+        created++;
+      }catch(error){
+        item.error = error.message;
+      }
+      renderSellerAccounts();
+    }
+    const failed = queue.length - created;
+    status.textContent = created+(created === 1 ? ' ACESSO CRIADO' : ' ACESSOS CRIADOS')+(failed ? ' · '+failed+' COM ERRO (veja na lista)' : '')+'. Na 1ª entrada cada vendedor cria a própria senha.';
+    await refreshAfterAction(() => loadAdminUsers());
+  });
 
   async function loadAdminUsers(){
     if(!canManageUsers()) return;

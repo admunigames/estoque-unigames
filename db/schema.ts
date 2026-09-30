@@ -32,6 +32,9 @@ export const appUsers = pgTable("app_users", {
   sector: text("sector").notNull().default(""),
   active: integer("active").notNull().default(1),
   sessionVersion: integer("session_version").notNull().default(1),
+  // 1 = conta criada com senha inicial padrão (acessos em lote dos
+  // vendedores): só entra no sistema depois de trocar a senha em /trocar-senha.
+  mustChangePassword: integer("must_change_password").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`now()::text`),
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
