@@ -782,7 +782,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v76"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -875,7 +875,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v76"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -968,7 +968,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v76"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1194,7 +1194,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v76"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1627,7 +1627,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v76"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
   // Lembrete da Início não chama a API para quem enxerga todas as lojas sem ter uma própria (evita 400).
   assert.match(
     html,
@@ -1723,7 +1723,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v76"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("carrossel de imagens de Instruções: rotas de upload em partes, servir arquivo e reordenar", async () => {
@@ -4094,4 +4094,20 @@ test("Compras nativo: anexar arquivo (pedido/nota fiscal) não dispara atualiza�
   assert.match(liveEvents, /path\.endsWith\("\/attachments"\)/);
   assert.match(liveEvents, /contentType\.includes\("application\/octet-stream"\)\) return null;/);
   assert.match(liveEvents, /action === "create" \|\| action === "cancel"\) return null;/);
+});
+
+test("abas do site inteiro compartilham um único estilo (barra arredondada, ativa preenchida)", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+
+  // As quatro famílias de abas (.supply-tab, .output-tab, .mission-tab,
+  // .instruction-tab) usam o MESMO bloco de regras agrupado — nada de
+  // cópias do visual antigo (pill com borda azul, fonte mono 9px).
+  assert.match(html, /\.supply-tabs,\.output-tabs,\.mission-tabs,\.instruction-tabs\{\s*display:inline-flex;flex-wrap:wrap;/);
+  assert.match(html, /\.supply-tab\.active,\.output-tab\.active,\.mission-tab\.active,\.instruction-tab\.active\{\s*background:var\(--accent-deep\)/);
+  assert.match(html, /html\[data-theme="light"\] :is\(\.supply-tab,\.output-tab,\.mission-tab,\.instruction-tab\)\.active\{background:var\(--accent\)/);
+  for (const family of ["supply", "output", "mission", "instruction"]) {
+    assert.doesNotMatch(html, new RegExp(`\n\s*\.${family}-tab\{`), `.${family}-tab ainda tem regra própria`);
+    assert.doesNotMatch(html, new RegExp(`\n\s*\.${family}-tab\.active\{`), `.${family}-tab.active ainda tem regra própria`);
+  }
+  assert.doesNotMatch(html, /border:1px solid rgba\(79,134,189,\.38\);\s*border-radius:999px/);
 });
