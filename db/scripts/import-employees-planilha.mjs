@@ -7,6 +7,11 @@
 // Tudo roda numa única transação: se qualquer INSERT falhar, nada fica
 // gravado. Recusa rodar de novo se já houver linhas importadas por ele.
 //
+// Funcionário cujo CPF já está cadastrado no sistema NÃO é inserido de novo:
+// o registro existente é atualizado preenchendo só os campos que estão
+// vazios nele (nome e dados digitados à mão são preservados) — decisão
+// confirmada com o usuário.
+//
 // Uso:
 //   SUPABASE_DB_URL="postgresql://..." node db/scripts/import-employees-planilha.mjs
 
@@ -137,14 +142,13 @@ async function main() {
         .map((c) => [normalizeKey(c.name), c]),
     );
 
-    // CPFs já cadastrados (funcionários que não são de teste) também
-    // bloqueariam o INSERT pelo índice único hr_employees_cpf_idx.
-    const existingCpfRows = await sql.unsafe(`SELECT cpf, full_name AS "fullName" FROM hr_employees WHERE cpf <> ''`);
-    const existingCpf = new Map(existingCpfRows.map((row) => [row.cpf, row.fullName]));
+    const existingCpfRows = await sql.unsafe(`SELECT id, cpf, full_name AS "fullName" FROM hr_employees WHERE cpf <> ''`);
+    const existingCpf = new Map(existingCpfRows.map((row) => [row.cpf, row]));
 
     const seenCpf = new Set();
     const now = new Date().toISOString();
     let inserted = 0;
+    let updated = 0;
     let skippedDuplicateCpf = 0;
     const unmatchedCompanies = new Set();
 
@@ -157,9 +161,7 @@ async function main() {
             skippedDuplicateCpf++;
             cpf = "";
           } else if (existingCpf.has(cpf)) {
-            console.warn(`CPF ${cpf} de "${emp.fullName}" já pertence a "${existingCpf.get(cpf)}" no sistema — cadastrando sem CPF.`);
-            skippedDuplicateCpf++;
-            cpf = "";
+            seenCpf.add(cpf);
           } else {
             seenCpf.add(cpf);
           }
@@ -180,6 +182,33 @@ async function main() {
 
         const notes = emp.email ? `E-mail: ${emp.email}` : "";
 
+        const existing = cpf ? existingCpf.get(cpf) : null;
+        if (existing) {
+          // Só preenche o que está vazio; o resto fica como já estava.
+          await tx.unsafe(
+            `UPDATE hr_employees SET
+               rg = CASE WHEN rg = '' THEN $2 ELSE rg END,
+               telefone = CASE WHEN telefone = '' THEN $3 ELSE telefone END,
+               admission_date = CASE WHEN admission_date = '' THEN $4 ELSE admission_date END,
+               company_id = CASE WHEN company_id = '' THEN $5 ELSE company_id END,
+               company_name = CASE WHEN company_id = '' THEN $6 ELSE company_name END,
+               role_title = CASE WHEN role_title = '' THEN $7 ELSE role_title END,
+               salary_cents = CASE WHEN salary_cents = 0 THEN $8 ELSE salary_cents END,
+               pix_key = CASE WHEN pix_key = '' THEN $9 ELSE pix_key END,
+               birth_date = CASE WHEN birth_date = '' THEN $10 ELSE birth_date END,
+               notes = CASE WHEN notes = '' THEN $11 ELSE notes END,
+               updated_by = $12, updated_by_name = 'Importação Planilha RH', updated_at = $13
+             WHERE id = $1`,
+            [
+              existing.id, emp.rg, emp.telefone, emp.admissionDate, companyId, companyName,
+              emp.roleTitle, emp.salaryCents, emp.pixKey, emp.birthDate, notes, CREATED_BY, now,
+            ],
+          );
+          console.log(`"${emp.fullName}" já cadastrado como "${existing.fullName}" (mesmo CPF) — só campos vazios preenchidos.`);
+          updated++;
+          continue;
+        }
+
         await tx.unsafe(
           `INSERT INTO hr_employees
             (id, full_name, cpf, rg, telefone, admission_date, company_id, company_name,
@@ -198,7 +227,7 @@ async function main() {
       }
     });
 
-    console.log(`${inserted} funcionários importados.`);
+    console.log(`${inserted} funcionários importados, ${updated} já existentes atualizados.`);
     if (skippedDuplicateCpf) console.log(`${skippedDuplicateCpf} com CPF duplicado (cadastrados sem CPF).`);
     if (unmatchedCompanies.size) console.log("Lojas da planilha sem correspondência encontrada:", [...unmatchedCompanies]);
   } finally {
