@@ -2184,6 +2184,10 @@ test("aplica o sistema visual responsivo sem alterar os módulos existentes", as
   );
 
   assert.doesNotMatch(html, /body\{[^}]*text-transform:uppercase/);
+  // Fundo liso nos dois temas: sem textura repetida de pontos (body) nem de
+  // grade (menu lateral), feitas com gradientes de 1px.
+  assert.doesNotMatch(html, /gradient\([^)]*\)?[^;{}]*1px,\s*transparent 1px/);
+  assert.match(html, /html\[data-theme="light"\] \.sidebar\{\s*background:linear-gradient\(160deg,#f8fbfe 0%,#dce9f4 72%\);/);
   assert.match(html, /class="page-header"/);
   assert.match(html, /class="mobile-tabbar no-print"/);
   assert.match(html, /id="btnSidebarCompact"/);
