@@ -29,7 +29,7 @@ export async function GET(request: Request) {
       zone: seller.zone,
       revenuePercent: seller.metrics.revenue.percent,
       itemsPercent: seller.metrics.items.percent,
-      warrantyPercent: seller.metrics.warranty.percent,
+      warrantyPercent: seller.metrics.warranty.attachPercent,
       realmePercent: seller.metrics.realme.percent,
     }));
     return jsonResponse({ month, items });

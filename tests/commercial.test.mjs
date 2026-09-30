@@ -141,39 +141,70 @@ test("progressPercent/progressTier: vermelho < 80 ≤ amarelo < 100 ≤ verde", 
   assert.equal(progressTier(100), "green");
 });
 
-test("comissão de faturamento: 0 abaixo de 80%, 0,4% de 80% a 99,9%, 0,6% a partir de 100%", () => {
-  const at = (revenueCents) => computeSellerMetrics(goal, realized({ revenueCents }), clock).commission;
-  assert.equal(at(7_999_999).revenueCommissionCents, 0);
-  assert.equal(at(8_000_000).revenueRate, 0.004);
-  assert.equal(at(8_000_000).revenueCommissionCents, 32_000);
-  assert.equal(at(9_999_999).revenueRate, 0.004);
-  assert.equal(at(10_000_000).revenueCommissionCents, 60_000);
+// Vendedor que bate os 3 critérios: itens 100/100, realme 10/10, anexo 3 de 10 = 30%.
+const allMet = { items: 100, realme: 10, warrantyQty: 3, notebookQty: 10 };
+
+test("critérios: Itens 100%, Realme 100% e anexo de garantia ≥ 30% (em quantidade, sem arredondar)", () => {
+  const at = (values) => computeSellerMetrics(goal, realized({ ...allMet, ...values }), clock);
+  assert.equal(at({}).commission.allCriteriaMet, true);
+  assert.equal(at({ items: 99 }).commission.allCriteriaMet, false);
+  assert.equal(at({ realme: 9 }).commission.allCriteriaMet, false);
+  assert.equal(at({ warrantyQty: 2 }).commission.allCriteriaMet, false); // 2 de 10 = 20%
+  const tres = at({ warrantyQty: 1, notebookQty: 3 }); // 1 de 3 = 33,3%
+  assert.equal(tres.warranty.met, true);
+  assert.equal(tres.warranty.attachPercent, 33.3);
+  const quase = at({ warrantyQty: 2, notebookQty: 7 }); // 28,5% → precisa de 3
+  assert.equal(quase.warranty.met, false);
+  assert.equal(quase.warranty.missingQty, 1);
+  assert.equal(quase.warranty.tier, "yellow");
 });
 
-test("premiação por itens NÃO cumulativa (110% → R$ 500; 120% → R$ 1.500); SUPER ITENS só referência", () => {
-  const at = (items) => computeSellerMetrics(goal, realized({ items }), clock);
-  assert.equal(at(109).commission.itemsPremiumCents, 0);
-  assert.equal(at(110).commission.itemsPremiumCents, 50_000);
-  assert.equal(at(119).commission.itemsPremiumCents, 50_000);
-  assert.equal(at(120).commission.itemsPremiumCents, 150_000);
-  assert.equal(at(116).items.superReached, false);
-  assert.equal(at(117).items.superReached, true);
-  assert.equal(at(117).items.superTarget, 117);
+test("casos de borda: meta de Itens/Realme zerada conta como batida; sem notebook/PC o anexo NÃO bate", () => {
+  const semMetas = { ...goal, targetItems: 0, targetRealme: 0 };
+  assert.equal(computeSellerMetrics(semMetas, realized({ warrantyQty: 3, notebookQty: 10 }), clock).commission.allCriteriaMet, true);
+  const semNotebook = computeSellerMetrics(goal, realized({ ...allMet, warrantyQty: 0, notebookQty: 0 }), clock);
+  assert.equal(semNotebook.warranty.attachPercent, null);
+  assert.equal(semNotebook.warranty.met, false);
+  assert.equal(semNotebook.warranty.tier, "none");
+  assert.equal(semNotebook.commission.allCriteriaMet, false);
 });
 
-test("garantia 4% fixo; Realmes sem comissão; anexo de garantia = QT G.A.R ÷ NOTEBOOK/PC", () => {
-  const metrics = computeSellerMetrics(goal, realized({ warrantyCents: 389_800, realme: 19, warrantyQty: 4, notebookQty: 11 }), clock);
-  assert.equal(metrics.commission.warrantyCommissionCents, 15_592);
-  assert.equal(metrics.realme.percent, 190);
-  assert.equal(metrics.realme.tier, "green");
-  assert.equal(metrics.attachPercent, 36.3);
-  assert.equal(metrics.commission.totalCents, 15_592);
-  assert.equal(computeSellerMetrics(goal, realized(), clock).attachPercent, null);
+test("faturamento: 0,6% com todos os critérios, 0,4% sem (sempre, sem mínimo de meta)", () => {
+  const ok = computeSellerMetrics(goal, realized({ ...allMet, revenueCents: 5_000_000 }), clock).commission;
+  assert.equal(ok.revenueRate, 0.006);
+  assert.equal(ok.revenueCommissionCents, 30_000); // 0,6% de R$ 50.000 (só 50% da meta)
+  const nao = computeSellerMetrics(goal, realized({ ...allMet, items: 50, revenueCents: 5_000_000 }), clock).commission;
+  assert.equal(nao.revenueRate, 0.004);
+  assert.equal(nao.revenueCommissionCents, 20_000); // 0,4% mesmo abaixo de 80% da meta
 });
 
-test("total estimado soma as três regras", () => {
-  const metrics = computeSellerMetrics(goal, realized({ revenueCents: 12_000_000, items: 121, warrantyCents: 200_000 }), clock);
-  assert.equal(metrics.commission.totalCents, 72_000 + 150_000 + 8_000);
+test("premiação sobre a META DE FATURAMENTO, não cumulativa, e só com todos os critérios", () => {
+  const prize = (revenueCents, extra = {}) =>
+    computeSellerMetrics(goal, realized({ ...allMet, revenueCents, ...extra }), clock).commission.revenuePremiumCents;
+  assert.equal(prize(10_999_999), 0);
+  assert.equal(prize(11_000_000), 50_000);
+  assert.equal(prize(11_999_999), 50_000);
+  assert.equal(prize(12_000_000), 150_000);
+  assert.equal(prize(20_000_000), 150_000);
+  assert.equal(prize(12_000_000, { realme: 0 }), 0); // não bateu Realme → sem premiação
+  // Itens acima da meta não geram premiação por si só (regra antiga removida).
+  assert.equal(prize(10_000_000, { items: 130 }), 0);
+});
+
+test("garantia 4% fixo sobre o valor, mesmo sem bater critérios; SUPER ITENS só referência", () => {
+  const nada = computeSellerMetrics(goal, realized({ warrantyCents: 389_800 }), clock);
+  assert.equal(nada.commission.allCriteriaMet, false);
+  assert.equal(nada.commission.warrantyCommissionCents, 15_592);
+  const itens = computeSellerMetrics(goal, realized({ items: 117 }), clock);
+  assert.equal(itens.items.superReached, true);
+  assert.equal(itens.items.superTarget, 117);
+});
+
+test("total estimado = faturamento + premiação + garantia", () => {
+  const m = computeSellerMetrics(goal, realized({ ...allMet, revenueCents: 12_000_000, warrantyCents: 200_000 }), clock);
+  assert.equal(m.commission.totalCents, 72_000 + 150_000 + 8_000);
+  const semCriterio = computeSellerMetrics(goal, realized({ revenueCents: 12_000_000, warrantyCents: 200_000 }), clock);
+  assert.equal(semCriterio.commission.totalCents, 48_000 + 0 + 8_000);
 });
 
 test("monthClock e nextTarget: dias restantes contam hoje; média diária = falta ÷ dias", () => {
