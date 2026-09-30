@@ -2912,12 +2912,11 @@
   .com-commission{display:flex;flex-direction:column;gap:12px;padding:15px}
   .com-commission-rows{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
   .com-commission-rows li{
-    display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:start;padding:10px 11px;
+    display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:10px 11px;
     border:1px solid var(--inset-border);border-radius:9px;background:var(--bg-card-2);
   }
   .com-commission-rows .label{font:800 9.5px/1.35 var(--mono);letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase}
   .com-commission-rows .value{font:900 14px/1.25 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-  .com-commission-rows .detail{grid-column:1/-1;font:600 11.5px/1.45 var(--sans);color:var(--ink-soft);overflow-wrap:anywhere}
   .com-commission-rows li.on{border-color:rgba(84,196,138,.45)}
   .com-commission-rows li.on .value{color:#54c48a}
   .com-commission-sum{
@@ -34674,48 +34673,19 @@ function renderHomeTasks(){
     }).join('');
   }
 
+  // Comissão: só o título e o valor de cada regra (pedido do usuário —
+  // sem as frases de percentual/faixa).
   function comCommissionCardHtml(seller){
-    const metrics = seller.metrics;
-    const commission = metrics.commission;
-    const revenue = metrics.revenue;
-    const items = metrics.items;
-    const warranty = metrics.warranty;
-
-    let revenueDetail;
-    if(!(revenue.target > 0)) revenueDetail = 'Sem meta de faturamento no mês.';
-    else if(commission.revenueRate === 0){
-      revenueDetail = comFormatPct(revenue.percent)+' da meta — abaixo de 80%, ainda sem comissão. Faltam '+
-        formatCentsBRL(comTargetValue(revenue.target, 80) - revenue.realized)+' para a faixa de 0,4%.';
-    }else if(commission.revenueRate < 0.006){
-      revenueDetail = comFormatPct(revenue.percent)+' da meta — faixa de 0,4% sobre '+formatCentsBRL(revenue.realized)+
-        '. Faltam '+formatCentsBRL(comTargetValue(revenue.target, 100) - revenue.realized)+' para a faixa de 0,6%.';
-    }else{
-      revenueDetail = comFormatPct(revenue.percent)+' da meta — faixa máxima de 0,6% sobre '+formatCentsBRL(revenue.realized)+'.';
-    }
-
-    let itemsDetail;
-    if(!(items.target > 0)) itemsDetail = 'Sem meta de itens no mês.';
-    else if(commission.itemsPremiumCents === 0){
-      itemsDetail = comFormatPct(items.percent)+' da meta — a premiação destrava em 110%. Faltam '+
-        comFormatValue('items', comTargetValue(items.target, 110) - items.realized)+' para R$ 500,00.';
-    }else if(commission.itemsPremiumCents < 150000){
-      itemsDetail = comFormatPct(items.percent)+' da meta — R$ 500,00 destravado. Faltam '+
-        comFormatValue('items', comTargetValue(items.target, 120) - items.realized)+' para R$ 1.500,00.';
-    }else{
-      itemsDetail = comFormatPct(items.percent)+' da meta — premiação máxima de R$ 1.500,00 destravada.';
-    }
-
-    const warrantyDetail = '4% sobre '+formatCentsBRL(warranty.realized)+' vendidos em garantia estendida.';
-
-    const row = (label, cents, detail) =>
+    const commission = seller.metrics.commission;
+    const row = (label, cents) =>
       '<li class="'+(cents > 0 ? 'on' : '')+'"><span class="label">'+escapeHtml(label)+'</span>'+
-      '<span class="value">'+escapeHtml(formatCentsBRL(cents))+'</span><span class="detail">'+escapeHtml(detail)+'</span></li>';
+      '<span class="value">'+escapeHtml(formatCentsBRL(cents))+'</span></li>';
 
     return '<article class="com-commission">'+comSellerHeadHtml(seller)+
       '<ul class="com-commission-rows">'+
-        row('Comissão por vendas', commission.revenueCommissionCents, revenueDetail)+
-        row('Premiação por itens', commission.itemsPremiumCents, itemsDetail)+
-        row('Garantia estendida', commission.warrantyCommissionCents, warrantyDetail)+
+        row('Comissão por vendas', commission.revenueCommissionCents)+
+        row('Premiação por itens', commission.itemsPremiumCents)+
+        row('Garantia estendida', commission.warrantyCommissionCents)+
       '</ul>'+
       '<div class="com-commission-sum"><span>Total estimado</span><strong>'+escapeHtml(formatCentsBRL(commission.totalCents))+'</strong></div>'+
     '</article>';
