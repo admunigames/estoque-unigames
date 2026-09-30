@@ -653,13 +653,16 @@ test("separa compras e lembretes no Início e oferece tema por usuário", async 
     readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
   ]);
 
-  assert.match(html, /class="home-operations"/);
-  assert.match(html, /id="homePurchaseProgress"/);
-  assert.match(html, /id="homePurchaseNotStarted"/);
-  assert.match(html, /id="homePurchaseOverdue"/);
-  assert.match(html, /params\.append\('status', 'Não iniciado'\)/);
-  assert.match(html, /params\.append\('status', 'Em andamento'\)/);
-  assert.match(html, /id="homeReminderNext"/);
+  // Os blocos "Operações do dia" (Compras/Lembretes/Tarefas), os botões de
+  // ação rápida e "Atualizações das lojas" foram removidos da Início.
+  assert.doesNotMatch(html, /class="home-operations"/);
+  assert.doesNotMatch(html, /id="homePurchaseProgress"/);
+  assert.doesNotMatch(html, /id="homeReminderNext"/);
+  assert.doesNotMatch(html, /id="btnEnableTaskNotifications"/);
+  assert.doesNotMatch(html, /class="home-quick-actions"/);
+  assert.doesNotMatch(html, /id="homeStoreUpdates"/);
+  // A ativação de notificações segue disponível pela tela de Missões.
+  assert.match(html, /el\('btnEnableMissionNotifications'\)\.addEventListener\('click',async \(\) => \{\s*await enableTaskNotifications\(\);/);
   assert.match(html, /Notification\.requestPermission\(\)/);
   assert.match(html, /setInterval\(checkTaskReminders, 30000\)/);
   assert.match(html, /id="themeToggle"/);
@@ -772,14 +775,14 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(html, /\/api\/preferences/);
   assert.match(html, /beforeinstallprompt/);
   assert.match(html, /estoque_offline_queue:/);
-  assert.match(html, /id="homeTaskChartDone"/);
-  assert.match(html, /data-quick-action="task"/);
+  assert.doesNotMatch(html, /id="homeTaskChartDone"/);
+  assert.doesNotMatch(html, /data-quick-action=/);
   assert.match(html, /\/api\/health/);
   assert.match(schema, /purchaseDeliveryRecords/);
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v75"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -872,7 +875,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v75"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -965,7 +968,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v75"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1191,7 +1194,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v75"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1624,7 +1627,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v75"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
   // Lembrete da Início não chama a API para quem enxerga todas as lojas sem ter uma própria (evita 400).
   assert.match(
     html,
@@ -1720,7 +1723,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v75"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v77"/);
 });
 
 test("carrossel de imagens de Instruções: rotas de upload em partes, servir arquivo e reordenar", async () => {
@@ -2054,7 +2057,7 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /\.home-access-section-label\{/);
   assert.match(html, /function orderHomeSections\(\)/);
   assert.match(html, /Atividades diárias e semanais que precisam ser realizadas pela loja/);
-  assert.match(html, /\.home-operation-head > div > span\{/);
+  assert.doesNotMatch(html, /\.home-operation-head/);
   assert.match(html, /html\[data-theme="light"\] \.home-missions\{/);
   assert.match(html, /get\('entrada'\) === '1'/);
   assert.match(html, /document\.title = 'UNIGAMES'/);
@@ -2181,13 +2184,19 @@ test("aplica o sistema visual responsivo sem alterar os módulos existentes", as
   );
 
   assert.doesNotMatch(html, /body\{[^}]*text-transform:uppercase/);
+  // Fundo liso nos dois temas: sem textura repetida de pontos (body) nem de
+  // grade (menu lateral), feitas com gradientes de 1px.
+  assert.doesNotMatch(html, /gradient\([^)]*\)?[^;{}]*1px,\s*transparent 1px/);
+  assert.match(html, /html\[data-theme="light"\] \.sidebar\{\s*background:linear-gradient\(160deg,#f8fbfe 0%,#dce9f4 72%\);/);
+  // Telas de login e recuperação de senha (renderizadas pelo worker) também
+  // sem a grade de fundo.
+  const workerSource = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(workerSource, /1px,\s*transparent 1px/);
   assert.match(html, /class="page-header"/);
   assert.match(html, /class="mobile-tabbar no-print"/);
   assert.match(html, /id="btnSidebarCompact"/);
   assert.match(html, /class="nav-icon"/);
-  assert.match(html, /id="homeStoreUpdates"/);
-  assert.match(html, /id="homePurchaseProgress"/);
-  assert.match(html, /function loadHomeOverview\(\)/);
+  assert.doesNotMatch(html, /function loadHomeOverview\(\)/);
   assert.match(html, /class="density-toggle"/);
   assert.match(html, /data-purchase-density="compact"/);
   assert.match(html, /<details class="purchase-files">/);
@@ -4107,8 +4116,10 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
   assert.match(html, /<section id="pageComercialAcompanhamento" class="page wrap">/);
   assert.doesNotMatch(html, /id="navComercial(Dashboard|Comissao|Ranking|Metas)"|pageComercialMetas|comercialMetas:/);
   for (const view of ["dashboard", "comissao", "ranking", "metas"]) {
-    assert.match(html, new RegExp(`class="com-view-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-com-view="${view}"`));
+    assert.match(html, new RegExp(`class="supply-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-com-view="${view}"`));
   }
+  // Abas no estilo único do site, sem classe própria do Comercial.
+  assert.doesNotMatch(html, /com-view-tab/);
   // Cadastro de Metas: só comercial:manage, e é a importação da planilha
   // (sem digitação manual de metas/realizado).
   assert.match(html, /data-com-view="metas" data-permission="comercial:manage">Cadastro de Metas</);
@@ -4151,4 +4162,20 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
   assert.match(migration, /CREATE TABLE "commercial_imports"/);
   assert.match(migration, /CREATE TABLE "commercial_aliases"/);
   assert.doesNotMatch(migration, /finance_/);
+});
+
+test("abas do site inteiro compartilham um único estilo (barra arredondada, ativa preenchida)", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+
+  // As quatro famílias de abas (.supply-tab, .output-tab, .mission-tab,
+  // .instruction-tab) usam o MESMO bloco de regras agrupado — nada de
+  // cópias do visual antigo (pill com borda azul, fonte mono 9px).
+  assert.match(html, /\.supply-tabs,\.output-tabs,\.mission-tabs,\.instruction-tabs\{\s*display:inline-flex;flex-wrap:wrap;/);
+  assert.match(html, /\.supply-tab\.active,\.output-tab\.active,\.mission-tab\.active,\.instruction-tab\.active\{\s*background:var\(--accent-deep\)/);
+  assert.match(html, /html\[data-theme="light"\] :is\(\.supply-tab,\.output-tab,\.mission-tab,\.instruction-tab\)\.active\{background:var\(--accent\)/);
+  for (const family of ["supply", "output", "mission", "instruction"]) {
+    assert.doesNotMatch(html, new RegExp(`\\n\\s*\\.${family}-tab\\{`), `.${family}-tab ainda tem regra própria`);
+    assert.doesNotMatch(html, new RegExp(`\\n\\s*\\.${family}-tab\\.active\\{`), `.${family}-tab.active ainda tem regra própria`);
+  }
+  assert.doesNotMatch(html, /border:1px solid rgba\(79,134,189,\.38\);\s*border-radius:999px/);
 });
