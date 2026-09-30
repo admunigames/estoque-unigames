@@ -1,30 +1,38 @@
-// Comercial — metas e comissionamento dos vendedores. Regras do documento
-// "ESTRUTURA DASH COMERCIAL - CENTRAL UNIGAMES":
+// Comercial — metas e comissionamento dos vendedores. Regra de comissão
+// (definida pelo usuário em 2026-09-30):
 //
-//   Faturamento  → comissão 0,4% entre 80% e 99,9% da meta; 0,6% a partir de 100%
-//   Itens        → premiação R$ 500 a partir de 110%; R$ 1.500 a partir de 120%
-//                  (NÃO cumulativa: 120% paga R$ 1.500, não R$ 2.000 —
-//                  decisão confirmada com o usuário). SUPER ITENS da planilha
-//                  é só marco de referência, não muda a premiação.
-//   Garantia     → 4% fixo sobre o realizado, sem faixa de meta
-//   Realmes      → só acompanhamento (meta × feito), sem comissão
+//   CRITÉRIOS: Itens ≥ 100% da META ITENS, Realme ≥ 100% da META REALMES e
+//   anexo de garantia ≥ 30% (QT G.A.R ÷ NOTEBOOK/PC — não existe meta de
+//   G.A.R em valor).
+//
+//   Bateu os 3 critérios → 0,6% do faturamento + premiação sobre a META DE
+//                          FATURAMENTO: R$ 500 a partir de 110%, R$ 1.500 a
+//                          partir de 120% (não cumulativa).
+//   Não bateu algum      → 0,4% do faturamento (sempre, sem mínimo) e sem
+//                          premiação.
+//   Garantia estendida   → 4% sobre o valor vendido em garantia, sempre.
+//
+//   Meta de Itens/Realme zerada conta como batida (não havia o que cumprir).
+//   Sem notebook/PC vendido no mês o anexo não tem base → critério de 30%
+//   NÃO batido.
 //
 // A ÚNICA fonte dos números é a planilha "ACOMPANHAMENTO LOJAS_VENDEDORES",
-// aba "VENDEDORES <MÊS>" (decisão confirmada: sem digitação manual). Cada
-// importação grava um retrato do mês por vendedor em commercial_monthly;
-// percentual, faixa de comissão e ranking são SEMPRE calculados ao vivo
-// a partir desse retrato (nada disso é persistido).
+// aba "VENDEDORES <MÊS>" (sem digitação manual). Cada importação grava um
+// retrato do mês por vendedor em commercial_monthly; percentuais, critérios
+// e comissão são SEMPRE calculados ao vivo (nada disso é persistido).
 
 export const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-// Os 4 alvos do dashboard (Faturamento e Itens), em % da meta.
-export const COMMERCIAL_TARGETS = [80, 100, 110, 120] as const;
+// Marcos da barra de Faturamento, em % da meta: a meta e as duas faixas de
+// premiação.
+export const REVENUE_TARGETS = [100, 110, 120] as const;
 
-export const REVENUE_RATE_LOW = 0.004; // 80% a 99,9%
-export const REVENUE_RATE_HIGH = 0.006; // a partir de 100%
-export const ITEMS_PREMIUM_LOW_CENTS = 50_000; // a partir de 110%
-export const ITEMS_PREMIUM_HIGH_CENTS = 150_000; // a partir de 120%
+export const REVENUE_RATE_LOW = 0.004; // não bateu todos os critérios
+export const REVENUE_RATE_HIGH = 0.006; // bateu Itens, Realme e anexo de garantia
+export const REVENUE_PREMIUM_LOW_CENTS = 50_000; // faturamento ≥ 110% da meta
+export const REVENUE_PREMIUM_HIGH_CENTS = 150_000; // faturamento ≥ 120% da meta
 export const WARRANTY_RATE = 0.04;
+export const WARRANTY_ATTACH_TARGET = 30; // % de notebooks/PC vendidos com garantia
 
 /** Maiúsculo, sem acento, sem pontuação e com espaços simples. */
 export function normalizeText(value: unknown): string {
@@ -149,12 +157,27 @@ export type MetricBlock = {
   tier: Tier;
   reachedTargets: number;
   next: NextTarget | null;
+  // Critério de comissão: realizado ≥ meta (meta zerada conta como batida).
+  met: boolean;
+};
+
+export type WarrantyBlock = {
+  realizedCents: number;
+  warrantyQty: number;
+  notebookQty: number;
+  // QT G.A.R ÷ NOTEBOOK/PC (1 casa decimal) — null sem notebook/PC vendido.
+  attachPercent: number | null;
+  tier: Tier;
+  met: boolean;
+  // Quantas garantias faltam para chegar a 30% (0 quando já chegou).
+  missingQty: number | null;
 };
 
 export type CommissionBreakdown = {
+  allCriteriaMet: boolean;
   revenueRate: number;
   revenueCommissionCents: number;
-  itemsPremiumCents: number;
+  revenuePremiumCents: number;
   warrantyCommissionCents: number;
   totalCents: number;
 };
@@ -162,10 +185,8 @@ export type CommissionBreakdown = {
 export type SellerMetrics = {
   revenue: MetricBlock;
   items: MetricBlock & { superTarget: number; superReached: boolean };
-  warranty: MetricBlock;
   realme: MetricBlock;
-  // QT G.A.R ÷ NOTEBOOK/PC (1 casa decimal) — null sem notebook/PC vendido.
-  attachPercent: number | null;
+  warranty: WarrantyBlock;
   commission: CommissionBreakdown;
 };
 
@@ -186,29 +207,48 @@ function metricBlock(
     tier: progressTier(percent),
     reachedTargets,
     next: nextTarget(realized, target, thresholds, clock),
+    met: !(target > 0) || realized >= target,
+  };
+}
+
+export function warrantyBlock(realized: Realized): WarrantyBlock {
+  const { warrantyQty, notebookQty } = realized;
+  const attachPercent = notebookQty > 0 ? Math.floor((warrantyQty / notebookQty) * 1000) / 10 : null;
+  // Compara em quantidade (sem arredondar o %): 3 de 10 = exatamente 30%.
+  const met = notebookQty > 0 && warrantyQty * 100 >= WARRANTY_ATTACH_TARGET * notebookQty;
+  const needed = notebookQty > 0 ? Math.ceil((WARRANTY_ATTACH_TARGET * notebookQty) / 100) : null;
+  let tier: Tier = "none";
+  if (attachPercent !== null) {
+    tier = met ? "green" : attachPercent >= WARRANTY_ATTACH_TARGET * 0.8 ? "yellow" : "red";
+  }
+  return {
+    realizedCents: realized.warrantyCents,
+    warrantyQty,
+    notebookQty,
+    attachPercent,
+    tier,
+    met,
+    missingQty: needed === null ? null : Math.max(0, needed - warrantyQty),
   };
 }
 
 export function computeSellerMetrics(goal: Goal, realized: Realized, clock: MonthClock): SellerMetrics {
-  const revenue = metricBlock(goal.targetRevenueCents, realized.revenueCents, COMMERCIAL_TARGETS, clock);
-  const itemsBase = metricBlock(goal.targetItems, realized.items, COMMERCIAL_TARGETS, clock);
-  const warranty = metricBlock(goal.targetWarrantyCents, realized.warrantyCents, [100], clock);
+  const revenue = metricBlock(goal.targetRevenueCents, realized.revenueCents, REVENUE_TARGETS, clock);
+  const itemsBase = metricBlock(goal.targetItems, realized.items, [100], clock);
   const realme = metricBlock(goal.targetRealme, realized.realme, [100], clock);
+  const warranty = warrantyBlock(realized);
 
-  // Os limiares usam o valor absoluto do alvo (targetValue), não o % já
-  // arredondado pra exibição — 79,99% nunca "vira" 80% por arredondamento.
-  const revenueRate = revenue.target > 0
-    ? (revenue.realized >= targetValue(revenue.target, 100)
-      ? REVENUE_RATE_HIGH
-      : revenue.realized >= targetValue(revenue.target, 80) ? REVENUE_RATE_LOW : 0)
-    : 0;
-  const itemsPremium = itemsBase.target > 0
-    ? (itemsBase.realized >= targetValue(itemsBase.target, 120)
-      ? ITEMS_PREMIUM_HIGH_CENTS
-      : itemsBase.realized >= targetValue(itemsBase.target, 110) ? ITEMS_PREMIUM_LOW_CENTS : 0)
+  const allCriteriaMet = itemsBase.met && realme.met && warranty.met;
+  const revenueRate = allCriteriaMet ? REVENUE_RATE_HIGH : REVENUE_RATE_LOW;
+  // Premiação só com todos os critérios batidos; limiares pelo valor absoluto
+  // da meta (targetValue), nunca pelo % arredondado de exibição.
+  const revenuePremiumCents = allCriteriaMet && revenue.target > 0
+    ? (revenue.realized >= targetValue(revenue.target, 120)
+      ? REVENUE_PREMIUM_HIGH_CENTS
+      : revenue.realized >= targetValue(revenue.target, 110) ? REVENUE_PREMIUM_LOW_CENTS : 0)
     : 0;
   const revenueCommissionCents = Math.round(revenue.realized * revenueRate);
-  const warrantyCommissionCents = Math.round(warranty.realized * WARRANTY_RATE);
+  const warrantyCommissionCents = Math.round(realized.warrantyCents * WARRANTY_RATE);
 
   return {
     revenue,
@@ -217,17 +257,15 @@ export function computeSellerMetrics(goal: Goal, realized: Realized, clock: Mont
       superTarget: goal.targetSuperItems,
       superReached: goal.targetSuperItems > 0 && realized.items >= goal.targetSuperItems,
     },
-    warranty,
     realme,
-    attachPercent: realized.notebookQty > 0
-      ? Math.floor((realized.warrantyQty / realized.notebookQty) * 1000) / 10
-      : null,
+    warranty,
     commission: {
+      allCriteriaMet,
       revenueRate,
       revenueCommissionCents,
-      itemsPremiumCents: itemsPremium,
+      revenuePremiumCents,
       warrantyCommissionCents,
-      totalCents: revenueCommissionCents + itemsPremium + warrantyCommissionCents,
+      totalCents: revenueCommissionCents + revenuePremiumCents + warrantyCommissionCents,
     },
   };
 }

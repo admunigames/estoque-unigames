@@ -2841,6 +2841,13 @@
   .com-seller-name{display:flex;flex-direction:column;gap:3px;min-width:0}
   .com-seller-name strong{font:800 15px/1.25 var(--sans);color:var(--ink);overflow-wrap:anywhere}
   .com-seller-name span{font:700 10px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase}
+  .com-seller-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:0}
+  .com-criteria{padding:4px 9px;border-radius:999px;border:1px solid;font:800 9.5px/1.3 var(--mono);letter-spacing:.05em;text-align:right;overflow-wrap:anywhere}
+  .com-criteria.ok{color:#54c48a;border-color:rgba(84,196,138,.5);background:rgba(84,196,138,.1)}
+  .com-criteria.pending{color:#e1ad49;border-color:rgba(225,173,73,.5);background:rgba(225,173,73,.08)}
+  html[data-theme="light"] .com-criteria.ok{color:#23874f}
+  html[data-theme="light"] .com-criteria.pending{color:#80570d}
+  @media(max-width:560px){.com-seller-side{align-items:flex-start}}
   .com-seller-meta{font:600 11px/1.4 var(--sans);color:var(--ink-faint)}
   .com-blocks{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
   .com-block{
@@ -2862,7 +2869,7 @@
   .com-bar.simple{padding-bottom:0}
   .com-bar-track{
     position:relative;height:14px;border-radius:999px;overflow:hidden;
-    background:linear-gradient(90deg,rgba(239,106,85,.2) 0 40%,rgba(225,173,73,.2) 40% 60%,rgba(84,196,138,.2) 60% 100%);
+    background:linear-gradient(90deg,rgba(239,106,85,.2) 0 40%,rgba(225,173,73,.2) 40% 50%,rgba(84,196,138,.2) 50% 100%);
   }
   .com-bar.simple .com-bar-track{background:linear-gradient(90deg,rgba(239,106,85,.2) 0 80%,rgba(225,173,73,.2) 80% 99.9%,rgba(84,196,138,.2) 99.9% 100%)}
   .com-bar-fill{position:absolute;inset:0 auto 0 0;border-radius:inherit;transition:width .5s ease}
@@ -6104,7 +6111,7 @@
           <select id="comRankMetric">
             <option value="revenuePercent">FATURAMENTO</option>
             <option value="itemsPercent">ITENS VENDIDOS</option>
-            <option value="warrantyPercent">GARANTIA ESTENDIDA</option>
+            <option value="warrantyPercent">ANEXO DE GARANTIA</option>
             <option value="realmePercent">REALMES</option>
           </select>
         </div>
@@ -6116,9 +6123,10 @@
 
       <div class="com-view-panel" id="comViewComissao" hidden>
         <div class="com-rules" aria-label="Regras de comissão">
-          <div class="com-rule"><span>Comissão por vendas (Faturamento)</span><strong>0,4% / 0,6%</strong><small>0,4% entre 80% e 99,9% da meta; 0,6% ao atingir 100%</small></div>
-          <div class="com-rule"><span>Premiação por vendas (Itens)</span><strong>R$ 500 / R$ 1.500</strong><small>R$ 500 ao atingir 110% da meta; R$ 1.500 ao atingir 120% (não cumulativa)</small></div>
-          <div class="com-rule"><span>Comissão por garantia estendida</span><strong>4%</strong><small>Percentual fixo sobre o valor vendido, sem faixa de meta</small></div>
+          <div class="com-rule"><span>Critérios para 0,6%</span><strong>Itens · Realme · Garantia</strong><small>Itens 100% da meta, Realme 100% da meta e garantia em 30% dos notebooks/PC vendidos</small></div>
+          <div class="com-rule"><span>Comissão por vendas (Faturamento)</span><strong>0,6% / 0,4%</strong><small>0,6% batendo os 3 critérios; 0,4% sem eles</small></div>
+          <div class="com-rule"><span>Premiação por faturamento</span><strong>R$ 500 / R$ 1.500</strong><small>110% / 120% da meta de faturamento, só batendo os 3 critérios (não cumulativa)</small></div>
+          <div class="com-rule"><span>Comissão por garantia estendida</span><strong>4%</strong><small>Sobre o valor vendido em garantia, sempre</small></div>
         </div>
         <div class="com-total" id="comComTotal" hidden></div>
         <div class="com-commission-grid" id="comComList"><p class="com-empty">Carregando…</p></div>
@@ -34443,10 +34451,13 @@ function renderHomeTasks(){
   // vêm SEMPRE calculados pelo servidor (app/lib/commercial.ts). O escopo
   // por loja e o "só o próprio vendedor" também são do servidor
   // (app/api/commercial/*): o front só filtra dentro do que já recebeu.
-  const COM_TARGETS = [80, 100, 110, 120];
-  // Posição fixa de cada alvo na barra (escala por trechos 0-80-100-110-120%),
-  // pra os 4 rótulos nunca se sobreporem em tela de celular.
-  const COM_TARGET_POS = [40, 60, 80, 100];
+  // Marcos da barra de Faturamento: a meta e as duas faixas de premiação
+  // (regra de 2026-09-30). Posições fixas (escala por trechos 0-100-110-120%)
+  // pra os rótulos nunca se sobreporem em tela de celular.
+  const COM_TARGETS = [100, 110, 120];
+  const COM_TARGET_POS = [50, 75, 100];
+  const COM_TARGET_LABELS = ['META', 'R$ 500', 'R$ 1.500'];
+  const COM_TARGET_NAMES = ['a meta (100%)', '110% (prêmio de R$ 500)', '120% (prêmio de R$ 1.500)'];
   const COM_MONTH_NAMES = ['JANEIRO','FEVEREIRO','MARCO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
   let comMonth = '';
   let comOverview = null;
@@ -34507,7 +34518,7 @@ function renderHomeTasks(){
 
   function comBarPosition(percent){
     if(percent === null || percent === undefined || percent <= 0) return 0;
-    const points = [[0,0],[80,40],[100,60],[110,80],[120,100]];
+    const points = [[0,0],[100,50],[110,75],[120,100]];
     for(let i = 1; i < points.length; i++){
       if(percent <= points[i][0]){
         const [p0, x0] = points[i-1];
@@ -34526,12 +34537,12 @@ function renderHomeTasks(){
     const fmt = value => comFormatValue(kind, value);
     if(!(block.target > 0)) return {text:'Sem meta neste mês.', sub:''};
     const next = block.next;
-    if(!next) return {text:simple ? 'Meta batida!' : 'Todos os 4 alvos atingidos!', sub:''};
-    const goalName = simple ? 'a meta' : 'o Alvo '+next.index+' ('+next.percent+'%)';
+    if(!next) return {text:simple ? 'Meta batida!' : 'Meta e as duas faixas de prêmio atingidas!', sub:''};
+    const goalName = simple ? 'a meta' : COM_TARGET_NAMES[next.index - 1];
     if(clock.status === 'past') return {text:'Mês encerrado — faltaram '+fmt(next.missing)+' para '+goalName+'.', sub:''};
     const days = clock.daysRemaining;
     const daysText = days === 1 ? 'último dia do mês' : days+' dias restantes';
-    if(!simple && block.reachedTargets >= 2){
+    if(!simple && block.reachedTargets >= 1){
       return {text:'Meta batida — faltam '+fmt(next.missing)+' para '+goalName+'.', sub:'Média de '+fmt(next.perDay)+' por dia · '+daysText};
     }
     const when = clock.status === 'future' ? 'por dia' : 'hoje';
@@ -34539,6 +34550,7 @@ function renderHomeTasks(){
   }
 
   // extraHtml: linha adicional no fim do bloco (Super itens, anexo de garantia)
+  // extraHtml: linha adicional no fim do bloco (ex.: Super itens)
   function comBlockHtml(kind, title, block, clock, simple, extraHtml){
     const percent = block.percent;
     const tier = comTier(percent);
@@ -34554,14 +34566,14 @@ function renderHomeTasks(){
         const last = index === COM_TARGETS.length - 1 ? ' last' : '';
         const left = 'left:'+COM_TARGET_POS[index]+'%';
         return '<span class="com-bar-marker'+reached+last+'" style="'+left+'"></span>'+
-          '<span class="com-bar-label'+reached+last+'" style="'+left+'"><span>A'+(index+1)+'</span><span>'+target+'%</span></span>';
+          '<span class="com-bar-label'+reached+last+'" style="'+left+'"><span>'+COM_TARGET_LABELS[index]+'</span><span>'+target+'%</span></span>';
       }).join('');
       bar = '<div class="com-bar" role="img" aria-label="'+escapeHtml(ariaLabel)+'">'+
         '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+comBarPosition(percent)+'%"></div></div>'+marks+'</div>';
     }
     const targets = simple || !(block.target > 0) ? '' :
       '<ul class="com-targets">'+COM_TARGETS.map((target, index) =>
-        '<li class="'+(block.reachedTargets > index ? 'reached' : '')+'"><b>ALVO '+(index+1)+' · '+target+'%</b>'+
+        '<li class="'+(block.reachedTargets > index ? 'reached' : '')+'"><b>'+(index ? 'PRÊMIO '+COM_TARGET_LABELS[index] : 'META')+' · '+target+'%</b>'+
         escapeHtml(comFormatValue(kind, comTargetValue(block.target, target)))+'</li>'
       ).join('')+'</ul>';
     const incentive = comIncentive(kind, block, clock, simple);
@@ -34577,11 +34589,44 @@ function renderHomeTasks(){
     '</section>';
   }
 
+  // Garantia estendida: não há meta em valor — o critério é o anexo
+  // (garantias ÷ notebooks/PC vendidos) chegar a 30%. A barra vai até 30%.
+  function comWarrantyBlockHtml(warranty){
+    const attach = warranty.attachPercent;
+    const width = attach === null ? 0 : Math.min(100, attach / 30 * 100);
+    let text;
+    if(attach === null) text = 'Nenhum notebook/PC vendido no mês — o critério de 30% ainda não conta.';
+    else if(warranty.met) text = 'Critério de 30% batido.';
+    else text = 'Falta'+(warranty.missingQty === 1 ? '' : 'm')+' '+warranty.missingQty+' garantia'+(warranty.missingQty === 1 ? '' : 's')+' para chegar a 30% dos notebooks/PC.';
+    return '<section class="com-block tier-'+warranty.tier+'">'+
+      '<div class="com-block-head"><span class="com-block-title">Garantia estendida</span><strong class="com-pct">'+(attach === null ? 'SEM PC' : comFormatPct(attach))+'</strong></div>'+
+      '<div class="com-bar simple" role="img" aria-label="'+escapeHtml('Anexo de garantia: '+comFormatPct(attach)+' de 30%')+'">'+
+        '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+width+'%"></div></div></div>'+
+      '<dl class="com-figures">'+
+        '<div><dt>Anexo (critério 30%)</dt><dd>'+escapeHtml(warranty.warrantyQty+' de '+comFormatQty(warranty.notebookQty, 'notebook/PC', 'notebooks/PC'))+'</dd></div>'+
+        '<div><dt>Vendido em garantia</dt><dd>'+escapeHtml(formatCentsBRL(warranty.realizedCents))+'</dd></div>'+
+      '</dl>'+
+      '<p class="com-incentive">'+escapeHtml(text)+'</p>'+
+    '</section>';
+  }
+
+  // Selo dos critérios da comissão: com Itens 100%, Realme 100% e anexo de
+  // garantia 30% o faturamento paga 0,6% (e libera a premiação); sem, 0,4%.
+  function comCriteriaHtml(metrics){
+    if(metrics.commission.allCriteriaMet) return '<span class="com-criteria ok">METAS BATIDAS · 0,6%</span>';
+    const missing = [];
+    if(!metrics.items.met) missing.push('ITENS');
+    if(!metrics.realme.met) missing.push('REALME');
+    if(!metrics.warranty.met) missing.push('GARANTIA 30%');
+    return '<span class="com-criteria pending">0,4% · FALTA: '+escapeHtml(missing.join(', '))+'</span>';
+  }
+
   function comSellerHeadHtml(seller){
     const updated = seller.updatedAt ? 'Atualizado em '+formatDateTimeBR(seller.updatedAt) : '';
     return '<header class="com-seller-head"><div class="com-seller-name"><strong>'+escapeHtml(seller.name)+'</strong>'+
       '<span>'+escapeHtml(seller.companyName || 'SEM LOJA')+(seller.zone ? ' · ZONA '+escapeHtml(seller.zone) : '')+'</span></div>'+
-      (updated ? '<span class="com-seller-meta">'+escapeHtml(updated)+'</span>' : '')+'</header>';
+      '<div class="com-seller-side">'+comCriteriaHtml(seller.metrics)+
+      (updated ? '<span class="com-seller-meta">'+escapeHtml(updated)+'</span>' : '')+'</div></header>';
   }
 
   function comData(){
@@ -34658,16 +34703,12 @@ function renderHomeTasks(){
           escapeHtml(comFormatValue('items', m.items.superTarget))+' · '+
           escapeHtml(m.items.superReached ? 'atingido' : 'faltam '+comFormatValue('items', m.items.superTarget - m.items.realized))+'</p>'
         : '';
-      const attachLine = '<p class="com-extra"><b>ANEXO DE GARANTIA</b>'+
-        (m.attachPercent === null
-          ? 'Nenhum notebook/PC vendido'
-          : escapeHtml(seller.realized.warrantyQty+' de '+comFormatQty(seller.realized.notebookQty, 'notebook/PC', 'notebooks/PC')+' ('+comFormatPct(m.attachPercent)+')'))+'</p>';
       return '<article class="com-seller">'+comSellerHeadHtml(seller)+
         '<div class="com-blocks">'+
           comBlockHtml('money', 'Faturamento', m.revenue, clock, false)+
-          comBlockHtml('items', 'Itens vendidos', m.items, clock, false, superLine)+
-          comBlockHtml('money', 'Garantia estendida', m.warranty, clock, true, attachLine)+
+          comBlockHtml('items', 'Itens vendidos', m.items, clock, true, superLine)+
           comBlockHtml('units', 'Realmes', m.realme, clock, true)+
+          comWarrantyBlockHtml(m.warranty)+
         '</div>'+
       '</article>';
     }).join('');
@@ -34683,9 +34724,9 @@ function renderHomeTasks(){
 
     return '<article class="com-commission">'+comSellerHeadHtml(seller)+
       '<ul class="com-commission-rows">'+
-        row('Comissão por vendas', commission.revenueCommissionCents)+
-        row('Premiação por itens', commission.itemsPremiumCents)+
-        row('Garantia estendida', commission.warrantyCommissionCents)+
+        row('Comissão por vendas ('+(commission.allCriteriaMet ? '0,6%' : '0,4%')+')', commission.revenueCommissionCents)+
+        row('Premiação por faturamento', commission.revenuePremiumCents)+
+        row('Garantia estendida (4%)', commission.warrantyCommissionCents)+
       '</ul>'+
       '<div class="com-commission-sum"><span>Total estimado</span><strong>'+escapeHtml(formatCentsBRL(commission.totalCents))+'</strong></div>'+
     '</article>';
@@ -34842,7 +34883,7 @@ function renderHomeTasks(){
         '<dl class="com-import-values">'+
           '<div><dt>Faturado / Meta</dt><dd>'+escapeHtml(formatCentsBRL(row.revenueCents)+' / '+formatCentsBRL(row.targetRevenueCents))+'</dd></div>'+
           '<div><dt>Itens / Meta</dt><dd>'+escapeHtml(row.items+' / '+row.targetItems)+'</dd></div>'+
-          '<div><dt>Garantia / Meta</dt><dd>'+escapeHtml(formatCentsBRL(row.warrantyCents)+' / '+formatCentsBRL(row.targetWarrantyCents))+'</dd></div>'+
+          '<div><dt>Anexo de garantia</dt><dd>'+escapeHtml(row.warrantyQty+' de '+row.notebookQty+' notebooks/PC')+'</dd></div>'+
           '<div><dt>Realmes / Meta</dt><dd>'+escapeHtml(row.realme+' / '+row.targetRealme)+'</dd></div>'+
         '</dl>'+
       '</li>';
