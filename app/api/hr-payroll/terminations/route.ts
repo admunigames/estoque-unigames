@@ -6,6 +6,7 @@ import {
   actorName,
   canManagePayroll,
   centsValue,
+  deactivateLinkedLogin,
   identity,
   jsonResponse,
   loadEmployee,
@@ -177,6 +178,8 @@ export async function POST(request: Request) {
              updated_at=CURRENT_TIMESTAMP WHERE id=?3`,
         )
         .bind(actor.id, actorName(actor), employeeId),
+      // Desligado: o login vinculado ao funcionário é bloqueado na hora.
+      deactivateLinkedLogin(database, employeeId),
     ]);
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {

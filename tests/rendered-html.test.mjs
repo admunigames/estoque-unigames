@@ -4179,3 +4179,77 @@ test("abas do site inteiro compartilham um único estilo (barra arredondada, ati
   }
   assert.doesNotMatch(html, /border:1px solid rgba\(79,134,189,\.38\);\s*border-radius:999px/);
 });
+
+test("acessos de vendedor: troca obrigatória da senha inicial, só Comercial + Instruções e bloqueio automático no desligamento", async () => {
+  const seller = {
+    id: "user-vendedor-1",
+    username: "otavio.paulo",
+    displayName: "OTAVIO PAULO",
+    email: "",
+    passwordHash: "x",
+    passwordSalt: "x",
+    role: "user",
+    accessGroup: "custom",
+    permissionsJson: JSON.stringify(["comercial:view"]),
+    companyId: "crecife001",
+    hierarchy: "administrative",
+    sector: "",
+    active: 1,
+    sessionVersion: 1,
+    mustChangePassword: 1,
+    createdAt: "",
+    updatedAt: "",
+  };
+  const cookie = `unigames_session=${await signSession(env.APP_SESSION_SECRET, seller.id, seller.sessionVersion)}`;
+  const runtime = await worker();
+  const call = (path, userRow) => runtime.fetch(
+    new Request(`http://localhost${path}`, { headers: { accept: path.startsWith("/api/") ? "application/json" : "text/html", cookie } }),
+    { ...env, DB: createFakeD1(userRow) },
+    ctx,
+  );
+
+  // Senha inicial: qualquer tela vai para /trocar-senha e as APIs recusam.
+  const page = await call("/comercial/acompanhamento", seller);
+  assert.equal(page.status, 303);
+  assert.equal(new URL(page.headers.get("location")).pathname, "/trocar-senha");
+  const api = await call("/api/session", seller);
+  assert.equal(api.status, 403);
+  assert.match((await api.json()).error, /TROQUE SUA SENHA INICIAL/);
+  const changePage = await call("/trocar-senha", seller);
+  assert.equal(changePage.status, 200);
+  assert.match(await changePage.text(), /Crie sua senha[\s\S]*name="newPassword"[\s\S]*name="confirmPassword"/);
+
+  // Depois da troca: só Comercial (e Instruções, liberado a todos); Documentos
+  // e demais módulos recusados.
+  const ready = { ...seller, mustChangePassword: 0 };
+  assert.equal((await call("/api/session", ready)).status, 200);
+  // Autorizada (o ASSETS falso dos testes não tem o HTML, então não é 200).
+  assert.notEqual((await call("/instrucoes", ready)).status, 403);
+  assert.equal((await call("/documentos", ready)).status, 403);
+  assert.equal((await call("/api/documents", ready)).status, 403);
+  assert.equal((await call("/api/outputs", ready)).status, 403);
+  assert.equal((await call("/api/admin/users/sellers", ready)).status, 403);
+  // Trocar a senha de novo não é possível sem a obrigação ligada.
+  const noNeed = await call("/trocar-senha", ready);
+  assert.equal(noNeed.status, 303);
+
+  const [workerSource, html, hrShared, terminations, employees, migration] = await Promise.all([
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/hr-payroll/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/hr-payroll/terminations/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/hr-payroll/employees/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0074_app_users_must_change_password.sql", import.meta.url), "utf8"),
+  ]);
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS "must_change_password" integer DEFAULT 0 NOT NULL/);
+  // Criação em lote: só comercial:view, vínculo com o RH e troca obrigatória.
+  assert.match(workerSource, /JSON\.stringify\(\["comercial:view"\]\)/);
+  assert.match(workerSource, /UPDATE hr_employees SET user_id=\?1/);
+  assert.match(workerSource, /'administrative', '', 1, 1, 1\)/);
+  assert.match(html, /id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES</);
+  assert.match(html, /<div class="nav-group" data-hide-for-commercial-only>\s*<button class="nav-group-toggle" id="navDocumentos"/);
+  // Desligamento no RH bloqueia o login vinculado (sessões caem na hora).
+  assert.match(hrShared, /UPDATE app_users SET active=0, session_version=session_version\+1/);
+  assert.match(terminations, /deactivateLinkedLogin\(database, employeeId\)/);
+  assert.match(employees, /if \(status === "inactive"\) await deactivateLinkedLogin\(database, editId\)\.run\(\);/);
+});

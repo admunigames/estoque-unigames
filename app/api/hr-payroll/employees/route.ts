@@ -8,6 +8,7 @@ import {
   EMPLOYEE_COLUMNS,
   EMPLOYEE_STATUSES,
   actorName,
+  deactivateLinkedLogin,
   identity,
   isOneOf,
   isValidCpf,
@@ -187,6 +188,8 @@ export async function POST(request: Request) {
           telefone,
         )
         .run();
+      // Marcado como inativo (desligado): bloqueia o login vinculado na hora.
+      if (status === "inactive") await deactivateLinkedLogin(database, editId).run();
       // O nome/loja do funcionário são desnormalizados nos lançamentos —
       // manter os já existentes em sincronia evita relatório com nome antigo.
       await database.batch([
