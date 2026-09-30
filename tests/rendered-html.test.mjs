@@ -2188,6 +2188,10 @@ test("aplica o sistema visual responsivo sem alterar os módulos existentes", as
   // grade (menu lateral), feitas com gradientes de 1px.
   assert.doesNotMatch(html, /gradient\([^)]*\)?[^;{}]*1px,\s*transparent 1px/);
   assert.match(html, /html\[data-theme="light"\] \.sidebar\{\s*background:linear-gradient\(160deg,#f8fbfe 0%,#dce9f4 72%\);/);
+  // Telas de login e recuperação de senha (renderizadas pelo worker) também
+  // sem a grade de fundo.
+  const workerSource = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(workerSource, /1px,\s*transparent 1px/);
   assert.match(html, /class="page-header"/);
   assert.match(html, /class="mobile-tabbar no-print"/);
   assert.match(html, /id="btnSidebarCompact"/);

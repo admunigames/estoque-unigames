@@ -743,10 +743,6 @@ function loginPage(options: {
       radial-gradient(circle at 8% 12%,rgba(64,122,211,.23),transparent 31%),
       radial-gradient(circle at 92% 82%,rgba(86,67,190,.19),transparent 33%),
       linear-gradient(145deg,#030914 0%,#061321 52%,#020711 100%)}
-    body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.36;background-image:
-      linear-gradient(rgba(112,205,255,.07) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(112,205,255,.07) 1px,transparent 1px);
-      background-size:54px 54px;mask-image:linear-gradient(to bottom,black,transparent 88%)}
     body::after{content:"";position:fixed;inset:-20%;pointer-events:none;background:conic-gradient(from 180deg at 50% 50%,transparent 0 24%,rgba(77,144,255,.08) 31%,transparent 38% 66%,rgba(103,226,255,.07) 73%,transparent 80%);animation:auroraSpin 28s linear infinite}
     .ambient{position:fixed;inset:0;overflow:hidden;pointer-events:none}
     .orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.72}
@@ -844,7 +840,6 @@ function passwordRecoveryPage(message = "", success = false): Response {
 <style>
 :root{color-scheme:dark;--bg:#030914;--cyan:#66d9ff;--blue:#4b8dff;--violet:#8b6cff;--ink:#f5fbff;--soft:#9eb5c9}*{box-sizing:border-box}
 body{margin:0;min-height:100vh;display:grid;place-items:center;overflow-x:hidden;padding:24px;background:radial-gradient(circle at 12% 15%,rgba(64,122,211,.24),transparent 32%),radial-gradient(circle at 88% 84%,rgba(103,77,198,.2),transparent 32%),linear-gradient(145deg,#030914,#071625 55%,#020711);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;background-image:linear-gradient(rgba(112,205,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(112,205,255,.07) 1px,transparent 1px);background-size:54px 54px;mask-image:linear-gradient(to bottom,black,transparent 90%)}
 .recovery-orbit{position:fixed;width:430px;height:430px;border:1px solid rgba(102,217,255,.15);border-radius:50%;pointer-events:none;animation:orbitFloat 9s ease-in-out infinite}.recovery-orbit::before,.recovery-orbit::after{content:"";position:absolute;border-radius:50%;border:1px dashed rgba(139,108,255,.17)}.recovery-orbit::before{inset:52px}.recovery-orbit::after{inset:115px;background:radial-gradient(circle,rgba(102,217,255,.12),transparent 65%);box-shadow:0 0 70px rgba(75,141,255,.09)}
 main{position:relative;z-index:1;width:min(480px,100%);padding:38px;border:1px solid rgba(135,215,255,.24);border-radius:28px;background:linear-gradient(145deg,rgba(13,34,53,.88),rgba(4,15,28,.94));box-shadow:0 36px 100px rgba(0,0,0,.53),inset 0 1px rgba(255,255,255,.045);backdrop-filter:blur(25px);animation:cardFloat 7s ease-in-out infinite}
 main::before{content:"";position:absolute;inset:-1px;border-radius:28px;padding:1px;background:linear-gradient(135deg,rgba(102,217,255,.55),transparent 33% 70%,rgba(139,108,255,.38));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
