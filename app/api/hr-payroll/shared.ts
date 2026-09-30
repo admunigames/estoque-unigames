@@ -154,6 +154,8 @@ export type EmployeeRow = {
   id: string;
   fullName: string;
   cpf: string;
+  rg: string;
+  telefone: string;
   admissionDate: string;
   companyId: string;
   companyName: string;
@@ -176,7 +178,7 @@ export type EmployeeRow = {
   updatedAt: string;
 };
 
-export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, admission_date AS admissionDate,
+export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, rg, telefone, admission_date AS admissionDate,
   company_id AS companyId, company_name AS companyName, role_title AS roleTitle,
   salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName, status,
   work_schedule AS workSchedule, food_per_day_cents AS foodPerDayCents,
