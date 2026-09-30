@@ -5493,7 +5493,7 @@
       <div class="dre-toolbar no-print">
         <div class="field"><label for="rhEmployeeFiltroLoja">LOJA</label><select id="rhEmployeeFiltroLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="field"><label for="rhEmployeeFiltroStatus">SITUAÇÃO</label><select id="rhEmployeeFiltroStatus"><option value="active">ATIVOS</option><option value="inactive">INATIVOS</option><option value="">TODOS</option></select></div>
-        <div class="field"><label for="rhEmployeeBusca">BUSCAR</label><input id="rhEmployeeBusca" placeholder="Nome, CPF ou cargo"></div>
+        <div class="field"><label for="rhEmployeeBusca">BUSCAR</label><input id="rhEmployeeBusca" placeholder="Nome, CPF, RG, telefone ou cargo"></div>
         <div class="dre-toolbar-actions">
           <button class="btn-accent" id="btnNewRhEmployee" type="button">NOVO FUNCIONÁRIO</button>
         </div>
@@ -5502,7 +5502,7 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="rhEmployeesTable">
-            <thead><tr><th>Funcionário</th><th>CPF</th><th>Cargo</th><th>Loja</th><th>Admissão</th><th>Salário</th><th>Pagamento</th><th>Situação</th><th class="no-print"></th></tr></thead>
+            <thead><tr><th>Funcionário</th><th>Documentos</th><th>Cargo</th><th>Loja</th><th>Admissão</th><th>Salário</th><th>Pagamento</th><th>Situação</th><th class="no-print"></th></tr></thead>
             <tbody id="rhEmployeesTableBody"><tr><td colspan="9" class="responsive-empty">Carregando funcionários…</td></tr></tbody>
           </table>
         </div>
@@ -8179,6 +8179,8 @@
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="rhEmployeeName">NOME COMPLETO *</label><input id="rhEmployeeName" maxlength="160" required></div>
       <div class="purchase-field"><label for="rhEmployeeCpf">CPF</label><input id="rhEmployeeCpf" maxlength="20" inputmode="numeric" placeholder="Somente números"></div>
+      <div class="purchase-field"><label for="rhEmployeeRg">RG</label><input id="rhEmployeeRg" maxlength="30"></div>
+      <div class="purchase-field"><label for="rhEmployeeTelefone">TELEFONE</label><input type="tel" id="rhEmployeeTelefone" maxlength="40" placeholder="(81) 90000-0000"></div>
       <div class="purchase-field"><label for="rhEmployeeAdmission">DATA DE ADMISSÃO</label><input type="date" id="rhEmployeeAdmission"></div>
       <div class="purchase-field"><label for="rhEmployeeCompany">LOJA</label><select id="rhEmployeeCompany"><option value="">SEM LOJA DEFINIDA</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeRole">CARGO</label><input id="rhEmployeeRole" maxlength="120"></div>
@@ -30290,7 +30292,7 @@ function renderHomeTasks(){
       if(companyId && employee.companyId !== companyId) return false;
       if(status && employee.status !== status) return false;
       if(!search) return true;
-      return [employee.fullName, employee.cpf, employee.roleTitle]
+      return [employee.fullName, employee.cpf, employee.rg, employee.telefone, employee.roleTitle]
         .some(field => String(field || '').toLowerCase().includes(search));
     });
   }
@@ -30310,8 +30312,8 @@ function renderHomeTasks(){
         ? '<span class="status-pill done">ATIVO</span>'
         : '<span class="status-pill alert">INATIVO</span>';
       return '<tr>'+
-        '<td>'+escapeHtml(employee.fullName)+'</td>'+
-        '<td>'+escapeHtml(rhFormatCpf(employee.cpf))+'</td>'+
+        '<td>'+escapeHtml(employee.fullName)+(employee.telefone ? '<br><small style="color:var(--ink-faint);">'+escapeHtml(employee.telefone)+'</small>' : '')+'</td>'+
+        '<td>'+escapeHtml(rhFormatCpf(employee.cpf))+(employee.rg ? '<br><small style="color:var(--ink-faint);">RG '+escapeHtml(employee.rg)+'</small>' : '')+'</td>'+
         '<td>'+escapeHtml(employee.roleTitle || '—')+'</td>'+
         '<td>'+escapeHtml(employee.companyName || '—')+'</td>'+
         '<td>'+escapeHtml(rhFormatDate(employee.admissionDate))+'</td>'+
@@ -30370,6 +30372,8 @@ function renderHomeTasks(){
     el('rhEmployeeDialogTitle').textContent = employee ? 'EDITAR FUNCIONÁRIO' : 'NOVO FUNCIONÁRIO';
     el('rhEmployeeName').value = employee ? employee.fullName : '';
     el('rhEmployeeCpf').value = employee ? (employee.cpf || '') : '';
+    el('rhEmployeeRg').value = employee ? (employee.rg || '') : '';
+    el('rhEmployeeTelefone').value = employee ? (employee.telefone || '') : '';
     el('rhEmployeeAdmission').value = employee ? (employee.admissionDate || '') : '';
     el('rhEmployeeCompany').value = employee ? (employee.companyId || '') : (el('rhEmployeeFiltroLoja').value || '');
     el('rhEmployeeRole').value = employee ? (employee.roleTitle || '') : '';
@@ -30436,6 +30440,8 @@ function renderHomeTasks(){
       id: el('rhEmployeeId').value || undefined,
       fullName: el('rhEmployeeName').value,
       cpf: el('rhEmployeeCpf').value,
+      rg: el('rhEmployeeRg').value,
+      telefone: el('rhEmployeeTelefone').value,
       admissionDate: el('rhEmployeeAdmission').value,
       companyId: el('rhEmployeeCompany').value,
       roleTitle: el('rhEmployeeRole').value,
