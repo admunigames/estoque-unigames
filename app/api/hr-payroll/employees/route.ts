@@ -79,6 +79,8 @@ export async function POST(request: Request) {
     const editId = safeText(body.id, 80);
     const fullName = safeText(body.fullName, 160);
     const cpf = onlyDigits(safeText(body.cpf, 20));
+    const rg = safeText(body.rg, 30);
+    const telefone = safeText(body.telefone, 40);
     const admissionDate = safeText(body.admissionDate, 10);
     const companyId = safeText(body.companyId, 80);
     const roleTitle = safeText(body.roleTitle, 120);
@@ -158,7 +160,7 @@ export async function POST(request: Request) {
                role_title=?6, salary_cents=?7, pix_key=?8, bank_name=?9, status=?10,
                work_schedule=?11, user_id=?12, notes=?13, updated_by=?14, updated_by_name=?15,
                food_per_day_cents=?17, transport_per_day_cents=?18, benefit_notes=?19,
-               updated_at=CURRENT_TIMESTAMP
+               rg=?20, telefone=?21, updated_at=CURRENT_TIMESTAMP
            WHERE id=?16`,
         )
         .bind(
@@ -181,6 +183,8 @@ export async function POST(request: Request) {
           foodPerDayCents,
           transportPerDayCents,
           benefitNotes,
+          rg,
+          telefone,
         )
         .run();
       // O nome/loja do funcionário são desnormalizados nos lançamentos —
@@ -212,9 +216,9 @@ export async function POST(request: Request) {
           (id, full_name, cpf, admission_date, company_id, company_name, role_title, salary_cents,
            pix_key, bank_name, status, work_schedule, user_id, notes, created_by, created_by_name,
            created_at, updated_by, updated_by_name, updated_at,
-           food_per_day_cents, transport_per_day_cents, benefit_notes)
+           food_per_day_cents, transport_per_day_cents, benefit_notes, rg, telefone)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16,
-                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP, ?17, ?18, ?19)`,
+                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP, ?17, ?18, ?19, ?20, ?21)`,
       )
       .bind(
         id,
@@ -236,6 +240,8 @@ export async function POST(request: Request) {
         foodPerDayCents,
         transportPerDayCents,
         benefitNotes,
+        rg,
+        telefone,
       )
       .run();
     return jsonResponse({ created: true, id }, 201);

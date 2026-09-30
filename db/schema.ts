@@ -1517,6 +1517,10 @@ export const hrEmployees = pgTable(
     // SÃ³ dÃ­gitos (11 caracteres). Ãšnico quando preenchido â€” Ã­ndice parcial,
     // jÃ¡ que '' (nÃ£o informado) pode se repetir Ã  vontade.
     cpf: text("cpf").notNull().default(""),
+    // Texto livre como veio do documento/planilha (RG tem formato variável
+    // por estado; telefone aceita qualquer máscara). '' = não informado.
+    rg: text("rg").notNull().default(""),
+    telefone: text("telefone").notNull().default(""),
     admissionDate: text("admission_date").notNull().default(""),
     companyId: text("company_id").notNull().default(""),
     companyName: text("company_name").notNull().default(""),
