@@ -4106,8 +4106,8 @@ test("abas do site inteiro compartilham um único estilo (barra arredondada, ati
   assert.match(html, /\.supply-tab\.active,\.output-tab\.active,\.mission-tab\.active,\.instruction-tab\.active\{\s*background:var\(--accent-deep\)/);
   assert.match(html, /html\[data-theme="light"\] :is\(\.supply-tab,\.output-tab,\.mission-tab,\.instruction-tab\)\.active\{background:var\(--accent\)/);
   for (const family of ["supply", "output", "mission", "instruction"]) {
-    assert.doesNotMatch(html, new RegExp(`\n\s*\.${family}-tab\{`), `.${family}-tab ainda tem regra própria`);
-    assert.doesNotMatch(html, new RegExp(`\n\s*\.${family}-tab\.active\{`), `.${family}-tab.active ainda tem regra própria`);
+    assert.doesNotMatch(html, new RegExp(`\\n\\s*\\.${family}-tab\\{`), `.${family}-tab ainda tem regra própria`);
+    assert.doesNotMatch(html, new RegExp(`\\n\\s*\\.${family}-tab\\.active\\{`), `.${family}-tab.active ainda tem regra própria`);
   }
   assert.doesNotMatch(html, /border:1px solid rgba\(79,134,189,\.38\);\s*border-radius:999px/);
 });
