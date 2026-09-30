@@ -34856,7 +34856,9 @@ function renderHomeTasks(){
     // qualquer endpoint do lote. Escalonar em pequenos grupos reduz o pico
     // de conexões simultâneas por carregamento sem mudar o que é
     // carregado nem a lógica de cada módulo.
-    const loaders = [];
+    // Instruções/carrossel ficam no topo da Início: entram no primeiro lote
+    // para não esperarem os demais módulos terminarem.
+    const loaders = [() => Promise.all([loadInstructions(),loadHomeInstructions(),loadInstructionCarousel()])];
     if(canAccess('pulls')) loaders.push(() => loadPullData());
     if(canAccess('database') || canAccess('report41')) loaders.push(() => loadCompanyStock());
     if(canAccess('report41')) loaders.push(() => loadReport41StoreData());
@@ -34879,7 +34881,6 @@ function renderHomeTasks(){
     if(canAccess('supplies')) loaders.push(() => loadHomeSupplies());
     if(canAccess('database') || canAccess('purchases_draft') ||
       canAccess('outputs:create') || canAccess('inputs:create') || canAccess('pdv_requests:create')) loaders.push(() => loadProductCatalog());
-    loaders.push(() => Promise.all([loadInstructions(),loadHomeInstructions(),loadInstructionCarousel()]));
     const HOME_LOADERS_BATCH_SIZE = 4;
     for(let start = 0; start < loaders.length; start += HOME_LOADERS_BATCH_SIZE){
       const batch = loaders.slice(start, start + HOME_LOADERS_BATCH_SIZE);
