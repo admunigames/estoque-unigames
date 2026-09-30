@@ -3377,3 +3377,76 @@ export const hrAsoExams = pgTable(
     index("hr_aso_exams_employee_idx").on(table.employeeId),
   ],
 );
+
+// Comercial — retrato do mês de cada vendedor, importado da planilha
+// "ACOMPANHAMENTO LOJAS_VENDEDORES" (aba "VENDEDORES <MÊS>"). Única fonte
+// dos números (decisão confirmada: sem digitação manual). Uma linha por
+// vendedor/mês, substituída a cada importação. Percentual, faixa de
+// comissão e ranking NUNCA são persistidos — sempre calculados ao vivo
+// (app/lib/commercial.ts). employee_id aponta para hr_employees (sem FK,
+// convenção do projeto); a loja é a do funcionário no RH.
+export const commercialMonthly = pgTable(
+  "commercial_monthly",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    // Como veio na planilha (ex.: "VITOR V." / "RIO MAR") — só referência.
+    sheetSellerName: text("sheet_seller_name").notNull().default(""),
+    sheetStoreName: text("sheet_store_name").notNull().default(""),
+    // 'NORTE' | 'SUL' | '' (coluna ZONA)
+    zone: text("zone").notNull().default(""),
+    // YYYY-MM
+    month: text("month").notNull(),
+    targetRevenueCents: integer("target_revenue_cents").notNull().default(0),
+    targetItems: integer("target_items").notNull().default(0),
+    targetSuperItems: integer("target_super_items").notNull().default(0),
+    targetWarrantyCents: integer("target_warranty_cents").notNull().default(0),
+    targetRealme: integer("target_realme").notNull().default(0),
+    revenueCents: integer("revenue_cents").notNull().default(0),
+    items: integer("items").notNull().default(0),
+    warrantyCents: integer("warranty_cents").notNull().default(0),
+    realme: integer("realme").notNull().default(0),
+    warrantyQty: integer("warranty_qty").notNull().default(0),
+    notebookQty: integer("notebook_qty").notNull().default(0),
+    importId: text("import_id").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("commercial_monthly_employee_month_idx").on(table.employeeId, table.month),
+    index("commercial_monthly_month_idx").on(table.month),
+  ],
+);
+
+// Comercial — histórico de importações da planilha (auditoria).
+export const commercialImports = pgTable(
+  "commercial_imports",
+  {
+    id: text("id").primaryKey(),
+    month: text("month").notNull(),
+    fileName: text("file_name").notNull().default(""),
+    sheetName: text("sheet_name").notNull().default(""),
+    rowsImported: integer("rows_imported").notNull().default(0),
+    rowsIgnored: integer("rows_ignored").notNull().default(0),
+    // Loja do importador quando ele só alcança a própria loja ('' = todas).
+    companyId: text("company_id").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("commercial_imports_month_idx").on(table.month)],
+);
+
+// Comercial — vínculo "apelido na planilha" → funcionário do RH, salvo na
+// confirmação de uma importação para o próximo mês reconhecer sozinho.
+// alias_key = aliasKey(loja, vendedor) em app/lib/commercial.ts.
+export const commercialAliases = pgTable("commercial_aliases", {
+  aliasKey: text("alias_key").primaryKey(),
+  employeeId: text("employee_id").notNull(),
+  updatedBy: text("updated_by").notNull().default(""),
+  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+});

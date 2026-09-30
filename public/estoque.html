@@ -2795,6 +2795,220 @@
   @media(prefers-reduced-motion:reduce){
     .app-loadbar::before{animation:none; width:100%; opacity:.5;}
   }
+  /* ================= COMERCIAL ================= */
+  /* Tela usada principalmente no celular: tudo em grid/flex com gap, sem
+     float nem largura fixa em px; números longos quebram dentro do card
+     (min-width:0 + overflow-wrap) em vez de estourar. Grades de cards usam
+     auto-fill (não auto-fit) para uma linha incompleta manter a mesma
+     largura das linhas cheias. */
+  .com-toolbar .field{flex:1 1 150px;min-width:0;max-width:260px}
+  .com-notice{
+    margin:0 0 16px;padding:10px 13px;border:1px solid rgba(225,173,73,.34);border-radius:11px;
+    background:rgba(225,173,73,.08);color:var(--ink-soft);font:600 12px/1.45 var(--sans);
+  }
+  .com-hint{margin:0 0 14px;color:var(--ink-soft);font:500 12px/1.5 var(--sans)}
+  .com-empty{margin:0;padding:22px 16px;border:1px dashed var(--surface-border);border-radius:var(--radius-surface);color:var(--ink-soft);font:600 12.5px/1.5 var(--sans);text-align:center;list-style:none}
+  .com-section-title{margin:26px 0 12px;font:800 11px/1.3 var(--mono);letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase}
+  /* As abas internas do Comercial usam o estilo único de abas do site
+     (.supply-tabs/.supply-tab). */
+  @media(max-width:560px){
+    /* "ACOMPANHAMENTO" é uma palavra só e, no tamanho padrão do título,
+       passava por baixo do botão de tema (canto superior direito). */
+    #pageComercialAcompanhamento .page-title{font-size:clamp(13px,3.7vw,18px)}
+  }
+  .com-seller-list{display:flex;flex-direction:column;gap:16px}
+  .com-seller,.com-commission,.com-rule,.com-total{
+    border:1px solid var(--surface-border);border-radius:var(--radius-surface);background:var(--bg-card);
+    box-shadow:var(--surface-shadow);min-width:0;
+  }
+  .com-seller{padding:16px}
+  .com-seller-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:6px 12px;margin-bottom:14px}
+  .com-seller-name{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .com-seller-name strong{font:800 15px/1.25 var(--sans);color:var(--ink);overflow-wrap:anywhere}
+  .com-seller-name span{font:700 10px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase}
+  .com-seller-meta{font:600 11px/1.4 var(--sans);color:var(--ink-faint)}
+  .com-blocks{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+  .com-block{
+    display:flex;flex-direction:column;gap:12px;min-width:0;padding:14px;border:1px solid var(--inset-border);
+    border-radius:var(--radius-inset);background:var(--bg-card-2);
+  }
+  .com-block-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .com-block-title{font:800 10px/1.3 var(--mono);letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase}
+  .com-pct{font:900 22px/1 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .com-block.tier-red .com-pct{color:#ef6a55}
+  .com-block.tier-yellow .com-pct{color:#e1ad49}
+  .com-block.tier-green .com-pct{color:#54c48a}
+  .com-block.tier-none .com-pct{color:var(--ink-faint);font-size:14px}
+  /* Barra: faixa colorida (vermelho → amarelo → verde) + preenchimento. Os 4
+     alvos ficam em posições FIXAS (40/60/80/100% da largura, escala por
+     trechos 0-80-100-110-120%), então os rótulos nunca se sobrepõem, nem a
+     360px; o último rótulo é alinhado pela direita para não cortar. */
+  .com-bar{position:relative;padding-bottom:30px}
+  .com-bar.simple{padding-bottom:0}
+  .com-bar-track{
+    position:relative;height:14px;border-radius:999px;overflow:hidden;
+    background:linear-gradient(90deg,rgba(239,106,85,.2) 0 40%,rgba(225,173,73,.2) 40% 60%,rgba(84,196,138,.2) 60% 100%);
+  }
+  .com-bar.simple .com-bar-track{background:linear-gradient(90deg,rgba(239,106,85,.2) 0 80%,rgba(225,173,73,.2) 80% 99.9%,rgba(84,196,138,.2) 99.9% 100%)}
+  .com-bar-fill{position:absolute;inset:0 auto 0 0;border-radius:inherit;transition:width .5s ease}
+  .tier-red .com-bar-fill{background:linear-gradient(90deg,#c9493a,#ef6a55)}
+  .tier-yellow .com-bar-fill{background:linear-gradient(90deg,#ef6a55,#e1ad49)}
+  .tier-green .com-bar-fill{background:linear-gradient(90deg,#e1ad49,#54c48a 55%)}
+  .com-bar-marker{position:absolute;top:-3px;width:2px;height:20px;margin-left:-1px;border-radius:2px;background:var(--ink-faint)}
+  .com-bar-marker.reached{background:var(--ink)}
+  .com-bar-marker.last{margin-left:-2px}
+  .com-bar-label{
+    position:absolute;top:21px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;
+    font:800 9px/1.15 var(--mono);color:var(--ink-faint);white-space:nowrap;
+  }
+  .com-bar-label.last{transform:translateX(-100%);align-items:flex-end}
+  .com-bar-label.reached{color:var(--ink)}
+  .com-figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:0}
+  .com-figures div{min-width:0}
+  .com-figures dt{font:800 9px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-faint);text-transform:uppercase}
+  .com-figures dd{margin:3px 0 0;font:800 14px/1.25 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .com-figures .com-sub dd{font-weight:700;font-size:12.5px;color:var(--ink-soft)}
+  .com-incentive{
+    margin:0;padding:9px 11px;border-radius:9px;border-left:3px solid var(--accent);background:rgba(79,134,189,.1);
+    color:var(--ink);font:700 12.5px/1.45 var(--sans);overflow-wrap:anywhere;
+  }
+  .com-incentive small{display:block;margin-top:3px;color:var(--ink-soft);font-weight:600;font-size:11.5px}
+  .tier-green .com-incentive{border-left-color:#54c48a;background:rgba(84,196,138,.1)}
+  .tier-yellow .com-incentive{border-left-color:#e1ad49;background:rgba(225,173,73,.1)}
+  .tier-red .com-incentive{border-left-color:#ef6a55;background:rgba(239,106,85,.09)}
+  .com-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:0;list-style:none}
+  .com-targets li{
+    display:flex;flex-direction:column;gap:2px;min-width:0;padding:7px 8px;border:1px solid var(--inset-border);border-radius:8px;
+    font:700 11px/1.3 var(--sans);color:var(--ink-soft);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+  }
+  .com-targets li b{font:800 9px/1.2 var(--mono);letter-spacing:.04em;color:var(--ink-faint)}
+  .com-targets li.reached{border-color:rgba(84,196,138,.45);color:var(--ink)}
+  .com-targets li.reached b{color:#54c48a}
+  /* Comissão */
+  .com-rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:10px;margin-bottom:16px}
+  .com-rule{display:flex;flex-direction:column;gap:4px;padding:13px 14px}
+  .com-rule span{font:800 9px/1.35 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase}
+  .com-rule strong{font:900 17px/1.2 var(--sans);color:var(--ink)}
+  .com-rule small{font:500 11.5px/1.45 var(--sans);color:var(--ink-soft)}
+  .com-total{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 14px;padding:14px 16px;margin-bottom:16px}
+  .com-total span{font:800 10px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase}
+  .com-total strong{font:900 22px/1.15 var(--sans);color:#54c48a;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .com-commission-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px}
+  .com-commission{display:flex;flex-direction:column;gap:12px;padding:15px}
+  .com-commission-rows{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+  .com-commission-rows li{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:start;padding:10px 11px;
+    border:1px solid var(--inset-border);border-radius:9px;background:var(--bg-card-2);
+  }
+  .com-commission-rows .label{font:800 9.5px/1.35 var(--mono);letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase}
+  .com-commission-rows .value{font:900 14px/1.25 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .com-commission-rows .detail{grid-column:1/-1;font:600 11.5px/1.45 var(--sans);color:var(--ink-soft);overflow-wrap:anywhere}
+  .com-commission-rows li.on{border-color:rgba(84,196,138,.45)}
+  .com-commission-rows li.on .value{color:#54c48a}
+  .com-commission-sum{
+    display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 10px;padding-top:10px;
+    border-top:1px solid var(--inset-border);
+  }
+  .com-commission-sum span{font:800 10px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase}
+  .com-commission-sum strong{font:900 19px/1.2 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  /* Ranking — lista, não grade: uma linha por vendedor, então número ímpar
+     de vendedores ou uma loja só com 1 vendedor não criam linha parcial. */
+  .com-ranking{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+  .com-rank-row{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 12px;padding:11px 13px;
+    border:1px solid var(--surface-border);border-radius:12px;background:var(--bg-card);box-shadow:var(--surface-shadow);
+  }
+  .com-rank-pos{
+    display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--inset-border);
+    font:900 13px/1 var(--sans);color:var(--ink-soft);font-variant-numeric:tabular-nums;
+  }
+  .com-rank-row.top1 .com-rank-pos{background:#e1ad49;border-color:#e1ad49;color:#1b1406}
+  .com-rank-row.top2 .com-rank-pos{background:#aeb9c4;border-color:#aeb9c4;color:#10151b}
+  .com-rank-row.top3 .com-rank-pos{background:#c07a45;border-color:#c07a45;color:#1b0f06}
+  .com-rank-who{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .com-rank-who strong{font:800 13.5px/1.3 var(--sans);color:var(--ink);overflow-wrap:anywhere}
+  .com-rank-who span{font:700 9.5px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase;overflow-wrap:anywhere}
+  .com-rank-pct{font:900 17px/1 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .com-rank-row.tier-red .com-rank-pct{color:#ef6a55}
+  .com-rank-row.tier-yellow .com-rank-pct{color:#e1ad49}
+  .com-rank-row.tier-green .com-rank-pct{color:#54c48a}
+  .com-rank-row.tier-none .com-rank-pct{color:var(--ink-faint);font-size:10px;font-family:var(--mono)}
+  .com-rank-bar{grid-column:2/-1;height:6px;border-radius:999px;background:rgba(79,134,189,.14);overflow:hidden}
+  .com-rank-bar i{display:block;height:100%;border-radius:inherit}
+  .com-rank-row.tier-red .com-rank-bar i{background:#ef6a55}
+  .com-rank-row.tier-yellow .com-rank-bar i{background:#e1ad49}
+  .com-rank-row.tier-green .com-rank-bar i{background:#54c48a}
+  .com-extra{
+    display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin:0;padding:8px 10px;border:1px dashed var(--inset-border);
+    border-radius:8px;color:var(--ink-soft);font:700 12px/1.4 var(--sans);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+  }
+  .com-extra b{font:800 9px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-faint)}
+  .com-extra.reached{border-style:solid;border-color:rgba(84,196,138,.45);color:var(--ink)}
+  .com-extra.reached b{color:#54c48a}
+  /* Importação da planilha */
+  .com-import-card,.com-import-preview{
+    padding:16px;margin-bottom:16px;border:1px solid var(--surface-border);border-radius:var(--radius-surface);
+    background:var(--bg-card);box-shadow:var(--surface-shadow);min-width:0;
+  }
+  .com-import-card .com-section-title{margin-top:0}
+  .com-import-controls{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+  .com-import-controls input,.com-import-controls select,.com-import-map select{width:100%;min-width:0}
+  .com-import-status[data-tone="error"]{color:var(--neg)}
+  .com-import-summary{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .com-import-errors{margin:0 0 12px;padding:10px 12px 10px 28px;border:1px solid rgba(239,106,85,.45);border-radius:10px;color:var(--neg);font:600 12px/1.5 var(--sans)}
+  .com-import-rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:10px;margin:0;padding:0;list-style:none}
+  .com-import-row{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:start;min-width:0;padding:12px;
+    border:1px solid var(--inset-border);border-radius:var(--radius-inset);background:var(--bg-card-2);
+  }
+  .com-import-row.status-unmatched,.com-import-row.status-duplicate{border-color:rgba(239,106,85,.55)}
+  .com-import-row.status-ignored,.com-import-row.status-out_of_scope{opacity:.65}
+  .com-import-who{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .com-import-who strong{font:800 14px/1.3 var(--sans);color:var(--ink);overflow-wrap:anywhere}
+  .com-import-who span{font:700 9.5px/1.3 var(--mono);letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase;overflow-wrap:anywhere}
+  .com-import-row .status-pill{white-space:nowrap}
+  .com-import-map{grid-column:1/-1}
+  .com-import-values{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin:0}
+  .com-import-values div{min-width:0}
+  .com-import-values dt{font:800 8.5px/1.3 var(--mono);letter-spacing:.04em;color:var(--ink-faint);text-transform:uppercase}
+  .com-import-values dd{margin:2px 0 0;font:700 12px/1.3 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .com-import-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:14px}
+  .com-import-actions button{min-width:0;white-space:normal;line-height:1.3}
+  .com-history{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+  .com-history-row{
+    display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--surface-border);border-radius:10px;
+    background:var(--bg-card);font:600 12px/1.45 var(--sans);color:var(--ink-soft);overflow-wrap:anywhere;
+  }
+  .com-history-row strong{color:var(--ink);font-weight:800}
+  @media(max-width:680px){
+    .com-toolbar .field{max-width:none}
+    .com-seller{padding:13px}
+    .com-block{padding:12px}
+    .com-pct{font-size:20px}
+    .com-import-actions button{flex:1 1 100%}
+  }
+  html[data-theme="light"] .com-seller,
+  html[data-theme="light"] .com-commission,
+  html[data-theme="light"] .com-import-card,
+  html[data-theme="light"] .com-import-preview,
+  html[data-theme="light"] .com-history-row,
+  html[data-theme="light"] .com-rule,
+  html[data-theme="light"] .com-total,
+  html[data-theme="light"] .com-rank-row{background:#fff;border-color:var(--surface-border);box-shadow:var(--surface-shadow)}
+  html[data-theme="light"] .com-block,
+  html[data-theme="light"] .com-import-row,
+  html[data-theme="light"] .com-commission-rows li{background:#f6f9fb;border-color:var(--inset-border)}
+  html[data-theme="light"] .com-block.tier-red .com-pct,
+  html[data-theme="light"] .com-rank-row.tier-red .com-rank-pct{color:#c44735}
+  html[data-theme="light"] .com-block.tier-yellow .com-pct,
+  html[data-theme="light"] .com-rank-row.tier-yellow .com-rank-pct{color:#a8740f}
+  html[data-theme="light"] .com-block.tier-green .com-pct,
+  html[data-theme="light"] .com-rank-row.tier-green .com-rank-pct,
+  html[data-theme="light"] .com-commission-rows li.on .value,
+  html[data-theme="light"] .com-targets li.reached b,
+  html[data-theme="light"] .com-total strong{color:#23874f}
+  html[data-theme="light"] .com-notice{background:#fff7e6;border-color:#e6c27a;color:#6b4d0f}
+  @media(prefers-reduced-motion:reduce){.com-bar-fill{transition:none}}
 </style>
 </head>
 <body class="home-active">
@@ -2870,6 +3084,14 @@
       <div class="nav-submenu" id="navSolicitacoesSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navAlteracoesPdv" data-page="alteracoesPdv" data-permission="pdv_requests" data-home-desc="Peça alterações manuais no PDV e acompanhe o status de cada pedido." title="Alterações PDV" href="/solicitacoes/alteracoes-pdv"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10l-2.6-2.6"/><path d="M17 17H7l2.6 2.6"/><line x1="9" y1="12" x2="15" y2="12"/></svg></span><span class="nav-label">Alterações PDV</span></a>
         <a class="nav-item sub-item" id="navNotasOs" data-page="notasOs" data-permission="os_notes" data-home-desc="Peça a nota de uma O.S. e acompanhe o anexo enviado pela administração." title="Notas de O.S." href="/solicitacoes/notas-os"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas de O.S.</span></a>
+      </div>
+    </div>
+    <div class="nav-group" data-any-permission="comercial">
+      <button class="nav-group-toggle" id="navComercialMenu" type="button" aria-expanded="false" aria-controls="navComercialSubmenu">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 16.5 9 11 13 14.5 20.5 7"/><polyline points="15.5 7 20.5 7 20.5 12"/></svg></span><span class="nav-label">Comercial</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </button>
+      <div class="nav-submenu" id="navComercialSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e importação da planilha de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="finance,payables">
@@ -5149,6 +5371,13 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>Comercial - Metas e Comissão</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:view"> Visualização: Dashboard, Comissão e Ranking (sem editar nada)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:manage"> Cadastro de metas e valores: cadastrar a meta mensal e lançar o realizado dos vendedores</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -5818,6 +6047,101 @@
         </div>
       </div>
     </section>
+
+    <!-- ================= COMERCIAL / ACOMPANHAMENTO METAS ================= -->
+    <!-- Dashboard e Comissão mostram só o próprio vendedor quando a conta está
+         vinculada a um vendedor (RH > Funcionários > Conta de acesso); gestor
+         sem vínculo vê a loja dele ou todas. Ranking é sempre geral, só %. -->
+    <section id="pageComercialAcompanhamento" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Acompanhamento Metas</h2>
+        </div>
+      </header>
+
+      <div class="supply-tabs" role="tablist" aria-label="Acompanhamento de metas">
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-com-view="dashboard">Dashboard</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="comissao">Comissão</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="ranking">Ranking</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="metas" data-permission="comercial:manage">Cadastro de Metas</button>
+      </div>
+
+      <div class="dre-toolbar com-toolbar no-print">
+        <div class="field">
+          <label for="comAcompMonth">Mês</label>
+          <input type="month" id="comAcompMonth" data-com-month>
+        </div>
+        <div class="field" id="comStoreField" hidden>
+          <label for="comStoreFilter">Loja</label>
+          <select id="comStoreFilter"><option value="">TODAS</option></select>
+        </div>
+        <div class="field" id="comZoneField" hidden>
+          <label for="comZoneFilter">Zona</label>
+          <select id="comZoneFilter"><option value="">TODAS</option></select>
+        </div>
+        <div class="field" id="comSellerField" hidden>
+          <label for="comSellerFilter">Vendedor</label>
+          <select id="comSellerFilter"><option value="">TODOS</option></select>
+        </div>
+        <div class="field" id="comRankMetricField" hidden>
+          <label for="comRankMetric">Rankear por</label>
+          <select id="comRankMetric">
+            <option value="revenuePercent">FATURAMENTO</option>
+            <option value="itemsPercent">ITENS VENDIDOS</option>
+            <option value="warrantyPercent">GARANTIA ESTENDIDA</option>
+            <option value="realmePercent">REALMES</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="com-view-panel" id="comViewDashboard">
+        <div class="com-seller-list" id="comDashList"><p class="com-empty">Carregando…</p></div>
+      </div>
+
+      <div class="com-view-panel" id="comViewComissao" hidden>
+        <div class="com-rules" aria-label="Regras de comissão">
+          <div class="com-rule"><span>Comissão por vendas (Faturamento)</span><strong>0,4% / 0,6%</strong><small>0,4% entre 80% e 99,9% da meta; 0,6% ao atingir 100%</small></div>
+          <div class="com-rule"><span>Premiação por vendas (Itens)</span><strong>R$ 500 / R$ 1.500</strong><small>R$ 500 ao atingir 110% da meta; R$ 1.500 ao atingir 120% (não cumulativa)</small></div>
+          <div class="com-rule"><span>Comissão por garantia estendida</span><strong>4%</strong><small>Percentual fixo sobre o valor vendido, sem faixa de meta</small></div>
+        </div>
+        <div class="com-total" id="comComTotal" hidden></div>
+        <div class="com-commission-grid" id="comComList"><p class="com-empty">Carregando…</p></div>
+      </div>
+
+      <div class="com-view-panel" id="comViewRanking" hidden>
+        <ol class="com-ranking" id="comRankList"><li class="com-empty">Carregando…</li></ol>
+      </div>
+
+      <div class="com-view-panel" id="comViewMetas" hidden>
+        <!-- Cadastro de Metas: só comercial:manage (aba escondida por
+             data-permission; o back-end também recusa). Os números vêm SÓ da
+             planilha "ACOMPANHAMENTO LOJAS_VENDEDORES", aba "VENDEDORES <MÊS>". -->
+        <section class="com-import-card">
+          <h3 class="com-section-title">Importar planilha do mês</h3>
+          <p class="com-hint" id="comManageSummary"></p>
+          <div class="com-import-controls">
+            <div class="field"><label for="comImportFile">Arquivo (.xlsx, .xls ou .csv)</label><input type="file" id="comImportFile" accept=".xlsx,.xls,.csv"></div>
+            <div class="field" id="comImportSheetField" hidden><label for="comImportSheet">Aba da planilha</label><select id="comImportSheet"><option value="">—</option></select></div>
+          </div>
+          <div class="user-form-status com-import-status" id="comImportStatus" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="com-import-preview" id="comImportPreview" hidden>
+          <div class="com-import-summary" id="comImportSummary"></div>
+          <ul class="com-import-errors" id="comImportErrors" hidden></ul>
+          <ul class="com-import-rows" id="comImportRows"></ul>
+          <div class="com-import-actions">
+            <button class="btn-outline" type="button" id="btnComImportCancel">CANCELAR</button>
+            <button class="btn-accent" type="button" id="btnComImportConfirm">CONFIRMAR IMPORTAÇÃO</button>
+          </div>
+        </section>
+
+        <h3 class="com-section-title">Importações deste mês</h3>
+        <ul class="com-history" id="comImportHistory"><li class="com-empty">Carregando…</li></ul>
+      </div>
+    </section>
+
 
     <!-- ================= RH / PLANO ODONTOLÓGICO ================= -->
     <section id="pageRhOdontologico" class="page wrap">
@@ -10115,6 +10439,7 @@
     rhAcompanhamentoLojas:'/rh/acompanhamento-lojas',
     rhAniversariantes:'/rh/aniversariantes',
     rhOdontologico:'/rh/odontologico',
+    comercialAcompanhamento:'/comercial/acompanhamento',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
@@ -10168,6 +10493,7 @@
     rhAcompanhamentoLojas:'ACOMPANHAMENTO - LOJAS',
     rhAniversariantes:'ANIVERSARIANTES',
     rhOdontologico:'PLANO ODONTOLÓGICO',
+    comercialAcompanhamento:'ACOMPANHAMENTO METAS',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
@@ -10217,6 +10543,7 @@
     rhAcompanhamentoLojas:'rh_acompanhamento',
     rhAniversariantes:'rh_aniversariantes',
     rhOdontologico:'rh_odontologico',
+    comercialAcompanhamento:'comercial',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
@@ -10860,6 +11187,7 @@
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
+    if(name.indexOf('comercial') === 0) loadComercialPage(name);
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -10914,6 +11242,7 @@
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
+    if(name.indexOf('comercial') === 0) loadComercialPage(name);
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -29532,6 +29861,7 @@ function renderHomeTasks(){
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
     'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
+    'comercial:view':'Comercial: visualizar (Dashboard, Comissão e Ranking)','comercial:manage':'Comercial: cadastrar metas e lançar realizado',
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'users:manage':'Usuários e acessos'
@@ -33941,6 +34271,675 @@ function renderHomeTasks(){
     await loadDentalPlanEmployees();
     await loadDentalPlanRows();
   }
+
+  // ================= COMERCIAL =================
+  // Metas e comissionamento dos vendedores — módulo independente do
+  // Financeiro. Permissões comercial:view (Dashboard, Comissão, Ranking) e
+  // comercial:manage (+ aba Cadastro de Metas = importação da planilha).
+  // A ÚNICA fonte dos números é a planilha "ACOMPANHAMENTO
+  // LOJAS_VENDEDORES", aba "VENDEDORES <MÊS>" (decisão confirmada: sem
+  // digitação manual). Percentual, alvo seguinte, média diária e comissão
+  // vêm SEMPRE calculados pelo servidor (app/lib/commercial.ts). O escopo
+  // por loja e o "só o próprio vendedor" também são do servidor
+  // (app/api/commercial/*): o front só filtra dentro do que já recebeu.
+  const COM_TARGETS = [80, 100, 110, 120];
+  // Posição fixa de cada alvo na barra (escala por trechos 0-80-100-110-120%),
+  // pra os 4 rótulos nunca se sobreporem em tela de celular.
+  const COM_TARGET_POS = [40, 60, 80, 100];
+  const COM_MONTH_NAMES = ['JANEIRO','FEVEREIRO','MARCO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+  let comMonth = '';
+  let comOverview = null;
+  // Dados da aba Cadastro de Metas: escopo de loja do gestor, nunca "só o próprio".
+  let comManage = null;
+  let comRanking = null;
+  let comImports = [];
+  let comStoreFilter = '';
+  let comZoneFilter = '';
+  let comSellerFilter = '';
+  let comCurrentPage = '';
+  let comView = 'dashboard';
+  // Importação em andamento: arquivo lido, aba escolhida, escolhas manuais e prévia.
+  let comImport = null;
+
+  async function comApi(path, options){
+    const response = await fetch('/api/commercial'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function comFormatPct(percent){
+    if(percent === null || percent === undefined) return '—';
+    return Number(percent).toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1})+'%';
+  }
+
+  function comFormatQty(value, singular, plural){
+    const number = Number(value) || 0;
+    return number.toLocaleString('pt-BR')+' '+(number === 1 ? singular : plural);
+  }
+
+  // kind: 'money' (centavos), 'items' ou 'units' (Realmes)
+  function comFormatValue(kind, value){
+    if(kind === 'money') return formatCentsBRL(value);
+    if(kind === 'items') return comFormatQty(value, 'item', 'itens');
+    return comFormatQty(value, 'unidade', 'unidades');
+  }
+
+  function comTargetValue(target, percent){
+    return Math.ceil(target * percent / 100);
+  }
+
+  function comTier(percent){
+    if(percent === null || percent === undefined) return 'none';
+    if(percent >= 100) return 'green';
+    if(percent >= 80) return 'yellow';
+    return 'red';
+  }
+
+  function comBarPosition(percent){
+    if(percent === null || percent === undefined || percent <= 0) return 0;
+    const points = [[0,0],[80,40],[100,60],[110,80],[120,100]];
+    for(let i = 1; i < points.length; i++){
+      if(percent <= points[i][0]){
+        const [p0, x0] = points[i-1];
+        const [p1, x1] = points[i];
+        return x0 + (percent - p0) / (p1 - p0) * (x1 - x0);
+      }
+    }
+    return 100;
+  }
+
+  function comNormalize(value){
+    return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  }
+
+  function comIncentive(kind, block, clock, simple){
+    const fmt = value => comFormatValue(kind, value);
+    if(!(block.target > 0)) return {text:'Sem meta neste mês.', sub:''};
+    const next = block.next;
+    if(!next) return {text:simple ? 'Meta batida!' : 'Todos os 4 alvos atingidos!', sub:''};
+    const goalName = simple ? 'a meta' : 'o Alvo '+next.index+' ('+next.percent+'%)';
+    if(clock.status === 'past') return {text:'Mês encerrado — faltaram '+fmt(next.missing)+' para '+goalName+'.', sub:''};
+    const days = clock.daysRemaining;
+    const daysText = days === 1 ? 'último dia do mês' : days+' dias restantes';
+    if(!simple && block.reachedTargets >= 2){
+      return {text:'Meta batida — faltam '+fmt(next.missing)+' para '+goalName+'.', sub:'Média de '+fmt(next.perDay)+' por dia · '+daysText};
+    }
+    const when = clock.status === 'future' ? 'por dia' : 'hoje';
+    return {text:'Venda '+fmt(next.perDay)+' '+when+' para atingir '+goalName+'.', sub:'Faltam '+fmt(next.missing)+' no mês · '+daysText};
+  }
+
+  // extraHtml: linha adicional no fim do bloco (Super itens, anexo de garantia)
+  function comBlockHtml(kind, title, block, clock, simple, extraHtml){
+    const percent = block.percent;
+    const tier = comTier(percent);
+    const ariaLabel = title+': '+comFormatPct(percent)+' da meta';
+    let bar;
+    if(simple){
+      const width = percent === null ? 0 : Math.min(100, percent);
+      bar = '<div class="com-bar simple" role="img" aria-label="'+escapeHtml(ariaLabel)+'">'+
+        '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+width+'%"></div></div></div>';
+    }else{
+      const marks = COM_TARGETS.map((target, index) => {
+        const reached = block.reachedTargets > index ? ' reached' : '';
+        const last = index === COM_TARGETS.length - 1 ? ' last' : '';
+        const left = 'left:'+COM_TARGET_POS[index]+'%';
+        return '<span class="com-bar-marker'+reached+last+'" style="'+left+'"></span>'+
+          '<span class="com-bar-label'+reached+last+'" style="'+left+'"><span>A'+(index+1)+'</span><span>'+target+'%</span></span>';
+      }).join('');
+      bar = '<div class="com-bar" role="img" aria-label="'+escapeHtml(ariaLabel)+'">'+
+        '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+comBarPosition(percent)+'%"></div></div>'+marks+'</div>';
+    }
+    const targets = simple || !(block.target > 0) ? '' :
+      '<ul class="com-targets">'+COM_TARGETS.map((target, index) =>
+        '<li class="'+(block.reachedTargets > index ? 'reached' : '')+'"><b>ALVO '+(index+1)+' · '+target+'%</b>'+
+        escapeHtml(comFormatValue(kind, comTargetValue(block.target, target)))+'</li>'
+      ).join('')+'</ul>';
+    const incentive = comIncentive(kind, block, clock, simple);
+    return '<section class="com-block tier-'+tier+'">'+
+      '<div class="com-block-head"><span class="com-block-title">'+escapeHtml(title)+'</span><strong class="com-pct">'+(block.target > 0 ? comFormatPct(percent) : 'SEM META')+'</strong></div>'+
+      bar+
+      '<dl class="com-figures">'+
+        '<div><dt>Meta do mês</dt><dd>'+(block.target > 0 ? escapeHtml(comFormatValue(kind, block.target)) : '—')+'</dd></div>'+
+        '<div><dt>Realizado</dt><dd>'+escapeHtml(comFormatValue(kind, block.realized))+'</dd></div>'+
+      '</dl>'+
+      '<p class="com-incentive">'+escapeHtml(incentive.text)+(incentive.sub ? '<small>'+escapeHtml(incentive.sub)+'</small>' : '')+'</p>'+
+      targets+(extraHtml || '')+
+    '</section>';
+  }
+
+  function comSellerHeadHtml(seller){
+    const updated = seller.updatedAt ? 'Atualizado em '+formatDateTimeBR(seller.updatedAt) : '';
+    return '<header class="com-seller-head"><div class="com-seller-name"><strong>'+escapeHtml(seller.name)+'</strong>'+
+      '<span>'+escapeHtml(seller.companyName || 'SEM LOJA')+(seller.zone ? ' · ZONA '+escapeHtml(seller.zone) : '')+'</span></div>'+
+      (updated ? '<span class="com-seller-meta">'+escapeHtml(updated)+'</span>' : '')+'</header>';
+  }
+
+  function comData(){
+    return comView === 'metas' ? comManage : comOverview;
+  }
+
+  function comFilteredSellers(options){
+    const data = comData();
+    const sellers = data ? data.sellers : [];
+    return sellers.filter(seller =>
+      (!comStoreFilter || seller.companyId === comStoreFilter) &&
+      (!comZoneFilter || seller.zone === comZoneFilter) &&
+      (!(options && options.ignoreSeller) && comSellerFilter ? seller.employeeId === comSellerFilter : true)
+    );
+  }
+
+  function comEmptyHtml(){
+    const data = comData();
+    if(data && data.ownOnly) return '<p class="com-empty">Os seus números deste mês ainda não foram importados.</p>';
+    return '<p class="com-empty">Nenhum vendedor importado neste mês. A importação da planilha fica na aba Cadastro de Metas.</p>';
+  }
+
+  // Loja/Zona/Vendedor só fazem sentido pra gestor (visão ampla); conta
+  // vinculada a um vendedor (ownOnly) só vê o próprio. No Ranking (sempre
+  // geral) só o filtro de Zona continua.
+  function comApplyFilterVisibility(){
+    const data = comView === 'ranking' ? comRanking : comData();
+    const ownOnly = comView !== 'ranking' && Boolean(data && data.ownOnly);
+    const allStores = comView === 'ranking' || Boolean(data && data.allStores);
+    if(el('comStoreField')) el('comStoreField').hidden = !data || ownOnly || comView === 'ranking' || comView === 'metas' || !allStores;
+    if(el('comZoneField')) el('comZoneField').hidden = !data || ownOnly || comView === 'metas';
+    if(el('comSellerField')) el('comSellerField').hidden = !data || ownOnly || comView === 'ranking' || comView === 'metas';
+    if(el('comRankMetricField')) el('comRankMetricField').hidden = comView !== 'ranking';
+  }
+
+  function comFillFilter(id, firstLabel, options, current){
+    rhFillSelect(id, firstLabel, options);
+    const select = el(id);
+    if(select) select.value = options.some(option => option.value === current) ? current : '';
+    return select ? select.value : '';
+  }
+
+  function comRenderFilters(){
+    comApplyFilterVisibility();
+    const data = comView === 'ranking' ? comRanking : comData();
+    if(!data) return;
+    const rows = comView === 'ranking' ? data.items : data.sellers;
+    const zones = Array.from(new Set(rows.map(row => row.zone).filter(Boolean))).sort();
+    comZoneFilter = comFillFilter('comZoneFilter', 'TODAS', zones.map(zone => ({value:zone, label:zone})), comZoneFilter);
+    if(comView === 'ranking') return;
+    const stores = new Map();
+    data.sellers.forEach(seller => {
+      if(seller.companyId && !stores.has(seller.companyId)) stores.set(seller.companyId, seller.companyName || seller.companyId);
+    });
+    comStoreFilter = comFillFilter('comStoreFilter', 'TODAS', Array.from(stores.entries())
+      .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'))
+      .map(([value, label]) => ({value, label})), comStoreFilter);
+    comSellerFilter = comFillFilter('comSellerFilter', 'TODOS', comFilteredSellers({ignoreSeller:true}).map(seller => ({
+      value: seller.employeeId,
+      label: seller.name + (data.allStores && !comStoreFilter && seller.companyName ? ' — '+seller.companyName : '')
+    })), comSellerFilter);
+  }
+
+  function comRenderDashboard(){
+    const list = el('comDashList');
+    if(!list || !comOverview) return;
+    const sellers = comFilteredSellers();
+    if(!sellers.length){ list.innerHTML = comEmptyHtml(); return; }
+    const clock = comOverview.clock;
+    list.innerHTML = sellers.map(seller => {
+      const m = seller.metrics;
+      const superLine = m.items.superTarget > 0
+        ? '<p class="com-extra'+(m.items.superReached ? ' reached' : '')+'"><b>SUPER ITENS</b>'+
+          escapeHtml(comFormatValue('items', m.items.superTarget))+' · '+
+          escapeHtml(m.items.superReached ? 'atingido' : 'faltam '+comFormatValue('items', m.items.superTarget - m.items.realized))+'</p>'
+        : '';
+      const attachLine = '<p class="com-extra"><b>ANEXO DE GARANTIA</b>'+
+        (m.attachPercent === null
+          ? 'Nenhum notebook/PC vendido'
+          : escapeHtml(seller.realized.warrantyQty+' de '+comFormatQty(seller.realized.notebookQty, 'notebook/PC', 'notebooks/PC')+' ('+comFormatPct(m.attachPercent)+')'))+'</p>';
+      return '<article class="com-seller">'+comSellerHeadHtml(seller)+
+        '<div class="com-blocks">'+
+          comBlockHtml('money', 'Faturamento', m.revenue, clock, false)+
+          comBlockHtml('items', 'Itens vendidos', m.items, clock, false, superLine)+
+          comBlockHtml('money', 'Garantia estendida', m.warranty, clock, true, attachLine)+
+          comBlockHtml('units', 'Realmes', m.realme, clock, true)+
+        '</div>'+
+      '</article>';
+    }).join('');
+  }
+
+  function comCommissionCardHtml(seller){
+    const metrics = seller.metrics;
+    const commission = metrics.commission;
+    const revenue = metrics.revenue;
+    const items = metrics.items;
+    const warranty = metrics.warranty;
+
+    let revenueDetail;
+    if(!(revenue.target > 0)) revenueDetail = 'Sem meta de faturamento no mês.';
+    else if(commission.revenueRate === 0){
+      revenueDetail = comFormatPct(revenue.percent)+' da meta — abaixo de 80%, ainda sem comissão. Faltam '+
+        formatCentsBRL(comTargetValue(revenue.target, 80) - revenue.realized)+' para a faixa de 0,4%.';
+    }else if(commission.revenueRate < 0.006){
+      revenueDetail = comFormatPct(revenue.percent)+' da meta — faixa de 0,4% sobre '+formatCentsBRL(revenue.realized)+
+        '. Faltam '+formatCentsBRL(comTargetValue(revenue.target, 100) - revenue.realized)+' para a faixa de 0,6%.';
+    }else{
+      revenueDetail = comFormatPct(revenue.percent)+' da meta — faixa máxima de 0,6% sobre '+formatCentsBRL(revenue.realized)+'.';
+    }
+
+    let itemsDetail;
+    if(!(items.target > 0)) itemsDetail = 'Sem meta de itens no mês.';
+    else if(commission.itemsPremiumCents === 0){
+      itemsDetail = comFormatPct(items.percent)+' da meta — a premiação destrava em 110%. Faltam '+
+        comFormatValue('items', comTargetValue(items.target, 110) - items.realized)+' para R$ 500,00.';
+    }else if(commission.itemsPremiumCents < 150000){
+      itemsDetail = comFormatPct(items.percent)+' da meta — R$ 500,00 destravado. Faltam '+
+        comFormatValue('items', comTargetValue(items.target, 120) - items.realized)+' para R$ 1.500,00.';
+    }else{
+      itemsDetail = comFormatPct(items.percent)+' da meta — premiação máxima de R$ 1.500,00 destravada.';
+    }
+
+    const warrantyDetail = '4% sobre '+formatCentsBRL(warranty.realized)+' vendidos em garantia estendida.';
+
+    const row = (label, cents, detail) =>
+      '<li class="'+(cents > 0 ? 'on' : '')+'"><span class="label">'+escapeHtml(label)+'</span>'+
+      '<span class="value">'+escapeHtml(formatCentsBRL(cents))+'</span><span class="detail">'+escapeHtml(detail)+'</span></li>';
+
+    return '<article class="com-commission">'+comSellerHeadHtml(seller)+
+      '<ul class="com-commission-rows">'+
+        row('Comissão por vendas', commission.revenueCommissionCents, revenueDetail)+
+        row('Premiação por itens', commission.itemsPremiumCents, itemsDetail)+
+        row('Garantia estendida', commission.warrantyCommissionCents, warrantyDetail)+
+      '</ul>'+
+      '<div class="com-commission-sum"><span>Total estimado</span><strong>'+escapeHtml(formatCentsBRL(commission.totalCents))+'</strong></div>'+
+    '</article>';
+  }
+
+  function comRenderCommission(){
+    const list = el('comComList');
+    const total = el('comComTotal');
+    if(!list || !comOverview) return;
+    const sellers = comFilteredSellers();
+    if(!sellers.length){
+      list.innerHTML = comEmptyHtml();
+      if(total) total.hidden = true;
+      return;
+    }
+    list.innerHTML = sellers.map(comCommissionCardHtml).join('');
+    if(total){
+      const sum = sellers.reduce((acc, seller) => acc + seller.metrics.commission.totalCents, 0);
+      total.innerHTML = '<span>Total estimado · '+sellers.length+(sellers.length === 1 ? ' vendedor' : ' vendedores')+'</span>'+
+        '<strong>'+escapeHtml(formatCentsBRL(sum))+'</strong>';
+      total.hidden = sellers.length < 2;
+    }
+  }
+
+  function comRenderRanking(){
+    const list = el('comRankList');
+    if(!list) return;
+    const metric = el('comRankMetric') ? el('comRankMetric').value : 'revenuePercent';
+    const items = comRanking ? comRanking.items.filter(item => !comZoneFilter || item.zone === comZoneFilter) : [];
+    if(!items.length){ list.innerHTML = '<li class="com-empty">Nenhum vendedor importado neste mês.</li>'; return; }
+    items.sort((a, b) => {
+      const pa = a[metric];
+      const pb = b[metric];
+      if(pa === null && pb === null) return a.name.localeCompare(b.name, 'pt-BR');
+      if(pa === null) return 1;
+      if(pb === null) return -1;
+      return pb - pa || a.name.localeCompare(b.name, 'pt-BR');
+    });
+    let position = 0;
+    list.innerHTML = items.map(item => {
+      const percent = item[metric];
+      const ranked = percent !== null;
+      if(ranked) position++;
+      const top = ranked && position <= 3 ? ' top'+position : '';
+      const barWidth = ranked ? Math.min(100, percent / 1.2) : 0;
+      return '<li class="com-rank-row tier-'+comTier(percent)+top+'">'+
+        '<span class="com-rank-pos">'+(ranked ? position+'º' : '–')+'</span>'+
+        '<span class="com-rank-who"><strong>'+escapeHtml(item.name)+'</strong><span>'+escapeHtml(item.companyName || 'SEM LOJA')+(item.zone ? ' · '+escapeHtml(item.zone) : '')+'</span></span>'+
+        '<span class="com-rank-pct">'+(ranked ? comFormatPct(percent) : 'SEM META')+'</span>'+
+        '<span class="com-rank-bar" aria-hidden="true"><i style="width:'+barWidth+'%"></i></span>'+
+      '</li>';
+    }).join('');
+  }
+
+  // ---------- Cadastro de Metas = importação da planilha ----------
+  const COM_ROW_STATUS = {
+    ok:['done','PRONTO'],
+    unmatched:['alert','ESCOLHA O FUNCIONÁRIO'],
+    duplicate:['alert','FUNCIONÁRIO REPETIDO'],
+    out_of_scope:['waiting','FORA DA SUA LOJA'],
+    ignored:['waiting','IGNORADA']
+  };
+
+  function comSuggestSheet(sheetNames){
+    const [year, monthNumber] = comMonth.split('-');
+    const monthName = COM_MONTH_NAMES[Number(monthNumber) - 1];
+    const ofMonth = sheetNames.filter(name => {
+      const normalized = comNormalize(name);
+      return /^VENDEDO/.test(normalized) && normalized.split(' ').includes(monthName);
+    });
+    return ofMonth.find(name => comNormalize(name).includes(year)) ||
+      ofMonth.find(name => !/\b20\d\d\b/.test(comNormalize(name))) || ofMonth[0] || '';
+  }
+
+  function comSheetCells(sheetName){
+    const sheet = comImport.workbook.Sheets[sheetName];
+    const rows = window.XLSX.utils.sheet_to_json(sheet, {header:1, raw:true, defval:''});
+    // Corta linhas/colunas vazias do fim (a aba real vai até a linha ~1000).
+    const filled = rows.map(row => {
+      let end = row.length;
+      while(end > 0 && (row[end-1] === '' || row[end-1] === null)) end--;
+      return row.slice(0, end);
+    });
+    let last = filled.length;
+    while(last > 0 && !filled[last-1].length) last--;
+    return filled.slice(0, last);
+  }
+
+  function comImportStatus(message, tone){
+    const node = el('comImportStatus');
+    if(!node) return;
+    node.textContent = message || '';
+    node.dataset.tone = tone || '';
+  }
+
+  function comResetImport(){
+    comImport = null;
+    if(el('comImportFile')) el('comImportFile').value = '';
+    if(el('comImportSheet')) el('comImportSheet').innerHTML = '<option value="">—</option>';
+    if(el('comImportSheetField')) el('comImportSheetField').hidden = true;
+    if(el('comImportPreview')) el('comImportPreview').hidden = true;
+    comImportStatus('');
+  }
+
+  async function comRequestPreview(confirm){
+    const payload = {
+      month: comMonth,
+      fileName: comImport.fileName,
+      sheetName: comImport.sheetName,
+      cells: comImport.cells,
+      mappings: comImport.mappings,
+      confirm: Boolean(confirm)
+    };
+    return comApi('/import', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+  }
+
+  async function comLoadPreview(){
+    if(!comImport || !comImport.sheetName) return;
+    comImport.cells = comSheetCells(comImport.sheetName);
+    comImportStatus('LENDO A ABA '+comImport.sheetName+'…');
+    try{
+      comImport.preview = await comRequestPreview(false);
+    }catch(error){
+      comImport.preview = null;
+      el('comImportPreview').hidden = true;
+      comImportStatus(error.message, 'error');
+      return;
+    }
+    comImportStatus('');
+    comRenderPreview();
+  }
+
+  function comRenderPreview(){
+    const box = el('comImportPreview');
+    const preview = comImport && comImport.preview;
+    if(!box || !preview) return;
+    const s = preview.summary;
+    const pending = s.unmatched + s.duplicate;
+    el('comImportSummary').innerHTML =
+      '<span class="status-pill done">'+s.ok+' PRONTO'+(s.ok === 1 ? '' : 'S')+'</span>'+
+      (pending ? '<span class="status-pill alert">'+pending+' PENDENTE'+(pending === 1 ? '' : 'S')+'</span>' : '')+
+      (s.ignored ? '<span class="status-pill waiting">'+s.ignored+' IGNORADA'+(s.ignored === 1 ? '' : 'S')+'</span>' : '')+
+      (s.outOfScope ? '<span class="status-pill waiting">'+s.outOfScope+' FORA DA SUA LOJA</span>' : '');
+    el('comImportErrors').innerHTML = preview.errors.map(error => '<li>'+escapeHtml(error)+'</li>').join('');
+    el('comImportErrors').hidden = !preview.errors.length;
+    const options = '<option value="__none">ESCOLHA O FUNCIONÁRIO</option><option value="">IGNORAR ESTA LINHA</option>'+
+      preview.employees.map(employee => '<option value="'+escapeHtml(employee.id)+'">'+escapeHtml(employee.fullName+(employee.companyName ? ' — '+employee.companyName : ''))+'</option>').join('');
+    el('comImportRows').innerHTML = preview.rows.map(row => {
+      const [tone, label] = COM_ROW_STATUS[row.status] || ['', row.status];
+      return '<li class="com-import-row status-'+row.status+'">'+
+        '<div class="com-import-who"><strong>'+escapeHtml(row.sellerLabel)+'</strong><span>'+escapeHtml(row.storeLabel || '—')+(row.zone ? ' · '+escapeHtml(row.zone) : '')+' · linha '+row.rowNumber+'</span></div>'+
+        '<span class="status-pill '+tone+'">'+escapeHtml(label)+'</span>'+
+        '<div class="field com-import-map"><label>Funcionário no RH</label><select data-com-alias="'+escapeHtml(row.aliasKey)+'">'+options+'</select></div>'+
+        '<dl class="com-import-values">'+
+          '<div><dt>Faturado / Meta</dt><dd>'+escapeHtml(formatCentsBRL(row.revenueCents)+' / '+formatCentsBRL(row.targetRevenueCents))+'</dd></div>'+
+          '<div><dt>Itens / Meta</dt><dd>'+escapeHtml(row.items+' / '+row.targetItems)+'</dd></div>'+
+          '<div><dt>Garantia / Meta</dt><dd>'+escapeHtml(formatCentsBRL(row.warrantyCents)+' / '+formatCentsBRL(row.targetWarrantyCents))+'</dd></div>'+
+          '<div><dt>Realmes / Meta</dt><dd>'+escapeHtml(row.realme+' / '+row.targetRealme)+'</dd></div>'+
+        '</dl>'+
+      '</li>';
+    }).join('');
+    el('comImportRows').querySelectorAll('[data-com-alias]').forEach(select => {
+      const row = preview.rows.find(item => item.aliasKey === select.dataset.comAlias);
+      select.value = row.status === 'ignored' ? '' : (row.employeeId || '__none');
+    });
+    const confirmButton = el('btnComImportConfirm');
+    confirmButton.disabled = pending > 0 || s.ok === 0;
+    confirmButton.textContent = pending ? 'RESOLVA AS PENDÊNCIAS PARA CONFIRMAR' : 'CONFIRMAR IMPORTAÇÃO ('+s.ok+(s.ok === 1 ? ' VENDEDOR' : ' VENDEDORES')+')';
+    box.hidden = false;
+  }
+
+  if(el('comImportFile')) el('comImportFile').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    if(!file) return;
+    comImportStatus('LENDO O ARQUIVO…');
+    el('comImportPreview').hidden = true;
+    try{
+      const XLSX = await ensureXlsx();
+      const workbook = XLSX.read(await readAsArrayBuffer(file), {type:'array'});
+      comImport = {fileName:file.name, workbook, sheetName:'', cells:[], mappings:{}, preview:null};
+      const names = workbook.SheetNames;
+      el('comImportSheet').innerHTML = names.map(name => '<option value="'+escapeHtml(name)+'">'+escapeHtml(name.trim())+'</option>').join('');
+      el('comImportSheetField').hidden = names.length < 2;
+      const suggestion = comSuggestSheet(names) || (names.length === 1 ? names[0] : '');
+      if(!suggestion){
+        el('comImportSheet').insertAdjacentHTML('afterbegin', '<option value="">ESCOLHA A ABA</option>');
+        el('comImportSheet').value = '';
+        comImportStatus('NÃO ACHEI A ABA "VENDEDORES" DO MÊS SELECIONADO — ESCOLHA A ABA.', 'error');
+        return;
+      }
+      el('comImportSheet').value = suggestion;
+      comImport.sheetName = suggestion;
+      await comLoadPreview();
+    }catch(error){
+      comResetImport();
+      comImportStatus(error.message || 'NÃO FOI POSSÍVEL LER O ARQUIVO.', 'error');
+    }
+  });
+
+  if(el('comImportSheet')) el('comImportSheet').addEventListener('change', async () => {
+    if(!comImport) return;
+    comImport.sheetName = el('comImportSheet').value;
+    comImport.mappings = {};
+    if(comImport.sheetName) await comLoadPreview();
+  });
+
+  if(el('comImportRows')) el('comImportRows').addEventListener('change', async event => {
+    const select = event.target.closest('[data-com-alias]');
+    if(!select || !comImport) return;
+    if(select.value === '__none') delete comImport.mappings[select.dataset.comAlias];
+    else comImport.mappings[select.dataset.comAlias] = select.value;
+    await comLoadPreview();
+  });
+
+  if(el('btnComImportCancel')) el('btnComImportCancel').addEventListener('click', comResetImport);
+
+  if(el('btnComImportConfirm')) el('btnComImportConfirm').addEventListener('click', async () => {
+    if(!comImport || !comImport.preview) return;
+    const button = el('btnComImportConfirm');
+    button.disabled = true;
+    try{
+      const result = await comRequestPreview(true);
+      comResetImport();
+      comOverview = null;
+      comRanking = null;
+      await refreshAfterAction(async () => {
+        await comLoadManage({silent:true});
+        await comLoadImports();
+      });
+      showPurchaseToast(result.imported+(result.imported === 1 ? ' vendedor importado.' : ' vendedores importados.'));
+    }catch(error){
+      button.disabled = false;
+      comImportStatus(error.message, 'error');
+    }
+  });
+
+  function comRenderImports(){
+    const list = el('comImportHistory');
+    if(!list) return;
+    if(!comImports.length){ list.innerHTML = '<li class="com-empty">Nenhuma importação neste mês.</li>'; return; }
+    list.innerHTML = comImports.map(item =>
+      '<li class="com-history-row"><strong>'+escapeHtml(formatDateTimeBR(item.createdAt))+'</strong>'+
+      '<span>'+escapeHtml((item.createdByName || '—')+' · '+(item.fileName || 'arquivo')+' · aba '+(item.sheetName || '—').trim())+'</span>'+
+      '<span>'+escapeHtml(item.rowsImported+' importado'+(item.rowsImported === 1 ? '' : 's')+(item.rowsIgnored ? ' · '+item.rowsIgnored+' não importado'+(item.rowsIgnored === 1 ? '' : 's') : ''))+'</span></li>'
+    ).join('');
+  }
+
+  function comRenderManageSummary(){
+    const node = el('comManageSummary');
+    if(!node || !comManage) return;
+    const count = comManage.sellers.length;
+    node.textContent = count
+      ? count+(count === 1 ? ' vendedor importado' : ' vendedores importados')+' neste mês'+(comManage.allStores ? '' : ' na sua loja')+'. Uma nova importação substitui todos os números do mês.'
+      : 'Nenhum vendedor importado neste mês ainda.';
+  }
+
+  // ---------- Abas, carregamento e filtros ----------
+  document.querySelectorAll('[data-com-view]').forEach(button => {
+    button.addEventListener('click', () => {
+      comView = button.dataset.comView;
+      document.querySelectorAll('[data-com-view]').forEach(tab => {
+        const active = tab === button;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      ['Dashboard','Comissao','Ranking','Metas'].forEach(name => {
+        el('comView'+name).hidden = comView !== name.toLowerCase();
+      });
+      comStoreFilter = '';
+      comZoneFilter = '';
+      comSellerFilter = '';
+      const data = comView === 'ranking' ? comRanking : comData();
+      if(data && data.month === comMonth) comRenderCurrent();
+      else loadComercialPage('comercialAcompanhamento');
+    });
+  });
+
+  function comRenderCurrent(){
+    comRenderFilters();
+    if(comView === 'dashboard') comRenderDashboard();
+    if(comView === 'comissao') comRenderCommission();
+    if(comView === 'ranking') comRenderRanking();
+    if(comView === 'metas'){
+      comRenderManageSummary();
+      comRenderImports();
+    }
+  }
+
+  async function comLoadOverview(opts){
+    const options = opts || {};
+    const targets = ['comDashList', 'comComList'].map(el).filter(Boolean);
+    if(!options.silent) targets.forEach(node => { node.innerHTML = '<p class="com-empty">Carregando…</p>'; });
+    try{
+      comOverview = await comApi('/overview?month='+encodeURIComponent(comMonth));
+    }catch(error){
+      comOverview = null;
+      targets.forEach(node => { node.innerHTML = '<p class="com-empty">'+escapeHtml(error.message)+'</p>'; });
+      return;
+    }
+    comRenderCurrent();
+  }
+
+  async function comLoadManage(){
+    try{
+      comManage = await comApi('/overview?month='+encodeURIComponent(comMonth)+'&for=cadastro');
+    }catch(error){
+      comManage = null;
+      if(el('comManageSummary')) el('comManageSummary').textContent = error.message;
+      return;
+    }
+    comRenderCurrent();
+  }
+
+  async function comLoadImports(){
+    try{
+      const data = await comApi('/import?month='+encodeURIComponent(comMonth));
+      comImports = Array.isArray(data.items) ? data.items : [];
+    }catch(error){
+      comImports = [];
+    }
+    comRenderImports();
+  }
+
+  async function comLoadRanking(opts){
+    const options = opts || {};
+    const list = el('comRankList');
+    if(!options.silent && list) list.innerHTML = '<li class="com-empty">Carregando…</li>';
+    try{
+      comRanking = await comApi('/ranking?month='+encodeURIComponent(comMonth));
+    }catch(error){
+      comRanking = null;
+      if(list) list.innerHTML = '<li class="com-empty">'+escapeHtml(error.message)+'</li>';
+      return;
+    }
+    comRenderCurrent();
+  }
+
+  async function loadComercialPage(name, opts){
+    if(!canAccess('comercial')) return;
+    comCurrentPage = name;
+    if(!comMonth) comMonth = financeCurrentMonthKey();
+    document.querySelectorAll('[data-com-month]').forEach(input => { input.value = comMonth; });
+    // Sem comercial:manage a aba Cadastro de Metas some; volta pro Dashboard.
+    if(comView === 'metas' && !canAccess('comercial:manage')){
+      const dashTab = document.querySelector('[data-com-view="dashboard"]');
+      if(dashTab) dashTab.click();
+      return;
+    }
+    comApplyFilterVisibility();
+    if(comView === 'ranking'){
+      await comLoadRanking(opts);
+      return;
+    }
+    if(comView === 'metas'){
+      await Promise.all([comLoadManage(opts), comLoadImports()]);
+      return;
+    }
+    await comLoadOverview(opts);
+  }
+
+  document.querySelectorAll('[data-com-month]').forEach(input => {
+    input.addEventListener('change', () => {
+      if(!/^\d{4}-\d{2}$/.test(input.value)) return;
+      comMonth = input.value;
+      comOverview = null;
+      comManage = null;
+      comRanking = null;
+      comResetImport();
+      loadComercialPage(comCurrentPage);
+    });
+  });
+  if(el('comStoreFilter')) el('comStoreFilter').addEventListener('change', () => {
+    comStoreFilter = el('comStoreFilter').value;
+    comSellerFilter = '';
+    comRenderCurrent();
+  });
+  if(el('comZoneFilter')) el('comZoneFilter').addEventListener('change', () => {
+    comZoneFilter = el('comZoneFilter').value;
+    comSellerFilter = '';
+    comRenderCurrent();
+  });
+  if(el('comSellerFilter')) el('comSellerFilter').addEventListener('change', () => {
+    comSellerFilter = el('comSellerFilter').value;
+    comRenderCurrent();
+  });
+  if(el('comRankMetric')) el('comRankMetric').addEventListener('change', comRenderRanking);
 
   // ================= RH / ESCALAS E FOLGAS =================
   // Substitui uma planilha externa. Jornada 6x1. O cálculo de folgas é

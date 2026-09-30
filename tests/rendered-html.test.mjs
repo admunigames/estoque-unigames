@@ -4096,6 +4096,74 @@ test("Compras nativo: anexar arquivo (pedido/nota fiscal) não dispara atualiza�
   assert.match(liveEvents, /action === "create" \|\| action === "cancel"\) return null;/);
 });
 
+test("Comercial: menu próprio, permissões comercial:view/manage, escopo por loja, importação da planilha e Ranking sem R$", async () => {
+  const [html, workerSource, shared, overviewRoute, rankingRoute, importRoute, migration] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/shared.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/overview/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/ranking/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/import/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0072_commercial_monthly.sql", import.meta.url), "utf8"),
+  ]);
+
+  // Seção própria no menu lateral (fora de Financeiro e RH) com UM item,
+  // "Acompanhamento Metas", e as telas como abas internas.
+  assert.match(html, /<div class="nav-group" data-any-permission="comercial">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
+  assert.match(html, /id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial"/);
+  assert.match(html, /comercialAcompanhamento:'\/comercial\/acompanhamento'/);
+  assert.match(workerSource, /"\/comercial\/acompanhamento",/);
+  assert.match(html, /<section id="pageComercialAcompanhamento" class="page wrap">/);
+  assert.doesNotMatch(html, /id="navComercial(Dashboard|Comissao|Ranking|Metas)"|pageComercialMetas|comercialMetas:/);
+  for (const view of ["dashboard", "comissao", "ranking", "metas"]) {
+    assert.match(html, new RegExp(`class="supply-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-com-view="${view}"`));
+  }
+  // Abas no estilo único do site, sem classe própria do Comercial.
+  assert.doesNotMatch(html, /com-view-tab/);
+  // Cadastro de Metas: só comercial:manage, e é a importação da planilha
+  // (sem digitação manual de metas/realizado).
+  assert.match(html, /data-com-view="metas" data-permission="comercial:manage">Cadastro de Metas</);
+  assert.match(html, /<input type="file" id="comImportFile" accept="\.xlsx,\.xls,\.csv">/);
+  assert.doesNotMatch(html, /comEntryForm|comGoalList|data-com-entry/);
+  assert.match(importRoute, /if \(!canManageCommercial\(actor\)\)/);
+  assert.match(importRoute, /parseSellerSheet\(cells\)/);
+  assert.match(overviewRoute, /forCadastro && !canManageCommercial\(actor\)/);
+
+  // Checkboxes no Cadastro de Usuários, no mesmo padrão das demais permissões.
+  assert.match(html, /name="userPermission" value="comercial:view"/);
+  assert.match(html, /name="userPermission" value="comercial:manage"/);
+  assert.match(workerSource, /"comercial:view", "comercial:manage",/);
+  assert.match(workerSource, /commercial: \["comercial:view", "comercial:manage"\],/);
+  assert.match(workerSource, /path\.startsWith\("\/comercial\/"\) \|\| path\.startsWith\("\/api\/commercial"\),\s*"commercial",/);
+
+  // Legendas/avisos das abas removidos a pedido do usuário.
+  assert.doesNotMatch(html, /class="com-notice"/);
+
+  // Escopo por loja reaproveita o helper central (sem lógica nova).
+  assert.match(shared, /from "\.\.\/\.\.\/lib\/access-scope"/);
+  assert.match(shared, /canSeeAllStores\(actor, "comercial:view"\) \|\| canSeeAllStores\(actor, "comercial:manage"\)/);
+  assert.match(overviewRoute, /scope\.allStores \? sellers : sellers\.filter\(\(seller\) => seller\.companyId === scope\.companyId\)/);
+  // Conta vinculada a um vendedor vê só o próprio no Dashboard/Comissão.
+  assert.match(overviewRoute, /linkedEmployeeIds\(database, actor\.id\)/);
+  assert.match(overviewRoute, /sellers\.filter\(\(seller\) => linked\.includes\(seller\.employeeId\)\)/);
+  // Importação de quem só alcança a própria loja: só grava/substitui a loja dele.
+  assert.match(importRoute, /const inScope = \(companyId: string\) => scope\.allStores \|\| companyId === scope\.companyId;/);
+  assert.match(importRoute, /DELETE FROM commercial_monthly WHERE month=\?1 AND company_id=\?2/);
+
+  // Ranking: empresa inteira, mas a resposta só leva nome, loja, zona e percentuais.
+  const rankingItem = rankingRoute.slice(rankingRoute.indexOf("sellers.map("), rankingRoute.indexOf("}));"));
+  assert.match(rankingItem, /revenuePercent: seller\.metrics\.revenue\.percent/);
+  assert.doesNotMatch(rankingItem, /Cents|realized|commission|goal|target/);
+  assert.doesNotMatch(rankingRoute, /commercialScope/);
+
+  // Tabelas novas, sem relação com o schema do Financeiro.
+  assert.match(migration, /CREATE TABLE "commercial_monthly"/);
+  assert.match(migration, /CREATE UNIQUE INDEX "commercial_monthly_employee_month_idx"/);
+  assert.match(migration, /CREATE TABLE "commercial_imports"/);
+  assert.match(migration, /CREATE TABLE "commercial_aliases"/);
+  assert.doesNotMatch(migration, /finance_/);
+});
+
 test("abas do site inteiro compartilham um único estilo (barra arredondada, ativa preenchida)", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
 
