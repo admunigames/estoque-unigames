@@ -3231,6 +3231,7 @@ test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aber
     stockBalanceRoute,
     comprasNovoShared,
     notionRoute,
+    pesquisaRoute,
   ] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
@@ -3245,6 +3246,7 @@ test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aber
     readFile(new URL("../app/api/compras-novo/estoque-saldo/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/shared.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/compras-novo/pesquisa/route.ts", import.meta.url), "utf8"),
   ]);
 
   // Nav/rotas: nada muda em relação às fases anteriores (mesmo módulo,
@@ -3349,6 +3351,11 @@ test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aber
   // UI: só 2 abas (Por Produto primeiro/padrão, Pedidos), sem Rascunhos.
   assert.match(html, /data-compras-section-tab="porProduto">POR PRODUTO/);
   assert.match(html, /data-compras-section-tab="pedidos">PEDIDOS/);
+  assert.match(html, /data-compras-section-tab="pesquisa">PESQUISA/);
+  assert.match(html, /id="comprasSectionPesquisa" hidden/);
+  assert.match(pesquisaRoute, /canManageComprasDraft\(actor\)/);
+  assert.match(pesquisaRoute, /resolveProductCodes\(database, produto\)/);
+  assert.match(pesquisaRoute, /INFORME AO MENOS UM FILTRO\./);
   assert.doesNotMatch(html, /data-compras-section-tab="rascunhos"/);
   assert.doesNotMatch(html, /id="comprasSectionRascunhos"/);
   assert.doesNotMatch(html, /id="comprasConvertDialog"/);

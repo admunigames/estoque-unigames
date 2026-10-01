@@ -4890,6 +4890,7 @@
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-compras-section-tab="porProduto">POR PRODUTO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="pedidos">PEDIDOS</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="fornecedores">CADASTRO DE FORNECEDOR</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="pesquisa">PESQUISA</button>
       </div>
 
       <section id="comprasSectionPedidos" hidden>
@@ -5123,6 +5124,45 @@
         <div class="user-form-status" id="comprasFornecedorFormStatus" data-supplier-status role="status" aria-live="polite"></div>
         <div class="field full" style="margin-bottom:12px;"><label for="comprasFornecedoresSearch">BUSCAR</label><input id="comprasFornecedoresSearch" data-supplier-search placeholder="Nome ou documento..."></div>
         <div class="dre-catalog-list" id="comprasFornecedoresList" data-supplier-list></div>
+      </section>
+
+      <!-- Pesquisa de compras por LOJA, PRODUTO e/ou FORNECEDOR (filtros
+           combináveis, AND) — 1 linha por item de pedido nativo; pedidos do
+           Notion (sem itens) entram como 1 linha por pedido só sem filtro de
+           produto. Ver GET /api/compras-novo/pesquisa. -->
+      <section id="comprasSectionPesquisa" hidden>
+        <form id="comprasPesquisaForm" novalidate>
+          <div class="purchase-form-grid" style="margin:12px 0;">
+            <div class="purchase-field full product-search-field">
+              <label for="comprasPesquisaProduto">PRODUTO (CÓDIGO OU NOME)</label>
+              <input id="comprasPesquisaProduto" maxlength="80" autocomplete="off">
+            </div>
+            <div class="purchase-field">
+              <label for="comprasPesquisaLoja">LOJA</label>
+              <select id="comprasPesquisaLoja"><option value="">TODAS</option></select>
+            </div>
+            <div class="purchase-field">
+              <label for="comprasPesquisaFornecedor">FORNECEDOR</label>
+              <select id="comprasPesquisaFornecedor"><option value="">TODOS</option></select>
+            </div>
+          </div>
+          <div class="page-header-actions" style="justify-content:space-between;margin:0 0 16px;flex-wrap:wrap;gap:10px;">
+            <label class="checkbox-inline" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="comprasPesquisaShowCanceled" style="width:auto;margin:0;"> Mostrar cancelados</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn-outline" type="button" id="btnComprasPesquisaLimpar">LIMPAR</button>
+              <button class="btn-accent" type="submit" id="btnComprasPesquisar">PESQUISAR</button>
+            </div>
+          </div>
+        </form>
+        <div class="table-panel">
+          <div class="table-scroll">
+            <table id="comprasPesquisaTable">
+              <thead><tr><th>Produto</th><th>Qtd pedida</th><th>Qtd recebida</th><th>Preço unit.</th><th>Fornecedor</th><th>Loja(s)</th><th>Data do pedido</th><th>Status</th><th></th></tr></thead>
+              <tbody id="comprasPesquisaBody"><tr><td colspan="9" class="responsive-empty">Use os filtros acima para pesquisar.</td></tr></tbody>
+            </table>
+          </div>
+          <p class="page-desc" id="comprasPesquisaFooter" hidden style="margin:0;padding:10px 16px;"></p>
+        </div>
       </section>
     </section>
 
@@ -26213,9 +26253,14 @@ function renderHomeTasks(){
     el('comprasSectionPedidos').hidden = tab !== 'pedidos';
     el('comprasSectionPorProduto').hidden = tab !== 'porProduto';
     el('comprasSectionFornecedores').hidden = tab !== 'fornecedores';
-    if(tab === 'pedidos') loadComprasOrdersPage();
+    el('comprasSectionPesquisa').hidden = tab !== 'pesquisa';
     if(tab === 'porProduto') initComprasProdutoBusca();
     if(tab === 'fornecedores') loadComprasFornecedoresTab();
+    // Pesquisa só popula os selects ao entrar — não pesquisa sozinha.
+    if(tab === 'pesquisa') initComprasPesquisa();
+    // Devolve a carga da lista pra quem precisa esperar por ela (ABRIR
+    // PEDIDO da aba Pesquisa abre o detalhe só depois da lista carregada).
+    if(tab === 'pedidos') return loadComprasOrdersPage();
   }
   document.querySelectorAll('[data-compras-section-tab]').forEach(button => {
     button.addEventListener('click',() => setComprasSectionTab(button.dataset.comprasSectionTab));
@@ -26392,7 +26437,7 @@ function renderHomeTasks(){
       })
       .filter(entry => entry.value);
   }
-  ['comprasItemProductCode','comprasProdutoBusca'].forEach(id => {
+  ['comprasItemProductCode','comprasProdutoBusca','comprasPesquisaProduto'].forEach(id => {
     attachProductCatalogSearch(el(id), { getEntries: comprasProductCodeEntries });
   });
 
@@ -27618,6 +27663,128 @@ function renderHomeTasks(){
   }
   if(el('comprasProdutoBusca')) el('comprasProdutoBusca').addEventListener('change', () => {
     loadComprasProdutoHistorico(el('comprasProdutoBusca').value.trim());
+  });
+
+  // ----- Aba "Pesquisa" (loja / produto / fornecedor, combináveis) -----
+  // Fornecedores com inativos inclusos: pedido antigo pode ser de fornecedor
+  // já desativado e ainda precisa ser pesquisável. Lista própria pra não
+  // misturar com comprasSuppliersCache (só ativos, usado nos pedidos).
+  let comprasPesquisaSuppliersLoaded = false;
+  async function initComprasPesquisa(){
+    if(!companies.length) await loadCompanies();
+    const lojaSelect = el('comprasPesquisaLoja');
+    const currentLoja = lojaSelect.value;
+    lojaSelect.innerHTML = '<option value="">TODAS</option>'+companies.map(c =>
+      '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>'
+    ).join('');
+    lojaSelect.value = currentLoja;
+    if(comprasPesquisaSuppliersLoaded) return;
+    try{
+      const data = await financeApiRequest('/suppliers?includeInactive=1');
+      const suppliers = (Array.isArray(data.suppliers) ? data.suppliers : [])
+        .slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+      const fornecedorSelect = el('comprasPesquisaFornecedor');
+      const currentFornecedor = fornecedorSelect.value;
+      fornecedorSelect.innerHTML = '<option value="">TODOS</option>'+suppliers.map(s =>
+        '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+(s.active ? '' : ' (INATIVO)')+'</option>'
+      ).join('');
+      fornecedorSelect.value = currentFornecedor;
+      comprasPesquisaSuppliersLoaded = true;
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+    }
+  }
+
+  function comprasPesquisaSetMessage(message){
+    el('comprasPesquisaBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(message)+'</td></tr>';
+    el('comprasPesquisaFooter').hidden = true;
+  }
+
+  function comprasPesquisaRowHtml(row){
+    const isNotion = row.origin === 'notion_import';
+    const produto = isNotion
+      ? '<span style="opacity:.65;">SEM ITENS DETALHADOS</span>'
+      : escapeHtml(row.productCode)+(row.productName ? ' — '+escapeHtml(row.productName) : '');
+    let statusHtml = comprasOrderStatusBadge(row.status);
+    if(Number(row.canceled)) statusHtml += ' <span class="status-pill alert">CANCELADO</span>';
+    else if(comprasOrderIsLate(row)) statusHtml += ' <span class="status-pill alert">ATRASADO</span>';
+    const stores = Array.isArray(row.storeNames) ? row.storeNames : [];
+    return '<tr>'+
+      '<td>'+produto+'</td>'+
+      '<td>'+(isNotion ? '—' : Number(row.quantity || 0))+'</td>'+
+      '<td>'+(isNotion ? '—' : Number(row.receivedQuantity || 0))+'</td>'+
+      '<td>'+(isNotion ? '—' : formatCentsBRL(row.unitPriceCents))+'</td>'+
+      '<td>'+escapeHtml(row.supplierName || '—')+'</td>'+
+      '<td>'+escapeHtml(stores.join(' / ') || '—')+'</td>'+
+      '<td>'+(formatDateBR(row.orderDate) || '—')+'</td>'+
+      '<td><div style="display:flex;flex-wrap:wrap;gap:6px;">'+statusHtml+'</div></td>'+
+      '<td><button class="btn-outline" type="button" data-compras-pesquisa-open="'+escapeHtml(row.orderId)+'" data-canceled="'+(Number(row.canceled) ? '1' : '0')+'">ABRIR PEDIDO</button></td>'+
+    '</tr>';
+  }
+
+  async function runComprasPesquisa(){
+    const loja = el('comprasPesquisaLoja').value;
+    const produto = el('comprasPesquisaProduto').value.trim();
+    const fornecedor = el('comprasPesquisaFornecedor').value;
+    if(!loja && !produto && !fornecedor){
+      showPurchaseToast('INFORME AO MENOS UM FILTRO.', 'error');
+      return;
+    }
+    const query = new URLSearchParams();
+    if(loja) query.set('loja', loja);
+    if(produto) query.set('produto', produto);
+    if(fornecedor) query.set('fornecedor', fornecedor);
+    if(el('comprasPesquisaShowCanceled').checked) query.set('includeCanceled', '1');
+    comprasPesquisaSetMessage('Pesquisando…');
+    try{
+      const data = await comprasNovoApiRequest('/pesquisa?'+query.toString());
+      const rows = Array.isArray(data.rows) ? data.rows : [];
+      if(!rows.length){ comprasPesquisaSetMessage('Nenhuma compra encontrada.'); return; }
+      el('comprasPesquisaBody').innerHTML = rows.map(comprasPesquisaRowHtml).join('');
+      const footer = el('comprasPesquisaFooter');
+      footer.textContent = rows.length+(rows.length === 1 ? ' LINHA' : ' LINHAS')+
+        (data.truncated ? ' — RESULTADO LIMITADO; REFINE OS FILTROS PARA VER TUDO.' : '');
+      footer.hidden = false;
+    }catch(error){
+      comprasPesquisaSetMessage(error.message);
+    }
+  }
+
+  // ABRIR PEDIDO: limpa os filtros da aba Pedidos (o pedido precisa estar
+  // na lista pra o detalhe accordion encontrar o card), troca de aba,
+  // espera a lista e abre o detalhe — mesmo caminho do botão ABRIR do card.
+  async function comprasPesquisaAbrirPedido(orderId, canceled){
+    el('comprasOrdersStatusFilter').value = '';
+    el('comprasOrdersOriginFilter').value = '';
+    if(canceled) el('comprasOrdersShowCanceled').checked = true;
+    comprasOrdersLateOnlyFilter = false;
+    comprasOrdersProdutoFilter = '';
+    await setComprasSectionTab('pedidos');
+    await openComprasOrderDetail(orderId);
+    const card = el('comprasOrdersCardGrid').querySelector('[data-compras-order-row="'+CSS.escape(orderId)+'"]');
+    if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  if(el('comprasPesquisaForm')) el('comprasPesquisaForm').addEventListener('submit', event => {
+    event.preventDefault();
+    runComprasPesquisa();
+  });
+  // Enter sem sugestão aberta já submete o form; com a lista de sugestões
+  // aberta, o autocomplete consome o Enter (escolhe o produto) — pesquisa
+  // logo em seguida também, sem exigir um segundo Enter.
+  if(el('comprasPesquisaProduto')) el('comprasPesquisaProduto').addEventListener('keydown', event => {
+    if(event.key === 'Enter' && event.defaultPrevented) runComprasPesquisa();
+  });
+  if(el('btnComprasPesquisaLimpar')) el('btnComprasPesquisaLimpar').addEventListener('click', () => {
+    el('comprasPesquisaLoja').value = '';
+    el('comprasPesquisaProduto').value = '';
+    el('comprasPesquisaFornecedor').value = '';
+    el('comprasPesquisaShowCanceled').checked = false;
+    comprasPesquisaSetMessage('Use os filtros acima para pesquisar.');
+  });
+  if(el('comprasPesquisaBody')) el('comprasPesquisaBody').addEventListener('click', event => {
+    const openBtn = event.target.closest('[data-compras-pesquisa-open]');
+    if(openBtn) comprasPesquisaAbrirPedido(openBtn.dataset.comprasPesquisaOpen, openBtn.dataset.canceled === '1');
   });
 
   // ----- Obras (CAPEX — fora de Despesas/DRE) -----
