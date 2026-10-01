@@ -1,5 +1,5 @@
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
 
@@ -54,7 +54,13 @@ const localBindingConfig = {
     : [],
 };
 
-export default defineConfig(async () => {
+function withSslModeRequire(connectionString: string): string {
+  const url = new URL(connectionString);
+  if (!url.searchParams.has("sslmode")) url.searchParams.set("sslmode", "require");
+  return url.toString();
+}
+
+export default defineConfig(async ({ command }) => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -63,6 +69,23 @@ export default defineConfig(async () => {
 
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import("@cloudflare/vite-plugin");
+
+  // So no `pnpm dev` (nunca no build) e com DB_DRIVER=postgres: emula o
+  // Hyperdrive de producao. O proxy do Miniflare (em Node) abre o TLS ate o
+  // Supabase e entrega ao Worker uma conexao local sem TLS. Conectar direto
+  // do workerd com SSL nao funciona (o handshake TLS com o pooler do
+  // Supabase trava/falha dentro do workerd).
+  const env = { ...loadEnv("development", process.cwd(), ""), ...process.env };
+  const localHyperdrive =
+    command === "serve" && env.DB_DRIVER === "postgres" && env.SUPABASE_DB_URL
+      ? [
+          {
+            binding: "HYPERDRIVE",
+            id: "local-supabase",
+            localConnectionString: withSslModeRequire(env.SUPABASE_DB_URL),
+          },
+        ]
+      : [];
 
   return {
     server: isCodexSeatbeltSandbox
@@ -74,9 +97,9 @@ export default defineConfig(async () => {
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         config: (productionConfig) => {
-          // O dev usa D1 local; nao tenta abrir o Hyperdrive de producao.
+          // Nunca abre o Hyperdrive de producao no dev; usa o emulado acima.
           productionConfig.hyperdrive = [];
-          return localBindingConfig;
+          return { ...localBindingConfig, hyperdrive: localHyperdrive };
         },
       }),
     ],
