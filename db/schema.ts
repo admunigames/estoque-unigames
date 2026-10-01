@@ -3453,3 +3453,59 @@ export const commercialAliases = pgTable("commercial_aliases", {
   updatedBy: text("updated_by").notNull().default(""),
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
+
+// Comercial > Relatório NF — lançamento manual diário de vendas x notas
+// fiscais emitidas por loja. Uma linha por (data, loja); totais/percentuais
+// nunca são persistidos, sempre derivados na leitura (ver app/lib/relatorio-nf.ts).
+export const commercialNfReportEntries = pgTable(
+  "commercial_nf_report_entries",
+  {
+    id: text("id").primaryKey(),
+    reportDate: text("report_date").notNull(),
+    storeId: text("store_id").notNull(),
+    storeName: text("store_name").notNull().default(""),
+    salesCount: integer("sales_count").notNull().default(0),
+    invoicesIssuedCount: integer("invoices_issued_count").notNull().default(0),
+    salesAmountCents: integer("sales_amount_cents").notNull().default(0),
+    invoicesIssuedAmountCents: integer("invoices_issued_amount_cents").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("commercial_nf_report_entries_date_store_idx").on(table.reportDate, table.storeId),
+    index("commercial_nf_report_entries_date_idx").on(table.reportDate),
+  ],
+);
+
+// Comercial > Controle GD — ledger de ajustes de saldo de "gordura de
+// vendas" por loja (desconto/margem usada numa venda). Saldo atual e
+// movimento do mês são sempre derivados somando os ajustes não cancelados
+// (ver app/lib/controle-gd.ts) — nunca um número solto sobrescrito, para
+// manter auditoria de algo que mexe com margem/dinheiro da loja.
+export const commercialGdBalanceAdjustments = pgTable(
+  "commercial_gd_balance_adjustments",
+  {
+    id: text("id").primaryKey(),
+    storeId: text("store_id").notNull(),
+    storeName: text("store_name").notNull().default(""),
+    adjustmentDate: text("adjustment_date").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    reason: text("reason").notNull().default(""),
+    source: text("source").notNull().default("manual"),
+    canceled: integer("canceled").notNull().default(0),
+    canceledBy: text("canceled_by").notNull().default(""),
+    canceledByName: text("canceled_by_name").notNull().default(""),
+    canceledAt: text("canceled_at").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("commercial_gd_adjustments_store_date_idx").on(table.storeId, table.adjustmentDate),
+    index("commercial_gd_adjustments_date_idx").on(table.adjustmentDate),
+  ],
+);

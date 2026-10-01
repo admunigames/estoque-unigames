@@ -3107,12 +3107,14 @@
         <a class="nav-item sub-item" id="navNotasOs" data-page="notasOs" data-permission="os_notes" data-home-desc="Peça a nota de uma O.S. e acompanhe o anexo enviado pela administração." title="Notas de O.S." href="/solicitacoes/notas-os"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas de O.S.</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="comercial">
+    <div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf">
       <button class="nav-group-toggle" id="navComercialMenu" type="button" aria-expanded="false" aria-controls="navComercialSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 16.5 9 11 13 14.5 20.5 7"/><polyline points="15.5 7 20.5 7 20.5 12"/></svg></span><span class="nav-label">Comercial</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navComercialSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e importação da planilha de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
+        <a class="nav-item sub-item" id="navComercialControleGd" data-page="comercialControleGd" data-permission="controle_gd" data-home-desc="Saldo de gordura de vendas por loja, com alerta de status, gráfico dos últimos 7 dias e relatório para WhatsApp." title="Controle GD" href="/comercial/controle-gd"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle GD</span></a>
+        <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/comercial/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="finance,payables">
@@ -5399,6 +5401,20 @@
                   </div>
                 </details>
                 <details class="permission-module">
+                  <summary>Comercial - Controle GD</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:view"> Ver o saldo, alertas, gráfico de 7 dias e script diário por loja</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:manage"> Lançar e cancelar ajuste de saldo</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Comercial - Relatório NF</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:view"> Ver o lançamento do dia e o histórico de dias salvos</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:manage"> Lançar vendas/notas emitidas por loja e salvar no histórico</label>
+                  </div>
+                </details>
+                <details class="permission-module">
                   <summary>Usuários e acessos</summary>
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
@@ -6165,6 +6181,20 @@
       </div>
     </section>
 
+    <section id="pageComercialControleGd" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Controle GD</h2>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnGdReload" type="button">ATUALIZAR</button>
+        </div>
+      </header>
+
+      <div class="supply-dashboard-grid" id="gdStoresGrid"></div>
+    </section>
+
 
     <!-- ================= RH / PLANO ODONTOLÓGICO ================= -->
     <section id="pageRhOdontologico" class="page wrap">
@@ -6837,6 +6867,52 @@
           <table id="receivablesByOperatorTable">
             <thead><tr><th>Adquirente</th><th>Valor</th></tr></thead>
             <tbody id="receivablesByOperatorBody"><tr><td colspan="2" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="pageComercialRelatorioNf" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Relatório NF</h2>
+        </div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="nfReportDate">DATA</label><input type="date" id="nfReportDate"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnNfReportHistory" type="button">HISTÓRICO</button>
+          <button class="btn-outline" id="btnNfReportShare" type="button">GERAR IMAGEM</button>
+          <button class="btn-accent" id="btnNfReportSave" type="button">SALVAR NO HISTÓRICO</button>
+        </div>
+      </div>
+
+      <div class="supply-dashboard-grid">
+        <article class="supply-dashboard-card">
+          <span>TOTAL DE VENDAS</span>
+          <strong id="nfTotalSales">0</strong>
+        </article>
+        <article class="supply-dashboard-card">
+          <span>TOTAL DE NOTAS EMITIDAS</span>
+          <strong id="nfTotalIssued">0</strong>
+        </article>
+        <article class="supply-dashboard-card" id="nfPctIssuedCard">
+          <span>% DE EMISSÃO</span>
+          <strong id="nfPctIssued">0%</strong>
+        </article>
+        <article class="supply-dashboard-card alert" id="nfPendingCard">
+          <span>PENDENTES DE EMISSÃO</span>
+          <strong id="nfPendingCount">0</strong>
+        </article>
+      </div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="nfStoresTable">
+            <thead><tr><th>Loja</th><th>Vendas</th><th>Emitidas</th><th>Valor Vendido</th><th>Valor Emitido</th><th>% Emissão</th></tr></thead>
+            <tbody id="nfStoresTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -8211,6 +8287,88 @@
     <canvas id="cashFlowShareCanvas" width="720" height="900" style="max-width:100%;border:1px solid var(--line);border-radius:10px;"></canvas>
     <div class="purchase-form-actions" style="justify-content:center;">
       <a class="btn-accent" id="btnDownloadCashFlowImage" download="fluxo-de-caixa.png" href="#">BAIXAR PNG</a>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="nfHistoryDialog" aria-labelledby="nfHistoryDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="nfHistoryDialogTitle">HISTÓRICO DO RELATÓRIO NF</h3>
+    <button class="purchase-dialog-close" id="btnCloseNfHistoryDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table id="nfHistoryTable">
+          <thead><tr><th>Data</th><th>Vendas</th><th>Emitidas</th><th>% Emissão</th><th></th></tr></thead>
+          <tbody id="nfHistoryTableBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="nfReportShareDialog" aria-labelledby="nfReportShareDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="nfReportShareDialogTitle">IMAGEM DO RELATÓRIO NF</h3>
+    <button class="purchase-dialog-close" id="btnCloseNfReportShareDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;text-align:center;">
+    <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Imagem compacta, pensada para compartilhar por mensagem.</p>
+    <canvas id="nfReportShareCanvas" width="720" height="900" style="max-width:100%;border:1px solid var(--line);border-radius:10px;"></canvas>
+    <div class="purchase-form-actions" style="justify-content:center;">
+      <a class="btn-accent" id="btnDownloadNfReportImage" download="relatorio-nf.png" href="#">BAIXAR PNG</a>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="gdAdjustDialog" aria-labelledby="gdAdjustDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="gdAdjustDialogTitle">LANÇAR AJUSTE DE SALDO</h3>
+    <button class="purchase-dialog-close" id="btnCloseGdAdjustDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="gdAdjustForm">
+    <input type="hidden" id="gdAdjustStoreId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label>LOJA</label><div id="gdAdjustStoreName" style="padding:8px 0;font-weight:700;"></div></div>
+      <div class="purchase-field"><label for="gdAdjustAmount">VALOR (USE "-" PARA CONSUMIR SALDO) *</label><input type="text" inputmode="decimal" id="gdAdjustAmount" placeholder="R$ 0,00 ou -R$ 0,00" required></div>
+      <div class="purchase-field"><label for="gdAdjustDate">DATA *</label><input type="date" id="gdAdjustDate" required></div>
+      <div class="purchase-field full"><label for="gdAdjustReason">MOTIVO</label><textarea id="gdAdjustReason" rows="2" maxlength="300"></textarea></div>
+    </div>
+    <div class="user-form-status" id="gdAdjustFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelGdAdjustDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveGdAdjust" type="submit">LANÇAR AJUSTE</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="gdDetailDialog" aria-labelledby="gdDetailDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="gdDetailDialogTitle">DETALHES DA LOJA</h3>
+    <button class="purchase-dialog-close" id="btnCloseGdDetailDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
+    <h3 class="supply-section-title">ÚLTIMOS 7 DIAS</h3>
+    <div class="cash-flow-chart" id="gdDetailChart"></div>
+    <h3 class="supply-section-title">SCRIPT DO DIA</h3>
+    <textarea id="gdDetailScript" rows="8" readonly style="width:100%;font:600 12px/1.5 var(--mono);"></textarea>
+    <div class="purchase-form-actions">
+      <button class="btn-accent" id="btnCopyGdDetailScript" type="button">COPIAR SCRIPT</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="gdShareDialog" aria-labelledby="gdShareDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="gdShareDialogTitle">IMAGEM DO CONTROLE GD</h3>
+    <button class="purchase-dialog-close" id="btnCloseGdShareDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;text-align:center;">
+    <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Imagem compacta, pensada para compartilhar por mensagem.</p>
+    <canvas id="gdShareCanvas" width="720" height="900" style="max-width:100%;border:1px solid var(--line);border-radius:10px;"></canvas>
+    <div class="purchase-form-actions" style="justify-content:center;">
+      <a class="btn-accent" id="btnDownloadGdImage" download="controle-gd.png" href="#">BAIXAR PNG</a>
     </div>
   </div>
 </dialog>
@@ -10448,6 +10606,8 @@
   const navSolicitacoesSubmenu = el('navSolicitacoesSubmenu');
   const navFinanceiroToggle = el('navFinanceiroMenu');
   const navFinanceiroSubmenu = el('navFinanceiroSubmenu');
+  const navComercialToggle = el('navComercialMenu');
+  const navComercialSubmenu = el('navComercialSubmenu');
   const navRhFinanceiroToggle = el('navRhFinanceiroMenu');
   const navRhFinanceiroSubmenu = el('navRhFinanceiroSubmenu');
   const PAGE_ROUTES = Object.freeze({
@@ -10486,6 +10646,7 @@
     rhAniversariantes:'/rh/aniversariantes',
     rhOdontologico:'/rh/odontologico',
     comercialAcompanhamento:'/comercial/acompanhamento',
+    comercialControleGd:'/comercial/controle-gd',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
@@ -10495,6 +10656,7 @@
     financeiroSupplierStatement:'/financeiro/fornecedores/conta-corrente',
     financeiroOrcamento:'/financeiro/orcamento',
     financeiroRecebiveis:'/financeiro/recebiveis',
+    comercialRelatorioNf:'/comercial/relatorio-nf',
     financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa',
     financeiroMaquinetas:'/financeiro/maquinetas',
     financeiroTaxasCartao:'/financeiro/taxas-cartao',
@@ -10540,6 +10702,7 @@
     rhAniversariantes:'ANIVERSARIANTES',
     rhOdontologico:'PLANO ODONTOLÓGICO',
     comercialAcompanhamento:'ACOMPANHAMENTO METAS',
+    comercialControleGd:'CONTROLE GD',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
@@ -10549,6 +10712,7 @@
     financeiroSupplierStatement:'CONTA CORRENTE DE FORNECEDORES',
     financeiroOrcamento:'ORÇAMENTO',
     financeiroRecebiveis:'RECEBÍVEIS',
+    comercialRelatorioNf:'RELATÓRIO NF',
     financeiroFluxoCaixa:'FLUXO DE CAIXA',
     financeiroMaquinetas:'MAQUINETAS',
     financeiroTaxasCartao:'TAXAS DE CARTÃO',
@@ -10590,6 +10754,7 @@
     rhAniversariantes:'rh_aniversariantes',
     rhOdontologico:'rh_odontologico',
     comercialAcompanhamento:'comercial',
+    comercialControleGd:'controle_gd',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
@@ -10598,6 +10763,7 @@
     financeiroSupplierStatement:'finance',
     financeiroOrcamento:'finance',
     financeiroRecebiveis:'finance',
+    comercialRelatorioNf:'relatorio_nf',
     financeiroFluxoCaixa:'finance',
     financeiroMaquinetas:'finance',
     financeiroTaxasCartao:'finance',
@@ -11136,6 +11302,16 @@
     setFinanceiroExpanded(!expanded);
   });
 
+  function setComercialExpanded(expanded){
+    navComercialToggle.setAttribute('aria-expanded', String(expanded));
+    navComercialSubmenu.setAttribute('aria-hidden', String(!expanded));
+  }
+
+  navComercialToggle.addEventListener('click', () => {
+    const expanded = navComercialToggle.getAttribute('aria-expanded') === 'true';
+    setComercialExpanded(!expanded);
+  });
+
   function setRhFinanceiroExpanded(expanded){
     navRhFinanceiroToggle.setAttribute('aria-expanded', String(expanded));
     navRhFinanceiroSubmenu.setAttribute('aria-hidden', String(!expanded));
@@ -11176,6 +11352,7 @@
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
+    const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -11196,6 +11373,8 @@
     if(isSolicitacoes) navSolicitacoesToggle.classList.add('active');
     setFinanceiroExpanded(isFinanceiro);
     if(isFinanceiro) navFinanceiroToggle.classList.add('active');
+    setComercialExpanded(isComercial);
+    if(isComercial) navComercialToggle.classList.add('active');
     // O grupo-atalho "RH Financeiro" abre/destaca nas mesmas 4 páginas do
     // grupo RH — são os mesmos destinos, com ids de link diferentes.
     setRhFinanceiroExpanded(isRhFinanceiro);
@@ -11239,6 +11418,7 @@
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
     if(name === 'financeiroRecebiveis') loadRecebiveisPage();
+    if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
@@ -11258,7 +11438,8 @@
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
-    if(name.indexOf('comercial') === 0) loadComercialPage(name);
+    if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf') loadComercialPage(name);
+    if(name === 'comercialControleGd') loadControleGdPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -11294,6 +11475,7 @@
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
     if(name === 'financeiroRecebiveis') loadRecebiveisPage();
+    if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
@@ -11313,7 +11495,8 @@
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
-    if(name.indexOf('comercial') === 0) loadComercialPage(name);
+    if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf') loadComercialPage(name);
+    if(name === 'comercialControleGd') loadControleGdPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -20566,6 +20749,429 @@ function renderHomeTasks(){
     if(!Number.isFinite(num)) return null;
     return Math.round(num * 100);
   }
+
+  // ---------- RELATÓRIO NF ----------
+  let nfReportData = null;
+
+  async function nfApiRequest(path, options){
+    const response = await fetch('/api/relatorio-nf'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function nfStorePct(salesCount, invoicesIssuedCount){
+    if(salesCount <= 0) return 0;
+    return (invoicesIssuedCount / salesCount) * 100;
+  }
+
+  function nfComputeTotals(entries){
+    const totalSales = entries.reduce((sum, e) => sum + e.salesCount, 0);
+    const totalIssued = entries.reduce((sum, e) => sum + e.invoicesIssuedCount, 0);
+    const totalSalesCents = entries.reduce((sum, e) => sum + e.salesAmountCents, 0);
+    const totalIssuedCents = entries.reduce((sum, e) => sum + e.invoicesIssuedAmountCents, 0);
+    return {
+      totalSales, totalIssued, totalSalesCents, totalIssuedCents,
+      pending: Math.max(0, totalSales - totalIssued),
+      pct: nfStorePct(totalSales, totalIssued),
+    };
+  }
+
+  function renderNfTotals(){
+    const entries = (nfReportData && nfReportData.entries) || [];
+    const t = nfComputeTotals(entries);
+    el('nfTotalSales').textContent = t.totalSales;
+    el('nfTotalIssued').textContent = t.totalIssued;
+    el('nfPctIssued').textContent = t.pct.toFixed(0)+'%';
+    el('nfPendingCount').textContent = t.pending;
+    el('nfPctIssuedCard').classList.toggle('danger', t.totalSales > 0 && t.pct < 70);
+    el('nfPctIssuedCard').classList.toggle('warning', t.totalSales > 0 && t.pct >= 70 && t.pct < 90);
+    el('nfPendingCard').classList.toggle('danger', t.pending > 0);
+  }
+
+  function renderNfStoresTable(){
+    const tbody = el('nfStoresTableBody');
+    const entries = (nfReportData && nfReportData.entries) || [];
+    if(!entries.length){
+      tbody.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhuma loja cadastrada.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = entries.map((entry, index) => {
+      const pct = nfStorePct(entry.salesCount, entry.invoicesIssuedCount);
+      return '<tr>'+
+        '<td>'+escapeHtml(entry.storeName)+'</td>'+
+        '<td><input type="number" min="0" step="1" value="'+entry.salesCount+'" data-nf-row="'+index+'" data-nf-field="salesCount" style="width:80px;"></td>'+
+        '<td><input type="number" min="0" step="1" value="'+entry.invoicesIssuedCount+'" data-nf-row="'+index+'" data-nf-field="invoicesIssuedCount" style="width:80px;"></td>'+
+        '<td><input type="text" inputmode="decimal" value="'+(entry.salesAmountCents/100).toFixed(2)+'" data-nf-row="'+index+'" data-nf-field="salesAmountCents" style="width:120px;"></td>'+
+        '<td><input type="text" inputmode="decimal" value="'+(entry.invoicesIssuedAmountCents/100).toFixed(2)+'" data-nf-row="'+index+'" data-nf-field="invoicesIssuedAmountCents" style="width:120px;"></td>'+
+        '<td>'+pct.toFixed(0)+'%</td>'+
+      '</tr>';
+    }).join('');
+    tbody.querySelectorAll('[data-nf-field="salesAmountCents"],[data-nf-field="invoicesIssuedAmountCents"]').forEach(input => attachCurrencyMask(input));
+    tbody.querySelectorAll('input').forEach(input => {
+      input.addEventListener('change', () => {
+        const index = Number(input.dataset.nfRow);
+        const field = input.dataset.nfField;
+        const entry = nfReportData && nfReportData.entries[index];
+        if(!entry) return;
+        if(field === 'salesCount' || field === 'invoicesIssuedCount'){
+          entry[field] = Math.max(0, Math.round(Number(input.value)) || 0);
+        }else{
+          entry[field] = Math.max(0, parseBRLToCents(getCurrencyValue(input) || '0') || 0);
+        }
+        renderNfTotals();
+        renderNfStoresTable();
+      });
+    });
+  }
+
+  async function nfLoadForDate(date){
+    try{
+      nfReportData = await nfApiRequest(date ? '?date='+encodeURIComponent(date) : '');
+      el('nfReportDate').value = nfReportData.date;
+      renderNfTotals();
+      renderNfStoresTable();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  async function loadRelatorioNfPage(){
+    await nfLoadForDate(el('nfReportDate').value);
+  }
+
+  async function nfSaveReport(){
+    if(!nfReportData) return;
+    try{
+      await nfApiRequest('', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        date: nfReportData.date,
+        entries: nfReportData.entries.map(e => ({
+          storeId:e.storeId, storeName:e.storeName, salesCount:e.salesCount,
+          invoicesIssuedCount:e.invoicesIssuedCount, salesAmountCents:e.salesAmountCents,
+          invoicesIssuedAmountCents:e.invoicesIssuedAmountCents,
+        })),
+      })});
+      showPurchaseToast('Relatório NF salvo no histórico.');
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  el('nfReportDate') && el('nfReportDate').addEventListener('change', () => nfLoadForDate(el('nfReportDate').value));
+  el('btnNfReportSave') && el('btnNfReportSave').addEventListener('click', nfSaveReport);
+
+  async function nfOpenHistory(){
+    const tbody = el('nfHistoryTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    el('nfHistoryDialog').showModal();
+    try{
+      const data = await nfApiRequest('?view=history&limit=30');
+      const rows = data.rows || [];
+      if(!rows.length){
+        tbody.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum relatório salvo ainda.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(row => '<tr>'+
+        '<td>'+escapeHtml(row.reportDate)+'</td>'+
+        '<td>'+row.totalSalesCount+'</td>'+
+        '<td>'+row.totalInvoicesIssuedCount+'</td>'+
+        '<td>'+row.pctIssued.toFixed(0)+'%</td>'+
+        '<td><button class="btn-outline small" type="button" data-nf-history-open="'+escapeHtml(row.reportDate)+'">ABRIR</button></td>'+
+      '</tr>').join('');
+    }catch(error){
+      tbody.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  el('btnNfReportHistory') && el('btnNfReportHistory').addEventListener('click', nfOpenHistory);
+  el('btnCloseNfHistoryDialog') && el('btnCloseNfHistoryDialog').addEventListener('click', () => { if(el('nfHistoryDialog').open) el('nfHistoryDialog').close(); });
+  el('nfHistoryTableBody') && el('nfHistoryTableBody').addEventListener('click', event => {
+    const btn = event.target.closest('[data-nf-history-open]');
+    if(!btn) return;
+    el('nfHistoryDialog').close();
+    nfLoadForDate(btn.dataset.nfHistoryOpen);
+  });
+
+  // Imagem pronta pra compartilhar — mesmo padrão sem lib nova de
+  // drawCashFlowShareImage (canvas 2D desenhado no cliente).
+  function drawNfReportShareImage(){
+    const canvas = el('nfReportShareCanvas');
+    if(!canvas || !nfReportData) return;
+    const context = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    context.fillStyle = '#0d1a26';
+    context.fillRect(0, 0, width, height);
+
+    context.fillStyle = '#7fa8d0';
+    context.font = '700 20px sans-serif';
+    context.fillText('UNIGAMES · RELATÓRIO NF', 40, 56);
+    const [y0,m0,d0] = nfReportData.date.split('-');
+    context.fillStyle = '#5c7187';
+    context.font = '600 16px sans-serif';
+    context.fillText('Dia '+d0+'/'+m0+'/'+y0, 40, 84);
+
+    const t = nfComputeTotals(nfReportData.entries || []);
+    context.fillStyle = '#e6eef6';
+    context.font = '700 18px sans-serif';
+    context.fillText('VENDAS: '+t.totalSales+'   EMITIDAS: '+t.totalIssued, 40, 130);
+    context.fillStyle = t.pct >= 90 ? '#66d49e' : t.pct >= 70 ? '#e1ad49' : '#e07b6a';
+    context.font = '800 40px sans-serif';
+    context.fillText(t.pct.toFixed(0)+'% DE EMISSÃO', 40, 182);
+
+    let y = 240;
+    (nfReportData.entries || []).forEach(entry => {
+      const storePct = nfStorePct(entry.salesCount, entry.invoicesIssuedCount);
+      context.fillStyle = '#5c7187';
+      context.font = '700 15px sans-serif';
+      context.fillText(entry.storeName, 40, y);
+      context.fillStyle = storePct >= 90 ? '#66d49e' : storePct >= 70 ? '#e1ad49' : '#e07b6a';
+      context.font = '800 16px sans-serif';
+      context.fillText(entry.invoicesIssuedCount+'/'+entry.salesCount+' · '+storePct.toFixed(0)+'%', width - 220, y);
+      y += 32;
+    });
+
+    const link = el('btnDownloadNfReportImage');
+    if(link) link.href = canvas.toDataURL('image/png');
+  }
+
+  el('btnNfReportShare') && el('btnNfReportShare').addEventListener('click', () => {
+    if(!nfReportData){ showPurchaseToast('Carregue o relatório antes de gerar a imagem.', 'error'); return; }
+    drawNfReportShareImage();
+    el('nfReportShareDialog').showModal();
+  });
+  el('btnCloseNfReportShareDialog') && el('btnCloseNfReportShareDialog').addEventListener('click', () => { if(el('nfReportShareDialog').open) el('nfReportShareDialog').close(); });
+
+  // ---------- CONTROLE GD (painel de saldo) ----------
+  let gdDashboardData = null;
+  const GD_STATUS_LABELS = {critico:'CRÍTICO', negativo:'NEGATIVO', margem_curta:'MARGEM CURTA', saudavel_queda:'SAUDÁVEL (QUEDA NO MÊS)', saudavel:'SAUDÁVEL'};
+  const GD_STATUS_RECOMMENDATION = {
+    critico:'Travar gordura hoje: só liberar desconto com aprovação direta da liderança.',
+    negativo:'Atenção: liberar desconto só com contrapartida clara (ex.: venda casada, ticket maior).',
+    margem_curta:'Margem curta: uso seletivo, priorizar os casos de maior impacto na conversão.',
+    saudavel_queda:'Saldo bom, mas o mês está em queda: monitorar o ritmo de uso nos próximos dias.',
+    saudavel:'Saldo saudável: uso estratégico liberado conforme a política da loja.',
+  };
+
+  async function gdApiRequest(path, options){
+    const response = await fetch('/api/controle-gd'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function gdStatusCardClass(status){
+    if(status === 'critico') return 'danger';
+    if(status === 'negativo' || status === 'margem_curta' || status === 'saudavel_queda') return 'warning';
+    return '';
+  }
+
+  function gdDateLabel(iso){
+    if(!iso) return '';
+    const [y,m,d] = iso.split('-');
+    return d+'/'+m+'/'+y;
+  }
+
+  function gdStoreById(storeId){
+    return ((gdDashboardData && gdDashboardData.stores) || []).find(s => s.storeId === storeId);
+  }
+
+  function renderGdStoresGrid(){
+    const grid = el('gdStoresGrid');
+    const stores = (gdDashboardData && gdDashboardData.stores) || [];
+    if(!stores.length){
+      grid.innerHTML = '<div class="dre-empty">Nenhuma loja cadastrada.</div>';
+      return;
+    }
+    grid.innerHTML = stores.map(store => {
+      const cls = gdStatusCardClass(store.status);
+      return '<article class="supply-dashboard-card'+(cls ? (' '+cls) : '')+'" data-gd-store="'+escapeHtml(store.storeId)+'">'+
+        '<span>'+escapeHtml(store.storeName)+'</span>'+
+        '<strong>'+formatCentsBRL(store.balanceCents)+'</strong>'+
+        '<div class="supply-dashboard-list"><div>Mês: '+formatCentsBRL(store.monthMovementCents)+' · '+escapeHtml(store.statusLabel)+'</div></div>'+
+        '<div class="dre-toolbar-actions" style="margin-top:8px;">'+
+          '<button class="btn-outline small" type="button" data-gd-action="adjust">AJUSTAR</button>'+
+          '<button class="btn-outline small" type="button" data-gd-action="detail">DETALHES</button>'+
+          '<button class="btn-outline small" type="button" data-gd-action="image">IMAGEM</button>'+
+        '</div>'+
+      '</article>';
+    }).join('');
+  }
+
+  async function loadControleGdPage(){
+    try{
+      gdDashboardData = await gdApiRequest('');
+      renderGdStoresGrid();
+    }catch(error){
+      el('gdStoresGrid').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+
+  el('btnGdReload') && el('btnGdReload').addEventListener('click', loadControleGdPage);
+
+  el('gdStoresGrid') && el('gdStoresGrid').addEventListener('click', event => {
+    const card = event.target.closest('[data-gd-store]');
+    const btn = event.target.closest('[data-gd-action]');
+    if(!card || !btn) return;
+    const store = gdStoreById(card.dataset.gdStore);
+    if(!store) return;
+    const action = btn.dataset.gdAction;
+    if(action === 'adjust') gdOpenAdjustDialog(store);
+    if(action === 'detail') gdOpenDetailDialog(store);
+    if(action === 'image') gdOpenShareDialog(store);
+  });
+
+  function gdOpenAdjustDialog(store){
+    el('gdAdjustForm').reset();
+    el('gdAdjustStoreId').value = store.storeId;
+    el('gdAdjustStoreName').textContent = store.storeName;
+    el('gdAdjustDate').value = (gdDashboardData && gdDashboardData.date) || '';
+    el('gdAdjustFormStatus').textContent = '';
+    const amountInput = el('gdAdjustAmount');
+    if(amountInput._currencyMask) amountInput._currencyMask.setValue('');
+    attachCurrencyMask(amountInput, {allowNegative:true});
+    el('gdAdjustDialog').showModal();
+  }
+  el('btnCloseGdAdjustDialog') && el('btnCloseGdAdjustDialog').addEventListener('click', () => { if(el('gdAdjustDialog').open) el('gdAdjustDialog').close(); });
+  el('btnCancelGdAdjustDialog') && el('btnCancelGdAdjustDialog').addEventListener('click', () => { if(el('gdAdjustDialog').open) el('gdAdjustDialog').close(); });
+
+  el('gdAdjustForm') && el('gdAdjustForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('gdAdjustFormStatus');
+    status.textContent = '';
+    const storeId = el('gdAdjustStoreId').value;
+    const store = gdStoreById(storeId);
+    const amountCents = parseBRLToCentsAllowNegative(getCurrencyValue(el('gdAdjustAmount')) || '');
+    if(!Number.isInteger(amountCents) || amountCents === 0){
+      status.textContent = 'INFORME UM VALOR DIFERENTE DE ZERO.';
+      return;
+    }
+    try{
+      await gdApiRequest('', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        storeId,
+        storeName: store ? store.storeName : '',
+        amountCents,
+        adjustmentDate: el('gdAdjustDate').value,
+        reason: el('gdAdjustReason').value,
+      })});
+      el('gdAdjustDialog').close();
+      showPurchaseToast('Ajuste de saldo lançado.');
+      await loadControleGdPage();
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  function gdBuildScript(store, dateLabel){
+    const lines = [
+      '*CONTROLE GD · '+store.storeName+'*',
+      '📅 '+dateLabel,
+      '',
+      '💰 Saldo atual: '+formatCentsBRL(store.balanceCents),
+      '📊 Movimento do mês: '+formatCentsBRL(store.monthMovementCents),
+    ];
+    if(store.worstNegativeAdjustmentCents < 0){
+      lines.push('📉 Maior ajuste negativo do mês: '+formatCentsBRL(store.worstNegativeAdjustmentCents));
+    }
+    lines.push('', '*Status: '+(GD_STATUS_LABELS[store.status] || store.status)+'*', GD_STATUS_RECOMMENDATION[store.status] || '');
+    return lines.join('\n');
+  }
+
+  // Gráfico 7 dias com SVG inline, mesmo princípio de renderCashFlowChart
+  // (sem lib externa), reaproveitando as classes .cf-bar-in/.cf-bar-out/.cf-zero/.cf-label.
+  function gdRenderDetailChart(store){
+    const days = store.last7Days || [];
+    const width = 320, height = 160, padLeft = 10, padTop = 8, padBottom = 20;
+    const plotWidth = width - padLeft * 2;
+    const plotHeight = height - padTop - padBottom;
+    const slot = days.length ? plotWidth / days.length : plotWidth;
+    const zeroY = padTop + plotHeight / 2;
+    const maxAbs = Math.max(1, ...days.map(d => Math.max(d.positiveCents, Math.abs(d.negativeCents))));
+    const bars = days.map((day, index) => {
+      const centerX = padLeft + slot * index + slot / 2;
+      const barWidth = Math.max(2, Math.min(16, slot * 0.4));
+      const posH = (day.positiveCents / maxAbs) * (plotHeight / 2);
+      const negH = (Math.abs(day.negativeCents) / maxAbs) * (plotHeight / 2);
+      return '<rect class="cf-bar-in" x="'+(centerX - barWidth - 1).toFixed(1)+'" y="'+(zeroY - posH).toFixed(1)+'" width="'+barWidth.toFixed(1)+'" height="'+posH.toFixed(1)+'"></rect>'+
+        '<rect class="cf-bar-out" x="'+(centerX + 1).toFixed(1)+'" y="'+zeroY.toFixed(1)+'" width="'+barWidth.toFixed(1)+'" height="'+negH.toFixed(1)+'"></rect>'+
+        '<text class="cf-label" x="'+centerX.toFixed(1)+'" y="'+(height - 4)+'" text-anchor="middle">'+escapeHtml(gdDateLabel(day.date).slice(0, 5))+'</text>';
+    }).join('');
+    el('gdDetailChart').innerHTML = '<svg viewBox="0 0 '+width+' '+height+'" width="100%" height="180">'+
+      '<line class="cf-axis" x1="'+padLeft+'" y1="'+padTop+'" x2="'+padLeft+'" y2="'+(height - padBottom)+'"></line>'+
+      '<line class="cf-zero" x1="'+padLeft+'" y1="'+zeroY.toFixed(1)+'" x2="'+(width - padLeft)+'" y2="'+zeroY.toFixed(1)+'"></line>'+
+      bars+
+    '</svg>';
+  }
+
+  function gdOpenDetailDialog(store){
+    gdRenderDetailChart(store);
+    el('gdDetailDialogTitle').textContent = 'DETALHES · '+store.storeName;
+    el('gdDetailScript').value = gdBuildScript(store, gdDateLabel((gdDashboardData && gdDashboardData.date) || ''));
+    el('gdDetailDialog').showModal();
+  }
+  el('btnCloseGdDetailDialog') && el('btnCloseGdDetailDialog').addEventListener('click', () => { if(el('gdDetailDialog').open) el('gdDetailDialog').close(); });
+  el('btnCopyGdDetailScript') && el('btnCopyGdDetailScript').addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(el('gdDetailScript').value);
+      showPurchaseToast('Script copiado.');
+    }catch{
+      showPurchaseToast('Não foi possível copiar automaticamente. Selecione o texto manualmente.', 'error');
+    }
+  });
+
+  function drawGdShareImage(store){
+    const canvas = el('gdShareCanvas');
+    if(!canvas) return;
+    const context = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    context.fillStyle = '#0d1a26';
+    context.fillRect(0, 0, width, height);
+
+    context.fillStyle = '#7fa8d0';
+    context.font = '700 20px sans-serif';
+    context.fillText('UNIGAMES · CONTROLE GD', 40, 56);
+    context.fillStyle = '#5c7187';
+    context.font = '600 16px sans-serif';
+    context.fillText(store.storeName, 40, 84);
+
+    context.fillStyle = '#e6eef6';
+    context.font = '700 18px sans-serif';
+    context.fillText('SALDO ATUAL', 40, 140);
+    context.fillStyle = store.balanceCents < 0 ? '#e07b6a' : '#66d49e';
+    context.font = '800 40px sans-serif';
+    context.fillText(formatCentsBRL(store.balanceCents), 40, 186);
+
+    context.fillStyle = '#e6eef6';
+    context.font = '700 18px sans-serif';
+    context.fillText('MOVIMENTO DO MÊS', 40, 250);
+    context.fillStyle = store.monthMovementCents < 0 ? '#e07b6a' : '#66d49e';
+    context.font = '800 32px sans-serif';
+    context.fillText(formatCentsBRL(store.monthMovementCents), 40, 290);
+
+    context.fillStyle = '#e6eef6';
+    context.font = '700 20px sans-serif';
+    context.fillText('STATUS: '+(GD_STATUS_LABELS[store.status] || store.status), 40, 350);
+
+    const link = el('btnDownloadGdImage');
+    if(link) link.href = canvas.toDataURL('image/png');
+  }
+
+  function gdOpenShareDialog(store){
+    drawGdShareImage(store);
+    el('gdShareDialog').showModal();
+  }
+  el('btnCloseGdShareDialog') && el('btnCloseGdShareDialog').addEventListener('click', () => { if(el('gdShareDialog').open) el('gdShareDialog').close(); });
 
   function financeCurrentDateKey(){
     const parts = new Intl.DateTimeFormat('en-US', {timeZone:'America/Recife', year:'numeric', month:'2-digit', day:'2-digit'}).formatToParts(new Date());
@@ -29935,6 +30541,8 @@ function renderHomeTasks(){
     'comercial:view':'Comercial: visualizar (Dashboard, Comissão e Ranking)','comercial:manage':'Comercial: cadastrar metas e lançar realizado',
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
+    'relatorio_nf:view':'Comercial - Relatório NF: visualizar','relatorio_nf:manage':'Comercial - Relatório NF: lançar/gerenciar',
+    'controle_gd:view':'Comercial - Controle GD: visualizar','controle_gd:manage':'Comercial - Controle GD: lançar ajuste de saldo',
     'users:manage':'Usuários e acessos'
   };
   // Espelha ACCESS_GROUP_PERMISSIONS de worker/index.ts. Mantido em sincronia

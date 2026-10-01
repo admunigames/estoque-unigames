@@ -4107,9 +4107,12 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
     readFile(new URL("../drizzle/0072_commercial_monthly.sql", import.meta.url), "utf8"),
   ]);
 
-  // Seção própria no menu lateral (fora de Financeiro e RH) com UM item,
-  // "Acompanhamento Metas", e as telas como abas internas.
-  assert.match(html, /<div class="nav-group" data-any-permission="comercial">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
+  // Seção própria no menu lateral (fora de Financeiro e RH) com o item
+  // "Acompanhamento Metas" (telas como abas internas) e, desde os módulos
+  // Controle GD e Relatório NF, também esses dois — por isso
+  // data-any-permission inclui controle_gd e relatorio_nf além de comercial
+  // (ver pageComercialControleGd e pageComercialRelatorioNf).
+  assert.match(html, /<div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
   assert.match(html, /id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial"/);
   assert.match(html, /comercialAcompanhamento:'\/comercial\/acompanhamento'/);
   assert.match(workerSource, /"\/comercial\/acompanhamento",/);

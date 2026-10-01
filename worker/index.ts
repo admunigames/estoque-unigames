@@ -63,6 +63,8 @@ type Permission =
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
+  | "relatorio_nf:view" | "relatorio_nf:manage"
+  | "controle_gd:view" | "controle_gd:manage"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
@@ -184,6 +186,14 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "works:manage",
   "payables:invoices_view", "payables:invoices_reconcile", "payables:confirm_payment", "payables:return_to_purchases",
   "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
+  // Comercial > Relatório NF — lançamento manual diário de vendas x notas
+  // emitidas por loja + histórico. Permissão própria, independente de
+  // comercial:* e de finance:* (ver MODULE_VIEW_PERMISSIONS.relatorioNf).
+  "relatorio_nf:view", "relatorio_nf:manage",
+  // Comercial > Controle GD — painel de saldo (gordura de vendas) por loja.
+  // Permissão própria, independente de comercial:* (ver
+  // MODULE_VIEW_PERMISSIONS.controleGd).
+  "controle_gd:view", "controle_gd:manage",
   "users:manage",
 ];
 // documents_manage continua exclusivo de administrador: nunca pode ser
@@ -296,6 +306,8 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/aniversariantes",
   "/rh/odontologico",
   "/comercial/acompanhamento",
+  "/comercial/controle-gd",
+  "/comercial/relatorio-nf",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
@@ -1272,6 +1284,8 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
   ],
+  relatorioNf: ["relatorio_nf:view", "relatorio_nf:manage"],
+  controleGd: ["controle_gd:view", "controle_gd:manage"],
 };
 
 const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_PERMISSIONS> = {
@@ -1428,6 +1442,21 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/rh/escalas" || path === "/rh/folgas" || path.startsWith("/api/hr-schedules"),
       "schedules",
+    ],
+    // Controle GD — permissão própria (controle_gd:*), independente de
+    // comercial:*, mesmo convivendo no grupo "Comercial" do menu. Checado
+    // ANTES do bucket genérico "/comercial/" abaixo.
+    [
+      path === "/comercial/controle-gd" || path.startsWith("/api/controle-gd"),
+      "controleGd",
+    ],
+    // Relatório NF — permissão própria (relatorio_nf:*), independente de
+    // comercial:*/finance:* (lançamento manual, sem relação com NF de
+    // fornecedor), mesmo convivendo no grupo "Comercial" do menu. Checado
+    // ANTES do bucket genérico "/comercial/" abaixo.
+    [
+      path === "/comercial/relatorio-nf" || path.startsWith("/api/relatorio-nf"),
+      "relatorioNf",
     ],
     // Comercial — permissão própria (comercial:*). O escopo por loja e a
     // distinção view/manage ficam em app/api/commercial/shared.ts.
