@@ -1,3 +1,5 @@
+import { hasDocumentPermission } from "../../lib/documents-access";
+
 export type DocumentFolderId =
   | "garantia-produto"
   | "garantia-estendida"
@@ -62,6 +64,16 @@ export function documentFolder(value: unknown): DocumentFolder | null {
   return FOLDERS[value as DocumentFolderId] ?? null;
 }
 
+// Caminho inverso de documentFolder(): acha a pasta a partir das colunas
+// folder/subfolder gravadas na tabela documents.
+export function documentFolderForRow(folder: string, subfolder: string): DocumentFolder | null {
+  return (
+    Object.values(FOLDERS).find(
+      (candidate) => candidate.folder === folder && candidate.subfolder === (subfolder || ""),
+    ) ?? null
+  );
+}
+
 export function safeDocumentText(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
@@ -88,8 +100,19 @@ export function documentActor(request: Request): DocumentActor {
   };
 }
 
-export function canManageDocuments(actor: DocumentActor) {
-  return actor.role === "admin" && actor.permissions.includes("documents_manage");
+// Admin pode tudo; os demais precisam da permissão exata da ação (ver
+// app/lib/documents-access.ts). Visualizar não tem guarda aqui: o worker já
+// libera GET para todo usuário logado, menos login só-Comercial.
+export function canCreateDocuments(actor: DocumentActor) {
+  return hasDocumentPermission(actor, "documents:create");
+}
+
+export function canEditDocuments(actor: DocumentActor) {
+  return hasDocumentPermission(actor, "documents:edit");
+}
+
+export function canDeleteDocuments(actor: DocumentActor) {
+  return hasDocumentPermission(actor, "documents:delete");
 }
 
 export function documentJson(body: Record<string, unknown>, status = 200) {

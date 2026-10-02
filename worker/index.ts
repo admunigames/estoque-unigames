@@ -18,6 +18,7 @@ import {
 } from "./live-updates";
 
 import { isSellerRole } from "../app/lib/commercial";
+import { documentsApiAllowed, isCommercialOnlyAccess } from "../app/lib/documents-access";
 
 export { LiveUpdates };
 
@@ -46,7 +47,7 @@ type Permission =
   | "database:view" | "database:manage"
   | "pulls:view"
   | "report41:view"
-  | "documents_manage"
+  | "documents:create" | "documents:edit" | "documents:delete"
   | "instructions:manage"
   | "pdv_requests:view" | "pdv_requests:create" | "pdv_requests:delete" | "pdv_requests:status"
   | "os_notes:view" | "os_notes:create" | "os_notes:attach" | "os_notes:delete"
@@ -194,11 +195,16 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // Permissão própria, independente de comercial:* (ver
   // MODULE_VIEW_PERMISSIONS.controleGd).
   "controle_gd:view", "controle_gd:manage",
+  // Documentos — visualizar é liberado para todo usuário logado (menos
+  // login só-Comercial); cadastrar, editar (renomear, mover de pasta e
+  // substituir o arquivo) e excluir têm permissão própria, válida para as
+  // três pastas do módulo (ver app/lib/documents-access.ts).
+  "documents:create", "documents:edit", "documents:delete",
   "users:manage",
 ];
-// documents_manage continua exclusivo de administrador: nunca pode ser
-// atribuída a um usuário custom, mesmo pela tela de cadastro.
-const ALL_PERMISSIONS: Permission[] = [...ASSIGNABLE_PERMISSIONS, "documents_manage"];
+// A antiga documents_manage (exclusiva do admin) virou legado: é expandida
+// para documents:create/edit/delete em LEGACY_PERMISSION_MAP.
+const ALL_PERMISSIONS: Permission[] = [...ASSIGNABLE_PERMISSIONS];
 const ACCESS_GROUP_PERMISSIONS: Record<AccessGroup, Permission[]> = {
   administrator: [...ALL_PERMISSIONS],
   purchases: [
@@ -252,6 +258,8 @@ const LEGACY_PERMISSION_MAP: Record<string, Permission[]> = {
   "database": ["database:view", "database:manage"],
   "pulls": ["pulls:view"],
   "report41": ["report41:view"],
+  // Documentos: a permissão única de admin virou três ações granulares.
+  "documents_manage": ["documents:create", "documents:edit", "documents:delete"],
 };
 function expandLegacyPermissions(raw: unknown[]): unknown[] {
   const expanded: unknown[] = [];
@@ -418,9 +426,8 @@ function normalizePermissions(value: unknown): Permission[] {
   if (!Array.isArray(value)) return [];
   // Aceita tanto o formato antigo (um valor por módulo) quanto o novo
   // (módulo:ação), expandindo chaves antigas para seus equivalentes
-  // granulares antes de filtrar. documents_manage continua deliberadamente
-  // exclusivo de administrador: uma requisição de cadastro de usuário
-  // manipulada não consegue persisti-la para um usuário comum/custom.
+  // granulares antes de filtrar (ex.: a antiga documents_manage, que era
+  // exclusiva do admin, vira documents:create/edit/delete).
   const expanded = expandLegacyPermissions(value);
   return ASSIGNABLE_PERMISSIONS.filter((permission) => expanded.includes(permission));
 }
@@ -1323,10 +1330,9 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     return !isCommercialOnlyUser(user);
   }
   if (path.startsWith("/api/documents")) {
-    if (isCommercialOnlyUser(user)) return false;
-    return request.method === "GET" || request.method === "HEAD"
-      ? true
-      : hasPermission(user, "documents_manage");
+    // GET/HEAD para todos (menos só-Comercial); escrita para quem tiver
+    // qualquer uma de documents:create/edit/delete — a rota checa qual.
+    return documentsApiAllowed(user, request.method);
   }
   if (path.startsWith("/api/product-catalog")) {
     // Leitura é liberada pra quem tem Base de Dados, Compras nativo, ou quem
@@ -1566,14 +1572,11 @@ async function publishLiveUpdate(env: Env, invalidation: LiveInvalidation): Prom
  * Login de vendedor: todas as permissões são do módulo Comercial. Esse
  * usuário vê só Início, Instruções e Comercial — Documentos (liberado para
  * qualquer outro usuário logado) fica escondido para ele (decisão do
- * usuário, 2026-09-30). Mesma regra em isCommercialOnlySession() no front.
+ * usuário, 2026-09-30). Regra em app/lib/documents-access.ts, espelhada em
+ * isCommercialOnlySession() no front.
  */
 function isCommercialOnlyUser(user: AuthenticatedUser): boolean {
-  return (
-    user.role !== "admin" &&
-    user.permissions.length > 0 &&
-    user.permissions.every((permission) => permission.startsWith("comercial:"))
-  );
+  return isCommercialOnlyAccess(user);
 }
 
 function sessionResponse(user: AuthenticatedUser): Response {

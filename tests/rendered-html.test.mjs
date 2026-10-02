@@ -2216,8 +2216,8 @@ test("aplica o sistema visual responsivo sem alterar os módulos existentes", as
   assert.match(html, /function resumeTaskReminderMonitor\(\)/);
 });
 
-test("oferece documentos em PDF para todos os grupos e restringe a gestão ao administrador", async () => {
-  const [html, workerSource, route, shared, fileRoute, schema, migration, wrangler] =
+test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir em permissões próprias", async () => {
+  const [html, workerSource, route, shared, fileRoute, schema, migration, wrangler, access] =
     await Promise.all([
       readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
@@ -2227,6 +2227,7 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
       readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
       readFile(new URL("../drizzle/0012_documents.sql", import.meta.url), "utf8"),
       readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/documents-access.ts", import.meta.url), "utf8"),
     ]);
 
   assert.match(html, /id="navDocumentos"/);
@@ -2235,19 +2236,49 @@ test("oferece documentos em PDF para todos os grupos e restringe a gestão ao ad
   assert.match(html, /data-document-folder="documentos-avulsos"/);
   assert.match(html, /id="pageDocumentos" class="page wrap"/);
   assert.match(html, /id="documentsUploadForm"/);
-  assert.match(html, /class="documents-upload-panel" data-admin-only/);
+  assert.match(html, /class="documents-upload-panel" data-permission="documents:create"/);
+  assert.doesNotMatch(html, /Somente o administrador pode cadastrar ou excluir documentos/);
+  assert.match(html, /canAccess\('documents:delete'\)/);
+  assert.match(html, /canAccess\('documents:edit'\)/);
+  assert.match(html, /<dialog class="purchase-dialog" id="documentEditDialog"/);
+  assert.match(html, /id="documentEditName"/);
+  assert.match(html, /<select id="documentEditFolder">/);
+  assert.match(html, /id="documentEditFile" type="file"/);
+  assert.match(html, /uploadDocument\(file,\{replaceId:doc\.id/);
+  assert.match(html, /method:'PATCH'/);
+  // Tela Usuários: módulo Documentos com as 3 ações (visualizar é livre).
+  assert.match(html, /<summary>Documentos<\/summary>/);
+  assert.match(html, /name="userPermission" value="documents:create"> CADASTRAR/);
+  assert.match(html, /name="userPermission" value="documents:edit"> EDITAR/);
+  assert.match(html, /name="userPermission" value="documents:delete"> EXCLUIR/);
+  assert.match(html, /Visualizar é liberado para todos os usuários\./);
+  assert.match(html, /'documents:create':'Documentos: cadastrar'/);
+  assert.match(html, /administrator: Object\.keys\(permissionNames\),/);
+  assert.doesNotMatch(html, /documents_manage/);
   assert.match(html, /id="documentsFile" type="file" required/);
   assert.match(html, /documentos:'\/documentos'/);
   assert.match(html, /function navigateToDocumentFolder\(folder\)/);
 
-  assert.match(workerSource, /"documents_manage"/);
-  assert.match(workerSource, /ASSIGNABLE_PERMISSIONS/);
+  assert.match(workerSource, /"documents:create", "documents:edit", "documents:delete",\n  "users:manage",\n\];/);
+  assert.match(
+    workerSource,
+    /"documents_manage": \["documents:create", "documents:edit", "documents:delete"\]/,
+  );
+  assert.match(workerSource, /const ALL_PERMISSIONS: Permission\[\] = \[\.\.\.ASSIGNABLE_PERMISSIONS\];/);
   assert.match(workerSource, /path === "\/documentos" \|\| path\.startsWith\("\/documentos\/"\)/);
   assert.match(workerSource, /path\.startsWith\("\/api\/documents"\)/);
-  assert.match(workerSource, /hasPermission\(user, "documents_manage"\)/);
+  assert.match(workerSource, /return documentsApiAllowed\(user, request\.method\);/);
+  assert.match(access, /DOCUMENT_WRITE_PERMISSIONS\.some/);
 
-  assert.match(shared, /actor\.role === "admin"/);
-  assert.match(shared, /actor\.permissions\.includes\("documents_manage"\)/);
+  assert.match(access, /user\.role === "admin" \|\| user\.permissions\.includes\(permission\)/);
+  assert.match(shared, /export function canCreateDocuments/);
+  assert.match(shared, /hasDocumentPermission\(actor, "documents:create"\)/);
+  assert.match(shared, /hasDocumentPermission\(actor, "documents:edit"\)/);
+  assert.match(shared, /hasDocumentPermission\(actor, "documents:delete"\)/);
+  assert.doesNotMatch(shared, /canManageDocuments/);
+  assert.match(route, /export async function PATCH\(request: Request\) \{[\s\S]*?if \(!canEditDocuments\(actor\)\)/);
+  assert.match(route, /if \(!canDeleteDocuments\(actor\)\)/);
+  assert.match(route, /UPDATE documents\s+SET file_name=\?1, content_type=\?2, size_bytes=\?3, r2_key=\?4/);
   assert.match(shared, /const bucket = \(env as \{ UPLOADS\?: R2Bucket \}\)\.UPLOADS/);
   assert.match(shared, /export function validAttachmentName/);
   assert.match(route, /INSERT INTO documents/);

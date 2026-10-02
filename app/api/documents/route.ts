@@ -4,15 +4,20 @@ import {
   DEFAULT_ATTACHMENT_CONTENT_TYPE,
   MAX_PDF_SIZE,
   PDF_CHUNK_SIZE,
-  canManageDocuments,
+  canCreateDocuments,
+  canDeleteDocuments,
+  canEditDocuments,
   documentActor,
   documentFolder,
+  documentFolderForRow,
   documentJson,
   documentSameOrigin,
   documentsBucket,
   safeDocumentText,
   safeR2FileName,
   validAttachmentName,
+  type DocumentActor,
+  type DocumentFolder,
   type DocumentRow,
 } from "./shared";
 
@@ -22,12 +27,65 @@ type StagedDocument = {
   fileSize: number;
   numberOfParts: number;
   folderId: string;
+  // Preenchido quando o envio é a SUBSTITUIÇÃO do arquivo de um documento
+  // existente (EDITAR) em vez de um documento novo (CADASTRAR).
+  replaceId?: string;
 };
 
 type JsonMap = Record<string, unknown>;
 
 const DOCUMENT_CHUNK_SIZE = PDF_CHUNK_SIZE;
 const MAX_DOCUMENT_SIZE = MAX_PDF_SIZE;
+
+const CREATE_FORBIDDEN = "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR DOCUMENTOS.";
+const EDIT_FORBIDDEN = "VOCÊ NÃO TEM PERMISSÃO PARA EDITAR DOCUMENTOS.";
+const DELETE_FORBIDDEN = "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR DOCUMENTOS.";
+
+const DOCUMENT_COLUMNS = `id, file_name AS fileName, category, folder, subfolder,
+                r2_key AS r2Key, content_type AS contentType,
+                size_bytes AS sizeBytes, uploaded_by AS uploadedBy,
+                uploaded_by_name AS uploadedByName, created_at AS createdAt`;
+
+function documentIdIsValid(value: string) {
+  return /^[0-9a-f-]{36}$/i.test(value);
+}
+
+function publicDocument(row: DocumentRow, folder: DocumentFolder) {
+  return {
+    id: row.id,
+    fileName: row.fileName,
+    category: row.category,
+    folder: row.folder,
+    subfolder: row.subfolder,
+    contentType: row.contentType,
+    sizeBytes: row.sizeBytes,
+    uploadedBy: row.uploadedBy,
+    uploadedByName: row.uploadedByName,
+    createdAt: row.createdAt,
+    folderId: folder.id,
+    viewUrl: `/api/documents/file?id=${encodeURIComponent(row.id)}`,
+    downloadUrl: `/api/documents/file?id=${encodeURIComponent(row.id)}&download=1`,
+  };
+}
+
+async function findDocument(database: D1Database, id: string) {
+  return database
+    .prepare(`SELECT ${DOCUMENT_COLUMNS} FROM documents WHERE id=?1 LIMIT 1`)
+    .bind(id)
+    .first<DocumentRow>();
+}
+
+// Upload novo exige CADASTRAR; substituição do arquivo exige EDITAR. Vale
+// para create, para cada pedaço, para complete e para cancel.
+function uploadForbidden(actor: DocumentActor, replaceId: string | undefined) {
+  if (replaceId) return canEditDocuments(actor) ? null : documentJson({ error: EDIT_FORBIDDEN }, 403);
+  return canCreateDocuments(actor) ? null : documentJson({ error: CREATE_FORBIDDEN }, 403);
+}
+
+function extensionSuffix(fileName: string) {
+  const match = /\.[a-z0-9]{1,10}$/i.exec(fileName);
+  return match ? match[0] : "";
+}
 
 function numberValue(value: unknown) {
   return typeof value === "number" ? value : Number(value);
@@ -81,7 +139,11 @@ async function removeStaged(bucket: R2Bucket, sessionId: string) {
   } while (cursor);
 }
 
-async function createSession(payload: JsonMap) {
+async function createSession(actor: DocumentActor, payload: JsonMap) {
+  const replaceId = safeDocumentText(payload.replaceId, 80);
+  const forbidden = uploadForbidden(actor, replaceId);
+  if (forbidden) return forbidden;
+
   const metadata: StagedDocument = {
     fileName: safeDocumentText(payload.fileName, 181),
     contentType: safeDocumentText(payload.contentType, 80).toLowerCase(),
@@ -89,6 +151,16 @@ async function createSession(payload: JsonMap) {
     numberOfParts: numberValue(payload.numberOfParts),
     folderId: safeDocumentText(payload.folder, 80),
   };
+  if (replaceId) {
+    if (!documentIdIsValid(replaceId)) return documentJson({ error: "DOCUMENTO INVÁLIDO." }, 400);
+    const existing = await findDocument(await getD1(), replaceId);
+    if (!existing) return documentJson({ error: "DOCUMENTO NÃO ENCONTRADO." }, 404);
+    // A substituição mantém a pasta atual do documento (mover é pelo PATCH).
+    const currentFolder = documentFolderForRow(existing.folder, existing.subfolder);
+    if (!currentFolder) return documentJson({ error: "PASTA DE DOCUMENTOS INVÁLIDA." }, 400);
+    metadata.folderId = currentFolder.id;
+    metadata.replaceId = replaceId;
+  }
   const error = documentMetadataError(metadata);
   if (error) return documentJson({ error }, 400);
 
@@ -105,7 +177,7 @@ async function createSession(payload: JsonMap) {
   return documentJson({ session: { id: sessionId, numberOfParts: expectedParts } }, 201);
 }
 
-async function storeChunk(request: Request) {
+async function storeChunk(request: Request, actor: DocumentActor) {
   const sessionId = safeDocumentText(request.headers.get("x-document-upload-id"), 80);
   const partNumber = numberValue(request.headers.get("x-document-part-number"));
   if (!sessionIdIsValid(sessionId) || !Number.isInteger(partNumber) || partNumber < 1) {
@@ -117,6 +189,8 @@ async function storeChunk(request: Request) {
   if (!metadata) {
     return documentJson({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
   }
+  const forbidden = uploadForbidden(actor, metadata.replaceId);
+  if (forbidden) return forbidden;
   if (partNumber > metadata.numberOfParts) {
     return documentJson({ error: "UMA PARTE DO ARQUIVO É INVÁLIDA. TENTE NOVAMENTE." }, 400);
   }
@@ -136,18 +210,22 @@ async function storeChunk(request: Request) {
   return documentJson({ partNumber });
 }
 
-async function completeSession(request: Request, payload: JsonMap) {
+async function completeSession(actor: DocumentActor, payload: JsonMap) {
   const sessionId = safeDocumentText(payload.sessionId, 80);
   if (!sessionIdIsValid(sessionId)) {
     return documentJson({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 400);
   }
 
   const bucket = await documentsBucket();
+  const metadata = await readMetadata(bucket, sessionId);
+  if (!metadata) {
+    await removeStaged(bucket, sessionId).catch(() => undefined);
+    return documentJson({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
+  }
+  // Sem permissão, o envio fica onde está (não apaga a sessão de quem tem).
+  const forbidden = uploadForbidden(actor, metadata.replaceId);
+  if (forbidden) return forbidden;
   try {
-    const metadata = await readMetadata(bucket, sessionId);
-    if (!metadata) {
-      return documentJson({ error: "O ENVIO DO ARQUIVO EXPIROU. SELECIONE-O NOVAMENTE." }, 410);
-    }
     const metadataError = documentMetadataError(metadata);
     if (metadataError) return documentJson({ error: metadataError }, 400);
 
@@ -170,7 +248,8 @@ async function completeSession(request: Request, payload: JsonMap) {
 
     const folder = documentFolder(metadata.folderId);
     if (!folder) return documentJson({ error: "PASTA DE DOCUMENTOS INVÁLIDA." }, 400);
-    const actor = documentActor(request);
+    if (metadata.replaceId) return await replaceDocumentFile(bucket, actor, metadata, bytes);
+
     const id = crypto.randomUUID();
     const r2Key = `documents/${folder.id}/${id}/${safeR2FileName(metadata.fileName)}`;
     const createdAt = new Date().toISOString();
@@ -219,10 +298,72 @@ async function completeSession(request: Request, payload: JsonMap) {
   }
 }
 
-async function cancelSession(payload: JsonMap) {
+// SUBSTITUIR ARQUIVO: grava a nova versão com chave nova, atualiza o
+// registro e só depois apaga o objeto antigo — se algo falhar antes do
+// UPDATE, o documento continua apontando para o arquivo antigo, intacto.
+async function replaceDocumentFile(
+  bucket: R2Bucket,
+  actor: DocumentActor,
+  metadata: StagedDocument,
+  bytes: Uint8Array,
+) {
+  const id = metadata.replaceId || "";
+  const database = await getD1();
+  const existing = await findDocument(database, id);
+  if (!existing) return documentJson({ error: "DOCUMENTO NÃO ENCONTRADO." }, 404);
+  const folder = documentFolderForRow(existing.folder, existing.subfolder);
+  if (!folder) return documentJson({ error: "PASTA DE DOCUMENTOS INVÁLIDA." }, 400);
+
+  const r2Key = `documents/${folder.id}/${id}/${crypto.randomUUID()}/${safeR2FileName(metadata.fileName)}`;
+  const contentType = metadata.contentType || DEFAULT_ATTACHMENT_CONTENT_TYPE;
+  await bucket.put(r2Key, bytes, {
+    httpMetadata: { contentType },
+    customMetadata: {
+      documentId: id,
+      uploadedBy: actor.id,
+      uploadedAt: new Date().toISOString(),
+    },
+  });
+
+  try {
+    await database
+      .prepare(
+        `UPDATE documents
+         SET file_name=?1, content_type=?2, size_bytes=?3, r2_key=?4
+         WHERE id=?5`,
+      )
+      .bind(metadata.fileName, contentType, metadata.fileSize, r2Key, id)
+      .run();
+  } catch (error) {
+    await bucket.delete(r2Key).catch(() => undefined);
+    throw error;
+  }
+
+  if (existing.r2Key && existing.r2Key !== r2Key) {
+    await bucket.delete(existing.r2Key).catch((error) => {
+      console.error("Arquivo do documento substituído, mas o objeto R2 antigo ficou órfão.", error);
+    });
+  }
+
+  const updated: DocumentRow = {
+    ...existing,
+    fileName: metadata.fileName,
+    contentType,
+    sizeBytes: metadata.fileSize,
+    r2Key,
+  };
+  return documentJson({ document: publicDocument(updated, folder) });
+}
+
+async function cancelSession(actor: DocumentActor, payload: JsonMap) {
   const sessionId = safeDocumentText(payload.sessionId, 80);
   if (sessionIdIsValid(sessionId)) {
     const bucket = await documentsBucket();
+    const metadata = await readMetadata(bucket, sessionId);
+    if (metadata) {
+      const forbidden = uploadForbidden(actor, metadata.replaceId);
+      if (forbidden) return forbidden;
+    }
     await removeStaged(bucket, sessionId);
   }
   return new Response(null, { status: 204 });
@@ -238,31 +379,14 @@ export async function GET(request: Request) {
     const database = await getD1();
     const result = await database
       .prepare(
-        `SELECT id, file_name AS fileName, category, folder, subfolder,
-                r2_key AS r2Key, content_type AS contentType,
-                size_bytes AS sizeBytes, uploaded_by AS uploadedBy,
-                uploaded_by_name AS uploadedByName, created_at AS createdAt
+        `SELECT ${DOCUMENT_COLUMNS}
          FROM documents
          WHERE folder=?1 AND subfolder=?2
          ORDER BY created_at DESC, file_name ASC`,
       )
       .bind(folder.folder, folder.subfolder)
       .all<DocumentRow>();
-    const documents = result.results.map((row) => ({
-      id: row.id,
-      fileName: row.fileName,
-      category: row.category,
-      folder: row.folder,
-      subfolder: row.subfolder,
-      contentType: row.contentType,
-      sizeBytes: row.sizeBytes,
-      uploadedBy: row.uploadedBy,
-      uploadedByName: row.uploadedByName,
-      createdAt: row.createdAt,
-      folderId: folder.id,
-      viewUrl: `/api/documents/file?id=${encodeURIComponent(row.id)}`,
-      downloadUrl: `/api/documents/file?id=${encodeURIComponent(row.id)}&download=1`,
-    }));
+    const documents = result.results.map((row) => publicDocument(row, folder));
     return documentJson({ folder, documents });
   } catch (error) {
     console.error("Não foi possível listar os documentos.", error);
@@ -274,8 +398,10 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = documentActor(request);
-  if (!canManageDocuments(actor)) {
-    return documentJson({ error: "APENAS O ADMINISTRADOR PODE ADICIONAR DOCUMENTOS." }, 403);
+  // Envio serve tanto para CADASTRAR quanto para SUBSTITUIR ARQUIVO (EDITAR):
+  // aqui só barra quem não tem nenhuma das duas; cada ação confere a sua.
+  if (!canCreateDocuments(actor) && !canEditDocuments(actor)) {
+    return documentJson({ error: CREATE_FORBIDDEN }, 403);
   }
   if (!documentSameOrigin(request)) {
     return documentJson({ error: "ORIGEM NÃO PERMITIDA." }, 403);
@@ -286,13 +412,13 @@ export async function POST(request: Request) {
     if (contentType.includes("application/json")) {
       const payload = (await request.json()) as JsonMap;
       const action = safeDocumentText(payload.action, 20);
-      if (action === "create") return await createSession(payload);
-      if (action === "complete") return await completeSession(request, payload);
-      if (action === "cancel") return await cancelSession(payload);
+      if (action === "create") return await createSession(actor, payload);
+      if (action === "complete") return await completeSession(actor, payload);
+      if (action === "cancel") return await cancelSession(actor, payload);
       return documentJson({ error: "AÇÃO DE ENVIO INVÁLIDA." }, 400);
     }
     if (contentType.includes("application/octet-stream")) {
-      return await storeChunk(request);
+      return await storeChunk(request, actor);
     }
     return documentJson({ error: "TIPO DE REQUISIÇÃO INVÁLIDO." }, 400);
   } catch (error) {
@@ -305,15 +431,15 @@ export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = documentActor(request);
-  if (!canManageDocuments(actor)) {
-    return documentJson({ error: "APENAS O ADMINISTRADOR PODE EXCLUIR DOCUMENTOS." }, 403);
+  if (!canDeleteDocuments(actor)) {
+    return documentJson({ error: DELETE_FORBIDDEN }, 403);
   }
   if (!documentSameOrigin(request)) {
     return documentJson({ error: "ORIGEM NÃO PERMITIDA." }, 403);
   }
 
   const id = safeDocumentText(new URL(request.url).searchParams.get("id"), 80);
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return documentJson({ error: "DOCUMENTO INVÁLIDO." }, 400);
+  if (!documentIdIsValid(id)) return documentJson({ error: "DOCUMENTO INVÁLIDO." }, 400);
 
   try {
     const database = await getD1();
@@ -332,5 +458,83 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error("Não foi possível excluir o documento.", error);
     return documentJson({ error: "NÃO FOI POSSÍVEL EXCLUIR O DOCUMENTO." }, 500);
+  }
+}
+
+// EDITAR: renomear (mantendo a extensão original) e/ou mover para outra
+// pasta. O objeto no R2 não se move — a chave é só armazenamento e o
+// download usa o id do documento.
+export async function PATCH(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = documentActor(request);
+  if (!canEditDocuments(actor)) {
+    return documentJson({ error: EDIT_FORBIDDEN }, 403);
+  }
+  if (!documentSameOrigin(request)) {
+    return documentJson({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+
+  const id = safeDocumentText(new URL(request.url).searchParams.get("id"), 80);
+  if (!documentIdIsValid(id)) return documentJson({ error: "DOCUMENTO INVÁLIDO." }, 400);
+
+  let payload: JsonMap;
+  try {
+    payload = (await request.json()) as JsonMap;
+  } catch {
+    return documentJson({ error: "DADOS INVÁLIDOS." }, 400);
+  }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return documentJson({ error: "DADOS INVÁLIDOS." }, 400);
+  }
+  const renaming = payload.fileName !== undefined;
+  const moving = payload.folder !== undefined;
+  if (!renaming && !moving) return documentJson({ error: "NADA PARA ALTERAR." }, 400);
+
+  const targetFolder = moving ? documentFolder(payload.folder) : null;
+  if (moving && !targetFolder) return documentJson({ error: "PASTA DE DOCUMENTOS INVÁLIDA." }, 400);
+
+  try {
+    const database = await getD1();
+    const existing = await findDocument(database, id);
+    if (!existing) return documentJson({ error: "DOCUMENTO NÃO ENCONTRADO." }, 404);
+
+    let fileName = existing.fileName;
+    if (renaming) {
+      const extension = extensionSuffix(existing.fileName);
+      let base = safeDocumentText(payload.fileName, 181);
+      // Quem digitar a extensão junto não fica com ".pdf.pdf".
+      if (extension && base.toLowerCase().endsWith(extension.toLowerCase())) {
+        base = base.slice(0, -extension.length).trim();
+      }
+      fileName = `${base}${extension}`;
+      if (!base || !validAttachmentName(fileName)) {
+        return documentJson({ error: "INFORME UM NOME DE ARQUIVO VÁLIDO (ATÉ 180 CARACTERES, SEM / OU \\)." }, 400);
+      }
+    }
+
+    const folder = targetFolder || documentFolderForRow(existing.folder, existing.subfolder);
+    if (!folder) return documentJson({ error: "PASTA DE DOCUMENTOS INVÁLIDA." }, 400);
+
+    await database
+      .prepare(
+        `UPDATE documents
+         SET file_name=?1, category=?2, folder=?3, subfolder=?4
+         WHERE id=?5`,
+      )
+      .bind(fileName, folder.category, folder.folder, folder.subfolder, id)
+      .run();
+
+    const updated: DocumentRow = {
+      ...existing,
+      fileName,
+      category: folder.category,
+      folder: folder.folder,
+      subfolder: folder.subfolder,
+    };
+    return documentJson({ document: publicDocument(updated, folder) });
+  } catch (error) {
+    console.error("Não foi possível editar o documento.", error);
+    return documentJson({ error: "NÃO FOI POSSÍVEL EDITAR O DOCUMENTO." }, 500);
   }
 }

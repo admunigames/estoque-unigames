@@ -784,6 +784,11 @@
   .document-card-copy span{display:block;margin-top:5px;color:var(--ink-faint);font:8.5px/1.45 var(--mono);}
   .document-card-actions{display:flex;align-items:center;gap:7px;}
   .document-card-actions a{text-decoration:none;}
+  .document-edit-name{display:flex;align-items:center;gap:6px;min-width:0;}
+  .document-edit-name input{flex:1 1 auto;min-width:0;}
+  .document-edit-name span{flex:0 0 auto;color:var(--ink-soft);font:800 11px/1 var(--mono);}
+  #documentEditDialog{max-width:560px;}
+  #documentEditDialog input[type="file"]{width:100%;min-width:0;}
   .documents-empty{padding:34px 18px;border:1px dashed var(--line);border-radius:12px;color:var(--ink-soft);font:700 10px/1.55 var(--mono);text-align:center;}
   .documents-upload-panel h3{margin:0;font:900 14px/1.25 var(--sans);}
   .documents-upload-panel>p{margin:7px 0 16px;color:var(--ink-soft);font-size:12px;}
@@ -4285,9 +4290,9 @@
               <div class="documents-empty">CARREGANDO DOCUMENTOS…</div>
             </div>
           </section>
-          <section class="documents-upload-panel" data-admin-only aria-labelledby="documentsUploadTitle">
+          <section class="documents-upload-panel" data-permission="documents:create" aria-labelledby="documentsUploadTitle">
             <h3 id="documentsUploadTitle">ADICIONAR ARQUIVO</h3>
-            <p>Somente o administrador pode cadastrar ou excluir documentos. Limite de 25 MB por arquivo.</p>
+            <p>O arquivo é adicionado à pasta aberta acima. Limite de 25 MB por arquivo.</p>
             <form class="documents-upload-form" id="documentsUploadForm">
               <label class="documents-file-label">ARQUIVO
                 <input id="documentsFile" type="file" required>
@@ -5458,6 +5463,15 @@
                   <div class="permission-grid">
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:view"> Ver o lançamento do dia e o histórico de dias salvos</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:manage"> Lançar vendas/notas emitidas por loja e salvar no histórico</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Documentos</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:create"> CADASTRAR</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:edit"> EDITAR (renomear, mover de pasta e substituir arquivo)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:delete"> EXCLUIR</label>
+                    <span class="field-hint">Visualizar é liberado para todos os usuários.</span>
                   </div>
                 </details>
                 <details class="permission-module">
@@ -7512,6 +7526,41 @@
      MESMO cadastro unificado (finance_suppliers) da aba "Cadastro de
      Fornecedor" e do Financeiro; ao salvar, volta pro diálogo de item com o
      fornecedor novo já marcado, sem perder o que já estava preenchido. -->
+<!-- Documentos: EDITAR (renomear, mover de pasta e substituir o arquivo). -->
+<dialog class="purchase-dialog" id="documentEditDialog" aria-labelledby="documentEditDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="documentEditDialogTitle">EDITAR DOCUMENTO</h3>
+    <button class="purchase-dialog-close" id="btnCloseDocumentEditDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="documentEditForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full">
+        <label for="documentEditName">NOME DO ARQUIVO *</label>
+        <div class="document-edit-name"><input id="documentEditName" maxlength="170" required autocomplete="off"><span id="documentEditExtension"></span></div>
+        <span class="purchase-field-help">A extensão do arquivo é mantida.</span>
+      </div>
+      <div class="purchase-field full">
+        <label for="documentEditFolder">PASTA</label>
+        <select id="documentEditFolder">
+          <option value="garantia-produto">CERTIFICADOS / GARANTIA DE PRODUTO</option>
+          <option value="garantia-estendida">CERTIFICADOS / GARANTIA ESTENDIDA</option>
+          <option value="documentos-avulsos">DOCUMENTOS AVULSOS</option>
+        </select>
+      </div>
+      <div class="purchase-field full">
+        <label for="documentEditFile">SUBSTITUIR ARQUIVO (OPCIONAL)</label>
+        <input id="documentEditFile" type="file">
+        <span class="purchase-field-help">Envia uma nova versão no lugar da atual, mantendo o mesmo documento. Limite de 25 MB.</span>
+      </div>
+    </div>
+    <div class="user-form-status" id="documentEditStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelDocumentEditDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveDocumentEdit" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="comprasQuickSupplierDialog" aria-labelledby="comprasQuickSupplierDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="comprasQuickSupplierDialogTitle">CADASTRAR NOVO FORNECEDOR</h3>
@@ -11777,6 +11826,7 @@
   const DOCUMENT_CHUNK_SIZE = 512 * 1024;
   const MAX_DOCUMENT_SIZE = 25 * 1024 * 1024;
   let currentDocumentFolder = 'garantia-produto';
+  let documentsById = new Map();
 
   function documentFolderFromPath(pathname){
     const path = normalizeRoutePath(pathname);
@@ -11835,8 +11885,12 @@
       list.innerHTML = '<div class="documents-empty">NENHUM ARQUIVO FOI ADICIONADO A ESTA PASTA.</div>';
       return;
     }
+    documentsById = new Map(documents.map(document => [document.id, document]));
     list.innerHTML = documents.map(document => {
-      const deleteButton = currentSession.role === 'admin'
+      const editButton = canAccess('documents:edit')
+        ? '<button class="btn-outline" type="button" data-document-edit="'+escapeHtml(document.id)+'">EDITAR</button>'
+        : '';
+      const deleteButton = canAccess('documents:delete')
         ? '<button class="btn-danger-outline" type="button" data-document-delete="'+escapeHtml(document.id)+'">EXCLUIR</button>'
         : '';
       return '<article class="document-card">'+
@@ -11846,7 +11900,7 @@
         '</div></div>'+
         '<div class="document-card-actions">'+
           '<a class="btn-outline" href="'+escapeHtml(document.viewUrl)+'" target="_blank" rel="noopener">VISUALIZAR</a>'+
-          '<a class="btn-accent" href="'+escapeHtml(document.downloadUrl)+'">BAIXAR</a>'+deleteButton+
+          '<a class="btn-accent" href="'+escapeHtml(document.downloadUrl)+'">BAIXAR</a>'+editButton+deleteButton+
         '</div></article>';
     }).join('');
   }
@@ -11875,7 +11929,12 @@
     }
   }
 
-  async function uploadDocument(file){
+  // Upload em partes. opts.replaceId = SUBSTITUIR ARQUIVO de um documento
+  // existente (exige documents:edit); sem ele, cadastra um documento novo na
+  // pasta aberta (exige documents:create). opts.onStatus recebe o progresso.
+  async function uploadDocument(file, opts){
+    const options = opts || {};
+    const onStatus = options.onStatus || setDocumentsUploadStatus;
     if(!file) throw new Error('SELECIONE UM ARQUIVO.');
     if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.');
@@ -11889,7 +11948,8 @@
         contentType:file.type || 'application/octet-stream',
         fileSize:file.size,
         numberOfParts,
-        folder:currentDocumentFolder
+        folder:currentDocumentFolder,
+        replaceId:options.replaceId || undefined
       })
     });
     const sessionId = create.session && create.session.id;
@@ -11897,7 +11957,7 @@
     try{
       for(let index=0;index<numberOfParts;index+=1){
         const partNumber = index + 1;
-        setDocumentsUploadStatus('ENVIANDO PARTE '+partNumber+' DE '+numberOfParts+'…','');
+        onStatus('ENVIANDO PARTE '+partNumber+' DE '+numberOfParts+'…','');
         await documentApiRequest('/api/documents',{
           method:'POST',
           headers:{
@@ -11909,8 +11969,8 @@
           body:file.slice(index * DOCUMENT_CHUNK_SIZE,Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
         });
       }
-      setDocumentsUploadStatus('VALIDANDO E SALVANDO O ARQUIVO…','');
-      await documentApiRequest('/api/documents',{
+      onStatus('VALIDANDO E SALVANDO O ARQUIVO…','');
+      return await documentApiRequest('/api/documents',{
         method:'POST',
         headers:{Accept:'application/json','Content-Type':'application/json'},
         body:JSON.stringify({action:'complete',sessionId})
@@ -11927,7 +11987,7 @@
 
   el('documentsUploadForm').addEventListener('submit',async event => {
     event.preventDefault();
-    if(currentSession.role !== 'admin') return;
+    if(!canAccess('documents:create')) return;
     const button = el('btnDocumentsUpload');
     const file = el('documentsFile').files && el('documentsFile').files[0];
     button.disabled = true;
@@ -11945,8 +12005,13 @@
   });
 
   el('documentsList').addEventListener('click',async event => {
+    const editButton = event.target.closest('[data-document-edit]');
+    if(editButton){
+      if(canAccess('documents:edit')) openDocumentEditDialog(editButton.dataset.documentEdit);
+      return;
+    }
     const button = event.target.closest('[data-document-delete]');
-    if(!button || currentSession.role !== 'admin') return;
+    if(!button || !canAccess('documents:delete')) return;
     if(!confirm('Excluir este documento definitivamente?')) return;
     button.disabled = true;
     try{
@@ -11955,6 +12020,90 @@
       showPurchaseToast('Documento excluído.');
     }catch(error){
       showPurchaseToast(error.message,'error');
+      button.disabled = false;
+    }
+  });
+
+  // ---------- DOCUMENTOS: EDITAR ----------
+  let editingDocument = null;
+
+  function documentNameParts(fileName){
+    const match = /\.[a-z0-9]{1,10}$/i.exec(fileName || '');
+    const extension = match ? match[0] : '';
+    return {base:extension ? fileName.slice(0,-extension.length) : (fileName || ''), extension};
+  }
+
+  function setDocumentEditStatus(message,type){
+    const status = el('documentEditStatus');
+    status.textContent = message || '';
+    status.className = 'user-form-status' + (type ? ' ' + type : '');
+  }
+
+  function openDocumentEditDialog(id){
+    const doc = documentsById.get(id);
+    if(!doc) return;
+    editingDocument = doc;
+    const parts = documentNameParts(doc.fileName);
+    el('documentEditName').value = parts.base;
+    el('documentEditExtension').textContent = parts.extension;
+    el('documentEditFolder').value = DOCUMENT_FOLDERS[doc.folderId] ? doc.folderId : currentDocumentFolder;
+    el('documentEditFile').value = '';
+    el('btnSaveDocumentEdit').disabled = false;
+    setDocumentEditStatus('','');
+    el('documentEditDialog').showModal();
+  }
+
+  function closeDocumentEditDialog(){
+    el('documentEditDialog').close();
+    editingDocument = null;
+  }
+
+  el('btnCloseDocumentEditDialog').addEventListener('click', closeDocumentEditDialog);
+  el('btnCancelDocumentEditDialog').addEventListener('click', closeDocumentEditDialog);
+
+  el('documentEditForm').addEventListener('submit',async event => {
+    event.preventDefault();
+    if(!editingDocument || !canAccess('documents:edit')) return;
+    const doc = editingDocument;
+    const typedName = el('documentEditName').value.trim();
+    const folder = el('documentEditFolder').value;
+    const file = el('documentEditFile').files && el('documentEditFile').files[0];
+    if(!typedName){
+      setDocumentEditStatus('INFORME O NOME DO ARQUIVO.','error');
+      return;
+    }
+    const button = el('btnSaveDocumentEdit');
+    button.disabled = true;
+    try{
+      // O nome digitado vale para o documento mesmo depois de substituir o
+      // arquivo: a substituição troca o conteúdo (e a extensão, se mudar).
+      let currentBase = documentNameParts(doc.fileName).base;
+      if(file){
+        const replaced = await uploadDocument(file,{replaceId:doc.id,onStatus:setDocumentEditStatus});
+        doc.fileName = replaced && replaced.document ? replaced.document.fileName : file.name;
+        el('documentEditFile').value = '';
+        el('documentEditExtension').textContent = documentNameParts(doc.fileName).extension;
+        currentBase = documentNameParts(doc.fileName).base;
+      }
+      const changes = {};
+      if(typedName !== currentBase) changes.fileName = typedName;
+      if(folder !== doc.folderId) changes.folder = folder;
+      if(Object.keys(changes).length){
+        setDocumentEditStatus('SALVANDO…','');
+        await documentApiRequest('/api/documents?id='+encodeURIComponent(doc.id),{
+          method:'PATCH',
+          headers:{Accept:'application/json','Content-Type':'application/json'},
+          body:JSON.stringify(changes)
+        });
+      }
+      closeDocumentEditDialog();
+      await refreshAfterAction(() => loadDocuments(currentDocumentFolder, {silent:true}));
+      showPurchaseToast(file || Object.keys(changes).length ? 'Documento atualizado.' : 'Nenhuma alteração.');
+    }catch(error){
+      setDocumentEditStatus(error.message,'error');
+      // Uma etapa pode ter sido salva antes do erro (ex.: arquivo substituído).
+      loadDocuments(currentDocumentFolder, {silent:true});
+    }finally{
       button.disabled = false;
     }
   });
@@ -30761,13 +30910,14 @@ function renderHomeTasks(){
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Comercial - Relatório NF: visualizar','relatorio_nf:manage':'Comercial - Relatório NF: lançar/gerenciar',
     'controle_gd:view':'Comercial - Controle GD: visualizar','controle_gd:manage':'Comercial - Controle GD: lançar ajuste de saldo',
+    'documents:create':'Documentos: cadastrar','documents:edit':'Documentos: editar','documents:delete':'Documentos: excluir',
     'users:manage':'Usuários e acessos'
   };
   // Espelha ACCESS_GROUP_PERMISSIONS de worker/index.ts. Mantido em sincronia
   // manualmente (o front-end estático não importa o worker) — qualquer
   // mudança lá precisa ser replicada aqui.
   const accessGroupPermissions = {
-    administrator: Object.keys(permissionNames).concat(['documents_manage']),
+    administrator: Object.keys(permissionNames),
     purchases:['tasks:view','tasks:manage','missions:view','missions:notify','captures:view','captures:create','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out','purchases:view','purchases:create','purchases:edit','purchases:delete'],
     fiscal:['missions:view','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out','stock:view','database:view','database:manage','pulls:view','report41:view'],
     operator:['tasks:view','tasks:manage','missions:view','missions:notify','captures:view','captures:create','outputs:view','outputs:create','supplies:view','supplies:request','supplies:receive','supplies:stock_out','loans:view','loans:request'],
