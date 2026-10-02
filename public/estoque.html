@@ -4890,7 +4890,6 @@
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-compras-section-tab="porProduto">POR PRODUTO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="pedidos">PEDIDOS</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="fornecedores">CADASTRO DE FORNECEDOR</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="pesquisa">PESQUISA</button>
       </div>
 
       <section id="comprasSectionPedidos" hidden>
@@ -4924,6 +4923,43 @@
           <span class="status-pill alert" id="comprasOrdersLateOnlyNoticeText">MOSTRANDO SÓ ATRASADOS</span>
           <button class="btn-outline" id="btnClearComprasLateFilter" type="button">LIMPAR FILTRO</button>
         </p>
+        <!-- Pesquisa de compras por LOJA, PRODUTO e/ou FORNECEDOR (filtros
+             combináveis, AND), sempre visível no topo da aba Pedidos — 1
+             linha por item de pedido nativo; pedidos do Notion (sem itens)
+             entram como 1 linha por pedido só sem filtro de produto. Usa o
+             mesmo "Mostrar cancelados" da lista. Ver GET
+             /api/compras-novo/pesquisa. -->
+        <form id="comprasPesquisaForm" novalidate>
+          <div class="purchase-form-grid" style="margin:0 0 12px;">
+            <div class="purchase-field full product-search-field">
+              <label for="comprasPesquisaProduto">PRODUTO (CÓDIGO OU NOME)</label>
+              <input id="comprasPesquisaProduto" maxlength="80" autocomplete="off">
+            </div>
+            <div class="purchase-field">
+              <label for="comprasPesquisaLoja">LOJA</label>
+              <select id="comprasPesquisaLoja"><option value="">TODAS</option></select>
+            </div>
+            <div class="purchase-field">
+              <label for="comprasPesquisaFornecedor">FORNECEDOR</label>
+              <select id="comprasPesquisaFornecedor"><option value="">TODOS</option></select>
+            </div>
+          </div>
+          <div class="page-header-actions" style="justify-content:flex-end;margin:0 0 16px;flex-wrap:wrap;gap:10px;">
+            <button class="btn-outline" type="button" id="btnComprasPesquisaLimpar">LIMPAR</button>
+            <button class="btn-accent" type="submit" id="btnComprasPesquisar">PESQUISAR</button>
+          </div>
+        </form>
+        <div class="table-panel" id="comprasPesquisaResultWrap" hidden style="margin-bottom:16px;">
+          <h4 style="margin:0 0 8px;padding:16px 16px 0;">RESULTADO DA PESQUISA</h4>
+          <div class="table-scroll">
+            <table id="comprasPesquisaTable">
+              <thead><tr><th>Produto</th><th>Qtd pedida</th><th>Qtd recebida</th><th>Preço unit.</th><th>Fornecedor</th><th>Loja(s)</th><th>Data do pedido</th><th>Status</th><th></th></tr></thead>
+              <tbody id="comprasPesquisaBody"><tr><td colspan="9" class="responsive-empty">Use os filtros acima para pesquisar.</td></tr></tbody>
+            </table>
+          </div>
+          <p class="page-desc" id="comprasPesquisaFooter" hidden style="margin:0;padding:10px 16px;"></p>
+        </div>
+
         <!-- Cards no mesmo estilo do Controle de Compras (Notion) — .purchase-card
              reaproveitado, pedido do usuário depois de comparar visualmente os
              dois módulos. O detalhe (accordion, Fase E) é o mesmo nó
@@ -4977,6 +5013,14 @@
           <!-- A partir de 'aguardando_chegada'/'concluido': recebimento,
                Divisão, NF e anexos (ver comprasOrderAbertoWrap acima pro
                fluxo anterior, enquanto o pedido está 'aberto'). -->
+          <!-- Pedido 'aguardando_chegada' com muitos produtos deixava a
+               Divisão muito abaixo — produtos começam ocultos e o botão
+               mostra/oculta a qualquer momento (escolha salva por pedido
+               neste aparelho, ver comprasApplyOrderItemsVisibility). -->
+          <div class="page-header-actions" id="comprasOrderItemsToggleBar" hidden style="justify-content:space-between;align-items:center;margin:12px 0;flex-wrap:wrap;gap:10px;">
+            <strong id="comprasOrderItemsToggleCount">0 PRODUTOS</strong>
+            <button class="btn-outline" type="button" id="btnToggleComprasOrderItems">MOSTRAR PRODUTOS</button>
+          </div>
           <div class="table-scroll" id="comprasOrderItemsWrap">
             <table id="comprasOrderItemsTable">
               <thead><tr><th>Produto</th><th>Lojas destino</th><th>Qtd pedida</th><th>Qtd recebida</th><th>Preço unit.</th><th class="no-print">Registrar recebimento / preço</th></tr></thead>
@@ -5126,44 +5170,6 @@
         <div class="dre-catalog-list" id="comprasFornecedoresList" data-supplier-list></div>
       </section>
 
-      <!-- Pesquisa de compras por LOJA, PRODUTO e/ou FORNECEDOR (filtros
-           combináveis, AND) — 1 linha por item de pedido nativo; pedidos do
-           Notion (sem itens) entram como 1 linha por pedido só sem filtro de
-           produto. Ver GET /api/compras-novo/pesquisa. -->
-      <section id="comprasSectionPesquisa" hidden>
-        <form id="comprasPesquisaForm" novalidate>
-          <div class="purchase-form-grid" style="margin:12px 0;">
-            <div class="purchase-field full product-search-field">
-              <label for="comprasPesquisaProduto">PRODUTO (CÓDIGO OU NOME)</label>
-              <input id="comprasPesquisaProduto" maxlength="80" autocomplete="off">
-            </div>
-            <div class="purchase-field">
-              <label for="comprasPesquisaLoja">LOJA</label>
-              <select id="comprasPesquisaLoja"><option value="">TODAS</option></select>
-            </div>
-            <div class="purchase-field">
-              <label for="comprasPesquisaFornecedor">FORNECEDOR</label>
-              <select id="comprasPesquisaFornecedor"><option value="">TODOS</option></select>
-            </div>
-          </div>
-          <div class="page-header-actions" style="justify-content:space-between;margin:0 0 16px;flex-wrap:wrap;gap:10px;">
-            <label class="checkbox-inline" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="comprasPesquisaShowCanceled" style="width:auto;margin:0;"> Mostrar cancelados</label>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn-outline" type="button" id="btnComprasPesquisaLimpar">LIMPAR</button>
-              <button class="btn-accent" type="submit" id="btnComprasPesquisar">PESQUISAR</button>
-            </div>
-          </div>
-        </form>
-        <div class="table-panel">
-          <div class="table-scroll">
-            <table id="comprasPesquisaTable">
-              <thead><tr><th>Produto</th><th>Qtd pedida</th><th>Qtd recebida</th><th>Preço unit.</th><th>Fornecedor</th><th>Loja(s)</th><th>Data do pedido</th><th>Status</th><th></th></tr></thead>
-              <tbody id="comprasPesquisaBody"><tr><td colspan="9" class="responsive-empty">Use os filtros acima para pesquisar.</td></tr></tbody>
-            </table>
-          </div>
-          <p class="page-desc" id="comprasPesquisaFooter" hidden style="margin:0;padding:10px 16px;"></p>
-        </div>
-      </section>
     </section>
 
     <!-- ================= ADMINISTRAÇÃO DE USUÁRIOS ================= -->
@@ -26253,14 +26259,14 @@ function renderHomeTasks(){
     el('comprasSectionPedidos').hidden = tab !== 'pedidos';
     el('comprasSectionPorProduto').hidden = tab !== 'porProduto';
     el('comprasSectionFornecedores').hidden = tab !== 'fornecedores';
-    el('comprasSectionPesquisa').hidden = tab !== 'pesquisa';
     if(tab === 'porProduto') initComprasProdutoBusca();
     if(tab === 'fornecedores') loadComprasFornecedoresTab();
-    // Pesquisa só popula os selects ao entrar — não pesquisa sozinha.
-    if(tab === 'pesquisa') initComprasPesquisa();
-    // Devolve a carga da lista pra quem precisa esperar por ela (ABRIR
-    // PEDIDO da aba Pesquisa abre o detalhe só depois da lista carregada).
-    if(tab === 'pedidos') return loadComprasOrdersPage();
+    // Pesquisa (topo da aba Pedidos) só popula os selects ao entrar — não
+    // pesquisa sozinha.
+    if(tab === 'pedidos'){
+      initComprasPesquisa();
+      loadComprasOrdersPage();
+    }
   }
   document.querySelectorAll('[data-compras-section-tab]').forEach(button => {
     button.addEventListener('click',() => setComprasSectionTab(button.dataset.comprasSectionTab));
@@ -27220,6 +27226,7 @@ function renderHomeTasks(){
       el('comprasOrderItemsWrap').hidden = Boolean(order.noItemsDetailed) || isAberto;
       el('comprasOrderNoItemsNotice').hidden = !order.noItemsDetailed;
       if(!order.noItemsDetailed && !isAberto) renderComprasOrderItemsTable();
+      comprasApplyOrderItemsVisibility(order);
 
       el('btnCancelComprasOrder').hidden = Boolean(order.canceled);
       el('btnReopenComprasOrder').hidden = !order.canceled;
@@ -27237,6 +27244,41 @@ function renderHomeTasks(){
       showPurchaseToast(error.message, 'error');
     }
   }
+
+  // Mostrar/ocultar produtos do pedido 'aguardando_chegada' — começa
+  // oculto; a escolha fica salva por pedido NESTE aparelho (preferência
+  // visual, sem coluna no banco).
+  // Map em memória vale como reserva quando o navegador bloqueia o
+  // localStorage (o botão continua funcionando, só não lembra depois).
+  const comprasOrderItemsVisibleMemo = new Map();
+  function comprasOrderItemsVisibleKey(orderId){ return 'unigames:compras-itens-visiveis:'+orderId; }
+  function comprasOrderItemsVisible(orderId){
+    if(comprasOrderItemsVisibleMemo.has(orderId)) return comprasOrderItemsVisibleMemo.get(orderId);
+    try{ return localStorage.getItem(comprasOrderItemsVisibleKey(orderId)) === '1'; }catch{ return false; }
+  }
+  function comprasApplyOrderItemsVisibility(order){
+    const bar = el('comprasOrderItemsToggleBar');
+    const togglable = order.status === 'aguardando_chegada' && !order.noItemsDetailed;
+    bar.hidden = !togglable;
+    if(!togglable) return;
+    const visible = comprasOrderItemsVisible(order.id);
+    const count = comprasCurrentOrderItems.length;
+    el('comprasOrderItemsToggleCount').textContent = count+(count === 1 ? ' PRODUTO' : ' PRODUTOS');
+    el('btnToggleComprasOrderItems').textContent = visible ? 'OCULTAR PRODUTOS' : 'MOSTRAR PRODUTOS';
+    el('btnToggleComprasOrderItems').setAttribute('aria-expanded', String(visible));
+    el('comprasOrderItemsWrap').hidden = !visible;
+  }
+  if(el('btnToggleComprasOrderItems')) el('btnToggleComprasOrderItems').addEventListener('click', () => {
+    if(!comprasCurrentOrder) return;
+    const orderId = comprasCurrentOrder.id;
+    const visible = !comprasOrderItemsVisible(orderId);
+    comprasOrderItemsVisibleMemo.set(orderId, visible);
+    try{
+      if(visible) localStorage.setItem(comprasOrderItemsVisibleKey(orderId), '1');
+      else localStorage.removeItem(comprasOrderItemsVisibleKey(orderId));
+    }catch{ /* sem armazenamento: vale só até recarregar a página */ }
+    comprasApplyOrderItemsVisibility(comprasCurrentOrder);
+  });
 
   function renderComprasOrderItemsTable(){
     const body = el('comprasOrderItemsBody');
@@ -27696,6 +27738,7 @@ function renderHomeTasks(){
   }
 
   function comprasPesquisaSetMessage(message){
+    el('comprasPesquisaResultWrap').hidden = false;
     el('comprasPesquisaBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(message)+'</td></tr>';
     el('comprasPesquisaFooter').hidden = true;
   }
@@ -27734,7 +27777,7 @@ function renderHomeTasks(){
     if(loja) query.set('loja', loja);
     if(produto) query.set('produto', produto);
     if(fornecedor) query.set('fornecedor', fornecedor);
-    if(el('comprasPesquisaShowCanceled').checked) query.set('includeCanceled', '1');
+    if(el('comprasOrdersShowCanceled').checked) query.set('includeCanceled', '1');
     comprasPesquisaSetMessage('Pesquisando…');
     try{
       const data = await comprasNovoApiRequest('/pesquisa?'+query.toString());
@@ -27750,16 +27793,19 @@ function renderHomeTasks(){
     }
   }
 
-  // ABRIR PEDIDO: limpa os filtros da aba Pedidos (o pedido precisa estar
-  // na lista pra o detalhe accordion encontrar o card), troca de aba,
-  // espera a lista e abre o detalhe — mesmo caminho do botão ABRIR do card.
+  // ABRIR PEDIDO: o detalhe accordion abre embaixo do card do pedido, então
+  // o pedido precisa estar na lista de cards — se os filtros de STATUS/
+  // ORIGEM o esconderem, limpa os filtros e recarrega antes de abrir (mesmo
+  // caminho do botão ABRIR do card).
   async function comprasPesquisaAbrirPedido(orderId, canceled){
-    el('comprasOrdersStatusFilter').value = '';
-    el('comprasOrdersOriginFilter').value = '';
-    if(canceled) el('comprasOrdersShowCanceled').checked = true;
-    comprasOrdersLateOnlyFilter = false;
-    comprasOrdersProdutoFilter = '';
-    await setComprasSectionTab('pedidos');
+    if(!comprasOrders.some(order => order.id === orderId)){
+      el('comprasOrdersStatusFilter').value = '';
+      el('comprasOrdersOriginFilter').value = '';
+      if(canceled) el('comprasOrdersShowCanceled').checked = true;
+      comprasOrdersLateOnlyFilter = false;
+      comprasOrdersProdutoFilter = '';
+      await loadComprasOrdersPage();
+    }
     await openComprasOrderDetail(orderId);
     const card = el('comprasOrdersCardGrid').querySelector('[data-compras-order-row="'+CSS.escape(orderId)+'"]');
     if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
@@ -27779,8 +27825,13 @@ function renderHomeTasks(){
     el('comprasPesquisaLoja').value = '';
     el('comprasPesquisaProduto').value = '';
     el('comprasPesquisaFornecedor').value = '';
-    el('comprasPesquisaShowCanceled').checked = false;
-    comprasPesquisaSetMessage('Use os filtros acima para pesquisar.');
+    el('comprasPesquisaResultWrap').hidden = true;
+    el('comprasPesquisaFooter').hidden = true;
+  });
+  // "Mostrar cancelados" é o mesmo da lista — refaz a pesquisa se já houver
+  // resultado na tela (a lista de cards já recarrega pelo próprio handler).
+  if(el('comprasOrdersShowCanceled')) el('comprasOrdersShowCanceled').addEventListener('change', () => {
+    if(!el('comprasPesquisaResultWrap').hidden) runComprasPesquisa();
   });
   if(el('comprasPesquisaBody')) el('comprasPesquisaBody').addEventListener('click', event => {
     const openBtn = event.target.closest('[data-compras-pesquisa-open]');

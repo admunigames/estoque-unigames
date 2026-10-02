@@ -3351,8 +3351,13 @@ test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aber
   // UI: só 2 abas (Por Produto primeiro/padrão, Pedidos), sem Rascunhos.
   assert.match(html, /data-compras-section-tab="porProduto">POR PRODUTO/);
   assert.match(html, /data-compras-section-tab="pedidos">PEDIDOS/);
-  assert.match(html, /data-compras-section-tab="pesquisa">PESQUISA/);
-  assert.match(html, /id="comprasSectionPesquisa" hidden/);
+  // Pesquisa fica DENTRO da aba Pedidos (filtros sempre visíveis), não
+  // como aba própria.
+  assert.doesNotMatch(html, /data-compras-section-tab="pesquisa"/);
+  assert.match(html, /id="comprasSectionPedidos" hidden>[\s\S]*?id="comprasPesquisaForm"[\s\S]*?id="comprasOrdersCardGrid"/);
+  // Produtos de pedido 'aguardando_chegada' começam ocultos, com botão.
+  assert.match(html, /id="btnToggleComprasOrderItems">MOSTRAR PRODUTOS</);
+  assert.match(html, /const togglable = order\.status === 'aguardando_chegada' && !order\.noItemsDetailed;/);
   assert.match(pesquisaRoute, /canManageComprasDraft\(actor\)/);
   assert.match(pesquisaRoute, /resolveProductCodes\(database, produto\)/);
   assert.match(pesquisaRoute, /INFORME AO MENOS UM FILTRO\./);
