@@ -35421,8 +35421,9 @@ function renderHomeTasks(){
   // ================= COMERCIAL =================
   // Metas e comissionamento dos vendedores — módulo independente do
   // Financeiro. Uma permissão por aba: comercial:dashboard (Dashboard e
-  // Ranking), comercial:commission (Comissão — sem ela o servidor nem envia
-  // os valores de comissão) e comercial:goals (Cadastro de Metas =
+  // Ranking), comercial:commission (SÓ a aba Comissão — sem ela o servidor
+  // não envia os valores em R$ da comissão; Dashboard e Ranking ficam iguais)
+  // e comercial:goals (Cadastro de Metas =
   // importação da planilha).
   // A ÚNICA fonte dos números é a planilha "ACOMPANHAMENTO
   // LOJAS_VENDEDORES", aba "VENDEDORES <MÊS>" (decisão confirmada: sem
@@ -35437,10 +35438,6 @@ function renderHomeTasks(){
   const COM_TARGET_POS = [50, 75, 100];
   const COM_TARGET_LABELS = ['META', 'R$ 500', 'R$ 1.500'];
   const COM_TARGET_NAMES = ['a meta (100%)', '110% (prêmio de R$ 500)', '120% (prêmio de R$ 1.500)'];
-  // Sem comercial:commission nada de comissão/prêmio em R$ aparece: as
-  // faixas de 110%/120% viram só "FAIXA".
-  const COM_TARGET_LABELS_PLAIN = ['META', 'FAIXA', 'FAIXA'];
-  const COM_TARGET_NAMES_PLAIN = ['a meta (100%)', '110% da meta', '120% da meta'];
   const COM_MONTH_NAMES = ['JANEIRO','FEVEREIRO','MARCO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
   let comMonth = '';
   let comOverview = null;
@@ -35516,21 +35513,12 @@ function renderHomeTasks(){
     return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
   }
 
-  function comCanCommission(){
-    const data = comData();
-    return Boolean(data && data.canCommission);
-  }
-
-  function comTargetLabels(){
-    return comCanCommission() ? COM_TARGET_LABELS : COM_TARGET_LABELS_PLAIN;
-  }
-
   function comIncentive(kind, block, clock, simple){
     const fmt = value => comFormatValue(kind, value);
     if(!(block.target > 0)) return {text:'Sem meta neste mês.', sub:''};
     const next = block.next;
-    if(!next) return {text:simple ? 'Meta batida!' : 'Meta e as duas faixas'+(comCanCommission() ? ' de prêmio' : '')+' atingidas!', sub:''};
-    const goalName = simple ? 'a meta' : (comCanCommission() ? COM_TARGET_NAMES : COM_TARGET_NAMES_PLAIN)[next.index - 1];
+    if(!next) return {text:simple ? 'Meta batida!' : 'Meta e as duas faixas de prêmio atingidas!', sub:''};
+    const goalName = simple ? 'a meta' : COM_TARGET_NAMES[next.index - 1];
     if(clock.status === 'past') return {text:'Mês encerrado — faltaram '+fmt(next.missing)+' para '+goalName+'.', sub:''};
     const days = clock.daysRemaining;
     const daysText = days === 1 ? 'último dia do mês' : days+' dias restantes';
@@ -35547,7 +35535,6 @@ function renderHomeTasks(){
     const percent = block.percent;
     const tier = comTier(percent);
     const ariaLabel = title+': '+comFormatPct(percent)+' da meta';
-    const labels = comTargetLabels();
     let bar;
     if(simple){
       const width = percent === null ? 0 : Math.min(100, percent);
@@ -35559,14 +35546,14 @@ function renderHomeTasks(){
         const last = index === COM_TARGETS.length - 1 ? ' last' : '';
         const left = 'left:'+COM_TARGET_POS[index]+'%';
         return '<span class="com-bar-marker'+reached+last+'" style="'+left+'"></span>'+
-          '<span class="com-bar-label'+reached+last+'" style="'+left+'"><span>'+labels[index]+'</span><span>'+target+'%</span></span>';
+          '<span class="com-bar-label'+reached+last+'" style="'+left+'"><span>'+COM_TARGET_LABELS[index]+'</span><span>'+target+'%</span></span>';
       }).join('');
       bar = '<div class="com-bar" role="img" aria-label="'+escapeHtml(ariaLabel)+'">'+
         '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+comBarPosition(percent)+'%"></div></div>'+marks+'</div>';
     }
     const targets = simple || !(block.target > 0) ? '' :
       '<ul class="com-targets">'+COM_TARGETS.map((target, index) =>
-        '<li class="'+(block.reachedTargets > index ? 'reached' : '')+'"><b>'+(index ? (comCanCommission() ? 'PRÊMIO ' : '')+labels[index] : 'META')+' · '+target+'%</b>'+
+        '<li class="'+(block.reachedTargets > index ? 'reached' : '')+'"><b>'+(index ? 'PRÊMIO '+COM_TARGET_LABELS[index] : 'META')+' · '+target+'%</b>'+
         escapeHtml(comFormatValue(kind, comTargetValue(block.target, target)))+'</li>'
       ).join('')+'</ul>';
     const incentive = comIncentive(kind, block, clock, simple);
@@ -35605,16 +35592,16 @@ function renderHomeTasks(){
 
   // Selo dos critérios da comissão: com Itens 100%, Realme 100% e anexo de
   // garantia 30% o faturamento paga 0,6% (e libera a premiação); sem, 0,4%.
-  // Sem comercial:commission o servidor não manda metrics.commission: o selo
-  // fica só com os critérios, sem a taxa.
+  // comercial:commission afeta SÓ a aba Comissão: o selo do Dashboard é o
+  // mesmo para todos (sem a permissão o servidor manda só os critérios e a
+  // taxa, sem os valores em R$).
   function comCriteriaHtml(metrics){
-    const withRate = Boolean(metrics.commission);
+    if(metrics.commission.allCriteriaMet) return '<span class="com-criteria ok">METAS BATIDAS · 0,6%</span>';
     const missing = [];
     if(!metrics.items.met) missing.push('ITENS');
     if(!metrics.realme.met) missing.push('REALME');
     if(!metrics.warranty.met) missing.push('GARANTIA 30%');
-    if(!missing.length) return '<span class="com-criteria ok">METAS BATIDAS'+(withRate ? ' · 0,6%' : '')+'</span>';
-    return '<span class="com-criteria pending">'+(withRate ? '0,4% · ' : '')+'FALTA: '+escapeHtml(missing.join(', '))+'</span>';
+    return '<span class="com-criteria pending">0,4% · FALTA: '+escapeHtml(missing.join(', '))+'</span>';
   }
 
   function comSellerHeadHtml(seller){

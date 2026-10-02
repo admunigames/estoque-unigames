@@ -28,8 +28,9 @@ import {
 //     sempre (commercialScope): a própria loja, ou todas.
 // `?for=cadastro` (aba Cadastro de Metas, só comercial:goals) ignora o
 // "só o próprio": quem cadastra metas precisa ver os vendedores da loja.
-// Sem comercial:commission, a comissão (R$) é REMOVIDA da resposta — não
-// basta esconder no front.
+// Sem comercial:commission, os valores em R$ da comissão são REMOVIDOS da
+// resposta (não basta esconder no front); ficam só allCriteriaMet e
+// revenueRate, usados pelo selo do Dashboard — que é igual para todos.
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -64,9 +65,10 @@ export async function GET(request: Request) {
     const visible = canCommission
       ? scoped
       : scoped.map((seller) => {
-        const metrics: Partial<typeof seller.metrics> = { ...seller.metrics };
-        delete metrics.commission;
-        return { ...seller, metrics };
+        // Dashboard igual para todos: fica só o que o selo usa (critérios
+        // batidos e taxa); os valores em R$ são exclusivos da aba Comissão.
+        const { allCriteriaMet, revenueRate } = seller.metrics.commission;
+        return { ...seller, metrics: { ...seller.metrics, commission: { allCriteriaMet, revenueRate } } };
       });
     return jsonResponse({
       month,

@@ -4178,8 +4178,11 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
   assert.match(importRoute, /if \(!canManageCommercialGoals\(actor\)\)/);
   assert.match(importRoute, /parseSellerSheet\(cells\)/);
   assert.match(overviewRoute, /if \(forCadastro\) \{\s*if \(!canGoals\)/);
-  // Sem comercial:commission a comissão nem sai do servidor.
-  assert.match(overviewRoute, /delete metrics\.commission;/);
+  // Sem comercial:commission os valores em R$ da comissão nem saem do
+  // servidor; o selo do Dashboard (critérios + taxa) continua igual.
+  assert.match(overviewRoute, /commission: \{ allCriteriaMet, revenueRate \}/);
+  assert.match(html, /METAS BATIDAS · 0,6%/);
+  assert.doesNotMatch(html, /COM_TARGET_LABELS_PLAIN|comCanCommission/);
 
   // Checkboxes no Cadastro de Usuários, no mesmo padrão das demais permissões.
   assert.match(html, /name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</);

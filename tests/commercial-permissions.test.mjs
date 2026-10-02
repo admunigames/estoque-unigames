@@ -139,10 +139,11 @@ test("só comercial:dashboard: overview sem comissão, ranking ok, Cadastro de M
   assert.deepEqual([data.canDashboard, data.canCommission, data.canGoals], [true, false, false]);
   assert.equal("canManage" in data, false);
   for (const seller of data.sellers) {
-    assert.equal("commission" in seller.metrics, false);
+    // Selo do Dashboard igual para todos: critérios e taxa, sem R$.
+    assert.deepEqual(seller.metrics.commission, { allCriteriaMet: true, revenueRate: 0.006 });
     assert.ok(seller.metrics.revenue && seller.metrics.items && seller.metrics.warranty);
   }
-  assert.doesNotMatch(JSON.stringify(data), /"commission"|CommissionCents|PremiumCents|totalCents|allCriteriaMet/);
+  assert.doesNotMatch(JSON.stringify(data), /CommissionCents|PremiumCents|totalCents/);
 
   assert.equal((await get(ranking, DASHBOARD, `/ranking?month=${MONTH}`)).status, 200);
   const cadastro = await get(overview, DASHBOARD, `/overview?month=${MONTH}&for=cadastro`);
@@ -172,7 +173,7 @@ test("só comercial:goals: Cadastro de Metas e importação liberados, Dashboard
   assert.equal(data.sellers.length, 3);
   assert.equal(data.canGoals, true);
   // Sem comercial:commission a comissão também não sai pelo Cadastro de Metas.
-  for (const seller of data.sellers) assert.equal("commission" in seller.metrics, false);
+  for (const seller of data.sellers) assert.equal("totalCents" in seller.metrics.commission, false);
 
   assert.equal((await get(importRoute, GOALS, `/import?month=${MONTH}`)).status, 200);
   // Passa da guarda de permissão (cai na validação do mês).
