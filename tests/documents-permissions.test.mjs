@@ -48,11 +48,18 @@ function createFakeD1() {
   )`);
   return {
     sqlite,
-    prepare(sql) {
+    prepare(text) {
+      // node:sqlite antigo (ex.: Node 22.13 do CI) não liga parâmetros
+      // posicionais a placeholders "?1": converte para "?" na ordem de uso.
+      const order = [];
+      const sql = text.replace(/\?(\d+)/g, (_match, index) => {
+        order.push(Number(index) - 1);
+        return "?";
+      });
       let params = [];
       const statement = {
         bind(...values) {
-          params = values;
+          params = order.length ? order.map((index) => values[index]) : values;
           return statement;
         },
         async run() {
