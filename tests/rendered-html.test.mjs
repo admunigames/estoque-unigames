@@ -4139,7 +4139,7 @@ test("Compras nativo: anexar arquivo (pedido/nota fiscal) não dispara atualiza�
   assert.match(liveEvents, /action === "create" \|\| action === "cancel"\) return null;/);
 });
 
-test("Comercial: menu próprio, permissões comercial:view/manage, escopo por loja, importação da planilha e Ranking sem R$", async () => {
+test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals, escopo por loja, importação da planilha e Ranking sem R$", async () => {
   const [html, workerSource, shared, overviewRoute, rankingRoute, importRoute, migration] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
@@ -4166,20 +4166,31 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
   }
   // Abas no estilo único do site, sem classe própria do Comercial.
   assert.doesNotMatch(html, /com-view-tab/);
-  // Cadastro de Metas: só comercial:manage, e é a importação da planilha
-  // (sem digitação manual de metas/realizado).
-  assert.match(html, /data-com-view="metas" data-permission="comercial:manage">Cadastro de Metas</);
+  // Uma permissão por aba: Dashboard e Ranking (comercial:dashboard),
+  // Comissão (comercial:commission) e Cadastro de Metas (comercial:goals) —
+  // este é a importação da planilha (sem digitação manual de metas/realizado).
+  assert.match(html, /data-com-view="dashboard" data-permission="comercial:dashboard">Dashboard</);
+  assert.match(html, /data-com-view="comissao" data-permission="comercial:commission">Comissão</);
+  assert.match(html, /data-com-view="ranking" data-permission="comercial:dashboard">Ranking</);
+  assert.match(html, /data-com-view="metas" data-permission="comercial:goals">Cadastro de Metas</);
   assert.match(html, /<input type="file" id="comImportFile" accept="\.xlsx,\.xls,\.csv">/);
   assert.doesNotMatch(html, /comEntryForm|comGoalList|data-com-entry/);
-  assert.match(importRoute, /if \(!canManageCommercial\(actor\)\)/);
+  assert.match(importRoute, /if \(!canManageCommercialGoals\(actor\)\)/);
   assert.match(importRoute, /parseSellerSheet\(cells\)/);
-  assert.match(overviewRoute, /forCadastro && !canManageCommercial\(actor\)/);
+  assert.match(overviewRoute, /if \(forCadastro\) \{\s*if \(!canGoals\)/);
+  // Sem comercial:commission a comissão nem sai do servidor.
+  assert.match(overviewRoute, /delete metrics\.commission;/);
 
   // Checkboxes no Cadastro de Usuários, no mesmo padrão das demais permissões.
-  assert.match(html, /name="userPermission" value="comercial:view"/);
-  assert.match(html, /name="userPermission" value="comercial:manage"/);
-  assert.match(workerSource, /"comercial:view", "comercial:manage",/);
-  assert.match(workerSource, /commercial: \["comercial:view", "comercial:manage"\],/);
+  assert.match(html, /name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</);
+  assert.match(html, /name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</);
+  assert.match(html, /name="userPermission" value="comercial:goals"> CADASTRO DE METAS</);
+  assert.doesNotMatch(html, /value="comercial:(view|manage)"/);
+  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals",/);
+  assert.match(workerSource, /commercial: \["comercial:dashboard", "comercial:commission", "comercial:goals"\],/);
+  // As antigas viram as novas na leitura (ninguém perde acesso).
+  assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission"\],/);
+  assert.match(workerSource, /"comercial:manage": \["comercial:goals"\],/);
   assert.match(workerSource, /path\.startsWith\("\/comercial\/"\) \|\| path\.startsWith\("\/api\/commercial"\),\s*"commercial",/);
 
   // Legendas/avisos das abas removidos a pedido do usuário.
@@ -4187,7 +4198,7 @@ test("Comercial: menu próprio, permissões comercial:view/manage, escopo por lo
 
   // Escopo por loja reaproveita o helper central (sem lógica nova).
   assert.match(shared, /from "\.\.\/\.\.\/lib\/access-scope"/);
-  assert.match(shared, /canSeeAllStores\(actor, "comercial:view"\) \|\| canSeeAllStores\(actor, "comercial:manage"\)/);
+  assert.match(shared, /COMMERCIAL_PERMISSIONS\.some\(\(permission\) => canSeeAllStores\(actor, permission\)\)/);
   assert.match(overviewRoute, /scope\.allStores \? sellers : sellers\.filter\(\(seller\) => seller\.companyId === scope\.companyId\)/);
   // Conta vinculada a um vendedor vê só o próprio no Dashboard/Comissão.
   assert.match(overviewRoute, /linkedEmployeeIds\(database, actor\.id\)/);
@@ -4236,7 +4247,7 @@ test("acessos de vendedor: troca obrigatória da senha inicial, só Comercial + 
     passwordSalt: "x",
     role: "user",
     accessGroup: "custom",
-    permissionsJson: JSON.stringify(["comercial:view"]),
+    permissionsJson: JSON.stringify(["comercial:dashboard", "comercial:commission"]),
     companyId: "crecife001",
     hierarchy: "administrative",
     sector: "",
@@ -4279,6 +4290,20 @@ test("acessos de vendedor: troca obrigatória da senha inicial, só Comercial + 
   const noNeed = await call("/trocar-senha", ready);
   assert.equal(noNeed.status, 303);
 
+  // Usuário com as chaves antigas (comercial:view/manage, sem UPDATE no
+  // banco): a leitura expande para as três novas — ninguém perde acesso — e
+  // ele continua só-Comercial.
+  const legacy = { ...ready, permissionsJson: JSON.stringify(["comercial:view", "comercial:manage"]) };
+  const legacySession = await call("/api/session", legacy);
+  assert.equal(legacySession.status, 200);
+  assert.deepEqual((await legacySession.json()).permissions, ["comercial:dashboard", "comercial:commission", "comercial:goals"]);
+  assert.equal((await call("/documentos", legacy)).status, 403);
+  assert.equal((await call("/api/documents", legacy)).status, 403);
+  // Só uma das chaves novas também é só-Comercial.
+  const goalsOnly = { ...ready, permissionsJson: JSON.stringify(["comercial:goals"]) };
+  assert.deepEqual((await (await call("/api/session", goalsOnly)).json()).permissions, ["comercial:goals"]);
+  assert.equal((await call("/api/documents", goalsOnly)).status, 403);
+
   const [workerSource, html, hrShared, terminations, employees, migration] = await Promise.all([
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
@@ -4288,8 +4313,8 @@ test("acessos de vendedor: troca obrigatória da senha inicial, só Comercial + 
     readFile(new URL("../drizzle/0074_app_users_must_change_password.sql", import.meta.url), "utf8"),
   ]);
   assert.match(migration, /ADD COLUMN IF NOT EXISTS "must_change_password" integer DEFAULT 0 NOT NULL/);
-  // Criação em lote: só comercial:view, vínculo com o RH e troca obrigatória.
-  assert.match(workerSource, /JSON\.stringify\(\["comercial:view"\]\)/);
+  // Criação em lote: só Dashboard/Ranking + Comissão, vínculo com o RH e troca obrigatória.
+  assert.match(workerSource, /JSON\.stringify\(\["comercial:dashboard", "comercial:commission"\]\)/);
   assert.match(workerSource, /UPDATE hr_employees SET user_id=\?1/);
   assert.match(workerSource, /'administrative', '', 1, 1, 1\)/);
   assert.match(html, /id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES</);

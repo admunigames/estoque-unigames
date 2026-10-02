@@ -184,7 +184,7 @@ const NO_PERMISSION = { id: "u-none", permissions: ["tasks:view"] };
 const CREATOR = { id: "u-create", permissions: ["documents:create"] };
 const EDITOR = { id: "u-edit", permissions: ["documents:edit"] };
 const DELETER = { id: "u-delete", permissions: ["documents:delete"] };
-const COMMERCIAL_ONLY = { id: "u-com", permissions: ["comercial:view", "comercial:manage"] };
+const COMMERCIAL_ONLY = { id: "u-com", permissions: ["comercial:dashboard", "comercial:commission", "comercial:goals"] };
 
 async function seedDocument(name = "seed.pdf") {
   const result = await upload(ADMIN, { fileName: name, content: "conteudo original" });

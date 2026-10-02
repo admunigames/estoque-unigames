@@ -60,7 +60,7 @@ type Permission =
   | "rh_aniversariantes:view" | "rh_aniversariantes:manage"
   | "rh_odontologico:view" | "rh_odontologico:manage"
   | "rh_escalas:view" | "rh_escalas:manage"
-  | "comercial:view" | "comercial:manage"
+  | "comercial:dashboard" | "comercial:commission" | "comercial:goals"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -176,11 +176,13 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // folgas e resumo por colaborador calculados ao vivo. Permissão própria,
   // independente das demais (ver MODULE_VIEW_PERMISSIONS.schedules).
   "rh_escalas:view", "rh_escalas:manage",
-  // Comercial — metas e comissionamento dos vendedores (Dashboard, Comissão,
-  // Ranking e Cadastro de Metas). Permissão própria, independente do
-  // Financeiro e do RH Financeiro (ver MODULE_VIEW_PERMISSIONS.commercial e
-  // app/api/commercial/shared.ts).
-  "comercial:view", "comercial:manage",
+  // Comercial — metas e comissionamento dos vendedores. Uma permissão por
+  // aba: dashboard (Dashboard e Ranking), commission (Comissão, valores em
+  // R$) e goals (Cadastro de Metas). Independente do Financeiro e do RH
+  // Financeiro (ver MODULE_VIEW_PERMISSIONS.commercial e
+  // app/api/commercial/shared.ts). As antigas comercial:view/manage ficam só
+  // em LEGACY_PERMISSION_MAP.
+  "comercial:dashboard", "comercial:commission", "comercial:goals",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -260,6 +262,10 @@ const LEGACY_PERMISSION_MAP: Record<string, Permission[]> = {
   "report41": ["report41:view"],
   // Documentos: a permissão única de admin virou três ações granulares.
   "documents_manage": ["documents:create", "documents:edit", "documents:delete"],
+  // Comercial: view/manage viraram uma permissão por aba (sem UPDATE no
+  // banco — a expansão é na leitura; ao salvar o usuário já grava as novas).
+  "comercial:view": ["comercial:dashboard", "comercial:commission"],
+  "comercial:manage": ["comercial:goals"],
 };
 function expandLegacyPermissions(raw: unknown[]): unknown[] {
   const expanded: unknown[] = [];
@@ -1286,7 +1292,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   birthdays: ["rh_aniversariantes:view", "rh_aniversariantes:manage"],
   dentalPlan: ["rh_odontologico:view", "rh_odontologico:manage"],
   schedules: ["rh_escalas:view", "rh_escalas:manage"],
-  commercial: ["comercial:view", "comercial:manage"],
+  commercial: ["comercial:dashboard", "comercial:commission", "comercial:goals"],
   works: ["works:manage", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
@@ -1654,7 +1660,8 @@ function publicUser(row: StoredUserRow) {
 // vendedores"). Vendedor = funcionário ATIVO com "vendedor" no cargo, ou que
 // esteja na última importação do Comercial (ex.: líderes comerciais que
 // aparecem na aba VENDEDORES). Cada acesso nasce com: usuário nome.sobrenome,
-// só a permissão comercial:view (vê os próprios números e o ranking), loja
+// só comercial:dashboard + comercial:commission (vê os próprios números, a
+// própria comissão e o ranking), loja
 // do RH, vínculo com o cadastro do funcionário e troca de senha obrigatória
 // no primeiro acesso. Um funcionário por requisição: cada senha passa por
 // PBKDF2 (100 mil iterações) e várias numa requisição só poderiam estourar
@@ -1775,7 +1782,7 @@ async function handleSellerAccounts(
          must_change_password)
        VALUES (?1, ?2, ?3, '', ?4, ?5, 'user', 'custom', ?6, ?7, 'administrative', '', 1, 1, 1)`,
     ).bind(id, candidate.suggestedUsername, candidate.fullName, password.hash, password.salt,
-      JSON.stringify(["comercial:view"]), companyId),
+      JSON.stringify(["comercial:dashboard", "comercial:commission"]), companyId),
     env.DB.prepare(
       "UPDATE hr_employees SET user_id=?1, updated_at=CURRENT_TIMESTAMP WHERE id=?2",
     ).bind(id, candidate.employeeId),

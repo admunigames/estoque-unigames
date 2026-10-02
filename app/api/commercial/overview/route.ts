@@ -6,8 +6,9 @@ import {
   NO_COMPANY_ERROR,
 } from "../../../lib/access-scope";
 import {
-  canManageCommercial,
-  canViewCommercial,
+  canManageCommercialGoals,
+  canViewCommercialCommission,
+  canViewCommercialDashboard,
   commercialScope,
   identity,
   jsonResponse,
@@ -25,24 +26,27 @@ import {
 //     → SÓ o próprio vendedor (ownOnly), independente da loja/permissão;
 //   - conta sem vínculo (gestor/admin/diretoria) → escopo por loja de
 //     sempre (commercialScope): a própria loja, ou todas.
-// `?for=cadastro` (aba Cadastro de Metas, só comercial:manage) ignora o
+// `?for=cadastro` (aba Cadastro de Metas, só comercial:goals) ignora o
 // "só o próprio": quem cadastra metas precisa ver os vendedores da loja.
+// Sem comercial:commission, a comissão (R$) é REMOVIDA da resposta — não
+// basta esconder no front.
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canViewCommercial(actor)) {
+  const url = new URL(request.url);
+  const requested = safeText(url.searchParams.get("month"), 7);
+  const forCadastro = url.searchParams.get("for") === "cadastro";
+  const canDashboard = canViewCommercialDashboard(actor);
+  const canCommission = canViewCommercialCommission(actor);
+  const canGoals = canManageCommercialGoals(actor);
+  if (forCadastro) {
+    if (!canGoals) return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR METAS." }, 403);
+  } else if (!canDashboard && !canCommission) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O COMERCIAL." }, 403);
   }
   const scope = commercialScope(actor);
   if (!scope) return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
-
-  const url = new URL(request.url);
-  const requested = safeText(url.searchParams.get("month"), 7);
-  const forCadastro = url.searchParams.get("for") === "cadastro";
-  if (forCadastro && !canManageCommercial(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR METAS." }, 403);
-  }
   const month = MONTH_PATTERN.test(requested) ? requested : todayInTimezone().slice(0, 7);
 
   try {
@@ -54,16 +58,25 @@ export async function GET(request: Request) {
     // Conta vinculada a um vendedor: só ele, mesmo que o mês ainda não
     // tenha sido importado (a tela mostra "ainda não importado").
     const ownOnly = linked.length > 0;
-    const visible = ownOnly
+    const scoped = ownOnly
       ? sellers.filter((seller) => linked.includes(seller.employeeId))
       : scope.allStores ? sellers : sellers.filter((seller) => seller.companyId === scope.companyId);
+    const visible = canCommission
+      ? scoped
+      : scoped.map((seller) => {
+        const metrics: Partial<typeof seller.metrics> = { ...seller.metrics };
+        delete metrics.commission;
+        return { ...seller, metrics };
+      });
     return jsonResponse({
       month,
       clock,
       ownOnly,
       allStores: !ownOnly && scope.allStores,
       companyId: scope.companyId,
-      canManage: canManageCommercial(actor),
+      canDashboard,
+      canCommission,
+      canGoals,
       sellers: visible,
     });
   } catch (error) {

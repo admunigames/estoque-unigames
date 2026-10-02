@@ -12,7 +12,7 @@ import {
 } from "../../../lib/commercial";
 import {
   actorName,
-  canManageCommercial,
+  canManageCommercialGoals,
   commercialScope,
   identity,
   jsonResponse,
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManageCommercial(actor)) {
+  if (!canManageCommercialGoals(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA IMPORTAR A PLANILHA." }, 403);
   }
   const month = safeText(new URL(request.url).searchParams.get("month"), 7);
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManageCommercial(actor)) {
+  if (!canManageCommercialGoals(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA IMPORTAR A PLANILHA." }, 403);
   }
   if (!sameOrigin(request)) return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);

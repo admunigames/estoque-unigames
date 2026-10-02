@@ -13,8 +13,13 @@ import {
 // Comercial — metas e comissionamento dos vendedores. Permissões próprias
 // (MODULE_VIEW_PERMISSIONS.commercial em worker/index.ts), independentes do
 // Financeiro e do RH Financeiro:
-//   comercial:view   → Dashboard, Comissão e Ranking (só leitura)
-//   comercial:manage → tudo acima + importação da planilha de metas/realizado
+//   comercial:dashboard  → abas Dashboard e Ranking (sem R$ de comissão)
+//   comercial:commission → aba Comissão (valores em R$ da comissão)
+//   comercial:goals      → aba Cadastro de Metas (importação da planilha)
+// As antigas comercial:view/manage são expandidas na leitura pelo Worker
+// (LEGACY_PERMISSION_MAP). Conta vinculada a um vendedor continua vendo só
+// os próprios números (ownOnly no overview) — isso vem do vínculo, não da
+// permissão.
 //
 // Escopo por loja: mesma regra de canSeeAllStores() (app/lib/access-scope.ts)
 // — admin vê todas; usuário com loja vinculada fica preso à própria loja;
@@ -66,22 +71,36 @@ export function identity(request: Request): Identity {
   };
 }
 
-export function canManageCommercial(actor: Identity) {
-  return actor.role === "admin" || actor.permissions.includes("comercial:manage");
+const COMMERCIAL_PERMISSIONS = ["comercial:dashboard", "comercial:commission", "comercial:goals"] as const;
+
+function hasCommercialPermission(actor: Identity, permission: (typeof COMMERCIAL_PERMISSIONS)[number]) {
+  return actor.role === "admin" || actor.permissions.includes(permission);
 }
 
-export function canViewCommercial(actor: Identity) {
-  return canManageCommercial(actor) || actor.permissions.includes("comercial:view");
+export function canViewCommercialDashboard(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:dashboard");
+}
+
+export function canViewCommercialCommission(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:commission");
+}
+
+export function canManageCommercialGoals(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:goals");
+}
+
+export function canAccessCommercial(actor: Identity) {
+  return COMMERCIAL_PERMISSIONS.some((permission) => hasCommercialPermission(actor, permission));
 }
 
 /**
  * Alcance de loja do ator — mesma regra de resolveStoreScope(), mas aceitando
- * qualquer uma das duas permissões do módulo como "a permissão da ação"
- * (quem só tem :manage também precisa enxergar o que está lançando).
+ * qualquer uma das permissões do módulo como "a permissão da ação" (quem só
+ * cadastra metas também precisa enxergar o que está lançando).
  * `null` = bloqueado (sem loja e sem permissão).
  */
 export function commercialScope(actor: Identity): { allStores: boolean; companyId: string } | null {
-  if (canSeeAllStores(actor, "comercial:view") || canSeeAllStores(actor, "comercial:manage")) {
+  if (COMMERCIAL_PERMISSIONS.some((permission) => canSeeAllStores(actor, permission))) {
     return { allStores: true, companyId: "" };
   }
   if (hasCompany(actor.companyId)) return { allStores: false, companyId: actor.companyId };
