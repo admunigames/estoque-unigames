@@ -4699,3 +4699,124 @@ test("Ilhas React: carregador genérico, piloto do dashboard de Divergências co
   const anonymous = await runtime.fetch(new Request("http://localhost/islands/manifest.json"), assetsEnv, ctx);
   assert.equal(anonymous.status, 303);
 });
+
+test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, permissão e rota no worker", async () => {
+  const [html, workerSource, migration, schema, packageJson] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0078_assistencia_orcamentos.sql", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ]);
+
+  // Menu: grupo novo "Assistência" com o submenu "Orçamentos" (mesmo formato
+  // dos grupos existentes), ícones copiados de itens já existentes.
+  assert.match(html, /<div class="nav-group" data-any-permission="assistencia">\n\s*<button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">/);
+  assert.match(html, /<a class="nav-item sub-item" id="navAssistenciaOrcamentos" data-page="assistenciaOrcamentos" data-permission="assistencia:manage" data-home-desc="[^"]+" title="Orçamentos" href="\/assistencia\/orcamentos">/);
+  const navGroup = html.slice(html.indexOf('id="navAssistencia"'), html.indexOf('id="navComercialMenu"'));
+  const loansIcon = /id="navAparelhosEmprestimo"[^\n]*?(<svg[^\n]*?<\/svg>)/.exec(html)[1];
+  const osNotesIcon = /id="navNotasOs"[^\n]*?(<svg[^\n]*?<\/svg>)/.exec(html)[1];
+  assert.ok(navGroup.includes(loansIcon), "ícone do grupo copiado de Aparelhos de Empréstimo");
+  assert.ok(navGroup.includes(osNotesIcon), "ícone de Orçamentos copiado de Notas de O.S.");
+  assert.match(html, /assistenciaOrcamentos:'\/assistencia\/orcamentos'/);
+  assert.match(html, /assistenciaOrcamentos:'ORÇAMENTOS'/);
+  assert.match(html, /assistenciaOrcamentos:'assistencia:manage',/);
+  assert.match(html, /if\(name === 'assistenciaOrcamentos'\) loadAssistenciaOrcamentos\(\);/);
+  assert.match(html, /<section id="pageAssistenciaOrcamentos" class="page wrap">/);
+
+  // Três abas no estilo único do site.
+  for (const [tab, label] of [["novo", "NOVO ORÇAMENTO"], ["historico", "HISTÓRICO"], ["tabela", "TABELA DE VALORES"]]) {
+    assert.match(html, new RegExp(`class="supply-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-assist-tab="${tab}"[^>]*>${label}</button>`));
+  }
+  // Observações com checkbox de verdade (visível, não só cor) + observação livre.
+  assert.match(extractNamedFunction(html, "assistRenderObservations"), /<label class="assist-obs-option"><input type="checkbox" name="assistObservation"/);
+  assert.match(html, /\.assist-obs-option input\[type="checkbox"\]\{width:18px; height:18px; min-height:0;/);
+  assert.match(html, /id="assistExtraNotes"/);
+  // Campos obrigatórios marcados e mensagem dizendo o que falta.
+  for (const label of ["LOJA \\*", "Nº DA OS \\*", "DATA DE ENTRADA \\*", "NOME \\*", "TELEFONE \\*"]) {
+    assert.match(html, new RegExp(`<label for="assist[A-Za-z]+">${label}</label>`));
+  }
+  assert.match(html, /'PARA SALVAR, FALTA: '\+problems\.join\(' · '\)/);
+  // Valor unitário pré-preenchido com o mínimo; "sob orçamento" vem vazio.
+  assert.match(html, /unitCents:defect\.quoteOnly \? null : defect\.minCents/);
+  // Histórico em .responsive-table com data-label em todas as células.
+  const history = extractNamedFunction(html, "assistRenderHistory");
+  const cells = history.match(/<td[ >]/g) || [];
+  const labeled = history.match(/<td data-label="[^"]+"/g) || [];
+  assert.equal(cells.length, labeled.length + 1, "só a linha vazia (responsive-empty) fica sem data-label");
+  for (const label of ["OS", "DATA", "CLIENTE", "LOJA", "EQUIPAMENTOS", "VALOR", "AÇÕES"]) {
+    assert.ok(labeled.includes(`<td data-label="${label}"`), label);
+  }
+  assert.match(html, /<div class="table-panel responsive-table assist-history-table">/);
+  assert.match(history, /class="loan-cell-actions assist-row-actions"/);
+  assert.match(extractNamedFunction(html, "assistHistoryAction"), /confirm\('EXCLUIR O ORÇAMENTO DA OS /);
+  // PDF no padrão do sistema, com o título do arquivo pedido.
+  assert.match(html, /<div class="print-only" id="assistPrintBody"><\/div>/);
+  const print = extractNamedFunction(html, "assistPrintQuote");
+  assert.match(print, /document\.title = 'ORCAMENTO-OS-'\+/);
+  assert.match(print, /document\.body\.classList\.add\('pdf-export'\);\s*window\.print\(\);/);
+  assert.match(extractNamedFunction(html, "assistDocHtml"), /Assistência Técnica Especializada · Unigames/);
+  // Nunca prompt() nativo no módulo.
+  const moduleJs = html.slice(html.indexOf("// ===== ASSISTÊNCIA > ORÇAMENTOS ====="), html.indexOf("// ===== ESTOQUE > DIVERGÊNCIAS ====="));
+  assert.ok(moduleJs.length > 1000);
+  assert.doesNotMatch(moduleJs, /\bprompt\(/);
+
+  // Cadastros > Lojas: EDITAR abre diálogo com os 4 campos (sem mudar id/nome).
+  assert.match(html, /<dialog class="purchase-dialog div-small-dialog" id="lojaDataDialog"/);
+  for (const id of ["lojaDataLegalName", "lojaDataCnpj", "lojaDataPhone", "lojaDataAddress"]) {
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
+  assert.match(extractNamedFunction(html, "saveLojaData"), /Object\.assign\(target, data\);/);
+  assert.match(extractNamedFunction(html, "renderLojasTable"), /canAccess\('database:manage'\)/);
+
+  // Tela Usuários: módulo próprio com uma caixa.
+  assert.match(html, /<summary>Assistência<\/summary>\n\s*<div class="permission-grid">\n\s*<label class="permission-option"><input type="checkbox" name="userPermission" value="assistencia:manage"> ORÇAMENTOS \(ACESSO COMPLETO\)<\/label>/);
+  assert.match(html, /'assistencia:manage':'Assistência - Orçamentos: acesso completo'/);
+
+  // Worker: tipo, atribuíveis, chave do módulo, página e rota.
+  assert.match(workerSource, /\| "assistencia:manage"\n/);
+  assert.match(workerSource, /\n {2}"assistencia:manage",\n/);
+  assert.match(workerSource, /assistencia: \["assistencia:manage"\],/);
+  assert.match(workerSource, /"\/assistencia\/orcamentos",/);
+  assert.match(workerSource, /\[path === "\/assistencia\/orcamentos" \|\| path\.startsWith\("\/api\/assistencia"\), "assistencia"\],/);
+  const groups = workerSource.slice(workerSource.indexOf("const ACCESS_GROUP_PERMISSIONS"), workerSource.indexOf("const LEGACY_PERMISSION_MAP"));
+  assert.doesNotMatch(groups, /assistencia:/);
+
+  // Migration nova (Postgres) + schema + teste próprio no script.
+  for (const table of ["assist_defects", "assist_quotes", "assist_quote_items"]) {
+    assert.match(migration, new RegExp(`CREATE TABLE "${table}"`));
+    assert.match(migration, new RegExp(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`));
+    assert.match(schema, new RegExp(`pgTable\\(\\s*"${table}"`));
+  }
+  assert.match(migration, /CREATE UNIQUE INDEX "assist_quotes_os_number_idx" ON "assist_quotes" USING btree \("os_number"\);/);
+  assert.match(migration, /CREATE UNIQUE INDEX "assist_defects_device_name_idx" ON "assist_defects" USING btree \("device","name"\);/);
+  assert.match(packageJson, /tests\/assistencia\.test\.mjs/);
+
+  // Bloqueio real pelo worker: com a permissão (mesmo com loja vinculada)
+  // abre página e API; login de loja sem ela recebe 403 nas duas.
+  const runtime = await worker();
+  const userRow = (permissions, id, companyId = "") => ({
+    id, username: id, displayName: id.toUpperCase(), email: "", passwordHash: "x", passwordSalt: "x",
+    role: "user", accessGroup: "custom", permissionsJson: JSON.stringify(permissions), companyId,
+    hierarchy: "", sector: "", active: 1, sessionVersion: 1, mustChangePassword: 0, createdAt: "", updatedAt: "",
+  });
+  const call = async (path, row) => runtime.fetch(
+    new Request(`http://localhost${path}`, {
+      headers: {
+        accept: path.startsWith("/api/") ? "application/json" : "text/html",
+        cookie: `unigames_session=${await signSession(env.APP_SESSION_SECRET, row.id, row.sessionVersion)}`,
+      },
+    }),
+    { ...env, DB: createFakeD1(row) },
+    ctx,
+  );
+  const attendant = userRow(["assistencia:manage"], "assist-loja", "cmrvhi891w5qk7");
+  const session = await call("/api/session", attendant);
+  assert.deepEqual((await session.json()).permissions, ["assistencia:manage"]);
+  assert.notEqual((await call("/assistencia/orcamentos", attendant)).status, 403);
+  assert.notEqual((await call("/api/assistencia/quotes", attendant)).status, 403);
+  const storeLogin = userRow(["outputs:view", "outputs:create", "divergencias:create"], "loja-sem-assist", "cmrvhi891w5qk7");
+  assert.equal((await call("/assistencia/orcamentos", storeLogin)).status, 403);
+  assert.equal((await call("/api/assistencia/quotes", storeLogin)).status, 403);
+  assert.equal((await call("/api/assistencia/defects", storeLogin)).status, 403);
+});

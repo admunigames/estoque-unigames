@@ -40,6 +40,7 @@ type Permission =
   | "outputs:view" | "outputs:create" | "outputs:complete" | "outputs:delete"
   | "divergencias:view" | "divergencias:create" | "divergencias:edit" | "divergencias:delete"
   | "divergencias:respond" | "divergencias:inventory"
+  | "assistencia:manage"
   | "inputs:view" | "inputs:create" | "inputs:complete" | "inputs:delete"
   | "supplies:view" | "supplies:request" | "supplies:receive" | "supplies:stock_in" | "supplies:stock_out" | "supplies:delete" | "supplies:manage_catalog"
   | "purchases:view" | "purchases:create" | "purchases:edit" | "purchases:delete" | "purchases:send_to_finance"
@@ -135,6 +136,11 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // que recebe todas).
   "divergencias:view", "divergencias:create", "divergencias:edit", "divergencias:delete",
   "divergencias:respond", "divergencias:inventory",
+  // Assistência > Orçamentos — permissão ÚNICA (criar, editar, excluir,
+  // gerar PDF e editar a tabela de valores), sem escopo por loja. Módulo
+  // novo: nenhum grupo de acesso ganha a chave automaticamente (só o
+  // Administrador, que recebe todas).
+  "assistencia:manage",
   "inputs:view", "inputs:create", "inputs:complete", "inputs:delete",
   "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
   "purchases:view", "purchases:create", "purchases:edit", "purchases:delete", "purchases:send_to_finance",
@@ -307,6 +313,7 @@ const APP_ROUTE_PATHS = new Set([
   "/captacao",
   "/saidas",
   "/divergencias",
+  "/assistencia/orcamentos",
   "/entradas",
   "/insumos",
   "/aparelhos-emprestimo",
@@ -1279,6 +1286,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "divergencias:view", "divergencias:create", "divergencias:edit", "divergencias:delete",
     "divergencias:respond", "divergencias:inventory",
   ],
+  assistencia: ["assistencia:manage"],
   inputs: ["inputs:view", "inputs:create", "inputs:complete", "inputs:delete"],
   supplies: [
     "supplies:view", "supplies:request", "supplies:receive",
@@ -1392,6 +1400,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
     [path === "/divergencias" || path.startsWith("/api/divergences"), "divergences"],
+    // Assistência > Orçamentos — só assistencia:manage (a rota confere de novo).
+    [path === "/assistencia/orcamentos" || path.startsWith("/api/assistencia"), "assistencia"],
     [path === "/entradas" || path.startsWith("/api/inputs"), "inputs"],
     [path === "/insumos" || path.startsWith("/api/supplies"), "supplies"],
     [path === "/aparelhos-emprestimo" || path.startsWith("/api/loans"), "loans"],

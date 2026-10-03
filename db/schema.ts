@@ -3595,3 +3595,90 @@ export const divergenceItemEvents = pgTable(
     index("divergence_item_events_request_idx").on(table.requestId),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Assistência > Orçamentos (migration 0078). Substitui o app externo
+// (Base44): o atendente monta o orçamento a partir da tabela de valores e
+// gera o PDF com os dados da loja (Cadastro de Lojas). Permissão única
+// assistencia:manage, sem escopo por loja.
+// ---------------------------------------------------------------------------
+
+// Tabela de valores: defeitos por aparelho. "Sob orçamento" = quote_only 1
+// (valor digitado no orçamento). Sem exclusão — só active 0.
+export const assistDefects = pgTable(
+  "assist_defects",
+  {
+    id: text("id").primaryKey(),
+    category: text("category").notNull(),
+    device: text("device").notNull(),
+    name: text("name").notNull(),
+    minCents: integer("min_cents").notNull().default(0),
+    maxCents: integer("max_cents").notNull().default(0),
+    quoteOnly: integer("quote_only").notNull().default(0),
+    active: integer("active").notNull().default(1),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("assist_defects_device_name_idx").on(table.device, table.name),
+    index("assist_defects_category_idx").on(table.category),
+  ],
+);
+
+// Cabeçalho do orçamento. os_number é a OS do PDV (digitada), ÚNICA.
+// observations guarda uma CÓPIA (JSON) dos textos padrão marcados.
+export const assistQuotes = pgTable(
+  "assist_quotes",
+  {
+    id: text("id").primaryKey(),
+    osNumber: text("os_number").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    entryDate: text("entry_date").notNull(),
+    clientName: text("client_name").notNull(),
+    clientCpf: text("client_cpf").notNull().default(""),
+    clientPhone: text("client_phone").notNull().default(""),
+    clientAddress: text("client_address").notNull().default(""),
+    observations: text("observations").notNull().default("[]"),
+    extraNotes: text("extra_notes").notNull().default(""),
+    totalCents: integer("total_cents").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("assist_quotes_os_number_idx").on(table.osNumber),
+    index("assist_quotes_company_idx").on(table.companyId),
+    index("assist_quotes_entry_date_idx").on(table.entryDate),
+  ],
+);
+
+// Uma linha por defeito/item avulso; os dados do equipamento se repetem em
+// cada linha (agrupados por equipment_index). Nome e valor do defeito são
+// cópias em texto/centavos, nunca referência ao cadastro.
+export const assistQuoteItems = pgTable(
+  "assist_quote_items",
+  {
+    id: text("id").primaryKey(),
+    quoteId: text("quote_id").notNull(),
+    equipmentIndex: integer("equipment_index").notNull().default(1),
+    category: text("category").notNull().default(""),
+    device: text("device").notNull().default(""),
+    serialNumber: text("serial_number").notNull().default(""),
+    service: text("service").notNull().default(""),
+    defectName: text("defect_name").notNull().default(""),
+    description: text("description").notNull().default(""),
+    quantity: integer("quantity").notNull().default(1),
+    unitCents: integer("unit_cents").notNull().default(0),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (table) => [index("assist_quote_items_quote_idx").on(table.quoteId)],
+);

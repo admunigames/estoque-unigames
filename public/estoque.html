@@ -3154,6 +3154,123 @@
   html[data-theme="light"] .com-total strong{color:#23874f}
   html[data-theme="light"] .com-notice{background:#fff7e6;border-color:#e6c27a;color:#6b4d0f}
   @media(prefers-reduced-motion:reduce){.com-bar-fill{transition:none}}
+  /* ASSISTÊNCIA > ORÇAMENTOS — reaproveita .supply-tabs, .table-panel,
+     .purchase-form-grid/.purchase-field, .responsive-table, .loan-cell-actions
+     e .purchase-dialog; aqui só o formulário em seções, as linhas de defeito e
+     o documento do PDF (.assist-doc, mesmo HTML na prévia e na impressão).
+     Grids com número fixo de colunas (sem auto-fill/auto-fit). */
+  .assist-section{margin-top:16px;}
+  .assist-form{padding:0; overflow:visible; max-height:none;}
+  .assist-panel{padding:16px 18px; margin-bottom:14px;}
+  .assist-panel-title{margin:0 0 12px; color:var(--accent); font:800 11px/1.3 var(--mono); letter-spacing:.5px;}
+  .assist-grid-3{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .assist-edit-banner{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin:0 0 14px;
+    padding:12px 14px; border:1px solid var(--accent); border-radius:11px;
+    background:color-mix(in srgb,var(--accent) 10%,var(--bg-card)); color:var(--ink); font:800 11px/1.4 var(--mono);
+  }
+  .assist-edit-banner button{min-height:38px; padding:8px 12px; font-size:10px;}
+  .assist-equipments{display:grid; gap:12px;}
+  .assist-equipment{padding:14px; border:1px solid var(--surface-border); border-radius:12px; background:var(--bg-card-2);}
+  .assist-equipment-head{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+  .assist-equipment-head h4{margin:0; color:var(--ink); font:800 13px/1.3 var(--sans); overflow-wrap:anywhere;}
+  .assist-picker{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:10px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);}
+  .assist-picker > button{min-height:46px; padding:9px 14px; font-size:11px;}
+  .assist-lines{display:grid; gap:8px; margin-top:12px;}
+  .assist-line{
+    display:grid; grid-template-columns:minmax(0,2fr) 88px minmax(0,1fr) minmax(0,.8fr) auto; align-items:end; gap:10px;
+    padding:10px 12px; border:1px solid var(--surface-border); border-radius:10px; background:var(--bg-card);
+  }
+  .assist-line-name{min-width:0; align-self:center;}
+  .assist-line-name strong{display:block; color:var(--ink); font:800 12px/1.35 var(--sans); overflow-wrap:anywhere;}
+  .assist-line-name small{display:block; margin-top:4px; color:var(--ink-faint); font:700 9px/1.35 var(--mono);}
+  .assist-line-name small.quote-only{color:#e4b85f;}
+  .assist-line-total{display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .assist-line-total span{color:var(--ink-soft); font:700 9.5px/1.3 var(--mono); letter-spacing:.45px;}
+  .assist-line-total strong{display:flex; align-items:center; min-height:46px; color:var(--ink); font:800 13px/1 var(--mono); white-space:nowrap;}
+  .assist-line-remove{min-height:46px; padding:8px 11px; font-size:10px;}
+  .assist-empty-lines{padding:6px 0; color:var(--ink-faint); font:700 10px/1.4 var(--mono);}
+  .assist-subtotal{display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:baseline; gap:10px; margin-top:12px; color:var(--ink-soft); font:700 10px/1.3 var(--mono);}
+  .assist-subtotal strong{color:var(--ink); font:800 15px/1 var(--mono);}
+  .assist-add{margin-top:12px; min-height:40px; padding:9px 14px; font-size:11px;}
+  .assist-obs-list{display:grid; gap:8px; margin-bottom:12px;}
+  .assist-obs-option{
+    display:flex; align-items:flex-start; gap:11px; padding:11px 12px; border:1px solid var(--border); border-radius:10px;
+    color:var(--ink); cursor:pointer;
+  }
+  .assist-obs-option:has(input:checked){border-color:var(--accent); background:color-mix(in srgb,var(--accent) 7%,transparent);}
+  .assist-obs-option input[type="checkbox"]{width:18px; height:18px; min-height:0; margin:1px 0 0; flex:0 0 auto; accent-color:var(--accent); cursor:pointer;}
+  .assist-obs-option strong{display:block; font:800 11px/1.3 var(--mono);}
+  .assist-obs-option span{display:block; margin-top:4px; color:var(--ink-soft); font:500 12px/1.5 var(--sans); text-transform:none;}
+  .assist-total-bar{
+    display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:12px;
+    padding:13px 15px; border:1px solid var(--accent); border-radius:11px; color:var(--ink-soft); font:800 11px/1.3 var(--mono);
+  }
+  .assist-total-bar strong{color:var(--ink); font:800 22px/1 var(--mono);}
+  .assist-preview{max-height:640px; overflow:auto; padding:18px; border:1px dashed var(--border); border-radius:11px; background:#fff;}
+  .assist-form .purchase-form-actions{flex-wrap:wrap;}
+  .div-toolbar .field.assist-search{flex:1 1 260px;}
+  .assist-history-table td{vertical-align:top;}
+  .assist-history-table .div-cell-sub{white-space:nowrap;}
+  .assist-row-actions > button,.assist-defect-table td > button{min-height:36px; padding:7px 10px; font-size:9.5px;}
+  .assist-defect-table td{vertical-align:middle;}
+  .assist-defect-table input[data-def-field="name"]{width:100%; min-width:200px;}
+  .assist-defect-table input[data-def-field="min"],.assist-defect-table input[data-def-field="max"]{width:120px;}
+  .assist-defect-table input[type="checkbox"],.assist-check input[type="checkbox"]{width:18px; height:18px; min-height:0; margin:0; accent-color:var(--accent); cursor:pointer;}
+  .assist-defect-table tr.inactive td{opacity:.6;}
+  .assist-check{display:flex; align-items:center; gap:9px; color:var(--ink); font:700 11px/1.3 var(--mono); cursor:pointer;}
+  .assist-store-data{color:var(--ink-soft); font:600 11px/1.5 var(--sans);}
+  .assist-store-data.missing{color:#e4b85f; font:800 10px/1.4 var(--mono);}
+  html[data-theme="light"] .assist-line-name small.quote-only,html[data-theme="light"] .assist-store-data.missing{color:#8a5a00;}
+  /* Documento do orçamento: papel branco e texto escuro também na prévia
+     (no tema escuro), legível em preto e branco. */
+  .assist-doc{color:#111827; background:#fff; font:400 11px/1.45 var(--sans); text-transform:none; min-width:560px;}
+  .assist-doc-head{display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:16px; padding-bottom:12px; border-bottom:2px solid #111827;}
+  .assist-doc-logo{display:block; width:70px; max-width:70px; height:auto;}
+  .assist-doc-store strong{display:block; font:800 14px/1.25 var(--sans);}
+  .assist-doc-store span{display:block; color:#334155; font-size:10px; line-height:1.45;}
+  .assist-doc-os{text-align:right;}
+  .assist-doc-os span{display:block; color:#334155; font:700 9px/1.4 var(--mono); letter-spacing:.4px;}
+  .assist-doc-os strong{display:block; margin:2px 0; font:800 17px/1.2 var(--mono);}
+  .assist-doc-title{margin:14px 0 10px; font:800 16px/1.2 var(--sans); letter-spacing:.6px; text-align:center; text-transform:uppercase;}
+  .assist-doc-block{margin-top:12px; break-inside:avoid; page-break-inside:avoid;}
+  .assist-doc-block h2{margin:0 0 6px; padding:5px 8px; border:1px solid #111827; font:800 10px/1.3 var(--mono); letter-spacing:.5px; text-transform:uppercase;}
+  .assist-doc-fields{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 16px; margin:0;}
+  .assist-doc-fields div{min-width:0; overflow-wrap:anywhere;}
+  .assist-doc-fields .full{grid-column:1 / -1;}
+  .assist-doc-fields b{font:800 9px/1.4 var(--mono); letter-spacing:.3px;}
+  .assist-doc-table{width:100%; margin-top:6px; border-collapse:collapse;}
+  .assist-doc-table th,.assist-doc-table td{padding:5px 7px; border:1px solid #6b7280; color:#111827; background:#fff; font-size:10px; text-align:left; vertical-align:top;}
+  .assist-doc-table th{font:800 8.5px/1.3 var(--mono); letter-spacing:.3px; text-transform:uppercase;}
+  .assist-doc-table .num{text-align:right; white-space:nowrap;}
+  .assist-doc-table .item{width:34px; text-align:center;}
+  .assist-doc-table .qty{width:44px;}
+  .assist-doc-table .money{width:104px;}
+  .assist-doc-table tfoot td{font-weight:800;}
+  .assist-doc-total{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; padding:10px 12px; border:2px solid #111827; font:800 12px/1.2 var(--mono);}
+  .assist-doc-total strong{font:800 18px/1 var(--mono);}
+  .assist-doc-obs p{margin:0 0 6px; overflow-wrap:anywhere; white-space:pre-wrap;}
+  .assist-doc-obs b{font:800 9px/1.4 var(--mono);}
+  .assist-doc-foot{margin-top:18px; padding-top:8px; border-top:1px solid #6b7280; color:#334155; font:700 9px/1.4 var(--mono); text-align:center; letter-spacing:.4px;}
+  @media (max-width:680px){
+    .assist-grid-3{grid-template-columns:1fr;}
+    .assist-panel{padding:14px 12px;}
+    .assist-equipment{padding:12px 10px;}
+    .assist-picker{grid-template-columns:1fr;}
+    .assist-line{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+    .assist-line-name,.assist-line-remove{grid-column:1 / -1;}
+    .assist-line-total strong{min-height:0;}
+    .assist-preview{padding:10px;}
+    .responsive-table tbody td > .loan-cell-actions.assist-row-actions{flex-wrap:wrap;}
+    .responsive-table tbody td > .loan-cell-actions.assist-row-actions > button{flex:1 1 auto;}
+    .assist-defect-table input[data-def-field="name"]{min-width:0;}
+    .assist-defect-table input[data-def-field="min"],.assist-defect-table input[data-def-field="max"]{width:100%;}
+    .responsive-table.assist-defect-table tbody td > input[type="checkbox"]{justify-self:end;}
+  }
+  @media print{
+    .assist-doc{min-width:0; font-size:10px;}
+    .assist-doc-logo{width:62px; max-width:62px;}
+  }
   /* ESTOQUE > DIVERGÊNCIAS — reaproveita .supply-tabs, .purchase-metric,
      .purchase-card, .table-panel, .status-pill e .purchase-dialog; aqui só
      o arranjo próprio do módulo (barra de filtros, gráficos em CSS, linhas
@@ -3400,6 +3517,14 @@
       <div class="nav-submenu" id="navSolicitacoesSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navAlteracoesPdv" data-page="alteracoesPdv" data-permission="pdv_requests" data-home-desc="Peça alterações manuais no PDV e acompanhe o status de cada pedido." title="Alterações PDV" href="/solicitacoes/alteracoes-pdv"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10l-2.6-2.6"/><path d="M17 17H7l2.6 2.6"/><line x1="9" y1="12" x2="15" y2="12"/></svg></span><span class="nav-label">Alterações PDV</span></a>
         <a class="nav-item sub-item" id="navNotasOs" data-page="notasOs" data-permission="os_notes" data-home-desc="Peça a nota de uma O.S. e acompanhe o anexo enviado pela administração." title="Notas de O.S." href="/solicitacoes/notas-os"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas de O.S.</span></a>
+      </div>
+    </div>
+    <div class="nav-group" data-any-permission="assistencia">
+      <button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Assistência</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </button>
+      <div class="nav-submenu" id="navAssistenciaSubmenu" aria-hidden="true">
+        <a class="nav-item sub-item" id="navAssistenciaOrcamentos" data-page="assistenciaOrcamentos" data-permission="assistencia:manage" data-home-desc="Monte o orçamento da assistência técnica com a tabela de valores e gere o PDF com os dados da loja." title="Orçamentos" href="/assistencia/orcamentos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Orçamentos</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf">
@@ -4257,6 +4382,116 @@
       </section>
     </section>
 
+    <section id="pageAssistenciaOrcamentos" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Orçamentos</h2>
+        </div>
+      </header>
+
+      <!-- PDF do orçamento (body.pdf-export + window.print, mesmo padrão dos
+           relatórios de Divergências/RH): o mesmo HTML da prévia. -->
+      <div class="print-only" id="assistPrintBody"></div>
+
+      <div class="supply-tabs no-print" role="tablist" aria-label="Seções de orçamentos">
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-assist-tab="novo" id="assistTabNovo">NOVO ORÇAMENTO</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="historico">HISTÓRICO</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="tabela">TABELA DE VALORES</button>
+      </div>
+
+      <section class="no-print assist-section" id="assistSectionNovo">
+        <div class="assist-edit-banner" id="assistEditBanner" hidden>
+          <span id="assistEditBannerText">EDITANDO ORÇAMENTO</span>
+          <button class="btn-outline" id="btnAssistCancelEdit" type="button">CANCELAR EDIÇÃO</button>
+        </div>
+        <form class="purchase-form assist-form" id="assistQuoteForm" novalidate>
+          <section class="table-panel assist-panel">
+            <h3 class="assist-panel-title">1. LOJA E OS</h3>
+            <div class="purchase-form-grid assist-grid-3">
+              <div class="purchase-field"><label for="assistCompany">LOJA *</label><select id="assistCompany"><option value="">SELECIONE A LOJA</option></select></div>
+              <div class="purchase-field"><label for="assistOsNumber">Nº DA OS *</label><input id="assistOsNumber" inputmode="numeric" maxlength="30" autocomplete="off" placeholder="Ex.: 22403"></div>
+              <div class="purchase-field"><label for="assistEntryDate">DATA DE ENTRADA *</label><input id="assistEntryDate" type="date"></div>
+            </div>
+            <p class="purchase-field-help" id="assistCompanyHelp" hidden></p>
+          </section>
+
+          <section class="table-panel assist-panel">
+            <h3 class="assist-panel-title">2. CLIENTE</h3>
+            <div class="purchase-form-grid">
+              <div class="purchase-field full"><label for="assistClientName">NOME *</label><input id="assistClientName" maxlength="160" autocomplete="off"></div>
+              <div class="purchase-field"><label for="assistClientPhone">TELEFONE *</label><input id="assistClientPhone" inputmode="tel" maxlength="16" autocomplete="off" placeholder="(81) 99999-9999"></div>
+              <div class="purchase-field"><label for="assistClientCpf">CPF (OPCIONAL)</label><input id="assistClientCpf" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="000.000.000-00"></div>
+              <div class="purchase-field full"><label for="assistClientAddress">ENDEREÇO (OPCIONAL)</label><textarea id="assistClientAddress" rows="2" maxlength="400"></textarea></div>
+            </div>
+          </section>
+
+          <section class="table-panel assist-panel">
+            <h3 class="assist-panel-title">3. EQUIPAMENTOS E DEFEITOS</h3>
+            <div class="assist-equipments" id="assistEquipments"></div>
+            <button class="btn-outline assist-add" id="btnAssistAddEquipment" type="button">+ ADICIONAR EQUIPAMENTO</button>
+          </section>
+
+          <section class="table-panel assist-panel">
+            <h3 class="assist-panel-title">4. OBSERVAÇÕES</h3>
+            <div class="assist-obs-list" id="assistObservations"></div>
+            <div class="purchase-field"><label for="assistExtraNotes">OBSERVAÇÃO LIVRE (OPCIONAL)</label><textarea id="assistExtraNotes" rows="3" maxlength="2000"></textarea></div>
+          </section>
+
+          <section class="table-panel assist-panel">
+            <h3 class="assist-panel-title">5. REVISÃO</h3>
+            <div class="assist-total-bar"><span>VALOR TOTAL DO ORÇAMENTO</span><strong id="assistTotal">R$ 0,00</strong></div>
+            <p class="purchase-field-help">PRÉVIA DO PDF (ATUALIZA ENQUANTO VOCÊ PREENCHE). CAMPOS COM * SÃO OBRIGATÓRIOS.</p>
+            <div class="assist-preview" id="assistPreview" aria-label="Prévia do PDF"></div>
+            <div class="user-form-status" id="assistFormStatus" role="status" aria-live="polite"></div>
+            <div class="purchase-form-actions">
+              <button class="btn-outline" id="btnAssistClear" type="button">LIMPAR</button>
+              <button class="btn-outline" id="btnAssistSaveOnly" type="button">SALVAR SEM GERAR PDF</button>
+              <button class="btn-accent" id="btnAssistSavePdf" type="submit">SALVAR E GERAR PDF</button>
+            </div>
+          </section>
+        </form>
+      </section>
+
+      <section class="no-print assist-section" id="assistSectionHistorico" hidden>
+        <div class="div-toolbar assist-toolbar">
+          <div class="field assist-search"><label for="assistSearch">BUSCAR</label><input id="assistSearch" type="search" autocomplete="off" placeholder="CLIENTE OU Nº DA OS"></div>
+          <div class="field"><label for="assistFilterCompany">LOJA</label><select id="assistFilterCompany"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="assistFilterFrom">ENTRADA DE</label><input id="assistFilterFrom" type="date"></div>
+          <div class="field"><label for="assistFilterTo">ENTRADA ATÉ</label><input id="assistFilterTo" type="date"></div>
+          <button class="btn-outline" id="btnAssistClearFilters" type="button">LIMPAR FILTROS</button>
+        </div>
+        <div class="user-form-status" id="assistHistoryStatus" role="status" aria-live="polite"></div>
+        <div class="table-panel responsive-table assist-history-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>OS</th><th>Data</th><th>Cliente</th><th>Loja</th><th>Equipamentos</th><th>Valor</th><th>Ações</th></tr></thead>
+              <tbody id="assistHistoryBody"><tr><td colspan="7" class="responsive-empty">Carregando orçamentos…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="no-print assist-section" id="assistSectionTabela" hidden>
+        <div class="div-toolbar">
+          <div class="field"><label for="assistDefFilterCategory">CATEGORIA</label><select id="assistDefFilterCategory"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="assistDefFilterDevice">APARELHO</label><select id="assistDefFilterDevice"><option value="">TODOS</option></select></div>
+          <div class="field assist-search"><label for="assistDefSearch">BUSCAR DEFEITO</label><input id="assistDefSearch" type="search" autocomplete="off" placeholder="EX.: NÃO LIGA"></div>
+          <button class="btn-accent" id="btnAssistNewDefect" type="button">+ NOVO DEFEITO</button>
+        </div>
+        <p class="purchase-field-help">MUDAR A TABELA NÃO ALTERA ORÇAMENTOS JÁ SALVOS. "SOB ORÇAMENTO": O VALOR É DIGITADO NO ORÇAMENTO. DEFEITO DESATIVADO SOME DA LISTA DO ORÇAMENTO.</p>
+        <div class="user-form-status" id="assistDefStatus" role="status" aria-live="polite"></div>
+        <div class="table-panel responsive-table assist-defect-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Aparelho</th><th>Defeito</th><th>Mínimo</th><th>Máximo</th><th>Sob orçamento</th><th>Ativo</th><th>Ação</th></tr></thead>
+              <tbody id="assistDefectBody"><tr><td colspan="7" class="responsive-empty">Carregando tabela de valores…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </section>
+
     <section id="pageEntradas" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
@@ -4979,9 +5214,9 @@
 
       <div class="table-panel">
         <table>
-          <thead><tr><th>Empresa</th><th style="text-align:right">Ação</th></tr></thead>
+          <thead><tr><th>Empresa</th><th>Dados cadastrais (PDF da assistência)</th><th style="text-align:right">Ação</th></tr></thead>
           <tbody id="tbodyLojas">
-            <tr><td colspan="2"><div class="empty-state"><h4>Nenhuma loja cadastrada</h4><p>Adicione uma empresa acima ou use o botão de lojas padrão.</p></div></td></tr>
+            <tr><td colspan="3"><div class="empty-state"><h4>Nenhuma loja cadastrada</h4><p>Adicione uma empresa acima ou use o botão de lojas padrão.</p></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -7779,6 +8014,50 @@
 
 <!-- Estoque > Divergências: pedido (criar/editar), resposta do estoque por
      item e retorno da loja em VERIFICAÇÃO DA LOJA. -->
+<dialog class="purchase-dialog div-small-dialog" id="assistDefectDialog" aria-labelledby="assistDefectDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="assistDefectDialogTitle">NOVO DEFEITO NA TABELA DE VALORES</h3>
+    <button class="purchase-dialog-close" id="btnCloseAssistDefectDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="assistDefectForm" novalidate>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="assistNewDefCategory">CATEGORIA *</label><select id="assistNewDefCategory"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="assistNewDefDevice">APARELHO * (NOVO OU EXISTENTE)</label><input id="assistNewDefDevice" list="assistNewDefDeviceList" maxlength="120" autocomplete="off"><datalist id="assistNewDefDeviceList"></datalist></div>
+      <div class="purchase-field full"><label for="assistNewDefName">DEFEITO *</label><input id="assistNewDefName" maxlength="160" autocomplete="off" placeholder="EX.: NÃO LIGA"></div>
+      <div class="purchase-field"><label for="assistNewDefMin">VALOR MÍNIMO *</label><input id="assistNewDefMin" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="assistNewDefMax">VALOR MÁXIMO (VAZIO = IGUAL AO MÍNIMO)</label><input id="assistNewDefMax" placeholder="R$ 0,00"></div>
+      <div class="purchase-field full"><label class="assist-check" for="assistNewDefQuoteOnly"><input id="assistNewDefQuoteOnly" type="checkbox"> SOB ORÇAMENTO (SEM PREÇO FIXO — O VALOR É DIGITADO NO ORÇAMENTO)</label></div>
+    </div>
+    <div class="user-form-status" id="assistDefectFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelAssistDefectDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveAssistDefect" type="submit">CADASTRAR DEFEITO</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog div-small-dialog" id="lojaDataDialog" aria-labelledby="lojaDataDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="lojaDataDialogTitle">DADOS CADASTRAIS DA LOJA</h3>
+    <button class="purchase-dialog-close" id="btnCloseLojaDataDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="lojaDataForm" novalidate>
+    <input type="hidden" id="lojaDataId">
+    <p class="purchase-field-help">USADOS NO PDF DO ORÇAMENTO DA ASSISTÊNCIA. O NOME DA LOJA NÃO MUDA AQUI.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="lojaDataLegalName">RAZÃO SOCIAL</label><input id="lojaDataLegalName" maxlength="160" autocomplete="off"></div>
+      <div class="purchase-field"><label for="lojaDataCnpj">CNPJ</label><input id="lojaDataCnpj" inputmode="numeric" maxlength="18" autocomplete="off" placeholder="00.000.000/0000-00"></div>
+      <div class="purchase-field"><label for="lojaDataPhone">TELEFONE</label><input id="lojaDataPhone" inputmode="tel" maxlength="16" autocomplete="off" placeholder="(81) 3000-0000"></div>
+      <div class="purchase-field full"><label for="lojaDataAddress">ENDEREÇO</label><textarea id="lojaDataAddress" rows="3" maxlength="300"></textarea></div>
+    </div>
+    <div class="user-form-status" id="lojaDataFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelLojaDataDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveLojaData" type="submit">SALVAR DADOS</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="divRequestDialog" aria-labelledby="divRequestDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="divRequestDialogTitle">NOVO PEDIDO DE DIVERGÊNCIA</h3>
@@ -8025,6 +8304,13 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:delete"> EXCLUIR PEDIDO</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:respond"> RESPONDER DIVERGÊNCIAS (estoque: status + resposta por item)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:inventory"> INVENTÁRIO (ver a aba e marcar INVENTARIADO)</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Assistência</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="assistencia:manage"> ORÇAMENTOS (ACESSO COMPLETO)</label>
+                <span class="field-hint">Cria, edita, exclui e gera o PDF dos orçamentos de qualquer loja, vê o histórico completo e edita a tabela de valores.</span>
               </div>
             </details>
             <details class="permission-module">
@@ -11246,6 +11532,8 @@
   const navDocumentosSubmenu = el('navDocumentosSubmenu');
   const navSolicitacoesToggle = el('navSolicitacoes');
   const navSolicitacoesSubmenu = el('navSolicitacoesSubmenu');
+  const navAssistenciaToggle = el('navAssistencia');
+  const navAssistenciaSubmenu = el('navAssistenciaSubmenu');
   const navFinanceiroToggle = el('navFinanceiroMenu');
   const navFinanceiroSubmenu = el('navFinanceiroSubmenu');
   const navComercialToggle = el('navComercialMenu');
@@ -11268,6 +11556,7 @@
     captacao:'/captacao',
     saidas:'/saidas',
     divergencias:'/divergencias',
+    assistenciaOrcamentos:'/assistencia/orcamentos',
     entradas:'/entradas',
     insumos:'/insumos',
     aparelhosEmprestimo:'/aparelhos-emprestimo',
@@ -11326,6 +11615,7 @@
     captacao:'CAPTAÇÃO',
     saidas:'SAÍDAS',
     divergencias:'DIVERGÊNCIAS',
+    assistenciaOrcamentos:'ORÇAMENTOS',
     entradas:'ENTRADA',
     insumos:'INSUMOS',
     aparelhosEmprestimo:'APARELHOS DE EMPRÉSTIMO',
@@ -11378,6 +11668,7 @@
     captacao:'captures',
     saidas:'outputs',
     divergencias:'divergencias',
+    assistenciaOrcamentos:'assistencia:manage',
     entradas:'inputs',
     insumos:'supplies',
     aparelhosEmprestimo:'loans',
@@ -11940,6 +12231,16 @@
     setSolicitacoesExpanded(!expanded);
   });
 
+  function setAssistenciaExpanded(expanded){
+    navAssistenciaToggle.setAttribute('aria-expanded', String(expanded));
+    navAssistenciaSubmenu.setAttribute('aria-hidden', String(!expanded));
+  }
+
+  navAssistenciaToggle.addEventListener('click', () => {
+    const expanded = navAssistenciaToggle.getAttribute('aria-expanded') === 'true';
+    setAssistenciaExpanded(!expanded);
+  });
+
   function setFinanceiroExpanded(expanded){
     navFinanceiroToggle.setAttribute('aria-expanded', String(expanded));
     navFinanceiroSubmenu.setAttribute('aria-hidden', String(!expanded));
@@ -11999,6 +12300,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
+    const isAssistencia = name === 'assistenciaOrcamentos';
     const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf';
     document.body.classList.toggle('home-active', isHome);
@@ -12019,6 +12321,8 @@
     if(isDocumentos) navDocumentosToggle.classList.add('active');
     setSolicitacoesExpanded(isSolicitacoes);
     if(isSolicitacoes) navSolicitacoesToggle.classList.add('active');
+    setAssistenciaExpanded(isAssistencia);
+    if(isAssistencia) navAssistenciaToggle.classList.add('active');
     setFinanceiroExpanded(isFinanceiro);
     if(isFinanceiro) navFinanceiroToggle.classList.add('active');
     setComercialExpanded(isComercial);
@@ -12048,6 +12352,7 @@
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
     if(name === 'divergencias') loadDivergencias();
+    if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
     if(name === 'instrucoes'){ loadInstructions(); loadInstructionCarousel(); }
@@ -12107,6 +12412,7 @@
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
     if(name === 'divergencias') loadDivergencias();
+    if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
     if(name === 'instrucoes'){ loadInstructions(); loadInstructionCarousel(); }
@@ -14242,17 +14548,89 @@
     const tbody = el('tbodyLojas');
     if(!tbody) return;
     if(companies.length === 0){
-      tbody.innerHTML = '<tr><td colspan="2"><div class="empty-state"><h4>Nenhuma loja cadastrada</h4><p>Adicione uma empresa acima ou use o botão de lojas padrão.</p></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state"><h4>Nenhuma loja cadastrada</h4><p>Adicione uma empresa acima ou use o botão de lojas padrão.</p></div></td></tr>';
       return;
     }
+    // Dados cadastrais (razão social, CNPJ, telefone, endereço) vão no PDF do
+    // orçamento da Assistência; só quem grava a lista (database:manage) edita.
+    const canEdit = canAccess('database:manage');
     tbody.innerHTML = companies.map(c =>
       '<tr><td class="nome" style="font-family:var(--sans); padding:14px 16px;">'+escapeHtml(c.name)+'</td>'+
-      '<td style="text-align:right; padding:14px 16px;"><button class="btn-danger-outline btn-remove-row" data-id="'+escapeHtml(c.id)+'">Remover</button></td></tr>'
+      '<td style="padding:14px 16px;">'+(c.cnpj
+        ? '<div class="assist-store-data">'+escapeHtml(c.legalName || '—')+' · CNPJ '+escapeHtml(c.cnpj)+(c.phone ? ' · '+escapeHtml(c.phone) : '')+'</div>'
+        : '<div class="assist-store-data missing">SEM DADOS CADASTRAIS</div>')+'</td>'+
+      '<td style="text-align:right; padding:14px 16px; white-space:nowrap;">'+
+        (canEdit ? '<button class="btn-outline btn-edit-loja" data-loja="'+escapeHtml(c.id)+'">Editar</button> ' : '')+
+        '<button class="btn-danger-outline btn-remove-row" data-id="'+escapeHtml(c.id)+'">Remover</button></td></tr>'
     ).join('');
     tbody.querySelectorAll('.btn-remove-row').forEach(btn => {
       btn.addEventListener('click', () => removeCompanyById(btn.dataset.id));
     });
+    tbody.querySelectorAll('.btn-edit-loja').forEach(btn => {
+      btn.addEventListener('click', () => openLojaDataDialog(btn.dataset.loja));
+    });
   }
+
+  function openLojaDataDialog(id){
+    const company = companies.find(c => c.id === id);
+    if(!company) return;
+    el('lojaDataId').value = company.id;
+    el('lojaDataDialogTitle').textContent = 'DADOS CADASTRAIS · '+company.name;
+    el('lojaDataLegalName').value = company.legalName || '';
+    el('lojaDataCnpj').value = company.cnpj || '';
+    el('lojaDataPhone').value = company.phone || '';
+    el('lojaDataAddress').value = company.address || '';
+    setAssistStatus('lojaDataFormStatus', '');
+    el('lojaDataDialog').showModal();
+    el('lojaDataLegalName').focus();
+  }
+
+  // Grava SÓ os 4 campos na loja (mesmo id e nome), relendo a lista do banco
+  // antes para não sobrescrever uma alteração feita em outro aparelho.
+  async function saveLojaData(event){
+    event.preventDefault();
+    const id = el('lojaDataId').value;
+    const data = {
+      legalName:el('lojaDataLegalName').value.trim(),
+      cnpj:assistFormatCnpj(el('lojaDataCnpj').value),
+      phone:assistFormatPhone(el('lojaDataPhone').value),
+      address:el('lojaDataAddress').value.trim()
+    };
+    if(data.cnpj && !assistIsValidCnpj(data.cnpj)){
+      setAssistStatus('lojaDataFormStatus', 'CNPJ INVÁLIDO.', 'error');
+      return;
+    }
+    const phoneDigits = assistDigits(data.phone);
+    if(phoneDigits && (phoneDigits.length < 10 || phoneDigits.length > 11)){
+      setAssistStatus('lojaDataFormStatus', 'TELEFONE INVÁLIDO (INFORME COM DDD).', 'error');
+      return;
+    }
+    if(data.cnpj && !data.legalName){
+      setAssistStatus('lojaDataFormStatus', 'INFORME A RAZÃO SOCIAL.', 'error');
+      return;
+    }
+    el('btnSaveLojaData').disabled = true;
+    try{
+      const stored = await storage.get('companies_list');
+      const list = stored && stored.value ? JSON.parse(stored.value) : companies.map(c => ({...c}));
+      const target = Array.isArray(list) ? list.find(c => c && c.id === id) : null;
+      if(!target) throw new Error('LOJA NÃO ENCONTRADA. RECARREGUE A PÁGINA.');
+      Object.assign(target, data);
+      const saved = await storage.set('companies_list', JSON.stringify(list));
+      companies = list;
+      renderCompanySelects();
+      el('lojaDataDialog').close();
+      showPurchaseToast(saved && saved.offline ? 'Sem conexão: os dados serão enviados quando a internet voltar.' : 'Dados da loja salvos.');
+    }catch(error){
+      setAssistStatus('lojaDataFormStatus', error.message || 'NÃO FOI POSSÍVEL SALVAR OS DADOS DA LOJA.', 'error');
+    }finally{
+      el('btnSaveLojaData').disabled = false;
+    }
+  }
+
+  el('lojaDataForm').addEventListener('submit', saveLojaData);
+  el('btnCloseLojaDataDialog').addEventListener('click', () => el('lojaDataDialog').close());
+  el('btnCancelLojaDataDialog').addEventListener('click', () => el('lojaDataDialog').close());
 
   function setDropzonesDisabled(disabled){
     el('dzEntrada').classList.toggle('disabled', disabled);
@@ -18693,6 +19071,1039 @@ function renderHomeTasks(){
     }
     return islandLoads[name];
   }
+
+  // ===== ASSISTÊNCIA > ORÇAMENTOS =====
+  // Substitui o app externo (Base44). Permissão ÚNICA assistencia:manage e SEM
+  // escopo por loja: qualquer loja no orçamento e histórico de todas, mesmo
+  // com loja vinculada no login. Cada linha guarda nome/valor do defeito como
+  // texto/centavos (o formulário só lida com strings e números; o app antigo
+  // travava a edição por guardar o defeito como objeto). O total que vale é o
+  // recalculado no servidor.
+  const ASSIST_CATEGORIES = ['CONSOLES','CONTROLES','NOTEBOOKS E COMPUTADORES'];
+  // Espelho de ASSIST_OBSERVATIONS em app/lib/assistencia.ts (o teste confere).
+  const ASSIST_OBSERVATIONS = [
+    {key:'preventiva', title:'MANUTENÇÃO PREVENTIVA', text:'Manutenção preventiva é a limpeza interna e externa, lubrificação dos componentes removendo suas oxidações ao máximo, auxiliando na prolongação da vida útil dos componentes e troca da pasta térmica.'},
+    {key:'novos_defeitos', title:'AVISO DE NOVOS DEFEITOS', text:'Em caso de detecção de novos defeitos identificados somente após correção deste orçamento, será realizado novo orçamento.'},
+    {key:'garantia', title:'GARANTIA', text:'O serviço deste orçamento contém garantia de 90 dias pelo CDC.'}
+  ];
+  const assistState = {
+    ready:false, tab:'novo', defects:[], defectsLoaded:false,
+    editingId:'', editingOs:'', equipments:[], history:[], saving:false, showingProblems:false
+  };
+  let assistPrintTitleBefore = '';
+  let assistPreviewTimer = null;
+
+  async function assistApi(path, options){
+    const settings = options || {};
+    const response = await fetch('/api/assistencia'+path, {
+      ...settings,
+      cache:'no-store',
+      headers:{
+        Accept:'application/json',
+        ...(settings.body ? {'Content-Type':'application/json'} : {}),
+        ...(settings.headers || {})
+      }
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok){
+      const error = new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+      error.status = response.status;
+      throw error;
+    }
+    return payload;
+  }
+
+  function setAssistStatus(id, message, type){
+    const status = el(id);
+    if(!status) return;
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  // ---------- MÁSCARAS (telefone, CPF, CNPJ) ----------
+  function assistDigits(value){
+    return String(value == null ? '' : value).replace(/\D/g, '');
+  }
+
+  function assistGroupDigits(digits, sizes, separators){
+    let out = '';
+    let start = 0;
+    sizes.forEach((size, index) => {
+      if(start >= digits.length) return;
+      out += (index ? separators[index - 1] : '') + digits.slice(start, start + size);
+      start += size;
+    });
+    return out;
+  }
+
+  function assistFormatPhone(value){
+    const digits = assistDigits(value).slice(0, 11);
+    if(!digits) return '';
+    if(digits.length <= 2) return '('+digits;
+    const rest = digits.slice(2);
+    if(rest.length <= 4) return '('+digits.slice(0, 2)+') '+rest;
+    const split = rest.length > 8 ? 5 : 4;
+    return '('+digits.slice(0, 2)+') '+rest.slice(0, split)+'-'+rest.slice(split);
+  }
+
+  function assistFormatCpf(value){
+    return assistGroupDigits(assistDigits(value).slice(0, 11), [3,3,3,2], ['.','.','-']);
+  }
+
+  function assistFormatCnpj(value){
+    return assistGroupDigits(assistDigits(value).slice(0, 14), [2,3,3,4,2], ['.','.','/','-']);
+  }
+
+  function assistIsValidCpf(value){
+    const digits = assistDigits(value);
+    if(digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+    const check = length => {
+      let sum = 0;
+      for(let i = 0; i < length; i++) sum += Number(digits[i]) * (length + 1 - i);
+      const rest = (sum * 10) % 11;
+      return rest === 10 ? 0 : rest;
+    };
+    return check(9) === Number(digits[9]) && check(10) === Number(digits[10]);
+  }
+
+  function assistIsValidCnpj(value){
+    const digits = assistDigits(value);
+    if(digits.length !== 14 || /^(\d)\1{13}$/.test(digits)) return false;
+    const check = weights => {
+      const sum = weights.reduce((total, weight, index) => total + Number(digits[index]) * weight, 0);
+      const rest = sum % 11;
+      return rest < 2 ? 0 : 11 - rest;
+    };
+    return check([5,4,3,2,9,8,7,6,5,4,3,2]) === Number(digits[12]) &&
+      check([6,5,4,3,2,9,8,7,6,5,4,3,2]) === Number(digits[13]);
+  }
+
+  function assistBindMask(input, format){
+    if(!input) return;
+    input.addEventListener('input', () => {
+      const formatted = format(input.value);
+      if(formatted !== input.value) input.value = formatted;
+    });
+  }
+
+  function assistCentsFromInput(input){
+    const raw = getCurrencyValue(input);
+    if(raw === '') return null;
+    const value = Math.round(Number(raw) * 100);
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  }
+
+  function assistSetCurrency(input, cents){
+    attachCurrencyMask(input);
+    setCurrencyValue(input, cents === null || cents === undefined ? '' : (Number(cents) / 100).toFixed(2));
+  }
+
+  // ---------- LOJAS ----------
+  // Só lojas com dados cadastrais (CNPJ) entram no select: o PDF precisa deles.
+  function assistCompanyHasData(company){
+    return Boolean(company && company.cnpj);
+  }
+
+  function assistRenderCompanySelects(){
+    const select = el('assistCompany');
+    const selected = select.value;
+    const usable = companies.filter(assistCompanyHasData);
+    let options = '<option value="">SELECIONE A LOJA</option>'+
+      usable.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    // Orçamento antigo de loja que ficou sem dados continua editável.
+    if(selected && !usable.some(company => company.id === selected)){
+      const current = companies.find(company => company.id === selected);
+      const name = current ? current.name : (select.selectedOptions[0] ? select.selectedOptions[0].textContent : selected);
+      options += '<option value="'+escapeHtml(selected)+'">'+escapeHtml(String(name).replace(/ \(LOJA SEM DADOS CADASTRAIS\)$/, ''))+' (LOJA SEM DADOS CADASTRAIS)</option>';
+    }
+    select.innerHTML = options;
+    select.value = selected;
+    const missing = companies.filter(company => !assistCompanyHasData(company)).map(company => company.name);
+    const help = el('assistCompanyHelp');
+    help.hidden = !missing.length;
+    help.textContent = missing.length
+      ? 'LOJAS SEM DADOS CADASTRAIS (NÃO APARECEM NA LISTA): '+missing.join(', ')+'. COMPLETE EM CADASTROS > LOJAS.'
+      : '';
+    const filter = el('assistFilterCompany');
+    const filterSelected = filter.value;
+    filter.innerHTML = '<option value="">TODAS AS LOJAS</option>'+
+      companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    if(companies.some(company => company.id === filterSelected)) filter.value = filterSelected;
+  }
+
+  // ---------- TABELA DE VALORES (dados) ----------
+  async function assistLoadDefects(){
+    const payload = await assistApi('/defects');
+    assistState.defects = Array.isArray(payload.defects) ? payload.defects : [];
+    assistState.defectsLoaded = true;
+  }
+
+  function assistDevicesFor(category, includeInactive){
+    const seen = [];
+    assistState.defects.forEach(defect => {
+      if(defect.category !== category || (!includeInactive && !defect.active)) return;
+      if(!seen.includes(defect.device)) seen.push(defect.device);
+    });
+    return seen;
+  }
+
+  function assistCategoryOfDevice(device){
+    const found = assistState.defects.find(defect => defect.device === device);
+    return found ? found.category : '';
+  }
+
+  function assistFindDefect(device, name){
+    return assistState.defects.find(defect => defect.device === device && defect.name === name) || null;
+  }
+
+  function assistRangeText(defect){
+    if(defect.quoteOnly) return 'SOB ORÇAMENTO';
+    if(defect.minCents === defect.maxCents) return formatCentsBRL(defect.minCents);
+    return formatCentsBRL(defect.minCents)+' – '+formatCentsBRL(defect.maxCents);
+  }
+
+  function assistRangeLabel(defect){
+    if(!defect) return 'FORA DA TABELA ATUAL';
+    if(defect.quoteOnly) return 'SOB ORÇAMENTO — DIGITE O VALOR';
+    return 'TABELA: '+assistRangeText(defect);
+  }
+
+  // ---------- FORMULÁRIO ----------
+  function assistNewEquipment(){
+    return {category:'', device:'', serialNumber:'', service:'', lines:[]};
+  }
+
+  function assistLineCents(line){
+    const quantity = Number(line.quantity);
+    if(!Number.isInteger(quantity) || quantity < 1 || line.unitCents === null) return 0;
+    return quantity * line.unitCents;
+  }
+
+  function assistEquipmentSubtotal(equipment){
+    return equipment.lines.reduce((sum, line) => sum + assistLineCents(line), 0);
+  }
+
+  function assistTotalCents(equipments){
+    return equipments.reduce((sum, equipment) => sum + assistEquipmentSubtotal(equipment), 0);
+  }
+
+  function assistLineHtml(equipment, line, index, lineIndex){
+    const id = 'assistEq'+index+'L'+lineIndex;
+    const isFree = !line.defectName;
+    const defect = isFree ? null : assistFindDefect(equipment.device, line.defectName);
+    const head = isFree
+      ? '<div class="purchase-field assist-line-name"><label for="'+id+'Desc">ITEM AVULSO (PEÇA / MÃO DE OBRA) *</label>'+
+          '<input id="'+id+'Desc" data-line-field="description" maxlength="600" value="'+escapeHtml(line.description)+'" placeholder="Descreva a peça ou o serviço"></div>'
+      : '<div class="assist-line-name"><strong>'+escapeHtml(line.defectName)+'</strong>'+
+          '<small class="'+(defect && defect.quoteOnly ? 'quote-only' : '')+'">'+escapeHtml(assistRangeLabel(defect))+'</small></div>';
+    return '<div class="assist-line" data-line="'+lineIndex+'">'+head+
+      '<div class="purchase-field"><label for="'+id+'Qty">QTD</label>'+
+        '<input id="'+id+'Qty" type="number" min="1" max="999" step="1" inputmode="numeric" data-line-field="quantity" value="'+escapeHtml(String(line.quantity))+'"></div>'+
+      '<div class="purchase-field"><label for="'+id+'Unit">VALOR UNIT. *</label>'+
+        '<input id="'+id+'Unit" data-line-field="unit" placeholder="R$ 0,00"></div>'+
+      '<div class="assist-line-total"><span>TOTAL</span><strong data-line-total>'+formatCentsBRL(assistLineCents(line))+'</strong></div>'+
+      '<button class="btn-danger-outline assist-line-remove" type="button" data-assist-action="remove-line">REMOVER</button>'+
+    '</div>';
+  }
+
+  function assistEquipmentHtml(equipment, index){
+    const id = 'assistEq'+index;
+    const devices = equipment.category ? assistDevicesFor(equipment.category) : [];
+    if(equipment.device && !devices.includes(equipment.device)) devices.push(equipment.device);
+    const used = new Set(equipment.lines.filter(line => line.defectName).map(line => line.defectName));
+    const available = equipment.device
+      ? assistState.defects.filter(defect => defect.active && defect.device === equipment.device && !used.has(defect.name))
+      : [];
+    const placeholder = !equipment.device
+      ? 'ESCOLHA O APARELHO PRIMEIRO'
+      : available.length ? 'SELECIONE O DEFEITO…' : 'TODOS OS DEFEITOS DA TABELA JÁ ESTÃO NO ORÇAMENTO';
+    const lines = equipment.lines.map((line, lineIndex) => assistLineHtml(equipment, line, index, lineIndex)).join('');
+    return '<article class="assist-equipment" data-eq="'+index+'">'+
+      '<div class="assist-equipment-head"><h4>EQUIPAMENTO '+(index + 1)+(equipment.device ? ' · '+escapeHtml(equipment.device) : '')+'</h4>'+
+        (assistState.equipments.length > 1 ? '<button class="btn-danger-outline assist-line-remove" type="button" data-assist-action="remove-equipment">REMOVER EQUIPAMENTO</button>' : '')+
+      '</div>'+
+      '<div class="purchase-form-grid">'+
+        '<div class="purchase-field"><label for="'+id+'Category">CATEGORIA *</label><select id="'+id+'Category" data-eq-field="category">'+
+          '<option value="">SELECIONE</option>'+
+          ASSIST_CATEGORIES.map(category => '<option value="'+escapeHtml(category)+'"'+(category === equipment.category ? ' selected' : '')+'>'+escapeHtml(category)+'</option>').join('')+
+        '</select></div>'+
+        '<div class="purchase-field"><label for="'+id+'Device">APARELHO *</label><select id="'+id+'Device" data-eq-field="device"'+(equipment.category ? '' : ' disabled')+'>'+
+          '<option value="">'+(equipment.category ? 'SELECIONE O APARELHO' : 'ESCOLHA A CATEGORIA PRIMEIRO')+'</option>'+
+          devices.map(device => '<option value="'+escapeHtml(device)+'"'+(device === equipment.device ? ' selected' : '')+'>'+escapeHtml(device)+'</option>').join('')+
+        '</select></div>'+
+        '<div class="purchase-field"><label for="'+id+'Serial">Nº DE SÉRIE (OPCIONAL)</label><input id="'+id+'Serial" data-eq-field="serialNumber" maxlength="80" autocomplete="off" value="'+escapeHtml(equipment.serialNumber)+'"></div>'+
+        '<div class="purchase-field"><label for="'+id+'Service">SERVIÇO REALIZADO (OPCIONAL)</label><input id="'+id+'Service" data-eq-field="service" maxlength="600" autocomplete="off" value="'+escapeHtml(equipment.service)+'"></div>'+
+      '</div>'+
+      '<div class="assist-picker">'+
+        '<div class="purchase-field"><label for="'+id+'Defect">ADICIONAR DEFEITO DA TABELA</label><select id="'+id+'Defect" data-eq-field="addDefect"'+(equipment.device && available.length ? '' : ' disabled')+'>'+
+          '<option value="">'+placeholder+'</option>'+
+          available.map(defect => '<option value="'+escapeHtml(defect.id)+'">'+escapeHtml(defect.name+' — '+assistRangeText(defect))+'</option>').join('')+
+        '</select></div>'+
+        '<button class="btn-outline" type="button" data-assist-action="add-free">+ ITEM AVULSO</button>'+
+      '</div>'+
+      '<div class="assist-lines">'+(lines || '<div class="assist-empty-lines">NENHUM DEFEITO OU ITEM INCLUÍDO AINDA.</div>')+'</div>'+
+      '<div class="assist-subtotal">SUBTOTAL DO EQUIPAMENTO <strong data-eq-subtotal>'+formatCentsBRL(assistEquipmentSubtotal(equipment))+'</strong></div>'+
+    '</article>';
+  }
+
+  function assistRenderEquipments(focusSelector){
+    const wrap = el('assistEquipments');
+    wrap.innerHTML = assistState.equipments.map((equipment, index) => assistEquipmentHtml(equipment, index)).join('');
+    wrap.querySelectorAll('[data-line-field="unit"]').forEach(input => {
+      const equipment = assistState.equipments[Number(input.closest('[data-eq]').dataset.eq)];
+      const line = equipment.lines[Number(input.closest('[data-line]').dataset.line)];
+      assistSetCurrency(input, line.unitCents);
+    });
+    assistUpdateTotals();
+    if(focusSelector){
+      const target = wrap.querySelector(focusSelector);
+      if(target) target.focus();
+    }
+  }
+
+  function assistUpdateTotals(){
+    document.querySelectorAll('#assistEquipments [data-eq]').forEach(card => {
+      const equipment = assistState.equipments[Number(card.dataset.eq)];
+      if(!equipment) return;
+      card.querySelectorAll('[data-line]').forEach(row => {
+        const line = equipment.lines[Number(row.dataset.line)];
+        const total = row.querySelector('[data-line-total]');
+        if(line && total) total.textContent = formatCentsBRL(assistLineCents(line));
+      });
+      card.querySelector('[data-eq-subtotal]').textContent = formatCentsBRL(assistEquipmentSubtotal(equipment));
+    });
+    el('assistTotal').textContent = formatCentsBRL(assistTotalCents(assistState.equipments));
+    assistSchedulePreview();
+  }
+
+  function assistRenderObservations(){
+    el('assistObservations').innerHTML = ASSIST_OBSERVATIONS.map(observation =>
+      '<label class="assist-obs-option"><input type="checkbox" name="assistObservation" value="'+escapeHtml(observation.key)+'">'+
+      '<span><strong>'+escapeHtml(observation.title)+'</strong><span>'+escapeHtml(observation.text)+'</span></span></label>'
+    ).join('');
+  }
+
+  function assistCollectPayload(){
+    return {
+      companyId:el('assistCompany').value,
+      osNumber:el('assistOsNumber').value.trim(),
+      entryDate:el('assistEntryDate').value,
+      clientName:el('assistClientName').value.trim(),
+      clientPhone:assistDigits(el('assistClientPhone').value),
+      clientCpf:assistDigits(el('assistClientCpf').value),
+      clientAddress:el('assistClientAddress').value.trim(),
+      observations:Array.from(document.querySelectorAll('input[name="assistObservation"]:checked')).map(input => input.value),
+      extraNotes:el('assistExtraNotes').value.trim(),
+      equipments:assistState.equipments.map(equipment => ({
+        category:equipment.category,
+        device:equipment.device,
+        serialNumber:equipment.serialNumber.trim(),
+        service:equipment.service.trim(),
+        lines:equipment.lines.map(line => ({
+          defectName:line.defectName,
+          description:line.description.trim(),
+          quantity:Number(line.quantity),
+          unitCents:line.unitCents
+        }))
+      }))
+    };
+  }
+
+  // Lista O QUE falta (o app antigo travava o botão sem explicar) e marca os
+  // campos com .input-error.
+  function assistValidate(){
+    document.querySelectorAll('#assistQuoteForm .input-error').forEach(node => node.classList.remove('input-error'));
+    const problems = [];
+    let first = null;
+    const flag = (node, message) => {
+      problems.push(message);
+      if(node){
+        node.classList.add('input-error');
+        if(!first) first = node;
+      }
+    };
+    if(!el('assistCompany').value) flag(el('assistCompany'), 'LOJA');
+    const os = el('assistOsNumber').value.trim();
+    if(!os) flag(el('assistOsNumber'), 'Nº DA OS');
+    else if(!/^[0-9A-Za-z][0-9A-Za-z./-]{0,29}$/.test(os.replace(/\s+/g, ''))) flag(el('assistOsNumber'), 'Nº DA OS VÁLIDO (SÓ NÚMEROS E LETRAS)');
+    if(!el('assistEntryDate').value) flag(el('assistEntryDate'), 'DATA DE ENTRADA');
+    if(el('assistClientName').value.trim().length < 2) flag(el('assistClientName'), 'NOME DO CLIENTE');
+    const phone = assistDigits(el('assistClientPhone').value);
+    if(phone.length < 10 || phone.length > 11) flag(el('assistClientPhone'), 'TELEFONE DO CLIENTE COM DDD');
+    const cpf = assistDigits(el('assistClientCpf').value);
+    if(cpf && !assistIsValidCpf(cpf)) flag(el('assistClientCpf'), 'CPF VÁLIDO (OU DEIXE EM BRANCO)');
+    if(!assistState.equipments.length) flag(el('btnAssistAddEquipment'), 'PELO MENOS UM EQUIPAMENTO');
+    assistState.equipments.forEach((equipment, index) => {
+      const label = 'EQUIPAMENTO '+(index + 1);
+      const card = document.querySelector('#assistEquipments [data-eq="'+index+'"]');
+      if(!equipment.category) flag(card && card.querySelector('[data-eq-field="category"]'), label+': CATEGORIA');
+      if(!equipment.device) flag(card && card.querySelector('[data-eq-field="device"]'), label+': APARELHO');
+      if(!equipment.lines.length) flag(card && card.querySelector('[data-eq-field="addDefect"]'), label+': INCLUA UM DEFEITO OU ITEM AVULSO');
+      equipment.lines.forEach((line, lineIndex) => {
+        const row = card && card.querySelector('[data-line="'+lineIndex+'"]');
+        const name = line.defectName || 'ITEM AVULSO '+(lineIndex + 1);
+        if(!line.defectName && line.description.trim().length < 2) flag(row && row.querySelector('[data-line-field="description"]'), label+': DESCRIÇÃO DO ITEM AVULSO');
+        const quantity = Number(line.quantity);
+        if(!Number.isInteger(quantity) || quantity < 1 || quantity > 999) flag(row && row.querySelector('[data-line-field="quantity"]'), label+' · '+name+': QUANTIDADE (1 A 999)');
+        if(line.unitCents === null) flag(row && row.querySelector('[data-line-field="unit"]'), label+' · '+name+': VALOR UNITÁRIO');
+      });
+    });
+    return {problems, first};
+  }
+
+  // Documento do orçamento (prévia e PDF): só texto/números, nunca objetos.
+  function assistDocHtml(data){
+    const company = companies.find(item => item.id === data.companyId) || {};
+    const storeName = company.name || data.companyName || '';
+    const dash = value => value ? escapeHtml(value) : '—';
+    let total = 0;
+    const equipmentsHtml = data.equipments.map((equipment, index) => {
+      let subtotal = 0;
+      const rows = equipment.lines.map((line, lineIndex) => {
+        const quantity = Number(line.quantity) || 0;
+        const hasValue = line.unitCents !== null && line.unitCents !== undefined;
+        const lineTotal = hasValue ? quantity * Number(line.unitCents) : 0;
+        subtotal += lineTotal;
+        const description = line.defectName
+          ? '<b>'+escapeHtml(line.defectName)+'</b>'+(line.description ? ' — '+escapeHtml(line.description) : '')
+          : escapeHtml(line.description || 'ITEM AVULSO');
+        return '<tr><td class="item">'+(lineIndex + 1)+'</td><td>'+description+'</td>'+
+          '<td class="num">'+(quantity || '—')+'</td>'+
+          '<td class="num">'+(hasValue ? formatCentsBRL(line.unitCents) : 'A DEFINIR')+'</td>'+
+          '<td class="num">'+(hasValue ? formatCentsBRL(lineTotal) : 'A DEFINIR')+'</td></tr>';
+      }).join('') || '<tr><td colspan="5">NENHUM DEFEITO OU ITEM INCLUÍDO.</td></tr>';
+      total += subtotal;
+      return '<section class="assist-doc-block">'+
+        '<h2>EQUIPAMENTO '+(index + 1)+': '+dash(equipment.device)+'</h2>'+
+        '<div class="assist-doc-fields">'+
+          '<div><b>Nº DE SÉRIE:</b> '+dash(equipment.serialNumber)+'</div>'+
+          '<div><b>CATEGORIA:</b> '+dash(equipment.category)+'</div>'+
+          '<div class="full"><b>SERVIÇO REALIZADO:</b> '+dash(equipment.service)+'</div>'+
+        '</div>'+
+        '<table class="assist-doc-table"><thead><tr><th class="item">Item</th><th>Descrição</th><th class="num qty">Qtd</th><th class="num money">Valor unit.</th><th class="num money">Valor total</th></tr></thead>'+
+        '<tbody>'+rows+'</tbody>'+
+        '<tfoot><tr><td colspan="4" class="num">SUBTOTAL</td><td class="num">'+formatCentsBRL(subtotal)+'</td></tr></tfoot></table>'+
+      '</section>';
+    }).join('');
+    const observations = (data.observations || []).map(observation =>
+      '<p><b>'+escapeHtml(observation.title)+':</b> '+escapeHtml(observation.text)+'</p>'
+    ).join('') + (data.extraNotes ? '<p><b>OBSERVAÇÕES ADICIONAIS:</b> '+escapeHtml(data.extraNotes)+'</p>' : '');
+    return '<div class="assist-doc">'+
+      '<header class="assist-doc-head">'+
+        '<img class="assist-doc-logo" data-assist-logo alt="UNIGAMES">'+
+        '<div class="assist-doc-store">'+
+          '<strong>'+dash(company.legalName || (storeName ? 'Unigames' : ''))+'</strong>'+
+          (company.cnpj ? '<span>CNPJ: '+escapeHtml(company.cnpj)+'</span>' : '')+
+          (company.address ? '<span>'+escapeHtml(company.address)+'</span>' : '')+
+          (company.phone ? '<span>TELEFONE: '+escapeHtml(company.phone)+'</span>' : '')+
+          (storeName ? '<span>LOJA: '+escapeHtml(storeName)+'</span>' : '')+
+        '</div>'+
+        '<div class="assist-doc-os"><span>Nº DA OS</span><strong>'+dash(data.osNumber)+'</strong><span>DATA: '+dash(formatDateBR(data.entryDate))+'</span></div>'+
+      '</header>'+
+      '<h1 class="assist-doc-title">Orçamento de serviço</h1>'+
+      '<section class="assist-doc-block"><h2>Dados do cliente</h2><div class="assist-doc-fields">'+
+        '<div class="full"><b>NOME:</b> '+dash(data.clientName)+'</div>'+
+        '<div><b>TELEFONE:</b> '+dash(assistFormatPhone(data.clientPhone))+'</div>'+
+        '<div><b>CPF:</b> '+dash(assistFormatCpf(data.clientCpf))+'</div>'+
+        '<div class="full"><b>ENDEREÇO:</b> '+dash(data.clientAddress)+'</div>'+
+      '</div></section>'+
+      equipmentsHtml+
+      '<div class="assist-doc-total"><span>VALOR TOTAL</span><strong>'+formatCentsBRL(total)+'</strong></div>'+
+      (observations ? '<section class="assist-doc-block assist-doc-obs"><h2>Observações</h2>'+observations+'</section>' : '')+
+      '<footer class="assist-doc-foot">Assistência Técnica Especializada · Unigames</footer>'+
+    '</div>';
+  }
+
+  function assistFillLogo(container){
+    const source = document.querySelector('img[data-logo]');
+    container.querySelectorAll('[data-assist-logo]').forEach(img => {
+      if(source && source.src) img.src = source.src;
+      else img.remove();
+    });
+  }
+
+  function assistFormDocData(){
+    const payload = assistCollectPayload();
+    const companyOption = el('assistCompany').selectedOptions[0];
+    return {
+      ...payload,
+      clientName:payload.clientName.toLocaleUpperCase('pt-BR'),
+      companyName:companyOption && companyOption.value ? companyOption.textContent : '',
+      observations:ASSIST_OBSERVATIONS.filter(observation => payload.observations.includes(observation.key))
+    };
+  }
+
+  function assistRenderPreview(){
+    const preview = el('assistPreview');
+    preview.innerHTML = assistDocHtml(assistFormDocData());
+    assistFillLogo(preview);
+  }
+
+  function assistSchedulePreview(){
+    clearTimeout(assistPreviewTimer);
+    assistPreviewTimer = setTimeout(() => {
+      assistRenderPreview();
+      if(assistState.showingProblems) assistShowProblems(false);
+    }, 180);
+  }
+
+  // Depois de uma tentativa de salvar, a lista do que falta acompanha o
+  // preenchimento (some sozinha quando não falta mais nada).
+  function assistShowProblems(focus){
+    const {problems, first} = assistValidate();
+    assistState.showingProblems = problems.length > 0;
+    setAssistStatus('assistFormStatus', problems.length ? 'PARA SALVAR, FALTA: '+problems.join(' · ')+'.' : '', problems.length ? 'error' : '');
+    if(focus && first && typeof first.focus === 'function') first.focus();
+    return problems.length === 0;
+  }
+
+  function assistSetEditing(id, osNumber){
+    assistState.editingId = id || '';
+    assistState.editingOs = osNumber || '';
+    el('assistEditBanner').hidden = !id;
+    el('assistEditBannerText').textContent = id ? 'EDITANDO O ORÇAMENTO DA OS '+osNumber+' — SALVAR SUBSTITUI O ORÇAMENTO ANTERIOR.' : '';
+    el('assistTabNovo').textContent = id ? 'EDITAR ORÇAMENTO' : 'NOVO ORÇAMENTO';
+  }
+
+  function assistResetForm(){
+    el('assistQuoteForm').reset();
+    document.querySelectorAll('#assistQuoteForm .input-error').forEach(node => node.classList.remove('input-error'));
+    el('assistCompany').value = '';
+    el('assistEntryDate').value = todayDateKeyRecife();
+    assistState.equipments = [assistNewEquipment()];
+    assistSetEditing('', '');
+    assistState.showingProblems = false;
+    setAssistStatus('assistFormStatus', '');
+    assistRenderCompanySelects();
+    assistRenderEquipments();
+  }
+
+  function assistFormIsDirty(){
+    return Boolean(
+      el('assistOsNumber').value.trim() || el('assistClientName').value.trim() ||
+      el('assistClientPhone').value.trim() ||
+      assistState.equipments.some(equipment => equipment.device || equipment.lines.length)
+    );
+  }
+
+  // Preenche o formulário com um orçamento salvo. Tudo vira string/número
+  // antes de entrar no estado (String()/Number()), então nenhum orçamento
+  // trava a edição, mesmo com aparelho/defeito que saiu da tabela.
+  function assistFillForm(detail){
+    const quote = detail.quote || {};
+    const select = el('assistCompany');
+    if(quote.companyId && !Array.from(select.options).some(option => option.value === quote.companyId)){
+      select.insertAdjacentHTML('beforeend', '<option value="'+escapeHtml(quote.companyId)+'">'+escapeHtml(String(quote.companyName || quote.companyId))+'</option>');
+    }
+    select.value = String(quote.companyId || '');
+    assistRenderCompanySelects();
+    el('assistOsNumber').value = String(quote.osNumber || '');
+    el('assistEntryDate').value = String(quote.entryDate || '');
+    el('assistClientName').value = String(quote.clientName || '');
+    el('assistClientPhone').value = assistFormatPhone(quote.clientPhone);
+    el('assistClientCpf').value = assistFormatCpf(quote.clientCpf);
+    el('assistClientAddress').value = String(quote.clientAddress || '');
+    const keys = (Array.isArray(quote.observations) ? quote.observations : []).map(observation => String(observation && observation.key || ''));
+    document.querySelectorAll('input[name="assistObservation"]').forEach(input => { input.checked = keys.includes(input.value); });
+    el('assistExtraNotes').value = String(quote.extraNotes || '');
+    const equipments = Array.isArray(detail.equipments) ? detail.equipments : [];
+    assistState.equipments = equipments.map(equipment => ({
+      category:ASSIST_CATEGORIES.includes(String(equipment.category)) ? String(equipment.category) : assistCategoryOfDevice(String(equipment.device || '')),
+      device:String(equipment.device || ''),
+      serialNumber:String(equipment.serialNumber || ''),
+      service:String(equipment.service || ''),
+      lines:(Array.isArray(equipment.lines) ? equipment.lines : []).map(line => ({
+        defectName:String(line.defectName || ''),
+        description:String(line.description || ''),
+        quantity:Number(line.quantity) || 1,
+        unitCents:line.unitCents === null || line.unitCents === undefined ? null : Number(line.unitCents) || 0
+      }))
+    }));
+    if(!assistState.equipments.length) assistState.equipments = [assistNewEquipment()];
+    assistSetEditing(String(quote.id || ''), String(quote.osNumber || ''));
+    assistState.showingProblems = false;
+    setAssistStatus('assistFormStatus', '');
+    assistRenderEquipments();
+  }
+
+  async function assistEditQuote(id){
+    if(assistState.editingId !== id && assistFormIsDirty() && !confirm('DESCARTAR O QUE ESTÁ NO FORMULÁRIO E ABRIR ESTE ORÇAMENTO PARA EDITAR?')) return;
+    try{
+      setAssistStatus('assistHistoryStatus', 'ABRINDO ORÇAMENTO…');
+      const detail = await assistApi('/quotes/'+encodeURIComponent(id));
+      setAssistStatus('assistHistoryStatus', '');
+      assistFillForm(detail);
+      setAssistTab('novo');
+      window.scrollTo({top:0, behavior:'smooth'});
+    }catch(error){
+      setAssistStatus('assistHistoryStatus', error.message, 'error');
+    }
+  }
+
+  async function assistSave(withPdf){
+    if(assistState.saving) return;
+    if(!assistShowProblems(true)) return;
+    const editingId = assistState.editingId;
+    assistState.saving = true;
+    el('btnAssistSavePdf').disabled = true;
+    el('btnAssistSaveOnly').disabled = true;
+    setAssistStatus('assistFormStatus', 'SALVANDO…');
+    try{
+      const body = JSON.stringify(assistCollectPayload());
+      const result = editingId
+        ? await assistApi('/quotes/'+encodeURIComponent(editingId), {method:'PATCH', body})
+        : await assistApi('/quotes', {method:'POST', body});
+      const id = result.id || editingId;
+      let detail = null;
+      if(withPdf) detail = await assistApi('/quotes/'+encodeURIComponent(id));
+      showPurchaseToast(editingId ? 'Orçamento atualizado.' : 'Orçamento salvo.');
+      assistResetForm();
+      if(editingId) setAssistTab('historico');
+      if(detail) assistPrintQuote(detail);
+    }catch(error){
+      setAssistStatus('assistFormStatus', error.message, 'error');
+      if(error.status === 409){
+        el('assistOsNumber').classList.add('input-error');
+        el('assistOsNumber').focus();
+      }
+    }finally{
+      assistState.saving = false;
+      el('btnAssistSavePdf').disabled = false;
+      el('btnAssistSaveOnly').disabled = false;
+    }
+  }
+
+  function assistPrintQuote(detail){
+    const quote = detail.quote || {};
+    const body = el('assistPrintBody');
+    body.innerHTML = assistDocHtml({
+      ...quote,
+      observations:Array.isArray(quote.observations) ? quote.observations : [],
+      equipments:Array.isArray(detail.equipments) ? detail.equipments : []
+    });
+    assistFillLogo(body);
+    assistPrintTitleBefore = document.title;
+    document.title = 'ORCAMENTO-OS-'+String(quote.osNumber || '').replace(/[^0-9A-Za-z.-]+/g, '-');
+    document.body.classList.add('pdf-export');
+    window.print();
+  }
+
+  window.addEventListener('afterprint', () => {
+    if(!assistPrintTitleBefore) return;
+    document.body.classList.remove('pdf-export');
+    document.title = assistPrintTitleBefore;
+    assistPrintTitleBefore = '';
+  });
+
+  // ---------- HISTÓRICO ----------
+  async function assistLoadHistory(){
+    const params = new URLSearchParams();
+    const search = el('assistSearch').value.trim();
+    if(search) params.set('q', search);
+    if(el('assistFilterCompany').value) params.set('companyId', el('assistFilterCompany').value);
+    if(el('assistFilterFrom').value) params.set('from', el('assistFilterFrom').value);
+    if(el('assistFilterTo').value) params.set('to', el('assistFilterTo').value);
+    const body = el('assistHistoryBody');
+    try{
+      const payload = await assistApi('/quotes'+(params.toString() ? '?'+params : ''));
+      assistState.history = Array.isArray(payload.quotes) ? payload.quotes : [];
+      setAssistStatus('assistHistoryStatus', assistState.history.length >= 500 ? 'MOSTRANDO OS 500 MAIS RECENTES — USE OS FILTROS PARA ENCONTRAR OS DEMAIS.' : '');
+      assistRenderHistory();
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function assistRenderHistory(){
+    const body = el('assistHistoryBody');
+    if(!assistState.history.length){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">NENHUM ORÇAMENTO ENCONTRADO.</td></tr>';
+      return;
+    }
+    body.innerHTML = assistState.history.map(quote =>
+      '<tr>'+
+        '<td data-label="OS"><strong>'+escapeHtml(String(quote.osNumber || ''))+'</strong></td>'+
+        '<td data-label="DATA">'+escapeHtml(formatDateBR(quote.entryDate) || '—')+'</td>'+
+        '<td data-label="CLIENTE"><div>'+escapeHtml(String(quote.clientName || ''))+'<span class="div-cell-sub">'+escapeHtml(assistFormatPhone(quote.clientPhone))+'</span></div></td>'+
+        '<td data-label="LOJA">'+escapeHtml(String(quote.companyName || '—'))+'</td>'+
+        '<td data-label="EQUIPAMENTOS">'+escapeHtml((Array.isArray(quote.devices) ? quote.devices : []).map(String).join(', ') || '—')+'</td>'+
+        '<td data-label="VALOR"><strong>'+formatCentsBRL(quote.totalCents)+'</strong></td>'+
+        '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
+          '<button class="btn-outline" type="button" data-assist-history="pdf" data-quote="'+escapeHtml(quote.id)+'">VER/IMPRIMIR PDF</button>'+
+          '<button class="btn-outline" type="button" data-assist-history="edit" data-quote="'+escapeHtml(quote.id)+'">EDITAR</button>'+
+          '<button class="btn-danger-outline" type="button" data-assist-history="delete" data-quote="'+escapeHtml(quote.id)+'">EXCLUIR</button>'+
+        '</div></td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  async function assistHistoryAction(action, id){
+    const quote = assistState.history.find(item => item.id === id);
+    if(action === 'edit') return assistEditQuote(id);
+    if(action === 'pdf'){
+      try{
+        setAssistStatus('assistHistoryStatus', 'GERANDO PDF…');
+        const detail = await assistApi('/quotes/'+encodeURIComponent(id));
+        setAssistStatus('assistHistoryStatus', '');
+        assistPrintQuote(detail);
+      }catch(error){
+        setAssistStatus('assistHistoryStatus', error.message, 'error');
+      }
+      return;
+    }
+    if(action === 'delete'){
+      if(!confirm('EXCLUIR O ORÇAMENTO DA OS '+(quote ? quote.osNumber : '')+'? ESTA AÇÃO NÃO PODE SER DESFEITA.')) return;
+      try{
+        await assistApi('/quotes/'+encodeURIComponent(id), {method:'DELETE'});
+        showPurchaseToast('Orçamento excluído.');
+        if(assistState.editingId === id) assistResetForm();
+        await assistLoadHistory();
+      }catch(error){
+        setAssistStatus('assistHistoryStatus', error.message, 'error');
+      }
+    }
+  }
+
+  // ---------- TABELA DE VALORES (tela) ----------
+  function assistSearchKey(value){
+    return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+  }
+
+  function assistRenderDefectFilters(){
+    const category = el('assistDefFilterCategory');
+    if(category.options.length <= 1){
+      category.innerHTML = '<option value="">TODAS</option>'+ASSIST_CATEGORIES.map(item => '<option value="'+escapeHtml(item)+'">'+escapeHtml(item)+'</option>').join('');
+    }
+    const device = el('assistDefFilterDevice');
+    const selected = device.value;
+    const devices = category.value
+      ? assistDevicesFor(category.value, true)
+      : ASSIST_CATEGORIES.flatMap(item => assistDevicesFor(item, true));
+    device.innerHTML = '<option value="">TODOS</option>'+devices.map(item => '<option value="'+escapeHtml(item)+'">'+escapeHtml(item)+'</option>').join('');
+    if(devices.includes(selected)) device.value = selected;
+  }
+
+  function assistRenderDefectTable(){
+    const body = el('assistDefectBody');
+    const category = el('assistDefFilterCategory').value;
+    const device = el('assistDefFilterDevice').value;
+    const search = assistSearchKey(el('assistDefSearch').value.trim());
+    const rows = assistState.defects.filter(defect =>
+      (!category || defect.category === category) &&
+      (!device || defect.device === device) &&
+      (!search || assistSearchKey(defect.name).includes(search))
+    );
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">NENHUM DEFEITO ENCONTRADO.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(defect => {
+      const id = 'assistDef'+escapeHtml(defect.id);
+      return '<tr data-defect-id="'+escapeHtml(defect.id)+'"'+(defect.active ? '' : ' class="inactive"')+'>'+
+        '<td data-label="APARELHO"><div><strong>'+escapeHtml(defect.device)+'</strong><span class="div-cell-sub">'+escapeHtml(defect.category)+'</span></div></td>'+
+        '<td data-label="DEFEITO"><input id="'+id+'Name" data-def-field="name" maxlength="160" value="'+escapeHtml(defect.name)+'" aria-label="Nome do defeito"></td>'+
+        '<td data-label="MÍNIMO"><input id="'+id+'Min" data-def-field="min" aria-label="Valor mínimo"'+(defect.quoteOnly ? ' disabled' : '')+'></td>'+
+        '<td data-label="MÁXIMO"><input id="'+id+'Max" data-def-field="max" aria-label="Valor máximo"'+(defect.quoteOnly ? ' disabled' : '')+'></td>'+
+        '<td data-label="SOB ORÇAMENTO"><input type="checkbox" data-def-field="quoteOnly" aria-label="Sob orçamento"'+(defect.quoteOnly ? ' checked' : '')+'></td>'+
+        '<td data-label="ATIVO"><input type="checkbox" data-def-field="active" aria-label="Ativo"'+(defect.active ? ' checked' : '')+'></td>'+
+        '<td data-label="AÇÃO"><button class="btn-outline" type="button" data-assist-def-save>SALVAR</button></td>'+
+      '</tr>';
+    }).join('');
+    body.querySelectorAll('tr[data-defect-id]').forEach(row => {
+      const defect = assistState.defects.find(item => item.id === row.dataset.defectId);
+      assistSetCurrency(row.querySelector('[data-def-field="min"]'), defect.quoteOnly ? null : defect.minCents);
+      assistSetCurrency(row.querySelector('[data-def-field="max"]'), defect.quoteOnly ? null : defect.maxCents);
+    });
+  }
+
+  async function assistSaveDefectRow(row){
+    const defect = assistState.defects.find(item => item.id === row.dataset.defectId);
+    if(!defect) return;
+    const quoteOnly = row.querySelector('[data-def-field="quoteOnly"]').checked;
+    const payload = {
+      id:defect.id,
+      name:row.querySelector('[data-def-field="name"]').value.trim(),
+      quoteOnly,
+      minCents:quoteOnly ? null : assistCentsFromInput(row.querySelector('[data-def-field="min"]')),
+      maxCents:quoteOnly ? null : assistCentsFromInput(row.querySelector('[data-def-field="max"]')),
+      active:row.querySelector('[data-def-field="active"]').checked
+    };
+    const button = row.querySelector('[data-assist-def-save]');
+    button.disabled = true;
+    try{
+      await assistApi('/defects', {method:'PATCH', body:JSON.stringify(payload)});
+      await assistLoadDefects();
+      setAssistStatus('assistDefStatus', '');
+      showPurchaseToast('Defeito salvo: '+payload.name.toUpperCase()+' ('+defect.device+').');
+      assistRenderDefectFilters();
+      assistRenderDefectTable();
+      assistRenderEquipments();
+    }catch(error){
+      setAssistStatus('assistDefStatus', error.message, 'error');
+      button.disabled = false;
+    }
+  }
+
+  function assistFillNewDefectDevices(){
+    const category = el('assistNewDefCategory').value;
+    const devices = category ? assistDevicesFor(category, true) : [];
+    el('assistNewDefDeviceList').innerHTML = devices.map(device => '<option value="'+escapeHtml(device)+'"></option>').join('');
+  }
+
+  function assistOpenDefectDialog(){
+    const category = el('assistNewDefCategory');
+    if(category.options.length <= 1){
+      category.innerHTML = '<option value="">SELECIONE</option>'+ASSIST_CATEGORIES.map(item => '<option value="'+escapeHtml(item)+'">'+escapeHtml(item)+'</option>').join('');
+    }
+    el('assistDefectForm').reset();
+    category.value = el('assistDefFilterCategory').value;
+    el('assistNewDefDevice').value = el('assistDefFilterDevice').value;
+    assistFillNewDefectDevices();
+    attachCurrencyMask(el('assistNewDefMin'));
+    attachCurrencyMask(el('assistNewDefMax'));
+    setCurrencyValue(el('assistNewDefMin'), '');
+    setCurrencyValue(el('assistNewDefMax'), '');
+    el('assistNewDefMin').disabled = false;
+    el('assistNewDefMax').disabled = false;
+    setAssistStatus('assistDefectFormStatus', '');
+    el('assistDefectDialog').showModal();
+    (category.value ? el('assistNewDefName') : category).focus();
+  }
+
+  async function assistSaveNewDefect(event){
+    event.preventDefault();
+    const quoteOnly = el('assistNewDefQuoteOnly').checked;
+    const payload = {
+      category:el('assistNewDefCategory').value,
+      device:el('assistNewDefDevice').value.trim(),
+      name:el('assistNewDefName').value.trim(),
+      quoteOnly,
+      minCents:quoteOnly ? null : assistCentsFromInput(el('assistNewDefMin')),
+      maxCents:quoteOnly ? null : assistCentsFromInput(el('assistNewDefMax'))
+    };
+    const missing = [];
+    if(!payload.category) missing.push('CATEGORIA');
+    if(payload.device.length < 2) missing.push('APARELHO');
+    if(payload.name.length < 2) missing.push('DEFEITO');
+    if(!quoteOnly && payload.minCents === null) missing.push('VALOR MÍNIMO (OU MARQUE SOB ORÇAMENTO)');
+    if(missing.length){
+      setAssistStatus('assistDefectFormStatus', 'FALTA: '+missing.join(' · ')+'.', 'error');
+      return;
+    }
+    el('btnSaveAssistDefect').disabled = true;
+    try{
+      await assistApi('/defects', {method:'POST', body:JSON.stringify(payload)});
+      await assistLoadDefects();
+      el('assistDefectDialog').close();
+      showPurchaseToast('Defeito cadastrado na tabela de valores.');
+      assistRenderDefectFilters();
+      assistRenderDefectTable();
+      assistRenderEquipments();
+    }catch(error){
+      setAssistStatus('assistDefectFormStatus', error.message, 'error');
+    }finally{
+      el('btnSaveAssistDefect').disabled = false;
+    }
+  }
+
+  // ---------- ABAS / ENTRADA DA PÁGINA ----------
+  function setAssistTab(tab){
+    const next = ['novo','historico','tabela'].includes(tab) ? tab : 'novo';
+    assistState.tab = next;
+    document.querySelectorAll('[data-assist-tab]').forEach(button => {
+      const active = button.dataset.assistTab === next;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    el('assistSectionNovo').hidden = next !== 'novo';
+    el('assistSectionHistorico').hidden = next !== 'historico';
+    el('assistSectionTabela').hidden = next !== 'tabela';
+    if(next === 'historico') assistLoadHistory();
+    if(next === 'tabela'){
+      assistRenderDefectFilters();
+      assistRenderDefectTable();
+    }
+    if(next === 'novo') assistSchedulePreview();
+  }
+
+  async function loadAssistenciaOrcamentos(){
+    if(!canAccess('assistencia:manage')) return;
+    if(!companies.length) await loadCompanies().catch(() => {});
+    if(!assistState.ready){
+      assistState.ready = true;
+      assistRenderObservations();
+      el('assistEntryDate').value = todayDateKeyRecife();
+      assistState.equipments = [assistNewEquipment()];
+    }
+    assistRenderCompanySelects();
+    try{
+      if(!assistState.defectsLoaded) await assistLoadDefects();
+      setAssistStatus('assistFormStatus', '');
+    }catch(error){
+      setAssistStatus('assistFormStatus', 'TABELA DE VALORES: '+error.message, 'error');
+    }
+    assistRenderEquipments();
+    setAssistTab(assistState.tab);
+  }
+
+  document.querySelectorAll('[data-assist-tab]').forEach(button => {
+    button.addEventListener('click', () => setAssistTab(button.dataset.assistTab));
+  });
+  assistBindMask(el('assistClientPhone'), assistFormatPhone);
+  assistBindMask(el('assistClientCpf'), assistFormatCpf);
+  el('assistOsNumber').addEventListener('input', () => el('assistOsNumber').classList.remove('input-error'));
+  el('assistQuoteForm').addEventListener('input', event => {
+    if(!event.target.closest('#assistEquipments')) assistSchedulePreview();
+  });
+  el('assistQuoteForm').addEventListener('change', event => {
+    if(!event.target.closest('#assistEquipments')) assistSchedulePreview();
+  });
+  el('assistCompany').addEventListener('change', assistSchedulePreview);
+  el('assistQuoteForm').addEventListener('submit', event => {
+    event.preventDefault();
+    assistSave(true);
+  });
+  el('btnAssistSaveOnly').addEventListener('click', () => assistSave(false));
+  el('btnAssistClear').addEventListener('click', () => {
+    if(assistFormIsDirty() && !confirm('LIMPAR TODO O FORMULÁRIO?')) return;
+    assistResetForm();
+  });
+  el('btnAssistCancelEdit').addEventListener('click', () => {
+    if(!confirm('CANCELAR A EDIÇÃO? AS ALTERAÇÕES NÃO SALVAS SERÃO DESCARTADAS.')) return;
+    assistResetForm();
+    setAssistTab('historico');
+  });
+  el('btnAssistAddEquipment').addEventListener('click', () => {
+    assistState.equipments.push(assistNewEquipment());
+    assistRenderEquipments('[data-eq="'+(assistState.equipments.length - 1)+'"] [data-eq-field="category"]');
+  });
+
+  // Equipamentos e linhas: delegação num nó só (o bloco é redesenhado nas
+  // mudanças de estrutura; digitação só atualiza estado e totais).
+  el('assistEquipments').addEventListener('input', event => {
+    const target = event.target;
+    const card = target.closest('[data-eq]');
+    if(!card) return;
+    const equipment = assistState.equipments[Number(card.dataset.eq)];
+    target.classList.remove('input-error');
+    if(target.dataset.eqField === 'serialNumber' || target.dataset.eqField === 'service'){
+      equipment[target.dataset.eqField] = target.value;
+      assistSchedulePreview();
+      return;
+    }
+    const row = target.closest('[data-line]');
+    if(!row) return;
+    const line = equipment.lines[Number(row.dataset.line)];
+    if(target.dataset.lineField === 'quantity') line.quantity = target.value === '' ? '' : Number(target.value);
+    if(target.dataset.lineField === 'unit') line.unitCents = assistCentsFromInput(target);
+    if(target.dataset.lineField === 'description') line.description = target.value;
+    assistUpdateTotals();
+  });
+  el('assistEquipments').addEventListener('change', event => {
+    const target = event.target;
+    const card = target.closest('[data-eq]');
+    if(!card) return;
+    const index = Number(card.dataset.eq);
+    const equipment = assistState.equipments[index];
+    const field = target.dataset.eqField;
+    if(field === 'category' || field === 'device'){
+      const value = target.value;
+      if(value === equipment[field]) return;
+      const defectLines = equipment.lines.filter(line => line.defectName).length;
+      if(defectLines && !confirm('TROCAR '+(field === 'category' ? 'A CATEGORIA' : 'O APARELHO')+' REMOVE OS DEFEITOS JÁ ESCOLHIDOS DESTE EQUIPAMENTO. CONTINUAR?')){
+        target.value = equipment[field];
+        return;
+      }
+      equipment.lines = equipment.lines.filter(line => !line.defectName);
+      if(field === 'category') equipment.device = '';
+      equipment[field] = value;
+      assistRenderEquipments('[data-eq="'+index+'"] [data-eq-field="'+(field === 'category' ? 'device' : 'addDefect')+'"]');
+      return;
+    }
+    if(field === 'addDefect'){
+      const defect = assistState.defects.find(item => item.id === target.value);
+      if(!defect) return;
+      // Valor unitário vem com o MÍNIMO da tabela (pode ser alterado à vontade);
+      // "sob orçamento" vem vazio e é obrigatório digitar.
+      equipment.lines.push({
+        defectName:defect.name,
+        description:'',
+        quantity:1,
+        unitCents:defect.quoteOnly ? null : defect.minCents
+      });
+      assistRenderEquipments('[data-eq="'+index+'"] [data-line="'+(equipment.lines.length - 1)+'"] [data-line-field="'+(defect.quoteOnly ? 'unit' : 'quantity')+'"]');
+    }
+  });
+  el('assistEquipments').addEventListener('click', event => {
+    const button = event.target.closest('[data-assist-action]');
+    if(!button) return;
+    const card = button.closest('[data-eq]');
+    const index = Number(card.dataset.eq);
+    const equipment = assistState.equipments[index];
+    const action = button.dataset.assistAction;
+    if(action === 'add-free'){
+      equipment.lines.push({defectName:'', description:'', quantity:1, unitCents:null});
+      assistRenderEquipments('[data-eq="'+index+'"] [data-line="'+(equipment.lines.length - 1)+'"] [data-line-field="description"]');
+    }
+    if(action === 'remove-line'){
+      equipment.lines.splice(Number(button.closest('[data-line]').dataset.line), 1);
+      assistRenderEquipments();
+    }
+    if(action === 'remove-equipment'){
+      if((equipment.device || equipment.lines.length) && !confirm('REMOVER O EQUIPAMENTO '+(index + 1)+(equipment.device ? ' ('+equipment.device+')' : '')+' DO ORÇAMENTO?')) return;
+      assistState.equipments.splice(index, 1);
+      if(!assistState.equipments.length) assistState.equipments.push(assistNewEquipment());
+      assistRenderEquipments();
+    }
+  });
+
+  const assistReloadHistorySoon = debounce(assistLoadHistory, 300);
+  el('assistSearch').addEventListener('input', assistReloadHistorySoon);
+  ['assistFilterCompany','assistFilterFrom','assistFilterTo'].forEach(id => el(id).addEventListener('change', assistLoadHistory));
+  el('btnAssistClearFilters').addEventListener('click', () => {
+    el('assistSearch').value = '';
+    el('assistFilterCompany').value = '';
+    el('assistFilterFrom').value = '';
+    el('assistFilterTo').value = '';
+    assistLoadHistory();
+  });
+  el('assistHistoryBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-assist-history]');
+    if(button) assistHistoryAction(button.dataset.assistHistory, button.dataset.quote);
+  });
+
+  el('assistDefFilterCategory').addEventListener('change', () => {
+    assistRenderDefectFilters();
+    assistRenderDefectTable();
+  });
+  el('assistDefFilterDevice').addEventListener('change', assistRenderDefectTable);
+  el('assistDefSearch').addEventListener('input', debounce(assistRenderDefectTable, 150));
+  el('assistDefectBody').addEventListener('change', event => {
+    if(event.target.dataset.defField !== 'quoteOnly') return;
+    const row = event.target.closest('tr');
+    row.querySelectorAll('[data-def-field="min"],[data-def-field="max"]').forEach(input => { input.disabled = event.target.checked; });
+  });
+  el('assistDefectBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-assist-def-save]');
+    if(button) assistSaveDefectRow(button.closest('tr'));
+  });
+  el('btnAssistNewDefect').addEventListener('click', assistOpenDefectDialog);
+  el('assistNewDefCategory').addEventListener('change', assistFillNewDefectDevices);
+  el('assistNewDefQuoteOnly').addEventListener('change', () => {
+    const quoteOnly = el('assistNewDefQuoteOnly').checked;
+    el('assistNewDefMin').disabled = quoteOnly;
+    el('assistNewDefMax').disabled = quoteOnly;
+  });
+  el('assistDefectForm').addEventListener('submit', assistSaveNewDefect);
+  el('btnCloseAssistDefectDialog').addEventListener('click', () => el('assistDefectDialog').close());
+  el('btnCancelAssistDefectDialog').addEventListener('click', () => el('assistDefectDialog').close());
+
+  assistBindMask(el('lojaDataCnpj'), assistFormatCnpj);
+  assistBindMask(el('lojaDataPhone'), assistFormatPhone);
 
   // ===== ESTOQUE > DIVERGÊNCIAS =====
   // A loja abre um pedido de verificação (1+ produtos, físico x sistema) e o
@@ -32551,6 +33962,7 @@ function renderHomeTasks(){
     'relatorio_nf:view':'Comercial - Relatório NF: visualizar','relatorio_nf:manage':'Comercial - Relatório NF: lançar/gerenciar',
     'controle_gd:view':'Comercial - Controle GD: visualizar','controle_gd:manage':'Comercial - Controle GD: lançar ajuste de saldo',
     'documents:create':'Documentos: cadastrar','documents:edit':'Documentos: editar','documents:delete':'Documentos: excluir',
+    'assistencia:manage':'Assistência - Orçamentos: acesso completo',
     'users:manage':'Usuários e acessos'
   };
   // Espelha ACCESS_GROUP_PERMISSIONS de worker/index.ts. Mantido em sincronia
