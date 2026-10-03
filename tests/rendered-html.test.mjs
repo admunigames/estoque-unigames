@@ -748,6 +748,82 @@ test("isola tarefas por usuário e oferece prioridade, recorrência e lembretes 
   assert.match(serviceWorker, /addEventListener\("push"/);
 });
 
+test("anima a caixa de tarefa concluída (aba Tarefas + Início) só com CSS no input nativo", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+
+  // Input nativo preservado (teclado, leitor de tela e handlers).
+  assert.match(html, /'<input type="checkbox" data-task-done="'\+escapeHtml\(task\.id\)\+'" '\+\(task\.done \? 'checked' : ''\)\+' aria-label="Marcar tarefa como concluída">'/);
+  assert.match(html, /'<input class="home-task-check" type="checkbox" data-home-task-done="'\+escapeHtml\(task\.id\)\+'" '\+\(task\.done \? 'checked' : ''\)\+' aria-label="Marcar tarefa como concluída">'/);
+  // O risco fica num span inline para correr pelas linhas em sequência.
+  assert.match(html, /'<span class="task-text"><span class="task-strike">'\+escapeHtml\(task\.text \|\| ''\)\+'<\/span><\/span>'/);
+  assert.match(html, /'<span class="home-task-text"><span class="task-strike">'\+escapeHtml\(task\.text \|\| ''\)\+'<\/span><\/span>'/);
+
+  // Visual antigo (checkbox do navegador + line-through) substituído.
+  assert.doesNotMatch(html, /\.task-row\.done \.task-text\{text-decoration:line-through/);
+  assert.doesNotMatch(html, /\.home-task-row\.done \.home-task-text\{text-decoration:line-through/);
+  assert.doesNotMatch(html, /\.task-row input\[type=checkbox\]\{[^}]*accent-color/);
+  assert.doesNotMatch(html, /\.home-task-check\{[^}]*accent-color/);
+
+  // Cores por contexto: destaque do tema na aba Tarefas, azul fixo na Início (sempre clara).
+  assert.match(html, /--task-check:var\(--accent\); --task-check-border:var\(--ink-faint\);/);
+  assert.match(html, /--task-check:#244f83; --task-check-border:rgba\(36,79,131,\.72\);/);
+
+  const start = html.indexOf('/* CAIXA "TAREFA CONCLUÍDA" ANIMADA');
+  assert.notEqual(start, -1, "bloco da caixa animada não encontrado");
+  const block = html.slice(start, html.indexOf(".home-tasks-empty{", start));
+  // 18x18 com appearance:none; min-height:0 anula o input{min-height:44px} do celular.
+  assert.match(block, /\.task-row input\[type=checkbox\],\.home-task-check\{\s*-webkit-appearance:none; appearance:none; position:relative;\s*width:18px; height:18px; min-height:0;/);
+  // Área de toque ampliada sem mudar o layout.
+  assert.match(block, /\.task-row input\[type=checkbox\]::before,\.home-task-check::before\{content:''; position:absolute; inset:-12px;\}/);
+  // ✓ = pseudo-elemento com bordas rotacionadas (sem SVG nem emoji).
+  assert.match(block, /\.task-row input\[type=checkbox\]::after,\.home-task-check::after\{[^}]*border-width:0 2px 2px 0;[^}]*transform-origin:0 100%; transform:rotate\(45deg\);/);
+  assert.match(block, /:checked::after\{width:3px; height:8px; opacity:1;\}/);
+  assert.doesNotMatch(block, /<svg|url\(|data:image/);
+  // Risco por background-size 0 → 100%.
+  assert.match(block, /\.task-strike\{background:linear-gradient\(currentColor,currentColor\) no-repeat 0 55%\/0 1\.5px;\}/);
+  assert.match(block, /\.task-row\.done \.task-strike,\.home-task-row\.done \.task-strike\{background-size:100% 1\.5px;\}/);
+  // Transições só com .is-toggling: linha recriada nasce no estado final.
+  assert.match(block, /\.task-row\.is-toggling \.task-strike,\.home-task-row\.is-toggling \.task-strike\{transition:background-size \.2s ease-out;\}/);
+  const rules = block.replace(/\/\*[\s\S]*?\*\//g, "").match(/[^{}]+\{[^{}]*transition:[^{}]*\}/g) || [];
+  assert.ok(rules.length >= 5, "transições da caixa animada não encontradas");
+  for (const rule of rules) {
+    const selector = rule.slice(0, rule.indexOf("{"));
+    if (selector.includes("prefers-reduced-motion")) continue;
+    for (const part of selector.split(",")) {
+      assert.match(part, /is-toggling/, `transição fora de .is-toggling: ${part.trim()}`);
+    }
+  }
+  // Reduzir movimento: sem transição, só o estado final.
+  assert.match(block, /@media \(prefers-reduced-motion:reduce\)\{[\s\S]*\.task-row\.is-toggling input\[type=checkbox\]::after,\.home-task-row\.is-toggling \.home-task-check::after,[\s\S]*\{transition:none!important;\}\s*\}/);
+
+  // Handlers só acrescentam a classe temporária (lógica de salvar inalterada).
+  assert.match(html, /event\.target\.closest\('\.task-row'\)\.classList\.toggle\('done', task\.done\);\n    markTaskToggling\(event\.target\.closest\('\.task-row'\)\);/);
+  assert.match(html, /row\.classList\.toggle\('done', event\.target\.checked\);\n    markTaskToggling\(row\);/);
+
+  const timers = new Map();
+  let nextTimer = 0;
+  const markTaskToggling = new Function(
+    "setTimeout",
+    "clearTimeout",
+    `const taskToggleTimers = new WeakMap();
+     return ${extractNamedFunction(html, "markTaskToggling")};`,
+  )(
+    (callback, delay) => { timers.set(++nextTimer, { callback, delay }); return nextTimer; },
+    (id) => { timers.delete(id); },
+  );
+  const classes = new Set();
+  const row = { classList: { add: (name) => classes.add(name), remove: (name) => classes.delete(name) } };
+  markTaskToggling(row);
+  assert.ok(classes.has("is-toggling"));
+  markTaskToggling(row);
+  assert.equal(timers.size, 1, "um novo clique reinicia o prazo da classe temporária");
+  const [{ callback, delay }] = timers.values();
+  assert.equal(delay, 400);
+  callback();
+  assert.ok(!classes.has("is-toggling"));
+  assert.doesNotThrow(() => markTaskToggling(null));
+});
+
 test("inclui grupos, recuperação, entregas, preferências, PWA e backup automático", async () => {
   const [html, workerSource, schema, migration, manifest, serviceWorker] =
     await Promise.all([

@@ -1230,10 +1230,11 @@
   .task-row{
     display:flex; align-items:center; gap:12px; padding:11px 13px;
     border:1px solid rgba(39,69,97,.5); border-radius:10px; background:var(--bg-card-2);
+    --task-check:var(--accent); --task-check-border:var(--ink-faint);
   }
   .task-row.done{opacity:.55;}
-  .task-row.done .task-text{text-decoration:line-through;}
-  .task-row input[type=checkbox]{width:18px; height:18px; accent-color:var(--accent); cursor:pointer; flex:0 0 auto;}
+  .task-row input[type=checkbox]{flex:0 0 auto;}
+  .task-row input[type=checkbox]:focus-visible{outline:2px solid var(--accent); outline-offset:3px;}
   .task-badges{display:flex; gap:5px; flex-wrap:wrap; align-items:center;}
   .task-priority,.task-recurrence{
     flex:0 0 auto; padding:4px 7px; border:1px solid rgba(79,134,189,.3); border-radius:999px;
@@ -1583,17 +1584,15 @@
 .home-task-row{
   display:flex; align-items:center; gap:12px; padding:11px 12px;
   border:1px solid rgba(36,79,131,.16); border-radius:11px; background:rgba(255,255,255,.46); color:#10233a;
+  --task-check:#244f83; --task-check-border:rgba(36,79,131,.72);
 }
 .home-task-row.done{opacity:.55;}
-.home-task-row.done .home-task-text{text-decoration:line-through; color:#5c7187;}
+.home-task-row.done .home-task-text{color:#5c7187;}
 .home-task-time{
   flex:0 0 54px; font:700 11px/1 var(--mono); color:#244f83; text-align:center;
   padding:4px 6px; border-radius:6px; background:rgba(36,79,131,.1);
 }
-.home-task-check{
-  flex:0 0 18px; width:18px; height:18px; margin:0; cursor:pointer;
-  accent-color:#244f83;
-}
+.home-task-check{flex:0 0 18px; margin:0;}
 .home-task-check:focus-visible{outline:2px solid #244f83; outline-offset:3px;}
 .home-task-outcome{
   flex:0 1 220px; min-width:180px; min-height:34px; padding:6px 8px;
@@ -1603,6 +1602,50 @@
 }
 .home-task-outcome:disabled{cursor:not-allowed; opacity:.58;}
 .home-task-text{flex:1; min-width:0; font:600 12px/1.45 var(--sans); overflow-wrap:anywhere;}
+/* CAIXA "TAREFA CONCLUÍDA" ANIMADA — aba Tarefas + Início.
+   Input nativo (teclado, leitor de tela e handlers intactos) com appearance:none.
+   O ✓ é o ::after (bordas rotacionadas, "desenhado" pela largura e depois pela
+   altura) e o ::before só amplia a área de toque. O risco é um linear-gradient
+   no .task-strike (inline, corre pelas linhas em sequência). As transições só
+   valem com .is-toggling, posto pelo handler no nó clicado: a linha recriada
+   depois de salvar já nasce no estado final, sem repetir a animação. */
+.task-row input[type=checkbox],.home-task-check{
+  -webkit-appearance:none; appearance:none; position:relative;
+  width:18px; height:18px; min-height:0; cursor:pointer;
+  border:1.5px solid var(--task-check-border); border-radius:5px; background:transparent;
+}
+.task-row input[type=checkbox]::before,.home-task-check::before{content:''; position:absolute; inset:-12px;}
+.task-row input[type=checkbox]::after,.home-task-check::after{
+  content:''; position:absolute; left:2.2px; bottom:6.8px; box-sizing:content-box;
+  width:0; height:0; border:solid #fff; border-width:0 2px 2px 0; opacity:0;
+  transform-origin:0 100%; transform:rotate(45deg);
+}
+.task-row input[type=checkbox]:not(:checked):hover,.home-task-check:not(:checked):hover{border-color:var(--task-check);}
+.task-row input[type=checkbox]:checked,.home-task-check:checked{background:var(--task-check); border-color:var(--task-check);}
+.task-row input[type=checkbox]:checked::after,.home-task-check:checked::after{width:3px; height:8px; opacity:1;}
+.task-row input[type=checkbox]:disabled,.home-task-check:disabled{cursor:not-allowed; opacity:.5;}
+.task-strike{background:linear-gradient(currentColor,currentColor) no-repeat 0 55%/0 1.5px;}
+.task-row.done .task-strike,.home-task-row.done .task-strike{background-size:100% 1.5px;}
+.task-row.is-toggling,.home-task-row.is-toggling{transition:opacity .2s ease;}
+.home-task-row.is-toggling .home-task-text{transition:color .2s ease;}
+.task-row.is-toggling input[type=checkbox],.home-task-row.is-toggling .home-task-check{
+  transition:background-color .14s ease,border-color .14s ease;
+}
+/* marcando: o ✓ surge e desenha a perna curta, depois a longa */
+.task-row.is-toggling input[type=checkbox]:checked::after,.home-task-row.is-toggling .home-task-check:checked::after{
+  transition:opacity 0s linear .04s,width .06s ease-in .04s,height .09s ease-out .1s;
+}
+/* desmarcando: apaga na ordem inversa */
+.task-row.is-toggling input[type=checkbox]:not(:checked)::after,.home-task-row.is-toggling .home-task-check:not(:checked)::after{
+  transition:height .07s ease-in,width .05s ease-out .07s,opacity 0s linear .12s;
+}
+.task-row.is-toggling .task-strike,.home-task-row.is-toggling .task-strike{transition:background-size .2s ease-out;}
+@media (prefers-reduced-motion:reduce){
+  .task-row.is-toggling,.home-task-row.is-toggling,.home-task-row.is-toggling .home-task-text,
+  .task-row.is-toggling input[type=checkbox],.home-task-row.is-toggling .home-task-check,
+  .task-row.is-toggling input[type=checkbox]::after,.home-task-row.is-toggling .home-task-check::after,
+  .task-row.is-toggling .task-strike,.home-task-row.is-toggling .task-strike{transition:none!important;}
+}
 .home-tasks-empty{
   padding:18px; border-radius:11px; background:rgba(236,244,251,.76);
   color:#5c7187; font:700 12px/1.5 var(--sans); text-align:center;
@@ -15894,6 +15937,15 @@
       return normalizeTaskData(data);
     } catch{ return {tasks:[], notes:''}; }
   }
+  const taskToggleTimers = new WeakMap();
+  function markTaskToggling(row){
+    // Só a linha clicada anima (CSS .is-toggling); as linhas recriadas depois de
+    // salvar nascem no estado final, sem repetir a animação.
+    if(!row) return;
+    clearTimeout(taskToggleTimers.get(row));
+    row.classList.add('is-toggling');
+    taskToggleTimers.set(row, setTimeout(() => row.classList.remove('is-toggling'), 400));
+  }
   function updateTaskSummary(tasks){
     const done = tasks.filter(task => task.done).length;
     el('taskCardTotal').textContent = tasks.length;
@@ -15912,7 +15964,7 @@
       '<div class="task-row'+(task.done ? ' done' : '')+'">'+
         '<input type="checkbox" data-task-done="'+escapeHtml(task.id)+'" '+(task.done ? 'checked' : '')+' aria-label="Marcar tarefa como concluída">'+
         (task.time ? '<span class="task-time">'+escapeHtml(task.time)+'</span>' : '')+
-        '<span class="task-text">'+escapeHtml(task.text || '')+'</span>'+
+        '<span class="task-text"><span class="task-strike">'+escapeHtml(task.text || '')+'</span></span>'+
         taskBadgesHtml(task)+
         (futureDate
           ? '<span class="task-scheduled">AGENDADA</span>'
@@ -16072,6 +16124,7 @@
     if(!task) return;
     task.done = event.target.checked;
     event.target.closest('.task-row').classList.toggle('done', task.done);
+    markTaskToggling(event.target.closest('.task-row'));
     try{
       await saveTaskData(data);
       await syncTaskCarryover(el('taskDate').value, task, !task.done && task.outcome === 'carryover');
@@ -16258,7 +16311,7 @@ function renderHomeTasks(){
         '<div class="home-task-row'+(task.done ? ' done' : '')+'">'+
           (task.time ? '<span class="home-task-time">'+escapeHtml(task.time)+'</span>' : '')+
           '<input class="home-task-check" type="checkbox" data-home-task-done="'+escapeHtml(task.id)+'" '+(task.done ? 'checked' : '')+' aria-label="Marcar tarefa como concluída">'+
-          '<span class="home-task-text">'+escapeHtml(task.text || '')+'</span>'+
+          '<span class="home-task-text"><span class="task-strike">'+escapeHtml(task.text || '')+'</span></span>'+
           taskBadgesHtml(task)+
           '<select class="home-task-outcome" data-home-task-outcome="'+escapeHtml(task.id)+'" '+(task.done ? 'disabled' : '')+' aria-label="Situação da tarefa">'+
             '<option value="carryover" '+(task.outcome === 'carryover' ? 'selected' : '')+'>EM ANDAMENTO — PRÓXIMO DIA</option>'+
@@ -16277,6 +16330,7 @@ function renderHomeTasks(){
     const todayKey = todayDateKey();
     const row = event.target.closest('.home-task-row');
     row.classList.toggle('done', event.target.checked);
+    markTaskToggling(row);
     try{
       const result = await storage.get('tarefas:' + todayKey);
       const data = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
@@ -16292,6 +16346,7 @@ function renderHomeTasks(){
     } catch{
       event.target.checked = !event.target.checked;
       row.classList.toggle('done', event.target.checked);
+      markTaskToggling(row);
       showError('Não foi possível atualizar a tarefa. Tente novamente.');
     }
   });
