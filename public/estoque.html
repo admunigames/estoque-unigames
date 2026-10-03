@@ -89,10 +89,6 @@
     background:var(--bg-card);
     box-shadow:0 1px 2px rgba(36,79,131,.08);
   }
-  html[data-theme="light"] .mobile-tabbar{
-    background:rgba(247,251,255,.96);
-    box-shadow:0 6px 17px rgba(36,79,131,.22),inset 0 1px rgba(255,255,255,.9);
-  }
   html[data-theme="light"] #inventoryTable th,
   html[data-theme="light"] .pull-table th{background:var(--bg-card-2);}
   html[data-theme="light"] #inventoryTable th:first-child,
@@ -816,6 +812,12 @@
     border-radius:9px; padding:9px 11px; font-family:var(--sans); font-size:12px;
   }
   .field textarea{min-height:78px; line-height:1.55; resize:vertical;}
+  /* Safari (iPhone) dá largura mínima própria aos campos de data/mês e
+     ignora o width:100% — o campo invadia a caixa vizinha nos filtros.
+     Sem a aparência nativa ele encolhe com a coluna; o seletor de data
+     continua abrindo normalmente. Texto à esquerda, como nos selects. */
+  .field input[type="month"],.field input[type="date"]{-webkit-appearance:none; appearance:none; min-width:0; display:flex; align-items:center;}
+  .field input[type="month"]::-webkit-date-and-time-value,.field input[type="date"]::-webkit-date-and-time-value{text-align:left; margin:0; line-height:normal;}
   /* Busca com sugestões no catálogo geral de produtos (Saídas/Entrada/
      Alterações PDV/Compras) — dropdown JS anexado como irmão do <input>,
      por isso o campo pai precisa de position:relative. */
@@ -1089,6 +1091,12 @@
     min-height:36px; padding:8px 11px; font-size:9px; text-decoration:none;
   }
   .purchase-card-empty{grid-column:1 / -1;}
+  /* Aparelhos de Empréstimo: cada célula com mais de um elemento vira UM
+     bloco — no cartão do celular, botões/selos soltos viravam itens de grid
+     separados (EDITAR esticado e EXCLUIR caindo para a linha de baixo). */
+  .loan-cell-actions{display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; align-items:center;}
+  .loan-cell-actions > button{width:auto; white-space:nowrap;}
+  .loan-cell-inline{display:inline-flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:flex-end;}
   .status-pill{
     display:inline-flex; align-items:center; max-width:190px; padding:5px 8px; border-radius:20px;
     border:1px solid var(--border); background:rgba(255,255,255,.025); color:var(--ink-soft);
@@ -1317,7 +1325,6 @@
     body.mobile-compact .purchase-card{border-radius:12px;padding:13px;}
   }
   footer.hint{margin-top:16px; font-size:12px; color:var(--ink-faint); text-align:center;}
-  .mobile-tabbar{display:none;}
   body:not(.access-ready) [data-permission],
   body:not(.access-ready) [data-any-permission],
   body:not(.access-ready) [data-admin-only],
@@ -1327,7 +1334,6 @@
     .summary{grid-template-columns:repeat(3,1fr);}
   }
   @media (max-width:800px){
-    body{padding-bottom:calc(74px + env(safe-area-inset-bottom));}
     .home-page{align-items:flex-start;}
     .home-access-grid-inner{grid-template-columns:repeat(2,minmax(0,1fr));}
     .home-lightglass{border-radius:24px;}
@@ -1377,24 +1383,6 @@
     .purchase-metrics{grid-template-columns:repeat(2,1fr);}
     .purchase-toolbar{grid-template-columns:1fr 1fr;}
     .purchase-toolbar .search-box{grid-column:1 / -1;}
-    .mobile-tabbar{
-      position:fixed; z-index:1050; left:max(10px,env(safe-area-inset-left)); right:max(10px,env(safe-area-inset-right));
-      bottom:calc(8px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(7,1fr);
-      min-height:60px; padding:5px; border:1px solid rgba(114,167,216,.34); border-radius:18px;
-      background:rgba(8,18,30,.94); box-shadow:0 6px 17px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.06);
-      backdrop-filter:blur(20px) saturate(130%);
-    }
-    body.home-active .mobile-tabbar,
-    body.menu-open .mobile-tabbar{display:none!important;}
-    .mobile-tab{
-      min-width:0; min-height:50px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-      padding:5px 3px; border:0; border-radius:13px; background:transparent; color:var(--ink-faint);
-    }
-    .mobile-tab span{display:grid; place-items:center; width:20px; height:20px;}
-    .mobile-tab span svg{width:20px; height:20px; stroke-width:1.8;}
-    .mobile-tab small{max-width:100%; overflow:hidden; text-overflow:ellipsis; font:800 8px/1 var(--sans); letter-spacing:.2px;}
-    .mobile-tab.active{color:#fff; background:linear-gradient(145deg,rgba(38,92,151,.92),rgba(79,134,189,.58)); box-shadow:0 1px 2px rgba(0,0,0,.1);}
-    .purchase-toast,.ios-install-hint,.task-reminder-toast{bottom:calc(82px + env(safe-area-inset-bottom));}
   }
   @media (max-width:680px){
     .purchase-status-options{position:static; width:100%; margin-top:7px; box-shadow:none;}
@@ -1424,7 +1412,16 @@
     .responsive-table tbody td.nome{font-size:14px; line-height:1.45;}
     .responsive-table tbody tr.neg{border-color:rgba(239,106,85,.34); background:linear-gradient(145deg,rgba(239,106,85,.11),transparent 58%),var(--bg-card);}
     .responsive-table tbody tr.neg td{background:transparent !important;}
-    .responsive-table tbody td.responsive-empty{display:block; padding:0; border:0;}
+    /* Selo de status no cartão: do tamanho do texto e à direita (como item de
+       grid ele esticava a coluna inteira). */
+    .responsive-table tbody td > .status-pill{justify-self:end;}
+    /* Ações do Empréstimo no cartão: rótulo em cima e os botões na largura
+       toda, lado a lado e do mesmo tamanho (na coluna da direita não cabiam). */
+    .responsive-table tbody td:has(> .loan-cell-actions){display:block;}
+    .responsive-table tbody td:has(> .loan-cell-actions)::before{display:block; margin-bottom:10px;}
+    .responsive-table tbody td > .loan-cell-actions{flex-wrap:nowrap;}
+    .responsive-table tbody td > .loan-cell-actions > button{flex:1 1 0; min-width:0;}
+    .responsive-table tbody td.responsive-empty{display:block; padding:16px 13px; border:0; text-align:center; color:var(--ink-soft);}
     .responsive-table tbody td.responsive-empty::before{content:none;}
     .responsive-table .pagination{
       margin-top:12px; border:1px solid rgba(39,69,97,.44); border-radius:14px;
@@ -2571,9 +2568,13 @@
   .instruction-carousel-track{display:flex;height:100%;transition:transform .45s ease;}
   .instruction-carousel-slide{flex:0 0 100%;height:100%;}
   .instruction-carousel-slide img{width:100%;height:100%;object-fit:cover;display:block;}
-  .instruction-carousel-dots{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:7px;}
-  .instruction-carousel-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);border:0;padding:0;cursor:pointer;}
-  .instruction-carousel-dot.active{background:#fff;}
+  .instruction-carousel-dots{position:absolute;left:0;right:0;bottom:4px;display:flex;justify-content:center;gap:0;}
+  /* O botão é só a área de toque (transparente, tamanho fixo); a bolinha
+     visível é o ::before. min-height:0 anula o "button{min-height:44px}"
+     das telas pequenas, que esticava o ponto numa elipse no celular. */
+  .instruction-carousel-dot{width:24px;height:24px;min-height:0;min-width:0;display:grid;place-items:center;border-radius:50%;background:transparent;border:0;padding:0;cursor:pointer;}
+  .instruction-carousel-dot::before{content:"";width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);}
+  .instruction-carousel-dot.active::before{background:#fff;}
   .instruction-carousel-manage-list{
     display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:16px;
   }
@@ -2790,7 +2791,6 @@
     height:100dvh;
     overscroll-behavior:contain;
   }
-  .mobile-tabbar{padding-bottom:max(5px,env(safe-area-inset-bottom));}
   @supports(content-visibility:auto){
     .purchase-card,.mission-card,.capture-card,.output-card,.supply-card,.instruction-card,
     .home-mission-row,.home-instruction-row,.home-supply-row{
@@ -3118,7 +3118,10 @@
   }
   .com-history-row strong{color:var(--ink);font-weight:800}
   @media(max-width:680px){
-    .com-toolbar .field{max-width:none}
+    /* Celular: filtros em 2 colunas iguais com espaço fixo entre as caixas. */
+    .com-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .com-toolbar .field{max-width:none;min-width:0}
+    .com-toolbar .field input,.com-toolbar .field select{height:46px;min-height:46px;line-height:normal}
     .com-seller{padding:13px}
     .com-block{padding:12px}
     .com-pct{font-size:20px}
@@ -10289,16 +10292,6 @@
   </form>
 </dialog>
 
-<nav class="mobile-tabbar no-print" aria-label="Atalhos principais">
-  <button class="mobile-tab active" type="button" data-mobile-page="inicio"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/></svg></span><small>INÍCIO</small></button>
-  <button class="mobile-tab" type="button" data-mobile-page="dashboard" data-permission="stock"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/><line x1="3" y1="19" x2="21" y2="19"/></svg></span><small>ESTOQUE</small></button>
-  <button class="mobile-tab" type="button" data-mobile-page="missoes" data-permission="missions"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg></span><small>MISSÕES</small></button>
-  <button class="mobile-tab" type="button" data-mobile-page="captacao" data-permission="captures"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.3V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4.7"/><path d="M4 13.3h4.1l1.3 2h4.9l1.3-2H20"/><path d="M12 3.6v8"/><path d="m8.8 8.6 3.2 3 3.2-3"/></svg></span><small>CAPTAÇÃO</small></button>
-  <button class="mobile-tab" type="button" data-mobile-page="instrucoes"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.6" r=".9" fill="currentColor" stroke="none"/></svg></span><small>INSTRUÇÕES</small></button>
-  <button class="mobile-tab" type="button" data-mobile-page="puxadas" data-permission="pulls"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11l-3-3"/><path d="M18 16H7l3 3"/></svg></span><small>PUXADAS</small></button>
-  <button class="mobile-tab" type="button" data-mobile-page="compras" data-permission="purchases"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="19.5" r="1.3" fill="currentColor" stroke="none"/><path d="M3.5 4h2.2l2 11.2a1.8 1.8 0 0 0 1.8 1.5h8a1.8 1.8 0 0 0 1.76-1.44L20.8 8H6.4"/></svg></span><small>COMPRAS</small></button>
-</nav>
-
 <dialog class="purchase-dialog" id="purchaseDialog" aria-labelledby="purchaseDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="purchaseDialogTitle">NOVO PEDIDO</h3>
@@ -12022,11 +12015,6 @@
     // grupo RH — são os mesmos destinos, com ids de link diferentes.
     setRhFinanceiroExpanded(isRhFinanceiro);
     if(isRhFinanceiro) navRhFinanceiroToggle.classList.add('active');
-    document.querySelectorAll('[data-mobile-page]').forEach(button => {
-      const active = button.dataset.mobilePage === name;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-current', active ? 'page' : 'false');
-    });
     document.title = 'UNIGAMES';
     setLivePage(name);
     return true;
@@ -12311,9 +12299,6 @@
   }
   el('btnRetryHealth').addEventListener('click',checkIntegrationHealth);
 
-  document.querySelectorAll('[data-mobile-page]').forEach(button => {
-    button.addEventListener('click', () => navigateToPage(button.dataset.mobilePage));
-  });
 
   function setTableDensity(density){
     const compact = density === 'compact';
@@ -21254,11 +21239,11 @@ function renderHomeTasks(){
     }
     tbody.innerHTML = items.map(device => (
       '<tr>'+
-        '<td>'+escapeHtml(device.name)+'</td>'+
-        '<td>'+escapeHtml(device.imei || '—')+'</td>'+
-        '<td>'+(device.hasDefect ? escapeHtml(device.defectDescription || 'SIM') : 'NÃO')+'</td>'+
-        '<td>'+escapeHtml(device.accessories || '—')+'</td>'+
-        '<td style="text-align:right;"><button class="btn-accent" type="button" data-loan-request-device="'+escapeHtml(device.id)+'">SOLICITAR</button></td>'+
+        '<td class="nome" data-label="Aparelho">'+escapeHtml(device.name)+'</td>'+
+        '<td data-label="IMEI/Série">'+escapeHtml(device.imei || '—')+'</td>'+
+        '<td data-label="Defeito">'+(device.hasDefect ? escapeHtml(device.defectDescription || 'SIM') : 'NÃO')+'</td>'+
+        '<td data-label="Acessórios">'+escapeHtml(device.accessories || '—')+'</td>'+
+        '<td data-label="Ações"><div class="loan-cell-actions"><button class="btn-accent" type="button" data-loan-request-device="'+escapeHtml(device.id)+'">SOLICITAR</button></div></td>'+
       '</tr>'
     )).join('');
   }
@@ -21272,18 +21257,18 @@ function renderHomeTasks(){
     tbody.innerHTML = loanDevicesCache.map(device => {
       const dayBadge = device.status === 'loaned' ? loanDaysBadge(device.loanedAt) : '';
       const currentCompany = device.status === 'loaned'
-        ? escapeHtml(device.currentCompanyName || '—')+(dayBadge ? ' '+dayBadge : '')
+        ? '<span class="loan-cell-inline">'+escapeHtml(device.currentCompanyName || '—')+(dayBadge ? ' '+dayBadge : '')+'</span>'
         : '—';
       const actions = (canAccess('loans:edit') ? '<button class="btn-outline" type="button" data-loan-device-edit="'+escapeHtml(device.id)+'">EDITAR</button>' : '')+
         (canAccess('loans:delete') ? '<button class="btn-danger-outline" type="button" data-loan-device-delete="'+escapeHtml(device.id)+'">EXCLUIR</button>' : '');
       return '<tr>'+
-        '<td>'+escapeHtml(device.name)+'</td>'+
-        '<td>'+escapeHtml(device.imei || '—')+'</td>'+
-        '<td>'+(device.hasDefect ? escapeHtml(device.defectDescription || 'SIM') : 'NÃO')+'</td>'+
-        '<td>'+escapeHtml(device.accessories || '—')+'</td>'+
-        '<td>'+loanDeviceStatusPill(device.status)+'</td>'+
-        '<td>'+currentCompany+'</td>'+
-        '<td style="text-align:right; white-space:nowrap;">'+actions+'</td>'+
+        '<td class="nome" data-label="Aparelho">'+escapeHtml(device.name)+'</td>'+
+        '<td data-label="IMEI/Série">'+escapeHtml(device.imei || '—')+'</td>'+
+        '<td data-label="Defeito">'+(device.hasDefect ? escapeHtml(device.defectDescription || 'SIM') : 'NÃO')+'</td>'+
+        '<td data-label="Acessórios">'+escapeHtml(device.accessories || '—')+'</td>'+
+        '<td data-label="Status">'+loanDeviceStatusPill(device.status)+'</td>'+
+        '<td data-label="Loja atual">'+currentCompany+'</td>'+
+        '<td data-label="Ações"><div class="loan-cell-actions">'+actions+'</div></td>'+
       '</tr>';
     }).join('');
   }
@@ -21296,11 +21281,11 @@ function renderHomeTasks(){
     }
     tbody.innerHTML = loanRequestsCache.map(request => (
       '<tr>'+
-        '<td>'+escapeHtml(request.deviceName)+'</td>'+
-        '<td>'+escapeHtml(request.responsibleName || '—')+'</td>'+
-        '<td>'+loanStatusPill(request.status)+'</td>'+
-        '<td>'+escapeHtml(formatDateTimeBR(request.createdAt))+'</td>'+
-        '<td>'+(request.status === 'loaned' ? loanDaysBadge(request.separatedAt) : '—')+'</td>'+
+        '<td class="nome" data-label="Aparelho">'+escapeHtml(request.deviceName)+'</td>'+
+        '<td data-label="Responsável">'+escapeHtml(request.responsibleName || '—')+'</td>'+
+        '<td data-label="Status">'+loanStatusPill(request.status)+'</td>'+
+        '<td data-label="Solicitado em">'+escapeHtml(formatDateTimeBR(request.createdAt))+'</td>'+
+        '<td data-label="Emprestado há">'+(request.status === 'loaned' ? loanDaysBadge(request.separatedAt) : '—')+'</td>'+
       '</tr>'
     )).join('');
   }
@@ -21313,12 +21298,12 @@ function renderHomeTasks(){
     }
     tbody.innerHTML = loanRequestsCache.map(request => (
       '<tr>'+
-        '<td>'+escapeHtml(request.companyName || '—')+'</td>'+
-        '<td>'+escapeHtml(request.deviceName)+'</td>'+
-        '<td>'+escapeHtml(request.responsibleName || '—')+'</td>'+
-        '<td>'+loanStatusPill(request.status)+'</td>'+
-        '<td>'+escapeHtml(formatDateTimeBR(request.createdAt))+'</td>'+
-        '<td style="text-align:right;"><button class="btn-outline" type="button" data-loan-request-details="'+escapeHtml(request.id)+'">DETALHES</button></td>'+
+        '<td data-label="Loja">'+escapeHtml(request.companyName || '—')+'</td>'+
+        '<td class="nome" data-label="Aparelho">'+escapeHtml(request.deviceName)+'</td>'+
+        '<td data-label="Responsável">'+escapeHtml(request.responsibleName || '—')+'</td>'+
+        '<td data-label="Status">'+loanStatusPill(request.status)+'</td>'+
+        '<td data-label="Solicitado em">'+escapeHtml(formatDateTimeBR(request.createdAt))+'</td>'+
+        '<td data-label="Ações"><div class="loan-cell-actions"><button class="btn-outline" type="button" data-loan-request-details="'+escapeHtml(request.id)+'">DETALHES</button></div></td>'+
       '</tr>'
     )).join('');
   }

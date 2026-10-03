@@ -2269,7 +2269,8 @@ test("aplica o sistema visual responsivo sem alterar os módulos existentes", as
   const workerSource = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
   assert.doesNotMatch(workerSource, /1px,\s*transparent 1px/);
   assert.match(html, /class="page-header"/);
-  assert.match(html, /class="mobile-tabbar no-print"/);
+  // Barra de atalhos inferior do celular removida (o menu lateral já cobre).
+  assert.doesNotMatch(html, /mobile-tabbar|data-mobile-page/);
   assert.match(html, /id="btnSidebarCompact"/);
   assert.match(html, /class="nav-icon"/);
   assert.doesNotMatch(html, /function loadHomeOverview\(\)/);
