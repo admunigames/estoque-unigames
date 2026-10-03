@@ -326,21 +326,26 @@
   body.home-active .menu-toggle{display:none;}
   .theme-toggle{
     position:fixed; top:calc(12px + env(safe-area-inset-top)); right:calc(12px + env(safe-area-inset-right));
-    z-index:850; width:60px; height:32px; min-height:32px!important;
-    display:flex; align-items:center; justify-content:space-between;
-    padding:4px 6px; border:1px solid var(--border); border-radius:999px; cursor:pointer;
-    background:var(--bg-card); color:var(--ink-soft); box-shadow:0 1px 2px rgba(0,0,0,.1);
+    z-index:850; width:40px; height:40px; min-height:40px!important;
+    display:grid; place-items:center;
+    padding:7px; border:1px solid var(--border); border-radius:50%; cursor:pointer;
+    background:var(--bg-card); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.1);
+    transition:background .3s ease,color .3s ease,transform .15s ease;
   }
   .theme-toggle:hover{opacity:1; border-color:var(--accent);}
-  .theme-toggle-icon{position:relative; z-index:2; width:17px; text-align:center; font-size:12px; line-height:1;}
-  .theme-toggle-knob{
-    position:absolute; z-index:1; top:3px; left:3px; width:24px; height:24px; border-radius:50%;
-    background:var(--accent); box-shadow:0 1px 2px rgba(0,0,0,.1);
-    transition:transform .22s ease;
+  .theme-toggle:active{transform:scale(.95);}
+  /* Ícone "sol que vira lua": tema claro = sol com raios; tema escuro = os
+     raios giram e somem, o sol cresce e a máscara (clipPath) desliza
+     recortando a lua. Só CSS, guiado por html[data-theme]. */
+  .theme-toggle-svg{width:100%; height:100%; display:block; overflow:visible;}
+  .theme-toggle-clip,.theme-toggle-core,.theme-toggle-rays{
+    transform-box:view-box; transform-origin:50% 50%;
+    transition:transform .35s ease-in-out,opacity .35s ease-in-out;
   }
-  html[data-theme="light"] .theme-toggle-knob{transform:translateX(30px);}
-  html[data-theme="light"] .theme-toggle-sun{color:#f4a62a;}
-  html:not([data-theme="light"]) .theme-toggle-moon{color:#d9ecff;}
+  html:not([data-theme="light"]) .theme-toggle-clip{transform:translate(-12px,10px);}
+  html:not([data-theme="light"]) .theme-toggle-core{transform:scale(1.25);}
+  html:not([data-theme="light"]) .theme-toggle-rays{transform:rotate(-100deg) scale(.5); opacity:0;}
+  @media(prefers-reduced-motion:reduce){.theme-toggle,.theme-toggle-clip,.theme-toggle-core,.theme-toggle-rays{transition:none;}}
   body.home-active .theme-toggle{display:none;}
   .page:not(.home-page) .page-heading{padding-right:66px;}
   .sidebar-backdrop{
@@ -3327,9 +3332,16 @@
 </button>
 <button class="sidebar-backdrop no-print" id="sidebarBackdrop" type="button" tabindex="-1" aria-label="Fechar menu"></button>
 <button class="theme-toggle no-print" id="themeToggle" type="button" aria-pressed="false" aria-label="Ativar tema claro" title="Alternar tema claro e escuro">
-  <span class="theme-toggle-icon theme-toggle-moon" aria-hidden="true">☾</span>
-  <span class="theme-toggle-icon theme-toggle-sun" aria-hidden="true">☀</span>
-  <span class="theme-toggle-knob" aria-hidden="true"></span>
+  <svg class="theme-toggle-svg" viewBox="0 0 32 32" fill="currentColor" stroke-linecap="round" aria-hidden="true">
+    <clipPath id="themeToggleClip"><path class="theme-toggle-clip" d="M0-5h30a1 1 0 0 0 9 13v24H0Z"/></clipPath>
+    <g clip-path="url(#themeToggleClip)">
+      <circle class="theme-toggle-core" cx="16" cy="16" r="8"/>
+      <g class="theme-toggle-rays" stroke="currentColor" stroke-width="1.5">
+        <path d="M16 5.5v-4"/><path d="M16 30.5v-4"/><path d="M1.5 16h4"/><path d="M26.5 16h4"/>
+        <path d="m23.4 8.6 2.8-2.8"/><path d="m5.7 26.3 2.9-2.9"/><path d="m5.8 5.8 2.8 2.8"/><path d="m23.4 23.4 2.9 2.9"/>
+      </g>
+    </g>
+  </svg>
 </button>
 <aside class="ios-install-hint no-print" id="iosInstallHint" hidden>
   <span><b>NO IPHONE/IPAD:</b> NO SAFARI, TOQUE EM COMPARTILHAR E DEPOIS EM “ADICIONAR À TELA DE INÍCIO”. ABRA PELO NOVO ÍCONE PARA ATIVAR AS NOTIFICAÇÕES.</span>

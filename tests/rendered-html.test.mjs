@@ -668,7 +668,11 @@ test("separa compras e lembretes no Início e oferece tema por usuário", async 
   assert.match(html, /id="themeToggle"/);
   assert.match(html, /body\.home-active \.theme-toggle\{display:none;\}/);
   assert.match(html, /estoque_theme:/);
-  assert.match(html, /\.theme-toggle\{[\s\S]*position:fixed;[\s\S]*width:60px; height:32px/);
+  assert.match(html, /\.theme-toggle\{[\s\S]*position:fixed;[\s\S]*width:40px; height:40px/);
+  // Ícone animado "sol que vira lua" (só CSS, guiado por html[data-theme]).
+  assert.match(html, /<clipPath id="themeToggleClip">/);
+  assert.match(html, /html:not\(\[data-theme="light"\]\) \.theme-toggle-rays\{transform:rotate\(-100deg\) scale\(\.5\); opacity:0;\}/);
+  assert.doesNotMatch(html, /theme-toggle-knob/);
   assert.match(html, /CONTRASTE E LEGIBILIDADE DO TEMA CLARO/);
   assert.match(html, /html\[data-theme="light"\] input:not\(\[type="checkbox"\]\)/);
   assert.match(html, /html\[data-theme="light"\] thead th\{[\s\S]*background:#dce7f0/);
