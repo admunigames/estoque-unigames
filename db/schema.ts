@@ -3509,3 +3509,89 @@ export const commercialGdBalanceAdjustments = pgTable(
     index("commercial_gd_adjustments_date_idx").on(table.adjustmentDate),
   ],
 );
+
+// Estoque > Divergências — a loja abre um pedido de verificação com 1+
+// produtos (físico x sistema) e o estoque/fiscal responde item a item.
+// A divergência (físico − sistema) nunca é gravada; o status do pedido é
+// uma cópia derivada dos itens (ver app/lib/divergences.ts), recalculada
+// na mesma transação de qualquer mudança de item. Timestamps em ISO UTC.
+export const divergenceRequests = pgTable(
+  "divergence_requests",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    status: text("status").notNull().default("aberto"),
+    notes: text("notes").notNull().default(""),
+    finalizedAt: text("finalized_at").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("divergence_requests_company_idx").on(table.companyId),
+    index("divergence_requests_status_idx").on(table.status),
+    index("divergence_requests_created_idx").on(table.createdAt),
+  ],
+);
+
+export const divergenceItems = pgTable(
+  "divergence_items",
+  {
+    id: text("id").primaryKey(),
+    requestId: text("request_id").notNull(),
+    productCode: text("product_code").notNull().default(""),
+    productName: text("product_name").notNull(),
+    // Ordem em que a loja digitou os itens no pedido.
+    position: integer("position").notNull().default(0),
+    physicalQty: integer("physical_qty").notNull().default(0),
+    systemQty: integer("system_qty").notNull().default(0),
+    storeNotes: text("store_notes").notNull().default(""),
+    status: text("status").notNull().default("nao_visto"),
+    stockResponse: text("stock_response").notNull().default(""),
+    respondedBy: text("responded_by").notNull().default(""),
+    respondedByName: text("responded_by_name").notNull().default(""),
+    respondedAt: text("responded_at").notNull().default(""),
+    storeReply: text("store_reply").notNull().default(""),
+    storeReplyBy: text("store_reply_by").notNull().default(""),
+    storeReplyByName: text("store_reply_by_name").notNull().default(""),
+    storeReplyAt: text("store_reply_at").notNull().default(""),
+    inventoriedAt: text("inventoried_at").notNull().default(""),
+    inventoriedBy: text("inventoried_by").notNull().default(""),
+    inventoriedByName: text("inventoried_by_name").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("divergence_items_request_idx").on(table.requestId),
+    index("divergence_items_status_idx").on(table.status),
+    index("divergence_items_product_code_idx").on(table.productCode),
+  ],
+);
+
+export const divergenceItemEvents = pgTable(
+  "divergence_item_events",
+  {
+    id: text("id").primaryKey(),
+    itemId: text("item_id").notNull(),
+    requestId: text("request_id").notNull(),
+    kind: text("kind").notNull(),
+    fromStatus: text("from_status").notNull().default(""),
+    toStatus: text("to_status").notNull().default(""),
+    text: text("text").notNull().default(""),
+    actorId: text("actor_id").notNull().default(""),
+    actorName: text("actor_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("divergence_item_events_item_idx").on(table.itemId),
+    index("divergence_item_events_request_idx").on(table.requestId),
+  ],
+);

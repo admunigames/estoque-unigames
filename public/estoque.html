@@ -3035,6 +3035,159 @@
   html[data-theme="light"] .com-total strong{color:#23874f}
   html[data-theme="light"] .com-notice{background:#fff7e6;border-color:#e6c27a;color:#6b4d0f}
   @media(prefers-reduced-motion:reduce){.com-bar-fill{transition:none}}
+  /* ESTOQUE > DIVERGÊNCIAS — reaproveita .supply-tabs, .purchase-metric,
+     .purchase-card, .table-panel, .status-pill e .purchase-dialog; aqui só
+     o arranjo próprio do módulo (barra de filtros, gráficos em CSS, linhas
+     de item do formulário e widgets da Início). Grids com número fixo de
+     colunas (sem auto-fill/auto-fit) para a linha incompleta não esticar. */
+  .div-section{margin-top:16px;}
+  .div-toolbar{display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; margin:0 0 14px;}
+  .div-toolbar .field{flex:0 1 200px; min-width:150px; margin:0;}
+  .div-toolbar .field select,.div-toolbar .field input{width:100%;}
+  .div-toolbar > button{min-height:46px;}
+  .div-metrics{margin-top:4px;}
+  .div-metric-button{width:100%; text-align:left; cursor:pointer; font:inherit; color:var(--ink); white-space:normal;}
+  .div-metric-button:hover{border-color:var(--accent);}
+  .div-dash-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:14px;}
+  .div-panel{padding:16px 18px; margin-bottom:14px;}
+  .div-dash-grid .div-panel{margin-bottom:0;}
+  .div-panel-head{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 12px; margin-bottom:14px;}
+  .div-panel-head h3{margin:0; font:800 13px/1.3 var(--sans); color:var(--ink);}
+  .div-panel-head span{color:var(--ink-faint); font:700 8.5px/1.35 var(--mono); letter-spacing:.4px;}
+  .div-chart{display:grid; gap:10px;}
+  .div-stack{display:flex; height:14px; overflow:hidden; border-radius:999px; background:rgba(79,134,189,.12);}
+  .div-stack span{display:block; height:100%;}
+  .div-bar-row{display:grid; grid-template-columns:minmax(0,150px) minmax(0,1fr) auto; align-items:center; gap:10px;}
+  .div-bar-label{min-width:0; color:var(--ink-soft); font:700 9px/1.3 var(--mono); overflow-wrap:anywhere;}
+  .div-bar-track{position:relative; height:12px; border-radius:999px; background:rgba(79,134,189,.1); overflow:hidden;}
+  .div-bar-fill{position:absolute; top:0; bottom:0; left:0; border-radius:999px;}
+  .div-bar-value{color:var(--ink); font:800 10px/1 var(--mono); text-align:right; white-space:nowrap;}
+  .div-dot{display:inline-block; width:9px; height:9px; margin-right:6px; border-radius:50%; vertical-align:-1px;}
+  .div-tone-nao_visto{background:var(--ink-faint);}
+  .div-tone-em_verificacao{background:var(--accent);}
+  .div-tone-verificacao_loja{background:#e4b85f;}
+  .div-tone-concluido{background:#54c48a;}
+  .div-tone-inventario{background:#7fc7c0;}
+  .div-store-row{display:grid; grid-template-columns:minmax(0,120px) minmax(0,1fr) minmax(0,1fr); align-items:center; gap:8px;}
+  .div-store-side{display:flex; align-items:center; gap:6px; min-width:0;}
+  .div-store-side.missing{flex-direction:row-reverse;}
+  .div-store-side .div-bar-track{flex:1 1 auto;}
+  .div-store-side.missing .div-bar-fill{left:auto; right:0; background:var(--neg);}
+  .div-store-side.surplus .div-bar-fill{background:var(--accent);}
+  .div-store-side strong{flex:0 0 auto; min-width:22px; color:var(--ink); font:800 10px/1 var(--mono); text-align:center;}
+  .div-store-legend{display:grid; grid-template-columns:minmax(0,120px) minmax(0,1fr) minmax(0,1fr); gap:8px; color:var(--ink-faint); font:700 8px/1.3 var(--mono);}
+  .div-store-legend span:nth-child(2){text-align:right;}
+  .div-product-list{display:grid; gap:8px;}
+  .div-product{
+    display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:start; gap:12px; padding:11px 12px;
+    border:1px solid var(--surface-border); border-radius:11px; background:var(--bg-card-2);
+  }
+  .div-product.multi{border-color:color-mix(in srgb,var(--neg) 55%,transparent); background:color-mix(in srgb,var(--neg) 7%,var(--bg-card-2));}
+  .div-product-rank{min-width:26px; padding:5px 6px; border-radius:8px; background:rgba(79,134,189,.14); color:var(--accent); font:800 10px/1 var(--mono); text-align:center;}
+  .div-product-copy{min-width:0;}
+  .div-product-copy strong{display:block; color:var(--ink); font:800 12px/1.35 var(--sans); overflow-wrap:anywhere;}
+  .div-product-copy small{display:block; margin-top:3px; color:var(--ink-faint); font:700 8.5px/1.35 var(--mono);}
+  .div-product-stores{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .div-product-side{display:grid; justify-items:end; gap:5px;}
+  .div-qty-neg{color:var(--neg) !important;}
+  .div-qty-pos{color:var(--accent) !important;}
+  .div-card-counters{display:flex; flex-wrap:wrap; gap:6px;}
+  .div-card-grid .purchase-card{cursor:pointer;}
+  .div-card-grid .purchase-card.selected{border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent);}
+  .div-detail{margin-top:16px; padding:16px;}
+  .div-detail-head{display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px;}
+  .div-detail-head h3{margin:0 0 6px; color:var(--ink); font:800 17px/1.3 var(--sans); overflow-wrap:anywhere;}
+  .div-detail-meta{display:grid; gap:4px; color:var(--ink-soft); font:700 10px/1.45 var(--mono);}
+  .div-detail-actions{display:flex; flex-wrap:wrap; gap:8px;}
+  .div-detail-actions button{min-height:38px; padding:8px 12px; font-size:10px;}
+  .div-items-table{box-shadow:none;}
+  .div-items-table table{min-width:1100px;}
+  .div-items-table td{vertical-align:top; font-size:12.5px;}
+  .div-items-table .status-pill{white-space:nowrap;}
+  .div-cell-text{white-space:pre-wrap; overflow-wrap:anywhere;}
+  .div-cell-sub{display:block; margin-top:4px; color:var(--ink-faint); font:700 8.5px/1.35 var(--mono);}
+  .div-row-actions{display:flex; flex-direction:column; gap:6px; align-items:stretch;}
+  .div-row-actions button{min-height:34px; padding:7px 10px; font-size:9px;}
+  .div-history{margin-top:2px; text-align:left;}
+  .div-history > summary{cursor:pointer; color:var(--accent); font:800 9px/1.3 var(--mono);}
+  .div-history ol{margin:8px 0 0; padding:0 0 0 16px; display:grid; gap:6px;}
+  .div-history li{color:var(--ink-soft); font:600 11px/1.4 var(--sans); overflow-wrap:anywhere;}
+  .div-history li small{display:block; color:var(--ink-faint); font:700 8.5px/1.35 var(--mono);}
+  .div-item-rows{display:grid; gap:10px; margin-top:12px;}
+  .div-item-row{
+    display:grid; grid-template-columns:minmax(0,2.2fr) minmax(0,.75fr) minmax(0,.75fr) minmax(0,1.6fr) auto;
+    align-items:end; gap:10px; padding:12px; border:1px solid var(--surface-border); border-radius:11px; background:var(--bg-card);
+  }
+  .div-item-row .purchase-field input,.div-item-row .purchase-field textarea{
+    width:100%; min-width:0; background:var(--bg-card-2); color:var(--ink); border:1px solid var(--border);
+    min-height:44px; border-radius:9px; padding:10px 11px; font-family:var(--sans); font-size:13px;
+  }
+  .div-item-row .purchase-field textarea{min-height:44px; resize:vertical;}
+  .div-item-preview{grid-column:1 / -1; color:var(--ink-faint); font:800 9px/1.3 var(--mono);}
+  .div-item-remove{min-height:44px; padding:8px 11px; font-size:10px;}
+  .div-item-locked{grid-column:1 / -1; color:#e4b85f; font:700 9px/1.35 var(--mono);}
+  .div-add-item{margin-top:10px; min-height:40px; padding:9px 14px; font-size:11px;}
+  .div-small-dialog{width:min(560px,calc(100vw - 28px));}
+  .div-dialog-fields{margin-top:14px;}
+  .div-dialog-fields input,.div-dialog-fields select,.div-dialog-fields textarea{
+    width:100%; min-width:0; background:var(--bg-card-2); color:var(--ink); border:1px solid var(--border);
+    min-height:44px; border-radius:9px; padding:10px 11px; font-family:var(--sans); font-size:13px;
+  }
+  .div-inventory-group{margin-bottom:14px;}
+  .div-inventory-group h4{margin:0 0 8px; color:var(--ink); font:800 12px/1.3 var(--mono); letter-spacing:.4px;}
+  .div-inventory-row-done{min-height:36px; padding:7px 12px; font-size:10px;}
+  /* Widgets da Início (mesmo modelo de .home-supplies-alert). */
+  .home-divergences .home-supplies-row-link{cursor:pointer; width:100%; text-align:left; font:inherit;}
+  .home-divergences .home-supplies-head a{display:inline-flex; align-items:center; justify-content:center; padding:8px 11px; border-radius:9px;}
+  .home-div-counters{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px;}
+  .home-div-counter{
+    display:grid; gap:5px; min-height:0; padding:10px 11px; border:1px solid rgba(126,100,39,.18); border-radius:10px;
+    background:rgba(255,255,255,.54); color:#352b16; text-align:left; cursor:pointer;
+  }
+  .home-div-counter span{color:#776846; font:900 7.5px/1.3 var(--mono); letter-spacing:.3px;}
+  .home-div-counter strong{font:900 20px/1 var(--mono);}
+  .home-div-alert{
+    margin-bottom:9px; padding:10px 12px; border:1px solid rgba(196,71,53,.45); border-radius:10px;
+    background:rgba(239,106,85,.14); color:#9c2f22; font:800 10px/1.45 var(--sans); cursor:pointer;
+  }
+  html[data-theme="dark"] .home-div-counter{background:rgba(255,255,255,.035); border-color:rgba(225,173,73,.22); color:#fff5d4;}
+  html[data-theme="dark"] .home-div-counter span{color:#e5c978;}
+  html[data-theme="dark"] .home-divergences .home-supply-quantity{background:rgba(225,173,73,.16); color:#f0d58b;}
+  html[data-theme="dark"] .home-div-alert{background:rgba(239,106,85,.16); border-color:rgba(239,106,85,.5); color:#ffc0b5;}
+  @media(max-width:900px){
+    .div-dash-grid{grid-template-columns:1fr;}
+    .div-item-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+    .div-item-row .div-item-product,.div-item-row .div-item-notes{grid-column:1 / -1;}
+    .div-item-remove{grid-column:1 / -1;}
+  }
+  @media(max-width:680px){
+    .div-items-table table{min-width:0;}
+    .div-row-actions{flex-direction:row; flex-wrap:wrap; justify-content:flex-end;}
+    .div-bar-row{grid-template-columns:minmax(0,1fr) auto;}
+    .div-bar-row .div-bar-track{grid-column:1 / -1; grid-row:2;}
+    .div-store-row,.div-store-legend{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+    .div-store-row .div-bar-label,.div-store-legend span:first-child{grid-column:1 / -1;}
+  }
+  @media(max-width:520px){
+    .div-toolbar .field{flex:1 1 100%;}
+    .div-toolbar > button{flex:1 1 100%;}
+    .home-div-counters{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .div-product{grid-template-columns:auto minmax(0,1fr);}
+    .div-product-side{grid-column:1 / -1; justify-items:start;}
+  }
+  @media print{
+    .div-print-items{table-layout:fixed;}
+    .div-print-items td,.div-print-items th{vertical-align:top; overflow-wrap:anywhere;}
+    .div-print-items thead{display:table-header-group;}
+    .div-print-items tr{break-inside:avoid; page-break-inside:avoid;}
+    .div-print-items thead th{position:static; background:#eef2f6 !important; color:#1e293b !important; border-color:#cfd8e3 !important;}
+    .div-print-items tbody td{color:#111827 !important;}
+    .div-print-items th:nth-child(1){width:19%;}
+    .div-print-items th:nth-child(2),.div-print-items th:nth-child(3){width:7%;}
+    .div-print-items th:nth-child(4){width:12%;}
+    .div-print-items th:nth-child(5),.div-print-items th:nth-child(6){width:12%;}
+    .div-print-items th:nth-child(7),.div-print-items th:nth-child(8){width:15.5%;}
+  }
 </style>
 </head>
 <body class="home-active">
@@ -3089,6 +3242,7 @@
         <a class="nav-item sub-item" id="navPuxadas" data-page="puxadas" data-permission="pulls" data-home-desc="Equilíbrio e transferências entre lojas." title="Puxadas" href="/puxadas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11l-3-3"/><path d="M18 16H7l3 3"/></svg></span><span class="nav-label">Puxadas</span></a>
         <a class="nav-item sub-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" data-home-desc="Vendas e estoque baixo da sua loja." title="Relatório 41" href="/relatorio-41"><span class="nav-icon nav-icon-text" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></a>
         <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc="Saídas Gerais Solicitadas pelas lojas." title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5"/><path d="M11 12h9.5"/><path d="m16.5 8 4 4-4 4"/></svg></span><span class="nav-label">Saídas</span></a>
+        <a class="nav-item sub-item" id="navDivergencias" data-page="divergencias" data-permission="divergencias" data-home-desc="Pedidos de verificação de divergência entre o físico e o sistema." title="Divergências" href="/divergencias"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11l-3-3"/><path d="M18 16H7l3 3"/></svg></span><span class="nav-label">Divergências</span></a>
       </div>
     </div>
     <div class="nav-group" data-hide-for-commercial-only>
@@ -3265,6 +3419,24 @@
             <a href="/insumos" data-home-target="insumos">ABRIR INSUMOS →</a>
           </div>
           <div class="home-supplies-list" id="homeSuppliesList" aria-live="polite"></div>
+        </section>
+        <!-- Divergências: widget da LOJA (pedidos recentes) e do ESTOQUE
+             (contadores + alerta de NÃO VISTO há mais de 14 dias). Mesmo
+             modelo visual compacto do lembrete de Insumos. -->
+        <section class="home-supplies-alert home-divergences" id="homeDivergencesStore" data-permission="divergencias" hidden aria-labelledby="homeDivergencesStoreTitle">
+          <div class="home-supplies-head">
+            <div><span>DIVERGÊNCIAS DE ESTOQUE</span><h2 id="homeDivergencesStoreTitle">Seus pedidos de verificação</h2></div>
+            <a href="/divergencias" data-div-home-filter="">ABRIR DIVERGÊNCIAS →</a>
+          </div>
+          <div class="home-supplies-list" id="homeDivergencesStoreList" aria-live="polite"></div>
+        </section>
+        <section class="home-supplies-alert home-divergences" id="homeDivergencesStock" data-permission="divergencias:respond" hidden aria-labelledby="homeDivergencesStockTitle">
+          <div class="home-supplies-head">
+            <div><span>DIVERGÊNCIAS DE ESTOQUE</span><h2 id="homeDivergencesStockTitle">Itens para responder</h2></div>
+            <a href="/divergencias" data-div-home-filter="">ABRIR DIVERGÊNCIAS →</a>
+          </div>
+          <div class="home-div-alert" id="homeDivergencesOverdue" hidden></div>
+          <div class="home-div-counters" id="homeDivergencesCounters"></div>
         </section>
         <section class="home-missions" data-permission="missions" aria-labelledby="homeMissionsTitle">
           <div class="home-missions-head">
@@ -3827,6 +3999,120 @@
           </div>
         </div>
         <div class="output-list" id="outputList" aria-live="polite"><div class="output-empty">Carregando solicitações…</div></div>
+      </section>
+    </section>
+
+    <section id="pageDivergencias" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Divergências</h2>
+        </div>
+      </header>
+
+      <!-- Relatório PDF de UM pedido (body.pdf-export + window.print, mesmo
+           padrão dos relatórios de Saídas e Captação). -->
+      <div class="print-report-header" id="divPrintHeader">
+        <div class="print-report-kicker">UNIGAMES · DIVERGÊNCIAS DE ESTOQUE</div>
+        <h1 id="divPrintTitle">Pedido de verificação de divergência</h1>
+        <div class="print-report-meta" id="divPrintMeta"></div>
+      </div>
+      <div class="print-only" id="divPrintBody"></div>
+
+      <div class="supply-tabs no-print" role="tablist" aria-label="Seções de divergências">
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-div-tab="dashboard">DASHBOARD</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-div-tab="pedidos">PEDIDOS</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-div-tab="inventario" id="divTabInventario" hidden>INVENTÁRIO</button>
+      </div>
+
+      <section class="no-print div-section" id="divSectionDashboard">
+        <div class="div-toolbar">
+          <div class="field"><label for="divDashFrom">DATA INICIAL</label><input id="divDashFrom" type="date"></div>
+          <div class="field"><label for="divDashTo">DATA FINAL</label><input id="divDashTo" type="date"></div>
+          <div class="field" data-div-all-stores hidden><label for="divDashCompany">LOJA</label><select id="divDashCompany"><option value="">TODAS AS LOJAS</option></select></div>
+          <button class="btn-outline" id="btnDivDashRefresh" type="button">ATUALIZAR</button>
+        </div>
+        <div class="user-form-status" id="divDashStatus" role="status" aria-live="polite"></div>
+        <div class="purchase-metrics div-metrics" id="divDashRequestMetrics"></div>
+        <div class="div-dash-grid">
+          <section class="table-panel div-panel">
+            <div class="div-panel-head"><h3>ITENS POR STATUS</h3><span id="divDashItemsTotal"></span></div>
+            <div id="divDashItemsChart" class="div-chart"></div>
+          </section>
+          <section class="table-panel div-panel">
+            <div class="div-panel-head"><h3>DIVERGÊNCIAS POR LOJA</h3><span>UNIDADES A MENOS / A MAIS FISICAMENTE</span></div>
+            <div id="divDashStoresChart" class="div-chart"></div>
+          </section>
+        </div>
+        <section class="table-panel div-panel">
+          <div class="div-panel-head"><h3>PRODUTOS MAIS DIVERGENTES</h3><span>EM DESTAQUE: PRODUTOS COM DIVERGÊNCIA EM MAIS DE UMA LOJA</span></div>
+          <div id="divDashProducts" class="div-product-list"></div>
+        </section>
+      </section>
+
+      <section class="no-print div-section" id="divSectionPedidos" hidden>
+        <div class="div-toolbar">
+          <button class="btn-accent" id="btnNewDivRequest" type="button" data-permission="divergencias:create">+ NOVO PEDIDO DE DIVERGÊNCIA</button>
+          <div class="field"><label for="divFilterStatus">STATUS DO PEDIDO</label>
+            <select id="divFilterStatus">
+              <option value="">TODOS</option>
+              <option value="aberto">EM ABERTO</option>
+              <option value="verificacao">EM VERIFICAÇÃO</option>
+              <option value="finalizado">FINALIZADO</option>
+            </select>
+          </div>
+          <div class="field"><label for="divFilterItemStatus">COM ITENS EM</label>
+            <select id="divFilterItemStatus">
+              <option value="">QUALQUER STATUS</option>
+              <option value="nao_visto">NÃO VISTO</option>
+              <option value="em_verificacao">EM VERIFICAÇÃO</option>
+              <option value="verificacao_loja">VERIFICAÇÃO DA LOJA</option>
+              <option value="concluido">CONCLUÍDO</option>
+              <option value="inventario">ANOTADO PARA INVENTÁRIO</option>
+            </select>
+          </div>
+          <div class="field" data-div-all-stores hidden><label for="divFilterCompany">LOJA</label><select id="divFilterCompany"><option value="">TODAS AS LOJAS</option></select></div>
+          <button class="btn-outline" id="btnDivRefresh" type="button">ATUALIZAR</button>
+        </div>
+        <div class="purchase-card-grid div-card-grid" id="divRequestGrid" aria-live="polite">
+          <div class="purchase-card-empty"><div class="empty-state"><h4>Carregando pedidos…</h4></div></div>
+        </div>
+
+        <section class="table-panel div-detail" id="divRequestDetail" hidden aria-live="polite">
+          <div class="div-detail-head">
+            <div>
+              <span class="purchase-card-kicker" id="divDetailKicker">PEDIDO DE VERIFICAÇÃO</span>
+              <h3 id="divDetailTitle">—</h3>
+              <div class="div-detail-meta" id="divDetailMeta"></div>
+            </div>
+            <div class="div-detail-actions">
+              <button class="btn-outline" id="btnDivPdf" type="button">GERAR PDF</button>
+              <button class="btn-outline" id="btnDivEdit" type="button" data-permission="divergencias:edit">EDITAR PEDIDO</button>
+              <button class="btn-danger-outline" id="btnDivDelete" type="button" data-permission="divergencias:delete">EXCLUIR PEDIDO</button>
+              <button class="btn-outline" id="btnDivCloseDetail" type="button">FECHAR</button>
+            </div>
+          </div>
+          <div class="table-panel responsive-table div-items-table">
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Produto</th><th>Físico</th><th>Sistema</th><th>Divergência</th><th>Obs. da loja</th><th>Status</th><th>Resposta do estoque</th><th>Retorno da loja</th><th></th></tr></thead>
+                <tbody id="divDetailItems"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="no-print div-section" id="divSectionInventario" hidden>
+        <div class="div-toolbar">
+          <div class="output-tabs" role="tablist" aria-label="Inventário">
+            <button class="output-tab active" type="button" role="tab" aria-selected="true" data-div-inventory-view="active">A INVENTARIAR</button>
+            <button class="output-tab" type="button" role="tab" aria-selected="false" data-div-inventory-view="history">HISTÓRICO</button>
+          </div>
+          <div class="field" data-div-inventory-all-stores hidden><label for="divInventoryCompany">LOJA</label><select id="divInventoryCompany"><option value="">TODAS AS LOJAS</option></select></div>
+          <button class="btn-outline" id="btnDivInventoryRefresh" type="button">ATUALIZAR</button>
+        </div>
+        <div id="divInventoryList" aria-live="polite"><div class="empty-state"><h4>Carregando inventário…</h4></div></div>
       </section>
     </section>
 
@@ -5268,6 +5554,17 @@
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:create"> Cadastrar saídas</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:complete"> Concluir saídas</label>
                     <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:delete"> Excluir saídas</label>
+                  </div>
+                </details>
+                <details class="permission-module">
+                  <summary>Divergências</summary>
+                  <div class="permission-grid">
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:view"> VISUALIZAR (pedidos, dashboard)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:create"> CADASTRAR PEDIDO</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:edit"> EDITAR PEDIDO (inclui o retorno da loja em VERIFICAÇÃO DA LOJA)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:delete"> EXCLUIR PEDIDO</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:respond"> RESPONDER DIVERGÊNCIAS (estoque: status + resposta por item)</label>
+                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:inventory"> INVENTÁRIO (ver a aba e marcar INVENTARIADO)</label>
                   </div>
                 </details>
                 <details class="permission-module">
@@ -7643,6 +7940,86 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelComprasCloneOrderDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">CRIAR PEDIDO CLONADO</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Estoque > Divergências: pedido (criar/editar), resposta do estoque por
+     item e retorno da loja em VERIFICAÇÃO DA LOJA. -->
+<dialog class="purchase-dialog" id="divRequestDialog" aria-labelledby="divRequestDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="divRequestDialogTitle">NOVO PEDIDO DE DIVERGÊNCIA</h3>
+    <button class="purchase-dialog-close" id="btnCloseDivRequestDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="divRequestForm" novalidate>
+    <input type="hidden" id="divRequestId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field" id="divRequestCompanyField" hidden>
+        <label for="divRequestCompany">LOJA</label>
+        <select id="divRequestCompany"><option value="">SELECIONE A LOJA</option></select>
+      </div>
+      <div class="purchase-field" id="divRequestCompanyStatic">
+        <label>LOJA</label>
+        <div class="purchase-field-static" id="divRequestCompanyName">—</div>
+      </div>
+      <div class="purchase-field full"><label for="divRequestNotes">OBSERVAÇÃO GERAL (OPCIONAL)</label><textarea id="divRequestNotes" rows="2" maxlength="2000"></textarea></div>
+      <div class="purchase-form-section">PRODUTOS (FÍSICO x SISTEMA)</div>
+    </div>
+    <div class="div-item-rows" id="divRequestItems"></div>
+    <button class="btn-outline div-add-item" id="btnDivAddItem" type="button">+ ADICIONAR PRODUTO</button>
+    <p class="purchase-field-help" id="divRequestEditHelp" hidden>ALTERAR PRODUTO OU QUANTIDADES DE UM ITEM JÁ RESPONDIDO DEVOLVE O ITEM PARA NÃO VISTO.</p>
+    <div class="user-form-status" id="divRequestFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelDivRequestDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveDivRequest" type="submit">ENVIAR PEDIDO</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog div-small-dialog" id="divRespondDialog" aria-labelledby="divRespondDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="divRespondDialogTitle">RESPONDER ITEM</h3>
+    <button class="purchase-dialog-close" id="btnCloseDivRespondDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="divRespondForm" novalidate>
+    <div class="purchase-card-details" id="divRespondSummary"></div>
+    <div class="purchase-form-grid div-dialog-fields">
+      <div class="purchase-field full">
+        <label for="divRespondStatus">STATUS DO ITEM</label>
+        <select id="divRespondStatus">
+          <option value="em_verificacao">EM VERIFICAÇÃO</option>
+          <option value="verificacao_loja">VERIFICAÇÃO DA LOJA</option>
+          <option value="concluido">CONCLUÍDO</option>
+          <option value="inventario">ANOTADO PARA INVENTÁRIO</option>
+        </select>
+      </div>
+      <div class="purchase-field full"><label for="divRespondText">RESPOSTA PARA A LOJA</label><textarea id="divRespondText" rows="4" maxlength="2000" placeholder="O que foi conferido no PDV / o que a loja precisa verificar."></textarea></div>
+    </div>
+    <div class="user-form-status" id="divRespondFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelDivRespondDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR RESPOSTA</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog div-small-dialog" id="divReplyDialog" aria-labelledby="divReplyDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="divReplyDialogTitle">RETORNO DA LOJA</h3>
+    <button class="purchase-dialog-close" id="btnCloseDivReplyDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="divReplyForm" novalidate>
+    <div class="purchase-card-details" id="divReplySummary"></div>
+    <div class="purchase-form-grid div-dialog-fields">
+      <div class="purchase-field full"><label for="divReplyText">OBSERVAÇÃO DE RETORNO</label><textarea id="divReplyText" rows="4" maxlength="2000" placeholder="O que a loja encontrou na verificação."></textarea></div>
+      <div class="purchase-field"><label for="divReplyPhysical">QTD FÍSICA (CORRIGIR, SE PRECISAR)</label><input id="divReplyPhysical" type="number" min="0" max="999999" step="1" inputmode="numeric"></div>
+      <div class="purchase-field"><label for="divReplySystem">QTD EM SISTEMA (CORRIGIR, SE PRECISAR)</label><input id="divReplySystem" type="number" min="0" max="999999" step="1" inputmode="numeric"></div>
+    </div>
+    <p class="purchase-field-help">AO ENVIAR, O ITEM VOLTA PARA EM VERIFICAÇÃO.</p>
+    <div class="user-form-status" id="divReplyFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelDivReplyDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">ENVIAR RETORNO</button>
     </div>
   </form>
 </dialog>
@@ -10721,6 +11098,7 @@
     missoes:'/missoes',
     captacao:'/captacao',
     saidas:'/saidas',
+    divergencias:'/divergencias',
     entradas:'/entradas',
     insumos:'/insumos',
     aparelhosEmprestimo:'/aparelhos-emprestimo',
@@ -10778,6 +11156,7 @@
     missoes:'MISSÕES',
     captacao:'CAPTAÇÃO',
     saidas:'SAÍDAS',
+    divergencias:'DIVERGÊNCIAS',
     entradas:'ENTRADA',
     insumos:'INSUMOS',
     aparelhosEmprestimo:'APARELHOS DE EMPRÉSTIMO',
@@ -10829,6 +11208,7 @@
     missoes:'missions',
     captacao:'captures',
     saidas:'outputs',
+    divergencias:'divergencias',
     entradas:'inputs',
     insumos:'supplies',
     aparelhosEmprestimo:'loans',
@@ -11444,7 +11824,7 @@
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'fornecedores' || name === 'usuarios';
     const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento' || name === 'rhDreFuncionario';
     const isRh = name === 'rhFolgas' || name === 'rhEscalas' || isRhFinanceiro;
-    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas';
+    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
@@ -11500,6 +11880,7 @@
     if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); if(CHECKLIST_KIND[missionSectionTab]) loadChecklist(missionSectionTab); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
+    if(name === 'divergencias') loadDivergencias();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
     if(name === 'instrucoes'){ loadInstructions(); loadInstructionCarousel(); }
@@ -11557,6 +11938,7 @@
     if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); if(CHECKLIST_KIND[missionSectionTab]) loadChecklist(missionSectionTab); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
+    if(name === 'divergencias') loadDivergencias();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
     if(name === 'instrucoes'){ loadInstructions(); loadInstructionCarousel(); }
@@ -14123,7 +14505,8 @@
 
   async function loadProductCatalogItems(){
     if(!canAccess('database:view') && !canAccess('purchases_draft:manage') &&
-      !canAccess('outputs:create') && !canAccess('inputs:create') && !canAccess('pdv_requests:create')) return;
+      !canAccess('outputs:create') && !canAccess('inputs:create') && !canAccess('pdv_requests:create') &&
+      !canAccess('divergencias:create') && !canAccess('divergencias:edit')) return;
     try{
       const data = await productCatalogApiRequest('');
       productCatalogItems = Array.isArray(data.items) ? data.items : [];
@@ -18080,6 +18463,982 @@ function renderHomeTasks(){
       alert.hidden = true;
     }
   }
+
+  // ===== ESTOQUE > DIVERGÊNCIAS =====
+  // A loja abre um pedido de verificação (1+ produtos, físico x sistema) e o
+  // estoque responde item a item. Regras e escopo por loja ficam no backend
+  // (app/api/divergences/**, app/lib/divergences.ts); aqui só a tela.
+  const DIV_ITEM_STATUS = Object.freeze({
+    nao_visto:'NÃO VISTO',
+    em_verificacao:'EM VERIFICAÇÃO',
+    verificacao_loja:'VERIFICAÇÃO DA LOJA',
+    concluido:'CONCLUÍDO',
+    inventario:'ANOTADO PARA INVENTÁRIO'
+  });
+  const DIV_ITEM_TONE = Object.freeze({nao_visto:'', em_verificacao:'progress', verificacao_loja:'waiting', concluido:'done', inventario:'done'});
+  const DIV_REQUEST_STATUS = Object.freeze({aberto:'EM ABERTO', verificacao:'EM VERIFICAÇÃO', finalizado:'FINALIZADO'});
+  const DIV_REQUEST_TONE = Object.freeze({aberto:'waiting', verificacao:'progress', finalizado:'done'});
+  const DIV_EVENT_LABEL = Object.freeze({
+    created:'PRODUTO INCLUÍDO PELA LOJA',
+    respond:'RESPOSTA DO ESTOQUE',
+    store_reply:'RETORNO DA LOJA',
+    store_edit:'ALTERADO PELA LOJA',
+    inventoried:'INVENTARIADO'
+  });
+  const DIV_READ_PERMISSIONS = ['divergencias:view','divergencias:respond','divergencias:edit','divergencias:delete'];
+  const divState = {
+    tab:'',
+    requests:[],
+    detail:null,
+    detailId:'',
+    inventoryView:'active',
+    inventoryItems:[],
+    pending:null,
+    rowSeq:0,
+    ready:false
+  };
+  let divPrintTitleBefore = '';
+
+  async function divApi(path, options){
+    const settings = options || {};
+    const response = await fetch('/api/divergences'+path, {
+      ...settings,
+      cache:'no-store',
+      headers:{
+        Accept:'application/json',
+        ...(settings.body ? {'Content-Type':'application/json'} : {}),
+        ...(settings.headers || {})
+      }
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function divCanRead(){
+    return DIV_READ_PERMISSIONS.some(permission => canAccess(permission));
+  }
+
+  // Mesmo critério do backend: sem loja + permissão (canActAcrossStores) ou
+  // setor Administrativo enxergam/agem em todas as lojas.
+  function divAllStores(permission){
+    return canActAcrossStores(permission) || currentSession.sector === 'administrative';
+  }
+
+  function divAllStoresRead(){
+    return DIV_READ_PERMISSIONS.some(permission => canAccess(permission) && divAllStores(permission));
+  }
+
+  function divDiff(item){
+    return (Number(item.physicalQty) || 0) - (Number(item.systemQty) || 0);
+  }
+
+  function divTwoDigits(value){
+    return String(Math.abs(value)).padStart(2,'0');
+  }
+
+  function divDiffLabel(item){
+    const diff = divDiff(item);
+    if(!diff) return 'SEM DIVERGÊNCIA';
+    return divTwoDigits(diff)+(diff < 0 ? ' A MENOS' : ' A MAIS')+' FISICAMENTE';
+  }
+
+  function divDiffClass(item){
+    const diff = divDiff(item);
+    return diff < 0 ? 'div-qty-neg' : diff > 0 ? 'div-qty-pos' : '';
+  }
+
+  function divInventoryLabel(item){
+    const diff = divDiff(item);
+    if(!diff) return 'SEM DIVERGÊNCIA';
+    return 'DIVERGÊNCIA DE '+divTwoDigits(diff)+(Math.abs(diff) === 1 ? ' UNIDADE' : ' UNIDADES')+
+      (diff < 0 ? ' A MENOS' : ' A MAIS')+' FISICAMENTE';
+  }
+
+  function divPill(label, tone){
+    return '<span class="status-pill'+(tone ? ' '+tone : '')+'">'+escapeHtml(label)+'</span>';
+  }
+
+  function divItemPill(status){
+    return divPill(DIV_ITEM_STATUS[status] || status, DIV_ITEM_TONE[status]);
+  }
+
+  function divDateTime(value){
+    return formatDateTimeBR(value) || '—';
+  }
+
+  function divCompanyName(id){
+    return (companies.find(company => company.id === id) || {}).name || '';
+  }
+
+  function divFillCompanySelect(select, placeholder){
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = '<option value="">'+escapeHtml(placeholder)+'</option>'+
+      companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    if(companies.some(company => company.id === selected)) select.value = selected;
+  }
+
+  function divRenderCompanySelects(){
+    divFillCompanySelect(el('divDashCompany'), 'TODAS AS LOJAS');
+    divFillCompanySelect(el('divFilterCompany'), 'TODAS AS LOJAS');
+    divFillCompanySelect(el('divInventoryCompany'), 'TODAS AS LOJAS');
+    divFillCompanySelect(el('divRequestCompany'), 'SELECIONE A LOJA');
+    const allStores = divAllStoresRead();
+    document.querySelectorAll('[data-div-all-stores]').forEach(node => { node.hidden = !allStores; });
+    document.querySelectorAll('[data-div-inventory-all-stores]').forEach(node => {
+      node.hidden = !divAllStores('divergencias:inventory');
+    });
+  }
+
+  function divAvailableTabs(){
+    const tabs = [];
+    if(divCanRead()) tabs.push('dashboard');
+    if(divCanRead() || canAccess('divergencias:create')) tabs.push('pedidos');
+    if(canAccess('divergencias:inventory')) tabs.push('inventario');
+    return tabs;
+  }
+
+  function setDivTab(tab){
+    const tabs = divAvailableTabs();
+    const next = tabs.includes(tab) ? tab : (tabs[0] || 'pedidos');
+    divState.tab = next;
+    document.querySelectorAll('[data-div-tab]').forEach(button => {
+      const name = button.dataset.divTab;
+      button.hidden = !tabs.includes(name);
+      const active = name === next;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    el('divSectionDashboard').hidden = next !== 'dashboard';
+    el('divSectionPedidos').hidden = next !== 'pedidos';
+    el('divSectionInventario').hidden = next !== 'inventario';
+    if(next === 'dashboard') loadDivDashboard();
+    if(next === 'pedidos') loadDivRequests();
+    if(next === 'inventario') loadDivInventory();
+  }
+
+  async function loadDivergencias(){
+    if(!divState.ready){
+      divState.ready = true;
+      const today = todayDateKeyRecife();
+      const from = new Date(today+'T12:00:00Z');
+      from.setUTCDate(from.getUTCDate()-30);
+      el('divDashFrom').value = from.toISOString().slice(0,10);
+      el('divDashTo').value = today;
+    }
+    if(!companies.length) await loadCompanies().catch(() => {});
+    divRenderCompanySelects();
+    const pending = divState.pending;
+    divState.pending = null;
+    if(pending){
+      if(pending.status !== undefined) el('divFilterStatus').value = pending.status;
+      if(pending.itemStatus !== undefined) el('divFilterItemStatus').value = pending.itemStatus;
+      if(pending.requestId) divState.detailId = pending.requestId;
+    }
+    setDivTab((pending && pending.tab) || divState.tab || 'dashboard');
+  }
+
+  // Atalho dos widgets/cards: abre o módulo já filtrado.
+  function divOpenFiltered(options){
+    divState.pending = options || {};
+    if(divState.tab && document.getElementById('pageDivergencias').classList.contains('active')){
+      loadDivergencias();
+      window.scrollTo({top:0, behavior:'smooth'});
+      return;
+    }
+    navigateToPage('divergencias');
+  }
+
+  // ---------- DASHBOARD ----------
+  function divDashQuery(){
+    const params = new URLSearchParams();
+    const from = el('divDashFrom').value;
+    const to = el('divDashTo').value;
+    if(from) params.set('from', from);
+    if(to) params.set('to', to);
+    const company = el('divDashCompany').value;
+    if(company && divAllStoresRead()) params.set('companyId', company);
+    return params.toString();
+  }
+
+  async function loadDivDashboard(){
+    if(!divCanRead()) return;
+    const status = el('divDashStatus');
+    const from = el('divDashFrom').value;
+    const to = el('divDashTo').value;
+    if(from && to && from > to){
+      status.textContent = 'A DATA INICIAL NÃO PODE SER DEPOIS DA DATA FINAL.';
+      status.className = 'user-form-status error';
+      return;
+    }
+    status.textContent = 'CARREGANDO…';
+    status.className = 'user-form-status';
+    try{
+      const data = await divApi('/dashboard?'+divDashQuery());
+      status.textContent = '';
+      renderDivDashboard(data);
+    }catch(error){
+      status.textContent = error.message;
+      status.className = 'user-form-status error';
+    }
+  }
+
+  function renderDivDashboard(data){
+    const requests = data.requestsByStatus || {};
+    const totals = data.totals || {};
+    el('divDashRequestMetrics').innerHTML =
+      [['aberto','PEDIDOS EM ABERTO'],['verificacao','PEDIDOS EM VERIFICAÇÃO'],['finalizado','PEDIDOS FINALIZADOS']].map(([status, label]) =>
+        '<button type="button" class="purchase-metric div-metric-button" data-div-metric-status="'+status+'">'+
+          '<small>'+label+'</small><strong>'+(Number(requests[status]) || 0)+'</strong>'+
+        '</button>'
+      ).join('')+
+      '<button type="button" class="purchase-metric div-metric-button'+(totals.overdue ? ' alert' : '')+'" data-div-metric-item="nao_visto">'+
+        '<small>NÃO VISTOS HÁ MAIS DE 14 DIAS</small><strong>'+(Number(totals.overdue) || 0)+'</strong>'+
+      '</button>';
+
+    const items = data.itemsByStatus || {};
+    const order = Object.keys(DIV_ITEM_STATUS);
+    const totalItems = Number(totals.items) || 0;
+    const maxItems = Math.max(1, ...order.map(status => Number(items[status]) || 0));
+    el('divDashItemsTotal').textContent = totalItems.toLocaleString('pt-BR')+' ITEM(NS) · '+
+      (Number(totals.totalAbs) || 0).toLocaleString('pt-BR')+' UN. DE DIVERGÊNCIA';
+    el('divDashItemsChart').innerHTML = totalItems
+      ? '<div class="div-stack" role="img" aria-label="Distribuição dos itens por status">'+
+          order.map(status => {
+            const count = Number(items[status]) || 0;
+            return count ? '<span class="div-tone-'+status+'" style="width:'+(count / totalItems * 100).toFixed(2)+'%" title="'+escapeHtml(DIV_ITEM_STATUS[status]+': '+count)+'"></span>' : '';
+          }).join('')+
+        '</div>'+
+        order.map(status => {
+          const count = Number(items[status]) || 0;
+          return '<div class="div-bar-row">'+
+            '<span class="div-bar-label"><span class="div-dot div-tone-'+status+'"></span>'+escapeHtml(DIV_ITEM_STATUS[status])+'</span>'+
+            '<span class="div-bar-track"><span class="div-bar-fill div-tone-'+status+'" style="width:'+(count / maxItems * 100).toFixed(2)+'%"></span></span>'+
+            '<span class="div-bar-value">'+count+'</span>'+
+          '</div>';
+        }).join('')
+      : '<div class="empty-state"><h4>Nenhum item no período.</h4></div>';
+
+    const stores = Array.isArray(data.byStore) ? data.byStore : [];
+    const maxSide = Math.max(1, ...stores.map(store => Math.max(Number(store.missing) || 0, Number(store.surplus) || 0)));
+    el('divDashStoresChart').innerHTML = stores.length
+      ? '<div class="div-store-legend"><span>LOJA</span><span>A MENOS FISICAMENTE</span><span>A MAIS FISICAMENTE</span></div>'+
+        stores.map(store => {
+          const missing = Number(store.missing) || 0;
+          const surplus = Number(store.surplus) || 0;
+          return '<div class="div-store-row">'+
+            '<span class="div-bar-label">'+escapeHtml(store.companyName || '—')+
+              '<span class="div-cell-sub">'+(Number(store.items) || 0)+' ITEM(NS) · '+(Number(store.pending) || 0)+' PENDENTE(S)</span></span>'+
+            '<span class="div-store-side missing"><span class="div-bar-track"><span class="div-bar-fill" style="width:'+(missing / maxSide * 100).toFixed(2)+'%"></span></span><strong>'+missing+'</strong></span>'+
+            '<span class="div-store-side surplus"><span class="div-bar-track"><span class="div-bar-fill" style="width:'+(surplus / maxSide * 100).toFixed(2)+'%"></span></span><strong>'+surplus+'</strong></span>'+
+          '</div>';
+        }).join('')
+      : '<div class="empty-state"><h4>Nenhuma divergência no período.</h4></div>';
+
+    const products = Array.isArray(data.topProducts) ? data.topProducts : [];
+    el('divDashProducts').innerHTML = products.length
+      ? products.map((product, index) =>
+          '<article class="div-product'+(product.multiStore ? ' multi' : '')+'">'+
+            '<span class="div-product-rank">'+(index+1)+'º</span>'+
+            '<div class="div-product-copy">'+
+              '<strong>'+escapeHtml(product.productName || '—')+'</strong>'+
+              '<small>'+(product.productCode ? 'CÓD. '+escapeHtml(product.productCode)+' · ' : '')+
+                (Number(product.occurrences) || 0)+' OCORRÊNCIA(S) · '+(Number(product.totalAbs) || 0)+' UN. DE DIVERGÊNCIA</small>'+
+              '<div class="div-product-stores">'+
+                (product.stores || []).map(store =>
+                  divPill((store.companyName || '—')+': '+divDiffLabel({physicalQty:store.divergence, systemQty:0}),
+                    store.divergence < 0 ? 'alert' : store.divergence > 0 ? 'progress' : '')
+                ).join('')+
+              '</div>'+
+            '</div>'+
+            '<div class="div-product-side">'+(product.multiStore ? divPill('EM '+product.storeCount+' LOJAS','alert') : divPill('1 LOJA',''))+'</div>'+
+          '</article>'
+        ).join('')
+      : '<div class="empty-state"><h4>Nenhum produto com divergência no período.</h4></div>';
+  }
+
+  // ---------- PEDIDOS ----------
+  async function loadDivRequests(){
+    const grid = el('divRequestGrid');
+    if(!divCanRead()){
+      grid.innerHTML = '<div class="purchase-card-empty"><div class="empty-state"><h4>Seu acesso permite apenas cadastrar pedidos.</h4><p>Use o botão “+ NOVO PEDIDO DE DIVERGÊNCIA”.</p></div></div>';
+      el('divRequestDetail').hidden = true;
+      return;
+    }
+    const params = new URLSearchParams();
+    const status = el('divFilterStatus').value;
+    if(status) params.set('status', status);
+    const company = el('divFilterCompany').value;
+    if(company && divAllStoresRead()) params.set('companyId', company);
+    try{
+      const data = await divApi('?'+params.toString());
+      divState.requests = Array.isArray(data.requests) ? data.requests : [];
+      renderDivRequests();
+      if(divState.detailId) await loadDivDetail(divState.detailId, {scroll:true});
+    }catch(error){
+      grid.innerHTML = '<div class="purchase-card-empty"><div class="empty-state"><h4>'+escapeHtml(error.message)+'</h4></div></div>';
+    }
+  }
+
+  function divFilteredRequests(){
+    const itemStatus = el('divFilterItemStatus').value;
+    if(!itemStatus) return divState.requests;
+    return divState.requests.filter(row => Number((row.itemsByStatus || {})[itemStatus]) > 0);
+  }
+
+  function divRequestCardHtml(row){
+    const byStatus = row.itemsByStatus || {};
+    const counters = Object.keys(DIV_ITEM_STATUS)
+      .filter(status => Number(byStatus[status]) > 0)
+      .map(status => divPill(DIV_ITEM_STATUS[status]+' · '+byStatus[status], DIV_ITEM_TONE[status]))
+      .join('');
+    const awaitingStore = Number(byStatus.verificacao_loja) || 0;
+    const alerts = (row.overdueCount ? divPill(row.overdueCount+' NÃO VISTO(S) HÁ MAIS DE 14 DIAS','alert') : '')+
+      (awaitingStore ? divPill(awaitingStore+' AGUARDANDO VERIFICAÇÃO DA LOJA','waiting') : '');
+    return '<article class="purchase-card tone-'+(DIV_REQUEST_TONE[row.status] || 'waiting')+(row.id === divState.detailId ? ' selected' : '')+'" data-div-request="'+escapeHtml(row.id)+'" tabindex="0" role="button" aria-label="Abrir pedido de '+escapeHtml(row.companyName || 'loja')+'">'+
+      '<div class="purchase-card-head">'+
+        '<div class="purchase-card-title">'+
+          '<span class="purchase-card-kicker">PEDIDO DE VERIFICAÇÃO</span>'+
+          '<h3>'+escapeHtml(row.companyName || '—')+'</h3>'+
+          '<span class="purchase-card-store">ABERTO POR '+escapeHtml(row.createdByName || 'LOJA')+'</span>'+
+        '</div>'+
+        divPill(DIV_REQUEST_STATUS[row.status] || row.status, DIV_REQUEST_TONE[row.status])+
+      '</div>'+
+      '<div class="purchase-card-dates">'+
+        '<div class="purchase-card-field"><span>ITENS</span><strong>'+(Number(row.itemCount) || 0)+'</strong></div>'+
+        '<div class="purchase-card-field"><span>ABERTO EM</span><strong>'+escapeHtml((formatDateTimeBR(row.createdAt) || '—').split(' às ')[0])+'</strong></div>'+
+        '<div class="purchase-card-field"><span>ATUALIZADO</span><strong>'+escapeHtml((formatDateTimeBR(row.updatedAt) || '—').split(' às ')[0])+'</strong></div>'+
+      '</div>'+
+      (counters ? '<div class="purchase-card-section"><span>ITENS POR STATUS</span><div class="div-card-counters">'+counters+'</div></div>' : '')+
+      (alerts ? '<div class="div-card-counters">'+alerts+'</div>' : '')+
+      (row.notes ? '<div class="purchase-card-detail wide"><span>OBSERVAÇÃO GERAL</span><strong>'+escapeHtml(row.notes)+'</strong></div>' : '')+
+      '<div class="purchase-card-footer"><div class="purchase-card-actions"><button class="btn-outline" type="button" data-div-open="'+escapeHtml(row.id)+'">VER ITENS</button></div></div>'+
+    '</article>';
+  }
+
+  function renderDivRequests(){
+    const rows = divFilteredRequests();
+    el('divRequestGrid').innerHTML = rows.length
+      ? rows.map(divRequestCardHtml).join('')
+      : '<div class="purchase-card-empty"><div class="empty-state"><h4>Nenhum pedido de divergência encontrado.</h4></div></div>';
+  }
+
+  async function loadDivDetail(id, options){
+    const settings = options || {};
+    divState.detailId = id;
+    const panel = el('divRequestDetail');
+    try{
+      const data = await divApi('/'+encodeURIComponent(id));
+      divState.detail = data;
+      renderDivDetail();
+      panel.hidden = false;
+      document.querySelectorAll('[data-div-request]').forEach(card => card.classList.toggle('selected', card.dataset.divRequest === id));
+      if(settings.scroll) panel.scrollIntoView({behavior:'smooth', block:'start'});
+    }catch(error){
+      divState.detail = null;
+      divState.detailId = '';
+      panel.hidden = true;
+      showPurchaseToast(error.message, 'error');
+    }
+  }
+
+  function divEventHtml(event){
+    const statusChange = event.fromStatus !== event.toStatus && event.toStatus
+      ? (event.fromStatus ? (DIV_ITEM_STATUS[event.fromStatus] || event.fromStatus)+' → ' : '')+(DIV_ITEM_STATUS[event.toStatus] || event.toStatus)
+      : '';
+    const label = DIV_EVENT_LABEL[event.kind] || event.kind;
+    // O texto gravado de uma edição já começa com "ALTERADO PELA LOJA — ".
+    const text = String(event.text || '').replace(label+' — ', '');
+    return '<li><strong>'+escapeHtml(label)+'</strong>'+
+      (statusChange ? ' · '+escapeHtml(statusChange) : '')+
+      (text && event.kind !== 'inventoried' ? '<span class="div-cell-text"> — '+escapeHtml(text)+'</span>' : '')+
+      '<small>'+escapeHtml(event.actorName || '—')+' · '+escapeHtml(divDateTime(event.createdAt))+'</small></li>';
+  }
+
+  function divDetailRowHtml(item){
+    const events = Array.isArray(item.events) ? item.events : [];
+    const actions = [];
+    if(canAccess('divergencias:respond')) actions.push('<button class="btn-accent" type="button" data-div-respond="'+escapeHtml(item.id)+'">RESPONDER</button>');
+    if(item.status === 'verificacao_loja' && canAccess('divergencias:edit')) actions.push('<button class="btn-accent" type="button" data-div-reply="'+escapeHtml(item.id)+'">RESPONDER VERIFICAÇÃO</button>');
+    return '<tr>'+
+      '<td data-label="Produto" class="nome"><div>'+escapeHtml(item.productName)+(item.productCode ? '<span class="div-cell-sub">CÓD. '+escapeHtml(item.productCode)+'</span>' : '')+'</div></td>'+
+      '<td data-label="Físico"><div>'+(Number(item.physicalQty) || 0)+'</div></td>'+
+      '<td data-label="Sistema"><div>'+(Number(item.systemQty) || 0)+'</div></td>'+
+      '<td data-label="Divergência"><div><strong class="'+divDiffClass(item)+'">'+escapeHtml(divDiffLabel(item))+'</strong></div></td>'+
+      '<td data-label="Obs. da loja"><div><span class="div-cell-text">'+escapeHtml(item.storeNotes || '—')+'</span></div></td>'+
+      '<td data-label="Status"><div>'+divItemPill(item.status)+'</div></td>'+
+      '<td data-label="Resposta do estoque"><div><span class="div-cell-text">'+escapeHtml(item.stockResponse || '—')+'</span>'+
+        (item.respondedAt ? '<span class="div-cell-sub">'+escapeHtml(item.respondedByName || '—')+' · '+escapeHtml(divDateTime(item.respondedAt))+'</span>' : '')+'</div></td>'+
+      '<td data-label="Retorno da loja"><div><span class="div-cell-text">'+escapeHtml(item.storeReply || '—')+'</span>'+
+        (item.storeReplyAt ? '<span class="div-cell-sub">'+escapeHtml(item.storeReplyByName || '—')+' · '+escapeHtml(divDateTime(item.storeReplyAt))+'</span>' : '')+'</div></td>'+
+      '<td data-label="Ações"><div><div class="div-row-actions">'+actions.join('')+
+        '<details class="div-history"><summary>HISTÓRICO ('+events.length+')</summary><ol>'+events.map(divEventHtml).join('')+'</ol></details>'+
+      '</div></div></td>'+
+    '</tr>';
+  }
+
+  function renderDivDetail(){
+    const data = divState.detail;
+    if(!data) return;
+    const request = data.request;
+    el('divDetailTitle').textContent = request.companyName || '—';
+    el('divDetailMeta').innerHTML =
+      '<span>'+divPill(DIV_REQUEST_STATUS[request.status] || request.status, DIV_REQUEST_TONE[request.status])+'</span>'+
+      '<span>ABERTO POR '+escapeHtml(request.createdByName || '—')+' EM '+escapeHtml(divDateTime(request.createdAt))+'</span>'+
+      (request.finalizedAt ? '<span>FINALIZADO EM '+escapeHtml(divDateTime(request.finalizedAt))+'</span>' : '')+
+      (request.notes ? '<span>OBSERVAÇÃO GERAL: '+escapeHtml(request.notes)+'</span>' : '');
+    el('divDetailItems').innerHTML = data.items.length
+      ? data.items.map(divDetailRowHtml).join('')
+      : '<tr><td colspan="9" class="responsive-empty">Nenhum item.</td></tr>';
+  }
+
+  function divDetailItem(id){
+    return divState.detail ? divState.detail.items.find(item => item.id === id) : null;
+  }
+
+  // ---------- PEDIDO: CRIAR / EDITAR ----------
+  function divItemRowHtml(item, index){
+    const seq = ++divState.rowSeq;
+    const responded = item.id && item.status && item.status !== 'nao_visto';
+    return '<div class="div-item-row" data-item-id="'+escapeHtml(item.id || '')+'">'+
+      '<div class="purchase-field div-item-product product-search-field"><label for="divItemName'+seq+'">PRODUTO '+(index+1)+'</label>'+
+        '<input id="divItemName'+seq+'" class="div-item-name" maxlength="180" autocomplete="off" placeholder="Busque por código ou nome (ou digite livremente)" value="'+escapeHtml(item.productName || '')+'" data-code="'+escapeHtml(item.productCode || '')+'"></div>'+
+      '<div class="purchase-field"><label for="divItemPhysical'+seq+'">QTD FÍSICA</label>'+
+        '<input id="divItemPhysical'+seq+'" class="div-item-physical" type="number" min="0" max="999999" step="1" inputmode="numeric" value="'+(item.physicalQty ?? '')+'"></div>'+
+      '<div class="purchase-field"><label for="divItemSystem'+seq+'">QTD EM SISTEMA</label>'+
+        '<input id="divItemSystem'+seq+'" class="div-item-system" type="number" min="0" max="999999" step="1" inputmode="numeric" value="'+(item.systemQty ?? '')+'"></div>'+
+      '<div class="purchase-field div-item-notes"><label for="divItemNotes'+seq+'">OBSERVAÇÃO DA LOJA</label>'+
+        '<textarea id="divItemNotes'+seq+'" class="div-item-store-notes" rows="1" maxlength="1200" placeholder="Situação atípica ou já conhecida">'+escapeHtml(item.storeNotes || '')+'</textarea></div>'+
+      '<button class="btn-danger-outline div-item-remove" type="button">REMOVER</button>'+
+      '<div class="div-item-preview">DIVERGÊNCIA: —</div>'+
+      (responded ? '<div class="div-item-locked">JÁ RESPONDIDO ('+escapeHtml(DIV_ITEM_STATUS[item.status] || item.status)+'): ALTERAR PRODUTO OU QUANTIDADES DEVOLVE O ITEM PARA NÃO VISTO.</div>' : '')+
+    '</div>';
+  }
+
+  function divResolveProduct(input){
+    const raw = input.value.trim();
+    const upper = raw.toUpperCase();
+    const product = productCatalogItems.find(p => raw && (p.codeUnigames === raw || p.codePa === raw)) ||
+      productCatalogItems.find(p => raw && String(p.name || '').trim().toUpperCase() === upper);
+    if(product){
+      input.value = product.name || raw;
+      input.dataset.code = product.codeUnigames || product.codePa || '';
+    }else{
+      input.dataset.code = '';
+    }
+  }
+
+  function divUpdateRowPreview(row){
+    const physical = row.querySelector('.div-item-physical').value;
+    const system = row.querySelector('.div-item-system').value;
+    const preview = row.querySelector('.div-item-preview');
+    if(physical === '' || system === ''){
+      preview.textContent = 'DIVERGÊNCIA: —';
+      preview.className = 'div-item-preview';
+      return;
+    }
+    const item = {physicalQty:Number(physical), systemQty:Number(system)};
+    preview.textContent = 'DIVERGÊNCIA: '+divDiffLabel(item);
+    preview.className = 'div-item-preview '+divDiffClass(item);
+  }
+
+  function divRenumberRows(){
+    el('divRequestItems').querySelectorAll('.div-item-row').forEach((row, index) => {
+      const label = row.querySelector('.div-item-product label');
+      if(label) label.textContent = 'PRODUTO '+(index+1);
+    });
+  }
+
+  function divAddItemRow(item){
+    const container = el('divRequestItems');
+    const index = container.querySelectorAll('.div-item-row').length;
+    container.insertAdjacentHTML('beforeend', divItemRowHtml(item || {}, index));
+    const row = container.lastElementChild;
+    const input = row.querySelector('.div-item-name');
+    attachProductCatalogSearch(input, { getEntries: productCatalogNameEntries });
+    input.addEventListener('input', () => { input.dataset.code = ''; });
+    input.addEventListener('change', () => divResolveProduct(input));
+    row.querySelectorAll('.div-item-physical,.div-item-system').forEach(field => {
+      field.addEventListener('input', () => divUpdateRowPreview(row));
+    });
+    row.querySelector('.div-item-remove').addEventListener('click', () => {
+      const rows = container.querySelectorAll('.div-item-row');
+      if(rows.length <= 1){
+        setDivFormStatus('divRequestFormStatus', 'O PEDIDO PRECISA DE PELO MENOS UM PRODUTO.', 'error');
+        return;
+      }
+      if(row.dataset.itemId && !confirm('REMOVER ESTE PRODUTO DO PEDIDO? A REMOÇÃO VALE AO SALVAR.')) return;
+      row.remove();
+      divRenumberRows();
+    });
+    divUpdateRowPreview(row);
+    return row;
+  }
+
+  function setDivFormStatus(id, message, type){
+    const status = el(id);
+    status.textContent = message || '';
+    status.className = 'user-form-status'+(type ? ' '+type : '');
+  }
+
+  function openDivRequestDialog(editing){
+    const request = editing && divState.detail ? divState.detail.request : null;
+    el('divRequestDialogTitle').textContent = request ? 'EDITAR PEDIDO DE DIVERGÊNCIA' : 'NOVO PEDIDO DE DIVERGÊNCIA';
+    el('btnSaveDivRequest').textContent = request ? 'SALVAR ALTERAÇÕES' : 'ENVIAR PEDIDO';
+    el('divRequestId').value = request ? request.id : '';
+    el('divRequestNotes').value = request ? (request.notes || '') : '';
+    el('divRequestEditHelp').hidden = !request;
+    const chooseCompany = divAllStores(request ? 'divergencias:edit' : 'divergencias:create');
+    divFillCompanySelect(el('divRequestCompany'), 'SELECIONE A LOJA');
+    el('divRequestCompanyField').hidden = !chooseCompany;
+    el('divRequestCompanyStatic').hidden = chooseCompany;
+    el('divRequestCompany').value = request ? request.companyId : '';
+    el('divRequestCompanyName').textContent = request
+      ? (request.companyName || '—')
+      : (divCompanyName(currentSession.companyId) || 'SUA LOJA');
+    el('divRequestItems').innerHTML = '';
+    divState.rowSeq = 0;
+    const items = request ? divState.detail.items : [{}];
+    items.forEach(item => divAddItemRow(item));
+    setDivFormStatus('divRequestFormStatus', '');
+    el('divRequestDialog').showModal();
+    const first = el('divRequestItems').querySelector('.div-item-name');
+    if(first && !request) first.focus();
+  }
+
+  function divCollectItems(){
+    const rows = Array.from(el('divRequestItems').querySelectorAll('.div-item-row'));
+    const items = [];
+    for(const [index, row] of rows.entries()){
+      const nameInput = row.querySelector('.div-item-name');
+      const physicalInput = row.querySelector('.div-item-physical');
+      const systemInput = row.querySelector('.div-item-system');
+      const productName = nameInput.value.trim();
+      const label = 'PRODUTO '+(index+1)+': ';
+      if(productName.length < 2){ nameInput.focus(); return {error:label+'INFORME O PRODUTO.'}; }
+      const physicalQty = Number(physicalInput.value);
+      if(physicalInput.value === '' || !Number.isInteger(physicalQty) || physicalQty < 0){ physicalInput.focus(); return {error:label+'INFORME A QUANTIDADE FÍSICA (INTEIRO, 0 OU MAIS).'}; }
+      const systemQty = Number(systemInput.value);
+      if(systemInput.value === '' || !Number.isInteger(systemQty) || systemQty < 0){ systemInput.focus(); return {error:label+'INFORME A QUANTIDADE EM SISTEMA (INTEIRO, 0 OU MAIS).'}; }
+      items.push({
+        id:row.dataset.itemId || '',
+        productName,
+        productCode:nameInput.dataset.code || '',
+        physicalQty,
+        systemQty,
+        storeNotes:row.querySelector('.div-item-store-notes').value.trim()
+      });
+    }
+    if(!items.length) return {error:'INCLUA PELO MENOS UM PRODUTO.'};
+    return {items};
+  }
+
+  async function saveDivRequest(event){
+    event.preventDefault();
+    const collected = divCollectItems();
+    if(collected.error){
+      setDivFormStatus('divRequestFormStatus', collected.error, 'error');
+      return;
+    }
+    const id = el('divRequestId').value;
+    const chooseCompany = !el('divRequestCompanyField').hidden;
+    const companyId = chooseCompany ? el('divRequestCompany').value : '';
+    if(chooseCompany && !companyId){
+      setDivFormStatus('divRequestFormStatus', 'ESCOLHA A LOJA.', 'error');
+      return;
+    }
+    const button = el('btnSaveDivRequest');
+    button.disabled = true;
+    setDivFormStatus('divRequestFormStatus', 'SALVANDO…');
+    try{
+      const body = JSON.stringify({companyId, notes:el('divRequestNotes').value.trim(), items:collected.items});
+      const result = id
+        ? await divApi('/'+encodeURIComponent(id), {method:'PATCH', body})
+        : await divApi('', {method:'POST', body});
+      el('divRequestDialog').close();
+      showPurchaseToast(id ? 'Pedido de divergência atualizado.' : 'Pedido de divergência enviado ao estoque.');
+      divState.detailId = id || result.id || '';
+      if(divState.tab !== 'pedidos') setDivTab('pedidos');
+      else await loadDivRequests();
+    }catch(error){
+      setDivFormStatus('divRequestFormStatus', error.message, 'error');
+    }finally{
+      button.disabled = false;
+    }
+  }
+
+  async function deleteDivRequest(){
+    const request = divState.detail && divState.detail.request;
+    if(!request) return;
+    if(!confirm('EXCLUIR ESTE PEDIDO DE DIVERGÊNCIA ('+(request.companyName || 'LOJA')+')? OS ITENS, O HISTÓRICO E AS PENDÊNCIAS DE INVENTÁRIO QUE VIERAM DELE TAMBÉM SERÃO REMOVIDOS.')) return;
+    try{
+      await divApi('/'+encodeURIComponent(request.id), {method:'DELETE'});
+      showPurchaseToast('Pedido de divergência excluído.');
+      divState.detail = null;
+      divState.detailId = '';
+      el('divRequestDetail').hidden = true;
+      await loadDivRequests();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+    }
+  }
+
+  // ---------- RESPOSTA DO ESTOQUE / RETORNO DA LOJA ----------
+  function divItemSummaryHtml(item){
+    return '<div class="purchase-card-detail wide"><span>PRODUTO</span><strong>'+escapeHtml(item.productName)+(item.productCode ? ' · CÓD. '+escapeHtml(item.productCode) : '')+'</strong></div>'+
+      '<div class="purchase-card-detail"><span>FÍSICO x SISTEMA</span><strong>'+(Number(item.physicalQty) || 0)+' x '+(Number(item.systemQty) || 0)+'</strong></div>'+
+      '<div class="purchase-card-detail"><span>DIVERGÊNCIA</span><strong class="'+divDiffClass(item)+'">'+escapeHtml(divDiffLabel(item))+'</strong></div>'+
+      '<div class="purchase-card-detail"><span>STATUS ATUAL</span><strong>'+escapeHtml(DIV_ITEM_STATUS[item.status] || item.status)+'</strong></div>'+
+      '<div class="purchase-card-detail"><span>OBS. DA LOJA</span><strong>'+escapeHtml(item.storeNotes || '—')+'</strong></div>'+
+      (item.stockResponse ? '<div class="purchase-card-detail wide"><span>RESPOSTA DO ESTOQUE</span><strong>'+escapeHtml(item.stockResponse)+'</strong></div>' : '')+
+      (item.storeReply ? '<div class="purchase-card-detail wide"><span>RETORNO DA LOJA</span><strong>'+escapeHtml(item.storeReply)+'</strong></div>' : '');
+  }
+
+  let divDialogItemId = '';
+
+  function openDivRespondDialog(itemId){
+    const item = divDetailItem(itemId);
+    if(!item) return;
+    divDialogItemId = itemId;
+    el('divRespondSummary').innerHTML = divItemSummaryHtml(item);
+    el('divRespondStatus').value = ['em_verificacao','verificacao_loja','concluido','inventario'].includes(item.status) ? item.status : 'em_verificacao';
+    el('divRespondText').value = item.stockResponse || '';
+    setDivFormStatus('divRespondFormStatus', '');
+    el('divRespondDialog').showModal();
+  }
+
+  async function saveDivRespond(event){
+    event.preventDefault();
+    const request = divState.detail && divState.detail.request;
+    if(!request || !divDialogItemId) return;
+    const status = el('divRespondStatus').value;
+    const response = el('divRespondText').value.trim();
+    if(status !== 'em_verificacao' && response.length < 2){
+      setDivFormStatus('divRespondFormStatus', 'ESCREVA A RESPOSTA PARA A LOJA.', 'error');
+      return;
+    }
+    try{
+      await divApi('/'+encodeURIComponent(request.id)+'/items/'+encodeURIComponent(divDialogItemId)+'/respond', {
+        method:'POST', body:JSON.stringify({status, response})
+      });
+      el('divRespondDialog').close();
+      showPurchaseToast('Resposta registrada.');
+      await loadDivRequests();
+    }catch(error){
+      setDivFormStatus('divRespondFormStatus', error.message, 'error');
+    }
+  }
+
+  function openDivReplyDialog(itemId){
+    const item = divDetailItem(itemId);
+    if(!item) return;
+    divDialogItemId = itemId;
+    el('divReplySummary').innerHTML = divItemSummaryHtml(item);
+    el('divReplyText').value = '';
+    el('divReplyPhysical').value = String(Number(item.physicalQty) || 0);
+    el('divReplySystem').value = String(Number(item.systemQty) || 0);
+    setDivFormStatus('divReplyFormStatus', '');
+    el('divReplyDialog').showModal();
+    el('divReplyText').focus();
+  }
+
+  async function saveDivReply(event){
+    event.preventDefault();
+    const request = divState.detail && divState.detail.request;
+    if(!request || !divDialogItemId) return;
+    const reply = el('divReplyText').value.trim();
+    if(reply.length < 2){
+      setDivFormStatus('divReplyFormStatus', 'ESCREVA O RETORNO DA LOJA.', 'error');
+      return;
+    }
+    const physical = el('divReplyPhysical').value;
+    const system = el('divReplySystem').value;
+    for(const value of [physical, system]){
+      if(value !== '' && (!Number.isInteger(Number(value)) || Number(value) < 0)){
+        setDivFormStatus('divReplyFormStatus', 'QUANTIDADES INVÁLIDAS (INTEIRO, 0 OU MAIS).', 'error');
+        return;
+      }
+    }
+    try{
+      await divApi('/'+encodeURIComponent(request.id)+'/items/'+encodeURIComponent(divDialogItemId)+'/store-reply', {
+        method:'POST',
+        body:JSON.stringify({
+          reply,
+          physicalQty:physical === '' ? undefined : Number(physical),
+          systemQty:system === '' ? undefined : Number(system)
+        })
+      });
+      el('divReplyDialog').close();
+      showPurchaseToast('Retorno enviado ao estoque.');
+      await loadDivRequests();
+    }catch(error){
+      setDivFormStatus('divReplyFormStatus', error.message, 'error');
+    }
+  }
+
+  // ---------- RELATÓRIO PDF DO PEDIDO ----------
+  function divPrintRequest(){
+    const data = divState.detail;
+    if(!data) return;
+    const request = data.request;
+    el('divPrintTitle').textContent = 'Pedido de divergência · '+(request.companyName || '—');
+    el('divPrintMeta').textContent =
+      'LOJA: '+(request.companyName || '—')+
+      ' · ABERTO POR '+(request.createdByName || '—')+' EM '+divDateTime(request.createdAt)+
+      ' · STATUS: '+(DIV_REQUEST_STATUS[request.status] || request.status)+
+      ' · '+data.items.length+' ITEM(NS)'+
+      ' · EMITIDO EM '+formatDateTimeBR(new Date());
+    el('divPrintBody').innerHTML =
+      (request.notes ? '<p><strong>OBSERVAÇÃO GERAL:</strong> '+escapeHtml(request.notes)+'</p>' : '')+
+      '<table class="rh-print-table div-print-items"><thead><tr>'+
+        '<th>Produto</th><th class="num">Físico</th><th class="num">Sistema</th><th>Divergência</th>'+
+        '<th>Obs. da loja</th><th>Status</th><th>Resposta do estoque</th><th>Retorno da loja</th>'+
+      '</tr></thead><tbody>'+
+      data.items.map(item => '<tr>'+
+        '<td>'+escapeHtml(item.productName)+(item.productCode ? '<br>CÓD. '+escapeHtml(item.productCode) : '')+'</td>'+
+        '<td class="num">'+(Number(item.physicalQty) || 0)+'</td>'+
+        '<td class="num">'+(Number(item.systemQty) || 0)+'</td>'+
+        '<td>'+escapeHtml(divDiffLabel(item))+'</td>'+
+        '<td>'+escapeHtml(item.storeNotes || '—')+'</td>'+
+        '<td>'+escapeHtml(DIV_ITEM_STATUS[item.status] || item.status)+'</td>'+
+        '<td>'+escapeHtml(item.stockResponse || '—')+(item.respondedAt ? '<br>('+escapeHtml(item.respondedByName || '—')+' · '+escapeHtml(divDateTime(item.respondedAt))+')' : '')+'</td>'+
+        '<td>'+escapeHtml(item.storeReply || '—')+(item.storeReplyAt ? '<br>('+escapeHtml(item.storeReplyByName || '—')+' · '+escapeHtml(divDateTime(item.storeReplyAt))+')' : '')+'</td>'+
+      '</tr>').join('')+
+      '</tbody></table>';
+    divPrintTitleBefore = document.title;
+    const createdDay = (formatDateTimeBR(request.createdAt) || '').split(' às ')[0].split('/').reverse().join('-');
+    document.title = 'divergencia-'+String(request.companyName || 'loja').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+createdDay;
+    document.body.classList.add('pdf-export');
+    window.print();
+  }
+
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('pdf-export');
+    if(divPrintTitleBefore){
+      document.title = divPrintTitleBefore;
+      divPrintTitleBefore = '';
+    }
+  });
+
+  // ---------- INVENTÁRIO ----------
+  async function loadDivInventory(){
+    if(!canAccess('divergencias:inventory')) return;
+    const list = el('divInventoryList');
+    const params = new URLSearchParams();
+    if(divState.inventoryView === 'history') params.set('view', 'history');
+    const company = el('divInventoryCompany').value;
+    if(company && divAllStores('divergencias:inventory')) params.set('companyId', company);
+    try{
+      const data = await divApi('/inventory?'+params.toString());
+      divState.inventoryItems = Array.isArray(data.items) ? data.items : [];
+      renderDivInventory();
+    }catch(error){
+      list.innerHTML = '<div class="empty-state"><h4>'+escapeHtml(error.message)+'</h4></div>';
+    }
+  }
+
+  function renderDivInventory(){
+    const history = divState.inventoryView === 'history';
+    const groups = new Map();
+    divState.inventoryItems.forEach(item => {
+      const name = item.companyName || '—';
+      if(!groups.has(name)) groups.set(name, []);
+      groups.get(name).push(item);
+    });
+    const ordered = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
+    el('divInventoryList').innerHTML = ordered.length
+      ? ordered.map(([company, rows]) =>
+          '<section class="div-inventory-group"><h4>'+escapeHtml(company)+' · '+rows.length+' ITEM(NS)</h4>'+
+          '<div class="table-panel responsive-table"><div class="table-scroll"><table><thead><tr>'+
+            '<th>Produto</th><th>Físico</th><th>Sistema</th><th>Divergência</th><th>Resposta do estoque</th>'+
+            (history ? '<th>Inventariado</th>' : '<th>Anotado em</th><th></th>')+
+          '</tr></thead><tbody>'+
+          rows.map(item => '<tr>'+
+            '<td data-label="Produto" class="nome"><div>'+escapeHtml(item.productName)+(item.productCode ? '<span class="div-cell-sub">CÓD. '+escapeHtml(item.productCode)+'</span>' : '')+'</div></td>'+
+            '<td data-label="Físico"><div>'+(Number(item.physicalQty) || 0)+'</div></td>'+
+            '<td data-label="Sistema"><div>'+(Number(item.systemQty) || 0)+'</div></td>'+
+            '<td data-label="Divergência"><div><strong class="'+divDiffClass(item)+'">'+escapeHtml(divInventoryLabel(item))+'</strong></div></td>'+
+            '<td data-label="Resposta do estoque"><div><span class="div-cell-text">'+escapeHtml(item.stockResponse || '—')+'</span></div></td>'+
+            (history
+              ? '<td data-label="Inventariado"><div>'+escapeHtml(divDateTime(item.inventoriedAt))+'<span class="div-cell-sub">'+escapeHtml(item.inventoriedByName || '—')+'</span></div></td>'
+              : '<td data-label="Anotado em"><div>'+escapeHtml(divDateTime(item.respondedAt))+'<span class="div-cell-sub">'+escapeHtml(item.respondedByName || '—')+'</span></div></td>'+
+                '<td data-label="Ação"><div><button class="btn-accent div-inventory-row-done" type="button" data-div-inventoried="'+escapeHtml(item.id)+'">INVENTARIADO</button></div></td>')+
+          '</tr>').join('')+
+          '</tbody></table></div></div></section>'
+        ).join('')
+      : '<div class="empty-state"><h4>'+(history ? 'Nenhum item inventariado ainda.' : 'Nenhum item anotado para inventário.')+'</h4></div>';
+  }
+
+  async function markDivInventoried(itemId){
+    const item = divState.inventoryItems.find(row => row.id === itemId);
+    if(!item) return;
+    if(!confirm('MARCAR COMO INVENTARIADO: '+item.productName+' ('+(item.companyName || 'LOJA')+')?')) return;
+    try{
+      await divApi('/inventory/'+encodeURIComponent(itemId)+'/done', {method:'POST', body:'{}'});
+      showPurchaseToast('Item marcado como inventariado.');
+      await loadDivInventory();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+    }
+  }
+
+  // ---------- WIDGETS DA INÍCIO ----------
+  async function loadHomeDivergences(){
+    const storeBox = el('homeDivergencesStore');
+    const stockBox = el('homeDivergencesStock');
+    if(!storeBox || !stockBox) return;
+    storeBox.hidden = true;
+    stockBox.hidden = true;
+    const stockView = canAccess('divergencias:respond');
+    if(!stockView && !canAccess('divergencias:view')) return;
+    let data;
+    try{
+      data = await divApi('/summary');
+    }catch{
+      return;
+    }
+    if(!data || data.hidden) return;
+    if(stockView){
+      const counts = data.counts || {};
+      const counters = [
+        ['nao_visto','NÃO VISTOS', counts.nao_visto],
+        ['em_verificacao','EM VERIFICAÇÃO', counts.em_verificacao],
+        ['verificacao_loja','VERIFICAÇÃO DA LOJA', counts.verificacao_loja],
+        ['concluido','RESPONDIDOS · 30 DIAS', counts.respondidos]
+      ];
+      el('homeDivergencesCounters').innerHTML = counters.map(([status, label, value]) =>
+        '<button type="button" class="home-div-counter" data-div-home-item="'+status+'"><span>'+label+'</span><strong>'+(Number(value) || 0)+'</strong></button>'
+      ).join('');
+      const overdue = data.overdue || {};
+      const alert = el('homeDivergencesOverdue');
+      alert.hidden = !(Number(overdue.count) > 0);
+      if(!alert.hidden){
+        alert.setAttribute('role', 'button');
+        alert.tabIndex = 0;
+        alert.textContent = 'ALERTA: '+overdue.count+' ITEM(NS) EM NÃO VISTO HÁ MAIS DE '+(overdue.days || 14)+' DIAS'+
+          (overdue.oldestAt ? ' (MAIS ANTIGO DE '+(formatDateTimeBR(overdue.oldestAt) || '').split(' às ')[0]+')' : '')+'. TOQUE PARA VER.';
+      }
+      stockBox.hidden = false;
+      return;
+    }
+    const recent = Array.isArray(data.recent) ? data.recent : [];
+    if(!recent.length) return;
+    el('homeDivergencesStoreList').innerHTML = recent.map(row => {
+      const state = row.awaitingStore
+        ? 'SUA VERIFICAÇÃO ('+row.awaitingStore+')'
+        : row.answered ? 'RESPONDIDO' : 'AGUARDANDO RETORNO';
+      return '<button type="button" class="home-supply-row home-supplies-row-link" data-div-home-request="'+escapeHtml(row.id)+'">'+
+        '<span class="home-supply-quantity">'+(Number(row.itemCount) || 0)+' ITEM(NS)</span>'+
+        '<span class="home-supply-copy"><strong>PEDIDO DE '+escapeHtml((formatDateTimeBR(row.createdAt) || '—').split(' às ')[0])+'</strong>'+
+          '<span>'+escapeHtml(row.companyName || '—')+' · '+escapeHtml(DIV_REQUEST_STATUS[row.status] || row.status)+'</span></span>'+
+        '<span class="home-supply-state'+(row.awaitingStore ? ' div-qty-neg' : '')+'">'+escapeHtml(state)+'</span>'+
+      '</button>';
+    }).join('');
+    storeBox.hidden = false;
+  }
+
+  // ---------- EVENTOS ----------
+  document.querySelectorAll('[data-div-tab]').forEach(button => {
+    button.addEventListener('click', () => setDivTab(button.dataset.divTab));
+  });
+  el('btnDivDashRefresh').addEventListener('click', loadDivDashboard);
+  ['divDashFrom','divDashTo','divDashCompany'].forEach(id => el(id).addEventListener('change', loadDivDashboard));
+  el('divDashRequestMetrics').addEventListener('click', event => {
+    const button = event.target.closest('[data-div-metric-status],[data-div-metric-item]');
+    if(!button) return;
+    divOpenFiltered({
+      tab:'pedidos',
+      status:button.dataset.divMetricStatus || '',
+      itemStatus:button.dataset.divMetricItem || ''
+    });
+  });
+  el('btnNewDivRequest').addEventListener('click', () => openDivRequestDialog(false));
+  el('btnDivRefresh').addEventListener('click', loadDivRequests);
+  el('divFilterStatus').addEventListener('change', loadDivRequests);
+  el('divFilterCompany').addEventListener('change', loadDivRequests);
+  el('divFilterItemStatus').addEventListener('change', renderDivRequests);
+  el('divRequestGrid').addEventListener('click', event => {
+    const card = event.target.closest('[data-div-request]');
+    if(card) loadDivDetail(card.dataset.divRequest, {scroll:true});
+  });
+  el('divRequestGrid').addEventListener('keydown', event => {
+    if(event.key !== 'Enter' && event.key !== ' ') return;
+    const card = event.target.closest('[data-div-request]');
+    if(!card || event.target !== card) return;
+    event.preventDefault();
+    loadDivDetail(card.dataset.divRequest, {scroll:true});
+  });
+  el('divDetailItems').addEventListener('click', event => {
+    const respond = event.target.closest('[data-div-respond]');
+    if(respond) openDivRespondDialog(respond.dataset.divRespond);
+    const reply = event.target.closest('[data-div-reply]');
+    if(reply) openDivReplyDialog(reply.dataset.divReply);
+  });
+  el('btnDivPdf').addEventListener('click', divPrintRequest);
+  el('btnDivEdit').addEventListener('click', () => openDivRequestDialog(true));
+  el('btnDivDelete').addEventListener('click', deleteDivRequest);
+  el('btnDivCloseDetail').addEventListener('click', () => {
+    el('divRequestDetail').hidden = true;
+    divState.detail = null;
+    divState.detailId = '';
+    document.querySelectorAll('[data-div-request].selected').forEach(card => card.classList.remove('selected'));
+  });
+  el('btnDivAddItem').addEventListener('click', () => {
+    const row = divAddItemRow({});
+    row.querySelector('.div-item-name').focus();
+  });
+  el('divRequestForm').addEventListener('submit', saveDivRequest);
+  el('divRespondForm').addEventListener('submit', saveDivRespond);
+  el('divReplyForm').addEventListener('submit', saveDivReply);
+  [
+    ['btnCloseDivRequestDialog','divRequestDialog'],['btnCancelDivRequestDialog','divRequestDialog'],
+    ['btnCloseDivRespondDialog','divRespondDialog'],['btnCancelDivRespondDialog','divRespondDialog'],
+    ['btnCloseDivReplyDialog','divReplyDialog'],['btnCancelDivReplyDialog','divReplyDialog']
+  ].forEach(([buttonId, dialogId]) => {
+    el(buttonId).addEventListener('click', () => { if(el(dialogId).open) el(dialogId).close(); });
+  });
+  document.querySelectorAll('[data-div-inventory-view]').forEach(button => {
+    button.addEventListener('click', () => {
+      divState.inventoryView = button.dataset.divInventoryView;
+      document.querySelectorAll('[data-div-inventory-view]').forEach(other => {
+        const active = other === button;
+        other.classList.toggle('active', active);
+        other.setAttribute('aria-selected', String(active));
+      });
+      loadDivInventory();
+    });
+  });
+  el('divInventoryCompany').addEventListener('change', loadDivInventory);
+  el('btnDivInventoryRefresh').addEventListener('click', loadDivInventory);
+  el('divInventoryList').addEventListener('click', event => {
+    const button = event.target.closest('[data-div-inventoried]');
+    if(button) markDivInventoried(button.dataset.divInventoried);
+  });
+  document.querySelectorAll('[data-div-home-filter]').forEach(link => {
+    link.addEventListener('click', event => {
+      if(!isPlainClick(event)) return;
+      event.preventDefault();
+      divOpenFiltered({tab:'pedidos', status:'', itemStatus:''});
+    });
+  });
+  el('homeDivergencesCounters').addEventListener('click', event => {
+    const button = event.target.closest('[data-div-home-item]');
+    if(button) divOpenFiltered({tab:'pedidos', status:'', itemStatus:button.dataset.divHomeItem});
+  });
+  const divOverdueOpen = () => divOpenFiltered({tab:'pedidos', status:'', itemStatus:'nao_visto'});
+  el('homeDivergencesOverdue').addEventListener('click', divOverdueOpen);
+  el('homeDivergencesOverdue').addEventListener('keydown', event => {
+    if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); divOverdueOpen(); }
+  });
+  el('homeDivergencesStoreList').addEventListener('click', event => {
+    const button = event.target.closest('[data-div-home-request]');
+    if(button) divOpenFiltered({tab:'pedidos', status:'', itemStatus:'', requestId:button.dataset.divHomeRequest});
+  });
 
   function setSupplyFormStatus(message,type){
     const status = el('supplyFormStatus');
@@ -30884,6 +32243,7 @@ function renderHomeTasks(){
     'missions:view':'Missões: visualizar','missions:create':'Missões: cadastrar','missions:delete':'Missões: excluir','missions:notify':'Missões: notificações',
     'captures:view':'Captação: visualizar','captures:create':'Captação: cadastrar','captures:receive':'Captação: receber/preparar','captures:assign':'Captação: definir destino','captures:delete':'Captação: excluir',
     'outputs:view':'Saídas: visualizar','outputs:create':'Saídas: cadastrar','outputs:complete':'Saídas: concluir','outputs:delete':'Saídas: excluir',
+    'divergencias:view':'Divergências: visualizar','divergencias:create':'Divergências: cadastrar pedido','divergencias:edit':'Divergências: editar pedido','divergencias:delete':'Divergências: excluir pedido','divergencias:respond':'Divergências: responder','divergencias:inventory':'Divergências: inventário',
     'inputs:view':'Entrada: visualizar','inputs:create':'Entrada: cadastrar','inputs:complete':'Entrada: concluir','inputs:delete':'Entrada: excluir',
     'supplies:view':'Insumos: visualizar','supplies:request':'Insumos: solicitar','supplies:receive':'Insumos: receber solicitação','supplies:stock_in':'Insumos: entrada','supplies:stock_out':'Insumos: saída','supplies:delete':'Insumos: excluir','supplies:manage_catalog':'Insumos: produtos/categorias',
     'loans:view':'Aparelhos de Empréstimo: visualizar','loans:create':'Aparelhos de Empréstimo: cadastrar aparelho','loans:edit':'Aparelhos de Empréstimo: editar aparelho','loans:delete':'Aparelhos de Empréstimo: excluir aparelho','loans:request':'Aparelhos de Empréstimo: solicitar','loans:manage_requests':'Aparelhos de Empréstimo: gerenciar solicitações',
@@ -36998,7 +38358,10 @@ function renderHomeTasks(){
       canActAcrossStores('outputs:create') || canActAcrossStores('captures:create') ||
       canActAcrossStores('supplies:request') || canActAcrossStores('missions:view') ||
       canActAcrossStores('inputs:create');
-    if(needsCompanies){
+    // Divergências: quem não tem loja escolhe/filtra a loja no módulo.
+    const needsCompaniesForDivergences = ['divergencias:view','divergencias:create','divergencias:respond','divergencias:inventory']
+      .some(permission => canActAcrossStores(permission));
+    if(needsCompanies || needsCompaniesForDivergences){
       const companiesPromise = loadCompanies();
       const catalogPromise = loadCatalog();
       await Promise.all([companiesPromise,catalogPromise]);
@@ -37020,6 +38383,8 @@ function renderHomeTasks(){
     // Instruções/carrossel ficam no topo da Início: entram no primeiro lote
     // para não esperarem os demais módulos terminarem.
     const loaders = [() => Promise.all([loadInstructions(),loadHomeInstructions(),loadInstructionCarousel()])];
+    // Widget de Divergências logo depois das Instruções (topo da Início).
+    if(canAccess('divergencias:view') || canAccess('divergencias:respond')) loaders.push(() => loadHomeDivergences());
     if(canAccess('pulls')) loaders.push(() => loadPullData());
     if(canAccess('database') || canAccess('report41')) loaders.push(() => loadCompanyStock());
     if(canAccess('report41')) loaders.push(() => loadReport41StoreData());
@@ -37041,7 +38406,8 @@ function renderHomeTasks(){
     if(canAccess('inputs')) loaders.push(() => loadInputs());
     if(canAccess('supplies')) loaders.push(() => loadHomeSupplies());
     if(canAccess('database') || canAccess('purchases_draft') ||
-      canAccess('outputs:create') || canAccess('inputs:create') || canAccess('pdv_requests:create')) loaders.push(() => loadProductCatalog());
+      canAccess('outputs:create') || canAccess('inputs:create') || canAccess('pdv_requests:create') ||
+      canAccess('divergencias:create') || canAccess('divergencias:edit')) loaders.push(() => loadProductCatalog());
     const HOME_LOADERS_BATCH_SIZE = 4;
     for(let start = 0; start < loaders.length; start += HOME_LOADERS_BATCH_SIZE){
       const batch = loaders.slice(start, start + HOME_LOADERS_BATCH_SIZE);

@@ -38,6 +38,8 @@ type Permission =
   | "missions:view" | "missions:create" | "missions:delete" | "missions:notify"
   | "captures:view" | "captures:create" | "captures:receive" | "captures:assign" | "captures:delete"
   | "outputs:view" | "outputs:create" | "outputs:complete" | "outputs:delete"
+  | "divergencias:view" | "divergencias:create" | "divergencias:edit" | "divergencias:delete"
+  | "divergencias:respond" | "divergencias:inventory"
   | "inputs:view" | "inputs:create" | "inputs:complete" | "inputs:delete"
   | "supplies:view" | "supplies:request" | "supplies:receive" | "supplies:stock_in" | "supplies:stock_out" | "supplies:delete" | "supplies:manage_catalog"
   | "purchases:view" | "purchases:create" | "purchases:edit" | "purchases:delete" | "purchases:send_to_finance"
@@ -124,6 +126,13 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "missions:view", "missions:create", "missions:delete", "missions:notify",
   "captures:view", "captures:create", "captures:receive", "captures:assign", "captures:delete",
   "outputs:view", "outputs:create", "outputs:complete", "outputs:delete",
+  // Estoque > Divergências — a loja abre o pedido de verificação
+  // (view/create/edit/delete) e o estoque/fiscal responde item a item
+  // (respond) e controla o inventário (inventory). Módulo novo: nenhum
+  // grupo de acesso ganha estas chaves automaticamente (só o Administrador,
+  // que recebe todas).
+  "divergencias:view", "divergencias:create", "divergencias:edit", "divergencias:delete",
+  "divergencias:respond", "divergencias:inventory",
   "inputs:view", "inputs:create", "inputs:complete", "inputs:delete",
   "supplies:view", "supplies:request", "supplies:receive", "supplies:stock_in", "supplies:stock_out", "supplies:delete", "supplies:manage_catalog",
   "purchases:view", "purchases:create", "purchases:edit", "purchases:delete", "purchases:send_to_finance",
@@ -295,6 +304,7 @@ const APP_ROUTE_PATHS = new Set([
   "/missoes",
   "/captacao",
   "/saidas",
+  "/divergencias",
   "/entradas",
   "/insumos",
   "/aparelhos-emprestimo",
@@ -1263,6 +1273,10 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   missions: ["missions:view", "missions:create", "missions:delete", "missions:notify"],
   captures: ["captures:view", "captures:create", "captures:receive", "captures:assign", "captures:delete"],
   outputs: ["outputs:view", "outputs:create", "outputs:complete", "outputs:delete"],
+  divergences: [
+    "divergencias:view", "divergencias:create", "divergencias:edit", "divergencias:delete",
+    "divergencias:respond", "divergencias:inventory",
+  ],
   inputs: ["inputs:view", "inputs:create", "inputs:complete", "inputs:delete"],
   supplies: [
     "supplies:view", "supplies:request", "supplies:receive",
@@ -1354,7 +1368,9 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
         "outputs:create",
         "inputs:create",
         "pdv_requests:create",
-      ]);
+      ]) ||
+        // Divergências: a loja busca o produto ao cadastrar/editar o pedido.
+        hasAnyPermission(user, ["divergencias:create", "divergencias:edit"]);
     }
     return hasPermission(user, "database:manage");
   }
@@ -1373,6 +1389,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path.startsWith("/api/checklists"), "missions"],
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
+    [path === "/divergencias" || path.startsWith("/api/divergences"), "divergences"],
     [path === "/entradas" || path.startsWith("/api/inputs"), "inputs"],
     [path === "/insumos" || path.startsWith("/api/supplies"), "supplies"],
     [path === "/aparelhos-emprestimo" || path.startsWith("/api/loans"), "loans"],

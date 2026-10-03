@@ -4327,3 +4327,107 @@ test("acessos de vendedor: troca obrigatória da senha inicial, só Comercial + 
   assert.match(terminations, /deactivateLinkedLogin\(database, employeeId\)/);
   assert.match(employees, /if \(status === "inactive"\) await deactivateLinkedLogin\(database, editId\)\.run\(\);/);
 });
+
+test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no worker e widgets da Início", async () => {
+  const [html, workerSource, migration, schema, packageJson] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0077_divergencias_estoque.sql", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ]);
+
+  // Menu: Estoque > Divergências, logo depois de Saídas, mesmo formato.
+  assert.match(html, /id="navSaidas"[^\n]*\n\s*<a class="nav-item sub-item" id="navDivergencias" data-page="divergencias" data-permission="divergencias" data-home-desc="[^"]+" title="Divergências" href="\/divergencias">/);
+  assert.match(html, /divergencias:'\/divergencias'/);
+  assert.match(html, /divergencias:'DIVERGÊNCIAS'/);
+  assert.match(html, /divergencias:'divergencias',/);
+  assert.match(html, /name === 'saidas' \|\| name === 'divergencias';/);
+  assert.match(html, /<section id="pageDivergencias" class="page wrap">/);
+
+  // Três abas no estilo único do site; INVENTÁRIO só com divergencias:inventory.
+  for (const tab of ["dashboard", "pedidos", "inventario"]) {
+    assert.match(html, new RegExp(`class="supply-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-div-tab="${tab}"`));
+  }
+  assert.match(html, /if\(canAccess\('divergencias:inventory'\)\) tabs\.push\('inventario'\);/);
+  assert.match(html, /id="btnNewDivRequest" type="button" data-permission="divergencias:create">\+ NOVO PEDIDO DE DIVERGÊNCIA</);
+  assert.match(html, /id="btnDivEdit" type="button" data-permission="divergencias:edit"/);
+  assert.match(html, /id="btnDivDelete" type="button" data-permission="divergencias:delete"/);
+  assert.match(html, /if\(canAccess\('divergencias:respond'\)\) actions\.push/);
+  // Busca no Cadastro de Produtos (texto livre continua permitido).
+  assert.match(html, /attachProductCatalogSearch\(input, \{ getEntries: productCatalogNameEntries \}\);/);
+  // PDF no mesmo padrão dos relatórios existentes.
+  assert.match(html, /<div class="print-only" id="divPrintBody"><\/div>/);
+  assert.match(extractNamedFunction(html, "divPrintRequest"), /document\.body\.classList\.add\('pdf-export'\);\s*window\.print\(\);/);
+  // Nunca prompt() nativo no módulo.
+  const moduleJs = html.slice(html.indexOf("// ===== ESTOQUE > DIVERGÊNCIAS ====="), html.indexOf("function setSupplyFormStatus("));
+  assert.doesNotMatch(moduleJs, /\bprompt\(/);
+
+  // Seis caixas em Cadastros > Usuários + nomes legíveis.
+  for (const [key, label] of [
+    ["view", "VISUALIZAR \\(pedidos, dashboard\\)"],
+    ["create", "CADASTRAR PEDIDO"],
+    ["edit", "EDITAR PEDIDO \\(inclui o retorno da loja em VERIFICAÇÃO DA LOJA\\)"],
+    ["delete", "EXCLUIR PEDIDO"],
+    ["respond", "RESPONDER DIVERGÊNCIAS \\(estoque: status \\+ resposta por item\\)"],
+    ["inventory", "INVENTÁRIO \\(ver a aba e marcar INVENTARIADO\\)"],
+  ]) {
+    assert.match(html, new RegExp(`name="userPermission" value="divergencias:${key}"> ${label}</label>`));
+    assert.match(html, new RegExp(`'divergencias:${key}':'Divergências: `));
+  }
+  assert.match(html, /<summary>Divergências<\/summary>/);
+
+  // Worker: tipo, atribuíveis, chave do módulo, página e rota.
+  assert.match(workerSource, /\| "divergencias:view" \| "divergencias:create" \| "divergencias:edit" \| "divergencias:delete"\n\s*\| "divergencias:respond" \| "divergencias:inventory"/);
+  assert.match(workerSource, /divergences: \[\s*"divergencias:view", "divergencias:create", "divergencias:edit", "divergencias:delete",\s*"divergencias:respond", "divergencias:inventory",\s*\],/);
+  assert.match(workerSource, /"\/saidas",\n\s*"\/divergencias",/);
+  assert.match(workerSource, /\[path === "\/divergencias" \|\| path\.startsWith\("\/api\/divergences"\), "divergences"\],/);
+  // Nenhum grupo de acesso (fora o Administrador, que recebe tudo) ganha as chaves.
+  const groups = workerSource.slice(workerSource.indexOf("const ACCESS_GROUP_PERMISSIONS"), workerSource.indexOf("const LEGACY_PERMISSION_MAP"));
+  assert.doesNotMatch(groups, /divergencias:/);
+
+  // Widgets da Início: loja e estoque, carregados logo depois das Instruções
+  // sem mexer no lote de 4.
+  assert.match(html, /id="homeDivergencesStore" data-permission="divergencias" hidden/);
+  assert.match(html, /id="homeDivergencesStock" data-permission="divergencias:respond" hidden/);
+  assert.match(html, /const loaders = \[\(\) => Promise\.all\(\[loadInstructions\(\),loadHomeInstructions\(\),loadInstructionCarousel\(\)\]\)\];\n\s*\/\/ [^\n]*\n\s*if\(canAccess\('divergencias:view'\) \|\| canAccess\('divergencias:respond'\)\) loaders\.push\(\(\) => loadHomeDivergences\(\)\);/);
+  assert.match(html, /const HOME_LOADERS_BATCH_SIZE = 4;/);
+
+  // Migration nova (Postgres) + schema + teste próprio no script.
+  for (const table of ["divergence_requests", "divergence_items", "divergence_item_events"]) {
+    assert.match(migration, new RegExp(`CREATE TABLE "${table}"`));
+    assert.match(migration, new RegExp(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`));
+    assert.match(schema, new RegExp(`pgTable\\(\\s*"${table}"`));
+  }
+  assert.match(packageJson, /tests\/divergences\.test\.mjs/);
+
+  // Bloqueio real pelo worker: qualquer chave do módulo libera a página;
+  // sem nenhuma, 403 na página e na API.
+  const runtime = await worker();
+  const userRow = (permissions, id) => ({
+    id, username: id, displayName: id.toUpperCase(), email: "", passwordHash: "x", passwordSalt: "x",
+    role: "user", accessGroup: "custom", permissionsJson: JSON.stringify(permissions), companyId: "",
+    hierarchy: "", sector: "", active: 1, sessionVersion: 1, mustChangePassword: 0, createdAt: "", updatedAt: "",
+  });
+  const call = async (path, row) => runtime.fetch(
+    new Request(`http://localhost${path}`, {
+      headers: {
+        accept: path.startsWith("/api/") ? "application/json" : "text/html",
+        cookie: `unigames_session=${await signSession(env.APP_SESSION_SECRET, row.id, row.sessionVersion)}`,
+      },
+    }),
+    { ...env, DB: createFakeD1(row) },
+    ctx,
+  );
+  const inventoryOnly = userRow(["divergencias:inventory"], "div-inventario");
+  const session = await call("/api/session", inventoryOnly);
+  assert.deepEqual((await session.json()).permissions, ["divergencias:inventory"]);
+  assert.notEqual((await call("/divergencias", inventoryOnly)).status, 403);
+  // Só quem cadastra/edita pedido lê o Cadastro de Produtos.
+  assert.equal((await call("/api/product-catalog", inventoryOnly)).status, 403);
+  const creator = userRow(["divergencias:create"], "div-loja");
+  assert.notEqual((await call("/api/product-catalog", creator)).status, 403);
+  const outsider = userRow(["outputs:view"], "div-fora");
+  assert.equal((await call("/divergencias", outsider)).status, 403);
+  assert.equal((await call("/api/divergences", outsider)).status, 403);
+});

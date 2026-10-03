@@ -18,7 +18,10 @@ export function canViewProductCatalog(actor: Identity) {
     // preencher o campo de produto desses formulários.
     actor.permissions.includes("outputs:create") ||
     actor.permissions.includes("inputs:create") ||
-    actor.permissions.includes("pdv_requests:create")
+    actor.permissions.includes("pdv_requests:create") ||
+    // Divergências: a loja busca o produto ao cadastrar/editar o pedido.
+    actor.permissions.includes("divergencias:create") ||
+    actor.permissions.includes("divergencias:edit")
   );
 }
 
