@@ -858,7 +858,7 @@ test("inclui grupos, recuperação, entregas, preferências, PWA e backup autom�
   assert.match(schema, /userPreferences/);
   assert.match(migration, /CREATE TABLE `password_reset_requests`/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v78"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v79"/);
 });
 
 test("oferece missões gerais e por loja com status dos destinatários e lembretes protegidos", async () => {
@@ -951,7 +951,7 @@ test("oferece missões gerais e por loja com status dos destinatários e lembret
   assert.match(statusMigration, /ADD `status` text DEFAULT 'completed' NOT NULL/);
   assert.match(statusMigration, /ADD `updated_at` text DEFAULT '' NOT NULL/);
   assert.match(manifest, /"url": "\/missoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v78"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v79"/);
 });
 
 test("implementa a captação por loja 100% via permissões granulares, sem fluxo especial de assistência", async () => {
@@ -1044,7 +1044,7 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(migration, /captured_products_status_updated_idx/);
   assert.match(migration, /captured_products_origin_created_idx/);
   assert.match(manifest, /"url": "\/captacao"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v78"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v79"/);
 });
 
 test("cadastra jogos direto para separação e os remove da fila da assistência", async () => {
@@ -1270,7 +1270,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
     /ALTER TABLE "defective_outputs" ADD COLUMN "responsible_name" text DEFAULT '' NOT NULL/,
   );
   assert.match(manifest, /"url": "\/saidas"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v78"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v79"/);
 });
 
 test("usuário sem loja do setor Administrativo vê, altera status e exclui saídas de todas as lojas", async () => {
@@ -1703,7 +1703,7 @@ test("separa insumos por loja, registra pedidos recorrentes e preserva recebimen
   assert.match(migration, /supply_request_events_item_date_unique/);
   assert.match(migration, /PRAGMA optimize/);
   assert.match(manifest, /"url": "\/insumos"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v78"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v79"/);
   // Lembrete da Início não chama a API para quem enxerga todas as lojas sem ter uma própria (evita 400).
   assert.match(
     html,
@@ -1799,7 +1799,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(migration, /CREATE TABLE `instructions`/);
   assert.match(migration, /instructions_due_date_created_idx/);
   assert.match(manifest, /"url": "\/instrucoes"/);
-  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v78"/);
+  assert.match(serviceWorker, /CACHE_NAME = "estoque-unigames-v79"/);
 });
 
 test("carrossel de imagens de Instruções: rotas de upload em partes, servir arquivo e reordenar", async () => {
@@ -4509,4 +4509,102 @@ test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no w
   const outsider = userRow(["outputs:view"], "div-fora");
   assert.equal((await call("/divergencias", outsider)).status, 403);
   assert.equal((await call("/api/divergences", outsider)).status, 403);
+});
+
+test("Ilhas React: carregador genérico, piloto do dashboard de Divergências com reserva vanilla, SW e build", async () => {
+  const [html, serviceWorker, packageJson, gitignore, eslintConfig, deployWorkflow] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../.gitignore", import.meta.url), "utf8"),
+    readFile(new URL("../eslint.config.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../.github/workflows/deploy.yml", import.meta.url), "utf8"),
+  ]);
+
+  // Carregador genérico: manifest sem cache + <script type="module">.
+  const loader = extractNamedFunction(html, "loadIsland");
+  assert.match(extractNamedFunction(html, "loadIslandManifest"), /fetch\('\/islands\/manifest\.json', \{cache:'no-store'/);
+  assert.match(loader, /script\.type = 'module';/);
+  assert.match(loader, /window\.UnigamesIslands && window\.UnigamesIslands\[globalName\]/);
+  assert.match(loader, /typeof api\.mount === 'function'/);
+  // React só sob demanda: nenhum módulo/vendor carregado direto na página e
+  // a única ilha pedida hoje é a do dashboard de Divergências.
+  assert.doesNotMatch(html, /<script[^>]*type="module"/);
+  assert.doesNotMatch(html, /vendor-react/);
+  const islandCalls = [...html.matchAll(/loadIsland\('([^']+)'\)/g)].map((match) => match[1]);
+  assert.ok(islandCalls.length >= 1);
+  assert.deepEqual([...new Set(islandCalls)], ["divergences-dashboard"]);
+
+  // Piloto: constante liga/desliga, contêiner da ilha e reserva vanilla.
+  assert.match(html, /const DIV_DASHBOARD_REACT = true;/);
+  assert.match(html, /<div class="div-dash-island" id="divDashIsland" hidden><\/div>\s*<div id="divDashVanilla">\s*<div class="purchase-metrics div-metrics" id="divDashRequestMetrics"><\/div>/);
+  assert.match(extractNamedFunction(html, "loadDivDashboard"), /await divDashRender\(data\);/);
+  const render = extractNamedFunction(html, "divDashRender");
+  assert.match(render, /if\(DIV_DASHBOARD_REACT && !divDashIslandFailed\)/);
+  assert.match(render, /divDashIsland\.update\(props\)/);
+  assert.match(render, /island\.mount\(el\('divDashIsland'\), props\)/);
+  assert.match(render, /console\.error\([^)]*error\);\s*divDashIslandFailed = true;/);
+  assert.match(render, /el\('divDashVanilla'\)\.hidden = false;[\s\S]*\}\s*renderDivDashboard\(data\);\s*\}$/);
+  assert.match(extractNamedFunction(html, "divDashMetricClick"), /divOpenFiltered\(\{tab:'pedidos', status:/);
+  // O desenho vanilla continua inteiro.
+  assert.match(extractNamedFunction(html, "renderDivDashboard"), /el\('divDashRequestMetrics'\)\.innerHTML =/);
+  // Barras animadas só na ilha, respeitando prefers-reduced-motion.
+  assert.match(html, /\.div-dash-island \.div-bar-fill,\.div-dash-island \.div-stack span\{transition:width \.35s ease;\}/);
+  assert.match(html, /@media\(prefers-reduced-motion:reduce\)\{\.div-dash-island \.div-bar-fill,\.div-dash-island \.div-stack span\{transition:none;\}\}/);
+
+  // Service worker: manifest sempre da rede; módulos com hash em cache-first,
+  // guardando só JavaScript (nunca a tela de login).
+  assert.match(serviceWorker, /if \(url\.pathname === "\/islands\/manifest\.json"\) return;/);
+  assert.match(serviceWorker, /url\.pathname\.startsWith\("\/islands\/"\)\) \{\s*event\.respondWith\(islandModule\(request, url\)\);/);
+  assert.match(serviceWorker, /response\.ok && !response\.redirected && isScript/);
+
+  // Build: ilhas antes do vinext (para cair em dist/client), saída fora do git
+  // e fora do lint; o artefato do deploy leva a pasta dist inteira.
+  const scripts = JSON.parse(packageJson).scripts;
+  assert.equal(scripts["islands:build"], "vite build --config vite.islands.config.ts");
+  assert.equal(scripts["islands:watch"], "vite build --config vite.islands.config.ts --watch");
+  assert.match(scripts.build, /^pnpm islands:build && vinext build$/);
+  assert.match(scripts.dev, /^pnpm islands:build && vinext dev/);
+  assert.match(scripts.test, /tests\/islands-divergences-dashboard\.test\.mjs/);
+  assert.match(gitignore, /^\/public\/islands\/$/m);
+  assert.match(eslintConfig, /"public\/islands\/\*\*"/);
+  assert.match(eslintConfig, /files: \["islands\/\*\*\/\*\.\{ts,tsx\}"\][\s\S]*"react\/no-danger": "error"/);
+  assert.match(deployWorkflow, /run: pnpm check[\s\S]*name: dist\s*\n\s*path: dist\n/);
+
+  // Worker: usuário logado com qualquer permissão recebe os arquivos da ilha
+  // (vinext lista public/islands no build); sem sessão, vai para o login.
+  const clientDir = new URL("../dist/client/", import.meta.url);
+  const manifest = JSON.parse(await readFile(new URL("islands/manifest.json", clientDir), "utf8"));
+  const assetsEnv = {
+    ...env,
+    ASSETS: {
+      fetch: async (request) => {
+        const path = new URL(request.url).pathname;
+        try {
+          const body = await readFile(new URL(path.slice(1), clientDir));
+          const type = path.endsWith(".json") ? "application/json" : "text/javascript";
+          return new Response(body, { headers: { "content-type": type } });
+        } catch {
+          return new Response("Not found", { status: 404 });
+        }
+      },
+    },
+  };
+  const row = {
+    id: "ilha-leitor", username: "ilha-leitor", displayName: "ILHA", email: "", passwordHash: "x", passwordSalt: "x",
+    role: "user", accessGroup: "custom", permissionsJson: JSON.stringify(["divergencias:view"]), companyId: "",
+    hierarchy: "", sector: "", active: 1, sessionVersion: 1, mustChangePassword: 0, createdAt: "", updatedAt: "",
+  };
+  const cookie = `unigames_session=${await signSession(env.APP_SESSION_SECRET, row.id, row.sessionVersion)}`;
+  const runtime = await worker();
+  for (const path of ["/islands/manifest.json", manifest.vendor, manifest.islands["divergences-dashboard"]]) {
+    const response = await runtime.fetch(
+      new Request(`http://localhost${path}`, { headers: { cookie } }),
+      { ...assetsEnv, DB: createFakeD1(row) },
+      ctx,
+    );
+    assert.equal(response.status, 200, path);
+  }
+  const anonymous = await runtime.fetch(new Request("http://localhost/islands/manifest.json"), assetsEnv, ctx);
+  assert.equal(anonymous.status, 303);
 });

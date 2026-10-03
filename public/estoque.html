@@ -3137,6 +3137,11 @@
   .div-product-copy small{display:block; margin-top:3px; color:var(--ink-faint); font:700 8.5px/1.35 var(--mono);}
   .div-product-stores{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
   .div-product-side{display:grid; justify-items:end; gap:5px;}
+  /* Ilha React do dashboard: os elementos continuam na tela entre uma
+     atualização e outra, então as barras deslizam até o novo tamanho (no
+     desenho vanilla elas são recriadas e não animam). */
+  .div-dash-island .div-bar-fill,.div-dash-island .div-stack span{transition:width .35s ease;}
+  @media(prefers-reduced-motion:reduce){.div-dash-island .div-bar-fill,.div-dash-island .div-stack span{transition:none;}}
   .div-qty-neg{color:var(--neg) !important;}
   .div-qty-pos{color:var(--accent) !important;}
   .div-card-counters{display:flex; flex-wrap:wrap; gap:6px;}
@@ -4081,21 +4086,26 @@
           <button class="btn-outline" id="btnDivDashRefresh" type="button">ATUALIZAR</button>
         </div>
         <div class="user-form-status" id="divDashStatus" role="status" aria-live="polite"></div>
-        <div class="purchase-metrics div-metrics" id="divDashRequestMetrics"></div>
-        <div class="div-dash-grid">
+        <!-- Ilha React (islands/divergences-dashboard) desenha aqui; o bloco
+             #divDashVanilla abaixo é a reserva (renderDivDashboard). -->
+        <div class="div-dash-island" id="divDashIsland" hidden></div>
+        <div id="divDashVanilla">
+          <div class="purchase-metrics div-metrics" id="divDashRequestMetrics"></div>
+          <div class="div-dash-grid">
+            <section class="table-panel div-panel">
+              <div class="div-panel-head"><h3>ITENS POR STATUS</h3><span id="divDashItemsTotal"></span></div>
+              <div id="divDashItemsChart" class="div-chart"></div>
+            </section>
+            <section class="table-panel div-panel">
+              <div class="div-panel-head"><h3>DIVERGÊNCIAS POR LOJA</h3><span>UNIDADES A MENOS / A MAIS FISICAMENTE</span></div>
+              <div id="divDashStoresChart" class="div-chart"></div>
+            </section>
+          </div>
           <section class="table-panel div-panel">
-            <div class="div-panel-head"><h3>ITENS POR STATUS</h3><span id="divDashItemsTotal"></span></div>
-            <div id="divDashItemsChart" class="div-chart"></div>
-          </section>
-          <section class="table-panel div-panel">
-            <div class="div-panel-head"><h3>DIVERGÊNCIAS POR LOJA</h3><span>UNIDADES A MENOS / A MAIS FISICAMENTE</span></div>
-            <div id="divDashStoresChart" class="div-chart"></div>
+            <div class="div-panel-head"><h3>PRODUTOS MAIS DIVERGENTES</h3><span>EM DESTAQUE: PRODUTOS COM DIVERGÊNCIA EM MAIS DE UMA LOJA</span></div>
+            <div id="divDashProducts" class="div-product-list"></div>
           </section>
         </div>
-        <section class="table-panel div-panel">
-          <div class="div-panel-head"><h3>PRODUTOS MAIS DIVERGENTES</h3><span>EM DESTAQUE: PRODUTOS COM DIVERGÊNCIA EM MAIS DE UMA LOJA</span></div>
-          <div id="divDashProducts" class="div-product-list"></div>
-        </section>
       </section>
 
       <section class="no-print div-section" id="divSectionPedidos" hidden>
@@ -18527,6 +18537,59 @@ function renderHomeTasks(){
     }
   }
 
+  // ===== ILHAS REACT (carregador genérico) =====
+  // Componentes React montados dentro desta SPA, uma "ilha" por vez (README,
+  // seção "Ilhas React"). O build (vite.islands.config.ts) gera
+  // /islands/manifest.json com o arquivo de cada ilha e o vendor ÚNICO do
+  // React; o módulo da ilha importa o vendor (baixado uma vez, reaproveitado
+  // por todas) e se registra em window.UnigamesIslands. Nada é baixado até a
+  // tela da ilha abrir. loadIsland(nome) → Promise com { mount, update, unmount }.
+  const ISLAND_LOAD_TIMEOUT_MS = 20000;
+  const islandLoads = {};
+  let islandManifestLoad = null;
+
+  function loadIslandManifest(){
+    if(!islandManifestLoad){
+      islandManifestLoad = fetch('/islands/manifest.json', {cache:'no-store', headers:{Accept:'application/json'}})
+        .then(response => {
+          if(!response.ok) throw new Error('MANIFESTO DAS ILHAS INDISPONÍVEL ('+response.status+').');
+          return response.json();
+        });
+      islandManifestLoad.catch(() => { islandManifestLoad = null; });
+    }
+    return islandManifestLoad;
+  }
+
+  function loadIsland(name){
+    if(!islandLoads[name]){
+      islandLoads[name] = loadIslandManifest().then(manifest => new Promise((resolve, reject) => {
+        const src = manifest && manifest.islands && manifest.islands[name];
+        if(typeof src !== 'string' || !/^\/islands\/[\w.-]+\.js$/.test(src)){
+          throw new Error('ILHA "'+name+'" NÃO ESTÁ NO MANIFESTO.');
+        }
+        // 'divergences-dashboard' → window.UnigamesIslands.divergencesDashboard
+        const globalName = name.replace(/-([a-z0-9])/g, (_, char) => char.toUpperCase());
+        const script = document.createElement('script');
+        const timer = setTimeout(() => reject(new Error('TEMPO ESGOTADO AO CARREGAR A ILHA "'+name+'".')), ISLAND_LOAD_TIMEOUT_MS);
+        script.type = 'module';
+        script.src = src;
+        script.onload = () => {
+          clearTimeout(timer);
+          const api = window.UnigamesIslands && window.UnigamesIslands[globalName];
+          if(api && typeof api.mount === 'function') resolve(api);
+          else reject(new Error('A ILHA "'+name+'" NÃO SE REGISTROU.'));
+        };
+        script.onerror = () => {
+          clearTimeout(timer);
+          reject(new Error('NÃO FOI POSSÍVEL BAIXAR A ILHA "'+name+'".'));
+        };
+        document.head.appendChild(script);
+      }));
+      islandLoads[name].catch(() => { delete islandLoads[name]; });
+    }
+    return islandLoads[name];
+  }
+
   // ===== ESTOQUE > DIVERGÊNCIAS =====
   // A loja abre um pedido de verificação (1+ produtos, físico x sistema) e o
   // estoque responde item a item. Regras e escopo por loja ficam no backend
@@ -18718,6 +18781,15 @@ function renderHomeTasks(){
   }
 
   // ---------- DASHBOARD ----------
+  // Piloto de ilha React: o React só DESENHA o dashboard (busca, filtros,
+  // escopo por loja e permissões continuam no vanilla). false = volta a usar só o
+  // renderDivDashboard vanilla, que também é a reserva automática: se o
+  // manifest/script falhar ou a ilha lançar erro, registra no console e cai
+  // nele até a página ser recarregada.
+  const DIV_DASHBOARD_REACT = true;
+  let divDashIsland = null;
+  let divDashIslandFailed = false;
+
   function divDashQuery(){
     const params = new URLSearchParams();
     const from = el('divDashFrom').value;
@@ -18741,14 +18813,50 @@ function renderHomeTasks(){
     }
     status.textContent = 'CARREGANDO…';
     status.className = 'user-form-status';
+    // Baixa a ilha junto com os dados (só na primeira abertura).
+    if(DIV_DASHBOARD_REACT && !divDashIsland && !divDashIslandFailed) loadIsland('divergences-dashboard').catch(() => {});
     try{
       const data = await divApi('/dashboard?'+divDashQuery());
       status.textContent = '';
-      renderDivDashboard(data);
+      await divDashRender(data);
     }catch(error){
       status.textContent = error.message;
       status.className = 'user-form-status error';
     }
+  }
+
+  function divDashMetricClick(filter){
+    divOpenFiltered({tab:'pedidos', status:(filter && filter.status) || '', itemStatus:(filter && filter.itemStatus) || ''});
+  }
+
+  async function divDashRender(data){
+    if(DIV_DASHBOARD_REACT && !divDashIslandFailed){
+      try{
+        const props = {data, onMetricClick:divDashMetricClick};
+        if(divDashIsland){
+          divDashIsland.update(props);
+        }else{
+          const island = await loadIsland('divergences-dashboard');
+          // Outra chamada pode ter montado enquanto esta esperava o download.
+          if(divDashIsland) divDashIsland.update(props);
+          else{
+            divDashIsland = island;
+            island.mount(el('divDashIsland'), props);
+          }
+        }
+        el('divDashVanilla').hidden = true;
+        el('divDashIsland').hidden = false;
+        return;
+      }catch(error){
+        console.error('Dashboard de Divergências: a ilha React falhou; usando o desenho padrão.', error);
+        divDashIslandFailed = true;
+        try{ if(divDashIsland) divDashIsland.unmount(); }catch{ /* já desmontada */ }
+        divDashIsland = null;
+        el('divDashIsland').hidden = true;
+        el('divDashVanilla').hidden = false;
+      }
+    }
+    renderDivDashboard(data);
   }
 
   function renderDivDashboard(data){

@@ -40,6 +40,8 @@ yarn-error.log*
 next-env.d.ts
 *.tsbuildinfo
 /dist/
+# ilhas React geradas por `pnpm islands:build` (vite.islands.config.ts)
+/public/islands/
 /.wrangler/
 /outputs/
 /work/

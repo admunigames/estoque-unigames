@@ -33,6 +33,47 @@ Para validar lint, tipos, build e testes:
 pnpm check
 ```
 
+## Ilhas React
+
+A interface é a SPA vanilla `public/estoque.html`. React entra só como
+"ilhas": um componente que desenha UMA área da tela, carregado quando essa
+tela abre. Use para telas/módulos NOVOS ou áreas isoladas; não reescreva o
+que já funciona. Piloto: aba DASHBOARD de Divergências.
+
+- **Estrutura:** `islands/<nome>/index.tsx` (montagem) + componentes `.tsx`
+  + lógica pura em `.ts` (testável no Node: o runner usa
+  `--experimental-strip-types`, que não aceita TSX). Utilitário comum em
+  `islands/shared/create-island.tsx`.
+- **Nova ilha:** crie a pasta `islands/<nome-em-kebab-case>/` com `index.tsx`;
+  o `vite.islands.config.ts` acha a entrada sozinho. `pnpm islands:build`
+  (também rodado por `pnpm build`/`pnpm dev`, antes do vinext) gera
+  `public/islands/` (fora do git) e `public/islands/manifest.json`.
+  `pnpm islands:watch` recompila ao salvar; se o `pnpm dev` não achar um
+  arquivo recém-gerado, reinicie-o (o vinext lista `public/` ao montar as
+  rotas).
+- **Regra do React compartilhado:** `react`, `react-dom` e `react/jsx-runtime`
+  ficam em UM arquivo, `islands/vendor-react-<hash>.js` (~60 KB gzip), que
+  todas as ilhas importam e o navegador baixa uma vez. Nunca embutir React
+  em uma ilha: o build falha e `tests/islands-divergences-dashboard.test.mjs`
+  também.
+- **Carregador:** no `estoque.html`, `loadIsland('<nome>')` lê o manifest
+  (`cache:'no-store'`), injeta o `<script type="module">` e devolve a API.
+  Nenhuma outra tela baixa React.
+- **Contrato:** o bundle registra
+  `window.UnigamesIslands.<nomeEmCamelCase> = { mount(container, props), update(props), unmount() }`
+  (via `createIsland`). Busca de dados, filtros, permissões e escopo por loja
+  continuam no vanilla, que chama `mount`/`update` com os dados prontos.
+- **Reserva obrigatória:** o renderizador vanilla antigo NÃO é apagado. Uma
+  constante liga a ilha (ex.: `DIV_DASHBOARD_REACT`); se o manifest/script
+  falhar ou a ilha lançar erro (`mount`/`update` relançam erros de render),
+  registra `console.error` e cai no vanilla.
+- **Estilo:** DOM normal (sem Shadow DOM) com as classes CSS que já existem
+  no `estoque.html`; sem Tailwind, CSS-in-JS, biblioteca de gráficos ou de
+  componentes; sem SVG/emoji novos; nada de `dangerouslySetInnerHTML` (o
+  lint bloqueia). Respeite `prefers-reduced-motion` e os temas claro/escuro.
+- **Cache:** o service worker busca `/islands/manifest.json` sempre na rede
+  e guarda os módulos com hash (cache-first).
+
 ## Fonte principal e publicação
 
 O código-fonte completo e atualizado é mantido em

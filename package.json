@@ -6,16 +6,18 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "vinext dev --hostname 127.0.0.1",
-    "build": "vinext build",
+    "dev": "pnpm islands:build && vinext dev --hostname 127.0.0.1",
+    "build": "pnpm islands:build && vinext build",
+    "islands:build": "vite build --config vite.islands.config.ts",
+    "islands:watch": "vite build --config vite.islands.config.ts --watch",
     "start": "vinext start",
-    "test": "pnpm build && node --test --experimental-strip-types tests/rendered-html.test.mjs tests/finance-payables.test.mjs tests/finance-cash-flow.test.mjs tests/finance-card-machines.test.mjs tests/finance-card-fees.test.mjs tests/finance-corporate-cards.test.mjs tests/finance-bank-reconciliation.test.mjs tests/finance-fase8-itens-diversos.test.mjs tests/hr-benefits.test.mjs tests/hr-working-days.test.mjs tests/hr-payroll.test.mjs tests/finance-rateio.test.mjs tests/hr-time-tracking.test.mjs tests/hr-uniform-stock.test.mjs tests/hr-birthdays.test.mjs tests/hr-benefit-cycle.test.mjs tests/hr-employee-dre.test.mjs tests/commercial.test.mjs tests/relatorio-nf.test.mjs tests/controle-gd.test.mjs tests/documents-permissions.test.mjs tests/commercial-permissions.test.mjs tests/divergences.test.mjs",
+    "test": "pnpm build && node --test --experimental-strip-types tests/rendered-html.test.mjs tests/finance-payables.test.mjs tests/finance-cash-flow.test.mjs tests/finance-card-machines.test.mjs tests/finance-card-fees.test.mjs tests/finance-corporate-cards.test.mjs tests/finance-bank-reconciliation.test.mjs tests/finance-fase8-itens-diversos.test.mjs tests/hr-benefits.test.mjs tests/hr-working-days.test.mjs tests/hr-payroll.test.mjs tests/finance-rateio.test.mjs tests/hr-time-tracking.test.mjs tests/hr-uniform-stock.test.mjs tests/hr-birthdays.test.mjs tests/hr-benefit-cycle.test.mjs tests/hr-employee-dre.test.mjs tests/commercial.test.mjs tests/relatorio-nf.test.mjs tests/controle-gd.test.mjs tests/documents-permissions.test.mjs tests/commercial-permissions.test.mjs tests/divergences.test.mjs tests/islands-divergences-dashboard.test.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "db:generate": "drizzle-kit generate",
     "db:migrate-data": "node db/scripts/migrate-d1-to-supabase.mjs",
-    "deploy": "vinext build && wrangler deploy -c wrangler.jsonc"
+    "deploy": "pnpm build && wrangler deploy -c wrangler.jsonc"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

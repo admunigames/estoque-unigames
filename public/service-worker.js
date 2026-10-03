@@ -1,4 +1,4 @@
-const CACHE_NAME = "estoque-unigames-v78";
+const CACHE_NAME = "estoque-unigames-v79";
 const APP_SHELL = [
   "/estoque.html",
   "/favicon.svg",
@@ -29,6 +29,14 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
+
+  // Ilhas React: o manifest.json vem sempre da rede (aponta para os arquivos
+  // da versão publicada); os módulos têm hash no nome e nunca mudam.
+  if (url.pathname === "/islands/manifest.json") return;
+  if (url.pathname.startsWith("/islands/")) {
+    event.respondWith(islandModule(request, url));
+    return;
+  }
 
   if (request.mode === "navigate") {
     event.respondWith(
@@ -72,6 +80,32 @@ self.addEventListener("fetch", (event) => {
   );
   event.waitUntil(refresh);
 });
+
+// Cache-first para /islands/<nome>-<hash>.js. Só guarda JavaScript de verdade
+// (nunca a tela de login de uma sessão expirada) e, ao guardar uma versão
+// nova, apaga as versões antigas do mesmo arquivo.
+async function islandModule(request, url) {
+  const cached = await caches.match(request).catch(() => undefined);
+  if (cached) return cached;
+  const response = await fetch(request);
+  const isScript = /javascript/.test(response.headers.get("content-type") || "");
+  if (response.ok && !response.redirected && isScript) {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response.clone());
+      const prefix = url.pathname.replace(/-[0-9a-z]+\.js$/, "-");
+      for (const key of await cache.keys()) {
+        const keyPath = new URL(key.url).pathname;
+        if (keyPath !== url.pathname && keyPath.startsWith(prefix) && /^[0-9a-z]+\.js$/.test(keyPath.slice(prefix.length))) {
+          await cache.delete(key);
+        }
+      }
+    } catch {
+      /* cache cheio/indisponível: segue com a resposta da rede */
+    }
+  }
+  return response;
+}
 
 self.addEventListener("push", (event) => {
   let payload = {};
