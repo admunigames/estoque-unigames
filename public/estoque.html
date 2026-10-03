@@ -3044,7 +3044,12 @@
   .div-toolbar{display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; margin:0 0 14px;}
   .div-toolbar .field{flex:0 1 200px; min-width:150px; margin:0;}
   .div-toolbar .field select,.div-toolbar .field input{width:100%;}
-  .div-toolbar > button{min-height:46px;}
+  /* Tudo na barra com a mesma altura (46px = altura das abas) e alinhado
+     pela base: abas sem a margem inferior padrão (igual .output-toolbar),
+     campos e botões com a mesma altura das abas. */
+  .div-toolbar > .output-tabs,.div-toolbar > .supply-tabs{margin-bottom:0;}
+  .div-toolbar .field select,.div-toolbar .field input{min-height:46px; height:46px;}
+  .div-toolbar > button{min-height:46px; height:46px; padding-block:0;}
   .div-metrics{margin-top:4px;}
   .div-metric-button{width:100%; text-align:left; cursor:pointer; font:inherit; color:var(--ink); white-space:normal;}
   .div-metric-button:hover{border-color:var(--accent);}
