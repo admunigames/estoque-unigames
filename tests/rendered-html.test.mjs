@@ -4392,6 +4392,9 @@ test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no w
   assert.match(html, /id="homeDivergencesStock" data-permission="divergencias:respond" hidden/);
   assert.match(html, /const loaders = \[\(\) => Promise\.all\(\[loadInstructions\(\),loadHomeInstructions\(\),loadInstructionCarousel\(\)\]\)\];\n\s*\/\/ [^\n]*\n\s*if\(canAccess\('divergencias:view'\) \|\| canAccess\('divergencias:respond'\)\) loaders\.push\(\(\) => loadHomeDivergences\(\)\);/);
   assert.match(html, /const HOME_LOADERS_BATCH_SIZE = 4;/);
+  // Na tela, os widgets ficam abaixo dos menus de acesso rápido (sem entrar
+  // na lista de orderHomeSections eles ficavam presos no topo da Início).
+  assert.match(extractNamedFunction(html, "orderHomeSections"), /'#homeAccessGrid',[\s\S]*'#homeDivergencesStore',\s*'#homeDivergencesStock',/);
 
   // Migration nova (Postgres) + schema + teste próprio no script.
   for (const table of ["divergence_requests", "divergence_items", "divergence_item_events"]) {
