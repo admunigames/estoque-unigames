@@ -16700,7 +16700,7 @@ function renderHomeTasks(){
     const list = el('missionList');
     if(!list) return;
     const date = el('missionDate').value || todayDateKey();
-    el('missionCount').textContent = missionRows.length+' MISSÃO'+(missionRows.length === 1 ? '' : 'ÕES');
+    el('missionCount').textContent = missionRows.length+(missionRows.length === 1 ? ' MISSÃO' : ' MISSÕES');
     el('missionBoardDescription').textContent = missionView === 'general'
       ? 'Missões destinadas a todas as lojas.'
       : 'Missões específicas de '+missionSelectedStoreName()+'.';
