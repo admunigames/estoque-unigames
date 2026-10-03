@@ -3949,10 +3949,11 @@ test("Insumos: seletor de semana de solicitação permite semanas passadas, ent�
 test("card de usuário em Cadastros > Usuários e Acessos fica compacto (sem a lista de badges de permissão)", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
 
-  // Card mostra só nome, @usuário, status e os 3 botões de ação — o resto
-  // (grupo, hierarquia, loja, setor, recuperação de senha, permissões
-  // granulares) só aparece dentro da tela de ALTERAR (edição), não solto
-  // na listagem principal.
+  // Card mostra só nome, @usuário, e-mail, status e o grupo de 3 botões
+  // (VISUALIZAR/EDITAR/EXCLUIR) — o resto (grupo, hierarquia, loja, setor,
+  // recuperação de senha, permissões granulares) só aparece no VISUALIZAR e
+  // no EDITAR, não solto na listagem principal. Bloquear/reativar saiu do
+  // card e virou a caixa "Usuário ativo" do EDITAR.
   const renderStart = html.indexOf("function renderAdminUsers(){");
   assert.notEqual(renderStart, -1, "renderAdminUsers não encontrada");
   const renderEnd = html.indexOf("\n  }\n", renderStart);
@@ -3961,9 +3962,23 @@ test("card de usuário em Cadastros > Usuários e Acessos fica compacto (sem a l
   assert.match(renderBody, /escapeHtml\(user\.displayName\)/);
   assert.match(renderBody, /@'\+escapeHtml\(user\.username\)/);
   assert.match(renderBody, /user\.active \? 'ATIVO' : 'BLOQUEADO'/);
+  assert.match(renderBody, /data-view-user=/);
   assert.match(renderBody, /data-edit-user=/);
-  assert.match(renderBody, /data-toggle-user=/);
   assert.match(renderBody, /data-delete-user=/);
+  assert.doesNotMatch(renderBody, /data-toggle-user=/);
+  assert.doesNotMatch(html, /data-toggle-user/);
+  // Grupo de botões com ícone (HyperUI "Button Group" no CSS do sistema):
+  // 3 botões com aria-label/title; conta principal fica só com VISUALIZAR.
+  assert.match(renderBody, /class="user-icon-group" role="group"/);
+  for (const action of ["VISUALIZAR", "EDITAR", "EXCLUIR"]) {
+    assert.match(renderBody, new RegExp(`aria-label="${action}" title="${action}"`));
+  }
+  assert.match(renderBody, /user\.managed \? '<button type="button" data-edit-user=/);
+  assert.match(renderBody, /CONTA PRINCIPAL/);
+  // Ícones no mesmo formato dos ícones do menu lateral (.nav-icon + svg 24x24 stroke).
+  assert.match(html, /const userIconSvg = paths => '<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1\.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'/);
+  assert.match(html, /\.user-icon-group\{display:inline-flex/);
+  assert.match(html, /\.user-icon-group button:focus-visible\{z-index:2;outline:2px solid var\(--accent\)/);
   assert.doesNotMatch(renderBody, /user-badges/);
   assert.doesNotMatch(renderBody, /permissionNames\[permission\]/);
   assert.doesNotMatch(renderBody, /accessGroupNames/);
@@ -3982,10 +3997,77 @@ test("card de usuário em Cadastros > Usuários e Acessos fica compacto (sem a l
   assert.doesNotMatch(html, /const sectorNames = \{/);
   assert.match(html, /const permissionNames = \{/);
 
-  // A tela de ALTERAR continua populando grupo/loja/setor/permissões
+  // A tela de EDITAR continua populando grupo/loja/setor/permissões
   // completos a partir do usuário selecionado — só a listagem que ficou
   // enxuta, não a edição.
   assert.match(html, /el\('userAccessGroup'\)\.value = user\.accessGroup \|\| \(user\.role === 'admin' \? 'administrator' : 'custom'\);/);
+});
+
+test("Cadastros > Usuários: lista em página inteira, criação/edição e VISUALIZAR em diálogos", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+
+  // Lista ocupa a página toda: sem a coluna fixa do formulário.
+  assert.match(html, /\.users-layout\{display:grid;gap:18px\}/);
+  assert.doesNotMatch(html, /\.users-layout\{[^}]*grid-template-columns/);
+  const pageStart = html.indexOf('<section id="pageUsuarios" class="page wrap">');
+  const pageEnd = html.indexOf("</section>\n\n    <!-- ================= RH / FOLGAS", pageStart);
+  assert.ok(pageStart !== -1 && pageEnd !== -1, "página de usuários não encontrada");
+  const page = html.slice(pageStart, pageEnd);
+  assert.doesNotMatch(page, /id="userForm"/);
+  assert.match(page, /<button class="btn-accent" type="button" id="btnNewUser">\+ NOVO USUÁRIO<\/button>/);
+  assert.match(page, /id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES</);
+  assert.match(page, /id="userListStatus" role="status"/);
+  assert.match(page, /id="userList"/);
+
+  // Diálogo de criação/edição no padrão dos outros módulos, com o MESMO
+  // formulário (ids, campos, acordeão de permissões e "Usuário ativo").
+  const dialogStart = html.indexOf('<dialog class="purchase-dialog" id="userDialog" aria-labelledby="userFormTitle">');
+  assert.notEqual(dialogStart, -1, "#userDialog não encontrado");
+  const dialog = html.slice(dialogStart, html.indexOf("</dialog>", dialogStart));
+  assert.match(dialog, /<h3 id="userFormTitle">NOVO USUÁRIO<\/h3>/);
+  assert.match(dialog, /id="btnCloseUserDialog" type="button" aria-label="Fechar">×</);
+  assert.match(dialog, /<form class="user-form user-dialog-form" id="userForm">/);
+  for (const id of ["userEditId", "userDisplayName", "userUsername", "userEmail", "userPassword", "userAccessGroup",
+    "userHierarchy", "userCompanyId", "userSector", "userPermissionGrid", "userActiveWrap", "userActive", "userFormStatus"]) {
+    assert.match(dialog, new RegExp(`id="${id}"`), `#${id} fora do #userDialog`);
+  }
+  assert.match(dialog, /<button class="btn-outline" id="btnCancelUserEdit" type="button">CANCELAR<\/button>/);
+  assert.match(dialog, /<button class="btn-accent" id="btnSaveUser" type="submit">CRIAR USUÁRIO<\/button>/);
+  assert.match(dialog, /name="userPermission" value="users:manage"/);
+
+  // VISUALIZAR: diálogo só leitura com EDITAR e FECHAR.
+  const viewStart = html.indexOf('<dialog class="purchase-dialog" id="userViewDialog" aria-labelledby="userViewTitle">');
+  assert.notEqual(viewStart, -1, "#userViewDialog não encontrado");
+  const view = html.slice(viewStart, html.indexOf("</dialog>", viewStart));
+  assert.match(view, /id="userViewBody"/);
+  assert.match(view, /id="btnCancelUserView" type="button">FECHAR</);
+  assert.match(view, /id="btnEditFromUserView" type="button">EDITAR</);
+  assert.doesNotMatch(view, /<input|<select|<textarea/);
+  const openViewStart = html.indexOf("function openUserView(user){");
+  assert.notEqual(openViewStart, -1, "openUserView não encontrada");
+  const openView = html.slice(openViewStart, html.indexOf("\n  }\n", openViewStart));
+  assert.match(openView, /escapeHtml\(user\.displayName\)/);
+  assert.match(openView, /escapeHtml\(module\.name\)/);
+  assert.match(openView, /module\.items\.map\(label => '<li>'\+escapeHtml\(label\)\+'<\/li>'\)/);
+  assert.match(openView, /el\('btnEditFromUserView'\)\.hidden = !user\.managed;/);
+  assert.match(html, /group === 'custom' \? \(user\.permissions \|\| \[\]\) : \(accessGroupPermissions\[group\]/);
+
+  // Clique da lista: closest() no botão (o clique pode cair no <svg>/<path>).
+  const clickStart = html.indexOf("el('userList').addEventListener('click', async event => {");
+  assert.notEqual(clickStart, -1);
+  const click = html.slice(clickStart, html.indexOf("\n  });\n", clickStart));
+  assert.match(click, /event\.target\.closest\('button\[data-view-user\],button\[data-edit-user\],button\[data-delete-user\]'\)/);
+  assert.doesNotMatch(click, /event\.target\.dataset\.\w/);
+  assert.match(click, /window\.confirm\(/);
+  assert.doesNotMatch(click, /prompt\(/);
+  assert.match(click, /'\/api\/admin\/users\?id=' \+ encodeURIComponent\(user\.id\)/);
+
+  // + NOVO USUÁRIO limpa e abre; fechar/cancelar/Esc limpa pelo evento close;
+  // salvar com sucesso fecha e avisa na lista; erro fica dentro do diálogo.
+  assert.match(html, /el\('btnNewUser'\)\.addEventListener\('click', \(\) => \{\n    resetUserForm\(\);/);
+  assert.match(html, /el\('userDialog'\)\.addEventListener\('close', resetUserForm\);/);
+  assert.match(html, /resetUserForm\(\);\n      el\('userDialog'\)\.close\(\);\n      await loadAdminUsers\(\);\n      setUserFormStatus\([^\n]*'success', 'userListStatus'\);/);
+  assert.match(html, /setUserFormStatus\(error\.message, 'error', el\('userDialog'\)\.open \? '' : 'userListStatus'\);/);
 });
 
 test("expõe o módulo RH > Fardamento e restringe o acesso a rh_fardamento:view/:manage", async () => {

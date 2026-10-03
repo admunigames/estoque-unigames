@@ -1663,10 +1663,10 @@
   .session-user{margin-top:auto;padding:14px 12px 4px;border-top:1px solid var(--line);display:grid;gap:3px}
   .session-user strong{font-size:12px;color:var(--ink)}
   .session-user span{font:700 10px/1.4 var(--mono);color:var(--ink-soft);text-transform:uppercase}
-  .users-layout{display:grid;grid-template-columns:minmax(280px,390px) 1fr;gap:18px;align-items:start}
+  .users-layout{display:grid;gap:18px}
   .user-panel{border:1px solid var(--surface-border);border-radius:var(--radius-surface);background:var(--panel);padding:var(--pad-panel);box-shadow:var(--surface-shadow)}
   .user-panel h3{margin:0 0 6px}.user-panel>p{margin:0 0 18px;color:var(--ink-soft);font-size:13px}
-  .user-form{display:grid;gap:13px}.user-form .field{display:grid;gap:6px}.user-form label{font:800 10px var(--mono);letter-spacing:.08em;color:var(--ink-soft)}
+  .user-form .field{display:grid;gap:6px}.user-form label{font:800 10px var(--mono);letter-spacing:.08em;color:var(--ink-soft)}
   .user-form-status{min-height:18px;font:800 11px/1.45 var(--mono)}
   .user-form-status.success{color:#8dd6a8}.user-form-status.error{color:#ff9b91}
   .permission-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.permission-option{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--line);border-radius:9px;font-size:12px}
@@ -1799,9 +1799,71 @@
   .payable-detail-summary div span:first-child{color:var(--ink-soft);}
   .payable-origin-row{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:11px;margin-bottom:6px;}
   @media(max-width:850px){.payables-quick-views{grid-template-columns:repeat(2,1fr);} .payable-detail-summary{grid-template-columns:1fr;}}
-  .user-actions{display:flex;gap:8px;flex-wrap:wrap}.user-list{display:grid;gap:10px}.user-card{border:1px solid var(--inset-border);border-radius:var(--radius-inset);padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
-  .user-card.inactive{opacity:.58}.user-card h4{margin:0 0 3px}.user-card p{margin:0;color:var(--ink-soft);font-size:11px}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
-  @media(max-width:850px){.users-layout{grid-template-columns:1fr}.permission-grid{grid-template-columns:1fr}}
+  .user-list{display:grid;gap:10px}.user-card{border:1px solid var(--inset-border);border-radius:var(--radius-inset);padding:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 14px;align-items:center}
+  .user-card.inactive .user-card-info{opacity:.58}.user-card h4{margin:0 0 3px;overflow-wrap:anywhere}.user-card p{margin:0;color:var(--ink-soft);font-size:11px;overflow-wrap:anywhere}.user-badge{font:800 9px var(--mono);padding:4px 7px;border-radius:999px;background:rgba(101,184,255,.12);color:var(--accent)}
+  .user-card-side{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  /* Cabeçalho da lista: título/aviso à esquerda, + NOVO USUÁRIO e acessos dos vendedores à direita. */
+  .user-list-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px 18px;flex-wrap:wrap;margin-bottom:12px}
+  .user-list-head h3{margin:0 0 6px}.user-list-head p{margin:0;color:var(--ink-soft);font-size:13px}
+  .user-list-head-actions{display:flex;gap:9px;flex-wrap:wrap}
+  .user-list-head+.user-form-status:empty{display:none}.user-list-head+.user-form-status{margin-bottom:12px}
+  /* Grupo de botões VISUALIZAR/EDITAR/EXCLUIR (Button Group do HyperUI no CSS do sistema).
+     Ícone dentro de .nav-icon (largura fixa): o "svg{max-width:100%}" global
+     não encolhe o desenho dentro do botão de largura automática. */
+  .user-icon-group{display:inline-flex;align-items:stretch;flex:none}
+  .user-icon-group button{
+    position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:46px;margin:0;padding:8px 12px;
+    border:1px solid var(--inset-border);border-radius:0;background:transparent;color:var(--ink);line-height:1;
+  }
+  .user-icon-group button+button{margin-left:-1px}
+  .user-icon-group button:first-child{border-radius:9px 0 0 9px}
+  .user-icon-group button:last-child{border-radius:0 9px 9px 0}
+  .user-icon-group button:only-child{border-radius:9px}
+  .user-icon-group button:hover{z-index:1;opacity:1;transform:none;background:rgba(79,134,189,.14);border-color:rgba(114,167,216,.6)}
+  .user-icon-group button:focus-visible{z-index:2;outline:2px solid var(--accent);outline-offset:1px}
+  .user-icon-group button[data-delete-user]:hover{color:var(--neg);background:var(--neg-bg);border-color:rgba(239,106,85,.4)}
+  .user-icon-group button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .user-icon-group .nav-icon{width:20px;height:20px;flex:0 0 20px;border-radius:0;background:transparent;color:inherit;transition:none}
+  .user-icon-group .nav-icon svg{width:20px;height:20px;max-width:none;stroke-width:1.5}
+  /* Diálogos de usuário: cabeçalho e rodapé fixos, conteúdo rola por dentro. */
+  #userDialog[open],#userViewDialog[open]{display:flex;flex-direction:column;max-height:calc(100vh - 28px);max-height:calc(100dvh - 28px)}
+  #userViewDialog{width:min(760px,calc(100vw - 28px))}
+  .user-dialog-form{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+  .user-dialog-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:18px 20px 20px}
+  .user-dialog-hint{margin:0 0 14px;color:var(--ink-soft);font-size:13px}
+  .user-dialog-foot{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;padding:12px 20px;border-top:1px solid var(--border);background:var(--bg-card)}
+  .user-dialog-foot .user-form-status{flex:1 1 220px;min-height:0}
+  .user-dialog-foot-actions{display:flex;gap:9px;margin-left:auto}
+  .user-form-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:13px;align-items:start}
+  .user-form-grid>*{grid-column:span 3}.user-form-grid>.user-field-third{grid-column:span 2}.user-form-grid>.user-field-full{grid-column:1 / -1}
+  .user-active-hint{color:var(--ink-faint);font-weight:700}
+  /* VISUALIZAR: dados da conta + permissões liberadas por módulo. */
+  .user-view-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;margin:0 0 18px}
+  .user-view-summary div{display:grid;gap:3px;min-width:0}
+  .user-view-summary dt{color:var(--ink-soft);font:800 9.5px/1.3 var(--mono);letter-spacing:.08em}
+  .user-view-summary dd{margin:0;font:600 13px/1.4 var(--sans);overflow-wrap:anywhere}
+  .user-view-status{display:inline-block;padding:3px 8px;border-radius:999px;font:800 10px/1.3 var(--mono);background:rgba(84,196,138,.14);color:#8dd6a8}
+  .user-view-status.blocked{background:var(--neg-bg);color:var(--neg)}
+  .user-view-section{margin:0 0 10px;padding-top:14px;border-top:1px solid var(--border);color:var(--accent);font:800 10px/1.3 var(--mono);letter-spacing:.08em}
+  .user-view-modules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .user-view-module{padding:10px 12px;border:1px solid var(--inset-border);border-radius:10px;min-width:0}
+  .user-view-module h5{margin:0 0 7px;font:800 12px/1.3 var(--sans)}
+  .user-view-module ul{display:flex;flex-wrap:wrap;gap:5px;margin:0;padding:0;list-style:none}
+  .user-view-module li{padding:4px 8px;border-radius:999px;background:rgba(79,134,189,.14);color:var(--ink);font:700 10px/1.3 var(--mono);text-transform:uppercase;overflow-wrap:anywhere}
+  .user-view-empty{margin:0;color:var(--ink-soft);font-size:13px}
+  @media(max-width:850px){.permission-grid{grid-template-columns:1fr}}
+  @media(max-width:680px){
+    .user-form-grid{grid-template-columns:1fr}.user-form-grid>*,.user-form-grid>.user-field-third{grid-column:1 / -1}
+    .user-view-summary,.user-view-modules{grid-template-columns:1fr}
+    .user-dialog-body{padding:16px 14px 18px}.user-dialog-foot{padding:10px 14px}
+    .user-dialog-foot-actions{width:100%}.user-dialog-foot-actions button{flex:1 1 0;min-width:0;padding-inline:10px;white-space:normal;line-height:1.2}
+    .user-list-head-actions{width:100%}.user-list-head-actions button{flex:1 1 220px}
+    .user-icon-group button{min-height:44px;min-width:52px}
+  }
+  @media(max-width:520px){
+    .user-card{grid-template-columns:minmax(0,1fr)}
+    .user-card-side{justify-content:flex-start}
+  }
 
   /* CONTRASTE E LEGIBILIDADE DO TEMA CLARO */
   html[data-theme="light"] body{background-color:#f2f6fa;color:#0f2238;}
@@ -1835,6 +1897,13 @@
     box-shadow:var(--surface-shadow);
   }
   html[data-theme="light"] .user-card{background:#fff;border-color:var(--inset-border);}
+  html[data-theme="light"] .user-icon-group button{background:#fff;color:#10233a;border-color:#b9ccdd;}
+  html[data-theme="light"] .user-icon-group button:hover{background:#e9f2f9;border-color:#2f6fa9;}
+  html[data-theme="light"] .user-icon-group button[data-delete-user]:hover{background:#fff4f2;color:#a93428;border-color:#d9a29c;}
+  html[data-theme="light"] .user-dialog-foot{background:#fff;}
+  html[data-theme="light"] .user-view-status{background:#e2f3e9;color:#236a47;}
+  html[data-theme="light"] .user-view-status.blocked{background:#fdecea;color:#a93428;}
+  html[data-theme="light"] .user-view-module li{background:#e8f2f9;color:#245b88;}
   html[data-theme="light"] .purchase-board{
     background:#e6eef5;
     border-color:#b7c8d8;
@@ -2844,7 +2913,6 @@
     .app-loadbar::before{animation:none; width:100%; opacity:.5;}
   }
   /* Cadastro de Usuários › Criar acessos dos vendedores */
-  .seller-accounts-open{margin:0 0 14px;width:100%}
   .seller-accounts-hint{margin:0 0 12px;color:var(--ink-soft);font:600 13px/1.5 var(--sans)}
   .seller-accounts-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 8px;font:700 11px/1.3 var(--mono);color:var(--ink-soft)}
   .seller-accounts-list{display:grid;gap:8px;max-height:min(52vh,460px);overflow-y:auto;margin:0;padding:0;list-style:none}
@@ -5531,325 +5599,17 @@
       </header>
       <div class="users-layout">
         <section class="user-panel">
-          <h3 id="userFormTitle">NOVO USUÁRIO</h3>
-          <p>A senha fica protegida e não poderá ser visualizada depois de salva.</p>
-          <form class="user-form" id="userForm">
-            <input id="userEditId" type="hidden">
-            <div class="field"><label for="userDisplayName">NOME DA PESSOA</label><input id="userDisplayName" maxlength="80" required></div>
-            <div class="field"><label for="userUsername">USUÁRIO DE LOGIN</label><input id="userUsername" maxlength="40" autocomplete="off" required></div>
-            <div class="field"><label for="userEmail">E-MAIL (OPCIONAL)</label><input id="userEmail" type="email" maxlength="200" autocomplete="off"></div>
-            <div class="field">
-              <label for="userHierarchy">HIERARQUIA</label>
-              <select id="userHierarchy">
-                <option value="director">DIRETOR</option>
-                <option value="supervisor">SUPERVISOR</option>
-                <option value="administrative" selected>ADMINISTRATIVO</option>
-              </select>
-              <span class="field-hint">Informação organizacional; não altera permissões de acesso.</span>
+          <div class="user-list-head">
+            <div>
+              <h3>CONTAS CADASTRADAS</h3>
+              <p>Bloquear ou alterar uma conta encerra imediatamente as sessões existentes dela.</p>
             </div>
-            <div class="field"><label for="userPassword">SENHA <span id="userPasswordHint">(MÍNIMO 8 CARACTERES)</span></label><input id="userPassword" type="password" minlength="8" maxlength="200" autocomplete="new-password"></div>
-            <div class="field">
-              <label for="userAccessGroup">GRUPO DE ACESSO</label>
-              <select id="userAccessGroup">
-                <option value="operator">OPERADOR — TAREFAS, MISSÕES, CAPTAÇÃO, SAÍDAS E INSUMOS</option>
-                <option value="purchases">COMPRAS — TAREFAS, MISSÕES, CAPTAÇÃO, SAÍDAS, INSUMOS E COMPRAS</option>
-                <option value="fiscal">FISCAL — MISSÕES, SAÍDAS, INSUMOS, ESTOQUE, BASE, PUXADAS E RELATÓRIO 41</option>
-                <option value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO</option>
-                <option value="administrator">ADMINISTRADOR — ACESSO COMPLETO</option>
-                <option value="custom">PERSONALIZADO</option>
-              </select>
+            <div class="user-list-head-actions">
+              <button class="btn-accent" type="button" id="btnNewUser">+ NOVO USUÁRIO</button>
+              <button class="btn-outline" type="button" id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES</button>
             </div>
-            <div class="field">
-              <label for="userCompanyId">LOJA VINCULADA</label>
-              <select id="userCompanyId">
-                <option value="">SEM LOJA VINCULADA</option>
-              </select>
-              <span class="field-hint">Usuários com acesso ao Relatório 41 visualizarão somente esta loja.</span>
-            </div>
-            <div class="field">
-              <label for="userSector">SETOR</label>
-              <select id="userSector">
-                <option value="">SEM SETOR</option>
-                <option value="administrative">ADMINISTRATIVO</option>
-                <option value="assistance">ASSISTÊNCIA</option>
-                <option value="deposit">DEPÓSITO</option>
-              </select>
-              <span class="field-hint">Setores são áreas internas e não aparecem como lojas.</span>
-            </div>
-            <div class="field">
-              <label>PERMISSÕES <span id="userPermissionHint">(DEFINIDAS PELO GRUPO)</span></label>
-              <div class="permission-accordion" id="userPermissionGrid">
-                <details class="permission-module" open>
-                  <summary>Tarefas</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:view"> Visualizar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:manage"> Cadastrar, editar e excluir</label>
-                  </div>
-                </details>
-                <details class="permission-module" open>
-                  <summary>Missões</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:view"> Visualizar missões</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:create"> Cadastrar missões</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:delete"> Excluir missões</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:notify"> Receber notificações (como administrador)</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Captação</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:view"> Visualizar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:create"> Cadastrar captações</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:receive"> Receber/preparar (assistência)</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:assign"> Definir destino</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:delete"> Excluir</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Saídas</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:view"> Visualizar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:create"> Cadastrar saídas</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:complete"> Concluir saídas</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:delete"> Excluir saídas</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Divergências</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:view"> VISUALIZAR (pedidos, dashboard)</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:create"> CADASTRAR PEDIDO</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:edit"> EDITAR PEDIDO (inclui o retorno da loja em VERIFICAÇÃO DA LOJA)</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:delete"> EXCLUIR PEDIDO</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:respond"> RESPONDER DIVERGÊNCIAS (estoque: status + resposta por item)</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:inventory"> INVENTÁRIO (ver a aba e marcar INVENTARIADO)</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Entrada</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:view"> Visualizar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:create"> Cadastrar entradas</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:complete"> Concluir entradas</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:delete"> Excluir entradas</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Insumos</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:view"> Visualizar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:request"> Solicitar insumos</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:receive"> Receber solicitações</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_in"> Dar entrada em estoque</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_out"> Dar saída em estoque</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:delete"> Excluir</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:manage_catalog"> Gerenciar produtos e categorias</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Aparelhos de Empréstimo</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:view"> Visualizar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:create"> Cadastrar aparelho</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:edit"> Editar aparelho</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:delete"> Excluir aparelho</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:request"> Solicitar aparelho (loja)</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:manage_requests"> Gerenciar solicitações (marcar emprestado, responder, apagar)</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Compras</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:view"> Visualizar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:create"> Cadastrar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:edit"> Editar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:delete"> Excluir</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:send_to_finance"> Enviar NF ao Financeiro</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Compras (novo)</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases_draft:manage"> Acessar módulo (rascunhos de compra)</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Estoque Fiscal</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="stock:view"> Visualizar</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Base de Dados</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="database:view"> Visualizar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="database:manage"> Cadastrar, editar e excluir</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Fornecedores</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="suppliers:manage"> Cadastrar, editar e desativar fornecedores (sem abrir Financeiro nem Compras)</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Puxadas</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pulls:view"> Visualizar e registrar</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Relatório 41</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="report41:view"> Visualizar</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Instruções</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="instructions:manage"> Cadastrar e excluir</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Solicitações · Alterações PDV</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:view"> Visualização</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:create"> Cadastro</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:delete"> Exclusão</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:status"> Alteração de status</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Solicitações · Notas de O.S.</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:view"> Visualização</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:create"> Cadastro</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:attach"> Anexar nota</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:delete"> Exclusão</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Financeiro</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="finance:manage"> Acessar o módulo Financeiro (acesso total)</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_view"> NF/Duplicatas: visualizar</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_reconcile"> NF/Duplicatas: conferir e cadastrar duplicatas/boletos</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:confirm_payment"> NF/Duplicatas: agendar/confirmar pagamento</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:return_to_purchases"> NF/Duplicatas: devolver para Compras</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Obras</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="works:manage"> Cadastrar e gerenciar obras (reformas/construções). Já liberado por "Acessar o módulo Financeiro".</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>RH Financeiro (Folha, Benefícios, Comissionamento)</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="payroll:manage"> Cadastrar funcionários e gerenciar folha, benefícios e comissionamento</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>RH - Acompanhamento de Lojas</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:view"> Ver PDI de líderes e acompanhamento por loja</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:manage"> Cadastrar, editar e excluir PDI de líderes e acompanhamento por loja</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>RH - Controle de Horas - Logística</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:view"> Ver registros de ponto, horas extras e banco de horas</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:manage"> Lançar ponto, configurar jornada e registrar horas pagas</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>RH - Recrutamento e Seleção</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:view"> Ver candidatos, pipeline e acompanhamento de padrinhos</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:manage"> Cadastrar, editar e excluir candidatos e padrinhos</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>RH - Fardamento</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:view"> Ver estoque, lançamentos e termos de responsabilidade de fardamento</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:manage"> Lançar saídas, devoluções, ajustes e gerenciar termos de casacos</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>RH - Aniversariantes</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:view"> Ver a lista de aniversariantes do mês e o status de cada um</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:manage"> Cadastrar data de nascimento e marcar aniversariante como "Feito"</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>RH - Plano Odontológico</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:view"> Ver a lista do plano odontológico (dado sensível: CPF e saúde)</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:manage"> Cadastrar, editar e excluir registros do plano odontológico</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>RH - Escalas e Folgas</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:view"> Ver a loja fixa do mês, a escala de domingos e a escala de folgas calculada</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:manage"> Cadastrar loja fixa do mês e lançar domingos trabalhados e folgas de segunda a sábado</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Comercial - Metas e Comissão</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals"> CADASTRO DE METAS</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Comercial - Controle GD</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:view"> Ver o saldo, alertas, gráfico de 7 dias e script diário por loja</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:manage"> Lançar e cancelar ajuste de saldo</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Comercial - Relatório NF</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:view"> Ver o lançamento do dia e o histórico de dias salvos</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:manage"> Lançar vendas/notas emitidas por loja e salvar no histórico</label>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Documentos</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:create"> CADASTRAR</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:edit"> EDITAR (renomear, mover de pasta e substituir arquivo)</label>
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:delete"> EXCLUIR</label>
-                    <span class="field-hint">Visualizar é liberado para todos os usuários.</span>
-                  </div>
-                </details>
-                <details class="permission-module">
-                  <summary>Usuários e acessos</summary>
-                  <div class="permission-grid">
-                    <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
-                  </div>
-                </details>
-              </div>
-            </div>
-            <label class="permission-option" id="userActiveWrap" hidden><input id="userActive" type="checkbox" checked> Usuário ativo</label>
-            <div class="user-actions">
-              <button class="btn-accent" id="btnSaveUser" type="submit">CRIAR USUÁRIO</button>
-              <button class="btn-outline" id="btnCancelUserEdit" type="button" hidden>CANCELAR</button>
-            </div>
-            <div class="user-form-status" id="userFormStatus" role="status" aria-live="polite"></div>
-          </form>
-        </section>
-        <section class="user-panel">
-          <h3>CONTAS CADASTRADAS</h3>
-          <p>Bloquear ou alterar uma conta encerra imediatamente as sessões existentes dela.</p>
-          <button class="btn-accent seller-accounts-open" type="button" id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES</button>
+          </div>
+          <div class="user-form-status" id="userListStatus" role="status" aria-live="polite"></div>
           <div class="user-list" id="userList"><div class="task-empty">Carregando usuários…</div></div>
         </section>
       </div>
@@ -8146,6 +7906,352 @@
       <button class="btn-accent" id="btnSubmitSellerAccounts" type="submit">CRIAR ACESSOS</button>
     </div>
   </form>
+</dialog>
+
+<!-- Cadastros > Usuários: criar/alterar conta. O formulário é o mesmo que
+     ficava no painel lateral da página (mesmos ids e mesma lógica de
+     submit); bloquear/reativar é a caixa "Usuário ativo" do EDITAR. -->
+<dialog class="purchase-dialog" id="userDialog" aria-labelledby="userFormTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="userFormTitle">NOVO USUÁRIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseUserDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="user-form user-dialog-form" id="userForm">
+    <input id="userEditId" type="hidden">
+    <div class="user-dialog-body">
+      <p class="user-dialog-hint">A senha fica protegida e não poderá ser visualizada depois de salva.</p>
+      <div class="user-form-grid">
+        <div class="field"><label for="userDisplayName">NOME DA PESSOA</label><input id="userDisplayName" maxlength="80" required></div>
+        <div class="field"><label for="userUsername">USUÁRIO DE LOGIN</label><input id="userUsername" maxlength="40" autocomplete="off" required></div>
+        <div class="field"><label for="userEmail">E-MAIL (OPCIONAL)</label><input id="userEmail" type="email" maxlength="200" autocomplete="off"></div>
+        <div class="field"><label for="userPassword">SENHA <span id="userPasswordHint">(MÍNIMO 8 CARACTERES)</span></label><input id="userPassword" type="password" minlength="8" maxlength="200" autocomplete="new-password"></div>
+        <div class="field user-field-full">
+          <label for="userAccessGroup">GRUPO DE ACESSO</label>
+          <select id="userAccessGroup">
+            <option value="operator">OPERADOR — TAREFAS, MISSÕES, CAPTAÇÃO, SAÍDAS E INSUMOS</option>
+            <option value="purchases">COMPRAS — TAREFAS, MISSÕES, CAPTAÇÃO, SAÍDAS, INSUMOS E COMPRAS</option>
+            <option value="fiscal">FISCAL — MISSÕES, SAÍDAS, INSUMOS, ESTOQUE, BASE, PUXADAS E RELATÓRIO 41</option>
+            <option value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO</option>
+            <option value="administrator">ADMINISTRADOR — ACESSO COMPLETO</option>
+            <option value="custom">PERSONALIZADO</option>
+          </select>
+        </div>
+        <div class="field user-field-third">
+          <label for="userHierarchy">HIERARQUIA</label>
+          <select id="userHierarchy">
+            <option value="director">DIRETOR</option>
+            <option value="supervisor">SUPERVISOR</option>
+            <option value="administrative" selected>ADMINISTRATIVO</option>
+          </select>
+          <span class="field-hint">Informação organizacional; não altera permissões de acesso.</span>
+        </div>
+        <div class="field user-field-third">
+          <label for="userCompanyId">LOJA VINCULADA</label>
+          <select id="userCompanyId">
+            <option value="">SEM LOJA VINCULADA</option>
+          </select>
+          <span class="field-hint">Usuários com acesso ao Relatório 41 visualizarão somente esta loja.</span>
+        </div>
+        <div class="field user-field-third">
+          <label for="userSector">SETOR</label>
+          <select id="userSector">
+            <option value="">SEM SETOR</option>
+            <option value="administrative">ADMINISTRATIVO</option>
+            <option value="assistance">ASSISTÊNCIA</option>
+            <option value="deposit">DEPÓSITO</option>
+          </select>
+          <span class="field-hint">Setores são áreas internas e não aparecem como lojas.</span>
+        </div>
+        <label class="permission-option user-field-full" id="userActiveWrap" hidden><input id="userActive" type="checkbox" checked> Usuário ativo <span class="user-active-hint">(DESMARQUE PARA BLOQUEAR: AS SESSÕES ABERTAS DA CONTA SÃO ENCERRADAS NA HORA)</span></label>
+        <div class="field user-field-full">
+          <label>PERMISSÕES <span id="userPermissionHint">(DEFINIDAS PELO GRUPO)</span></label>
+          <div class="permission-accordion" id="userPermissionGrid">
+            <details class="permission-module" open>
+              <summary>Tarefas</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:manage"> Cadastrar, editar e excluir</label>
+              </div>
+            </details>
+            <details class="permission-module" open>
+              <summary>Missões</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:view"> Visualizar missões</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:create"> Cadastrar missões</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:delete"> Excluir missões</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:notify"> Receber notificações (como administrador)</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Captação</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:create"> Cadastrar captações</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:receive"> Receber/preparar (assistência)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:assign"> Definir destino</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="captures:delete"> Excluir</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Saídas</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:create"> Cadastrar saídas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:complete"> Concluir saídas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:delete"> Excluir saídas</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Divergências</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:view"> VISUALIZAR (pedidos, dashboard)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:create"> CADASTRAR PEDIDO</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:edit"> EDITAR PEDIDO (inclui o retorno da loja em VERIFICAÇÃO DA LOJA)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:delete"> EXCLUIR PEDIDO</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:respond"> RESPONDER DIVERGÊNCIAS (estoque: status + resposta por item)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:inventory"> INVENTÁRIO (ver a aba e marcar INVENTARIADO)</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Entrada</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:create"> Cadastrar entradas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:complete"> Concluir entradas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:delete"> Excluir entradas</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Insumos</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:request"> Solicitar insumos</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:receive"> Receber solicitações</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_in"> Dar entrada em estoque</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_out"> Dar saída em estoque</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:delete"> Excluir</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:manage_catalog"> Gerenciar produtos e categorias</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Aparelhos de Empréstimo</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:create"> Cadastrar aparelho</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:edit"> Editar aparelho</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:delete"> Excluir aparelho</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:request"> Solicitar aparelho (loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:manage_requests"> Gerenciar solicitações (marcar emprestado, responder, apagar)</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Compras</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:create"> Cadastrar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:edit"> Editar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:delete"> Excluir</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases:send_to_finance"> Enviar NF ao Financeiro</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Compras (novo)</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="purchases_draft:manage"> Acessar módulo (rascunhos de compra)</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Estoque Fiscal</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="stock:view"> Visualizar</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Base de Dados</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="database:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="database:manage"> Cadastrar, editar e excluir</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Fornecedores</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="suppliers:manage"> Cadastrar, editar e desativar fornecedores (sem abrir Financeiro nem Compras)</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Puxadas</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="pulls:view"> Visualizar e registrar</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Relatório 41</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="report41:view"> Visualizar</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Instruções</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="instructions:manage"> Cadastrar e excluir</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Solicitações · Alterações PDV</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:view"> Visualização</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:create"> Cadastro</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:delete"> Exclusão</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="pdv_requests:status"> Alteração de status</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Solicitações · Notas de O.S.</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:view"> Visualização</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:create"> Cadastro</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:attach"> Anexar nota</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="os_notes:delete"> Exclusão</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Financeiro</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="finance:manage"> Acessar o módulo Financeiro (acesso total)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_view"> NF/Duplicatas: visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_reconcile"> NF/Duplicatas: conferir e cadastrar duplicatas/boletos</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:confirm_payment"> NF/Duplicatas: agendar/confirmar pagamento</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:return_to_purchases"> NF/Duplicatas: devolver para Compras</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Obras</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="works:manage"> Cadastrar e gerenciar obras (reformas/construções). Já liberado por "Acessar o módulo Financeiro".</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>RH Financeiro (Folha, Benefícios, Comissionamento)</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="payroll:manage"> Cadastrar funcionários e gerenciar folha, benefícios e comissionamento</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>RH - Acompanhamento de Lojas</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:view"> Ver PDI de líderes e acompanhamento por loja</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:manage"> Cadastrar, editar e excluir PDI de líderes e acompanhamento por loja</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>RH - Controle de Horas - Logística</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:view"> Ver registros de ponto, horas extras e banco de horas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:manage"> Lançar ponto, configurar jornada e registrar horas pagas</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>RH - Recrutamento e Seleção</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:view"> Ver candidatos, pipeline e acompanhamento de padrinhos</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:manage"> Cadastrar, editar e excluir candidatos e padrinhos</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>RH - Fardamento</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:view"> Ver estoque, lançamentos e termos de responsabilidade de fardamento</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:manage"> Lançar saídas, devoluções, ajustes e gerenciar termos de casacos</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>RH - Aniversariantes</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:view"> Ver a lista de aniversariantes do mês e o status de cada um</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:manage"> Cadastrar data de nascimento e marcar aniversariante como "Feito"</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>RH - Plano Odontológico</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:view"> Ver a lista do plano odontológico (dado sensível: CPF e saúde)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:manage"> Cadastrar, editar e excluir registros do plano odontológico</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>RH - Escalas e Folgas</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:view"> Ver a loja fixa do mês, a escala de domingos e a escala de folgas calculada</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:manage"> Cadastrar loja fixa do mês e lançar domingos trabalhados e folgas de segunda a sábado</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Comercial - Metas e Comissão</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals"> CADASTRO DE METAS</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Comercial - Controle GD</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:view"> Ver o saldo, alertas, gráfico de 7 dias e script diário por loja</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:manage"> Lançar e cancelar ajuste de saldo</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Comercial - Relatório NF</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:view"> Ver o lançamento do dia e o histórico de dias salvos</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:manage"> Lançar vendas/notas emitidas por loja e salvar no histórico</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Documentos</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:create"> CADASTRAR</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:edit"> EDITAR (renomear, mover de pasta e substituir arquivo)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:delete"> EXCLUIR</label>
+                <span class="field-hint">Visualizar é liberado para todos os usuários.</span>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Usuários e acessos</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="users:manage"> Gerenciar usuários e permissões</label>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="user-dialog-foot">
+      <div class="user-form-status" id="userFormStatus" role="status" aria-live="polite"></div>
+      <div class="user-dialog-foot-actions">
+        <button class="btn-outline" id="btnCancelUserEdit" type="button">CANCELAR</button>
+        <button class="btn-accent" id="btnSaveUser" type="submit">CRIAR USUÁRIO</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- Cadastros > Usuários: VISUALIZAR (somente leitura) — dados da conta e
+     as permissões liberadas agrupadas pelos mesmos módulos do acordeão. -->
+<dialog class="purchase-dialog" id="userViewDialog" aria-labelledby="userViewTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="userViewTitle">VISUALIZAR USUÁRIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseUserView" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="user-dialog-body" id="userViewBody"></div>
+  <div class="user-dialog-foot">
+    <div></div>
+    <div class="user-dialog-foot-actions">
+      <button class="btn-outline" id="btnCancelUserView" type="button">FECHAR</button>
+      <button class="btn-accent" id="btnEditFromUserView" type="button">EDITAR</button>
+    </div>
+  </div>
 </dialog>
 
 <dialog class="purchase-dialog" id="dentalPlanDialog" aria-labelledby="dentalPlanDialogTitle">
@@ -11996,6 +12102,7 @@
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
     if(name === 'comprasNovo') setComprasSectionTab(comprasSectionTab);
+    if(name === 'usuarios') loadAdminUsers();
     if(name === 'missoes'){ loadMissions(); if(missionSectionTab === 'rotina') loadRoutines(); if(CHECKLIST_KIND[missionSectionTab]) loadChecklist(missionSectionTab); }
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
@@ -32490,18 +32597,35 @@ function renderHomeTasks(){
     el('userSector').value = '';
     el('userActive').checked = true;
     el('userActiveWrap').hidden = true;
-    el('btnCancelUserEdit').hidden = true;
     el('userFormTitle').textContent = 'NOVO USUÁRIO';
     el('btnSaveUser').textContent = 'CRIAR USUÁRIO';
     el('userPasswordHint').textContent = '(MÍNIMO 8 CARACTERES)';
+    setUserFormStatus('', '');
     updateUserGroupFields();
   }
 
-  function setUserFormStatus(message, type){
-    const status = el('userFormStatus');
+  // Sem "target" escreve dentro do diálogo (#userFormStatus); com
+  // 'userListStatus' escreve na tela da lista (sucesso depois de fechar).
+  function setUserFormStatus(message, type, target){
+    const status = el(target || 'userFormStatus');
     status.textContent = message || '';
     status.className = 'user-form-status' + (type ? ' ' + type : '');
   }
+
+  // Ícones Heroicons (outline) no mesmo formato dos ícones do menu lateral
+  // (<span class="nav-icon"><svg ...>). O aria-label/title do botão diz o
+  // que ele faz mesmo se o desenho não aparecer.
+  const userIconSvg = paths => '<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths.map(d => '<path d="'+d+'"/>').join('')+'</svg></span>';
+  const USER_ICON_VIEW = userIconSvg([
+    'M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z',
+    'M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'
+  ]);
+  const USER_ICON_EDIT = userIconSvg([
+    'm16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125'
+  ]);
+  const USER_ICON_DELETE = userIconSvg([
+    'm14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0'
+  ]);
 
   function renderAdminUsers(){
     const list = el('userList');
@@ -32510,11 +32634,17 @@ function renderHomeTasks(){
       return;
     }
     list.innerHTML = managedUsers.map(user => {
-      // Card compacto: nome, usuário de login e status só — o detalhamento
-      // de permissões, grupo, loja, setor etc. fica só na tela de ALTERAR
-      // (edição), não solto aqui na listagem (evita a "sopa de badges").
-      const actions = user.managed ? '<div class="user-actions"><button class="btn-outline" type="button" data-edit-user="'+escapeHtml(user.id)+'">ALTERAR</button><button class="btn-outline" type="button" data-toggle-user="'+escapeHtml(user.id)+'">'+(user.active ? 'BLOQUEAR' : 'REATIVAR')+'</button><button class="btn-danger-outline" type="button" data-delete-user="'+escapeHtml(user.id)+'">EXCLUIR</button></div>' : '<span class="user-badge">CONTA PRINCIPAL</span>';
-      return '<article class="user-card'+(user.active ? '' : ' inactive')+'"><div><h4>'+escapeHtml(user.displayName)+'</h4><p>@'+escapeHtml(user.username)+(user.email ? ' · '+escapeHtml(user.email) : '')+' · '+(user.active ? 'ATIVO' : 'BLOQUEADO')+'</p></div>'+actions+'</article>';
+      // Card compacto: nome, usuário de login, e-mail e status só — grupo,
+      // loja, setor e permissões ficam no VISUALIZAR e no EDITAR, não soltos
+      // aqui na listagem (evita a "sopa de badges"). Bloquear/reativar é a
+      // caixa "Usuário ativo" do EDITAR. A conta principal só tem VISUALIZAR.
+      const id = escapeHtml(user.id);
+      const group = '<div class="user-icon-group" role="group" aria-label="AÇÕES DE '+escapeHtml(user.displayName)+'">'
+        +'<button type="button" data-view-user="'+id+'" aria-label="VISUALIZAR" title="VISUALIZAR">'+USER_ICON_VIEW+'</button>'
+        +(user.managed ? '<button type="button" data-edit-user="'+id+'" aria-label="EDITAR" title="EDITAR">'+USER_ICON_EDIT+'</button><button type="button" data-delete-user="'+id+'" aria-label="EXCLUIR" title="EXCLUIR">'+USER_ICON_DELETE+'</button>' : '')
+        +'</div>';
+      const actions = user.managed ? group : '<div class="user-card-side"><span class="user-badge">CONTA PRINCIPAL</span>'+group+'</div>';
+      return '<article class="user-card'+(user.active ? '' : ' inactive')+'"><div class="user-card-info"><h4>'+escapeHtml(user.displayName)+'</h4><p>@'+escapeHtml(user.username)+(user.email ? ' · '+escapeHtml(user.email) : '')+' · '+(user.active ? 'ATIVO' : 'BLOQUEADO')+'</p></div>'+actions+'</article>';
     }).join('');
   }
 
@@ -32669,17 +32799,131 @@ function renderHomeTasks(){
         body:JSON.stringify(payload)
       });
       resetUserForm();
+      el('userDialog').close();
       await loadAdminUsers();
-      setUserFormStatus(editId ? 'Usuário alterado com sucesso.' : 'Usuário criado com sucesso. Ele já pode entrar no sistema.', 'success');
+      setUserFormStatus(editId ? 'Usuário alterado com sucesso.' : 'Usuário criado com sucesso. O acesso já está liberado.', 'success', 'userListStatus');
+      // A lista foi redesenhada: devolve o foco ao EDITAR do usuário salvo
+      // (ou ao "+ NOVO USUÁRIO") para quem navega pelo teclado.
+      const backTo = editId ? el('userList').querySelector('[data-edit-user="'+CSS.escape(editId)+'"]') : null;
+      (backTo || el('btnNewUser')).focus();
     }catch(error){
-      setUserFormStatus(error.message, 'error');
+      // Erro aparece dentro do diálogo, que continua aberto (se a pessoa
+      // fechou enquanto salvava, o aviso vai para a tela da lista).
+      setUserFormStatus(error.message, 'error', el('userDialog').open ? '' : 'userListStatus');
     }finally{
       el('btnSaveUser').disabled = false;
       el('btnSaveUser').textContent = el('userEditId').value ? 'SALVAR ALTERAÇÕES' : 'CRIAR USUÁRIO';
     }
   });
 
-  el('btnCancelUserEdit').addEventListener('click', resetUserForm);
+  function openUserDialog(){
+    const dialog = el('userDialog');
+    dialog.querySelector('.user-dialog-body').scrollTop = 0;
+    if(!dialog.open) dialog.showModal();
+    el('userDisplayName').focus();
+  }
+
+  function openUserEdit(user){
+    resetUserForm();
+    el('userEditId').value = user.id;
+    el('userDisplayName').value = user.displayName;
+    el('userUsername').value = user.username;
+    el('userEmail').value = user.email || '';
+    el('userPassword').value = '';
+    el('userAccessGroup').value = user.accessGroup || (user.role === 'admin' ? 'administrator' : 'custom');
+    el('userCompanyId').value = user.companyId || '';
+    el('userHierarchy').value = user.hierarchy || 'administrative';
+    el('userSector').value = user.sector || '';
+    document.querySelectorAll('[name="userPermission"]').forEach(input => { input.checked = user.permissions.includes(input.value); });
+    updateUserGroupFields();
+    el('userActive').checked = user.active;
+    el('userActiveWrap').hidden = false;
+    el('userFormTitle').textContent = 'EDITAR USUÁRIO';
+    el('btnSaveUser').textContent = 'SALVAR ALTERAÇÕES';
+    el('userPasswordHint').textContent = '(DEIXE VAZIO PARA MANTER)';
+    openUserDialog();
+  }
+
+  // ---------- VISUALIZAR (somente leitura) ----------
+  let viewingUserId = '';
+
+  // Rótulo de um <option> do formulário (grupo/hierarquia/setor), sem o
+  // resumo depois do "—" (ex.: "OPERADOR — TAREFAS, ..." -> "OPERADOR").
+  function userOptionLabel(selectId, value){
+    const option = Array.from(el(selectId).options).find(item => item.value === value);
+    return option ? option.textContent.split(' — ')[0].trim() : '';
+  }
+
+  // "Tarefas: visualizar" -> "visualizar" (o módulo já é o título do bloco).
+  // Rótulo sem "módulo:" (ex.: 'Relatório 41') repetiria o título: usa o
+  // texto da caixa do acordeão ("Visualizar").
+  function userPermissionLabel(value, input){
+    const label = permissionNames[value] || value;
+    const cut = label.indexOf(': ');
+    if(cut !== -1) return label.slice(cut + 2);
+    return input && input.parentElement ? input.parentElement.textContent.trim() : label;
+  }
+
+  // Permissões liberadas agrupadas pelos mesmos módulos do acordeão
+  // #userPermissionGrid; grupo pronto usa o pacote de accessGroupPermissions.
+  function userViewPermissionModules(user){
+    const group = user.accessGroup || (user.role === 'admin' ? 'administrator' : 'custom');
+    const granted = new Set(group === 'custom' ? (user.permissions || []) : (accessGroupPermissions[group] || user.permissions || []));
+    const known = new Set();
+    const modules = Array.from(el('userPermissionGrid').querySelectorAll('.permission-module')).map(module => {
+      const inputs = Array.from(module.querySelectorAll('[name="userPermission"]'));
+      inputs.forEach(input => known.add(input.value));
+      return {name: module.querySelector('summary').textContent.trim(), items: inputs.filter(input => granted.has(input.value)).map(input => userPermissionLabel(input.value, input))};
+    }).filter(module => module.items.length);
+    const others = Array.from(granted).filter(value => !known.has(value));
+    if(others.length) modules.push({name:'OUTRAS', items: others.map(value => permissionNames[value] || value)});
+    return modules;
+  }
+
+  function openUserView(user){
+    viewingUserId = user.id;
+    const group = user.accessGroup || (user.role === 'admin' ? 'administrator' : 'custom');
+    const company = user.companyId ? companies.find(item => item.id === user.companyId) : null;
+    const fields = [
+      ['NOME', escapeHtml(user.displayName)],
+      ['USUÁRIO DE LOGIN', '@'+escapeHtml(user.username)],
+      ['E-MAIL', escapeHtml(user.email || 'NÃO INFORMADO')],
+      ['STATUS', '<span class="user-view-status'+(user.active ? '' : ' blocked')+'">'+(user.active ? 'ATIVO' : 'BLOQUEADO')+'</span>'],
+      ['GRUPO DE ACESSO', escapeHtml(userOptionLabel('userAccessGroup', group) || (group === 'administrator' ? 'ADMINISTRADOR' : group.toUpperCase()))],
+      ['HIERARQUIA', escapeHtml(userOptionLabel('userHierarchy', user.hierarchy || 'administrative'))],
+      ['LOJA VINCULADA', escapeHtml(user.companyId ? (company ? company.name : 'LOJA NÃO ENCONTRADA') : 'SEM LOJA VINCULADA')],
+      ['SETOR', escapeHtml(userOptionLabel('userSector', user.sector || '') || 'SEM SETOR')]
+    ];
+    const modules = userViewPermissionModules(user);
+    const total = modules.reduce((sum, module) => sum + module.items.length, 0);
+    el('userViewBody').innerHTML = '<dl class="user-view-summary">'+fields.map(([label, value]) => '<div><dt>'+label+'</dt><dd>'+value+'</dd></div>').join('')+'</dl>'
+      +'<h4 class="user-view-section">PERMISSÕES LIBERADAS ('+total+')</h4>'
+      +(modules.length
+        ? '<div class="user-view-modules">'+modules.map(module => '<section class="user-view-module"><h5>'+escapeHtml(module.name)+'</h5><ul>'+module.items.map(label => '<li>'+escapeHtml(label)+'</li>').join('')+'</ul></section>').join('')+'</div>'
+        : '<p class="user-view-empty">NENHUMA PERMISSÃO LIBERADA.</p>');
+    el('btnEditFromUserView').hidden = !user.managed;
+    const dialog = el('userViewDialog');
+    dialog.querySelector('.user-dialog-body').scrollTop = 0;
+    if(!dialog.open) dialog.showModal();
+  }
+
+  el('btnNewUser').addEventListener('click', () => {
+    resetUserForm();
+    setUserFormStatus('', '', 'userListStatus');
+    openUserDialog();
+  });
+  // Fechar (×), CANCELAR e Esc passam pelo evento "close": o formulário
+  // sempre volta limpo para o próximo "+ NOVO USUÁRIO".
+  el('userDialog').addEventListener('close', resetUserForm);
+  el('btnCloseUserDialog').addEventListener('click', () => el('userDialog').close());
+  el('btnCancelUserEdit').addEventListener('click', () => el('userDialog').close());
+  el('btnCloseUserView').addEventListener('click', () => el('userViewDialog').close());
+  el('btnCancelUserView').addEventListener('click', () => el('userViewDialog').close());
+  el('btnEditFromUserView').addEventListener('click', () => {
+    const user = managedUsers.find(item => item.id === viewingUserId);
+    el('userViewDialog').close();
+    if(user && user.managed) openUserEdit(user);
+  });
   el('userAccessGroup').addEventListener('change',updateUserGroupFields);
   el('userSector').addEventListener('change',() => {
     if(el('userSector').value) el('userCompanyId').value = '';
@@ -32707,76 +32951,43 @@ function renderHomeTasks(){
   }
   updateUserGroupFields();
   el('userList').addEventListener('click', async event => {
-    const editId = event.target.dataset.editUser;
-    const toggleId = event.target.dataset.toggleUser;
-    const deleteId = event.target.dataset.deleteUser;
-    const user = managedUsers.find(item => item.id === (editId || toggleId || deleteId));
+    // O clique pode cair no <svg>/<path> do ícone: sobe até o botão e lê o
+    // dataset dele (event.target.dataset viria vazio).
+    const button = event.target.closest('button[data-view-user],button[data-edit-user],button[data-delete-user]');
+    if(!button || button.disabled) return;
+    const viewId = button.dataset.viewUser;
+    const editId = button.dataset.editUser;
+    const deleteId = button.dataset.deleteUser;
+    const user = managedUsers.find(item => item.id === (viewId || editId || deleteId));
     if(!user) return;
-    if(deleteId){
-      const confirmed = window.confirm('Excluir definitivamente o usuário \"'+user.displayName+'\" (@'+user.username+')? Ele perderá o acesso imediatamente.');
-      if(!confirmed) return;
-      event.target.disabled = true;
-      try{
-        await fetch('/api/admin/users?id=' + encodeURIComponent(user.id), {
-          method:'DELETE',
-          headers:{Accept:'application/json'},
-          cache:'no-store'
-        }).then(async response => {
-          const data = await response.json().catch(() => ({}));
-          if(response.status === 401) location.assign('/login?next=' + encodeURIComponent(location.pathname));
-          if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL EXCLUIR O USUÁRIO.');
-        });
-        if(el('userEditId').value === user.id) resetUserForm();
-        await loadAdminUsers();
-        setUserFormStatus('Usuário excluído definitivamente.', 'success');
-      }catch(error){
-        setUserFormStatus(error.message, 'error');
-        event.target.disabled = false;
-      }
+    setUserFormStatus('', '', 'userListStatus');
+    if(viewId){
+      openUserView(user);
       return;
     }
     if(editId){
-      el('userEditId').value = user.id;
-      el('userDisplayName').value = user.displayName;
-      el('userUsername').value = user.username;
-      el('userEmail').value = user.email || '';
-      el('userPassword').value = '';
-      el('userAccessGroup').value = user.accessGroup || (user.role === 'admin' ? 'administrator' : 'custom');
-      el('userCompanyId').value = user.companyId || '';
-      el('userHierarchy').value = user.hierarchy || 'administrative';
-      el('userSector').value = user.sector || '';
-      document.querySelectorAll('[name="userPermission"]').forEach(input => { input.checked = user.permissions.includes(input.value); });
-      updateUserGroupFields();
-      el('userActive').checked = user.active;
-      el('userActiveWrap').hidden = false;
-      el('btnCancelUserEdit').hidden = false;
-      el('userFormTitle').textContent = 'ALTERAR USUÁRIO';
-      el('btnSaveUser').textContent = 'SALVAR ALTERAÇÕES';
-      el('userPasswordHint').textContent = '(DEIXE VAZIO PARA MANTER)';
-      el('userDisplayName').focus();
+      if(user.managed) openUserEdit(user);
       return;
     }
-    event.target.disabled = true;
+    const confirmed = window.confirm('Excluir definitivamente o usuário \"'+user.displayName+'\" (@'+user.username+')? Ele perderá o acesso imediatamente.');
+    if(!confirmed) return;
+    button.disabled = true;
     try{
-      await adminUserRequest({
-        method:'PATCH',
-        headers:{Accept:'application/json','Content-Type':'application/json'},
-        body:JSON.stringify({
-          id:user.id,
-          displayName:user.displayName,
-          username:user.username,
-          email:user.email || '',
-          password:'',
-          active:!user.active,
-          accessGroup:user.accessGroup || 'custom',
-          companyId:user.companyId || '',
-          permissions:user.permissions
-        })
+      await fetch('/api/admin/users?id=' + encodeURIComponent(user.id), {
+        method:'DELETE',
+        headers:{Accept:'application/json'},
+        cache:'no-store'
+      }).then(async response => {
+        const data = await response.json().catch(() => ({}));
+        if(response.status === 401) location.assign('/login?next=' + encodeURIComponent(location.pathname));
+        if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL EXCLUIR O USUÁRIO.');
       });
+      if(el('userEditId').value === user.id) resetUserForm();
       await loadAdminUsers();
+      setUserFormStatus('Usuário excluído definitivamente.', 'success', 'userListStatus');
     }catch(error){
-      showError(error.message);
-      event.target.disabled = false;
+      setUserFormStatus(error.message, 'error', 'userListStatus');
+      button.disabled = false;
     }
   });
 
