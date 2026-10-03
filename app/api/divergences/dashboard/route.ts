@@ -1,6 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
+import { hasCompany } from "../../../lib/access-scope";
 import {
   divergenceOf,
   isDateOnly,
@@ -61,9 +61,11 @@ export async function GET(request: Request) {
   }
   try {
     const url = new URL(request.url);
+    // O DASHBOARD é só para quem tem acesso geral (todas as lojas) — regra
+    // do usuário (03/10/2026); a loja vê apenas os próprios pedidos.
     const allStores = allStoresForAny(actor, READ_PERMISSIONS);
-    if (!allStores && !hasCompany(actor.companyId)) {
-      return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
+    if (!allStores) {
+      return jsonResponse({ error: "O DASHBOARD É SÓ PARA QUEM TEM ACESSO GERAL." }, 403);
     }
     const conditions: string[] = [];
     const params: unknown[] = [];
@@ -72,8 +74,7 @@ export async function GET(request: Request) {
       conditions.push(condition.replace("?", `?${params.length}`));
     };
     const requestedCompany = safeText(url.searchParams.get("companyId"), 80);
-    if (!allStores) add("r.company_id=?", actor.companyId);
-    else if (hasCompany(requestedCompany)) add("r.company_id=?", requestedCompany);
+    if (hasCompany(requestedCompany)) add("r.company_id=?", requestedCompany);
     const from = url.searchParams.get("from");
     const to = url.searchParams.get("to");
     if (isDateOnly(from)) add("r.created_at>=?", recifeDayStartIso(from));

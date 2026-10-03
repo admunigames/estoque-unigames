@@ -221,7 +221,7 @@ test("status do pedido: EM ABERTO → EM VERIFICAÇÃO → FINALIZADO só com tu
   assert.equal((await respond(STOCK_USER, id, first, "nao_visto", "x")).status, 400);
 });
 
-test("VERIFICAÇÃO DA LOJA → retorno da loja (com correção) → volta para EM VERIFICAÇÃO", async () => {
+test("VERIFICAÇÃO DA LOJA → retorno da loja (com VISUALIZAR, só a loja do pedido) → volta para EM VERIFICAÇÃO", async () => {
   const id = await createRequest(STORE_A_USER, [THREE_ITEMS[0]]);
   const itemId = (await detail(STORE_A_USER, id)).body.items[0].id;
   const url = `${BASE}/${id}/items/${itemId}/store-reply`;
@@ -231,15 +231,25 @@ test("VERIFICAÇÃO DA LOJA → retorno da loja (com correção) → volta para 
   assert.equal(reply.status, 409);
 
   await respond(STOCK_USER, id, itemId, "verificacao_loja", "CONTE DE NOVO");
-  // Sem divergencias:edit não responde como loja.
-  reply = await call(replyRoute.POST, { ...STORE_A_USER, permissions: ["divergencias:view"] }, "POST", url, { reply: "OK LOJA" }, { id, itemId });
+  // Sem divergencias:view não responde como loja (nem com editar/cadastrar).
+  for (const permissions of [["divergencias:create"], ["divergencias:edit"], ["divergencias:delete"]]) {
+    reply = await call(replyRoute.POST, { ...STORE_A_USER, permissions }, "POST", url, { reply: "OK LOJA" }, { id, itemId });
+    assert.equal(reply.status, 403, `retorno com ${permissions}`);
+  }
+  // Quem tem acesso geral (sem loja vinculada) não responde pela loja.
+  reply = await call(replyRoute.POST, STOCK_USER, "POST", url, { reply: "OK LOJA" }, { id, itemId });
+  assert.equal(reply.status, 403);
+  assert.equal((await reply.json()).error, "SÓ A LOJA DO PEDIDO RESPONDE A VERIFICAÇÃO DA LOJA.");
+  reply = await call(replyRoute.POST, { id: "admin", role: "admin", companyId: "", permissions: [] }, "POST", url, { reply: "OK LOJA" }, { id, itemId });
   assert.equal(reply.status, 403);
   // Loja B não responde item da loja A.
   reply = await call(replyRoute.POST, STORE_B_USER, "POST", url, { reply: "OK LOJA" }, { id, itemId });
   assert.equal(reply.status, 404);
 
+  // Perfil padrão da loja: só CADASTRAR + VISUALIZAR já responde.
+  const basicStore = { id: "loja-a-basica", companyId: STORE_A, permissions: ["divergencias:view", "divergencias:create"] };
   await new Promise((resolve) => setTimeout(resolve, 2));
-  reply = await call(replyRoute.POST, STORE_A_USER, "POST", url, { reply: "ACHEI MAIS UMA NO DEPÓSITO", physicalQty: 2 }, { id, itemId });
+  reply = await call(replyRoute.POST, basicStore, "POST", url, { reply: "ACHEI MAIS UMA NO DEPÓSITO", physicalQty: 2 }, { id, itemId });
   assert.equal(reply.status, 200);
   const { body } = await detail(STORE_A_USER, id);
   const item = body.items[0];
@@ -479,8 +489,12 @@ test("dashboard: produtos mais divergentes destacam os que aparecem em mais de u
   assert.deepEqual(fone.stores.map((store) => [store.companyName, store.divergence]), [["GUARARAPES", 1], ["RIOMAR", -2]]);
   assert.ok(body.byStore.some((store) => store.companyName === "RIOMAR" && store.missing >= 2));
   assert.ok(body.totals.requests >= 2);
-  const storeView = await (await call(dashboardRoute.GET, STORE_A_USER, "GET", `${BASE}/dashboard`)).json();
-  assert.ok(storeView.byStore.every((store) => store.companyId === STORE_A));
+  // DASHBOARD só para acesso geral: usuário com loja vinculada recebe 403
+  // (setor Administrativo com loja continua vendo, por ver todas as lojas).
+  const storeView = await call(dashboardRoute.GET, STORE_A_USER, "GET", `${BASE}/dashboard`);
+  assert.equal(storeView.status, 403);
+  assert.equal((await storeView.json()).error, "O DASHBOARD É SÓ PARA QUEM TEM ACESSO GERAL.");
+  assert.equal((await call(dashboardRoute.GET, { ...STORE_A_USER, sector: "administrative" }, "GET", `${BASE}/dashboard`)).status, 200);
   // Período no futuro: nada.
   const future = await (await call(dashboardRoute.GET, STOCK_USER, "GET", `${BASE}/dashboard?from=2099-01-01&to=2099-01-31`)).json();
   assert.equal(future.totals.requests, 0);

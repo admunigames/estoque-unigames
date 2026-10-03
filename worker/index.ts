@@ -126,9 +126,11 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "missions:view", "missions:create", "missions:delete", "missions:notify",
   "captures:view", "captures:create", "captures:receive", "captures:assign", "captures:delete",
   "outputs:view", "outputs:create", "outputs:complete", "outputs:delete",
-  // Estoque > Divergências — a loja abre o pedido de verificação
-  // (view/create/edit/delete) e o estoque/fiscal responde item a item
-  // (respond) e controla o inventário (inventory). Módulo novo: nenhum
+  // Estoque > Divergências — a loja abre o pedido de verificação (create),
+  // vê os da própria loja e responde a VERIFICAÇÃO DA LOJA (view); o
+  // estoque/fiscal responde item a item (respond) e controla o inventário
+  // (inventory). edit/delete valem conforme as caixas marcadas; o DASHBOARD
+  // é só para quem tem acesso geral (app/api/divergences/dashboard). Módulo novo: nenhum
   // grupo de acesso ganha estas chaves automaticamente (só o Administrador,
   // que recebe todas).
   "divergencias:view", "divergencias:create", "divergencias:edit", "divergencias:delete",

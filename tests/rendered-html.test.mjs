@@ -4513,6 +4513,10 @@ test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no w
     assert.match(html, new RegExp(`class="supply-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-div-tab="${tab}"`));
   }
   assert.match(html, /if\(canAccess\('divergencias:inventory'\)\) tabs\.push\('inventario'\);/);
+  // DASHBOARD só para quem tem acesso geral; a loja responde a VERIFICAÇÃO
+  // DA LOJA com VISUALIZAR, só nos pedidos da própria loja.
+  assert.match(html, /if\(divCanRead\(\) && divAllStoresRead\(\)\) tabs\.push\('dashboard'\);/);
+  assert.match(html, /item\.status === 'verificacao_loja' && ownStore && canAccess\('divergencias:view'\)/);
   assert.match(html, /id="btnNewDivRequest" type="button" data-permission="divergencias:create">\+ NOVO PEDIDO DE DIVERGÊNCIA</);
   assert.match(html, /id="btnDivEdit" type="button" data-permission="divergencias:edit"/);
   assert.match(html, /id="btnDivDelete" type="button" data-permission="divergencias:delete"/);
@@ -4528,9 +4532,9 @@ test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no w
 
   // Seis caixas em Cadastros > Usuários + nomes legíveis.
   for (const [key, label] of [
-    ["view", "VISUALIZAR \\(pedidos, dashboard\\)"],
+    ["view", "VISUALIZAR \\(pedidos da própria loja; dashboard só com acesso geral\\) E RESPONDER A VERIFICAÇÃO DA LOJA"],
     ["create", "CADASTRAR PEDIDO"],
-    ["edit", "EDITAR PEDIDO \\(inclui o retorno da loja em VERIFICAÇÃO DA LOJA\\)"],
+    ["edit", "EDITAR PEDIDO"],
     ["delete", "EXCLUIR PEDIDO"],
     ["respond", "RESPONDER DIVERGÊNCIAS \\(estoque: status \\+ resposta por item\\)"],
     ["inventory", "INVENTÁRIO \\(ver a aba e marcar INVENTARIADO\\)"],

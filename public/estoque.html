@@ -8019,9 +8019,9 @@
             <details class="permission-module">
               <summary>Divergências</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:view"> VISUALIZAR (pedidos, dashboard)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:view"> VISUALIZAR (pedidos da própria loja; dashboard só com acesso geral) E RESPONDER A VERIFICAÇÃO DA LOJA</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:create"> CADASTRAR PEDIDO</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:edit"> EDITAR PEDIDO (inclui o retorno da loja em VERIFICAÇÃO DA LOJA)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:edit"> EDITAR PEDIDO</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:delete"> EXCLUIR PEDIDO</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:respond"> RESPONDER DIVERGÊNCIAS (estoque: status + resposta por item)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:inventory"> INVENTÁRIO (ver a aba e marcar INVENTARIADO)</label>
@@ -18827,7 +18827,8 @@ function renderHomeTasks(){
 
   function divAvailableTabs(){
     const tabs = [];
-    if(divCanRead()) tabs.push('dashboard');
+    // DASHBOARD só para quem tem acesso geral; a loja vê só os próprios pedidos.
+    if(divCanRead() && divAllStoresRead()) tabs.push('dashboard');
     if(divCanRead() || canAccess('divergencias:create')) tabs.push('pedidos');
     if(canAccess('divergencias:inventory')) tabs.push('inventario');
     return tabs;
@@ -18906,7 +18907,7 @@ function renderHomeTasks(){
   }
 
   async function loadDivDashboard(){
-    if(!divCanRead()) return;
+    if(!divCanRead() || !divAllStoresRead()) return;
     const status = el('divDashStatus');
     const from = el('divDashFrom').value;
     const to = el('divDashTo').value;
@@ -19139,7 +19140,10 @@ function renderHomeTasks(){
     const events = Array.isArray(item.events) ? item.events : [];
     const actions = [];
     if(canAccess('divergencias:respond')) actions.push('<button class="btn-accent" type="button" data-div-respond="'+escapeHtml(item.id)+'">RESPONDER</button>');
-    if(item.status === 'verificacao_loja' && canAccess('divergencias:edit')) actions.push('<button class="btn-accent" type="button" data-div-reply="'+escapeHtml(item.id)+'">RESPONDER VERIFICAÇÃO</button>');
+    // Retorno da loja: VISUALIZAR + loja vinculada igual à do pedido.
+    const request = divState.detail && divState.detail.request;
+    const ownStore = Boolean(currentSession.companyId) && Boolean(request) && request.companyId === currentSession.companyId;
+    if(item.status === 'verificacao_loja' && ownStore && canAccess('divergencias:view')) actions.push('<button class="btn-accent" type="button" data-div-reply="'+escapeHtml(item.id)+'">RESPONDER VERIFICAÇÃO</button>');
     return '<tr>'+
       '<td data-label="Produto" class="nome"><div>'+escapeHtml(item.productName)+(item.productCode ? '<span class="div-cell-sub">CÓD. '+escapeHtml(item.productCode)+'</span>' : '')+'</div></td>'+
       '<td data-label="Físico"><div>'+(Number(item.physicalQty) || 0)+'</div></td>'+
@@ -32518,7 +32522,7 @@ function renderHomeTasks(){
     'missions:view':'Missões: visualizar','missions:create':'Missões: cadastrar','missions:delete':'Missões: excluir','missions:notify':'Missões: notificações',
     'captures:view':'Captação: visualizar','captures:create':'Captação: cadastrar','captures:receive':'Captação: receber/preparar','captures:assign':'Captação: definir destino','captures:delete':'Captação: excluir',
     'outputs:view':'Saídas: visualizar','outputs:create':'Saídas: cadastrar','outputs:complete':'Saídas: concluir','outputs:delete':'Saídas: excluir',
-    'divergencias:view':'Divergências: visualizar','divergencias:create':'Divergências: cadastrar pedido','divergencias:edit':'Divergências: editar pedido','divergencias:delete':'Divergências: excluir pedido','divergencias:respond':'Divergências: responder','divergencias:inventory':'Divergências: inventário',
+    'divergencias:view':'Divergências: visualizar e responder verificação da loja','divergencias:create':'Divergências: cadastrar pedido','divergencias:edit':'Divergências: editar pedido','divergencias:delete':'Divergências: excluir pedido','divergencias:respond':'Divergências: responder','divergencias:inventory':'Divergências: inventário',
     'inputs:view':'Entrada: visualizar','inputs:create':'Entrada: cadastrar','inputs:complete':'Entrada: concluir','inputs:delete':'Entrada: excluir',
     'supplies:view':'Insumos: visualizar','supplies:request':'Insumos: solicitar','supplies:receive':'Insumos: receber solicitação','supplies:stock_in':'Insumos: entrada','supplies:stock_out':'Insumos: saída','supplies:delete':'Insumos: excluir','supplies:manage_catalog':'Insumos: produtos/categorias',
     'loans:view':'Aparelhos de Empréstimo: visualizar','loans:create':'Aparelhos de Empréstimo: cadastrar aparelho','loans:edit':'Aparelhos de Empréstimo: editar aparelho','loans:delete':'Aparelhos de Empréstimo: excluir aparelho','loans:request':'Aparelhos de Empréstimo: solicitar','loans:manage_requests':'Aparelhos de Empréstimo: gerenciar solicitações',

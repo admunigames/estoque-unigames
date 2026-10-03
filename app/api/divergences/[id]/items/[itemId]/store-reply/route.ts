@@ -1,11 +1,11 @@
 import { getD1 } from "../../../../../../../db";
 import { unauthorizedResponse } from "../../../../../../lib/notion";
+import { hasCompany } from "../../../../../../lib/access-scope";
 import { divergenceLabel } from "../../../../../../lib/divergences";
 import {
   can,
   eventStatement,
   identity,
-  inScope,
   jsonResponse,
   loadItem,
   loadRequest,
@@ -21,13 +21,18 @@ type Context = { params: Promise<{ id: string; itemId: string }> };
 
 // Retorno da loja num item em VERIFICAÇÃO DA LOJA: observação obrigatória
 // e, se quiser, físico/sistema corrigidos. O item volta sozinho para EM
-// VERIFICAÇÃO (o estoque continua a análise).
+// VERIFICAÇÃO (o estoque continua a análise). Regra do usuário (03/10/2026):
+// a loja responde com VISUALIZAR, e só quem é da loja do pedido (loja
+// vinculada no login) — quem tem acesso geral não responde pela loja.
 export async function POST(request: Request, context: Context) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!can(actor, "divergencias:edit")) {
+  if (!can(actor, "divergencias:view")) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA RESPONDER COMO LOJA." }, 403);
+  }
+  if (!hasCompany(actor.companyId)) {
+    return jsonResponse({ error: "SÓ A LOJA DO PEDIDO RESPONDE A VERIFICAÇÃO DA LOJA." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
@@ -41,7 +46,7 @@ export async function POST(request: Request, context: Context) {
     if (reply.length < 2) return jsonResponse({ error: "ESCREVA O RETORNO DA LOJA." }, 400);
     const database = await getD1();
     const row = await loadRequest(database, id);
-    if (!row || !inScope(actor, "divergencias:edit", row.companyId)) {
+    if (!row || row.companyId !== actor.companyId) {
       return jsonResponse({ error: "PEDIDO NÃO ENCONTRADO." }, 404);
     }
     const item = await loadItem(database, id, itemId);
