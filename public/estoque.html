@@ -3271,6 +3271,35 @@
     .assist-doc{min-width:0; font-size:10px;}
     .assist-doc-logo{width:62px; max-width:62px;}
   }
+  /* FINANCEIRO — seleção em lote reutilizável (setupBulkSelection): barra com
+     SELECIONAR TODOS + ações que só aparecem com seleção; checkbox por linha
+     (.bulk-check). Também a grade do cadastro em lote da Declaração de Vendas.
+     Checkbox com min-height:0 (o input{min-height:44px} do celular pega). */
+  .bulk-bar{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 10px;}
+  .bulk-select-all{display:inline-flex; align-items:center; gap:8px; font:800 11px/1.3 var(--mono); cursor:pointer;}
+  .bulk-bar-actions{
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--accent);
+    border-radius:11px; background:color-mix(in srgb,var(--accent) 10%,var(--bg-card));
+  }
+  .bulk-bar-actions[hidden]{display:none;}
+  .bulk-bar-count{font:800 11px/1.3 var(--mono);}
+  .bulk-bar input[type="checkbox"],.bulk-check,.decl-batch-table input[type="checkbox"]{
+    width:18px; height:18px; min-height:0; margin:0; accent-color:var(--accent); cursor:pointer;
+  }
+  .bulk-col{width:36px;}
+  .purchase-field[data-decl-pct-field][hidden]{display:none;}
+  .decl-batch-dialog{width:min(1240px,calc(100vw - 28px));}
+  .decl-batch-table td{vertical-align:middle;}
+  .decl-batch-table input:not([type="checkbox"]){width:120px;}
+  .decl-batch-table input[data-batch-field="pct"]{width:72px;}
+  .decl-batch-table input[data-batch-field="notes"]{width:170px;}
+  .decl-batch-table tr.is-registered td{opacity:.6;}
+  @media (max-width:680px){
+    .bulk-bar-actions{width:100%;}
+    .bulk-bar-actions > button{flex:1 1 auto;}
+    .decl-batch-table input:not([type="checkbox"]),.decl-batch-table input[data-batch-field]{width:100%; min-width:0;}
+    .responsive-table tbody td > .bulk-check,.responsive-table.decl-batch-table tbody td > input[type="checkbox"]{justify-self:end;}
+  }
   /* ESTOQUE > DIVERGÊNCIAS — reaproveita .supply-tabs, .purchase-metric,
      .purchase-card, .table-panel, .status-pill e .purchase-dialog; aqui só
      o arranjo próprio do módulo (barra de filtros, gráficos em CSS, linhas
@@ -3547,7 +3576,7 @@
         <a class="nav-item sub-item" id="navFinanceiroConciliacao" data-page="financeiroConciliacao" data-permission="finance" data-home-desc="Importe o extrato bancário, classifique os lançamentos e deixe o sistema sugerir a classificação pelos nomes que se repetem." title="Conciliação Bancária" href="/financeiro/conciliacao-bancaria"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><path d="m16 16 2 2 4-4"/></svg></span><span class="nav-label">Conciliação Bancária</span></a>
         <a class="nav-item sub-item" id="navFinanceiroPayables" data-page="financeiroPayables" data-permission="finance" data-home-desc="Contas a pagar: parcelas, recorrências e pagamentos por loja." title="Contas a Pagar" href="/financeiro/contas-a-pagar"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Contas a Pagar</span></a>
         <a class="nav-item sub-item" id="navFinanceiroReposicao" data-page="financeiroReposicao" data-permission="finance" data-home-desc="Valores repostos e gastos por Assistência, Logística e outros setores." title="Controle de Reposição" href="/financeiro/controle-reposicao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 14-4l2 2"/><path d="M20 16a8 8 0 0 1-14 4l-2-2"/><path d="M18 2v4h-4M6 22v-4h4"/></svg></span><span class="nav-label">Controle de Reposição</span></a>
-        <a class="nav-item sub-item" id="navFinanceiroDeclaracaoShopping" data-page="financeiroDeclaracaoShopping" data-permission="finance" data-home-desc="Declaração de faturamento por loja/shopping, com histórico e alerta de aluguel percentual." title="Declaração de Shopping" href="/financeiro/declaracao-shopping"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></span><span class="nav-label">Declaração de Shopping</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroDeclaracaoShopping" data-page="financeiroDeclaracaoShopping" data-permission="finance" data-home-desc="Declaração de vendas por loja, com faturamento puxado do cadastro, cadastro em lote e alerta de aluguel percentual." title="Declaração de Vendas" href="/financeiro/declaracao-shopping"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></span><span class="nav-label">Declaração de Vendas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroExpenses" data-page="financeiroExpenses" data-permission="finance" data-home-desc="Cadastro completo de despesas, com rateio entre lojas." title="Despesas" href="/financeiro/despesas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14.5 3.5V7h3.5"/><path d="M8 12h8M8 15.5h8M8 18.5h5"/></svg></span><span class="nav-label">Despesas</span></a>
         <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
         <a class="nav-item sub-item" id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance" data-home-desc="Projeção diária de caixa: caixa atual, entradas e saídas em 7, 15, 30, 60 e 90 dias." title="Fluxo de Caixa" href="/financeiro/fluxo-de-caixa"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 18.5L9 12l3.5 3.5L20.5 6"/><path d="M15.5 6h5v5"/></svg></span><span class="nav-label">Fluxo de Caixa</span></a>
@@ -7759,17 +7788,17 @@
       <header class="page-header">
         <div class="page-heading">
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">Declaração de Shopping</h2>
+          <h2 class="page-title">Declaração de Vendas</h2>
         </div>
       </header>
 
       <div class="dre-toolbar">
         <div class="field"><label for="declShoppingLoja">LOJA</label><select id="declShoppingLoja"><option value="">TODAS AS LOJAS</option></select></div>
-        <div class="field"><label for="declShoppingShopping">SHOPPING</label><select id="declShoppingShopping"><option value="">TODOS OS SHOPPINGS</option></select></div>
         <div class="field"><label for="declShoppingMesDe">DE</label><input type="month" id="declShoppingMesDe"></div>
         <div class="field"><label for="declShoppingMesAte">ATÉ</label><input type="month" id="declShoppingMesAte"></div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnFiltrarDeclShopping" type="button">FILTRAR</button>
+          <button class="btn-outline" id="btnBatchDeclShopping" type="button">+ CADASTRAR EM LOTE</button>
           <button class="btn-accent" id="btnNewDeclShopping" type="button">NOVA DECLARAÇÃO</button>
         </div>
       </div>
@@ -7777,11 +7806,21 @@
       <div id="declShoppingAlertas"></div>
 
       <h3 class="supply-section-title">HISTÓRICO E COMPARATIVO</h3>
+      <div class="bulk-bar" id="declShoppingBulkBar">
+        <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+        <div class="bulk-bar-actions" data-bulk-actions hidden>
+          <strong class="bulk-bar-count" data-bulk-count></strong>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="mark-paid">MARCAR ALUGUEL % COMO PAGO</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="unmark-paid">DESMARCAR PAGO</button>
+          <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR SELECIONADOS</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+        </div>
+      </div>
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="declShoppingTable">
-            <thead><tr><th>Competência</th><th>Shopping / Loja</th><th>Faturamento real</th><th>Média declarada</th><th>Valor declarado</th><th>Variação</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Valor pago</th><th>Alerta</th><th></th></tr></thead>
-            <tbody id="declShoppingTableBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Loja</th><th>Faturamento real</th><th>Sugerido</th><th>Valor declarado</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Alerta</th><th></th></tr></thead>
+            <tbody id="declShoppingTableBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -8769,20 +8808,16 @@
   <form class="purchase-form" id="declShoppingForm">
     <input type="hidden" id="declShoppingId">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="declShoppingNome">SHOPPING *</label><input id="declShoppingNome" maxlength="160" required list="declShoppingNomeList"></div>
-      <datalist id="declShoppingNomeList"></datalist>
       <div class="purchase-field"><label for="declShoppingLojaForm">LOJA *</label><select id="declShoppingLojaForm" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="declShoppingCompetencia">COMPETÊNCIA *</label><input type="month" id="declShoppingCompetencia" required></div>
-      <div class="purchase-field"><label for="declShoppingDataDecl">DATA DA DECLARAÇÃO</label><input type="date" id="declShoppingDataDecl"></div>
-      <div class="purchase-field"><label for="declShoppingFatReal">FATURAMENTO REAL (R$) *</label><input type="text" inputmode="decimal" id="declShoppingFatReal" placeholder="R$ 0,00" required></div>
-      <div class="purchase-field"><label for="declShoppingMedia">MÉDIA QUE COSTUMA SER DECLARADA (R$)</label><input type="text" inputmode="decimal" id="declShoppingMedia" placeholder="R$ 0,00"></div>
-      <div class="purchase-field"><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="text" inputmode="decimal" id="declShoppingSugerido" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="declShoppingFatReal">FATURAMENTO REAL (R$)</label><input type="text" inputmode="decimal" id="declShoppingFatReal" placeholder="R$ 0,00"><small class="purchase-field-help" id="declShoppingFatRealInfo">ESCOLHA A LOJA E A COMPETÊNCIA.</small></div>
       <div class="purchase-field"><label for="declShoppingDeclarado">VALOR EFETIVAMENTE DECLARADO (R$)</label><input type="text" inputmode="decimal" id="declShoppingDeclarado" placeholder="R$ 0,00"></div>
-      <div class="purchase-field"><label for="declShoppingPercentual">PERCENTUAL CONTRATUAL (%)</label><input type="number" id="declShoppingPercentual" min="0" max="100" step="0.01" placeholder="Ex.: 7"></div>
-      <div class="purchase-field"><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="text" inputmode="decimal" id="declShoppingMinimo" placeholder="R$ 0,00"></div>
-      <div class="purchase-field"><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="number" id="declShoppingAluguelPct" min="0" step="0.01"></div>
-      <div class="purchase-field"><label class="checkbox-inline"><input type="checkbox" id="declShoppingPctPago"> Houve pagamento de aluguel percentual</label></div>
-      <div class="purchase-field"><label for="declShoppingPago">VALOR EFETIVAMENTE PAGO (R$)</label><input type="text" inputmode="decimal" id="declShoppingPago" placeholder="R$ 0,00"></div>
+      <div class="purchase-field full"><label class="assist-check" for="declShoppingTemPct"><input type="checkbox" id="declShoppingTemPct"> LOJA COM ALUGUEL PERCENTUAL</label></div>
+      <div class="purchase-field" data-decl-pct-field><label for="declShoppingPercentual">PERCENTUAL CONTRATUAL (%)</label><input type="number" id="declShoppingPercentual" min="0" max="100" step="0.01" placeholder="Ex.: 7"></div>
+      <div class="purchase-field" data-decl-pct-field><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="text" inputmode="decimal" id="declShoppingMinimo" placeholder="R$ 0,00"></div>
+      <div class="purchase-field" data-decl-pct-field><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="text" id="declShoppingSugerido" readonly placeholder="—"><small class="purchase-field-help" id="declShoppingSugeridoConta"></small></div>
+      <div class="purchase-field" data-decl-pct-field><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="text" id="declShoppingAluguelPct" readonly placeholder="—"><small class="purchase-field-help">CALCULADO: DECLARADO × % − MÍNIMO</small></div>
+      <div class="purchase-field full" data-decl-pct-field><label class="assist-check" for="declShoppingPctPago"><input type="checkbox" id="declShoppingPctPago"> ALUGUEL PERCENTUAL PAGO</label></div>
       <div class="purchase-field full"><label for="declShoppingObs">OBSERVAÇÕES</label><textarea id="declShoppingObs" rows="2" maxlength="2000"></textarea></div>
     </div>
     <div id="declShoppingCalcHint" class="page-desc"></div>
@@ -8795,6 +8830,32 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelDeclShoppingDialog" type="button">FECHAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog decl-batch-dialog" id="declBatchDialog" aria-labelledby="declBatchDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="declBatchDialogTitle">CADASTRAR DECLARAÇÕES EM LOTE</h3>
+    <button class="purchase-dialog-close" id="btnCloseDeclBatchDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="declBatchForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="declBatchCompetencia">COMPETÊNCIA *</label><input type="month" id="declBatchCompetencia" required></div>
+    </div>
+    <p class="purchase-field-help">UMA LINHA POR LOJA. LINHAS SEM VALOR DECLARADO SÃO IGNORADAS; LOJAS JÁ CADASTRADAS NO MÊS NÃO SÃO REGRAVADAS (EDITE PELO HISTÓRICO).</p>
+    <div class="table-panel responsive-table decl-batch-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Loja</th><th>Faturamento real</th><th>Aluguel %</th><th>%</th><th>Mínimo</th><th>Sugerido</th><th>Declarado</th><th>Aluguel % (calc.)</th><th>Observação</th></tr></thead>
+          <tbody id="declBatchBody"><tr><td colspan="9" class="responsive-empty">Escolha a competência.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="declBatchStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelDeclBatchDialog" type="button">FECHAR</button>
+      <button class="btn-accent" id="btnSaveDeclBatch" type="submit">SALVAR TUDO</button>
     </div>
   </form>
 </dialog>
@@ -11655,7 +11716,7 @@
     financeiroConciliacao:'CONCILIAÇÃO BANCÁRIA',
     financeiroReposicao:'CONTROLE DE REPOSIÇÃO',
     financeiroRecargas:'RECARGAS DE CELULARES',
-    financeiroDeclaracaoShopping:'DECLARAÇÃO DE SHOPPING',
+    financeiroDeclaracaoShopping:'DECLARAÇÃO DE VENDAS',
     obras:'OBRAS'
   });
   const PAGE_PERMISSIONS = Object.freeze({
@@ -31349,9 +31410,89 @@ function renderHomeTasks(){
     }
   });
 
-  // ----- Declaração de Shopping -----
+  // ----- Seleção em lote (componente reutilizável do Financeiro) -----
+  // Barra: [data-bulk-all] (SELECIONAR TODOS), [data-bulk-actions] (só aparece
+  // com seleção), [data-bulk-count], botões [data-bulk-action="..."] e
+  // [data-bulk-clear]. Linhas: bulkRowCheckbox(id). Depois de cada render da
+  // tabela, chamar .sync() (mantém a seleção das linhas que continuam lá).
+  // onAction(action, ids) faz a chamada; a seleção é limpa se ele não lançar.
+  function bulkRowCheckbox(id, label){
+    return '<input type="checkbox" class="bulk-check" data-bulk-row="'+escapeHtml(id)+'" aria-label="'+escapeHtml(label || 'Selecionar')+'">';
+  }
+  function setupBulkSelection(bar, body, onAction){
+    const selected = new Set();
+    const selectAll = bar.querySelector('[data-bulk-all]');
+    const actions = bar.querySelector('[data-bulk-actions]');
+    const count = bar.querySelector('[data-bulk-count]');
+    const boxes = () => Array.from(body.querySelectorAll('input[data-bulk-row]'));
+    function sync(){
+      const all = boxes();
+      const present = new Set(all.map(b => b.dataset.bulkRow));
+      Array.from(selected).forEach(id => { if(!present.has(id)) selected.delete(id); });
+      all.forEach(b => { b.checked = selected.has(b.dataset.bulkRow); });
+      selectAll.checked = all.length > 0 && selected.size === all.length;
+      selectAll.indeterminate = selected.size > 0 && selected.size < all.length;
+      selectAll.disabled = !all.length;
+      actions.hidden = !selected.size;
+      count.textContent = selected.size + (selected.size === 1 ? ' ITEM SELECIONADO' : ' ITENS SELECIONADOS');
+    }
+    body.addEventListener('change', event => {
+      const box = event.target.closest('input[data-bulk-row]');
+      if(!box) return;
+      if(box.checked) selected.add(box.dataset.bulkRow); else selected.delete(box.dataset.bulkRow);
+      sync();
+    });
+    selectAll.addEventListener('change', () => {
+      boxes().forEach(b => { if(selectAll.checked) selected.add(b.dataset.bulkRow); else selected.delete(b.dataset.bulkRow); });
+      sync();
+    });
+    bar.addEventListener('click', async event => {
+      if(event.target.closest('[data-bulk-clear]')){ selected.clear(); sync(); return; }
+      const button = event.target.closest('[data-bulk-action]');
+      if(!button || !selected.size) return;
+      const buttons = Array.from(actions.querySelectorAll('button'));
+      buttons.forEach(b => { b.disabled = true; });
+      try{
+        if(await onAction(button.dataset.bulkAction, Array.from(selected)) !== false) selected.clear();
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      finally{ buttons.forEach(b => { b.disabled = false; }); sync(); }
+    });
+    sync();
+    return {sync};
+  }
+
+  // ----- Declaração de Vendas (ex-"Declaração de Shopping") -----
+  // Faturamento real puxado do faturamento cadastrado (finance_store_revenue)
+  // via /mall-declarations/batch?month= — o mesmo contexto do mês serve ao
+  // diálogo e ao cadastro em lote. Sugerido e aluguel % são calculados aqui
+  // só para mostrar; o backend recalcula ao salvar.
   let declShoppingRows = [];
-  let declShoppingMalls = [];
+  const declMonthContextCache = new Map();
+  // MESMA CONTA de deriveMallDeclaration (app/lib/mall-declarations.ts) —
+  // tests/finance-mall-declarations.test.mjs compara as duas.
+  function declShoppingDerive(input){
+    const toInt = v => { const n = Number(v); return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0; };
+    const real = toInt(input.realRevenueCents);
+    const declared = toInt(input.declaredCents);
+    const bps = toInt(input.contractPercentBps);
+    const minimum = toInt(input.minimumRentCents);
+    const breakpointCents = bps > 0 && minimum > 0 ? Math.floor((minimum * 10000) / bps) : 0;
+    const percentageRentCents = bps > 0 ? Math.max(0, Math.round((declared * bps) / 10000) - minimum) : 0;
+    let alertLevel = 'none';
+    if(breakpointCents > 0 && declared > breakpointCents) alertLevel = 'declared';
+    else if(breakpointCents > 0 && real > breakpointCents) alertLevel = 'real';
+    return {breakpointCents, percentageRentCents, alertLevel};
+  }
+  function declPctLabel(bps){ return (Number(bps || 0) / 100).toLocaleString('pt-BR', {maximumFractionDigits:2}) + '%'; }
+  function declPctToBps(value){ return value === '' || value == null ? 0 : Math.round(Number(String(value).replace(',', '.')) * 100) || 0; }
+  function declMoneyCents(input){ const v = getCurrencyValue(input); return v === '' ? 0 : Math.round(Number(v) * 100); }
+  async function declMonthContext(month, fresh){
+    if(fresh || !declMonthContextCache.has(month)){
+      declMonthContextCache.set(month, financeApiRequest('/mall-declarations/batch?month='+encodeURIComponent(month)).then(d => d.stores || {}));
+    }
+    try{ return await declMonthContextCache.get(month); }
+    catch(error){ declMonthContextCache.delete(month); throw error; }
+  }
   async function loadDeclShoppingPage(){
     if(!canAccess('finance')) return;
     if(!companies.length) await loadCompanies();
@@ -31362,125 +31503,146 @@ function renderHomeTasks(){
   async function reloadDeclShopping(){
     const body = el('declShoppingTableBody');
     if(!body) return;
-    body.innerHTML = '<tr><td colspan="12" class="responsive-empty">Carregando…</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    declMonthContextCache.clear();
     const params = new URLSearchParams();
     if(el('declShoppingLoja').value) params.set('companyId', el('declShoppingLoja').value);
-    if(el('declShoppingShopping').value) params.set('mallName', el('declShoppingShopping').value);
     if(el('declShoppingMesDe').value) params.set('monthFrom', el('declShoppingMesDe').value);
     if(el('declShoppingMesAte').value) params.set('monthTo', el('declShoppingMesAte').value);
     try{
       const data = await financeApiRequest('/mall-declarations?'+params.toString());
       declShoppingRows = Array.isArray(data.rows) ? data.rows : [];
-      declShoppingMalls = Array.isArray(data.malls) ? data.malls : [];
-      const mallSel = el('declShoppingShopping');
-      const sel = mallSel.value;
-      mallSel.innerHTML = '<option value="">TODOS OS SHOPPINGS</option>' + declShoppingMalls.map(m => '<option value="'+escapeHtml(m)+'">'+escapeHtml(m)+'</option>').join('');
-      if(declShoppingMalls.includes(sel)) mallSel.value = sel;
-      el('declShoppingNomeList').innerHTML = declShoppingMalls.map(m => '<option value="'+escapeHtml(m)+'"></option>').join('');
       renderDeclShopping();
     }catch(error){
-      body.innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      declShoppingRows = [];
+      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      declShoppingBulk.sync();
     }
   }
   function renderDeclShopping(){
     const body = el('declShoppingTableBody');
     const alertas = el('declShoppingAlertas');
+    const storeName = r => r.companyName || fase8CompanyName(r.companyId) || '—';
     const alertRows = declShoppingRows.filter(r => r.derived && r.derived.alertLevel !== 'none');
     alertas.innerHTML = alertRows.length
-      ? alertRows.map(r => '<div class="dre-empty" style="border-left:3px solid var(--danger,#c0392b)"><strong>'+escapeHtml(r.mallName)+' · '+escapeHtml(r.companyName || '')+' · '+escapeHtml(r.competenceMonth)+':</strong> '+escapeHtml(r.derived.alertMessage)+' Ponto de virada: '+formatCentsBRL(r.derived.breakpointCents)+'.</div>').join('')
+      ? alertRows.map(r => '<div class="dre-empty" style="border-left:3px solid var(--neg)"><strong>'+escapeHtml(storeName(r))+' · '+escapeHtml(rhFormatMonth(r.competenceMonth))+':</strong> '+escapeHtml(r.derived.alertMessage)+' PONTO DE VIRADA: '+formatCentsBRL(r.derived.breakpointCents)+'.</div>').join('')
       : '';
     body.innerHTML = declShoppingRows.length ? declShoppingRows.map(r => {
       const d = r.derived || {};
-      const variacao = d.declaredVsAverageCents || 0;
+      const hasPct = Number(r.contractPercentBps) > 0;
       return '<tr>'+
-        '<td>'+escapeHtml(r.competenceMonth)+'</td>'+
-        '<td>'+escapeHtml((r.mallName || '—')+' / '+(r.companyName || fase8CompanyName(r.companyId) || '—'))+'</td>'+
-        '<td>'+formatCentsBRL(r.realRevenueCents)+'</td>'+
-        '<td>'+formatCentsBRL(r.avgDeclaredCents)+'</td>'+
-        '<td>'+formatCentsBRL(r.declaredCents)+'</td>'+
-        '<td>'+(variacao >= 0 ? '+' : '')+formatCentsBRL(variacao)+'</td>'+
-        '<td>'+pctFromBps(d.declaredShareBps)+'</td>'+
-        '<td>'+formatCentsBRL(r.minimumRentCents)+'</td>'+
-        '<td>'+formatCentsBRL(r.percentageRentCents)+'</td>'+
-        '<td>'+formatCentsBRL(r.amountPaidCents)+(r.percentageRentPaid ? ' <span class="status-pill ok">%</span>' : '')+'</td>'+
-        '<td>'+(d.alertLevel && d.alertLevel !== 'none' ? '<span class="status-pill '+(d.alertLevel === 'declared' ? 'danger' : 'warn')+'">'+(d.alertLevel === 'declared' ? 'DECLARADO' : 'RISCO')+'</span>' : '—')+'</td>'+
-        '<td style="white-space:nowrap">'+
-          '<button class="btn-outline btn-sm" type="button" data-decl-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
+        '<td data-label="SELECIONAR">'+bulkRowCheckbox(r.id, 'Selecionar '+storeName(r)+' '+rhFormatMonth(r.competenceMonth))+'</td>'+
+        '<td data-label="COMPETÊNCIA">'+escapeHtml(rhFormatMonth(r.competenceMonth))+'</td>'+
+        '<td data-label="LOJA">'+escapeHtml(storeName(r))+'</td>'+
+        '<td data-label="FATURAMENTO REAL">'+formatCentsBRL(r.realRevenueCents)+'</td>'+
+        '<td data-label="SUGERIDO">'+(d.breakpointCents ? formatCentsBRL(d.breakpointCents) : '—')+'</td>'+
+        '<td data-label="VALOR DECLARADO">'+formatCentsBRL(r.declaredCents)+'</td>'+
+        '<td data-label="% S/ FATURAMENTO">'+pctFromBps(d.declaredShareBps)+'</td>'+
+        '<td data-label="ALUGUEL MÍNIMO">'+(hasPct ? formatCentsBRL(r.minimumRentCents)+' · '+declPctLabel(r.contractPercentBps) : '—')+'</td>'+
+        '<td data-label="ALUGUEL PERCENTUAL"><span>'+(hasPct ? formatCentsBRL(d.percentageRentCents)+' <span class="status-pill '+(r.percentageRentPaid ? 'ok' : 'warn')+'">'+(r.percentageRentPaid ? 'PAGO' : 'NÃO PAGO')+'</span>' : 'SEM PERCENTUAL')+'</span></td>'+
+        '<td data-label="ALERTA">'+(d.alertLevel && d.alertLevel !== 'none' ? '<span class="status-pill '+(d.alertLevel === 'declared' ? 'danger' : 'warn')+'">'+(d.alertLevel === 'declared' ? 'DECLARADO' : 'RISCO')+'</span>' : '—')+'</td>'+
+        '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
+          '<button class="btn-outline btn-sm" type="button" data-decl-edit="'+escapeHtml(r.id)+'">EDITAR</button>'+
           '<button class="btn-outline btn-sm" type="button" data-decl-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
-        '</td>'+
+        '</div></td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma declaração.</td></tr>';
+    }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhuma declaração.</td></tr>';
+    declShoppingBulk.sync();
   }
-  // declShoppingAluguelPct tem "(R$)" no rótulo mas guarda um PERCENTUAL
-  // (confirmado com o usuário), não dinheiro — por isso fica fora da máscara
-  // de moeda e continua lendo/escrevendo .value bruto, diferente dos outros.
-  const DECL_SHOPPING_MONEY_FIELDS = ['declShoppingFatReal','declShoppingMedia','declShoppingSugerido','declShoppingDeclarado','declShoppingMinimo','declShoppingPago'];
+  const declShoppingBulk = setupBulkSelection(el('declShoppingBulkBar'), el('declShoppingTableBody'), async (action, ids) => {
+    if(action === 'delete' && !confirm('Excluir '+ids.length+(ids.length === 1 ? ' declaração' : ' declarações')+' e seus anexos?')) return false;
+    const res = await financeApiRequest('/mall-declarations/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids})});
+    await reloadDeclShopping();
+    showPurchaseToast(action === 'delete' ? res.deleted+' excluída(s).' : res.updated+' atualizada(s).');
+  });
+
   function declShoppingReadForm(){
-    const num = id => {
-      const v = DECL_SHOPPING_MONEY_FIELDS.includes(id) ? getCurrencyValue(el(id)) : el(id).value;
-      return v === '' ? 0 : Math.round(Number(v) * 100);
-    };
     const companyId = el('declShoppingLojaForm').value;
+    const hasPct = el('declShoppingTemPct').checked;
     return {
-      mallName: el('declShoppingNome').value.trim(),
       companyId, companyName: fase8CompanyName(companyId),
       competenceMonth: el('declShoppingCompetencia').value,
-      declarationDate: el('declShoppingDataDecl').value,
-      realRevenueCents: num('declShoppingFatReal'),
-      avgDeclaredCents: num('declShoppingMedia'),
-      suggestedDeclaredCents: num('declShoppingSugerido'),
-      declaredCents: num('declShoppingDeclarado'),
-      contractPercentBps: el('declShoppingPercentual').value === '' ? 0 : Math.round(Number(el('declShoppingPercentual').value) * 100),
-      minimumRentCents: num('declShoppingMinimo'),
-      percentageRentCents: num('declShoppingAluguelPct'),
-      percentageRentPaid: el('declShoppingPctPago').checked,
-      amountPaidCents: num('declShoppingPago'),
+      realRevenueCents: declMoneyCents(el('declShoppingFatReal')),
+      declaredCents: declMoneyCents(el('declShoppingDeclarado')),
+      contractPercentBps: hasPct ? declPctToBps(el('declShoppingPercentual').value) : 0,
+      minimumRentCents: hasPct ? declMoneyCents(el('declShoppingMinimo')) : 0,
+      percentageRentPaid: hasPct && el('declShoppingPctPago').checked,
       notes: el('declShoppingObs').value
     };
   }
   function declShoppingUpdateHint(){
     const f = declShoppingReadForm();
-    const percentFraction = f.contractPercentBps / 10000;
-    const breakpoint = percentFraction > 0 && f.minimumRentCents > 0 ? Math.round(f.minimumRentCents / percentFraction) : 0;
+    const hasPct = el('declShoppingTemPct').checked;
+    document.querySelectorAll('#declShoppingForm [data-decl-pct-field]').forEach(node => { node.hidden = !hasPct; });
+    const d = declShoppingDerive(f);
+    el('declShoppingSugerido').value = d.breakpointCents ? formatCentsBRL(d.breakpointCents) : '';
+    el('declShoppingSugeridoConta').textContent = d.breakpointCents
+      ? formatCentsBRL(d.breakpointCents)+' = '+formatCentsBRL(f.minimumRentCents)+' ÷ '+declPctLabel(f.contractPercentBps)
+      : 'INFORME O PERCENTUAL E O ALUGUEL MÍNIMO.';
+    el('declShoppingAluguelPct').value = hasPct ? formatCentsBRL(d.percentageRentCents) : '';
     const hint = el('declShoppingCalcHint');
-    if(!breakpoint){ hint.textContent = 'Informe percentual contratual e aluguel mínimo para calcular o ponto de virada.'; return; }
-    const pctReal = Math.round(f.realRevenueCents * percentFraction);
-    let msg = 'Ponto de virada: ' + formatCentsBRL(breakpoint) + '. Aluguel percentual sobre o faturamento real: ' + formatCentsBRL(pctReal) + '.';
-    if(f.declaredCents > breakpoint) msg += ' ⚠️ O valor declarado já ultrapassa o ponto de virada.';
-    else if(f.realRevenueCents > breakpoint) msg += ' ⚠️ O faturamento real ultrapassa o ponto de virada.';
+    if(!hasPct || !d.breakpointCents){ hint.textContent = ''; return; }
+    let msg = 'PONTO DE VIRADA: '+formatCentsBRL(d.breakpointCents)+' (ATÉ ESTE VALOR DECLARADO O ALUGUEL PERCENTUAL FICA ZERADO).';
+    if(d.alertLevel === 'declared') msg += ' ⚠️ O VALOR DECLARADO JÁ ULTRAPASSA O PONTO DE VIRADA.';
+    else if(d.alertLevel === 'real') msg += ' ⚠️ O FATURAMENTO REAL ULTRAPASSA O PONTO DE VIRADA.';
     hint.textContent = msg;
   }
+  // Ao escolher loja + competência: puxa o faturamento cadastrado (campo
+  // somente leitura) e, em declaração nova, o % e o mínimo da última.
+  let declShoppingContextToken = 0;
+  async function declShoppingApplyContext(){
+    const companyId = el('declShoppingLojaForm').value;
+    const month = el('declShoppingCompetencia').value;
+    const input = el('declShoppingFatReal');
+    const info = el('declShoppingFatRealInfo');
+    const status = el('declShoppingFormStatus');
+    const token = ++declShoppingContextToken;
+    input.readOnly = false;
+    if(!companyId || !month){ info.textContent = 'ESCOLHA A LOJA E A COMPETÊNCIA.'; declShoppingUpdateHint(); return; }
+    info.textContent = 'BUSCANDO FATURAMENTO…';
+    let ctx;
+    try{ ctx = ((await declMonthContext(month)) || {})[companyId] || {}; }
+    catch(error){ if(token === declShoppingContextToken) info.textContent = error.message; return; }
+    if(token !== declShoppingContextToken) return;
+    if(ctx.revenueCents != null){
+      setCurrencyValue(input, ctx.revenueCents / 100);
+      input.readOnly = true;
+      info.textContent = 'PUXADO DO FATURAMENTO CADASTRADO';
+    }else{
+      info.textContent = 'FATURAMENTO NÃO CADASTRADO PARA ESTE MÊS — DIGITE O VALOR.';
+    }
+    if(!declShoppingCurrentId){
+      status.textContent = ctx.existingId ? 'ESTA LOJA JÁ TEM DECLARAÇÃO NESTA COMPETÊNCIA — EDITE PELO HISTÓRICO.' : '';
+      if(ctx.lastContractPercentBps && el('declShoppingPercentual').value === '' && !getCurrencyValue(el('declShoppingMinimo'))){
+        el('declShoppingTemPct').checked = true;
+        el('declShoppingPercentual').value = String(ctx.lastContractPercentBps / 100);
+        setCurrencyValue(el('declShoppingMinimo'), ctx.lastMinimumRentCents ? ctx.lastMinimumRentCents / 100 : '');
+      }
+    }
+    declShoppingUpdateHint();
+  }
   let declShoppingCurrentId = '';
-  async function openDeclShoppingDialog(row){
+  function openDeclShoppingDialog(row){
     el('declShoppingForm').reset();
-    DECL_SHOPPING_MONEY_FIELDS.forEach(id => setCurrencyValue(el(id), ''));
+    ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo'].forEach(id => setCurrencyValue(el(id), ''));
     fase8CompanyOptions('declShoppingLojaForm', '');
     declShoppingCurrentId = row ? row.id : '';
-    el('declShoppingId').value = row ? row.id : '';
+    el('declShoppingId').value = declShoppingCurrentId;
     el('declShoppingDialogTitle').textContent = row ? 'EDITAR DECLARAÇÃO' : 'NOVA DECLARAÇÃO';
     if(row){
-      const set = (id, cents) => {
-        const value = cents ? cents/100 : '';
-        if(DECL_SHOPPING_MONEY_FIELDS.includes(id)) setCurrencyValue(el(id), value);
-        else el(id).value = cents ? (cents/100).toFixed(2) : '';
-      };
-      el('declShoppingNome').value = row.mallName || '';
       el('declShoppingLojaForm').value = row.companyId || '';
       el('declShoppingCompetencia').value = row.competenceMonth || '';
-      el('declShoppingDataDecl').value = row.declarationDate || '';
-      set('declShoppingFatReal', row.realRevenueCents);
-      set('declShoppingMedia', row.avgDeclaredCents);
-      set('declShoppingSugerido', row.suggestedDeclaredCents);
-      set('declShoppingDeclarado', row.declaredCents);
-      el('declShoppingPercentual').value = row.contractPercentBps ? (row.contractPercentBps/100).toString() : '';
-      set('declShoppingMinimo', row.minimumRentCents);
-      set('declShoppingAluguelPct', row.percentageRentCents);
+      setCurrencyValue(el('declShoppingFatReal'), row.realRevenueCents ? row.realRevenueCents / 100 : '');
+      setCurrencyValue(el('declShoppingDeclarado'), row.declaredCents ? row.declaredCents / 100 : '');
+      el('declShoppingTemPct').checked = Number(row.contractPercentBps) > 0;
+      el('declShoppingPercentual').value = row.contractPercentBps ? String(row.contractPercentBps / 100) : '';
+      setCurrencyValue(el('declShoppingMinimo'), row.minimumRentCents ? row.minimumRentCents / 100 : '');
       el('declShoppingPctPago').checked = !!row.percentageRentPaid;
-      set('declShoppingPago', row.amountPaidCents);
       el('declShoppingObs').value = row.notes || '';
     }
     el('declShoppingFormStatus').textContent = '';
     declShoppingUpdateHint();
+    declShoppingApplyContext();
     renderDeclShoppingAttachments();
     el('declShoppingDialog').showModal();
   }
@@ -31521,18 +31683,19 @@ function renderHomeTasks(){
       showPurchaseToast('Anexo enviado.');
     }catch(error){ status.textContent = error.message; }
   });
-  ['declShoppingFatReal','declShoppingDeclarado','declShoppingPercentual','declShoppingMinimo'].forEach(id => {
-    const node = el(id);
-    if(node) node.addEventListener('input', declShoppingUpdateHint);
+  ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo'].forEach(id => attachCurrencyMask(el(id)));
+  ['declShoppingFatReal','declShoppingDeclarado','declShoppingPercentual','declShoppingMinimo','declShoppingTemPct'].forEach(id => {
+    el(id).addEventListener('input', declShoppingUpdateHint);
+    el(id).addEventListener('change', declShoppingUpdateHint);
   });
-  DECL_SHOPPING_MONEY_FIELDS.forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
-  el('btnNewDeclShopping') && el('btnNewDeclShopping').addEventListener('click', () => openDeclShoppingDialog(null));
-  el('btnFiltrarDeclShopping') && el('btnFiltrarDeclShopping').addEventListener('click', reloadDeclShopping);
-  el('declShoppingLoja') && el('declShoppingLoja').addEventListener('change', reloadDeclShopping);
-  el('declShoppingShopping') && el('declShoppingShopping').addEventListener('change', reloadDeclShopping);
-  el('btnCloseDeclShoppingDialog') && el('btnCloseDeclShoppingDialog').addEventListener('click', () => el('declShoppingDialog').close());
-  el('btnCancelDeclShoppingDialog') && el('btnCancelDeclShoppingDialog').addEventListener('click', () => el('declShoppingDialog').close());
-  el('declShoppingForm') && el('declShoppingForm').addEventListener('submit', async event => {
+  el('declShoppingLojaForm').addEventListener('change', declShoppingApplyContext);
+  el('declShoppingCompetencia').addEventListener('change', declShoppingApplyContext);
+  el('btnNewDeclShopping').addEventListener('click', () => openDeclShoppingDialog(null));
+  el('btnFiltrarDeclShopping').addEventListener('click', reloadDeclShopping);
+  el('declShoppingLoja').addEventListener('change', reloadDeclShopping);
+  el('btnCloseDeclShoppingDialog').addEventListener('click', () => el('declShoppingDialog').close());
+  el('btnCancelDeclShoppingDialog').addEventListener('click', () => el('declShoppingDialog').close());
+  el('declShoppingForm').addEventListener('submit', async event => {
     event.preventDefault();
     const status = el('declShoppingFormStatus');
     status.textContent = '';
@@ -31549,7 +31712,7 @@ function renderHomeTasks(){
       showPurchaseToast('Declaração salva.');
     }catch(error){ status.textContent = error.message; }
   });
-  el('declShoppingTableBody') && el('declShoppingTableBody').addEventListener('click', async event => {
+  el('declShoppingTableBody').addEventListener('click', async event => {
     const edit = event.target.closest('[data-decl-edit]');
     const del = event.target.closest('[data-decl-del]');
     if(edit){ const r = declShoppingRows.find(x => x.id === edit.dataset.declEdit); if(r) openDeclShoppingDialog(r); }
@@ -31558,6 +31721,123 @@ function renderHomeTasks(){
       try{ await financeApiRequest('/mall-declarations?id='+encodeURIComponent(del.dataset.declDel), {method:'DELETE'}); await reloadDeclShopping(); showPurchaseToast('Declaração excluída.'); }
       catch(error){ alert(error.message); }
     }
+  });
+
+  // ----- Declaração de Vendas: cadastro em lote -----
+  // Uma linha por loja (pullStoreCompanies: sem Assistência/Depósito). Lojas
+  // que já têm declaração no mês ficam travadas como "JÁ CADASTRADA".
+  let declBatchToken = 0;
+  function declBatchRowValues(tr){
+    const field = name => tr.querySelector('[data-batch-field="'+name+'"]');
+    const hasPct = field('hasPct').checked;
+    const declaredRaw = getCurrencyValue(field('declared'));
+    return {
+      companyId: tr.dataset.batchStore,
+      companyName: fase8CompanyName(tr.dataset.batchStore),
+      realRevenueCents: declMoneyCents(field('real')),
+      contractPercentBps: hasPct ? declPctToBps(field('pct').value) : 0,
+      minimumRentCents: hasPct ? declMoneyCents(field('min')) : 0,
+      declaredCents: declaredRaw === '' ? null : Math.round(Number(declaredRaw) * 100),
+      notes: field('notes').value,
+      hasPct
+    };
+  }
+  // suggestFill: ao mexer em %/mínimo, o declarado acompanha o sugerido
+  // enquanto o usuário não digitou nele.
+  function declBatchRecalc(tr, suggestFill){
+    const field = name => tr.querySelector('[data-batch-field="'+name+'"]');
+    const v = declBatchRowValues(tr);
+    field('pct').disabled = field('min').disabled = !v.hasPct;
+    const d = declShoppingDerive(v);
+    if(suggestFill && field('declared').dataset.touched !== '1'){
+      setCurrencyValue(field('declared'), d.breakpointCents ? d.breakpointCents / 100 : '');
+      v.declaredCents = d.breakpointCents || null;
+    }
+    const after = declShoppingDerive(v);
+    tr.querySelector('[data-batch-out="suggested"]').textContent = after.breakpointCents ? formatCentsBRL(after.breakpointCents) : '—';
+    tr.querySelector('[data-batch-out="rent"]').innerHTML = v.hasPct
+      ? formatCentsBRL(after.percentageRentCents) + (after.alertLevel !== 'none' ? ' <span class="status-pill '+(after.alertLevel === 'declared' ? 'danger' : 'warn')+'">'+(after.alertLevel === 'declared' ? 'DECLARADO' : 'RISCO')+'</span>' : '')
+      : '—';
+  }
+  async function renderDeclBatch(){
+    const body = el('declBatchBody');
+    const month = el('declBatchCompetencia').value;
+    const token = ++declBatchToken;
+    el('declBatchStatus').textContent = '';
+    if(!month){ body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Escolha a competência.</td></tr>'; return; }
+    const stores = pullStoreCompanies();
+    if(!stores.length){ body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma loja cadastrada.</td></tr>'; return; }
+    body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    let ctx;
+    try{ ctx = await declMonthContext(month, true); }
+    catch(error){ if(token === declBatchToken) body.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>'; return; }
+    if(token !== declBatchToken) return;
+    body.innerHTML = stores.map(company => {
+      const c = ctx[company.id] || {};
+      const done = !!c.existingId;
+      const pulled = c.revenueCents != null;
+      const dis = done ? ' disabled' : '';
+      return '<tr data-batch-store="'+escapeHtml(company.id)+'"'+(done ? ' class="is-registered"' : '')+'>'+
+        '<td data-label="LOJA"><strong>'+escapeHtml(company.name)+'</strong>'+(done ? ' <span class="status-pill ok">JÁ CADASTRADA</span>' : '')+'</td>'+
+        '<td data-label="FATURAMENTO REAL"><input data-batch-field="real" aria-label="Faturamento real de '+escapeHtml(company.name)+'"'+(pulled || done ? ' readonly' : '')+dis+' placeholder="'+(pulled ? '' : 'SEM CADASTRO')+'"></td>'+
+        '<td data-label="ALUGUEL %"><input type="checkbox" data-batch-field="hasPct" aria-label="Loja com aluguel percentual"'+(c.lastContractPercentBps ? ' checked' : '')+dis+'></td>'+
+        '<td data-label="%"><input type="number" min="0" max="100" step="0.01" data-batch-field="pct" aria-label="Percentual contratual"'+dis+' value="'+(c.lastContractPercentBps ? c.lastContractPercentBps / 100 : '')+'"></td>'+
+        '<td data-label="MÍNIMO"><input data-batch-field="min" aria-label="Aluguel mínimo"'+dis+'></td>'+
+        '<td data-label="SUGERIDO" data-batch-out="suggested">—</td>'+
+        '<td data-label="DECLARADO"><input data-batch-field="declared" aria-label="Valor declarado de '+escapeHtml(company.name)+'"'+dis+'></td>'+
+        '<td data-label="ALUGUEL % (CALC.)" data-batch-out="rent">—</td>'+
+        '<td data-label="OBSERVAÇÃO"><input data-batch-field="notes" maxlength="2000" aria-label="Observação"'+dis+'></td>'+
+      '</tr>';
+    }).join('');
+    body.querySelectorAll('tr[data-batch-store]').forEach(tr => {
+      const c = ctx[tr.dataset.batchStore] || {};
+      ['real','min','declared'].forEach(name => attachCurrencyMask(tr.querySelector('[data-batch-field="'+name+'"]')));
+      if(c.revenueCents != null) setCurrencyValue(tr.querySelector('[data-batch-field="real"]'), c.revenueCents / 100);
+      if(c.lastMinimumRentCents) setCurrencyValue(tr.querySelector('[data-batch-field="min"]'), c.lastMinimumRentCents / 100);
+      declBatchRecalc(tr, !c.existingId);
+    });
+  }
+  el('declBatchBody').addEventListener('input', event => {
+    const tr = event.target.closest('tr[data-batch-store]');
+    if(!tr) return;
+    if(event.target.dataset.batchField === 'declared') event.target.dataset.touched = '1';
+    declBatchRecalc(tr, ['pct','min'].includes(event.target.dataset.batchField));
+  });
+  el('declBatchBody').addEventListener('change', event => {
+    const tr = event.target.closest('tr[data-batch-store]');
+    if(tr && event.target.dataset.batchField === 'hasPct') declBatchRecalc(tr, true);
+  });
+  el('btnBatchDeclShopping').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    if(!el('declBatchCompetencia').value) el('declBatchCompetencia').value = rhPreviousMonth(financeCurrentMonthKey());
+    renderDeclBatch();
+    el('declBatchDialog').showModal();
+  });
+  el('declBatchCompetencia').addEventListener('change', renderDeclBatch);
+  el('btnCloseDeclBatchDialog').addEventListener('click', () => el('declBatchDialog').close());
+  el('btnCancelDeclBatchDialog').addEventListener('click', () => el('declBatchDialog').close());
+  el('declBatchForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('declBatchStatus');
+    const rows = Array.from(el('declBatchBody').querySelectorAll('tr[data-batch-store]:not(.is-registered)'))
+      .map(declBatchRowValues)
+      .filter(r => r.declaredCents != null)
+      .map(({hasPct, ...r}) => r);
+    if(!rows.length){ status.textContent = 'NENHUMA LOJA COM VALOR DECLARADO.'; return; }
+    const button = el('btnSaveDeclBatch');
+    button.disabled = true;
+    status.textContent = 'Salvando…';
+    try{
+      const res = await financeApiRequest('/mall-declarations/batch', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({competenceMonth: el('declBatchCompetencia').value, rows})});
+      const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+      status.textContent = res.created+' CRIADA(S).'+(skipped.length ? ' PULADAS: '+skipped.map(s => (s.companyName || s.companyId)+' ('+s.reason+')').join('; ')+'.' : '');
+      showPurchaseToast(res.created+' declaração(ões) criada(s).');
+      await reloadDeclShopping();
+      const keepStatus = status.textContent;
+      await renderDeclBatch();
+      status.textContent = keepStatus;
+    }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
   });
 
   // ================= DASHBOARD GERAL (PAINEL) =================

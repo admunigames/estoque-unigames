@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 // Financeiro Fase 8 — Itens Diversos: Controle de Reposição, Recargas de
-// Celulares e Declaração de Shopping. Lógica pura do alerta de aluguel
+// Celulares e Declaração de Vendas (ex-Shopping). Lógica pura do alerta de aluguel
 // percentual + registro dos três módulos.
 
 const mall = await import("../app/lib/mall-declarations.ts");
@@ -20,7 +20,6 @@ test("deriveMallDeclaration: ponto de virada = mínimo / percentual", () => {
   const d = mall.deriveMallDeclaration({
     realRevenueCents: 8_000_000,
     declaredCents: 5_000_000,
-    avgDeclaredCents: 4_000_000,
     contractPercentBps: 700,
     minimumRentCents: 700_000,
   });
@@ -31,7 +30,6 @@ test("deriveMallDeclaration: alerta usa o FATURAMENTO REAL, mesmo com declarado 
   const d = mall.deriveMallDeclaration({
     realRevenueCents: 12_000_000, // acima do ponto de virada (10M)
     declaredCents: 8_000_000, // abaixo do ponto de virada
-    avgDeclaredCents: 8_000_000,
     contractPercentBps: 700,
     minimumRentCents: 700_000,
   });
@@ -43,19 +41,16 @@ test("deriveMallDeclaration: alerta forte quando o próprio declarado passa do p
   const d = mall.deriveMallDeclaration({
     realRevenueCents: 12_000_000,
     declaredCents: 11_000_000,
-    avgDeclaredCents: 8_000_000,
     contractPercentBps: 700,
     minimumRentCents: 700_000,
   });
   assert.equal(d.alertLevel, "declared");
-  assert.equal(d.declaredVsAverageCents, 3_000_000);
 });
 
 test("deriveMallDeclaration: sem percentual/mínimo não há ponto de virada nem alerta", () => {
   const d = mall.deriveMallDeclaration({
     realRevenueCents: 99_999_999,
     declaredCents: 99_999_999,
-    avgDeclaredCents: 0,
     contractPercentBps: 0,
     minimumRentCents: 0,
   });

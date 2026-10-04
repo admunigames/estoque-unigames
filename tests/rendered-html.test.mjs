@@ -4828,3 +4828,33 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
   assert.equal((await call("/api/assistencia/quotes", storeLogin)).status, 403);
   assert.equal((await call("/api/assistencia/defects", storeLogin)).status, 403);
 });
+
+test("Financeiro > Declaração de Vendas: nome novo, campos retirados, lote e ações em lote", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /<h2 class="page-title">Declaração de Vendas<\/h2>/);
+  assert.match(html, /<span class="nav-label">Declaração de Vendas<\/span>/);
+  assert.match(html, /financeiroDeclaracaoShopping:'DECLARAÇÃO DE VENDAS'/);
+  assert.doesNotMatch(html, /title="Declaração de Shopping"|>Declaração de Shopping<|'DECLARAÇÃO DE SHOPPING'/);
+  // Campos retirados do formulário, da tabela e dos filtros.
+  for (const removed of ["declShoppingShopping", "declShoppingNome", "declShoppingDataDecl", "declShoppingMedia", "declShoppingPago"]) {
+    assert.doesNotMatch(html, new RegExp(`id="${removed}"`), removed);
+  }
+  assert.doesNotMatch(html, /<th>Média declarada<\/th>|<th>Valor pago<\/th>|Shopping \/ Loja/);
+  // Automatizações do diálogo.
+  assert.match(html, /class="assist-check" for="declShoppingTemPct"><input type="checkbox" id="declShoppingTemPct"> LOJA COM ALUGUEL PERCENTUAL/);
+  assert.match(html, /PUXADO DO FATURAMENTO CADASTRADO/);
+  assert.match(html, /FATURAMENTO NÃO CADASTRADO PARA ESTE MÊS/);
+  assert.match(html, /id="declShoppingSugerido" readonly/);
+  assert.match(html, /id="declShoppingAluguelPct" readonly/);
+  // Cadastro em lote.
+  assert.match(html, /id="btnBatchDeclShopping" type="button">\+ CADASTRAR EM LOTE</);
+  assert.match(html, /<dialog class="purchase-dialog decl-batch-dialog" id="declBatchDialog"/);
+  assert.match(html, /financeApiRequest\('\/mall-declarations\/batch'/);
+  assert.match(html, /JÁ CADASTRADA/);
+  assert.match(html, /pullStoreCompanies\(\)/);
+  // Barra de ações em lote (componente reutilizável).
+  assert.match(html, /function setupBulkSelection\(bar, body, onAction\)/);
+  assert.match(html, /id="declShoppingBulkBar"[\s\S]*?data-bulk-all> SELECIONAR TODOS[\s\S]*?data-bulk-action="mark-paid"[\s\S]*?data-bulk-action="delete">EXCLUIR SELECIONADOS/);
+  assert.match(html, /financeApiRequest\('\/mall-declarations\/bulk'/);
+  assert.match(html, /\.bulk-check,\.decl-batch-table input\[type="checkbox"\]\{\n\s*width:18px; height:18px; min-height:0;/);
+});
