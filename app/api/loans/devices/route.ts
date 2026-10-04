@@ -1,11 +1,13 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
+import { canSeeAllStores } from "../../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
   id: string;
   displayName: string;
   role: "admin" | "user";
+  companyId: string;
   permissions: string[];
 };
 
@@ -39,6 +41,7 @@ function identity(request: Request): Identity {
     id: safeText(request.headers.get("x-unigames-user-id"), 80),
     displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
     permissions: (request.headers.get("x-unigames-permissions") || "")
       .split(",")
       .map((permission) => permission.trim())
@@ -48,6 +51,16 @@ function identity(request: Request): Identity {
 
 function canAccessLoans(actor: Identity) {
   return actor.role === "admin" || actor.permissions.some((permission) => permission.startsWith("loans:"));
+}
+
+const LOAN_PERMISSIONS = [
+  "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
+];
+
+// O catálogo é compartilhado de propósito, mas a LOJA ATUAL de um aparelho
+// emprestado a OUTRA loja só aparece para quem vê todas as lojas.
+function seesAllStores(actor: Identity) {
+  return LOAN_PERMISSIONS.some((permission) => canSeeAllStores(actor, permission));
 }
 
 function canManageCatalog(actor: Identity) {
@@ -121,7 +134,13 @@ export async function GET(request: Request) {
       ? `${DEVICE_SELECT} ORDER BY name ASC`
       : `${DEVICE_SELECT} WHERE status='available' ORDER BY name ASC`;
     const result = await database.prepare(query).all<DeviceRow>();
-    return jsonResponse({ items: result.results ?? [] });
+    const allStores = seesAllStores(actor);
+    const items = (result.results ?? []).map((item) =>
+      allStores || !item.currentCompanyId || item.currentCompanyId === actor.companyId
+        ? item
+        : { ...item, currentCompanyId: "", currentCompanyName: "OUTRA LOJA" },
+    );
+    return jsonResponse({ items });
   } catch (error) {
     console.error("Não foi possível carregar os aparelhos de empréstimo.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR OS APARELHOS." }, 500);

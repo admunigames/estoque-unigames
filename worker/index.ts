@@ -1561,6 +1561,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
 
 function liveConnectionGroups(user: AuthenticatedUser): string[] {
   const groups: string[] = [];
+  // Os grupos abaixo recebem avisos de TODAS as lojas — só para login sem
+  // loja vinculada (regra única de app/lib/access-scope.ts). Login com loja
+  // recebe só os avisos da própria loja (tag company:<id>), mesmo com a
+  // permissão. Os avisos não levam dados (só "recarregue"), mas o escopo
+  // fica igual ao das APIs.
+  if (user.companyId) return groups;
   // Canal de aviso em tempo real p/ quem pode receber/preparar captações —
   // baseado só na permissão granular, não mais em setor/grupo/nome de
   // usuário (o fluxo especial de "assistência" foi removido).

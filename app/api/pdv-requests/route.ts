@@ -1,5 +1,6 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
+import { canActOnStore, canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type PdvRequestType =
@@ -15,10 +16,13 @@ type Identity = {
   id: string;
   displayName: string;
   role: "admin" | "user";
+  companyId: string;
   permissions: string[];
 };
 type PdvRequestRow = {
   id: string;
+  companyId: string;
+  companyName: string;
   type: PdvRequestType;
   saleId: string;
   requesterName: string;
@@ -89,6 +93,7 @@ function identity(request: Request): Identity {
     id: safeText(request.headers.get("x-unigames-user-id"), 80),
     displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
     permissions: (request.headers.get("x-unigames-permissions") || "")
       .split(",")
       .map((permission) => permission.trim())
@@ -105,6 +110,42 @@ function canAccessPdvRequests(actor: Identity) {
     actor.role === "admin" ||
     actor.permissions.some((permission) => permission.startsWith("pdv_requests:"))
   );
+}
+
+const PDV_PERMISSIONS = [
+  "pdv_requests:view",
+  "pdv_requests:create",
+  "pdv_requests:status",
+  "pdv_requests:delete",
+];
+
+// Escopo por loja (regra única de app/lib/access-scope.ts): login com loja
+// vinculada só vê/age nas solicitações da própria loja; sem loja + qualquer
+// permissão do módulo (ou admin) → todas as lojas.
+function seesAllStores(actor: Identity) {
+  return PDV_PERMISSIONS.some((permission) => canSeeAllStores(actor, permission));
+}
+
+async function companyName(database: D1Database, companyId: string) {
+  try {
+    const row = await database
+      .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
+      .first<{ value: string }>();
+    const parsed = row?.value ? JSON.parse(row.value) : [];
+    if (!Array.isArray(parsed)) return "";
+    const company = parsed.find(
+      (item): item is { id: string; name: string } =>
+        Boolean(item) &&
+        typeof item === "object" &&
+        "id" in item &&
+        item.id === companyId &&
+        "name" in item &&
+        typeof item.name === "string",
+    );
+    return company?.name?.trim().slice(0, 120) || "";
+  } catch {
+    return "";
+  }
 }
 
 function sameOrigin(request: Request) {
@@ -165,6 +206,8 @@ function toRow(row: PdvRequestRow) {
   }
   return {
     id: row.id,
+    companyId: row.companyId,
+    companyName: row.companyName,
     type: row.type,
     saleId: row.saleId,
     requesterName: row.requesterName,
@@ -180,7 +223,8 @@ function toRow(row: PdvRequestRow) {
 }
 
 const PDV_REQUEST_SELECT = `
-  SELECT id, type, sale_id AS saleId, requester_name AS requesterName,
+  SELECT id, company_id AS companyId, company_name AS companyName,
+         type, sale_id AS saleId, requester_name AS requesterName,
          details_json AS detailsJson, status,
          created_by AS createdBy, created_by_name AS createdByName,
          created_at AS createdAt, updated_by AS updatedBy,
@@ -196,11 +240,19 @@ export async function GET(request: Request) {
   }
 
   try {
+    const allStores = seesAllStores(actor);
+    if (!allStores && !hasCompany(actor.companyId)) {
+      return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
+    }
     const database = await getD1();
-    const result = await database
-      .prepare(`${PDV_REQUEST_SELECT} ORDER BY CASE status WHEN 'open' THEN 0 ELSE 1 END, created_at DESC`)
-      .all<PdvRequestRow>();
-    return jsonResponse({ requests: (result.results ?? []).map(toRow) });
+    const order = "ORDER BY CASE status WHEN 'open' THEN 0 ELSE 1 END, created_at DESC";
+    const result = allStores
+      ? await database.prepare(`${PDV_REQUEST_SELECT} ${order}`).all<PdvRequestRow>()
+      : await database
+          .prepare(`${PDV_REQUEST_SELECT} WHERE company_id=?1 ${order}`)
+          .bind(actor.companyId)
+          .all<PdvRequestRow>();
+    return jsonResponse({ requests: (result.results ?? []).map(toRow), allStores });
   } catch (error) {
     console.error("Não foi possível carregar as alterações PDV.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR AS SOLICITAÇÕES." }, 500);
@@ -244,18 +296,35 @@ export async function POST(request: Request) {
       );
     }
 
+    // Login com loja grava sempre na própria loja (ignora o que vier do
+    // cliente); sem loja escolhe a loja no formulário.
+    const canChooseCompany = canSeeAllStores(actor, "pdv_requests:create");
+    const companyId = canChooseCompany ? safeText(body.companyId, 80) : actor.companyId;
+    if (!hasCompany(companyId)) {
+      return jsonResponse(
+        { error: canChooseCompany ? "ESCOLHA A LOJA." : NO_COMPANY_ERROR },
+        400,
+      );
+    }
+
     const database = await getD1();
+    const resolvedCompanyName = await companyName(database, companyId);
+    if (!resolvedCompanyName) {
+      return jsonResponse({ error: "LOJA NÃO ENCONTRADA." }, 400);
+    }
     const id = crypto.randomUUID();
     await database
       .prepare(
         `INSERT INTO pdv_change_requests
-          (id, type, sale_id, requester_name, details_json, status,
+          (id, company_id, company_name, type, sale_id, requester_name, details_json, status,
            created_by, created_by_name, created_at,
            updated_by, updated_by_name, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, 'open', ?6, ?7, CURRENT_TIMESTAMP, '', '', CURRENT_TIMESTAMP)`,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'open', ?8, ?9, CURRENT_TIMESTAMP, '', '', CURRENT_TIMESTAMP)`,
       )
       .bind(
         id,
+        companyId,
+        resolvedCompanyName,
         type,
         saleId,
         requesterName,
@@ -296,10 +365,11 @@ export async function PATCH(request: Request) {
 
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT id FROM pdv_change_requests WHERE id=?1 LIMIT 1")
+      .prepare("SELECT id, company_id AS companyId FROM pdv_change_requests WHERE id=?1 LIMIT 1")
       .bind(id)
-      .first<{ id: string }>();
-    if (!existing) {
+      .first<{ id: string; companyId: string }>();
+    // Solicitação de outra loja responde igual a inexistente.
+    if (!existing || !canActOnStore(actor, "pdv_requests:status", existing.companyId)) {
       return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
     }
     await database
@@ -335,6 +405,13 @@ export async function DELETE(request: Request) {
 
   try {
     const database = await getD1();
+    const existing = await database
+      .prepare("SELECT id, company_id AS companyId FROM pdv_change_requests WHERE id=?1 LIMIT 1")
+      .bind(id)
+      .first<{ id: string; companyId: string }>();
+    if (!existing || !canActOnStore(actor, "pdv_requests:delete", existing.companyId)) {
+      return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
+    }
     await database.prepare("DELETE FROM pdv_change_requests WHERE id=?1").bind(id).run();
     return jsonResponse({ deleted: true });
   } catch (error) {

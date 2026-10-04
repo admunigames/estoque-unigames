@@ -577,6 +577,10 @@ export const pdvChangeRequests = pgTable(
     saleId: text("sale_id").notNull(),
     requesterName: text("requester_name").notNull().default(""),
     detailsJson: text("details_json").notNull().default("{}"),
+    // Loja da solicitação (migration 0079). Vazio = criada por login sem
+    // loja antes da 0079 — visível só para quem vê todas as lojas.
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
     status: text("status").notNull().default("open"),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
@@ -588,6 +592,11 @@ export const pdvChangeRequests = pgTable(
   (table) => [
     index("pdv_change_requests_sale_idx").on(table.saleId),
     index("pdv_change_requests_status_created_idx").on(table.status, table.createdAt),
+    index("pdv_change_requests_company_status_created_idx").on(
+      table.companyId,
+      table.status,
+      table.createdAt,
+    ),
   ],
 );
 

@@ -10,6 +10,7 @@ import {
   MAX_CAPTURE_CONTROLLERS,
   can,
   canAccessCaptures,
+  canActOnCapture,
   companyName,
   identity,
   isValidPhotoKey,
@@ -152,8 +153,10 @@ export async function GET(request: Request) {
     }
     // Quem só recebe/prepara (sem ver o quadro completo) não precisa ver
     // jogos, que pulam direto essa etapa e já entram "disponíveis para
-    // separação".
-    const result = actor.role !== "admin" && actor.permissions.includes("captures:receive")
+    // separação". Login com loja continua preso à própria loja mesmo com
+    // captures:receive (a fila geral é da equipe sem loja).
+    const receiver = actor.role !== "admin" && actor.permissions.includes("captures:receive");
+    const result = receiver && allStores
       ? await database
           .prepare(
             `${CAPTURE_SELECT}
@@ -177,7 +180,7 @@ export async function GET(request: Request) {
       : await database
           .prepare(
             `${CAPTURE_SELECT}
-             WHERE origin_company_id=?1
+             WHERE origin_company_id=?1${receiver ? " AND category <> 'jogo'" : ""}
              ORDER BY updated_at DESC`,
           )
           .bind(actor.companyId)
@@ -371,7 +374,12 @@ export async function PATCH(request: Request) {
       .prepare(`${CAPTURE_SELECT} WHERE id=?1 LIMIT 1`)
       .bind(id)
       .first<CaptureRow>();
-    if (!existing) return jsonResponse({ error: "PRODUTO NÃO ENCONTRADO." }, 404);
+    // Captação de outra loja responde igual a inexistente (login com loja só
+    // age nas da própria loja, sem exceção por permissão).
+    const actionPermission = action === "assign" ? "captures:assign" : "captures:receive";
+    if (!existing || !canActOnCapture(actor, actionPermission, existing)) {
+      return jsonResponse({ error: "PRODUTO NÃO ENCONTRADO." }, 404);
+    }
 
     if (action === "receive" || action === "ready") {
       const allowedToReceive =
@@ -527,7 +535,7 @@ export async function DELETE(request: Request) {
       .prepare(`${CAPTURE_SELECT} WHERE id=?1 LIMIT 1`)
       .bind(id)
       .first<CaptureRow>();
-    if (!existing) {
+    if (!existing || !canActOnCapture(actor, "captures:delete", existing)) {
       return jsonResponse({ error: "PRODUTO NÃO ENCONTRADO." }, 404);
     }
 

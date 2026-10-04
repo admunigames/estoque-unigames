@@ -1,6 +1,6 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
-import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
+import { canActOnStore, canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -475,10 +475,11 @@ export async function DELETE(request: Request) {
 
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT id FROM supply_items WHERE id=?1 LIMIT 1")
+      .prepare("SELECT id, company_id AS companyId FROM supply_items WHERE id=?1 LIMIT 1")
       .bind(id)
-      .first<{ id: string }>();
-    if (!existing) {
+      .first<{ id: string; companyId: string }>();
+    // Insumo de outra loja responde igual a inexistente.
+    if (!existing || !canActOnStore(actor, "supplies:delete", existing.companyId)) {
       return jsonResponse({ error: "INSUMO NÃO ENCONTRADO." }, 404);
     }
 

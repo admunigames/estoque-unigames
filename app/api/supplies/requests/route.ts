@@ -3,6 +3,7 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import {
   ASSISTANCE_SUPPLIES_COMPANY_ID,
   ASSISTANCE_SUPPLIES_COMPANY_NAME,
+  canActOnStore,
   canSeeAllStores,
   NO_COMPANY_ERROR,
   suppliesActingCompanyId,
@@ -611,7 +612,10 @@ export async function PATCH(request: Request) {
         companyId: string;
         companyName: string;
       }>();
-    if (!item) return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
+    // Login com loja só separa itens da própria loja (outra loja = não encontrado).
+    if (!item || !canActOnStore(actor, "supplies:stock_out", item.companyId)) {
+      return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
+    }
     if (item.separated) {
       return jsonResponse({ error: "ESTE ITEM JÁ FOI SEPARADO." }, 409);
     }
@@ -765,10 +769,11 @@ export async function DELETE(request: Request) {
 
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT id FROM supply_requests WHERE id=?1 LIMIT 1")
+      .prepare("SELECT id, company_id AS companyId FROM supply_requests WHERE id=?1 LIMIT 1")
       .bind(id)
-      .first<{ id: string }>();
-    if (!existing) {
+      .first<{ id: string; companyId: string }>();
+    // Solicitação de outra loja responde igual a inexistente.
+    if (!existing || !canActOnStore(actor, "supplies:delete", existing.companyId)) {
       return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
     }
 

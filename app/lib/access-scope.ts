@@ -53,6 +53,22 @@ export function resolveStoreScope(
   return { blocked: true };
 }
 
+/**
+ * O ator pode agir sobre um registro já existente da loja `companyId`?
+ * Admin ou "sem loja + permissão" → qualquer loja; com loja vinculada →
+ * só a própria (sem exceção por setor, grupo ou permissão). Usado por
+ * PATCH/DELETE/anexos que buscam o registro pelo id — quem estiver fora
+ * do escopo deve receber o mesmo 404 de "não encontrado".
+ */
+export function canActOnStore(
+  actor: ScopeActor,
+  requiredPermission: string,
+  companyId: string,
+): boolean {
+  if (canSeeAllStores(actor, requiredPermission)) return true;
+  return hasCompany(actor.companyId) && actor.companyId === companyId;
+}
+
 export const NO_COMPANY_ERROR = "SEU USUÁRIO PRECISA ESTAR VINCULADO A UMA LOJA.";
 
 /**

@@ -1,5 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
+import { canActOnStore, canSeeAllStores } from "../../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -173,7 +174,15 @@ export async function GET(request: Request) {
       bindings.push(productId);
       conditions.push(`sm.product_id=?${bindings.length}`);
     }
-    if (isManager && COMPANY_PATTERN.test(requestedCompanyId)) {
+    // Gestor com loja vinculada só vê movimentações da própria loja; sem
+    // loja (depósito central) ou admin vê todas e pode filtrar a loja.
+    const managerAllStores = isManager &&
+      ["supplies:manage_catalog", "supplies:stock_in", "supplies:stock_out", "supplies:delete"]
+        .some((permission) => canSeeAllStores(actor, permission));
+    if (isManager && !managerAllStores) {
+      bindings.push(actor.companyId);
+      conditions.push(`sm.company_id=?${bindings.length}`);
+    } else if (isManager && COMPANY_PATTERN.test(requestedCompanyId)) {
       bindings.push(requestedCompanyId);
       conditions.push(`sm.company_id=?${bindings.length}`);
     }
@@ -316,12 +325,13 @@ export async function DELETE(request: Request) {
     const database = await getD1();
     const movement = await database
       .prepare(
-        `SELECT id, product_id AS productId, type, quantity
+        `SELECT id, product_id AS productId, type, quantity, company_id AS companyId
          FROM supply_stock_movements WHERE id=?1 LIMIT 1`,
       )
       .bind(id)
-      .first<{ id: string; productId: string; type: MovementType; quantity: number }>();
-    if (!movement) {
+      .first<{ id: string; productId: string; type: MovementType; quantity: number; companyId: string }>();
+    // Movimentação de outra loja responde igual a inexistente.
+    if (!movement || !canActOnStore(actor, "supplies:delete", movement.companyId)) {
       return jsonResponse({ error: "MOVIMENTAÇÃO NÃO ENCONTRADA." }, 404);
     }
 

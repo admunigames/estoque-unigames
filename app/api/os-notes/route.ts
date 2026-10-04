@@ -1,6 +1,6 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
-import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
+import { canActOnStore, canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
 import { documentsBucket } from "../documents/shared";
 
 type JsonMap = Record<string, unknown>;
@@ -295,10 +295,11 @@ export async function DELETE(request: Request) {
   try {
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT r2_key AS r2Key FROM os_notes WHERE id=?1 LIMIT 1")
+      .prepare("SELECT company_id AS companyId, r2_key AS r2Key FROM os_notes WHERE id=?1 LIMIT 1")
       .bind(id)
-      .first<{ r2Key: string }>();
-    if (!existing) return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
+      .first<{ companyId: string; r2Key: string }>();
+    // Solicitação de outra loja responde igual a inexistente.
+    if (!existing || !canActOnStore(actor, "os_notes:delete", existing.companyId)) return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
 
     await database.prepare("DELETE FROM os_notes WHERE id=?1").bind(id).run();
     if (existing.r2Key) {

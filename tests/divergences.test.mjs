@@ -344,9 +344,13 @@ test("escopo: loja A não vê/edita/exclui pedido da loja B; usuário sem loja v
   assert.equal(rowA.itemCount, 1);
   assert.equal(rowA.itemsByStatus.nao_visto, 1);
 
-  // Setor administrativo vê todas mesmo com loja vinculada (regra de Saídas).
+  // Login com loja continua preso à própria loja mesmo no setor
+  // Administrativo (sem exceção por setor — app/lib/access-scope.ts).
   const administrative = { ...STORE_A_USER, sector: "administrative" };
-  assert.equal((await detail(administrative, idB)).status, 200);
+  assert.equal((await detail(administrative, idB)).status, 404);
+  const adminSectorList = await (await call(listRoute.GET, administrative, "GET", BASE)).json();
+  assert.equal(adminSectorList.allStores, false);
+  assert.ok(adminSectorList.requests.every((row) => row.companyId === STORE_A));
 
   // Sem loja e sem a permissão de criar para todas: precisa escolher a loja.
   const noStoreCreator = { id: "adm", companyId: "", permissions: ["divergencias:create"] };
@@ -489,12 +493,12 @@ test("dashboard: produtos mais divergentes destacam os que aparecem em mais de u
   assert.deepEqual(fone.stores.map((store) => [store.companyName, store.divergence]), [["GUARARAPES", 1], ["RIOMAR", -2]]);
   assert.ok(body.byStore.some((store) => store.companyName === "RIOMAR" && store.missing >= 2));
   assert.ok(body.totals.requests >= 2);
-  // DASHBOARD só para acesso geral: usuário com loja vinculada recebe 403
-  // (setor Administrativo com loja continua vendo, por ver todas as lojas).
+  // DASHBOARD só para acesso geral: usuário com loja vinculada recebe 403,
+  // inclusive no setor Administrativo (sem exceção por setor).
   const storeView = await call(dashboardRoute.GET, STORE_A_USER, "GET", `${BASE}/dashboard`);
   assert.equal(storeView.status, 403);
   assert.equal((await storeView.json()).error, "O DASHBOARD É SÓ PARA QUEM TEM ACESSO GERAL.");
-  assert.equal((await call(dashboardRoute.GET, { ...STORE_A_USER, sector: "administrative" }, "GET", `${BASE}/dashboard`)).status, 200);
+  assert.equal((await call(dashboardRoute.GET, { ...STORE_A_USER, sector: "administrative" }, "GET", `${BASE}/dashboard`)).status, 403);
   // Período no futuro: nada.
   const future = await (await call(dashboardRoute.GET, STOCK_USER, "GET", `${BASE}/dashboard?from=2099-01-01&to=2099-01-31`)).json();
   assert.equal(future.totals.requests, 0);

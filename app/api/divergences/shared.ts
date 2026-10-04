@@ -1,10 +1,11 @@
-import { canSeeAllStores, hasCompany } from "../../lib/access-scope";
+import { canActOnStore, canSeeAllStores } from "../../lib/access-scope";
 import { RESOLVED_ITEM_STATUSES } from "../../lib/divergences";
 
 // Base comum das rotas de Estoque > Divergências — mesmo estilo de
 // app/api/outputs/route.ts: identidade só pelos headers x-unigames-*
 // (setados pelo Worker), sameOrigin em toda escrita e escopo por loja via
-// canSeeAllStores() + setor administrativo.
+// canSeeAllStores() (regra única de app/lib/access-scope.ts, sem exceção
+// por setor).
 
 export type JsonMap = Record<string, unknown>;
 
@@ -132,15 +133,9 @@ export function canAny(actor: Identity, permissions: DivergencePermission[]) {
   return permissions.some((permission) => can(actor, permission));
 }
 
-// Mesma regra histórica de Saídas: setor Administrativo vê todas as lojas,
-// além da regra genérica de canSeeAllStores() (sem loja + permissão).
-export function isAdministrativeActor(actor: Identity) {
-  return actor.sector === "administrative";
-}
-
-/** Vê/age em todas as lojas para a ação dada (admin, sem loja + permissão, ou administrativo). */
+/** Vê/age em todas as lojas para a ação dada (admin, ou sem loja + permissão). */
 export function allStoresFor(actor: Identity, permission: DivergencePermission) {
-  return canSeeAllStores(actor, permission) || isAdministrativeActor(actor);
+  return canSeeAllStores(actor, permission);
 }
 
 /** Escopo de leitura: todas as lojas se QUALQUER permissão dada amplia o alcance. */
@@ -150,8 +145,7 @@ export function allStoresForAny(actor: Identity, permissions: DivergencePermissi
 
 /** Ator pode agir neste pedido (loja dele, ou todas as lojas para a ação). */
 export function inScope(actor: Identity, permission: DivergencePermission, companyId: string) {
-  if (allStoresFor(actor, permission)) return true;
-  return hasCompany(actor.companyId) && actor.companyId === companyId;
+  return canActOnStore(actor, permission, companyId);
 }
 
 export function sameOrigin(request: Request) {

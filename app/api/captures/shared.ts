@@ -1,4 +1,4 @@
-import { canSeeAllStores } from "../../lib/access-scope";
+import { canActOnStore, canSeeAllStores } from "../../lib/access-scope";
 
 export type JsonMap = Record<string, unknown>;
 export type CaptureStatus = "submitted" | "received" | "ready" | "assigned";
@@ -125,20 +125,22 @@ export function canAccessCaptures(actor: Identity) {
 }
 
 export function canSeeCapturedValue(actor: Identity, row: CaptureRow) {
+  return canActOnStore(actor, "captures:view", row.originCompanyId);
+}
+
+// Quem recebe/prepara (equipe sem loja) vê a foto de qualquer loja; login
+// com loja só vê a da própria, mesmo tendo captures:receive.
+export function canSeePhoto(actor: Identity, row: CaptureRow) {
   return (
-    actor.role === "admin" ||
-    actor.companyId === row.originCompanyId ||
-    canSeeAllStores(actor, "captures:view")
+    canActOnStore(actor, "captures:view", row.originCompanyId) ||
+    canSeeAllStores(actor, "captures:receive")
   );
 }
 
-export function canSeePhoto(actor: Identity, row: CaptureRow) {
-  return (
-    actor.role === "admin" ||
-    actor.companyId === row.originCompanyId ||
-    actor.permissions.includes("captures:receive") ||
-    canSeeAllStores(actor, "captures:view")
-  );
+// Ação que exige a permissão dada sobre uma captação existente: login com
+// loja só age nas captações originadas na própria loja.
+export function canActOnCapture(actor: Identity, permission: string, row: CaptureRow) {
+  return canActOnStore(actor, permission, row.originCompanyId);
 }
 
 export function serializeCaptureRow(actor: Identity, row: CaptureRow) {

@@ -1,8 +1,9 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
+import { canSeeAllStores } from "../../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
-type Identity = { role: "admin" | "user"; permissions: string[] };
+type Identity = { role: "admin" | "user"; companyId: string; permissions: string[] };
 
 function jsonResponse(body: JsonMap, status = 200) {
   return Response.json(body, {
@@ -17,6 +18,7 @@ function jsonResponse(body: JsonMap, status = 200) {
 function identity(request: Request): Identity {
   return {
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    companyId: (request.headers.get("x-unigames-company-id") || "").trim().slice(0, 80),
     permissions: (request.headers.get("x-unigames-permissions") || "")
       .split(",")
       .map((permission) => permission.trim())
@@ -29,6 +31,13 @@ function identity(request: Request): Identity {
  * pendentes, estoque baixo, solicitações da semana) — qualquer
  * permissão de gestão de Insumos concede esse alcance, não só admin.
  */
+const MANAGER_PERMISSIONS = [
+  "supplies:manage_catalog",
+  "supplies:stock_in",
+  "supplies:stock_out",
+  "supplies:delete",
+];
+
 function isSuppliesManager(actor: Identity) {
   return (
     actor.role === "admin" ||
@@ -99,6 +108,10 @@ export async function GET(request: Request) {
   try {
     const database = await getD1();
 
+    // Gestor com loja vinculada vê só as solicitações da própria loja
+    // (estoque baixo/zerado é do depósito central, compartilhado).
+    const allStores = MANAGER_PERMISSIONS.some((permission) => canSeeAllStores(actor, permission));
+    const storeFilter = allStores ? "" : " AND r.company_id=?2";
     const requestRows = await database
       .prepare(
         `SELECT r.id, r.company_name AS companyName,
@@ -107,11 +120,11 @@ export async function GET(request: Request) {
                 SUM(CASE WHEN i.separated=1 AND i.received_status IN ('received','not_received') THEN 1 ELSE 0 END) AS receivedItems
          FROM supply_requests r
          LEFT JOIN supply_request_items i ON i.request_id = r.id
-         WHERE r.week_start=?1
+         WHERE r.week_start=?1${storeFilter}
          GROUP BY r.id, r.company_name
          ORDER BY r.company_name ASC`,
       )
-      .bind(weekStart)
+      .bind(...(allStores ? [weekStart] : [weekStart, actor.companyId]))
       .all<RequestProgressRow>();
     const requests = requestRows.results ?? [];
 

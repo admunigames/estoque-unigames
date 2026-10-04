@@ -1,11 +1,13 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
+import { canActOnStore } from "../../../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
   id: string;
   displayName: string;
   role: "admin" | "user";
+  companyId: string;
   permissions: string[];
 };
 
@@ -37,6 +39,7 @@ function identity(request: Request): Identity {
     id: safeText(request.headers.get("x-unigames-user-id"), 80),
     displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
     permissions: (request.headers.get("x-unigames-permissions") || "")
       .split(",")
       .map((permission) => permission.trim())
@@ -46,6 +49,15 @@ function identity(request: Request): Identity {
 
 function canManageRequests(actor: Identity) {
   return actor.role === "admin" || actor.permissions.includes("loans:manage_requests");
+}
+
+// Gestor com loja vinculada só vê/responde solicitações da própria loja.
+async function requestInScope(database: D1Database, actor: Identity, requestId: string) {
+  const row = await database
+    .prepare("SELECT company_id AS companyId FROM loan_requests WHERE id=?1 LIMIT 1")
+    .bind(requestId)
+    .first<{ companyId: string }>();
+  return row ? canActOnStore(actor, "loans:manage_requests", row.companyId) : false;
 }
 
 function sameOrigin(request: Request) {
@@ -99,6 +111,9 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
+    if (!(await requestInScope(database, actor, requestId))) {
+      return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
+    }
     const result = await database
       .prepare(`${UPDATE_SELECT} WHERE request_id=?1 ORDER BY created_at ASC`)
       .bind(requestId)
@@ -129,11 +144,7 @@ export async function POST(request: Request) {
     if (!message) return jsonResponse({ error: "ESCREVA UMA MENSAGEM." }, 400);
 
     const database = await getD1();
-    const existing = await database
-      .prepare("SELECT id FROM loan_requests WHERE id=?1 LIMIT 1")
-      .bind(requestId)
-      .first<{ id: string }>();
-    if (!existing) {
+    if (!(await requestInScope(database, actor, requestId))) {
       return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
     }
 

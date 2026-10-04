@@ -1,6 +1,6 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
-import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
+import { canActOnStore, canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type OutputStatus = "requested" | "completed";
@@ -78,14 +78,9 @@ function canAccessOutputs(actor: Identity) {
   );
 }
 
-// Usuários do setor Administrativo não têm loja vinculada (companyId vazio)
-// e continuam vendo todas as lojas independente de quais permissões
-// granulares tenham — regra histórica mantida como reforço além da regra
-// genérica em canSeeAllStores() (que já cobre o caso comum de "sem loja,
-// mas com a permissão do módulo").
-function isAdministrativeActor(actor: Identity) {
-  return actor.sector === "administrative";
-}
+// Escopo por loja: só a regra única de app/lib/access-scope.ts. Login com
+// loja vinculada vê/age só na própria loja, sem exceção por setor; sem loja
+// + permissão do módulo (ou admin) → todas as lojas.
 
 function sameOrigin(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
@@ -154,7 +149,7 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const allStores = canSeeAllStores(actor, "outputs:view") || isAdministrativeActor(actor);
+    const allStores = canSeeAllStores(actor, "outputs:view");
     if (!allStores && !hasCompany(actor.companyId)) {
       return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
     }
@@ -198,7 +193,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const requestedCompanyId = safeText(body.companyId, 80);
-    const canChooseCompany = canSeeAllStores(actor, "outputs:create") || isAdministrativeActor(actor);
+    const canChooseCompany = canSeeAllStores(actor, "outputs:create");
     const companyId = canChooseCompany ? requestedCompanyId : actor.companyId;
     if (!hasCompany(companyId)) {
       return jsonResponse(
@@ -279,7 +274,8 @@ export async function PATCH(request: Request) {
       .prepare(`${OUTPUT_SELECT} WHERE id=?1 LIMIT 1`)
       .bind(id)
       .first<OutputRow>();
-    if (!existing) {
+    // Registro de outra loja responde igual a inexistente (não revela que existe).
+    if (!existing || !canActOnStore(actor, "outputs:complete", existing.companyId)) {
       return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
     }
     if (existing.status !== "requested") {
@@ -325,7 +321,7 @@ export async function DELETE(request: Request) {
       .prepare(`${OUTPUT_SELECT} WHERE id=?1 LIMIT 1`)
       .bind(id)
       .first<OutputRow>();
-    if (!existing) {
+    if (!existing || !canActOnStore(actor, "outputs:delete", existing.companyId)) {
       return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
     }
 

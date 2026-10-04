@@ -1069,7 +1069,8 @@ test("cadastra jogos direto para separação e os remove da fila da assistência
   assert.match(captureShared, /"PS4",\s+"PS3",\s+"PS5",\s+"Nintendo Switch",\s+"Xbox One\/Series"/);
   assert.match(captureShared, /GAME_CONDITIONS = new Set<GameCondition>\(\["Novo", "Semi Novo"\]\)/);
   assert.match(captureShared, /game_name AS gameName/);
-  assert.match(captureShared, /actor\.companyId === row\.originCompanyId \|\|\s*canSeeAllStores\(actor, "captures:view"\)/);
+  // Valor captado: loja de origem ou quem vê todas (canActOnStore, regra única).
+  assert.match(captureShared, /return canActOnStore\(actor, "captures:view", row\.originCompanyId\);/);
 
   assert.match(html, /<option value="jogo">JOGOS<\/option>/);
   assert.match(html, /id="captureGameName"/);
@@ -1252,7 +1253,7 @@ test("registra Saídas Gerais Solicitadas por loja e preserva o histórico do ad
   assert.match(workerSource, /env\.DB\.prepare\("SELECT \* FROM defective_outputs"\)\.all\(\)/);
   assert.match(workerSource, /defectiveOutputs: defectiveOutputs\.results \?\? \[\]/);
 
-  assert.match(route, /const canChooseCompany = canSeeAllStores\(actor, "outputs:create"\) \|\| isAdministrativeActor\(actor\)/);
+  assert.match(route, /const canChooseCompany = canSeeAllStores\(actor, "outputs:create"\)/);
   assert.match(route, /responsible_name AS responsibleName/);
   assert.match(route, /const responsibleName = safeText\(body\.responsibleName, 120\)/);
   assert.match(route, /INFORME O RESPONSÁVEL PELA SAÍDA/);
@@ -1284,7 +1285,10 @@ test("usuário sem loja do setor Administrativo vê, altera status e exclui saí
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(route, /function isAdministrativeActor\(actor: Identity\) \{\s*return actor\.sector === "administrative";/);
+  // Sem atalho por setor: login com loja vinculada fica na própria loja
+  // mesmo no setor Administrativo (regra única de app/lib/access-scope.ts).
+  assert.doesNotMatch(route, /isAdministrativeActor/);
+  assert.match(route, /canActOnStore\(actor, "outputs:delete", existing\.companyId\)/);
   assert.match(route, /const result = allStores/);
   assert.match(route, /!can\(actor, "outputs:delete"\)/);
   assert.match(route, /VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR SAÍDAS/);
@@ -1316,10 +1320,10 @@ test("Saídas: loja vê só a própria, conta sem loja com permissões completas
   // ação também vê/age em todas as lojas — via o helper único
   // canSeeAllStores() em app/lib/access-scope.ts, reaproveitado por todos os
   // módulos (não mais uma checagem redundante por módulo).
-  assert.match(route, /import \{ canSeeAllStores, hasCompany, NO_COMPANY_ERROR \} from "\.\.\/\.\.\/lib\/access-scope"/);
+  assert.match(route, /import \{ canActOnStore, canSeeAllStores, hasCompany, NO_COMPANY_ERROR \} from "\.\.\/\.\.\/lib\/access-scope"/);
   assert.match(
     route,
-    /const allStores = canSeeAllStores\(actor, "outputs:view"\) \|\| isAdministrativeActor\(actor\);/,
+    /const allStores = canSeeAllStores\(actor, "outputs:view"\);/,
   );
   assert.doesNotMatch(route, /hasFullOutputsAccess/);
 
@@ -1349,14 +1353,14 @@ test("Saídas — Regra 1 (usuário com loja só cadastra/visualiza/histórico d
   // GET (visualizar/histórico): filtra por company_id quando não é allStores.
   assert.match(
     route,
-    /const allStores = canSeeAllStores\(actor, "outputs:view"\) \|\| isAdministrativeActor\(actor\);/,
+    /const allStores = canSeeAllStores\(actor, "outputs:view"\);/,
   );
   assert.match(route, /WHERE company_id=\?1/);
   assert.match(route, /\.bind\(actor\.companyId\)/);
   // POST (cadastrar): usuário com loja nunca escolhe outra empresa.
   assert.match(
     route,
-    /const canChooseCompany = canSeeAllStores\(actor, "outputs:create"\) \|\| isAdministrativeActor\(actor\);/,
+    /const canChooseCompany = canSeeAllStores\(actor, "outputs:create"\);/,
   );
   assert.match(route, /const companyId = canChooseCompany \? requestedCompanyId : actor\.companyId;/);
   // Concluir é restrito só pela permissão granular outputs:complete, nunca
@@ -1393,7 +1397,7 @@ test("Saídas: usuário sem loja e sem ser admin (ex.: Assistência com outputs:
   // isoladamente em nenhum ponto desta decisão.
   assert.match(
     route,
-    /const canChooseCompany = canSeeAllStores\(actor, "outputs:create"\) \|\| isAdministrativeActor\(actor\);/,
+    /const canChooseCompany = canSeeAllStores\(actor, "outputs:create"\);/,
   );
   assert.doesNotMatch(route, /actor\.role === "admin" \? requestedCompanyId/);
   // A loja escolhida (requestedCompanyId) é a que efetivamente é gravada.
@@ -1573,8 +1577,8 @@ test("registra Entradas Gerais Solicitadas por loja e preserva o histórico do a
     /purchases: \[\s*"tasks:view", "tasks:manage",\s*"missions:view", "missions:notify",\s*"captures:view", "captures:create",\s*"outputs:view", "outputs:create",\s*"supplies:view", "supplies:request", "supplies:receive", "supplies:stock_out",\s*"purchases:view", "purchases:create", "purchases:edit", "purchases:delete",\s*\]/,
   );
 
-  assert.match(route, /const canChooseCompany = canSeeAllStores\(actor, "inputs:create"\) \|\| isAdministrativeActor\(actor\)/);
-  assert.match(route, /const allStores = canSeeAllStores\(actor, "inputs:view"\) \|\| isAdministrativeActor\(actor\)/);
+  assert.match(route, /const canChooseCompany = canSeeAllStores\(actor, "inputs:create"\)/);
+  assert.match(route, /const allStores = canSeeAllStores\(actor, "inputs:view"\)/);
   assert.match(route, /responsible_name AS responsibleName, reason/);
   assert.match(route, /const responsibleName = safeText\(body\.responsibleName, 120\)/);
   assert.match(route, /const reason = safeText\(body\.reason, 1200\)/);
@@ -1607,13 +1611,13 @@ test("Entrada: loja vê só a própria, conta sem loja com permissões completas
   // (canSeeAllStores nega antes de checar permissão), mesmo com inputs:view.
   assert.match(
     route,
-    /const allStores = canSeeAllStores\(actor, "inputs:view"\) \|\| isAdministrativeActor\(actor\);/,
+    /const allStores = canSeeAllStores\(actor, "inputs:view"\);/,
   );
   // Regra 2: sem loja + permissão granular específica da ação vê/age em
   // todas as lojas, igual a um administrador.
   assert.match(
     route,
-    /const canChooseCompany = canSeeAllStores\(actor, "inputs:create"\) \|\| isAdministrativeActor\(actor\);/,
+    /const canChooseCompany = canSeeAllStores\(actor, "inputs:create"\);/,
   );
   // Concluir é restrito só pela permissão granular inputs:complete.
   assert.match(route, /!can\(actor, "inputs:complete"\)/);
@@ -1878,7 +1882,9 @@ test("registra e controla solicitações de Alterações PDV com permissões gra
   assert.match(route, /!can\(actor, "pdv_requests:create"\)/);
   assert.match(route, /!can\(actor, "pdv_requests:status"\)/);
   assert.match(route, /!can\(actor, "pdv_requests:delete"\)/);
-  assert.match(route, /VALUES \(\?1, \?2, \?3, \?4, \?5, 'open'/);
+  assert.match(route, /VALUES \(\?1, \?2, \?3, \?4, \?5, \?6, \?7, 'open'/);
+  // Loja da solicitação (migration 0079): login com loja grava a própria.
+  assert.match(route, /const companyId = canChooseCompany \? safeText\(body\.companyId, 80\) : actor\.companyId;/);
   assert.match(route, /INSERT INTO pdv_change_requests/);
   assert.match(route, /DELETE FROM pdv_change_requests WHERE id=\?1/);
   assert.match(route, /REQUIRED_DETAIL_FIELDS/);
@@ -2605,7 +2611,7 @@ test("regra genérica: usuário sem loja com a permissão do módulo enxerga e a
 
   // Saídas: sem loja + outputs:view enxerga todas (não precisa mais das 4
   // permissões nem só do setor Administrativo).
-  assert.match(outputsRoute, /canSeeAllStores\(actor, "outputs:view"\) \|\| isAdministrativeActor\(actor\)/);
+  assert.match(outputsRoute, /canSeeAllStores\(actor, "outputs:view"\)/);
   // Captação: idem para captures:view/receive/assign (view) e captures:create (cadastro).
   assert.match(capturesRoute, /canSeeAllStores\(actor, "captures:view"\) \|\|/);
   assert.match(capturesRoute, /canSeeAllStores\(actor, "captures:create"\)/);
@@ -2786,6 +2792,8 @@ test("remove o fluxo especial de assistência: acesso 100% via permissões granu
   // pela permissão granular, não mais por identidade.
   assert.match(workerSource, /function liveConnectionGroups\(user: AuthenticatedUser\): string\[\] \{/);
   assert.match(workerSource, /if \(hasPermission\(user, "captures:receive"\)\) groups\.push\("assistance"\);/);
+  // Grupos de "todas as lojas" só para login sem loja vinculada.
+  assert.match(workerSource, /function liveConnectionGroups[\s\S]*?if \(user\.companyId\) return groups;[\s\S]*?groups\.push\("assistance"\)/);
 });
 
 test("Rotina Operacional: cadastro simplificado (sem descrição/loja específica, vários dias da semana) e geração auto-suficiente das tarefas", async () => {

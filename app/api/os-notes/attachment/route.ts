@@ -1,5 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
+import { canActOnStore } from "../../../lib/access-scope";
 import {
   DEFAULT_ATTACHMENT_CONTENT_TYPE,
   MAX_PDF_SIZE,
@@ -14,6 +15,7 @@ type Identity = {
   id: string;
   displayName: string;
   role: "admin" | "user";
+  companyId: string;
   permissions: string[];
 };
 type StagedAttachment = {
@@ -52,6 +54,7 @@ function identity(request: Request): Identity {
     id: safeText(request.headers.get("x-unigames-user-id"), 80),
     displayName: decodedHeader(request, "x-unigames-display-name").slice(0, 80),
     role: request.headers.get("x-unigames-role") === "admin" ? "admin" : "user",
+    companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
     permissions: (request.headers.get("x-unigames-permissions") || "")
       .split(",")
       .map((permission) => permission.trim())
@@ -144,7 +147,7 @@ async function removeStaged(bucket: R2Bucket, sessionId: string) {
   } while (cursor);
 }
 
-async function createSession(payload: JsonMap) {
+async function createSession(payload: JsonMap, actor: Identity) {
   const metadata: StagedAttachment = {
     osNoteId: safeText(payload.id, 80),
     fileName: safeText(payload.fileName, 181),
@@ -157,10 +160,11 @@ async function createSession(payload: JsonMap) {
 
   const database = await getD1();
   const existing = await database
-    .prepare("SELECT id FROM os_notes WHERE id=?1 LIMIT 1")
+    .prepare("SELECT id, company_id AS companyId FROM os_notes WHERE id=?1 LIMIT 1")
     .bind(metadata.osNoteId)
-    .first<{ id: string }>();
-  if (!existing) return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
+    .first<{ id: string; companyId: string }>();
+  // Login com loja só anexa em O.S. da própria loja; outra loja = não encontrada.
+  if (!existing || !canActOnStore(actor, "os_notes:attach", existing.companyId)) return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
 
   const expectedParts = Math.ceil(metadata.fileSize / PDF_CHUNK_SIZE);
   if (!Number.isInteger(metadata.numberOfParts) || metadata.numberOfParts !== expectedParts) {
@@ -223,10 +227,10 @@ async function completeSession(request: Request, payload: JsonMap, actor: Identi
 
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT id, r2_key AS r2Key FROM os_notes WHERE id=?1 LIMIT 1")
+      .prepare("SELECT id, company_id AS companyId, r2_key AS r2Key FROM os_notes WHERE id=?1 LIMIT 1")
       .bind(metadata.osNoteId)
-      .first<{ id: string; r2Key: string }>();
-    if (!existing) return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
+      .first<{ id: string; companyId: string; r2Key: string }>();
+    if (!existing || !canActOnStore(actor, "os_notes:attach", existing.companyId)) return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
 
     const parts: ArrayBuffer[] = [];
     let receivedSize = 0;
@@ -316,7 +320,7 @@ export async function POST(request: Request) {
     if (contentType.includes("application/json")) {
       const payload = (await request.json()) as JsonMap;
       const action = safeText(payload.action, 20);
-      if (action === "create") return await createSession(payload);
+      if (action === "create") return await createSession(payload, actor);
       if (action === "complete") return await completeSession(request, payload, actor);
       if (action === "cancel") return await cancelSession(payload);
       return jsonResponse({ error: "AÇÃO DE ENVIO INVÁLIDA." }, 400);

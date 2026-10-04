@@ -1,6 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { canSeeAllStores, NO_COMPANY_ERROR, resolveStoreScope } from "../../../lib/access-scope";
+import { canActOnStore, canSeeAllStores, NO_COMPANY_ERROR, resolveStoreScope } from "../../../lib/access-scope";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -145,7 +145,9 @@ export async function GET(request: Request) {
   try {
     const database = await getD1();
 
-    if (canManageRequests(actor)) {
+    // Gestor SEM loja (ou admin) vê todas; gestor com loja vinculada cai no
+    // escopo da própria loja abaixo, como qualquer login de loja.
+    if (canManageRequests(actor) && canSeeAllStores(actor, "loans:manage_requests")) {
       const result = await database
         .prepare(`${REQUEST_SELECT} ORDER BY (status='requested') DESC, created_at DESC LIMIT 500`)
         .all<RequestRow>();
@@ -263,7 +265,8 @@ export async function PATCH(request: Request) {
       )
       .bind(id)
       .first<{ id: string; deviceId: string; deviceName: string; companyId: string; companyName: string; status: string }>();
-    if (!existing) {
+    // Solicitação de outra loja responde igual a inexistente.
+    if (!existing || !canActOnStore(actor, "loans:manage_requests", existing.companyId)) {
       return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
     }
 
@@ -339,10 +342,10 @@ export async function DELETE(request: Request) {
     if (!id) return jsonResponse({ error: "SOLICITAÇÃO INVÁLIDA." }, 400);
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT id FROM loan_requests WHERE id=?1 LIMIT 1")
+      .prepare("SELECT id, company_id AS companyId FROM loan_requests WHERE id=?1 LIMIT 1")
       .bind(id)
-      .first<{ id: string }>();
-    if (!existing) {
+      .first<{ id: string; companyId: string }>();
+    if (!existing || !canActOnStore(actor, "loans:manage_requests", existing.companyId)) {
       return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
     }
     await database.prepare("DELETE FROM loan_request_updates WHERE request_id=?1").bind(id).run();
