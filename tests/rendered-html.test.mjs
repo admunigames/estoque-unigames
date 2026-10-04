@@ -4887,3 +4887,12 @@ test("Financeiro > Cartões: selos de duplicidade, filtros, barra de lote e gast
   assert.match(html, /financeApiRequest\('\/corporate-cards\/spending\?'/);
   assert.match(html, /class="spend-bar" type="button" data-spend-category=/);
 });
+
+test("importadores financeiros leem CSV como texto (data DD/MM com dia <= 12 não vira data americana)", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /XLSX\.read\(buffer, \{type:'array', raw: Boolean\(options && options\.rawCsv\)\}\)/);
+  // Maquinetas: vendas e repasse.
+  assert.equal(html.split("const rows = await extractRowsFromFile(file, {rawCsv: /\\.csv$/i.test(file.name)});").length - 1, 2);
+  // Fatura do cartão e extrato da conciliação.
+  assert.equal(html.split("const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});").length - 1, 2);
+});

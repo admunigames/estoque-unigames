@@ -28195,7 +28195,7 @@ function renderHomeTasks(){
     if(!file) return;
     status.textContent = 'Lendo arquivo…';
     try{
-      const rows = await extractRowsFromFile(file);
+      const rows = await extractRowsFromFile(file, {rawCsv: /\.csv$/i.test(file.name)});
       if(rows.length < 2) throw new Error('ARQUIVO SEM DADOS.');
       const header = rows[0];
       const col = {
@@ -28285,7 +28285,7 @@ function renderHomeTasks(){
     if(!file) return;
     status.textContent = 'Lendo arquivo…';
     try{
-      const rows = await extractRowsFromFile(file);
+      const rows = await extractRowsFromFile(file, {rawCsv: /\.csv$/i.test(file.name)});
       if(rows.length < 2) throw new Error('ARQUIVO SEM DADOS.');
       const header = rows[0];
       const col = {
@@ -29131,7 +29131,7 @@ function renderHomeTasks(){
         rows = parseReconOfx(await readAsText(file, 'ISO-8859-1'));
       }else{
         sourceFormat = ext === 'xls' ? 'xls' : (ext === 'xlsx' ? 'xlsx' : 'csv');
-        const table = await extractRowsFromFile(file);
+        const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});
         if(table.length < 2) throw new Error('ARQUIVO SEM DADOS.');
         const header = table[0];
         const col = {
