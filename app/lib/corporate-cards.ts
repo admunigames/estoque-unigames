@@ -183,3 +183,106 @@ export function computeCardSummary(input: {
     dueDate,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Financeiro 2/9 (04/10/2026): duplicidade de lançamentos e classificação.
+// ---------------------------------------------------------------------------
+
+// 'not_expense' = NÃO É DESPESA (compra pessoal a reembolsar, estorno,
+// transferência): nunca vira Despesa e pode voltar para pendente.
+export const CARD_ENTRY_STATUSES = ["pending", "classified", "expensed", "not_expense"] as const;
+export type CardEntryStatus = (typeof CARD_ENTRY_STATUSES)[number];
+
+/** Estabelecimento comparável: maiúsculas, sem acento, espaços simples. */
+export function normalizeMerchant(text: string): string {
+  return String(text || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Chave de "mesmo lançamento" num cartão: data + valor + estabelecimento
+ * normalizado + parcela atual/total. Parcelas 2/10 e 3/10 da mesma compra
+ * têm chaves diferentes (não são duplicadas).
+ */
+export function cardEntryDuplicateKey(entry: {
+  entryDate: string;
+  amountCents: number;
+  merchant: string;
+  installmentCurrent: number;
+  installmentTotal: number;
+}): string {
+  const current = Math.max(1, Number(entry.installmentCurrent) || 1);
+  const total = Math.max(current, Number(entry.installmentTotal) || 1);
+  return [entry.entryDate, Math.round(Number(entry.amountCents) || 0), normalizeMerchant(entry.merchant), `${current}/${total}`].join("|");
+}
+
+function dayNumber(isoDate: string): number {
+  return Math.round(Date.parse(`${isoDate}T00:00:00Z`) / 86_400_000);
+}
+
+/** Soma dias a uma data AAAA-MM-DD. */
+export function shiftIsoDate(isoDate: string, days: number): string {
+  return new Date((dayNumber(isoDate) + days) * 86_400_000).toISOString().slice(0, 10);
+}
+
+/**
+ * Lançamentos ainda não lançados que provavelmente já estão em Despesas
+ * (alguém lançou a compra à mão): Despesa da mesma loja, mesmo valor, data
+ * a até ±`days` dias e sem vínculo com cartão. Só sinaliza.
+ */
+export function possibleExpenseDuplicates(
+  entries: Array<{ id: string; entryDate: string; amountCents: number; expenseId: string; status: string }>,
+  expenses: Array<{ date: string; amountCents: number }>,
+  days = 3,
+): Set<string> {
+  const flagged = new Set<string>();
+  for (const entry of entries) {
+    if (entry.expenseId || entry.status === "not_expense") continue;
+    const day = dayNumber(entry.entryDate);
+    const hit = expenses.some(
+      (expense) => Number(expense.amountCents) === Number(entry.amountCents) && Math.abs(dayNumber(expense.date) - day) <= days,
+    );
+    if (hit) flagged.add(entry.id);
+  }
+  return flagged;
+}
+
+export type CardEntryFields = {
+  categoryItemId?: string;
+  costCenterId?: string;
+  holderName?: string;
+  notes?: string;
+  // 'expense' (é despesa) | 'not_expense' (NÃO É DESPESA). Ausente = mantém.
+  expenseKind?: "expense" | "not_expense";
+};
+
+/**
+ * Aplica só os campos informados a um lançamento e devolve o novo estado.
+ * Lançamento já LANÇADO EM DESPESAS só aceita responsável e observação (a
+ * categoria vale pela Despesa).
+ */
+export function applyCardEntryFields(
+  entry: { status: string; expenseId: string; categoryItemId: string; costCenterId: string; holderName: string; notes: string },
+  fields: CardEntryFields,
+):
+  | { error: string }
+  | { status: CardEntryStatus; categoryItemId: string; costCenterId: string; holderName: string; notes: string } {
+  const next = {
+    categoryItemId: fields.categoryItemId ?? entry.categoryItemId,
+    costCenterId: fields.costCenterId ?? entry.costCenterId,
+    holderName: fields.holderName ?? entry.holderName,
+    notes: fields.notes ?? entry.notes,
+  };
+  if (entry.expenseId) {
+    if (fields.categoryItemId !== undefined || fields.costCenterId !== undefined || fields.expenseKind !== undefined) {
+      return { error: "JÁ LANÇADO EM DESPESAS — ALTERE PELA DESPESA." };
+    }
+    return { ...next, status: "expensed" };
+  }
+  const notExpense = fields.expenseKind ? fields.expenseKind === "not_expense" : entry.status === "not_expense";
+  return { ...next, status: notExpense ? "not_expense" : next.categoryItemId ? "classified" : "pending" };
+}

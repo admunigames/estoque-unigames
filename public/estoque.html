@@ -3300,6 +3300,28 @@
     .decl-batch-table input:not([type="checkbox"]),.decl-batch-table input[data-batch-field]{width:100%; min-width:0;}
     .responsive-table tbody td > .bulk-check,.responsive-table.decl-batch-table tbody td > input[type="checkbox"]{justify-self:end;}
   }
+  /* FINANCEIRO > CARTÕES — GASTOS POR CATEGORIA: barras horizontais feitas à
+     mão (sem biblioteca), uma por categoria, clicáveis; e a coluna IMPORTAR da
+     prévia da fatura. Grid com colunas fixas (sem auto-fill/auto-fit). */
+  .spend-panel{padding:14px 16px; margin-bottom:14px;}
+  .spend-bars{display:grid; gap:8px;}
+  .spend-bar{
+    display:grid; grid-template-columns:minmax(140px,1.1fr) minmax(0,2fr) minmax(150px,auto); gap:12px; align-items:center;
+    width:100%; min-height:40px; padding:6px 10px; border:1px solid transparent; border-radius:10px;
+    background:transparent; color:var(--ink); text-align:left; text-transform:none; cursor:pointer;
+  }
+  .spend-bar:hover,.spend-bar.active{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,transparent);}
+  .spend-bar:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .spend-bar-label{min-width:0; font:700 11px/1.3 var(--mono); white-space:normal; overflow-wrap:anywhere;}
+  .spend-bar-track{position:relative; height:14px; border-radius:7px; background:var(--bg-card-2); overflow:hidden;}
+  .spend-bar-fill{position:absolute; inset:0 auto 0 0; border-radius:inherit; background:var(--accent);}
+  .spend-bar-value{font:700 11px/1.3 var(--mono); text-align:right; white-space:nowrap;}
+  .spend-total td{border-top:2px solid var(--border);}
+  .corp-preview-check{display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  @media (max-width:680px){
+    .spend-bar{grid-template-columns:minmax(0,1fr) auto; gap:6px 10px;}
+    .spend-bar-track{grid-column:1 / -1; grid-row:2;}
+  }
   /* ESTOQUE > DIVERGÊNCIAS — reaproveita .supply-tabs, .purchase-metric,
      .purchase-card, .table-panel, .status-pill e .purchase-dialog; aqui só
      o arranjo próprio do módulo (barra de filtros, gráficos em CSS, linhas
@@ -7599,6 +7621,47 @@
         </div>
       </header>
 
+      <div class="output-tabs" role="tablist" aria-label="Visões dos cartões">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-corp-view="cartoes">CARTÕES</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-corp-view="gastos">GASTOS POR CATEGORIA</button>
+      </div>
+
+      <div data-corp-view-panel="gastos" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="corpSpendFrom">DE</label><input type="month" id="corpSpendFrom"></div>
+          <div class="field"><label for="corpSpendTo">ATÉ</label><input type="month" id="corpSpendTo"></div>
+          <div class="field"><label for="corpSpendCard">CARTÃO</label><select id="corpSpendCard"><option value="">TODOS OS CARTÕES</option></select></div>
+          <div class="field"><label for="corpSpendLoja">UNIDADE</label><select id="corpSpendLoja"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label class="assist-check" for="corpSpendNotExpense"><input type="checkbox" id="corpSpendNotExpense"> INCLUIR NÃO É DESPESA</label></div>
+        </div>
+        <div class="table-panel spend-panel">
+          <div id="corpSpendChart" class="spend-bars" aria-label="Gastos por categoria"><div class="dre-empty">Escolha o período.</div></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="corpSpendTable">
+              <thead><tr><th>Categoria</th><th>Lançamentos</th><th>Valor</th><th>% do total</th></tr></thead>
+              <tbody id="corpSpendTableBody"><tr><td colspan="4" class="responsive-empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <section id="corpSpendEntries" hidden>
+          <div class="dre-toolbar">
+            <h3 class="supply-section-title" id="corpSpendEntriesTitle">LANÇAMENTOS</h3>
+            <div class="dre-toolbar-actions"><button class="btn-outline btn-sm" id="btnCloseCorpSpendEntries" type="button">LIMPAR FILTRO</button></div>
+          </div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Data</th><th>Cartão</th><th>Estabelecimento</th><th>Valor</th><th>Parcela</th><th>Responsável</th><th>Situação</th></tr></thead>
+                <tbody id="corpSpendEntriesBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div data-corp-view-panel="cartoes">
       <div class="dre-toolbar">
         <div class="field"><label for="corpCardLoja">UNIDADE</label><select id="corpCardLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="dre-toolbar-actions"><button class="btn-accent" id="btnNewCorpCard" type="button">NOVO CARTÃO</button></div>
@@ -7625,12 +7688,27 @@
         <div data-corp-panel="lancamentos">
           <div class="dre-toolbar">
             <div class="field"><label for="corpEntriesMonth">MÊS</label><input type="month" id="corpEntriesMonth"></div>
+            <div class="field"><label for="corpEntriesStatus">SITUAÇÃO</label><select id="corpEntriesStatus"><option value="">TODAS</option><option value="pending">PENDENTE</option><option value="classified">CLASSIFICADO</option><option value="expensed">LANÇADO EM DESPESAS</option><option value="not_expense">NÃO É DESPESA</option></select></div>
+            <div class="field"><label for="corpEntriesCategory">CATEGORIA</label><select id="corpEntriesCategory"><option value="">TODAS</option></select></div>
+            <div class="field"><label for="corpEntriesHolder">RESPONSÁVEL</label><select id="corpEntriesHolder"><option value="">TODOS</option></select></div>
+            <div class="field"><label class="assist-check" for="corpEntriesOnlyDup"><input type="checkbox" id="corpEntriesOnlyDup"> SÓ DUPLICADOS</label></div>
+          </div>
+          <div class="bulk-bar" id="corpEntriesBulkBar">
+            <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+            <div class="bulk-bar-actions" data-bulk-actions hidden>
+              <strong class="bulk-bar-count" data-bulk-count></strong>
+              <button class="btn-outline btn-sm" type="button" data-bulk-action="classify">CLASSIFICAR</button>
+              <button class="btn-outline btn-sm" type="button" data-bulk-action="launch">LANÇAR EM DESPESAS</button>
+              <button class="btn-outline btn-sm" type="button" data-bulk-action="not-expense">MARCAR "NÃO É DESPESA"</button>
+              <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+              <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+            </div>
           </div>
           <div class="table-panel responsive-table">
             <div class="table-scroll">
               <table id="corpEntriesTable">
-                <thead><tr><th>Data</th><th>Estabelecimento</th><th>Valor</th><th>Parcela</th><th>Responsável</th><th>Categoria</th><th>Situação</th><th></th></tr></thead>
-                <tbody id="corpEntriesTableBody"><tr><td colspan="8" class="responsive-empty">Selecione um cartão.</td></tr></tbody>
+                <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Estabelecimento</th><th>Valor</th><th>Parcela</th><th>Responsável</th><th>Categoria</th><th>Situação</th><th></th></tr></thead>
+                <tbody id="corpEntriesTableBody"><tr><td colspan="9" class="responsive-empty">Selecione um cartão.</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -7641,13 +7719,13 @@
             <div class="field"><label for="corpInvoiceMonth">MÊS DA FATURA</label><input type="month" id="corpInvoiceMonth"></div>
             <div class="field"><label for="corpInvoiceFile">ARQUIVO (.csv / .xlsx / .xls / .ofx / .pdf)</label><input type="file" id="corpInvoiceFile" accept=".csv,.xls,.xlsx,.ofx,.pdf,.htm,.html"></div>
           </div>
-          <p class="page-desc">CSV/XLSX/OFX são lidos automaticamente. <strong>PDF é uma leitura aproximada</strong> — revise todas as linhas antes de confirmar. Colunas: data, estabelecimento, valor, parcela (ex.: 2/6).</p>
+          <p class="page-desc">CSV/XLSX/OFX são lidos automaticamente. <strong>PDF é uma leitura aproximada</strong> — revise todas as linhas antes de confirmar. Colunas: data, estabelecimento, valor, parcela (ex.: 2/6). Lançamentos JÁ CADASTRADOS neste cartão (mesma data, valor, estabelecimento e parcela) vêm desmarcados.</p>
           <div class="user-form-status" id="corpInvoiceImportStatus" role="status" aria-live="polite"></div>
           <div class="table-panel responsive-table">
             <div class="table-scroll">
               <table id="corpInvoicePreviewTable">
-                <thead><tr><th>Data</th><th>Estabelecimento</th><th>Valor (R$)</th><th>Parcela</th><th></th></tr></thead>
-                <tbody id="corpInvoicePreviewBody"><tr><td colspan="5" class="responsive-empty">Selecione um arquivo.</td></tr></tbody>
+                <thead><tr><th>Importar</th><th>Data</th><th>Estabelecimento</th><th>Valor (R$)</th><th>Parcela</th><th></th></tr></thead>
+                <tbody id="corpInvoicePreviewBody"><tr><td colspan="6" class="responsive-empty">Selecione um arquivo.</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -7657,6 +7735,7 @@
           </div>
         </div>
       </section>
+      </div>
     </section>
 
     <section id="pageFinanceiroConciliacao" class="page wrap">
@@ -9174,6 +9253,30 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCorpCardDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="corpClassifyDialog" aria-labelledby="corpClassifyTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="corpClassifyTitle">CLASSIFICAR LANÇAMENTOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseCorpClassifyDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="corpClassifyForm">
+    <p class="page-desc" id="corpClassifySummary"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="corpClassifyItem">CATEGORIA / SUBCATEGORIA</label><select id="corpClassifyItem"><option value="">— MANTER —</option></select></div>
+      <div class="purchase-field"><label for="corpClassifyCostCenter">CENTRO DE CUSTO</label><select id="corpClassifyCostCenter"><option value="">— MANTER —</option></select></div>
+      <div class="purchase-field"><label for="corpClassifyHolder">RESPONSÁVEL PELA COMPRA</label><input id="corpClassifyHolder" maxlength="120" list="corpHolderList" placeholder="— MANTER —"></div>
+      <datalist id="corpHolderList"></datalist>
+      <div class="purchase-field"><label for="corpClassifyKind">DESPESA?</label><select id="corpClassifyKind"><option value="">— MANTER —</option><option value="expense">É DESPESA</option><option value="not_expense">NÃO É DESPESA</option></select></div>
+      <div class="purchase-field full"><label for="corpClassifyNotes">OBSERVAÇÃO</label><textarea id="corpClassifyNotes" rows="2" maxlength="1000" placeholder="— MANTER —"></textarea></div>
+    </div>
+    <p class="purchase-field-help">SÓ OS CAMPOS PREENCHIDOS SÃO APLICADOS. LANÇAMENTOS JÁ LANÇADOS EM DESPESAS SÓ MUDAM RESPONSÁVEL E OBSERVAÇÃO.</p>
+    <div class="user-form-status" id="corpClassifyStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCorpClassifyDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
     </div>
   </form>
 </dialog>
@@ -13301,7 +13404,9 @@
     return xlsxLoader;
   }
 
-  async function extractRowsFromFile(file){
+  // options.rawCsv: CSV sem conversão de valores — sem isso o SheetJS lê
+  // "10/09/2026" como data americana e devolve "10/9/26" (dia ≤ 12 se perde).
+  async function extractRowsFromFile(file, options){
     const text = await readAsText(file, 'ISO-8859-1');
     if(/<table/i.test(text)){
       return parseHtmlRows(text);
@@ -13309,7 +13414,7 @@
     // Não é uma tabela HTML (formato usado pelos relatórios do CRM) — tenta como planilha real (.xlsx/.xls/.csv).
     const XLSX = await ensureXlsx();
     const buffer = await readAsArrayBuffer(file);
-    const wb = XLSX.read(buffer, {type:'array'});
+    const wb = XLSX.read(buffer, {type:'array', raw: Boolean(options && options.rawCsv)});
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
     return rows.map(row => row.map(cell => String(cell === undefined || cell === null ? '' : cell).trim()));
@@ -28289,7 +28394,9 @@ function renderHomeTasks(){
   let corpInvoiceParsed = null;
 
   const CORP_STATUS_LABELS = {active:'ATIVO', blocked:'BLOQUEADO', canceled:'CANCELADO'};
-  const CORP_ENTRY_STATUS_LABELS = {pending:'A CLASSIFICAR', classified:'CLASSIFICADO', expensed:'VIROU DESPESA'};
+  const CORP_ENTRY_STATUS_LABELS = {pending:'PENDENTE', classified:'CLASSIFICADO', expensed:'LANÇADO EM DESPESAS', not_expense:'NÃO É DESPESA'};
+  const CORP_ENTRY_STATUS_PILLS = {pending:'warn', classified:'ok', expensed:'ok', not_expense:'danger'};
+  let corpHolderSuggestions = [];
 
   // pdf.js sob demanda, do mesmo CDN já usado para o leitor de Excel.
   let pdfjsLoader = null;
@@ -28413,6 +28520,7 @@ function renderHomeTasks(){
       const data = await financeApiRequest('/corporate-cards');
       corpCardsRows = Array.isArray(data.cards) ? data.cards : [];
       renderCorpCardsTable();
+      renderCorpSpendFilters();
     }catch(error){
       el('corpCardsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
@@ -28546,39 +28654,133 @@ function renderHomeTasks(){
   async function loadCorpEntries(){
     if(!corpCardCurrent) return;
     const body = el('corpEntriesTableBody');
-    body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
     try{
       const month = el('corpEntriesMonth').value;
       const params = new URLSearchParams();
       if(month) params.set('month', month);
       const data = await financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/invoice?'+params.toString());
-      const entries = Array.isArray(data.entries) ? data.entries : [];
-      corpCardCurrent._entries = entries;
-      body.innerHTML = entries.length ? entries.map(e => {
-        const item = financeItems.find(i => i.id === e.categoryItemId);
-        const category = item && financeCategories.find(c => c.id === item.categoryId);
-        return '<tr'+(e.status === 'expensed' ? ' style="opacity:.6"' : '')+'>'+
-          '<td>'+escapeHtml(formatDateBR(e.entryDate))+'</td>'+
-          '<td>'+escapeHtml(e.merchant || '—')+'</td>'+
-          '<td>'+formatCentsBRL(e.amountCents)+'</td>'+
-          '<td>'+escapeHtml(e.installmentLabel || '—')+'</td>'+
-          '<td>'+escapeHtml(e.holderName || '—')+'</td>'+
-          '<td>'+escapeHtml(item ? ((category ? category.name+' › ' : '')+item.name) : '—')+'</td>'+
-          '<td>'+escapeHtml(CORP_ENTRY_STATUS_LABELS[e.status] || e.status)+'</td>'+
-          '<td>'+(e.status === 'expensed' ? '' : '<button class="btn-outline btn-sm" type="button" data-corp-entry-expense="'+escapeHtml(e.id)+'">LANÇAR DESPESA</button>')+'</td>'+
-        '</tr>';
-      }).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum lançamento nesse mês.</td></tr>';
+      corpCardCurrent._entries = Array.isArray(data.entries) ? data.entries : [];
+      corpHolderSuggestions = Array.isArray(data.holderSuggestions) ? data.holderSuggestions : [];
+      renderCorpEntryFilters();
+      renderCorpEntries();
     }catch(error){
-      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      corpCardCurrent._entries = [];
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      corpEntriesBulk.sync();
     }
   }
-  el('corpEntriesMonth') && el('corpEntriesMonth').addEventListener('change', loadCorpEntries);
+  function corpItemLabel(itemId){
+    const item = financeItems.find(i => i.id === itemId);
+    if(!item) return '';
+    const category = financeCategories.find(c => c.id === item.categoryId);
+    return (category ? category.name+' › ' : '')+item.name;
+  }
+  // Opções dos filtros a partir dos lançamentos carregados (mantém a escolha).
+  function renderCorpEntryFilters(){
+    const entries = corpCardCurrent._entries || [];
+    const fill = (id, first, options) => {
+      const select = el(id);
+      const keep = select.value;
+      select.innerHTML = '<option value="">'+first+'</option>'+options.map(o => '<option value="'+escapeHtml(o.value)+'">'+escapeHtml(o.label)+'</option>').join('');
+      if(options.some(o => o.value === keep)) select.value = keep;
+    };
+    const items = [...new Set(entries.map(e => e.categoryItemId).filter(Boolean))];
+    fill('corpEntriesCategory', 'TODAS', [{value:'__none__', label:'SEM CATEGORIA'}].concat(items.map(id => ({value:id, label:corpItemLabel(id) || 'CATEGORIA REMOVIDA'})).sort((a, b) => a.label.localeCompare(b.label))));
+    const holders = [...new Set(entries.map(e => e.holderName).filter(Boolean))].sort();
+    fill('corpEntriesHolder', 'TODOS', [{value:'__none__', label:'SEM RESPONSÁVEL'}].concat(holders.map(h => ({value:h, label:h}))));
+    el('corpHolderList').innerHTML = [...new Set(corpHolderSuggestions.concat(holders))].map(h => '<option value="'+escapeHtml(h)+'"></option>').join('');
+  }
+  function renderCorpEntries(){
+    const body = el('corpEntriesTableBody');
+    const status = el('corpEntriesStatus').value;
+    const category = el('corpEntriesCategory').value;
+    const holder = el('corpEntriesHolder').value;
+    const onlyDup = el('corpEntriesOnlyDup').checked;
+    const all = corpCardCurrent && corpCardCurrent._entries || [];
+    const entries = all.filter(e =>
+      (!status || e.status === status) &&
+      (!category || (category === '__none__' ? !e.categoryItemId : e.categoryItemId === category)) &&
+      (!holder || (holder === '__none__' ? !e.holderName : e.holderName === holder)) &&
+      (!onlyDup || e.possibleExpenseDuplicate));
+    body.innerHTML = entries.length ? entries.map(e =>
+      '<tr>'+
+        '<td data-label="SELECIONAR">'+bulkRowCheckbox(e.id, 'Selecionar '+(e.merchant || 'lançamento')+' '+formatDateBR(e.entryDate))+'</td>'+
+        '<td data-label="DATA">'+escapeHtml(formatDateBR(e.entryDate))+'</td>'+
+        '<td data-label="ESTABELECIMENTO"><span>'+escapeHtml(e.merchant || '—')+(e.possibleExpenseDuplicate ? ' <span class="status-pill warn" title="Há Despesa da mesma loja com o mesmo valor e data a ±3 dias, sem vínculo com cartão.">POSSÍVEL DUPLICADO EM DESPESAS</span>' : '')+'</span></td>'+
+        '<td data-label="VALOR">'+formatCentsBRL(e.amountCents)+'</td>'+
+        '<td data-label="PARCELA">'+escapeHtml(e.installmentLabel || '—')+'</td>'+
+        '<td data-label="RESPONSÁVEL">'+escapeHtml(e.holderName || '—')+'</td>'+
+        '<td data-label="CATEGORIA">'+escapeHtml(e.categoryItemId ? (corpItemLabel(e.categoryItemId) || 'CATEGORIA REMOVIDA') : 'SEM CATEGORIA')+'</td>'+
+        '<td data-label="SITUAÇÃO"><span class="status-pill '+(CORP_ENTRY_STATUS_PILLS[e.status] || '')+'">'+escapeHtml(CORP_ENTRY_STATUS_LABELS[e.status] || e.status)+'</span></td>'+
+        '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
+          '<button class="btn-outline btn-sm" type="button" data-corp-entry-edit="'+escapeHtml(e.id)+'">EDITAR</button>'+
+          (e.status === 'expensed' || e.status === 'not_expense' ? '' : '<button class="btn-outline btn-sm" type="button" data-corp-entry-expense="'+escapeHtml(e.id)+'">LANÇAR DESPESA</button>')+
+        '</div></td>'+
+      '</tr>').join('') : '<tr><td colspan="9" class="responsive-empty">'+(all.length ? 'Nenhum lançamento com esses filtros.' : 'Nenhum lançamento nesse mês.')+'</td></tr>';
+    corpEntriesBulk.sync();
+  }
+  el('corpEntriesMonth').addEventListener('change', loadCorpEntries);
+  ['corpEntriesStatus','corpEntriesCategory','corpEntriesHolder','corpEntriesOnlyDup'].forEach(id => el(id).addEventListener('change', renderCorpEntries));
 
-  el('corpEntriesTableBody') && el('corpEntriesTableBody').addEventListener('click', event => {
-    const btn = event.target.closest('[data-corp-entry-expense]');
-    if(!btn) return;
-    const entry = (corpCardCurrent && corpCardCurrent._entries || []).find(e => e.id === btn.dataset.corpEntryExpense);
-    if(entry) openCorpEntryExpenseDialog(entry);
+  // Ações em lote (mesmo endpoint para o EDITAR e o LANÇAR DESPESA de um só).
+  async function runCorpBulk(action, ids, fields){
+    const res = await financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/invoice/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids, fields: fields || {}})});
+    await Promise.all([loadCorpEntries(), loadCorpCardSummary()]);
+    const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+    const verb = {classify:'classificado(s)', 'not-expense':'marcado(s) como NÃO É DESPESA', launch:'lançado(s) em Despesas', delete:'excluído(s)'}[action];
+    showPurchaseToast(res.applied+' '+verb+'.'+(skipped.length ? ' Pulados: '+skipped.map(s => (s.merchant || 'lançamento')+' ('+s.reason+')').join('; ')+'.' : ''), skipped.length && !res.applied ? 'error' : undefined);
+    return res;
+  }
+  const corpEntriesBulk = setupBulkSelection(el('corpEntriesBulkBar'), el('corpEntriesTableBody'), async (action, ids) => {
+    if(action === 'classify'){ openCorpClassifyDialog(ids); return false; }
+    if(action === 'delete' && !confirm('Excluir '+ids.length+(ids.length === 1 ? ' lançamento' : ' lançamentos')+' da fatura? Os já lançados em Despesas serão mantidos.')) return false;
+    await runCorpBulk(action, ids);
+  });
+
+  // --- Classificar (lote) / Editar (um) ---
+  let corpClassifyIds = [];
+  function openCorpClassifyDialog(ids, entry){
+    corpClassifyIds = ids;
+    el('corpClassifyForm').reset();
+    el('corpClassifyItem').innerHTML = '<option value="">— MANTER —</option>'+financeItems.map(item => '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(corpItemLabel(item.id))+'</option>').join('');
+    el('corpClassifyCostCenter').innerHTML = '<option value="">— MANTER —</option>'+(financeCostCenters || []).map(cc => '<option value="'+escapeHtml(cc.id)+'">'+escapeHtml(cc.name)+'</option>').join('');
+    el('corpClassifyTitle').textContent = entry ? 'EDITAR LANÇAMENTO' : 'CLASSIFICAR '+ids.length+(ids.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS');
+    el('corpClassifySummary').textContent = entry ? formatDateBR(entry.entryDate)+' · '+(entry.merchant || 'sem estabelecimento')+' · '+formatCentsBRL(entry.amountCents)+(entry.installmentLabel ? ' · parcela '+entry.installmentLabel : '') : '';
+    if(entry){
+      el('corpClassifyItem').value = entry.categoryItemId || '';
+      el('corpClassifyCostCenter').value = entry.costCenterId || '';
+      el('corpClassifyHolder').value = entry.holderName || '';
+      el('corpClassifyNotes').value = entry.notes || '';
+      el('corpClassifyKind').value = entry.status === 'not_expense' ? 'not_expense' : '';
+    }
+    el('corpClassifyStatus').textContent = '';
+    el('corpClassifyDialog').showModal();
+  }
+  el('btnCloseCorpClassifyDialog').addEventListener('click', () => el('corpClassifyDialog').close());
+  el('btnCancelCorpClassifyDialog').addEventListener('click', () => el('corpClassifyDialog').close());
+  el('corpClassifyForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const fields = {};
+    if(el('corpClassifyItem').value) fields.categoryItemId = el('corpClassifyItem').value;
+    if(el('corpClassifyCostCenter').value) fields.costCenterId = el('corpClassifyCostCenter').value;
+    if(el('corpClassifyHolder').value.trim()) fields.holderName = el('corpClassifyHolder').value.trim();
+    if(el('corpClassifyNotes').value.trim()) fields.notes = el('corpClassifyNotes').value.trim();
+    if(el('corpClassifyKind').value) fields.expenseKind = el('corpClassifyKind').value;
+    if(!Object.keys(fields).length){ el('corpClassifyStatus').textContent = 'PREENCHA AO MENOS UM CAMPO.'; return; }
+    try{
+      await runCorpBulk('classify', corpClassifyIds, fields);
+      el('corpClassifyDialog').close();
+      corpEntriesBulk.clear();
+    }catch(error){ el('corpClassifyStatus').textContent = error.message; }
+  });
+
+  el('corpEntriesTableBody').addEventListener('click', event => {
+    const entries = corpCardCurrent && corpCardCurrent._entries || [];
+    const edit = event.target.closest('[data-corp-entry-edit]');
+    const launch = event.target.closest('[data-corp-entry-expense]');
+    if(edit){ const entry = entries.find(e => e.id === edit.dataset.corpEntryEdit); if(entry) openCorpClassifyDialog([entry.id], entry); }
+    else if(launch){ const entry = entries.find(e => e.id === launch.dataset.corpEntryExpense); if(entry) openCorpEntryExpenseDialog(entry); }
   });
 
   // --- Lançar lançamento da fatura como Despesa (reaproveita /expenses) ---
@@ -28609,53 +28811,39 @@ function renderHomeTasks(){
     if(!financeItemId){ status.textContent = 'SELECIONE A CATEGORIA.'; return; }
     if(!dueDate){ status.textContent = 'INFORME O VENCIMENTO.'; return; }
     try{
-      // 1. Cria a Despesa pelo endpoint existente (sem duplicar lógica).
-      const expensePayload = {
-        idempotencyKey: 'card-entry:'+entryId,
-        companyId: corpCardCurrent.companyId,
-        companyName: corpCardCurrent.companyName || '',
-        description: (entry.merchant || 'Cartão '+corpCardCurrent.name).slice(0, 200),
-        financeItemId,
+      // Mesma criação do POST /api/finance/expenses, feita no servidor junto
+      // com o vínculo ao lançamento (uma transação só).
+      const res = await runCorpBulk('launch', [entryId], {
+        categoryItemId: financeItemId,
         costCenterId: el('corpEntryExpenseCostCenter').value || '',
-        originalAmountCents: entry.amountCents,
-        issueDate: entry.entryDate,
         dueDate,
-        paymentMethod: 'CARTÃO CORPORATIVO',
-        cardId: corpCardCurrent.id,
-        notes: (el('corpEntryExpenseNotes').value || '')+(entry.installmentLabel ? ' (parcela '+entry.installmentLabel+')' : '')
-      };
-      const created = await financeApiRequest('/expenses', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(expensePayload)});
-      const expenseId = created.id || created.expenseId || (created.expense && created.expense.id) || '';
-      // 2. Vincula o lançamento da fatura à despesa criada.
-      await financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/invoice', {
-        method:'PATCH', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({entryId, expenseId, categoryItemId: financeItemId, costCenterId: el('corpEntryExpenseCostCenter').value || ''})
+        notes: el('corpEntryExpenseNotes').value || ''
       });
+      if(!res.applied){ status.textContent = (res.skipped && res.skipped[0] && res.skipped[0].reason) || 'NÃO FOI POSSÍVEL LANÇAR.'; return; }
       el('corpEntryExpenseDialog').close();
-      await Promise.all([loadCorpEntries(), loadCorpCardSummary()]);
-      showPurchaseToast('Despesa criada a partir da fatura.');
     }catch(error){ status.textContent = error.message; }
   });
 
   // --- Importar fatura ---
   el('btnAddCorpInvoiceRow') && el('btnAddCorpInvoiceRow').addEventListener('click', () => {
     if(!corpInvoiceParsed) corpInvoiceParsed = {rows: [], sourceFormat: 'manual', sourceName: 'Manual', fileHash: ''};
-    corpInvoiceParsed.rows.push({entryDate: el('corpInvoiceMonth').value ? el('corpInvoiceMonth').value+'-01' : financeCurrentDateKey(), merchant: '', amountCents: 0, installmentLabel: ''});
+    corpInvoiceParsed.rows.push({entryDate: el('corpInvoiceMonth').value ? el('corpInvoiceMonth').value+'-01' : financeCurrentDateKey(), merchant: '', amountCents: 0, installmentLabel: '', include: true});
     renderCorpInvoicePreview();
   });
   function renderCorpInvoicePreview(){
     const body = el('corpInvoicePreviewBody');
     const rows = corpInvoiceParsed ? corpInvoiceParsed.rows : [];
     body.innerHTML = rows.length ? rows.map((r, i) =>
-      '<tr>'+
-        '<td><input type="date" data-corp-row="'+i+'" data-corp-field="entryDate" value="'+escapeHtml(r.entryDate)+'"></td>'+
-        '<td><input data-corp-row="'+i+'" data-corp-field="merchant" value="'+escapeHtml(r.merchant)+'" maxlength="200"></td>'+
-        '<td><input type="text" inputmode="decimal" data-corp-row="'+i+'" data-corp-field="amount" value="'+(r.amountCents/100).toFixed(2)+'"></td>'+
-        '<td><input data-corp-row="'+i+'" data-corp-field="installmentLabel" value="'+escapeHtml(r.installmentLabel)+'" maxlength="20" placeholder="2/6"></td>'+
-        '<td><button class="btn-outline btn-sm" type="button" data-corp-row-remove="'+i+'">×</button></td>'+
-      '</tr>').join('') : '<tr><td colspan="5" class="responsive-empty">Selecione um arquivo.</td></tr>';
+      '<tr'+(r.duplicate ? ' class="is-registered"' : '')+'>'+
+        '<td data-label="IMPORTAR"><span class="corp-preview-check"><input type="checkbox" class="bulk-check" data-corp-row="'+i+'" data-corp-field="include" aria-label="Importar esta linha"'+(r.include === false ? '' : ' checked')+'>'+(r.duplicate ? ' <span class="status-pill warn">JÁ CADASTRADO</span>' : '')+'</span></td>'+
+        '<td data-label="DATA"><input type="date" data-corp-row="'+i+'" data-corp-field="entryDate" value="'+escapeHtml(r.entryDate)+'"></td>'+
+        '<td data-label="ESTABELECIMENTO"><input data-corp-row="'+i+'" data-corp-field="merchant" value="'+escapeHtml(r.merchant)+'" maxlength="200"></td>'+
+        '<td data-label="VALOR (R$)"><input type="text" inputmode="decimal" data-corp-row="'+i+'" data-corp-field="amount" value="'+(r.amountCents/100).toFixed(2)+'"></td>'+
+        '<td data-label="PARCELA"><input data-corp-row="'+i+'" data-corp-field="installmentLabel" value="'+escapeHtml(r.installmentLabel)+'" maxlength="20" placeholder="2/6"></td>'+
+        '<td data-label="REMOVER"><button class="btn-outline btn-sm" type="button" data-corp-row-remove="'+i+'" aria-label="Remover linha">×</button></td>'+
+      '</tr>').join('') : '<tr><td colspan="6" class="responsive-empty">Selecione um arquivo.</td></tr>';
     body.querySelectorAll('[data-corp-field="amount"]').forEach(attachCurrencyMask);
-    el('btnConfirmCorpInvoice').disabled = !rows.length;
+    el('btnConfirmCorpInvoice').disabled = !rows.some(r => r.include !== false);
   }
   el('corpInvoicePreviewBody') && el('corpInvoicePreviewBody').addEventListener('input', event => {
     const input = event.target.closest('[data-corp-row]');
@@ -28663,6 +28851,7 @@ function renderHomeTasks(){
     const row = corpInvoiceParsed.rows[Number(input.dataset.corpRow)];
     if(!row) return;
     if(input.dataset.corpField === 'amount') row.amountCents = Math.round(Number(getCurrencyValue(input))*100);
+    else if(input.dataset.corpField === 'include'){ row.include = input.checked; el('btnConfirmCorpInvoice').disabled = !corpInvoiceParsed.rows.some(r => r.include !== false); }
     else row[input.dataset.corpField] = input.value;
   });
   el('corpInvoicePreviewBody') && el('corpInvoicePreviewBody').addEventListener('click', event => {
@@ -28693,7 +28882,7 @@ function renderHomeTasks(){
         rows = parseOfxTransactions(await readAsText(file, 'ISO-8859-1'));
       }else{
         sourceFormat = ext === 'xls' || ext === 'xlsx' ? 'xlsx' : 'csv';
-        const table = await extractRowsFromFile(file);
+        const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});
         if(table.length < 2) throw new Error('ARQUIVO SEM DADOS.');
         const header = table[0];
         const col = {
@@ -28717,9 +28906,14 @@ function renderHomeTasks(){
         }
       }
       if(!rows.length) throw new Error('NENHUM LANÇAMENTO VÁLIDO.');
+      // Prévia no servidor: marca as linhas JÁ CADASTRADAS no cartão (mesma
+      // data + valor + estabelecimento + parcela) e deixa-as desmarcadas.
+      const check = await financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/invoice', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dryRun:true, rows})});
+      const duplicates = new Set(Array.isArray(check.duplicates) ? check.duplicates : []);
+      rows.forEach((row, index) => { row.duplicate = duplicates.has(index); row.include = !row.duplicate; });
       corpInvoiceParsed = {rows, sourceFormat, sourceName: file.name, fileHash: cheapHash(file.name, [[rows.length, rows[0] && rows[0].entryDate]])};
       renderCorpInvoicePreview();
-      status.textContent = rows.length+' lançamento(s).'+(sourceFormat === 'pdf' ? ' Revise cada linha — a leitura de PDF é aproximada.' : '');
+      status.textContent = rows.length+' lançamento(s)'+(duplicates.size ? ', '+duplicates.size+' JÁ CADASTRADO(S) (desmarcados)' : '')+'.'+(sourceFormat === 'pdf' ? ' Revise cada linha — a leitura de PDF é aproximada.' : '');
     }catch(error){
       status.textContent = error.message;
       el('corpInvoicePreviewBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
@@ -28729,7 +28923,8 @@ function renderHomeTasks(){
     if(!corpInvoiceParsed || !corpCardCurrent) return;
     const referenceMonth = el('corpInvoiceMonth').value;
     if(!referenceMonth){ el('corpInvoiceImportStatus').textContent = 'INFORME O MÊS DA FATURA.'; return; }
-    const valid = corpInvoiceParsed.rows.filter(r => r.entryDate && r.amountCents !== 0);
+    const valid = corpInvoiceParsed.rows.filter(r => r.include !== false && r.entryDate && r.amountCents !== 0)
+      .map(r => ({entryDate: r.entryDate, merchant: r.merchant, amountCents: r.amountCents, installmentLabel: r.installmentLabel, allowDuplicate: !!r.duplicate}));
     if(!valid.length){ el('corpInvoiceImportStatus').textContent = 'NENHUMA LINHA VÁLIDA.'; return; }
     el('btnConfirmCorpInvoice').disabled = true;
     try{
@@ -28737,8 +28932,7 @@ function renderHomeTasks(){
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({referenceMonth, sourceName: corpInvoiceParsed.sourceName, sourceFormat: corpInvoiceParsed.sourceFormat, fileHash: corpInvoiceParsed.fileHash, rows: valid})
       });
-      if(res.alreadyProcessed) showPurchaseToast('Essa fatura já tinha sido importada.');
-      else showPurchaseToast('Importados '+res.inserted+' lançamento(s).');
+      showPurchaseToast('Importados '+res.inserted+' lançamento(s).'+(res.skippedDuplicates ? ' '+res.skippedDuplicates+' já cadastrado(s) foram pulados.' : ''));
       el('corpInvoiceFile').value = '';
       corpInvoiceParsed = null;
       renderCorpInvoicePreview();
@@ -28751,6 +28945,100 @@ function renderHomeTasks(){
       el('btnConfirmCorpInvoice').disabled = false;
     }
   });
+
+  // --- Visões do módulo: CARTÕES | GASTOS POR CATEGORIA ---
+  document.querySelectorAll('[data-corp-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-corp-view]').forEach(b => {
+        const active = b === btn; b.classList.toggle('active', active); b.setAttribute('aria-selected', String(active));
+      });
+      document.querySelectorAll('[data-corp-view-panel]').forEach(panel => { panel.hidden = panel.dataset.corpViewPanel !== btn.dataset.corpView; });
+      if(btn.dataset.corpView === 'gastos') loadCorpSpending();
+    });
+  });
+
+  // --- Gastos por categoria (somados no servidor) ---
+  let corpSpendData = null;
+  function renderCorpSpendFilters(){
+    const card = el('corpSpendCard');
+    const keepCard = card.value;
+    card.innerHTML = '<option value="">TODOS OS CARTÕES</option>'+corpCardsRows.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name+' •••• '+(c.last4 || ''))+'</option>').join('');
+    if(corpCardsRows.some(c => c.id === keepCard)) card.value = keepCard;
+    fase8CompanyOptions('corpSpendLoja', 'TODAS AS LOJAS');
+    if(!el('corpSpendTo').value) el('corpSpendTo').value = financeCurrentMonthKey();
+    if(!el('corpSpendFrom').value) el('corpSpendFrom').value = rhPreviousMonth(rhPreviousMonth(financeCurrentMonthKey()));
+  }
+  function corpSpendParams(){
+    const params = new URLSearchParams({from: el('corpSpendFrom').value, to: el('corpSpendTo').value});
+    if(el('corpSpendCard').value) params.set('cardId', el('corpSpendCard').value);
+    if(el('corpSpendLoja').value) params.set('companyId', el('corpSpendLoja').value);
+    if(el('corpSpendNotExpense').checked) params.set('includeNotExpense', '1');
+    return params;
+  }
+  async function loadCorpSpending(){
+    const chart = el('corpSpendChart');
+    const body = el('corpSpendTableBody');
+    el('corpSpendEntries').hidden = true;
+    if(!el('corpSpendFrom').value || !el('corpSpendTo').value){ chart.innerHTML = '<div class="dre-empty">Escolha o período.</div>'; return; }
+    chart.innerHTML = '<div class="dre-empty">Carregando…</div>';
+    try{
+      corpSpendData = await financeApiRequest('/corporate-cards/spending?'+corpSpendParams().toString());
+    }catch(error){
+      chart.innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">—</td></tr>';
+      return;
+    }
+    const categories = corpSpendData.categories || [];
+    const max = Math.max(1, ...categories.map(c => c.totalCents));
+    const key = c => c.categoryItemId || '__none__';
+    chart.innerHTML = categories.length ? categories.map(c =>
+      '<button class="spend-bar" type="button" data-spend-category="'+escapeHtml(key(c))+'" title="Ver os lançamentos desta categoria">'+
+        '<span class="spend-bar-label">'+escapeHtml(c.label)+'</span>'+
+        '<span class="spend-bar-track"><span class="spend-bar-fill" style="width:'+Math.max(0, c.totalCents / max * 100).toFixed(1)+'%"></span></span>'+
+        '<span class="spend-bar-value">'+formatCentsBRL(c.totalCents)+' · '+pctFromBps(c.shareBps)+'</span>'+
+      '</button>').join('') : '<div class="dre-empty">Nenhum gasto no período.</div>';
+    body.innerHTML = categories.length ? categories.map(c =>
+      '<tr>'+
+        '<td data-label="CATEGORIA">'+escapeHtml(c.label)+'</td>'+
+        '<td data-label="LANÇAMENTOS">'+c.entryCount+'</td>'+
+        '<td data-label="VALOR">'+formatCentsBRL(c.totalCents)+'</td>'+
+        '<td data-label="% DO TOTAL">'+pctFromBps(c.shareBps)+'</td>'+
+      '</tr>').join('') +
+      '<tr class="spend-total"><td data-label="CATEGORIA"><strong>TOTAL</strong></td><td data-label="LANÇAMENTOS"><strong>'+categories.reduce((n, c) => n + c.entryCount, 0)+'</strong></td><td data-label="VALOR"><strong>'+formatCentsBRL(corpSpendData.totalCents)+'</strong></td><td data-label="% DO TOTAL"><strong>100,00%</strong></td></tr>'
+      : '<tr><td colspan="4" class="responsive-empty">Nenhum gasto no período.</td></tr>';
+  }
+  el('corpSpendChart').addEventListener('click', async event => {
+    const bar = event.target.closest('[data-spend-category]');
+    if(!bar) return;
+    const category = (corpSpendData.categories || []).find(c => (c.categoryItemId || '__none__') === bar.dataset.spendCategory);
+    const params = corpSpendParams();
+    params.set('category', bar.dataset.spendCategory);
+    el('corpSpendChart').querySelectorAll('.spend-bar').forEach(b => b.classList.toggle('active', b === bar));
+    el('corpSpendEntriesTitle').textContent = 'LANÇAMENTOS — '+(category ? category.label : '');
+    el('corpSpendEntries').hidden = false;
+    const body = el('corpSpendEntriesBody');
+    body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await financeApiRequest('/corporate-cards/spending?'+params.toString());
+      const entries = Array.isArray(data.entries) ? data.entries : [];
+      body.innerHTML = entries.length ? entries.map(e =>
+        '<tr>'+
+          '<td data-label="DATA">'+escapeHtml(formatDateBR(e.entryDate))+'</td>'+
+          '<td data-label="CARTÃO">'+escapeHtml(e.cardName || '—')+'</td>'+
+          '<td data-label="ESTABELECIMENTO">'+escapeHtml(e.merchant || '—')+'</td>'+
+          '<td data-label="VALOR">'+formatCentsBRL(e.amountCents)+'</td>'+
+          '<td data-label="PARCELA">'+escapeHtml(e.installmentLabel || '—')+'</td>'+
+          '<td data-label="RESPONSÁVEL">'+escapeHtml(e.holderName || '—')+'</td>'+
+          '<td data-label="SITUAÇÃO"><span class="status-pill '+(CORP_ENTRY_STATUS_PILLS[e.status] || '')+'">'+escapeHtml(CORP_ENTRY_STATUS_LABELS[e.status] || e.status)+'</span></td>'+
+        '</tr>').join('') : '<tr><td colspan="7" class="responsive-empty">Nenhum lançamento.</td></tr>';
+      el('corpSpendEntries').scrollIntoView({behavior:'smooth', block:'start'});
+    }catch(error){ body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>'; }
+  });
+  el('btnCloseCorpSpendEntries').addEventListener('click', () => {
+    el('corpSpendEntries').hidden = true;
+    el('corpSpendChart').querySelectorAll('.spend-bar').forEach(b => b.classList.remove('active'));
+  });
+  ['corpSpendFrom','corpSpendTo','corpSpendCard','corpSpendLoja','corpSpendNotExpense'].forEach(id => el(id).addEventListener('change', loadCorpSpending));
 
   // ---------------------------------------------------------------------
   // Conciliação Bancária (Financeiro Fase 7).
@@ -31458,7 +31746,7 @@ function renderHomeTasks(){
       finally{ buttons.forEach(b => { b.disabled = false; }); sync(); }
     });
     sync();
-    return {sync};
+    return {sync, clear(){ selected.clear(); sync(); }};
   }
 
   // ----- Declaração de Vendas (ex-"Declaração de Shopping") -----

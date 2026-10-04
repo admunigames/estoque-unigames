@@ -4858,3 +4858,32 @@ test("Financeiro > Declaração de Vendas: nome novo, campos retirados, lote e a
   assert.match(html, /financeApiRequest\('\/mall-declarations\/bulk'/);
   assert.match(html, /\.bulk-check,\.decl-batch-table input\[type="checkbox"\]\{\n\s*width:18px; height:18px; min-height:0;/);
 });
+
+test("Financeiro > Cartões: selos de duplicidade, filtros, barra de lote e gastos por categoria", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  // Selos.
+  assert.match(html, /status-pill warn">JÁ CADASTRADO<\/span>/);
+  assert.match(html, /POSSÍVEL DUPLICADO EM DESPESAS<\/span>/);
+  assert.match(html, /financeApiRequest\('\/corporate-cards\/'\+encodeURIComponent\(corpCardCurrent\.id\)\+'\/invoice', \{method:'POST', headers:\{'Content-Type':'application\/json'\}, body:JSON\.stringify\(\{dryRun:true, rows\}\)\}\)/);
+  assert.match(html, /allowDuplicate: !!r\.duplicate/);
+  // Situações e filtros.
+  assert.match(html, /CORP_ENTRY_STATUS_LABELS = \{pending:'PENDENTE', classified:'CLASSIFICADO', expensed:'LANÇADO EM DESPESAS', not_expense:'NÃO É DESPESA'\}/);
+  for (const id of ["corpEntriesStatus", "corpEntriesCategory", "corpEntriesHolder", "corpEntriesOnlyDup"]) {
+    assert.match(html, new RegExp(`id="${id}"`), id);
+  }
+  assert.match(html, /<option value="not_expense">NÃO É DESPESA<\/option>/);
+  // Responsável editável com sugestões.
+  assert.match(html, /id="corpClassifyHolder" maxlength="120" list="corpHolderList"/);
+  assert.match(html, /<datalist id="corpHolderList"><\/datalist>/);
+  // Barra de lote (componente reutilizado, não outro).
+  assert.match(html, /id="corpEntriesBulkBar"[\s\S]*?data-bulk-action="classify">CLASSIFICAR[\s\S]*?data-bulk-action="launch">LANÇAR EM DESPESAS[\s\S]*?data-bulk-action="not-expense">MARCAR "NÃO É DESPESA"[\s\S]*?data-bulk-action="delete">EXCLUIR</);
+  assert.match(html, /const corpEntriesBulk = setupBulkSelection\(el\('corpEntriesBulkBar'\), el\('corpEntriesTableBody'\)/);
+  assert.equal(html.split("function setupBulkSelection(").length - 1, 1);
+  // LANÇAR DESPESA de um passa pelo servidor (sem criar Despesa pelo front).
+  assert.match(html, /runCorpBulk\('launch', \[entryId\]/);
+  // Gastos por categoria.
+  assert.match(html, /data-corp-view="gastos">GASTOS POR CATEGORIA<\/button>/);
+  assert.match(html, /id="corpSpendNotExpense"> INCLUIR NÃO É DESPESA/);
+  assert.match(html, /financeApiRequest\('\/corporate-cards\/spending\?'/);
+  assert.match(html, /class="spend-bar" type="button" data-spend-category=/);
+});
