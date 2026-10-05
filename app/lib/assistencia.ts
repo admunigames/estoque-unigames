@@ -86,6 +86,8 @@ export type ParsedLine = {
   description: string;
   quantity: number;
   unitCents: number;
+  /** Desconto em R$ (centavos) no item inteiro (qtd × valor), digitado no orçamento. */
+  discountCents: number;
 };
 
 export type ParsedEquipment = {
@@ -107,10 +109,17 @@ export type ParsedQuote = {
   observations: SavedObservation[];
   extraNotes: string;
   equipments: ParsedEquipment[];
+  /** Forma de CRÉDITO escolhida para aparecer no PDF ("" = nenhuma). */
+  creditOptionId: string;
   totalCents: number;
 };
 
-type PricedLine = { defectName?: string; quantity: number; unitCents: number };
+type PricedLine = { defectName?: string; quantity: number; unitCents: number; discountCents?: number };
+
+/** Valor do item já com o desconto em R$ digitado no orçamento. */
+export function lineNetCents(line: PricedLine) {
+  return line.quantity * line.unitCents - (line.discountCents || 0);
+}
 
 /** Defeito da tabela com PREVENTIVA no nome (ex.: "PREVENTIVA", "MANUTENÇÃO PREVENTIVA"). */
 export function isPreventive(line: { defectName?: string }) {
@@ -124,13 +133,13 @@ export function isPreventive(line: { defectName?: string }) {
  */
 export function preventiveDiscountCents(equipment: { lines: PricedLine[] }, line: PricedLine) {
   const hasOtherService = equipment.lines.some((other) => !isPreventive(other));
-  return hasOtherService && isPreventive(line) ? line.quantity * line.unitCents : 0;
+  return hasOtherService && isPreventive(line) ? lineNetCents(line) : 0;
 }
 
-/** Total SEMPRE calculado aqui (qtd × valor unitário − desconto da preventiva), nunca vindo do navegador. */
+/** Total SEMPRE calculado aqui (qtd × valor − desconto do item − desconto da preventiva), nunca vindo do navegador. */
 export function equipmentSubtotal(equipment: { lines: PricedLine[] }) {
   return equipment.lines.reduce(
-    (sum, line) => sum + line.quantity * line.unitCents - preventiveDiscountCents(equipment, line),
+    (sum, line) => sum + lineNetCents(line) - preventiveDiscountCents(equipment, line),
     0,
   );
 }
@@ -161,7 +170,11 @@ function parseLines(raw: unknown, label: string): { lines: ParsedLine[] } | { er
     }
     const unitCents = cents(entry.unitCents);
     if (unitCents === null) return { error: `${lineLabel}: INFORME O VALOR UNITÁRIO.` };
-    lines.push({ defectName, description, quantity, unitCents });
+    const rawDiscount = entry.discountCents;
+    const discountCents = rawDiscount === null || rawDiscount === undefined || rawDiscount === "" ? 0 : cents(rawDiscount);
+    if (discountCents === null) return { error: `${lineLabel}: DESCONTO INVÁLIDO.` };
+    if (discountCents > quantity * unitCents) return { error: `${lineLabel}: O DESCONTO NÃO PODE SER MAIOR QUE O VALOR DO ITEM.` };
+    lines.push({ defectName, description, quantity, unitCents, discountCents });
   }
   return { lines };
 }
@@ -231,6 +244,7 @@ export function parseQuote(body: unknown): { quote: ParsedQuote } | { error: str
       observations,
       extraNotes,
       equipments,
+      creditOptionId: text(entry.creditOptionId, 80),
       totalCents: quoteTotal(equipments),
     },
   };
@@ -299,4 +313,60 @@ export function isUniqueViolation(error: unknown) {
   if (code === "23505") return true;
   const message = (error as { message?: unknown }).message;
   return typeof message === "string" && /unique/i.test(message);
+}
+
+// ---------------------------------------------------------------------------
+// Formas de pagamento (aba PAGAMENTOS). "always" aparece em todo orçamento
+// (débito, dinheiro/Pix); "credit" só a escolhida no orçamento. Só desconto,
+// nunca acréscimo (decisão do usuário). Percentual em centésimos (500 = 5%).
+// ---------------------------------------------------------------------------
+export const PAYMENT_KINDS = ["credit", "always"] as const;
+export type PaymentKind = (typeof PAYMENT_KINDS)[number];
+export const MAX_INSTALLMENTS = 24;
+
+export type PaymentSnapshot = { id: string; kind: PaymentKind; label: string; discountBp: number; installments: number };
+
+/** Valor total na forma de pagamento (desconto sobre o total, arredondado ao centavo). */
+export function paymentAmountCents(totalCents: number, discountBp: number) {
+  return Math.round((totalCents * (10000 - discountBp)) / 10000);
+}
+
+export function parsePaymentOption(body: unknown): { option: Omit<PaymentSnapshot, "id"> & { active: boolean } } | { error: string } {
+  const entry = (body && typeof body === "object" ? body : {}) as JsonMap;
+  const kind = entry.kind;
+  if (kind !== "credit" && kind !== "always") return { error: "ESCOLHA O TIPO (CRÉDITO OU SEMPRE)." };
+  const label = upper(text(entry.label, 160));
+  if (label.length < 3) return { error: "INFORME A DESCRIÇÃO DA FORMA DE PAGAMENTO." };
+  const discountBp = typeof entry.discountBp === "string" ? Number(entry.discountBp) : entry.discountBp ?? 0;
+  if (typeof discountBp !== "number" || !Number.isInteger(discountBp) || discountBp < 0 || discountBp >= 10000) {
+    return { error: "DESCONTO INVÁLIDO (0% A 99,99%)." };
+  }
+  const installments = kind === "credit"
+    ? typeof entry.installments === "string" ? Number(entry.installments) : entry.installments
+    : 1;
+  if (typeof installments !== "number" || !Number.isInteger(installments) || installments < 1 || installments > MAX_INSTALLMENTS) {
+    return { error: `Nº DE PARCELAS INVÁLIDO (1 A ${MAX_INSTALLMENTS}).` };
+  }
+  const active = !(entry.active === false || entry.active === 0 || entry.active === "0");
+  return { option: { kind, label, discountBp, installments, active } };
+}
+
+/** Lê o JSON de formas de pagamento gravado no orçamento (lista vazia se ausente/inválido). */
+export function parseSavedPayments(raw: unknown): PaymentSnapshot[] {
+  if (typeof raw !== "string" || !raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item) => item && typeof item === "object" && typeof item.label === "string")
+      .map((item) => ({
+        id: String(item.id || ""),
+        kind: item.kind === "credit" ? "credit" : "always",
+        label: String(item.label),
+        discountBp: Number(item.discountBp) || 0,
+        installments: Math.max(1, Number(item.installments) || 1),
+      }));
+  } catch {
+    return [];
+  }
 }

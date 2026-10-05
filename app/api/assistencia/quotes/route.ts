@@ -3,6 +3,7 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import { hasCompany } from "../../../lib/access-scope";
 import { isDateOnly, isUniqueViolation, parseQuote, upper } from "../../../lib/assistencia";
 import {
+  buildPayments,
   canManage,
   companyName,
   FORBIDDEN,
@@ -75,6 +76,7 @@ export async function GET(request: Request) {
       quotes: rows.map((row) => {
         const quote: Partial<QuoteRow> = normalizeQuote(row);
         delete quote.observations;
+        delete quote.payments;
         return { ...quote, devices: Array.from((byQuote.get(row.id) || new Map<number, string>()).values()) };
       }),
     });
@@ -105,6 +107,8 @@ export async function POST(request: Request) {
     if (await osTaken(database, quote.osNumber)) {
       return jsonResponse({ error: osConflictMessage(quote.osNumber) }, 409);
     }
+    const built = await buildPayments(database, quote.creditOptionId);
+    if ("error" in built) return jsonResponse({ error: built.error }, 400);
 
     const id = crypto.randomUUID();
     const at = new Date().toISOString();
@@ -113,9 +117,9 @@ export async function POST(request: Request) {
         .prepare(
           `INSERT INTO assist_quotes
             (id, os_number, company_id, company_name, entry_date, client_name, client_cpf, client_phone,
-             client_address, observations, extra_notes, total_cents, created_by, created_by_name, created_at,
-             updated_by, updated_by_name, updated_at)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?13, ?14, ?15)`,
+             client_address, observations, extra_notes, payments, total_cents, created_by, created_by_name,
+             created_at, updated_by, updated_by_name, updated_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?16, ?12, ?13, ?14, ?15, ?13, ?14, ?15)`,
         )
         .bind(
           id,
@@ -133,6 +137,7 @@ export async function POST(request: Request) {
           actor.id,
           actor.displayName,
           at,
+          JSON.stringify(built.payments),
         ),
       ...itemStatements(database, id, quote),
     ]);

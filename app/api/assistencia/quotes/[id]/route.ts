@@ -1,7 +1,8 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
-import { isUniqueViolation, parseQuote } from "../../../../lib/assistencia";
+import { isUniqueViolation, parseQuote, parseSavedPayments } from "../../../../lib/assistencia";
 import {
+  buildPayments,
   canManage,
   companyName,
   FORBIDDEN,
@@ -66,6 +67,8 @@ export async function PATCH(request: Request, context: Context) {
     if (await osTaken(database, quote.osNumber, id)) {
       return jsonResponse({ error: osConflictMessage(quote.osNumber) }, 409);
     }
+    const built = await buildPayments(database, quote.creditOptionId, parseSavedPayments(row.payments));
+    if ("error" in built) return jsonResponse({ error: built.error }, 400);
 
     const at = new Date().toISOString();
     await database.batch([
@@ -74,7 +77,7 @@ export async function PATCH(request: Request, context: Context) {
           `UPDATE assist_quotes
            SET os_number=?1, company_id=?2, company_name=?3, entry_date=?4, client_name=?5, client_cpf=?6,
                client_phone=?7, client_address=?8, observations=?9, extra_notes=?10, total_cents=?11,
-               updated_by=?12, updated_by_name=?13, updated_at=?14
+               updated_by=?12, updated_by_name=?13, updated_at=?14, payments=?16
            WHERE id=?15`,
         )
         .bind(
@@ -93,6 +96,7 @@ export async function PATCH(request: Request, context: Context) {
           actor.displayName,
           at,
           id,
+          JSON.stringify(built.payments),
         ),
       database.prepare("DELETE FROM assist_quote_items WHERE quote_id=?1").bind(id),
       ...itemStatements(database, id, quote),

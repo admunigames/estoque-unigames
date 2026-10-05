@@ -3840,6 +3840,8 @@ export const assistQuotes = pgTable(
     clientAddress: text("client_address").notNull().default(""),
     observations: text("observations").notNull().default("[]"),
     extraNotes: text("extra_notes").notNull().default(""),
+    // Cópia (JSON) das formas de pagamento que vão no PDF (migration 0081).
+    payments: text("payments").notNull().default(""),
     totalCents: integer("total_cents").notNull().default(0),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
@@ -3872,7 +3874,27 @@ export const assistQuoteItems = pgTable(
     description: text("description").notNull().default(""),
     quantity: integer("quantity").notNull().default(1),
     unitCents: integer("unit_cents").notNull().default(0),
+    // Desconto em R$ no item inteiro, digitado no orçamento (migration 0081).
+    discountCents: integer("discount_cents").notNull().default(0),
     sortOrder: integer("sort_order").notNull().default(0),
   },
   (table) => [index("assist_quote_items_quote_idx").on(table.quoteId)],
 );
+
+// Aba PAGAMENTOS (migration 0081): kind "credit" aparece só se escolhida no
+// orçamento; "always" em todo orçamento. Só desconto (discount_bp: 500 = 5%).
+export const assistPaymentOptions = pgTable("assist_payment_options", {
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  label: text("label").notNull(),
+  discountBp: integer("discount_bp").notNull().default(0),
+  installments: integer("installments").notNull().default(1),
+  active: integer("active").notNull().default(1),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdBy: text("created_by").notNull().default(""),
+  createdByName: text("created_by_name").notNull().default(""),
+  createdAt: text("created_at").notNull().default(""),
+  updatedBy: text("updated_by").notNull().default(""),
+  updatedByName: text("updated_by_name").notNull().default(""),
+  updatedAt: text("updated_at").notNull().default(""),
+});

@@ -3182,7 +3182,7 @@
   .assist-picker > button{min-height:46px; padding:9px 14px; font-size:11px;}
   .assist-lines{display:grid; gap:8px; margin-top:12px;}
   .assist-line{
-    display:grid; grid-template-columns:minmax(0,2fr) 88px minmax(0,1fr) minmax(0,.8fr) auto; align-items:end; gap:10px;
+    display:grid; grid-template-columns:minmax(0,2fr) 76px minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) auto; align-items:end; gap:10px;
     padding:10px 12px; border:1px solid var(--surface-border); border-radius:10px; background:var(--bg-card);
   }
   .assist-line-name{min-width:0; align-self:center;}
@@ -3220,7 +3220,12 @@
   .assist-defect-table td{vertical-align:middle;}
   .assist-defect-table input[data-def-field="name"]{width:100%; min-width:200px;}
   .assist-defect-table input[data-def-field="min"],.assist-defect-table input[data-def-field="max"]{width:120px;}
-  .assist-defect-table input[type="checkbox"],.assist-check input[type="checkbox"]{width:18px; height:18px; min-height:0; margin:0; accent-color:var(--accent); cursor:pointer;}
+  .assist-credit-field{max-width:520px; margin-bottom:14px;}
+  .assist-pay-table td{vertical-align:middle;}
+  .assist-pay-table input[data-pay-field="label"]{width:100%; min-width:260px;}
+  .assist-pay-table input[type="number"]{width:96px;}
+  .assist-pay-table td > button{min-height:36px; padding:7px 10px; font-size:9.5px;}
+  .assist-defect-table input[type="checkbox"],.assist-check input[type="checkbox"],.assist-pay-table input[type="checkbox"]{width:18px; height:18px; min-height:0; margin:0; accent-color:var(--accent); cursor:pointer;}
   .assist-defect-table tr.inactive td{opacity:.6;}
   .assist-check{display:flex; align-items:center; gap:9px; color:var(--ink); font:700 11px/1.3 var(--mono); cursor:pointer;}
   .assist-store-data{color:var(--ink-soft); font:600 11px/1.5 var(--sans);}
@@ -3269,7 +3274,9 @@
     .assist-preview{padding:10px;}
     .responsive-table tbody td > .loan-cell-actions.assist-row-actions{flex-wrap:wrap;}
     .responsive-table tbody td > .loan-cell-actions.assist-row-actions > button{flex:1 1 auto;}
-    .assist-defect-table input[data-def-field="name"]{min-width:0;}
+    .assist-defect-table input[data-def-field="name"],.assist-pay-table input[data-pay-field="label"]{min-width:0;}
+    .assist-pay-table input[type="number"],.assist-pay-table select{width:100%;}
+    .responsive-table.assist-pay-table tbody td > input[type="checkbox"]{justify-self:end;}
     .assist-defect-table input[data-def-field="min"],.assist-defect-table input[data-def-field="max"]{width:100%;}
     .responsive-table.assist-defect-table tbody td > input[type="checkbox"]{justify-self:end;}
   }
@@ -4500,6 +4507,7 @@
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-assist-tab="novo" id="assistTabNovo">NOVO ORÇAMENTO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="historico">HISTÓRICO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="tabela">TABELA DE VALORES</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="pagamentos">PAGAMENTOS</button>
       </div>
 
       <section class="no-print assist-section" id="assistSectionNovo">
@@ -4535,7 +4543,9 @@
           </section>
 
           <section class="table-panel assist-panel">
-            <h3 class="assist-panel-title">4. OBSERVAÇÕES</h3>
+            <h3 class="assist-panel-title">4. PAGAMENTO E OBSERVAÇÕES</h3>
+            <div class="purchase-field assist-credit-field"><label for="assistCreditOption">FORMA DE CRÉDITO NO PDF</label><select id="assistCreditOption"></select>
+              <p class="purchase-field-help">DÉBITO, DINHEIRO E PIX (FORMAS "SEMPRE" DA ABA PAGAMENTOS) APARECEM EM TODO ORÇAMENTO.</p></div>
             <div class="assist-obs-list" id="assistObservations"></div>
             <div class="purchase-field"><label for="assistExtraNotes">OBSERVAÇÃO LIVRE (OPCIONAL)</label><textarea id="assistExtraNotes" rows="3" maxlength="2000"></textarea></div>
           </section>
@@ -4569,6 +4579,26 @@
             <table>
               <thead><tr><th>OS</th><th>Data</th><th>Cliente</th><th>Loja</th><th>Equipamentos</th><th>Valor</th><th>Ações</th></tr></thead>
               <tbody id="assistHistoryBody"><tr><td colspan="7" class="responsive-empty">Carregando orçamentos…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="no-print assist-section" id="assistSectionPagamentos" hidden>
+        <form class="div-toolbar" id="assistPayForm" novalidate>
+          <div class="field"><label for="assistNewPayKind">TIPO</label><select id="assistNewPayKind"><option value="credit">CRÉDITO</option><option value="always">SEMPRE</option></select></div>
+          <div class="field assist-search"><label for="assistNewPayLabel">DESCRIÇÃO NO PDF</label><input id="assistNewPayLabel" maxlength="160" autocomplete="off" placeholder="EX.: PAGAMENTO NO CRÉDITO EM 10X SEM JUROS"></div>
+          <div class="field"><label for="assistNewPayDiscount">DESCONTO (%)</label><input id="assistNewPayDiscount" type="number" min="0" max="99.99" step="0.01" value="0"></div>
+          <div class="field"><label for="assistNewPayInstallments">PARCELAS</label><input id="assistNewPayInstallments" type="number" min="1" max="24" step="1" value="1"></div>
+          <button class="btn-accent" id="btnAssistNewPayment" type="submit">+ CADASTRAR</button>
+        </form>
+        <p class="purchase-field-help">CRÉDITO: SÓ A FORMA ESCOLHIDA NO ORÇAMENTO APARECE NO PDF, COM O VALOR DA PARCELA. SEMPRE: APARECE EM TODO ORÇAMENTO (DÉBITO, DINHEIRO, PIX). O DESCONTO É SOBRE O TOTAL. ORÇAMENTOS JÁ SALVOS NÃO MUDAM.</p>
+        <div class="user-form-status" id="assistPayStatus" role="status" aria-live="polite"></div>
+        <div class="table-panel responsive-table assist-pay-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Tipo</th><th>Descrição no PDF</th><th>Desconto (%)</th><th>Parcelas</th><th>Ativo</th><th>Ação</th></tr></thead>
+              <tbody id="assistPayBody"><tr><td colspan="6" class="responsive-empty">Carregando formas de pagamento…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -19947,21 +19977,33 @@ function renderHomeTasks(){
     {key:'novos_defeitos', title:'AVISO DE NOVOS DEFEITOS', text:'ATENÇÃO, EM CASO DE DETECÇÃO DE NOVOS DEFEITOS DOS QUAIS SÓ PODEM SER IDENTIFICADOS COM O ELETRÔNICO LIGADO APÓS A CORREÇÃO DESTE ORÇAMENTO, ESTAREMOS REFORMULANDO ESSE ORÇAMENTO. EX: DRIVE (FUNÇÃO P/ LEITURA CD/DVD), PORTAS USB’s, UNIDADE DE ARMAZENAMENTO, COOLER E ETC...'},
     {key:'garantia', title:'GARANTIA', text:'O SERVIÇO DESSE ORÇAMENTO CONTÉM GARANTIA DE 90 DIAS PELO CDC, Lei nº 8.078, NO ART 26.'}
   ];
-  // Formas de pagamento mostradas abaixo do total no PDF (só cálculo de
-  // exibição; o total salvo continua sendo o valor cheio).
+  // Formas de pagamento abaixo do total no PDF (só exibição: o total salvo é o
+  // valor cheio). As formas vêm da aba PAGAMENTOS; esta lista é a reserva para
+  // orçamentos salvos antes dela (sem cópia gravada) — as mesmas 3 que a
+  // migration 0081 cadastrou. discountBp: 500 = 5%.
   const ASSIST_PAYMENT_OPTIONS = [
-    {label:'PAGAMENTO NO CRÉDITO ATÉ 6X SEM JUROS', discountPct:0},
-    {label:'PAGAMENTO NO DÉBITO COM 5% DE DESCONTO', discountPct:5},
-    {label:'PAGAMENTO NO DINHEIRO OU PIX COM 10% DE DESCONTO', discountPct:10}
+    {kind:'credit', label:'PAGAMENTO NO CRÉDITO ATÉ 6X SEM JUROS', discountBp:0, installments:6},
+    {kind:'always', label:'PAGAMENTO NO DÉBITO COM 5% DE DESCONTO', discountBp:500, installments:1},
+    {kind:'always', label:'PAGAMENTO NO DINHEIRO OU PIX COM 10% DE DESCONTO', discountBp:1000, installments:1}
   ];
 
-  function assistPaymentCents(totalCents, discountPct){
-    return Math.round(totalCents * (100 - discountPct) / 100);
+  // Espelho de paymentAmountCents() em app/lib/assistencia.ts.
+  function assistPaymentCents(totalCents, discountBp){
+    return Math.round(totalCents * (10000 - discountBp) / 10000);
+  }
+
+  function assistPaymentRowHtml(option, totalCents){
+    const amount = assistPaymentCents(totalCents, Number(option.discountBp) || 0);
+    const installments = Math.max(1, Number(option.installments) || 1);
+    return '<tr><td>'+escapeHtml(option.label)+'</td><td class="num">'+
+      (installments > 1 ? installments+'X DE '+formatCentsBRL(Math.round(amount / installments))+' · ' : '')+
+      'VALOR TOTAL: '+formatCentsBRL(amount)+'</td></tr>';
   }
 
   const assistState = {
     ready:false, tab:'novo', defects:[], defectsLoaded:false,
-    editingId:'', editingOs:'', equipments:[], history:[], saving:false, showingProblems:false
+    editingId:'', editingOs:'', equipments:[], history:[], saving:false, showingProblems:false,
+    paymentOptions:[], paymentsLoaded:false
   };
   let assistPrintTitleBefore = '';
   let assistPreviewTimer = null;
@@ -20163,13 +20205,18 @@ function renderHomeTasks(){
     return Boolean(line.defectName && line.defectName.includes('PREVENTIVA'));
   }
 
+  // Espelho de lineNetCents(): valor do item já com o desconto em R$ digitado.
+  function assistLineNet(line){
+    return Math.max(0, assistLineCents(line) - (Number(line.discountCents) || 0));
+  }
+
   function assistPreventiveDiscount(equipment, line){
     const hasOtherService = equipment.lines.some(other => !assistIsPreventive(other));
-    return hasOtherService && assistIsPreventive(line) ? assistLineCents(line) : 0;
+    return hasOtherService && assistIsPreventive(line) ? assistLineNet(line) : 0;
   }
 
   function assistEquipmentSubtotal(equipment){
-    return equipment.lines.reduce((sum, line) => sum + assistLineCents(line) - assistPreventiveDiscount(equipment, line), 0);
+    return equipment.lines.reduce((sum, line) => sum + assistLineNet(line) - assistPreventiveDiscount(equipment, line), 0);
   }
 
   function assistTotalCents(equipments){
@@ -20192,7 +20239,9 @@ function renderHomeTasks(){
         '<input id="'+id+'Qty" type="number" min="1" max="999" step="1" inputmode="numeric" data-line-field="quantity" value="'+escapeHtml(String(line.quantity))+'"></div>'+
       '<div class="purchase-field"><label for="'+id+'Unit">VALOR UNIT. *</label>'+
         '<input id="'+id+'Unit" data-line-field="unit" placeholder="R$ 0,00"></div>'+
-      '<div class="assist-line-total"><span>TOTAL</span><strong data-line-total>'+formatCentsBRL(assistLineCents(line) - assistPreventiveDiscount(equipment, line))+'</strong></div>'+
+      '<div class="purchase-field"><label for="'+id+'Disc">DESCONTO (R$)</label>'+
+        '<input id="'+id+'Disc" data-line-field="discount" placeholder="R$ 0,00"></div>'+
+      '<div class="assist-line-total"><span>TOTAL</span><strong data-line-total>'+formatCentsBRL(assistLineNet(line) - assistPreventiveDiscount(equipment, line))+'</strong></div>'+
       '<button class="btn-danger-outline assist-line-remove" type="button" data-assist-action="remove-line">REMOVER</button>'+
     '</div>';
   }
@@ -20244,6 +20293,7 @@ function renderHomeTasks(){
       const equipment = assistState.equipments[Number(input.closest('[data-eq]').dataset.eq)];
       const line = equipment.lines[Number(input.closest('[data-line]').dataset.line)];
       assistSetCurrency(input, line.unitCents);
+      assistSetCurrency(input.closest('[data-line]').querySelector('[data-line-field="discount"]'), line.discountCents || null);
     });
     assistUpdateTotals();
     if(focusSelector){
@@ -20259,7 +20309,7 @@ function renderHomeTasks(){
       card.querySelectorAll('[data-line]').forEach(row => {
         const line = equipment.lines[Number(row.dataset.line)];
         const total = row.querySelector('[data-line-total]');
-        if(line && total) total.textContent = formatCentsBRL(assistLineCents(line) - assistPreventiveDiscount(equipment, line));
+        if(line && total) total.textContent = formatCentsBRL(assistLineNet(line) - assistPreventiveDiscount(equipment, line));
       });
       card.querySelector('[data-eq-subtotal]').textContent = formatCentsBRL(assistEquipmentSubtotal(equipment));
     });
@@ -20294,9 +20344,11 @@ function renderHomeTasks(){
           defectName:line.defectName,
           description:line.description.trim(),
           quantity:Number(line.quantity),
-          unitCents:line.unitCents
+          unitCents:line.unitCents,
+          discountCents:Number(line.discountCents) || 0
         }))
-      }))
+      })),
+      creditOptionId:el('assistCreditOption').value
     };
   }
 
@@ -20337,6 +20389,7 @@ function renderHomeTasks(){
         const quantity = Number(line.quantity);
         if(!Number.isInteger(quantity) || quantity < 1 || quantity > 999) flag(row && row.querySelector('[data-line-field="quantity"]'), label+' · '+name+': QUANTIDADE (1 A 999)');
         if(line.unitCents === null) flag(row && row.querySelector('[data-line-field="unit"]'), label+' · '+name+': VALOR UNITÁRIO');
+        else if((Number(line.discountCents) || 0) > assistLineCents(line)) flag(row && row.querySelector('[data-line-field="discount"]'), label+' · '+name+': DESCONTO MAIOR QUE O VALOR DO ITEM');
       });
     });
     return {problems, first};
@@ -20354,7 +20407,8 @@ function renderHomeTasks(){
       const rows = equipment.lines.map(line => {
         const quantity = Number(line.quantity) || 0;
         const hasValue = line.unitCents !== null && line.unitCents !== undefined;
-        const lineTotal = hasValue ? quantity * Number(line.unitCents) : 0;
+        const itemDiscount = Number(line.discountCents) || 0;
+        const lineTotal = hasValue ? Math.max(0, quantity * Number(line.unitCents) - itemDiscount) : 0;
         subtotal += lineTotal;
         const description = line.defectName
           ? '<b>'+escapeHtml(line.defectName)+'</b>'+(line.description ? ' — '+escapeHtml(line.description) : '')
@@ -20364,10 +20418,11 @@ function renderHomeTasks(){
         return '<tr><td class="item">'+(++item)+'</td><td>'+description+'</td>'+
           '<td class="num">'+(quantity || '—')+'</td>'+
           '<td class="num">'+(hasValue ? formatCentsBRL(line.unitCents) : 'A DEFINIR')+'</td>'+
+          '<td class="num">'+(itemDiscount ? '-'+formatCentsBRL(itemDiscount) : '—')+'</td>'+
           '<td class="num">'+(hasValue ? formatCentsBRL(lineTotal) : 'A DEFINIR')+'</td></tr>'+
           (discount ? '<tr class="assist-doc-discount"><td class="item">'+(++item)+'</td><td><b>DESCONTO '+escapeHtml(line.defectName)+'</b></td>'+
-            '<td class="num">'+quantity+'</td><td class="num">-'+formatCentsBRL(line.unitCents)+'</td><td class="num">-'+formatCentsBRL(discount)+'</td></tr>' : '');
-      }).join('') || '<tr><td colspan="5">NENHUM DEFEITO OU ITEM INCLUÍDO.</td></tr>';
+            '<td class="num">'+quantity+'</td><td class="num">'+(itemDiscount ? '—' : '-'+formatCentsBRL(line.unitCents))+'</td><td class="num">—</td><td class="num">-'+formatCentsBRL(discount)+'</td></tr>' : '');
+      }).join('') || '<tr><td colspan="6">NENHUM DEFEITO OU ITEM INCLUÍDO.</td></tr>';
       total += subtotal;
       return '<section class="assist-doc-block">'+
         '<h2>EQUIPAMENTO '+(index + 1)+': '+dash(equipment.device)+'</h2>'+
@@ -20376,9 +20431,9 @@ function renderHomeTasks(){
           '<div><b>CATEGORIA:</b> '+dash(equipment.category)+'</div>'+
           '<div class="full"><b>SERVIÇO REALIZADO:</b> '+dash(equipment.service)+'</div>'+
         '</div>'+
-        '<table class="assist-doc-table"><thead><tr><th class="item">Item</th><th>Descrição</th><th class="num qty">Qtd</th><th class="num money">Valor unit.</th><th class="num money">Valor total</th></tr></thead>'+
+        '<table class="assist-doc-table"><thead><tr><th class="item">Item</th><th>Descrição</th><th class="num qty">Qtd</th><th class="num money">Valor unit.</th><th class="num money">Desconto</th><th class="num money">Valor total</th></tr></thead>'+
         '<tbody>'+rows+'</tbody>'+
-        '<tfoot><tr><td colspan="4" class="num">SUBTOTAL</td><td class="num">'+formatCentsBRL(subtotal)+'</td></tr></tfoot></table>'+
+        '<tfoot><tr><td colspan="5" class="num">SUBTOTAL</td><td class="num">'+formatCentsBRL(subtotal)+'</td></tr></tfoot></table>'+
       '</section>';
     }).join('');
     const observations = (data.observations || []).map(observation =>
@@ -20406,7 +20461,7 @@ function renderHomeTasks(){
       equipmentsHtml+
       '<div class="assist-doc-total"><span>VALOR TOTAL</span><strong>'+formatCentsBRL(total)+'</strong></div>'+
       '<table class="assist-doc-table assist-doc-payments"><tbody>'+
-        ASSIST_PAYMENT_OPTIONS.map(option => '<tr><td>'+escapeHtml(option.label)+'</td><td class="num">VALOR TOTAL: '+formatCentsBRL(assistPaymentCents(total, option.discountPct))+'</td></tr>').join('')+
+        (Array.isArray(data.payments) && data.payments.length ? data.payments : ASSIST_PAYMENT_OPTIONS).map(option => assistPaymentRowHtml(option, total)).join('')+
       '</tbody></table>'+
       (observations ? '<section class="assist-doc-block assist-doc-obs"><h2>Observações</h2>'+observations+'</section>' : '')+
       '<footer class="assist-doc-foot">Assistência Técnica Especializada · Unigames</footer>'+
@@ -20428,7 +20483,8 @@ function renderHomeTasks(){
       ...payload,
       clientName:payload.clientName.toLocaleUpperCase('pt-BR'),
       companyName:companyOption && companyOption.value ? companyOption.textContent : '',
-      observations:ASSIST_OBSERVATIONS.filter(observation => payload.observations.includes(observation.key))
+      observations:ASSIST_OBSERVATIONS.filter(observation => payload.observations.includes(observation.key)),
+      payments:assistState.paymentsLoaded ? assistSelectedPayments(payload.creditOptionId) : ASSIST_PAYMENT_OPTIONS
     };
   }
 
@@ -20474,6 +20530,7 @@ function renderHomeTasks(){
     assistState.showingProblems = false;
     setAssistStatus('assistFormStatus', '');
     assistRenderCompanySelects();
+    assistRenderCreditSelect();
     assistRenderEquipments();
   }
 
@@ -20515,10 +20572,15 @@ function renderHomeTasks(){
         defectName:String(line.defectName || ''),
         description:String(line.description || ''),
         quantity:Number(line.quantity) || 1,
-        unitCents:line.unitCents === null || line.unitCents === undefined ? null : Number(line.unitCents) || 0
+        unitCents:line.unitCents === null || line.unitCents === undefined ? null : Number(line.unitCents) || 0,
+        discountCents:Number(line.discountCents) || 0
       }))
     }));
     if(!assistState.equipments.length) assistState.equipments = [assistNewEquipment()];
+    // Orçamento sem cópia gravada (anterior à aba PAGAMENTOS) usa o crédito padrão.
+    const savedPayments = Array.isArray(quote.payments) ? quote.payments : [];
+    const savedCredit = savedPayments.find(option => option && option.kind === 'credit');
+    assistRenderCreditSelect(savedCredit ? String(savedCredit.id || '') : null, savedCredit, savedPayments.length > 0 && !savedCredit);
     assistSetEditing(String(quote.id || ''), String(quote.osNumber || ''));
     assistState.showingProblems = false;
     setAssistStatus('assistFormStatus', '');
@@ -20805,9 +20867,138 @@ function renderHomeTasks(){
     }
   }
 
+  // ---------- PAGAMENTOS ----------
+  async function assistLoadPayments(){
+    const payload = await assistApi('/payment-options');
+    assistState.paymentOptions = Array.isArray(payload.options) ? payload.options : [];
+    assistState.paymentsLoaded = true;
+  }
+
+  // Formas que vão no PDF: a de CRÉDITO escolhida + todas as "sempre" ativas
+  // (mesma ordem de buildPayments() em app/api/assistencia/shared.ts).
+  function assistSelectedPayments(creditOptionId){
+    const options = assistState.paymentOptions || [];
+    const credit = creditOptionId ? options.find(option => option.id === creditOptionId && option.kind === 'credit') : null;
+    return (credit ? [credit] : []).concat(options.filter(option => option.active && option.kind === 'always'));
+  }
+
+  // selectedId null = padrão (primeira forma de crédito ativa). extra = forma
+  // de crédito já gravada no orçamento que saiu do cadastro (continua valendo).
+  function assistRenderCreditSelect(selectedId, extra, keepNone){
+    const select = el('assistCreditOption');
+    const credits = (assistState.paymentOptions || []).filter(option => option.active && option.kind === 'credit');
+    if(extra && extra.id && !credits.some(option => option.id === extra.id)) credits.push(extra);
+    select.innerHTML = credits.map(option => '<option value="'+escapeHtml(option.id)+'">'+escapeHtml(option.label)+'</option>').join('')+
+      '<option value="">NÃO MOSTRAR CRÉDITO NO PDF</option>';
+    if(selectedId !== null && selectedId !== undefined && (selectedId === '' || credits.some(option => option.id === selectedId))) select.value = selectedId;
+    else select.value = keepNone ? '' : (credits[0] ? credits[0].id : '');
+    assistSchedulePreview();
+  }
+
+  function assistPercentText(bp){
+    return ((Number(bp) || 0) / 100).toLocaleString('pt-BR', {maximumFractionDigits:2})+'%';
+  }
+
+  function assistRenderPaymentTable(){
+    const body = el('assistPayBody');
+    const options = assistState.paymentOptions || [];
+    if(!options.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">'+(assistState.paymentsLoaded ? 'NENHUMA FORMA DE PAGAMENTO CADASTRADA.' : 'Carregando formas de pagamento…')+'</td></tr>';
+      return;
+    }
+    body.innerHTML = options.map(option =>
+      '<tr data-payment="'+escapeHtml(option.id)+'"'+(option.active ? '' : ' class="inactive"')+'>'+
+        '<td data-label="TIPO"><select data-pay-field="kind" aria-label="Tipo">'+
+          '<option value="credit"'+(option.kind === 'credit' ? ' selected' : '')+'>CRÉDITO</option>'+
+          '<option value="always"'+(option.kind === 'always' ? ' selected' : '')+'>SEMPRE</option></select></td>'+
+        '<td data-label="DESCRIÇÃO NO PDF"><input data-pay-field="label" maxlength="160" value="'+escapeHtml(option.label)+'" aria-label="Descrição no PDF"></td>'+
+        '<td data-label="DESCONTO (%)"><input data-pay-field="discount" type="number" min="0" max="99.99" step="0.01" value="'+((Number(option.discountBp) || 0) / 100)+'" aria-label="Desconto em %"></td>'+
+        '<td data-label="PARCELAS"><input data-pay-field="installments" type="number" min="1" max="24" step="1" value="'+(Number(option.installments) || 1)+'" aria-label="Parcelas"'+(option.kind === 'credit' ? '' : ' disabled')+'></td>'+
+        '<td data-label="ATIVO"><input type="checkbox" data-pay-field="active" aria-label="Ativo"'+(option.active ? ' checked' : '')+'></td>'+
+        '<td data-label="AÇÃO"><button class="btn-outline" type="button" data-assist-pay-save>SALVAR</button></td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  function assistPaymentPayload(kind, label, discount, installments){
+    const value = Number(String(discount).replace(',', '.'));
+    return {
+      kind,
+      label:String(label || '').trim(),
+      discountBp:Number.isFinite(value) ? Math.round(value * 100) : NaN,
+      installments:kind === 'credit' ? Number(installments) : 1
+    };
+  }
+
+  async function assistAfterPaymentChange(message){
+    await assistLoadPayments();
+    assistRenderPaymentTable();
+    assistRenderCreditSelect(el('assistCreditOption').value || null);
+    showPurchaseToast(message);
+  }
+
+  async function assistSavePaymentRow(row){
+    const field = name => row.querySelector('[data-pay-field="'+name+'"]');
+    const payload = {
+      id:row.dataset.payment,
+      ...assistPaymentPayload(field('kind').value, field('label').value, field('discount').value, field('installments').value),
+      active:field('active').checked
+    };
+    const button = row.querySelector('[data-assist-pay-save]');
+    button.disabled = true;
+    try{
+      await assistApi('/payment-options', {method:'PATCH', body:JSON.stringify(payload)});
+      setAssistStatus('assistPayStatus', '');
+      await assistAfterPaymentChange('Forma de pagamento salva.');
+    }catch(error){
+      setAssistStatus('assistPayStatus', error.message, 'error');
+      button.disabled = false;
+    }
+  }
+
+  async function assistCreatePayment(event){
+    event.preventDefault();
+    const payload = assistPaymentPayload(el('assistNewPayKind').value, el('assistNewPayLabel').value, el('assistNewPayDiscount').value, el('assistNewPayInstallments').value);
+    if(payload.label.length < 3){
+      setAssistStatus('assistPayStatus', 'INFORME A DESCRIÇÃO QUE VAI NO PDF.', 'error');
+      el('assistNewPayLabel').focus();
+      return;
+    }
+    el('btnAssistNewPayment').disabled = true;
+    try{
+      await assistApi('/payment-options', {method:'POST', body:JSON.stringify(payload)});
+      el('assistPayForm').reset();
+      el('assistNewPayInstallments').disabled = false;
+      setAssistStatus('assistPayStatus', '');
+      await assistAfterPaymentChange('Forma de pagamento cadastrada.');
+    }catch(error){
+      setAssistStatus('assistPayStatus', error.message, 'error');
+    }finally{
+      el('btnAssistNewPayment').disabled = false;
+    }
+  }
+
+  el('assistPayForm').addEventListener('submit', assistCreatePayment);
+  el('assistNewPayKind').addEventListener('change', () => {
+    const credit = el('assistNewPayKind').value === 'credit';
+    el('assistNewPayInstallments').disabled = !credit;
+    if(!credit) el('assistNewPayInstallments').value = '1';
+  });
+  el('assistPayBody').addEventListener('change', event => {
+    if(event.target.dataset.payField !== 'kind') return;
+    const installments = event.target.closest('tr').querySelector('[data-pay-field="installments"]');
+    installments.disabled = event.target.value !== 'credit';
+    if(installments.disabled) installments.value = '1';
+  });
+  el('assistPayBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-assist-pay-save]');
+    if(button) assistSavePaymentRow(button.closest('tr'));
+  });
+  el('assistCreditOption').addEventListener('change', assistSchedulePreview);
+
   // ---------- ABAS / ENTRADA DA PÁGINA ----------
   function setAssistTab(tab){
-    const next = ['novo','historico','tabela'].includes(tab) ? tab : 'novo';
+    const next = ['novo','historico','tabela','pagamentos'].includes(tab) ? tab : 'novo';
     assistState.tab = next;
     document.querySelectorAll('[data-assist-tab]').forEach(button => {
       const active = button.dataset.assistTab === next;
@@ -20817,6 +21008,8 @@ function renderHomeTasks(){
     el('assistSectionNovo').hidden = next !== 'novo';
     el('assistSectionHistorico').hidden = next !== 'historico';
     el('assistSectionTabela').hidden = next !== 'tabela';
+    el('assistSectionPagamentos').hidden = next !== 'pagamentos';
+    if(next === 'pagamentos') assistRenderPaymentTable();
     if(next === 'historico') assistLoadHistory();
     if(next === 'tabela'){
       assistRenderDefectFilters();
@@ -20840,6 +21033,12 @@ function renderHomeTasks(){
       setAssistStatus('assistFormStatus', '');
     }catch(error){
       setAssistStatus('assistFormStatus', 'TABELA DE VALORES: '+error.message, 'error');
+    }
+    try{
+      if(!assistState.paymentsLoaded) await assistLoadPayments();
+      if(!assistState.editingId) assistRenderCreditSelect(el('assistCreditOption').value || null);
+    }catch(error){
+      setAssistStatus('assistFormStatus', 'FORMAS DE PAGAMENTO: '+error.message, 'error');
     }
     assistRenderEquipments();
     setAssistTab(assistState.tab);
@@ -20895,6 +21094,7 @@ function renderHomeTasks(){
     const line = equipment.lines[Number(row.dataset.line)];
     if(target.dataset.lineField === 'quantity') line.quantity = target.value === '' ? '' : Number(target.value);
     if(target.dataset.lineField === 'unit') line.unitCents = assistCentsFromInput(target);
+    if(target.dataset.lineField === 'discount') line.discountCents = assistCentsFromInput(target) || 0;
     if(target.dataset.lineField === 'description') line.description = target.value;
     assistUpdateTotals();
   });

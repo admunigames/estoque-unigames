@@ -31,6 +31,7 @@ const STORE_B = "cguarar01";
 const migration = await readFile(new URL("../drizzle/0078_assistencia_orcamentos.sql", import.meta.url), "utf8");
 const migration0079 = await readFile(new URL("../drizzle/0079_assistencia_eletronicos.sql", import.meta.url), "utf8");
 const migration0080 = await readFile(new URL("../drizzle/0080_assistencia_mao_de_obra.sql", import.meta.url), "utf8");
+const migration0081 = await readFile(new URL("../drizzle/0081_assistencia_pagamentos.sql", import.meta.url), "utf8");
 const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
 
 function createFakeD1() {
@@ -69,6 +70,10 @@ function createFakeD1() {
   for (const statement of migration0079.split("--> statement-breakpoint")) sqlite.exec(statement);
   // 0080: MÃO DE OBRA (R$ 99,99) em todos os aparelhos.
   sqlite.exec(migration0080);
+  // 0081: formas de pagamento + desconto por item (RLS/REVOKE são só do Postgres).
+  for (const statement of migration0081.split("--> statement-breakpoint")) {
+    if (!/ROW LEVEL SECURITY|REVOKE ALL/.test(statement)) sqlite.exec(statement);
+  }
   sqlite
     .prepare("INSERT INTO shared_state (state_key, value_json) VALUES ('companies_list', ?)")
     .run(JSON.stringify([
@@ -130,6 +135,7 @@ globalThis.__assistTestDb = db;
 const quotesRoute = await import("../app/api/assistencia/quotes/route.ts");
 const quoteRoute = await import("../app/api/assistencia/quotes/[id]/route.ts");
 const defectsRoute = await import("../app/api/assistencia/defects/route.ts");
+const paymentsRoute = await import("../app/api/assistencia/payment-options/route.ts");
 const lib = await import("../app/lib/assistencia.ts");
 
 const BASE = "http://127.0.0.1/api/assistencia";
@@ -170,6 +176,9 @@ const deleteQuote = (user, id) => call(quoteRoute.DELETE, user, { method: "DELET
 const getDefects = (user) => call(defectsRoute.GET, user, { path: "/defects" });
 const postDefect = (user, body) => call(defectsRoute.POST, user, { method: "POST", path: "/defects", body });
 const patchDefect = (user, body) => call(defectsRoute.PATCH, user, { method: "PATCH", path: "/defects", body });
+const getPayments = (user) => call(paymentsRoute.GET, user, { path: "/payment-options" });
+const postPayment = (user, body) => call(paymentsRoute.POST, user, { method: "POST", path: "/payment-options", body });
+const patchPayment = (user, body) => call(paymentsRoute.PATCH, user, { method: "PATCH", path: "/payment-options", body });
 
 function quote(overrides = {}) {
   return {
@@ -511,4 +520,59 @@ test("preventiva da tabela entra como DESCONTO quando há outro serviço no equi
     { lines: [{ defectName: "FORMATAÇÃO", quantity: 1, unitCents: 25000 }, { defectName: "MANUTENÇÃO PREVENTIVA", quantity: 1, unitCents: 25000 }] },
     { lines: [{ defectName: "PREVENTIVA", quantity: 1, unitCents: 15000 }] },
   ]), 40000);
+});
+
+test("aba PAGAMENTOS: 3 formas atuais, cadastrar/editar e cópia no orçamento (crédito escolhido + sempre)", async () => {
+  const seeded = (await getPayments(NO_STORE_USER)).body.options;
+  assert.deepEqual(seeded.map((o) => [o.id, o.kind, o.discountBp, o.installments]), [
+    ["assist-pay-credito-6x", "credit", 0, 6],
+    ["assist-pay-debito", "always", 500, 1],
+    ["assist-pay-dinheiro-pix", "always", 1000, 1],
+  ]);
+  assert.equal((await getPayments(STORE_LOGIN)).status, 403);
+  assert.equal((await postPayment(NO_STORE_USER, { kind: "credit", label: "X", discountBp: 0, installments: 2 })).body.error, "INFORME A DESCRIÇÃO DA FORMA DE PAGAMENTO.");
+  assert.equal((await postPayment(NO_STORE_USER, { kind: "credit", label: "CRÉDITO 10X", discountBp: 10000, installments: 10 })).body.error, "DESCONTO INVÁLIDO (0% A 99,99%).");
+  assert.equal((await postPayment(NO_STORE_USER, { kind: "juros", label: "CRÉDITO 10X", discountBp: 0, installments: 10 })).status, 400);
+  const created = await postPayment(NO_STORE_USER, { kind: "credit", label: "pagamento no crédito em 10x sem juros", discountBp: 0, installments: 10 });
+  assert.equal(created.status, 201);
+  const tenX = created.body.id;
+
+  const base = (overrides) => quote({
+    companyId: STORE_A, entryDate: "2026-10-06",
+    equipments: [{ category: "CONSOLES", device: "PS3 SLIM", serialNumber: "", service: "",
+      lines: [{ defectName: "NÃO LIGA", description: "", quantity: 1, unitCents: 45000, discountCents: 5000 }] }],
+    ...overrides,
+  });
+  // Crédito escolhido primeiro, depois as "sempre"; desconto em R$ do item sai do total.
+  const withCredit = await createQuote(NO_STORE_USER, base({ osNumber: "PAG1", creditOptionId: tenX }));
+  assert.equal(withCredit.status, 201, JSON.stringify(withCredit.body));
+  assert.equal(withCredit.body.totalCents, 40000);
+  const detail = (await getQuote(NO_STORE_USER, withCredit.body.id)).body;
+  assert.deepEqual(detail.quote.payments.map((o) => o.label), [
+    "PAGAMENTO NO CRÉDITO EM 10X SEM JUROS", "PAGAMENTO NO DÉBITO COM 5% DE DESCONTO", "PAGAMENTO NO DINHEIRO OU PIX COM 10% DE DESCONTO",
+  ]);
+  assert.equal(detail.quote.payments[0].installments, 10);
+  assert.deepEqual([detail.equipments[0].lines[0].discountCents, detail.equipments[0].lines[0].totalCents], [5000, 40000]);
+  assert.equal(lib.paymentAmountCents(40000, 500), 38000);
+  // Sem crédito: só as "sempre". Crédito inexistente: 400.
+  const noCredit = await createQuote(NO_STORE_USER, base({ osNumber: "PAG2", creditOptionId: "" }));
+  assert.deepEqual((await getQuote(NO_STORE_USER, noCredit.body.id)).body.quote.payments.map((o) => o.kind), ["always", "always"]);
+  const unknown = await createQuote(NO_STORE_USER, base({ osNumber: "PAG3", creditOptionId: "nao-existe" }));
+  assert.equal(unknown.body.error, "FORMA DE CRÉDITO NÃO ENCONTRADA. ESCOLHA OUTRA.");
+  // Desconto maior que o item: 400.
+  const tooMuch = await createQuote(NO_STORE_USER, base({ osNumber: "PAG4",
+    equipments: [{ category: "CONSOLES", device: "PS3 SLIM", lines: [{ defectName: "NÃO LIGA", quantity: 1, unitCents: 45000, discountCents: 45001 }] }] }));
+  assert.equal(tooMuch.body.error, "EQUIPAMENTO 1 · NÃO LIGA: O DESCONTO NÃO PODE SER MAIOR QUE O VALOR DO ITEM.");
+
+  // Desativar a forma de crédito: o orçamento salvo continua com a cópia, e
+  // editar mantendo a mesma forma continua valendo; orçamento novo não aceita.
+  assert.equal((await patchPayment(NO_STORE_USER, { id: tenX, kind: "credit", label: "CRÉDITO 10X", discountBp: 0, installments: 10, active: false })).status, 200);
+  const edited = await patchQuote(NO_STORE_USER, withCredit.body.id, base({ osNumber: "PAG1", creditOptionId: tenX }));
+  assert.equal(edited.status, 200, JSON.stringify(edited.body));
+  assert.equal((await getQuote(NO_STORE_USER, withCredit.body.id)).body.quote.payments[0].label, "PAGAMENTO NO CRÉDITO EM 10X SEM JUROS");
+  assert.equal((await createQuote(NO_STORE_USER, base({ osNumber: "PAG5", creditOptionId: tenX }))).status, 400);
+  // Débito com 7%: só orçamentos novos pegam o valor novo.
+  assert.equal((await patchPayment(NO_STORE_USER, { id: "assist-pay-debito", kind: "always", label: "PAGAMENTO NO DÉBITO COM 7% DE DESCONTO", discountBp: 700, installments: 1 })).status, 200);
+  assert.equal((await getQuote(NO_STORE_USER, noCredit.body.id)).body.quote.payments[0].discountBp, 500);
+  assert.equal(paymentsRoute.DELETE, undefined);
 });

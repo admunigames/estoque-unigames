@@ -1,5 +1,12 @@
 import { hasCompany } from "../../lib/access-scope";
-import { equipmentSubtotal, parseSavedObservations, type ParsedQuote } from "../../lib/assistencia";
+import {
+  equipmentSubtotal,
+  lineNetCents,
+  parseSavedObservations,
+  parseSavedPayments,
+  type ParsedQuote,
+  type PaymentSnapshot,
+} from "../../lib/assistencia";
 
 // Base comum de Assistência > Orçamentos — mesmo estilo de
 // app/api/divergences/shared.ts: identidade só pelos headers x-unigames-*
@@ -129,6 +136,7 @@ export type QuoteRow = {
   clientAddress: string;
   observations: string;
   extraNotes: string;
+  payments: string;
   totalCents: number;
   createdByName: string;
   createdAt: string;
@@ -140,7 +148,7 @@ export const QUOTE_SELECT = `
   SELECT id, os_number AS osNumber, company_id AS companyId, company_name AS companyName,
          entry_date AS entryDate, client_name AS clientName, client_cpf AS clientCpf,
          client_phone AS clientPhone, client_address AS clientAddress, observations,
-         extra_notes AS extraNotes, total_cents AS totalCents, created_by_name AS createdByName,
+         extra_notes AS extraNotes, payments, total_cents AS totalCents, created_by_name AS createdByName,
          created_at AS createdAt, updated_by_name AS updatedByName, updated_at AS updatedAt
   FROM assist_quotes`;
 
@@ -154,6 +162,7 @@ type ItemRow = {
   description: string;
   quantity: number;
   unitCents: number;
+  discountCents: number;
 };
 
 export async function loadQuote(database: D1Database, id: string) {
@@ -165,7 +174,8 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
   const result = await database
     .prepare(
       `SELECT equipment_index AS equipmentIndex, category, device, serial_number AS serialNumber, service,
-              defect_name AS defectName, description, quantity, unit_cents AS unitCents
+              defect_name AS defectName, description, quantity, unit_cents AS unitCents,
+              discount_cents AS discountCents
        FROM assist_quote_items WHERE quote_id=?1 ORDER BY equipment_index, sort_order, id`,
     )
     .bind(row.id)
@@ -176,7 +186,14 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
     serialNumber: string;
     service: string;
     subtotalCents: number;
-    lines: Array<{ defectName: string; description: string; quantity: number; unitCents: number; totalCents: number }>;
+    lines: Array<{
+      defectName: string;
+      description: string;
+      quantity: number;
+      unitCents: number;
+      discountCents: number;
+      totalCents: number;
+    }>;
   }> = [];
   const byIndex = new Map<number, (typeof equipments)[number]>();
   for (const item of result.results ?? []) {
@@ -195,18 +212,24 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
       equipments.push(equipment);
     }
     const quantity = Number(item.quantity) || 0;
-    const unitCents = Number(item.unitCents) || 0;
-    equipment.lines.push({
+    const line = {
       defectName: String(item.defectName || ""),
       description: String(item.description || ""),
       quantity,
-      unitCents,
-      totalCents: quantity * unitCents,
-    });
+      unitCents: Number(item.unitCents) || 0,
+      discountCents: Number(item.discountCents) || 0,
+      totalCents: 0,
+    };
+    line.totalCents = lineNetCents(line);
+    equipment.lines.push(line);
   }
   for (const equipment of equipments) equipment.subtotalCents = equipmentSubtotal(equipment);
   return {
-    quote: { ...normalizeQuote(row), observations: parseSavedObservations(row.observations) },
+    quote: {
+      ...normalizeQuote(row),
+      observations: parseSavedObservations(row.observations),
+      payments: parseSavedPayments(row.payments),
+    },
     equipments,
   };
 }
@@ -225,8 +248,8 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
           .prepare(
             `INSERT INTO assist_quote_items
               (id, quote_id, equipment_index, category, device, serial_number, service, defect_name,
-               description, quantity, unit_cents, sort_order)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`,
+               description, quantity, unit_cents, discount_cents, sort_order)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`,
           )
           .bind(
             crypto.randomUUID(),
@@ -240,6 +263,7 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
             line.description,
             line.quantity,
             line.unitCents,
+            line.discountCents,
             linePosition,
           ),
       );
@@ -256,4 +280,42 @@ export async function osTaken(database: D1Database, osNumber: string, exceptId =
         .first<{ id: string }>()
     : await database.prepare("SELECT id FROM assist_quotes WHERE os_number=?1 LIMIT 1").bind(osNumber).first<{ id: string }>();
   return Boolean(row);
+}
+
+type PaymentRow = { id: string; kind: string; label: string; discountBp: number; installments: number };
+
+/**
+ * Cópia (JSON) das formas de pagamento que vão no PDF deste orçamento: a de
+ * CRÉDITO escolhida primeiro, depois todas as "sempre" ativas. Gravar a cópia
+ * mantém o PDF antigo igual mesmo se o cadastro mudar. Ao editar, uma forma
+ * de crédito desativada que já estava no orçamento continua valendo.
+ */
+export async function buildPayments(
+  database: D1Database,
+  creditOptionId: string,
+  previous: PaymentSnapshot[] = [],
+): Promise<{ payments: PaymentSnapshot[] } | { error: string }> {
+  const result = await database
+    .prepare(
+      `SELECT id, kind, label, discount_bp AS discountBp, installments
+       FROM assist_payment_options WHERE active=1 ORDER BY sort_order, label`,
+    )
+    .all<PaymentRow>();
+  const rows = (result.results ?? []).map((row) => ({
+    id: String(row.id),
+    kind: row.kind === "credit" ? ("credit" as const) : ("always" as const),
+    label: String(row.label),
+    discountBp: Number(row.discountBp) || 0,
+    installments: Math.max(1, Number(row.installments) || 1),
+  }));
+  const payments: PaymentSnapshot[] = [];
+  if (creditOptionId) {
+    const credit =
+      rows.find((row) => row.id === creditOptionId && row.kind === "credit") ||
+      previous.find((row) => row.id === creditOptionId && row.kind === "credit");
+    if (!credit) return { error: "FORMA DE CRÉDITO NÃO ENCONTRADA. ESCOLHA OUTRA." };
+    payments.push(credit);
+  }
+  payments.push(...rows.filter((row) => row.kind === "always"));
+  return { payments };
 }
