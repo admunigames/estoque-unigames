@@ -2,6 +2,7 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { isMachineStatus, normalizeSerial, validateMachineDraft } from "../../../lib/card-machines";
+import { todayInTimezone } from "../../../lib/finance-status";
 import {
   canManageFinance,
   identity,
@@ -80,14 +81,25 @@ export async function GET(request: Request) {
       conditions.push(`status=?${values.length}`);
     }
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    values.push(todayInTimezone());
+    const today = `?${values.length}`;
+    // feeSource (coluna TAXAS): 'machine' = tem taxa própria vigente,
+    // 'acquirer' = usa a da adquirente, 'none' = nenhuma vigente.
     const result = await database
       .prepare(
         `SELECT id, acquirer_id AS acquirerId, acquirer_name AS acquirerName, model, serial,
                 establishment_code AS establishmentCode, terminal,
                 company_id AS companyId, company_name AS companyName,
                 installed_at AS installedAt, status, notes,
-                created_by_name AS createdByName, created_at AS createdAt, updated_at AS updatedAt
-         FROM finance_card_machines
+                created_by_name AS createdByName, created_at AS createdAt, updated_at AS updatedAt,
+                CASE
+                  WHEN EXISTS (SELECT 1 FROM finance_card_fees f WHERE f.machine_id = m.id
+                               AND (f.valid_to = '' OR f.valid_to >= ${today})) THEN 'machine'
+                  WHEN EXISTS (SELECT 1 FROM finance_card_fees f WHERE f.machine_id = '' AND f.acquirer_id = m.acquirer_id
+                               AND (f.valid_to = '' OR f.valid_to >= ${today})) THEN 'acquirer'
+                  ELSE 'none'
+                END AS feeSource
+         FROM finance_card_machines m
          ${where}
          ORDER BY
            CASE status WHEN 'active' THEN 0 WHEN 'inactive' THEN 1 WHEN 'transferred' THEN 2 ELSE 3 END ASC,

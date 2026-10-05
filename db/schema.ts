@@ -2115,6 +2115,9 @@ export const financeCardFees = pgTable(
     acquirerId: text("acquirer_id").notNull(),
     acquirerName: text("acquirer_name").notNull().default(""),
     companyId: text("company_id").notNull().default(""),
+    // Financeiro 5/9: '' = taxa da adquirente (padrão); preenchido = taxa
+    // própria da maquineta, que tem prioridade sobre a da adquirente.
+    machineId: text("machine_id").notNull().default(""),
     brand: text("brand").notNull().default(""),
     modality: text("modality").notNull().default("credit"),
     installments: integer("installments").notNull().default(1),
@@ -2131,6 +2134,7 @@ export const financeCardFees = pgTable(
   },
   (table) => [
     index("finance_card_fees_acquirer_idx").on(table.acquirerId),
+    index("finance_card_fees_machine_idx").on(table.machineId),
     index("finance_card_fees_lookup_idx").on(
       table.acquirerId,
       table.modality,
@@ -2207,9 +2211,18 @@ export const financeCardSales = pgTable(
     reviewedBy: text("reviewed_by").notNull().default(""),
     reviewedByName: text("reviewed_by_name").notNull().default(""),
     reviewedNote: text("reviewed_note").notNull().default(""),
+    // Financeiro 5/9: maquineta identificada no arquivo de vendas (a unidade
+    // da venda é a da maquineta NA DATA da venda), identificador cru do
+    // arquivo, taxa cobrada (NULL = arquivo sem taxa/líquido) e conferência
+    // da cobrada × cadastrada: '' sem conferência | 'ok' | 'divergent'.
+    machineId: text("machine_id").notNull().default(""),
+    terminalRef: text("terminal_ref").notNull().default(""),
+    chargedFeeCents: integer("charged_fee_cents"),
+    feeCheck: text("fee_check").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [
+    index("finance_card_sales_machine_date_idx").on(table.machineId, table.saleDate),
     index("finance_card_sales_company_date_idx").on(table.companyId, table.saleDate),
     index("finance_card_sales_import_idx").on(table.importId),
     index("finance_card_sales_nsu_idx").on(table.nsu),

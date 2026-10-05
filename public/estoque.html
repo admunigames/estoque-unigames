@@ -1558,6 +1558,10 @@
     #inventoryTable th:nth-child(3),#inventoryTable th:nth-child(4),#inventoryTable th:nth-child(5){width:12%;}
     #inventoryTable .tag-zerado,#inventoryTable .tag-alerta{display:none !important;}
     #inventoryTable thead th{background:#eef2f6 !important; color:#1e293b !important; border-color:#cfd8e3 !important;}
+    /* Maquinetas > TOTAL DE TAXAS (Financeiro 5/9). */
+    #cardTotalsTables thead th{background:#eef2f6 !important; color:#1e293b !important;}
+    #cardTotalsTables .table-scroll table{min-width:0; width:100%;}
+    #cardTotalsTables .table-panel{break-inside:avoid; page-break-inside:avoid;}
     #inventoryTable tbody td{color:#111827 !important; border-color:#dbe3ec !important;}
     #inventoryTable tbody tr.neg td{background:#fff1f0 !important; color:#7a271a !important;}
     #inventoryTable tbody tr.neg td.nome{color:#7a271a !important;}
@@ -3340,6 +3344,12 @@
   .cf-weekly-dialog{width:min(980px,calc(100vw - 28px));}
   .cf-weekly-table input{width:100%; min-width:120px;}
   [data-cf-bulk-field][hidden]{display:none !important;}
+  /* MAQUINETAS (Financeiro 5/9) */
+  [data-mq-bulk-field][hidden],#cardGridAcquirerField[hidden]{display:none !important;}
+  .card-fee-grid-dialog{width:min(640px,calc(100vw - 28px));}
+  #cardFeeGridTable input{width:100%; min-width:90px;}
+  .responsive-table tbody tr.row-muted{opacity:.6;}
+  .responsive-table tbody td.neg{color:var(--neg); font-weight:700;}
   @media (max-width:680px){
     .responsive-table tbody tr.cf-group-row{border-color:var(--accent);}
     .responsive-table tbody td.cf-group-head{display:block; text-align:left;}
@@ -3627,12 +3637,11 @@
         <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
         <a class="nav-item sub-item" id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance" data-home-desc="Projeção de pagamentos dia a dia e por semana, caixa semanal com o saldo de cada conta toda segunda e recebíveis futuros." title="Fluxo de Caixa" href="/financeiro/fluxo-de-caixa"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 18.5L9 12l3.5 3.5L20.5 6"/><path d="M15.5 6h5v5"/></svg></span><span class="nav-label">Fluxo de Caixa</span></a>
         <a class="nav-item sub-item" id="navFinanceiroSupplierStatement" data-page="financeiroSupplierStatement" data-permission="finance" data-home-desc="Resumo geral e extrato (conta corrente) de cada fornecedor." title="Fornecedores" href="/financeiro/fornecedores/conta-corrente"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="17" height="12" rx="2"/><path d="M3.5 10.5h17"/><circle cx="8" cy="14.2" r="1.3" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Fornecedores</span></a>
-        <a class="nav-item sub-item" id="navFinanceiroMaquinetas" data-page="financeiroMaquinetas" data-permission="finance" data-home-desc="Cadastro de maquinetas por adquirente e unidade, com histórico de transferência, manutenção e substituição." title="Maquinetas" href="/financeiro/maquinetas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><rect x="9" y="6" width="6" height="4"/><path d="M9 14h.01M12 14h.01M15 14h.01M9 17h.01M12 17h.01M15 17h.01"/></svg></span><span class="nav-label">Maquinetas</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroMaquinetas" data-page="financeiroMaquinetas" data-permission="finance" data-home-desc="Maquinetas por unidade com taxas próprias, arquivo de vendas com conferência da taxa cobrada e total pago em taxas (lojas × assistência)." title="Maquinetas" href="/financeiro/maquinetas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><rect x="9" y="6" width="6" height="4"/><path d="M9 14h.01M12 14h.01M15 14h.01M9 17h.01M12 17h.01M15 17h.01"/></svg></span><span class="nav-label">Maquinetas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroInvoices" data-page="financeiroInvoices" data-any-permission="finance,payables" data-home-desc="Notas fiscais e duplicatas de fornecedores, integradas a Compras." title="Notas Fiscais" href="/financeiro/notas-fiscais"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas Fiscais</span></a>
         <a class="nav-item sub-item" id="navObras" data-page="obras" data-any-permission="works,finance" data-home-desc="Reformas e construções nas lojas — investimento (CAPEX), fora de Despesas e da DRE." title="Obras" href="/obras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V10l6-4 6 4v11"/><path d="M10 21v-5h4v5"/><path d="m2 8 10-6 10 6"/></svg></span><span class="nav-label">Obras</span></a>
         <a class="nav-item sub-item" id="navFinanceiroOrcamento" data-page="financeiroOrcamento" data-permission="finance" data-home-desc="Valor orçado por loja, categoria e centro de custo, comparado com o realizado." title="Orçamento" href="/financeiro/orcamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M11 20V4M18 20V13"/></svg></span><span class="nav-label">Orçamento</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRecargas" data-page="financeiroRecargas" data-permission="finance" data-home-desc="Recargas de celulares por unidade, com lembrete da próxima recarga." title="Recargas de Celulares" href="/financeiro/recargas-celular"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Recargas de Celulares</span></a>
-        <a class="nav-item sub-item" id="navFinanceiroTaxasCartao" data-page="financeiroTaxasCartao" data-permission="finance" data-home-desc="Taxas por adquirente e bandeira, importação de vendas e repasse, relatório mensal do custo com taxas." title="Taxas de Cartão" href="/financeiro/taxas-cartao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><span class="nav-label">Taxas de Cartão</span></a>
       </div>
     </div>
     <!-- Atalho do RH Financeiro perto do Financeiro. São LINKS para as
@@ -7593,101 +7602,177 @@
         </div>
       </header>
 
-      <div class="dre-toolbar">
-        <div class="field"><label for="machineLoja">UNIDADE</label><select id="machineLoja"><option value="">TODAS AS LOJAS</option></select></div>
-        <div class="field"><label for="machineAcquirerFilter">ADQUIRENTE</label><select id="machineAcquirerFilter"><option value="">TODAS</option></select></div>
-        <div class="field"><label for="machineStatusFilter">SITUAÇÃO</label>
-          <select id="machineStatusFilter">
-            <option value="">TODAS</option>
-            <option value="active">ATIVA</option>
-            <option value="inactive">INATIVA</option>
-            <option value="transferred">TRANSFERIDA</option>
-            <option value="canceled">CANCELADA</option>
-          </select>
-        </div>
-        <div class="dre-toolbar-actions">
-          <button class="btn-outline" id="btnNewAcquirer" type="button">NOVA ADQUIRENTE</button>
-          <button class="btn-accent" id="btnNewMachine" type="button">NOVA MAQUINETA</button>
-        </div>
+      <div class="print-report-header" id="cardTotalsPrintHeader">
+        <div class="print-report-kicker">UNIGAMES · FINANCEIRO</div>
+        <h1>Total pago em taxas de cartão</h1>
+        <div class="print-report-meta" id="cardTotalsPrintMeta"></div>
       </div>
 
-      <div class="table-panel responsive-table">
-        <div class="table-scroll">
-          <table id="machinesTable">
-            <thead><tr><th>Adquirente</th><th>Modelo</th><th>Serial</th><th>Cód. estab.</th><th>Terminal</th><th>Unidade</th><th>Instalação</th><th>Situação</th><th></th></tr></thead>
-            <tbody id="machinesTableBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
-          </table>
-        </div>
+      <!-- Financeiro 5/9: Taxas de Cartão virou abas daqui. REPASSE é
+           provisória — a Conciliação de Vendas (prompt 6) substitui. -->
+      <div class="output-tabs no-print" role="tablist" aria-label="Seções de maquinetas">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-mq-tab="maquinetas">MAQUINETAS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="taxas">TAXAS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="arquivo">ARQUIVO DE VENDAS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="conferencia">CONFERÊNCIA</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="totais">TOTAL DE TAXAS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="repasse">REPASSE</button>
       </div>
 
-      <h3 class="supply-section-title">ADQUIRENTES CADASTRADAS</h3>
-      <div class="table-panel responsive-table">
-        <div class="table-scroll">
-          <table id="acquirersTable">
-            <thead><tr><th>Nome</th><th>Abrangência</th><th>Situação</th><th></th></tr></thead>
-            <tbody id="acquirersTableBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section id="pageFinanceiroTaxasCartao" class="page wrap">
-      <header class="page-header">
-        <div class="page-heading">
-          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">Taxas de Cartão</h2>
-        </div>
-      </header>
-
-      <div class="output-tabs" role="tablist" aria-label="Seções de taxas de cartão">
-        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-tax-tab="taxas">TABELA DE TAXAS</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-tax-tab="vendas">IMPORTAR VENDAS</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-tax-tab="repasse">IMPORTAR REPASSE</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-tax-tab="conciliacao">CONCILIAÇÃO</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-tax-tab="relatorio">RELATÓRIO MENSAL</button>
-      </div>
-
-      <div data-tax-panel="taxas">
+      <div data-mq-panel="maquinetas">
         <div class="dre-toolbar">
-          <div class="field"><label for="cardFeeAcquirerFilter">ADQUIRENTE</label><select id="cardFeeAcquirerFilter"><option value="">TODAS</option></select></div>
-          <div class="dre-toolbar-actions"><button class="btn-accent" id="btnNewCardFee" type="button">NOVA TAXA</button></div>
+          <div class="field"><label for="machineLoja">UNIDADE</label><select id="machineLoja"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="machineAcquirerFilter">ADQUIRENTE</label><select id="machineAcquirerFilter"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="machineStatusFilter">SITUAÇÃO</label>
+            <select id="machineStatusFilter">
+              <option value="">TODAS</option>
+              <option value="active">ATIVA</option>
+              <option value="inactive">INATIVA</option>
+              <option value="transferred">TRANSFERIDA</option>
+              <option value="canceled">CANCELADA</option>
+            </select>
+          </div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnNewAcquirer" type="button">NOVA ADQUIRENTE</button>
+            <button class="btn-accent" id="btnNewMachine" type="button">NOVA MAQUINETA</button>
+          </div>
         </div>
+        <div class="bulk-bar" id="machinesBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="copy_fees">COPIAR TAXAS DE…</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="inactivate">INATIVAR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="reactivate">REATIVAR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
+        <p class="purchase-field-help">TRANSFERÊNCIA DE LOJA CONTINUA SÓ PELO HISTÓRICO (ELE GRAVA A DATA, QUE DEFINE A UNIDADE DAS VENDAS).</p>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
-            <table id="cardFeesTable">
-              <thead><tr><th>Adquirente</th><th>Bandeira</th><th>Modalidade</th><th>Parcelas</th><th>Taxa</th><th>Antecipação</th><th>Vigência</th><th></th></tr></thead>
-              <tbody id="cardFeesTableBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+            <table id="machinesTable">
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Adquirente</th><th>Modelo</th><th>Serial</th><th>Cód. estab.</th><th>Terminal</th><th>Unidade</th><th>Instalação</th><th>Situação</th><th>Taxas</th><th></th></tr></thead>
+              <tbody id="machinesTableBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 class="supply-section-title">ADQUIRENTES CADASTRADAS</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="acquirersTable">
+              <thead><tr><th>Nome</th><th>Abrangência</th><th>Situação</th><th></th></tr></thead>
+              <tbody id="acquirersTableBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <div data-tax-panel="vendas" hidden>
+      <div data-mq-panel="taxas" hidden>
         <div class="dre-toolbar">
-          <div class="field"><label for="cardSalesCompany">UNIDADE</label><select id="cardSalesCompany"><option value="">SELECIONE</option></select></div>
-          <div class="field"><label for="cardSalesMonth">MÊS DE REFERÊNCIA</label><input type="month" id="cardSalesMonth"></div>
-          <div class="field"><label for="cardSalesFile">PLANILHA (.xlsx / .xls / .csv)</label><input type="file" id="cardSalesFile" accept=".xls,.xlsx,.csv,.htm,.html"></div>
+          <div class="field"><label for="cardFeeAcquirerFilter">ADQUIRENTE</label><select id="cardFeeAcquirerFilter"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="cardFeeMachineFilter">MAQUINETA</label><select id="cardFeeMachineFilter"><option value="">TODAS</option></select></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnCardFeeGrid" type="button">TABELA DA MAQUINETA</button>
+            <button class="btn-accent" id="btnNewCardFee" type="button">NOVA TAXA</button>
+          </div>
         </div>
-        <p class="page-desc">Colunas esperadas (o cabeçalho é reconhecido automaticamente): data, adquirente, bandeira, modalidade (débito/crédito/pix), parcelas, NSU, valor bruto.</p>
+        <p class="purchase-field-help">MAQUINETA SEM TAXA PRÓPRIA USA A TAXA DA ADQUIRENTE (PADRÃO). TAXA NOVA ENCERRA A ANTERIOR NA VÉSPERA — VENDAS ANTIGAS MANTÊM O CÁLCULO DO DIA.</p>
+        <div class="bulk-bar" id="cardFeesBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="close">ENCERRAR VIGÊNCIA</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="cardFeesTable">
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Adquirente</th><th>Maquineta</th><th>Bandeira</th><th>Modalidade</th><th>Parcelas</th><th>Taxa</th><th>Antecipação</th><th>Vigência</th><th></th></tr></thead>
+              <tbody id="cardFeesTableBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div data-mq-panel="arquivo" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="cardSalesMonth">MÊS DE REFERÊNCIA</label><input type="month" id="cardSalesMonth"></div>
+          <div class="field"><label for="cardSalesCompany">UNIDADE PADRÃO (LINHAS SEM MAQUINETA)</label><select id="cardSalesCompany"><option value="">NENHUMA (NÃO IMPORTA)</option></select></div>
+          <div class="field"><label for="cardSalesFile">ARQUIVOS (.xlsx / .xls / .csv)</label><input type="file" id="cardSalesFile" accept=".xls,.xlsx,.csv,.htm,.html" multiple></div>
+        </div>
+        <p class="page-desc">A UNIDADE DE CADA VENDA VEM DA MAQUINETA DO ARQUIVO (TERMINAL / Nº LÓGICO / SERIAL / ESTABELECIMENTO), NA DATA DA VENDA. COLUNAS RECONHECIDAS PELO CABEÇALHO: DATA, ADQUIRENTE, BANDEIRA, MODALIDADE, PARCELAS, NSU/AUTORIZAÇÃO, VALOR BRUTO, TERMINAL, SERIAL, ESTABELECIMENTO/EC, TAXA (R$ OU %), VALOR LÍQUIDO.</p>
         <div class="user-form-status" id="cardSalesImportStatus" role="status" aria-live="polite"></div>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="cardSalesPreviewTable">
-              <thead><tr><th>Data</th><th>Adquirente</th><th>Bandeira</th><th>Modalidade</th><th>Parc.</th><th>NSU</th><th>Bruto</th><th>Taxa prev.</th><th>Líquido prev.</th></tr></thead>
-              <tbody id="cardSalesPreviewBody"><tr><td colspan="9" class="responsive-empty">Selecione uma planilha para pré-visualizar.</td></tr></tbody>
+              <thead><tr><th class="bulk-col" aria-label="Importar"></th><th>Data</th><th>Maquineta</th><th>Unidade</th><th>Adquirente</th><th>Bandeira</th><th>Modalidade</th><th>Parc.</th><th>NSU</th><th>Bruto</th><th>Taxa cadastrada</th><th>Taxa cobrada</th><th>Diferença</th><th>Situação</th></tr></thead>
+              <tbody id="cardSalesPreviewBody"><tr><td colspan="14" class="responsive-empty">Selecione um ou mais arquivos para pré-visualizar.</td></tr></tbody>
             </table>
           </div>
         </div>
         <div class="purchase-form-actions"><button class="btn-accent" id="btnConfirmCardSales" type="button" disabled>CONFIRMAR IMPORTAÇÃO</button></div>
       </div>
 
-      <div data-tax-panel="repasse" hidden>
+      <div data-mq-panel="conferencia" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="cardConfFrom">DE</label><input type="date" id="cardConfFrom"></div>
+          <div class="field"><label for="cardConfTo">ATÉ</label><input type="date" id="cardConfTo"></div>
+          <div class="field"><label for="cardConfCompany">UNIDADE</label><select id="cardConfCompany"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="cardConfMachine">MAQUINETA</label><select id="cardConfMachine"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="cardConfAcquirer">ADQUIRENTE</label><select id="cardConfAcquirer"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="cardConfStatus">SITUAÇÃO</label>
+            <select id="cardConfStatus">
+              <option value="">TODAS</option>
+              <option value="divergent">DIVERGENTE</option>
+              <option value="missing">SEM TAXA</option>
+              <option value="reviewed">REVISADA</option>
+            </select>
+          </div>
+        </div>
+        <section class="summary" id="cardConfSummary" aria-label="Resumo da conferência"></section>
+        <p class="purchase-field-help" id="cardConfByAcquirer"></p>
+        <div class="bulk-bar" id="cardConfBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="review">MARCAR COMO REVISADA</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR VENDAS</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="cardConfTable">
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Maquineta</th><th>Unidade</th><th>Modalidade</th><th>Bruto</th><th>Taxa cadastrada</th><th>Taxa cobrada</th><th>Diferença</th><th>Situação</th></tr></thead>
+              <tbody id="cardConfBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div data-mq-panel="totais" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="cardTotalsFrom">MÊS DE</label><input type="month" id="cardTotalsFrom"></div>
+          <div class="field"><label for="cardTotalsTo">ATÉ</label><input type="month" id="cardTotalsTo"></div>
+          <div class="field"><label for="cardTotalsAcquirer">ADQUIRENTE</label><select id="cardTotalsAcquirer"><option value="">TODAS</option></select></div>
+          <div class="dre-toolbar-actions"><button class="btn-outline" id="btnCardTotalsPdf" type="button">GERAR IMAGEM/PDF</button></div>
+        </div>
+        <section class="summary" id="cardTotalsCards" aria-label="Total pago em taxas"></section>
+        <p class="purchase-field-help no-print" id="cardTotalsSource"></p>
+        <div id="cardTotalsTables"></div>
+      </div>
+
+      <div data-mq-panel="repasse" hidden>
+        <p class="page-desc">PROVISÓRIO: IMPORTAÇÃO DO REPASSE E CONCILIAÇÃO COMO ERAM EM TAXAS DE CARTÃO. A CONCILIAÇÃO DE VENDAS VAI SUBSTITUIR ESTA ABA. QUANDO A PLANILHA TRAZ O TERMINAL, O REPASSE CASA PELA MAQUINETA.</p>
         <div class="dre-toolbar">
           <div class="field"><label for="cardSettlementCompany">UNIDADE</label><select id="cardSettlementCompany"><option value="">SELECIONE</option></select></div>
           <div class="field"><label for="cardSettlementMonth">MÊS DE REFERÊNCIA</label><input type="month" id="cardSettlementMonth"></div>
           <div class="field"><label for="cardSettlementFile">PLANILHA DE REPASSE (.xlsx / .xls / .csv)</label><input type="file" id="cardSettlementFile" accept=".xls,.xlsx,.csv,.htm,.html"></div>
         </div>
-        <p class="page-desc">O repasse é casado com as vendas já importadas por NSU (ou, sem NSU, por data + valor bruto + unidade). Colunas esperadas: NSU, data, valor bruto, valor recebido.</p>
+        <p class="purchase-field-help">O REPASSE É CASADO COM AS VENDAS JÁ IMPORTADAS POR NSU (OU, SEM NSU, POR DATA + VALOR BRUTO + UNIDADE). COLUNAS ESPERADAS: NSU, DATA, VALOR BRUTO, VALOR RECEBIDO (E, SE HOUVER, TERMINAL).</p>
         <div class="user-form-status" id="cardSettlementImportStatus" role="status" aria-live="polite"></div>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
@@ -7698,9 +7783,8 @@
           </div>
         </div>
         <div class="purchase-form-actions"><button class="btn-accent" id="btnConfirmCardSettlement" type="button" disabled>CONFIRMAR REPASSE</button></div>
-      </div>
 
-      <div data-tax-panel="conciliacao" hidden>
+        <h3 class="supply-section-title">CONCILIAÇÃO DO REPASSE</h3>
         <div class="dre-toolbar">
           <div class="field"><label for="cardReconCompany">UNIDADE</label><select id="cardReconCompany"><option value="">TODAS AS LOJAS</option></select></div>
           <div class="field"><label for="cardReconMonth">MÊS</label><input type="month" id="cardReconMonth"></div>
@@ -7715,29 +7799,12 @@
             </select>
           </div>
         </div>
-        <p class="page-desc">Cruzamento de cada venda com a taxa cadastrada por adquirente/bandeira. Quando a taxa real cobrada no repasse não bate com a cadastrada — ou não há taxa cadastrada — a venda fica <strong>Em Atenção</strong> para revisão manual.</p>
         <div class="user-form-status" id="cardReconSummary" role="status" aria-live="polite"></div>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="cardReconTable">
               <thead><tr><th>Data</th><th>Adquirente</th><th>Bandeira</th><th>Modal.</th><th>Bruto</th><th>Taxa prev.</th><th>Taxa real</th><th>Situação</th><th></th></tr></thead>
               <tbody id="cardReconBody"><tr><td colspan="9" class="responsive-empty">Selecione os filtros.</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div data-tax-panel="relatorio" hidden>
-        <div class="dre-toolbar">
-          <div class="field"><label for="cardFeeReportMonth">MÊS</label><input type="month" id="cardFeeReportMonth"></div>
-          <div class="field"><label for="cardFeeReportCompany">UNIDADE</label><select id="cardFeeReportCompany"><option value="">TODAS AS LOJAS</option></select></div>
-          <div class="dre-toolbar-actions"><button class="btn-outline" id="btnExportCardFeeReport" type="button">EXPORTAR</button></div>
-        </div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table id="cardFeeReportTable">
-              <thead><tr><th>Adquirente</th><th>Bandeira</th><th>Vendas</th><th>Bruto</th><th>Taxa prevista</th><th>Custo real</th><th>Divergência</th></tr></thead>
-              <tbody id="cardFeeReportBody"><tr><td colspan="7" class="responsive-empty">Selecione o mês.</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -9342,6 +9409,7 @@
     <input type="hidden" id="cardFeeId">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="cardFeeAcquirer">ADQUIRENTE *</label><select id="cardFeeAcquirer" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="cardFeeMachine">MAQUINETA</label><select id="cardFeeMachine"><option value="">PADRÃO DA ADQUIRENTE</option></select></div>
       <div class="purchase-field"><label for="cardFeeBrand">BANDEIRA</label><input id="cardFeeBrand" maxlength="40" placeholder="Vazio = todas"></div>
       <div class="purchase-field"><label for="cardFeeModality">MODALIDADE *</label><select id="cardFeeModality" required><option value="credit">CRÉDITO</option><option value="debit">DÉBITO</option><option value="pix">PIX</option></select></div>
       <div class="purchase-field" id="cardFeeInstallmentsField"><label for="cardFeeInstallments">PARCELAS</label><input type="number" id="cardFeeInstallments" min="1" max="48" value="1"></div>
@@ -9354,6 +9422,56 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCardFeeDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog card-fee-grid-dialog" id="cardFeeGridDialog" aria-labelledby="cardFeeGridTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cardFeeGridTitle">TABELA DA MAQUINETA</h3>
+    <button class="purchase-dialog-close" id="btnCloseCardFeeGrid" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cardFeeGridForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="cardGridMachine">MAQUINETA</label><select id="cardGridMachine"><option value="">PADRÃO DA ADQUIRENTE</option></select></div>
+      <div class="purchase-field" id="cardGridAcquirerField"><label for="cardGridAcquirer">ADQUIRENTE *</label><select id="cardGridAcquirer"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="cardGridBrand">BANDEIRA</label><input id="cardGridBrand" maxlength="40" placeholder="Vazio = todas"></div>
+      <div class="purchase-field"><label for="cardGridValidFrom">VIGÊNCIA A PARTIR DE *</label><input type="date" id="cardGridValidFrom" required></div>
+    </div>
+    <p class="purchase-field-help">VEM PREENCHIDA COM A TABELA VIGENTE. LINHA EM BRANCO NÃO É ALTERADA; A TAXA ANTERIOR DE CADA LINHA ALTERADA FICA VALENDO ATÉ A VÉSPERA.</p>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table id="cardFeeGridTable">
+          <thead><tr><th>Modalidade</th><th>Taxa (%)</th><th>Antecipação (%)</th></tr></thead>
+          <tbody id="cardFeeGridBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="cardFeeGridStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCardFeeGrid" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR TABELA</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="mqBulkDialog" aria-labelledby="mqBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="mqBulkTitle">SELECIONADOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseMqBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="mqBulkForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field" data-mq-bulk-field="copy_fees"><label for="mqBulkSource">MAQUINETA-MODELO *</label><select id="mqBulkSource"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field" data-mq-bulk-field="copy_fees"><label for="mqBulkValidFrom">VIGÊNCIA A PARTIR DE</label><input type="date" id="mqBulkValidFrom"></div>
+      <div class="purchase-field" data-mq-bulk-field="close"><label for="mqBulkValidTo">VIGENTE ATÉ *</label><input type="date" id="mqBulkValidTo"></div>
+      <div class="purchase-field full" data-mq-bulk-field="review"><label for="mqBulkNote">OBSERVAÇÃO</label><textarea id="mqBulkNote" rows="2" maxlength="300" placeholder="Por que a taxa está ok ou o que foi ajustado"></textarea></div>
+    </div>
+    <p class="purchase-field-help" data-mq-bulk-field="copy_fees">COPIA A TABELA VIGENTE DA MODELO (VIGÊNCIA EM BRANCO = A MESMA DA MODELO). A TAXA ANTERIOR DE CADA MAQUINETA FICA VALENDO ATÉ A VÉSPERA.</p>
+    <div class="user-form-status" id="mqBulkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelMqBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
     </div>
   </form>
 </dialog>
@@ -11949,7 +12067,6 @@
     comercialRelatorioNf:'/comercial/relatorio-nf',
     financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa',
     financeiroMaquinetas:'/financeiro/maquinetas',
-    financeiroTaxasCartao:'/financeiro/taxas-cartao',
     financeiroCartoesCorp:'/financeiro/cartoes-corporativos',
     financeiroConciliacao:'/financeiro/conciliacao-bancaria',
     financeiroReposicao:'/financeiro/controle-reposicao',
@@ -12006,7 +12123,6 @@
     comercialRelatorioNf:'RELATÓRIO NF',
     financeiroFluxoCaixa:'FLUXO DE CAIXA',
     financeiroMaquinetas:'MAQUINETAS',
-    financeiroTaxasCartao:'TAXAS DE CARTÃO',
     financeiroCartoesCorp:'CARTÕES CORPORATIVOS',
     financeiroConciliacao:'CONCILIAÇÃO BANCÁRIA',
     financeiroReposicao:'CONTROLE DE REPOSIÇÃO',
@@ -12058,7 +12174,6 @@
     comercialRelatorioNf:'relatorio_nf',
     financeiroFluxoCaixa:'finance',
     financeiroMaquinetas:'finance',
-    financeiroTaxasCartao:'finance',
     financeiroCartoesCorp:'finance',
     financeiroConciliacao:'finance',
     financeiroReposicao:'finance',
@@ -12069,9 +12184,15 @@
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
     '/estoque.html':'inicio',
-    // Recebíveis virou a 3ª aba do Fluxo de Caixa (Financeiro 4/9): links
-    // salvos continuam abrindo, já na aba (ver syncPageFromLocation).
-    '/financeiro/recebiveis':'financeiroFluxoCaixa'
+    // Recebíveis virou a 3ª aba do Fluxo de Caixa (Financeiro 4/9) e Taxas
+    // de Cartão virou abas de Maquinetas (5/9): links salvos continuam
+    // abrindo, já na aba (LEGACY_TABS, ver syncPageFromLocation).
+    '/financeiro/recebiveis':'financeiroFluxoCaixa',
+    '/financeiro/taxas-cartao':'financeiroMaquinetas'
+  });
+  const LEGACY_TABS = Object.freeze({
+    '/financeiro/recebiveis':'recebiveis',
+    '/financeiro/taxas-cartao':'taxas'
   });
 
   function normalizeRoutePath(pathname){
@@ -12660,7 +12781,7 @@
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
@@ -12728,7 +12849,6 @@
     if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
-    if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
     if(name === 'financeiroReposicao') loadReposicaoPage();
@@ -12757,12 +12877,13 @@
   }
 
   function syncPageFromLocation(replace){
-    const legacyCashFlowTab = normalizeRoutePath(location.pathname) === '/financeiro/recebiveis' ? 'recebiveis' : '';
+    const legacyPath = normalizeRoutePath(location.pathname);
+    const legacyTab = LEGACY_TABS[legacyPath] || '';
     let name = pageFromPath(location.pathname);
     if(!canAccessPage(name)) name = 'inicio';
     showPage(name);
     if(replace || (name !== 'documentos' && normalizeRoutePath(location.pathname) !== PAGE_ROUTES[name])){
-      history.replaceState({page:name}, '', PAGE_ROUTES[name]+(legacyCashFlowTab && name === 'financeiroFluxoCaixa' ? '?aba='+legacyCashFlowTab : ''));
+      history.replaceState({page:name}, '', PAGE_ROUTES[name]+(legacyTab && LEGACY_ROUTES[legacyPath] === name ? '?aba='+legacyTab : ''));
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
     if(name === 'comprasNovo') setComprasSectionTab(comprasSectionTab);
@@ -12788,7 +12909,6 @@
     if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
-    if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
     if(name === 'financeiroReposicao') loadReposicaoPage();
@@ -13607,7 +13727,18 @@
     // Não é uma tabela HTML (formato usado pelos relatórios do CRM) — tenta como planilha real (.xlsx/.xls/.csv).
     const XLSX = await ensureXlsx();
     const buffer = await readAsArrayBuffer(file);
-    const wb = XLSX.read(buffer, {type:'array', raw: Boolean(options && options.rawCsv)});
+    // CSV (rawCsv): decodifica aqui — o SheetJS lê CSV sem BOM como Latin-1 e
+    // estraga acento de arquivo UTF-8 ("Débito", "Valor líquido"). UTF-8
+    // válido fica UTF-8; senão é Windows-1252 (exportação do Excel BR).
+    let wb;
+    if(options && options.rawCsv){
+      let csv;
+      try{ csv = new TextDecoder('utf-8', {fatal:true}).decode(buffer); }
+      catch(_error){ csv = new TextDecoder('windows-1252').decode(buffer); }
+      wb = XLSX.read(csv.replace(/^\uFEFF/, ''), {type:'string', raw:true});
+    }else{
+      wb = XLSX.read(buffer, {type:'array'});
+    }
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
     return rows.map(row => row.map(cell => String(cell === undefined || cell === null ? '' : cell).trim()));
@@ -28264,46 +28395,53 @@ function renderHomeTasks(){
       '</tr>').join('');
   }
 
+  const MACHINE_FEE_SOURCE = {machine:['done','PRÓPRIAS'], acquirer:['progress','DA ADQUIRENTE'], none:['alert','SEM TAXA']};
+  function machineLabel(m){
+    return (m.acquirerName || '—')+' '+(m.model || '')+' · '+(m.terminal || m.serial || '—')+' · '+(m.companyName || machineCompanyName(m.companyId));
+  }
   function renderMachinesTable(){
     const body = el('machinesTableBody');
     if(!body) return;
-    if(!machinesRows.length){
-      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma maquineta encontrada.</td></tr>';
+    const loja = el('machineLoja').value;
+    const acq = el('machineAcquirerFilter').value;
+    const st = el('machineStatusFilter').value;
+    const rows = machinesRows.filter(m => (!loja || m.companyId === loja) && (!acq || m.acquirerId === acq) && (!st || m.status === st));
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhuma maquineta encontrada.</td></tr>';
+      machinesBulk.sync();
       return;
     }
-    body.innerHTML = machinesRows.map(m =>
-      '<tr>'+
-        '<td>'+escapeHtml(m.acquirerName || '—')+'</td>'+
-        '<td>'+escapeHtml(m.model || '—')+'</td>'+
-        '<td>'+escapeHtml(m.serial || '—')+'</td>'+
-        '<td>'+escapeHtml(m.establishmentCode || '—')+'</td>'+
-        '<td>'+escapeHtml(m.terminal || '—')+'</td>'+
-        '<td>'+escapeHtml(m.companyName || machineCompanyName(m.companyId))+'</td>'+
-        '<td>'+escapeHtml(m.installedAt || '—')+'</td>'+
-        '<td>'+escapeHtml(MACHINE_STATUS_LABELS[m.status] || m.status)+'</td>'+
-        '<td>'+
+    body.innerHTML = rows.map(m => {
+      const fee = MACHINE_FEE_SOURCE[m.feeSource] || MACHINE_FEE_SOURCE.none;
+      return '<tr>'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(m.id, 'Selecionar maquineta')+'</td>'+
+        '<td data-label="Adquirente">'+escapeHtml(m.acquirerName || '—')+'</td>'+
+        '<td data-label="Modelo">'+escapeHtml(m.model || '—')+'</td>'+
+        '<td data-label="Serial">'+escapeHtml(m.serial || '—')+'</td>'+
+        '<td data-label="Cód. estab.">'+escapeHtml(m.establishmentCode || '—')+'</td>'+
+        '<td data-label="Terminal">'+escapeHtml(m.terminal || '—')+'</td>'+
+        '<td data-label="Unidade">'+escapeHtml(m.companyName || machineCompanyName(m.companyId))+'</td>'+
+        '<td data-label="Instalação">'+escapeHtml(formatDateBR(m.installedAt) || '—')+'</td>'+
+        '<td data-label="Situação">'+escapeHtml(MACHINE_STATUS_LABELS[m.status] || m.status)+'</td>'+
+        '<td data-label="Taxas"><span class="status-pill '+fee[0]+'">'+fee[1]+'</span></td>'+
+        '<td data-label="Ações">'+
+          '<button class="btn-outline btn-sm" type="button" data-machine-fees="'+escapeHtml(m.id)+'">TAXAS</button> '+
           '<button class="btn-outline btn-sm" type="button" data-machine-history="'+escapeHtml(m.id)+'">HISTÓRICO</button> '+
           '<button class="btn-outline btn-sm" type="button" data-machine-edit="'+escapeHtml(m.id)+'">EDITAR</button>'+
         '</td>'+
-      '</tr>').join('');
+      '</tr>';
+    }).join('');
+    machinesBulk.sync();
   }
 
-  async function loadMaquinetasPage(){
-    if(!canAccess('finance')) return;
-    if(!companies.length) await loadCompanies();
-    el('machinesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+  // Lista completa (escopo do login) — filtros da aba são no cliente e as
+  // outras abas usam a mesma lista nos selects de maquineta.
+  async function loadMachinesTab(){
+    el('machinesTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
     try{
-      const acquirerParams = new URLSearchParams();
-      const machineParams = new URLSearchParams();
-      const loja = el('machineLoja').value;
-      const acq = el('machineAcquirerFilter').value;
-      const st = el('machineStatusFilter').value;
-      if(loja) machineParams.set('companyId', loja);
-      if(acq) machineParams.set('acquirerId', acq);
-      if(st) machineParams.set('status', st);
       const [acquirers, machines] = await Promise.all([
-        financeApiRequest('/acquirers?'+acquirerParams.toString()),
-        financeApiRequest('/card-machines?'+machineParams.toString())
+        financeApiRequest('/acquirers'),
+        financeApiRequest('/card-machines')
       ]);
       acquirersRows = Array.isArray(acquirers.acquirers) ? acquirers.acquirers : [];
       machinesRows = Array.isArray(machines.machines) ? machines.machines : [];
@@ -28312,12 +28450,19 @@ function renderHomeTasks(){
       renderMachinesTable();
     }catch(error){
       machinesRows = [];
-      el('machinesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('machinesTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
+  async function loadMaquinetasPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    if(!machinesRows.length) await loadMachinesTab();
+    await setMqTab(new URLSearchParams(location.search).get('aba') || 'maquinetas', {url:false});
+  }
+
   ['machineLoja','machineAcquirerFilter','machineStatusFilter'].forEach(id => {
-    el(id) && el(id).addEventListener('change', loadMaquinetasPage);
+    el(id) && el(id).addEventListener('change', renderMachinesTable);
   });
 
   // --- Adquirente ---
@@ -28359,7 +28504,7 @@ function renderHomeTasks(){
     try{
       await financeApiRequest('/acquirers', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       el('acquirerDialog').close();
-      await loadMaquinetasPage();
+      await loadMachinesTab();
       showPurchaseToast('Adquirente salva.');
     }catch(error){ status.textContent = error.message; }
   });
@@ -28394,7 +28539,11 @@ function renderHomeTasks(){
   el('machinesTableBody') && el('machinesTableBody').addEventListener('click', event => {
     const editButton = event.target.closest('[data-machine-edit]');
     const historyButton = event.target.closest('[data-machine-history]');
-    if(editButton){
+    const feesButton = event.target.closest('[data-machine-fees]');
+    if(feesButton){
+      cardFeeMachinePending = feesButton.dataset.machineFees;
+      setMqTab('taxas');
+    }else if(editButton){
       const row = machinesRows.find(m => m.id === editButton.dataset.machineEdit);
       if(row) openMachineDialog(row);
     }else if(historyButton){
@@ -28424,7 +28573,7 @@ function renderHomeTasks(){
     try{
       await financeApiRequest('/card-machines', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       el('machineDialog').close();
-      await loadMaquinetasPage();
+      await loadMachinesTab();
       showPurchaseToast('Maquineta salva.');
     }catch(error){ status.textContent = error.message; }
   });
@@ -28493,17 +28642,121 @@ function renderHomeTasks(){
       el('machineEventForm').reset();
       syncMachineEventFields();
       await loadMachineEvents();
-      await loadMaquinetasPage();
+      await loadMachinesTab();
       showPurchaseToast('Evento registrado.');
     }catch(error){ status.textContent = error.message; }
   });
 
   // ---------------------------------------------------------------------
-  // Taxas de Cartão (Financeiro Fase 7).
+  // Maquinetas em abas (Financeiro 5/9): MAQUINETAS · TAXAS · ARQUIVO DE
+  // VENDAS · CONFERÊNCIA · TOTAL DE TAXAS · REPASSE (provisória — a
+  // Conciliação de Vendas substitui). Aba na URL (?aba=); o link antigo
+  // /financeiro/taxas-cartao cai em ?aba=taxas.
+  // ---------------------------------------------------------------------
+
+  const MQ_TABS = ['maquinetas','taxas','arquivo','conferencia','totais','repasse'];
+  let mqTab = 'maquinetas';
+  function setMqTab(tab, opts){
+    mqTab = MQ_TABS.includes(tab) ? tab : 'maquinetas';
+    document.querySelectorAll('[data-mq-tab]').forEach(b => {
+      const on = b.dataset.mqTab === mqTab;
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+    });
+    document.querySelectorAll('[data-mq-panel]').forEach(p => { p.hidden = p.dataset.mqPanel !== mqTab; });
+    if(!opts || opts.url !== false){
+      history.replaceState({page:'financeiroMaquinetas'}, '', PAGE_ROUTES.financeiroMaquinetas+(mqTab === 'maquinetas' ? '' : '?aba='+mqTab));
+    }
+    return loadMqTab();
+  }
+  async function loadMqTab(){
+    if(mqTab === 'maquinetas') return renderMachinesTable();
+    await loadFinanceAcquirers(true);
+    renderMqCompanyOptions();
+    if(mqTab === 'taxas') return loadCardFeesTab();
+    if(mqTab === 'arquivo'){ if(!el('cardSalesMonth').value) el('cardSalesMonth').value = financeCurrentMonthKey(); return; }
+    if(mqTab === 'conferencia') return loadCardConference();
+    if(mqTab === 'totais') return loadCardTotals();
+    if(mqTab === 'repasse') return loadCardReconciliation();
+  }
+  document.querySelectorAll('[data-mq-tab]').forEach(btn => btn.addEventListener('click', () => setMqTab(btn.dataset.mqTab)));
+
+  function companyOptionsHtml(){
+    return companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+  }
+  function fillSelect(id, placeholder, optionsHtml){
+    const select = el(id);
+    if(!select) return;
+    const selected = select.value;
+    select.innerHTML = placeholder + optionsHtml;
+    if(Array.from(select.options).some(o => o.value === selected)) select.value = selected;
+  }
+  function machineOptionsHtml(){
+    return machinesRows.map(m => '<option value="'+escapeHtml(m.id)+'">'+escapeHtml(machineLabel(m))+'</option>').join('');
+  }
+  function renderMqCompanyOptions(){
+    fillSelect('cardSalesCompany', '<option value="">NENHUMA (NÃO IMPORTA)</option>', companyOptionsHtml());
+    fillSelect('cardSettlementCompany', '<option value="">SELECIONE</option>', companyOptionsHtml());
+    fillSelect('cardReconCompany', '<option value="">TODAS AS LOJAS</option>', companyOptionsHtml());
+    fillSelect('cardConfCompany', '<option value="">TODAS AS LOJAS</option>', companyOptionsHtml());
+    fillSelect('cardConfMachine', '<option value="">TODAS</option>', machineOptionsHtml());
+    fillSelect('cardFeeMachineFilter', '<option value="">TODAS</option><option value="__acquirer">PADRÃO DA ADQUIRENTE</option>', machineOptionsHtml());
+    ['cardFeeAcquirerFilter','cardReconAcquirer','cardConfAcquirer','cardTotalsAcquirer'].forEach(id =>
+      renderAcquirerSelect(id, {placeholder:'<option value="">TODAS</option>', includeInactive:true}));
+  }
+
+  // --- Lote: diálogo único (copiar taxas, encerrar vigência, revisar) ---
+  let mqBulkPending = null; // {action, ids, endpoint, done}
+  function openMqBulkDialog(action, ids, endpoint, title, done){
+    mqBulkPending = {action, ids, endpoint, done};
+    el('mqBulkForm').reset();
+    el('mqBulkTitle').textContent = title+' — '+ids.length+(ids.length === 1 ? ' ITEM' : ' ITENS');
+    document.querySelectorAll('[data-mq-bulk-field]').forEach(node => { node.hidden = node.dataset.mqBulkField !== action; });
+    if(action === 'copy_fees') fillSelect('mqBulkSource', '<option value="">SELECIONE</option>', machinesRows.filter(m => m.feeSource === 'machine').map(m => '<option value="'+escapeHtml(m.id)+'">'+escapeHtml(machineLabel(m))+'</option>').join(''));
+    if(action === 'close') el('mqBulkValidTo').value = financeCurrentDateKey();
+    el('mqBulkStatus').textContent = '';
+    el('mqBulkDialog').showModal();
+  }
+  el('btnCloseMqBulk').addEventListener('click', () => el('mqBulkDialog').close());
+  el('btnCancelMqBulk').addEventListener('click', () => el('mqBulkDialog').close());
+  el('mqBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!mqBulkPending) return;
+    const {action, ids, endpoint, done} = mqBulkPending;
+    const fields = action === 'copy_fees' ? {sourceMachineId: el('mqBulkSource').value, validFrom: el('mqBulkValidFrom').value}
+      : action === 'close' ? {validTo: el('mqBulkValidTo').value}
+      : {note: el('mqBulkNote').value};
+    if(action === 'copy_fees' && !fields.sourceMachineId){ el('mqBulkStatus').textContent = 'ESCOLHA A MAQUINETA-MODELO (SÓ APARECEM AS QUE TÊM TAXA PRÓPRIA).'; return; }
+    if(action === 'close' && !fields.validTo){ el('mqBulkStatus').textContent = 'INFORME A DATA.'; return; }
+    try{
+      const res = await mqBulkRequest(endpoint, action, ids, fields);
+      el('mqBulkDialog').close();
+      await done(res);
+    }catch(error){ el('mqBulkStatus').textContent = error.message; }
+  });
+  async function mqBulkRequest(endpoint, action, ids, fields){
+    const res = await financeApiRequest(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids, fields: fields || {}})});
+    const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+    showPurchaseToast(res.applied+' item(ns) atualizado(s).'+(skipped.length ? ' Pulados: '+skipped.map(s => s.description+' ('+s.reason+')').join('; ')+'.' : ''), skipped.length && !res.applied ? 'error' : undefined);
+    return res;
+  }
+
+  const MQ_BULK_TITLES = {copy_fees:'COPIAR TAXAS', inactivate:'INATIVAR', reactivate:'REATIVAR'};
+  const machinesBulk = setupBulkSelection(el('machinesBulkBar'), el('machinesTableBody'), async (action, ids) => {
+    if(action === 'copy_fees'){
+      if(!machinesRows.some(m => m.feeSource === 'machine')){ showPurchaseToast('Nenhuma maquineta tem tabela própria ainda. Cadastre em TAXAS > TABELA DA MAQUINETA.', 'error'); return false; }
+      openMqBulkDialog(action, ids, '/card-machines/bulk', MQ_BULK_TITLES[action], async () => { machinesBulk.clear(); await loadMachinesTab(); });
+      return false;
+    }
+    await mqBulkRequest('/card-machines/bulk', action, ids);
+    await loadMachinesTab();
+  });
+
+  // ---------------------------------------------------------------------
+  // Aba TAXAS: taxa por maquineta (sem taxa própria vale a da adquirente).
   // ---------------------------------------------------------------------
 
   let cardFeesRows = [];
-  let cardSalesParsed = null;
+  let cardFeeMachinePending = '';
   let cardSettlementParsed = null;
 
   const CARD_MODALITY_LABELS = {credit:'CRÉDITO', debit:'DÉBITO', pix:'PIX'};
@@ -28515,18 +28768,21 @@ function renderHomeTasks(){
       .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
   }
   // Acha o índice da primeira coluna cujo cabeçalho normalizado contém alguma
-  // das palavras-chave.
-  function findColumn(headerRow, keywords){
+  // das palavras-chave ('=xx' exige o cabeçalho inteiro igual — para siglas
+  // curtas como EC/PV). `skip` = colunas já usadas por outro campo.
+  function findColumn(headerRow, keywords, skip){
     const norm = headerRow.map(normHeader);
     for(const kw of keywords){
-      const idx = norm.findIndex(h => h.indexOf(kw) !== -1);
+      const exact = kw.charAt(0) === '=';
+      const word = exact ? kw.slice(1) : kw;
+      const idx = norm.findIndex((h, i) => !(skip || []).includes(i) && (exact ? h === word : h.indexOf(word) !== -1));
       if(idx !== -1) return idx;
     }
     return -1;
   }
   function parseMoneyToCents(value){
     if(typeof value === 'number') return Math.round(value*100);
-    let text = String(value == null ? '' : value).trim().replace(/[R$\s]/g, '');
+    let text = String(value == null ? '' : value).trim().replace(/[R$\s%]/g, '');
     if(!text) return 0;
     if(text.indexOf(',') !== -1){ text = text.replace(/\./g, '').replace(',', '.'); }
     const num = Number(text);
@@ -28546,103 +28802,547 @@ function renderHomeTasks(){
     if(n.indexOf('pix') !== -1) return 'pix';
     return 'credit';
   }
-
-  // Cálculo de preview no cliente — o servidor recalcula de forma autoritativa
-  // na hora de confirmar.
-  function previewResolveFee(acquirerId, brand, modality, installments, date){
-    const b = (brand||'').trim().toLowerCase();
-    const cand = cardFeesRows.filter(f => {
-      if(f.acquirerId !== acquirerId) return false;
-      if(f.modality !== modality) return false;
-      if(modality === 'credit' && Number(f.installments||1) !== Number(installments||1)) return false;
-      const fb = (f.brand||'').trim().toLowerCase();
-      if(fb && fb !== b) return false;
-      if(f.validFrom && f.validFrom > date) return false;
-      if(f.validTo && f.validTo < date) return false;
-      return true;
-    });
-    if(!cand.length) return null;
-    cand.sort((a,c) => ((c.brand?1:0)-(a.brand?1:0)) || String(c.validFrom||'').localeCompare(String(a.validFrom||'')));
-    return cand[0];
+  function cardFeeIsCurrent(f, date){
+    return (!f.validFrom || f.validFrom <= date) && (!f.validTo || f.validTo >= date);
+  }
+  function cardFeeMachineLabel(f){
+    if(!f.machineId) return 'PADRÃO DA ADQUIRENTE';
+    const m = machinesRows.find(row => row.id === f.machineId);
+    return m ? machineLabel(m) : 'MAQUINETA REMOVIDA';
   }
 
   function renderCardFeesTable(){
     const body = el('cardFeesTableBody');
     if(!body) return;
-    const filter = el('cardFeeAcquirerFilter').value;
-    const rows = cardFeesRows.filter(f => !filter || f.acquirerId === filter);
+    const acq = el('cardFeeAcquirerFilter').value;
+    const machine = el('cardFeeMachineFilter').value;
+    const today = financeCurrentDateKey();
+    const rows = cardFeesRows.filter(f => (!acq || f.acquirerId === acq) &&
+      (!machine || (machine === '__acquirer' ? !f.machineId : f.machineId === machine)));
     body.innerHTML = rows.length ? rows.map(f =>
-      '<tr>'+
-        '<td>'+escapeHtml(f.acquirerName || '—')+'</td>'+
-        '<td>'+escapeHtml(f.brand || 'Todas')+'</td>'+
-        '<td>'+escapeHtml(CARD_MODALITY_LABELS[f.modality] || f.modality)+'</td>'+
-        '<td>'+(f.modality === 'credit' ? escapeHtml(String(f.installments)) : '—')+'</td>'+
-        '<td>'+taxPct(f.feeBps)+'</td>'+
-        '<td>'+(Number(f.anticipationBps) ? taxPct(f.anticipationBps) : '—')+'</td>'+
-        '<td>'+escapeHtml((f.validFrom || '—')+(f.validTo ? ' → '+f.validTo : ' → vigente'))+'</td>'+
-        '<td>'+
-          '<button class="btn-outline btn-sm" type="button" data-card-fee-edit="'+escapeHtml(f.id)+'">EDITAR</button> '+
-          '<button class="btn-outline btn-sm" type="button" data-card-fee-delete="'+escapeHtml(f.id)+'">EXCLUIR</button>'+
-        '</td>'+
-      '</tr>').join('') : '<tr><td colspan="8" class="responsive-empty">Nenhuma taxa cadastrada.</td></tr>';
+      '<tr'+(cardFeeIsCurrent(f, today) ? '' : ' class="row-muted"')+'>'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(f.id, 'Selecionar taxa')+'</td>'+
+        '<td data-label="Adquirente">'+escapeHtml(f.acquirerName || '—')+'</td>'+
+        '<td data-label="Maquineta">'+escapeHtml(cardFeeMachineLabel(f))+'</td>'+
+        '<td data-label="Bandeira">'+escapeHtml(f.brand || 'TODAS')+'</td>'+
+        '<td data-label="Modalidade">'+escapeHtml(CARD_MODALITY_LABELS[f.modality] || f.modality)+'</td>'+
+        '<td data-label="Parcelas">'+(f.modality === 'credit' ? escapeHtml(String(f.installments)) : '—')+'</td>'+
+        '<td data-label="Taxa">'+taxPct(f.feeBps)+'</td>'+
+        '<td data-label="Antecipação">'+(Number(f.anticipationBps) ? taxPct(f.anticipationBps) : '—')+'</td>'+
+        '<td data-label="Vigência">'+escapeHtml((formatDateBR(f.validFrom) || 'SEMPRE')+(f.validTo ? ' → '+formatDateBR(f.validTo) : ' → VIGENTE'))+'</td>'+
+        '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-card-fee-edit="'+escapeHtml(f.id)+'">EDITAR</button></td>'+
+      '</tr>').join('') : '<tr><td colspan="10" class="responsive-empty">Nenhuma taxa para os filtros.</td></tr>';
+    cardFeesBulk.sync();
   }
 
-  async function loadTaxasCartaoPage(){
-    if(!canAccess('finance')) return;
-    if(!companies.length) await loadCompanies();
-    await loadFinanceAcquirers(true);
-    ['cardSalesCompany','cardSettlementCompany','cardFeeReportCompany'].forEach(id => {
-      const select = el(id);
-      if(!select) return;
-      const selected = select.value;
-      const ph = id === 'cardFeeReportCompany' ? '<option value="">TODAS AS LOJAS</option>' : '<option value="">SELECIONE</option>';
-      select.innerHTML = ph + companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-      if(Array.from(select.options).some(o => o.value === selected)) select.value = selected;
-    });
-    renderAcquirerSelect('cardFeeAcquirer');
-    renderAcquirerSelect('cardFeeAcquirerFilter', {placeholder:'<option value="">TODAS</option>', includeInactive:true});
-    renderAcquirerSelect('cardReconAcquirer', {placeholder:'<option value="">TODAS</option>', includeInactive:true});
-    if(el('cardReconCompany')){
-      const selected = el('cardReconCompany').value;
-      el('cardReconCompany').innerHTML = '<option value="">TODAS AS LOJAS</option>' +
-        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-      if(Array.from(el('cardReconCompany').options).some(o => o.value === selected)) el('cardReconCompany').value = selected;
+  async function loadCardFeesTab(){
+    if(cardFeeMachinePending){
+      el('cardFeeMachineFilter').value = cardFeeMachinePending;
+      el('cardFeeAcquirerFilter').value = '';
+      cardFeeMachinePending = '';
     }
-    if(!el('cardSalesMonth').value) el('cardSalesMonth').value = financeCurrentMonthKey();
-    if(!el('cardSettlementMonth').value) el('cardSettlementMonth').value = financeCurrentMonthKey();
-    if(!el('cardReconMonth').value) el('cardReconMonth').value = financeCurrentMonthKey();
-    if(!el('cardFeeReportMonth').value) el('cardFeeReportMonth').value = financeCurrentMonthKey();
-    el('cardFeesTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    renderAcquirerSelect('cardFeeAcquirer');
+    el('cardFeesTableBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
     try{
       const data = await financeApiRequest('/card-fees');
       cardFeesRows = Array.isArray(data.fees) ? data.fees : [];
       renderCardFeesTable();
     }catch(error){
-      el('cardFeesTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('cardFeesTableBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
+  ['cardFeeAcquirerFilter','cardFeeMachineFilter'].forEach(id => el(id).addEventListener('change', renderCardFeesTable));
 
-  document.querySelectorAll('[data-tax-tab]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.taxTab;
-      document.querySelectorAll('[data-tax-tab]').forEach(b => {
-        const active = b === btn;
-        b.classList.toggle('active', active);
-        b.setAttribute('aria-selected', String(active));
-      });
-      document.querySelectorAll('[data-tax-panel]').forEach(p => { p.hidden = p.dataset.taxPanel !== tab; });
-      if(tab === 'relatorio') loadCardFeeReport();
-      if(tab === 'conciliacao') loadCardReconciliation();
-    });
+  const cardFeesBulk = setupBulkSelection(el('cardFeesBulkBar'), el('cardFeesTableBody'), async (action, ids) => {
+    const done = async () => { cardFeesBulk.clear(); await Promise.all([loadCardFeesTab(), loadMachinesTab()]); };
+    if(action === 'close'){
+      openMqBulkDialog('close', ids, '/card-fees/bulk', 'ENCERRAR VIGÊNCIA', done);
+      return false;
+    }
+    if(!confirm('Excluir '+ids.length+' taxa(s)? Vendas já importadas mantêm o cálculo feito na importação. Para trocar uma taxa, prefira ENCERRAR VIGÊNCIA.')) return false;
+    await mqBulkRequest('/card-fees/bulk', 'delete', ids);
+    await done();
   });
-  el('cardFeeAcquirerFilter') && el('cardFeeAcquirerFilter').addEventListener('change', renderCardFeesTable);
 
-  // --- Conciliação de vendas (itens 5 e 6) ---
+  // --- Cadastro de taxa (avulsa) ---
+  function syncCardFeeInstallments(){
+    el('cardFeeInstallmentsField').style.display = el('cardFeeModality').value === 'credit' ? '' : 'none';
+  }
+  el('cardFeeModality') && el('cardFeeModality').addEventListener('change', syncCardFeeInstallments);
+  el('cardFeeMachine').addEventListener('change', () => {
+    const m = machinesRows.find(row => row.id === el('cardFeeMachine').value);
+    if(m) el('cardFeeAcquirer').value = m.acquirerId;
+  });
+  function openCardFeeDialog(row){
+    el('cardFeeForm').reset();
+    renderAcquirerSelect('cardFeeAcquirer');
+    fillSelect('cardFeeMachine', '<option value="">PADRÃO DA ADQUIRENTE</option>', machineOptionsHtml());
+    el('cardFeeId').value = row ? row.id : '';
+    el('cardFeeDialogTitle').textContent = row ? 'EDITAR TAXA' : 'NOVA TAXA';
+    const filterMachine = el('cardFeeMachineFilter').value;
+    el('cardFeeMachine').value = row ? (row.machineId || '') : (filterMachine && filterMachine !== '__acquirer' ? filterMachine : '');
+    const machine = machinesRows.find(m => m.id === el('cardFeeMachine').value);
+    el('cardFeeAcquirer').value = row ? row.acquirerId : (machine ? machine.acquirerId : '');
+    el('cardFeeBrand').value = row ? (row.brand || '') : '';
+    el('cardFeeModality').value = row ? row.modality : 'credit';
+    el('cardFeeInstallments').value = row ? (row.installments || 1) : 1;
+    el('cardFeePercent').value = row ? ((row.feeBps||0)/100).toFixed(2) : '';
+    el('cardFeeAnticipation').value = row && row.anticipationBps ? (row.anticipationBps/100).toFixed(2) : '';
+    el('cardFeeValidFrom').value = row ? (row.validFrom || '') : financeCurrentDateKey();
+    el('cardFeeValidTo').value = row ? (row.validTo || '') : '';
+    el('cardFeeFormStatus').textContent = '';
+    syncCardFeeInstallments();
+    el('cardFeeDialog').showModal();
+  }
+  el('btnNewCardFee') && el('btnNewCardFee').addEventListener('click', () => {
+    if(!financeAcquirersCache.some(a => a.status === 'active')){
+      showPurchaseToast('Cadastre uma adquirente na aba MAQUINETAS antes de cadastrar taxas.', 'error');
+      return;
+    }
+    openCardFeeDialog(null);
+  });
+  el('btnCloseCardFeeDialog') && el('btnCloseCardFeeDialog').addEventListener('click', () => el('cardFeeDialog').close());
+  el('btnCancelCardFeeDialog') && el('btnCancelCardFeeDialog').addEventListener('click', () => el('cardFeeDialog').close());
+  el('cardFeesTableBody') && el('cardFeesTableBody').addEventListener('click', event => {
+    const editBtn = event.target.closest('[data-card-fee-edit]');
+    if(!editBtn) return;
+    const row = cardFeesRows.find(f => f.id === editBtn.dataset.cardFeeEdit);
+    if(row) openCardFeeDialog(row);
+  });
+  el('cardFeeForm') && el('cardFeeForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('cardFeeFormStatus');
+    status.textContent = '';
+    const payload = {
+      acquirerId: el('cardFeeAcquirer').value,
+      machineId: el('cardFeeMachine').value,
+      brand: el('cardFeeBrand').value.trim(),
+      modality: el('cardFeeModality').value,
+      installments: Number(el('cardFeeInstallments').value) || 1,
+      feeBps: Math.round(Number(el('cardFeePercent').value) * 100),
+      anticipationBps: Math.round(Number(el('cardFeeAnticipation').value || 0) * 100),
+      validFrom: el('cardFeeValidFrom').value,
+      validTo: el('cardFeeValidTo').value
+    };
+    if(!payload.acquirerId){ status.textContent = 'SELECIONE A ADQUIRENTE.'; return; }
+    if(!Number.isFinite(payload.feeBps) || payload.feeBps < 0){ status.textContent = 'INFORME UMA TAXA VÁLIDA.'; return; }
+    const id = el('cardFeeId').value;
+    if(id) payload.id = id;
+    try{
+      await financeApiRequest('/card-fees', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('cardFeeDialog').close();
+      await Promise.all([loadCardFeesTab(), loadMachinesTab()]);
+      showPurchaseToast('Taxa salva.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // --- TABELA DA MAQUINETA: grade débito · pix · crédito à vista · 2x–12x ---
+  const CARD_FEE_GRID_ROWS = [['debit',1,'DÉBITO'],['pix',1,'PIX'],['credit',1,'CRÉDITO À VISTA']]
+    .concat(Array.from({length:11}, (_, i) => ['credit', i+2, 'CRÉDITO '+(i+2)+'X']));
+  function renderCardFeeGrid(){
+    el('cardFeeGridBody').innerHTML = CARD_FEE_GRID_ROWS.map(([modality, installments, label]) =>
+      '<tr data-grid-modality="'+modality+'" data-grid-installments="'+installments+'">'+
+        '<td data-label="Modalidade">'+label+'</td>'+
+        '<td data-label="Taxa (%)"><input type="number" min="0" max="100" step="0.01" data-grid-fee aria-label="Taxa '+label+'"></td>'+
+        '<td data-label="Antecipação (%)"><input type="number" min="0" max="100" step="0.01" data-grid-anticipation aria-label="Antecipação '+label+'"></td>'+
+      '</tr>').join('');
+  }
+  // Preenche com a tabela vigente da seleção (maquineta, ou padrão da adquirente).
+  function fillCardFeeGrid(){
+    const machineId = el('cardGridMachine').value;
+    const machine = machinesRows.find(m => m.id === machineId);
+    if(machine) el('cardGridAcquirer').value = machine.acquirerId;
+    el('cardGridAcquirerField').hidden = Boolean(machine);
+    const acquirerId = el('cardGridAcquirer').value;
+    const brand = el('cardGridBrand').value.trim().toLowerCase();
+    const today = financeCurrentDateKey();
+    el('cardFeeGridBody').querySelectorAll('tr').forEach(tr => {
+      const fee = cardFeesRows.find(f => (f.machineId || '') === machineId && f.acquirerId === acquirerId &&
+        String(f.brand || '').trim().toLowerCase() === brand && f.modality === tr.dataset.gridModality &&
+        Number(f.installments || 1) === Number(tr.dataset.gridInstallments) && cardFeeIsCurrent(f, today));
+      tr.querySelector('[data-grid-fee]').value = fee ? (fee.feeBps/100).toFixed(2) : '';
+      tr.querySelector('[data-grid-anticipation]').value = fee && fee.anticipationBps ? (fee.anticipationBps/100).toFixed(2) : '';
+    });
+  }
+  el('btnCardFeeGrid').addEventListener('click', () => {
+    el('cardFeeGridForm').reset();
+    renderCardFeeGrid();
+    fillSelect('cardGridMachine', '<option value="">PADRÃO DA ADQUIRENTE</option>', machineOptionsHtml());
+    renderAcquirerSelect('cardGridAcquirer');
+    const filterMachine = el('cardFeeMachineFilter').value;
+    el('cardGridMachine').value = filterMachine && filterMachine !== '__acquirer' ? filterMachine : '';
+    el('cardGridValidFrom').value = financeCurrentDateKey();
+    el('cardFeeGridStatus').textContent = '';
+    fillCardFeeGrid();
+    el('cardFeeGridDialog').showModal();
+  });
+  ['cardGridMachine','cardGridAcquirer','cardGridBrand'].forEach(id => el(id).addEventListener('change', fillCardFeeGrid));
+  el('btnCloseCardFeeGrid').addEventListener('click', () => el('cardFeeGridDialog').close());
+  el('btnCancelCardFeeGrid').addEventListener('click', () => el('cardFeeGridDialog').close());
+  el('cardFeeGridForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('cardFeeGridStatus');
+    const rows = Array.from(el('cardFeeGridBody').querySelectorAll('tr'))
+      .filter(tr => tr.querySelector('[data-grid-fee]').value !== '')
+      .map(tr => ({
+        modality: tr.dataset.gridModality,
+        installments: Number(tr.dataset.gridInstallments),
+        feeBps: Math.round(Number(tr.querySelector('[data-grid-fee]').value) * 100),
+        anticipationBps: Math.round(Number(tr.querySelector('[data-grid-anticipation]').value || 0) * 100)
+      }));
+    const payload = {machineId: el('cardGridMachine').value, acquirerId: el('cardGridAcquirer').value, brand: el('cardGridBrand').value.trim(), validFrom: el('cardGridValidFrom').value, rows};
+    if(!payload.machineId && !payload.acquirerId){ status.textContent = 'SELECIONE A MAQUINETA OU A ADQUIRENTE.'; return; }
+    if(!rows.length){ status.textContent = 'PREENCHA AO MENOS UMA TAXA.'; return; }
+    try{
+      const res = await financeApiRequest('/card-fees/table', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('cardFeeGridDialog').close();
+      await Promise.all([loadCardFeesTab(), loadMachinesTab()]);
+      showPurchaseToast(res.saved+' taxa(s) salva(s) na tabela.');
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // ---------------------------------------------------------------------
+  // Aba ARQUIVO DE VENDAS: vários arquivos; a prévia (unidade pela
+  // maquineta na data, taxa cadastrada × cobrada, JÁ IMPORTADA) vem do
+  // servidor (dryRun) — o front só lê a planilha.
+  // ---------------------------------------------------------------------
+  let cardSalesFiles = []; // [{name, fileHash, rows, preview}]
+  let cardSalesExcluded = new Set(); // "arquivo:linha" desmarcadas
+
+  // Colunas aceitas (o relatório final do 5/9 lista as mesmas).
+  const CARD_SALES_COLUMNS = {
+    date: ['datadavenda','datavenda','dtvenda','datatransacao','datadatransacao','data'],
+    acquirer: ['adquirente','operadora','credenciadora'],
+    brand: ['bandeira'],
+    modality: ['modalidade','formadepagamento','tipodetransacao','tipodevenda','produto','tipo'],
+    installments: ['qtdparcelas','quantidadedeparcelas','numparcelas','parcelas','parcela','plano'],
+    nsu: ['nsu','codigodeautorizacao','codigoautorizacao','autorizacao','=cv','=doc'],
+    net: ['valorliquido','vlrliquido','liquido','valorareceber','valorreceber'],
+    fee: ['valordataxa','valortaxa','vlrtaxa','taxamdr','mdr','valordesconto','desconto','tarifa','taxa'],
+    gross: ['valorbruto','vlrbruto','bruto','valordavenda','valorvenda','valortransacao','valororiginal','=valor'],
+    terminal: ['terminal','numerologico','nlogico','logico','maquineta','=pos'],
+    serial: ['numerodeserie','serial','nserie','=serie'],
+    establishment: ['codigodoestabelecimento','codigoestabelecimento','estabelecimento','stonecode','=ec','=pv']
+  };
+  function mapCardSalesColumns(header){
+    const col = {};
+    const used = [];
+    ['date','net','fee','gross','installments','acquirer','brand','modality','nsu','terminal','serial','establishment'].forEach(key => {
+      col[key] = findColumn(header, CARD_SALES_COLUMNS[key], used);
+      if(col[key] !== -1) used.push(col[key]);
+    });
+    return col;
+  }
+  function parseCardSalesFile(rows){
+    // Cabeçalho: a primeira das 15 primeiras linhas com DATA e VALOR BRUTO.
+    let headerIndex = -1, col = null;
+    for(let i = 0; i < Math.min(rows.length, 15); i++){
+      const candidate = mapCardSalesColumns(rows[i] || []);
+      if(candidate.date !== -1 && candidate.gross !== -1){ headerIndex = i; col = candidate; break; }
+    }
+    if(headerIndex === -1) throw new Error('NÃO ENCONTREI AS COLUNAS DE DATA E VALOR BRUTO.');
+    const header = rows[headerIndex];
+    const feeIsPercent = col.fee !== -1 && (/%|percent/i.test(String(header[col.fee])));
+    const cell = (r, key) => col[key] !== -1 ? String(r[col[key]] == null ? '' : r[col[key]]).trim() : '';
+    const parsed = [];
+    for(let i = headerIndex + 1; i < rows.length; i++){
+      const r = rows[i] || [];
+      const saleDate = parseDateISO(r[col.date]);
+      const grossCents = parseMoneyToCents(r[col.gross]);
+      if(!saleDate || grossCents <= 0) continue;
+      const modalityText = cell(r, 'modality');
+      const plan = modalityText.match(/(\d+)\s*x/i);
+      let feeCents = null, feeBps = null;
+      if(col.fee !== -1 && cell(r, 'fee') !== ''){
+        const raw = r[col.fee];
+        if(feeIsPercent || /%/.test(String(raw))){
+          const pct = typeof raw === 'number' && raw < 1 ? raw * 100 : parseMoneyToCents(raw) / 100;
+          feeBps = Math.round(pct * 100);
+        }else feeCents = Math.abs(parseMoneyToCents(raw));
+      }
+      parsed.push({
+        line: i + 1,
+        saleDate, grossCents,
+        acquirerName: cell(r, 'acquirer'),
+        brand: cell(r, 'brand'),
+        modality: modalityText ? detectModality(modalityText) : 'credit',
+        installments: col.installments !== -1 ? (Number(cell(r, 'installments').replace(/\D/g,'')) || 1) : (plan ? Number(plan[1]) : 1),
+        nsu: cell(r, 'nsu'),
+        terminal: cell(r, 'terminal'), serial: cell(r, 'serial'), establishment: cell(r, 'establishment'),
+        feeCents, feeBps,
+        netCents: col.net !== -1 && cell(r, 'net') !== '' ? parseMoneyToCents(r[col.net]) : null
+      });
+    }
+    if(!parsed.length) throw new Error('NENHUMA LINHA VÁLIDA (confira data e valor).');
+    const found = Object.keys(col).filter(k => col[k] !== -1).map(k => String(header[col[k]]).trim());
+    return {rows: parsed, columns: found};
+  }
+  function cheapHash(name, rows){
+    return (name||'')+'|'+rows.length+'|'+(rows[0]||[]).join('~').slice(0,120);
+  }
+  function cardSalesHash(name, rows){
+    return (name||'')+'|'+rows.length+'|'+(rows[0]||[]).join('~').slice(0,120)+'|'+(rows[rows.length-1]||[]).join('~').slice(0,80);
+  }
+
+  async function previewCardSales(){
+    const status = el('cardSalesImportStatus');
+    el('btnConfirmCardSales').disabled = true;
+    if(!cardSalesFiles.length) return;
+    status.textContent = 'Calculando a prévia no servidor…';
+    try{
+      for(const file of cardSalesFiles){
+        file.preview = await financeApiRequest('/card-sales', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+          kind:'sales', dryRun:true, referenceMonth: el('cardSalesMonth').value || financeCurrentMonthKey(),
+          companyId: el('cardSalesCompany').value, rows: file.rows
+        })});
+      }
+      cardSalesExcluded = new Set();
+      cardSalesFiles.forEach((file, f) => file.preview.rows.forEach(row => { if(row.duplicate) cardSalesExcluded.add(f+':'+row.line); }));
+      renderCardSalesPreview();
+    }catch(error){
+      status.textContent = error.message;
+      el('cardSalesPreviewBody').innerHTML = '<tr><td colspan="14" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function cardSalesBadges(row){
+    if(row.rejected) return '<span class="status-pill alert">'+escapeHtml(row.rejected)+'</span>';
+    const tags = [];
+    if(row.duplicate) tags.push('<span class="status-pill waiting">JÁ IMPORTADA</span>');
+    if(!row.machineId) tags.push('<span class="status-pill waiting">MAQUINETA NÃO CADASTRADA</span>');
+    if(row.feeMissing) tags.push('<span class="status-pill alert">SEM TAXA CADASTRADA</span>');
+    if(row.feeCheck === 'divergent') tags.push('<span class="status-pill alert">TAXA DIVERGENTE</span>');
+    if(row.feeCheck === 'ok') tags.push('<span class="status-pill done">TAXA OK</span>');
+    return tags.join(' ') || '<span class="status-pill progress">SEM TAXA NO ARQUIVO</span>';
+  }
+  function renderCardSalesPreview(){
+    const all = [];
+    cardSalesFiles.forEach((file, f) => file.preview.rows.forEach(row => all.push({key: f+':'+row.line, row})));
+    const shown = all.slice(0, 400);
+    el('cardSalesPreviewBody').innerHTML = shown.map(({key, row}) => {
+      const pickable = !row.rejected;
+      const diff = row.differenceCents;
+      return '<tr'+(pickable && !cardSalesExcluded.has(key) ? '' : ' class="row-muted"')+'>'+
+        '<td class="bulk-col" data-label="Importar">'+(pickable ? '<input type="checkbox" class="bulk-check" data-sales-key="'+escapeHtml(key)+'"'+(cardSalesExcluded.has(key) ? '' : ' checked')+' aria-label="Importar linha '+row.line+'">' : '—')+'</td>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(row.saleDate) || row.saleDate || '—')+'</td>'+
+        '<td data-label="Maquineta">'+escapeHtml(row.machineLabel || row.terminalRef || '—')+'</td>'+
+        '<td data-label="Unidade">'+escapeHtml(row.companyName || '—')+'</td>'+
+        '<td data-label="Adquirente">'+escapeHtml(row.acquirerName || '—')+'</td>'+
+        '<td data-label="Bandeira">'+escapeHtml(row.brand || '—')+'</td>'+
+        '<td data-label="Modalidade">'+escapeHtml(CARD_MODALITY_LABELS[row.modality] || '—')+'</td>'+
+        '<td data-label="Parc.">'+escapeHtml(String(row.installments || '—'))+'</td>'+
+        '<td data-label="NSU">'+escapeHtml(row.nsu || '—')+'</td>'+
+        '<td data-label="Bruto">'+formatCentsBRL(row.grossCents)+'</td>'+
+        '<td data-label="Taxa cadastrada">'+(row.rejected ? '—' : row.feeMissing ? 'SEM TAXA' : formatCentsBRL(row.expectedFeeCents)+' ('+taxPct(row.feeBps)+')')+'</td>'+
+        '<td data-label="Taxa cobrada">'+(row.chargedFeeCents == null ? '—' : formatCentsBRL(row.chargedFeeCents))+'</td>'+
+        '<td data-label="Diferença"'+(diff > 0 ? ' class="neg"' : '')+'>'+(diff == null ? '—' : formatCentsBRL(diff))+'</td>'+
+        '<td data-label="Situação">'+cardSalesBadges(row)+'</td>'+
+      '</tr>';
+    }).join('') || '<tr><td colspan="14" class="responsive-empty">Nenhuma linha.</td></tr>';
+    const ready = all.filter(({key, row}) => !row.rejected && !cardSalesExcluded.has(key));
+    const count = fn => all.filter(({row}) => fn(row)).length;
+    el('cardSalesImportStatus').textContent =
+      cardSalesFiles.map(f => f.name+': '+f.columns.join(', ')).join(' · ')+' — '+
+      all.length+' linha(s) · '+ready.length+' marcada(s) para importar · '+count(r => r.duplicate)+' já importada(s) · '+
+      count(r => r.rejected)+' recusada(s) · '+count(r => !r.rejected && r.feeCheck === 'divergent')+' com taxa divergente · '+
+      count(r => !r.rejected && !r.machineId)+' sem maquineta.'+(all.length > shown.length ? ' Mostrando '+shown.length+' de '+all.length+'.' : '');
+    el('btnConfirmCardSales').disabled = !ready.length;
+  }
+  el('cardSalesPreviewBody').addEventListener('change', event => {
+    const box = event.target.closest('[data-sales-key]');
+    if(!box) return;
+    if(box.checked) cardSalesExcluded.delete(box.dataset.salesKey); else cardSalesExcluded.add(box.dataset.salesKey);
+    renderCardSalesPreview();
+  });
+  el('cardSalesFile').addEventListener('change', async event => {
+    const files = Array.from(event.target.files || []);
+    cardSalesFiles = [];
+    el('btnConfirmCardSales').disabled = true;
+    if(!files.length) return;
+    el('cardSalesImportStatus').textContent = 'Lendo arquivo(s)…';
+    try{
+      for(const file of files){
+        const rows = await extractRowsFromFile(file, {rawCsv: /\.csv$/i.test(file.name)});
+        if(rows.length < 2) throw new Error(file.name+': ARQUIVO SEM DADOS.');
+        let parsed;
+        try{ parsed = parseCardSalesFile(rows); }catch(error){ throw new Error(file.name+': '+error.message); }
+        cardSalesFiles.push({name: file.name, fileHash: cardSalesHash(file.name, rows), rows: parsed.rows, columns: parsed.columns});
+      }
+      await previewCardSales();
+    }catch(error){
+      cardSalesFiles = [];
+      el('cardSalesImportStatus').textContent = error.message;
+      el('cardSalesPreviewBody').innerHTML = '<tr><td colspan="14" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  });
+  ['cardSalesMonth','cardSalesCompany'].forEach(id => el(id).addEventListener('change', previewCardSales));
+  el('btnConfirmCardSales').addEventListener('click', async () => {
+    if(!cardSalesFiles.length) return;
+    el('btnConfirmCardSales').disabled = true;
+    const totals = {inserted:0, divergentCount:0, noMachineCount:0, skipped:[]};
+    try{
+      for(let f = 0; f < cardSalesFiles.length; f++){
+        const file = cardSalesFiles[f];
+        const rows = file.rows.filter(row => !cardSalesExcluded.has(f+':'+row.line));
+        if(!rows.length) continue;
+        const res = await financeApiRequest('/card-sales', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+          kind:'sales', referenceMonth: el('cardSalesMonth').value || financeCurrentMonthKey(), companyId: el('cardSalesCompany').value,
+          fileHash: file.fileHash, sourceName: file.name, rows
+        })});
+        totals.inserted += res.inserted || 0;
+        totals.divergentCount += res.divergentCount || 0;
+        totals.noMachineCount += res.noMachineCount || 0;
+        (res.skipped || []).forEach(s => totals.skipped.push(file.name+' linha '+s.line+': '+s.reason));
+      }
+      showPurchaseToast(totals.inserted+' venda(s) importada(s) · '+totals.divergentCount+' com taxa divergente · '+totals.noMachineCount+' sem maquineta · '+totals.skipped.length+' pulada(s).');
+      el('cardSalesImportStatus').textContent = totals.skipped.length ? 'PULADAS: '+totals.skipped.slice(0, 30).join(' · ')+(totals.skipped.length > 30 ? ' …' : '') : '';
+      el('cardSalesFile').value = '';
+      cardSalesFiles = [];
+      el('cardSalesPreviewBody').innerHTML = '<tr><td colspan="14" class="responsive-empty">Importação concluída. Divergências na aba CONFERÊNCIA.</td></tr>';
+    }catch(error){
+      el('cardSalesImportStatus').textContent = error.message;
+      el('btnConfirmCardSales').disabled = false;
+    }
+  });
+
+  // ---------------------------------------------------------------------
+  // Aba CONFERÊNCIA: taxa cobrada divergente ou sem taxa cadastrada.
+  // ---------------------------------------------------------------------
+  let cardConfRows = [];
+  function monthBounds(month){
+    const [y, m] = month.split('-').map(Number);
+    return [month+'-01', month+'-'+String(new Date(y, m, 0).getDate()).padStart(2, '0')];
+  }
+  async function loadCardConference(){
+    if(!el('cardConfFrom').value || !el('cardConfTo').value){
+      const [from, to] = monthBounds(financeCurrentMonthKey());
+      el('cardConfFrom').value = from; el('cardConfTo').value = to;
+    }
+    const params = new URLSearchParams({from: el('cardConfFrom').value, to: el('cardConfTo').value});
+    [['companyId','cardConfCompany'],['machineId','cardConfMachine'],['acquirerId','cardConfAcquirer'],['status','cardConfStatus']].forEach(([key, id]) => {
+      if(el(id).value) params.set(key, el(id).value);
+    });
+    el('cardConfBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await financeApiRequest('/card-sales/conference?'+params.toString());
+      cardConfRows = Array.isArray(data.rows) ? data.rows : [];
+      const t = data.totals || {};
+      el('cardConfSummary').innerHTML =
+        '<div class="card'+(t.divergentCount ? ' neg' : '')+'"><div class="lbl">VENDAS DIVERGENTES</div><div class="num">'+(Number(t.divergentCount)||0)+'</div></div>'+
+        '<div class="card"><div class="lbl">SEM TAXA CADASTRADA</div><div class="num">'+(Number(t.missingCount)||0)+'</div></div>'+
+        '<div class="card'+(t.overchargedCents ? ' neg' : '')+'"><div class="lbl">COBRADO A MAIS NO PERÍODO</div><div class="num">'+formatCentsBRL(t.overchargedCents||0)+'</div></div>';
+      el('cardConfByAcquirer').textContent = (data.summary || []).filter(s => s.divergentCount || s.overchargedCents).map(s => s.acquirerName+': '+s.divergentCount+' divergente(s) · '+formatCentsBRL(s.overchargedCents)+' a mais').join(' — ');
+      renderCardConference();
+    }catch(error){
+      cardConfRows = [];
+      el('cardConfBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      cardConfBulk.sync();
+    }
+  }
+  function renderCardConference(){
+    el('cardConfBody').innerHTML = cardConfRows.length ? cardConfRows.map(row => {
+      const gross = Number(row.grossCents) || 0;
+      const pct = cents => gross ? ' ('+taxPct(Math.round(cents / gross * 10000))+')' : '';
+      const diff = row.differenceCents;
+      const status = row.reviewedAt ? ['done','REVISADA'] : Number(row.feeMissing) ? ['waiting','SEM TAXA'] : ['alert','DIVERGENTE'];
+      return '<tr>'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar venda')+'</td>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(row.saleDate))+'</td>'+
+        '<td data-label="Maquineta">'+escapeHtml(row.machineLabel || '—')+'</td>'+
+        '<td data-label="Unidade">'+escapeHtml(row.companyName || '—')+'</td>'+
+        '<td data-label="Modalidade">'+escapeHtml((CARD_MODALITY_LABELS[row.modality] || row.modality)+(row.modality === 'credit' ? ' '+row.installments+'X' : ''))+'</td>'+
+        '<td data-label="Bruto">'+formatCentsBRL(gross)+'</td>'+
+        '<td data-label="Taxa cadastrada">'+(Number(row.feeMissing) ? 'SEM TAXA' : formatCentsBRL(row.expectedFeeCents)+pct(row.expectedFeeCents))+'</td>'+
+        '<td data-label="Taxa cobrada">'+(row.chargedFeeCents == null ? '—' : formatCentsBRL(row.chargedFeeCents)+pct(row.chargedFeeCents))+'</td>'+
+        '<td data-label="Diferença"'+(diff > 0 ? ' class="neg"' : '')+'>'+(diff == null ? '—' : formatCentsBRL(diff))+'</td>'+
+        '<td data-label="Situação"><span class="status-pill '+status[0]+'">'+status[1]+'</span>'+(row.reviewedNote ? '<br><small>'+escapeHtml(row.reviewedNote)+'</small>' : '')+'</td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="10" class="responsive-empty">Nenhuma venda divergente ou sem taxa no período.</td></tr>';
+    cardConfBulk.sync();
+  }
+  ['cardConfFrom','cardConfTo','cardConfCompany','cardConfMachine','cardConfAcquirer','cardConfStatus'].forEach(id => el(id).addEventListener('change', loadCardConference));
+  const cardConfBulk = setupBulkSelection(el('cardConfBulkBar'), el('cardConfBody'), async (action, ids) => {
+    if(action === 'review'){
+      openMqBulkDialog('review', ids, '/card-sales/bulk', 'MARCAR COMO REVISADA', async () => { cardConfBulk.clear(); await loadCardConference(); });
+      return false;
+    }
+    if(!confirm('Excluir '+ids.length+' venda(s) importada(s)? Elas saem da conferência e do total de taxas.')) return false;
+    await mqBulkRequest('/card-sales/bulk', 'delete', ids);
+    await loadCardConference();
+  });
+
+  // ---------------------------------------------------------------------
+  // Aba TOTAL DE TAXAS (soma no servidor; substitui o relatório mensal).
+  // ---------------------------------------------------------------------
+  let cardTotalsData = null;
+  async function loadCardTotals(){
+    if(!el('cardTotalsFrom').value) el('cardTotalsFrom').value = financeCurrentMonthKey();
+    if(!el('cardTotalsTo').value || el('cardTotalsTo').value < el('cardTotalsFrom').value) el('cardTotalsTo').value = el('cardTotalsFrom').value;
+    const params = new URLSearchParams({from: el('cardTotalsFrom').value, to: el('cardTotalsTo').value});
+    if(el('cardTotalsAcquirer').value) params.set('acquirerId', el('cardTotalsAcquirer').value);
+    el('cardTotalsTables').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    try{
+      cardTotalsData = await financeApiRequest('/card-fees/totals?'+params.toString());
+      renderCardTotals();
+    }catch(error){
+      cardTotalsData = null;
+      el('cardTotalsCards').innerHTML = '';
+      el('cardTotalsTables').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+    }
+  }
+  function cardTotalsTable(title, rows){
+    return '<h3 class="supply-section-title">'+escapeHtml(title)+'</h3>'+
+      '<div class="table-panel responsive-table"><div class="table-scroll"><table class="rh-print-table">'+
+      '<thead><tr><th></th><th>Vendas</th><th>Bruto</th><th>Taxa (R$)</th><th>%</th><th>Diferença</th></tr></thead><tbody>'+
+      (rows.length ? rows.map(r =>
+        '<tr><td data-label="">'+escapeHtml(r.label)+'</td><td data-label="Vendas">'+r.salesCount+'</td>'+
+        '<td data-label="Bruto">'+formatCentsBRL(r.grossCents)+'</td><td data-label="Taxa (R$)">'+formatCentsBRL(r.feeCents)+'</td>'+
+        '<td data-label="%">'+taxPct(r.feeBps)+'</td><td data-label="Diferença"'+(r.differenceCents > 0 ? ' class="neg"' : '')+'>'+formatCentsBRL(r.differenceCents)+'</td></tr>').join('')
+        : '<tr><td colspan="6" class="responsive-empty">Nenhuma venda no período.</td></tr>')+
+      '</tbody></table></div></div>';
+  }
+  function renderCardTotals(){
+    const d = cardTotalsData;
+    const t = d.totals;
+    const period = d.from === d.to ? d.from.split('-').reverse().join('/') : d.from.split('-').reverse().join('/')+' A '+d.to.split('-').reverse().join('/');
+    el('cardTotalsCards').innerHTML =
+      '<div class="card"><div class="lbl">BRUTO VENDIDO</div><div class="num">'+formatCentsBRL(t.grossCents)+'</div><div class="sub">'+t.salesCount+' venda(s)</div></div>'+
+      '<div class="card"><div class="lbl">TOTAL PAGO EM TAXAS</div><div class="num">'+formatCentsBRL(t.feeCents)+'</div></div>'+
+      '<div class="card"><div class="lbl">TAXA MÉDIA EFETIVA</div><div class="num">'+taxPct(t.feeBps)+'</div></div>'+
+      '<div class="card'+(t.overchargedCents ? ' neg' : '')+'"><div class="lbl">COBRADO A MAIS</div><div class="num">'+formatCentsBRL(t.overchargedCents)+'</div></div>';
+    const source = t.fromFilePct+'% DO VALOR DE TAXA VEM DO ARQUIVO (TAXA COBRADA); O RESTO É A TAXA CADASTRADA.';
+    el('cardTotalsSource').textContent = source;
+    el('cardTotalsPrintMeta').textContent = 'PERÍODO '+period+' · BRUTO '+formatCentsBRL(t.grossCents)+' · TAXAS '+formatCentsBRL(t.feeCents)+' ('+taxPct(t.feeBps)+') · COBRADO A MAIS '+formatCentsBRL(t.overchargedCents)+' · '+source;
+    el('cardTotalsTables').innerHTML =
+      cardTotalsTable('LOJAS × ASSISTÊNCIA', d.split)+
+      cardTotalsTable('POR UNIDADE', d.byCompany)+
+      cardTotalsTable('POR MAQUINETA', d.byMachine)+
+      cardTotalsTable('POR ADQUIRENTE / BANDEIRA', d.byAcquirerBrand);
+  }
+  ['cardTotalsFrom','cardTotalsTo','cardTotalsAcquirer'].forEach(id => el(id).addEventListener('change', loadCardTotals));
+  let cardTotalsTitleBefore = '';
+  el('btnCardTotalsPdf').addEventListener('click', () => {
+    if(!cardTotalsData){ showPurchaseToast('Nada para gerar.', 'error'); return; }
+    cardTotalsTitleBefore = document.title;
+    document.title = 'taxas-cartao-'+cardTotalsData.from+(cardTotalsData.to !== cardTotalsData.from ? '-a-'+cardTotalsData.to : '');
+    document.body.classList.add('pdf-export');
+    window.print();
+  });
+  window.addEventListener('afterprint', () => {
+    if(!cardTotalsTitleBefore) return;
+    document.body.classList.remove('pdf-export');
+    document.title = cardTotalsTitleBefore;
+    cardTotalsTitleBefore = '';
+  });
+
+  // ---------------------------------------------------------------------
+  // Aba REPASSE (provisória): import de repasse + conciliação, como era.
+  // ---------------------------------------------------------------------
   const CARD_RECON_LABELS = {attention:'EM ATENÇÃO', pending:'SEM REPASSE', ok:'CONFERIDA', reviewed:'REVISADA'};
   let cardReconRows = [];
 
   async function loadCardReconciliation(){
     if(!canAccess('finance')) return;
+    if(!el('cardSettlementMonth').value) el('cardSettlementMonth').value = financeCurrentMonthKey();
     const month = el('cardReconMonth').value || financeCurrentMonthKey();
     el('cardReconMonth').value = month;
     const params = new URLSearchParams({month});
@@ -28704,15 +29404,7 @@ function renderHomeTasks(){
     const reviewBtn = event.target.closest('[data-card-recon-review]');
     const reopenBtn = event.target.closest('[data-card-recon-reopen]');
     if(reviewBtn){
-      const note = prompt('Nota da revisão (opcional): por que essa taxa está ok ou o que foi ajustado?') ;
-      if(note === null) return;
-      try{
-        await financeApiRequest('/card-sales/'+encodeURIComponent(reviewBtn.dataset.cardReconReview), {
-          method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reviewed:true, note})
-        });
-        showPurchaseToast('Venda marcada como revisada.');
-        await loadCardReconciliation();
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      openMqBulkDialog('review', [reviewBtn.dataset.cardReconReview], '/card-sales/bulk', 'MARCAR COMO REVISADA', loadCardReconciliation);
       return;
     }
     if(reopenBtn){
@@ -28723,171 +29415,6 @@ function renderHomeTasks(){
         showPurchaseToast('Revisão reaberta.');
         await loadCardReconciliation();
       }catch(error){ showPurchaseToast(error.message, 'error'); }
-    }
-  });
-
-  // --- Cadastro de taxa ---
-  function syncCardFeeInstallments(){
-    el('cardFeeInstallmentsField').style.display = el('cardFeeModality').value === 'credit' ? '' : 'none';
-  }
-  el('cardFeeModality') && el('cardFeeModality').addEventListener('change', syncCardFeeInstallments);
-  function openCardFeeDialog(row){
-    el('cardFeeForm').reset();
-    renderAcquirerSelect('cardFeeAcquirer');
-    el('cardFeeId').value = row ? row.id : '';
-    el('cardFeeDialogTitle').textContent = row ? 'EDITAR TAXA' : 'NOVA TAXA';
-    el('cardFeeAcquirer').value = row ? row.acquirerId : '';
-    el('cardFeeBrand').value = row ? (row.brand || '') : '';
-    el('cardFeeModality').value = row ? row.modality : 'credit';
-    el('cardFeeInstallments').value = row ? (row.installments || 1) : 1;
-    el('cardFeePercent').value = row ? ((row.feeBps||0)/100).toFixed(2) : '';
-    el('cardFeeAnticipation').value = row && row.anticipationBps ? (row.anticipationBps/100).toFixed(2) : '';
-    el('cardFeeValidFrom').value = row ? (row.validFrom || '') : '';
-    el('cardFeeValidTo').value = row ? (row.validTo || '') : '';
-    el('cardFeeFormStatus').textContent = '';
-    syncCardFeeInstallments();
-    el('cardFeeDialog').showModal();
-  }
-  el('btnNewCardFee') && el('btnNewCardFee').addEventListener('click', () => {
-    if(!financeAcquirersCache.some(a => a.status === 'active')){
-      showPurchaseToast('Cadastre uma adquirente em Maquinetas antes de cadastrar taxas.', 'error');
-      return;
-    }
-    openCardFeeDialog(null);
-  });
-  el('btnCloseCardFeeDialog') && el('btnCloseCardFeeDialog').addEventListener('click', () => el('cardFeeDialog').close());
-  el('btnCancelCardFeeDialog') && el('btnCancelCardFeeDialog').addEventListener('click', () => el('cardFeeDialog').close());
-  el('cardFeesTableBody') && el('cardFeesTableBody').addEventListener('click', async event => {
-    const editBtn = event.target.closest('[data-card-fee-edit]');
-    const delBtn = event.target.closest('[data-card-fee-delete]');
-    if(editBtn){
-      const row = cardFeesRows.find(f => f.id === editBtn.dataset.cardFeeEdit);
-      if(row) openCardFeeDialog(row);
-    }else if(delBtn){
-      if(!confirm('Excluir esta taxa? Vendas já importadas mantêm o cálculo feito na importação.')) return;
-      try{
-        await financeApiRequest('/card-fees?id='+encodeURIComponent(delBtn.dataset.cardFeeDelete), {method:'DELETE'});
-        await loadTaxasCartaoPage();
-        showPurchaseToast('Taxa excluída.');
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
-    }
-  });
-  el('cardFeeForm') && el('cardFeeForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const status = el('cardFeeFormStatus');
-    status.textContent = '';
-    const payload = {
-      acquirerId: el('cardFeeAcquirer').value,
-      brand: el('cardFeeBrand').value.trim(),
-      modality: el('cardFeeModality').value,
-      installments: Number(el('cardFeeInstallments').value) || 1,
-      feeBps: Math.round(Number(el('cardFeePercent').value) * 100),
-      anticipationBps: Math.round(Number(el('cardFeeAnticipation').value || 0) * 100),
-      validFrom: el('cardFeeValidFrom').value,
-      validTo: el('cardFeeValidTo').value
-    };
-    if(!payload.acquirerId){ status.textContent = 'SELECIONE A ADQUIRENTE.'; return; }
-    if(!Number.isFinite(payload.feeBps) || payload.feeBps < 0){ status.textContent = 'INFORME UMA TAXA VÁLIDA.'; return; }
-    const id = el('cardFeeId').value;
-    if(id) payload.id = id;
-    try{
-      await financeApiRequest('/card-fees', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      el('cardFeeDialog').close();
-      await loadTaxasCartaoPage();
-      showPurchaseToast('Taxa salva.');
-    }catch(error){ status.textContent = error.message; }
-  });
-
-  // --- Importar vendas ---
-  function cheapHash(name, rows){
-    return (name||'')+'|'+rows.length+'|'+(rows[0]||[]).join('~').slice(0,120);
-  }
-  el('cardSalesFile') && el('cardSalesFile').addEventListener('change', async event => {
-    const file = event.target.files && event.target.files[0];
-    cardSalesParsed = null;
-    el('btnConfirmCardSales').disabled = true;
-    const status = el('cardSalesImportStatus');
-    if(!file) return;
-    status.textContent = 'Lendo arquivo…';
-    try{
-      const rows = await extractRowsFromFile(file, {rawCsv: /\.csv$/i.test(file.name)});
-      if(rows.length < 2) throw new Error('ARQUIVO SEM DADOS.');
-      const header = rows[0];
-      const col = {
-        date: findColumn(header, ['data','datavenda','dtvenda']),
-        acquirer: findColumn(header, ['adquirente','operadora','bandeirawadquirente','credenciadora']),
-        brand: findColumn(header, ['bandeira']),
-        modality: findColumn(header, ['modalidade','tipo','produto']),
-        installments: findColumn(header, ['parcelas','parcela','qtdparcelas','numparcelas']),
-        nsu: findColumn(header, ['nsu','doc','autorizacao','codigoautorizacao']),
-        gross: findColumn(header, ['valorbruto','bruto','valor','valorvenda','vlrbruto'])
-      };
-      if(col.date === -1 || col.gross === -1) throw new Error('NÃO ENCONTREI AS COLUNAS DE DATA E VALOR BRUTO.');
-      const acqByName = new Map(financeAcquirersCache.map(a => [a.name.trim().toLowerCase(), a]));
-      const parsed = [];
-      for(let i = 1; i < rows.length; i++){
-        const r = rows[i];
-        const saleDate = parseDateISO(r[col.date]);
-        const grossCents = parseMoneyToCents(r[col.gross]);
-        if(!saleDate || grossCents <= 0) continue;
-        const acqName = col.acquirer !== -1 ? String(r[col.acquirer]||'').trim() : '';
-        const acq = acqByName.get(acqName.toLowerCase()) || null;
-        const modality = col.modality !== -1 ? detectModality(r[col.modality]) : 'credit';
-        const installments = col.installments !== -1 ? (Number(String(r[col.installments]).replace(/\D/g,'')) || 1) : 1;
-        const brand = col.brand !== -1 ? String(r[col.brand]||'').trim() : '';
-        const nsu = col.nsu !== -1 ? String(r[col.nsu]||'').trim() : '';
-        const fee = acq ? previewResolveFee(acq.id, brand, modality, installments, saleDate) : null;
-        const totalBps = fee ? (Number(fee.feeBps)+Number(fee.anticipationBps||0)) : 0;
-        const expectedFeeCents = Math.round(grossCents*totalBps/10000);
-        parsed.push({
-          saleDate, acquirerId: acq ? acq.id : '', acquirerName: acq ? acq.name : acqName,
-          brand, modality, installments, nsu, grossCents,
-          expectedFeeCents, netCents: grossCents - expectedFeeCents, feeMissing: !fee
-        });
-      }
-      if(!parsed.length) throw new Error('NENHUMA LINHA VÁLIDA (confira data e valor).');
-      cardSalesParsed = {rows: parsed, fileHash: cheapHash(file.name, rows), sourceName: file.name};
-      const missing = parsed.filter(p => p.feeMissing).length;
-      el('cardSalesPreviewBody').innerHTML = parsed.slice(0, 200).map(p =>
-        '<tr'+(p.feeMissing ? ' style="opacity:.6"' : '')+'>'+
-          '<td>'+escapeHtml(formatDateBR(p.saleDate))+'</td>'+
-          '<td>'+escapeHtml(p.acquirerName || '—')+(p.acquirerId ? '' : ' ⚠')+'</td>'+
-          '<td>'+escapeHtml(p.brand || '—')+'</td>'+
-          '<td>'+escapeHtml(CARD_MODALITY_LABELS[p.modality])+'</td>'+
-          '<td>'+p.installments+'</td>'+
-          '<td>'+escapeHtml(p.nsu || '—')+'</td>'+
-          '<td>'+formatCentsBRL(p.grossCents)+'</td>'+
-          '<td>'+(p.feeMissing ? 'sem taxa' : formatCentsBRL(p.expectedFeeCents))+'</td>'+
-          '<td>'+formatCentsBRL(p.netCents)+'</td>'+
-        '</tr>').join('');
-      status.textContent = parsed.length+' linha(s) prontas.'+(missing ? ' '+missing+' sem taxa cadastrada (entram com custo 0).' : '')+(parsed.length > 200 ? ' Mostrando as 200 primeiras.' : '');
-      el('btnConfirmCardSales').disabled = false;
-    }catch(error){
-      status.textContent = error.message;
-      el('cardSalesPreviewBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-    }
-  });
-  el('btnConfirmCardSales') && el('btnConfirmCardSales').addEventListener('click', async () => {
-    if(!cardSalesParsed) return;
-    const companyId = el('cardSalesCompany').value;
-    const referenceMonth = el('cardSalesMonth').value;
-    if(!companyId){ el('cardSalesImportStatus').textContent = 'SELECIONE A UNIDADE.'; return; }
-    if(!referenceMonth){ el('cardSalesImportStatus').textContent = 'INFORME O MÊS DE REFERÊNCIA.'; return; }
-    el('btnConfirmCardSales').disabled = true;
-    try{
-      const res = await financeApiRequest('/card-sales', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({kind:'sales', companyId, referenceMonth, fileHash: cardSalesParsed.fileHash, sourceName: cardSalesParsed.sourceName, rows: cardSalesParsed.rows})
-      });
-      if(res.alreadyProcessed){ showPurchaseToast('Esse arquivo já tinha sido importado.'); }
-      else showPurchaseToast('Importadas '+res.inserted+' venda(s).');
-      el('cardSalesFile').value = '';
-      cardSalesParsed = null;
-      el('cardSalesPreviewBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Importação concluída.</td></tr>';
-      el('cardSalesImportStatus').textContent = '';
-    }catch(error){
-      el('cardSalesImportStatus').textContent = error.message;
-      el('btnConfirmCardSales').disabled = false;
     }
   });
 
@@ -28907,7 +29434,8 @@ function renderHomeTasks(){
         nsu: findColumn(header, ['nsu','doc','autorizacao']),
         date: findColumn(header, ['data','datavenda','dtvenda']),
         gross: findColumn(header, ['valorbruto','bruto','valorvenda','vlrbruto']),
-        received: findColumn(header, ['valorliquido','liquido','valorrecebido','recebido','vlrliquido','valorpago'])
+        received: findColumn(header, ['valorliquido','liquido','valorrecebido','recebido','vlrliquido','valorpago']),
+        terminal: findColumn(header, CARD_SALES_COLUMNS.terminal)
       };
       if(col.received === -1) throw new Error('NÃO ENCONTREI A COLUNA DE VALOR RECEBIDO/LÍQUIDO.');
       const parsed = [];
@@ -28917,13 +29445,14 @@ function renderHomeTasks(){
         const nsu = col.nsu !== -1 ? String(r[col.nsu]||'').trim() : '';
         const saleDate = col.date !== -1 ? parseDateISO(r[col.date]) : '';
         const grossCents = col.gross !== -1 ? parseMoneyToCents(r[col.gross]) : 0;
+        const terminal = col.terminal !== -1 ? String(r[col.terminal]||'').trim() : '';
         if(receivedCents <= 0 && grossCents <= 0) continue;
-        parsed.push({nsu, saleDate, grossCents, receivedCents});
+        parsed.push({nsu, saleDate, grossCents, receivedCents, terminal});
       }
       if(!parsed.length) throw new Error('NENHUMA LINHA VÁLIDA.');
       cardSettlementParsed = {rows: parsed, fileHash: cheapHash(file.name, rows), sourceName: file.name};
       el('cardSettlementPreviewBody').innerHTML = parsed.slice(0, 200).map(p =>
-        '<tr><td>'+escapeHtml(p.nsu || '—')+'</td><td>'+escapeHtml(formatDateBR(p.saleDate) || '—')+'</td><td>'+formatCentsBRL(p.grossCents)+'</td><td>'+formatCentsBRL(p.receivedCents)+'</td></tr>').join('');
+        '<tr><td data-label="NSU">'+escapeHtml(p.nsu || '—')+'</td><td data-label="Data">'+escapeHtml(formatDateBR(p.saleDate) || '—')+'</td><td data-label="Bruto">'+formatCentsBRL(p.grossCents)+'</td><td data-label="Recebido">'+formatCentsBRL(p.receivedCents)+'</td></tr>').join('');
       status.textContent = parsed.length+' linha(s) prontas para casar com as vendas.';
       el('btnConfirmCardSettlement').disabled = false;
     }catch(error){
@@ -28949,53 +29478,11 @@ function renderHomeTasks(){
       cardSettlementParsed = null;
       el('cardSettlementPreviewBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">Repasse processado.</td></tr>';
       el('cardSettlementImportStatus').textContent = '';
+      await loadCardReconciliation();
     }catch(error){
       el('cardSettlementImportStatus').textContent = error.message;
       el('btnConfirmCardSettlement').disabled = false;
     }
-  });
-
-  // --- Relatório mensal ---
-  let cardFeeReportData = null;
-  async function loadCardFeeReport(){
-    const month = el('cardFeeReportMonth').value || financeCurrentMonthKey();
-    el('cardFeeReportMonth').value = month;
-    const companyId = el('cardFeeReportCompany').value;
-    el('cardFeeReportBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
-    try{
-      const params = new URLSearchParams({month});
-      if(companyId) params.set('companyId', companyId);
-      cardFeeReportData = await financeApiRequest('/card-fees/report?'+params.toString());
-      const rows = cardFeeReportData.rows || [];
-      const t = cardFeeReportData.totals;
-      el('cardFeeReportBody').innerHTML = (rows.length ? rows.map(r =>
-        '<tr>'+
-          '<td>'+escapeHtml(r.acquirerName)+'</td><td>'+escapeHtml(r.brand)+'</td>'+
-          '<td>'+r.salesCount+'</td><td>'+formatCentsBRL(r.grossCents)+'</td>'+
-          '<td>'+formatCentsBRL(r.expectedFeeCents)+'</td><td>'+formatCentsBRL(r.actualCostCents)+'</td>'+
-          '<td>'+formatCentsBRL(r.divergenceCents)+'</td>'+
-        '</tr>').join('') : '<tr><td colspan="7" class="responsive-empty">Nenhuma venda no mês.</td></tr>')+
-        (rows.length ? '<tr><th>'+escapeHtml(t.acquirerName)+'</th><th></th><th>'+t.salesCount+'</th><th>'+formatCentsBRL(t.grossCents)+'</th><th>'+formatCentsBRL(t.expectedFeeCents)+'</th><th>'+formatCentsBRL(t.actualCostCents)+'</th><th>'+formatCentsBRL(t.divergenceCents)+'</th></tr>' : '');
-    }catch(error){
-      el('cardFeeReportBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-    }
-  }
-  el('cardFeeReportMonth') && el('cardFeeReportMonth').addEventListener('change', loadCardFeeReport);
-  el('cardFeeReportCompany') && el('cardFeeReportCompany').addEventListener('change', loadCardFeeReport);
-  el('btnExportCardFeeReport') && el('btnExportCardFeeReport').addEventListener('click', async () => {
-    if(!cardFeeReportData || !(cardFeeReportData.rows || []).length){ showPurchaseToast('Nada para exportar.', 'error'); return; }
-    let XLSX;
-    try{ XLSX = await ensureXlsx(); }
-    catch(error){ showPurchaseToast(error.message, 'error'); return; }
-    const data = cardFeeReportData.rows.map(r => ({
-      Adquirente: r.acquirerName, Bandeira: r.brand, Vendas: r.salesCount,
-      'Bruto (R$)': r.grossCents/100, 'Taxa prevista (R$)': r.expectedFeeCents/100,
-      'Custo real (R$)': r.actualCostCents/100, 'Divergência (R$)': r.divergenceCents/100
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Taxas '+cardFeeReportData.month);
-    XLSX.writeFile(wb, 'taxas-cartao-'+cardFeeReportData.month+'.xlsx');
   });
 
   // ---------------------------------------------------------------------

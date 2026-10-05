@@ -44,6 +44,37 @@ test("normalização de serial e validação do cadastro", () => {
   assert.equal(machines.validateMachineDraft({ acquirerId: "a1", companyId: "c1", installedAt: "2026-01-31" }), null);
 });
 
+test("matchCardMachine: terminal/serial sem zeros/pontuação; EC só quando é de uma unidade só", () => {
+  const list = [
+    { id: "m1", terminal: "00012345", serial: "PB-0099", establishmentCode: "1020304050", companyId: "criomar01" },
+    { id: "m2", terminal: "777", serial: "XY1", establishmentCode: "1020304050", companyId: "criomar01" },
+    { id: "m3", terminal: "888", serial: "ZZ9", establishmentCode: "55", companyId: "ctacaruna1" },
+    { id: "m4", terminal: "999", serial: "ZZ8", establishmentCode: "55", companyId: "criomar01" },
+  ];
+  assert.equal(machines.matchCardMachine(list, ["12345"])?.id, "m1");
+  assert.equal(machines.matchCardMachine(list, ["", "pb 0099"])?.id, "m1");
+  assert.equal(machines.matchCardMachine(list, ["000777"])?.id, "m2");
+  // EC compartilhado pela mesma loja → resolve a loja (1ª maquineta).
+  assert.equal(machines.matchCardMachine(list, ["", "", "1.020.304.050"])?.companyId, "criomar01");
+  // EC de maquinetas em lojas diferentes é ambíguo.
+  assert.equal(machines.matchCardMachine(list, ["", "", "0055"]), null);
+  assert.equal(machines.matchCardMachine(list, ["", " "]), null);
+  assert.equal(machines.matchCardMachine(list, ["4242"]), null);
+});
+
+test("machineCompanyAt: unidade da maquineta na DATA da venda (transferência)", () => {
+  const machine = { companyId: "cassist01", companyName: "ASSISTÊNCIA" };
+  const transfers = [
+    { eventDate: "2026-09-10", fromCompanyId: "ctacaruna1", fromCompanyName: "TACARUNA" },
+    { eventDate: "2026-08-01", fromCompanyId: "criomar01", fromCompanyName: "RIOMAR" },
+  ];
+  assert.equal(machines.machineCompanyAt(machine, transfers, "2026-07-31").companyId, "criomar01");
+  assert.equal(machines.machineCompanyAt(machine, transfers, "2026-08-01").companyId, "ctacaruna1");
+  assert.equal(machines.machineCompanyAt(machine, transfers, "2026-09-09").companyId, "ctacaruna1");
+  assert.equal(machines.machineCompanyAt(machine, transfers, "2026-09-10").companyId, "cassist01");
+  assert.equal(machines.machineCompanyAt(machine, [], "2020-01-01").companyId, "cassist01");
+});
+
 test("guardas de tipo de status/evento", () => {
   assert.equal(machines.isMachineStatus("transferred"), true);
   assert.equal(machines.isMachineStatus("foo"), false);

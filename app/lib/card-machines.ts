@@ -93,3 +93,64 @@ export function validateMachineDraft(draft: {
   }
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Identificação da maquineta no arquivo de vendas (Financeiro 5/9).
+// ---------------------------------------------------------------------------
+
+/** Terminal/serial/EC comparáveis: sem espaço/pontuação e sem zeros à esquerda. */
+export function normalizeMachineRef(value: unknown): string {
+  return String(value ?? "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .replace(/^0+/, "");
+}
+
+export type MachineForMatch = {
+  id: string;
+  terminal: string;
+  serial: string;
+  establishmentCode: string;
+  companyId: string;
+};
+
+/**
+ * Acha a maquineta pelos identificadores da linha (terminal / nº lógico /
+ * serial / código do estabelecimento). Terminal e serial identificam UMA
+ * maquineta; o código do estabelecimento costuma ser da loja inteira, então
+ * só vale quando todas as maquinetas com aquele código são da mesma unidade.
+ */
+export function matchCardMachine<T extends MachineForMatch>(machines: T[], refs: unknown[]): T | null {
+  const wanted = new Set(refs.map(normalizeMachineRef).filter(Boolean));
+  if (!wanted.size) return null;
+  const hit = (value: string) => {
+    const normalized = normalizeMachineRef(value);
+    return Boolean(normalized) && wanted.has(normalized);
+  };
+  const direct = machines.find((machine) => hit(machine.terminal) || hit(machine.serial));
+  if (direct) return direct;
+  const byEstablishment = machines.filter((machine) => hit(machine.establishmentCode));
+  return byEstablishment.length && byEstablishment.every((m) => m.companyId === byEstablishment[0].companyId)
+    ? byEstablishment[0]
+    : null;
+}
+
+export type MachineTransfer = { eventDate: string; fromCompanyId: string; fromCompanyName: string };
+
+/**
+ * Unidade em que a maquineta ESTAVA na data (transferências do histórico):
+ * a primeira transferência DEPOIS da data diz de onde ela saiu; sem nenhuma,
+ * é a unidade atual. Venda no dia da transferência já é da loja nova.
+ */
+export function machineCompanyAt(
+  machine: { companyId: string; companyName: string },
+  transfers: MachineTransfer[],
+  date: string,
+): { companyId: string; companyName: string } {
+  const next = transfers
+    .filter((event) => event.eventDate && event.eventDate > date)
+    .sort((a, b) => a.eventDate.localeCompare(b.eventDate))[0];
+  return next
+    ? { companyId: next.fromCompanyId, companyName: next.fromCompanyName }
+    : { companyId: machine.companyId, companyName: machine.companyName };
+}

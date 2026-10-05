@@ -84,23 +84,65 @@ test("actualFeeBps: taxa efetiva cobrada pela adquirente em basis points", () =>
   assert.equal(fees.actualFeeBps(0, 0), null);
 });
 
-test("summarizeMonthlyFees: agrega por adquirente+bandeira, custo real usa repasse quando existe", () => {
-  const { rows, totals } = fees.summarizeMonthlyFees([
-    { acquirerName: "Cielo", brand: "Visa", grossCents: 10000, expectedFeeCents: 200, netCents: 9800, receivedCents: 9750 },
-    { acquirerName: "Cielo", brand: "Visa", grossCents: 5000, expectedFeeCents: 100, netCents: 4900, receivedCents: null },
-    { acquirerName: "Rede", brand: "Master", grossCents: 20000, expectedFeeCents: 600, netCents: 19400, receivedCents: 19400 },
-  ]);
-  const cielo = rows.find((r) => r.acquirerName === "Cielo");
-  assert.equal(cielo.salesCount, 2);
-  assert.equal(cielo.grossCents, 15000);
-  // custo real: (10000-9750) da conciliada + 100 (taxa prevista) da pendente.
-  assert.equal(cielo.actualCostCents, 250 + 100);
-  assert.equal(cielo.divergenceCents, 9750 - 9800);
-  assert.equal(totals.grossCents, 35000);
-  assert.equal(totals.salesCount, 3);
+test("resolveCardFee: taxa da maquineta ganha da adquirente; sem cobertura cai na adquirente (5/9)", () => {
+  const base = { acquirerId: "cielo", brand: "", modality: "credit", installments: 1, anticipationBps: 0, validFrom: "2026-01-01", validTo: "" };
+  const table = [
+    { id: "adq", ...base, feeBps: 300 },
+    { id: "adq-loja-b", ...base, companyId: "clojabb", feeBps: 280 },
+    { id: "maq", ...base, machineId: "m1", feeBps: 199 },
+    { id: "maq-antiga", ...base, machineId: "m1", feeBps: 250, validFrom: "2025-01-01", validTo: "2025-12-31" },
+    { id: "maq-visa", ...base, machineId: "m1", brand: "Visa", feeBps: 150 },
+  ];
+  const sale = { acquirerId: "cielo", brand: "Elo", modality: "credit", installments: 1, date: "2026-08-01" };
+  assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m1" })?.id, "maq");
+  assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m1", brand: "visa" })?.id, "maq-visa");
+  // Vigência vale no nível da maquineta: em 2025 vale a versão antiga.
+  assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m1", date: "2025-06-01" })?.id, "maq-antiga");
+  // Maquineta sem taxa própria / parcela sem taxa própria → adquirente.
+  assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m2" })?.id, "adq");
+  assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m1", installments: 3 }), null);
+  // Taxa de adquirente por unidade só vale para vendas daquela unidade.
+  assert.equal(fees.resolveCardFee(table, { ...sale, companyId: "clojabb" })?.id, "adq-loja-b");
+  assert.equal(fees.resolveCardFee(table, { ...sale, companyId: "clojaaa" })?.id, "adq");
 });
 
-test("Financeiro Fase 7: Taxas de Cartão registrado + religação dos Recebíveis", async () => {
+test("conferência na importação: taxa cobrada do arquivo × cadastrada pela tolerância", () => {
+  assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000, feeCents: 250 }), 250);
+  assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000, feeBps: 199 }), 199);
+  // Arquivo só com líquido: bruto − líquido.
+  assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000, netCents: 9700 }), 300);
+  assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000 }), null);
+  assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000, netCents: 12000 }), null);
+
+  const check = (charged, expected = 200, gross = 10000, feeMissing = false) =>
+    fees.computeFeeCheck({ grossCents: gross, expectedFeeCents: expected, chargedFeeCents: charged, feeMissing });
+  assert.equal(check(null), "");
+  assert.equal(check(210), "ok"); // R$ 0,10 de diferença: dentro da tolerância
+  assert.equal(check(260), "divergent"); // R$ 0,60 e 0,60 p.p.: fora
+  assert.equal(check(260, 200, 100000), "ok"); // em R$ 1.000, 0,06 p.p. é tolerado
+  assert.equal(check(500, 0, 10000, true), ""); // sem taxa cadastrada vai como SEM TAXA
+});
+
+test("summarizeCardFeeTotals: LOJAS × ASSISTÊNCIA, por unidade, maquineta e adquirente/bandeira", () => {
+  const sale = (row) => ({ machineId: "m1", machineLabel: "STONE S920 1", acquirerName: "STONE", brand: "VISA", feeMissing: false, chargedFeeCents: null, ...row });
+  const result = fees.summarizeCardFeeTotals([
+    sale({ companyId: "criomar01", companyName: "RIOMAR", grossCents: 10000, expectedFeeCents: 200, chargedFeeCents: 260 }),
+    sale({ companyId: "ctacaruna1", companyName: "TACARUNA", grossCents: 20000, expectedFeeCents: 400, machineId: "m2", machineLabel: "STONE 2" }),
+    sale({ companyId: fees.ASSISTANCE_COMPANY_ID, companyName: "ASSISTÊNCIA", grossCents: 5000, expectedFeeCents: 100, chargedFeeCents: 90, brand: "ELO" }),
+  ]);
+  assert.equal(result.totals.grossCents, 35000);
+  assert.equal(result.totals.feeCents, 260 + 400 + 90); // cobrada quando houver, senão a cadastrada
+  assert.equal(result.totals.overchargedCents, 60);
+  assert.equal(result.totals.differenceCents, 60 - 10);
+  assert.equal(result.totals.fromFilePct, Math.round((350 / 750) * 100));
+  assert.equal(result.totals.feeBps, Math.round((750 / 35000) * 10000));
+  assert.deepEqual(result.split.map((r) => [r.label, r.grossCents, r.feeCents]), [["LOJAS", 30000, 660], ["ASSISTÊNCIA", 5000, 90]]);
+  assert.deepEqual(result.byCompany.map((r) => r.label), ["TACARUNA", "RIOMAR", "ASSISTÊNCIA"]);
+  assert.equal(result.byMachine.find((r) => r.key === "m1").salesCount, 2);
+  assert.deepEqual(result.byAcquirerBrand.map((r) => r.label).sort(), ["STONE · ELO", "STONE · VISA"]);
+});
+
+test("Financeiro Fase 7: Taxas de Cartão (hoje dentro de Maquinetas) + religação dos Recebíveis", async () => {
   const [html, workerSource, schema, migration, receivablesShared, receivablesRoute] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
@@ -110,15 +152,13 @@ test("Financeiro Fase 7: Taxas de Cartão registrado + religação dos Recebíve
     readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(
-    html,
-    /id="navFinanceiroTaxasCartao" data-page="financeiroTaxasCartao" data-permission="finance"[^>]*href="\/financeiro\/taxas-cartao"/,
-  );
-  assert.match(html, /id="pageFinanceiroTaxasCartao" class="page wrap"/);
-  assert.match(html, /financeiroTaxasCartao:'\/financeiro\/taxas-cartao'/);
-  assert.match(html, /financeiroTaxasCartao:'finance'/);
+  // Financeiro 5/9: a tela virou abas de Maquinetas; o link antigo continua
+  // servido pelo worker e cai em Maquinetas > TAXAS.
+  assert.doesNotMatch(html, /id="navFinanceiroTaxasCartao"/);
+  assert.doesNotMatch(html, /id="pageFinanceiroTaxasCartao"/);
+  assert.doesNotMatch(html, /financeiroTaxasCartao/);
+  assert.match(html, /'\/financeiro\/taxas-cartao':'financeiroMaquinetas'/);
   assert.match(workerSource, /"\/financeiro\/taxas-cartao"/);
-  assert.equal(html.split("if(name === 'financeiroTaxasCartao') loadTaxasCartaoPage();").length - 1, 2);
 
   // Importação reaproveita o leitor de planilha já existente (nada de CDN novo).
   assert.match(html, /extractRowsFromFile\(file\)/);

@@ -10,10 +10,13 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../shared";
-import { CARD_FEE_COLUMNS } from "./shared";
+import { CARD_FEE_COLUMNS, loadCardFees, planFeeVersion, runStatements } from "./shared";
 
-// Tabela de Taxas de Cartão (Financeiro Fase 7). Mesma permissão e escopo do
-// resto do módulo. company_id vazio ('') = taxa global.
+// Tabela de Taxas de Cartão (Financeiro Fase 7; aba TAXAS de Maquinetas no
+// 5/9). Mesma permissão e escopo do resto do módulo. company_id vazio ('') =
+// taxa global; machine_id preenchido = taxa própria da maquineta (gravada com
+// a unidade da maquineta). Taxa NOVA encerra a anterior da mesma chave na
+// véspera (planFeeVersion) — editar continua alterando a linha.
 
 function scopeActorOf(request: Request, actor: ReturnType<typeof identity>) {
   return {
@@ -48,7 +51,8 @@ export async function GET(request: Request) {
     let where = "";
     if (!allStores) {
       values.push(scopeActor.companyId);
-      where = `WHERE company_id='' OR company_id=?1`;
+      where = `WHERE company_id='' OR company_id=?1
+        OR machine_id IN (SELECT id FROM finance_card_machines WHERE company_id=?1)`;
     }
     const result = await database
       .prepare(
@@ -114,6 +118,20 @@ export async function POST(request: Request) {
     }
 
     const database = await getD1();
+    const machineId = safeText(body.machineId, 80);
+    const machine = machineId
+      ? await database
+          .prepare("SELECT acquirer_id AS acquirerId, company_id AS companyId FROM finance_card_machines WHERE id=?1")
+          .bind(machineId)
+          .first<{ acquirerId: string; companyId: string }>()
+      : null;
+    if (machineId && !machine) return jsonResponse({ error: "MAQUINETA NÃO ENCONTRADA." }, 400);
+    if (machine && !allStores && machine.companyId !== scopeActor.companyId) {
+      return jsonResponse({ error: "ESSA MAQUINETA É DE OUTRA UNIDADE." }, 403);
+    }
+    if (machine && machine.acquirerId !== acquirerId) {
+      return jsonResponse({ error: "A ADQUIRENTE NÃO É A DA MAQUINETA." }, 400);
+    }
     const acquirer = await database
       .prepare("SELECT name, company_id AS companyId FROM finance_acquirers WHERE id=?1")
       .bind(acquirerId)
@@ -121,9 +139,10 @@ export async function POST(request: Request) {
     if (!acquirer) return jsonResponse({ error: "ADQUIRENTE NÃO ENCONTRADA." }, 400);
 
     let companyId = safeText(body.companyId, 80);
-    if (!allStores) companyId = scopeActor.companyId;
+    if (machine) companyId = machine.companyId;
+    else if (!allStores) companyId = scopeActor.companyId;
     else if (companyId && !hasCompany(companyId)) companyId = "";
-    if (acquirer.companyId && acquirer.companyId !== companyId) {
+    if (!machine && acquirer.companyId && acquirer.companyId !== companyId) {
       return jsonResponse({ error: "ESSA ADQUIRENTE É DE OUTRA UNIDADE." }, 400);
     }
 
@@ -142,7 +161,7 @@ export async function POST(request: Request) {
           `UPDATE finance_card_fees
            SET acquirer_id=?1, acquirer_name=?2, company_id=?3, brand=?4, modality=?5, installments=?6,
                fee_bps=?7, anticipation_bps=?8, valid_from=?9, valid_to=?10,
-               updated_by=?11, updated_by_name=?12, updated_at=now()::text
+               updated_by=?11, updated_by_name=?12, updated_at=CURRENT_TIMESTAMP, machine_id=?14
            WHERE id=?13`,
         )
         .bind(
@@ -159,37 +178,19 @@ export async function POST(request: Request) {
           actor.id,
           who,
           editId,
+          machineId,
         )
         .run();
       return jsonResponse({ updated: true, id: editId });
     }
 
-    const id = crypto.randomUUID();
-    await database
-      .prepare(
-        `INSERT INTO finance_card_fees
-          (id, acquirer_id, acquirer_name, company_id, brand, modality, installments,
-           fee_bps, anticipation_bps, valid_from, valid_to,
-           created_by, created_by_name, updated_by, updated_by_name)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?12, ?13)`,
-      )
-      .bind(
-        id,
-        acquirerId,
-        acquirer.name,
-        companyId,
-        brand,
-        modality,
-        installments,
-        feeBps,
-        anticipationBps,
-        validFrom,
-        validTo,
-        actor.id,
-        who,
-      )
-      .run();
-    return jsonResponse({ created: true, id }, 201);
+    const statements = planFeeVersion(
+      await loadCardFees(database),
+      { acquirerId, acquirerName: acquirer.name, companyId, machineId, brand, modality, installments, feeBps, anticipationBps, validFrom, validTo },
+      { id: actor.id, name: who },
+    );
+    await runStatements(database, statements);
+    return jsonResponse({ created: true, closedPrevious: statements.length - 1 }, 201);
   } catch (error) {
     console.error("Não foi possível salvar a taxa de cartão.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR A TAXA DE CARTÃO." }, 500);

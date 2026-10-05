@@ -3252,7 +3252,8 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
   assert.match(html, /financeiroFluxoCaixa:'\/financeiro\/fluxo-de-caixa'/);
   assert.match(html, /financeiroFluxoCaixa:'finance'/);
   assert.match(html, /'\/financeiro\/recebiveis':'financeiroFluxoCaixa'/);
-  assert.match(html, /legacyCashFlowTab = normalizeRoutePath\(location\.pathname\) === '\/financeiro\/recebiveis' \? 'recebiveis'/);
+  assert.match(html, /const LEGACY_TABS = Object\.freeze\(\{\s*'\/financeiro\/recebiveis':'recebiveis'/);
+  assert.match(html, /legacyTab && LEGACY_ROUTES\[legacyPath\] === name \? '\?aba='\+legacyTab/);
   assert.match(workerSource, /"\/financeiro\/recebiveis"/);
   assert.match(workerSource, /"\/financeiro\/fluxo-de-caixa"/);
 
@@ -4892,7 +4893,9 @@ test("Financeiro > Cartões: selos de duplicidade, filtros, barra de lote e gast
 
 test("importadores financeiros leem CSV como texto (data DD/MM com dia <= 12 não vira data americana)", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /XLSX\.read\(buffer, \{type:'array', raw: Boolean\(options && options\.rawCsv\)\}\)/);
+  assert.match(html, /wb = XLSX\.read\(csv\.replace\(\/\^\\uFEFF\/, ''\), \{type:'string', raw:true\}\)/);
+  // UTF-8 válido continua UTF-8; senão Windows-1252 (acentos de "Débito").
+  assert.match(html, /new TextDecoder\('utf-8', \{fatal:true\}\)[\s\S]{0,120}new TextDecoder\('windows-1252'\)/);
   // Maquinetas: vendas e repasse.
   assert.equal(html.split("const rows = await extractRowsFromFile(file, {rawCsv: /\\.csv$/i.test(file.name)});").length - 1, 2);
   // Fatura do cartão e extrato da conciliação.
@@ -4935,4 +4938,49 @@ test("Financeiro > Fluxo de Caixa: 3 abas, lista de pagamentos, caixa semanal e 
   assert.match(html, /<h3 class="supply-section-title">RECEBIMENTOS FUTUROS<\/h3>/);
   assert.match(html, /financeApiRequest\('\/receivables\/upcoming\?'/);
   assert.match(html, /'ATRASADOS \(DATA PREVISTA ANTERIOR A HOJE\)'/);
+});
+
+test("Financeiro > Maquinetas: Taxas de Cartão em abas, taxa por maquineta, arquivo de vendas, conferência e total de taxas", async () => {
+  const [html, workerSource, migration, schema] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0081_taxas_por_maquineta.sql", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+  ]);
+  // Taxas de Cartão saiu do menu/mapas; o link antigo abre Maquinetas > TAXAS.
+  assert.doesNotMatch(html, /navFinanceiroTaxasCartao|pageFinanceiroTaxasCartao|financeiroTaxasCartao|loadTaxasCartaoPage/);
+  assert.match(html, /'\/financeiro\/taxas-cartao':'financeiroMaquinetas'/);
+  assert.match(html, /'\/financeiro\/taxas-cartao':'taxas'/);
+  assert.match(workerSource, /"\/financeiro\/taxas-cartao"/);
+  assert.match(html, /id="navFinanceiroMaquinetas"[^>]*data-home-desc="Maquinetas por unidade com taxas próprias/);
+  // Abas (padrão .output-tabs) e aba na URL.
+  for (const [tab, label] of [["maquinetas", "MAQUINETAS"], ["taxas", "TAXAS"], ["arquivo", "ARQUIVO DE VENDAS"], ["conferencia", "CONFERÊNCIA"], ["totais", "TOTAL DE TAXAS"], ["repasse", "REPASSE"]]) {
+    assert.match(html, new RegExp(`class="output-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-mq-tab="${tab}">${label}</button>`), tab);
+    assert.match(html, new RegExp(`data-mq-panel="${tab}"`), tab);
+  }
+  assert.match(html, /'\?aba='\+mqTab/);
+  // Barras de lote (componente reutilizado) nas três listas.
+  assert.match(html, /id="machinesBulkBar"[\s\S]*?data-bulk-action="copy_fees">COPIAR TAXAS DE…[\s\S]*?data-bulk-action="inactivate">INATIVAR[\s\S]*?data-bulk-action="reactivate">REATIVAR/);
+  assert.match(html, /id="cardFeesBulkBar"[\s\S]*?data-bulk-action="close">ENCERRAR VIGÊNCIA[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /id="cardConfBulkBar"[\s\S]*?data-bulk-action="review">MARCAR COMO REVISADA[\s\S]*?data-bulk-action="delete">EXCLUIR VENDAS/);
+  for (const name of ["machinesBulk", "cardFeesBulk", "cardConfBulk"]) {
+    assert.match(html, new RegExp(`const ${name} = setupBulkSelection\\(`), name);
+  }
+  // Taxa por maquineta, tabela em grade e vários arquivos com prévia do servidor.
+  assert.match(html, /id="cardFeeMachine"/);
+  assert.match(html, /id="cardFeeGridDialog"/);
+  assert.match(html, /financeApiRequest\('\/card-fees\/table'/);
+  assert.match(html, /id="cardSalesFile" accept="[^"]*" multiple/);
+  assert.match(html, /kind:'sales', dryRun:true/);
+  assert.match(html, /JÁ IMPORTADA/);
+  assert.match(html, /MAQUINETA NÃO CADASTRADA/);
+  assert.match(html, /financeApiRequest\('\/card-fees\/totals\?'/);
+  assert.match(html, /id="btnCardTotalsPdf" type="button">GERAR IMAGEM\/PDF/);
+  // Nada de prompt() nativo na conciliação (revisão usa o diálogo de lote).
+  assert.doesNotMatch(html, /prompt\('Nota da revisão/);
+  // Migration 0081: só ADD COLUMN/INDEX.
+  assert.match(migration, /ALTER TABLE "finance_card_fees" ADD COLUMN IF NOT EXISTS "machine_id"/);
+  assert.match(migration, /ALTER TABLE "finance_card_sales" ADD COLUMN IF NOT EXISTS "charged_fee_cents" integer/);
+  assert.doesNotMatch(migration, /DROP /i);
+  assert.match(schema, /chargedFeeCents: integer\("charged_fee_cents"\)/);
 });
