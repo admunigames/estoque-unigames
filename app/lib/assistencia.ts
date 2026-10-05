@@ -18,17 +18,17 @@ export const ASSIST_OBSERVATIONS = [
   {
     key: "preventiva",
     title: "MANUTENÇÃO PREVENTIVA",
-    text: "Manutenção preventiva é a limpeza interna e externa, lubrificação dos componentes removendo suas oxidações ao máximo, auxiliando na prolongação da vida útil dos componentes e troca da pasta térmica.",
+    text: "MANUTENÇÃO PREVENTIVA É A LIMPEZA INTERNA E EXTERNA, LUBRIFICAÇÃO DOS COMPONENTES REMOVENDO SUAS OXIDAÇÕES AO MÁXIMO, AUXILIANDO NA PROLONGAÇÃO DA VIDA ÚTIL DOS COMPONENTES E, C/A TROCA DA PASTA TÉRMICA SILVER DE ALTA RESISTÊNCIA / METAL LIQUIDO.",
   },
   {
     key: "novos_defeitos",
     title: "AVISO DE NOVOS DEFEITOS",
-    text: "Em caso de detecção de novos defeitos identificados somente após correção deste orçamento, será realizado novo orçamento.",
+    text: "ATENÇÃO, EM CASO DE DETECÇÃO DE NOVOS DEFEITOS DOS QUAIS SÓ PODEM SER IDENTIFICADOS COM O ELETRÔNICO LIGADO APÓS A CORREÇÃO DESTE ORÇAMENTO, ESTAREMOS REFORMULANDO ESSE ORÇAMENTO. EX: DRIVE (FUNÇÃO P/ LEITURA CD/DVD), PORTAS USB’s, UNIDADE DE ARMAZENAMENTO, COOLER E ETC...",
   },
   {
     key: "garantia",
     title: "GARANTIA",
-    text: "O serviço deste orçamento contém garantia de 90 dias pelo CDC.",
+    text: "O SERVIÇO DESSE ORÇAMENTO CONTÉM GARANTIA DE 90 DIAS PELO CDC, Lei nº 8.078, NO ART 26.",
   },
 ] as const;
 

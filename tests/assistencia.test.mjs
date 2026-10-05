@@ -288,7 +288,7 @@ test("criar: loja vinculada + permissão cria para OUTRA loja; total recalculado
   // Observação gravada como cópia (título + texto), não só a chave.
   const observations = JSON.parse(row.observations);
   assert.deepEqual(observations.map((item) => item.title), ["GARANTIA"]);
-  assert.match(observations[0].text, /90 dias pelo CDC/);
+  assert.match(observations[0].text, /GARANTIA DE 90 DIAS PELO CDC, Lei nº 8\.078, NO ART 26\./);
 });
 
 test("OS duplicada → 409 com mensagem clara (também com espaços), inclusive ao editar", async () => {
