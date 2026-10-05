@@ -3253,6 +3253,8 @@
   .assist-doc-table tfoot td{font-weight:800;}
   .assist-doc-total{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; padding:10px 12px; border:2px solid #111827; font:800 12px/1.2 var(--mono);}
   .assist-doc-total strong{font:800 18px/1 var(--mono);}
+  .assist-doc-payments{margin-top:0;}
+  .assist-doc-payments td{font:800 10px/1.3 var(--mono); border-top:0;}
   .assist-doc-obs p{margin:0 0 6px; overflow-wrap:anywhere; white-space:pre-wrap;}
   .assist-doc-obs b{font:800 9px/1.4 var(--mono);}
   .assist-doc-foot{margin-top:18px; padding-top:8px; border-top:1px solid #6b7280; color:#334155; font:700 9px/1.4 var(--mono); text-align:center; letter-spacing:.4px;}
@@ -19719,6 +19721,18 @@ function renderHomeTasks(){
     {key:'novos_defeitos', title:'AVISO DE NOVOS DEFEITOS', text:'Em caso de detecção de novos defeitos identificados somente após correção deste orçamento, será realizado novo orçamento.'},
     {key:'garantia', title:'GARANTIA', text:'O serviço deste orçamento contém garantia de 90 dias pelo CDC.'}
   ];
+  // Formas de pagamento mostradas abaixo do total no PDF (só cálculo de
+  // exibição; o total salvo continua sendo o valor cheio).
+  const ASSIST_PAYMENT_OPTIONS = [
+    {label:'PAGAMENTO NO CRÉDITO ATÉ 6X SEM JUROS', discountPct:0},
+    {label:'PAGAMENTO NO DÉBITO COM 5% DE DESCONTO', discountPct:5},
+    {label:'PAGAMENTO NO DINHEIRO OU PIX COM 10% DE DESCONTO', discountPct:10}
+  ];
+
+  function assistPaymentCents(totalCents, discountPct){
+    return Math.round(totalCents * (100 - discountPct) / 100);
+  }
+
   const assistState = {
     ready:false, tab:'novo', defects:[], defectsLoaded:false,
     editingId:'', editingOs:'', equipments:[], history:[], saving:false, showingProblems:false
@@ -20146,6 +20160,9 @@ function renderHomeTasks(){
       '</div></section>'+
       equipmentsHtml+
       '<div class="assist-doc-total"><span>VALOR TOTAL</span><strong>'+formatCentsBRL(total)+'</strong></div>'+
+      '<table class="assist-doc-table assist-doc-payments"><tbody>'+
+        ASSIST_PAYMENT_OPTIONS.map(option => '<tr><td>'+escapeHtml(option.label)+'</td><td class="num">VALOR TOTAL: '+formatCentsBRL(assistPaymentCents(total, option.discountPct))+'</td></tr>').join('')+
+      '</tbody></table>'+
       (observations ? '<section class="assist-doc-block assist-doc-obs"><h2>Observações</h2>'+observations+'</section>' : '')+
       '<footer class="assist-doc-foot">Assistência Técnica Especializada · Unigames</footer>'+
     '</div>';

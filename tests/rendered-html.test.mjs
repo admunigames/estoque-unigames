@@ -4767,6 +4767,13 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
   assert.match(print, /document\.title = 'ORCAMENTO-OS-'\+/);
   assert.match(print, /document\.body\.classList\.add\('pdf-export'\);\s*window\.print\(\);/);
   assert.match(extractNamedFunction(html, "assistDocHtml"), /Assistência Técnica Especializada · Unigames/);
+  // Formas de pagamento abaixo do total: crédito 6x sem juros, débito -5%, dinheiro/Pix -10%.
+  assert.match(extractNamedFunction(html, "assistDocHtml"), /ASSIST_PAYMENT_OPTIONS\.map\(/);
+  for (const label of ["PAGAMENTO NO CRÉDITO ATÉ 6X SEM JUROS", "PAGAMENTO NO DÉBITO COM 5% DE DESCONTO", "PAGAMENTO NO DINHEIRO OU PIX COM 10% DE DESCONTO"]) {
+    assert.ok(html.includes(label), label);
+  }
+  const paymentCents = new Function(`${extractNamedFunction(html, "assistPaymentCents")}; return assistPaymentCents;`)();
+  assert.deepEqual([0, 5, 10].map((pct) => paymentCents(87999, pct)), [87999, 83599, 79199]);
   // Nunca prompt() nativo no módulo.
   const moduleJs = html.slice(html.indexOf("// ===== ASSISTÊNCIA > ORÇAMENTOS ====="), html.indexOf("// ===== ESTOQUE > DIVERGÊNCIAS ====="));
   assert.ok(moduleJs.length > 1000);
