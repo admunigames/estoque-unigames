@@ -256,10 +256,10 @@ test("criar: loja vinculada + permissão cria para OUTRA loja; total recalculado
   const created = await createQuote(STORE_USER, quote());
   assert.equal(created.status, 201, JSON.stringify(created.body));
   firstId = created.body.id;
-  // 120000 + 40000 + 2×8000 + 3500
-  assert.equal(created.body.totalCents, 179500);
+  // 120000 + 2×8000 + 3500 (a PREVENTIVA de 40000 entra como desconto)
+  assert.equal(created.body.totalCents, 139500);
   const row = db.sqlite.prepare("SELECT * FROM assist_quotes WHERE id=?").get(firstId);
-  assert.equal(row.total_cents, 179500);
+  assert.equal(row.total_cents, 139500);
   assert.equal(row.company_id, STORE_B);
   assert.equal(row.company_name, "GUARARAPES");
   assert.equal(row.client_name, "MARIA DA SILVA");
@@ -291,7 +291,7 @@ test("histórico: TODAS as lojas para quem tem loja vinculada, com busca e filtr
   assert.deepEqual(new Set(all.body.quotes.map((item) => item.companyId)), new Set([STORE_A, STORE_B]));
   const first = all.body.quotes.find((item) => item.id === firstId);
   assert.deepEqual(first.devices, ["PS5 PRO", "CONTROLE PS5"]);
-  assert.equal(first.totalCents, 179500);
+  assert.equal(first.totalCents, 139500);
   assert.equal(first.observations, undefined);
   assert.deepEqual((await getQuotes(STORE_USER, "?q=maria")).body.quotes.map((item) => item.osNumber), ["22403"]);
   assert.deepEqual((await getQuotes(STORE_USER, "?q=2220")).body.quotes.map((item) => item.osNumber), ["22204"]);
@@ -389,12 +389,12 @@ test("editar orçamento com vários equipamentos e defeitos (regressão do React
   };
   const patched = await patchQuote(NO_STORE_USER, firstId, edited);
   assert.equal(patched.status, 200, JSON.stringify(patched.body));
-  // (120100 + 40100) + (2×8100 + 3600) + 45000
-  assert.equal(patched.body.totalCents, 225000);
+  // 120100 (PREVENTIVA 40100 vira desconto) + (2×8100 + 3600) + 45000
+  assert.equal(patched.body.totalCents, 184900);
   assert.equal(itemCount(firstId), 5);
   const after = await getQuote(STORE_USER, firstId);
   assert.equal(after.body.quote.companyName, "RIOMAR");
-  assert.equal(after.body.quote.totalCents, 225000);
+  assert.equal(after.body.quote.totalCents, 184900);
   assert.deepEqual(after.body.quote.observations.map((item) => item.key), ["preventiva", "novos_defeitos"]);
   assert.deepEqual(after.body.equipments.map((equipment) => equipment.device), ["PS5 PRO", "CONTROLE PS5", "NINTENDO SWITCH LITE"]);
   assert.equal(after.body.equipments[2].lines[0].description, "Tela original");
@@ -462,4 +462,28 @@ test("textos padrão das observações iguais no servidor e na tela", () => {
   }
   assert.equal(lib.normalizeOsNumber(" 22 403 "), "22403");
   assert.equal(lib.quoteTotal([{ lines: [{ quantity: 2, unitCents: 150 }, { quantity: 1, unitCents: 1 }] }]), 301);
+});
+
+test("preventiva da tabela entra como DESCONTO quando há outro serviço no equipamento", async () => {
+  const ps3 = (lines) => quote({
+    osNumber: `P${lines.length}${lines[0].defectName.length}`,
+    equipments: [{ category: "CONSOLES", device: "PS3 SLIM", serialNumber: "", service: "", lines }],
+  });
+  const naoLiga = { defectName: "NÃO LIGA", description: "", quantity: 1, unitCents: 45000 };
+  const preventiva = { defectName: "PREVENTIVA", description: "", quantity: 1, unitCents: 15000 };
+  // NÃO LIGA + PREVENTIVA → só o NÃO LIGA soma.
+  const both = await createQuote(NO_STORE_USER, ps3([naoLiga, preventiva]));
+  assert.equal(both.status, 201, JSON.stringify(both.body));
+  assert.equal(both.body.totalCents, 45000);
+  const detail = await getQuote(NO_STORE_USER, both.body.id);
+  assert.equal(detail.body.equipments[0].subtotalCents, 45000);
+  assert.equal(detail.body.equipments[0].lines[1].unitCents, 15000);
+  // Preventiva sozinha é cobrada.
+  const alone = await createQuote(NO_STORE_USER, ps3([preventiva]));
+  assert.equal(alone.body.totalCents, 15000);
+  // "MANUTENÇÃO PREVENTIVA" (computadores) segue a mesma regra; o desconto é por equipamento.
+  assert.equal(lib.quoteTotal([
+    { lines: [{ defectName: "FORMATAÇÃO", quantity: 1, unitCents: 25000 }, { defectName: "MANUTENÇÃO PREVENTIVA", quantity: 1, unitCents: 25000 }] },
+    { lines: [{ defectName: "PREVENTIVA", quantity: 1, unitCents: 15000 }] },
+  ]), 40000);
 });

@@ -19930,8 +19930,20 @@ function renderHomeTasks(){
     return quantity * line.unitCents;
   }
 
+  // Espelho de preventiveDiscountCents() em app/lib/assistencia.ts: preventiva
+  // da tabela sai de graça (linha de DESCONTO) quando o equipamento tem outro
+  // serviço; sozinha, é cobrada.
+  function assistIsPreventive(line){
+    return Boolean(line.defectName && line.defectName.includes('PREVENTIVA'));
+  }
+
+  function assistPreventiveDiscount(equipment, line){
+    const hasOtherService = equipment.lines.some(other => !assistIsPreventive(other));
+    return hasOtherService && assistIsPreventive(line) ? assistLineCents(line) : 0;
+  }
+
   function assistEquipmentSubtotal(equipment){
-    return equipment.lines.reduce((sum, line) => sum + assistLineCents(line), 0);
+    return equipment.lines.reduce((sum, line) => sum + assistLineCents(line) - assistPreventiveDiscount(equipment, line), 0);
   }
 
   function assistTotalCents(equipments){
@@ -19946,13 +19958,15 @@ function renderHomeTasks(){
       ? '<div class="purchase-field assist-line-name"><label for="'+id+'Desc">ITEM AVULSO (PEÇA / MÃO DE OBRA) *</label>'+
           '<input id="'+id+'Desc" data-line-field="description" maxlength="600" value="'+escapeHtml(line.description)+'" placeholder="Descreva a peça ou o serviço"></div>'
       : '<div class="assist-line-name"><strong>'+escapeHtml(line.defectName)+'</strong>'+
-          '<small class="'+(defect && defect.quoteOnly ? 'quote-only' : '')+'">'+escapeHtml(assistRangeLabel(defect))+'</small></div>';
+          '<small class="'+(defect && defect.quoteOnly ? 'quote-only' : '')+'">'+escapeHtml(assistRangeLabel(defect))+'</small>'+
+          (assistIsPreventive(line) ? '<small class="quote-only" data-line-discount>'+(equipment.lines.some(other => !assistIsPreventive(other)) ? 'ENTRA COMO DESCONTO (GRÁTIS COM OUTRO SERVIÇO)' : 'SOZINHA NO EQUIPAMENTO: COBRADA')+'</small>' : '')+
+          '</div>';
     return '<div class="assist-line" data-line="'+lineIndex+'">'+head+
       '<div class="purchase-field"><label for="'+id+'Qty">QTD</label>'+
         '<input id="'+id+'Qty" type="number" min="1" max="999" step="1" inputmode="numeric" data-line-field="quantity" value="'+escapeHtml(String(line.quantity))+'"></div>'+
       '<div class="purchase-field"><label for="'+id+'Unit">VALOR UNIT. *</label>'+
         '<input id="'+id+'Unit" data-line-field="unit" placeholder="R$ 0,00"></div>'+
-      '<div class="assist-line-total"><span>TOTAL</span><strong data-line-total>'+formatCentsBRL(assistLineCents(line))+'</strong></div>'+
+      '<div class="assist-line-total"><span>TOTAL</span><strong data-line-total>'+formatCentsBRL(assistLineCents(line) - assistPreventiveDiscount(equipment, line))+'</strong></div>'+
       '<button class="btn-danger-outline assist-line-remove" type="button" data-assist-action="remove-line">REMOVER</button>'+
     '</div>';
   }
@@ -20019,7 +20033,7 @@ function renderHomeTasks(){
       card.querySelectorAll('[data-line]').forEach(row => {
         const line = equipment.lines[Number(row.dataset.line)];
         const total = row.querySelector('[data-line-total]');
-        if(line && total) total.textContent = formatCentsBRL(assistLineCents(line));
+        if(line && total) total.textContent = formatCentsBRL(assistLineCents(line) - assistPreventiveDiscount(equipment, line));
       });
       card.querySelector('[data-eq-subtotal]').textContent = formatCentsBRL(assistEquipmentSubtotal(equipment));
     });
@@ -20110,7 +20124,8 @@ function renderHomeTasks(){
     let total = 0;
     const equipmentsHtml = data.equipments.map((equipment, index) => {
       let subtotal = 0;
-      const rows = equipment.lines.map((line, lineIndex) => {
+      let item = 0;
+      const rows = equipment.lines.map(line => {
         const quantity = Number(line.quantity) || 0;
         const hasValue = line.unitCents !== null && line.unitCents !== undefined;
         const lineTotal = hasValue ? quantity * Number(line.unitCents) : 0;
@@ -20118,10 +20133,14 @@ function renderHomeTasks(){
         const description = line.defectName
           ? '<b>'+escapeHtml(line.defectName)+'</b>'+(line.description ? ' — '+escapeHtml(line.description) : '')
           : escapeHtml(line.description || 'ITEM AVULSO');
-        return '<tr><td class="item">'+(lineIndex + 1)+'</td><td>'+description+'</td>'+
+        const discount = hasValue ? assistPreventiveDiscount(equipment, {...line, quantity}) : 0;
+        subtotal -= discount;
+        return '<tr><td class="item">'+(++item)+'</td><td>'+description+'</td>'+
           '<td class="num">'+(quantity || '—')+'</td>'+
           '<td class="num">'+(hasValue ? formatCentsBRL(line.unitCents) : 'A DEFINIR')+'</td>'+
-          '<td class="num">'+(hasValue ? formatCentsBRL(lineTotal) : 'A DEFINIR')+'</td></tr>';
+          '<td class="num">'+(hasValue ? formatCentsBRL(lineTotal) : 'A DEFINIR')+'</td></tr>'+
+          (discount ? '<tr class="assist-doc-discount"><td class="item">'+(++item)+'</td><td><b>DESCONTO '+escapeHtml(line.defectName)+'</b></td>'+
+            '<td class="num">'+quantity+'</td><td class="num">-'+formatCentsBRL(line.unitCents)+'</td><td class="num">-'+formatCentsBRL(discount)+'</td></tr>' : '');
       }).join('') || '<tr><td colspan="5">NENHUM DEFEITO OU ITEM INCLUÍDO.</td></tr>';
       total += subtotal;
       return '<section class="assist-doc-block">'+

@@ -4774,6 +4774,13 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
   }
   const paymentCents = new Function(`${extractNamedFunction(html, "assistPaymentCents")}; return assistPaymentCents;`)();
   assert.deepEqual([0, 5, 10].map((pct) => paymentCents(87999, pct)), [87999, 83599, 79199]);
+  // Preventiva vira DESCONTO no formulário e no PDF (espelho de app/lib/assistencia.ts).
+  const subtotal = new Function(`${["assistLineCents", "assistIsPreventive", "assistPreventiveDiscount", "assistEquipmentSubtotal"].map((name) => extractNamedFunction(html, name)).join("\n")}; return assistEquipmentSubtotal;`)();
+  const naoLiga = { defectName: "NÃO LIGA", quantity: 1, unitCents: 45000 };
+  const preventiva = { defectName: "PREVENTIVA", quantity: 1, unitCents: 15000 };
+  assert.equal(subtotal({ lines: [naoLiga, preventiva] }), 45000);
+  assert.equal(subtotal({ lines: [preventiva] }), 15000);
+  assert.match(extractNamedFunction(html, "assistDocHtml"), /<b>DESCONTO \x27\+escapeHtml\(line\.defectName\)/);
   // Nunca prompt() nativo no módulo.
   const moduleJs = html.slice(html.indexOf("// ===== ASSISTÊNCIA > ORÇAMENTOS ====="), html.indexOf("// ===== ESTOQUE > DIVERGÊNCIAS ====="));
   assert.ok(moduleJs.length > 1000);

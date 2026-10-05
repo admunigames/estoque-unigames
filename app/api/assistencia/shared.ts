@@ -1,5 +1,5 @@
 import { hasCompany } from "../../lib/access-scope";
-import { parseSavedObservations, type ParsedQuote } from "../../lib/assistencia";
+import { equipmentSubtotal, parseSavedObservations, type ParsedQuote } from "../../lib/assistencia";
 
 // Base comum de Assistência > Orçamentos — mesmo estilo de
 // app/api/divergences/shared.ts: identidade só pelos headers x-unigames-*
@@ -203,8 +203,8 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
       unitCents,
       totalCents: quantity * unitCents,
     });
-    equipment.subtotalCents += quantity * unitCents;
   }
+  for (const equipment of equipments) equipment.subtotalCents = equipmentSubtotal(equipment);
   return {
     quote: { ...normalizeQuote(row), observations: parseSavedObservations(row.observations) },
     equipments,

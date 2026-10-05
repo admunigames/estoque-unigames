@@ -110,12 +110,32 @@ export type ParsedQuote = {
   totalCents: number;
 };
 
-/** Total SEMPRE calculado aqui (qtd × valor unitário), nunca vindo do navegador. */
-export function equipmentSubtotal(equipment: { lines: Array<{ quantity: number; unitCents: number }> }) {
-  return equipment.lines.reduce((sum, line) => sum + line.quantity * line.unitCents, 0);
+type PricedLine = { defectName?: string; quantity: number; unitCents: number };
+
+/** Defeito da tabela com PREVENTIVA no nome (ex.: "PREVENTIVA", "MANUTENÇÃO PREVENTIVA"). */
+export function isPreventive(line: { defectName?: string }) {
+  return Boolean(line.defectName && line.defectName.includes("PREVENTIVA"));
 }
 
-export function quoteTotal(equipments: Array<{ lines: Array<{ quantity: number; unitCents: number }> }>) {
+/**
+ * A preventiva entra como DESCONTO (sai de graça) quando o equipamento tem
+ * outro serviço: aparece com o valor e uma linha "DESCONTO ..." igual, sem
+ * somar no total. Preventiva sozinha no equipamento é cobrada normalmente.
+ */
+export function preventiveDiscountCents(equipment: { lines: PricedLine[] }, line: PricedLine) {
+  const hasOtherService = equipment.lines.some((other) => !isPreventive(other));
+  return hasOtherService && isPreventive(line) ? line.quantity * line.unitCents : 0;
+}
+
+/** Total SEMPRE calculado aqui (qtd × valor unitário − desconto da preventiva), nunca vindo do navegador. */
+export function equipmentSubtotal(equipment: { lines: PricedLine[] }) {
+  return equipment.lines.reduce(
+    (sum, line) => sum + line.quantity * line.unitCents - preventiveDiscountCents(equipment, line),
+    0,
+  );
+}
+
+export function quoteTotal(equipments: Array<{ lines: PricedLine[] }>) {
   return equipments.reduce((sum, equipment) => sum + equipmentSubtotal(equipment), 0);
 }
 
