@@ -19939,7 +19939,8 @@ function renderHomeTasks(){
   // texto/centavos (o formulário só lida com strings e números; o app antigo
   // travava a edição por guardar o defeito como objeto). O total que vale é o
   // recalculado no servidor.
-  const ASSIST_CATEGORIES = ['CONSOLES','CONTROLES','NOTEBOOKS E COMPUTADORES'];
+  // Espelho de ASSIST_CATEGORIES em app/lib/assistencia.ts (o teste confere).
+  const ASSIST_CATEGORIES = ['CONSOLES','CONTROLES','ELETRÔNICOS','NOTEBOOKS E COMPUTADORES'];
   // Espelho de ASSIST_OBSERVATIONS em app/lib/assistencia.ts (o teste confere).
   const ASSIST_OBSERVATIONS = [
     {key:'preventiva', title:'MANUTENÇÃO PREVENTIVA', text:'Manutenção preventiva é a limpeza interna e externa, lubrificação dos componentes removendo suas oxidações ao máximo, auxiliando na prolongação da vida útil dos componentes e troca da pasta térmica.'},

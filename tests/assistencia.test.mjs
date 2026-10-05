@@ -29,6 +29,7 @@ const STORE_A = "criomar01";
 const STORE_B = "cguarar01";
 
 const migration = await readFile(new URL("../drizzle/0078_assistencia_orcamentos.sql", import.meta.url), "utf8");
+const migration0079 = await readFile(new URL("../drizzle/0079_assistencia_eletronicos.sql", import.meta.url), "utf8");
 const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
 
 function createFakeD1() {
@@ -63,6 +64,8 @@ function createFakeD1() {
   const seed = migration.split("--> statement-breakpoint").map((part) => part.trim()).filter((part) => part.startsWith("INSERT INTO"));
   assert.equal(seed.length, 1, "a migration tem um INSERT de seed");
   sqlite.exec(seed[0]);
+  // 0079: HOVERBOARD em ELETRÔNICOS + PREVENTIVA dele.
+  for (const statement of migration0079.split("--> statement-breakpoint")) sqlite.exec(statement);
   sqlite
     .prepare("INSERT INTO shared_state (state_key, value_json) VALUES ('companies_list', ?)")
     .run(JSON.stringify([
@@ -208,7 +211,13 @@ const itemCount = (quoteId) => db.sqlite.prepare("SELECT COUNT(*) AS n FROM assi
 
 test("seed da tabela de valores (migration 0078)", async () => {
   const defects = (await getDefects(NO_STORE_USER)).body.defects;
-  assert.equal(defects.length, 233);
+  assert.equal(defects.length, 234);
+  // 0079: HOVERBOARD saiu de CONSOLES para ELETRÔNICOS e ganhou PREVENTIVA (padrão do PS3 SLIM).
+  assert.deepEqual(new Set(defects.filter((defect) => defect.device === "HOVERBOARD").map((defect) => defect.category)), new Set(["ELETRÔNICOS"]));
+  assert.deepEqual(
+    [defects.find((d) => d.device === "HOVERBOARD" && d.name === "PREVENTIVA").minCents, defects.find((d) => d.device === "PS3 SLIM" && d.name === "PREVENTIVA").minCents],
+    [15000, 15000],
+  );
   const find = (device, name) => defects.find((defect) => defect.device === device && defect.name === name);
   // PS5 SLIM "NÃO LIGA" = 1000/1500
   assert.deepEqual(
@@ -454,6 +463,7 @@ test("tabela de valores: criar, duplicado, categoria do aparelho, editar e desat
 });
 
 test("textos padrão das observações iguais no servidor e na tela", () => {
+  assert.ok(html.includes(`const ASSIST_CATEGORIES = [${lib.ASSIST_CATEGORIES.map((category) => `'${category}'`).join(",")}];`), "categorias iguais na tela");
   for (const observation of lib.ASSIST_OBSERVATIONS) {
     assert.ok(
       html.includes(`{key:'${observation.key}', title:'${observation.title}', text:'${observation.text}'}`),

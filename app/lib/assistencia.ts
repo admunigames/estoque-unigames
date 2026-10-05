@@ -8,7 +8,7 @@ import { isValidCpf } from "./br-documents";
 // altera orçamento salvo, e a edição nunca recebe um objeto onde espera texto
 // (o app antigo travava com React #31 por guardar {label, description}).
 
-export const ASSIST_CATEGORIES = ["CONSOLES", "CONTROLES", "NOTEBOOKS E COMPUTADORES"] as const;
+export const ASSIST_CATEGORIES = ["CONSOLES", "CONTROLES", "ELETRÔNICOS", "NOTEBOOKS E COMPUTADORES"] as const;
 export type AssistCategory = (typeof ASSIST_CATEGORIES)[number];
 
 // Textos padrão marcáveis no orçamento. Espelhados em ASSIST_OBSERVATIONS de
