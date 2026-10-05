@@ -4766,6 +4766,8 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
   const print = extractNamedFunction(html, "assistPrintQuote");
   assert.match(print, /document\.title = 'ORCAMENTO-OS-'\+/);
   assert.match(print, /document\.body\.classList\.add\('pdf-export'\);\s*window\.print\(\);/);
+  // O aviso "Orçamento salvo." aparece logo antes do print: nunca sai no PDF.
+  assert.match(html, /footer\.hint, \.no-print, \.purchase-toast,\n/);
   assert.match(extractNamedFunction(html, "assistDocHtml"), /Assistência Técnica Especializada · Unigames/);
   // Formas de pagamento abaixo do total: crédito 6x sem juros, débito -5%, dinheiro/Pix -10%.
   assert.match(extractNamedFunction(html, "assistDocHtml"), /ASSIST_PAYMENT_OPTIONS\.map\(/);
