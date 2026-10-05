@@ -2360,7 +2360,8 @@ export const financeBankStatementImports = pgTable(
 // Um lançamento do extrato. amount_cents preserva o sinal (negativo =
 // saída). raw_merchant = nome normalizado (base do aprendizado). fit_id =
 // id único do OFX, usado para não reimportar a mesma transação.
-// status: 'pending' | 'classified' | 'confirmed' | 'expensed'.
+// status: 'pending' | 'classified' | 'confirmed' | 'expensed' | 'credit_sale'
+// ('credit_sale' = depósito de financeira vinculado a crediário, in_dre 0).
 export const financeBankStatementEntries = pgTable(
   "finance_bank_statement_entries",
   {
@@ -2464,6 +2465,73 @@ export const financeSalesReconRows = pgTable(
     index("finance_sales_recon_rows_import_idx").on(table.importId),
     index("finance_sales_recon_rows_revenue_date_idx").on(table.revenueCompanyId, table.saleDate),
     index("finance_sales_recon_rows_card_sale_idx").on(table.cardSaleId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Financeiro 7/9 — Crediários: venda financiada por uma FINANCEIRA PARCEIRA,
+// que aprova a proposta e deposita de uma vez o VALOR SEM TAXA (a taxa é paga
+// pela loja). Um depósito do extrato pode quitar vários crediários; a entrada
+// vinculada vira status 'credit_sale' com in_dre = 0. A situação (PENDENTE /
+// FINALIZADO / CANCELADO) não é persistida: sai de received_date/canceled
+// (app/lib/credit-sales.ts).
+// ---------------------------------------------------------------------------
+export const financeCreditProviders = pgTable(
+  "finance_credit_providers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    // '' = todas as lojas.
+    companyId: text("company_id").notNull().default(""),
+    defaultFeeBps: integer("default_fee_bps").notNull().default(0),
+    bankKeyword: text("bank_keyword").notNull().default(""),
+    status: text("status").notNull().default("active"),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+);
+
+export const financeCreditSales = pgTable(
+  "finance_credit_sales",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
+    providerId: text("provider_id").notNull(),
+    providerName: text("provider_name").notNull().default(""),
+    saleDate: text("sale_date").notNull().default(""),
+    saleRef: text("sale_ref").notNull().default(""),
+    proposal: text("proposal").notNull().default(""),
+    customerName: text("customer_name").notNull().default(""),
+    grossCents: integer("gross_cents").notNull().default(0),
+    feeBps: integer("fee_bps").notNull().default(0),
+    feeCents: integer("fee_cents").notNull().default(0),
+    netCents: integer("net_cents").notNull().default(0),
+    expectedDate: text("expected_date").notNull().default(""),
+    // '' = não recebido pelo extrato (pode estar FINALIZADO à mão).
+    bankEntryId: text("bank_entry_id").notNull().default(""),
+    receivedDate: text("received_date").notNull().default(""),
+    receivedCents: integer("received_cents").notNull().default(0),
+    canceled: integer("canceled").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_credit_sales_company_date_idx").on(table.companyId, table.saleDate),
+    index("finance_credit_sales_provider_idx").on(table.providerId),
+    index("finance_credit_sales_bank_entry_idx").on(table.bankEntryId),
+    // Proposta é obrigatória na aplicação; o índice parcial só protege o banco.
+    uniqueIndex("finance_credit_sales_proposal_idx").on(table.providerId, table.proposal).where(sql`proposal <> ''`),
   ],
 );
 

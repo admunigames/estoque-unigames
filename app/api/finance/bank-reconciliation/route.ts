@@ -64,7 +64,7 @@ export async function GET(request: Request) {
       values.push(`${month}-01`, `${month}-31`);
       conditions.push(`entry_date >= ?2 AND entry_date <= ?3`);
     }
-    if (["pending", "classified", "confirmed", "expensed"].includes(status)) {
+    if (["pending", "classified", "confirmed", "expensed", "credit_sale"].includes(status)) {
       values.push(status);
       conditions.push(`status=?${values.length}`);
     }

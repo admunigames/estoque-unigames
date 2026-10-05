@@ -5009,8 +5009,8 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
     readFile(new URL("../drizzle/0082_conciliacao_vendas.sql", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
   ]);
-  // Menu logo abaixo de Conciliação Bancária, rota, título, permissão e dispatch.
-  assert.match(html, /id="navFinanceiroConciliacao"[^\n]*\n\s*<a class="nav-item sub-item" id="navFinanceiroConciliacaoVendas" data-page="financeiroConciliacaoVendas" data-permission="finance"[^>]*href="\/financeiro\/conciliacao-vendas"/);
+  // Menu logo abaixo de Crediários (que fica logo abaixo de Conciliação Bancária), rota, título, permissão e dispatch.
+  assert.match(html, /id="navFinanceiroCrediarios"[^\n]*\n\s*<a class="nav-item sub-item" id="navFinanceiroConciliacaoVendas" data-page="financeiroConciliacaoVendas" data-permission="finance"[^>]*href="\/financeiro\/conciliacao-vendas"/);
   assert.match(html, /financeiroConciliacaoVendas:'\/financeiro\/conciliacao-vendas'/);
   assert.match(html, /financeiroConciliacaoVendas:'CONCILIAÇÃO DE VENDAS'/);
   assert.match(html, /financeiroConciliacaoVendas:'finance'/);
@@ -5043,4 +5043,53 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
   assert.match(migration, /ALTER TABLE "finance_bank_statement_entries" ADD COLUMN IF NOT EXISTS "sales_recon_status"/);
   assert.doesNotMatch(migration, /DROP /i);
   assert.match(schema, /export const financeSalesReconRows = pgTable\(\s*"finance_sales_recon_rows"/);
+});
+
+test("Financeiro > Crediários: menu, rota, abas, lote, extrato e situação CREDIÁRIO na Conciliação Bancária", async () => {
+  const [html, workerSource, migration, schema] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0083_crediarios.sql", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+  ]);
+  // Menu logo abaixo de Conciliação Bancária, rota, título, permissão e dispatch.
+  assert.match(html, /id="navFinanceiroConciliacao"[^\n]*\n\s*<a class="nav-item sub-item" id="navFinanceiroCrediarios" data-page="financeiroCrediarios" data-permission="finance"[^>]*href="\/financeiro\/crediarios"/);
+  assert.match(html, /financeiroCrediarios:'\/financeiro\/crediarios'/);
+  assert.match(html, /financeiroCrediarios:'CREDIÁRIOS'/);
+  assert.match(html, /financeiroCrediarios:'finance'/);
+  assert.match(html, /name === 'financeiroCrediarios' \|\|/);
+  assert.equal(html.split("if(name === 'financeiroCrediarios') loadCrediariosPage();").length - 1, 2);
+  assert.match(workerSource, /"\/financeiro\/crediarios"/);
+  assert.match(html, /id="pageFinanceiroCrediarios" class="page wrap"/);
+  for (const [tab, label] of [["crediarios", "CREDIÁRIOS"], ["extrato", "CLASSIFICAR EXTRATO"], ["financeiras", "FINANCEIRAS"]]) {
+    assert.match(html, new RegExp(`class="output-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-cr-tab="${tab}">${label}</button>`), tab);
+    assert.match(html, new RegExp(`data-cr-panel="${tab}"`), tab);
+  }
+  // Filtros e cards.
+  for (const id of ["crCompany", "crMonth", "crProvider", "crStatus", "crSearch", "crSummary"]) assert.match(html, new RegExp(`id="${id}"`), id);
+  assert.match(html, /PENDENTES HÁ MAIS DE 30 DIAS/);
+  // Lote (componente reutilizado), cadastro em lote e diálogo do depósito.
+  assert.match(html, /id="crBulkBar"[\s\S]*?data-bulk-action="finish">MARCAR COMO FINALIZADO[\s\S]*?data-bulk-action="pending">VOLTAR PARA PENDENTE[\s\S]*?data-bulk-action="provider">ALTERAR FINANCEIRA\/TAXA[\s\S]*?data-bulk-action="cancel">CANCELAR[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /const crBulk = setupBulkSelection\(el\('crBulkBar'\), el\('crBody'\)/);
+  assert.match(html, /id="crBatchDialog"[\s\S]*?SALVAR TUDO/);
+  assert.match(html, /financeApiRequest\('\/credit-sales\/batch'/);
+  assert.match(html, /financeApiRequest\('\/credit-sales\/link', \{method:'POST'/);
+  assert.match(html, /id="crLinkTotals"/);
+  assert.match(html, /VENDA ENCONTRADA NO PONTTIE/);
+  for (const id of ["crProviderName", "crProviderCompany", "crProviderFee", "crProviderKeyword", "crProviderStatus"]) assert.match(html, new RegExp(`id="${id}"`), id);
+  // Conciliação Bancária: situação CREDIÁRIO (filtro e rótulo), VER CREDIÁRIO e É CREDIÁRIO só em entrada.
+  assert.match(html, /id="reconStatusFilter">[\s\S]*?<option value="credit_sale">CREDIÁRIO<\/option>/);
+  assert.match(html, /credit_sale:'CREDIÁRIO'/);
+  assert.match(html, /data-recon-credit="'\+escapeHtml\(e\.id\)\+'">VER CREDIÁRIO/);
+  assert.match(html, /Number\(e\.amountCents\) > 0 \? ' <button[^']*data-recon-is-credit/);
+  // Nada de prompt() nativo nos crediários.
+  const block = html.slice(html.indexOf("// Crediários (Financeiro 7/9)"), html.indexOf("// Conciliação de Vendas (Financeiro 6/9)"));
+  assert.ok(block.length > 1000);
+  assert.doesNotMatch(block, /\bprompt\(/);
+  // Migration 0083: só CREATE, índice único parcial da proposta.
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS "finance_credit_providers"/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS "finance_credit_sales"/);
+  assert.match(migration, /CREATE UNIQUE INDEX IF NOT EXISTS "finance_credit_sales_proposal_idx"[^;]*WHERE "proposal" <> ''/);
+  assert.doesNotMatch(migration, /DROP |ALTER TABLE/i);
+  assert.match(schema, /export const financeCreditSales = pgTable\(\s*"finance_credit_sales"/);
 });

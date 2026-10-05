@@ -96,7 +96,8 @@ export async function loadMatchContext(
     database
       .prepare(
         `SELECT id, entry_date AS entryDate, amount_cents AS amountCents
-         FROM finance_bank_statement_entries WHERE amount_cents > 0 AND entry_date >= ?1 AND entry_date <= ?2`,
+         FROM finance_bank_statement_entries
+         WHERE amount_cents > 0 AND status <> 'credit_sale' AND entry_date >= ?1 AND entry_date <= ?2`,
       )
       .bind(addDays(range.from, -1), addDays(range.to, 1))
       .all<BankCredit>(),

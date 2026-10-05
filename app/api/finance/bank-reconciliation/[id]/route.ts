@@ -34,6 +34,7 @@ type EntryRow = {
   inDre: number;
   inRateio: number;
   expenseId: string;
+  status: string;
 };
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -56,7 +57,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         `SELECT id, finance_account_id AS financeAccountId, company_id AS companyId,
                 raw_merchant AS rawMerchant, category_item_id AS categoryItemId, subcategory,
                 cost_center_id AS costCenterId, in_dre AS inDre, in_rateio AS inRateio,
-                expense_id AS expenseId
+                expense_id AS expenseId, status
          FROM finance_bank_statement_entries WHERE id=?1`,
       )
       .bind(entryId)
@@ -70,6 +71,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     }
     if (!allStores && entry.companyId !== scopeActor.companyId) {
       return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO A ESSE LANÇAMENTO." }, 403);
+    }
+
+    // Depósito de crediário (Financeiro 7/9) só sai pelo crediário.
+    if (entry.status === "credit_sale") {
+      return jsonResponse({ error: "ENTRADA VINCULADA A CREDIÁRIO. VOLTE O CREDIÁRIO PARA PENDENTE ANTES." }, 409);
     }
 
     const body = (await request.json()) as JsonMap;

@@ -3300,7 +3300,12 @@
   .decl-batch-table input[data-batch-field="pct"]{width:72px;}
   .decl-batch-table input[data-batch-field="notes"]{width:170px;}
   .decl-batch-table tr.is-registered td{opacity:.6;}
+  .cr-batch-table select{width:140px;}
+  .cr-batch-table input[data-cr-amount="fee"]{width:72px;}
+  .cr-link-dialog{width:min(980px,calc(100vw - 28px));}
+  .cr-link-dialog tr.is-suggested td{background:color-mix(in srgb,var(--accent) 8%,transparent);}
   @media (max-width:680px){
+    .cr-batch-table select{width:100%; min-width:0;}
     .bulk-bar-actions{width:100%;}
     .bulk-bar-actions > button{flex:1 1 auto;}
     .decl-batch-table input:not([type="checkbox"]),.decl-batch-table input[data-batch-field]{width:100%; min-width:0;}
@@ -3642,6 +3647,7 @@
         <a class="nav-item sub-item" id="navFinanceiroDashboard" data-page="financeiroDashboard" data-permission="finance" data-home-desc="Painel geral: contas a pagar, despesas, faturamento e resultado num só lugar." title="Painel" href="/financeiro/painel"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.3"/><rect x="13" y="3.5" width="7.5" height="4.8" rx="1.3"/><rect x="13" y="10.4" width="7.5" height="10.1" rx="1.3"/><rect x="3.5" y="13.2" width="7.5" height="7.3" rx="1.3"/></svg></span><span class="nav-label">Painel</span></a>
         <a class="nav-item sub-item" id="navFinanceiroCartoesCorp" data-page="financeiroCartoesCorp" data-permission="finance" data-home-desc="Cartões de crédito corporativos: limite, fatura importada, parcelas futuras e lançamento como despesa." title="Cartões Corporativos" href="/financeiro/cartoes-corporativos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="M6 14.5h5"/></svg></span><span class="nav-label">Cartões Corporativos</span></a>
         <a class="nav-item sub-item" id="navFinanceiroConciliacao" data-page="financeiroConciliacao" data-permission="finance" data-home-desc="Importe o extrato bancário, classifique os lançamentos e deixe o sistema sugerir a classificação pelos nomes que se repetem." title="Conciliação Bancária" href="/financeiro/conciliacao-bancaria"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><path d="m16 16 2 2 4-4"/></svg></span><span class="nav-label">Conciliação Bancária</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroCrediarios" data-page="financeiroCrediarios" data-permission="finance" data-home-desc="Vendas financiadas por financeira parceira: proposta, valor com e sem taxa, e o depósito do extrato que quita cada crediário." title="Crediários" href="/financeiro/crediarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/><path d="M15 15h2"/></svg></span><span class="nav-label">Crediários</span></a>
         <a class="nav-item sub-item" id="navFinanceiroConciliacaoVendas" data-page="financeiroConciliacaoVendas" data-permission="finance" data-home-desc="Vendas do Ponttie × maquineta × extrato: venda para a loja da maquineta, serviço para a Assistência, e faturamento do mês com confirmação." title="Conciliação de Vendas" href="/financeiro/conciliacao-vendas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="11" height="8" rx="1.5"/><path d="M3 8h11"/><path d="M14 16h7"/><path d="m18 13 3 3-3 3"/><path d="M6 17h4"/></svg></span><span class="nav-label">Conciliação de Vendas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroPayables" data-page="financeiroPayables" data-permission="finance" data-home-desc="Contas a pagar: parcelas, recorrências e pagamentos por loja." title="Contas a Pagar" href="/financeiro/contas-a-pagar"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Contas a Pagar</span></a>
         <a class="nav-item sub-item" id="navFinanceiroReposicao" data-page="financeiroReposicao" data-permission="finance" data-home-desc="Valores repostos e gastos por Assistência, Logística e outros setores." title="Controle de Reposição" href="/financeiro/controle-reposicao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 14-4l2 2"/><path d="M20 16a8 8 0 0 1-14 4l-2-2"/><path d="M18 2v4h-4M6 22v-4h4"/></svg></span><span class="nav-label">Controle de Reposição</span></a>
@@ -7924,6 +7930,7 @@
             <option value="classified">CLASSIFICADO</option>
             <option value="confirmed">CONFIRMADO</option>
             <option value="expensed">VIROU DESPESA</option>
+            <option value="credit_sale">CREDIÁRIO</option>
           </select>
         </div>
       </div>
@@ -7948,6 +7955,93 @@
             <thead><tr><th>Data</th><th>Histórico</th><th>Valor</th><th>Categoria / Subcategoria</th><th>Unidade</th><th>Centro de custo</th><th>DRE</th><th>Rateio</th><th>Situação</th><th></th></tr></thead>
             <tbody id="reconEntriesBody"><tr><td colspan="10" class="responsive-empty">Selecione uma conta bancária.</td></tr></tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="pageFinanceiroCrediarios" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Crediários</h2>
+        </div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="crCompany">UNIDADE</label><select id="crCompany"><option value="">TODAS AS UNIDADES</option></select></div>
+        <div class="field"><label for="crMonth">MÊS (DA VENDA)</label><input type="month" id="crMonth"></div>
+        <div class="field"><label for="crProvider">FINANCEIRA</label><select id="crProvider"><option value="">TODAS</option></select></div>
+        <div class="field"><label for="crStatus">SITUAÇÃO</label><select id="crStatus"><option value="">TODAS</option><option value="pending">PENDENTE</option><option value="finished">FINALIZADO</option><option value="difference">RECEBIDO COM DIFERENÇA</option><option value="canceled">CANCELADO</option></select></div>
+        <div class="field"><label for="crSearch">PROPOSTA / ID DA VENDA</label><input id="crSearch" maxlength="60" placeholder="Buscar"></div>
+      </div>
+
+      <section class="summary" id="crSummary" aria-label="Totais dos crediários"></section>
+
+      <div class="output-tabs" role="tablist" aria-label="Seções dos crediários">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-cr-tab="crediarios">CREDIÁRIOS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-cr-tab="extrato">CLASSIFICAR EXTRATO</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-cr-tab="financeiras">FINANCEIRAS</button>
+      </div>
+
+      <div data-cr-panel="crediarios">
+        <div class="dre-toolbar">
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnCrBatch" type="button">+ CADASTRAR EM LOTE</button>
+            <button class="btn-accent" id="btnCrNew" type="button">NOVO CREDIÁRIO</button>
+          </div>
+        </div>
+        <div class="user-form-status" id="crEntryFilterNote" role="status" aria-live="polite" hidden></div>
+        <div class="bulk-bar" id="crBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="finish">MARCAR COMO FINALIZADO</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="pending">VOLTAR PARA PENDENTE</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="provider">ALTERAR FINANCEIRA/TAXA</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
+        <p class="purchase-field-help">MARCAR COMO FINALIZADO: PARA QUANDO O DEPÓSITO NÃO FOI IMPORTADO. VOLTAR PARA PENDENTE DESFAZ O VÍNCULO COM O EXTRATO (A ENTRADA VOLTA PARA "A CLASSIFICAR").</p>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="crTable">
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Financeira</th><th>ID venda</th><th>Proposta</th><th>Com taxa</th><th>Taxa</th><th>Sem taxa</th><th>Situação</th><th>Recebido em</th></tr></thead>
+              <tbody id="crBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div data-cr-panel="extrato" hidden>
+        <p class="page-desc">ENTRADAS DO EXTRATO (IMPORTADO NA CONCILIAÇÃO BANCÁRIA) AINDA A CLASSIFICAR. O DEPÓSITO VINCULADO A CREDIÁRIO SAI DE "A CLASSIFICAR" E NÃO ENTRA NA DRE (A RECEITA JÁ ESTÁ NO FATURAMENTO).</p>
+        <div class="dre-toolbar">
+          <div class="field"><label for="crEntryAccount">CONTA BANCÁRIA</label><select id="crEntryAccount"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="crEntryMonth">MÊS DO DEPÓSITO</label><input type="month" id="crEntryMonth"></div>
+          <label class="assist-check"><input type="checkbox" id="crEntryOnlyLikely"> SÓ PROVÁVEL CREDIÁRIO</label>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="crEntriesTable">
+              <thead><tr><th>Data</th><th>Conta</th><th>Histórico</th><th>Valor</th><th>Sugestão</th><th></th></tr></thead>
+              <tbody id="crEntriesBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div data-cr-panel="financeiras" hidden>
+        <div class="dre-toolbar">
+          <div class="dre-toolbar-actions"><button class="btn-accent" id="btnCrNewProvider" type="button">NOVA FINANCEIRA</button></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="crProvidersTable">
+              <thead><tr><th>Nome</th><th>Abrangência</th><th>Taxa padrão</th><th>Texto no extrato</th><th>Situação</th><th>Crediários</th><th></th></tr></thead>
+              <tbody id="crProvidersBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -9569,6 +9663,132 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelMqBulk" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="crSaleDialog" aria-labelledby="crSaleTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="crSaleTitle">NOVO CREDIÁRIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseCrSale" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="crSaleForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="crSaleCompany">UNIDADE *</label><select id="crSaleCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="crSaleProvider">FINANCEIRA *</label><select id="crSaleProvider" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="crSaleDate">DATA DA VENDA *</label><input type="date" id="crSaleDate" required></div>
+      <div class="purchase-field"><label for="crSaleRef">ID DA VENDA (PONTTIE)</label><input id="crSaleRef" maxlength="60"></div>
+      <div class="purchase-field"><label for="crSaleProposal">Nº DA PROPOSTA *</label><input id="crSaleProposal" maxlength="60" required></div>
+      <div class="purchase-field"><label for="crSaleCustomer">CLIENTE</label><input id="crSaleCustomer" maxlength="80"></div>
+      <div class="purchase-field"><label for="crSaleGross">VALOR COM TAXA *</label><input id="crSaleGross" data-cr-amount="gross" required></div>
+      <div class="purchase-field"><label for="crSaleFee">TAXA (%)</label><input type="number" id="crSaleFee" data-cr-amount="fee" min="0" max="100" step="0.01"></div>
+      <div class="purchase-field"><label for="crSaleNet">VALOR SEM TAXA</label><input id="crSaleNet" data-cr-amount="net"></div>
+      <div class="purchase-field"><label for="crSaleExpected">DATA PREVISTA DE PAGAMENTO</label><input type="date" id="crSaleExpected"></div>
+      <div class="purchase-field full"><label for="crSaleNotes">OBSERVAÇÕES</label><textarea id="crSaleNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <p class="purchase-field-help" id="crSalePonttie" role="status" aria-live="polite"></p>
+    <p class="purchase-field-help">A TAXA É PAGA PELA LOJA: O VALOR SEM TAXA É O QUE CAI NO EXTRATO. DIGITANDO O VALOR SEM TAXA, A TAXA É RECALCULADA.</p>
+    <div class="user-form-status" id="crSaleStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCrSale" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog decl-batch-dialog" id="crBatchDialog" aria-labelledby="crBatchTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="crBatchTitle">CADASTRAR CREDIÁRIOS EM LOTE</h3>
+    <button class="purchase-dialog-close" id="btnCloseCrBatch" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="crBatchForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="crBatchCompany">UNIDADE (PADRÃO)</label><select id="crBatchCompany"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="crBatchProvider">FINANCEIRA (PADRÃO)</label><select id="crBatchProvider"><option value="">SELECIONE</option></select></div>
+    </div>
+    <p class="purchase-field-help">UNIDADE E FINANCEIRA DA LINHA EM BRANCO = AS DO CABEÇALHO. LINHAS SEM PROPOSTA E SEM VALOR SÃO IGNORADAS; PROPOSTA JÁ CADASTRADA É PULADA.</p>
+    <div class="table-panel responsive-table decl-batch-table cr-batch-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Unidade</th><th>Financeira</th><th>Data *</th><th>ID venda</th><th>Proposta *</th><th>Cliente</th><th>Com taxa *</th><th>Taxa %</th><th>Sem taxa</th><th>Prevista</th><th>Observação</th></tr></thead>
+          <tbody id="crBatchBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="crBatchStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCrBatchAddRows" type="button">+ 5 LINHAS</button>
+      <button class="btn-outline" id="btnCancelCrBatch" type="button">FECHAR</button>
+      <button class="btn-accent" id="btnSaveCrBatch" type="submit">SALVAR TUDO</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="crBulkDialog" aria-labelledby="crBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="crBulkTitle">SELECIONADOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseCrBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="crBulkForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field" data-cr-bulk-field="finish"><label for="crBulkDate">DATA DO RECEBIMENTO *</label><input type="date" id="crBulkDate"></div>
+      <div class="purchase-field" data-cr-bulk-field="provider"><label for="crBulkProvider">FINANCEIRA *</label><select id="crBulkProvider"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field" data-cr-bulk-field="provider"><label for="crBulkFee">TAXA (%)</label><input type="number" id="crBulkFee" min="0" max="100" step="0.01" placeholder="TAXA PADRÃO DA FINANCEIRA"></div>
+    </div>
+    <p class="purchase-field-help" data-cr-bulk-field="finish">SEM EXTRATO: O RECEBIDO FICA IGUAL AO VALOR SEM TAXA.</p>
+    <p class="purchase-field-help" data-cr-bulk-field="provider">O VALOR SEM TAXA É RECALCULADO A PARTIR DO VALOR COM TAXA.</p>
+    <div class="user-form-status" id="crBulkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCrBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog cr-link-dialog" id="crLinkDialog" aria-labelledby="crLinkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="crLinkTitle">DEPÓSITO DE CREDIÁRIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseCrLink" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="crLinkForm">
+    <p class="purchase-field-help" id="crLinkEntry"></p>
+    <section class="summary" id="crLinkTotals" aria-label="Soma selecionada × depósito"></section>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Financeira</th><th>Proposta</th><th>ID venda</th><th>Sem taxa</th></tr></thead>
+          <tbody id="crLinkBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="crLinkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCrLink" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnConfirmCrLink" type="submit">CONFIRMAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="crProviderDialog" aria-labelledby="crProviderTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="crProviderTitle">NOVA FINANCEIRA</h3>
+    <button class="purchase-dialog-close" id="btnCloseCrProvider" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="crProviderForm">
+    <input type="hidden" id="crProviderId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="crProviderName">NOME *</label><input id="crProviderName" maxlength="120" required></div>
+      <div class="purchase-field"><label for="crProviderCompany">ABRANGÊNCIA</label><select id="crProviderCompany"><option value="">TODAS AS UNIDADES</option></select></div>
+      <div class="purchase-field"><label for="crProviderStatus">SITUAÇÃO</label><select id="crProviderStatus"><option value="active">ATIVA</option><option value="inactive">INATIVA</option></select></div>
+      <div class="purchase-field"><label for="crProviderFee">TAXA PADRÃO (%)</label><input type="number" id="crProviderFee" min="0" max="100" step="0.01"></div>
+      <div class="purchase-field"><label for="crProviderKeyword">TEXTO NO EXTRATO</label><input id="crProviderKeyword" maxlength="60" placeholder="Ex.: o nome da financeira"></div>
+      <div class="purchase-field full"><label for="crProviderNotes">OBSERVAÇÕES</label><textarea id="crProviderNotes" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="crProviderStatusMsg" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnDeleteCrProvider" type="button" hidden>EXCLUIR</button>
+      <button class="btn-outline" id="btnCancelCrProvider" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
     </div>
   </form>
 </dialog>
@@ -12209,6 +12429,7 @@
     financeiroMaquinetas:'/financeiro/maquinetas',
     financeiroCartoesCorp:'/financeiro/cartoes-corporativos',
     financeiroConciliacao:'/financeiro/conciliacao-bancaria',
+    financeiroCrediarios:'/financeiro/crediarios',
     financeiroConciliacaoVendas:'/financeiro/conciliacao-vendas',
     financeiroReposicao:'/financeiro/controle-reposicao',
     financeiroRecargas:'/financeiro/recargas-celular',
@@ -12266,6 +12487,7 @@
     financeiroMaquinetas:'MAQUINETAS',
     financeiroCartoesCorp:'CARTÕES CORPORATIVOS',
     financeiroConciliacao:'CONCILIAÇÃO BANCÁRIA',
+    financeiroCrediarios:'CREDIÁRIOS',
     financeiroConciliacaoVendas:'CONCILIAÇÃO DE VENDAS',
     financeiroReposicao:'CONTROLE DE REPOSIÇÃO',
     financeiroRecargas:'RECARGAS DE CELULARES',
@@ -12318,6 +12540,7 @@
     financeiroMaquinetas:'finance',
     financeiroCartoesCorp:'finance',
     financeiroConciliacao:'finance',
+    financeiroCrediarios:'finance',
     financeiroConciliacaoVendas:'finance',
     financeiroReposicao:'finance',
     financeiroRecargas:'finance',
@@ -12924,7 +13147,7 @@
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroConciliacaoVendas' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroCrediarios' || name === 'financeiroConciliacaoVendas' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
@@ -12994,6 +13217,7 @@
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
+    if(name === 'financeiroCrediarios') loadCrediariosPage();
     if(name === 'financeiroConciliacaoVendas') loadConciliacaoVendasPage();
     if(name === 'financeiroReposicao') loadReposicaoPage();
     if(name === 'financeiroRecargas') loadRecargasPage();
@@ -13055,6 +13279,7 @@
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
+    if(name === 'financeiroCrediarios') loadCrediariosPage();
     if(name === 'financeiroConciliacaoVendas') loadConciliacaoVendasPage();
     if(name === 'financeiroReposicao') loadReposicaoPage();
     if(name === 'financeiroRecargas') loadRecargasPage();
@@ -30183,7 +30408,7 @@ function renderHomeTasks(){
   let reconParsed = null;
   let reconEntries = [];
 
-  const RECON_STATUS_LABELS = {pending:'A CLASSIFICAR', classified:'CLASSIFICADO', confirmed:'CONFIRMADO', expensed:'VIROU DESPESA'};
+  const RECON_STATUS_LABELS = {pending:'A CLASSIFICAR', classified:'CLASSIFICADO', confirmed:'CONFIRMADO', expensed:'VIROU DESPESA', credit_sale:'CREDIÁRIO'};
 
   // OFX preservando o sinal (negativo = saída) — diferente do parser usado
   // nos cartões, que usa o valor absoluto.
@@ -30334,6 +30559,540 @@ function renderHomeTasks(){
       el('reconImportStatus').textContent = error.message;
       el('btnConfirmReconImport').disabled = false;
     }
+  });
+
+  // ---------------------------------------------------------------------
+  // Crediários (Financeiro 7/9): CREDIÁRIOS · CLASSIFICAR EXTRATO ·
+  // FINANCEIRAS. Situação, cards, sugestão de depósito e vínculo vêm do
+  // servidor (app/api/finance/credit-sales/*, credit-providers).
+  // ---------------------------------------------------------------------
+  const CR_TABS = ['crediarios','extrato','financeiras'];
+  let crTab = 'crediarios';
+  let crProviders = [];
+  let crRows = [];
+  let crEntries = [];
+  let crEntryFilter = ''; // ?entrada= (VER CREDIÁRIO na Conciliação Bancária)
+  const CR_STATUS = {pending:['waiting','PENDENTE'], finished:['done','FINALIZADO'], canceled:['progress','CANCELADO']};
+
+  // MESMA CONTA de computeCreditSale (app/lib/credit-sales.ts) —
+  // tests/finance-credit-sales.test.mjs compara as duas.
+  function crComputeSale(input){
+    const grossCents = Math.round(Number(input.grossCents));
+    if(!Number.isFinite(grossCents) || grossCents <= 0) return null;
+    if(input.netCents !== undefined && input.netCents !== null){
+      const netCents = Math.round(Number(input.netCents));
+      if(!Number.isFinite(netCents) || netCents < 0 || netCents > grossCents) return null;
+      const feeCents = grossCents - netCents;
+      return {grossCents, feeBps: Math.round((feeCents * 10000) / grossCents), feeCents, netCents};
+    }
+    const feeBps = Math.round(Number(input.feeBps == null ? 0 : input.feeBps));
+    if(!Number.isFinite(feeBps) || feeBps < 0 || feeBps > 10000) return null;
+    const feeCents = Math.round((grossCents * feeBps) / 10000);
+    return {grossCents, feeBps, feeCents, netCents: grossCents - feeCents};
+  }
+  function crPct(bps){ return (Number(bps || 0) / 100).toLocaleString('pt-BR', {maximumFractionDigits:2})+'%'; }
+  function crPctToBps(value){ return value === '' || value == null ? null : Math.round(Number(String(value).replace(',', '.')) * 100); }
+  function crMoneyCents(input){ const v = getCurrencyValue(input); return v === '' ? null : Math.round(Number(v) * 100); }
+  function crCompanyName(id){ const c = companies.find(item => item.id === id); return c ? c.name : (id || '—'); }
+  function crCompanyOptions(){ return companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join(''); }
+  // Financeiras ativas que atendem a unidade ('' = qualquer).
+  function crProviderOptions(companyId){
+    return crProviders.filter(p => p.status === 'active' && (!companyId || !p.companyId || p.companyId === companyId))
+      .map(p => '<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name)+'</option>').join('');
+  }
+  function crProviderFee(id){ const p = crProviders.find(item => item.id === id); return p ? Number(p.defaultFeeBps || 0) : 0; }
+
+  // Valor com taxa / taxa % / sem taxa ([data-cr-amount]) no diálogo e em cada
+  // linha do lote: mexeu na taxa → recalcula o sem taxa; digitou o sem taxa →
+  // recalcula a taxa. dataset.crSource diz o que vai para o servidor.
+  function crRecalc(scope, source){
+    const field = name => scope.querySelector('[data-cr-amount="'+name+'"]');
+    if(source === 'net' || source === 'fee') scope.dataset.crSource = source;
+    const gross = crMoneyCents(field('gross'));
+    if(gross == null) return;
+    if(scope.dataset.crSource === 'net'){
+      const net = crMoneyCents(field('net'));
+      const r = net == null ? null : crComputeSale({grossCents: gross, netCents: net});
+      if(r) field('fee').value = r.feeBps / 100;
+      return;
+    }
+    const r = crComputeSale({grossCents: gross, feeBps: crPctToBps(field('fee').value) || 0});
+    if(r) setCurrencyValue(field('net'), r.netCents / 100);
+  }
+  function crAmountsPayload(scope){
+    const field = name => scope.querySelector('[data-cr-amount="'+name+'"]');
+    const payload = {grossCents: crMoneyCents(field('gross'))};
+    if(scope.dataset.crSource === 'net') payload.netCents = crMoneyCents(field('net'));
+    else payload.feeBps = crPctToBps(field('fee').value);
+    return payload;
+  }
+  function crSetFee(scope, bps){
+    scope.querySelector('[data-cr-amount="fee"]').value = bps / 100;
+    scope.dataset.crSource = 'fee';
+    crRecalc(scope, 'fee');
+  }
+  function crBindAmounts(root){
+    root.querySelectorAll('[data-cr-amount="gross"],[data-cr-amount="net"]').forEach(input => attachCurrencyMask(input));
+  }
+  [el('crSaleForm'), el('crBatchBody')].forEach(root => root.addEventListener('input', event => {
+    const source = event.target.dataset && event.target.dataset.crAmount;
+    if(!source) return;
+    if(source === 'fee') event.target.dataset.touched = '1';
+    crRecalc(event.target.closest('tr') || el('crSaleForm'), source);
+  }));
+
+  function crMonth(){ return el('crMonth').value; }
+  function setCrTab(tab, opts){
+    crTab = CR_TABS.includes(tab) ? tab : 'crediarios';
+    document.querySelectorAll('[data-cr-tab]').forEach(b => {
+      const on = b.dataset.crTab === crTab;
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+    });
+    document.querySelectorAll('[data-cr-panel]').forEach(p => { p.hidden = p.dataset.crPanel !== crTab; });
+    if(!opts || opts.url !== false){
+      history.replaceState({page:'financeiroCrediarios'}, '', PAGE_ROUTES.financeiroCrediarios+(crTab === 'crediarios' ? '' : '?aba='+crTab));
+    }
+    return loadCrTab();
+  }
+  function loadCrTab(){
+    if(crTab === 'extrato') return Promise.all([loadCrSales({silent:true}), loadCrEntries()]);
+    if(crTab === 'financeiras') return Promise.all([loadCrSales({silent:true}), crLoadProviders().then(renderCrProviders)]);
+    return loadCrSales();
+  }
+  document.querySelectorAll('[data-cr-tab]').forEach(btn => btn.addEventListener('click', () => setCrTab(btn.dataset.crTab)));
+  ['crCompany','crMonth','crProvider','crStatus'].forEach(id => el(id).addEventListener('change', loadCrTab));
+  let crSearchTimer = 0;
+  el('crSearch').addEventListener('input', () => { clearTimeout(crSearchTimer); crSearchTimer = setTimeout(() => loadCrSales({silent:true}), 300); });
+  ['crEntryAccount','crEntryMonth'].forEach(id => el(id).addEventListener('change', () => loadCrEntries()));
+  el('crEntryOnlyLikely').addEventListener('change', renderCrEntries);
+
+  async function crLoadProviders(){
+    try{
+      const data = await financeApiRequest('/credit-providers');
+      crProviders = Array.isArray(data.providers) ? data.providers : [];
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    fillSelect('crProvider', '<option value="">TODAS</option>', crProviders.map(p =>
+      '<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name+(p.status === 'active' ? '' : ' (INATIVA)'))+'</option>').join(''));
+  }
+
+  async function loadCrediariosPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    const params = new URLSearchParams(location.search);
+    crEntryFilter = params.get('entrada') || '';
+    if(!el('crMonth').value) el('crMonth').value = financeCurrentMonthKey();
+    if(!el('crEntryMonth').value) el('crEntryMonth').value = financeCurrentMonthKey();
+    fillSelect('crCompany', '<option value="">TODAS AS UNIDADES</option>', crCompanyOptions());
+    try{
+      const accounts = await financeApiRequest('/accounts?includeInactive=1');
+      reconAccounts = Array.isArray(accounts.accounts) ? accounts.accounts : [];
+    }catch(_error){ /* a aba mostra o erro ao carregar */ }
+    fillSelect('crEntryAccount', '<option value="">TODAS</option>', reconAccounts.map(a =>
+      '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name+(a.companyName ? ' — '+a.companyName : ''))+'</option>').join(''));
+    await crLoadProviders();
+    await setCrTab(crEntryFilter ? 'crediarios' : (params.get('aba') || 'crediarios'), {url:false});
+  }
+
+  // --- CREDIÁRIOS: lista, cards e lote ---
+  function renderCrSummary(s){
+    if(!s){ el('crSummary').innerHTML = ''; return; }
+    const month = s.month.split('-').reverse().join('/');
+    const card = (label, value, sub, neg) => '<div class="card'+(neg ? ' neg' : '')+'"><div class="lbl">'+label+'</div><div class="num">'+value+'</div><div class="sub">'+sub+'</div></div>';
+    el('crSummary').innerHTML =
+      card('TOTAL PENDENTE (SEM TAXA)', formatCentsBRL(s.pendingCents), 'a receber das financeiras')+
+      card('FINALIZADO NO MÊS', formatCentsBRL(s.finishedMonthCents), 'recebido em '+month)+
+      card('TAXAS PAGAS NO MÊS', formatCentsBRL(s.feesMonthCents), 'vendas de '+month)+
+      card('QUANTIDADE PENDENTE', String(s.pendingCount), 'crediário(s)')+
+      card('PENDENTES HÁ MAIS DE 30 DIAS', String(s.pendingOver30), 'venda há mais de 30 dias', s.pendingOver30 > 0);
+  }
+  function crStatusPill(r){
+    let pill = CR_STATUS[r.status] || ['progress', r.status];
+    if(r.status === 'finished' && r.differenceCents) pill = ['alert','RECEBIDO COM DIFERENÇA'];
+    return '<span class="status-pill '+pill[0]+'"'+(r.notes ? ' title="'+escapeHtml(r.notes)+'"' : '')+'>'+pill[1]+'</span>'+
+      (r.status === 'finished' && r.differenceCents ? ' <small>'+formatCentsBRL(r.differenceCents)+'</small>' : '');
+  }
+  function renderCrSales(){
+    el('crBody').innerHTML = crRows.length ? crRows.map(r =>
+      '<tr>'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(r.id, 'Selecionar proposta '+r.proposal)+'</td>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(r.saleDate))+'</td>'+
+        '<td data-label="Unidade">'+escapeHtml(r.companyName || crCompanyName(r.companyId))+'</td>'+
+        '<td data-label="Financeira">'+escapeHtml(r.providerName || '—')+'</td>'+
+        '<td data-label="ID venda">'+escapeHtml(r.saleRef || '—')+'</td>'+
+        '<td data-label="Proposta"><span><strong>'+escapeHtml(r.proposal)+'</strong>'+(r.customerName ? ' <small>'+escapeHtml(r.customerName)+'</small>' : '')+'</span></td>'+
+        '<td data-label="Com taxa">'+formatCentsBRL(r.grossCents)+'</td>'+
+        '<td data-label="Taxa">'+crPct(r.feeBps)+' · '+formatCentsBRL(r.feeCents)+'</td>'+
+        '<td data-label="Sem taxa"><strong>'+formatCentsBRL(r.netCents)+'</strong></td>'+
+        '<td data-label="Situação"><span>'+crStatusPill(r)+'</span></td>'+
+        '<td data-label="Recebido em"><span>'+(r.receivedDate ? escapeHtml(formatDateBR(r.receivedDate))+' <small>'+(r.bankEntryId ? 'EXTRATO' : 'MANUAL')+'</small>' : (r.expectedDate ? '<small>PREVISTO '+escapeHtml(formatDateBR(r.expectedDate))+'</small>' : '—'))+'</span></td>'+
+      '</tr>').join('') : '<tr><td colspan="11" class="responsive-empty">Nenhum crediário para os filtros.</td></tr>';
+    crBulk.sync();
+  }
+  async function loadCrSales(opts){
+    if(!opts || !opts.silent) el('crBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams();
+    [['companyId','crCompany'],['month','crMonth'],['providerId','crProvider'],['status','crStatus'],['q','crSearch']].forEach(([key, id]) => {
+      if(el(id).value.trim()) params.set(key, el(id).value.trim());
+    });
+    if(crEntryFilter) params.set('bankEntryId', crEntryFilter);
+    const note = el('crEntryFilterNote');
+    note.hidden = !crEntryFilter;
+    note.innerHTML = crEntryFilter ? 'MOSTRANDO OS CREDIÁRIOS DO DEPÓSITO ESCOLHIDO NA CONCILIAÇÃO BANCÁRIA. <button class="btn-outline btn-sm" type="button" id="btnCrClearEntry">VER TODOS</button>' : '';
+    try{
+      const data = await financeApiRequest('/credit-sales?'+params.toString());
+      crRows = Array.isArray(data.creditSales) ? data.creditSales : [];
+      renderCrSummary(data.summary);
+      renderCrSales();
+    }catch(error){
+      crRows = [];
+      el('crBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  el('crEntryFilterNote').addEventListener('click', event => {
+    if(!event.target.closest('#btnCrClearEntry')) return;
+    crEntryFilter = '';
+    history.replaceState({page:'financeiroCrediarios'}, '', PAGE_ROUTES.financeiroCrediarios);
+    loadCrSales();
+  });
+
+  let crBulkPending = null;
+  const CR_BULK_TITLES = {finish:'MARCAR COMO FINALIZADO', provider:'ALTERAR FINANCEIRA/TAXA', pending:'VOLTAR PARA PENDENTE', cancel:'CANCELAR', delete:'EXCLUIR'};
+  async function crBulkRun(action, ids, fields){
+    await svBulkRequest('/credit-sales/bulk', {action, ids, fields: fields || {}});
+    crBulk.clear();
+    await loadCrSales({silent:true});
+  }
+  const crBulk = setupBulkSelection(el('crBulkBar'), el('crBody'), async (action, ids) => {
+    if(action === 'finish' || action === 'provider'){
+      crBulkPending = {action, ids};
+      el('crBulkForm').reset();
+      el('crBulkTitle').textContent = CR_BULK_TITLES[action]+' — '+ids.length+(ids.length === 1 ? ' CREDIÁRIO' : ' CREDIÁRIOS');
+      document.querySelectorAll('[data-cr-bulk-field]').forEach(node => { node.hidden = node.dataset.crBulkField !== action; });
+      fillSelect('crBulkProvider', '<option value="">SELECIONE</option>', crProviderOptions(''));
+      el('crBulkDate').value = financeCurrentDateKey();
+      el('crBulkStatus').textContent = '';
+      el('crBulkDialog').showModal();
+      return false;
+    }
+    const warn = action === 'delete' ? ' Não dá para desfazer.' : (action === 'pending' || action === 'cancel' ? ' O depósito do extrato vinculado volta para "a classificar".' : '');
+    if(!confirm(CR_BULK_TITLES[action]+' '+ids.length+' crediário(s)?'+warn)) return false;
+    await crBulkRun(action, ids);
+  });
+  el('btnCloseCrBulk').addEventListener('click', () => el('crBulkDialog').close());
+  el('btnCancelCrBulk').addEventListener('click', () => el('crBulkDialog').close());
+  el('crBulkProvider').addEventListener('change', () => { el('crBulkFee').value = el('crBulkProvider').value ? crProviderFee(el('crBulkProvider').value) / 100 : ''; });
+  el('crBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!crBulkPending) return;
+    const {action, ids} = crBulkPending;
+    const fields = action === 'finish' ? {date: el('crBulkDate').value} : {providerId: el('crBulkProvider').value, feeBps: crPctToBps(el('crBulkFee').value)};
+    if(action === 'finish' && !fields.date){ el('crBulkStatus').textContent = 'INFORME A DATA DO RECEBIMENTO.'; return; }
+    if(action === 'provider' && !fields.providerId){ el('crBulkStatus').textContent = 'ESCOLHA A FINANCEIRA.'; return; }
+    try{
+      await crBulkRun(action, ids, fields);
+      el('crBulkDialog').close();
+    }catch(error){ el('crBulkStatus').textContent = error.message; }
+  });
+
+  // --- NOVO CREDIÁRIO ---
+  function crFillSaleProviders(){
+    fillSelect('crSaleProvider', '<option value="">SELECIONE</option>', crProviderOptions(el('crSaleCompany').value));
+  }
+  let crLookupToken = 0;
+  async function crLookupPonttie(){
+    const ref = el('crSaleRef').value.trim();
+    const companyId = el('crSaleCompany').value;
+    const out = el('crSalePonttie');
+    const token = ++crLookupToken;
+    out.textContent = '';
+    if(!ref || !companyId) return;
+    try{
+      const data = await financeApiRequest('/credit-sales?lookupSaleRef='+encodeURIComponent(ref)+'&companyId='+encodeURIComponent(companyId));
+      if(token !== crLookupToken) return;
+      out.textContent = data.ponttie
+        ? 'VENDA ENCONTRADA NO PONTTIE: '+formatDateBR(data.ponttie.saleDate)+' · '+formatCentsBRL(data.ponttie.amountCents)+'.'
+        : 'VENDA NÃO ENCONTRADA NO PONTTIE (DÁ PARA SALVAR ASSIM MESMO).';
+    }catch(_error){ /* só aviso */ }
+  }
+  el('btnCrNew').addEventListener('click', async () => {
+    if(!crProviders.length) await crLoadProviders();
+    el('crSaleForm').reset();
+    delete el('crSaleForm').dataset.crSource;
+    el('crSalePonttie').textContent = '';
+    el('crSaleStatus').textContent = '';
+    fillSelect('crSaleCompany', '<option value="">SELECIONE</option>', crCompanyOptions());
+    el('crSaleCompany').value = el('crCompany').value;
+    crFillSaleProviders();
+    if(el('crProvider').value && Array.from(el('crSaleProvider').options).some(o => o.value === el('crProvider').value)) el('crSaleProvider').value = el('crProvider').value;
+    crBindAmounts(el('crSaleForm'));
+    setCurrencyValue(el('crSaleGross'), '');
+    setCurrencyValue(el('crSaleNet'), '');
+    el('crSaleFee').value = el('crSaleProvider').value ? crProviderFee(el('crSaleProvider').value) / 100 : '';
+    el('crSaleDate').value = financeCurrentDateKey();
+    el('crSaleDialog').showModal();
+  });
+  el('crSaleCompany').addEventListener('change', () => { crFillSaleProviders(); crLookupPonttie(); });
+  el('crSaleProvider').addEventListener('change', () => { if(el('crSaleProvider').value) crSetFee(el('crSaleForm'), crProviderFee(el('crSaleProvider').value)); });
+  el('crSaleRef').addEventListener('change', crLookupPonttie);
+  el('btnCloseCrSale').addEventListener('click', () => el('crSaleDialog').close());
+  el('btnCancelCrSale').addEventListener('click', () => el('crSaleDialog').close());
+  el('crSaleForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('crSaleStatus');
+    const payload = Object.assign({
+      companyId: el('crSaleCompany').value, providerId: el('crSaleProvider').value, saleDate: el('crSaleDate').value,
+      saleRef: el('crSaleRef').value, proposal: el('crSaleProposal').value, customerName: el('crSaleCustomer').value,
+      expectedDate: el('crSaleExpected').value, notes: el('crSaleNotes').value
+    }, crAmountsPayload(el('crSaleForm')));
+    if(!payload.grossCents){ status.textContent = 'INFORME O VALOR COM TAXA.'; return; }
+    status.textContent = 'Salvando…';
+    try{
+      await financeApiRequest('/credit-sales', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('crSaleDialog').close();
+      showPurchaseToast('Crediário cadastrado.');
+      await loadCrSales({silent:true});
+    }catch(error){ status.textContent = error.message; }
+  });
+
+  // --- CADASTRAR EM LOTE ---
+  function crBatchAddRows(count){
+    const companyOptions = '<option value="">(CABEÇALHO)</option>'+crCompanyOptions();
+    const providerOptions = '<option value="">(CABEÇALHO)</option>'+crProviderOptions('');
+    const html = Array.from({length: count}, () =>
+      '<tr data-cr-batch-row>'+
+        '<td data-label="UNIDADE"><select data-cr-batch="companyId" aria-label="Unidade">'+companyOptions+'</select></td>'+
+        '<td data-label="FINANCEIRA"><select data-cr-batch="providerId" aria-label="Financeira">'+providerOptions+'</select></td>'+
+        '<td data-label="DATA"><input type="date" data-cr-batch="saleDate" aria-label="Data da venda"></td>'+
+        '<td data-label="ID VENDA"><input data-cr-batch="saleRef" maxlength="60" aria-label="ID da venda"></td>'+
+        '<td data-label="PROPOSTA"><input data-cr-batch="proposal" maxlength="60" aria-label="Nº da proposta"></td>'+
+        '<td data-label="CLIENTE"><input data-cr-batch="customerName" maxlength="80" aria-label="Cliente"></td>'+
+        '<td data-label="COM TAXA"><input data-cr-amount="gross" aria-label="Valor com taxa"></td>'+
+        '<td data-label="TAXA %"><input type="number" min="0" max="100" step="0.01" data-cr-amount="fee" aria-label="Taxa em %"></td>'+
+        '<td data-label="SEM TAXA"><input data-cr-amount="net" aria-label="Valor sem taxa"></td>'+
+        '<td data-label="PREVISTA"><input type="date" data-cr-batch="expectedDate" aria-label="Data prevista"></td>'+
+        '<td data-label="OBSERVAÇÃO"><input data-cr-batch="notes" maxlength="500" aria-label="Observação"></td>'+
+      '</tr>').join('');
+    const body = el('crBatchBody');
+    const before = body.rows.length;
+    body.insertAdjacentHTML('beforeend', html);
+    Array.from(body.rows).slice(before).forEach(tr => { crBindAmounts(tr); crBatchDefaultFee(tr); });
+  }
+  // Taxa da linha = taxa padrão da financeira (da linha ou do cabeçalho) enquanto não for digitada.
+  function crBatchDefaultFee(tr){
+    const fee = tr.querySelector('[data-cr-amount="fee"]');
+    if(fee.dataset.touched === '1') return;
+    const providerId = tr.querySelector('[data-cr-batch="providerId"]').value || el('crBatchProvider').value;
+    if(providerId) crSetFee(tr, crProviderFee(providerId)); else fee.value = '';
+  }
+  el('btnCrBatch').addEventListener('click', async () => {
+    if(!crProviders.length) await crLoadProviders();
+    fillSelect('crBatchCompany', '<option value="">SELECIONE</option>', crCompanyOptions());
+    fillSelect('crBatchProvider', '<option value="">SELECIONE</option>', crProviderOptions(''));
+    if(el('crCompany').value) el('crBatchCompany').value = el('crCompany').value;
+    el('crBatchBody').innerHTML = '';
+    el('crBatchStatus').textContent = '';
+    crBatchAddRows(5);
+    el('crBatchDialog').showModal();
+  });
+  el('btnCrBatchAddRows').addEventListener('click', () => crBatchAddRows(5));
+  el('crBatchProvider').addEventListener('change', () => Array.from(el('crBatchBody').rows).forEach(crBatchDefaultFee));
+  el('crBatchBody').addEventListener('change', event => {
+    if(event.target.dataset.crBatch === 'providerId') crBatchDefaultFee(event.target.closest('tr'));
+  });
+  el('btnCloseCrBatch').addEventListener('click', () => el('crBatchDialog').close());
+  el('btnCancelCrBatch').addEventListener('click', () => el('crBatchDialog').close());
+  el('crBatchForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('crBatchStatus');
+    const filled = Array.from(el('crBatchBody').rows).filter(tr =>
+      tr.querySelector('[data-cr-batch="proposal"]').value.trim() || crMoneyCents(tr.querySelector('[data-cr-amount="gross"]')));
+    if(!filled.length){ status.textContent = 'PREENCHA AO MENOS UMA LINHA.'; return; }
+    const rows = filled.map(tr => {
+      const row = {};
+      tr.querySelectorAll('[data-cr-batch]').forEach(input => { row[input.dataset.crBatch] = input.value; });
+      return Object.assign(row, crAmountsPayload(tr));
+    });
+    const button = el('btnSaveCrBatch');
+    button.disabled = true;
+    status.textContent = 'Salvando…';
+    try{
+      const res = await financeApiRequest('/credit-sales/batch', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        companyId: el('crBatchCompany').value, providerId: el('crBatchProvider').value, rows
+      })});
+      const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+      // Fica na grade só o que foi pulado, para corrigir e salvar de novo.
+      const keep = new Set(skipped.map(s => s.line - 1));
+      filled.forEach((tr, index) => { if(!keep.has(index)) tr.remove(); });
+      status.textContent = res.created+' CRIADO(S).'+(skipped.length ? ' PULADAS (FICARAM NA GRADE): '+skipped.map(s => (s.proposal || 'SEM PROPOSTA')+' — '+s.reason).join('; ') : '');
+      if(res.created) showPurchaseToast(res.created+' crediário(s) cadastrado(s).');
+      if(!el('crBatchBody').rows.length) crBatchAddRows(5);
+      await loadCrSales({silent:true});
+    }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+
+  // --- CLASSIFICAR EXTRATO ---
+  async function loadCrEntries(){
+    el('crEntriesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams();
+    if(el('crEntryAccount').value) params.set('financeAccountId', el('crEntryAccount').value);
+    if(el('crEntryMonth').value) params.set('month', el('crEntryMonth').value);
+    if(el('crCompany').value) params.set('companyId', el('crCompany').value);
+    try{
+      const data = await financeApiRequest('/credit-sales/link?'+params.toString());
+      crEntries = Array.isArray(data.entries) ? data.entries : [];
+      renderCrEntries();
+    }catch(error){
+      crEntries = [];
+      el('crEntriesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function renderCrEntries(){
+    const only = el('crEntryOnlyLikely').checked;
+    const rows = crEntries.filter(e => !only || e.providerId);
+    el('crEntriesBody').innerHTML = rows.length ? rows.map(e =>
+      '<tr>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(e.entryDate))+'</td>'+
+        '<td data-label="Conta">'+escapeHtml(e.accountName || '—')+'</td>'+
+        '<td data-label="Histórico"><span>'+escapeHtml(e.description || '—')+(e.providerId ? ' <span class="status-pill waiting">PROVÁVEL CREDIÁRIO — '+escapeHtml(e.providerName)+'</span>' : '')+'</span></td>'+
+        '<td data-label="Valor"><strong>'+formatCentsBRL(e.amountCents)+'</strong></td>'+
+        '<td data-label="Sugestão">'+(e.suggestedIds.length ? e.suggestedIds.length+' CREDIÁRIO(S) SOMAM O DEPÓSITO' : '—')+'</td>'+
+        '<td data-label="Ações"><button class="'+(e.providerId ? 'btn-accent' : 'btn-outline')+' btn-sm" type="button" data-cr-link-entry="'+escapeHtml(e.id)+'">É CREDIÁRIO</button></td>'+
+      '</tr>').join('') : '<tr><td colspan="6" class="responsive-empty">Nenhuma entrada a classificar'+(only ? ' com texto de financeira' : '')+'. Importe o extrato na Conciliação Bancária.</td></tr>';
+  }
+  el('crEntriesBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-cr-link-entry]');
+    if(button) openCrLinkDialog(button.dataset.crLinkEntry, () => Promise.all([loadCrEntries(), loadCrSales({silent:true})]));
+  });
+
+  // Diálogo do depósito: usado aqui e no botão É CREDIÁRIO da Conciliação Bancária.
+  let crLink = null; // {entry, pending, after}
+  async function openCrLinkDialog(entryId, after){
+    let data;
+    try{ data = await financeApiRequest('/credit-sales/link?entryId='+encodeURIComponent(entryId)); }
+    catch(error){ showPurchaseToast(error.message, 'error'); return; }
+    const entry = (data.entries || [])[0];
+    if(!entry){ showPurchaseToast('LANÇAMENTO DO EXTRATO NÃO ENCONTRADO.', 'error'); return; }
+    if(entry.status === 'credit_sale'){ showPurchaseToast('ESSA ENTRADA JÁ ESTÁ VINCULADA A CREDIÁRIO.', 'error'); return; }
+    const suggested = new Set(entry.suggestedIds || []);
+    const pending = (data.pending || []).slice().sort((a, b) =>
+      Number(suggested.has(b.id)) - Number(suggested.has(a.id)) ||
+      Number(b.providerId === entry.providerId) - Number(a.providerId === entry.providerId) ||
+      String(a.saleDate).localeCompare(String(b.saleDate)));
+    crLink = {entry, pending, after};
+    el('crLinkEntry').textContent = 'DEPÓSITO DE '+formatDateBR(entry.entryDate)+' · '+(entry.accountName || '')+' · '+(entry.description || 'SEM HISTÓRICO')+
+      (entry.providerName ? ' · PROVÁVEL CREDIÁRIO — '+entry.providerName : '')+
+      (suggested.size ? ' · SUGESTÃO AUTOMÁTICA MARCADA.' : ' · NENHUM CREDIÁRIO (OU COMBINAÇÃO) SOMA EXATAMENTE O DEPÓSITO: MARQUE À MÃO.');
+    el('crLinkBody').innerHTML = pending.length ? pending.map(r =>
+      '<tr'+(suggested.has(r.id) ? ' class="is-suggested"' : '')+'>'+
+        '<td class="bulk-col" data-label="Selecionar"><input type="checkbox" class="bulk-check" data-cr-link="'+escapeHtml(r.id)+'"'+(suggested.has(r.id) ? ' checked' : '')+' aria-label="Selecionar proposta '+escapeHtml(r.proposal)+'"></td>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(r.saleDate))+'</td>'+
+        '<td data-label="Unidade">'+escapeHtml(r.companyName || crCompanyName(r.companyId))+'</td>'+
+        '<td data-label="Financeira">'+escapeHtml(r.providerName)+'</td>'+
+        '<td data-label="Proposta"><strong>'+escapeHtml(r.proposal)+'</strong></td>'+
+        '<td data-label="ID venda">'+escapeHtml(r.saleRef || '—')+'</td>'+
+        '<td data-label="Sem taxa">'+formatCentsBRL(r.netCents)+'</td>'+
+      '</tr>').join('') : '<tr><td colspan="7" class="responsive-empty">Nenhum crediário pendente. Cadastre o crediário antes.</td></tr>';
+    el('crLinkStatus').textContent = '';
+    renderCrLinkTotals();
+    el('crLinkDialog').showModal();
+  }
+  function crLinkSelected(){
+    return Array.from(el('crLinkBody').querySelectorAll('input[data-cr-link]:checked')).map(box => box.dataset.crLink);
+  }
+  function renderCrLinkTotals(){
+    if(!crLink) return;
+    const ids = new Set(crLinkSelected());
+    const sum = crLink.pending.filter(r => ids.has(r.id)).reduce((total, r) => total + Number(r.netCents), 0);
+    const diff = crLink.entry.amountCents - sum;
+    const card = (label, value, neg) => '<div class="card'+(neg ? ' neg' : '')+'"><div class="lbl">'+label+'</div><div class="num">'+value+'</div></div>';
+    el('crLinkTotals').innerHTML = card('SOMA SELECIONADA ('+ids.size+')', formatCentsBRL(sum))+card('DEPÓSITO', formatCentsBRL(crLink.entry.amountCents))+card('DIFERENÇA', formatCentsBRL(diff), diff !== 0);
+    el('btnConfirmCrLink').disabled = !ids.size;
+  }
+  el('crLinkBody').addEventListener('change', renderCrLinkTotals);
+  el('btnCloseCrLink').addEventListener('click', () => el('crLinkDialog').close());
+  el('btnCancelCrLink').addEventListener('click', () => el('crLinkDialog').close());
+  el('crLinkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!crLink) return;
+    const ids = crLinkSelected();
+    if(!ids.length){ el('crLinkStatus').textContent = 'SELECIONE AO MENOS UM CREDIÁRIO.'; return; }
+    const sum = crLink.pending.filter(r => ids.includes(r.id)).reduce((total, r) => total + Number(r.netCents), 0);
+    const diff = crLink.entry.amountCents - sum;
+    if(diff && !confirm('A SOMA DOS CREDIÁRIOS NÃO BATE COM O DEPÓSITO (DIFERENÇA '+formatCentsBRL(diff)+'). CONFIRMAR MESMO ASSIM? A DIFERENÇA FICA REGISTRADA NA OBSERVAÇÃO.')) return;
+    el('btnConfirmCrLink').disabled = true;
+    try{
+      const res = await financeApiRequest('/credit-sales/link', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({bankEntryId: crLink.entry.id, creditSaleIds: ids})});
+      el('crLinkDialog').close();
+      showPurchaseToast(res.linked+' crediário(s) finalizado(s) com o depósito.'+(res.differenceCents ? ' Diferença: '+formatCentsBRL(res.differenceCents)+'.' : ''));
+      if(crLink.after) await crLink.after();
+    }catch(error){
+      el('crLinkStatus').textContent = error.message;
+      el('btnConfirmCrLink').disabled = false;
+    }
+  });
+
+  // --- FINANCEIRAS ---
+  function renderCrProviders(){
+    el('crProvidersBody').innerHTML = crProviders.length ? crProviders.map(p =>
+      '<tr>'+
+        '<td data-label="Nome"><span><strong>'+escapeHtml(p.name)+'</strong>'+(p.notes ? ' <small>'+escapeHtml(p.notes)+'</small>' : '')+'</span></td>'+
+        '<td data-label="Abrangência">'+escapeHtml(p.companyId ? crCompanyName(p.companyId) : 'TODAS AS UNIDADES')+'</td>'+
+        '<td data-label="Taxa padrão">'+crPct(p.defaultFeeBps)+'</td>'+
+        '<td data-label="Texto no extrato">'+escapeHtml(p.bankKeyword || '—')+'</td>'+
+        '<td data-label="Situação"><span class="status-pill '+(p.status === 'active' ? 'done' : 'progress')+'">'+(p.status === 'active' ? 'ATIVA' : 'INATIVA')+'</span></td>'+
+        '<td data-label="Crediários">'+Number(p.creditSales || 0)+'</td>'+
+        '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-cr-provider-edit="'+escapeHtml(p.id)+'">EDITAR</button></td>'+
+      '</tr>').join('') : '<tr><td colspan="7" class="responsive-empty">Nenhuma financeira cadastrada.</td></tr>';
+  }
+  function openCrProviderDialog(row){
+    el('crProviderForm').reset();
+    fillSelect('crProviderCompany', '<option value="">TODAS AS UNIDADES</option>', crCompanyOptions());
+    el('crProviderId').value = row ? row.id : '';
+    el('crProviderTitle').textContent = row ? 'EDITAR FINANCEIRA' : 'NOVA FINANCEIRA';
+    el('crProviderName').value = row ? row.name : '';
+    el('crProviderCompany').value = row ? (row.companyId || '') : '';
+    el('crProviderCompany').disabled = Boolean(row);
+    el('crProviderStatus').value = row ? row.status : 'active';
+    el('crProviderFee').value = row ? Number(row.defaultFeeBps || 0) / 100 : '';
+    el('crProviderKeyword').value = row ? (row.bankKeyword || '') : '';
+    el('crProviderNotes').value = row ? (row.notes || '') : '';
+    el('btnDeleteCrProvider').hidden = !row || Number(row.creditSales || 0) > 0;
+    el('crProviderStatusMsg').textContent = '';
+    el('crProviderDialog').showModal();
+  }
+  el('btnCrNewProvider').addEventListener('click', () => openCrProviderDialog(null));
+  el('crProvidersBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-cr-provider-edit]');
+    const row = button && crProviders.find(p => p.id === button.dataset.crProviderEdit);
+    if(row) openCrProviderDialog(row);
+  });
+  el('btnCloseCrProvider').addEventListener('click', () => el('crProviderDialog').close());
+  el('btnCancelCrProvider').addEventListener('click', () => el('crProviderDialog').close());
+  el('btnDeleteCrProvider').addEventListener('click', async () => {
+    const id = el('crProviderId').value;
+    if(!id || !confirm('EXCLUIR A FINANCEIRA '+el('crProviderName').value+'?')) return;
+    try{
+      await financeApiRequest('/credit-providers?id='+encodeURIComponent(id), {method:'DELETE'});
+      el('crProviderDialog').close();
+      showPurchaseToast('Financeira excluída.');
+      await crLoadProviders(); renderCrProviders();
+    }catch(error){ el('crProviderStatusMsg').textContent = error.message; }
+  });
+  el('crProviderForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const id = el('crProviderId').value;
+    const payload = {
+      id, name: el('crProviderName').value.trim(), companyId: el('crProviderCompany').value, status: el('crProviderStatus').value,
+      defaultFeeBps: crPctToBps(el('crProviderFee').value) || 0, bankKeyword: el('crProviderKeyword').value.trim(), notes: el('crProviderNotes').value
+    };
+    if(payload.name.length < 2){ el('crProviderStatusMsg').textContent = 'INFORME O NOME DA FINANCEIRA.'; return; }
+    try{
+      await financeApiRequest('/credit-providers', {method: id ? 'PUT' : 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('crProviderDialog').close();
+      showPurchaseToast('Financeira salva.');
+      await crLoadProviders(); renderCrProviders();
+    }catch(error){ el('crProviderStatusMsg').textContent = error.message; }
   });
 
   // ---------------------------------------------------------------------
@@ -30840,7 +31599,7 @@ function renderHomeTasks(){
       return;
     }
     body.innerHTML = reconEntries.map(e => {
-      const done = e.status === 'confirmed' || e.status === 'expensed';
+      const done = e.status === 'confirmed' || e.status === 'expensed' || e.status === 'credit_sale';
       const suggested = e.status === 'pending' && e.categoryItemId;
       if(done){
         return '<tr style="opacity:.65">'+
@@ -30853,7 +31612,7 @@ function renderHomeTasks(){
           '<td>'+(Number(e.inDre) ? 'sim' : 'não')+'</td>'+
           '<td>'+(Number(e.inRateio) ? 'sim' : 'não')+'</td>'+
           '<td>'+escapeHtml(RECON_STATUS_LABELS[e.status])+'</td>'+
-          '<td>'+(e.status === 'expensed' ? '' : '<button class="btn-outline btn-sm" type="button" data-recon-expense="'+escapeHtml(e.id)+'">DESPESA</button>')+'</td>'+
+          '<td>'+(e.status === 'credit_sale' ? '<button class="btn-outline btn-sm" type="button" data-recon-credit="'+escapeHtml(e.id)+'">VER CREDIÁRIO</button>' : e.status === 'expensed' ? '' : '<button class="btn-outline btn-sm" type="button" data-recon-expense="'+escapeHtml(e.id)+'">DESPESA</button>')+'</td>'+
         '</tr>';
       }
       return '<tr data-recon-row="'+escapeHtml(e.id)+'">'+
@@ -30869,6 +31628,7 @@ function renderHomeTasks(){
         '<td>'+
           '<button class="btn-accent btn-sm" type="button" data-recon-confirm="'+escapeHtml(e.id)+'">CONFIRMAR</button> '+
           '<button class="btn-outline btn-sm" type="button" data-recon-expense="'+escapeHtml(e.id)+'">DESPESA</button>'+
+          (Number(e.amountCents) > 0 ? ' <button class="btn-outline btn-sm" type="button" data-recon-is-credit="'+escapeHtml(e.id)+'">É CREDIÁRIO</button>' : '')+
         '</td>'+
       '</tr>';
     }).join('');
@@ -30903,6 +31663,18 @@ function renderHomeTasks(){
   el('reconEntriesBody') && el('reconEntriesBody').addEventListener('click', async event => {
     const confirmBtn = event.target.closest('[data-recon-confirm]');
     const expenseBtn = event.target.closest('[data-recon-expense]');
+    // Crediários (Financeiro 7/9): ver o crediário do depósito / vincular a entrada.
+    const creditBtn = event.target.closest('[data-recon-credit]');
+    const isCreditBtn = event.target.closest('[data-recon-is-credit]');
+    if(creditBtn){
+      history.pushState({page:'financeiroCrediarios'}, '', PAGE_ROUTES.financeiroCrediarios+'?entrada='+encodeURIComponent(creditBtn.dataset.reconCredit));
+      syncPageFromLocation();
+      return;
+    }
+    if(isCreditBtn){
+      openCrLinkDialog(isCreditBtn.dataset.reconIsCredit, () => loadReconEntries({silent:true}));
+      return;
+    }
     if(confirmBtn){
       const rowEl = confirmBtn.closest('[data-recon-row]');
       const payload = reconRowPayload(rowEl);
