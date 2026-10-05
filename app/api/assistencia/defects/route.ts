@@ -19,6 +19,10 @@ type DefectRow = {
   sortOrder: number;
 };
 
+// Mão de obra padrão de todo aparelho (migration 0080).
+const LABOR_NAME = "MÃO DE OBRA";
+const LABOR_CENTS = 9999;
+
 const DEFECT_SELECT = `
   SELECT id, category, device, name, min_cents AS minCents, max_cents AS maxCents,
          quote_only AS quoteOnly, active, sort_order AS sortOrder
@@ -91,27 +95,23 @@ export async function POST(request: Request) {
       .first<{ maxOrder: number | string | null }>();
     const id = crypto.randomUUID();
     const at = new Date().toISOString();
-    await database
-      .prepare(
-        `INSERT INTO assist_defects
-          (id, category, device, name, min_cents, max_cents, quote_only, active, sort_order,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, ?9, ?10, ?11, ?9, ?10, ?11)`,
-      )
-      .bind(
-        id,
-        defect.category,
-        defect.device,
-        defect.name,
-        defect.minCents,
-        defect.maxCents,
-        defect.quoteOnly ? 1 : 0,
-        (Number(order?.maxOrder) || 0) + 1,
-        actor.id,
-        actor.displayName,
-        at,
-      )
-      .run();
+    const sortOrder = (Number(order?.maxOrder) || 0) + 1;
+    const insert = (rowId: string, name: string, minCents: number, maxCents: number, quoteOnly: boolean) =>
+      database
+        .prepare(
+          `INSERT INTO assist_defects
+            (id, category, device, name, min_cents, max_cents, quote_only, active, sort_order,
+             created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, ?9, ?10, ?11, ?9, ?10, ?11)`,
+        )
+        .bind(rowId, defect.category, defect.device, name, minCents, maxCents, quoteOnly ? 1 : 0, sortOrder,
+          actor.id, actor.displayName, at);
+    const statements = [insert(id, defect.name, defect.minCents, defect.maxCents, defect.quoteOnly)];
+    // Aparelho novo já nasce com a MÃO DE OBRA padrão (mesma regra da migration 0080).
+    if (!sameDevice && defect.name !== LABOR_NAME) {
+      statements.push(insert(crypto.randomUUID(), LABOR_NAME, LABOR_CENTS, LABOR_CENTS, false));
+    }
+    await database.batch(statements);
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
     if (duplicate && isUniqueViolation(error)) return jsonResponse({ error: duplicate }, 409);

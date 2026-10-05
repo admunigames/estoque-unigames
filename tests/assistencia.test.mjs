@@ -30,6 +30,7 @@ const STORE_B = "cguarar01";
 
 const migration = await readFile(new URL("../drizzle/0078_assistencia_orcamentos.sql", import.meta.url), "utf8");
 const migration0079 = await readFile(new URL("../drizzle/0079_assistencia_eletronicos.sql", import.meta.url), "utf8");
+const migration0080 = await readFile(new URL("../drizzle/0080_assistencia_mao_de_obra.sql", import.meta.url), "utf8");
 const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
 
 function createFakeD1() {
@@ -66,6 +67,8 @@ function createFakeD1() {
   sqlite.exec(seed[0]);
   // 0079: HOVERBOARD em ELETRÔNICOS + PREVENTIVA dele.
   for (const statement of migration0079.split("--> statement-breakpoint")) sqlite.exec(statement);
+  // 0080: MÃO DE OBRA (R$ 99,99) em todos os aparelhos.
+  sqlite.exec(migration0080);
   sqlite
     .prepare("INSERT INTO shared_state (state_key, value_json) VALUES ('companies_list', ?)")
     .run(JSON.stringify([
@@ -211,7 +214,15 @@ const itemCount = (quoteId) => db.sqlite.prepare("SELECT COUNT(*) AS n FROM assi
 
 test("seed da tabela de valores (migration 0078)", async () => {
   const defects = (await getDefects(NO_STORE_USER)).body.defects;
-  assert.equal(defects.length, 234);
+  // 233 do seed + PREVENTIVA do hoverboard (0079) + MÃO DE OBRA nos 29 aparelhos (0080)
+  assert.equal(defects.length, 263);
+  const devices = new Set(defects.map((defect) => defect.device));
+  assert.equal(devices.size, 29);
+  for (const device of devices) {
+    const labor = defects.find((defect) => defect.device === device && defect.name === "MÃO DE OBRA");
+    assert.deepEqual([labor?.minCents, labor?.maxCents, labor?.quoteOnly], [9999, 9999, false], device);
+    assert.equal(labor.category, defects.find((defect) => defect.device === device).category);
+  }
   // 0079: HOVERBOARD saiu de CONSOLES para ELETRÔNICOS e ganhou PREVENTIVA (padrão do PS3 SLIM).
   assert.deepEqual(new Set(defects.filter((defect) => defect.device === "HOVERBOARD").map((defect) => defect.category)), new Set(["ELETRÔNICOS"]));
   assert.deepEqual(
@@ -243,7 +254,7 @@ test("seed da tabela de valores (migration 0078)", async () => {
   assert.equal(find("CONTROLE XBOX SERIES S/X", "HALL EFFECT (PAR)"), undefined);
   // Contagem por aparelho (relatório do seed)
   const counts = Object.fromEntries(
-    db.sqlite.prepare("SELECT device, COUNT(*) AS n FROM assist_defects GROUP BY device").all().map((row) => [row.device, row.n]),
+    db.sqlite.prepare("SELECT device, COUNT(*) AS n FROM assist_defects WHERE name <> 'MÃO DE OBRA' GROUP BY device").all().map((row) => [row.device, row.n]),
   );
   assert.equal(counts["PS3 SLIM"], 8);
   assert.equal(counts["PS4 PRO"], 9);
@@ -444,6 +455,10 @@ test("tabela de valores: criar, duplicado, categoria do aparelho, editar e desat
   assert.equal(noValue.body.error, "INFORME O VALOR MÍNIMO (OU MARQUE SOB ORÇAMENTO).");
   const quoteOnly = await postDefect(NO_STORE_USER, { category: "NOTEBOOKS E COMPUTADORES", device: "MACBOOK", name: "TELA", quoteOnly: true });
   assert.equal(quoteOnly.status, 201);
+  // Aparelho novo já ganha a MÃO DE OBRA padrão; aparelho existente não duplica.
+  const macbook = db.sqlite.prepare("SELECT name, min_cents AS min FROM assist_defects WHERE device='MACBOOK' ORDER BY name").all();
+  assert.deepEqual(macbook.map((row) => [row.name, row.min]), [["MÃO DE OBRA", 9999], ["TELA", 0]]);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM assist_defects WHERE device='PS5 SLIM' AND name='MÃO DE OBRA'").get().n, 1);
 
   const inverted = await patchDefect(NO_STORE_USER, { id: created.body.id, name: "TROCA DE COOLER", minCents: 50000, maxCents: 40000 });
   assert.equal(inverted.status, 400);
