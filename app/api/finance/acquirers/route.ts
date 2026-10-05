@@ -67,6 +67,7 @@ export async function GET(request: Request) {
     const result = await database
       .prepare(
         `SELECT id, name, company_id AS companyId, status, notes,
+                debit_days AS debitDays, credit_days AS creditDays, anticipated, bank_keyword AS bankKeyword,
                 created_by_name AS createdByName, created_at AS createdAt,
                 updated_at AS updatedAt
          FROM finance_acquirers
@@ -104,6 +105,15 @@ export async function POST(request: Request) {
     const editId = safeText(body.id, 80);
     const status = safeText(body.status, 20) === "inactive" ? "inactive" : "active";
     const notes = safeText(body.notes, 500);
+    // Prazo de recebimento (Conciliação de Vendas > CARTÃO × BANCO).
+    const days = (value: unknown, fallback: number) => {
+      const n = Math.round(Number(value));
+      return Number.isFinite(n) && n >= 0 && n <= 120 ? n : fallback;
+    };
+    const debitDays = days(body.debitDays, 1);
+    const creditDays = days(body.creditDays, 30);
+    const anticipated = body.anticipated === true || body.anticipated === 1 ? 1 : 0;
+    const bankKeyword = safeText(body.bankKeyword, 60);
     if (name.length < 2) return jsonResponse({ error: "INFORME O NOME DA ADQUIRENTE." }, 400);
 
     // Só admin/geral cadastra adquirente global; usuário de loja cadastra na
@@ -137,10 +147,11 @@ export async function POST(request: Request) {
       await database
         .prepare(
           `UPDATE finance_acquirers
-           SET name=?1, status=?2, notes=?3, updated_by=?4, updated_by_name=?5, updated_at=now()::text
+           SET name=?1, status=?2, notes=?3, updated_by=?4, updated_by_name=?5, updated_at=CURRENT_TIMESTAMP,
+               debit_days=?7, credit_days=?8, anticipated=?9, bank_keyword=?10
            WHERE id=?6`,
         )
-        .bind(name, status, notes, actor.id, who, editId)
+        .bind(name, status, notes, actor.id, who, editId, debitDays, creditDays, anticipated, bankKeyword)
         .run();
       // Propaga o novo nome para as maquinetas dessa adquirente (o snapshot
       // acompanha o cadastro enquanto a adquirente não é renomeada de novo).
@@ -155,10 +166,11 @@ export async function POST(request: Request) {
     await database
       .prepare(
         `INSERT INTO finance_acquirers
-          (id, name, company_id, status, notes, created_by, created_by_name, updated_by, updated_by_name)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?6, ?7)`,
+          (id, name, company_id, status, notes, created_by, created_by_name, updated_by, updated_by_name,
+           debit_days, credit_days, anticipated, bank_keyword)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?6, ?7, ?8, ?9, ?10, ?11)`,
       )
-      .bind(id, name, companyId, status, notes, actor.id, who)
+      .bind(id, name, companyId, status, notes, actor.id, who, debitDays, creditDays, anticipated, bankKeyword)
       .run();
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {

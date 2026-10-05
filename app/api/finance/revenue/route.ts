@@ -9,6 +9,7 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../shared";
+import { planRevenueUpsert } from "./shared";
 
 type RevenueRow = {
   id: string;
@@ -94,7 +95,6 @@ export async function POST(request: Request) {
         return jsonResponse({ error: "INFORME VALORES DE RECEITA VÁLIDOS." }, 400);
       }
     }
-    const totalAmount = salesAmount + servicesAmount;
 
     const database = await getD1();
     const existing = await database
@@ -102,46 +102,15 @@ export async function POST(request: Request) {
       .bind(storeId, month)
       .first<{ id: string }>();
 
-    if (existing) {
-      await database
-        .prepare(
-          `UPDATE finance_store_revenue
-           SET amount_cents=?1, sales_amount_cents=?2, services_amount_cents=?3,
-               updated_by=?4, updated_by_name=?5, updated_at=CURRENT_TIMESTAMP
-           WHERE id=?6`,
-        )
-        .bind(
-          totalAmount,
-          salesAmount,
-          servicesAmount,
-          actor.id,
-          actor.displayName || "Administrador",
-          existing.id,
-        )
-        .run();
-      return jsonResponse({ updated: true, id: existing.id });
-    }
-
-    const id = crypto.randomUUID();
-    await database
-      .prepare(
-        `INSERT INTO finance_store_revenue
-          (id, store_id, month, amount_cents, sales_amount_cents, services_amount_cents,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP, ?7, ?8, CURRENT_TIMESTAMP)`,
-      )
-      .bind(
-        id,
-        storeId,
-        month,
-        totalAmount,
-        salesAmount,
-        servicesAmount,
-        actor.id,
-        actor.displayName || "Administrador",
-      )
-      .run();
-    return jsonResponse({ created: true, id }, 201);
+    const [sql, values] = planRevenueUpsert(
+      existing?.id ?? null,
+      { storeId, month, salesCents: salesAmount, servicesCents: servicesAmount },
+      { id: actor.id, name: actor.displayName || "Administrador" },
+    );
+    await database.prepare(sql).bind(...values).run();
+    return existing
+      ? jsonResponse({ updated: true, id: existing.id })
+      : jsonResponse({ created: true, id: values[0] }, 201);
   } catch (error) {
     console.error("Não foi possível salvar a receita financeira.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR A RECEITA." }, 500);

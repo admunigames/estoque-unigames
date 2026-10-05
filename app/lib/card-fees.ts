@@ -160,7 +160,7 @@ export function computeCardReconStatus(input: {
     : "ok";
 }
 
-function feeOutsideTolerance(
+export function feeOutsideTolerance(
   grossCents: number,
   diffCents: number,
   options: { toleranceBps?: number; toleranceFixedCents?: number } = {},

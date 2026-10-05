@@ -354,6 +354,7 @@ const APP_ROUTE_PATHS = new Set([
   "/financeiro/taxas-cartao",
   "/financeiro/cartoes-corporativos",
   "/financeiro/conciliacao-bancaria",
+  "/financeiro/conciliacao-vendas",
   "/financeiro/controle-reposicao",
   "/financeiro/recargas-celular",
   "/financeiro/declaracao-shopping",

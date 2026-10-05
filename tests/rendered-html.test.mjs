@@ -2391,7 +2391,7 @@ test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", 
       readFile(new URL("../app/api/finance/categories/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/finance/items/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/finance/entries/route.ts", import.meta.url), "utf8"),
-      readFile(new URL("../app/api/finance/revenue/route.ts", import.meta.url), "utf8"),
+      Promise.all(["route.ts", "shared.ts"].map((f) => readFile(new URL(`../app/api/finance/revenue/${f}`, import.meta.url), "utf8"))).then((parts) => parts.join("\n")),
       // A montagem da DRE (buildStoreDre/buildConsolidatedDre/etc.) foi
       // extraída para dre/shared.ts na Fase 2 do Financeiro (Dashboard
       // Geral), pra ser reaproveitada sem duplicar a fórmula de
@@ -4896,7 +4896,7 @@ test("importadores financeiros leem CSV como texto (data DD/MM com dia <= 12 nã
   assert.match(html, /wb = XLSX\.read\(csv\.replace\(\/\^\\uFEFF\/, ''\), \{type:'string', raw:true\}\)/);
   // UTF-8 válido continua UTF-8; senão Windows-1252 (acentos de "Débito").
   assert.match(html, /new TextDecoder\('utf-8', \{fatal:true\}\)[\s\S]{0,120}new TextDecoder\('windows-1252'\)/);
-  // Maquinetas: vendas e repasse.
+  // Maquinetas (arquivo de vendas) e Conciliação de Vendas (Ponttie).
   assert.equal(html.split("const rows = await extractRowsFromFile(file, {rawCsv: /\\.csv$/i.test(file.name)});").length - 1, 2);
   // Fatura do cartão e extrato da conciliação.
   assert.equal(html.split("const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});").length - 1, 2);
@@ -4954,7 +4954,7 @@ test("Financeiro > Maquinetas: Taxas de Cartão em abas, taxa por maquineta, arq
   assert.match(workerSource, /"\/financeiro\/taxas-cartao"/);
   assert.match(html, /id="navFinanceiroMaquinetas"[^>]*data-home-desc="Maquinetas por unidade com taxas próprias/);
   // Abas (padrão .output-tabs) e aba na URL.
-  for (const [tab, label] of [["maquinetas", "MAQUINETAS"], ["taxas", "TAXAS"], ["arquivo", "ARQUIVO DE VENDAS"], ["conferencia", "CONFERÊNCIA"], ["totais", "TOTAL DE TAXAS"], ["repasse", "REPASSE"]]) {
+  for (const [tab, label] of [["maquinetas", "MAQUINETAS"], ["taxas", "TAXAS"], ["arquivo", "ARQUIVO DE VENDAS"], ["conferencia", "CONFERÊNCIA"], ["totais", "TOTAL DE TAXAS"]]) {
     assert.match(html, new RegExp(`class="output-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-mq-tab="${tab}">${label}</button>`), tab);
     assert.match(html, new RegExp(`data-mq-panel="${tab}"`), tab);
   }
@@ -4976,11 +4976,55 @@ test("Financeiro > Maquinetas: Taxas de Cartão em abas, taxa por maquineta, arq
   assert.match(html, /MAQUINETA NÃO CADASTRADA/);
   assert.match(html, /financeApiRequest\('\/card-fees\/totals\?'/);
   assert.match(html, /id="btnCardTotalsPdf" type="button">GERAR IMAGEM\/PDF/);
-  // Nada de prompt() nativo na conciliação (revisão usa o diálogo de lote).
+  // Nada de prompt() nativo; a aba REPASSE saiu no 6/9 (CARTÃO × BANCO).
   assert.doesNotMatch(html, /prompt\('Nota da revisão/);
+  assert.doesNotMatch(html, /data-mq-tab="repasse"|data-mq-panel="repasse"|id="cardSettlementFile"|loadCardReconciliation/);
   // Migration 0081: só ADD COLUMN/INDEX.
   assert.match(migration, /ALTER TABLE "finance_card_fees" ADD COLUMN IF NOT EXISTS "machine_id"/);
   assert.match(migration, /ALTER TABLE "finance_card_sales" ADD COLUMN IF NOT EXISTS "charged_fee_cents" integer/);
   assert.doesNotMatch(migration, /DROP /i);
   assert.match(schema, /chargedFeeCents: integer\("charged_fee_cents"\)/);
+});
+
+test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adquirente e faturamento com confirmação", async () => {
+  const [html, workerSource, migration, schema] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0082_conciliacao_vendas.sql", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+  ]);
+  // Menu logo abaixo de Conciliação Bancária, rota, título, permissão e dispatch.
+  assert.match(html, /id="navFinanceiroConciliacao"[^\n]*\n\s*<a class="nav-item sub-item" id="navFinanceiroConciliacaoVendas" data-page="financeiroConciliacaoVendas" data-permission="finance"[^>]*href="\/financeiro\/conciliacao-vendas"/);
+  assert.match(html, /financeiroConciliacaoVendas:'\/financeiro\/conciliacao-vendas'/);
+  assert.match(html, /financeiroConciliacaoVendas:'CONCILIAÇÃO DE VENDAS'/);
+  assert.match(html, /financeiroConciliacaoVendas:'finance'/);
+  assert.match(html, /name === 'financeiroConciliacaoVendas' \|\|/);
+  assert.equal(html.split("if(name === 'financeiroConciliacaoVendas') loadConciliacaoVendasPage();").length - 1, 2);
+  assert.match(workerSource, /"\/financeiro\/conciliacao-vendas"/);
+  assert.match(html, /id="pageFinanceiroConciliacaoVendas" class="page wrap"/);
+  for (const [tab, label] of [["importar", "IMPORTAR"], ["vendas", "VENDAS DO PONTTIE"], ["cartao", "CARTÃO × BANCO"], ["resumo", "RESUMO DO MÊS"]]) {
+    assert.match(html, new RegExp(`class="output-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-sv-tab="${tab}">${label}</button>`), tab);
+    assert.match(html, new RegExp(`data-sv-panel="${tab}"`), tab);
+  }
+  // Importar: vários arquivos do Ponttie (prévia do servidor) + extrato pela rota da Conciliação Bancária.
+  assert.match(html, /id="svPonttieFile" accept="[^"]*" multiple/);
+  assert.match(html, /financeApiRequest\('\/sales-recon', \{method:'POST'[\s\S]{0,120}dryRun:true/);
+  assert.match(html, /SERVIÇO \(AUTO\)/);
+  assert.match(html, /MAQUINETA NÃO IDENTIFICADA/);
+  assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 2);
+  // Lote (componente reutilizado) e confirmação do faturamento.
+  assert.match(html, /id="svRowsBulkBar"[\s\S]*?data-bulk-action="sale">MARCAR COMO VENDA[\s\S]*?data-bulk-action="service">MARCAR COMO SERVIÇO[\s\S]*?data-bulk-action="machine">DEFINIR MAQUINETA[\s\S]*?data-bulk-action="ignore">IGNORAR[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /id="svDaysBulkBar"[\s\S]*?data-bulk-action="review">MARCAR COMO REVISADO/);
+  for (const name of ["svRowsBulk", "svDaysBulk"]) assert.match(html, new RegExp(`const ${name} = setupBulkSelection\\(`), name);
+  assert.match(html, /id="btnSvRevenue" type="button">ATUALIZAR FATURAMENTO DO MÊS/);
+  assert.match(html, /id="svRevenueDialog"/);
+  assert.match(html, /financeApiRequest\('\/sales-recon\/apply-revenue'/);
+  // Prazo de recebimento e texto do extrato no cadastro de adquirente.
+  for (const id of ["acquirerDebitDays", "acquirerCreditDays", "acquirerAnticipated", "acquirerBankKeyword"]) assert.match(html, new RegExp(`id="${id}"`), id);
+  // Migration 0082: tabelas novas e colunas, nada apagado.
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS "finance_sales_recon_rows"/);
+  assert.match(migration, /ALTER TABLE "finance_acquirers" ADD COLUMN IF NOT EXISTS "bank_keyword"/);
+  assert.match(migration, /ALTER TABLE "finance_bank_statement_entries" ADD COLUMN IF NOT EXISTS "sales_recon_status"/);
+  assert.doesNotMatch(migration, /DROP /i);
+  assert.match(schema, /export const financeSalesReconRows = pgTable\(\s*"finance_sales_recon_rows"/);
 });

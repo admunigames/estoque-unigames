@@ -2029,6 +2029,13 @@ export const financeAcquirers = pgTable(
     // 'active' | 'inactive'
     status: text("status").notNull().default("active"),
     notes: text("notes").notNull().default(""),
+    // Financeiro 6/9 — prazo de recebimento (CARTÃO × BANCO): débito em
+    // D+debit_days; crédito em D+credit_days por parcela (anticipated=1: tudo
+    // em D+1). bank_keyword = texto que identifica o depósito no extrato.
+    debitDays: integer("debit_days").notNull().default(1),
+    creditDays: integer("credit_days").notNull().default(30),
+    anticipated: integer("anticipated").notNull().default(0),
+    bankKeyword: text("bank_keyword").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -2373,6 +2380,12 @@ export const financeBankStatementEntries = pgTable(
     inRateio: integer("in_rateio").notNull().default(0),
     status: text("status").notNull().default("pending"),
     expenseId: text("expense_id").notNull().default(""),
+    // Financeiro 6/9 — CARTÃO × BANCO: depósito de adquirente conciliado
+    // ('' | 'ok' | 'divergent' | 'reviewed'), observação da revisão e a
+    // adquirente identificada pelo bank_keyword.
+    salesReconStatus: text("sales_recon_status").notNull().default(""),
+    salesReconNote: text("sales_recon_note").notNull().default(""),
+    acquirerId: text("acquirer_id").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -2388,6 +2401,69 @@ export const financeBankStatementEntries = pgTable(
     index("finance_bank_statement_entries_import_idx").on(table.importId),
     index("finance_bank_statement_entries_fit_idx").on(table.financeAccountId, table.fitId),
     index("finance_bank_statement_entries_merchant_idx").on(table.rawMerchant),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Financeiro 6/9 — Conciliação de Vendas: arquivo do PONTTIE (todas as formas
+// de pagamento) × maquineta × extrato. Cada linha é uma forma de pagamento de
+// uma venda/OS. kind 'sale' entra no faturamento da loja da maquineta (ou da
+// loja do Ponttie sem maquineta); 'service' entra na ASSISTÊNCIA.
+// kind_source 'manual' nunca é sobrescrito pela classificação automática.
+// status: 'pending' | 'matched' | 'divergent' | 'not_found' | 'ignored'.
+// ---------------------------------------------------------------------------
+export const financeSalesReconImports = pgTable(
+  "finance_sales_recon_imports",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull().default(""),
+    referenceMonth: text("reference_month").notNull().default(""),
+    sourceName: text("source_name").notNull().default(""),
+    fileHash: text("file_hash").notNull().default(""),
+    rowCount: integer("row_count").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("finance_sales_recon_imports_hash_idx").on(table.fileHash)],
+);
+
+export const financeSalesReconRows = pgTable(
+  "finance_sales_recon_rows",
+  {
+    id: text("id").primaryKey(),
+    importId: text("import_id").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    saleDate: text("sale_date").notNull().default(""),
+    saleRef: text("sale_ref").notNull().default(""),
+    description: text("description").notNull().default(""),
+    // 'cash' | 'pix' | 'debit' | 'credit' | 'other'
+    paymentMethod: text("payment_method").notNull().default("other"),
+    installments: integer("installments").notNull().default(1),
+    amountCents: integer("amount_cents").notNull().default(0),
+    // NSU/autorização ("authorization" é palavra reservada no Postgres).
+    authorizationCode: text("authorization_code").notNull().default(""),
+    terminalRef: text("terminal_ref").notNull().default(""),
+    kind: text("kind").notNull().default("sale"),
+    kindSource: text("kind_source").notNull().default("auto"),
+    machineId: text("machine_id").notNull().default(""),
+    revenueCompanyId: text("revenue_company_id").notNull().default(""),
+    cardSaleId: text("card_sale_id").notNull().default(""),
+    bankEntryId: text("bank_entry_id").notNull().default(""),
+    status: text("status").notNull().default("pending"),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_sales_recon_rows_company_date_idx").on(table.companyId, table.saleDate),
+    index("finance_sales_recon_rows_import_idx").on(table.importId),
+    index("finance_sales_recon_rows_revenue_date_idx").on(table.revenueCompanyId, table.saleDate),
+    index("finance_sales_recon_rows_card_sale_idx").on(table.cardSaleId),
   ],
 );
 

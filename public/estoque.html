@@ -3350,6 +3350,16 @@
   #cardFeeGridTable input{width:100%; min-width:90px;}
   .responsive-table tbody tr.row-muted{opacity:.6;}
   .responsive-table tbody td.neg{color:var(--neg); font-weight:700;}
+  /* CONCILIAÇÃO DE VENDAS (Financeiro 6/9) */
+  [data-sv-bulk-field][hidden]{display:none !important;}
+  .sv-revenue-dialog{width:min(900px,calc(100vw - 28px));}
+  .sv-day-detail-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; text-align:left; font-size:12px;}
+  .sv-day-detail-grid ul{margin:6px 0 0; padding-left:18px;}
+  .sv-day-detail-grid p{margin:6px 0 0;}
+  @media (max-width:680px){
+    .responsive-table tbody tr.sv-day-detail td{display:block; text-align:left;}
+    .responsive-table tbody tr.sv-day-detail td::before{content:none;}
+  }
   @media (max-width:680px){
     .responsive-table tbody tr.cf-group-row{border-color:var(--accent);}
     .responsive-table tbody td.cf-group-head{display:block; text-align:left;}
@@ -3630,6 +3640,7 @@
         <a class="nav-item sub-item" id="navFinanceiroDashboard" data-page="financeiroDashboard" data-permission="finance" data-home-desc="Painel geral: contas a pagar, despesas, faturamento e resultado num só lugar." title="Painel" href="/financeiro/painel"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.3"/><rect x="13" y="3.5" width="7.5" height="4.8" rx="1.3"/><rect x="13" y="10.4" width="7.5" height="10.1" rx="1.3"/><rect x="3.5" y="13.2" width="7.5" height="7.3" rx="1.3"/></svg></span><span class="nav-label">Painel</span></a>
         <a class="nav-item sub-item" id="navFinanceiroCartoesCorp" data-page="financeiroCartoesCorp" data-permission="finance" data-home-desc="Cartões de crédito corporativos: limite, fatura importada, parcelas futuras e lançamento como despesa." title="Cartões Corporativos" href="/financeiro/cartoes-corporativos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="M6 14.5h5"/></svg></span><span class="nav-label">Cartões Corporativos</span></a>
         <a class="nav-item sub-item" id="navFinanceiroConciliacao" data-page="financeiroConciliacao" data-permission="finance" data-home-desc="Importe o extrato bancário, classifique os lançamentos e deixe o sistema sugerir a classificação pelos nomes que se repetem." title="Conciliação Bancária" href="/financeiro/conciliacao-bancaria"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><path d="m16 16 2 2 4-4"/></svg></span><span class="nav-label">Conciliação Bancária</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroConciliacaoVendas" data-page="financeiroConciliacaoVendas" data-permission="finance" data-home-desc="Vendas do Ponttie × maquineta × extrato: venda para a loja da maquineta, serviço para a Assistência, e faturamento do mês com confirmação." title="Conciliação de Vendas" href="/financeiro/conciliacao-vendas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="11" height="8" rx="1.5"/><path d="M3 8h11"/><path d="M14 16h7"/><path d="m18 13 3 3-3 3"/><path d="M6 17h4"/></svg></span><span class="nav-label">Conciliação de Vendas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroPayables" data-page="financeiroPayables" data-permission="finance" data-home-desc="Contas a pagar: parcelas, recorrências e pagamentos por loja." title="Contas a Pagar" href="/financeiro/contas-a-pagar"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Contas a Pagar</span></a>
         <a class="nav-item sub-item" id="navFinanceiroReposicao" data-page="financeiroReposicao" data-permission="finance" data-home-desc="Valores repostos e gastos por Assistência, Logística e outros setores." title="Controle de Reposição" href="/financeiro/controle-reposicao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 14-4l2 2"/><path d="M20 16a8 8 0 0 1-14 4l-2-2"/><path d="M18 2v4h-4M6 22v-4h4"/></svg></span><span class="nav-label">Controle de Reposição</span></a>
         <a class="nav-item sub-item" id="navFinanceiroDeclaracaoShopping" data-page="financeiroDeclaracaoShopping" data-permission="finance" data-home-desc="Declaração de vendas por loja, com faturamento puxado do cadastro, cadastro em lote e alerta de aluguel percentual." title="Declaração de Vendas" href="/financeiro/declaracao-shopping"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></span><span class="nav-label">Declaração de Vendas</span></a>
@@ -7608,15 +7619,15 @@
         <div class="print-report-meta" id="cardTotalsPrintMeta"></div>
       </div>
 
-      <!-- Financeiro 5/9: Taxas de Cartão virou abas daqui. REPASSE é
-           provisória — a Conciliação de Vendas (prompt 6) substitui. -->
+      <!-- Financeiro 5/9: Taxas de Cartão virou abas daqui. O repasse saiu no
+           6/9: a conferência de depósito é o CARTÃO × BANCO da Conciliação
+           de Vendas. -->
       <div class="output-tabs no-print" role="tablist" aria-label="Seções de maquinetas">
         <button class="output-tab active" type="button" role="tab" aria-selected="true" data-mq-tab="maquinetas">MAQUINETAS</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="taxas">TAXAS</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="arquivo">ARQUIVO DE VENDAS</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="conferencia">CONFERÊNCIA</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="totais">TOTAL DE TAXAS</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-mq-tab="repasse">REPASSE</button>
       </div>
 
       <div data-mq-panel="maquinetas">
@@ -7661,8 +7672,8 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="acquirersTable">
-              <thead><tr><th>Nome</th><th>Abrangência</th><th>Situação</th><th></th></tr></thead>
-              <tbody id="acquirersTableBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th>Nome</th><th>Abrangência</th><th>Recebimento</th><th>Situação</th><th></th></tr></thead>
+              <tbody id="acquirersTableBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -7765,50 +7776,6 @@
         <div id="cardTotalsTables"></div>
       </div>
 
-      <div data-mq-panel="repasse" hidden>
-        <p class="page-desc">PROVISÓRIO: IMPORTAÇÃO DO REPASSE E CONCILIAÇÃO COMO ERAM EM TAXAS DE CARTÃO. A CONCILIAÇÃO DE VENDAS VAI SUBSTITUIR ESTA ABA. QUANDO A PLANILHA TRAZ O TERMINAL, O REPASSE CASA PELA MAQUINETA.</p>
-        <div class="dre-toolbar">
-          <div class="field"><label for="cardSettlementCompany">UNIDADE</label><select id="cardSettlementCompany"><option value="">SELECIONE</option></select></div>
-          <div class="field"><label for="cardSettlementMonth">MÊS DE REFERÊNCIA</label><input type="month" id="cardSettlementMonth"></div>
-          <div class="field"><label for="cardSettlementFile">PLANILHA DE REPASSE (.xlsx / .xls / .csv)</label><input type="file" id="cardSettlementFile" accept=".xls,.xlsx,.csv,.htm,.html"></div>
-        </div>
-        <p class="purchase-field-help">O REPASSE É CASADO COM AS VENDAS JÁ IMPORTADAS POR NSU (OU, SEM NSU, POR DATA + VALOR BRUTO + UNIDADE). COLUNAS ESPERADAS: NSU, DATA, VALOR BRUTO, VALOR RECEBIDO (E, SE HOUVER, TERMINAL).</p>
-        <div class="user-form-status" id="cardSettlementImportStatus" role="status" aria-live="polite"></div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table id="cardSettlementPreviewTable">
-              <thead><tr><th>NSU</th><th>Data</th><th>Bruto</th><th>Recebido</th></tr></thead>
-              <tbody id="cardSettlementPreviewBody"><tr><td colspan="4" class="responsive-empty">Selecione uma planilha para pré-visualizar.</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="purchase-form-actions"><button class="btn-accent" id="btnConfirmCardSettlement" type="button" disabled>CONFIRMAR REPASSE</button></div>
-
-        <h3 class="supply-section-title">CONCILIAÇÃO DO REPASSE</h3>
-        <div class="dre-toolbar">
-          <div class="field"><label for="cardReconCompany">UNIDADE</label><select id="cardReconCompany"><option value="">TODAS AS LOJAS</option></select></div>
-          <div class="field"><label for="cardReconMonth">MÊS</label><input type="month" id="cardReconMonth"></div>
-          <div class="field"><label for="cardReconAcquirer">ADQUIRENTE</label><select id="cardReconAcquirer"><option value="">TODAS</option></select></div>
-          <div class="field"><label for="cardReconStatus">SITUAÇÃO</label>
-            <select id="cardReconStatus">
-              <option value="">TODAS</option>
-              <option value="attention" selected>EM ATENÇÃO</option>
-              <option value="pending">SEM REPASSE</option>
-              <option value="ok">CONFERIDAS</option>
-              <option value="reviewed">REVISADAS</option>
-            </select>
-          </div>
-        </div>
-        <div class="user-form-status" id="cardReconSummary" role="status" aria-live="polite"></div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table id="cardReconTable">
-              <thead><tr><th>Data</th><th>Adquirente</th><th>Bandeira</th><th>Modal.</th><th>Bruto</th><th>Taxa prev.</th><th>Taxa real</th><th>Situação</th><th></th></tr></thead>
-              <tbody id="cardReconBody"><tr><td colspan="9" class="responsive-empty">Selecione os filtros.</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     </section>
 
     <section id="pageFinanceiroCartoesCorp" class="page wrap">
@@ -7982,6 +7949,130 @@
         </div>
       </div>
     </section>
+
+    <section id="pageFinanceiroConciliacaoVendas" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Conciliação de Vendas</h2>
+        </div>
+      </header>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="svMonth">MÊS (COMPETÊNCIA)</label><input type="month" id="svMonth"></div>
+        <div class="field"><label for="svCompany">UNIDADE</label><select id="svCompany"><option value="">TODAS AS UNIDADES</option></select></div>
+      </div>
+
+      <div class="output-tabs" role="tablist" aria-label="Seções da conciliação de vendas">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-sv-tab="importar">IMPORTAR</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-sv-tab="vendas">VENDAS DO PONTTIE</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-sv-tab="cartao">CARTÃO × BANCO</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-sv-tab="resumo">RESUMO DO MÊS</button>
+      </div>
+
+      <div data-sv-panel="importar">
+        <h3 class="supply-section-title">ARQUIVO DO PONTTIE</h3>
+        <div class="dre-toolbar">
+          <div class="field"><label for="svFileCompany">LOJA DO ARQUIVO</label><select id="svFileCompany"><option value="">PELA COLUNA LOJA DO ARQUIVO</option></select></div>
+          <div class="field"><label for="svPonttieFile">ARQUIVOS (.xlsx / .xls / .csv)</label><input type="file" id="svPonttieFile" accept=".xls,.xlsx,.csv,.htm,.html" multiple></div>
+        </div>
+        <p class="page-desc">UMA LINHA POR FORMA DE PAGAMENTO. COLUNAS RECONHECIDAS PELO CABEÇALHO: DATA, Nº DA VENDA/PEDIDO, Nº DA OS, LOJA/EMPRESA/FILIAL, DESCRIÇÃO/PRODUTO, TIPO/CATEGORIA, FORMA DE PAGAMENTO, PARCELAS, VALOR, NSU/AUTORIZAÇÃO, TERMINAL/MAQUINETA. SEM COLUNA DE LOJA, ESCOLHA A LOJA DO ARQUIVO.</p>
+        <div class="user-form-status" id="svPonttieStatus" role="status" aria-live="polite"></div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="svPonttiePreviewTable">
+              <thead><tr><th class="bulk-col" aria-label="Importar"></th><th>Data</th><th>Nº</th><th>Loja da venda</th><th>Descrição</th><th>Forma</th><th>Valor</th><th>Tipo</th><th>Maquineta</th><th>Entra em</th><th>Situação</th></tr></thead>
+              <tbody id="svPonttiePreviewBody"><tr><td colspan="11" class="responsive-empty">Selecione um ou mais arquivos do Ponttie.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="purchase-form-actions"><button class="btn-accent" id="btnConfirmPonttie" type="button" disabled>CONFIRMAR IMPORTAÇÃO</button></div>
+
+        <h3 class="supply-section-title">EXTRATO BANCÁRIO</h3>
+        <div class="dre-toolbar">
+          <div class="field"><label for="svBankAccount">CONTA BANCÁRIA</label><select id="svBankAccount"><option value="">SELECIONE</option></select></div>
+          <div class="field"><label for="svBankFile">EXTRATO (.ofx / .xls / .xlsx / .csv)</label><input type="file" id="svBankFile" accept=".ofx,.xls,.xlsx,.csv,.htm,.html"></div>
+        </div>
+        <p class="purchase-field-help">É A MESMA IMPORTAÇÃO DA CONCILIAÇÃO BANCÁRIA: SUBIR AQUI OU LÁ DÁ NO MESMO E NÃO DUPLICA.</p>
+        <div class="user-form-status" id="svBankStatus" role="status" aria-live="polite"></div>
+        <div class="purchase-form-actions"><button class="btn-accent" id="btnConfirmSvBank" type="button" disabled>IMPORTAR EXTRATO</button></div>
+      </div>
+
+      <div data-sv-panel="vendas" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="svFilterMethod">FORMA DE PAGAMENTO</label><select id="svFilterMethod"><option value="">TODAS</option><option value="cash">DINHEIRO</option><option value="pix">PIX</option><option value="debit">DÉBITO</option><option value="credit">CRÉDITO</option><option value="other">OUTRAS</option></select></div>
+          <div class="field"><label for="svFilterKind">TIPO</label><select id="svFilterKind"><option value="">TODOS</option><option value="sale">VENDA</option><option value="service">SERVIÇO</option></select></div>
+          <div class="field"><label for="svFilterStatus">SITUAÇÃO</label><select id="svFilterStatus"><option value="">TODAS</option><option value="matched">CONCILIADA</option><option value="divergent">DIVERGENTE</option><option value="not_found">NÃO ENCONTRADA</option><option value="pending">SEM CONCILIAÇÃO</option><option value="ignored">IGNORADA</option></select></div>
+          <div class="field"><label for="svFilterStore">LOJA DA VENDA</label><select id="svFilterStore"><option value="">TODAS</option></select></div>
+          <label class="assist-check"><input type="checkbox" id="svOnlyProblems"> SÓ COM PROBLEMA</label>
+        </div>
+        <section class="summary" id="svRowsTotals" aria-label="Totais das vendas filtradas"></section>
+        <div class="bulk-bar" id="svRowsBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="sale">MARCAR COMO VENDA</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="service">MARCAR COMO SERVIÇO</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="machine">DEFINIR MAQUINETA</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="ignore">IGNORAR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="rematch">CONCILIAR DE NOVO</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
+        <p class="purchase-field-help">CONCILIAR DE NOVO: USE DEPOIS DE IMPORTAR O ARQUIVO DA MAQUINETA OU O EXTRATO (TAMBÉM DESFAZ O IGNORAR). IGNORADA NÃO ENTRA NO FATURAMENTO.</p>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="svRowsTable">
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Nº</th><th>Loja da venda</th><th>Descrição</th><th>Forma</th><th>Valor</th><th>Tipo</th><th>Maquineta</th><th>Entra em</th><th>Situação</th></tr></thead>
+              <tbody id="svRowsBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div data-sv-panel="cartao" hidden>
+        <p class="page-desc">POR ADQUIRENTE E DIA DE DEPÓSITO: LÍQUIDO ESPERADO DAS VENDAS DA MAQUINETA (PELO PRAZO DA ADQUIRENTE, NO CADASTRO DE MAQUINETAS) × CRÉDITOS DO EXTRATO COM O TEXTO DA ADQUIRENTE.</p>
+        <div class="user-form-status" id="svDepositsWarn" role="status" aria-live="polite"></div>
+        <div class="dre-toolbar">
+          <div class="field"><label for="svDaysFilter">SITUAÇÃO</label><select id="svDaysFilter"><option value="">TODAS</option><option value="problem">SÓ COM PROBLEMA</option><option value="ok">OK</option><option value="reviewed">REVISADO</option></select></div>
+          <div class="dre-toolbar-actions"><button class="btn-accent" id="btnSvApplyDeposits" type="button">CONCILIAR DEPÓSITOS DO MÊS</button></div>
+        </div>
+        <section class="summary" id="svDaysTotals" aria-label="Totais do cartão × banco"></section>
+        <div class="bulk-bar" id="svDaysBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="review">MARCAR COMO REVISADO</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="svDaysTable">
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Dia do depósito</th><th>Adquirente</th><th>Esperado</th><th>Depositado</th><th>Diferença</th><th>Situação</th><th></th></tr></thead>
+              <tbody id="svDaysBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div data-sv-panel="resumo" hidden>
+        <section class="summary" id="svSummaryCards" aria-label="Resumo do mês"></section>
+        <div class="dre-toolbar">
+          <div class="dre-toolbar-actions"><button class="btn-accent" id="btnSvRevenue" type="button">ATUALIZAR FATURAMENTO DO MÊS</button></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="svUnitsTable">
+              <thead><tr><th>Unidade</th><th>Vendas</th><th>Serviços</th><th>Total</th><th>Dinheiro</th><th>PIX</th><th>Débito</th><th>Crédito</th><th>Outras</th></tr></thead>
+              <tbody id="svUnitsBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
 
     <section id="pageFinanceiroReposicao" class="page wrap">
       <header class="page-header">
@@ -9329,6 +9420,10 @@
       <div class="purchase-field full"><label for="acquirerName">NOME *</label><input id="acquirerName" maxlength="120" placeholder="Ex: CIELO" required></div>
       <div class="purchase-field"><label for="acquirerCompany">ABRANGÊNCIA</label><select id="acquirerCompany"><option value="">TODAS AS LOJAS (GLOBAL)</option></select></div>
       <div class="purchase-field"><label for="acquirerStatus">SITUAÇÃO</label><select id="acquirerStatus"><option value="active">ATIVA</option><option value="inactive">INATIVA</option></select></div>
+      <div class="purchase-field"><label for="acquirerDebitDays">DÉBITO CAI EM (DIAS)</label><input type="number" id="acquirerDebitDays" min="0" max="120" value="1"></div>
+      <div class="purchase-field"><label for="acquirerCreditDays">CRÉDITO CAI EM (DIAS POR PARCELA)</label><input type="number" id="acquirerCreditDays" min="0" max="120" value="30"></div>
+      <div class="purchase-field"><label for="acquirerBankKeyword">TEXTO NO EXTRATO</label><input id="acquirerBankKeyword" maxlength="60" placeholder="Ex: STONE, CIELO, REDE"></div>
+      <label class="assist-check"><input type="checkbox" id="acquirerAnticipated"> CRÉDITO ANTECIPADO (TUDO EM D+1)</label>
       <div class="purchase-field full"><label for="acquirerNotes">OBSERVAÇÕES</label><textarea id="acquirerNotes" rows="2" maxlength="500"></textarea></div>
     </div>
     <div class="user-form-status" id="acquirerFormStatus" role="status" aria-live="polite"></div>
@@ -9474,6 +9569,49 @@
       <button class="btn-accent" type="submit">APLICAR</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="svBulkDialog" aria-labelledby="svBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="svBulkTitle">SELECIONADOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseSvBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="svBulkForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full" data-sv-bulk-field="machine"><label for="svBulkMachine">MAQUINETA *</label><select id="svBulkMachine"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full" data-sv-bulk-field="review"><label for="svBulkNote">OBSERVAÇÃO</label><textarea id="svBulkNote" rows="2" maxlength="300" placeholder="Ex.: taxa de antecipação, depósito em dois dias"></textarea></div>
+    </div>
+    <p class="purchase-field-help" data-sv-bulk-field="machine">A VENDA PASSA A ENTRAR NA LOJA EM QUE A MAQUINETA ESTAVA NA DATA (SERVIÇO CONTINUA NA ASSISTÊNCIA).</p>
+    <div class="user-form-status" id="svBulkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelSvBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog sv-revenue-dialog" id="svRevenueDialog" aria-labelledby="svRevenueTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="svRevenueTitle">ATUALIZAR FATURAMENTO DO MÊS</h3>
+    <button class="purchase-dialog-close" id="btnCloseSvRevenue" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <div class="user-form-status" id="svRevenueWarn" role="status" aria-live="polite"></div>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table id="svRevenueTable">
+          <thead><tr><th>Unidade</th><th>Atual — vendas</th><th>Atual — serviços</th><th>Novo — vendas</th><th>Novo — serviços</th><th>Diferença</th></tr></thead>
+          <tbody id="svRevenueBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <p class="purchase-field-help">GRAVA EM FATURAMENTO (DRE / RATEIO) SÓ AS UNIDADES ACIMA. QUEM APLICOU E QUANDO FICA REGISTRADO.</p>
+    <div class="user-form-status" id="svRevenueStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelSvRevenue" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnConfirmSvRevenue" type="button">CONFIRMAR E GRAVAR</button>
+    </div>
+  </div>
 </dialog>
 
 <dialog class="purchase-dialog" id="corpCardDialog" aria-labelledby="corpCardDialogTitle">
@@ -12069,6 +12207,7 @@
     financeiroMaquinetas:'/financeiro/maquinetas',
     financeiroCartoesCorp:'/financeiro/cartoes-corporativos',
     financeiroConciliacao:'/financeiro/conciliacao-bancaria',
+    financeiroConciliacaoVendas:'/financeiro/conciliacao-vendas',
     financeiroReposicao:'/financeiro/controle-reposicao',
     financeiroRecargas:'/financeiro/recargas-celular',
     financeiroDeclaracaoShopping:'/financeiro/declaracao-shopping',
@@ -12125,6 +12264,7 @@
     financeiroMaquinetas:'MAQUINETAS',
     financeiroCartoesCorp:'CARTÕES CORPORATIVOS',
     financeiroConciliacao:'CONCILIAÇÃO BANCÁRIA',
+    financeiroConciliacaoVendas:'CONCILIAÇÃO DE VENDAS',
     financeiroReposicao:'CONTROLE DE REPOSIÇÃO',
     financeiroRecargas:'RECARGAS DE CELULARES',
     financeiroDeclaracaoShopping:'DECLARAÇÃO DE VENDAS',
@@ -12176,6 +12316,7 @@
     financeiroMaquinetas:'finance',
     financeiroCartoesCorp:'finance',
     financeiroConciliacao:'finance',
+    financeiroConciliacaoVendas:'finance',
     financeiroReposicao:'finance',
     financeiroRecargas:'finance',
     financeiroDeclaracaoShopping:'finance',
@@ -12781,7 +12922,7 @@
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroConciliacaoVendas' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
@@ -12851,6 +12992,7 @@
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
+    if(name === 'financeiroConciliacaoVendas') loadConciliacaoVendasPage();
     if(name === 'financeiroReposicao') loadReposicaoPage();
     if(name === 'financeiroRecargas') loadRecargasPage();
     if(name === 'financeiroDeclaracaoShopping') loadDeclShoppingPage();
@@ -12911,6 +13053,7 @@
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
     if(name === 'financeiroConciliacao') loadConciliacaoPage();
+    if(name === 'financeiroConciliacaoVendas') loadConciliacaoVendasPage();
     if(name === 'financeiroReposicao') loadReposicaoPage();
     if(name === 'financeiroRecargas') loadRecargasPage();
     if(name === 'financeiroDeclaracaoShopping') loadDeclShoppingPage();
@@ -28383,15 +28526,16 @@ function renderHomeTasks(){
     const body = el('acquirersTableBody');
     if(!body) return;
     if(!acquirersRows.length){
-      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhuma adquirente cadastrada.</td></tr>';
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhuma adquirente cadastrada.</td></tr>';
       return;
     }
     body.innerHTML = acquirersRows.map(a =>
       '<tr>'+
-        '<td>'+escapeHtml(a.name)+'</td>'+
-        '<td>'+escapeHtml(a.companyId ? machineCompanyName(a.companyId) : 'Todas as lojas')+'</td>'+
-        '<td>'+escapeHtml(a.status === 'inactive' ? 'INATIVA' : 'ATIVA')+'</td>'+
-        '<td><button class="btn-outline btn-sm" type="button" data-acquirer-edit="'+escapeHtml(a.id)+'">EDITAR</button></td>'+
+        '<td data-label="Nome">'+escapeHtml(a.name)+'</td>'+
+        '<td data-label="Abrangência">'+escapeHtml(a.companyId ? machineCompanyName(a.companyId) : 'Todas as lojas')+'</td>'+
+        '<td data-label="Recebimento">'+escapeHtml('DÉBITO D+'+(a.debitDays ?? 1)+' · CRÉDITO '+(Number(a.anticipated) ? 'D+1 (ANTECIPADO)' : 'D+'+(a.creditDays ?? 30)+'/PARCELA')+(a.bankKeyword ? ' · EXTRATO: '+a.bankKeyword : ' · SEM TEXTO NO EXTRATO'))+'</td>'+
+        '<td data-label="Situação">'+escapeHtml(a.status === 'inactive' ? 'INATIVA' : 'ATIVA')+'</td>'+
+        '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-acquirer-edit="'+escapeHtml(a.id)+'">EDITAR</button></td>'+
       '</tr>').join('');
   }
 
@@ -28476,6 +28620,10 @@ function renderHomeTasks(){
     el('acquirerCompany').disabled = Boolean(row);
     el('acquirerStatus').value = row ? (row.status || 'active') : 'active';
     el('acquirerNotes').value = row ? (row.notes || '') : '';
+    el('acquirerDebitDays').value = row && row.debitDays != null ? row.debitDays : 1;
+    el('acquirerCreditDays').value = row && row.creditDays != null ? row.creditDays : 30;
+    el('acquirerAnticipated').checked = Boolean(row && Number(row.anticipated));
+    el('acquirerBankKeyword').value = row ? (row.bankKeyword || '') : '';
     el('acquirerFormStatus').textContent = '';
     el('acquirerDialog').showModal();
   }
@@ -28496,7 +28644,11 @@ function renderHomeTasks(){
       name: el('acquirerName').value.trim(),
       companyId: el('acquirerCompany').value,
       status: el('acquirerStatus').value,
-      notes: el('acquirerNotes').value
+      notes: el('acquirerNotes').value,
+      debitDays: Number(el('acquirerDebitDays').value),
+      creditDays: Number(el('acquirerCreditDays').value),
+      anticipated: el('acquirerAnticipated').checked,
+      bankKeyword: el('acquirerBankKeyword').value.trim()
     };
     if(payload.name.length < 2){ status.textContent = 'INFORME O NOME DA ADQUIRENTE.'; return; }
     const id = el('acquirerId').value;
@@ -28649,12 +28801,12 @@ function renderHomeTasks(){
 
   // ---------------------------------------------------------------------
   // Maquinetas em abas (Financeiro 5/9): MAQUINETAS · TAXAS · ARQUIVO DE
-  // VENDAS · CONFERÊNCIA · TOTAL DE TAXAS · REPASSE (provisória — a
-  // Conciliação de Vendas substitui). Aba na URL (?aba=); o link antigo
+  // VENDAS · CONFERÊNCIA · TOTAL DE TAXAS (o repasse virou o CARTÃO × BANCO
+  // da Conciliação de Vendas). Aba na URL (?aba=); o link antigo
   // /financeiro/taxas-cartao cai em ?aba=taxas.
   // ---------------------------------------------------------------------
 
-  const MQ_TABS = ['maquinetas','taxas','arquivo','conferencia','totais','repasse'];
+  const MQ_TABS = ['maquinetas','taxas','arquivo','conferencia','totais'];
   let mqTab = 'maquinetas';
   function setMqTab(tab, opts){
     mqTab = MQ_TABS.includes(tab) ? tab : 'maquinetas';
@@ -28676,7 +28828,6 @@ function renderHomeTasks(){
     if(mqTab === 'arquivo'){ if(!el('cardSalesMonth').value) el('cardSalesMonth').value = financeCurrentMonthKey(); return; }
     if(mqTab === 'conferencia') return loadCardConference();
     if(mqTab === 'totais') return loadCardTotals();
-    if(mqTab === 'repasse') return loadCardReconciliation();
   }
   document.querySelectorAll('[data-mq-tab]').forEach(btn => btn.addEventListener('click', () => setMqTab(btn.dataset.mqTab)));
 
@@ -28695,12 +28846,10 @@ function renderHomeTasks(){
   }
   function renderMqCompanyOptions(){
     fillSelect('cardSalesCompany', '<option value="">NENHUMA (NÃO IMPORTA)</option>', companyOptionsHtml());
-    fillSelect('cardSettlementCompany', '<option value="">SELECIONE</option>', companyOptionsHtml());
-    fillSelect('cardReconCompany', '<option value="">TODAS AS LOJAS</option>', companyOptionsHtml());
     fillSelect('cardConfCompany', '<option value="">TODAS AS LOJAS</option>', companyOptionsHtml());
     fillSelect('cardConfMachine', '<option value="">TODAS</option>', machineOptionsHtml());
     fillSelect('cardFeeMachineFilter', '<option value="">TODAS</option><option value="__acquirer">PADRÃO DA ADQUIRENTE</option>', machineOptionsHtml());
-    ['cardFeeAcquirerFilter','cardReconAcquirer','cardConfAcquirer','cardTotalsAcquirer'].forEach(id =>
+    ['cardFeeAcquirerFilter','cardConfAcquirer','cardTotalsAcquirer'].forEach(id =>
       renderAcquirerSelect(id, {placeholder:'<option value="">TODAS</option>', includeInactive:true}));
   }
 
@@ -28757,7 +28906,6 @@ function renderHomeTasks(){
 
   let cardFeesRows = [];
   let cardFeeMachinePending = '';
-  let cardSettlementParsed = null;
 
   const CARD_MODALITY_LABELS = {credit:'CRÉDITO', debit:'DÉBITO', pix:'PIX'};
 
@@ -29332,157 +29480,6 @@ function renderHomeTasks(){
     document.body.classList.remove('pdf-export');
     document.title = cardTotalsTitleBefore;
     cardTotalsTitleBefore = '';
-  });
-
-  // ---------------------------------------------------------------------
-  // Aba REPASSE (provisória): import de repasse + conciliação, como era.
-  // ---------------------------------------------------------------------
-  const CARD_RECON_LABELS = {attention:'EM ATENÇÃO', pending:'SEM REPASSE', ok:'CONFERIDA', reviewed:'REVISADA'};
-  let cardReconRows = [];
-
-  async function loadCardReconciliation(){
-    if(!canAccess('finance')) return;
-    if(!el('cardSettlementMonth').value) el('cardSettlementMonth').value = financeCurrentMonthKey();
-    const month = el('cardReconMonth').value || financeCurrentMonthKey();
-    el('cardReconMonth').value = month;
-    const params = new URLSearchParams({month});
-    if(el('cardReconCompany').value) params.set('companyId', el('cardReconCompany').value);
-    if(el('cardReconAcquirer').value) params.set('acquirerId', el('cardReconAcquirer').value);
-    if(el('cardReconStatus').value) params.set('recon', el('cardReconStatus').value);
-    el('cardReconBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
-    el('cardReconSummary').textContent = '';
-    try{
-      const data = await financeApiRequest('/card-sales?'+params.toString());
-      cardReconRows = Array.isArray(data.rows) ? data.rows : [];
-      const t = data.totals || {};
-      el('cardReconSummary').textContent = (Number(t.count)||0)+' venda(s) no filtro · '+
-        (Number(t.attentionCount)||0)+' em atenção · '+(Number(t.pendingCount)||0)+' sem repasse · '+
-        (Number(t.reviewedCount)||0)+' revisada(s).';
-      renderCardReconTable();
-    }catch(error){
-      el('cardReconBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-    }
-  }
-
-  function renderCardReconTable(){
-    const body = el('cardReconBody');
-    if(!body) return;
-    if(!cardReconRows.length){
-      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma venda para os filtros selecionados.</td></tr>';
-      return;
-    }
-    body.innerHTML = cardReconRows.map(row => {
-      const status = CARD_RECON_LABELS[row.reconStatus] ? row.reconStatus : 'pending';
-      const received = row.receivedAmountCents === null || row.receivedAmountCents === undefined;
-      const actualFee = received ? '—' : formatCentsBRL(Number(row.grossCents||0) - Number(row.receivedAmountCents||0));
-      const noteHtml = row.reconStatus === 'reviewed' && row.reviewedNote
-        ? '<br><span style="font-size:10px;color:var(--ink-soft);">'+escapeHtml(row.reviewedNote)+'</span>' : '';
-      const action = status === 'reviewed'
-        ? '<button class="btn-outline btn-sm" type="button" data-card-recon-reopen="'+escapeHtml(row.id)+'">REABRIR</button>'
-        : (status === 'attention'
-          ? '<button class="btn-outline btn-sm" type="button" data-card-recon-review="'+escapeHtml(row.id)+'">MARCAR COMO REVISADA</button>'
-          : '');
-      return '<tr'+(status === 'attention' ? ' class="recon-row-attention"' : '')+'>'+
-        '<td data-label="Data">'+escapeHtml(formatDateBR(row.saleDate) || '')+'</td>'+
-        '<td data-label="Adquirente">'+escapeHtml(row.acquirerName || '—')+'</td>'+
-        '<td data-label="Bandeira">'+escapeHtml(row.brand || '—')+'</td>'+
-        '<td data-label="Modal.">'+escapeHtml(CARD_MODALITY_LABELS[row.modality] || row.modality || '')+'</td>'+
-        '<td data-label="Bruto">'+formatCentsBRL(row.grossCents)+'</td>'+
-        '<td data-label="Taxa prev.">'+(Number(row.feeMissing) ? 'sem taxa' : formatCentsBRL(row.expectedFeeCents))+'</td>'+
-        '<td data-label="Taxa real">'+actualFee+'</td>'+
-        '<td data-label="Situação"><span class="recon-tag '+status+'">'+escapeHtml(CARD_RECON_LABELS[status])+'</span>'+noteHtml+'</td>'+
-        '<td data-label="Ações">'+action+'</td>'+
-      '</tr>';
-    }).join('');
-  }
-
-  ['cardReconCompany','cardReconMonth','cardReconAcquirer','cardReconStatus'].forEach(id => {
-    el(id) && el(id).addEventListener('change', loadCardReconciliation);
-  });
-
-  el('cardReconBody') && el('cardReconBody').addEventListener('click', async event => {
-    const reviewBtn = event.target.closest('[data-card-recon-review]');
-    const reopenBtn = event.target.closest('[data-card-recon-reopen]');
-    if(reviewBtn){
-      openMqBulkDialog('review', [reviewBtn.dataset.cardReconReview], '/card-sales/bulk', 'MARCAR COMO REVISADA', loadCardReconciliation);
-      return;
-    }
-    if(reopenBtn){
-      try{
-        await financeApiRequest('/card-sales/'+encodeURIComponent(reopenBtn.dataset.cardReconReopen), {
-          method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reviewed:false})
-        });
-        showPurchaseToast('Revisão reaberta.');
-        await loadCardReconciliation();
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
-    }
-  });
-
-  // --- Importar repasse ---
-  el('cardSettlementFile') && el('cardSettlementFile').addEventListener('change', async event => {
-    const file = event.target.files && event.target.files[0];
-    cardSettlementParsed = null;
-    el('btnConfirmCardSettlement').disabled = true;
-    const status = el('cardSettlementImportStatus');
-    if(!file) return;
-    status.textContent = 'Lendo arquivo…';
-    try{
-      const rows = await extractRowsFromFile(file, {rawCsv: /\.csv$/i.test(file.name)});
-      if(rows.length < 2) throw new Error('ARQUIVO SEM DADOS.');
-      const header = rows[0];
-      const col = {
-        nsu: findColumn(header, ['nsu','doc','autorizacao']),
-        date: findColumn(header, ['data','datavenda','dtvenda']),
-        gross: findColumn(header, ['valorbruto','bruto','valorvenda','vlrbruto']),
-        received: findColumn(header, ['valorliquido','liquido','valorrecebido','recebido','vlrliquido','valorpago']),
-        terminal: findColumn(header, CARD_SALES_COLUMNS.terminal)
-      };
-      if(col.received === -1) throw new Error('NÃO ENCONTREI A COLUNA DE VALOR RECEBIDO/LÍQUIDO.');
-      const parsed = [];
-      for(let i = 1; i < rows.length; i++){
-        const r = rows[i];
-        const receivedCents = parseMoneyToCents(r[col.received]);
-        const nsu = col.nsu !== -1 ? String(r[col.nsu]||'').trim() : '';
-        const saleDate = col.date !== -1 ? parseDateISO(r[col.date]) : '';
-        const grossCents = col.gross !== -1 ? parseMoneyToCents(r[col.gross]) : 0;
-        const terminal = col.terminal !== -1 ? String(r[col.terminal]||'').trim() : '';
-        if(receivedCents <= 0 && grossCents <= 0) continue;
-        parsed.push({nsu, saleDate, grossCents, receivedCents, terminal});
-      }
-      if(!parsed.length) throw new Error('NENHUMA LINHA VÁLIDA.');
-      cardSettlementParsed = {rows: parsed, fileHash: cheapHash(file.name, rows), sourceName: file.name};
-      el('cardSettlementPreviewBody').innerHTML = parsed.slice(0, 200).map(p =>
-        '<tr><td data-label="NSU">'+escapeHtml(p.nsu || '—')+'</td><td data-label="Data">'+escapeHtml(formatDateBR(p.saleDate) || '—')+'</td><td data-label="Bruto">'+formatCentsBRL(p.grossCents)+'</td><td data-label="Recebido">'+formatCentsBRL(p.receivedCents)+'</td></tr>').join('');
-      status.textContent = parsed.length+' linha(s) prontas para casar com as vendas.';
-      el('btnConfirmCardSettlement').disabled = false;
-    }catch(error){
-      status.textContent = error.message;
-      el('cardSettlementPreviewBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-    }
-  });
-  el('btnConfirmCardSettlement') && el('btnConfirmCardSettlement').addEventListener('click', async () => {
-    if(!cardSettlementParsed) return;
-    const companyId = el('cardSettlementCompany').value;
-    const referenceMonth = el('cardSettlementMonth').value;
-    if(!companyId){ el('cardSettlementImportStatus').textContent = 'SELECIONE A UNIDADE.'; return; }
-    if(!referenceMonth){ el('cardSettlementImportStatus').textContent = 'INFORME O MÊS DE REFERÊNCIA.'; return; }
-    el('btnConfirmCardSettlement').disabled = true;
-    try{
-      const res = await financeApiRequest('/card-sales', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({kind:'settlement', companyId, referenceMonth, fileHash: cardSettlementParsed.fileHash, sourceName: cardSettlementParsed.sourceName, rows: cardSettlementParsed.rows})
-      });
-      if(res.alreadyProcessed){ showPurchaseToast('Esse repasse já tinha sido importado.'); }
-      else showPurchaseToast('Repasse: '+res.matched+' casada(s), '+res.unmatched+' sem venda, '+(res.attentionCount||0)+' em atenção na conciliação.');
-      el('cardSettlementFile').value = '';
-      cardSettlementParsed = null;
-      el('cardSettlementPreviewBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">Repasse processado.</td></tr>';
-      el('cardSettlementImportStatus').textContent = '';
-      await loadCardReconciliation();
-    }catch(error){
-      el('cardSettlementImportStatus').textContent = error.message;
-      el('btnConfirmCardSettlement').disabled = false;
-    }
   });
 
   // ---------------------------------------------------------------------
@@ -30215,6 +30212,49 @@ function renderHomeTasks(){
     el(id) && el(id).addEventListener('change', () => { if(el('reconAccount').value) loadReconEntries(); });
   });
 
+  // Lê o extrato (OFX ou planilha) — usado pela Conciliação Bancária e pela
+  // Conciliação de Vendas (as duas importam pela mesma rota, mesmo dedupe).
+  async function parseBankStatementFile(file){
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    let rows = [];
+    let sourceFormat = 'csv';
+    if(ext === 'ofx'){
+      sourceFormat = 'ofx';
+      rows = parseReconOfx(await readAsText(file, 'ISO-8859-1'));
+    }else{
+      sourceFormat = ext === 'xls' ? 'xls' : (ext === 'xlsx' ? 'xlsx' : 'csv');
+      const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});
+      if(table.length < 2) throw new Error('ARQUIVO SEM DADOS.');
+      const header = table[0];
+      const col = {
+        date: findColumn(header, ['data','datalancamento','datamov']),
+        desc: findColumn(header, ['historico','descricao','lancamento','memo','detalhe']),
+        value: findColumn(header, ['valor','valorrs','montante']),
+        debit: findColumn(header, ['debito','saida','pagamento']),
+        credit: findColumn(header, ['credito','entrada','recebimento'])
+      };
+      if(col.date === -1 || (col.value === -1 && col.debit === -1 && col.credit === -1)){
+        throw new Error('NÃO ENCONTREI AS COLUNAS DE DATA E VALOR.');
+      }
+      for(let i = 1; i < table.length; i++){
+        const r = table[i];
+        const entryDate = parseDateISO(r[col.date]);
+        if(!entryDate) continue;
+        let amountCents = 0;
+        if(col.value !== -1){
+          amountCents = parseMoneyToCents(r[col.value]);
+          if(/^\s*-/.test(String(r[col.value]))) amountCents = -Math.abs(amountCents);
+        }
+        if(col.debit !== -1 && parseMoneyToCents(r[col.debit])) amountCents = -Math.abs(parseMoneyToCents(r[col.debit]));
+        if(col.credit !== -1 && parseMoneyToCents(r[col.credit])) amountCents = Math.abs(parseMoneyToCents(r[col.credit]));
+        if(amountCents === 0) continue;
+        rows.push({entryDate, description: col.desc !== -1 ? String(r[col.desc]||'').trim() : '', amountCents, fitId:''});
+      }
+    }
+    if(!rows.length) throw new Error('NENHUM LANÇAMENTO VÁLIDO.');
+    return {rows, sourceFormat};
+  }
+
   el('reconFile') && el('reconFile').addEventListener('change', async event => {
     const file = event.target.files && event.target.files[0];
     reconParsed = null;
@@ -30223,45 +30263,9 @@ function renderHomeTasks(){
     const status = el('reconImportStatus');
     if(!file) return;
     if(!el('reconAccount').value){ status.textContent = 'SELECIONE A CONTA BANCÁRIA ANTES DO ARQUIVO.'; el('reconFile').value = ''; return; }
-    const ext = (file.name.split('.').pop() || '').toLowerCase();
     status.textContent = 'Lendo arquivo…';
     try{
-      let rows = [];
-      let sourceFormat = 'csv';
-      if(ext === 'ofx'){
-        sourceFormat = 'ofx';
-        rows = parseReconOfx(await readAsText(file, 'ISO-8859-1'));
-      }else{
-        sourceFormat = ext === 'xls' ? 'xls' : (ext === 'xlsx' ? 'xlsx' : 'csv');
-        const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});
-        if(table.length < 2) throw new Error('ARQUIVO SEM DADOS.');
-        const header = table[0];
-        const col = {
-          date: findColumn(header, ['data','datalancamento','datamov']),
-          desc: findColumn(header, ['historico','descricao','lancamento','memo','detalhe']),
-          value: findColumn(header, ['valor','valorrs','montante']),
-          debit: findColumn(header, ['debito','saida','pagamento']),
-          credit: findColumn(header, ['credito','entrada','recebimento'])
-        };
-        if(col.date === -1 || (col.value === -1 && col.debit === -1 && col.credit === -1)){
-          throw new Error('NÃO ENCONTREI AS COLUNAS DE DATA E VALOR.');
-        }
-        for(let i = 1; i < table.length; i++){
-          const r = table[i];
-          const entryDate = parseDateISO(r[col.date]);
-          if(!entryDate) continue;
-          let amountCents = 0;
-          if(col.value !== -1){
-            amountCents = parseMoneyToCents(r[col.value]);
-            if(/^\s*-/.test(String(r[col.value]))) amountCents = -Math.abs(amountCents);
-          }
-          if(col.debit !== -1 && parseMoneyToCents(r[col.debit])) amountCents = -Math.abs(parseMoneyToCents(r[col.debit]));
-          if(col.credit !== -1 && parseMoneyToCents(r[col.credit])) amountCents = Math.abs(parseMoneyToCents(r[col.credit]));
-          if(amountCents === 0) continue;
-          rows.push({entryDate, description: col.desc !== -1 ? String(r[col.desc]||'').trim() : '', amountCents, fitId:''});
-        }
-      }
-      if(!rows.length) throw new Error('NENHUM LANÇAMENTO VÁLIDO.');
+      const {rows, sourceFormat} = await parseBankStatementFile(file);
       reconParsed = {rows, sourceFormat, sourceName: file.name};
       el('reconPreviewBody').innerHTML = rows.slice(0, 300).map(r =>
         '<tr><td>'+escapeHtml(formatDateBR(r.entryDate))+'</td><td>'+escapeHtml(r.description || '—')+'</td><td>'+formatCentsBRL(r.amountCents)+'</td><td></td></tr>').join('');
@@ -30293,6 +30297,503 @@ function renderHomeTasks(){
     }catch(error){
       el('reconImportStatus').textContent = error.message;
       el('btnConfirmReconImport').disabled = false;
+    }
+  });
+
+  // ---------------------------------------------------------------------
+  // Conciliação de Vendas (Financeiro 6/9): IMPORTAR · VENDAS DO PONTTIE ·
+  // CARTÃO × BANCO · RESUMO DO MÊS. Prévia, casamento, depósitos e
+  // faturamento são calculados no servidor (app/api/finance/sales-recon/*).
+  // ---------------------------------------------------------------------
+  const SV_TABS = ['importar','vendas','cartao','resumo'];
+  let svTab = 'importar';
+  let svMachines = [];
+  let svRows = [];
+  const SV_METHOD = {cash:'DINHEIRO', pix:'PIX', debit:'DÉBITO', credit:'CRÉDITO', other:'OUTRA'};
+  function svCompanyName(id){ const c = companies.find(item => item.id === id); return c ? c.name : (id || '—'); }
+  function svMonth(){
+    if(!el('svMonth').value) el('svMonth').value = financeCurrentMonthKey();
+    return el('svMonth').value;
+  }
+  function setSvTab(tab, opts){
+    svTab = SV_TABS.includes(tab) ? tab : 'importar';
+    document.querySelectorAll('[data-sv-tab]').forEach(b => {
+      const on = b.dataset.svTab === svTab;
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+    });
+    document.querySelectorAll('[data-sv-panel]').forEach(p => { p.hidden = p.dataset.svPanel !== svTab; });
+    if(!opts || opts.url !== false){
+      history.replaceState({page:'financeiroConciliacaoVendas'}, '', PAGE_ROUTES.financeiroConciliacaoVendas+(svTab === 'importar' ? '' : '?aba='+svTab));
+    }
+    return loadSvTab();
+  }
+  function loadSvTab(){
+    if(svTab === 'vendas') return loadSvRows();
+    if(svTab === 'cartao') return loadSvDeposits();
+    if(svTab === 'resumo') return loadSvSummary();
+    return Promise.resolve();
+  }
+  document.querySelectorAll('[data-sv-tab]').forEach(btn => btn.addEventListener('click', () => setSvTab(btn.dataset.svTab)));
+  ['svMonth','svCompany'].forEach(id => el(id).addEventListener('change', loadSvTab));
+
+  async function loadConciliacaoVendasPage(){
+    if(!canAccess('finance')) return;
+    if(!companies.length) await loadCompanies();
+    svMonth();
+    const options = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    fillSelect('svCompany', '<option value="">TODAS AS UNIDADES</option>', options);
+    fillSelect('svFileCompany', '<option value="">PELA COLUNA LOJA DO ARQUIVO</option>', options);
+    fillSelect('svFilterStore', '<option value="">TODAS</option>', options);
+    try{
+      const [accounts, machines] = await Promise.all([financeApiRequest('/accounts?includeInactive=1'), financeApiRequest('/card-machines')]);
+      reconAccounts = Array.isArray(accounts.accounts) ? accounts.accounts : [];
+      svMachines = Array.isArray(machines.machines) ? machines.machines : [];
+    }catch(_error){ /* a aba mostra o erro ao carregar */ }
+    fillSelect('svBankAccount', '<option value="">SELECIONE</option>', reconAccounts.map(a =>
+      '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name+(a.companyName ? ' — '+a.companyName : ''))+'</option>').join(''));
+    await setSvTab(new URLSearchParams(location.search).get('aba') || 'importar', {url:false});
+  }
+
+  // --- IMPORTAR: arquivo do Ponttie (vários) ---
+  // Colunas aceitas (o relatório do 6/9 lista as mesmas).
+  const PONTTIE_COLUMNS = {
+    date: ['datadavenda','datavenda','dtvenda','datadeemissao','dataemissao','datadopagamento','data'],
+    payment: ['formadepagamento','formapagamento','meiodepagamento','formadepagto','finalizadora','pagamento','=forma'],
+    installments: ['qtdparcelas','quantidadedeparcelas','parcelas','parcela'],
+    authorization: ['nsu','codigodeautorizacao','codigoautorizacao','autorizacao','=aut'],
+    terminal: ['terminal','maquineta','maquina','numerologico','=pos'],
+    store: ['loja','empresa','filial','unidade'],
+    serviceOrder: ['ordemdeservico','numerodaos','numeroos','=nos','=os','=o.s.'],
+    type: ['tipo','categoria','natureza','grupo'],
+    saleRef: ['numerodavenda','numerovenda','nvenda','numerodopedido','numeropedido','pedido','codigodavenda','cupom','documento','=venda','=numero','=n'],
+    description: ['descricao','produto','servico','item'],
+    amount: ['valorpago','valordopagamento','valortotal','valordavenda','valorliquido','=valor','valor','total']
+  };
+  let svPonttieFiles = []; // [{name, fileHash, rows, columns, preview}]
+  let svPonttieExcluded = new Set();
+  function parsePonttieFile(table){
+    let headerIndex = -1, col = null;
+    for(let i = 0; i < Math.min(table.length, 15); i++){
+      const used = [];
+      const candidate = {};
+      Object.keys(PONTTIE_COLUMNS).forEach(key => {
+        candidate[key] = findColumn(table[i] || [], PONTTIE_COLUMNS[key], used);
+        if(candidate[key] !== -1) used.push(candidate[key]);
+      });
+      if(candidate.date !== -1 && candidate.amount !== -1){ headerIndex = i; col = candidate; break; }
+    }
+    if(headerIndex === -1) throw new Error('NÃO ENCONTREI AS COLUNAS DE DATA E VALOR.');
+    const header = table[headerIndex];
+    const cell = (r, key) => col[key] !== -1 ? String(r[col[key]] == null ? '' : r[col[key]]).trim() : '';
+    const rows = [];
+    for(let i = headerIndex + 1; i < table.length; i++){
+      const r = table[i] || [];
+      const saleDate = parseDateISO(r[col.date]);
+      const amountCents = parseMoneyToCents(r[col.amount]);
+      if(!saleDate || amountCents <= 0) continue;
+      const payment = cell(r, 'payment');
+      const plan = payment.match(/(\d+)\s*x/i);
+      rows.push({
+        line: i + 1, saleDate, amountCents, payment,
+        saleRef: cell(r, 'saleRef') || cell(r, 'serviceOrder'),
+        serviceOrder: cell(r, 'serviceOrder'),
+        store: cell(r, 'store'), description: cell(r, 'description'), type: cell(r, 'type'),
+        installments: col.installments !== -1 ? (Number(cell(r, 'installments').replace(/\D/g,'')) || 1) : (plan ? Number(plan[1]) : 1),
+        authorization: cell(r, 'authorization'), terminal: cell(r, 'terminal')
+      });
+    }
+    if(!rows.length) throw new Error('NENHUMA LINHA VÁLIDA (confira data e valor).');
+    return {rows, columns: Object.keys(col).filter(k => col[k] !== -1).map(k => String(header[col[k]]).trim()), hasStore: col.store !== -1};
+  }
+  const SV_STATUS = {
+    matched:['done','CONCILIADA'], divergent:['alert','DIVERGENTE'], not_found:['alert','NÃO ENCONTRADA NA MAQUINETA'],
+    ignored:['waiting','IGNORADA']
+  };
+  function svStatusPill(row){
+    let pill = SV_STATUS[row.status];
+    if(!pill && row.paymentMethod === 'pix') pill = ['waiting','SEM CRÉDITO NO EXTRATO'];
+    if(!pill) pill = ['progress','SEM CONCILIAÇÃO'];
+    return '<span class="status-pill '+pill[0]+'">'+pill[1]+'</span>';
+  }
+  function svKindLabel(row){
+    return (row.kind === 'service' ? 'SERVIÇO' : 'VENDA')+' <small>('+(row.kindSource === 'manual' ? 'MANUAL' : 'AUTO')+')</small>';
+  }
+  async function previewPonttie(){
+    el('btnConfirmPonttie').disabled = true;
+    if(!svPonttieFiles.length) return;
+    el('svPonttieStatus').textContent = 'Calculando a prévia no servidor…';
+    try{
+      for(const file of svPonttieFiles){
+        file.preview = await financeApiRequest('/sales-recon', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+          dryRun:true, referenceMonth: svMonth(), companyId: el('svFileCompany').value, rows: file.rows
+        })});
+      }
+      svPonttieExcluded = new Set();
+      svPonttieFiles.forEach((file, f) => file.preview.rows.forEach(row => { if(row.duplicate) svPonttieExcluded.add(f+':'+row.line); }));
+      renderPonttiePreview();
+    }catch(error){
+      el('svPonttieStatus').textContent = error.message;
+    }
+  }
+  function renderPonttiePreview(){
+    const all = [];
+    svPonttieFiles.forEach((file, f) => file.preview.rows.forEach(row => all.push({key: f+':'+row.line, row})));
+    const shown = all.slice(0, 400);
+    el('svPonttiePreviewBody').innerHTML = shown.map(({key, row}) => {
+      const pickable = !row.rejected;
+      const tags = row.rejected ? '<span class="status-pill alert">'+escapeHtml(row.rejected)+'</span>'
+        : (row.duplicate ? '<span class="status-pill waiting">JÁ IMPORTADA</span> ' : '')+
+          (row.kind === 'service' ? '<span class="status-pill progress">SERVIÇO (AUTO)</span> ' : '')+
+          ((row.paymentMethod === 'debit' || row.paymentMethod === 'credit') && !row.machineId ? '<span class="status-pill alert">MAQUINETA NÃO IDENTIFICADA</span> ' : '')+
+          (row.duplicate ? '' : svStatusPill(row));
+      return '<tr'+(pickable && !svPonttieExcluded.has(key) ? '' : ' class="row-muted"')+'>'+
+        '<td class="bulk-col" data-label="Importar">'+(pickable ? '<input type="checkbox" class="bulk-check" data-ponttie-key="'+escapeHtml(key)+'"'+(svPonttieExcluded.has(key) ? '' : ' checked')+' aria-label="Importar linha '+row.line+'">' : '—')+'</td>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(row.saleDate) || row.saleDate || '—')+'</td>'+
+        '<td data-label="Nº">'+escapeHtml(row.saleRef || '—')+'</td>'+
+        '<td data-label="Loja da venda">'+escapeHtml(row.companyName || '—')+'</td>'+
+        '<td data-label="Descrição">'+escapeHtml(row.description || '—')+'</td>'+
+        '<td data-label="Forma">'+escapeHtml(SV_METHOD[row.paymentMethod] || '—')+'</td>'+
+        '<td data-label="Valor">'+formatCentsBRL(row.amountCents)+'</td>'+
+        '<td data-label="Tipo">'+(row.kind === 'service' ? 'SERVIÇO' : 'VENDA')+'</td>'+
+        '<td data-label="Maquineta">'+escapeHtml(row.machineLabel || '—')+'</td>'+
+        '<td data-label="Entra em">'+escapeHtml(row.revenueCompanyName || '—')+'</td>'+
+        '<td data-label="Situação">'+tags+'</td>'+
+      '</tr>';
+    }).join('') || '<tr><td colspan="11" class="responsive-empty">Nenhuma linha.</td></tr>';
+    const ready = all.filter(({key, row}) => !row.rejected && !svPonttieExcluded.has(key));
+    const count = fn => all.filter(({row}) => fn(row)).length;
+    el('svPonttieStatus').textContent = svPonttieFiles.map(f => f.name+': '+f.columns.join(', ')).join(' · ')+' — '+
+      all.length+' linha(s) · '+ready.length+' marcada(s) para importar · '+count(r => r.duplicate)+' já importada(s) · '+
+      count(r => r.rejected)+' recusada(s) · '+count(r => !r.rejected && r.kind === 'service')+' serviço(s).'+
+      (all.length > shown.length ? ' Mostrando '+shown.length+' de '+all.length+'.' : '');
+    el('btnConfirmPonttie').disabled = !ready.length;
+  }
+  el('svPonttiePreviewBody').addEventListener('change', event => {
+    const box = event.target.closest('[data-ponttie-key]');
+    if(!box) return;
+    if(box.checked) svPonttieExcluded.delete(box.dataset.ponttieKey); else svPonttieExcluded.add(box.dataset.ponttieKey);
+    renderPonttiePreview();
+  });
+  el('svPonttieFile').addEventListener('change', async event => {
+    const files = Array.from(event.target.files || []);
+    svPonttieFiles = [];
+    el('btnConfirmPonttie').disabled = true;
+    if(!files.length) return;
+    el('svPonttieStatus').textContent = 'Lendo arquivo(s)…';
+    try{
+      for(const file of files){
+        const rows = await extractRowsFromFile(file, {rawCsv: /\.csv$/i.test(file.name)});
+        if(rows.length < 2) throw new Error(file.name+': ARQUIVO SEM DADOS.');
+        let parsed;
+        try{ parsed = parsePonttieFile(rows); }catch(error){ throw new Error(file.name+': '+error.message); }
+        svPonttieFiles.push({name: file.name, fileHash: cheapHash(file.name, rows), rows: parsed.rows, columns: parsed.columns});
+      }
+      await previewPonttie();
+    }catch(error){
+      svPonttieFiles = [];
+      el('svPonttieStatus').textContent = error.message;
+      el('svPonttiePreviewBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  });
+  el('svFileCompany').addEventListener('change', previewPonttie);
+  el('btnConfirmPonttie').addEventListener('click', async () => {
+    if(!svPonttieFiles.length) return;
+    el('btnConfirmPonttie').disabled = true;
+    let inserted = 0, services = 0;
+    const skipped = [];
+    try{
+      for(let f = 0; f < svPonttieFiles.length; f++){
+        const file = svPonttieFiles[f];
+        const rows = file.rows.filter(row => !svPonttieExcluded.has(f+':'+row.line));
+        if(!rows.length) continue;
+        const res = await financeApiRequest('/sales-recon', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+          referenceMonth: svMonth(), companyId: el('svFileCompany').value, fileHash: file.fileHash, sourceName: file.name, rows
+        })});
+        inserted += res.inserted || 0;
+        services += res.serviceCount || 0;
+        (res.skipped || []).forEach(s => skipped.push(file.name+' linha '+s.line+': '+s.reason));
+      }
+      showPurchaseToast(inserted+' linha(s) importada(s) · '+services+' serviço(s) · '+skipped.length+' pulada(s).');
+      el('svPonttieStatus').textContent = skipped.length ? 'PULADAS: '+skipped.slice(0, 30).join(' · ')+(skipped.length > 30 ? ' …' : '') : '';
+      el('svPonttieFile').value = '';
+      svPonttieFiles = [];
+      el('svPonttiePreviewBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Importação concluída. Confira em VENDAS DO PONTTIE.</td></tr>';
+    }catch(error){
+      el('svPonttieStatus').textContent = error.message;
+      el('btnConfirmPonttie').disabled = false;
+    }
+  });
+
+  // --- IMPORTAR: extrato (mesma rota/dedupe da Conciliação Bancária) ---
+  let svBankParsed = null;
+  el('svBankFile').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    svBankParsed = null;
+    el('btnConfirmSvBank').disabled = true;
+    if(!file) return;
+    el('svBankStatus').textContent = 'Lendo arquivo…';
+    try{
+      const {rows, sourceFormat} = await parseBankStatementFile(file);
+      svBankParsed = {rows, sourceFormat, sourceName: file.name};
+      const credits = rows.filter(r => r.amountCents > 0);
+      el('svBankStatus').textContent = rows.length+' lançamento(s) · '+credits.length+' crédito(s) somando '+formatCentsBRL(credits.reduce((sum, r) => sum + r.amountCents, 0))+'. Escolha a conta e importe.';
+      el('btnConfirmSvBank').disabled = false;
+    }catch(error){ el('svBankStatus').textContent = error.message; }
+  });
+  el('btnConfirmSvBank').addEventListener('click', async () => {
+    if(!svBankParsed) return;
+    const financeAccountId = el('svBankAccount').value;
+    if(!financeAccountId){ el('svBankStatus').textContent = 'SELECIONE A CONTA BANCÁRIA.'; return; }
+    el('btnConfirmSvBank').disabled = true;
+    try{
+      const res = await financeApiRequest('/bank-reconciliation', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({financeAccountId, sourceName: svBankParsed.sourceName, sourceFormat: svBankParsed.sourceFormat, rows: svBankParsed.rows})});
+      showPurchaseToast('Extrato importado: '+res.inserted+' novo(s), '+res.duplicates+' já existiam.');
+      el('svBankFile').value = '';
+      svBankParsed = null;
+      el('svBankStatus').textContent = 'Importado. Use CONCILIAR DE NOVO em VENDAS DO PONTTIE para casar os PIX e veja o CARTÃO × BANCO.';
+    }catch(error){
+      el('svBankStatus').textContent = error.message;
+      el('btnConfirmSvBank').disabled = false;
+    }
+  });
+
+  // --- VENDAS DO PONTTIE ---
+  function svHasProblem(row){
+    return row.status === 'divergent' || row.status === 'not_found' || (row.paymentMethod === 'pix' && row.status === 'pending');
+  }
+  async function loadSvRows(){
+    el('svRowsBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams({month: svMonth()});
+    if(el('svCompany').value) params.set('companyId', el('svCompany').value);
+    try{
+      const data = await financeApiRequest('/sales-recon?'+params.toString());
+      svRows = Array.isArray(data.rows) ? data.rows : [];
+      renderSvRows();
+    }catch(error){
+      svRows = [];
+      el('svRowsBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      svRowsBulk.sync();
+    }
+  }
+  function renderSvRows(){
+    const method = el('svFilterMethod').value, kind = el('svFilterKind').value, status = el('svFilterStatus').value;
+    const store = el('svFilterStore').value, onlyProblems = el('svOnlyProblems').checked;
+    const rows = svRows.filter(r => (!method || r.paymentMethod === method) && (!kind || r.kind === kind) &&
+      (!status || r.status === status) && (!store || r.companyId === store) && (!onlyProblems || svHasProblem(r)));
+    const active = rows.filter(r => r.status !== 'ignored');
+    const sum = list => list.reduce((acc, r) => acc + Number(r.amountCents || 0), 0);
+    el('svRowsTotals').innerHTML =
+      '<div class="card"><div class="lbl">LINHAS NO FILTRO</div><div class="num">'+rows.length+'</div></div>'+
+      '<div class="card"><div class="lbl">VENDAS</div><div class="num">'+formatCentsBRL(sum(active.filter(r => r.kind !== 'service')))+'</div></div>'+
+      '<div class="card"><div class="lbl">SERVIÇOS</div><div class="num">'+formatCentsBRL(sum(active.filter(r => r.kind === 'service')))+'</div></div>'+
+      '<div class="card'+(rows.some(svHasProblem) ? ' neg' : '')+'"><div class="lbl">COM PROBLEMA</div><div class="num">'+rows.filter(svHasProblem).length+'</div></div>';
+    el('svRowsBody').innerHTML = rows.length ? rows.map(r =>
+      '<tr'+(r.status === 'ignored' ? ' class="row-muted"' : '')+'>'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(r.id, 'Selecionar venda')+'</td>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(r.saleDate))+'</td>'+
+        '<td data-label="Nº">'+escapeHtml(r.saleRef || '—')+'</td>'+
+        '<td data-label="Loja da venda">'+escapeHtml(svCompanyName(r.companyId))+'</td>'+
+        '<td data-label="Descrição">'+escapeHtml(r.description || '—')+'</td>'+
+        '<td data-label="Forma">'+escapeHtml((SV_METHOD[r.paymentMethod] || r.paymentMethod)+(r.paymentMethod === 'credit' && Number(r.installments) > 1 ? ' '+r.installments+'X' : ''))+'</td>'+
+        '<td data-label="Valor">'+formatCentsBRL(r.amountCents)+'</td>'+
+        '<td data-label="Tipo">'+svKindLabel(r)+'</td>'+
+        '<td data-label="Maquineta">'+escapeHtml(r.machineLabel || r.terminalRef || '—')+'</td>'+
+        '<td data-label="Entra em">'+escapeHtml(svCompanyName(r.revenueCompanyId))+'</td>'+
+        '<td data-label="Situação">'+svStatusPill(r)+'</td>'+
+      '</tr>').join('') : '<tr><td colspan="11" class="responsive-empty">Nenhuma venda do Ponttie para os filtros. Importe na aba IMPORTAR.</td></tr>';
+    svRowsBulk.sync();
+  }
+  ['svFilterMethod','svFilterKind','svFilterStatus','svFilterStore','svOnlyProblems'].forEach(id => el(id).addEventListener('change', renderSvRows));
+
+  // Diálogo único de lote (maquineta / observação da revisão).
+  let svBulkPending = null;
+  function openSvBulkDialog(action, ids, title, run){
+    svBulkPending = {action, ids, run};
+    el('svBulkForm').reset();
+    el('svBulkTitle').textContent = title+' — '+ids.length+(ids.length === 1 ? ' ITEM' : ' ITENS');
+    document.querySelectorAll('[data-sv-bulk-field]').forEach(node => { node.hidden = node.dataset.svBulkField !== action; });
+    if(action === 'machine') fillSelect('svBulkMachine', '<option value="">SELECIONE</option>', svMachines.map(m =>
+      '<option value="'+escapeHtml(m.id)+'">'+escapeHtml((m.acquirerName || '')+' '+(m.model || '')+' · '+(m.terminal || m.serial || '—')+' · '+(m.companyName || svCompanyName(m.companyId)))+'</option>').join(''));
+    el('svBulkStatus').textContent = '';
+    el('svBulkDialog').showModal();
+  }
+  el('btnCloseSvBulk').addEventListener('click', () => el('svBulkDialog').close());
+  el('btnCancelSvBulk').addEventListener('click', () => el('svBulkDialog').close());
+  el('svBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!svBulkPending) return;
+    const fields = svBulkPending.action === 'machine' ? {machineId: el('svBulkMachine').value} : {note: el('svBulkNote').value};
+    if(svBulkPending.action === 'machine' && !fields.machineId){ el('svBulkStatus').textContent = 'ESCOLHA A MAQUINETA.'; return; }
+    try{
+      await svBulkPending.run(fields);
+      el('svBulkDialog').close();
+    }catch(error){ el('svBulkStatus').textContent = error.message; }
+  });
+  async function svBulkRequest(endpoint, body){
+    const res = await financeApiRequest(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+    showPurchaseToast(res.applied+' item(ns) atualizado(s).'+(skipped.length ? ' Pulados: '+skipped.map(s => s.description+' ('+s.reason+')').join('; ')+'.' : ''), skipped.length && !res.applied ? 'error' : undefined);
+    return res;
+  }
+  const SV_BULK_TITLES = {machine:'DEFINIR MAQUINETA'};
+  const svRowsBulk = setupBulkSelection(el('svRowsBulkBar'), el('svRowsBody'), async (action, ids) => {
+    if(action === 'machine'){
+      openSvBulkDialog('machine', ids, SV_BULK_TITLES.machine, async fields => {
+        await svBulkRequest('/sales-recon/bulk', {action, ids, fields});
+        svRowsBulk.clear();
+        await loadSvRows();
+      });
+      return false;
+    }
+    if(action === 'delete' && !confirm('Excluir '+ids.length+' linha(s) do Ponttie? Elas saem da conciliação e do faturamento.')) return false;
+    await svBulkRequest('/sales-recon/bulk', {action, ids});
+    await loadSvRows();
+  });
+
+  // --- CARTÃO × BANCO ---
+  const SV_DAY_STATUS = {
+    ok:['done','OK'], divergent:['alert','DIVERGENTE'], deposit_without_sale:['alert','DEPÓSITO SEM VENDA'],
+    awaiting:['progress','AGUARDANDO DEPÓSITO'], not_deposited:['alert','NÃO DEPOSITADO'], reviewed:['waiting','REVISADO']
+  };
+  let svDays = [];
+  const svDaysOpen = new Set();
+  async function loadSvDeposits(){
+    el('svDaysBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams({month: svMonth()});
+    if(el('svCompany').value) params.set('companyId', el('svCompany').value);
+    try{
+      const data = await financeApiRequest('/sales-recon/deposits?'+params.toString());
+      svDays = Array.isArray(data.days) ? data.days : [];
+      el('svDepositsWarn').textContent = (data.missingKeyword || []).length
+        ? 'ADQUIRENTE SEM "TEXTO NO EXTRATO" (CADASTRO EM MAQUINETAS): '+data.missingKeyword.join(', ')+' — OS DEPÓSITOS DELA NÃO SÃO RECONHECIDOS.' : '';
+      renderSvDeposits();
+    }catch(error){
+      svDays = [];
+      el('svDaysBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      svDaysBulk.sync();
+    }
+  }
+  function renderSvDeposits(){
+    const filter = el('svDaysFilter').value;
+    const problem = d => ['divergent','deposit_without_sale','not_deposited'].includes(d.status);
+    const days = svDays.filter(d => !filter || (filter === 'problem' ? problem(d) : d.status === filter));
+    const sum = key => days.reduce((acc, d) => acc + Number(d[key] || 0), 0);
+    el('svDaysTotals').innerHTML =
+      '<div class="card"><div class="lbl">ESPERADO</div><div class="num">'+formatCentsBRL(sum('expectedCents'))+'</div></div>'+
+      '<div class="card"><div class="lbl">DEPOSITADO</div><div class="num">'+formatCentsBRL(sum('depositedCents'))+'</div></div>'+
+      '<div class="card'+(sum('differenceCents') ? ' neg' : '')+'"><div class="lbl">DIFERENÇA</div><div class="num">'+formatCentsBRL(sum('differenceCents'))+'</div></div>'+
+      '<div class="card'+(days.some(problem) ? ' neg' : '')+'"><div class="lbl">DIAS COM PROBLEMA</div><div class="num">'+days.filter(problem).length+'</div></div>';
+    el('svDaysBody').innerHTML = days.length ? days.map(d => {
+      const pill = SV_DAY_STATUS[d.status] || ['progress', d.status];
+      const open = svDaysOpen.has(d.key);
+      const detail = open ? '<tr class="sv-day-detail"><td colspan="8"><div class="sv-day-detail-grid">'+
+        '<div><strong>VENDAS ESPERADAS ('+d.sales.length+')</strong>'+(d.sales.length ? '<ul>'+d.sales.map(s =>
+          '<li>'+escapeHtml(formatDateBR(s.saleDate)+' · '+(s.modality === 'debit' ? 'DÉBITO' : 'CRÉDITO'+(Number(s.installments) > 1 ? ' '+s.installments+'X' : ''))+' · BRUTO '+formatCentsBRL(s.grossCents)+' · LÍQUIDO '+formatCentsBRL(s.netCents))+'</li>').join('')+'</ul>' : '<p>—</p>')+'</div>'+
+        '<div><strong>LANÇAMENTOS DO EXTRATO ('+d.entries.length+')</strong>'+(d.entries.length ? '<ul>'+d.entries.map(e =>
+          '<li>'+escapeHtml(e.description+' · '+formatCentsBRL(e.amountCents))+'</li>').join('')+'</ul>' : '<p>—</p>')+'</div>'+
+        (d.note ? '<div><strong>OBSERVAÇÃO</strong><p>'+escapeHtml(d.note)+'</p></div>' : '')+
+        '</div></td></tr>' : '';
+      return '<tr>'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(d.key, 'Selecionar dia')+'</td>'+
+        '<td data-label="Dia do depósito">'+escapeHtml(formatDateBR(d.date))+'</td>'+
+        '<td data-label="Adquirente">'+escapeHtml(d.acquirerName)+'</td>'+
+        '<td data-label="Esperado">'+formatCentsBRL(d.expectedCents)+'</td>'+
+        '<td data-label="Depositado">'+formatCentsBRL(d.depositedCents)+'</td>'+
+        '<td data-label="Diferença"'+(d.differenceCents ? ' class="neg"' : '')+'>'+formatCentsBRL(d.differenceCents)+'</td>'+
+        '<td data-label="Situação"><span class="status-pill '+pill[0]+'">'+pill[1]+'</span></td>'+
+        '<td data-label="Detalhes"><button class="btn-outline btn-sm" type="button" data-sv-day="'+escapeHtml(d.key)+'">'+(open ? 'FECHAR' : 'DETALHES')+'</button></td>'+
+      '</tr>'+detail;
+    }).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhuma venda de maquineta com depósito previsto nem depósito de adquirente no mês.</td></tr>';
+    svDaysBulk.sync();
+  }
+  el('svDaysFilter').addEventListener('change', renderSvDeposits);
+  el('svDaysBody').addEventListener('click', event => {
+    const btn = event.target.closest('[data-sv-day]');
+    if(!btn) return;
+    if(svDaysOpen.has(btn.dataset.svDay)) svDaysOpen.delete(btn.dataset.svDay); else svDaysOpen.add(btn.dataset.svDay);
+    renderSvDeposits();
+  });
+  const svDaysBulk = setupBulkSelection(el('svDaysBulkBar'), el('svDaysBody'), async (action, ids) => {
+    openSvBulkDialog('review', ids, 'MARCAR COMO REVISADO', async fields => {
+      await svBulkRequest('/sales-recon/deposits', {action:'review', month: svMonth(), companyId: el('svCompany').value, ids, fields});
+      svDaysBulk.clear();
+      await loadSvDeposits();
+    });
+    return false;
+  });
+  el('btnSvApplyDeposits').addEventListener('click', async () => {
+    if(!confirm('Conciliar os depósitos do mês? Grava o valor recebido nas vendas da maquineta (rateado pelo líquido esperado) e marca os lançamentos do extrato.')) return;
+    try{
+      const res = await financeApiRequest('/sales-recon/deposits', {method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'apply', month: svMonth(), companyId: el('svCompany').value})});
+      showPurchaseToast(res.applied+' dia(s) conciliado(s) · '+res.salesUpdated+' venda(s) da maquineta com valor recebido.');
+      await loadSvDeposits();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // --- RESUMO DO MÊS + ATUALIZAR FATURAMENTO ---
+  let svSummary = null;
+  async function loadSvSummary(){
+    el('svUnitsBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      svSummary = await financeApiRequest('/sales-recon/summary?month='+encodeURIComponent(svMonth()));
+      const c = svSummary.cards;
+      const card = (label, item, neg) => '<div class="card'+(neg && item.count ? ' neg' : '')+'"><div class="lbl">'+label+'</div><div class="num">'+formatCentsBRL(item.amountCents)+'</div><div class="sub">'+item.count+' linha(s)</div></div>';
+      el('svSummaryCards').innerHTML =
+        card('TOTAL PONTTIE', c.total)+card('CARTÃO CONCILIADO', c.cardMatched)+card('DIVERGENTE', c.divergent, true)+
+        card('NÃO ENCONTRADO NA MAQUINETA', c.notFound, true)+
+        '<div class="card'+(c.depositsDivergent ? ' neg' : '')+'"><div class="lbl">DEPÓSITOS COM PROBLEMA</div><div class="num">'+c.depositsDivergent+'</div><div class="sub">dia(s) no CARTÃO × BANCO</div></div>';
+      const units = svSummary.units || [];
+      el('svUnitsBody').innerHTML = units.length ? units.map(u =>
+        '<tr>'+
+          '<td data-label="Unidade">'+escapeHtml(u.companyName)+'</td>'+
+          '<td data-label="Vendas">'+formatCentsBRL(u.salesCents)+'</td>'+
+          '<td data-label="Serviços">'+formatCentsBRL(u.servicesCents)+'</td>'+
+          '<td data-label="Total"><strong>'+formatCentsBRL(u.salesCents + u.servicesCents)+'</strong></td>'+
+          ['cash','pix','debit','credit','other'].map(m => '<td data-label="'+SV_METHOD[m]+'">'+formatCentsBRL(u.byMethod[m] || 0)+'</td>').join('')+
+        '</tr>').join('') : '<tr><td colspan="9" class="responsive-empty">Nenhuma venda do Ponttie no mês (ignoradas ficam fora).</td></tr>';
+      el('btnSvRevenue').disabled = !units.length;
+    }catch(error){
+      svSummary = null;
+      el('svUnitsBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  el('btnSvRevenue').addEventListener('click', async () => {
+    await loadSvSummary();
+    if(!svSummary || !(svSummary.units || []).length) return;
+    const c = svSummary.cards;
+    const open = c.divergent.count + c.notFound.count + c.pixPending.count;
+    el('svRevenueWarn').textContent = open
+      ? 'ATENÇÃO: AINDA HÁ '+open+' LINHA(S) SEM CONCILIAR ('+c.divergent.count+' DIVERGENTE(S), '+c.notFound.count+' NÃO ENCONTRADA(S) NA MAQUINETA, '+c.pixPending.count+' PIX SEM CRÉDITO NO EXTRATO). ELAS ENTRAM PELA CLASSIFICAÇÃO ATUAL.'
+      : 'TUDO CONCILIADO OU SEM CONCILIAÇÃO (DINHEIRO).';
+    el('svRevenueBody').innerHTML = svSummary.units.map(u => {
+      const diff = (u.salesCents + u.servicesCents) - (u.currentSalesCents + u.currentServicesCents);
+      return '<tr>'+
+        '<td data-label="Unidade">'+escapeHtml(u.companyName)+(u.currentUpdatedByName ? '<br><small>ATUAL POR '+escapeHtml(u.currentUpdatedByName)+'</small>' : '')+'</td>'+
+        '<td data-label="Atual — vendas">'+formatCentsBRL(u.currentSalesCents)+'</td>'+
+        '<td data-label="Atual — serviços">'+formatCentsBRL(u.currentServicesCents)+'</td>'+
+        '<td data-label="Novo — vendas">'+formatCentsBRL(u.salesCents)+'</td>'+
+        '<td data-label="Novo — serviços">'+formatCentsBRL(u.servicesCents)+'</td>'+
+        '<td data-label="Diferença"'+(diff ? ' class="neg"' : '')+'>'+formatCentsBRL(diff)+'</td>'+
+      '</tr>';
+    }).join('');
+    el('svRevenueStatus').textContent = '';
+    el('btnConfirmSvRevenue').disabled = false;
+    el('svRevenueDialog').showModal();
+  });
+  el('btnCloseSvRevenue').addEventListener('click', () => el('svRevenueDialog').close());
+  el('btnCancelSvRevenue').addEventListener('click', () => el('svRevenueDialog').close());
+  el('btnConfirmSvRevenue').addEventListener('click', async () => {
+    el('btnConfirmSvRevenue').disabled = true;
+    try{
+      const res = await financeApiRequest('/sales-recon/apply-revenue', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: svMonth()})});
+      el('svRevenueDialog').close();
+      showPurchaseToast('Faturamento de '+res.applied+' unidade(s) atualizado.');
+      await loadSvSummary();
+    }catch(error){
+      el('svRevenueStatus').textContent = error.message;
+      el('btnConfirmSvRevenue').disabled = false;
     }
   });
 
