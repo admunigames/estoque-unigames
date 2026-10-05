@@ -1,8 +1,7 @@
 import { getD1 } from "../../../../../../db";
 import { unauthorizedResponse } from "../../../../../lib/notion";
-import { computeStoredStatus } from "../../../../../lib/finance-status";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../../shared";
-import { DATE_PATTERN, assertAccess, assertFinanceAccountBelongsToCompany, loadPayable } from "../../shared";
+import { assertAccess, loadPayable, planPayablePayment } from "../../shared";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const unauthorized = unauthorizedResponse(request);
@@ -87,77 +86,18 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       return jsonResponse({ created: true, alreadyProcessed: true, id: existingByKey.id });
     }
 
-    const amountCents = Math.trunc(Number(body.amountCents));
-    if (!Number.isFinite(amountCents) || amountCents <= 0) {
-      return jsonResponse({ error: "INFORME UM VALOR DE PAGAMENTO VÁLIDO E POSITIVO." }, 400);
-    }
-
-    const paymentDate = safeText(body.paymentDate, 10);
-    if (!DATE_PATTERN.test(paymentDate)) return jsonResponse({ error: "INFORME A DATA DO PAGAMENTO." }, 400);
-
     const scheduled = body.scheduled === true;
-    const remainingBalance = payable.originalAmountCents - payable.paidAmountCents;
-    if (amountCents > remainingBalance) {
-      return jsonResponse(
-        { error: "O VALOR DO PAGAMENTO NÃO PODE SER MAIOR QUE O SALDO EM ABERTO DA CONTA." },
-        400,
-      );
-    }
-
-    const paymentMethod = safeText(body.paymentMethod, 40);
-    const financeAccountId = safeText(body.financeAccountId, 80);
-    const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, payable.companyId);
-    if (accountError) return jsonResponse({ error: accountError }, 409);
-
-    const notes = safeText(body.notes, 2000);
-    const paymentId = crypto.randomUUID();
-    const actorName = actor.displayName || "Administrador";
-
-    const statements: [string, unknown[]][] = [
-      [
-        `INSERT INTO accounts_payable_payments
-          (id, payable_id, amount_cents, payment_date, payment_method, finance_account_id, notes,
-           scheduled, confirmed_at, created_by, created_by_name, created_at, idempotency_key)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,CURRENT_TIMESTAMP,?12)`,
-        [
-          paymentId,
-          id,
-          amountCents,
-          paymentDate,
-          paymentMethod,
-          financeAccountId,
-          notes,
-          scheduled ? 1 : 0,
-          scheduled ? "" : new Date().toISOString(),
-          actor.id,
-          actorName,
-          idempotencyKey,
-        ],
-      ],
-    ];
-
-    if (!scheduled) {
-      const newPaidAmount = payable.paidAmountCents + amountCents;
-      const status = computeStoredStatus({
-        originalAmountCents: payable.originalAmountCents,
-        paidAmountCents: newPaidAmount,
-        canceled: false,
-        hasPendingSchedule: false,
-      });
-      statements.push([
-        `UPDATE accounts_payable
-         SET paid_amount_cents=?1, status=?2, updated_by=?3, updated_by_name=?4, updated_at=CURRENT_TIMESTAMP
-         WHERE id=?5`,
-        [newPaidAmount, status, actor.id, actorName, id],
-      ]);
-    } else if (payable.status === "open") {
-      statements.push([
-        `UPDATE accounts_payable
-         SET status='scheduled', updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
-         WHERE id=?3`,
-        [actor.id, actorName, id],
-      ]);
-    }
+    const plan = await planPayablePayment(database, payable, actor, {
+      idempotencyKey,
+      amountCents: Number(body.amountCents),
+      paymentDate: safeText(body.paymentDate, 10),
+      scheduled,
+      paymentMethod: safeText(body.paymentMethod, 40),
+      financeAccountId: safeText(body.financeAccountId, 80),
+      notes: safeText(body.notes, 2000),
+    });
+    if ("error" in plan) return jsonResponse({ error: plan.error }, plan.status);
+    const { paymentId, statements } = plan;
 
     const prepared = statements.map(([sql, sqlValues]) => database.prepare(sql).bind(...sqlValues));
     await database.batch(prepared);

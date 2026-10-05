@@ -1955,6 +1955,34 @@ export const financeAccountBalances = pgTable(
   ],
 );
 
+// Fluxo de Caixa > CAIXA SEMANAL (migration 0080): saldo de cada conta
+// informado toda SEGUNDA-FEIRA (week_date sempre segunda, AAAA-MM-DD), com
+// histórico. Um registro por conta/semana. Pode ser negativo (cheque
+// especial). Ao salvar a semana mais recente, finance_account_balances (o
+// saldo "atual", fonte do Caixa Atual) é atualizado junto.
+export const financeAccountWeeklyBalances = pgTable(
+  "finance_account_weekly_balances",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    // Copiado de finance_accounts.company_id na escrita (filtro por loja).
+    companyId: text("company_id").notNull().default(""),
+    weekDate: text("week_date").notNull(),
+    balanceCents: integer("balance_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("finance_account_weekly_balances_account_week_idx").on(table.accountId, table.weekDate),
+    index("finance_account_weekly_balances_company_week_idx").on(table.companyId, table.weekDate),
+  ],
+);
+
 // Configurações de Recebíveis/Fluxo de Caixa, uma linha por loja. company_id
 // vazio ('') é a linha GLOBAL, usada como fallback quando a loja não tem
 // configuração própria — mesma convenção de sentinela vazio já usada em

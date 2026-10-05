@@ -3322,6 +3322,30 @@
     .spend-bar{grid-template-columns:minmax(0,1fr) auto; gap:6px 10px;}
     .spend-bar-track{grid-column:1 / -1; grid-row:2;}
   }
+  /* FINANCEIRO > FLUXO DE CAIXA (3 abas): linhas-título de grupo (dia,
+     semana, vencidos) dentro das tabelas, seletor de semana e diálogo dos
+     saldos da segunda. */
+  .cf-group-row td.cf-group-head{
+    padding:9px 12px; background:color-mix(in srgb,var(--accent) 9%,var(--bg-card-2)) !important; font:800 11px/1.35 var(--mono);
+  }
+  .cf-group-line{display:flex; justify-content:space-between; gap:12px;}
+  .cf-group-row.danger td.cf-group-head{background:color-mix(in srgb,var(--neg) 14%,var(--bg-card-2)) !important; color:var(--neg);}
+  .cf-group-row.total td.cf-group-head{border-top:2px solid var(--border);}
+  .cf-link{padding:0; min-height:0; border:0; background:none; color:var(--accent); font:inherit; text-align:left; text-transform:none; text-decoration:underline; cursor:pointer;}
+  .cf-week-picker{display:flex; align-items:center; gap:6px;}
+  .cf-week-picker input{min-width:0;}
+  .cf-week-selected td{background:color-mix(in srgb,var(--accent) 8%,transparent) !important;}
+  .cf-weekly-pending{border-left:3px solid var(--neg); text-align:left;}
+  .cf-weekly-pending .btn-sm{margin-left:8px;}
+  .cf-weekly-dialog{width:min(980px,calc(100vw - 28px));}
+  .cf-weekly-table input{width:100%; min-width:120px;}
+  [data-cf-bulk-field][hidden]{display:none !important;}
+  @media (max-width:680px){
+    .responsive-table tbody tr.cf-group-row{border-color:var(--accent);}
+    .responsive-table tbody td.cf-group-head{display:block; text-align:left;}
+    .responsive-table tbody td.cf-group-head::before{content:none;}
+    .cf-weekly-table input{min-width:0;}
+  }
   /* ESTOQUE > DIVERGÊNCIAS — reaproveita .supply-tabs, .purchase-metric,
      .purchase-card, .table-panel, .status-pill e .purchase-dialog; aqui só
      o arranjo próprio do módulo (barra de filtros, gráficos em CSS, linhas
@@ -3601,14 +3625,13 @@
         <a class="nav-item sub-item" id="navFinanceiroDeclaracaoShopping" data-page="financeiroDeclaracaoShopping" data-permission="finance" data-home-desc="Declaração de vendas por loja, com faturamento puxado do cadastro, cadastro em lote e alerta de aluguel percentual." title="Declaração de Vendas" href="/financeiro/declaracao-shopping"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></span><span class="nav-label">Declaração de Vendas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroExpenses" data-page="financeiroExpenses" data-permission="finance" data-home-desc="Cadastro completo de despesas, com rateio entre lojas." title="Despesas" href="/financeiro/despesas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14.5 3.5V7h3.5"/><path d="M8 12h8M8 15.5h8M8 18.5h5"/></svg></span><span class="nav-label">Despesas</span></a>
         <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
-        <a class="nav-item sub-item" id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance" data-home-desc="Projeção diária de caixa: caixa atual, entradas e saídas em 7, 15, 30, 60 e 90 dias." title="Fluxo de Caixa" href="/financeiro/fluxo-de-caixa"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 18.5L9 12l3.5 3.5L20.5 6"/><path d="M15.5 6h5v5"/></svg></span><span class="nav-label">Fluxo de Caixa</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance" data-home-desc="Projeção de pagamentos dia a dia e por semana, caixa semanal com o saldo de cada conta toda segunda e recebíveis futuros." title="Fluxo de Caixa" href="/financeiro/fluxo-de-caixa"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 18.5L9 12l3.5 3.5L20.5 6"/><path d="M15.5 6h5v5"/></svg></span><span class="nav-label">Fluxo de Caixa</span></a>
         <a class="nav-item sub-item" id="navFinanceiroSupplierStatement" data-page="financeiroSupplierStatement" data-permission="finance" data-home-desc="Resumo geral e extrato (conta corrente) de cada fornecedor." title="Fornecedores" href="/financeiro/fornecedores/conta-corrente"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="17" height="12" rx="2"/><path d="M3.5 10.5h17"/><circle cx="8" cy="14.2" r="1.3" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Fornecedores</span></a>
         <a class="nav-item sub-item" id="navFinanceiroMaquinetas" data-page="financeiroMaquinetas" data-permission="finance" data-home-desc="Cadastro de maquinetas por adquirente e unidade, com histórico de transferência, manutenção e substituição." title="Maquinetas" href="/financeiro/maquinetas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><rect x="9" y="6" width="6" height="4"/><path d="M9 14h.01M12 14h.01M15 14h.01M9 17h.01M12 17h.01M15 17h.01"/></svg></span><span class="nav-label">Maquinetas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroInvoices" data-page="financeiroInvoices" data-any-permission="finance,payables" data-home-desc="Notas fiscais e duplicatas de fornecedores, integradas a Compras." title="Notas Fiscais" href="/financeiro/notas-fiscais"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas Fiscais</span></a>
         <a class="nav-item sub-item" id="navObras" data-page="obras" data-any-permission="works,finance" data-home-desc="Reformas e construções nas lojas — investimento (CAPEX), fora de Despesas e da DRE." title="Obras" href="/obras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V10l6-4 6 4v11"/><path d="M10 21v-5h4v5"/><path d="m2 8 10-6 10 6"/></svg></span><span class="nav-label">Obras</span></a>
         <a class="nav-item sub-item" id="navFinanceiroOrcamento" data-page="financeiroOrcamento" data-permission="finance" data-home-desc="Valor orçado por loja, categoria e centro de custo, comparado com o realizado." title="Orçamento" href="/financeiro/orcamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M11 20V4M18 20V13"/></svg></span><span class="nav-label">Orçamento</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRecargas" data-page="financeiroRecargas" data-permission="finance" data-home-desc="Recargas de celulares por unidade, com lembrete da próxima recarga." title="Recargas de Celulares" href="/financeiro/recargas-celular"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Recargas de Celulares</span></a>
-        <a class="nav-item sub-item" id="navFinanceiroRecebiveis" data-page="financeiroRecebiveis" data-permission="finance" data-home-desc="Valores a receber por mês e operadora, com alerta de divergência entre previsto e recebido." title="Recebíveis" href="/financeiro/recebiveis"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M12 15.5V9"/><path d="M9 12l3-3 3 3"/></svg></span><span class="nav-label">Recebíveis</span></a>
         <a class="nav-item sub-item" id="navFinanceiroTaxasCartao" data-page="financeiroTaxasCartao" data-permission="finance" data-home-desc="Taxas por adquirente e bandeira, importação de vendas e repasse, relatório mensal do custo com taxas." title="Taxas de Cartão" href="/financeiro/taxas-cartao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><span class="nav-label">Taxas de Cartão</span></a>
       </div>
     </div>
@@ -7297,58 +7320,6 @@
       </div>
     </section>
 
-    <section id="pageFinanceiroRecebiveis" class="page wrap">
-      <header class="page-header">
-        <div class="page-heading">
-          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">Recebíveis</h2>
-        </div>
-      </header>
-
-      <div class="dre-toolbar">
-        <div class="field"><label for="receivableLoja">UNIDADE</label><select id="receivableLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
-        <div class="field"><label for="receivableMes">COMPETÊNCIA</label><input type="month" id="receivableMes"></div>
-        <div class="field"><label for="receivableOperator">ADQUIRENTE</label><input id="receivableOperator" maxlength="120" placeholder="Buscar adquirente"></div>
-        <div class="field"><label for="receivableShowCanceled" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="receivableShowCanceled"> MOSTRAR CANCELADOS</label></div>
-        <!-- Filtro de situação (previsto/recebido/divergente) removido no item 4. -->
-        <div class="dre-toolbar-actions">
-          <button class="btn-accent" id="btnNewReceivable" type="button">NOVO RECEBÍVEL</button>
-        </div>
-      </div>
-
-      <section class="summary" id="receivablesSummary" aria-label="Total de recebíveis na competência">
-        <div class="dre-empty">Carregando…</div>
-      </section>
-
-      <div id="receivablesDivergenceAlert" class="dre-empty" hidden></div>
-
-      <div class="table-panel responsive-table">
-        <div class="table-scroll">
-          <table id="receivablesTable">
-            <thead><tr><th>Competência</th><th>Unidade</th><th>Adquirente</th><th>Valor</th><th></th></tr></thead>
-            <tbody id="receivablesTableBody"><tr><td colspan="5" class="responsive-empty">Selecione os filtros para ver os recebíveis.</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-
-      <h3 class="supply-section-title">TOTAIS</h3>
-      <div class="table-panel responsive-table">
-        <div class="table-scroll">
-          <table id="receivablesByStoreTable">
-            <thead><tr><th>Unidade</th><th>Valor</th></tr></thead>
-            <tbody id="receivablesByStoreBody"><tr><td colspan="2" class="responsive-empty">Carregando…</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="table-panel responsive-table">
-        <div class="table-scroll">
-          <table id="receivablesByOperatorTable">
-            <thead><tr><th>Adquirente</th><th>Valor</th></tr></thead>
-            <tbody id="receivablesByOperatorBody"><tr><td colspan="2" class="responsive-empty">Carregando…</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
 
     <section id="pageComercialRelatorioNf" class="page wrap">
       <header class="page-header">
@@ -7406,6 +7377,16 @@
 
       <div class="dre-toolbar">
         <div class="field"><label for="cashFlowLoja">UNIDADE</label><select id="cashFlowLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+      </div>
+
+      <div class="output-tabs" role="tablist" aria-label="Visões do fluxo de caixa">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-cf-tab="projecao">PROJEÇÃO DE PAGAMENTOS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-cf-tab="semanal">CAIXA SEMANAL</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-cf-tab="recebiveis">RECEBÍVEIS</button>
+      </div>
+
+      <div data-cf-panel="projecao">
+      <div class="dre-toolbar">
         <div class="field"><label for="cashFlowHorizon">HORIZONTE</label>
           <select id="cashFlowHorizon">
             <option value="7">7 DIAS</option>
@@ -7443,6 +7424,35 @@
         </div>
       </div>
 
+      <h3 class="supply-section-title">LISTA DE PAGAMENTOS</h3>
+      <div class="dre-toolbar">
+        <div class="field"><label for="cfPayFrom">DE</label><input type="date" id="cfPayFrom"></div>
+        <div class="field"><label for="cfPayTo">ATÉ</label><input type="date" id="cfPayTo"></div>
+        <div class="field"><label for="cfPayGroup">AGRUPAR POR</label><select id="cfPayGroup"><option value="day">DIA</option><option value="week">SEMANA</option></select></div>
+        <div class="field"><label for="cfPayOrigin">ORIGEM</label><select id="cfPayOrigin"><option value="">TODAS</option></select></div>
+        <div class="field"><label for="cfPayCategory">CATEGORIA</label><select id="cfPayCategory"><option value="">TODAS</option></select></div>
+        <div class="field"><label for="cfPaySupplier">FORNECEDOR</label><select id="cfPaySupplier"><option value="">TODOS</option></select></div>
+      </div>
+      <section class="summary" id="cfPayTotals" aria-label="Totais da lista de pagamentos"></section>
+      <div class="bulk-bar" id="cfPayBulkBar">
+        <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+        <div class="bulk-bar-actions" data-bulk-actions hidden>
+          <strong class="bulk-bar-count" data-bulk-count></strong>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="reschedule">ALTERAR VENCIMENTO</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+        </div>
+      </div>
+      <p class="purchase-field-help">SÓ CONTAS A PAGAR, DESPESAS E FORNECEDORES EM ABERTO TÊM SELEÇÃO — FOLHA, BENEFÍCIOS E COMISSÕES SÃO PAGOS NA FOLHA. CANCELAR OU EXCLUIR, SÓ EM CONTAS A PAGAR.</p>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="cfPayTable">
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Origem</th><th>Descrição</th><th>Fornecedor</th><th>Categoria</th><th>Unidade</th><th>Valor</th><th>Situação</th></tr></thead>
+            <tbody id="cfPayBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <h3 class="supply-section-title">DIA A DIA</h3>
       <div class="table-panel responsive-table">
         <div class="table-scroll">
@@ -7450,6 +7460,127 @@
             <thead><tr><th>Data</th><th>Caixa inicial</th><th>Entradas</th><th>Saídas</th><th>Caixa final</th></tr></thead>
             <tbody id="cashFlowDaysBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
+        </div>
+      </div>
+      </div>
+
+      <div data-cf-panel="semanal" hidden>
+        <div id="cfWeeklyPending" class="dre-empty cf-weekly-pending" hidden></div>
+        <div class="dre-toolbar">
+          <div class="field"><label for="cfWeekDate">SEMANA (SEGUNDA-FEIRA)</label>
+            <div class="cf-week-picker">
+              <button class="btn-outline btn-sm" id="btnCfWeekPrev" type="button" aria-label="Semana anterior">◀</button>
+              <input type="date" id="cfWeekDate">
+              <button class="btn-outline btn-sm" id="btnCfWeekNext" type="button" aria-label="Próxima semana">▶</button>
+            </div>
+          </div>
+          <div class="dre-toolbar-actions"><button class="btn-accent" id="btnCfWeeklyInform" type="button">INFORMAR SALDOS DA SEGUNDA</button></div>
+        </div>
+        <h3 class="supply-section-title">SEMANA A SEMANA</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="cfWeeklyTable">
+              <thead><tr><th>Semana</th><th>Saldo da segunda</th><th>Entradas</th><th>Saídas</th><th>Saldo previsto p/ próxima segunda</th><th>Saldo informado na próxima segunda</th><th>Diferença</th><th></th></tr></thead>
+              <tbody id="cfWeeklyBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="purchase-field-help">SEMANAS PASSADAS: ENTRADAS = RECEBÍVEIS RECEBIDOS; SAÍDAS = PAGAMENTOS CONFIRMADOS + RH PAGO. A DIFERENÇA MOSTRA O QUE MEXEU NO BANCO SEM ESTAR LANÇADO. SEMANA ATUAL E FUTURAS: MESMA PROJEÇÃO DA ABA PROJEÇÃO DE PAGAMENTOS.</p>
+        <section id="cfWeeklyDetail" hidden>
+          <div class="dre-toolbar">
+            <h3 class="supply-section-title" id="cfWeeklyDetailTitle">CONTAS</h3>
+            <div class="dre-toolbar-actions"><button class="btn-outline btn-sm" id="btnCloseCfWeeklyDetail" type="button">FECHAR</button></div>
+          </div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Conta</th><th>Loja</th><th id="cfWeeklyDetailNow">Segunda</th><th id="cfWeeklyDetailNext">Segunda seguinte</th><th>Variação</th></tr></thead>
+                <tbody id="cfWeeklyDetailBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        <h3 class="supply-section-title">HISTÓRICO DE SALDOS INFORMADOS</h3>
+        <div class="bulk-bar" id="cfWeeklyBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR SELECIONADOS</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="cfWeeklyHistoryTable">
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Semana</th><th>Conta</th><th>Loja</th><th>Saldo</th><th>Obs.</th><th>Atualizado por</th></tr></thead>
+              <tbody id="cfWeeklyHistoryBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div data-cf-panel="recebiveis" hidden>
+        <h3 class="supply-section-title">RECEBIMENTOS FUTUROS</h3>
+        <section class="summary" id="cfReceivablesFutureTotals" aria-label="Totais de recebimentos futuros"></section>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="cfReceivablesFutureTable">
+              <thead><tr><th>Data prevista</th><th>Adquirente</th><th>Unidade</th><th>Competência</th><th>Valor</th></tr></thead>
+              <tbody id="cfReceivablesFutureBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <h3 class="supply-section-title">RECEBÍVEIS POR COMPETÊNCIA</h3>
+        <div class="dre-toolbar">
+          <div class="field"><label for="receivableMes">COMPETÊNCIA</label><input type="month" id="receivableMes"></div>
+          <div class="field"><label for="receivableOperator">ADQUIRENTE</label><input id="receivableOperator" maxlength="120" placeholder="Buscar adquirente"></div>
+          <div class="field"><label for="receivableShowCanceled" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="receivableShowCanceled"> MOSTRAR CANCELADOS</label></div>
+          <!-- Filtro de situação (previsto/recebido/divergente) removido no item 4. -->
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnNewReceivable" type="button">NOVO RECEBÍVEL</button>
+          </div>
+        </div>
+
+        <section class="summary" id="receivablesSummary" aria-label="Total de recebíveis na competência">
+          <div class="dre-empty">Carregando…</div>
+        </section>
+
+        <div id="receivablesDivergenceAlert" class="dre-empty" hidden></div>
+
+        <div class="bulk-bar" id="receivablesBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="receive">MARCAR COMO RECEBIDO</button>
+            <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="receivablesTable">
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Unidade</th><th>Adquirente</th><th>Data prevista</th><th>Valor</th><th>Situação</th><th></th></tr></thead>
+              <tbody id="receivablesTableBody"><tr><td colspan="8" class="responsive-empty">Selecione os filtros para ver os recebíveis.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 class="supply-section-title">TOTAIS</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="receivablesByStoreTable">
+              <thead><tr><th>Unidade</th><th>Valor</th></tr></thead>
+              <tbody id="receivablesByStoreBody"><tr><td colspan="2" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="receivablesByOperatorTable">
+              <thead><tr><th>Adquirente</th><th>Valor</th></tr></thead>
+              <tbody id="receivablesByOperatorBody"><tr><td colspan="2" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -9322,6 +9453,69 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelReconEntryExpenseDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">CRIAR DESPESA</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="cfPayBulkDialog" aria-labelledby="cfPayBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cfPayBulkTitle">CONTAS SELECIONADAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseCfPayBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cfPayBulkForm">
+    <input type="hidden" id="cfPayBulkAction">
+    <div class="purchase-form-grid">
+      <div class="purchase-field" data-cf-bulk-field="pay"><label for="cfPayBulkDate">DATA DO PAGAMENTO *</label><input type="date" id="cfPayBulkDate"></div>
+      <div class="purchase-field" data-cf-bulk-field="pay"><label for="cfPayBulkAccount">CONTA</label><select id="cfPayBulkAccount"><option value="">SEM CONTA</option></select></div>
+      <div class="purchase-field" data-cf-bulk-field="reschedule"><label for="cfPayBulkDueDate">NOVO VENCIMENTO *</label><input type="date" id="cfPayBulkDueDate"></div>
+    </div>
+    <p class="purchase-field-help" data-cf-bulk-field="pay">REGISTRA O PAGAMENTO DO SALDO EM ABERTO DE CADA CONTA (O QUE JÁ ESTÁ AGENDADO CONTINUA AGENDADO).</p>
+    <div class="user-form-status" id="cfPayBulkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCfPayBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog cf-weekly-dialog" id="cfWeeklyDialog" aria-labelledby="cfWeeklyDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cfWeeklyDialogTitle">SALDOS DA SEGUNDA</h3>
+    <button class="purchase-dialog-close" id="btnCloseCfWeeklyDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cfWeeklyForm">
+    <input type="hidden" id="cfWeeklyDialogWeek">
+    <p class="purchase-field-help">UMA LINHA POR CONTA ATIVA. CONTA EM BRANCO NÃO É ALTERADA. SALDO NEGATIVO (CHEQUE ESPECIAL) É ACEITO.</p>
+    <div class="table-panel responsive-table cf-weekly-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Conta</th><th>Loja</th><th>Saldo</th><th>Obs.</th></tr></thead>
+          <tbody id="cfWeeklyDialogBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="cfWeeklyDialogStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCfWeeklyDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR TUDO</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="cfReceiveDialog" aria-labelledby="cfReceiveTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cfReceiveTitle">MARCAR COMO RECEBIDO</h3>
+    <button class="purchase-dialog-close" id="btnCloseCfReceive" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cfReceiveForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="cfReceiveDate">DATA DO RECEBIMENTO *</label><input type="date" id="cfReceiveDate" required></div>
+    </div>
+    <p class="purchase-field-help">O VALOR RECEBIDO É O VALOR PREVISTO DE CADA RECEBÍVEL.</p>
+    <div class="user-form-status" id="cfReceiveStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCfReceive" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">CONFIRMAR</button>
     </div>
   </form>
 </dialog>
@@ -11752,7 +11946,6 @@
     financeiroExpenses:'/financeiro/despesas',
     financeiroSupplierStatement:'/financeiro/fornecedores/conta-corrente',
     financeiroOrcamento:'/financeiro/orcamento',
-    financeiroRecebiveis:'/financeiro/recebiveis',
     comercialRelatorioNf:'/comercial/relatorio-nf',
     financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa',
     financeiroMaquinetas:'/financeiro/maquinetas',
@@ -11810,7 +12003,6 @@
     financeiroExpenses:'DESPESAS',
     financeiroSupplierStatement:'CONTA CORRENTE DE FORNECEDORES',
     financeiroOrcamento:'ORÇAMENTO',
-    financeiroRecebiveis:'RECEBÍVEIS',
     comercialRelatorioNf:'RELATÓRIO NF',
     financeiroFluxoCaixa:'FLUXO DE CAIXA',
     financeiroMaquinetas:'MAQUINETAS',
@@ -11863,7 +12055,6 @@
     financeiroExpenses:'finance',
     financeiroSupplierStatement:'finance',
     financeiroOrcamento:'finance',
-    financeiroRecebiveis:'finance',
     comercialRelatorioNf:'relatorio_nf',
     financeiroFluxoCaixa:'finance',
     financeiroMaquinetas:'finance',
@@ -11877,7 +12068,10 @@
   });
   const LEGACY_ROUTES = Object.freeze({
     '/':'inicio',
-    '/estoque.html':'inicio'
+    '/estoque.html':'inicio',
+    // Recebíveis virou a 3ª aba do Fluxo de Caixa (Financeiro 4/9): links
+    // salvos continuam abrindo, já na aba (ver syncPageFromLocation).
+    '/financeiro/recebiveis':'financeiroFluxoCaixa'
   });
 
   function normalizeRoutePath(pathname){
@@ -12466,7 +12660,7 @@
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos';
-    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroRecebiveis' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
+    const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroTaxasCartao' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
@@ -12531,7 +12725,6 @@
     if(name === 'financeiroExpenses') loadExpensesPage();
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
-    if(name === 'financeiroRecebiveis') loadRecebiveisPage();
     if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
@@ -12564,11 +12757,12 @@
   }
 
   function syncPageFromLocation(replace){
+    const legacyCashFlowTab = normalizeRoutePath(location.pathname) === '/financeiro/recebiveis' ? 'recebiveis' : '';
     let name = pageFromPath(location.pathname);
     if(!canAccessPage(name)) name = 'inicio';
     showPage(name);
     if(replace || (name !== 'documentos' && normalizeRoutePath(location.pathname) !== PAGE_ROUTES[name])){
-      history.replaceState({page:name}, '', PAGE_ROUTES[name]);
+      history.replaceState({page:name}, '', PAGE_ROUTES[name]+(legacyCashFlowTab && name === 'financeiroFluxoCaixa' ? '?aba='+legacyCashFlowTab : ''));
     }
     if(name === 'compras' && !purchasesLoaded) loadPurchases(true);
     if(name === 'comprasNovo') setComprasSectionTab(comprasSectionTab);
@@ -12591,7 +12785,6 @@
     if(name === 'financeiroExpenses') loadExpensesPage();
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
-    if(name === 'financeiroRecebiveis') loadRecebiveisPage();
     if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
@@ -27005,7 +27198,7 @@ function renderHomeTasks(){
   }
 
   function renderReceivableCompanyOptions(){
-    ['receivableLoja','receivableCompany','cashFlowLoja','cashFlowSettingsCompany'].forEach(id => {
+    ['receivableCompany','cashFlowLoja','cashFlowSettingsCompany'].forEach(id => {
       const select = el(id);
       if(!select) return;
       const selected = select.value;
@@ -27024,23 +27217,32 @@ function renderHomeTasks(){
     const body = el('receivablesTableBody');
     if(!body) return;
     if(!rows.length){
-      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum recebível para os filtros selecionados.</td></tr>';
+      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Nenhum recebível para os filtros selecionados.</td></tr>';
+      receivablesBulk.sync();
       return;
     }
+    const today = financeCurrentDateKey();
     body.innerHTML = rows.map(row => {
       const canceled = Number(row.canceled) === 1;
       const canceledTag = canceled ? ' <span class="receivable-tag canceled">CANCELADO</span>' : '';
+      const received = row.receivedAmountCents !== null && row.receivedAmountCents !== undefined;
+      const situation = canceled ? ['', 'CANCELADO'] : received ? ['ok', 'RECEBIDO'+(row.receivedDate ? ' '+formatDateBR(row.receivedDate) : '')]
+        : (row.expectedDate && row.expectedDate < today) ? ['danger', 'ATRASADO'] : ['warn', 'A RECEBER'];
       return '<tr>'+
+        '<td data-label="SELECIONAR">'+(canceled ? '' : bulkRowCheckbox(row.id, 'Selecionar '+(row.operatorText || 'recebível')+' '+(row.competenceMonth || '')))+'</td>'+
         '<td data-label="Competência">'+escapeHtml(row.competenceMonth || '')+canceledTag+'</td>'+
         '<td data-label="Unidade">'+escapeHtml(row.companyName || '')+'</td>'+
         '<td data-label="Adquirente">'+escapeHtml(row.operatorText || '')+'</td>'+
+        '<td data-label="Data prevista">'+escapeHtml(row.expectedDate ? formatDateBR(row.expectedDate) : '—')+'</td>'+
         '<td data-label="Valor">'+formatCentsBRL(row.expectedAmountCents)+'</td>'+
+        '<td data-label="Situação">'+(situation[0] ? '<span class="status-pill '+situation[0]+'">'+escapeHtml(situation[1])+'</span>' : escapeHtml(situation[1]))+'</td>'+
         '<td data-label="Ações">'+
           (canceled ? '' : '<button class="btn-outline" type="button" data-receivable-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
           ' <button class="btn-outline" type="button" data-receivable-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>')+
         '</td>'+
       '</tr>';
     }).join('');
+    receivablesBulk.sync();
   }
 
   function renderReceivablesSummary(summary, totals){
@@ -27108,12 +27310,12 @@ function renderHomeTasks(){
     await loadFinanceAcquirers();
     renderAcquirerSelect('receivableAcquirer');
     if(!el('receivableMes').value) el('receivableMes').value = financeCurrentMonthKey();
-    const companyId = el('receivableLoja').value;
+    const companyId = el('cashFlowLoja').value;
     const month = el('receivableMes').value;
     const showCanceled = el('receivableShowCanceled') && el('receivableShowCanceled').checked;
     const operatorText = el('receivableOperator').value.trim();
 
-    if(!opts || !opts.silent) el('receivablesTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    if(!opts || !opts.silent) el('receivablesTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
     const listParams = new URLSearchParams({competenceFrom:month, competenceTo:month, pageSize:'100'});
     if(companyId) listParams.set('companyId', companyId);
     if(showCanceled) listParams.set('includeCanceled', '1');
@@ -27134,12 +27336,13 @@ function renderHomeTasks(){
       renderReceivablesGroup('receivablesByOperatorBody', summary.byOperator || [], 'Nenhum recebível na competência.');
     }catch(error){
       receivablesCurrentRows = [];
-      el('receivablesTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('receivablesTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      receivablesBulk.sync();
       renderReceivablesSummary(null, null);
     }
   }
 
-  ['receivableLoja','receivableMes','receivableShowCanceled'].forEach(id => {
+  ['receivableMes','receivableShowCanceled'].forEach(id => {
     el(id) && el(id).addEventListener('change', loadRecebiveisPage);
   });
   el('receivableOperator') && el('receivableOperator').addEventListener('change', loadRecebiveisPage);
@@ -27161,7 +27364,7 @@ function renderHomeTasks(){
     }
     el('receivableId').value = row ? row.id : '';
     el('receivableDialogTitle').textContent = row ? 'EDITAR RECEBÍVEL' : 'NOVO RECEBÍVEL';
-    el('receivableCompany').value = row ? row.companyId : (el('receivableLoja').value || '');
+    el('receivableCompany').value = row ? row.companyId : (el('cashFlowLoja').value || '');
     el('receivableCompany').disabled = Boolean(row);
     el('receivableCompetence').value = row ? row.competenceMonth : (el('receivableMes').value || financeCurrentMonthKey());
     el('receivableAcquirer').value = row ? (row.acquirerId || (row.operatorText ? 'legacy:'+row.operatorText : '')) : '';
@@ -27197,6 +27400,7 @@ function renderHomeTasks(){
       try{
         await financeApiRequest('/receivables/'+encodeURIComponent(cancelButton.dataset.receivableCancel)+'/cancel', {method:'POST'});
         await refreshAfterAction(() => loadRecebiveisPage({silent:true}));
+        loadCashFlowFutureReceivables();
         showPurchaseToast('Recebível cancelado.');
       }catch(error){
         showPurchaseToast(error.message, 'error');
@@ -27248,6 +27452,7 @@ function renderHomeTasks(){
       });
       closeReceivableDialog();
       await refreshAfterAction(() => loadRecebiveisPage({silent:true}));
+      loadCashFlowFutureReceivables();
       showPurchaseToast('Recebível salvo.');
     }catch(error){
       status.textContent = error.message;
@@ -27423,10 +27628,38 @@ function renderHomeTasks(){
     renderCashFlowDays();
   }
 
+  // --- Abas do Fluxo de Caixa: PROJEÇÃO DE PAGAMENTOS · CAIXA SEMANAL · RECEBÍVEIS ---
+  // A aba aberta vai na URL (?aba=semanal|recebiveis) para F5/compartilhar;
+  // o filtro UNIDADE do topo vale para as três.
+  const CF_TABS = ['projecao','semanal','recebiveis'];
+  let cashFlowTab = 'projecao';
+  function setCashFlowTab(tab, opts){
+    cashFlowTab = CF_TABS.includes(tab) ? tab : 'projecao';
+    document.querySelectorAll('[data-cf-tab]').forEach(b => {
+      const on = b.dataset.cfTab === cashFlowTab;
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+    });
+    document.querySelectorAll('[data-cf-panel]').forEach(p => { p.hidden = p.dataset.cfPanel !== cashFlowTab; });
+    if(!opts || opts.url !== false){
+      history.replaceState({page:'financeiroFluxoCaixa'}, '', PAGE_ROUTES.financeiroFluxoCaixa+(cashFlowTab === 'projecao' ? '' : '?aba='+cashFlowTab));
+    }
+    return loadCashFlowTab();
+  }
+  function loadCashFlowTab(){
+    if(cashFlowTab === 'semanal') return loadCashFlowWeekly();
+    if(cashFlowTab === 'recebiveis') return Promise.all([loadRecebiveisPage(), loadCashFlowFutureReceivables()]);
+    return Promise.all([loadCashFlowSeries(), loadCashFlowPayments()]);
+  }
+  document.querySelectorAll('[data-cf-tab]').forEach(btn => btn.addEventListener('click', () => setCashFlowTab(btn.dataset.cfTab)));
+
   async function loadFluxoCaixaPage(){
     if(!canAccess('finance')) return;
     if(!companies.length) await loadCompanies();
     renderReceivableCompanyOptions();
+    await setCashFlowTab(new URLSearchParams(location.search).get('aba') || 'projecao', {url:false});
+  }
+
+  async function loadCashFlowSeries(){
     const companyId = el('cashFlowLoja').value;
     el('cashFlowChart').innerHTML = '<div class="dre-empty">Carregando…</div>';
     const params = new URLSearchParams();
@@ -27441,9 +27674,391 @@ function renderHomeTasks(){
     }
   }
 
-  el('cashFlowLoja') && el('cashFlowLoja').addEventListener('change', loadFluxoCaixaPage);
-  el('cashFlowHorizon') && el('cashFlowHorizon').addEventListener('change', renderCashFlowPage);
+  el('cashFlowLoja').addEventListener('change', loadCashFlowTab);
+  el('cashFlowHorizon').addEventListener('change', renderCashFlowPage);
   el('cashFlowBalanceAmount') && attachCurrencyMask(el('cashFlowBalanceAmount'), {allowNegative:true});
+
+  function cfAddDays(date, days){
+    const d = new Date(date+'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0,10);
+  }
+  function cfMonday(date){
+    const weekday = new Date(date+'T00:00:00Z').getUTCDay();
+    return cfAddDays(date, -((weekday + 6) % 7));
+  }
+  function cfWeekLabel(monday){
+    const end = cfAddDays(monday, 6);
+    return monday.slice(8,10)+'/'+monday.slice(5,7)+' A '+formatDateBR(end);
+  }
+  // Linha-título de grupo (dia/semana/vencidos) dentro da tabela.
+  function cfGroupRow(colspan, title, totalCents, kind){
+    return '<tr class="cf-group-row'+(kind ? ' '+kind : '')+'"><td colspan="'+colspan+'" class="cf-group-head"><div class="cf-group-line"><strong>'+escapeHtml(title)+'</strong><span>'+formatCentsBRL(totalCents)+'</span></div></td></tr>';
+  }
+
+  // --- LISTA DE PAGAMENTOS (mesmos itens que a projeção soma por dia) ---
+  const CF_ORIGIN_LABELS = {payable:'CONTA A PAGAR', supplier_debt:'FORNECEDOR EM ABERTO', expense:'DESPESA', payroll:'FOLHA', benefits:'BENEFÍCIOS', commissions:'COMISSÕES'};
+  const CF_ITEM_STATUS = {overdue:['danger','VENCIDO'], scheduled:['warn','AGENDADO'], paid:['ok','PAGO'], due:['','A VENCER']};
+  let cfPayData = null;
+  async function loadCashFlowPayments(){
+    const body = el('cfPayBody');
+    const today = financeCurrentDateKey();
+    if(!el('cfPayFrom').value) el('cfPayFrom').value = today;
+    if(!el('cfPayTo').value) el('cfPayTo').value = cfAddDays(today, 30);
+    const params = new URLSearchParams({from: el('cfPayFrom').value, to: el('cfPayTo').value});
+    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      cfPayData = await financeApiRequest('/cash-flow/payments?'+params.toString());
+      el('cfPayFrom').value = cfPayData.from;
+      el('cfPayTo').value = cfPayData.to;
+      el('cfPayFrom').min = el('cfPayTo').min = cfPayData.today;
+      el('cfPayFrom').max = el('cfPayTo').max = cfPayData.maxDate;
+      renderCfPayFilters();
+      renderCfPayments();
+    }catch(error){
+      cfPayData = null;
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('cfPayTotals').innerHTML = '';
+      cfPayBulk.sync();
+    }
+  }
+  function renderCfPayFilters(){
+    const all = cfPayData.overdue.concat(cfPayData.items);
+    const fill = (id, first, values, label) => {
+      const select = el(id); const keep = select.value;
+      select.innerHTML = '<option value="">'+first+'</option>'+values.map(v => '<option value="'+escapeHtml(v)+'">'+escapeHtml(label ? label(v) : v)+'</option>').join('');
+      if(values.includes(keep)) select.value = keep;
+    };
+    fill('cfPayOrigin', 'TODAS', Object.keys(CF_ORIGIN_LABELS).filter(o => all.some(i => i.origin === o)), o => CF_ORIGIN_LABELS[o]);
+    fill('cfPayCategory', 'TODAS', [...new Set(all.map(i => i.categoryName).filter(Boolean))].sort());
+    fill('cfPaySupplier', 'TODOS', [...new Set(all.map(i => i.supplierName).filter(Boolean))].sort());
+  }
+  function renderCfPayments(){
+    if(!cfPayData) return;
+    const origin = el('cfPayOrigin').value, category = el('cfPayCategory').value, supplier = el('cfPaySupplier').value;
+    const keep = i => (!origin || i.origin === origin) && (!category || i.categoryName === category) && (!supplier || i.supplierName === supplier);
+    const overdue = cfPayData.overdue.filter(keep);
+    const items = cfPayData.items.filter(keep);
+    const sum = list => list.reduce((total, i) => total + i.amountCents, 0);
+    const byOrigin = {};
+    items.forEach(i => { byOrigin[i.origin] = (byOrigin[i.origin] || 0) + i.amountCents; });
+    el('cfPayTotals').innerHTML =
+      '<div class="card"><div class="lbl">TOTAL DO PERÍODO</div><div class="num">'+formatCentsBRL(sum(items))+'</div><div class="sub">'+escapeHtml(formatDateBR(cfPayData.from)+' a '+formatDateBR(cfPayData.to))+'</div></div>'+
+      '<div class="card'+(overdue.length ? ' neg' : '')+'"><div class="lbl">VENCIDOS</div><div class="num">'+formatCentsBRL(sum(overdue))+'</div><div class="sub">'+overdue.length+' item(ns)</div></div>'+
+      Object.keys(byOrigin).map(o => '<div class="card"><div class="lbl">'+escapeHtml(CF_ORIGIN_LABELS[o])+'</div><div class="num">'+formatCentsBRL(byOrigin[o])+'</div></div>').join('');
+    const row = i => {
+      const status = CF_ITEM_STATUS[i.status] || ['', i.status];
+      const selectable = i.payableId && i.key.indexOf('open:') === 0;
+      return '<tr>'+
+        '<td data-label="SELECIONAR">'+(selectable ? bulkRowCheckbox(i.payableId, 'Selecionar '+i.description) : '')+'</td>'+
+        '<td data-label="DATA">'+escapeHtml(formatDateBR(i.date))+'</td>'+
+        '<td data-label="ORIGEM">'+escapeHtml(CF_ORIGIN_LABELS[i.origin] || i.origin)+'</td>'+
+        '<td data-label="DESCRIÇÃO">'+(i.payableId ? '<button class="cf-link" type="button" data-cf-open-payable="'+escapeHtml(i.payableId)+'" title="Abrir em Contas a Pagar">'+escapeHtml(i.description || '—')+'</button>' : escapeHtml(i.description || '—'))+'</td>'+
+        '<td data-label="FORNECEDOR">'+escapeHtml(i.supplierName || '—')+'</td>'+
+        '<td data-label="CATEGORIA">'+escapeHtml(i.categoryName || '—')+'</td>'+
+        '<td data-label="UNIDADE">'+escapeHtml(i.companyName || '—')+'</td>'+
+        '<td data-label="VALOR">'+formatCentsBRL(i.amountCents)+'</td>'+
+        '<td data-label="SITUAÇÃO">'+(status[0] ? '<span class="status-pill '+status[0]+'">'+status[1]+'</span>' : status[1])+'</td>'+
+      '</tr>';
+    };
+    const weekly = el('cfPayGroup').value === 'week';
+    const groups = new Map();
+    items.forEach(i => {
+      const key = weekly ? cfMonday(i.date) : i.date;
+      if(!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(i);
+    });
+    let html = overdue.length ? cfGroupRow(9, 'VENCIDOS (DATA ANTERIOR A HOJE, AINDA EM ABERTO)', sum(overdue), 'danger') + overdue.map(row).join('') : '';
+    groups.forEach((list, key) => {
+      html += cfGroupRow(9, weekly ? 'SEMANA DE '+cfWeekLabel(key) : formatDateBR(key), sum(list)) + list.map(row).join('');
+    });
+    el('cfPayBody').innerHTML = html || '<tr><td colspan="9" class="responsive-empty">Nenhum pagamento no período com esses filtros.</td></tr>';
+    cfPayBulk.sync();
+  }
+  ['cfPayFrom','cfPayTo'].forEach(id => el(id).addEventListener('change', loadCashFlowPayments));
+  ['cfPayGroup','cfPayOrigin','cfPayCategory','cfPaySupplier'].forEach(id => el(id).addEventListener('change', renderCfPayments));
+  el('cfPayBody').addEventListener('click', event => {
+    const open = event.target.closest('[data-cf-open-payable]');
+    if(open) openPayableDetailDialog(open.dataset.cfOpenPayable);
+  });
+  // Pagamento feito no detalhe da conta reflete na lista e na projeção.
+  el('payableDetailDialog').addEventListener('close', () => {
+    if(el('pageFinanceiroFluxoCaixa').classList.contains('active') && cashFlowTab === 'projecao') loadCashFlowTab();
+  });
+
+  let cfPayBulkIds = [];
+  const cfPayBulk = setupBulkSelection(el('cfPayBulkBar'), el('cfPayBody'), async (action, ids) => {
+    cfPayBulkIds = ids;
+    el('cfPayBulkForm').reset();
+    el('cfPayBulkAction').value = action;
+    el('cfPayBulkTitle').textContent = (action === 'pay' ? 'MARCAR COMO PAGO' : 'ALTERAR VENCIMENTO')+' — '+ids.length+(ids.length === 1 ? ' CONTA' : ' CONTAS');
+    document.querySelectorAll('[data-cf-bulk-field]').forEach(node => { node.hidden = node.dataset.cfBulkField !== action; });
+    el('cfPayBulkDate').value = financeCurrentDateKey();
+    el('cfPayBulkDueDate').value = '';
+    el('cfPayBulkStatus').textContent = '';
+    if(action === 'pay'){
+      await loadPayablesCatalogData();
+      renderPayableAccountOptionsForCompany('cfPayBulkAccount', el('cashFlowLoja').value, 'SEM CONTA');
+    }
+    el('cfPayBulkDialog').showModal();
+    return false;
+  });
+  el('btnCloseCfPayBulk').addEventListener('click', () => el('cfPayBulkDialog').close());
+  el('btnCancelCfPayBulk').addEventListener('click', () => el('cfPayBulkDialog').close());
+  el('cfPayBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const action = el('cfPayBulkAction').value;
+    const fields = action === 'pay'
+      ? {paymentDate: el('cfPayBulkDate').value, financeAccountId: el('cfPayBulkAccount').value}
+      : {dueDate: el('cfPayBulkDueDate').value};
+    if(action === 'pay' ? !fields.paymentDate : !fields.dueDate){ el('cfPayBulkStatus').textContent = action === 'pay' ? 'INFORME A DATA DO PAGAMENTO.' : 'INFORME O NOVO VENCIMENTO.'; return; }
+    try{
+      const res = await financeApiRequest('/cash-flow/payments/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids: cfPayBulkIds, fields})});
+      el('cfPayBulkDialog').close();
+      cfPayBulk.clear();
+      await loadCashFlowTab();
+      const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+      showPurchaseToast(res.applied+(action === 'pay' ? ' conta(s) paga(s).' : ' vencimento(s) alterado(s).')+(skipped.length ? ' Puladas: '+skipped.map(s => s.description+' ('+s.reason+')').join('; ')+'.' : ''), skipped.length && !res.applied ? 'error' : undefined);
+    }catch(error){ el('cfPayBulkStatus').textContent = error.message; }
+  });
+
+  // --- CAIXA SEMANAL (saldo de cada conta toda segunda) ---
+  let cfWeeklyData = null;
+  let cfWeeklyHistory = [];
+  async function loadCashFlowWeekly(){
+    const body = el('cfWeeklyBody');
+    body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    const companyId = el('cashFlowLoja').value;
+    const params = new URLSearchParams();
+    if(companyId) params.set('companyId', companyId);
+    try{
+      cfWeeklyData = await financeApiRequest('/cash-flow/weekly?'+params.toString());
+      const weeks = cfWeeklyData.weeks || [];
+      const historyParams = new URLSearchParams(params);
+      historyParams.set('from', weeks.length ? weeks[0].weekDate : cfWeeklyData.currentMonday);
+      historyParams.set('to', cfAddDays(cfWeeklyData.currentMonday, 7));
+      const history = await financeApiRequest('/account-weekly-balances?'+historyParams.toString());
+      cfWeeklyHistory = Array.isArray(history.rows) ? history.rows : [];
+      if(!el('cfWeekDate').value) el('cfWeekDate').value = cfWeeklyData.currentMonday;
+      renderCfWeekly();
+    }catch(error){
+      cfWeeklyData = null;
+      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('cfWeeklyHistoryBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">—</td></tr>';
+      cfWeeklyBulk.sync();
+    }
+  }
+  function renderCfWeekly(){
+    const weeks = cfWeeklyData.weeks || [];
+    const current = weeks.find(w => w.kind === 'current');
+    const banner = el('cfWeeklyPending');
+    if(current && current.missingAccounts.length && cfWeeklyData.accounts.length){
+      banner.hidden = false;
+      banner.innerHTML = '<strong>SALDOS DA SEGUNDA '+escapeHtml(formatDateBR(current.weekDate))+' AINDA NÃO INFORMADOS</strong> — FALTAM: '+escapeHtml(current.missingAccounts.join(', '))+'. '+
+        '<button class="btn-accent btn-sm" type="button" data-cf-weekly-inform="'+escapeHtml(current.weekDate)+'">INFORMAR SALDOS DA SEGUNDA</button>';
+    }else{ banner.hidden = true; banner.innerHTML = ''; }
+    const selected = el('cfWeekDate').value;
+    const money = v => v === null || v === undefined ? '—' : formatCentsBRL(v);
+    el('cfWeeklyBody').innerHTML = weeks.map(w => {
+      const tag = w.kind === 'current' ? ' <span class="status-pill warn">ATUAL</span>' : w.kind === 'future' ? ' <span class="status-pill">PREVISÃO</span>' : '';
+      const informed = w.kind === 'future' ? '—'
+        : w.informedCents === null ? '<span class="status-pill danger">NÃO INFORMADO</span>'
+        : formatCentsBRL(w.informedCents)+(w.missingAccounts.length ? ' <span class="status-pill danger" title="'+escapeHtml(w.missingAccounts.join(', '))+'">FALTAM '+w.missingAccounts.length+'</span>' : '');
+      const informedNext = w.kind === 'future' ? '—'
+        : w.informedNextCents === null ? (w.kind === 'past' ? '<span class="status-pill danger">NÃO INFORMADO</span>' : '—')
+        : formatCentsBRL(w.informedNextCents)+(w.missingNextAccounts.length ? ' <span class="status-pill danger" title="'+escapeHtml(w.missingNextAccounts.join(', '))+'">FALTAM '+w.missingNextAccounts.length+'</span>' : '');
+      const diff = w.differenceCents === null ? '—'
+        : '<span class="status-pill '+(w.differenceCents === 0 ? 'ok' : 'danger')+'">'+(w.differenceCents > 0 ? '+' : '')+formatCentsBRL(w.differenceCents)+'</span>';
+      return '<tr'+(w.weekDate === selected ? ' class="cf-week-selected"' : '')+'>'+
+        '<td data-label="SEMANA">'+escapeHtml(cfWeekLabel(w.weekDate))+tag+'</td>'+
+        '<td data-label="SALDO DA SEGUNDA">'+(w.kind === 'future' ? money(w.startCents)+' <small>(PREVISTO)</small>' : informed)+'</td>'+
+        '<td data-label="ENTRADAS">'+formatCentsBRL(w.entradasCents)+'</td>'+
+        '<td data-label="SAÍDAS">'+formatCentsBRL(w.saidasCents)+'</td>'+
+        '<td data-label="PREVISTO P/ PRÓXIMA SEGUNDA">'+money(w.expectedNextCents)+'</td>'+
+        '<td data-label="INFORMADO NA PRÓXIMA SEGUNDA">'+informedNext+'</td>'+
+        '<td data-label="DIFERENÇA">'+diff+'</td>'+
+        '<td data-label="AÇÕES">'+(w.kind === 'future' ? '' : '<button class="btn-outline btn-sm" type="button" data-cf-week-detail="'+escapeHtml(w.weekDate)+'">VER CONTAS</button>')+'</td>'+
+      '</tr>';
+    }).join('') || '<tr><td colspan="8" class="responsive-empty">Sem semanas.</td></tr>';
+    el('cfWeeklyHistoryBody').innerHTML = cfWeeklyHistory.length ? cfWeeklyHistory.map(r =>
+      '<tr>'+
+        '<td data-label="SELECIONAR">'+bulkRowCheckbox(r.id, 'Selecionar saldo de '+(r.accountName || 'conta')+' em '+formatDateBR(r.weekDate))+'</td>'+
+        '<td data-label="SEMANA">'+escapeHtml(formatDateBR(r.weekDate))+'</td>'+
+        '<td data-label="CONTA">'+escapeHtml(r.accountName || 'CONTA REMOVIDA')+'</td>'+
+        '<td data-label="LOJA">'+escapeHtml(r.companyName || '—')+'</td>'+
+        '<td data-label="SALDO">'+formatCentsBRL(r.balanceCents)+'</td>'+
+        '<td data-label="OBS.">'+escapeHtml(r.notes || '—')+'</td>'+
+        '<td data-label="ATUALIZADO POR">'+escapeHtml(r.updatedByName || '—')+'</td>'+
+      '</tr>').join('') : '<tr><td colspan="7" class="responsive-empty">Nenhum saldo informado nessas semanas.</td></tr>';
+    cfWeeklyBulk.sync();
+  }
+  const cfWeeklyBulk = setupBulkSelection(el('cfWeeklyBulkBar'), el('cfWeeklyHistoryBody'), async (action, ids) => {
+    if(!confirm('Excluir '+ids.length+(ids.length === 1 ? ' saldo informado' : ' saldos informados')+'? O saldo atual das contas não muda.')) return false;
+    const res = await financeApiRequest('/account-weekly-balances/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids})});
+    await loadCashFlowWeekly();
+    showPurchaseToast(res.deleted+' saldo(s) excluído(s).');
+  });
+  function setCfWeek(date){
+    if(!date) return;
+    el('cfWeekDate').value = cfMonday(date);
+    if(cfWeeklyData) renderCfWeekly();
+  }
+  el('cfWeekDate').addEventListener('change', () => setCfWeek(el('cfWeekDate').value));
+  el('btnCfWeekPrev').addEventListener('click', () => setCfWeek(cfAddDays(el('cfWeekDate').value || financeCurrentDateKey(), -7)));
+  el('btnCfWeekNext').addEventListener('click', () => setCfWeek(cfAddDays(el('cfWeekDate').value || financeCurrentDateKey(), 7)));
+
+  async function cfWeekBalances(weekDate){
+    const params = new URLSearchParams({from: weekDate, to: weekDate});
+    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    const data = await financeApiRequest('/account-weekly-balances?'+params.toString());
+    return new Map((data.rows || []).map(r => [r.accountId, r]));
+  }
+  el('cfWeeklyBody').addEventListener('click', async event => {
+    const btn = event.target.closest('[data-cf-week-detail]');
+    if(!btn || !cfWeeklyData) return;
+    const weekDate = btn.dataset.cfWeekDetail;
+    const nextDate = cfAddDays(weekDate, 7);
+    el('cfWeeklyDetail').hidden = false;
+    el('cfWeeklyDetailTitle').textContent = 'CONTAS — SEMANA DE '+cfWeekLabel(weekDate);
+    el('cfWeeklyDetailNow').textContent = 'SEGUNDA '+formatDateBR(weekDate);
+    el('cfWeeklyDetailNext').textContent = 'SEGUNDA '+formatDateBR(nextDate);
+    const body = el('cfWeeklyDetailBody');
+    body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const [now, next] = await Promise.all([cfWeekBalances(weekDate), cfWeekBalances(nextDate)]);
+      body.innerHTML = cfWeeklyData.accounts.map(a => {
+        const n = now.get(a.accountId), x = next.get(a.accountId);
+        return '<tr>'+
+          '<td data-label="CONTA">'+escapeHtml(a.accountName)+'</td>'+
+          '<td data-label="LOJA">'+escapeHtml(a.companyName || '—')+'</td>'+
+          '<td data-label="SEGUNDA">'+(n ? formatCentsBRL(n.balanceCents) : '<span class="status-pill danger">NÃO INFORMADO</span>')+'</td>'+
+          '<td data-label="SEGUNDA SEGUINTE">'+(x ? formatCentsBRL(x.balanceCents) : '—')+'</td>'+
+          '<td data-label="VARIAÇÃO">'+(n && x ? formatCentsBRL(x.balanceCents - n.balanceCents) : '—')+'</td>'+
+        '</tr>';
+      }).join('') || '<tr><td colspan="5" class="responsive-empty">Nenhuma conta ativa.</td></tr>';
+      el('cfWeeklyDetail').scrollIntoView({behavior:'smooth', block:'start'});
+    }catch(error){ body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>'; }
+  });
+  el('btnCloseCfWeeklyDetail').addEventListener('click', () => { el('cfWeeklyDetail').hidden = true; });
+
+  // Diálogo: UMA LINHA POR CONTA ATIVA da unidade, pré-preenchido com o que já foi informado.
+  async function openCfWeeklyDialog(weekDate){
+    if(!cfWeeklyData) await loadCashFlowWeekly();
+    const monday = cfMonday(weekDate || el('cfWeekDate').value || financeCurrentDateKey());
+    el('cfWeeklyDialogWeek').value = monday;
+    el('cfWeeklyDialogTitle').textContent = 'SALDOS DA SEGUNDA '+formatDateBR(monday);
+    el('cfWeeklyDialogStatus').textContent = '';
+    const body = el('cfWeeklyDialogBody');
+    body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Carregando…</td></tr>';
+    el('cfWeeklyDialog').showModal();
+    try{
+      const informed = await cfWeekBalances(monday);
+      const accounts = cfWeeklyData.accounts || [];
+      body.innerHTML = accounts.map(a =>
+        '<tr data-cf-week-account="'+escapeHtml(a.accountId)+'">'+
+          '<td data-label="CONTA"><strong>'+escapeHtml(a.accountName)+'</strong></td>'+
+          '<td data-label="LOJA">'+escapeHtml(a.companyName || '—')+'</td>'+
+          '<td data-label="SALDO"><input data-cf-week-field="balance" aria-label="Saldo de '+escapeHtml(a.accountName)+'"></td>'+
+          '<td data-label="OBS."><input data-cf-week-field="notes" maxlength="500" aria-label="Observação"></td>'+
+        '</tr>').join('') || '<tr><td colspan="4" class="responsive-empty">Nenhuma conta ativa cadastrada nesta unidade.</td></tr>';
+      body.querySelectorAll('tr[data-cf-week-account]').forEach(tr => {
+        const input = tr.querySelector('[data-cf-week-field="balance"]');
+        attachCurrencyMask(input, {allowNegative:true});
+        const row = informed.get(tr.dataset.cfWeekAccount);
+        if(row){ setCurrencyValue(input, row.balanceCents/100); tr.querySelector('[data-cf-week-field="notes"]').value = row.notes || ''; }
+      });
+    }catch(error){ body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>'; }
+  }
+  el('btnCfWeeklyInform').addEventListener('click', () => openCfWeeklyDialog(el('cfWeekDate').value));
+  el('cfWeeklyPending').addEventListener('click', event => {
+    const btn = event.target.closest('[data-cf-weekly-inform]');
+    if(btn) openCfWeeklyDialog(btn.dataset.cfWeeklyInform);
+  });
+  el('btnCloseCfWeeklyDialog').addEventListener('click', () => el('cfWeeklyDialog').close());
+  el('btnCancelCfWeeklyDialog').addEventListener('click', () => el('cfWeeklyDialog').close());
+  el('cfWeeklyForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const rows = Array.from(el('cfWeeklyDialogBody').querySelectorAll('tr[data-cf-week-account]')).map(tr => {
+      const raw = getCurrencyValue(tr.querySelector('[data-cf-week-field="balance"]'));
+      return raw === '' ? null : {accountId: tr.dataset.cfWeekAccount, balanceCents: Math.round(Number(raw)*100), notes: tr.querySelector('[data-cf-week-field="notes"]').value};
+    }).filter(Boolean);
+    if(!rows.length){ el('cfWeeklyDialogStatus').textContent = 'INFORME O SALDO DE AO MENOS UMA CONTA.'; return; }
+    try{
+      await financeApiRequest('/account-weekly-balances', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({weekDate: el('cfWeeklyDialogWeek').value, rows})});
+      el('cfWeeklyDialog').close();
+      await loadCashFlowWeekly();
+      showPurchaseToast('Saldos da segunda salvos.');
+    }catch(error){ el('cfWeeklyDialogStatus').textContent = error.message; }
+  });
+
+  // --- RECEBÍVEIS: recebimentos futuros por semana e adquirente ---
+  async function loadCashFlowFutureReceivables(){
+    const body = el('cfReceivablesFutureBody');
+    body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams({days:'90'});
+    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    try{
+      const data = await financeApiRequest('/receivables/upcoming?'+params.toString());
+      const sum = list => list.reduce((total, r) => total + r.expectedAmountCents, 0);
+      const overdue = data.overdue || [];
+      const upcoming = data.upcoming || [];
+      el('cfReceivablesFutureTotals').innerHTML =
+        '<div class="card'+(overdue.length ? ' neg' : '')+'"><div class="lbl">ATRASADOS</div><div class="num">'+formatCentsBRL(sum(overdue))+'</div><div class="sub">'+overdue.length+' recebível(is)</div></div>'+
+        '<div class="card"><div class="lbl">PRÓXIMOS 90 DIAS</div><div class="num">'+formatCentsBRL(sum(upcoming))+'</div><div class="sub">até '+escapeHtml(formatDateBR(data.to))+'</div></div>';
+      const row = r => '<tr>'+
+        '<td data-label="DATA PREVISTA">'+escapeHtml(formatDateBR(r.expectedDate))+'</td>'+
+        '<td data-label="ADQUIRENTE">'+escapeHtml(r.operatorText || '—')+'</td>'+
+        '<td data-label="UNIDADE">'+escapeHtml(r.companyName || '—')+'</td>'+
+        '<td data-label="COMPETÊNCIA">'+escapeHtml(r.competenceMonth || '—')+'</td>'+
+        '<td data-label="VALOR">'+formatCentsBRL(r.expectedAmountCents)+'</td>'+
+      '</tr>';
+      const weeks = new Map();
+      upcoming.forEach(r => { const k = cfMonday(r.expectedDate); if(!weeks.has(k)) weeks.set(k, []); weeks.get(k).push(r); });
+      let html = overdue.length ? cfGroupRow(5, 'ATRASADOS (DATA PREVISTA ANTERIOR A HOJE)', sum(overdue), 'danger') + overdue.map(row).join('') : '';
+      weeks.forEach((list, monday) => {
+        list.sort((a, b) => (a.operatorText || '').localeCompare(b.operatorText || '') || a.expectedDate.localeCompare(b.expectedDate));
+        const byAcquirer = new Map();
+        list.forEach(r => byAcquirer.set(r.operatorText || '—', (byAcquirer.get(r.operatorText || '—') || 0) + r.expectedAmountCents));
+        html += cfGroupRow(5, 'SEMANA DE '+cfWeekLabel(monday)+' · '+[...byAcquirer].map(([name, cents]) => name+' '+formatCentsBRL(cents)).join(' · '), sum(list)) + list.map(row).join('');
+      });
+      if(upcoming.length) html += cfGroupRow(5, 'TOTAL GERAL (PRÓXIMOS 90 DIAS)', sum(upcoming), 'total');
+      body.innerHTML = html || '<tr><td colspan="5" class="responsive-empty">Nenhum recebimento futuro.</td></tr>';
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  // Ações em lote nos recebíveis: MARCAR COMO RECEBIDO (valor = previsto) e CANCELAR.
+  let receivablesBulkIds = [];
+  async function runReceivablesBulk(action, ids, fields){
+    const res = await financeApiRequest('/receivables/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids, fields: fields || {}})});
+    await Promise.all([loadRecebiveisPage({silent:true}), loadCashFlowFutureReceivables()]);
+    const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+    showPurchaseToast(res.applied+(action === 'receive' ? ' recebido(s).' : ' cancelado(s).')+(skipped.length ? ' Pulados: '+skipped.map(x => x.label+' ('+x.reason+')').join('; ')+'.' : ''), skipped.length && !res.applied ? 'error' : undefined);
+  }
+  const receivablesBulk = setupBulkSelection(el('receivablesBulkBar'), el('receivablesTableBody'), async (action, ids) => {
+    if(action === 'cancel'){
+      if(!confirm('Cancelar '+ids.length+(ids.length === 1 ? ' recebível' : ' recebíveis')+'? Eles deixam de contar no fluxo de caixa, mas continuam no histórico.')) return false;
+      await runReceivablesBulk('cancel', ids);
+      return;
+    }
+    receivablesBulkIds = ids;
+    el('cfReceiveTitle').textContent = 'MARCAR COMO RECEBIDO — '+ids.length+(ids.length === 1 ? ' RECEBÍVEL' : ' RECEBÍVEIS');
+    el('cfReceiveDate').value = financeCurrentDateKey();
+    el('cfReceiveStatus').textContent = '';
+    el('cfReceiveDialog').showModal();
+    return false;
+  });
+  el('btnCloseCfReceive').addEventListener('click', () => el('cfReceiveDialog').close());
+  el('btnCancelCfReceive').addEventListener('click', () => el('cfReceiveDialog').close());
+  el('cfReceiveForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!el('cfReceiveDate').value){ el('cfReceiveStatus').textContent = 'INFORME A DATA DO RECEBIMENTO.'; return; }
+    try{
+      await runReceivablesBulk('receive', receivablesBulkIds, {receivedDate: el('cfReceiveDate').value});
+      el('cfReceiveDialog').close();
+      receivablesBulk.clear();
+    }catch(error){ el('cfReceiveStatus').textContent = error.message; }
+  });
 
   // --- Saldos das contas (fonte do Caixa Atual) -------------------------
 
@@ -28916,7 +29531,7 @@ function renderHomeTasks(){
       status.textContent = rows.length+' lançamento(s)'+(duplicates.size ? ', '+duplicates.size+' JÁ CADASTRADO(S) (desmarcados)' : '')+'.'+(sourceFormat === 'pdf' ? ' Revise cada linha — a leitura de PDF é aproximada.' : '');
     }catch(error){
       status.textContent = error.message;
-      el('corpInvoicePreviewBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('corpInvoicePreviewBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   });
   el('btnConfirmCorpInvoice') && el('btnConfirmCorpInvoice').addEventListener('click', async () => {

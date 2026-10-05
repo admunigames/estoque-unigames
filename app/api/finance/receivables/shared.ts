@@ -111,3 +111,38 @@ export async function resolveReceivableOperator(
   if (!operatorText) return { acquirerId: "", operatorText: "", error: "INFORME A OPERADORA." };
   return { acquirerId: "", operatorText };
 }
+
+/**
+ * Cancelamento SOFT (canceled=1 + auditoria), nunca DELETE — usado pelo
+ * POST [id]/cancel e pelo CANCELAR em lote.
+ */
+export function cancelReceivableStatement(database: Database, id: string, actor: { id: string; displayName: string }) {
+  return database
+    .prepare(
+      `UPDATE accounts_receivable
+       SET canceled=1, canceled_by=?1, canceled_by_name=?2, canceled_at=CURRENT_TIMESTAMP,
+           updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
+       WHERE id=?3`,
+    )
+    .bind(actor.id, actor.displayName || "Administrador", id);
+}
+
+/**
+ * Marca como recebido (valor e data reais) — mesma validação de
+ * parseReceived que o PUT [id] usa. Usado pelo RECEBER em lote.
+ */
+export function receiveReceivableStatement(
+  database: Database,
+  id: string,
+  received: { receivedAmountCents: number; receivedDate: string },
+  actor: { id: string; displayName: string },
+) {
+  return database
+    .prepare(
+      `UPDATE accounts_receivable
+       SET received_amount_cents=?1, received_date=?2,
+           updated_by=?3, updated_by_name=?4, updated_at=CURRENT_TIMESTAMP
+       WHERE id=?5`,
+    )
+    .bind(received.receivedAmountCents, received.receivedDate, actor.id, actor.displayName || "Administrador", id);
+}

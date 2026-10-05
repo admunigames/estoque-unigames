@@ -1,7 +1,7 @@
 import { getD1 } from "../../../../../../db";
 import { unauthorizedResponse } from "../../../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin } from "../../../shared";
-import { assertReceivableAccess, loadReceivable } from "../../shared";
+import { assertReceivableAccess, cancelReceivableStatement, loadReceivable } from "../../shared";
 
 // Cancelamento de recebível é sempre SOFT (canceled=1 + auditoria de
 // quem/quando), nunca DELETE físico — mesmo princípio do cancelamento de
@@ -35,15 +35,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const accessError = assertReceivableAccess(scopeActor, receivable);
     if (accessError) return jsonResponse({ error: accessError }, 403);
 
-    await database
-      .prepare(
-        `UPDATE accounts_receivable
-         SET canceled=1, canceled_by=?1, canceled_by_name=?2, canceled_at=CURRENT_TIMESTAMP,
-             updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
-         WHERE id=?3`,
-      )
-      .bind(actor.id, actor.displayName || "Administrador", id)
-      .run();
+    await cancelReceivableStatement(database, id, actor).run();
 
     return jsonResponse({ canceled: true, id });
   } catch (error) {

@@ -235,3 +235,142 @@ export function summarizeHorizons(
     };
   });
 }
+
+// ---------------------------------------------------------------------------
+// CAIXA SEMANAL (Financeiro 4/9): saldo informado toda segunda-feira × o que
+// entrou/saiu na semana. Semana = segunda a domingo.
+// ---------------------------------------------------------------------------
+
+/** Segunda-feira da semana de uma data (AAAA-MM-DD). */
+export function mondayOf(date: string): string {
+  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay(); // 0 = domingo
+  return addDays(date, -((weekday + 6) % 7));
+}
+
+export function isMonday(date: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) && mondayOf(date) === date;
+}
+
+export type WeeklyCashInput = {
+  today: string;
+  /** Segundas-feiras, em ordem crescente. */
+  weeks: string[];
+  /** Contas ativas do escopo (as que DEVEM ter saldo informado). */
+  accounts: Array<{ accountId: string; accountName: string }>;
+  /** Saldos informados (segunda-feira por conta). */
+  balances: Array<{ accountId: string; weekDate: string; balanceCents: number }>;
+  /** REALIZADO: recebíveis recebidos (data do recebimento). */
+  realizedIn: DailyAmount[];
+  /** REALIZADO: pagamentos confirmados + RH pago (data do pagamento). */
+  realizedOut: DailyAmount[];
+  /** Projeção diária a partir de hoje (buildCashFlowSeries). */
+  projection: CashFlowDay[];
+  /** Caixa Atual — ponto de partida quando a segunda atual não foi informada. */
+  caixaAtualCents: number;
+};
+
+export type WeeklyCashRow = {
+  weekDate: string;
+  weekEnd: string;
+  kind: "past" | "current" | "future";
+  /** Soma dos saldos informados na segunda (null = nenhuma conta informada). */
+  informedCents: number | null;
+  missingAccounts: string[];
+  entradasCents: number;
+  saidasCents: number;
+  /** Saldo de partida da semana (informado; Caixa Atual; ou previsto da anterior). */
+  startCents: number | null;
+  expectedNextCents: number | null;
+  informedNextCents: number | null;
+  missingNextAccounts: string[];
+  /** Informado na próxima segunda − previsto (só com as duas segundas completas). */
+  differenceCents: number | null;
+};
+
+/**
+ * Quadro semana a semana.
+ * - Semanas PASSADAS: entradas/saídas REALIZADAS na semana, a partir do saldo
+ *   informado na segunda; a diferença para o saldo informado na segunda
+ *   seguinte mostra o que mexeu no banco sem estar lançado.
+ * - Semana ATUAL: se a segunda foi informada, parte dela e soma o realizado
+ *   de segunda até ontem + a projeção de hoje até domingo; se não, parte do
+ *   Caixa Atual e soma só a projeção de hoje até domingo.
+ * - Semanas FUTURAS: partem do previsto da semana anterior e somam a projeção.
+ * A projeção já traz os vencidos no dia de hoje (dia 0 da série).
+ */
+export function buildWeeklyCash(input: WeeklyCashInput): WeeklyCashRow[] {
+  const currentMonday = mondayOf(input.today);
+  const informed = new Map<string, Map<string, number>>();
+  for (const balance of input.balances) {
+    if (!informed.has(balance.weekDate)) informed.set(balance.weekDate, new Map());
+    informed.get(balance.weekDate)!.set(balance.accountId, Number(balance.balanceCents || 0));
+  }
+  const informedOf = (weekDate: string) => {
+    const byAccount = informed.get(weekDate) ?? new Map<string, number>();
+    const missing = input.accounts.filter((a) => !byAccount.has(a.accountId)).map((a) => a.accountName);
+    let total = 0;
+    for (const value of byAccount.values()) total += value;
+    return { total: byAccount.size ? total : null, missing };
+  };
+  const sumBetween = (rows: DailyAmount[], from: string, to: string) =>
+    rows.reduce((sum, row) => (row.date >= from && row.date <= to ? sum + Number(row.amountCents || 0) : sum), 0);
+  const projectionBetween = (from: string, to: string) =>
+    input.projection.reduce(
+      (acc, day) => (day.date >= from && day.date <= to
+        ? { entradas: acc.entradas + day.entradasCents, saidas: acc.saidas + day.saidasCents }
+        : acc),
+      { entradas: 0, saidas: 0 },
+    );
+
+  const rows: WeeklyCashRow[] = [];
+  let previousExpected: number | null = null;
+  for (const weekDate of input.weeks) {
+    const weekEnd = addDays(weekDate, 6);
+    const kind: WeeklyCashRow["kind"] = weekDate < currentMonday ? "past" : weekDate === currentMonday ? "current" : "future";
+    const now = informedOf(weekDate);
+    const next = informedOf(addDays(weekDate, 7));
+    let entradasCents = 0;
+    let saidasCents = 0;
+    let startCents: number | null = null;
+    if (kind === "past") {
+      entradasCents = sumBetween(input.realizedIn, weekDate, weekEnd);
+      saidasCents = sumBetween(input.realizedOut, weekDate, weekEnd);
+      startCents = now.total;
+    } else if (kind === "current") {
+      const projected = projectionBetween(input.today, weekEnd);
+      if (now.total !== null) {
+        const yesterday = addDays(input.today, -1);
+        entradasCents = sumBetween(input.realizedIn, weekDate, yesterday) + projected.entradas;
+        saidasCents = sumBetween(input.realizedOut, weekDate, yesterday) + projected.saidas;
+        startCents = now.total;
+      } else {
+        entradasCents = projected.entradas;
+        saidasCents = projected.saidas;
+        startCents = Number(input.caixaAtualCents || 0);
+      }
+    } else {
+      const projected = projectionBetween(weekDate, weekEnd);
+      entradasCents = projected.entradas;
+      saidasCents = projected.saidas;
+      startCents = previousExpected;
+    }
+    const expectedNextCents: number | null = startCents === null ? null : startCents + entradasCents - saidasCents;
+    const comparable = kind !== "future" && next.total !== null && !next.missing.length && !now.missing.length;
+    rows.push({
+      weekDate,
+      weekEnd,
+      kind,
+      informedCents: now.total,
+      missingAccounts: now.missing,
+      entradasCents,
+      saidasCents,
+      startCents,
+      expectedNextCents,
+      informedNextCents: kind === "future" ? null : next.total,
+      missingNextAccounts: kind === "future" ? [] : next.missing,
+      differenceCents: comparable && expectedNextCents !== null ? (next.total as number) - expectedNextCents : null,
+    });
+    previousExpected = expectedNextCents;
+  }
+  return rows;
+}

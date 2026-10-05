@@ -3229,33 +3229,35 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
     readFile(new URL("../drizzle/0037_finance_cash_flow.sql", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0038_accounts_receivable_received_idx.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/cash-flow/route.ts", import.meta.url), "utf8"),
+    // Desde o Financeiro 4/9 o SQL do fluxo mora em cash-flow/shared.ts (fonte
+    // única da projeção e da lista de pagamentos).
+    Promise.all([
+      readFile(new URL("../app/api/finance/cash-flow/shared.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/cash-flow/route.ts", import.meta.url), "utf8"),
+    ]).then((parts) => parts.join("\n")),
     readFile(new URL("../app/api/finance/account-balances/shared.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/account-balances/route.ts", import.meta.url), "utf8"),
   ]);
 
-  // Nav + rotas: duas telas novas dentro do submenu Financeiro, liberadas
-  // pela MESMA permissão do resto do módulo (nenhuma permissão nova).
-  assert.match(
-    html,
-    /id="navFinanceiroRecebiveis" data-page="financeiroRecebiveis" data-permission="finance"[^>]*href="\/financeiro\/recebiveis"/,
-  );
+  // Nav + rotas. Financeiro 4/9: Recebíveis virou a 3ª aba do Fluxo de Caixa
+  // e saiu do menu; a rota antiga continua abrindo o Fluxo já na aba.
+  assert.doesNotMatch(html, /id="navFinanceiroRecebiveis"/);
+  assert.doesNotMatch(html, /id="pageFinanceiroRecebiveis"/);
+  assert.doesNotMatch(html, /financeiroRecebiveis:/);
   assert.match(
     html,
     /id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance"[^>]*href="\/financeiro\/fluxo-de-caixa"/,
   );
-  assert.match(html, /id="pageFinanceiroRecebiveis" class="page wrap"/);
   assert.match(html, /id="pageFinanceiroFluxoCaixa" class="page wrap"/);
-  assert.match(html, /financeiroRecebiveis:'\/financeiro\/recebiveis'/);
   assert.match(html, /financeiroFluxoCaixa:'\/financeiro\/fluxo-de-caixa'/);
-  assert.match(html, /financeiroRecebiveis:'finance'/);
   assert.match(html, /financeiroFluxoCaixa:'finance'/);
+  assert.match(html, /'\/financeiro\/recebiveis':'financeiroFluxoCaixa'/);
+  assert.match(html, /legacyCashFlowTab = normalizeRoutePath\(location\.pathname\) === '\/financeiro\/recebiveis' \? 'recebiveis'/);
   assert.match(workerSource, /"\/financeiro\/recebiveis"/);
   assert.match(workerSource, /"\/financeiro\/fluxo-de-caixa"/);
 
   // O dispatch on-enter precisa existir nos DOIS caminhos (clique no menu e
   // navegação direta pela URL), como em todos os módulos anteriores.
-  assert.equal(html.split("if(name === 'financeiroRecebiveis') loadRecebiveisPage();").length - 1, 2);
   assert.equal(html.split("if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();").length - 1, 2);
 
   // Gráfico e imagem de compartilhamento sem dependência externa nova.
@@ -4895,4 +4897,42 @@ test("importadores financeiros leem CSV como texto (data DD/MM com dia <= 12 nã
   assert.equal(html.split("const rows = await extractRowsFromFile(file, {rawCsv: /\\.csv$/i.test(file.name)});").length - 1, 2);
   // Fatura do cartão e extrato da conciliação.
   assert.equal(html.split("const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});").length - 1, 2);
+});
+
+test("Financeiro > Fluxo de Caixa: 3 abas, lista de pagamentos, caixa semanal e recebíveis com lote", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  // Abas (mesmo padrão .output-tabs) e aba na URL.
+  for (const [tab, label] of [["projecao", "PROJEÇÃO DE PAGAMENTOS"], ["semanal", "CAIXA SEMANAL"], ["recebiveis", "RECEBÍVEIS"]]) {
+    assert.match(html, new RegExp(`class="output-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-cf-tab="${tab}">${label}</button>`));
+    assert.match(html, new RegExp(`data-cf-panel="${tab}"`));
+  }
+  assert.match(html, /new URLSearchParams\(location\.search\)\.get\('aba'\)/);
+  assert.match(html, /'\?aba='\+cashFlowTab/);
+  assert.match(html, /data-home-desc="Projeção de pagamentos dia a dia e por semana, caixa semanal com o saldo de cada conta toda segunda e recebíveis futuros\."/);
+  // Filtro UNIDADE único (o de Recebíveis saiu).
+  assert.doesNotMatch(html, /id="receivableLoja"/);
+  // Lista de pagamentos.
+  for (const id of ["cfPayFrom", "cfPayTo", "cfPayGroup", "cfPayOrigin", "cfPayCategory", "cfPaySupplier", "cfPayTotals"]) {
+    assert.match(html, new RegExp(`id="${id}"`), id);
+  }
+  assert.match(html, /financeApiRequest\('\/cash-flow\/payments\?'/);
+  assert.match(html, /'VENCIDOS \(DATA ANTERIOR A HOJE, AINDA EM ABERTO\)'/);
+  assert.match(html, /'SEMANA DE '\+cfWeekLabel\(key\)/);
+  // Barra de lote nas três abas (componente reutilizado).
+  assert.match(html, /id="cfPayBulkBar"[\s\S]*?data-bulk-action="pay">MARCAR COMO PAGO[\s\S]*?data-bulk-action="reschedule">ALTERAR VENCIMENTO/);
+  assert.match(html, /id="cfWeeklyBulkBar"[\s\S]*?data-bulk-action="delete">EXCLUIR SELECIONADOS/);
+  assert.match(html, /id="receivablesBulkBar"[\s\S]*?data-bulk-action="receive">MARCAR COMO RECEBIDO[\s\S]*?data-bulk-action="cancel">CANCELAR/);
+  for (const name of ["cfPayBulk", "cfWeeklyBulk", "receivablesBulk"]) {
+    assert.match(html, new RegExp(`const ${name} = setupBulkSelection\\(`), name);
+  }
+  assert.equal(html.split("function setupBulkSelection(").length - 1, 1);
+  // Caixa semanal: diálogo dos saldos da segunda e aviso.
+  assert.match(html, /<dialog class="purchase-dialog cf-weekly-dialog" id="cfWeeklyDialog"/);
+  assert.match(html, /id="btnCfWeeklyInform" type="button">INFORMAR SALDOS DA SEGUNDA/);
+  assert.match(html, /AINDA NÃO INFORMADOS<\/strong>/);
+  assert.match(html, /financeApiRequest\('\/account-weekly-balances', \{method:'PUT'/);
+  // Recebíveis: futuros por semana + atrasados.
+  assert.match(html, /<h3 class="supply-section-title">RECEBIMENTOS FUTUROS<\/h3>/);
+  assert.match(html, /financeApiRequest\('\/receivables\/upcoming\?'/);
+  assert.match(html, /'ATRASADOS \(DATA PREVISTA ANTERIOR A HOJE\)'/);
 });

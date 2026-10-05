@@ -267,3 +267,91 @@ test("recebível simplificado entra no fluxo de caixa na data derivada da compet
   assert.equal(day.entradasCents, 500_00);
   assert.equal(series.days[series.days.length - 1].caixaFinalCents, 500_00);
 });
+
+// ---------------------------------------------------------------------------
+// CAIXA SEMANAL (Financeiro 4/9)
+// ---------------------------------------------------------------------------
+test("mondayOf/isMonday: semana de segunda a domingo", () => {
+  assert.equal(cashFlow.mondayOf("2026-10-04"), "2026-09-28"); // domingo
+  assert.equal(cashFlow.mondayOf("2026-10-05"), "2026-10-05");
+  assert.equal(cashFlow.mondayOf("2026-10-07"), "2026-10-05");
+  assert.equal(cashFlow.isMonday("2026-10-05"), true);
+  assert.equal(cashFlow.isMonday("2026-10-06"), false);
+  assert.equal(cashFlow.isMonday("05/10/2026"), false);
+});
+
+test("buildWeeklyCash: passada usa realizado e mostra a diferença; atual e futura usam a projeção", () => {
+  const accounts = [{ accountId: "a", accountName: "BANCO A" }, { accountId: "b", accountName: "CAIXA" }];
+  const projection = cashFlow.buildCashFlowSeries({
+    today: "2026-10-07", // quarta
+    days: 20,
+    caixaAtualCents: 0,
+    entradas: [{ date: "2026-10-08", amountCents: 1_000 }, { date: "2026-10-13", amountCents: 5_000 }],
+    saidasPayables: [{ date: "2026-10-01", amountCents: 300 } /* vencido → hoje */, { date: "2026-10-14", amountCents: 2_000 }],
+    saidasPayroll: [],
+  }).days;
+  const rows = cashFlow.buildWeeklyCash({
+    today: "2026-10-07",
+    weeks: ["2026-09-28", "2026-10-05", "2026-10-12"],
+    accounts,
+    balances: [
+      { accountId: "a", weekDate: "2026-09-28", balanceCents: 10_000 },
+      { accountId: "b", weekDate: "2026-09-28", balanceCents: 500 },
+      { accountId: "a", weekDate: "2026-10-05", balanceCents: 9_000 },
+      { accountId: "b", weekDate: "2026-10-05", balanceCents: 700 },
+    ],
+    realizedIn: [{ date: "2026-09-30", amountCents: 2_000 }, { date: "2026-10-06", amountCents: 100 }],
+    realizedOut: [{ date: "2026-10-02", amountCents: 3_000 }, { date: "2026-10-06", amountCents: 50 }],
+    projection,
+    caixaAtualCents: 99_999,
+  });
+  const [past, current, future] = rows;
+  assert.equal(past.kind, "past");
+  assert.equal(past.informedCents, 10_500);
+  assert.equal(past.entradasCents, 2_000);
+  assert.equal(past.saidasCents, 3_000);
+  assert.equal(past.expectedNextCents, 9_500);
+  assert.equal(past.informedNextCents, 9_700);
+  assert.equal(past.differenceCents, 200); // mexeu no banco sem estar lançado
+
+  assert.equal(current.kind, "current");
+  assert.equal(current.startCents, 9_700); // segunda informada, não o Caixa Atual
+  // realizado seg–ter (100 / 50) + projeção qua–dom (1.000 / 300 vencido)
+  assert.equal(current.entradasCents, 1_100);
+  assert.equal(current.saidasCents, 350);
+  assert.equal(current.expectedNextCents, 10_450);
+  assert.equal(current.differenceCents, null);
+
+  assert.equal(future.kind, "future");
+  assert.equal(future.startCents, 10_450);
+  assert.equal(future.entradasCents, 5_000);
+  assert.equal(future.saidasCents, 2_000);
+  assert.equal(future.expectedNextCents, 13_450);
+  assert.equal(future.informedNextCents, null);
+});
+
+test("buildWeeklyCash: conta sem saldo informado é sinalizada e não gera diferença; segunda atual vazia parte do Caixa Atual", () => {
+  const rows = cashFlow.buildWeeklyCash({
+    today: "2026-10-05",
+    weeks: ["2026-09-28", "2026-10-05"],
+    accounts: [{ accountId: "a", accountName: "BANCO A" }, { accountId: "b", accountName: "CAIXA" }],
+    balances: [
+      { accountId: "a", weekDate: "2026-09-28", balanceCents: 1_000 },
+      { accountId: "a", weekDate: "2026-10-05", balanceCents: 1_000 },
+      { accountId: "b", weekDate: "2026-10-05", balanceCents: 1_000 },
+    ],
+    realizedIn: [],
+    realizedOut: [],
+    projection: [],
+    caixaAtualCents: 7_777,
+  });
+  assert.deepEqual(rows[0].missingAccounts, ["CAIXA"]);
+  assert.equal(rows[0].differenceCents, null);
+  const empty = cashFlow.buildWeeklyCash({
+    today: "2026-10-07", weeks: ["2026-10-05"], accounts: [{ accountId: "a", accountName: "BANCO A" }],
+    balances: [], realizedIn: [], realizedOut: [], projection: [], caixaAtualCents: 7_777,
+  });
+  assert.equal(empty[0].informedCents, null);
+  assert.deepEqual(empty[0].missingAccounts, ["BANCO A"]);
+  assert.equal(empty[0].startCents, 7_777);
+});
