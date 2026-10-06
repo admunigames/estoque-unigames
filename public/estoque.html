@@ -4630,12 +4630,12 @@
           <div class="field assist-search"><label for="assistDefSearch">BUSCAR DEFEITO</label><input id="assistDefSearch" type="search" autocomplete="off" placeholder="EX.: NÃO LIGA"></div>
           <button class="btn-accent" id="btnAssistNewDefect" type="button">+ NOVO DEFEITO</button>
         </div>
-        <p class="purchase-field-help">MUDAR A TABELA NÃO ALTERA ORÇAMENTOS JÁ SALVOS. "SOB ORÇAMENTO": O VALOR É DIGITADO NO ORÇAMENTO. DEFEITO DESATIVADO SOME DA LISTA DO ORÇAMENTO.</p>
+        <p class="purchase-field-help">MUDAR A TABELA NÃO ALTERA ORÇAMENTOS JÁ SALVOS. "SOB ORÇAMENTO": O VALOR É DIGITADO NO ORÇAMENTO. DEFEITO DESATIVADO OU EXCLUÍDO SOME DA LISTA DO ORÇAMENTO.</p>
         <div class="user-form-status" id="assistDefStatus" role="status" aria-live="polite"></div>
         <div class="table-panel responsive-table assist-defect-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Aparelho</th><th>Defeito</th><th>Mínimo</th><th>Máximo</th><th>Sob orçamento</th><th>Ativo</th><th>Ação</th></tr></thead>
+              <thead><tr><th>Aparelho</th><th>Defeito</th><th>Mínimo</th><th>Máximo</th><th>Sob orçamento</th><th>Ativo</th><th>Ações</th></tr></thead>
               <tbody id="assistDefectBody"><tr><td colspan="7" class="responsive-empty">Carregando tabela de valores…</td></tr></tbody>
             </table>
           </div>
@@ -20835,7 +20835,10 @@ function renderHomeTasks(){
         '<td data-label="MÁXIMO"><input id="'+id+'Max" data-def-field="max" aria-label="Valor máximo"'+(defect.quoteOnly ? ' disabled' : '')+'></td>'+
         '<td data-label="SOB ORÇAMENTO"><input type="checkbox" data-def-field="quoteOnly" aria-label="Sob orçamento"'+(defect.quoteOnly ? ' checked' : '')+'></td>'+
         '<td data-label="ATIVO"><input type="checkbox" data-def-field="active" aria-label="Ativo"'+(defect.active ? ' checked' : '')+'></td>'+
-        '<td data-label="AÇÃO"><button class="btn-outline" type="button" data-assist-def-save>SALVAR</button></td>'+
+        '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
+          '<button class="btn-outline" type="button" data-assist-def-save>SALVAR</button>'+
+          '<button class="btn-danger-outline" type="button" data-assist-def-delete>EXCLUIR</button>'+
+        '</div></td>'+
       '</tr>';
     }).join('');
     body.querySelectorAll('tr[data-defect-id]').forEach(row => {
@@ -20864,6 +20867,26 @@ function renderHomeTasks(){
       await assistLoadDefects();
       setAssistStatus('assistDefStatus', '');
       showPurchaseToast('Defeito salvo: '+payload.name.toUpperCase()+' ('+defect.device+').');
+      assistRenderDefectFilters();
+      assistRenderDefectTable();
+      assistRenderEquipments();
+    }catch(error){
+      setAssistStatus('assistDefStatus', error.message, 'error');
+      button.disabled = false;
+    }
+  }
+
+  async function assistDeleteDefectRow(row){
+    const defect = assistState.defects.find(item => item.id === row.dataset.defectId);
+    if(!defect) return;
+    if(!confirm('EXCLUIR O DEFEITO '+defect.name+' DO APARELHO '+defect.device+' DA TABELA DE VALORES? ORÇAMENTOS JÁ SALVOS NÃO MUDAM.')) return;
+    const button = row.querySelector('[data-assist-def-delete]');
+    button.disabled = true;
+    try{
+      await assistApi('/defects?id='+encodeURIComponent(defect.id), {method:'DELETE'});
+      await assistLoadDefects();
+      setAssistStatus('assistDefStatus', '');
+      showPurchaseToast('Defeito excluído: '+defect.name+' ('+defect.device+').');
       assistRenderDefectFilters();
       assistRenderDefectTable();
       assistRenderEquipments();
@@ -21344,6 +21367,8 @@ function renderHomeTasks(){
   el('assistDefectBody').addEventListener('click', event => {
     const button = event.target.closest('[data-assist-def-save]');
     if(button) assistSaveDefectRow(button.closest('tr'));
+    const remove = event.target.closest('[data-assist-def-delete]');
+    if(remove) assistDeleteDefectRow(remove.closest('tr'));
   });
   el('btnAssistNewDefect').addEventListener('click', assistOpenDefectDialog);
   el('assistNewDefCategory').addEventListener('change', assistFillNewDefectDevices);

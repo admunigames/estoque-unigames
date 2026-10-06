@@ -450,7 +450,7 @@ test("editar orçamento com vários equipamentos e defeitos (regressão do React
   assert.equal((await createQuote(STORE_USER, quote())).status, 201);
 });
 
-test("tabela de valores: criar, duplicado, categoria do aparelho, editar e desativar (sem excluir)", async () => {
+test("tabela de valores: criar, duplicado, categoria do aparelho, editar, desativar e excluir", async () => {
   const created = await postDefect(NO_STORE_USER, { category: "CONSOLES", device: "ps5 slim", name: "troca de cooler", minCents: 30000, maxCents: "" });
   assert.equal(created.status, 201, JSON.stringify(created.body));
   const row = db.sqlite.prepare("SELECT * FROM assist_defects WHERE id=?").get(created.body.id);
@@ -488,7 +488,17 @@ test("tabela de valores: criar, duplicado, categoria do aparelho, editar e desat
     { name: updated.name, quoteOnly: updated.quoteOnly, active: updated.active, min: updated.minCents },
     { name: "TROCA DE COOLER", quoteOnly: true, active: false, min: 0 },
   );
-  assert.equal(defectsRoute.DELETE, undefined);
+  // EXCLUIR: apaga a linha; orçamento salvo com esse defeito não muda.
+  const delQuote = await createQuote(NO_STORE_USER, quote({ osNumber: "DEL1", equipments: [{ category: "CONSOLES", device: "PS5 SLIM",
+    lines: [{ defectName: "NÃO LIGA", quantity: 1, unitCents: 100000 }] }] }));
+  assert.equal(delQuote.status, 201);
+  const naoLiga = db.sqlite.prepare("SELECT id FROM assist_defects WHERE device='PS5 SLIM' AND name='NÃO LIGA'").get().id;
+  const remove = (user, id) => call(defectsRoute.DELETE, user, { method: "DELETE", path: `/defects?id=${encodeURIComponent(id)}` });
+  assert.equal((await remove(STORE_LOGIN, naoLiga)).status, 403);
+  assert.equal((await remove(NO_STORE_USER, naoLiga)).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM assist_defects WHERE id=?").get(naoLiga).n, 0);
+  assert.equal((await remove(NO_STORE_USER, naoLiga)).status, 404);
+  assert.equal((await getQuote(NO_STORE_USER, delQuote.body.id)).body.equipments[0].lines[0].defectName, "NÃO LIGA");
   assert.equal((await patchDefect(NO_STORE_USER, { id: "nao-existe", name: "X1", minCents: 1 })).status, 404);
 });
 

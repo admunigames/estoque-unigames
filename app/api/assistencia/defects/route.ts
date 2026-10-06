@@ -3,9 +3,8 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import { isUniqueViolation, parseDefectValues, parseNewDefect, upper } from "../../../lib/assistencia";
 import { canManage, FORBIDDEN, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
 
-// Tabela de valores da assistência (defeitos por aparelho). Sem excluir: só
-// desativar — orçamentos antigos guardam a própria cópia do nome/valor, mas
-// manter a linha evita "sumir" um defeito que ainda aparece no histórico.
+// Tabela de valores da assistência (defeitos por aparelho). Excluir é seguro:
+// orçamentos salvos guardam a própria cópia do nome/valor de cada linha.
 
 type DefectRow = {
   id: string;
@@ -177,5 +176,28 @@ export async function PATCH(request: Request) {
     if (duplicate && isUniqueViolation(error)) return jsonResponse({ error: duplicate }, 409);
     console.error("Não foi possível editar o defeito da assistência.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR O DEFEITO." }, 500);
+  }
+}
+
+// EXCLUIR (botão da tabela de valores): apaga UMA linha. Orçamentos já salvos
+// não mudam (cada linha do orçamento tem a cópia do nome e do valor).
+export async function DELETE(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canManage(actor)) return jsonResponse({ error: FORBIDDEN }, 403);
+  if (!sameOrigin(request)) return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  try {
+    const id = safeText(new URL(request.url).searchParams.get("id"), 80);
+    const database = await getD1();
+    const current = id
+      ? await database.prepare("SELECT id FROM assist_defects WHERE id=?1 LIMIT 1").bind(id).first<{ id: string }>()
+      : null;
+    if (!current) return jsonResponse({ error: "DEFEITO NÃO ENCONTRADO." }, 404);
+    await database.prepare("DELETE FROM assist_defects WHERE id=?1").bind(id).run();
+    return jsonResponse({ deleted: true });
+  } catch (error) {
+    console.error("Não foi possível excluir o defeito da assistência.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR O DEFEITO." }, 500);
   }
 }

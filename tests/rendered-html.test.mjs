@@ -4780,6 +4780,9 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
   assert.match(html, /data-assist-tab="pagamentos">PAGAMENTOS<\/button>/);
   // Aba CATEGORIAS (sem lista fixa no código) e campo MODELO por categoria.
   assert.match(html, /data-assist-tab="categorias">CATEGORIAS<\/button>/);
+  // EXCLUIR na tabela de valores, sempre com confirm().
+  assert.match(extractNamedFunction(html, "assistRenderDefectTable"), /data-assist-def-delete>EXCLUIR<\/button>/);
+  assert.match(extractNamedFunction(html, "assistDeleteDefectRow"), /if\(!confirm\(\x27EXCLUIR O DEFEITO /);
   assert.match(html, /<section class="no-print assist-section" id="assistSectionCategorias" hidden>/);
   assert.doesNotMatch(html, /ASSIST_CATEGORIES/);
   assert.match(extractNamedFunction(html, "assistEquipmentHtml"), /assistCategoryAsksModel\(equipment\.category\) \|\| equipment\.model/);
