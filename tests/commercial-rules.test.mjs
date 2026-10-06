@@ -28,6 +28,7 @@ const overview = await import("../app/api/commercial/overview/route.ts");
 const sellersRoute = await import("../app/api/commercial/sellers/route.ts");
 const entriesRoute = await import("../app/api/commercial/entries/route.ts");
 const storesRoute = await import("../app/api/commercial/stores/route.ts");
+const rankingRoute = await import("../app/api/commercial/ranking/route.ts");
 
 const STORE_A = "clojaalfa1";
 const STORE_B = "clojabeta1";
@@ -405,4 +406,17 @@ test("Meta Loja (comercial:stores): todos veem só o %; quem lança vê os valor
   // Mês sem metas: nada no painel.
   const empty = await (await callRoute(storesRoute.GET, DASHBOARD, "GET", "/api/commercial/stores?month=2027-05")).json();
   assert.deepEqual([empty.items, empty.totalPercent], [[], null]);
+});
+
+test("Ranking: totais de itens e realmes por loja (só quantidades, nada em R$), empresa inteira", async () => {
+  // Gestor da LOJA ALFA vê o ranking da empresa toda (sempre geral).
+  const response = await callRoute(rankingRoute.GET, GOALS_A, "GET", "/api/commercial/ranking?month=2026-12");
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.deepEqual(
+    data.stores.map((store) => [store.name, store.items, store.targetItems, store.realme, store.targetRealme]).sort(),
+    [["LOJA ALFA", 200, 200, 20, 20], ["LOJA BETA", 100, 100, 10, 10]],
+  );
+  assert.equal(data.items.length, 3);
+  assert.doesNotMatch(JSON.stringify(data), /Cents|commission|revenue"/);
 });

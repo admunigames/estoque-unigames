@@ -3070,33 +3070,14 @@
   }
   .com-commission-sum span{font:800 10px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase}
   .com-commission-sum strong{font:900 19px/1.2 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-  /* Ranking — lista, não grade: uma linha por vendedor, então número ímpar
-     de vendedores ou uma loja só com 1 vendedor não criam linha parcial. */
-  .com-ranking{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
-  .com-rank-row{
-    display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 12px;padding:11px 13px;
-    border:1px solid var(--surface-border);border-radius:12px;background:var(--bg-card);box-shadow:var(--surface-shadow);
-  }
-  .com-rank-pos{
-    display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--inset-border);
-    font:900 13px/1 var(--sans);color:var(--ink-soft);font-variant-numeric:tabular-nums;
-  }
-  .com-rank-row.top1 .com-rank-pos{background:#e1ad49;border-color:#e1ad49;color:#1b1406}
-  .com-rank-row.top2 .com-rank-pos{background:#aeb9c4;border-color:#aeb9c4;color:#10151b}
-  .com-rank-row.top3 .com-rank-pos{background:#c07a45;border-color:#c07a45;color:#1b0f06}
-  .com-rank-who{display:flex;flex-direction:column;gap:2px;min-width:0}
-  .com-rank-who strong{font:800 13.5px/1.3 var(--sans);color:var(--ink);overflow-wrap:anywhere}
-  .com-rank-who span{font:700 9.5px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase;overflow-wrap:anywhere}
-  .com-rank-pct{font:900 17px/1 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap}
-  .com-rank-row.tier-red .com-rank-pct{color:#ef6a55}
-  .com-rank-row.tier-yellow .com-rank-pct{color:#e1ad49}
-  .com-rank-row.tier-green .com-rank-pct{color:#54c48a}
-  .com-rank-row.tier-none .com-rank-pct{color:var(--ink-faint);font-size:10px;font-family:var(--mono)}
-  .com-rank-bar{grid-column:2/-1;height:6px;border-radius:999px;background:rgba(79,134,189,.14);overflow:hidden}
-  .com-rank-bar i{display:block;height:100%;border-radius:inherit}
-  .com-rank-row.tier-red .com-rank-bar i{background:#ef6a55}
-  .com-rank-row.tier-yellow .com-rank-bar i{background:#e1ad49}
-  .com-rank-row.tier-green .com-rank-bar i{background:#54c48a}
+  /* Ranking — gráfico de colunas (canvas) por subaba. */
+  .com-chart-card{padding:14px;border:1px solid var(--surface-border);border-radius:var(--radius-surface);background:var(--bg-card);box-shadow:var(--surface-shadow);min-width:0}
+  .com-chart-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .com-chart-head .com-section-title{margin:0;min-width:0;overflow-wrap:anywhere}
+  .com-chart-head button{max-width:100%;white-space:normal;line-height:1.3}
+  /* Muitas colunas no celular: o gráfico rola dentro do quadro (a página não). */
+  .com-chart-scroll{overflow-x:auto;overscroll-behavior-x:contain}
+  #comRankCanvas{display:block}
   .com-extra{
     display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin:0;padding:8px 10px;border:1px dashed var(--inset-border);
     border-radius:8px;color:var(--ink-soft);font:700 12px/1.4 var(--sans);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
@@ -3117,10 +3098,6 @@
   .com-entry-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-bottom:10px}
   .com-entry-form .field{min-width:min(100%,200px);flex:1 1 200px}
   .com-entry-form input,.com-entry-form select{width:100%}
-  .com-rank-row.com-rank-total{border-color:var(--accent)}
-  .com-rank-row.com-rank-total strong{font-size:14.5px}
-  .com-stores-visual{margin-bottom:18px}
-  .com-stores-visual .com-section-title{margin-top:0}
   @media(max-width:680px){
     /* Celular: filtros em 2 colunas iguais com espaço fixo entre as caixas. */
     .com-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -3134,15 +3111,12 @@
   html[data-theme="light"] .com-commission,
   html[data-theme="light"] .com-rule,
   html[data-theme="light"] .com-total,
-  html[data-theme="light"] .com-rank-row{background:#fff;border-color:var(--surface-border);box-shadow:var(--surface-shadow)}
+  html[data-theme="light"] .com-chart-card{background:#fff;border-color:var(--surface-border);box-shadow:var(--surface-shadow)}
   html[data-theme="light"] .com-block,
   html[data-theme="light"] .com-commission-rows li{background:#f6f9fb;border-color:var(--inset-border)}
-  html[data-theme="light"] .com-block.tier-red .com-pct,
-  html[data-theme="light"] .com-rank-row.tier-red .com-rank-pct{color:#c44735}
-  html[data-theme="light"] .com-block.tier-yellow .com-pct,
-  html[data-theme="light"] .com-rank-row.tier-yellow .com-rank-pct{color:#a8740f}
+  html[data-theme="light"] .com-block.tier-red .com-pct{color:#c44735}
+  html[data-theme="light"] .com-block.tier-yellow .com-pct{color:#a8740f}
   html[data-theme="light"] .com-block.tier-green .com-pct,
-  html[data-theme="light"] .com-rank-row.tier-green .com-rank-pct,
   html[data-theme="light"] .com-commission-rows li.on .value,
   html[data-theme="light"] .com-targets li.reached b,
   html[data-theme="light"] .com-total strong{color:#23874f}
@@ -6705,12 +6679,6 @@
       </div>
 
       <div class="com-view-panel" id="comViewDashboard">
-        <!-- Painel visual para TODOS do Comercial: % de cada loja e da rede,
-             sem valores em R$ (a rota /stores só manda o percentual). -->
-        <section class="com-stores-visual" id="comStoresVisual" hidden>
-          <h3 class="com-section-title">Metas das lojas</h3>
-          <ol class="com-ranking" id="comStoresList"></ol>
-        </section>
         <div class="com-seller-list" id="comDashList"><p class="com-empty">Carregando…</p></div>
       </div>
 
@@ -6723,7 +6691,22 @@
       </div>
 
       <div class="com-view-panel" id="comViewRanking" hidden>
-        <ol class="com-ranking" id="comRankList"><li class="com-empty">Carregando…</li></ol>
+        <!-- Ranking em gráfico de colunas, por subaba; METAS LOJAS só em %
+             (a rota /stores não manda R$ a quem só visualiza). -->
+        <div class="supply-tabs com-kind-tabs" role="tablist" aria-label="Tipo de ranking" id="comRankTabs">
+          <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-com-rank="vendedores">Vendedores</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-rank="lojas">Metas Lojas</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-rank="itens">Itens Totais por Loja</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-rank="realmes">Realmes Totais por Loja</button>
+        </div>
+        <section class="com-chart-card">
+          <div class="com-chart-head">
+            <h3 class="com-section-title" id="comRankTitle"></h3>
+            <button class="btn-accent" type="button" id="btnComRankImage">GERAR IMAGEM PARA WHATSAPP</button>
+          </div>
+          <div class="com-chart-scroll"><canvas id="comRankCanvas" role="img" aria-label="Gráfico do ranking"></canvas></div>
+          <p class="com-empty" id="comRankEmpty" hidden></p>
+        </section>
       </div>
 
       <!-- Abas de ATUALIZAÇÃO (alimentação manual e ao vivo — sem importar
@@ -42394,9 +42377,11 @@ function renderHomeTasks(){
     // Abas de atualização: sem filtros (a lista já é a do alcance de quem lança).
     const editing = ['vendedores', 'crediarios', 'lojas', 'regras'].includes(comView);
     if(el('comStoreField')) el('comStoreField').hidden = !data || ownOnly || editing || comView === 'ranking' || !allStores;
-    if(el('comZoneField')) el('comZoneField').hidden = !data || ownOnly || editing;
+    // No Ranking, Zona e "Rankear por" só valem para a subaba VENDEDORES.
+    const storeChart = comView === 'ranking' && comRankSub !== 'vendedores';
+    if(el('comZoneField')) el('comZoneField').hidden = !data || ownOnly || editing || storeChart;
     if(el('comSellerField')) el('comSellerField').hidden = !data || ownOnly || editing || comView === 'ranking';
-    if(el('comRankMetricField')) el('comRankMetricField').hidden = comView !== 'ranking';
+    if(el('comRankMetricField')) el('comRankMetricField').hidden = comView !== 'ranking' || storeChart;
     // Regras de Comissão não dependem do mês (cada vigência tem o seu).
     if(el('comMonthField')) el('comMonthField').hidden = comView === 'regras';
   }
@@ -42522,35 +42507,262 @@ function renderHomeTasks(){
     }
   }
 
-  function comRenderRanking(){
-    const list = el('comRankList');
-    if(!list) return;
-    const metric = el('comRankMetric') ? el('comRankMetric').value : 'revenuePercent';
-    const items = comRanking ? comRanking.items.filter(item => !comZoneFilter || item.zone === comZoneFilter) : [];
-    if(!items.length){ list.innerHTML = '<li class="com-empty">Nenhum vendedor importado neste mês.</li>'; return; }
-    items.sort((a, b) => {
-      const pa = a[metric];
-      const pb = b[metric];
-      if(pa === null && pb === null) return a.name.localeCompare(b.name, 'pt-BR');
-      if(pa === null) return 1;
-      if(pb === null) return -1;
-      return pb - pa || a.name.localeCompare(b.name, 'pt-BR');
-    });
-    let position = 0;
-    list.innerHTML = items.map(item => {
-      const percent = item[metric];
-      const ranked = percent !== null;
-      if(ranked) position++;
-      const top = ranked && position <= 3 ? ' top'+position : '';
-      const barWidth = ranked ? Math.min(100, percent / 1.2) : 0;
-      return '<li class="com-rank-row tier-'+comTier(percent)+top+'">'+
-        '<span class="com-rank-pos">'+(ranked ? position+'º' : '–')+'</span>'+
-        '<span class="com-rank-who"><strong>'+escapeHtml(item.name)+'</strong><span>'+escapeHtml(item.companyName || 'SEM LOJA')+(item.zone ? ' · '+escapeHtml(item.zone) : '')+'</span></span>'+
-        '<span class="com-rank-pct">'+(ranked ? comFormatPct(percent) : 'SEM META')+'</span>'+
-        '<span class="com-rank-bar" aria-hidden="true"><i style="width:'+barWidth+'%"></i></span>'+
-      '</li>';
-    }).join('');
+  // ---------- Ranking em gráfico de colunas ("vela") ----------
+  // Subabas: VENDEDORES (% da métrica escolhida em "Rankear por"), METAS
+  // LOJAS (% feito ÷ meta, aba Meta Loja), ITENS e REALMES TOTAIS POR LOJA
+  // (quantidades somadas dos vendedores; cor pelo % da meta somada). Sempre do
+  // maior para o menor. O MESMO desenho (canvas) vai para a tela e para a
+  // imagem do WhatsApp (1080x1080, fundo branco).
+  const COM_RANK_METRICS = {revenuePercent:'FATURAMENTO', itemsPercent:'ITENS VENDIDOS', warrantyPercent:'ANEXO DE GARANTIA', realmePercent:'REALMES'};
+  const COM_TIER_COLORS = {red:'#ef6a55', yellow:'#e1ad49', green:'#54c48a', none:'#8a99a8'};
+  const COM_IMAGE_PALETTE = {bg:'#ffffff', ink:'#10202f', soft:'#4a5b6b', faint:'#8a99a8', grid:'#e3e9ef'};
+  let comRankSub = 'vendedores';
+
+  function comMonthLong(month){
+    const [year, monthNumber] = String(month || '').split('-').map(Number);
+    if(!year || !monthNumber) return '';
+    return new Date(year, monthNumber - 1, 1).toLocaleString('pt-BR', {month:'long'}).toUpperCase()+'/'+year;
   }
+
+  // Dados do gráfico da subaba aberta: {title, subtitle, percent, unit, bars, empty}.
+  function comRankChart(){
+    if(comRankSub === 'vendedores'){
+      const metric = el('comRankMetric') ? el('comRankMetric').value : 'revenuePercent';
+      const items = (comRanking ? comRanking.items : [])
+        .filter(item => (!comZoneFilter || item.zone === comZoneFilter) && item[metric] !== null);
+      return {
+        title: 'RANKING VENDEDORES · '+COM_RANK_METRICS[metric]+(comZoneFilter ? ' · ZONA '+comZoneFilter : ''),
+        subtitle: '% DA META DE CADA VENDEDOR',
+        percent: true,
+        bars: items.map(item => ({label: item.name, sub: item.companyName || '', value: item[metric], tierPercent: item[metric]})),
+        empty: 'Nenhum vendedor com meta neste mês.'
+      };
+    }
+    if(comRankSub === 'lojas'){
+      const items = comStores ? comStores.items : [];
+      return {
+        title: 'METAS DAS LOJAS · FEITO ÷ META',
+        subtitle: comStores && comStores.totalPercent !== null && comStores.totalPercent !== undefined ? 'TODAS AS LOJAS: '+comFormatPct(comStores.totalPercent) : '',
+        percent: true,
+        bars: items.map(item => ({label: item.name, sub: '', value: item.percent || 0, tierPercent: item.percent})),
+        empty: 'Nenhuma loja com meta neste mês (aba Meta Loja).'
+      };
+    }
+    const isItems = comRankSub === 'itens';
+    const key = isItems ? 'items' : 'realme';
+    const targetKey = isItems ? 'targetItems' : 'targetRealme';
+    const stores = (comRanking && comRanking.stores ? comRanking.stores : []).filter(store => store[key] > 0 || store[targetKey] > 0);
+    const totalDone = stores.reduce((sum, store) => sum + store[key], 0);
+    return {
+      title: (isItems ? 'ITENS' : 'REALMES')+' TOTAIS POR LOJA',
+      subtitle: 'TOTAL: '+comFormatValue(isItems ? 'items' : 'units', totalDone).toUpperCase(),
+      percent: false,
+      unit: isItems ? 'items' : 'units',
+      bars: stores.map(store => {
+        const share = comShare(store[key], store[targetKey]);
+        return {label: store.name, sub: share === null ? 'SEM META' : comFormatPct(share)+' DA META', value: store[key], tierPercent: share};
+      }),
+      empty: 'Nenhum vendedor lançado neste mês.'
+    };
+  }
+
+  // Corta o texto com reticências para caber na largura.
+  function comFitText(ctx, text, maxWidth){
+    if(ctx.measureText(text).width <= maxWidth) return text;
+    let cut = text;
+    while(cut.length > 1 && ctx.measureText(cut+'…').width > maxWidth) cut = cut.slice(0, -1);
+    return cut+'…';
+  }
+
+  function comDrawChart(canvas, chart, options){
+    const {width, height, scale, palette, header} = options;
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    const family = getComputedStyle(document.body).fontFamily || 'sans-serif';
+    const font = (weight, size) => weight+' '+size+'px '+family;
+    const k = header ? 1.6 : 1;
+    ctx.fillStyle = palette.bg;
+    ctx.fillRect(0, 0, width, height);
+
+    let top = 14 * k;
+    if(header){
+      ctx.fillStyle = palette.ink;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.font = font(900, 30);
+      ctx.fillText(comFitText(ctx, chart.title, width - 80), 40, 40);
+      ctx.fillStyle = palette.soft;
+      ctx.font = font(700, 20);
+      ctx.fillText(comFitText(ctx, ['UNIGAMES · '+comMonthLong(comMonth), chart.subtitle].filter(Boolean).join(' · '), width - 80), 40, 82);
+      top = 130;
+    }
+
+    const bars = chart.bars.slice().sort((a, b) => b.value - a.value || a.label.localeCompare(b.label, 'pt-BR'));
+    const side = header ? 40 : 12;
+    const count = Math.max(1, bars.length);
+    const rotate = (width - side * 2) / count < 92 * k;
+    ctx.font = font(800, 12 * k);
+    const longest = bars.reduce((max, bar) => Math.max(max, ctx.measureText(bar.label).width), 0);
+    const labelArea = rotate ? Math.min(170 * k, longest * 0.77 + 26 * k) : 46 * k;
+    // Nomes inclinados descem para a esquerda: o 1º precisa de margem.
+    const firstName = bars.length ? ctx.measureText('1º '+bars[0].label).width : 0;
+    const left = rotate ? Math.max(side, Math.min(firstName, labelArea * 1.3) * 0.71 + 4 - (width - side * 2) / count / 2) : side;
+    const slot = (width - left - side) / count;
+    const plotTop = top + 26 * k;
+    const plotBottom = height - labelArea - (header ? 24 : 6);
+    const values = bars.map(bar => bar.value);
+    const max = (chart.percent ? Math.max(100, ...values) : Math.max(1, ...values)) * 1.08;
+    const y = value => plotBottom - (value / max) * (plotBottom - plotTop);
+
+    // Base e, nos gráficos de %, a linha da META (100%).
+    ctx.strokeStyle = palette.grid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(left, plotBottom + 0.5);
+    ctx.lineTo(width - side, plotBottom + 0.5);
+    ctx.stroke();
+    if(chart.percent){
+      ctx.setLineDash([6 * k, 5 * k]);
+      ctx.strokeStyle = palette.faint;
+      ctx.beginPath();
+      ctx.moveTo(left, Math.round(y(100)) + 0.5);
+      ctx.lineTo(width - side, Math.round(y(100)) + 0.5);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = palette.faint;
+      ctx.font = font(800, 10 * k);
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('META 100%', width - side, y(100) - 3);
+    }
+
+    const barWidth = Math.max(6, Math.min(64 * k, slot * 0.62));
+    bars.forEach((bar, index) => {
+      const cx = left + slot * index + slot / 2;
+      const barTop = y(bar.value);
+      const tier = bar.tierPercent === null || bar.tierPercent === undefined ? 'none' : comTier(bar.tierPercent);
+      ctx.fillStyle = COM_TIER_COLORS[tier];
+      const radius = Math.min(6 * k, barWidth / 2);
+      const h = Math.max(2, plotBottom - barTop);
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(cx - barWidth / 2, plotBottom - h, barWidth, h, [radius, radius, 0, 0]);
+      else ctx.rect(cx - barWidth / 2, plotBottom - h, barWidth, h);
+      ctx.fill();
+
+      // Valor em cima da coluna.
+      ctx.fillStyle = palette.ink;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.font = font(900, (slot < 46 * k ? 9 : 12) * k);
+      const valueText = chart.percent ? comFormatPct(bar.value) : Number(bar.value).toLocaleString('pt-BR');
+      ctx.fillText(valueText, cx, plotBottom - h - 4);
+
+      // Posição + nome (e a linha de baixo) embaixo da coluna.
+      const name = (index + 1)+'º '+bar.label;
+      ctx.fillStyle = palette.ink;
+      ctx.font = font(800, 12 * k);
+      if(rotate){
+        ctx.save();
+        ctx.translate(cx, plotBottom + 8 * k);
+        ctx.rotate(-Math.PI / 4);
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(comFitText(ctx, name, labelArea * 1.3), 0, 0);
+        ctx.restore();
+      }else{
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(comFitText(ctx, name, slot - 8), cx, plotBottom + 8 * k);
+        if(bar.sub){
+          ctx.fillStyle = palette.soft;
+          ctx.font = font(700, 10 * k);
+          ctx.fillText(comFitText(ctx, bar.sub, slot - 8), cx, plotBottom + 25 * k);
+        }
+      }
+    });
+  }
+
+  function comScreenPalette(){
+    const css = getComputedStyle(document.documentElement);
+    const v = (name, fallback) => (css.getPropertyValue(name) || '').trim() || fallback;
+    return {bg: v('--bg-card', '#132231'), ink: v('--ink', '#e8eef4'), soft: v('--ink-soft', '#9fb0c0'), faint: v('--ink-faint', '#6f8293'), grid: v('--inset-border', 'rgba(255,255,255,.12)')};
+  }
+
+  function comRenderRanking(){
+    const canvas = el('comRankCanvas');
+    if(!canvas) return;
+    document.querySelectorAll('[data-com-rank]').forEach(tab => {
+      const active = tab.dataset.comRank === comRankSub;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    const chart = comRankChart();
+    if(el('comRankTitle')) el('comRankTitle').textContent = chart.title+(chart.subtitle ? ' · '+chart.subtitle : '');
+    const empty = el('comRankEmpty');
+    const hasBars = chart.bars.length > 0;
+    canvas.hidden = !hasBars;
+    if(empty){
+      empty.hidden = hasBars;
+      empty.textContent = chart.empty;
+    }
+    if(el('btnComRankImage')) el('btnComRankImage').disabled = !hasBars;
+    if(!hasBars) return;
+    canvas.setAttribute('aria-label', chart.title+': '+chart.bars.slice().sort((a, b) => b.value - a.value)
+      .map((bar, index) => (index + 1)+'º '+bar.label+' '+(chart.percent ? comFormatPct(bar.value) : bar.value)).join(', '));
+    const box = Math.max(280, canvas.parentElement.clientWidth);
+    // Mínimo de 40px por coluna para os valores não se encostarem.
+    const width = Math.max(box, chart.bars.length * 40 + 60);
+    const height = box < 560 ? 380 : 440;
+    canvas.style.width = width+'px';
+    canvas.style.height = height+'px';
+    comDrawChart(canvas, chart, {width, height, scale: window.devicePixelRatio || 1, palette: comScreenPalette(), header: false});
+  }
+
+  // Imagem 1080x1080 para o WhatsApp: no celular abre o "Compartilhar"
+  // (WhatsApp aparece na lista); onde não dá, baixa o PNG.
+  async function comShareRankImage(){
+    const chart = comRankChart();
+    if(!chart.bars.length) return;
+    const canvas = document.createElement('canvas');
+    comDrawChart(canvas, chart, {width:1080, height:1080, scale:1, palette:COM_IMAGE_PALETTE, header:true});
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if(!blob){ showPurchaseToast('NÃO FOI POSSÍVEL GERAR A IMAGEM.'); return; }
+    const fileName = 'ranking-'+comRankSub+'-'+comMonth+'.png';
+    const file = new File([blob], fileName, {type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({files:[file], title: chart.title});
+        return;
+      }catch(error){
+        if(error && error.name === 'AbortError') return;
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showPurchaseToast('IMAGEM BAIXADA — ANEXE NO WHATSAPP.');
+  }
+
+  if(el('comRankTabs')) el('comRankTabs').addEventListener('click', event => {
+    const tab = event.target.closest('[data-com-rank]');
+    if(!tab || tab.dataset.comRank === comRankSub) return;
+    comRankSub = tab.dataset.comRank;
+    comApplyFilterVisibility();
+    comRenderRanking();
+  });
+  if(el('btnComRankImage')) el('btnComRankImage').addEventListener('click', comShareRankImage);
+  let comRankResizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(comRankResizeTimer);
+    comRankResizeTimer = setTimeout(() => { if(comView === 'ranking' && el('comRankCanvas') && el('comRankCanvas').offsetParent) comRenderRanking(); }, 150);
+  });
 
   // ---------- Abas de atualização (alimentação manual, ao vivo) ----------
   // Vendedores (comercial:goals), Crediários (comercial:credit) e Meta Loja
@@ -42885,24 +43097,6 @@ function renderHomeTasks(){
     comRenderStoreGoalsTotal();
   }
 
-  function comRenderStoresVisual(){
-    const box = el('comStoresVisual');
-    const list = el('comStoresList');
-    if(!box || !list) return;
-    const items = comStores ? comStores.items : [];
-    box.hidden = !items.length;
-    if(!items.length) return;
-    const row = (position, name, sub, percent, extra) =>
-      '<li class="com-rank-row tier-'+comTier(percent)+(extra || '')+'">'+
-        '<span class="com-rank-pos">'+position+'</span>'+
-        '<span class="com-rank-who"><strong>'+escapeHtml(name)+'</strong><span>'+escapeHtml(sub)+'</span></span>'+
-        '<span class="com-rank-pct">'+comFormatPct(percent)+'</span>'+
-        '<span class="com-rank-bar" aria-hidden="true"><i style="width:'+Math.min(100, Math.max(0, percent || 0))+'%"></i></span>'+
-      '</li>';
-    list.innerHTML = row('–', 'Todas as lojas', 'Rede · feito ÷ meta', comStores.totalPercent, ' com-rank-total')+
-      items.map((item, index) => row((index + 1)+'º', item.name, 'Feito ÷ meta da loja', item.percent)).join('');
-  }
-
   async function comLoadStores(){
     try{
       comStores = await comApi('/stores?month='+encodeURIComponent(comMonth));
@@ -42911,7 +43105,7 @@ function renderHomeTasks(){
       if(comView === 'lojas' && el('comStoreGoalsBody')) el('comStoreGoalsBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
     if(comView === 'lojas') comRenderStoreGoals();
-    if(comView === 'dashboard') comRenderStoresVisual();
+    if(comView === 'ranking') comRenderRanking();
   }
 
   if(el('comStoreGoalsBody')) el('comStoreGoalsBody').addEventListener('change', event => {
@@ -43166,16 +43360,12 @@ function renderHomeTasks(){
       comStoreFilter = '';
       comZoneFilter = '';
       comSellerFilter = '';
-      // Abas de atualização sempre recarregam ao abrir (outra pessoa pode ter
-      // lançado); as de leitura reaproveitam o que já veio do mês.
+      // Mostra na hora o que já veio do mês (abas de leitura) e SEMPRE busca de
+      // novo: outra pessoa pode ter lançado enquanto esta aba estava fechada.
       const data = comView === 'ranking' ? comRanking : comData();
-      const fresh = data && data.month === comMonth &&
-        !['vendedores', 'crediarios', 'lojas', 'regras'].includes(comView);
-      if(fresh){
-        comRenderCurrent();
-        // O painel das lojas é leve e muda pela aba Meta Loja: sempre busca.
-        if(comView === 'dashboard') comLoadStores();
-      }else loadComercialPage('comercialAcompanhamento');
+      const cached = data && data.month === comMonth && !['vendedores', 'crediarios', 'lojas', 'regras'].includes(comView);
+      if(cached) comRenderCurrent();
+      loadComercialPage('comercialAcompanhamento', {silent: Boolean(cached)});
     });
   });
 
@@ -43188,7 +43378,6 @@ function renderHomeTasks(){
     if(comView === 'vendedores') comRenderSellersEdit();
     if(comView === 'crediarios') comRenderEntries();
     if(comView === 'lojas') comRenderStoreGoals();
-    if(comView === 'dashboard') comRenderStoresVisual();
   }
 
   async function comLoadOverview(opts){
@@ -43217,15 +43406,16 @@ function renderHomeTasks(){
     comRenderCurrent();
   }
 
-  async function comLoadRanking(opts){
-    const options = opts || {};
-    const list = el('comRankList');
-    if(!options.silent && list) list.innerHTML = '<li class="com-empty">Carregando…</li>';
+  async function comLoadRanking(){
     try{
       comRanking = await comApi('/ranking?month='+encodeURIComponent(comMonth));
     }catch(error){
       comRanking = null;
-      if(list) list.innerHTML = '<li class="com-empty">'+escapeHtml(error.message)+'</li>';
+      if(el('comRankEmpty')){
+        el('comRankEmpty').hidden = false;
+        el('comRankEmpty').textContent = error.message;
+      }
+      if(el('comRankCanvas')) el('comRankCanvas').hidden = true;
       return;
     }
     comRenderCurrent();
@@ -43250,7 +43440,7 @@ function renderHomeTasks(){
       return;
     }
     if(comView === 'ranking'){
-      await comLoadRanking(opts);
+      await Promise.all([comLoadRanking(opts), comLoadStores()]);
       return;
     }
     if(comView === 'vendedores'){
@@ -43266,7 +43456,7 @@ function renderHomeTasks(){
       await comLoadStores();
       return;
     }
-    await Promise.all([comLoadOverview(opts), comView === 'dashboard' ? comLoadStores() : null]);
+    await comLoadOverview(opts);
   }
 
   document.querySelectorAll('[data-com-month]').forEach(input => {

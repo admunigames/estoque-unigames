@@ -4355,10 +4355,20 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Sem importação de arquivo/planilha em lugar nenhum do Comercial.
   assert.doesNotMatch(html, /comImportFile|comImportPreview|btnComImportConfirm|com-import-|\/import\?month/);
   await assert.rejects(readFile(new URL("../app/api/commercial/import/route.ts", import.meta.url), "utf8"));
-  // Tabelas de crediário (só ID, vendedor e total) e painel visual das lojas
-  // para todos, só com % (a rota /stores não manda R$ a quem só visualiza).
+  // Tabelas de crediário (só ID, vendedor e total). Metas das lojas só em %
+  // (a rota /stores não manda R$ a quem só visualiza), no Ranking — o
+  // Dashboard é só dos vendedores.
   assert.match(html, /\['payjoy','PAYJOY'\], \['crefaz','CREFAZ'\], \['parcelex','PARCELEX'\], \['odres','ODRES'\],\s*\['venda_pa','VENDA P\.A'\], \['venda_unigames','VENDA UNIGAMES'\]/);
-  assert.match(html, /<section class="com-stores-visual" id="comStoresVisual" hidden>/);
+  assert.doesNotMatch(html, /comStoresVisual|comRenderStoresVisual|com-stores-visual/);
+  // Ranking: subabas em gráfico de colunas (canvas) + imagem para o WhatsApp.
+  for (const [sub, label] of [["vendedores", "Vendedores"], ["lojas", "Metas Lojas"], ["itens", "Itens Totais por Loja"], ["realmes", "Realmes Totais por Loja"]]) {
+    assert.match(html, new RegExp(`data-com-rank="${sub}">${label}</button>`));
+  }
+  assert.match(html, /<canvas id="comRankCanvas" role="img"/);
+  assert.match(html, /id="btnComRankImage">GERAR IMAGEM PARA WHATSAPP</);
+  assert.match(html, /comDrawChart\(canvas, chart, \{width:1080, height:1080, scale:1, palette:COM_IMAGE_PALETTE, header:true\}\)/);
+  assert.match(html, /navigator\.share\(\{files:\[file\], title: chart\.title\}\)/);
+  assert.doesNotMatch(html, /comRankList/);
   assert.match(storesRoute, /const body: JsonMap = \{ month, items, totalPercent: progressPercent\(revenueSum, targetSum\) \};/);
   assert.match(storesRoute, /if \(canManageCommercialStores\(actor\) && scope\)/);
   // Ao vivo: qualquer escrita em /api/commercial avisa o canal "commercial".
