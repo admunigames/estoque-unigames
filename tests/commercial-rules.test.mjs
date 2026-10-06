@@ -346,7 +346,7 @@ test("Crediários (comercial:credit): ID, vendedor e valor por tabela; somam no 
 
   const list = await (await callRoute(entriesRoute.GET, CREDIT_A, "GET", "/api/commercial/entries?month=2027-01&kind=payjoy")).json();
   assert.equal(list.label, "PAYJOY");
-  assert.deepEqual(list.items.map((item) => [item.saleRef, item.employeeName, item.amountCents]), [["330137", "Ana Souza", 151_499]]);
+  assert.deepEqual(list.items.map((item) => [item.saleRef, item.employeeName, item.amountCents]), [["330137", "ANA SOUZA", 151_499]]);
   assert.equal(list.totalCents, 151_499);
 
   // Overview: crediário = PAYJOY + PARCELEX; venda P.A/Unigames separada.
@@ -419,4 +419,13 @@ test("Ranking: totais de itens e realmes por loja (só quantidades, nada em R$),
   );
   assert.equal(data.items.length, 3);
   assert.doesNotMatch(JSON.stringify(data), /Cents|commission|revenue"/);
+});
+
+test("nomes de vendedor sempre em CAIXA ALTA (cadastro do RH em minúsculas)", async () => {
+  const overviewData = await sellersOf(ADMIN, "2026-12");
+  assert.deepEqual(overviewData.sellers.map((seller) => seller.name).sort(), ["ANA SOUZA", "BRUNO LIMA", "CARLA DIAS"]);
+  const rank = await (await callRoute(rankingRoute.GET, DASHBOARD, "GET", "/api/commercial/ranking?month=2026-12")).json();
+  assert.ok(rank.items.every((item) => item.name === item.name.toLocaleUpperCase("pt-BR")));
+  const options = await (await callRoute(sellersRoute.GET, ADMIN, "GET", "/api/commercial/sellers?month=2026-12")).json();
+  assert.ok(options.employees.every((employee) => employee.fullName === employee.fullName.toLocaleUpperCase("pt-BR")));
 });

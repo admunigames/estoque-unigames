@@ -58,8 +58,10 @@ export async function GET(request: Request) {
          FROM commercial_credit_entries WHERE month=?1 AND kind=?2 ORDER BY created_at DESC`,
       )
       .bind(month, kind)
-      .all<{ companyId: string; amountCents: number }>();
-    const items = (result.results ?? []).filter((item) => scope.allStores || item.companyId === scope.companyId);
+      .all<{ companyId: string; amountCents: number; employeeName: string }>();
+    const items = (result.results ?? [])
+      .filter((item) => scope.allStores || item.companyId === scope.companyId)
+      .map((item) => ({ ...item, employeeName: String(item.employeeName || "").toLocaleUpperCase("pt-BR") }));
     return jsonResponse({
       month,
       kind,

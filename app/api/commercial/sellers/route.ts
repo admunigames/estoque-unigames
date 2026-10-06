@@ -80,7 +80,7 @@ export async function GET(request: Request) {
       .filter((employee) => scope.allStores || employee.companyId === scope.companyId)
       .map((employee) => ({
         id: employee.id,
-        fullName: employee.fullName,
+        fullName: employee.fullName.toLocaleUpperCase("pt-BR"),
         companyId: employee.companyId,
         companyName: companyNames.get(employee.companyId) || employee.companyName,
         isSeller: isSellerRole(employee.roleTitle),

@@ -348,7 +348,8 @@ export async function loadSellers(
     const companyId = row.currentCompanyId || row.companyId;
     return {
       employeeId: row.employeeId,
-      name: row.currentName || row.employeeName,
+      // Nomes de vendedor sempre em CAIXA ALTA no Comercial (telas e imagem).
+      name: (row.currentName || row.employeeName || "").toLocaleUpperCase("pt-BR"),
       companyId,
       companyName: companyNames.get(companyId) || row.companyName,
       zone: row.zone,
