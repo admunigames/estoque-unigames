@@ -42510,12 +42510,18 @@ function renderHomeTasks(){
   // ---------- Ranking em gráfico de colunas ("vela") ----------
   // Subabas: VENDEDORES (% da métrica escolhida em "Rankear por"), METAS
   // LOJAS (% feito ÷ meta, aba Meta Loja), ITENS e REALMES TOTAIS POR LOJA
-  // (quantidades somadas dos vendedores; cor pelo % da meta somada). Sempre do
+  // (quantidades somadas dos vendedores). Cor pela posição (verde → vermelho). Sempre do
   // maior para o menor. O MESMO desenho das colunas (comDrawBars) vai para a
   // tela e para a imagem do WhatsApp (1600x900, 16:9 — o WhatsApp mostra
   // inteira, sem cortar —, com a logo, faixa da marca e rodapé).
   const COM_RANK_METRICS = {revenuePercent:'FATURAMENTO', itemsPercent:'ITENS VENDIDOS', warrantyPercent:'ANEXO DE GARANTIA', realmePercent:'REALMES'};
-  const COM_TIER_COLORS = {red:'#ef6a55', yellow:'#e1ad49', green:'#54c48a', none:'#8a99a8'};
+  // Cor da coluna pela POSIÇÃO no ranking: degradê do 1º (verde) ao último
+  // (vermelho), passando pelo amarelo. alpha < 1 = base mais clara da coluna.
+  function comRankColor(index, count, alpha){
+    const t = count > 1 ? index / (count - 1) : 0;
+    const hue = Math.round(145 - t * 140);
+    return 'hsla('+hue+', 78%, 48%, '+(alpha === undefined ? 1 : alpha)+')';
+  }
   const COM_IMAGE_PALETTE = {bg:'#f4f7fb', ink:'#10202f', soft:'#4a5b6b', faint:'#7d8fa1', grid:'#d5dee8'};
   let comRankSub = 'vendedores';
 
@@ -42535,7 +42541,7 @@ function renderHomeTasks(){
         title: 'RANKING VENDEDORES · '+COM_RANK_METRICS[metric]+(comZoneFilter ? ' · ZONA '+comZoneFilter : ''),
         subtitle: '',
         percent: true,
-        bars: items.map(item => ({label: item.name, sub: item.companyName || '', value: item[metric], tierPercent: item[metric]})),
+        bars: items.map(item => ({label: item.name, sub: item.companyName || '', value: item[metric]})),
         empty: 'Nenhum vendedor com meta neste mês.'
       };
     }
@@ -42545,7 +42551,7 @@ function renderHomeTasks(){
         title: 'METAS DAS LOJAS',
         subtitle: comStores && comStores.totalPercent !== null && comStores.totalPercent !== undefined ? 'TODAS AS LOJAS: '+comFormatPct(comStores.totalPercent) : '',
         percent: true,
-        bars: items.map(item => ({label: item.name, sub: '', value: item.percent || 0, tierPercent: item.percent})),
+        bars: items.map(item => ({label: item.name, sub: '', value: item.percent || 0})),
         empty: 'Nenhuma loja com meta neste mês (aba Meta Loja).'
       };
     }
@@ -42561,7 +42567,7 @@ function renderHomeTasks(){
       unit: isItems ? 'items' : 'units',
       bars: stores.map(store => {
         const share = comShare(store[key], store[targetKey]);
-        return {label: store.name, sub: share === null ? 'SEM META' : comFormatPct(share)+' DA META', value: store[key], tierPercent: share};
+        return {label: store.name, sub: share === null ? 'SEM META' : comFormatPct(share)+' DA META', value: store[key]};
       }),
       empty: 'Nenhum vendedor lançado neste mês.'
     };
@@ -42632,13 +42638,12 @@ function renderHomeTasks(){
     bars.forEach((bar, index) => {
       const cx = left + slot * index + slot / 2;
       const barTop = y(bar.value);
-      const tier = bar.tierPercent === null || bar.tierPercent === undefined ? 'none' : comTier(bar.tierPercent);
       const radius = Math.min(6 * k, barWidth / 2);
       const h = Math.max(2, plotBottom - barTop);
       // Coluna em degradê (mais clara em cima).
       const gradient = ctx.createLinearGradient(0, plotBottom - h, 0, plotBottom);
-      gradient.addColorStop(0, COM_TIER_COLORS[tier]);
-      gradient.addColorStop(1, COM_TIER_COLORS[tier]+'b3');
+      gradient.addColorStop(0, comRankColor(index, bars.length));
+      gradient.addColorStop(1, comRankColor(index, bars.length, 0.7));
       ctx.fillStyle = gradient;
       ctx.beginPath();
       if(ctx.roundRect) ctx.roundRect(cx - barWidth / 2, plotBottom - h, barWidth, h, [radius, radius, 0, 0]);

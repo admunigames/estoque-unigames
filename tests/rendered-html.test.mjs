@@ -4372,6 +4372,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /comDrawBars\(ctx, chart, \{x:40, y:HEADER \+ 30,/);
   assert.match(html, /navigator\.share\(\{files:\[file\], title: chart\.title\}\)/);
   assert.doesNotMatch(html, /comRankList/);
+  // Cor das colunas pela posição: 1º verde → último vermelho (degradê).
+  assert.match(html, /const hue = Math\.round\(145 - t \* 140\);/);
+  assert.doesNotMatch(html, /COM_TIER_COLORS/);
   assert.match(storesRoute, /const body: JsonMap = \{ month, items, totalPercent: progressPercent\(revenueSum, targetSum\) \};/);
   assert.match(storesRoute, /if \(canManageCommercialStores\(actor\) && scope\)/);
   // Ao vivo: qualquer escrita em /api/commercial avisa o canal "commercial".
