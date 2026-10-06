@@ -34,6 +34,9 @@ import {
 // resposta (não basta esconder no front); ficam só allCriteriaMet,
 // revenueRateBps e newcomer, usados pelo selo do Dashboard — que é igual
 // para todos. `rules` = regra vigente do mês (textos das regras no front).
+// NOVATO é escondido da conta vinculada a um vendedor (ownOnly): a resposta
+// sai com newcomer=false (os valores em R$ continuam os reais), e essa conta
+// nunca pode marcar novatos (canMarkNewcomer=false; a rota também recusa).
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -63,7 +66,13 @@ export async function GET(request: Request) {
     // tenha sido importado (a tela mostra "ainda não importado").
     const ownOnly = linked.length > 0;
     const scoped = ownOnly
-      ? sellers.filter((seller) => linked.includes(seller.employeeId))
+      ? sellers
+        .filter((seller) => linked.includes(seller.employeeId))
+        .map((seller) => ({
+          ...seller,
+          newcomer: false,
+          metrics: { ...seller.metrics, commission: { ...seller.metrics.commission, newcomer: false } },
+        }))
       : scope.allStores ? sellers : sellers.filter((seller) => seller.companyId === scope.companyId);
     const visible = canCommission
       ? scoped
@@ -83,7 +92,7 @@ export async function GET(request: Request) {
       canCommission,
       canGoals,
       canRules: canManageCommercialRules(actor),
-      canMarkNewcomer: canMarkCommercialNewcomer(actor),
+      canMarkNewcomer: !ownOnly && canMarkCommercialNewcomer(actor),
       rules,
       sellers: visible,
     });

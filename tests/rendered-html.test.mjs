@@ -4399,7 +4399,9 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
   assert.match(overviewRoute, /scope\.allStores \? sellers : sellers\.filter\(\(seller\) => seller\.companyId === scope\.companyId\)/);
   // Conta vinculada a um vendedor vê só o próprio no Dashboard/Comissão.
   assert.match(overviewRoute, /linkedEmployeeIds\(database, actor\.id\)/);
-  assert.match(overviewRoute, /sellers\.filter\(\(seller\) => linked\.includes\(seller\.employeeId\)\)/);
+  assert.match(overviewRoute, /sellers\s*\.filter\(\(seller\) => linked\.includes\(seller\.employeeId\)\)/);
+  // ...e não fica sabendo que é NOVATO (nem marca novatos).
+  assert.match(overviewRoute, /canMarkNewcomer: !ownOnly && canMarkCommercialNewcomer\(actor\)/);
   // Importação de quem só alcança a própria loja: só grava/substitui a loja dele.
   assert.match(importRoute, /const inScope = \(companyId: string\) => scope\.allStores \|\| companyId === scope\.companyId;/);
   assert.match(importRoute, /DELETE FROM commercial_monthly WHERE month=\?1 AND company_id=\?2/);

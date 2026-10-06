@@ -8,6 +8,7 @@ import {
   commercialScope,
   identity,
   jsonResponse,
+  linkedEmployeeIds,
   safeText,
   sameOrigin,
   type JsonMap,
@@ -17,6 +18,8 @@ import {
 // faturamento. Vale só para o mês marcado e fica fora de commercial_monthly
 // (a importação apaga e reinsere o mês). comercial:goals ou comercial:rules,
 // dentro do escopo de loja do overview; vendedor de outra loja = 404.
+// Conta vinculada a um vendedor nunca marca novatos (nem a si mesma), mesmo
+// com a permissão.
 export async function PUT(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -35,6 +38,9 @@ export async function PUT(request: Request) {
       return jsonResponse({ error: "DADOS INVÁLIDOS." }, 400);
     }
     const database = await getD1();
+    if ((await linkedEmployeeIds(database, actor.id)).length) {
+      return jsonResponse({ error: "CONTA DE VENDEDOR NÃO PODE MARCAR NOVATOS." }, 403);
+    }
     const employee = await database
       .prepare("SELECT company_id AS companyId FROM hr_employees WHERE id=?1")
       .bind(employeeId)

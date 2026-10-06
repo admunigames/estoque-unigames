@@ -44,6 +44,7 @@ const GOALS_A = { id: "u-goals-a", companyId: STORE_A, permissions: ["comercial:
 const DASHBOARD = { id: "u-dash", permissions: ["comercial:dashboard"] };
 const COMMISSION = { id: "u-com", permissions: ["comercial:dashboard", "comercial:commission"] };
 const SELLER_ANA = { id: "user-ana", companyId: STORE_A, permissions: ["comercial:dashboard", "comercial:commission"] };
+const SELLER_ANA_GOALS = { ...SELLER_ANA, permissions: [...SELLER_ANA.permissions, "comercial:goals"] };
 
 // Todos batem os critérios: itens 100/100, realme 10/10, anexo 3 de 10.
 const HEADER = ["LOJAS", "VENDEDOR", "META REALMES", "REALMES FEITO", "META ITENS", "ITENS FEITO", "GAR FEITO", "QT G.A.R", "NOTEBOOK/PC", "FATURADO", "META", "ZONA"];
@@ -188,6 +189,12 @@ test("novatos: permissão, escopo de loja, só no mês marcado e sobrevive à re
   for (const user of [DASHBOARD, COMMISSION, SELLER_ANA]) {
     assert.equal((await mark(user, { employeeId: "emp-ana", month: "2026-10", newcomer: true })).status, 403);
   }
+  // Conta de vendedor com Cadastro de Metas: não marca nem a si nem a outro.
+  for (const employeeId of ["emp-ana", "emp-bruno"]) {
+    const response = await mark(SELLER_ANA_GOALS, { employeeId, month: "2026-10", newcomer: true });
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, "CONTA DE VENDEDOR NÃO PODE MARCAR NOVATOS.");
+  }
   assert.equal((await mark(RULES, { employeeId: "emp-ana", month: "2026-1", newcomer: true })).status, 400);
   assert.equal((await mark(RULES, { employeeId: "emp-ana", month: "2026-10", newcomer: "sim" })).status, 400);
   // Gestor da LOJA ALFA não marca vendedor da LOJA BETA (mesmo 404 de inexistente).
@@ -212,11 +219,17 @@ test("novatos: permissão, escopo de loja, só no mês marcado e sobrevive à re
     assert.equal(byId(oct, "emp-bruno").newcomer, false);
     // Só no mês marcado.
     assert.equal(byId(await sellersOf(ADMIN, "2026-12"), "emp-ana").newcomer, false);
-    // A própria vendedora vê o selo (sem poder marcar).
-    const own = await sellersOf(SELLER_ANA, "2026-10");
-    assert.deepEqual(own.sellers.map((seller) => seller.employeeId), ["emp-ana"]);
-    assert.equal(own.sellers[0].newcomer, true);
-    assert.equal(own.canMarkNewcomer, false);
+    // A própria vendedora NÃO fica sabendo que é novata (nem com a permissão
+    // de Cadastro de Metas): newcomer some da resposta, os valores são os reais.
+    for (const user of [SELLER_ANA, SELLER_ANA_GOALS]) {
+      const own = await sellersOf(user, "2026-10");
+      assert.deepEqual(own.sellers.map((seller) => seller.employeeId), ["emp-ana"]);
+      assert.equal(own.sellers[0].newcomer, false);
+      assert.equal(own.sellers[0].metrics.commission.newcomer, false);
+      assert.equal(own.canMarkNewcomer, false);
+      assert.doesNotMatch(JSON.stringify(own), /"newcomer":true/);
+    }
+    assert.equal(byId(await sellersOf(SELLER_ANA, "2026-10"), "emp-ana").metrics.commission.totalCents, 60_000);
   };
   await check();
   // Reimportar a planilha do mês apaga commercial_monthly, não a marcação.
