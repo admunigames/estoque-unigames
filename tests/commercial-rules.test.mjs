@@ -30,6 +30,7 @@ const entriesRoute = await import("../app/api/commercial/entries/route.ts");
 const storesRoute = await import("../app/api/commercial/stores/route.ts");
 const rankingRoute = await import("../app/api/commercial/ranking/route.ts");
 const employeesRoute = await import("../app/api/hr-payroll/employees/route.ts");
+const teamRoute = await import("../app/api/commercial/team/route.ts");
 
 const STORE_A = "clojaalfa1";
 const STORE_B = "clojabeta1";
@@ -439,4 +440,28 @@ test("RH: o nome do funcionário é gravado em CAIXA ALTA (aparece igual no Come
   assert.equal(created.status, 201, JSON.stringify(await created.clone().json()));
   const row = db.sqlite.prepare("SELECT full_name AS name FROM hr_employees WHERE cpf = '' OR cpf IS NULL ORDER BY rowid DESC LIMIT 1").get();
   assert.equal(row.name, "JOÃO OTÁVIO DA SILVA");
+});
+
+test("Ranking > META VENDEDORES: o vendedor vê só a própria loja; gestor a dele; quem vê tudo escolhe", async () => {
+  const team = async (user, query) => {
+    const response = await callRoute(teamRoute.GET, user, "GET", `/api/commercial/team?month=2026-12${query || ""}`);
+    return { status: response.status, data: await response.json() };
+  };
+  // Vendedora da LOJA ALFA: só os colegas da loja dela, mesmo pedindo a LOJA BETA.
+  const own = await team(SELLER_ANA, `&companyId=${STORE_B}`);
+  assert.equal(own.status, 200);
+  assert.deepEqual(own.data.stores.map((store) => store.companyId), [STORE_A]);
+  assert.equal(own.data.companyId, STORE_A);
+  assert.deepEqual(own.data.items.map((item) => item.name).sort(), ["ANA SOUZA", "BRUNO LIMA"]);
+  assert.deepEqual(Object.keys(own.data.items[0]).sort(), ["employeeId", "name", "percent", "revenueCents", "targetRevenueCents"]);
+  // Gestor com loja: a loja dele.
+  const manager = await team({ ...GOALS_A, permissions: ["comercial:dashboard"] }, `&companyId=${STORE_B}`);
+  assert.deepEqual(manager.data.stores.map((store) => store.companyId), [STORE_A]);
+  // Sem loja (vê todas): escolhe a loja.
+  const all = await team(DASHBOARD, `&companyId=${STORE_B}`);
+  assert.deepEqual(all.data.stores.map((store) => store.name), ["LOJA ALFA", "LOJA BETA"]);
+  assert.equal(all.data.companyId, STORE_B);
+  assert.deepEqual(all.data.items.map((item) => item.name), ["CARLA DIAS"]);
+  // Precisa de comercial:dashboard.
+  assert.equal((await team({ id: "x", permissions: ["comercial:commission"] })).status, 403);
 });

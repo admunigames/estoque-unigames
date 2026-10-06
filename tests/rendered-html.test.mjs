@@ -4375,6 +4375,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Cor das colunas pela posição: 1º verde → último vermelho (degradê).
   assert.match(html, /const hue = Math\.round\(145 - t \* 140\);/);
   assert.doesNotMatch(html, /COM_TIER_COLORS/);
+  // META VENDEDORES: meta (tracejada) × feito por vendedor, só da loja de quem vê (rota /team).
+  assert.match(html, /data-com-rank="equipe">Meta Vendedores</);
+  assert.match(html, /comApi\('\/team\?month='/);
   // Aba Vendedores: rola dentro do quadro, coluna VENDEDOR fixa e botões ← / → COLUNAS.
   assert.match(html, /data-com-scroll="-1">← COLUNAS</);
   assert.match(html, /data-com-scroll="1">COLUNAS →</);
