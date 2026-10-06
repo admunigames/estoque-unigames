@@ -6692,7 +6692,6 @@
       <div class="supply-tabs" role="tablist" aria-label="Acompanhamento de metas">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-com-view="dashboard" data-permission="comercial:dashboard">Dashboard</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="comissao" data-permission="comercial:commission">Comissão</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="crediario" data-permission="comercial:dashboard">Crediário Feito</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="ranking" data-permission="comercial:dashboard">Ranking</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="metas" data-permission="comercial:goals">Cadastro de Metas</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="regras" data-permission="comercial:rules">Regras de Comissão</button>
@@ -6736,18 +6735,6 @@
         <div class="com-rules" id="comRulesBox" aria-label="Regras de comissão"></div>
         <div class="com-total" id="comComTotal" hidden></div>
         <div class="com-commission-grid" id="comComList"><p class="com-empty">Carregando…</p></div>
-      </div>
-
-      <div class="com-view-panel" id="comViewCrediario" hidden>
-        <div class="com-total" id="comCreditTotal" hidden></div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table>
-              <thead><tr><th>Vendedor</th><th>Loja</th><th style="text-align:right">Crediário feito</th><th style="text-align:right">% do faturamento</th><th style="text-align:right" id="comCreditCommissionHead">Comissão</th></tr></thead>
-              <tbody id="comCreditBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
-            </table>
-          </div>
-        </div>
       </div>
 
       <div class="com-view-panel" id="comViewRanking" hidden>
@@ -9131,7 +9118,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals"> CADASTRO DE METAS</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules"> REGRAS DE COMISSÃO</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</label>
               </div>
             </details>
             <details class="permission-module">
@@ -37490,7 +37477,7 @@ function renderHomeTasks(){
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
     'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
-    'comercial:dashboard':'Comercial: visualizar Dashboard e Ranking','comercial:commission':'Comercial: visualizar Comissão','comercial:goals':'Comercial: Cadastro de Metas','comercial:rules':'Comercial: Regras de Comissão',
+    'comercial:dashboard':'Comercial: visualizar Dashboard e Ranking','comercial:commission':'Comercial: visualizar Comissão','comercial:goals':'Comercial: Cadastro de Metas','comercial:rules':'Comercial: Cadastro de Regras de Comissão',
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Comercial - Relatório NF: visualizar','relatorio_nf:manage':'Comercial - Relatório NF: lançar/gerenciar',
@@ -42507,49 +42494,16 @@ function renderHomeTasks(){
     list.innerHTML = sellers.map(comCommissionCardHtml).join('');
     if(total){
       const sum = sellers.reduce((acc, seller) => acc + seller.metrics.commission.totalCents, 0);
-      total.innerHTML = '<span>Total estimado · '+sellers.length+(sellers.length === 1 ? ' vendedor' : ' vendedores')+'</span>'+
+      // Soma do crediário (a antiga aba Crediário Feito): valor vendido e
+      // comissão — já incluída no total estimado.
+      const creditSum = sellers.reduce((acc, seller) => acc + seller.realized.creditSalesCents, 0);
+      const creditCommissionSum = sellers.reduce((acc, seller) => acc + seller.metrics.commission.creditCommissionCents, 0);
+      const creditText = comRules().creditRateBps > 0
+        ? ' · crediário feito '+formatCentsBRL(creditSum)+' (comissão '+formatCentsBRL(creditCommissionSum)+')'
+        : '';
+      total.innerHTML = '<span>Total estimado · '+sellers.length+(sellers.length === 1 ? ' vendedor' : ' vendedores')+escapeHtml(creditText)+'</span>'+
         '<strong>'+escapeHtml(formatCentsBRL(sum))+'</strong>';
       total.hidden = sellers.length < 2;
-    }
-  }
-
-  // Crediário Feito: valor vendido em crediário (planilha) por vendedor; a
-  // comissão só aparece com comercial:commission (sem ela o servidor nem
-  // manda o valor).
-  function comRenderCredit(){
-    const body = el('comCreditBody');
-    const total = el('comCreditTotal');
-    if(!body || !comOverview) return;
-    const canCommission = Boolean(comOverview.canCommission);
-    if(el('comCreditCommissionHead')) el('comCreditCommissionHead').hidden = !canCommission;
-    const sellers = comFilteredSellers();
-    if(!sellers.length){
-      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(comEmptyHtml().replace(/<[^>]+>/g, ''))+'</td></tr>';
-      if(total) total.hidden = true;
-      return;
-    }
-    const rate = comFormatBps(comRules().creditRateBps);
-    body.innerHTML = sellers.map(seller => {
-      const credit = seller.realized.creditSalesCents;
-      const revenue = seller.realized.revenueCents;
-      const share = revenue > 0 ? Math.floor(credit / revenue * 1000) / 10 : null;
-      const commission = seller.metrics.commission;
-      const commissionCell = !canCommission ? '' :
-        '<td data-label="Comissão ('+escapeHtml(rate)+')" style="text-align:right">'+
-          (commission.newcomer ? '<span class="status-pill waiting">NOVATO — NÃO RECEBE</span>' : escapeHtml(formatCentsBRL(commission.creditCommissionCents)))+'</td>';
-      return '<tr><td data-label="Vendedor" class="nome">'+escapeHtml(seller.name)+'</td>'+
-        '<td data-label="Loja">'+escapeHtml(seller.companyName || 'SEM LOJA')+'</td>'+
-        '<td data-label="Crediário feito" style="text-align:right">'+escapeHtml(formatCentsBRL(credit))+'</td>'+
-        '<td data-label="% do faturamento" style="text-align:right">'+escapeHtml(comFormatPct(share))+'</td>'+
-        commissionCell+'</tr>';
-    }).join('');
-    if(total){
-      const creditSum = sellers.reduce((acc, seller) => acc + seller.realized.creditSalesCents, 0);
-      const commissionSum = canCommission ? sellers.reduce((acc, seller) => acc + seller.metrics.commission.creditCommissionCents, 0) : 0;
-      total.innerHTML = '<span>Crediário feito · '+sellers.length+(sellers.length === 1 ? ' vendedor' : ' vendedores')+
-        (canCommission ? ' · comissão '+escapeHtml(formatCentsBRL(commissionSum)) : '')+'</span>'+
-        '<strong>'+escapeHtml(formatCentsBRL(creditSum))+'</strong>';
-      total.hidden = false;
     }
   }
 
@@ -42988,7 +42942,7 @@ function renderHomeTasks(){
         tab.classList.toggle('active', active);
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
       });
-      ['Dashboard','Comissao','Crediario','Ranking','Metas','Regras'].forEach(name => {
+      ['Dashboard','Comissao','Ranking','Metas','Regras'].forEach(name => {
         el('comView'+name).hidden = comView !== name.toLowerCase();
       });
       comStoreFilter = '';
@@ -43004,7 +42958,6 @@ function renderHomeTasks(){
     comRenderFilters();
     if(comView === 'dashboard') comRenderDashboard();
     if(comView === 'comissao') comRenderCommission();
-    if(comView === 'crediario') comRenderCredit();
     if(comView === 'ranking') comRenderRanking();
     if(comView === 'regras') comRenderRules();
     if(comView === 'metas'){
@@ -43016,7 +42969,6 @@ function renderHomeTasks(){
   async function comLoadOverview(opts){
     const options = opts || {};
     const targets = ['comDashList', 'comComList'].map(el).filter(Boolean);
-    if(!options.silent && el('comCreditBody')) el('comCreditBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
     if(!options.silent) targets.forEach(node => { node.innerHTML = '<p class="com-empty">Carregando…</p>'; });
     try{
       comOverview = await comApi('/overview?month='+encodeURIComponent(comMonth));
