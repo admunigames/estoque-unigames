@@ -1,20 +1,34 @@
 // Comercial — metas e comissionamento dos vendedores. Regra de comissão
-// (definida pelo usuário em 2026-09-30):
+// (definida pelo usuário em 2026-09-30, ajustada em 2026-10-06):
 //
 //   CRITÉRIOS: Itens ≥ 100% da META ITENS, Realme ≥ 100% da META REALMES e
-//   anexo de garantia ≥ 30% (QT G.A.R ÷ NOTEBOOK/PC — não existe meta de
-//   G.A.R em valor).
+//   anexo de garantia ≥ ANEXO MÍNIMO (QT G.A.R ÷ NOTEBOOK/PC — não existe
+//   meta de G.A.R em valor).
 //
-//   Bateu os 3 critérios → 0,6% do faturamento + premiação sobre a META DE
-//                          FATURAMENTO: R$ 500 a partir de 110%, R$ 1.500 a
-//                          partir de 120% (não cumulativa).
-//   Não bateu algum      → 0,4% do faturamento (sempre, sem mínimo) e sem
-//                          premiação.
-//   Garantia estendida   → 4% sobre o valor vendido em garantia, sempre.
+//   Faturamento        → % ALTA (bateu os 3 critérios) ou % BAIXA (não bateu
+//                        algum; sempre, sem mínimo) sobre FATURADO − CREDIÁRIO
+//                        (o crediário paga só a própria %). Regra sem % de
+//                        crediário (setembro e anteriores) → FATURADO inteiro,
+//                        como antes.
+//   Premiação          → só com os 3 critérios: a MAIOR faixa atingida sobre
+//                        a META DE FATURAMENTO, usando o FATURADO TOTAL (não
+//                        cumulativa).
+//   Garantia estendida → % sobre o valor vendido em garantia, sempre.
+//   Crediário feito    → % sobre o valor vendido em crediário (coluna
+//                        opcional da planilha).
+//   NOVATO (marcado no Dashboard, só naquele mês) → SÓ a % do faturamento:
+//                        sem premiação, garantia e crediário.
+//
+//   Os percentuais e as faixas são por VIGÊNCIA (commercial_rules, aba Regras
+//   de Comissão): vale a regra com a maior vigência ≤ mês. Mês sem regra
+//   cadastrada → DEFAULT_COMMERCIAL_RULES (a regra de setembro/2026: 0,6% /
+//   0,4%, R$ 500 a 110% e R$ 1.500 a 120%, garantia 4%, anexo 30%, sem
+//   crediário). A migration 0085 cadastra 2026-10 com garantia 6% e
+//   crediário 2%.
 //
 //   Meta de Itens/Realme zerada conta como batida (não havia o que cumprir).
-//   Sem notebook/PC vendido no mês o anexo não tem base → critério de 30%
-//   NÃO batido.
+//   Sem notebook/PC vendido no mês o anexo não tem base → critério NÃO
+//   batido.
 //
 // A ÚNICA fonte dos números é a planilha "ACOMPANHAMENTO LOJAS_VENDEDORES",
 // aba "VENDEDORES <MÊS>" (sem digitação manual). Cada importação grava um
@@ -23,16 +37,109 @@
 
 export const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-// Marcos da barra de Faturamento, em % da meta: a meta e as duas faixas de
-// premiação.
-export const REVENUE_TARGETS = [100, 110, 120] as const;
+// Percentuais em basis points (1% = 100), valores em centavos.
+export type PremiumTier = { percent: number; cents: number };
+export type CommercialRules = {
+  validFrom: string; // YYYY-MM ('' = regra padrão do código)
+  revenueRateHighBps: number;
+  revenueRateLowBps: number;
+  premiumTiers: PremiumTier[]; // % da meta crescente → prêmio
+  warrantyRateBps: number;
+  warrantyAttachTarget: number; // % de notebooks/PC vendidos com garantia
+  creditRateBps: number;
+};
 
-export const REVENUE_RATE_LOW = 0.004; // não bateu todos os critérios
-export const REVENUE_RATE_HIGH = 0.006; // bateu Itens, Realme e anexo de garantia
-export const REVENUE_PREMIUM_LOW_CENTS = 50_000; // faturamento ≥ 110% da meta
-export const REVENUE_PREMIUM_HIGH_CENTS = 150_000; // faturamento ≥ 120% da meta
-export const WARRANTY_RATE = 0.04;
-export const WARRANTY_ATTACH_TARGET = 30; // % de notebooks/PC vendidos com garantia
+export const DEFAULT_COMMERCIAL_RULES: CommercialRules = {
+  validFrom: "",
+  revenueRateHighBps: 60,
+  revenueRateLowBps: 40,
+  premiumTiers: [
+    { percent: 110, cents: 50_000 },
+    { percent: 120, cents: 150_000 },
+  ],
+  warrantyRateBps: 400,
+  warrantyAttachTarget: 30,
+  creditRateBps: 0,
+};
+
+/** Regra vigente no mês: a de maior vigência ≤ mês; sem nenhuma, a padrão. */
+export function resolveCommercialRules(rules: CommercialRules[], month: string): CommercialRules {
+  let best: CommercialRules | null = null;
+  for (const rule of rules) {
+    if (rule.validFrom <= month && (!best || rule.validFrom > best.validFrom)) best = rule;
+  }
+  return best ?? DEFAULT_COMMERCIAL_RULES;
+}
+
+/** Marcos da barra de Faturamento, em % da meta: a meta e as faixas de premiação. */
+export function revenueTargets(rules: CommercialRules): number[] {
+  return [...new Set([100, ...rules.premiumTiers.map((tier) => tier.percent)])].sort((a, b) => a - b);
+}
+
+// Mais que isso não cabe nos rótulos da barra de Faturamento no celular.
+const MAX_PREMIUM_TIERS = 4;
+
+function intIn(value: unknown, min: number, max: number): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max ? value : null;
+}
+
+/**
+ * Valida a vigência enviada pela aba Regras de Comissão (percentuais já em
+ * bps, prêmios em centavos). Faixas: % da meta ≥ 100, % e valor crescentes.
+ */
+export function parseCommercialRules(input: Record<string, unknown>):
+  { rules: CommercialRules; error: "" } | { rules: null; error: string } {
+  const fail = (error: string) => ({ rules: null, error });
+  const validFrom = typeof input.validFrom === "string" ? input.validFrom : "";
+  if (!MONTH_PATTERN.test(validFrom)) return fail("INFORME O MÊS DE INÍCIO DA VIGÊNCIA.");
+  const rates: Array<[keyof CommercialRules, string]> = [
+    ["revenueRateHighBps", "% DO FATURAMENTO BATENDO OS CRITÉRIOS"],
+    ["revenueRateLowBps", "% DO FATURAMENTO SEM OS CRITÉRIOS"],
+    ["warrantyRateBps", "% DA GARANTIA"],
+    ["creditRateBps", "% DO CREDIÁRIO"],
+  ];
+  const values: Record<string, number> = {};
+  for (const [field, label] of rates) {
+    const value = intIn(input[field], 0, 10_000);
+    if (value === null) return fail(`${label} PRECISA ESTAR ENTRE 0% E 100%.`);
+    values[field] = value;
+  }
+  const warrantyAttachTarget = intIn(input.warrantyAttachTarget, 0, 100);
+  if (warrantyAttachTarget === null) return fail("ANEXO DE GARANTIA MÍNIMO PRECISA ESTAR ENTRE 0% E 100%.");
+  if (!Array.isArray(input.premiumTiers) || input.premiumTiers.length > MAX_PREMIUM_TIERS) {
+    return fail(`A PREMIAÇÃO ACEITA ATÉ ${MAX_PREMIUM_TIERS} FAIXAS.`);
+  }
+  const premiumTiers: PremiumTier[] = [];
+  for (const raw of input.premiumTiers as unknown[]) {
+    const tier = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+    const percent = intIn(tier.percent, 100, 1000);
+    const cents = intIn(tier.cents, 1, 100_000_000);
+    if (percent === null) return fail("CADA FAIXA DA PREMIAÇÃO COMEÇA EM 100% A 1000% DA META.");
+    if (cents === null) return fail("INFORME O VALOR DE CADA FAIXA DA PREMIAÇÃO.");
+    const previous = premiumTiers[premiumTiers.length - 1];
+    if (previous && (percent <= previous.percent || cents <= previous.cents)) {
+      return fail("AS FAIXAS DA PREMIAÇÃO PRECISAM SER CRESCENTES (% DA META E VALOR).");
+    }
+    premiumTiers.push({ percent, cents });
+  }
+  return {
+    rules: {
+      validFrom,
+      revenueRateHighBps: values.revenueRateHighBps,
+      revenueRateLowBps: values.revenueRateLowBps,
+      premiumTiers,
+      warrantyRateBps: values.warrantyRateBps,
+      warrantyAttachTarget,
+      creditRateBps: values.creditRateBps,
+    },
+    error: "",
+  };
+}
+
+/** Valor × bps, em centavos. */
+function applyBps(cents: number, bps: number): number {
+  return Math.round((cents * bps) / 10_000);
+}
 
 /** Maiúsculo, sem acento, sem pontuação e com espaços simples. */
 export function normalizeText(value: unknown): string {
@@ -148,6 +255,8 @@ export type Realized = {
   realme: number;
   warrantyQty: number;
   notebookQty: number;
+  // Valor vendido em crediário (coluna opcional da planilha; 0 sem ela).
+  creditSalesCents: number;
 };
 
 export type MetricBlock = {
@@ -169,16 +278,22 @@ export type WarrantyBlock = {
   attachPercent: number | null;
   tier: Tier;
   met: boolean;
-  // Quantas garantias faltam para chegar a 30% (0 quando já chegou).
+  // Quantas garantias faltam para chegar ao anexo mínimo (0 quando já chegou).
   missingQty: number | null;
+  attachTarget: number;
 };
 
 export type CommissionBreakdown = {
   allCriteriaMet: boolean;
-  revenueRate: number;
+  // Novato no mês: só a % do faturamento (premiação, garantia e crediário = 0).
+  newcomer: boolean;
+  revenueRateBps: number;
+  // FATURADO − CREDIÁRIO (mínimo 0): base da % do faturamento.
+  revenueBaseCents: number;
   revenueCommissionCents: number;
   revenuePremiumCents: number;
   warrantyCommissionCents: number;
+  creditCommissionCents: number;
   totalCents: number;
 };
 
@@ -211,15 +326,15 @@ function metricBlock(
   };
 }
 
-export function warrantyBlock(realized: Realized): WarrantyBlock {
+export function warrantyBlock(realized: Realized, attachTarget: number): WarrantyBlock {
   const { warrantyQty, notebookQty } = realized;
   const attachPercent = notebookQty > 0 ? Math.floor((warrantyQty / notebookQty) * 1000) / 10 : null;
   // Compara em quantidade (sem arredondar o %): 3 de 10 = exatamente 30%.
-  const met = notebookQty > 0 && warrantyQty * 100 >= WARRANTY_ATTACH_TARGET * notebookQty;
-  const needed = notebookQty > 0 ? Math.ceil((WARRANTY_ATTACH_TARGET * notebookQty) / 100) : null;
+  const met = notebookQty > 0 && warrantyQty * 100 >= attachTarget * notebookQty;
+  const needed = notebookQty > 0 ? Math.ceil((attachTarget * notebookQty) / 100) : null;
   let tier: Tier = "none";
   if (attachPercent !== null) {
-    tier = met ? "green" : attachPercent >= WARRANTY_ATTACH_TARGET * 0.8 ? "yellow" : "red";
+    tier = met ? "green" : attachPercent >= attachTarget * 0.8 ? "yellow" : "red";
   }
   return {
     realizedCents: realized.warrantyCents,
@@ -229,26 +344,43 @@ export function warrantyBlock(realized: Realized): WarrantyBlock {
     tier,
     met,
     missingQty: needed === null ? null : Math.max(0, needed - warrantyQty),
+    attachTarget,
   };
 }
 
-export function computeSellerMetrics(goal: Goal, realized: Realized, clock: MonthClock): SellerMetrics {
-  const revenue = metricBlock(goal.targetRevenueCents, realized.revenueCents, REVENUE_TARGETS, clock);
+export function computeSellerMetrics(
+  goal: Goal,
+  realized: Realized,
+  clock: MonthClock,
+  rules: CommercialRules = DEFAULT_COMMERCIAL_RULES,
+  newcomer = false,
+): SellerMetrics {
+  const revenue = metricBlock(goal.targetRevenueCents, realized.revenueCents, revenueTargets(rules), clock);
   const itemsBase = metricBlock(goal.targetItems, realized.items, [100], clock);
   const realme = metricBlock(goal.targetRealme, realized.realme, [100], clock);
-  const warranty = warrantyBlock(realized);
+  const warranty = warrantyBlock(realized, rules.warrantyAttachTarget);
 
   const allCriteriaMet = itemsBase.met && realme.met && warranty.met;
-  const revenueRate = allCriteriaMet ? REVENUE_RATE_HIGH : REVENUE_RATE_LOW;
-  // Premiação só com todos os critérios batidos; limiares pelo valor absoluto
-  // da meta (targetValue), nunca pelo % arredondado de exibição.
-  const revenuePremiumCents = allCriteriaMet && revenue.target > 0
-    ? (revenue.realized >= targetValue(revenue.target, 120)
-      ? REVENUE_PREMIUM_HIGH_CENTS
-      : revenue.realized >= targetValue(revenue.target, 110) ? REVENUE_PREMIUM_LOW_CENTS : 0)
-    : 0;
-  const revenueCommissionCents = Math.round(revenue.realized * revenueRate);
-  const warrantyCommissionCents = Math.round(realized.warrantyCents * WARRANTY_RATE);
+  const revenueRateBps = allCriteriaMet ? rules.revenueRateHighBps : rules.revenueRateLowBps;
+  // Crediário só sai da base quando a regra paga crediário: meses na regra
+  // antiga não mudam nem se a planilha for reimportada com a coluna nova.
+  const revenueBaseCents = rules.creditRateBps > 0
+    ? Math.max(0, revenue.realized - realized.creditSalesCents)
+    : revenue.realized;
+  const revenueCommissionCents = applyBps(revenueBaseCents, revenueRateBps);
+  // Premiação só com todos os critérios batidos (e nunca para novato): a
+  // maior faixa atingida, pelo valor absoluto da meta (targetValue), nunca
+  // pelo % arredondado de exibição.
+  let revenuePremiumCents = 0;
+  if (allCriteriaMet && !newcomer && revenue.target > 0) {
+    for (const tier of rules.premiumTiers) {
+      if (revenue.realized >= targetValue(revenue.target, tier.percent)) {
+        revenuePremiumCents = Math.max(revenuePremiumCents, tier.cents);
+      }
+    }
+  }
+  const warrantyCommissionCents = newcomer ? 0 : applyBps(realized.warrantyCents, rules.warrantyRateBps);
+  const creditCommissionCents = newcomer ? 0 : applyBps(realized.creditSalesCents, rules.creditRateBps);
 
   return {
     revenue,
@@ -261,11 +393,14 @@ export function computeSellerMetrics(goal: Goal, realized: Realized, clock: Mont
     warranty,
     commission: {
       allCriteriaMet,
-      revenueRate,
+      newcomer,
+      revenueRateBps,
+      revenueBaseCents,
       revenueCommissionCents,
       revenuePremiumCents,
       warrantyCommissionCents,
-      totalCents: revenueCommissionCents + revenuePremiumCents + warrantyCommissionCents,
+      creditCommissionCents,
+      totalCents: revenueCommissionCents + revenuePremiumCents + warrantyCommissionCents + creditCommissionCents,
     },
   };
 }
@@ -288,7 +423,7 @@ type Field =
   | "targetRealme" | "realme"
   | "targetItems" | "targetSuperItems" | "items"
   | "targetWarranty" | "warranty" | "warrantyQty" | "notebookQty"
-  | "revenue" | "targetRevenue";
+  | "revenue" | "targetRevenue" | "creditSales";
 
 // Rótulos do cabeçalho (normalizados por normalizeText) → campo. "META"
 // sozinho é a meta de faturamento (coluna ao lado de FATURADO).
@@ -311,6 +446,11 @@ const HEADER_FIELDS: Record<string, Field> = {
   "NOTEBOOK PC": "notebookQty",
   "FATURADO": "revenue",
   "META": "targetRevenue",
+  // Coluna opcional (planilhas antigas não têm → 0).
+  "CREDIARIO": "creditSales",
+  "CREDIARIOS": "creditSales",
+  "CREDIARIO FEITO": "creditSales",
+  "VALOR CREDIARIO": "creditSales",
 };
 
 const REQUIRED_FIELDS: Field[] = ["seller", "revenue", "targetRevenue"];
@@ -398,7 +538,7 @@ export function parseSellerSheet(cells: unknown[][]): ParsedSheet {
     let invalid = "";
     for (const field of [
       "targetRealme", "realme", "targetItems", "targetSuperItems", "items",
-      "targetWarranty", "warranty", "warrantyQty", "notebookQty", "revenue", "targetRevenue",
+      "targetWarranty", "warranty", "warrantyQty", "notebookQty", "revenue", "targetRevenue", "creditSales",
     ] as Field[]) {
       const value = parseSheetNumber(cell(row, field));
       if (value === null || value < 0) {
@@ -428,6 +568,7 @@ export function parseSellerSheet(cells: unknown[][]): ParsedSheet {
       realme: Math.round(n("realme")),
       warrantyQty: Math.round(n("warrantyQty")),
       notebookQty: Math.round(n("notebookQty")),
+      creditSalesCents: Math.round(n("creditSales") * 100),
     });
   }
   if (!rows.length && !errors.length) errors.push("NENHUM VENDEDOR ENCONTRADO ABAIXO DO CABEÇALHO.");

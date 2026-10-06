@@ -7,6 +7,8 @@ import {
 } from "../../../lib/access-scope";
 import {
   canManageCommercialGoals,
+  canManageCommercialRules,
+  canMarkCommercialNewcomer,
   canViewCommercialCommission,
   canViewCommercialDashboard,
   commercialScope,
@@ -29,8 +31,9 @@ import {
 // `?for=cadastro` (aba Cadastro de Metas, só comercial:goals) ignora o
 // "só o próprio": quem cadastra metas precisa ver os vendedores da loja.
 // Sem comercial:commission, os valores em R$ da comissão são REMOVIDOS da
-// resposta (não basta esconder no front); ficam só allCriteriaMet e
-// revenueRate, usados pelo selo do Dashboard — que é igual para todos.
+// resposta (não basta esconder no front); ficam só allCriteriaMet,
+// revenueRateBps e newcomer, usados pelo selo do Dashboard — que é igual
+// para todos. `rules` = regra vigente do mês (textos das regras no front).
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -52,7 +55,7 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const [{ sellers, clock }, linked] = await Promise.all([
+    const [{ sellers, clock, rules }, linked] = await Promise.all([
       loadSellers(database, month),
       forCadastro ? Promise.resolve([] as string[]) : linkedEmployeeIds(database, actor.id),
     ]);
@@ -67,8 +70,8 @@ export async function GET(request: Request) {
       : scoped.map((seller) => {
         // Dashboard igual para todos: fica só o que o selo usa (critérios
         // batidos e taxa); os valores em R$ são exclusivos da aba Comissão.
-        const { allCriteriaMet, revenueRate } = seller.metrics.commission;
-        return { ...seller, metrics: { ...seller.metrics, commission: { allCriteriaMet, revenueRate } } };
+        const { allCriteriaMet, revenueRateBps, newcomer } = seller.metrics.commission;
+        return { ...seller, metrics: { ...seller.metrics, commission: { allCriteriaMet, revenueRateBps, newcomer } } };
       });
     return jsonResponse({
       month,
@@ -79,6 +82,9 @@ export async function GET(request: Request) {
       canDashboard,
       canCommission,
       canGoals,
+      canRules: canManageCommercialRules(actor),
+      canMarkNewcomer: canMarkCommercialNewcomer(actor),
+      rules,
       sellers: visible,
     });
   } catch (error) {

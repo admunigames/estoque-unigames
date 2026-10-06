@@ -49,8 +49,14 @@ function createFakeD1() {
       target_revenue_cents integer, target_items integer, target_super_items integer,
       target_warranty_cents integer, target_realme integer, revenue_cents integer, items integer,
       warranty_cents integer, realme integer, warranty_qty integer, notebook_qty integer,
-      updated_at text, updated_by_name text
+      updated_at text, updated_by_name text, credit_sales_cents integer DEFAULT 0
     );
+    CREATE TABLE commercial_rules (
+      id text PRIMARY KEY, valid_from text, revenue_rate_high_bps integer, revenue_rate_low_bps integer,
+      premium_tiers_json text, warranty_rate_bps integer, warranty_attach_target integer, credit_rate_bps integer,
+      notes text, updated_by_name text, updated_at text
+    );
+    CREATE TABLE commercial_newcomers (id text PRIMARY KEY, employee_id text, month text);
   `);
   sqlite.prepare("INSERT INTO shared_state VALUES ('companies_list', ?)").run(
     JSON.stringify([{ id: "loja-a", name: "LOJA A" }, { id: "loja-b", name: "LOJA B" }]),
@@ -64,7 +70,7 @@ function createFakeD1() {
     sqlite.prepare("INSERT INTO hr_employees VALUES (?, ?, ?, ?)").run(id, name, companyId, userId);
     sqlite.prepare(
       `INSERT INTO commercial_monthly VALUES (?, ?, ?, ?, ?, ?, 'NORTE', ?,
-        10000000, 100, 120, 500000, 10, 11000000, 100, 400000, 10, 3, 10, '2026-09-20T12:00:00Z', 'GESTOR')`,
+        10000000, 100, 120, 500000, 10, 11000000, 100, 400000, 10, 3, 10, '2026-09-20T12:00:00Z', 'GESTOR', 0)`,
     ).run(id, name, companyId, companyId.toUpperCase(), name, companyId.toUpperCase(), MONTH);
   }
   return {
@@ -140,7 +146,7 @@ test("só comercial:dashboard: overview sem comissão, ranking ok, Cadastro de M
   assert.equal("canManage" in data, false);
   for (const seller of data.sellers) {
     // Selo do Dashboard igual para todos: critérios e taxa, sem R$.
-    assert.deepEqual(seller.metrics.commission, { allCriteriaMet: true, revenueRate: 0.006 });
+    assert.deepEqual(seller.metrics.commission, { allCriteriaMet: true, revenueRateBps: 60, newcomer: false });
     assert.ok(seller.metrics.revenue && seller.metrics.items && seller.metrics.warranty);
   }
   assert.doesNotMatch(JSON.stringify(data), /CommissionCents|PremiumCents|totalCents/);

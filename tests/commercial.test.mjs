@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 const {
+  DEFAULT_COMMERCIAL_RULES,
   aliasKey,
   computeSellerMetrics,
   isSellerRole,
@@ -9,10 +10,13 @@ const {
   monthClock,
   nameMatches,
   nextTarget,
+  parseCommercialRules,
   parseSellerSheet,
   parseSheetNumber,
   progressPercent,
   progressTier,
+  resolveCommercialRules,
+  revenueTargets,
   storeMatches,
   suggestSheetName,
 } = await import("../app/lib/commercial.ts");
@@ -26,7 +30,7 @@ const goal = {
   targetRealme: 10,
 };
 function realized(values = {}) {
-  return { revenueCents: 0, items: 0, warrantyCents: 0, realme: 0, warrantyQty: 0, notebookQty: 0, ...values };
+  return { revenueCents: 0, items: 0, warrantyCents: 0, realme: 0, warrantyQty: 0, notebookQty: 0, creditSalesCents: 0, ...values };
 }
 
 // Mesma estrutura da aba "VENDEDORES SETEMBRO" da planilha real (dados fictícios).
@@ -72,7 +76,7 @@ test("parseSellerSheet: lê a aba VENDEDORES com loja mesclada, ignora TOTAL e l
     rowNumber: 3, storeLabel: "LOJA ALFA", sellerLabel: "JOAO", zone: "SUL",
     targetRevenueCents: 17_000_000, targetItems: 290, targetSuperItems: 340, targetWarrantyCents: 400_000,
     targetRealme: 13, revenueCents: 19_238_223, items: 379, warrantyCents: 389_800, realme: 19,
-    warrantyQty: 4, notebookQty: 11,
+    warrantyQty: 4, notebookQty: 11, creditSalesCents: 0,
   });
   assert.equal(maria.storeLabel, "LOJA ALFA"); // herdada da célula mesclada
   assert.equal(pedro.storeLabel, "LOJA BETA");
@@ -171,10 +175,10 @@ test("casos de borda: meta de Itens/Realme zerada conta como batida; sem noteboo
 
 test("faturamento: 0,6% com todos os critérios, 0,4% sem (sempre, sem mínimo de meta)", () => {
   const ok = computeSellerMetrics(goal, realized({ ...allMet, revenueCents: 5_000_000 }), clock).commission;
-  assert.equal(ok.revenueRate, 0.006);
+  assert.equal(ok.revenueRateBps, 60);
   assert.equal(ok.revenueCommissionCents, 30_000); // 0,6% de R$ 50.000 (só 50% da meta)
   const nao = computeSellerMetrics(goal, realized({ ...allMet, items: 50, revenueCents: 5_000_000 }), clock).commission;
-  assert.equal(nao.revenueRate, 0.004);
+  assert.equal(nao.revenueRateBps, 40);
   assert.equal(nao.revenueCommissionCents, 20_000); // 0,4% mesmo abaixo de 80% da meta
 });
 
@@ -216,4 +220,143 @@ test("monthClock e nextTarget: dias restantes contam hoje; média diária = falt
   });
   assert.equal(nextTarget(12_000_000, 10_000_000, [80, 100, 110, 120], clock), null);
   assert.equal(nextTarget(0, 10_000_000, [80], monthClock("2026-08", "2026-09-21")).perDay, null);
+});
+
+// ---------------------------------------------------------------------------
+// Regras por vigência, crediário e novato (pedido de 2026-10-06)
+// ---------------------------------------------------------------------------
+
+// Mesma regra que a migration 0085 cadastra para 2026-10.
+const OCTOBER = {
+  ...DEFAULT_COMMERCIAL_RULES,
+  validFrom: "2026-10",
+  warrantyRateBps: 600,
+  creditRateBps: 200,
+};
+
+test("regra vigente: setembro (sem vigência) usa a padrão com garantia 4%; outubro em diante usa a de 2026-10", () => {
+  const saved = [OCTOBER, { ...OCTOBER, validFrom: "2027-03", creditRateBps: 300 }];
+  assert.equal(resolveCommercialRules(saved, "2026-09"), DEFAULT_COMMERCIAL_RULES);
+  assert.equal(resolveCommercialRules(saved, "2026-09").warrantyRateBps, 400);
+  assert.equal(resolveCommercialRules(saved, "2026-09").creditRateBps, 0);
+  assert.equal(resolveCommercialRules(saved, "2026-10").warrantyRateBps, 600);
+  assert.equal(resolveCommercialRules(saved, "2027-02").validFrom, "2026-10");
+  assert.equal(resolveCommercialRules(saved, "2027-03").creditRateBps, 300);
+  assert.equal(resolveCommercialRules([], "2030-01"), DEFAULT_COMMERCIAL_RULES);
+
+  const sept = computeSellerMetrics(goal, realized({ warrantyCents: 100_000 }), clock, resolveCommercialRules(saved, "2026-09"));
+  const oct = computeSellerMetrics(goal, realized({ warrantyCents: 100_000 }), clock, resolveCommercialRules(saved, "2026-10"));
+  assert.equal(sept.commission.warrantyCommissionCents, 4_000);
+  assert.equal(oct.commission.warrantyCommissionCents, 6_000);
+});
+
+test("crediário: paga só a própria % (2%) e sai da base do faturamento", () => {
+  const m = computeSellerMetrics(goal, realized({ ...allMet, revenueCents: 10_000_000, creditSalesCents: 2_000_000 }), clock, OCTOBER);
+  assert.equal(m.commission.revenueBaseCents, 8_000_000);
+  assert.equal(m.commission.revenueCommissionCents, 48_000); // 0,6% de R$ 80.000
+  assert.equal(m.commission.creditCommissionCents, 40_000); // 2% de R$ 20.000
+  assert.equal(m.commission.totalCents, 48_000 + 0 + 0 + 40_000);
+  // Crediário maior que o faturado: base nunca negativa.
+  const over = computeSellerMetrics(goal, realized({ revenueCents: 100, creditSalesCents: 500 }), clock, OCTOBER);
+  assert.equal(over.commission.revenueBaseCents, 0);
+  assert.equal(over.commission.revenueCommissionCents, 0);
+  // Regra padrão (setembro) não paga crediário: o faturado inteiro continua
+  // na base (setembro não muda nem reimportando com a coluna nova).
+  const sept = computeSellerMetrics(goal, realized({ revenueCents: 10_000_000, creditSalesCents: 2_000_000 }), clock);
+  assert.equal(sept.commission.creditCommissionCents, 0);
+  assert.equal(sept.commission.revenueBaseCents, 10_000_000);
+  assert.equal(sept.commission.revenueCommissionCents, 40_000); // 0,4% de R$ 100.000
+});
+
+test("premiação: maior faixa atingida pelo FATURADO TOTAL (com o crediário), só com os 3 critérios", () => {
+  const prize = (values, rules = OCTOBER) =>
+    computeSellerMetrics(goal, realized({ ...allMet, ...values }), clock, rules).commission.revenuePremiumCents;
+  // R$ 120.000 faturados, metade em crediário: continua 120% da meta.
+  assert.equal(prize({ revenueCents: 12_000_000, creditSalesCents: 6_000_000 }), 150_000);
+  assert.equal(prize({ revenueCents: 11_500_000 }), 50_000);
+  assert.equal(prize({ revenueCents: 12_000_000, items: 10 }), 0);
+
+  const three = {
+    ...OCTOBER,
+    premiumTiers: [{ percent: 100, cents: 20_000 }, { percent: 115, cents: 80_000 }, { percent: 130, cents: 200_000 }],
+  };
+  assert.equal(prize({ revenueCents: 9_999_999 }, three), 0);
+  assert.equal(prize({ revenueCents: 10_000_000 }, three), 20_000);
+  assert.equal(prize({ revenueCents: 12_900_000 }, three), 80_000);
+  assert.equal(prize({ revenueCents: 13_000_000 }, three), 200_000); // não cumulativa
+  // Marcos da barra: a meta + as faixas (100% não duplica).
+  assert.deepEqual(revenueTargets(three), [100, 115, 130]);
+  assert.deepEqual(revenueTargets(DEFAULT_COMMERCIAL_RULES), [100, 110, 120]);
+  assert.deepEqual(revenueTargets({ ...OCTOBER, premiumTiers: [] }), [100]);
+  const m = computeSellerMetrics(goal, realized({ revenueCents: 12_000_000 }), clock, three);
+  assert.equal(m.revenue.reachedTargets, 2);
+  assert.equal(m.revenue.next.percent, 130);
+});
+
+test("anexo mínimo de garantia vem da regra", () => {
+  const forty = { ...OCTOBER, warrantyAttachTarget: 40 };
+  const m = computeSellerMetrics(goal, realized({ ...allMet }), clock, forty); // 3 de 10 = 30%
+  assert.equal(m.warranty.met, false);
+  assert.equal(m.warranty.missingQty, 1);
+  assert.equal(m.warranty.attachTarget, 40);
+  assert.equal(m.commission.allCriteriaMet, false);
+});
+
+test("novato: só a % do faturamento — sem premiação, garantia e crediário", () => {
+  const values = realized({ ...allMet, revenueCents: 12_000_000, warrantyCents: 200_000, creditSalesCents: 1_000_000 });
+  const normal = computeSellerMetrics(goal, values, clock, OCTOBER, false).commission;
+  const novato = computeSellerMetrics(goal, values, clock, OCTOBER, true).commission;
+  assert.equal(normal.revenuePremiumCents, 150_000);
+  assert.equal(normal.warrantyCommissionCents, 12_000);
+  assert.equal(normal.creditCommissionCents, 20_000);
+  assert.equal(novato.newcomer, true);
+  assert.equal(novato.allCriteriaMet, true);
+  assert.equal(novato.revenueRateBps, 60); // continua pelos critérios
+  assert.equal(novato.revenueCommissionCents, normal.revenueCommissionCents); // 0,6% de R$ 110.000
+  assert.equal(novato.revenueCommissionCents, 66_000);
+  assert.equal(novato.revenuePremiumCents, 0);
+  assert.equal(novato.warrantyCommissionCents, 0);
+  assert.equal(novato.creditCommissionCents, 0);
+  assert.equal(novato.totalCents, 66_000);
+});
+
+test("parseCommercialRules: valida percentuais, anexo e faixas crescentes", () => {
+  const valid = {
+    validFrom: "2026-11", revenueRateHighBps: 70, revenueRateLowBps: 40, warrantyRateBps: 600,
+    warrantyAttachTarget: 30, creditRateBps: 200,
+    premiumTiers: [{ percent: 110, cents: 50_000 }, { percent: 120, cents: 150_000 }, { percent: 140, cents: 300_000 }],
+  };
+  const ok = parseCommercialRules(valid);
+  assert.equal(ok.error, "");
+  assert.equal(ok.rules.premiumTiers.length, 3);
+  assert.deepEqual(parseCommercialRules({ ...valid, premiumTiers: [] }).rules.premiumTiers, []);
+  assert.match(parseCommercialRules({ ...valid, validFrom: "2026-13" }).error, /MÊS DE INÍCIO/);
+  assert.match(parseCommercialRules({ ...valid, revenueRateHighBps: 10_001 }).error, /ENTRE 0% E 100%/);
+  assert.match(parseCommercialRules({ ...valid, creditRateBps: -1 }).error, /CREDIÁRIO/);
+  assert.match(parseCommercialRules({ ...valid, warrantyRateBps: 1.5 }).error, /GARANTIA/);
+  assert.match(parseCommercialRules({ ...valid, warrantyAttachTarget: 101 }).error, /ANEXO/);
+  assert.match(parseCommercialRules({ ...valid, premiumTiers: [{ percent: 120, cents: 1 }, { percent: 110, cents: 2 }] }).error, /CRESCENTES/);
+  assert.match(parseCommercialRules({ ...valid, premiumTiers: [{ percent: 110, cents: 500 }, { percent: 120, cents: 500 }] }).error, /CRESCENTES/);
+  assert.match(parseCommercialRules({ ...valid, premiumTiers: [{ percent: 90, cents: 500 }] }).error, /100% A 1000%/);
+  assert.match(parseCommercialRules({ ...valid, premiumTiers: [{ percent: 110, cents: 0 }] }).error, /VALOR/);
+  assert.match(parseCommercialRules({ ...valid, premiumTiers: "x" }).error, /FAIXAS/);
+  const five = [1, 2, 3, 4, 5].map((n) => ({ percent: 100 + n * 10, cents: n * 10_000 }));
+  assert.match(parseCommercialRules({ ...valid, premiumTiers: five }).error, /ATÉ 4 FAIXAS/);
+});
+
+test("parseSellerSheet: coluna CREDIÁRIO opcional (todos os nomes aceitos)", () => {
+  // Sem a coluna: 0 (planilhas antigas).
+  assert.equal(parseSellerSheet(SHEET).rows[0].creditSalesCents, 0);
+  for (const label of ["CREDIÁRIO", "Crediário Feito", "VALOR CREDIÁRIO", "CREDIARIOS"]) {
+    const { rows, errors } = parseSellerSheet([
+      ["LOJAS", "VENDEDOR", "FATURADO", "META", label],
+      ["LOJA ALFA", "JOAO", 100000, 90000, "12.345,67"],
+      ["", "MARIA", 50000, 90000, ""],
+    ]);
+    assert.deepEqual(errors, [], label);
+    assert.equal(rows[0].creditSalesCents, 1_234_567, label);
+    assert.equal(rows[1].creditSalesCents, 0, label);
+  }
+  const bad = parseSellerSheet([["LOJAS", "VENDEDOR", "FATURADO", "META", "CREDIARIO"], ["X", "ANA", 1, 1, "abc"]]);
+  assert.match(bad.errors[0], /LINHA 2 \(ANA\)/);
 });

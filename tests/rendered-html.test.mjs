@@ -4335,7 +4335,7 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
   assert.match(workerSource, /"\/comercial\/acompanhamento",/);
   assert.match(html, /<section id="pageComercialAcompanhamento" class="page wrap">/);
   assert.doesNotMatch(html, /id="navComercial(Dashboard|Comissao|Ranking|Metas)"|pageComercialMetas|comercialMetas:/);
-  for (const view of ["dashboard", "comissao", "ranking", "metas"]) {
+  for (const view of ["dashboard", "comissao", "crediario", "ranking", "metas", "regras"]) {
     assert.match(html, new RegExp(`class="supply-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-com-view="${view}"`));
   }
   // Abas no estilo único do site, sem classe própria do Comercial.
@@ -4347,6 +4347,22 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
   assert.match(html, /data-com-view="comissao" data-permission="comercial:commission">Comissão</);
   assert.match(html, /data-com-view="ranking" data-permission="comercial:dashboard">Ranking</);
   assert.match(html, /data-com-view="metas" data-permission="comercial:goals">Cadastro de Metas</);
+  // Crediário Feito (comercial:dashboard; comissão só com commission) e
+  // Regras de Comissão (comercial:rules) — pedido de 2026-10-06.
+  assert.match(html, /data-com-view="crediario" data-permission="comercial:dashboard">Crediário Feito</);
+  assert.match(html, /data-com-view="regras" data-permission="comercial:rules">Regras de Comissão</);
+  assert.match(html, /<dialog class="purchase-dialog" id="comRuleDialog"/);
+  assert.match(html, /el\('comCreditCommissionHead'\)\.hidden = !canCommission/);
+  assert.match(html, /data-com-newcomer="'\+escapeHtml\(seller\.employeeId\)/);
+  assert.match(html, /comOverview && comOverview\.canMarkNewcomer/);
+  assert.match(html, /'NÃO SE APLICA \(NOVATO\)'/);
+  // Nenhum número de regra fixo no front: tudo vem de overview.rules.
+  const comercialJs = html.slice(html.indexOf("// ================= COMERCIAL ================="), html.indexOf("// ================= RH / ESCALAS E FOLGAS"));
+  const comercialHtml = html.slice(html.indexOf('<section id="pageComercialAcompanhamento"'), html.indexOf('<section id="pageComercialControleGd"'));
+  for (const source of [comercialJs, comercialHtml]) {
+    assert.doesNotMatch(source, /0,6%|0,4%|R\$ 500\b|R\$ 1\.500|\(4%\)|GARANTIA 30%|COM_TARGET_LABELS/);
+  }
+  assert.match(html, /<div class="com-rules" id="comRulesBox" aria-label="Regras de comissão"><\/div>/);
   assert.match(html, /<input type="file" id="comImportFile" accept="\.xlsx,\.xls,\.csv">/);
   assert.doesNotMatch(html, /comEntryForm|comGoalList|data-com-entry/);
   assert.match(importRoute, /if \(!canManageCommercialGoals\(actor\)\)/);
@@ -4354,17 +4370,19 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
   assert.match(overviewRoute, /if \(forCadastro\) \{\s*if \(!canGoals\)/);
   // Sem comercial:commission os valores em R$ da comissão nem saem do
   // servidor; o selo do Dashboard (critérios + taxa) continua igual.
-  assert.match(overviewRoute, /commission: \{ allCriteriaMet, revenueRate \}/);
-  assert.match(html, /METAS BATIDAS · 0,6%/);
+  assert.match(overviewRoute, /commission: \{ allCriteriaMet, revenueRateBps, newcomer \}/);
+  assert.match(html, /'<span class="com-criteria ok">METAS BATIDAS · '\+escapeHtml\(rate\)/);
   assert.doesNotMatch(html, /COM_TARGET_LABELS_PLAIN|comCanCommission/);
 
   // Checkboxes no Cadastro de Usuários, no mesmo padrão das demais permissões.
   assert.match(html, /name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</);
   assert.match(html, /name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</);
   assert.match(html, /name="userPermission" value="comercial:goals"> CADASTRO DE METAS</);
+  assert.match(html, /name="userPermission" value="comercial:rules"> REGRAS DE COMISSÃO</);
+  assert.match(html, /'comercial:rules':'Comercial: Regras de Comissão'/);
   assert.doesNotMatch(html, /value="comercial:(view|manage)"/);
-  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals",/);
-  assert.match(workerSource, /commercial: \["comercial:dashboard", "comercial:commission", "comercial:goals"\],/);
+  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",/);
+  assert.match(workerSource, /commercial: \["comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules"\],/);
   // As antigas viram as novas na leitura (ninguém perde acesso).
   assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission"\],/);
   assert.match(workerSource, /"comercial:manage": \["comercial:goals"\],/);

@@ -3610,6 +3610,8 @@ export const commercialMonthly = pgTable(
     realme: integer("realme").notNull().default(0),
     warrantyQty: integer("warranty_qty").notNull().default(0),
     notebookQty: integer("notebook_qty").notNull().default(0),
+    // Coluna opcional CREDIÁRIO da planilha (0 sem ela).
+    creditSalesCents: integer("credit_sales_cents").notNull().default(0),
     importId: text("import_id").notNull().default(""),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
@@ -3619,6 +3621,47 @@ export const commercialMonthly = pgTable(
     uniqueIndex("commercial_monthly_employee_month_idx").on(table.employeeId, table.month),
     index("commercial_monthly_month_idx").on(table.month),
   ],
+);
+
+// Comercial — percentuais e premiação por VIGÊNCIA (aba Regras de Comissão):
+// vale a linha de maior valid_from ≤ mês; sem nenhuma, a regra padrão do
+// código (DEFAULT_COMMERCIAL_RULES em app/lib/commercial.ts). Percentuais em
+// basis points (1% = 100); premium_tiers_json = [{percent, cents}] crescente.
+export const commercialRules = pgTable(
+  "commercial_rules",
+  {
+    id: text("id").primaryKey(),
+    // YYYY-MM
+    validFrom: text("valid_from").notNull(),
+    revenueRateHighBps: integer("revenue_rate_high_bps").notNull().default(60),
+    revenueRateLowBps: integer("revenue_rate_low_bps").notNull().default(40),
+    premiumTiersJson: text("premium_tiers_json").notNull().default("[]"),
+    warrantyRateBps: integer("warranty_rate_bps").notNull().default(400),
+    warrantyAttachTarget: integer("warranty_attach_target").notNull().default(30),
+    creditRateBps: integer("credit_rate_bps").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [uniqueIndex("commercial_rules_valid_from_idx").on(table.validFrom)],
+);
+
+// Comercial — vendedor NOVATO no mês (marcado no Dashboard): recebe só a %
+// do faturamento. Tabela própria porque a importação apaga e reinsere
+// commercial_monthly do mês.
+export const commercialNewcomers = pgTable(
+  "commercial_newcomers",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    // YYYY-MM
+    month: text("month").notNull(),
+    markedBy: text("marked_by").notNull().default(""),
+    markedByName: text("marked_by_name").notNull().default(""),
+    markedAt: text("marked_at").notNull().default(""),
+  },
+  (table) => [uniqueIndex("commercial_newcomers_employee_month_idx").on(table.employeeId, table.month)],
 );
 
 // Comercial — histórico de importações da planilha (auditoria).

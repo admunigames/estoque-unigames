@@ -230,9 +230,9 @@ export async function POST(request: Request) {
               (id, employee_id, employee_name, company_id, company_name, sheet_seller_name, sheet_store_name,
                zone, month, target_revenue_cents, target_items, target_super_items, target_warranty_cents,
                target_realme, revenue_cents, items, warranty_cents, realme, warranty_qty, notebook_qty,
-               import_id, updated_by, updated_by_name, updated_at)
+               credit_sales_cents, import_id, updated_by, updated_by_name, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
-                     ?21, ?22, ?23, CURRENT_TIMESTAMP)
+                     ?24, ?21, ?22, ?23, CURRENT_TIMESTAMP)
              ON CONFLICT (employee_id, month) DO UPDATE SET
                employee_name=excluded.employee_name, company_id=excluded.company_id,
                company_name=excluded.company_name, sheet_seller_name=excluded.sheet_seller_name,
@@ -243,6 +243,7 @@ export async function POST(request: Request) {
                revenue_cents=excluded.revenue_cents, items=excluded.items,
                warranty_cents=excluded.warranty_cents, realme=excluded.realme,
                warranty_qty=excluded.warranty_qty, notebook_qty=excluded.notebook_qty,
+               credit_sales_cents=excluded.credit_sales_cents,
                import_id=excluded.import_id, updated_by=excluded.updated_by,
                updated_by_name=excluded.updated_by_name, updated_at=CURRENT_TIMESTAMP`,
           )
@@ -251,7 +252,7 @@ export async function POST(request: Request) {
             row.sellerLabel, row.storeLabel, row.zone, month,
             row.targetRevenueCents, row.targetItems, row.targetSuperItems, row.targetWarrantyCents, row.targetRealme,
             row.revenueCents, row.items, row.warrantyCents, row.realme, row.warrantyQty, row.notebookQty,
-            importId, actor.id, who,
+            importId, actor.id, who, row.creditSalesCents,
           ),
       ),
       ...toImport

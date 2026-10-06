@@ -2986,15 +2986,16 @@
   .com-block.tier-yellow .com-pct{color:#e1ad49}
   .com-block.tier-green .com-pct{color:#54c48a}
   .com-block.tier-none .com-pct{color:var(--ink-faint);font-size:14px}
-  /* Barra: faixa colorida (vermelho → amarelo → verde) + preenchimento. Os 4
-     alvos ficam em posições FIXAS (40/60/80/100% da largura, escala por
-     trechos 0-80-100-110-120%), então os rótulos nunca se sobrepõem, nem a
-     360px; o último rótulo é alinhado pela direita para não cortar. */
-  .com-bar{position:relative;padding-bottom:30px}
+  /* Barra: faixa colorida (vermelho → amarelo → verde) + preenchimento. A
+     meta fica em --com-goal da largura (metade; o fim quando a regra do mês
+     não tem premiação) e as faixas de premiação espalhadas até o fim, então
+     os rótulos nunca se sobrepõem, nem a 360px; o último rótulo é alinhado
+     pela direita para não cortar. */
+  .com-bar{position:relative;padding-bottom:30px;--com-goal:50%}
   .com-bar.simple{padding-bottom:0}
   .com-bar-track{
     position:relative;height:14px;border-radius:999px;overflow:hidden;
-    background:linear-gradient(90deg,rgba(239,106,85,.2) 0 40%,rgba(225,173,73,.2) 40% 50%,rgba(84,196,138,.2) 50% 100%);
+    background:linear-gradient(90deg,rgba(239,106,85,.2) 0 calc(var(--com-goal) * .8),rgba(225,173,73,.2) calc(var(--com-goal) * .8) var(--com-goal),rgba(84,196,138,.2) var(--com-goal) 100%);
   }
   .com-bar.simple .com-bar-track{background:linear-gradient(90deg,rgba(239,106,85,.2) 0 80%,rgba(225,173,73,.2) 80% 99.9%,rgba(84,196,138,.2) 99.9% 100%)}
   .com-bar-fill{position:absolute;inset:0 auto 0 0;border-radius:inherit;transition:width .5s ease}
@@ -3009,6 +3010,9 @@
     font:800 9px/1.15 var(--mono);color:var(--ink-faint);white-space:nowrap;
   }
   .com-bar-label.last{transform:translateX(-100%);align-items:flex-end}
+  .com-bar.stagger{padding-bottom:52px}
+  .com-bar-marker.low{height:44px}
+  .com-bar-label.low{top:45px}
   .com-bar-label.reached{color:var(--ink)}
   .com-figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:0}
   .com-figures div{min-width:0}
@@ -3031,6 +3035,15 @@
   .com-targets li b{font:800 9px/1.2 var(--mono);letter-spacing:.04em;color:var(--ink-faint)}
   .com-targets li.reached{border-color:rgba(84,196,138,.45);color:var(--ink)}
   .com-targets li.reached b{color:#54c48a}
+  /* Novato no mês (seletor do Dashboard) */
+  .com-criteria.newcomer{color:var(--accent);border-color:rgba(79,134,189,.5);background:rgba(79,134,189,.1)}
+  .com-newcomer-toggle{font-size:10px}
+  /* Regras de Comissão */
+  .com-rules-actions{justify-content:flex-end;margin-bottom:12px}
+  .com-tier-list{display:flex;flex-direction:column;gap:8px}
+  .com-tier-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr) auto;align-items:center;gap:8px;font:700 10px/1.3 var(--mono);color:var(--ink-soft)}
+  .com-tier-add{align-self:flex-start;margin-top:4px}
+  @media(max-width:560px){.com-tier-row{grid-template-columns:auto minmax(0,1fr);}.com-tier-row button{grid-column:1 / -1}}
   /* Comissão */
   .com-rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:10px;margin-bottom:16px}
   .com-rule{display:flex;flex-direction:column;gap:4px;padding:13px 14px}
@@ -6679,12 +6692,14 @@
       <div class="supply-tabs" role="tablist" aria-label="Acompanhamento de metas">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-com-view="dashboard" data-permission="comercial:dashboard">Dashboard</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="comissao" data-permission="comercial:commission">Comissão</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="crediario" data-permission="comercial:dashboard">Crediário Feito</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="ranking" data-permission="comercial:dashboard">Ranking</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="metas" data-permission="comercial:goals">Cadastro de Metas</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="regras" data-permission="comercial:rules">Regras de Comissão</button>
       </div>
 
       <div class="dre-toolbar com-toolbar no-print">
-        <div class="field">
+        <div class="field" id="comMonthField">
           <label for="comAcompMonth">Mês</label>
           <input type="month" id="comAcompMonth" data-com-month>
         </div>
@@ -6716,14 +6731,23 @@
       </div>
 
       <div class="com-view-panel" id="comViewComissao" hidden>
-        <div class="com-rules" aria-label="Regras de comissão">
-          <div class="com-rule"><span>Critérios para 0,6%</span><strong>Itens · Realme · Garantia</strong><small>Itens 100% da meta, Realme 100% da meta e garantia em 30% dos notebooks/PC vendidos</small></div>
-          <div class="com-rule"><span>Comissão por vendas (Faturamento)</span><strong>0,6% / 0,4%</strong><small>0,6% batendo os 3 critérios; 0,4% sem eles</small></div>
-          <div class="com-rule"><span>Premiação por faturamento</span><strong>R$ 500 / R$ 1.500</strong><small>110% / 120% da meta de faturamento, só batendo os 3 critérios (não cumulativa)</small></div>
-          <div class="com-rule"><span>Comissão por garantia estendida</span><strong>4%</strong><small>Sobre o valor vendido em garantia, sempre</small></div>
-        </div>
+        <!-- Quadro montado pela regra vigente do mês (comRulesBoxHtml) —
+             nenhum percentual fixo aqui. -->
+        <div class="com-rules" id="comRulesBox" aria-label="Regras de comissão"></div>
         <div class="com-total" id="comComTotal" hidden></div>
         <div class="com-commission-grid" id="comComList"><p class="com-empty">Carregando…</p></div>
+      </div>
+
+      <div class="com-view-panel" id="comViewCrediario" hidden>
+        <div class="com-total" id="comCreditTotal" hidden></div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Vendedor</th><th>Loja</th><th style="text-align:right">Crediário feito</th><th style="text-align:right">% do faturamento</th><th style="text-align:right" id="comCreditCommissionHead">Comissão</th></tr></thead>
+              <tbody id="comCreditBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div class="com-view-panel" id="comViewRanking" hidden>
@@ -6756,6 +6780,22 @@
 
         <h3 class="com-section-title">Importações deste mês</h3>
         <ul class="com-history" id="comImportHistory"><li class="com-empty">Carregando…</li></ul>
+      </div>
+
+      <div class="com-view-panel" id="comViewRegras" hidden>
+        <!-- Regras de Comissão: só comercial:rules. Cada vigência vale do mês
+             dela em diante; meses anteriores não mudam. -->
+        <div class="dre-toolbar-actions com-rules-actions">
+          <button class="btn-accent" type="button" id="btnComRuleNew">NOVA VIGÊNCIA</button>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>A partir de</th><th>Faturamento (com / sem critérios)</th><th>Premiação</th><th>Garantia</th><th>Anexo mínimo</th><th>Crediário</th><th>Quem alterou</th><th>Quando</th><th></th></tr></thead>
+              <tbody id="comRulesBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -8388,6 +8428,37 @@
 <!-- Fase F: rascunho e pedido viram uma entidade só — este diálogo cria
      direto um purchase_orders (origin='native', status='aberto'), sem
      etapa intermediária de "converter em pedido". -->
+<!-- Comercial > Regras de Comissão: nova vigência / editar. Percentuais em %
+     na tela, enviados em basis points (1% = 100). -->
+<dialog class="purchase-dialog" id="comRuleDialog" aria-labelledby="comRuleDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="comRuleDialogTitle">NOVA VIGÊNCIA</h3>
+    <button class="purchase-dialog-close" id="btnCloseComRuleDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="comRuleForm" novalidate>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="comRuleFrom">A PARTIR DE (MÊS)</label><input type="month" id="comRuleFrom" required></div>
+      <div class="purchase-field"><label for="comRuleHigh">% FATURAMENTO BATENDO OS CRITÉRIOS</label><input type="number" id="comRuleHigh" min="0" max="100" step="0.01" inputmode="decimal" required></div>
+      <div class="purchase-field"><label for="comRuleLow">% FATURAMENTO SEM OS CRITÉRIOS</label><input type="number" id="comRuleLow" min="0" max="100" step="0.01" inputmode="decimal" required></div>
+      <div class="purchase-field full">
+        <label>PREMIAÇÃO (SÓ BATENDO OS CRITÉRIOS; VALE A MAIOR FAIXA ATINGIDA)</label>
+        <div class="com-tier-list" id="comRuleTiers"></div>
+        <button class="btn-outline com-tier-add" type="button" id="btnComRuleAddTier">+ ADICIONAR FAIXA</button>
+      </div>
+      <div class="purchase-field"><label for="comRuleWarranty">% GARANTIA ESTENDIDA</label><input type="number" id="comRuleWarranty" min="0" max="100" step="0.01" inputmode="decimal" required></div>
+      <div class="purchase-field"><label for="comRuleAttach">ANEXO DE GARANTIA MÍNIMO (%)</label><input type="number" id="comRuleAttach" min="0" max="100" step="1" inputmode="numeric" required></div>
+      <div class="purchase-field"><label for="comRuleCredit">% CREDIÁRIO FEITO</label><input type="number" id="comRuleCredit" min="0" max="100" step="0.01" inputmode="decimal" required></div>
+      <div class="purchase-field full"><label for="comRuleNotes">OBSERVAÇÃO (OPCIONAL)</label><input id="comRuleNotes" maxlength="500"></div>
+    </div>
+    <p class="purchase-field-help" id="comRuleWarning"></p>
+    <div class="user-form-status" id="comRuleStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelComRuleDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="comprasDraftDialog" aria-labelledby="comprasDraftDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="comprasDraftDialogTitle">NOVO PEDIDO DE COMPRA</h3>
@@ -9060,6 +9131,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals"> CADASTRO DE METAS</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules"> REGRAS DE COMISSÃO</label>
               </div>
             </details>
             <details class="permission-module">
@@ -37418,7 +37490,7 @@ function renderHomeTasks(){
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
     'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
-    'comercial:dashboard':'Comercial: visualizar Dashboard e Ranking','comercial:commission':'Comercial: visualizar Comissão','comercial:goals':'Comercial: Cadastro de Metas',
+    'comercial:dashboard':'Comercial: visualizar Dashboard e Ranking','comercial:commission':'Comercial: visualizar Comissão','comercial:goals':'Comercial: Cadastro de Metas','comercial:rules':'Comercial: Regras de Comissão',
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Comercial - Relatório NF: visualizar','relatorio_nf:manage':'Comercial - Relatório NF: lançar/gerenciar',
@@ -42040,21 +42112,17 @@ function renderHomeTasks(){
   // Financeiro. Uma permissão por aba: comercial:dashboard (Dashboard e
   // Ranking), comercial:commission (SÓ a aba Comissão — sem ela o servidor
   // não envia os valores em R$ da comissão; Dashboard e Ranking ficam iguais)
-  // e comercial:goals (Cadastro de Metas =
-  // importação da planilha).
+  // comercial:goals (Cadastro de Metas = importação da planilha) e
+  // comercial:rules (Regras de Comissão por vigência). Marcar NOVATO no
+  // Dashboard: goals ou rules (overview.canMarkNewcomer).
   // A ÚNICA fonte dos números é a planilha "ACOMPANHAMENTO
   // LOJAS_VENDEDORES", aba "VENDEDORES <MÊS>" (decisão confirmada: sem
   // digitação manual). Percentual, alvo seguinte, média diária e comissão
   // vêm SEMPRE calculados pelo servidor (app/lib/commercial.ts). O escopo
   // por loja e o "só o próprio vendedor" também são do servidor
   // (app/api/commercial/*): o front só filtra dentro do que já recebeu.
-  // Marcos da barra de Faturamento: a meta e as duas faixas de premiação
-  // (regra de 2026-09-30). Posições fixas (escala por trechos 0-100-110-120%)
-  // pra os rótulos nunca se sobreporem em tela de celular.
-  const COM_TARGETS = [100, 110, 120];
-  const COM_TARGET_POS = [50, 75, 100];
-  const COM_TARGET_LABELS = ['META', 'R$ 500', 'R$ 1.500'];
-  const COM_TARGET_NAMES = ['a meta (100%)', '110% (prêmio de R$ 500)', '120% (prêmio de R$ 1.500)'];
+  // Percentuais e premiação vêm da regra vigente do mês (overview.rules,
+  // aba Regras de Comissão) — nenhum número de regra fixo aqui.
   const COM_MONTH_NAMES = ['JANEIRO','FEVEREIRO','MARCO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
   let comMonth = '';
   let comOverview = null;
@@ -42106,6 +42174,39 @@ function renderHomeTasks(){
     return Math.ceil(target * percent / 100);
   }
 
+  // Basis points → percentual (60 → "0,6" + "%").
+  function comFormatBps(bps){
+    return (Number(bps) / 100).toLocaleString('pt-BR', {maximumFractionDigits:2})+'%';
+  }
+
+  // Prêmio em reais sem centavos quando redondo (50000 → "R$" + " 500").
+  function comMoneyShort(cents){
+    return cents % 100 ? formatCentsBRL(cents) : 'R$ '+(cents / 100).toLocaleString('pt-BR');
+  }
+
+  function comRules(){
+    return (comOverview && comOverview.rules) || {revenueRateHighBps:0, revenueRateLowBps:0, premiumTiers:[], warrantyRateBps:0, warrantyAttachTarget:0, creditRateBps:0};
+  }
+
+  // Marcos da barra de Faturamento: a meta (100%) e as faixas de premiação.
+  // Posições fixas pra os rótulos nunca se sobreporem no celular: até 2
+  // faixas, a meta na metade e as faixas espalhadas até o fim (sem faixa, a
+  // meta no fim); com 3 ou 4, todos os marcos igualmente espaçados.
+  function comRevenueMarks(){
+    const tiers = comRules().premiumTiers;
+    const percents = Array.from(new Set([100].concat(tiers.map(tier => tier.percent)))).sort((a, b) => a - b);
+    return percents.map((percent, index) => {
+      const tier = tiers.find(item => item.percent === percent);
+      return {
+        percent,
+        pos: percents.length > 3 ? 100 * (index + 1) / percents.length
+          : percents.length === 1 ? 100 : 50 + 50 * index / (percents.length - 1),
+        label: tier ? comMoneyShort(tier.cents) : 'META',
+        name: tier ? percent+'% (prêmio de '+comMoneyShort(tier.cents)+')' : 'a meta (100%)'
+      };
+    });
+  }
+
   function comTier(percent){
     if(percent === null || percent === undefined) return 'none';
     if(percent >= 100) return 'green';
@@ -42113,9 +42214,9 @@ function renderHomeTasks(){
     return 'red';
   }
 
-  function comBarPosition(percent){
+  function comBarPosition(percent, marks){
     if(percent === null || percent === undefined || percent <= 0) return 0;
-    const points = [[0,0],[100,50],[110,75],[120,100]];
+    const points = [[0,0]].concat(marks.map(mark => [mark.percent, mark.pos]));
     for(let i = 1; i < points.length; i++){
       if(percent <= points[i][0]){
         const [p0, x0] = points[i-1];
@@ -42134,8 +42235,9 @@ function renderHomeTasks(){
     const fmt = value => comFormatValue(kind, value);
     if(!(block.target > 0)) return {text:'Sem meta neste mês.', sub:''};
     const next = block.next;
-    if(!next) return {text:simple ? 'Meta batida!' : 'Meta e as duas faixas de prêmio atingidas!', sub:''};
-    const goalName = simple ? 'a meta' : COM_TARGET_NAMES[next.index - 1];
+    const marks = simple ? [] : comRevenueMarks();
+    if(!next) return {text:marks.length > 1 ? 'Meta e todas as faixas de prêmio atingidas!' : 'Meta batida!', sub:''};
+    const goalName = simple ? 'a meta' : marks[next.index - 1].name;
     if(clock.status === 'past') return {text:'Mês encerrado — faltaram '+fmt(next.missing)+' para '+goalName+'.', sub:''};
     const days = clock.daysRemaining;
     const daysText = days === 1 ? 'último dia do mês' : days+' dias restantes';
@@ -42158,20 +42260,23 @@ function renderHomeTasks(){
       bar = '<div class="com-bar simple" role="img" aria-label="'+escapeHtml(ariaLabel)+'">'+
         '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+width+'%"></div></div></div>';
     }else{
-      const marks = COM_TARGETS.map((target, index) => {
+      const revenueMarks = comRevenueMarks();
+      // 3+ marcos: rótulos alternados em duas alturas (cartão estreito).
+      const stagger = revenueMarks.length >= 3;
+      const marks = revenueMarks.map((mark, index) => {
         const reached = block.reachedTargets > index ? ' reached' : '';
-        const last = index === COM_TARGETS.length - 1 ? ' last' : '';
-        const left = 'left:'+COM_TARGET_POS[index]+'%';
+        const last = (index === revenueMarks.length - 1 ? ' last' : '')+(stagger && index % 2 ? ' low' : '');
+        const left = 'left:'+mark.pos+'%';
         return '<span class="com-bar-marker'+reached+last+'" style="'+left+'"></span>'+
-          '<span class="com-bar-label'+reached+last+'" style="'+left+'"><span>'+COM_TARGET_LABELS[index]+'</span><span>'+target+'%</span></span>';
+          '<span class="com-bar-label'+reached+last+'" style="'+left+'"><span>'+escapeHtml(mark.label)+'</span><span>'+mark.percent+'%</span></span>';
       }).join('');
-      bar = '<div class="com-bar" role="img" aria-label="'+escapeHtml(ariaLabel)+'">'+
-        '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+comBarPosition(percent)+'%"></div></div>'+marks+'</div>';
+      bar = '<div class="com-bar'+(stagger ? ' stagger' : '')+'" role="img" aria-label="'+escapeHtml(ariaLabel)+'" style="--com-goal:'+revenueMarks[0].pos+'%">'+
+        '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+comBarPosition(percent, revenueMarks)+'%"></div></div>'+marks+'</div>';
     }
     const targets = simple || !(block.target > 0) ? '' :
-      '<ul class="com-targets">'+COM_TARGETS.map((target, index) =>
-        '<li class="'+(block.reachedTargets > index ? 'reached' : '')+'"><b>'+(index ? 'PRÊMIO '+COM_TARGET_LABELS[index] : 'META')+' · '+target+'%</b>'+
-        escapeHtml(comFormatValue(kind, comTargetValue(block.target, target)))+'</li>'
+      '<ul class="com-targets">'+comRevenueMarks().map((mark, index) =>
+        '<li class="'+(block.reachedTargets > index ? 'reached' : '')+'"><b>'+escapeHtml(mark.label === 'META' ? 'META' : 'PRÊMIO '+mark.label)+' · '+mark.percent+'%</b>'+
+        escapeHtml(comFormatValue(kind, comTargetValue(block.target, mark.percent)))+'</li>'
       ).join('')+'</ul>';
     const incentive = comIncentive(kind, block, clock, simple);
     return '<section class="com-block tier-'+tier+'">'+
@@ -42187,49 +42292,60 @@ function renderHomeTasks(){
   }
 
   // Garantia estendida: não há meta em valor — o critério é o anexo
-  // (garantias ÷ notebooks/PC vendidos) chegar a 30%. A barra vai até 30%.
+  // (garantias ÷ notebooks/PC vendidos) chegar ao mínimo da regra do mês. A
+  // barra vai até esse mínimo.
   function comWarrantyBlockHtml(warranty){
     const attach = warranty.attachPercent;
-    const width = attach === null ? 0 : Math.min(100, attach / 30 * 100);
+    const target = warranty.attachTarget;
+    const width = attach === null ? 0 : target > 0 ? Math.min(100, attach / target * 100) : 100;
     let text;
-    if(attach === null) text = 'Nenhum notebook/PC vendido no mês — o critério de 30% ainda não conta.';
-    else if(warranty.met) text = 'Critério de 30% batido.';
-    else text = 'Falta'+(warranty.missingQty === 1 ? '' : 'm')+' '+warranty.missingQty+' garantia'+(warranty.missingQty === 1 ? '' : 's')+' para chegar a 30% dos notebooks/PC.';
+    if(attach === null) text = 'Nenhum notebook/PC vendido no mês — o critério de '+target+'% ainda não conta.';
+    else if(warranty.met) text = 'Critério de '+target+'% batido.';
+    else text = 'Falta'+(warranty.missingQty === 1 ? '' : 'm')+' '+warranty.missingQty+' garantia'+(warranty.missingQty === 1 ? '' : 's')+' para chegar a '+target+'% dos notebooks/PC.';
     return '<section class="com-block tier-'+warranty.tier+'">'+
       '<div class="com-block-head"><span class="com-block-title">Garantia estendida</span><strong class="com-pct">'+(attach === null ? 'SEM PC' : comFormatPct(attach))+'</strong></div>'+
-      '<div class="com-bar simple" role="img" aria-label="'+escapeHtml('Anexo de garantia: '+comFormatPct(attach)+' de 30%')+'">'+
+      '<div class="com-bar simple" role="img" aria-label="'+escapeHtml('Anexo de garantia: '+comFormatPct(attach)+' de '+target+'%')+'">'+
         '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+width+'%"></div></div></div>'+
       '<dl class="com-figures">'+
-        '<div><dt>Anexo (critério 30%)</dt><dd>'+escapeHtml(warranty.warrantyQty+' de '+comFormatQty(warranty.notebookQty, 'notebook/PC', 'notebooks/PC'))+'</dd></div>'+
+        '<div><dt>Anexo (critério '+target+'%)</dt><dd>'+escapeHtml(warranty.warrantyQty+' de '+comFormatQty(warranty.notebookQty, 'notebook/PC', 'notebooks/PC'))+'</dd></div>'+
         '<div><dt>Vendido em garantia</dt><dd>'+escapeHtml(formatCentsBRL(warranty.realizedCents))+'</dd></div>'+
       '</dl>'+
       '<p class="com-incentive">'+escapeHtml(text)+'</p>'+
     '</section>';
   }
 
-  // Selo dos critérios da comissão: com Itens 100%, Realme 100% e anexo de
-  // garantia 30% o faturamento paga 0,6% (e libera a premiação); sem, 0,4%.
+  // Selo dos critérios da comissão: com Itens 100%, Realme 100% e o anexo
+  // mínimo de garantia o faturamento paga a % alta (e libera a premiação);
+  // sem, a % baixa (taxas da regra do mês, em revenueRateBps).
   // comercial:commission afeta SÓ a aba Comissão: o selo do Dashboard é o
-  // mesmo para todos (sem a permissão o servidor manda só os critérios e a
-  // taxa, sem os valores em R$).
+  // mesmo para todos (sem a permissão o servidor manda só os critérios, a
+  // taxa e o novato, sem os valores em R$).
   function comCriteriaHtml(metrics){
-    if(metrics.commission.allCriteriaMet) return '<span class="com-criteria ok">METAS BATIDAS · 0,6%</span>';
+    const rate = comFormatBps(metrics.commission.revenueRateBps);
+    const newcomer = metrics.commission.newcomer ? '<span class="com-criteria newcomer">NOVATO · SÓ % DO FATURAMENTO</span>' : '';
+    if(metrics.commission.allCriteriaMet) return '<span class="com-criteria ok">METAS BATIDAS · '+escapeHtml(rate)+'</span>'+newcomer;
     const missing = [];
     if(!metrics.items.met) missing.push('ITENS');
     if(!metrics.realme.met) missing.push('REALME');
-    if(!metrics.warranty.met) missing.push('GARANTIA 30%');
-    return '<span class="com-criteria pending">0,4% · FALTA: '+escapeHtml(missing.join(', '))+'</span>';
+    if(!metrics.warranty.met) missing.push('GARANTIA '+metrics.warranty.attachTarget+'%');
+    return '<span class="com-criteria pending">'+escapeHtml(rate)+' · FALTA: '+escapeHtml(missing.join(', '))+'</span>'+newcomer;
   }
 
-  function comSellerHeadHtml(seller){
+  // withToggle: Dashboard — quem tem comercial:goals ou comercial:rules marca
+  // o NOVATO do mês ali mesmo (os outros só veem o selo).
+  function comSellerHeadHtml(seller, withToggle){
     const updated = seller.updatedAt ? 'Atualizado em '+formatDateTimeBR(seller.updatedAt) : '';
+    const toggle = withToggle && comOverview && comOverview.canMarkNewcomer
+      ? '<label class="assist-check com-newcomer-toggle"><input type="checkbox" data-com-newcomer="'+escapeHtml(seller.employeeId)+'"'+(seller.newcomer ? ' checked' : '')+'> NOVATO NESTE MÊS</label>'
+      : '';
     return '<header class="com-seller-head"><div class="com-seller-name"><strong>'+escapeHtml(seller.name)+'</strong>'+
       '<span>'+escapeHtml(seller.companyName || 'SEM LOJA')+(seller.zone ? ' · ZONA '+escapeHtml(seller.zone) : '')+'</span></div>'+
-      '<div class="com-seller-side">'+comCriteriaHtml(seller.metrics)+
+      '<div class="com-seller-side">'+comCriteriaHtml(seller.metrics)+toggle+
       (updated ? '<span class="com-seller-meta">'+escapeHtml(updated)+'</span>' : '')+'</div></header>';
   }
 
   function comData(){
+    if(comView === 'regras') return null;
     return comView === 'metas' ? comManage : comOverview;
   }
 
@@ -42260,6 +42376,8 @@ function renderHomeTasks(){
     if(el('comZoneField')) el('comZoneField').hidden = !data || ownOnly || comView === 'metas';
     if(el('comSellerField')) el('comSellerField').hidden = !data || ownOnly || comView === 'ranking' || comView === 'metas';
     if(el('comRankMetricField')) el('comRankMetricField').hidden = comView !== 'ranking';
+    // Regras de Comissão não dependem do mês (cada vigência tem o seu).
+    if(el('comMonthField')) el('comMonthField').hidden = comView === 'regras';
   }
 
   function comFillFilter(id, firstLabel, options, current){
@@ -42303,7 +42421,7 @@ function renderHomeTasks(){
           escapeHtml(comFormatValue('items', m.items.superTarget))+' · '+
           escapeHtml(m.items.superReached ? 'atingido' : 'faltam '+comFormatValue('items', m.items.superTarget - m.items.realized))+'</p>'
         : '';
-      return '<article class="com-seller">'+comSellerHeadHtml(seller)+
+      return '<article class="com-seller">'+comSellerHeadHtml(seller, true)+
         '<div class="com-blocks">'+
           comBlockHtml('money', 'Faturamento', m.revenue, clock, false)+
           comBlockHtml('items', 'Itens vendidos', m.items, clock, true, superLine)+
@@ -42314,19 +42432,40 @@ function renderHomeTasks(){
     }).join('');
   }
 
+  // Quadro de regras da aba Comissão, montado pela regra vigente do mês.
+  function comRulesBoxHtml(){
+    const rules = comRules();
+    const high = comFormatBps(rules.revenueRateHighBps);
+    const low = comFormatBps(rules.revenueRateLowBps);
+    const tiers = rules.premiumTiers;
+    const rule = (title, value, note) =>
+      '<div class="com-rule"><span>'+escapeHtml(title)+'</span><strong>'+escapeHtml(value)+'</strong><small>'+escapeHtml(note)+'</small></div>';
+    return rule('Critérios para '+high, 'Itens · Realme · Garantia', 'Itens 100% da meta, Realme 100% da meta e garantia em '+rules.warrantyAttachTarget+'% dos notebooks/PC vendidos')+
+      rule('Comissão por vendas (Faturamento)', high+' / '+low, high+' batendo os 3 critérios; '+low+' sem eles'+(rules.creditRateBps > 0 ? ' — sobre o faturado sem o crediário' : ''))+
+      rule('Premiação por faturamento', tiers.length ? tiers.map(tier => comMoneyShort(tier.cents)).join(' / ') : 'Sem premiação',
+        tiers.length ? tiers.map(tier => tier.percent+'%').join(' / ')+' da meta de faturamento, só batendo os 3 critérios (não cumulativa)' : 'Nenhuma faixa nesta regra')+
+      rule('Comissão por garantia estendida', comFormatBps(rules.warrantyRateBps), 'Sobre o valor vendido em garantia, sempre')+
+      (rules.creditRateBps > 0 ? rule('Comissão por crediário feito', comFormatBps(rules.creditRateBps), 'Sobre o valor vendido em crediário') : '')+
+      rule('Novato no mês', 'Só '+high+' / '+low, 'Sem premiação, garantia e crediário (marcado no Dashboard)');
+  }
+
   // Comissão: só o título e o valor de cada regra (pedido do usuário —
-  // sem as frases de percentual/faixa).
+  // sem as frases de percentual/faixa). Novato: premiação, garantia e
+  // crediário "NÃO SE APLICA (NOVATO)".
   function comCommissionCardHtml(seller){
     const commission = seller.metrics.commission;
-    const row = (label, cents) =>
-      '<li class="'+(cents > 0 ? 'on' : '')+'"><span class="label">'+escapeHtml(label)+'</span>'+
-      '<span class="value">'+escapeHtml(formatCentsBRL(cents))+'</span></li>';
+    const rules = comRules();
+    const row = (label, cents, notApplicable) =>
+      '<li class="'+(!notApplicable && cents > 0 ? 'on' : '')+'"><span class="label">'+escapeHtml(label)+'</span>'+
+      '<span class="value">'+escapeHtml(notApplicable ? 'NÃO SE APLICA (NOVATO)' : formatCentsBRL(cents))+'</span></li>';
+    const showCredit = rules.creditRateBps > 0;
 
     return '<article class="com-commission">'+comSellerHeadHtml(seller)+
       '<ul class="com-commission-rows">'+
-        row('Comissão por vendas ('+(commission.allCriteriaMet ? '0,6%' : '0,4%')+')', commission.revenueCommissionCents)+
-        row('Premiação por faturamento', commission.revenuePremiumCents)+
-        row('Garantia estendida (4%)', commission.warrantyCommissionCents)+
+        row('Comissão por vendas ('+comFormatBps(commission.revenueRateBps)+(commission.revenueBaseCents < seller.realized.revenueCents ? ' · sem o crediário' : '')+')', commission.revenueCommissionCents)+
+        row('Premiação por faturamento', commission.revenuePremiumCents, commission.newcomer)+
+        row('Garantia estendida ('+comFormatBps(rules.warrantyRateBps)+')', commission.warrantyCommissionCents, commission.newcomer)+
+        (showCredit ? row('Crediário ('+comFormatBps(rules.creditRateBps)+' de '+formatCentsBRL(seller.realized.creditSalesCents)+')', commission.creditCommissionCents, commission.newcomer) : '')+
       '</ul>'+
       '<div class="com-commission-sum"><span>Total estimado</span><strong>'+escapeHtml(formatCentsBRL(commission.totalCents))+'</strong></div>'+
     '</article>';
@@ -42336,6 +42475,7 @@ function renderHomeTasks(){
     const list = el('comComList');
     const total = el('comComTotal');
     if(!list || !comOverview) return;
+    if(el('comRulesBox')) el('comRulesBox').innerHTML = comRulesBoxHtml();
     const sellers = comFilteredSellers();
     if(!sellers.length){
       list.innerHTML = comEmptyHtml();
@@ -42348,6 +42488,46 @@ function renderHomeTasks(){
       total.innerHTML = '<span>Total estimado · '+sellers.length+(sellers.length === 1 ? ' vendedor' : ' vendedores')+'</span>'+
         '<strong>'+escapeHtml(formatCentsBRL(sum))+'</strong>';
       total.hidden = sellers.length < 2;
+    }
+  }
+
+  // Crediário Feito: valor vendido em crediário (planilha) por vendedor; a
+  // comissão só aparece com comercial:commission (sem ela o servidor nem
+  // manda o valor).
+  function comRenderCredit(){
+    const body = el('comCreditBody');
+    const total = el('comCreditTotal');
+    if(!body || !comOverview) return;
+    const canCommission = Boolean(comOverview.canCommission);
+    if(el('comCreditCommissionHead')) el('comCreditCommissionHead').hidden = !canCommission;
+    const sellers = comFilteredSellers();
+    if(!sellers.length){
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(comEmptyHtml().replace(/<[^>]+>/g, ''))+'</td></tr>';
+      if(total) total.hidden = true;
+      return;
+    }
+    const rate = comFormatBps(comRules().creditRateBps);
+    body.innerHTML = sellers.map(seller => {
+      const credit = seller.realized.creditSalesCents;
+      const revenue = seller.realized.revenueCents;
+      const share = revenue > 0 ? Math.floor(credit / revenue * 1000) / 10 : null;
+      const commission = seller.metrics.commission;
+      const commissionCell = !canCommission ? '' :
+        '<td data-label="Comissão ('+escapeHtml(rate)+')" style="text-align:right">'+
+          (commission.newcomer ? '<span class="status-pill waiting">NOVATO — NÃO RECEBE</span>' : escapeHtml(formatCentsBRL(commission.creditCommissionCents)))+'</td>';
+      return '<tr><td data-label="Vendedor" class="nome">'+escapeHtml(seller.name)+'</td>'+
+        '<td data-label="Loja">'+escapeHtml(seller.companyName || 'SEM LOJA')+'</td>'+
+        '<td data-label="Crediário feito" style="text-align:right">'+escapeHtml(formatCentsBRL(credit))+'</td>'+
+        '<td data-label="% do faturamento" style="text-align:right">'+escapeHtml(comFormatPct(share))+'</td>'+
+        commissionCell+'</tr>';
+    }).join('');
+    if(total){
+      const creditSum = sellers.reduce((acc, seller) => acc + seller.realized.creditSalesCents, 0);
+      const commissionSum = canCommission ? sellers.reduce((acc, seller) => acc + seller.metrics.commission.creditCommissionCents, 0) : 0;
+      total.innerHTML = '<span>Crediário feito · '+sellers.length+(sellers.length === 1 ? ' vendedor' : ' vendedores')+
+        (canCommission ? ' · comissão '+escapeHtml(formatCentsBRL(commissionSum)) : '')+'</span>'+
+        '<strong>'+escapeHtml(formatCentsBRL(creditSum))+'</strong>';
+      total.hidden = false;
     }
   }
 
@@ -42485,6 +42665,7 @@ function renderHomeTasks(){
           '<div><dt>Itens / Meta</dt><dd>'+escapeHtml(row.items+' / '+row.targetItems)+'</dd></div>'+
           '<div><dt>Anexo de garantia</dt><dd>'+escapeHtml(row.warrantyQty+' de '+row.notebookQty+' notebooks/PC')+'</dd></div>'+
           '<div><dt>Realmes / Meta</dt><dd>'+escapeHtml(row.realme+' / '+row.targetRealme)+'</dd></div>'+
+          '<div><dt>Crediário</dt><dd>'+escapeHtml(formatCentsBRL(row.creditSalesCents))+'</dd></div>'+
         '</dl>'+
       '</li>';
     }).join('');
@@ -42583,6 +42764,199 @@ function renderHomeTasks(){
       : 'Nenhum vendedor importado neste mês ainda.';
   }
 
+  // ---------- Regras de Comissão (comercial:rules) ----------
+  let comRulesData = null;
+  let comRuleEditing = null;
+
+  function comMonthLabel(month){
+    const [year, monthNumber] = String(month || '').split('-');
+    return year && monthNumber ? monthNumber+'/'+year : '—';
+  }
+
+  function comTiersText(tiers){
+    return tiers.length ? tiers.map(tier => tier.percent+'% → '+comMoneyShort(tier.cents)).join(' · ') : 'SEM PREMIAÇÃO';
+  }
+
+  function comRenderRules(){
+    const body = el('comRulesBody');
+    if(!body || !comRulesData) return;
+    const canManage = Boolean(comRulesData.canManage);
+    if(el('btnComRuleNew')) el('btnComRuleNew').hidden = !canManage;
+    const rowHtml = (rule, isDefault) =>
+      '<tr><td data-label="A partir de"><strong>'+escapeHtml(isDefault ? 'PADRÃO (SEM VIGÊNCIA)' : comMonthLabel(rule.validFrom))+'</strong></td>'+
+      '<td data-label="Faturamento">'+escapeHtml(comFormatBps(rule.revenueRateHighBps)+' / '+comFormatBps(rule.revenueRateLowBps))+'</td>'+
+      '<td data-label="Premiação">'+escapeHtml(comTiersText(rule.premiumTiers))+'</td>'+
+      '<td data-label="Garantia">'+escapeHtml(comFormatBps(rule.warrantyRateBps))+'</td>'+
+      '<td data-label="Anexo mínimo">'+escapeHtml(rule.warrantyAttachTarget+'%')+'</td>'+
+      '<td data-label="Crediário">'+escapeHtml(comFormatBps(rule.creditRateBps))+'</td>'+
+      '<td data-label="Quem alterou">'+escapeHtml(isDefault ? 'REGRA DO CÓDIGO' : (rule.updatedByName || '—'))+'</td>'+
+      '<td data-label="Quando">'+escapeHtml(isDefault || !rule.updatedAt ? '—' : formatDateTimeBR(rule.updatedAt))+'</td>'+
+      '<td data-label="Ações">'+(canManage && !isDefault ? '<button class="btn-outline" type="button" data-com-rule-edit="'+escapeHtml(rule.id)+'">EDITAR</button>' : '')+'</td></tr>';
+    body.innerHTML = comRulesData.items.map(rule => rowHtml(rule, false)).join('')+rowHtml(comRulesData.defaults, true);
+  }
+
+  async function comLoadRules(){
+    const body = el('comRulesBody');
+    try{
+      comRulesData = await comApi('/rules');
+    }catch(error){
+      comRulesData = null;
+      if(body) body.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    comRenderRules();
+  }
+
+  function comTierRowHtml(tier){
+    return '<div class="com-tier-row"><span>A PARTIR DE</span>'+
+      '<input type="number" min="100" max="1000" step="1" inputmode="numeric" aria-label="% da meta" data-com-tier-percent value="'+(tier ? tier.percent : '')+'">'+
+      '<span>% DA META → R$</span>'+
+      '<input type="number" min="0.01" step="0.01" inputmode="decimal" aria-label="Valor do prêmio" data-com-tier-cents value="'+(tier ? (tier.cents / 100) : '')+'">'+
+      '<button class="btn-outline" type="button" data-com-tier-remove>REMOVER</button></div>';
+  }
+
+  function comNextMonthKey(){
+    const [year, month] = financeCurrentMonthKey().split('-').map(Number);
+    return month === 12 ? (year + 1)+'-01' : year+'-'+String(month + 1).padStart(2, '0');
+  }
+
+  function comRuleWarningText(){
+    const month = el('comRuleFrom').value;
+    return month ? 'VALE PARA '+comMonthLabel(month)+' EM DIANTE; MESES ANTERIORES NÃO MUDAM.' : '';
+  }
+
+  function comOpenRuleDialog(rule){
+    comRuleEditing = rule || null;
+    // Nova vigência começa com os números da mais recente (ou da padrão).
+    const base = rule || (comRulesData && comRulesData.items[0]) || (comRulesData && comRulesData.defaults);
+    const pct = bps => Number(bps) / 100;
+    el('comRuleDialogTitle').textContent = rule ? 'EDITAR VIGÊNCIA '+comMonthLabel(rule.validFrom) : 'NOVA VIGÊNCIA';
+    el('comRuleFrom').value = rule ? rule.validFrom : comNextMonthKey();
+    el('comRuleHigh').value = pct(base.revenueRateHighBps);
+    el('comRuleLow').value = pct(base.revenueRateLowBps);
+    el('comRuleWarranty').value = pct(base.warrantyRateBps);
+    el('comRuleAttach').value = base.warrantyAttachTarget;
+    el('comRuleCredit').value = pct(base.creditRateBps);
+    el('comRuleNotes').value = rule ? (rule.notes || '') : '';
+    el('comRuleTiers').innerHTML = base.premiumTiers.map(comTierRowHtml).join('');
+    el('comRuleWarning').textContent = comRuleWarningText();
+    el('comRuleStatus').textContent = '';
+    el('comRuleDialog').showModal();
+  }
+
+  // Lê o formulário (% → basis points, R$ → centavos). Erro = texto.
+  function comReadRuleForm(){
+    const bps = (id, label) => {
+      const value = Number(el(id).value);
+      if(el(id).value === '' || !Number.isFinite(value) || value < 0 || value > 100) throw new Error(label+' PRECISA ESTAR ENTRE 0% E 100%.');
+      return Math.round(value * 100);
+    };
+    const validFrom = el('comRuleFrom').value;
+    if(!/^\d{4}-\d{2}$/.test(validFrom)) throw new Error('INFORME O MÊS DE INÍCIO DA VIGÊNCIA.');
+    const attach = Number(el('comRuleAttach').value);
+    if(el('comRuleAttach').value === '' || !Number.isInteger(attach) || attach < 0 || attach > 100) throw new Error('ANEXO DE GARANTIA MÍNIMO PRECISA SER UM NÚMERO INTEIRO ENTRE 0% E 100%.');
+    const premiumTiers = Array.from(el('comRuleTiers').querySelectorAll('.com-tier-row')).map(row => {
+      const percent = Number(row.querySelector('[data-com-tier-percent]').value);
+      const cents = parseBRLToCents(row.querySelector('[data-com-tier-cents]').value);
+      if(!Number.isInteger(percent) || percent < 100 || percent > 1000) throw new Error('CADA FAIXA DA PREMIAÇÃO COMEÇA EM 100% A 1000% DA META (NÚMERO INTEIRO).');
+      if(!cents) throw new Error('INFORME O VALOR DE CADA FAIXA DA PREMIAÇÃO.');
+      return {percent, cents};
+    });
+    premiumTiers.forEach((tier, index) => {
+      const previous = premiumTiers[index - 1];
+      if(previous && (tier.percent <= previous.percent || tier.cents <= previous.cents)) throw new Error('AS FAIXAS DA PREMIAÇÃO PRECISAM SER CRESCENTES (% DA META E VALOR).');
+    });
+    return {
+      validFrom,
+      revenueRateHighBps: bps('comRuleHigh', '% DO FATURAMENTO BATENDO OS CRITÉRIOS'),
+      revenueRateLowBps: bps('comRuleLow', '% DO FATURAMENTO SEM OS CRITÉRIOS'),
+      premiumTiers,
+      warrantyRateBps: bps('comRuleWarranty', '% DA GARANTIA'),
+      warrantyAttachTarget: attach,
+      creditRateBps: bps('comRuleCredit', '% DO CREDIÁRIO'),
+      notes: el('comRuleNotes').value.trim()
+    };
+  }
+
+  if(el('btnComRuleNew')) el('btnComRuleNew').addEventListener('click', () => comOpenRuleDialog(null));
+  if(el('comRulesBody')) el('comRulesBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-com-rule-edit]');
+    if(!button || !comRulesData) return;
+    const rule = comRulesData.items.find(item => item.id === button.dataset.comRuleEdit);
+    if(rule) comOpenRuleDialog(rule);
+  });
+  if(el('btnCloseComRuleDialog')) el('btnCloseComRuleDialog').addEventListener('click', () => el('comRuleDialog').close());
+  if(el('btnCancelComRuleDialog')) el('btnCancelComRuleDialog').addEventListener('click', () => el('comRuleDialog').close());
+  if(el('btnComRuleAddTier')) el('btnComRuleAddTier').addEventListener('click', () => {
+    // Mesmo limite do servidor (rótulos da barra no celular).
+    if(el('comRuleTiers').children.length >= 4){
+      el('comRuleStatus').textContent = 'A PREMIAÇÃO ACEITA ATÉ 4 FAIXAS.';
+      el('comRuleStatus').dataset.tone = 'error';
+      return;
+    }
+    el('comRuleTiers').insertAdjacentHTML('beforeend', comTierRowHtml(null));
+  });
+  if(el('comRuleTiers')) el('comRuleTiers').addEventListener('click', event => {
+    const button = event.target.closest('[data-com-tier-remove]');
+    if(button) button.closest('.com-tier-row').remove();
+  });
+  if(el('comRuleFrom')) el('comRuleFrom').addEventListener('input', () => {
+    el('comRuleWarning').textContent = comRuleWarningText();
+  });
+  if(el('comRuleForm')) el('comRuleForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comRuleStatus');
+    let payload;
+    try{
+      payload = comReadRuleForm();
+    }catch(error){
+      status.textContent = error.message;
+      status.dataset.tone = 'error';
+      return;
+    }
+    // Vigência que já começou: muda a comissão de meses já fechados/em curso.
+    const started = comRuleEditing && comRuleEditing.validFrom <= financeCurrentMonthKey();
+    const message = comRuleWarningText()+(started ? '\n\nATENÇÃO: ESSA VIGÊNCIA JÁ COMEÇOU — ALTERAR MUDA A COMISSÃO DE '+comMonthLabel(comRuleEditing.validFrom)+' EM DIANTE.' : '')+'\n\nSALVAR?';
+    if(!confirm(message)) return;
+    const button = el('comRuleForm').querySelector('[type="submit"]');
+    button.disabled = true;
+    try{
+      await comApi('/rules', {
+        method: comRuleEditing ? 'PUT' : 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(comRuleEditing ? {...payload, id: comRuleEditing.id} : payload)
+      });
+      el('comRuleDialog').close();
+      comOverview = null;
+      await comLoadRules();
+      showPurchaseToast('REGRA DE COMISSÃO SALVA.');
+    }catch(error){
+      status.textContent = error.message;
+      status.dataset.tone = 'error';
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  // NOVATO no mês: só a % do faturamento. Recalcula pelo servidor.
+  if(el('comDashList')) el('comDashList').addEventListener('change', async event => {
+    const input = event.target.closest('[data-com-newcomer]');
+    if(!input) return;
+    input.disabled = true;
+    try{
+      await comApi('/newcomers', {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({employeeId: input.dataset.comNewcomer, month: comMonth, newcomer: input.checked})
+      });
+      await comLoadOverview({silent:true});
+    }catch(error){
+      input.checked = !input.checked;
+      input.disabled = false;
+      showPurchaseToast(error.message);
+    }
+  });
+
   // ---------- Abas, carregamento e filtros ----------
   document.querySelectorAll('[data-com-view]').forEach(button => {
     button.addEventListener('click', () => {
@@ -42592,7 +42966,7 @@ function renderHomeTasks(){
         tab.classList.toggle('active', active);
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
       });
-      ['Dashboard','Comissao','Ranking','Metas'].forEach(name => {
+      ['Dashboard','Comissao','Crediario','Ranking','Metas','Regras'].forEach(name => {
         el('comView'+name).hidden = comView !== name.toLowerCase();
       });
       comStoreFilter = '';
@@ -42608,7 +42982,9 @@ function renderHomeTasks(){
     comRenderFilters();
     if(comView === 'dashboard') comRenderDashboard();
     if(comView === 'comissao') comRenderCommission();
+    if(comView === 'crediario') comRenderCredit();
     if(comView === 'ranking') comRenderRanking();
+    if(comView === 'regras') comRenderRules();
     if(comView === 'metas'){
       comRenderManageSummary();
       comRenderImports();
@@ -42618,6 +42994,7 @@ function renderHomeTasks(){
   async function comLoadOverview(opts){
     const options = opts || {};
     const targets = ['comDashList', 'comComList'].map(el).filter(Boolean);
+    if(!options.silent && el('comCreditBody')) el('comCreditBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
     if(!options.silent) targets.forEach(node => { node.innerHTML = '<p class="com-empty">Carregando…</p>'; });
     try{
       comOverview = await comApi('/overview?month='+encodeURIComponent(comMonth));
@@ -42678,6 +43055,10 @@ function renderHomeTasks(){
       return;
     }
     comApplyFilterVisibility();
+    if(comView === 'regras'){
+      await comLoadRules();
+      return;
+    }
     if(comView === 'ranking'){
       await comLoadRanking(opts);
       return;

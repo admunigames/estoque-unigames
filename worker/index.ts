@@ -63,7 +63,7 @@ type Permission =
   | "rh_aniversariantes:view" | "rh_aniversariantes:manage"
   | "rh_odontologico:view" | "rh_odontologico:manage"
   | "rh_escalas:view" | "rh_escalas:manage"
-  | "comercial:dashboard" | "comercial:commission" | "comercial:goals"
+  | "comercial:dashboard" | "comercial:commission" | "comercial:goals" | "comercial:rules"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -195,11 +195,12 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "rh_escalas:view", "rh_escalas:manage",
   // Comercial — metas e comissionamento dos vendedores. Uma permissão por
   // aba: dashboard (Dashboard e Ranking), commission (Comissão, valores em
-  // R$) e goals (Cadastro de Metas). Independente do Financeiro e do RH
+  // R$), goals (Cadastro de Metas) e rules (Regras de Comissão: percentuais
+  // e premiação por vigência). Independente do Financeiro e do RH
   // Financeiro (ver MODULE_VIEW_PERMISSIONS.commercial e
   // app/api/commercial/shared.ts). As antigas comercial:view/manage ficam só
   // em LEGACY_PERMISSION_MAP.
-  "comercial:dashboard", "comercial:commission", "comercial:goals",
+  "comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -1318,7 +1319,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   birthdays: ["rh_aniversariantes:view", "rh_aniversariantes:manage"],
   dentalPlan: ["rh_odontologico:view", "rh_odontologico:manage"],
   schedules: ["rh_escalas:view", "rh_escalas:manage"],
-  commercial: ["comercial:dashboard", "comercial:commission", "comercial:goals"],
+  commercial: ["comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules"],
   works: ["works:manage", "finance:manage"],
   loans: [
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
