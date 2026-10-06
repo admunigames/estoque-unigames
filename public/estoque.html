@@ -20530,7 +20530,7 @@ function renderHomeTasks(){
         (Array.isArray(data.payments) && data.payments.length ? data.payments : ASSIST_PAYMENT_OPTIONS).map(option => assistPaymentRowHtml(option, total)).join('')+
       '</tbody></table>'+
       (observations ? '<section class="assist-doc-block assist-doc-obs"><h2>Observações</h2>'+observations+'</section>' : '')+
-      '<footer class="assist-doc-foot">Assistência Técnica Especializada · Unigames</footer>'+
+      '<footer class="assist-doc-foot">Assistência Técnica Especializada · '+(assistCompanyLogo(company) === 'pa' ? 'Paulista Acessórios' : 'Unigames')+'</footer>'+
     '</div>';
   }
 

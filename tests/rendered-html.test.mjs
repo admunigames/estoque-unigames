@@ -4768,7 +4768,7 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
   assert.match(print, /document\.body\.classList\.add\('pdf-export'\);\s*window\.print\(\);/);
   // O aviso "Orçamento salvo." aparece logo antes do print: nunca sai no PDF.
   assert.match(html, /footer\.hint, \.no-print, \.purchase-toast,\n/);
-  assert.match(extractNamedFunction(html, "assistDocHtml"), /Assistência Técnica Especializada · Unigames/);
+  assert.match(extractNamedFunction(html, "assistDocHtml"), /Assistência Técnica Especializada · '\+\(assistCompanyLogo\(company\) === 'pa' \? 'Paulista Acessórios' : 'Unigames'\)/);
   // Formas de pagamento abaixo do total: crédito 6x sem juros, débito -5%, dinheiro/Pix -10%.
   assert.match(extractNamedFunction(html, "assistDocHtml"), /data\.payments : ASSIST_PAYMENT_OPTIONS\)\.map\(option => assistPaymentRowHtml\(option, total\)\)/);
   for (const label of ["PAGAMENTO NO CRÉDITO ATÉ 6X SEM JUROS", "PAGAMENTO NO DÉBITO COM 5% DE DESCONTO", "PAGAMENTO NO DINHEIRO OU PIX COM 10% DE DESCONTO"]) {
