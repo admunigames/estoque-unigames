@@ -4366,7 +4366,10 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   }
   assert.match(html, /<canvas id="comRankCanvas" role="img"/);
   assert.match(html, /id="btnComRankImage">GERAR IMAGEM PARA WHATSAPP</);
-  assert.match(html, /comDrawChart\(canvas, chart, \{width:1080, height:1080, scale:1, palette:COM_IMAGE_PALETTE, header:true\}\)/);
+  // Imagem horizontal 16:9 (o WhatsApp mostra inteira), com a logo da empresa.
+  assert.match(html, /const W = 1600, H = 900, HEADER = 172, FOOTER = 58;/);
+  assert.match(html, /logo\.src = LOGO_DATA_URI;/);
+  assert.match(html, /comDrawBars\(ctx, chart, \{x:40, y:HEADER \+ 30,/);
   assert.match(html, /navigator\.share\(\{files:\[file\], title: chart\.title\}\)/);
   assert.doesNotMatch(html, /comRankList/);
   assert.match(storesRoute, /const body: JsonMap = \{ month, items, totalPercent: progressPercent\(revenueSum, targetSum\) \};/);

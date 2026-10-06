@@ -42511,11 +42511,12 @@ function renderHomeTasks(){
   // Subabas: VENDEDORES (% da métrica escolhida em "Rankear por"), METAS
   // LOJAS (% feito ÷ meta, aba Meta Loja), ITENS e REALMES TOTAIS POR LOJA
   // (quantidades somadas dos vendedores; cor pelo % da meta somada). Sempre do
-  // maior para o menor. O MESMO desenho (canvas) vai para a tela e para a
-  // imagem do WhatsApp (1080x1080, fundo branco).
+  // maior para o menor. O MESMO desenho das colunas (comDrawBars) vai para a
+  // tela e para a imagem do WhatsApp (1600x900, 16:9 — o WhatsApp mostra
+  // inteira, sem cortar —, com a logo, faixa da marca e rodapé).
   const COM_RANK_METRICS = {revenuePercent:'FATURAMENTO', itemsPercent:'ITENS VENDIDOS', warrantyPercent:'ANEXO DE GARANTIA', realmePercent:'REALMES'};
   const COM_TIER_COLORS = {red:'#ef6a55', yellow:'#e1ad49', green:'#54c48a', none:'#8a99a8'};
-  const COM_IMAGE_PALETTE = {bg:'#ffffff', ink:'#10202f', soft:'#4a5b6b', faint:'#8a99a8', grid:'#e3e9ef'};
+  const COM_IMAGE_PALETTE = {bg:'#f4f7fb', ink:'#10202f', soft:'#4a5b6b', faint:'#7d8fa1', grid:'#d5dee8'};
   let comRankSub = 'vendedores';
 
   function comMonthLong(month){
@@ -42532,7 +42533,7 @@ function renderHomeTasks(){
         .filter(item => (!comZoneFilter || item.zone === comZoneFilter) && item[metric] !== null);
       return {
         title: 'RANKING VENDEDORES · '+COM_RANK_METRICS[metric]+(comZoneFilter ? ' · ZONA '+comZoneFilter : ''),
-        subtitle: '% DA META DE CADA VENDEDOR',
+        subtitle: '',
         percent: true,
         bars: items.map(item => ({label: item.name, sub: item.companyName || '', value: item[metric], tierPercent: item[metric]})),
         empty: 'Nenhum vendedor com meta neste mês.'
@@ -42541,7 +42542,7 @@ function renderHomeTasks(){
     if(comRankSub === 'lojas'){
       const items = comStores ? comStores.items : [];
       return {
-        title: 'METAS DAS LOJAS · FEITO ÷ META',
+        title: 'METAS DAS LOJAS',
         subtitle: comStores && comStores.totalPercent !== null && comStores.totalPercent !== undefined ? 'TODAS AS LOJAS: '+comFormatPct(comStores.totalPercent) : '',
         percent: true,
         bars: items.map(item => ({label: item.name, sub: '', value: item.percent || 0, tierPercent: item.percent})),
@@ -42574,33 +42575,21 @@ function renderHomeTasks(){
     return cut+'…';
   }
 
-  function comDrawChart(canvas, chart, options){
-    const {width, height, scale, palette, header} = options;
-    canvas.width = Math.round(width * scale);
-    canvas.height = Math.round(height * scale);
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    const family = getComputedStyle(document.body).fontFamily || 'sans-serif';
-    const font = (weight, size) => weight+' '+size+'px '+family;
-    const k = header ? 1.6 : 1;
-    ctx.fillStyle = palette.bg;
-    ctx.fillRect(0, 0, width, height);
+  function comFont(weight, size){
+    return weight+' '+size+'px '+(getComputedStyle(document.body).fontFamily || 'sans-serif');
+  }
 
-    let top = 14 * k;
-    if(header){
-      ctx.fillStyle = palette.ink;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.font = font(900, 30);
-      ctx.fillText(comFitText(ctx, chart.title, width - 80), 40, 40);
-      ctx.fillStyle = palette.soft;
-      ctx.font = font(700, 20);
-      ctx.fillText(comFitText(ctx, ['UNIGAMES · '+comMonthLong(comMonth), chart.subtitle].filter(Boolean).join(' · '), width - 80), 40, 82);
-      top = 130;
-    }
+  // Desenha as colunas dentro da região {x, y, width, height}; k = escala
+  // das fontes/espaços (1 na tela, maior na imagem).
+  function comDrawBars(ctx, chart, region){
+    const {palette, k} = region;
+    const width = region.width;
+    const height = region.height;
+    const font = comFont;
+    const top = region.y;
 
     const bars = chart.bars.slice().sort((a, b) => b.value - a.value || a.label.localeCompare(b.label, 'pt-BR'));
-    const side = header ? 40 : 12;
+    const side = 12 * k;
     const count = Math.max(1, bars.length);
     const rotate = (width - side * 2) / count < 92 * k;
     ctx.font = font(800, 12 * k);
@@ -42608,10 +42597,11 @@ function renderHomeTasks(){
     const labelArea = rotate ? Math.min(170 * k, longest * 0.77 + 26 * k) : 46 * k;
     // Nomes inclinados descem para a esquerda: o 1º precisa de margem.
     const firstName = bars.length ? ctx.measureText('1º '+bars[0].label).width : 0;
-    const left = rotate ? Math.max(side, Math.min(firstName, labelArea * 1.3) * 0.71 + 4 - (width - side * 2) / count / 2) : side;
-    const slot = (width - left - side) / count;
+    const left = region.x + (rotate ? Math.max(side, Math.min(firstName, labelArea * 1.3) * 0.71 + 4 - (width - side * 2) / count / 2) : side);
+    const right = region.x + width - side;
+    const slot = (right - left) / count;
     const plotTop = top + 26 * k;
-    const plotBottom = height - labelArea - (header ? 24 : 6);
+    const plotBottom = top + height - labelArea - 6;
     const values = bars.map(bar => bar.value);
     const max = (chart.percent ? Math.max(100, ...values) : Math.max(1, ...values)) * 1.08;
     const y = value => plotBottom - (value / max) * (plotBottom - plotTop);
@@ -42621,21 +42611,21 @@ function renderHomeTasks(){
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(left, plotBottom + 0.5);
-    ctx.lineTo(width - side, plotBottom + 0.5);
+    ctx.lineTo(right, plotBottom + 0.5);
     ctx.stroke();
     if(chart.percent){
       ctx.setLineDash([6 * k, 5 * k]);
       ctx.strokeStyle = palette.faint;
       ctx.beginPath();
       ctx.moveTo(left, Math.round(y(100)) + 0.5);
-      ctx.lineTo(width - side, Math.round(y(100)) + 0.5);
+      ctx.lineTo(right, Math.round(y(100)) + 0.5);
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = palette.faint;
       ctx.font = font(800, 10 * k);
       ctx.textAlign = 'right';
       ctx.textBaseline = 'bottom';
-      ctx.fillText('META 100%', width - side, y(100) - 3);
+      ctx.fillText('META 100%', right, y(100) - 3);
     }
 
     const barWidth = Math.max(6, Math.min(64 * k, slot * 0.62));
@@ -42643,9 +42633,13 @@ function renderHomeTasks(){
       const cx = left + slot * index + slot / 2;
       const barTop = y(bar.value);
       const tier = bar.tierPercent === null || bar.tierPercent === undefined ? 'none' : comTier(bar.tierPercent);
-      ctx.fillStyle = COM_TIER_COLORS[tier];
       const radius = Math.min(6 * k, barWidth / 2);
       const h = Math.max(2, plotBottom - barTop);
+      // Coluna em degradê (mais clara em cima).
+      const gradient = ctx.createLinearGradient(0, plotBottom - h, 0, plotBottom);
+      gradient.addColorStop(0, COM_TIER_COLORS[tier]);
+      gradient.addColorStop(1, COM_TIER_COLORS[tier]+'b3');
+      ctx.fillStyle = gradient;
       ctx.beginPath();
       if(ctx.roundRect) ctx.roundRect(cx - barWidth / 2, plotBottom - h, barWidth, h, [radius, radius, 0, 0]);
       else ctx.rect(cx - barWidth / 2, plotBottom - h, barWidth, h);
@@ -42717,16 +42711,99 @@ function renderHomeTasks(){
     const height = box < 560 ? 380 : 440;
     canvas.style.width = width+'px';
     canvas.style.height = height+'px';
-    comDrawChart(canvas, chart, {width, height, scale: window.devicePixelRatio || 1, palette: comScreenPalette(), header: false});
+    const scale = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    const palette = comScreenPalette();
+    ctx.fillStyle = palette.bg;
+    ctx.fillRect(0, 0, width, height);
+    comDrawBars(ctx, chart, {x:0, y:14, width, height:height - 14, palette, k:1});
   }
 
-  // Imagem 1080x1080 para o WhatsApp: no celular abre o "Compartilhar"
+  function comRoundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+    else ctx.rect(x, y, w, h);
+  }
+
+  // Imagem horizontal 1600x900 para o WhatsApp: faixa da marca com a logo
+  // (num quadro branco — a logo é azul), título e mês; gráfico em fundo
+  // claro; rodapé com a data/hora em que foi gerada.
+  async function comBuildRankImage(chart){
+    const W = 1600, H = 900, HEADER = 172, FOOTER = 58;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const logo = new Image();
+    logo.src = LOGO_DATA_URI;
+    await logo.decode().catch(() => null);
+
+    ctx.fillStyle = COM_IMAGE_PALETTE.bg;
+    ctx.fillRect(0, 0, W, H);
+    const band = ctx.createLinearGradient(0, 0, W, 0);
+    band.addColorStop(0, '#0f2c52');
+    band.addColorStop(0.55, '#1d487e');
+    band.addColorStop(1, '#2f6fa9');
+    ctx.fillStyle = band;
+    ctx.fillRect(0, 0, W, HEADER);
+    ctx.fillRect(0, H - FOOTER, W, FOOTER);
+    // Faixa fina de destaque embaixo do cabeçalho.
+    ctx.fillStyle = '#54c48a';
+    ctx.fillRect(0, HEADER, W, 6);
+
+    ctx.fillStyle = '#ffffff';
+    comRoundRect(ctx, 44, 26, 120, 120, 22);
+    ctx.fill();
+    if(logo.naturalWidth){
+      const ratio = Math.min(96 / logo.naturalWidth, 96 / logo.naturalHeight);
+      const lw = logo.naturalWidth * ratio;
+      const lh = logo.naturalHeight * ratio;
+      ctx.drawImage(logo, 44 + (120 - lw) / 2, 26 + (120 - lh) / 2, lw, lh);
+    }
+
+    const month = comMonthLong(comMonth);
+    ctx.font = comFont(900, 28);
+    const pillWidth = ctx.measureText(month).width + 56;
+    ctx.fillStyle = '#ffffff';
+    comRoundRect(ctx, W - 48 - pillWidth, 58, pillWidth, 56, 28);
+    ctx.fill();
+    ctx.fillStyle = '#1d487e';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(month, W - 48 - pillWidth / 2, 87);
+
+    const textMax = W - 48 - pillWidth - 40 - 196;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = comFont(900, 46);
+    ctx.fillText(comFitText(ctx, chart.title, textMax), 196, 88);
+    ctx.fillStyle = '#cfe2f5';
+    ctx.font = comFont(700, 25);
+    ctx.fillText(comFitText(ctx, chart.subtitle || 'ACOMPANHAMENTO DE METAS', textMax), 196, 128);
+
+    comDrawBars(ctx, chart, {x:40, y:HEADER + 30, width:W - 80, height:H - HEADER - FOOTER - 52, palette:COM_IMAGE_PALETTE, k:1.85});
+
+    ctx.font = comFont(800, 21);
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText('UNIGAMES · ACOMPANHAMENTO DE METAS', 48, H - FOOTER / 2);
+    ctx.fillStyle = '#cfe2f5';
+    ctx.textAlign = 'right';
+    ctx.fillText('GERADO EM '+formatDateTimeBR(new Date().toISOString()).toUpperCase(), W - 48, H - FOOTER / 2);
+    return canvas;
+  }
+
+  // Imagem para o WhatsApp: no celular abre o "Compartilhar"
   // (WhatsApp aparece na lista); onde não dá, baixa o PNG.
   async function comShareRankImage(){
     const chart = comRankChart();
     if(!chart.bars.length) return;
-    const canvas = document.createElement('canvas');
-    comDrawChart(canvas, chart, {width:1080, height:1080, scale:1, palette:COM_IMAGE_PALETTE, header:true});
+    const canvas = await comBuildRankImage(chart);
     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     if(!blob){ showPurchaseToast('NÃO FOI POSSÍVEL GERAR A IMAGEM.'); return; }
     const fileName = 'ranking-'+comRankSub+'-'+comMonth+'.png';
