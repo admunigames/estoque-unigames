@@ -4778,6 +4778,16 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
   assert.deepEqual([0, 500, 1000].map((bp) => paymentCents(87999, bp)), [87999, 83599, 79199]);
   // Aba PAGAMENTOS + crédito escolhido no orçamento + parcela no PDF.
   assert.match(html, /data-assist-tab="pagamentos">PAGAMENTOS<\/button>/);
+  // Aba CATEGORIAS (sem lista fixa no código) e campo MODELO por categoria.
+  assert.match(html, /data-assist-tab="categorias">CATEGORIAS<\/button>/);
+  assert.match(html, /<section class="no-print assist-section" id="assistSectionCategorias" hidden>/);
+  assert.doesNotMatch(html, /ASSIST_CATEGORIES/);
+  assert.match(extractNamedFunction(html, "assistEquipmentHtml"), /assistCategoryAsksModel\(equipment\.category\) \|\| equipment\.model/);
+  assert.match(extractNamedFunction(html, "assistDocHtml"), /<b>MODELO:<\/b>/);
+  // Logo da Paulista Acessórios (fundo branco) para as lojas P.A.
+  assert.match(html, /const ASSIST_PA_LOGO = 'data:image\/jpeg;base64,\/9j\//);
+  const logoOf = new Function(`${extractNamedFunction(html, "assistCompanyLogo")}; return assistCompanyLogo;`)();
+  assert.deepEqual([logoOf({ cnpj: "17.696.757/0002-45" }), logoOf({ cnpj: "23.189.383/0006-06" }), logoOf({})], ["pa", "unigames", "unigames"]);
   assert.match(html, /<section class="no-print assist-section" id="assistSectionPagamentos" hidden>/);
   assert.match(html, /<label for="assistCreditOption">FORMA DE CRÉDITO NO PDF<\/label><select id="assistCreditOption"><\/select>/);
   assert.match(extractNamedFunction(html, "assistPaymentRowHtml"), /installments\+\x27X DE \x27\+formatCentsBRL/);

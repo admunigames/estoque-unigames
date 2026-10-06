@@ -156,6 +156,7 @@ type ItemRow = {
   equipmentIndex: number;
   category: string;
   device: string;
+  model: string;
   serialNumber: string;
   service: string;
   defectName: string;
@@ -173,7 +174,7 @@ export async function loadQuote(database: D1Database, id: string) {
 export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
   const result = await database
     .prepare(
-      `SELECT equipment_index AS equipmentIndex, category, device, serial_number AS serialNumber, service,
+      `SELECT equipment_index AS equipmentIndex, category, device, model, serial_number AS serialNumber, service,
               defect_name AS defectName, description, quantity, unit_cents AS unitCents,
               discount_cents AS discountCents
        FROM assist_quote_items WHERE quote_id=?1 ORDER BY equipment_index, sort_order, id`,
@@ -183,6 +184,7 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
   const equipments: Array<{
     category: string;
     device: string;
+    model: string;
     serialNumber: string;
     service: string;
     subtotalCents: number;
@@ -203,6 +205,7 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
       equipment = {
         category: String(item.category || ""),
         device: String(item.device || ""),
+        model: String(item.model || ""),
         serialNumber: String(item.serialNumber || ""),
         service: String(item.service || ""),
         subtotalCents: 0,
@@ -248,8 +251,8 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
           .prepare(
             `INSERT INTO assist_quote_items
               (id, quote_id, equipment_index, category, device, serial_number, service, defect_name,
-               description, quantity, unit_cents, discount_cents, sort_order)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`,
+               description, quantity, unit_cents, discount_cents, sort_order, model)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
           )
           .bind(
             crypto.randomUUID(),
@@ -265,6 +268,7 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
             line.unitCents,
             line.discountCents,
             linePosition,
+            equipment.model,
           ),
       );
     }

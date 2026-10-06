@@ -3222,7 +3222,7 @@
   .assist-defect-table input[data-def-field="min"],.assist-defect-table input[data-def-field="max"]{width:120px;}
   .assist-credit-field{max-width:520px; margin-bottom:14px;}
   .assist-pay-table td{vertical-align:middle;}
-  .assist-pay-table input[data-pay-field="label"]{width:100%; min-width:260px;}
+  .assist-pay-table input[data-pay-field="label"],.assist-pay-table input[data-cat-field="name"]{width:100%; min-width:260px;}
   .assist-pay-table input[type="number"]{width:96px;}
   .assist-pay-table td > button{min-height:36px; padding:7px 10px; font-size:9.5px;}
   .assist-defect-table input[type="checkbox"],.assist-check input[type="checkbox"],.assist-pay-table input[type="checkbox"]{width:18px; height:18px; min-height:0; margin:0; accent-color:var(--accent); cursor:pointer;}
@@ -3274,7 +3274,7 @@
     .assist-preview{padding:10px;}
     .responsive-table tbody td > .loan-cell-actions.assist-row-actions{flex-wrap:wrap;}
     .responsive-table tbody td > .loan-cell-actions.assist-row-actions > button{flex:1 1 auto;}
-    .assist-defect-table input[data-def-field="name"],.assist-pay-table input[data-pay-field="label"]{min-width:0;}
+    .assist-defect-table input[data-def-field="name"],.assist-pay-table input[data-pay-field="label"],.assist-pay-table input[data-cat-field="name"]{min-width:0;}
     .assist-pay-table input[type="number"],.assist-pay-table select{width:100%;}
     .responsive-table.assist-pay-table tbody td > input[type="checkbox"]{justify-self:end;}
     .assist-defect-table input[data-def-field="min"],.assist-defect-table input[data-def-field="max"]{width:100%;}
@@ -4508,6 +4508,7 @@
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="historico">HISTÓRICO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="tabela">TABELA DE VALORES</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="pagamentos">PAGAMENTOS</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="categorias">CATEGORIAS</button>
       </div>
 
       <section class="no-print assist-section" id="assistSectionNovo">
@@ -4579,6 +4580,24 @@
             <table>
               <thead><tr><th>OS</th><th>Data</th><th>Cliente</th><th>Loja</th><th>Equipamentos</th><th>Valor</th><th>Ações</th></tr></thead>
               <tbody id="assistHistoryBody"><tr><td colspan="7" class="responsive-empty">Carregando orçamentos…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="no-print assist-section" id="assistSectionCategorias" hidden>
+        <form class="div-toolbar" id="assistCatForm" novalidate>
+          <div class="field assist-search"><label for="assistNewCatName">NOME DA CATEGORIA</label><input id="assistNewCatName" maxlength="60" autocomplete="off" placeholder="EX.: VIDEOGAMES PORTÁTEIS"></div>
+          <div class="field"><label class="assist-check" for="assistNewCatModel"><input id="assistNewCatModel" type="checkbox"> PEDE O MODELO NO ORÇAMENTO</label></div>
+          <button class="btn-accent" id="btnAssistNewCategory" type="submit">+ CADASTRAR</button>
+        </form>
+        <p class="purchase-field-help">"PEDE O MODELO": O ORÇAMENTO MOSTRA O CAMPO MODELO (EX.: IPHONE 13, DELL INSPIRON 15) NOS APARELHOS DA CATEGORIA. RENOMEAR A CATEGORIA TAMBÉM RENOMEIA NA TABELA DE VALORES; ORÇAMENTOS JÁ SALVOS NÃO MUDAM. OS APARELHOS E DEFEITOS DA CATEGORIA SÃO CADASTRADOS EM TABELA DE VALORES &gt; + NOVO DEFEITO.</p>
+        <div class="user-form-status" id="assistCatStatus" role="status" aria-live="polite"></div>
+        <div class="table-panel responsive-table assist-pay-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Categoria</th><th>Pede o modelo</th><th>Ativa</th><th>Ação</th></tr></thead>
+              <tbody id="assistCatBody"><tr><td colspan="4" class="responsive-empty">Carregando categorias…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -20006,8 +20025,13 @@ function renderHomeTasks(){
   // texto/centavos (o formulário só lida com strings e números; o app antigo
   // travava a edição por guardar o defeito como objeto). O total que vale é o
   // recalculado no servidor.
-  // Espelho de ASSIST_CATEGORIES em app/lib/assistencia.ts (o teste confere).
-  const ASSIST_CATEGORIES = ['CONSOLES','CONTROLES','ELETRÔNICOS','NOTEBOOKS E COMPUTADORES'];
+  // Logo da Paulista Acessórios (fundo branco) no PDF das lojas P.A — embutido
+  // como o LOGO_DATA_URI da Unigames para já estar pronto na hora do print.
+  const ASSIST_PA_LOGO = 'data:image/jpeg;base64,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';
+  // P.A LOJA e QUIOSQUE P.A: raiz de CNPJ da Paulista Acessórios.
+  function assistCompanyLogo(company){
+    return company && String(company.cnpj || '').startsWith('17.696.757') ? 'pa' : 'unigames';
+  }
   // Espelho de ASSIST_OBSERVATIONS em app/lib/assistencia.ts (o teste confere).
   const ASSIST_OBSERVATIONS = [
     {key:'preventiva', title:'MANUTENÇÃO PREVENTIVA', text:'MANUTENÇÃO PREVENTIVA É A LIMPEZA INTERNA E EXTERNA, LUBRIFICAÇÃO DOS COMPONENTES REMOVENDO SUAS OXIDAÇÕES AO MÁXIMO, AUXILIANDO NA PROLONGAÇÃO DA VIDA ÚTIL DOS COMPONENTES E, C/A TROCA DA PASTA TÉRMICA SILVER DE ALTA RESISTÊNCIA / METAL LIQUIDO.'},
@@ -20040,7 +20064,7 @@ function renderHomeTasks(){
   const assistState = {
     ready:false, tab:'novo', defects:[], defectsLoaded:false,
     editingId:'', editingOs:'', equipments:[], history:[], saving:false, showingProblems:false,
-    paymentOptions:[], paymentsLoaded:false
+    paymentOptions:[], paymentsLoaded:false, categories:[], categoriesLoaded:false
   };
   let assistPrintTitleBefore = '';
   let assistPreviewTimer = null;
@@ -20226,7 +20250,7 @@ function renderHomeTasks(){
 
   // ---------- FORMULÁRIO ----------
   function assistNewEquipment(){
-    return {category:'', device:'', serialNumber:'', service:'', lines:[]};
+    return {category:'', device:'', model:'', serialNumber:'', service:'', lines:[]};
   }
 
   function assistLineCents(line){
@@ -20302,12 +20326,15 @@ function renderHomeTasks(){
       '<div class="purchase-form-grid">'+
         '<div class="purchase-field"><label for="'+id+'Category">CATEGORIA *</label><select id="'+id+'Category" data-eq-field="category">'+
           '<option value="">SELECIONE</option>'+
-          ASSIST_CATEGORIES.map(category => '<option value="'+escapeHtml(category)+'"'+(category === equipment.category ? ' selected' : '')+'>'+escapeHtml(category)+'</option>').join('')+
+          assistCategoryNames(equipment.category).map(category => '<option value="'+escapeHtml(category)+'"'+(category === equipment.category ? ' selected' : '')+'>'+escapeHtml(category)+'</option>').join('')+
         '</select></div>'+
         '<div class="purchase-field"><label for="'+id+'Device">APARELHO *</label><select id="'+id+'Device" data-eq-field="device"'+(equipment.category ? '' : ' disabled')+'>'+
           '<option value="">'+(equipment.category ? 'SELECIONE O APARELHO' : 'ESCOLHA A CATEGORIA PRIMEIRO')+'</option>'+
           devices.map(device => '<option value="'+escapeHtml(device)+'"'+(device === equipment.device ? ' selected' : '')+'>'+escapeHtml(device)+'</option>').join('')+
         '</select></div>'+
+        (assistCategoryAsksModel(equipment.category) || equipment.model
+          ? '<div class="purchase-field full"><label for="'+id+'Model">MODELO (OPCIONAL)</label><input id="'+id+'Model" data-eq-field="model" maxlength="120" autocomplete="off" placeholder="EX.: IPHONE 13 PRO / DELL INSPIRON 15 3520 / PC I5 12ª GERAÇÃO" value="'+escapeHtml(equipment.model || '')+'"></div>'
+          : '')+
         '<div class="purchase-field"><label for="'+id+'Serial">Nº DE SÉRIE (OPCIONAL)</label><input id="'+id+'Serial" data-eq-field="serialNumber" maxlength="80" autocomplete="off" value="'+escapeHtml(equipment.serialNumber)+'"></div>'+
         '<div class="purchase-field"><label for="'+id+'Service">SERVIÇO REALIZADO (OPCIONAL)</label><input id="'+id+'Service" data-eq-field="service" maxlength="600" autocomplete="off" value="'+escapeHtml(equipment.service)+'"></div>'+
       '</div>'+
@@ -20375,6 +20402,7 @@ function renderHomeTasks(){
       equipments:assistState.equipments.map(equipment => ({
         category:equipment.category,
         device:equipment.device,
+        model:String(equipment.model || '').trim(),
         serialNumber:equipment.serialNumber.trim(),
         service:equipment.service.trim(),
         lines:equipment.lines.map(line => ({
@@ -20464,6 +20492,7 @@ function renderHomeTasks(){
       return '<section class="assist-doc-block">'+
         '<h2>EQUIPAMENTO '+(index + 1)+': '+dash(equipment.device)+'</h2>'+
         '<div class="assist-doc-fields">'+
+          (equipment.model ? '<div class="full"><b>MODELO:</b> '+escapeHtml(equipment.model)+'</div>' : '')+
           '<div><b>Nº DE SÉRIE:</b> '+dash(equipment.serialNumber)+'</div>'+
           '<div><b>CATEGORIA:</b> '+dash(equipment.category)+'</div>'+
           '<div class="full"><b>SERVIÇO REALIZADO:</b> '+dash(equipment.service)+'</div>'+
@@ -20478,7 +20507,7 @@ function renderHomeTasks(){
     ).join('') + (data.extraNotes ? '<p><b>OBSERVAÇÕES ADICIONAIS:</b> '+escapeHtml(data.extraNotes)+'</p>' : '');
     return '<div class="assist-doc">'+
       '<header class="assist-doc-head">'+
-        '<img class="assist-doc-logo" data-assist-logo alt="UNIGAMES">'+
+        '<img class="assist-doc-logo" data-assist-logo="'+assistCompanyLogo(company)+'" alt="">'+
         '<div class="assist-doc-store">'+
           '<strong>'+dash(company.legalName || (storeName ? 'Unigames' : ''))+'</strong>'+
           (company.cnpj ? '<span>CNPJ: '+escapeHtml(company.cnpj)+'</span>' : '')+
@@ -20508,7 +20537,8 @@ function renderHomeTasks(){
   function assistFillLogo(container){
     const source = document.querySelector('img[data-logo]');
     container.querySelectorAll('[data-assist-logo]').forEach(img => {
-      if(source && source.src) img.src = source.src;
+      if(img.dataset.assistLogo === 'pa') img.src = ASSIST_PA_LOGO;
+      else if(source && source.src) img.src = source.src;
       else img.remove();
     });
   }
@@ -20601,7 +20631,8 @@ function renderHomeTasks(){
     el('assistExtraNotes').value = String(quote.extraNotes || '');
     const equipments = Array.isArray(detail.equipments) ? detail.equipments : [];
     assistState.equipments = equipments.map(equipment => ({
-      category:ASSIST_CATEGORIES.includes(String(equipment.category)) ? String(equipment.category) : assistCategoryOfDevice(String(equipment.device || '')),
+      category:String(equipment.category || '') || assistCategoryOfDevice(String(equipment.device || '')),
+      model:String(equipment.model || ''),
       device:String(equipment.device || ''),
       serialNumber:String(equipment.serialNumber || ''),
       service:String(equipment.service || ''),
@@ -20769,14 +20800,14 @@ function renderHomeTasks(){
 
   function assistRenderDefectFilters(){
     const category = el('assistDefFilterCategory');
-    if(category.options.length <= 1){
-      category.innerHTML = '<option value="">TODAS</option>'+ASSIST_CATEGORIES.map(item => '<option value="'+escapeHtml(item)+'">'+escapeHtml(item)+'</option>').join('');
-    }
+    const selectedCategory = category.value;
+    category.innerHTML = '<option value="">TODAS</option>'+assistCategoryNames(selectedCategory).map(item => '<option value="'+escapeHtml(item)+'">'+escapeHtml(item)+'</option>').join('');
+    category.value = selectedCategory;
     const device = el('assistDefFilterDevice');
     const selected = device.value;
     const devices = category.value
       ? assistDevicesFor(category.value, true)
-      : ASSIST_CATEGORIES.flatMap(item => assistDevicesFor(item, true));
+      : assistCategoryNames().flatMap(item => assistDevicesFor(item, true));
     device.innerHTML = '<option value="">TODOS</option>'+devices.map(item => '<option value="'+escapeHtml(item)+'">'+escapeHtml(item)+'</option>').join('');
     if(devices.includes(selected)) device.value = selected;
   }
@@ -20850,9 +20881,7 @@ function renderHomeTasks(){
 
   function assistOpenDefectDialog(){
     const category = el('assistNewDefCategory');
-    if(category.options.length <= 1){
-      category.innerHTML = '<option value="">SELECIONE</option>'+ASSIST_CATEGORIES.map(item => '<option value="'+escapeHtml(item)+'">'+escapeHtml(item)+'</option>').join('');
-    }
+    category.innerHTML = '<option value="">SELECIONE</option>'+assistCategoryNames().map(item => '<option value="'+escapeHtml(item)+'">'+escapeHtml(item)+'</option>').join('');
     el('assistDefectForm').reset();
     category.value = el('assistDefFilterCategory').value;
     el('assistNewDefDevice').value = el('assistDefFilterDevice').value;
@@ -20903,6 +20932,93 @@ function renderHomeTasks(){
       el('btnSaveAssistDefect').disabled = false;
     }
   }
+
+  // ---------- CATEGORIAS ----------
+  async function assistLoadCategories(){
+    const payload = await assistApi('/categories');
+    assistState.categories = Array.isArray(payload.categories) ? payload.categories : [];
+    assistState.categoriesLoaded = true;
+  }
+
+  // Categorias ativas na ordem do cadastro; "keep" mantém uma categoria já
+  // usada (ex.: orçamento antigo de categoria desativada) na lista.
+  function assistCategoryNames(keep){
+    const names = (assistState.categories || []).filter(category => category.active).map(category => category.name);
+    if(keep && !names.includes(keep)) names.push(keep);
+    return names;
+  }
+
+  function assistCategoryAsksModel(name){
+    const category = (assistState.categories || []).find(item => item.name === name);
+    return Boolean(category && category.asksModel);
+  }
+
+  function assistRenderCategoryTable(){
+    const body = el('assistCatBody');
+    const categories = assistState.categories || [];
+    if(!categories.length){
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+(assistState.categoriesLoaded ? 'NENHUMA CATEGORIA CADASTRADA.' : 'Carregando categorias…')+'</td></tr>';
+      return;
+    }
+    body.innerHTML = categories.map(category =>
+      '<tr data-category="'+escapeHtml(category.id)+'"'+(category.active ? '' : ' class="inactive"')+'>'+
+        '<td data-label="CATEGORIA"><input data-cat-field="name" maxlength="60" value="'+escapeHtml(category.name)+'" aria-label="Nome da categoria"></td>'+
+        '<td data-label="PEDE O MODELO"><input type="checkbox" data-cat-field="asksModel" aria-label="Pede o modelo"'+(category.asksModel ? ' checked' : '')+'></td>'+
+        '<td data-label="ATIVA"><input type="checkbox" data-cat-field="active" aria-label="Ativa"'+(category.active ? ' checked' : '')+'></td>'+
+        '<td data-label="AÇÃO"><button class="btn-outline" type="button" data-assist-cat-save>SALVAR</button></td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  async function assistAfterCategoryChange(message){
+    await Promise.all([assistLoadCategories(), assistLoadDefects()]);
+    assistRenderCategoryTable();
+    assistRenderEquipments();
+    showPurchaseToast(message);
+  }
+
+  async function assistSaveCategoryRow(row){
+    const field = name => row.querySelector('[data-cat-field="'+name+'"]');
+    const button = row.querySelector('[data-assist-cat-save]');
+    button.disabled = true;
+    try{
+      await assistApi('/categories', {method:'PATCH', body:JSON.stringify({
+        id:row.dataset.category, name:field('name').value.trim(), asksModel:field('asksModel').checked, active:field('active').checked
+      })});
+      setAssistStatus('assistCatStatus', '');
+      await assistAfterCategoryChange('Categoria salva.');
+    }catch(error){
+      setAssistStatus('assistCatStatus', error.message, 'error');
+      button.disabled = false;
+    }
+  }
+
+  async function assistCreateCategory(event){
+    event.preventDefault();
+    const name = el('assistNewCatName').value.trim();
+    if(name.length < 2){
+      setAssistStatus('assistCatStatus', 'INFORME O NOME DA CATEGORIA.', 'error');
+      el('assistNewCatName').focus();
+      return;
+    }
+    el('btnAssistNewCategory').disabled = true;
+    try{
+      await assistApi('/categories', {method:'POST', body:JSON.stringify({name, asksModel:el('assistNewCatModel').checked})});
+      el('assistCatForm').reset();
+      setAssistStatus('assistCatStatus', '');
+      await assistAfterCategoryChange('Categoria cadastrada.');
+    }catch(error){
+      setAssistStatus('assistCatStatus', error.message, 'error');
+    }finally{
+      el('btnAssistNewCategory').disabled = false;
+    }
+  }
+
+  el('assistCatForm').addEventListener('submit', assistCreateCategory);
+  el('assistCatBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-assist-cat-save]');
+    if(button) assistSaveCategoryRow(button.closest('tr'));
+  });
 
   // ---------- PAGAMENTOS ----------
   async function assistLoadPayments(){
@@ -21035,7 +21151,7 @@ function renderHomeTasks(){
 
   // ---------- ABAS / ENTRADA DA PÁGINA ----------
   function setAssistTab(tab){
-    const next = ['novo','historico','tabela','pagamentos'].includes(tab) ? tab : 'novo';
+    const next = ['novo','historico','tabela','pagamentos','categorias'].includes(tab) ? tab : 'novo';
     assistState.tab = next;
     document.querySelectorAll('[data-assist-tab]').forEach(button => {
       const active = button.dataset.assistTab === next;
@@ -21046,6 +21162,8 @@ function renderHomeTasks(){
     el('assistSectionHistorico').hidden = next !== 'historico';
     el('assistSectionTabela').hidden = next !== 'tabela';
     el('assistSectionPagamentos').hidden = next !== 'pagamentos';
+    el('assistSectionCategorias').hidden = next !== 'categorias';
+    if(next === 'categorias') assistRenderCategoryTable();
     if(next === 'pagamentos') assistRenderPaymentTable();
     if(next === 'historico') assistLoadHistory();
     if(next === 'tabela'){
@@ -21066,6 +21184,7 @@ function renderHomeTasks(){
     }
     assistRenderCompanySelects();
     try{
+      if(!assistState.categoriesLoaded) await assistLoadCategories();
       if(!assistState.defectsLoaded) await assistLoadDefects();
       setAssistStatus('assistFormStatus', '');
     }catch(error){
@@ -21121,7 +21240,7 @@ function renderHomeTasks(){
     if(!card) return;
     const equipment = assistState.equipments[Number(card.dataset.eq)];
     target.classList.remove('input-error');
-    if(target.dataset.eqField === 'serialNumber' || target.dataset.eqField === 'service'){
+    if(target.dataset.eqField === 'serialNumber' || target.dataset.eqField === 'service' || target.dataset.eqField === 'model'){
       equipment[target.dataset.eqField] = target.value;
       assistSchedulePreview();
       return;
@@ -21151,7 +21270,10 @@ function renderHomeTasks(){
         return;
       }
       equipment.lines = equipment.lines.filter(line => !line.defectName);
-      if(field === 'category') equipment.device = '';
+      if(field === 'category'){
+        equipment.device = '';
+        equipment.model = '';
+      }
       equipment[field] = value;
       assistRenderEquipments('[data-eq="'+index+'"] [data-eq-field="'+(field === 'category' ? 'device' : 'addDefect')+'"]');
       return;

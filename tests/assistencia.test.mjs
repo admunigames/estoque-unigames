@@ -32,6 +32,7 @@ const migration = await readFile(new URL("../drizzle/0078_assistencia_orcamentos
 const migration0079 = await readFile(new URL("../drizzle/0079_assistencia_eletronicos.sql", import.meta.url), "utf8");
 const migration0080 = await readFile(new URL("../drizzle/0080_assistencia_mao_de_obra.sql", import.meta.url), "utf8");
 const migration0081 = await readFile(new URL("../drizzle/0081_assistencia_pagamentos.sql", import.meta.url), "utf8");
+const migration0082 = await readFile(new URL("../drizzle/0082_assistencia_categorias.sql", import.meta.url), "utf8");
 const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
 
 function createFakeD1() {
@@ -71,8 +72,8 @@ function createFakeD1() {
   // 0080: MÃO DE OBRA (R$ 99,99) em todos os aparelhos.
   sqlite.exec(migration0080);
   // 0081: formas de pagamento + desconto por item (RLS/REVOKE são só do Postgres).
-  for (const statement of migration0081.split("--> statement-breakpoint")) {
-    if (!/ROW LEVEL SECURITY|REVOKE ALL/.test(statement)) sqlite.exec(statement);
+  for (const statement of [migration0081, migration0082].join("--> statement-breakpoint").split("--> statement-breakpoint")) {
+    if (!/ROW LEVEL SECURITY|REVOKE ALL/.test(statement)) sqlite.exec(statement.replace(" USING btree", ""));
   }
   sqlite
     .prepare("INSERT INTO shared_state (state_key, value_json) VALUES ('companies_list', ?)")
@@ -136,6 +137,7 @@ const quotesRoute = await import("../app/api/assistencia/quotes/route.ts");
 const quoteRoute = await import("../app/api/assistencia/quotes/[id]/route.ts");
 const defectsRoute = await import("../app/api/assistencia/defects/route.ts");
 const paymentsRoute = await import("../app/api/assistencia/payment-options/route.ts");
+const categoriesRoute = await import("../app/api/assistencia/categories/route.ts");
 const lib = await import("../app/lib/assistencia.ts");
 
 const BASE = "http://127.0.0.1/api/assistencia";
@@ -176,6 +178,9 @@ const deleteQuote = (user, id) => call(quoteRoute.DELETE, user, { method: "DELET
 const getDefects = (user) => call(defectsRoute.GET, user, { path: "/defects" });
 const postDefect = (user, body) => call(defectsRoute.POST, user, { method: "POST", path: "/defects", body });
 const patchDefect = (user, body) => call(defectsRoute.PATCH, user, { method: "PATCH", path: "/defects", body });
+const getCategories = (user) => call(categoriesRoute.GET, user, { path: "/categories" });
+const postCategory = (user, body) => call(categoriesRoute.POST, user, { method: "POST", path: "/categories", body });
+const patchCategory = (user, body) => call(categoriesRoute.PATCH, user, { method: "PATCH", path: "/categories", body });
 const getPayments = (user) => call(paymentsRoute.GET, user, { path: "/payment-options" });
 const postPayment = (user, body) => call(paymentsRoute.POST, user, { method: "POST", path: "/payment-options", body });
 const patchPayment = (user, body) => call(paymentsRoute.PATCH, user, { method: "PATCH", path: "/payment-options", body });
@@ -272,10 +277,11 @@ test("seed da tabela de valores (migration 0078)", async () => {
   assert.equal(counts["JOY-CON"], 12);
   assert.equal(counts["CONTROLE XBOX SERIES S/X"], 11);
   assert.equal(counts["PC GAMER"], 5);
-  // Todos em CAIXA ALTA e nas 3 categorias
+  // Todos em CAIXA ALTA e em categorias cadastradas (0082)
+  const categories = new Set(db.sqlite.prepare("SELECT name FROM assist_categories").all().map((row) => row.name));
   for (const defect of defects) {
     assert.equal(defect.name, defect.name.toLocaleUpperCase("pt-BR"));
-    assert.ok(lib.ASSIST_CATEGORIES.includes(defect.category));
+    assert.ok(categories.has(defect.category), defect.category);
   }
 });
 
@@ -487,7 +493,6 @@ test("tabela de valores: criar, duplicado, categoria do aparelho, editar e desat
 });
 
 test("textos padrão das observações iguais no servidor e na tela", () => {
-  assert.ok(html.includes(`const ASSIST_CATEGORIES = [${lib.ASSIST_CATEGORIES.map((category) => `'${category}'`).join(",")}];`), "categorias iguais na tela");
   for (const observation of lib.ASSIST_OBSERVATIONS) {
     assert.ok(
       html.includes(`{key:'${observation.key}', title:'${observation.title}', text:'${observation.text}'}`),
@@ -575,4 +580,39 @@ test("aba PAGAMENTOS: 3 formas atuais, cadastrar/editar e cópia no orçamento (
   assert.equal((await patchPayment(NO_STORE_USER, { id: "assist-pay-debito", kind: "always", label: "PAGAMENTO NO DÉBITO COM 7% DE DESCONTO", discountBp: 700, installments: 1 })).status, 200);
   assert.equal((await getQuote(NO_STORE_USER, noCredit.body.id)).body.quote.payments[0].discountBp, 500);
   assert.equal(paymentsRoute.DELETE, undefined);
+});
+
+test("aba CATEGORIAS: CELULAR/TABLET criada, nova categoria, renomear leva a tabela de valores e MODELO no orçamento", async () => {
+  const seeded = (await getCategories(NO_STORE_USER)).body.categories;
+  assert.deepEqual(seeded.map((c) => [c.name, c.asksModel]), [
+    ["CONSOLES", false], ["CONTROLES", false], ["ELETRÔNICOS", false],
+    ["NOTEBOOKS E COMPUTADORES", true], ["CELULAR/TABLET", true],
+  ]);
+  assert.equal((await getCategories(STORE_LOGIN)).status, 403);
+  assert.equal((await postCategory(NO_STORE_USER, { name: "x" })).body.error, "INFORME O NOME DA CATEGORIA.");
+  assert.equal((await postCategory(NO_STORE_USER, { name: "celular/tablet" })).status, 409);
+  const created = await postCategory(NO_STORE_USER, { name: "videogames  portáteis", asksModel: true });
+  assert.equal(created.status, 201);
+  assert.equal((await getCategories(NO_STORE_USER)).body.categories.at(-1).name, "VIDEOGAMES PORTÁTEIS");
+
+  // Aparelho de CELULAR/TABLET pela tabela de valores; categoria inexistente bloqueia.
+  assert.equal((await postDefect(NO_STORE_USER, { category: "CELULAR/TABLET", device: "IPHONE", name: "TROCA DE TELA", quoteOnly: true })).status, 201);
+  assert.equal((await postDefect(NO_STORE_USER, { category: "NAO EXISTE", device: "X1", name: "Y1", minCents: 1 })).body.error,
+    "A CATEGORIA NAO EXISTE NÃO EXISTE (CADASTRE NA ABA CATEGORIAS).");
+  // Renomear a categoria renomeia os defeitos dela.
+  const id = (await getCategories(NO_STORE_USER)).body.categories.find((c) => c.name === "CELULAR/TABLET").id;
+  assert.equal((await patchCategory(NO_STORE_USER, { id, name: "CELULARES E TABLETS", asksModel: true })).status, 200);
+  assert.deepEqual(db.sqlite.prepare("SELECT DISTINCT category FROM assist_defects WHERE device='IPHONE'").all().map((r) => r.category), ["CELULARES E TABLETS"]);
+  assert.equal((await patchCategory(NO_STORE_USER, { id, name: "CONSOLES", asksModel: true })).status, 409);
+
+  // MODELO gravado no equipamento e devolvido para editar/PDF.
+  const saved = await createQuote(NO_STORE_USER, quote({ osNumber: "CEL1", equipments: [{
+    category: "CELULARES E TABLETS", device: "IPHONE", model: "iPhone 13 Pro Max", serialNumber: "", service: "",
+    lines: [{ defectName: "TROCA DE TELA", quantity: 1, unitCents: 120000 }],
+  }] }));
+  assert.equal(saved.status, 201, JSON.stringify(saved.body));
+  const detail = (await getQuote(NO_STORE_USER, saved.body.id)).body;
+  assert.equal(detail.equipments[0].model, "IPHONE 13 PRO MAX");
+  assert.equal(detail.equipments[0].category, "CELULARES E TABLETS");
+  assert.equal(categoriesRoute.DELETE, undefined);
 });

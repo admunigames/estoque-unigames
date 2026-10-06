@@ -77,6 +77,11 @@ export async function POST(request: Request) {
     const defect = parsed.defect;
     duplicate = duplicateMessage(defect.device, defect.name);
     const database = await getD1();
+    const category = await database
+      .prepare("SELECT id FROM assist_categories WHERE name=?1 AND active=1 LIMIT 1")
+      .bind(defect.category)
+      .first<{ id: string }>();
+    if (!category) return jsonResponse({ error: `A CATEGORIA ${defect.category} NÃO EXISTE (CADASTRE NA ABA CATEGORIAS).` }, 400);
     // Um aparelho pertence a uma categoria só (é por ela que o orçamento filtra).
     const sameDevice = await database
       .prepare("SELECT category FROM assist_defects WHERE device=?1 LIMIT 1")

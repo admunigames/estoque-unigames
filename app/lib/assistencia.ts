@@ -8,8 +8,8 @@ import { isValidCpf } from "./br-documents";
 // altera orçamento salvo, e a edição nunca recebe um objeto onde espera texto
 // (o app antigo travava com React #31 por guardar {label, description}).
 
-export const ASSIST_CATEGORIES = ["CONSOLES", "CONTROLES", "ELETRÔNICOS", "NOTEBOOKS E COMPUTADORES"] as const;
-export type AssistCategory = (typeof ASSIST_CATEGORIES)[number];
+// Categorias ficam na tabela assist_categories (aba CATEGORIAS, migration 0082).
+// O orçamento guarda o NOME da categoria como texto (cópia), como o defeito.
 
 // Textos padrão marcáveis no orçamento. Espelhados em ASSIST_OBSERVATIONS de
 // public/estoque.html (o teste confere que são iguais). O orçamento salva uma
@@ -53,8 +53,10 @@ export function onlyDigits(value: unknown) {
   return typeof value === "string" ? value.replace(/\D/g, "") : "";
 }
 
-export function isAssistCategory(value: unknown): value is AssistCategory {
-  return typeof value === "string" && (ASSIST_CATEGORIES as readonly string[]).includes(value);
+/** Nome de categoria em caixa alta (2 a 60 caracteres) ou "" se inválido. */
+export function categoryName(value: unknown) {
+  const name = upper(text(value, 60).replace(/\s+/g, " "));
+  return name.length >= 2 ? name : "";
 }
 
 /** OS do PDV: sem espaços, em caixa alta (é o que garante o ÚNICO). */
@@ -91,8 +93,10 @@ export type ParsedLine = {
 };
 
 export type ParsedEquipment = {
-  category: AssistCategory;
+  category: string;
   device: string;
+  /** Modelo exato (celular/tablet, notebook, PC) — opcional. */
+  model: string;
   serialNumber: string;
   service: string;
   lines: ParsedLine[];
@@ -217,8 +221,8 @@ export function parseQuote(body: unknown): { quote: ParsedQuote } | { error: str
   for (const [index, value] of rawEquipments.entries()) {
     const item = (value && typeof value === "object" ? value : {}) as JsonMap;
     const label = `EQUIPAMENTO ${index + 1}`;
-    const category = item.category;
-    if (!isAssistCategory(category)) return { error: `${label}: ESCOLHA A CATEGORIA.` };
+    const category = categoryName(item.category);
+    if (!category) return { error: `${label}: ESCOLHA A CATEGORIA.` };
     const device = upper(text(item.device, 120));
     if (device.length < 2) return { error: `${label}: ESCOLHA O APARELHO.` };
     const parsed = parseLines(item.lines, label);
@@ -226,6 +230,7 @@ export function parseQuote(body: unknown): { quote: ParsedQuote } | { error: str
     equipments.push({
       category,
       device,
+      model: upper(text(item.model, 120)),
       serialNumber: upper(text(item.serialNumber, 80)),
       service: text(item.service, 600),
       lines: parsed.lines,
@@ -270,7 +275,7 @@ export function parseSavedObservations(raw: unknown): SavedObservation[] {
 }
 
 export type ParsedDefect = {
-  category: AssistCategory;
+  category: string;
   device: string;
   name: string;
   minCents: number;
@@ -296,14 +301,15 @@ export function parseDefectValues(entry: JsonMap): { minCents: number; maxCents:
 
 export function parseNewDefect(body: unknown): { defect: ParsedDefect } | { error: string } {
   const entry = (body && typeof body === "object" ? body : {}) as JsonMap;
-  if (!isAssistCategory(entry.category)) return { error: "ESCOLHA A CATEGORIA." };
+  const category = categoryName(entry.category);
+  if (!category) return { error: "ESCOLHA A CATEGORIA." };
   const device = upper(text(entry.device, 120));
   if (device.length < 2) return { error: "INFORME O APARELHO." };
   const name = upper(text(entry.name, 160));
   if (name.length < 2) return { error: "INFORME O NOME DO DEFEITO." };
   const values = parseDefectValues(entry);
   if ("error" in values) return values;
-  return { defect: { category: entry.category, device, name, ...values } };
+  return { defect: { category, device, name, ...values } };
 }
 
 /** Violação de índice único no Postgres (23505) ou no SQLite dos testes. */
@@ -369,4 +375,14 @@ export function parseSavedPayments(raw: unknown): PaymentSnapshot[] {
   } catch {
     return [];
   }
+}
+
+// Aba CATEGORIAS: nome e se o orçamento pede o MODELO do aparelho.
+export function parseCategory(body: unknown): { category: { name: string; asksModel: boolean; active: boolean } } | { error: string } {
+  const entry = (body && typeof body === "object" ? body : {}) as JsonMap;
+  const name = categoryName(entry.name);
+  if (!name) return { error: "INFORME O NOME DA CATEGORIA." };
+  const flag = (value: unknown) => value === true || value === 1 || value === "1";
+  const active = !(entry.active === false || entry.active === 0 || entry.active === "0");
+  return { category: { name, asksModel: flag(entry.asksModel), active } };
 }

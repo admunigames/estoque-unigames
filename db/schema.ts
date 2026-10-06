@@ -3870,6 +3870,8 @@ export const assistQuoteItems = pgTable(
     equipmentIndex: integer("equipment_index").notNull().default(1),
     category: text("category").notNull().default(""),
     device: text("device").notNull().default(""),
+    // Modelo exato (celular/tablet, notebook, PC), opcional (migration 0082).
+    model: text("model").notNull().default(""),
     serialNumber: text("serial_number").notNull().default(""),
     service: text("service").notNull().default(""),
     defectName: text("defect_name").notNull().default(""),
@@ -3900,3 +3902,23 @@ export const assistPaymentOptions = pgTable("assist_payment_options", {
   updatedByName: text("updated_by_name").notNull().default(""),
   updatedAt: text("updated_at").notNull().default(""),
 });
+
+// Aba CATEGORIAS (migration 0082): categorias da tabela de valores.
+// asksModel 1 = o orçamento mostra o campo MODELO do aparelho.
+export const assistCategories = pgTable(
+  "assist_categories",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    asksModel: integer("asks_model").notNull().default(0),
+    active: integer("active").notNull().default(1),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [uniqueIndex("assist_categories_name_idx").on(table.name)],
+);
