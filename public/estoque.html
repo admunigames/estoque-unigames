@@ -42314,6 +42314,27 @@ function renderHomeTasks(){
     '</section>';
   }
 
+  // Crediário feito: não tem meta — o número grande é a parte do faturado
+  // vendida em crediário; embaixo, o valor. A % paga vem da regra do mês (novato não recebe).
+  function comCreditBlockHtml(seller){
+    const credit = seller.realized.creditSalesCents;
+    const revenue = seller.realized.revenueCents;
+    const share = revenue > 0 ? Math.floor(credit / revenue * 1000) / 10 : null;
+    const rate = comRules().creditRateBps;
+    let text;
+    if(!(rate > 0)) text = 'Sem comissão de crediário neste mês.';
+    else if(seller.newcomer) text = 'Novato — o crediário não gera comissão neste mês.';
+    else text = 'Paga '+comFormatBps(rate)+' sobre o valor vendido em crediário.';
+    return '<section class="com-block tier-'+(credit > 0 ? 'green' : 'none')+'">'+
+      '<div class="com-block-head"><span class="com-block-title">Crediário</span><strong class="com-pct">'+escapeHtml(credit > 0 ? comFormatPct(share) : 'SEM CREDIÁRIO')+'</strong></div>'+
+      '<dl class="com-figures">'+
+        '<div><dt>Crediário feito</dt><dd>'+escapeHtml(formatCentsBRL(credit))+'</dd></div>'+
+        '<div><dt>% do faturado</dt><dd>'+escapeHtml(comFormatPct(share)+' de '+formatCentsBRL(revenue))+'</dd></div>'+
+      '</dl>'+
+      '<p class="com-incentive">'+escapeHtml(text)+'</p>'+
+    '</section>';
+  }
+
   // Selo dos critérios da comissão: com Itens 100%, Realme 100% e o anexo
   // mínimo de garantia o faturamento paga a % alta (e libera a premiação);
   // sem, a % baixa (taxas da regra do mês, em revenueRateBps).
@@ -42427,6 +42448,7 @@ function renderHomeTasks(){
           comBlockHtml('items', 'Itens vendidos', m.items, clock, true, superLine)+
           comBlockHtml('units', 'Realmes', m.realme, clock, true)+
           comWarrantyBlockHtml(m.warranty)+
+          (comRules().creditRateBps > 0 || seller.realized.creditSalesCents > 0 ? comCreditBlockHtml(seller) : '')+
         '</div>'+
       '</article>';
     }).join('');

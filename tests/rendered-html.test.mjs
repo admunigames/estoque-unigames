@@ -4356,6 +4356,8 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
   assert.match(html, /data-com-newcomer="'\+escapeHtml\(seller\.employeeId\)/);
   assert.match(html, /comOverview && comOverview\.canMarkNewcomer/);
   assert.match(html, /'NÃO SE APLICA \(NOVATO\)'/);
+  // Crediário também no cartão do vendedor no Dashboard, como as outras métricas.
+  assert.match(html, /comWarrantyBlockHtml\(m\.warranty\)\+\s*\(comRules\(\)\.creditRateBps > 0 \|\| seller\.realized\.creditSalesCents > 0 \? comCreditBlockHtml\(seller\) : ''\)/);
   // Nenhum número de regra fixo no front: tudo vem de overview.rules.
   const comercialJs = html.slice(html.indexOf("// ================= COMERCIAL ================="), html.indexOf("// ================= RH / ESCALAS E FOLGAS"));
   const comercialHtml = html.slice(html.indexOf('<section id="pageComercialAcompanhamento"'), html.indexOf('<section id="pageComercialControleGd"'));
