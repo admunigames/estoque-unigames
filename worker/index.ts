@@ -345,6 +345,7 @@ const APP_ROUTE_PATHS = new Set([
   "/comercial/acompanhamento",
   "/comercial/controle-gd",
   "/comercial/relatorio-nf",
+  "/comercial/treinamento",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
@@ -1271,6 +1272,10 @@ function sharedStatePermission(key: string, scope: string, write: boolean): Perm
   const normalized = `${scope}:${key}`.toLowerCase();
   if (normalized.includes("tarefa")) return write ? "tasks:manage" : ["tasks:view", "tasks:manage"];
   if (normalized.includes("puxada")) return write ? "pulls:view" : ["pulls:view", "report41:view"];
+  // Vínculo login × participante da Unigames Academy: só pela rota própria
+  // (app/api/commercial/academy/links); pela rota genérica, só quem gerencia
+  // usuários.
+  if (key === "commercial_academy_links") return "users:manage";
   if (key === "report41:company-stock") {
     return write ? "database:manage" : ["database:view", "report41:view"];
   }

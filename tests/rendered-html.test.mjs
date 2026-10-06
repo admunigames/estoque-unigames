@@ -4333,6 +4333,17 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // (ver pageComercialControleGd e pageComercialRelatorioNf).
   assert.match(html, /<div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
   assert.match(html, /id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial"/);
+  // Treinamento (Unigames Academy): quem tem o Comercial entra; dados só pelo
+  // servidor (/api/commercial/academy/*), sem a chave no front.
+  assert.match(html, /id="navComercialTreinamento" data-page="comercialTreinamento" data-permission="comercial"[^>]*href="\/comercial\/treinamento"/);
+  assert.match(html, /comercialTreinamento:'\/comercial\/treinamento'/);
+  assert.match(html, /comercialTreinamento:'comercial'/);
+  assert.match(html, /<section id="pageComercialTreinamento" class="page wrap">[\s\S]*?data-acad-view="team" hidden/);
+  assert.equal(html.split("if(name === 'comercialTreinamento') loadTreinamentoPage();").length - 1, 2);
+  assert.match(html, /comApi\('\/academy\/me'\)/);
+  assert.doesNotMatch(html, /uak_|integrations\/v1/);
+  assert.match(workerSource, /"\/comercial\/treinamento",/);
+  assert.match(workerSource, /if \(key === "commercial_academy_links"\) return "users:manage";/);
   assert.match(html, /comercialAcompanhamento:'\/comercial\/acompanhamento'/);
   assert.match(workerSource, /"\/comercial\/acompanhamento",/);
   assert.match(html, /<section id="pageComercialAcompanhamento" class="page wrap">/);

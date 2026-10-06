@@ -3016,6 +3016,15 @@
   .com-bar-label.reached{color:var(--ink)}
   .com-figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:0}
   .com-figures div{min-width:0}
+  .acad-meta{margin:0;font:700 11px/1.4 var(--sans);color:var(--ink-faint);text-transform:uppercase}
+  .acad-desc{margin:0;font:600 12.5px/1.5 var(--sans);color:var(--ink-soft);text-transform:none}
+  .acad-lessons summary{cursor:pointer;font:800 10px/1.3 var(--mono);letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase}
+  .acad-lessons ol{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+  .acad-lessons li{display:flex;align-items:baseline;gap:8px;font:600 12.5px/1.4 var(--sans);color:var(--ink);text-transform:none}
+  .acad-lessons li small{margin-left:auto;color:var(--ink-faint);white-space:nowrap;font-weight:700}
+  .acad-check{flex:0 0 auto;width:16px;text-align:center;font-weight:900;color:var(--ink-faint)}
+  .acad-lessons li.done .acad-check{color:#54c48a}
+  .acad-lessons li.done span:not(.acad-check){color:var(--ink-soft)}
   .com-figures dt{font:800 9px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-faint);text-transform:uppercase}
   .com-figures dd{margin:3px 0 0;font:800 14px/1.25 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
   .com-figures .com-sub dd{font-weight:700;font-size:12.5px;color:var(--ink-soft)}
@@ -3623,6 +3632,7 @@
         <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e importação da planilha de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
         <a class="nav-item sub-item" id="navComercialControleGd" data-page="comercialControleGd" data-permission="controle_gd" data-home-desc="Saldo de gordura de vendas por loja, com alerta de status, gráfico dos últimos 7 dias e relatório para WhatsApp." title="Controle GD" href="/comercial/controle-gd"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle GD</span></a>
         <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/comercial/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
+        <a class="nav-item sub-item" id="navComercialTreinamento" data-page="comercialTreinamento" data-permission="comercial" data-home-desc="Trilhas e aulas da Unigames Academy com o seu progresso; gestores acompanham a equipe." title="Treinamento" href="/comercial/treinamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11"/><path d="M21.5 9v5"/></svg></span><span class="nav-label">Treinamento</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="finance,payables">
@@ -7444,6 +7454,48 @@
     </section>
 
 
+    <section id="pageComercialTreinamento" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Treinamento</h2>
+        </div>
+        <div class="page-header-meta">
+          <p class="page-desc">Trilhas da Unigames Academy e o seu progresso. As aulas são feitas na própria Academy; a conclusão aparece aqui em seguida.</p>
+          <div class="page-header-actions"><a class="btn-accent" id="acadOpenSite" href="https://unigames-academy.claudinhooo.chatgpt.site/" target="_blank" rel="noopener noreferrer">ABRIR A ACADEMY</a></div>
+        </div>
+      </header>
+
+      <div class="supply-tabs" role="tablist" aria-label="Treinamento">
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-acad-view="mine">Meu treinamento</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-acad-view="team" hidden>Equipe</button>
+      </div>
+
+      <div id="acadMineView">
+        <p class="com-empty" id="acadMineStatus">Carregando…</p>
+        <div class="supply-dashboard-grid" id="acadMineCards" hidden></div>
+        <h3 class="supply-section-title" id="acadTracksTitle" hidden>TRILHAS</h3>
+        <div class="com-blocks" id="acadTracks"></div>
+      </div>
+
+      <div id="acadTeamView" hidden>
+        <div class="dre-toolbar com-toolbar">
+          <div class="field"><label for="acadTeamSearch">BUSCAR</label><input id="acadTeamSearch" maxlength="80" placeholder="Nome ou usuário"></div>
+          <div class="field"><label for="acadTeamStore">LOJA (ACADEMY)</label><select id="acadTeamStore"><option value="">TODAS</option></select></div>
+          <div class="field"><label for="acadTeamLink">VÍNCULO</label><select id="acadTeamLink"><option value="">TODOS</option><option value="none">SEM LOGIN VINCULADO</option></select></div>
+        </div>
+        <p class="com-empty" id="acadTeamStatus" hidden></p>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="acadTeamTable">
+              <thead><tr><th>Participante</th><th>Loja</th><th>Nível</th><th>Aulas concluídas</th><th>Dias aprovados</th><th>Último acesso</th><th>Login no sistema</th><th></th></tr></thead>
+              <tbody id="acadTeamBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="pageComercialRelatorioNf" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
@@ -9361,6 +9413,16 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="acadPersonDialog" aria-labelledby="acadPersonTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="acadPersonTitle">TREINAMENTO</h3>
+    <button class="purchase-dialog-close" id="btnCloseAcadPerson" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <p class="page-desc" id="acadPersonSubtitle"></p>
+    <div class="com-blocks" id="acadPersonTracks"><p class="com-empty">Carregando…</p></div>
+  </div>
+</dialog>
 <dialog class="purchase-dialog" id="recargaDialog" aria-labelledby="recargaDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="recargaDialogTitle">NOVA RECARGA</h3>
@@ -12593,6 +12655,7 @@
     financeiroSupplierStatement:'/financeiro/fornecedores/conta-corrente',
     financeiroOrcamento:'/financeiro/orcamento',
     comercialRelatorioNf:'/comercial/relatorio-nf',
+    comercialTreinamento:'/comercial/treinamento',
     financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa',
     financeiroMaquinetas:'/financeiro/maquinetas',
     financeiroCartoesCorp:'/financeiro/cartoes-corporativos',
@@ -12651,6 +12714,7 @@
     financeiroSupplierStatement:'CONTA CORRENTE DE FORNECEDORES',
     financeiroOrcamento:'ORÇAMENTO',
     comercialRelatorioNf:'RELATÓRIO NF',
+    comercialTreinamento:'TREINAMENTO',
     financeiroFluxoCaixa:'FLUXO DE CAIXA',
     financeiroMaquinetas:'MAQUINETAS',
     financeiroCartoesCorp:'CARTÕES CORPORATIVOS',
@@ -12704,6 +12768,7 @@
     financeiroSupplierStatement:'finance',
     financeiroOrcamento:'finance',
     comercialRelatorioNf:'relatorio_nf',
+    comercialTreinamento:'comercial',
     financeiroFluxoCaixa:'finance',
     financeiroMaquinetas:'finance',
     financeiroCartoesCorp:'finance',
@@ -13316,7 +13381,7 @@
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos';
     const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroCrediarios' || name === 'financeiroConciliacaoVendas' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
-    const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf';
+    const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf' || name === 'comercialTreinamento';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     setCadastrosExpanded(isCadastros);
@@ -13381,6 +13446,7 @@
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
     if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
+    if(name === 'comercialTreinamento') loadTreinamentoPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
@@ -13401,7 +13467,7 @@
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
-    if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf') loadComercialPage(name);
+    if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf' && name !== 'comercialTreinamento') loadComercialPage(name);
     if(name === 'comercialControleGd') loadControleGdPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
@@ -13443,6 +13509,7 @@
     if(name === 'financeiroSupplierStatement') loadSupplierStatementPage();
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
     if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
+    if(name === 'comercialTreinamento') loadTreinamentoPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
@@ -13463,7 +13530,7 @@
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
-    if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf') loadComercialPage(name);
+    if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf' && name !== 'comercialTreinamento') loadComercialPage(name);
     if(name === 'comercialControleGd') loadControleGdPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
@@ -42159,6 +42226,232 @@ function renderHomeTasks(){
     if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
     return payload;
   }
+
+  // --- Treinamento (Unigames Academy, integração só leitura) -----------
+  // Os dados vêm de /api/commercial/academy/* (a chave da Academy fica só no
+  // servidor). A API não entrega o conteúdo das aulas nem marca conclusão:
+  // aqui só se vê trilhas e progresso; a aula é feita na Academy.
+  let acadData = null;
+  let acadTeam = null;
+  let acadView = 'mine';
+
+  function acadTier(percent){
+    if(percent >= 100) return 'green';
+    return percent > 0 ? 'yellow' : 'none';
+  }
+
+  function acadTrackHtml(track, progress, lessonsById, doneIds){
+    const percent = progress ? progress.percent : 0;
+    const minutes = track.lessonIds.reduce((sum, id) => sum + ((lessonsById.get(id) || {}).durationMinutes || 0), 0);
+    const meta = [track.audience, track.level, track.kind === 'journey' ? 'JORNADA' : ''].filter(Boolean).join(' · ');
+    const lessons = track.lessonIds.map(id => {
+      const lesson = lessonsById.get(id) || {title:id, durationMinutes:0};
+      const done = doneIds.has(id);
+      return '<li class="'+(done ? 'done' : '')+'"><span class="acad-check" role="img" aria-label="'+(done ? 'Concluída' : 'Pendente')+'">'+(done ? '✓' : '○')+'</span>'+
+        '<span>'+escapeHtml(lesson.title)+'</span>'+
+        (lesson.durationMinutes ? '<small>'+lesson.durationMinutes+' MIN</small>' : '')+'</li>';
+    }).join('');
+    return '<section class="com-block tier-'+acadTier(percent)+'">'+
+      '<div class="com-block-head"><span class="com-block-title">'+escapeHtml(track.title)+'</span><strong class="com-pct">'+percent+'%</strong></div>'+
+      (meta ? '<p class="acad-meta">'+escapeHtml(meta)+'</p>' : '')+
+      (track.description ? '<p class="acad-desc">'+escapeHtml(track.description)+'</p>' : '')+
+      '<div class="com-bar simple" role="img" aria-label="'+escapeHtml(track.title+': '+percent+'% concluído')+'"><div class="com-bar-track"><div class="com-bar-fill" style="width:'+Math.min(100, percent)+'%"></div></div></div>'+
+      '<dl class="com-figures">'+
+        '<div><dt>Aulas</dt><dd>'+escapeHtml((progress ? progress.completed : 0)+' de '+track.lessonIds.length)+'</dd></div>'+
+        '<div><dt>Duração</dt><dd>'+escapeHtml(minutes ? minutes+' MIN' : '—')+'</dd></div>'+
+      '</dl>'+
+      (lessons ? '<details class="acad-lessons"><summary>Ver aulas</summary><ol>'+lessons+'</ol></details>' : '')+
+    '</section>';
+  }
+
+  function acadTracksHtml(catalog, tracks, progress){
+    if(!catalog || !catalog.tracks.length) return '<p class="com-empty">Nenhuma trilha publicada na Academy.</p>';
+    const lessonsById = new Map(catalog.lessons.map(lesson => [lesson.id, lesson]));
+    const progressById = new Map((tracks || []).map(row => [row.trackId, row]));
+    const doneIds = new Set(progress ? progress.completed.map(row => row.lessonId) : []);
+    return catalog.tracks.map(track => acadTrackHtml(track, progressById.get(track.id), lessonsById, doneIds)).join('');
+  }
+
+  function acadCard(label, value, sub){
+    return '<article class="supply-dashboard-card"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong>'+
+      (sub ? '<small class="acad-meta">'+escapeHtml(sub)+'</small>' : '')+'</article>';
+  }
+
+  function renderAcadMine(){
+    const status = el('acadMineStatus');
+    const cards = el('acadMineCards');
+    const data = acadData;
+    el('acadTracksTitle').hidden = !(data && data.configured && data.catalog);
+    if(!data || !data.configured){
+      status.hidden = false;
+      status.textContent = data ? 'A integração com a Unigames Academy ainda não foi configurada.' : 'Carregando…';
+      cards.hidden = true;
+      el('acadTracks').innerHTML = '';
+      return;
+    }
+    const progress = data.progress;
+    if(!data.participant){
+      status.hidden = false;
+      status.textContent = 'Seu login ainda não está vinculado a um participante da Academy. Peça ao gestor para vincular na aba Equipe. Enquanto isso, veja as trilhas abaixo.';
+      cards.hidden = true;
+    }else{
+      status.hidden = true;
+      const totalLessons = data.catalog.lessons.length;
+      const completed = progress ? progress.completed.length : 0;
+      cards.innerHTML =
+        acadCard('NÍVEL', progress && progress.levelName ? progress.levelName : '—', progress && progress.levelNumber ? 'NÍVEL '+progress.levelNumber : '')+
+        acadCard('XP', progress ? Number(progress.xp).toLocaleString('pt-BR') : '0', progress && progress.xpToNext ? 'FALTAM '+Number(progress.xpToNext).toLocaleString('pt-BR')+' PARA O PRÓXIMO' : '')+
+        acadCard('AULAS CONCLUÍDAS', completed+' de '+totalLessons, '')+
+        acadCard('CERTIFICADOS', String(progress ? progress.certificates.length : 0), data.participant.lastAccessAt ? 'ÚLTIMO ACESSO '+formatDateTimeBR(data.participant.lastAccessAt) : '');
+      cards.hidden = false;
+    }
+    el('acadTracks').innerHTML = acadTracksHtml(data.catalog, data.tracks, progress);
+  }
+
+  function acadFilteredPeople(){
+    if(!acadTeam) return [];
+    const term = normalizeSearchText(el('acadTeamSearch').value);
+    const store = el('acadTeamStore').value;
+    const link = el('acadTeamLink').value;
+    return acadTeam.people.filter(person =>
+      (!term || normalizeSearchText(person.name+' '+person.username).includes(term)) &&
+      (!store || person.store === store) &&
+      (link !== 'none' || !person.linkedUser)
+    );
+  }
+
+  function renderAcadTeam(){
+    const body = el('acadTeamBody');
+    if(!acadTeam){ body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>'; return; }
+    const totalLessons = acadData && acadData.catalog ? acadData.catalog.lessons.length : 0;
+    const rows = acadFilteredPeople();
+    if(!rows.length){ body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Nenhum participante encontrado.</td></tr>'; return; }
+    const userOptions = acadTeam.users.map(user =>
+      '<option value="'+escapeHtml(user.id)+'">'+escapeHtml(user.name+(user.companyName ? ' — '+user.companyName : ''))+'</option>').join('');
+    body.innerHTML = rows.map(person => {
+      const linked = person.linkedUser;
+      const select = '<select data-acad-link="'+escapeHtml(person.id)+'" aria-label="'+escapeHtml('Login de '+person.name)+'">'+
+        '<option value="">SEM VÍNCULO</option>'+userOptions+'</select>';
+      return '<tr>'+
+        '<td data-label="Participante"><strong>'+escapeHtml(person.name || person.username)+'</strong>'+(person.accessActive ? '' : ' <span class="status-pill waiting">ACESSO INATIVO</span>')+'</td>'+
+        '<td data-label="Loja">'+escapeHtml(person.store || '—')+'</td>'+
+        '<td data-label="Nível">'+escapeHtml(person.levelName ? person.levelName+' ('+person.levelNumber+')' : '—')+'</td>'+
+        '<td data-label="Aulas concluídas">'+escapeHtml(person.completedLessons+(totalLessons ? ' de '+totalLessons : ''))+'</td>'+
+        '<td data-label="Dias aprovados">'+escapeHtml(String(person.approvedDays))+'</td>'+
+        '<td data-label="Último acesso">'+escapeHtml(person.lastAccessAt ? formatDateTimeBR(person.lastAccessAt) : '—')+'</td>'+
+        '<td data-label="Login no sistema">'+select+(linked && !linked.manual ? '<small class="acad-meta">AUTOMÁTICO</small>' : '')+'</td>'+
+        '<td data-label=""><button class="btn-outline btn-sm" type="button" data-acad-person="'+escapeHtml(person.id)+'">VER PROGRESSO</button></td>'+
+      '</tr>';
+    }).join('');
+    rows.forEach(person => {
+      const select = body.querySelector('[data-acad-link="'+CSS.escape(person.id)+'"]');
+      if(select) select.value = person.linkedUser ? person.linkedUser.id : '';
+    });
+  }
+
+  function renderAcadTeamStores(){
+    const select = el('acadTeamStore');
+    const current = select.value;
+    const stores = Array.from(new Set((acadTeam ? acadTeam.people : []).map(person => person.store).filter(Boolean))).sort();
+    select.innerHTML = '<option value="">TODAS</option>'+stores.map(store => '<option value="'+escapeHtml(store)+'">'+escapeHtml(store)+'</option>').join('');
+    if(stores.includes(current)) select.value = current;
+  }
+
+  async function loadAcadTeam(){
+    const status = el('acadTeamStatus');
+    try{
+      acadTeam = await comApi('/academy/team');
+      status.hidden = true;
+      renderAcadTeamStores();
+    }catch(error){
+      acadTeam = {people:[], users:[]};
+      status.hidden = false;
+      status.textContent = error.message;
+    }
+    renderAcadTeam();
+  }
+
+  function setAcadView(view){
+    acadView = view === 'team' && acadData && acadData.canManageTeam ? 'team' : 'mine';
+    document.querySelectorAll('[data-acad-view]').forEach(button => {
+      const active = button.dataset.acadView === acadView;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    el('acadMineView').hidden = acadView !== 'mine';
+    el('acadTeamView').hidden = acadView !== 'team';
+    if(acadView === 'team' && !acadTeam) loadAcadTeam();
+  }
+
+  async function loadTreinamentoPage(){
+    if(!canAccess('comercial')) return;
+    acadTeam = null;
+    try{
+      acadData = await comApi('/academy/me');
+    }catch(error){
+      acadData = null;
+      el('acadMineStatus').hidden = false;
+      el('acadMineStatus').textContent = error.message;
+      el('acadMineCards').hidden = true;
+      el('acadTracks').innerHTML = '';
+      return;
+    }
+    const teamTab = document.querySelector('[data-acad-view="team"]');
+    if(teamTab) teamTab.hidden = !acadData.canManageTeam;
+    renderAcadMine();
+    setAcadView(acadView);
+  }
+
+  document.querySelectorAll('[data-acad-view]').forEach(button => button.addEventListener('click', () => setAcadView(button.dataset.acadView)));
+  ['acadTeamSearch', 'acadTeamStore', 'acadTeamLink'].forEach(id => {
+    const field = el(id);
+    if(field) field.addEventListener(id === 'acadTeamSearch' ? 'input' : 'change', renderAcadTeam);
+  });
+  el('acadTeamBody') && el('acadTeamBody').addEventListener('change', async event => {
+    const select = event.target.closest('[data-acad-link]');
+    if(!select) return;
+    const participantId = select.dataset.acadLink;
+    const person = acadTeam && acadTeam.people.find(row => row.id === participantId);
+    const previousUserId = person && person.linkedUser ? person.linkedUser.id : '';
+    if(!select.value && person && person.linkedUser && !person.linkedUser.manual){
+      showPurchaseToast('VÍNCULO AUTOMÁTICO (MESMO USUÁRIO OU NOME). PARA TROCAR, ESCOLHA O LOGIN CERTO.', 'error');
+      select.value = previousUserId;
+      return;
+    }
+    const userId = select.value || previousUserId;
+    if(!userId) return;
+    select.disabled = true;
+    try{
+      await comApi('/academy/links', {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({userId, participantId: select.value ? participantId : ''})
+      });
+      showPurchaseToast(select.value ? 'Login vinculado.' : 'Vínculo removido.');
+      await loadAcadTeam();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+      select.value = previousUserId;
+    }finally{
+      select.disabled = false;
+    }
+  });
+  el('acadTeamBody') && el('acadTeamBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-acad-person]');
+    if(!button) return;
+    const person = acadTeam && acadTeam.people.find(row => row.id === button.dataset.acadPerson);
+    el('acadPersonTitle').textContent = person ? (person.name || person.username) : 'TREINAMENTO';
+    el('acadPersonSubtitle').textContent = person ? [person.store, person.levelName].filter(Boolean).join(' · ') : '';
+    el('acadPersonTracks').innerHTML = '<p class="com-empty">Carregando…</p>';
+    el('acadPersonDialog').showModal();
+    try{
+      const detail = await comApi('/academy/team?participantId='+encodeURIComponent(button.dataset.acadPerson));
+      el('acadPersonTracks').innerHTML = acadTracksHtml(acadData && acadData.catalog, detail.tracks, detail.progress);
+    }catch(error){
+      el('acadPersonTracks').innerHTML = '<p class="com-empty">'+escapeHtml(error.message)+'</p>';
+    }
+  });
+  el('btnCloseAcadPerson') && el('btnCloseAcadPerson').addEventListener('click', () => el('acadPersonDialog').close());
 
   function comFormatPct(percent){
     if(percent === null || percent === undefined) return '—';
