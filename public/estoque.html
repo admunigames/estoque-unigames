@@ -3094,6 +3094,20 @@
   .com-edit-table td.calc{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
   .com-edit-table tr.saving td{opacity:.7}
   .com-edit-table tr.saved td:first-child{box-shadow:inset 3px 0 0 #54c48a}
+  /* Aba Vendedores (18 colunas): a tabela rola DENTRO do quadro (a barra
+     lateral fica sempre à vista), cabeçalho e coluna VENDEDOR fixos, e os
+     botões ← COLUNAS / COLUNAS → andam para os lados. No celular a tabela
+     vira cartões e nada disso aparece. */
+  .com-scroll-nav{display:none}
+  @media(min-width:681px){
+    .com-scroll-nav{display:flex;align-items:center;gap:10px;margin:0 0 8px}
+    .com-scroll-nav span{flex:1;min-width:0;text-align:center;font:800 10px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase;overflow-wrap:anywhere}
+    #comViewVendedores .table-scroll{max-height:calc(100vh - 250px);min-height:280px;overflow:auto;scroll-padding-left:190px}
+    #comViewVendedores thead th:first-child,#comViewVendedores tbody td:first-child{position:sticky;left:0;min-width:170px}
+    #comViewVendedores thead th:first-child{z-index:7}
+    #comViewVendedores tbody td:first-child{z-index:3;background:var(--bg-card);box-shadow:1px 0 0 var(--surface-border)}
+    #comViewVendedores tbody tr.saved td:first-child{box-shadow:inset 3px 0 0 #54c48a,1px 0 0 var(--surface-border)}
+  }
   .com-kind-tabs{margin-bottom:12px}
   .com-entry-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-bottom:10px}
   .com-entry-form .field{min-width:min(100%,200px);flex:1 1 200px}
@@ -6719,6 +6733,11 @@
           <button class="btn-outline" type="button" id="btnComCopyPrev">COPIAR VENDEDORES E METAS DO MÊS ANTERIOR</button>
         </div>
         <div class="user-form-status" id="comSellersStatus" role="status" aria-live="polite"></div>
+        <div class="com-scroll-nav" id="comScrollNav">
+          <button class="btn-outline" type="button" data-com-scroll="-1">← COLUNAS</button>
+          <span id="comScrollHint"></span>
+          <button class="btn-outline" type="button" data-com-scroll="1">COLUNAS →</button>
+        </div>
         <div class="table-panel responsive-table com-edit-table">
           <div class="table-scroll">
             <table>
@@ -42935,9 +42954,41 @@ function renderHomeTasks(){
     const options = comEmployees
       .filter(employee => !inMonth.has(employee.id))
       .sort((a, b) => Number(b.isSeller) - Number(a.isSeller) || a.fullName.localeCompare(b.fullName, 'pt-BR'));
+    requestAnimationFrame(comUpdateScrollHint);
     el('comAddSellerSelect').innerHTML = '<option value="">ESCOLHA O FUNCIONÁRIO</option>'+options.map(employee =>
       '<option value="'+escapeHtml(employee.id)+'">'+escapeHtml(employee.fullName+(employee.companyName ? ' — '+employee.companyName : ''))+'</option>').join('');
   }
+
+  // Navegação lateral da aba Vendedores: botões ← / → (uma "tela" de colunas
+  // por clique) e o aviso de quais colunas estão à vista.
+  function comSellersScrollBox(){
+    return document.querySelector('#comViewVendedores .table-scroll');
+  }
+
+  function comUpdateScrollHint(){
+    const box = comSellersScrollBox();
+    const hint = el('comScrollHint');
+    if(!box || !hint) return;
+    const ths = Array.from(box.querySelectorAll('thead th'));
+    const fixed = ths.length ? ths[0].offsetWidth : 0;
+    const start = box.scrollLeft + fixed - 2;
+    const end = box.scrollLeft + box.clientWidth + 2;
+    const visible = ths.slice(1).filter(th => th.textContent.trim() && th.offsetLeft >= start && th.offsetLeft + th.offsetWidth <= end);
+    hint.textContent = visible.length ? 'Colunas: '+visible[0].textContent.trim()+' → '+visible[visible.length - 1].textContent.trim() : '';
+    document.querySelectorAll('[data-com-scroll]').forEach(button => {
+      button.disabled = button.dataset.comScroll === '-1' ? box.scrollLeft <= 1 : box.scrollLeft + box.clientWidth >= box.scrollWidth - 1;
+    });
+  }
+
+  if(el('comScrollNav')) el('comScrollNav').addEventListener('click', event => {
+    const button = event.target.closest('[data-com-scroll]');
+    const box = comSellersScrollBox();
+    if(!button || !box) return;
+    const fixed = (box.querySelector('thead th') || {offsetWidth:0}).offsetWidth;
+    box.scrollBy({left: Number(button.dataset.comScroll) * Math.max(200, (box.clientWidth - fixed) * 0.85), behavior:'smooth'});
+  });
+  if(comSellersScrollBox()) comSellersScrollBox().addEventListener('scroll', comUpdateScrollHint, {passive:true});
+  window.addEventListener('resize', () => { if(comView === 'vendedores') comUpdateScrollHint(); });
 
   async function comLoadEmployees(){
     try{

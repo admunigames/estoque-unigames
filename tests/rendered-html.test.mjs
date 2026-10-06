@@ -4375,6 +4375,10 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Cor das colunas pela posição: 1º verde → último vermelho (degradê).
   assert.match(html, /const hue = Math\.round\(145 - t \* 140\);/);
   assert.doesNotMatch(html, /COM_TIER_COLORS/);
+  // Aba Vendedores: rola dentro do quadro, coluna VENDEDOR fixa e botões ← / → COLUNAS.
+  assert.match(html, /data-com-scroll="-1">← COLUNAS</);
+  assert.match(html, /data-com-scroll="1">COLUNAS →</);
+  assert.match(html, /#comViewVendedores thead th:first-child,#comViewVendedores tbody td:first-child\{position:sticky;left:0;/);
   // Sem o quadro "Novato no mês" nas regras da Comissão (o vendedor não fica sabendo do novato).
   assert.doesNotMatch(html, /rule\('Novato no mês'/);
   assert.match(storesRoute, /const body: JsonMap = \{ month, items, totalPercent: progressPercent\(revenueSum, targetSum\) \};/);
