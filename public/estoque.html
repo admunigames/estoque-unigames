@@ -42453,8 +42453,7 @@ function renderHomeTasks(){
         tiers.length ? tiers.map(tier => tier.percent+'%').join(' / ')+' da meta de faturamento, só batendo os 3 critérios (não cumulativa)' : 'Nenhuma faixa nesta regra')+
       rule('Comissão por garantia estendida', comFormatBps(rules.warrantyRateBps), 'Sobre o valor vendido em garantia, sempre')+
       (rules.creditRateBps > 0 ? rule('Comissão por crediário feito', comFormatBps(rules.creditRateBps), 'Sobre PAYJOY, CREFAZ, PARCELEX e ODRES') : '')+
-      (rules.partnerSaleRateBps > 0 ? rule('Venda P.A / Venda Unigames', comFormatBps(rules.partnerSaleRateBps), 'Sobre as vendas lançadas em VENDA P.A e VENDA UNIGAMES') : '')+
-      rule('Novato no mês', 'Só '+high+' / '+low, 'Sem premiação, garantia, crediário e venda P.A/Unigames (marcado no Dashboard)');
+      (rules.partnerSaleRateBps > 0 ? rule('Venda P.A / Venda Unigames', comFormatBps(rules.partnerSaleRateBps), 'Sobre as vendas lançadas em VENDA P.A e VENDA UNIGAMES') : '');
   }
 
   // Comissão: só o título e o valor de cada regra (pedido do usuário —

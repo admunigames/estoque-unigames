@@ -4375,6 +4375,8 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Cor das colunas pela posição: 1º verde → último vermelho (degradê).
   assert.match(html, /const hue = Math\.round\(145 - t \* 140\);/);
   assert.doesNotMatch(html, /COM_TIER_COLORS/);
+  // Sem o quadro "Novato no mês" nas regras da Comissão (o vendedor não fica sabendo do novato).
+  assert.doesNotMatch(html, /rule\('Novato no mês'/);
   assert.match(storesRoute, /const body: JsonMap = \{ month, items, totalPercent: progressPercent\(revenueSum, targetSum\) \};/);
   assert.match(storesRoute, /if \(canManageCommercialStores\(actor\) && scope\)/);
   // Ao vivo: qualquer escrita em /api/commercial avisa o canal "commercial".
