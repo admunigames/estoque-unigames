@@ -120,7 +120,8 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const editId = safeText(body.id, 80);
-    const fullName = safeText(body.fullName, 160);
+    // Nomes do RH sempre em CAIXA ALTA (vira o nome do funcionário na admissão).
+    const fullName = safeText(body.fullName, 160).toLocaleUpperCase("pt-BR");
     const status = safeText(body.status, 30) || "selecionado_entrevista";
     const statusNote = safeText(body.statusNote, 2000);
 

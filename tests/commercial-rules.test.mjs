@@ -29,6 +29,7 @@ const sellersRoute = await import("../app/api/commercial/sellers/route.ts");
 const entriesRoute = await import("../app/api/commercial/entries/route.ts");
 const storesRoute = await import("../app/api/commercial/stores/route.ts");
 const rankingRoute = await import("../app/api/commercial/ranking/route.ts");
+const employeesRoute = await import("../app/api/hr-payroll/employees/route.ts");
 
 const STORE_A = "clojaalfa1";
 const STORE_B = "clojabeta1";
@@ -428,4 +429,14 @@ test("nomes de vendedor sempre em CAIXA ALTA (cadastro do RH em minúsculas)", a
   assert.ok(rank.items.every((item) => item.name === item.name.toLocaleUpperCase("pt-BR")));
   const options = await (await callRoute(sellersRoute.GET, ADMIN, "GET", "/api/commercial/sellers?month=2026-12")).json();
   assert.ok(options.employees.every((employee) => employee.fullName === employee.fullName.toLocaleUpperCase("pt-BR")));
+});
+
+test("RH: o nome do funcionário é gravado em CAIXA ALTA (aparece igual no Comercial)", async () => {
+  const hr = { id: "u-rh", permissions: ["payroll:manage"] };
+  const created = await callRoute(employeesRoute.POST, hr, "POST", "/api/hr-payroll/employees", {
+    fullName: "joão otávio da silva", companyId: STORE_A, roleTitle: "Vendedor", admissionDate: "2026-10-01",
+  });
+  assert.equal(created.status, 201, JSON.stringify(await created.clone().json()));
+  const row = db.sqlite.prepare("SELECT full_name AS name FROM hr_employees WHERE cpf = '' OR cpf IS NULL ORDER BY rowid DESC LIMIT 1").get();
+  assert.equal(row.name, "JOÃO OTÁVIO DA SILVA");
 });

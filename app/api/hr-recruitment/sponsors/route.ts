@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as JsonMap;
     const editId = safeText(body.id, 80);
     const employeeId = safeText(body.employeeId, 80);
-    const employeeName = safeText(body.employeeName, 160);
+    const employeeName = safeText(body.employeeName, 160).toLocaleUpperCase("pt-BR");
     const companyId = safeText(body.companyId, 80);
     const companyName = safeText(body.companyName, 160);
     const sponsorName = safeText(body.sponsorName, 160);

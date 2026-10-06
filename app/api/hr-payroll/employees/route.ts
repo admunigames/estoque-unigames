@@ -78,7 +78,8 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const editId = safeText(body.id, 80);
-    const fullName = safeText(body.fullName, 160);
+    // Nomes do RH sempre em CAIXA ALTA (pedido do usuário, 2026-10-06).
+    const fullName = safeText(body.fullName, 160).toLocaleUpperCase("pt-BR");
     const cpf = onlyDigits(safeText(body.cpf, 20));
     const rg = safeText(body.rg, 30);
     const telefone = safeText(body.telefone, 40);
