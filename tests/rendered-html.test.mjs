@@ -2060,7 +2060,7 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(schema, /accessories: text\("accessories"\)/);
 
   assert.match(liveUpdates, /"missions", "captures", "supplies", "tasks", "loans"/);
-  assert.match(workerSource, /loans: "loans",\s*\n\s*compras: "purchasesDraft",\s*\n\s*\};/);
+  assert.match(workerSource, /loans: "loans",\s*\n\s*compras: "purchasesDraft",\s*\n\s*commercial: "commercial",\s*\n\s*\};/);
   assert.match(html, /aparelhosEmprestimo:'loans'/);
   assert.match(
     html,
@@ -4313,15 +4313,17 @@ test("Compras nativo: anexar arquivo (pedido/nota fiscal) não dispara atualiza�
   assert.match(liveEvents, /action === "create" \|\| action === "cancel"\) return null;/);
 });
 
-test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals, escopo por loja, importação da planilha e Ranking sem R$", async () => {
-  const [html, workerSource, shared, overviewRoute, rankingRoute, importRoute, migration] = await Promise.all([
+test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentação manual ao vivo e Ranking sem R$", async () => {
+  const [html, workerSource, shared, overviewRoute, rankingRoute, sellersRoute, migration, liveEvents, storesRoute] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/commercial/shared.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/commercial/overview/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/commercial/ranking/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/commercial/import/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/sellers/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0072_commercial_monthly.sql", import.meta.url), "utf8"),
+    readFile(new URL("../worker/live-events.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/commercial/stores/route.ts", import.meta.url), "utf8"),
   ]);
 
   // Seção própria no menu lateral (fora de Financeiro e RH) com o item
@@ -4335,21 +4337,37 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
   assert.match(workerSource, /"\/comercial\/acompanhamento",/);
   assert.match(html, /<section id="pageComercialAcompanhamento" class="page wrap">/);
   assert.doesNotMatch(html, /id="navComercial(Dashboard|Comissao|Ranking|Metas)"|pageComercialMetas|comercialMetas:/);
-  for (const view of ["dashboard", "comissao", "ranking", "metas", "regras"]) {
+  for (const view of ["dashboard", "comissao", "ranking", "vendedores", "crediarios", "lojas", "regras"]) {
     assert.match(html, new RegExp(`class="supply-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-com-view="${view}"`));
   }
   // Abas no estilo único do site, sem classe própria do Comercial.
   assert.doesNotMatch(html, /com-view-tab/);
   // Uma permissão por aba: Dashboard e Ranking (comercial:dashboard),
-  // Comissão (comercial:commission) e Cadastro de Metas (comercial:goals) —
-  // este é a importação da planilha (sem digitação manual de metas/realizado).
+  // Comissão (comercial:commission) e as abas de ATUALIZAÇÃO (alimentação
+  // manual e ao vivo, sem importar planilha — decisão de 2026-10-06):
+  // Vendedores (goals), Crediários (credit) e Meta Loja (stores).
   assert.match(html, /data-com-view="dashboard" data-permission="comercial:dashboard">Dashboard</);
   assert.match(html, /data-com-view="comissao" data-permission="comercial:commission">Comissão</);
   assert.match(html, /data-com-view="ranking" data-permission="comercial:dashboard">Ranking</);
-  assert.match(html, /data-com-view="metas" data-permission="comercial:goals">Cadastro de Metas</);
+  assert.match(html, /data-com-view="vendedores" data-permission="comercial:goals">Vendedores</);
+  assert.match(html, /data-com-view="crediarios" data-permission="comercial:credit">Crediários</);
+  assert.match(html, /data-com-view="lojas" data-permission="comercial:stores">Meta Loja</);
+  // Sem importação de arquivo/planilha em lugar nenhum do Comercial.
+  assert.doesNotMatch(html, /comImportFile|comImportPreview|btnComImportConfirm|com-import-|\/import\?month/);
+  await assert.rejects(readFile(new URL("../app/api/commercial/import/route.ts", import.meta.url), "utf8"));
+  // Tabelas de crediário (só ID, vendedor e total) e painel visual das lojas
+  // para todos, só com % (a rota /stores não manda R$ a quem só visualiza).
+  assert.match(html, /\['payjoy','PAYJOY'\], \['crefaz','CREFAZ'\], \['parcelex','PARCELEX'\], \['odres','ODRES'\],\s*\['venda_pa','VENDA P\.A'\], \['venda_unigames','VENDA UNIGAMES'\]/);
+  assert.match(html, /<section class="com-stores-visual" id="comStoresVisual" hidden>/);
+  assert.match(storesRoute, /const body: JsonMap = \{ month, items, totalPercent: progressPercent\(revenueSum, targetSum\) \};/);
+  assert.match(storesRoute, /if \(canManageCommercialStores\(actor\) && scope\)/);
+  // Ao vivo: qualquer escrita em /api/commercial avisa o canal "commercial".
+  assert.match(liveEvents, /if \(path\.startsWith\("\/api\/commercial\/"\)\) \{[\s\S]*?module: "commercial", audience: \{ kind: "all" \}/);
+  assert.match(html, /comercialAcompanhamento:'commercial'\}\);/);
+  assert.match(html, /if\(livePageName === 'comercialAcompanhamento'\) await comLiveRefresh\(\);/);
   // Regras de Comissão (comercial:rules) — pedido de 2026-10-06.
   // Sem aba de crediário: ele fica no cartão (Dashboard) e na Comissão.
-  assert.doesNotMatch(html, /data-com-view="crediario"|comViewCrediario|comRenderCredit/);
+  assert.doesNotMatch(html, /data-com-view="crediario"|comViewCrediario\b|comRenderCredit\b/);
   assert.match(html, /data-com-view="regras" data-permission="comercial:rules">Regras de Comissão</);
   assert.match(html, /<dialog class="purchase-dialog" id="comRuleDialog"/);
   assert.match(html, /' · crediário feito '\+formatCentsBRL\(creditSum\)/);
@@ -4365,11 +4383,8 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
     assert.doesNotMatch(source, /0,6%|0,4%|R\$ 500\b|R\$ 1\.500|\(4%\)|GARANTIA 30%|COM_TARGET_LABELS/);
   }
   assert.match(html, /<div class="com-rules" id="comRulesBox" aria-label="Regras de comissão"><\/div>/);
-  assert.match(html, /<input type="file" id="comImportFile" accept="\.xlsx,\.xls,\.csv">/);
-  assert.doesNotMatch(html, /comEntryForm|comGoalList|data-com-entry/);
-  assert.match(importRoute, /if \(!canManageCommercialGoals\(actor\)\)/);
-  assert.match(importRoute, /parseSellerSheet\(cells\)/);
-  assert.match(overviewRoute, /if \(forCadastro\) \{\s*if \(!canGoals\)/);
+  assert.match(sellersRoute, /if \(!canManageCommercialGoals\(actor\)\)/);
+  assert.match(overviewRoute, /if \(forCadastro\) \{\s*if \(!canGoals && !canManageCommercialCredit\(actor\)\)/);
   // Sem comercial:commission os valores em R$ da comissão nem saem do
   // servidor; o selo do Dashboard (critérios + taxa) continua igual.
   assert.match(overviewRoute, /commission: \{ allCriteriaMet, revenueRateBps, newcomer \}/);
@@ -4379,12 +4394,14 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
   // Checkboxes no Cadastro de Usuários, no mesmo padrão das demais permissões.
   assert.match(html, /name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</);
   assert.match(html, /name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</);
-  assert.match(html, /name="userPermission" value="comercial:goals"> CADASTRO DE METAS</);
+  assert.match(html, /name="userPermission" value="comercial:goals"> ATUALIZAR VENDEDORES \(METAS E REALIZADO\)</);
+  assert.match(html, /name="userPermission" value="comercial:credit"> LANÇAR CREDIÁRIOS/);
+  assert.match(html, /name="userPermission" value="comercial:stores"> ATUALIZAR META LOJA</);
   assert.match(html, /name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</);
   assert.match(html, /'comercial:rules':'Comercial: Cadastro de Regras de Comissão'/);
   assert.doesNotMatch(html, /value="comercial:(view|manage)"/);
-  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",/);
-  assert.match(workerSource, /commercial: \["comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules"\],/);
+  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores",/);
+  assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores",\s*\],/);
   // As antigas viram as novas na leitura (ninguém perde acesso).
   assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission"\],/);
   assert.match(workerSource, /"comercial:manage": \["comercial:goals"\],/);
@@ -4402,9 +4419,9 @@ test("Comercial: menu próprio, permissões comercial:dashboard/commission/goals
   assert.match(overviewRoute, /sellers\s*\.filter\(\(seller\) => linked\.includes\(seller\.employeeId\)\)/);
   // ...e não fica sabendo que é NOVATO (nem marca novatos).
   assert.match(overviewRoute, /canMarkNewcomer: !ownOnly && canMarkCommercialNewcomer\(actor\)/);
-  // Importação de quem só alcança a própria loja: só grava/substitui a loja dele.
-  assert.match(importRoute, /const inScope = \(companyId: string\) => scope\.allStores \|\| companyId === scope\.companyId;/);
-  assert.match(importRoute, /DELETE FROM commercial_monthly WHERE month=\?1 AND company_id=\?2/);
+  // Lançamento de quem só alcança a própria loja: só os vendedores dela.
+  assert.match(shared, /if \(!employee \|\| \(!scope\.allStores && employee\.companyId !== scope\.companyId\)\) return null;/);
+  assert.match(sellersRoute, /employeeInScope\(database, scope, safeText\(body\.employeeId, 80\)\)/);
 
   // Ranking: empresa inteira, mas a resposta só leva nome, loja, zona e percentuais.
   const rankingItem = rankingRoute.slice(rankingRoute.indexOf("sellers.map("), rankingRoute.indexOf("}));"));

@@ -3577,11 +3577,11 @@ export const hrAsoExams = pgTable(
   ],
 );
 
-// Comercial — retrato do mês de cada vendedor, importado da planilha
-// "ACOMPANHAMENTO LOJAS_VENDEDORES" (aba "VENDEDORES <MÊS>"). Única fonte
-// dos números (decisão confirmada: sem digitação manual). Uma linha por
-// vendedor/mês, substituída a cada importação. Percentual, faixa de
-// comissão e ranking NUNCA são persistidos — sempre calculados ao vivo
+// Comercial — metas e realizado do mês de cada vendedor, lançados à mão na
+// aba Vendedores (antes vinham da planilha "ACOMPANHAMENTO
+// LOJAS_VENDEDORES"; a importação foi removida em 2026-10-06). Uma linha por
+// vendedor/mês; cada mês fica guardado. Percentual, faixa de comissão e
+// ranking NUNCA são persistidos — sempre calculados ao vivo
 // (app/lib/commercial.ts). employee_id aponta para hr_employees (sem FK,
 // convenção do projeto); a loja é a do funcionário no RH.
 export const commercialMonthly = pgTable(
@@ -3610,8 +3610,11 @@ export const commercialMonthly = pgTable(
     realme: integer("realme").notNull().default(0),
     warrantyQty: integer("warranty_qty").notNull().default(0),
     notebookQty: integer("notebook_qty").notNull().default(0),
-    // Coluna opcional CREDIÁRIO da planilha (0 sem ela).
+    // Legado da importação: o crediário agora é a soma de
+    // commercial_credit_entries (coluna não é mais lida).
     creditSalesCents: integer("credit_sales_cents").notNull().default(0),
+    // QUANTIDADE DE VENDAS do mês (só acompanhamento).
+    salesQty: integer("sales_qty").notNull().default(0),
     importId: text("import_id").notNull().default(""),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
@@ -3639,6 +3642,8 @@ export const commercialRules = pgTable(
     warrantyRateBps: integer("warranty_rate_bps").notNull().default(400),
     warrantyAttachTarget: integer("warranty_attach_target").notNull().default(30),
     creditRateBps: integer("credit_rate_bps").notNull().default(0),
+    // VENDA P.A / VENDA UNIGAMES
+    partnerSaleRateBps: integer("partner_sale_rate_bps").notNull().default(0),
     notes: text("notes").notNull().default(""),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
@@ -3664,7 +3669,50 @@ export const commercialNewcomers = pgTable(
   (table) => [uniqueIndex("commercial_newcomers_employee_month_idx").on(table.employeeId, table.month)],
 );
 
-// Comercial — histórico de importações da planilha (auditoria).
+// Comercial > Crediários — vendas lançadas por tabela (kind = payjoy, crefaz,
+// parcelex, odres, venda_pa, venda_unigames; ver ENTRY_KINDS em
+// app/lib/commercial.ts): ID da venda, vendedor e valor. As de crediário
+// somam no CREDIÁRIO do vendedor no mês; venda P.A/Unigames pagam % própria.
+// NÃO se mistura com finance_credit_sales (Financeiro > Crediários).
+export const commercialCreditEntries = pgTable(
+  "commercial_credit_entries",
+  {
+    id: text("id").primaryKey(),
+    // YYYY-MM
+    month: text("month").notNull(),
+    kind: text("kind").notNull(),
+    saleRef: text("sale_ref").notNull().default(""),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+  },
+  (table) => [index("commercial_credit_entries_month_idx").on(table.month, table.kind)],
+);
+
+// Comercial > Meta Loja — meta e feito do mês por loja (lançados à mão; o
+// feito da loja não é a soma dos vendedores). Uma linha por loja/mês.
+export const commercialStoreGoals = pgTable(
+  "commercial_store_goals",
+  {
+    id: text("id").primaryKey(),
+    // YYYY-MM
+    month: text("month").notNull(),
+    companyId: text("company_id").notNull(),
+    targetCents: integer("target_cents").notNull().default(0),
+    revenueCents: integer("revenue_cents").notNull().default(0),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [uniqueIndex("commercial_store_goals_month_company_idx").on(table.month, table.companyId)],
+);
+
+// Comercial — histórico de importações da planilha (auditoria; importação
+// removida em 2026-10-06, tabela mantida com o histórico).
 export const commercialImports = pgTable(
   "commercial_imports",
   {

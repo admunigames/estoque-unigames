@@ -3,23 +3,31 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
-// Comercial — regras de comissão por vigência (comercial:rules), crediário
-// feito (coluna da planilha) e NOVATO no mês (Dashboard). Rotas reais sobre
-// SQLite, com o seed da migration 0085.
+// Comercial — regras de comissão por vigência (comercial:rules), NOVATO no
+// mês (Dashboard) e as abas de atualização manual e ao vivo: Vendedores
+// (comercial:goals), Crediários (comercial:credit) e Meta Loja
+// (comercial:stores). Rotas reais sobre SQLite, com os seeds das migrations
+// 0085 e 0086.
 
 const db = await setupRouteDb([
-  "shared_state", "hr_employees", "commercial_monthly", "commercial_imports", "commercial_aliases",
-  "commercial_rules", "commercial_newcomers",
+  "shared_state", "hr_employees", "commercial_monthly", "commercial_rules", "commercial_newcomers",
+  "commercial_credit_entries", "commercial_store_goals",
 ]);
 const migration = await readFile(new URL("../drizzle/0085_comercial_regras.sql", import.meta.url), "utf8");
-const seed = migration.split("--> statement-breakpoint").map((part) => part.trim()).filter((part) => part.startsWith("INSERT INTO"));
+const migration0086 = await readFile(new URL("../drizzle/0086_comercial_lancamentos.sql", import.meta.url), "utf8");
+const statements = (sql) => sql.split("--> statement-breakpoint").map((part) => part.trim());
+const seed = statements(migration).filter((part) => part.startsWith("INSERT INTO"));
 assert.equal(seed.length, 1, "a migration tem um INSERT de seed");
 db.sqlite.exec(seed[0]);
+// 0086: % da venda P.A/Unigames = 2% na vigência 2026-10 (as colunas já vêm do schema).
+db.sqlite.exec(statements(migration0086).find((part) => part.startsWith("UPDATE")));
 
 const rulesRoute = await import("../app/api/commercial/rules/route.ts");
 const newcomersRoute = await import("../app/api/commercial/newcomers/route.ts");
 const overview = await import("../app/api/commercial/overview/route.ts");
-const importRoute = await import("../app/api/commercial/import/route.ts");
+const sellersRoute = await import("../app/api/commercial/sellers/route.ts");
+const entriesRoute = await import("../app/api/commercial/entries/route.ts");
+const storesRoute = await import("../app/api/commercial/stores/route.ts");
 
 const STORE_A = "clojaalfa1";
 const STORE_B = "clojabeta1";
@@ -45,22 +53,35 @@ const DASHBOARD = { id: "u-dash", permissions: ["comercial:dashboard"] };
 const COMMISSION = { id: "u-com", permissions: ["comercial:dashboard", "comercial:commission"] };
 const SELLER_ANA = { id: "user-ana", companyId: STORE_A, permissions: ["comercial:dashboard", "comercial:commission"] };
 const SELLER_ANA_GOALS = { ...SELLER_ANA, permissions: [...SELLER_ANA.permissions, "comercial:goals"] };
+const CREDIT_A = { id: "u-cred-a", companyId: STORE_A, permissions: ["comercial:credit"] };
+const STORES = { id: "u-stores", permissions: ["comercial:stores", "comercial:dashboard"] };
+const STORES_B = { id: "u-stores-b", companyId: STORE_B, permissions: ["comercial:stores"] };
 
 // Todos batem os critérios: itens 100/100, realme 10/10, anexo 3 de 10.
-const HEADER = ["LOJAS", "VENDEDOR", "META REALMES", "REALMES FEITO", "META ITENS", "ITENS FEITO", "GAR FEITO", "QT G.A.R", "NOTEBOOK/PC", "FATURADO", "META", "ZONA"];
-function sheet(withCredit) {
-  const rows = [
-    ["LOJA ALFA", "ANA", 10, 10, 100, 100, 1000, 3, 10, 120000, 100000, "SUL", 20000],
-    ["", "BRUNO", 10, 10, 100, 100, 0, 3, 10, 50000, 100000, "SUL", 0],
-    ["LOJA BETA", "CARLA", 10, 10, 100, 100, 0, 3, 10, 80000, 100000, "NORTE", 5000],
-  ];
-  return [withCredit ? [...HEADER, "CREDIÁRIO"] : HEADER, ...rows.map((row) => (withCredit ? row : row.slice(0, -1)))];
-}
-async function importSheet(month, withCredit) {
-  const response = await callRoute(importRoute.POST, ADMIN, "POST", "/api/commercial/import", {
-    month, fileName: "acompanhamento.xlsx", sheetName: "VENDEDORES", cells: sheet(withCredit), confirm: true,
-  });
-  assert.equal(response.status, 201, JSON.stringify(await response.clone().json()));
+const ROWS = {
+  "emp-ana": { revenueCents: 12_000_000, warrantyCents: 100_000 },
+  "emp-bruno": { revenueCents: 5_000_000, warrantyCents: 0 },
+  "emp-carla": { revenueCents: 8_000_000, warrantyCents: 0 },
+};
+const sellerBody = (month, employeeId, values = {}) => ({
+  month, employeeId, zone: employeeId === "emp-carla" ? "NORTE" : "SUL",
+  targetRevenueCents: 10_000_000, targetItems: 100, targetSuperItems: 120, targetWarrantyCents: 0, targetRealme: 10,
+  items: 100, realme: 10, warrantyQty: 3, notebookQty: 10, salesQty: 40, ...ROWS[employeeId], ...values,
+});
+const putSeller = (user, body) => callRoute(sellersRoute.PUT, user, "PUT", "/api/commercial/sellers", body);
+const postEntry = (user, body) => callRoute(entriesRoute.POST, user, "POST", "/api/commercial/entries", body);
+// Lança o mês à mão (aba Vendedores) e o crediário da Ana (R$ 20.000 em
+// PAYJOY + CREFAZ) e da Carla (R$ 5.000 em ODRES).
+async function seedMonth(month, withCredit = true) {
+  for (const employeeId of Object.keys(ROWS)) {
+    const response = await putSeller(ADMIN, sellerBody(month, employeeId));
+    assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
+  }
+  if (!withCredit) return;
+  for (const [kind, employeeId, amountCents] of [["payjoy", "emp-ana", 1_500_000], ["crefaz", "emp-ana", 500_000], ["odres", "emp-carla", 500_000]]) {
+    const response = await postEntry(ADMIN, { month, kind, saleRef: `${month}-${kind}`, employeeId, amountCents });
+    assert.equal(response.status, 201, JSON.stringify(await response.clone().json()));
+  }
 }
 async function sellersOf(user, month) {
   const response = await callRoute(overview.GET, user, "GET", `/api/commercial/overview?month=${month}`);
@@ -71,7 +92,7 @@ const byId = (data, id) => data.sellers.find((seller) => seller.employeeId === i
 
 const RULE_BODY = {
   validFrom: "2026-12", revenueRateHighBps: 70, revenueRateLowBps: 30, warrantyRateBps: 500,
-  warrantyAttachTarget: 25, creditRateBps: 300,
+  warrantyAttachTarget: 25, creditRateBps: 300, partnerSaleRateBps: 100,
   premiumTiers: [{ percent: 105, cents: 30_000 }, { percent: 115, cents: 90_000 }, { percent: 130, cents: 250_000 }],
 };
 
@@ -84,7 +105,7 @@ test("seed da migration: 2026-10 com garantia 6% e crediário 2%; tabelas novas 
     {
       validFrom: "2026-10", revenueRateHighBps: 60, revenueRateLowBps: 40,
       premiumTiers: [{ percent: 110, cents: 50_000 }, { percent: 120, cents: 150_000 }],
-      warrantyRateBps: 600, warrantyAttachTarget: 30, creditRateBps: 200, updatedByName: "SISTEMA",
+      warrantyRateBps: 600, warrantyAttachTarget: 30, creditRateBps: 200, partnerSaleRateBps: 200, updatedByName: "SISTEMA",
       id: undefined, updatedAt: undefined, notes: undefined,
     },
   );
@@ -95,6 +116,13 @@ test("seed da migration: 2026-10 com garantia 6% e crediário 2%; tabelas novas 
   }
   assert.match(migration, /ADD COLUMN IF NOT EXISTS "credit_sales_cents" integer DEFAULT 0 NOT NULL/);
   assert.doesNotMatch(migration, /DROP|DELETE/);
+  for (const table of ["commercial_credit_entries", "commercial_store_goals"]) {
+    assert.match(migration0086, new RegExp(`CREATE TABLE IF NOT EXISTS "${table}"`));
+    assert.match(migration0086, new RegExp(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`));
+  }
+  assert.match(migration0086, /ADD COLUMN IF NOT EXISTS "sales_qty"/);
+  assert.match(migration0086, /ADD COLUMN IF NOT EXISTS "partner_sale_rate_bps"/);
+  assert.doesNotMatch(migration0086, /DROP|DELETE/);
 });
 
 test("rules: GET para qualquer permissão do Comercial; POST/PUT só comercial:rules, com validação", async () => {
@@ -133,12 +161,13 @@ test("rules: GET para qualquer permissão do Comercial; POST/PUT só comercial:r
   assert.equal(list.items[0].premiumTiers.length, 3);
   assert.equal(list.items[0].notes, "TRÊS FAIXAS");
   assert.equal(list.items[0].updatedByName, "U-RULES");
+  assert.equal(list.items[0].partnerSaleRateBps, 100);
 });
 
 test("overview: setembro na regra padrão (4%), outubro na seed (6% + crediário 2%), dezembro na vigência nova", async () => {
-  await importSheet("2026-09", true);
-  await importSheet("2026-10", true);
-  await importSheet("2026-12", true);
+  await seedMonth("2026-09");
+  await seedMonth("2026-10");
+  await seedMonth("2026-12");
 
   const sept = await sellersOf(ADMIN, "2026-09");
   assert.equal(sept.rules.warrantyRateBps, 400);
@@ -176,15 +205,15 @@ test("overview: setembro na regra padrão (4%), outubro na seed (6% + crediário
   assert.equal(plain.canMarkNewcomer, false);
 });
 
-test("planilha sem a coluna CREDIÁRIO: crediário 0 e faturamento inteiro na base", async () => {
-  await importSheet("2026-11", false);
+test("mês sem crediário lançado: crediário 0 e faturamento inteiro na base", async () => {
+  await seedMonth("2026-11", false);
   const ana = byId(await sellersOf(ADMIN, "2026-11"), "emp-ana");
   assert.equal(ana.realized.creditSalesCents, 0);
   assert.equal(ana.metrics.commission.revenueBaseCents, 12_000_000);
   assert.equal(ana.metrics.commission.creditCommissionCents, 0);
 });
 
-test("novatos: permissão, escopo de loja, só no mês marcado e sobrevive à reimportação", async () => {
+test("novatos: permissão, escopo de loja, só no mês marcado e sobrevive a tirar/recolocar o vendedor", async () => {
   const mark = (user, body) => callRoute(newcomersRoute.PUT, user, "PUT", "/api/commercial/newcomers", body);
   for (const user of [DASHBOARD, COMMISSION, SELLER_ANA]) {
     assert.equal((await mark(user, { employeeId: "emp-ana", month: "2026-10", newcomer: true })).status, 403);
@@ -232,12 +261,148 @@ test("novatos: permissão, escopo de loja, só no mês marcado e sobrevive à re
     assert.equal(byId(await sellersOf(SELLER_ANA, "2026-10"), "emp-ana").metrics.commission.totalCents, 60_000);
   };
   await check();
-  // Reimportar a planilha do mês apaga commercial_monthly, não a marcação.
-  await importSheet("2026-10", true);
+  // Tirar a vendedora do mês e lançar de novo não perde a marcação.
+  assert.equal((await callRoute(sellersRoute.DELETE, ADMIN, "DELETE", "/api/commercial/sellers?month=2026-10&employeeId=emp-ana")).status, 200);
+  assert.equal((await putSeller(ADMIN, sellerBody("2026-10", "emp-ana"))).status, 200);
   await check();
 
   assert.equal((await mark(RULES, { employeeId: "emp-ana", month: "2026-10", newcomer: false })).status, 200);
   const ana = byId(await sellersOf(ADMIN, "2026-10"), "emp-ana");
   assert.equal(ana.newcomer, false);
   assert.equal(ana.metrics.commission.revenuePremiumCents, 150_000);
+});
+
+test("Vendedores (comercial:goals): lança metas e realizado à mão, no escopo de loja", async () => {
+  for (const user of [DASHBOARD, COMMISSION, CREDIT_A, RULES]) {
+    assert.equal((await putSeller(user, sellerBody("2027-01", "emp-ana"))).status, 403);
+    assert.equal((await callRoute(sellersRoute.GET, user, "GET", "/api/commercial/sellers?month=2027-01")).status, 403);
+  }
+  // Funcionários para adicionar: só os da loja do gestor.
+  const options = await (await callRoute(sellersRoute.GET, GOALS_A, "GET", "/api/commercial/sellers?month=2027-01")).json();
+  assert.deepEqual(options.employees.map((employee) => employee.id).sort(), ["emp-ana", "emp-bruno"]);
+  assert.equal(options.employees[0].isSeller, true);
+
+  assert.equal((await putSeller(GOALS_A, sellerBody("2027-01", "emp-carla"))).status, 404);
+  assert.equal((await putSeller(GOALS_A, sellerBody("2027-01", "emp-ana", { items: -1 }))).status, 400);
+  assert.equal((await putSeller(GOALS_A, sellerBody("2027-01", "emp-ana", { revenueCents: 1.5 }))).status, 400);
+  assert.equal((await putSeller(GOALS_A, sellerBody("2027-01", "emp-ana", { zone: "LESTE" }))).status, 400);
+  assert.equal((await putSeller(GOALS_A, sellerBody("2027-13", "emp-ana"))).status, 400);
+
+  assert.equal((await putSeller(GOALS_A, sellerBody("2027-01", "emp-ana"))).status, 200);
+  // Atualizar de novo só muda a linha (um registro por vendedor/mês).
+  assert.equal((await putSeller(GOALS_A, sellerBody("2027-01", "emp-ana", { items: 130, salesQty: 55 }))).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM commercial_monthly WHERE month='2027-01'").get().n, 1);
+  const ana = byId(await sellersOf(ADMIN, "2027-01"), "emp-ana");
+  assert.equal(ana.realized.items, 130);
+  assert.equal(ana.realized.salesQty, 55);
+  assert.equal(ana.zone, "SUL");
+  assert.equal(ana.metrics.items.superReached, true);
+
+  // Copiar do mês anterior: vendedores, zona e metas; realizado zerado; quem
+  // já está no mês não muda; gestor de loja só copia a própria loja.
+  const copied = await callRoute(sellersRoute.POST, GOALS_A, "POST", "/api/commercial/sellers", { month: "2027-01" });
+  assert.equal(copied.status, 201);
+  assert.equal((await copied.json()).copied, 1); // Bruno (Ana já estava; Carla é de outra loja)
+  const jan = await sellersOf(ADMIN, "2027-01");
+  assert.deepEqual(jan.sellers.map((seller) => seller.employeeId).sort(), ["emp-ana", "emp-bruno"]);
+  const bruno = byId(jan, "emp-bruno");
+  assert.equal(bruno.goal.targetRevenueCents, 10_000_000);
+  assert.equal(bruno.realized.revenueCents, 0);
+  assert.equal(byId(jan, "emp-ana").realized.items, 130);
+  assert.equal((await (await callRoute(sellersRoute.POST, GOALS_A, "POST", "/api/commercial/sellers", { month: "2027-01" })).json()).copied, 0);
+
+  // Tirar do mês: escopo de loja (outra loja = 404).
+  assert.equal((await callRoute(sellersRoute.DELETE, GOALS_A, "DELETE", "/api/commercial/sellers?month=2026-12&employeeId=emp-carla")).status, 404);
+  assert.equal((await callRoute(sellersRoute.DELETE, GOALS_A, "DELETE", "/api/commercial/sellers?month=2027-01&employeeId=emp-bruno")).status, 200);
+  assert.equal(byId(await sellersOf(ADMIN, "2027-01"), "emp-bruno"), undefined);
+  // O mês anterior continua guardado (virar o mês não apaga nada).
+  assert.equal(byId(await sellersOf(ADMIN, "2026-12"), "emp-bruno").realized.revenueCents, 5_000_000);
+});
+
+test("Crediários (comercial:credit): ID, vendedor e valor por tabela; somam no crediário; venda P.A/Unigames à parte", async () => {
+  const body = { month: "2027-01", kind: "payjoy", saleRef: "330137", employeeId: "emp-ana", amountCents: 151_499 };
+  for (const user of [DASHBOARD, COMMISSION, GOALS_A, RULES]) {
+    assert.equal((await postEntry(user, body)).status, 403);
+    assert.equal((await callRoute(entriesRoute.GET, user, "GET", "/api/commercial/entries?month=2027-01&kind=payjoy")).status, 403);
+  }
+  assert.equal((await postEntry(CREDIT_A, { ...body, kind: "boleto" })).status, 400);
+  assert.equal((await postEntry(CREDIT_A, { ...body, saleRef: "" })).status, 400);
+  assert.equal((await postEntry(CREDIT_A, { ...body, amountCents: 0 })).status, 400);
+  // Vendedor de outra loja → 404; vendedor fora da aba Vendedores do mês → 400.
+  assert.equal((await postEntry(CREDIT_A, { ...body, employeeId: "emp-carla", month: "2026-12" })).status, 404);
+  const notInMonth = await postEntry(CREDIT_A, { ...body, month: "2027-02" });
+  assert.equal(notInMonth.status, 400);
+  assert.match((await notInMonth.json()).error, /ABA VENDEDORES/);
+
+  assert.equal((await postEntry(CREDIT_A, body)).status, 201);
+  // Mesmo ID na mesma tabela (até em outro mês) → 409; em outra tabela pode.
+  const duplicate = await postEntry(CREDIT_A, { ...body, amountCents: 100 });
+  assert.equal(duplicate.status, 409);
+  assert.match((await duplicate.json()).error, /330137 JÁ FOI LANÇADA EM PAYJOY \(01\/2027\)/);
+  assert.equal((await postEntry(CREDIT_A, { ...body, kind: "parcelex", amountCents: 100_001 })).status, 201);
+  assert.equal((await postEntry(CREDIT_A, { ...body, kind: "venda_pa", saleRef: "35032", amountCents: 243_998 })).status, 201);
+  assert.equal((await postEntry(ADMIN, { ...body, kind: "venda_unigames", saleRef: "9", amountCents: 2 })).status, 201);
+
+  const list = await (await callRoute(entriesRoute.GET, CREDIT_A, "GET", "/api/commercial/entries?month=2027-01&kind=payjoy")).json();
+  assert.equal(list.label, "PAYJOY");
+  assert.deepEqual(list.items.map((item) => [item.saleRef, item.employeeName, item.amountCents]), [["330137", "Ana Souza", 151_499]]);
+  assert.equal(list.totalCents, 151_499);
+
+  // Overview: crediário = PAYJOY + PARCELEX; venda P.A/Unigames separada.
+  const ana = byId(await sellersOf(ADMIN, "2027-01"), "emp-ana");
+  assert.equal(ana.realized.creditSalesCents, 151_499 + 100_001);
+  assert.equal(ana.realized.partnerSalesCents, 243_998 + 2);
+  // Janeiro/2027 está na vigência 12/2026: crediário 2,5% e venda P.A/Unigames 1%.
+  assert.equal(ana.metrics.commission.creditCommissionCents, Math.round(251_500 * 0.025));
+  assert.equal(ana.metrics.commission.partnerCommissionCents, Math.round(244_000 * 0.01));
+
+  // Escopo: lançamento de outra loja some da lista e não pode ser excluído.
+  const carlaEntry = db.sqlite.prepare("SELECT id FROM commercial_credit_entries WHERE employee_id='emp-carla' LIMIT 1").get();
+  assert.equal((await callRoute(entriesRoute.DELETE, CREDIT_A, "DELETE", `/api/commercial/entries?id=${carlaEntry.id}`)).status, 404);
+  const odres = await (await callRoute(entriesRoute.GET, CREDIT_A, "GET", "/api/commercial/entries?month=2026-12&kind=odres")).json();
+  assert.equal(odres.items.length, 0);
+  const own = list.items[0];
+  assert.equal((await callRoute(entriesRoute.DELETE, CREDIT_A, "DELETE", `/api/commercial/entries?id=${own.id}`)).status, 200);
+  assert.equal(byId(await sellersOf(ADMIN, "2027-01"), "emp-ana").realized.creditSalesCents, 100_001);
+});
+
+test("Meta Loja (comercial:stores): todos veem só o %; quem lança vê os valores do seu alcance", async () => {
+  const put = (user, body) => callRoute(storesRoute.PUT, user, "PUT", "/api/commercial/stores", body);
+  for (const user of [DASHBOARD, GOALS_A, CREDIT_A]) {
+    assert.equal((await put(user, { month: "2027-01", companyId: STORE_A, targetCents: 1, revenueCents: 1 })).status, 403);
+  }
+  assert.equal((await put(STORES_B, { month: "2027-01", companyId: STORE_A, targetCents: 1, revenueCents: 1 })).status, 404);
+  assert.equal((await put(STORES, { month: "2027-01", companyId: "c-nao-existe", targetCents: 1, revenueCents: 1 })).status, 404);
+  assert.equal((await put(STORES, { month: "2027-01", companyId: STORE_A, targetCents: -1, revenueCents: 1 })).status, 400);
+
+  assert.equal((await put(STORES, { month: "2027-01", companyId: STORE_A, targetCents: 50_000_000, revenueCents: 13_388_853 })).status, 200);
+  assert.equal((await put(STORES_B, { month: "2027-01", companyId: STORE_B, targetCents: 36_000_000, revenueCents: 7_450_377 })).status, 200);
+  // Atualizar não duplica.
+  assert.equal((await put(STORES, { month: "2027-01", companyId: STORE_A, targetCents: 50_000_000, revenueCents: 15_000_000 })).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM commercial_store_goals").get().n, 2);
+
+  // Painel visual: qualquer permissão do Comercial (até o vendedor), só %.
+  for (const user of [DASHBOARD, SELLER_ANA, GOALS_A]) {
+    const response = await callRoute(storesRoute.GET, user, "GET", "/api/commercial/stores?month=2027-01");
+    assert.equal(response.status, 200);
+    const data = await response.json();
+    assert.deepEqual(data.items.map((item) => [item.name, item.percent]), [["LOJA ALFA", 30], ["LOJA BETA", 20.6]]);
+    assert.equal(data.totalPercent, 26.1); // R$ 224.503,77 de R$ 860.000
+    assert.doesNotMatch(JSON.stringify(data), /Cents/);
+  }
+  assert.equal((await callRoute(storesRoute.GET, { id: "x", permissions: ["tasks:view"] }, "GET", "/api/commercial/stores?month=2027-01")).status, 403);
+
+  // Quem lança: valores das lojas do alcance; total em R$ só com todas.
+  const all = await (await callRoute(storesRoute.GET, STORES, "GET", "/api/commercial/stores?month=2027-01")).json();
+  assert.equal(all.canManage, true);
+  assert.deepEqual(all.rows.map((row) => [row.companyId, row.targetCents, row.revenueCents]), [
+    [STORE_A, 50_000_000, 15_000_000], [STORE_B, 36_000_000, 7_450_377],
+  ]);
+  assert.deepEqual(all.total, { targetCents: 86_000_000, revenueCents: 22_450_377 });
+  const onlyB = await (await callRoute(storesRoute.GET, STORES_B, "GET", "/api/commercial/stores?month=2027-01")).json();
+  assert.deepEqual(onlyB.rows.map((row) => row.companyId), [STORE_B]);
+  assert.equal("total" in onlyB, false);
+  // Mês sem metas: nada no painel.
+  const empty = await (await callRoute(storesRoute.GET, DASHBOARD, "GET", "/api/commercial/stores?month=2027-05")).json();
+  assert.deepEqual([empty.items, empty.totalPercent], [[], null]);
 });

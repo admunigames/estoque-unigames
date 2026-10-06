@@ -14,10 +14,13 @@
 //                        a META DE FATURAMENTO, usando o FATURADO TOTAL (não
 //                        cumulativa).
 //   Garantia estendida → % sobre o valor vendido em garantia, sempre.
-//   Crediário feito    → % sobre o valor vendido em crediário (coluna
-//                        opcional da planilha).
+//   Crediário feito    → % sobre o valor vendido em crediário = soma das
+//                        vendas lançadas em PAYJOY, CREFAZ, PARCELEX e ODRES.
+//   Venda P.A/Unigames → % própria sobre as vendas lançadas em VENDA P.A e
+//                        VENDA UNIGAMES (não somam no crediário nem mexem na
+//                        base do faturamento).
 //   NOVATO (marcado no Dashboard, só naquele mês) → SÓ a % do faturamento:
-//                        sem premiação, garantia e crediário.
+//                        sem premiação, garantia, crediário e venda P.A/Unigames.
 //
 //   Os percentuais e as faixas são por VIGÊNCIA (commercial_rules, aba Regras
 //   de Comissão): vale a regra com a maior vigência ≤ mês. Mês sem regra
@@ -30,10 +33,12 @@
 //   Sem notebook/PC vendido no mês o anexo não tem base → critério NÃO
 //   batido.
 //
-// A ÚNICA fonte dos números é a planilha "ACOMPANHAMENTO LOJAS_VENDEDORES",
-// aba "VENDEDORES <MÊS>" (sem digitação manual). Cada importação grava um
-// retrato do mês por vendedor em commercial_monthly; percentuais, critérios
-// e comissão são SEMPRE calculados ao vivo (nada disso é persistido).
+// Alimentação MANUAL e ao vivo, nas abas de atualização do Comercial
+// (decisão do usuário em 2026-10-06 — sem importar planilha/arquivo):
+// Vendedores (metas e realizado do mês em commercial_monthly), Crediários
+// (commercial_credit_entries) e Meta Loja (commercial_store_goals).
+// Percentuais, critérios e comissão são SEMPRE calculados ao vivo (nada
+// disso é persistido); cada mês fica guardado — virar o mês não apaga nada.
 
 export const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -47,6 +52,7 @@ export type CommercialRules = {
   warrantyRateBps: number;
   warrantyAttachTarget: number; // % de notebooks/PC vendidos com garantia
   creditRateBps: number;
+  partnerSaleRateBps: number; // VENDA P.A / VENDA UNIGAMES
 };
 
 export const DEFAULT_COMMERCIAL_RULES: CommercialRules = {
@@ -60,7 +66,24 @@ export const DEFAULT_COMMERCIAL_RULES: CommercialRules = {
   warrantyRateBps: 400,
   warrantyAttachTarget: 30,
   creditRateBps: 0,
+  partnerSaleRateBps: 0,
 };
+
+// Tabelas de lançamento (aba Crediários). As de crediário somam no
+// CREDIÁRIO do vendedor; as de venda P.A/Unigames pagam a % própria.
+export const ENTRY_KINDS = {
+  payjoy: { label: "PAYJOY", group: "credit" },
+  crefaz: { label: "CREFAZ", group: "credit" },
+  parcelex: { label: "PARCELEX", group: "credit" },
+  odres: { label: "ODRES", group: "credit" },
+  venda_pa: { label: "VENDA P.A", group: "partner" },
+  venda_unigames: { label: "VENDA UNIGAMES", group: "partner" },
+} as const;
+export type EntryKind = keyof typeof ENTRY_KINDS;
+
+export function isEntryKind(value: unknown): value is EntryKind {
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(ENTRY_KINDS, value);
+}
 
 /** Regra vigente no mês: a de maior vigência ≤ mês; sem nenhuma, a padrão. */
 export function resolveCommercialRules(rules: CommercialRules[], month: string): CommercialRules {
@@ -97,6 +120,7 @@ export function parseCommercialRules(input: Record<string, unknown>):
     ["revenueRateLowBps", "% DO FATURAMENTO SEM OS CRITÉRIOS"],
     ["warrantyRateBps", "% DA GARANTIA"],
     ["creditRateBps", "% DO CREDIÁRIO"],
+    ["partnerSaleRateBps", "% DA VENDA P.A / UNIGAMES"],
   ];
   const values: Record<string, number> = {};
   for (const [field, label] of rates) {
@@ -131,6 +155,7 @@ export function parseCommercialRules(input: Record<string, unknown>):
       warrantyRateBps: values.warrantyRateBps,
       warrantyAttachTarget,
       creditRateBps: values.creditRateBps,
+      partnerSaleRateBps: values.partnerSaleRateBps,
     },
     error: "",
   };
@@ -255,8 +280,12 @@ export type Realized = {
   realme: number;
   warrantyQty: number;
   notebookQty: number;
-  // Valor vendido em crediário (coluna opcional da planilha; 0 sem ela).
+  // Quantidade de vendas no mês (só acompanhamento).
+  salesQty: number;
+  // Soma das vendas lançadas em PAYJOY/CREFAZ/PARCELEX/ODRES no mês.
   creditSalesCents: number;
+  // Soma das vendas lançadas em VENDA P.A / VENDA UNIGAMES no mês.
+  partnerSalesCents: number;
 };
 
 export type MetricBlock = {
@@ -294,6 +323,7 @@ export type CommissionBreakdown = {
   revenuePremiumCents: number;
   warrantyCommissionCents: number;
   creditCommissionCents: number;
+  partnerCommissionCents: number;
   totalCents: number;
 };
 
@@ -381,6 +411,7 @@ export function computeSellerMetrics(
   }
   const warrantyCommissionCents = newcomer ? 0 : applyBps(realized.warrantyCents, rules.warrantyRateBps);
   const creditCommissionCents = newcomer ? 0 : applyBps(realized.creditSalesCents, rules.creditRateBps);
+  const partnerCommissionCents = newcomer ? 0 : applyBps(realized.partnerSalesCents, rules.partnerSaleRateBps);
 
   return {
     revenue,
@@ -400,246 +431,9 @@ export function computeSellerMetrics(
       revenuePremiumCents,
       warrantyCommissionCents,
       creditCommissionCents,
-      totalCents: revenueCommissionCents + revenuePremiumCents + warrantyCommissionCents + creditCommissionCents,
+      partnerCommissionCents,
+      totalCents:
+        revenueCommissionCents + revenuePremiumCents + warrantyCommissionCents + creditCommissionCents + partnerCommissionCents,
     },
   };
-}
-
-// ---------------------------------------------------------------------------
-// Leitura da aba "VENDEDORES <MÊS>"
-// ---------------------------------------------------------------------------
-
-export type SheetRow = Goal & Realized & {
-  rowNumber: number; // linha na planilha (1 = primeira)
-  storeLabel: string;
-  sellerLabel: string;
-  zone: string;
-};
-
-export type ParsedSheet = { rows: SheetRow[]; errors: string[] };
-
-type Field =
-  | "store" | "seller" | "zone"
-  | "targetRealme" | "realme"
-  | "targetItems" | "targetSuperItems" | "items"
-  | "targetWarranty" | "warranty" | "warrantyQty" | "notebookQty"
-  | "revenue" | "targetRevenue" | "creditSales";
-
-// Rótulos do cabeçalho (normalizados por normalizeText) → campo. "META"
-// sozinho é a meta de faturamento (coluna ao lado de FATURADO).
-const HEADER_FIELDS: Record<string, Field> = {
-  "LOJAS": "store",
-  "LOJA": "store",
-  "VENDEDOR": "seller",
-  "VENDEDORES": "seller",
-  "ZONA": "zone",
-  "META REALMES": "targetRealme",
-  "REALMES FEITO": "realme",
-  "META ITENS": "targetItems",
-  "SUPER ITENS": "targetSuperItems",
-  "ITENS FEITO": "items",
-  "META G A R": "targetWarranty",
-  "META GAR": "targetWarranty",
-  "GAR FEITO": "warranty",
-  "QT G A R": "warrantyQty",
-  "QT GAR": "warrantyQty",
-  "NOTEBOOK PC": "notebookQty",
-  "FATURADO": "revenue",
-  "META": "targetRevenue",
-  // Coluna opcional (planilhas antigas não têm → 0).
-  "CREDIARIO": "creditSales",
-  "CREDIARIOS": "creditSales",
-  "CREDIARIO FEITO": "creditSales",
-  "VALOR CREDIARIO": "creditSales",
-};
-
-const REQUIRED_FIELDS: Field[] = ["seller", "revenue", "targetRevenue"];
-const FIELD_LABELS: Partial<Record<Field, string>> = {
-  seller: "VENDEDOR",
-  revenue: "FATURADO",
-  targetRevenue: "META",
-};
-
-/**
- * Número de uma célula: aceita número puro (Excel) ou texto no formato
- * brasileiro ("R$ 1.234,56", "12,5"). Vazio = 0. null = inválido.
- */
-export function parseSheetNumber(value: unknown): number | null {
-  if (value === null || value === undefined) return 0;
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  let text = String(value).trim();
-  if (!text || text === "-") return 0;
-  text = text.replace(/R\$|\s/g, "");
-  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(text) || /^-?\d+,\d+$/.test(text)) {
-    text = text.replace(/\./g, "").replace(",", ".");
-  }
-  const number = Number(text);
-  return Number.isFinite(number) ? number : null;
-}
-
-/** Nome da aba sugerida para o mês ("VENDEDORES SETEMBRO", "VENDEDORES SETEMBRO 2025"...). */
-const MONTH_NAMES = [
-  "JANEIRO", "FEVEREIRO", "MARCO", "ABRIL", "MAIO", "JUNHO",
-  "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO",
-];
-
-export function suggestSheetName(sheetNames: string[], month: string): string {
-  const [year, monthNumber] = month.split("-");
-  const monthName = MONTH_NAMES[Number(monthNumber) - 1];
-  // "VENDEDORS AGOSTO." (erro de digitação na planilha real) também conta.
-  const sellerSheets = sheetNames.filter((name) => /^VENDEDO/.test(normalizeText(name)));
-  const ofMonth = sellerSheets.filter((name) => normalizeText(name).split(" ").includes(monthName));
-  return (
-    ofMonth.find((name) => normalizeText(name).includes(year)) ||
-    ofMonth.find((name) => !/\b20\d\d\b/.test(normalizeText(name))) ||
-    ofMonth[0] ||
-    ""
-  );
-}
-
-export function parseSellerSheet(cells: unknown[][]): ParsedSheet {
-  const errors: string[] = [];
-  let headerIndex = -1;
-  const columns = new Map<Field, number>();
-  for (let r = 0; r < Math.min(cells.length, 30) && headerIndex < 0; r++) {
-    const labels = (cells[r] || []).map(normalizeText);
-    if (labels.includes("VENDEDOR") && labels.includes("FATURADO")) {
-      headerIndex = r;
-      labels.forEach((label, c) => {
-        const field = HEADER_FIELDS[label];
-        if (field && !columns.has(field)) columns.set(field, c);
-      });
-    }
-  }
-  if (headerIndex < 0) {
-    return { rows: [], errors: ["NÃO ENCONTREI O CABEÇALHO (colunas VENDEDOR e FATURADO) NAS PRIMEIRAS 30 LINHAS DA ABA."] };
-  }
-  const missing = REQUIRED_FIELDS.filter((field) => !columns.has(field));
-  if (missing.length) {
-    return { rows: [], errors: [`FALTAM AS COLUNAS: ${missing.map((field) => FIELD_LABELS[field]).join(", ")}.`] };
-  }
-
-  const cell = (row: unknown[], field: Field) => {
-    const index = columns.get(field);
-    return index === undefined ? undefined : row[index];
-  };
-  const rows: SheetRow[] = [];
-  let currentStore = "";
-  for (let r = headerIndex + 1; r < cells.length; r++) {
-    const row = cells[r] || [];
-    const storeRaw = String(cell(row, "store") ?? "").trim();
-    // LOJAS vem mesclada (só a 1ª linha do grupo tem valor) — herda pra baixo.
-    if (storeRaw) currentStore = storeRaw;
-    const seller = String(cell(row, "seller") ?? "").trim();
-    if (!seller) continue;
-    if (/^(TOTAL|SUBTOTAL)\b/.test(normalizeText(seller))) continue;
-
-    const numbers: Partial<Record<Field, number>> = {};
-    let invalid = "";
-    for (const field of [
-      "targetRealme", "realme", "targetItems", "targetSuperItems", "items",
-      "targetWarranty", "warranty", "warrantyQty", "notebookQty", "revenue", "targetRevenue", "creditSales",
-    ] as Field[]) {
-      const value = parseSheetNumber(cell(row, field));
-      if (value === null || value < 0) {
-        invalid = `LINHA ${r + 1} (${seller}): VALOR INVÁLIDO NA COLUNA ${field}.`;
-        break;
-      }
-      numbers[field] = value;
-    }
-    if (invalid) {
-      errors.push(invalid);
-      continue;
-    }
-    const n = (field: Field) => numbers[field] ?? 0;
-    rows.push({
-      rowNumber: r + 1,
-      storeLabel: currentStore,
-      sellerLabel: seller,
-      zone: normalizeText(cell(row, "zone")),
-      targetRevenueCents: Math.round(n("targetRevenue") * 100),
-      targetItems: Math.round(n("targetItems")),
-      targetSuperItems: Math.round(n("targetSuperItems")),
-      targetWarrantyCents: Math.round(n("targetWarranty") * 100),
-      targetRealme: Math.round(n("targetRealme")),
-      revenueCents: Math.round(n("revenue") * 100),
-      items: Math.round(n("items")),
-      warrantyCents: Math.round(n("warranty") * 100),
-      realme: Math.round(n("realme")),
-      warrantyQty: Math.round(n("warrantyQty")),
-      notebookQty: Math.round(n("notebookQty")),
-      creditSalesCents: Math.round(n("creditSales") * 100),
-    });
-  }
-  if (!rows.length && !errors.length) errors.push("NENHUM VENDEDOR ENCONTRADO ABAIXO DO CABEÇALHO.");
-  return { rows, errors };
-}
-
-// ---------------------------------------------------------------------------
-// Reconhecimento do vendedor da planilha no cadastro do RH
-// ---------------------------------------------------------------------------
-
-export type EmployeeCandidate = {
-  id: string;
-  fullName: string;
-  companyName: string;
-  isSeller: boolean;
-};
-
-/** Chave do vínculo apelido → funcionário (loja + nome, normalizados). */
-export function aliasKey(storeLabel: string, sellerLabel: string): string {
-  return `${normalizeText(storeLabel)}|${normalizeText(sellerLabel)}`;
-}
-
-/** "RIO MAR" x "RIOMAR", "GUARARAPES" x "GUARA", "QUIOSQUE" x "P.A QUIOSQUE". */
-export function storeMatches(storeLabel: string, companyName: string): boolean {
-  const a = normalizeText(storeLabel).replace(/ /g, "");
-  const b = normalizeText(companyName).replace(/ /g, "");
-  if (!a || !b) return false;
-  return a.includes(b) || b.includes(a);
-}
-
-/**
- * "OTAVIO" → "Otávio Souza"; "VITOR V." → "Vitor Vasconcelos"; "TATIANY
- * LUIZA" → "Tatiany Luiza Lima". O 1º nome precisa ser igual e cada parte
- * seguinte do apelido precisa ser início de algum sobrenome, na ordem.
- */
-export function nameMatches(sellerLabel: string, fullName: string): boolean {
-  const alias = normalizeText(sellerLabel).split(" ").filter(Boolean);
-  const name = normalizeText(fullName).split(" ").filter(Boolean);
-  if (!alias.length || !name.length || alias[0] !== name[0]) return false;
-  let position = 1;
-  for (const part of alias.slice(1)) {
-    while (position < name.length && !name[position].startsWith(part)) position++;
-    if (position >= name.length) return false;
-    position++;
-  }
-  return true;
-}
-
-/**
- * Funcionário único que corresponde à linha, ou null (nenhum ou ambíguo).
- * Critérios em ordem: vínculo salvo → nome + loja + cargo vendedor → nome +
- * loja → nome + cargo vendedor → só nome. Em cada nível, precisa haver
- * exatamente um candidato.
- */
-export function matchEmployee(
-  row: Pick<SheetRow, "storeLabel" | "sellerLabel">,
-  employees: EmployeeCandidate[],
-  aliases: Map<string, string>,
-): { employeeId: string; by: "alias" | "name" } | null {
-  const saved = aliases.get(aliasKey(row.storeLabel, row.sellerLabel));
-  if (saved && employees.some((employee) => employee.id === saved)) return { employeeId: saved, by: "alias" };
-  const byName = employees.filter((employee) => nameMatches(row.sellerLabel, employee.fullName));
-  const byStore = byName.filter((employee) => storeMatches(row.storeLabel, employee.companyName));
-  for (const list of [
-    byStore.filter((employee) => employee.isSeller),
-    byStore,
-    byName.filter((employee) => employee.isSeller),
-    byName,
-  ]) {
-    if (list.length === 1) return { employeeId: list[0].id, by: "name" };
-    if (list.length > 1) return null;
-  }
-  return null;
 }

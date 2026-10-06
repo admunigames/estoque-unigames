@@ -6,7 +6,7 @@ import test from "node:test";
 // Permissões do Comercial > Acompanhamento Metas, uma por aba:
 //   comercial:dashboard  → Dashboard e Ranking (sem R$ de comissão)
 //   comercial:commission → Comissão
-//   comercial:goals      → Cadastro de Metas (importação da planilha)
+//   comercial:goals      → Vendedores (metas e realizado, lançados à mão)
 // Carrega as rotas reais de /api/commercial trocando só o getD1() por um
 // SQLite em memória (exposto via globalThis.__commercialTestEnv). A expansão
 // das chaves antigas (comercial:view/manage) e o login só-Comercial são do
@@ -38,10 +38,9 @@ function createFakeD1() {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(`
     CREATE TABLE shared_state (state_key text PRIMARY KEY, value_json text NOT NULL);
-    CREATE TABLE hr_employees (id text PRIMARY KEY, full_name text NOT NULL, company_id text, user_id text);
-    CREATE TABLE commercial_imports (
-      id text PRIMARY KEY, month text NOT NULL, file_name text, sheet_name text, rows_imported integer,
-      rows_ignored integer, created_by_name text, created_at text
+    CREATE TABLE hr_employees (
+      id text PRIMARY KEY, full_name text NOT NULL, company_id text, user_id text,
+      role_title text DEFAULT 'Vendedor', company_name text DEFAULT '', status text DEFAULT 'active'
     );
     CREATE TABLE commercial_monthly (
       employee_id text NOT NULL, employee_name text NOT NULL, company_id text NOT NULL, company_name text,
@@ -49,13 +48,14 @@ function createFakeD1() {
       target_revenue_cents integer, target_items integer, target_super_items integer,
       target_warranty_cents integer, target_realme integer, revenue_cents integer, items integer,
       warranty_cents integer, realme integer, warranty_qty integer, notebook_qty integer,
-      updated_at text, updated_by_name text, credit_sales_cents integer DEFAULT 0
+      updated_at text, updated_by_name text, credit_sales_cents integer DEFAULT 0, sales_qty integer DEFAULT 0
     );
     CREATE TABLE commercial_rules (
       id text PRIMARY KEY, valid_from text, revenue_rate_high_bps integer, revenue_rate_low_bps integer,
       premium_tiers_json text, warranty_rate_bps integer, warranty_attach_target integer, credit_rate_bps integer,
-      notes text, updated_by_name text, updated_at text
+      notes text, updated_by_name text, updated_at text, partner_sale_rate_bps integer DEFAULT 0
     );
+    CREATE TABLE commercial_credit_entries (id text PRIMARY KEY, month text, kind text, employee_id text, amount_cents integer);
     CREATE TABLE commercial_newcomers (id text PRIMARY KEY, employee_id text, month text);
   `);
   sqlite.prepare("INSERT INTO shared_state VALUES ('companies_list', ?)").run(
@@ -67,10 +67,10 @@ function createFakeD1() {
     ["emp-3", "CARLA VENDEDORA", "loja-b", null],
   ];
   for (const [id, name, companyId, userId] of sellers) {
-    sqlite.prepare("INSERT INTO hr_employees VALUES (?, ?, ?, ?)").run(id, name, companyId, userId);
+    sqlite.prepare("INSERT INTO hr_employees (id, full_name, company_id, user_id) VALUES (?, ?, ?, ?)").run(id, name, companyId, userId);
     sqlite.prepare(
       `INSERT INTO commercial_monthly VALUES (?, ?, ?, ?, ?, ?, 'NORTE', ?,
-        10000000, 100, 120, 500000, 10, 11000000, 100, 400000, 10, 3, 10, '2026-09-20T12:00:00Z', 'GESTOR', 0)`,
+        10000000, 100, 120, 500000, 10, 11000000, 100, 400000, 10, 3, 10, '2026-09-20T12:00:00Z', 'GESTOR', 0, 0)`,
     ).run(id, name, companyId, companyId.toUpperCase(), name, companyId.toUpperCase(), MONTH);
   }
   return {
@@ -108,7 +108,7 @@ globalThis.__commercialTestEnv = { DB: createFakeD1() };
 
 const overview = await import("../app/api/commercial/overview/route.ts");
 const ranking = await import("../app/api/commercial/ranking/route.ts");
-const importRoute = await import("../app/api/commercial/import/route.ts");
+const sellersRoute = await import("../app/api/commercial/sellers/route.ts");
 
 const BASE = "http://127.0.0.1/api/commercial";
 
@@ -124,9 +124,9 @@ function headersFor(user) {
 }
 
 const get = (route, user, path) => route.GET(new Request(`${BASE}${path}`, { headers: headersFor(user) }));
-const postImport = (user, body) =>
-  importRoute.POST(new Request(`${BASE}/import`, {
-    method: "POST",
+const putSeller = (user, body) =>
+  sellersRoute.PUT(new Request(`${BASE}/sellers`, {
+    method: "PUT",
     headers: { ...headersFor(user), "content-type": "application/json" },
     body: JSON.stringify(body),
   }));
@@ -137,7 +137,7 @@ const GOALS = { id: "u-goals", permissions: ["comercial:goals"] };
 const SELLER = { id: "user-ana", companyId: "loja-a", permissions: ["comercial:dashboard", "comercial:commission"] };
 const ADMIN = { id: "admin", role: "admin", permissions: [] };
 
-test("só comercial:dashboard: overview sem comissão, ranking ok, Cadastro de Metas e importação 403", async () => {
+test("só comercial:dashboard: overview sem comissão, ranking ok, aba Vendedores 403", async () => {
   const response = await get(overview, DASHBOARD, `/overview?month=${MONTH}`);
   assert.equal(response.status, 200);
   const data = await response.json();
@@ -154,9 +154,9 @@ test("só comercial:dashboard: overview sem comissão, ranking ok, Cadastro de M
   assert.equal((await get(ranking, DASHBOARD, `/ranking?month=${MONTH}`)).status, 200);
   const cadastro = await get(overview, DASHBOARD, `/overview?month=${MONTH}&for=cadastro`);
   assert.equal(cadastro.status, 403);
-  assert.equal((await cadastro.json()).error, "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR METAS.");
-  assert.equal((await get(importRoute, DASHBOARD, `/import?month=${MONTH}`)).status, 403);
-  assert.equal((await postImport(DASHBOARD, { month: MONTH })).status, 403);
+  assert.equal((await cadastro.json()).error, "VOCÊ NÃO TEM PERMISSÃO PARA ATUALIZAR OS VENDEDORES.");
+  assert.equal((await get(sellersRoute, DASHBOARD, `/sellers?month=${MONTH}`)).status, 403);
+  assert.equal((await putSeller(DASHBOARD, { month: MONTH })).status, 403);
 });
 
 test("só comercial:commission: overview com a comissão, ranking 403", async () => {
@@ -172,18 +172,18 @@ test("só comercial:commission: overview com a comissão, ranking 403", async ()
   assert.equal((await get(overview, COMMISSION, `/overview?month=${MONTH}&for=cadastro`)).status, 403);
 });
 
-test("só comercial:goals: Cadastro de Metas e importação liberados, Dashboard/Comissão/Ranking 403", async () => {
+test("só comercial:goals: aba Vendedores liberada, Dashboard/Comissão/Ranking 403", async () => {
   const cadastro = await get(overview, GOALS, `/overview?month=${MONTH}&for=cadastro`);
   assert.equal(cadastro.status, 200);
   const data = await cadastro.json();
   assert.equal(data.sellers.length, 3);
   assert.equal(data.canGoals, true);
-  // Sem comercial:commission a comissão também não sai pelo Cadastro de Metas.
+  // Sem comercial:commission a comissão também não sai pela aba Vendedores.
   for (const seller of data.sellers) assert.equal("totalCents" in seller.metrics.commission, false);
 
-  assert.equal((await get(importRoute, GOALS, `/import?month=${MONTH}`)).status, 200);
+  assert.equal((await get(sellersRoute, GOALS, `/sellers?month=${MONTH}`)).status, 200);
   // Passa da guarda de permissão (cai na validação do mês).
-  const posted = await postImport(GOALS, { month: "x" });
+  const posted = await putSeller(GOALS, { month: "x" });
   assert.equal(posted.status, 400);
   assert.equal((await posted.json()).error, "MÊS INVÁLIDO.");
 
@@ -212,7 +212,7 @@ test("sem nenhuma permissão do Comercial: tudo 403; admin vê tudo", async () =
   const none = { id: "u-none", permissions: ["tasks:view"] };
   assert.equal((await get(overview, none, `/overview?month=${MONTH}`)).status, 403);
   assert.equal((await get(ranking, none, `/ranking?month=${MONTH}`)).status, 403);
-  assert.equal((await get(importRoute, none, `/import?month=${MONTH}`)).status, 403);
+  assert.equal((await get(sellersRoute, none, `/sellers?month=${MONTH}`)).status, 403);
 
   const data = await (await get(overview, ADMIN, `/overview?month=${MONTH}`)).json();
   assert.deepEqual([data.canDashboard, data.canCommission, data.canGoals], [true, true, true]);

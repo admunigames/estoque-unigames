@@ -3,7 +3,9 @@ import { canSeeAllStores, hasCompany, type ScopeActor } from "../../lib/access-s
 import { todayInTimezone } from "../../lib/finance-status";
 import {
   DEFAULT_COMMERCIAL_RULES,
+  ENTRY_KINDS,
   computeSellerMetrics,
+  isEntryKind,
   monthClock,
   resolveCommercialRules,
   type CommercialRules,
@@ -18,8 +20,11 @@ import {
 // Financeiro e do RH Financeiro:
 //   comercial:dashboard  → abas Dashboard e Ranking (sem R$ de comissão)
 //   comercial:commission → aba Comissão (valores em R$ da comissão)
-//   comercial:goals      → aba Cadastro de Metas (importação da planilha) e
+//   comercial:goals      → aba Vendedores (metas e realizado do mês) e
 //                          marcar NOVATO no Dashboard
+//   comercial:credit     → aba Crediários (PAYJOY, CREFAZ, PARCELEX, ODRES,
+//                          VENDA P.A, VENDA UNIGAMES)
+//   comercial:stores     → aba Meta Loja (meta e feito de cada loja)
 //   comercial:rules      → aba Regras de Comissão (percentuais e premiação
 //                          por vigência) e marcar NOVATO no Dashboard
 // As antigas comercial:view/manage são expandidas na leitura pelo Worker
@@ -79,6 +84,7 @@ export function identity(request: Request): Identity {
 
 const COMMERCIAL_PERMISSIONS = [
   "comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",
+  "comercial:credit", "comercial:stores",
 ] as const;
 
 function hasCommercialPermission(actor: Identity, permission: (typeof COMMERCIAL_PERMISSIONS)[number]) {
@@ -99,6 +105,14 @@ export function canManageCommercialGoals(actor: Identity) {
 
 export function canManageCommercialRules(actor: Identity) {
   return hasCommercialPermission(actor, "comercial:rules");
+}
+
+export function canManageCommercialCredit(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:credit");
+}
+
+export function canManageCommercialStores(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:stores");
 }
 
 export function canMarkCommercialNewcomer(actor: Identity) {
@@ -176,13 +190,11 @@ export async function loadCompanyNames(database: Database): Promise<Map<string, 
   return names;
 }
 
-export type MonthlyRow = Goal & Realized & {
+export type MonthlyRow = Goal & Omit<Realized, "creditSalesCents" | "partnerSalesCents"> & {
   employeeId: string;
   employeeName: string;
   companyId: string;
   companyName: string;
-  sheetSellerName: string;
-  sheetStoreName: string;
   zone: string;
   updatedAt: string;
   updatedByName: string;
@@ -194,7 +206,6 @@ export type Seller = {
   companyId: string;
   companyName: string;
   zone: string;
-  sheetSellerName: string;
   goal: Goal;
   realized: Realized;
   updatedAt: string;
@@ -212,6 +223,7 @@ export type RulesRow = {
   warrantyRateBps: number;
   warrantyAttachTarget: number;
   creditRateBps: number;
+  partnerSaleRateBps: number;
   notes: string;
   updatedByName: string;
   updatedAt: string;
@@ -236,6 +248,7 @@ export function rulesFromRow(row: RulesRow): CommercialRules & { id: string; not
     warrantyRateBps: Number(row.warrantyRateBps) || 0,
     warrantyAttachTarget: Number(row.warrantyAttachTarget) || 0,
     creditRateBps: Number(row.creditRateBps) || 0,
+    partnerSaleRateBps: Number(row.partnerSaleRateBps) || 0,
     notes: row.notes || "",
     updatedByName: row.updatedByName || "",
     updatedAt: row.updatedAt || "",
@@ -249,7 +262,7 @@ export async function loadRules(database: Database) {
       `SELECT id, valid_from AS validFrom, revenue_rate_high_bps AS revenueRateHighBps,
               revenue_rate_low_bps AS revenueRateLowBps, premium_tiers_json AS premiumTiersJson,
               warranty_rate_bps AS warrantyRateBps, warranty_attach_target AS warrantyAttachTarget,
-              credit_rate_bps AS creditRateBps, notes, updated_by_name AS updatedByName, updated_at AS updatedAt
+              credit_rate_bps AS creditRateBps, partner_sale_rate_bps AS partnerSaleRateBps, notes, updated_by_name AS updatedByName, updated_at AS updatedAt
        FROM commercial_rules ORDER BY valid_from DESC`,
     )
     .all<RulesRow>();
@@ -258,13 +271,12 @@ export async function loadRules(database: Database) {
 
 const MONTHLY_COLUMNS = `
   m.employee_id AS employeeId, m.employee_name AS employeeName, m.company_id AS companyId,
-  m.company_name AS companyName, m.sheet_seller_name AS sheetSellerName,
-  m.sheet_store_name AS sheetStoreName, m.zone,
+  m.company_name AS companyName, m.zone,
   m.target_revenue_cents AS targetRevenueCents, m.target_items AS targetItems,
   m.target_super_items AS targetSuperItems, m.target_warranty_cents AS targetWarrantyCents,
   m.target_realme AS targetRealme, m.revenue_cents AS revenueCents, m.items,
   m.warranty_cents AS warrantyCents, m.realme, m.warranty_qty AS warrantyQty,
-  m.notebook_qty AS notebookQty, m.credit_sales_cents AS creditSalesCents, m.updated_at AS updatedAt, m.updated_by_name AS updatedByName,
+  m.notebook_qty AS notebookQty, m.sales_qty AS salesQty, m.updated_at AS updatedAt, m.updated_by_name AS updatedByName,
   e.full_name AS currentName
 `;
 
@@ -279,7 +291,7 @@ export async function loadSellers(
   database: Database,
   month: string,
 ): Promise<{ sellers: Seller[]; clock: MonthClock; rules: CommercialRules }> {
-  const [result, companyNames, allRules, newcomersResult] = await Promise.all([
+  const [result, companyNames, allRules, newcomersResult, entriesResult] = await Promise.all([
     database
       .prepare(
         `SELECT ${MONTHLY_COLUMNS}, e.company_id AS currentCompanyId
@@ -294,10 +306,25 @@ export async function loadSellers(
       .prepare("SELECT employee_id AS employeeId FROM commercial_newcomers WHERE month=?1")
       .bind(month)
       .all<{ employeeId: string }>(),
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, kind, SUM(amount_cents) AS total
+         FROM commercial_credit_entries WHERE month=?1 GROUP BY employee_id, kind`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; kind: string; total: number }>(),
   ]);
   const clock = monthClock(month, todayInTimezone());
   const rules = resolveCommercialRules(allRules, month);
   const newcomers = new Set((newcomersResult.results ?? []).map((row) => row.employeeId));
+  // Crediário (PAYJOY/CREFAZ/PARCELEX/ODRES) e venda P.A/Unigames do mês, por vendedor.
+  const entrySums = new Map<string, { credit: number; partner: number }>();
+  for (const row of entriesResult.results ?? []) {
+    if (!isEntryKind(row.kind)) continue;
+    const sums = entrySums.get(row.employeeId) ?? { credit: 0, partner: 0 };
+    sums[ENTRY_KINDS[row.kind].group] += n(row.total);
+    entrySums.set(row.employeeId, sums);
+  }
   const sellers = (result.results ?? []).map((row): Seller => {
     const goal: Goal = {
       targetRevenueCents: n(row.targetRevenueCents),
@@ -313,7 +340,9 @@ export async function loadSellers(
       realme: n(row.realme),
       warrantyQty: n(row.warrantyQty),
       notebookQty: n(row.notebookQty),
-      creditSalesCents: n(row.creditSalesCents),
+      salesQty: n(row.salesQty),
+      creditSalesCents: entrySums.get(row.employeeId)?.credit ?? 0,
+      partnerSalesCents: entrySums.get(row.employeeId)?.partner ?? 0,
     };
     const newcomer = newcomers.has(row.employeeId);
     const companyId = row.currentCompanyId || row.companyId;
@@ -323,7 +352,6 @@ export async function loadSellers(
       companyId,
       companyName: companyNames.get(companyId) || row.companyName,
       zone: row.zone,
-      sheetSellerName: row.sheetSellerName,
       goal,
       realized,
       updatedAt: row.updatedAt,
@@ -344,4 +372,38 @@ export async function linkedEmployeeIds(database: Database, userId: string): Pro
     .bind(userId)
     .all<{ id: string }>();
   return (result.results ?? []).map((row) => row.id);
+}
+
+export type ScopedEmployee = { id: string; fullName: string; companyId: string; companyName: string };
+
+/**
+ * Funcionário do RH dentro do alcance de loja de quem lança (null = não
+ * existe ou é de outra loja — as rotas respondem o mesmo 404).
+ */
+export async function employeeInScope(
+  database: Database,
+  scope: { allStores: boolean; companyId: string },
+  employeeId: string,
+): Promise<ScopedEmployee | null> {
+  if (!employeeId) return null;
+  const [employee, companyNames] = await Promise.all([
+    database
+      .prepare("SELECT id, full_name AS fullName, company_id AS companyId, company_name AS companyName FROM hr_employees WHERE id=?1")
+      .bind(employeeId)
+      .first<ScopedEmployee>(),
+    loadCompanyNames(database),
+  ]);
+  if (!employee || (!scope.allStores && employee.companyId !== scope.companyId)) return null;
+  return { ...employee, companyName: companyNames.get(employee.companyId) || employee.companyName };
+}
+
+/** Inteiro ≥ 0 (centavos ou quantidade) — null quando inválido. */
+export function nonNegativeInt(value: unknown, max = 2_000_000_000): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= max ? value : null;
+}
+
+/** "2026-10" → "2026-09". */
+export function previousMonth(month: string): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return monthNumber === 1 ? `${year - 1}-12` : `${year}-${String(monthNumber - 1).padStart(2, "0")}`;
 }

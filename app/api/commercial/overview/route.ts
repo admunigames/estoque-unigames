@@ -6,6 +6,7 @@ import {
   NO_COMPANY_ERROR,
 } from "../../../lib/access-scope";
 import {
+  canManageCommercialCredit,
   canManageCommercialGoals,
   canManageCommercialRules,
   canMarkCommercialNewcomer,
@@ -28,8 +29,9 @@ import {
 //     → SÓ o próprio vendedor (ownOnly), independente da loja/permissão;
 //   - conta sem vínculo (gestor/admin/diretoria) → escopo por loja de
 //     sempre (commercialScope): a própria loja, ou todas.
-// `?for=cadastro` (aba Cadastro de Metas, só comercial:goals) ignora o
-// "só o próprio": quem cadastra metas precisa ver os vendedores da loja.
+// `?for=cadastro` (abas de atualização Vendedores e Crediários —
+// comercial:goals ou comercial:credit) ignora o "só o próprio": quem lança
+// precisa ver os vendedores da loja.
 // Sem comercial:commission, os valores em R$ da comissão são REMOVIDOS da
 // resposta (não basta esconder no front); ficam só allCriteriaMet,
 // revenueRateBps e newcomer, usados pelo selo do Dashboard — que é igual
@@ -48,7 +50,9 @@ export async function GET(request: Request) {
   const canCommission = canViewCommercialCommission(actor);
   const canGoals = canManageCommercialGoals(actor);
   if (forCadastro) {
-    if (!canGoals) return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR METAS." }, 403);
+    if (!canGoals && !canManageCommercialCredit(actor)) {
+      return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ATUALIZAR OS VENDEDORES." }, 403);
+    }
   } else if (!canDashboard && !canCommission) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O COMERCIAL." }, 403);
   }

@@ -131,6 +131,13 @@ export async function liveInvalidationForRequest(
     return { module: "loans", audience: { kind: "all" } };
   }
 
+  if (path.startsWith("/api/commercial/")) {
+    // Comercial ao vivo: qualquer lançamento (vendedores, crediários, meta
+    // loja, novato, regras) avisa todo mundo. O aviso não leva dados; cada
+    // sessão recarrega pela API, que aplica o escopo (loja / só o próprio).
+    return { module: "commercial", audience: { kind: "all" } };
+  }
+
   if (path === "/api/shared-state") {
     const body = request.method === "PUT" ? await requestBody(request) : {};
     const key = request.method === "DELETE"

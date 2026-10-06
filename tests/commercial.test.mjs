@@ -3,22 +3,17 @@ import test from "node:test";
 
 const {
   DEFAULT_COMMERCIAL_RULES,
-  aliasKey,
+  ENTRY_KINDS,
   computeSellerMetrics,
+  isEntryKind,
   isSellerRole,
-  matchEmployee,
   monthClock,
-  nameMatches,
   nextTarget,
   parseCommercialRules,
-  parseSellerSheet,
-  parseSheetNumber,
   progressPercent,
   progressTier,
   resolveCommercialRules,
   revenueTargets,
-  storeMatches,
-  suggestSheetName,
 } = await import("../app/lib/commercial.ts");
 
 const clock = monthClock("2026-09", "2026-09-21");
@@ -30,24 +25,8 @@ const goal = {
   targetRealme: 10,
 };
 function realized(values = {}) {
-  return { revenueCents: 0, items: 0, warrantyCents: 0, realme: 0, warrantyQty: 0, notebookQty: 0, creditSalesCents: 0, ...values };
+  return { revenueCents: 0, items: 0, warrantyCents: 0, realme: 0, warrantyQty: 0, notebookQty: 0, salesQty: 0, creditSalesCents: 0, partnerSalesCents: 0, ...values };
 }
-
-// Mesma estrutura da aba "VENDEDORES SETEMBRO" da planilha real (dados fictícios).
-const HEADER = [
-  "LOJAS", "VENDEDOR", "META REALMES", "REALMES FEITO", "META ITENS", "SUPER ITENS", "ITENS FEITO",
-  "META G.A.R", "GAR FEITO", "VALOR GAR", "QT - Vendas", "QT G.A.R", "NOTEBOOK/PC", "PERCENTUAL",
-  "FATURADO", "META", "PERCENTUAL", "ZONA",
-];
-const SHEET = [
-  ["", "", " "],
-  HEADER,
-  ["LOJA ALFA", "JOAO", 13, 19, 290, 340, 379, 4000, 3898, 0, 220, 4, 11, 0.36, 192382.23, 170000, 1.13, "SUL"],
-  ["", "MARIA C.", 13, 21, 290, 340, 338, 4000, 7638, 0, 181, 9, 28, 0.32, 254831.81, 170000, 1.49, "SUL"],
-  ["LOJA BETA", "PEDRO", 14, 9, 310, 350, 273, 2000, 0, 0, 162, 0, 5, 0, "98.711,40", "R$ 140.000,00", 0.7, "NORTE"],
-  ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
-  ["", "TOTAL", 40, 49, 890, 1030, 990, 10000, 11536, 0, 563, 13, 44, 0, 545925.44, 480000, 1.1, ""],
-];
 
 test("isSellerRole: comparação normalizada do CARGO (texto livre)", () => {
   assert.equal(isSellerRole("Vendedor"), true);
@@ -55,85 +34,6 @@ test("isSellerRole: comparação normalizada do CARGO (texto livre)", () => {
   assert.equal(isSellerRole("vendedora"), true);
   assert.equal(isSellerRole(" Vendédora "), true);
   assert.equal(isSellerRole("Gerente"), false);
-});
-
-test("parseSheetNumber: número do Excel ou texto no formato brasileiro", () => {
-  assert.equal(parseSheetNumber(192382.23), 192382.23);
-  assert.equal(parseSheetNumber("98.711,40"), 98711.4);
-  assert.equal(parseSheetNumber("R$ 140.000,00"), 140000);
-  assert.equal(parseSheetNumber("12,5"), 12.5);
-  assert.equal(parseSheetNumber(""), 0);
-  assert.equal(parseSheetNumber(null), 0);
-  assert.equal(parseSheetNumber("abc"), null);
-});
-
-test("parseSellerSheet: lê a aba VENDEDORES com loja mesclada, ignora TOTAL e linhas vazias", () => {
-  const { rows, errors } = parseSellerSheet(SHEET);
-  assert.deepEqual(errors, []);
-  assert.equal(rows.length, 3);
-  const [joao, maria, pedro] = rows;
-  assert.deepEqual(joao, {
-    rowNumber: 3, storeLabel: "LOJA ALFA", sellerLabel: "JOAO", zone: "SUL",
-    targetRevenueCents: 17_000_000, targetItems: 290, targetSuperItems: 340, targetWarrantyCents: 400_000,
-    targetRealme: 13, revenueCents: 19_238_223, items: 379, warrantyCents: 389_800, realme: 19,
-    warrantyQty: 4, notebookQty: 11, creditSalesCents: 0,
-  });
-  assert.equal(maria.storeLabel, "LOJA ALFA"); // herdada da célula mesclada
-  assert.equal(pedro.storeLabel, "LOJA BETA");
-  assert.equal(pedro.revenueCents, 9_871_140);
-  assert.equal(pedro.targetRevenueCents, 14_000_000);
-  assert.equal(pedro.zone, "NORTE");
-});
-
-test("parseSellerSheet: aponta cabeçalho ausente, coluna obrigatória faltando e valor inválido", () => {
-  assert.match(parseSellerSheet([["A", "B"], [1, 2]]).errors[0], /CABEÇALHO/);
-  assert.match(parseSellerSheet([["LOJAS", "VENDEDOR", "FATURADO"], ["X", "Y", 1]]).errors[0], /FALTAM AS COLUNAS: META/);
-  const bad = parseSellerSheet([HEADER, ["X", "ANA", 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, "muito", 100, 0, "SUL"]]);
-  assert.equal(bad.rows.length, 0);
-  assert.match(bad.errors[0], /LINHA 2 \(ANA\)/);
-});
-
-test("suggestSheetName: escolhe a aba VENDEDORES do mês (inclusive com erro de digitação)", () => {
-  const names = ["LOJAS SETEMBRO", "VENDEDORES SETEMBRO 2025", "VENDEDORES SETEMBRO", "VENDEDORS AGOSTO.", "SITE SETEMBRO"];
-  assert.equal(suggestSheetName(names, "2026-09"), "VENDEDORES SETEMBRO");
-  assert.equal(suggestSheetName(names, "2025-09"), "VENDEDORES SETEMBRO 2025");
-  assert.equal(suggestSheetName(names, "2026-08"), "VENDEDORS AGOSTO.");
-  assert.equal(suggestSheetName(names, "2026-10"), "");
-});
-
-test("reconhecimento do vendedor: apelido x nome completo e loja", () => {
-  assert.equal(nameMatches("OTAVIO", "Otávio Souza Lima"), true);
-  assert.equal(nameMatches("VITOR V.", "Vitor Vasconcelos"), true);
-  assert.equal(nameMatches("VITOR V.", "Vitor Almeida"), false);
-  assert.equal(nameMatches("TATIANY LUIZA", "Tatiany Luiza Ramos"), true);
-  assert.equal(nameMatches("JOÃO VITOR", "João Pedro Vitor"), true);
-  assert.equal(nameMatches("ANA", "Mariana Costa"), false);
-  assert.equal(storeMatches("RIO MAR", "RIOMAR"), true);
-  assert.equal(storeMatches("GUARARAPES", "GUARA"), true);
-  assert.equal(storeMatches("QUIOSQUE", "P.A QUIOSQUE"), true);
-  assert.equal(storeMatches("PATTEO", "RECIFE"), false);
-});
-
-test("matchEmployee: vínculo salvo > nome+loja > nome; ambíguo não casa", () => {
-  const employees = [
-    { id: "e1", fullName: "João Silva", companyName: "LOJA ALFA", isSeller: true },
-    { id: "e2", fullName: "João Souza", companyName: "LOJA BETA", isSeller: true },
-    { id: "e3", fullName: "Pedro Lima", companyName: "LOJA BETA", isSeller: true },
-    { id: "e4", fullName: "Pedro Alves", companyName: "LOJA BETA", isSeller: false },
-    { id: "e5", fullName: "Carla Dias", companyName: "LOJA ALFA", isSeller: true },
-    { id: "e6", fullName: "Carla Nunes", companyName: "LOJA ALFA", isSeller: true },
-  ];
-  const none = new Map();
-  assert.deepEqual(matchEmployee({ storeLabel: "LOJA ALFA", sellerLabel: "JOAO" }, employees, none), { employeeId: "e1", by: "name" });
-  // Dois Pedros na loja, só um é vendedor → o vendedor.
-  assert.deepEqual(matchEmployee({ storeLabel: "LOJA BETA", sellerLabel: "PEDRO" }, employees, none), { employeeId: "e3", by: "name" });
-  // Duas Carlas vendedoras na mesma loja → ambíguo.
-  assert.equal(matchEmployee({ storeLabel: "LOJA ALFA", sellerLabel: "CARLA" }, employees, none), null);
-  // Vínculo salvo resolve a ambiguidade.
-  const saved = new Map([[aliasKey("LOJA ALFA", "CARLA"), "e6"]]);
-  assert.deepEqual(matchEmployee({ storeLabel: "loja alfa", sellerLabel: "Carla" }, employees, saved), { employeeId: "e6", by: "alias" });
-  // Ninguém com esse nome.
-  assert.equal(matchEmployee({ storeLabel: "LOJA ALFA", sellerLabel: "ZECA" }, employees, none), null);
 });
 
 test("progressPercent/progressTier: vermelho < 80 ≤ amarelo < 100 ≤ verde", () => {
@@ -232,6 +132,7 @@ const OCTOBER = {
   validFrom: "2026-10",
   warrantyRateBps: 600,
   creditRateBps: 200,
+  partnerSaleRateBps: 200, // migration 0086
 };
 
 test("regra vigente: setembro (sem vigência) usa a padrão com garantia 4%; outubro em diante usa a de 2026-10", () => {
@@ -323,7 +224,7 @@ test("novato: só a % do faturamento — sem premiação, garantia e crediário"
 test("parseCommercialRules: valida percentuais, anexo e faixas crescentes", () => {
   const valid = {
     validFrom: "2026-11", revenueRateHighBps: 70, revenueRateLowBps: 40, warrantyRateBps: 600,
-    warrantyAttachTarget: 30, creditRateBps: 200,
+    warrantyAttachTarget: 30, creditRateBps: 200, partnerSaleRateBps: 200,
     premiumTiers: [{ percent: 110, cents: 50_000 }, { percent: 120, cents: 150_000 }, { percent: 140, cents: 300_000 }],
   };
   const ok = parseCommercialRules(valid);
@@ -333,6 +234,8 @@ test("parseCommercialRules: valida percentuais, anexo e faixas crescentes", () =
   assert.match(parseCommercialRules({ ...valid, validFrom: "2026-13" }).error, /MÊS DE INÍCIO/);
   assert.match(parseCommercialRules({ ...valid, revenueRateHighBps: 10_001 }).error, /ENTRE 0% E 100%/);
   assert.match(parseCommercialRules({ ...valid, creditRateBps: -1 }).error, /CREDIÁRIO/);
+  assert.match(parseCommercialRules({ ...valid, partnerSaleRateBps: undefined }).error, /VENDA P\.A/);
+  assert.equal(ok.rules.partnerSaleRateBps, 200);
   assert.match(parseCommercialRules({ ...valid, warrantyRateBps: 1.5 }).error, /GARANTIA/);
   assert.match(parseCommercialRules({ ...valid, warrantyAttachTarget: 101 }).error, /ANEXO/);
   assert.match(parseCommercialRules({ ...valid, premiumTiers: [{ percent: 120, cents: 1 }, { percent: 110, cents: 2 }] }).error, /CRESCENTES/);
@@ -344,19 +247,26 @@ test("parseCommercialRules: valida percentuais, anexo e faixas crescentes", () =
   assert.match(parseCommercialRules({ ...valid, premiumTiers: five }).error, /ATÉ 4 FAIXAS/);
 });
 
-test("parseSellerSheet: coluna CREDIÁRIO opcional (todos os nomes aceitos)", () => {
-  // Sem a coluna: 0 (planilhas antigas).
-  assert.equal(parseSellerSheet(SHEET).rows[0].creditSalesCents, 0);
-  for (const label of ["CREDIÁRIO", "Crediário Feito", "VALOR CREDIÁRIO", "CREDIARIOS"]) {
-    const { rows, errors } = parseSellerSheet([
-      ["LOJAS", "VENDEDOR", "FATURADO", "META", label],
-      ["LOJA ALFA", "JOAO", 100000, 90000, "12.345,67"],
-      ["", "MARIA", 50000, 90000, ""],
-    ]);
-    assert.deepEqual(errors, [], label);
-    assert.equal(rows[0].creditSalesCents, 1_234_567, label);
-    assert.equal(rows[1].creditSalesCents, 0, label);
-  }
-  const bad = parseSellerSheet([["LOJAS", "VENDEDOR", "FATURADO", "META", "CREDIARIO"], ["X", "ANA", 1, 1, "abc"]]);
-  assert.match(bad.errors[0], /LINHA 2 \(ANA\)/);
+test("venda P.A / Unigames: % própria, fora do crediário e da base do faturamento; novato não recebe", () => {
+  const values = realized({ ...allMet, revenueCents: 10_000_000, partnerSalesCents: 500_000, creditSalesCents: 1_000_000 });
+  const normal = computeSellerMetrics(goal, values, clock, OCTOBER).commission;
+  assert.equal(normal.partnerCommissionCents, 10_000); // 2% de R$ 5.000
+  assert.equal(normal.revenueBaseCents, 9_000_000); // só o crediário sai da base
+  assert.equal(normal.creditCommissionCents, 20_000);
+  assert.equal(normal.totalCents, 54_000 + 0 + 0 + 20_000 + 10_000);
+  // Regra padrão (antes de outubro): sem % de venda P.A/Unigames.
+  assert.equal(computeSellerMetrics(goal, values, clock).commission.partnerCommissionCents, 0);
+  const novato = computeSellerMetrics(goal, values, clock, OCTOBER, true).commission;
+  assert.equal(novato.partnerCommissionCents, 0);
+  assert.equal(novato.totalCents, novato.revenueCommissionCents);
+});
+
+test("tabelas de lançamento: 4 de crediário (somam no crediário) e 2 de venda P.A/Unigames", () => {
+  const credit = Object.entries(ENTRY_KINDS).filter(([, kind]) => kind.group === "credit").map(([, kind]) => kind.label);
+  const partner = Object.entries(ENTRY_KINDS).filter(([, kind]) => kind.group === "partner").map(([, kind]) => kind.label);
+  assert.deepEqual(credit, ["PAYJOY", "CREFAZ", "PARCELEX", "ODRES"]);
+  assert.deepEqual(partner, ["VENDA P.A", "VENDA UNIGAMES"]);
+  assert.equal(isEntryKind("payjoy"), true);
+  assert.equal(isEntryKind("toString"), false);
+  assert.equal(isEntryKind("PAYJOY"), false);
 });
