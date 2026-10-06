@@ -5103,3 +5103,28 @@ test("Financeiro > Crediários: menu, rota, abas, lote, extrato e situação CRE
   assert.doesNotMatch(migration, /DROP |ALTER TABLE/i);
   assert.match(schema, /export const financeCreditSales = pgTable\(\s*"finance_credit_sales"/);
 });
+
+test("Financeiro > Recargas: período 30/60/90 no diálogo, coluna/filtro e barra de lote", async () => {
+  const [html, migration, schema] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0084_recarga_periodo.sql", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+  ]);
+  // Diálogo: PERÍODO DE RECARGA antes de PRÓXIMA RECARGA, padrão 90.
+  assert.match(html, /<label for="recargaPeriodo">PERÍODO DE RECARGA \*<\/label><select id="recargaPeriodo" required><option value="30">30 DIAS<\/option><option value="60">60 DIAS<\/option><option value="90" selected>90 DIAS<\/option><\/select><\/div>\s*<div class="purchase-field"><label for="recargaProxima">/);
+  assert.match(html, /periodDays: Number\(el\('recargaPeriodo'\)\.value\)/);
+  assert.match(html, /id="recargaEventProxima"/);
+  assert.match(html, /'PRÓXIMA: '\+formatDateBR\(next\)\+' \(EM '\+days\+' DIAS\)'/);
+  // A regra antiga de 3 meses no front saiu.
+  assert.doesNotMatch(html, /getUTCMonth\(\)\+3/);
+  // Tabela: coluna e filtro PERÍODO; barra de lote.
+  assert.match(html, /<th>Última recarga<\/th><th>Período<\/th><th>Próxima recarga<\/th>/);
+  assert.match(html, /id="recargaPeriodoFiltro"><option value="">TODOS<\/option><option value="30">30 DIAS<\/option><option value="60">60 DIAS<\/option><option value="90">90 DIAS<\/option>/);
+  assert.match(html, /id="recargaBulkBar"[\s\S]*?data-bulk-action="period">ALTERAR PERÍODO[\s\S]*?data-bulk-action="recharge">REGISTRAR RECARGA EM LOTE[\s\S]*?data-bulk-action="activate">ATIVAR[\s\S]*?data-bulk-action="deactivate">DESATIVAR[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /const recargaBulk = setupBulkSelection\(el\('recargaBulkBar'\), el\('recargaTableBody'\)/);
+  assert.match(html, /id="recargaBulkDialog"/);
+  // Migration 0084: só ADD COLUMN com padrão 90.
+  assert.match(migration, /ALTER TABLE "finance_phone_recharges" ADD COLUMN IF NOT EXISTS "period_days" integer DEFAULT 90 NOT NULL/);
+  assert.doesNotMatch(migration, /DROP |UPDATE /i);
+  assert.match(schema, /periodDays: integer\("period_days"\)\.notNull\(\)\.default\(90\)/);
+});

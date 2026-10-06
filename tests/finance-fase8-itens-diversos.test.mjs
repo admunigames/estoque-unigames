@@ -99,7 +99,7 @@ test("Financeiro Fase 8: os três módulos estão registrados", async () => {
   // duplica lógica de despesa.
   assert.match(html, /financeApiRequest\('\/expenses'/);
   assert.match(replRoute, /canManageFinance/);
-  assert.match(rechargeRoute, /addThreeMonths/);
+  assert.match(rechargeRoute, /parseRechargePeriod/); // período 30/60/90 (8/9)
   assert.match(mallRoute, /deriveMallDeclaration/);
 
   // Lembrete de recarga: push ao Financeiro pelo cron, sem módulo paralelo.

@@ -8260,7 +8260,8 @@
 
       <div class="dre-toolbar">
         <div class="field"><label for="recargaLoja">UNIDADE</label><select id="recargaLoja"><option value="">TODAS AS UNIDADES</option></select></div>
-        <div class="field"><label class="checkbox-inline"><input type="checkbox" id="recargaSomenteAtivas" checked> Somente ativas</label></div>
+        <div class="field"><label for="recargaPeriodoFiltro">PERÍODO</label><select id="recargaPeriodoFiltro"><option value="">TODOS</option><option value="30">30 DIAS</option><option value="60">60 DIAS</option><option value="90">90 DIAS</option></select></div>
+        <label class="assist-check"><input type="checkbox" id="recargaSomenteAtivas" checked> SOMENTE ATIVAS</label>
         <div class="dre-toolbar-actions">
           <button class="btn-accent" id="btnNewRecarga" type="button">NOVA RECARGA</button>
         </div>
@@ -8268,11 +8269,24 @@
 
       <div id="recargaAlertaProximas" class="dre-empty" hidden></div>
 
+      <div class="bulk-bar" id="recargaBulkBar">
+        <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+        <div class="bulk-bar-actions" data-bulk-actions hidden>
+          <strong class="bulk-bar-count" data-bulk-count></strong>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="period">ALTERAR PERÍODO</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="recharge">REGISTRAR RECARGA EM LOTE</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="activate">ATIVAR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="deactivate">DESATIVAR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+        </div>
+      </div>
+
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="recargaTable">
-            <thead><tr><th>Número</th><th>Operadora</th><th>Unidade</th><th>Responsável</th><th>Último valor</th><th>Última recarga</th><th>Próxima recarga</th><th>Situação</th><th></th></tr></thead>
-            <tbody id="recargaTableBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Número</th><th>Operadora</th><th>Unidade</th><th>Responsável</th><th>Último valor</th><th>Última recarga</th><th>Período</th><th>Próxima recarga</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="recargaTableBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -9261,8 +9275,9 @@
       <div class="purchase-field"><label for="recargaResponsavel">RESPONSÁVEL</label><input id="recargaResponsavel" maxlength="160"></div>
       <div class="purchase-field"><label for="recargaValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="recargaUltima">DATA DA ÚLTIMA RECARGA *</label><input type="date" id="recargaUltima" required></div>
+      <div class="purchase-field"><label for="recargaPeriodo">PERÍODO DE RECARGA *</label><select id="recargaPeriodo" required><option value="30">30 DIAS</option><option value="60">60 DIAS</option><option value="90" selected>90 DIAS</option></select></div>
       <div class="purchase-field"><label for="recargaProxima">PRÓXIMA RECARGA</label><input type="date" id="recargaProxima" disabled></div>
-      <div class="purchase-field"><label class="checkbox-inline"><input type="checkbox" id="recargaAtiva" checked> Linha ativa</label></div>
+      <label class="assist-check"><input type="checkbox" id="recargaAtiva" checked> LINHA ATIVA</label>
       <div class="purchase-field full"><label for="recargaObs">OBSERVAÇÕES</label><textarea id="recargaObs" rows="2" maxlength="2000"></textarea></div>
     </div>
     <div class="user-form-status" id="recargaFormStatus" role="status" aria-live="polite"></div>
@@ -9285,11 +9300,33 @@
       <div class="purchase-field"><label for="recargaEventValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaEventValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="recargaEventObs">OBSERVAÇÕES</label><textarea id="recargaEventObs" rows="2" maxlength="1000"></textarea></div>
     </div>
+    <p class="purchase-field-help" id="recargaEventProxima" role="status" aria-live="polite"></p>
     <div id="recargaEventHistorico" class="page-desc"></div>
     <div class="user-form-status" id="recargaEventStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelRecargaEventDialog" type="button">FECHAR</button>
       <button class="btn-accent" type="submit">REGISTRAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="recargaBulkDialog" aria-labelledby="recargaBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="recargaBulkTitle">SELECIONADAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRecargaBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="recargaBulkForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field" data-recarga-bulk-field="period"><label for="recargaBulkPeriodo">PERÍODO DE RECARGA *</label><select id="recargaBulkPeriodo"><option value="30">30 DIAS</option><option value="60">60 DIAS</option><option value="90" selected>90 DIAS</option></select></div>
+      <div class="purchase-field" data-recarga-bulk-field="recharge"><label for="recargaBulkData">DATA DA RECARGA *</label><input type="date" id="recargaBulkData"></div>
+      <div class="purchase-field" data-recarga-bulk-field="recharge"><label for="recargaBulkValor">VALOR (R$)</label><input type="text" inputmode="decimal" id="recargaBulkValor" placeholder="VAZIO = ÚLTIMO VALOR DE CADA LINHA"></div>
+    </div>
+    <p class="purchase-field-help" data-recarga-bulk-field="period">A PRÓXIMA RECARGA DE CADA LINHA É RECALCULADA A PARTIR DA ÚLTIMA RECARGA.</p>
+    <p class="purchase-field-help" data-recarga-bulk-field="recharge">GRAVA UMA RECARGA NO HISTÓRICO DE CADA LINHA; A PRÓXIMA USA O PERÍODO DE CADA UMA.</p>
+    <div class="user-form-status" id="recargaBulkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRecargaBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
     </div>
   </form>
 </dialog>
@@ -32287,7 +32324,7 @@ function renderHomeTasks(){
   async function reloadRecargas(){
     const body = el('recargaTableBody');
     if(!body) return;
-    body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
     const params = new URLSearchParams();
     if(el('recargaLoja').value) params.set('companyId', el('recargaLoja').value);
     if(el('recargaSomenteAtivas').checked) params.set('active', '1');
@@ -32296,7 +32333,7 @@ function renderHomeTasks(){
       recargaRows = Array.isArray(data.rows) ? data.rows : [];
       renderRecargaTable();
     }catch(error){
-      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
   function renderRecargaTable(){
@@ -32304,40 +32341,48 @@ function renderHomeTasks(){
     const today = todayDateKeyRecife();
     const soon = new Date(Date.now() + 3*86400000).toISOString().slice(0,10);
     let due = 0;
-    body.innerHTML = recargaRows.length ? recargaRows.map(r => {
+    const period = el('recargaPeriodoFiltro').value;
+    const rows = recargaRows.filter(r => !period || String(r.periodDays || 90) === period);
+    body.innerHTML = rows.length ? rows.map(r => {
       const overdue = r.nextRechargeDate && r.nextRechargeDate < today;
       const near = r.nextRechargeDate && r.nextRechargeDate <= soon;
       if((overdue || near) && r.active) due += 1;
       const nextCell = '<span class="'+(overdue ? 'status-pill danger' : (near ? 'status-pill warn' : ''))+'">'+escapeHtml(formatDateBR(r.nextRechargeDate) || '—')+'</span>';
       return '<tr'+(r.active ? '' : ' style="opacity:.55"')+'>'+
-        '<td>'+escapeHtml(r.phoneNumber || '—')+'</td>'+
-        '<td>'+escapeHtml(r.carrier || '—')+'</td>'+
-        '<td>'+escapeHtml(r.companyName || fase8CompanyName(r.companyId) || '—')+'</td>'+
-        '<td>'+escapeHtml(r.responsibleName || '—')+'</td>'+
-        '<td>'+formatCentsBRL(r.lastAmountCents)+'</td>'+
-        '<td>'+escapeHtml(formatDateBR(r.lastRechargeDate) || '—')+'</td>'+
-        '<td>'+nextCell+'</td>'+
-        '<td>'+(r.active ? 'ATIVA' : 'INATIVA')+'</td>'+
-        '<td style="white-space:nowrap">'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(r.id, 'Selecionar linha '+(r.phoneNumber || ''))+'</td>'+
+        '<td data-label="Número">'+escapeHtml(r.phoneNumber || '—')+'</td>'+
+        '<td data-label="Operadora">'+escapeHtml(r.carrier || '—')+'</td>'+
+        '<td data-label="Unidade">'+escapeHtml(r.companyName || fase8CompanyName(r.companyId) || '—')+'</td>'+
+        '<td data-label="Responsável">'+escapeHtml(r.responsibleName || '—')+'</td>'+
+        '<td data-label="Último valor">'+formatCentsBRL(r.lastAmountCents)+'</td>'+
+        '<td data-label="Última recarga">'+escapeHtml(formatDateBR(r.lastRechargeDate) || '—')+'</td>'+
+        '<td data-label="Período">'+Number(r.periodDays || 90)+' DIAS</td>'+
+        '<td data-label="Próxima recarga">'+nextCell+'</td>'+
+        '<td data-label="Situação">'+(r.active ? 'ATIVA' : 'INATIVA')+'</td>'+
+        '<td data-label="Ações" style="white-space:nowrap">'+
           '<button class="btn-outline btn-sm" type="button" data-recarga-event="'+escapeHtml(r.id)+'">REGISTRAR RECARGA</button> '+
           '<button class="btn-outline btn-sm" type="button" data-recarga-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
           '<button class="btn-outline btn-sm" type="button" data-recarga-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="9" class="responsive-empty">Nenhuma linha cadastrada.</td></tr>';
+    }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhuma linha'+(period ? ' com período de '+period+' dias' : ' cadastrada')+'.</td></tr>';
+    recargaBulk.sync();
     const alerta = el('recargaAlertaProximas');
     if(alerta){
       alerta.hidden = due === 0;
       alerta.textContent = due ? (due+' recarga(s) vencida(s) ou nos próximos 3 dias. O Financeiro é avisado por push automaticamente.') : '';
     }
   }
+  // MESMA CONTA de nextRechargeDate (app/lib/phone-recharges.ts) — só prévia;
+  // o servidor é quem grava. tests/finance-phone-recharges.test.mjs compara as duas.
+  function recargaNextDate(lastDate, periodDays){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(lastDate)) return '';
+    const date = new Date(lastDate + 'T00:00:00Z');
+    date.setUTCDate(date.getUTCDate() + Number(periodDays));
+    return date.toISOString().slice(0, 10);
+  }
   function recalcRecargaProxima(){
-    const d = el('recargaUltima').value;
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ el('recargaProxima').value = ''; return; }
-    const base = new Date(d + 'T00:00:00Z');
-    const dm = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth()+3, 1));
-    const last = new Date(Date.UTC(dm.getUTCFullYear(), dm.getUTCMonth()+1, 0)).getUTCDate();
-    el('recargaProxima').value = dm.getUTCFullYear()+'-'+String(dm.getUTCMonth()+1).padStart(2,'0')+'-'+String(Math.min(base.getUTCDate(), last)).padStart(2,'0');
+    el('recargaProxima').value = recargaNextDate(el('recargaUltima').value, el('recargaPeriodo').value);
   }
   function openRecargaDialog(row){
     el('recargaForm').reset();
@@ -32350,6 +32395,7 @@ function renderHomeTasks(){
     el('recargaResponsavel').value = row ? (row.responsibleName || '') : '';
     setCurrencyValue(el('recargaValor'), row && row.lastAmountCents ? row.lastAmountCents/100 : '');
     el('recargaUltima').value = row ? (row.lastRechargeDate || '') : '';
+    el('recargaPeriodo').value = String(row ? (row.periodDays || 90) : 90);
     el('recargaAtiva').checked = row ? !!row.active : true;
     el('recargaObs').value = row ? (row.notes || '') : '';
     recalcRecargaProxima();
@@ -32359,6 +32405,8 @@ function renderHomeTasks(){
   el('recargaValor') && attachCurrencyMask(el('recargaValor'));
   el('recargaEventValor') && attachCurrencyMask(el('recargaEventValor'));
   el('recargaUltima') && el('recargaUltima').addEventListener('change', recalcRecargaProxima);
+  el('recargaPeriodo').addEventListener('change', recalcRecargaProxima);
+  el('recargaPeriodoFiltro').addEventListener('change', renderRecargaTable);
   el('btnNewRecarga') && el('btnNewRecarga').addEventListener('click', () => openRecargaDialog(null));
   el('recargaLoja') && el('recargaLoja').addEventListener('change', reloadRecargas);
   el('recargaSomenteAtivas') && el('recargaSomenteAtivas').addEventListener('change', reloadRecargas);
@@ -32376,6 +32424,7 @@ function renderHomeTasks(){
       responsibleName: el('recargaResponsavel').value.trim(),
       lastAmountCents: Math.round(Number(getCurrencyValue(el('recargaValor')) || 0) * 100),
       lastRechargeDate: el('recargaUltima').value,
+      periodDays: Number(el('recargaPeriodo').value),
       notes: el('recargaObs').value,
       active: el('recargaAtiva').checked
     };
@@ -32406,6 +32455,8 @@ function renderHomeTasks(){
     el('recargaEventId').value = row.id;
     el('recargaEventData').value = new Date().toISOString().slice(0,10);
     el('recargaEventTitle').textContent = 'REGISTRAR RECARGA — ' + (row.phoneNumber || '');
+    el('recargaEventForm').dataset.periodDays = String(row.periodDays || 90);
+    recalcRecargaEventProxima();
     el('recargaEventStatus').textContent = '';
     el('recargaEventHistorico').textContent = 'Carregando histórico…';
     el('recargaEventDialog').showModal();
@@ -32417,6 +32468,13 @@ function renderHomeTasks(){
         : 'Sem recargas registradas ainda.';
     }catch(_e){ el('recargaEventHistorico').textContent = ''; }
   }
+  // Prévia com o período da linha.
+  function recalcRecargaEventProxima(){
+    const days = el('recargaEventForm').dataset.periodDays || '90';
+    const next = recargaNextDate(el('recargaEventData').value, days);
+    el('recargaEventProxima').textContent = next ? 'PRÓXIMA: '+formatDateBR(next)+' (EM '+days+' DIAS)' : '';
+  }
+  el('recargaEventData').addEventListener('change', recalcRecargaEventProxima);
   el('btnCloseRecargaEventDialog') && el('btnCloseRecargaEventDialog').addEventListener('click', () => el('recargaEventDialog').close());
   el('btnCancelRecargaEventDialog') && el('btnCancelRecargaEventDialog').addEventListener('click', () => el('recargaEventDialog').close());
   el('recargaEventForm') && el('recargaEventForm').addEventListener('submit', async event => {
@@ -32435,6 +32493,47 @@ function renderHomeTasks(){
       await reloadRecargas();
       showPurchaseToast('Recarga registrada.');
     }catch(error){ status.textContent = error.message; }
+  });
+
+  // Ações em lote (Financeiro 8/9) — POST /phone-recharges/bulk.
+  let recargaBulkPending = null;
+  const RECARGA_BULK_TITLES = {period:'ALTERAR PERÍODO', recharge:'REGISTRAR RECARGA EM LOTE', activate:'ATIVAR', deactivate:'DESATIVAR', delete:'EXCLUIR'};
+  async function recargaBulkRun(action, ids, fields){
+    await svBulkRequest('/phone-recharges/bulk', {action, ids, fields: fields || {}});
+    recargaBulk.clear();
+    await reloadRecargas();
+  }
+  const recargaBulk = setupBulkSelection(el('recargaBulkBar'), el('recargaTableBody'), async (action, ids) => {
+    if(action === 'period' || action === 'recharge'){
+      recargaBulkPending = {action, ids};
+      el('recargaBulkForm').reset();
+      setCurrencyValue(el('recargaBulkValor'), '');
+      el('recargaBulkData').value = todayDateKeyRecife();
+      el('recargaBulkTitle').textContent = RECARGA_BULK_TITLES[action]+' — '+ids.length+(ids.length === 1 ? ' LINHA' : ' LINHAS');
+      document.querySelectorAll('[data-recarga-bulk-field]').forEach(node => { node.hidden = node.dataset.recargaBulkField !== action; });
+      el('recargaBulkStatus').textContent = '';
+      el('recargaBulkDialog').showModal();
+      return false;
+    }
+    if(!confirm(RECARGA_BULK_TITLES[action]+' '+ids.length+' linha(s)?'+(action === 'delete' ? ' O histórico de recargas também é excluído.' : ''))) return false;
+    await recargaBulkRun(action, ids);
+  });
+  attachCurrencyMask(el('recargaBulkValor'));
+  el('btnCloseRecargaBulk').addEventListener('click', () => el('recargaBulkDialog').close());
+  el('btnCancelRecargaBulk').addEventListener('click', () => el('recargaBulkDialog').close());
+  el('recargaBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!recargaBulkPending) return;
+    const {action, ids} = recargaBulkPending;
+    const valor = getCurrencyValue(el('recargaBulkValor'));
+    const fields = action === 'period'
+      ? {periodDays: Number(el('recargaBulkPeriodo').value)}
+      : {date: el('recargaBulkData').value, amountCents: valor === '' ? null : Math.round(Number(valor) * 100)};
+    if(action === 'recharge' && !fields.date){ el('recargaBulkStatus').textContent = 'INFORME A DATA DA RECARGA.'; return; }
+    try{
+      await recargaBulkRun(action, ids, fields);
+      el('recargaBulkDialog').close();
+    }catch(error){ el('recargaBulkStatus').textContent = error.message; }
   });
 
   // ----- Compras (novo — Fase F: pedido único com pipeline de status) -----

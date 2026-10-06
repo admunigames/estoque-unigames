@@ -8,10 +8,11 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../shared";
-import { addThreeMonths } from "../../../lib/mall-declarations";
+import { nextRechargeDate as computeNextRecharge, parseRechargePeriod, RECHARGE_PERIOD_ERROR } from "../../../lib/phone-recharges";
 
-// Recargas de Celulares (Financeiro — Fase 8). Próxima recarga é sempre
-// última recarga + 3 meses (calculada aqui). O lembrete é enviado por push
+// Recargas de Celulares (Financeiro — Fase 8; período no 8/9). Próxima
+// recarga = última recarga + período da linha (30/60/90 dias, calculada aqui;
+// editar recalcula a partir da última recarga). O lembrete é enviado por push
 // ao Financeiro pelo cron (dispatchDuePhoneRechargeNotifications no Worker).
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -19,7 +20,7 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SELECT_COLUMNS = `id, phone_number AS phoneNumber, carrier, company_id AS companyId,
   company_name AS companyName, responsible_name AS responsibleName,
   last_amount_cents AS lastAmountCents, last_recharge_date AS lastRechargeDate,
-  next_recharge_date AS nextRechargeDate, notes, active,
+  next_recharge_date AS nextRechargeDate, period_days AS periodDays, notes, active,
   created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
   updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt`;
 
@@ -104,7 +105,9 @@ export async function POST(request: Request) {
     if (!Number.isInteger(lastAmountCents) || lastAmountCents < 0) {
       return jsonResponse({ error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." }, 400);
     }
-    const nextRechargeDate = addThreeMonths(lastRechargeDate);
+    const periodDays = parseRechargePeriod(body.periodDays);
+    if (!periodDays) return jsonResponse({ error: RECHARGE_PERIOD_ERROR }, 400);
+    const nextRechargeDate = computeNextRecharge(lastRechargeDate, periodDays);
 
     const database = await getD1();
     const who = actor.displayName || "Administrador";
@@ -120,15 +123,15 @@ export async function POST(request: Request) {
           `UPDATE finance_phone_recharges
            SET phone_number=?1, carrier=?2, company_id=?3, company_name=?4, responsible_name=?5,
                last_amount_cents=?6, last_recharge_date=?7, next_recharge_date=?8, notes=?9, active=?10,
-               updated_by=?11, updated_by_name=?12, updated_at=CURRENT_TIMESTAMP
+               updated_by=?11, updated_by_name=?12, updated_at=CURRENT_TIMESTAMP, period_days=?14
            WHERE id=?13`,
         )
         .bind(
           phoneNumber, carrier, companyId, companyName, responsibleName, lastAmountCents,
-          lastRechargeDate, nextRechargeDate, notes, active, actor.id, who, editId,
+          lastRechargeDate, nextRechargeDate, notes, active, actor.id, who, editId, periodDays,
         )
         .run();
-      return jsonResponse({ updated: true, id: editId, nextRechargeDate });
+      return jsonResponse({ updated: true, id: editId, nextRechargeDate, periodDays });
     }
 
     const id = crypto.randomUUID();
@@ -137,15 +140,15 @@ export async function POST(request: Request) {
         `INSERT INTO finance_phone_recharges
           (id, phone_number, carrier, company_id, company_name, responsible_name,
            last_amount_cents, last_recharge_date, next_recharge_date, notes, active,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,CURRENT_TIMESTAMP,?12,?13,CURRENT_TIMESTAMP)`,
+           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, period_days)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,CURRENT_TIMESTAMP,?12,?13,CURRENT_TIMESTAMP,?14)`,
       )
       .bind(
         id, phoneNumber, carrier, companyId, companyName, responsibleName, lastAmountCents,
-        lastRechargeDate, nextRechargeDate, notes, active, actor.id, who,
+        lastRechargeDate, nextRechargeDate, notes, active, actor.id, who, periodDays,
       )
       .run();
-    return jsonResponse({ created: true, id, nextRechargeDate }, 201);
+    return jsonResponse({ created: true, id, nextRechargeDate, periodDays }, 201);
   } catch (error) {
     console.error("Não foi possível salvar a recarga de celular.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR A RECARGA." }, 500);

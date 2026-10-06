@@ -2600,8 +2600,9 @@ export const financeReplacementEntries = pgTable(
 );
 
 // Recargas de Celulares — cadastro de linhas pré-pagas por unidade.
-// next_recharge_date é sempre last_recharge_date + 3 meses (calculado no
-// servidor). O lembrete da próxima recarga é feito por push ao Financeiro
+// next_recharge_date = last_recharge_date + period_days (30/60/90 dias
+// corridos, calculado no servidor por app/lib/phone-recharges.ts; linhas
+// anteriores ao 8/9 mantêm a data já gravada até a próxima recarga/edição). O lembrete da próxima recarga é feito por push ao Financeiro
 // via cron (dispatchDuePhoneRechargeNotifications), sem depender de outro
 // módulo de tarefas.
 export const financePhoneRecharges = pgTable(
@@ -2616,6 +2617,7 @@ export const financePhoneRecharges = pgTable(
     lastAmountCents: integer("last_amount_cents").notNull().default(0),
     lastRechargeDate: text("last_recharge_date").notNull().default(""),
     nextRechargeDate: text("next_recharge_date").notNull().default(""),
+    periodDays: integer("period_days").notNull().default(90),
     notes: text("notes").notNull().default(""),
     active: integer("active").notNull().default(1),
     createdBy: text("created_by").notNull().default(""),

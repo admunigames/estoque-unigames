@@ -8,12 +8,12 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../../../shared";
-import { addThreeMonths } from "../../../../../lib/mall-declarations";
+import { nextRechargeDate as computeNextRecharge, parseRechargePeriod } from "../../../../../lib/phone-recharges";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 // Registra uma recarga efetivada: grava um evento no histórico e atualiza
-// última/próxima recarga do cadastro.
+// última/próxima recarga do cadastro (próxima = data + período da linha).
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -39,13 +39,13 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT id FROM finance_phone_recharges WHERE id=?1")
+      .prepare("SELECT id, period_days AS periodDays FROM finance_phone_recharges WHERE id=?1")
       .bind(rechargeId)
-      .first<{ id: string }>();
+      .first<{ id: string; periodDays: number }>();
     if (!existing) return jsonResponse({ error: "RECARGA NÃO ENCONTRADA." }, 404);
 
     const who = actor.displayName || "Administrador";
-    const nextRechargeDate = addThreeMonths(rechargeDate);
+    const nextRechargeDate = computeNextRecharge(rechargeDate, parseRechargePeriod(existing.periodDays) ?? 90);
     await database
       .prepare(
         `INSERT INTO finance_phone_recharge_events
