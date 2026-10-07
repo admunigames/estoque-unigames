@@ -4331,13 +4331,19 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Controle GD e Relatório NF, também esses dois — por isso
   // data-any-permission inclui controle_gd e relatorio_nf além de comercial
   // (ver pageComercialControleGd e pageComercialRelatorioNf).
-  assert.match(html, /<div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
+  assert.match(html, /<div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf,treinamento">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
   assert.match(html, /id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial"/);
-  // Treinamento (Unigames Academy): quem tem o Comercial entra; dados só pelo
-  // servidor (/api/commercial/academy/*), sem a chave no front.
-  assert.match(html, /id="navComercialTreinamento" data-page="comercialTreinamento" data-permission="comercial"[^>]*href="\/comercial\/treinamento"/);
+  // Treinamento (Unigames Academy): permissão própria treinamento:view/team;
+  // dados só pelo servidor (/api/commercial/academy/*), sem a chave no front.
+  assert.match(html, /id="navComercialTreinamento" data-page="comercialTreinamento" data-permission="treinamento"[^>]*href="\/comercial\/treinamento"/);
+  assert.match(html, /value="treinamento:view"/);
+  assert.match(html, /value="treinamento:team"/);
+  assert.match(workerSource, /treinamento: \["treinamento:view", "treinamento:team"\],/);
+  assert.ok(
+    workerSource.indexOf('path.startsWith("/api/commercial/academy")') < workerSource.indexOf('path.startsWith("/comercial/") || path.startsWith("/api/commercial")'),
+  );
   assert.match(html, /comercialTreinamento:'\/comercial\/treinamento'/);
-  assert.match(html, /comercialTreinamento:'comercial'/);
+  assert.match(html, /comercialTreinamento:'treinamento'/);
   assert.match(html, /<section id="pageComercialTreinamento" class="page wrap">[\s\S]*?data-acad-view="team" hidden/);
   assert.equal(html.split("if(name === 'comercialTreinamento') loadTreinamentoPage();").length - 1, 2);
   assert.match(html, /comApi\('\/academy\/me'\)/);

@@ -3624,7 +3624,7 @@
         <a class="nav-item sub-item" id="navAssistenciaOrcamentos" data-page="assistenciaOrcamentos" data-permission="assistencia:manage" data-home-desc="Monte o orçamento da assistência técnica com a tabela de valores e gere o PDF com os dados da loja." title="Orçamentos" href="/assistencia/orcamentos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Orçamentos</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf">
+    <div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf,treinamento">
       <button class="nav-group-toggle" id="navComercialMenu" type="button" aria-expanded="false" aria-controls="navComercialSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 16.5 9 11 13 14.5 20.5 7"/><polyline points="15.5 7 20.5 7 20.5 12"/></svg></span><span class="nav-label">Comercial</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -3632,7 +3632,7 @@
         <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e importação da planilha de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
         <a class="nav-item sub-item" id="navComercialControleGd" data-page="comercialControleGd" data-permission="controle_gd" data-home-desc="Saldo de gordura de vendas por loja, com alerta de status, gráfico dos últimos 7 dias e relatório para WhatsApp." title="Controle GD" href="/comercial/controle-gd"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle GD</span></a>
         <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/comercial/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
-        <a class="nav-item sub-item" id="navComercialTreinamento" data-page="comercialTreinamento" data-permission="comercial" data-home-desc="Trilhas e aulas da Unigames Academy com o seu progresso; gestores acompanham a equipe." title="Treinamento" href="/comercial/treinamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11"/><path d="M21.5 9v5"/></svg></span><span class="nav-label">Treinamento</span></a>
+        <a class="nav-item sub-item" id="navComercialTreinamento" data-page="comercialTreinamento" data-permission="treinamento" data-home-desc="Trilhas e aulas da Unigames Academy com o seu progresso; gestores acompanham a equipe." title="Treinamento" href="/comercial/treinamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11"/><path d="M21.5 9v5"/></svg></span><span class="nav-label">Treinamento</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="finance,payables">
@@ -9203,6 +9203,13 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Comercial - Treinamento</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="treinamento:view"> Ver o próprio treinamento (trilhas e progresso na Unigames Academy)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="treinamento:team"> Acompanhar o treinamento da equipe e vincular logins à Academy</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Comercial - Relatório NF</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:view"> Ver o lançamento do dia e o histórico de dias salvos</label>
@@ -12768,7 +12775,7 @@
     financeiroSupplierStatement:'finance',
     financeiroOrcamento:'finance',
     comercialRelatorioNf:'relatorio_nf',
-    comercialTreinamento:'comercial',
+    comercialTreinamento:'treinamento',
     financeiroFluxoCaixa:'finance',
     financeiroMaquinetas:'finance',
     financeiroCartoesCorp:'finance',
@@ -13014,7 +13021,7 @@
   function isCommercialOnlySession(){
     return currentSession.role !== 'admin' &&
       currentSession.permissions.length > 0 &&
-      currentSession.permissions.every(permission => permission.indexOf('comercial:') === 0);
+      currentSession.permissions.every(permission => permission.indexOf('comercial:') === 0 || permission.indexOf('treinamento:') === 0);
   }
 
   function applyAccessVisibility(){
@@ -37571,6 +37578,7 @@ function renderHomeTasks(){
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Comercial - Relatório NF: visualizar','relatorio_nf:manage':'Comercial - Relatório NF: lançar/gerenciar',
+    'treinamento:view':'Comercial - Treinamento: ver o próprio','treinamento:team':'Comercial - Treinamento: equipe e vínculos',
     'controle_gd:view':'Comercial - Controle GD: visualizar','controle_gd:manage':'Comercial - Controle GD: lançar ajuste de saldo',
     'documents:create':'Documentos: cadastrar','documents:edit':'Documentos: editar','documents:delete':'Documentos: excluir',
     'assistencia:manage':'Assistência - Orçamentos: acesso completo',
@@ -42384,7 +42392,7 @@ function renderHomeTasks(){
   }
 
   async function loadTreinamentoPage(){
-    if(!canAccess('comercial')) return;
+    if(!canAccess('treinamento')) return;
     acadTeam = null;
     try{
       acadData = await comApi('/academy/me');

@@ -67,16 +67,19 @@ const user = (id, username, displayName, companyId, permissions) =>
     id, username, display_name: displayName, email: "", password_hash: "x", password_salt: "x", role: "user",
     access_group: "custom", permissions_json: JSON.stringify(permissions), company_id: companyId, active: 1,
   });
-user("u-ana", "ana.souza", "Ana", STORE_A, ["comercial:dashboard"]);
-user("u-bruno", "bruno.l", "Bruno Lima", STORE_A, ["comercial:dashboard"]);
-user("u-carla", "carlad", "Carla D.", STORE_B, ["comercial:dashboard"]);
+user("u-ana", "ana.souza", "Ana", STORE_A, ["comercial:dashboard", "treinamento:view"]);
+user("u-bruno", "bruno.l", "Bruno Lima", STORE_A, ["treinamento:view"]);
+user("u-carla", "carlad", "Carla D.", STORE_B, ["treinamento:view"]);
 user("u-estoque", "estoque", "Estoque", STORE_A, ["stock:view"]);
+// Tem Comercial, mas não Treinamento: não entra nem aparece para vincular.
+user("u-so-comercial", "socom", "Só Comercial", STORE_A, ["comercial:dashboard", "comercial:goals"]);
 
-const ANA = { id: "u-ana", companyId: STORE_A, permissions: ["comercial:dashboard"] };
-const CARLA = { id: "u-carla", companyId: STORE_B, permissions: ["comercial:dashboard"] };
-const GESTOR_GERAL = { id: "u-gestor", permissions: ["comercial:goals", "comercial:dashboard"] };
-const GESTOR_A = { id: "u-gestor-a", companyId: STORE_A, permissions: ["comercial:goals"] };
+const ANA = { id: "u-ana", companyId: STORE_A, permissions: ["comercial:dashboard", "treinamento:view"] };
+const CARLA = { id: "u-carla", companyId: STORE_B, permissions: ["treinamento:view"] };
+const GESTOR_GERAL = { id: "u-gestor", permissions: ["treinamento:team"] };
+const GESTOR_A = { id: "u-gestor-a", companyId: STORE_A, permissions: ["treinamento:team"] };
 const ESTOQUE = { id: "u-estoque", companyId: STORE_A, permissions: ["stock:view"] };
+const SO_COMERCIAL = { id: "u-so-comercial", companyId: STORE_A, permissions: ["comercial:dashboard", "comercial:goals"] };
 
 const getMe = (actor) => callRoute(me.GET, actor, "GET", "/api/commercial/academy/me");
 const getTeam = (actor, query = "") => callRoute(team.GET, actor, "GET", "/api/commercial/academy/team" + query);
@@ -127,19 +130,23 @@ test("me: vendedor vê catálogo e o próprio progresso (vínculo automático po
   assert.ok(calls.some((call) => call.path.endsWith("/people")));
 });
 
-test("me: sem permissão comercial = 403; sem vínculo = participant null", async () => {
+test("me: sem treinamento:* = 403 (mesmo com Comercial); sem vínculo = participant null", async () => {
   assert.equal((await getMe(ESTOQUE)).status, 403);
+  assert.equal((await getMe(SO_COMERCIAL)).status, 403);
   const body = await (await getMe(CARLA)).json();
   assert.equal(body.participant, null);
 });
 
-test("team: só gestor (comercial:goals); gestor de loja só vê a própria loja; vendedor 403", async () => {
+test("team: só treinamento:team; gestor de loja só vê a própria loja; vendedor e comercial:goals 403", async () => {
   assert.equal((await getTeam(ANA)).status, 403);
+  assert.equal((await getTeam(SO_COMERCIAL)).status, 403);
+  assert.equal((await (await getMe(GESTOR_GERAL)).json()).canManageTeam, true);
+  assert.equal((await (await getMe(ANA)).json()).canManageTeam, false);
   const all = await (await getTeam(GESTOR_GERAL)).json();
   assert.deepEqual(all.people.map((p) => p.id).sort(), ["p-ana", "p-bruno", "p-carla"]);
   assert.equal(all.people.find((p) => p.id === "p-ana").linkedUser.id, "u-ana");
   assert.equal(all.people.find((p) => p.id === "p-bruno").linkedUser.id, "u-bruno", "casou pelo nome");
-  assert.ok(!all.users.some((u) => u.id === "u-estoque"), "login sem Comercial não aparece para vincular");
+  assert.ok(!all.users.some((u) => u.id === "u-estoque" || u.id === "u-so-comercial"), "só logins com treinamento:* aparecem para vincular");
   const own = await (await getTeam(GESTOR_A)).json();
   assert.deepEqual(own.people.map((p) => p.id).sort(), ["p-ana", "p-bruno"]);
   assert.ok(own.users.every((u) => u.id !== "u-carla"));

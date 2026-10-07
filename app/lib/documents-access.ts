@@ -23,13 +23,17 @@ type DocumentAccessUser = {
  * Login de vendedor: todas as permissões são do módulo Comercial. Esse
  * usuário vê só Início, Instruções e Comercial — Documentos (liberado para
  * qualquer outro usuário logado) fica escondido para ele (decisão do
- * usuário, 2026-09-30). Mesma regra em isCommercialOnlySession() no front.
+ * usuário, 2026-09-30). O Treinamento (treinamento:*) mora no menu
+ * Comercial e não tira ninguém dessa condição. Mesma regra em
+ * isCommercialOnlySession() no front.
  */
 export function isCommercialOnlyAccess(user: DocumentAccessUser): boolean {
   return (
     user.role !== "admin" &&
     user.permissions.length > 0 &&
-    user.permissions.every((permission) => permission.startsWith("comercial:"))
+    user.permissions.every(
+      (permission) => permission.startsWith("comercial:") || permission.startsWith("treinamento:"),
+    )
   );
 }
 

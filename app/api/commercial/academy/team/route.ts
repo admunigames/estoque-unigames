@@ -2,8 +2,7 @@ import { trackProgress } from "../../../../lib/academy";
 import { jsonResponse, safeText } from "../../shared";
 import { AcademyError, loadCatalog, loadProgress, scopedTeam, teamGuard } from "../shared";
 
-// Treinamento da equipe (gestor = comercial:goals, sem ser conta de
-// vendedor). Sem participantId: lista da equipe + logins para vincular. Com
+// Treinamento da equipe (treinamento:team, no escopo de loja). Sem participantId: lista da equipe + logins para vincular. Com
 // participantId: o progresso daquela pessoa — fora do escopo = mesmo 404.
 export async function GET(request: Request) {
   try {

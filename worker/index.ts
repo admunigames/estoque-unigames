@@ -70,6 +70,7 @@ type Permission =
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
   | "relatorio_nf:view" | "relatorio_nf:manage"
   | "controle_gd:view" | "controle_gd:manage"
+  | "treinamento:view" | "treinamento:team"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
@@ -218,6 +219,9 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // Permissão própria, independente de comercial:* (ver
   // MODULE_VIEW_PERMISSIONS.controleGd).
   "controle_gd:view", "controle_gd:manage",
+  // Comercial > Treinamento (Unigames Academy) — permissão própria,
+  // independente de comercial:* (ver MODULE_VIEW_PERMISSIONS.treinamento).
+  "treinamento:view", "treinamento:team",
   // Documentos — visualizar é liberado para todo usuário logado (menos
   // login só-Comercial); cadastrar, editar (renomear, mover de pasta e
   // substituir o arquivo) e excluir têm permissão própria, válida para as
@@ -1337,6 +1341,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   ],
   relatorioNf: ["relatorio_nf:view", "relatorio_nf:manage"],
   controleGd: ["controle_gd:view", "controle_gd:manage"],
+  treinamento: ["treinamento:view", "treinamento:team"],
 };
 
 const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_PERMISSIONS> = {
@@ -1513,6 +1518,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [
       path === "/comercial/relatorio-nf" || path.startsWith("/api/relatorio-nf"),
       "relatorioNf",
+    ],
+    // Treinamento (Unigames Academy) — permissão própria (treinamento:*),
+    // checado ANTES do bucket genérico "/comercial/" e "/api/commercial".
+    [
+      path === "/comercial/treinamento" || path.startsWith("/api/commercial/academy"),
+      "treinamento",
     ],
     // Comercial — permissão própria (comercial:*). O escopo por loja e a
     // distinção view/manage ficam em app/api/commercial/shared.ts.

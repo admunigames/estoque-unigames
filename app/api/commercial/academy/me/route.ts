@@ -1,12 +1,13 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { matchParticipant, trackProgress } from "../../../../lib/academy";
-import { canAccessCommercial, identity, jsonResponse } from "../../shared";
+import { identity, jsonResponse } from "../../shared";
 import {
   ACADEMY_SITE_URL,
   AcademyError,
   academyConfigured,
   canManageAcademyTeam,
+  canViewAcademy,
   loadAppUser,
   loadCatalog,
   loadLinks,
@@ -16,23 +17,22 @@ import {
 
 // Comercial > Treinamento: catálogo da Unigames Academy + o progresso do
 // PRÓPRIO login (participante vinculado manualmente ou casado por usuário/
-// nome). Qualquer permissão comercial:* entra.
+// nome). treinamento:view ou treinamento:team.
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canAccessCommercial(actor)) {
+  if (!canViewAcademy(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O TREINAMENTO." }, 403);
   }
   if (!academyConfigured()) return jsonResponse({ configured: false, academyUrl: ACADEMY_SITE_URL });
   try {
     const database = await getD1();
-    const [catalog, people, links, user, canManageTeam] = await Promise.all([
+    const [catalog, people, links, user] = await Promise.all([
       loadCatalog(),
       loadPeople(),
       loadLinks(database),
       loadAppUser(database, actor.id),
-      canManageAcademyTeam(database, actor),
     ]);
     const participant = user
       ? matchParticipant(people, { id: user.id, username: user.username, displayName: user.displayName }, links)
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     return jsonResponse({
       configured: true,
       academyUrl: ACADEMY_SITE_URL,
-      canManageTeam,
+      canManageTeam: canManageAcademyTeam(actor),
       catalog,
       participant,
       progress,

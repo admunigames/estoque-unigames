@@ -338,6 +338,9 @@ test("login só-Comercial: bloqueado em tudo, inclusive visualizar", () => {
     assert.equal(documentsApiAllowed(COMMERCIAL_ONLY, method), false, method);
   }
   // Ganhar uma permissão de documentos deixa de ser só-Comercial.
+  // O Treinamento mora no menu Comercial: não tira o vendedor do "só-Comercial".
+  const withTraining = { permissions: [...COMMERCIAL_ONLY.permissions, "treinamento:view"], role: "user" };
+  assert.equal(documentsApiAllowed(withTraining, "GET"), false);
   const withDocs = { permissions: [...COMMERCIAL_ONLY.permissions, "documents:create"], role: "user" };
   assert.equal(documentsApiAllowed(withDocs, "GET"), true);
   assert.equal(documentsApiAllowed(withDocs, "POST"), true);

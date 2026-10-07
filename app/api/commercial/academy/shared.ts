@@ -1,6 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { NO_COMPANY_ERROR } from "../../../lib/access-scope";
+import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import {
   matchParticipant,
   normalizeCatalog,
@@ -11,11 +11,8 @@ import {
   type AcademyPerson,
 } from "../../../lib/academy";
 import {
-  canManageCommercialGoals,
-  commercialScope,
   identity,
   jsonResponse,
-  linkedEmployeeIds,
   loadCompanyNames,
   type Database,
   type Identity,
@@ -113,10 +110,15 @@ export async function saveLinks(database: Database, links: Record<string, string
     .run();
 }
 
-/** Gestor do treinamento: cadastra metas e NÃO é conta de vendedor. */
-export async function canManageAcademyTeam(database: Database, actor: Identity) {
-  if (!canManageCommercialGoals(actor)) return false;
-  return actor.role === "admin" || (await linkedEmployeeIds(database, actor.id)).length === 0;
+// Permissões próprias do Treinamento, independentes de comercial:*:
+// treinamento:view = o próprio progresso; treinamento:team = aba Equipe
+// (progresso de todos no escopo de loja + vínculo de logins).
+export function canViewAcademy(actor: Identity) {
+  return actor.role === "admin" || actor.permissions.includes("treinamento:view") || actor.permissions.includes("treinamento:team");
+}
+
+export function canManageAcademyTeam(actor: Identity) {
+  return actor.role === "admin" || actor.permissions.includes("treinamento:team");
 }
 
 export type AppUserRow = { id: string; username: string; displayName: string; companyId: string; permissions: string; role: string };
@@ -132,7 +134,7 @@ export async function loadAppUser(database: Database, id: string) {
     .first<AppUserRow>();
 }
 
-/** Logins ativos com acesso ao Comercial (candidatos ao vínculo). */
+/** Logins ativos com permissão de Treinamento (candidatos ao vínculo). */
 export async function loadCommercialUsers(database: Database): Promise<AppUserRow[]> {
   const result = await database
     .prepare(
@@ -145,7 +147,7 @@ export async function loadCommercialUsers(database: Database): Promise<AppUserRo
     if (user.role === "admin") return false;
     try {
       const permissions = JSON.parse(user.permissions || "[]");
-      return Array.isArray(permissions) && permissions.some((p) => typeof p === "string" && (p === "comercial" || p.startsWith("comercial:")));
+      return Array.isArray(permissions) && permissions.some((p) => typeof p === "string" && p.startsWith("treinamento:"));
     } catch {
       return false;
     }
@@ -185,12 +187,15 @@ export async function teamGuard(
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  const database = await getD1();
-  if (!(await canManageAcademyTeam(database, actor))) {
+  if (!canManageAcademyTeam(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA VER O TREINAMENTO DA EQUIPE." }, 403);
   }
-  const scope = commercialScope(actor);
+  // Mesma regra de loja do resto do sistema: com loja = só a própria.
+  const scope: TeamScope | null = canSeeAllStores(actor, "treinamento:team")
+    ? { allStores: true, companyId: "" }
+    : hasCompany(actor.companyId) ? { allStores: false, companyId: actor.companyId } : null;
   if (!scope) return jsonResponse({ error: NO_COMPANY_ERROR }, 403);
+  const database = await getD1();
   if (!academyConfigured()) return jsonResponse({ error: "INTEGRAÇÃO COM A ACADEMY NÃO CONFIGURADA." }, 503);
   return { actor, scope, database };
 }
