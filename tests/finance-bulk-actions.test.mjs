@@ -12,11 +12,13 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 const db = await setupRouteDb([
   "accounts_payable", "accounts_payable_payments", "finance_items", "finance_categories", "finance_cost_centers",
   "finance_store_entries", "finance_accounts", "supplier_open_debts", "finance_suppliers",
+  "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",
 ]);
 const { todayInTimezone } = await import("../app/lib/finance-status.ts");
 const payablesBulk = await import("../app/api/finance/payables/bulk/route.ts");
 const cashFlowBulk = await import("../app/api/finance/cash-flow/payments/bulk/route.ts");
 const debtsBulk = await import("../app/api/finance/supplier-debts/bulk/route.ts");
+const invoicesBulk = await import("../app/api/finance/invoices/bulk/route.ts");
 
 const STORE_A = "criomar01";
 const STORE_B = "ctacaruna1";
@@ -44,6 +46,7 @@ test("sem finance:manage recebe 403 em todos os lotes", async () => {
   for (const [handler, path] of [
     [payablesBulk.POST, "/api/finance/payables/bulk"],
     [debtsBulk.POST, "/api/finance/supplier-debts/bulk"],
+    [invoicesBulk.POST, "/api/finance/invoices/bulk"],
   ]) {
     assert.equal((await post(handler, NO_FINANCE, path, {})).status, 403, path);
   }
@@ -117,4 +120,48 @@ test("Fornecedores em Aberto: pagar e cancelar pela conta gêmea; dívida cancel
   assert.equal(row("accounts_payable", "ap-d2").status, "canceled");
   assert.equal((await post(debtsBulk.POST, ADMIN, "/api/finance/supplier-debts/bulk", { action: "cancel", ids: ["d1", "zzz"] })).status, 404);
   assert.equal((await post(debtsBulk.POST, STORE_A_LOGIN, "/api/finance/supplier-debts/bulk", { action: "cancel", ids: ["db"] })).status, 403);
+});
+
+// ---------------------------------------------------------------------------
+// 2. Notas Fiscais
+// ---------------------------------------------------------------------------
+
+test("Notas Fiscais: conferir, categoria (pula NF com duplicata), cancelar (pula duplicata paga), 404/403", async () => {
+  const nf = (id, extra) => db.insert("supplier_invoices", {
+    id, company_id: STORE_A, company_name: "RIOMAR", invoice_number: id.toUpperCase(), competence_month: month,
+    total_amount_cents: 10_000, finance_item_id: "item-1", financial_status: "aguardando_conferencia",
+    sent_to_finance_at: "2026-10-01", origin: "manual", created_by: "seed", ...extra,
+  });
+  const dup = (id, invoiceId, payableId, extra) => db.insert("supplier_invoice_installments", {
+    id, invoice_id: invoiceId, company_id: STORE_A, due_date: today, original_amount_cents: 10_000,
+    accounts_payable_id: payableId, created_by: "seed", ...extra,
+  });
+  nf("nf-1"); nf("nf-2", { financial_status: "a_pagar" }); nf("nf-dup"); nf("nf-paga"); nf("nf-b", { company_id: STORE_B });
+  payable("ap-nf-dup"); payable("ap-nf-paga", { status: "paid", paid_amount_cents: 10_000 });
+  dup("i-dup", "nf-dup", "ap-nf-dup"); dup("i-paga", "nf-paga", "ap-nf-paga", { paid_amount_cents: 10_000 });
+
+  const reviewed = await json(await post(invoicesBulk.POST, ADMIN, "/api/finance/invoices/bulk", { action: "review", ids: ["nf-1", "nf-2"] }));
+  assert.equal(reviewed.applied, 1);
+  assert.deepEqual(reviewed.skipped.map((s) => s.reason), ["ESTA NOTA FISCAL NÃO ESTÁ AGUARDANDO CONFERÊNCIA."]);
+  assert.notEqual(row("supplier_invoices", "nf-1").financial_status, "aguardando_conferencia");
+
+  const cat = await json(await post(invoicesBulk.POST, ADMIN, "/api/finance/invoices/bulk", { action: "category", ids: ["nf-1", "nf-dup"], fields: { financeItemId: "item-2", costCenterId: "cc-1" } }));
+  assert.equal(cat.applied, 1);
+  assert.deepEqual(cat.skipped.map((s) => s.id), ["nf-dup"]);
+  assert.equal(row("supplier_invoices", "nf-1").finance_item_id, "item-2");
+  assert.equal(row("supplier_invoices", "nf-1").finance_category_id, "cat-1");
+  assert.equal(row("supplier_invoices", "nf-dup").finance_item_id, "item-1");
+
+  const canc = await json(await post(invoicesBulk.POST, ADMIN, "/api/finance/invoices/bulk", { action: "cancel", ids: ["nf-dup", "nf-paga"], fields: { reason: "DUPLICADA" } }));
+  assert.equal(canc.applied, 1);
+  assert.deepEqual(canc.skipped.map((s) => s.reason), ["NOTA COM DUPLICATA PAGA — CANCELE PELA TELA DA NOTA"]);
+  assert.equal(row("supplier_invoices", "nf-dup").canceled, 1);
+  assert.equal(row("accounts_payable", "ap-nf-dup").status, "canceled");
+  assert.equal(row("supplier_invoice_installments", "i-dup").canceled, 1);
+  assert.equal(row("supplier_invoices", "nf-paga").canceled, 0);
+
+  assert.equal((await post(invoicesBulk.POST, ADMIN, "/api/finance/invoices/bulk", { action: "cancel", ids: ["nf-2", "nf-x"] })).status, 404);
+  assert.equal(row("supplier_invoices", "nf-2").canceled, 0);
+  assert.equal((await post(invoicesBulk.POST, STORE_A_LOGIN, "/api/finance/invoices/bulk", { action: "cancel", ids: ["nf-2", "nf-b"] })).status, 403);
+  assert.equal(row("supplier_invoices", "nf-2").canceled, 0);
 });

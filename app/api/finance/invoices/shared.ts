@@ -1,6 +1,6 @@
 import type { getD1 } from "../../../../db";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR, type ScopeActor } from "../../../lib/access-scope";
-import { effectiveDreAmountCents } from "../../../lib/payables-recurrence";
+import { effectiveDreAmountCents, recalcPayableEntrySql } from "../../../lib/payables-recurrence";
 import {
   computeInvoiceFinancialStatus,
   type InstallmentSnapshot,
@@ -357,4 +357,69 @@ export async function loadPendingScheduleIds(
     .bind(...ids)
     .all<{ payableId: string }>();
   return new Set((result.results ?? []).map((row) => row.payableId));
+}
+
+/**
+ * CONFERIR NF — usado pelo PATCH individual (action 'review') e pelo lote
+ * (invoices/bulk). Só NF aguardando conferência.
+ */
+export async function planInvoiceReview(
+  database: Awaited<ReturnType<typeof getD1>>,
+  invoice: InvoiceRow,
+  actor: { id: string; name: string },
+): Promise<{ error: string } | { statements: [string, unknown[]][]; nextStatus: string }> {
+  if (invoice.financialStatus !== "aguardando_conferencia") return { error: "ESTA NOTA FISCAL NÃO ESTÁ AGUARDANDO CONFERÊNCIA." };
+  const recalc = await buildInvoiceStatusRecalcStatement(database, invoice, actor.id, actor.name, { reviewed: true });
+  return {
+    nextStatus: recalc.nextStatus,
+    statements: [
+      [recalc.sql, recalc.values],
+      invoiceEventStatement({ invoiceId: invoice.id, eventType: "reviewed", description: "NOTA FISCAL CONFERIDA.", actorId: actor.id, actorName: actor.name }),
+    ],
+  };
+}
+
+/**
+ * CANCELAR NF — soft-cancel da nota, das duplicatas e das contas a pagar
+ * gêmeas, com a DRE recalculada. Usado pelo PATCH individual e pelo lote.
+ */
+export async function planInvoiceCancel(
+  database: Awaited<ReturnType<typeof getD1>>,
+  invoice: InvoiceRow,
+  actor: { id: string; name: string },
+  reason: string,
+): Promise<[string, unknown[]][]> {
+  const installments = await loadInstallments(database, invoice.id);
+  const statements: [string, unknown[]][] = [
+    [
+      `UPDATE supplier_invoices
+       SET canceled=1, financial_status='cancelado', updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
+       WHERE id=?3`,
+      [actor.id, actor.name, invoice.id],
+    ],
+    invoiceEventStatement({
+      invoiceId: invoice.id,
+      eventType: "canceled",
+      description: reason || "NOTA FISCAL CANCELADA.",
+      actorId: actor.id,
+      actorName: actor.name,
+    }),
+  ];
+  for (const installment of installments) {
+    if (installment.canceled || !installment.accountsPayableId) continue;
+    statements.push([
+      `UPDATE accounts_payable
+       SET status='canceled', canceled_by=?1, canceled_by_name=?2, canceled_at=CURRENT_TIMESTAMP,
+           updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
+       WHERE id=?3`,
+      [actor.id, actor.name, installment.accountsPayableId],
+    ]);
+    statements.push([`UPDATE supplier_invoice_installments SET canceled=1, updated_at=CURRENT_TIMESTAMP WHERE id=?1`, [installment.id]]);
+  }
+  if (installments.length) {
+    statements.push(
+      ...recalcPayableEntrySql(crypto.randomUUID(), invoice.companyId, invoice.financeItemId, invoice.competenceMonth, actor.id, actor.name),
+    );
+  }
+  return statements;
 }

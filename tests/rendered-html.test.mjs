@@ -5252,3 +5252,11 @@ test("Financeiro 9/9 > Contas a Pagar e Fornecedores em Aberto: barra de lote", 
   assert.match(html, /async function financeBulkRequest\(endpoint, body, apiRequest\)/);
   assert.match(html, /' ATUALIZADO\(S\) · '\+skipped\.length\+' PULADO\(S\)'/);
 });
+
+test("Financeiro 9/9 > Notas Fiscais: barra de lote", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="invoicesBulkBar"[\s\S]*?data-bulk-action="review">CONFERIR[\s\S]*?data-bulk-action="category">ALTERAR CATEGORIA \/ CENTRO DE CUSTO[\s\S]*?data-bulk-action="cancel">CANCELAR/);
+  assert.match(html, /const invoicesBulk = setupBulkSelection\(el\('invoicesBulkBar'\), el\('invoicesBody'\)/);
+  assert.match(html, /financeBulkRequest\('\/invoices\/bulk'/);
+  assert.match(html, /id="invBulkDialog"/);
+});

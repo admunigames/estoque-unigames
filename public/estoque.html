@@ -7299,13 +7299,23 @@
 
       <section class="summary payables-quick-views" id="invoicesStatusChips" aria-label="Filtro por status da NF"></section>
 
+      <div class="bulk-bar" id="invoicesBulkBar">
+        <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+        <div class="bulk-bar-actions" data-bulk-actions hidden>
+          <strong class="bulk-bar-count" data-bulk-count></strong>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="review">CONFERIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="category">ALTERAR CATEGORIA / CENTRO DE CUSTO</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+        </div>
+      </div>
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Nota Fiscal</th><th>Fornecedor</th><th>Empresa/Loja</th><th>Competência</th><th>Valor Total</th><th>Status</th><th>Origem</th><th></th>
+              <th class="bulk-col" aria-label="Selecionar"></th><th>Nota Fiscal</th><th>Fornecedor</th><th>Empresa/Loja</th><th>Competência</th><th>Valor Total</th><th>Status</th><th>Origem</th><th></th>
             </tr></thead>
-            <tbody id="invoicesBody"><tr><td colspan="8" class="responsive-empty">Carregando notas fiscais…</td></tr></tbody>
+            <tbody id="invoicesBody"><tr><td colspan="9" class="responsive-empty">Carregando notas fiscais…</td></tr></tbody>
           </table>
         </div>
         <div class="payables-pagination" id="invoicesPagination"></div>
@@ -10205,6 +10215,27 @@
     <div class="user-form-status" id="payBulkStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelPayBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="invBulkDialog" aria-labelledby="invBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="invBulkTitle">NOTAS SELECIONADAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseInvBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="invBulkForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full" data-inv-bulk-field="category"><label for="invBulkItem">CATEGORIA › ITEM</label><select id="invBulkItem"><option value="">NÃO ALTERAR</option></select></div>
+      <div class="purchase-field full" data-inv-bulk-field="category"><label for="invBulkCostCenter">CENTRO DE CUSTO</label><select id="invBulkCostCenter"><option value="">NÃO ALTERAR</option></select></div>
+      <div class="purchase-field full" data-inv-bulk-field="cancel"><label for="invBulkReason">MOTIVO DO CANCELAMENTO</label><input id="invBulkReason" maxlength="500" placeholder="Opcional"></div>
+    </div>
+    <p class="purchase-field-help" data-inv-bulk-field="category">NOTA COM DUPLICATAS NÃO TROCA DE ITEM (SÓ DE CENTRO DE CUSTO), IGUAL À EDIÇÃO DA NOTA.</p>
+    <p class="purchase-field-help" data-inv-bulk-field="cancel">CANCELA A NOTA E AS DUPLICATAS EM ABERTO. NOTA COM DUPLICATA PAGA É PULADA (CANCELE PELA TELA DA NOTA).</p>
+    <div class="user-form-status" id="invBulkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelInvBulk" type="button">FECHAR</button>
       <button class="btn-accent" type="submit">APLICAR</button>
     </div>
   </form>
@@ -37051,20 +37082,21 @@ function renderHomeTasks(){
   function invoiceRowHtml(row){
     const supplier = payableSuppliers.find(s => s.id === row.supplierId);
     return '<tr>'+
-      '<td>'+escapeHtml(row.invoiceNumber)+(row.series ? '/'+escapeHtml(row.series) : '')+'</td>'+
-      '<td>'+escapeHtml((supplier && supplier.name) || row.supplierDocument || '—')+'</td>'+
-      '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
-      '<td>'+escapeHtml(row.competenceMonth)+'</td>'+
-      '<td>'+formatCentsBRL(row.totalAmountCents)+'</td>'+
-      '<td>'+invoiceStatusPillHtml(row.financialStatus)+'</td>'+
-      '<td>'+(row.origin === 'purchase' ? 'COMPRAS' : 'MANUAL')+'</td>'+
-      '<td><button class="btn-outline" type="button" data-invoice-open="'+escapeHtml(row.id)+'">ABRIR</button></td>'+
+      '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar NF '+row.invoiceNumber)+'</td>'+
+      '<td data-label="Nota fiscal">'+escapeHtml(row.invoiceNumber)+(row.series ? '/'+escapeHtml(row.series) : '')+'</td>'+
+      '<td data-label="Fornecedor">'+escapeHtml((supplier && supplier.name) || row.supplierDocument || '—')+'</td>'+
+      '<td data-label="Empresa/Loja">'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+      '<td data-label="Competência">'+escapeHtml(row.competenceMonth)+'</td>'+
+      '<td data-label="Valor total">'+formatCentsBRL(row.totalAmountCents)+'</td>'+
+      '<td data-label="Status">'+invoiceStatusPillHtml(row.financialStatus)+'</td>'+
+      '<td data-label="Origem">'+(row.origin === 'purchase' ? 'COMPRAS' : 'MANUAL')+'</td>'+
+      '<td data-label="Ações"><button class="btn-outline" type="button" data-invoice-open="'+escapeHtml(row.id)+'">ABRIR</button></td>'+
     '</tr>';
   }
 
   async function loadInvoicesList(opts){
     const tbody = el('invoicesBody');
-    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando notas fiscais…</td></tr>';
+    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando notas fiscais…</td></tr>';
     const params = new URLSearchParams();
     const companyId = el('invoicesLoja') ? el('invoicesLoja').value : '';
     if(companyId) params.set('companyId', companyId);
@@ -37077,13 +37109,58 @@ function renderHomeTasks(){
       if(tbody){
         tbody.innerHTML = invoiceRows.length
           ? invoiceRows.map(invoiceRowHtml).join('')
-          : '<tr><td colspan="8" class="responsive-empty">Nenhuma nota fiscal encontrada.</td></tr>';
+          : '<tr><td colspan="9" class="responsive-empty">Nenhuma nota fiscal encontrada.</td></tr>';
       }
     }catch(error){
       invoiceRows = [];
-      if(tbody) tbody.innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
+    invoicesBulk.sync();
   }
+
+  // Ações em lote (Financeiro 9/9) — invoices/bulk, mesma regra da tela da nota.
+  let invBulkPending = null;
+  const invoicesBulk = setupBulkSelection(el('invoicesBulkBar'), el('invoicesBody'), async (action, ids) => {
+    if(action === 'review'){
+      if(!confirm('Conferir '+ids.length+' nota(s)? Só as que estão aguardando conferência são conferidas.')) return false;
+      await financeBulkRequest('/invoices/bulk', {action, ids});
+      await loadInvoicesList({silent:true});
+      return;
+    }
+    invBulkPending = {action, ids};
+    el('invBulkForm').reset();
+    el('invBulkTitle').textContent = (action === 'cancel' ? 'CANCELAR' : 'ALTERAR CATEGORIA / CENTRO DE CUSTO')+' — '+ids.length+(ids.length === 1 ? ' NOTA' : ' NOTAS');
+    document.querySelectorAll('[data-inv-bulk-field]').forEach(node => { node.hidden = node.dataset.invBulkField !== action; });
+    el('invBulkStatus').textContent = '';
+    await loadPayablesCatalogData();
+    el('invBulkItem').innerHTML = '<option value="">NÃO ALTERAR</option>'+financeItems.map(item =>
+      '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(payableFinanceItemLabel(item.id))+'</option>').join('');
+    el('invBulkCostCenter').innerHTML = '<option value="">NÃO ALTERAR</option><option value="__none">SEM CENTRO DE CUSTO</option>'+
+      financeCostCenters.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    el('invBulkDialog').showModal();
+    return false;
+  });
+  el('btnCloseInvBulk').addEventListener('click', () => el('invBulkDialog').close());
+  el('btnCancelInvBulk').addEventListener('click', () => el('invBulkDialog').close());
+  el('invBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!invBulkPending) return;
+    const {action, ids} = invBulkPending;
+    const fields = {};
+    if(action === 'cancel'){
+      fields.reason = el('invBulkReason').value.trim();
+    }else{
+      if(el('invBulkItem').value) fields.financeItemId = el('invBulkItem').value;
+      if(el('invBulkCostCenter').value) fields.costCenterId = el('invBulkCostCenter').value === '__none' ? '' : el('invBulkCostCenter').value;
+      if(!Object.keys(fields).length){ el('invBulkStatus').textContent = 'ESCOLHA A CATEGORIA OU O CENTRO DE CUSTO.'; return; }
+    }
+    try{
+      await financeBulkRequest('/invoices/bulk', {action, ids, fields});
+      el('invBulkDialog').close();
+      invoicesBulk.clear();
+      await loadInvoicesList({silent:true});
+    }catch(error){ el('invBulkStatus').textContent = error.message; }
+  });
 
   async function loadInvoicesPage(){
     if(!companies.length) await loadCompanies();

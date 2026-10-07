@@ -8,7 +8,6 @@ import { computeDreAnchorAssignments } from "../../../../lib/payables-recurrence
 import { recalcPayableEntrySql } from "../../payables/shared";
 import {
   assertInvoiceAccess,
-  buildInvoiceStatusRecalcStatement,
   canReconcileInvoices,
   canViewInvoices,
   invoiceEventStatement,
@@ -16,6 +15,8 @@ import {
   loadInvoice,
   loadInvoiceDreView,
   loadPendingScheduleIds,
+  planInvoiceCancel,
+  planInvoiceReview,
   purchaseOrderNfAttachmentCopyStatements,
   toInstallmentSnapshot,
 } from "../shared";
@@ -141,71 +142,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const actorName = actor.displayName || "Administrador";
 
     if (action === "review") {
-      if (invoice.financialStatus !== "aguardando_conferencia") {
-        return jsonResponse({ error: "ESTA NOTA FISCAL NÃO ESTÁ AGUARDANDO CONFERÊNCIA." }, 409);
-      }
-      const recalc = await buildInvoiceStatusRecalcStatement(database, invoice, actor.id, actorName, {
-        reviewed: true,
-      });
-      const statements = [
-        [recalc.sql, recalc.values] as [string, unknown[]],
-        invoiceEventStatement({
-          invoiceId: id,
-          eventType: "reviewed",
-          description: "NOTA FISCAL CONFERIDA.",
-          actorId: actor.id,
-          actorName,
-        }),
-      ];
-      await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
-      return jsonResponse({ updated: true, financialStatus: recalc.nextStatus });
+      const plan = await planInvoiceReview(database, invoice, { id: actor.id, name: actorName });
+      if ("error" in plan) return jsonResponse({ error: plan.error }, 409);
+      await database.batch(plan.statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
+      return jsonResponse({ updated: true, financialStatus: plan.nextStatus });
     }
 
     if (action === "cancel") {
-      const installments = await loadInstallments(database, id);
-      const statements: [string, unknown[]][] = [
-        [
-          `UPDATE supplier_invoices
-           SET canceled=1, financial_status='cancelado', updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
-           WHERE id=?3`,
-          [actor.id, actorName, id],
-        ],
-        invoiceEventStatement({
-          invoiceId: id,
-          eventType: "canceled",
-          description: safeText(body.reason, 500) || "NOTA FISCAL CANCELADA.",
-          actorId: actor.id,
-          actorName,
-        }),
-      ];
-      for (const installment of installments) {
-        if (installment.canceled || !installment.accountsPayableId) continue;
-        statements.push([
-          `UPDATE accounts_payable
-           SET status='canceled', canceled_by=?1, canceled_by_name=?2, canceled_at=CURRENT_TIMESTAMP::text,
-               updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
-           WHERE id=?3`,
-          [actor.id, actorName, installment.accountsPayableId],
-        ]);
-        statements.push([
-          `UPDATE supplier_invoice_installments SET canceled=1, updated_at=CURRENT_TIMESTAMP WHERE id=?1`,
-          [installment.id],
-        ]);
-      }
-      const distinctMonths = [...new Set(installments.map(() => invoice.competenceMonth))];
-      for (const month of distinctMonths) {
-        const entryId = crypto.randomUUID();
-        for (const [sql, values] of recalcPayableEntrySql(
-          entryId,
-          invoice.companyId,
-          invoice.financeItemId,
-          month,
-          actor.id,
-          actorName,
-        )) {
-          statements.push([sql, values]);
-        }
-      }
+      const statements = await planInvoiceCancel(database, invoice, { id: actor.id, name: actorName }, safeText(body.reason, 500));
       await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
       return jsonResponse({ updated: true, canceled: true });
     }
