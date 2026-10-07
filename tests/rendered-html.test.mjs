@@ -5277,3 +5277,11 @@ test("Financeiro 9/9 > Controle de Reposição: barra de lote e cadastro em lote
   assert.match(html, /id="reposicaoBatchDialog"[\s\S]*?SALVAR TUDO/);
   assert.match(html, /financeApiRequest\('\/replacement-control\/batch'/);
 });
+
+test("Financeiro 9/9 > Orçamento: barra de lote", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="budgetsBulkBar"[\s\S]*?data-bulk-action="copy">COPIAR PARA OUTRO MÊS[\s\S]*?data-bulk-action="adjust">AJUSTAR VALOR[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /const budgetsBulk = setupBulkSelection\(el\('budgetsBulkBar'\), el\('budgetsTableBody'\)/);
+  assert.match(html, /financeBulkRequest\('\/budgets\/bulk'/);
+  assert.match(html, /id="budgetBulkDialog"/);
+});

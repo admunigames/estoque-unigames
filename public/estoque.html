@@ -7480,11 +7480,21 @@
         </div>
       </div>
 
+      <div class="bulk-bar" id="budgetsBulkBar">
+        <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+        <div class="bulk-bar-actions" data-bulk-actions hidden>
+          <strong class="bulk-bar-count" data-bulk-count></strong>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="copy">COPIAR PARA OUTRO MÊS</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="adjust">AJUSTAR VALOR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+        </div>
+      </div>
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="budgetsTable">
-            <thead><tr><th>Categoria</th><th>Centro de Custo</th><th>Orçado</th><th>Realizado</th><th>Diferença</th><th>Saldo</th><th>% Utilizado</th><th></th></tr></thead>
-            <tbody id="budgetsTableBody"><tr><td colspan="8" class="responsive-empty">Selecione o mês para ver o orçamento.</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Categoria</th><th>Centro de Custo</th><th>Orçado</th><th>Realizado</th><th>Diferença</th><th>Saldo</th><th>% Utilizado</th><th></th></tr></thead>
+            <tbody id="budgetsTableBody"><tr><td colspan="9" class="responsive-empty">Selecione o mês para ver o orçamento.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -10323,6 +10333,27 @@
       <button class="btn-outline" id="btnReposicaoBatchAddRows" type="button">+ 5 LINHAS</button>
       <button class="btn-outline" id="btnCancelReposicaoBatch" type="button">FECHAR</button>
       <button class="btn-accent" id="btnSaveReposicaoBatch" type="submit">SALVAR TUDO</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="budgetBulkDialog" aria-labelledby="budgetBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="budgetBulkTitle">ORÇAMENTOS SELECIONADOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseBudgetBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="budgetBulkForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field" data-budget-bulk-field="copy"><label for="budgetBulkMonth">MÊS DE DESTINO *</label><input type="month" id="budgetBulkMonth"></div>
+      <div class="purchase-field" data-budget-bulk-field="adjust"><label for="budgetBulkMode">TIPO DE AJUSTE</label><select id="budgetBulkMode"><option value="percent">PERCENTUAL (%)</option><option value="fixed">VALOR FIXO (R$)</option></select></div>
+      <div class="purchase-field" data-budget-bulk-field="adjust"><div id="budgetBulkPercentField"><label for="budgetBulkPercent">PERCENTUAL (+ OU −)</label><input type="number" id="budgetBulkPercent" step="0.01" placeholder="EX.: 10 OU -5"></div><div id="budgetBulkDeltaField" hidden><label for="budgetBulkDelta">VALOR (+ OU −)</label><input id="budgetBulkDelta" placeholder="EX.: -R$ 100,00"></div></div>
+    </div>
+    <p class="purchase-field-help" data-budget-bulk-field="copy">O QUE JÁ EXISTE NO MÊS DE DESTINO (MESMA LOJA/CATEGORIA/CENTRO DE CUSTO) É PULADO.</p>
+    <p class="purchase-field-help" data-budget-bulk-field="adjust">ORÇAMENTO QUE FICARIA ZERO OU NEGATIVO É PULADO.</p>
+    <div class="user-form-status" id="budgetBulkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelBudgetBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
     </div>
   </form>
 </dialog>
@@ -28353,29 +28384,33 @@ function renderHomeTasks(){
         '<button class="btn-outline" type="button" data-budget-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span>';
     const statusCell = noBudget
-      ? '<td><span class="status-pill" style="opacity:.65;">SEM ORÇAMENTO · SÓ REALIZADO</span></td>'
-      : '<td><span class="status-pill '+BUDGET_ALERT_TONE[row.alertLevel]+'">'+budgetPercentLabel(row)+' — '+BUDGET_ALERT_LABEL[row.alertLevel]+'</span></td>';
+      ? '<td data-label="% utilizado"><span class="status-pill" style="opacity:.65;">SEM ORÇAMENTO · SÓ REALIZADO</span></td>'
+      : '<td data-label="% utilizado"><span class="status-pill '+BUDGET_ALERT_TONE[row.alertLevel]+'">'+budgetPercentLabel(row)+' — '+BUDGET_ALERT_LABEL[row.alertLevel]+'</span></td>';
+    // Seleção em lote (9/9) só na tela do Orçamento e só em orçamento cadastrado.
+    const selectCell = settings.readOnly ? '' : '<td class="bulk-col" data-label="Selecionar">'+(noBudget ? '' : bulkRowCheckbox(row.id, 'Selecionar orçamento '+row.categoryName))+'</td>';
     return '<tr'+(noBudget ? ' style="color:var(--ink-soft);"' : '')+'>'+
-      '<td>'+escapeHtml(row.categoryName)+'</td>'+
-      '<td>'+escapeHtml(row.costCenterName || 'TODOS')+'</td>'+
-      '<td>'+(noBudget ? '—' : formatCentsBRL(row.amountCents))+'</td>'+
-      '<td>'+formatCentsBRL(row.realizedCents)+'</td>'+
-      '<td>'+(noBudget ? '—' : formatCentsBRL(row.differenceCents))+'</td>'+
-      '<td>'+(noBudget ? '—' : formatCentsBRL(row.balanceCents))+'</td>'+
+      selectCell+
+      '<td data-label="Categoria">'+escapeHtml(row.categoryName)+'</td>'+
+      '<td data-label="Centro de custo">'+escapeHtml(row.costCenterName || 'TODOS')+'</td>'+
+      '<td data-label="Orçado">'+(noBudget ? '—' : formatCentsBRL(row.amountCents))+'</td>'+
+      '<td data-label="Realizado">'+formatCentsBRL(row.realizedCents)+'</td>'+
+      '<td data-label="Diferença">'+(noBudget ? '—' : formatCentsBRL(row.differenceCents))+'</td>'+
+      '<td data-label="Saldo">'+(noBudget ? '—' : formatCentsBRL(row.balanceCents))+'</td>'+
       statusCell+
-      (settings.readOnly ? '' : '<td>'+actions+'</td>')+
+      (settings.readOnly ? '' : '<td data-label="Ações">'+actions+'</td>')+
     '</tr>';
   }
 
   function renderBudgetsTable(tableBodyId, rows, options){
     const body = el(tableBodyId);
     if(!body) return;
-    const columns = (options && options.readOnly) ? 7 : 8;
+    const columns = (options && options.readOnly) ? 7 : 9;
     if(!rows.length){
       body.innerHTML = '<tr><td colspan="'+columns+'" class="responsive-empty">Nenhum orçamento cadastrado para este período.</td></tr>';
-      return;
+    }else{
+      body.innerHTML = rows.map(row => budgetRowHtml(row, options)).join('');
     }
-    body.innerHTML = rows.map(row => budgetRowHtml(row, options)).join('');
+    if(tableBodyId === 'budgetsTableBody') budgetsBulk.sync();
   }
 
   async function loadBudgetsFor(companyId, month){
@@ -28397,15 +28432,70 @@ function renderHomeTasks(){
     const companyId = el('budgetLoja').value;
     const month = el('budgetMes').value;
     const silent = opts && opts.silent;
-    if(!silent) el('budgetsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    if(!silent) el('budgetsTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
     try{
       budgetsCurrentRows = await loadBudgetsFor(companyId, month);
       renderBudgetsTable('budgetsTableBody', budgetsCurrentRows);
     }catch(error){
       budgetsCurrentRows = [];
-      el('budgetsTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('budgetsTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
+
+  // Ações em lote (Financeiro 9/9) — budgets/bulk.
+  let budgetsBulkPending = null;
+  const budgetsBulk = setupBulkSelection(el('budgetsBulkBar'), el('budgetsTableBody'), async (action, ids) => {
+    if(action === 'delete'){
+      if(!confirm('Excluir '+ids.length+' orçamento(s)?')) return false;
+      await financeBulkRequest('/budgets/bulk', {action, ids});
+      await loadOrcamentoPage({silent:true});
+      return;
+    }
+    budgetsBulkPending = {action, ids};
+    el('budgetBulkForm').reset();
+    setCurrencyValue(el('budgetBulkDelta'), '');
+    el('budgetBulkTitle').textContent = (action === 'copy' ? 'COPIAR PARA OUTRO MÊS' : 'AJUSTAR VALOR')+' — '+ids.length+(ids.length === 1 ? ' ORÇAMENTO' : ' ORÇAMENTOS');
+    document.querySelectorAll('[data-budget-bulk-field]').forEach(node => { node.hidden = node.dataset.budgetBulkField !== action; });
+    if(action === 'copy'){
+      const [year, mon] = (el('budgetMes').value || financeCurrentMonthKey()).split('-').map(Number);
+      el('budgetBulkMonth').value = mon === 12 ? (year + 1)+'-01' : year+'-'+String(mon + 1).padStart(2, '0');
+    }
+    el('budgetBulkStatus').textContent = '';
+    el('budgetBulkDialog').showModal();
+    return false;
+  });
+  attachCurrencyMask(el('budgetBulkDelta'), {allowNegative:true});
+  el('btnCloseBudgetBulk').addEventListener('click', () => el('budgetBulkDialog').close());
+  el('btnCancelBudgetBulk').addEventListener('click', () => el('budgetBulkDialog').close());
+  el('budgetBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!budgetsBulkPending) return;
+    const {action, ids} = budgetsBulkPending;
+    const status = el('budgetBulkStatus');
+    let fields;
+    if(action === 'copy'){
+      fields = {month: el('budgetBulkMonth').value};
+      if(!fields.month){ status.textContent = 'INFORME O MÊS DE DESTINO.'; return; }
+    }else if(el('budgetBulkMode').value === 'percent'){
+      const pct = Number(String(el('budgetBulkPercent').value).replace(',', '.'));
+      if(!pct){ status.textContent = 'INFORME O PERCENTUAL (EX.: 10 OU -5).'; return; }
+      fields = {mode:'percent', percentBps: Math.round(pct * 100)};
+    }else{
+      const delta = Math.round(Number(getCurrencyValue(el('budgetBulkDelta')) || 0) * 100);
+      if(!delta){ status.textContent = 'INFORME O VALOR DO AJUSTE (+ OU −).'; return; }
+      fields = {mode:'fixed', deltaCents: delta};
+    }
+    try{
+      await financeBulkRequest('/budgets/bulk', {action, ids, fields});
+      el('budgetBulkDialog').close();
+      budgetsBulk.clear();
+      await loadOrcamentoPage({silent:true});
+    }catch(error){ status.textContent = error.message; }
+  });
+  el('budgetBulkMode').addEventListener('change', () => {
+    el('budgetBulkPercentField').hidden = el('budgetBulkMode').value !== 'percent';
+    el('budgetBulkDeltaField').hidden = el('budgetBulkMode').value !== 'fixed';
+  });
   el('budgetLoja') && el('budgetLoja').addEventListener('change', loadOrcamentoPage);
   el('budgetMes') && el('budgetMes').addEventListener('change', loadOrcamentoPage);
   el('budgetAmount') && attachCurrencyMask(el('budgetAmount'));

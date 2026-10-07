@@ -13,7 +13,7 @@ const db = await setupRouteDb([
   "accounts_payable", "accounts_payable_payments", "finance_items", "finance_categories", "finance_cost_centers",
   "finance_store_entries", "finance_accounts", "supplier_open_debts", "finance_suppliers",
   "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",
-  "finance_bank_statement_entries", "finance_bank_classification_rules", "finance_replacement_entries",
+  "finance_bank_statement_entries", "finance_bank_classification_rules", "finance_replacement_entries", "finance_budgets",
 ]);
 const { todayInTimezone } = await import("../app/lib/finance-status.ts");
 const payablesBulk = await import("../app/api/finance/payables/bulk/route.ts");
@@ -23,6 +23,7 @@ const invoicesBulk = await import("../app/api/finance/invoices/bulk/route.ts");
 const reconBulk = await import("../app/api/finance/bank-reconciliation/bulk/route.ts");
 const reposicaoBulk = await import("../app/api/finance/replacement-control/bulk/route.ts");
 const reposicaoBatch = await import("../app/api/finance/replacement-control/batch/route.ts");
+const budgetsBulk = await import("../app/api/finance/budgets/bulk/route.ts");
 
 const STORE_A = "criomar01";
 const STORE_B = "ctacaruna1";
@@ -54,6 +55,7 @@ test("sem finance:manage recebe 403 em todos os lotes", async () => {
     [reconBulk.POST, "/api/finance/bank-reconciliation/bulk"],
     [reposicaoBulk.POST, "/api/finance/replacement-control/bulk"],
     [reposicaoBatch.POST, "/api/finance/replacement-control/batch"],
+    [budgetsBulk.POST, "/api/finance/budgets/bulk"],
   ]) {
     assert.equal((await post(handler, NO_FINANCE, path, {})).status, 403, path);
   }
@@ -238,4 +240,36 @@ test("Reposição: cadastrar em lote (cria e pula), alterar setor/motivo, exclui
   assert.equal(del.applied, 1);
   assert.deepEqual(del.skipped.map((s) => s.reason), ["JÁ VIROU DESPESA — REMOVA A DESPESA PRIMEIRO"]);
   assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_replacement_entries").get().n, 1);
+});
+
+// ---------------------------------------------------------------------------
+// 5. Orçamento
+// ---------------------------------------------------------------------------
+
+test("Orçamento: copiar para outro mês (pula o que já existe), ajustar % e fixo (pula ≤ 0), excluir, 404", async () => {
+  const budget = (id, extra) => db.insert("finance_budgets", {
+    id, company_id: STORE_A, company_name: "RIOMAR", category_id: "cat-1", cost_center_id: "", month: "2026-09",
+    amount_cents: 100_000, created_by: "seed", ...extra,
+  });
+  budget("b1"); budget("b2", { cost_center_id: "cc-1", amount_cents: 5_000 }); budget("b-out", { month: "2026-10" });
+
+  const copied = await json(await post(budgetsBulk.POST, ADMIN, "/api/finance/budgets/bulk", { action: "copy", ids: ["b1", "b2"], fields: { month: "2026-10" } }));
+  assert.equal(copied.applied, 1);
+  assert.deepEqual(copied.skipped.map((s) => [s.id, s.reason]), [["b1", "JÁ EXISTE ORÇAMENTO NO MÊS DE DESTINO"]]);
+  const october = db.sqlite.prepare("SELECT cost_center_id, amount_cents FROM finance_budgets WHERE month='2026-10' ORDER BY cost_center_id").all().map((r) => ({ ...r }));
+  assert.deepEqual(october, [{ cost_center_id: "", amount_cents: 100_000 }, { cost_center_id: "cc-1", amount_cents: 5_000 }]);
+
+  await post(budgetsBulk.POST, ADMIN, "/api/finance/budgets/bulk", { action: "adjust", ids: ["b1", "b2"], fields: { mode: "percent", percentBps: 1000 } });
+  assert.equal(row("finance_budgets", "b1").amount_cents, 110_000);
+  assert.equal(row("finance_budgets", "b2").amount_cents, 5_500);
+  const fixed = await json(await post(budgetsBulk.POST, ADMIN, "/api/finance/budgets/bulk", { action: "adjust", ids: ["b1", "b2"], fields: { mode: "fixed", deltaCents: -10_000 } }));
+  assert.equal(fixed.applied, 1);
+  assert.deepEqual(fixed.skipped.map((s) => s.reason), ["O VALOR FICARIA ZERO OU NEGATIVO"]);
+  assert.equal(row("finance_budgets", "b1").amount_cents, 100_000);
+  assert.equal(row("finance_budgets", "b2").amount_cents, 5_500);
+
+  assert.equal((await post(budgetsBulk.POST, ADMIN, "/api/finance/budgets/bulk", { action: "delete", ids: ["b1", "zz"] })).status, 404);
+  assert.equal(row("finance_budgets", "b1").id, "b1");
+  await post(budgetsBulk.POST, ADMIN, "/api/finance/budgets/bulk", { action: "delete", ids: ["b1", "b2"] });
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_budgets WHERE month='2026-09'").get().n, 0);
 });
