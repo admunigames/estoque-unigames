@@ -4435,6 +4435,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.doesNotMatch(html, /COM_TIER_COLORS/);
   // Meta Loja: itens da loja à mão; comissão do Comercial travada no RH (vem de lá).
   assert.match(html, /<th>Meta itens<\/th><th>Itens feito<\/th>/);
+  assert.match(html, /<th>Meta realme<\/th><th>Realmes feito<\/th>/);
   assert.match(html, /id="rhComissaoValorHint" hidden>VEM DO COMERCIAL/);
   assert.match(html, /el\('rhComissaoValor'\)\.readOnly = fromCommercial;/);
   // META VENDEDORES: meta (tracejada) × feito por vendedor, só da loja de quem vê (rota /team).

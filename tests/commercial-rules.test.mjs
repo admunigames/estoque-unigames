@@ -411,19 +411,6 @@ test("Meta Loja (comercial:stores): todos veem só o %; quem lança vê os valor
   assert.deepEqual([empty.items, empty.totalPercent], [[], null]);
 });
 
-test("Ranking: totais de itens e realmes por loja (só quantidades, nada em R$), empresa inteira", async () => {
-  // Gestor da LOJA ALFA vê o ranking da empresa toda (sempre geral).
-  const response = await callRoute(rankingRoute.GET, GOALS_A, "GET", "/api/commercial/ranking?month=2026-12");
-  assert.equal(response.status, 200);
-  const data = await response.json();
-  assert.deepEqual(
-    data.stores.map((store) => [store.name, store.items, store.targetItems, store.realme, store.targetRealme]).sort(),
-    [["LOJA ALFA", 200, 200, 20, 20], ["LOJA BETA", 100, 100, 10, 10]],
-  );
-  assert.equal(data.items.length, 3);
-  assert.doesNotMatch(JSON.stringify(data), /Cents|commission|revenue"/);
-});
-
 test("nomes de vendedor sempre em CAIXA ALTA (cadastro do RH em minúsculas)", async () => {
   const overviewData = await sellersOf(ADMIN, "2026-12");
   assert.deepEqual(overviewData.sellers.map((seller) => seller.name).sort(), ["ANA SOUZA", "BRUNO LIMA", "CARLA DIAS"]);
@@ -509,14 +496,18 @@ test("comissão do Comercial preenche o comissionamento do RH (a partir de 10/20
   assert.equal(hrRow("emp-bruno", "2026-10").c, 12_345);
 });
 
-test("Meta Loja: META ITENS e ITENS FEITO à mão; o gráfico de itens por loja usa esses números", async () => {
+test("Meta Loja: itens e realmes da loja à mão; os gráficos de itens/realmes por loja usam esses números", async () => {
   const put = (body) => callRoute(storesRoute.PUT, STORES, "PUT", "/api/commercial/stores", { month: "2027-02", targetCents: 0, revenueCents: 0, ...body });
-  assert.equal((await put({ companyId: STORE_A, targetItems: 760, items: 178 })).status, 200);
+  assert.equal((await put({ companyId: STORE_A, targetItems: 760, items: 178, targetRealme: 28, realme: 9 })).status, 200);
   assert.equal((await put({ companyId: STORE_B, targetItems: -1, items: 0 })).status, 400);
+  assert.equal((await put({ companyId: STORE_B, realme: -2 })).status, 400);
   const data = await (await callRoute(storesRoute.GET, DASHBOARD, "GET", "/api/commercial/stores?month=2027-02")).json();
-  assert.deepEqual(data.itemStores, [{ companyId: STORE_A, name: "LOJA ALFA", items: 178, targetItems: 760 }]);
+  assert.deepEqual(data.itemStores, [{ companyId: STORE_A, name: "LOJA ALFA", items: 178, targetItems: 760, realme: 9, targetRealme: 28 }]);
   const editor = await (await callRoute(storesRoute.GET, STORES, "GET", "/api/commercial/stores?month=2027-02")).json();
   assert.deepEqual(editor.rows.find((row) => row.companyId === STORE_A), {
-    companyId: STORE_A, name: "LOJA ALFA", targetCents: 0, revenueCents: 0, targetItems: 760, items: 178,
+    companyId: STORE_A, name: "LOJA ALFA", targetCents: 0, revenueCents: 0, targetItems: 760, items: 178, targetRealme: 28, realme: 9,
   });
+  // O Ranking não manda mais quantidades por loja (vêm da Meta Loja).
+  const rank = await (await callRoute(rankingRoute.GET, DASHBOARD, "GET", "/api/commercial/ranking?month=2027-02")).json();
+  assert.equal("stores" in rank, false);
 });

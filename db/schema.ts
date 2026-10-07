@@ -3704,9 +3704,12 @@ export const commercialStoreGoals = pgTable(
     companyId: text("company_id").notNull(),
     targetCents: integer("target_cents").notNull().default(0),
     revenueCents: integer("revenue_cents").notNull().default(0),
-    // META ITENS / ITENS FEITO da loja (ITENS TOTAIS POR LOJA no Ranking).
+    // META ITENS / ITENS FEITO e META REALME / REALMES FEITO da loja
+    // (ITENS e REALMES TOTAIS POR LOJA no Ranking).
     targetItems: integer("target_items").notNull().default(0),
     items: integer("items").notNull().default(0),
+    targetRealme: integer("target_realme").notNull().default(0),
+    realme: integer("realme").notNull().default(0),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(""),

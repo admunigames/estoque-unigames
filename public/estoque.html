@@ -6801,8 +6801,8 @@
         <div class="table-panel responsive-table com-edit-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Loja</th><th>Meta da loja (R$)</th><th>Feito da loja (R$)</th><th style="text-align:right">% feito ÷ meta</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th></tr></thead>
-              <tbody id="comStoreGoalsBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th>Loja</th><th>Meta da loja (R$)</th><th>Feito da loja (R$)</th><th style="text-align:right">% feito ÷ meta</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th><th>Meta realme</th><th>Realmes feito</th><th style="text-align:right">% realmes</th></tr></thead>
+              <tbody id="comStoreGoalsBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -43498,7 +43498,7 @@ function renderHomeTasks(){
   // ---------- Ranking em gráfico de colunas ("vela") ----------
   // Subabas: VENDEDORES (% da métrica escolhida em "Rankear por"), METAS
   // LOJAS (% feito ÷ meta, aba Meta Loja), ITENS e REALMES TOTAIS POR LOJA
-  // (itens lançados na Meta Loja; realmes somados dos vendedores). Cor pela posição (verde → vermelho). Sempre do
+  // (itens e realmes lançados na aba Meta Loja). Cor pela posição (verde → vermelho). Sempre do
   // maior para o menor. O MESMO desenho das colunas (comDrawBars) vai para a
   // tela e para a imagem do WhatsApp (1600x900, 16:9 — o WhatsApp mostra
   // inteira, sem cortar —, com a logo, faixa da marca e rodapé).
@@ -43582,8 +43582,8 @@ function renderHomeTasks(){
     const isItems = comRankSub === 'itens';
     const key = isItems ? 'items' : 'realme';
     const targetKey = isItems ? 'targetItems' : 'targetRealme';
-    // ITENS: lançados à mão na Meta Loja; REALMES: soma dos vendedores da loja.
-    const source = isItems ? (comStores && comStores.itemStores) : (comRanking && comRanking.stores);
+    // ITENS e REALMES: lançados à mão na aba Meta Loja.
+    const source = comStores && comStores.itemStores;
     const stores = (source || []).filter(store => store[key] > 0 || store[targetKey] > 0);
     const totalDone = stores.reduce((sum, store) => sum + store[key], 0);
     return {
@@ -43595,7 +43595,7 @@ function renderHomeTasks(){
         const share = comShare(store[key], store[targetKey]);
         return {label: store.name, sub: share === null ? 'SEM META' : comFormatPct(share)+' DA META', value: store[key]};
       }),
-      empty: isItems ? 'Nenhum item lançado na aba Meta Loja neste mês.' : 'Nenhum vendedor lançado neste mês.'
+      empty: 'Nenhum '+(isItems ? 'item' : 'realme')+' lançado na aba Meta Loja neste mês.'
     };
   }
 
@@ -44280,7 +44280,10 @@ function renderHomeTasks(){
       '<td data-label="% feito ÷ meta" class="calc" style="text-align:right" data-com-calc="storePct">'+escapeHtml(comFormatPct(comShare(store.revenueCents, store.targetCents)))+'</td>'+
       '<td data-label="Meta itens"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Meta de itens da loja" data-com-field="targetItems" value="'+(Number(store.targetItems) || 0)+'"></td>'+
       '<td data-label="Itens feito"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Itens feitos pela loja" data-com-field="items" value="'+(Number(store.items) || 0)+'"></td>'+
-      '<td data-label="% itens" class="calc" style="text-align:right" data-com-calc="storeItemsPct">'+escapeHtml(comFormatPct(comShare(store.items, store.targetItems)))+'</td></tr>';
+      '<td data-label="% itens" class="calc" style="text-align:right" data-com-calc="storeItemsPct">'+escapeHtml(comFormatPct(comShare(store.items, store.targetItems)))+'</td>'+
+      '<td data-label="Meta realme"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Meta de realmes da loja" data-com-field="targetRealme" value="'+(Number(store.targetRealme) || 0)+'"></td>'+
+      '<td data-label="Realmes feito"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Realmes feitos pela loja" data-com-field="realme" value="'+(Number(store.realme) || 0)+'"></td>'+
+      '<td data-label="% realmes" class="calc" style="text-align:right" data-com-calc="storeRealmePct">'+escapeHtml(comFormatPct(comShare(store.realme, store.targetRealme)))+'</td></tr>';
   }
 
   function comRenderStoreGoalsTotal(){
@@ -44298,7 +44301,7 @@ function renderHomeTasks(){
     const body = el('comStoreGoalsBody');
     if(!body || !comStores) return;
     const rows = comStores.rows || [];
-    body.innerHTML = rows.length ? rows.map(comStoreRowHtml).join('') : '<tr><td colspan="7" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
+    body.innerHTML = rows.length ? rows.map(comStoreRowHtml).join('') : '<tr><td colspan="10" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
     comMaskMoney(body);
     comRenderStoreGoalsTotal();
   }
@@ -44308,7 +44311,7 @@ function renderHomeTasks(){
       comStores = await comApi('/stores?month='+encodeURIComponent(comMonth));
     }catch(error){
       comStores = null;
-      if(comView === 'lojas' && el('comStoreGoalsBody')) el('comStoreGoalsBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(comView === 'lojas' && el('comStoreGoalsBody')) el('comStoreGoalsBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
     if(comView === 'lojas') comRenderStoreGoals();
     if(comView === 'ranking') comRenderRanking();
@@ -44321,7 +44324,9 @@ function renderHomeTasks(){
     const revenueCents = comMoneyCents(row.querySelector('[data-com-field="revenueCents"]'));
     const targetItems = Math.round(Number(row.querySelector('[data-com-field="targetItems"]').value || 0));
     const items = Math.round(Number(row.querySelector('[data-com-field="items"]').value || 0));
-    if(targetCents === null || revenueCents === null || !(targetItems >= 0) || !(items >= 0)){
+    const targetRealme = Math.round(Number(row.querySelector('[data-com-field="targetRealme"]').value || 0));
+    const realme = Math.round(Number(row.querySelector('[data-com-field="realme"]').value || 0));
+    if(targetCents === null || revenueCents === null || ![targetItems, items, targetRealme, realme].every(value => value >= 0)){
       showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
       return;
     }
@@ -44331,15 +44336,18 @@ function renderHomeTasks(){
       store.revenueCents = revenueCents;
       store.targetItems = targetItems;
       store.items = items;
+      store.targetRealme = targetRealme;
+      store.realme = realme;
     }
     row.querySelector('[data-com-calc="storePct"]').textContent = comFormatPct(comShare(revenueCents, targetCents));
     row.querySelector('[data-com-calc="storeItemsPct"]').textContent = comFormatPct(comShare(items, targetItems));
+    row.querySelector('[data-com-calc="storeRealmePct"]').textContent = comFormatPct(comShare(realme, targetRealme));
     comRenderStoreGoalsTotal();
     row.classList.remove('saved');
     row.classList.add('saving');
     comQueueSave('store:'+row.dataset.comStore, async () => {
       try{
-        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items})});
+        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme})});
         row.classList.add('saved');
       }catch(error){
         showPurchaseToast(error.message);

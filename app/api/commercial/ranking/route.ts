@@ -5,10 +5,10 @@ import { todayInTimezone } from "../../../lib/finance-status";
 import { canViewCommercialDashboard, identity, jsonResponse, loadSellers, safeText } from "../shared";
 
 // Ranking — SEMPRE a empresa inteira (todas as lojas), para qualquer
-// usuário com comercial:dashboard, independente da loja dele. Por vendedor a
-// resposta leva SÓ nome, loja e percentual; por loja (`stores`, gráficos
-// ITENS/REALMES TOTAIS POR LOJA) só as quantidades somadas e as metas.
-// Nenhum valor em R$ e nenhuma comissão sai desta rota.
+// usuário com comercial:dashboard, independente da loja dele. Por isso a
+// resposta leva SÓ nome, loja e percentual: nenhum valor em R$, nenhuma
+// quantidade e nenhuma comissão sai desta rota. (Itens/realmes por loja vêm
+// da Meta Loja, rota /stores.)
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -33,18 +33,7 @@ export async function GET(request: Request) {
       warrantyPercent: seller.metrics.warranty.attachPercent,
       realmePercent: seller.metrics.realme.percent,
     }));
-    // Totais por loja (pedido de 2026-10-06): soma dos vendedores da loja.
-    const byStore = new Map<string, { name: string; items: number; targetItems: number; realme: number; targetRealme: number }>();
-    for (const seller of sellers) {
-      const name = seller.companyName || "SEM LOJA";
-      const store = byStore.get(name) ?? { name, items: 0, targetItems: 0, realme: 0, targetRealme: 0 };
-      store.items += seller.metrics.items.realized;
-      store.targetItems += seller.metrics.items.target;
-      store.realme += seller.metrics.realme.realized;
-      store.targetRealme += seller.metrics.realme.target;
-      byStore.set(name, store);
-    }
-    return jsonResponse({ month, items, stores: [...byStore.values()] });
+    return jsonResponse({ month, items });
   } catch (error) {
     console.error("Não foi possível carregar o ranking do Comercial.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O RANKING." }, 500);
