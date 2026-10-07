@@ -8398,17 +8398,28 @@
         <div class="field"><label for="reposicaoBusca">BUSCAR</label><input id="reposicaoBusca" maxlength="120" placeholder="Produto, motivo ou responsável"></div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnFiltrarReposicao" type="button">FILTRAR</button>
+          <button class="btn-outline" id="btnBatchReposicao" type="button">+ CADASTRAR EM LOTE</button>
           <button class="btn-accent" id="btnNewReposicao" type="button">NOVO LANÇAMENTO</button>
         </div>
       </div>
 
       <section class="summary" id="reposicaoSummary" aria-label="Totais por setor"><div class="dre-empty">Carregando…</div></section>
 
+      <div class="bulk-bar" id="reposicaoBulkBar">
+        <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+        <div class="bulk-bar-actions" data-bulk-actions hidden>
+          <strong class="bulk-bar-count" data-bulk-count></strong>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="update">ALTERAR SETOR / MOTIVO</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+        </div>
+      </div>
+
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="reposicaoTable">
-            <thead><tr><th>Data</th><th>Unidade</th><th>Produto</th><th>Motivo</th><th>Setor</th><th>Responsável</th><th>Tipo</th><th>Valor</th><th>Despesa</th><th></th></tr></thead>
-            <tbody id="reposicaoTableBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Produto</th><th>Motivo</th><th>Setor</th><th>Responsável</th><th>Tipo</th><th>Valor</th><th>Despesa</th><th></th></tr></thead>
+            <tbody id="reposicaoTableBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -10270,6 +10281,48 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelReconBulk" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="reposicaoBulkDialog" aria-labelledby="reposicaoBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="reposicaoBulkTitle">ALTERAR SETOR / MOTIVO</h3>
+    <button class="purchase-dialog-close" id="btnCloseReposicaoBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="reposicaoBulkForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="reposicaoBulkSetor">SETOR</label><select id="reposicaoBulkSetor"><option value="">NÃO ALTERAR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option><option value="outros">OUTROS</option></select></div>
+      <div class="purchase-field full"><label for="reposicaoBulkMotivo">MOTIVO</label><input id="reposicaoBulkMotivo" maxlength="500" placeholder="EM BRANCO = NÃO ALTERAR"></div>
+    </div>
+    <div class="user-form-status" id="reposicaoBulkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelReposicaoBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog decl-batch-dialog" id="reposicaoBatchDialog" aria-labelledby="reposicaoBatchTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="reposicaoBatchTitle">CADASTRAR LANÇAMENTOS EM LOTE</h3>
+    <button class="purchase-dialog-close" id="btnCloseReposicaoBatch" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="reposicaoBatchForm">
+    <p class="purchase-field-help">LINHAS SEM PRODUTO E SEM VALOR SÃO IGNORADAS. AS PULADAS FICAM NA GRADE COM O MOTIVO.</p>
+    <div class="table-panel responsive-table decl-batch-table cr-batch-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Data *</th><th>Unidade *</th><th>Produto *</th><th>Motivo</th><th>Setor *</th><th>Responsável</th><th>Tipo *</th><th>Valor *</th></tr></thead>
+          <tbody id="reposicaoBatchBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="reposicaoBatchStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnReposicaoBatchAddRows" type="button">+ 5 LINHAS</button>
+      <button class="btn-outline" id="btnCancelReposicaoBatch" type="button">FECHAR</button>
+      <button class="btn-accent" id="btnSaveReposicaoBatch" type="submit">SALVAR TUDO</button>
     </div>
   </form>
 </dialog>
@@ -32668,7 +32721,7 @@ function renderHomeTasks(){
   async function reloadReposicao(){
     const body = el('reposicaoTableBody');
     if(!body) return;
-    body.innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
     const params = new URLSearchParams();
     const map = {companyId:'reposicaoLoja', sector:'reposicaoSetor', kind:'reposicaoTipo', search:'reposicaoBusca'};
     Object.keys(map).forEach(k => { const v = (el(map[k]).value || '').trim(); if(v) params.set(k, v); });
@@ -32680,7 +32733,7 @@ function renderHomeTasks(){
       renderReposicaoSummary(Array.isArray(data.breakdown) ? data.breakdown : []);
       renderReposicaoTable();
     }catch(error){
-      body.innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
   function renderReposicaoSummary(breakdown){
@@ -32706,22 +32759,119 @@ function renderHomeTasks(){
         ? '<span class="status-pill ok">VINCULADA</span>'
         : (eligible ? '<button class="btn-outline btn-sm" type="button" data-reposicao-expense="'+escapeHtml(r.id)+'">ADICIONAR</button>' : '—');
       return '<tr>'+
-        '<td>'+escapeHtml(formatDateBR(r.entryDate))+'</td>'+
-        '<td>'+escapeHtml(r.companyName || fase8CompanyName(r.companyId) || '—')+'</td>'+
-        '<td>'+escapeHtml(r.product || '—')+'</td>'+
-        '<td>'+escapeHtml(r.reason || '—')+'</td>'+
-        '<td>'+escapeHtml(REPOSICAO_SECTOR_LABELS[r.sector] || r.sector)+'</td>'+
-        '<td>'+escapeHtml(r.responsibleName || '—')+'</td>'+
-        '<td>'+escapeHtml(REPOSICAO_KIND_LABELS[r.kind] || r.kind)+'</td>'+
-        '<td>'+formatCentsBRL(r.amountCents)+'</td>'+
-        '<td>'+despesaCell+'</td>'+
-        '<td style="white-space:nowrap">'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(r.id, 'Selecionar '+(r.product || 'lançamento'))+'</td>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(r.entryDate))+'</td>'+
+        '<td data-label="Unidade">'+escapeHtml(r.companyName || fase8CompanyName(r.companyId) || '—')+'</td>'+
+        '<td data-label="Produto">'+escapeHtml(r.product || '—')+'</td>'+
+        '<td data-label="Motivo">'+escapeHtml(r.reason || '—')+'</td>'+
+        '<td data-label="Setor">'+escapeHtml(REPOSICAO_SECTOR_LABELS[r.sector] || r.sector)+'</td>'+
+        '<td data-label="Responsável">'+escapeHtml(r.responsibleName || '—')+'</td>'+
+        '<td data-label="Tipo">'+escapeHtml(REPOSICAO_KIND_LABELS[r.kind] || r.kind)+'</td>'+
+        '<td data-label="Valor">'+formatCentsBRL(r.amountCents)+'</td>'+
+        '<td data-label="Despesa">'+despesaCell+'</td>'+
+        '<td data-label="Ações" style="white-space:nowrap">'+
           '<button class="btn-outline btn-sm" type="button" data-reposicao-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
           (r.expenseId ? '' : '<button class="btn-outline btn-sm" type="button" data-reposicao-del="'+escapeHtml(r.id)+'">EXCLUIR</button>')+
         '</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="10" class="responsive-empty">Nenhum lançamento.</td></tr>';
+    }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhum lançamento.</td></tr>';
+    reposicaoBulk.sync();
   }
+
+  // Ações em lote e cadastro em lote (Financeiro 9/9) — replacement-control/bulk e /batch.
+  let reposicaoBulkIds = [];
+  const reposicaoBulk = setupBulkSelection(el('reposicaoBulkBar'), el('reposicaoTableBody'), async (action, ids) => {
+    if(action === 'update'){
+      reposicaoBulkIds = ids;
+      el('reposicaoBulkForm').reset();
+      el('reposicaoBulkTitle').textContent = 'ALTERAR SETOR / MOTIVO — '+ids.length+(ids.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS');
+      el('reposicaoBulkStatus').textContent = '';
+      el('reposicaoBulkDialog').showModal();
+      return false;
+    }
+    if(!confirm('Excluir '+ids.length+' lançamento(s)? Os que já viraram despesa são pulados.')) return false;
+    await financeBulkRequest('/replacement-control/bulk', {action, ids});
+    await reloadReposicao();
+  });
+  el('btnCloseReposicaoBulk').addEventListener('click', () => el('reposicaoBulkDialog').close());
+  el('btnCancelReposicaoBulk').addEventListener('click', () => el('reposicaoBulkDialog').close());
+  el('reposicaoBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const fields = {};
+    if(el('reposicaoBulkSetor').value) fields.sector = el('reposicaoBulkSetor').value;
+    if(el('reposicaoBulkMotivo').value.trim()) fields.reason = el('reposicaoBulkMotivo').value.trim();
+    if(!Object.keys(fields).length){ el('reposicaoBulkStatus').textContent = 'ESCOLHA O SETOR OU INFORME O MOTIVO.'; return; }
+    try{
+      await financeBulkRequest('/replacement-control/bulk', {action:'update', ids: reposicaoBulkIds, fields});
+      el('reposicaoBulkDialog').close();
+      reposicaoBulk.clear();
+      await reloadReposicao();
+    }catch(error){ el('reposicaoBulkStatus').textContent = error.message; }
+  });
+
+  function reposicaoBatchAddRows(count){
+    const companyOptions = '<option value="">SELECIONE</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    const sectorOptions = '<option value="">SELECIONE</option>'+Object.keys(REPOSICAO_SECTOR_LABELS).map(k => '<option value="'+k+'">'+REPOSICAO_SECTOR_LABELS[k]+'</option>').join('');
+    const kindOptions = '<option value="">SELECIONE</option>'+Object.keys(REPOSICAO_KIND_LABELS).map(k => '<option value="'+k+'">'+REPOSICAO_KIND_LABELS[k]+'</option>').join('');
+    const today = todayDateKeyRecife();
+    const body = el('reposicaoBatchBody');
+    const before = body.rows.length;
+    body.insertAdjacentHTML('beforeend', Array.from({length: count}, () =>
+      '<tr>'+
+        '<td data-label="DATA"><input type="date" data-rp-batch="entryDate" value="'+today+'" aria-label="Data"></td>'+
+        '<td data-label="UNIDADE"><select data-rp-batch="companyId" aria-label="Unidade">'+companyOptions+'</select></td>'+
+        '<td data-label="PRODUTO"><input data-rp-batch="product" maxlength="200" aria-label="Produto"></td>'+
+        '<td data-label="MOTIVO"><input data-rp-batch="reason" maxlength="500" aria-label="Motivo"></td>'+
+        '<td data-label="SETOR"><select data-rp-batch="sector" aria-label="Setor">'+sectorOptions+'</select></td>'+
+        '<td data-label="RESPONSÁVEL"><input data-rp-batch="responsibleName" maxlength="160" aria-label="Responsável"></td>'+
+        '<td data-label="TIPO"><select data-rp-batch="kind" aria-label="Tipo">'+kindOptions+'</select></td>'+
+        '<td data-label="VALOR"><input data-rp-batch="amount" aria-label="Valor"></td>'+
+      '</tr>').join(''));
+    Array.from(body.rows).slice(before).forEach(tr => attachCurrencyMask(tr.querySelector('[data-rp-batch="amount"]')));
+  }
+  el('btnBatchReposicao').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    el('reposicaoBatchBody').innerHTML = '';
+    el('reposicaoBatchStatus').textContent = '';
+    reposicaoBatchAddRows(5);
+    el('reposicaoBatchDialog').showModal();
+  });
+  el('btnReposicaoBatchAddRows').addEventListener('click', () => reposicaoBatchAddRows(5));
+  el('btnCloseReposicaoBatch').addEventListener('click', () => el('reposicaoBatchDialog').close());
+  el('btnCancelReposicaoBatch').addEventListener('click', () => el('reposicaoBatchDialog').close());
+  el('reposicaoBatchForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('reposicaoBatchStatus');
+    const filled = Array.from(el('reposicaoBatchBody').rows).filter(tr =>
+      tr.querySelector('[data-rp-batch="product"]').value.trim() || getCurrencyValue(tr.querySelector('[data-rp-batch="amount"]')));
+    if(!filled.length){ status.textContent = 'PREENCHA AO MENOS UMA LINHA.'; return; }
+    const rows = filled.map(tr => {
+      const field = name => tr.querySelector('[data-rp-batch="'+name+'"]');
+      const companyId = field('companyId').value;
+      return {
+        entryDate: field('entryDate').value, companyId, companyName: fase8CompanyName(companyId),
+        product: field('product').value.trim(), reason: field('reason').value.trim(), sector: field('sector').value,
+        responsibleName: field('responsibleName').value.trim(), kind: field('kind').value,
+        amountCents: Math.round(Number(getCurrencyValue(field('amount')) || 0) * 100)
+      };
+    });
+    const button = el('btnSaveReposicaoBatch');
+    button.disabled = true;
+    status.textContent = 'Salvando…';
+    try{
+      const res = await financeApiRequest('/replacement-control/batch', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({rows})});
+      const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+      // Fica na grade só o que foi pulado, para corrigir e salvar de novo.
+      const keep = new Set(skipped.map(item => item.line - 1));
+      filled.forEach((tr, index) => { if(!keep.has(index)) tr.remove(); });
+      status.textContent = res.created+' CRIADO(S) · '+skipped.length+' PULADO(S)'+(skipped.length ? ' (FICARAM NA GRADE): '+skipped.map(item => 'LINHA '+item.line+(item.description ? ' '+item.description : '')+' — '+item.reason).join('; ') : '');
+      if(res.created) showPurchaseToast(res.created+' lançamento(s) cadastrado(s).');
+      if(!el('reposicaoBatchBody').rows.length) reposicaoBatchAddRows(5);
+      await reloadReposicao();
+    }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+
   function openReposicaoDialog(row){
     el('reposicaoForm').reset();
     fase8CompanyOptions('reposicaoUnidade', '');

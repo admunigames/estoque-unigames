@@ -13,7 +13,7 @@ const db = await setupRouteDb([
   "accounts_payable", "accounts_payable_payments", "finance_items", "finance_categories", "finance_cost_centers",
   "finance_store_entries", "finance_accounts", "supplier_open_debts", "finance_suppliers",
   "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",
-  "finance_bank_statement_entries", "finance_bank_classification_rules",
+  "finance_bank_statement_entries", "finance_bank_classification_rules", "finance_replacement_entries",
 ]);
 const { todayInTimezone } = await import("../app/lib/finance-status.ts");
 const payablesBulk = await import("../app/api/finance/payables/bulk/route.ts");
@@ -21,6 +21,8 @@ const cashFlowBulk = await import("../app/api/finance/cash-flow/payments/bulk/ro
 const debtsBulk = await import("../app/api/finance/supplier-debts/bulk/route.ts");
 const invoicesBulk = await import("../app/api/finance/invoices/bulk/route.ts");
 const reconBulk = await import("../app/api/finance/bank-reconciliation/bulk/route.ts");
+const reposicaoBulk = await import("../app/api/finance/replacement-control/bulk/route.ts");
+const reposicaoBatch = await import("../app/api/finance/replacement-control/batch/route.ts");
 
 const STORE_A = "criomar01";
 const STORE_B = "ctacaruna1";
@@ -50,6 +52,8 @@ test("sem finance:manage recebe 403 em todos os lotes", async () => {
     [debtsBulk.POST, "/api/finance/supplier-debts/bulk"],
     [invoicesBulk.POST, "/api/finance/invoices/bulk"],
     [reconBulk.POST, "/api/finance/bank-reconciliation/bulk"],
+    [reposicaoBulk.POST, "/api/finance/replacement-control/bulk"],
+    [reposicaoBatch.POST, "/api/finance/replacement-control/batch"],
   ]) {
     assert.equal((await post(handler, NO_FINANCE, path, {})).status, 403, path);
   }
@@ -206,4 +210,32 @@ test("Conciliação Bancária: classificar só os campos enviados, confirmar (ap
   assert.equal((await post(reconBulk.POST, STORE_A_LOGIN, "/api/finance/bank-reconciliation/bulk", { action: "unclassify", ids: ["e2", "e-b"] })).status, 403);
   assert.equal(row("finance_bank_statement_entries", "e2").status, "confirmed");
   assert.equal((await post(reconBulk.POST, STORE_A_LOGIN, "/api/finance/bank-reconciliation/bulk", { action: "classify", ids: ["e2"], fields: { companyId: STORE_B } })).status, 403);
+});
+
+// ---------------------------------------------------------------------------
+// 4. Controle de Reposição
+// ---------------------------------------------------------------------------
+
+test("Reposição: cadastrar em lote (cria e pula), alterar setor/motivo, excluir (pula o que virou despesa), 404", async () => {
+  const base = { entryDate: today, companyId: STORE_A, companyName: "RIOMAR", sector: "assistencia", kind: "reposicao", amountCents: 5000 };
+  const created = await json(await post(reposicaoBatch.POST, ADMIN, "/api/finance/replacement-control/batch", {
+    rows: [{ ...base, product: "CONTROLE PS5" }, { ...base, product: "X" }, { ...base, product: "CABO HDMI", amountCents: 0 }, { ...base, product: "FONTE", sector: "logistica" }],
+  }));
+  assert.equal(created.created, 2);
+  assert.deepEqual(created.skipped.map((s) => [s.line, s.reason]), [[2, "INFORME O PRODUTO."], [3, "INFORME UM VALOR VÁLIDO EM CENTAVOS."]]);
+  const ids = db.sqlite.prepare("SELECT id FROM finance_replacement_entries ORDER BY product").all().map((r) => r.id); // CONTROLE, FONTE
+  db.sqlite.prepare("UPDATE finance_replacement_entries SET expense_id='exp-9' WHERE id=?").run(ids[1]);
+
+  await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "update", ids, fields: { sector: "outros" } });
+  assert.deepEqual(db.sqlite.prepare("SELECT DISTINCT sector FROM finance_replacement_entries").all().map((r) => r.sector), ["outros"]);
+  await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "update", ids: [ids[0]], fields: { reason: "QUEBROU NA VITRINE" } });
+  assert.equal(row("finance_replacement_entries", ids[0]).reason, "QUEBROU NA VITRINE");
+  assert.equal(row("finance_replacement_entries", ids[0]).sector, "outros");
+
+  assert.equal((await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "delete", ids: [ids[0], "nope"] })).status, 404);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_replacement_entries").get().n, 2);
+  const del = await json(await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "delete", ids }));
+  assert.equal(del.applied, 1);
+  assert.deepEqual(del.skipped.map((s) => s.reason), ["JÁ VIROU DESPESA — REMOVA A DESPESA PRIMEIRO"]);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_replacement_entries").get().n, 1);
 });

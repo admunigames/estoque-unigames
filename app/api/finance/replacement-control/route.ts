@@ -8,23 +8,14 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../shared";
+import { insertReplacementStatement, KINDS, parseReplacementEntry, SECTORS } from "./shared";
 
 // Controle de Reposição (Financeiro — Fase 8). Registra valores repostos/
 // gastos por Assistência, Logística e outros setores. "Adicionar como
 // Despesa" é feito pelo front (POST /finance/expenses) que devolve o
 // expense_id via PATCH aqui — a lógica de despesa/DRE não é duplicada.
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
-const SECTORS = new Set(["assistencia", "logistica", "outros"]);
-const KINDS = new Set([
-  "entrada",
-  "saida",
-  "reposicao",
-  "ressarcimento",
-  "prejuizo",
-  "recuperacao",
-]);
 // Só os tipos de saída de dinheiro podem virar Despesa.
 const EXPENSE_ELIGIBLE_KINDS = new Set(["saida", "reposicao", "ressarcimento", "prejuizo"]);
 
@@ -109,24 +100,9 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const editId = safeText(body.id, 80);
-    const entryDate = safeText(body.entryDate, 10);
-    if (!DATE_PATTERN.test(entryDate)) return jsonResponse({ error: "INFORME A DATA." }, 400);
-    const companyId = safeText(body.companyId, 80);
-    const companyName = safeText(body.companyName, 160);
-    if (!companyId) return jsonResponse({ error: "SELECIONE A UNIDADE." }, 400);
-    const product = safeText(body.product, 200);
-    if (product.length < 2) return jsonResponse({ error: "INFORME O PRODUTO." }, 400);
-    const reason = safeText(body.reason, 500);
-    const sector = safeText(body.sector, 20);
-    if (!SECTORS.has(sector)) return jsonResponse({ error: "SELECIONE O SETOR RESPONSÁVEL." }, 400);
-    const responsibleName = safeText(body.responsibleName, 160);
-    const kind = safeText(body.kind, 20);
-    if (!KINDS.has(kind)) return jsonResponse({ error: "SELECIONE O TIPO DO LANÇAMENTO." }, 400);
-    const notes = safeText(body.notes, 2000);
-    const amountCents = Number(body.amountCents);
-    if (!Number.isInteger(amountCents) || amountCents <= 0) {
-      return jsonResponse({ error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." }, 400);
-    }
+    const parsed = parseReplacementEntry(body);
+    if ("error" in parsed) return jsonResponse({ error: parsed.error }, 400);
+    const { entryDate, companyId, companyName, product, reason, sector, responsibleName, kind, notes, amountCents } = parsed;
 
     const database = await getD1();
     const who = actor.displayName || "Administrador";
@@ -153,20 +129,9 @@ export async function POST(request: Request) {
       return jsonResponse({ updated: true, id: editId });
     }
 
-    const id = crypto.randomUUID();
-    await database
-      .prepare(
-        `INSERT INTO finance_replacement_entries
-          (id, entry_date, company_id, company_name, product, reason, sector, responsible_name,
-           amount_cents, kind, notes, created_by, created_by_name, created_at,
-           updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,CURRENT_TIMESTAMP,?12,?13,CURRENT_TIMESTAMP)`,
-      )
-      .bind(
-        id, entryDate, companyId, companyName, product, reason, sector, responsibleName,
-        amountCents, kind, notes, actor.id, who,
-      )
-      .run();
+    const [sql, values] = insertReplacementStatement(parsed, { id: actor.id, name: who });
+    await database.prepare(sql).bind(...values).run();
+    const id = values[0] as string;
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
     console.error("Não foi possível salvar o lançamento de reposição.", error);

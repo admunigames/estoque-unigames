@@ -5268,3 +5268,12 @@ test("Financeiro 9/9 > Conciliação Bancária: barra de lote", async () => {
   assert.match(html, /financeBulkRequest\('\/bank-reconciliation\/bulk'/);
   for (const id of ["reconBulkItem", "reconBulkSubcategory", "reconBulkCompany", "reconBulkCostCenter", "reconBulkDre", "reconBulkRateio"]) assert.match(html, new RegExp(`id="${id}"`), id);
 });
+
+test("Financeiro 9/9 > Controle de Reposição: barra de lote e cadastro em lote", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="reposicaoBulkBar"[\s\S]*?data-bulk-action="update">ALTERAR SETOR \/ MOTIVO[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /const reposicaoBulk = setupBulkSelection\(el\('reposicaoBulkBar'\), el\('reposicaoTableBody'\)/);
+  assert.match(html, /id="btnBatchReposicao" type="button">\+ CADASTRAR EM LOTE/);
+  assert.match(html, /id="reposicaoBatchDialog"[\s\S]*?SALVAR TUDO/);
+  assert.match(html, /financeApiRequest\('\/replacement-control\/batch'/);
+});
