@@ -81,6 +81,19 @@ export function normalizeCatalog(body: unknown): AcademyCatalog {
     title: text(row.title, 200),
     lessonIds: list(row.lessons).map((lesson) => text(lesson.id, 120)).filter(Boolean),
   }));
+  // As aulas da jornada (ex.: "j1-cultura") NÃO vêm em `lessons`, só dentro
+  // de journeyDays[].lessons — sem isso a trilha da jornada mostraria códigos
+  // no lugar dos títulos e duração vazia.
+  const known = new Set(lessons.map((lesson) => lesson.id));
+  const journeyTrack = tracks.find((track) => track.kind === "journey");
+  for (const day of list(root.journeyDays)) {
+    for (const row of list(day.lessons)) {
+      const id = text(row.id, 120);
+      if (!id || known.has(id)) continue;
+      known.add(id);
+      lessons.push({ id, title: text(row.title, 200) || id, summary: "", durationMinutes: num(row.durationMinutes), trackId: journeyTrack?.id ?? "" });
+    }
+  }
   return { tracks, lessons, journeyDays };
 }
 

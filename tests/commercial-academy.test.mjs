@@ -20,7 +20,7 @@ const CATALOG = {
     { id: "l3", title: "Abertura da loja", durationMinutes: 5, trackId: "t-sem-ids" },
   ],
   courses: [],
-  journeyDays: [{ day: 1, title: "Cultura", lessons: [{ id: "l1", title: "Abordagem" }] }],
+  journeyDays: [{ day: 1, title: "Cultura", lessons: [{ id: "l1", title: "Abordagem" }, { id: "j1-cultura", title: "Módulo 1 — Cultura", durationMinutes: 20 }] }],
 };
 const PEOPLE = [
   { id: "p-ana", name: "Ana Souza", username: "ana.souza", store: "LOJA ALFA", role: "Vendedor", level: { number: 2, name: "Bronze", xp: 120 }, journey: { completedLessons: 1, approvedDays: 1 } },
@@ -88,7 +88,13 @@ const putLink = (actor, body) => callRoute(links.PUT, actor, "PUT", "/api/commer
 test("lib: catálogo normalizado, trilha sem lessonIds usa trackId, progresso por trilha", () => {
   const catalog = lib.normalizeCatalog(CATALOG);
   assert.deepEqual(catalog.tracks.find((t) => t.id === "t-sem-ids").lessonIds, ["l3"]);
-  assert.deepEqual(catalog.journeyDays[0].lessonIds, ["l1"]);
+  assert.deepEqual(catalog.journeyDays[0].lessonIds, ["l1", "j1-cultura"]);
+  // Aula que só existe na jornada entra no catálogo com título e duração.
+  assert.deepEqual(
+    catalog.lessons.find((lesson) => lesson.id === "j1-cultura"),
+    { id: "j1-cultura", title: "Módulo 1 — Cultura", summary: "", durationMinutes: 20, trackId: "" },
+  );
+  assert.equal(catalog.lessons.filter((lesson) => lesson.id === "l1").length, 1, "aula repetida na jornada não duplica");
   const progress = lib.trackProgress(catalog, ["l1"]);
   assert.deepEqual(progress.find((row) => row.trackId === "t-vendas"), { trackId: "t-vendas", completed: 1, total: 2, percent: 50 });
 });
