@@ -2335,6 +2335,22 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /method:'PATCH'/);
   // Tela Usuários: módulo Documentos com as 3 ações (visualizar é livre).
   assert.match(html, /<summary>Documentos<\/summary>/);
+  // Permissões (Usuários): módulos em ordem alfabética e todas as áreas de RH
+  // dentro de um único módulo "RH", também em ordem alfabética.
+  const permissionGrid = html.slice(html.indexOf('id="userPermissionGrid"'), html.indexOf('<div class="user-dialog-foot">'));
+  const sortKey = (text) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  const moduleNames = [...permissionGrid.matchAll(/<summary>(.*?)<\/summary>/g)].map((m) => m[1]);
+  assert.deepEqual(moduleNames, [...moduleNames].sort((a, b) => sortKey(a).localeCompare(sortKey(b))));
+  assert.equal(moduleNames.filter((name) => /^RH/.test(name)).join(), "RH");
+  const rhAreas = [...permissionGrid.matchAll(/data-permission-subgroup="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(rhAreas.length, 8);
+  assert.deepEqual(rhAreas, [...rhAreas].sort((a, b) => sortKey(a).localeCompare(sortKey(b))));
+  for (const value of ["payroll:manage", "rh_acompanhamento:view", "rh_ponto_logistica:view", "rh_recrutamento:view",
+    "rh_fardamento:view", "rh_aniversariantes:view", "rh_odontologico:view", "rh_escalas:view"]) {
+    const rhStart = permissionGrid.indexOf("<summary>RH</summary>");
+    const at = permissionGrid.indexOf(`value="${value}"`);
+    assert.ok(at > rhStart && at < permissionGrid.indexOf("</details>", rhStart), value + " dentro do módulo RH");
+  }
   assert.match(html, /name="userPermission" value="documents:create"> CADASTRAR/);
   assert.match(html, /name="userPermission" value="documents:edit"> EDITAR/);
   assert.match(html, /name="userPermission" value="documents:delete"> EXCLUIR/);

@@ -1686,6 +1686,10 @@
   .permission-module[open]>summary::after{content:'−'}
   .permission-module>.permission-grid{padding:0 12px 12px;grid-template-columns:1fr}
   .permission-module.has-checked>summary{color:var(--accent)}
+  /* RH: um módulo só, com as áreas como subgrupos (ordem alfabética). */
+  .permission-subgroup{display:grid;gap:6px}
+  .permission-subgroup + .permission-subgroup{margin-top:8px;padding-top:10px;border-top:1px dashed var(--line)}
+  .permission-subtitle{font:800 10px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase}
   .routine-weekday-picker{display:flex;flex-wrap:wrap;gap:6px}
   .routine-weekday-chip{
     display:flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid var(--line);
@@ -3016,6 +3020,8 @@
   .com-bar-label.reached{color:var(--ink)}
   .com-figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:0}
   .com-figures div{min-width:0}
+  /* Treinamento: trilha vazia não é alerta — fundo neutro no lugar das faixas vermelho→verde das metas. */
+  .com-bar.simple.acad-bar .com-bar-track{background:var(--surface-border)}
   .acad-meta{margin:0;font:700 11px/1.4 var(--sans);color:var(--ink-faint);text-transform:uppercase}
   .acad-desc{margin:0;font:600 12.5px/1.5 var(--sans);color:var(--ink-soft);text-transform:none}
   .acad-lessons summary{cursor:pointer;font:800 10px/1.3 var(--mono);letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase}
@@ -8958,19 +8964,28 @@
           <label>PERMISSÕES <span id="userPermissionHint">(DEFINIDAS PELO GRUPO)</span></label>
           <div class="permission-accordion" id="userPermissionGrid">
             <details class="permission-module" open>
-              <summary>Tarefas</summary>
+              <summary>Aparelhos de Empréstimo</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:view"> Visualizar</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:manage"> Cadastrar, editar e excluir</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:create"> Cadastrar aparelho</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:edit"> Editar aparelho</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:delete"> Excluir aparelho</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:request"> Solicitar aparelho (loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:manage_requests"> Gerenciar solicitações (marcar emprestado, responder, apagar)</label>
               </div>
             </details>
-            <details class="permission-module" open>
-              <summary>Missões</summary>
+            <details class="permission-module">
+              <summary>Assistência</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:view"> Visualizar missões</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:create"> Cadastrar missões</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:delete"> Excluir missões</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:notify"> Receber notificações (como administrador)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="assistencia:manage"> ORÇAMENTOS (ACESSO COMPLETO)</label>
+                <span class="field-hint">Cria, edita, exclui e gera o PDF dos orçamentos de qualquer loja, vê o histórico completo e edita a tabela de valores.</span>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Base de Dados</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="database:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="database:manage"> Cadastrar, editar e excluir</label>
               </div>
             </details>
             <details class="permission-module">
@@ -8984,62 +8999,35 @@
               </div>
             </details>
             <details class="permission-module">
-              <summary>Saídas</summary>
+              <summary>Comercial - Controle GD</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:view"> Visualizar</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:create"> Cadastrar saídas</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:complete"> Concluir saídas</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:delete"> Excluir saídas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:view"> Ver o saldo, alertas, gráfico de 7 dias e script diário por loja</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:manage"> Lançar e cancelar ajuste de saldo</label>
               </div>
             </details>
             <details class="permission-module">
-              <summary>Divergências</summary>
+              <summary>Comercial - Metas e Comissão</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:view"> VISUALIZAR (pedidos da própria loja; dashboard só com acesso geral) E RESPONDER A VERIFICAÇÃO DA LOJA</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:create"> CADASTRAR PEDIDO</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:edit"> EDITAR PEDIDO</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:delete"> EXCLUIR PEDIDO</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:respond"> RESPONDER DIVERGÊNCIAS (estoque: status + resposta por item)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:inventory"> INVENTÁRIO (ver a aba e marcar INVENTARIADO)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals"> ATUALIZAR VENDEDORES (METAS E REALIZADO)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:credit"> LANÇAR CREDIÁRIOS (PAYJOY, CREFAZ, PARCELEX, ODRES, VENDA P.A E UNIGAMES)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:stores"> ATUALIZAR META LOJA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</label>
               </div>
             </details>
             <details class="permission-module">
-              <summary>Assistência</summary>
+              <summary>Comercial - Relatório NF</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="assistencia:manage"> ORÇAMENTOS (ACESSO COMPLETO)</label>
-                <span class="field-hint">Cria, edita, exclui e gera o PDF dos orçamentos de qualquer loja, vê o histórico completo e edita a tabela de valores.</span>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:view"> Ver o lançamento do dia e o histórico de dias salvos</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:manage"> Lançar vendas/notas emitidas por loja e salvar no histórico</label>
               </div>
             </details>
             <details class="permission-module">
-              <summary>Entrada</summary>
+              <summary>Comercial - Treinamento</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:view"> Visualizar</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:create"> Cadastrar entradas</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:complete"> Concluir entradas</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:delete"> Excluir entradas</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>Insumos</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:view"> Visualizar</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:request"> Solicitar insumos</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:receive"> Receber solicitações</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_in"> Dar entrada em estoque</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_out"> Dar saída em estoque</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:delete"> Excluir</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:manage_catalog"> Gerenciar produtos e categorias</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>Aparelhos de Empréstimo</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:view"> Visualizar</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:create"> Cadastrar aparelho</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:edit"> Editar aparelho</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:delete"> Excluir aparelho</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:request"> Solicitar aparelho (loja)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="loans:manage_requests"> Gerenciar solicitações (marcar emprestado, responder, apagar)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="treinamento:view"> Ver o próprio treinamento (trilhas e progresso na Unigames Academy)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="treinamento:team"> Acompanhar o treinamento da equipe e vincular logins à Academy</label>
               </div>
             </details>
             <details class="permission-module">
@@ -9059,22 +9047,87 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Divergências</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:view"> VISUALIZAR (pedidos da própria loja; dashboard só com acesso geral) E RESPONDER A VERIFICAÇÃO DA LOJA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:create"> CADASTRAR PEDIDO</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:edit"> EDITAR PEDIDO</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:delete"> EXCLUIR PEDIDO</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:respond"> RESPONDER DIVERGÊNCIAS (estoque: status + resposta por item)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="divergencias:inventory"> INVENTÁRIO (ver a aba e marcar INVENTARIADO)</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Documentos</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:create"> CADASTRAR</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:edit"> EDITAR (renomear, mover de pasta e substituir arquivo)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:delete"> EXCLUIR</label>
+                <span class="field-hint">Visualizar é liberado para todos os usuários.</span>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Entrada</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:create"> Cadastrar entradas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:complete"> Concluir entradas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inputs:delete"> Excluir entradas</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Estoque Fiscal</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="stock:view"> Visualizar</label>
               </div>
             </details>
             <details class="permission-module">
-              <summary>Base de Dados</summary>
+              <summary>Financeiro</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="database:view"> Visualizar</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="database:manage"> Cadastrar, editar e excluir</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="finance:manage"> Acessar o módulo Financeiro (acesso total)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_view"> NF/Duplicatas: visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_reconcile"> NF/Duplicatas: conferir e cadastrar duplicatas/boletos</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:confirm_payment"> NF/Duplicatas: agendar/confirmar pagamento</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:return_to_purchases"> NF/Duplicatas: devolver para Compras</label>
               </div>
             </details>
             <details class="permission-module">
               <summary>Fornecedores</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="suppliers:manage"> Cadastrar, editar e desativar fornecedores (sem abrir Financeiro nem Compras)</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Instruções</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="instructions:manage"> Cadastrar e excluir</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Insumos</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:request"> Solicitar insumos</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:receive"> Receber solicitações</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_in"> Dar entrada em estoque</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:stock_out"> Dar saída em estoque</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:delete"> Excluir</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="supplies:manage_catalog"> Gerenciar produtos e categorias</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Missões</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:view"> Visualizar missões</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:create"> Cadastrar missões</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:delete"> Excluir missões</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="missions:notify"> Receber notificações (como administrador)</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Obras</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="works:manage"> Cadastrar e gerenciar obras (reformas/construções). Já liberado por "Acessar o módulo Financeiro".</label>
               </div>
             </details>
             <details class="permission-module">
@@ -9090,9 +9143,56 @@
               </div>
             </details>
             <details class="permission-module">
-              <summary>Instruções</summary>
+              <summary>RH</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="instructions:manage"> Cadastrar e excluir</label>
+                <div class="permission-subgroup" data-permission-subgroup="Acompanhamento de Lojas">
+                  <span class="permission-subtitle">Acompanhamento de Lojas</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:view"> Ver PDI de líderes e acompanhamento por loja</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:manage"> Cadastrar, editar e excluir PDI de líderes e acompanhamento por loja</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Aniversariantes">
+                  <span class="permission-subtitle">Aniversariantes</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:view"> Ver a lista de aniversariantes do mês e o status de cada um</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:manage"> Cadastrar data de nascimento e marcar aniversariante como "Feito"</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Controle de Horas - Logística">
+                  <span class="permission-subtitle">Controle de Horas - Logística</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:view"> Ver registros de ponto, horas extras e banco de horas</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:manage"> Lançar ponto, configurar jornada e registrar horas pagas</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Escalas e Folgas">
+                  <span class="permission-subtitle">Escalas e Folgas</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:view"> Ver a loja fixa do mês, a escala de domingos e a escala de folgas calculada</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:manage"> Cadastrar loja fixa do mês e lançar domingos trabalhados e folgas de segunda a sábado</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Fardamento">
+                  <span class="permission-subtitle">Fardamento</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:view"> Ver estoque, lançamentos e termos de responsabilidade de fardamento</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:manage"> Lançar saídas, devoluções, ajustes e gerenciar termos de casacos</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Financeiro (Folha, Benefícios, Comissionamento)">
+                  <span class="permission-subtitle">Financeiro (Folha, Benefícios, Comissionamento)</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="payroll:manage"> Cadastrar funcionários e gerenciar folha, benefícios e comissionamento</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Plano Odontológico">
+                  <span class="permission-subtitle">Plano Odontológico</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:view"> Ver a lista do plano odontológico (dado sensível: CPF e saúde)</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:manage"> Cadastrar, editar e excluir registros do plano odontológico</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Recrutamento e Seleção">
+                  <span class="permission-subtitle">Recrutamento e Seleção</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:view"> Ver candidatos, pipeline e acompanhamento de padrinhos</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:manage"> Cadastrar, editar e excluir candidatos e padrinhos</label>
+                </div>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Saídas</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:create"> Cadastrar saídas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:complete"> Concluir saídas</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="outputs:delete"> Excluir saídas</label>
               </div>
             </details>
             <details class="permission-module">
@@ -9114,115 +9214,10 @@
               </div>
             </details>
             <details class="permission-module">
-              <summary>Financeiro</summary>
+              <summary>Tarefas</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="finance:manage"> Acessar o módulo Financeiro (acesso total)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_view"> NF/Duplicatas: visualizar</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:invoices_reconcile"> NF/Duplicatas: conferir e cadastrar duplicatas/boletos</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:confirm_payment"> NF/Duplicatas: agendar/confirmar pagamento</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="payables:return_to_purchases"> NF/Duplicatas: devolver para Compras</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>Obras</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="works:manage"> Cadastrar e gerenciar obras (reformas/construções). Já liberado por "Acessar o módulo Financeiro".</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>RH Financeiro (Folha, Benefícios, Comissionamento)</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="payroll:manage"> Cadastrar funcionários e gerenciar folha, benefícios e comissionamento</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>RH - Acompanhamento de Lojas</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:view"> Ver PDI de líderes e acompanhamento por loja</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_acompanhamento:manage"> Cadastrar, editar e excluir PDI de líderes e acompanhamento por loja</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>RH - Controle de Horas - Logística</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:view"> Ver registros de ponto, horas extras e banco de horas</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:manage"> Lançar ponto, configurar jornada e registrar horas pagas</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>RH - Recrutamento e Seleção</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:view"> Ver candidatos, pipeline e acompanhamento de padrinhos</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_recrutamento:manage"> Cadastrar, editar e excluir candidatos e padrinhos</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>RH - Fardamento</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:view"> Ver estoque, lançamentos e termos de responsabilidade de fardamento</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_fardamento:manage"> Lançar saídas, devoluções, ajustes e gerenciar termos de casacos</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>RH - Aniversariantes</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:view"> Ver a lista de aniversariantes do mês e o status de cada um</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_aniversariantes:manage"> Cadastrar data de nascimento e marcar aniversariante como "Feito"</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>RH - Plano Odontológico</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:view"> Ver a lista do plano odontológico (dado sensível: CPF e saúde)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:manage"> Cadastrar, editar e excluir registros do plano odontológico</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>RH - Escalas e Folgas</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:view"> Ver a loja fixa do mês, a escala de domingos e a escala de folgas calculada</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:manage"> Cadastrar loja fixa do mês e lançar domingos trabalhados e folgas de segunda a sábado</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>Comercial - Metas e Comissão</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals"> ATUALIZAR VENDEDORES (METAS E REALIZADO)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:credit"> LANÇAR CREDIÁRIOS (PAYJOY, CREFAZ, PARCELEX, ODRES, VENDA P.A E UNIGAMES)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:stores"> ATUALIZAR META LOJA</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>Comercial - Controle GD</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:view"> Ver o saldo, alertas, gráfico de 7 dias e script diário por loja</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:manage"> Lançar e cancelar ajuste de saldo</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>Comercial - Treinamento</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="treinamento:view"> Ver o próprio treinamento (trilhas e progresso na Unigames Academy)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="treinamento:team"> Acompanhar o treinamento da equipe e vincular logins à Academy</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>Comercial - Relatório NF</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:view"> Ver o lançamento do dia e o histórico de dias salvos</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:manage"> Lançar vendas/notas emitidas por loja e salvar no histórico</label>
-              </div>
-            </details>
-            <details class="permission-module">
-              <summary>Documentos</summary>
-              <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:create"> CADASTRAR</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:edit"> EDITAR (renomear, mover de pasta e substituir arquivo)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="documents:delete"> EXCLUIR</label>
-                <span class="field-hint">Visualizar é liberado para todos os usuários.</span>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:view"> Visualizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="tasks:manage"> Cadastrar, editar e excluir</label>
               </div>
             </details>
             <details class="permission-module">
@@ -37905,7 +37900,11 @@ function renderHomeTasks(){
     const modules = Array.from(el('userPermissionGrid').querySelectorAll('.permission-module')).map(module => {
       const inputs = Array.from(module.querySelectorAll('[name="userPermission"]'));
       inputs.forEach(input => known.add(input.value));
-      return {name: module.querySelector('summary').textContent.trim(), items: inputs.filter(input => granted.has(input.value)).map(input => userPermissionLabel(input.value, input))};
+      // Subgrupo (RH): o nome da área vai junto, senão "Visualizar" fica sem contexto.
+      return {name: module.querySelector('summary').textContent.trim(), items: inputs.filter(input => granted.has(input.value)).map(input => {
+        const sub = input.closest('[data-permission-subgroup]');
+        return (sub ? sub.dataset.permissionSubgroup+' — ' : '')+userPermissionLabel(input.value, input);
+      })};
     }).filter(module => module.items.length);
     const others = Array.from(granted).filter(value => !known.has(value));
     if(others.length) modules.push({name:'OUTRAS', items: others.map(value => permissionNames[value] || value)});
@@ -42263,7 +42262,7 @@ function renderHomeTasks(){
       '<div class="com-block-head"><span class="com-block-title">'+escapeHtml(track.title)+'</span><strong class="com-pct">'+percent+'%</strong></div>'+
       (meta ? '<p class="acad-meta">'+escapeHtml(meta)+'</p>' : '')+
       (track.description ? '<p class="acad-desc">'+escapeHtml(track.description)+'</p>' : '')+
-      '<div class="com-bar simple" role="img" aria-label="'+escapeHtml(track.title+': '+percent+'% concluído')+'"><div class="com-bar-track"><div class="com-bar-fill" style="width:'+Math.min(100, percent)+'%"></div></div></div>'+
+      '<div class="com-bar simple acad-bar" role="img" aria-label="'+escapeHtml(track.title+': '+percent+'% concluído')+'"><div class="com-bar-track"><div class="com-bar-fill" style="width:'+Math.min(100, percent)+'%"></div></div></div>'+
       '<dl class="com-figures">'+
         '<div><dt>Aulas</dt><dd>'+escapeHtml((progress ? progress.completed : 0)+' de '+track.lessonIds.length)+'</dd></div>'+
         '<div><dt>Duração</dt><dd>'+escapeHtml(minutes ? minutes+' MIN' : '—')+'</dd></div>'+
