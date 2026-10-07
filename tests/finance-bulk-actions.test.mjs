@@ -13,7 +13,7 @@ const db = await setupRouteDb([
   "accounts_payable", "accounts_payable_payments", "finance_items", "finance_categories", "finance_cost_centers",
   "finance_store_entries", "finance_accounts", "supplier_open_debts", "finance_suppliers",
   "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",
-  "finance_bank_statement_entries", "finance_bank_classification_rules", "finance_replacement_entries", "finance_budgets",
+  "finance_bank_statement_entries", "finance_bank_classification_rules", "finance_replacement_entries", "finance_budgets", "obras", "obra_entries",
 ]);
 const { todayInTimezone } = await import("../app/lib/finance-status.ts");
 const payablesBulk = await import("../app/api/finance/payables/bulk/route.ts");
@@ -24,6 +24,7 @@ const reconBulk = await import("../app/api/finance/bank-reconciliation/bulk/rout
 const reposicaoBulk = await import("../app/api/finance/replacement-control/bulk/route.ts");
 const reposicaoBatch = await import("../app/api/finance/replacement-control/batch/route.ts");
 const budgetsBulk = await import("../app/api/finance/budgets/bulk/route.ts");
+const obrasBulk = await import("../app/api/obras/bulk/route.ts");
 
 const STORE_A = "criomar01";
 const STORE_B = "ctacaruna1";
@@ -56,6 +57,7 @@ test("sem finance:manage recebe 403 em todos os lotes", async () => {
     [reposicaoBulk.POST, "/api/finance/replacement-control/bulk"],
     [reposicaoBatch.POST, "/api/finance/replacement-control/batch"],
     [budgetsBulk.POST, "/api/finance/budgets/bulk"],
+    [obrasBulk.POST, "/api/obras/bulk"],
   ]) {
     assert.equal((await post(handler, NO_FINANCE, path, {})).status, 403, path);
   }
@@ -272,4 +274,30 @@ test("Orçamento: copiar para outro mês (pula o que já existe), ajustar % e fi
   assert.equal(row("finance_budgets", "b1").id, "b1");
   await post(budgetsBulk.POST, ADMIN, "/api/finance/budgets/bulk", { action: "delete", ids: ["b1", "b2"] });
   assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_budgets WHERE month='2026-09'").get().n, 0);
+});
+
+// ---------------------------------------------------------------------------
+// 6. Obras
+// ---------------------------------------------------------------------------
+
+test("Obras: alterar status (pula o que já está), excluir com lançamentos e anexos, 404", async () => {
+  const uuid = (n) => `00000000-0000-4000-8000-00000000000${n}`;
+  const obra = (n, extra) => db.insert("obras", { id: uuid(n), title: `OBRA ${n}`, kind: "reforma", status: "planejada", created_by: "seed", ...extra });
+  obra(1); obra(2, { status: "andamento" }); obra(3);
+  db.insert("obra_entries", { id: uuid(7), obra_id: uuid(3), description: "TINTA", amount_cents: 1000, attachment_r2_key: "obras/nota.pdf", created_by: "seed" });
+
+  const status = await json(await post(obrasBulk.POST, ADMIN, "/api/obras/bulk", { action: "status", ids: [uuid(1), uuid(2)], fields: { status: "andamento" } }));
+  assert.equal(status.applied, 1);
+  assert.deepEqual(status.skipped.map((s) => s.reason), ["JÁ ESTÁ COM ESSE STATUS"]);
+  assert.equal(row("obras", uuid(1)).status, "andamento");
+  assert.equal((await post(obrasBulk.POST, ADMIN, "/api/obras/bulk", { action: "status", ids: [uuid(1)], fields: { status: "xx" } })).status, 400);
+  // works:manage sozinho também pode (mesma permissão da tela).
+  assert.equal((await post(obrasBulk.POST, { id: "obras", permissions: ["works:manage"] }, "/api/obras/bulk", { action: "status", ids: [uuid(1)], fields: { status: "concluida" } })).status, 200);
+
+  assert.equal((await post(obrasBulk.POST, ADMIN, "/api/obras/bulk", { action: "delete", ids: [uuid(3), uuid(9)] })).status, 404);
+  assert.equal(row("obras", uuid(3)).id, uuid(3));
+  await post(obrasBulk.POST, ADMIN, "/api/obras/bulk", { action: "delete", ids: [uuid(3)] });
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM obras WHERE id=?").get(uuid(3)).n, 0);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM obra_entries WHERE obra_id=?").get(uuid(3)).n, 0);
+  assert.ok(globalThis.__routeTestBucket.deletedKeys.includes("obras/nota.pdf"));
 });

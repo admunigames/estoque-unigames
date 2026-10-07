@@ -8538,11 +8538,20 @@
 
       <div class="table-panel" id="obrasResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
 
+      <div class="bulk-bar no-print" id="obrasBulkBar">
+        <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+        <div class="bulk-bar-actions" data-bulk-actions hidden>
+          <strong class="bulk-bar-count" data-bulk-count></strong>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="status">ALTERAR STATUS</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+        </div>
+      </div>
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="obrasTable">
-            <thead><tr><th>Obra</th><th>Loja</th><th>Tipo</th><th>Responsável</th><th>Orçado</th><th>Realizado</th><th>Início</th><th>Previsão</th><th>Status</th><th class="no-print"></th></tr></thead>
-            <tbody id="obrasTableBody"><tr><td colspan="10" class="responsive-empty">Carregando obras…</td></tr></tbody>
+            <thead><tr><th class="bulk-col no-print" aria-label="Selecionar"></th><th>Obra</th><th>Loja</th><th>Tipo</th><th>Responsável</th><th>Orçado</th><th>Realizado</th><th>Início</th><th>Previsão</th><th>Status</th><th class="no-print"></th></tr></thead>
+            <tbody id="obrasTableBody"><tr><td colspan="11" class="responsive-empty">Carregando obras…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -10353,6 +10362,23 @@
     <div class="user-form-status" id="budgetBulkStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelBudgetBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="obraBulkDialog" aria-labelledby="obraBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="obraBulkTitle">ALTERAR STATUS</h3>
+    <button class="purchase-dialog-close" id="btnCloseObraBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="obraBulkForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="obraBulkStatus">NOVO STATUS *</label><select id="obraBulkStatus"><option value="planejada">PLANEJADA</option><option value="andamento">EM ANDAMENTO</option><option value="concluida">CONCLUÍDA</option><option value="cancelada">CANCELADA</option></select></div>
+    </div>
+    <div class="user-form-status" id="obraBulkStatusMsg" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelObraBulk" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">APLICAR</button>
     </div>
   </form>
@@ -34917,21 +34943,23 @@ function renderHomeTasks(){
     const body = el('obrasTableBody');
     if(!body) return;
     if(!obrasRows.length){
-      body.innerHTML = '<tr><td colspan="10" class="responsive-empty">Nenhuma obra cadastrada para o filtro.</td></tr>';
+      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhuma obra cadastrada para o filtro.</td></tr>';
       el('obrasResumo').textContent = '';
+      obrasBulk.sync();
       return;
     }
     body.innerHTML = obrasRows.map(row => '<tr>'+
-      '<td>'+escapeHtml(row.title)+'</td>'+
-      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
-      '<td>'+escapeHtml(OBRA_KIND_LABELS[row.kind] || row.kind)+'</td>'+
-      '<td>'+escapeHtml(row.responsible || '—')+'</td>'+
-      '<td>'+formatCentsBRL(row.budgetCents)+'</td>'+
-      '<td><strong>'+formatCentsBRL(row.realizedCents)+'</strong>'+(row.budgetCents > 0 && row.realizedCents > row.budgetCents ? ' <span class="status-pill alert">ACIMA DO ORÇADO</span>' : '')+'</td>'+
-      '<td>'+escapeHtml(formatDateBR(row.startDate) || '—')+'</td>'+
-      '<td>'+escapeHtml(formatDateBR(row.expectedEndDate) || '—')+'</td>'+
-      '<td>'+escapeHtml(OBRA_STATUS_LABELS[row.status] || row.status)+'</td>'+
-      '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+      '<td class="bulk-col no-print" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar obra '+row.title)+'</td>'+
+      '<td data-label="Obra">'+escapeHtml(row.title)+'</td>'+
+      '<td data-label="Loja">'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td data-label="Tipo">'+escapeHtml(OBRA_KIND_LABELS[row.kind] || row.kind)+'</td>'+
+      '<td data-label="Responsável">'+escapeHtml(row.responsible || '—')+'</td>'+
+      '<td data-label="Orçado">'+formatCentsBRL(row.budgetCents)+'</td>'+
+      '<td data-label="Realizado"><span><strong>'+formatCentsBRL(row.realizedCents)+'</strong>'+(row.budgetCents > 0 && row.realizedCents > row.budgetCents ? ' <span class="status-pill alert">ACIMA DO ORÇADO</span>' : '')+'</span></td>'+
+      '<td data-label="Início">'+escapeHtml(formatDateBR(row.startDate) || '—')+'</td>'+
+      '<td data-label="Previsão">'+escapeHtml(formatDateBR(row.expectedEndDate) || '—')+'</td>'+
+      '<td data-label="Status">'+escapeHtml(OBRA_STATUS_LABELS[row.status] || row.status)+'</td>'+
+      '<td class="no-print" data-label="Ações"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
         '<button class="btn-outline" type="button" data-obra-open="'+escapeHtml(row.id)+'">LANÇAMENTOS</button>'+
         '<button class="btn-outline" type="button" data-obra-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
         '<button class="btn-outline" type="button" data-obra-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
@@ -34940,7 +34968,35 @@ function renderHomeTasks(){
     const orc = obrasRows.reduce((s, r) => s + Number(r.budgetCents || 0), 0);
     const real = obrasRows.reduce((s, r) => s + Number(r.realizedCents || 0), 0);
     el('obrasResumo').innerHTML = '<strong>'+obrasRows.length+'</strong> obra(s) · Orçado: <strong>'+formatCentsBRL(orc)+'</strong> · Realizado: <strong>'+formatCentsBRL(real)+'</strong>';
+    obrasBulk.sync();
   }
+
+  // Ações em lote (Financeiro 9/9) — /api/obras/bulk, mesma regra da tela.
+  let obrasBulkIds = [];
+  const obrasBulk = setupBulkSelection(el('obrasBulkBar'), el('obrasTableBody'), async (action, ids) => {
+    if(action === 'status'){
+      obrasBulkIds = ids;
+      el('obraBulkForm').reset();
+      el('obraBulkTitle').textContent = 'ALTERAR STATUS — '+ids.length+(ids.length === 1 ? ' OBRA' : ' OBRAS');
+      el('obraBulkStatusMsg').textContent = '';
+      el('obraBulkDialog').showModal();
+      return false;
+    }
+    if(!confirm('Excluir '+ids.length+' obra(s) com todos os lançamentos e anexos? Não dá para desfazer.')) return false;
+    await financeBulkRequest('/bulk', {action, ids}, obraApiRequest);
+    await loadObrasPage();
+  });
+  el('btnCloseObraBulk').addEventListener('click', () => el('obraBulkDialog').close());
+  el('btnCancelObraBulk').addEventListener('click', () => el('obraBulkDialog').close());
+  el('obraBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    try{
+      await financeBulkRequest('/bulk', {action:'status', ids: obrasBulkIds, fields:{status: el('obraBulkStatus').value}}, obraApiRequest);
+      el('obraBulkDialog').close();
+      obrasBulk.clear();
+      await loadObrasPage();
+    }catch(error){ el('obraBulkStatusMsg').textContent = error.message; }
+  });
 
   async function loadObrasPage(){
     if(!canAccess('finance')) return;
@@ -34948,14 +35004,14 @@ function renderHomeTasks(){
     const params = new URLSearchParams();
     if(el('obrasFiltroLoja').value) params.set('companyId', el('obrasFiltroLoja').value);
     if(el('obrasFiltroStatus').value) params.set('status', el('obrasFiltroStatus').value);
-    el('obrasTableBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
+    el('obrasTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
     try{
       const data = await obraApiRequest('?'+params.toString());
       obrasRows = Array.isArray(data.obras) ? data.obras : [];
       renderObrasTable();
     }catch(error){
       obrasRows = [];
-      el('obrasTableBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('obrasTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
   ['obrasFiltroLoja','obrasFiltroStatus'].forEach(id => { if(el(id)) el(id).addEventListener('change', loadObrasPage); });

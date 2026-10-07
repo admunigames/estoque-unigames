@@ -5285,3 +5285,11 @@ test("Financeiro 9/9 > Orçamento: barra de lote", async () => {
   assert.match(html, /financeBulkRequest\('\/budgets\/bulk'/);
   assert.match(html, /id="budgetBulkDialog"/);
 });
+
+test("Financeiro 9/9 > Obras: barra de lote", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="obrasBulkBar"[\s\S]*?data-bulk-action="status">ALTERAR STATUS[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /const obrasBulk = setupBulkSelection\(el\('obrasBulkBar'\), el\('obrasTableBody'\)/);
+  assert.match(html, /financeBulkRequest\('\/bulk', \{action:'status'/);
+  assert.match(html, /id="obraBulkDialog"/);
+});
