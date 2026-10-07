@@ -4433,6 +4433,10 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Cor das colunas pela posição: 1º verde → último vermelho (degradê).
   assert.match(html, /const hue = Math\.round\(145 - t \* 140\);/);
   assert.doesNotMatch(html, /COM_TIER_COLORS/);
+  // Meta Loja: itens da loja à mão; comissão do Comercial travada no RH (vem de lá).
+  assert.match(html, /<th>Meta itens<\/th><th>Itens feito<\/th>/);
+  assert.match(html, /id="rhComissaoValorHint" hidden>VEM DO COMERCIAL/);
+  assert.match(html, /el\('rhComissaoValor'\)\.readOnly = fromCommercial;/);
   // META VENDEDORES: meta (tracejada) × feito por vendedor, só da loja de quem vê (rota /team).
   assert.match(html, /data-com-rank="equipe">Meta Vendedores</);
   assert.match(html, /comApi\('\/team\?month='/);
@@ -4442,7 +4446,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /#comViewVendedores thead th:first-child,#comViewVendedores tbody td:first-child\{position:sticky;left:0;/);
   // Sem o quadro "Novato no mês" nas regras da Comissão (o vendedor não fica sabendo do novato).
   assert.doesNotMatch(html, /rule\('Novato no mês'/);
-  assert.match(storesRoute, /const body: JsonMap = \{ month, items, totalPercent: progressPercent\(revenueSum, targetSum\) \};/);
+  assert.match(storesRoute, /const body: JsonMap = \{ month, items, itemStores, totalPercent: progressPercent\(revenueSum, targetSum\) \};/);
   assert.match(storesRoute, /if \(canManageCommercialStores\(actor\) && scope\)/);
   // Ao vivo: qualquer escrita em /api/commercial avisa o canal "commercial".
   assert.match(liveEvents, /if \(path\.startsWith\("\/api\/commercial\/"\)\) \{[\s\S]*?module: "commercial", audience: \{ kind: "all" \}/);

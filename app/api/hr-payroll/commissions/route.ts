@@ -22,6 +22,7 @@ import {
   type Database,
   type JsonMap,
 } from "../shared";
+import { COMMISSION_SYNC_FROM, commercialCommissionFor, commercialEmployeeIds } from "../../commercial/shared";
 
 // Comissionamento — um cabeçalho por funcionário/mês, com as linhas
 // itemizadas que o sustentam (bônus, premiações, descontos e ajustes).
@@ -40,6 +41,12 @@ import {
 // seguintes, com o VALOR CHEIO repetido, e reconciliadas sempre que a
 // âncora é salva de novo. O cabeçalho de cada competência futura é criado
 // se ainda não existir.
+//
+// Vendedores do Comercial (a partir de COMMISSION_SYNC_FROM): o campo
+// "comissão" vem do total calculado no Comercial (syncHrCommissions em
+// app/api/commercial/shared.ts) — fromCommercial=true na leitura e, ao salvar
+// aqui, o valor digitado é trocado pelo do Comercial. Bônus, premiações,
+// descontos e ajustes continuam lançados nesta tela.
 
 type CommissionRow = {
   id: string;
@@ -286,16 +293,19 @@ export async function GET(request: Request) {
       }
     }
 
+    const fromCommercial = await commercialEmployeeIds(database, month);
     const rows = commissions.map((row) => ({
       ...row,
       netCents: commissionNetCents(row),
       items: itemsByCommission.get(row.id) ?? [],
+      fromCommercial: fromCommercial.has(row.employeeId),
     }));
     const commissionRuleText = await loadCommissionRuleText(database);
     return jsonResponse({
       month,
       companyId,
       commissionRuleText,
+      commercialSyncFrom: COMMISSION_SYNC_FROM,
       commissions: rows,
       totalNetCents: rows.reduce((sum, row) => sum + row.netCents, 0),
     });
@@ -322,7 +332,7 @@ export async function POST(request: Request) {
     const employeeId = safeText(body.employeeId, 80);
     const month = safeText(body.month, 7);
     const notes = safeText(body.notes, 500);
-    const commissionCents = centsValue(body.commissionCents ?? 0);
+    let commissionCents = centsValue(body.commissionCents ?? 0);
 
     if (!employeeId) return jsonResponse({ error: "SELECIONE O FUNCIONÁRIO." }, 400);
     if (!MONTH_PATTERN.test(month)) {
@@ -337,6 +347,9 @@ export async function POST(request: Request) {
     const database = await getD1();
     const employee = await loadEmployee(database, employeeId);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
+    // Vendedor do Comercial: a comissão é a calculada lá, nunca a digitada.
+    const commercialCents = await commercialCommissionFor(database, employeeId, month);
+    if (commercialCents !== null) commissionCents = commercialCents;
 
     const existing = await database
       .prepare("SELECT id FROM hr_commissions WHERE employee_id=?1 AND month=?2 LIMIT 1")

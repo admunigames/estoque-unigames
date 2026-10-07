@@ -11,7 +11,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
 const db = await setupRouteDb([
   "shared_state", "hr_employees", "commercial_monthly", "commercial_rules", "commercial_newcomers",
-  "commercial_credit_entries", "commercial_store_goals",
+  "commercial_credit_entries", "commercial_store_goals", "hr_commissions", "hr_commission_items", "hr_payroll_settings",
 ]);
 const migration = await readFile(new URL("../drizzle/0085_comercial_regras.sql", import.meta.url), "utf8");
 const migration0086 = await readFile(new URL("../drizzle/0086_comercial_lancamentos.sql", import.meta.url), "utf8");
@@ -31,6 +31,7 @@ const storesRoute = await import("../app/api/commercial/stores/route.ts");
 const rankingRoute = await import("../app/api/commercial/ranking/route.ts");
 const employeesRoute = await import("../app/api/hr-payroll/employees/route.ts");
 const teamRoute = await import("../app/api/commercial/team/route.ts");
+const hrCommissionsRoute = await import("../app/api/hr-payroll/commissions/route.ts");
 
 const STORE_A = "clojaalfa1";
 const STORE_B = "clojabeta1";
@@ -464,4 +465,48 @@ test("Ranking > META VENDEDORES: o vendedor vê só a própria loja; gestor a de
   assert.deepEqual(all.data.items.map((item) => item.name), ["CARLA DIAS"]);
   // Precisa de comercial:dashboard.
   assert.equal((await team({ id: "x", permissions: ["comercial:commission"] })).status, 403);
+});
+
+test("comissão do Comercial preenche o comissionamento do RH (a partir de 10/2026)", async () => {
+  const hrRow = (employeeId, month) => { const row = db.sqlite.prepare("SELECT commission_cents AS c, bonuses_cents AS b FROM hr_commissions WHERE employee_id=? AND month=?").get(employeeId, month); return row ? { ...row } : undefined; }
+  // Setembro (antes de 10/2026): o RH não é tocado.
+  assert.equal(hrRow("emp-ana", "2026-09"), undefined);
+  // Outubro: todo vendedor do mês tem o "comissão" = total do Comercial.
+  const oct = await sellersOf(ADMIN, "2026-10");
+  for (const seller of oct.sellers) {
+    assert.equal(hrRow(seller.employeeId, "2026-10")?.c, seller.metrics.commission.totalCents, seller.name);
+  }
+  // RH vê a marca e não consegue digitar por cima (bônus segue livre).
+  const hr = { id: "u-rh", permissions: ["payroll:manage"] };
+  const list = await (await callRoute(hrCommissionsRoute.GET, hr, "GET", "/api/hr-payroll/commissions?month=2026-10")).json();
+  assert.equal(list.commercialSyncFrom, "2026-10");
+  const anaHr = list.commissions.find((row) => row.employeeId === "emp-ana");
+  assert.equal(anaHr.fromCommercial, true);
+  const saved = await callRoute(hrCommissionsRoute.POST, hr, "POST", "/api/hr-payroll/commissions", {
+    id: anaHr.id, employeeId: "emp-ana", month: "2026-10", commissionCents: 1, notes: "",
+    items: [{ kind: "bonus", label: "BÔNUS LOJA", amountCents: 5_000 }],
+  });
+  assert.equal(saved.status, 200, JSON.stringify(await saved.clone().json()));
+  const ana = byId(await sellersOf(ADMIN, "2026-10"), "emp-ana");
+  assert.deepEqual(hrRow("emp-ana", "2026-10"), { c: ana.metrics.commission.totalCents, b: 5_000 });
+  // Lançamento novo no Comercial (crediário) atualiza o RH na hora, sem mexer no bônus.
+  assert.equal((await postEntry(ADMIN, { month: "2026-10", kind: "payjoy", saleRef: "sync-1", employeeId: "emp-ana", amountCents: 100_000 })).status, 201);
+  const after = byId(await sellersOf(ADMIN, "2026-10"), "emp-ana").metrics.commission.totalCents;
+  assert.notEqual(after, ana.metrics.commission.totalCents);
+  assert.deepEqual(hrRow("emp-ana", "2026-10"), { c: after, b: 5_000 });
+  // Tirar do mês zera a comissão no RH.
+  assert.equal((await callRoute(sellersRoute.DELETE, ADMIN, "DELETE", "/api/commercial/sellers?month=2026-10&employeeId=emp-bruno")).status, 200);
+  assert.equal(hrRow("emp-bruno", "2026-10").c, 0);
+});
+
+test("Meta Loja: META ITENS e ITENS FEITO à mão; o gráfico de itens por loja usa esses números", async () => {
+  const put = (body) => callRoute(storesRoute.PUT, STORES, "PUT", "/api/commercial/stores", { month: "2027-02", targetCents: 0, revenueCents: 0, ...body });
+  assert.equal((await put({ companyId: STORE_A, targetItems: 760, items: 178 })).status, 200);
+  assert.equal((await put({ companyId: STORE_B, targetItems: -1, items: 0 })).status, 400);
+  const data = await (await callRoute(storesRoute.GET, DASHBOARD, "GET", "/api/commercial/stores?month=2027-02")).json();
+  assert.deepEqual(data.itemStores, [{ companyId: STORE_A, name: "LOJA ALFA", items: 178, targetItems: 760 }]);
+  const editor = await (await callRoute(storesRoute.GET, STORES, "GET", "/api/commercial/stores?month=2027-02")).json();
+  assert.deepEqual(editor.rows.find((row) => row.companyId === STORE_A), {
+    companyId: STORE_A, name: "LOJA ALFA", targetCents: 0, revenueCents: 0, targetItems: 760, items: 178,
+  });
 });

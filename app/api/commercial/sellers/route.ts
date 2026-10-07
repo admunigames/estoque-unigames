@@ -14,6 +14,7 @@ import {
   previousMonth,
   safeText,
   sameOrigin,
+  syncHrCommissions,
   type JsonMap,
 } from "../shared";
 
@@ -134,6 +135,7 @@ export async function PUT(request: Request) {
         actor.id, actorName(actor), new Date().toISOString(),
       )
       .run();
+    await syncHrCommissions(database, month, actor);
     return jsonResponse({ employeeId: employee.id, month });
   } catch (error) {
     console.error("Não foi possível salvar o vendedor do mês.", error);
@@ -188,6 +190,7 @@ export async function POST(request: Request) {
           actor.id, actorName(actor), now,
         ),
     ));
+    await syncHrCommissions(database, month, actor);
     return jsonResponse({ copied: toCopy.length }, 201);
   } catch (error) {
     console.error("Não foi possível copiar os vendedores do mês anterior.", error);
@@ -198,7 +201,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const checked = guard(request);
   if (checked.error) return checked.error;
-  const { scope } = checked;
+  const { actor, scope } = checked;
   const url = new URL(request.url);
   const month = safeText(url.searchParams.get("month"), 7);
   if (!MONTH_PATTERN.test(month)) return jsonResponse({ error: "MÊS INVÁLIDO." }, 400);
@@ -210,6 +213,7 @@ export async function DELETE(request: Request) {
       .prepare("DELETE FROM commercial_monthly WHERE employee_id=?1 AND month=?2")
       .bind(employee.id, month)
       .run();
+    await syncHrCommissions(database, month, actor, [employee.id]);
     return jsonResponse({ employeeId: employee.id, month });
   } catch (error) {
     console.error("Não foi possível tirar o vendedor do mês.", error);

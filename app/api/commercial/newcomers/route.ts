@@ -11,6 +11,7 @@ import {
   linkedEmployeeIds,
   safeText,
   sameOrigin,
+  syncHrCommissions,
   type JsonMap,
 } from "../shared";
 
@@ -59,6 +60,7 @@ export async function PUT(request: Request) {
         .prepare("DELETE FROM commercial_newcomers WHERE employee_id=?1 AND month=?2")
         .bind(employeeId, month)
     ).run();
+    await syncHrCommissions(database, month, actor);
     return jsonResponse({ employeeId, month, newcomer: body.newcomer });
   } catch (error) {
     console.error("Não foi possível marcar o novato.", error);

@@ -12,6 +12,7 @@ import {
   nonNegativeInt,
   safeText,
   sameOrigin,
+  syncHrCommissions,
   type JsonMap,
 } from "../shared";
 
@@ -117,6 +118,7 @@ export async function POST(request: Request) {
         actor.id, actorName(actor), new Date().toISOString(),
       )
       .run();
+    await syncHrCommissions(database, month, actor);
     return jsonResponse({ id }, 201);
   } catch (error) {
     console.error("Não foi possível lançar a venda.", error);
@@ -127,18 +129,19 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const checked = guard(request);
   if (checked.error) return checked.error;
-  const { scope } = checked;
+  const { actor, scope } = checked;
   const id = safeText(new URL(request.url).searchParams.get("id"), 80);
   try {
     const database = await getD1();
     const entry = await database
-      .prepare("SELECT company_id AS companyId FROM commercial_credit_entries WHERE id=?1")
+      .prepare("SELECT company_id AS companyId, month FROM commercial_credit_entries WHERE id=?1")
       .bind(id)
-      .first<{ companyId: string }>();
+      .first<{ companyId: string; month: string }>();
     if (!entry || (!scope.allStores && entry.companyId !== scope.companyId)) {
       return jsonResponse({ error: "LANÇAMENTO NÃO ENCONTRADO." }, 404);
     }
     await database.prepare("DELETE FROM commercial_credit_entries WHERE id=?1").bind(id).run();
+    await syncHrCommissions(database, entry.month, actor);
     return jsonResponse({ id });
   } catch (error) {
     console.error("Não foi possível excluir o lançamento.", error);

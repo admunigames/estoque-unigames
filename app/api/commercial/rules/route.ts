@@ -10,6 +10,7 @@ import {
   loadRules,
   safeText,
   sameOrigin,
+  syncHrCommissionsAllMonths,
   type JsonMap,
 } from "../shared";
 
@@ -80,6 +81,8 @@ async function save(request: Request, method: "POST" | "PUT") {
       )
       .bind(...values)
       .run();
+    // Regra nova/editada muda a comissão dos meses da vigência em diante.
+    await syncHrCommissionsAllMonths(database, actor);
     return jsonResponse({ id }, method === "POST" ? 201 : 200);
   } catch (error) {
     console.error("Não foi possível salvar a regra de comissão.", error);

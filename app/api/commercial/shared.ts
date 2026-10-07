@@ -408,3 +408,95 @@ export function previousMonth(month: string): string {
   const [year, monthNumber] = month.split("-").map(Number);
   return monthNumber === 1 ? `${year - 1}-12` : `${year}-${String(monthNumber - 1).padStart(2, "0")}`;
 }
+
+// ---------------------------------------------------------------------------
+// Comissão do Comercial → RH > Comissionamento (pedido de 2026-10-07).
+// A partir desta competência, o campo "comissão" (commission_cents) do
+// cabeçalho de cada vendedor do mês é o TOTAL calculado aqui (faturamento +
+// premiação + garantia + crediário + venda P.A/Unigames), atualizado a cada
+// lançamento no Comercial. Bônus, premiações, descontos e ajustes do RH
+// (hr_commission_items) não são tocados. Meses anteriores ficam como o RH
+// lançou.
+// ---------------------------------------------------------------------------
+export const COMMISSION_SYNC_FROM = "2026-10";
+
+/** Vendedores do mês cuja comissão vem do Comercial (vazio antes de COMMISSION_SYNC_FROM). */
+export async function commercialEmployeeIds(database: Database, month: string): Promise<Set<string>> {
+  if (month < COMMISSION_SYNC_FROM) return new Set();
+  const result = await database
+    .prepare("SELECT employee_id AS employeeId FROM commercial_monthly WHERE month=?1")
+    .bind(month)
+    .all<{ employeeId: string }>();
+  return new Set((result.results ?? []).map((row) => row.employeeId));
+}
+
+/** Total do Comercial para o funcionário no mês — null quando não vem do Comercial. */
+export async function commercialCommissionFor(database: Database, employeeId: string, month: string): Promise<number | null> {
+  if (month < COMMISSION_SYNC_FROM) return null;
+  const { sellers } = await loadSellers(database, month);
+  const seller = sellers.find((item) => item.employeeId === employeeId);
+  return seller ? seller.metrics.commission.totalCents : null;
+}
+
+/**
+ * Regrava o "comissão" do RH de todos os vendedores do mês. `removed` =
+ * vendedores tirados do mês no Comercial (a comissão deles volta a zero).
+ * Falha aqui não desfaz o lançamento do Comercial: fica registrada no log e o
+ * próximo lançamento do mês corrige.
+ */
+export async function syncHrCommissions(database: Database, month: string, actor: Identity, removed: string[] = []) {
+  if (month < COMMISSION_SYNC_FROM) return;
+  try {
+    const [{ sellers }, existing] = await Promise.all([
+      loadSellers(database, month),
+      database
+        .prepare("SELECT id, employee_id AS employeeId FROM hr_commissions WHERE month=?1")
+        .bind(month)
+        .all<{ id: string; employeeId: string }>(),
+    ]);
+    const headers = new Map((existing.results ?? []).map((row) => [row.employeeId, row.id]));
+    const who = actorName(actor);
+    const now = new Date().toISOString();
+    const statements = sellers.map((seller) => {
+      const id = headers.get(seller.employeeId);
+      return id
+        ? database
+          .prepare("UPDATE hr_commissions SET commission_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=?4 WHERE id=?5")
+          .bind(seller.metrics.commission.totalCents, actor.id, who, now, id)
+        : database
+          .prepare(
+            `INSERT INTO hr_commissions
+              (id, employee_id, employee_name, company_id, company_name, month, commission_cents,
+               bonuses_cents, premiums_cents, discounts_cents, adjustments_cents, notes,
+               created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, 0, 0, 0, '', ?8, ?9, ?10, ?8, ?9, ?10)`,
+          )
+          .bind(
+            crypto.randomUUID(), seller.employeeId, seller.name, seller.companyId, seller.companyName, month,
+            seller.metrics.commission.totalCents, actor.id, who, now,
+          );
+    });
+    for (const employeeId of removed) {
+      const id = headers.get(employeeId);
+      if (id && !sellers.some((seller) => seller.employeeId === employeeId)) {
+        statements.push(
+          database
+            .prepare("UPDATE hr_commissions SET commission_cents=0, updated_by=?1, updated_by_name=?2, updated_at=?3 WHERE id=?4")
+            .bind(actor.id, who, now, id),
+        );
+      }
+    }
+    if (statements.length) await database.batch(statements);
+  } catch (error) {
+    console.error("Não foi possível atualizar a comissão no RH.", error);
+  }
+}
+
+/** Todos os meses com vendedores a partir de COMMISSION_SYNC_FROM (troca de regra). */
+export async function syncHrCommissionsAllMonths(database: Database, actor: Identity) {
+  const result = await database
+    .prepare("SELECT DISTINCT month FROM commercial_monthly WHERE month>=?1")
+    .bind(COMMISSION_SYNC_FROM)
+    .all<{ month: string }>();
+  for (const row of result.results ?? []) await syncHrCommissions(database, row.month, actor);
+}
