@@ -14127,7 +14127,52 @@
   // Upload em partes. opts.replaceId = SUBSTITUIR ARQUIVO de um documento
   // existente (exige documents:edit); sem ele, cadastra um documento novo na
   // pasta aberta (exige documents:create). opts.onStatus recebe o progresso.
+  // Antes de subir para o R2: foto/print vira JPEG de até 1600 px (qualidade
+  // 80%) — 3–5 MB de celular caem para ~200–400 KB. Imagem pequena (<500 KB),
+  // formato que o navegador não abre ou resultado maior que o original sobem
+  // como estão. PDF não é reduzido (perderia o texto); acima de 5 MB pede
+  // confirmação e sugere enviar como imagem.
+  const UPLOAD_IMAGE_MAX_SIDE = 1600;
+  const UPLOAD_IMAGE_QUALITY = 0.8;
+  const UPLOAD_IMAGE_MIN_BYTES = 500 * 1024;
+  const UPLOAD_PDF_WARN_BYTES = 5 * 1024 * 1024;
+
+  async function shrinkImageForUpload(file){
+    if(!file || !/^image\/(jpe?g|png|webp|heic|heif)$/i.test(file.type || '') || file.size < UPLOAD_IMAGE_MIN_BYTES) return file;
+    if(typeof createImageBitmap !== 'function') return file;
+    try{
+      const bitmap = await createImageBitmap(file, {imageOrientation:'from-image'});
+      const scale = Math.min(1, UPLOAD_IMAGE_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      if(bitmap.close) bitmap.close();
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', UPLOAD_IMAGE_QUALITY));
+      if(!blob || blob.size >= file.size) return file;
+      return new File([blob], (file.name || 'imagem').replace(/\.[^.]+$/, '')+'.jpg', {type:'image/jpeg', lastModified:Date.now()});
+    }catch(error){
+      return file;
+    }
+  }
+
+  function confirmLargePdfUpload(file){
+    if(!file || file.size <= UPLOAD_PDF_WARN_BYTES) return true;
+    if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name || '')) return true;
+    const mb = (file.size / 1024 / 1024).toLocaleString('pt-BR', {maximumFractionDigits:1});
+    return confirm('O PDF "'+file.name+'" TEM '+mb+' MB. SE FOR FOTO OU DIGITALIZAÇÃO, ENVIE COMO IMAGEM (JPG/PNG): O SISTEMA REDUZ AUTOMATICAMENTE. ENVIAR O PDF ASSIM MESMO?');
+  }
+
+  async function prepareUploadFile(file){
+    if(!confirmLargePdfUpload(file)) throw new Error('ENVIO CANCELADO.');
+    return shrinkImageForUpload(file);
+  }
+
   async function uploadDocument(file, opts){
+    file = await prepareUploadFile(file);
     const options = opts || {};
     const onStatus = options.onStatus || setDocumentsUploadStatus;
     if(!file) throw new Error('SELECIONE UM ARQUIVO.');
@@ -17153,6 +17198,7 @@
 
   async function uploadPurchaseFile(file){
     if(!file) return null;
+    if(!confirmLargePdfUpload(file)) throw new Error('ENVIO CANCELADO.');
     if(file.size > PURCHASE_FILE_MAX_SIZE){
       throw new Error('O ARQUIVO '+file.name+' DEVE TER NO MÁXIMO 100 MB.');
     }
@@ -25581,6 +25627,7 @@ function renderHomeTasks(){
   });
 
   async function uploadOsNoteAttachment(osNoteId, file){
+    file = await prepareUploadFile(file);
     if(!file) throw new Error('SELECIONE UM ARQUIVO.');
     if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.');
@@ -28246,6 +28293,7 @@ function renderHomeTasks(){
   // disparado depois que o pagamento em si já foi criado com sucesso, então
   // um comprovante que falhe no upload nunca impede o registro do pagamento.
   async function uploadPaymentReceipt(payableId, paymentId, file){
+    file = await prepareUploadFile(file);
     const PART_SIZE = 512 * 1024;
     const numberOfParts = Math.ceil(file.size / PART_SIZE);
     const createResp = await financeApiRequest('/payables/'+encodeURIComponent(payableId)+'/payments/'+encodeURIComponent(paymentId)+'/attachments', {
@@ -35129,6 +35177,7 @@ function renderHomeTasks(){
 
   let obraAttachTargetEntryId = '';
   async function uploadObraEntryAttachment(entryId, file){
+    file = await prepareUploadFile(file);
     const PART_SIZE = 512 * 1024;
     if(file.size > 25 * 1024 * 1024) throw new Error('O ANEXO DEVE TER NO MÁXIMO 25 MB.');
     const numberOfParts = Math.max(1, Math.ceil(file.size / PART_SIZE));
@@ -37390,6 +37439,7 @@ function renderHomeTasks(){
   // anexos de NF/duplicata/pagamento, tanto pela tela de Compras quanto
   // pela do Financeiro (a diferença é só a URL de destino).
   async function uploadInvoiceFile(uploadUrl, file, extraFields){
+    file = await prepareUploadFile(file);
     if(!file) throw new Error('SELECIONE UM ARQUIVO.');
     if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O DOCUMENTO DEVE TER NO MÁXIMO 25 MB.');
@@ -39391,6 +39441,7 @@ function renderHomeTasks(){
   });
 
   async function uploadRhFolhaAttachment(entryId, file){
+    file = await prepareUploadFile(file);
     if(!file) throw new Error('SELECIONE UM ARQUIVO.');
     if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O COMPROVANTE DEVE TER NO MÁXIMO 25 MB.');
@@ -41089,6 +41140,7 @@ function renderHomeTasks(){
   if(el('btnCancelRhLeaderPdiDialog')) el('btnCancelRhLeaderPdiDialog').addEventListener('click', () => el('rhLeaderPdiDialog').close());
 
   async function uploadRhStoreTrackAttachment(kind, id, file){
+    file = await prepareUploadFile(file);
     if(!file) return;
     if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('A ATA DEVE TER NO MÁXIMO 25 MB.');
@@ -41630,6 +41682,7 @@ function renderHomeTasks(){
   if(el('btnCancelRecCandidateDialog')) el('btnCancelRecCandidateDialog').addEventListener('click', () => el('recCandidateDialog').close());
 
   async function uploadRecAttachment(kind, candidateId, file){
+    file = await prepareUploadFile(file);
     if(!file) return;
     if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O ARQUIVO DEVE TER NO MÁXIMO 25 MB.');
@@ -42297,6 +42350,7 @@ function renderHomeTasks(){
   if(el('btnCancelFardTermDialog')) el('btnCancelFardTermDialog').addEventListener('click', () => el('fardTermDialog').close());
 
   async function uploadFardTermFile(termId, file){
+    file = await prepareUploadFile(file);
     if(!file) return;
     if(file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
     if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O ARQUIVO DEVE TER NO MÁXIMO 25 MB.');

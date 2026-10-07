@@ -2335,6 +2335,20 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /method:'PATCH'/);
   // Tela Usuários: módulo Documentos com as 3 ações (visualizar é livre).
   assert.match(html, /<summary>Documentos<\/summary>/);
+  // Imagens reduzidas no navegador antes de subir para o R2 (JPEG até 1600 px)
+  // em TODOS os envios que aceitam imagem; PDF grande só pede confirmação.
+  assert.match(html, /async function shrinkImageForUpload\(file\)\{[\s\S]*?createImageBitmap[\s\S]*?toBlob\(resolve, 'image\/jpeg', UPLOAD_IMAGE_QUALITY\)/);
+  assert.match(html, /const UPLOAD_IMAGE_MAX_SIDE = 1600;/);
+  for (const sig of [
+    "uploadDocument(file, opts)", "uploadOsNoteAttachment(osNoteId, file)", "uploadPaymentReceipt(payableId, paymentId, file)",
+    "uploadObraEntryAttachment(entryId, file)", "uploadInvoiceFile(uploadUrl, file, extraFields)", "uploadRhFolhaAttachment(entryId, file)",
+    "uploadRhStoreTrackAttachment(kind, id, file)", "uploadRecAttachment(kind, candidateId, file)", "uploadFardTermFile(termId, file)",
+  ]) {
+    assert.ok(html.includes(`async function ${sig}{\n    file = await prepareUploadFile(file);`), sig + " reduz a imagem antes de subir");
+  }
+  assert.match(html, /async function uploadPurchaseFile\(file\)\{\n    if\(!file\) return null;\n    if\(!confirmLargePdfUpload\(file\)\)/);
+  // Carrossel de Instruções fica de fora (precisa da imagem original).
+  assert.doesNotMatch(html, /async function uploadInstructionCarouselImage\(file\)\{\n    file = await prepareUploadFile/);
   // Título UNIGAMES do Início com o efeito de letras embaralhadas a cada entrada.
   assert.match(html, /<strong id="homeBrandTitle" aria-label="UNIGAMES">UNIGAMES<\/strong>/);
   assert.match(html, /if\(isHome\) scrambleText\(el\('homeBrandTitle'\)\);/);
