@@ -2335,6 +2335,13 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /method:'PATCH'/);
   // Tela Usuários: módulo Documentos com as 3 ações (visualizar é livre).
   assert.match(html, /<summary>Documentos<\/summary>/);
+  // Comercial (Meta Loja, Vendedores, Crediários): dinheiro com a mesma máscara
+  // de Compras (R$ 1.234,56) e "change" disparado ao sair do campo (a máscara
+  // escreve por código e o navegador não avisaria — a linha não salvaria).
+  assert.match(html, /function comMoneyInput\(field, cents, label\)\{\n    return '<input type="text" inputmode="decimal"[^\n]*data-com-money data-cents=/);
+  assert.match(html, /function comMaskMoney\(root\)\{[\s\S]*?attachCurrencyMask\(input\)[\s\S]*?input\.dispatchEvent\(new Event\('change', \{bubbles:true\}\)\)/);
+  assert.match(html, /<input type="text" id="comEntryAmount" inputmode="decimal" placeholder="R\$ 0,00" required>/);
+  assert.match(html, /const amountCents = comMoneyCents\(el\('comEntryAmount'\)\);/);
   // Imagens reduzidas no navegador antes de subir para o R2 (JPEG até 1600 px)
   // em TODOS os envios que aceitam imagem; PDF grande só pede confirmação.
   assert.match(html, /async function shrinkImageForUpload\(file\)\{[\s\S]*?createImageBitmap[\s\S]*?toBlob\(resolve, 'image\/jpeg', UPLOAD_IMAGE_QUALITY\)/);

@@ -3110,6 +3110,7 @@
   .com-sellers-actions .field{min-width:min(100%,260px)}
   .com-sellers-actions button{max-width:100%;white-space:normal;line-height:1.3}
   .com-edit-table td input,.com-edit-table td select{width:100%;min-width:84px;max-width:140px}
+  .com-edit-table td input[data-com-money]{min-width:120px;max-width:170px;font-variant-numeric:tabular-nums}
   .com-edit-table td.calc{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
   .com-edit-table tr.saving td{opacity:.7}
   .com-edit-table tr.saved td:first-child{box-shadow:inset 3px 0 0 #54c48a}
@@ -6780,7 +6781,7 @@
         <form class="com-entry-form" id="comEntryForm" novalidate>
           <div class="field"><label for="comEntryRef">ID da venda</label><input id="comEntryRef" maxlength="60" autocomplete="off" required></div>
           <div class="field"><label for="comEntrySeller">Vendedor</label><select id="comEntrySeller" required><option value="">ESCOLHA O VENDEDOR</option></select></div>
-          <div class="field"><label for="comEntryAmount">Total da venda (R$)</label><input type="number" id="comEntryAmount" min="0.01" step="0.01" inputmode="decimal" required></div>
+          <div class="field"><label for="comEntryAmount">Total da venda (R$)</label><input type="text" id="comEntryAmount" inputmode="decimal" placeholder="R$ 0,00" required></div>
           <button class="btn-accent" type="submit">LANÇAR</button>
         </form>
         <div class="user-form-status" id="comEntryStatus" role="status" aria-live="polite"></div>
@@ -43946,8 +43947,40 @@ function renderHomeTasks(){
     node.dataset.tone = tone || '';
   }
 
+  // Campo de dinheiro com a mesma máscara de Compras/Financeiro (R$ 1.234,56
+  // enquanto digita). O valor inicial vai em data-cents e a máscara é ligada
+  // depois de desenhar a tabela (comMaskMoney); ler com comMoneyCents().
   function comMoneyInput(field, cents, label){
-    return '<input type="number" min="0" step="0.01" inputmode="decimal" aria-label="'+escapeHtml(label)+'" data-com-field="'+field+'" value="'+((Number(cents) || 0) / 100)+'">';
+    return '<input type="text" inputmode="decimal" aria-label="'+escapeHtml(label)+'" data-com-field="'+field+'" data-com-money data-cents="'+(Number(cents) || 0)+'">';
+  }
+
+  // Zero fica vazio (dica "R$ 0,00") e, ao entrar no campo, o valor inteiro
+  // fica selecionado: digitar já substitui (a máscara recomeça do zero).
+  // A máscara escreve o valor por código, e aí o navegador não dispara o
+  // "change" ao sair do campo — que é o que salva a linha. Por isso, ao sair,
+  // o "change" é disparado aqui se o valor mudou e ninguém avisou ainda.
+  function comMaskMoney(root){
+    if(!root) return;
+    root.querySelectorAll('[data-com-money]').forEach(input => {
+      const cents = Number(input.dataset.cents) || 0;
+      input.placeholder = 'R$ 0,00';
+      attachCurrencyMask(input).setValue(cents ? (cents / 100).toFixed(2) : '');
+      let committed = input.value;
+      input.addEventListener('focus', () => {
+        committed = input.value;
+        requestAnimationFrame(() => input.select());
+      });
+      input.addEventListener('change', () => { committed = input.value; });
+      input.addEventListener('blur', () => {
+        if(input.value === committed) return;
+        committed = input.value;
+        input.dispatchEvent(new Event('change', {bubbles:true}));
+      });
+    });
+  }
+
+  function comMoneyCents(input){
+    return parseBRLToCents(getCurrencyValue(input) || 0);
   }
 
   // ----- Vendedores -----
@@ -43977,6 +44010,7 @@ function renderHomeTasks(){
     body.innerHTML = sellers.length
       ? sellers.map(comSellerRowHtml).join('')
       : '<tr><td colspan="18" class="responsive-empty">Nenhum vendedor neste mês. Adicione um vendedor ou copie do mês anterior.</td></tr>';
+    comMaskMoney(body);
     const inMonth = new Set(sellers.map(seller => seller.employeeId));
     const options = comEmployees
       .filter(employee => !inMonth.has(employee.id))
@@ -44031,9 +44065,10 @@ function renderHomeTasks(){
     const payload = {month: comMonth, employeeId: row.dataset.comSeller, zone: row.querySelector('[data-com-field="zone"]').value};
     for(const [key, label, kind] of COM_SELLER_FIELDS){
       if(kind !== 'money' && kind !== 'qty') continue;
-      const value = Number(row.querySelector('[data-com-field="'+key+'"]').value || 0);
-      if(!Number.isFinite(value) || value < 0) throw new Error(label.toUpperCase()+': INFORME UM NÚMERO POSITIVO (OU ZERO).');
-      payload[key] = kind === 'money' ? Math.round(value * 100) : Math.round(value);
+      const input = row.querySelector('[data-com-field="'+key+'"]');
+      const value = kind === 'money' ? comMoneyCents(input) : Number(input.value || 0);
+      if(value === null || !Number.isFinite(value) || value < 0) throw new Error(label.toUpperCase()+': INFORME UM NÚMERO POSITIVO (OU ZERO).');
+      payload[key] = Math.round(value);
     }
     return payload;
   }
@@ -44186,11 +44221,12 @@ function renderHomeTasks(){
     comLoadEntries();
   });
 
+  if(el('comEntryAmount')) attachCurrencyMask(el('comEntryAmount'));
   if(el('comEntryForm')) el('comEntryForm').addEventListener('submit', async event => {
     event.preventDefault();
     const saleRef = el('comEntryRef').value.trim();
     const employeeId = el('comEntrySeller').value;
-    const amountCents = parseBRLToCents(el('comEntryAmount').value);
+    const amountCents = comMoneyCents(el('comEntryAmount'));
     if(!saleRef) return comStatus('comEntryStatus', 'INFORME O ID DA VENDA.', 'error');
     if(!employeeId) return comStatus('comEntryStatus', 'ESCOLHA O VENDEDOR.', 'error');
     if(!amountCents) return comStatus('comEntryStatus', 'INFORME O TOTAL DA VENDA.', 'error');
@@ -44200,7 +44236,7 @@ function renderHomeTasks(){
       await comApi('/entries', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, kind: comEntryKind, saleRef, employeeId, amountCents})});
       comStatus('comEntryStatus', '');
       el('comEntryRef').value = '';
-      el('comEntryAmount').value = '';
+      setCurrencyValue(el('comEntryAmount'), '');
       comOverview = null;
       comManage = null;
       await Promise.all([comLoadEntries(), comLoadManage()]);
@@ -44253,6 +44289,7 @@ function renderHomeTasks(){
     if(!body || !comStores) return;
     const rows = comStores.rows || [];
     body.innerHTML = rows.length ? rows.map(comStoreRowHtml).join('') : '<tr><td colspan="4" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
+    comMaskMoney(body);
     comRenderStoreGoalsTotal();
   }
 
@@ -44270,8 +44307,8 @@ function renderHomeTasks(){
   if(el('comStoreGoalsBody')) el('comStoreGoalsBody').addEventListener('change', event => {
     const row = event.target.closest('tr[data-com-store]');
     if(!row || !event.target.matches('[data-com-field]')) return;
-    const targetCents = parseBRLToCents(row.querySelector('[data-com-field="targetCents"]').value || 0);
-    const revenueCents = parseBRLToCents(row.querySelector('[data-com-field="revenueCents"]').value || 0);
+    const targetCents = comMoneyCents(row.querySelector('[data-com-field="targetCents"]'));
+    const revenueCents = comMoneyCents(row.querySelector('[data-com-field="revenueCents"]'));
     if(targetCents === null || revenueCents === null){
       showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
       return;
