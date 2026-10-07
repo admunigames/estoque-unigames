@@ -5260,3 +5260,11 @@ test("Financeiro 9/9 > Notas Fiscais: barra de lote", async () => {
   assert.match(html, /financeBulkRequest\('\/invoices\/bulk'/);
   assert.match(html, /id="invBulkDialog"/);
 });
+
+test("Financeiro 9/9 > Conciliação Bancária: barra de lote", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="reconBulkBar"[\s\S]*?data-bulk-action="classify">CLASSIFICAR[\s\S]*?data-bulk-action="confirm">CONFIRMAR[\s\S]*?data-bulk-action="unclassify">VOLTAR PARA A CLASSIFICAR/);
+  assert.match(html, /const reconBulk = setupBulkSelection\(el\('reconBulkBar'\), el\('reconEntriesBody'\)/);
+  assert.match(html, /financeBulkRequest\('\/bank-reconciliation\/bulk'/);
+  for (const id of ["reconBulkItem", "reconBulkSubcategory", "reconBulkCompany", "reconBulkCostCenter", "reconBulkDre", "reconBulkRateio"]) assert.match(html, new RegExp(`id="${id}"`), id);
+});

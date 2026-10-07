@@ -75,6 +75,9 @@ test("Financeiro Fase 7: Conciliação Bancária registrada + aprendizado por no
   // Importação dedupe por fit_id; PATCH com confirm faz upsert da regra.
   assert.match(listRoute, /fit_id/);
   assert.match(listRoute, /suggestFromRules/);
-  assert.match(patchRoute, /finance_bank_classification_rules/);
-  assert.match(patchRoute, /hits/);
+  // O upsert da regra mora em bank-reconciliation/shared.ts (PATCH e lote, 9/9).
+  assert.match(patchRoute, /planRuleLearning/);
+  const sharedRoute = await readFile(new URL("../app/api/finance/bank-reconciliation/shared.ts", import.meta.url), "utf8");
+  assert.match(sharedRoute, /finance_bank_classification_rules/);
+  assert.match(sharedRoute, /hits/);
 });

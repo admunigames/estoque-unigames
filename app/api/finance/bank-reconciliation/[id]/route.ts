@@ -9,6 +9,7 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../../shared";
+import { planRuleLearning } from "../shared";
 
 // PATCH de um lançamento do extrato: classificar (categoria/subcategoria/
 // unidade/centro de custo/DRE/rateio), confirmar ou vincular a uma Despesa.
@@ -137,56 +138,16 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       .run();
 
     // Aprendizado: só ao confirmar, e só quando há um nome de
-    // estabelecimento para casar.
-    if (confirm && entry.rawMerchant) {
-      const existing = await database
-        .prepare(
-          "SELECT id, hits FROM finance_bank_classification_rules WHERE company_id=?1 AND merchant_key=?2",
-        )
-        .bind(companyId, entry.rawMerchant)
-        .first<{ id: string; hits: number }>();
-      if (existing) {
-        await database
-          .prepare(
-            `UPDATE finance_bank_classification_rules
-             SET category_item_id=?1, subcategory=?2, cost_center_id=?3, in_dre=?4, in_rateio=?5,
-                 hits=?6, updated_by=?7, updated_by_name=?8, updated_at=now()::text
-             WHERE id=?9`,
-          )
-          .bind(
-            categoryItemId,
-            subcategory,
-            costCenterId,
-            inDre,
-            inRateio,
-            Number(existing.hits || 0) + 1,
-            actor.id,
-            who,
-            existing.id,
-          )
-          .run();
-      } else {
-        await database
-          .prepare(
-            `INSERT INTO finance_bank_classification_rules
-              (id, company_id, merchant_key, category_item_id, subcategory, cost_center_id,
-               in_dre, in_rateio, hits, updated_by, updated_by_name)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1, ?9, ?10)`,
-          )
-          .bind(
-            crypto.randomUUID(),
-            companyId,
-            entry.rawMerchant,
-            categoryItemId,
-            subcategory,
-            costCenterId,
-            inDre,
-            inRateio,
-            actor.id,
-            who,
-          )
-          .run();
-      }
+    // estabelecimento para casar (mesma função do lote).
+    if (confirm) {
+      const learning = await planRuleLearning(
+        database,
+        companyId,
+        entry.rawMerchant,
+        { categoryItemId, subcategory, costCenterId, inDre, inRateio },
+        { id: actor.id, name: who },
+      );
+      for (const [sql, values] of learning) await database.prepare(sql).bind(...values).run();
     }
 
     return jsonResponse({ updated: true, id: entryId, status });

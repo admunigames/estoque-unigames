@@ -13,12 +13,14 @@ const db = await setupRouteDb([
   "accounts_payable", "accounts_payable_payments", "finance_items", "finance_categories", "finance_cost_centers",
   "finance_store_entries", "finance_accounts", "supplier_open_debts", "finance_suppliers",
   "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",
+  "finance_bank_statement_entries", "finance_bank_classification_rules",
 ]);
 const { todayInTimezone } = await import("../app/lib/finance-status.ts");
 const payablesBulk = await import("../app/api/finance/payables/bulk/route.ts");
 const cashFlowBulk = await import("../app/api/finance/cash-flow/payments/bulk/route.ts");
 const debtsBulk = await import("../app/api/finance/supplier-debts/bulk/route.ts");
 const invoicesBulk = await import("../app/api/finance/invoices/bulk/route.ts");
+const reconBulk = await import("../app/api/finance/bank-reconciliation/bulk/route.ts");
 
 const STORE_A = "criomar01";
 const STORE_B = "ctacaruna1";
@@ -47,6 +49,7 @@ test("sem finance:manage recebe 403 em todos os lotes", async () => {
     [payablesBulk.POST, "/api/finance/payables/bulk"],
     [debtsBulk.POST, "/api/finance/supplier-debts/bulk"],
     [invoicesBulk.POST, "/api/finance/invoices/bulk"],
+    [reconBulk.POST, "/api/finance/bank-reconciliation/bulk"],
   ]) {
     assert.equal((await post(handler, NO_FINANCE, path, {})).status, 403, path);
   }
@@ -164,4 +167,43 @@ test("Notas Fiscais: conferir, categoria (pula NF com duplicata), cancelar (pula
   assert.equal(row("supplier_invoices", "nf-2").canceled, 0);
   assert.equal((await post(invoicesBulk.POST, STORE_A_LOGIN, "/api/finance/invoices/bulk", { action: "cancel", ids: ["nf-2", "nf-b"] })).status, 403);
   assert.equal(row("supplier_invoices", "nf-2").canceled, 0);
+});
+
+// ---------------------------------------------------------------------------
+// 3. Conciliação Bancária
+// ---------------------------------------------------------------------------
+
+test("Conciliação Bancária: classificar só os campos enviados, confirmar (aprende a regra uma vez), voltar, pulados, 404/403", async () => {
+  const entry = (id, extra) => db.insert("finance_bank_statement_entries", {
+    id, import_id: "imp", finance_account_id: "acc", company_id: STORE_A, entry_date: today, description: id.toUpperCase(),
+    raw_merchant: "PADARIA", amount_cents: -1500, status: "pending", in_dre: 1, ...extra,
+  });
+  entry("e1", { cost_center_id: "cc-1" }); entry("e2"); entry("e-sem", { raw_merchant: "OUTRO" });
+  entry("e-desp", { status: "expensed" }); entry("e-cred", { status: "credit_sale", amount_cents: 5000 }); entry("e-b", { company_id: STORE_B });
+
+  const classified = await json(await post(reconBulk.POST, ADMIN, "/api/finance/bank-reconciliation/bulk", {
+    action: "classify", ids: ["e1", "e2", "e-desp", "e-cred"], fields: { categoryItemId: "item-1", inRateio: true },
+  }));
+  assert.equal(classified.applied, 2);
+  assert.deepEqual(classified.skipped.map((s) => s.reason).sort(), ["JÁ VIROU DESPESA", "VINCULADO A CREDIÁRIO — DESFAÇA PELO CREDIÁRIO"]);
+  assert.equal(row("finance_bank_statement_entries", "e1").status, "classified");
+  assert.equal(row("finance_bank_statement_entries", "e1").cost_center_id, "cc-1"); // campo não enviado fica
+  assert.equal(row("finance_bank_statement_entries", "e2").in_rateio, 1);
+
+  const confirmed = await json(await post(reconBulk.POST, ADMIN, "/api/finance/bank-reconciliation/bulk", { action: "confirm", ids: ["e1", "e2", "e-sem"] }));
+  assert.equal(confirmed.applied, 2);
+  assert.deepEqual(confirmed.skipped.map((s) => s.reason), ["ESCOLHA A CATEGORIA ANTES DE CONFIRMAR"]);
+  const rules = db.sqlite.prepare("SELECT hits, category_item_id FROM finance_bank_classification_rules WHERE merchant_key='PADARIA'").all();
+  assert.equal(rules.length, 1); // duas confirmações da mesma loja/nome = 1 regra com 2 acertos
+  assert.equal(rules[0].hits, 2);
+
+  const back = await json(await post(reconBulk.POST, ADMIN, "/api/finance/bank-reconciliation/bulk", { action: "unclassify", ids: ["e1", "e-sem"] }));
+  assert.equal(back.applied, 1);
+  assert.equal(row("finance_bank_statement_entries", "e1").status, "pending");
+  assert.equal(row("finance_bank_statement_entries", "e1").category_item_id, "item-1");
+
+  assert.equal((await post(reconBulk.POST, ADMIN, "/api/finance/bank-reconciliation/bulk", { action: "confirm", ids: ["e2", "nope"] })).status, 404);
+  assert.equal((await post(reconBulk.POST, STORE_A_LOGIN, "/api/finance/bank-reconciliation/bulk", { action: "unclassify", ids: ["e2", "e-b"] })).status, 403);
+  assert.equal(row("finance_bank_statement_entries", "e2").status, "confirmed");
+  assert.equal((await post(reconBulk.POST, STORE_A_LOGIN, "/api/finance/bank-reconciliation/bulk", { action: "classify", ids: ["e2"], fields: { companyId: STORE_B } })).status, 403);
 });
