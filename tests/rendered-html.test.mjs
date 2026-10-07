@@ -5238,3 +5238,17 @@ test("Financeiro > Recargas: período 30/60/90 no diálogo, coluna/filtro e barr
   assert.doesNotMatch(migration, /DROP |UPDATE /i);
   assert.match(schema, /periodDays: integer\("period_days"\)\.notNull\(\)\.default\(90\)/);
 });
+
+test("Financeiro 9/9 > Contas a Pagar e Fornecedores em Aberto: barra de lote", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="payablesBulkBar"[\s\S]*?data-bulk-action="pay">MARCAR COMO PAGO[\s\S]*?data-bulk-action="reschedule">ALTERAR VENCIMENTO[\s\S]*?data-bulk-action="category">ALTERAR CATEGORIA \/ CENTRO DE CUSTO[\s\S]*?data-bulk-action="cancel">CANCELAR/);
+  assert.match(html, /id="supplierDebtsBulkBar"[\s\S]*?data-bulk-action="pay">MARCAR COMO PAGO[\s\S]*?data-bulk-action="cancel">CANCELAR/);
+  assert.match(html, /const payablesBulk = setupBulkSelection\(el\('payablesBulkBar'\), el\('payablesBody'\)/);
+  assert.match(html, /const supplierDebtsBulk = setupBulkSelection\(el\('supplierDebtsBulkBar'\), el\('supplierDebtsBody'\)/);
+  assert.match(html, /openPayBulk\('\/payables\/bulk'/);
+  assert.match(html, /openPayBulk\('\/supplier-debts\/bulk'/);
+  assert.match(html, /id="payBulkDialog"/);
+  // Resultado padrão: "N ATUALIZADO(S) · M PULADO(S)" com motivos.
+  assert.match(html, /async function financeBulkRequest\(endpoint, body, apiRequest\)/);
+  assert.match(html, /' ATUALIZADO\(S\) · '\+skipped\.length\+' PULADO\(S\)'/);
+});

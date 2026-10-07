@@ -7193,9 +7193,21 @@
           </div>
         </div>
 
+        <div class="bulk-bar" id="payablesBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="reschedule">ALTERAR VENCIMENTO</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="category">ALTERAR CATEGORIA / CENTRO DE CUSTO</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
         <div class="table-scroll">
           <table>
             <thead><tr>
+              <th class="bulk-col" aria-label="Selecionar"></th>
               <th data-payables-sort="description" class="sortable">Descrição</th>
               <th>Empresa/Loja</th>
               <th>Fornecedor</th>
@@ -7208,7 +7220,7 @@
               <th>Parcela/Recorrência</th>
               <th></th>
             </tr></thead>
-            <tbody id="payablesBody"><tr><td colspan="11" class="responsive-empty">Carregando contas…</td></tr></tbody>
+            <tbody id="payablesBody"><tr><td colspan="12" class="responsive-empty">Carregando contas…</td></tr></tbody>
           </table>
         </div>
         <div class="payables-totals" id="payablesTotals"></div>
@@ -7243,13 +7255,22 @@
               <button class="btn-accent" id="btnSupplierDebtsApplyFilters" type="button">APLICAR FILTROS</button>
             </div>
           </div>
+          <div class="bulk-bar" id="supplierDebtsBulkBar">
+            <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+            <div class="bulk-bar-actions" data-bulk-actions hidden>
+              <strong class="bulk-bar-count" data-bulk-count></strong>
+              <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
+              <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
+              <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+            </div>
+          </div>
           <div class="table-scroll">
             <table>
               <thead><tr>
-                <th>Fornecedor</th><th>Empresa/Loja</th><th>Descrição</th><th>NF/Pedido</th>
+                <th class="bulk-col" aria-label="Selecionar"></th><th>Fornecedor</th><th>Empresa/Loja</th><th>Descrição</th><th>NF/Pedido</th>
                 <th>Vencimento</th><th>Valor Original</th><th>Saldo</th><th>Status</th><th></th>
               </tr></thead>
-              <tbody id="supplierDebtsBody"><tr><td colspan="9" class="responsive-empty">Carregando dívidas…</td></tr></tbody>
+              <tbody id="supplierDebtsBody"><tr><td colspan="10" class="responsive-empty">Carregando dívidas…</td></tr></tbody>
             </table>
           </div>
           <div class="payables-totals" id="supplierDebtsTotals"></div>
@@ -10162,6 +10183,29 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelReconEntryExpenseDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">CRIAR DESPESA</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="payBulkDialog" aria-labelledby="payBulkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="payBulkTitle">CONTAS SELECIONADAS</h3>
+    <button class="purchase-dialog-close" id="btnClosePayBulk" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="payBulkForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field" data-pay-bulk-field="pay"><label for="payBulkDate">DATA DO PAGAMENTO *</label><input type="date" id="payBulkDate"></div>
+      <div class="purchase-field" data-pay-bulk-field="pay"><label for="payBulkAccount">CONTA</label><select id="payBulkAccount"><option value="">SEM CONTA</option></select></div>
+      <div class="purchase-field" data-pay-bulk-field="reschedule"><label for="payBulkDueDate">NOVO VENCIMENTO *</label><input type="date" id="payBulkDueDate"></div>
+      <div class="purchase-field full" data-pay-bulk-field="category"><label for="payBulkItem">CATEGORIA › ITEM</label><select id="payBulkItem"><option value="">NÃO ALTERAR</option></select></div>
+      <div class="purchase-field full" data-pay-bulk-field="category"><label for="payBulkCostCenter">CENTRO DE CUSTO</label><select id="payBulkCostCenter"><option value="">NÃO ALTERAR</option></select></div>
+    </div>
+    <p class="purchase-field-help" data-pay-bulk-field="pay">REGISTRA O PAGAMENTO DO SALDO EM ABERTO DE CADA CONTA (O QUE JÁ ESTÁ AGENDADO CONTINUA AGENDADO). MESMA REGRA DO FLUXO DE CAIXA.</p>
+    <p class="purchase-field-help" data-pay-bulk-field="category">SÓ O QUE FOR ESCOLHIDO É ALTERADO. A DRE DO MÊS É RECALCULADA.</p>
+    <div class="user-form-status" id="payBulkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelPayBulk" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">APLICAR</button>
     </div>
   </form>
 </dialog>
@@ -27126,30 +27170,33 @@ function renderHomeTasks(){
     const tbody = el('payablesBody');
     if(!tbody) return;
     if(!payablesRows.length){
-      tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhuma conta encontrada com os filtros atuais.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="responsive-empty">Nenhuma conta encontrada com os filtros atuais.</td></tr>';
+      payablesBulk.sync();
       return;
     }
     tbody.innerHTML = payablesRows.map(row => {
       const balance = row.originalAmountCents - row.paidAmountCents;
       const canCancel = row.status !== 'canceled' && row.status !== 'paid';
       return '<tr>'+
-        '<td>'+escapeHtml(row.description)+'</td>'+
-        '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
-        '<td>'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
-        '<td>'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
-        '<td>'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
-        '<td>'+formatCentsBRL(row.originalAmountCents)+'</td>'+
-        '<td>'+formatCentsBRL(row.paidAmountCents)+'</td>'+
-        '<td>'+formatCentsBRL(balance)+'</td>'+
-        '<td>'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
-        '<td>'+escapeHtml(payableInstallmentBadge(row))+'</td>'+
-        '<td style="display:flex;gap:6px;flex-wrap:wrap;">'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar '+row.description)+'</td>'+
+        '<td data-label="Descrição">'+escapeHtml(row.description)+'</td>'+
+        '<td data-label="Empresa/Loja">'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+        '<td data-label="Fornecedor">'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
+        '<td data-label="Categoria">'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
+        '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
+        '<td data-label="Valor original">'+formatCentsBRL(row.originalAmountCents)+'</td>'+
+        '<td data-label="Valor pago">'+formatCentsBRL(row.paidAmountCents)+'</td>'+
+        '<td data-label="Saldo">'+formatCentsBRL(balance)+'</td>'+
+        '<td data-label="Status">'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
+        '<td data-label="Parcela/Recorrência">'+escapeHtml(payableInstallmentBadge(row))+'</td>'+
+        '<td data-label="Ações" style="display:flex;gap:6px;flex-wrap:wrap;">'+
           '<button class="btn-outline" type="button" data-payable-open="'+escapeHtml(row.id)+'">ABRIR</button>'+
           (row.status !== 'canceled' ? '<button class="btn-outline" type="button" data-payable-edit="'+escapeHtml(row.id)+'">EDITAR</button>' : '')+
           (canCancel ? '<button class="btn-outline" type="button" data-payable-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
         '</td>'+
       '</tr>';
     }).join('');
+    payablesBulk.sync();
   }
 
   function renderPayablesTotals(totals){
@@ -27178,7 +27225,7 @@ function renderHomeTasks(){
 
   async function loadPayablesList(opts){
     const tbody = el('payablesBody');
-    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando contas…</td></tr>';
+    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="12" class="responsive-empty">Carregando contas…</td></tr>';
     const params = payablesFilterParams();
     if(payablesQuickView) params.set('quickView', payablesQuickView);
     params.set('page', String(payablesPage));
@@ -27193,7 +27240,7 @@ function renderHomeTasks(){
       renderPayablesTotals(data.totals || {});
       renderPayablesPagination();
     }catch(error){
-      if(tbody) tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(tbody) tbody.innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
@@ -27631,6 +27678,67 @@ function renderHomeTasks(){
     });
   });
 
+  // Ações em lote de Contas a Pagar e de Fornecedores em Aberto (Financeiro
+  // 9/9) — payables/bulk e supplier-debts/bulk usam a MESMA regra do lote do
+  // Fluxo de Caixa (planPayablesBulk). Um diálogo só para as duas tabelas.
+  const PAY_BULK_TITLES = {pay:'MARCAR COMO PAGO', reschedule:'ALTERAR VENCIMENTO', category:'ALTERAR CATEGORIA / CENTRO DE CUSTO', cancel:'CANCELAR'};
+  let payBulkPending = null; // {endpoint, action, ids, companyId, reload}
+  async function openPayBulk(endpoint, action, ids, companyId, reload, bulk){
+    if(action === 'cancel'){
+      if(!confirm('Cancelar '+ids.length+' item(ns)? O lançamento na DRE sai dos totais. Itens já pagos são pulados.')) return false;
+      await financeBulkRequest(endpoint, {action, ids});
+      bulk.clear();
+      await reload();
+      return;
+    }
+    payBulkPending = {endpoint, action, ids, reload, bulk};
+    el('payBulkForm').reset();
+    el('payBulkTitle').textContent = PAY_BULK_TITLES[action]+' — '+ids.length+(ids.length === 1 ? ' ITEM' : ' ITENS');
+    document.querySelectorAll('[data-pay-bulk-field]').forEach(node => { node.hidden = node.dataset.payBulkField !== action; });
+    el('payBulkDate').value = financeCurrentDateKey();
+    el('payBulkStatus').textContent = '';
+    await loadPayablesCatalogData();
+    renderPayableAccountOptionsForCompany('payBulkAccount', companyId, 'SEM CONTA');
+    el('payBulkItem').innerHTML = '<option value="">NÃO ALTERAR</option>'+financeItems.map(item =>
+      '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(payableFinanceItemLabel(item.id))+'</option>').join('');
+    el('payBulkCostCenter').innerHTML = '<option value="">NÃO ALTERAR</option><option value="__none">SEM CENTRO DE CUSTO</option>'+
+      financeCostCenters.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    el('payBulkDialog').showModal();
+    return false;
+  }
+  const payablesBulk = setupBulkSelection(el('payablesBulkBar'), el('payablesBody'), (action, ids) =>
+    openPayBulk('/payables/bulk', action, ids, el('payablesLoja').value,
+      () => Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]), payablesBulk));
+  const supplierDebtsBulk = setupBulkSelection(el('supplierDebtsBulkBar'), el('supplierDebtsBody'), (action, ids) =>
+    openPayBulk('/supplier-debts/bulk', action, ids, el('supplierDebtsLoja').value,
+      () => loadSupplierDebtsList({silent:true}), supplierDebtsBulk));
+  el('btnClosePayBulk').addEventListener('click', () => el('payBulkDialog').close());
+  el('btnCancelPayBulk').addEventListener('click', () => el('payBulkDialog').close());
+  el('payBulkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!payBulkPending) return;
+    const {endpoint, action, ids, reload, bulk} = payBulkPending;
+    const status = el('payBulkStatus');
+    let fields = {};
+    if(action === 'pay'){
+      fields = {paymentDate: el('payBulkDate').value, financeAccountId: el('payBulkAccount').value};
+      if(!fields.paymentDate){ status.textContent = 'INFORME A DATA DO PAGAMENTO.'; return; }
+    }else if(action === 'reschedule'){
+      fields = {dueDate: el('payBulkDueDate').value};
+      if(!fields.dueDate){ status.textContent = 'INFORME O NOVO VENCIMENTO.'; return; }
+    }else if(action === 'category'){
+      if(el('payBulkItem').value) fields.financeItemId = el('payBulkItem').value;
+      if(el('payBulkCostCenter').value) fields.costCenterId = el('payBulkCostCenter').value === '__none' ? '' : el('payBulkCostCenter').value;
+      if(!Object.keys(fields).length){ status.textContent = 'ESCOLHA A CATEGORIA OU O CENTRO DE CUSTO.'; return; }
+    }
+    try{
+      await financeBulkRequest(endpoint, {action, ids, fields});
+      el('payBulkDialog').close();
+      bulk.clear();
+      await reload();
+    }catch(error){ status.textContent = error.message; }
+  });
+
   // ================= FORNECEDORES EM ABERTO (aba de Contas a Pagar) =================
   // Financeiro Fase 3 — cada dívida cadastrada aqui cria, no backend, uma
   // linha gêmea em accounts_payable (ver app/api/finance/supplier-debts),
@@ -27698,7 +27806,8 @@ function renderHomeTasks(){
     const tbody = el('supplierDebtsBody');
     if(!tbody) return;
     if(!supplierDebtsRows.length){
-      tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma dívida encontrada com os filtros atuais.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="responsive-empty">Nenhuma dívida encontrada com os filtros atuais.</td></tr>';
+      supplierDebtsBulk.sync();
       return;
     }
     tbody.innerHTML = supplierDebtsRows.map(row => {
@@ -27706,21 +27815,23 @@ function renderHomeTasks(){
       const canPay = row.displayStatus !== 'canceled' && row.displayStatus !== 'paid';
       const canCancel = canPay;
       return '<tr>'+
-        '<td>'+escapeHtml(row.supplierName || '—')+'</td>'+
-        '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
-        '<td>'+escapeHtml(row.description)+'</td>'+
-        '<td>'+escapeHtml(row.invoiceNumber || row.orderReference || '—')+'</td>'+
-        '<td>'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
-        '<td>'+formatCentsBRL(row.originalAmountCents)+'</td>'+
-        '<td>'+formatCentsBRL(balance)+'</td>'+
-        '<td>'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
-        '<td style="display:flex;gap:6px;flex-wrap:wrap;">'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar dívida '+row.description)+'</td>'+
+        '<td data-label="Fornecedor">'+escapeHtml(row.supplierName || '—')+'</td>'+
+        '<td data-label="Empresa/Loja">'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+        '<td data-label="Descrição">'+escapeHtml(row.description)+'</td>'+
+        '<td data-label="NF/Pedido">'+escapeHtml(row.invoiceNumber || row.orderReference || '—')+'</td>'+
+        '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
+        '<td data-label="Valor original">'+formatCentsBRL(row.originalAmountCents)+'</td>'+
+        '<td data-label="Saldo">'+formatCentsBRL(balance)+'</td>'+
+        '<td data-label="Status">'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
+        '<td data-label="Ações" style="display:flex;gap:6px;flex-wrap:wrap;">'+
           (canPay ? '<button class="btn-outline" type="button" data-supplier-debt-pay="'+escapeHtml(row.accountsPayableId)+'">REGISTRAR PAGAMENTO</button>' : '')+
           '<button class="btn-outline" type="button" data-supplier-debt-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
           (canCancel ? '<button class="btn-outline" type="button" data-supplier-debt-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
         '</td>'+
       '</tr>';
     }).join('');
+    supplierDebtsBulk.sync();
   }
 
   function renderSupplierDebtsTotals(totals){
@@ -27749,7 +27860,7 @@ function renderHomeTasks(){
 
   async function loadSupplierDebtsList(opts){
     const tbody = el('supplierDebtsBody');
-    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando dívidas…</td></tr>';
+    if(tbody && (!opts || !opts.silent)) tbody.innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando dívidas…</td></tr>';
     renderSupplierDebtsCompanyOptions();
     renderSupplierDebtsSupplierOptions();
     const params = supplierDebtsFilterParams();
@@ -27763,7 +27874,7 @@ function renderHomeTasks(){
       renderSupplierDebtsTotals(data.totals || {});
       renderSupplierDebtsPagination();
     }catch(error){
-      if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(tbody) tbody.innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
@@ -34713,6 +34824,15 @@ function renderHomeTasks(){
   // [data-bulk-clear]. Linhas: bulkRowCheckbox(id). Depois de cada render da
   // tabela, chamar .sync() (mantém a seleção das linhas que continuam lá).
   // onAction(action, ids) faz a chamada; a seleção é limpa se ele não lançar.
+  // Chamada padrão das ações em lote do Financeiro 9/9: POST no endpoint e
+  // toast "N ATUALIZADO(S) · M PULADO(S)" com os motivos dos pulados.
+  async function financeBulkRequest(endpoint, body, apiRequest){
+    const res = await (apiRequest || financeApiRequest)(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+    showPurchaseToast(Number(res.applied || 0)+' ATUALIZADO(S) · '+skipped.length+' PULADO(S)'+
+      (skipped.length ? ': '+skipped.map(item => (item.description || item.id)+' ('+item.reason+')').join('; ') : ''), skipped.length && !res.applied ? 'error' : undefined);
+    return res;
+  }
   function bulkRowCheckbox(id, label){
     return '<input type="checkbox" class="bulk-check" data-bulk-row="'+escapeHtml(id)+'" aria-label="'+escapeHtml(label || 'Selecionar')+'">';
   }

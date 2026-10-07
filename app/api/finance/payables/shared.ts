@@ -302,3 +302,143 @@ export async function planPayablePayment(
   }
   return { paymentId, statements };
 }
+
+export type PayablesBulkAction = "pay" | "reschedule" | "category" | "cancel";
+
+/**
+ * Ações em lote de contas a pagar — usada pelo Fluxo de Caixa
+ * (cash-flow/payments/bulk: pay/reschedule) e por Contas a Pagar
+ * (payables/bulk: as quatro), para que MARCAR COMO PAGO dê o mesmo resultado
+ * nas duas telas. Confere TODOS os ids antes (404 se algum sumiu, 403 se for
+ * de outra loja) e devolve os SQL para uma transação só:
+ * - pay: pagamento CONFIRMADO do saldo em aberto (original − pago − agendados
+ *   pendentes) pela regra do POST payables/[id]/payments (planPayablePayment);
+ * - reschedule: novo vencimento (fields.dueDate);
+ * - category: item financeiro e/ou centro de custo (mesma checagem do PATCH
+ *   individual: item existe, célula da DRE livre) e recalcula a DRE;
+ * - cancel: mesma regra do [id]/cancel (soft-cancel, DRE recalculada, dívida
+ *   de fornecedor gêmea cancelada junto); conta paga é pulada, como na tela.
+ */
+export async function planPayablesBulk(
+  database: Awaited<ReturnType<typeof getD1>>,
+  actor: { id: string; displayName: string },
+  scopeActor: ScopeActor,
+  action: PayablesBulkAction,
+  ids: string[],
+  fields: Record<string, unknown>,
+): Promise<
+  | { error: string; status: number }
+  | { applied: number; skipped: Array<{ id: string; description: string; reason: string }>; statements: [string, unknown[]][] }
+> {
+  const text = (value: unknown, max: number) => (typeof value === "string" ? value.trim().slice(0, max) : "");
+  const paymentDate = text(fields.paymentDate, 10);
+  const dueDate = text(fields.dueDate, 10);
+  if (action === "pay" && !DATE_PATTERN.test(paymentDate)) return { error: "INFORME A DATA DO PAGAMENTO.", status: 400 };
+  if (action === "reschedule" && !DATE_PATTERN.test(dueDate)) return { error: "INFORME O NOVO VENCIMENTO.", status: 400 };
+  const financeItemId = text(fields.financeItemId, 80);
+  const costCenterChanged = fields.costCenterId !== undefined;
+  const costCenterId = text(fields.costCenterId, 80);
+  let costCenterName = "";
+  if (action === "category") {
+    if (!financeItemId && !costCenterChanged) return { error: "ESCOLHA A CATEGORIA OU O CENTRO DE CUSTO.", status: 400 };
+    if (financeItemId) {
+      const item = await database.prepare("SELECT id FROM finance_items WHERE id=?1").bind(financeItemId).first();
+      if (!item) return { error: "ITEM DE DESPESA NÃO ENCONTRADO NO CATÁLOGO FINANCEIRO.", status: 400 };
+    }
+    if (costCenterId) {
+      const row = await database.prepare("SELECT name FROM finance_cost_centers WHERE id=?1").bind(costCenterId).first<{ name: string }>();
+      if (!row) return { error: "CENTRO DE CUSTO NÃO ENCONTRADO.", status: 400 };
+      costCenterName = row.name;
+    }
+  }
+
+  const payables: PayableRow[] = [];
+  for (const id of ids) {
+    const payable = await loadPayable(database, id);
+    if (!payable) return { error: "ALGUMA CONTA SELECIONADA NÃO EXISTE MAIS. ATUALIZE A LISTA.", status: 404 };
+    const accessError = assertAccess(scopeActor, payable);
+    if (accessError) return { error: accessError, status: 403 };
+    payables.push(payable);
+  }
+
+  const pending = await database
+    .prepare(
+      `SELECT payable_id AS payableId, SUM(amount_cents) AS total FROM accounts_payable_payments
+       WHERE scheduled = 1 AND confirmed_at = '' AND payable_id IN (${ids.map((_, i) => `?${i + 1}`).join(",")})
+       GROUP BY payable_id`,
+    )
+    .bind(...ids)
+    .all<{ payableId: string; total: number }>();
+  const scheduledOf = new Map((pending.results ?? []).map((row) => [row.payableId, Number(row.total || 0)]));
+
+  const skipped: Array<{ id: string; description: string; reason: string }> = [];
+  const statements: [string, unknown[]][] = [];
+  const slots = new Map<string, [string, string, string]>();
+  const addSlot = (companyId: string, itemId: string, month: string) => slots.set(`${companyId}|${itemId}|${month}`, [companyId, itemId, month]);
+  const actorName = actor.displayName || "Administrador";
+  for (const payable of payables) {
+    const skip = (reason: string) => skipped.push({ id: payable.id, description: payable.description, reason });
+    if (payable.status === "canceled") { skip("CONTA CANCELADA"); continue; }
+    if (action === "category") {
+      const nextItem = financeItemId || payable.financeItemId;
+      if (nextItem !== payable.financeItemId) {
+        const conflict = await assertSlotAvailableForPayable(database, payable.companyId, nextItem, payable.competenceMonth);
+        if (conflict) { skip(conflict); continue; }
+        addSlot(payable.companyId, payable.financeItemId, payable.competenceMonth);
+        addSlot(payable.companyId, nextItem, payable.competenceMonth);
+      }
+      statements.push([
+        `UPDATE accounts_payable SET finance_item_id=?1, cost_center=?2, cost_center_id=?3,
+           updated_by=?4, updated_by_name=?5, updated_at=CURRENT_TIMESTAMP WHERE id=?6`,
+        [
+          nextItem,
+          costCenterChanged ? costCenterName : payable.costCenter,
+          costCenterChanged ? costCenterId || null : payable.costCenterId,
+          actor.id, actorName, payable.id,
+        ],
+      ]);
+      continue;
+    }
+    if (payable.status === "paid") { skip("CONTA JÁ PAGA"); continue; }
+    if (action === "reschedule") {
+      statements.push([
+        `UPDATE accounts_payable SET due_date=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP WHERE id=?4`,
+        [dueDate, actor.id, actorName, payable.id],
+      ]);
+      continue;
+    }
+    if (action === "cancel") {
+      statements.push([
+        `UPDATE accounts_payable
+         SET status='canceled', canceled_by=?1, canceled_by_name=?2, canceled_at=CURRENT_TIMESTAMP,
+             updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
+         WHERE id=?3`,
+        [actor.id, actorName, payable.id],
+      ]);
+      statements.push([
+        `UPDATE supplier_open_debts SET canceled=1, updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP
+         WHERE accounts_payable_id=?3`,
+        [actor.id, actorName, payable.id],
+      ]);
+      addSlot(payable.companyId, payable.financeItemId, payable.competenceMonth);
+      continue;
+    }
+    const openCents = payable.originalAmountCents - payable.paidAmountCents - (scheduledOf.get(payable.id) ?? 0);
+    if (openCents <= 0) { skip("SALDO JÁ AGENDADO — CONFIRME O AGENDAMENTO EM CONTAS A PAGAR"); continue; }
+    const plan = await planPayablePayment(database, payable, actor, {
+      idempotencyKey: `payables-bulk:${crypto.randomUUID()}`,
+      amountCents: openCents,
+      paymentDate,
+      scheduled: false,
+      paymentMethod: text(fields.paymentMethod, 40),
+      financeAccountId: text(fields.financeAccountId, 80),
+      notes: text(fields.notes, 200) || "PAGO EM LOTE",
+    });
+    if ("error" in plan) { skip(plan.error); continue; }
+    statements.push(...plan.statements);
+  }
+  for (const [companyId, itemId, month] of slots.values()) {
+    statements.push(...recalcPayableEntrySql(crypto.randomUUID(), companyId, itemId, month, actor.id, actorName));
+  }
+  return { applied: payables.length - skipped.length, skipped, statements };
+}
