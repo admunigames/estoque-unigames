@@ -494,9 +494,19 @@ test("comissão do Comercial preenche o comissionamento do RH (a partir de 10/20
   const after = byId(await sellersOf(ADMIN, "2026-10"), "emp-ana").metrics.commission.totalCents;
   assert.notEqual(after, ana.metrics.commission.totalCents);
   assert.deepEqual(hrRow("emp-ana", "2026-10"), { c: after, b: 5_000 });
-  // Tirar do mês zera a comissão no RH.
+  // Tirar do mês NÃO zera no RH: o valor fica e o RH passa a poder editar.
+  const brunoBefore = hrRow("emp-bruno", "2026-10").c;
+  assert.ok(brunoBefore > 0);
   assert.equal((await callRoute(sellersRoute.DELETE, ADMIN, "DELETE", "/api/commercial/sellers?month=2026-10&employeeId=emp-bruno")).status, 200);
-  assert.equal(hrRow("emp-bruno", "2026-10").c, 0);
+  assert.equal(hrRow("emp-bruno", "2026-10").c, brunoBefore);
+  const brunoHr = (await (await callRoute(hrCommissionsRoute.GET, hr, "GET", "/api/hr-payroll/commissions?month=2026-10")).json())
+    .commissions.find((row) => row.employeeId === "emp-bruno");
+  assert.equal(brunoHr.fromCommercial, false);
+  const edited = await callRoute(hrCommissionsRoute.POST, hr, "POST", "/api/hr-payroll/commissions", {
+    id: brunoHr.id, employeeId: "emp-bruno", month: "2026-10", commissionCents: 12_345, notes: "", items: [],
+  });
+  assert.equal(edited.status, 200);
+  assert.equal(hrRow("emp-bruno", "2026-10").c, 12_345);
 });
 
 test("Meta Loja: META ITENS e ITENS FEITO à mão; o gráfico de itens por loja usa esses números", async () => {

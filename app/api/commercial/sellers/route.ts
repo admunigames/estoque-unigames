@@ -213,7 +213,7 @@ export async function DELETE(request: Request) {
       .prepare("DELETE FROM commercial_monthly WHERE employee_id=?1 AND month=?2")
       .bind(employee.id, month)
       .run();
-    await syncHrCommissions(database, month, actor, [employee.id]);
+    await syncHrCommissions(database, month, actor);
     return jsonResponse({ employeeId: employee.id, month });
   } catch (error) {
     console.error("Não foi possível tirar o vendedor do mês.", error);

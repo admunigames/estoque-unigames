@@ -439,12 +439,13 @@ export async function commercialCommissionFor(database: Database, employeeId: st
 }
 
 /**
- * Regrava o "comissão" do RH de todos os vendedores do mês. `removed` =
- * vendedores tirados do mês no Comercial (a comissão deles volta a zero).
- * Falha aqui não desfaz o lançamento do Comercial: fica registrada no log e o
- * próximo lançamento do mês corrige.
+ * Regrava o "comissão" do RH de todos os vendedores do mês. Vendedor tirado do
+ * mês no Comercial NÃO é zerado aqui: o valor fica no RH, que passa a poder
+ * editar ou remover (decisão do usuário, 2026-10-07). Falha aqui não desfaz o
+ * lançamento do Comercial: fica registrada no log e o próximo lançamento do
+ * mês corrige.
  */
-export async function syncHrCommissions(database: Database, month: string, actor: Identity, removed: string[] = []) {
+export async function syncHrCommissions(database: Database, month: string, actor: Identity) {
   if (month < COMMISSION_SYNC_FROM) return;
   try {
     const [{ sellers }, existing] = await Promise.all([
@@ -476,16 +477,6 @@ export async function syncHrCommissions(database: Database, month: string, actor
             seller.metrics.commission.totalCents, actor.id, who, now,
           );
     });
-    for (const employeeId of removed) {
-      const id = headers.get(employeeId);
-      if (id && !sellers.some((seller) => seller.employeeId === employeeId)) {
-        statements.push(
-          database
-            .prepare("UPDATE hr_commissions SET commission_cents=0, updated_by=?1, updated_by_name=?2, updated_at=?3 WHERE id=?4")
-            .bind(actor.id, who, now, id),
-        );
-      }
-    }
     if (statements.length) await database.batch(statements);
   } catch (error) {
     console.error("Não foi possível atualizar a comissão no RH.", error);
