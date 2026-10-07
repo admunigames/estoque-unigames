@@ -2335,6 +2335,10 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /method:'PATCH'/);
   // Tela Usuários: módulo Documentos com as 3 ações (visualizar é livre).
   assert.match(html, /<summary>Documentos<\/summary>/);
+  // Título UNIGAMES do Início com o efeito de letras embaralhadas a cada entrada.
+  assert.match(html, /<strong id="homeBrandTitle" aria-label="UNIGAMES">UNIGAMES<\/strong>/);
+  assert.match(html, /if\(isHome\) scrambleText\(el\('homeBrandTitle'\)\);/);
+  assert.match(html, /function scrambleText\(node, speed\)\{[\s\S]*?prefers-reduced-motion: reduce/);
   // Permissões (Usuários): módulos em ordem alfabética e todas as áreas de RH
   // dentro de um único módulo "RH", também em ordem alfabética.
   const permissionGrid = html.slice(html.indexOf('id="userPermissionGrid"'), html.indexOf('<div class="user-dialog-foot">'));

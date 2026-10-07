@@ -436,6 +436,9 @@
   .home-brand-compact{display:flex; align-items:center; gap:9px; flex:0 0 auto;}
   .home-brand-compact .brand-logo{width:32px; height:32px; flex:0 0 32px; border-radius:9px;}
   .home-brand-compact .brand-copy strong{font-size:14px; color:#10233a;}
+  /* Efeito de letras embaralhadas do título (scrambleText): largura travada
+     na do texto final para nada ao lado "pular" durante a animação. */
+  #homeBrandTitle{display:inline-block; white-space:nowrap; font-variant-numeric:tabular-nums;}
   .home-no-access{margin-top:24px;padding:18px;border:1px solid rgba(36,79,131,.22);border-radius:14px;background:rgba(79,134,189,.08);text-align:center}
   .home-no-access strong{display:block;margin-bottom:5px}.home-no-access span{color:#49627b;font-size:12px}
   .home-access-grid{
@@ -3737,7 +3740,7 @@
         <div class="home-account">
           <div class="home-brand-compact">
             <img class="brand-logo" data-logo alt="LOGO UNIGAMES">
-            <span class="brand-copy"><strong>UNIGAMES</strong></span>
+            <span class="brand-copy"><strong id="homeBrandTitle" aria-label="UNIGAMES">UNIGAMES</strong></span>
           </div>
           <div class="home-search" id="homeSearchWrap">
             <button type="button" class="home-search-icon-btn" id="homeSearchToggle" aria-label="Buscar módulo ou menu" aria-expanded="false" aria-controls="homeSearchBox">
@@ -13581,6 +13584,40 @@
     setSidebarCompact(!document.body.classList.contains('sidebar-compact'));
   });
 
+  // Efeito "letras embaralhadas" (como o SpecialText): 1ª fase enche de
+  // símbolos aleatórios, 2ª revela o texto letra a letra. Roda a cada
+  // entrada no Início; com "reduzir movimento" mostra o texto direto.
+  function scrambleText(node, speed){
+    if(!node) return;
+    const text = node.dataset.scrambleText || (node.dataset.scrambleText = node.textContent);
+    clearInterval(node._scrambleTimer);
+    node.textContent = text;
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    node.style.minWidth = '';
+    node.style.minWidth = node.getBoundingClientRect().width+'px';
+    const symbols = '_!X$0-+*#';
+    const random = prev => { let char; do char = symbols[Math.floor(Math.random()*symbols.length)]; while(char === prev); return char; };
+    const size = text.length;
+    let phase = 1;
+    let step = 0;
+    node._scrambleTimer = setInterval(() => {
+      let out = '';
+      if(phase === 1){
+        const filled = Math.min(step + 1, size);
+        for(let i = 0; i < filled; i++) out += random(out[i - 1]);
+        out += '\u00A0'.repeat(size - filled);
+        if(++step >= size * 2){ phase = 2; step = 0; }
+      }else{
+        const shown = Math.floor(step / 2);
+        out = text.slice(0, shown);
+        if(shown < size) out += step % 2 ? random() : '_';
+        while(out.length < size) out += random();
+        if(++step >= size * 2){ out = text; clearInterval(node._scrambleTimer); }
+      }
+      node.textContent = out;
+    }, speed || 30);
+  }
+
   function showPage(name){
     if(!canAccessPage(name)) return false;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -13604,6 +13641,7 @@
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf' || name === 'comercialTreinamento';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
+    if(isHome) scrambleText(el('homeBrandTitle'));
     setCadastrosExpanded(isCadastros);
     if(isCadastros){
       navCadastrosToggle.classList.add('active');
