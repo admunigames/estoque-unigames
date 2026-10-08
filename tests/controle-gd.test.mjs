@@ -103,3 +103,20 @@ test("buildGdDailyScript omite a linha de maior ajuste negativo quando não há 
   });
   assert.doesNotMatch(script, /Maior ajuste negativo/);
 });
+
+test("openingBalanceCents: automático soma tudo antes do mês; correção à mão vira a nova base", async () => {
+  const { openingBalanceCents } = await import("../app/lib/controle-gd.ts");
+  const sums = [
+    { month: "2026-08", amountCents: 5000 },
+    { month: "2026-09", amountCents: 10000 },
+    { month: "2026-10", amountCents: -2000 },
+  ];
+  assert.equal(openingBalanceCents(sums, [], "2026-08"), 0);
+  assert.equal(openingBalanceCents(sums, [], "2026-10"), 15000);
+  assert.equal(openingBalanceCents(sums, [], "2026-11"), 13000);
+  // Setembro começou corrigido em R$ 100: outubro = 100 + movimento de setembro.
+  const overrides = [{ month: "2026-09", balanceCents: 10000 }];
+  assert.equal(openingBalanceCents(sums, overrides, "2026-09"), 10000);
+  assert.equal(openingBalanceCents(sums, overrides, "2026-10"), 20000);
+  assert.equal(openingBalanceCents(sums, overrides, "2026-08"), 0);
+});

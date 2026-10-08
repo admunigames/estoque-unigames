@@ -2606,6 +2606,18 @@
     padding:5px 8px;border-radius:7px;background:rgba(79,134,189,.06);
     color:var(--ink-soft);font:700 9px/1.4 var(--mono);
   }
+  .gd-summary{margin-bottom:6px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
+  @media (max-width:560px){.gd-summary .supply-dashboard-card{padding:12px;}.gd-summary .supply-dashboard-card strong{font-size:19px;}}
+  .gd-summary .supply-dashboard-card .btn-outline{margin-top:10px;}
+  .gd-summary .supply-dashboard-card small{display:block;margin-top:6px;color:var(--ink-faint);font:700 9px/1.4 var(--mono);}
+  .gd-pos{color:#66d49e !important;}
+  .gd-neg{color:#ef817b !important;}
+  html[data-theme="light"] .gd-pos{color:#1f7a4a !important;}
+  html[data-theme="light"] .gd-neg{color:#b8382c !important;}
+  .gd-entries-footer{margin-top:10px;color:var(--ink-soft);font:800 10px/1.4 var(--mono);text-align:right;}
+  .gd-opening-hint{margin:0 0 12px;color:var(--ink-soft);font-size:12px;}
+  #gdStoresGrid .supply-dashboard-card{cursor:pointer;}
+  #gdStoresGrid .supply-dashboard-card.selected{outline:2px solid var(--accent);}
   .supply-dashboard-empty{color:var(--ink-faint);font:700 9px/1.4 var(--mono);margin-top:8px;}
   html[data-theme="light"] .supply-dashboard-card{background:#f6f9fb;border-color:var(--inset-border);}
   .supply-admin-tabs{margin-bottom:16px;}
@@ -3712,7 +3724,7 @@
       </button>
       <div class="nav-submenu" id="navComercialSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e importação da planilha de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
-        <a class="nav-item sub-item" id="navComercialControleGd" data-page="comercialControleGd" data-permission="controle_gd" data-home-desc="Saldo de gordura de vendas por loja, com alerta de status, gráfico dos últimos 7 dias e relatório para WhatsApp." title="Controle GD" href="/comercial/controle-gd"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle GD</span></a>
+        <a class="nav-item sub-item" id="navComercialControleGd" data-page="comercialControleGd" data-permission="controle_gd" data-home-desc="Gordura por venda (data, ID, vendedor e valor), saldo anterior e total do mês por loja, com alerta de status e relatório para WhatsApp." title="Controle GD" href="/comercial/controle-gd"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle GD</span></a>
         <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/comercial/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
         <a class="nav-item sub-item" id="navComercialTreinamento" data-page="comercialTreinamento" data-permission="treinamento" data-home-desc="Trilhas e aulas da Unigames Academy com o seu progresso; gestores acompanham a equipe." title="Treinamento" href="/comercial/treinamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11"/><path d="M21.5 9v5"/></svg></span><span class="nav-label">Treinamento</span></a>
       </div>
@@ -6918,10 +6930,40 @@
         </div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnGdReload" type="button">ATUALIZAR</button>
+          <button class="btn-accent" id="btnGdNewEntry" type="button" hidden>NOVA GORDURA</button>
         </div>
       </header>
 
+      <div class="dre-toolbar">
+        <div class="field"><label for="gdMonth">MÊS</label><input type="month" id="gdMonth"></div>
+        <div class="field" id="gdStoreField"><label for="gdStoreFilter">LOJA</label><select id="gdStoreFilter"></select></div>
+        <div class="field"><label for="gdSignFilter">GORDURAS</label>
+          <select id="gdSignFilter">
+            <option value="">TODAS</option>
+            <option value="positive">SÓ POSITIVAS</option>
+            <option value="negative">SÓ NEGATIVAS</option>
+          </select>
+        </div>
+        <div class="field"><label for="gdSearch">BUSCAR</label><input type="search" id="gdSearch" placeholder="ID da venda, vendedor ou observação"></div>
+      </div>
+
+      <div class="supply-dashboard-grid gd-summary" id="gdSummary"></div>
+
+      <h3 class="supply-section-title" id="gdStoresTitle">SALDO POR LOJA</h3>
       <div class="supply-dashboard-grid" id="gdStoresGrid"></div>
+
+      <h3 class="supply-section-title">GORDURAS DO MÊS</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="gdEntriesTable">
+            <thead><tr>
+              <th>Data</th><th>Loja</th><th>ID da venda</th><th>Vendedor</th><th>Valor</th><th>Observações</th><th></th>
+            </tr></thead>
+            <tbody id="gdEntriesBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="gd-entries-footer" id="gdEntriesFooter"></div>
     </section>
 
 
@@ -9164,8 +9206,10 @@
             <details class="permission-module">
               <summary>Comercial - Controle GD</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:view"> Ver o saldo, alertas, gráfico de 7 dias e script diário por loja</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:manage"> Lançar e cancelar ajuste de saldo</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:view"> Ver as gorduras e o saldo (login com loja vê só a própria loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:create"> Lançar gordura</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:edit"> Alterar e excluir gordura</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:opening"> Alterar o saldo anterior</label>
               </div>
             </details>
             <details class="permission-module">
@@ -10650,21 +10694,45 @@
 
 <dialog class="purchase-dialog" id="gdAdjustDialog" aria-labelledby="gdAdjustDialogTitle">
   <div class="purchase-dialog-head">
-    <h3 id="gdAdjustDialogTitle">LANÇAR AJUSTE DE SALDO</h3>
+    <h3 id="gdAdjustDialogTitle">NOVA GORDURA</h3>
     <button class="purchase-dialog-close" id="btnCloseGdAdjustDialog" type="button" aria-label="Fechar">×</button>
   </div>
   <form class="purchase-form" id="gdAdjustForm">
-    <input type="hidden" id="gdAdjustStoreId">
+    <input type="hidden" id="gdAdjustEntryId">
     <div class="purchase-form-grid">
-      <div class="purchase-field full"><label>LOJA</label><div id="gdAdjustStoreName" style="padding:8px 0;font-weight:700;"></div></div>
-      <div class="purchase-field"><label for="gdAdjustAmount">VALOR (USE "-" PARA CONSUMIR SALDO) *</label><input type="text" inputmode="decimal" id="gdAdjustAmount" placeholder="R$ 0,00 ou -R$ 0,00" required></div>
+      <div class="purchase-field full"><label for="gdAdjustStore">LOJA *</label><select id="gdAdjustStore" required></select></div>
       <div class="purchase-field"><label for="gdAdjustDate">DATA *</label><input type="date" id="gdAdjustDate" required></div>
-      <div class="purchase-field full"><label for="gdAdjustReason">MOTIVO</label><textarea id="gdAdjustReason" rows="2" maxlength="300"></textarea></div>
+      <div class="purchase-field"><label for="gdAdjustSaleCode">ID DA VENDA *</label><input type="text" id="gdAdjustSaleCode" maxlength="40" inputmode="numeric" autocomplete="off" required></div>
+      <div class="purchase-field full"><label for="gdAdjustSeller">VENDEDOR RESPONSÁVEL *</label><input type="text" id="gdAdjustSeller" list="gdSellerOptions" maxlength="80" autocomplete="off" placeholder="Escolha da lista ou digite o nome" required><datalist id="gdSellerOptions"></datalist></div>
+      <div class="purchase-field full payables-kind-tabs" role="radiogroup" aria-label="Tipo da gordura">
+        <label><input type="radio" name="gdAdjustSign" value="1" checked> POSITIVA (+)</label>
+        <label><input type="radio" name="gdAdjustSign" value="-1"> NEGATIVA (−)</label>
+      </div>
+      <div class="purchase-field full"><label for="gdAdjustAmount">VALOR *</label><input type="text" inputmode="decimal" id="gdAdjustAmount" placeholder="R$ 0,00" required></div>
+      <div class="purchase-field full"><label for="gdAdjustReason">OBSERVAÇÕES</label><textarea id="gdAdjustReason" rows="3" maxlength="1000"></textarea></div>
     </div>
     <div class="user-form-status" id="gdAdjustFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelGdAdjustDialog" type="button">CANCELAR</button>
-      <button class="btn-accent" id="btnSaveGdAdjust" type="submit">LANÇAR AJUSTE</button>
+      <button class="btn-accent" id="btnSaveGdAdjust" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="gdOpeningDialog" aria-labelledby="gdOpeningDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="gdOpeningDialogTitle">SALDO ANTERIOR</h3>
+    <button class="purchase-dialog-close" id="btnCloseGdOpeningDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="gdOpeningForm">
+    <p class="gd-opening-hint" id="gdOpeningHint"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="gdOpeningAmount">SALDO COM QUE A LOJA FECHOU O MÊS ANTERIOR (USE "-" SE NEGATIVO) *</label><input type="text" inputmode="decimal" id="gdOpeningAmount" placeholder="R$ 0,00 ou -R$ 0,00" required></div>
+    </div>
+    <div class="user-form-status" id="gdOpeningFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnGdOpeningAuto" type="button">VOLTAR AO AUTOMÁTICO</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
     </div>
   </form>
 </dialog>
@@ -26107,21 +26175,54 @@ function renderHomeTasks(){
     return ((gdDashboardData && gdDashboardData.stores) || []).find(s => s.storeId === storeId);
   }
 
+  function gdMoneyClass(cents){
+    return cents > 0 ? 'gd-pos' : cents < 0 ? 'gd-neg' : '';
+  }
+
+  function gdSignedBRL(cents){
+    return (cents > 0 ? '+' : '')+formatCentsBRL(cents);
+  }
+
+  // Loja escolhida no filtro ('' = todas as lojas do escopo).
+  function gdSelectedStores(){
+    const stores = (gdDashboardData && gdDashboardData.stores) || [];
+    const storeId = el('gdStoreFilter').value;
+    return storeId ? stores.filter(store => store.storeId === storeId) : stores;
+  }
+
+  function renderGdSummary(){
+    const stores = gdSelectedStores();
+    const sum = key => stores.reduce((total, store) => total + (Number(store[key]) || 0), 0);
+    const single = stores.length === 1 ? stores[0] : null;
+    const opening = sum('openingCents');
+    const total = sum('balanceCents');
+    const openingNote = single
+      ? (single.openingManual ? 'CORRIGIDO À MÃO' : 'AUTOMÁTICO: FECHAMENTO DO MÊS ANTERIOR')
+      : 'SOMA DAS LOJAS';
+    const openingButton = single && canAccess('controle_gd:opening')
+      ? '<button class="btn-outline small" type="button" id="btnGdEditOpening">ALTERAR</button>' : '';
+    el('gdSummary').innerHTML =
+      '<article class="supply-dashboard-card"><span>SALDO ANTERIOR</span><strong class="'+gdMoneyClass(opening)+'">'+formatCentsBRL(opening)+'</strong><small>'+openingNote+'</small>'+openingButton+'</article>'+
+      '<article class="supply-dashboard-card"><span>POSITIVAS NO MÊS</span><strong class="gd-pos">'+gdSignedBRL(sum('positiveCents'))+'</strong></article>'+
+      '<article class="supply-dashboard-card"><span>NEGATIVAS NO MÊS</span><strong class="gd-neg">'+formatCentsBRL(sum('negativeCents'))+'</strong></article>'+
+      '<article class="supply-dashboard-card"><span>TOTAL GERAL'+(single ? ' · '+escapeHtml(single.storeName) : '')+'</span><strong class="'+gdMoneyClass(total)+'">'+formatCentsBRL(total)+'</strong><small>'+(total < 0 ? 'NEGATIVO' : 'POSITIVO')+' · SALDO ANTERIOR + GORDURAS DO MÊS</small></article>';
+  }
+
   function renderGdStoresGrid(){
     const grid = el('gdStoresGrid');
     const stores = (gdDashboardData && gdDashboardData.stores) || [];
+    const selected = el('gdStoreFilter').value;
     if(!stores.length){
       grid.innerHTML = '<div class="dre-empty">Nenhuma loja cadastrada.</div>';
       return;
     }
     grid.innerHTML = stores.map(store => {
       const cls = gdStatusCardClass(store.status);
-      return '<article class="supply-dashboard-card'+(cls ? (' '+cls) : '')+'" data-gd-store="'+escapeHtml(store.storeId)+'">'+
+      return '<article class="supply-dashboard-card'+(cls ? (' '+cls) : '')+(store.storeId === selected ? ' selected' : '')+'" data-gd-store="'+escapeHtml(store.storeId)+'" title="Ver as gorduras desta loja">'+
         '<span>'+escapeHtml(store.storeName)+'</span>'+
         '<strong>'+formatCentsBRL(store.balanceCents)+'</strong>'+
-        '<div class="supply-dashboard-list"><div>Mês: '+formatCentsBRL(store.monthMovementCents)+' · '+escapeHtml(store.statusLabel)+'</div></div>'+
+        '<div class="supply-dashboard-list"><div>Anterior: '+formatCentsBRL(store.openingCents)+' · Mês: '+formatCentsBRL(store.monthMovementCents)+'</div><div>'+escapeHtml(store.statusLabel)+'</div></div>'+
         '<div class="dre-toolbar-actions" style="margin-top:8px;">'+
-          '<button class="btn-outline small" type="button" data-gd-action="adjust">AJUSTAR</button>'+
           '<button class="btn-outline small" type="button" data-gd-action="detail">DETALHES</button>'+
           '<button class="btn-outline small" type="button" data-gd-action="image">IMAGEM</button>'+
         '</div>'+
@@ -26129,40 +26230,127 @@ function renderHomeTasks(){
     }).join('');
   }
 
+  function renderGdEntries(){
+    const body = el('gdEntriesBody');
+    const selected = el('gdStoreFilter').value;
+    const sign = el('gdSignFilter').value;
+    const search = el('gdSearch').value.trim().toLocaleLowerCase('pt-BR');
+    let rows = (gdDashboardData && gdDashboardData.entries) || [];
+    if(selected) rows = rows.filter(row => row.storeId === selected);
+    if(sign === 'positive') rows = rows.filter(row => row.amountCents > 0);
+    if(sign === 'negative') rows = rows.filter(row => row.amountCents < 0);
+    if(search) rows = rows.filter(row => [row.saleCode, row.sellerName, row.notes].join(' ').toLocaleLowerCase('pt-BR').includes(search));
+    const canEdit = canAccess('controle_gd:edit');
+    el('gdEntriesFooter').innerHTML = rows.length
+      ? rows.length+' GORDURA'+(rows.length === 1 ? '' : 'S')+' · SOMA: <span class="'+gdMoneyClass(rows.reduce((t, r) => t + r.amountCents, 0))+'">'+formatCentsBRL(rows.reduce((t, r) => t + r.amountCents, 0))+'</span>'
+      : '';
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Nenhuma gordura neste mês'+(sign || search ? ' com esse filtro' : '')+'.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(row => {
+      const edited = row.updatedByName ? 'Alterado por '+row.updatedByName : (row.createdByName ? 'Lançado por '+row.createdByName : '');
+      const actions = canEdit
+        ? '<button class="btn-outline btn-sm" type="button" data-gd-edit="'+escapeHtml(row.id)+'">EDITAR</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-gd-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'
+        : '';
+      return '<tr title="'+escapeHtml(edited)+'">'+
+        '<td data-label="Data">'+escapeHtml(gdDateLabel(row.entryDate))+'</td>'+
+        '<td data-label="Loja">'+escapeHtml(row.storeName || '—')+'</td>'+
+        '<td data-label="ID da venda">'+escapeHtml(row.saleCode || '—')+'</td>'+
+        '<td data-label="Vendedor">'+escapeHtml(row.sellerName || '—')+'</td>'+
+        '<td data-label="Valor" class="'+gdMoneyClass(row.amountCents)+'" style="white-space:nowrap;font-weight:800;">'+gdSignedBRL(row.amountCents)+'</td>'+
+        '<td data-label="Observações">'+escapeHtml(row.notes || '—')+'</td>'+
+        '<td style="white-space:nowrap">'+actions+'</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function renderControleGd(){
+    renderGdSummary();
+    renderGdStoresGrid();
+    renderGdEntries();
+  }
+
   async function loadControleGdPage(){
+    const monthInput = el('gdMonth');
     try{
-      gdDashboardData = await gdApiRequest('');
-      renderGdStoresGrid();
+      gdDashboardData = await gdApiRequest(monthInput.value ? '?month='+encodeURIComponent(monthInput.value) : '');
+      monthInput.value = gdDashboardData.month;
+      const select = el('gdStoreFilter');
+      const previous = select.value;
+      const stores = gdDashboardData.stores || [];
+      // Login com loja vinculada: só a própria loja, sem escolha.
+      select.innerHTML = (gdDashboardData.allStores ? '<option value="">TODAS AS LOJAS</option>' : '')+
+        stores.map(store => '<option value="'+escapeHtml(store.storeId)+'">'+escapeHtml(store.storeName)+'</option>').join('');
+      if(stores.some(store => store.storeId === previous)) select.value = previous;
+      el('gdStoreField').hidden = !gdDashboardData.allStores;
+      el('gdStoresTitle').hidden = el('gdStoresGrid').hidden = !gdDashboardData.allStores;
+      el('btnGdNewEntry').hidden = !canAccess('controle_gd:create') || !stores.length;
+      renderControleGd();
     }catch(error){
+      el('gdSummary').innerHTML = '';
       el('gdStoresGrid').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      el('gdEntriesBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
   el('btnGdReload') && el('btnGdReload').addEventListener('click', loadControleGdPage);
+  el('gdMonth') && el('gdMonth').addEventListener('change', loadControleGdPage);
+  el('gdStoreFilter') && el('gdStoreFilter').addEventListener('change', renderControleGd);
+  el('gdSignFilter') && el('gdSignFilter').addEventListener('change', renderGdEntries);
+  el('gdSearch') && el('gdSearch').addEventListener('input', renderGdEntries);
 
   el('gdStoresGrid') && el('gdStoresGrid').addEventListener('click', event => {
     const card = event.target.closest('[data-gd-store]');
-    const btn = event.target.closest('[data-gd-action]');
-    if(!card || !btn) return;
+    if(!card) return;
     const store = gdStoreById(card.dataset.gdStore);
     if(!store) return;
-    const action = btn.dataset.gdAction;
-    if(action === 'adjust') gdOpenAdjustDialog(store);
-    if(action === 'detail') gdOpenDetailDialog(store);
-    if(action === 'image') gdOpenShareDialog(store);
+    const btn = event.target.closest('[data-gd-action]');
+    if(btn && btn.dataset.gdAction === 'detail') return gdOpenDetailDialog(store);
+    if(btn && btn.dataset.gdAction === 'image') return gdOpenShareDialog(store);
+    // Clique no card: filtra a loja (de novo = volta para todas).
+    const select = el('gdStoreFilter');
+    select.value = select.value === store.storeId ? '' : store.storeId;
+    renderControleGd();
   });
 
-  function gdOpenAdjustDialog(store){
+  async function gdLoadSellers(storeId){
+    const list = el('gdSellerOptions');
+    list.innerHTML = '';
+    if(!storeId) return;
+    try{
+      const data = await gdApiRequest('?view=sellers&storeId='+encodeURIComponent(storeId));
+      list.innerHTML = (data.sellers || []).map(name => '<option value="'+escapeHtml(name)+'"></option>').join('');
+    }catch(error){ /* sem sugestões: o campo aceita texto livre */ }
+  }
+
+  function gdOpenAdjustDialog(entry){
     el('gdAdjustForm').reset();
-    el('gdAdjustStoreId').value = store.storeId;
-    el('gdAdjustStoreName').textContent = store.storeName;
-    el('gdAdjustDate').value = (gdDashboardData && gdDashboardData.date) || '';
-    el('gdAdjustFormStatus').textContent = '';
+    el('gdAdjustEntryId').value = entry ? entry.id : '';
+    el('gdAdjustDialogTitle').textContent = entry ? 'EDITAR GORDURA' : 'NOVA GORDURA';
+    const stores = (gdDashboardData && gdDashboardData.stores) || [];
+    const storeSelect = el('gdAdjustStore');
+    storeSelect.innerHTML = (stores.length > 1 ? '<option value="">SELECIONE A LOJA</option>' : '')+
+      stores.map(store => '<option value="'+escapeHtml(store.storeId)+'">'+escapeHtml(store.storeName)+'</option>').join('');
+    storeSelect.value = entry ? entry.storeId : (el('gdStoreFilter').value || (stores.length === 1 ? stores[0].storeId : ''));
+    storeSelect.disabled = Boolean(entry) || stores.length === 1;
+    const today = (gdDashboardData && gdDashboardData.date) || '';
+    el('gdAdjustDate').value = entry ? entry.entryDate : today;
+    el('gdAdjustSaleCode').value = entry ? entry.saleCode : '';
+    el('gdAdjustSeller').value = entry ? entry.sellerName : '';
+    el('gdAdjustReason').value = entry ? (entry.notes || '') : '';
+    const negative = entry ? entry.amountCents < 0 : false;
+    document.querySelector('input[name="gdAdjustSign"][value="'+(negative ? '-1' : '1')+'"]').checked = true;
     const amountInput = el('gdAdjustAmount');
-    if(amountInput._currencyMask) amountInput._currencyMask.setValue('');
-    attachCurrencyMask(amountInput, {allowNegative:true});
+    attachCurrencyMask(amountInput);
+    setCurrencyValue(amountInput, entry ? Math.abs(entry.amountCents) / 100 : '');
+    el('gdAdjustFormStatus').textContent = '';
+    gdLoadSellers(storeSelect.value);
     el('gdAdjustDialog').showModal();
   }
+  el('btnGdNewEntry') && el('btnGdNewEntry').addEventListener('click', () => gdOpenAdjustDialog(null));
+  el('gdAdjustStore') && el('gdAdjustStore').addEventListener('change', () => gdLoadSellers(el('gdAdjustStore').value));
   el('btnCloseGdAdjustDialog') && el('btnCloseGdAdjustDialog').addEventListener('click', () => { if(el('gdAdjustDialog').open) el('gdAdjustDialog').close(); });
   el('btnCancelGdAdjustDialog') && el('btnCancelGdAdjustDialog').addEventListener('click', () => { if(el('gdAdjustDialog').open) el('gdAdjustDialog').close(); });
 
@@ -26170,26 +26358,91 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('gdAdjustFormStatus');
     status.textContent = '';
-    const storeId = el('gdAdjustStoreId').value;
-    const store = gdStoreById(storeId);
-    const amountCents = parseBRLToCentsAllowNegative(getCurrencyValue(el('gdAdjustAmount')) || '');
-    if(!Number.isInteger(amountCents) || amountCents === 0){
-      status.textContent = 'INFORME UM VALOR DIFERENTE DE ZERO.';
-      return;
-    }
+    const id = el('gdAdjustEntryId').value;
+    const storeId = el('gdAdjustStore').value;
+    const cents = parseBRLToCents(getCurrencyValue(el('gdAdjustAmount')) || '');
+    const sign = Number((document.querySelector('input[name="gdAdjustSign"]:checked') || {}).value || 1);
+    if(!storeId){ status.textContent = 'SELECIONE A LOJA.'; return; }
+    if(!cents){ status.textContent = 'INFORME UM VALOR MAIOR QUE ZERO.'; return; }
+    const button = el('btnSaveGdAdjust');
+    button.disabled = true;
     try{
-      await gdApiRequest('', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      await gdApiRequest('', {method:id ? 'PATCH' : 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        id,
         storeId,
-        storeName: store ? store.storeName : '',
-        amountCents,
-        adjustmentDate: el('gdAdjustDate').value,
-        reason: el('gdAdjustReason').value,
+        entryDate: el('gdAdjustDate').value,
+        saleCode: el('gdAdjustSaleCode').value,
+        sellerName: el('gdAdjustSeller').value,
+        amountCents: sign * cents,
+        notes: el('gdAdjustReason').value,
       })});
       el('gdAdjustDialog').close();
-      showPurchaseToast('Ajuste de saldo lançado.');
+      showPurchaseToast(id ? 'Gordura alterada.' : 'Gordura lançada.');
       await loadControleGdPage();
     }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
   });
+
+  el('gdEntriesBody') && el('gdEntriesBody').addEventListener('click', async event => {
+    const editBtn = event.target.closest('[data-gd-edit]');
+    const deleteBtn = event.target.closest('[data-gd-delete]');
+    const entries = (gdDashboardData && gdDashboardData.entries) || [];
+    if(editBtn){
+      const entry = entries.find(row => row.id === editBtn.dataset.gdEdit);
+      if(entry) gdOpenAdjustDialog(entry);
+      return;
+    }
+    if(!deleteBtn) return;
+    const entry = entries.find(row => row.id === deleteBtn.dataset.gdDelete);
+    if(!entry) return;
+    const ok = await askConfirm('EXCLUIR A GORDURA DA VENDA '+entry.saleCode+' ('+entry.sellerName+' · '+gdSignedBRL(entry.amountCents)+')? O TOTAL DO MÊS SERÁ RECALCULADO.', {okText:'EXCLUIR', danger:true});
+    if(!ok) return;
+    try{
+      await gdApiRequest('', {method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:entry.id})});
+      showPurchaseToast('Gordura excluída.');
+      await loadControleGdPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // SALDO ANTERIOR (uma loja selecionada).
+  el('gdSummary') && el('gdSummary').addEventListener('click', event => {
+    if(!event.target.closest('#btnGdEditOpening')) return;
+    const store = gdSelectedStores()[0];
+    if(!store) return;
+    const month = gdDashboardData.month;
+    el('gdOpeningDialogTitle').textContent = 'SALDO ANTERIOR · '+store.storeName;
+    el('gdOpeningHint').textContent = 'Saldo com que a loja começa '+month.slice(5)+'/'+month.slice(0, 4)+'. '+
+      (store.openingManual ? 'Hoje está corrigido à mão.' : 'Hoje está automático (fechamento do mês anterior).')+
+      ' Os meses seguintes continuam somando a partir deste valor.';
+    const input = el('gdOpeningAmount');
+    attachCurrencyMask(input, {allowNegative:true});
+    setCurrencyValue(input, store.openingCents / 100);
+    el('gdOpeningFormStatus').textContent = '';
+    el('btnGdOpeningAuto').hidden = !store.openingManual;
+    el('gdOpeningForm').dataset.storeId = store.storeId;
+    el('gdOpeningDialog').showModal();
+  });
+  el('btnCloseGdOpeningDialog') && el('btnCloseGdOpeningDialog').addEventListener('click', () => el('gdOpeningDialog').close());
+
+  async function gdSaveOpening(balanceCents){
+    const status = el('gdOpeningFormStatus');
+    status.textContent = '';
+    try{
+      await gdApiRequest('', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        storeId: el('gdOpeningForm').dataset.storeId, month: gdDashboardData.month, balanceCents,
+      })});
+      el('gdOpeningDialog').close();
+      showPurchaseToast('Saldo anterior atualizado.');
+      await loadControleGdPage();
+    }catch(error){ status.textContent = error.message; }
+  }
+  el('gdOpeningForm') && el('gdOpeningForm').addEventListener('submit', event => {
+    event.preventDefault();
+    const cents = parseBRLToCentsAllowNegative(getCurrencyValue(el('gdOpeningAmount')) || '');
+    if(!Number.isInteger(cents)){ el('gdOpeningFormStatus').textContent = 'INFORME O VALOR.'; return; }
+    gdSaveOpening(cents);
+  });
+  el('btnGdOpeningAuto') && el('btnGdOpeningAuto').addEventListener('click', () => gdSaveOpening(null));
 
   function gdBuildScript(store, dateLabel){
     const lines = [
@@ -38828,7 +39081,7 @@ function renderHomeTasks(){
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Comercial - Relatório NF: visualizar','relatorio_nf:manage':'Comercial - Relatório NF: lançar/gerenciar',
     'treinamento:view':'Comercial - Treinamento: ver o próprio','treinamento:team':'Comercial - Treinamento: equipe e vínculos',
-    'controle_gd:view':'Comercial - Controle GD: visualizar','controle_gd:manage':'Comercial - Controle GD: lançar ajuste de saldo',
+    'controle_gd:view':'Comercial - Controle GD: visualizar','controle_gd:create':'Comercial - Controle GD: lançar gordura','controle_gd:edit':'Comercial - Controle GD: alterar e excluir gordura','controle_gd:opening':'Comercial - Controle GD: alterar saldo anterior',
     'documents:create':'Documentos: cadastrar','documents:edit':'Documentos: editar','documents:delete':'Documentos: excluir',
     'assistencia:manage':'Assistência - Orçamentos: acesso completo',
     'users:manage':'Usuários e acessos'

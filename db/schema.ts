@@ -3787,6 +3787,9 @@ export const commercialGdBalanceAdjustments = pgTable(
     storeName: text("store_name").notNull().default(""),
     adjustmentDate: text("adjustment_date").notNull(),
     amountCents: integer("amount_cents").notNull(),
+    // Gordura por venda: ID da venda, vendedor e observação (reason).
+    saleCode: text("sale_code").notNull().default(""),
+    sellerName: text("seller_name").notNull().default(""),
     reason: text("reason").notNull().default(""),
     source: text("source").notNull().default("manual"),
     canceled: integer("canceled").notNull().default(0),
@@ -3796,11 +3799,31 @@ export const commercialGdBalanceAdjustments = pgTable(
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
   },
   (table) => [
     index("commercial_gd_adjustments_store_date_idx").on(table.storeId, table.adjustmentDate),
     index("commercial_gd_adjustments_date_idx").on(table.adjustmentDate),
   ],
+);
+
+// Controle GD — SALDO ANTERIOR corrigido à mão (loja + mês AAAA-MM). Sem
+// linha aqui o saldo anterior é automático (fechamento do mês anterior —
+// ver openingBalanceCents em app/lib/controle-gd.ts).
+export const commercialGdOpeningBalances = pgTable(
+  "commercial_gd_opening_balances",
+  {
+    id: text("id").primaryKey(),
+    storeId: text("store_id").notNull(),
+    month: text("month").notNull(),
+    balanceCents: integer("balance_cents").notNull(),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [uniqueIndex("commercial_gd_opening_store_month_idx").on(table.storeId, table.month)],
 );
 
 // Estoque > Divergências — a loja abre um pedido de verificação com 1+

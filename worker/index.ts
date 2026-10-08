@@ -69,7 +69,7 @@ type Permission =
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
   | "relatorio_nf:view" | "relatorio_nf:manage"
-  | "controle_gd:view" | "controle_gd:manage"
+  | "controle_gd:view" | "controle_gd:create" | "controle_gd:edit" | "controle_gd:opening"
   | "treinamento:view" | "treinamento:team"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
@@ -218,7 +218,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // Comercial > Controle GD — painel de saldo (gordura de vendas) por loja.
   // Permissão própria, independente de comercial:* (ver
   // MODULE_VIEW_PERMISSIONS.controleGd).
-  "controle_gd:view", "controle_gd:manage",
+  "controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening",
   // Comercial > Treinamento (Unigames Academy) — permissão própria,
   // independente de comercial:* (ver MODULE_VIEW_PERMISSIONS.treinamento).
   "treinamento:view", "treinamento:team",
@@ -291,6 +291,8 @@ const LEGACY_PERMISSION_MAP: Record<string, Permission[]> = {
   // banco — a expansão é na leitura; ao salvar o usuário já grava as novas).
   "comercial:view": ["comercial:dashboard", "comercial:commission"],
   "comercial:manage": ["comercial:goals"],
+  // Controle GD: lançar/cancelar ajuste virou lançar, alterar/excluir e saldo anterior.
+  "controle_gd:manage": ["controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
 };
 function expandLegacyPermissions(raw: unknown[]): unknown[] {
   const expanded: unknown[] = [];
@@ -1340,7 +1342,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "loans:view", "loans:create", "loans:edit", "loans:delete", "loans:request", "loans:manage_requests",
   ],
   relatorioNf: ["relatorio_nf:view", "relatorio_nf:manage"],
-  controleGd: ["controle_gd:view", "controle_gd:manage"],
+  controleGd: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
   treinamento: ["treinamento:view", "treinamento:team"],
 };
 

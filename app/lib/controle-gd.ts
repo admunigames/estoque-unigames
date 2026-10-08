@@ -140,3 +140,31 @@ export function buildLastNDates(todayIso: string, n: number): string[] {
   }
   return dates;
 }
+
+export const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+/**
+ * SALDO ANTERIOR da loja no mês `month` (AAAA-MM): o saldo corrigido à mão
+ * mais recente até `month` (inclusive) mais a soma dos lançamentos dos meses
+ * entre ele e `month`; sem correção nenhuma, é a soma de todos os
+ * lançamentos antes de `month`. Assim alterar uma gordura antiga corrige
+ * sozinho os meses seguintes, até o primeiro saldo corrigido à mão.
+ */
+export function openingBalanceCents(
+  monthlySums: { month: string; amountCents: number }[],
+  overrides: { month: string; balanceCents: number }[],
+  month: string,
+): number {
+  let base = 0;
+  let from = "";
+  for (const override of overrides) {
+    if (override.month <= month && override.month > from) {
+      from = override.month;
+      base = override.balanceCents;
+    }
+  }
+  return monthlySums.reduce(
+    (sum, row) => (row.month >= from && row.month < month ? sum + Number(row.amountCents) : sum),
+    base,
+  );
+}
