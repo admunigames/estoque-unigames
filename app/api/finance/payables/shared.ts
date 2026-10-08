@@ -442,3 +442,111 @@ export async function planPayablesBulk(
   }
   return { applied: payables.length - skipped.length, skipped, statements };
 }
+
+/**
+ * EXCLUIR conta a pagar de vez (pedido do usuário: limpar lançamentos
+ * cancelados). Regras de segurança — o que não pode, é PULADO com o motivo:
+ *  - só conta já CANCELADA (o cancelamento é que tira o valor da DRE; excluir
+ *    é só tirar da lista);
+ *  - sem pagamento confirmado (o dinheiro saiu; o histórico fica);
+ *  - duplicata de NOTA FISCAL: exclui-se pela nota;
+ *  - conta de DESPESA: a despesa inteira sai junto (todas as contas dela,
+ *    fatias do rateio e anexos), e só se TODAS as contas dela estiverem
+ *    canceladas e sem pagamento; despesa vinda do cartão corporativo ou do
+ *    extrato bancário não é excluída por aqui (o lançamento de origem
+ *    ficaria apontando para ela).
+ * Apaga também agendamentos/anexos de pagamento e a dívida "gêmea" de
+ * Fornecedores em Aberto.
+ */
+export async function planPayablesDelete(
+  database: Awaited<ReturnType<typeof getD1>>,
+  scopeActor: ScopeActor,
+  ids: string[],
+): Promise<
+  | { error: string; status: number }
+  | { applied: number; skipped: Array<{ id: string; description: string; reason: string }>; statements: [string, unknown[]][] }
+> {
+  const payables: PayableRow[] = [];
+  for (const id of ids) {
+    const payable = await loadPayable(database, id);
+    if (!payable) return { error: "ALGUMA CONTA SELECIONADA NÃO EXISTE MAIS. ATUALIZE A LISTA.", status: 404 };
+    const accessError = assertAccess(scopeActor, payable);
+    if (accessError) return { error: accessError, status: 403 };
+    payables.push(payable);
+  }
+  const skipped: Array<{ id: string; description: string; reason: string }> = [];
+  const statements: [string, unknown[]][] = [];
+  const deletedPayables = new Set<string>();
+  const handledExpenses = new Set<string>();
+
+  const confirmedPayments = async (payableIds: string[]) => {
+    if (!payableIds.length) return 0;
+    const row = await database
+      .prepare(
+        `SELECT COUNT(*) AS n FROM accounts_payable_payments
+         WHERE confirmed_at <> '' AND payable_id IN (${payableIds.map((_, i) => `?${i + 1}`).join(",")})`,
+      )
+      .bind(...payableIds)
+      .first<{ n: number }>();
+    return Number(row?.n || 0);
+  };
+  const deletePayableSql = (payableId: string) => {
+    statements.push(
+      [
+        `DELETE FROM accounts_payable_payment_attachments
+         WHERE payment_id IN (SELECT id FROM accounts_payable_payments WHERE payable_id=?1)`,
+        [payableId],
+      ],
+      ["DELETE FROM accounts_payable_payments WHERE payable_id=?1", [payableId]],
+      ["DELETE FROM supplier_open_debts WHERE accounts_payable_id=?1", [payableId]],
+      ["DELETE FROM accounts_payable WHERE id=?1", [payableId]],
+    );
+    deletedPayables.add(payableId);
+  };
+
+  for (const payable of payables) {
+    if (deletedPayables.has(payable.id)) continue;
+    const skip = (reason: string) => skipped.push({ id: payable.id, description: payable.description, reason });
+    if (payable.status !== "canceled") { skip("CANCELE A CONTA ANTES DE EXCLUIR"); continue; }
+    const invoiceLink = await database
+      .prepare("SELECT id FROM supplier_invoice_installments WHERE accounts_payable_id=?1")
+      .bind(payable.id)
+      .first<{ id: string }>();
+    if (invoiceLink) { skip("VEIO DE NOTA FISCAL — EXCLUA PELA NOTA"); continue; }
+
+    if (payable.expenseId) {
+      if (handledExpenses.has(payable.expenseId)) continue;
+      handledExpenses.add(payable.expenseId);
+      const expense = await database
+        .prepare("SELECT id, card_id AS cardId, bank_reconciliation_id AS bankReconciliationId FROM expenses WHERE id=?1")
+        .bind(payable.expenseId)
+        .first<{ id: string; cardId: string; bankReconciliationId: string }>();
+      if (expense && (expense.cardId || expense.bankReconciliationId)) {
+        skip("DESPESA VEIO DO CARTÃO OU DO EXTRATO — NÃO PODE SER EXCLUÍDA POR AQUI");
+        continue;
+      }
+      const siblings = (
+        await database
+          .prepare("SELECT id, status FROM accounts_payable WHERE expense_id=?1")
+          .bind(payable.expenseId)
+          .all<{ id: string; status: string }>()
+      ).results ?? [];
+      if (siblings.some((row) => row.status !== "canceled")) {
+        skip("A DESPESA TEM OUTRAS CONTAS NÃO CANCELADAS — CANCELE TODAS ANTES");
+        continue;
+      }
+      if (await confirmedPayments(siblings.map((row) => row.id))) { skip("TEM PAGAMENTO REGISTRADO"); continue; }
+      for (const row of siblings) deletePayableSql(row.id);
+      statements.push(
+        ["DELETE FROM expense_rateio_shares WHERE expense_id=?1", [payable.expenseId]],
+        ["DELETE FROM expense_attachments WHERE expense_id=?1", [payable.expenseId]],
+        ["DELETE FROM expenses WHERE id=?1", [payable.expenseId]],
+      );
+      continue;
+    }
+
+    if (await confirmedPayments([payable.id])) { skip("TEM PAGAMENTO REGISTRADO"); continue; }
+    deletePayableSql(payable.id);
+  }
+  return { applied: deletedPayables.size, skipped, statements };
+}

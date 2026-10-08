@@ -554,6 +554,8 @@
   .company-actions input::placeholder{color:var(--ink-faint);}
   .company-meta{font-size:12px; color:var(--ink-faint); font-family:var(--mono); min-width:0; max-width:100%; overflow-wrap:anywhere;}
   .btn-danger-outline{background:transparent; color:var(--neg); border:1px solid rgba(239,106,85,0.4);}
+  .app-confirm-dialog{max-width:440px;}
+  .app-confirm-message{margin:0 0 6px; font:600 14px/1.5 var(--sans); color:var(--ink); text-transform:none; white-space:pre-line;}
 
   .lojas-defaults{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px;}
 
@@ -7288,6 +7290,7 @@
             <button class="btn-outline btn-sm" type="button" data-bulk-action="reschedule">ALTERAR VENCIMENTO</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="category">ALTERAR CATEGORIA / CENTRO DE CUSTO</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel" data-bulk-confirm="CONFIRMAR CANCELAMENTO">CANCELAR</button>
+            <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO (SÓ CANCELADAS)">EXCLUIR</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
         </div>
@@ -9583,6 +9586,16 @@
   <div class="purchase-form">
     <p class="page-desc" id="acadPersonSubtitle"></p>
     <div class="com-blocks" id="acadPersonTracks"><p class="com-empty">Carregando…</p></div>
+  </div>
+</dialog>
+<dialog class="purchase-dialog app-confirm-dialog" id="appConfirmDialog" aria-labelledby="appConfirmTitle">
+  <div class="purchase-dialog-head"><h3 id="appConfirmTitle">CONFIRMAR</h3></div>
+  <div class="purchase-form">
+    <p class="app-confirm-message" id="appConfirmMessage"></p>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" id="btnAppConfirmCancel">VOLTAR</button>
+      <button class="btn-accent" type="button" id="btnAppConfirmOk">CONFIRMAR</button>
+    </div>
   </div>
 </dialog>
 <dialog class="purchase-dialog" id="recargaDialog" aria-labelledby="recargaDialogTitle">
@@ -27067,7 +27080,7 @@ function renderHomeTasks(){
   el('dreCategoryList').addEventListener('click', async event => {
     const button = event.target.closest('[data-finance-delete-entry]');
     if(!button) return;
-    if(!confirm('Excluir este lançamento?')) return;
+    if(!await askConfirm('Excluir este lançamento?')) return;
     button.disabled = true;
     try{
       await financeApiRequest('/entries?id='+encodeURIComponent(button.dataset.financeDeleteEntry), {method:'DELETE'});
@@ -27210,7 +27223,7 @@ function renderHomeTasks(){
         showPurchaseToast('Item renomeado.');
       }catch(error){ showPurchaseToast(error.message,'error'); }
     }else if(categoryButton){
-      if(!confirm('Excluir esta categoria/subgrupo?')) return;
+      if(!await askConfirm('Excluir esta categoria/subgrupo?')) return;
       try{
         await financeApiRequest('/categories?id='+encodeURIComponent(categoryButton.dataset.financeDeleteCategory), {method:'DELETE'});
         await loadFinanceCatalog();
@@ -27219,7 +27232,7 @@ function renderHomeTasks(){
         showPurchaseToast(error.message,'error');
       }
     }else if(itemButton){
-      if(!confirm('Excluir este item?')) return;
+      if(!await askConfirm('Excluir este item?')) return;
       try{
         await financeApiRequest('/items?id='+encodeURIComponent(itemButton.dataset.financeDeleteItem), {method:'DELETE'});
         await loadFinanceCatalog();
@@ -27545,6 +27558,7 @@ function renderHomeTasks(){
           '<button class="btn-outline" type="button" data-payable-open="'+escapeHtml(row.id)+'">ABRIR</button>'+
           (row.status !== 'canceled' ? '<button class="btn-outline" type="button" data-payable-edit="'+escapeHtml(row.id)+'">EDITAR</button>' : '')+
           (canCancel ? '<button class="btn-outline" type="button" data-payable-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
+          (row.status === 'canceled' ? '<button class="btn-danger-outline" type="button" data-payable-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+
         '</td>'+
       '</tr>';
     }).join('');
@@ -27577,6 +27591,9 @@ function renderHomeTasks(){
         '<button class="btn-outline" type="button" data-payable-group-toggle="'+escapeHtml(row.id)+'" aria-expanded="'+open+'">'+(open ? 'OCULTAR RATEIO' : 'VER RATEIO')+'</button>'+
         (canPay ? '<button class="btn-outline" type="button" data-payable-group-pay="'+escapeHtml(row.id)+'">MARCAR PAGO</button>' : '')+
         (live.length && canPay ? '<button class="btn-outline" type="button" data-payable-group-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
+        // Todas as fatias canceladas: EXCLUIR apaga a despesa inteira (qualquer
+        // fatia serve — o servidor leva o conjunto).
+        (shares.length && !live.length ? '<button class="btn-danger-outline" type="button" data-payable-delete="'+escapeHtml(shares[0].id)+'" data-payable-delete-expense="1">EXCLUIR</button>' : '')+
       '</td>'+
     '</tr>'+
     (open ? shares.map(share =>
@@ -28010,7 +28027,7 @@ function renderHomeTasks(){
         await refreshAfterAction(async () => { await Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]); });
       }catch(error){ showPurchaseToast(error.message,'error'); }
     }else if(deleteButton){
-      if(!confirm('Cancelar este agendamento?')) return;
+      if(!await askConfirm('Cancelar este agendamento?')) return;
       try{
         await financeApiRequest('/payables/'+encodeURIComponent(payablesCurrentDetailId)+'/payments/'+encodeURIComponent(deleteButton.dataset.paymentDelete), { method:'DELETE' });
         showPurchaseToast('Agendamento cancelado.');
@@ -28045,13 +28062,27 @@ function renderHomeTasks(){
     const openButton = event.target.closest('[data-payable-open]');
     const editButton = event.target.closest('[data-payable-edit]');
     const cancelButton = event.target.closest('[data-payable-cancel]');
+    const deleteButton = event.target.closest('[data-payable-delete]');
+    if(deleteButton){
+      const row = payablesRows.find(r => r.id === deleteButton.dataset.payableDelete);
+      const fromExpense = deleteButton.dataset.payableDeleteExpense === '1' || (row && row.expenseId);
+      if(!await askConfirm(fromExpense
+        ? 'EXCLUIR DE VEZ? ESTA CONTA VEIO DE UMA DESPESA: A DESPESA INTEIRA (TODAS AS CONTAS DELA, INCLUSIVE AS FATIAS DO RATEIO) SERÁ APAGADA. NÃO DÁ PARA DESFAZER.'
+        : 'EXCLUIR ESTA CONTA CANCELADA DE VEZ? ELA SAI DA LISTA E NÃO DÁ PARA DESFAZER.', {okText:'EXCLUIR', danger:true})) return;
+      try{
+        await financeApiRequest('/payables/'+encodeURIComponent(deleteButton.dataset.payableDelete), { method:'DELETE' });
+        showPurchaseToast('Conta excluída.');
+        await refreshAfterAction(async () => { await Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]); });
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+      return;
+    }
     if(openButton){
       openPayableDetailDialog(openButton.dataset.payableOpen);
     }else if(editButton){
       const row = payablesRows.find(r => r.id === editButton.dataset.payableEdit);
       if(row) openEditPayableDialog(row);
     }else if(cancelButton){
-      if(!confirm('Cancelar esta conta a pagar? O lançamento vinculado na DRE será removido dos totais.')) return;
+      if(!await askConfirm('Cancelar esta conta a pagar? O lançamento vinculado na DRE será removido dos totais.')) return;
       try{
         await financeApiRequest('/payables/'+encodeURIComponent(cancelButton.dataset.payableCancel)+'/cancel', { method:'POST' });
         showPurchaseToast('Conta cancelada.');
@@ -28106,7 +28137,7 @@ function renderHomeTasks(){
   const PAY_BULK_TITLES = {pay:'MARCAR COMO PAGO', reschedule:'ALTERAR VENCIMENTO', category:'ALTERAR CATEGORIA / CENTRO DE CUSTO', cancel:'CANCELAR'};
   let payBulkPending = null; // {endpoint, action, ids, companyId, reload}
   async function openPayBulk(endpoint, action, ids, companyId, reload, bulk){
-    if(action === 'cancel'){
+    if(action === 'cancel' || action === 'delete'){
       await financeBulkRequest(endpoint, {action, ids});
       bulk.clear();
       await reload();
@@ -28442,7 +28473,7 @@ function renderHomeTasks(){
       const row = supplierDebtsRows.find(r => r.id === editButton.dataset.supplierDebtEdit);
       if(row) openEditSupplierDebtDialog(row);
     }else if(cancelButton){
-      if(!confirm('Cancelar esta dívida de fornecedor? A conta a pagar vinculada também será cancelada.')) return;
+      if(!await askConfirm('Cancelar esta dívida de fornecedor? A conta a pagar vinculada também será cancelada.')) return;
       try{
         await financeApiRequest('/supplier-debts/'+encodeURIComponent(cancelButton.dataset.supplierDebtCancel)+'/cancel', { method:'POST' });
         showPurchaseToast('Dívida cancelada.');
@@ -28804,7 +28835,7 @@ function renderHomeTasks(){
       const row = budgetsCurrentRows.find(r => r.id === editButton.dataset.budgetEdit);
       if(row) openBudgetDialog(row);
     }else if(deleteButton){
-      if(!confirm('Excluir este orçamento?')) return;
+      if(!await askConfirm('Excluir este orçamento?')) return;
       try{
         await financeApiRequest('/budgets?id='+encodeURIComponent(deleteButton.dataset.budgetDelete), {method:'DELETE'});
         await refreshAfterAction(() => loadOrcamentoPage({silent:true}));
@@ -29058,7 +29089,7 @@ function renderHomeTasks(){
       return;
     }
     if(cancelButton){
-      if(!confirm('Cancelar este recebível? Ele deixa de contar no fluxo de caixa, mas continua no histórico.')) return;
+      if(!await askConfirm('Cancelar este recebível? Ele deixa de contar no fluxo de caixa, mas continua no histórico.')) return;
       try{
         await financeApiRequest('/receivables/'+encodeURIComponent(cancelButton.dataset.receivableCancel)+'/cancel', {method:'POST'});
         await refreshAfterAction(() => loadRecebiveisPage({silent:true}));
@@ -32139,7 +32170,7 @@ function renderHomeTasks(){
     if(!ids.length){ el('crLinkStatus').textContent = 'SELECIONE AO MENOS UM CREDIÁRIO.'; return; }
     const sum = crLink.pending.filter(r => ids.includes(r.id)).reduce((total, r) => total + Number(r.netCents), 0);
     const diff = crLink.entry.amountCents - sum;
-    if(diff && !confirm('A SOMA DOS CREDIÁRIOS NÃO BATE COM O DEPÓSITO (DIFERENÇA '+formatCentsBRL(diff)+'). CONFIRMAR MESMO ASSIM? A DIFERENÇA FICA REGISTRADA NA OBSERVAÇÃO.')) return;
+    if(diff && !await askConfirm('A SOMA DOS CREDIÁRIOS NÃO BATE COM O DEPÓSITO (DIFERENÇA '+formatCentsBRL(diff)+'). CONFIRMAR MESMO ASSIM? A DIFERENÇA FICA REGISTRADA NA OBSERVAÇÃO.')) return;
     el('btnConfirmCrLink').disabled = true;
     try{
       const res = await financeApiRequest('/credit-sales/link', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({bankEntryId: crLink.entry.id, creditSaleIds: ids})});
@@ -32191,7 +32222,7 @@ function renderHomeTasks(){
   el('btnCancelCrProvider').addEventListener('click', () => el('crProviderDialog').close());
   el('btnDeleteCrProvider').addEventListener('click', async () => {
     const id = el('crProviderId').value;
-    if(!id || !confirm('EXCLUIR A FINANCEIRA '+el('crProviderName').value+'?')) return;
+    if(!id || !await askConfirm('EXCLUIR A FINANCEIRA '+el('crProviderName').value+'?')) return;
     try{
       await financeApiRequest('/credit-providers?id='+encodeURIComponent(id), {method:'DELETE'});
       el('crProviderDialog').close();
@@ -32637,7 +32668,7 @@ function renderHomeTasks(){
     return false;
   });
   el('btnSvApplyDeposits').addEventListener('click', async () => {
-    if(!confirm('Conciliar os depósitos do mês? Grava o valor recebido nas vendas da maquineta (rateado pelo líquido esperado) e marca os lançamentos do extrato.')) return;
+    if(!await askConfirm('Conciliar os depósitos do mês? Grava o valor recebido nas vendas da maquineta (rateado pelo líquido esperado) e marca os lançamentos do extrato.')) return;
     try{
       const res = await financeApiRequest('/sales-recon/deposits', {method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({action:'apply', month: svMonth(), companyId: el('svCompany').value})});
@@ -33278,7 +33309,7 @@ function renderHomeTasks(){
     const exp = event.target.closest('[data-reposicao-expense]');
     if(edit){ const r = reposicaoRows.find(x => x.id === edit.dataset.reposicaoEdit); if(r) openReposicaoDialog(r); }
     else if(del){
-      if(!confirm('Excluir este lançamento?')) return;
+      if(!await askConfirm('Excluir este lançamento?')) return;
       try{ await financeApiRequest('/replacement-control?id='+encodeURIComponent(del.dataset.reposicaoDel), {method:'DELETE'}); await reloadReposicao(); showPurchaseToast('Lançamento excluído.'); }
       catch(error){ alert(error.message); }
     }
@@ -33462,7 +33493,7 @@ function renderHomeTasks(){
     const ev = event.target.closest('[data-recarga-event]');
     if(edit){ const r = recargaRows.find(x => x.id === edit.dataset.recargaEdit); if(r) openRecargaDialog(r); }
     else if(del){
-      if(!confirm('Excluir esta linha e todo o histórico de recargas?')) return;
+      if(!await askConfirm('Excluir esta linha e todo o histórico de recargas?')) return;
       try{ await financeApiRequest('/phone-recharges?id='+encodeURIComponent(del.dataset.recargaDel), {method:'DELETE'}); await reloadRecargas(); showPurchaseToast('Linha excluída.'); }
       catch(error){ alert(error.message); }
     }
@@ -35734,7 +35765,7 @@ function renderHomeTasks(){
       return;
     }
     if(attachRemove){
-      if(!confirm('Remover o anexo deste lançamento?')) return;
+      if(!await askConfirm('Remover o anexo deste lançamento?')) return;
       try{
         await obraApiRequest('/attachment?id='+encodeURIComponent(attachRemove.dataset.obraAttachRemove), {method:'DELETE'});
         if(obraDetailCurrent) await openObraDetail(obraDetailCurrent.id);
@@ -35743,7 +35774,7 @@ function renderHomeTasks(){
       return;
     }
     if(!del) return;
-    if(!confirm('Excluir este lançamento?')) return;
+    if(!await askConfirm('Excluir este lançamento?')) return;
     try{
       await obraApiRequest('?entryId='+encodeURIComponent(del.dataset.obraEntryDelete), {method:'DELETE'});
       if(obraDetailCurrent) await openObraDetail(obraDetailCurrent.id);
@@ -35758,7 +35789,7 @@ function renderHomeTasks(){
     if(open){ openObraDetail(open.dataset.obraOpen); return; }
     if(edit){ const row = obrasRows.find(r => r.id === edit.dataset.obraEdit); if(row) openObraDialog(row); return; }
     if(del){
-      if(!confirm('Excluir esta obra e todos os seus lançamentos?')) return;
+      if(!await askConfirm('Excluir esta obra e todos os seus lançamentos?')) return;
       try{ await obraApiRequest('?id='+encodeURIComponent(del.dataset.obraDelete), {method:'DELETE'}); await loadObrasPage(); showPurchaseToast('Obra excluída.'); }
       catch(error){ showPurchaseToast(error.message,'error'); }
     }
@@ -35779,6 +35810,37 @@ function renderHomeTasks(){
       (skipped.length ? ': '+skipped.map(item => (item.description || item.id)+' ('+item.reason+')').join('; ') : ''), skipped.length && !res.applied ? 'error' : undefined);
     return res;
   }
+  // Confirmação do PRÓPRIO sistema (no lugar do confirm() do navegador, que
+  // o navegador embutido não mostra e responde "não"): mostra a mensagem e
+  // devolve true/false. Esc/fechar/CANCELAR = false.
+  function askConfirm(message, options){
+    const dialog = el('appConfirmDialog');
+    if(!dialog || typeof dialog.showModal !== 'function') return Promise.resolve(window.confirm(message));
+    const okButton = el('btnAppConfirmOk');
+    el('appConfirmMessage').textContent = message;
+    okButton.textContent = (options && options.okText) || 'CONFIRMAR';
+    const danger = options && options.danger !== undefined ? options.danger : /^(EXCLUIR|REMOVER|APAGAR|CANCELAR)/i.test(String(message).trim());
+    okButton.className = danger ? 'btn-danger-outline' : 'btn-accent';
+    return new Promise(resolve => {
+      let done = false;
+      const finish = value => {
+        if(done) return;
+        done = true;
+        okButton.removeEventListener('click', onOk);
+        dialog.removeEventListener('close', onClose);
+        if(dialog.open) dialog.close();
+        resolve(value);
+      };
+      const onOk = () => finish(true);
+      const onClose = () => finish(false);
+      okButton.addEventListener('click', onOk);
+      dialog.addEventListener('close', onClose);
+      dialog.showModal();
+      okButton.focus();
+    });
+  }
+  if(el('btnAppConfirmCancel')) el('btnAppConfirmCancel').addEventListener('click', () => el('appConfirmDialog').close());
+
   function bulkRowCheckbox(id, label){
     return '<input type="checkbox" class="bulk-check" data-bulk-row="'+escapeHtml(id)+'" aria-label="'+escapeHtml(label || 'Selecionar')+'">';
   }
@@ -36035,7 +36097,7 @@ function renderHomeTasks(){
   el('declShoppingAnexos') && el('declShoppingAnexos').addEventListener('click', async event => {
     const del = event.target.closest('[data-decl-anexo-del]');
     if(!del || !declShoppingCurrentId) return;
-    if(!confirm('Remover este anexo?')) return;
+    if(!await askConfirm('Remover este anexo?')) return;
     try{
       await financeApiRequest('/mall-declarations/'+encodeURIComponent(declShoppingCurrentId)+'/attachments?attachmentId='+encodeURIComponent(del.dataset.declAnexoDel), {method:'DELETE'});
       renderDeclShoppingAttachments();
@@ -36088,7 +36150,7 @@ function renderHomeTasks(){
     const del = event.target.closest('[data-decl-del]');
     if(edit){ const r = declShoppingRows.find(x => x.id === edit.dataset.declEdit); if(r) openDeclShoppingDialog(r); }
     else if(del){
-      if(!confirm('Excluir esta declaração e seus anexos?')) return;
+      if(!await askConfirm('Excluir esta declaração e seus anexos?')) return;
       try{ await financeApiRequest('/mall-declarations?id='+encodeURIComponent(del.dataset.declDel), {method:'DELETE'}); await reloadDeclShopping(); showPurchaseToast('Declaração excluída.'); }
       catch(error){ alert(error.message); }
     }
@@ -37207,7 +37269,7 @@ function renderHomeTasks(){
     if(!button) return;
     const payableId = button.dataset.expensePayableMarkPaid;
     const balanceCents = Number(button.dataset.balanceCents);
-    if(!confirm('Marcar esta conta como paga (valor integral: '+formatCentsBRL(balanceCents)+')?')) return;
+    if(!await askConfirm('Marcar esta conta como paga (valor integral: '+formatCentsBRL(balanceCents)+')?')) return;
     button.disabled = true;
     try{
       await financeApiRequest('/payables/'+encodeURIComponent(payableId)+'/payments', {
@@ -37697,7 +37759,7 @@ function renderHomeTasks(){
       el('btnSaveCostCenter').textContent = 'SALVAR ALTERAÇÕES';
       el('costCenterName').focus();
     }else if(deleteButton){
-      if(!confirm('Excluir este centro de custo?')) return;
+      if(!await askConfirm('Excluir este centro de custo?')) return;
       try{
         await financeApiRequest('/cost-centers?id='+encodeURIComponent(deleteButton.dataset.costCenterDelete), {method:'DELETE'});
         await loadPayablesCatalogData();
@@ -37854,7 +37916,7 @@ function renderHomeTasks(){
     }else if(toggleButton){
       const account = payableAccounts.find(a => a.id === toggleButton.dataset.payableToggleAccount);
       if(!account) return;
-      if(account.active && !confirm('Inativar esta conta financeira? Ela deixa de aparecer em novos lançamentos, mas o histórico é preservado.')) return;
+      if(account.active && !await askConfirm('Inativar esta conta financeira? Ela deixa de aparecer em novos lançamentos, mas o histórico é preservado.')) return;
       try{
         await financeApiRequest('/accounts', {
           method:'POST', headers:{'Content-Type':'application/json'},
@@ -38326,7 +38388,7 @@ function renderHomeTasks(){
 
   async function cancelInvoiceAction(){
     const reason = prompt('Motivo do cancelamento (opcional):') || '';
-    if(!confirm('Cancelar esta nota fiscal e todas as duplicatas em aberto?')) return;
+    if(!await askConfirm('Cancelar esta nota fiscal e todas as duplicatas em aberto?')) return;
     try{
       await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId), {
         method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'cancel', reason})
@@ -38518,7 +38580,7 @@ function renderHomeTasks(){
     }
     const deleteButton = event.target.closest('[data-installment-delete]');
     if(deleteButton){
-      if(!confirm('Excluir esta duplicata?')) return;
+      if(!await askConfirm('Excluir esta duplicata?')) return;
       try{
         await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments/'+encodeURIComponent(deleteButton.dataset.installmentDelete), {method:'DELETE'});
         showPurchaseToast('Duplicata excluída.');
@@ -38706,7 +38768,7 @@ function renderHomeTasks(){
   el('btnSendPurchaseInvoiceToFinance') && el('btnSendPurchaseInvoiceToFinance').addEventListener('click', async () => {
     const purchaseId = el('purchasePageId').value;
     if(!purchaseId) return;
-    if(!confirm('Enviar esta nota fiscal ao Financeiro? Depois disso ela só volta pra edição se for devolvida.')) return;
+    if(!await askConfirm('Enviar esta nota fiscal ao Financeiro? Depois disso ela só volta pra edição se for devolvida.')) return;
     const button = el('btnSendPurchaseInvoiceToFinance');
     button.disabled = true;
     try{

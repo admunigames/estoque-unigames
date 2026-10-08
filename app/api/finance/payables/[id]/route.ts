@@ -6,6 +6,7 @@ import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, MONTH_P
 import {
   DATE_PATTERN,
   assertAccess,
+  planPayablesDelete,
   assertFinanceAccountBelongsToCompany,
   assertSlotAvailableForPayable,
   computeDreAnchorAssignments,
@@ -299,3 +300,29 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   }
 }
 
+
+// EXCLUIR de vez UMA conta a pagar (só cancelada; regras em planPayablesDelete).
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canManageFinance(actor)) return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR CONTAS A PAGAR." }, 403);
+  if (!sameOrigin(request)) return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  const { id } = await context.params;
+  const scopeActor = {
+    role: actor.role,
+    companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
+    permissions: actor.permissions,
+  };
+  try {
+    const database = await getD1();
+    const plan = await planPayablesDelete(database, scopeActor, [safeText(id, 80)]);
+    if ("error" in plan) return jsonResponse({ error: plan.error }, plan.status);
+    if (!plan.applied) return jsonResponse({ error: plan.skipped[0]?.reason || "NÃO FOI POSSÍVEL EXCLUIR." }, 409);
+    await database.batch(plan.statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
+    return jsonResponse({ deleted: true, id, applied: plan.applied });
+  } catch (error) {
+    console.error("Não foi possível excluir a conta a pagar.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR A CONTA A PAGAR." }, 500);
+  }
+}

@@ -2353,6 +2353,18 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /\['Previsão', formatDateBR\(order\.expectedDate\), false, late \? '#ef6a55' : ''\]/);
   assert.match(html, /\['Entrega', formatDateBR\(order\.receivedDate\)[^\n]*'#54c48a'/);
   assert.doesNotMatch(html, /if\(!confirm\('GERAR O PEDIDO COM/);
+  // Financeiro: confirmações pela janela do próprio sistema (askConfirm), não
+  // pelo confirm() do navegador; EXCLUIR conta a pagar cancelada (linha e lote).
+  assert.match(html, /<dialog class="purchase-dialog app-confirm-dialog" id="appConfirmDialog"/);
+  assert.match(html, /function askConfirm\(message, options\)\{/);
+  for (const text of ["Cancelar esta conta a pagar?", "Excluir este orçamento?", "Cancelar esta nota fiscal", "Excluir este centro de custo?", "Excluir esta declaração"]) {
+    assert.ok(html.includes("await askConfirm('" + text), text + " usa a confirmação do sistema");
+    assert.ok(!html.includes("!confirm('" + text), text + " não usa mais o confirm() do navegador");
+  }
+  assert.match(html, /row\.status === 'canceled' \? '<button class="btn-danger-outline" type="button" data-payable-delete=/);
+  assert.match(html, /data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO \(SÓ CANCELADAS\)">EXCLUIR<\/button>/);
+  assert.match(html, /if\(action === 'cancel' \|\| action === 'delete'\)\{/);
+  assert.match(html, /shares\.length && !live\.length \? '<button class="btn-danger-outline" type="button" data-payable-delete="'\+escapeHtml\(shares\[0\]\.id\)\+'" data-payable-delete-expense="1">EXCLUIR/);
   // EXCLUIR produto e × do fornecedor também confirmam na tela (2 cliques).
   assert.doesNotMatch(html, /confirm\('EXCLUIR ESTE PRODUTO DO PEDIDO\?'\)|confirm\('TIRAR '\+comprasSupplierName/);
   assert.match(html, /comprasArmButton\(deleteItemBtn, 'CONFIRMAR EXCLUSÃO'\)/);
