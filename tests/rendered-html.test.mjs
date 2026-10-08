@@ -5048,7 +5048,7 @@ test("Financeiro > Declaração de Vendas: nome novo, campos retirados, lote e a
   assert.match(html, /pullStoreCompanies\(\)/);
   // Barra de ações em lote (componente reutilizável).
   assert.match(html, /function setupBulkSelection\(bar, body, onAction\)/);
-  assert.match(html, /id="declShoppingBulkBar"[\s\S]*?data-bulk-all> SELECIONAR TODOS[\s\S]*?data-bulk-action="mark-paid"[\s\S]*?data-bulk-action="delete">EXCLUIR SELECIONADOS/);
+  assert.match(html, /id="declShoppingBulkBar"[\s\S]*?data-bulk-all> SELECIONAR TODOS[\s\S]*?data-bulk-action="mark-paid"[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR SELECIONADOS/);
   assert.match(html, /financeApiRequest\('\/mall-declarations\/bulk'/);
   assert.match(html, /\.bulk-check,\.decl-batch-table input\[type="checkbox"\]\{\n\s*width:18px; height:18px; min-height:0;/);
 });
@@ -5070,7 +5070,7 @@ test("Financeiro > Cartões: selos de duplicidade, filtros, barra de lote e gast
   assert.match(html, /id="corpClassifyHolder" maxlength="120" list="corpHolderList"/);
   assert.match(html, /<datalist id="corpHolderList"><\/datalist>/);
   // Barra de lote (componente reutilizado, não outro).
-  assert.match(html, /id="corpEntriesBulkBar"[\s\S]*?data-bulk-action="classify">CLASSIFICAR[\s\S]*?data-bulk-action="launch">LANÇAR EM DESPESAS[\s\S]*?data-bulk-action="not-expense">MARCAR "NÃO É DESPESA"[\s\S]*?data-bulk-action="delete">EXCLUIR</);
+  assert.match(html, /id="corpEntriesBulkBar"[\s\S]*?data-bulk-action="classify"(?: data-bulk-confirm="[^"]*")?>CLASSIFICAR[\s\S]*?data-bulk-action="launch"(?: data-bulk-confirm="[^"]*")?>LANÇAR EM DESPESAS[\s\S]*?data-bulk-action="not-expense">MARCAR "NÃO É DESPESA"[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR</);
   assert.match(html, /const corpEntriesBulk = setupBulkSelection\(el\('corpEntriesBulkBar'\), el\('corpEntriesTableBody'\)/);
   assert.equal(html.split("function setupBulkSelection(").length - 1, 1);
   // LANÇAR DESPESA de um passa pelo servidor (sem criar Despesa pelo front).
@@ -5113,9 +5113,9 @@ test("Financeiro > Fluxo de Caixa: 3 abas, lista de pagamentos, caixa semanal e 
   assert.match(html, /'VENCIDOS \(DATA ANTERIOR A HOJE, AINDA EM ABERTO\)'/);
   assert.match(html, /'SEMANA DE '\+cfWeekLabel\(key\)/);
   // Barra de lote nas três abas (componente reutilizado).
-  assert.match(html, /id="cfPayBulkBar"[\s\S]*?data-bulk-action="pay">MARCAR COMO PAGO[\s\S]*?data-bulk-action="reschedule">ALTERAR VENCIMENTO/);
-  assert.match(html, /id="cfWeeklyBulkBar"[\s\S]*?data-bulk-action="delete">EXCLUIR SELECIONADOS/);
-  assert.match(html, /id="receivablesBulkBar"[\s\S]*?data-bulk-action="receive">MARCAR COMO RECEBIDO[\s\S]*?data-bulk-action="cancel">CANCELAR/);
+  assert.match(html, /id="cfPayBulkBar"[\s\S]*?data-bulk-action="pay"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO PAGO[\s\S]*?data-bulk-action="reschedule"(?: data-bulk-confirm="[^"]*")?>ALTERAR VENCIMENTO/);
+  assert.match(html, /id="cfWeeklyBulkBar"[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR SELECIONADOS/);
+  assert.match(html, /id="receivablesBulkBar"[\s\S]*?data-bulk-action="receive"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO RECEBIDO[\s\S]*?data-bulk-action="cancel"(?: data-bulk-confirm="[^"]*")?>CANCELAR/);
   for (const name of ["cfPayBulk", "cfWeeklyBulk", "receivablesBulk"]) {
     assert.match(html, new RegExp(`const ${name} = setupBulkSelection\\(`), name);
   }
@@ -5151,9 +5151,9 @@ test("Financeiro > Maquinetas: Taxas de Cartão em abas, taxa por maquineta, arq
   }
   assert.match(html, /'\?aba='\+mqTab/);
   // Barras de lote (componente reutilizado) nas três listas.
-  assert.match(html, /id="machinesBulkBar"[\s\S]*?data-bulk-action="copy_fees">COPIAR TAXAS DE…[\s\S]*?data-bulk-action="inactivate">INATIVAR[\s\S]*?data-bulk-action="reactivate">REATIVAR/);
-  assert.match(html, /id="cardFeesBulkBar"[\s\S]*?data-bulk-action="close">ENCERRAR VIGÊNCIA[\s\S]*?data-bulk-action="delete">EXCLUIR/);
-  assert.match(html, /id="cardConfBulkBar"[\s\S]*?data-bulk-action="review">MARCAR COMO REVISADA[\s\S]*?data-bulk-action="delete">EXCLUIR VENDAS/);
+  assert.match(html, /id="machinesBulkBar"[\s\S]*?data-bulk-action="copy_fees"(?: data-bulk-confirm="[^"]*")?>COPIAR TAXAS DE…[\s\S]*?data-bulk-action="inactivate"(?: data-bulk-confirm="[^"]*")?>INATIVAR[\s\S]*?data-bulk-action="reactivate"(?: data-bulk-confirm="[^"]*")?>REATIVAR/);
+  assert.match(html, /id="cardFeesBulkBar"[\s\S]*?data-bulk-action="close"(?: data-bulk-confirm="[^"]*")?>ENCERRAR VIGÊNCIA[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
+  assert.match(html, /id="cardConfBulkBar"[\s\S]*?data-bulk-action="review"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO REVISADA[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR VENDAS/);
   for (const name of ["machinesBulk", "cardFeesBulk", "cardConfBulk"]) {
     assert.match(html, new RegExp(`const ${name} = setupBulkSelection\\(`), name);
   }
@@ -5204,8 +5204,8 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
   assert.match(html, /MAQUINETA NÃO IDENTIFICADA/);
   assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 2);
   // Lote (componente reutilizado) e confirmação do faturamento.
-  assert.match(html, /id="svRowsBulkBar"[\s\S]*?data-bulk-action="sale">MARCAR COMO VENDA[\s\S]*?data-bulk-action="service">MARCAR COMO SERVIÇO[\s\S]*?data-bulk-action="machine">DEFINIR MAQUINETA[\s\S]*?data-bulk-action="ignore">IGNORAR[\s\S]*?data-bulk-action="delete">EXCLUIR/);
-  assert.match(html, /id="svDaysBulkBar"[\s\S]*?data-bulk-action="review">MARCAR COMO REVISADO/);
+  assert.match(html, /id="svRowsBulkBar"[\s\S]*?data-bulk-action="sale"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO VENDA[\s\S]*?data-bulk-action="service"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO SERVIÇO[\s\S]*?data-bulk-action="machine"(?: data-bulk-confirm="[^"]*")?>DEFINIR MAQUINETA[\s\S]*?data-bulk-action="ignore"(?: data-bulk-confirm="[^"]*")?>IGNORAR[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
+  assert.match(html, /id="svDaysBulkBar"[\s\S]*?data-bulk-action="review"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO REVISADO/);
   for (const name of ["svRowsBulk", "svDaysBulk"]) assert.match(html, new RegExp(`const ${name} = setupBulkSelection\\(`), name);
   assert.match(html, /id="btnSvRevenue" type="button">ATUALIZAR FATURAMENTO DO MÊS/);
   assert.match(html, /id="svRevenueDialog"/);
@@ -5244,7 +5244,7 @@ test("Financeiro > Crediários: menu, rota, abas, lote, extrato e situação CRE
   for (const id of ["crCompany", "crMonth", "crProvider", "crStatus", "crSearch", "crSummary"]) assert.match(html, new RegExp(`id="${id}"`), id);
   assert.match(html, /PENDENTES HÁ MAIS DE 30 DIAS/);
   // Lote (componente reutilizado), cadastro em lote e diálogo do depósito.
-  assert.match(html, /id="crBulkBar"[\s\S]*?data-bulk-action="finish">MARCAR COMO FINALIZADO[\s\S]*?data-bulk-action="pending">VOLTAR PARA PENDENTE[\s\S]*?data-bulk-action="provider">ALTERAR FINANCEIRA\/TAXA[\s\S]*?data-bulk-action="cancel">CANCELAR[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /id="crBulkBar"[\s\S]*?data-bulk-action="finish"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO FINALIZADO[\s\S]*?data-bulk-action="pending"(?: data-bulk-confirm="[^"]*")?>VOLTAR PARA PENDENTE[\s\S]*?data-bulk-action="provider"(?: data-bulk-confirm="[^"]*")?>ALTERAR FINANCEIRA\/TAXA[\s\S]*?data-bulk-action="cancel"(?: data-bulk-confirm="[^"]*")?>CANCELAR[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /const crBulk = setupBulkSelection\(el\('crBulkBar'\), el\('crBody'\)/);
   assert.match(html, /id="crBatchDialog"[\s\S]*?SALVAR TUDO/);
   assert.match(html, /financeApiRequest\('\/credit-sales\/batch'/);
@@ -5285,7 +5285,7 @@ test("Financeiro > Recargas: período 30/60/90 no diálogo, coluna/filtro e barr
   // Tabela: coluna e filtro PERÍODO; barra de lote.
   assert.match(html, /<th>Última recarga<\/th><th>Período<\/th><th>Próxima recarga<\/th>/);
   assert.match(html, /id="recargaPeriodoFiltro"><option value="">TODOS<\/option><option value="30">30 DIAS<\/option><option value="60">60 DIAS<\/option><option value="90">90 DIAS<\/option>/);
-  assert.match(html, /id="recargaBulkBar"[\s\S]*?data-bulk-action="period">ALTERAR PERÍODO[\s\S]*?data-bulk-action="recharge">REGISTRAR RECARGA EM LOTE[\s\S]*?data-bulk-action="activate">ATIVAR[\s\S]*?data-bulk-action="deactivate">DESATIVAR[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /id="recargaBulkBar"[\s\S]*?data-bulk-action="period"(?: data-bulk-confirm="[^"]*")?>ALTERAR PERÍODO[\s\S]*?data-bulk-action="recharge"(?: data-bulk-confirm="[^"]*")?>REGISTRAR RECARGA EM LOTE[\s\S]*?data-bulk-action="activate"(?: data-bulk-confirm="[^"]*")?>ATIVAR[\s\S]*?data-bulk-action="deactivate"(?: data-bulk-confirm="[^"]*")?>DESATIVAR[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /const recargaBulk = setupBulkSelection\(el\('recargaBulkBar'\), el\('recargaTableBody'\)/);
   assert.match(html, /id="recargaBulkDialog"/);
   // Migration 0084: só ADD COLUMN com padrão 90.
@@ -5296,8 +5296,8 @@ test("Financeiro > Recargas: período 30/60/90 no diálogo, coluna/filtro e barr
 
 test("Financeiro 9/9 > Contas a Pagar e Fornecedores em Aberto: barra de lote", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /id="payablesBulkBar"[\s\S]*?data-bulk-action="pay">MARCAR COMO PAGO[\s\S]*?data-bulk-action="reschedule">ALTERAR VENCIMENTO[\s\S]*?data-bulk-action="category">ALTERAR CATEGORIA \/ CENTRO DE CUSTO[\s\S]*?data-bulk-action="cancel">CANCELAR/);
-  assert.match(html, /id="supplierDebtsBulkBar"[\s\S]*?data-bulk-action="pay">MARCAR COMO PAGO[\s\S]*?data-bulk-action="cancel">CANCELAR/);
+  assert.match(html, /id="payablesBulkBar"[\s\S]*?data-bulk-action="pay"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO PAGO[\s\S]*?data-bulk-action="reschedule"(?: data-bulk-confirm="[^"]*")?>ALTERAR VENCIMENTO[\s\S]*?data-bulk-action="category"(?: data-bulk-confirm="[^"]*")?>ALTERAR CATEGORIA \/ CENTRO DE CUSTO[\s\S]*?data-bulk-action="cancel"(?: data-bulk-confirm="[^"]*")?>CANCELAR/);
+  assert.match(html, /id="supplierDebtsBulkBar"[\s\S]*?data-bulk-action="pay"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO PAGO[\s\S]*?data-bulk-action="cancel"(?: data-bulk-confirm="[^"]*")?>CANCELAR/);
   assert.match(html, /const payablesBulk = setupBulkSelection\(el\('payablesBulkBar'\), el\('payablesBody'\)/);
   assert.match(html, /const supplierDebtsBulk = setupBulkSelection\(el\('supplierDebtsBulkBar'\), el\('supplierDebtsBody'\)/);
   assert.match(html, /openPayBulk\('\/payables\/bulk'/);
@@ -5310,7 +5310,7 @@ test("Financeiro 9/9 > Contas a Pagar e Fornecedores em Aberto: barra de lote", 
 
 test("Financeiro 9/9 > Notas Fiscais: barra de lote", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /id="invoicesBulkBar"[\s\S]*?data-bulk-action="review">CONFERIR[\s\S]*?data-bulk-action="category">ALTERAR CATEGORIA \/ CENTRO DE CUSTO[\s\S]*?data-bulk-action="cancel">CANCELAR/);
+  assert.match(html, /id="invoicesBulkBar"[\s\S]*?data-bulk-action="review"(?: data-bulk-confirm="[^"]*")?>CONFERIR[\s\S]*?data-bulk-action="category"(?: data-bulk-confirm="[^"]*")?>ALTERAR CATEGORIA \/ CENTRO DE CUSTO[\s\S]*?data-bulk-action="cancel"(?: data-bulk-confirm="[^"]*")?>CANCELAR/);
   assert.match(html, /const invoicesBulk = setupBulkSelection\(el\('invoicesBulkBar'\), el\('invoicesBody'\)/);
   assert.match(html, /financeBulkRequest\('\/invoices\/bulk'/);
   assert.match(html, /id="invBulkDialog"/);
@@ -5318,7 +5318,7 @@ test("Financeiro 9/9 > Notas Fiscais: barra de lote", async () => {
 
 test("Financeiro 9/9 > Conciliação Bancária: barra de lote", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /id="reconBulkBar"[\s\S]*?data-bulk-action="classify">CLASSIFICAR[\s\S]*?data-bulk-action="confirm">CONFIRMAR[\s\S]*?data-bulk-action="unclassify">VOLTAR PARA A CLASSIFICAR/);
+  assert.match(html, /id="reconBulkBar"[\s\S]*?data-bulk-action="classify"(?: data-bulk-confirm="[^"]*")?>CLASSIFICAR[\s\S]*?data-bulk-action="confirm"(?: data-bulk-confirm="[^"]*")?>CONFIRMAR[\s\S]*?data-bulk-action="unclassify"(?: data-bulk-confirm="[^"]*")?>VOLTAR PARA A CLASSIFICAR/);
   assert.match(html, /const reconBulk = setupBulkSelection\(el\('reconBulkBar'\), el\('reconEntriesBody'\)/);
   assert.match(html, /financeBulkRequest\('\/bank-reconciliation\/bulk'/);
   for (const id of ["reconBulkItem", "reconBulkSubcategory", "reconBulkCompany", "reconBulkCostCenter", "reconBulkDre", "reconBulkRateio"]) assert.match(html, new RegExp(`id="${id}"`), id);
@@ -5326,7 +5326,7 @@ test("Financeiro 9/9 > Conciliação Bancária: barra de lote", async () => {
 
 test("Financeiro 9/9 > Controle de Reposição: barra de lote e cadastro em lote", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /id="reposicaoBulkBar"[\s\S]*?data-bulk-action="update">ALTERAR SETOR \/ MOTIVO[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /id="reposicaoBulkBar"[\s\S]*?data-bulk-action="update"(?: data-bulk-confirm="[^"]*")?>ALTERAR SETOR \/ MOTIVO[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /const reposicaoBulk = setupBulkSelection\(el\('reposicaoBulkBar'\), el\('reposicaoTableBody'\)/);
   assert.match(html, /id="btnBatchReposicao" type="button">\+ CADASTRAR EM LOTE/);
   assert.match(html, /id="reposicaoBatchDialog"[\s\S]*?SALVAR TUDO/);
@@ -5335,7 +5335,7 @@ test("Financeiro 9/9 > Controle de Reposição: barra de lote e cadastro em lote
 
 test("Financeiro 9/9 > Orçamento: barra de lote", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /id="budgetsBulkBar"[\s\S]*?data-bulk-action="copy">COPIAR PARA OUTRO MÊS[\s\S]*?data-bulk-action="adjust">AJUSTAR VALOR[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /id="budgetsBulkBar"[\s\S]*?data-bulk-action="copy"(?: data-bulk-confirm="[^"]*")?>COPIAR PARA OUTRO MÊS[\s\S]*?data-bulk-action="adjust"(?: data-bulk-confirm="[^"]*")?>AJUSTAR VALOR[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /const budgetsBulk = setupBulkSelection\(el\('budgetsBulkBar'\), el\('budgetsTableBody'\)/);
   assert.match(html, /financeBulkRequest\('\/budgets\/bulk'/);
   assert.match(html, /id="budgetBulkDialog"/);
@@ -5343,7 +5343,7 @@ test("Financeiro 9/9 > Orçamento: barra de lote", async () => {
 
 test("Financeiro 9/9 > Obras: barra de lote", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /id="obrasBulkBar"[\s\S]*?data-bulk-action="status">ALTERAR STATUS[\s\S]*?data-bulk-action="delete">EXCLUIR/);
+  assert.match(html, /id="obrasBulkBar"[\s\S]*?data-bulk-action="status"(?: data-bulk-confirm="[^"]*")?>ALTERAR STATUS[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /const obrasBulk = setupBulkSelection\(el\('obrasBulkBar'\), el\('obrasTableBody'\)/);
   assert.match(html, /financeBulkRequest\('\/bulk', \{action:'status'/);
   assert.match(html, /id="obraBulkDialog"/);

@@ -3370,6 +3370,12 @@
   .decl-batch-table input[data-batch-field="notes"]{width:170px;}
   .decl-batch-table tr.is-registered td{opacity:.6;}
   .cr-batch-table select{width:140px;}
+  .account-field-error{color:#ef6a55; font-weight:700;}
+  [aria-invalid="true"]{border-color:#ef6a55 !important;}
+  .rateio-store-actions{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:8px;}
+  .rateio-store-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px 14px;}
+  .rateio-store-row{display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:34px;}
+  .rateio-store-row input[type="number"]{width:84px;}
   .cr-batch-table input[data-cr-amount="fee"]{width:72px;}
   .cr-link-dialog{width:min(980px,calc(100vw - 28px));}
   .cr-link-dialog tr.is-suggested td{background:color-mix(in srgb,var(--accent) 8%,transparent);}
@@ -7281,7 +7287,7 @@
             <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="reschedule">ALTERAR VENCIMENTO</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="category">ALTERAR CATEGORIA / CENTRO DE CUSTO</button>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel" data-bulk-confirm="CONFIRMAR CANCELAMENTO">CANCELAR</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
         </div>
@@ -7341,7 +7347,7 @@
             <div class="bulk-bar-actions" data-bulk-actions hidden>
               <strong class="bulk-bar-count" data-bulk-count></strong>
               <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
-              <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
+              <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel" data-bulk-confirm="CONFIRMAR CANCELAMENTO">CANCELAR</button>
               <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
             </div>
           </div>
@@ -7384,7 +7390,7 @@
         <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
         <div class="bulk-bar-actions" data-bulk-actions hidden>
           <strong class="bulk-bar-count" data-bulk-count></strong>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="review">CONFERIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="review" data-bulk-confirm="CLIQUE DE NOVO PARA CONFIRMAR">CONFERIR</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="category">ALTERAR CATEGORIA / CENTRO DE CUSTO</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
@@ -7567,7 +7573,7 @@
           <strong class="bulk-bar-count" data-bulk-count></strong>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="copy">COPIAR PARA OUTRO MÊS</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="adjust">AJUSTAR VALOR</button>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
       </div>
@@ -7808,7 +7814,7 @@
           <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
           <div class="bulk-bar-actions" data-bulk-actions hidden>
             <strong class="bulk-bar-count" data-bulk-count></strong>
-            <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR SELECIONADOS</button>
+            <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR SELECIONADOS</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
         </div>
@@ -7855,7 +7861,7 @@
           <div class="bulk-bar-actions" data-bulk-actions hidden>
             <strong class="bulk-bar-count" data-bulk-count></strong>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="receive">MARCAR COMO RECEBIDO</button>
-            <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
+            <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="cancel" data-bulk-confirm="CONFIRMAR CANCELAMENTO">CANCELAR</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
         </div>
@@ -7977,7 +7983,7 @@
           <div class="bulk-bar-actions" data-bulk-actions hidden>
             <strong class="bulk-bar-count" data-bulk-count></strong>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="close">ENCERRAR VIGÊNCIA</button>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
         </div>
@@ -8033,7 +8039,7 @@
           <div class="bulk-bar-actions" data-bulk-actions hidden>
             <strong class="bulk-bar-count" data-bulk-count></strong>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="review">MARCAR COMO REVISADA</button>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR VENDAS</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR VENDAS</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
         </div>
@@ -8148,7 +8154,7 @@
               <button class="btn-outline btn-sm" type="button" data-bulk-action="classify">CLASSIFICAR</button>
               <button class="btn-outline btn-sm" type="button" data-bulk-action="launch">LANÇAR EM DESPESAS</button>
               <button class="btn-outline btn-sm" type="button" data-bulk-action="not-expense">MARCAR "NÃO É DESPESA"</button>
-              <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+              <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
               <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
             </div>
           </div>
@@ -8229,7 +8235,7 @@
         <div class="bulk-bar-actions" data-bulk-actions hidden>
           <strong class="bulk-bar-count" data-bulk-count></strong>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="classify">CLASSIFICAR</button>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="confirm">CONFIRMAR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="confirm" data-bulk-confirm="CLIQUE DE NOVO PARA CONFIRMAR">CONFIRMAR</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="unclassify">VOLTAR PARA A CLASSIFICAR</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
@@ -8281,10 +8287,10 @@
           <div class="bulk-bar-actions" data-bulk-actions hidden>
             <strong class="bulk-bar-count" data-bulk-count></strong>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="finish">MARCAR COMO FINALIZADO</button>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="pending">VOLTAR PARA PENDENTE</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="pending" data-bulk-confirm="CLIQUE DE NOVO PARA CONFIRMAR">VOLTAR PARA PENDENTE</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="provider">ALTERAR FINANCEIRA/TAXA</button>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel">CANCELAR</button>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel" data-bulk-confirm="CONFIRMAR CANCELAMENTO">CANCELAR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
         </div>
@@ -8397,7 +8403,7 @@
             <button class="btn-outline btn-sm" type="button" data-bulk-action="machine">DEFINIR MAQUINETA</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="ignore">IGNORAR</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="rematch">CONCILIAR DE NOVO</button>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
         </div>
@@ -8501,7 +8507,7 @@
         <div class="bulk-bar-actions" data-bulk-actions hidden>
           <strong class="bulk-bar-count" data-bulk-count></strong>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="update">ALTERAR SETOR / MOTIVO</button>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
       </div>
@@ -8541,9 +8547,9 @@
           <strong class="bulk-bar-count" data-bulk-count></strong>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="period">ALTERAR PERÍODO</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="recharge">REGISTRAR RECARGA EM LOTE</button>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="activate">ATIVAR</button>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="deactivate">DESATIVAR</button>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="activate" data-bulk-confirm="CLIQUE DE NOVO PARA CONFIRMAR">ATIVAR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="deactivate" data-bulk-confirm="CLIQUE DE NOVO PARA CONFIRMAR">DESATIVAR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
       </div>
@@ -8586,7 +8592,7 @@
           <strong class="bulk-bar-count" data-bulk-count></strong>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="mark-paid">MARCAR ALUGUEL % COMO PAGO</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="unmark-paid">DESMARCAR PAGO</button>
-          <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR SELECIONADOS</button>
+          <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR SELECIONADOS</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
       </div>
@@ -8624,7 +8630,7 @@
         <div class="bulk-bar-actions" data-bulk-actions hidden>
           <strong class="bulk-bar-count" data-bulk-count></strong>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="status">ALTERAR STATUS</button>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
       </div>
@@ -11614,11 +11620,17 @@
       </div>
       <div class="purchase-field full" id="expenseRateioHelp" hidden><span class="purchase-field-help">Rateio padrão/administrativo usam os percentuais configurados em "CONFIGURAR RATEIO". Faturamento e funcionários são calculados a partir dos dados já cadastrados. Personalizado é digitado manualmente abaixo.</span></div>
       <div class="purchase-field full" id="expenseRateioSharesArea" hidden>
-        <label>DIVISÃO POR LOJA</label>
+        <label>LOJAS PARTICIPANTES</label>
+        <div class="rateio-store-actions">
+          <button class="btn-outline btn-sm" type="button" id="btnRateioStoresAll">MARCAR TODAS</button>
+          <button class="btn-outline btn-sm" type="button" id="btnRateioStoresNone">LIMPAR</button>
+          <span class="purchase-field-help" id="expenseRateioStoresCount"></span>
+        </div>
+        <div class="rateio-store-list" id="expenseRateioStores"></div>
+        <p class="purchase-field-help" id="expenseRateioStoresHelp">O MODELO É RECALCULADO SÓ ENTRE AS LOJAS MARCADAS, SOMANDO 100%. UMA LOJA SÓ FICA COM 100%.</p>
         <div id="expenseRateioSharesList"></div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
-          <button class="btn-outline" type="button" id="btnAddExpenseRateioShare" hidden>+ ADICIONAR LOJA</button>
-          <button class="btn-outline" type="button" id="btnPreviewExpenseRateio" hidden>PRÉ-VISUALIZAR RATEIO</button>
+          <button class="btn-outline" type="button" id="btnPreviewExpenseRateio">PRÉ-VISUALIZAR RATEIO</button>
           <span id="expenseRateioSharesTotal" style="font-size:12px;color:var(--ink-soft);"></span>
         </div>
       </div>
@@ -27516,6 +27528,7 @@ function renderHomeTasks(){
     tbody.innerHTML = payablesRows.map(row => {
       const balance = row.originalAmountCents - row.paidAmountCents;
       const canCancel = row.status !== 'canceled' && row.status !== 'paid';
+      if(row.isGroup) return payableGroupRowHtml(row, balance);
       return '<tr>'+
         '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar '+row.description)+'</td>'+
         '<td data-label="Descrição">'+escapeHtml(row.description)+'</td>'+
@@ -27538,11 +27551,61 @@ function renderHomeTasks(){
     payablesBulk.sync();
   }
 
+  // Despesa rateada = UMA linha (loja da despesa, total das fatias, situação
+  // do conjunto). VER RATEIO abre as fatias por loja logo abaixo; MARCAR PAGO
+  // e CANCELAR valem para o conjunto (mesmo lote de Contas a Pagar).
+  const payablesOpenGroups = new Set();
+  function payableGroupRowHtml(row, balance){
+    const open = payablesOpenGroups.has(row.id);
+    const shares = Array.isArray(row.shares) ? row.shares : [];
+    const live = shares.filter(share => share.status !== 'canceled');
+    const stores = new Set(shares.map(share => share.companyId)).size;
+    const canPay = live.some(share => share.status !== 'paid');
+    return '<tr class="payable-group-row">'+
+      '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar '+row.description)+'</td>'+
+      '<td data-label="Descrição"><span>'+escapeHtml(row.description)+' <span class="status-pill progress">RATEADA EM '+stores+' LOJA'+(stores === 1 ? '' : 'S')+'</span></span></td>'+
+      '<td data-label="Empresa/Loja">'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+      '<td data-label="Fornecedor">'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
+      '<td data-label="Categoria">'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
+      '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
+      '<td data-label="Valor original">'+formatCentsBRL(row.originalAmountCents)+'</td>'+
+      '<td data-label="Valor pago">'+formatCentsBRL(row.paidAmountCents)+'</td>'+
+      '<td data-label="Saldo">'+formatCentsBRL(balance)+'</td>'+
+      '<td data-label="Status">'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
+      '<td data-label="Parcela/Recorrência">'+escapeHtml(payableInstallmentBadge(row))+'</td>'+
+      '<td data-label="Ações" style="display:flex;gap:6px;flex-wrap:wrap;">'+
+        '<button class="btn-outline" type="button" data-payable-group-toggle="'+escapeHtml(row.id)+'" aria-expanded="'+open+'">'+(open ? 'OCULTAR RATEIO' : 'VER RATEIO')+'</button>'+
+        (canPay ? '<button class="btn-outline" type="button" data-payable-group-pay="'+escapeHtml(row.id)+'">MARCAR PAGO</button>' : '')+
+        (live.length && canPay ? '<button class="btn-outline" type="button" data-payable-group-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
+      '</td>'+
+    '</tr>'+
+    (open ? shares.map(share =>
+      '<tr class="payable-share-row">'+
+        '<td class="bulk-col" data-label=""></td>'+
+        '<td data-label="Fatia">↳ '+escapeHtml(share.companyName || share.companyId)+'</td>'+
+        '<td data-label="Loja">'+escapeHtml(share.companyName || share.companyId)+'</td>'+
+        '<td data-label="" colspan="3"></td>'+
+        '<td data-label="Valor">'+formatCentsBRL(share.originalAmountCents)+'</td>'+
+        '<td data-label="Pago">'+formatCentsBRL(share.paidAmountCents)+'</td>'+
+        '<td data-label="Saldo">'+formatCentsBRL(share.originalAmountCents - share.paidAmountCents)+'</td>'+
+        '<td data-label="Status">'+payablesStatusPillHtml(share.displayStatus)+'</td>'+
+        '<td data-label=""></td>'+
+        '<td data-label="Ações"><button class="btn-outline" type="button" data-payable-open="'+escapeHtml(share.id)+'">ABRIR</button></td>'+
+      '</tr>').join('') : '');
+  }
+  // Ids reais (fatias) por trás de uma linha: a agrupada vale pelo conjunto.
+  function payableIdsFor(ids){
+    return ids.flatMap(id => {
+      const row = payablesRows.find(item => item.id === id);
+      return row && row.isGroup ? row.groupIds : [id];
+    });
+  }
+
   function renderPayablesTotals(totals){
     const el2 = el('payablesTotals');
     if(!el2) return;
     el2.innerHTML =
-      '<span>CONTAS: <strong>'+(totals.count || 0)+'</strong></span>'+
+      '<span>CONTAS: <strong>'+(totals.count || 0)+'</strong>'+(totals.canceledCount ? ' · CANCELADAS: '+totals.canceledCount : '')+'</span>'+
       '<span>ORIGINAL: <strong>'+formatCentsBRL(totals.originalCents)+'</strong></span>'+
       '<span>PAGO: <strong>'+formatCentsBRL(totals.paidCents)+'</strong></span>'+
       '<span>SALDO: <strong>'+formatCentsBRL(totals.balanceCents)+'</strong></span>';
@@ -27959,6 +28022,26 @@ function renderHomeTasks(){
   });
 
   el('payablesBody').addEventListener('click', async event => {
+    const groupToggle = event.target.closest('[data-payable-group-toggle]');
+    const groupPay = event.target.closest('[data-payable-group-pay]');
+    const groupCancel = event.target.closest('[data-payable-group-cancel]');
+    if(groupToggle){
+      const id = groupToggle.dataset.payableGroupToggle;
+      if(payablesOpenGroups.has(id)) payablesOpenGroups.delete(id); else payablesOpenGroups.add(id);
+      renderPayablesTable();
+      return;
+    }
+    if(groupPay || groupCancel){
+      const button = groupPay || groupCancel;
+      const id = groupPay ? groupPay.dataset.payableGroupPay : groupCancel.dataset.payableGroupCancel;
+      if(groupCancel && !comprasArmButton(groupCancel, 'CONFIRMAR CANCELAMENTO')) return;
+      button.disabled = true;
+      try{ await openPayBulk('/payables/bulk', groupPay ? 'pay' : 'cancel', payableIdsFor([id]), el('payablesLoja').value,
+        () => Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]), payablesBulk); }
+      catch(error){ showPurchaseToast(error.message, 'error'); }
+      finally{ button.disabled = false; }
+      return;
+    }
     const openButton = event.target.closest('[data-payable-open]');
     const editButton = event.target.closest('[data-payable-edit]');
     const cancelButton = event.target.closest('[data-payable-cancel]');
@@ -28024,7 +28107,6 @@ function renderHomeTasks(){
   let payBulkPending = null; // {endpoint, action, ids, companyId, reload}
   async function openPayBulk(endpoint, action, ids, companyId, reload, bulk){
     if(action === 'cancel'){
-      if(!confirm('Cancelar '+ids.length+' item(ns)? O lançamento na DRE sai dos totais. Itens já pagos são pulados.')) return false;
       await financeBulkRequest(endpoint, {action, ids});
       bulk.clear();
       await reload();
@@ -28046,7 +28128,7 @@ function renderHomeTasks(){
     return false;
   }
   const payablesBulk = setupBulkSelection(el('payablesBulkBar'), el('payablesBody'), (action, ids) =>
-    openPayBulk('/payables/bulk', action, ids, el('payablesLoja').value,
+    openPayBulk('/payables/bulk', action, payableIdsFor(ids), el('payablesLoja').value,
       () => Promise.all([loadPayablesList({silent:true}), renderPayablesQuickViews()]), payablesBulk));
   const supplierDebtsBulk = setupBulkSelection(el('supplierDebtsBulkBar'), el('supplierDebtsBody'), (action, ids) =>
     openPayBulk('/supplier-debts/bulk', action, ids, el('supplierDebtsLoja').value,
@@ -28638,7 +28720,6 @@ function renderHomeTasks(){
   let budgetsBulkPending = null;
   const budgetsBulk = setupBulkSelection(el('budgetsBulkBar'), el('budgetsTableBody'), async (action, ids) => {
     if(action === 'delete'){
-      if(!confirm('Excluir '+ids.length+' orçamento(s)?')) return false;
       await financeBulkRequest('/budgets/bulk', {action, ids});
       await loadOrcamentoPage({silent:true});
       return;
@@ -29473,7 +29554,6 @@ function renderHomeTasks(){
     cfWeeklyBulk.sync();
   }
   const cfWeeklyBulk = setupBulkSelection(el('cfWeeklyBulkBar'), el('cfWeeklyHistoryBody'), async (action, ids) => {
-    if(!confirm('Excluir '+ids.length+(ids.length === 1 ? ' saldo informado' : ' saldos informados')+'? O saldo atual das contas não muda.')) return false;
     const res = await financeApiRequest('/account-weekly-balances/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids})});
     await loadCashFlowWeekly();
     showPurchaseToast(res.deleted+' saldo(s) excluído(s).');
@@ -29618,7 +29698,6 @@ function renderHomeTasks(){
   }
   const receivablesBulk = setupBulkSelection(el('receivablesBulkBar'), el('receivablesTableBody'), async (action, ids) => {
     if(action === 'cancel'){
-      if(!confirm('Cancelar '+ids.length+(ids.length === 1 ? ' recebível' : ' recebíveis')+'? Eles deixam de contar no fluxo de caixa, mas continuam no histórico.')) return false;
       await runReceivablesBulk('cancel', ids);
       return;
     }
@@ -30314,7 +30393,6 @@ function renderHomeTasks(){
       openMqBulkDialog('close', ids, '/card-fees/bulk', 'ENCERRAR VIGÊNCIA', done);
       return false;
     }
-    if(!confirm('Excluir '+ids.length+' taxa(s)? Vendas já importadas mantêm o cálculo feito na importação. Para trocar uma taxa, prefira ENCERRAR VIGÊNCIA.')) return false;
     await mqBulkRequest('/card-fees/bulk', 'delete', ids);
     await done();
   });
@@ -30720,7 +30798,6 @@ function renderHomeTasks(){
       openMqBulkDialog('review', ids, '/card-sales/bulk', 'MARCAR COMO REVISADA', async () => { cardConfBulk.clear(); await loadCardConference(); });
       return false;
     }
-    if(!confirm('Excluir '+ids.length+' venda(s) importada(s)? Elas saem da conferência e do total de taxas.')) return false;
     await mqBulkRequest('/card-sales/bulk', 'delete', ids);
     await loadCardConference();
   });
@@ -31140,7 +31217,6 @@ function renderHomeTasks(){
   }
   const corpEntriesBulk = setupBulkSelection(el('corpEntriesBulkBar'), el('corpEntriesTableBody'), async (action, ids) => {
     if(action === 'classify'){ openCorpClassifyDialog(ids); return false; }
-    if(action === 'delete' && !confirm('Excluir '+ids.length+(ids.length === 1 ? ' lançamento' : ' lançamentos')+' da fatura? Os já lançados em Despesas serão mantidos.')) return false;
     await runCorpBulk(action, ids);
   });
 
@@ -31820,8 +31896,6 @@ function renderHomeTasks(){
       el('crBulkDialog').showModal();
       return false;
     }
-    const warn = action === 'delete' ? ' Não dá para desfazer.' : (action === 'pending' || action === 'cancel' ? ' O depósito do extrato vinculado volta para "a classificar".' : '');
-    if(!confirm(CR_BULK_TITLES[action]+' '+ids.length+' crediário(s)?'+warn)) return false;
     await crBulkRun(action, ids);
   });
   el('btnCloseCrBulk').addEventListener('click', () => el('crBulkDialog').close());
@@ -32487,7 +32561,6 @@ function renderHomeTasks(){
       });
       return false;
     }
-    if(action === 'delete' && !confirm('Excluir '+ids.length+' linha(s) do Ponttie? Elas saem da conciliação e do faturamento.')) return false;
     await svBulkRequest('/sales-recon/bulk', {action, ids});
     await loadSvRows();
   });
@@ -32775,7 +32848,6 @@ function renderHomeTasks(){
       el('reconBulkDialog').showModal();
       return false;
     }
-    if(action === 'confirm' && !confirm('Confirmar '+ids.length+' lançamento(s)? Os sem categoria são pulados; a classificação é aprendida para os próximos extratos.')) return false;
     await financeBulkRequest('/bank-reconciliation/bulk', {action, ids});
     await loadReconEntries({silent:true});
   });
@@ -33071,7 +33143,6 @@ function renderHomeTasks(){
       el('reposicaoBulkDialog').showModal();
       return false;
     }
-    if(!confirm('Excluir '+ids.length+' lançamento(s)? Os que já viraram despesa são pulados.')) return false;
     await financeBulkRequest('/replacement-control/bulk', {action, ids});
     await reloadReposicao();
   });
@@ -33463,7 +33534,6 @@ function renderHomeTasks(){
       el('recargaBulkDialog').showModal();
       return false;
     }
-    if(!confirm(RECARGA_BULK_TITLES[action]+' '+ids.length+' linha(s)?'+(action === 'delete' ? ' O histórico de recargas também é excluído.' : ''))) return false;
     await recargaBulkRun(action, ids);
   });
   attachCurrencyMask(el('recargaBulkValor'));
@@ -35455,7 +35525,6 @@ function renderHomeTasks(){
       el('obraBulkDialog').showModal();
       return false;
     }
-    if(!confirm('Excluir '+ids.length+' obra(s) com todos os lançamentos e anexos? Não dá para desfazer.')) return false;
     await financeBulkRequest('/bulk', {action, ids}, obraApiRequest);
     await loadObrasPage();
   });
@@ -35744,6 +35813,15 @@ function renderHomeTasks(){
       if(event.target.closest('[data-bulk-clear]')){ selected.clear(); sync(); return; }
       const button = event.target.closest('[data-bulk-action]');
       if(!button || !selected.size) return;
+      // Ação destrutiva: confirmação em 2 cliques no próprio botão (o confirm()
+      // do navegador não aparece em todo navegador). Depois de rodar, desarma.
+      if(button.dataset.bulkConfirm && !comprasArmButton(button, button.dataset.bulkConfirm)) return;
+      if(button.dataset.armed){
+        clearTimeout(button._armTimer);
+        delete button.dataset.armed;
+        button.textContent = button.dataset.originalText;
+        button.classList.remove('compras-armed');
+      }
       const buttons = Array.from(actions.querySelectorAll('button'));
       buttons.forEach(b => { b.disabled = true; });
       try{
@@ -35844,7 +35922,6 @@ function renderHomeTasks(){
     declShoppingBulk.sync();
   }
   const declShoppingBulk = setupBulkSelection(el('declShoppingBulkBar'), el('declShoppingTableBody'), async (action, ids) => {
-    if(action === 'delete' && !confirm('Excluir '+ids.length+(ids.length === 1 ? ' declaração' : ' declarações')+' e seus anexos?')) return false;
     const res = await financeApiRequest('/mall-declarations/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids})});
     await reloadDeclShopping();
     showPurchaseToast(action === 'delete' ? res.deleted+' excluída(s).' : res.updated+' atualizada(s).');
@@ -36846,7 +36923,13 @@ function renderHomeTasks(){
     input.addEventListener('change', updateExpenseKindFields);
   });
 
-  let expenseCustomRateioShares = [];
+  // RATEADA ENTRE LOJAS (Financeiro): LOJAS PARTICIPANTES com caixas de
+  // seleção — o modelo é recalculado só entre as marcadas (backend:
+  // computeRateioShares com companyIds). No PERSONALIZADO, cada loja marcada
+  // ganha o seu % (soma 100%).
+  let expenseRateioChecked = new Set();
+  let expenseRateioPercents = {};
+  let expenseRateioDefaultsToken = 0;
 
   function updateExpenseRateioFields(){
     const rateioType = document.querySelector('input[name="expenseRateioType"]:checked').value;
@@ -36854,79 +36937,82 @@ function renderHomeTasks(){
     el('expenseRateioModelField').hidden = !isRateio;
     el('expenseRateioHelp').hidden = !isRateio;
     el('expenseRateioSharesArea').hidden = !isRateio;
-    if(!isRateio){
-      expenseCustomRateioShares = [];
-      el('expenseRateioSharesList').innerHTML = '';
-      el('expenseRateioSharesTotal').textContent = '';
-    }else{
-      updateExpenseRateioModelFields();
-    }
+    el('expenseRateioSharesList').innerHTML = '';
+    el('expenseRateioSharesTotal').textContent = '';
+    if(isRateio) updateExpenseRateioModelFields();
   }
   document.querySelectorAll('input[name="expenseRateioType"]').forEach(input => {
     input.addEventListener('change', updateExpenseRateioFields);
   });
 
-  function updateExpenseRateioModelFields(){
-    const model = el('expenseRateioModel').value;
-    const isCustom = model === 'personalizado';
-    el('btnAddExpenseRateioShare').hidden = !isCustom;
-    el('btnPreviewExpenseRateio').hidden = isCustom;
-    if(isCustom){
-      if(!expenseCustomRateioShares.length) expenseCustomRateioShares = [{companyId:'', percent:''}, {companyId:'', percent:''}];
-      renderExpenseCustomRateioShares();
-    }else{
-      el('expenseRateioSharesList').innerHTML = '';
-      el('expenseRateioSharesTotal').textContent = '';
+  function expenseRateioIsCustom(){ return el('expenseRateioModel').value === 'personalizado'; }
+
+  // Lojas marcadas por padrão = as que têm peso no modelo (prévia sem filtro).
+  async function updateExpenseRateioModelFields(opts){
+    el('btnPreviewExpenseRateio').hidden = expenseRateioIsCustom();
+    el('expenseRateioSharesList').innerHTML = '';
+    if(opts && opts.keepSelection){ renderExpenseRateioStores(); return; }
+    if(expenseRateioIsCustom()){
+      expenseRateioChecked = new Set(); expenseRateioPercents = {};
+      renderExpenseRateioStores();
+      return;
+    }
+    const token = ++expenseRateioDefaultsToken;
+    expenseRateioChecked = new Set();
+    renderExpenseRateioStores();
+    try{
+      const data = await financeApiRequest('/expenses/rateio-preview', {method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({rateioModel: el('expenseRateioModel').value, competenceMonth: expenseCompetenceMonthForPreview() || financeCurrentMonthKey(), originalAmountCents: 10000})});
+      if(token !== expenseRateioDefaultsToken) return;
+      expenseRateioChecked = new Set((data.shares || []).map(share => share.companyId));
+      renderExpenseRateioStores();
+    }catch(error){
+      if(token === expenseRateioDefaultsToken) el('expenseRateioSharesTotal').textContent = error.message;
     }
   }
-  el('expenseRateioModel').addEventListener('change', updateExpenseRateioModelFields);
+  el('expenseRateioModel').addEventListener('change', () => updateExpenseRateioModelFields());
 
-  function renderExpenseCustomRateioShares(){
-    const companyOptions = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-    el('expenseRateioSharesList').innerHTML = expenseCustomRateioShares.map((share, index) =>
-      '<div class="field-inline-form" style="margin-bottom:6px;">'+
-        '<select data-rateio-share-company="'+index+'"><option value="">SELECIONE A LOJA</option>'+companyOptions+'</select>'+
-        '<input type="number" min="0" max="100" step="0.01" data-rateio-share-percent="'+index+'" placeholder="%" value="'+escapeHtml(share.percent)+'" style="max-width:100px;">'+
-        '<button class="btn-outline" type="button" data-rateio-share-remove="'+index+'">REMOVER</button>'+
-      '</div>'
-    ).join('');
-    expenseCustomRateioShares.forEach((share, index) => {
-      const select = document.querySelector('[data-rateio-share-company="'+index+'"]');
-      if(select) select.value = share.companyId;
-    });
+  function renderExpenseRateioStores(){
+    const custom = expenseRateioIsCustom();
+    el('expenseRateioStores').innerHTML = companies.map(c => {
+      const checked = expenseRateioChecked.has(c.id);
+      return '<div class="rateio-store-row">'+
+        '<label class="assist-check"><input type="checkbox" data-rateio-store="'+escapeHtml(c.id)+'"'+(checked ? ' checked' : '')+'> '+escapeHtml(c.name)+'</label>'+
+        (custom && checked ? '<input type="number" min="0" max="100" step="0.01" placeholder="%" aria-label="% de '+escapeHtml(c.name)+'" data-rateio-store-percent="'+escapeHtml(c.id)+'" value="'+escapeHtml(expenseRateioPercents[c.id] ?? '')+'">' : '')+
+      '</div>';
+    }).join('');
+    el('expenseRateioStoresCount').textContent = expenseRateioChecked.size+' DE '+companies.length+' LOJA(S) MARCADA(S)';
     updateExpenseRateioSharesTotal();
   }
 
   function updateExpenseRateioSharesTotal(){
-    const total = expenseCustomRateioShares.reduce((sum, share) => sum + (Number(share.percent) || 0), 0);
+    if(!expenseRateioIsCustom()) return;
+    const total = [...expenseRateioChecked].reduce((sum, id) => sum + (Number(expenseRateioPercents[id]) || 0), 0);
     const totalEl = el('expenseRateioSharesTotal');
     totalEl.textContent = 'TOTAL: '+total.toFixed(2)+'%'+(Math.round(total*100) === 10000 ? ' ✓' : ' (precisa somar 100%)');
     totalEl.style.color = Math.round(total*100) === 10000 ? 'var(--ok, #2e7d32)' : 'var(--ink-soft)';
   }
 
-  el('expenseRateioSharesList').addEventListener('change', event => {
-    const companySelect = event.target.closest('[data-rateio-share-company]');
-    const percentInput = event.target.closest('[data-rateio-share-percent]');
-    if(companySelect){
-      const index = Number(companySelect.dataset.rateioShareCompany);
-      expenseCustomRateioShares[index].companyId = companySelect.value;
-    }else if(percentInput){
-      const index = Number(percentInput.dataset.rateioSharePercent);
-      expenseCustomRateioShares[index].percent = percentInput.value;
+  el('expenseRateioStores').addEventListener('change', event => {
+    const box = event.target.closest('[data-rateio-store]');
+    const percent = event.target.closest('[data-rateio-store-percent]');
+    if(box){
+      if(box.checked) expenseRateioChecked.add(box.dataset.rateioStore); else expenseRateioChecked.delete(box.dataset.rateioStore);
+      el('expenseRateioSharesList').innerHTML = '';
+      renderExpenseRateioStores();
+    }else if(percent){
+      expenseRateioPercents[percent.dataset.rateioStorePercent] = percent.value;
       updateExpenseRateioSharesTotal();
     }
   });
-  el('expenseRateioSharesList').addEventListener('click', event => {
-    const removeButton = event.target.closest('[data-rateio-share-remove]');
-    if(!removeButton) return;
-    const index = Number(removeButton.dataset.rateioShareRemove);
-    expenseCustomRateioShares.splice(index, 1);
-    renderExpenseCustomRateioShares();
+  el('expenseRateioStores').addEventListener('input', event => {
+    const percent = event.target.closest('[data-rateio-store-percent]');
+    if(!percent) return;
+    expenseRateioPercents[percent.dataset.rateioStorePercent] = percent.value;
+    updateExpenseRateioSharesTotal();
   });
-  el('btnAddExpenseRateioShare').addEventListener('click', () => {
-    expenseCustomRateioShares.push({companyId:'', percent:''});
-    renderExpenseCustomRateioShares();
-  });
+  el('btnRateioStoresAll').addEventListener('click', () => { expenseRateioChecked = new Set(companies.map(c => c.id)); el('expenseRateioSharesList').innerHTML = ''; renderExpenseRateioStores(); });
+  el('btnRateioStoresNone').addEventListener('click', () => { expenseRateioChecked = new Set(); el('expenseRateioSharesList').innerHTML = ''; renderExpenseRateioStores(); });
 
   function expenseCompetenceMonthForPreview(){
     const kind = document.querySelector('input[name="expenseKind"]:checked').value;
@@ -36943,17 +37029,20 @@ function renderHomeTasks(){
     const originalAmountCents = parseBRLToCents(getCurrencyValue(el('expenseOriginalAmount')) || '0');
     if(!competenceMonth){ statusEl.textContent = 'INFORME O VENCIMENTO ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
     if(originalAmountCents === null || originalAmountCents <= 0){ statusEl.textContent = 'INFORME O VALOR ANTES DE PRÉ-VISUALIZAR O RATEIO.'; return; }
+    if(!expenseRateioChecked.size){ statusEl.textContent = 'MARQUE AO MENOS UMA LOJA PARTICIPANTE.'; return; }
     try{
       const data = await financeApiRequest('/expenses/rateio-preview', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({rateioModel:model, competenceMonth, originalAmountCents})
+        body:JSON.stringify({rateioModel:model, competenceMonth, originalAmountCents, companyIds:[...expenseRateioChecked]})
       });
       const shares = Array.isArray(data.shares) ? data.shares : [];
-      el('expenseRateioSharesList').innerHTML = shares.length
+      const skipped = Array.isArray(data.skipped) ? data.skipped : [];
+      el('expenseRateioSharesList').innerHTML = (shares.length
         ? '<table style="width:100%;"><thead><tr><th>Loja</th><th>%</th><th>Valor</th></tr></thead><tbody>'+
             shares.map(s => '<tr><td>'+escapeHtml(s.companyName)+'</td><td>'+(s.percentBasisPoints/100).toFixed(2)+'%</td><td>'+formatCentsBRL(s.amountCents)+'</td></tr>').join('')+
           '</tbody></table>'
-        : '<div class="dre-empty">Nenhuma loja retornada.</div>';
+        : '<div class="dre-empty">Nenhuma loja retornada.</div>')+
+        (skipped.length ? '<p class="purchase-field-help">SEM PESO NO MODELO (FICAM DE FORA): '+escapeHtml(skipped.map(s => s.companyName).join(', '))+'.</p>' : '');
       el('expenseRateioSharesTotal').textContent = '';
     }catch(error){ statusEl.textContent = error.message; }
   });
@@ -36994,12 +37083,13 @@ function renderHomeTasks(){
     const rateioModel = el('expenseRateioModel').value;
     if(rateioType === 'rateio' && !rateioModel){ statusEl.textContent = 'SELECIONE O MODELO DE RATEIO.'; return; }
     let rateioShares;
+    if(rateioType === 'rateio' && !expenseRateioChecked.size){ statusEl.textContent = 'MARQUE AO MENOS UMA LOJA PARTICIPANTE DO RATEIO.'; return; }
     if(rateioType === 'rateio' && rateioModel === 'personalizado'){
-      const validShares = expenseCustomRateioShares.filter(s => s.companyId && s.percent !== '');
-      if(validShares.length < 2){ statusEl.textContent = 'INFORME AO MENOS DUAS LOJAS COM PERCENTUAL NO RATEIO PERSONALIZADO.'; return; }
-      const totalBp = validShares.reduce((sum, s) => sum + Math.round(Number(s.percent) * 100), 0);
+      const ids = [...expenseRateioChecked];
+      if(ids.some(id => expenseRateioPercents[id] === undefined || expenseRateioPercents[id] === '')){ statusEl.textContent = 'INFORME O % DE CADA LOJA MARCADA NO RATEIO PERSONALIZADO.'; return; }
+      const totalBp = ids.reduce((sum, id) => sum + Math.round(Number(expenseRateioPercents[id]) * 100), 0);
       if(totalBp !== 10000){ statusEl.textContent = 'OS PERCENTUAIS DO RATEIO PERSONALIZADO PRECISAM SOMAR EXATAMENTE 100%.'; return; }
-      rateioShares = validShares.map(s => ({companyId:s.companyId, percentBasisPoints:Math.round(Number(s.percent) * 100)}));
+      rateioShares = ids.map(id => ({companyId:id, percentBasisPoints:Math.round(Number(expenseRateioPercents[id]) * 100)}));
     }
 
     const kind = document.querySelector('input[name="expenseKind"]:checked').value;
@@ -37014,6 +37104,7 @@ function renderHomeTasks(){
       cardId:el('expenseCardId').value.trim(), bankReconciliationId:el('expenseBankReconciliationId').value.trim()
     };
     if(rateioShares) body.rateioShares = rateioShares;
+    if(rateioType === 'rateio') body.rateioCompanyIds = [...expenseRateioChecked];
     if(expenseDreTouched){
       body.dreIncluded = el('expenseDreIncludedNew').checked;
       body.dreAmountCents = parseBRLToCents(getCurrencyValue(el('expenseDreAmountNew')) || '0') || 0;
@@ -37047,6 +37138,7 @@ function renderHomeTasks(){
   });
 
   let expenseDetailCurrentExpense = null;
+  let expenseDetailCurrentShares = [];
 
   function expenseDetailPayableRowHtml(payable){
     const balance = payable.originalAmountCents - payable.paidAmountCents;
@@ -37090,6 +37182,7 @@ function renderHomeTasks(){
         '<div class="payable-detail-summary-row"><span>NF / PEDIDO</span><strong>'+escapeHtml(expense.invoiceNumber || '—')+' / '+escapeHtml(expense.orderReference || '—')+'</strong></div>'+
         (expense.notes ? '<div class="payable-detail-summary-row"><span>OBSERVAÇÕES</span><strong>'+escapeHtml(expense.notes)+'</strong></div>' : '');
       const rateioShares = Array.isArray(data.rateioShares) ? data.rateioShares : [];
+      expenseDetailCurrentShares = rateioShares;
       if(rateioShares.length){
         el('expenseDetailRateioSection').hidden = false;
         el('expenseDetailRateioPanel').hidden = false;
@@ -37154,6 +37247,13 @@ function renderHomeTasks(){
     document.querySelectorAll('input[name="expenseRateioType"]').forEach(input => { input.checked = input.value === expense.rateioType; });
     if(expense.rateioType === 'rateio') el('expenseRateioModel').value = expense.rateioModel || 'padrao';
     updateExpenseRateioFields();
+    // Reabre com as mesmas lojas (e % do personalizado) da despesa original.
+    if(expense.rateioType === 'rateio' && expenseDetailCurrentShares.length){
+      expenseRateioDefaultsToken++;
+      expenseRateioChecked = new Set(expenseDetailCurrentShares.map(share => share.companyId));
+      expenseRateioPercents = Object.fromEntries(expenseDetailCurrentShares.map(share => [share.companyId, String(share.percentBasisPoints / 100)]));
+      updateExpenseRateioModelFields({keepSelection:true});
+    }
     // Data, vencimento e tipo (avulsa/parcelada/recorrente) ficam em branco/avulsa
     // de propósito — o usuário decide a nova data ao duplicar.
     el('expenseDialogTitle').textContent = 'DUPLICAR DESPESA';
@@ -37449,14 +37549,47 @@ function renderHomeTasks(){
     }
   }
 
+  // Mesmas regras do POST /api/finance/accounts: CAIXA/CARTEIRA sem dados
+  // bancários; os demais exigem BANCO + NÚMERO; corrente/poupança também a
+  // AGÊNCIA. O * acompanha o TIPO escolhido.
+  const ACCOUNT_TYPES_REQUIRING_AGENCY = new Set(['checking','savings']);
+  const PIX_KEY_PLACEHOLDERS = {cpf:'000.000.000-00', cnpj:'00.000.000/0000-00', email:'nome@empresa.com.br', phone:'81999990000 ou +5581999990000', random:'0000aaaa-0000-0000-0000-000000000000', other:'Outra chave'};
   function updatePayableAccountBankFieldsVisibility(){
     const type = el('payableAccountType').value;
     const hideBankFields = ACCOUNT_TYPES_WITHOUT_BANK.has(type);
     ['payableAccountBankNameField','payableAccountBankCodeField','payableAccountAgencyField','payableAccountAgencyDigitField','payableAccountNumberField','payableAccountDigitField'].forEach(id => {
       el(id).style.display = hideBankFields ? 'none' : '';
     });
+    const mark = (id, text, required) => { el(id).querySelector('label').textContent = text+(required ? ' *' : ''); };
+    mark('payableAccountBankNameField', 'BANCO/INSTITUIÇÃO', !hideBankFields);
+    mark('payableAccountNumberField', 'NÚMERO DA CONTA', !hideBankFields);
+    mark('payableAccountAgencyField', 'AGÊNCIA', ACCOUNT_TYPES_REQUIRING_AGENCY.has(type));
   }
   el('payableAccountType').addEventListener('change', updatePayableAccountBankFieldsVisibility);
+  el('payableAccountPixType').addEventListener('change', () => {
+    el('payableAccountPixKey').placeholder = PIX_KEY_PLACEHOLDERS[el('payableAccountPixType').value] || '';
+  });
+  // Erro ao lado do campo (além da linha de status do formulário).
+  const ACCOUNT_ERROR_FIELDS = [
+    [/EMPRESA\/LOJA|PRÓPRIA LOJA/, 'payableAccountCompany'], [/NOME|COM ESSE NOME/, 'payableAccountName'],
+    [/TIPO DA CONTA/, 'payableAccountType'], [/BANCO\/INSTITUIÇÃO/, 'payableAccountBankName'],
+    [/AGÊNCIA E NÚMERO|NÚMERO DA CONTA/, 'payableAccountNumber'], [/AGÊNCIA/, 'payableAccountAgency'],
+    [/CPF\/CNPJ DO TITULAR/, 'payableAccountHolderDocument'], [/TIPO DA CHAVE PIX/, 'payableAccountPixType'],
+    [/CHAVE PIX/, 'payableAccountPixKey'], [/SALDO INICIAL/, 'payableAccountOpeningBalance']
+  ];
+  function clearPayableAccountFieldErrors(){
+    el('payableAccountForm').querySelectorAll('.account-field-error').forEach(node => node.remove());
+    el('payableAccountForm').querySelectorAll('[aria-invalid="true"]').forEach(node => node.removeAttribute('aria-invalid'));
+  }
+  function showPayableAccountError(message){
+    el('payableAccountFormStatus').textContent = message;
+    const match = ACCOUNT_ERROR_FIELDS.find(([pattern]) => pattern.test(message));
+    if(!match) return;
+    const input = el(match[1]);
+    input.setAttribute('aria-invalid', 'true');
+    input.insertAdjacentHTML('afterend', '<span class="purchase-field-help account-field-error" role="alert">'+escapeHtml(message)+'</span>');
+    input.focus();
+  }
 
   function renderPayablesCatalogLists(){
     renderPayableSuppliersList();
@@ -37481,6 +37614,8 @@ function renderHomeTasks(){
     el('btnCancelAccountEdit').hidden = true;
     el('btnSaveAccount').textContent = 'ADICIONAR CONTA';
     el('payableAccountFormStatus').textContent = '';
+    clearPayableAccountFieldErrors();
+    updatePayableAccountBankFieldsVisibility();
     renderPayableAccountsFilterCompanyOptions();
     if(!payablesCanActAcrossStores() && currentSession.companyId){
       el('payableAccountCompany').value = currentSession.companyId;
@@ -37624,12 +37759,19 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('payableAccountFormStatus');
     status.textContent = '';
+    clearPayableAccountFieldErrors();
     const companyId = el('payableAccountCompany').value;
     const companySelect = el('payableAccountCompany');
     const companyName = companySelect.options[companySelect.selectedIndex] ? companySelect.options[companySelect.selectedIndex].textContent : '';
-    if(!companyId){ status.textContent = 'SELECIONE A EMPRESA/LOJA.'; return; }
+    if(!companyId){ showPayableAccountError('SELECIONE A EMPRESA/LOJA DA CONTA.'); return; }
     const name = el('payableAccountName').value.trim();
-    if(!name){ status.textContent = 'INFORME O NOME/DESCRIÇÃO DA CONTA.'; return; }
+    if(!name){ showPayableAccountError('INFORME O NOME/DESCRIÇÃO DA CONTA.'); return; }
+    const type = el('payableAccountType').value;
+    if(!ACCOUNT_TYPES_WITHOUT_BANK.has(type)){
+      if(!el('payableAccountBankName').value.trim() && !el('payableAccountBankCode').value.trim()){ showPayableAccountError('INFORME O BANCO/INSTITUIÇÃO FINANCEIRA.'); return; }
+      if(!el('payableAccountNumber').value.trim()){ showPayableAccountError('INFORME O NÚMERO DA CONTA.'); return; }
+      if(ACCOUNT_TYPES_REQUIRING_AGENCY.has(type) && !el('payableAccountAgency').value.trim()){ showPayableAccountError('INFORME A AGÊNCIA.'); return; }
+    }
 
     const openingBalanceValue = getCurrencyValue(el('payableAccountOpeningBalance'));
     let openingBalanceCents;
@@ -37667,7 +37809,7 @@ function renderHomeTasks(){
       renderPayablesCatalogLists();
       showPurchaseToast('Conta financeira salva.');
     }catch(error){
-      status.textContent = error.message;
+      showPayableAccountError(error.message);
     }finally{
       button.disabled = false;
     }
@@ -37976,7 +38118,6 @@ function renderHomeTasks(){
   let invBulkPending = null;
   const invoicesBulk = setupBulkSelection(el('invoicesBulkBar'), el('invoicesBody'), async (action, ids) => {
     if(action === 'review'){
-      if(!confirm('Conferir '+ids.length+' nota(s)? Só as que estão aguardando conferência são conferidas.')) return false;
       await financeBulkRequest('/invoices/bulk', {action, ids});
       await loadInvoicesList({silent:true});
       return;

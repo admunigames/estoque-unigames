@@ -368,13 +368,19 @@ export async function planExpense(
           percentBasisPoints: Math.round(Number(entry.percentBasisPoints)),
         }))
       : undefined;
+    // Lojas participantes (RATEADA ENTRE LOJAS): o modelo é recalculado só
+    // entre elas. As próprias expense_rateio_shares guardam quem entrou.
+    const companyIds = Array.isArray(body.rateioCompanyIds)
+      ? (body.rateioCompanyIds as unknown[]).map((value) => safeText(value, 80)).filter(Boolean)
+      : undefined;
     const rateioResult = await computeRateioShares(database, {
       model: rateioModel as RateioModel,
       competenceMonth: primaryCompetenceMonth,
       totalAmountCents,
       customShares,
+      companyIds,
     });
-    if ("error" in rateioResult) return reply({ error: rateioResult.error }, 409);
+    if ("error" in rateioResult) return reply({ error: rateioResult.error }, rateioResult.status);
     shares = rateioResult.shares;
   } else {
     shares = [{ companyId, companyName, amountCents: totalAmountCents, percentBasisPoints: 0 }];

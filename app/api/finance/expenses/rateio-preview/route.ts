@@ -29,10 +29,14 @@ export async function POST(request: Request) {
         }))
       : undefined;
 
+    const companyIds = Array.isArray(body.companyIds)
+      ? (body.companyIds as unknown[]).map((value) => safeText(value, 80)).filter(Boolean)
+      : undefined;
+
     const database = await getD1();
-    const result = await computeRateioShares(database, { model, competenceMonth, totalAmountCents, customShares });
-    if ("error" in result) return jsonResponse({ error: result.error }, 409);
-    return jsonResponse({ shares: result.shares });
+    const result = await computeRateioShares(database, { model, competenceMonth, totalAmountCents, customShares, companyIds });
+    if ("error" in result) return jsonResponse({ error: result.error }, result.status);
+    return jsonResponse({ shares: result.shares, skipped: result.skipped });
   } catch (error) {
     console.error("Não foi possível calcular a prévia do rateio.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CALCULAR A PRÉVIA DO RATEIO." }, 500);

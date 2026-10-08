@@ -24,6 +24,15 @@ const TYPES_WITHOUT_BANK_DETAILS = new Set<AccountType>(["cash", "wallet"]);
 // número — os demais (digital, cartão, investimento, outros) só exigem
 // banco + número, já que muita fintech não usa agência de verdade.
 const TYPES_REQUIRING_AGENCY = new Set<AccountType>(["checking", "savings"]);
+// Mensagem de chave PIX inválida dizendo o formato esperado de cada tipo.
+const PIX_KEY_HINTS: Record<PixKeyType, string> = {
+  cpf: "CHAVE PIX INVÁLIDA: INFORME UM CPF VÁLIDO (11 DÍGITOS).",
+  cnpj: "CHAVE PIX INVÁLIDA: INFORME UM CNPJ VÁLIDO (14 DÍGITOS).",
+  email: "CHAVE PIX INVÁLIDA: INFORME UM E-MAIL VÁLIDO.",
+  phone: "CHAVE PIX INVÁLIDA: INFORME O TELEFONE COM DDD (10 A 13 DÍGITOS, EX.: 81999990000 OU +5581999990000).",
+  random: "CHAVE PIX INVÁLIDA: A CHAVE ALEATÓRIA TEM 32 LETRAS/NÚMEROS NO FORMATO 0000AAAA-0000-0000-0000-000000000000.",
+  other: "CHAVE PIX INVÁLIDA: INFORME AO MENOS 3 CARACTERES.",
+};
 
 type AccountRow = {
   id: string;
@@ -214,7 +223,7 @@ export async function POST(request: Request) {
       }
       if (!pixKey) return jsonResponse({ error: "INFORME A CHAVE PIX." }, 400);
       if (!isValidPixKey(pixKey, pixKeyTypeRaw as PixKeyType)) {
-        return jsonResponse({ error: "CHAVE PIX INVÁLIDA PARA O TIPO SELECIONADO." }, 400);
+        return jsonResponse({ error: PIX_KEY_HINTS[pixKeyTypeRaw as PixKeyType] }, 400);
       }
       pixKeyType = pixKeyTypeRaw;
     }
@@ -236,19 +245,28 @@ export async function POST(request: Request) {
     const database = await getD1();
 
     // Duplicidade dentro da mesma loja: mesmo nome, ou mesma combinação
-    // banco+agência+número quando esses estiverem preenchidos.
-    const duplicateCheck = await database
-      .prepare(
-        `SELECT id FROM finance_accounts
-         WHERE company_id=?1 AND id != ?2 AND (
-           name = ?3
-           OR (?4 != '' AND account_number = ?4 AND bank_code = ?5 AND agency = ?6)
-         )`,
-      )
-      .bind(companyId, id || "", name, accountNumber, bankCode, agency)
+    // banco+agência+número quando o número estiver preenchido. A condição do
+    // número é montada aqui (e não no SQL com o parâmetro comparado a texto
+    // vazio, que não tem tipo garantido no Postgres e podia derrubar o
+    // cadastro com erro 500.
+    const sameName = await database
+      .prepare("SELECT id FROM finance_accounts WHERE company_id=?1 AND id <> ?2 AND name = ?3")
+      .bind(companyId, id || "", name)
       .first<{ id: string }>();
-    if (duplicateCheck) {
-      return jsonResponse({ error: "JÁ EXISTE UMA CONTA FINANCEIRA COM ESSES DADOS NESSA LOJA." }, 409);
+    if (sameName) {
+      return jsonResponse({ error: "JÁ EXISTE UMA CONTA FINANCEIRA COM ESSE NOME NESSA LOJA." }, 409);
+    }
+    if (accountNumber) {
+      const sameNumber = await database
+        .prepare(
+          `SELECT id FROM finance_accounts
+           WHERE company_id=?1 AND id <> ?2 AND account_number = ?3 AND bank_code = ?4 AND agency = ?5`,
+        )
+        .bind(companyId, id || "", accountNumber, bankCode, agency)
+        .first<{ id: string }>();
+      if (sameNumber) {
+        return jsonResponse({ error: "JÁ EXISTE UMA CONTA COM ESSE BANCO, AGÊNCIA E NÚMERO NESSA LOJA." }, 409);
+      }
     }
 
     if (id) {
@@ -305,8 +323,8 @@ export async function POST(request: Request) {
            account_number, account_digit, holder_name, holder_document, pix_key_type, pix_key,
            opening_balance_cents, opening_balance_date, notes, active,
            created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,
-           ?19,?20,CURRENT_TIMESTAMP,?19,?20,CURRENT_TIMESTAMP)`,
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,
+           ?20,?21,CURRENT_TIMESTAMP,?20,?21,CURRENT_TIMESTAMP)`,
       )
       .bind(
         newId,

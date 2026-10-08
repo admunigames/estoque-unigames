@@ -66,7 +66,8 @@ export async function GET(request: Request) {
     let fragment = sqlFragment;
     for (const arg of args) {
       values.push(arg);
-      fragment = fragment.replace("?", `?${values.length}`);
+      // Só o "?" ainda sem número (um fragmento pode ter mais de um).
+      fragment = fragment.replace(/\?(?!\d)/, `?${values.length}`);
     }
     conditions.push(fragment);
   }

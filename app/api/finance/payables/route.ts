@@ -19,6 +19,71 @@ import {
 } from "./shared";
 
 type ListRow = Record<string, unknown>;
+type PayableUnit = {
+  key: string;
+  expenseId?: string;
+  dueDate?: string;
+  slices: Array<{ id: string; status: string; originalCents: number; paidCents: number }>;
+};
+
+const LIST_COLUMNS = `id, company_id AS companyId, company_name AS companyName, description,
+  supplier_id AS supplierId, finance_item_id AS financeItemId, finance_account_id AS financeAccountId,
+  original_amount_cents AS originalAmountCents, paid_amount_cents AS paidAmountCents,
+  dre_amount_cents AS dreAmountCents,
+  issue_date AS issueDate, competence_month AS competenceMonth, due_date AS dueDate,
+  payment_method AS paymentMethod, invoice_number AS invoiceNumber, order_reference AS orderReference,
+  billing_code AS billingCode, notes, status,
+  recurrence_id AS recurrenceId, recurrence_frequency AS recurrenceFrequency,
+  installment_group_id AS installmentGroupId, installment_number AS installmentNumber,
+  installment_total AS installmentTotal, expense_id AS expenseId, cost_center AS costCenter,
+  cost_center_id AS costCenterId, created_at AS createdAt, updated_at AS updatedAt`;
+
+/**
+ * Linha agrupada de uma despesa rateada (mesmo vencimento): descrição e loja
+ * da DESPESA, soma das fatias e situação do conjunto — CANCELADO se todas
+ * canceladas; PAGO se todas (não canceladas) pagas; PARCIALMENTE PAGO se
+ * misto; senão a situação mais urgente das fatias.
+ */
+function buildPayableGroupRow(
+  key: string,
+  expense: { description: string; companyId: string; companyName: string } | undefined,
+  slices: ListRow[],
+): ListRow {
+  const first = slices[0] ?? {};
+  const live = slices.filter((slice) => slice.status !== "canceled");
+  const counted = live.length ? live : slices;
+  const sum = (field: string) => counted.reduce((total, slice) => total + Number(slice[field] || 0), 0);
+  let displayStatus: string;
+  if (!live.length) displayStatus = "canceled";
+  else if (live.every((slice) => slice.status === "paid")) displayStatus = "paid";
+  else if (live.some((slice) => Number(slice.paidAmountCents || 0) > 0)) displayStatus = "partially_paid";
+  else {
+    const order = ["overdue", "due_today", "scheduled", "upcoming"];
+    displayStatus = order.find((status) => live.some((slice) => slice.displayStatus === status)) ?? String(live[0].displayStatus);
+  }
+  return {
+    ...first,
+    id: key,
+    isGroup: true,
+    groupIds: slices.map((slice) => slice.id),
+    description: expense?.description ?? first.description,
+    companyId: expense?.companyId ?? first.companyId,
+    companyName: expense?.companyName ?? first.companyName,
+    originalAmountCents: sum("originalAmountCents"),
+    paidAmountCents: sum("paidAmountCents"),
+    status: displayStatus === "canceled" ? "canceled" : displayStatus === "paid" ? "paid" : "open",
+    displayStatus,
+    shares: slices.map((slice) => ({
+      id: slice.id,
+      companyId: slice.companyId,
+      companyName: slice.companyName,
+      originalAmountCents: slice.originalAmountCents,
+      paidAmountCents: slice.paidAmountCents,
+      status: slice.status,
+      displayStatus: slice.displayStatus,
+    })),
+  };
+}
 
 const SORTABLE_COLUMNS: Record<string, string> = {
   dueDate: "due_date",
@@ -63,12 +128,24 @@ export async function GET(request: Request) {
     let fragment = sqlFragment;
     for (const arg of args) {
       values.push(arg);
-      fragment = fragment.replace("?", `?${values.length}`);
+      // Só o "?" ainda sem número (um fragmento pode ter mais de um).
+      fragment = fragment.replace(/\?(?!\d)/, `?${values.length}`);
     }
     conditions.push(fragment);
   }
 
-  if (effectiveCompanyId) addCondition("company_id = ?", effectiveCompanyId);
+  // Despesa rateada (visão agrupada): com a loja filtrada, a despesa aparece
+  // se a loja for a da despesa OU uma das lojas do rateio. Login de loja
+  // continua vendo só as fatias da própria loja.
+  if (effectiveCompanyId && allStores) {
+    addCondition(
+      "(company_id = ? OR expense_id IN (SELECT id FROM expenses WHERE rateio_type = 'rateio' AND company_id = ?))",
+      effectiveCompanyId,
+      effectiveCompanyId,
+    );
+  } else if (effectiveCompanyId) {
+    addCondition("company_id = ?", effectiveCompanyId);
+  }
   const supplierId = safeText(params.get("supplierId"), 80);
   if (supplierId) addCondition("supplier_id = ?", supplierId);
   const financeItemId = safeText(params.get("financeItemId"), 80);
@@ -117,8 +194,9 @@ export async function GET(request: Request) {
   const search = safeText(params.get("search"), 120);
   if (search) {
     addCondition(
-      `(description ILIKE ? OR invoice_number ILIKE ? OR order_reference ILIKE ? OR billing_code ILIKE ?
-        OR EXISTS (SELECT 1 FROM finance_suppliers s WHERE s.id = accounts_payable.supplier_id AND s.name ILIKE ?))`,
+      `(LOWER(description) LIKE LOWER(?) OR LOWER(invoice_number) LIKE LOWER(?) OR LOWER(order_reference) LIKE LOWER(?)
+        OR LOWER(billing_code) LIKE LOWER(?)
+        OR EXISTS (SELECT 1 FROM finance_suppliers s WHERE s.id = accounts_payable.supplier_id AND LOWER(s.name) LIKE LOWER(?)))`,
       `%${search}%`,
       `%${search}%`,
       `%${search}%`,
@@ -139,7 +217,7 @@ export async function GET(request: Request) {
   // Cast explícito: um parâmetro bind sozinho (`?N IS NOT NULL`) sem
   // nenhum operador que dê contexto de tipo faz o Postgres recusar com
   // "could not determine data type of parameter" — o cast resolve isso.
-  conditions.push(`?${todayIndex}::text IS NOT NULL`);
+  conditions.push(`CAST(?${todayIndex} AS TEXT) IS NOT NULL`);
 
   const status = safeText(params.get("status"), 20);
   if (status) {
@@ -172,52 +250,98 @@ export async function GET(request: Request) {
   try {
     const database = await getD1();
 
-    const totalsRow = await database
+    // Visão agrupada (despesa rateada = UMA linha por despesa + vencimento,
+    // com as fatias por loja em shares[]); o banco e a DRE continuam por loja.
+    // ponytail: lê id/valores de TODAS as contas do filtro para paginar por
+    // linha agrupada; paginar no SQL se passar de dezenas de milhares.
+    const matched = await database
       .prepare(
-        `SELECT COUNT(*) AS count,
-                COALESCE(SUM(original_amount_cents), 0) AS originalCents,
-                COALESCE(SUM(paid_amount_cents), 0) AS paidCents,
-                COALESCE(SUM(original_amount_cents - paid_amount_cents), 0) AS balanceCents
-         FROM accounts_payable ${whereSql}`,
+        `SELECT id, due_date AS dueDate, status, original_amount_cents AS originalCents, paid_amount_cents AS paidCents,
+                (SELECT e.id FROM expenses e WHERE e.id = accounts_payable.expense_id AND e.rateio_type = 'rateio') AS rateioExpenseId
+         FROM accounts_payable ${whereSql}
+         ORDER BY ${sortField} ${sortDirection}, id ASC
+         LIMIT 20000`,
       )
       .bind(...values)
-      .first<{ count: number; originalCents: number; paidCents: number; balanceCents: number }>();
+      .all<{ id: string; dueDate: string; status: string; originalCents: number; paidCents: number; rateioExpenseId: string | null }>();
+    const units: PayableUnit[] = [];
+    const unitByKey = new Map<string, PayableUnit>();
+    for (const row of matched.results ?? []) {
+      const key = row.rateioExpenseId ? `grp:${row.rateioExpenseId}:${row.dueDate}` : row.id;
+      if (unitByKey.has(key)) continue;
+      const unit: PayableUnit = row.rateioExpenseId
+        ? { key, expenseId: row.rateioExpenseId, dueDate: row.dueDate, slices: [] }
+        : { key, slices: [row] };
+      unitByKey.set(key, unit);
+      units.push(unit);
+    }
+    // Fatias de cada grupo: todas as da despesa no mesmo vencimento (dentro do escopo do login).
+    const groupExpenseIds = [...new Set(units.filter((unit) => unit.expenseId).map((unit) => unit.expenseId as string))];
+    const scopeSql = allStores ? "" : " AND company_id = ?1";
+    const scopeValues = allStores ? [] : [scopeActor.companyId];
+    for (let index = 0; index < groupExpenseIds.length; index += 500) {
+      const chunk = groupExpenseIds.slice(index, index + 500);
+      const offset = scopeValues.length;
+      const sliceRows = await database
+        .prepare(
+          `SELECT id, expense_id AS expenseId, due_date AS dueDate, status, original_amount_cents AS originalCents,
+                  paid_amount_cents AS paidCents
+           FROM accounts_payable WHERE expense_id IN (${chunk.map((_, i) => `?${i + offset + 1}`).join(",")})${scopeSql}`,
+        )
+        .bind(...scopeValues, ...chunk)
+        .all<{ id: string; expenseId: string; dueDate: string; status: string; originalCents: number; paidCents: number }>();
+      for (const slice of sliceRows.results ?? []) unitByKey.get(`grp:${slice.expenseId}:${slice.dueDate}`)?.slices.push(slice);
+    }
 
-    const rowsValues = [...values, pageSize, (page - 1) * pageSize];
-    const rows = await database
-      .prepare(
-        `SELECT id, company_id AS companyId, company_name AS companyName, description,
-                supplier_id AS supplierId, finance_item_id AS financeItemId, finance_account_id AS financeAccountId,
-                original_amount_cents AS originalAmountCents, paid_amount_cents AS paidAmountCents,
-                dre_amount_cents AS dreAmountCents,
-                issue_date AS issueDate, competence_month AS competenceMonth, due_date AS dueDate,
-                payment_method AS paymentMethod, invoice_number AS invoiceNumber, order_reference AS orderReference,
-                billing_code AS billingCode, notes, status,
-                recurrence_id AS recurrenceId, recurrence_frequency AS recurrenceFrequency,
-                installment_group_id AS installmentGroupId, installment_number AS installmentNumber,
-                installment_total AS installmentTotal, expense_id AS expenseId, cost_center AS costCenter,
-                cost_center_id AS costCenterId,
-                ${displayStatusSql} AS displayStatus,
-                created_at AS createdAt, updated_at AS updatedAt
-         FROM accounts_payable
-         ${whereSql}
-         ORDER BY ${sortField} ${sortDirection}, id ASC
-         LIMIT ?${values.length + 1} OFFSET ?${values.length + 2}`,
-      )
-      .bind(...rowsValues)
-      .all<ListRow>();
+    // Totais sem as canceladas: CONTAS = linhas (agrupadas) com algo não
+    // cancelado; CANCELADAS = linhas inteiramente canceladas.
+    const totals = { count: 0, canceledCount: 0, originalCents: 0, paidCents: 0, balanceCents: 0 };
+    for (const unit of units) {
+      const live = unit.slices.filter((slice) => slice.status !== "canceled");
+      if (!live.length) { totals.canceledCount += 1; continue; }
+      totals.count += 1;
+      for (const slice of live) {
+        totals.originalCents += Number(slice.originalCents);
+        totals.paidCents += Number(slice.paidCents);
+        totals.balanceCents += Number(slice.originalCents) - Number(slice.paidCents);
+      }
+    }
+
+    const pageUnits = units.slice((page - 1) * pageSize, page * pageSize);
+    const pageIds = pageUnits.flatMap((unit) => unit.slices.map((slice) => slice.id));
+    const fullRows = pageIds.length
+      ? await database
+          .prepare(
+            `SELECT ${LIST_COLUMNS}, ${displayStatusCaseSql(1)} AS displayStatus
+             FROM accounts_payable WHERE id IN (${pageIds.map((_, i) => `?${i + 2}`).join(",")})`,
+          )
+          .bind(today, ...pageIds)
+          .all<ListRow>()
+      : { results: [] as ListRow[] };
+    const rowById = new Map((fullRows.results ?? []).map((row) => [String(row.id), row]));
+    const pageExpenseIds = [...new Set(pageUnits.filter((unit) => unit.expenseId).map((unit) => unit.expenseId as string))];
+    const expenses = pageExpenseIds.length
+      ? await database
+          .prepare(
+            `SELECT id, description, company_id AS companyId, company_name AS companyName FROM expenses
+             WHERE id IN (${pageExpenseIds.map((_, i) => `?${i + 1}`).join(",")})`,
+          )
+          .bind(...pageExpenseIds)
+          .all<{ id: string; description: string; companyId: string; companyName: string }>()
+      : { results: [] };
+    const expenseById = new Map((expenses.results ?? []).map((row) => [row.id, row]));
+    const rows = pageUnits.map((unit) => {
+      const slices = unit.slices.map((slice) => rowById.get(slice.id)).filter((row): row is ListRow => Boolean(row));
+      if (!unit.expenseId) return slices[0];
+      return buildPayableGroupRow(unit.key, expenseById.get(unit.expenseId), slices);
+    });
 
     return jsonResponse({
-      rows: rows.results ?? [],
+      rows,
       page,
       pageSize,
-      total: Number(totalsRow?.count ?? 0),
-      totals: {
-        count: Number(totalsRow?.count ?? 0),
-        originalCents: Number(totalsRow?.originalCents ?? 0),
-        paidCents: Number(totalsRow?.paidCents ?? 0),
-        balanceCents: Number(totalsRow?.balanceCents ?? 0),
-      },
+      total: units.length,
+      totals,
       today,
     });
   } catch (error) {

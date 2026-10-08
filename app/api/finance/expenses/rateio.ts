@@ -1,5 +1,13 @@
 import type { getD1 } from "../../../../db";
-import { BASIS_POINTS_TOTAL, distributeAmount, type RateioShare } from "../../../lib/rateio-distribute";
+import {
+  BASIS_POINTS_TOTAL,
+  distributeAmount,
+  restrictRateioWeights,
+  weightsToBasisPoints,
+  type RateioShare,
+  type RateioShareInput,
+  type RateioWeight,
+} from "../../../lib/rateio-distribute";
 import { loadCompanyList } from "../shared";
 import type { RateioModel } from "./shared";
 
@@ -13,42 +21,68 @@ export type RateioCalcInput = {
   competenceMonth: string;
   totalAmountCents: number;
   customShares?: CustomShareInput[];
+  /** Lojas escolhidas (RATEADA ENTRE LOJAS). Vazio/ausente = todas as do modelo (comportamento anterior). */
+  companyIds?: string[];
 };
 
+export type RateioCalcResult =
+  | { shares: RateioShare[]; skipped: Array<{ companyId: string; companyName: string }> }
+  | { error: string; status: number };
+
 /**
- * Calcula a divisão por loja de uma despesa rateada. Retorna a lista de
- * fatias (com nome da loja e valor em centavos já somando exatamente o
- * total) ou uma mensagem de erro (pra responder 400/409) se o modelo não
- * tiver dado suficiente pra calcular.
+ * Calcula a divisão por loja de uma despesa rateada. Retorna as fatias (com
+ * nome da loja e valor em centavos somando exatamente o total) ou um erro
+ * (400 = dado inválido; 409 = modelo sem dado para calcular). Com companyIds,
+ * o modelo é recalculado SÓ entre as lojas escolhidas, renormalizado a 100%
+ * (restrictRateioWeights); lojas sem peso no modelo ficam em `skipped`.
  */
 export async function computeRateioShares(
   database: Awaited<ReturnType<typeof getD1>>,
   input: RateioCalcInput,
-): Promise<{ shares: RateioShare[] } | { error: string }> {
+): Promise<RateioCalcResult> {
   const { model, competenceMonth, totalAmountCents, customShares } = input;
+  const chosenIds = [...new Set((input.companyIds ?? []).filter(Boolean))];
+  const companies = await loadCompanyList(database);
+  const unknownChosen = chosenIds.find((id) => !companies.some((c) => c.id === id));
+  if (unknownChosen) return { error: `LOJA NÃO ENCONTRADA NO RATEIO (ID "${unknownChosen}").`, status: 400 };
+  const chosen = chosenIds.map((id) => ({ id, name: companies.find((c) => c.id === id)!.name }));
+  const done = (shares: RateioShareInput[], skipped: Array<{ companyId: string; companyName: string }> = []): RateioCalcResult => ({
+    shares: distributeAmount(totalAmountCents, shares),
+    skipped,
+  });
+  // Pesos do modelo → fatias (todas as lojas do modelo, ou só as escolhidas).
+  const fromWeights = (weights: RateioWeight[], legacy: () => RateioShareInput[]): RateioCalcResult => {
+    if (!chosen.length) return done(legacy());
+    const restricted = restrictRateioWeights(weights, chosen);
+    if ("error" in restricted) return { error: restricted.error, status: 409 };
+    return done(weightsToBasisPoints(restricted.weights), restricted.skipped);
+  };
 
   if (model === "personalizado") {
-    if (!customShares || customShares.length < 2) {
-      return { error: "INFORME AO MENOS DUAS LOJAS COM PERCENTUAL NO RATEIO PERSONALIZADO." };
+    if (!customShares || customShares.length < 1) {
+      return { error: "INFORME AO MENOS UMA LOJA COM PERCENTUAL NO RATEIO PERSONALIZADO.", status: 400 };
     }
     if (new Set(customShares.map((share) => share.companyId)).size !== customShares.length) {
-      return { error: "CADA LOJA SÓ PODE APARECER UMA VEZ NO RATEIO PERSONALIZADO." };
+      return { error: "CADA LOJA SÓ PODE APARECER UMA VEZ NO RATEIO PERSONALIZADO.", status: 400 };
     }
     const totalBp = customShares.reduce((sum, share) => sum + share.percentBasisPoints, 0);
     if (totalBp !== BASIS_POINTS_TOTAL) {
-      return { error: "OS PERCENTUAIS DO RATEIO PERSONALIZADO PRECISAM SOMAR EXATAMENTE 100%." };
+      return { error: "OS PERCENTUAIS DO RATEIO PERSONALIZADO PRECISAM SOMAR EXATAMENTE 100%.", status: 400 };
     }
-    const companies = await loadCompanyList(database);
     const unknownCompanyId = customShares.find((share) => !companies.some((c) => c.id === share.companyId));
     if (unknownCompanyId) {
-      return { error: `LOJA NÃO ENCONTRADA NO RATEIO PERSONALIZADO (ID "${unknownCompanyId.companyId}").` };
+      return { error: `LOJA NÃO ENCONTRADA NO RATEIO PERSONALIZADO (ID "${unknownCompanyId.companyId}").`, status: 400 };
     }
-    const shares = customShares.map((share) => ({
-      companyId: share.companyId,
-      companyName: companies.find((c) => c.id === share.companyId)!.name,
-      percentBasisPoints: share.percentBasisPoints,
-    }));
-    return { shares: distributeAmount(totalAmountCents, shares) };
+    if (chosen.length && customShares.some((share) => !chosenIds.includes(share.companyId))) {
+      return { error: "O RATEIO PERSONALIZADO SÓ PODE USAR AS LOJAS MARCADAS.", status: 400 };
+    }
+    return done(
+      customShares.map((share) => ({
+        companyId: share.companyId,
+        companyName: companies.find((c) => c.id === share.companyId)!.name,
+        percentBasisPoints: share.percentBasisPoints,
+      })),
+    );
   }
 
   if (model === "padrao" || model === "administrativo") {
@@ -58,13 +92,17 @@ export async function computeRateioShares(
       )
       .bind(model)
       .all<{ companyId: string; companyName: string; percentBasisPoints: number }>();
-    const shares = rows.results ?? [];
+    const shares = (rows.results ?? []).map((row) => ({ ...row, percentBasisPoints: Number(row.percentBasisPoints) }));
     if (!shares.length) {
       return {
         error: `O MODELO DE RATEIO "${model === "padrao" ? "PADRÃO" : "ADMINISTRATIVO"}" AINDA NÃO FOI CONFIGURADO — CADASTRE OS PERCENTUAIS POR LOJA ANTES DE USÁ-LO.`,
+        status: 409,
       };
     }
-    return { shares: distributeAmount(totalAmountCents, shares) };
+    return fromWeights(
+      shares.map((share) => ({ companyId: share.companyId, companyName: share.companyName, weight: share.percentBasisPoints })),
+      () => shares,
+    );
   }
 
   if (model === "faturamento" || model === "faturamento_vendas" || model === "faturamento_servicos") {
@@ -89,20 +127,25 @@ export async function computeRateioShares(
       )
       .bind(competenceMonth)
       .all<{ companyId: string; amountCents: number }>();
-    const revenueRows = rows.results ?? [];
+    const revenueRows = (rows.results ?? []).map((row) => ({ ...row, amountCents: Number(row.amountCents) }));
     const total = revenueRows.reduce((sum, row) => sum + row.amountCents, 0);
     if (!revenueRows.length || total <= 0) {
+      if (chosen.length === 1) return done([{ companyId: chosen[0].id, companyName: chosen[0].name, percentBasisPoints: BASIS_POINTS_TOTAL }]);
       return {
         error: `NÃO HÁ ${baseLabel} CADASTRADO NA DRE PARA A COMPETÊNCIA ${competenceMonth} — CADASTRE O FATURAMENTO DAS LOJAS ANTES DE USAR ESSE RATEIO NESSE MÊS.`,
+        status: 409,
       };
     }
-    const companies = await loadCompanyList(database);
-    const shares = revenueRows.map((row) => ({
-      companyId: row.companyId,
-      companyName: companies.find((c) => c.id === row.companyId)?.name || row.companyId,
-      percentBasisPoints: Math.round((row.amountCents * BASIS_POINTS_TOTAL) / total),
-    }));
-    return { shares: distributeAmount(totalAmountCents, shares) };
+    const nameOf = (id: string) => companies.find((c) => c.id === id)?.name || id;
+    return fromWeights(
+      revenueRows.map((row) => ({ companyId: row.companyId, companyName: nameOf(row.companyId), weight: row.amountCents })),
+      () =>
+        revenueRows.map((row) => ({
+          companyId: row.companyId,
+          companyName: nameOf(row.companyId),
+          percentBasisPoints: Math.round((row.amountCents * BASIS_POINTS_TOTAL) / total),
+        })),
+    );
   }
 
   if (model === "funcionarios") {
@@ -112,20 +155,25 @@ export async function computeRateioShares(
          FROM finance_store_headcount WHERE employee_count > 0 ORDER BY company_id`,
       )
       .all<{ companyId: string; companyName: string; employeeCount: number }>();
-    const headcountRows = rows.results ?? [];
+    const headcountRows = (rows.results ?? []).map((row) => ({ ...row, employeeCount: Number(row.employeeCount) }));
     const total = headcountRows.reduce((sum, row) => sum + row.employeeCount, 0);
     if (!headcountRows.length || total <= 0) {
+      if (chosen.length === 1) return done([{ companyId: chosen[0].id, companyName: chosen[0].name, percentBasisPoints: BASIS_POINTS_TOTAL }]);
       return {
         error: "NÃO HÁ QUADRO DE FUNCIONÁRIOS CADASTRADO — CADASTRE A QUANTIDADE DE FUNCIONÁRIOS POR LOJA ANTES DE USAR O RATEIO POR FUNCIONÁRIOS.",
+        status: 409,
       };
     }
-    const shares = headcountRows.map((row) => ({
-      companyId: row.companyId,
-      companyName: row.companyName,
-      percentBasisPoints: Math.round((row.employeeCount * BASIS_POINTS_TOTAL) / total),
-    }));
-    return { shares: distributeAmount(totalAmountCents, shares) };
+    return fromWeights(
+      headcountRows.map((row) => ({ companyId: row.companyId, companyName: row.companyName, weight: row.employeeCount })),
+      () =>
+        headcountRows.map((row) => ({
+          companyId: row.companyId,
+          companyName: row.companyName,
+          percentBasisPoints: Math.round((row.employeeCount * BASIS_POINTS_TOTAL) / total),
+        })),
+    );
   }
 
-  return { error: "MODELO DE RATEIO INVÁLIDO." };
+  return { error: "MODELO DE RATEIO INVÁLIDO.", status: 400 };
 }
