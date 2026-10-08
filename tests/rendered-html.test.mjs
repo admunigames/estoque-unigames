@@ -2335,6 +2335,27 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /method:'PATCH'/);
   // Tela Usuários: módulo Documentos com as 3 ações (visualizar é livre).
   assert.match(html, /<summary>Documentos<\/summary>/);
+  // Compras — pedido aberto: adição rápida (catálogo ou texto livre, sem loja
+  // nem fornecedor por produto), mapa de cotação com fornecedor por coluna e
+  // fechamento com vencedor + loja que fatura (CNPJ) + previsão.
+  assert.match(html, /<form class="compras-quick-add" id="comprasQuickAddForm" novalidate>/);
+  assert.match(html, /\['comprasItemProductCode','comprasProdutoBusca','comprasPesquisaProduto','comprasQuickProduct'\]/);
+  assert.match(html, /<table class="compras-quote-table" id="comprasQuoteTable"><\/table>/);
+  assert.match(html, /id="comprasOrderBillingCompany"/);
+  assert.match(html, /id="comprasOrderWinnerExpected"/);
+  assert.match(html, /body:JSON\.stringify\(\{supplierId, companyId, expectedDate\}\)/);
+  assert.match(html, /\/suppliers', \{\s*method:'POST'[^)]*action:'add'/);
+  assert.doesNotMatch(html, /id="comprasOrderWinnerBody"|id="btnAddComprasDraftItem"|id="comprasOrderAbertoItemsList"/);
+  // Recebimento incompleto (selo), divisão + prazo de entrega no cabeçalho,
+  // confirmação do fechamento na própria tela e anexos em paralelo com aviso.
+  assert.match(html, /function comprasOrderPartialBadge\(order\)\{[\s\S]*?RECEBIMENTO INCOMPLETO/);
+  assert.match(html, /comprasDivisionStatusBadge\(order\.divisionStatus, 'DIVISÃO · '\)/);
+  assert.match(html, /\['Previsão', formatDateBR\(order\.expectedDate\), false, late \? '#ef6a55' : ''\]/);
+  assert.match(html, /\['Entrega', formatDateBR\(order\.receivedDate\)[^\n]*'#54c48a'/);
+  assert.doesNotMatch(html, /if\(!confirm\('GERAR O PEDIDO COM/);
+  assert.match(html, /button\.textContent = 'SIM, GERAR PEDIDO COM '/);
+  assert.match(html, /await Promise\.all\(Array\.from\(\{length: Math\.min\(4, numberOfParts\)\}, sendNext\)\);/);
+  assert.match(html, /box\.textContent = 'ENVIANDO "'\+file\.name\+'"…';/);
   // Comercial (Meta Loja, Vendedores, Crediários): dinheiro com a mesma máscara
   // de Compras (R$ 1.234,56) e "change" disparado ao sair do campo (a máscara
   // escreve por código e o navegador não avisaria — a linha não salvaria).
@@ -3764,7 +3785,7 @@ test("Módulo Compras nativo (Fase F): accordion no detalhe, atualização ao vi
 
   // Badge de Status da Divisão: reflete os 5 valores + vazio, aparece na
   // lista e no cabeçalho do detalhe (comprasOrderBadges).
-  assert.match(html, /function comprasDivisionStatusBadge\(divisionStatus\)/);
+  assert.match(html, /function comprasDivisionStatusBadge\(divisionStatus, prefix\)/);
   assert.match(html, /divisionStatus === 'CONCLUÍDO'/);
   assert.match(html, /divisionStatus === 'FALTA DIVISÃO'/);
   assert.match(html, /divisionStatus === 'FALTANDO ENVIO COMPLETO DA DIVISÃO'/);

@@ -47,6 +47,27 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const body = (await request.json()) as JsonMap;
     const supplierId = safeText(body.supplierId, 80);
     if (!supplierId) return jsonResponse({ error: "INFORME O FORNECEDOR VENCEDOR." }, 400);
+    // Fechamento: a loja (CNPJ) que fatura só é escolhida aqui, no fim; a
+    // previsão de chegada é opcional.
+    const companyId = safeText(body.companyId, 80);
+    if (!companyId) return jsonResponse({ error: "ESCOLHA A LOJA QUE VAI FATURAR (CNPJ)." }, 400);
+    const expectedDate = safeText(body.expectedDate, 10);
+    if (expectedDate && !/^\d{4}-\d{2}-\d{2}$/.test(expectedDate)) {
+      return jsonResponse({ error: "PREVISÃO DE CHEGADA INVÁLIDA." }, 400);
+    }
+    const companiesRow = await database
+      .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
+      .first<{ value: string }>();
+    let companies: { id?: unknown; name?: unknown }[] = [];
+    try {
+      const parsed = companiesRow?.value ? JSON.parse(companiesRow.value) : [];
+      companies = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      companies = [];
+    }
+    const company = companies.find((entry) => entry && entry.id === companyId);
+    if (!company) return jsonResponse({ error: "LOJA NÃO ENCONTRADA." }, 400);
+    const companyName = safeText(company.name, 160);
 
     const supplier = await database
       .prepare("SELECT id, name FROM finance_suppliers WHERE id=?1")
@@ -66,9 +87,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       {
         sql: `UPDATE purchase_orders
               SET supplier_id=?1, supplier_name_raw=?2, won_at=?3, won_by=?4, won_by_name=?5,
+                  company_id=?7, company_name=?8,${expectedDate ? " expected_date=?9," : ""}
                   status='aguardando_chegada', updated_by=?4, updated_by_name=?5, updated_at=CURRENT_TIMESTAMP
               WHERE id=?6`,
-        values: [supplierId, supplier.name, nowIso, actor.id, actorName, orderId],
+        values: [supplierId, supplier.name, nowIso, actor.id, actorName, orderId, companyId, companyName,
+          ...(expectedDate ? [expectedDate] : [])],
       },
     ];
 
@@ -95,7 +118,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const prepared = statements.map((statement) => database.prepare(statement.sql).bind(...statement.values));
     await database.batch(prepared);
 
-    return jsonResponse({ updated: true, id: orderId, status: "aguardando_chegada", supplierId, supplierName: supplier.name });
+    return jsonResponse({
+      updated: true, id: orderId, status: "aguardando_chegada", supplierId, supplierName: supplier.name,
+      companyId, companyName, expectedDate,
+    });
   } catch (error) {
     console.error("Não foi possível definir o fornecedor vencedor do pedido.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL DEFINIR O FORNECEDOR VENCEDOR." }, 500);

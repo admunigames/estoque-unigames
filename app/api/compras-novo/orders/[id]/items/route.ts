@@ -68,7 +68,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const targetStores = safeStoreList(body.targetStores);
     const candidateSupplierIds = safeSupplierIdList(body.candidateSupplierIds);
 
-    if (!productCode) return jsonResponse({ error: "INFORME O CÓDIGO DO PRODUTO." }, 400);
+    // Produto fora do catálogo entra só pelo nome (texto livre), sem código.
+    if (!productCode && !productName) return jsonResponse({ error: "INFORME O PRODUTO." }, 400);
     if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity < 0) {
       return jsonResponse({ error: "INFORME UMA QUANTIDADE VÁLIDA." }, 400);
     }

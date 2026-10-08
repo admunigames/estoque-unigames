@@ -1,3 +1,4 @@
+import { todayInTimezone } from "../../../../../../lib/finance-status";
 import { getD1 } from "../../../../../../../db";
 import { unauthorizedResponse } from "../../../../../../lib/notion";
 import { canManageComprasDraft, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../../../shared";
@@ -142,12 +143,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       }
     }
 
-    let productCode = item.productCode;
-    if (hasProductCode) {
-      productCode = safeText(body.productCode, 80);
-      if (!productCode) return jsonResponse({ error: "INFORME O CÓDIGO DO PRODUTO." }, 400);
-    }
+    const productCode = hasProductCode ? safeText(body.productCode, 80) : item.productCode;
     const productName = hasProductName ? safeText(body.productName, 200) : item.productName;
+    // Produto fora do catálogo pode ficar só com o nome (texto livre).
+    if (!productCode && !productName) return jsonResponse({ error: "INFORME O PRODUTO." }, 400);
     const notes = hasNotes ? safeText(body.notes, 2000) : item.notes;
     const targetStores = hasTargetStores ? safeTargetStores(body.targetStores) : item.targetStores;
 
@@ -180,7 +179,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     // Só promove pra 'concluido' quando tudo foi recebido — não regride o
     // status se ainda faltar item (mantém 'aguardando_chegada'/'em_andamento').
     const newStatus = allReceived ? "concluido" : order.status;
-    const newReceivedDate = allReceived && !order.receivedDate ? new Date().toISOString().slice(0, 10) : order.receivedDate;
+    const newReceivedDate = allReceived && !order.receivedDate ? todayInTimezone() : order.receivedDate; // dia de Recife (não UTC)
 
     await database
       .prepare(

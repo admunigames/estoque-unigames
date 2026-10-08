@@ -845,6 +845,41 @@
   .product-search-option:hover,.product-search-option.active{background:rgba(79,134,189,.14);}
   .product-search-option.create-option{color:var(--accent); font-weight:700;}
   .multi-select-chips{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 0;}
+  /* Compras — pedido aberto: adição rápida + mapa de cotação + fechamento */
+  .compras-quick-add{display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; margin:0 0 6px;}
+  .compras-quick-add .compras-quick-product{flex:1 1 320px; min-width:0; margin:0;}
+  .compras-quick-add .compras-quick-qty{flex:0 0 96px; margin:0;}
+  .compras-quick-add button{min-height:42px;}
+  .compras-quote-bar{display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin:12px 0 8px;}
+  .compras-quote-bar .field{margin:0; min-width:260px;}
+  .compras-quote-table{width:100%; border-collapse:collapse;}
+  .table-scroll table.compras-quote-table{min-width:0;}
+  .compras-quote-table th,.compras-quote-table td{padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; text-align:left;}
+  .compras-quote-table thead th{font:800 10px/1.3 var(--mono); letter-spacing:.04em; color:var(--ink-soft); text-transform:uppercase; white-space:nowrap;}
+  .compras-quote-col-remove{min-height:0; min-width:0; width:20px; height:20px; padding:0; margin-left:4px; border:0; border-radius:50%; background:transparent; color:var(--ink-soft); cursor:pointer; font-size:14px; line-height:1;}
+  .compras-quote-col-remove:hover{color:#ef6a55;}
+  .compras-quote-product strong{display:block; font-size:13px;}
+  .compras-quote-product small,.compras-quote-cell small,.compras-quote-table tfoot small{display:block; margin-top:3px; font:700 10.5px/1.3 var(--sans); color:var(--ink-faint); text-transform:none;}
+  .compras-quote-qty{width:72px;}
+  .compras-quote-cell input{width:120px; font-variant-numeric:tabular-nums;}
+  .compras-quote-cell.best input{border-color:#54c48a;}
+  .compras-quote-cell.best small{color:#54c48a;}
+  .compras-quote-cell.saving{opacity:.6;}
+  .compras-quote-actions{white-space:nowrap; text-align:right;}
+  .compras-quote-table tfoot th{font:800 13px/1.3 var(--sans); white-space:nowrap; border-bottom:0;}
+  .compras-quote-table tfoot th.best{color:#54c48a;}
+  .compras-close-panel{margin-top:16px; padding:16px;}
+  .compras-close-panel h4{margin:0 0 10px;}
+  @media (max-width:720px){
+    .compras-quote-table thead{display:none;}
+    .compras-quote-table tr{display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; padding:10px 0; border-bottom:1px solid var(--line);}
+    .compras-quote-table td,.compras-quote-table th{border:0; padding:0;}
+    .compras-quote-table td.compras-quote-product,.compras-quote-table td.compras-quote-actions{grid-column:1 / -1;}
+    .compras-quote-table td.compras-quote-actions{text-align:left;}
+    .compras-quote-table tfoot th[data-label]::before,
+    .compras-quote-table td[data-label]:not(.compras-quote-product):not(.compras-quote-actions)::before{content:attr(data-label); display:block; font:800 9px/1.3 var(--mono); color:var(--ink-faint); text-transform:uppercase; margin-bottom:3px;}
+    .compras-quote-cell input,.compras-quote-qty{width:100%;}
+  }
   .multi-select-chip{
     display:inline-flex; align-items:center; gap:6px; padding:5px 6px 5px 10px; border-radius:20px;
     border:1px solid var(--border); background:rgba(79,134,189,.12); color:var(--ink);
@@ -1118,7 +1153,11 @@
      detalhe expandido de um pedido reaproveitam .purchase-metric/.purchase-card
      do Controle de Compras (Notion) — só esta regra de span é nova, pro
      detalhe ocupar a largura inteira do grid de cards. */
-  .compras-order-detail-row{grid-column:1 / -1;}
+  /* Detalhe do pedido dentro da grade de cartões: sem min-width:0 ele
+     esticava a grade (e a página) até a largura das tabelas internas no
+     celular; as tabelas rolam dentro do próprio .table-scroll. */
+  .compras-order-detail-row{grid-column:1 / -1; min-width:0; max-width:100%;}
+  #comprasOrderDetail{min-width:0; max-width:100%;}
   .purchase-metric.clickable{cursor:pointer;}
   .loan-details-dialog{width:min(460px,calc(100vw - 28px));}
   .loan-details-dialog .purchase-form{padding-top:16px;}
@@ -5805,29 +5844,42 @@
                fornecedor candidato e definição do vencedor. Some assim que
                o vencedor é definido (pedido vai pra 'aguardando_chegada'). -->
           <div id="comprasOrderAbertoWrap" hidden>
-            <div class="page-header-actions" style="justify-content:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-              <button class="btn-outline" id="btnAddComprasDraftItem" type="button">+ ADICIONAR ITEM</button>
+            <!-- Adição rápida: busca no catálogo ou texto livre + quantidade,
+                 Enter adiciona e volta para o campo do produto (20 produtos
+                 sem abrir janela). Loja e fornecedor NÃO são pedidos aqui. -->
+            <form class="compras-quick-add" id="comprasQuickAddForm" novalidate>
+              <div class="field product-search-field compras-quick-product">
+                <label for="comprasQuickProduct">PRODUTO (CATÁLOGO OU TEXTO LIVRE)</label>
+                <input id="comprasQuickProduct" maxlength="200" autocomplete="off" placeholder="Código ou nome do produto…">
+              </div>
+              <div class="field compras-quick-qty"><label for="comprasQuickQty">QTD</label><input type="number" id="comprasQuickQty" min="1" step="1" value="1" inputmode="numeric"></div>
+              <button class="btn-accent" type="submit">ADICIONAR</button>
               <button class="btn-outline" id="btnGerarTxtOrcamento" type="button">GERAR TXT DE ORÇAMENTO</button>
+            </form>
+            <div class="user-form-status" id="comprasQuickAddStatus" role="status" aria-live="polite"></div>
+            <!-- Mapa de cotação: uma COLUNA por fornecedor (vale para todos os
+                 produtos); cada célula é o preço unitário e mostra o total
+                 (unitário × quantidade). Salva ao sair do campo. -->
+            <div class="compras-quote-bar" id="comprasQuoteSupplierBar">
+              <div class="field"><label for="comprasQuoteAddSupplier">FORNECEDOR NA COTAÇÃO</label>
+                <select id="comprasQuoteAddSupplier"><option value="">+ ADICIONAR FORNECEDOR…</option></select>
+              </div>
             </div>
-            <div id="comprasOrderAbertoItemsList"></div>
-
-            <div class="table-panel" style="margin-top:16px;padding:16px;">
-              <h4 style="margin:0 0 8px;">DEFINIR FORNECEDOR VENCEDOR</h4>
-              <p class="page-desc" style="margin:0 0 8px;">Fornecedores que cotaram ao menos um item deste pedido, com o total cotado (soma das cotações que cada um deu — pode não cobrir todos os itens).</p>
-              <div class="table-scroll">
-                <table id="comprasOrderWinnerTable">
-                  <thead><tr><th>Fornecedor</th><th>Itens cotados</th><th>Total cotado</th></tr></thead>
-                  <tbody id="comprasOrderWinnerBody"><tr><td colspan="3" class="responsive-empty">Nenhuma cotação registrada ainda.</td></tr></tbody>
-                </table>
+            <div class="table-scroll compras-quote-scroll">
+              <table class="compras-quote-table" id="comprasQuoteTable"></table>
+            </div>
+            <div class="table-panel compras-close-panel">
+              <h4>FECHAR PEDIDO</h4>
+              <div class="purchase-form-grid">
+                <div class="purchase-field"><label for="comprasOrderWinnerSelect">FORNECEDOR VENCEDOR *</label><select id="comprasOrderWinnerSelect"><option value="">ESCOLHA</option></select></div>
+                <div class="purchase-field"><label for="comprasOrderBillingCompany">LOJA QUE FATURA (CNPJ) *</label><select id="comprasOrderBillingCompany"><option value="">ESCOLHA</option></select></div>
+                <div class="purchase-field"><label for="comprasOrderWinnerExpected">PREVISÃO DE CHEGADA</label><input type="date" id="comprasOrderWinnerExpected"></div>
               </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;">
-                <select id="comprasOrderWinnerSelect" style="min-width:260px;"><option value="">-- ESCOLHA O FORNECEDOR VENCEDOR --</option></select>
-                <button class="btn-accent" id="btnConfirmComprasWinner" type="button">CONFIRMAR VENCEDOR — COMPRA EFETUADA</button>
-              </div>
+              <p class="page-desc" id="comprasOrderWinnerSummary"></p>
               <div class="user-form-status" id="comprasOrderWinnerStatus" role="status" aria-live="polite"></div>
+              <button class="btn-accent" id="btnConfirmComprasWinner" type="button">GERAR PEDIDO — COMPRA EFETUADA</button>
             </div>
           </div>
-
           <!-- A partir de 'aguardando_chegada'/'concluido': recebimento,
                Divisão, NF e anexos (ver comprasOrderAbertoWrap acima pro
                fluxo anterior, enquanto o pedido está 'aberto'). -->
@@ -5841,8 +5893,8 @@
           </div>
           <div class="table-scroll" id="comprasOrderItemsWrap">
             <table id="comprasOrderItemsTable">
-              <thead><tr><th>Produto</th><th>Lojas destino</th><th>Qtd pedida</th><th>Qtd recebida</th><th>Preço unit.</th><th class="no-print">Registrar recebimento / preço</th></tr></thead>
-              <tbody id="comprasOrderItemsBody"><tr><td colspan="6" class="responsive-empty">Nenhum item.</td></tr></tbody>
+              <thead><tr><th>Produto</th><th>Qtd pedida</th><th>Qtd recebida</th><th>Preço unit.</th><th class="no-print">Registrar recebimento / preço</th></tr></thead>
+              <tbody id="comprasOrderItemsBody"><tr><td colspan="5" class="responsive-empty">Nenhum item.</td></tr></tbody>
             </table>
           </div>
           <p class="page-desc" id="comprasOrderNoItemsNotice" hidden>Este pedido foi importado do Notion e não tem itens detalhados — edite o status manualmente em "EDITAR PEDIDO".</p>
@@ -8628,7 +8680,7 @@
     <input type="hidden" id="comprasItemId">
     <div class="purchase-form-grid">
       <div class="purchase-field full product-search-field">
-        <label for="comprasItemProductCode">PRODUTO (CÓDIGO OU NOME) *</label>
+        <label for="comprasItemProductCode">PRODUTO (CATÁLOGO OU TEXTO LIVRE) *</label>
         <input id="comprasItemProductCode" maxlength="80" required autocomplete="off">
       </div>
       <div class="purchase-field"><label for="comprasItemQuantity">QUANTIDADE *</label><input type="number" id="comprasItemQuantity" min="0" step="1" required></div>
@@ -8645,6 +8697,7 @@
       </table>
     </div>
 
+    <div hidden>
     <p class="page-desc" style="margin:14px 0 6px;">LOJAS DESTINO</p>
     <div class="product-search-field">
       <input id="comprasItemStoresFilter" type="text" placeholder="Buscar loja..." autocomplete="off">
@@ -8656,6 +8709,7 @@
       <input id="comprasItemSuppliersFilter" type="text" placeholder="Buscar fornecedor..." autocomplete="off">
     </div>
     <div class="multi-select-chips" id="comprasItemSuppliersChips"></div>
+    </div>
 
     <div class="user-form-status" id="comprasDraftItemFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -33607,7 +33661,7 @@ function renderHomeTasks(){
       })
       .filter(entry => entry.value);
   }
-  ['comprasItemProductCode','comprasProdutoBusca','comprasPesquisaProduto'].forEach(id => {
+  ['comprasItemProductCode','comprasProdutoBusca','comprasPesquisaProduto','comprasQuickProduct'].forEach(id => {
     attachProductCatalogSearch(el(id), { getEntries: comprasProductCodeEntries });
   });
 
@@ -33666,23 +33720,45 @@ function renderHomeTasks(){
 
   // Badge de STATUS DA DIVISÃO — mesma paleta dos outros status-pill do módulo
   // (neutro/aguardando/alerta/concluído).
-  function comprasDivisionStatusBadge(divisionStatus){
+  function comprasDivisionStatusBadge(divisionStatus, prefix){
     if(!divisionStatus) return '';
-    if(divisionStatus === 'CONCLUÍDO') return '<span class="status-pill done">'+escapeHtml(divisionStatus)+'</span>';
-    if(divisionStatus === 'FALTA DIVISÃO') return '<span class="status-pill" style="opacity:.65;">'+escapeHtml(divisionStatus)+'</span>';
-    if(divisionStatus === 'FALTANDO ENVIO COMPLETO DA DIVISÃO') return '<span class="status-pill alert">'+escapeHtml(divisionStatus)+'</span>';
+    const text = escapeHtml((prefix || '')+divisionStatus);
+    if(divisionStatus === 'CONCLUÍDO') return '<span class="status-pill done">'+text+'</span>';
+    if(divisionStatus === 'FALTA DIVISÃO') return '<span class="status-pill" style="opacity:.65;">'+text+'</span>';
+    if(divisionStatus === 'FALTANDO ENVIO COMPLETO DA DIVISÃO') return '<span class="status-pill alert">'+text+'</span>';
     // AGUARDANDO APROVAÇÃO / ENVIAR DIVISÃO A LOJA
-    return '<span class="status-pill waiting">'+escapeHtml(divisionStatus)+'</span>';
+    return '<span class="status-pill waiting">'+text+'</span>';
   }
 
-  function comprasOrderBadges(order){
+  // Chegou parte do pedido (algum item recebido, mas não tudo) e ele ainda
+  // não foi concluído. orderedQty/receivedQty vêm da lista (servidor) ou dos
+  // itens do pedido aberto no detalhe (comprasApplyItemTotals).
+  function comprasOrderPartialBadge(order){
+    if(Number(order.canceled) || order.status === 'concluido' || order.status === 'aberto') return '';
+    const ordered = Number(order.orderedQty || 0);
+    const received = Number(order.receivedQty || 0);
+    if(!(received > 0 && received < ordered)) return '';
+    return '<span class="status-pill waiting" title="Unidades recebidas de unidades pedidas">RECEBIMENTO INCOMPLETO · '+received+' DE '+ordered+'</span>';
+  }
+
+  function comprasApplyItemTotals(order, items){
+    if(!order) return;
+    order.orderedQty = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    order.receivedQty = items.reduce((sum, item) => sum + Math.min(Number(item.receivedQuantity || 0), Number(item.quantity || 0)), 0);
+  }
+
+  function comprasOrderBadges(order, options){
     let html = comprasOrderStatusBadge(order.status);
     const wonBadge = comprasOrderWonBadge(order);
     if(wonBadge) html += ' '+wonBadge;
     if(Number(order.canceled)) html += ' <span class="status-pill alert">CANCELADO</span>';
     else if(comprasOrderIsLate(order)) html += ' <span class="status-pill alert">ATRASADO</span>';
-    const divisionBadge = comprasDivisionStatusBadge(order.divisionStatus);
-    if(divisionBadge) html += ' '+divisionBadge;
+    const partialBadge = comprasOrderPartialBadge(order);
+    if(partialBadge) html += ' '+partialBadge;
+    if(!(options && options.skipDivision)){
+      const divisionBadge = comprasDivisionStatusBadge(order.divisionStatus);
+      if(divisionBadge) html += ' '+divisionBadge;
+    }
     return html;
   }
 
@@ -33700,18 +33776,22 @@ function renderHomeTasks(){
   function comprasOrderDetailMetaHtml(order){
     // "Origem" já vem como HTML (span com title) de comprasOrderOriginLabel
     // — os demais campos são texto puro e precisam de escapeHtml.
+    // Previsão em vermelho quando passou sem chegar; Entrega (data em que
+    // chegou de fato) em verde, logo ao lado. Antes de chegar, Entrega mostra
+    // "—" (só a partir do vencedor definido).
+    const late = comprasOrderIsLate(order);
     const fields = [
       ['Origem', comprasOrderOriginLabel(order), true],
       ['Loja', order.companyName || ''],
       ['Pedido em', comprasOrderDateLabel(order)],
-      ['Previsão', formatDateBR(order.expectedDate)],
-      ['Recebido em', formatDateBR(order.receivedDate)],
+      ['Previsão', formatDateBR(order.expectedDate), false, late ? '#ef6a55' : ''],
+      ['Entrega', formatDateBR(order.receivedDate) || (order.status !== 'aberto' && !Number(order.canceled) ? '—' : ''), false, order.receivedDate ? '#54c48a' : ''],
     ].filter(([, value]) => value);
     const fieldsHtml = fields.length
       ? '<div style="display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:10px;">'+
-        fields.map(([label, value, isHtml]) =>
+        fields.map(([label, value, isHtml, color]) =>
           '<div><div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:2px;">'+escapeHtml(label)+'</div>'+
-          '<div>'+(isHtml ? value : escapeHtml(value))+'</div></div>'
+          '<div'+(color ? ' style="color:'+color+';font-weight:700;"' : '')+'>'+(isHtml ? value : escapeHtml(value))+'</div></div>'
         ).join('')+
         '</div>'
       : '';
@@ -33719,7 +33799,12 @@ function renderHomeTasks(){
     const notesHtml = cleanNotes
       ? '<p class="page-desc" style="margin:10px 0 0;">'+escapeHtml(cleanNotes)+'</p>'
       : '';
-    return '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">'+comprasOrderBadges(order)+'</div>'+fieldsHtml+notesHtml;
+    // No detalhe, a divisão aparece SEMPRE (inclusive "SEM STATUS"), a partir
+    // do vencedor definido; previsão e entrega ficam nos campos abaixo.
+    const divisionPill = comprasDivisionStatusBadge(order.divisionStatus, 'DIVISÃO · ') ||
+      '<span class="status-pill" style="opacity:.65;">DIVISÃO · SEM STATUS</span>';
+    return '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">'+comprasOrderBadges(order, {skipDivision:true})+
+      (order.status !== 'aberto' ? ' '+divisionPill : '')+'</div>'+fieldsHtml+notesHtml;
   }
 
   // Tom da barra colorida no topo do card (mesmo esquema do Controle de
@@ -33898,64 +33983,268 @@ function renderHomeTasks(){
     return ids.map(id => escapeHtml(comprasSupplierName(id))).join(', ');
   }
 
-  // ----- Fase F: itens + cotação, enquanto o pedido está 'aberto' -----
-  function renderComprasOrderAbertoItems(){
-    const wrap = el('comprasOrderAbertoItemsList');
-    if(!wrap) return;
-    if(!comprasCurrentOrderItems.length){
-      wrap.innerHTML = '<p class="page-desc">Nenhum item neste pedido ainda — use "+ ADICIONAR ITEM".</p>';
-      return;
+  // ----- Pedido 'aberto': adição rápida + mapa de cotação + fechamento -----
+  let comprasQuickSupplierAfterCreate = null;
+  let comprasWinnerFormOrderId = '';
+  // Fornecedores da cotação = colunas: candidatos de qualquer item + quem já
+  // cotou, na ordem em que aparecem.
+  function comprasQuoteSupplierIds(){
+    const ids = [];
+    for(const item of comprasCurrentOrderItems){
+      for(const id of (item.candidateSupplierIdsList || [])) if(!ids.includes(id)) ids.push(id);
+      for(const quote of (item.quotes || [])) if(!ids.includes(quote.supplierId)) ids.push(quote.supplierId);
     }
-    wrap.innerHTML = comprasCurrentOrderItems.map(item => {
-      const candidateIds = item.candidateSupplierIdsList || [];
-      const quotes = item.quotes || [];
-      const quotedSupplierIds = new Set(quotes.map(q => q.supplierId));
-      // União: candidatos marcados no item + quem já cotou (mesmo sem ter
-      // sido marcado candidato) — permite cotar qualquer fornecedor válido.
-      const supplierIdsToShow = Array.from(new Set([...candidateIds, ...quotes.map(q => q.supplierId)]));
-      const quoteRows = supplierIdsToShow.map(supplierId => {
-        const quote = quotes.find(q => q.supplierId === supplierId);
-        const supplierName = quote ? quote.supplierName : comprasSupplierName(supplierId);
-        return '<tr>'+
-          '<td>'+escapeHtml(supplierName)+'</td>'+
-          '<td><input type="text" inputmode="decimal" style="width:110px;" value="'+(quote ? (Number(quote.unitPriceCents||0)/100).toFixed(2) : '')+'" placeholder="R$ 0,00" data-compras-quote-price="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'"></td>'+
-          '<td class="no-print"><span style="display:flex;gap:6px;">'+
-            '<button class="btn-outline" type="button" data-compras-quote-save="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'">SALVAR</button>'+
-            (quote ? '<button class="btn-outline" type="button" data-compras-quote-delete="'+escapeHtml(item.id)+'|'+escapeHtml(supplierId)+'">REMOVER</button>' : '')+
-          '</span></td>'+
-        '</tr>';
-      }).join('');
-      const otherSuppliers = comprasSuppliersCache.filter(s => !supplierIdsToShow.includes(s.id));
-      const addSupplierSelect = otherSuppliers.length
-        ? '<div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">'+
-            '<select data-compras-quote-add-supplier="'+escapeHtml(item.id)+'" style="min-width:200px;"><option value="">+ COTAR OUTRO FORNECEDOR…</option>'+
-              otherSuppliers.map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('')+
-            '</select>'+
-            '<input type="text" inputmode="decimal" placeholder="R$ 0,00" style="width:110px;" data-compras-quote-add-price="'+escapeHtml(item.id)+'">'+
-            '<button class="btn-outline" type="button" data-compras-quote-add="'+escapeHtml(item.id)+'">ADICIONAR COTAÇÃO</button>'+
-          '</div>'
-        : '';
-      return '<div class="table-panel" style="margin-bottom:12px;padding:14px;">'+
-        '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:baseline;">'+
-          '<strong>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</strong>'+
-          '<span>QTD: '+Number(item.quantity || 0)+' · LOJAS: '+comprasStoreNamesLabel(item.targetStores)+'</span>'+
-          '<span style="display:flex;gap:6px;">'+
-            '<button class="btn-outline" type="button" data-compras-item-edit="'+escapeHtml(item.id)+'">EDITAR</button>'+
-            '<button class="btn-outline" type="button" data-compras-item-delete="'+escapeHtml(item.id)+'">EXCLUIR ITEM</button>'+
-          '</span>'+
-        '</div>'+
-        (item.notes ? '<p class="page-desc" style="margin:6px 0 0;">'+escapeHtml(item.notes)+'</p>' : '')+
-        '<div class="table-scroll" style="margin-top:10px;">'+
-          '<table><thead><tr><th>Fornecedor</th><th>Preço unit. cotado</th><th class="no-print"></th></tr></thead>'+
-          '<tbody>'+(quoteRows || '<tr><td colspan="3" class="responsive-empty">Nenhum fornecedor candidato/cotado ainda.</td></tr>')+'</tbody></table>'+
-        '</div>'+
-        addSupplierSelect+
-      '</div>';
-    }).join('');
-    wrap.querySelectorAll('[data-compras-quote-price],[data-compras-quote-add-price]').forEach(attachCurrencyMask);
+    return ids;
   }
 
-  if(el('comprasOrderAbertoItemsList')) el('comprasOrderAbertoItemsList').addEventListener('click', async event => {
+  function comprasQuoteOf(item, supplierId){
+    return (item.quotes || []).find(quote => quote.supplierId === supplierId) || null;
+  }
+
+  function comprasItemLabel(item){
+    return item.productName || item.productCode || 'PRODUTO';
+  }
+
+  // Totais por fornecedor (só itens cotados) e quantos itens cada um cobriu.
+  function comprasQuoteTotals(){
+    const supplierIds = comprasQuoteSupplierIds();
+    return supplierIds.map(supplierId => {
+      let totalCents = 0;
+      let quoted = 0;
+      for(const item of comprasCurrentOrderItems){
+        const quote = comprasQuoteOf(item, supplierId);
+        if(!quote) continue;
+        quoted += 1;
+        totalCents += Number(quote.unitPriceCents || 0) * Number(item.quantity || 0);
+      }
+      return {supplierId, name: comprasSupplierName(supplierId), totalCents, quoted, complete: quoted === comprasCurrentOrderItems.length && quoted > 0};
+    });
+  }
+
+  // Sugestão de vencedor: o mais barato entre os que cotaram TODOS os itens;
+  // se nenhum cotou tudo, o mais barato entre os que cotaram algo.
+  function comprasSuggestedWinner(totals){
+    const pool = totals.filter(row => row.complete).length ? totals.filter(row => row.complete) : totals.filter(row => row.quoted);
+    return pool.slice().sort((a, b) => a.totalCents - b.totalCents)[0] || null;
+  }
+
+  function renderComprasOrderAbertoItems(){
+    const table = el('comprasQuoteTable');
+    if(!table) return;
+    const supplierIds = comprasQuoteSupplierIds();
+    const items = comprasCurrentOrderItems;
+    const addSelect = el('comprasQuoteAddSupplier');
+    addSelect.innerHTML = '<option value="">+ ADICIONAR FORNECEDOR…</option>'+
+      comprasSuppliersCache.filter(supplier => !supplierIds.includes(supplier.id))
+        .map(supplier => '<option value="'+escapeHtml(supplier.id)+'">'+escapeHtml(supplier.name)+'</option>').join('')+
+      '<option value="__new__">+ CADASTRAR NOVO FORNECEDOR…</option>';
+    addSelect.disabled = !items.length;
+    if(!items.length){
+      table.innerHTML = '<tbody><tr><td class="responsive-empty">Nenhum produto ainda — busque ou digite acima e aperte ENTER.</td></tr></tbody>';
+      return;
+    }
+    const head = '<thead><tr><th>Produto</th><th>Qtd</th>'+
+      supplierIds.map(id => '<th class="compras-quote-col">'+escapeHtml(comprasSupplierName(id))+
+        ' <button class="compras-quote-col-remove" type="button" data-compras-col-remove="'+escapeHtml(id)+'" aria-label="'+escapeHtml('Tirar '+comprasSupplierName(id)+' da cotação')+'">×</button></th>').join('')+
+      '<th></th></tr></thead>';
+    const body = '<tbody>'+items.map(item => '<tr data-compras-quote-row="'+escapeHtml(item.id)+'">'+
+      '<td data-label="Produto" class="compras-quote-product"><strong>'+escapeHtml(comprasItemLabel(item))+'</strong>'+
+        (item.productCode && item.productName ? '<small>'+escapeHtml(item.productCode)+'</small>' : (!item.productCode ? '<small>TEXTO LIVRE</small>' : ''))+
+        (item.notes ? '<small>'+escapeHtml(item.notes)+'</small>' : '')+'</td>'+
+      '<td data-label="Qtd"><input type="number" min="1" step="1" inputmode="numeric" class="compras-quote-qty" data-compras-qty="'+escapeHtml(item.id)+'" value="'+Number(item.quantity || 0)+'" aria-label="Quantidade"></td>'+
+      supplierIds.map(supplierId => {
+        const quote = comprasQuoteOf(item, supplierId);
+        const key = item.id+'|'+supplierId;
+        return '<td data-label="'+escapeHtml(comprasSupplierName(supplierId))+'" class="compras-quote-cell" data-compras-cell="'+escapeHtml(key)+'">'+
+          '<input type="text" inputmode="decimal" placeholder="R$ 0,00" data-compras-price="'+escapeHtml(key)+'" data-cents="'+(quote ? Number(quote.unitPriceCents || 0) : '')+'" aria-label="'+escapeHtml('Preço unitário de '+comprasSupplierName(supplierId))+'">'+
+          '<small data-compras-line-total="'+escapeHtml(key)+'"></small></td>';
+      }).join('')+
+      '<td data-label="" class="compras-quote-actions"><button class="btn-outline btn-sm" type="button" data-compras-item-edit="'+escapeHtml(item.id)+'">EDITAR</button> '+
+        '<button class="btn-outline btn-sm" type="button" data-compras-item-delete="'+escapeHtml(item.id)+'">EXCLUIR</button></td>'+
+    '</tr>').join('')+'</tbody>';
+    const foot = '<tfoot><tr><th>TOTAL</th><th>'+items.length+(items.length === 1 ? ' ITEM' : ' ITENS')+'</th>'+
+      supplierIds.map(id => '<th data-label="'+escapeHtml(comprasSupplierName(id))+'" data-compras-col-total="'+escapeHtml(id)+'"></th>').join('')+'<th></th></tr></tfoot>';
+    table.innerHTML = head+body+foot;
+    table.querySelectorAll('[data-compras-price]').forEach(input => {
+      const cents = input.dataset.cents === '' ? null : Number(input.dataset.cents);
+      attachCurrencyMask(input).setValue(cents === null ? '' : (cents / 100).toFixed(2));
+      let committed = input.value;
+      input.addEventListener('focus', () => { committed = input.value; requestAnimationFrame(() => input.select()); });
+      input.addEventListener('keydown', event => {
+        if(event.key !== 'Enter') return;
+        event.preventDefault();
+        // Enter desce para o mesmo fornecedor no próximo produto.
+        const [itemId, supplierId] = input.dataset.comprasPrice.split('|');
+        const index = comprasCurrentOrderItems.findIndex(row => row.id === itemId);
+        const next = comprasCurrentOrderItems[index + 1];
+        const target = next && table.querySelector('[data-compras-price="'+CSS.escape(next.id+'|'+supplierId)+'"]');
+        if(target) target.focus(); else input.blur();
+      });
+      input.addEventListener('blur', () => {
+        if(input.value === committed) return;
+        committed = input.value;
+        comprasSaveQuoteCell(input);
+      });
+    });
+    comprasRefreshQuoteTotals();
+  }
+
+  // Recalcula os totais da linha, das colunas e o painel de fechamento sem
+  // redesenhar a tabela (não tira o foco de quem está digitando).
+  function comprasRefreshQuoteTotals(){
+    const table = el('comprasQuoteTable');
+    if(!table) return;
+    const totals = comprasQuoteTotals();
+    const best = comprasSuggestedWinner(totals);
+    for(const item of comprasCurrentOrderItems){
+      const prices = comprasQuoteSupplierIds().map(id => comprasQuoteOf(item, id)).filter(Boolean).map(q => Number(q.unitPriceCents || 0));
+      const min = prices.length > 1 ? Math.min(...prices) : null;
+      for(const supplierId of comprasQuoteSupplierIds()){
+        const key = item.id+'|'+supplierId;
+        const quote = comprasQuoteOf(item, supplierId);
+        const small = table.querySelector('[data-compras-line-total="'+CSS.escape(key)+'"]');
+        const cell = table.querySelector('[data-compras-cell="'+CSS.escape(key)+'"]');
+        if(small) small.textContent = quote ? '= '+formatCentsBRL(Number(quote.unitPriceCents || 0) * Number(item.quantity || 0)) : '';
+        if(cell) cell.classList.toggle('best', Boolean(quote && min !== null && Number(quote.unitPriceCents) === min));
+      }
+    }
+    for(const row of totals){
+      const th = table.querySelector('[data-compras-col-total="'+CSS.escape(row.supplierId)+'"]');
+      if(!th) continue;
+      th.classList.toggle('best', Boolean(best && best.supplierId === row.supplierId));
+      th.innerHTML = escapeHtml(formatCentsBRL(row.totalCents))+'<small>'+row.quoted+' DE '+comprasCurrentOrderItems.length+(row.complete ? '' : ' COTADOS')+'</small>';
+    }
+    renderComprasOrderWinnerSection(totals, best);
+  }
+
+  async function comprasSaveQuoteCell(input){
+    const [itemId, supplierId] = input.dataset.comprasPrice.split('|');
+    const item = comprasCurrentOrderItems.find(row => row.id === itemId);
+    if(!item) return;
+    const raw = getCurrencyValue(input);
+    const existing = comprasQuoteOf(item, supplierId);
+    const base = '/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes';
+    const cell = input.closest('td');
+    if(cell) cell.classList.add('saving');
+    try{
+      if(!raw){
+        if(existing) await comprasNovoApiRequest(base+'?supplierId='+encodeURIComponent(supplierId), {method:'DELETE'});
+        item.quotes = (item.quotes || []).filter(quote => quote.supplierId !== supplierId);
+      }else{
+        const unitPriceCents = parseBRLToCents(raw);
+        if(unitPriceCents === null) throw new Error('INFORME UM PREÇO VÁLIDO.');
+        await comprasNovoApiRequest(base, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, unitPriceCents})});
+        if(existing) existing.unitPriceCents = unitPriceCents;
+        else (item.quotes = item.quotes || []).push({supplierId, supplierName: comprasSupplierName(supplierId), unitPriceCents});
+      }
+      comprasRefreshQuoteTotals();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+    }finally{
+      if(cell) cell.classList.remove('saving');
+    }
+  }
+
+  async function comprasReloadCurrentOrder(){
+    await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
+  }
+
+  // Adição rápida: o que bate com o catálogo entra com código e nome
+  // oficiais; o resto entra como texto livre (só o nome).
+  if(el('comprasQuickAddForm')) el('comprasQuickAddForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('comprasQuickAddStatus');
+    const input = el('comprasQuickProduct');
+    const text = input.value.trim();
+    const quantity = Number(el('comprasQuickQty').value);
+    if(!text){ status.textContent = 'BUSQUE OU DIGITE O PRODUTO.'; input.focus(); return; }
+    if(!Number.isInteger(quantity) || quantity < 1){ status.textContent = 'INFORME A QUANTIDADE (1 OU MAIS).'; return; }
+    // Escolhido na lista (código) ou digitado igual ao nome do catálogo.
+    const byName = productCatalogItems.find(product => (product.name || '').toUpperCase() === text.toUpperCase());
+    const code = comprasFindProductName(text) ? text : (byName ? (byName.codeUnigames || byName.codePa || '') : '');
+    const payload = code
+      ? {productCode: code, productName: comprasFindProductName(code), quantity}
+      : {productCode: '', productName: text.toUpperCase(), quantity};
+    payload.candidateSupplierIds = comprasQuoteSupplierIds();
+    status.textContent = '';
+    const button = event.target.querySelector('[type="submit"]');
+    button.disabled = true;
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+      });
+      input.value = '';
+      el('comprasQuickQty').value = '1';
+      await comprasReloadCurrentOrder();
+      el('comprasQuickProduct').focus();
+    }catch(error){
+      status.textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+  // Escolher na lista do catálogo já leva para a quantidade.
+  if(el('comprasQuickProduct')) el('comprasQuickProduct').addEventListener('change', () => {
+    if(comprasFindProductName(el('comprasQuickProduct').value.trim())) el('comprasQuickQty').select();
+  });
+  // ENTER no produto vai para a quantidade (a lista do catálogo, se aberta,
+  // trata o ENTER antes); ENTER na quantidade adiciona.
+  if(el('comprasQuickProduct')) el('comprasQuickProduct').addEventListener('keydown', event => {
+    if(event.key !== 'Enter' || event.defaultPrevented) return;
+    event.preventDefault();
+    if(el('comprasQuickProduct').value.trim()) el('comprasQuickQty').select();
+  });
+
+  if(el('comprasQuoteAddSupplier')) el('comprasQuoteAddSupplier').addEventListener('change', async event => {
+    const supplierId = event.target.value;
+    event.target.value = '';
+    if(!supplierId) return;
+    if(supplierId === '__new__'){
+      comprasQuickSupplierAfterCreate = id => comprasAddQuoteSupplier(id);
+      el('comprasQuickSupplierForm').reset();
+      el('comprasQuickSupplierFormStatus').textContent = '';
+      el('comprasQuickSupplierDialog').showModal();
+      return;
+    }
+    await comprasAddQuoteSupplier(supplierId);
+  });
+
+  async function comprasAddQuoteSupplier(supplierId){
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/suppliers', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, action:'add'})
+      });
+      await comprasReloadCurrentOrder();
+      const first = comprasCurrentOrderItems[0];
+      const input = first && document.querySelector('[data-compras-price="'+CSS.escape(first.id+'|'+supplierId)+'"]');
+      if(input) input.focus();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  if(el('comprasQuoteTable')) el('comprasQuoteTable').addEventListener('change', async event => {
+    const qtyInput = event.target.closest('[data-compras-qty]');
+    if(!qtyInput) return;
+    const item = comprasCurrentOrderItems.find(row => row.id === qtyInput.dataset.comprasQty);
+    const quantity = Number(qtyInput.value);
+    if(!item) return;
+    if(!Number.isInteger(quantity) || quantity < 1){
+      showPurchaseToast('INFORME A QUANTIDADE (1 OU MAIS).', 'error');
+      qtyInput.value = item.quantity;
+      return;
+    }
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(item.id), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({quantity})
+      });
+      item.quantity = quantity;
+      comprasRefreshQuoteTotals();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+      qtyInput.value = item.quantity;
+    }
+  });
+
+  if(el('comprasQuoteTable')) el('comprasQuoteTable').addEventListener('click', async event => {
     const editItemBtn = event.target.closest('[data-compras-item-edit]');
     if(editItemBtn){
       const item = comprasCurrentOrderItems.find(i => i.id === editItemBtn.dataset.comprasItemEdit);
@@ -33964,93 +34253,96 @@ function renderHomeTasks(){
     }
     const deleteItemBtn = event.target.closest('[data-compras-item-delete]');
     if(deleteItemBtn){
-      const itemId = deleteItemBtn.dataset.comprasItemDelete;
-      if(!confirm('EXCLUIR ESTE ITEM DO PEDIDO?')) return;
+      if(!confirm('EXCLUIR ESTE PRODUTO DO PEDIDO?')) return;
       try{
-        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {method:'DELETE'});
-        await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
-        showPurchaseToast('Item removido.');
+        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(deleteItemBtn.dataset.comprasItemDelete), {method:'DELETE'});
+        await comprasReloadCurrentOrder();
+        showPurchaseToast('Produto removido.');
       }catch(error){ showPurchaseToast(error.message, 'error'); }
       return;
     }
-    const saveQuoteBtn = event.target.closest('[data-compras-quote-save]');
-    if(saveQuoteBtn){
-      const [itemId, supplierId] = saveQuoteBtn.dataset.comprasQuoteSave.split('|');
-      const priceInput = document.querySelector('[data-compras-quote-price="'+itemId+'|'+supplierId+'"]');
-      const unitPriceCents = priceInput ? parseBRLToCents(getCurrencyValue(priceInput) || '0') : null;
-      if(unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO VÁLIDO.', 'error'); return; }
+    const removeColBtn = event.target.closest('[data-compras-col-remove]');
+    if(removeColBtn){
+      const supplierId = removeColBtn.dataset.comprasColRemove;
+      if(!confirm('TIRAR '+comprasSupplierName(supplierId)+' DA COTAÇÃO? OS PREÇOS DELE NESTE PEDIDO SERÃO APAGADOS.')) return;
       try{
-        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
-          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, unitPriceCents})
+        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/suppliers', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, action:'remove'})
         });
-        await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
-        showPurchaseToast('Cotação salva.');
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
-      return;
-    }
-    const deleteQuoteBtn = event.target.closest('[data-compras-quote-delete]');
-    if(deleteQuoteBtn){
-      const [itemId, supplierId] = deleteQuoteBtn.dataset.comprasQuoteDelete.split('|');
-      try{
-        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes?supplierId='+encodeURIComponent(supplierId), {method:'DELETE'});
-        await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
-        showPurchaseToast('Cotação removida.');
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
-      return;
-    }
-    const addQuoteBtn = event.target.closest('[data-compras-quote-add]');
-    if(addQuoteBtn){
-      const itemId = addQuoteBtn.dataset.comprasQuoteAdd;
-      const select = document.querySelector('[data-compras-quote-add-supplier="'+itemId+'"]');
-      const priceInput = document.querySelector('[data-compras-quote-add-price="'+itemId+'"]');
-      const supplierId = select ? select.value : '';
-      if(!supplierId){ showPurchaseToast('ESCOLHA UM FORNECEDOR.', 'error'); return; }
-      const unitPriceCents = priceInput ? parseBRLToCents(getCurrencyValue(priceInput) || '0') : null;
-      if(unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO VÁLIDO.', 'error'); return; }
-      try{
-        await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId)+'/quotes', {
-          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, unitPriceCents})
-        });
-        await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
-        showPurchaseToast('Cotação adicionada.');
+        await comprasReloadCurrentOrder();
       }catch(error){ showPurchaseToast(error.message, 'error'); }
     }
   });
 
-  // ----- "DEFINIR FORNECEDOR VENCEDOR" -----
-  function renderComprasOrderWinnerSection(){
-    const body = el('comprasOrderWinnerBody');
+  // ----- Fechamento: vencedor + loja que fatura (CNPJ) + previsão -----
+  function renderComprasOrderWinnerSection(totals, best){
     const select = el('comprasOrderWinnerSelect');
-    if(!body || !select) return;
-    const bySupplier = new Map();
-    for(const item of comprasCurrentOrderItems){
-      for(const quote of (item.quotes || [])){
-        const agg = bySupplier.get(quote.supplierId) || { supplierId: quote.supplierId, supplierName: quote.supplierName, itemCount: 0, totalCents: 0 };
-        agg.itemCount += 1;
-        agg.totalCents += Number(quote.unitPriceCents || 0) * Number(item.quantity || 0);
-        bySupplier.set(quote.supplierId, agg);
-      }
+    if(!select) return;
+    totals = totals || comprasQuoteTotals();
+    best = best === undefined ? comprasSuggestedWinner(totals) : best;
+    if(comprasWinnerFormOrderId !== comprasCurrentOrderId){
+      comprasWinnerFormOrderId = comprasCurrentOrderId;
+      select.value = '';
+      el('comprasOrderBillingCompany').value = '';
+      el('comprasOrderWinnerExpected').value = '';
+      el('comprasOrderWinnerStatus').textContent = '';
+      comprasDisarmWinnerButton();
     }
-    const rows = Array.from(bySupplier.values()).sort((a,b) => b.totalCents - a.totalCents);
-    body.innerHTML = rows.length
-      ? rows.map(row => '<tr>'+
-          '<td>'+escapeHtml(row.supplierName || row.supplierId)+'</td>'+
-          '<td>'+row.itemCount+' de '+comprasCurrentOrderItems.length+(row.itemCount < comprasCurrentOrderItems.length ? ' <span class="status-pill alert">INCOMPLETO</span>' : '')+'</td>'+
-          '<td>'+formatCentsBRL(row.totalCents)+'</td>'+
-        '</tr>').join('')
-      : '<tr><td colspan="3" class="responsive-empty">Nenhuma cotação registrada ainda.</td></tr>';
-    select.innerHTML = '<option value="">-- ESCOLHA O FORNECEDOR VENCEDOR --</option>'+
-      rows.map(row => '<option value="'+escapeHtml(row.supplierId)+'">'+escapeHtml(row.supplierName || row.supplierId)+'</option>').join('');
+    const current = select.value;
+    const quotedRows = totals.filter(row => row.quoted);
+    select.innerHTML = '<option value="">ESCOLHA</option>'+quotedRows.map(row =>
+      '<option value="'+escapeHtml(row.supplierId)+'">'+escapeHtml(row.name+' — '+formatCentsBRL(row.totalCents)+(row.complete ? '' : ' ('+row.quoted+' DE '+comprasCurrentOrderItems.length+' ITENS)'))+'</option>').join('');
+    if(quotedRows.some(row => row.supplierId === current)) select.value = current;
+    else if(best) select.value = best.supplierId;
+    const billing = el('comprasOrderBillingCompany');
+    const billingCurrent = billing.value || (comprasCurrentOrder && comprasCurrentOrder.companyId) || '';
+    billing.innerHTML = '<option value="">ESCOLHA</option>'+companies.map(company =>
+      '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    if(companies.some(company => company.id === billingCurrent)) billing.value = billingCurrent;
+    const expected = el('comprasOrderWinnerExpected');
+    if(!expected.value && comprasCurrentOrder && comprasCurrentOrder.expectedDate) expected.value = comprasCurrentOrder.expectedDate;
+    const chosen = quotedRows.find(row => row.supplierId === select.value);
+    el('comprasOrderWinnerSummary').textContent = chosen
+      ? 'TOTAL DO PEDIDO COM '+chosen.name+': '+formatCentsBRL(chosen.totalCents)+(chosen.complete ? '' : ' — ATENÇÃO: COTOU SÓ '+chosen.quoted+' DE '+comprasCurrentOrderItems.length+' PRODUTOS')
+      : (comprasCurrentOrderItems.length ? 'PREENCHA OS PREÇOS NA COTAÇÃO ACIMA PARA ESCOLHER O VENCEDOR.' : '');
   }
+  function comprasDisarmWinnerButton(){
+    const button = el('btnConfirmComprasWinner');
+    if(!button) return;
+    delete button.dataset.armed;
+    button.textContent = 'GERAR PEDIDO — COMPRA EFETUADA';
+  }
+  if(el('comprasOrderWinnerSelect')) el('comprasOrderWinnerSelect').addEventListener('change', () => { comprasDisarmWinnerButton(); renderComprasOrderWinnerSection(); });
+  ['comprasOrderBillingCompany', 'comprasOrderWinnerExpected'].forEach(id => {
+    if(el(id)) el(id).addEventListener('change', () => { comprasDisarmWinnerButton(); el('comprasOrderWinnerStatus').textContent = ''; });
+  });
+
   if(el('btnConfirmComprasWinner')) el('btnConfirmComprasWinner').addEventListener('click', async () => {
     const status = el('comprasOrderWinnerStatus');
     status.textContent = '';
     const supplierId = el('comprasOrderWinnerSelect').value;
+    const companyId = el('comprasOrderBillingCompany').value;
+    const expectedDate = el('comprasOrderWinnerExpected').value;
+    if(!comprasCurrentOrderItems.length){ status.textContent = 'ADICIONE OS PRODUTOS DO PEDIDO.'; return; }
     if(!supplierId){ status.textContent = 'ESCOLHA O FORNECEDOR VENCEDOR.'; return; }
-    if(!confirm('CONFIRMAR ESTE FORNECEDOR COMO VENCEDOR? O pedido vai para "AGUARDANDO CHEGADA" e não será mais possível adicionar/remover itens.')) return;
+    if(!companyId){ status.textContent = 'ESCOLHA A LOJA QUE VAI FATURAR (CNPJ).'; return; }
+    // Confirmação na própria tela (sem janela do navegador): o 1º clique
+    // arma o botão com o resumo; o 2º clique (com os mesmos dados) gera.
+    const button = el('btnConfirmComprasWinner');
+    const armKey = [comprasCurrentOrderId, supplierId, companyId, expectedDate].join('|');
+    if(button.dataset.armed !== armKey){
+      button.dataset.armed = armKey;
+      button.textContent = 'SIM, GERAR PEDIDO COM '+comprasSupplierName(supplierId);
+      const companyName = (companies.find(company => company.id === companyId) || {}).name || '';
+      status.textContent = 'CONFIRA: '+comprasSupplierName(supplierId)+' · FATURA EM '+companyName+
+        (expectedDate ? ' · CHEGADA '+formatDateBR(expectedDate) : ' · SEM PREVISÃO')+
+        '. O PEDIDO VAI PARA "AGUARDANDO CHEGADA" E OS PRODUTOS NÃO PODERÃO MAIS SER ALTERADOS. CLIQUE DE NOVO PARA CONFIRMAR.';
+      return;
+    }
+    comprasDisarmWinnerButton();
     try{
       await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/winner', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId})
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, companyId, expectedDate})
       });
       showPurchaseToast('Compra efetuada — pedido aguardando chegada.');
       await refreshAfterAction(async () => { await loadComprasOrdersPage({silent:true}); await openComprasOrderDetail(comprasCurrentOrderId); });
@@ -34062,7 +34354,7 @@ function renderHomeTasks(){
     const order = comprasOrders.find(o => o.id === comprasCurrentOrderId);
     const linhas = ['SOLICITAÇÃO DE ORÇAMENTO', 'Pedido: '+(order ? comprasOrderDisplayName(order) : comprasCurrentOrderId), ''];
     for(const item of comprasCurrentOrderItems){
-      linhas.push(Number(item.quantity || 0)+'x '+(item.productName || item.productCode)+' ('+item.productCode+')');
+      linhas.push(Number(item.quantity || 0)+'x '+(item.productName || item.productCode)+(item.productCode ? ' ('+item.productCode+')' : ''));
     }
     const blob = new Blob(['﻿'+linhas.join('\n')], {type:'text/plain;charset=utf-8'});
     const url = URL.createObjectURL(blob);
@@ -34220,8 +34512,12 @@ function renderHomeTasks(){
       });
       comprasSuppliersCache = []; // cache invalidada — próxima comprasNovoSuppliers() busca de novo
       await comprasNovoSuppliers();
-      comprasItemSuppliersSelect.addSelection(result.id, name);
       el('comprasQuickSupplierDialog').close();
+      // Aberto pelo mapa de cotação: o fornecedor novo já vira coluna.
+      const afterCreate = comprasQuickSupplierAfterCreate;
+      comprasQuickSupplierAfterCreate = null;
+      if(afterCreate) await afterCreate(result.id);
+      else comprasItemSuppliersSelect.addSelection(result.id, name);
       showPurchaseToast('Fornecedor cadastrado e selecionado.');
     }catch(error){ status.textContent = error.message; }
   });
@@ -34230,7 +34526,7 @@ function renderHomeTasks(){
     el('comprasDraftItemForm').reset();
     el('comprasItemId').value = item ? item.id : '';
     el('comprasDraftItemDialogTitle').textContent = item ? 'EDITAR ITEM' : 'ADICIONAR ITEM';
-    el('comprasItemProductCode').value = item ? item.productCode : '';
+    el('comprasItemProductCode').value = item ? (item.productCode || item.productName || '') : '';
     el('comprasItemQuantity').value = item ? item.quantity : '';
     el('comprasItemNotes').value = item ? (item.notes || '') : '';
     el('comprasItemStockWrap').hidden = true;
@@ -34250,7 +34546,6 @@ function renderHomeTasks(){
     el('comprasDraftItemFormStatus').textContent = '';
     el('comprasDraftItemDialog').showModal();
   }
-  if(el('btnAddComprasDraftItem')) el('btnAddComprasDraftItem').addEventListener('click', () => openComprasItemDialog(null));
   if(el('btnCloseComprasDraftItemDialog')) el('btnCloseComprasDraftItemDialog').addEventListener('click', () => el('comprasDraftItemDialog').close());
   if(el('btnCancelComprasDraftItemDialog')) el('btnCancelComprasDraftItemDialog').addEventListener('click', () => el('comprasDraftItemDialog').close());
 
@@ -34275,8 +34570,11 @@ function renderHomeTasks(){
     const status = el('comprasDraftItemFormStatus');
     status.textContent = '';
     if(!comprasCurrentOrderId) return;
-    const productCode = el('comprasItemProductCode').value.trim();
-    if(!productCode){ status.textContent = 'INFORME O CÓDIGO DO PRODUTO.'; return; }
+    const productText = el('comprasItemProductCode').value.trim();
+    if(!productText){ status.textContent = 'INFORME O PRODUTO.'; return; }
+    // Fora do catálogo = texto livre (sem código), igual à adição rápida.
+    const catalogName = comprasFindProductName(productText);
+    const productCode = catalogName ? productText : '';
     const quantity = Number(el('comprasItemQuantity').value);
     if(!Number.isFinite(quantity) || quantity < 0){ status.textContent = 'INFORME UMA QUANTIDADE VÁLIDA.'; return; }
 
@@ -34288,7 +34586,7 @@ function renderHomeTasks(){
 
     const payload = {
       productCode,
-      productName: comprasFindProductName(productCode) || el('comprasItemProductCode').dataset.productName || '',
+      productName: catalogName || (productCode ? el('comprasItemProductCode').dataset.productName || '' : productText.toUpperCase()),
       quantity,
       notes: el('comprasItemNotes').value,
       targetStores,
@@ -34327,7 +34625,7 @@ function renderHomeTasks(){
     }
     const header = '*ENTRADA* FORNECEDOR '+supplierName+', ORIGEM '+(lojas || 'NÃO DEFINIDA');
     const linhas = comprasCurrentOrderItems
-      .map(item => Number(item.quantity || 0)+'x '+(item.productName || item.productCode)+' ('+item.productCode+')')
+      .map(item => Number(item.quantity || 0)+'x '+(item.productName || item.productCode)+(item.productCode ? ' ('+item.productCode+')' : ''))
       .join('\n');
     return header+'\n\n'+linhas;
   }
@@ -34373,6 +34671,7 @@ function renderHomeTasks(){
       comprasCurrentOrderItems = Array.isArray(data.items) ? data.items : [];
       comprasCurrentOrderLinkedInvoice = data.linkedInvoice || null;
       const order = data.order;
+      comprasApplyItemTotals(order, comprasCurrentOrderItems);
       comprasCurrentOrder = order;
       // Reposiciona a linha de detalhe ANTES de popular os campos (o nó só
       // é encontrado por document.getElementById depois de voltar ao DOM).
@@ -34448,14 +34747,16 @@ function renderHomeTasks(){
     const body = el('comprasOrderItemsBody');
     if(!body) return;
     if(!comprasCurrentOrderItems.length){
-      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum item neste pedido.</td></tr>';
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum item neste pedido.</td></tr>';
       return;
     }
-    body.innerHTML = comprasCurrentOrderItems.map(item => '<tr>'+
-      '<td>'+escapeHtml(item.productCode)+(item.productName ? ' — '+escapeHtml(item.productName) : '')+'</td>'+
-      '<td>'+comprasStoreNamesLabel(item.targetStores)+'</td>'+
+    body.innerHTML = comprasCurrentOrderItems.map(item => {
+      const missing = Number(item.quantity || 0) - Number(item.receivedQuantity || 0);
+      const partial = Number(item.receivedQuantity || 0) > 0 && missing > 0;
+      return '<tr>'+
+      '<td><strong>'+escapeHtml(comprasItemLabel(item))+'</strong>'+(item.productCode && item.productName ? ' <small style="color:var(--ink-faint);">'+escapeHtml(item.productCode)+'</small>' : '')+'</td>'+
       '<td>'+Number(item.quantity || 0)+'</td>'+
-      '<td>'+Number(item.receivedQuantity || 0)+'</td>'+
+      '<td>'+Number(item.receivedQuantity || 0)+(partial ? ' <span class="status-pill waiting">FALTAM '+missing+'</span>' : '')+'</td>'+
       // 0 = "não informado" (default do schema), não mostra R$ 0,00.
       '<td>'+(Number(item.unitPriceCents || 0) > 0 ? formatCentsBRL(item.unitPriceCents) : '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+
@@ -34464,7 +34765,8 @@ function renderHomeTasks(){
         '<button class="btn-outline" type="button" data-compras-order-item-save="'+escapeHtml(item.id)+'">SALVAR</button>'+
         '<button class="btn-outline" type="button" data-compras-order-item-edit="'+escapeHtml(item.id)+'" title="Corrigir produto/quantidade/loja">EDITAR PRODUTO</button>'+
       '</span></td>'+
-    '</tr>').join('');
+    '</tr>';
+    }).join('');
     body.querySelectorAll('[data-compras-order-item-price]').forEach(attachCurrencyMask);
   }
 
@@ -34574,11 +34876,25 @@ function renderHomeTasks(){
 
   async function comprasOrderUploadAttachment(file, attachmentType){
     if(!file || !comprasCurrentOrderId) return;
+    // Aviso imediato: antes, nada mudava na tela enquanto o arquivo subia.
+    const box = el(attachmentType === 'pedido' ? 'comprasOrderAttachmentsPedido' : 'comprasOrderAttachmentsNota');
+    const input = el(attachmentType === 'pedido' ? 'comprasOrderAttachPedidoInput' : 'comprasOrderAttachNotaInput');
+    const label = input && input.closest('label');
+    const previous = box ? box.innerHTML : '';
+    if(box) box.textContent = 'ENVIANDO "'+file.name+'"…';
+    if(input) input.disabled = true;
+    if(label) label.style.opacity = '.5';
     try{
       await uploadInvoiceFile('/api/compras-novo/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/attachments', file, {attachmentType});
       showPurchaseToast('Arquivo anexado.');
       await renderComprasOrderAttachments(attachmentType);
-    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    }catch(error){
+      if(box) box.innerHTML = previous;
+      showPurchaseToast(error.message, 'error');
+    }finally{
+      if(input) input.disabled = false;
+      if(label) label.style.opacity = '';
+    }
   }
   if(el('comprasOrderAttachPedidoInput')) el('comprasOrderAttachPedidoInput').addEventListener('change', async () => {
     const file = el('comprasOrderAttachPedidoInput').files[0];
@@ -34647,13 +34963,36 @@ function renderHomeTasks(){
     if(!Number.isFinite(receivedQuantity) || receivedQuantity < 0){ showPurchaseToast('INFORME UMA QUANTIDADE RECEBIDA VÁLIDA.', 'error'); return; }
     const unitPriceCents = priceInput ? parseBRLToCents(getCurrencyValue(priceInput) || '0') : null;
     if(priceInput && unitPriceCents === null){ showPurchaseToast('INFORME UM PREÇO UNITÁRIO VÁLIDO.', 'error'); return; }
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'SALVANDO…';
     try{
-      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {
+      const result = await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(itemId), {
         method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ receivedQuantity, unitPriceCents })
       });
-      await refreshAfterAction(async () => { await openComprasOrderDetail(comprasCurrentOrderId); await loadComprasOrdersPage({silent:true}); });
+      const order = comprasCurrentOrder;
+      if(!order || (result.orderStatus && result.orderStatus !== order.status)){
+        // Mudou o status (ex.: tudo chegou → concluído): recarrega tudo.
+        await refreshAfterAction(async () => { await openComprasOrderDetail(comprasCurrentOrderId); await loadComprasOrdersPage({silent:true}); });
+      }else{
+        // Só esta linha mudou: atualiza na hora, sem buscar o pedido de novo.
+        const item = comprasCurrentOrderItems.find(row => row.id === itemId);
+        if(item){
+          item.receivedQuantity = receivedQuantity;
+          if(unitPriceCents !== null) item.unitPriceCents = unitPriceCents;
+        }
+        comprasApplyItemTotals(order, comprasCurrentOrderItems);
+        const listOrder = comprasOrders.find(row => row.id === order.id);
+        if(listOrder){ listOrder.orderedQty = order.orderedQty; listOrder.receivedQty = order.receivedQty; }
+        el('comprasOrderDetailMeta').innerHTML = comprasOrderDetailMetaHtml(order);
+        renderComprasOrderItemsTable();
+        renderComprasOrdersTable();
+      }
       showPurchaseToast('Item atualizado.');
-    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'SALVAR';
+    }
   });
 
   // ----- "EDITAR PEDIDO" -----
@@ -37456,17 +37795,24 @@ function renderHomeTasks(){
     const sessionId = create.session && create.session.id;
     if(!sessionId) throw new Error('NÃO FOI POSSÍVEL INICIAR O ENVIO DO ARQUIVO.');
     try{
-      for(let index=0; index<numberOfParts; index+=1){
-        const partNumber = index + 1;
-        await invoiceAttachmentRequest(uploadUrl, {
-          method:'POST',
-          headers:{
-            Accept:'application/json', 'Content-Type':'application/octet-stream',
-            'x-invoice-upload-id':sessionId, 'x-invoice-part-number':String(partNumber)
-          },
-          body:file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
-        });
-      }
+      // Pedaços de 512 KB (limite histórico) enviados 4 de cada vez: cada
+      // parte é gravada à parte no servidor e juntadas em ordem no 'complete',
+      // então a ordem de chegada não importa — 3 MB = 2 rodadas em vez de 6.
+      let nextIndex = 0;
+      const sendNext = async () => {
+        while(nextIndex < numberOfParts){
+          const index = nextIndex++;
+          await invoiceAttachmentRequest(uploadUrl, {
+            method:'POST',
+            headers:{
+              Accept:'application/json', 'Content-Type':'application/octet-stream',
+              'x-invoice-upload-id':sessionId, 'x-invoice-part-number':String(index + 1)
+            },
+            body:file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size,(index + 1) * DOCUMENT_CHUNK_SIZE))
+          });
+        }
+      };
+      await Promise.all(Array.from({length: Math.min(4, numberOfParts)}, sendNext));
       await invoiceAttachmentRequest(uploadUrl, {
         method:'POST', headers:{Accept:'application/json','Content-Type':'application/json'},
         body:JSON.stringify({action:'complete', sessionId})

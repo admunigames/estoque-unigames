@@ -104,7 +104,22 @@ export async function GET(request: Request) {
                 updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt
          FROM purchase_orders
          ${where}
-         ORDER BY created_at DESC`,
+         -- Abertos (cotando) -> aguardando chegada (pela previsão mais
+         -- próxima; sem previsão por último) -> concluídos. 'pendente' e
+         -- 'em_andamento' são os status herdados do Notion (= a caminho).
+         ORDER BY
+           CASE
+             WHEN status = 'aberto' THEN 0
+             WHEN status IN ('aguardando_chegada', 'pendente', 'em_andamento') THEN 1
+             WHEN status = 'concluido' THEN 2
+             ELSE 3
+           END,
+           CASE
+             WHEN status IN ('aguardando_chegada', 'pendente', 'em_andamento')
+               THEN COALESCE(NULLIF(expected_date, ''), '9999-12-31')
+             ELSE ''
+           END ASC,
+           created_at DESC`,
       )
       .bind(...values)
       .all<OrderRow>();
@@ -128,16 +143,24 @@ export async function GET(request: Request) {
 
     const orderIds = orders.map((order) => order.id);
     const itemCountByOrderId = new Map<string, number>();
+    // Unidades pedidas × recebidas (recebido limitado ao pedido de cada item)
+    // — base do selo "RECEBIMENTO INCOMPLETO" na lista.
+    const unitsByOrderId = new Map<string, { orderedQty: number; receivedQty: number }>();
     if (orderIds.length) {
       const placeholders = orderIds.map((_, index) => `?${index + 1}`).join(",");
       const countsResult = await database
         .prepare(
-          `SELECT order_id AS orderId, COUNT(*) AS itemCount
+          `SELECT order_id AS orderId, COUNT(*) AS itemCount,
+                  COALESCE(SUM(quantity), 0) AS orderedQty,
+                  COALESCE(SUM(CASE WHEN received_quantity > quantity THEN quantity ELSE received_quantity END), 0) AS receivedQty
            FROM purchase_order_items WHERE order_id IN (${placeholders}) GROUP BY order_id`,
         )
         .bind(...orderIds)
-        .all<ItemCountRow>();
-      for (const row of countsResult.results ?? []) itemCountByOrderId.set(row.orderId, Number(row.itemCount));
+        .all<ItemCountRow & { orderedQty: number; receivedQty: number }>();
+      for (const row of countsResult.results ?? []) {
+        itemCountByOrderId.set(row.orderId, Number(row.itemCount));
+        unitsByOrderId.set(row.orderId, { orderedQty: Number(row.orderedQty), receivedQty: Number(row.receivedQty) });
+      }
     }
 
     // Loja de destino pra exibir na lista (antes de abrir o pedido) — pedido
@@ -175,8 +198,12 @@ export async function GET(request: Request) {
       ...order,
       supplierName: order.origin === "native" ? supplierNameById.get(order.supplierId) || "" : order.supplierNameRaw,
       itemCount: itemCountByOrderId.get(order.id) || 0,
+      orderedQty: unitsByOrderId.get(order.id)?.orderedQty || 0,
+      receivedQty: unitsByOrderId.get(order.id)?.receivedQty || 0,
+      // Nativo: a loja que fatura (escolhida no fechamento) manda; pedidos
+      // antigos sem ela continuam mostrando as "lojas destino" dos itens.
       targetStoreNames:
-        order.origin === "native"
+        order.origin === "native" && !order.companyName
           ? Array.from(storeNamesByOrderId.get(order.id) || [])
           : order.companyName
             ? [order.companyName]
