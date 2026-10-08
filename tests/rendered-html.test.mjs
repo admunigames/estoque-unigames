@@ -5348,3 +5348,27 @@ test("Financeiro 9/9 > Obras: barra de lote", async () => {
   assert.match(html, /financeBulkRequest\('\/bulk', \{action:'status'/);
   assert.match(html, /id="obraBulkDialog"/);
 });
+
+test("Contas a Pagar > TIPO DE CONTA: seletor segmentado em linha, rádio fora da altura mínima de 44 px", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  // Nenhuma regra de altura mínima de 44 px pega o rádio (era o que criava as bolinhas gigantes).
+  const css = html.replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const [, selector] of css.matchAll(/\n\s*([^{}\n]*input[^{}\n]*)\{[^{}]*min-height:44px/g)) {
+    for (const part of selector.split(",")) {
+      // Só as regras globais (que começam em "input"); as de um componente específico não têm rádio.
+      if (/^input\b/.test(part.trim())) assert.match(part, /:not\(\[type="radio"\]\)/, `regra de 44 px pega o rádio: ${part.trim()}`);
+    }
+  }
+  assert.match(html, /html\[data-theme="light"\] input:not\(\[type="checkbox"\]\):not\(\[type="radio"\]\):not\(\[type="file"\]\),/);
+  // Em linha, botões iguais, rádio acessível (invisível sobre o botão), marcado com destaque e foco visível.
+  assert.match(html, /\.purchase-field\.payables-kind-tabs\{\s*display:flex; flex-direction:row;/);
+  assert.match(html, /\.purchase-field\.payables-kind-tabs label\{[^}]*flex:1 1 0;[^}]*min-height:40px;/);
+  assert.match(html, /\.purchase-field\.payables-kind-tabs input\[type="radio"\]\{[^}]*opacity:0;/);
+  assert.match(html, /\.purchase-field\.payables-kind-tabs label:has\(input:checked\)\{[^}]*background:var\(--accent-deep\)/);
+  assert.match(html, /\.purchase-field\.payables-kind-tabs label:has\(input:focus-visible\)\{outline:2px solid var\(--accent\)/);
+  assert.match(html, /html\[data-theme="light"\] \.purchase-field\.payables-kind-tabs label:has\(input:checked\)\{background:var\(--accent\)/);
+  // Os 4 diálogos usam o mesmo componente, com os mesmos name.
+  for (const name of ["payableKind", "expenseKind", "expenseRateioType", "invoiceInstallmentMode"]) {
+    assert.match(html, new RegExp(`<div class="purchase-field full payables-kind-tabs">\\s*<label><input type="radio" name="${name}"`), name);
+  }
+});
