@@ -858,6 +858,8 @@
   .compras-quote-table thead th{font:800 10px/1.3 var(--mono); letter-spacing:.04em; color:var(--ink-soft); text-transform:uppercase; white-space:nowrap;}
   .compras-quote-col-remove{min-height:0; min-width:0; width:20px; height:20px; padding:0; margin-left:4px; border:0; border-radius:50%; background:transparent; color:var(--ink-soft); cursor:pointer; font-size:14px; line-height:1;}
   .compras-quote-col-remove:hover{color:#ef6a55;}
+  .compras-armed{color:#ef6a55 !important; border-color:#ef6a55 !important;}
+  .compras-quote-col-remove.compras-armed{width:auto; height:auto; padding:2px 8px; border:1px solid #ef6a55; border-radius:999px; font:800 9px/1.2 var(--mono); white-space:nowrap;}
   .compras-quote-product strong{display:block; font-size:13px;}
   .compras-quote-product small,.compras-quote-cell small,.compras-quote-table tfoot small{display:block; margin-top:3px; font:700 10.5px/1.3 var(--sans); color:var(--ink-faint); text-transform:none;}
   .compras-quote-qty{width:72px;}
@@ -34145,6 +34147,24 @@ function renderHomeTasks(){
     }
   }
 
+  // Confirmação na própria tela (o navegador embutido não mostra a janelinha
+  // de confirm()): o 1º clique arma o botão (vermelho, texto de confirmação),
+  // o 2º executa; sem 2º clique em 6 s, volta ao normal.
+  function comprasArmButton(button, armedText){
+    if(button.dataset.armed === '1') return true;
+    button.dataset.armed = '1';
+    button.dataset.originalText = button.textContent;
+    button.textContent = armedText;
+    button.classList.add('compras-armed');
+    clearTimeout(button._armTimer);
+    button._armTimer = setTimeout(() => {
+      delete button.dataset.armed;
+      button.textContent = button.dataset.originalText;
+      button.classList.remove('compras-armed');
+    }, 6000);
+    return false;
+  }
+
   async function comprasReloadCurrentOrder(){
     await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
   }
@@ -34253,24 +34273,28 @@ function renderHomeTasks(){
     }
     const deleteItemBtn = event.target.closest('[data-compras-item-delete]');
     if(deleteItemBtn){
-      if(!confirm('EXCLUIR ESTE PRODUTO DO PEDIDO?')) return;
+      if(!comprasArmButton(deleteItemBtn, 'CONFIRMAR EXCLUSÃO')) return;
+      deleteItemBtn.disabled = true;
       try{
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/items/'+encodeURIComponent(deleteItemBtn.dataset.comprasItemDelete), {method:'DELETE'});
         await comprasReloadCurrentOrder();
         showPurchaseToast('Produto removido.');
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      }catch(error){ showPurchaseToast(error.message, 'error'); deleteItemBtn.disabled = false; }
       return;
     }
     const removeColBtn = event.target.closest('[data-compras-col-remove]');
     if(removeColBtn){
       const supplierId = removeColBtn.dataset.comprasColRemove;
-      if(!confirm('TIRAR '+comprasSupplierName(supplierId)+' DA COTAÇÃO? OS PREÇOS DELE NESTE PEDIDO SERÃO APAGADOS.')) return;
+      // Tirar o fornecedor apaga os preços dele neste pedido: confirma na tela.
+      if(!comprasArmButton(removeColBtn, 'TIRAR E APAGAR PREÇOS?')) return;
+      removeColBtn.disabled = true;
       try{
         await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/suppliers', {
           method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({supplierId, action:'remove'})
         });
         await comprasReloadCurrentOrder();
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
+        showPurchaseToast(comprasSupplierName(supplierId)+' saiu da cotação.');
+      }catch(error){ showPurchaseToast(error.message, 'error'); removeColBtn.disabled = false; }
     }
   });
 

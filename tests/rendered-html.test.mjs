@@ -2353,6 +2353,10 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /\['Previsão', formatDateBR\(order\.expectedDate\), false, late \? '#ef6a55' : ''\]/);
   assert.match(html, /\['Entrega', formatDateBR\(order\.receivedDate\)[^\n]*'#54c48a'/);
   assert.doesNotMatch(html, /if\(!confirm\('GERAR O PEDIDO COM/);
+  // EXCLUIR produto e × do fornecedor também confirmam na tela (2 cliques).
+  assert.doesNotMatch(html, /confirm\('EXCLUIR ESTE PRODUTO DO PEDIDO\?'\)|confirm\('TIRAR '\+comprasSupplierName/);
+  assert.match(html, /comprasArmButton\(deleteItemBtn, 'CONFIRMAR EXCLUSÃO'\)/);
+  assert.match(html, /comprasArmButton\(removeColBtn, 'TIRAR E APAGAR PREÇOS\?'\)/);
   assert.match(html, /button\.textContent = 'SIM, GERAR PEDIDO COM '/);
   assert.match(html, /await Promise\.all\(Array\.from\(\{length: Math\.min\(4, numberOfParts\)\}, sendNext\)\);/);
   assert.match(html, /box\.textContent = 'ENVIANDO "'\+file\.name\+'"…';/);
