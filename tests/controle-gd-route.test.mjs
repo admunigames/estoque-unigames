@@ -107,3 +107,18 @@ test("Assistência: clone com dados e permissões próprios (não mistura com o 
   const ASSIST_EDIT = { id: "ae", permissions: ["gorduras_assistencia:edit"] };
   assert.equal((await callA(ASSIST_EDIT, "DELETE", { id: comercialId })).status, 404);
 });
+
+test("isGdStore: Assistência e Depósito ficam fora do Controle de Gorduras", async () => {
+  const { isGdStore } = await import("../app/api/controle-gd/handlers.ts");
+  for (const name of ["ASSISTÊNCIA", "Assistencia", "DEPÓSITO", "deposito central", "CD"]) assert.equal(isGdStore(name), false, name);
+  for (const name of ["RIOMAR", "P.A LOJA", "QUIOSQUE P.A", "NORTH WAY", "CDU SHOPPING"]) assert.equal(isGdStore(name), true, name);
+});
+
+test("Assistência/Depósito não aparecem nem recebem gordura", async () => {
+  db.sqlite.prepare("UPDATE shared_state SET value_json=? WHERE state_key='companies_list'").run(JSON.stringify([
+    { id: A, name: "LOJA ALFA" }, { id: B, name: "LOJA BETA" }, { id: "cassist001", name: "ASSISTÊNCIA" }, { id: "cdeposi001", name: "DEPÓSITO" },
+  ]));
+  const data = await (await call(CENTRAL, "GET", undefined, "?month=2026-10")).json();
+  assert.deepEqual(data.stores.map((s) => s.storeId), [A, B]);
+  assert.equal((await entry("cassist001", "2026-10-08", 100)).status, 400);
+});
