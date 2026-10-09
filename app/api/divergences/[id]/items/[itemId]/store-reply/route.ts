@@ -55,9 +55,9 @@ export async function POST(request: Request, context: Context) {
       return jsonResponse({ error: "ESTE ITEM NÃO ESTÁ AGUARDANDO VERIFICAÇÃO DA LOJA." }, 409);
     }
     const physicalQty = body.physicalQty === undefined || body.physicalQty === "" ? item.physicalQty : quantity(body.physicalQty);
-    const systemQty = body.systemQty === undefined || body.systemQty === "" ? item.systemQty : quantity(body.systemQty);
+    const systemQty = body.systemQty === undefined || body.systemQty === "" ? item.systemQty : quantity(body.systemQty, true);
     if (physicalQty === null || systemQty === null) {
-      return jsonResponse({ error: "QUANTIDADES INVÁLIDAS (NÚMERO INTEIRO, 0 OU MAIS)." }, 400);
+      return jsonResponse({ error: "QUANTIDADES INVÁLIDAS (FÍSICA: INTEIRO, 0 OU MAIS; SISTEMA: INTEIRO, PODE SER NEGATIVO)." }, 400);
     }
     const corrected = physicalQty !== item.physicalQty || systemQty !== item.systemQty;
     const at = new Date().toISOString();

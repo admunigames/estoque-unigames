@@ -508,3 +508,13 @@ test("dashboard: produtos mais divergentes destacam os que aparecem em mais de u
   const future = await (await call(dashboardRoute.GET, STOCK_USER, "GET", `${BASE}/dashboard?from=2099-01-01&to=2099-01-31`)).json();
   assert.equal(future.totals.requests, 0);
 });
+
+test("QTD EM SISTEMA aceita negativo; QTD FÍSICA não", async () => {
+  const id = await createRequest(STORE_A_USER, [{ productCode: "7001", productName: "CABO NEGATIVO", physicalQty: 0, systemQty: -2 }]);
+  const { body } = await detail(STORE_A_USER, id);
+  const item = body.items.find((row) => row.productName === "CABO NEGATIVO");
+  assert.equal(item.systemQty, -2);
+  assert.equal(lib.divergenceOf(item.physicalQty, item.systemQty), 2);
+  const bad = await call(listRoute.POST, STORE_A_USER, "POST", BASE, { items: [{ productCode: "7002", productName: "X", physicalQty: -1, systemQty: 0 }] });
+  assert.equal(bad.status, 400);
+});

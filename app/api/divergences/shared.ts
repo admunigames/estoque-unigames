@@ -196,9 +196,11 @@ export async function companyName(database: D1Database, companyId: string) {
   }
 }
 
-export function quantity(value: unknown): number | null {
+// allowNegative: a QTD EM SISTEMA pode estar negativa (estoque furado no
+// sistema); a QTD FÍSICA nunca.
+export function quantity(value: unknown, allowNegative = false): number | null {
   const parsed = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
-  return typeof parsed === "number" && Number.isInteger(parsed) && parsed >= 0 && parsed <= MAX_QTY
+  return typeof parsed === "number" && Number.isInteger(parsed) && parsed >= (allowNegative ? -MAX_QTY : 0) && parsed <= MAX_QTY
     ? parsed
     : null;
 }
@@ -319,8 +321,8 @@ export function parseItems(raw: unknown): { items: ParsedItem[] } | { error: str
     if (productName.length < 2) return { error: `${label}: INFORME O PRODUTO.` };
     const physicalQty = quantity(entry.physicalQty);
     if (physicalQty === null) return { error: `${label}: INFORME A QUANTIDADE FÍSICA (NÚMERO INTEIRO, 0 OU MAIS).` };
-    const systemQty = quantity(entry.systemQty);
-    if (systemQty === null) return { error: `${label}: INFORME A QUANTIDADE EM SISTEMA (NÚMERO INTEIRO, 0 OU MAIS).` };
+    const systemQty = quantity(entry.systemQty, true);
+    if (systemQty === null) return { error: `${label}: INFORME A QUANTIDADE EM SISTEMA (NÚMERO INTEIRO, PODE SER NEGATIVO).` };
     items.push({
       id: safeText(entry.id, 80),
       productCode: safeText(entry.productCode, 40),

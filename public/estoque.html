@@ -9033,7 +9033,7 @@
     <div class="purchase-form-grid div-dialog-fields">
       <div class="purchase-field full"><label for="divReplyText">OBSERVAÇÃO DE RETORNO</label><textarea id="divReplyText" rows="4" maxlength="2000" placeholder="O que a loja encontrou na verificação."></textarea></div>
       <div class="purchase-field"><label for="divReplyPhysical">QTD FÍSICA (CORRIGIR, SE PRECISAR)</label><input id="divReplyPhysical" type="number" min="0" max="999999" step="1" inputmode="numeric"></div>
-      <div class="purchase-field"><label for="divReplySystem">QTD EM SISTEMA (CORRIGIR, SE PRECISAR)</label><input id="divReplySystem" type="number" min="0" max="999999" step="1" inputmode="numeric"></div>
+      <div class="purchase-field"><label for="divReplySystem">QTD EM SISTEMA (CORRIGIR, SE PRECISAR)</label><input id="divReplySystem" type="number" min="-999999" max="999999" step="1" inputmode="numeric"></div>
     </div>
     <p class="purchase-field-help">AO ENVIAR, O ITEM VOLTA PARA EM VERIFICAÇÃO.</p>
     <div class="user-form-status" id="divReplyFormStatus" role="status" aria-live="polite"></div>
@@ -22475,7 +22475,7 @@ function renderHomeTasks(){
       '<div class="purchase-field"><label for="divItemPhysical'+seq+'">QTD FÍSICA</label>'+
         '<input id="divItemPhysical'+seq+'" class="div-item-physical" type="number" min="0" max="999999" step="1" inputmode="numeric" value="'+(item.physicalQty ?? '')+'"></div>'+
       '<div class="purchase-field"><label for="divItemSystem'+seq+'">QTD EM SISTEMA</label>'+
-        '<input id="divItemSystem'+seq+'" class="div-item-system" type="number" min="0" max="999999" step="1" inputmode="numeric" value="'+(item.systemQty ?? '')+'"></div>'+
+        '<input id="divItemSystem'+seq+'" class="div-item-system" type="number" min="-999999" max="999999" step="1" inputmode="numeric" value="'+(item.systemQty ?? '')+'"></div>'+
       '<div class="purchase-field div-item-notes"><label for="divItemNotes'+seq+'">OBSERVAÇÃO DA LOJA</label>'+
         '<textarea id="divItemNotes'+seq+'" class="div-item-store-notes" rows="1" maxlength="1200" placeholder="Situação atípica ou já conhecida">'+escapeHtml(item.storeNotes || '')+'</textarea></div>'+
       '<button class="btn-danger-outline div-item-remove" type="button">REMOVER</button>'+
@@ -22588,7 +22588,7 @@ function renderHomeTasks(){
       const physicalQty = Number(physicalInput.value);
       if(physicalInput.value === '' || !Number.isInteger(physicalQty) || physicalQty < 0){ physicalInput.focus(); return {error:label+'INFORME A QUANTIDADE FÍSICA (INTEIRO, 0 OU MAIS).'}; }
       const systemQty = Number(systemInput.value);
-      if(systemInput.value === '' || !Number.isInteger(systemQty) || systemQty < 0){ systemInput.focus(); return {error:label+'INFORME A QUANTIDADE EM SISTEMA (INTEIRO, 0 OU MAIS).'}; }
+      if(systemInput.value === '' || !Number.isInteger(systemQty)){ systemInput.focus(); return {error:label+'INFORME A QUANTIDADE EM SISTEMA (INTEIRO, PODE SER NEGATIVO).'}; }
       items.push({
         id:row.dataset.itemId || '',
         productName,
@@ -22722,11 +22722,10 @@ function renderHomeTasks(){
     }
     const physical = el('divReplyPhysical').value;
     const system = el('divReplySystem').value;
-    for(const value of [physical, system]){
-      if(value !== '' && (!Number.isInteger(Number(value)) || Number(value) < 0)){
-        setDivFormStatus('divReplyFormStatus', 'QUANTIDADES INVÁLIDAS (INTEIRO, 0 OU MAIS).', 'error');
-        return;
-      }
+    // Física: inteiro 0 ou mais; sistema: inteiro (pode ser negativo).
+    if((physical !== '' && (!Number.isInteger(Number(physical)) || Number(physical) < 0)) || (system !== '' && !Number.isInteger(Number(system)))){
+      setDivFormStatus('divReplyFormStatus', 'QUANTIDADES INVÁLIDAS (FÍSICA: INTEIRO, 0 OU MAIS; SISTEMA: INTEIRO, PODE SER NEGATIVO).', 'error');
+      return;
     }
     try{
       await divApi('/'+encodeURIComponent(request.id)+'/items/'+encodeURIComponent(divDialogItemId)+'/store-reply', {
