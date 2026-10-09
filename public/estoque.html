@@ -26502,7 +26502,8 @@ function renderHomeTasks(){
   });
 
   // Imagem do Controle GD no padrão do Acompanhamento de Metas, quadrada
-  // (1080x1080, como foto no celular) para o WhatsApp: só os 4 totais do mês e o status.
+  // (1080x1080, como foto no celular) para o WhatsApp: só os 4 totais do mês e o status
+  // (sem a recomendação de conduta — essa fica com a liderança).
   async function gdBuildShareImage(store){
     const W = 1080, H = 1080;
     const canvas = document.createElement('canvas');
@@ -26552,9 +26553,6 @@ function renderHomeTasks(){
     ctx.fillStyle = '#ffffff';
     ctx.textBaseline = 'middle';
     ctx.fillText(statusText, 68, y + 29);
-    ctx.fillStyle = pal.ink;
-    ctx.font = comFont(700, 26);
-    ctx.fillText(comFitText(ctx, GD_STATUS_RECOMMENDATION[store.status] || '', W - 80), 40, y + 100);
     return canvas;
   }
 
@@ -44695,7 +44693,10 @@ function renderHomeTasks(){
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#ffffff';
-    ctx.font = comFont(900, 46);
+    // Título diminui a fonte (até 30px) para caber inteiro antes de cortar com "…".
+    let titleSize = 46;
+    ctx.font = comFont(900, titleSize);
+    while(titleSize > 30 && ctx.measureText(opts.title).width > textMax){ titleSize -= 2; ctx.font = comFont(900, titleSize); }
     ctx.fillText(comFitText(ctx, opts.title, textMax), 196, 88);
     ctx.fillStyle = '#cfe2f5';
     ctx.font = comFont(700, 25);
