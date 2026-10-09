@@ -3802,6 +3802,8 @@ export const commercialGdBalanceAdjustments = pgTable(
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(""),
+    // 'comercial' (Controle de Gorduras) ou 'assistencia' (Controle Gorduras Assistência).
+    module: text("module").notNull().default("comercial"),
   },
   (table) => [
     index("commercial_gd_adjustments_store_date_idx").on(table.storeId, table.adjustmentDate),
@@ -3822,8 +3824,9 @@ export const commercialGdOpeningBalances = pgTable(
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    module: text("module").notNull().default("comercial"),
   },
-  (table) => [uniqueIndex("commercial_gd_opening_store_month_idx").on(table.storeId, table.month)],
+  (table) => [uniqueIndex("commercial_gd_opening_module_store_month_idx").on(table.module, table.storeId, table.month)],
 );
 
 // Estoque > Divergências — a loja abre um pedido de verificação com 1+

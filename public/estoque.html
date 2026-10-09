@@ -3711,12 +3711,13 @@
         <a class="nav-item sub-item" id="navNotasOs" data-page="notasOs" data-permission="os_notes" data-home-desc="Peça a nota de uma O.S. e acompanhe o anexo enviado pela administração." title="Notas de O.S." href="/solicitacoes/notas-os"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas de O.S.</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="assistencia">
+    <div class="nav-group" data-any-permission="assistencia,gorduras_assistencia">
       <button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Assistência</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navAssistenciaSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navAssistenciaOrcamentos" data-page="assistenciaOrcamentos" data-permission="assistencia:manage" data-home-desc="Monte o orçamento da assistência técnica com a tabela de valores e gere o PDF com os dados da loja." title="Orçamentos" href="/assistencia/orcamentos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Orçamentos</span></a>
+        <a class="nav-item sub-item" id="navAssistenciaControleGorduras" data-page="assistenciaControleGorduras" data-permission="gorduras_assistencia" data-home-desc="Gordura da assistência por venda (data, ID, vendedor e valor), saldo anterior e total do mês por loja, com alerta de status e relatório para WhatsApp." title="Controle Gorduras Assistência" href="/assistencia/controle-gorduras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle Gorduras Assistência</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf,treinamento">
@@ -3725,7 +3726,7 @@
       </button>
       <div class="nav-submenu" id="navComercialSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e importação da planilha de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
-        <a class="nav-item sub-item" id="navComercialControleGd" data-page="comercialControleGd" data-permission="controle_gd" data-home-desc="Gordura por venda (data, ID, vendedor e valor), saldo anterior e total do mês por loja, com alerta de status e relatório para WhatsApp." title="Controle GD" href="/comercial/controle-gd"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle GD</span></a>
+        <a class="nav-item sub-item" id="navComercialControleGd" data-page="comercialControleGd" data-permission="controle_gd" data-home-desc="Gordura por venda (data, ID, vendedor e valor), saldo anterior e total do mês por loja, com alerta de status e relatório para WhatsApp." title="Controle de Gorduras" href="/comercial/controle-gd"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle de Gorduras</span></a>
         <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/comercial/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
         <a class="nav-item sub-item" id="navComercialTreinamento" data-page="comercialTreinamento" data-permission="treinamento" data-home-desc="Trilhas e aulas da Unigames Academy com o seu progresso; gestores acompanham a equipe." title="Treinamento" href="/comercial/treinamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11"/><path d="M21.5 9v5"/></svg></span><span class="nav-label">Treinamento</span></a>
       </div>
@@ -6927,7 +6928,7 @@
       <header class="page-header">
         <div class="page-heading">
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
-          <h2 class="page-title">Controle GD</h2>
+          <h2 class="page-title" id="gdPageTitle">Controle de Gorduras</h2>
         </div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnGdReload" type="button">ATUALIZAR</button>
@@ -9188,6 +9189,15 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Assistência - Controle Gorduras Assistência</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="gorduras_assistencia:view"> Ver as gorduras e o saldo (login com loja só visualiza a própria loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="gorduras_assistencia:create"> Lançar gordura</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="gorduras_assistencia:edit"> Alterar e excluir gordura</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="gorduras_assistencia:opening"> Alterar o saldo anterior</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Base de Dados</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="database:view"> Visualizar</label>
@@ -9205,9 +9215,9 @@
               </div>
             </details>
             <details class="permission-module">
-              <summary>Comercial - Controle GD</summary>
+              <summary>Comercial - Controle de Gorduras</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:view"> Ver as gorduras e o saldo (login com loja vê só a própria loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:view"> Ver as gorduras e o saldo (login com loja só visualiza a própria loja)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:create"> Lançar gordura</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:edit"> Alterar e excluir gordura</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:opening"> Alterar o saldo anterior</label>
@@ -13029,6 +13039,7 @@
     rhOdontologico:'/rh/odontologico',
     comercialAcompanhamento:'/comercial/acompanhamento',
     comercialControleGd:'/comercial/controle-gd',
+    assistenciaControleGorduras:'/assistencia/controle-gorduras',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
@@ -13087,7 +13098,8 @@
     rhAniversariantes:'ANIVERSARIANTES',
     rhOdontologico:'PLANO ODONTOLÓGICO',
     comercialAcompanhamento:'ACOMPANHAMENTO METAS',
-    comercialControleGd:'CONTROLE GD',
+    comercialControleGd:'CONTROLE DE GORDURAS',
+    assistenciaControleGorduras:'CONTROLE GORDURAS ASSISTÊNCIA',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
@@ -13143,6 +13155,7 @@
     rhOdontologico:'rh_odontologico',
     comercialAcompanhamento:'comercial',
     comercialControleGd:'controle_gd',
+    assistenciaControleGorduras:'gorduras_assistencia',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
@@ -13782,7 +13795,7 @@
     if(!canAccessPage(name)) return false;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item,.nav-group-toggle').forEach(b => b.classList.remove('active'));
-    const page = el('page' + name.charAt(0).toUpperCase() + name.slice(1));
+    const page = el(name === 'assistenciaControleGorduras' ? 'pageComercialControleGd' : 'page' + name.charAt(0).toUpperCase() + name.slice(1));
     const navItem = name === 'documentos'
       ? navDocumentosToggle
       : el('nav' + name.charAt(0).toUpperCase() + name.slice(1));
@@ -13796,7 +13809,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isAssistencia = name === 'assistenciaOrcamentos';
+    const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras';
     const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroCrediarios' || name === 'financeiroConciliacaoVendas' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialRelatorioNf' || name === 'comercialTreinamento';
     document.body.classList.toggle('home-active', isHome);
@@ -13886,7 +13899,8 @@
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
     if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf' && name !== 'comercialTreinamento') loadComercialPage(name);
-    if(name === 'comercialControleGd') loadControleGdPage();
+    if(name === 'comercialControleGd') loadControleGdPage('comercial');
+    if(name === 'assistenciaControleGorduras') loadControleGdPage('assistencia');
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -13949,7 +13963,8 @@
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
     if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf' && name !== 'comercialTreinamento') loadComercialPage(name);
-    if(name === 'comercialControleGd') loadControleGdPage();
+    if(name === 'comercialControleGd') loadControleGdPage('comercial');
+    if(name === 'assistenciaControleGorduras') loadControleGdPage('assistencia');
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -26146,6 +26161,15 @@ function renderHomeTasks(){
 
   // ---------- CONTROLE GD (painel de saldo) ----------
   let gdDashboardData = null;
+  // Mesmo painel para o Comercial e a Assistência (dados e permissões separados).
+  const GD_MODULES = {
+    comercial:{api:'/api/controle-gd', perm:'controle_gd', title:'CONTROLE DE GORDURAS', file:'controle-gorduras'},
+    assistencia:{api:'/api/gorduras-assistencia', perm:'gorduras_assistencia', title:'CONTROLE GORDURAS ASSISTÊNCIA', file:'controle-gorduras-assistencia'},
+  };
+  let gdModule = 'comercial';
+  const gdCfg = () => GD_MODULES[gdModule];
+  // Login com loja vinculada só visualiza (o backend também bloqueia).
+  const gdCan = action => (action === 'view' || currentSession.role === 'admin' || !currentSession.companyId) && canAccess(gdCfg().perm+':'+action);
   const GD_STATUS_LABELS = {critico:'CRÍTICO', negativo:'NEGATIVO', margem_curta:'MARGEM CURTA', saudavel_queda:'SAUDÁVEL (QUEDA NO MÊS)', saudavel:'SAUDÁVEL'};
   const GD_STATUS_RECOMMENDATION = {
     critico:'Travar gordura hoje: só liberar desconto com aprovação direta da liderança.',
@@ -26156,7 +26180,7 @@ function renderHomeTasks(){
   };
 
   async function gdApiRequest(path, options){
-    const response = await fetch('/api/controle-gd'+path, {
+    const response = await fetch(gdCfg().api+path, {
       ...(options || {}),
       cache:'no-store',
       headers:{Accept:'application/json',...((options && options.headers) || {})}
@@ -26210,7 +26234,7 @@ function renderHomeTasks(){
     const openingNote = single
       ? (single.openingManual ? 'CORRIGIDO À MÃO' : 'AUTOMÁTICO: FECHAMENTO DO MÊS ANTERIOR')
       : 'SOMA DAS LOJAS';
-    const openingButton = single && canAccess('controle_gd:opening')
+    const openingButton = single && gdCan('opening')
       ? '<button class="btn-outline small" type="button" id="btnGdEditOpening">ALTERAR</button>' : '';
     el('gdSummary').innerHTML =
       '<article class="supply-dashboard-card"><span>SALDO ANTERIOR</span><strong class="'+gdMoneyClass(opening)+'">'+formatCentsBRL(opening)+'</strong><small>'+openingNote+'</small>'+openingButton+'</article>'+
@@ -26251,7 +26275,7 @@ function renderHomeTasks(){
     if(sign === 'positive') rows = rows.filter(row => row.amountCents > 0);
     if(sign === 'negative') rows = rows.filter(row => row.amountCents < 0);
     if(search) rows = rows.filter(row => [row.saleCode, row.sellerName, row.notes].join(' ').toLocaleLowerCase('pt-BR').includes(search));
-    const canEdit = canAccess('controle_gd:edit');
+    const canEdit = gdCan('edit');
     el('gdEntriesFooter').innerHTML = rows.length
       ? rows.length+' GORDURA'+(rows.length === 1 ? '' : 'S')+' · SOMA: <span class="'+gdMoneyClass(rows.reduce((t, r) => t + r.amountCents, 0))+'">'+formatCentsBRL(rows.reduce((t, r) => t + r.amountCents, 0))+'</span>'
       : '';
@@ -26283,7 +26307,16 @@ function renderHomeTasks(){
     renderGdEntries();
   }
 
-  async function loadControleGdPage(){
+  async function loadControleGdPage(module){
+    if(module && module !== gdModule){
+      // Trocou de módulo: começa limpo (loja, filtros e dados do outro módulo).
+      gdModule = module;
+      gdDashboardData = null;
+      el('gdStoreFilter').innerHTML = '';
+      el('gdSignFilter').value = '';
+      el('gdSearch').value = '';
+    }
+    el('gdPageTitle').textContent = gdModule === 'assistencia' ? 'Controle Gorduras Assistência' : 'Controle de Gorduras';
     const monthInput = el('gdMonth');
     try{
       gdDashboardData = await gdApiRequest(monthInput.value ? '?month='+encodeURIComponent(monthInput.value) : '');
@@ -26297,7 +26330,7 @@ function renderHomeTasks(){
       if(stores.some(store => store.storeId === previous)) select.value = previous;
       el('gdStoreField').hidden = !gdDashboardData.allStores;
       el('gdStoresTitle').hidden = el('gdStoresGrid').hidden = !gdDashboardData.allStores;
-      el('btnGdNewEntry').hidden = !canAccess('controle_gd:create') || !stores.length;
+      el('btnGdNewEntry').hidden = !gdCan('create') || !stores.length;
       renderControleGd();
     }catch(error){
       el('gdSummary').innerHTML = '';
@@ -26306,8 +26339,8 @@ function renderHomeTasks(){
     }
   }
 
-  el('btnGdReload') && el('btnGdReload').addEventListener('click', loadControleGdPage);
-  el('gdMonth') && el('gdMonth').addEventListener('change', loadControleGdPage);
+  el('btnGdReload') && el('btnGdReload').addEventListener('click', () => loadControleGdPage());
+  el('gdMonth') && el('gdMonth').addEventListener('change', () => loadControleGdPage());
   el('gdStoreFilter') && el('gdStoreFilter').addEventListener('change', renderControleGd);
   el('gdSignFilter') && el('gdSignFilter').addEventListener('change', renderGdEntries);
   el('gdSearch') && el('gdSearch').addEventListener('input', renderGdEntries);
@@ -26457,7 +26490,7 @@ function renderHomeTasks(){
 
   function gdBuildScript(store, dateLabel){
     const lines = [
-      '*CONTROLE GD · '+store.storeName+'*',
+      '*'+gdCfg().title+' · '+store.storeName+'*',
       '📅 '+dateLabel,
       '',
       '💰 Saldo atual: '+formatCentsBRL(store.balanceCents),
@@ -26521,7 +26554,7 @@ function renderHomeTasks(){
     canvas.height = H;
     const ctx = canvas.getContext('2d');
     const {HEADER} = await comDrawImageFrame(ctx, W, H, {
-      title: 'CONTROLE GD', subtitle: store.storeName+' · GORDURA DE VENDAS', month: gdDashboardData.month, footer: 'UNIGAMES · CONTROLE GD',
+      title: gdCfg().title, subtitle: store.storeName+' · GORDURA DE VENDAS', month: gdDashboardData.month, footer: 'UNIGAMES · '+gdCfg().title,
     });
     const pal = COM_IMAGE_PALETTE;
     const green = '#1f8a55', red = '#c8402f';
@@ -26570,7 +26603,7 @@ function renderHomeTasks(){
   }
 
   async function gdOpenShareDialog(store){
-    await shareCanvasImage(await gdBuildShareImage(store), 'controle-gd-'+store.storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-')+'-'+gdDashboardData.month+'.png', 'CONTROLE GD · '+store.storeName);
+    await shareCanvasImage(await gdBuildShareImage(store), gdCfg().file+'-'+store.storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-')+'-'+gdDashboardData.month+'.png', gdCfg().title+' · '+store.storeName);
   }
 
   function financeCurrentDateKey(){
@@ -39109,7 +39142,7 @@ function renderHomeTasks(){
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Comercial - Relatório NF: visualizar','relatorio_nf:manage':'Comercial - Relatório NF: lançar/gerenciar',
     'treinamento:view':'Comercial - Treinamento: ver o próprio','treinamento:team':'Comercial - Treinamento: equipe e vínculos',
-    'controle_gd:view':'Comercial - Controle GD: visualizar','controle_gd:create':'Comercial - Controle GD: lançar gordura','controle_gd:edit':'Comercial - Controle GD: alterar e excluir gordura','controle_gd:opening':'Comercial - Controle GD: alterar saldo anterior',
+    'controle_gd:view':'Comercial - Controle de Gorduras: visualizar','controle_gd:create':'Comercial - Controle de Gorduras: lançar gordura','controle_gd:edit':'Comercial - Controle de Gorduras: alterar e excluir gordura','controle_gd:opening':'Comercial - Controle de Gorduras: alterar saldo anterior','gorduras_assistencia:view':'Assistência - Controle Gorduras Assistência: visualizar','gorduras_assistencia:create':'Assistência - Controle Gorduras Assistência: lançar gordura','gorduras_assistencia:edit':'Assistência - Controle Gorduras Assistência: alterar e excluir gordura','gorduras_assistencia:opening':'Assistência - Controle Gorduras Assistência: alterar saldo anterior',
     'documents:create':'Documentos: cadastrar','documents:edit':'Documentos: editar','documents:delete':'Documentos: excluir',
     'assistencia:manage':'Assistência - Orçamentos: acesso completo',
     'users:manage':'Usuários e acessos'

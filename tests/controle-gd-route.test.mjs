@@ -15,7 +15,8 @@ db.insert("shared_state", {
   value_json: JSON.stringify([{ id: A, name: "LOJA ALFA" }, { id: B, name: "LOJA BETA" }]),
 });
 const CENTRAL = { id: "central", permissions: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"] };
-const LOJA_A = { id: "loja-a", companyId: A, permissions: ["controle_gd:view", "controle_gd:create"] };
+// Loja com TODAS as permissões: mesmo assim só visualiza.
+const LOJA_A = { id: "loja-a", companyId: A, permissions: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"] };
 const SO_VE = { id: "so-ve", permissions: ["controle_gd:view"] };
 
 const call = (actor, method, body, query = "") => callRoute(route[method], actor, method, `/api/controle-gd${query}`, body);
@@ -30,8 +31,10 @@ test("lança gordura com ID e vendedor; campos obrigatórios; sem permissão = 4
   assert.equal((await entry(A, "2026-10-07", 100, { saleCode: "" })).status, 400);
   assert.equal((await entry(A, "2026-10-07", 0)).status, 400);
   assert.equal((await call(SO_VE, "POST", { storeId: A, entryDate: "2026-10-07", saleCode: "1", sellerName: "X", amountCents: 100 })).status, 403);
-  // Loja só lança na própria loja.
-  assert.equal((await call(LOJA_A, "POST", { storeId: B, entryDate: "2026-10-07", saleCode: "1", sellerName: "X", amountCents: 100 })).status, 400);
+  // Login de loja só visualiza: não lança nem na própria loja.
+  for (const storeId of [A, B]) {
+    assert.equal((await call(LOJA_A, "POST", { storeId, entryDate: "2026-10-07", saleCode: "1", sellerName: "X", amountCents: 100 })).status, 403);
+  }
 });
 
 test("saldo anterior automático entra no total; loja vê só a própria loja", async () => {
@@ -80,4 +83,27 @@ test("saldo anterior corrigido à mão vale para o mês e segue nos seguintes; n
   alfa = data.stores.find((s) => s.storeId === A);
   assert.equal(alfa.openingCents, 10000);
   assert.equal(alfa.openingManual, false);
+});
+
+test("Assistência: clone com dados e permissões próprios (não mistura com o Comercial)", async () => {
+  const assist = await import("../app/api/gorduras-assistencia/route.ts");
+  const ASSIST = { id: "assist", permissions: ["gorduras_assistencia:view", "gorduras_assistencia:create", "gorduras_assistencia:opening"] };
+  const callA = (actor, method, body, query = "") => callRoute(assist[method], actor, method, `/api/gorduras-assistencia${query}`, body);
+  // Permissão do Comercial não abre a Assistência, e vice-versa.
+  assert.equal((await callA(CENTRAL, "GET", undefined, "?month=2026-10")).status, 403);
+  assert.equal((await call(ASSIST, "GET", undefined, "?month=2026-10")).status, 403);
+  assert.equal((await callA(ASSIST, "POST", { storeId: A, entryDate: "2026-10-08", saleCode: "OS-1", sellerName: "tecnico", amountCents: -300 })).status, 201);
+  assert.equal((await callA(ASSIST, "PUT", { storeId: A, month: "2026-10", balanceCents: 700 })).status, 200);
+  const a = await (await callA(ASSIST, "GET", undefined, "?month=2026-10")).json();
+  const alfa = a.stores.find((s) => s.storeId === A);
+  assert.deepEqual([alfa.openingCents, alfa.negativeCents, alfa.balanceCents], [700, -300, 400]);
+  assert.equal(a.entries.length, 1);
+  // Comercial segue intacto (mesmos números do teste anterior).
+  const c = await (await call(CENTRAL, "GET", undefined, "?month=2026-10")).json();
+  assert.equal(c.stores.find((s) => s.storeId === A).openingCents, 10000);
+  assert.ok(c.entries.every((e) => e.saleCode !== "OS-1"));
+  // Gordura do Comercial não é editável pela rota da Assistência.
+  const comercialId = c.entries[0].id;
+  const ASSIST_EDIT = { id: "ae", permissions: ["gorduras_assistencia:edit"] };
+  assert.equal((await callA(ASSIST_EDIT, "DELETE", { id: comercialId })).status, 404);
 });

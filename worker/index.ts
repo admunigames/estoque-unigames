@@ -70,6 +70,7 @@ type Permission =
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
   | "relatorio_nf:view" | "relatorio_nf:manage"
   | "controle_gd:view" | "controle_gd:create" | "controle_gd:edit" | "controle_gd:opening"
+  | "gorduras_assistencia:view" | "gorduras_assistencia:create" | "gorduras_assistencia:edit" | "gorduras_assistencia:opening"
   | "treinamento:view" | "treinamento:team"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
@@ -219,6 +220,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // Permissão própria, independente de comercial:* (ver
   // MODULE_VIEW_PERMISSIONS.controleGd).
   "controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening",
+  // Assistência > Controle Gorduras Assistência — clone do Controle de Gorduras.
+  "gorduras_assistencia:view", "gorduras_assistencia:create", "gorduras_assistencia:edit", "gorduras_assistencia:opening",
   // Comercial > Treinamento (Unigames Academy) — permissão própria,
   // independente de comercial:* (ver MODULE_VIEW_PERMISSIONS.treinamento).
   "treinamento:view", "treinamento:team",
@@ -324,6 +327,7 @@ const APP_ROUTE_PATHS = new Set([
   "/saidas",
   "/divergencias",
   "/assistencia/orcamentos",
+  "/assistencia/controle-gorduras",
   "/entradas",
   "/insumos",
   "/aparelhos-emprestimo",
@@ -1343,6 +1347,9 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   ],
   relatorioNf: ["relatorio_nf:view", "relatorio_nf:manage"],
   controleGd: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
+  gordurasAssistencia: [
+    "gorduras_assistencia:view", "gorduras_assistencia:create", "gorduras_assistencia:edit", "gorduras_assistencia:opening",
+  ],
   treinamento: ["treinamento:view", "treinamento:team"],
 };
 
@@ -1422,6 +1429,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
     [path === "/divergencias" || path.startsWith("/api/divergences"), "divergences"],
+    // Assistência > Controle Gorduras Assistência — permissão própria
+    // (gorduras_assistencia:*), independente de assistencia:manage.
+    [
+      path === "/assistencia/controle-gorduras" || path.startsWith("/api/gorduras-assistencia"),
+      "gordurasAssistencia",
+    ],
     // Assistência > Orçamentos — só assistencia:manage (a rota confere de novo).
     [path === "/assistencia/orcamentos" || path.startsWith("/api/assistencia"), "assistencia"],
     [path === "/entradas" || path.startsWith("/api/inputs"), "inputs"],

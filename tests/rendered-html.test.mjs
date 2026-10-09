@@ -4886,7 +4886,7 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
 
   // Menu: grupo novo "Assistência" com o submenu "Orçamentos" (mesmo formato
   // dos grupos existentes), ícones copiados de itens já existentes.
-  assert.match(html, /<div class="nav-group" data-any-permission="assistencia">\n\s*<button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">/);
+  assert.match(html, /<div class="nav-group" data-any-permission="assistencia,gorduras_assistencia">\n\s*<button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">/);
   assert.match(html, /<a class="nav-item sub-item" id="navAssistenciaOrcamentos" data-page="assistenciaOrcamentos" data-permission="assistencia:manage" data-home-desc="[^"]+" title="Orçamentos" href="\/assistencia\/orcamentos">/);
   const navGroup = html.slice(html.indexOf('id="navAssistencia"'), html.indexOf('id="navComercialMenu"'));
   const loansIcon = /id="navAparelhosEmprestimo"[^\n]*?(<svg[^\n]*?<\/svg>)/.exec(html)[1];
