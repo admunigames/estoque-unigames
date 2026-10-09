@@ -26075,7 +26075,7 @@ function renderHomeTasks(){
     // Totais + emissão geral.
     let y = HEADER + 32;
     card(40, y, W - 80, 170);
-    [['TOTAL VENDAS', t.totalSales, green], ['TOTAL EMITIDAS', t.totalIssued, red], ['PENDENTES', t.pending, amber]].forEach(([text, value, color], index) => {
+    [['TOTAL VENDAS', t.totalSales, green], ['NOTAS EMITIDAS', t.totalIssued, red], ['PENDENTES', t.pending, amber]].forEach(([text, value, color], index) => {
       const cx = 150 + index * 196;
       label(text, cx, y + 52, 'center', 19);
       number(String(value), cx, y + 128, 64, color);
