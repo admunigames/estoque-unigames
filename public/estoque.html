@@ -2617,6 +2617,7 @@
   .gd-entries-footer{margin-top:10px;color:var(--ink-soft);font:800 10px/1.4 var(--mono);text-align:right;}
   .gd-opening-hint{margin:0 0 12px;color:var(--ink-soft);font-size:12px;}
   #gdStoresGrid .supply-dashboard-card{cursor:pointer;}
+  #gdStoresGrid .supply-dashboard-list span{display:inline;font:inherit;letter-spacing:0;}
   #gdStoresGrid .supply-dashboard-card.selected{outline:2px solid var(--accent);}
   .supply-dashboard-empty{color:var(--ink-faint);font:700 9px/1.4 var(--mono);margin-top:8px;}
   html[data-theme="light"] .supply-dashboard-card{background:#f6f9fb;border-color:var(--inset-border);}
@@ -10749,20 +10750,6 @@
     <textarea id="gdDetailScript" rows="8" readonly style="width:100%;font:600 12px/1.5 var(--mono);"></textarea>
     <div class="purchase-form-actions">
       <button class="btn-accent" id="btnCopyGdDetailScript" type="button">COPIAR SCRIPT</button>
-    </div>
-  </div>
-</dialog>
-
-<dialog class="purchase-dialog" id="gdShareDialog" aria-labelledby="gdShareDialogTitle">
-  <div class="purchase-dialog-head">
-    <h3 id="gdShareDialogTitle">IMAGEM DO CONTROLE GD</h3>
-    <button class="purchase-dialog-close" id="btnCloseGdShareDialog" type="button" aria-label="Fechar">×</button>
-  </div>
-  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;text-align:center;">
-    <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Imagem compacta, pensada para compartilhar por mensagem.</p>
-    <canvas id="gdShareCanvas" width="720" height="900" style="max-width:100%;border:1px solid var(--line);border-radius:10px;"></canvas>
-    <div class="purchase-form-actions" style="justify-content:center;">
-      <a class="btn-accent" id="btnDownloadGdImage" download="controle-gd.png" href="#">BAIXAR PNG</a>
     </div>
   </div>
 </dialog>
@@ -26220,8 +26207,8 @@ function renderHomeTasks(){
       const cls = gdStatusCardClass(store.status);
       return '<article class="supply-dashboard-card'+(cls ? (' '+cls) : '')+(store.storeId === selected ? ' selected' : '')+'" data-gd-store="'+escapeHtml(store.storeId)+'" title="Ver as gorduras desta loja">'+
         '<span>'+escapeHtml(store.storeName)+'</span>'+
-        '<strong>'+formatCentsBRL(store.balanceCents)+'</strong>'+
-        '<div class="supply-dashboard-list"><div>Anterior: '+formatCentsBRL(store.openingCents)+' · Mês: '+formatCentsBRL(store.monthMovementCents)+'</div><div>'+escapeHtml(store.statusLabel)+'</div></div>'+
+        '<strong class="'+gdMoneyClass(store.balanceCents)+'">'+formatCentsBRL(store.balanceCents)+'</strong>'+
+        '<div class="supply-dashboard-list"><div>Anterior: <span class="'+gdMoneyClass(store.openingCents)+'">'+formatCentsBRL(store.openingCents)+'</span> · Mês: <span class="'+gdMoneyClass(store.monthMovementCents)+'">'+formatCentsBRL(store.monthMovementCents)+'</span></div><div>'+escapeHtml(store.statusLabel)+'</div></div>'+
         '<div class="dre-toolbar-actions" style="margin-top:8px;">'+
           '<button class="btn-outline small" type="button" data-gd-action="detail">DETALHES</button>'+
           '<button class="btn-outline small" type="button" data-gd-action="image">IMAGEM</button>'+
@@ -26501,49 +26488,66 @@ function renderHomeTasks(){
     }
   });
 
-  function drawGdShareImage(store){
-    const canvas = el('gdShareCanvas');
-    if(!canvas) return;
-    const context = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-    context.fillStyle = '#0d1a26';
-    context.fillRect(0, 0, width, height);
+  // Imagem do Controle GD no padrão do Acompanhamento de Metas, quadrada
+  // (1080x1080, como foto no celular) para o WhatsApp: só os 4 totais do mês e o status.
+  async function gdBuildShareImage(store){
+    const W = 1080, H = 1080;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const {HEADER} = await comDrawImageFrame(ctx, W, H, {
+      title: 'CONTROLE GD', subtitle: store.storeName+' · GORDURA DE VENDAS', month: gdDashboardData.month, footer: 'UNIGAMES · CONTROLE GD',
+    });
+    const pal = COM_IMAGE_PALETTE;
+    const green = '#1f8a55', red = '#c8402f';
+    const color = cents => cents > 0 ? green : cents < 0 ? red : pal.ink;
+    const half = (W - 80 - 24) / 2;
+    const box = (x, y, w, h, label, cents, text, highlight) => {
+      ctx.fillStyle = '#ffffff';
+      comRoundRect(ctx, x, y, w, h, 20);
+      ctx.fill();
+      ctx.lineWidth = highlight ? 5 : 2;
+      ctx.strokeStyle = highlight ? color(cents) : pal.grid;
+      ctx.stroke();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = pal.soft;
+      ctx.font = comFont(800, highlight ? 30 : 26);
+      ctx.fillText(label, x + 30, y + 52);
+      ctx.fillStyle = color(cents);
+      ctx.font = comFont(900, highlight ? 84 : 60);
+      ctx.fillText(comFitText(ctx, text, w - 60), x + 30, y + h - 36);
+    };
+    let y = HEADER + 36;
+    box(40, y, W - 80, 170, 'SALDO ANTERIOR', store.openingCents, formatCentsBRL(store.openingCents));
+    y += 170 + 24;
+    box(40, y, half, 170, 'POSITIVAS NO MÊS', store.positiveCents, gdSignedBRL(store.positiveCents));
+    box(40 + half + 24, y, half, 170, 'NEGATIVAS NO MÊS', store.negativeCents, formatCentsBRL(store.negativeCents));
+    y += 170 + 24;
+    box(40, y, W - 80, 230, 'TOTAL GERAL', store.balanceCents, formatCentsBRL(store.balanceCents), true);
+    y += 230 + 32;
 
-    context.fillStyle = '#7fa8d0';
-    context.font = '700 20px sans-serif';
-    context.fillText('UNIGAMES · CONTROLE GD', 40, 56);
-    context.fillStyle = '#5c7187';
-    context.font = '600 16px sans-serif';
-    context.fillText(store.storeName, 40, 84);
-
-    context.fillStyle = '#e6eef6';
-    context.font = '700 18px sans-serif';
-    context.fillText('SALDO ATUAL', 40, 140);
-    context.fillStyle = store.balanceCents < 0 ? '#e07b6a' : '#66d49e';
-    context.font = '800 40px sans-serif';
-    context.fillText(formatCentsBRL(store.balanceCents), 40, 186);
-
-    context.fillStyle = '#e6eef6';
-    context.font = '700 18px sans-serif';
-    context.fillText('MOVIMENTO DO MÊS', 40, 250);
-    context.fillStyle = store.monthMovementCents < 0 ? '#e07b6a' : '#66d49e';
-    context.font = '800 32px sans-serif';
-    context.fillText(formatCentsBRL(store.monthMovementCents), 40, 290);
-
-    context.fillStyle = '#e6eef6';
-    context.font = '700 20px sans-serif';
-    context.fillText('STATUS: '+(GD_STATUS_LABELS[store.status] || store.status), 40, 350);
-
-    const link = el('btnDownloadGdImage');
-    if(link) link.href = canvas.toDataURL('image/png');
+    // Status + recomendação.
+    const statusColor = store.status === 'critico' || store.status === 'negativo' ? red : store.status === 'saudavel' ? green : '#b7791f';
+    const statusText = 'STATUS: '+(GD_STATUS_LABELS[store.status] || store.status);
+    ctx.font = comFont(900, 28);
+    const pillW = ctx.measureText(statusText).width + 56;
+    ctx.fillStyle = statusColor;
+    comRoundRect(ctx, 40, y, pillW, 56, 28);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(statusText, 68, y + 29);
+    ctx.fillStyle = pal.ink;
+    ctx.font = comFont(700, 26);
+    ctx.fillText(comFitText(ctx, GD_STATUS_RECOMMENDATION[store.status] || '', W - 80), 40, y + 100);
+    return canvas;
   }
 
-  function gdOpenShareDialog(store){
-    drawGdShareImage(store);
-    el('gdShareDialog').showModal();
+  async function gdOpenShareDialog(store){
+    await shareCanvasImage(await gdBuildShareImage(store), 'controle-gd-'+store.storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-')+'-'+gdDashboardData.month+'.png', 'CONTROLE GD · '+store.storeName);
   }
-  el('btnCloseGdShareDialog') && el('btnCloseGdShareDialog').addEventListener('click', () => { if(el('gdShareDialog').open) el('gdShareDialog').close(); });
 
   function financeCurrentDateKey(){
     const parts = new Intl.DateTimeFormat('en-US', {timeZone:'America/Recife', year:'numeric', month:'2-digit', day:'2-digit'}).formatToParts(new Date());
@@ -44630,18 +44634,15 @@ function renderHomeTasks(){
     else ctx.rect(x, y, w, h);
   }
 
-  // Imagem horizontal 1600x900 para o WhatsApp: faixa da marca com a logo
-  // (num quadro branco — a logo é azul), título e mês; gráfico em fundo
-  // claro; rodapé com a data/hora em que foi gerada.
-  async function comBuildRankImage(chart){
-    const W = 1600, H = 900, HEADER = 172, FOOTER = 58;
-    const canvas = document.createElement('canvas');
-    canvas.width = W;
-    canvas.height = H;
-    const ctx = canvas.getContext('2d');
+  // Moldura das imagens 1600x900 para o WhatsApp: faixa da marca com a logo
+  // (num quadro branco — a logo é azul), título e mês; fundo claro; rodapé
+  // com a data/hora em que foi gerada. Usada pelo Acompanhamento e pelo Controle GD.
+  async function comDrawImageFrame(ctx, W, H, opts){
+    const HEADER = 172, FOOTER = 58;
     const logo = new Image();
     logo.src = LOGO_DATA_URI;
-    await logo.decode().catch(() => null);
+    // decode() pode não resolver com a aba em segundo plano: no máximo 2s.
+    await Promise.race([logo.decode().catch(() => null), new Promise(resolve => setTimeout(resolve, 2000))]);
 
     ctx.fillStyle = COM_IMAGE_PALETTE.bg;
     ctx.fillRect(0, 0, W, H);
@@ -44666,7 +44667,7 @@ function renderHomeTasks(){
       ctx.drawImage(logo, 44 + (120 - lw) / 2, 26 + (120 - lh) / 2, lw, lh);
     }
 
-    const month = comMonthLong(comMonth);
+    const month = comMonthLong(opts.month);
     ctx.font = comFont(900, 28);
     const pillWidth = ctx.measureText(month).width + 56;
     ctx.fillStyle = '#ffffff';
@@ -44682,37 +44683,45 @@ function renderHomeTasks(){
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#ffffff';
     ctx.font = comFont(900, 46);
-    ctx.fillText(comFitText(ctx, chart.title, textMax), 196, 88);
+    ctx.fillText(comFitText(ctx, opts.title, textMax), 196, 88);
     ctx.fillStyle = '#cfe2f5';
     ctx.font = comFont(700, 25);
-    ctx.fillText(comFitText(ctx, chart.subtitle || 'ACOMPANHAMENTO DE METAS', textMax), 196, 128);
-
-    comDrawBars(ctx, chart, {x:40, y:HEADER + 30, width:W - 80, height:H - HEADER - FOOTER - 52, palette:COM_IMAGE_PALETTE, k:1.85});
+    ctx.fillText(comFitText(ctx, opts.subtitle, textMax), 196, 128);
 
     ctx.font = comFont(800, 21);
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'left';
-    ctx.fillText('UNIGAMES · ACOMPANHAMENTO DE METAS', 48, H - FOOTER / 2);
+    ctx.fillText(opts.footer, 48, H - FOOTER / 2);
     ctx.fillStyle = '#cfe2f5';
     ctx.textAlign = 'right';
     ctx.fillText('GERADO EM '+formatDateTimeBR(new Date().toISOString()).toUpperCase(), W - 48, H - FOOTER / 2);
+    return {HEADER, FOOTER};
+  }
+
+  async function comBuildRankImage(chart){
+    const W = 1600, H = 900;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const {HEADER, FOOTER} = await comDrawImageFrame(ctx, W, H, {
+      title: chart.title, subtitle: chart.subtitle || 'ACOMPANHAMENTO DE METAS', month: comMonth,
+      footer: 'UNIGAMES · ACOMPANHAMENTO DE METAS',
+    });
+    comDrawBars(ctx, chart, {x:40, y:HEADER + 30, width:W - 80, height:H - HEADER - FOOTER - 52, palette:COM_IMAGE_PALETTE, k:1.85});
     return canvas;
   }
 
   // Imagem para o WhatsApp: no celular abre o "Compartilhar"
   // (WhatsApp aparece na lista); onde não dá, baixa o PNG.
-  async function comShareRankImage(){
-    const chart = comRankChart();
-    if(!chart.bars.length) return;
-    const canvas = await comBuildRankImage(chart);
+  async function shareCanvasImage(canvas, fileName, title){
     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     if(!blob){ showPurchaseToast('NÃO FOI POSSÍVEL GERAR A IMAGEM.'); return; }
-    const fileName = 'ranking-'+comRankSub+'-'+comMonth+'.png';
     const file = new File([blob], fileName, {type:'image/png'});
     if(navigator.canShare && navigator.canShare({files:[file]})){
       try{
-        await navigator.share({files:[file], title: chart.title});
+        await navigator.share({files:[file], title});
         return;
       }catch(error){
         if(error && error.name === 'AbortError') return;
@@ -44727,6 +44736,12 @@ function renderHomeTasks(){
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     showPurchaseToast('IMAGEM BAIXADA — ANEXE NO WHATSAPP.');
+  }
+
+  async function comShareRankImage(){
+    const chart = comRankChart();
+    if(!chart.bars.length) return;
+    await shareCanvasImage(await comBuildRankImage(chart), 'ranking-'+comRankSub+'-'+comMonth+'.png', chart.title);
   }
 
   if(el('comRankTabs')) el('comRankTabs').addEventListener('click', event => {
