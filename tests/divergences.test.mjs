@@ -469,6 +469,11 @@ test("widget: alerta de NÃO VISTO há mais de 14 dias e pedidos recentes da loj
   const recent = store.recent.find((row) => row.id === id);
   assert.equal(recent.awaitingStore, 1);
   assert.equal(recent.answered, false, "ainda há item aguardando o estoque");
+  // Contador PEDIDOS da loja: só pedidos não finalizados da própria loja.
+  const openA = db.sqlite.prepare("SELECT COUNT(*) AS n FROM divergence_requests WHERE company_id=? AND status<>'finalizado'").get(STORE_A_USER.companyId).n;
+  assert.ok(openA >= 1);
+  assert.equal(store.counts.pedidos, openA);
+  assert.equal(store.counts.verificacao_loja >= 1, true);
   const stockAfter = await (await call(summaryRoute.GET, STOCK_USER, "GET", `${BASE}/summary`)).json();
   assert.equal(stockAfter.overdue.count, stockBefore - 1, "item respondido sai do alerta");
   assert.ok(stockAfter.counts.verificacao_loja >= 1);

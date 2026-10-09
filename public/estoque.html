@@ -22885,6 +22885,29 @@ function renderHomeTasks(){
       return;
     }
     if(!data || data.hidden) return;
+    const counterButtons = counters => counters.map(([status, label, value]) =>
+      '<button type="button" class="home-div-counter" data-div-home-item="'+status+'"><span>'+label+'</span><strong>'+(Number(value) || 0)+'</strong></button>'
+    ).join('');
+    // Login com loja: só o essencial da própria loja, num painel só.
+    if(!data.allStores){
+      const counts = data.counts || {};
+      const html = counterButtons([
+        ['','PEDIDOS EM ANDAMENTO', counts.pedidos],
+        ['em_verificacao','ITENS EM VERIFICAÇÃO', counts.em_verificacao],
+        ['verificacao_loja','AGUARDANDO RESPOSTA DA LOJA', counts.verificacao_loja],
+        ['concluido','RESPONDIDOS · 30 DIAS', counts.respondidos]
+      ]);
+      if(stockView){
+        el('homeDivergencesStockTitle').textContent = 'Seus pedidos de verificação';
+        el('homeDivergencesOverdue').hidden = true;
+        el('homeDivergencesCounters').innerHTML = html;
+        stockBox.hidden = false;
+      }else{
+        el('homeDivergencesStoreList').innerHTML = '<div class="home-div-counters">'+html+'</div>';
+        storeBox.hidden = false;
+      }
+      return;
+    }
     if(stockView){
       const counts = data.counts || {};
       const counters = [
@@ -22893,9 +22916,8 @@ function renderHomeTasks(){
         ['verificacao_loja','VERIFICAÇÃO DA LOJA', counts.verificacao_loja],
         ['concluido','RESPONDIDOS · 30 DIAS', counts.respondidos]
       ];
-      el('homeDivergencesCounters').innerHTML = counters.map(([status, label, value]) =>
-        '<button type="button" class="home-div-counter" data-div-home-item="'+status+'"><span>'+label+'</span><strong>'+(Number(value) || 0)+'</strong></button>'
-      ).join('');
+      el('homeDivergencesStockTitle').textContent = 'Itens para responder';
+      el('homeDivergencesCounters').innerHTML = counterButtons(counters);
       const overdue = data.overdue || {};
       const alert = el('homeDivergencesOverdue');
       alert.hidden = !(Number(overdue.count) > 0);
@@ -23018,6 +23040,8 @@ function renderHomeTasks(){
     if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); divOverdueOpen(); }
   });
   el('homeDivergencesStoreList').addEventListener('click', event => {
+    const counter = event.target.closest('[data-div-home-item]');
+    if(counter) return divOpenFiltered({tab:'pedidos', status:'', itemStatus:counter.dataset.divHomeItem});
     const button = event.target.closest('[data-div-home-request]');
     if(button) divOpenFiltered({tab:'pedidos', status:'', itemStatus:'', requestId:button.dataset.divHomeRequest});
   });

@@ -24,7 +24,8 @@ type RecentRow = {
 // Números leves para os widgets da Início:
 // - estoque (divergencias:respond): contadores por status + alerta de item
 //   em NÃO VISTO há mais de 14 dias (data de criação, fuso Recife);
-// - loja: pedidos recentes com selo RESPONDIDO / AGUARDANDO RETORNO e itens
+// - loja (login com loja): PEDIDOS em andamento, itens EM VERIFICAÇÃO,
+//   AGUARDANDO A LOJA e RESPONDIDOS; sem loja: pedidos recentes com selo RESPONDIDO / AGUARDANDO RETORNO e itens
 //   esperando a verificação da própria loja.
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
     const scope = companyFilter ? "r.company_id=?1 AND " : "";
     const scopeParams = companyFilter ? [companyFilter] : [];
     const next = scopeParams.length + 1;
-    const [counts, respondedRow, overdueRow, recent] = await Promise.all([
+    const [counts, respondedRow, overdueRow, recent, openRequestsRow] = await Promise.all([
       database
         .prepare(
           `SELECT i.status, COUNT(*) AS total
@@ -87,6 +88,11 @@ export async function GET(request: Request) {
         )
         .bind(...scopeParams)
         .all<RecentRow>(),
+      // Pedidos ainda não finalizados (contador PEDIDOS da loja).
+      database
+        .prepare(`SELECT COUNT(*) AS total FROM divergence_requests r WHERE ${scope}r.status<>'finalizado'`)
+        .bind(...scopeParams)
+        .first<{ total: number | string }>(),
     ]);
     const byStatus: Record<string, number> = { nao_visto: 0, em_verificacao: 0, verificacao_loja: 0 };
     for (const row of counts.results ?? []) byStatus[row.status] = Number(row.total) || 0;
@@ -110,7 +116,7 @@ export async function GET(request: Request) {
     return jsonResponse({
       view: can(actor, "divergencias:respond") ? "stock" : "store",
       allStores,
-      counts: { ...byStatus, respondidos: Number(respondedRow?.total) || 0 },
+      counts: { ...byStatus, respondidos: Number(respondedRow?.total) || 0, pedidos: Number(openRequestsRow?.total) || 0 },
       overdue: { count: Number(overdueRow?.total) || 0, oldestAt: overdueRow?.oldest || "", days: OVERDUE_DAYS },
       recent: [...recentMap.values()]
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
