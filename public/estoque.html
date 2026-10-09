@@ -7688,13 +7688,11 @@
       <div class="dre-toolbar">
         <div class="field"><label for="nfReportDate">DATA</label><input type="date" id="nfReportDate"></div>
         <div class="dre-toolbar-actions">
-          <button class="btn-outline" id="btnNfReportHistory" type="button">HISTÓRICO</button>
-          <button class="btn-outline" id="btnNfReportShare" type="button">GERAR IMAGEM</button>
-          <button class="btn-accent" id="btnNfReportSave" type="button">SALVAR NO HISTÓRICO</button>
+          <button class="btn-accent" id="btnNfReportShare" type="button">GERAR IMAGEM PARA WHATSAPP</button>
         </div>
       </div>
 
-      <div class="supply-dashboard-grid">
+      <div class="supply-dashboard-grid" style="margin-bottom:16px;">
         <article class="supply-dashboard-card">
           <span>TOTAL DE VENDAS</span>
           <strong id="nfTotalSales">0</strong>
@@ -7716,8 +7714,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="nfStoresTable">
-            <thead><tr><th>Loja</th><th>Vendas</th><th>Emitidas</th><th>Valor Vendido</th><th>Valor Emitido</th><th>% Emissão</th></tr></thead>
-            <tbody id="nfStoresTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th>Loja</th><th>Vendas</th><th>Emitidas</th><th>% Emissão</th></tr></thead>
+            <tbody id="nfStoresTableBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -10668,37 +10666,6 @@
     <canvas id="cashFlowShareCanvas" width="720" height="900" style="max-width:100%;border:1px solid var(--line);border-radius:10px;"></canvas>
     <div class="purchase-form-actions" style="justify-content:center;">
       <a class="btn-accent" id="btnDownloadCashFlowImage" download="fluxo-de-caixa.png" href="#">BAIXAR PNG</a>
-    </div>
-  </div>
-</dialog>
-
-<dialog class="purchase-dialog" id="nfHistoryDialog" aria-labelledby="nfHistoryDialogTitle">
-  <div class="purchase-dialog-head">
-    <h3 id="nfHistoryDialogTitle">HISTÓRICO DO RELATÓRIO NF</h3>
-    <button class="purchase-dialog-close" id="btnCloseNfHistoryDialog" type="button" aria-label="Fechar">×</button>
-  </div>
-  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;">
-    <div class="table-panel responsive-table">
-      <div class="table-scroll">
-        <table id="nfHistoryTable">
-          <thead><tr><th>Data</th><th>Vendas</th><th>Emitidas</th><th>% Emissão</th><th></th></tr></thead>
-          <tbody id="nfHistoryTableBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</dialog>
-
-<dialog class="purchase-dialog" id="nfReportShareDialog" aria-labelledby="nfReportShareDialogTitle">
-  <div class="purchase-dialog-head">
-    <h3 id="nfReportShareDialogTitle">IMAGEM DO RELATÓRIO NF</h3>
-    <button class="purchase-dialog-close" id="btnCloseNfReportShareDialog" type="button" aria-label="Fechar">×</button>
-  </div>
-  <div style="padding:0 20px 20px;max-height:76vh;overflow:auto;text-align:center;">
-    <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Imagem compacta, pensada para compartilhar por mensagem.</p>
-    <canvas id="nfReportShareCanvas" width="720" height="900" style="max-width:100%;border:1px solid var(--line);border-radius:10px;"></canvas>
-    <div class="purchase-form-actions" style="justify-content:center;">
-      <a class="btn-accent" id="btnDownloadNfReportImage" download="relatorio-nf.png" href="#">BAIXAR PNG</a>
     </div>
   </div>
 </dialog>
@@ -25989,10 +25956,8 @@ function renderHomeTasks(){
   function nfComputeTotals(entries){
     const totalSales = entries.reduce((sum, e) => sum + e.salesCount, 0);
     const totalIssued = entries.reduce((sum, e) => sum + e.invoicesIssuedCount, 0);
-    const totalSalesCents = entries.reduce((sum, e) => sum + e.salesAmountCents, 0);
-    const totalIssuedCents = entries.reduce((sum, e) => sum + e.invoicesIssuedAmountCents, 0);
     return {
-      totalSales, totalIssued, totalSalesCents, totalIssuedCents,
+      totalSales, totalIssued,
       pending: Math.max(0, totalSales - totalIssued),
       pct: nfStorePct(totalSales, totalIssued),
     };
@@ -26014,7 +25979,7 @@ function renderHomeTasks(){
     const tbody = el('nfStoresTableBody');
     const entries = (nfReportData && nfReportData.entries) || [];
     if(!entries.length){
-      tbody.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhuma loja cadastrada.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="responsive-empty">Nenhuma loja cadastrada.</td></tr>';
       return;
     }
     tbody.innerHTML = entries.map((entry, index) => {
@@ -26023,23 +25988,16 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(entry.storeName)+'</td>'+
         '<td><input type="number" min="0" step="1" value="'+entry.salesCount+'" data-nf-row="'+index+'" data-nf-field="salesCount" style="width:80px;"></td>'+
         '<td><input type="number" min="0" step="1" value="'+entry.invoicesIssuedCount+'" data-nf-row="'+index+'" data-nf-field="invoicesIssuedCount" style="width:80px;"></td>'+
-        '<td><input type="text" inputmode="decimal" value="'+(entry.salesAmountCents/100).toFixed(2)+'" data-nf-row="'+index+'" data-nf-field="salesAmountCents" style="width:120px;"></td>'+
-        '<td><input type="text" inputmode="decimal" value="'+(entry.invoicesIssuedAmountCents/100).toFixed(2)+'" data-nf-row="'+index+'" data-nf-field="invoicesIssuedAmountCents" style="width:120px;"></td>'+
         '<td>'+pct.toFixed(0)+'%</td>'+
       '</tr>';
     }).join('');
-    tbody.querySelectorAll('[data-nf-field="salesAmountCents"],[data-nf-field="invoicesIssuedAmountCents"]').forEach(input => attachCurrencyMask(input));
     tbody.querySelectorAll('input').forEach(input => {
       input.addEventListener('change', () => {
         const index = Number(input.dataset.nfRow);
         const field = input.dataset.nfField;
         const entry = nfReportData && nfReportData.entries[index];
         if(!entry) return;
-        if(field === 'salesCount' || field === 'invoicesIssuedCount'){
-          entry[field] = Math.max(0, Math.round(Number(input.value)) || 0);
-        }else{
-          entry[field] = Math.max(0, parseBRLToCents(getCurrencyValue(input) || '0') || 0);
-        }
+        entry[field] = Math.max(0, Math.round(Number(input.value)) || 0);
         renderNfTotals();
         renderNfStoresTable();
       });
@@ -26059,105 +26017,104 @@ function renderHomeTasks(){
     await nfLoadForDate(el('nfReportDate').value);
   }
 
-  async function nfSaveReport(){
-    if(!nfReportData) return;
-    try{
-      await nfApiRequest('', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
-        date: nfReportData.date,
-        entries: nfReportData.entries.map(e => ({
-          storeId:e.storeId, storeName:e.storeName, salesCount:e.salesCount,
-          invoicesIssuedCount:e.invoicesIssuedCount, salesAmountCents:e.salesAmountCents,
-          invoicesIssuedAmountCents:e.invoicesIssuedAmountCents,
-        })),
-      })});
-      showPurchaseToast('Relatório NF salvo no histórico.');
-    }catch(error){ showPurchaseToast(error.message, 'error'); }
-  }
-
   el('nfReportDate') && el('nfReportDate').addEventListener('change', () => nfLoadForDate(el('nfReportDate').value));
-  el('btnNfReportSave') && el('btnNfReportSave').addEventListener('click', nfSaveReport);
 
-  async function nfOpenHistory(){
-    const tbody = el('nfHistoryTableBody');
-    tbody.innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
-    el('nfHistoryDialog').showModal();
-    try{
-      const data = await nfApiRequest('?view=history&limit=30');
-      const rows = data.rows || [];
-      if(!rows.length){
-        tbody.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhum relatório salvo ainda.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = rows.map(row => '<tr>'+
-        '<td>'+escapeHtml(row.reportDate)+'</td>'+
-        '<td>'+row.totalSalesCount+'</td>'+
-        '<td>'+row.totalInvoicesIssuedCount+'</td>'+
-        '<td>'+row.pctIssued.toFixed(0)+'%</td>'+
-        '<td><button class="btn-outline small" type="button" data-nf-history-open="'+escapeHtml(row.reportDate)+'">ABRIR</button></td>'+
-      '</tr>').join('');
-    }catch(error){
-      tbody.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-    }
-  }
-
-  el('btnNfReportHistory') && el('btnNfReportHistory').addEventListener('click', nfOpenHistory);
-  el('btnCloseNfHistoryDialog') && el('btnCloseNfHistoryDialog').addEventListener('click', () => { if(el('nfHistoryDialog').open) el('nfHistoryDialog').close(); });
-  el('nfHistoryTableBody') && el('nfHistoryTableBody').addEventListener('click', event => {
-    const btn = event.target.closest('[data-nf-history-open]');
-    if(!btn) return;
-    el('nfHistoryDialog').close();
-    nfLoadForDate(btn.dataset.nfHistoryOpen);
-  });
-
-  // Imagem pronta pra compartilhar — mesmo padrão sem lib nova de
-  // drawCashFlowShareImage (canvas 2D desenhado no cliente).
-  function drawNfReportShareImage(){
-    const canvas = el('nfReportShareCanvas');
-    if(!canvas || !nfReportData) return;
-    const context = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-    context.fillStyle = '#0d1a26';
-    context.fillRect(0, 0, width, height);
-
-    context.fillStyle = '#7fa8d0';
-    context.font = '700 20px sans-serif';
-    context.fillText('UNIGAMES · RELATÓRIO NF', 40, 56);
-    const [y0,m0,d0] = nfReportData.date.split('-');
-    context.fillStyle = '#5c7187';
-    context.font = '600 16px sans-serif';
-    context.fillText('Dia '+d0+'/'+m0+'/'+y0, 40, 84);
-
-    const t = nfComputeTotals(nfReportData.entries || []);
-    context.fillStyle = '#e6eef6';
-    context.font = '700 18px sans-serif';
-    context.fillText('VENDAS: '+t.totalSales+'   EMITIDAS: '+t.totalIssued, 40, 130);
-    context.fillStyle = t.pct >= 90 ? '#66d49e' : t.pct >= 70 ? '#e1ad49' : '#e07b6a';
-    context.font = '800 40px sans-serif';
-    context.fillText(t.pct.toFixed(0)+'% DE EMISSÃO', 40, 182);
-
-    let y = 240;
-    (nfReportData.entries || []).forEach(entry => {
-      const storePct = nfStorePct(entry.salesCount, entry.invoicesIssuedCount);
-      context.fillStyle = '#5c7187';
-      context.font = '700 15px sans-serif';
-      context.fillText(entry.storeName, 40, y);
-      context.fillStyle = storePct >= 90 ? '#66d49e' : storePct >= 70 ? '#e1ad49' : '#e07b6a';
-      context.font = '800 16px sans-serif';
-      context.fillText(entry.invoicesIssuedCount+'/'+entry.salesCount+' · '+storePct.toFixed(0)+'%', width - 220, y);
-      y += 32;
+  // Imagem do Relatório NF no padrão do Acompanhamento de Metas (moldura
+  // comum): totais com a barra de emissão geral e um card por loja com
+  // VENDAS / NOTAS EMITIDAS e a barra da loja. Vertical, 1080 de largura.
+  async function nfBuildShareImage(){
+    const entries = (nfReportData && nfReportData.entries) || [];
+    const t = nfComputeTotals(entries);
+    const W = 1080, gap = 20, cardH = 250, rows = Math.ceil(entries.length / 2);
+    const H = 178 + 32 + 170 + 28 + rows * (cardH + gap) + 40 + 58;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const [y0, m0, d0] = nfReportData.date.split('-');
+    const {HEADER} = await comDrawImageFrame(ctx, W, H, {
+      title: 'RELATÓRIO EMISSÃO NF', subtitle: 'NOTAS EMITIDAS × VENDAS POR LOJA', pill: d0+'/'+m0+'/'+y0,
+      footer: 'UNIGAMES · RELATÓRIO NF',
     });
+    const pal = COM_IMAGE_PALETTE;
+    const green = '#1f8a55', red = '#c8402f', amber = '#b7791f';
+    const pctColor = pct => pct >= 90 ? green : pct >= 70 ? amber : red;
+    const card = (x, y, w, h) => {
+      ctx.fillStyle = '#ffffff';
+      comRoundRect(ctx, x, y, w, h, 22);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = pal.grid;
+      ctx.stroke();
+    };
+    const bar = (x, y, w, pct, has) => {
+      ctx.fillStyle = '#dde6f0';
+      comRoundRect(ctx, x, y, w, 16, 8);
+      ctx.fill();
+      if(has && pct > 0){
+        ctx.fillStyle = pctColor(pct);
+        comRoundRect(ctx, x, y, Math.max(16, w * Math.min(pct, 100) / 100), 16, 8);
+        ctx.fill();
+      }
+    };
+    const number = (text, x, y, size, color, align) => {
+      ctx.textAlign = align || 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = color;
+      ctx.font = comFont(900, size);
+      ctx.fillText(text, x, y);
+    };
+    const label = (text, x, y, align, size) => {
+      ctx.textAlign = align || 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = pal.soft;
+      ctx.font = comFont(800, size || 22);
+      ctx.fillText(text, x, y);
+    };
 
-    const link = el('btnDownloadNfReportImage');
-    if(link) link.href = canvas.toDataURL('image/png');
+    // Totais + emissão geral.
+    let y = HEADER + 32;
+    card(40, y, W - 80, 170);
+    [['TOTAL VENDAS', t.totalSales, green], ['TOTAL EMITIDAS', t.totalIssued, red], ['PENDENTES', t.pending, amber]].forEach(([text, value, color], index) => {
+      const cx = 150 + index * 196;
+      label(text, cx, y + 52, 'center', 19);
+      number(String(value), cx, y + 128, 64, color);
+    });
+    const barX = 660, barW = W - 80 - (barX - 40) - 36;
+    label('EMISSÃO GERAL', barX, y + 70, 'left');
+    number(t.totalSales > 0 ? t.pct.toFixed(0)+'%' : '—', barX + barW, y + 72, 34, t.totalSales > 0 ? pctColor(t.pct) : pal.faint, 'right');
+    bar(barX, y + 96, barW, t.pct, t.totalSales > 0);
+    y += 170 + 28;
+
+    // Um card por loja, 2 colunas.
+    const cardW = (W - 80 - gap) / 2;
+    entries.forEach((entry, index) => {
+      const x = 40 + (index % 2) * (cardW + gap);
+      const cy = y + Math.floor(index / 2) * (cardH + gap);
+      const pct = nfStorePct(entry.salesCount, entry.invoicesIssuedCount);
+      card(x, cy, cardW, cardH);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = pal.ink;
+      ctx.font = comFont(900, 30);
+      ctx.fillText(comFitText(ctx, String(entry.storeName || '').toUpperCase(), cardW - 56), x + 28, cy + 52);
+      label('VENDAS', x + cardW * 0.28, cy + 100);
+      label('NOTAS EMITIDAS', x + cardW * 0.72, cy + 100);
+      const pad = n => String(n).padStart(2, '0');
+      number(pad(entry.salesCount), x + cardW * 0.28, cy + 166, 60, green);
+      number(pad(entry.invoicesIssuedCount), x + cardW * 0.72, cy + 166, 60, red);
+      bar(x + 28, cy + 192, cardW - 56, pct, entry.salesCount > 0);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = entry.salesCount > 0 ? pctColor(pct) : pal.faint;
+      ctx.font = comFont(800, 22);
+      ctx.fillText(entry.salesCount > 0 ? pct.toFixed(0)+'%' : '—', x + cardW - 28, cy + 236);
+    });
+    return canvas;
   }
 
-  el('btnNfReportShare') && el('btnNfReportShare').addEventListener('click', () => {
+  el('btnNfReportShare') && el('btnNfReportShare').addEventListener('click', async () => {
     if(!nfReportData){ showPurchaseToast('Carregue o relatório antes de gerar a imagem.', 'error'); return; }
-    drawNfReportShareImage();
-    el('nfReportShareDialog').showModal();
+    await shareCanvasImage(await nfBuildShareImage(), 'relatorio-nf-'+nfReportData.date+'.png', 'RELATÓRIO EMISSÃO NF');
   });
-  el('btnCloseNfReportShareDialog') && el('btnCloseNfReportShareDialog').addEventListener('click', () => { if(el('nfReportShareDialog').open) el('nfReportShareDialog').close(); });
 
   // ---------- CONTROLE GD (painel de saldo) ----------
   let gdDashboardData = null;
@@ -44724,7 +44681,7 @@ function renderHomeTasks(){
       ctx.drawImage(logo, 44 + (120 - lw) / 2, 26 + (120 - lh) / 2, lw, lh);
     }
 
-    const month = comMonthLong(opts.month);
+    const month = opts.pill || comMonthLong(opts.month);
     ctx.font = comFont(900, 28);
     const pillWidth = ctx.measureText(month).width + 56;
     ctx.fillStyle = '#ffffff';
