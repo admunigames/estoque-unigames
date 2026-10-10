@@ -8578,6 +8578,8 @@
 
       <div class="dre-toolbar">
         <div class="field"><label for="recargaLoja">UNIDADE</label><select id="recargaLoja"><option value="">TODAS AS UNIDADES</option></select></div>
+        <div class="field"><label for="recargaMesFiltro">MÊS</label><input type="month" id="recargaMesFiltro"></div>
+        <div class="field"><label for="recargaMesBase">MÊS DA</label><select id="recargaMesBase"><option value="next">PRÓXIMA RECARGA</option><option value="last">ÚLTIMA RECARGA</option></select></div>
         <div class="field"><label for="recargaPeriodoFiltro">PERÍODO</label><select id="recargaPeriodoFiltro"><option value="">TODOS</option><option value="30">30 DIAS</option><option value="60">60 DIAS</option><option value="90">90 DIAS</option></select></div>
         <label class="assist-check"><input type="checkbox" id="recargaSomenteAtivas" checked> SOMENTE ATIVAS</label>
         <div class="dre-toolbar-actions">
@@ -9690,9 +9692,11 @@
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="recargaEventData">DATA DA RECARGA *</label><input type="date" id="recargaEventData" required></div>
       <div class="purchase-field"><label for="recargaEventValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaEventValor" placeholder="R$ 0,00" required></div>
+      <div class="purchase-field full"><label for="recargaEventItem">CATEGORIA DA DESPESA *</label><select id="recargaEventItem" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="recargaEventObs">OBSERVAÇÕES</label><textarea id="recargaEventObs" rows="2" maxlength="1000"></textarea></div>
     </div>
     <p class="purchase-field-help" id="recargaEventProxima" role="status" aria-live="polite"></p>
+    <p class="purchase-field-help">A RECARGA ENTRA NAS DESPESAS DO MÊS: CONTA A PAGAR EM ABERTO NA UNIDADE DA LINHA, VENCENDO NA DATA DA RECARGA.</p>
     <div id="recargaEventHistorico" class="page-desc"></div>
     <div class="user-form-status" id="recargaEventStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -9712,9 +9716,10 @@
       <div class="purchase-field" data-recarga-bulk-field="period"><label for="recargaBulkPeriodo">PERÍODO DE RECARGA *</label><select id="recargaBulkPeriodo"><option value="30">30 DIAS</option><option value="60">60 DIAS</option><option value="90" selected>90 DIAS</option></select></div>
       <div class="purchase-field" data-recarga-bulk-field="recharge"><label for="recargaBulkData">DATA DA RECARGA *</label><input type="date" id="recargaBulkData"></div>
       <div class="purchase-field" data-recarga-bulk-field="recharge"><label for="recargaBulkValor">VALOR (R$)</label><input type="text" inputmode="decimal" id="recargaBulkValor" placeholder="VAZIO = ÚLTIMO VALOR DE CADA LINHA"></div>
+      <div class="purchase-field full" data-recarga-bulk-field="recharge"><label for="recargaBulkItem">CATEGORIA DA DESPESA *</label><select id="recargaBulkItem"><option value="">SELECIONE</option></select></div>
     </div>
     <p class="purchase-field-help" data-recarga-bulk-field="period">A PRÓXIMA RECARGA DE CADA LINHA É RECALCULADA A PARTIR DA ÚLTIMA RECARGA.</p>
-    <p class="purchase-field-help" data-recarga-bulk-field="recharge">GRAVA UMA RECARGA NO HISTÓRICO DE CADA LINHA; A PRÓXIMA USA O PERÍODO DE CADA UMA.</p>
+    <p class="purchase-field-help" data-recarga-bulk-field="recharge">GRAVA UMA RECARGA NO HISTÓRICO DE CADA LINHA E UMA DESPESA EM ABERTO NA UNIDADE DE CADA UMA; A PRÓXIMA USA O PERÍODO DE CADA LINHA.</p>
     <div class="user-form-status" id="recargaBulkStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelRecargaBulk" type="button">CANCELAR</button>
@@ -14896,8 +14901,13 @@
     return pullCompanyRole(company) === 'assistance';
   }
 
+  // ESCRITÓRIO (cadastrado em Cadastro de Lojas para vincular linhas de
+  // celular, despesas etc.) não é loja: fica fora das listas de lojas reais.
+  function isOfficeCompany(company){
+    return /^ESCRITORIO\b/.test(String(company && company.name || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim());
+  }
   function pullStoreCompanies(){
-    return companies.filter(company => !isPullDepot(company) && !isPullAssistance(company));
+    return companies.filter(company => !isPullDepot(company) && !isPullAssistance(company) && !isOfficeCompany(company));
   }
 
   function pullDepotCompanies(){
@@ -33685,7 +33695,9 @@ function renderHomeTasks(){
     const soon = new Date(Date.now() + 3*86400000).toISOString().slice(0,10);
     let due = 0;
     const period = el('recargaPeriodoFiltro').value;
-    const rows = recargaRows.filter(r => !period || String(r.periodDays || 90) === period);
+    const month = el('recargaMesFiltro').value;
+    const monthField = el('recargaMesBase').value === 'last' ? 'lastRechargeDate' : 'nextRechargeDate';
+    const rows = recargaRows.filter(r => (!period || String(r.periodDays || 90) === period) && (!month || String(r[monthField] || '').startsWith(month)));
     body.innerHTML = rows.length ? rows.map(r => {
       const overdue = r.nextRechargeDate && r.nextRechargeDate < today;
       const near = r.nextRechargeDate && r.nextRechargeDate <= soon;
@@ -33708,7 +33720,7 @@ function renderHomeTasks(){
           '<button class="btn-outline btn-sm" type="button" data-recarga-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhuma linha'+(period ? ' com período de '+period+' dias' : ' cadastrada')+'.</td></tr>';
+    }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhuma linha'+(period || month ? ' para os filtros' : ' cadastrada')+'.</td></tr>';
     recargaBulk.sync();
     const alerta = el('recargaAlertaProximas');
     if(alerta){
@@ -33750,6 +33762,8 @@ function renderHomeTasks(){
   el('recargaUltima') && el('recargaUltima').addEventListener('change', recalcRecargaProxima);
   el('recargaPeriodo').addEventListener('change', recalcRecargaProxima);
   el('recargaPeriodoFiltro').addEventListener('change', renderRecargaTable);
+  el('recargaMesFiltro').addEventListener('change', renderRecargaTable);
+  el('recargaMesBase').addEventListener('change', renderRecargaTable);
   el('btnNewRecarga') && el('btnNewRecarga').addEventListener('click', () => openRecargaDialog(null));
   el('recargaLoja') && el('recargaLoja').addEventListener('change', reloadRecargas);
   el('recargaSomenteAtivas') && el('recargaSomenteAtivas').addEventListener('change', reloadRecargas);
@@ -33792,6 +33806,17 @@ function renderHomeTasks(){
     }
     else if(ev){ const r = recargaRows.find(x => x.id === ev.dataset.recargaEvent); if(r) openRecargaEventDialog(r); }
   });
+  // Categoria da despesa da recarga: lembrada neste navegador (a mais usada é sempre a mesma).
+  async function fillRecargaItemSelect(id){
+    if(!financeItems.length) await loadFinanceCatalog();
+    const select = el(id);
+    select.innerHTML = '<option value="">SELECIONE</option>'+financeItems.map(item =>
+      '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(payableFinanceItemLabel(item.id))+'</option>').join('');
+    let remembered = '';
+    try{ remembered = localStorage.getItem('recargaFinanceItemId') || ''; }catch(_e){}
+    if(financeItems.some(item => item.id === remembered)) select.value = remembered;
+  }
+  function rememberRecargaItem(value){ try{ localStorage.setItem('recargaFinanceItemId', value); }catch(_e){} }
   async function openRecargaEventDialog(row){
     el('recargaEventForm').reset();
     setCurrencyValue(el('recargaEventValor'), '');
@@ -33799,6 +33824,7 @@ function renderHomeTasks(){
     el('recargaEventData').value = new Date().toISOString().slice(0,10);
     el('recargaEventTitle').textContent = 'REGISTRAR RECARGA — ' + (row.phoneNumber || '');
     el('recargaEventForm').dataset.periodDays = String(row.periodDays || 90);
+    fillRecargaItemSelect('recargaEventItem');
     recalcRecargaEventProxima();
     el('recargaEventStatus').textContent = '';
     el('recargaEventHistorico').textContent = 'Carregando histórico…';
@@ -33807,7 +33833,7 @@ function renderHomeTasks(){
       const data = await financeApiRequest('/phone-recharges?rechargeId='+encodeURIComponent(row.id));
       const events = Array.isArray(data.events) ? data.events : [];
       el('recargaEventHistorico').innerHTML = events.length
-        ? '<strong>Histórico:</strong><br>' + events.map(e => escapeHtml(formatDateBR(e.rechargeDate)) + ' — ' + formatCentsBRL(e.amountCents) + (e.notes ? ' (' + escapeHtml(e.notes) + ')' : '')).join('<br>')
+        ? '<strong>Histórico:</strong><br>' + events.map(e => escapeHtml(formatDateBR(e.rechargeDate)) + ' — ' + formatCentsBRL(e.amountCents) + (e.notes ? ' (' + escapeHtml(e.notes) + ')' : '') + (e.expenseId ? ' · DESPESA LANÇADA' : '')).join('<br>')
         : 'Sem recargas registradas ainda.';
     }catch(_e){ el('recargaEventHistorico').textContent = ''; }
   }
@@ -33828,13 +33854,16 @@ function renderHomeTasks(){
     const payload = {
       rechargeDate: el('recargaEventData').value,
       amountCents: Math.round(Number(getCurrencyValue(el('recargaEventValor'))) * 100),
-      notes: el('recargaEventObs').value
+      notes: el('recargaEventObs').value,
+      financeItemId: el('recargaEventItem').value
     };
+    if(!payload.financeItemId){ status.textContent = 'ESCOLHA A CATEGORIA DA DESPESA.'; return; }
+    rememberRecargaItem(payload.financeItemId);
     try{
       await financeApiRequest('/phone-recharges/'+encodeURIComponent(id)+'/recharge', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       el('recargaEventDialog').close();
       await reloadRecargas();
-      showPurchaseToast('Recarga registrada.');
+      showPurchaseToast('Recarga registrada e lançada nas despesas do mês.');
     }catch(error){ status.textContent = error.message; }
   });
 
@@ -33852,6 +33881,7 @@ function renderHomeTasks(){
       el('recargaBulkForm').reset();
       setCurrencyValue(el('recargaBulkValor'), '');
       el('recargaBulkData').value = todayDateKeyRecife();
+      if(action === 'recharge') await fillRecargaItemSelect('recargaBulkItem');
       el('recargaBulkTitle').textContent = RECARGA_BULK_TITLES[action]+' — '+ids.length+(ids.length === 1 ? ' LINHA' : ' LINHAS');
       document.querySelectorAll('[data-recarga-bulk-field]').forEach(node => { node.hidden = node.dataset.recargaBulkField !== action; });
       el('recargaBulkStatus').textContent = '';
@@ -33870,8 +33900,10 @@ function renderHomeTasks(){
     const valor = getCurrencyValue(el('recargaBulkValor'));
     const fields = action === 'period'
       ? {periodDays: Number(el('recargaBulkPeriodo').value)}
-      : {date: el('recargaBulkData').value, amountCents: valor === '' ? null : Math.round(Number(valor) * 100)};
+      : {date: el('recargaBulkData').value, amountCents: valor === '' ? null : Math.round(Number(valor) * 100), financeItemId: el('recargaBulkItem').value};
     if(action === 'recharge' && !fields.date){ el('recargaBulkStatus').textContent = 'INFORME A DATA DA RECARGA.'; return; }
+    if(action === 'recharge' && !fields.financeItemId){ el('recargaBulkStatus').textContent = 'ESCOLHA A CATEGORIA DA DESPESA.'; return; }
+    if(action === 'recharge') rememberRecargaItem(fields.financeItemId);
     try{
       await recargaBulkRun(action, ids, fields);
       el('recargaBulkDialog').close();

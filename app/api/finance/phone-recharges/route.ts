@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     if (rechargeId) {
       const events = await database
         .prepare(
-          `SELECT id, recharge_date AS rechargeDate, amount_cents AS amountCents, notes,
+          `SELECT id, recharge_date AS rechargeDate, amount_cents AS amountCents, notes, expense_id AS expenseId,
                   created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt
            FROM finance_phone_recharge_events WHERE recharge_id=?1
            ORDER BY recharge_date DESC, created_at DESC LIMIT 500`,

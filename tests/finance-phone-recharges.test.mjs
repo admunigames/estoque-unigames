@@ -6,7 +6,12 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // Financeiro 8/9 — Recargas de Celulares: período por linha (30/60/90 dias).
 // Função pura, a mesma conta no front e as rotas reais sobre SQLite.
 
-const db = await setupRouteDb(["finance_phone_recharges", "finance_phone_recharge_events"]);
+const db = await setupRouteDb([
+  "finance_phone_recharges", "finance_phone_recharge_events", "expenses", "expense_rateio_shares", "accounts_payable",
+  "finance_store_entries", "finance_items", "finance_categories", "finance_cost_centers", "finance_accounts",
+]);
+db.insert("finance_categories", { id: "cat-tel", name: "TELEFONIA" });
+db.insert("finance_items", { id: "item-recarga", category_id: "cat-tel", name: "RECARGA DE CELULAR" });
 const lib = await import("../app/lib/phone-recharges.ts");
 const route = await import("../app/api/finance/phone-recharges/route.ts");
 const recharge = await import("../app/api/finance/phone-recharges/[id]/recharge/route.ts");
@@ -77,13 +82,13 @@ test("criar com 30 → +30; sem período → 90; inválido 400; editar recalcula
 });
 
 test("registrar recarga usa o período da linha", async () => {
-  const res = await json(await post(recharge.POST, `/api/finance/phone-recharges/${a}/recharge`, { rechargeDate: "2026-11-20", amountCents: 3500 }, { id: a }));
+  const res = await json(await post(recharge.POST, `/api/finance/phone-recharges/${a}/recharge`, { rechargeDate: "2026-11-20", amountCents: 3500, financeItemId: "item-recarga" }, { id: a }));
   assert.equal(res.nextRechargeDate, "2027-01-19");
   assert.equal(line(a).last_amount_cents, 3500);
 });
 
 test("linha antiga (antes do 8/9) mantém a data gravada até a próxima recarga/edição", async () => {
-  db.insert("finance_phone_recharges", { id: "old", phone_number: "81977770000", last_recharge_date: "2026-08-31", next_recharge_date: "2026-11-30", last_amount_cents: 2000 });
+  db.insert("finance_phone_recharges", { id: "old", phone_number: "81977770000", company_id: "criomar01", company_name: "RIOMAR", last_recharge_date: "2026-08-31", next_recharge_date: "2026-11-30", last_amount_cents: 2000 });
   assert.equal(line("old").period_days, 90);
   assert.equal(line("old").next_recharge_date, "2026-11-30");
 });
@@ -94,7 +99,7 @@ test("lote: alterar período, registrar recarga (valor vazio = último), ativar/
   assert.equal(line(a).next_recharge_date, "2026-12-20"); // última 20/11 + 30
   assert.equal(line(b).next_recharge_date, "2026-10-31"); // última 01/10 + 30
 
-  const rec = await json(await post(bulk.POST, "/api/finance/phone-recharges/bulk", { action: "recharge", ids: [a, b, "old"], fields: { date: "2026-12-01" } }));
+  const rec = await json(await post(bulk.POST, "/api/finance/phone-recharges/bulk", { action: "recharge", ids: [a, b, "old"], fields: { date: "2026-12-01", financeItemId: "item-recarga" } }));
   assert.equal(rec.applied, 3);
   assert.equal(line(a).last_amount_cents, 3500);
   assert.equal(line(b).last_amount_cents, 3000);
@@ -102,7 +107,7 @@ test("lote: alterar período, registrar recarga (valor vazio = último), ativar/
   assert.equal(line("old").next_recharge_date, "2027-03-01"); // linha antiga: 90 dias
   const events = db.sqlite.prepare("SELECT recharge_id, amount_cents FROM finance_phone_recharge_events WHERE recharge_date='2026-12-01'").all();
   assert.equal(events.length, 3);
-  await post(bulk.POST, "/api/finance/phone-recharges/bulk", { action: "recharge", ids: [b], fields: { date: "2026-12-05", amountCents: 4000 } });
+  await post(bulk.POST, "/api/finance/phone-recharges/bulk", { action: "recharge", ids: [b], fields: { date: "2026-12-05", amountCents: 4000, financeItemId: "item-recarga" } });
   assert.equal(line(b).last_amount_cents, 4000);
 
   await post(bulk.POST, "/api/finance/phone-recharges/bulk", { action: "deactivate", ids: [a, b] });
@@ -114,4 +119,16 @@ test("lote: alterar período, registrar recarga (valor vazio = último), ativar/
   await post(bulk.POST, "/api/finance/phone-recharges/bulk", { action: "delete", ids: [a] });
   assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_phone_recharges WHERE id=?").get(a).n, 0);
   assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_phone_recharge_events WHERE recharge_id=?").get(a).n, 0);
+});
+
+test("registrar recarga lança a Despesa do mês EM ABERTO na unidade da linha (vence na data da recarga)", async () => {
+  const lineId = (await json(await post(route.POST, "/api/finance/phone-recharges", { ...base, phoneNumber: "81955550000", periodDays: 30 }))).id;
+  const noItem = await post(recharge.POST, `/api/finance/phone-recharges/${lineId}/recharge`, { rechargeDate: "2026-10-09", amountCents: 2500 }, { id: lineId });
+  assert.equal(noItem.status, 400);
+  const res = await json(await post(recharge.POST, `/api/finance/phone-recharges/${lineId}/recharge`, { rechargeDate: "2026-10-09", amountCents: 2500, financeItemId: "item-recarga" }, { id: lineId }));
+  const expense = { ...db.sqlite.prepare("SELECT company_id, description, original_amount_cents, due_date FROM expenses WHERE id=?").get(res.expenseId) };
+  assert.deepEqual(expense, { company_id: "criomar01", description: "RECARGA 81955550000 (TIM)", original_amount_cents: 2500, due_date: "2026-10-09" });
+  const payable = { ...db.sqlite.prepare("SELECT status, due_date, original_amount_cents FROM accounts_payable WHERE expense_id=?").get(res.expenseId) };
+  assert.deepEqual(payable, { status: "open", due_date: "2026-10-09", original_amount_cents: 2500 });
+  assert.equal(db.sqlite.prepare("SELECT expense_id FROM finance_phone_recharge_events WHERE recharge_id=?").get(lineId).expense_id, res.expenseId);
 });

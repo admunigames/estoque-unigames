@@ -2643,6 +2643,8 @@ export const financePhoneRechargeEvents = pgTable(
     rechargeDate: text("recharge_date").notNull().default(""),
     amountCents: integer("amount_cents").notNull().default(0),
     notes: text("notes").notNull().default(""),
+    // Despesa do mês lançada pela recarga (em aberto, vence na data da recarga).
+    expenseId: text("expense_id").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),

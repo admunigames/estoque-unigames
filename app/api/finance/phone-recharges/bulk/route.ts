@@ -3,11 +3,13 @@ import { unauthorizedResponse } from "../../../../lib/notion";
 import { nextRechargeDate, parseRechargePeriod, RECHARGE_PERIOD_ERROR } from "../../../../lib/phone-recharges";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
 import { runStatements, type Statement } from "../../card-fees/shared";
+import { planRechargeExpense, type RechargeLine } from "../shared";
 
 // Ações em lote nas Recargas de Celulares (Financeiro 8/9): { action, ids, fields }
 // - period: ALTERAR PERÍODO (fields.periodDays 30/60/90; próxima = última + período);
-// - recharge: REGISTRAR RECARGA EM LOTE (fields.date; fields.amountCents vazio =
-//   último valor de cada linha; um evento por linha);
+// - recharge: REGISTRAR RECARGA EM LOTE (fields.date, fields.financeItemId;
+//   fields.amountCents vazio = último valor de cada linha; um evento e uma
+//   Despesa em aberto por linha);
 // - activate / deactivate: ATIVAR / DESATIVAR;
 // - delete: EXCLUIR (com o histórico, igual à exclusão individual).
 // Todos os ids conferidos antes (404); gravação numa transação.
@@ -15,7 +17,7 @@ import { runStatements, type Statement } from "../../card-fees/shared";
 const ACTIONS = ["period", "recharge", "activate", "deactivate", "delete"];
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-type Row = { id: string; phoneNumber: string; lastRechargeDate: string; lastAmountCents: number; periodDays: number };
+type Row = RechargeLine & { lastRechargeDate: string; lastAmountCents: number; periodDays: number };
 
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -41,6 +43,7 @@ export async function POST(request: Request) {
     const typedAmount = fields.amountCents === undefined || fields.amountCents === null || fields.amountCents === "" ? null : Number(fields.amountCents);
     if (action === "recharge") {
       if (!DATE_PATTERN.test(date)) return jsonResponse({ error: "INFORME A DATA DA RECARGA." }, 400);
+      if (!safeText(fields.financeItemId, 80)) return jsonResponse({ error: "ESCOLHA A CATEGORIA DA DESPESA DA RECARGA." }, 400);
       if (typedAmount !== null && (!Number.isInteger(typedAmount) || typedAmount <= 0)) {
         return jsonResponse({ error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." }, 400);
       }
@@ -49,8 +52,8 @@ export async function POST(request: Request) {
     const database = await getD1();
     const found = await database
       .prepare(
-        `SELECT id, phone_number AS phoneNumber, last_recharge_date AS lastRechargeDate,
-                last_amount_cents AS lastAmountCents, period_days AS periodDays
+        `SELECT id, phone_number AS phoneNumber, carrier, company_id AS companyId, company_name AS companyName,
+                last_recharge_date AS lastRechargeDate, last_amount_cents AS lastAmountCents, period_days AS periodDays
          FROM finance_phone_recharges WHERE id IN (${ids.map((_, i) => `?${i + 1}`).join(",")})`,
       )
       .bind(...ids)
@@ -83,12 +86,21 @@ export async function POST(request: Request) {
           continue;
         }
         const period = parseRechargePeriod(row.periodDays) ?? 90;
+        const eventId = crypto.randomUUID();
+        const expense = await planRechargeExpense(database, actor, row, {
+          eventId, rechargeDate: date, amountCents, financeItemId: safeText(fields.financeItemId, 80),
+        });
+        if ("error" in expense) {
+          skipped.push({ id: row.id, description: row.phoneNumber, reason: expense.error });
+          continue;
+        }
         statements.push([
           `INSERT INTO finance_phone_recharge_events
-             (id, recharge_id, recharge_date, amount_cents, notes, created_by, created_by_name, created_at)
-           VALUES (?1, ?2, ?3, ?4, 'REGISTRADA EM LOTE', ?5, ?6, CURRENT_TIMESTAMP)`,
-          [crypto.randomUUID(), row.id, date, amountCents, actor.id, who],
+             (id, recharge_id, recharge_date, amount_cents, notes, created_by, created_by_name, created_at, expense_id)
+           VALUES (?1, ?2, ?3, ?4, 'REGISTRADA EM LOTE', ?5, ?6, CURRENT_TIMESTAMP, ?7)`,
+          [eventId, row.id, date, amountCents, actor.id, who, expense.expenseId],
         ]);
+        statements.push(...expense.statements);
         statements.push([
           `UPDATE finance_phone_recharges SET last_recharge_date=?1, last_amount_cents=?2, next_recharge_date=?3,
              updated_by=?4, updated_by_name=?5, updated_at=CURRENT_TIMESTAMP WHERE id=?6`,
