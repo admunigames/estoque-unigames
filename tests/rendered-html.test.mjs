@@ -5101,8 +5101,8 @@ test("importadores financeiros leem CSV como texto (data DD/MM com dia <= 12 nã
   assert.match(html, /new TextDecoder\('utf-8', \{fatal:true\}\)[\s\S]{0,120}new TextDecoder\('windows-1252'\)/);
   // Maquinetas (arquivo de vendas) e Conciliação de Vendas (Ponttie).
   assert.equal(html.split("const rows = await extractRowsFromFile(file, {rawCsv: /\\.csv$/i.test(file.name)});").length - 1, 2);
-  // Fatura do cartão e extrato da conciliação.
-  assert.equal(html.split("const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});").length - 1, 2);
+  // Fatura do cartão, corridas Uber e extrato da conciliação.
+  assert.equal(html.split("const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});").length - 1, 3);
 });
 
 test("Financeiro > Fluxo de Caixa: 3 abas, lista de pagamentos, caixa semanal e recebíveis com lote", async () => {
@@ -5215,6 +5215,10 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
   assert.match(html, /SERVIÇO \(AUTO\)/);
   assert.match(html, /MAQUINETA NÃO IDENTIFICADA/);
   assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 3); // Conciliação Bancária, de Vendas e Reposição
+  // Cartão corporativo: aba CONCILIAÇÃO UBER (planilha de corridas × fatura).
+  assert.match(html, /data-corp-tab="uber">CONCILIAÇÃO UBER</);
+  assert.match(html, /data-corp-panel="uber" hidden/);
+  assert.match(html, /'\/uber\?month='/);
   // Lote (componente reutilizado) e confirmação do faturamento.
   assert.match(html, /id="svRowsBulkBar"[\s\S]*?data-bulk-action="sale"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO VENDA[\s\S]*?data-bulk-action="service"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO SERVIÇO[\s\S]*?data-bulk-action="machine"(?: data-bulk-confirm="[^"]*")?>DEFINIR MAQUINETA[\s\S]*?data-bulk-action="ignore"(?: data-bulk-confirm="[^"]*")?>IGNORAR[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /id="svDaysBulkBar"[\s\S]*?data-bulk-action="review"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO REVISADO/);

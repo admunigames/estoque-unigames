@@ -2471,6 +2471,34 @@ export const financeSalesReconRows = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Conciliação Uber (Cartões Corporativos): corridas anotadas, importadas de
+// planilha, batidas com as cobranças UBER da fatura do cartão.
+// card_entry_id = lançamento da fatura (finance_card_invoice_entries) casado;
+// '' = corrida sem cobrança.
+// ---------------------------------------------------------------------------
+export const financeUberRides = pgTable(
+  "finance_uber_rides",
+  {
+    id: text("id").primaryKey(),
+    cardId: text("card_id").notNull(),
+    companyId: text("company_id").notNull().default(""),
+    rideDate: text("ride_date").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    passenger: text("passenger").notNull().default(""),
+    reason: text("reason").notNull().default(""),
+    sourceName: text("source_name").notNull().default(""),
+    cardEntryId: text("card_entry_id").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_uber_rides_card_date_idx").on(table.cardId, table.rideDate),
+    index("finance_uber_rides_entry_idx").on(table.cardEntryId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // Financeiro 7/9 — Crediários: venda financiada por uma FINANCEIRA PARCEIRA,
 // que aprova a proposta e deposita de uma vez o VALOR SEM TAXA (a taxa é paga
 // pela loja). Um depósito do extrato pode quitar vários crediários; a entrada

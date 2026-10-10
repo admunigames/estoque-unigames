@@ -10,12 +10,15 @@ const db = await setupRouteDb([
   "shared_state", "finance_mall_declarations", "finance_store_revenue",
   "finance_card_machines", "finance_acquirers", "finance_card_fees", "finance_card_machine_events",
   "finance_replacement_entries", "finance_bank_statement_entries",
+  "finance_corporate_cards", "finance_card_invoice_entries", "finance_uber_rides",
 ]);
 const plan = await import("../app/api/finance/mall-declarations/plan/route.ts");
 const declBatch = await import("../app/api/finance/mall-declarations/batch/route.ts");
 const declList = await import("../app/api/finance/mall-declarations/route.ts");
 const machines = await import("../app/api/finance/card-machines/route.ts");
 const rpBank = await import("../app/api/finance/replacement-control/bank/route.ts");
+const uberLib = await import("../app/lib/uber-recon.ts");
+const uber = await import("../app/api/finance/corporate-cards/[id]/uber/route.ts");
 
 const ADMIN = { id: "admin", role: "admin" };
 const NO_FINANCE = { id: "loja", permissions: ["outputs:view"] };
@@ -103,4 +106,54 @@ test("Reposição × extrato: saídas do mês com sugestão, bater, desfazer, se
   assert.equal((await json(await get(rpBank.GET, "/api/finance/replacement-control/bank?month=2026-10"))).unmatched.length, 3);
   assert.equal((await post(rpBank.POST, "/api/finance/replacement-control/bank", { action: "unlink", replacementIds: ["nao-existe"] })).status, 404);
   assert.equal((await get(rpBank.GET, "/api/finance/replacement-control/bank?month=2026-10", NO_FINANCE)).status, 403);
+});
+
+test("Uber (puro): mesmo valor, até 1 dia, menor diferença primeiro; cada cobrança com uma corrida", () => {
+  const pairs = uberLib.matchUberRides(
+    [{ id: "r1", rideDate: "2026-10-05", amountCents: 2350 }, { id: "r2", rideDate: "2026-10-05", amountCents: 2350 }, { id: "r3", rideDate: "2026-10-07", amountCents: 1000 }],
+    [{ id: "c1", entryDate: "2026-10-06", amountCents: 2350 }, { id: "c2", entryDate: "2026-10-05", amountCents: 2350 }, { id: "c3", entryDate: "2026-10-09", amountCents: 1000 }],
+  );
+  assert.deepEqual(pairs, [{ rideId: "r1", chargeId: "c2" }, { rideId: "r2", chargeId: "c1" }]); // r3: 2 dias → sem par
+  assert.equal(uberLib.isUberMerchant("UBER *TRIP HELP.UBER.COM"), true);
+  assert.equal(uberLib.isUberMerchant("SUPERMERCADO TUBERCULO"), false);
+});
+
+test("Uber (rota): importar a planilha casa com a fatura; repetida pulada; conciliar de novo; bater/desfazer; excluir", async () => {
+  db.insert("finance_corporate_cards", { id: "card-1", name: "CARTÃO DIRETORIA", company_id: RIOMAR, company_name: "RIOMAR", status: "active", created_by: "seed" });
+  const charge = (id, extra) => db.insert("finance_card_invoice_entries", { id, import_id: "f1", card_id: "card-1", company_id: RIOMAR, ...extra });
+  charge("c1", { entry_date: "2026-10-05", merchant: "UBER *TRIP", amount_cents: 2350 });
+  charge("c2", { entry_date: "2026-10-12", merchant: "UBER DO BRASIL", amount_cents: 4100 });
+  charge("c-outro", { entry_date: "2026-10-05", merchant: "POSTO SHELL", amount_cents: 2350 });
+  const path = "/api/finance/corporate-cards/card-1/uber";
+  const call = (method, body, user = ADMIN) => callRoute(method === "GET" ? uber.GET : uber.POST, user, method, method === "GET" ? `${path}?month=2026-10` : path, body, { id: "card-1" });
+
+  const imported = await json(await call("POST", { action: "import", sourceName: "corridas.xlsx", rows: [
+    { rideDate: "2026-10-04", amountCents: 2350, passenger: "ANA", reason: "BANCO" },
+    { rideDate: "2026-10-20", amountCents: 1800, passenger: "JOÃO", reason: "FORNECEDOR" },
+    { rideDate: "2026-10-04", amountCents: 2350, passenger: "ANA", reason: "REPETIDA" },
+    { rideDate: "xx", amountCents: 1 },
+  ] }));
+  assert.equal(imported.inserted, 2);
+  assert.equal(imported.matched, 1);
+  assert.deepEqual(imported.skipped.map((s) => s.reason), ["JÁ IMPORTADA", "DATA INVÁLIDA"]);
+
+  let view = await json(await call("GET"));
+  assert.equal(view.rides.find((r) => r.passenger === "ANA").charge.id, "c1");
+  assert.deepEqual(view.freeCharges.map((c) => c.id), ["c2"]); // posto não é Uber
+  assert.deepEqual(view.totals, { ridesCents: 4150, chargesCents: 6450 });
+
+  const joao = view.rides.find((r) => r.passenger === "JOÃO");
+  assert.equal((await call("POST", { action: "link", rideId: joao.id, entryId: "c1" })).status, 409);
+  await call("POST", { action: "link", rideId: joao.id, entryId: "c2" });
+  view = await json(await call("GET"));
+  assert.equal(view.freeCharges.length, 0);
+  await call("POST", { action: "unlink", rideId: joao.id });
+  assert.equal((await json(await call("GET"))).freeCharges.length, 1);
+  // Corrida nova de mesmo valor da cobrança livre: conciliar de novo casa.
+  db.insert("finance_uber_rides", { id: "r-novo", card_id: "card-1", ride_date: "2026-10-12", amount_cents: 4100, passenger: "BIA" });
+  assert.equal((await json(await call("POST", { action: "automatch", month: "2026-10" }))).matched, 1);
+  assert.equal((await call("POST", { action: "delete", ids: ["r-novo", "nao-existe"] })).status, 404);
+  await call("POST", { action: "delete", ids: ["r-novo"] });
+  assert.equal((await json(await call("GET"))).rides.length, 2);
+  assert.equal((await call("GET", undefined, NO_FINANCE)).status, 403);
 });

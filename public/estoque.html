@@ -8185,6 +8185,7 @@
         <div class="output-tabs" role="tablist" aria-label="Seções do cartão">
           <button class="output-tab active" type="button" role="tab" aria-selected="true" data-corp-tab="lancamentos">LANÇAMENTOS DA FATURA</button>
           <button class="output-tab" type="button" role="tab" aria-selected="false" data-corp-tab="importar">IMPORTAR FATURA</button>
+          <button class="output-tab" type="button" role="tab" aria-selected="false" data-corp-tab="uber">CONCILIAÇÃO UBER</button>
         </div>
 
         <div data-corp-panel="lancamentos">
@@ -8211,6 +8212,35 @@
               <table id="corpEntriesTable">
                 <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Estabelecimento</th><th>Valor</th><th>Parcela</th><th>Responsável</th><th>Categoria</th><th>Situação</th><th></th></tr></thead>
                 <tbody id="corpEntriesTableBody"><tr><td colspan="9" class="responsive-empty">Selecione um cartão.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div data-corp-panel="uber" hidden>
+          <div class="dre-toolbar">
+            <div class="field"><label for="corpUberMonth">MÊS</label><input type="month" id="corpUberMonth"></div>
+            <div class="field"><label for="corpUberFile">PLANILHA DAS CORRIDAS (.xlsx / .xls / .csv)</label><input type="file" id="corpUberFile" accept=".xls,.xlsx,.csv"></div>
+            <div class="dre-toolbar-actions"><button class="btn-outline" id="btnCorpUberMatch" type="button">CONCILIAR DE NOVO</button></div>
+          </div>
+          <p class="page-desc">COLUNAS RECONHECIDAS: DATA, VALOR, PASSAGEIRO (NOME/COLABORADOR/USUÁRIO) E MOTIVO (DESCRIÇÃO/DESTINO). CADA CORRIDA CASA COM A COBRANÇA UBER DA FATURA DESTE CARTÃO DE MESMO VALOR, ATÉ 1 DIA DE DIFERENÇA. IMPORTOU A FATURA DEPOIS? USE CONCILIAR DE NOVO.</p>
+          <div class="user-form-status" id="corpUberStatus" role="status" aria-live="polite"></div>
+          <section class="summary" id="corpUberSummary" aria-label="Resumo da conciliação Uber"></section>
+          <h3 class="supply-section-title">CORRIDAS ANOTADAS</h3>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Data</th><th>Passageiro</th><th>Motivo</th><th>Valor</th><th>Cobrança na fatura</th><th></th></tr></thead>
+                <tbody id="corpUberRidesBody"><tr><td colspan="6" class="responsive-empty">Escolha o mês.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <h3 class="supply-section-title">COBRANÇAS UBER NA FATURA SEM CORRIDA ANOTADA</h3>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Data</th><th>Estabelecimento</th><th>Responsável</th><th>Valor</th></tr></thead>
+                <tbody id="corpUberChargesBody"><tr><td colspan="4" class="responsive-empty">—</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -31495,7 +31525,119 @@ function renderHomeTasks(){
         const active = b === btn; b.classList.toggle('active', active); b.setAttribute('aria-selected', String(active));
       });
       document.querySelectorAll('[data-corp-panel]').forEach(p => { p.hidden = p.dataset.corpPanel !== tab; });
+      if(tab === 'uber') loadCorpUber();
     });
+  });
+
+  // ----- CONCILIAÇÃO UBER: corridas anotadas (planilha) × cobranças UBER da fatura -----
+  let corpUberData = null;
+  async function corpUberRequest(body){
+    return financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/uber', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  }
+  async function loadCorpUber(){
+    if(!corpCardCurrent) return;
+    if(!el('corpUberMonth').value) el('corpUberMonth').value = el('corpEntriesMonth').value || financeCurrentMonthKey();
+    el('corpUberRidesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      corpUberData = await financeApiRequest('/corporate-cards/'+encodeURIComponent(corpCardCurrent.id)+'/uber?month='+encodeURIComponent(el('corpUberMonth').value));
+    }catch(error){
+      el('corpUberRidesBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    renderCorpUber();
+  }
+  function renderCorpUber(){
+    const rides = corpUberData.rides || [];
+    const free = corpUberData.freeCharges || [];
+    const matched = rides.filter(ride => ride.charge);
+    const card = (label, value, sub, neg) => '<div class="card'+(neg ? ' neg' : '')+'"><div class="lbl">'+label+'</div><div class="num">'+value+'</div><div class="sub">'+sub+'</div></div>';
+    el('corpUberSummary').innerHTML =
+      card('CORRIDAS ANOTADAS', formatCentsBRL(corpUberData.totals.ridesCents), rides.length+' corrida(s)')+
+      card('COBRANÇAS UBER NA FATURA', formatCentsBRL(corpUberData.totals.chargesCents), (matched.length + free.length)+' cobrança(s)')+
+      card('BATIDAS', String(matched.length), 'corrida = cobrança')+
+      card('CORRIDAS SEM COBRANÇA', String(rides.length - matched.length), 'anotada e não cobrada', rides.length - matched.length > 0)+
+      card('COBRANÇAS SEM CORRIDA', String(free.length), 'cobrada e não anotada', free.length > 0);
+    const freeOptions = free.map(charge => '<option value="'+escapeHtml(charge.id)+'">'+escapeHtml(formatDateBR(charge.entryDate)+' · '+formatCentsBRL(charge.amountCents))+'</option>').join('');
+    el('corpUberRidesBody').innerHTML = rides.length ? rides.map(ride =>
+      '<tr>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(ride.rideDate))+'</td>'+
+        '<td data-label="Passageiro">'+escapeHtml(ride.passenger || '—')+'</td>'+
+        '<td data-label="Motivo">'+escapeHtml(ride.reason || '—')+'</td>'+
+        '<td data-label="Valor">'+formatCentsBRL(ride.amountCents)+'</td>'+
+        '<td data-label="Cobrança">'+(ride.charge
+          ? '<span class="status-pill ok">BATIDA</span> '+escapeHtml(formatDateBR(ride.charge.entryDate))
+          : (free.length ? '<select data-uber-link="'+escapeHtml(ride.id)+'" aria-label="Bater com cobrança"><option value="">SEM COBRANÇA — BATER COM…</option>'+freeOptions+'</select>' : '<span class="status-pill alert">SEM COBRANÇA</span>'))+'</td>'+
+        '<td data-label="Ações"><div class="loan-cell-actions assist-row-actions">'+
+          (ride.charge ? '<button class="btn-outline btn-sm" type="button" data-uber-unlink="'+escapeHtml(ride.id)+'">DESFAZER</button>' : '')+
+          '<button class="btn-outline btn-sm" type="button" data-uber-delete="'+escapeHtml(ride.id)+'">EXCLUIR</button>'+
+        '</div></td>'+
+      '</tr>').join('') : '<tr><td colspan="6" class="responsive-empty">Nenhuma corrida anotada neste mês. Importe a planilha.</td></tr>';
+    el('corpUberChargesBody').innerHTML = free.length ? free.map(charge =>
+      '<tr><td data-label="Data">'+escapeHtml(formatDateBR(charge.entryDate))+'</td><td data-label="Estabelecimento">'+escapeHtml(charge.merchant)+'</td>'+
+      '<td data-label="Responsável">'+escapeHtml(charge.holderName || '—')+'</td><td data-label="Valor">'+formatCentsBRL(charge.amountCents)+'</td></tr>').join('')
+      : '<tr><td colspan="4" class="responsive-empty">Toda cobrança UBER da fatura tem corrida anotada.</td></tr>';
+  }
+  el('corpUberMonth').addEventListener('change', loadCorpUber);
+  el('btnCorpUberMatch').addEventListener('click', async () => {
+    try{
+      const res = await corpUberRequest({action:'automatch', month: el('corpUberMonth').value});
+      showPurchaseToast(res.matched+' corrida(s) batida(s).');
+      await loadCorpUber();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('corpUberFile').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    const status = el('corpUberStatus');
+    if(!file || !corpCardCurrent) return;
+    status.textContent = 'Lendo planilha…';
+    try{
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      const table = await extractRowsFromFile(file, {rawCsv: ext === 'csv'});
+      let headerIndex = -1, col = null;
+      for(let i = 0; i < Math.min(table.length, 15); i++){
+        const header = table[i] || [];
+        const candidate = {date: findColumn(header, ['data','datadacorrida','dia']), amount: findColumn(header, ['valor','valorrs','total','preco'])};
+        if(candidate.date !== -1 && candidate.amount !== -1){
+          candidate.passenger = findColumn(header, ['passageiro','nome','colaborador','usuario','funcionario','quem']);
+          candidate.reason = findColumn(header, ['motivo','descricao','destino','observacao','obs','trajeto']);
+          headerIndex = i; col = candidate; break;
+        }
+      }
+      if(headerIndex === -1) throw new Error('NÃO ENCONTREI AS COLUNAS DE DATA E VALOR.');
+      const rows = [];
+      for(let i = headerIndex + 1; i < table.length; i++){
+        const r = table[i] || [];
+        const rideDate = parseDateISO(r[col.date]);
+        const amountCents = parseMoneyToCents(r[col.amount]);
+        if(!rideDate || !amountCents) continue;
+        rows.push({rideDate, amountCents: Math.abs(amountCents),
+          passenger: col.passenger !== -1 ? String(r[col.passenger] || '').trim() : '',
+          reason: col.reason !== -1 ? String(r[col.reason] || '').trim() : ''});
+      }
+      if(!rows.length) throw new Error('NENHUMA CORRIDA VÁLIDA NA PLANILHA (CONFIRA DATA E VALOR).');
+      const res = await corpUberRequest({action:'import', sourceName: file.name, rows});
+      const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+      status.textContent = res.inserted+' CORRIDA(S) IMPORTADA(S) · '+res.matched+' BATIDA(S) COM A FATURA'+(skipped.length ? ' · '+skipped.length+' PULADA(S) ('+[...new Set(skipped.map(s => s.reason))].join(', ')+')' : '')+'.';
+      el('corpUberFile').value = '';
+      if(rows[0] && rows[0].rideDate) el('corpUberMonth').value = rows[0].rideDate.slice(0, 7);
+      await loadCorpUber();
+    }catch(error){ status.textContent = error.message; }
+  });
+  el('corpUberRidesBody').addEventListener('change', async event => {
+    const select = event.target.closest('[data-uber-link]');
+    if(!select || !select.value) return;
+    try{ await corpUberRequest({action:'link', rideId: select.dataset.uberLink, entryId: select.value}); await loadCorpUber(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('corpUberRidesBody').addEventListener('click', async event => {
+    const unlink = event.target.closest('[data-uber-unlink]');
+    const del = event.target.closest('[data-uber-delete]');
+    if(!unlink && !del) return;
+    if(del && !comprasArmButton(del, 'CONFIRMAR EXCLUSÃO')) return;
+    try{
+      await corpUberRequest(unlink ? {action:'unlink', rideId: unlink.dataset.uberUnlink} : {action:'delete', ids:[del.dataset.uberDelete]});
+      await loadCorpUber();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
   async function loadCorpCardSummary(){
