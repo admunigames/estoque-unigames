@@ -148,8 +148,8 @@ export function planCreditSale(
   if (provider.companyId && provider.companyId !== companyId) return { error: "A FINANCEIRA NÃO ATENDE ESSA UNIDADE.", status: 400 };
   const saleDate = safeText(input.saleDate, 10);
   if (!DATE_RE.test(saleDate)) return { error: "INFORME A DATA DA VENDA.", status: 400 };
+  // Proposta é opcional; quando vem, não pode repetir na mesma financeira.
   const proposal = safeText(input.proposal, 60).toUpperCase();
-  if (!proposal) return { error: "INFORME O Nº DA PROPOSTA.", status: 400 };
   const expectedDate = safeText(input.expectedDate, 10);
   if (expectedDate && !DATE_RE.test(expectedDate)) return { error: "DATA PREVISTA INVÁLIDA.", status: 400 };
   const hasNet = input.netCents !== undefined && input.netCents !== null && input.netCents !== "";
@@ -159,9 +159,11 @@ export function planCreditSale(
     netCents: hasNet ? Number(input.netCents) : null,
   });
   if (!amounts) return { error: "CONFIRA O VALOR COM TAXA, A TAXA E O VALOR SEM TAXA.", status: 400 };
-  const key = proposalKey(provider.id, proposal);
-  if (ctx.taken.has(key)) return { error: "PROPOSTA JÁ CADASTRADA.", status: 409 };
-  ctx.taken.add(key);
+  if (proposal) {
+    const key = proposalKey(provider.id, proposal);
+    if (ctx.taken.has(key)) return { error: "PROPOSTA JÁ CADASTRADA.", status: 409 };
+    ctx.taken.add(key);
+  }
 
   const id = crypto.randomUUID();
   const who = ctx.scope.actor.displayName || "Administrador";

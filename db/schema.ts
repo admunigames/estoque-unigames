@@ -2530,7 +2530,7 @@ export const financeCreditSales = pgTable(
     index("finance_credit_sales_company_date_idx").on(table.companyId, table.saleDate),
     index("finance_credit_sales_provider_idx").on(table.providerId),
     index("finance_credit_sales_bank_entry_idx").on(table.bankEntryId),
-    // Proposta é obrigatória na aplicação; o índice parcial só protege o banco.
+    // Proposta é opcional: o índice parcial só impede repetir as preenchidas.
     uniqueIndex("finance_credit_sales_proposal_idx").on(table.providerId, table.proposal).where(sql`proposal <> ''`),
   ],
 );

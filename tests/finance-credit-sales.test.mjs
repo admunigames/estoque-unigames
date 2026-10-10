@@ -279,3 +279,19 @@ test("cards: total pendente, finalizado e taxas do mês, pendentes há mais de 3
   assert.equal(summary.finishedMonthCents, 90000 + 45000);
   assert.equal(summary.feesMonthCents, 10000 + 5000 + 5000 + 2000);
 });
+
+test("proposta opcional: dois crediários sem proposta na mesma financeira; só o valor da venda, taxa da financeira", async () => {
+  const base = { companyId: RIOMAR, providerId: credfacil, saleDate: "2026-10-01", grossCents: 200000 };
+  const a = await post(salesRoute.POST, ADMIN, "/api/finance/credit-sales", base);
+  const b = await post(salesRoute.POST, ADMIN, "/api/finance/credit-sales", { ...base, grossCents: 30000 });
+  assert.equal(a.status, 201);
+  assert.equal(b.status, 201);
+  const rows = db.sqlite.prepare("SELECT proposal, fee_bps, fee_cents, net_cents FROM finance_credit_sales WHERE proposal='' ORDER BY gross_cents").all().map((r) => ({ ...r }));
+  assert.deepEqual(rows, [
+    { proposal: "", fee_bps: 1000, fee_cents: 3000, net_cents: 27000 },
+    { proposal: "", fee_bps: 1000, fee_cents: 20000, net_cents: 180000 },
+  ]);
+  const lote = await json(await post(batch.POST, ADMIN, "/api/finance/credit-sales/batch", { companyId: RIOMAR, providerId: credfacil, rows: [{ saleDate: "2026-10-02", grossCents: 1000 }, { saleDate: "2026-10-02", grossCents: 2000 }] }));
+  assert.equal(lote.created, 2);
+  db.sqlite.prepare("DELETE FROM finance_credit_sales WHERE proposal=''").run();
+});

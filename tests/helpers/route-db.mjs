@@ -70,9 +70,10 @@ export function createTableSql(table) {
     columns.push(`"${column}"${chain.includes(".primaryKey()") ? " PRIMARY KEY" : ""}${sqliteDefault(defaultMatch?.[1])}`);
   }
   const indexes = [];
-  for (const [, name, fields] of block.matchAll(/uniqueIndex\("([^"]+)"\)\.on\(([^)]*)\)/g)) {
+  // Índice único parcial (".where(sql`...`)") vira índice parcial no SQLite também.
+  for (const [, name, fields, where] of block.matchAll(/uniqueIndex\("([^"]+)"\)\.on\(([^)]*)\)(?:\.where\(sql`([^`]*)`\))?/g)) {
     const cols = [...fields.matchAll(/table\.(\w+)/g)].map(([, field]) => `"${fieldToColumn.get(field)}"`);
-    indexes.push(`CREATE UNIQUE INDEX "${name}" ON "${table}" (${cols.join(", ")});`);
+    indexes.push(`CREATE UNIQUE INDEX "${name}" ON "${table}" (${cols.join(", ")})${where ? ` WHERE ${where}` : ""};`);
   }
   return `CREATE TABLE "${table}" (${columns.join(", ")});\n${indexes.join("\n")}`;
 }

@@ -8343,7 +8343,7 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="crTable">
-              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Financeira</th><th>ID venda</th><th>Proposta</th><th>Com taxa</th><th>Taxa</th><th>Sem taxa</th><th>Situação</th><th>Recebido em</th></tr></thead>
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Financeira</th><th>ID venda</th><th>Proposta</th><th>Valor da venda</th><th>Taxa</th><th>Sem taxa</th><th>Situação</th><th>Recebido em</th></tr></thead>
               <tbody id="crBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
@@ -10135,16 +10135,15 @@
       <div class="purchase-field"><label for="crSaleProvider">FINANCEIRA *</label><select id="crSaleProvider" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="crSaleDate">DATA DA VENDA *</label><input type="date" id="crSaleDate" required></div>
       <div class="purchase-field"><label for="crSaleRef">ID DA VENDA (PONTTIE)</label><input id="crSaleRef" maxlength="60"></div>
-      <div class="purchase-field"><label for="crSaleProposal">Nº DA PROPOSTA *</label><input id="crSaleProposal" maxlength="60" required></div>
-      <div class="purchase-field"><label for="crSaleCustomer">CLIENTE</label><input id="crSaleCustomer" maxlength="80"></div>
-      <div class="purchase-field"><label for="crSaleGross">VALOR COM TAXA *</label><input id="crSaleGross" data-cr-amount="gross" required></div>
-      <div class="purchase-field"><label for="crSaleFee">TAXA (%)</label><input type="number" id="crSaleFee" data-cr-amount="fee" min="0" max="100" step="0.01"></div>
-      <div class="purchase-field"><label for="crSaleNet">VALOR SEM TAXA</label><input id="crSaleNet" data-cr-amount="net"></div>
+      <div class="purchase-field"><label for="crSaleProposal">Nº DA PROPOSTA</label><input id="crSaleProposal" maxlength="60" placeholder="OPCIONAL"></div>
+      <div class="purchase-field"><label for="crSaleGross">VALOR DA VENDA *</label><input id="crSaleGross" data-cr-amount="gross" required></div>
+      <div class="purchase-field"><label for="crSaleFee">TAXA DA FINANCEIRA (%)</label><input type="number" id="crSaleFee" data-cr-amount="fee" readonly tabindex="-1"></div>
+      <div class="purchase-field"><label for="crSaleNet">VALOR SEM TAXA (CALCULADO)</label><input id="crSaleNet" data-cr-amount="net" readonly tabindex="-1"></div>
       <div class="purchase-field"><label for="crSaleExpected">DATA PREVISTA DE PAGAMENTO</label><input type="date" id="crSaleExpected"></div>
       <div class="purchase-field full"><label for="crSaleNotes">OBSERVAÇÕES</label><textarea id="crSaleNotes" rows="2" maxlength="500"></textarea></div>
     </div>
     <p class="purchase-field-help" id="crSalePonttie" role="status" aria-live="polite"></p>
-    <p class="purchase-field-help">A TAXA É PAGA PELA LOJA: O VALOR SEM TAXA É O QUE CAI NO EXTRATO. DIGITANDO O VALOR SEM TAXA, A TAXA É RECALCULADA.</p>
+    <p class="purchase-field-help">É SÓ INFORMAR O VALOR DA VENDA: A TAXA VEM DO CADASTRO DA FINANCEIRA E O VALOR SEM TAXA (O QUE CAI NO EXTRATO) É CALCULADO.</p>
     <div class="user-form-status" id="crSaleStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCrSale" type="button">CANCELAR</button>
@@ -10163,11 +10162,11 @@
       <div class="purchase-field"><label for="crBatchCompany">UNIDADE (PADRÃO)</label><select id="crBatchCompany"><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="crBatchProvider">FINANCEIRA (PADRÃO)</label><select id="crBatchProvider"><option value="">SELECIONE</option></select></div>
     </div>
-    <p class="purchase-field-help">UNIDADE E FINANCEIRA DA LINHA EM BRANCO = AS DO CABEÇALHO. LINHAS SEM PROPOSTA E SEM VALOR SÃO IGNORADAS; PROPOSTA JÁ CADASTRADA É PULADA.</p>
+    <p class="purchase-field-help">UNIDADE E FINANCEIRA DA LINHA EM BRANCO = AS DO CABEÇALHO. INFORME O VALOR DA VENDA: A TAXA VEM DA FINANCEIRA. LINHAS SEM VALOR SÃO IGNORADAS; PROPOSTA JÁ CADASTRADA É PULADA.</p>
     <div class="table-panel responsive-table decl-batch-table cr-batch-table">
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Unidade</th><th>Financeira</th><th>Data *</th><th>ID venda</th><th>Proposta *</th><th>Cliente</th><th>Com taxa *</th><th>Taxa %</th><th>Sem taxa</th><th>Prevista</th><th>Observação</th></tr></thead>
+          <thead><tr><th>Unidade</th><th>Financeira</th><th>Data *</th><th>ID venda</th><th>Proposta</th><th>Valor da venda *</th><th>Taxa %</th><th>Sem taxa</th><th>Prevista</th><th>Observação</th></tr></thead>
           <tbody id="crBatchBody"></tbody>
         </table>
       </div>
@@ -32140,8 +32139,8 @@ function renderHomeTasks(){
         '<td data-label="Unidade">'+escapeHtml(r.companyName || crCompanyName(r.companyId))+'</td>'+
         '<td data-label="Financeira">'+escapeHtml(r.providerName || '—')+'</td>'+
         '<td data-label="ID venda">'+escapeHtml(r.saleRef || '—')+'</td>'+
-        '<td data-label="Proposta"><span><strong>'+escapeHtml(r.proposal)+'</strong>'+(r.customerName ? ' <small>'+escapeHtml(r.customerName)+'</small>' : '')+'</span></td>'+
-        '<td data-label="Com taxa">'+formatCentsBRL(r.grossCents)+'</td>'+
+        '<td data-label="Proposta"><span><strong>'+escapeHtml(r.proposal || '—')+'</strong>'+(r.customerName ? ' <small>'+escapeHtml(r.customerName)+'</small>' : '')+'</span></td>'+
+        '<td data-label="Valor da venda">'+formatCentsBRL(r.grossCents)+'</td>'+
         '<td data-label="Taxa">'+crPct(r.feeBps)+' · '+formatCentsBRL(r.feeCents)+'</td>'+
         '<td data-label="Sem taxa"><strong>'+formatCentsBRL(r.netCents)+'</strong></td>'+
         '<td data-label="Situação"><span>'+crStatusPill(r)+'</span></td>'+
@@ -32260,10 +32259,10 @@ function renderHomeTasks(){
     const status = el('crSaleStatus');
     const payload = Object.assign({
       companyId: el('crSaleCompany').value, providerId: el('crSaleProvider').value, saleDate: el('crSaleDate').value,
-      saleRef: el('crSaleRef').value, proposal: el('crSaleProposal').value, customerName: el('crSaleCustomer').value,
+      saleRef: el('crSaleRef').value, proposal: el('crSaleProposal').value,
       expectedDate: el('crSaleExpected').value, notes: el('crSaleNotes').value
     }, crAmountsPayload(el('crSaleForm')));
-    if(!payload.grossCents){ status.textContent = 'INFORME O VALOR COM TAXA.'; return; }
+    if(!payload.grossCents){ status.textContent = 'INFORME O VALOR DA VENDA.'; return; }
     status.textContent = 'Salvando…';
     try{
       await financeApiRequest('/credit-sales', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
@@ -32283,11 +32282,10 @@ function renderHomeTasks(){
         '<td data-label="FINANCEIRA"><select data-cr-batch="providerId" aria-label="Financeira">'+providerOptions+'</select></td>'+
         '<td data-label="DATA"><input type="date" data-cr-batch="saleDate" aria-label="Data da venda"></td>'+
         '<td data-label="ID VENDA"><input data-cr-batch="saleRef" maxlength="60" aria-label="ID da venda"></td>'+
-        '<td data-label="PROPOSTA"><input data-cr-batch="proposal" maxlength="60" aria-label="Nº da proposta"></td>'+
-        '<td data-label="CLIENTE"><input data-cr-batch="customerName" maxlength="80" aria-label="Cliente"></td>'+
-        '<td data-label="COM TAXA"><input data-cr-amount="gross" aria-label="Valor com taxa"></td>'+
-        '<td data-label="TAXA %"><input type="number" min="0" max="100" step="0.01" data-cr-amount="fee" aria-label="Taxa em %"></td>'+
-        '<td data-label="SEM TAXA"><input data-cr-amount="net" aria-label="Valor sem taxa"></td>'+
+        '<td data-label="PROPOSTA"><input data-cr-batch="proposal" maxlength="60" placeholder="OPCIONAL" aria-label="Nº da proposta"></td>'+
+        '<td data-label="VALOR DA VENDA"><input data-cr-amount="gross" aria-label="Valor da venda"></td>'+
+        '<td data-label="TAXA %"><input type="number" data-cr-amount="fee" readonly tabindex="-1" aria-label="Taxa da financeira em %"></td>'+
+        '<td data-label="SEM TAXA"><input data-cr-amount="net" readonly tabindex="-1" aria-label="Valor sem taxa (calculado)"></td>'+
         '<td data-label="PREVISTA"><input type="date" data-cr-batch="expectedDate" aria-label="Data prevista"></td>'+
         '<td data-label="OBSERVAÇÃO"><input data-cr-batch="notes" maxlength="500" aria-label="Observação"></td>'+
       '</tr>').join('');
@@ -32323,8 +32321,7 @@ function renderHomeTasks(){
   el('crBatchForm').addEventListener('submit', async event => {
     event.preventDefault();
     const status = el('crBatchStatus');
-    const filled = Array.from(el('crBatchBody').rows).filter(tr =>
-      tr.querySelector('[data-cr-batch="proposal"]').value.trim() || crMoneyCents(tr.querySelector('[data-cr-amount="gross"]')));
+    const filled = Array.from(el('crBatchBody').rows).filter(tr => crMoneyCents(tr.querySelector('[data-cr-amount="gross"]')));
     if(!filled.length){ status.textContent = 'PREENCHA AO MENOS UMA LINHA.'; return; }
     const rows = filled.map(tr => {
       const row = {};
