@@ -23,7 +23,7 @@ function userId(request: Request) {
 }
 
 function normalizePreferences(value: JsonMap) {
-  const theme = value.theme === "light" ? "light" : "dark";
+  const theme = value.theme === "light" || value.theme === "glass" ? value.theme : "dark";
   const accentColor =
     typeof value.accentColor === "string" && /^#[0-9a-f]{6}$/i.test(value.accentColor)
       ? value.accentColor.toLowerCase()

@@ -70,6 +70,42 @@
     --neg-bg:rgba(196,71,53,.1);
     --ok:#397cae;
   }
+  /* TEMA VIDRO — base escura (todas as regras sem tema valem), superfícies
+     translúcidas e fundo fixo com brilho da COR PRINCIPAL (--accent). O
+     desfoque fica só nas camadas que sobrepõem conteúdo (diálogos, menu,
+     listas suspensas, cabeçalhos fixos) para não pesar no celular. */
+  html[data-theme="glass"]{
+    --bg:#060b14;
+    --bg-card:rgba(255,255,255,.075);
+    --bg-card-2:rgba(255,255,255,.11);
+    --border:rgba(255,255,255,.18);
+    --surface-border:rgba(255,255,255,.16);
+    --inset-border:rgba(255,255,255,.13);
+    --surface-shadow:0 8px 30px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.08);
+    --surface-shadow-hover:0 12px 38px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.12);
+    --ink:#f7fbff;
+    --ink-soft:rgba(232,240,250,.8);
+    --ink-faint:rgba(222,232,244,.58);
+    --glass-tint:var(--accent);
+  }
+  html[data-theme="glass"] body{background:#060b14;}
+  html[data-theme="glass"] body::before{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(62vmax 62vmax at 4% -6%, color-mix(in srgb, var(--glass-tint) 90%, #fff 10%), transparent 64%),
+      radial-gradient(52vmax 52vmax at 106% 30%, color-mix(in srgb, var(--glass-tint) 70%, transparent), transparent 66%),
+      radial-gradient(60vmax 60vmax at 32% 108%, color-mix(in srgb, var(--glass-tint) 75%, #000 10%), transparent 68%),
+      linear-gradient(160deg, color-mix(in srgb, var(--glass-tint) 22%, #0a1322), #05080f);
+  }
+  html[data-theme="glass"] :is(.sidebar,.purchase-dialog,dialog,.home-search-results,.product-search-menu,.purchase-toast,.task-reminder-toast,.ios-install-hint,.menu-toggle,.theme-toggle){
+    background:rgba(14,22,36,.64); border-color:rgba(255,255,255,.18);
+    -webkit-backdrop-filter:blur(22px) saturate(150%); backdrop-filter:blur(22px) saturate(150%);
+  }
+  html[data-theme="glass"] .purchase-dialog::backdrop{background:rgba(3,6,12,.45); backdrop-filter:blur(6px);}
+  html[data-theme="glass"] thead th{background:rgba(12,20,34,.78); border-bottom-color:rgba(255,255,255,.12); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);}
+  html[data-theme="glass"] tbody td{border-bottom-color:rgba(255,255,255,.08);}
+  @media (max-width:800px){html[data-theme="glass"] .page-header{background:rgba(8,14,26,.55); border-bottom-color:rgba(255,255,255,.12);}}
+  html[data-theme="glass"] option{background:#101d2b; color:#f7fbff;}
   *{box-sizing:border-box;}
   [hidden]{display:none !important;}
   html{-webkit-text-size-adjust:100%;}
@@ -2505,11 +2541,11 @@
   .home-supply-copy span{display:block;margin-top:3px;color:#776846;font:700 8px/1.35 var(--mono);}
   .home-supply-state{color:#8b6b20;font:900 7px/1.3 var(--mono);text-align:right;}
   .home-supplies-more{padding:8px;text-align:center;color:#6d5623;font:800 8px/1.4 var(--mono);}
-  html[data-theme="dark"] .home-supplies-alert{background:linear-gradient(135deg,rgba(68,54,23,.94),rgba(23,31,40,.96));}
-  html[data-theme="dark"] .home-supplies-head h2,html[data-theme="dark"] .home-supply-copy strong{color:#fff5d4;}
-  html[data-theme="dark"] .home-supplies-head span,html[data-theme="dark"] .home-supply-copy span,html[data-theme="dark"] .home-supply-state,html[data-theme="dark"] .home-supplies-more{color:#e5c978;}
-  html[data-theme="dark"] .home-supply-row{background:rgba(255,255,255,.035);border-color:rgba(225,173,73,.22);}
-  html[data-theme="dark"] .home-supplies-head button,html[data-theme="dark"] .home-supplies-head a{background:rgba(255,255,255,.04);color:#f0d58b;border-color:rgba(225,173,73,.28);}
+  html:is([data-theme="dark"],[data-theme="glass"]) .home-supplies-alert{background:linear-gradient(135deg,rgba(68,54,23,.94),rgba(23,31,40,.96));}
+  html:is([data-theme="dark"],[data-theme="glass"]) .home-supplies-head h2,html:is([data-theme="dark"],[data-theme="glass"]) .home-supply-copy strong{color:#fff5d4;}
+  html:is([data-theme="dark"],[data-theme="glass"]) .home-supplies-head span,html:is([data-theme="dark"],[data-theme="glass"]) .home-supply-copy span,html:is([data-theme="dark"],[data-theme="glass"]) .home-supply-state,html:is([data-theme="dark"],[data-theme="glass"]) .home-supplies-more{color:#e5c978;}
+  html:is([data-theme="dark"],[data-theme="glass"]) .home-supply-row{background:rgba(255,255,255,.035);border-color:rgba(225,173,73,.22);}
+  html:is([data-theme="dark"],[data-theme="glass"]) .home-supplies-head button,html:is([data-theme="dark"],[data-theme="glass"]) .home-supplies-head a{background:rgba(255,255,255,.04);color:#f0d58b;border-color:rgba(225,173,73,.28);}
   html[data-theme="light"] .supply-summary-card,
   html[data-theme="light"] .supply-register-panel,
   html[data-theme="light"] .supply-board{background:#fff;border-color:var(--surface-border);box-shadow:var(--surface-shadow);}
@@ -3591,10 +3627,10 @@
     margin-bottom:9px; padding:10px 12px; border:1px solid rgba(196,71,53,.45); border-radius:10px;
     background:rgba(239,106,85,.14); color:#9c2f22; font:800 10px/1.45 var(--sans); cursor:pointer;
   }
-  html[data-theme="dark"] .home-div-counter{background:rgba(255,255,255,.035); border-color:rgba(225,173,73,.22); color:#fff5d4;}
-  html[data-theme="dark"] .home-div-counter span{color:#e5c978;}
-  html[data-theme="dark"] .home-divergences .home-supply-quantity{background:rgba(225,173,73,.16); color:#f0d58b;}
-  html[data-theme="dark"] .home-div-alert{background:rgba(239,106,85,.16); border-color:rgba(239,106,85,.5); color:#ffc0b5;}
+  html:is([data-theme="dark"],[data-theme="glass"]) .home-div-counter{background:rgba(255,255,255,.035); border-color:rgba(225,173,73,.22); color:#fff5d4;}
+  html:is([data-theme="dark"],[data-theme="glass"]) .home-div-counter span{color:#e5c978;}
+  html:is([data-theme="dark"],[data-theme="glass"]) .home-divergences .home-supply-quantity{background:rgba(225,173,73,.16); color:#f0d58b;}
+  html:is([data-theme="dark"],[data-theme="glass"]) .home-div-alert{background:rgba(239,106,85,.16); border-color:rgba(239,106,85,.5); color:#ffc0b5;}
   @media(max-width:900px){
     .div-dash-grid{grid-template-columns:1fr;}
     .div-item-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
@@ -3643,7 +3679,7 @@
   <span class="menu-toggle-icon" aria-hidden="true"><span></span><span></span><span></span></span>
 </button>
 <button class="sidebar-backdrop no-print" id="sidebarBackdrop" type="button" tabindex="-1" aria-label="Fechar menu"></button>
-<button class="theme-toggle no-print" id="themeToggle" type="button" aria-pressed="false" aria-label="Ativar tema claro" title="Alternar tema claro e escuro">
+<button class="theme-toggle no-print" id="themeToggle" type="button" aria-pressed="false" aria-label="Ativar tema claro" title="Alternar tema escuro, claro e vidro">
   <svg class="theme-toggle-svg" viewBox="0 0 32 32" fill="currentColor" stroke-linecap="round" aria-hidden="true">
     <clipPath id="themeToggleClip"><path class="theme-toggle-clip" d="M0-5h30a1 1 0 0 0 9 13v24H0Z"/></clipPath>
     <g clip-path="url(#themeToggleClip)">
@@ -12305,8 +12341,8 @@
   </div>
   <form class="purchase-form" id="appearanceForm">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="appearanceTheme">TEMA</label><select id="appearanceTheme"><option value="dark">ESCURO</option><option value="light">CLARO</option></select></div>
-      <div class="purchase-field"><label for="appearanceAccent">COR PRINCIPAL</label><input type="color" id="appearanceAccent" value="#4f86bd"></div>
+      <div class="purchase-field"><label for="appearanceTheme">TEMA</label><select id="appearanceTheme"><option value="dark">ESCURO</option><option value="light">CLARO</option><option value="glass">VIDRO</option></select></div>
+      <div class="purchase-field"><label for="appearanceAccent" id="appearanceAccentLabel">COR PRINCIPAL</label><input type="color" id="appearanceAccent" value="#4f86bd"></div>
       <div class="purchase-field full"><label for="appearanceLogo">LOGOTIPO/ÍCONE PESSOAL</label><input type="file" id="appearanceLogo" accept="image/png,image/jpeg,image/webp"><span class="purchase-field-help">A IMAGEM SERÁ REDUZIDA E SALVA APENAS PARA O SEU USUÁRIO.</span></div>
       <div class="purchase-field full appearance-preview"><img class="preference-logo-preview" id="appearanceLogoPreview" src="/favicon.svg" alt="Prévia do logotipo"><button class="btn-outline" id="btnRemoveAppearanceLogo" type="button">USAR LOGO PADRÃO</button></div>
       <label class="permission-option full"><input id="appearanceCompactMobile" type="checkbox"> Usar visual mais compacto no celular</label>
@@ -13585,12 +13621,14 @@
   }
 
   function setUserTheme(theme, persist){
-    const selected = theme === 'light' ? 'light' : 'dark';
+    const selected = theme === 'light' || theme === 'glass' ? theme : 'dark';
     currentPreferences.theme = selected;
     document.documentElement.dataset.theme = selected;
     const toggle = el('themeToggle');
+    const nextLabel = {dark:'Ativar tema claro', light:'Ativar tema vidro', glass:'Ativar tema escuro'}[selected];
     toggle.setAttribute('aria-pressed', String(selected === 'light'));
-    toggle.setAttribute('aria-label', selected === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro');
+    toggle.setAttribute('aria-label', nextLabel);
+    toggle.title = nextLabel;
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if(themeMeta) themeMeta.content = selected === 'light' ? '#eef4f9' : '#08121e';
     if(persist){
@@ -13641,7 +13679,7 @@
       const data = await response.json();
       if(response.ok && data.preferences){
         currentPreferences = {
-          theme:data.preferences.theme === 'light' ? 'light' : 'dark',
+          theme:['light','glass'].includes(data.preferences.theme) ? data.preferences.theme : 'dark',
           accentColor:/^#[0-9a-f]{6}$/i.test(data.preferences.accentColor || '') ? data.preferences.accentColor : '#4f86bd',
           logoDataUrl:typeof data.preferences.logoDataUrl === 'string' ? data.preferences.logoDataUrl : '',
           compactMobile:data.preferences.compactMobile === true
@@ -13655,7 +13693,9 @@
   }
 
   el('themeToggle').addEventListener('click', () => {
-    setUserTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light', true);
+    const order = ['dark','light','glass'];
+    const current = order.indexOf(document.documentElement.dataset.theme);
+    setUserTheme(order[(current + 1) % order.length], true);
   });
 
   window.addEventListener('beforeinstallprompt', event => {
@@ -13665,6 +13705,7 @@
 
   function openAppearanceDialog(){
     el('appearanceTheme').value = currentPreferences.theme;
+    syncAppearanceAccentLabel();
     el('appearanceAccent').value = currentPreferences.accentColor;
     el('appearanceCompactMobile').checked = currentPreferences.compactMobile;
     el('appearanceLogo').value = '';
@@ -13674,7 +13715,17 @@
 
   function closeAppearanceDialog(){
     if(el('appearanceDialog').open) el('appearanceDialog').close();
+    // Desfaz a prévia se fechou sem salvar (no salvar, currentPreferences já tem o novo).
+    setUserTheme(currentPreferences.theme,false);
+    applyAccentColor(currentPreferences.accentColor);
   }
+
+  // Prévia ao vivo: tema e cor mudam na hora; no tema Vidro a cor é a do vidro.
+  function syncAppearanceAccentLabel(){
+    el('appearanceAccentLabel').textContent = el('appearanceTheme').value === 'glass' ? 'COR DO VIDRO' : 'COR PRINCIPAL';
+  }
+  el('appearanceTheme').addEventListener('change', () => { setUserTheme(el('appearanceTheme').value,false); syncAppearanceAccentLabel(); });
+  el('appearanceAccent').addEventListener('input', () => applyAccentColor(el('appearanceAccent').value));
 
   async function resizePreferenceLogo(file){
     if(!file || !/^image\/(?:png|jpeg|webp)$/i.test(file.type)) throw new Error('ESCOLHA UMA IMAGEM PNG, JPG OU WEBP.');
@@ -13720,7 +13771,7 @@
   });
   el('appearanceForm').addEventListener('submit',async event => {
     event.preventDefault();
-    currentPreferences.theme = el('appearanceTheme').value === 'light' ? 'light' : 'dark';
+    currentPreferences.theme = ['light','glass'].includes(el('appearanceTheme').value) ? el('appearanceTheme').value : 'dark';
     currentPreferences.accentColor = el('appearanceAccent').value;
     currentPreferences.compactMobile = el('appearanceCompactMobile').checked;
     setUserTheme(currentPreferences.theme,false);
