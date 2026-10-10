@@ -10681,7 +10681,7 @@
       <div class="purchase-field full"><label for="gdAdjustStore">LOJA *</label><select id="gdAdjustStore" required></select></div>
       <div class="purchase-field"><label for="gdAdjustDate">DATA *</label><input type="date" id="gdAdjustDate" required></div>
       <div class="purchase-field"><label for="gdAdjustSaleCode">ID DA VENDA *</label><input type="text" id="gdAdjustSaleCode" maxlength="40" inputmode="numeric" autocomplete="off" required></div>
-      <div class="purchase-field full"><label for="gdAdjustSeller">VENDEDOR RESPONSÁVEL *</label><input type="text" id="gdAdjustSeller" list="gdSellerOptions" maxlength="80" autocomplete="off" placeholder="Escolha da lista ou digite o nome" required><datalist id="gdSellerOptions"></datalist></div>
+      <div class="purchase-field full"><label for="gdAdjustSeller">VENDEDOR RESPONSÁVEL</label><input type="text" id="gdAdjustSeller" list="gdSellerOptions" maxlength="80" autocomplete="off" placeholder="Escolha da lista ou digite o nome"><datalist id="gdSellerOptions"></datalist></div>
       <div class="purchase-field full payables-kind-tabs" role="radiogroup" aria-label="Tipo da gordura">
         <label><input type="radio" name="gdAdjustSign" value="1" checked> POSITIVA (+)</label>
         <label><input type="radio" name="gdAdjustSign" value="-1"> NEGATIVA (−)</label>
@@ -26557,7 +26557,7 @@ function renderHomeTasks(){
   }
 
   async function gdOpenShareDialog(store){
-    await shareCanvasImage(await gdBuildShareImage(store), gdCfg().file+'-'+store.storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-')+'-'+gdDashboardData.month+'.png', gdCfg().title+' · '+store.storeName);
+    await shareCanvasImage(await gdBuildShareImage(store), gdCfg().file+'-'+store.storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-')+'-'+gdDashboardData.month+'.png', gdCfg().title+' · '+store.storeName, true);
   }
 
   function financeCurrentDateKey(){
@@ -44729,11 +44729,12 @@ function renderHomeTasks(){
 
   // Imagem para o WhatsApp: no celular abre o "Compartilhar"
   // (WhatsApp aparece na lista); onde não dá, baixa o PNG.
-  async function shareCanvasImage(canvas, fileName, title){
+  // downloadOnly: baixa o PNG direto, sem abrir o "Compartilhar" do celular.
+  async function shareCanvasImage(canvas, fileName, title, downloadOnly){
     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     if(!blob){ showPurchaseToast('NÃO FOI POSSÍVEL GERAR A IMAGEM.'); return; }
     const file = new File([blob], fileName, {type:'image/png'});
-    if(navigator.canShare && navigator.canShare({files:[file]})){
+    if(!downloadOnly && navigator.canShare && navigator.canShare({files:[file]})){
       try{
         await navigator.share({files:[file], title});
         return;

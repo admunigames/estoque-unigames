@@ -29,6 +29,8 @@ test("lança gordura com ID e vendedor; campos obrigatórios; sem permissão = 4
   assert.equal((await entry(A, "2026-10-07", -500, { sellerName: "RENATO" })).status, 201);
   assert.equal((await entry(B, "2026-10-07", 700)).status, 201);
   assert.equal((await entry(A, "2026-10-07", 100, { saleCode: "" })).status, 400);
+  // Vendedor não é obrigatório.
+  assert.equal((await entry(B, "2026-10-07", 100, { sellerName: "" })).status, 201);
   assert.equal((await entry(A, "2026-10-07", 0)).status, 400);
   assert.equal((await call(SO_VE, "POST", { storeId: A, entryDate: "2026-10-07", saleCode: "1", sellerName: "X", amountCents: 100 })).status, 403);
   // Login de loja só visualiza: não lança nem na própria loja.
@@ -45,7 +47,8 @@ test("saldo anterior automático entra no total; loja vê só a própria loja", 
   assert.equal(alfa.positiveCents, 1000);
   assert.equal(alfa.negativeCents, -500);
   assert.equal(alfa.balanceCents, 10500);
-  assert.equal(all.entries.length, 3);
+  assert.equal(all.entries.length, 4);
+  assert.equal(all.entries.filter((e) => !e.sellerName).length, 1);
   assert.equal(all.entries.find((e) => e.amountCents === -500).sellerName, "RENATO");
   assert.equal(all.entries.find((e) => e.amountCents === 1000).sellerName, "BRENNDHA");
 

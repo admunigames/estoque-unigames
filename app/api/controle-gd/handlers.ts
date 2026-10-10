@@ -158,7 +158,6 @@ function parseEntry(body: JsonMap): { error: string } | { entry: EntryInput } {
   };
   if (!ADJUSTMENT_DATE_PATTERN.test(entry.entryDate)) return { error: "DATA INVÁLIDA." };
   if (!entry.saleCode) return { error: "INFORME O ID DA VENDA." };
-  if (!entry.sellerName) return { error: "INFORME O VENDEDOR RESPONSÁVEL." };
   if (!Number.isInteger(entry.amountCents) || entry.amountCents === 0) {
     return { error: "INFORME UM VALOR DIFERENTE DE ZERO." };
   }
