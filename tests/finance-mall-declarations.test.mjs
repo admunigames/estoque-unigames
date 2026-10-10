@@ -38,7 +38,7 @@ sqlite.exec(`
     id TEXT PRIMARY KEY, mall_name TEXT NOT NULL DEFAULT '', company_id TEXT NOT NULL DEFAULT '',
     company_name TEXT NOT NULL DEFAULT '', competence_month TEXT NOT NULL,
     real_revenue_cents INTEGER NOT NULL DEFAULT 0, avg_declared_cents INTEGER NOT NULL DEFAULT 0,
-    suggested_declared_cents INTEGER NOT NULL DEFAULT 0, declared_cents INTEGER NOT NULL DEFAULT 0,
+    suggested_declared_cents INTEGER NOT NULL DEFAULT 0, declared_cents INTEGER NOT NULL DEFAULT 0, planned_cents INTEGER NOT NULL DEFAULT 0,
     declaration_date TEXT NOT NULL DEFAULT '', contract_percent_bps INTEGER NOT NULL DEFAULT 0,
     minimum_rent_cents INTEGER NOT NULL DEFAULT 0, percentage_rent_cents INTEGER NOT NULL DEFAULT 0,
     percentage_rent_paid INTEGER NOT NULL DEFAULT 0, amount_paid_cents INTEGER NOT NULL DEFAULT 0,
