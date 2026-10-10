@@ -3388,6 +3388,8 @@
   .cr-batch-table select{width:140px;}
   .account-field-error{color:#ef6a55; font-weight:700;}
   [aria-invalid="true"]{border-color:#ef6a55 !important;}
+  .machine-more{margin-top:10px;}
+  .machine-more > summary{cursor:pointer; font:800 11px/1.3 var(--mono); color:var(--ink-soft); padding:6px 0;}
   .rateio-store-actions{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:8px;}
   .rateio-store-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px 14px;}
   .rateio-store-row{display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:34px;}
@@ -7997,8 +7999,8 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="machinesTable">
-              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Adquirente</th><th>Modelo</th><th>Serial</th><th>Cód. estab.</th><th>Terminal</th><th>Unidade</th><th>Instalação</th><th>Situação</th><th>Taxas</th><th></th></tr></thead>
-              <tbody id="machinesTableBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Adquirente</th><th>Nome</th><th>Serial</th><th>Senha adm.</th><th>Unidade</th><th>Situação</th><th>Taxas</th><th></th></tr></thead>
+              <tbody id="machinesTableBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -10030,14 +10032,21 @@
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="machineAcquirer">ADQUIRENTE *</label><select id="machineAcquirer" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="machineCompany">UNIDADE *</label><select id="machineCompany" required><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field"><label for="machineModel">MODELO</label><input id="machineModel" maxlength="120" placeholder="Ex: PAX D195"></div>
+      <div class="purchase-field"><label for="machineModel">NOME DA MAQUINETA</label><input id="machineModel" maxlength="120" placeholder="Ex: RIOMAR CAIXA 1"></div>
       <div class="purchase-field"><label for="machineSerial">SERIAL</label><input id="machineSerial" maxlength="60"></div>
-      <div class="purchase-field"><label for="machineEstablishmentCode">CÓDIGO DO ESTABELECIMENTO</label><input id="machineEstablishmentCode" maxlength="60"></div>
-      <div class="purchase-field"><label for="machineTerminal">TERMINAL</label><input id="machineTerminal" maxlength="60"></div>
-      <div class="purchase-field"><label for="machineInstalledAt">DATA DA INSTALAÇÃO</label><input type="date" id="machineInstalledAt"></div>
-      <div class="purchase-field"><label for="machineStatus">SITUAÇÃO</label><select id="machineStatus"><option value="active">ATIVA</option><option value="inactive">INATIVA</option><option value="transferred">TRANSFERIDA</option><option value="canceled">CANCELADA</option></select></div>
-      <div class="purchase-field full"><label for="machineNotes">OBSERVAÇÕES</label><textarea id="machineNotes" rows="2" maxlength="1000"></textarea></div>
+      <div class="purchase-field"><label for="machineAdminPassword">SENHA ADMINISTRATIVA</label><input id="machineAdminPassword" maxlength="60" autocomplete="off" spellcheck="false"></div>
     </div>
+    <details class="machine-more">
+      <summary>MAIS DADOS (OPCIONAL)</summary>
+      <p class="purchase-field-help">TERMINAL E CÓDIGO DO ESTABELECIMENTO LIGAM O ARQUIVO DE VENDAS DA ADQUIRENTE À MAQUINETA (SEM ELES, SÓ PELO SERIAL).</p>
+      <div class="purchase-form-grid">
+        <div class="purchase-field"><label for="machineEstablishmentCode">CÓDIGO DO ESTABELECIMENTO</label><input id="machineEstablishmentCode" maxlength="60"></div>
+        <div class="purchase-field"><label for="machineTerminal">TERMINAL</label><input id="machineTerminal" maxlength="60"></div>
+        <div class="purchase-field"><label for="machineInstalledAt">DATA DA INSTALAÇÃO</label><input type="date" id="machineInstalledAt"></div>
+        <div class="purchase-field"><label for="machineStatus">SITUAÇÃO</label><select id="machineStatus"><option value="active">ATIVA</option><option value="inactive">INATIVA</option><option value="transferred">TRANSFERIDA</option><option value="canceled">CANCELADA</option></select></div>
+        <div class="purchase-field full"><label for="machineNotes">OBSERVAÇÕES</label><textarea id="machineNotes" rows="2" maxlength="1000"></textarea></div>
+      </div>
+    </details>
     <div class="user-form-status" id="machineFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelMachineDialog" type="button">CANCELAR</button>
@@ -30273,7 +30282,7 @@ function renderHomeTasks(){
     const st = el('machineStatusFilter').value;
     const rows = machinesRows.filter(m => (!loja || m.companyId === loja) && (!acq || m.acquirerId === acq) && (!st || m.status === st));
     if(!rows.length){
-      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhuma maquineta encontrada.</td></tr>';
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma maquineta encontrada.</td></tr>';
       machinesBulk.sync();
       return;
     }
@@ -30282,12 +30291,10 @@ function renderHomeTasks(){
       return '<tr>'+
         '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(m.id, 'Selecionar maquineta')+'</td>'+
         '<td data-label="Adquirente">'+escapeHtml(m.acquirerName || '—')+'</td>'+
-        '<td data-label="Modelo">'+escapeHtml(m.model || '—')+'</td>'+
+        '<td data-label="Nome">'+escapeHtml(m.model || '—')+'</td>'+
         '<td data-label="Serial">'+escapeHtml(m.serial || '—')+'</td>'+
-        '<td data-label="Cód. estab.">'+escapeHtml(m.establishmentCode || '—')+'</td>'+
-        '<td data-label="Terminal">'+escapeHtml(m.terminal || '—')+'</td>'+
+        '<td data-label="Senha adm.">'+escapeHtml(m.adminPassword || '—')+'</td>'+
         '<td data-label="Unidade">'+escapeHtml(m.companyName || machineCompanyName(m.companyId))+'</td>'+
-        '<td data-label="Instalação">'+escapeHtml(formatDateBR(m.installedAt) || '—')+'</td>'+
         '<td data-label="Situação">'+escapeHtml(MACHINE_STATUS_LABELS[m.status] || m.status)+'</td>'+
         '<td data-label="Taxas"><span class="status-pill '+fee[0]+'">'+fee[1]+'</span></td>'+
         '<td data-label="Ações">'+
@@ -30303,7 +30310,7 @@ function renderHomeTasks(){
   // Lista completa (escopo do login) — filtros da aba são no cliente e as
   // outras abas usam a mesma lista nos selects de maquineta.
   async function loadMachinesTab(){
-    el('machinesTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    el('machinesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
     try{
       const [acquirers, machines] = await Promise.all([
         financeApiRequest('/acquirers'),
@@ -30316,7 +30323,7 @@ function renderHomeTasks(){
       renderMachinesTable();
     }catch(error){
       machinesRows = [];
-      el('machinesTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('machinesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
@@ -30393,6 +30400,7 @@ function renderHomeTasks(){
     el('machineCompany').value = row ? row.companyId : (el('machineLoja').value || '');
     el('machineModel').value = row ? (row.model || '') : '';
     el('machineSerial').value = row ? (row.serial || '') : '';
+    el('machineAdminPassword').value = row ? (row.adminPassword || '') : '';
     el('machineEstablishmentCode').value = row ? (row.establishmentCode || '') : '';
     el('machineTerminal').value = row ? (row.terminal || '') : '';
     el('machineInstalledAt').value = row ? (row.installedAt || '') : '';
@@ -30434,6 +30442,7 @@ function renderHomeTasks(){
       companyId: el('machineCompany').value,
       model: el('machineModel').value,
       serial: el('machineSerial').value,
+      adminPassword: el('machineAdminPassword').value,
       establishmentCode: el('machineEstablishmentCode').value,
       terminal: el('machineTerminal').value,
       installedAt: el('machineInstalledAt').value,

@@ -2061,6 +2061,8 @@ export const financeCardMachines = pgTable(
     acquirerName: text("acquirer_name").notNull().default(""),
     model: text("model").notNull().default(""),
     serial: text("serial").notNull().default(""),
+    // Senha administrativa da maquineta (decisão do usuário: visível para quem tem o Financeiro).
+    adminPassword: text("admin_password").notNull().default(""),
     establishmentCode: text("establishment_code").notNull().default(""),
     terminal: text("terminal").notNull().default(""),
     companyId: text("company_id").notNull().default(""),

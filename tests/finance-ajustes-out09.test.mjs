@@ -8,10 +8,12 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
 const db = await setupRouteDb([
   "shared_state", "finance_mall_declarations", "finance_store_revenue",
+  "finance_card_machines", "finance_acquirers", "finance_card_fees", "finance_card_machine_events",
 ]);
 const plan = await import("../app/api/finance/mall-declarations/plan/route.ts");
 const declBatch = await import("../app/api/finance/mall-declarations/batch/route.ts");
 const declList = await import("../app/api/finance/mall-declarations/route.ts");
+const machines = await import("../app/api/finance/card-machines/route.ts");
 
 const ADMIN = { id: "admin", role: "admin" };
 const NO_FINANCE = { id: "loja", permissions: ["outputs:view"] };
@@ -56,4 +58,17 @@ test("Declaração: PLANEJAR O ANO grava o A DECLARAR de cada mês; o lote do m�
   // A lista traz o previsto.
   const list = await json(await get(declList.GET, "/api/finance/mall-declarations?monthFrom=2027-02&monthTo=2027-02"));
   assert.equal(list.rows[0].plannedCents, 100_001);
+});
+
+test("Maquinetas: nome, serial e SENHA ADMINISTRATIVA gravados e devolvidos; edição troca a senha", async () => {
+  db.sqlite.prepare("INSERT INTO shared_state (state_key, value_json) VALUES ('companies_list', ?)").run(JSON.stringify([{ id: RIOMAR, name: "RIOMAR" }]));
+  db.insert("finance_acquirers", { id: "stone", name: "STONE", status: "active" });
+  const created = await post(machines.POST, "/api/finance/card-machines", { acquirerId: "stone", companyId: RIOMAR, model: "RIOMAR CAIXA 1", serial: "SN123", adminPassword: "4321" });
+  assert.equal(created.status, 201);
+  const { id } = await json(created);
+  const list = await json(await get(machines.GET, "/api/finance/card-machines"));
+  const machine = list.machines.find((row) => row.id === id);
+  assert.deepEqual([machine.model, machine.serial, machine.adminPassword], ["RIOMAR CAIXA 1", "SN123", "4321"]);
+  assert.equal((await post(machines.POST, "/api/finance/card-machines", { id, acquirerId: "stone", companyId: RIOMAR, model: "RIOMAR CAIXA 1", serial: "SN123", adminPassword: "9999" })).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT admin_password FROM finance_card_machines WHERE id=?").get(id).admin_password, "9999");
 });

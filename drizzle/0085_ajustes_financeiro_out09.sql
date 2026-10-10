@@ -4,3 +4,6 @@ ALTER TABLE "finance_mall_declarations" ADD COLUMN IF NOT EXISTS "planned_cents"
 --> statement-breakpoint
 -- Recargas: despesa do mês lançada ao registrar a recarga.
 ALTER TABLE "finance_phone_recharge_events" ADD COLUMN IF NOT EXISTS "expense_id" text DEFAULT '' NOT NULL;
+--> statement-breakpoint
+-- Maquinetas: senha administrativa da maquineta.
+ALTER TABLE "finance_card_machines" ADD COLUMN IF NOT EXISTS "admin_password" text DEFAULT '' NOT NULL;

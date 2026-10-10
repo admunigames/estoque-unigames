@@ -87,7 +87,7 @@ export async function GET(request: Request) {
     // 'acquirer' = usa a da adquirente, 'none' = nenhuma vigente.
     const result = await database
       .prepare(
-        `SELECT id, acquirer_id AS acquirerId, acquirer_name AS acquirerName, model, serial,
+        `SELECT id, acquirer_id AS acquirerId, acquirer_name AS acquirerName, model, serial, admin_password AS adminPassword,
                 establishment_code AS establishmentCode, terminal,
                 company_id AS companyId, company_name AS companyName,
                 installed_at AS installedAt, status, notes,
@@ -135,6 +135,8 @@ export async function POST(request: Request) {
     const editId = safeText(body.id, 80);
     const acquirerId = safeText(body.acquirerId, 80);
     const model = safeText(body.model, 120);
+    // Senha administrativa da maquineta (visível para quem tem o Financeiro, por decisão do usuário).
+    const adminPassword = safeText(body.adminPassword, 60);
     const serial = normalizeSerial(body.serial);
     const establishmentCode = safeText(body.establishmentCode, 60);
     const terminal = safeText(body.terminal, 60);
@@ -188,7 +190,7 @@ export async function POST(request: Request) {
           `UPDATE finance_card_machines
            SET acquirer_id=?1, acquirer_name=?2, model=?3, serial=?4, establishment_code=?5,
                terminal=?6, company_id=?7, company_name=?8, installed_at=?9, status=?10, notes=?11,
-               updated_by=?12, updated_by_name=?13, updated_at=now()::text
+               updated_by=?12, updated_by_name=?13, updated_at=CURRENT_TIMESTAMP, admin_password=?15
            WHERE id=?14`,
         )
         .bind(
@@ -206,6 +208,7 @@ export async function POST(request: Request) {
           actor.id,
           who,
           editId,
+          adminPassword,
         )
         .run();
       return jsonResponse({ updated: true, id: editId });
@@ -217,8 +220,8 @@ export async function POST(request: Request) {
         `INSERT INTO finance_card_machines
           (id, acquirer_id, acquirer_name, model, serial, establishment_code, terminal,
            company_id, company_name, installed_at, status, notes,
-           created_by, created_by_name, updated_by, updated_by_name)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?13, ?14)`,
+           created_by, created_by_name, updated_by, updated_by_name, admin_password)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?13, ?14, ?15)`,
       )
       .bind(
         id,
@@ -235,6 +238,7 @@ export async function POST(request: Request) {
         notes,
         actor.id,
         who,
+        adminPassword,
       )
       .run();
     return jsonResponse({ created: true, id }, 201);
