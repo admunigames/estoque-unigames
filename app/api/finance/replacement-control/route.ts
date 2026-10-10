@@ -23,7 +23,7 @@ type Row = Record<string, unknown>;
 
 const SELECT_COLUMNS = `id, entry_date AS entryDate, company_id AS companyId, company_name AS companyName,
   product, reason, sector, responsible_name AS responsibleName, amount_cents AS amountCents,
-  kind, notes, expense_id AS expenseId,
+  kind, notes, expense_id AS expenseId, bank_entry_id AS bankEntryId,
   created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
   updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt`;
 

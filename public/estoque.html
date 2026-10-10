@@ -8568,6 +8568,33 @@
           </table>
         </div>
       </div>
+
+      <h3 class="supply-section-title">BATER COM O EXTRATO BANCÁRIO</h3>
+      <p class="page-desc">SUBA O EXTRATO (O MESMO DA CONCILIAÇÃO BANCÁRIA, SEM DUPLICAR) E BATA CADA SAÍDA COM O LANÇAMENTO DE REPOSIÇÃO. O QUE FICAR SEM PAR APARECE NOS DOIS LADOS.</p>
+      <div class="dre-toolbar">
+        <div class="field"><label for="rpBankAccount">CONTA BANCÁRIA</label><select id="rpBankAccount"><option value="">TODAS</option></select></div>
+        <div class="field"><label for="rpBankMonth">MÊS</label><input type="month" id="rpBankMonth"></div>
+        <div class="field"><label for="rpBankFile">IMPORTAR EXTRATO (.ofx / .xls / .xlsx / .csv)</label><input type="file" id="rpBankFile" accept=".ofx,.xls,.xlsx,.csv,.htm,.html"></div>
+      </div>
+      <div class="user-form-status" id="rpBankStatus" role="status" aria-live="polite"></div>
+      <section class="summary" id="rpBankSummary" aria-label="Resumo do extrato"></section>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="rpBankTable">
+            <thead><tr><th>Data</th><th>Histórico</th><th>Saída</th><th>Lançamento de reposição</th><th></th></tr></thead>
+            <tbody id="rpBankBody"><tr><td colspan="5" class="responsive-empty">Escolha o mês.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <h3 class="supply-section-title">LANÇAMENTOS DO MÊS SEM PAR NO EXTRATO</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Data</th><th>Unidade</th><th>Produto</th><th>Motivo</th><th>Valor</th></tr></thead>
+            <tbody id="rpUnmatchedBody"><tr><td colspan="5" class="responsive-empty">—</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <section id="pageFinanceiroRecargas" class="page wrap">
@@ -10576,6 +10603,30 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelObraBulk" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rpLinkDialog" aria-labelledby="rpLinkTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rpLinkTitle">BATER SAÍDA DO EXTRATO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRpLink" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rpLinkForm">
+    <p class="purchase-field-help" id="rpLinkExit"></p>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Produto</th><th>Valor</th></tr></thead>
+          <tbody id="rpLinkBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <p class="purchase-field-help" id="rpLinkTotal"></p>
+    <div class="user-form-status" id="rpLinkStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRpLink" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">BATER</button>
     </div>
   </form>
 </dialog>
@@ -33414,6 +33465,7 @@ function renderHomeTasks(){
     fase8CompanyOptions('reposicaoLoja', 'TODAS AS UNIDADES');
     fase8CompanyOptions('reposicaoUnidade', '');
     await reloadReposicao();
+    await loadRpBank();
   }
   async function reloadReposicao(){
     const body = el('reposicaoTableBody');
@@ -33568,7 +33620,140 @@ function renderHomeTasks(){
     finally{ button.disabled = false; }
   });
 
+  // ----- Controle de Reposição × EXTRATO (saídas do extrato batidas com os lançamentos) -----
+  let rpBankData = null;
+  let rpLinkAfterSave = '';
+  let rpLinkExitId = '';
+  async function loadRpBank(){
+    if(!el('rpBankMonth').value) el('rpBankMonth').value = financeCurrentMonthKey();
+    if(!reconAccounts.length){
+      try{ const data = await financeApiRequest('/accounts?includeInactive=1'); reconAccounts = Array.isArray(data.accounts) ? data.accounts : []; }catch(_e){}
+    }
+    fillSelect('rpBankAccount', '<option value="">TODAS</option>', reconAccounts.map(a =>
+      '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name+(a.companyName ? ' — '+a.companyName : ''))+'</option>').join(''));
+    const params = new URLSearchParams({month: el('rpBankMonth').value});
+    if(el('rpBankAccount').value) params.set('financeAccountId', el('rpBankAccount').value);
+    el('rpBankBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      rpBankData = await financeApiRequest('/replacement-control/bank?'+params.toString());
+    }catch(error){
+      rpBankData = null;
+      el('rpBankBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    renderRpBank();
+  }
+  function renderRpBank(){
+    const exits = rpBankData.exits || [];
+    const free = rpBankData.free || [];
+    const matched = exits.filter(exit => exit.linked.length).length;
+    const card = (label, value, neg) => '<div class="card'+(neg ? ' neg' : '')+'"><div class="lbl">'+label+'</div><div class="num">'+value+'</div></div>';
+    el('rpBankSummary').innerHTML = card('SAÍDAS NO EXTRATO', String(exits.length))+card('BATIDAS COM REPOSIÇÃO', String(matched))+
+      card('LANÇAMENTOS SEM PAR', String((rpBankData.unmatched || []).length), (rpBankData.unmatched || []).length > 0);
+    el('rpBankBody').innerHTML = exits.length ? exits.map(exit => {
+      const suggestion = free.find(item => item.id === exit.suggestionId);
+      const linkedText = exit.linked.length
+        ? exit.linked.map(item => escapeHtml(item.product)+' · '+formatCentsBRL(item.amountCents)).join('<br>')+
+          (exit.linkedCents !== Math.abs(exit.amountCents) ? ' <span class="status-pill warn">DIFERENÇA '+formatCentsBRL(Math.abs(exit.amountCents) - exit.linkedCents)+'</span>' : ' <span class="status-pill ok">BATIDA</span>')
+        : (suggestion ? '<span class="status-pill waiting">SUGESTÃO: '+escapeHtml(suggestion.product)+'</span>' : '—');
+      return '<tr>'+
+        '<td data-label="Data">'+escapeHtml(formatDateBR(exit.entryDate))+'</td>'+
+        '<td data-label="Histórico">'+escapeHtml(exit.description || '—')+'</td>'+
+        '<td data-label="Saída">'+formatCentsBRL(Math.abs(exit.amountCents))+'</td>'+
+        '<td data-label="Lançamento"><span>'+linkedText+'</span></td>'+
+        '<td data-label="Ações"><div class="loan-cell-actions assist-row-actions">'+
+          (exit.linked.length
+            ? '<button class="btn-outline btn-sm" type="button" data-rp-unlink="'+escapeHtml(exit.id)+'">DESFAZER</button>'
+            : '<button class="btn-outline btn-sm" type="button" data-rp-link="'+escapeHtml(exit.id)+'">BATER</button>'+
+              '<button class="btn-outline btn-sm" type="button" data-rp-create="'+escapeHtml(exit.id)+'">CRIAR LANÇAMENTO</button>')+
+        '</div></td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="5" class="responsive-empty">Nenhuma saída no extrato deste mês. Importe o extrato acima.</td></tr>';
+    const unmatched = rpBankData.unmatched || [];
+    el('rpUnmatchedBody').innerHTML = unmatched.length ? unmatched.map(item =>
+      '<tr><td data-label="Data">'+escapeHtml(formatDateBR(item.entryDate))+'</td><td data-label="Unidade">'+escapeHtml(item.companyName || fase8CompanyName(item.companyId) || '—')+'</td>'+
+      '<td data-label="Produto">'+escapeHtml(item.product || '—')+'</td><td data-label="Motivo">'+escapeHtml(item.reason || '—')+'</td><td data-label="Valor">'+formatCentsBRL(item.amountCents)+'</td></tr>').join('')
+      : '<tr><td colspan="5" class="responsive-empty">Todos os lançamentos do mês estão batidos com o extrato.</td></tr>';
+  }
+  ['rpBankAccount','rpBankMonth'].forEach(id => el(id).addEventListener('change', loadRpBank));
+  el('rpBankFile').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    const status = el('rpBankStatus');
+    if(!file) return;
+    if(!el('rpBankAccount').value){ status.textContent = 'ESCOLHA A CONTA BANCÁRIA ANTES DO ARQUIVO.'; el('rpBankFile').value = ''; return; }
+    status.textContent = 'Lendo arquivo…';
+    try{
+      const {rows, sourceFormat} = await parseBankStatementFile(file);
+      const res = await financeApiRequest('/bank-reconciliation', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({financeAccountId: el('rpBankAccount').value, sourceName: file.name, sourceFormat, rows})});
+      status.textContent = 'EXTRATO IMPORTADO: '+res.inserted+' NOVO(S), '+res.duplicates+' JÁ EXISTIAM.';
+      el('rpBankFile').value = '';
+      await loadRpBank();
+    }catch(error){ status.textContent = error.message; }
+  });
+  function openRpLinkDialog(exitId){
+    const exit = (rpBankData.exits || []).find(item => item.id === exitId);
+    if(!exit) return;
+    rpLinkExitId = exitId;
+    el('rpLinkExit').textContent = 'SAÍDA DE '+formatDateBR(exit.entryDate)+' · '+(exit.description || 'SEM HISTÓRICO')+' · '+formatCentsBRL(Math.abs(exit.amountCents));
+    const free = (rpBankData.free || []).slice().sort((a, b) => Number(b.id === exit.suggestionId) - Number(a.id === exit.suggestionId) || a.entryDate.localeCompare(b.entryDate));
+    el('rpLinkBody').innerHTML = free.length ? free.map(item =>
+      '<tr><td class="bulk-col" data-label="Selecionar"><input type="checkbox" class="bulk-check" data-rp-pick="'+escapeHtml(item.id)+'"'+(item.id === exit.suggestionId ? ' checked' : '')+' aria-label="Selecionar '+escapeHtml(item.product)+'"></td>'+
+      '<td data-label="Data">'+escapeHtml(formatDateBR(item.entryDate))+'</td><td data-label="Unidade">'+escapeHtml(item.companyName || fase8CompanyName(item.companyId) || '—')+'</td>'+
+      '<td data-label="Produto">'+escapeHtml(item.product || '—')+'</td><td data-label="Valor">'+formatCentsBRL(item.amountCents)+'</td></tr>').join('')
+      : '<tr><td colspan="5" class="responsive-empty">Nenhum lançamento livre. Use CRIAR LANÇAMENTO.</td></tr>';
+    el('rpLinkStatus').textContent = '';
+    renderRpLinkTotal();
+    el('rpLinkDialog').showModal();
+  }
+  function renderRpLinkTotal(){
+    const exit = (rpBankData.exits || []).find(item => item.id === rpLinkExitId);
+    const picked = Array.from(el('rpLinkBody').querySelectorAll('[data-rp-pick]:checked')).map(box => box.dataset.rpPick);
+    const sum = (rpBankData.free || []).filter(item => picked.includes(item.id)).reduce((total, item) => total + item.amountCents, 0);
+    el('rpLinkTotal').textContent = 'SELECIONADO: '+formatCentsBRL(sum)+' · SAÍDA: '+formatCentsBRL(Math.abs(exit.amountCents))+' · DIFERENÇA: '+formatCentsBRL(Math.abs(exit.amountCents) - sum);
+  }
+  el('rpLinkBody').addEventListener('change', renderRpLinkTotal);
+  el('btnCloseRpLink').addEventListener('click', () => el('rpLinkDialog').close());
+  el('btnCancelRpLink').addEventListener('click', () => el('rpLinkDialog').close());
+  el('rpLinkForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const replacementIds = Array.from(el('rpLinkBody').querySelectorAll('[data-rp-pick]:checked')).map(box => box.dataset.rpPick);
+    if(!replacementIds.length){ el('rpLinkStatus').textContent = 'SELECIONE AO MENOS UM LANÇAMENTO.'; return; }
+    try{
+      await financeApiRequest('/replacement-control/bank', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'link', bankEntryId: rpLinkExitId, replacementIds})});
+      el('rpLinkDialog').close();
+      showPurchaseToast('Saída batida com a reposição.');
+      await Promise.all([loadRpBank(), reloadReposicao()]);
+    }catch(error){ el('rpLinkStatus').textContent = error.message; }
+  });
+  el('rpBankBody').addEventListener('click', async event => {
+    const link = event.target.closest('[data-rp-link]');
+    const unlink = event.target.closest('[data-rp-unlink]');
+    const create = event.target.closest('[data-rp-create]');
+    if(link){ openRpLinkDialog(link.dataset.rpLink); return; }
+    if(unlink){
+      if(!comprasArmButton(unlink, 'CONFIRMAR')) return;
+      const exit = (rpBankData.exits || []).find(item => item.id === unlink.dataset.rpUnlink);
+      try{
+        await financeApiRequest('/replacement-control/bank', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'unlink', replacementIds: exit.linked.map(item => item.id)})});
+        await Promise.all([loadRpBank(), reloadReposicao()]);
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      return;
+    }
+    if(create){
+      const exit = (rpBankData.exits || []).find(item => item.id === create.dataset.rpCreate);
+      if(!exit) return;
+      openReposicaoDialog(null);
+      rpLinkAfterSave = exit.id;
+      el('reposicaoData').value = exit.entryDate;
+      setCurrencyValue(el('reposicaoValor'), Math.abs(exit.amountCents) / 100);
+      el('reposicaoMotivo').value = exit.description || '';
+      if(exit.companyId) el('reposicaoUnidade').value = exit.companyId;
+    }
+  });
+
   function openReposicaoDialog(row){
+    rpLinkAfterSave = '';
     el('reposicaoForm').reset();
     fase8CompanyOptions('reposicaoUnidade', '');
     el('reposicaoId').value = row ? row.id : '';
@@ -33609,8 +33794,13 @@ function renderHomeTasks(){
     const id = el('reposicaoId').value;
     if(id) payload.id = id;
     try{
-      await financeApiRequest('/replacement-control', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      const saved = await financeApiRequest('/replacement-control', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       el('reposicaoDialog').close();
+      // Criado a partir de uma saída do extrato: já fica batido com ela.
+      if(rpLinkAfterSave && saved && saved.id){
+        await financeApiRequest('/replacement-control/bank', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'link', bankEntryId: rpLinkAfterSave, replacementIds:[saved.id]})});
+      }
+      rpLinkAfterSave = '';
       await reloadReposicao();
       showPurchaseToast('Lançamento salvo.');
     }catch(error){ status.textContent = error.message; }

@@ -7,3 +7,6 @@ ALTER TABLE "finance_phone_recharge_events" ADD COLUMN IF NOT EXISTS "expense_id
 --> statement-breakpoint
 -- Maquinetas: senha administrativa da maquineta.
 ALTER TABLE "finance_card_machines" ADD COLUMN IF NOT EXISTS "admin_password" text DEFAULT '' NOT NULL;
+--> statement-breakpoint
+-- Controle de Reposição: saída do extrato bancário batida com o lançamento.
+ALTER TABLE "finance_replacement_entries" ADD COLUMN IF NOT EXISTS "bank_entry_id" text DEFAULT '' NOT NULL;

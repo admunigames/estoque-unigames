@@ -5214,7 +5214,7 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
   assert.match(html, /financeApiRequest\('\/sales-recon', \{method:'POST'[\s\S]{0,120}dryRun:true/);
   assert.match(html, /SERVIÇO \(AUTO\)/);
   assert.match(html, /MAQUINETA NÃO IDENTIFICADA/);
-  assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 2);
+  assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 3); // Conciliação Bancária, de Vendas e Reposição
   // Lote (componente reutilizado) e confirmação do faturamento.
   assert.match(html, /id="svRowsBulkBar"[\s\S]*?data-bulk-action="sale"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO VENDA[\s\S]*?data-bulk-action="service"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO SERVIÇO[\s\S]*?data-bulk-action="machine"(?: data-bulk-confirm="[^"]*")?>DEFINIR MAQUINETA[\s\S]*?data-bulk-action="ignore"(?: data-bulk-confirm="[^"]*")?>IGNORAR[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /id="svDaysBulkBar"[\s\S]*?data-bulk-action="review"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO REVISADO/);

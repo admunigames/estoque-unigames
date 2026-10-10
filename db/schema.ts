@@ -2587,6 +2587,8 @@ export const financeReplacementEntries = pgTable(
     notes: text("notes").notNull().default(""),
     // != '' quando o lançamento já foi adicionado como Despesa.
     expenseId: text("expense_id").notNull().default(""),
+    // Saída do extrato bancário batida com este lançamento (BATER COM EXTRATO).
+    bankEntryId: text("bank_entry_id").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),

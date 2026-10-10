@@ -9,11 +9,13 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 const db = await setupRouteDb([
   "shared_state", "finance_mall_declarations", "finance_store_revenue",
   "finance_card_machines", "finance_acquirers", "finance_card_fees", "finance_card_machine_events",
+  "finance_replacement_entries", "finance_bank_statement_entries",
 ]);
 const plan = await import("../app/api/finance/mall-declarations/plan/route.ts");
 const declBatch = await import("../app/api/finance/mall-declarations/batch/route.ts");
 const declList = await import("../app/api/finance/mall-declarations/route.ts");
 const machines = await import("../app/api/finance/card-machines/route.ts");
+const rpBank = await import("../app/api/finance/replacement-control/bank/route.ts");
 
 const ADMIN = { id: "admin", role: "admin" };
 const NO_FINANCE = { id: "loja", permissions: ["outputs:view"] };
@@ -71,4 +73,34 @@ test("Maquinetas: nome, serial e SENHA ADMINISTRATIVA gravados e devolvidos; edi
   assert.deepEqual([machine.model, machine.serial, machine.adminPassword], ["RIOMAR CAIXA 1", "SN123", "4321"]);
   assert.equal((await post(machines.POST, "/api/finance/card-machines", { id, acquirerId: "stone", companyId: RIOMAR, model: "RIOMAR CAIXA 1", serial: "SN123", adminPassword: "9999" })).status, 200);
   assert.equal(db.sqlite.prepare("SELECT admin_password FROM finance_card_machines WHERE id=?").get(id).admin_password, "9999");
+});
+
+test("Reposição × extrato: saídas do mês com sugestão, bater, desfazer, sem par e recusas", async () => {
+  const entry = (id, extra) => db.insert("finance_bank_statement_entries", { id, import_id: "i", finance_account_id: "acc-1", company_id: RIOMAR, status: "pending", ...extra });
+  entry("s1", { entry_date: "2026-10-05", description: "PIX FORNECEDOR CONTROLE", amount_cents: -15000 });
+  entry("s2", { entry_date: "2026-10-07", description: "TED PECAS", amount_cents: -8000 });
+  entry("e-in", { entry_date: "2026-10-07", description: "DEPOSITO", amount_cents: 9000 });
+  const rp = (id, extra) => db.insert("finance_replacement_entries", { id, company_id: RIOMAR, company_name: "RIOMAR", sector: "assistencia", kind: "reposicao", created_by: "seed", ...extra });
+  rp("r1", { entry_date: "2026-10-03", product: "CONTROLE PS5", amount_cents: 15000 });
+  rp("r2", { entry_date: "2026-10-07", product: "PEÇA A", amount_cents: 5000 });
+  rp("r3", { entry_date: "2026-10-08", product: "PEÇA B", amount_cents: 3000 });
+  rp("r4", { entry_date: "2026-10-20", product: "SEM PAR", amount_cents: 999 });
+
+  const view = await json(await get(rpBank.GET, "/api/finance/replacement-control/bank?month=2026-10&financeAccountId=acc-1"));
+  assert.deepEqual(view.exits.map((e) => e.id), ["s1", "s2"]); // só saídas
+  assert.equal(view.exits[0].suggestionId, "r1"); // mesmo valor, 2 dias de diferença
+  assert.equal(view.unmatched.length, 4);
+
+  assert.equal((await post(rpBank.POST, "/api/finance/replacement-control/bank", { action: "link", bankEntryId: "e-in", replacementIds: ["r1"] })).status, 400);
+  await post(rpBank.POST, "/api/finance/replacement-control/bank", { action: "link", bankEntryId: "s1", replacementIds: ["r1"] });
+  await post(rpBank.POST, "/api/finance/replacement-control/bank", { action: "link", bankEntryId: "s2", replacementIds: ["r2", "r3"] });
+  const after = await json(await get(rpBank.GET, "/api/finance/replacement-control/bank?month=2026-10"));
+  assert.deepEqual(after.exits.map((e) => [e.id, e.linked.length, e.linkedCents]), [["s1", 1, 15000], ["s2", 2, 8000]]);
+  assert.deepEqual(after.unmatched.map((r) => r.id), ["r4"]);
+  // Já ligado a outra saída: 409; desfazer libera.
+  assert.equal((await post(rpBank.POST, "/api/finance/replacement-control/bank", { action: "link", bankEntryId: "s1", replacementIds: ["r2"] })).status, 409);
+  await post(rpBank.POST, "/api/finance/replacement-control/bank", { action: "unlink", replacementIds: ["r2", "r3"] });
+  assert.equal((await json(await get(rpBank.GET, "/api/finance/replacement-control/bank?month=2026-10"))).unmatched.length, 3);
+  assert.equal((await post(rpBank.POST, "/api/finance/replacement-control/bank", { action: "unlink", replacementIds: ["nao-existe"] })).status, 404);
+  assert.equal((await get(rpBank.GET, "/api/finance/replacement-control/bank?month=2026-10", NO_FINANCE)).status, 403);
 });
