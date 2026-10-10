@@ -16104,7 +16104,7 @@
       const response = await fetch('/api/backup', {cache:'no-store', headers:{Accept:'application/json'}});
       const payload = await response.json();
       if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL EXPORTAR O BACKUP.');
-      const date = new Date().toISOString().slice(0,10);
+      const date = todayDateKeyRecife();
       const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json;charset=utf-8'});
       await deliverIosFile(blob, 'backup_estoque_geral_' + date + '.json');
       setIosStorageStatus('BACKUP EXPORTADO COM SUCESSO.');
@@ -17362,7 +17362,7 @@
     el('purchaseDialogTitle').textContent = item ? 'EDITAR PEDIDO' : 'NOVO PEDIDO';
     el('purchaseSupplier').value = item ? (item.fornecedor || '') : '';
     el('purchaseStore').value = item ? (item.loja || '') : '';
-    el('purchaseOrderDate').value = item ? purchaseDateInput(item.dataPedido) : new Date().toISOString().slice(0,10);
+    el('purchaseOrderDate').value = item ? purchaseDateInput(item.dataPedido) : todayDateKeyRecife();
     el('purchaseForecast').value = item ? purchaseDateInput(item.previsao) : '';
     el('purchaseReceivedDate').value = item ? purchaseDateInput(item.dataRecebimento) : '';
     el('purchaseSystemDate').value = item ? purchaseDateInput(item.movimentacaoSistema) : '';
@@ -28298,7 +28298,7 @@ function renderHomeTasks(){
     el('payablePaymentForm').reset();
     attachCurrencyMask(el('payablePaymentAmount'));
     setCurrencyValue(el('payablePaymentAmount'), '');
-    el('payablePaymentDate').value = new Date().toISOString().slice(0,10);
+    el('payablePaymentDate').value = todayDateKeyRecife();
     payablePaymentIdempotencyKey = crypto.randomUUID();
     el('payableDetailDialog').showModal();
     try{
@@ -33900,7 +33900,7 @@ function renderHomeTasks(){
     fase8CompanyOptions('reposicaoUnidade', '');
     el('reposicaoId').value = row ? row.id : '';
     el('reposicaoDialogTitle').textContent = row ? 'EDITAR LANÇAMENTO' : 'NOVO LANÇAMENTO';
-    el('reposicaoData').value = row ? row.entryDate : new Date().toISOString().slice(0,10);
+    el('reposicaoData').value = row ? row.entryDate : todayDateKeyRecife();
     el('reposicaoUnidade').value = row ? row.companyId : '';
     el('reposicaoProduto').value = row ? (row.product || '') : '';
     el('reposicaoMotivo').value = row ? (row.reason || '') : '';
@@ -33943,7 +33943,7 @@ function renderHomeTasks(){
         await financeApiRequest('/replacement-control/bank', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'link', bankEntryId: rpLinkAfterSave, replacementIds:[saved.id]})});
       }
       rpLinkAfterSave = '';
-      await reloadReposicao();
+      await Promise.all([reloadReposicao(), loadRpBank()]);
       showPurchaseToast('Lançamento salvo.');
     }catch(error){ status.textContent = error.message; }
   });
@@ -34162,7 +34162,7 @@ function renderHomeTasks(){
     el('recargaEventForm').reset();
     setCurrencyValue(el('recargaEventValor'), '');
     el('recargaEventId').value = row.id;
-    el('recargaEventData').value = new Date().toISOString().slice(0,10);
+    el('recargaEventData').value = todayDateKeyRecife();
     el('recargaEventTitle').textContent = 'REGISTRAR RECARGA — ' + (row.phoneNumber || '');
     el('recargaEventForm').dataset.periodDays = String(row.periodDays || 90);
     fillRecargaItemSelect('recargaEventItem');
@@ -38031,7 +38031,7 @@ function renderHomeTasks(){
         method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           idempotencyKey:crypto.randomUUID(), amountCents:balanceCents,
-          paymentDate:new Date().toISOString().slice(0,10), scheduled:false
+          paymentDate:todayDateKeyRecife(), scheduled:false
         })
       });
       showPurchaseToast('Conta marcada como paga.');
@@ -43533,7 +43533,7 @@ function renderHomeTasks(){
     el('fardMovementType').value = movementType;
     el('fardMovementPieceType').value = fardTab;
     el('fardMovementDialogTitle').textContent = movementType === 'saida' ? 'NOVA SAÍDA — '+fardTab.toUpperCase() : 'NOVA DEVOLUÇÃO — '+fardTab.toUpperCase();
-    el('fardMovementDate').value = new Date().toISOString().slice(0,10);
+    el('fardMovementDate').value = todayDateKeyRecife();
     const showCompany = fardTab === 'casacos';
     el('fardMovementCompanyField').hidden = !showCompany;
     el('fardMovementCompany').required = showCompany;
@@ -43584,7 +43584,7 @@ function renderHomeTasks(){
     el('fardAdjustForm').reset();
     el('fardAdjustPieceType').value = fardTab;
     el('fardAdjustDialogTitle').textContent = 'AJUSTAR ESTOQUE — '+fardTab.toUpperCase();
-    el('fardAdjustDate').value = new Date().toISOString().slice(0,10);
+    el('fardAdjustDate').value = todayDateKeyRecife();
     el('fardAdjustSize').value = 'P';
     el('fardAdjustCurrentQty').textContent = String(fardStockQty(fardTab, el('fardAdjustSize').value));
     el('fardAdjustNewQty').value = String(fardStockQty(fardTab, el('fardAdjustSize').value));
