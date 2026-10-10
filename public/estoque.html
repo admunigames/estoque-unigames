@@ -3384,6 +3384,7 @@
   .decl-batch-table input[data-batch-field="pct"]{width:72px;}
   .decl-batch-table input[data-batch-field="notes"]{width:170px;}
   .decl-batch-table tr.is-registered td{opacity:.6;}
+  .decl-plan-table input[data-plan-month]{width:104px;}
   .cr-batch-table select{width:140px;}
   .account-field-error{color:#ef6a55; font-weight:700;}
   [aria-invalid="true"]{border-color:#ef6a55 !important;}
@@ -8623,6 +8624,7 @@
         <div class="field"><label for="declShoppingMesAte">ATÉ</label><input type="month" id="declShoppingMesAte"></div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnFiltrarDeclShopping" type="button">FILTRAR</button>
+          <button class="btn-outline" id="btnPlanDeclShopping" type="button">PLANEJAR O ANO</button>
           <button class="btn-outline" id="btnBatchDeclShopping" type="button">+ CADASTRAR EM LOTE</button>
           <button class="btn-accent" id="btnNewDeclShopping" type="button">NOVA DECLARAÇÃO</button>
         </div>
@@ -8644,8 +8646,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="declShoppingTable">
-            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Loja</th><th>Faturamento real</th><th>Sugerido</th><th>Valor declarado</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Alerta</th><th></th></tr></thead>
-            <tbody id="declShoppingTableBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Loja</th><th>Faturamento real</th><th>Sugerido</th><th>A declarar (previsto)</th><th>Valor declarado</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Alerta</th><th></th></tr></thead>
+            <tbody id="declShoppingTableBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -9751,6 +9753,32 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelDeclShoppingDialog" type="button">FECHAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog decl-batch-dialog" id="declPlanDialog" aria-labelledby="declPlanTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="declPlanTitle">PLANEJAR O ANO — A DECLARAR</h3>
+    <button class="purchase-dialog-close" id="btnCloseDeclPlan" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="declPlanForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="declPlanYear">ANO *</label><input type="number" id="declPlanYear" min="2020" max="2100" step="1" required></div>
+    </div>
+    <p class="purchase-field-help">VALOR A DECLARAR DE CADA LOJA EM CADA MÊS. DEPOIS, NO DECORRER DOS MESES, EDITE A DECLARAÇÃO (OU USE O CADASTRAR EM LOTE) PARA LANÇAR O REAL DECLARADO. MÊS EM BRANCO NÃO É ALTERADO.</p>
+    <div class="table-panel responsive-table decl-batch-table decl-plan-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Loja</th><th>Jan</th><th>Fev</th><th>Mar</th><th>Abr</th><th>Mai</th><th>Jun</th><th>Jul</th><th>Ago</th><th>Set</th><th>Out</th><th>Nov</th><th>Dez</th><th>Total</th></tr></thead>
+          <tbody id="declPlanBody"><tr><td colspan="14" class="responsive-empty">Escolha o ano.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="declPlanStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelDeclPlan" type="button">FECHAR</button>
+      <button class="btn-accent" id="btnSaveDeclPlan" type="submit">SALVAR PLANEJAMENTO</button>
     </div>
   </form>
 </dialog>
@@ -36235,7 +36263,8 @@ function renderHomeTasks(){
         '<td data-label="LOJA">'+escapeHtml(storeName(r))+'</td>'+
         '<td data-label="FATURAMENTO REAL">'+formatCentsBRL(r.realRevenueCents)+'</td>'+
         '<td data-label="SUGERIDO">'+(d.breakpointCents ? formatCentsBRL(d.breakpointCents) : '—')+'</td>'+
-        '<td data-label="VALOR DECLARADO">'+formatCentsBRL(r.declaredCents)+'</td>'+
+        '<td data-label="A DECLARAR (PREVISTO)">'+(Number(r.plannedCents) ? formatCentsBRL(r.plannedCents) : '—')+'</td>'+
+        '<td data-label="VALOR DECLARADO">'+(Number(r.declaredCents) > 0 ? formatCentsBRL(r.declaredCents) : '<span class="status-pill warn">AGUARDANDO DECLARAÇÃO</span>')+'</td>'+
         '<td data-label="% S/ FATURAMENTO">'+pctFromBps(d.declaredShareBps)+'</td>'+
         '<td data-label="ALUGUEL MÍNIMO">'+(hasPct ? formatCentsBRL(r.minimumRentCents)+' · '+declPctLabel(r.contractPercentBps) : '—')+'</td>'+
         '<td data-label="ALUGUEL PERCENTUAL"><span>'+(hasPct ? formatCentsBRL(d.percentageRentCents)+' <span class="status-pill '+(r.percentageRentPaid ? 'ok' : 'warn')+'">'+(r.percentageRentPaid ? 'PAGO' : 'NÃO PAGO')+'</span>' : 'SEM PERCENTUAL')+'</span></td>'+
@@ -36245,7 +36274,7 @@ function renderHomeTasks(){
           '<button class="btn-outline btn-sm" type="button" data-decl-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</div></td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhuma declaração.</td></tr>';
+    }).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma declaração.</td></tr>';
     declShoppingBulk.sync();
   }
   const declShoppingBulk = setupBulkSelection(el('declShoppingBulkBar'), el('declShoppingTableBody'), async (action, ids) => {
@@ -36331,7 +36360,9 @@ function renderHomeTasks(){
       el('declShoppingLojaForm').value = row.companyId || '';
       el('declShoppingCompetencia').value = row.competenceMonth || '';
       setCurrencyValue(el('declShoppingFatReal'), row.realRevenueCents ? row.realRevenueCents / 100 : '');
-      setCurrencyValue(el('declShoppingDeclarado'), row.declaredCents ? row.declaredCents / 100 : '');
+      // Mês planejado ainda sem o real: o A DECLARAR já vem no campo para conferir.
+      const declaredOrPlanned = Number(row.declaredCents) || Number(row.plannedCents) || 0;
+      setCurrencyValue(el('declShoppingDeclarado'), declaredOrPlanned ? declaredOrPlanned / 100 : '');
       el('declShoppingTemPct').checked = Number(row.contractPercentBps) > 0;
       el('declShoppingPercentual').value = row.contractPercentBps ? String(row.contractPercentBps / 100) : '';
       setCurrencyValue(el('declShoppingMinimo'), row.minimumRentCents ? row.minimumRentCents / 100 : '');
@@ -36472,11 +36503,13 @@ function renderHomeTasks(){
     if(token !== declBatchToken) return;
     body.innerHTML = stores.map(company => {
       const c = ctx[company.id] || {};
-      const done = !!c.existingId;
+      // Mês só planejado (A DECLARAR sem o real) entra no lote com o previsto preenchido.
+      const done = !!c.existingId && Number(c.existingDeclaredCents) > 0;
+      const planned = !done && Number(c.plannedCents) > 0;
       const pulled = c.revenueCents != null;
       const dis = done ? ' disabled' : '';
       return '<tr data-batch-store="'+escapeHtml(company.id)+'"'+(done ? ' class="is-registered"' : '')+'>'+
-        '<td data-label="LOJA"><strong>'+escapeHtml(company.name)+'</strong>'+(done ? ' <span class="status-pill ok">JÁ CADASTRADA</span>' : '')+'</td>'+
+        '<td data-label="LOJA"><strong>'+escapeHtml(company.name)+'</strong>'+(done ? ' <span class="status-pill ok">JÁ CADASTRADA</span>' : (planned ? ' <span class="status-pill warn">PREVISTO '+formatCentsBRL(c.plannedCents)+'</span>' : ''))+'</td>'+
         '<td data-label="FATURAMENTO REAL"><input data-batch-field="real" aria-label="Faturamento real de '+escapeHtml(company.name)+'"'+(pulled || done ? ' readonly' : '')+dis+' placeholder="'+(pulled ? '' : 'SEM CADASTRO')+'"></td>'+
         '<td data-label="ALUGUEL %"><input type="checkbox" data-batch-field="hasPct" aria-label="Loja com aluguel percentual"'+(c.lastContractPercentBps ? ' checked' : '')+dis+'></td>'+
         '<td data-label="%"><input type="number" min="0" max="100" step="0.01" data-batch-field="pct" aria-label="Percentual contratual"'+dis+' value="'+(c.lastContractPercentBps ? c.lastContractPercentBps / 100 : '')+'"></td>'+
@@ -36492,7 +36525,14 @@ function renderHomeTasks(){
       ['real','min','declared'].forEach(name => attachCurrencyMask(tr.querySelector('[data-batch-field="'+name+'"]')));
       if(c.revenueCents != null) setCurrencyValue(tr.querySelector('[data-batch-field="real"]'), c.revenueCents / 100);
       if(c.lastMinimumRentCents) setCurrencyValue(tr.querySelector('[data-batch-field="min"]'), c.lastMinimumRentCents / 100);
-      declBatchRecalc(tr, !c.existingId);
+      const declaredDone = !!c.existingId && Number(c.existingDeclaredCents) > 0;
+      declBatchRecalc(tr, !declaredDone);
+      if(!declaredDone && Number(c.plannedCents) > 0){
+        const declaredInput = tr.querySelector('[data-batch-field="declared"]');
+        setCurrencyValue(declaredInput, c.plannedCents / 100);
+        declaredInput.dataset.touched = '1';
+        declBatchRecalc(tr, false);
+      }
     });
   }
   el('declBatchBody').addEventListener('input', event => {
@@ -36534,6 +36574,83 @@ function renderHomeTasks(){
       const keepStatus = status.textContent;
       await renderDeclBatch();
       status.textContent = keepStatus;
+    }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+
+  // ----- Declaração de Vendas: PLANEJAR O ANO (A DECLARAR por loja × mês) -----
+  // Grava em /mall-declarations/plan; o real declarado entra depois, mês a
+  // mês, na mesma linha (edição ou lote).
+  const DECL_PLAN_MONTHS = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+  let declPlanToken = 0;
+  async function renderDeclPlan(){
+    const body = el('declPlanBody');
+    const year = String(el('declPlanYear').value || '').trim();
+    const token = ++declPlanToken;
+    el('declPlanStatus').textContent = '';
+    if(!/^\d{4}$/.test(year)){ body.innerHTML = '<tr><td colspan="14" class="responsive-empty">Escolha o ano.</td></tr>'; return; }
+    const stores = pullStoreCompanies();
+    body.innerHTML = '<tr><td colspan="14" class="responsive-empty">Carregando…</td></tr>';
+    let rows;
+    try{ rows = (await financeApiRequest('/mall-declarations/plan?year='+encodeURIComponent(year))).rows || []; }
+    catch(error){ if(token === declPlanToken) body.innerHTML = '<tr><td colspan="14" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>'; return; }
+    if(token !== declPlanToken) return;
+    const byKey = new Map(rows.map(row => [row.companyId+'|'+row.competenceMonth, row]));
+    body.innerHTML = stores.map(company => '<tr data-plan-store="'+escapeHtml(company.id)+'">'+
+      '<td data-label="LOJA"><strong>'+escapeHtml(company.name)+'</strong></td>'+
+      DECL_PLAN_MONTHS.map(m => {
+        const row = byKey.get(company.id+'|'+year+'-'+m);
+        const declared = row && Number(row.declaredCents) > 0;
+        return '<td data-label="'+rhFormatMonth(year+'-'+m)+'"><input data-plan-month="'+m+'" aria-label="A declarar '+escapeHtml(company.name)+' '+rhFormatMonth(year+'-'+m)+'"'+(declared ? ' title="JÁ DECLARADO: '+formatCentsBRL(row.declaredCents)+'"' : '')+'></td>';
+      }).join('')+
+      '<td data-label="TOTAL" data-plan-total>—</td>'+
+    '</tr>').join('') || '<tr><td colspan="14" class="responsive-empty">Nenhuma loja cadastrada.</td></tr>';
+    body.querySelectorAll('tr[data-plan-store]').forEach(tr => {
+      tr.querySelectorAll('[data-plan-month]').forEach(input => {
+        attachCurrencyMask(input);
+        const row = byKey.get(tr.dataset.planStore+'|'+year+'-'+input.dataset.planMonth);
+        if(row && Number(row.plannedCents)) setCurrencyValue(input, row.plannedCents / 100);
+      });
+      declPlanTotal(tr);
+    });
+  }
+  function declPlanTotal(tr){
+    const total = Array.from(tr.querySelectorAll('[data-plan-month]')).reduce((sum, input) => sum + declMoneyCents(input), 0);
+    tr.querySelector('[data-plan-total]').textContent = total ? formatCentsBRL(total) : '—';
+  }
+  el('declPlanBody').addEventListener('input', event => {
+    const tr = event.target.closest('tr[data-plan-store]');
+    if(tr) declPlanTotal(tr);
+  });
+  el('btnPlanDeclShopping').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    if(!el('declPlanYear').value) el('declPlanYear').value = financeCurrentMonthKey().slice(0, 4);
+    renderDeclPlan();
+    el('declPlanDialog').showModal();
+  });
+  el('declPlanYear').addEventListener('change', renderDeclPlan);
+  el('btnCloseDeclPlan').addEventListener('click', () => el('declPlanDialog').close());
+  el('btnCancelDeclPlan').addEventListener('click', () => el('declPlanDialog').close());
+  el('declPlanForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('declPlanStatus');
+    const year = String(el('declPlanYear').value);
+    const rows = [];
+    el('declPlanBody').querySelectorAll('tr[data-plan-store]').forEach(tr => {
+      tr.querySelectorAll('[data-plan-month]').forEach(input => {
+        if(getCurrencyValue(input) === '') return;
+        rows.push({companyId: tr.dataset.planStore, companyName: fase8CompanyName(tr.dataset.planStore), competenceMonth: year+'-'+input.dataset.planMonth, plannedCents: declMoneyCents(input)});
+      });
+    });
+    if(!rows.length){ status.textContent = 'PREENCHA AO MENOS UM MÊS.'; return; }
+    const button = el('btnSaveDeclPlan');
+    button.disabled = true;
+    status.textContent = 'Salvando…';
+    try{
+      const res = await financeApiRequest('/mall-declarations/plan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({year, rows})});
+      status.textContent = res.saved+' MÊS(ES) SALVO(S).';
+      showPurchaseToast('Planejamento do ano salvo.');
+      await reloadDeclShopping();
     }catch(error){ status.textContent = error.message; }
     finally{ button.disabled = false; }
   });

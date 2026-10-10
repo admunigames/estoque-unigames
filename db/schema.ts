@@ -2668,6 +2668,9 @@ export const financeMallDeclarations = pgTable(
     avgDeclaredCents: integer("avg_declared_cents").notNull().default(0),
     suggestedDeclaredCents: integer("suggested_declared_cents").notNull().default(0),
     declaredCents: integer("declared_cents").notNull().default(0),
+    // A DECLARAR planejado para o mês (PLANEJAR O ANO); declared_cents = 0
+    // enquanto o real não for lançado ("AGUARDANDO DECLARAÇÃO").
+    plannedCents: integer("planned_cents").notNull().default(0),
     declarationDate: text("declaration_date").notNull().default(""),
     contractPercentBps: integer("contract_percent_bps").notNull().default(0),
     minimumRentCents: integer("minimum_rent_cents").notNull().default(0),

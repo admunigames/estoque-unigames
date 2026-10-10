@@ -28,7 +28,7 @@ type Row = Record<string, unknown>;
 
 const SELECT_COLUMNS = `id, company_id AS companyId, company_name AS companyName,
   competence_month AS competenceMonth, real_revenue_cents AS realRevenueCents,
-  declared_cents AS declaredCents,
+  declared_cents AS declaredCents, planned_cents AS plannedCents,
   contract_percent_bps AS contractPercentBps, minimum_rent_cents AS minimumRentCents,
   percentage_rent_paid AS percentageRentPaid, notes,
   created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,

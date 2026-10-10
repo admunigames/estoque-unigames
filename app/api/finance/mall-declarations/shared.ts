@@ -45,6 +45,7 @@ export function insertDeclarationStatement(
     notes: string;
     actorId: string;
     who: string;
+    plannedCents?: number;
   },
 ) {
   const derived = deriveMallDeclaration(row);
@@ -54,12 +55,12 @@ export function insertDeclarationStatement(
         (id, mall_name, company_id, company_name, competence_month, real_revenue_cents,
          suggested_declared_cents, declared_cents, contract_percent_bps, minimum_rent_cents,
          percentage_rent_cents, percentage_rent_paid, notes, created_by, created_by_name, created_at,
-         updated_by, updated_by_name, updated_at)
-       VALUES (?1,'',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,CURRENT_TIMESTAMP,?13,?14,CURRENT_TIMESTAMP)`,
+         updated_by, updated_by_name, updated_at, planned_cents)
+       VALUES (?1,'',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,CURRENT_TIMESTAMP,?13,?14,CURRENT_TIMESTAMP,?15)`,
     )
     .bind(
       row.id, row.companyId, row.companyName, row.competenceMonth, row.realRevenueCents,
       derived.breakpointCents, row.declaredCents, row.contractPercentBps, row.minimumRentCents,
-      derived.percentageRentCents, row.percentageRentPaid, row.notes, row.actorId, row.who,
+      derived.percentageRentCents, row.percentageRentPaid, row.notes, row.actorId, row.who, row.plannedCents ?? 0,
     );
 }
