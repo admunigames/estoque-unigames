@@ -4082,3 +4082,31 @@ export const assistCategories = pgTable(
   },
   (table) => [uniqueIndex("assist_categories_name_idx").on(table.name)],
 );
+
+// Auditoria — registro central de toda gravação em /api/* (POST/PUT/PATCH/
+// DELETE com sucesso), feito pelo Worker. Quem fez, quando, módulo, ação,
+// registro e um resumo seguro do corpo (lista branca de campos, ver
+// app/lib/audit.ts). Tela: Cadastros > Auditoria (audit:view). Retenção 1 ano.
+export const auditLog = pgTable(
+  "audit_log",
+  {
+    id: text("id").primaryKey(),
+    at: text("at").notNull(),
+    userId: text("user_id").notNull().default(""),
+    userName: text("user_name").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    method: text("method").notNull(),
+    path: text("path").notNull(),
+    module: text("module").notNull().default(""),
+    action: text("action").notNull().default(""),
+    recordId: text("record_id").notNull().default(""),
+    summary: text("summary").notNull().default(""),
+    status: integer("status").notNull().default(0),
+  },
+  (table) => [
+    index("audit_log_at_idx").on(table.at),
+    index("audit_log_module_at_idx").on(table.module, table.at),
+    index("audit_log_user_at_idx").on(table.userId, table.at),
+    index("audit_log_record_idx").on(table.recordId),
+  ],
+);

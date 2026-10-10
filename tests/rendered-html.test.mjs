@@ -2424,7 +2424,7 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /documentos:'\/documentos'/);
   assert.match(html, /function navigateToDocumentFolder\(folder\)/);
 
-  assert.match(workerSource, /"documents:create", "documents:edit", "documents:delete",\n  "users:manage",\n\];/);
+  assert.match(workerSource, /"documents:create", "documents:edit", "documents:delete",\n  \/\/ Cadastros > Auditoria[^\n]*\n  "audit:view",\n  "users:manage",\n\];/);
   assert.match(
     workerSource,
     /"documents_manage": \["documents:create", "documents:edit", "documents:delete"\]/,
@@ -4367,7 +4367,7 @@ test("permissão própria suppliers:manage libera só o Cadastro de Fornecedores
   // UI: checkbox no cadastro de usuário, item no grupo Cadastros e as duas
   // telas (aba do Compras nativo + página nova) montadas pela mesma função.
   assert.match(html, /name="userPermission" value="suppliers:manage"/);
-  assert.match(html, /<div class="nav-group" data-any-permission="database,suppliers,finance:manage,purchases_draft">/);
+  assert.match(html, /<div class="nav-group" data-any-permission="database,suppliers,finance:manage,purchases_draft,audit">/);
   assert.match(html, /id="navFornecedores" data-page="fornecedores" data-any-permission="suppliers,finance:manage,purchases_draft"[^>]*href="\/cadastros\/fornecedores"/);
   assert.match(html, /id="navDados" data-page="dados" data-permission="database"/);
   assert.match(html, /id="navLojas" data-page="lojas" data-permission="database"/);

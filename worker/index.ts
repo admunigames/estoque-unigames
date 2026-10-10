@@ -18,6 +18,7 @@ import {
 } from "./live-updates";
 
 import { isSellerRole } from "../app/lib/commercial";
+import { auditAction, auditModule, auditRecordId, auditSummary, shouldAudit } from "../app/lib/audit";
 import { documentsApiAllowed, isCommercialOnlyAccess } from "../app/lib/documents-access";
 
 export { LiveUpdates };
@@ -72,6 +73,7 @@ type Permission =
   | "controle_gd:view" | "controle_gd:create" | "controle_gd:edit" | "controle_gd:opening"
   | "gorduras_assistencia:view" | "gorduras_assistencia:create" | "gorduras_assistencia:edit" | "gorduras_assistencia:opening"
   | "treinamento:view" | "treinamento:team"
+  | "audit:view"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
@@ -230,6 +232,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // substituir o arquivo) e excluir têm permissão própria, válida para as
   // três pastas do módulo (ver app/lib/documents-access.ts).
   "documents:create", "documents:edit", "documents:delete",
+  // Cadastros > Auditoria — ver quem cadastrou/alterou/excluiu em qualquer módulo.
+  "audit:view",
   "users:manage",
 ];
 // A antiga documents_manage (exclusiva do admin) virou legado: é expandida
@@ -339,6 +343,7 @@ const APP_ROUTE_PATHS = new Set([
   "/cadastros/base-de-dados",
   "/cadastros/fornecedores",
   "/cadastros/usuarios",
+  "/cadastros/auditoria",
   "/rh/folgas",
   "/rh/escalas",
   "/rh/funcionarios",
@@ -1351,6 +1356,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "gorduras_assistencia:view", "gorduras_assistencia:create", "gorduras_assistencia:edit", "gorduras_assistencia:opening",
   ],
   treinamento: ["treinamento:view", "treinamento:team"],
+  audit: ["audit:view"],
 };
 
 const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_PERMISSIONS> = {
@@ -1429,6 +1435,9 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
     [path === "/divergencias" || path.startsWith("/api/divergences"), "divergences"],
+    // Cadastros > Auditoria — permissão própria (audit:view). Checado antes
+    // do bucket "/cadastros/" (Base de Dados).
+    [path === "/cadastros/auditoria" || path.startsWith("/api/audit"), "audit"],
     // Assistência > Controle Gorduras Assistência — permissão própria
     // (gorduras_assistencia:*), independente de assistencia:manage.
     [
@@ -2795,6 +2804,58 @@ async function resolvePostgresBackedEnv(rawEnv: Env): Promise<Env> {
   };
 }
 
+// Auditoria: corpo JSON pequeno lido ANTES da rota (o corpo só pode ser lido
+// uma vez); o registro é gravado depois, fora do caminho da resposta.
+async function auditRequestBody(request: Request): Promise<unknown> {
+  const type = request.headers.get("content-type") || "";
+  const size = Number(request.headers.get("content-length") || 0);
+  if (!type.includes("application/json") || size > 65536) return null;
+  try {
+    return await request.clone().json();
+  } catch {
+    return null;
+  }
+}
+
+async function writeAuditLog(
+  env: Env, request: Request, user: AuthenticatedUser, response: Response, body: unknown,
+): Promise<void> {
+  try {
+    const url = new URL(request.url);
+    let responseBody: unknown = null;
+    if ((response.headers.get("content-type") || "").includes("application/json")) {
+      responseBody = await response.clone().json().catch(() => null);
+    }
+    await env.DB.prepare(
+      `INSERT INTO audit_log (id, at, user_id, user_name, company_id, method, path, module, action, record_id, summary, status)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`,
+    )
+      .bind(
+        crypto.randomUUID(), new Date().toISOString(), user.id, user.displayName || user.username, user.companyId,
+        request.method, url.pathname.slice(0, 300), auditModule(url.pathname), auditAction(request.method, url.pathname),
+        auditRecordId(url.pathname, responseBody), auditSummary(body), response.status,
+      )
+      .run();
+  } catch (error) {
+    // Auditoria nunca derruba a operação do usuário.
+    console.error("Não foi possível gravar a auditoria.", error);
+  }
+}
+
+let auditPurgeDate = "";
+async function purgeOldAuditLog(env: Env): Promise<void> {
+  const { date } = recifeDateTime();
+  if (auditPurgeDate === date) return;
+  try {
+    const cutoff = new Date();
+    cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 1);
+    await env.DB.prepare("DELETE FROM audit_log WHERE at < ?1").bind(cutoff.toISOString()).run();
+    auditPurgeDate = date;
+  } catch (error) {
+    console.error("Não foi possível limpar a auditoria antiga.", error);
+  }
+}
+
 const worker = {
   async fetch(request: Request, rawEnv: Env, ctx: ExecutionContext): Promise<Response> {
     const env = await resolvePostgresBackedEnv(rawEnv);
@@ -2836,8 +2897,12 @@ const worker = {
     }
     if (!(await isAllowed(request, url, user))) return forbidden(url);
     if (url.pathname === "/api/session") return sessionResponse(user);
+    const audited = shouldAudit(request.method, url.pathname);
     if (url.pathname === "/api/admin/users") {
-      return securityHeaders(await handleAdminUsers(request, env, url, config, user));
+      const auditBody = audited ? await auditRequestBody(request) : null;
+      const adminResponse = await handleAdminUsers(request, env, url, config, user);
+      if (audited && adminResponse.status < 400) ctx.waitUntil(writeAuditLog(env, request, user, adminResponse, auditBody));
+      return securityHeaders(adminResponse);
     }
     if (url.pathname === "/api/admin/users/sellers") {
       return securityHeaders(await handleSellerAccounts(request, env, url, user));
@@ -2930,7 +2995,9 @@ const worker = {
     }
 
     const requestInvalidation = await liveInvalidationForRequest(authenticatedRequest, user);
+    const auditBody = audited ? await auditRequestBody(authenticatedRequest) : null;
     const response = await handler.fetch(authenticatedRequest, env, ctx);
+    if (audited && response.status < 400) ctx.waitUntil(writeAuditLog(env, authenticatedRequest, user, response, auditBody));
     const liveInvalidation = liveInvalidationForResponse(
       authenticatedRequest,
       response,
@@ -2956,6 +3023,7 @@ const worker = {
       advanceOperationalRoutines(env),
       createAutomaticBackup(env, config.sessionSecret),
       purgeOldOsNotes(env),
+      purgeOldAuditLog(env),
     ]));
   },
 };
