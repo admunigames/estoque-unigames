@@ -114,3 +114,21 @@ test("fechamento: exige a loja que fatura; grava loja, previsão e preço do ven
   assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b), "abertos, depois aguardando, depois concluídos");
   assert.ok(ranks.includes(0) && ranks.includes(1) && ranks.includes(2));
 });
+
+test("clonar: item em texto livre (sem código) entra no pedido clonado", async () => {
+  const clone = await import("../app/api/compras-novo/orders/[id]/clone/route.ts");
+  const sourceId = await newOrder("PEDIDO CLONE");
+  db.sqlite.prepare("UPDATE purchase_orders SET supplier_id='s-a', supplier_name_raw='FORNECEDOR A', status='aguardando_chegada' WHERE id=?").run(sourceId);
+  const res = await callRoute(clone.POST, BUYER, "POST", `/api/compras-novo/orders/${sourceId}/clone`, {
+    companyId: "clojaalfa1", companyName: "LOJA ALFA",
+    items: [{ productCode: "", productName: "GTA 6-PS5", quantity: 25, unitPriceCents: 32122 }],
+  }, { id: sourceId });
+  assert.equal(res.status, 201, JSON.stringify(await res.clone().json()));
+  const newId = (await res.json()).id;
+  assert.deepEqual(itemRows(newId).map((r) => [r.product_code, r.product_name, r.quantity, r.unit_price_cents]), [["", "GTA 6-PS5", 25, 32122]]);
+  // Item sem código e sem nome continua sendo recusado.
+  const empty = await callRoute(clone.POST, BUYER, "POST", `/api/compras-novo/orders/${sourceId}/clone`, {
+    companyId: "clojaalfa1", items: [{ productCode: "", productName: "", quantity: 1 }],
+  }, { id: sourceId });
+  assert.equal(empty.status, 400);
+});

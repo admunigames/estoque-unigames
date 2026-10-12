@@ -25,7 +25,8 @@ function safeCloneItems(value: unknown): CloneItemInput[] {
         unitPriceCents: Number(record.unitPriceCents) || 0,
       };
     })
-    .filter((item) => item.productCode);
+    // Produto fora do catálogo (texto livre) não tem código: vale pelo nome.
+    .filter((item) => item.productCode || item.productName);
 }
 
 // Clonar pedido — caso de uso confirmado com o usuário: mesmo pedido (mesmo
@@ -87,7 +88,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!items.length) return jsonResponse({ error: "O PEDIDO CLONADO PRECISA DE PELO MENOS UM ITEM." }, 400);
     for (const item of items) {
       if (!Number.isFinite(item.quantity) || !Number.isInteger(item.quantity) || item.quantity <= 0) {
-        return jsonResponse({ error: "INFORME UMA QUANTIDADE VÁLIDA PARA CADA ITEM (" + item.productCode + ")." }, 400);
+        return jsonResponse({ error: "INFORME UMA QUANTIDADE VÁLIDA PARA CADA ITEM (" + (item.productCode || item.productName) + ")." }, 400);
       }
       if (!Number.isInteger(item.unitPriceCents) || item.unitPriceCents < 0) {
         return jsonResponse({ error: "INFORME UM PREÇO UNITÁRIO VÁLIDO PARA CADA ITEM." }, 400);
