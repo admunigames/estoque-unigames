@@ -21295,15 +21295,16 @@ function renderHomeTasks(){
         const description = line.defectName
           ? '<b>'+escapeHtml(line.defectName)+'</b>'+(line.description ? ' — '+escapeHtml(line.description) : '')
           : escapeHtml(line.description || 'ITEM AVULSO');
+        // Desconto da preventiva (grátis com outro serviço) vai na própria
+        // coluna DESCONTO da linha, somado ao desconto digitado no item.
         const discount = hasValue ? assistPreventiveDiscount(equipment, {...line, quantity}) : 0;
         subtotal -= discount;
+        const totalDiscount = itemDiscount + discount;
         return '<tr><td class="item">'+(++item)+'</td><td>'+description+'</td>'+
           '<td class="num">'+(quantity || '—')+'</td>'+
           '<td class="num">'+(hasValue ? formatCentsBRL(line.unitCents) : 'A DEFINIR')+'</td>'+
-          '<td class="num">'+(itemDiscount ? '-'+formatCentsBRL(itemDiscount) : '—')+'</td>'+
-          '<td class="num">'+(hasValue ? formatCentsBRL(lineTotal) : 'A DEFINIR')+'</td></tr>'+
-          (discount ? '<tr class="assist-doc-discount"><td class="item">'+(++item)+'</td><td><b>DESCONTO '+escapeHtml(line.defectName)+'</b></td>'+
-            '<td class="num">'+quantity+'</td><td class="num">'+(itemDiscount ? '—' : '-'+formatCentsBRL(line.unitCents))+'</td><td class="num">—</td><td class="num">-'+formatCentsBRL(discount)+'</td></tr>' : '');
+          '<td class="num">'+(totalDiscount ? '-'+formatCentsBRL(totalDiscount) : '—')+'</td>'+
+          '<td class="num">'+(hasValue ? formatCentsBRL(lineTotal - discount) : 'A DEFINIR')+'</td></tr>';
       }).join('') || '<tr><td colspan="6">NENHUM DEFEITO OU ITEM INCLUÍDO.</td></tr>';
       total += subtotal;
       return '<section class="assist-doc-block">'+

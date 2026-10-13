@@ -4969,7 +4969,9 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
   assert.equal(subtotal({ lines: [preventiva] }), 15000);
   // Desconto em R$ do item sai do subtotal (espelho de lineNetCents()).
   assert.equal(subtotal({ lines: [{ ...naoLiga, discountCents: 5000 }, preventiva] }), 40000);
-  assert.match(extractNamedFunction(html, "assistDocHtml"), /<b>DESCONTO \x27\+escapeHtml\(line\.defectName\)/);
+  // Desconto da preventiva na coluna DESCONTO da própria linha (sem linha extra).
+  assert.doesNotMatch(extractNamedFunction(html, "assistDocHtml"), /<b>DESCONTO /);
+  assert.match(extractNamedFunction(html, "assistDocHtml"), /const totalDiscount = itemDiscount \+ discount;/);
   // Nunca prompt() nativo no módulo.
   const moduleJs = html.slice(html.indexOf("// ===== ASSISTÊNCIA > ORÇAMENTOS ====="), html.indexOf("// ===== ESTOQUE > DIVERGÊNCIAS ====="));
   assert.ok(moduleJs.length > 1000);
