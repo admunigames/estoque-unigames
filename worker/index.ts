@@ -1424,6 +1424,11 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
   // de listar/salvar fornecedor: o extrato /api/finance/suppliers/:id/
   // statement expõe contas a pagar e pagamentos, então continua exigindo
   // o Financeiro. A checagem fina fica em canManageSuppliers() da rota.
+  // NF criada no recebimento do pedido de compra: o Compras também pode
+  // CADASTRAR (só POST; a rota exige o vínculo com o pedido nativo).
+  if (path === "/api/finance/invoices" && request.method === "POST") {
+    return hasAnyPermission(user, [...MODULE_VIEW_PERMISSIONS.finance, "purchases_draft:manage"]);
+  }
   if (path === "/cadastros/fornecedores" || path === "/api/finance/suppliers") {
     return hasAnyPermission(user, ["suppliers:manage", "purchases_draft:manage", "finance:manage"]);
   }

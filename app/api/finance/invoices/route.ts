@@ -117,7 +117,13 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canViewInvoices(actor) || !(actor.role === "admin" || actor.permissions.includes("finance:manage") || actor.permissions.includes("payables:invoices_reconcile"))) {
+  const financeCan = canViewInvoices(actor) &&
+    (actor.role === "admin" || actor.permissions.includes("finance:manage") || actor.permissions.includes("payables:invoices_reconcile"));
+  // Compras (purchases_draft:manage) também cadastra, mas SÓ a NF que nasce
+  // do pedido de compra ("CRIAR NOTA FISCAL PARA ESTE PEDIDO") — conferido
+  // abaixo, depois de ler o corpo.
+  const comprasCan = actor.permissions.includes("purchases_draft:manage");
+  if (!financeCan && !comprasCan) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR NOTAS FISCAIS." }, 403);
   }
   if (!sameOrigin(request)) {
@@ -129,10 +135,14 @@ export async function POST(request: Request) {
     companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
     permissions: actor.permissions,
   };
-  const allStores = canSeeAllStores(scopeActor, "finance:manage");
-
   try {
     const body = (await request.json()) as JsonMap;
+    const viaPurchaseOrder = !financeCan;
+    if (viaPurchaseOrder && !safeText(body.purchaseOrderId, 80)) {
+      return jsonResponse({ error: "PELO COMPRAS, A NOTA FISCAL SÓ PODE SER CRIADA A PARTIR DO PEDIDO DE COMPRA." }, 403);
+    }
+    // Pelo pedido de compra vale o alcance do Compras (central vê todas as lojas).
+    const allStores = canSeeAllStores(scopeActor, viaPurchaseOrder ? "purchases_draft:manage" : "finance:manage");
 
     const companyId = safeText(body.companyId, 80);
     const companyName = safeText(body.companyName, 160);
@@ -178,6 +188,13 @@ export async function POST(request: Request) {
     const purchaseOrderId = safeText(body.purchaseOrderId, 80);
 
     const database = await getD1();
+    if (viaPurchaseOrder) {
+      const order = await database
+        .prepare("SELECT id FROM purchase_orders WHERE id=?1 AND origin='native' AND canceled=0")
+        .bind(purchaseOrderId)
+        .first<{ id: string }>();
+      if (!order) return jsonResponse({ error: "PEDIDO DE COMPRA NÃO ENCONTRADO." }, 404);
+    }
 
     const costCenterId = safeText(body.costCenterId, 80);
     let costCenter = "";

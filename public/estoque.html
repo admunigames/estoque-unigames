@@ -12103,6 +12103,7 @@
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="invoiceCompany">EMPRESA/LOJA *</label><select id="invoiceCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="invoiceSupplier">FORNECEDOR</label><select id="invoiceSupplier"><option value="">SEM FORNECEDOR</option></select></div>
+      <div class="purchase-field full" id="invoiceNewSupplierField" hidden><label for="invoiceNewSupplierName">NOME DO NOVO FORNECEDOR *</label><input id="invoiceNewSupplierName" maxlength="160" placeholder="Ex.: OEX"><span class="purchase-field-help">O FORNECEDOR É CADASTRADO JUNTO COM A NOTA (USA O CNPJ/CPF INFORMADO AO LADO).</span></div>
       <div class="purchase-field"><label for="invoiceSupplierDocument">CNPJ/CPF DO FORNECEDOR</label><input id="invoiceSupplierDocument" maxlength="20"></div>
       <div class="purchase-field"><label for="invoiceNumberInput">NÚMERO DA NF *</label><input id="invoiceNumberInput" maxlength="60" required></div>
       <div class="purchase-field"><label for="invoiceSeries">SÉRIE</label><input id="invoiceSeries" maxlength="20"></div>
@@ -28035,21 +28036,18 @@ function renderHomeTasks(){
   });
 
   async function loadPayablesCatalogData(){
-    try{
-      if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
-      const [suppliersData, accountsData, costCentersData] = await Promise.all([
-        financeApiRequest('/suppliers?includeInactive=1'),
-        financeApiRequest('/accounts?includeInactive=1'),
-        financeApiRequest('/cost-centers')
-      ]);
-      payableSuppliers = Array.isArray(suppliersData.suppliers) ? suppliersData.suppliers : [];
-      payableAccounts = Array.isArray(accountsData.accounts) ? accountsData.accounts : [];
-      financeCostCenters = Array.isArray(costCentersData.costCenters) ? costCentersData.costCenters : [];
-    }catch(error){
-      payableSuppliers = [];
-      payableAccounts = [];
-      financeCostCenters = [];
-    }
+    // Cada lista carrega por conta própria: quem abre a NF pelo Compras não
+    // tem acesso a contas/centros de custo, mas precisa dos fornecedores.
+    try{ if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog(); }catch{ /* categorias opcionais */ }
+    const [suppliersData, accountsData, costCentersData] = await Promise.allSettled([
+      financeApiRequest('/suppliers?includeInactive=1'),
+      financeApiRequest('/accounts?includeInactive=1'),
+      financeApiRequest('/cost-centers')
+    ]);
+    const settledList = (result, key) => result.status === 'fulfilled' && Array.isArray(result.value[key]) ? result.value[key] : [];
+    payableSuppliers = settledList(suppliersData, 'suppliers');
+    payableAccounts = settledList(accountsData, 'accounts');
+    financeCostCenters = settledList(costCentersData, 'costCenters');
     renderPayablesCatalogSelects();
   }
 
@@ -39046,7 +39044,10 @@ function renderHomeTasks(){
       if(companies.some(c => c.id === selected)) invoiceCompanySelect.value = selected;
     }
     const supplierOptions = payableSuppliers.filter(s => s.active).map(s => '<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.name)+'</option>').join('');
-    if(el('invoiceSupplier')) el('invoiceSupplier').innerHTML = '<option value="">SEM FORNECEDOR</option>'+supplierOptions;
+    if(el('invoiceSupplier')){
+      el('invoiceSupplier').innerHTML = '<option value="">SEM FORNECEDOR</option>'+supplierOptions+'<option value="__new__">+ CADASTRAR NOVO FORNECEDOR</option>';
+      syncInvoiceNewSupplierField();
+    }
     renderCostCenterOptionsFor('invoiceCostCenter', 'SEM CENTRO DE CUSTO');
     const categorySelect = el('invoiceCategory');
     if(categorySelect){
@@ -39385,6 +39386,13 @@ function renderHomeTasks(){
     renderPayableItemOptions('invoiceItem', el('invoiceCategory').value, {selectedId:''});
   });
 
+  function syncInvoiceNewSupplierField(){
+    const isNew = el('invoiceSupplier').value === '__new__';
+    el('invoiceNewSupplierField').hidden = !isNew;
+    if(isNew) setTimeout(() => el('invoiceNewSupplierName').focus(), 0);
+  }
+  el('invoiceSupplier') && el('invoiceSupplier').addEventListener('change', syncInvoiceNewSupplierField);
+
   el('invoiceForm') && el('invoiceForm').addEventListener('submit', async event => {
     event.preventDefault();
     const button = el('btnSaveInvoice');
@@ -39393,6 +39401,16 @@ function renderHomeTasks(){
     try{
       const totalAmountCents = parseBRLToCents(getCurrencyValue(el('invoiceTotalAmount')));
       if(!totalAmountCents) throw new Error('INFORME UM VALOR TOTAL VÁLIDO.');
+      // Fornecedor novo: cadastra antes e já usa na nota (fica na lista).
+      if(el('invoiceSupplier').value === '__new__'){
+        const name = el('invoiceNewSupplierName').value.trim();
+        if(!name){ el('invoiceNewSupplierName').focus(); throw new Error('INFORME O NOME DO NOVO FORNECEDOR.'); }
+        const created = await financeApiRequest('/suppliers', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, document:el('invoiceSupplierDocument').value.trim()})});
+        payableSuppliers.push({id:created.id, name:name.toLocaleUpperCase('pt-BR'), document:el('invoiceSupplierDocument').value.trim(), active:1});
+        renderInvoiceFormSelects();
+        el('invoiceSupplier').value = created.id;
+        syncInvoiceNewSupplierField();
+      }
       await invoicesApiRequest('', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
