@@ -5388,3 +5388,10 @@ test("Contas a Pagar > TIPO DE CONTA: seletor segmentado em linha, rádio fora d
     assert.match(html, new RegExp(`<div class="purchase-field full payables-kind-tabs">\\s*<label><input type="radio" name="${name}"`), name);
   }
 });
+
+test("Insumos: painel SOLICITAÇÃO só aparece para quem pode solicitar (supplies:request)", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  const loader = extractNamedFunction(html, "loadSupplyRequest");
+  assert.match(loader, /const canRequest = canAccess\('supplies:request'\);\n\s*el\('supplyRequestPanel'\)\.hidden = managesAllStores \|\| !canRequest;/);
+  assert.match(loader, /if\(managesAllStores \|\| !canRequest \|\| supplyRequestLoading\) return;/);
+});

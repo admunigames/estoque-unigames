@@ -23574,8 +23574,12 @@ function renderHomeTasks(){
     // então nunca cai no caso de "enxerga todas".
     const managesAllStores = !supplyIsAssistance() &&
       (currentSession.role === 'admin' || canActAcrossStores('supplies:request'));
-    el('supplyRequestPanel').hidden = managesAllStores || !canAccess('supplies');
-    if(managesAllStores || !canAccess('supplies') || supplyRequestLoading) return;
+    // Só quem pode SOLICITAR vê o painel: login só com "visualizar" (sem loja
+    // e fora da Assistência) caía aqui e recebia "precisa estar vinculado a
+    // uma loja", que não explica o motivo real (falta a permissão).
+    const canRequest = canAccess('supplies:request');
+    el('supplyRequestPanel').hidden = managesAllStores || !canRequest;
+    if(managesAllStores || !canRequest || supplyRequestLoading) return;
     supplyRequestLoading = true;
     try{
       const weekStart = el('supplyMissingWeekSelect').value || supplyUpcomingMonday();
