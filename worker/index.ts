@@ -360,6 +360,7 @@ const APP_ROUTE_PATHS = new Set([
   "/comercial/acompanhamento",
   "/comercial/controle-gd",
   "/comercial/relatorio-nf",
+  "/relatorio-nf",
   "/comercial/treinamento",
   "/financeiro/painel",
   "/financeiro/dre",
@@ -1545,7 +1546,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     // fornecedor), mesmo convivendo no grupo "Comercial" do menu. Checado
     // ANTES do bucket genérico "/comercial/" abaixo.
     [
-      path === "/comercial/relatorio-nf" || path.startsWith("/api/relatorio-nf"),
+      path === "/relatorio-nf" || path === "/comercial/relatorio-nf" || path.startsWith("/api/relatorio-nf"),
       "relatorioNf",
     ],
     // Treinamento (Unigames Academy) — permissão própria (treinamento:*),

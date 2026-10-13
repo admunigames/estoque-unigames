@@ -4409,7 +4409,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Controle GD e Relatório NF, também esses dois — por isso
   // data-any-permission inclui controle_gd e relatorio_nf além de comercial
   // (ver pageComercialControleGd e pageComercialRelatorioNf).
-  assert.match(html, /<div class="nav-group" data-any-permission="comercial,controle_gd,relatorio_nf,treinamento">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
+  assert.match(html, /<div class="nav-group" data-any-permission="comercial,controle_gd,treinamento">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
   assert.match(html, /id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial"/);
   // Treinamento (Unigames Academy): permissão própria treinamento:view/team;
   // dados só pelo servidor (/api/commercial/academy/*), sem a chave no front.
@@ -4680,7 +4680,7 @@ test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no w
   assert.match(html, /divergencias:'\/divergencias'/);
   assert.match(html, /divergencias:'DIVERGÊNCIAS'/);
   assert.match(html, /divergencias:'divergencias',/);
-  assert.match(html, /name === 'saidas' \|\| name === 'divergencias';/);
+  assert.match(html, /name === 'saidas' \|\| name === 'divergencias' \|\| name === 'comercialRelatorioNf';/);
   assert.match(html, /<section id="pageDivergencias" class="page wrap">/);
 
   // Três abas no estilo único do site; INVENTÁRIO só com divergencias:inventory.
