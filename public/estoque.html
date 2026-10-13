@@ -370,6 +370,7 @@
   }
   .theme-toggle:hover{opacity:1; border-color:var(--accent);}
   .theme-toggle:active{transform:scale(.95);}
+  .loan-return-note{font:800 10px/1.3 var(--mono);color:var(--ink-soft);letter-spacing:.3px;}
   /* Ícone "sol que vira lua": tema claro = sol com raios; tema escuro = os
      raios giram e somem, o sol cresce e a máscara (clipPath) desliza
      recortando a lua. Só CSS, guiado por html[data-theme]. */
@@ -5084,8 +5085,8 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Aparelho</th><th>Responsável</th><th>Status</th><th>Data da Solicitação</th><th>Emprestado há</th></tr></thead>
-              <tbody id="loanStoreRequestsBody"><tr><td colspan="5" class="responsive-empty">Nenhuma solicitação ainda.</td></tr></tbody>
+              <thead><tr><th>Aparelho</th><th>Responsável</th><th>Status</th><th>Data da Solicitação</th><th>Emprestado há</th><th></th></tr></thead>
+              <tbody id="loanStoreRequestsBody"><tr><td colspan="6" class="responsive-empty">Nenhuma solicitação ainda.</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -24694,7 +24695,7 @@ function renderHomeTasks(){
 
   // ================= APARELHOS DE EMPRÉSTIMO =================
   const LOAN_ALERT_DAYS = 15;
-  const LOAN_STATUS_LABELS = {requested:'AGUARDANDO SEPARAÇÃO',loaned:'EMPRESTADO',returned:'DEVOLVIDO'};
+  const LOAN_STATUS_LABELS = {requested:'AGUARDANDO SEPARAÇÃO',loaned:'EMPRESTADO',returning:'EM DEVOLUÇÃO',returned:'DEVOLVIDO'};
   const LOAN_DEVICE_STATUS_LABELS = {available:'DISPONÍVEL',loaned:'EMPRESTADO',maintenance:'MANUTENÇÃO'};
   let loanDevicesCache = [];
   let loanRequestsCache = [];
@@ -24730,7 +24731,7 @@ function renderHomeTasks(){
   }
 
   function loanStatusPill(status){
-    const tone = status === 'loaned' ? 'progress' : status === 'returned' ? 'done' : 'waiting';
+    const tone = status === 'loaned' || status === 'returning' ? 'progress' : status === 'returned' ? 'done' : 'waiting';
     return '<span class="status-pill '+tone+'">'+escapeHtml(LOAN_STATUS_LABELS[status] || String(status).toUpperCase())+'</span>';
   }
 
@@ -24825,7 +24826,7 @@ function renderHomeTasks(){
   function renderLoanStoreRequests(){
     const tbody = el('loanStoreRequestsBody');
     if(!loanRequestsCache.length){
-      tbody.innerHTML = '<tr><td colspan="5" class="responsive-empty">Nenhuma solicitação ainda.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhuma solicitação ainda.</td></tr>';
       return;
     }
     tbody.innerHTML = loanRequestsCache.map(request => (
@@ -24834,7 +24835,10 @@ function renderHomeTasks(){
         '<td data-label="Responsável">'+escapeHtml(request.responsibleName || '—')+'</td>'+
         '<td data-label="Status">'+loanStatusPill(request.status)+'</td>'+
         '<td data-label="Solicitado em">'+escapeHtml(formatDateTimeBR(request.createdAt))+'</td>'+
-        '<td data-label="Emprestado há">'+(request.status === 'loaned' ? loanDaysBadge(request.separatedAt) : '—')+'</td>'+
+        '<td data-label="Emprestado há">'+(request.status === 'loaned' || request.status === 'returning' ? loanDaysBadge(request.separatedAt) : '—')+'</td>'+
+        '<td data-label="Ações">'+(request.status === 'loaned' && canAccess('loans:request')
+          ? '<button class="btn-accent" type="button" data-loan-store-return="'+escapeHtml(request.id)+'">DEVOLVER</button>'
+          : request.status === 'returning' ? '<span class="loan-return-note">AGUARDANDO CHEGADA</span>' : '')+'</td>'+
       '</tr>'
     )).join('');
   }
@@ -24877,7 +24881,7 @@ function renderHomeTasks(){
       loanRequestsCache = Array.isArray(data.requests) ? data.requests : [];
     }catch(error){
       loanRequestsCache = [];
-      el('loanStoreRequestsBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('loanStoreRequestsBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
       el('loanRequestsBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
       return;
     }
@@ -25079,7 +25083,7 @@ function renderHomeTasks(){
     el('loanRequestDetailsMeta').innerHTML = loanRequestDetailsMetaHtml(request);
     setLoanRequestDetailsStatus('');
     el('btnMarkLoanLoaned').hidden = request.status !== 'requested';
-    el('btnMarkLoanReturned').hidden = request.status !== 'loaned';
+    el('btnMarkLoanReturned').hidden = request.status !== 'loaned' && request.status !== 'returning';
     el('loanReportPanel').hidden = request.status !== 'loaned';
     el('loanReportText').hidden = request.status !== 'loaned';
     el('loanReportActions').hidden = request.status !== 'loaned';
@@ -25114,6 +25118,25 @@ function renderHomeTasks(){
       setLoanRequestDetailsStatus('SOLICITAÇÃO MARCADA COMO EMPRESTADA.','success');
     }catch(error){
       setLoanRequestDetailsStatus(error.message,'error');
+    }
+  });
+
+  // Loja avisa a devolução; o aparelho só fica disponível quando quem recebe marca DEVOLVIDO.
+  el('loanStoreRequestsBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-loan-store-return]');
+    if(!button) return;
+    const request = loanRequestsCache.find(item => item.id === button.dataset.loanStoreReturn);
+    if(!request) return;
+    const ok = await askConfirm('DEVOLVER O APARELHO '+request.deviceName+'? QUEM RECEBE VAI MARCAR COMO DEVOLVIDO QUANDO ELE CHEGAR.', {okText:'DEVOLVER', danger:false});
+    if(!ok) return;
+    button.disabled = true;
+    try{
+      await loanApiRequest('/api/loans/requests',{method:'PATCH',body:JSON.stringify({id:request.id,action:'returning'})});
+      showPurchaseToast('Devolução informada. Aguardando a chegada do aparelho.');
+      await refreshAfterAction(() => loadLoanRequests());
+    }catch(error){
+      button.disabled = false;
+      showPurchaseToast(error.message, 'error');
     }
   });
 

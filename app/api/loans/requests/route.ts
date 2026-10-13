@@ -149,7 +149,7 @@ export async function GET(request: Request) {
     // escopo da própria loja abaixo, como qualquer login de loja.
     if (canManageRequests(actor) && canSeeAllStores(actor, "loans:manage_requests")) {
       const result = await database
-        .prepare(`${REQUEST_SELECT} ORDER BY (status='requested') DESC, created_at DESC LIMIT 500`)
+        .prepare(`${REQUEST_SELECT} ORDER BY (status IN ('requested','returning')) DESC, created_at DESC LIMIT 500`)
         .all<RequestRow>();
       return jsonResponse({ requests: result.results ?? [] });
     }
@@ -240,9 +240,6 @@ export async function PATCH(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManageRequests(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA GERENCIAR SOLICITAÇÕES DE APARELHO." }, 403);
-  }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
   }
@@ -252,8 +249,16 @@ export async function PATCH(request: Request) {
     const id = safeText(body.id, 80);
     const action = safeText(body.action, 20);
     if (!id) return jsonResponse({ error: "SOLICITAÇÃO INVÁLIDA." }, 400);
-    if (action !== "loan" && action !== "return") {
+    if (action !== "loan" && action !== "return" && action !== "returning") {
       return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
+    }
+    // "returning": a LOJA avisa que está devolvendo (loans:request, só a
+    // própria loja); loan/return continuam com quem gerencia os empréstimos.
+    const storeAction = action === "returning";
+    if (storeAction ? !canRequest(actor) : !canManageRequests(actor)) {
+      return jsonResponse({ error: storeAction
+        ? "VOCÊ NÃO TEM PERMISSÃO PARA DEVOLVER APARELHO."
+        : "VOCÊ NÃO TEM PERMISSÃO PARA GERENCIAR SOLICITAÇÕES DE APARELHO." }, 403);
     }
 
     const database = await getD1();
@@ -266,8 +271,30 @@ export async function PATCH(request: Request) {
       .bind(id)
       .first<{ id: string; deviceId: string; deviceName: string; companyId: string; companyName: string; status: string }>();
     // Solicitação de outra loja responde igual a inexistente.
-    if (!existing || !canActOnStore(actor, "loans:manage_requests", existing.companyId)) {
+    if (!existing || !canActOnStore(actor, storeAction ? "loans:request" : "loans:manage_requests", existing.companyId)) {
       return jsonResponse({ error: "SOLICITAÇÃO NÃO ENCONTRADA." }, 404);
+    }
+
+    if (storeAction) {
+      if (existing.status !== "loaned") {
+        return jsonResponse({ error: existing.status === "returning"
+          ? "A DEVOLUÇÃO DESTE APARELHO JÁ FOI INFORMADA."
+          : "ESTE APARELHO NÃO ESTÁ EMPRESTADO PARA A LOJA." }, 409);
+      }
+      const note = safeText(body.note, 500);
+      // O aparelho segue EMPRESTADO até chegar; quem recebe marca DEVOLVIDO.
+      await database.batch([
+        database
+          .prepare("UPDATE loan_requests SET status='returning', updated_at=CURRENT_TIMESTAMP WHERE id=?1")
+          .bind(id),
+        database
+          .prepare(
+            `INSERT INTO loan_request_updates (id, request_id, message, author_id, author_name, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)`,
+          )
+          .bind(crypto.randomUUID(), id, "LOJA INFORMOU A DEVOLUÇÃO DO APARELHO." + (note ? " " + note : ""), actor.id, actor.displayName),
+      ]);
+      return jsonResponse({ updated: true, status: "returning", deviceName: existing.deviceName, companyName: existing.companyName });
     }
 
     if (action === "loan") {
@@ -297,7 +324,7 @@ export async function PATCH(request: Request) {
 
     // action === "return": aparelho volta da loja pro local e fica
     // disponível de novo para um novo empréstimo.
-    if (existing.status !== "loaned") {
+    if (existing.status !== "loaned" && existing.status !== "returning") {
       return jsonResponse({ error: "ESTA SOLICITAÇÃO NÃO ESTÁ COM O APARELHO EMPRESTADO." }, 409);
     }
     await database
