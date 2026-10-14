@@ -1,6 +1,7 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
 import { computeNfTotals, REPORT_DATE_PATTERN, type NfStoreEntry } from "../../lib/relatorio-nf";
+import { isSellingStore } from "../../lib/selling-stores";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -97,7 +98,7 @@ function todayDate(): string {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
-/** Lista completa de lojas (Cadastros > Lojas), na ordem cadastrada. */
+/** Lista completa de empresas (Cadastros > Lojas), na ordem cadastrada — inclui Assistência/Depósito. */
 async function loadCompanies(database: D1Database): Promise<CompanyEntry[]> {
   const row = await database
     .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
@@ -138,6 +139,14 @@ export async function GET(request: Request) {
       ? Math.min(Math.trunc(requestedLimit), HISTORY_MAX_LIMIT)
       : HISTORY_DEFAULT_LIMIT;
     try {
+      // Lançamentos antigos de Assistência/Depósito continuam no banco, só
+      // ficam fora dos totais.
+      const excludedIds = (await loadCompanies(database))
+        .filter((company) => !isSellingStore(String(company.name || "")))
+        .map((company) => company.id);
+      const excludedSql = excludedIds.length
+        ? `WHERE store_id NOT IN (${excludedIds.map((_, index) => `?${index + 2}`).join(", ")})`
+        : "";
       const result = await database
         .prepare(
           `SELECT report_date AS reportDate,
@@ -146,11 +155,12 @@ export async function GET(request: Request) {
                   SUM(sales_amount_cents) AS totalSalesAmountCents,
                   SUM(invoices_issued_amount_cents) AS totalInvoicesIssuedAmountCents
            FROM commercial_nf_report_entries
+           ${excludedSql}
            GROUP BY report_date
            ORDER BY report_date DESC
            LIMIT ?1`,
         )
-        .bind(limit)
+        .bind(limit, ...excludedIds)
         .all<{
           reportDate: string;
           totalSalesCount: number;
@@ -173,7 +183,7 @@ export async function GET(request: Request) {
   const date = REPORT_DATE_PATTERN.test(requestedDate) ? requestedDate : todayDate();
 
   try {
-    const [companies, result] = await Promise.all([
+    const [allCompanies, result] = await Promise.all([
       loadCompanies(database),
       database
         .prepare(
@@ -186,6 +196,7 @@ export async function GET(request: Request) {
         .bind(date)
         .all<NfEntryRow>(),
     ]);
+    const companies = allCompanies.filter((company) => isSellingStore(String(company.name || "")));
     const byStoreId = new Map((result.results ?? []).map((row) => [row.storeId, row]));
     const entries: NfStoreEntry[] = companies.map((company) => {
       const row = byStoreId.get(company.id);
@@ -227,11 +238,17 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "INFORME AO MENOS UMA LOJA." }, 400);
     }
 
+    const database = await getD1();
+    const companyNames = new Map((await loadCompanies(database)).map((company) => [company.id, String(company.name || "")]));
     const entries: { storeId: string; storeName: string; salesCount: number; invoicesIssuedCount: number; salesAmountCents: number; invoicesIssuedAmountCents: number }[] = [];
     for (const raw of rawEntries) {
       const storeId = safeText(raw.storeId, 80);
       if (!storeId) {
         return jsonResponse({ error: "LOJA INVÁLIDA." }, 400);
+      }
+      const storeName = safeText(raw.storeName, 120);
+      if (!isSellingStore(companyNames.get(storeId) ?? storeName)) {
+        return jsonResponse({ error: "ASSISTÊNCIA E DEPÓSITO NÃO ENTRAM NO RELATÓRIO NF." }, 400);
       }
       const salesCount = Number(raw.salesCount);
       const invoicesIssuedCount = Number(raw.invoicesIssuedCount);
@@ -249,7 +266,7 @@ export async function POST(request: Request) {
       }
       entries.push({
         storeId,
-        storeName: safeText(raw.storeName, 120),
+        storeName,
         salesCount,
         invoicesIssuedCount,
         salesAmountCents,
@@ -257,7 +274,6 @@ export async function POST(request: Request) {
       });
     }
 
-    const database = await getD1();
     const operations = entries.map((entry) =>
       database
         .prepare(

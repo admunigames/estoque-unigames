@@ -4,6 +4,7 @@
 // separados pela coluna module (valor fixo do código, nunca do usuário).
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
+import { isSellingStore } from "../../lib/selling-stores";
 import {
   ADJUSTMENT_DATE_PATTERN,
   aggregateLast7Days,
@@ -115,17 +116,6 @@ function todayDate(): string {
 }
 
 /** Lista completa de lojas (Cadastros > Lojas), na ordem cadastrada. */
-// Assistência e Depósito são setores internos, não lojas: ficam fora dos dois
-// Controles de Gorduras (mesmo critério de isNonStoreCompany em worker/index.ts).
-export function isGdStore(name: string): boolean {
-  const normalized = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-  return !(
-    /\bassistencia\b/.test(normalized) || normalized.includes("assistance") ||
-    /\bdeposito\b/.test(normalized) || normalized === "cd" || normalized.startsWith("cd ") ||
-    normalized.includes("centro de distribuicao")
-  );
-}
-
 async function loadCompanies(database: D1Database): Promise<CompanyEntry[]> {
   const row = await database
     .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
@@ -133,7 +123,7 @@ async function loadCompanies(database: D1Database): Promise<CompanyEntry[]> {
   try {
     const list = row?.value ? (JSON.parse(row.value) as CompanyEntry[]) : [];
     return Array.isArray(list)
-      ? list.filter((item): item is CompanyEntry => Boolean(item) && typeof item.id === "string" && isGdStore(String(item.name || "")))
+      ? list.filter((item): item is CompanyEntry => Boolean(item) && typeof item.id === "string" && isSellingStore(String(item.name || "")))
       : [];
   } catch {
     return [];

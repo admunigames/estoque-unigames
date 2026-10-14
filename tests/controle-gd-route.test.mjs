@@ -111,10 +111,10 @@ test("Assistência: clone com dados e permissões próprios (não mistura com o 
   assert.equal((await callA(ASSIST_EDIT, "DELETE", { id: comercialId })).status, 404);
 });
 
-test("isGdStore: Assistência e Depósito ficam fora do Controle de Gorduras", async () => {
-  const { isGdStore } = await import("../app/api/controle-gd/handlers.ts");
-  for (const name of ["ASSISTÊNCIA", "Assistencia", "DEPÓSITO", "deposito central", "CD"]) assert.equal(isGdStore(name), false, name);
-  for (const name of ["RIOMAR", "P.A LOJA", "QUIOSQUE P.A", "NORTH WAY", "CDU SHOPPING"]) assert.equal(isGdStore(name), true, name);
+test("isSellingStore: Assistência e Depósito ficam fora do Controle de Gorduras", async () => {
+  const { isSellingStore } = await import("../app/lib/selling-stores.ts");
+  for (const name of ["ASSISTÊNCIA", "Assistencia", "DEPÓSITO", "deposito central", "CD"]) assert.equal(isSellingStore(name), false, name);
+  for (const name of ["RIOMAR", "P.A LOJA", "QUIOSQUE P.A", "NORTH WAY", "CDU SHOPPING"]) assert.equal(isSellingStore(name), true, name);
 });
 
 test("Assistência/Depósito não aparecem nem recebem gordura", async () => {
