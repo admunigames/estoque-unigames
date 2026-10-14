@@ -2664,6 +2664,20 @@
   #gdStoresGrid .supply-dashboard-card.selected{outline:2px solid var(--accent);}
   .supply-dashboard-empty{color:var(--ink-faint);font:700 9px/1.4 var(--mono);margin-top:8px;}
   html[data-theme="light"] .supply-dashboard-card{background:#f6f9fb;border-color:var(--inset-border);}
+  /* Ordens de Serviço: borda da linha pela criticidade da data limite. */
+  #osTable tr.os-row td:first-child{border-left:4px solid transparent;}
+  #osTable tr.os-atrasada td:first-child,#osTable tr.os-hoje td:first-child{border-left-color:#ef6a55;}
+  #osTable tr.os-proxima td:first-child{border-left-color:#e1ad49;}
+  #osTable tr.os-no_prazo td:first-child{border-left-color:#54c48a;}
+  #osTable tr.os-atrasada td{background:rgba(239,106,85,.07);}
+  .os-update-cell{min-width:220px;max-width:420px;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .os-update-meta{display:block;margin-top:4px;color:var(--ink-faint);font:700 8.5px/1.3 var(--mono);}
+  .os-muted{color:var(--ink-faint);}
+  .os-update-history{display:grid;gap:8px;max-height:44vh;overflow:auto;}
+  .os-update-item{padding:9px 11px;border:1px solid var(--inset-border);border-radius:10px;background:var(--bg-card-2);}
+  .os-update-item small{color:var(--ink-faint);font:700 8.5px/1.3 var(--mono);}
+  .os-update-item p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;}
+  #osTabs{flex-wrap:wrap;margin-bottom:12px;}
   .supply-admin-tabs{margin-bottom:16px;}
   .supply-admin-tab-panel{display:grid;gap:12px;}
   .supply-category-form{display:flex;gap:8px;max-width:420px;}
@@ -3799,13 +3813,14 @@
         <a class="nav-item sub-item" id="navNotasOs" data-page="notasOs" data-permission="os_notes" data-home-desc="Peça a nota de uma O.S. e acompanhe o anexo enviado pela administração." title="Notas de O.S." href="/solicitacoes/notas-os"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas de O.S.</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="assistencia,gorduras_assistencia">
+    <div class="nav-group" data-any-permission="assistencia,gorduras_assistencia,ordens_servico">
       <button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Assistência</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
       <div class="nav-submenu" id="navAssistenciaSubmenu" aria-hidden="true">
         <a class="nav-item sub-item" id="navAssistenciaOrcamentos" data-page="assistenciaOrcamentos" data-permission="assistencia:manage" data-home-desc="Monte o orçamento da assistência técnica com a tabela de valores e gere o PDF com os dados da loja." title="Orçamentos" href="/assistencia/orcamentos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Orçamentos</span></a>
         <a class="nav-item sub-item" id="navAssistenciaControleGorduras" data-page="assistenciaControleGorduras" data-permission="gorduras_assistencia" data-home-desc="Gordura da assistência por venda (data, ID, vendedor e valor), saldo anterior e total do mês por loja, com alerta de status e relatório para WhatsApp." title="Controle Gorduras Assistência" href="/assistencia/controle-gorduras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle Gorduras Assistência</span></a>
+        <a class="nav-item sub-item" id="navAssistenciaOrdensServico" data-page="assistenciaOrdensServico" data-permission="ordens_servico" data-home-desc="Ordens de serviço em andamento por tipo (console, informática, controle, celular, terceirizado), com data limite, status e atualização diária; as mais críticas aparecem primeiro." title="Ordens de Serviço" href="/assistencia/ordens-servico"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3"/><path d="M8.5 11l1.5 1.5 3-3"/><line x1="8.5" y1="16" x2="15.5" y2="16"/></svg></span><span class="nav-label">Ordens de Serviço</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="comercial,controle_gd,treinamento">
@@ -7091,6 +7106,56 @@
     </section>
 
 
+    <!-- ================= ASSISTÊNCIA / ORDENS DE SERVIÇO ================= -->
+    <section id="pageAssistenciaOrdensServico" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Ordens de Serviço</h2>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnOsReload" type="button">ATUALIZAR</button>
+          <button class="btn-accent" id="btnOsNew" type="button" hidden>NOVA O.S.</button>
+        </div>
+      </header>
+
+      <div class="supply-tabs" role="tablist" aria-label="Tipos de O.S." id="osTabs"></div>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="osView">MOSTRAR</label>
+          <select id="osView"><option value="open">EM ABERTO</option><option value="closed">FINALIZADAS</option></select>
+        </div>
+        <div class="field" id="osStoreField"><label for="osStoreFilter">LOJA</label><select id="osStoreFilter"></select></div>
+        <div class="field"><label for="osStatusFilter">STATUS</label><select id="osStatusFilter"></select></div>
+        <div class="field"><label for="osLevelFilter">PRAZO</label>
+          <select id="osLevelFilter">
+            <option value="">TODOS</option>
+            <option value="atrasada">ATRASADAS</option>
+            <option value="hoje">VENCEM HOJE</option>
+            <option value="proxima">VENCEM EM ATÉ 2 DIAS</option>
+            <option value="no_prazo">NO PRAZO</option>
+            <option value="sem_data">SEM DATA LIMITE</option>
+            <option value="sem_atualizacao">SEM ATUALIZAÇÃO HOJE</option>
+          </select>
+        </div>
+        <div class="field"><label for="osSearch">BUSCAR</label><input type="search" id="osSearch" placeholder="O.S., equipamento, observação ou atualização"></div>
+      </div>
+
+      <div class="supply-dashboard-grid gd-summary" id="osSummary"></div>
+
+      <h3 class="supply-section-title" id="osListTitle">O.S. EM ABERTO · MAIS CRÍTICAS PRIMEIRO</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="osTable">
+            <thead><tr>
+              <th>O.S.</th><th>Tipo</th><th>Equipamento</th><th>Status</th><th>Loja</th><th>Data limite</th><th>Observações</th><th>Atualização diária</th><th></th>
+            </tr></thead>
+            <tbody id="osTableBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= RH / PLANO ODONTOLÓGICO ================= -->
     <section id="pageRhOdontologico" class="page wrap">
       <header class="page-header">
@@ -9382,6 +9447,15 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Assistência - Ordens de Serviço</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="ordens_servico:view"> Ver as O.S. (login com loja só visualiza as da própria loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="ordens_servico:create"> Cadastrar O.S.</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="ordens_servico:edit"> Editar O.S. e registrar a atualização diária</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="ordens_servico:delete"> Excluir O.S.</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Auditoria</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="audit:view"> Ver quem cadastrou, alterou, anexou ou excluiu em qualquer módulo</label>
@@ -10926,6 +11000,51 @@
       <a class="btn-accent" id="btnDownloadCashFlowImage" download="fluxo-de-caixa.png" href="#">BAIXAR PNG</a>
     </div>
   </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="osOrderDialog" aria-labelledby="osOrderDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="osOrderDialogTitle">NOVA O.S.</h3>
+    <button class="purchase-dialog-close" type="button" data-os-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="osOrderForm">
+    <input type="hidden" id="osOrderId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="osOrderNumber">N° DA O.S. *</label><input type="text" id="osOrderNumber" maxlength="40" autocomplete="off" required></div>
+      <div class="purchase-field"><label for="osOrderCategory">TIPO *</label><select id="osOrderCategory" required></select></div>
+      <div class="purchase-field full"><label for="osOrderEquipment">EQUIPAMENTO / MODELO</label><input type="text" id="osOrderEquipment" maxlength="120" autocomplete="off" placeholder="Ex.: PS5 SLIM DIGITAL"></div>
+      <div class="purchase-field"><label for="osOrderStatus">STATUS *</label><select id="osOrderStatus" required></select></div>
+      <div class="purchase-field"><label for="osOrderStore">LOJA RESPONSÁVEL *</label><select id="osOrderStore" required></select></div>
+      <div class="purchase-field"><label for="osOrderDeadline">DATA LIMITE</label><input type="date" id="osOrderDeadline"></div>
+      <div class="purchase-field"><label for="osOrderSituation">OBSERVAÇÕES</label><input type="text" id="osOrderSituation" list="osSituationOptions" maxlength="120" autocomplete="off" placeholder="Escolha ou digite"><datalist id="osSituationOptions"></datalist></div>
+      <div class="purchase-field full" id="osOrderFirstUpdateField"><label for="osOrderFirstUpdate">ATUALIZAÇÃO DIÁRIA (OPCIONAL)</label><textarea id="osOrderFirstUpdate" rows="3" maxlength="2000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="osOrderFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-os-close>CANCELAR</button>
+      <button class="btn-accent" id="btnOsOrderSave" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="osUpdateDialog" aria-labelledby="osUpdateDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="osUpdateDialogTitle">ATUALIZAÇÃO DIÁRIA</h3>
+    <button class="purchase-dialog-close" type="button" data-os-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="osUpdateForm">
+    <p class="gd-opening-hint" id="osUpdateHint"></p>
+    <div class="purchase-form-grid" id="osUpdateFields">
+      <div class="purchase-field full"><label for="osUpdateText">NOVA ATUALIZAÇÃO *</label><textarea id="osUpdateText" rows="4" maxlength="2000" placeholder="Ex.: PRODUÇÃO PEDRO - CLIENTE CIENTE, AGUARDANDO PEÇA"></textarea></div>
+    </div>
+    <div class="user-form-status" id="osUpdateFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions" id="osUpdateActions">
+      <button class="btn-outline" type="button" data-os-close>FECHAR</button>
+      <button class="btn-accent" id="btnOsUpdateSave" type="submit">REGISTRAR</button>
+    </div>
+    <h4 class="supply-section-title">HISTÓRICO</h4>
+    <div class="os-update-history" id="osUpdateHistory"></div>
+  </form>
 </dialog>
 
 <dialog class="purchase-dialog" id="gdAdjustDialog" aria-labelledby="gdAdjustDialogTitle">
@@ -13286,6 +13405,7 @@
     comercialAcompanhamento:'/comercial/acompanhamento',
     comercialControleGd:'/comercial/controle-gd',
     assistenciaControleGorduras:'/assistencia/controle-gorduras',
+    assistenciaOrdensServico:'/assistencia/ordens-servico',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
@@ -13347,6 +13467,7 @@
     comercialAcompanhamento:'ACOMPANHAMENTO METAS',
     comercialControleGd:'CONTROLE DE GORDURAS',
     assistenciaControleGorduras:'CONTROLE GORDURAS ASSISTÊNCIA',
+    assistenciaOrdensServico:'ORDENS DE SERVIÇO',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
@@ -13404,6 +13525,7 @@
     comercialAcompanhamento:'comercial',
     comercialControleGd:'controle_gd',
     assistenciaControleGorduras:'gorduras_assistencia',
+    assistenciaOrdensServico:'ordens_servico',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
@@ -14079,7 +14201,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'comercialRelatorioNf';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras';
+    const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico';
     const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroCrediarios' || name === 'financeiroConciliacaoVendas' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialTreinamento';
     document.body.classList.toggle('home-active', isHome);
@@ -14172,6 +14294,7 @@
     if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf' && name !== 'comercialTreinamento') loadComercialPage(name);
     if(name === 'comercialControleGd') loadControleGdPage('comercial');
     if(name === 'assistenciaControleGorduras') loadControleGdPage('assistencia');
+    if(name === 'assistenciaOrdensServico') loadOrdensServicoPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -14237,6 +14360,7 @@
     if(name.indexOf('comercial') === 0 && name !== 'comercialControleGd' && name !== 'comercialRelatorioNf' && name !== 'comercialTreinamento') loadComercialPage(name);
     if(name === 'comercialControleGd') loadControleGdPage('comercial');
     if(name === 'assistenciaControleGorduras') loadControleGdPage('assistencia');
+    if(name === 'assistenciaOrdensServico') loadOrdensServicoPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -26531,6 +26655,246 @@ function renderHomeTasks(){
   el('btnAuditMore') && el('btnAuditMore').addEventListener('click', () => loadAuditPage(false));
   ['auditFrom','auditTo','auditModule'].forEach(id => el(id) && el(id).addEventListener('change', () => loadAuditPage(true)));
   ['auditUser','auditQuery'].forEach(id => el(id) && el(id).addEventListener('keydown', event => { if(event.key === 'Enter') loadAuditPage(true); }));
+
+  // ---------- ASSISTÊNCIA · ORDENS DE SERVIÇO ----------
+  // Padrão da planilha UNITEC: abas por tipo, status, loja, data limite,
+  // observações e atualização diária (com histórico). A API já devolve da
+  // mais crítica (data limite mais vencida) para a menos.
+  const OS_API = '/api/assistencia/ordens-servico';
+  const OS_CATEGORIES = ['CONSOLE','INFORMÁTICA','CONTROLE','CELULAR','TERCEIRIZADO'];
+  const OS_STATUSES = ['ORÇAMENTO PENDENTE','PASSADO ORÇAMENTO','AUTORIZADA','GARANTIA DE SERVIÇO','GARANTIA DE VENDA','DE VENDA','FINALIZADA'];
+  const OS_SITUATIONS = ['NO PRAZO','AGUARDANDO ORÇAMENTO','AGUARDANDO AUTORIZAÇÃO','CLIENTE AGUARDANDO ORÇAMENTO','AGUARDANDO PEÇA','REPROVADO'];
+  let osData = null;
+  let osTab = '';
+  // Login com loja vinculada só visualiza (o backend também bloqueia).
+  const osCan = action => (action === 'view' || currentSession.role === 'admin' || !currentSession.companyId) && canAccess('ordens_servico:'+action);
+
+  async function osApiRequest(path, options){
+    const response = await fetch(OS_API+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+  const osSend = (method, body) => osApiRequest('', {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+
+  function osDeadlineLabel(order){
+    if(order.closed) return 'FINALIZADA';
+    const days = order.deadlineDays;
+    if(order.deadlineLevel === 'sem_data') return 'SEM DATA';
+    if(days < 0) return 'ATRASADA '+(-days)+(days === -1 ? ' DIA' : ' DIAS');
+    if(days === 0) return 'VENCE HOJE';
+    if(days === 1) return 'VENCE AMANHÃ';
+    return 'FALTAM '+days+' DIAS';
+  }
+  const OS_LEVEL_PILL = {atrasada:'alert', hoje:'alert', proxima:'waiting', no_prazo:'done', sem_data:'', finalizada:'progress'};
+
+  function osFiltered(ignoreTab){
+    const rows = (osData && osData.orders) || [];
+    const store = el('osStoreFilter').value;
+    const status = el('osStatusFilter').value;
+    const level = el('osLevelFilter').value;
+    const search = el('osSearch').value.trim().toLocaleLowerCase('pt-BR');
+    return rows.filter(row =>
+      (ignoreTab || !osTab || row.category === osTab) &&
+      (!store || row.storeId === store) &&
+      (!status || row.status === status) &&
+      (!level || (level === 'sem_atualizacao' ? !row.closed && !row.updatedToday : row.deadlineLevel === level)) &&
+      (!search || [row.osNumber, row.equipment, row.situation, row.lastUpdateText, row.storeName].join(' ').toLocaleLowerCase('pt-BR').includes(search))
+    );
+  }
+
+  function renderOrdensServico(){
+    const all = osFiltered(true);
+    const tabs = [['', 'TODAS']].concat(OS_CATEGORIES.map(category => [category, category]));
+    el('osTabs').innerHTML = tabs.map(([value, label]) => {
+      const count = value ? all.filter(row => row.category === value).length : all.length;
+      return '<button class="supply-tab'+(osTab === value ? ' active' : '')+'" type="button" role="tab" aria-selected="'+(osTab === value)+'" data-os-tab="'+escapeHtml(value)+'">'+escapeHtml(label)+' ('+count+')</button>';
+    }).join('');
+    const rows = osFiltered(false);
+    const closedView = el('osView').value === 'closed';
+    const count = level => rows.filter(row => row.deadlineLevel === level).length;
+    el('osSummary').innerHTML = closedView
+      ? '<article class="supply-dashboard-card"><span>FINALIZADAS (ÚLTIMAS 300)</span><strong>'+rows.length+'</strong></article>'
+      : '<article class="supply-dashboard-card"><span>EM ABERTO</span><strong>'+rows.length+'</strong></article>'+
+        '<article class="supply-dashboard-card danger"><span>ATRASADAS</span><strong>'+count('atrasada')+'</strong></article>'+
+        '<article class="supply-dashboard-card danger"><span>VENCEM HOJE</span><strong>'+count('hoje')+'</strong></article>'+
+        '<article class="supply-dashboard-card warning"><span>VENCEM EM ATÉ 2 DIAS</span><strong>'+count('proxima')+'</strong></article>'+
+        '<article class="supply-dashboard-card warning"><span>SEM ATUALIZAÇÃO HOJE</span><strong>'+rows.filter(row => !row.updatedToday).length+'</strong></article>';
+    el('osListTitle').textContent = closedView ? 'O.S. FINALIZADAS · MAIS RECENTES PRIMEIRO' : 'O.S. EM ABERTO · MAIS CRÍTICAS PRIMEIRO';
+    const body = el('osTableBody');
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma O.S. '+(closedView ? 'finalizada' : 'em aberto')+' com esse filtro.</td></tr>';
+      return;
+    }
+    const canEdit = osCan('edit');
+    const canDelete = osCan('delete');
+    body.innerHTML = rows.map(row => {
+      const level = row.deadlineLevel;
+      const last = row.lastUpdateText
+        ? escapeHtml(row.lastUpdateText)+'<small class="os-update-meta">'+escapeHtml((row.lastUpdateByName || '')+' · '+(formatDateTimeBR(row.lastUpdateAt) || ''))+'</small>'
+        : '<span class="os-muted">—</span>';
+      const stale = !row.closed && !row.updatedToday ? '<span class="status-pill waiting">SEM ATUALIZAÇÃO HOJE</span> ' : '';
+      const actions = '<button class="btn-outline btn-sm" type="button" data-os-updates="'+escapeHtml(row.id)+'">'+(canEdit && !row.closed ? 'ATUALIZAR' : 'HISTÓRICO')+'</button> '+
+        (canEdit ? '<button class="btn-outline btn-sm" type="button" data-os-edit="'+escapeHtml(row.id)+'">EDITAR</button> ' : '')+
+        (canDelete ? '<button class="btn-outline btn-sm" type="button" data-os-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '');
+      return '<tr class="os-row os-'+escapeHtml(level)+'">'+
+        '<td data-label="O.S."><strong>'+escapeHtml(row.osNumber)+'</strong></td>'+
+        '<td data-label="Tipo">'+escapeHtml(row.category)+'</td>'+
+        '<td data-label="Equipamento">'+escapeHtml(row.equipment || '—')+'</td>'+
+        '<td data-label="Status">'+escapeHtml(row.status)+'</td>'+
+        '<td data-label="Loja">'+escapeHtml(row.storeName || '—')+'</td>'+
+        '<td data-label="Data limite" style="white-space:nowrap">'+escapeHtml(row.deadline ? gdDateLabel(row.deadline) : '—')+'<br><span class="status-pill '+(OS_LEVEL_PILL[level] || '')+'">'+escapeHtml(osDeadlineLabel(row))+'</span></td>'+
+        '<td data-label="Observações">'+escapeHtml(row.situation || '—')+'</td>'+
+        '<td data-label="Atualização diária" class="os-update-cell">'+stale+last+'</td>'+
+        '<td style="white-space:nowrap">'+actions+'</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  async function loadOrdensServicoPage(){
+    try{
+      osData = await osApiRequest(el('osView').value === 'closed' ? '?closed=1' : '');
+      const storeSelect = el('osStoreFilter');
+      const previousStore = storeSelect.value;
+      storeSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+
+        osData.companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+      if(osData.companies.some(company => company.id === previousStore)) storeSelect.value = previousStore;
+      el('osStoreField').hidden = !osData.allStores;
+      const statusSelect = el('osStatusFilter');
+      const previousStatus = statusSelect.value;
+      statusSelect.innerHTML = '<option value="">TODOS</option>'+OS_STATUSES.map(status => '<option>'+escapeHtml(status)+'</option>').join('');
+      statusSelect.value = previousStatus;
+      el('btnOsNew').hidden = !osCan('create') || !osData.companies.length;
+      renderOrdensServico();
+    }catch(error){
+      el('osSummary').innerHTML = '';
+      el('osTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function osOpenOrderDialog(order){
+    el('osOrderForm').reset();
+    el('osOrderId').value = order ? order.id : '';
+    el('osOrderDialogTitle').textContent = order ? 'EDITAR O.S. '+order.osNumber : 'NOVA O.S.';
+    el('osOrderCategory').innerHTML = OS_CATEGORIES.map(category => '<option>'+escapeHtml(category)+'</option>').join('');
+    el('osOrderStatus').innerHTML = OS_STATUSES.map(status => '<option>'+escapeHtml(status)+'</option>').join('');
+    const companies = (osData && osData.companies) || [];
+    el('osOrderStore').innerHTML = '<option value="">SELECIONE A LOJA</option>'+
+      companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    el('osSituationOptions').innerHTML = OS_SITUATIONS.map(situation => '<option value="'+escapeHtml(situation)+'">').join('');
+    el('osOrderNumber').value = order ? order.osNumber : '';
+    el('osOrderCategory').value = order ? order.category : (osTab || OS_CATEGORIES[0]);
+    el('osOrderEquipment').value = order ? order.equipment : '';
+    el('osOrderStatus').value = order ? order.status : OS_STATUSES[0];
+    el('osOrderStore').value = order ? order.storeId : el('osStoreFilter').value;
+    el('osOrderDeadline').value = order ? order.deadline : '';
+    el('osOrderSituation').value = order ? order.situation : '';
+    el('osOrderFirstUpdateField').hidden = Boolean(order);
+    el('osOrderFormStatus').textContent = '';
+    el('osOrderDialog').showModal();
+  }
+
+  async function osOpenUpdates(order){
+    const canWrite = osCan('edit') && !order.closed;
+    el('osUpdateDialogTitle').textContent = 'O.S. '+order.osNumber+' · '+(order.equipment || order.category);
+    el('osUpdateHint').textContent = order.storeName+' · '+order.status+(order.deadline ? ' · LIMITE '+gdDateLabel(order.deadline)+' ('+osDeadlineLabel(order)+')' : '');
+    el('osUpdateFields').hidden = !canWrite;
+    el('btnOsUpdateSave').hidden = !canWrite;
+    el('osUpdateForm').dataset.orderId = order.id;
+    el('osUpdateText').value = '';
+    el('osUpdateFormStatus').textContent = '';
+    const history = el('osUpdateHistory');
+    history.innerHTML = '<p class="os-muted">Carregando…</p>';
+    el('osUpdateDialog').showModal();
+    try{
+      const {updates} = await osApiRequest('?updates='+encodeURIComponent(order.id));
+      history.innerHTML = updates.length
+        ? updates.map(item => '<div class="os-update-item"><small>'+escapeHtml((formatDateTimeBR(item.createdAt) || '')+' · '+(item.createdByName || ''))+'</small><p>'+escapeHtml(item.text)+'</p></div>').join('')
+        : '<p class="os-muted">Nenhuma atualização registrada.</p>';
+    }catch(error){ history.innerHTML = '<p class="os-muted">'+escapeHtml(error.message)+'</p>'; }
+  }
+
+  el('osTabs') && el('osTabs').addEventListener('click', event => {
+    const tab = event.target.closest('[data-os-tab]');
+    if(!tab) return;
+    osTab = tab.dataset.osTab;
+    renderOrdensServico();
+  });
+  el('btnOsReload') && el('btnOsReload').addEventListener('click', loadOrdensServicoPage);
+  el('osView') && el('osView').addEventListener('change', loadOrdensServicoPage);
+  ['osStoreFilter','osStatusFilter','osLevelFilter'].forEach(id => el(id) && el(id).addEventListener('change', renderOrdensServico));
+  el('osSearch') && el('osSearch').addEventListener('input', debounce(renderOrdensServico, 120));
+  el('btnOsNew') && el('btnOsNew').addEventListener('click', () => osOpenOrderDialog(null));
+  document.querySelectorAll('#osOrderDialog [data-os-close],#osUpdateDialog [data-os-close]').forEach(button =>
+    button.addEventListener('click', () => { const dialog = button.closest('dialog'); if(dialog.open) dialog.close(); }));
+
+  el('osOrderForm') && el('osOrderForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('osOrderFormStatus');
+    status.textContent = '';
+    const id = el('osOrderId').value;
+    if(!el('osOrderStore').value){ status.textContent = 'ESCOLHA A LOJA RESPONSÁVEL.'; return; }
+    const button = el('btnOsOrderSave');
+    button.disabled = true;
+    try{
+      await osSend(id ? 'PATCH' : 'POST', {
+        id,
+        osNumber: el('osOrderNumber').value,
+        category: el('osOrderCategory').value,
+        equipment: el('osOrderEquipment').value,
+        status: el('osOrderStatus').value,
+        storeId: el('osOrderStore').value,
+        deadline: el('osOrderDeadline').value,
+        situation: el('osOrderSituation').value,
+        updateText: id ? '' : el('osOrderFirstUpdate').value,
+      });
+      el('osOrderDialog').close();
+      showPurchaseToast(id ? 'O.S. alterada.' : 'O.S. cadastrada.');
+      await loadOrdensServicoPage();
+    }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+
+  el('osUpdateForm') && el('osUpdateForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('osUpdateFormStatus');
+    const text = el('osUpdateText').value.trim();
+    if(!text){ status.textContent = 'ESCREVA A ATUALIZAÇÃO.'; return; }
+    const button = el('btnOsUpdateSave');
+    button.disabled = true;
+    try{
+      await osSend('PUT', {id: el('osUpdateForm').dataset.orderId, text});
+      el('osUpdateDialog').close();
+      showPurchaseToast('Atualização registrada.');
+      await loadOrdensServicoPage();
+    }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+
+  el('osTableBody') && el('osTableBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-os-updates],[data-os-edit],[data-os-delete]');
+    if(!button) return;
+    const id = button.dataset.osUpdates || button.dataset.osEdit || button.dataset.osDelete;
+    const order = ((osData && osData.orders) || []).find(row => row.id === id);
+    if(!order) return;
+    if(button.dataset.osUpdates){ osOpenUpdates(order); return; }
+    if(button.dataset.osEdit){ osOpenOrderDialog(order); return; }
+    const ok = await askConfirm('EXCLUIR A O.S. '+order.osNumber+' ('+(order.equipment || order.category)+')?', {okText:'EXCLUIR', danger:true});
+    if(!ok) return;
+    try{
+      await osSend('DELETE', {id});
+      showPurchaseToast('O.S. excluída.');
+      await loadOrdensServicoPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
 
   // ---------- CONTROLE GD (painel de saldo) ----------
   let gdDashboardData = null;

@@ -4110,3 +4110,56 @@ export const auditLog = pgTable(
     index("audit_log_record_idx").on(table.recordId),
   ],
 );
+
+// Assistência > Ordens de Serviço — controle das O.S. em andamento (padrão da
+// planilha UNITEC: abas CONSOLE/INFORMÁTICA/CONTROLE/CELULAR/TERCEIRIZADO,
+// status, loja, data limite, observações e atualização diária). A lista sai
+// da mais crítica (data limite mais vencida) para a menos. A última
+// atualização fica copiada aqui para a lista; o histórico completo fica em
+// assist_service_order_updates. Excluir = canceled=1 (nada some do banco).
+export const assistServiceOrders = pgTable(
+  "assist_service_orders",
+  {
+    id: text("id").primaryKey(),
+    osNumber: text("os_number").notNull(),
+    category: text("category").notNull(),
+    equipment: text("equipment").notNull().default(""),
+    status: text("status").notNull().default(""),
+    storeId: text("store_id").notNull().default(""),
+    storeName: text("store_name").notNull().default(""),
+    // YYYY-MM-DD; '' = sem data limite (vai para o fim da lista).
+    deadline: text("deadline").notNull().default(""),
+    // Coluna OBSERVAÇÕES da planilha (NO PRAZO, AGUARDANDO ORÇAMENTO…).
+    situation: text("situation").notNull().default(""),
+    closed: integer("closed").notNull().default(0),
+    closedAt: text("closed_at").notNull().default(""),
+    lastUpdateText: text("last_update_text").notNull().default(""),
+    lastUpdateAt: text("last_update_at").notNull().default(""),
+    lastUpdateByName: text("last_update_by_name").notNull().default(""),
+    canceled: integer("canceled").notNull().default(0),
+    source: text("source").notNull().default("manual"),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [
+    index("assist_service_orders_open_idx").on(table.canceled, table.closed, table.deadline),
+    index("assist_service_orders_store_idx").on(table.storeId),
+  ],
+);
+
+export const assistServiceOrderUpdates = pgTable(
+  "assist_service_order_updates",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id").notNull(),
+    updateText: text("update_text").notNull(),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [index("assist_service_order_updates_order_idx").on(table.orderId, table.createdAt)],
+);

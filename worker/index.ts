@@ -73,6 +73,7 @@ type Permission =
   | "relatorio_nf:view" | "relatorio_nf:manage"
   | "controle_gd:view" | "controle_gd:create" | "controle_gd:edit" | "controle_gd:opening"
   | "gorduras_assistencia:view" | "gorduras_assistencia:create" | "gorduras_assistencia:edit" | "gorduras_assistencia:opening"
+  | "ordens_servico:view" | "ordens_servico:create" | "ordens_servico:edit" | "ordens_servico:delete"
   | "treinamento:view" | "treinamento:team"
   | "audit:view"
   | "rh_funcionarios:view" | "rh_funcionarios:create" | "rh_funcionarios:edit" | "rh_funcionarios:delete"
@@ -226,6 +227,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening",
   // Assistência > Controle Gorduras Assistência — clone do Controle de Gorduras.
   "gorduras_assistencia:view", "gorduras_assistencia:create", "gorduras_assistencia:edit", "gorduras_assistencia:opening",
+  // Assistência > Ordens de Serviço — permissão própria (login com loja só visualiza).
+  "ordens_servico:view", "ordens_servico:create", "ordens_servico:edit", "ordens_servico:delete",
   // Comercial > Treinamento (Unigames Academy) — permissão própria,
   // independente de comercial:* (ver MODULE_VIEW_PERMISSIONS.treinamento).
   "treinamento:view", "treinamento:team",
@@ -337,6 +340,7 @@ const APP_ROUTE_PATHS = new Set([
   "/divergencias",
   "/assistencia/orcamentos",
   "/assistencia/controle-gorduras",
+  "/assistencia/ordens-servico",
   "/entradas",
   "/insumos",
   "/aparelhos-emprestimo",
@@ -1358,6 +1362,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   ],
   relatorioNf: ["relatorio_nf:view", "relatorio_nf:manage"],
   controleGd: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
+  ordensServico: ["ordens_servico:view", "ordens_servico:create", "ordens_servico:edit", "ordens_servico:delete"],
   gordurasAssistencia: [
     "gorduras_assistencia:view", "gorduras_assistencia:create", "gorduras_assistencia:edit", "gorduras_assistencia:opening",
   ],
@@ -1450,6 +1455,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     // Cadastros > Auditoria — permissão própria (audit:view). Checado antes
     // do bucket "/cadastros/" (Base de Dados).
     [path === "/cadastros/auditoria" || path.startsWith("/api/audit"), "audit"],
+    // Assistência > Ordens de Serviço — permissão própria (ordens_servico:*),
+    // antes do prefixo /api/assistencia (Orçamentos).
+    [
+      path === "/assistencia/ordens-servico" || path.startsWith("/api/assistencia/ordens-servico"),
+      "ordensServico",
+    ],
     // Assistência > Controle Gorduras Assistência — permissão própria
     // (gorduras_assistencia:*), independente de assistencia:manage.
     [
