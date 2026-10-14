@@ -20212,7 +20212,12 @@ function renderHomeTasks(){
     const action = button.dataset.captureAction;
     const id = button.dataset.captureKey;
     const card = button.closest('.capture-card');
-    const destination = card && card.querySelector('[data-capture-destination]');
+    // Os cartões dos controles ficam dentro do cartão do console: buscar o seletor da própria linha.
+    const destination = card && card.querySelector('[data-capture-destination="'+CSS.escape(id)+'"]');
+    if(action === 'assign' && !(destination && destination.value)){
+      showPurchaseToast('ESCOLHA A LOJA DE DESTINO.','error');
+      return;
+    }
     if(action === 'delete'){
       if(!canAccess('captures:delete')) return;
       const row = captureRows.find(item => item.id === id);

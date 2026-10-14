@@ -992,6 +992,8 @@ test("implementa a captação por loja 100% via permissões granulares, sem flux
   assert.match(html, /data-capture-action="receive"/);
   assert.match(html, /data-capture-action="ready"/);
   assert.match(html, /data-capture-action="assign"/);
+  // Controles ficam dentro do cartão do console: cada botão lê o seletor da própria linha.
+  assert.match(html, /card\.querySelector\('\[data-capture-destination="'\+CSS\.escape\(id\)\+'"\]'\)/);
   assert.match(html, /function canReceiveCaptures\(\)\{/);
   assert.match(html, /value="assistance">ASSISTÊNCIA — FLUXO DE CAPTAÇÃO/);
   assert.match(html, /value="captures:view"> Visualizar/);
