@@ -4932,7 +4932,18 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
   assert.match(html, /<div class="print-only" id="assistPrintBody"><\/div>/);
   const print = extractNamedFunction(html, "assistPrintQuote");
   assert.match(print, /document\.title = 'ORCAMENTO-OS-'\+/);
-  assert.match(print, /document\.body\.classList\.add\('pdf-export'\);\s*window\.print\(\);/);
+  assert.match(print, /document\.body\.classList\.add\('pdf-export', 'assist-printing'\);\s*window\.print\(\);/);
+  // Folha limpa em qualquer tema: regra final de impressão sem fundo do tema
+  // (Vidro usa body::before) e só o documento no PDF do orçamento.
+  const lastPrint = html.slice(html.lastIndexOf("@media print{"), html.indexOf("</style>", html.lastIndexOf("@media print{")));
+  assert.match(lastPrint, /:root,html\[data-theme\]\{/);
+  assert.match(lastPrint, /html,html\[data-theme\],body,html\[data-theme\] body\{background:#fff !important; background-image:none !important;/);
+  assert.match(lastPrint, /body::before,body::after\{display:none !important;/);
+  assert.match(lastPrint, /backdrop-filter:none !important; box-shadow:none !important;/);
+  assert.match(lastPrint, /body\.assist-printing #pageAssistenciaOrcamentos > :not\(#assistPrintBody\)\{display:none !important;\}/);
+  assert.match(lastPrint, /\.assist-doc-table thead\{display:table-header-group;\}/);
+  assert.equal(html.indexOf("@media print{", html.indexOf(lastPrint) + 1), -1, "regra de folha limpa é a última");
+  assert.match(html, /@page\{size:A4 portrait; margin:12mm;\}/);
   // O aviso "Orçamento salvo." aparece logo antes do print: nunca sai no PDF.
   assert.match(html, /footer\.hint, \.no-print, \.purchase-toast,\n/);
   assert.match(extractNamedFunction(html, "assistDocHtml"), /Assistência Técnica Especializada · '\+\(assistCompanyLogo\(company\) === 'pa' \? 'Paulista Acessórios' : 'Unigames'\)/);
