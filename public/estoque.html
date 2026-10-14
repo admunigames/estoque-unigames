@@ -2677,7 +2677,7 @@
   .os-update-item{padding:9px 11px;border:1px solid var(--inset-border);border-radius:10px;background:var(--bg-card-2);}
   .os-update-item small{color:var(--ink-faint);font:700 8.5px/1.3 var(--mono);}
   .os-update-item p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;}
-  #osTabs{flex-wrap:wrap;margin-bottom:12px;}
+  #osTabs,#prcTabs{flex-wrap:wrap;margin-bottom:12px;}
   .supply-admin-tabs{margin-bottom:16px;}
   .supply-admin-tab-panel{display:grid;gap:12px;}
   .supply-category-form{display:flex;gap:8px;max-width:420px;}
@@ -3831,7 +3831,7 @@
         <a class="nav-item sub-item" id="navNotasOs" data-page="notasOs" data-permission="os_notes" data-home-desc="Peça a nota de uma O.S. e acompanhe o anexo enviado pela administração." title="Notas de O.S." href="/solicitacoes/notas-os"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas de O.S.</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="assistencia,gorduras_assistencia,ordens_servico">
+    <div class="nav-group" data-any-permission="assistencia,gorduras_assistencia,ordens_servico,precos_assistencia">
       <button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Assistência</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -3839,6 +3839,7 @@
         <a class="nav-item sub-item" id="navAssistenciaOrcamentos" data-page="assistenciaOrcamentos" data-permission="assistencia:manage" data-home-desc="Monte o orçamento da assistência técnica com a tabela de valores e gere o PDF com os dados da loja." title="Orçamentos" href="/assistencia/orcamentos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Orçamentos</span></a>
         <a class="nav-item sub-item" id="navAssistenciaControleGorduras" data-page="assistenciaControleGorduras" data-permission="gorduras_assistencia" data-home-desc="Gordura da assistência por venda (data, ID, vendedor e valor), saldo anterior e total do mês por loja, com alerta de status e relatório para WhatsApp." title="Controle Gorduras Assistência" href="/assistencia/controle-gorduras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle Gorduras Assistência</span></a>
         <a class="nav-item sub-item" id="navAssistenciaOrdensServico" data-page="assistenciaOrdensServico" data-permission="ordens_servico" data-home-desc="Ordens de serviço em andamento por tipo (console, informática, controle, celular, terceirizado), com data limite, status e atualização diária; as mais críticas aparecem primeiro." title="Ordens de Serviço" href="/assistencia/ordens-servico"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3"/><path d="M8.5 11l1.5 1.5 3-3"/><line x1="8.5" y1="16" x2="15.5" y2="16"/></svg></span><span class="nav-label">Ordens de Serviço</span></a>
+        <a class="nav-item sub-item" id="navAssistenciaPrecos" data-page="assistenciaPrecos" data-permission="precos_assistencia" data-home-desc="Tabela de valores de conserto (display, tampa traseira, conector e bateria) por marca e modelo; as lojas consultam e a assistência atualiza." title="Consulta de Preços" href="/assistencia/precos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><span class="nav-label">Consulta de Preços</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="comercial,controle_gd,treinamento">
@@ -7124,6 +7125,38 @@
     </section>
 
 
+    <!-- ================= ASSISTÊNCIA / CONSULTA DE PREÇOS ================= -->
+    <section id="pageAssistenciaPrecos" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Consulta de Preços</h2>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnPrcReload" type="button">ATUALIZAR</button>
+          <button class="btn-accent" id="btnPrcNew" type="button" hidden>NOVO PREÇO</button>
+        </div>
+      </header>
+
+      <div class="supply-tabs" role="tablist" aria-label="Serviços" id="prcTabs"></div>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="prcBrand">MARCA</label><select id="prcBrand"></select></div>
+        <div class="field"><label for="prcSearch">BUSCAR MODELO</label><input type="search" id="prcSearch" placeholder="Ex.: A15, iPhone 13, G54"></div>
+      </div>
+
+      <h3 class="supply-section-title" id="prcListTitle">VALORES DE CONSERTO</h3>
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="prcTable">
+            <thead><tr><th>Serviço</th><th>Marca</th><th>Modelo</th><th>Valor</th><th>Atualizado</th><th></th></tr></thead>
+            <tbody id="prcTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="gd-entries-footer" id="prcFooter"></div>
+    </section>
+
     <!-- ================= ASSISTÊNCIA / ORDENS DE SERVIÇO ================= -->
     <section id="pageAssistenciaOrdensServico" class="page wrap">
       <header class="page-header">
@@ -9460,6 +9493,15 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Assistência - Consulta de Preços</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="precos_assistencia:view"> Consultar os preços de conserto (lojas)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="precos_assistencia:create"> Cadastrar preço (só login sem loja: assistência)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="precos_assistencia:edit"> Alterar preço (só login sem loja: assistência)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="precos_assistencia:delete"> Excluir preço (só login sem loja: assistência)</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Assistência - Controle Gorduras Assistência</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="gorduras_assistencia:view"> Ver as gorduras e o saldo (login com loja só visualiza a própria loja)</label>
@@ -11023,6 +11065,27 @@
       <a class="btn-accent" id="btnDownloadCashFlowImage" download="fluxo-de-caixa.png" href="#">BAIXAR PNG</a>
     </div>
   </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="prcDialog" aria-labelledby="prcDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="prcDialogTitle">NOVO PREÇO</h3>
+    <button class="purchase-dialog-close" type="button" data-prc-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="prcForm">
+    <input type="hidden" id="prcId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="prcService">SERVIÇO *</label><select id="prcService" required></select></div>
+      <div class="purchase-field"><label for="prcFormBrand">MARCA *</label><input type="text" id="prcFormBrand" list="prcBrandOptions" maxlength="60" autocomplete="off" required><datalist id="prcBrandOptions"></datalist></div>
+      <div class="purchase-field"><label for="prcModel">MODELO *</label><input type="text" id="prcModel" maxlength="160" autocomplete="off" required></div>
+      <div class="purchase-field full"><label for="prcAmount">VALOR (VAZIO = SOB CONSULTA)</label><input type="text" inputmode="decimal" id="prcAmount" placeholder="R$ 0,00"></div>
+    </div>
+    <div class="user-form-status" id="prcFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-prc-close>CANCELAR</button>
+      <button class="btn-accent" id="btnPrcSave" type="submit">SALVAR</button>
+    </div>
+  </form>
 </dialog>
 
 <dialog class="purchase-dialog" id="osOrderDialog" aria-labelledby="osOrderDialogTitle">
@@ -13457,6 +13520,7 @@
     comercialControleGd:'/comercial/controle-gd',
     assistenciaControleGorduras:'/assistencia/controle-gorduras',
     assistenciaOrdensServico:'/assistencia/ordens-servico',
+    assistenciaPrecos:'/assistencia/precos',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
@@ -13519,6 +13583,7 @@
     comercialControleGd:'CONTROLE DE GORDURAS',
     assistenciaControleGorduras:'CONTROLE GORDURAS ASSISTÊNCIA',
     assistenciaOrdensServico:'ORDENS DE SERVIÇO',
+    assistenciaPrecos:'CONSULTA DE PREÇOS',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
@@ -13577,6 +13642,7 @@
     comercialControleGd:'controle_gd',
     assistenciaControleGorduras:'gorduras_assistencia',
     assistenciaOrdensServico:'ordens_servico',
+    assistenciaPrecos:'precos_assistencia',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
@@ -14252,7 +14318,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'comercialRelatorioNf';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico';
+    const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico' || name === 'assistenciaPrecos';
     const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroCrediarios' || name === 'financeiroConciliacaoVendas' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialTreinamento';
     document.body.classList.toggle('home-active', isHome);
@@ -14346,6 +14412,7 @@
     if(name === 'comercialControleGd') loadControleGdPage('comercial');
     if(name === 'assistenciaControleGorduras') loadControleGdPage('assistencia');
     if(name === 'assistenciaOrdensServico') loadOrdensServicoPage();
+    if(name === 'assistenciaPrecos') loadPrecosPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -14412,6 +14479,7 @@
     if(name === 'comercialControleGd') loadControleGdPage('comercial');
     if(name === 'assistenciaControleGorduras') loadControleGdPage('assistencia');
     if(name === 'assistenciaOrdensServico') loadOrdensServicoPage();
+    if(name === 'assistenciaPrecos') loadPrecosPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -26706,6 +26774,130 @@ function renderHomeTasks(){
   el('btnAuditMore') && el('btnAuditMore').addEventListener('click', () => loadAuditPage(false));
   ['auditFrom','auditTo','auditModule'].forEach(id => el(id) && el(id).addEventListener('change', () => loadAuditPage(true)));
   ['auditUser','auditQuery'].forEach(id => el(id) && el(id).addEventListener('keydown', event => { if(event.key === 'Enter') loadAuditPage(true); }));
+
+  // ---------- ASSISTÊNCIA · CONSULTA DE PREÇOS ----------
+  // Tabela única para todas as lojas; só a assistência (login sem loja)
+  // altera — o backend também bloqueia.
+  let prcData = null;
+  let prcTab = '';
+  const prcCan = action => (currentSession.role === 'admin' || !currentSession.companyId) && canAccess('precos_assistencia:'+action);
+  async function prcApi(method, body){
+    const response = await fetch('/api/assistencia/precos', {
+      method: method || 'GET', cache:'no-store',
+      headers: body ? {Accept:'application/json','Content-Type':'application/json'} : {Accept:'application/json'},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){ location.assign('/login?next='+encodeURIComponent(location.pathname)); throw new Error('SESSÃO EXPIRADA.'); }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+  const prcValue = cents => cents === null || cents === undefined ? 'SOB CONSULTA' : formatCentsBRL(cents);
+
+  function renderPrecos(){
+    if(!prcData) return;
+    const all = prcData.prices;
+    if(!prcTab || !prcData.services.includes(prcTab)) prcTab = prcData.services[0];
+    el('prcTabs').innerHTML = prcData.services.map(service =>
+      '<button class="supply-tab'+(service === prcTab ? ' active' : '')+'" type="button" role="tab" aria-selected="'+(service === prcTab)+'" data-prc-tab="'+escapeHtml(service)+'">'+escapeHtml(service)+' ('+all.filter(row => row.service === service).length+')</button>'
+    ).join('');
+    const inTab = all.filter(row => row.service === prcTab);
+    const brandSelect = el('prcBrand');
+    const brands = [...new Set(inTab.map(row => row.brand))].sort();
+    const previous = brandSelect.value;
+    brandSelect.innerHTML = '<option value="">TODAS AS MARCAS</option>'+brands.map(brand => '<option>'+escapeHtml(brand)+'</option>').join('');
+    if(brands.includes(previous)) brandSelect.value = previous;
+    const brand = brandSelect.value;
+    const terms = el('prcSearch').value.trim().toLocaleUpperCase('pt-BR').split(/\s+/).filter(Boolean);
+    const rows = inTab.filter(row => (!brand || row.brand === brand) && terms.every(term => (row.brand+' '+row.model).includes(term)));
+    el('prcListTitle').textContent = prcTab;
+    el('prcFooter').textContent = rows.length+' DE '+inTab.length+' MODELO'+(inTab.length === 1 ? '' : 'S');
+    const canEdit = prcCan('edit');
+    const canDelete = prcCan('delete');
+    el('prcTableBody').innerHTML = rows.length ? rows.map(row =>
+      '<tr>'+
+        '<td data-label="Serviço">'+escapeHtml(row.service)+'</td>'+
+        '<td data-label="Marca">'+escapeHtml(row.brand)+'</td>'+
+        '<td data-label="Modelo"><strong>'+escapeHtml(row.model)+'</strong></td>'+
+        '<td data-label="Valor" style="white-space:nowrap;font-weight:800;">'+escapeHtml(prcValue(row.priceCents))+'</td>'+
+        '<td data-label="Atualizado"><small class="os-update-meta">'+escapeHtml((row.updatedByName || row.createdByName || '')+' · '+(formatDateTimeBR(row.updatedAt || row.createdAt) || ''))+'</small></td>'+
+        '<td style="white-space:nowrap">'+
+          (canEdit ? '<button class="btn-outline btn-sm" type="button" data-prc-edit="'+escapeHtml(row.id)+'">EDITAR</button> ' : '')+
+          (canDelete ? '<button class="btn-outline btn-sm" type="button" data-prc-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+
+        '</td>'+
+      '</tr>'
+    ).join('') : '<tr><td colspan="6" class="responsive-empty">Nenhum modelo encontrado.</td></tr>';
+  }
+
+  async function loadPrecosPage(){
+    try{
+      prcData = await prcApi();
+      el('btnPrcNew').hidden = !prcCan('create');
+      renderPrecos();
+    }catch(error){
+      el('prcTableBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function prcOpenDialog(row){
+    el('prcForm').reset();
+    el('prcId').value = row ? row.id : '';
+    el('prcDialogTitle').textContent = row ? 'EDITAR PREÇO' : 'NOVO PREÇO';
+    el('prcService').innerHTML = ((prcData && prcData.services) || []).map(service => '<option>'+escapeHtml(service)+'</option>').join('');
+    el('prcService').value = row ? row.service : prcTab;
+    el('prcBrandOptions').innerHTML = [...new Set(((prcData && prcData.prices) || []).map(item => item.brand))].sort().map(brand => '<option value="'+escapeHtml(brand)+'">').join('');
+    el('prcFormBrand').value = row ? row.brand : el('prcBrand').value;
+    el('prcModel').value = row ? row.model : '';
+    const amount = el('prcAmount');
+    attachCurrencyMask(amount);
+    setCurrencyValue(amount, row && row.priceCents !== null ? row.priceCents / 100 : '');
+    el('prcFormStatus').textContent = '';
+    el('prcDialog').showModal();
+  }
+
+  el('prcTabs') && el('prcTabs').addEventListener('click', event => {
+    const tab = event.target.closest('[data-prc-tab]');
+    if(!tab) return;
+    prcTab = tab.dataset.prcTab;
+    el('prcBrand').value = '';
+    renderPrecos();
+  });
+  el('prcBrand') && el('prcBrand').addEventListener('change', renderPrecos);
+  el('prcSearch') && el('prcSearch').addEventListener('input', debounce(renderPrecos, 120));
+  el('btnPrcReload') && el('btnPrcReload').addEventListener('click', loadPrecosPage);
+  el('btnPrcNew') && el('btnPrcNew').addEventListener('click', () => prcOpenDialog(null));
+  document.querySelectorAll('#prcDialog [data-prc-close]').forEach(button => button.addEventListener('click', () => { if(el('prcDialog').open) el('prcDialog').close(); }));
+  el('prcForm') && el('prcForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('prcFormStatus');
+    status.textContent = '';
+    const id = el('prcId').value;
+    const raw = getCurrencyValue(el('prcAmount'));
+    const cents = raw ? parseBRLToCents(raw) : null;
+    const button = el('btnPrcSave');
+    button.disabled = true;
+    try{
+      await prcApi(id ? 'PATCH' : 'POST', {id, service: el('prcService').value, brand: el('prcFormBrand').value, model: el('prcModel').value, priceCents: cents || null});
+      el('prcDialog').close();
+      showPurchaseToast(id ? 'Preço alterado.' : 'Preço cadastrado.');
+      await loadPrecosPage();
+    }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+  el('prcTableBody') && el('prcTableBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-prc-edit],[data-prc-delete]');
+    if(!button) return;
+    const row = ((prcData && prcData.prices) || []).find(item => item.id === (button.dataset.prcEdit || button.dataset.prcDelete));
+    if(!row) return;
+    if(button.dataset.prcEdit){ prcOpenDialog(row); return; }
+    const ok = await askConfirm('EXCLUIR O PREÇO DE '+row.service+' · '+row.brand+' '+row.model+'?', {okText:'EXCLUIR', danger:true});
+    if(!ok) return;
+    try{
+      await prcApi('DELETE', {id: row.id});
+      showPurchaseToast('Preço excluído.');
+      await loadPrecosPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
 
   // ---------- ASSISTÊNCIA · ORDENS DE SERVIÇO ----------
   // Padrão da planilha UNITEC: abas por tipo, status, loja, data limite,

@@ -18,6 +18,7 @@ const MODULE_LABELS: [string, string][] = [
   ["/api/relatorio-nf", "RELATÓRIO NF"],
   ["/api/divergences", "DIVERGÊNCIAS"],
   ["/api/assistencia/ordens-servico", "ORDENS DE SERVIÇO"],
+  ["/api/assistencia/precos", "CONSULTA DE PREÇOS"],
   ["/api/assistencia", "ASSISTÊNCIA"],
   ["/api/captures", "CAPTAÇÃO"],
   ["/api/checklists", "MISSÕES"],

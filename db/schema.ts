@@ -4172,3 +4172,28 @@ export const assistServiceOrderUpdates = pgTable(
   },
   (table) => [index("assist_service_order_updates_order_idx").on(table.orderId, table.createdAt)],
 );
+
+// Assistência > Consulta de Preços — tabela de valores de conserto de
+// aparelhos (planilha ORÇAMENTO CELULAR: display/tela frontal, tampa/vidro
+// traseiro, conector/doc de carga e bateria) por marca e modelo. A loja só
+// consulta; a assistência cadastra/edita/exclui. price_cents NULL = SOB
+// CONSULTA. Excluir = deleted=1.
+export const assistRepairPrices = pgTable(
+  "assist_repair_prices",
+  {
+    id: text("id").primaryKey(),
+    service: text("service").notNull(),
+    brand: text("brand").notNull().default(""),
+    model: text("model").notNull(),
+    priceCents: integer("price_cents"),
+    deleted: integer("deleted").notNull().default(0),
+    source: text("source").notNull().default("manual"),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("assist_repair_prices_service_idx").on(table.deleted, table.service, table.brand)],
+);
