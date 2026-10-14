@@ -46,6 +46,8 @@ export function insertDeclarationStatement(
     actorId: string;
     who: string;
     plannedCents?: number;
+    /** Digitado (valor cobrado); ausente = calculado. */
+    percentageRentCents?: number;
   },
 ) {
   const derived = deriveMallDeclaration(row);
@@ -61,6 +63,6 @@ export function insertDeclarationStatement(
     .bind(
       row.id, row.companyId, row.companyName, row.competenceMonth, row.realRevenueCents,
       derived.breakpointCents, row.declaredCents, row.contractPercentBps, row.minimumRentCents,
-      derived.percentageRentCents, row.percentageRentPaid, row.notes, row.actorId, row.who, row.plannedCents ?? 0,
+      row.percentageRentCents ?? derived.percentageRentCents, row.percentageRentPaid, row.notes, row.actorId, row.who, row.plannedCents ?? 0,
     );
 }

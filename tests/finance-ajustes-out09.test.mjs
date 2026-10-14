@@ -157,3 +157,14 @@ test("Uber (rota): importar a planilha casa com a fatura; repetida pulada; conci
   assert.equal((await json(await call("GET"))).rides.length, 2);
   assert.equal((await call("GET", undefined, NO_FINANCE)).status, 403);
 });
+
+test("Declaração: ALUGUEL PERCENTUAL digitado substitui o calculado; sem digitar, vale o cálculo", async () => {
+  const base = { companyId: TACARUNA, companyName: "TACARUNA", competenceMonth: "2026-01", realRevenueCents: 23516389,
+    declaredCents: 13000000, contractPercentBps: 600, minimumRentCents: 829210, percentageRentPaid: true };
+  const created = await json(await post(declList.POST, "/api/finance/mall-declarations", { ...base, percentageRentCents: 150000 }));
+  const row = async () => (await json(await get(declList.GET, "/api/finance/mall-declarations?month=2026-01"))).rows.find((r) => r.id === created.id);
+  assert.equal((await row()).derived.percentageRentCents, 150000); // calculado daria 0 (abaixo do ponto de virada)
+  await post(declList.POST, "/api/finance/mall-declarations", { ...base, id: created.id, declaredCents: 15000000 });
+  assert.equal((await row()).derived.percentageRentCents, 70790); // 6% × 150.000 − 8.292,10
+  assert.equal((await post(declList.POST, "/api/finance/mall-declarations", { ...base, id: created.id, percentageRentCents: -5 })).status, 400);
+});

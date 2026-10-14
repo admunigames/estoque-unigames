@@ -5067,7 +5067,9 @@ test("Financeiro > Declaração de Vendas: nome novo, campos retirados, lote e a
   assert.match(html, /PUXADO DO FATURAMENTO CADASTRADO/);
   assert.match(html, /FATURAMENTO NÃO CADASTRADO PARA ESTE MÊS/);
   assert.match(html, /id="declShoppingSugerido" readonly/);
-  assert.match(html, /id="declShoppingAluguelPct" readonly/);
+  // Aluguel percentual: vem calculado, mas pode ser digitado (valor cobrado) — vazio volta ao cálculo.
+  assert.match(html, /id="declShoppingAluguelPct" placeholder="R\$ 0,00"/);
+  assert.match(html, /percentageRentCents: hasPct && el\('declShoppingAluguelPct'\)\.dataset\.manual === '1'/);
   // Cadastro em lote.
   assert.match(html, /id="btnBatchDeclShopping" type="button">\+ CADASTRAR EM LOTE</);
   assert.match(html, /<dialog class="purchase-dialog decl-batch-dialog" id="declBatchDialog"/);

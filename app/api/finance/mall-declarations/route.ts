@@ -30,7 +30,7 @@ const SELECT_COLUMNS = `id, company_id AS companyId, company_name AS companyName
   competence_month AS competenceMonth, real_revenue_cents AS realRevenueCents,
   declared_cents AS declaredCents, planned_cents AS plannedCents,
   contract_percent_bps AS contractPercentBps, minimum_rent_cents AS minimumRentCents,
-  percentage_rent_paid AS percentageRentPaid, notes,
+  percentage_rent_cents AS percentageRentCents, percentage_rent_paid AS percentageRentPaid, notes,
   created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
   updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt`;
 
@@ -41,7 +41,8 @@ function withDerived(row: Row) {
     contractPercentBps: Number(row.contractPercentBps) || 0,
     minimumRentCents: Number(row.minimumRentCents) || 0,
   });
-  return { ...row, derived };
+  // Aluguel percentual: o salvo (pode ter sido digitado — valor cobrado pelo shopping).
+  return { ...row, derived: { ...derived, percentageRentCents: Number(row.percentageRentCents) || 0 } };
 }
 
 export async function GET(request: Request) {
@@ -106,6 +107,11 @@ export async function POST(request: Request) {
     const values = parseDeclarationValues(body);
     if ("error" in values) return jsonResponse(values, 400);
     const percentageRentPaid = body.percentageRentPaid === true || body.percentageRentPaid === 1 ? 1 : 0;
+    // Aluguel percentual digitado (valor cobrado) substitui o calculado; ausente = calculado.
+    const typedRent = body.percentageRentCents === undefined || body.percentageRentCents === null || body.percentageRentCents === "" ? null : Number(body.percentageRentCents);
+    if (typedRent !== null && !(Number.isInteger(typedRent) && typedRent >= 0)) {
+      return jsonResponse({ error: "INFORME UM VALOR VÁLIDO PARA O ALUGUEL PERCENTUAL." }, 400);
+    }
     const notes = safeText(body.notes, 2000);
 
     const database = await getD1();
@@ -120,6 +126,7 @@ export async function POST(request: Request) {
       realRevenueCents = Number(revenue?.amountCents) || 0;
     }
     const derived = deriveMallDeclaration({ ...values, realRevenueCents });
+    const percentageRentCents = values.contractPercentBps && typedRent !== null ? typedRent : derived.percentageRentCents;
 
     const existing = editId
       ? await database
@@ -155,7 +162,7 @@ export async function POST(request: Request) {
         .bind(
           companyId, companyName, competenceMonth, realRevenueCents, derived.breakpointCents,
           values.declaredCents, values.contractPercentBps, values.minimumRentCents,
-          derived.percentageRentCents, percentageRentPaid, notes, actor.id, who, editId,
+          percentageRentCents, percentageRentPaid, notes, actor.id, who, editId,
         )
         .run();
       return jsonResponse({ updated: true, id: editId });
@@ -165,7 +172,7 @@ export async function POST(request: Request) {
     await insertDeclarationStatement(database, {
       id, companyId, companyName, competenceMonth, realRevenueCents,
       declaredCents: values.declaredCents, contractPercentBps: values.contractPercentBps,
-      minimumRentCents: values.minimumRentCents, percentageRentPaid, notes, actorId: actor.id, who,
+      minimumRentCents: values.minimumRentCents, percentageRentCents, percentageRentPaid, notes, actorId: actor.id, who,
     }).run();
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {

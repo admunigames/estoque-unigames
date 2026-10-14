@@ -193,7 +193,7 @@ test("faturamento real é puxado de finance_store_revenue quando vem vazio; suge
   sqlite.prepare("INSERT INTO finance_store_revenue (id, store_id, month, amount_cents) VALUES ('r1','lojaA','2026-08',12000000)").run();
   const res = await call(route.POST, ADMIN, "POST", "/api/finance/mall-declarations", {
     companyId: "lojaA", companyName: "LOJA A", competenceMonth: "2026-08", declaredCents: 11_000_000,
-    contractPercentBps: 700, minimumRentCents: 700_000, suggestedDeclaredCents: 1, percentageRentCents: 1,
+    contractPercentBps: 700, minimumRentCents: 700_000, suggestedDeclaredCents: 1,
     mallName: "IGNORADO", amountPaidCents: 999,
   });
   assert.equal(res.status, 201);

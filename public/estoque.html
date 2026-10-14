@@ -9936,7 +9936,7 @@
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingPercentual">PERCENTUAL CONTRATUAL (%)</label><input type="number" id="declShoppingPercentual" min="0" max="100" step="0.01" placeholder="Ex.: 7"></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="text" inputmode="decimal" id="declShoppingMinimo" placeholder="R$ 0,00"></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="text" id="declShoppingSugerido" readonly placeholder="—"><small class="purchase-field-help" id="declShoppingSugeridoConta"></small></div>
-      <div class="purchase-field" data-decl-pct-field><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="text" id="declShoppingAluguelPct" readonly placeholder="—"><small class="purchase-field-help">CALCULADO: DECLARADO × % − MÍNIMO</small></div>
+      <div class="purchase-field" data-decl-pct-field><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="text" inputmode="decimal" id="declShoppingAluguelPct" placeholder="R$ 0,00"><small class="purchase-field-help" id="declShoppingAluguelPctInfo">CALCULADO: DECLARADO × % − MÍNIMO · PODE DIGITAR O VALOR COBRADO</small></div>
       <div class="purchase-field full" data-decl-pct-field><label class="assist-check" for="declShoppingPctPago"><input type="checkbox" id="declShoppingPctPago"> ALUGUEL PERCENTUAL PAGO</label></div>
       <div class="purchase-field full"><label for="declShoppingObs">OBSERVAÇÕES</label><textarea id="declShoppingObs" rows="2" maxlength="2000"></textarea></div>
     </div>
@@ -36943,6 +36943,8 @@ function renderHomeTasks(){
       contractPercentBps: hasPct ? declPctToBps(el('declShoppingPercentual').value) : 0,
       minimumRentCents: hasPct ? declMoneyCents(el('declShoppingMinimo')) : 0,
       percentageRentPaid: hasPct && el('declShoppingPctPago').checked,
+      // Digitado (valor cobrado pelo shopping) substitui o calculado; vazio = calculado.
+      percentageRentCents: hasPct && el('declShoppingAluguelPct').dataset.manual === '1' ? declMoneyCents(el('declShoppingAluguelPct')) : undefined,
       notes: el('declShoppingObs').value
     };
   }
@@ -36955,7 +36957,11 @@ function renderHomeTasks(){
     el('declShoppingSugeridoConta').textContent = d.breakpointCents
       ? formatCentsBRL(d.breakpointCents)+' = '+formatCentsBRL(f.minimumRentCents)+' ÷ '+declPctLabel(f.contractPercentBps)
       : 'INFORME O PERCENTUAL E O ALUGUEL MÍNIMO.';
-    el('declShoppingAluguelPct').value = hasPct ? formatCentsBRL(d.percentageRentCents) : '';
+    const rentInput = el('declShoppingAluguelPct');
+    if(rentInput.dataset.manual !== '1') setCurrencyValue(rentInput, hasPct ? d.percentageRentCents / 100 : '');
+    el('declShoppingAluguelPctInfo').textContent = rentInput.dataset.manual === '1'
+      ? 'DIGITADO · CALCULADO SERIA '+formatCentsBRL(d.percentageRentCents)+' (APAGUE PARA VOLTAR AO CÁLCULO)'
+      : 'CALCULADO: DECLARADO × % − MÍNIMO · PODE DIGITAR O VALOR COBRADO';
     const hint = el('declShoppingCalcHint');
     if(!hasPct || !d.breakpointCents){ hint.textContent = ''; return; }
     let msg = 'PONTO DE VIRADA: '+formatCentsBRL(d.breakpointCents)+' (ATÉ ESTE VALOR DECLARADO O ALUGUEL PERCENTUAL FICA ZERADO).';
@@ -37000,7 +37006,8 @@ function renderHomeTasks(){
   let declShoppingCurrentId = '';
   function openDeclShoppingDialog(row){
     el('declShoppingForm').reset();
-    ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo'].forEach(id => setCurrencyValue(el(id), ''));
+    ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => setCurrencyValue(el(id), ''));
+    el('declShoppingAluguelPct').dataset.manual = '';
     fase8CompanyOptions('declShoppingLojaForm', '');
     declShoppingCurrentId = row ? row.id : '';
     el('declShoppingId').value = declShoppingCurrentId;
@@ -37017,6 +37024,12 @@ function renderHomeTasks(){
       setCurrencyValue(el('declShoppingMinimo'), row.minimumRentCents ? row.minimumRentCents / 100 : '');
       el('declShoppingPctPago').checked = !!row.percentageRentPaid;
       el('declShoppingObs').value = row.notes || '';
+      // Valor salvo diferente do cálculo = foi digitado: mantém.
+      const savedRent = Number(row.derived && row.derived.percentageRentCents) || 0;
+      if(savedRent !== declShoppingDerive(declShoppingReadForm()).percentageRentCents){
+        el('declShoppingAluguelPct').dataset.manual = '1';
+        setCurrencyValue(el('declShoppingAluguelPct'), savedRent / 100);
+      }
     }
     el('declShoppingFormStatus').textContent = '';
     declShoppingUpdateHint();
@@ -37061,7 +37074,11 @@ function renderHomeTasks(){
       showPurchaseToast('Anexo enviado.');
     }catch(error){ status.textContent = error.message; }
   });
-  ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo'].forEach(id => attachCurrencyMask(el(id)));
+  ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => attachCurrencyMask(el(id)));
+  el('declShoppingAluguelPct').addEventListener('input', () => {
+    el('declShoppingAluguelPct').dataset.manual = getCurrencyValue(el('declShoppingAluguelPct')) === '' ? '' : '1';
+    declShoppingUpdateHint();
+  });
   ['declShoppingFatReal','declShoppingDeclarado','declShoppingPercentual','declShoppingMinimo','declShoppingTemPct'].forEach(id => {
     el(id).addEventListener('input', declShoppingUpdateHint);
     el(id).addEventListener('change', declShoppingUpdateHint);
