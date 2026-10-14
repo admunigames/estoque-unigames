@@ -18,6 +18,7 @@ import {
 } from "./live-updates";
 
 import { isSellerRole } from "../app/lib/commercial";
+import { isSellingStore } from "../app/lib/selling-stores";
 import { auditAction, auditModule, auditRecordId, auditSummary, shouldAudit } from "../app/lib/audit";
 import { documentsApiAllowed, isCommercialOnlyAccess } from "../app/lib/documents-access";
 
@@ -2701,23 +2702,6 @@ function parseRoutineWeekdays(text: string): number[] {
     .filter((item) => Number.isInteger(item) && item >= 0 && item <= 6);
 }
 
-const ROUTINE_DIACRITICS_PATTERN = new RegExp(
-  "[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + "]",
-  "g",
-);
-
-// Depósito e Assistência são setores internos, não lojas — não recebem rotinas gerais.
-function isNonStoreCompany(name: string) {
-  const normalized = name.toLowerCase().normalize("NFD").replace(ROUTINE_DIACRITICS_PATTERN, "").trim();
-  if (/\bassistencia\b/.test(normalized) || normalized.includes("assistance")) return true;
-  return (
-    /\bdeposito\b/.test(normalized) ||
-    normalized === "cd" ||
-    normalized.startsWith("cd ") ||
-    normalized.includes("centro de distribuicao")
-  );
-}
-
 async function routineStoreCompanies(env: Env): Promise<RoutineCompanyRecord[]> {
   try {
     const row = await env.DB
@@ -2731,7 +2715,7 @@ async function routineStoreCompanies(env: Env): Promise<RoutineCompanyRecord[]> 
         typeof item === "object" &&
         typeof item.id === "string" &&
         typeof item.name === "string" &&
-        !isNonStoreCompany(item.name),
+        isSellingStore(item.name),
     );
   } catch {
     return [];

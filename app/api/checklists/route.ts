@@ -2,6 +2,7 @@ import webPush from "web-push";
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
 import { canSeeAllStores } from "../../lib/access-scope";
+import { isSellingStore } from "../../lib/selling-stores";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -154,21 +155,6 @@ function sameOrigin(request: Request) {
   return allowedOrigins.has(origin);
 }
 
-// Depósito e Assistência são setores internos, não lojas — não recebem checklist.
-function isNonStoreCompany(name: string) {
-  const normalized = name.toLowerCase().normalize("NFD").replace(DIACRITICS_PATTERN, "").trim();
-  if (/\bassistencia\b/.test(normalized) || normalized.includes("assistance")) return true;
-  if (
-    /\bdeposito\b/.test(normalized) ||
-    normalized === "cd" ||
-    normalized.startsWith("cd ") ||
-    normalized.includes("centro de distribuicao")
-  ) {
-    return true;
-  }
-  return false;
-}
-
 async function storeCompanies(database: D1Database): Promise<CompanyRecord[]> {
   try {
     const row = await database
@@ -182,7 +168,7 @@ async function storeCompanies(database: D1Database): Promise<CompanyRecord[]> {
         typeof item === "object" &&
         typeof item.id === "string" &&
         typeof item.name === "string" &&
-        !isNonStoreCompany(item.name),
+        isSellingStore(item.name),
     );
   } catch {
     return [];

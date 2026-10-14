@@ -1,6 +1,6 @@
 // Assistência e Depósito (CD) são setores internos, não lojas: não vendem nem
-// emitem nota de venda. Regra única usada pelo Controle de Gorduras e pelo
-// Relatório NF (mesmo critério de isNonStoreCompany em worker/index.ts).
+// emitem nota de venda. Regra única usada pelo Controle de Gorduras, Relatório
+// NF, Checklists e Rotinas (rotas e worker/index.ts).
 export function isSellingStore(name: string): boolean {
   const normalized = name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
   return !(
