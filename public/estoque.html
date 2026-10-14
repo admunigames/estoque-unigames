@@ -13129,7 +13129,7 @@
 
   // O canal ao vivo carrega somente avisos de invalidacao. Os dados continuam
   // sendo buscados pelas APIs existentes, que aplicam as permissoes da sessao.
-  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans',comprasNovo:'compras',comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico'});
+  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans',comprasNovo:'compras',comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico',assistenciaEstoque:'estoque_assistencia'});
   let livePageName = '';
   let liveModule = '';
   let liveSocket = null;
@@ -13169,6 +13169,7 @@
     if(livePageName === 'captacao') await refreshAfterAction(() => loadCaptures({silent:true}));
     if(livePageName === 'comercialAcompanhamento') await comLiveRefresh();
     if(livePageName === 'assistenciaOrdensServico') await refreshAfterAction(() => loadOrdensServicoPage());
+    if(livePageName === 'assistenciaEstoque') await refreshAfterAction(() => loadAstPage());
     if(livePageName === 'insumos'){
       await refreshAfterAction(() => {
         const refreshes = [loadSupplyAdminData(),loadSupplyExitData(),loadSupplyMissing({silent:true}),loadSupplyRequest(),loadSupplyRequestPendingOld()];

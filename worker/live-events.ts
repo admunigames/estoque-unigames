@@ -144,6 +144,12 @@ export async function liveInvalidationForRequest(
     return { module: "ordens_servico", audience: { kind: "all" } };
   }
 
+  if (path === "/api/assistencia/estoque") {
+    // Estoque da Assistência ao vivo: entrada, baixa e cadastro de item
+    // avisam as telas abertas; cada sessão recarrega pela API.
+    return { module: "estoque_assistencia", audience: { kind: "all" } };
+  }
+
   if (path === "/api/shared-state") {
     const body = request.method === "PUT" ? await requestBody(request) : {};
     const key = request.method === "DELETE"
