@@ -1906,7 +1906,7 @@
   .purchase-field.payables-kind-tabs label:has(input:disabled) input{cursor:not-allowed;}
   html[data-theme="light"] .purchase-field.payables-kind-tabs{background:#fff;}
   html[data-theme="light"] .purchase-field.payables-kind-tabs label{color:#3f5870;}
-  html[data-theme="light"] .purchase-field.payables-kind-tabs label:has(input:checked){background:var(--accent); border-color:var(--accent-deep); color:#fff;}
+  html[data-theme="light"] .purchase-field.payables-kind-tabs label:has(input:checked){background:var(--accent); border-color:var(--accent-deep); color:var(--accent-ink);}
   .field-with-action{display:flex;gap:6px;align-items:stretch;}
   .field-with-action select{flex:1;min-width:0;}
   .field-with-action button{white-space:nowrap;padding-inline:10px;font-size:10px;}
@@ -13733,6 +13733,9 @@
     const selected = /^#[0-9a-f]{6}$/i.test(color || '') ? color.toLowerCase() : '#4f86bd';
     currentPreferences.accentColor = selected;
     document.documentElement.style.setProperty('--accent', selected);
+    // Cor clara (amarelo, branco, verde-limão…) pede letra escura por cima.
+    const [r,g,b] = [1,3,5].map(i => parseInt(selected.slice(i,i+2),16));
+    document.documentElement.style.setProperty('--accent-ink', (r*299+g*587+b*114)/1000 > 160 ? '#10233a' : '#ffffff');
   }
 
   function applyUserLogo(dataUrl){
