@@ -2677,7 +2677,11 @@
   .os-update-item{padding:9px 11px;border:1px solid var(--inset-border);border-radius:10px;background:var(--bg-card-2);}
   .os-update-item small{color:var(--ink-faint);font:700 8.5px/1.3 var(--mono);}
   .os-update-item p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;}
-  #osTabs,#prcTabs{flex-wrap:wrap;margin-bottom:12px;}
+  #osTabs,#prcTabs,#astTabs{flex-wrap:wrap;margin-bottom:12px;}
+  .ast-qty{font:900 15px/1 var(--sans);color:#54c48a;}
+  .ast-qty.zero{color:#ef817b;}
+  .ast-in{border-color:rgba(84,196,138,.55);color:#54c48a;}
+  .ast-out{border-color:rgba(239,129,123,.55);color:#ef817b;}
   .supply-admin-tabs{margin-bottom:16px;}
   .supply-admin-tab-panel{display:grid;gap:12px;}
   .supply-category-form{display:flex;gap:8px;max-width:420px;}
@@ -3831,7 +3835,7 @@
         <a class="nav-item sub-item" id="navNotasOs" data-page="notasOs" data-permission="os_notes" data-home-desc="Peça a nota de uma O.S. e acompanhe o anexo enviado pela administração." title="Notas de O.S." href="/solicitacoes/notas-os"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span><span class="nav-label">Notas de O.S.</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="assistencia,gorduras_assistencia,ordens_servico,precos_assistencia">
+    <div class="nav-group" data-any-permission="assistencia,gorduras_assistencia,ordens_servico,precos_assistencia,estoque_assistencia">
       <button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Assistência</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -3840,6 +3844,7 @@
         <a class="nav-item sub-item" id="navAssistenciaControleGorduras" data-page="assistenciaControleGorduras" data-permission="gorduras_assistencia" data-home-desc="Gordura da assistência por venda (data, ID, vendedor e valor), saldo anterior e total do mês por loja, com alerta de status e relatório para WhatsApp." title="Controle Gorduras Assistência" href="/assistencia/controle-gorduras"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle Gorduras Assistência</span></a>
         <a class="nav-item sub-item" id="navAssistenciaOrdensServico" data-page="assistenciaOrdensServico" data-permission="ordens_servico" data-home-desc="Ordens de serviço em andamento por tipo (console, informática, controle, celular, terceirizado), com data limite, status e atualização diária; as mais críticas aparecem primeiro." title="Ordens de Serviço" href="/assistencia/ordens-servico"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3"/><path d="M8.5 11l1.5 1.5 3-3"/><line x1="8.5" y1="16" x2="15.5" y2="16"/></svg></span><span class="nav-label">Ordens de Serviço</span></a>
         <a class="nav-item sub-item" id="navAssistenciaPrecos" data-page="assistenciaPrecos" data-permission="precos_assistencia" data-home-desc="Tabela de valores de conserto (display, tampa traseira, conector e bateria) por marca e modelo; as lojas consultam e a assistência atualiza." title="Consulta de Preços" href="/assistencia/precos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><span class="nav-label">Consulta de Preços</span></a>
+        <a class="nav-item sub-item" id="navAssistenciaEstoque" data-page="assistenciaEstoque" data-permission="estoque_assistencia" data-home-desc="Peças da assistência (gabinete, placa mãe, processador, memória, SSD, vídeo, fonte, cooler) com entrada e baixa rápidas e histórico." title="Estoque Assistência" href="/assistencia/estoque"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><line x1="12" y1="13" x2="12" y2="21"/></svg></span><span class="nav-label">Estoque Assistência</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="comercial,controle_gd,treinamento">
@@ -7125,6 +7130,40 @@
     </section>
 
 
+    <!-- ================= ASSISTÊNCIA / ESTOQUE ================= -->
+    <section id="pageAssistenciaEstoque" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Estoque Assistência</h2>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnAstReload" type="button">ATUALIZAR</button>
+          <button class="btn-accent" id="btnAstNew" type="button" hidden>NOVO ITEM</button>
+        </div>
+      </header>
+
+      <div class="supply-tabs" role="tablist" aria-label="Categorias" id="astTabs"></div>
+
+      <div class="dre-toolbar">
+        <div class="field"><label for="astSearch">BUSCAR ITEM</label><input type="search" id="astSearch" placeholder="Ex.: H81, RYZEN, SSD 240"></div>
+        <div class="field"><label for="astFilter">MOSTRAR</label>
+          <select id="astFilter"><option value="">TODOS</option><option value="zerado">SÓ ZERADOS</option><option value="com">SÓ COM ESTOQUE</option></select>
+        </div>
+      </div>
+
+      <div class="supply-dashboard-grid gd-summary" id="astSummary"></div>
+
+      <div class="table-panel responsive-table">
+        <div class="table-scroll">
+          <table id="astTable">
+            <thead><tr><th>Categoria</th><th>Item</th><th>Estoque</th><th>Valor de venda</th><th></th></tr></thead>
+            <tbody id="astTableBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= ASSISTÊNCIA / CONSULTA DE PREÇOS ================= -->
     <section id="pageAssistenciaPrecos" class="page wrap">
       <header class="page-header">
@@ -9511,6 +9550,16 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Assistência - Estoque Assistência</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:view"> Ver o estoque e o histórico (só login sem loja: assistência)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:entrada"> Dar entrada</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:baixa"> Dar baixa</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:manage"> Cadastrar e editar itens (nome, categoria, valor de venda)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:delete"> Excluir item</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Assistência - Ordens de Serviço</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="ordens_servico:view"> Ver as O.S. (login com loja só visualiza as da própria loja)</label>
@@ -11065,6 +11114,55 @@
       <a class="btn-accent" id="btnDownloadCashFlowImage" download="fluxo-de-caixa.png" href="#">BAIXAR PNG</a>
     </div>
   </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="astItemDialog" aria-labelledby="astItemDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="astItemDialogTitle">NOVO ITEM</h3>
+    <button class="purchase-dialog-close" type="button" data-ast-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="astItemForm">
+    <input type="hidden" id="astItemId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="astItemCategory">CATEGORIA *</label><select id="astItemCategory" required></select></div>
+      <div class="purchase-field full"><label for="astItemName">ITEM *</label><input type="text" id="astItemName" maxlength="160" autocomplete="off" required></div>
+      <div class="purchase-field" id="astItemQtyField"><label for="astItemQty">ESTOQUE INICIAL</label><input type="number" id="astItemQty" min="0" step="1" value="0" inputmode="numeric"></div>
+      <div class="purchase-field"><label for="astItemPrice">VALOR DE VENDA</label><input type="text" inputmode="decimal" id="astItemPrice" placeholder="R$ 0,00"></div>
+    </div>
+    <div class="user-form-status" id="astItemStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-ast-close>CANCELAR</button>
+      <button class="btn-accent" id="btnAstItemSave" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="astMoveDialog" aria-labelledby="astMoveDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="astMoveDialogTitle">ENTRADA</h3>
+    <button class="purchase-dialog-close" type="button" data-ast-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="astMoveForm">
+    <p class="gd-opening-hint" id="astMoveHint"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="astMoveQty">QUANTIDADE *</label><input type="number" id="astMoveQty" min="1" step="1" value="1" inputmode="numeric" required></div>
+      <div class="purchase-field"><label for="astMoveOs">O.S. (OPCIONAL)</label><input type="text" id="astMoveOs" maxlength="40" autocomplete="off"></div>
+      <div class="purchase-field full"><label for="astMoveNote">OBSERVAÇÃO</label><input type="text" id="astMoveNote" maxlength="500" autocomplete="off"></div>
+    </div>
+    <div class="user-form-status" id="astMoveStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-ast-close>CANCELAR</button>
+      <button class="btn-accent" id="btnAstMoveSave" type="submit">CONFIRMAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="astHistoryDialog" aria-labelledby="astHistoryDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="astHistoryDialogTitle">HISTÓRICO</h3>
+    <button class="purchase-dialog-close" type="button" data-ast-close aria-label="Fechar">×</button>
+  </div>
+  <div style="padding:0 20px 20px;"><div class="os-update-history" id="astHistoryList"></div></div>
 </dialog>
 
 <dialog class="purchase-dialog" id="prcDialog" aria-labelledby="prcDialogTitle">
@@ -13521,6 +13619,7 @@
     assistenciaControleGorduras:'/assistencia/controle-gorduras',
     assistenciaOrdensServico:'/assistencia/ordens-servico',
     assistenciaPrecos:'/assistencia/precos',
+    assistenciaEstoque:'/assistencia/estoque',
     rhControleHoras:'/rh/controle-horas-logistica',
     financeiroDashboard:'/financeiro/painel',
     financeiro:'/financeiro/dre',
@@ -13584,6 +13683,7 @@
     assistenciaControleGorduras:'CONTROLE GORDURAS ASSISTÊNCIA',
     assistenciaOrdensServico:'ORDENS DE SERVIÇO',
     assistenciaPrecos:'CONSULTA DE PREÇOS',
+    assistenciaEstoque:'ESTOQUE ASSISTÊNCIA',
     rhControleHoras:'CONTROLE DE HORAS - LOGÍSTICA',
     financeiroDashboard:'PAINEL',
     financeiro:'DRE',
@@ -13643,6 +13743,7 @@
     assistenciaControleGorduras:'gorduras_assistencia',
     assistenciaOrdensServico:'ordens_servico',
     assistenciaPrecos:'precos_assistencia',
+    assistenciaEstoque:'estoque_assistencia',
     rhControleHoras:'rh_ponto_logistica',
     financeiroDashboard:'finance',
     financeiro:'finance',
@@ -13717,6 +13818,8 @@
     if(name === 'usuarios') return canManageUsers();
     // Funcionários: RH Financeiro OU as permissões próprias do cadastro.
     if(name === 'rhFuncionarios') return canAccess('payroll') || canAccess('rh_funcionarios');
+    // Estoque da Assistência: só login sem loja (o backend também bloqueia).
+    if(name === 'assistenciaEstoque') return canAccess('estoque_assistencia') && (currentSession.role === 'admin' || !currentSession.companyId);
     if(name === 'documentos' && isCommercialOnlySession()) return false;
     // NF/Duplicatas é acessível por finance:manage OU qualquer permissão
     // granular payables:* (fallback já aplicado no backend, ver
@@ -14318,7 +14421,7 @@
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'comercialRelatorioNf';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
-    const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico' || name === 'assistenciaPrecos';
+    const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico' || name === 'assistenciaPrecos' || name === 'assistenciaEstoque';
     const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroCrediarios' || name === 'financeiroConciliacaoVendas' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras';
     const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialTreinamento';
     document.body.classList.toggle('home-active', isHome);
@@ -14413,6 +14516,7 @@
     if(name === 'assistenciaControleGorduras') loadControleGdPage('assistencia');
     if(name === 'assistenciaOrdensServico') loadOrdensServicoPage();
     if(name === 'assistenciaPrecos') loadPrecosPage();
+    if(name === 'assistenciaEstoque') loadAstPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -14480,6 +14584,7 @@
     if(name === 'assistenciaControleGorduras') loadControleGdPage('assistencia');
     if(name === 'assistenciaOrdensServico') loadOrdensServicoPage();
     if(name === 'assistenciaPrecos') loadPrecosPage();
+    if(name === 'assistenciaEstoque') loadAstPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -26774,6 +26879,172 @@ function renderHomeTasks(){
   el('btnAuditMore') && el('btnAuditMore').addEventListener('click', () => loadAuditPage(false));
   ['auditFrom','auditTo','auditModule'].forEach(id => el(id) && el(id).addEventListener('change', () => loadAuditPage(true)));
   ['auditUser','auditQuery'].forEach(id => el(id) && el(id).addEventListener('keydown', event => { if(event.key === 'Enter') loadAuditPage(true); }));
+
+  // ---------- ASSISTÊNCIA · ESTOQUE ----------
+  let astData = null;
+  let astTab = '';
+  const astCan = action => canAccess('estoque_assistencia:'+action);
+  async function astApi(method, body, query){
+    const response = await fetch('/api/assistencia/estoque'+(query || ''), {
+      method: method || 'GET', cache:'no-store',
+      headers: body ? {Accept:'application/json','Content-Type':'application/json'} : {Accept:'application/json'},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){ location.assign('/login?next='+encodeURIComponent(location.pathname)); throw new Error('SESSÃO EXPIRADA.'); }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+
+  function renderAst(){
+    if(!astData) return;
+    const items = astData.items;
+    const tabs = [['', 'TODOS']].concat(astData.categories.map(category => [category, category]));
+    el('astTabs').innerHTML = tabs.map(([value, label]) =>
+      '<button class="supply-tab'+(astTab === value ? ' active' : '')+'" type="button" role="tab" aria-selected="'+(astTab === value)+'" data-ast-tab="'+escapeHtml(value)+'">'+escapeHtml(label)+' ('+(value ? items.filter(item => item.category === value).length : items.length)+')</button>'
+    ).join('');
+    const terms = el('astSearch').value.trim().toLocaleUpperCase('pt-BR').split(/\s+/).filter(Boolean);
+    const filter = el('astFilter').value;
+    const rows = items.filter(item => (!astTab || item.category === astTab) &&
+      (filter !== 'zerado' || item.quantity === 0) && (filter !== 'com' || item.quantity > 0) &&
+      terms.every(term => item.name.includes(term)));
+    const inTab = items.filter(item => !astTab || item.category === astTab);
+    el('astSummary').innerHTML =
+      '<article class="supply-dashboard-card"><span>ITENS</span><strong>'+inTab.length+'</strong></article>'+
+      '<article class="supply-dashboard-card"><span>UNIDADES EM ESTOQUE</span><strong>'+inTab.reduce((sum, item) => sum + item.quantity, 0)+'</strong></article>'+
+      '<article class="supply-dashboard-card danger"><span>ZERADOS</span><strong>'+inTab.filter(item => item.quantity === 0).length+'</strong></article>';
+    const canIn = astCan('entrada'), canOut = astCan('baixa'), canManage = astCan('manage'), canDelete = astCan('delete');
+    el('astTableBody').innerHTML = rows.length ? rows.map(item =>
+      '<tr>'+
+        '<td data-label="Categoria">'+escapeHtml(item.category)+'</td>'+
+        '<td data-label="Item"><strong>'+escapeHtml(item.name)+'</strong></td>'+
+        '<td data-label="Estoque"><strong class="ast-qty'+(item.quantity === 0 ? ' zero' : '')+'">'+item.quantity+'</strong></td>'+
+        '<td data-label="Valor de venda" style="white-space:nowrap">'+escapeHtml(item.salePriceCents === null ? '—' : formatCentsBRL(item.salePriceCents))+'</td>'+
+        '<td style="white-space:nowrap">'+
+          (canIn ? '<button class="btn-outline btn-sm ast-in" type="button" data-ast-move="entrada" data-ast-key="'+escapeHtml(item.id)+'">+ ENTRADA</button> ' : '')+
+          (canOut ? '<button class="btn-outline btn-sm ast-out" type="button" data-ast-move="baixa" data-ast-key="'+escapeHtml(item.id)+'"'+(item.quantity === 0 ? ' disabled' : '')+'>− BAIXA</button> ' : '')+
+          '<button class="btn-outline btn-sm" type="button" data-ast-history="'+escapeHtml(item.id)+'">HISTÓRICO</button> '+
+          (canManage ? '<button class="btn-outline btn-sm" type="button" data-ast-edit="'+escapeHtml(item.id)+'">EDITAR</button> ' : '')+
+          (canDelete ? '<button class="btn-outline btn-sm" type="button" data-ast-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>' : '')+
+        '</td>'+
+      '</tr>'
+    ).join('') : '<tr><td colspan="5" class="responsive-empty">Nenhum item encontrado.</td></tr>';
+  }
+
+  async function loadAstPage(){
+    try{
+      astData = await astApi();
+      el('btnAstNew').hidden = !astCan('manage');
+      renderAst();
+    }catch(error){
+      el('astSummary').innerHTML = '';
+      el('astTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+
+  function astOpenItem(item){
+    el('astItemForm').reset();
+    el('astItemId').value = item ? item.id : '';
+    el('astItemDialogTitle').textContent = item ? 'EDITAR ITEM' : 'NOVO ITEM';
+    el('astItemCategory').innerHTML = astData.categories.map(category => '<option>'+escapeHtml(category)+'</option>').join('');
+    el('astItemCategory').value = item ? item.category : (astTab || astData.categories[0]);
+    el('astItemName').value = item ? item.name : '';
+    el('astItemQtyField').hidden = Boolean(item);
+    el('astItemQty').value = '0';
+    const price = el('astItemPrice');
+    attachCurrencyMask(price);
+    setCurrencyValue(price, item && item.salePriceCents !== null ? item.salePriceCents / 100 : '');
+    el('astItemStatus').textContent = '';
+    el('astItemDialog').showModal();
+  }
+
+  function astOpenMove(item, kind){
+    el('astMoveForm').reset();
+    el('astMoveForm').dataset.id = item.id;
+    el('astMoveForm').dataset.kind = kind;
+    el('astMoveDialogTitle').textContent = (kind === 'entrada' ? 'ENTRADA · ' : 'BAIXA · ')+item.name;
+    el('astMoveHint').textContent = 'ESTOQUE ATUAL: '+item.quantity+(kind === 'baixa' ? ' · A BAIXA NÃO PODE PASSAR DISSO.' : '');
+    el('astMoveQty').value = '1';
+    el('astMoveQty').max = kind === 'baixa' ? String(item.quantity) : '';
+    el('astMoveStatus').textContent = '';
+    el('btnAstMoveSave').textContent = kind === 'entrada' ? 'DAR ENTRADA' : 'DAR BAIXA';
+    el('astMoveDialog').showModal();
+    el('astMoveQty').select();
+  }
+
+  async function astOpenHistory(item){
+    el('astHistoryDialogTitle').textContent = 'HISTÓRICO · '+item.name;
+    const list = el('astHistoryList');
+    list.innerHTML = '<p class="os-muted">Carregando…</p>';
+    el('astHistoryDialog').showModal();
+    try{
+      const {movements} = await astApi('GET', null, '?movements='+encodeURIComponent(item.id));
+      list.innerHTML = movements.length ? movements.map(move =>
+        '<div class="os-update-item"><small>'+escapeHtml((formatDateTimeBR(move.createdAt) || '')+' · '+(move.createdByName || ''))+'</small>'+
+        '<p><strong class="'+(move.kind === 'entrada' ? 'ast-qty' : 'ast-qty zero')+'">'+(move.kind === 'entrada' ? '+' : '−')+move.quantity+'</strong> · SALDO '+move.balanceAfter+
+        (move.osNumber ? ' · O.S. '+escapeHtml(move.osNumber) : '')+(move.note ? ' · '+escapeHtml(move.note) : '')+'</p></div>'
+      ).join('') : '<p class="os-muted">Nenhuma movimentação.</p>';
+    }catch(error){ list.innerHTML = '<p class="os-muted">'+escapeHtml(error.message)+'</p>'; }
+  }
+
+  el('astTabs') && el('astTabs').addEventListener('click', event => {
+    const tab = event.target.closest('[data-ast-tab]');
+    if(!tab) return;
+    astTab = tab.dataset.astTab;
+    renderAst();
+  });
+  el('astSearch') && el('astSearch').addEventListener('input', debounce(renderAst, 120));
+  el('astFilter') && el('astFilter').addEventListener('change', renderAst);
+  el('btnAstReload') && el('btnAstReload').addEventListener('click', loadAstPage);
+  el('btnAstNew') && el('btnAstNew').addEventListener('click', () => astOpenItem(null));
+  document.querySelectorAll('#astItemDialog [data-ast-close],#astMoveDialog [data-ast-close],#astHistoryDialog [data-ast-close]').forEach(button =>
+    button.addEventListener('click', () => { const dialog = button.closest('dialog'); if(dialog.open) dialog.close(); }));
+  el('astTableBody') && el('astTableBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-ast-move],[data-ast-history],[data-ast-edit],[data-ast-delete]');
+    if(!button) return;
+    const id = button.dataset.astKey || button.dataset.astHistory || button.dataset.astEdit || button.dataset.astDelete;
+    const item = ((astData && astData.items) || []).find(row => row.id === id);
+    if(!item) return;
+    if(button.dataset.astMove){ astOpenMove(item, button.dataset.astMove); return; }
+    if(button.dataset.astHistory){ astOpenHistory(item); return; }
+    if(button.dataset.astEdit){ astOpenItem(item); return; }
+    const ok = await askConfirm('EXCLUIR O ITEM '+item.name+'? O HISTÓRICO FICA GUARDADO.', {okText:'EXCLUIR', danger:true});
+    if(!ok) return;
+    try{
+      await astApi('DELETE', {id});
+      showPurchaseToast('Item excluído.');
+      await loadAstPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('astItemForm') && el('astItemForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const id = el('astItemId').value;
+    const raw = getCurrencyValue(el('astItemPrice'));
+    const button = el('btnAstItemSave');
+    button.disabled = true;
+    try{
+      await astApi(id ? 'PATCH' : 'POST', {id, category: el('astItemCategory').value, name: el('astItemName').value,
+        quantity: Number(el('astItemQty').value || 0), salePriceCents: raw ? parseBRLToCents(raw) || null : null});
+      el('astItemDialog').close();
+      showPurchaseToast(id ? 'Item alterado.' : 'Item cadastrado.');
+      await loadAstPage();
+    }catch(error){ el('astItemStatus').textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+  el('astMoveForm') && el('astMoveForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = el('astMoveForm');
+    const button = el('btnAstMoveSave');
+    button.disabled = true;
+    try{
+      const result = await astApi('PUT', {id: form.dataset.id, kind: form.dataset.kind, quantity: Number(el('astMoveQty').value),
+        osNumber: el('astMoveOs').value, note: el('astMoveNote').value});
+      el('astMoveDialog').close();
+      showPurchaseToast((form.dataset.kind === 'entrada' ? 'Entrada registrada' : 'Baixa registrada')+'. Estoque: '+result.quantity+'.');
+      await loadAstPage();
+    }catch(error){ el('astMoveStatus').textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
 
   // ---------- ASSISTÊNCIA · CONSULTA DE PREÇOS ----------
   // Tabela única para todas as lojas; só a assistência (login sem loja)

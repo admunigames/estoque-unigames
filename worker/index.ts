@@ -75,6 +75,7 @@ type Permission =
   | "gorduras_assistencia:view" | "gorduras_assistencia:create" | "gorduras_assistencia:edit" | "gorduras_assistencia:opening"
   | "ordens_servico:view" | "ordens_servico:create" | "ordens_servico:edit" | "ordens_servico:delete" | "ordens_servico:store_test"
   | "precos_assistencia:view" | "precos_assistencia:create" | "precos_assistencia:edit" | "precos_assistencia:delete"
+  | "estoque_assistencia:view" | "estoque_assistencia:entrada" | "estoque_assistencia:baixa" | "estoque_assistencia:manage" | "estoque_assistencia:delete"
   | "treinamento:view" | "treinamento:team"
   | "audit:view"
   | "rh_funcionarios:view" | "rh_funcionarios:create" | "rh_funcionarios:edit" | "rh_funcionarios:delete"
@@ -232,6 +233,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "ordens_servico:view", "ordens_servico:create", "ordens_servico:edit", "ordens_servico:delete", "ordens_servico:store_test",
   // Assistência > Consulta de Preços — loja consulta; só login sem loja altera.
   "precos_assistencia:view", "precos_assistencia:create", "precos_assistencia:edit", "precos_assistencia:delete",
+  // Assistência > Estoque — só login sem loja (a rota confere).
+  "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
   // Comercial > Treinamento (Unigames Academy) — permissão própria,
   // independente de comercial:* (ver MODULE_VIEW_PERMISSIONS.treinamento).
   "treinamento:view", "treinamento:team",
@@ -345,6 +348,7 @@ const APP_ROUTE_PATHS = new Set([
   "/assistencia/controle-gorduras",
   "/assistencia/ordens-servico",
   "/assistencia/precos",
+  "/assistencia/estoque",
   "/entradas",
   "/insumos",
   "/aparelhos-emprestimo",
@@ -1366,6 +1370,9 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   ],
   relatorioNf: ["relatorio_nf:view", "relatorio_nf:manage"],
   controleGd: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
+  estoqueAssistencia: [
+    "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
+  ],
   precosAssistencia: ["precos_assistencia:view", "precos_assistencia:create", "precos_assistencia:edit", "precos_assistencia:delete"],
   ordensServico: [
     "ordens_servico:view", "ordens_servico:create", "ordens_servico:edit", "ordens_servico:delete", "ordens_servico:store_test",
@@ -1471,6 +1478,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     ],
     // Assistência > Consulta de Preços — permissão própria (precos_assistencia:*).
     [path === "/assistencia/precos" || path.startsWith("/api/assistencia/precos"), "precosAssistencia"],
+    // Assistência > Estoque — permissão própria (estoque_assistencia:*).
+    [path === "/assistencia/estoque" || path.startsWith("/api/assistencia/estoque"), "estoqueAssistencia"],
     // Assistência > Controle Gorduras Assistência — permissão própria
     // (gorduras_assistencia:*), independente de assistencia:manage.
     [

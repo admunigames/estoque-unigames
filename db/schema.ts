@@ -4197,3 +4197,45 @@ export const assistRepairPrices = pgTable(
   },
   (table) => [index("assist_repair_prices_service_idx").on(table.deleted, table.service, table.brand)],
 );
+
+// Assistência > Estoque — peças da assistência (planilha UNITEC, aba PEÇAS
+// MONTAGEM PC) com entrada e baixa rápidas. Só a assistência (login sem loja)
+// acessa. Cada movimento fica em assist_stock_movements (quem, quando, O.S.).
+export const assistStockItems = pgTable(
+  "assist_stock_items",
+  {
+    id: text("id").primaryKey(),
+    category: text("category").notNull(),
+    name: text("name").notNull(),
+    quantity: integer("quantity").notNull().default(0),
+    // NULL = sem valor de venda definido.
+    salePriceCents: integer("sale_price_cents"),
+    deleted: integer("deleted").notNull().default(0),
+    source: text("source").notNull().default("manual"),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("assist_stock_items_category_idx").on(table.deleted, table.category)],
+);
+
+export const assistStockMovements = pgTable(
+  "assist_stock_movements",
+  {
+    id: text("id").primaryKey(),
+    itemId: text("item_id").notNull(),
+    // 'entrada' | 'baixa'
+    kind: text("kind").notNull(),
+    quantity: integer("quantity").notNull(),
+    balanceAfter: integer("balance_after").notNull(),
+    osNumber: text("os_number").notNull().default(""),
+    note: text("note").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [index("assist_stock_movements_item_idx").on(table.itemId, table.createdAt)],
+);
