@@ -3196,6 +3196,7 @@
   .com-seller.inactive,.com-commission.inactive{filter:grayscale(1);opacity:.72}
   .com-inactive-toggle{justify-content:flex-end;margin:0 0 10px}
   .com-inactive-tag{display:inline-block;margin-left:6px;padding:1px 7px;border:1px solid var(--inset-border);border-radius:999px;font:800 9px/1.5 var(--mono);letter-spacing:.05em;color:var(--ink-faint);vertical-align:middle}
+  .com-inactive-tag.com-new-tag{color:var(--accent);border-color:rgba(79,134,189,.5)}
   .com-newcomer-toggle{font-size:10px}
   /* Regras de Comissão */
   .com-rules-actions{justify-content:flex-end;margin-bottom:12px}
@@ -46210,6 +46211,20 @@ function renderHomeTasks(){
   }
 
   // ----- Vendedores -----
+  // Vendedores do RH (cargo VENDEDOR, ativos, no alcance de quem lança) que
+  // ainda não estão no mês: aparecem já com os campos, marcados NOVO, e entram
+  // no mês (e no Dashboard) quando o primeiro número é salvo.
+  const comPendingSellers = new Map();
+
+  function comPendingSeller(employee){
+    return {
+      employeeId: employee.id, name: employee.fullName, companyName: employee.companyName, zone: '',
+      goal: {targetRevenueCents:0, targetItems:0, targetSuperItems:0, targetWarrantyCents:0, targetRealme:0},
+      realized: {revenueCents:0, items:0, warrantyCents:0, realme:0, warrantyQty:0, notebookQty:0, salesQty:0, creditSalesCents:0, partnerSalesCents:0},
+      pending: true
+    };
+  }
+
   function comSellerRowHtml(seller){
     const cells = COM_SELLER_FIELDS.map(([key, label, kind]) => {
       let content;
@@ -46222,24 +46237,32 @@ function renderHomeTasks(){
     }).join('');
     const zone = ['', 'NORTE', 'SUL'].map(value =>
       '<option value="'+value+'"'+(seller.zone === value ? ' selected' : '')+'>'+(value || '—')+'</option>').join('');
-    return '<tr data-com-seller="'+escapeHtml(seller.employeeId)+'">'+
-      '<td data-label="Vendedor" class="nome"><strong>'+escapeHtml(seller.name)+'</strong>'+(seller.inactive ? '<span class="com-inactive-tag">INATIVO</span>' : '')+'<br><small>'+escapeHtml(seller.companyName || 'SEM LOJA')+'</small></td>'+
+    return '<tr data-com-seller="'+escapeHtml(seller.employeeId)+'"'+(seller.pending ? ' data-com-pending="1"' : '')+'>'+
+      '<td data-label="Vendedor" class="nome"><strong>'+escapeHtml(seller.name)+'</strong>'+(seller.inactive ? '<span class="com-inactive-tag">INATIVO</span>' : '')+
+        (seller.pending ? '<span class="com-inactive-tag com-new-tag" title="Ainda não está no mês: entra ao salvar o primeiro número">NOVO</span>' : '')+'<br><small>'+escapeHtml(seller.companyName || 'SEM LOJA')+'</small></td>'+
       '<td data-label="Zona"><select aria-label="Zona" data-com-field="zone">'+zone+'</select></td>'+
       cells+
-      '<td data-label="Ações"><button class="btn-outline" type="button" data-com-remove>TIRAR DO MÊS</button></td></tr>';
+      '<td data-label="Ações">'+(seller.pending ? '' : '<button class="btn-outline" type="button" data-com-remove>TIRAR DO MÊS</button>')+'</td></tr>';
   }
 
   function comRenderSellersEdit(){
     const body = el('comSellersBody');
     if(!body || !comManage) return;
     const sellers = comManage.sellers;
-    body.innerHTML = sellers.length
-      ? sellers.map(comSellerRowHtml).join('')
+    const inMonth = new Set(sellers.map(seller => seller.employeeId));
+    comPendingSellers.clear();
+    comEmployees
+      .filter(employee => employee.isSeller && !inMonth.has(employee.id))
+      .sort((a, b) => (a.companyName || '').localeCompare(b.companyName || '', 'pt-BR') || a.fullName.localeCompare(b.fullName, 'pt-BR'))
+      .forEach(employee => comPendingSellers.set(employee.id, comPendingSeller(employee)));
+    const rows = sellers.concat(Array.from(comPendingSellers.values()));
+    body.innerHTML = rows.length
+      ? rows.map(comSellerRowHtml).join('')
       : '<tr><td colspan="18" class="responsive-empty">Nenhum vendedor neste mês. Adicione um vendedor ou copie do mês anterior.</td></tr>';
     comMaskMoney(body);
-    const inMonth = new Set(sellers.map(seller => seller.employeeId));
+    // "Adicionar": quem não é VENDEDOR no RH (os vendedores já aparecem acima).
     const options = comEmployees
-      .filter(employee => !inMonth.has(employee.id))
+      .filter(employee => !inMonth.has(employee.id) && !comPendingSellers.has(employee.id))
       .sort((a, b) => Number(b.isSeller) - Number(a.isSeller) || a.fullName.localeCompare(b.fullName, 'pt-BR'));
     requestAnimationFrame(comUpdateScrollHint);
     el('comAddSellerSelect').innerHTML = '<option value="">ESCOLHA O FUNCIONÁRIO</option>'+options.map(employee =>
@@ -46311,7 +46334,7 @@ function renderHomeTasks(){
     }
     // Atualiza na hora os % da linha e o retrato local (sem redesenhar a
     // tabela, que tiraria o foco de quem está digitando).
-    const seller = comManage && comManage.sellers.find(item => item.employeeId === payload.employeeId);
+    const seller = (comManage && comManage.sellers.find(item => item.employeeId === payload.employeeId)) || comPendingSellers.get(payload.employeeId);
     if(seller){
       seller.zone = payload.zone;
       COM_SELLER_FIELDS.forEach(([key, , kind]) => {
@@ -46327,6 +46350,17 @@ function renderHomeTasks(){
     comQueueSave('seller:'+payload.employeeId, async () => {
       try{
         await comApi('/sellers', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+        // NOVO salvo pela 1ª vez: agora está no mês.
+        if(row.dataset.comPending && comPendingSellers.has(payload.employeeId)){
+          const added = comPendingSellers.get(payload.employeeId);
+          comPendingSellers.delete(payload.employeeId);
+          delete added.pending;
+          if(comManage) comManage.sellers.push(added);
+          delete row.dataset.comPending;
+          const tag = row.querySelector('.com-new-tag');
+          if(tag) tag.remove();
+          row.lastElementChild.innerHTML = '<button class="btn-outline" type="button" data-com-remove>TIRAR DO MÊS</button>';
+        }
         row.classList.add('saved');
         comStatus('comSellersStatus', '');
         comOverview = null;

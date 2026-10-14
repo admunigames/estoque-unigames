@@ -4472,6 +4472,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Cor das colunas pela posição: 1º verde → último vermelho (degradê).
   assert.match(html, /const hue = Math\.round\(145 - t \* 140\);/);
   assert.doesNotMatch(html, /COM_TIER_COLORS/);
+  // Aba Vendedores: vendedor ativo do RH que ainda não está no mês aparece como NOVO (entra ao salvar).
+  assert.match(html, /\.filter\(employee => employee\.isSeller && !inMonth\.has\(employee\.id\)\)/);
+  assert.match(html, /class="com-inactive-tag com-new-tag"/);
   // Vendedor inativo no RH: some do Dashboard; "MOSTRAR INATIVOS" e a aba Comissão pedem ?inactive=1.
   assert.match(html, /<input type="checkbox" id="comShowInactive"> MOSTRAR INATIVOS</);
   assert.match(html, /const withInactive = comView === 'comissao' \|\| \(el\('comShowInactive'\) && el\('comShowInactive'\)\.checked\);/);
