@@ -2062,7 +2062,7 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(schema, /accessories: text\("accessories"\)/);
 
   assert.match(liveUpdates, /"missions", "captures", "supplies", "tasks", "loans"/);
-  assert.match(workerSource, /loans: "loans",\s*\n\s*compras: "purchasesDraft",\s*\n\s*commercial: "commercial",\s*\n\s*\};/);
+  assert.match(workerSource, /loans: "loans",\s*\n\s*compras: "purchasesDraft",\s*\n\s*commercial: "commercial",\s*\n\s*ordens_servico: "ordensServico",\s*\n\s*\};/);
   assert.match(html, /aparelhosEmprestimo:'loans'/);
   assert.match(
     html,
@@ -4493,7 +4493,10 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(storesRoute, /if \(canManageCommercialStores\(actor\) && scope\)/);
   // Ao vivo: qualquer escrita em /api/commercial avisa o canal "commercial".
   assert.match(liveEvents, /if \(path\.startsWith\("\/api\/commercial\/"\)\) \{[\s\S]*?module: "commercial", audience: \{ kind: "all" \}/);
-  assert.match(html, /comercialAcompanhamento:'commercial'\}\);/);
+  assert.match(html, /comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico'\}\);/);
+  // Ordens de Serviço ao vivo: canal "ordens_servico".
+  assert.match(liveEvents, /if \(path === "\/api\/assistencia\/ordens-servico"\) \{[\s\S]*?module: "ordens_servico", audience: \{ kind: "all" \}/);
+  assert.match(html, /if\(livePageName === 'assistenciaOrdensServico'\) await refreshAfterAction\(\(\) => loadOrdensServicoPage\(\)\);/);
   assert.match(html, /if\(livePageName === 'comercialAcompanhamento'\) await comLiveRefresh\(\);/);
   // Regras de Comissão (comercial:rules) — pedido de 2026-10-06.
   // Sem aba de crediário: ele fica no cartão (Dashboard) e na Comissão.
