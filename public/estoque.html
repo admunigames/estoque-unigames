@@ -7132,7 +7132,7 @@
         </div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnOsReload" type="button">ATUALIZAR</button>
-          <button class="btn-outline" id="btnOsProductionReport" type="button">RELATÓRIO PRODUÇÃO (PDF)</button>
+          <button class="btn-outline" id="btnOsProductionReport" type="button" hidden>RELATÓRIO PRODUÇÃO (PDF)</button>
           <button class="btn-accent" id="btnOsNew" type="button" hidden>NOVA O.S.</button>
         </div>
       </header>
@@ -26844,6 +26844,8 @@ function renderHomeTasks(){
       statusSelect.innerHTML = '<option value="">TODOS</option>'+OS_STATUSES.map(status => '<option>'+escapeHtml(status)+'</option>').join('');
       statusSelect.value = previousStatus;
       el('btnOsNew').hidden = !osCan('create') || !osData.companies.length;
+      // Relatório de produção é só da assistência: login com loja não vê.
+      el('btnOsProductionReport').hidden = Boolean(currentSession.companyId) && currentSession.role !== 'admin';
       renderOrdensServico();
     }catch(error){
       el('osSummary').innerHTML = '';
@@ -26915,6 +26917,7 @@ function renderHomeTasks(){
 
   // Relatório PDF (A4): O.S. em PRODUÇÃO por categoria, com o filtro de loja da tela.
   function osPrintProductionReport(){
+    if(currentSession.companyId && currentSession.role !== 'admin') return;
     const store = el('osStoreFilter').value;
     const rows = ((osData && osData.orders) || []).filter(row => !row.closed && row.status === 'PRODUÇÃO' && (!store || row.storeId === store));
     const storeLabel = store ? el('osStoreFilter').selectedOptions[0].textContent : 'TODAS AS LOJAS';
