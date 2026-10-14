@@ -12,6 +12,7 @@ import {
   loadCompanyNames,
   loadSellers,
   safeText,
+  withoutInactive,
 } from "../shared";
 
 // Ranking > META VENDEDORES: meta e feito (faturamento) de cada vendedor DA
@@ -19,7 +20,8 @@ import {
 //   - conta vinculada a um vendedor → SÓ a loja do próprio vendedor (no RH),
 //     com os colegas dela — nenhuma outra loja;
 //   - gestor com loja → a própria loja; sem loja (ou admin) → escolhe a loja.
-// Só meta e feito: nenhuma comissão sai desta rota.
+// Só meta e feito: nenhuma comissão sai desta rota. Vendedor inativo no RH só
+// com ?inactive=1.
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -51,7 +53,8 @@ export async function GET(request: Request) {
     } else {
       allowed = scope.allStores ? null : new Set([scope.companyId]);
     }
-    const visible = sellers.filter((seller) => !allowed || allowed.has(seller.companyId));
+    const visible = withoutInactive(sellers, url.searchParams.get("inactive") === "1")
+      .filter((seller) => !allowed || allowed.has(seller.companyId));
     const stores = [...new Set(visible.map((seller) => seller.companyId))]
       .map((companyId) => ({ companyId, name: companyNames.get(companyId) || visible.find((s) => s.companyId === companyId)?.companyName || "SEM LOJA" }))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
@@ -65,6 +68,7 @@ export async function GET(request: Request) {
         targetRevenueCents: seller.goal.targetRevenueCents,
         revenueCents: seller.realized.revenueCents,
         percent: seller.metrics.revenue.percent,
+        inactive: seller.inactive,
       }));
     return jsonResponse({ month, stores, companyId, items });
   } catch (error) {

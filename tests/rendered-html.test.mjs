@@ -4470,6 +4470,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Cor das colunas pela posição: 1º verde → último vermelho (degradê).
   assert.match(html, /const hue = Math\.round\(145 - t \* 140\);/);
   assert.doesNotMatch(html, /COM_TIER_COLORS/);
+  // Vendedor inativo no RH: some do Dashboard; "MOSTRAR INATIVOS" e a aba Comissão pedem ?inactive=1.
+  assert.match(html, /<input type="checkbox" id="comShowInactive"> MOSTRAR INATIVOS</);
+  assert.match(html, /const withInactive = comView === 'comissao' \|\| \(el\('comShowInactive'\) && el\('comShowInactive'\)\.checked\);/);
   // Meta Loja: itens da loja à mão; comissão do Comercial travada no RH (vem de lá).
   assert.match(html, /<th>Meta itens<\/th><th>Itens feito<\/th>/);
   assert.match(html, /<th>Meta realme<\/th><th>Realmes feito<\/th>/);
@@ -4549,7 +4552,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(sellersRoute, /employeeInScope\(database, scope, safeText\(body\.employeeId, 80\)\)/);
 
   // Ranking: empresa inteira, mas a resposta só leva nome, loja, zona e percentuais.
-  const rankingItem = rankingRoute.slice(rankingRoute.indexOf("sellers.map("), rankingRoute.indexOf("}));"));
+  const rankingItem = rankingRoute.slice(rankingRoute.indexOf("withoutInactive(sellers, includeInactive).map("), rankingRoute.indexOf("}));"));
   assert.match(rankingItem, /revenuePercent: seller\.metrics\.revenue\.percent/);
   assert.doesNotMatch(rankingItem, /Cents|realized|commission|goal|target/);
   assert.doesNotMatch(rankingRoute, /commercialScope/);

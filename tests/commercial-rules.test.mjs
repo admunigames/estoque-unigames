@@ -441,7 +441,7 @@ test("Ranking > META VENDEDORES: o vendedor vê só a própria loja; gestor a de
   assert.deepEqual(own.data.stores.map((store) => store.companyId), [STORE_A]);
   assert.equal(own.data.companyId, STORE_A);
   assert.deepEqual(own.data.items.map((item) => item.name).sort(), ["ANA SOUZA", "BRUNO LIMA"]);
-  assert.deepEqual(Object.keys(own.data.items[0]).sort(), ["employeeId", "name", "percent", "revenueCents", "targetRevenueCents"]);
+  assert.deepEqual(Object.keys(own.data.items[0]).sort(), ["employeeId", "inactive", "name", "percent", "revenueCents", "targetRevenueCents"]);
   // Gestor com loja: a loja dele.
   const manager = await team({ ...GOALS_A, permissions: ["comercial:dashboard"] }, `&companyId=${STORE_B}`);
   assert.deepEqual(manager.data.stores.map((store) => store.companyId), [STORE_A]);
@@ -510,4 +510,50 @@ test("Meta Loja: itens e realmes da loja à mão; os gráficos de itens/realmes 
   // O Ranking não manda mais quantidades por loja (vêm da Meta Loja).
   const rank = await (await callRoute(rankingRoute.GET, DASHBOARD, "GET", "/api/commercial/ranking?month=2027-02")).json();
   assert.equal("stores" in rank, false);
+});
+
+test("vendedor INATIVO no RH: some do Dashboard/Ranking/Equipe por padrão, mas continua no cadastro, na comissão e no próprio histórico", async () => {
+  const setStatus = (id, status) => db.sqlite.prepare("UPDATE hr_employees SET status=? WHERE id=?").run(status, id);
+  const names = (list) => list.map((item) => item.name);
+  const getJson = async (route, user, path) => (await callRoute(route.GET, user, "GET", path)).json();
+  const hrCents = () => db.sqlite.prepare("SELECT commission_cents AS c FROM hr_commissions WHERE employee_id='emp-ana' AND month='2026-10'").get().c;
+  const storesBefore = await getJson(storesRoute, DASHBOARD, "/api/commercial/stores?month=2026-10");
+  const hrBefore = hrCents();
+  setStatus("emp-ana", "inactive");
+  try {
+    // Dashboard (overview), Ranking e Equipe: some por padrão.
+    const dash = await sellersOf(ADMIN, "2026-10");
+    assert.equal(byId(dash, "emp-ana"), undefined);
+    assert.equal(dash.includeInactive, false);
+    const rank = await getJson(rankingRoute, DASHBOARD, "/api/commercial/ranking?month=2026-10");
+    assert.ok(!names(rank.items).includes("ANA SOUZA"));
+    const team = await getJson(teamRoute, DASHBOARD, `/api/commercial/team?month=2026-10&companyId=${STORE_A}`);
+    assert.ok(!names(team.items).includes("ANA SOUZA"));
+    // ?inactive=1 (aba Comissão / "MOSTRAR INATIVOS"): volta, marcada.
+    const all = await getJson(overview, ADMIN, "/api/commercial/overview?month=2026-10&inactive=1");
+    assert.equal(all.includeInactive, true);
+    assert.equal(byId(all, "emp-ana").inactive, true);
+    assert.equal(byId(all, "emp-carla").inactive, false);
+    const rankAll = await getJson(rankingRoute, DASHBOARD, "/api/commercial/ranking?month=2026-10&inactive=1");
+    assert.equal(rankAll.items.find((item) => item.name === "ANA SOUZA").inactive, true);
+    const teamAll = await getJson(teamRoute, DASHBOARD, `/api/commercial/team?month=2026-10&companyId=${STORE_A}&inactive=1`);
+    assert.ok(names(teamAll.items).includes("ANA SOUZA"));
+    // Abas de cadastro (Vendedores/Crediários): continua, marcada.
+    const cadastro = await getJson(overview, ADMIN, "/api/commercial/overview?month=2026-10&for=cadastro");
+    assert.equal(byId(cadastro, "emp-ana").inactive, true);
+    // A conta vinculada continua vendo o próprio histórico.
+    const own = await sellersOf(SELLER_ANA, "2026-10");
+    assert.deepEqual(own.sellers.map((seller) => seller.employeeId), ["emp-ana"]);
+    // Nada é apagado; a comissão no RH continua sendo atualizada pelo Comercial.
+    assert.equal((await postEntry(ADMIN, { month: "2026-10", kind: "payjoy", saleRef: "inativo-1", employeeId: "emp-ana", amountCents: 50_000 })).status, 201);
+    const total = byId(await getJson(overview, ADMIN, "/api/commercial/overview?month=2026-10&inactive=1"), "emp-ana").metrics.commission.totalCents;
+    assert.notEqual(hrCents(), hrBefore);
+    assert.equal(hrCents(), total);
+    // Totais da loja (Meta Loja) não mudam.
+    assert.deepEqual(await getJson(storesRoute, DASHBOARD, "/api/commercial/stores?month=2026-10"), storesBefore);
+  } finally {
+    setStatus("emp-ana", "active");
+  }
+  // Reativada no RH: volta normalmente.
+  assert.equal(byId(await sellersOf(ADMIN, "2026-10"), "emp-ana").inactive, false);
 });

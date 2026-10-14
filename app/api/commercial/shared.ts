@@ -211,8 +211,17 @@ export type Seller = {
   updatedAt: string;
   updatedByName: string;
   newcomer: boolean;
+  // Funcionário inativo no RH (ou que não existe mais lá). Continua nos
+  // cálculos, na comissão/folha e nas abas de cadastro; Dashboard, Ranking e
+  // Equipe só o mostram com ?inactive=1 (ver withoutInactive).
+  inactive: boolean;
   metrics: SellerMetrics;
 };
+
+/** Esconde os vendedores inativos no RH (padrão do Dashboard/Ranking/Equipe). */
+export function withoutInactive<T extends { inactive: boolean }>(sellers: T[], includeInactive: boolean): T[] {
+  return includeInactive ? sellers : sellers.filter((seller) => !seller.inactive);
+}
 
 export type RulesRow = {
   id: string;
@@ -294,12 +303,12 @@ export async function loadSellers(
   const [result, companyNames, allRules, newcomersResult, entriesResult] = await Promise.all([
     database
       .prepare(
-        `SELECT ${MONTHLY_COLUMNS}, e.company_id AS currentCompanyId
+        `SELECT ${MONTHLY_COLUMNS}, e.company_id AS currentCompanyId, e.status AS currentStatus
          FROM commercial_monthly m LEFT JOIN hr_employees e ON e.id = m.employee_id
          WHERE m.month=?1`,
       )
       .bind(month)
-      .all<MonthlyRow & { currentName: string | null; currentCompanyId: string | null }>(),
+      .all<MonthlyRow & { currentName: string | null; currentCompanyId: string | null; currentStatus: string | null }>(),
     loadCompanyNames(database),
     loadRules(database),
     database
@@ -358,6 +367,7 @@ export async function loadSellers(
       updatedAt: row.updatedAt,
       updatedByName: row.updatedByName,
       newcomer,
+      inactive: row.currentStatus !== "active",
       metrics: computeSellerMetrics(goal, realized, clock, rules, newcomer),
     };
   });

@@ -18,6 +18,7 @@ import {
   linkedEmployeeIds,
   loadSellers,
   safeText,
+  withoutInactive,
 } from "../shared";
 
 // Dashboard + Comissão: vendedores do mês (importados da planilha) com meta,
@@ -39,6 +40,9 @@ import {
 // NOVATO é escondido da conta vinculada a um vendedor (ownOnly): a resposta
 // sai com newcomer=false (os valores em R$ continuam os reais), e essa conta
 // nunca pode marcar novatos (canMarkNewcomer=false; a rota também recusa).
+// Vendedor INATIVO no RH some por padrão (Dashboard); ?inactive=1 (aba
+// Comissão e "MOSTRAR INATIVOS" do Dashboard) e ?for=cadastro trazem com
+// inactive=true. A conta vinculada continua vendo o próprio histórico.
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -46,6 +50,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const requested = safeText(url.searchParams.get("month"), 7);
   const forCadastro = url.searchParams.get("for") === "cadastro";
+  const includeInactive = forCadastro || url.searchParams.get("inactive") === "1";
   const canDashboard = canViewCommercialDashboard(actor);
   const canCommission = canViewCommercialCommission(actor);
   const canGoals = canManageCommercialGoals(actor);
@@ -78,9 +83,10 @@ export async function GET(request: Request) {
           metrics: { ...seller.metrics, commission: { ...seller.metrics.commission, newcomer: false } },
         }))
       : scope.allStores ? sellers : sellers.filter((seller) => seller.companyId === scope.companyId);
+    const shown = ownOnly ? scoped : withoutInactive(scoped, includeInactive);
     const visible = canCommission
-      ? scoped
-      : scoped.map((seller) => {
+      ? shown
+      : shown.map((seller) => {
         // Dashboard igual para todos: fica só o que o selo usa (critérios
         // batidos e taxa); os valores em R$ são exclusivos da aba Comissão.
         const { allCriteriaMet, revenueRateBps, newcomer } = seller.metrics.commission;
@@ -90,6 +96,7 @@ export async function GET(request: Request) {
       month,
       clock,
       ownOnly,
+      includeInactive,
       allStores: !ownOnly && scope.allStores,
       companyId: scope.companyId,
       canDashboard,

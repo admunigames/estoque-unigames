@@ -3171,6 +3171,11 @@
   .com-targets li.reached b{color:#54c48a}
   /* Novato no mês (seletor do Dashboard) */
   .com-criteria.newcomer{color:var(--accent);border-color:rgba(79,134,189,.5);background:rgba(79,134,189,.1)}
+  /* Vendedor inativo no RH: selo e cartão em cinza (histórico). */
+  .com-criteria.inactive{color:var(--ink-faint);border-color:var(--inset-border);background:transparent}
+  .com-seller.inactive,.com-commission.inactive{filter:grayscale(1);opacity:.72}
+  .com-inactive-toggle{justify-content:flex-end;margin:0 0 10px}
+  .com-inactive-tag{display:inline-block;margin-left:6px;padding:1px 7px;border:1px solid var(--inset-border);border-radius:999px;font:800 9px/1.5 var(--mono);letter-spacing:.05em;color:var(--ink-faint);vertical-align:middle}
   .com-newcomer-toggle{font-size:10px}
   /* Regras de Comissão */
   .com-rules-actions{justify-content:flex-end;margin-bottom:12px}
@@ -6885,6 +6890,9 @@
       </div>
 
       <div class="com-view-panel" id="comViewDashboard">
+        <!-- Vendedor inativo no RH some por padrão; aqui volta (em cinza, com
+             selo INATIVO) para consultar o histórico dele no mês. -->
+        <label class="assist-check com-inactive-toggle" id="comInactiveToggleField" hidden><input type="checkbox" id="comShowInactive"> MOSTRAR INATIVOS</label>
         <div class="com-seller-list" id="comDashList"><p class="com-empty">Carregando…</p></div>
       </div>
 
@@ -44898,7 +44906,7 @@ function renderHomeTasks(){
       : '';
     return '<header class="com-seller-head"><div class="com-seller-name"><strong>'+escapeHtml(seller.name)+'</strong>'+
       '<span>'+escapeHtml(seller.companyName || 'SEM LOJA')+(seller.zone ? ' · ZONA '+escapeHtml(seller.zone) : '')+'</span></div>'+
-      '<div class="com-seller-side">'+comCriteriaHtml(seller.metrics)+toggle+
+      '<div class="com-seller-side">'+(seller.inactive ? '<span class="com-criteria inactive">INATIVO</span>' : '')+comCriteriaHtml(seller.metrics)+toggle+
       (updated ? '<span class="com-seller-meta">'+escapeHtml(updated)+'</span>' : '')+'</div></header>';
   }
 
@@ -44973,6 +44981,9 @@ function renderHomeTasks(){
   function comRenderDashboard(){
     const list = el('comDashList');
     if(!list || !comOverview) return;
+    // "MOSTRAR INATIVOS" só para quem vê a equipe (a conta do vendedor já vê o
+    // próprio histórico).
+    if(el('comInactiveToggleField')) el('comInactiveToggleField').hidden = Boolean(comOverview.ownOnly);
     const sellers = comFilteredSellers();
     if(!sellers.length){ list.innerHTML = comEmptyHtml(); return; }
     const clock = comOverview.clock;
@@ -44983,7 +44994,7 @@ function renderHomeTasks(){
           escapeHtml(comFormatValue('items', m.items.superTarget))+' · '+
           escapeHtml(m.items.superReached ? 'atingido' : 'faltam '+comFormatValue('items', m.items.superTarget - m.items.realized))+'</p>'
         : '';
-      return '<article class="com-seller">'+comSellerHeadHtml(seller, true)+
+      return '<article class="com-seller'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller, true)+
         '<div class="com-blocks">'+
           comBlockHtml('money', 'Faturamento', m.revenue, clock, false)+
           comBlockHtml('items', 'Itens vendidos', m.items, clock, true, superLine)+
@@ -45023,7 +45034,7 @@ function renderHomeTasks(){
       '<span class="value">'+escapeHtml(notApplicable ? 'NÃO SE APLICA (NOVATO)' : formatCentsBRL(cents))+'</span></li>';
     const showCredit = rules.creditRateBps > 0;
 
-    return '<article class="com-commission">'+comSellerHeadHtml(seller)+
+    return '<article class="com-commission'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller)+
       '<ul class="com-commission-rows">'+
         row('Comissão por vendas ('+comFormatBps(commission.revenueRateBps)+(commission.revenueBaseCents < seller.realized.revenueCents ? ' · sem o crediário' : '')+')', commission.revenueCommissionCents)+
         row('Premiação por faturamento', commission.revenuePremiumCents, commission.newcomer)+
@@ -45586,7 +45597,7 @@ function renderHomeTasks(){
     const zone = ['', 'NORTE', 'SUL'].map(value =>
       '<option value="'+value+'"'+(seller.zone === value ? ' selected' : '')+'>'+(value || '—')+'</option>').join('');
     return '<tr data-com-seller="'+escapeHtml(seller.employeeId)+'">'+
-      '<td data-label="Vendedor" class="nome"><strong>'+escapeHtml(seller.name)+'</strong><br><small>'+escapeHtml(seller.companyName || 'SEM LOJA')+'</small></td>'+
+      '<td data-label="Vendedor" class="nome"><strong>'+escapeHtml(seller.name)+'</strong>'+(seller.inactive ? '<span class="com-inactive-tag">INATIVO</span>' : '')+'<br><small>'+escapeHtml(seller.companyName || 'SEM LOJA')+'</small></td>'+
       '<td data-label="Zona"><select aria-label="Zona" data-com-field="zone">'+zone+'</select></td>'+
       cells+
       '<td data-label="Ações"><button class="btn-outline" type="button" data-com-remove>TIRAR DO MÊS</button></td></tr>';
@@ -45766,7 +45777,7 @@ function renderHomeTasks(){
     if(select && comManage){
       const current = select.value;
       select.innerHTML = '<option value="">ESCOLHA O VENDEDOR</option>'+comManage.sellers.map(seller =>
-        '<option value="'+escapeHtml(seller.employeeId)+'">'+escapeHtml(seller.name+(seller.companyName ? ' — '+seller.companyName : ''))+'</option>').join('');
+        '<option value="'+escapeHtml(seller.employeeId)+'">'+escapeHtml(seller.name+(seller.companyName ? ' — '+seller.companyName : '')+(seller.inactive ? ' (INATIVO)' : ''))+'</option>').join('');
       select.value = comManage.sellers.some(seller => seller.employeeId === current) ? current : '';
     }
     const body = el('comEntriesBody');
@@ -46181,12 +46192,17 @@ function renderHomeTasks(){
     if(comView === 'lojas') comRenderStoreGoals();
   }
 
+  if(el('comShowInactive')) el('comShowInactive').addEventListener('change', () => comLoadOverview({silent:true}));
+
   async function comLoadOverview(opts){
     const options = opts || {};
     const targets = ['comDashList', 'comComList'].map(el).filter(Boolean);
     if(!options.silent) targets.forEach(node => { node.innerHTML = '<p class="com-empty">Carregando…</p>'; });
     try{
-      comOverview = await comApi('/overview?month='+encodeURIComponent(comMonth));
+      // Comissão sempre com os inativos (fechar o pagamento); Dashboard só com
+      // "MOSTRAR INATIVOS".
+      const withInactive = comView === 'comissao' || (el('comShowInactive') && el('comShowInactive').checked);
+      comOverview = await comApi('/overview?month='+encodeURIComponent(comMonth)+(withInactive ? '&inactive=1' : ''));
     }catch(error){
       comOverview = null;
       targets.forEach(node => { node.innerHTML = '<p class="com-empty">'+escapeHtml(error.message)+'</p>'; });
