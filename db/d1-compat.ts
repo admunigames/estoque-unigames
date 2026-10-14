@@ -51,20 +51,26 @@ function toPgPlaceholders(queryText: string): string {
 // query (ex.: `AS updatedAt` viraria a chave `updatedat`). Em vez de
 // revisar centenas de aliases manualmente, citamos automaticamente todo
 // alias `AS xyz` que contenha letra maiúscula, preservando a grafia
-// original.
+// original. Só camelCase (maiúscula E minúscula): `CAST(x AS TEXT)` é tipo,
+// não alias — citado viraria o tipo inexistente "TEXT" (quebrou a lista de
+// Contas a Pagar em 08/10/2026).
 function quoteCamelCaseAliases(queryText: string): string {
   return queryText.replace(
     /\bAS\s+([A-Za-z_][A-Za-z0-9_]*)/g,
-    (full: string, identifier: string) => (/[A-Z]/.test(identifier) ? `AS "${identifier}"` : full),
+    (full: string, identifier: string) => (/[A-Z]/.test(identifier) && /[a-z]/.test(identifier) ? `AS "${identifier}"` : full),
   );
 }
 
 class PgPreparedStatement {
-  constructor(
-    private readonly sql: ReturnType<typeof postgres>,
-    private readonly originalQuery: string,
-    private readonly params: unknown[] = [],
-  ) {}
+  private readonly sql: ReturnType<typeof postgres>;
+  private readonly originalQuery: string;
+  private readonly params: unknown[];
+
+  constructor(sql: ReturnType<typeof postgres>, originalQuery: string, params: unknown[] = []) {
+    this.sql = sql;
+    this.originalQuery = originalQuery;
+    this.params = params;
+  }
 
   bind(...values: unknown[]): PgPreparedStatement {
     return new PgPreparedStatement(this.sql, this.originalQuery, values);
@@ -115,7 +121,11 @@ class PgPreparedStatement {
 }
 
 class PgD1Compat {
-  constructor(private readonly sql: ReturnType<typeof postgres>) {}
+  private readonly sql: ReturnType<typeof postgres>;
+
+  constructor(sql: ReturnType<typeof postgres>) {
+    this.sql = sql;
+  }
 
   prepare(query: string): PgPreparedStatement {
     return new PgPreparedStatement(this.sql, query);
