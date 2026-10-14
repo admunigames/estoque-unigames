@@ -2,7 +2,10 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { loadCompanyList } from "../../finance/shared";
 import {
+  canEmployees,
   canManagePayroll,
+  canSeeEmployees,
+  EMPLOYEE_FINANCIAL_FIELDS,
   centsValue,
   DATE_PATTERN,
   EMPLOYEE_COLUMNS,
@@ -29,8 +32,8 @@ export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManagePayroll(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O RH FINANCEIRO." }, 403);
+  if (!canSeeEmployees(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA VER OS FUNCIONÁRIOS." }, 403);
   }
 
   const url = new URL(request.url);
@@ -57,7 +60,15 @@ export async function GET(request: Request) {
       .prepare(`SELECT ${EMPLOYEE_COLUMNS} FROM hr_employees ${where} ORDER BY full_name ASC`)
       .bind(...params)
       .all<EmployeeRow>();
-    return jsonResponse({ employees: result.results ?? [] });
+    const financial = canManagePayroll(actor);
+    const employees = (result.results ?? []).map((row) => {
+      if (financial) return row;
+      // Sem RH Financeiro: salário, PIX, banco e benefícios não saem do servidor.
+      const copy: Record<string, unknown> = { ...row, financialHidden: true };
+      for (const field of EMPLOYEE_FINANCIAL_FIELDS) delete copy[field];
+      return copy;
+    });
+    return jsonResponse({ employees });
   } catch (error) {
     console.error("Não foi possível carregar os funcionários.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR OS FUNCIONÁRIOS." }, 500);
@@ -68,7 +79,7 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManagePayroll(actor)) {
+  if (!canEmployees(actor, "create") && !canEmployees(actor, "edit")) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR FUNCIONÁRIOS." }, 403);
   }
   if (!sameOrigin(request)) {
@@ -78,6 +89,10 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const editId = safeText(body.id, 80);
+    if (!canEmployees(actor, editId ? "edit" : "create")) {
+      return jsonResponse({ error: editId ? "VOCÊ NÃO TEM PERMISSÃO PARA EDITAR FUNCIONÁRIOS." : "VOCÊ NÃO TEM PERMISSÃO PARA CADASTRAR FUNCIONÁRIOS." }, 403);
+    }
+    const financial = canManagePayroll(actor);
     // Nomes do RH sempre em CAIXA ALTA (pedido do usuário, 2026-10-06).
     const fullName = safeText(body.fullName, 160).toLocaleUpperCase("pt-BR");
     const cpf = onlyDigits(safeText(body.cpf, 20));
@@ -86,16 +101,16 @@ export async function POST(request: Request) {
     const admissionDate = safeText(body.admissionDate, 10);
     const companyId = safeText(body.companyId, 80);
     const roleTitle = safeText(body.roleTitle, 120);
-    const pixKey = safeText(body.pixKey, 160);
-    const bankName = safeText(body.bankName, 120);
+    let pixKey = safeText(body.pixKey, 160);
+    let bankName = safeText(body.bankName, 120);
     const status = safeText(body.status, 20) || "active";
     const workSchedule = safeText(body.workSchedule, 10) || "5x2";
     const userId = safeText(body.userId, 80);
     const notes = safeText(body.notes, 500);
-    const salaryCents = centsValue(body.salaryCents ?? 0);
-    const foodPerDayCents = centsValue(body.foodPerDayCents ?? 0);
-    const transportPerDayCents = centsValue(body.transportPerDayCents ?? 0);
-    const benefitNotes = safeText(body.benefitNotes, 500);
+    let salaryCents = centsValue(body.salaryCents ?? 0);
+    let foodPerDayCents = centsValue(body.foodPerDayCents ?? 0);
+    let transportPerDayCents = centsValue(body.transportPerDayCents ?? 0);
+    let benefitNotes = safeText(body.benefitNotes, 500);
 
     if (!fullName) return jsonResponse({ error: "INFORME O NOME DO FUNCIONÁRIO." }, 400);
     if (cpf && !isValidCpf(cpf)) return jsonResponse({ error: "INFORME UM CPF VÁLIDO." }, 400);
@@ -151,10 +166,24 @@ export async function POST(request: Request) {
 
     if (editId) {
       const existing = await database
-        .prepare("SELECT id FROM hr_employees WHERE id=?1")
+        .prepare(
+          `SELECT id, salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName,
+                  food_per_day_cents AS foodPerDayCents, transport_per_day_cents AS transportPerDayCents,
+                  benefit_notes AS benefitNotes
+           FROM hr_employees WHERE id=?1`,
+        )
         .bind(editId)
-        .first<{ id: string }>();
+        .first<{ id: string; salaryCents: number; pixKey: string; bankName: string; foodPerDayCents: number; transportPerDayCents: number; benefitNotes: string }>();
       if (!existing) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
+      // Sem RH Financeiro: os dados financeiros ficam como estavam.
+      if (!financial) {
+        salaryCents = Number(existing.salaryCents) || 0;
+        pixKey = existing.pixKey || "";
+        bankName = existing.bankName || "";
+        foodPerDayCents = Number(existing.foodPerDayCents) || 0;
+        transportPerDayCents = Number(existing.transportPerDayCents) || 0;
+        benefitNotes = existing.benefitNotes || "";
+      }
       await database
         .prepare(
           `UPDATE hr_employees
@@ -213,6 +242,10 @@ export async function POST(request: Request) {
       return jsonResponse({ updated: true, id: editId });
     }
 
+    if (!financial) {
+      // Cadastro novo sem RH Financeiro: entra sem dados financeiros.
+      salaryCents = 0; pixKey = ""; bankName = ""; foodPerDayCents = 0; transportPerDayCents = 0; benefitNotes = "";
+    }
     const id = crypto.randomUUID();
     await database
       .prepare(
@@ -259,7 +292,7 @@ export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManagePayroll(actor)) {
+  if (!canEmployees(actor, "delete")) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR FUNCIONÁRIOS." }, 403);
   }
   if (!sameOrigin(request)) {

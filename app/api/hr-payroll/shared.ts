@@ -67,6 +67,18 @@ export function canManagePayroll(actor: Identity) {
   return actor.role === "admin" || actor.permissions.includes("payroll:manage");
 }
 
+// Cadastro de Funcionários: permissões próprias (rh_funcionarios:view/create/
+// edit/delete). Quem tem payroll:manage continua podendo tudo. Salário, PIX,
+// banco e benefícios ficam só com o RH Financeiro (payroll:manage).
+export type EmployeeAction = "view" | "create" | "edit" | "delete";
+export function canEmployees(actor: Identity, action: EmployeeAction) {
+  return canManagePayroll(actor) || actor.permissions.includes(`rh_funcionarios:${action}`);
+}
+export function canSeeEmployees(actor: Identity) {
+  return canManagePayroll(actor) || actor.permissions.some((permission) => permission.startsWith("rh_funcionarios:"));
+}
+export const EMPLOYEE_FINANCIAL_FIELDS = ["salaryCents", "pixKey", "bankName", "foodPerDayCents", "transportPerDayCents", "benefitNotes"] as const;
+
 export function actorName(actor: Identity) {
   return actor.displayName || "Usuário";
 }

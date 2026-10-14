@@ -74,6 +74,7 @@ type Permission =
   | "gorduras_assistencia:view" | "gorduras_assistencia:create" | "gorduras_assistencia:edit" | "gorduras_assistencia:opening"
   | "treinamento:view" | "treinamento:team"
   | "audit:view"
+  | "rh_funcionarios:view" | "rh_funcionarios:create" | "rh_funcionarios:edit" | "rh_funcionarios:delete"
   | "users:manage";
 type AccessGroup = "administrator" | "purchases" | "fiscal" | "operator" | "assistance" | "custom";
 type UserHierarchy = "director" | "supervisor" | "administrative";
@@ -234,6 +235,9 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "documents:create", "documents:edit", "documents:delete",
   // Cadastros > Auditoria — ver quem cadastrou/alterou/excluiu em qualquer módulo.
   "audit:view",
+  // RH > Funcionários — cadastro com permissões próprias (sem salário/PIX/banco,
+  // que seguem com payroll:manage).
+  "rh_funcionarios:view", "rh_funcionarios:create", "rh_funcionarios:edit", "rh_funcionarios:delete",
   "users:manage",
 ];
 // A antiga documents_manage (exclusiva do admin) virou legado: é expandida
@@ -1358,6 +1362,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   ],
   treinamento: ["treinamento:view", "treinamento:team"],
   audit: ["audit:view"],
+  employees: ["payroll:manage", "rh_funcionarios:view", "rh_funcionarios:create", "rh_funcionarios:edit", "rh_funcionarios:delete"],
 };
 
 const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_PERMISSIONS> = {
@@ -1482,6 +1487,9 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     // RH Financeiro: as quatro telas novas (Funcionários, Folha, Benefícios
     // e Comissionamento) e a API delas só dependem de payroll:manage — nem
     // do "hr" das telas de Folgas/Escalas, nem de finance:manage.
+    // RH > Funcionários: payroll:manage OU as permissões próprias do cadastro.
+    // Checado antes do bucket do RH Financeiro abaixo.
+    [path === "/rh/funcionarios" || path === "/api/hr-payroll/employees", "employees"],
     [
       path === "/rh/funcionarios" ||
         path === "/rh/folha" ||

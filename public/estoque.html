@@ -370,6 +370,9 @@
   }
   .theme-toggle:hover{opacity:1; border-color:var(--accent);}
   .theme-toggle:active{transform:scale(.95);}
+  /* Funcionários sem RH Financeiro: sem as colunas Salário (6) e Pagamento (7). */
+  #rhEmployeesTable.rh-no-fin th:nth-child(6),#rhEmployeesTable.rh-no-fin th:nth-child(7),
+  #rhEmployeesTable.rh-no-fin td:nth-child(6),#rhEmployeesTable.rh-no-fin td:nth-child(7){display:none;}
   .loan-return-note{font:800 10px/1.3 var(--mono);color:var(--ink-soft);letter-spacing:.3px;}
   /* Ícone "sol que vira lua": tema claro = sol com raios; tema escuro = os
      raios giram e somem, o sol cresce e a máscara (clipPath) desliza
@@ -3816,7 +3819,7 @@
         <a class="nav-item sub-item" id="navFinanceiroRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="rh_escalas,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento,rh_aniversariantes,rh_odontologico">
+    <div class="nav-group" data-any-permission="rh_funcionarios,payroll,rh_escalas,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento,rh_aniversariantes,rh_odontologico">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -3831,7 +3834,7 @@
         <a class="nav-item sub-item" id="navRhFardamento" data-page="rhFardamento" data-permission="rh_fardamento" data-home-desc="Controle de estoque de fardamento e casacos por tipo de peça e tamanho." title="Fardamento" href="/rh/fardamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l1 2 4 2-2 4-2-1v11H8V10l-2 1-2-4 4-2 1-2Z"/></svg></span><span class="nav-label">Fardamento</span></a>
         <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-permission="rh_escalas" data-home-desc="Escala de folgas gerada automaticamente e resumo por colaborador." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
         <a class="nav-item sub-item" id="navRhFolha" data-page="rhFolha" data-permission="payroll" data-home-desc="Folha de pagamento mensal, com comissão e benefícios calculados na hora." title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
-        <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
+        <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-any-permission="payroll,rh_funcionarios" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
         <a class="nav-item sub-item" id="navRhOdontologico" data-page="rhOdontologico" data-permission="rh_odontologico" data-home-desc="Controle de inclusão e exclusão de colaboradores no plano odontológico." title="Plano Odontológico" href="/rh/odontologico"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-3 0-5 2-5 5 0 2.5 1 3.5 1 6.5 0 2 1 4.5 2.5 4.5S12 17 12 14c0-1 .5-1 .5 0 0 3 1 5 2.5 5s2.5-2.5 2.5-4.5c0-3 1-4 1-6.5 0-3-2-5-5-5-1 0-1 .8-1.5.8S13 3 12 3Z"/></svg></span><span class="nav-label">Plano Odontológico</span></a>
         <a class="nav-item sub-item" id="navRhRecrutamento" data-page="rhRecrutamento" data-permission="rh_recrutamento" data-home-desc="Pipeline de Recrutamento e Seleção: entrevista, teste, treinamento, contratação e integração." title="Recrutamento e Seleção" href="/rh/recrutamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/><path d="m17 4 2 2-2 2"/><path d="M19 6h-4"/></svg></span><span class="nav-label">Recrutamento e Seleção</span></a>
       </div>
@@ -9540,6 +9543,13 @@
                   <span class="permission-subtitle">Financeiro (Folha, Benefícios, Comissionamento)</span>
                   <label class="permission-option"><input type="checkbox" name="userPermission" value="payroll:manage"> Cadastrar funcionários e gerenciar folha, benefícios e comissionamento</label>
                 </div>
+                <div class="permission-subgroup" data-permission-subgroup="Funcionários">
+                  <span class="permission-subtitle">Funcionários</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_funcionarios:view"> Ver o cadastro de funcionários (sem salário, PIX e banco)</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_funcionarios:create"> Cadastrar funcionário</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_funcionarios:edit"> Editar funcionário</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_funcionarios:delete"> Excluir funcionário</label>
+                </div>
                 <div class="permission-subgroup" data-permission-subgroup="Plano Odontológico">
                   <span class="permission-subtitle">Plano Odontológico</span>
                   <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_odontologico:view"> Ver a lista do plano odontológico (dado sensível: CPF e saúde)</label>
@@ -10955,14 +10965,14 @@
       <div class="purchase-field"><label for="rhEmployeeAdmission">DATA DE ADMISSÃO</label><input type="date" id="rhEmployeeAdmission"></div>
       <div class="purchase-field"><label for="rhEmployeeCompany">LOJA</label><select id="rhEmployeeCompany"><option value="">SEM LOJA DEFINIDA</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeRole">CARGO</label><input id="rhEmployeeRole" maxlength="120"></div>
-      <div class="purchase-field"><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeSalary" placeholder="R$ 0,00"></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeSalary" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhEmployeeStatus">SITUAÇÃO</label><select id="rhEmployeeStatus"><option value="active">ATIVO</option><option value="inactive">INATIVO</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeSchedule">ESCALA</label><select id="rhEmployeeSchedule"><option value="5x2">5x2 (SEG A SEX)</option><option value="6x1">6x1 (TRABALHA 6, FOLGA 1)</option></select></div>
-      <div class="purchase-field"><label for="rhEmployeePix">CHAVE PIX</label><input id="rhEmployeePix" maxlength="160"></div>
-      <div class="purchase-field"><label for="rhEmployeeBank">BANCO</label><input id="rhEmployeeBank" maxlength="120"></div>
-      <div class="purchase-field"><label for="rhEmployeeFoodPerDay">ALIMENTAÇÃO POR DIA (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeFoodPerDay" placeholder="R$ 0,00"></div>
-      <div class="purchase-field"><label for="rhEmployeeTransportPerDay">TRANSPORTE POR DIA (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeTransportPerDay" placeholder="R$ 0,00"></div>
-      <div class="purchase-field full"><label for="rhEmployeeBenefitNotes">OBSERVAÇÕES DOS BENEFÍCIOS</label><input id="rhEmployeeBenefitNotes" maxlength="500"></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeePix">CHAVE PIX</label><input id="rhEmployeePix" maxlength="160"></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeeBank">BANCO</label><input id="rhEmployeeBank" maxlength="120"></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeeFoodPerDay">ALIMENTAÇÃO POR DIA (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeFoodPerDay" placeholder="R$ 0,00"></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeeTransportPerDay">TRANSPORTE POR DIA (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeTransportPerDay" placeholder="R$ 0,00"></div>
+      <div class="purchase-field full" data-rh-fin><label for="rhEmployeeBenefitNotes">OBSERVAÇÕES DOS BENEFÍCIOS</label><input id="rhEmployeeBenefitNotes" maxlength="500"></div>
       <div class="purchase-field full"><label for="rhEmployeeUser">CONTA DE ACESSO (OPCIONAL)</label><select id="rhEmployeeUser"><option value="">SEM CONTA VINCULADA</option></select></div>
       <div class="purchase-field full"><label for="rhEmployeeNotes">OBSERVAÇÕES</label><textarea id="rhEmployeeNotes" rows="2" maxlength="500"></textarea></div>
     </div>
@@ -12583,6 +12593,13 @@
       }
       if(type === 'insertText' || type === 'insertCompositionText'){
         event.preventDefault();
+        // Campo zerado (ex.: nasceu com "0.00", centavos já "cheios"): digitar
+        // começa um valor novo em vez de ser ignorado.
+        if(decimalMode && decDigits === '00' && /^0*$/.test(intDigits)){
+          intDigits = '';
+          decDigits = '';
+          decimalMode = false;
+        }
         const data = event.data || '';
         for(const ch of data){
           if(/\d/.test(ch)){
@@ -12637,6 +12654,18 @@
         parseFullString(input.value);
         render();
         placeCursorAtEnd();
+      }
+    });
+
+    // Como a máscara reescreve o valor pelo código, o navegador não dispara o
+    // "change" nativo: quem escuta "change" (ex.: Relatório NF) nunca recebia o
+    // valor digitado. Ao sair do campo, avisa se o valor mudou desde o foco.
+    let valueOnFocus = input.value;
+    input.addEventListener('focus', () => { valueOnFocus = input.value; });
+    input.addEventListener('blur', () => {
+      if(input.value !== valueOnFocus){
+        valueOnFocus = input.value;
+        input.dispatchEvent(new Event('change', {bubbles: true}));
       }
     });
 
@@ -13408,6 +13437,8 @@
 
   function canAccessPage(name){
     if(name === 'usuarios') return canManageUsers();
+    // Funcionários: RH Financeiro OU as permissões próprias do cadastro.
+    if(name === 'rhFuncionarios') return canAccess('payroll') || canAccess('rh_funcionarios');
     if(name === 'documentos' && isCommercialOnlySession()) return false;
     // NF/Duplicatas é acessível por finance:manage OU qualquer permissão
     // granular payables:* (fallback já aplicado no backend, ver
@@ -26253,11 +26284,17 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(entry.storeName)+'</td>'+
         '<td><input type="number" min="0" step="1" value="'+entry.salesCount+'" data-nf-row="'+index+'" data-nf-field="salesCount" style="width:80px;"></td>'+
         '<td><input type="number" min="0" step="1" value="'+entry.invoicesIssuedCount+'" data-nf-row="'+index+'" data-nf-field="invoicesIssuedCount" style="width:80px;"></td>'+
-        '<td><input type="text" inputmode="decimal" value="'+((Number(entry.invoicesIssuedAmountCents) || 0) / 100).toFixed(2)+'" data-nf-row="'+index+'" data-nf-field="invoicesIssuedAmountCents" style="width:130px;"></td>'+
+        // Zero fica vazio (só o placeholder): com "0.00" a máscara já nasce com os
+        // centavos cheios e ignora o que se digita.
+        '<td><input type="text" inputmode="decimal" placeholder="R$ 0,00" value="'+(Number(entry.invoicesIssuedAmountCents) ? (Number(entry.invoicesIssuedAmountCents) / 100).toFixed(2) : '')+'" data-nf-row="'+index+'" data-nf-field="invoicesIssuedAmountCents" style="width:130px;"></td>'+
         '<td>'+pct.toFixed(0)+'%</td>'+
       '</tr>';
     }).join('');
-    tbody.querySelectorAll('[data-nf-field="invoicesIssuedAmountCents"]').forEach(input => attachCurrencyMask(input));
+    tbody.querySelectorAll('[data-nf-field="invoicesIssuedAmountCents"]').forEach(input => {
+      attachCurrencyMask(input);
+      // Ao entrar no campo, seleciona tudo: digitar substitui o valor anterior.
+      input.addEventListener('focus', () => requestAnimationFrame(() => input.select()));
+    });
     tbody.querySelectorAll('input').forEach(input => {
       input.addEventListener('change', () => {
         const index = Number(input.dataset.nfRow);
@@ -39795,6 +39832,7 @@ function renderHomeTasks(){
     'finance:manage':'Financeiro: acessar módulo',
     'payables:invoices_view':'Financeiro: ver notas fiscais/duplicatas','payables:invoices_reconcile':'Financeiro: conferir NF e cadastrar duplicatas','payables:confirm_payment':'Financeiro: agendar/confirmar pagamento de duplicata','payables:return_to_purchases':'Financeiro: devolver NF para Compras',
     'payroll:manage':'RH Financeiro: folha, benefícios e comissionamento',
+    'rh_funcionarios:view':'RH - Funcionários: visualizar','rh_funcionarios:create':'RH - Funcionários: cadastrar','rh_funcionarios:edit':'RH - Funcionários: editar','rh_funcionarios:delete':'RH - Funcionários: excluir',
     'rh_acompanhamento:view':'RH - Acompanhamento de Lojas: visualizar','rh_acompanhamento:manage':'RH - Acompanhamento de Lojas: cadastrar/editar/excluir',
     'rh_ponto_logistica:view':'RH - Controle de Horas - Logística: visualizar','rh_ponto_logistica:manage':'RH - Controle de Horas - Logística: lançar/configurar',
     'rh_recrutamento:view':'RH - Recrutamento e Seleção: visualizar','rh_recrutamento:manage':'RH - Recrutamento e Seleção: cadastrar/editar/excluir',
@@ -40473,8 +40511,8 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(payment)+'</td>'+
         '<td>'+statusPill+'</td>'+
         '<td class="no-print"><span style="display:flex;gap:6px;">'+
-          '<button class="btn-outline" type="button" data-rh-employee-edit="'+escapeHtml(employee.id)+'">EDITAR</button>'+
-          '<button class="btn-outline" type="button" data-rh-employee-delete="'+escapeHtml(employee.id)+'">EXCLUIR</button>'+
+          (rhEmployeeCan('edit') ? '<button class="btn-outline" type="button" data-rh-employee-edit="'+escapeHtml(employee.id)+'">EDITAR</button>' : '')+
+          (rhEmployeeCan('delete') ? '<button class="btn-outline" type="button" data-rh-employee-delete="'+escapeHtml(employee.id)+'">EXCLUIR</button>' : '')+
         '</span></td>'+
       '</tr>';
     }).join('');
@@ -40497,8 +40535,14 @@ function renderHomeTasks(){
     })));
   }
 
+  // Sem RH Financeiro: salário, PIX, banco e benefícios ficam escondidos (o
+  // servidor nem envia); botões conforme rh_funcionarios:create/edit/delete.
+  const rhEmployeeCan = action => canAccess('payroll') || canAccess('rh_funcionarios:'+action);
+
   async function loadRhFuncionarios(opts){
-    if(!canAccess('payroll')) return;
+    if(!canAccess('payroll') && !canAccess('rh_funcionarios')) return;
+    el('btnNewRhEmployee').hidden = !rhEmployeeCan('create');
+    el('rhEmployeesTable').classList.toggle('rh-no-fin', !canAccess('payroll'));
     const body = el('rhEmployeesTableBody');
     if(body && (!opts || !opts.silent)) body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando funcionários…</td></tr>';
     try{
@@ -40522,6 +40566,7 @@ function renderHomeTasks(){
     rhRenderEmployeeUserOptions();
     el('rhEmployeeId').value = employee ? employee.id : '';
     el('rhEmployeeDialogTitle').textContent = employee ? 'EDITAR FUNCIONÁRIO' : 'NOVO FUNCIONÁRIO';
+    document.querySelectorAll('#rhEmployeeForm [data-rh-fin]').forEach(node => { node.hidden = !canAccess('payroll'); });
     el('rhEmployeeName').value = employee ? employee.fullName : '';
     el('rhEmployeeCpf').value = employee ? (employee.cpf || '') : '';
     el('rhEmployeeRg').value = employee ? (employee.rg || '') : '';

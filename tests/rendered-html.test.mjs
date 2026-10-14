@@ -2405,7 +2405,7 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.deepEqual(moduleNames, [...moduleNames].sort((a, b) => sortKey(a).localeCompare(sortKey(b))));
   assert.equal(moduleNames.filter((name) => /^RH/.test(name)).join(), "RH");
   const rhAreas = [...permissionGrid.matchAll(/data-permission-subgroup="([^"]+)"/g)].map((m) => m[1]);
-  assert.equal(rhAreas.length, 8);
+  assert.equal(rhAreas.length, 9);
   assert.deepEqual(rhAreas, [...rhAreas].sort((a, b) => sortKey(a).localeCompare(sortKey(b))));
   for (const value of ["payroll:manage", "rh_acompanhamento:view", "rh_ponto_logistica:view", "rh_recrutamento:view",
     "rh_fardamento:view", "rh_aniversariantes:view", "rh_odontologico:view", "rh_escalas:view"]) {
@@ -2424,7 +2424,7 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /documentos:'\/documentos'/);
   assert.match(html, /function navigateToDocumentFolder\(folder\)/);
 
-  assert.match(workerSource, /"documents:create", "documents:edit", "documents:delete",\n  \/\/ Cadastros > Auditoria[^\n]*\n  "audit:view",\n  "users:manage",\n\];/);
+  assert.match(workerSource, /"documents:create", "documents:edit", "documents:delete",\n  \/\/ Cadastros > Auditoria[^\n]*\n  "audit:view",\n[\s\S]*?  "users:manage",\n\];/);
   assert.match(
     workerSource,
     /"documents_manage": \["documents:create", "documents:edit", "documents:delete"\]/,
