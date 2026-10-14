@@ -7,7 +7,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
 const db = await setupRouteDb(["shared_state", "assist_service_orders", "assist_service_order_updates"]);
 const route = await import("../app/api/assistencia/ordens-servico/route.ts");
-const { compareOrders, deadlineInfo, recifeDate } = await import("../app/lib/ordens-servico.ts");
+const { approvalState, compareOrders, deadlineInfo, recifeDate } = await import("../app/lib/ordens-servico.ts");
 
 const A = "clojaalfa1";
 const B = "clojabeta1";
@@ -18,6 +18,8 @@ db.insert("shared_state", {
 const TECNICO = { id: "tec", permissions: ["ordens_servico:view", "ordens_servico:create", "ordens_servico:edit"] };
 const LOJA_A = { id: "loja-a", companyId: A, permissions: ["ordens_servico:view", "ordens_servico:create", "ordens_servico:edit", "ordens_servico:delete"] };
 const SO_VE = { id: "so-ve", permissions: ["ordens_servico:view"] };
+const LOJA_A_TESTE = { id: "loja-a-teste", name: "GERENTE ALFA", companyId: A, permissions: ["ordens_servico:view", "ordens_servico:store_test"] };
+const LOJA_B_TESTE = { id: "loja-b-teste", companyId: B, permissions: ["ordens_servico:view", "ordens_servico:store_test"] };
 const ADMIN = { id: "adm", role: "admin", permissions: [] };
 
 const call = (actor, method, body, query = "") => callRoute(route[method], actor, method, `/api/assistencia/ordens-servico${query}`, body);
@@ -96,7 +98,8 @@ test("atualização diária guarda histórico; FINALIZADA sai das abertas; exclu
   assert.equal(updated.updatedToday, true);
   assert.ok(["AGUARDANDO PEÇA", "PEÇA CHEGOU"].includes(updated.lastUpdateText));
 
-  const patch = { ...order("23328", target.deadline), id: target.id, status: "FINALIZADA" };
+  const patch = { ...order("23328", target.deadline), id: target.id, status: "APROVADA", shipToStore: "nao" };
+  assert.equal((await call(TECNICO, "PATCH", { ...patch, shipToStore: "" })).status, 400);
   assert.equal((await call(SO_VE, "PATCH", patch)).status, 403);
   assert.equal((await call(TECNICO, "PATCH", patch)).status, 200);
   after = await (await call(TECNICO, "GET")).json();
@@ -112,4 +115,56 @@ test("atualização diária guarda histórico; FINALIZADA sai das abertas; exclu
   assert.equal((await call(ADMIN, "DELETE", { id: victim.id })).status, 200);
   const final = await (await call(TECNICO, "GET")).json();
   assert.ok(!final.orders.some((row) => row.id === victim.id));
+});
+
+test("approvalState: APROVADA finaliza ou espera a loja; voltar para a assistência desfaz o pendente", () => {
+  assert.deepEqual(approvalState("APROVADA", "nao", ""), { closed: 1, storeCheck: "" });
+  assert.deepEqual(approvalState("APROVADA", "sim", ""), { closed: 0, storeCheck: "pendente" });
+  assert.deepEqual(approvalState("APROVADA", "sim", "aprovada"), { closed: 1, storeCheck: "aprovada" });
+  assert.deepEqual(approvalState("PRODUÇÃO", "", "pendente"), { closed: 0, storeCheck: "" });
+  assert.deepEqual(approvalState("PRODUÇÃO", "", "reprovada"), { closed: 0, storeCheck: "reprovada" });
+});
+
+test("segue para a loja: loja testa; reprovado em loja volta para a assistência com quem e quando", async () => {
+  assert.equal((await call(TECNICO, "POST", order("30001", shift(3), { status: "PRODUÇÃO" }))).status, 201);
+  let data = await (await call(TECNICO, "GET")).json();
+  const os = data.orders.find((row) => row.osNumber === "30001");
+  const approve = { ...order("30001", os.deadline), id: os.id, status: "APROVADA", shipToStore: "sim" };
+  // Ainda não seguiu para a loja: teste recusado.
+  assert.equal((await call(LOJA_A_TESTE, "PATCH", { id: os.id, action: "store_test", result: "aprovada" })).status, 409);
+  assert.equal((await call(TECNICO, "PATCH", approve)).status, 200);
+  data = await (await call(TECNICO, "GET")).json();
+  let row = data.orders.find((item) => item.id === os.id);
+  assert.equal(row.closed, 0);
+  assert.equal(row.storeCheck, "pendente");
+  assert.equal(row.shipToStore, "sim");
+  assert.equal(row.shipByName, "TEC");
+  assert.ok(row.shipAt);
+  // Sem permissão de teste / outra loja / login de loja sem store_test.
+  assert.equal((await call(SO_VE, "PATCH", { id: os.id, action: "store_test", result: "aprovada" })).status, 403);
+  assert.equal((await call(LOJA_B_TESTE, "PATCH", { id: os.id, action: "store_test", result: "aprovada" })).status, 404);
+  assert.equal((await call(LOJA_A, "PATCH", { id: os.id, action: "store_test", result: "aprovada" })).status, 403);
+  // Reprovar exige motivo.
+  assert.equal((await call(LOJA_A_TESTE, "PATCH", { id: os.id, action: "store_test", result: "reprovada" })).status, 400);
+  assert.equal((await call(LOJA_A_TESTE, "PATCH", { id: os.id, action: "store_test", result: "reprovada", note: "não liga" })).status, 200);
+  data = await (await call(TECNICO, "GET")).json();
+  row = data.orders.find((item) => item.id === os.id);
+  assert.equal(row.status, "REPROVADO EM LOJA");
+  assert.equal(row.closed, 0);
+  assert.equal(row.storeCheck, "reprovada");
+  assert.equal(row.storeCheckByName, "GERENTE ALFA");
+  assert.equal(row.storeCheckNote, "NÃO LIGA");
+  assert.match(row.lastUpdateText, /^REPROVADO EM LOJA POR GERENTE ALFA EM \d{2}\/\d{2}\/\d{4} - NÃO LIGA$/);
+  // Assistência conserta e manda de novo; a loja aprova → finaliza.
+  assert.equal((await call(TECNICO, "PATCH", approve)).status, 200);
+  assert.equal((await call(LOJA_A_TESTE, "PATCH", { id: os.id, action: "store_test", result: "aprovada" })).status, 200);
+  data = await (await call(TECNICO, "GET")).json();
+  assert.ok(!data.orders.some((item) => item.id === os.id));
+  const closed = await (await call(TECNICO, "GET", undefined, "?closed=1")).json();
+  row = closed.orders.find((item) => item.id === os.id);
+  assert.equal(row.storeCheck, "aprovada");
+  const history = await (await call(TECNICO, "GET", undefined, `?updates=${os.id}`)).json();
+  const texts = history.updates.map((item) => item.text);
+  assert.ok(texts.includes("STATUS: APROVADA · SEGUE PARA A LOJA"));
+  assert.ok(texts.some((text) => text.startsWith("APROVADA NA LOJA POR GERENTE ALFA")));
 });

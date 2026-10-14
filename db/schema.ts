@@ -4136,6 +4136,15 @@ export const assistServiceOrders = pgTable(
     lastUpdateText: text("last_update_text").notNull().default(""),
     lastUpdateAt: text("last_update_at").notNull().default(""),
     lastUpdateByName: text("last_update_by_name").notNull().default(""),
+    // APROVADA: o produto segue para a loja? '' | 'sim' | 'nao' (+ quem marcou).
+    shipToStore: text("ship_to_store").notNull().default(""),
+    shipByName: text("ship_by_name").notNull().default(""),
+    shipAt: text("ship_at").notNull().default(""),
+    // Teste da loja: '' | 'pendente' | 'aprovada' | 'reprovada' (+ quem/quando/motivo).
+    storeCheck: text("store_check").notNull().default(""),
+    storeCheckByName: text("store_check_by_name").notNull().default(""),
+    storeCheckAt: text("store_check_at").notNull().default(""),
+    storeCheckNote: text("store_check_note").notNull().default(""),
     canceled: integer("canceled").notNull().default(0),
     source: text("source").notNull().default("manual"),
     createdBy: text("created_by").notNull().default(""),

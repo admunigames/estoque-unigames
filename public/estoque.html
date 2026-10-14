@@ -3721,6 +3721,23 @@
       display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
     }
     body.assist-printing #assistPrintBody{display:block !important; width:100%;}
+    /* Relatório de produção das Ordens de Serviço: só o relatório. */
+    body.os-printing > :not(.shell),
+    body.os-printing .shell > :not(.content),
+    body.os-printing .content > :not(#pageAssistenciaOrdensServico),
+    body.os-printing #pageAssistenciaOrdensServico > :not(#osPrintBody){display:none !important;}
+    body.os-printing .shell,body.os-printing .content,body.os-printing #pageAssistenciaOrdensServico{
+      display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+    }
+    body.os-printing #osPrintBody{display:block !important; width:100%; color:#111827;}
+    .os-print-section{margin-top:12px;}
+    .os-print-section h2{margin:0 0 6px; padding:5px 8px; border:1px solid #111827; font:800 11px/1.3 var(--mono); break-after:avoid; page-break-after:avoid;}
+    .os-print-table{width:100%; border-collapse:collapse; font-size:9px;}
+    .os-print-table thead{display:table-header-group;}
+    .os-print-table th,.os-print-table td{padding:4px 6px; border:1px solid #9ca3af !important; background:#fff !important; color:#111827 !important; text-align:left; vertical-align:top; overflow-wrap:anywhere;}
+    .os-print-table th{font:800 8px/1.3 var(--mono); text-transform:uppercase;}
+    .os-print-table tr{break-inside:avoid; page-break-inside:avoid;}
+    .os-print-empty{margin:4px 0 0; color:#475569; font-size:9px;}
     .assist-doc{width:100%; min-width:0 !important; font-size:10px; color:#111827 !important;}
     .assist-doc-head,.assist-doc-block,.assist-doc-total,.assist-doc-payments,.assist-doc-obs,.assist-doc-foot{break-inside:avoid; page-break-inside:avoid;}
     .assist-doc-total{break-after:avoid; page-break-after:avoid;}
@@ -7115,6 +7132,7 @@
         </div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnOsReload" type="button">ATUALIZAR</button>
+          <button class="btn-outline" id="btnOsProductionReport" type="button">RELATÓRIO PRODUÇÃO (PDF)</button>
           <button class="btn-accent" id="btnOsNew" type="button" hidden>NOVA O.S.</button>
         </div>
       </header>
@@ -7123,7 +7141,7 @@
 
       <div class="dre-toolbar">
         <div class="field"><label for="osView">MOSTRAR</label>
-          <select id="osView"><option value="open">EM ABERTO</option><option value="closed">FINALIZADAS</option></select>
+          <select id="osView"><option value="open">EM ABERTO</option><option value="closed">APROVADAS (FINALIZADAS)</option></select>
         </div>
         <div class="field" id="osStoreField"><label for="osStoreFilter">LOJA</label><select id="osStoreFilter"></select></div>
         <div class="field"><label for="osStatusFilter">STATUS</label><select id="osStatusFilter"></select></div>
@@ -7136,6 +7154,8 @@
             <option value="no_prazo">NO PRAZO</option>
             <option value="sem_data">SEM DATA LIMITE</option>
             <option value="sem_atualizacao">SEM ATUALIZAÇÃO HOJE</option>
+            <option value="na_loja">AGUARDANDO TESTE NA LOJA</option>
+            <option value="reprovado_loja">REPROVADO EM LOJA</option>
           </select>
         </div>
         <div class="field"><label for="osSearch">BUSCAR</label><input type="search" id="osSearch" placeholder="O.S., equipamento, observação ou atualização"></div>
@@ -7144,6 +7164,7 @@
       <div class="supply-dashboard-grid gd-summary" id="osSummary"></div>
 
       <h3 class="supply-section-title" id="osListTitle">O.S. EM ABERTO · MAIS CRÍTICAS PRIMEIRO</h3>
+      <div class="print-only" id="osPrintBody"></div>
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="osTable">
@@ -9453,6 +9474,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="ordens_servico:create"> Cadastrar O.S.</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="ordens_servico:edit"> Editar O.S. e registrar a atualização diária</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="ordens_servico:delete"> Excluir O.S.</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="ordens_servico:store_test"> Testar na loja: aprovar ou reprovar em loja as O.S. que seguiram para a loja (login com loja: só as da própria loja)</label>
               </div>
             </details>
             <details class="permission-module">
@@ -11017,12 +11039,39 @@
       <div class="purchase-field"><label for="osOrderStore">LOJA RESPONSÁVEL *</label><select id="osOrderStore" required></select></div>
       <div class="purchase-field"><label for="osOrderDeadline">DATA LIMITE</label><input type="date" id="osOrderDeadline"></div>
       <div class="purchase-field"><label for="osOrderSituation">OBSERVAÇÕES</label><input type="text" id="osOrderSituation" list="osSituationOptions" maxlength="120" autocomplete="off" placeholder="Escolha ou digite"><datalist id="osSituationOptions"></datalist></div>
+      <div class="purchase-field full payables-kind-tabs" id="osOrderShipField" role="radiogroup" aria-label="Segue para a loja" hidden>
+        <label><input type="radio" name="osOrderShip" value="sim"> SEGUE PARA A LOJA</label>
+        <label><input type="radio" name="osOrderShip" value="nao"> NÃO SEGUE (FINALIZA)</label>
+      </div>
+      <p class="purchase-field-help full" id="osOrderShipHelp" hidden></p>
       <div class="purchase-field full" id="osOrderFirstUpdateField"><label for="osOrderFirstUpdate">ATUALIZAÇÃO DIÁRIA (OPCIONAL)</label><textarea id="osOrderFirstUpdate" rows="3" maxlength="2000"></textarea></div>
     </div>
     <div class="user-form-status" id="osOrderFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" type="button" data-os-close>CANCELAR</button>
       <button class="btn-accent" id="btnOsOrderSave" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="osStoreTestDialog" aria-labelledby="osStoreTestDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="osStoreTestDialogTitle">TESTE NA LOJA</h3>
+    <button class="purchase-dialog-close" type="button" data-os-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="osStoreTestForm">
+    <p class="gd-opening-hint" id="osStoreTestHint"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full payables-kind-tabs" role="radiogroup" aria-label="Resultado do teste">
+        <label><input type="radio" name="osStoreTestResult" value="aprovada"> APROVADA (TUDO CERTO)</label>
+        <label><input type="radio" name="osStoreTestResult" value="reprovada"> REPROVADO EM LOJA (VOLTA PARA A ASSISTÊNCIA)</label>
+      </div>
+      <div class="purchase-field full"><label for="osStoreTestNote" id="osStoreTestNoteLabel">OBSERVAÇÃO</label><textarea id="osStoreTestNote" rows="3" maxlength="1000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="osStoreTestStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-os-close>CANCELAR</button>
+      <button class="btn-accent" id="btnOsStoreTestSave" type="submit">CONFIRMAR</button>
     </div>
   </form>
 </dialog>
@@ -26663,12 +26712,15 @@ function renderHomeTasks(){
   // mais crítica (data limite mais vencida) para a menos.
   const OS_API = '/api/assistencia/ordens-servico';
   const OS_CATEGORIES = ['CONSOLE','INFORMÁTICA','CONTROLE','CELULAR','TERCEIRIZADO'];
-  const OS_STATUSES = ['ORÇAMENTO PENDENTE','PASSADO ORÇAMENTO','AUTORIZADA','GARANTIA DE SERVIÇO','GARANTIA DE VENDA','DE VENDA','FINALIZADA'];
+  const OS_STATUSES = ['ORÇAMENTO PENDENTE','PASSADO ORÇAMENTO','AUTORIZADA','PRODUÇÃO','GARANTIA DE SERVIÇO','GARANTIA DE VENDA','DE VENDA','REPROVADO NA ASSISTÊNCIA','REPROVADO EM LOJA','APROVADA'];
   const OS_SITUATIONS = ['NO PRAZO','AGUARDANDO ORÇAMENTO','AGUARDANDO AUTORIZAÇÃO','CLIENTE AGUARDANDO ORÇAMENTO','AGUARDANDO PEÇA','REPROVADO'];
   let osData = null;
   let osTab = '';
   // Login com loja vinculada só visualiza (o backend também bloqueia).
   const osCan = action => (action === 'view' || currentSession.role === 'admin' || !currentSession.companyId) && canAccess('ordens_servico:'+action);
+  // Teste na loja: o login da loja também pode (só as O.S. da própria loja).
+  const osCanStoreTest = () => canAccess('ordens_servico:store_test');
+  const osAtStore = row => !row.closed && row.storeCheck === 'pendente';
 
   async function osApiRequest(path, options){
     const response = await fetch(OS_API+path, {
@@ -26687,7 +26739,7 @@ function renderHomeTasks(){
   const osSend = (method, body) => osApiRequest('', {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
 
   function osDeadlineLabel(order){
-    if(order.closed) return 'FINALIZADA';
+    if(order.closed) return 'APROVADA';
     const days = order.deadlineDays;
     if(order.deadlineLevel === 'sem_data') return 'SEM DATA';
     if(days < 0) return 'ATRASADA '+(-days)+(days === -1 ? ' DIA' : ' DIAS');
@@ -26707,7 +26759,10 @@ function renderHomeTasks(){
       (ignoreTab || !osTab || row.category === osTab) &&
       (!store || row.storeId === store) &&
       (!status || row.status === status) &&
-      (!level || (level === 'sem_atualizacao' ? !row.closed && !row.updatedToday : row.deadlineLevel === level)) &&
+      (!level || (level === 'sem_atualizacao' ? !row.closed && !osAtStore(row) && !row.updatedToday
+        : level === 'na_loja' ? osAtStore(row)
+        : level === 'reprovado_loja' ? !row.closed && row.storeCheck === 'reprovada'
+        : row.deadlineLevel === level)) &&
       (!search || [row.osNumber, row.equipment, row.situation, row.lastUpdateText, row.storeName].join(' ').toLocaleLowerCase('pt-BR').includes(search))
     );
   }
@@ -26723,16 +26778,18 @@ function renderHomeTasks(){
     const closedView = el('osView').value === 'closed';
     const count = level => rows.filter(row => row.deadlineLevel === level).length;
     el('osSummary').innerHTML = closedView
-      ? '<article class="supply-dashboard-card"><span>FINALIZADAS (ÚLTIMAS 300)</span><strong>'+rows.length+'</strong></article>'
+      ? '<article class="supply-dashboard-card"><span>APROVADAS (ÚLTIMAS 300)</span><strong>'+rows.length+'</strong></article>'
       : '<article class="supply-dashboard-card"><span>EM ABERTO</span><strong>'+rows.length+'</strong></article>'+
         '<article class="supply-dashboard-card danger"><span>ATRASADAS</span><strong>'+count('atrasada')+'</strong></article>'+
         '<article class="supply-dashboard-card danger"><span>VENCEM HOJE</span><strong>'+count('hoje')+'</strong></article>'+
         '<article class="supply-dashboard-card warning"><span>VENCEM EM ATÉ 2 DIAS</span><strong>'+count('proxima')+'</strong></article>'+
-        '<article class="supply-dashboard-card warning"><span>SEM ATUALIZAÇÃO HOJE</span><strong>'+rows.filter(row => !row.updatedToday).length+'</strong></article>';
-    el('osListTitle').textContent = closedView ? 'O.S. FINALIZADAS · MAIS RECENTES PRIMEIRO' : 'O.S. EM ABERTO · MAIS CRÍTICAS PRIMEIRO';
+        '<article class="supply-dashboard-card warning"><span>SEM ATUALIZAÇÃO HOJE</span><strong>'+rows.filter(row => !osAtStore(row) && !row.updatedToday).length+'</strong></article>'+
+        '<article class="supply-dashboard-card"><span>AGUARDANDO TESTE NA LOJA</span><strong>'+rows.filter(osAtStore).length+'</strong></article>'+
+        '<article class="supply-dashboard-card danger"><span>REPROVADO EM LOJA</span><strong>'+rows.filter(row => row.storeCheck === 'reprovada').length+'</strong></article>';
+    el('osListTitle').textContent = closedView ? 'O.S. APROVADAS · MAIS RECENTES PRIMEIRO' : 'O.S. EM ABERTO · MAIS CRÍTICAS PRIMEIRO';
     const body = el('osTableBody');
     if(!rows.length){
-      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma O.S. '+(closedView ? 'finalizada' : 'em aberto')+' com esse filtro.</td></tr>';
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma O.S. '+(closedView ? 'aprovada' : 'em aberto')+' com esse filtro.</td></tr>';
       return;
     }
     const canEdit = osCan('edit');
@@ -26742,15 +26799,28 @@ function renderHomeTasks(){
       const last = row.lastUpdateText
         ? escapeHtml(row.lastUpdateText)+'<small class="os-update-meta">'+escapeHtml((row.lastUpdateByName || '')+' · '+(formatDateTimeBR(row.lastUpdateAt) || ''))+'</small>'
         : '<span class="os-muted">—</span>';
-      const stale = !row.closed && !row.updatedToday ? '<span class="status-pill waiting">SEM ATUALIZAÇÃO HOJE</span> ' : '';
-      const actions = '<button class="btn-outline btn-sm" type="button" data-os-updates="'+escapeHtml(row.id)+'">'+(canEdit && !row.closed ? 'ATUALIZAR' : 'HISTÓRICO')+'</button> '+
+      const stale = !row.closed && !osAtStore(row) && !row.updatedToday ? '<span class="status-pill waiting">SEM ATUALIZAÇÃO HOJE</span> ' : '';
+      const ship = row.shipToStore && row.status === 'APROVADA'
+        ? '<small class="os-update-meta">'+(row.shipToStore === 'sim' ? 'SEGUE PARA A LOJA' : 'NÃO SEGUE PARA A LOJA')+(row.shipByName ? ' · '+escapeHtml(row.shipByName)+' · '+escapeHtml(formatDateTimeBR(row.shipAt) || '') : '')+'</small>'
+        : '';
+      const check = osAtStore(row)
+        ? '<br><span class="status-pill progress">NA LOJA · AGUARDANDO TESTE</span>'
+        : row.storeCheck === 'reprovada'
+          ? '<br><span class="status-pill alert">REPROVADO EM LOJA</span><small class="os-update-meta">'+escapeHtml((row.storeCheckByName || '')+' · '+(formatDateTimeBR(row.storeCheckAt) || '')+(row.storeCheckNote ? ' · '+row.storeCheckNote : ''))+'</small>'
+          : row.storeCheck === 'aprovada'
+            ? '<br><span class="status-pill done">APROVADA NA LOJA</span><small class="os-update-meta">'+escapeHtml((row.storeCheckByName || '')+' · '+(formatDateTimeBR(row.storeCheckAt) || ''))+'</small>'
+            : '';
+      const storeTest = osAtStore(row) && osCanStoreTest()
+        ? '<button class="btn-accent btn-sm" type="button" data-os-storetest="'+escapeHtml(row.id)+'">TESTE DA LOJA</button> '
+        : '';
+      const actions = storeTest+'<button class="btn-outline btn-sm" type="button" data-os-updates="'+escapeHtml(row.id)+'">'+(canEdit && !row.closed ? 'ATUALIZAR' : 'HISTÓRICO')+'</button> '+
         (canEdit ? '<button class="btn-outline btn-sm" type="button" data-os-edit="'+escapeHtml(row.id)+'">EDITAR</button> ' : '')+
         (canDelete ? '<button class="btn-outline btn-sm" type="button" data-os-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '');
       return '<tr class="os-row os-'+escapeHtml(level)+'">'+
         '<td data-label="O.S."><strong>'+escapeHtml(row.osNumber)+'</strong></td>'+
         '<td data-label="Tipo">'+escapeHtml(row.category)+'</td>'+
         '<td data-label="Equipamento">'+escapeHtml(row.equipment || '—')+'</td>'+
-        '<td data-label="Status">'+escapeHtml(row.status)+'</td>'+
+        '<td data-label="Status">'+escapeHtml(row.status)+ship+check+'</td>'+
         '<td data-label="Loja">'+escapeHtml(row.storeName || '—')+'</td>'+
         '<td data-label="Data limite" style="white-space:nowrap">'+escapeHtml(row.deadline ? gdDateLabel(row.deadline) : '—')+'<br><span class="status-pill '+(OS_LEVEL_PILL[level] || '')+'">'+escapeHtml(osDeadlineLabel(row))+'</span></td>'+
         '<td data-label="Observações">'+escapeHtml(row.situation || '—')+'</td>'+
@@ -26799,9 +26869,85 @@ function renderHomeTasks(){
     el('osOrderDeadline').value = order ? order.deadline : '';
     el('osOrderSituation').value = order ? order.situation : '';
     el('osOrderFirstUpdateField').hidden = Boolean(order);
+    document.querySelectorAll('input[name="osOrderShip"]').forEach(input => { input.checked = Boolean(order) && input.value === order.shipToStore; });
+    el('osOrderShipHelp').textContent = order && order.shipByName ? 'MARCADO POR '+order.shipByName+' EM '+(formatDateTimeBR(order.shipAt) || '') : '';
+    osSyncShipField();
     el('osOrderFormStatus').textContent = '';
     el('osOrderDialog').showModal();
   }
+
+  function osSyncShipField(){
+    const approved = el('osOrderStatus').value === 'APROVADA';
+    el('osOrderShipField').hidden = !approved;
+    el('osOrderShipHelp').hidden = !approved || !el('osOrderShipHelp').textContent;
+  }
+  el('osOrderStatus') && el('osOrderStatus').addEventListener('change', osSyncShipField);
+
+  function osOpenStoreTest(order){
+    el('osStoreTestForm').reset();
+    el('osStoreTestForm').dataset.orderId = order.id;
+    el('osStoreTestDialogTitle').textContent = 'TESTE NA LOJA · O.S. '+order.osNumber;
+    el('osStoreTestHint').textContent = (order.equipment || order.category)+' · '+order.storeName+'. APROVADA finaliza a O.S.; REPROVADO EM LOJA devolve para a assistência com o seu nome, a data e o motivo.';
+    el('osStoreTestNoteLabel').textContent = 'OBSERVAÇÃO';
+    el('osStoreTestStatus').textContent = '';
+    el('osStoreTestDialog').showModal();
+  }
+  document.querySelectorAll('input[name="osStoreTestResult"]').forEach(input => input.addEventListener('change', () => {
+    el('osStoreTestNoteLabel').textContent = input.value === 'reprovada' ? 'MOTIVO DA REPROVAÇÃO *' : 'OBSERVAÇÃO';
+  }));
+  el('osStoreTestForm') && el('osStoreTestForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('osStoreTestStatus');
+    const result = (document.querySelector('input[name="osStoreTestResult"]:checked') || {}).value || '';
+    const note = el('osStoreTestNote').value.trim();
+    if(!result){ status.textContent = 'ESCOLHA APROVADA OU REPROVADO EM LOJA.'; return; }
+    if(result === 'reprovada' && !note){ status.textContent = 'INFORME O MOTIVO DA REPROVAÇÃO.'; return; }
+    const button = el('btnOsStoreTestSave');
+    button.disabled = true;
+    try{
+      await osSend('PATCH', {id: el('osStoreTestForm').dataset.orderId, action:'store_test', result, note});
+      el('osStoreTestDialog').close();
+      showPurchaseToast(result === 'aprovada' ? 'O.S. aprovada na loja.' : 'O.S. reprovada em loja: voltou para a assistência.');
+      await loadOrdensServicoPage();
+    }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+
+  // Relatório PDF (A4): O.S. em PRODUÇÃO por categoria, com o filtro de loja da tela.
+  function osPrintProductionReport(){
+    const store = el('osStoreFilter').value;
+    const rows = ((osData && osData.orders) || []).filter(row => !row.closed && row.status === 'PRODUÇÃO' && (!store || row.storeId === store));
+    const storeLabel = store ? el('osStoreFilter').selectedOptions[0].textContent : 'TODAS AS LOJAS';
+    const sections = OS_CATEGORIES.map(category => {
+      const items = rows.filter(row => row.category === category);
+      if(!items.length && category === 'TERCEIRIZADO') return '';
+      return '<section class="os-print-section"><h2>'+escapeHtml(category)+' ('+items.length+')</h2>'+
+        (items.length
+          ? '<table class="os-print-table"><thead><tr><th>O.S.</th><th>Equipamento</th><th>Loja</th><th>Data limite</th><th>Prazo</th><th>Observações</th><th>Última atualização</th></tr></thead><tbody>'+
+            items.map(row => '<tr><td>'+escapeHtml(row.osNumber)+'</td><td>'+escapeHtml(row.equipment || '—')+'</td><td>'+escapeHtml(row.storeName || '—')+'</td>'+
+              '<td>'+escapeHtml(row.deadline ? gdDateLabel(row.deadline) : '—')+'</td><td>'+escapeHtml(osDeadlineLabel(row))+'</td>'+
+              '<td>'+escapeHtml(row.situation || '—')+'</td><td>'+escapeHtml(row.lastUpdateText || '—')+'</td></tr>').join('')+
+            '</tbody></table>'
+          : '<p class="os-print-empty">Nenhuma O.S. em produção.</p>')+
+      '</section>';
+    }).join('');
+    el('osPrintBody').innerHTML =
+      '<header class="print-report-header"><div class="print-report-kicker">ASSISTÊNCIA · ORDENS DE SERVIÇO</div>'+
+      '<h1>PRODUTOS EM PRODUÇÃO POR CATEGORIA</h1>'+
+      '<div class="print-report-meta">'+escapeHtml(storeLabel)+' · '+rows.length+' O.S. · GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+'</div></header>'+sections;
+    osPrintTitleBefore = document.title;
+    document.title = 'PRODUCAO-OS-'+((osData && osData.today) || '');
+    document.body.classList.add('pdf-export', 'os-printing');
+    window.print();
+  }
+  let osPrintTitleBefore = '';
+  window.addEventListener('afterprint', () => {
+    if(!osPrintTitleBefore) return;
+    document.body.classList.remove('pdf-export', 'os-printing');
+    document.title = osPrintTitleBefore;
+    osPrintTitleBefore = '';
+  });
+  el('btnOsProductionReport') && el('btnOsProductionReport').addEventListener('click', osPrintProductionReport);
 
   async function osOpenUpdates(order){
     const canWrite = osCan('edit') && !order.closed;
@@ -26834,7 +26980,7 @@ function renderHomeTasks(){
   ['osStoreFilter','osStatusFilter','osLevelFilter'].forEach(id => el(id) && el(id).addEventListener('change', renderOrdensServico));
   el('osSearch') && el('osSearch').addEventListener('input', debounce(renderOrdensServico, 120));
   el('btnOsNew') && el('btnOsNew').addEventListener('click', () => osOpenOrderDialog(null));
-  document.querySelectorAll('#osOrderDialog [data-os-close],#osUpdateDialog [data-os-close]').forEach(button =>
+  document.querySelectorAll('#osOrderDialog [data-os-close],#osUpdateDialog [data-os-close],#osStoreTestDialog [data-os-close]').forEach(button =>
     button.addEventListener('click', () => { const dialog = button.closest('dialog'); if(dialog.open) dialog.close(); }));
 
   el('osOrderForm') && el('osOrderForm').addEventListener('submit', async event => {
@@ -26843,6 +26989,7 @@ function renderHomeTasks(){
     status.textContent = '';
     const id = el('osOrderId').value;
     if(!el('osOrderStore').value){ status.textContent = 'ESCOLHA A LOJA RESPONSÁVEL.'; return; }
+    if(el('osOrderStatus').value === 'APROVADA' && !document.querySelector('input[name="osOrderShip"]:checked')){ status.textContent = 'INFORME SE O PRODUTO SEGUE PARA A LOJA.'; return; }
     const button = el('btnOsOrderSave');
     button.disabled = true;
     try{
@@ -26855,6 +27002,7 @@ function renderHomeTasks(){
         storeId: el('osOrderStore').value,
         deadline: el('osOrderDeadline').value,
         situation: el('osOrderSituation').value,
+        shipToStore: el('osOrderStatus').value === 'APROVADA' ? ((document.querySelector('input[name="osOrderShip"]:checked') || {}).value || '') : '',
         updateText: id ? '' : el('osOrderFirstUpdate').value,
       });
       el('osOrderDialog').close();
@@ -26881,11 +27029,12 @@ function renderHomeTasks(){
   });
 
   el('osTableBody') && el('osTableBody').addEventListener('click', async event => {
-    const button = event.target.closest('[data-os-updates],[data-os-edit],[data-os-delete]');
+    const button = event.target.closest('[data-os-updates],[data-os-edit],[data-os-delete],[data-os-storetest]');
     if(!button) return;
-    const id = button.dataset.osUpdates || button.dataset.osEdit || button.dataset.osDelete;
+    const id = button.dataset.osUpdates || button.dataset.osEdit || button.dataset.osDelete || button.dataset.osStoretest;
     const order = ((osData && osData.orders) || []).find(row => row.id === id);
     if(!order) return;
+    if(button.dataset.osStoretest){ osOpenStoreTest(order); return; }
     if(button.dataset.osUpdates){ osOpenUpdates(order); return; }
     if(button.dataset.osEdit){ osOpenOrderDialog(order); return; }
     const ok = await askConfirm('EXCLUIR A O.S. '+order.osNumber+' ('+(order.equipment || order.category)+')?', {okText:'EXCLUIR', danger:true});

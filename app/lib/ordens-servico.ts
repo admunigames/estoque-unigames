@@ -4,17 +4,41 @@
 
 export const OS_CATEGORIES = ["CONSOLE", "INFORMÁTICA", "CONTROLE", "CELULAR", "TERCEIRIZADO"] as const;
 
-// Coluna STATUS da planilha + FINALIZADA (tira a O.S. da lista de abertas).
+// Coluna STATUS da planilha + PRODUÇÃO, reprovações e APROVADA (decisão do
+// usuário, 14/10/2026). APROVADA pede SEGUE PARA A LOJA: "nao" finaliza na
+// hora; "sim" espera o teste da loja (aprovada = finaliza; reprovada = volta
+// para a assistência como REPROVADO EM LOJA).
 export const OS_STATUSES = [
   "ORÇAMENTO PENDENTE",
   "PASSADO ORÇAMENTO",
   "AUTORIZADA",
+  "PRODUÇÃO",
   "GARANTIA DE SERVIÇO",
   "GARANTIA DE VENDA",
   "DE VENDA",
-  "FINALIZADA",
+  "REPROVADO NA ASSISTÊNCIA",
+  "REPROVADO EM LOJA",
+  "APROVADA",
 ] as const;
-export const OS_CLOSED_STATUS = "FINALIZADA";
+export const OS_APPROVED_STATUS = "APROVADA";
+export const OS_STORE_REJECTED_STATUS = "REPROVADO EM LOJA";
+
+export type ShipToStore = "" | "sim" | "nao";
+export type StoreCheck = "" | "pendente" | "aprovada" | "reprovada";
+
+/**
+ * Situação depois de salvar pela assistência: fechada ou não e o teste da loja.
+ * APROVADA + não segue → fecha; APROVADA + segue → aguarda a loja (se a loja
+ * já aprovou, continua fechada). Outro status: aberta; "pendente" é desfeito
+ * (a O.S. voltou para a assistência) e "reprovada" fica para mostrar quem reprovou.
+ */
+export function approvalState(status: string, ship: ShipToStore, previousCheck: StoreCheck): { closed: 0 | 1; storeCheck: StoreCheck } {
+  if (status === OS_APPROVED_STATUS) {
+    if (ship === "nao") return { closed: 1, storeCheck: "" };
+    return previousCheck === "aprovada" ? { closed: 1, storeCheck: "aprovada" } : { closed: 0, storeCheck: "pendente" };
+  }
+  return { closed: 0, storeCheck: previousCheck === "pendente" || previousCheck === "aprovada" ? "" : previousCheck };
+}
 
 // Sugestões da coluna OBSERVAÇÕES (o campo aceita texto livre).
 export const OS_SITUATIONS = [
