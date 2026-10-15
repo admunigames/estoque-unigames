@@ -28,7 +28,7 @@ const shift = (days) => {
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 };
 const order = (osNumber, deadline, extra = {}) => ({
-  osNumber, category: "CONSOLE", equipment: "ps5 slim", status: "AUTORIZADA", storeId: A, deadline, situation: "no prazo", ...extra,
+  osNumber, category: "CONSOLE", equipment: "ps5 slim", status: "AUTORIZADA", storeId: A, deadline, situation: "garantia de serviço", ...extra,
 });
 
 test("deadlineInfo e compareOrders", () => {
@@ -55,6 +55,8 @@ test("cadastra, valida, recusa duplicada e ordena pela data limite mais crítica
   assert.equal((await call(TECNICO, "POST", order("23299", shift(1)))).status, 409);
   assert.equal((await call(TECNICO, "POST", order("", shift(1)))).status, 400);
   assert.equal((await call(TECNICO, "POST", order("1", shift(1), { category: "OUTRO" }))).status, 400);
+  // Garantia/venda saíram do STATUS (viraram observação); entraram SETOR QUALIDADE e PREVENTIVA.
+  assert.equal((await call(TECNICO, "POST", order("1", shift(1), { status: "GARANTIA DE VENDA" }))).status, 400);
   assert.equal((await call(TECNICO, "POST", order("1", shift(1), { storeId: "cassist001" }))).status, 400);
   assert.equal((await call(SO_VE, "POST", order("2", shift(1)))).status, 403);
   // Login de loja só visualiza, mesmo com todas as permissões.
@@ -65,7 +67,7 @@ test("cadastra, valida, recusa duplicada e ordena pela data limite mais crítica
   assert.deepEqual(data.orders.map((row) => row.deadlineLevel), ["atrasada", "hoje", "no_prazo", "sem_data"]);
   const first = data.orders.find((row) => row.osNumber === "23299");
   assert.equal(first.equipment, "PS5 SLIM");
-  assert.equal(first.situation, "NO PRAZO");
+  assert.equal(first.situation, "GARANTIA DE SERVIÇO");
   assert.equal(first.lastUpdateText, "PRODUÇÃO PEDRO");
   assert.equal(first.updatedToday, true);
   assert.equal(data.orders.find((row) => row.osNumber === "23328").updatedToday, false);
@@ -126,7 +128,7 @@ test("approvalState: APROVADA finaliza ou espera a loja; voltar para a assistên
 });
 
 test("segue para a loja: loja testa; reprovado em loja volta para a assistência com quem e quando", async () => {
-  assert.equal((await call(TECNICO, "POST", order("30001", shift(3), { status: "PRODUÇÃO" }))).status, 201);
+  assert.equal((await call(TECNICO, "POST", order("30001", shift(3), { status: "SETOR QUALIDADE" }))).status, 201);
   let data = await (await call(TECNICO, "GET")).json();
   const os = data.orders.find((row) => row.osNumber === "30001");
   const approve = { ...order("30001", os.deadline), id: os.id, status: "APROVADA", shipToStore: "sim" };

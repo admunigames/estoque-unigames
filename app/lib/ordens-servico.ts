@@ -13,9 +13,8 @@ export const OS_STATUSES = [
   "PASSADO ORÇAMENTO",
   "AUTORIZADA",
   "PRODUÇÃO",
-  "GARANTIA DE SERVIÇO",
-  "GARANTIA DE VENDA",
-  "DE VENDA",
+  "PREVENTIVA",
+  "SETOR QUALIDADE",
   "REPROVADO NA ASSISTÊNCIA",
   "REPROVADO EM LOJA",
   "APROVADA",
@@ -40,9 +39,13 @@ export function approvalState(status: string, ship: ShipToStore, previousCheck: 
   return { closed: 0, storeCheck: previousCheck === "pendente" || previousCheck === "aprovada" ? "" : previousCheck };
 }
 
-// Sugestões da coluna OBSERVAÇÕES (o campo aceita texto livre).
+// Sugestões da coluna OBSERVAÇÕES (o campo aceita texto livre). Garantia e
+// venda saíram do STATUS (15/10/2026); "NO PRAZO" deixou de existir: a data
+// limite já diz se está no prazo ou atrasada.
 export const OS_SITUATIONS = [
-  "NO PRAZO",
+  "GARANTIA DE VENDA",
+  "GARANTIA DE SERVIÇO",
+  "DE VENDA",
   "AGUARDANDO ORÇAMENTO",
   "AGUARDANDO AUTORIZAÇÃO",
   "CLIENTE AGUARDANDO ORÇAMENTO",
