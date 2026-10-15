@@ -6,38 +6,39 @@ const { classifyGdBalance, buildGdDailyScript, aggregateLast7Days, buildLastNDat
 );
 
 test("classifyGdBalance: crítico quando saldo <= -R$800", () => {
-  assert.equal(classifyGdBalance(-80000, 0), "critico");
-  assert.equal(classifyGdBalance(-80001, 0), "critico");
+  assert.equal(classifyGdBalance(-80000), "critico");
+  assert.equal(classifyGdBalance(-80001), "critico");
 });
 
-test("classifyGdBalance: crítico quando movimento do mês <= -R$300, mesmo com saldo positivo", () => {
-  assert.equal(classifyGdBalance(100000, -30000), "critico");
+test("classifyGdBalance: status pelo total atual, não pelo movimento do mês", () => {
+  assert.equal(classifyGdBalance(100000), "saudavel");
+  assert.equal(classifyGdBalance(29999), "margem_curta");
 });
 
 test("classifyGdBalance: logo acima dos limiares críticos não é mais crítico", () => {
-  assert.equal(classifyGdBalance(-79999, -29999), "negativo");
+  assert.equal(classifyGdBalance(-79999), "negativo");
 });
 
 test("classifyGdBalance: negativo quando saldo < 0 (e não é crítico)", () => {
-  assert.equal(classifyGdBalance(-1, -100), "negativo");
+  assert.equal(classifyGdBalance(-1), "negativo");
 });
 
 test("classifyGdBalance: margem_curta quando 0 <= saldo < R$300", () => {
-  assert.equal(classifyGdBalance(0, 0), "margem_curta");
-  assert.equal(classifyGdBalance(29999, 0), "margem_curta");
+  assert.equal(classifyGdBalance(0), "margem_curta");
+  assert.equal(classifyGdBalance(29999), "margem_curta");
 });
 
-test("classifyGdBalance: saudavel_queda quando saldo confortável mas mês negativo", () => {
-  assert.equal(classifyGdBalance(30000, -1), "saudavel_queda");
+test("classifyGdBalance: mês negativo não muda o status de quem tem saldo confortável", () => {
+  assert.equal(classifyGdBalance(30000), "saudavel");
 });
 
 test("classifyGdBalance: saudavel no caso ideal", () => {
-  assert.equal(classifyGdBalance(100000, 5000), "saudavel");
+  assert.equal(classifyGdBalance(100000), "saudavel");
 });
 
 test("classifyGdBalance: caso que divergia entre os dois critérios do app de referência fica definido", () => {
   // saldo=-R$600, movimento=+R$50 — nem <= -800 nem movimento <= -300, mas < 0 => negativo.
-  assert.equal(classifyGdBalance(-60000, 5000), "negativo");
+  assert.equal(classifyGdBalance(-60000), "negativo");
 });
 
 test("buildLastNDates gera N datas terminando (inclusive) em todayIso, da mais antiga pra mais nova", () => {

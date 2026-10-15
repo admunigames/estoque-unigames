@@ -4300,3 +4300,20 @@ export const opsAuditAnswers = pgTable(
   },
   (table) => [index("ops_audit_answers_audit_idx").on(table.auditId, table.sortOrder)],
 );
+
+// Controle de Gorduras (Comercial e Assistência) — ATUALIZADO ATÉ: data
+// informada à mão pelo responsável de até quando a gordura da loja está
+// lançada; sai na imagem no lugar de "GERADO EM". Uma linha por módulo+loja.
+export const commercialGdStoreInfo = pgTable(
+  "commercial_gd_store_info",
+  {
+    id: text("id").primaryKey(),
+    module: text("module").notNull(),
+    storeId: text("store_id").notNull(),
+    updatedUntil: text("updated_until").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [uniqueIndex("commercial_gd_store_info_module_store_idx").on(table.module, table.storeId)],
+);

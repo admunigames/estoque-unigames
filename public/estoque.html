@@ -11448,6 +11448,24 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="gdUntilDialog" aria-labelledby="gdUntilDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="gdUntilDialogTitle">GORDURA ATUALIZADA ATÉ</h3>
+    <button class="purchase-dialog-close" type="button" data-gd-until-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="gdUntilForm">
+    <p class="gd-opening-hint">Até que dia a gordura desta loja está lançada. Sai na imagem no lugar de "GERADO EM". Deixe vazio para voltar a mostrar a data em que a imagem foi gerada.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="gdUntilDate">ATUALIZADO ATÉ</label><input type="date" id="gdUntilDate"></div>
+    </div>
+    <div class="user-form-status" id="gdUntilStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-gd-until-close>CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="gdOpeningDialog" aria-labelledby="gdOpeningDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="gdOpeningDialogTitle">SALDO ANTERIOR</h3>
@@ -28233,7 +28251,12 @@ function renderHomeTasks(){
       '<article class="supply-dashboard-card"><span>SALDO ANTERIOR</span><strong class="'+gdMoneyClass(opening)+'">'+formatCentsBRL(opening)+'</strong><small>'+openingNote+'</small>'+openingButton+'</article>'+
       '<article class="supply-dashboard-card"><span>POSITIVAS NO MÊS</span><strong class="gd-pos">'+gdSignedBRL(sum('positiveCents'))+'</strong></article>'+
       '<article class="supply-dashboard-card"><span>NEGATIVAS NO MÊS</span><strong class="gd-neg">'+formatCentsBRL(sum('negativeCents'))+'</strong></article>'+
-      '<article class="supply-dashboard-card"><span>TOTAL GERAL'+(single ? ' · '+escapeHtml(single.storeName) : '')+'</span><strong class="'+gdMoneyClass(total)+'">'+formatCentsBRL(total)+'</strong><small>'+(total < 0 ? 'NEGATIVO' : 'POSITIVO')+' · SALDO ANTERIOR + GORDURAS DO MÊS</small></article>';
+      '<article class="supply-dashboard-card"><span>TOTAL GERAL'+(single ? ' · '+escapeHtml(single.storeName) : '')+'</span><strong class="'+gdMoneyClass(total)+'">'+formatCentsBRL(total)+'</strong><small>'+(total < 0 ? 'NEGATIVO' : 'POSITIVO')+' · SALDO ANTERIOR + GORDURAS DO MÊS</small></article>'+
+      (single
+        ? '<article class="supply-dashboard-card"><span>GORDURA ATUALIZADA ATÉ</span><strong>'+escapeHtml(single.updatedUntil ? gdDateLabel(single.updatedUntil) : '—')+'</strong>'+
+          '<small>'+escapeHtml(single.updatedUntil ? 'INFORMADO POR '+(single.updatedUntilBy || '') : 'SAI NA IMAGEM NO LUGAR DE "GERADO EM"')+'</small>'+
+          (gdCan('edit') || gdCan('create') ? '<button class="btn-outline small" type="button" id="btnGdEditUntil">ALTERAR</button>' : '')+'</article>'
+        : '');
   }
 
   function renderGdStoresGrid(){
@@ -28441,6 +28464,28 @@ function renderHomeTasks(){
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
+  // GORDURA ATUALIZADA ATÉ (uma loja selecionada): data informada à mão.
+  el('gdSummary') && el('gdSummary').addEventListener('click', event => {
+    if(!event.target.closest('#btnGdEditUntil')) return;
+    const store = gdSelectedStores()[0];
+    if(!store) return;
+    el('gdUntilDialogTitle').textContent = 'GORDURA ATUALIZADA ATÉ · '+store.storeName;
+    el('gdUntilDate').value = store.updatedUntil || (gdDashboardData && gdDashboardData.date) || '';
+    el('gdUntilStatus').textContent = '';
+    el('gdUntilForm').dataset.storeId = store.storeId;
+    el('gdUntilDialog').showModal();
+  });
+  document.querySelectorAll('#gdUntilDialog [data-gd-until-close]').forEach(button => button.addEventListener('click', () => { if(el('gdUntilDialog').open) el('gdUntilDialog').close(); }));
+  el('gdUntilForm') && el('gdUntilForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    try{
+      await gdApiRequest('', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({storeId: el('gdUntilForm').dataset.storeId, updatedUntil: el('gdUntilDate').value})});
+      el('gdUntilDialog').close();
+      showPurchaseToast('Data de atualização salva.');
+      await loadControleGdPage();
+    }catch(error){ el('gdUntilStatus').textContent = error.message; }
+  });
+
   // SALDO ANTERIOR (uma loja selecionada).
   el('gdSummary') && el('gdSummary').addEventListener('click', event => {
     if(!event.target.closest('#btnGdEditOpening')) return;
@@ -28549,6 +28594,7 @@ function renderHomeTasks(){
     const ctx = canvas.getContext('2d');
     const {HEADER} = await comDrawImageFrame(ctx, W, H, {
       title: gdCfg().title, subtitle: store.storeName+' · GORDURA DE VENDAS', month: gdDashboardData.month, footer: 'UNIGAMES · '+gdCfg().title,
+      footerRight: store.updatedUntil ? 'GORDURA ATUALIZADA ATÉ '+gdDateLabel(store.updatedUntil) : '',
     });
     const pal = COM_IMAGE_PALETTE;
     const green = '#1f8a55', red = '#c8402f';
@@ -47136,14 +47182,40 @@ function renderHomeTasks(){
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#ffffff';
-    // Título diminui a fonte (até 30px) para caber inteiro antes de cortar com "…".
+    // Título diminui a fonte (até 34px); se ainda não couber, quebra em duas
+    // linhas (nunca corta com "…" enquanto couber em duas).
     let titleSize = 46;
     ctx.font = comFont(900, titleSize);
-    while(titleSize > 30 && ctx.measureText(opts.title).width > textMax){ titleSize -= 2; ctx.font = comFont(900, titleSize); }
-    ctx.fillText(comFitText(ctx, opts.title, textMax), 196, 88);
-    ctx.fillStyle = '#cfe2f5';
-    ctx.font = comFont(700, 25);
-    ctx.fillText(comFitText(ctx, opts.subtitle, textMax), 196, 128);
+    while(titleSize > 34 && ctx.measureText(opts.title).width > textMax){ titleSize -= 2; ctx.font = comFont(900, titleSize); }
+    const words = String(opts.title).split(' ');
+    let lines = [opts.title];
+    if(ctx.measureText(opts.title).width > textMax && words.length > 1){
+      titleSize = 34;
+      ctx.font = comFont(900, titleSize);
+      let best = null;
+      for(let i = 1; i < words.length; i++){
+        const a = words.slice(0, i).join(' '), b = words.slice(i).join(' ');
+        const widest = Math.max(ctx.measureText(a).width, ctx.measureText(b).width);
+        if(!best || widest < best.widest) best = {a, b, widest};
+      }
+      while(titleSize > 26 && best.widest > textMax){
+        titleSize -= 2; ctx.font = comFont(900, titleSize);
+        best.widest = Math.max(ctx.measureText(best.a).width, ctx.measureText(best.b).width);
+      }
+      lines = [best.a, best.b];
+    }
+    if(lines.length === 2){
+      ctx.fillText(comFitText(ctx, lines[0], textMax), 196, 64);
+      ctx.fillText(comFitText(ctx, lines[1], textMax), 196, 64 + titleSize + 4);
+      ctx.fillStyle = '#cfe2f5';
+      ctx.font = comFont(700, 22);
+      ctx.fillText(comFitText(ctx, opts.subtitle, textMax), 196, 64 + titleSize * 2 + 22);
+    }else{
+      ctx.fillText(comFitText(ctx, opts.title, textMax), 196, 88);
+      ctx.fillStyle = '#cfe2f5';
+      ctx.font = comFont(700, 25);
+      ctx.fillText(comFitText(ctx, opts.subtitle, textMax), 196, 128);
+    }
 
     ctx.font = comFont(800, 21);
     ctx.textBaseline = 'middle';
@@ -47152,7 +47224,7 @@ function renderHomeTasks(){
     ctx.fillText(opts.footer, 48, H - FOOTER / 2);
     ctx.fillStyle = '#cfe2f5';
     ctx.textAlign = 'right';
-    ctx.fillText('GERADO EM '+formatDateTimeBR(new Date().toISOString()).toUpperCase(), W - 48, H - FOOTER / 2);
+    ctx.fillText(opts.footerRight || 'GERADO EM '+formatDateTimeBR(new Date().toISOString()).toUpperCase(), W - 48, H - FOOTER / 2);
     return {HEADER, FOOTER};
   }
 

@@ -246,6 +246,13 @@ export async function GET(request: Request, cfg: GdConfig) {
         [monthStart, monthEnd],
       ),
     ]);
+    // ATUALIZADO ATÉ (data informada à mão pelo responsável; sai na imagem).
+    const infoResult = await database
+      .prepare(`SELECT store_id AS storeId, updated_until AS updatedUntil, updated_by_name AS updatedUntilBy
+                FROM commercial_gd_store_info WHERE module=?1`)
+      .bind(cfg.module)
+      .all<{ storeId: string; updatedUntil: string; updatedUntilBy: string }>();
+    const infoByStore = new Map((infoResult.results ?? []).map((row) => [row.storeId, row]));
 
     const companies = scope.allStores ? allCompanies : allCompanies.filter((company) => company.id === actor.companyId);
     const group = <T extends { storeId: string }>(rows: T[] | undefined) => {
@@ -270,10 +277,12 @@ export async function GET(request: Request, cfg: GdConfig) {
       const balanceCents = openingCents + monthMovementCents;
       const worstNegativeAdjustmentCents = monthEntries.reduce((worst, row) => Math.min(worst, row.amountCents), 0);
       const recent = (recentByStore.get(company.id) ?? []).map((row) => ({ adjustmentDate: row.adjustmentDate, amountCents: Number(row.amountCents) }));
-      const status = classifyGdBalance(balanceCents, monthMovementCents);
+      const status = classifyGdBalance(balanceCents);
       return {
         storeId: company.id,
         storeName: company.name,
+        updatedUntil: infoByStore.get(company.id)?.updatedUntil || "",
+        updatedUntilBy: infoByStore.get(company.id)?.updatedUntilBy || "",
         openingCents,
         openingManual: overrides.some((row) => row.month === month),
         positiveCents,
@@ -396,7 +405,41 @@ export async function DELETE(request: Request, cfg: GdConfig) {
 
 // SALDO ANTERIOR corrigido à mão: {storeId, month, balanceCents}; balanceCents
 // null volta ao automático (fechamento do mês anterior).
+// ATUALIZADO ATÉ: {storeId, updatedUntil: "YYYY-MM-DD" | ""} — quem lança ou
+// altera gordura informa até que data a gordura da loja está atualizada.
+async function putUpdatedUntil(request: Request, cfg: GdConfig, body: JsonMap) {
+  const actor = identity(request);
+  const permission = can(actor, `${cfg.prefix}:edit`) ? `${cfg.prefix}:edit` : `${cfg.prefix}:create`;
+  const guard = writeGuard(request, permission, "VOCÊ NÃO TEM PERMISSÃO PARA INFORMAR A DATA DE ATUALIZAÇÃO.");
+  if ("error" in guard) return guard.error;
+  const storeId = safeText(body.storeId, 80);
+  const updatedUntil = safeText(body.updatedUntil, 10);
+  if (updatedUntil && !ADJUSTMENT_DATE_PATTERN.test(updatedUntil)) return jsonResponse({ error: "DATA INVÁLIDA." }, 400);
+  const database = await getD1();
+  const store = (await loadCompanies(database)).find((company) => company.id === storeId);
+  if (!store || !canActOnStore(guard.actor, permission, storeId)) return jsonResponse({ error: "LOJA INVÁLIDA." }, 400);
+  await database
+    .prepare(
+      `INSERT INTO commercial_gd_store_info (id, module, store_id, updated_until, updated_by, updated_by_name, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+       ON CONFLICT (module, store_id) DO UPDATE SET updated_until=excluded.updated_until, updated_by=excluded.updated_by,
+         updated_by_name=excluded.updated_by_name, updated_at=excluded.updated_at`,
+    )
+    .bind(`${cfg.module}:${storeId}`, cfg.module, storeId, updatedUntil, guard.actor.id, guard.actor.displayName, new Date().toISOString())
+    .run();
+  return jsonResponse({ updated: true, updatedUntil });
+}
+
 export async function PUT(request: Request, cfg: GdConfig) {
+  const peek = (await request.clone().json().catch(() => ({}))) as JsonMap;
+  if ("updatedUntil" in peek) {
+    try {
+      return await putUpdatedUntil(request, cfg, peek);
+    } catch (error) {
+      console.error("Não foi possível salvar a data de atualização do Controle GD.", error);
+      return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR A DATA." }, 500);
+    }
+  }
   const guard = writeGuard(request, `${cfg.prefix}:opening`, "VOCÊ NÃO TEM PERMISSÃO PARA ALTERAR O SALDO ANTERIOR.");
   if ("error" in guard) return guard.error;
   const { actor } = guard;

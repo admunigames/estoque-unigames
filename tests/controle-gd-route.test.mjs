@@ -5,7 +5,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // Controle GD: gordura por venda, escopo por loja, permissões granulares e
 // SALDO ANTERIOR automático/corrigido à mão.
 
-const db = await setupRouteDb(["shared_state", "commercial_gd_balance_adjustments", "commercial_gd_opening_balances", "hr_employees"]);
+const db = await setupRouteDb(["shared_state", "commercial_gd_balance_adjustments", "commercial_gd_opening_balances", "commercial_gd_store_info", "hr_employees"]);
 const route = await import("../app/api/controle-gd/route.ts");
 
 const A = "clojaalfa1";
@@ -124,4 +124,17 @@ test("Assistência/Depósito não aparecem nem recebem gordura", async () => {
   const data = await (await call(CENTRAL, "GET", undefined, "?month=2026-10")).json();
   assert.deepEqual(data.stores.map((s) => s.storeId), [A, B]);
   assert.equal((await entry("cassist001", "2026-10-08", 100)).status, 400);
+});
+
+test("GORDURA ATUALIZADA ATÉ: quem lança informa a data; loja só vê; data vazia volta ao padrão", async () => {
+  assert.equal((await call(LOJA_A, "PUT", { storeId: A, updatedUntil: "2026-10-14" })).status, 403);
+  assert.equal((await call(SO_VE, "PUT", { storeId: A, updatedUntil: "2026-10-14" })).status, 403);
+  assert.equal((await call(CENTRAL, "PUT", { storeId: A, updatedUntil: "14/10/2026" })).status, 400);
+  assert.equal((await call(CENTRAL, "PUT", { storeId: A, updatedUntil: "2026-10-14" })).status, 200);
+  let data = await (await call(LOJA_A, "GET", undefined, "?month=2026-10")).json();
+  assert.equal(data.stores[0].updatedUntil, "2026-10-14");
+  assert.equal(data.stores[0].updatedUntilBy, "CENTRAL");
+  assert.equal((await call(CENTRAL, "PUT", { storeId: A, updatedUntil: "" })).status, 200);
+  data = await (await call(CENTRAL, "GET", undefined, "?month=2026-10")).json();
+  assert.equal(data.stores.find((s) => s.storeId === A).updatedUntil, "");
 });

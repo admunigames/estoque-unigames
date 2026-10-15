@@ -34,26 +34,20 @@ export const GD_BALANCE_STATUS_LABELS: Record<GdBalanceStatus, string> = {
 // divergentes do app de referência, que davam respostas diferentes pro
 // mesmo par saldo/movimento — ver histórico da conversa de planejamento).
 const CRITICAL_BALANCE_CENTS = -80000; // -R$800
-const CRITICAL_MONTH_MOVEMENT_CENTS = -30000; // -R$300
 const TIGHT_MARGIN_BALANCE_CENTS = 30000; // R$300
 
 /**
- * Classifica o status de uma loja a partir do saldo acumulado e do
- * movimento (soma de ajustes) do mês corrente. Precedência, da mais forte
- * pra mais fraca:
- *   1. critico — saldo muito negativo OU o mês já consumiu muita margem
+ * Classifica o status de uma loja pelo TOTAL ATUAL (saldo acumulado), não pelo
+ * que foi feito no mês (decisão do usuário, 15/10/2026). Precedência:
+ *   1. critico — saldo <= -R$800
  *   2. negativo — saldo abaixo de zero (mas não crítico)
- *   3. margem_curta — saldo positivo mas baixo, uso deve ser seletivo
- *   4. saudavel_queda — saldo confortável, mas o mês está negativo (monitorar)
- *   5. saudavel — tudo bem, uso estratégico liberado
+ *   3. margem_curta — saldo positivo mas abaixo de R$300
+ *   4. saudavel — tudo bem, uso estratégico liberado
  */
-export function classifyGdBalance(balanceCents: number, monthMovementCents: number): GdBalanceStatus {
-  if (balanceCents <= CRITICAL_BALANCE_CENTS || monthMovementCents <= CRITICAL_MONTH_MOVEMENT_CENTS) {
-    return "critico";
-  }
+export function classifyGdBalance(balanceCents: number): GdBalanceStatus {
+  if (balanceCents <= CRITICAL_BALANCE_CENTS) return "critico";
   if (balanceCents < 0) return "negativo";
   if (balanceCents < TIGHT_MARGIN_BALANCE_CENTS) return "margem_curta";
-  if (monthMovementCents < 0) return "saudavel_queda";
   return "saudavel";
 }
 
