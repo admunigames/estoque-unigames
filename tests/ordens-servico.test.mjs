@@ -121,6 +121,7 @@ test("atualização diária guarda histórico; FINALIZADA sai das abertas; exclu
 
 test("approvalState: APROVADA finaliza ou espera a loja; voltar para a assistência desfaz o pendente", () => {
   assert.deepEqual(approvalState("APROVADA", "nao", ""), { closed: 1, storeCheck: "" });
+  assert.deepEqual(approvalState("SEM SOLUÇÃO", "", "pendente"), { closed: 1, storeCheck: "" });
   assert.deepEqual(approvalState("APROVADA", "sim", ""), { closed: 0, storeCheck: "pendente" });
   assert.deepEqual(approvalState("APROVADA", "sim", "aprovada"), { closed: 1, storeCheck: "aprovada" });
   assert.deepEqual(approvalState("PRODUÇÃO", "", "pendente"), { closed: 0, storeCheck: "" });
@@ -131,6 +132,10 @@ test("segue para a loja: loja testa; reprovado em loja volta para a assistência
   assert.equal((await call(TECNICO, "POST", order("30001", shift(3), { status: "SETOR QUALIDADE" }))).status, 201);
   assert.equal((await call(TECNICO, "POST", order("40001", shift(1), { status: "NÃO AUTORIZADO" }))).status, 201);
   assert.equal((await call(TECNICO, "POST", order("40002", shift(1), { status: "SEM SOLUÇÃO" }))).status, 201);
+  // Sem conserto: finaliza na hora e segue para a loja só para devolver ao cliente.
+  const returned = (await (await call(TECNICO, "GET", undefined, "?closed=1")).json()).orders.filter((row) => ["40001", "40002"].includes(row.osNumber));
+  assert.equal(returned.length, 2);
+  assert.ok(returned.every((row) => row.closed === 1 && row.shipToStore === "sim" && row.storeCheck === "" && row.shipByName === "TEC"));
   let data = await (await call(TECNICO, "GET")).json();
   const os = data.orders.find((row) => row.osNumber === "30001");
   const approve = { ...order("30001", os.deadline), id: os.id, status: "APROVADA", shipToStore: "sim" };

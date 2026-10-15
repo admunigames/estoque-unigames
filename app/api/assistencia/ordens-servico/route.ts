@@ -9,6 +9,7 @@ import {
   deadlineInfo,
   OS_APPROVED_STATUS,
   OS_CATEGORIES,
+  OS_RETURN_STATUSES,
   OS_STATUSES,
   OS_STORE_REJECTED_STATUS,
   recifeDate,
@@ -93,7 +94,8 @@ function parseOrder(body: JsonMap): { error: string } | { order: OrderInput } {
   if (!(OS_STATUSES as readonly string[]).includes(order.status)) return { error: "ESCOLHA O STATUS DA O.S." };
   if (order.deadline && !DATE_PATTERN.test(order.deadline)) return { error: "DATA LIMITE INVÁLIDA." };
   if (order.status === OS_APPROVED_STATUS && !order.shipToStore) return { error: "INFORME SE O PRODUTO SEGUE PARA A LOJA." };
-  if (order.status !== OS_APPROVED_STATUS) order.shipToStore = "";
+  if (OS_RETURN_STATUSES.includes(order.status)) order.shipToStore = "sim";
+  else if (order.status !== OS_APPROVED_STATUS) order.shipToStore = "";
   return { order };
 }
 
@@ -343,7 +345,8 @@ export async function PATCH(request: Request) {
     ];
     // Mudança de status (e o SEGUE PARA A LOJA) entra no histórico com quem fez.
     if (statusChanged || shipChanged) {
-      const ship = order.shipToStore === "sim" ? " · SEGUE PARA A LOJA" : order.shipToStore === "nao" ? " · NÃO SEGUE PARA A LOJA" : "";
+      const ship = OS_RETURN_STATUSES.includes(order.status) ? " · SEGUE PARA A LOJA PARA DEVOLVER AO CLIENTE"
+        : order.shipToStore === "sim" ? " · SEGUE PARA A LOJA" : order.shipToStore === "nao" ? " · NÃO SEGUE PARA A LOJA" : "";
       statements.push(historyEntry(database, existing.id, `STATUS: ${order.status}${ship}`, actor, now));
     }
     await database.batch(statements);

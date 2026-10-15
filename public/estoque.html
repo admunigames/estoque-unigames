@@ -7328,7 +7328,7 @@
 
       <div class="dre-toolbar">
         <div class="field"><label for="osView">MOSTRAR</label>
-          <select id="osView"><option value="open">EM ABERTO</option><option value="closed">APROVADAS (FINALIZADAS)</option></select>
+          <select id="osView"><option value="open">EM ABERTO</option><option value="closed">FINALIZADAS (APROVADAS, NÃO AUTORIZADAS, SEM SOLUÇÃO)</option></select>
         </div>
         <div class="field" id="osStoreField"><label for="osStoreFilter">LOJA</label><select id="osStoreFilter"></select></div>
         <div class="field"><label for="osStatusFilter">STATUS</label><select id="osStatusFilter"></select></div>
@@ -27810,6 +27810,8 @@ function renderHomeTasks(){
   const OS_API = '/api/assistencia/ordens-servico';
   const OS_CATEGORIES = ['CONSOLE','INFORMÁTICA','CONTROLE','CELULAR','TERCEIRIZADO'];
   const OS_STATUSES = ['ORÇAMENTO PENDENTE','PASSADO ORÇAMENTO','AUTORIZADA','NÃO AUTORIZADO','PRODUÇÃO','PREVENTIVA','SETOR QUALIDADE','SEM SOLUÇÃO','REPROVADO NA ASSISTÊNCIA','REPROVADO EM LOJA','APROVADA'];
+  // Sem conserto: finaliza e segue para a loja só para devolver ao cliente.
+  const OS_RETURN_STATUSES = ['NÃO AUTORIZADO','SEM SOLUÇÃO'];
   const OS_SITUATIONS = ['GARANTIA DE VENDA','GARANTIA DE SERVIÇO','DE VENDA','AGUARDANDO ORÇAMENTO','AGUARDANDO AUTORIZAÇÃO','CLIENTE AGUARDANDO ORÇAMENTO','AGUARDANDO PEÇA','REPROVADO'];
   let osData = null;
   let osTab = '';
@@ -27836,7 +27838,7 @@ function renderHomeTasks(){
   const osSend = (method, body) => osApiRequest('', {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
 
   function osDeadlineLabel(order){
-    if(order.closed) return 'APROVADA';
+    if(order.closed) return OS_RETURN_STATUSES.includes(order.status) ? 'DEVOLVER AO CLIENTE' : 'APROVADA';
     const days = order.deadlineDays;
     if(order.deadlineLevel === 'sem_data') return 'SEM DATA';
     if(days < 0) return 'ATRASADA '+(-days)+(days === -1 ? ' DIA' : ' DIAS');
@@ -27875,7 +27877,7 @@ function renderHomeTasks(){
     const closedView = el('osView').value === 'closed';
     const count = level => rows.filter(row => row.deadlineLevel === level).length;
     el('osSummary').innerHTML = closedView
-      ? '<article class="supply-dashboard-card"><span>APROVADAS (ÚLTIMAS 300)</span><strong>'+rows.length+'</strong></article>'
+      ? '<article class="supply-dashboard-card"><span>FINALIZADAS (ÚLTIMAS 300)</span><strong>'+rows.length+'</strong></article>'
       : '<article class="supply-dashboard-card"><span>EM ABERTO</span><strong>'+rows.length+'</strong></article>'+
         '<article class="supply-dashboard-card danger"><span>ATRASADAS</span><strong>'+count('atrasada')+'</strong></article>'+
         '<article class="supply-dashboard-card danger"><span>VENCEM HOJE</span><strong>'+count('hoje')+'</strong></article>'+
@@ -27883,7 +27885,7 @@ function renderHomeTasks(){
         '<article class="supply-dashboard-card warning"><span>SEM ATUALIZAÇÃO HOJE</span><strong>'+rows.filter(row => !osAtStore(row) && !row.updatedToday).length+'</strong></article>'+
         '<article class="supply-dashboard-card"><span>AGUARDANDO TESTE NA LOJA</span><strong>'+rows.filter(osAtStore).length+'</strong></article>'+
         '<article class="supply-dashboard-card danger"><span>REPROVADO EM LOJA</span><strong>'+rows.filter(row => row.storeCheck === 'reprovada').length+'</strong></article>';
-    el('osListTitle').textContent = closedView ? 'O.S. APROVADAS · MAIS RECENTES PRIMEIRO' : 'O.S. EM ABERTO · MAIS CRÍTICAS PRIMEIRO';
+    el('osListTitle').textContent = closedView ? 'O.S. FINALIZADAS · MAIS RECENTES PRIMEIRO' : 'O.S. EM ABERTO · MAIS CRÍTICAS PRIMEIRO';
     const body = el('osTableBody');
     if(!rows.length){
       body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma O.S. '+(closedView ? 'aprovada' : 'em aberto')+' com esse filtro.</td></tr>';
@@ -27897,7 +27899,9 @@ function renderHomeTasks(){
         ? escapeHtml(row.lastUpdateText)+'<small class="os-update-meta">'+escapeHtml((row.lastUpdateByName || '')+' · '+(formatDateTimeBR(row.lastUpdateAt) || ''))+'</small>'
         : '<span class="os-muted">—</span>';
       const stale = !row.closed && !osAtStore(row) && !row.updatedToday ? '<span class="status-pill waiting">SEM ATUALIZAÇÃO HOJE</span> ' : '';
-      const ship = row.shipToStore && row.status === 'APROVADA'
+      const ship = OS_RETURN_STATUSES.includes(row.status)
+        ? '<br><span class="status-pill waiting">NA LOJA · DEVOLVER AO CLIENTE</span>'+(row.shipByName ? '<small class="os-update-meta">'+escapeHtml(row.shipByName+' · '+(formatDateTimeBR(row.shipAt) || ''))+'</small>' : '')
+        : row.shipToStore && row.status === 'APROVADA'
         ? '<small class="os-update-meta">'+(row.shipToStore === 'sim' ? 'SEGUE PARA A LOJA' : 'NÃO SEGUE PARA A LOJA')+(row.shipByName ? ' · '+escapeHtml(row.shipByName)+' · '+escapeHtml(formatDateTimeBR(row.shipAt) || '') : '')+'</small>'
         : '';
       const check = osAtStore(row)
@@ -27969,7 +27973,7 @@ function renderHomeTasks(){
     el('osOrderSituation').value = order ? order.situation : '';
     el('osOrderFirstUpdateField').hidden = Boolean(order);
     document.querySelectorAll('input[name="osOrderShip"]').forEach(input => { input.checked = Boolean(order) && input.value === order.shipToStore; });
-    el('osOrderShipHelp').textContent = order && order.shipByName ? 'MARCADO POR '+order.shipByName+' EM '+(formatDateTimeBR(order.shipAt) || '') : '';
+    el('osOrderShipHelp').dataset.marked = order && order.shipByName ? 'MARCADO POR '+order.shipByName+' EM '+(formatDateTimeBR(order.shipAt) || '') : '';
     osSyncShipField();
     el('osOrderFormStatus').textContent = '';
     el('osOrderDialog').showModal();
@@ -27978,7 +27982,9 @@ function renderHomeTasks(){
   function osSyncShipField(){
     const approved = el('osOrderStatus').value === 'APROVADA';
     el('osOrderShipField').hidden = !approved;
-    el('osOrderShipHelp').hidden = !approved || !el('osOrderShipHelp').textContent;
+    const returning = OS_RETURN_STATUSES.includes(el('osOrderStatus').value);
+    el('osOrderShipHelp').textContent = returning ? 'SEGUE PARA A LOJA SÓ PARA DEVOLVER AO CLIENTE (A LOJA NÃO TESTA). A O.S. É FINALIZADA AO SALVAR.' : (el('osOrderShipHelp').dataset.marked || '');
+    el('osOrderShipHelp').hidden = !(returning || (approved && el('osOrderShipHelp').textContent));
   }
   el('osOrderStatus') && el('osOrderStatus').addEventListener('change', osSyncShipField);
 

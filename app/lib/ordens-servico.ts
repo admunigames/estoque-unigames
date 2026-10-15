@@ -22,6 +22,9 @@ export const OS_STATUSES = [
   "APROVADA",
 ] as const;
 export const OS_APPROVED_STATUS = "APROVADA";
+// Sem conserto: o produto segue para a loja só para devolver ao cliente (a
+// loja não testa). Finaliza na hora, com SEGUE PARA A LOJA = sim (15/10/2026).
+export const OS_RETURN_STATUSES = ["NÃO AUTORIZADO", "SEM SOLUÇÃO"];
 export const OS_STORE_REJECTED_STATUS = "REPROVADO EM LOJA";
 
 export type ShipToStore = "" | "sim" | "nao";
@@ -34,6 +37,7 @@ export type StoreCheck = "" | "pendente" | "aprovada" | "reprovada";
  * (a O.S. voltou para a assistência) e "reprovada" fica para mostrar quem reprovou.
  */
 export function approvalState(status: string, ship: ShipToStore, previousCheck: StoreCheck): { closed: 0 | 1; storeCheck: StoreCheck } {
+  if (OS_RETURN_STATUSES.includes(status)) return { closed: 1, storeCheck: "" };
   if (status === OS_APPROVED_STATUS) {
     if (ship === "nao") return { closed: 1, storeCheck: "" };
     return previousCheck === "aprovada" ? { closed: 1, storeCheck: "aprovada" } : { closed: 0, storeCheck: "pendente" };
