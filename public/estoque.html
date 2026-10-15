@@ -2682,6 +2682,52 @@
   .ast-qty.zero{color:#ef817b;}
   .ast-in{border-color:rgba(84,196,138,.55);color:#54c48a;}
   .ast-out{border-color:rgba(239,129,123,.55);color:#ef817b;}
+  /* Auditoria Operacional: pensada para o celular da auditora na loja. */
+  /* Na auditoria o cabeçalho da página (fixo no topo) fica só com o título; o contador gruda logo abaixo dele. */
+  #pageAuditoriaOperacional.aop-auditing .page-header .dre-toolbar-actions{display:none;}
+  .aop-bar{position:sticky;top:var(--aop-top,0px);z-index:5;display:grid;gap:6px;margin:8px 0 14px;padding:10px 12px;border:1px solid var(--surface-border);border-radius:var(--radius-surface);background:var(--bg-card);box-shadow:var(--surface-shadow);}
+  .aop-bar-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+  .aop-bar-head h3{margin:0;font:800 16px/1.2 var(--sans);}
+  .aop-meta,.aop-save-status{color:var(--ink-faint);font:700 10px/1.4 var(--mono);}
+  .aop-counter{font:700 12px/1.3 var(--mono);}
+  .aop-progress{height:6px;border-radius:99px;background:var(--bg-card-2);overflow:hidden;}
+  .aop-progress span{display:block;height:100%;width:0;background:#54c48a;}
+  .aop-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .aop-chip{padding:2px 7px;border:1px solid var(--inset-border);border-radius:99px;font:700 10px/1.3 var(--mono);}
+  .aop-group-title{margin:14px 0 8px;font:800 11px/1.3 var(--mono);letter-spacing:.06em;color:var(--ink-soft);}
+  .aop-item{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:10px 14px;margin-bottom:8px;padding:12px;border:1px solid var(--surface-border);border-left:4px solid var(--inset-border);border-radius:var(--radius-inset);background:var(--bg-card);}
+  .aop-item.is-feito{border-left-color:#54c48a;}
+  .aop-item.is-nao_feito{border-left-color:#ef817b;}
+  .aop-item-text{margin:0 0 10px;font-weight:700;line-height:1.35;}
+  .aop-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .aop-choice{min-height:48px;border:2px solid var(--inset-border);border-radius:10px;background:transparent;color:var(--ink);font:800 13px/1 var(--sans);cursor:pointer;}
+  .aop-choice.feito.active{background:#54c48a;border-color:#54c48a;color:#0b1f14;}
+  .aop-choice.nao.active{background:#ef817b;border-color:#ef817b;color:#2a0b09;}
+  .aop-choice:disabled{cursor:default;}
+  .aop-choice:disabled:not(.active){opacity:.45;}
+  .aop-note{width:100%;min-height:76px;resize:vertical;}
+  .aop-note-read{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .aop-finalize{display:grid;gap:8px;justify-items:start;margin:16px 0 24px;}
+  .aop-improve-list{display:grid;gap:8px;margin:0 0 12px;padding:0;list-style:none;}
+  .aop-improve-list li{padding:10px 12px;border:1px solid var(--surface-border);border-left:4px solid #ef817b;border-radius:var(--radius-inset);background:var(--bg-card);}
+  .aop-improve-list small{color:var(--ink-faint);font:700 9px/1.3 var(--mono);}
+  .aop-improve-list p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .aop-delta{display:block;margin-top:6px;font:800 10px/1.3 var(--mono);color:var(--ink-faint);}
+  .aop-delta.up{color:#54c48a;}
+  .aop-delta.down{color:#ef817b;}
+  .aop-summary-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px;}
+  .aop-items-list{padding:0 20px 20px;}
+  .aop-item-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--inset-border);}
+  .aop-item-row.off{opacity:.55;}
+  .aop-item-row small{display:block;margin-top:2px;color:var(--ink-faint);font:700 9px/1.3 var(--mono);}
+  .aop-item-row-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;}
+  @media(max-width:680px){
+    .aop-item{grid-template-columns:1fr;}
+    .aop-choice{min-height:52px;font-size:14px;}
+    .aop-chip{font-size:9px;}
+    .aop-item-row{flex-direction:column;align-items:stretch;}
+    .aop-item-row-actions{justify-content:flex-start;}
+  }
   .supply-admin-tabs{margin-bottom:16px;}
   .supply-admin-tab-panel{display:grid;gap:12px;}
   .supply-category-form{display:flex;gap:8px;max-width:420px;}
@@ -3735,6 +3781,15 @@
       display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
     }
     body.os-printing #osPrintBody{display:block !important; width:100%; color:#111827;}
+    /* Resumo da Auditoria Operacional: só o resumo. */
+    body.aop-printing > :not(.shell),
+    body.aop-printing .shell > :not(.content),
+    body.aop-printing .content > :not(#pageAuditoriaOperacional),
+    body.aop-printing #pageAuditoriaOperacional > :not(#aopPrintBody){display:none !important;}
+    body.aop-printing .shell,body.aop-printing .content,body.aop-printing #pageAuditoriaOperacional{
+      display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+    }
+    body.aop-printing #aopPrintBody{display:block !important; width:100%; color:#111827;}
     .os-print-section{margin-top:12px;}
     .os-print-section h2{margin:0 0 6px; padding:5px 8px; border:1px solid #111827; font:800 11px/1.3 var(--mono); break-after:avoid; page-break-after:avoid;}
     .os-print-table{width:100%; border-collapse:collapse; font-size:9px;}
@@ -3796,6 +3851,7 @@
     <a class="nav-item" id="navInstrucoes" data-page="instrucoes" data-home-desc="Orientações gerais com prazo para as lojas." title="Instruções" href="/instrucoes"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.6" r=".9" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Instruções</span></a>
     <a class="nav-item" id="navInsumos" data-page="insumos" data-permission="supplies" data-home-desc="Anote faltas, solicite na segunda e confirme o recebimento." title="Insumos" href="/insumos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.3 20 7.6v8.8L12 20.7 4 16.4V7.6z"/><path d="M4 7.6 12 11.9l8-4.3"/><path d="M12 11.9v8.8"/></svg></span><span class="nav-label">Insumos</span></a>
     <a class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" data-home-desc="Atividades diárias e semanais que precisam ser realizadas pela loja." title="Missões" href="/missoes"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Missões</span></a>
+    <a class="nav-item" id="navAuditoriaOperacional" data-page="auditoriaOperacional" data-permission="auditoria_operacional" data-home-desc="Checklist da auditora na loja (feito / não feito com observação) e resumo do que precisa melhorar." title="Auditoria Operacional" href="/auditoria-operacional"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3"/><path d="M8.5 11l1.5 1.5 3-3"/><line x1="8.5" y1="16" x2="15.5" y2="16"/></svg></span><span class="nav-label">Auditoria Operacional</span></a>
     <a class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas" href="/tarefas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.2"/><path d="m8.3 12.5 2.4 2.4L16 9.7"/></svg></span><span class="nav-label">Tarefas</span></a>
     <span class="nav-section-label">Gestão</span>
     <div class="nav-group">
@@ -7130,6 +7186,64 @@
     </section>
 
 
+    <!-- ================= AUDITORIA OPERACIONAL ================= -->
+    <section id="pageAuditoriaOperacional" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Auditoria Operacional</h2>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnAopReload" type="button">ATUALIZAR</button>
+          <button class="btn-outline" id="btnAopItems" type="button" hidden>ITENS DO CHECKLIST</button>
+          <button class="btn-accent" id="btnAopNew" type="button" hidden>NOVA AUDITORIA</button>
+        </div>
+      </header>
+
+      <div id="aopListView">
+        <div class="dre-toolbar">
+          <div class="field"><label for="aopStoreFilter">LOJA</label><select id="aopStoreFilter"></select></div>
+        </div>
+        <h3 class="supply-section-title">HISTÓRICO DE AUDITORIAS</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="aopListTable">
+              <thead><tr><th>Data</th><th>Loja</th><th>Auditora</th><th>Situação</th><th>Nota</th><th></th></tr></thead>
+              <tbody id="aopListBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="aopAuditView" hidden>
+        <div class="aop-bar-head">
+          <button class="btn-outline btn-sm" id="btnAopBack" type="button">VOLTAR</button>
+          <h3 id="aopAuditTitle"></h3>
+        </div>
+        <div class="aop-meta" id="aopAuditMeta"></div>
+        <div class="aop-bar">
+          <div class="aop-counter" id="aopCounter"></div>
+          <div class="aop-progress" aria-hidden="true"><span id="aopProgress"></span></div>
+          <div class="aop-chips" id="aopSectionChips"></div>
+          <div class="aop-save-status" id="aopSaveStatus" role="status" aria-live="polite"></div>
+        </div>
+        <div id="aopSummaryBox" hidden>
+          <div id="aopSummary"></div>
+          <div class="aop-summary-actions">
+            <button class="btn-outline" id="btnAopPdf" type="button">GERAR PDF</button>
+            <button class="btn-accent" id="btnAopWhats" type="button">COPIAR PARA WHATSAPP</button>
+          </div>
+          <h3 class="supply-section-title">CHECKLIST</h3>
+        </div>
+        <div id="aopChecklist"></div>
+        <div class="aop-finalize" id="aopFinalizeBox" hidden>
+          <p class="os-muted" id="aopFinalizeHint"></p>
+          <button class="btn-accent" id="btnAopFinalize" type="button">FINALIZAR AUDITORIA</button>
+        </div>
+      </div>
+      <div class="print-only" id="aopPrintBody"></div>
+    </section>
+
     <!-- ================= ASSISTÊNCIA / ESTOQUE ================= -->
     <section id="pageAssistenciaEstoque" class="page wrap">
       <header class="page-header">
@@ -9576,6 +9690,15 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Auditoria Operacional</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="auditoria_operacional:view"> Ver as auditorias e o resumo (login com loja só lê as finalizadas da própria loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="auditoria_operacional:audit"> Fazer e finalizar auditoria (auditora; só login sem loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="auditoria_operacional:manage"> Editar os itens do checklist (adicionar, editar, desativar, reordenar)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="auditoria_operacional:delete"> Excluir auditoria</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Base de Dados</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="database:view"> Visualizar</label>
@@ -11135,6 +11258,46 @@
       <button class="btn-accent" id="btnAstItemSave" type="submit">SALVAR</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="aopNewDialog" aria-labelledby="aopNewDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="aopNewDialogTitle">NOVA AUDITORIA</h3>
+    <button class="purchase-dialog-close" type="button" data-aop-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="aopNewForm">
+    <p class="gd-opening-hint" id="aopNewHint"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="aopNewStore">LOJA *</label><select id="aopNewStore" required></select></div>
+    </div>
+    <div class="user-form-status" id="aopNewStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-aop-close>CANCELAR</button>
+      <button class="btn-accent" id="btnAopNewSave" type="submit">COMEÇAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="aopItemsDialog" aria-labelledby="aopItemsDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="aopItemsDialogTitle">ITENS DO CHECKLIST</h3>
+    <button class="purchase-dialog-close" type="button" data-aop-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="aopItemForm">
+    <p class="gd-opening-hint">Auditorias já feitas guardam o texto da época: editar, desativar ou reordenar aqui só vale para as próximas.</p>
+    <input type="hidden" id="aopItemId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="aopItemSection">SEÇÃO *</label><select id="aopItemSection" required></select></div>
+      <div class="purchase-field"><label for="aopItemGroup">GRUPO (OPCIONAL)</label><input type="text" id="aopItemGroup" maxlength="60" autocomplete="off" placeholder="Ex.: LIMPEZA"></div>
+      <div class="purchase-field full"><label for="aopItemText">ITEM *</label><input type="text" id="aopItemText" maxlength="300" autocomplete="off" required></div>
+    </div>
+    <div class="user-form-status" id="aopItemStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnAopItemCancel" type="button" hidden>CANCELAR EDIÇÃO</button>
+      <button class="btn-accent" id="btnAopItemSave" type="submit">ADICIONAR ITEM</button>
+    </div>
+  </form>
+  <div class="aop-items-list" id="aopItemsList"></div>
 </dialog>
 
 <dialog class="purchase-dialog" id="astMoveDialog" aria-labelledby="astMoveDialogTitle">
@@ -13590,6 +13753,7 @@
     fornecedores:'/cadastros/fornecedores',
     tarefas:'/tarefas',
     missoes:'/missoes',
+    auditoriaOperacional:'/auditoria-operacional',
     captacao:'/captacao',
     saidas:'/saidas',
     divergencias:'/divergencias',
@@ -13655,6 +13819,7 @@
     fornecedores:'CADASTRO DE FORNECEDORES',
     tarefas:'TAREFAS',
     missoes:'MISSÕES',
+    auditoriaOperacional:'AUDITORIA OPERACIONAL',
     captacao:'CAPTAÇÃO',
     saidas:'SAÍDAS',
     divergencias:'DIVERGÊNCIAS',
@@ -13715,6 +13880,7 @@
     dashboard:'stock',
     tarefas:'tasks',
     missoes:'missions',
+    auditoriaOperacional:'auditoria_operacional',
     captacao:'captures',
     saidas:'outputs',
     divergencias:'divergencias',
@@ -14518,6 +14684,7 @@
     if(name === 'assistenciaOrdensServico') loadOrdensServicoPage();
     if(name === 'assistenciaPrecos') loadPrecosPage();
     if(name === 'assistenciaEstoque') loadAstPage();
+    if(name === 'auditoriaOperacional') loadAopPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -14586,6 +14753,7 @@
     if(name === 'assistenciaOrdensServico') loadOrdensServicoPage();
     if(name === 'assistenciaPrecos') loadPrecosPage();
     if(name === 'assistenciaEstoque') loadAstPage();
+    if(name === 'auditoriaOperacional') loadAopPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -27046,6 +27214,470 @@ function renderHomeTasks(){
     }catch(error){ el('astMoveStatus').textContent = error.message; }
     finally{ button.disabled = false; }
   });
+
+  // ---------- AUDITORIA OPERACIONAL (CHECKLIST DE LOJA) ----------
+  // A auditora marca FEITO / NÃO FEITO e a observação de cada item; cada
+  // marcação salva sozinha (rascunho). Finalizada = só leitura + resumo do que
+  // precisa melhorar. Login com loja só lê as finalizadas da própria loja (o
+  // backend filtra e bloqueia a escrita).
+  let aopList = null;
+  let aopCurrent = null;
+  let aopItems = null;
+  let aopSaveChain = Promise.resolve();
+  const aopNoteTimers = new Map();
+  const aopCan = action => (currentSession.role === 'admin' || !currentSession.companyId) && canAccess('auditoria_operacional:'+action);
+  async function aopApi(method, body, query){
+    const response = await fetch('/api/auditoria-operacional'+(query || ''), {
+      method: method || 'GET', cache:'no-store',
+      headers: body ? {Accept:'application/json','Content-Type':'application/json'} : {Accept:'application/json'},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){ location.assign('/login?next='+encodeURIComponent(location.pathname)); throw new Error('SESSÃO EXPIRADA.'); }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+  const aopPct = (done, total) => total ? Math.round(done / total * 100) : 0;
+  // Mesma conta de buildSummary() em app/lib/auditoria-operacional.ts (% FEITO sobre o total).
+  function aopScores(answers){
+    const sections = [...new Set(answers.map(answer => answer.section))].map(section => {
+      const rows = answers.filter(answer => answer.section === section);
+      const done = rows.filter(answer => answer.answer === 'feito').length;
+      return {section, pct: aopPct(done, rows.length)};
+    });
+    const done = answers.filter(answer => answer.answer === 'feito').length;
+    return {done, answered: answers.filter(answer => answer.answer).length, total: answers.length, pct: aopPct(done, answers.length), sections};
+  }
+  const aopEditable = () => Boolean(aopCurrent) && aopCurrent.audit.status === 'draft' && aopCan('audit');
+
+  // Auditoria finalizada anterior da mesma loja (para "melhorou / piorou").
+  function aopPrevious(audit){
+    const key = row => row.auditDate+'|'+row.createdAt;
+    return ((aopList && aopList.audits) || [])
+      .filter(row => row.id !== audit.id && row.companyId === audit.companyId && row.status === 'final' && key(row) < key(audit))
+      .sort((a, b) => key(b).localeCompare(key(a)))[0] || null;
+  }
+  function aopDelta(previousPct, pct){
+    if(previousPct === null || previousPct === undefined) return null;
+    const diff = pct - previousPct;
+    return {diff, label: diff > 0 ? 'MELHOROU +'+diff+' PTS' : diff < 0 ? 'PIOROU −'+Math.abs(diff)+' PTS' : 'IGUAL'};
+  }
+  const aopPreviousSectionPct = (previous, section) => {
+    const found = previous && previous.sections.find(row => row.section === section);
+    return found ? found.pct : null;
+  };
+
+  function aopShowList(){
+    el('aopListView').hidden = false;
+    el('aopAuditView').hidden = true;
+    el('pageAuditoriaOperacional').classList.remove('aop-auditing');
+  }
+
+  function renderAopList(){
+    if(!aopList) return;
+    const store = el('aopStoreFilter').value;
+    const rows = aopList.audits.filter(row => !store || row.companyId === store);
+    const canAudit = aopCan('audit'), canDelete = aopCan('delete');
+    el('aopListBody').innerHTML = rows.length ? rows.map(row => {
+      const final = row.status === 'final';
+      return '<tr>'+
+        '<td data-label="Data">'+escapeHtml(gdDateLabel(row.auditDate))+'</td>'+
+        '<td data-label="Loja"><strong>'+escapeHtml(row.companyName)+'</strong></td>'+
+        '<td data-label="Auditora">'+escapeHtml(row.auditorName || '—')+'</td>'+
+        '<td data-label="Situação">'+(final ? 'FINALIZADA' : 'RASCUNHO · '+row.answered+' DE '+row.total)+'</td>'+
+        '<td data-label="Nota"><strong>'+(final ? row.pct+'% FEITO' : '—')+'</strong></td>'+
+        '<td style="white-space:nowrap">'+
+          '<button class="btn-outline btn-sm" type="button" data-aop-open="'+escapeHtml(row.id)+'">'+(!final && canAudit ? 'CONTINUAR' : 'ABRIR')+'</button> '+
+          (canDelete ? '<button class="btn-outline btn-sm" type="button" data-aop-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+
+        '</td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="6" class="responsive-empty">Nenhuma auditoria'+(currentSession.companyId && currentSession.role !== 'admin' ? ' finalizada da sua loja.' : '.')+'</td></tr>';
+  }
+
+  async function loadAopList(){
+    aopList = await aopApi();
+    const select = el('aopStoreFilter');
+    const previous = select.value;
+    select.innerHTML = (aopList.companies.length > 1 ? '<option value="">TODAS AS LOJAS</option>' : '')+
+      aopList.companies.map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    if([...select.options].some(option => option.value === previous)) select.value = previous;
+    el('btnAopNew').hidden = !aopCan('audit');
+    el('btnAopItems').hidden = !aopCan('manage');
+    renderAopList();
+  }
+
+  async function loadAopPage(){
+    await aopFlushNotes();
+    aopCurrent = null;
+    aopShowList();
+    try{ await loadAopList(); }
+    catch(error){ el('aopListBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>'; }
+  }
+
+  async function aopOpen(id){
+    await aopFlushNotes();
+    try{ aopCurrent = await aopApi('GET', null, '?id='+encodeURIComponent(id)); }
+    catch(error){ showPurchaseToast(error.message, 'error'); return; }
+    el('aopListView').hidden = true;
+    el('aopAuditView').hidden = false;
+    const page = el('pageAuditoriaOperacional');
+    page.classList.add('aop-auditing');
+    const header = page.querySelector('.page-header');
+    page.style.setProperty('--aop-top', getComputedStyle(header).position === 'sticky' ? header.offsetHeight+'px' : '0px');
+    el('aopSaveStatus').textContent = '';
+    renderAopAudit();
+    window.scrollTo({top:0});
+  }
+
+  function aopItemHtml(answer, editable){
+    const choice = (value, label, kind) =>
+      '<button class="aop-choice '+kind+(answer.answer === value ? ' active' : '')+'" type="button" data-aop-set="'+value+'" aria-pressed="'+(answer.answer === value)+'"'+(editable ? '' : ' disabled')+'>'+label+'</button>';
+    return '<article class="aop-item'+(answer.answer ? ' is-'+answer.answer : '')+'" data-aop-row="'+escapeHtml(answer.id)+'">'+
+      '<div><p class="aop-item-text">'+escapeHtml(answer.text)+'</p>'+
+      '<div class="aop-choices">'+choice('feito', 'FEITO', 'feito')+choice('nao_feito', 'NÃO FEITO', 'nao')+'</div></div>'+
+      (editable
+        ? '<textarea class="aop-note" rows="2" maxlength="1000" placeholder="Observação" aria-label="Observação">'+escapeHtml(answer.note || '')+'</textarea>'
+        : '<p class="aop-note-read">'+(answer.note ? escapeHtml(answer.note) : '<span class="os-muted">Sem observação.</span>')+'</p>')+
+    '</article>';
+  }
+
+  function renderAopAudit(){
+    const {audit, answers} = aopCurrent;
+    const editable = aopEditable();
+    const final = audit.status === 'final';
+    el('aopAuditTitle').textContent = audit.companyName;
+    el('aopAuditMeta').textContent = gdDateLabel(audit.auditDate)+' · AUDITORA: '+(audit.auditorName || '—')+
+      (final ? ' · FINALIZADA POR '+(audit.finalizedByName || '—')+' EM '+(formatDateTimeBR(audit.finalizedAt) || '') : ' · RASCUNHO (SALVA SOZINHO)');
+    let html = '';
+    for(const section of [...new Set(answers.map(answer => answer.section))]){
+      html += '<h3 class="supply-section-title">'+escapeHtml(section)+'</h3>';
+      let group = '';
+      for(const answer of answers.filter(row => row.section === section)){
+        if(answer.groupName && answer.groupName !== group) html += '<h4 class="aop-group-title">'+escapeHtml(answer.groupName)+'</h4>';
+        group = answer.groupName;
+        html += aopItemHtml(answer, editable);
+      }
+    }
+    el('aopChecklist').innerHTML = html;
+    el('aopFinalizeBox').hidden = !editable;
+    renderAopCounters();
+    renderAopSummary();
+  }
+
+  function renderAopCounters(){
+    const score = aopScores(aopCurrent.answers);
+    el('aopCounter').innerHTML = '<strong>'+score.answered+' DE '+score.total+'</strong> RESPONDIDOS · GERAL <strong>'+score.pct+'% FEITO</strong>';
+    el('aopSectionChips').innerHTML = score.sections.map(row => '<span class="aop-chip">'+escapeHtml(row.section)+' <strong>'+row.pct+'%</strong></span>').join('');
+    el('aopProgress').style.width = aopPct(score.answered, score.total)+'%';
+    const missing = score.total - score.answered;
+    el('btnAopFinalize').disabled = missing > 0;
+    el('aopFinalizeHint').textContent = missing > 0
+      ? 'FALTA'+(missing === 1 ? ' 1 ITEM' : 'M '+missing+' ITENS')+' PARA FINALIZAR.'
+      : 'TUDO RESPONDIDO. DEPOIS DE FINALIZAR, A AUDITORIA FICA SÓ LEITURA.';
+  }
+
+  function renderAopSummary(){
+    const box = el('aopSummaryBox');
+    if(!aopCurrent || aopCurrent.audit.status !== 'final'){ box.hidden = true; el('aopSummary').innerHTML = ''; return; }
+    const {audit, summary} = aopCurrent;
+    const previous = aopPrevious(audit);
+    const deltaHtml = delta => delta ? '<span class="aop-delta '+(delta.diff > 0 ? 'up' : delta.diff < 0 ? 'down' : '')+'">'+delta.label+'</span>' : '';
+    const card = (label, pct, extra, delta) =>
+      '<article class="supply-dashboard-card"><span>'+escapeHtml(label)+'</span><strong>'+pct+'%</strong>'+(extra ? '<span>'+extra+'</span>' : '')+deltaHtml(delta)+'</article>';
+    const improvements = summary.sections.filter(row => row.improvements.length);
+    el('aopSummary').innerHTML = '<h3 class="supply-section-title">RESUMO DO QUE PRECISA MELHORAR</h3>'+
+      '<div class="supply-dashboard-grid gd-summary">'+
+        card('NOTA GERAL', summary.pct, summary.done+' DE '+summary.total+' FEITOS', aopDelta(previous && previous.pct, summary.pct))+
+        summary.sections.map(row => card(row.section, row.pct, row.done+' DE '+row.total, aopDelta(aopPreviousSectionPct(previous, row.section), row.pct))).join('')+
+      '</div>'+
+      '<p class="os-muted">'+(previous ? 'COMPARADO COM A AUDITORIA ANTERIOR DA LOJA ('+escapeHtml(gdDateLabel(previous.auditDate))+', '+previous.pct+'%).' : 'PRIMEIRA AUDITORIA FINALIZADA DESTA LOJA: SEM COMPARAÇÃO.')+'</p>'+
+      (improvements.length ? improvements.map(row =>
+        '<h4 class="aop-group-title">'+escapeHtml(row.section)+' · NÃO FEITOS ('+row.improvements.length+')</h4>'+
+        '<ul class="aop-improve-list">'+row.improvements.map(item =>
+          '<li><strong>'+escapeHtml(item.text)+'</strong>'+(item.groupName ? ' <small>'+escapeHtml(item.groupName)+'</small>' : '')+
+          (item.note ? '<p>'+escapeHtml(item.note)+'</p>' : '<p class="os-muted">Sem observação.</p>')+'</li>').join('')+'</ul>'
+      ).join('') : '<p><strong>TODOS OS ITENS FEITOS. NADA A MELHORAR.</strong></p>');
+    box.hidden = false;
+  }
+
+  function aopQueueSave(answer){
+    const body = {id: aopCurrent.audit.id, answerId: answer.id, status: answer.answer, notes: answer.note || '', companyName: aopCurrent.audit.companyName};
+    el('aopSaveStatus').textContent = 'SALVANDO…';
+    aopSaveChain = aopSaveChain.then(() => aopApi('PUT', body)).then(() => {
+      el('aopSaveStatus').textContent = 'SALVO ÀS '+new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', timeZone:'America/Recife'});
+    }, error => {
+      el('aopSaveStatus').textContent = 'NÃO SALVOU: '+error.message;
+      showPurchaseToast(error.message, 'error');
+    });
+    return aopSaveChain;
+  }
+  // Observação: salva 800 ms depois de parar de digitar (ou ao sair do campo / da tela).
+  function aopFlushNotes(){
+    for(const [id, timer] of aopNoteTimers){
+      clearTimeout(timer);
+      const answer = aopCurrent && aopCurrent.answers.find(row => row.id === id);
+      if(answer) aopQueueSave(answer);
+    }
+    aopNoteTimers.clear();
+    return aopSaveChain;
+  }
+
+  el('aopChecklist') && el('aopChecklist').addEventListener('click', event => {
+    const button = event.target.closest('[data-aop-set]');
+    const row = button && button.closest('[data-aop-row]');
+    if(!row || !aopEditable()) return;
+    const answer = aopCurrent.answers.find(item => item.id === row.dataset.aopRow);
+    if(!answer) return;
+    answer.answer = button.dataset.aopSet;
+    row.className = 'aop-item is-'+answer.answer;
+    row.querySelectorAll('[data-aop-set]').forEach(choice => {
+      choice.classList.toggle('active', choice === button);
+      choice.setAttribute('aria-pressed', String(choice === button));
+    });
+    clearTimeout(aopNoteTimers.get(answer.id));
+    aopNoteTimers.delete(answer.id);
+    aopQueueSave(answer);
+    renderAopCounters();
+  });
+  el('aopChecklist') && el('aopChecklist').addEventListener('input', event => {
+    const row = event.target.classList.contains('aop-note') && event.target.closest('[data-aop-row]');
+    const answer = row && aopCurrent && aopCurrent.answers.find(item => item.id === row.dataset.aopRow);
+    if(!answer) return;
+    answer.note = event.target.value;
+    clearTimeout(aopNoteTimers.get(answer.id));
+    aopNoteTimers.set(answer.id, setTimeout(() => { aopNoteTimers.delete(answer.id); aopQueueSave(answer); }, 800));
+  });
+  el('aopChecklist') && el('aopChecklist').addEventListener('focusout', event => {
+    if(event.target.classList.contains('aop-note')) aopFlushNotes();
+  });
+  document.addEventListener('visibilitychange', () => { if(document.hidden) aopFlushNotes(); });
+
+  el('aopStoreFilter') && el('aopStoreFilter').addEventListener('change', renderAopList);
+  el('btnAopReload') && el('btnAopReload').addEventListener('click', async () => {
+    if(!aopCurrent){ loadAopPage(); return; }
+    const id = aopCurrent.audit.id;
+    await aopFlushNotes();
+    try{ await loadAopList(); }catch(error){ showPurchaseToast(error.message, 'error'); }
+    aopOpen(id);
+  });
+  el('btnAopBack') && el('btnAopBack').addEventListener('click', loadAopPage);
+  el('aopListBody') && el('aopListBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-aop-open],[data-aop-delete]');
+    if(!button) return;
+    if(button.dataset.aopOpen){ aopOpen(button.dataset.aopOpen); return; }
+    const row = aopList.audits.find(item => item.id === button.dataset.aopDelete);
+    if(!row) return;
+    const ok = await askConfirm('EXCLUIR A AUDITORIA DA '+row.companyName+' DE '+gdDateLabel(row.auditDate)+'?', {okText:'EXCLUIR', danger:true});
+    if(!ok) return;
+    try{
+      await aopApi('DELETE', {id: row.id, companyName: row.companyName, date: row.auditDate});
+      showPurchaseToast('Auditoria excluída.');
+      await loadAopList();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  el('btnAopNew') && el('btnAopNew').addEventListener('click', () => {
+    el('aopNewForm').reset();
+    el('aopNewStore').innerHTML = '<option value="">ESCOLHA A LOJA</option>'+((aopList && aopList.companies) || [])
+      .map(company => '<option value="'+escapeHtml(company.id)+'">'+escapeHtml(company.name)+'</option>').join('');
+    el('aopNewStore').value = el('aopStoreFilter').value;
+    el('aopNewHint').textContent = 'DATA: '+gdDateLabel((aopList && aopList.today) || '')+' · AUDITORA: '+(currentSession.displayName || '');
+    el('aopNewStatus').textContent = '';
+    el('aopNewDialog').showModal();
+  });
+  el('aopNewForm') && el('aopNewForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const select = el('aopNewStore');
+    const button = el('btnAopNewSave');
+    button.disabled = true;
+    try{
+      const result = await aopApi('POST', {companyId: select.value, companyName: select.selectedOptions[0] ? select.selectedOptions[0].textContent : ''});
+      el('aopNewDialog').close();
+      if(result.existing) showPurchaseToast('Já havia um rascunho desta loja hoje: continuando.');
+      await loadAopList().catch(() => {});
+      await aopOpen(result.id);
+    }catch(error){ el('aopNewStatus').textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+
+  el('btnAopFinalize') && el('btnAopFinalize').addEventListener('click', async () => {
+    if(!aopEditable()) return;
+    await aopFlushNotes();
+    const {id, companyName} = aopCurrent.audit;
+    const ok = await askConfirm('FINALIZAR A AUDITORIA DA '+companyName+'? DEPOIS DISSO ELA FICA SÓ LEITURA.', {okText:'FINALIZAR'});
+    if(!ok) return;
+    const button = el('btnAopFinalize');
+    button.disabled = true;
+    try{
+      await aopApi('PATCH', {id, action:'FINALIZAR', companyName});
+      showPurchaseToast('Auditoria finalizada.');
+      await loadAopList().catch(() => {});
+      await aopOpen(id);
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+      renderAopCounters();
+    }
+  });
+
+  // Resumo para o WhatsApp (só os NÃO FEITOS, com a observação).
+  function aopWhatsText(){
+    const {audit, summary} = aopCurrent;
+    const previous = aopPrevious(audit);
+    const deltaText = delta => delta ? ' ('+delta.label+')' : '';
+    const lines = [
+      '*AUDITORIA OPERACIONAL · '+audit.companyName+'*',
+      'Data: '+gdDateLabel(audit.auditDate)+' · Auditora: '+(audit.auditorName || '—'),
+      '',
+      '*NOTA GERAL: '+summary.pct+'% FEITO* ('+summary.done+' de '+summary.total+')'+deltaText(aopDelta(previous && previous.pct, summary.pct)),
+    ];
+    summary.sections.forEach(row => lines.push(row.section+': '+row.pct+'%'+deltaText(aopDelta(aopPreviousSectionPct(previous, row.section), row.pct))));
+    lines.push('', '*O QUE PRECISA MELHORAR*');
+    const improvements = summary.sections.filter(row => row.improvements.length);
+    if(!improvements.length) lines.push('Todos os itens feitos.');
+    improvements.forEach(row => {
+      lines.push('', '*'+row.section+'*');
+      row.improvements.forEach(item => lines.push('• '+item.text+(item.note ? '\n   Obs.: '+item.note : '')));
+    });
+    return lines.join('\n');
+  }
+  el('btnAopWhats') && el('btnAopWhats').addEventListener('click', async () => {
+    if(!aopCurrent) return;
+    const text = aopWhatsText();
+    try{
+      await navigator.clipboard.writeText(text);
+      showPurchaseToast('Resumo copiado. É só colar no WhatsApp.');
+    }catch{
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      const copied = document.execCommand('copy');
+      area.remove();
+      showPurchaseToast(copied ? 'Resumo copiado. É só colar no WhatsApp.' : 'Não foi possível copiar automaticamente.', copied ? undefined : 'error');
+    }
+  });
+
+  // PDF A4 (folha branca em qualquer tema): notas, comparação e os NÃO FEITOS.
+  let aopPrintTitleBefore = '';
+  el('btnAopPdf') && el('btnAopPdf').addEventListener('click', () => {
+    if(!aopCurrent || aopCurrent.audit.status !== 'final') return;
+    const {audit, summary} = aopCurrent;
+    const previous = aopPrevious(audit);
+    const scoreRow = (label, done, total, pct, previousPct) => {
+      const delta = aopDelta(previousPct, pct);
+      return '<tr><td>'+escapeHtml(label)+'</td><td>'+pct+'%</td><td>'+done+' de '+total+'</td><td>'+(previousPct === null || previousPct === undefined ? '—' : previousPct+'%')+'</td><td>'+(delta ? delta.label : '—')+'</td></tr>';
+    };
+    const improvements = summary.sections.filter(row => row.improvements.length);
+    el('aopPrintBody').innerHTML =
+      '<header class="print-report-header"><div class="print-report-kicker">AUDITORIA OPERACIONAL · '+escapeHtml(audit.companyName)+'</div>'+
+      '<h1>RESUMO DO QUE PRECISA MELHORAR</h1>'+
+      '<div class="print-report-meta">DATA '+escapeHtml(gdDateLabel(audit.auditDate))+' · AUDITORA '+escapeHtml(audit.auditorName || '—')+
+      ' · FINALIZADA POR '+escapeHtml(audit.finalizedByName || '—')+' EM '+escapeHtml(formatDateTimeBR(audit.finalizedAt) || '')+'</div></header>'+
+      '<section class="os-print-section"><h2>NOTA (% FEITO)</h2><table class="os-print-table"><thead><tr><th>Seção</th><th>Nota</th><th>Feitos</th><th>Anterior'+(previous ? ' ('+escapeHtml(gdDateLabel(previous.auditDate))+')' : '')+'</th><th>Comparação</th></tr></thead><tbody>'+
+        scoreRow('GERAL', summary.done, summary.total, summary.pct, previous ? previous.pct : null)+
+        summary.sections.map(row => scoreRow(row.section, row.done, row.total, row.pct, aopPreviousSectionPct(previous, row.section))).join('')+
+      '</tbody></table></section>'+
+      (improvements.length ? improvements.map(row =>
+        '<section class="os-print-section"><h2>'+escapeHtml(row.section)+' · NÃO FEITOS ('+row.improvements.length+')</h2>'+
+        '<table class="os-print-table"><thead><tr><th style="width:50%">Item</th><th>Observação</th></tr></thead><tbody>'+
+        row.improvements.map(item => '<tr><td>'+escapeHtml(item.text)+(item.groupName ? ' ('+escapeHtml(item.groupName)+')' : '')+'</td><td>'+escapeHtml(item.note || '—')+'</td></tr>').join('')+
+        '</tbody></table></section>').join('')
+        : '<p class="os-print-empty">Todos os itens feitos. Nada a melhorar.</p>');
+    aopPrintTitleBefore = document.title;
+    document.title = 'AUDITORIA-'+audit.companyName.replace(/[^A-Z0-9]+/gi, '-')+'-'+audit.auditDate;
+    document.body.classList.add('pdf-export', 'aop-printing');
+    window.print();
+  });
+  window.addEventListener('afterprint', () => {
+    if(!aopPrintTitleBefore) return;
+    document.body.classList.remove('pdf-export', 'aop-printing');
+    document.title = aopPrintTitleBefore;
+    aopPrintTitleBefore = '';
+  });
+
+  // Itens do checklist (quem gerencia): adicionar, editar, desativar, reordenar.
+  async function loadAopItems(){
+    aopItems = await aopApi('GET', null, '?items=1');
+    el('aopItemsList').innerHTML = aopItems.sections.map(section => {
+      const rows = aopItems.items.filter(item => item.section === section);
+      return '<h4 class="aop-group-title">'+escapeHtml(section)+' ('+rows.filter(item => item.active).length+' ATIVOS)</h4>'+
+        rows.map((item, index) =>
+          '<div class="aop-item-row'+(item.active ? '' : ' off')+'"><div><strong>'+escapeHtml(item.text)+'</strong>'+
+          '<small>'+escapeHtml((item.groupName ? item.groupName+' · ' : '')+(item.active ? 'ATIVO' : 'DESATIVADO'))+'</small></div>'+
+          '<div class="aop-item-row-actions">'+
+            '<button class="btn-outline btn-sm" type="button" data-aop-move="-1" data-aop-item="'+escapeHtml(item.id)+'"'+(index ? '' : ' disabled')+'>SUBIR</button>'+
+            '<button class="btn-outline btn-sm" type="button" data-aop-move="1" data-aop-item="'+escapeHtml(item.id)+'"'+(index < rows.length - 1 ? '' : ' disabled')+'>DESCER</button>'+
+            '<button class="btn-outline btn-sm" type="button" data-aop-edit="'+escapeHtml(item.id)+'">EDITAR</button>'+
+            '<button class="btn-outline btn-sm" type="button" data-aop-toggle="'+escapeHtml(item.id)+'">'+(item.active ? 'DESATIVAR' : 'ATIVAR')+'</button>'+
+          '</div></div>').join('');
+    }).join('');
+  }
+  function aopResetItemForm(){
+    el('aopItemForm').reset();
+    el('aopItemId').value = '';
+    el('aopItemSection').innerHTML = ((aopItems && aopItems.sections) || []).map(section => '<option>'+escapeHtml(section)+'</option>').join('');
+    el('btnAopItemSave').textContent = 'ADICIONAR ITEM';
+    el('btnAopItemCancel').hidden = true;
+    el('aopItemStatus').textContent = '';
+  }
+  el('btnAopItems') && el('btnAopItems').addEventListener('click', async () => {
+    el('aopItemsList').innerHTML = '<p class="os-muted">Carregando…</p>';
+    el('aopItemsDialog').showModal();
+    try{ await loadAopItems(); aopResetItemForm(); }
+    catch(error){ el('aopItemsList').innerHTML = '<p class="os-muted">'+escapeHtml(error.message)+'</p>'; }
+  });
+  el('btnAopItemCancel') && el('btnAopItemCancel').addEventListener('click', aopResetItemForm);
+  el('aopItemForm') && el('aopItemForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const id = el('aopItemId').value;
+    const current = id && aopItems.items.find(item => item.id === id);
+    const button = el('btnAopItemSave');
+    button.disabled = true;
+    try{
+      await aopApi(id ? 'PATCH' : 'POST', {kind:'item', id, section: el('aopItemSection').value, groupName: el('aopItemGroup').value,
+        text: el('aopItemText').value, active: current ? current.active : true});
+      showPurchaseToast(id ? 'Item alterado.' : 'Item adicionado.');
+      await loadAopItems();
+      aopResetItemForm();
+    }catch(error){ el('aopItemStatus').textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+  el('aopItemsList') && el('aopItemsList').addEventListener('click', async event => {
+    const button = event.target.closest('[data-aop-move],[data-aop-edit],[data-aop-toggle]');
+    if(!button || !aopItems) return;
+    const item = aopItems.items.find(row => row.id === (button.dataset.aopItem || button.dataset.aopEdit || button.dataset.aopToggle));
+    if(!item) return;
+    if(button.dataset.aopEdit){
+      el('aopItemId').value = item.id;
+      el('aopItemSection').value = item.section;
+      el('aopItemGroup').value = item.groupName;
+      el('aopItemText').value = item.text;
+      el('btnAopItemSave').textContent = 'SALVAR ALTERAÇÃO';
+      el('btnAopItemCancel').hidden = false;
+      el('aopItemText').focus();
+      return;
+    }
+    try{
+      if(button.dataset.aopToggle){
+        await aopApi('PATCH', {kind:'item', id: item.id, section: item.section, groupName: item.groupName, text: item.text, active: !item.active});
+      }else{
+        // Troca com o vizinho da mesma seção e grava a ordem completa.
+        const order = aopItems.items.slice();
+        const sameSection = order.filter(row => row.section === item.section);
+        const neighbor = sameSection[sameSection.indexOf(item) + Number(button.dataset.aopMove)];
+        if(!neighbor) return;
+        const a = order.indexOf(item), b = order.indexOf(neighbor);
+        [order[a], order[b]] = [order[b], order[a]];
+        await aopApi('PATCH', {kind:'item-order', ids: order.map(row => row.id)});
+      }
+      await loadAopItems();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  document.querySelectorAll('#aopNewDialog [data-aop-close],#aopItemsDialog [data-aop-close]').forEach(button =>
+    button.addEventListener('click', () => { const dialog = button.closest('dialog'); if(dialog.open) dialog.close(); }));
 
   // ---------- ASSISTÊNCIA · CONSULTA DE PREÇOS ----------
   // Tabela única para todas as lojas; só a assistência (login sem loja)

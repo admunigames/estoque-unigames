@@ -22,6 +22,7 @@ const MODULE_LABELS: [string, string][] = [
   ["/api/assistencia/estoque", "ESTOQUE ASSISTÊNCIA"],
   ["/api/assistencia", "ASSISTÊNCIA"],
   ["/api/captures", "CAPTAÇÃO"],
+  ["/api/auditoria-operacional", "AUDITORIA OPERACIONAL"],
   ["/api/checklists", "MISSÕES"],
   ["/api/routines", "MISSÕES"],
   ["/api/missions", "MISSÕES"],

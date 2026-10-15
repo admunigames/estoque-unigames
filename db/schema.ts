@@ -4239,3 +4239,64 @@ export const assistStockMovements = pgTable(
   },
   (table) => [index("assist_stock_movements_item_idx").on(table.itemId, table.createdAt)],
 );
+
+// Auditoria Operacional (checklist de loja). Itens editáveis por quem
+// gerencia; cada auditoria copia o texto dos itens ativos na criação
+// (ops_audit_answers), então editar um item não muda auditorias já feitas.
+export const opsAuditItems = pgTable(
+  "ops_audit_items",
+  {
+    id: text("id").primaryKey(),
+    section: text("section").notNull(),
+    groupName: text("group_name").notNull().default(""),
+    text: text("text").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    active: integer("active").notNull().default(1),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("ops_audit_items_order_idx").on(table.sortOrder)],
+);
+
+export const opsAudits = pgTable(
+  "ops_audits",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    // YYYY-MM-DD em America/Recife.
+    auditDate: text("audit_date").notNull(),
+    auditorId: text("auditor_id").notNull().default(""),
+    auditorName: text("auditor_name").notNull().default(""),
+    // 'draft' | 'final' (final = só leitura)
+    status: text("status").notNull().default("draft"),
+    finalizedBy: text("finalized_by").notNull().default(""),
+    finalizedByName: text("finalized_by_name").notNull().default(""),
+    finalizedAt: text("finalized_at").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("ops_audits_company_idx").on(table.deleted, table.companyId, table.auditDate)],
+);
+
+export const opsAuditAnswers = pgTable(
+  "ops_audit_answers",
+  {
+    id: text("id").primaryKey(),
+    auditId: text("audit_id").notNull(),
+    itemId: text("item_id").notNull(),
+    section: text("section").notNull(),
+    groupName: text("group_name").notNull().default(""),
+    text: text("text").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    // '' | 'feito' | 'nao_feito'
+    answer: text("answer").notNull().default(""),
+    note: text("note").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("ops_audit_answers_audit_idx").on(table.auditId, table.sortOrder)],
+);
