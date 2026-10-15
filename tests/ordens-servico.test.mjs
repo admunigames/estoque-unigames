@@ -129,6 +129,8 @@ test("approvalState: APROVADA finaliza ou espera a loja; voltar para a assistên
 
 test("segue para a loja: loja testa; reprovado em loja volta para a assistência com quem e quando", async () => {
   assert.equal((await call(TECNICO, "POST", order("30001", shift(3), { status: "SETOR QUALIDADE" }))).status, 201);
+  assert.equal((await call(TECNICO, "POST", order("40001", shift(1), { status: "NÃO AUTORIZADO" }))).status, 201);
+  assert.equal((await call(TECNICO, "POST", order("40002", shift(1), { status: "SEM SOLUÇÃO" }))).status, 201);
   let data = await (await call(TECNICO, "GET")).json();
   const os = data.orders.find((row) => row.osNumber === "30001");
   const approve = { ...order("30001", os.deadline), id: os.id, status: "APROVADA", shipToStore: "sim" };
