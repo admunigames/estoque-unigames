@@ -28174,8 +28174,8 @@ function renderHomeTasks(){
   let gdDashboardData = null;
   // Mesmo painel para o Comercial e a Assistência (dados e permissões separados).
   const GD_MODULES = {
-    comercial:{api:'/api/controle-gd', perm:'controle_gd', title:'CONTROLE DE GORDURAS', file:'controle-gorduras'},
-    assistencia:{api:'/api/gorduras-assistencia', perm:'gorduras_assistencia', title:'CONTROLE GORDURAS ASSISTÊNCIA', file:'controle-gorduras-assistencia'},
+    comercial:{api:'/api/controle-gd', perm:'controle_gd', title:'CONTROLE DE GORDURAS', subtitle:'GORDURA DE VENDAS', file:'controle-gorduras'},
+    assistencia:{api:'/api/gorduras-assistencia', perm:'gorduras_assistencia', title:'CONTROLE GORDURAS ASSISTÊNCIA', subtitle:'GORDURA DA ASSISTÊNCIA', file:'controle-gorduras-assistencia'},
   };
   let gdModule = 'comercial';
   const gdCfg = () => GD_MODULES[gdModule];
@@ -28593,7 +28593,7 @@ function renderHomeTasks(){
     canvas.height = H;
     const ctx = canvas.getContext('2d');
     const {HEADER} = await comDrawImageFrame(ctx, W, H, {
-      title: gdCfg().title, subtitle: store.storeName+' · GORDURA DE VENDAS', month: gdDashboardData.month, footer: 'UNIGAMES · '+gdCfg().title,
+      title: gdCfg().title, subtitle: store.storeName+' · '+gdCfg().subtitle, month: gdDashboardData.month, footer: 'UNIGAMES · '+gdCfg().title,
       footerRight: store.updatedUntil ? 'GORDURA ATUALIZADA ATÉ '+gdDateLabel(store.updatedUntil) : '',
     });
     const pal = COM_IMAGE_PALETTE;
