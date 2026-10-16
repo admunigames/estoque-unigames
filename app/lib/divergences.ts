@@ -137,3 +137,108 @@ export function productKey(productCode: string, productName: string): string {
     .replace(/\s+/g, " ")
     .trim()}`;
 }
+
+/**
+ * Chave do agrupamento de COMPENSAÇÃO entre lojas: pelo código; sem código,
+ * pelo nome normalizado (acentos, maiúsculas, sem espaços, "64GB" = "64G"),
+ * marcado como SEMELHANTE para o usuário conferir.
+ */
+export function compensationKey(productCode: string, productName: string): { key: string; similar: boolean } {
+  const code = String(productCode || "").trim().toUpperCase();
+  if (code) return { key: `code:${code}`, similar: false };
+  const name = String(productName || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/(\d)GB\b/g, "$1G");
+  return { key: `name:${name}`, similar: true };
+}
+
+export type CompensationInput = {
+  requestId: string;
+  requestCreatedAt?: string;
+  companyId: string;
+  companyName: string;
+  productCode: string;
+  productName: string;
+  physicalQty: number;
+  systemQty: number;
+  status: string;
+};
+
+export type CompensationStore = {
+  companyId: string;
+  companyName: string;
+  qty: number;
+  requests: { id: string; createdAt: string }[];
+};
+
+export type CompensationGroup = {
+  productCode: string;
+  productName: string;
+  similar: boolean;
+  names: string[];
+  surplus: CompensationStore[];
+  missing: CompensationStore[];
+  matched: number;
+  net: number;
+  requests: { id: string; companyName: string; createdAt: string }[];
+};
+
+/**
+ * MESMO PRODUTO COM SOBRA EM UMA LOJA E FALTA EM OUTRA: só itens ainda não
+ * resolvidos; saldo por loja = soma de (físico − sistema); fica só o produto
+ * com sobra em 1+ loja E falta em 1+ outra. matched = quanto casa
+ * (min(sobra, falta)); net = saldo somando as lojas (0 = COMPENSA).
+ */
+export function compensationGroups(rows: readonly CompensationInput[]): CompensationGroup[] {
+  const groups = new Map<string, {
+    productCode: string; productName: string; similar: boolean; names: Set<string>;
+    stores: Map<string, CompensationStore>;
+  }>();
+  for (const row of rows) {
+    if ((RESOLVED_ITEM_STATUSES as readonly string[]).includes(row.status)) continue;
+    const diff = divergenceOf(row.physicalQty, row.systemQty);
+    if (!diff) continue;
+    const { key, similar } = compensationKey(row.productCode, row.productName);
+    const group = groups.get(key) || {
+      productCode: String(row.productCode || "").trim(), productName: row.productName, similar,
+      names: new Set<string>(), stores: new Map(),
+    };
+    group.names.add(row.productName);
+    const store: CompensationStore = group.stores.get(row.companyId) || {
+      companyId: row.companyId, companyName: row.companyName, qty: 0, requests: [],
+    };
+    store.qty += diff;
+    if (!store.requests.some((request) => request.id === row.requestId)) {
+      store.requests.push({ id: row.requestId, createdAt: row.requestCreatedAt || "" });
+    }
+    group.stores.set(row.companyId, store);
+    groups.set(key, group);
+  }
+  const byName = (a: CompensationStore, b: CompensationStore) => a.companyName.localeCompare(b.companyName, "pt-BR");
+  const result: CompensationGroup[] = [];
+  for (const group of groups.values()) {
+    const stores = [...group.stores.values()];
+    const surplus = stores.filter((store) => store.qty > 0).sort(byName);
+    const missing = stores.filter((store) => store.qty < 0).sort(byName);
+    if (!surplus.length || !missing.length) continue;
+    const totalSurplus = surplus.reduce((sum, store) => sum + store.qty, 0);
+    const totalMissing = -missing.reduce((sum, store) => sum + store.qty, 0);
+    result.push({
+      productCode: group.productCode,
+      productName: group.productName,
+      similar: group.similar,
+      names: [...group.names].sort(),
+      surplus,
+      missing,
+      matched: Math.min(totalSurplus, totalMissing),
+      net: totalSurplus - totalMissing,
+      requests: [...surplus, ...missing].flatMap((store) =>
+        store.requests.map((request) => ({ ...request, companyName: store.companyName }))),
+    });
+  }
+  return result.sort((a, b) => b.matched - a.matched || Math.abs(a.net) - Math.abs(b.net) ||
+    a.productName.localeCompare(b.productName, "pt-BR"));
+}

@@ -3646,6 +3646,16 @@
      desenho vanilla elas são recriadas e não animam). */
   .div-dash-island .div-bar-fill,.div-dash-island .div-stack span{transition:width .35s ease;}
   @media(prefers-reduced-motion:reduce){.div-dash-island .div-bar-fill,.div-dash-island .div-stack span{transition:none;}}
+  .div-comp{cursor:pointer;}
+  .div-comp:hover{border-color:var(--accent);}
+  .div-comp-requests{display:none; flex-wrap:wrap; gap:6px; margin-top:10px;}
+  .div-comp.open .div-comp-requests{display:flex;}
+  .div-comp-requests button{min-height:34px; padding:7px 10px; font-size:9px;}
+  .div-comp-actions{display:flex; flex-wrap:wrap; gap:8px; margin:-4px 0 12px;}
+  .div-comp-actions button{min-height:38px; padding:8px 12px; font-size:10px;}
+  .div-resolved-row{cursor:pointer;}
+  .div-resolved-row.selected td{background:color-mix(in srgb,var(--accent) 10%,transparent);}
+  .div-detail.readonly #btnDivEdit,.div-detail.readonly #btnDivDelete{display:none !important;}
   .div-qty-neg{color:var(--neg) !important;}
   .div-qty-pos{color:var(--accent) !important;}
   .div-card-counters{display:flex; flex-wrap:wrap; gap:6px;}
@@ -3733,6 +3743,12 @@
     .div-product-side{grid-column:1 / -1; justify-items:start;}
   }
   @media print{
+    .div-print-comp{table-layout:fixed;}
+    .div-print-comp td,.div-print-comp th{vertical-align:top; overflow-wrap:anywhere;}
+    .div-print-comp thead{display:table-header-group;}
+    .div-print-comp tr{break-inside:avoid; page-break-inside:avoid;}
+    .div-print-comp th:nth-child(1){width:34%;}
+    .div-print-comp th:nth-child(4){width:16%;}
     .div-print-items{table-layout:fixed;}
     .div-print-items td,.div-print-items th{vertical-align:top; overflow-wrap:anywhere;}
     .div-print-items thead{display:table-header-group;}
@@ -4665,6 +4681,7 @@
       <div class="supply-tabs no-print" role="tablist" aria-label="Seções de divergências">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-div-tab="dashboard">DASHBOARD</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-div-tab="pedidos">PEDIDOS</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-div-tab="resolvidos">RESOLVIDOS</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-div-tab="inventario" id="divTabInventario" hidden>INVENTÁRIO</button>
       </div>
 
@@ -4696,6 +4713,14 @@
             <div id="divDashProducts" class="div-product-list"></div>
           </section>
         </div>
+        <section class="table-panel div-panel" id="divDashCompPanel">
+          <div class="div-panel-head"><h3>MESMO PRODUTO, SOBRA EM UMA LOJA E FALTA EM OUTRA</h3><span>ITENS AINDA PENDENTES DE TODAS AS LOJAS (NÃO SEGUE O PERÍODO NEM A LOJA DO FILTRO)</span></div>
+          <div class="div-comp-actions">
+            <button class="btn-outline" id="btnDivCompTxt" type="button">EXPORTAR TXT</button>
+            <button class="btn-outline" id="btnDivCompPdf" type="button">GERAR PDF</button>
+          </div>
+          <div id="divDashComp" class="div-product-list"></div>
+        </section>
       </section>
 
       <section class="no-print div-section" id="divSectionPedidos" hidden>
@@ -4706,7 +4731,6 @@
               <option value="">TODOS</option>
               <option value="aberto">EM ABERTO</option>
               <option value="verificacao">EM VERIFICAÇÃO</option>
-              <option value="finalizado">FINALIZADO</option>
             </select>
           </div>
           <div class="field"><label for="divFilterItemStatus">COM ITENS EM</label>
@@ -4725,7 +4749,21 @@
         <div class="purchase-card-grid div-card-grid" id="divRequestGrid" aria-live="polite">
           <div class="purchase-card-empty"><div class="empty-state"><h4>Carregando pedidos…</h4></div></div>
         </div>
+      </section>
 
+      <section class="no-print div-section" id="divSectionResolvidos" hidden>
+        <div class="div-toolbar">
+          <div class="field" data-div-all-stores hidden><label for="divResolvedCompany">LOJA</label><select id="divResolvedCompany"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="divResolvedFrom">CONCLUÍDO DE</label><input id="divResolvedFrom" type="date"></div>
+          <div class="field"><label for="divResolvedTo">CONCLUÍDO ATÉ</label><input id="divResolvedTo" type="date"></div>
+          <div class="field assist-search"><label for="divResolvedSearch">PRODUTO OU CÓDIGO</label><input id="divResolvedSearch" type="search" maxlength="80" autocomplete="off" placeholder="Buscar produto ou código"></div>
+          <button class="btn-outline" id="btnDivResolvedRefresh" type="button">ATUALIZAR</button>
+        </div>
+        <div id="divResolvedList" aria-live="polite"><div class="empty-state"><h4>Carregando resolvidos…</h4></div></div>
+      </section>
+
+      <!-- Detalhe do pedido: PEDIDOS (com ações) e RESOLVIDOS (só leitura, .readonly). -->
+      <div class="no-print">
         <section class="table-panel div-detail" id="divRequestDetail" hidden aria-live="polite">
           <div class="div-detail-head">
             <div>
@@ -4749,7 +4787,7 @@
             </div>
           </div>
         </section>
-      </section>
+      </div>
 
       <section class="no-print div-section" id="divSectionInventario" hidden>
         <div class="div-toolbar">
@@ -22855,6 +22893,8 @@ function renderHomeTasks(){
   const divState = {
     tab:'',
     requests:[],
+    resolved:[],
+    compensation:[],
     detail:null,
     detailId:'',
     inventoryView:'active',
@@ -22952,6 +22992,7 @@ function renderHomeTasks(){
   function divRenderCompanySelects(){
     divFillCompanySelect(el('divDashCompany'), 'TODAS AS LOJAS');
     divFillCompanySelect(el('divFilterCompany'), 'TODAS AS LOJAS');
+    divFillCompanySelect(el('divResolvedCompany'), 'TODAS AS LOJAS');
     divFillCompanySelect(el('divInventoryCompany'), 'TODAS AS LOJAS');
     divFillCompanySelect(el('divRequestCompany'), 'SELECIONE A LOJA');
     const allStores = divAllStoresRead();
@@ -22966,14 +23007,21 @@ function renderHomeTasks(){
     // DASHBOARD só para quem tem acesso geral; a loja vê só os próprios pedidos.
     if(divCanRead() && divAllStoresRead()) tabs.push('dashboard');
     if(divCanRead() || canAccess('divergencias:create')) tabs.push('pedidos');
+    if(divCanRead()) tabs.push('resolvidos');
     if(canAccess('divergencias:inventory')) tabs.push('inventario');
     return tabs;
   }
 
-  function setDivTab(tab){
+  // detailId: pedido para abrir na aba (undefined = trocar de aba fecha o detalhe).
+  function setDivTab(tab, detailId){
     const tabs = divAvailableTabs();
     const next = tabs.includes(tab) ? tab : (tabs[0] || 'pedidos');
+    if(next !== divState.tab || detailId !== undefined){
+      divCloseDetail();
+      divState.detailId = detailId || '';
+    }
     divState.tab = next;
+    el('divRequestDetail').classList.toggle('readonly', next === 'resolvidos');
     document.querySelectorAll('[data-div-tab]').forEach(button => {
       const name = button.dataset.divTab;
       button.hidden = !tabs.includes(name);
@@ -22983,9 +23031,11 @@ function renderHomeTasks(){
     });
     el('divSectionDashboard').hidden = next !== 'dashboard';
     el('divSectionPedidos').hidden = next !== 'pedidos';
+    el('divSectionResolvidos').hidden = next !== 'resolvidos';
     el('divSectionInventario').hidden = next !== 'inventario';
     if(next === 'dashboard') loadDivDashboard();
     if(next === 'pedidos') loadDivRequests();
+    if(next === 'resolvidos') loadDivResolved();
     if(next === 'inventario') loadDivInventory();
   }
 
@@ -23005,9 +23055,8 @@ function renderHomeTasks(){
     if(pending){
       if(pending.status !== undefined) el('divFilterStatus').value = pending.status;
       if(pending.itemStatus !== undefined) el('divFilterItemStatus').value = pending.itemStatus;
-      if(pending.requestId) divState.detailId = pending.requestId;
     }
-    setDivTab((pending && pending.tab) || divState.tab || 'dashboard');
+    setDivTab((pending && pending.tab) || divState.tab || 'dashboard', (pending && pending.requestId) || divState.detailId);
   }
 
   // Atalho dos widgets/cards: abre o módulo já filtrado.
@@ -23067,10 +23116,13 @@ function renderHomeTasks(){
   }
 
   function divDashMetricClick(filter){
-    divOpenFiltered({tab:'pedidos', status:(filter && filter.status) || '', itemStatus:(filter && filter.itemStatus) || ''});
+    const status = (filter && filter.status) || '';
+    if(status === 'finalizado') return divOpenFiltered({tab:'resolvidos'});
+    divOpenFiltered({tab:'pedidos', status, itemStatus:(filter && filter.itemStatus) || ''});
   }
 
   async function divDashRender(data){
+    renderDivCompensation(data);
     if(DIV_DASHBOARD_REACT && !divDashIslandFailed){
       try{
         const props = {data, onMetricClick:divDashMetricClick};
@@ -23174,15 +23226,160 @@ function renderHomeTasks(){
       : '<div class="empty-state"><h4>Nenhum produto com divergência no período.</h4></div>';
   }
 
+  // ---------- COMPENSAÇÃO ENTRE LOJAS ----------
+  function divSigned(value){
+    const n = Number(value) || 0;
+    return (n > 0 ? '+' : n < 0 ? '−' : '')+Math.abs(n);
+  }
+
+  function divCompNetLabel(group){
+    return group.net ? 'SALDO '+divSigned(group.net) : 'COMPENSA';
+  }
+
+  function renderDivCompensation(data){
+    const groups = Array.isArray(data.compensation) ? data.compensation : [];
+    divState.compensation = groups;
+    el('btnDivCompTxt').disabled = !groups.length;
+    el('btnDivCompPdf').disabled = !groups.length;
+    el('divDashComp').innerHTML = groups.length
+      ? groups.map((group, index) =>
+          '<article class="div-product div-comp" data-div-comp="'+index+'" tabindex="0" role="button" aria-expanded="false">'+
+            '<span class="div-product-rank">'+(index+1)+'º</span>'+
+            '<div class="div-product-copy">'+
+              '<strong>'+escapeHtml(group.productName || '—')+'</strong>'+
+              '<small>'+(group.productCode ? 'CÓD. '+escapeHtml(group.productCode) : 'SEM CÓDIGO')+' · CASA '+(Number(group.matched) || 0)+' UN.'+
+                (group.similar && (group.names || []).length > 1 ? ' · NOMES: '+escapeHtml(group.names.join(' / ')) : '')+'</small>'+
+              '<div class="div-product-stores">'+
+                (group.surplus || []).map(store => divPill((store.companyName || '—')+': '+divSigned(store.qty)+' SOBRA','done')).join('')+
+                (group.missing || []).map(store => divPill((store.companyName || '—')+': '+divSigned(store.qty)+' FALTA','alert')).join('')+
+              '</div>'+
+              '<div class="div-comp-requests">'+
+                (group.requests || []).map(request =>
+                  '<button class="btn-outline" type="button" data-div-comp-request="'+escapeHtml(request.id)+'">PEDIDO '+
+                    escapeHtml(request.companyName || '—')+(request.createdAt ? ' · '+escapeHtml((formatDateTimeBR(request.createdAt) || '').split(' às ')[0]) : '')+' →</button>'
+                ).join('')+
+              '</div>'+
+            '</div>'+
+            '<div class="div-product-side">'+divPill(divCompNetLabel(group), group.net ? 'waiting' : 'done')+
+              (group.similar ? divPill('SEMELHANTE','waiting') : '')+'</div>'+
+          '</article>'
+        ).join('')
+      : '<div class="empty-state"><h4>Nenhum produto com sobra numa loja e falta em outra.</h4></div>';
+  }
+
+  function divCompStoresText(stores){
+    return (stores || []).map(store => (store.companyName || '—')+' '+divSigned(store.qty)).join(', ');
+  }
+
+  function divCompTitle(){
+    return 'MESMO PRODUTO, SOBRA EM UMA LOJA E FALTA EM OUTRA';
+  }
+
+  function divCompTxt(){
+    const groups = divState.compensation;
+    if(!groups.length) return;
+    const lines = [
+      'UNIGAMES · DIVERGÊNCIAS DE ESTOQUE',
+      divCompTitle(),
+      'ITENS AINDA PENDENTES DE TODAS AS LOJAS · EMITIDO EM '+formatDateTimeBR(new Date()),
+      ''
+    ];
+    groups.forEach((group, index) => {
+      lines.push((index+1)+'. '+(group.productName || '—')+(group.productCode ? ' (CÓD. '+group.productCode+')' : ' (SEM CÓDIGO'+(group.similar ? ' · SEMELHANTE: CONFERIR' : '')+')'));
+      if(group.similar && (group.names || []).length > 1) lines.push('   NOMES: '+group.names.join(' / '));
+      lines.push('   SOBRA: '+divCompStoresText(group.surplus));
+      lines.push('   FALTA: '+divCompStoresText(group.missing));
+      lines.push('   '+divCompNetLabel(group)+' · CASA '+(Number(group.matched) || 0)+' UN.');
+      lines.push('');
+    });
+    const blob = new Blob(['\uFEFF'+lines.join('\r\n')], {type:'text/plain;charset=utf-8;'});
+    downloadBlobFile(blob, 'divergencias-compensacao-'+todayDateKeyRecife()+'.txt');
+  }
+
+  function divCompPdf(){
+    const groups = divState.compensation;
+    if(!groups.length) return;
+    el('divPrintTitle').textContent = 'Mesmo produto: sobra em uma loja e falta em outra';
+    el('divPrintMeta').textContent = 'ITENS AINDA PENDENTES DE TODAS AS LOJAS · '+groups.length+' PRODUTO(S) · EMITIDO EM '+formatDateTimeBR(new Date());
+    el('divPrintBody').innerHTML =
+      '<table class="rh-print-table div-print-comp"><thead><tr>'+
+        '<th>Produto</th><th>Sobra</th><th>Falta</th><th>Saldo</th>'+
+      '</tr></thead><tbody>'+
+      groups.map(group => '<tr>'+
+        '<td>'+escapeHtml(group.productName || '—')+'<br>'+(group.productCode ? 'CÓD. '+escapeHtml(group.productCode) : 'SEM CÓDIGO'+(group.similar ? ' · SEMELHANTE' : ''))+
+          (group.similar && (group.names || []).length > 1 ? '<br>NOMES: '+escapeHtml(group.names.join(' / ')) : '')+'</td>'+
+        '<td>'+escapeHtml(divCompStoresText(group.surplus))+'</td>'+
+        '<td>'+escapeHtml(divCompStoresText(group.missing))+'</td>'+
+        '<td>'+escapeHtml(divCompNetLabel(group))+'<br>CASA '+(Number(group.matched) || 0)+' UN.</td>'+
+      '</tr>').join('')+
+      '</tbody></table>';
+    divPrintTitleBefore = document.title;
+    document.title = 'divergencias-compensacao-'+todayDateKeyRecife();
+    document.body.classList.add('pdf-export');
+    window.print();
+  }
+
+  // ---------- RESOLVIDOS ----------
+  async function loadDivResolved(){
+    if(!divCanRead()) return;
+    const list = el('divResolvedList');
+    const params = new URLSearchParams({view:'resolved'});
+    const from = el('divResolvedFrom').value;
+    const to = el('divResolvedTo').value;
+    if(from && to && from > to){
+      list.innerHTML = '<div class="empty-state"><h4>A DATA INICIAL NÃO PODE SER DEPOIS DA DATA FINAL.</h4></div>';
+      return;
+    }
+    if(from) params.set('from', from);
+    if(to) params.set('to', to);
+    const search = el('divResolvedSearch').value.trim();
+    if(search) params.set('q', search);
+    const company = el('divResolvedCompany').value;
+    if(company && divAllStoresRead()) params.set('companyId', company);
+    try{
+      const data = await divApi('?'+params.toString());
+      divState.resolved = Array.isArray(data.requests) ? data.requests : [];
+      renderDivResolved();
+      if(divState.detailId) await loadDivDetail(divState.detailId, {scroll:true});
+    }catch(error){
+      list.innerHTML = '<div class="empty-state"><h4>'+escapeHtml(error.message)+'</h4></div>';
+    }
+  }
+
+  function renderDivResolved(){
+    const rows = divState.resolved;
+    const day = value => escapeHtml((formatDateTimeBR(value) || '—').split(' às ')[0]);
+    el('divResolvedList').innerHTML = rows.length
+      ? '<div class="table-panel responsive-table"><div class="table-scroll"><table><thead><tr>'+
+          '<th>Loja</th><th>Aberto em</th><th>Concluído em</th><th>Concluído por</th><th>Itens</th><th>Faltas / sobras</th><th></th>'+
+        '</tr></thead><tbody>'+
+        rows.map(row => '<tr class="div-resolved-row'+(row.id === divState.detailId ? ' selected' : '')+'" data-div-resolved="'+escapeHtml(row.id)+'">'+
+          '<td data-label="Loja" class="nome"><div>'+escapeHtml(row.companyName || '—')+'<span class="div-cell-sub">ABERTO POR '+escapeHtml(row.createdByName || '—')+'</span></div></td>'+
+          '<td data-label="Aberto em"><div>'+day(row.createdAt)+'</div></td>'+
+          '<td data-label="Concluído em"><div>'+day(row.finalizedAt)+'</div></td>'+
+          '<td data-label="Concluído por"><div>'+escapeHtml(row.concludedByName || '—')+'</div></td>'+
+          '<td data-label="Itens"><div>'+(Number(row.itemCount) || 0)+'</div></td>'+
+          '<td data-label="Faltas / sobras"><div>'+
+            (Number(row.missing) ? '<strong class="div-qty-neg">'+Number(row.missing)+' A MENOS</strong> ' : '')+
+            (Number(row.surplus) ? '<strong class="div-qty-pos">'+Number(row.surplus)+' A MAIS</strong>' : '')+
+            (!Number(row.missing) && !Number(row.surplus) ? 'SEM DIVERGÊNCIA' : '')+
+          '</div></td>'+
+          '<td data-label="Ação"><div><button class="btn-outline" type="button" data-div-resolved-open="'+escapeHtml(row.id)+'">VER PEDIDO</button></div></td>'+
+        '</tr>').join('')+
+        '</tbody></table></div></div>'
+      : '<div class="empty-state"><h4>Nenhum pedido resolvido encontrado.</h4></div>';
+  }
+
   // ---------- PEDIDOS ----------
-  async function loadDivRequests(){
+  async function loadDivRequests(options){
     const grid = el('divRequestGrid');
     if(!divCanRead()){
       grid.innerHTML = '<div class="purchase-card-empty"><div class="empty-state"><h4>Seu acesso permite apenas cadastrar pedidos.</h4><p>Use o botão “+ NOVO PEDIDO DE DIVERGÊNCIA”.</p></div></div>';
       el('divRequestDetail').hidden = true;
       return;
     }
-    const params = new URLSearchParams();
+    // PEDIDOS = só EM ABERTO / EM VERIFICAÇÃO; FINALIZADO fica em RESOLVIDOS.
+    const params = new URLSearchParams({view:'open'});
     const status = el('divFilterStatus').value;
     if(status) params.set('status', status);
     const company = el('divFilterCompany').value;
@@ -23191,7 +23388,7 @@ function renderHomeTasks(){
       const data = await divApi('?'+params.toString());
       divState.requests = Array.isArray(data.requests) ? data.requests : [];
       renderDivRequests();
-      if(divState.detailId) await loadDivDetail(divState.detailId, {scroll:true});
+      if(divState.detailId) await loadDivDetail(divState.detailId, {scroll:true, ...(options || {})});
     }catch(error){
       grid.innerHTML = '<div class="purchase-card-empty"><div class="empty-state"><h4>'+escapeHtml(error.message)+'</h4></div></div>';
     }
@@ -23246,10 +23443,24 @@ function renderHomeTasks(){
     const panel = el('divRequestDetail');
     try{
       const data = await divApi('/'+encodeURIComponent(id));
+      // O pedido mudou de aba: finalizou (vai para RESOLVIDOS) ou foi
+      // reaberto (volta para PEDIDOS). Logo após responder o último item o
+      // estoque continua em PEDIDOS, só com o aviso.
+      const finalized = data.request.status === 'finalizado';
+      if(divState.tab === 'pedidos' && finalized && settings.fromRespond){
+        divCloseDetail();
+        showPurchaseToast('Pedido finalizado: foi para a aba RESOLVIDOS.');
+        return;
+      }
+      if((divState.tab === 'pedidos' && finalized) || (divState.tab === 'resolvidos' && !finalized)){
+        setDivTab(finalized ? 'resolvidos' : 'pedidos', id);
+        return;
+      }
       divState.detail = data;
       renderDivDetail();
       panel.hidden = false;
       document.querySelectorAll('[data-div-request]').forEach(card => card.classList.toggle('selected', card.dataset.divRequest === id));
+      document.querySelectorAll('[data-div-resolved]').forEach(row => row.classList.toggle('selected', row.dataset.divResolved === id));
       if(settings.scroll) panel.scrollIntoView({behavior:'smooth', block:'start'});
     }catch(error){
       divState.detail = null;
@@ -23257,6 +23468,13 @@ function renderHomeTasks(){
       panel.hidden = true;
       showPurchaseToast(error.message, 'error');
     }
+  }
+
+  function divCloseDetail(){
+    el('divRequestDetail').hidden = true;
+    divState.detail = null;
+    divState.detailId = '';
+    document.querySelectorAll('[data-div-request].selected,[data-div-resolved].selected').forEach(node => node.classList.remove('selected'));
   }
 
   function divEventHtml(event){
@@ -23275,11 +23493,12 @@ function renderHomeTasks(){
   function divDetailRowHtml(item){
     const events = Array.isArray(item.events) ? item.events : [];
     const actions = [];
-    if(canAccess('divergencias:respond')) actions.push('<button class="btn-accent" type="button" data-div-respond="'+escapeHtml(item.id)+'">RESPONDER</button>');
+    const readonly = divState.tab === 'resolvidos';
+    if(!readonly && canAccess('divergencias:respond')) actions.push('<button class="btn-accent" type="button" data-div-respond="'+escapeHtml(item.id)+'">RESPONDER</button>');
     // Retorno da loja: VISUALIZAR + loja vinculada igual à do pedido.
     const request = divState.detail && divState.detail.request;
     const ownStore = Boolean(currentSession.companyId) && Boolean(request) && request.companyId === currentSession.companyId;
-    if(item.status === 'verificacao_loja' && ownStore && canAccess('divergencias:view')) actions.push('<button class="btn-accent" type="button" data-div-reply="'+escapeHtml(item.id)+'">RESPONDER VERIFICAÇÃO</button>');
+    if(!readonly && item.status === 'verificacao_loja' && ownStore && canAccess('divergencias:view')) actions.push('<button class="btn-accent" type="button" data-div-reply="'+escapeHtml(item.id)+'">RESPONDER VERIFICAÇÃO</button>');
     return '<tr>'+
       '<td data-label="Produto" class="nome"><div>'+escapeHtml(item.productName)+(item.productCode ? '<span class="div-cell-sub">CÓD. '+escapeHtml(item.productCode)+'</span>' : '')+'</div></td>'+
       '<td data-label="Físico"><div>'+(Number(item.physicalQty) || 0)+'</div></td>'+
@@ -23305,11 +23524,18 @@ function renderHomeTasks(){
     el('divDetailMeta').innerHTML =
       '<span>'+divPill(DIV_REQUEST_STATUS[request.status] || request.status, DIV_REQUEST_TONE[request.status])+'</span>'+
       '<span>ABERTO POR '+escapeHtml(request.createdByName || '—')+' EM '+escapeHtml(divDateTime(request.createdAt))+'</span>'+
-      (request.finalizedAt ? '<span>FINALIZADO EM '+escapeHtml(divDateTime(request.finalizedAt))+'</span>' : '')+
+      (request.finalizedAt ? '<span>FINALIZADO EM '+escapeHtml(divDateTime(request.finalizedAt))+
+        (divDetailConcludedBy(data) ? ' POR '+escapeHtml(divDetailConcludedBy(data)) : '')+'</span>' : '')+
       (request.notes ? '<span>OBSERVAÇÃO GERAL: '+escapeHtml(request.notes)+'</span>' : '');
     el('divDetailItems').innerHTML = data.items.length
       ? data.items.map(divDetailRowHtml).join('')
       : '<tr><td colspan="9" class="responsive-empty">Nenhum item.</td></tr>';
+  }
+
+  // Quem concluiu = quem deu a última resposta (mesma regra da lista).
+  function divDetailConcludedBy(data){
+    const last = data.items.filter(item => item.respondedAt).sort((a, b) => String(b.respondedAt).localeCompare(String(a.respondedAt)))[0];
+    return last ? last.respondedByName || '' : '';
   }
 
   function divDetailItem(id){
@@ -23477,9 +23703,11 @@ function renderHomeTasks(){
         : await divApi('', {method:'POST', body});
       el('divRequestDialog').close();
       showPurchaseToast(id ? 'Pedido de divergência atualizado.' : 'Pedido de divergência enviado ao estoque.');
-      divState.detailId = id || result.id || '';
-      if(divState.tab !== 'pedidos') setDivTab('pedidos');
-      else await loadDivRequests();
+      if(divState.tab !== 'pedidos') setDivTab('pedidos', id || result.id || '');
+      else{
+        divState.detailId = id || result.id || '';
+        await loadDivRequests();
+      }
     }catch(error){
       setDivFormStatus('divRequestFormStatus', error.message, 'error');
     }finally{
@@ -23494,9 +23722,7 @@ function renderHomeTasks(){
     try{
       await divApi('/'+encodeURIComponent(request.id), {method:'DELETE'});
       showPurchaseToast('Pedido de divergência excluído.');
-      divState.detail = null;
-      divState.detailId = '';
-      el('divRequestDetail').hidden = true;
+      divCloseDetail();
       await loadDivRequests();
     }catch(error){
       showPurchaseToast(error.message, 'error');
@@ -23543,7 +23769,7 @@ function renderHomeTasks(){
       });
       el('divRespondDialog').close();
       showPurchaseToast('Resposta registrada.');
-      await loadDivRequests();
+      await loadDivRequests({fromRespond:true});
     }catch(error){
       setDivFormStatus('divRespondFormStatus', error.message, 'error');
     }
@@ -23787,11 +24013,7 @@ function renderHomeTasks(){
   el('divDashRequestMetrics').addEventListener('click', event => {
     const button = event.target.closest('[data-div-metric-status],[data-div-metric-item]');
     if(!button) return;
-    divOpenFiltered({
-      tab:'pedidos',
-      status:button.dataset.divMetricStatus || '',
-      itemStatus:button.dataset.divMetricItem || ''
-    });
+    divDashMetricClick({status:button.dataset.divMetricStatus || '', itemStatus:button.dataset.divMetricItem || ''});
   });
   el('btnNewDivRequest').addEventListener('click', () => openDivRequestDialog(false));
   el('btnDivRefresh').addEventListener('click', loadDivRequests);
@@ -23818,11 +24040,34 @@ function renderHomeTasks(){
   el('btnDivPdf').addEventListener('click', divPrintRequest);
   el('btnDivEdit').addEventListener('click', () => openDivRequestDialog(true));
   el('btnDivDelete').addEventListener('click', deleteDivRequest);
-  el('btnDivCloseDetail').addEventListener('click', () => {
-    el('divRequestDetail').hidden = true;
-    divState.detail = null;
-    divState.detailId = '';
-    document.querySelectorAll('[data-div-request].selected').forEach(card => card.classList.remove('selected'));
+  el('btnDivCloseDetail').addEventListener('click', divCloseDetail);
+  el('btnDivResolvedRefresh').addEventListener('click', loadDivResolved);
+  ['divResolvedFrom','divResolvedTo','divResolvedCompany','divResolvedSearch'].forEach(id => el(id).addEventListener('change', loadDivResolved));
+  el('divResolvedList').addEventListener('click', event => {
+    const row = event.target.closest('[data-div-resolved]');
+    if(row) loadDivDetail(row.dataset.divResolved, {scroll:true});
+  });
+  el('btnDivCompTxt').addEventListener('click', () => {
+    try{ divCompTxt(); }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('btnDivCompPdf').addEventListener('click', divCompPdf);
+  const divCompToggle = card => {
+    const open = !card.classList.contains('open');
+    card.classList.toggle('open', open);
+    card.setAttribute('aria-expanded', String(open));
+  };
+  el('divDashComp').addEventListener('click', event => {
+    const link = event.target.closest('[data-div-comp-request]');
+    if(link) return divOpenFiltered({tab:'pedidos', status:'', itemStatus:'', requestId:link.dataset.divCompRequest});
+    const card = event.target.closest('[data-div-comp]');
+    if(card) divCompToggle(card);
+  });
+  el('divDashComp').addEventListener('keydown', event => {
+    if(event.key !== 'Enter' && event.key !== ' ') return;
+    const card = event.target.closest('[data-div-comp]');
+    if(!card || event.target !== card) return;
+    event.preventDefault();
+    divCompToggle(card);
   });
   el('btnDivAddItem').addEventListener('click', () => {
     const row = divAddItemRow({});

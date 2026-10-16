@@ -4696,8 +4696,8 @@ test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no w
   assert.match(html, /name === 'saidas' \|\| name === 'divergencias' \|\| name === 'comercialRelatorioNf';/);
   assert.match(html, /<section id="pageDivergencias" class="page wrap">/);
 
-  // Três abas no estilo único do site; INVENTÁRIO só com divergencias:inventory.
-  for (const tab of ["dashboard", "pedidos", "inventario"]) {
+  // Abas no estilo único do site; INVENTÁRIO só com divergencias:inventory.
+  for (const tab of ["dashboard", "pedidos", "resolvidos", "inventario"]) {
     assert.match(html, new RegExp(`class="supply-tab[^"]*" type="button" role="tab" aria-selected="(true|false)" data-div-tab="${tab}"`));
   }
   assert.match(html, /if\(canAccess\('divergencias:inventory'\)\) tabs\.push\('inventario'\);/);
@@ -4708,7 +4708,17 @@ test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no w
   assert.match(html, /id="btnNewDivRequest" type="button" data-permission="divergencias:create">\+ NOVO PEDIDO DE DIVERGÊNCIA</);
   assert.match(html, /id="btnDivEdit" type="button" data-permission="divergencias:edit"/);
   assert.match(html, /id="btnDivDelete" type="button" data-permission="divergencias:delete"/);
-  assert.match(html, /if\(canAccess\('divergencias:respond'\)\) actions\.push/);
+  // RESOLVIDOS: PEDIDOS só lista em aberto/verificação; o detalhe de um
+  // finalizado é só leitura (sem RESPONDER, EDITAR nem EXCLUIR).
+  assert.match(html, /if\(!readonly && canAccess\('divergencias:respond'\)\) actions\.push/);
+  assert.match(html, /if\(!readonly && item\.status === 'verificacao_loja'/);
+  assert.match(html, /\.div-detail\.readonly #btnDivEdit,\.div-detail\.readonly #btnDivDelete\{display:none !important;\}/);
+  assert.match(extractNamedFunction(html, "loadDivRequests"), /new URLSearchParams\(\{view:'open'\}\)/);
+  assert.match(extractNamedFunction(html, "loadDivResolved"), /new URLSearchParams\(\{view:'resolved'\}\)/);
+  assert.doesNotMatch(html, /<option value="finalizado">FINALIZADO<\/option>/);
+  // Compensação entre lojas no DASHBOARD, com TXT e PDF.
+  assert.match(html, /<h3>MESMO PRODUTO, SOBRA EM UMA LOJA E FALTA EM OUTRA<\/h3>/);
+  assert.match(extractNamedFunction(html, "divDashRender"), /^function divDashRender\(data\)\{\s*renderDivCompensation\(data\);/);
   // Busca no Cadastro de Produtos (texto livre continua permitido).
   assert.match(html, /attachProductCatalogSearch\(input, \{ getEntries: productCatalogNameEntries \}\);/);
   // PDF no mesmo padrão dos relatórios existentes.
@@ -4824,7 +4834,8 @@ test("Ilhas React: carregador genérico, piloto do dashboard de Divergências co
   assert.match(render, /island\.mount\(el\('divDashIsland'\), props\)/);
   assert.match(render, /console\.error\([^)]*error\);\s*divDashIslandFailed = true;/);
   assert.match(render, /el\('divDashVanilla'\)\.hidden = false;[\s\S]*\}\s*renderDivDashboard\(data\);\s*\}$/);
-  assert.match(extractNamedFunction(html, "divDashMetricClick"), /divOpenFiltered\(\{tab:'pedidos', status:/);
+  assert.match(extractNamedFunction(html, "divDashMetricClick"), /divOpenFiltered\(\{tab:'pedidos', status,/);
+  assert.match(extractNamedFunction(html, "divDashMetricClick"), /status === 'finalizado'\) return divOpenFiltered\(\{tab:'resolvidos'\}\)/);
   // O desenho vanilla continua inteiro.
   assert.match(extractNamedFunction(html, "renderDivDashboard"), /el\('divDashRequestMetrics'\)\.innerHTML =/);
   // Barras animadas só na ilha, respeitando prefers-reduced-motion.

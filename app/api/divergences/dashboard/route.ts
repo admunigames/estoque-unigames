@@ -2,6 +2,7 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { hasCompany } from "../../../lib/access-scope";
 import {
+  compensationGroups,
   divergenceOf,
   isDateOnly,
   isOverdueUnseen,
@@ -93,6 +94,18 @@ export async function GET(request: Request) {
       )
       .bind(...params)
       .all<Row>();
+    // COMPENSAÇÃO: retrato ATUAL de todas as lojas (todos os itens pendentes),
+    // sem o filtro de período/loja — com uma loja só nunca haveria par.
+    const pending = await database
+      .prepare(
+        `SELECT r.id AS requestId, r.created_at AS requestCreatedAt, r.company_id AS companyId, r.company_name AS companyName,
+                i.product_code AS productCode, i.product_name AS productName,
+                i.physical_qty AS physicalQty, i.system_qty AS systemQty, i.status
+         FROM divergence_items i JOIN divergence_requests r ON r.id=i.request_id
+         WHERE i.status NOT IN ('concluido','inventario')`,
+      )
+      .all<{ requestId: string; requestCreatedAt: string; companyId: string; companyName: string; productCode: string;
+        productName: string; physicalQty: number; systemQty: number; status: string }>();
 
     const requestsByStatus: Record<string, number> = { aberto: 0, verificacao: 0, finalizado: 0 };
     const itemsByStatus: Record<string, number> = {
@@ -162,6 +175,9 @@ export async function GET(request: Request) {
       byStore: [...stores.values()].sort((a, b) =>
         b.missing + b.surplus - (a.missing + a.surplus) || a.companyName.localeCompare(b.companyName, "pt-BR")),
       topProducts,
+      compensation: compensationGroups((pending.results ?? []).map((row) => ({
+        ...row, physicalQty: Number(row.physicalQty) || 0, systemQty: Number(row.systemQty) || 0,
+      }))),
     });
   } catch (error) {
     console.error("Não foi possível carregar o dashboard de divergências.", error);

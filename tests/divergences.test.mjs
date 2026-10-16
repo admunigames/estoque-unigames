@@ -518,3 +518,105 @@ test("QTD EM SISTEMA aceita negativo; QTD FÍSICA não", async () => {
   const bad = await call(listRoute.POST, STORE_A_USER, "POST", BASE, { items: [{ productCode: "7002", productName: "X", physicalQty: -1, systemQty: 0 }] });
   assert.equal(bad.status, 400);
 });
+
+async function list(user, query) {
+  const response = await call(listRoute.GET, user, "GET", `${BASE}?${query}`);
+  assert.equal(response.status, 200);
+  return (await response.json()).requests;
+}
+
+test("RESOLVIDOS: finalizado sai de PEDIDOS e vai para RESOLVIDOS; reabrir volta; escopo da loja", async () => {
+  const id = await createRequest(STORE_A_USER, [
+    { productCode: "7701", productName: "MOUSE GAMER RESOLV", physicalQty: 1, systemQty: 3 },
+    { productCode: "7702", productName: "TECLADO RESOLV", physicalQty: 2, systemQty: 1 },
+  ]);
+  const otherStore = await createRequest(STORE_B_USER, [{ productCode: "7703", productName: "WEBCAM RESOLV", physicalQty: 0, systemQty: 1 }]);
+  const [first, second] = (await detail(STORE_A_USER, id)).body.items.map((item) => item.id);
+  assert.ok((await list(STORE_A_USER, "view=open")).some((row) => row.id === id));
+  assert.ok(!(await list(STORE_A_USER, "view=resolved")).some((row) => row.id === id));
+
+  await respond(STOCK_USER, id, first, "concluido", "AJUSTADO");
+  assert.ok((await list(STORE_A_USER, "view=open")).some((row) => row.id === id), "ainda tem item pendente");
+  await respond({ ...STOCK_USER, name: "FISCAL" }, id, second, "inventario", "CONTAR");
+
+  assert.ok(!(await list(STORE_A_USER, "view=open")).some((row) => row.id === id), "finalizado sai de PEDIDOS");
+  // PEDIDOS nunca mostra finalizado, mesmo pedindo status=finalizado.
+  assert.ok(!(await list(STORE_A_USER, "view=open&status=finalizado")).some((row) => row.id === id));
+  const resolved = (await list(STORE_A_USER, "view=resolved")).find((row) => row.id === id);
+  assert.ok(resolved);
+  assert.equal(resolved.status, "finalizado");
+  assert.ok(resolved.finalizedAt);
+  assert.equal(resolved.concludedByName, "FISCAL");
+  assert.equal(resolved.itemCount, 2);
+  assert.equal(resolved.missing, 2);
+  assert.equal(resolved.surplus, 1);
+
+  // Busca por produto/código e período pela data de conclusão.
+  assert.ok((await list(STORE_A_USER, "view=resolved&q=teclado")).some((row) => row.id === id));
+  assert.ok((await list(STORE_A_USER, "view=resolved&q=7701")).some((row) => row.id === id));
+  assert.ok(!(await list(STORE_A_USER, "view=resolved&q=NADA-ASSIM")).some((row) => row.id === id));
+  assert.ok(!(await list(STORE_A_USER, "view=resolved&from=2099-01-01")).some((row) => row.id === id));
+  const today = lib.recifeDateOf(new Date().toISOString());
+  assert.ok((await list(STORE_A_USER, `view=resolved&from=${today}&to=${today}`)).some((row) => row.id === id));
+
+  // Escopo: a loja B não vê o resolvido da loja A; quem vê todas, vê.
+  await respond(STOCK_USER, otherStore, (await detail(STORE_B_USER, otherStore)).body.items[0].id, "concluido", "OK");
+  const storeB = await list(STORE_B_USER, "view=resolved");
+  assert.ok(storeB.some((row) => row.id === otherStore));
+  assert.ok(!storeB.some((row) => row.id === id));
+  assert.ok(storeB.every((row) => row.companyId === STORE_B));
+  // Loja tentando outra loja pelo filtro continua presa na própria.
+  assert.ok(!(await list(STORE_B_USER, `view=resolved&companyId=${STORE_A}`)).some((row) => row.id === id));
+  const all = await list(STOCK_USER, "view=resolved");
+  assert.ok(all.some((row) => row.id === id) && all.some((row) => row.id === otherStore));
+  // Mais recente primeiro.
+  assert.ok(all.findIndex((row) => row.id === otherStore) < all.findIndex((row) => row.id === id));
+
+  // Reabrir: um item volta a pendente → pedido volta para PEDIDOS.
+  await respond(STOCK_USER, id, first, "em_verificacao", "");
+  assert.ok((await list(STORE_A_USER, "view=open")).some((row) => row.id === id), "reaberto volta para PEDIDOS");
+  assert.ok(!(await list(STORE_A_USER, "view=resolved")).some((row) => row.id === id));
+  assert.equal((await detail(STORE_A_USER, id)).body.request.finalizedAt, "");
+});
+
+test("dashboard: COMPENSAÇÃO — mesmo código com sobra numa loja e falta em outra; ignora resolvidos e quem só tem um lado", async () => {
+  // PENDRIVE: +1 na A, −1 na B → compensa. CAPA: só falta (A e B) → fora.
+  // FONTE: sobra na A e falta na B, mas a falta já foi resolvida → fora.
+  const a = await createRequest(STORE_A_USER, [
+    { productCode: "8801", productName: "PENDRIVE 64GB", physicalQty: 3, systemQty: 2 },
+    { productCode: "8802", productName: "CAPA COMP", physicalQty: 0, systemQty: 1 },
+    { productCode: "8803", productName: "FONTE COMP", physicalQty: 2, systemQty: 1 },
+  ]);
+  const b = await createRequest(STORE_B_USER, [
+    { productCode: "8801", productName: "PEN DRIVE 64 GB", physicalQty: 0, systemQty: 1 },
+    { productCode: "8802", productName: "CAPA COMP", physicalQty: 1, systemQty: 2 },
+    { productCode: "8803", productName: "FONTE COMP", physicalQty: 0, systemQty: 4 },
+    // Sem código: agrupa pelo nome normalizado (64GB = 64 G) e marca SEMELHANTE.
+    { productName: "Cartão SD 32GB", physicalQty: 0, systemQty: 2 },
+  ]);
+  await createRequest(STORE_A_USER, [{ productName: "CARTAO SD 32 G", physicalQty: 5, systemQty: 2 }]);
+  const fonteB = (await detail(STORE_B_USER, b)).body.items.find((item) => item.productCode === "8803");
+  await respond(STOCK_USER, b, fonteB.id, "concluido", "AJUSTADO");
+  assert.ok(a);
+
+  const body = await (await call(dashboardRoute.GET, STOCK_USER, "GET", `${BASE}/dashboard`)).json();
+  const codes = body.compensation.map((group) => group.productCode);
+  assert.ok(!codes.includes("8802"), "só falta não entra");
+  assert.ok(!codes.includes("8803"), "falta resolvida não conta");
+  const pendrive = body.compensation.find((group) => group.productCode === "8801");
+  assert.deepEqual(pendrive.surplus.map((store) => [store.companyName, store.qty]), [["RIOMAR", 1]]);
+  assert.deepEqual(pendrive.missing.map((store) => [store.companyName, store.qty]), [["GUARARAPES", -1]]);
+  assert.equal(pendrive.matched, 1);
+  assert.equal(pendrive.net, 0);
+  assert.equal(pendrive.similar, false);
+  assert.equal(pendrive.requests.length, 2);
+  const sd = body.compensation.find((group) => group.similar && group.names.includes("CARTAO SD 32 G"));
+  assert.ok(sd, "agrupa pelo nome parecido quando não há código");
+  assert.equal(sd.matched, 2);
+  assert.equal(sd.net, 1);
+  // Mais compensado primeiro.
+  assert.ok(body.compensation.indexOf(sd) < body.compensation.indexOf(pendrive));
+  // Período no futuro não esconde a compensação (é o retrato atual).
+  const future = await (await call(dashboardRoute.GET, STOCK_USER, "GET", `${BASE}/dashboard?from=2099-01-01&to=2099-01-31`)).json();
+  assert.ok(future.compensation.some((group) => group.productCode === "8801"));
+});

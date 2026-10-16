@@ -2,6 +2,7 @@ import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
 import { hasCompany, NO_COMPANY_ERROR } from "../../lib/access-scope";
 import {
+  divergenceOf,
   isDateOnly,
   isOverdueUnseen,
   isRequestStatus,
@@ -26,7 +27,15 @@ import {
   type RequestRow,
 } from "./shared";
 
-type ItemStatusRow = { requestId: string; status: string; createdAt: string };
+type ItemStatusRow = {
+  requestId: string;
+  status: string;
+  createdAt: string;
+  physicalQty: number | string;
+  systemQty: number | string;
+  respondedAt: string;
+  respondedByName: string;
+};
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -51,19 +60,34 @@ export async function GET(request: Request) {
     const requestedCompany = safeText(url.searchParams.get("companyId"), 80);
     if (!allStores) add("company_id=?", actor.companyId);
     else if (hasCompany(requestedCompany)) add("company_id=?", requestedCompany);
+    // view=open (aba PEDIDOS): só EM ABERTO / EM VERIFICAÇÃO;
+    // view=resolved (aba RESOLVIDOS): só FINALIZADO, período pela data de
+    // conclusão e o mais recente primeiro. Sem view: tudo (como antes).
+    const view = url.searchParams.get("view");
+    const resolved = view === "resolved";
     const status = url.searchParams.get("status");
-    if (isRequestStatus(status)) add("status=?", status);
+    if (resolved) add("status=?", "finalizado");
+    else if (isRequestStatus(status) && !(view === "open" && status === "finalizado")) add("status=?", status);
+    else if (view === "open") add("status<>?", "finalizado");
+    const dateColumn = resolved ? "finalized_at" : "created_at";
     const from = url.searchParams.get("from");
     const to = url.searchParams.get("to");
-    if (isDateOnly(from)) add("created_at>=?", recifeDayStartIso(from));
-    if (isDateOnly(to)) add("created_at<?", recifeNextDayStartIso(to));
+    if (isDateOnly(from)) add(`${dateColumn}>=?`, recifeDayStartIso(from));
+    if (isDateOnly(to)) add(`${dateColumn}<?`, recifeNextDayStartIso(to));
+    // Busca por produto/código (sem curingas do usuário; UPPER = igual no SQLite e no Postgres).
+    const search = safeText(url.searchParams.get("q"), 80).toUpperCase().replace(/[%_\\]/g, "");
+    if (search) {
+      params.push(`%${search}%`);
+      const n = params.length;
+      conditions.push(`id IN (SELECT request_id FROM divergence_items WHERE UPPER(product_name) LIKE ?${n} OR UPPER(product_code) LIKE ?${n})`);
+    }
     const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
 
     const database = await getD1();
     const requests = await database
       .prepare(
         `${REQUEST_SELECT}${where}
-         ORDER BY CASE status WHEN 'finalizado' THEN 1 ELSE 0 END, created_at DESC
+         ORDER BY ${resolved ? "finalized_at DESC, created_at DESC" : "CASE status WHEN 'finalizado' THEN 1 ELSE 0 END, created_at DESC"}
          LIMIT 500`,
       )
       .bind(...params)
@@ -72,18 +96,35 @@ export async function GET(request: Request) {
     const items = rows.length
       ? await database
           .prepare(
-            `SELECT i.request_id AS requestId, i.status, i.created_at AS createdAt
+            `SELECT i.request_id AS requestId, i.status, i.created_at AS createdAt,
+                    i.physical_qty AS physicalQty, i.system_qty AS systemQty,
+                    i.responded_at AS respondedAt, i.responded_by_name AS respondedByName
              FROM divergence_items i
              WHERE i.request_id IN (SELECT id FROM divergence_requests${where})`,
           )
           .bind(...params)
           .all<ItemStatusRow>()
       : { results: [] as ItemStatusRow[] };
-    const counters = new Map<string, { total: number; overdue: number; byStatus: Record<string, number> }>();
+    type Counter = {
+      total: number; overdue: number; byStatus: Record<string, number>;
+      missing: number; surplus: number; concludedAt: string; concludedByName: string;
+    };
+    const emptyCounter = (): Counter => ({
+      total: 0, overdue: 0, byStatus: {}, missing: 0, surplus: 0, concludedAt: "", concludedByName: "",
+    });
+    const counters = new Map<string, Counter>();
     const now = new Date();
     for (const item of items.results ?? []) {
-      const entry = counters.get(item.requestId) || { total: 0, overdue: 0, byStatus: {} };
+      const entry = counters.get(item.requestId) || emptyCounter();
       entry.total += 1;
+      const diff = divergenceOf(Number(item.physicalQty), Number(item.systemQty));
+      if (diff < 0) entry.missing += -diff;
+      if (diff > 0) entry.surplus += diff;
+      // Quem concluiu = quem deu a última resposta (o pedido finaliza nela).
+      if (item.respondedAt && item.respondedAt > entry.concludedAt) {
+        entry.concludedAt = item.respondedAt;
+        entry.concludedByName = item.respondedByName;
+      }
       entry.byStatus[item.status] = (entry.byStatus[item.status] || 0) + 1;
       if (isOverdueUnseen(item.status, item.createdAt, now)) entry.overdue += 1;
       counters.set(item.requestId, entry);
@@ -91,8 +132,16 @@ export async function GET(request: Request) {
     return jsonResponse({
       allStores,
       requests: rows.map((row) => {
-        const entry = counters.get(row.id) || { total: 0, overdue: 0, byStatus: {} };
-        return { ...row, itemCount: entry.total, overdueCount: entry.overdue, itemsByStatus: entry.byStatus };
+        const entry = counters.get(row.id) || emptyCounter();
+        return {
+          ...row,
+          itemCount: entry.total,
+          overdueCount: entry.overdue,
+          itemsByStatus: entry.byStatus,
+          missing: entry.missing,
+          surplus: entry.surplus,
+          concludedByName: row.status === "finalizado" ? entry.concludedByName || row.updatedByName : "",
+        };
       }),
     });
   } catch (error) {
