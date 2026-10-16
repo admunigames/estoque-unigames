@@ -3305,10 +3305,7 @@
   .com-edit-table td input[data-com-money]{min-width:120px;max-width:170px;font-variant-numeric:tabular-nums}
   .com-edit-table td.calc{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
   .com-edit-table tr.saving td{opacity:.7}
-  .com-edit-table tr.com-assist-row td{border-top:0;background:rgba(79,134,189,.05)}
-  .com-edit-table tr.com-assist-row td.nome{padding-left:22px}
   .com-edit-table tr.com-weekend-total td{border-top:2px solid var(--surface-border);font-weight:900}
-  @media (max-width:680px){ .com-edit-table tbody td.com-assist-pad{display:none} }
   .com-edit-table tr.saved td:first-child{box-shadow:inset 3px 0 0 #54c48a}
   /* Aba Vendedores (18 colunas): a tabela rola DENTRO do quadro (a barra
      lateral fica sempre à vista), cabeçalho e coluna VENDEDOR fixos, e os
@@ -48299,15 +48296,7 @@ function renderHomeTasks(){
       '<td data-label="% itens" class="calc" style="text-align:right" data-com-calc="storeItemsPct">'+escapeHtml(comFormatPct(comShare(store.items, store.targetItems)))+'</td>'+
       '<td data-label="Meta realme"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Meta de realmes da loja" data-com-field="targetRealme" value="'+(Number(store.targetRealme) || 0)+'"></td>'+
       '<td data-label="Realmes feito"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Realmes feitos pela loja" data-com-field="realme" value="'+(Number(store.realme) || 0)+'"></td>'+
-      '<td data-label="% realmes" class="calc" style="text-align:right" data-com-calc="storeRealmePct">'+escapeHtml(comFormatPct(comShare(store.realme, store.targetRealme)))+'</td></tr>'+
-      // ASSISTÊNCIA da loja numa linha própria, logo abaixo (meta e feito
-      // nas mesmas colunas de meta e feito da loja).
-      '<tr class="com-assist-row" data-com-store="'+escapeHtml(store.companyId)+'">'+
-      '<td data-label="Assistência" class="nome"><strong>ASSISTÊNCIA</strong><br><small>'+escapeHtml(store.name)+'</small></td>'+
-      '<td data-label="Meta da assistência (R$)">'+comMoneyInput('assistTargetCents', store.assistTargetCents, 'Meta da assistência')+'</td>'+
-      '<td data-label="Feito da assistência (R$)">'+comMoneyInput('assistRevenueCents', store.assistRevenueCents, 'Feito da assistência')+'</td>'+
-      '<td data-label="% assistência" class="calc" style="text-align:right" data-com-calc="storeAssistPct">'+escapeHtml(comFormatPct(comShare(store.assistRevenueCents, store.assistTargetCents)))+'</td>'+
-      '<td class="com-assist-pad" colspan="8"></td></tr>';
+      '<td data-label="% realmes" class="calc" style="text-align:right" data-com-calc="storeRealmePct">'+escapeHtml(comFormatPct(comShare(store.realme, store.targetRealme)))+'</td></tr>';
   }
 
   function comRenderStoreGoalsTotal(){
@@ -48344,24 +48333,24 @@ function renderHomeTasks(){
   if(el('comStoreGoalsBody')) el('comStoreGoalsBody').addEventListener('change', event => {
     const row = event.target.closest('tr[data-com-store]');
     if(!row || !event.target.matches('[data-com-field]')) return;
-    // A loja tem duas linhas (loja e ASSISTÊNCIA): os campos vêm das duas.
-    const storeRows = Array.from(el('comStoreGoalsBody').querySelectorAll('tr[data-com-store]')).filter(item => item.dataset.comStore === row.dataset.comStore);
-    const field = name => storeRows.map(item => item.querySelector('[data-com-field="'+name+'"],[data-com-calc="'+name+'"]')).find(Boolean);
+    const field = name => row.querySelector('[data-com-field="'+name+'"],[data-com-calc="'+name+'"]');
+    const store = comStores && comStores.rows.find(item => item.companyId === row.dataset.comStore);
     const targetCents = comMoneyCents(field('targetCents'));
     const revenueCents = comMoneyCents(field('revenueCents'));
     const targetItems = Math.round(Number(field('targetItems').value || 0));
     const items = Math.round(Number(field('items').value || 0));
     const targetRealme = Math.round(Number(field('targetRealme').value || 0));
     const realme = Math.round(Number(field('realme').value || 0));
-    const assistTargetCents = comMoneyCents(field('assistTargetCents'));
-    const assistRevenueCents = comMoneyCents(field('assistRevenueCents'));
+    // META/FEITO DA ASSISTÊNCIA saíram desta aba (vão ter aba própria):
+    // reenvia os valores guardados para não zerá-los.
+    const assistTargetCents = store ? Number(store.assistTargetCents) || 0 : 0;
+    const assistRevenueCents = store ? Number(store.assistRevenueCents) || 0 : 0;
     const indicationQty = Math.round(Number(field('indicationQty').value || 0));
     const indicationCents = comMoneyCents(field('indicationCents'));
-    if(targetCents === null || revenueCents === null || assistTargetCents === null || assistRevenueCents === null || indicationCents === null || ![targetItems, items, targetRealme, realme, indicationQty].every(value => value >= 0)){
+    if(targetCents === null || revenueCents === null || indicationCents === null || ![targetItems, items, targetRealme, realme, indicationQty].every(value => value >= 0)){
       showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
       return;
     }
-    const store = comStores && comStores.rows.find(item => item.companyId === row.dataset.comStore);
     if(store){
       store.targetCents = targetCents;
       store.revenueCents = revenueCents;
@@ -48374,7 +48363,6 @@ function renderHomeTasks(){
       store.indicationQty = indicationQty;
       store.indicationCents = indicationCents;
     }
-    field('storeAssistPct').textContent = comFormatPct(comShare(assistRevenueCents, assistTargetCents));
     field('storePct').textContent = comFormatPct(comShare(revenueCents, targetCents));
     field('storeItemsPct').textContent = comFormatPct(comShare(items, targetItems));
     field('storeRealmePct').textContent = comFormatPct(comShare(realme, targetRealme));
