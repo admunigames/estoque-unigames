@@ -5243,6 +5243,40 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
   assert.match(html, /SERVIÇO \(AUTO\)/);
   assert.match(html, /MAQUINETA NÃO IDENTIFICADA/);
   assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 3); // Conciliação Bancária, de Vendas e Reposição
+  // Extrato em PDF (as 3 importações): leitura aproximada das linhas do pdf.js.
+  {
+    const start = html.indexOf("function parseBankPdfLines(");
+    let depth = 0;
+    let end = html.indexOf("{", start);
+    for (; end < html.length; end++) {
+      if (html[end] === "{") depth++;
+      if (html[end] === "}" && --depth === 0) break;
+    }
+    const parsePdf = new Function(`${html.slice(start, end + 1)}; return parseBankPdfLines;`)();
+    const rows = parsePdf([
+      "EXTRATO DE CONTA CORRENTE PERÍODO 01/10/2026 A 31/10/2026",
+      "30/09 SALDO ANTERIOR 1.000,00",
+      "01/10 PIX RECEBIDO CLIENTE 500,00 1.500,00", // pelo saldo: +
+      "02/10 FORNECEDOR LIMPEZA 150,00 1.350,00", // pelo saldo: −
+      "BOLETO PAPELARIA 89,90 D", // sem data = mesmo dia; D = saída
+      "03/10/2026 TARIFA PACOTE -25,00", // sinal escrito
+      "05/10 TED RECEBIDA ACME 1.234,56", // sem saldo: palavra de entrada
+      "06/10 PAGAMENTO BOLETO LUZ 300,00", // sem saldo: palavra de saída
+      "TOTAL DE SAÍDAS 564,90",
+      "SALDO FINAL 2.669,66",
+    ]);
+    assert.deepEqual(rows.map((r) => [r.entryDate, r.description, r.amountCents]), [
+      ["2026-10-01", "PIX RECEBIDO CLIENTE", 50000],
+      ["2026-10-02", "FORNECEDOR LIMPEZA", -15000],
+      ["2026-10-02", "BOLETO PAPELARIA", -8990],
+      ["2026-10-03", "TARIFA PACOTE", -2500],
+      ["2026-10-05", "TED RECEBIDA ACME", 123456],
+      ["2026-10-06", "PAGAMENTO BOLETO LUZ", -30000],
+    ]);
+    for (const id of ["reconFile", "svBankFile", "rpBankFile"]) assert.match(html, new RegExp(`id="${id}" accept="[^"]*\\.pdf"`), id);
+    assert.match(html, /PDF SEM TEXTO \(DIGITALIZADO\?\)/);
+    assert.match(html, /CONFIRA COM OS TOTAIS DO EXTRATO ANTES DE IMPORTAR/);
+  }
   // Cartão corporativo: aba CONCILIAÇÃO UBER (planilha de corridas × fatura).
   assert.match(html, /data-corp-tab="uber">CONCILIAÇÃO UBER</);
   assert.match(html, /data-corp-panel="uber" hidden/);

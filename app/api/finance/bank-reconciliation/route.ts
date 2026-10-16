@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     const financeAccountId = safeText(body.financeAccountId, 80);
     const sourceName = safeText(body.sourceName, 200);
     const sourceFormatRaw = safeText(body.sourceFormat, 8).toLowerCase();
-    const sourceFormat = ["ofx", "xls", "xlsx", "csv"].includes(sourceFormatRaw) ? sourceFormatRaw : "csv";
+    const sourceFormat = ["ofx", "xls", "xlsx", "csv", "pdf"].includes(sourceFormatRaw) ? sourceFormatRaw : "csv";
     const rawRows = Array.isArray(body.rows) ? (body.rows as RawRow[]) : [];
     if (!financeAccountId) return jsonResponse({ error: "SELECIONE A CONTA BANCÁRIA." }, 400);
     if (!rawRows.length) return jsonResponse({ error: "O EXTRATO NÃO TEM LANÇAMENTOS." }, 400);
