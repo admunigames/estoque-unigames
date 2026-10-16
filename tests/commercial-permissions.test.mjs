@@ -40,7 +40,8 @@ function createFakeD1() {
     CREATE TABLE shared_state (state_key text PRIMARY KEY, value_json text NOT NULL);
     CREATE TABLE hr_employees (
       id text PRIMARY KEY, full_name text NOT NULL, company_id text, user_id text,
-      role_title text DEFAULT 'Vendedor', company_name text DEFAULT '', status text DEFAULT 'active'
+      role_title text DEFAULT 'Vendedor', company_name text DEFAULT '', status text DEFAULT 'active',
+      admission_date text DEFAULT ''
     );
     CREATE TABLE commercial_monthly (
       employee_id text NOT NULL, employee_name text NOT NULL, company_id text NOT NULL, company_name text,
@@ -53,7 +54,15 @@ function createFakeD1() {
     CREATE TABLE commercial_rules (
       id text PRIMARY KEY, valid_from text, revenue_rate_high_bps integer, revenue_rate_low_bps integer,
       premium_tiers_json text, warranty_rate_bps integer, warranty_attach_target integer, credit_rate_bps integer,
-      notes text, updated_by_name text, updated_at text, partner_sale_rate_bps integer DEFAULT 0
+      notes text, updated_by_name text, updated_at text, partner_sale_rate_bps integer DEFAULT 0, roles_json text DEFAULT ''
+    );
+    CREATE TABLE commercial_roles (id text PRIMARY KEY, employee_id text, month text, role text);
+    CREATE TABLE commercial_store_goals (
+      id text PRIMARY KEY, month text, company_id text, target_cents integer DEFAULT 0, revenue_cents integer DEFAULT 0,
+      assist_target_cents integer DEFAULT 0, assist_revenue_cents integer DEFAULT 0
+    );
+    CREATE TABLE commercial_indications (
+      id text PRIMARY KEY, month text, company_id text, company_name text DEFAULT '', amount_cents integer DEFAULT 0, deleted_at text DEFAULT ''
     );
     CREATE TABLE commercial_credit_entries (id text PRIMARY KEY, month text, kind text, employee_id text, amount_cents integer);
     CREATE TABLE commercial_newcomers (id text PRIMARY KEY, employee_id text, month text);

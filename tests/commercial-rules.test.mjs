@@ -12,6 +12,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 const db = await setupRouteDb([
   "shared_state", "hr_employees", "commercial_monthly", "commercial_rules", "commercial_newcomers",
   "commercial_credit_entries", "commercial_store_goals", "hr_commissions", "hr_commission_items", "hr_payroll_settings",
+  "commercial_roles", "commercial_indications",
 ]);
 const migration = await readFile(new URL("../drizzle/0085_comercial_regras.sql", import.meta.url), "utf8");
 const migration0086 = await readFile(new URL("../drizzle/0086_comercial_lancamentos.sql", import.meta.url), "utf8");
@@ -109,7 +110,7 @@ test("seed da migration: 2026-10 com garantia 6% e crediário 2%; tabelas novas 
     {
       validFrom: "2026-10", revenueRateHighBps: 60, revenueRateLowBps: 40,
       premiumTiers: [{ percent: 110, cents: 50_000 }, { percent: 120, cents: 150_000 }],
-      warrantyRateBps: 600, warrantyAttachTarget: 30, creditRateBps: 200, partnerSaleRateBps: 200, updatedByName: "SISTEMA",
+      warrantyRateBps: 600, warrantyAttachTarget: 30, creditRateBps: 200, partnerSaleRateBps: 200, updatedByName: "SISTEMA", roles: null,
       id: undefined, updatedAt: undefined, notes: undefined,
     },
   );
@@ -506,6 +507,7 @@ test("Meta Loja: itens e realmes da loja à mão; os gráficos de itens/realmes 
   const editor = await (await callRoute(storesRoute.GET, STORES, "GET", "/api/commercial/stores?month=2027-02")).json();
   assert.deepEqual(editor.rows.find((row) => row.companyId === STORE_A), {
     companyId: STORE_A, name: "LOJA ALFA", targetCents: 0, revenueCents: 0, targetItems: 760, items: 178, targetRealme: 28, realme: 9,
+    assistTargetCents: 0, assistRevenueCents: 0,
   });
   // O Ranking não manda mais quantidades por loja (vêm da Meta Loja).
   const rank = await (await callRoute(rankingRoute.GET, DASHBOARD, "GET", "/api/commercial/ranking?month=2027-02")).json();

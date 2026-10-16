@@ -53,6 +53,59 @@ export type CommercialRules = {
   warrantyAttachTarget: number; // % de notebooks/PC vendidos com garantia
   creditRateBps: number;
   partnerSaleRateBps: number; // VENDA P.A / VENDA UNIGAMES
+  // LÍDER COMERCIAL e OPERACIONAL — null = vigência sem essas regras: o líder
+  // é vendedor comum e ninguém recebe como operacional.
+  roles: RoleRules | null;
+};
+
+// Tipo do colaborador no Comercial: vem do cargo do RH (roleFromTitle), com
+// troca manual por mês na aba Vendedores (commercial_roles).
+export const COMMERCIAL_ROLES = ["vendedor", "lider", "operacional"] as const;
+export type CommercialRole = (typeof COMMERCIAL_ROLES)[number];
+
+export function isCommercialRole(value: unknown): value is CommercialRole {
+  return typeof value === "string" && (COMMERCIAL_ROLES as readonly string[]).includes(value);
+}
+
+// LÍDER: comissão por vendas sobre a mesma base do vendedor (faturado −
+// crediário), taxa baixa abaixo de 100% da própria meta (inclusive < 80%,
+// decisão do usuário em 2026-10-16) e alta a partir de 100%. Garantia e
+// crediário com % próprios. No lugar da premiação de vendedor: valor por
+// vendedor da loja com ≥ sellerPercent da própria meta e um valor quando loja
+// E assistência chegam a storePercent.
+export type LeaderRules = {
+  rateLowBps: number;
+  rateHighBps: number;
+  warrantyRateBps: number;
+  creditRateBps: number;
+  sellerPercent: number;
+  perSellerCents: number;
+  storePercent: number;
+  storeCents: number;
+};
+
+// OPERACIONAL (por loja): % sobre o FEITO DA ASSISTÊNCIA — baixa de 80% a
+// 99,9% da meta da assistência, alta a partir de 100%, nada abaixo de 80%
+// (contracheque) — e premiações quando assistência / loja chegam a
+// premiumPercent. Cada operacional recebe o valor CHEIO (sem rateio).
+export type OperationalRules = {
+  rateLowBps: number;
+  rateHighBps: number;
+  premiumPercent: number;
+  assistPremiumCents: number;
+  storePremiumCents: number;
+};
+
+export type RoleRules = { leader: LeaderRules; operational: OperationalRules };
+
+// Valores do pedido de 2026-10-16 (vigência 10/2026) — ponto de partida do
+// formulário de vigência; só valem quando gravados numa vigência.
+export const DEFAULT_ROLE_RULES: RoleRules = {
+  leader: {
+    rateLowBps: 40, rateHighBps: 60, warrantyRateBps: 600, creditRateBps: 200,
+    sellerPercent: 110, perSellerCents: 50_000, storePercent: 120, storeCents: 150_000,
+  },
+  operational: { rateLowBps: 50, rateHighBps: 100, premiumPercent: 120, assistPremiumCents: 20_000, storePremiumCents: 40_000 },
 };
 
 export const DEFAULT_COMMERCIAL_RULES: CommercialRules = {
@@ -67,6 +120,7 @@ export const DEFAULT_COMMERCIAL_RULES: CommercialRules = {
   warrantyAttachTarget: 30,
   creditRateBps: 0,
   partnerSaleRateBps: 0,
+  roles: null,
 };
 
 // Tabelas de lançamento (aba Crediários). As de crediário somam no
@@ -104,6 +158,56 @@ const MAX_PREMIUM_TIERS = 4;
 
 function intIn(value: unknown, min: number, max: number): number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max ? value : null;
+}
+
+const LEADER_FIELDS: Array<[keyof LeaderRules, "bps" | "percent" | "cents", string]> = [
+  ["rateLowBps", "bps", "% DO LÍDER ABAIXO DA META"],
+  ["rateHighBps", "bps", "% DO LÍDER A PARTIR DE 100%"],
+  ["warrantyRateBps", "bps", "% DE GARANTIA DO LÍDER"],
+  ["creditRateBps", "bps", "% DE CREDIÁRIO DO LÍDER"],
+  ["sellerPercent", "percent", "% DA META DO VENDEDOR PARA O PRÊMIO DO LÍDER"],
+  ["perSellerCents", "cents", "PRÊMIO DO LÍDER POR VENDEDOR"],
+  ["storePercent", "percent", "% DA LOJA E DA ASSISTÊNCIA PARA O PRÊMIO DO LÍDER"],
+  ["storeCents", "cents", "PRÊMIO DO LÍDER POR LOJA E ASSISTÊNCIA"],
+];
+const OPERATIONAL_FIELDS: Array<[keyof OperationalRules, "bps" | "percent" | "cents", string]> = [
+  ["rateLowBps", "bps", "% DO OPERACIONAL DE 80% A 99,9%"],
+  ["rateHighBps", "bps", "% DO OPERACIONAL A PARTIR DE 100%"],
+  ["premiumPercent", "percent", "% DA META PARA A PREMIAÇÃO DO OPERACIONAL"],
+  ["assistPremiumCents", "cents", "PREMIAÇÃO DO OPERACIONAL PELA ASSISTÊNCIA"],
+  ["storePremiumCents", "cents", "PREMIAÇÃO DO OPERACIONAL PELA LOJA"],
+];
+
+function parseFields<T>(raw: unknown, fields: Array<[keyof T, "bps" | "percent" | "cents", string]>):
+  { value: T; error: "" } | { value: null; error: string } {
+  const input = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const value = {} as Record<keyof T, number>;
+  for (const [field, kind, label] of fields) {
+    const parsed = kind === "bps" ? intIn(input[field as string], 0, 10_000)
+      : kind === "percent" ? intIn(input[field as string], 1, 1000)
+      : intIn(input[field as string], 0, 100_000_000);
+    if (parsed === null) {
+      return {
+        value: null,
+        error: kind === "bps" ? `${label} PRECISA ESTAR ENTRE 0% E 100%.`
+          : kind === "percent" ? `${label} PRECISA ESTAR ENTRE 1% E 1000%.`
+          : `INFORME O VALOR: ${label}.`,
+      };
+    }
+    value[field] = parsed;
+  }
+  return { value: value as T, error: "" };
+}
+
+/** Regras de líder/operacional da vigência — null/ausente = sem essas regras. */
+export function parseRoleRules(input: unknown): { roles: RoleRules | null; error: string } {
+  if (input === null || input === undefined) return { roles: null, error: "" };
+  const raw = (typeof input === "object" ? input : {}) as Record<string, unknown>;
+  const leader = parseFields<LeaderRules>(raw.leader, LEADER_FIELDS);
+  if (!leader.value) return { roles: null, error: leader.error };
+  const operational = parseFields<OperationalRules>(raw.operational, OPERATIONAL_FIELDS);
+  if (!operational.value) return { roles: null, error: operational.error };
+  return { roles: { leader: leader.value, operational: operational.value }, error: "" };
 }
 
 /**
@@ -146,6 +250,8 @@ export function parseCommercialRules(input: Record<string, unknown>):
     }
     premiumTiers.push({ percent, cents });
   }
+  const roles = parseRoleRules(input.roles);
+  if (roles.error) return fail(roles.error);
   return {
     rules: {
       validFrom,
@@ -156,6 +262,7 @@ export function parseCommercialRules(input: Record<string, unknown>):
       warrantyAttachTarget,
       creditRateBps: values.creditRateBps,
       partnerSaleRateBps: values.partnerSaleRateBps,
+      roles: roles.roles,
     },
     error: "",
   };
@@ -182,6 +289,18 @@ export function normalizeText(value: unknown): string {
  */
 export function isSellerRole(roleTitle: string): boolean {
   return normalizeText(roleTitle).includes("VENDEDOR");
+}
+
+/**
+ * Tipo pelo CARGO do RH: qualquer cargo com "OPERACIONAL" (inclusive LÍDER
+ * OPERACIONAL e SUPERVISOR OPERACIONAL — decisão do usuário em 2026-10-16) é
+ * operacional; com "LIDER", líder comercial; o resto, vendedor.
+ */
+export function roleFromTitle(roleTitle: string): CommercialRole {
+  const text = normalizeText(roleTitle);
+  if (text.includes("OPERACIONAL")) return "operacional";
+  if (text.includes("LIDER")) return "lider";
+  return "vendedor";
 }
 
 // ---------------------------------------------------------------------------
@@ -324,7 +443,24 @@ export type CommissionBreakdown = {
   warrantyCommissionCents: number;
   creditCommissionCents: number;
   partnerCommissionCents: number;
+  // CONTRACHEQUE (comissões) + PREMIAÇÃO = total enviado ao RH.
+  payslipCents: number;
+  premiumCents: number;
   totalCents: number;
+  // Só do LÍDER (a premiação dele fica em revenuePremiumCents).
+  leader?: LeaderBreakdown;
+};
+
+export type LeaderBreakdown = {
+  sellerPercent: number;
+  perSellerCents: number;
+  // Vendedores da loja que chegaram a sellerPercent da própria meta.
+  qualified: string[];
+  sellersPremiumCents: number;
+  storePercent: number;
+  storeRevenuePercent: number | null;
+  assistPercent: number | null;
+  storePremiumCents: number;
 };
 
 export type SellerMetrics = {
@@ -432,8 +568,135 @@ export function computeSellerMetrics(
       warrantyCommissionCents,
       creditCommissionCents,
       partnerCommissionCents,
-      totalCents:
-        revenueCommissionCents + revenuePremiumCents + warrantyCommissionCents + creditCommissionCents + partnerCommissionCents,
+      ...totals(revenueCommissionCents + warrantyCommissionCents + creditCommissionCents + partnerCommissionCents, revenuePremiumCents),
     },
+  };
+}
+
+function totals(payslipCents: number, premiumCents: number) {
+  return { payslipCents, premiumCents, totalCents: payslipCents + premiumCents };
+}
+
+/** Realizado chegou a `percent`% da meta (pelo valor absoluto; meta zerada = não). */
+function reached(realized: number, target: number, percent: number): boolean {
+  return target > 0 && realized >= targetValue(target, percent);
+}
+
+// Meta e feito da loja no mês (aba Meta Loja), em centavos.
+export type StoreGoal = {
+  targetCents: number;
+  revenueCents: number;
+  assistTargetCents: number;
+  assistRevenueCents: number;
+};
+
+export type TeamMember = {
+  employeeId: string;
+  name: string;
+  companyId: string;
+  inactive: boolean;
+  role: CommercialRole;
+  targetRevenueCents: number;
+  revenueCents: number;
+};
+
+/**
+ * Liderados que contam para o prêmio por vendedor do líder: vendedores ATIVOS
+ * da loja do líder (novato conta) com ≥ percent% da própria meta. Não contam
+ * o próprio líder, outros líderes nem inativos.
+ */
+export function leaderQualifiedSellers(leader: { employeeId: string; companyId: string }, team: TeamMember[], percent: number): string[] {
+  return team
+    .filter((member) =>
+      member.employeeId !== leader.employeeId && member.companyId === leader.companyId &&
+      member.role === "vendedor" && !member.inactive &&
+      reached(member.revenueCents, member.targetRevenueCents, percent))
+    .map((member) => member.name);
+}
+
+/**
+ * Comissão do LÍDER: troca a % do faturamento, a garantia, o crediário e a
+ * premiação do vendedor pelas regras do líder (venda P.A/Unigames continua
+ * a do vendedor). Os critérios (itens/realme/garantia) não mudam a taxa.
+ */
+export function leaderCommission(
+  metrics: SellerMetrics,
+  realized: Realized,
+  partnerCommissionCents: number,
+  rules: LeaderRules,
+  qualified: string[],
+  store: StoreGoal | null,
+): CommissionBreakdown {
+  const revenueRateBps = metrics.revenue.target > 0 && metrics.revenue.realized >= metrics.revenue.target
+    ? rules.rateHighBps
+    : rules.rateLowBps;
+  const revenueBaseCents = rules.creditRateBps > 0
+    ? Math.max(0, metrics.revenue.realized - realized.creditSalesCents)
+    : metrics.revenue.realized;
+  const revenueCommissionCents = applyBps(revenueBaseCents, revenueRateBps);
+  const warrantyCommissionCents = applyBps(realized.warrantyCents, rules.warrantyRateBps);
+  const creditCommissionCents = applyBps(realized.creditSalesCents, rules.creditRateBps);
+  const sellersPremiumCents = qualified.length * rules.perSellerCents;
+  const storeMet = Boolean(store) &&
+    reached(store!.revenueCents, store!.targetCents, rules.storePercent) &&
+    reached(store!.assistRevenueCents, store!.assistTargetCents, rules.storePercent);
+  const storePremiumCents = storeMet ? rules.storeCents : 0;
+  return {
+    allCriteriaMet: metrics.commission.allCriteriaMet,
+    newcomer: false,
+    revenueRateBps,
+    revenueBaseCents,
+    revenueCommissionCents,
+    revenuePremiumCents: sellersPremiumCents + storePremiumCents,
+    warrantyCommissionCents,
+    creditCommissionCents,
+    partnerCommissionCents,
+    ...totals(revenueCommissionCents + warrantyCommissionCents + creditCommissionCents + partnerCommissionCents, sellersPremiumCents + storePremiumCents),
+    leader: {
+      sellerPercent: rules.sellerPercent,
+      perSellerCents: rules.perSellerCents,
+      qualified,
+      sellersPremiumCents,
+      storePercent: rules.storePercent,
+      storeRevenuePercent: store ? progressPercent(store.revenueCents, store.targetCents) : null,
+      assistPercent: store ? progressPercent(store.assistRevenueCents, store.assistTargetCents) : null,
+      storePremiumCents,
+    },
+  };
+}
+
+export type OperationalBreakdown = StoreGoal & {
+  assistPercent: number | null;
+  storePercent: number | null;
+  // 0 abaixo de 80% da meta da assistência.
+  rateBps: number;
+  commissionCents: number;
+  assistPremiumCents: number;
+  storePremiumCents: number;
+  premiumPercent: number;
+  payslipCents: number;
+  premiumCents: number;
+  totalCents: number;
+};
+
+/** Comissão do OPERACIONAL pela meta da loja dele (valor cheio, sem rateio). */
+export function operationalCommission(store: StoreGoal | null, rules: OperationalRules): OperationalBreakdown {
+  const goal = store ?? { targetCents: 0, revenueCents: 0, assistTargetCents: 0, assistRevenueCents: 0 };
+  const rateBps = reached(goal.assistRevenueCents, goal.assistTargetCents, 100) ? rules.rateHighBps
+    : reached(goal.assistRevenueCents, goal.assistTargetCents, 80) ? rules.rateLowBps
+    : 0;
+  const commissionCents = applyBps(goal.assistRevenueCents, rateBps);
+  const assistPremiumCents = reached(goal.assistRevenueCents, goal.assistTargetCents, rules.premiumPercent) ? rules.assistPremiumCents : 0;
+  const storePremiumCents = reached(goal.revenueCents, goal.targetCents, rules.premiumPercent) ? rules.storePremiumCents : 0;
+  return {
+    ...goal,
+    assistPercent: progressPercent(goal.assistRevenueCents, goal.assistTargetCents),
+    storePercent: progressPercent(goal.revenueCents, goal.targetCents),
+    rateBps,
+    commissionCents,
+    assistPremiumCents,
+    storePremiumCents,
+    premiumPercent: rules.premiumPercent,
+    ...totals(commissionCents, assistPremiumCents + storePremiumCents),
   };
 }

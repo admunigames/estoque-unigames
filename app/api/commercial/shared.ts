@@ -5,14 +5,23 @@ import {
   DEFAULT_COMMERCIAL_RULES,
   ENTRY_KINDS,
   computeSellerMetrics,
+  isCommercialRole,
   isEntryKind,
+  leaderCommission,
+  leaderQualifiedSellers,
   monthClock,
+  operationalCommission,
+  parseRoleRules,
   resolveCommercialRules,
+  roleFromTitle,
+  type CommercialRole,
   type CommercialRules,
   type Goal,
   type MonthClock,
+  type OperationalBreakdown,
   type Realized,
   type SellerMetrics,
+  type StoreGoal,
 } from "../../lib/commercial";
 
 // Comercial — metas e comissionamento dos vendedores. Permissões próprias
@@ -27,6 +36,7 @@ import {
 //   comercial:stores     → aba Meta Loja (meta e feito de cada loja)
 //   comercial:rules      → aba Regras de Comissão (percentuais e premiação
 //                          por vigência) e marcar NOVATO no Dashboard
+//   comercial:indications → aba Indicação (só controle, sem comissão)
 // As antigas comercial:view/manage são expandidas na leitura pelo Worker
 // (LEGACY_PERMISSION_MAP). Conta vinculada a um vendedor continua vendo só
 // os próprios números (ownOnly no overview) — isso vem do vínculo, não da
@@ -84,7 +94,7 @@ export function identity(request: Request): Identity {
 
 const COMMERCIAL_PERMISSIONS = [
   "comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",
-  "comercial:credit", "comercial:stores",
+  "comercial:credit", "comercial:stores", "comercial:indications",
 ] as const;
 
 function hasCommercialPermission(actor: Identity, permission: (typeof COMMERCIAL_PERMISSIONS)[number]) {
@@ -113,6 +123,10 @@ export function canManageCommercialCredit(actor: Identity) {
 
 export function canManageCommercialStores(actor: Identity) {
   return hasCommercialPermission(actor, "comercial:stores");
+}
+
+export function canManageCommercialIndications(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:indications");
 }
 
 export function canMarkCommercialNewcomer(actor: Identity) {
@@ -211,11 +225,26 @@ export type Seller = {
   updatedAt: string;
   updatedByName: string;
   newcomer: boolean;
+  // Tipo no mês. Operacional da aba Vendedores sai de `sellers` e vai para
+  // `tabOperationals` (só a aba Vendedores mostra) e `operationals`.
+  role: CommercialRole;
   // Funcionário inativo no RH (ou que não existe mais lá). Continua nos
   // cálculos, na comissão/folha e nas abas de cadastro; Dashboard, Ranking e
   // Equipe só o mostram com ?inactive=1 (ver withoutInactive).
   inactive: boolean;
   metrics: SellerMetrics;
+};
+
+// OPERACIONAL do mês: ganha pela meta da loja dele (aba Meta Loja). Entra
+// sozinho pelo cargo (ativo no RH, com loja) ou pela troca de tipo na aba
+// Vendedores. Só existe em vigência com regras de operacional.
+export type Operational = {
+  employeeId: string;
+  name: string;
+  companyId: string;
+  companyName: string;
+  roleTitle: string;
+  commission: OperationalBreakdown;
 };
 
 /** Esconde os vendedores inativos no RH (padrão do Dashboard/Ranking/Equipe). */
@@ -233,6 +262,7 @@ export type RulesRow = {
   warrantyAttachTarget: number;
   creditRateBps: number;
   partnerSaleRateBps: number;
+  rolesJson: string;
   notes: string;
   updatedByName: string;
   updatedAt: string;
@@ -258,10 +288,21 @@ export function rulesFromRow(row: RulesRow): CommercialRules & { id: string; not
     warrantyAttachTarget: Number(row.warrantyAttachTarget) || 0,
     creditRateBps: Number(row.creditRateBps) || 0,
     partnerSaleRateBps: Number(row.partnerSaleRateBps) || 0,
+    // JSON vazio ou corrompido = vigência sem regras de líder/operacional.
+    roles: rolesFromJson(row.rolesJson),
     notes: row.notes || "",
     updatedByName: row.updatedByName || "",
     updatedAt: row.updatedAt || "",
   };
+}
+
+function rolesFromJson(json: string) {
+  if (!json) return null;
+  try {
+    return parseRoleRules(JSON.parse(json)).roles;
+  } catch {
+    return null;
+  }
 }
 
 /** Todas as vigências cadastradas, mais recente primeiro (tabela pequena). */
@@ -271,7 +312,7 @@ export async function loadRules(database: Database) {
       `SELECT id, valid_from AS validFrom, revenue_rate_high_bps AS revenueRateHighBps,
               revenue_rate_low_bps AS revenueRateLowBps, premium_tiers_json AS premiumTiersJson,
               warranty_rate_bps AS warrantyRateBps, warranty_attach_target AS warrantyAttachTarget,
-              credit_rate_bps AS creditRateBps, partner_sale_rate_bps AS partnerSaleRateBps, notes, updated_by_name AS updatedByName, updated_at AS updatedAt
+              credit_rate_bps AS creditRateBps, partner_sale_rate_bps AS partnerSaleRateBps, roles_json AS rolesJson, notes, updated_by_name AS updatedByName, updated_at AS updatedAt
        FROM commercial_rules ORDER BY valid_from DESC`,
     )
     .all<RulesRow>();
@@ -286,7 +327,7 @@ const MONTHLY_COLUMNS = `
   m.target_realme AS targetRealme, m.revenue_cents AS revenueCents, m.items,
   m.warranty_cents AS warrantyCents, m.realme, m.warranty_qty AS warrantyQty,
   m.notebook_qty AS notebookQty, m.sales_qty AS salesQty, m.updated_at AS updatedAt, m.updated_by_name AS updatedByName,
-  e.full_name AS currentName
+  e.full_name AS currentName, e.role_title AS roleTitle
 `;
 
 const n = (value: unknown) => Number(value) || 0;
@@ -299,8 +340,8 @@ const n = (value: unknown) => Number(value) || 0;
 export async function loadSellers(
   database: Database,
   month: string,
-): Promise<{ sellers: Seller[]; clock: MonthClock; rules: CommercialRules }> {
-  const [result, companyNames, allRules, newcomersResult, entriesResult] = await Promise.all([
+): Promise<{ sellers: Seller[]; tabOperationals: Seller[]; operationals: Operational[]; clock: MonthClock; rules: CommercialRules }> {
+  const [result, companyNames, allRules, newcomersResult, entriesResult, rolesResult, storeGoals] = await Promise.all([
     database
       .prepare(
         `SELECT ${MONTHLY_COLUMNS}, e.company_id AS currentCompanyId, e.status AS currentStatus
@@ -308,7 +349,7 @@ export async function loadSellers(
          WHERE m.month=?1`,
       )
       .bind(month)
-      .all<MonthlyRow & { currentName: string | null; currentCompanyId: string | null; currentStatus: string | null }>(),
+      .all<MonthlyRow & { currentName: string | null; currentCompanyId: string | null; currentStatus: string | null; roleTitle: string | null }>(),
     loadCompanyNames(database),
     loadRules(database),
     database
@@ -322,9 +363,20 @@ export async function loadSellers(
       )
       .bind(month)
       .all<{ employeeId: string; kind: string; total: number }>(),
+    database
+      .prepare("SELECT employee_id AS employeeId, role FROM commercial_roles WHERE month=?1")
+      .bind(month)
+      .all<{ employeeId: string; role: string }>(),
+    loadStoreGoals(database, month),
   ]);
   const clock = monthClock(month, todayInTimezone());
   const rules = resolveCommercialRules(allRules, month);
+  const overrides = new Map((rolesResult.results ?? [])
+    .filter((row) => isCommercialRole(row.role))
+    .map((row) => [row.employeeId, row.role as CommercialRole]));
+  // Sem regras de líder/operacional na vigência, todo mundo é vendedor.
+  const roleOf = (employeeId: string, roleTitle: string | null): CommercialRole =>
+    rules.roles ? overrides.get(employeeId) ?? roleFromTitle(roleTitle || "") : "vendedor";
   const newcomers = new Set((newcomersResult.results ?? []).map((row) => row.employeeId));
   // Crediário (PAYJOY/CREFAZ/PARCELEX/ODRES) e venda P.A/Unigames do mês, por vendedor.
   const entrySums = new Map<string, { credit: number; partner: number }>();
@@ -334,7 +386,10 @@ export async function loadSellers(
     sums[ENTRY_KINDS[row.kind].group] += n(row.total);
     entrySums.set(row.employeeId, sums);
   }
-  const sellers = (result.results ?? []).map((row): Seller => {
+  const roleTitles = new Map<string, string>();
+  const everyone = (result.results ?? []).map((row): Seller => {
+    roleTitles.set(row.employeeId, row.roleTitle || "");
+    const companyId = row.currentCompanyId || row.companyId;
     const goal: Goal = {
       targetRevenueCents: n(row.targetRevenueCents),
       targetItems: n(row.targetItems),
@@ -354,10 +409,9 @@ export async function loadSellers(
       partnerSalesCents: entrySums.get(row.employeeId)?.partner ?? 0,
     };
     const newcomer = newcomers.has(row.employeeId);
-    const companyId = row.currentCompanyId || row.companyId;
     return {
       employeeId: row.employeeId,
-      // Nomes de vendedor sempre em CAIXA ALTA no Comercial (telas e imagem).
+      // Nomes sempre em CAIXA ALTA no Comercial (telas e imagem).
       name: (row.currentName || row.employeeName || "").toLocaleUpperCase("pt-BR"),
       companyId,
       companyName: companyNames.get(companyId) || row.companyName,
@@ -367,12 +421,95 @@ export async function loadSellers(
       updatedAt: row.updatedAt,
       updatedByName: row.updatedByName,
       newcomer,
+      role: roleOf(row.employeeId, row.roleTitle),
       inactive: row.currentStatus !== "active",
       metrics: computeSellerMetrics(goal, realized, clock, rules, newcomer),
     };
   });
-  sellers.sort((a, b) => a.companyName.localeCompare(b.companyName, "pt-BR") || a.name.localeCompare(b.name, "pt-BR"));
-  return { sellers, clock, rules };
+  const sellers = everyone.filter((seller) => seller.role !== "operacional");
+  const tabOperationals = everyone.filter((seller) => seller.role === "operacional");
+  // 2ª passada: o LÍDER depende dos liderados e da meta da loja.
+  const roleRules = rules.roles;
+  if (roleRules) {
+    const team = sellers.map((seller) => ({
+      employeeId: seller.employeeId, name: seller.name, companyId: seller.companyId, inactive: seller.inactive,
+      role: seller.role, targetRevenueCents: seller.goal.targetRevenueCents, revenueCents: seller.realized.revenueCents,
+    }));
+    for (const seller of sellers) {
+      if (seller.role !== "lider") continue;
+      seller.metrics = {
+        ...seller.metrics,
+        commission: leaderCommission(
+          seller.metrics, seller.realized, seller.metrics.commission.partnerCommissionCents, roleRules.leader,
+          leaderQualifiedSellers(seller, team, roleRules.leader.sellerPercent), storeGoals.get(seller.companyId) ?? null,
+        ),
+      };
+    }
+  }
+  for (const list of [sellers, tabOperationals]) {
+    list.sort((a, b) => a.companyName.localeCompare(b.companyName, "pt-BR") || a.name.localeCompare(b.name, "pt-BR"));
+  }
+  const operationals = roleRules
+    ? (await operationalPeople(
+      database, month, roleOf,
+      tabOperationals.map(({ employeeId, name, companyId, companyName }) => ({ employeeId, name, companyId, companyName, roleTitle: roleTitles.get(employeeId) || "" })),
+      companyNames, new Set(everyone.map((seller) => seller.employeeId)),
+    ))
+      .map((person): Operational => ({ ...person, commission: operationalCommission(storeGoals.get(person.companyId) ?? null, roleRules.operational) }))
+      .sort((a, b) => a.companyName.localeCompare(b.companyName, "pt-BR") || a.name.localeCompare(b.name, "pt-BR"))
+    : [];
+  return { sellers, tabOperationals, operationals, clock, rules };
+}
+
+/** Meta e feito do mês por loja (aba Meta Loja). */
+export async function loadStoreGoals(database: Database, month: string): Promise<Map<string, StoreGoal>> {
+  const result = await database
+    .prepare(
+      `SELECT company_id AS companyId, target_cents AS targetCents, revenue_cents AS revenueCents,
+              assist_target_cents AS assistTargetCents, assist_revenue_cents AS assistRevenueCents
+       FROM commercial_store_goals WHERE month=?1`,
+    )
+    .bind(month)
+    .all<StoreGoal & { companyId: string }>();
+  return new Map((result.results ?? []).map((row) => [row.companyId, {
+    targetCents: n(row.targetCents), revenueCents: n(row.revenueCents),
+    assistTargetCents: n(row.assistTargetCents), assistRevenueCents: n(row.assistRevenueCents),
+  }]));
+}
+
+/**
+ * Operacionais do mês: os da aba Vendedores com tipo OPERACIONAL mais os
+ * funcionários ATIVOS do RH, com loja, admitidos até o mês, que são
+ * operacionais pelo cargo (ou pela troca de tipo) e não estão na aba.
+ * ponytail: usa o status ATUAL do RH — quem saiu some dos meses antigos (o
+ * valor que já foi para o RH fica lá); guardar o histórico de status se precisar.
+ */
+async function operationalPeople(
+  database: Database,
+  month: string,
+  roleOf: (employeeId: string, roleTitle: string | null) => CommercialRole,
+  fromSellersTab: Array<Omit<Operational, "commission">>,
+  companyNames: Map<string, string>,
+  inSellersTab: Set<string>,
+): Promise<Array<Omit<Operational, "commission">>> {
+  const result = await database
+    .prepare(
+      `SELECT id, full_name AS fullName, role_title AS roleTitle, company_id AS companyId, company_name AS companyName
+       FROM hr_employees
+       WHERE status='active' AND company_id<>'' AND (admission_date='' OR admission_date<=?1)`,
+    )
+    .bind(`${month}-31`)
+    .all<{ id: string; fullName: string; roleTitle: string; companyId: string; companyName: string }>();
+  const fromRh = (result.results ?? [])
+    .filter((employee) => !inSellersTab.has(employee.id) && roleOf(employee.id, employee.roleTitle) === "operacional")
+    .map((employee) => ({
+      employeeId: employee.id,
+      name: employee.fullName.toLocaleUpperCase("pt-BR"),
+      companyId: employee.companyId,
+      companyName: companyNames.get(employee.companyId) || employee.companyName,
+      roleTitle: employee.roleTitle,
+    }));
+  return [...fromSellersTab, ...fromRh];
 }
 
 /** Funcionários vinculados à conta logada (RH > Funcionários > Conta de acesso). */
@@ -430,22 +567,31 @@ export function previousMonth(month: string): string {
 // ---------------------------------------------------------------------------
 export const COMMISSION_SYNC_FROM = "2026-10";
 
-/** Vendedores do mês cuja comissão vem do Comercial (vazio antes de COMMISSION_SYNC_FROM). */
-export async function commercialEmployeeIds(database: Database, month: string): Promise<Set<string>> {
-  if (month < COMMISSION_SYNC_FROM) return new Set();
-  const result = await database
-    .prepare("SELECT employee_id AS employeeId FROM commercial_monthly WHERE month=?1")
-    .bind(month)
-    .all<{ employeeId: string }>();
-  return new Set((result.results ?? []).map((row) => row.employeeId));
+type CommercialPayee = { employeeId: string; name: string; companyId: string; companyName: string; role: CommercialRole; totalCents: number };
+
+/** Vendedores, líderes e operacionais do mês com o total que vai para o RH. */
+async function commercialPayees(database: Database, month: string): Promise<CommercialPayee[]> {
+  const { sellers, operationals } = await loadSellers(database, month);
+  return [
+    ...sellers.map((seller) => ({ ...seller, totalCents: seller.metrics.commission.totalCents })),
+    ...operationals.map((person) => ({ ...person, role: "operacional" as const, totalCents: person.commission.totalCents })),
+  ];
+}
+
+/**
+ * Quem do mês tem a comissão vinda do Comercial, com o tipo (o recibo do
+ * operacional cita DSR/13º/férias/FGTS). Vazio antes de COMMISSION_SYNC_FROM.
+ */
+export async function commercialEmployeeRoles(database: Database, month: string): Promise<Map<string, CommercialRole>> {
+  if (month < COMMISSION_SYNC_FROM) return new Map();
+  return new Map((await commercialPayees(database, month)).map((payee) => [payee.employeeId, payee.role]));
 }
 
 /** Total do Comercial para o funcionário no mês — null quando não vem do Comercial. */
 export async function commercialCommissionFor(database: Database, employeeId: string, month: string): Promise<number | null> {
   if (month < COMMISSION_SYNC_FROM) return null;
-  const { sellers } = await loadSellers(database, month);
-  const seller = sellers.find((item) => item.employeeId === employeeId);
-  return seller ? seller.metrics.commission.totalCents : null;
+  const payee = (await commercialPayees(database, month)).find((item) => item.employeeId === employeeId);
+  return payee ? payee.totalCents : null;
 }
 
 /**
@@ -458,8 +604,8 @@ export async function commercialCommissionFor(database: Database, employeeId: st
 export async function syncHrCommissions(database: Database, month: string, actor: Identity) {
   if (month < COMMISSION_SYNC_FROM) return;
   try {
-    const [{ sellers }, existing] = await Promise.all([
-      loadSellers(database, month),
+    const [payees, existing] = await Promise.all([
+      commercialPayees(database, month),
       database
         .prepare("SELECT id, employee_id AS employeeId FROM hr_commissions WHERE month=?1")
         .bind(month)
@@ -468,12 +614,14 @@ export async function syncHrCommissions(database: Database, month: string, actor
     const headers = new Map((existing.results ?? []).map((row) => [row.employeeId, row.id]));
     const who = actorName(actor);
     const now = new Date().toISOString();
-    const statements = sellers.map((seller) => {
+    // Operacional sem valor não ganha cabeçalho novo no RH (são muitos, e o
+    // da loja sem meta lançada fica zerado o mês todo).
+    const statements = payees.filter((payee) => headers.has(payee.employeeId) || payee.role !== "operacional" || payee.totalCents > 0).map((seller) => {
       const id = headers.get(seller.employeeId);
       return id
         ? database
           .prepare("UPDATE hr_commissions SET commission_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=?4 WHERE id=?5")
-          .bind(seller.metrics.commission.totalCents, actor.id, who, now, id)
+          .bind(seller.totalCents, actor.id, who, now, id)
         : database
           .prepare(
             `INSERT INTO hr_commissions
@@ -484,7 +632,7 @@ export async function syncHrCommissions(database: Database, month: string, actor
           )
           .bind(
             crypto.randomUUID(), seller.employeeId, seller.name, seller.companyId, seller.companyName, month,
-            seller.metrics.commission.totalCents, actor.id, who, now,
+            seller.totalCents, actor.id, who, now,
           );
     });
     if (statements.length) await database.batch(statements);
@@ -493,11 +641,35 @@ export async function syncHrCommissions(database: Database, month: string, actor
   }
 }
 
-/** Todos os meses com vendedores a partir de COMMISSION_SYNC_FROM (troca de regra). */
+/** Todos os meses com vendedores ou metas de loja a partir de COMMISSION_SYNC_FROM (troca de regra). */
 export async function syncHrCommissionsAllMonths(database: Database, actor: Identity) {
   const result = await database
-    .prepare("SELECT DISTINCT month FROM commercial_monthly WHERE month>=?1")
+    .prepare("SELECT month FROM commercial_monthly WHERE month>=?1 UNION SELECT month FROM commercial_store_goals WHERE month>=?1")
     .bind(COMMISSION_SYNC_FROM)
     .all<{ month: string }>();
   for (const row of result.results ?? []) await syncHrCommissions(database, row.month, actor);
+}
+
+export type IndicationTotal = { companyId: string; name: string; count: number; totalCents: number };
+
+/** Indicações do mês por loja (sem as excluídas), só as lojas do alcance. */
+export async function indicationSummary(
+  database: Database,
+  month: string,
+  scope: { allStores: boolean; companyId: string },
+): Promise<IndicationTotal[]> {
+  const [result, companyNames] = await Promise.all([
+    database
+      .prepare(
+        `SELECT company_id AS companyId, MAX(company_name) AS companyName, COUNT(*) AS count, SUM(amount_cents) AS totalCents
+         FROM commercial_indications WHERE month=?1 AND deleted_at='' GROUP BY company_id`,
+      )
+      .bind(month)
+      .all<{ companyId: string; companyName: string; count: number; totalCents: number }>(),
+    loadCompanyNames(database),
+  ]);
+  return (result.results ?? [])
+    .filter((row) => scope.allStores || row.companyId === scope.companyId)
+    .map((row) => ({ companyId: row.companyId, name: companyNames.get(row.companyId) || row.companyName, count: n(row.count), totalCents: n(row.totalCents) }))
+    .sort((a, b) => b.totalCents - a.totalCents || a.name.localeCompare(b.name, "pt-BR"));
 }

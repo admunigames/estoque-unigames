@@ -22,7 +22,7 @@ import {
   type Database,
   type JsonMap,
 } from "../shared";
-import { COMMISSION_SYNC_FROM, commercialCommissionFor, commercialEmployeeIds } from "../../commercial/shared";
+import { COMMISSION_SYNC_FROM, commercialCommissionFor, commercialEmployeeRoles } from "../../commercial/shared";
 
 // Comissionamento — um cabeçalho por funcionário/mês, com as linhas
 // itemizadas que o sustentam (bônus, premiações, descontos e ajustes).
@@ -293,12 +293,14 @@ export async function GET(request: Request) {
       }
     }
 
-    const fromCommercial = await commercialEmployeeIds(database, month);
+    const commercialRoles = await commercialEmployeeRoles(database, month);
     const rows = commissions.map((row) => ({
       ...row,
       netCents: commissionNetCents(row),
       items: itemsByCommission.get(row.id) ?? [],
-      fromCommercial: fromCommercial.has(row.employeeId),
+      fromCommercial: commercialRoles.has(row.employeeId),
+      // 'vendedor' | 'lider' | 'operacional' (recibo do operacional: natureza salarial).
+      commercialRole: commercialRoles.get(row.employeeId) ?? "",
     }));
     const commissionRuleText = await loadCommissionRuleText(database);
     return jsonResponse({

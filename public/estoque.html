@@ -3322,6 +3322,20 @@
   }
   .com-kind-tabs{margin-bottom:12px}
   .com-entry-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-bottom:10px}
+  .com-criteria.leader{color:var(--accent);border-color:rgba(79,134,189,.6);background:rgba(79,134,189,.14)}
+  .com-criteria.operational{color:#c08bdc;border-color:rgba(192,139,220,.55);background:rgba(192,139,220,.1)}
+  html[data-theme="light"] .com-criteria.operational{color:#7a3fa0}
+  .com-commission-split{display:flex;justify-content:space-between;gap:10px;font:800 10px/1.3 var(--mono);letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase}
+  .com-commission-split strong{font:900 13px/1.2 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums}
+  .com-commission-note{margin:-2px 0 0;font:600 11px/1.4 var(--sans);color:var(--ink-soft)}
+  .com-operationals-title{margin:22px 0 10px}
+  .com-operationals{margin-top:16px}
+  .com-indication-summary,.com-indication-totals{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .com-indication-chip{padding:8px 12px;border:1px solid var(--surface-border);border-radius:var(--radius-surface);background:var(--bg-card);font:800 10px/1.4 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft)}
+  .com-indication-chip strong{display:block;font:900 14px/1.25 var(--sans);color:var(--ink);letter-spacing:0;text-transform:none}
+  .com-indication-history{margin:4px 0 0;padding-left:16px;font:600 11px/1.45 var(--sans);color:var(--ink-soft)}
+  tr.com-ind-deleted td{opacity:.6}
+  tr.com-ind-deleted td:first-child strong{text-decoration:line-through}
   .com-entry-form .field{min-width:min(100%,200px);flex:1 1 200px}
   .com-entry-form input,.com-entry-form select{width:100%}
   @media(max-width:680px){
@@ -7034,6 +7048,7 @@
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="crediarios" data-permission="comercial:credit">Crediários</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="lojas" data-permission="comercial:stores">Meta Loja</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="regras" data-permission="comercial:rules">Regras de Comissão</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="indicacao" data-permission="comercial:indications">Indicação</button>
       </div>
 
       <div class="dre-toolbar com-toolbar no-print">
@@ -7068,7 +7083,11 @@
         <!-- Vendedor inativo no RH some por padrão; aqui volta (em cinza, com
              selo INATIVO) para consultar o histórico dele no mês. -->
         <label class="assist-check com-inactive-toggle" id="comInactiveToggleField" hidden><input type="checkbox" id="comShowInactive"> MOSTRAR INATIVOS</label>
+        <!-- Resumo do mês da aba Indicação (lojas do alcance; nada de comissão). -->
+        <div class="com-indication-summary" id="comDashIndications" hidden></div>
         <div class="com-seller-list" id="comDashList"><p class="com-empty">Carregando…</p></div>
+        <!-- OPERACIONAIS: um cartão por loja, só % (assistência e loja) e a faixa. -->
+        <div class="com-seller-list com-operationals" id="comDashOperationals" hidden></div>
       </div>
 
       <div class="com-view-panel" id="comViewComissao" hidden>
@@ -7077,6 +7096,8 @@
         <div class="com-rules" id="comRulesBox" aria-label="Regras de comissão"></div>
         <div class="com-total" id="comComTotal" hidden></div>
         <div class="com-commission-grid" id="comComList"><p class="com-empty">Carregando…</p></div>
+        <h3 class="com-section-title com-operationals-title" id="comComOperationalsTitle" hidden>OPERACIONAIS</h3>
+        <div class="com-commission-grid" id="comComOperationals" hidden></div>
       </div>
 
       <div class="com-view-panel" id="comViewRanking" hidden>
@@ -7119,12 +7140,12 @@
           <div class="table-scroll">
             <table>
               <thead><tr>
-                <th>Vendedor</th><th>Zona</th><th>Meta itens</th><th>Super itens</th><th>Itens feito</th>
+                <th>Vendedor</th><th>Tipo</th><th>Zona</th><th>Meta itens</th><th>Super itens</th><th>Itens feito</th>
                 <th>Meta realme</th><th>Realmes feito</th><th>Crediário (soma)</th><th>Meta G.A.R (R$)</th><th>G.A.R feito (R$)</th>
                 <th>Qtd. G.A.R</th><th>Qtd. vendas</th><th>Notebook/PC</th><th>% G.A.R ÷ notebook/PC</th>
                 <th>Meta do mês (R$)</th><th>Feito no mês (R$)</th><th>% feito ÷ meta</th><th></th>
               </tr></thead>
-              <tbody id="comSellersBody"><tr><td colspan="18" class="responsive-empty">Carregando…</td></tr></tbody>
+              <tbody id="comSellersBody"><tr><td colspan="19" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -7155,8 +7176,8 @@
         <div class="table-panel responsive-table com-edit-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Loja</th><th>Meta da loja (R$)</th><th>Feito da loja (R$)</th><th style="text-align:right">% feito ÷ meta</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th><th>Meta realme</th><th>Realmes feito</th><th style="text-align:right">% realmes</th></tr></thead>
-              <tbody id="comStoreGoalsBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th>Loja</th><th>Meta da loja (R$)</th><th>Feito da loja (R$)</th><th style="text-align:right">% feito ÷ meta</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th><th>Meta realme</th><th>Realmes feito</th><th style="text-align:right">% realmes</th><th>Meta assistência (R$)</th><th>Feito assistência (R$)</th><th style="text-align:right">% assistência</th></tr></thead>
+              <tbody id="comStoreGoalsBody"><tr><td colspan="13" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -7171,8 +7192,35 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>A partir de</th><th>Faturamento (com / sem critérios)</th><th>Premiação</th><th>Garantia</th><th>Anexo mínimo</th><th>Crediário</th><th>Venda P.A / Unigames</th><th>Quem alterou</th><th>Quando</th><th></th></tr></thead>
-              <tbody id="comRulesBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th>A partir de</th><th>Faturamento (com / sem critérios)</th><th>Premiação</th><th>Garantia</th><th>Anexo mínimo</th><th>Crediário</th><th>Venda P.A / Unigames</th><th>Líder / Operacional</th><th>Quem alterou</th><th>Quando</th><th></th></tr></thead>
+              <tbody id="comRulesBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="com-view-panel" id="comViewIndicacao" hidden>
+        <!-- Indicação: SÓ CONTROLE (comercial:indications) — não gera comissão,
+             premiação nem vai para o RH. Login com loja vê e lança só a dela. -->
+        <form class="com-entry-form com-indication-form" id="comIndForm" novalidate>
+          <div class="field"><label for="comIndDate">Data</label><input type="date" id="comIndDate" required></div>
+          <div class="field"><label for="comIndStore">Loja</label><select id="comIndStore" required></select></div>
+          <div class="field"><label for="comIndEmployee">Quem indicou</label><select id="comIndEmployee"></select></div>
+          <div class="field" id="comIndReferrerField" hidden><label for="comIndReferrer">Nome de quem indicou</label><input id="comIndReferrer" maxlength="120" autocomplete="off"></div>
+          <div class="field"><label for="comIndCustomer">Cliente</label><input id="comIndCustomer" maxlength="160" autocomplete="off"></div>
+          <div class="field"><label for="comIndReference">ID da venda / O.S.</label><input id="comIndReference" maxlength="80" autocomplete="off"></div>
+          <div class="field"><label for="comIndAmount">Valor (R$)</label><input type="text" id="comIndAmount" inputmode="decimal" placeholder="R$ 0,00"></div>
+          <div class="field"><label for="comIndNotes">Observação</label><input id="comIndNotes" maxlength="500" autocomplete="off"></div>
+          <button class="btn-accent" type="submit" id="btnComIndSubmit">LANÇAR</button>
+          <button class="btn-outline" type="button" id="btnComIndCancel" hidden>CANCELAR EDIÇÃO</button>
+        </form>
+        <div class="user-form-status" id="comIndStatus" role="status" aria-live="polite"></div>
+        <div class="com-indication-totals" id="comIndTotals"></div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Data</th><th>Loja</th><th>Quem indicou</th><th>Cliente</th><th>ID da venda / O.S.</th><th style="text-align:right">Valor</th><th>Observação</th><th>Lançado por</th><th></th></tr></thead>
+              <tbody id="comIndBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -9213,6 +9261,28 @@
       <div class="purchase-field"><label for="comRuleAttach">ANEXO DE GARANTIA MÍNIMO (%)</label><input type="number" id="comRuleAttach" min="0" max="100" step="1" inputmode="numeric" required></div>
       <div class="purchase-field"><label for="comRuleCredit">% CREDIÁRIO FEITO</label><input type="number" id="comRuleCredit" min="0" max="100" step="0.01" inputmode="decimal" required></div>
       <div class="purchase-field"><label for="comRulePartner">% VENDA P.A / VENDA UNIGAMES</label><input type="number" id="comRulePartner" min="0" max="100" step="0.01" inputmode="decimal" required></div>
+      <div class="purchase-field full">
+        <label class="assist-check"><input type="checkbox" id="comRuleRolesOn"> PAGA LÍDER COMERCIAL E OPERACIONAL NESTA VIGÊNCIA</label>
+      </div>
+      <div class="purchase-field full com-rule-roles" id="comRuleRoles" hidden>
+        <div class="purchase-form-grid">
+          <div class="purchase-field full"><strong>LÍDER COMERCIAL</strong> — no lugar da premiação de vendedor</div>
+          <div class="purchase-field"><label for="comRuleLeaderLow">% VENDAS ABAIXO DE 100% DA META</label><input type="number" id="comRuleLeaderLow" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="leader.rateLowBps" data-kind="bps"></div>
+          <div class="purchase-field"><label for="comRuleLeaderHigh">% VENDAS A PARTIR DE 100%</label><input type="number" id="comRuleLeaderHigh" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="leader.rateHighBps" data-kind="bps"></div>
+          <div class="purchase-field"><label for="comRuleLeaderWarranty">% GARANTIA DO LÍDER</label><input type="number" id="comRuleLeaderWarranty" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="leader.warrantyRateBps" data-kind="bps"></div>
+          <div class="purchase-field"><label for="comRuleLeaderCredit">% CREDIÁRIO DO LÍDER</label><input type="number" id="comRuleLeaderCredit" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="leader.creditRateBps" data-kind="bps"></div>
+          <div class="purchase-field"><label for="comRuleLeaderSellerPct">VENDEDOR COM ≥ (% DA META)</label><input type="number" id="comRuleLeaderSellerPct" min="1" max="1000" step="1" inputmode="numeric" data-com-role-field="leader.sellerPercent" data-kind="percent"></div>
+          <div class="purchase-field"><label for="comRuleLeaderPerSeller">PRÊMIO POR VENDEDOR (R$)</label><input type="number" id="comRuleLeaderPerSeller" min="0" step="0.01" inputmode="decimal" data-com-role-field="leader.perSellerCents" data-kind="cents"></div>
+          <div class="purchase-field"><label for="comRuleLeaderStorePct">LOJA E ASSISTÊNCIA COM ≥ (% DA META)</label><input type="number" id="comRuleLeaderStorePct" min="1" max="1000" step="1" inputmode="numeric" data-com-role-field="leader.storePercent" data-kind="percent"></div>
+          <div class="purchase-field"><label for="comRuleLeaderStore">PRÊMIO LOJA E ASSISTÊNCIA (R$)</label><input type="number" id="comRuleLeaderStore" min="0" step="0.01" inputmode="decimal" data-com-role-field="leader.storeCents" data-kind="cents"></div>
+          <div class="purchase-field full"><strong>OPERACIONAL</strong> — por loja, valor cheio para cada um</div>
+          <div class="purchase-field"><label for="comRuleOpLow">% DO FEITO DA ASSISTÊNCIA (80% A 99,9%)</label><input type="number" id="comRuleOpLow" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="operational.rateLowBps" data-kind="bps"></div>
+          <div class="purchase-field"><label for="comRuleOpHigh">% DO FEITO DA ASSISTÊNCIA (A PARTIR DE 100%)</label><input type="number" id="comRuleOpHigh" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="operational.rateHighBps" data-kind="bps"></div>
+          <div class="purchase-field"><label for="comRuleOpPct">PREMIAÇÃO COM ≥ (% DA META)</label><input type="number" id="comRuleOpPct" min="1" max="1000" step="1" inputmode="numeric" data-com-role-field="operational.premiumPercent" data-kind="percent"></div>
+          <div class="purchase-field"><label for="comRuleOpAssist">PREMIAÇÃO PELA ASSISTÊNCIA (R$)</label><input type="number" id="comRuleOpAssist" min="0" step="0.01" inputmode="decimal" data-com-role-field="operational.assistPremiumCents" data-kind="cents"></div>
+          <div class="purchase-field"><label for="comRuleOpStore">PREMIAÇÃO PELA LOJA (R$)</label><input type="number" id="comRuleOpStore" min="0" step="0.01" inputmode="decimal" data-com-role-field="operational.storePremiumCents" data-kind="cents"></div>
+        </div>
+      </div>
       <div class="purchase-field full"><label for="comRuleNotes">OBSERVAÇÃO (OPCIONAL)</label><input id="comRuleNotes" maxlength="500"></div>
     </div>
     <p class="purchase-field-help" id="comRuleWarning"></p>
@@ -9771,6 +9841,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:credit"> LANÇAR CREDIÁRIOS (PAYJOY, CREFAZ, PARCELEX, ODRES, VENDA P.A E UNIGAMES)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:stores"> ATUALIZAR META LOJA</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:indications"> INDICAÇÃO (LANÇAR E VER AS INDICAÇÕES DA LOJA)</label>
               </div>
             </details>
             <details class="permission-module">
@@ -41880,7 +41951,7 @@ function renderHomeTasks(){
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
     'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
-    'comercial:dashboard':'Comercial: visualizar Dashboard e Ranking','comercial:commission':'Comercial: visualizar Comissão','comercial:goals':'Comercial: Atualizar Vendedores','comercial:credit':'Comercial: Lançar Crediários','comercial:stores':'Comercial: Atualizar Meta Loja','comercial:rules':'Comercial: Cadastro de Regras de Comissão',
+    'comercial:dashboard':'Comercial: visualizar Dashboard e Ranking','comercial:commission':'Comercial: visualizar Comissão','comercial:goals':'Comercial: Atualizar Vendedores','comercial:credit':'Comercial: Lançar Crediários','comercial:stores':'Comercial: Atualizar Meta Loja','comercial:rules':'Comercial: Cadastro de Regras de Comissão','comercial:indications':'Comercial: Indicação',
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Estoque - Relatório NF: visualizar','relatorio_nf:manage':'Estoque - Relatório NF: lançar/gerenciar',
@@ -44511,6 +44582,11 @@ function renderHomeTasks(){
         '<div class="print-report-meta">'+escapeHtml(row.employeeName)+' · '+escapeHtml(row.companyName || 'Sem loja definida')+' · Competência '+escapeHtml(rhFormatMonth(row.month))+'</div>'+
       '</div>'+
       '<div class="rh-recibo-meta">Comissão base: <strong>'+formatCentsBRL(row.commissionCents)+'</strong></div>'+
+      // OPERACIONAL do Comercial: a comissão sobre o feito da assistência é
+      // de natureza salarial (pedido de 2026-10-16).
+      (row.commercialRole === 'operacional'
+        ? '<div class="rh-recibo-meta"><strong>Comissão de natureza salarial (operacional — feito da assistência da loja): integra DSR, 13º salário, férias e FGTS.</strong></div>'
+        : '')+
       ruleHtml+
       '<table class="rh-print-table"><thead><tr><th>Descrição</th><th>Tipo</th><th class="num">Valor</th></tr></thead>'+
       '<tbody>'+itemsHtml+'</tbody></table>'+
@@ -46951,7 +47027,8 @@ function renderHomeTasks(){
     const credit = seller.realized.creditSalesCents;
     const revenue = seller.realized.revenueCents;
     const share = revenue > 0 ? Math.floor(credit / revenue * 1000) / 10 : null;
-    const rate = comRules().creditRateBps;
+    const rules = comRules();
+    const rate = seller.role === 'lider' && rules.roles ? rules.roles.leader.creditRateBps : rules.creditRateBps;
     let text;
     if(!(rate > 0)) text = 'Sem comissão de crediário neste mês.';
     else if(seller.newcomer) text = 'Novato — o crediário não gera comissão neste mês.';
@@ -46972,8 +47049,10 @@ function renderHomeTasks(){
   // comercial:commission afeta SÓ a aba Comissão: o selo do Dashboard é o
   // mesmo para todos (sem a permissão o servidor manda só os critérios, a
   // taxa e o novato, sem os valores em R$).
-  function comCriteriaHtml(metrics){
+  function comCriteriaHtml(metrics, role){
     const rate = comFormatBps(metrics.commission.revenueRateBps);
+    // LÍDER: a taxa vem só da própria meta (os critérios não mudam a %).
+    if(role === 'lider') return '<span class="com-criteria leader">LÍDER · '+escapeHtml(rate)+'</span>';
     const newcomer = metrics.commission.newcomer ? '<span class="com-criteria newcomer">NOVATO · SÓ % DO FATURAMENTO</span>' : '';
     if(metrics.commission.allCriteriaMet) return '<span class="com-criteria ok">METAS BATIDAS · '+escapeHtml(rate)+'</span>'+newcomer;
     const missing = [];
@@ -46992,12 +47071,12 @@ function renderHomeTasks(){
       : '';
     return '<header class="com-seller-head"><div class="com-seller-name"><strong>'+escapeHtml(seller.name)+'</strong>'+
       '<span>'+escapeHtml(seller.companyName || 'SEM LOJA')+(seller.zone ? ' · ZONA '+escapeHtml(seller.zone) : '')+'</span></div>'+
-      '<div class="com-seller-side">'+(seller.inactive ? '<span class="com-criteria inactive">INATIVO</span>' : '')+comCriteriaHtml(seller.metrics)+toggle+
+      '<div class="com-seller-side">'+(seller.inactive ? '<span class="com-criteria inactive">INATIVO</span>' : '')+comCriteriaHtml(seller.metrics, seller.role)+toggle+
       (updated ? '<span class="com-seller-meta">'+escapeHtml(updated)+'</span>' : '')+'</div></header>';
   }
 
   function comData(){
-    if(comView === 'regras' || comView === 'lojas') return null;
+    if(comView === 'regras' || comView === 'lojas' || comView === 'indicacao') return null;
     return comView === 'vendedores' || comView === 'crediarios' ? comManage : comOverview;
   }
 
@@ -47009,6 +47088,14 @@ function renderHomeTasks(){
       (!comZoneFilter || seller.zone === comZoneFilter) &&
       (!(options && options.ignoreSeller) && comSellerFilter ? seller.employeeId === comSellerFilter : true)
     );
+  }
+
+  // Operacionais dentro dos filtros: só o de Loja vale (eles não têm zona e
+  // não estão no seletor de vendedor — com esses filtros, somem).
+  function comFilteredOperationals(){
+    const data = comData();
+    if(!data || comZoneFilter || comSellerFilter) return [];
+    return (data.operationals || []).filter(person => !comStoreFilter || person.companyId === comStoreFilter);
   }
 
   function comEmptyHtml(){
@@ -47025,7 +47112,7 @@ function renderHomeTasks(){
     const ownOnly = comView !== 'ranking' && Boolean(data && data.ownOnly);
     const allStores = comView === 'ranking' || Boolean(data && data.allStores);
     // Abas de atualização: sem filtros (a lista já é a do alcance de quem lança).
-    const editing = ['vendedores', 'crediarios', 'lojas', 'regras'].includes(comView);
+    const editing = ['vendedores', 'crediarios', 'lojas', 'regras', 'indicacao'].includes(comView);
     if(el('comStoreField')) el('comStoreField').hidden = !data || ownOnly || editing || comView === 'ranking' || !allStores;
     // No Ranking, Zona e "Rankear por" só valem para a subaba VENDEDORES.
     const storeChart = comView === 'ranking' && comRankSub !== 'vendedores';
@@ -47052,7 +47139,7 @@ function renderHomeTasks(){
     comZoneFilter = comFillFilter('comZoneFilter', 'TODAS', zones.map(zone => ({value:zone, label:zone})), comZoneFilter);
     if(comView === 'ranking') return;
     const stores = new Map();
-    data.sellers.forEach(seller => {
+    data.sellers.concat(data.operationals || []).forEach(seller => {
       if(seller.companyId && !stores.has(seller.companyId)) stores.set(seller.companyId, seller.companyName || seller.companyId);
     });
     comStoreFilter = comFillFilter('comStoreFilter', 'TODAS', Array.from(stores.entries())
@@ -47070,8 +47157,10 @@ function renderHomeTasks(){
     // "MOSTRAR INATIVOS" só para quem vê a equipe (a conta do vendedor já vê o
     // próprio histórico).
     if(el('comInactiveToggleField')) el('comInactiveToggleField').hidden = Boolean(comOverview.ownOnly);
+    comRenderDashIndications();
+    comRenderDashOperationals();
     const sellers = comFilteredSellers();
-    if(!sellers.length){ list.innerHTML = comEmptyHtml(); return; }
+    if(!sellers.length){ list.innerHTML = comFilteredOperationals().length ? '' : comEmptyHtml(); return; }
     const clock = comOverview.clock;
     list.innerHTML = sellers.map(seller => {
       const m = seller.metrics;
@@ -47080,14 +47169,66 @@ function renderHomeTasks(){
           escapeHtml(comFormatValue('items', m.items.superTarget))+' · '+
           escapeHtml(m.items.superReached ? 'atingido' : 'faltam '+comFormatValue('items', m.items.superTarget - m.items.realized))+'</p>'
         : '';
-      return '<article class="com-seller'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller, true)+
+      // LÍDER: sem as faixas de premiação de vendedor — a barra vai até a
+      // meta, onde a % dele sobe.
+      const leader = seller.role === 'lider';
+      return '<article class="com-seller'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller, !leader)+
         '<div class="com-blocks">'+
-          comBlockHtml('money', 'Faturamento', m.revenue, clock, false)+
+          comBlockHtml('money', 'Faturamento', m.revenue, clock, leader)+
           comBlockHtml('items', 'Itens vendidos', m.items, clock, true, superLine)+
           comBlockHtml('units', 'Realmes', m.realme, clock, true)+
           comWarrantyBlockHtml(m.warranty)+
           (comRules().creditRateBps > 0 || seller.realized.creditSalesCents > 0 ? comCreditBlockHtml(seller) : '')+
         '</div>'+
+      '</article>';
+    }).join('');
+  }
+
+  // Resumo da aba Indicação no Dashboard: quantidade e R$ do mês por loja.
+  function comRenderDashIndications(){
+    const box = el('comDashIndications');
+    if(!box) return;
+    const stores = (comOverview.indications || []).filter(store => !comStoreFilter || store.companyId === comStoreFilter);
+    box.hidden = !stores.length;
+    box.innerHTML = stores.map(store =>
+      '<div class="com-indication-chip">INDICAÇÕES · '+escapeHtml(store.name)+'<strong>'+escapeHtml(comFormatQty(store.count, 'indicação', 'indicações')+' · '+formatCentsBRL(store.totalCents))+'</strong></div>').join('');
+  }
+
+  // Barra de % sem valores em R$ (cartões dos operacionais no Dashboard).
+  function comPctBlockHtml(title, percent, note){
+    const has = percent !== null && percent !== undefined;
+    return '<section class="com-block tier-'+comTier(percent)+'">'+
+      '<div class="com-block-head"><span class="com-block-title">'+escapeHtml(title)+'</span><strong class="com-pct">'+escapeHtml(has ? comFormatPct(percent) : 'SEM META')+'</strong></div>'+
+      '<div class="com-bar simple" role="img" aria-label="'+escapeHtml(title+': '+(has ? comFormatPct(percent) : 'sem meta'))+'">'+
+        '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+(has ? Math.min(100, percent) : 0)+'%"></div></div></div>'+
+      '<p class="com-incentive">'+escapeHtml(note)+'</p>'+
+    '</section>';
+  }
+
+  // OPERACIONAIS no Dashboard: um cartão por loja (todos da loja recebem o
+  // mesmo valor cheio), só com os % da assistência e da loja e a faixa.
+  function comRenderDashOperationals(){
+    const box = el('comDashOperationals');
+    if(!box) return;
+    const people = comFilteredOperationals();
+    const op = comRules().roles ? comRules().roles.operational : null;
+    box.hidden = !people.length || !op;
+    if(box.hidden){ box.innerHTML = ''; return; }
+    const stores = new Map();
+    people.forEach(person => {
+      if(!stores.has(person.companyId)) stores.set(person.companyId, []);
+      stores.get(person.companyId).push(person);
+    });
+    box.innerHTML = Array.from(stores.values()).map(group => {
+      const c = group[0].commission;
+      const rateText = c.rateBps > 0 ? 'Faixa de '+comFormatBps(c.rateBps)+' do feito da assistência.' : 'Abaixo de 80% da meta da assistência — sem comissão.';
+      const assistNote = rateText+(c.assistPercent !== null && c.assistPercent >= op.premiumPercent ? ' Premiação da assistência atingida.' : ' Premiação a partir de '+op.premiumPercent+'%.');
+      const storeNote = c.storePercent !== null && c.storePercent >= op.premiumPercent ? 'Premiação da loja atingida.' : 'Premiação a partir de '+op.premiumPercent+'% da meta da loja.';
+      return '<article class="com-seller">'+
+        '<header class="com-seller-head"><div class="com-seller-name"><strong>OPERACIONAIS · '+escapeHtml(group[0].companyName || 'SEM LOJA')+'</strong>'+
+          '<span>'+escapeHtml(group.map(person => person.name).join(' · '))+'</span></div>'+
+          '<div class="com-seller-side"><span class="com-criteria operational">OPERACIONAL'+(c.rateBps > 0 ? ' · '+escapeHtml(comFormatBps(c.rateBps)) : '')+'</span></div></header>'+
+        '<div class="com-blocks">'+comPctBlockHtml('Assistência', c.assistPercent, assistNote)+comPctBlockHtml('Loja', c.storePercent, storeNote)+'</div>'+
       '</article>';
     }).join('');
   }
@@ -47106,7 +47247,21 @@ function renderHomeTasks(){
         tiers.length ? tiers.map(tier => tier.percent+'%').join(' / ')+' da meta de faturamento, só batendo os 3 critérios (não cumulativa)' : 'Nenhuma faixa nesta regra')+
       rule('Comissão por garantia estendida', comFormatBps(rules.warrantyRateBps), 'Sobre o valor vendido em garantia, sempre')+
       (rules.creditRateBps > 0 ? rule('Comissão por crediário feito', comFormatBps(rules.creditRateBps), 'Sobre PAYJOY, CREFAZ, PARCELEX e ODRES') : '')+
-      (rules.partnerSaleRateBps > 0 ? rule('Venda P.A / Venda Unigames', comFormatBps(rules.partnerSaleRateBps), 'Sobre as vendas lançadas em VENDA P.A e VENDA UNIGAMES') : '');
+      (rules.partnerSaleRateBps > 0 ? rule('Venda P.A / Venda Unigames', comFormatBps(rules.partnerSaleRateBps), 'Sobre as vendas lançadas em VENDA P.A e VENDA UNIGAMES') : '')+
+      (rules.roles ? comRolesRulesHtml(rules.roles, rule) : '');
+  }
+
+  function comRolesRulesHtml(roles, rule){
+    const leader = roles.leader;
+    const op = roles.operational;
+    return rule('Líder comercial · vendas', comFormatBps(leader.rateHighBps)+' / '+comFormatBps(leader.rateLowBps),
+        comFormatBps(leader.rateHighBps)+' a partir de 100% da própria meta; '+comFormatBps(leader.rateLowBps)+' abaixo — garantia '+comFormatBps(leader.warrantyRateBps)+', crediário '+comFormatBps(leader.creditRateBps))+
+      rule('Líder comercial · premiação', comMoneyShort(leader.perSellerCents)+' / '+comMoneyShort(leader.storeCents),
+        comMoneyShort(leader.perSellerCents)+' por vendedor ativo da loja com '+leader.sellerPercent+'%+ da meta; '+comMoneyShort(leader.storeCents)+' com loja E assistência em '+leader.storePercent+'%+')+
+      rule('Operacional · assistência', comFormatBps(op.rateHighBps)+' / '+comFormatBps(op.rateLowBps),
+        'Sobre o feito da assistência da loja: '+comFormatBps(op.rateHighBps)+' a partir de 100% da meta, '+comFormatBps(op.rateLowBps)+' de 80% a 99,9% — natureza salarial (integra DSR, 13º, férias e FGTS)')+
+      rule('Operacional · premiação', comMoneyShort(op.assistPremiumCents)+' + '+comMoneyShort(op.storePremiumCents),
+        comMoneyShort(op.assistPremiumCents)+' com a assistência e '+comMoneyShort(op.storePremiumCents)+' com a loja em '+op.premiumPercent+'%+ da meta — valor cheio para cada operacional');
   }
 
   // Comissão: só o título e o valor de cada regra (pedido do usuário —
@@ -47119,6 +47274,22 @@ function renderHomeTasks(){
       '<li class="'+(!notApplicable && cents > 0 ? 'on' : '')+'"><span class="label">'+escapeHtml(label)+'</span>'+
       '<span class="value">'+escapeHtml(notApplicable ? 'NÃO SE APLICA (NOVATO)' : formatCentsBRL(cents))+'</span></li>';
     const showCredit = rules.creditRateBps > 0;
+    const leader = commission.leader;
+    if(leader && rules.roles){
+      const lr = rules.roles.leader;
+      return '<article class="com-commission'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller)+
+        '<ul class="com-commission-rows">'+
+          row('Comissão por vendas ('+comFormatBps(commission.revenueRateBps)+(commission.revenueBaseCents < seller.realized.revenueCents ? ' · sem o crediário' : '')+')', commission.revenueCommissionCents)+
+          row('Garantia estendida ('+comFormatBps(lr.warrantyRateBps)+')', commission.warrantyCommissionCents)+
+          (lr.creditRateBps > 0 ? row('Crediário ('+comFormatBps(lr.creditRateBps)+' de '+formatCentsBRL(seller.realized.creditSalesCents)+')', commission.creditCommissionCents) : '')+
+          (rules.partnerSaleRateBps > 0 ? row('Venda P.A / Unigames ('+comFormatBps(rules.partnerSaleRateBps)+' de '+formatCentsBRL(seller.realized.partnerSalesCents)+')', commission.partnerCommissionCents) : '')+
+          row('Prêmio líder · vendedores com '+leader.sellerPercent+'%+ ('+leader.qualified.length+' × '+comMoneyShort(leader.perSellerCents)+')', leader.sellersPremiumCents)+
+          row('Prêmio líder · loja '+comFormatPct(leader.storeRevenuePercent)+' e assistência '+comFormatPct(leader.assistPercent)+' (meta '+leader.storePercent+'%)', leader.storePremiumCents)+
+        '</ul>'+
+        (leader.qualified.length ? '<p class="com-commission-note">Vendedores com '+leader.sellerPercent+'%+: '+escapeHtml(leader.qualified.join(', '))+'</p>' : '')+
+        comCommissionSumHtml(commission)+
+      '</article>';
+    }
 
     return '<article class="com-commission'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller)+
       '<ul class="com-commission-rows">'+
@@ -47128,7 +47299,38 @@ function renderHomeTasks(){
         (showCredit ? row('Crediário ('+comFormatBps(rules.creditRateBps)+' de '+formatCentsBRL(seller.realized.creditSalesCents)+')', commission.creditCommissionCents, commission.newcomer) : '')+
         (rules.partnerSaleRateBps > 0 ? row('Venda P.A / Unigames ('+comFormatBps(rules.partnerSaleRateBps)+' de '+formatCentsBRL(seller.realized.partnerSalesCents)+')', commission.partnerCommissionCents, commission.newcomer) : '')+
       '</ul>'+
-      '<div class="com-commission-sum"><span>Total estimado</span><strong>'+escapeHtml(formatCentsBRL(commission.totalCents))+'</strong></div>'+
+      comCommissionSumHtml(commission)+
+    '</article>';
+  }
+
+  // CONTRACHEQUE (comissões) e PREMIAÇÃO separados; o total vai para o RH.
+  function comCommissionSumHtml(commission){
+    return '<div class="com-commission-split"><span>Contracheque</span><strong>'+escapeHtml(formatCentsBRL(commission.payslipCents))+'</strong></div>'+
+      '<div class="com-commission-split"><span>Premiação</span><strong>'+escapeHtml(formatCentsBRL(commission.premiumCents))+'</strong></div>'+
+      '<div class="com-commission-sum"><span>Total estimado</span><strong>'+escapeHtml(formatCentsBRL(commission.totalCents))+'</strong></div>';
+  }
+
+  // Cartão do OPERACIONAL na aba Comissão (valor cheio, pela meta da loja).
+  function comOperationalCardHtml(person){
+    const c = person.commission;
+    const op = comRules().roles.operational;
+    const row = (label, cents) =>
+      '<li class="'+(cents > 0 ? 'on' : '')+'"><span class="label">'+escapeHtml(label)+'</span><span class="value">'+escapeHtml(formatCentsBRL(cents))+'</span></li>';
+    return '<article class="com-commission">'+
+      '<header class="com-seller-head"><div class="com-seller-name"><strong>'+escapeHtml(person.name)+'</strong>'+
+        '<span>'+escapeHtml((person.companyName || 'SEM LOJA')+(person.roleTitle ? ' · '+person.roleTitle.toLocaleUpperCase('pt-BR') : ''))+'</span></div>'+
+        '<div class="com-seller-side"><span class="com-criteria operational">OPERACIONAL</span></div></header>'+
+      '<dl class="com-figures">'+
+        '<div><dt>Assistência ('+escapeHtml(comFormatPct(c.assistPercent))+')</dt><dd>'+escapeHtml(formatCentsBRL(c.assistRevenueCents)+' de '+formatCentsBRL(c.assistTargetCents))+'</dd></div>'+
+        '<div><dt>Loja ('+escapeHtml(comFormatPct(c.storePercent))+')</dt><dd>'+escapeHtml(formatCentsBRL(c.revenueCents)+' de '+formatCentsBRL(c.targetCents))+'</dd></div>'+
+      '</dl>'+
+      '<ul class="com-commission-rows">'+
+        row('Comissão sobre o feito da assistência ('+(c.rateBps > 0 ? comFormatBps(c.rateBps) : 'abaixo de 80%')+')', c.commissionCents)+
+        row('Premiação · assistência '+op.premiumPercent+'%+', c.assistPremiumCents)+
+        row('Premiação · loja '+op.premiumPercent+'%+', c.storePremiumCents)+
+      '</ul>'+
+      '<p class="com-commission-note">Comissão de natureza salarial: integra DSR, 13º, férias e FGTS.</p>'+
+      comCommissionSumHtml(c)+
     '</article>';
   }
 
@@ -47138,14 +47340,22 @@ function renderHomeTasks(){
     if(!list || !comOverview) return;
     if(el('comRulesBox')) el('comRulesBox').innerHTML = comRulesBoxHtml();
     const sellers = comFilteredSellers();
-    if(!sellers.length){
+    const operationals = comRules().roles ? comFilteredOperationals() : [];
+    if(el('comComOperationals')){
+      el('comComOperationals').hidden = el('comComOperationalsTitle').hidden = !operationals.length;
+      el('comComOperationals').innerHTML = operationals.map(comOperationalCardHtml).join('');
+    }
+    if(!sellers.length && !operationals.length){
       list.innerHTML = comEmptyHtml();
       if(total) total.hidden = true;
       return;
     }
     list.innerHTML = sellers.map(comCommissionCardHtml).join('');
     if(total){
-      const sum = sellers.reduce((acc, seller) => acc + seller.metrics.commission.totalCents, 0);
+      const payees = sellers.map(seller => seller.metrics.commission).concat(operationals.map(person => person.commission));
+      const sum = payees.reduce((acc, item) => acc + item.totalCents, 0);
+      const payslipSum = payees.reduce((acc, item) => acc + item.payslipCents, 0);
+      const premiumSum = payees.reduce((acc, item) => acc + item.premiumCents, 0);
       // Soma do crediário (a antiga aba Crediário Feito): valor vendido e
       // comissão — já incluída no total estimado.
       const creditSum = sellers.reduce((acc, seller) => acc + seller.realized.creditSalesCents, 0);
@@ -47153,9 +47363,11 @@ function renderHomeTasks(){
       const creditText = comRules().creditRateBps > 0
         ? ' · crediário feito '+formatCentsBRL(creditSum)+' (comissão '+formatCentsBRL(creditCommissionSum)+')'
         : '';
-      total.innerHTML = '<span>Total estimado · '+sellers.length+(sellers.length === 1 ? ' vendedor' : ' vendedores')+escapeHtml(creditText)+'</span>'+
+      const opText = operationals.length ? ' + '+operationals.length+(operationals.length === 1 ? ' operacional' : ' operacionais') : '';
+      total.innerHTML = '<span>Total estimado · '+sellers.length+(sellers.length === 1 ? ' vendedor' : ' vendedores')+escapeHtml(opText+creditText)+
+        ' · contracheque '+escapeHtml(formatCentsBRL(payslipSum))+' · premiação '+escapeHtml(formatCentsBRL(premiumSum))+'</span>'+
         '<strong>'+escapeHtml(formatCentsBRL(sum))+'</strong>';
-      total.hidden = sellers.length < 2;
+      total.hidden = payees.length < 2;
     }
   }
 
@@ -47235,11 +47447,17 @@ function renderHomeTasks(){
     }
     if(comRankSub === 'lojas'){
       const items = comStores ? comStores.items : [];
+      const has = value => value !== null && value !== undefined;
+      const subtitle = [
+        comStores && has(comStores.totalPercent) ? 'TODAS AS LOJAS: '+comFormatPct(comStores.totalPercent) : '',
+        comStores && has(comStores.totalAssistPercent) ? 'ASSISTÊNCIA: '+comFormatPct(comStores.totalAssistPercent) : ''
+      ].filter(Boolean).join(' · ');
       return {
         title: 'METAS DAS LOJAS',
-        subtitle: comStores && comStores.totalPercent !== null && comStores.totalPercent !== undefined ? 'TODAS AS LOJAS: '+comFormatPct(comStores.totalPercent) : '',
+        subtitle,
         percent: true,
-        bars: items.map(item => ({label: item.name, sub: '', value: item.percent || 0})),
+        // % ASSISTÊNCIA da loja embaixo do nome (aba Meta Loja).
+        bars: items.map(item => ({label: item.name, sub: has(item.assistPercent) ? 'ASSIST. '+comFormatPct(item.assistPercent) : '', value: item.percent || 0})),
         empty: 'Nenhuma loja com meta neste mês (aba Meta Loja).'
       };
     }
@@ -47625,6 +47843,11 @@ function renderHomeTasks(){
     ['revenuePct','% feito ÷ meta','calc']
   ];
   let comEmployees = [];
+  // TIPO do colaborador no mês (aba Vendedores): troca manual por mês; sem
+  // troca, vale o tipo pelo cargo do RH (cargoRole de /sellers).
+  let comRoleOverrides = {};
+  let comRolesEnabled = false;
+  const COM_ROLE_LABELS = {vendedor:'VENDEDOR', lider:'LÍDER', operacional:'OPERACIONAL'};
   let comEntryKind = 'payjoy';
   let comEntries = null;
   let comStores = null;
@@ -47710,6 +47933,15 @@ function renderHomeTasks(){
     };
   }
 
+  function comRoleSelectHtml(seller){
+    const override = comRoleOverrides[seller.employeeId] || '';
+    const employee = comEmployees.find(item => item.id === seller.employeeId);
+    const cargo = (employee && employee.cargoRole) || 'vendedor';
+    const options = [['', 'PELO CARGO ('+COM_ROLE_LABELS[cargo]+')']].concat(Object.entries(COM_ROLE_LABELS));
+    return '<select aria-label="Tipo" data-com-role'+(comRolesEnabled ? '' : ' disabled title="A regra deste mês não paga líder/operacional (aba Regras de Comissão)."')+'>'+
+      options.map(([value, label]) => '<option value="'+value+'"'+(override === value ? ' selected' : '')+'>'+escapeHtml(label)+'</option>').join('')+'</select>';
+  }
+
   function comSellerRowHtml(seller){
     const cells = COM_SELLER_FIELDS.map(([key, label, kind]) => {
       let content;
@@ -47725,6 +47957,7 @@ function renderHomeTasks(){
     return '<tr data-com-seller="'+escapeHtml(seller.employeeId)+'"'+(seller.pending ? ' data-com-pending="1"' : '')+'>'+
       '<td data-label="Vendedor" class="nome"><strong>'+escapeHtml(seller.name)+'</strong>'+(seller.inactive ? '<span class="com-inactive-tag">INATIVO</span>' : '')+
         (seller.pending ? '<span class="com-inactive-tag com-new-tag" title="Ainda não está no mês: entra ao salvar o primeiro número">NOVO</span>' : '')+'<br><small>'+escapeHtml(seller.companyName || 'SEM LOJA')+'</small></td>'+
+      '<td data-label="Tipo">'+comRoleSelectHtml(seller)+'</td>'+
       '<td data-label="Zona"><select aria-label="Zona" data-com-field="zone">'+zone+'</select></td>'+
       cells+
       '<td data-label="Ações">'+(seller.pending ? '' : '<button class="btn-outline" type="button" data-com-remove>TIRAR DO MÊS</button>')+'</td></tr>';
@@ -47743,7 +47976,7 @@ function renderHomeTasks(){
     const rows = sellers.concat(Array.from(comPendingSellers.values()));
     body.innerHTML = rows.length
       ? rows.map(comSellerRowHtml).join('')
-      : '<tr><td colspan="18" class="responsive-empty">Nenhum vendedor neste mês. Adicione um vendedor ou copie do mês anterior.</td></tr>';
+      : '<tr><td colspan="19" class="responsive-empty">Nenhum vendedor neste mês. Adicione um vendedor ou copie do mês anterior.</td></tr>';
     comMaskMoney(body);
     // "Adicionar": quem não é VENDEDOR no RH (os vendedores já aparecem acima).
     const options = comEmployees
@@ -47787,9 +48020,13 @@ function renderHomeTasks(){
 
   async function comLoadEmployees(){
     try{
-      comEmployees = (await comApi('/sellers?month='+encodeURIComponent(comMonth))).employees || [];
+      const result = await comApi('/sellers?month='+encodeURIComponent(comMonth));
+      comEmployees = result.employees || [];
+      comRoleOverrides = result.roleOverrides || {};
+      comRolesEnabled = Boolean(result.rolesEnabled);
     }catch(error){
       comEmployees = [];
+      comRoleOverrides = {};
       comStatus('comSellersStatus', error.message, 'error');
     }
   }
@@ -47856,6 +48093,29 @@ function renderHomeTasks(){
         row.classList.remove('saving');
       }
     });
+  });
+
+  // TIPO: salva na hora (fora da linha de números) e recalcula no servidor.
+  if(el('comSellersBody')) el('comSellersBody').addEventListener('change', async event => {
+    const select = event.target.closest('[data-com-role]');
+    if(!select) return;
+    const row = select.closest('tr[data-com-seller]');
+    const employeeId = row.dataset.comSeller;
+    const previous = comRoleOverrides[employeeId] || '';
+    select.disabled = true;
+    try{
+      await comApi('/roles', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, employeeId, role: select.value})});
+      if(select.value) comRoleOverrides[employeeId] = select.value;
+      else delete comRoleOverrides[employeeId];
+      comStatus('comSellersStatus', '');
+      comOverview = null;
+      comRanking = null;
+    }catch(error){
+      select.value = previous;
+      comStatus('comSellersStatus', error.message, 'error');
+    }finally{
+      select.disabled = false;
+    }
   });
 
   if(el('comSellersBody')) el('comSellersBody').addEventListener('click', async event => {
@@ -48021,7 +48281,10 @@ function renderHomeTasks(){
       '<td data-label="% itens" class="calc" style="text-align:right" data-com-calc="storeItemsPct">'+escapeHtml(comFormatPct(comShare(store.items, store.targetItems)))+'</td>'+
       '<td data-label="Meta realme"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Meta de realmes da loja" data-com-field="targetRealme" value="'+(Number(store.targetRealme) || 0)+'"></td>'+
       '<td data-label="Realmes feito"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Realmes feitos pela loja" data-com-field="realme" value="'+(Number(store.realme) || 0)+'"></td>'+
-      '<td data-label="% realmes" class="calc" style="text-align:right" data-com-calc="storeRealmePct">'+escapeHtml(comFormatPct(comShare(store.realme, store.targetRealme)))+'</td></tr>';
+      '<td data-label="% realmes" class="calc" style="text-align:right" data-com-calc="storeRealmePct">'+escapeHtml(comFormatPct(comShare(store.realme, store.targetRealme)))+'</td>'+
+      '<td data-label="Meta assistência (R$)">'+comMoneyInput('assistTargetCents', store.assistTargetCents, 'Meta da assistência')+'</td>'+
+      '<td data-label="Feito assistência (R$)">'+comMoneyInput('assistRevenueCents', store.assistRevenueCents, 'Feito da assistência')+'</td>'+
+      '<td data-label="% assistência" class="calc" style="text-align:right" data-com-calc="storeAssistPct">'+escapeHtml(comFormatPct(comShare(store.assistRevenueCents, store.assistTargetCents)))+'</td></tr>';
   }
 
   function comRenderStoreGoalsTotal(){
@@ -48039,7 +48302,7 @@ function renderHomeTasks(){
     const body = el('comStoreGoalsBody');
     if(!body || !comStores) return;
     const rows = comStores.rows || [];
-    body.innerHTML = rows.length ? rows.map(comStoreRowHtml).join('') : '<tr><td colspan="10" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
+    body.innerHTML = rows.length ? rows.map(comStoreRowHtml).join('') : '<tr><td colspan="13" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
     comMaskMoney(body);
     comRenderStoreGoalsTotal();
   }
@@ -48049,7 +48312,7 @@ function renderHomeTasks(){
       comStores = await comApi('/stores?month='+encodeURIComponent(comMonth));
     }catch(error){
       comStores = null;
-      if(comView === 'lojas' && el('comStoreGoalsBody')) el('comStoreGoalsBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(comView === 'lojas' && el('comStoreGoalsBody')) el('comStoreGoalsBody').innerHTML = '<tr><td colspan="13" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
     if(comView === 'lojas') comRenderStoreGoals();
     if(comView === 'ranking') comRenderRanking();
@@ -48064,7 +48327,9 @@ function renderHomeTasks(){
     const items = Math.round(Number(row.querySelector('[data-com-field="items"]').value || 0));
     const targetRealme = Math.round(Number(row.querySelector('[data-com-field="targetRealme"]').value || 0));
     const realme = Math.round(Number(row.querySelector('[data-com-field="realme"]').value || 0));
-    if(targetCents === null || revenueCents === null || ![targetItems, items, targetRealme, realme].every(value => value >= 0)){
+    const assistTargetCents = comMoneyCents(row.querySelector('[data-com-field="assistTargetCents"]'));
+    const assistRevenueCents = comMoneyCents(row.querySelector('[data-com-field="assistRevenueCents"]'));
+    if(targetCents === null || revenueCents === null || assistTargetCents === null || assistRevenueCents === null || ![targetItems, items, targetRealme, realme].every(value => value >= 0)){
       showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
       return;
     }
@@ -48076,7 +48341,10 @@ function renderHomeTasks(){
       store.items = items;
       store.targetRealme = targetRealme;
       store.realme = realme;
+      store.assistTargetCents = assistTargetCents;
+      store.assistRevenueCents = assistRevenueCents;
     }
+    row.querySelector('[data-com-calc="storeAssistPct"]').textContent = comFormatPct(comShare(assistRevenueCents, assistTargetCents));
     row.querySelector('[data-com-calc="storePct"]').textContent = comFormatPct(comShare(revenueCents, targetCents));
     row.querySelector('[data-com-calc="storeItemsPct"]').textContent = comFormatPct(comShare(items, targetItems));
     row.querySelector('[data-com-calc="storeRealmePct"]').textContent = comFormatPct(comShare(realme, targetRealme));
@@ -48085,7 +48353,8 @@ function renderHomeTasks(){
     row.classList.add('saving');
     comQueueSave('store:'+row.dataset.comStore, async () => {
       try{
-        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme})});
+        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme, assistTargetCents, assistRevenueCents})});
+        comOverview = null;
         row.classList.add('saved');
       }catch(error){
         showPurchaseToast(error.message);
@@ -48132,6 +48401,9 @@ function renderHomeTasks(){
       '<td data-label="Anexo mínimo">'+escapeHtml(rule.warrantyAttachTarget+'%')+'</td>'+
       '<td data-label="Crediário">'+escapeHtml(comFormatBps(rule.creditRateBps))+'</td>'+
       '<td data-label="Venda P.A / Unigames">'+escapeHtml(comFormatBps(rule.partnerSaleRateBps || 0))+'</td>'+
+      '<td data-label="Líder / Operacional">'+escapeHtml(rule.roles
+        ? 'LÍDER '+comFormatBps(rule.roles.leader.rateHighBps)+' / '+comFormatBps(rule.roles.leader.rateLowBps)+' · OPERACIONAL '+comFormatBps(rule.roles.operational.rateHighBps)+' / '+comFormatBps(rule.roles.operational.rateLowBps)
+        : 'NÃO PAGA')+'</td>'+
       '<td data-label="Quem alterou">'+escapeHtml(isDefault ? 'REGRA DO CÓDIGO' : (rule.updatedByName || '—'))+'</td>'+
       '<td data-label="Quando">'+escapeHtml(isDefault || !rule.updatedAt ? '—' : formatDateTimeBR(rule.updatedAt))+'</td>'+
       '<td data-label="Ações">'+(canManage && !isDefault ? '<button class="btn-outline" type="button" data-com-rule-edit="'+escapeHtml(rule.id)+'">EDITAR</button>' : '')+'</td></tr>';
@@ -48144,7 +48416,7 @@ function renderHomeTasks(){
       comRulesData = await comApi('/rules');
     }catch(error){
       comRulesData = null;
-      if(body) body.innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(body) body.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
       return;
     }
     comRenderRules();
@@ -48183,6 +48455,15 @@ function renderHomeTasks(){
     el('comRulePartner').value = pct(base.partnerSaleRateBps || 0);
     el('comRuleNotes').value = rule ? (rule.notes || '') : '';
     el('comRuleTiers').innerHTML = base.premiumTiers.map(comTierRowHtml).join('');
+    // Líder/operacional: os valores da vigência ou, sem eles, os do pedido de 10/2026.
+    const roles = base.roles || (comRulesData && comRulesData.roleDefaults);
+    el('comRuleRolesOn').checked = Boolean(base.roles);
+    el('comRuleRoles').hidden = !base.roles;
+    document.querySelectorAll('[data-com-role-field]').forEach(input => {
+      const [group, key] = input.dataset.comRoleField.split('.');
+      const value = roles ? Number(roles[group][key]) : 0;
+      input.value = input.dataset.kind === 'percent' ? value : value / 100;
+    });
     el('comRuleWarning').textContent = comRuleWarningText();
     el('comRuleStatus').textContent = '';
     el('comRuleDialog').showModal();
@@ -48210,7 +48491,21 @@ function renderHomeTasks(){
       const previous = premiumTiers[index - 1];
       if(previous && (tier.percent <= previous.percent || tier.cents <= previous.cents)) throw new Error('AS FAIXAS DA PREMIAÇÃO PRECISAM SER CRESCENTES (% DA META E VALOR).');
     });
+    let roles = null;
+    if(el('comRuleRolesOn').checked){
+      roles = {leader:{}, operational:{}};
+      document.querySelectorAll('[data-com-role-field]').forEach(input => {
+        const [group, key] = input.dataset.comRoleField.split('.');
+        const label = input.closest('.purchase-field').querySelector('label').textContent;
+        const value = Number(input.value);
+        if(input.value === '' || !Number.isFinite(value) || value < 0) throw new Error('INFORME '+label+'.');
+        if(input.dataset.kind === 'bps' && value > 100) throw new Error(label+' PRECISA ESTAR ENTRE 0% E 100%.');
+        if(input.dataset.kind === 'percent' && (!Number.isInteger(value) || value < 1 || value > 1000)) throw new Error(label+' PRECISA SER UM NÚMERO INTEIRO ENTRE 1 E 1000.');
+        roles[group][key] = input.dataset.kind === 'percent' ? value : Math.round(value * 100);
+      });
+    }
     return {
+      roles,
       validFrom,
       revenueRateHighBps: bps('comRuleHigh', '% DO FATURAMENTO BATENDO OS CRITÉRIOS'),
       revenueRateLowBps: bps('comRuleLow', '% DO FATURAMENTO SEM OS CRITÉRIOS'),
@@ -48244,6 +48539,9 @@ function renderHomeTasks(){
   if(el('comRuleTiers')) el('comRuleTiers').addEventListener('click', event => {
     const button = event.target.closest('[data-com-tier-remove]');
     if(button) button.closest('.com-tier-row').remove();
+  });
+  if(el('comRuleRolesOn')) el('comRuleRolesOn').addEventListener('change', () => {
+    el('comRuleRoles').hidden = !el('comRuleRolesOn').checked;
   });
   if(el('comRuleFrom')) el('comRuleFrom').addEventListener('input', () => {
     el('comRuleWarning').textContent = comRuleWarningText();
@@ -48302,6 +48600,179 @@ function renderHomeTasks(){
     }
   });
 
+  // ---------- Indicação (comercial:indications) ----------
+  // SÓ CONTROLE: não gera comissão nem premiação e nada vai para o RH. O
+  // servidor limita à loja de quem tem loja; quem indicou é um funcionário do
+  // RH ou um nome livre. Exclusão é lógica (fica riscada, com o histórico).
+  let comIndData = null;
+  let comIndEditing = null;
+  const COM_IND_FREE = '__livre';
+
+  function comIndFillSelects(){
+    const store = el('comIndStore');
+    const keepStore = store.value;
+    store.innerHTML = (comIndData.stores.length > 1 ? '<option value="">ESCOLHA A LOJA</option>' : '')+
+      comIndData.stores.map(item => '<option value="'+escapeHtml(item.companyId)+'">'+escapeHtml(item.name)+'</option>').join('');
+    if(comIndData.stores.some(item => item.companyId === keepStore)) store.value = keepStore;
+    comIndFillEmployees();
+  }
+
+  // Funcionários da loja escolhida primeiro; "OUTRO" abre o nome livre.
+  function comIndFillEmployees(){
+    const select = el('comIndEmployee');
+    const keep = select.value;
+    const companyId = el('comIndStore').value;
+    const names = new Map(comIndData.stores.map(item => [item.companyId, item.name]));
+    const list = comIndData.employees.slice().sort((a, b) =>
+      Number(b.companyId === companyId) - Number(a.companyId === companyId) || a.fullName.localeCompare(b.fullName, 'pt-BR'));
+    select.innerHTML = '<option value="">ESCOLHA QUEM INDICOU</option><option value="'+COM_IND_FREE+'">OUTRO (DIGITAR O NOME)</option>'+
+      list.map(item => '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(item.fullName+(item.companyId !== companyId && names.get(item.companyId) ? ' — '+names.get(item.companyId) : ''))+'</option>').join('');
+    if(Array.from(select.options).some(option => option.value === keep)) select.value = keep;
+    el('comIndReferrerField').hidden = select.value !== COM_IND_FREE;
+  }
+
+  function comIndResetForm(){
+    comIndEditing = null;
+    el('comIndForm').reset();
+    setCurrencyValue(el('comIndAmount'), '');
+    el('comIndDate').value = todayDateKeyRecife().slice(0, 7) === comMonth ? todayDateKeyRecife() : comMonth+'-01';
+    el('btnComIndSubmit').textContent = 'LANÇAR';
+    el('btnComIndCancel').hidden = true;
+    if(comIndData && comIndData.stores.length === 1) el('comIndStore').value = comIndData.stores[0].companyId;
+    if(comIndData) comIndFillEmployees();
+  }
+
+  function comIndChip(label, count, cents){
+    return '<div class="com-indication-chip">'+escapeHtml(label)+'<strong>'+escapeHtml(comFormatQty(count, 'indicação', 'indicações')+' · '+formatCentsBRL(cents))+'</strong></div>';
+  }
+
+  function comRenderIndications(){
+    const body = el('comIndBody');
+    if(!body || !comIndData) return;
+    comIndFillSelects();
+    if(!comIndEditing && el('comIndDate').value.slice(0, 7) !== comMonth) comIndResetForm();
+    el('comIndTotals').innerHTML =
+      comIndData.byStore.map(store => comIndChip('LOJA · '+store.name, store.count, store.totalCents)).join('')+
+      comIndData.byPerson.map(person => comIndChip('QUEM INDICOU · '+person.name, person.count, person.totalCents)).join('');
+    const active = comIndData.items.filter(item => !item.deletedAt);
+    const deleted = comIndData.items.filter(item => item.deletedAt);
+    const historyHtml = item => item.history.length
+      ? '<details><summary>HISTÓRICO</summary><ul class="com-indication-history">'+item.history.map(entry =>
+          '<li>'+escapeHtml(entry.action+' · '+entry.byName+' · '+formatDateTimeBR(entry.at)+(entry.changes && entry.changes.length ? ' — '+entry.changes.join('; ') : ''))+'</li>').join('')+'</ul></details>'
+      : '';
+    const rowHtml = item =>
+      '<tr'+(item.deletedAt ? ' class="com-ind-deleted"' : '')+'>'+
+        '<td data-label="Data"><strong>'+escapeHtml(formatDateBR(item.date))+'</strong></td>'+
+        '<td data-label="Loja">'+escapeHtml(item.companyName || '—')+'</td>'+
+        '<td data-label="Quem indicou">'+escapeHtml(item.referrerName)+'</td>'+
+        '<td data-label="Cliente">'+escapeHtml(item.customer || '—')+'</td>'+
+        '<td data-label="ID da venda / O.S.">'+escapeHtml(item.reference || '—')+'</td>'+
+        '<td data-label="Valor" style="text-align:right">'+escapeHtml(formatCentsBRL(item.amountCents))+'</td>'+
+        '<td data-label="Observação">'+escapeHtml(item.notes || '—')+'</td>'+
+        '<td data-label="Lançado por">'+escapeHtml(item.createdByName || '—')+
+          (item.deletedAt ? '<br><small>EXCLUÍDA POR '+escapeHtml(item.deletedByName || '—')+'</small>' : '')+historyHtml(item)+'</td>'+
+        '<td data-label="Ações">'+(item.deletedAt ? '' :
+          '<button class="btn-outline" type="button" data-com-ind-edit="'+escapeHtml(item.id)+'">EDITAR</button> '+
+          '<button class="btn-outline" type="button" data-com-ind-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>')+'</td>'+
+      '</tr>';
+    body.innerHTML = active.length || deleted.length
+      ? active.concat(deleted).map(rowHtml).join('')
+      : '<tr><td colspan="9" class="responsive-empty">Nenhuma indicação em '+escapeHtml(comMonthLabelShort(comMonth))+'.</td></tr>';
+  }
+
+  async function comLoadIndications(){
+    try{
+      comIndData = await comApi('/indications?month='+encodeURIComponent(comMonth));
+    }catch(error){
+      comIndData = null;
+      if(el('comIndBody')) el('comIndBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    comRenderIndications();
+  }
+
+  if(el('comIndAmount')) attachCurrencyMask(el('comIndAmount'));
+  if(el('comIndStore')) el('comIndStore').addEventListener('change', () => { if(comIndData) comIndFillEmployees(); });
+  if(el('comIndEmployee')) el('comIndEmployee').addEventListener('change', () => {
+    el('comIndReferrerField').hidden = el('comIndEmployee').value !== COM_IND_FREE;
+  });
+  if(el('btnComIndCancel')) el('btnComIndCancel').addEventListener('click', () => { comIndResetForm(); comStatus('comIndStatus', ''); });
+  if(el('comIndForm')) el('comIndForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const who = el('comIndEmployee').value;
+    const payload = {
+      date: el('comIndDate').value,
+      companyId: el('comIndStore').value,
+      employeeId: who && who !== COM_IND_FREE ? who : '',
+      referrerName: who === COM_IND_FREE ? el('comIndReferrer').value.trim() : '',
+      customer: el('comIndCustomer').value.trim(),
+      reference: el('comIndReference').value.trim(),
+      amountCents: comMoneyCents(el('comIndAmount')) || 0,
+      notes: el('comIndNotes').value.trim()
+    };
+    if(!payload.date) return comStatus('comIndStatus', 'INFORME A DATA.', 'error');
+    if(!payload.companyId) return comStatus('comIndStatus', 'ESCOLHA A LOJA.', 'error');
+    if(!payload.employeeId && !payload.referrerName) return comStatus('comIndStatus', 'INFORME QUEM INDICOU.', 'error');
+    if(!payload.customer && !payload.reference) return comStatus('comIndStatus', 'INFORME O CLIENTE OU O ID DA VENDA / O.S.', 'error');
+    const button = el('btnComIndSubmit');
+    button.disabled = true;
+    try{
+      await comApi('/indications', {
+        method: comIndEditing ? 'PUT' : 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(comIndEditing ? {...payload, id: comIndEditing} : payload)
+      });
+      comStatus('comIndStatus', '');
+      // Lançou em outro mês: a lista acompanha a data.
+      if(payload.date.slice(0, 7) !== comMonth){
+        comMonth = payload.date.slice(0, 7);
+        document.querySelectorAll('[data-com-month]').forEach(input => { input.value = comMonth; });
+        comOverview = null;
+      }
+      comIndResetForm();
+      await comLoadIndications();
+      showPurchaseToast('INDICAÇÃO SALVA.');
+    }catch(error){
+      comStatus('comIndStatus', error.message, 'error');
+    }finally{
+      button.disabled = false;
+    }
+  });
+  if(el('comIndBody')) el('comIndBody').addEventListener('click', async event => {
+    const edit = event.target.closest('[data-com-ind-edit]');
+    const remove = event.target.closest('[data-com-ind-delete]');
+    const id = (edit && edit.dataset.comIndEdit) || (remove && remove.dataset.comIndDelete);
+    const item = id && comIndData && comIndData.items.find(entry => entry.id === id);
+    if(!item) return;
+    if(edit){
+      comIndEditing = item.id;
+      el('comIndDate').value = item.date;
+      el('comIndStore').value = item.companyId;
+      comIndFillEmployees();
+      el('comIndEmployee').value = item.employeeId || COM_IND_FREE;
+      el('comIndReferrerField').hidden = Boolean(item.employeeId);
+      el('comIndReferrer').value = item.employeeId ? '' : item.referrerName;
+      el('comIndCustomer').value = item.customer;
+      el('comIndReference').value = item.reference;
+      setCurrencyValue(el('comIndAmount'), item.amountCents ? (item.amountCents / 100).toFixed(2) : '');
+      el('comIndNotes').value = item.notes;
+      el('btnComIndSubmit').textContent = 'SALVAR EDIÇÃO';
+      el('btnComIndCancel').hidden = false;
+      el('comIndForm').scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+    if(!confirm('EXCLUIR A INDICAÇÃO DE '+item.referrerName+' ('+formatCentsBRL(item.amountCents)+')? ELA FICA NO HISTÓRICO, RISCADA.')) return;
+    remove.disabled = true;
+    try{
+      await comApi('/indications?id='+encodeURIComponent(item.id), {method:'DELETE'});
+      if(comIndEditing === item.id) comIndResetForm();
+      await comLoadIndications();
+    }catch(error){
+      remove.disabled = false;
+      comStatus('comIndStatus', error.message, 'error');
+    }
+  });
+
   // ---------- Abas, carregamento e filtros ----------
   document.querySelectorAll('[data-com-view]').forEach(button => {
     button.addEventListener('click', () => {
@@ -48311,7 +48782,7 @@ function renderHomeTasks(){
         tab.classList.toggle('active', active);
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
       });
-      ['Dashboard','Comissao','Ranking','Vendedores','Crediarios','Lojas','Regras'].forEach(name => {
+      ['Dashboard','Comissao','Ranking','Vendedores','Crediarios','Lojas','Regras','Indicacao'].forEach(name => {
         el('comView'+name).hidden = comView !== name.toLowerCase();
       });
       comStoreFilter = '';
@@ -48320,7 +48791,7 @@ function renderHomeTasks(){
       // Mostra na hora o que já veio do mês (abas de leitura) e SEMPRE busca de
       // novo: outra pessoa pode ter lançado enquanto esta aba estava fechada.
       const data = comView === 'ranking' ? comRanking : comData();
-      const cached = data && data.month === comMonth && !['vendedores', 'crediarios', 'lojas', 'regras'].includes(comView);
+      const cached = data && data.month === comMonth && !['vendedores', 'crediarios', 'lojas', 'regras', 'indicacao'].includes(comView);
       if(cached) comRenderCurrent();
       loadComercialPage('comercialAcompanhamento', {silent: Boolean(cached)});
     });
@@ -48335,6 +48806,7 @@ function renderHomeTasks(){
     if(comView === 'vendedores') comRenderSellersEdit();
     if(comView === 'crediarios') comRenderEntries();
     if(comView === 'lojas') comRenderStoreGoals();
+    if(comView === 'indicacao') comRenderIndications();
   }
 
   if(el('comShowInactive')) el('comShowInactive').addEventListener('change', () => comLoadOverview({silent:true}));
@@ -48362,7 +48834,7 @@ function renderHomeTasks(){
     }catch(error){
       comManage = null;
       const body = el(comView === 'crediarios' ? 'comEntriesBody' : 'comSellersBody');
-      if(body) body.innerHTML = '<tr><td colspan="18" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(body) body.innerHTML = '<tr><td colspan="19" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
       return;
     }
     comRenderCurrent();
@@ -48416,6 +48888,10 @@ function renderHomeTasks(){
     }
     if(comView === 'lojas'){
       await comLoadStores();
+      return;
+    }
+    if(comView === 'indicacao'){
+      await comLoadIndications();
       return;
     }
     await comLoadOverview(opts);

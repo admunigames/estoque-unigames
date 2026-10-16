@@ -14,6 +14,7 @@ import {
   nonNegativeInt,
   safeText,
   sameOrigin,
+  syncHrCommissions,
   type JsonMap,
 } from "../shared";
 
@@ -25,12 +26,16 @@ import {
 //                alcance (`rows`) para editar; o total em R$ só com todas.
 //                `itemStores` = itens e realmes de cada loja (quantidades,
 //                gráficos ITENS/REALMES TOTAIS POR LOJA do Ranking) — para todos.
-//   PUT {month, companyId, targetCents, revenueCents, targetItems, items, targetRealme, realme} → comercial:stores,
-//       só lojas do alcance de quem lança.
+//                `assistPercent` / `totalAssistPercent` = % da ASSISTÊNCIA (META e
+//                FEITO ASSISTÊNCIA), também só %.
+//   PUT {month, companyId, targetCents, revenueCents, targetItems, items, targetRealme, realme,
+//        assistTargetCents, assistRevenueCents} → comercial:stores, só lojas do alcance de quem
+//       lança. Recalcula a comissão de líderes e operacionais no RH.
 
 type GoalRow = {
   companyId: string; targetCents: number; revenueCents: number;
   targetItems: number; items: number; targetRealme: number; realme: number;
+  assistTargetCents: number; assistRevenueCents: number;
 };
 
 export async function GET(request: Request) {
@@ -48,7 +53,8 @@ export async function GET(request: Request) {
       database
         .prepare(
           `SELECT company_id AS companyId, target_cents AS targetCents, revenue_cents AS revenueCents,
-                  target_items AS targetItems, items, target_realme AS targetRealme, realme
+                  target_items AS targetItems, items, target_realme AS targetRealme, realme,
+                  assist_target_cents AS assistTargetCents, assist_revenue_cents AS assistRevenueCents
            FROM commercial_store_goals WHERE month=?1`,
         )
         .bind(month)
@@ -66,6 +72,7 @@ export async function GET(request: Request) {
         companyId: store.companyId,
         name: store.name,
         percent: progressPercent(Number(store.goal?.revenueCents), Number(store.goal?.targetCents)),
+        assistPercent: progressPercent(Number(store.goal?.assistRevenueCents), Number(store.goal?.assistTargetCents)),
       }))
       .sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0) || a.name.localeCompare(b.name, "pt-BR"));
     const itemStores = [...companyNames.entries()]
@@ -78,7 +85,17 @@ export async function GET(request: Request) {
         };
       })
       .filter((store) => store.items > 0 || store.targetItems > 0 || store.realme > 0 || store.targetRealme > 0);
-    const body: JsonMap = { month, items, itemStores, totalPercent: progressPercent(revenueSum, targetSum) };
+    const assist = [...goals.values()].reduce(
+      (sum, goal) => Number(goal.assistTargetCents) > 0
+        ? { target: sum.target + Number(goal.assistTargetCents), revenue: sum.revenue + Number(goal.assistRevenueCents) }
+        : sum,
+      { target: 0, revenue: 0 },
+    );
+    const body: JsonMap = {
+      month, items, itemStores,
+      totalPercent: progressPercent(revenueSum, targetSum),
+      totalAssistPercent: progressPercent(assist.revenue, assist.target),
+    };
 
     const scope = commercialScope(actor);
     if (canManageCommercialStores(actor) && scope) {
@@ -94,6 +111,8 @@ export async function GET(request: Request) {
           items: Number(goals.get(companyId)?.items) || 0,
           targetRealme: Number(goals.get(companyId)?.targetRealme) || 0,
           realme: Number(goals.get(companyId)?.realme) || 0,
+          assistTargetCents: Number(goals.get(companyId)?.assistTargetCents) || 0,
+          assistRevenueCents: Number(goals.get(companyId)?.assistRevenueCents) || 0,
         }));
       if (scope.allStores) body.total = { targetCents: targetSum, revenueCents: revenueSum };
     }
@@ -124,8 +143,10 @@ export async function PUT(request: Request) {
     const items = nonNegativeInt(body.items ?? 0);
     const targetRealme = nonNegativeInt(body.targetRealme ?? 0);
     const realme = nonNegativeInt(body.realme ?? 0);
+    const assistTargetCents = nonNegativeInt(body.assistTargetCents ?? 0);
+    const assistRevenueCents = nonNegativeInt(body.assistRevenueCents ?? 0);
     if (!MONTH_PATTERN.test(month)) return jsonResponse({ error: "MÊS INVÁLIDO." }, 400);
-    if ([targetCents, revenueCents, targetItems, items, targetRealme, realme].some((value) => value === null)) {
+    if ([targetCents, revenueCents, targetItems, items, targetRealme, realme, assistTargetCents, assistRevenueCents].some((value) => value === null)) {
       return jsonResponse({ error: "META E FEITO PRECISAM SER POSITIVOS (OU ZERO)." }, 400);
     }
     const database = await getD1();
@@ -137,17 +158,20 @@ export async function PUT(request: Request) {
       .prepare(
         `INSERT INTO commercial_store_goals
           (id, month, company_id, target_cents, revenue_cents, updated_by, updated_by_name, updated_at,
-           target_items, items, target_realme, realme)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+           target_items, items, target_realme, realme, assist_target_cents, assist_revenue_cents)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
          ON CONFLICT (month, company_id) DO UPDATE SET
            target_cents=excluded.target_cents, revenue_cents=excluded.revenue_cents,
            target_items=excluded.target_items, items=excluded.items,
            target_realme=excluded.target_realme, realme=excluded.realme,
+           assist_target_cents=excluded.assist_target_cents, assist_revenue_cents=excluded.assist_revenue_cents,
            updated_by=excluded.updated_by, updated_by_name=excluded.updated_by_name,
            updated_at=excluded.updated_at`,
       )
-      .bind(crypto.randomUUID(), month, companyId, targetCents, revenueCents, actor.id, actorName(actor), new Date().toISOString(), targetItems, items, targetRealme, realme)
+      .bind(crypto.randomUUID(), month, companyId, targetCents, revenueCents, actor.id, actorName(actor), new Date().toISOString(), targetItems, items, targetRealme, realme, assistTargetCents, assistRevenueCents)
       .run();
+    // Meta/feito da loja e da assistência mudam o líder e os operacionais.
+    await syncHrCommissions(database, month, actor);
     return jsonResponse({ companyId, month });
   } catch (error) {
     console.error("Não foi possível salvar a meta da loja.", error);

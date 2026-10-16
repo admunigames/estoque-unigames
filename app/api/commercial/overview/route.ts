@@ -16,6 +16,7 @@ import {
   identity,
   jsonResponse,
   linkedEmployeeIds,
+  indicationSummary,
   loadSellers,
   safeText,
   withoutInactive,
@@ -43,6 +44,11 @@ import {
 // Vendedor INATIVO no RH some por padrão (Dashboard); ?inactive=1 (aba
 // Comissão e "MOSTRAR INATIVOS" do Dashboard) e ?for=cadastro trazem com
 // inactive=true. A conta vinculada continua vendo o próprio histórico.
+// LÍDER vem em sellers (role='lider', premiação de líder na comissão).
+// OPERACIONAIS vêm à parte (`operationals`), com o mesmo escopo; sem
+// comercial:commission saem só os % e a faixa (nenhum R$). `indications` =
+// resumo do mês da aba Indicação por loja do alcance (não vai para a conta
+// vinculada a um vendedor nem para o cadastro).
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -67,10 +73,12 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const [{ sellers, clock, rules }, linked] = await Promise.all([
+    const [{ sellers: monthSellers, tabOperationals, operationals, clock, rules }, linked] = await Promise.all([
       loadSellers(database, month),
       forCadastro ? Promise.resolve([] as string[]) : linkedEmployeeIds(database, actor.id),
     ]);
+    // A aba Vendedores mostra também quem foi trocado para OPERACIONAL.
+    const sellers = forCadastro ? [...monthSellers, ...tabOperationals] : monthSellers;
     // Conta vinculada a um vendedor: só ele, mesmo que o mês ainda não
     // tenha sido importado (a tela mostra "ainda não importado").
     const ownOnly = linked.length > 0;
@@ -92,6 +100,14 @@ export async function GET(request: Request) {
         const { allCriteriaMet, revenueRateBps, newcomer } = seller.metrics.commission;
         return { ...seller, metrics: { ...seller.metrics, commission: { allCriteriaMet, revenueRateBps, newcomer } } };
       });
+    const scopedOperationals = operationals.filter((person) =>
+      ownOnly ? linked.includes(person.employeeId) : scope.allStores || person.companyId === scope.companyId);
+    const visibleOperationals = canCommission
+      ? scopedOperationals
+      : scopedOperationals.map((person) => {
+        const { assistPercent, storePercent, rateBps, premiumPercent } = person.commission;
+        return { ...person, commission: { assistPercent, storePercent, rateBps, premiumPercent } };
+      });
     return jsonResponse({
       month,
       clock,
@@ -106,6 +122,8 @@ export async function GET(request: Request) {
       canMarkNewcomer: !ownOnly && canMarkCommercialNewcomer(actor),
       rules,
       sellers: visible,
+      operationals: forCadastro ? [] : visibleOperationals,
+      indications: forCadastro || ownOnly ? [] : await indicationSummary(database, month, scope),
     });
   } catch (error) {
     console.error("Não foi possível carregar o Comercial.", error);

@@ -1,6 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { DEFAULT_COMMERCIAL_RULES, parseCommercialRules } from "../../../lib/commercial";
+import { DEFAULT_COMMERCIAL_RULES, DEFAULT_ROLE_RULES, parseCommercialRules } from "../../../lib/commercial";
 import {
   actorName,
   canAccessCommercial,
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   }
   try {
     const items = await loadRules(await getD1());
-    return jsonResponse({ items, defaults: DEFAULT_COMMERCIAL_RULES, canManage: canManageCommercialRules(actor) });
+    return jsonResponse({ items, defaults: DEFAULT_COMMERCIAL_RULES, roleDefaults: DEFAULT_ROLE_RULES, canManage: canManageCommercialRules(actor) });
   } catch (error) {
     console.error("Não foi possível carregar as regras de comissão.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR AS REGRAS DE COMISSÃO." }, 500);
@@ -65,6 +65,7 @@ async function save(request: Request, method: "POST" | "PUT") {
       rules.validFrom, rules.revenueRateHighBps, rules.revenueRateLowBps, JSON.stringify(rules.premiumTiers),
       rules.warrantyRateBps, rules.warrantyAttachTarget, rules.creditRateBps, notes,
       actor.id, actorName(actor), new Date().toISOString(), id, rules.partnerSaleRateBps,
+      rules.roles ? JSON.stringify(rules.roles) : "",
     ];
     await database
       .prepare(
@@ -72,11 +73,11 @@ async function save(request: Request, method: "POST" | "PUT") {
           ? `INSERT INTO commercial_rules
               (valid_from, revenue_rate_high_bps, revenue_rate_low_bps, premium_tiers_json, warranty_rate_bps,
                warranty_attach_target, credit_rate_bps, notes, updated_by, updated_by_name, updated_at, id,
-               partner_sale_rate_bps)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`
+               partner_sale_rate_bps, roles_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`
           : `UPDATE commercial_rules SET valid_from=?1, revenue_rate_high_bps=?2, revenue_rate_low_bps=?3,
                premium_tiers_json=?4, warranty_rate_bps=?5, warranty_attach_target=?6, credit_rate_bps=?7,
-               notes=?8, updated_by=?9, updated_by_name=?10, updated_at=?11, partner_sale_rate_bps=?13
+               notes=?8, updated_by=?9, updated_by_name=?10, updated_at=?11, partner_sale_rate_bps=?13, roles_json=?14
              WHERE id=?12`,
       )
       .bind(...values)

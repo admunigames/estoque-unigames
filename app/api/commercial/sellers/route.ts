@@ -1,7 +1,7 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { NO_COMPANY_ERROR } from "../../../lib/access-scope";
-import { MONTH_PATTERN, isSellerRole } from "../../../lib/commercial";
+import { MONTH_PATTERN, isSellerRole, resolveCommercialRules, roleFromTitle } from "../../../lib/commercial";
 import {
   actorName,
   canManageCommercialGoals,
@@ -10,6 +10,7 @@ import {
   identity,
   jsonResponse,
   loadCompanyNames,
+  loadRules,
   nonNegativeInt,
   previousMonth,
   safeText,
@@ -23,7 +24,10 @@ import {
 // Escopo de loja de sempre (commercialScope): gestor com loja só lança os
 // vendedores da própria loja. Cada mês é uma linha por vendedor em
 // commercial_monthly — virar o mês não apaga nada.
-//   GET    ?month        → funcionários do RH que podem ser adicionados
+//   GET    ?month        → funcionários do RH que podem ser adicionados, com
+//                          o tipo pelo cargo (cargoRole), as trocas de tipo
+//                          do mês (roleOverrides) e se a vigência tem regras
+//                          de líder/operacional (rolesEnabled)
 //   PUT    {month, employeeId, zone, ...números} → cria/atualiza a linha
 //   POST   {month}       → copia vendedores, zona e metas do mês anterior
 //                          (só quem ainda não está no mês; realizado zerado)
@@ -65,9 +69,10 @@ export async function GET(request: Request) {
   const checked = guard(request);
   if (checked.error) return checked.error;
   const { scope } = checked;
+  const requested = safeText(new URL(request.url).searchParams.get("month"), 7);
   try {
     const database = await getD1();
-    const [result, companyNames] = await Promise.all([
+    const [result, companyNames, allRules, overrides] = await Promise.all([
       database
         .prepare(
           `SELECT id, full_name AS fullName, role_title AS roleTitle, company_id AS companyId,
@@ -76,6 +81,11 @@ export async function GET(request: Request) {
         )
         .all<{ id: string; fullName: string; roleTitle: string; companyId: string; companyName: string }>(),
       loadCompanyNames(database),
+      loadRules(database),
+      database
+        .prepare("SELECT employee_id AS employeeId, role FROM commercial_roles WHERE month=?1")
+        .bind(requested)
+        .all<{ employeeId: string; role: string }>(),
     ]);
     const employees = (result.results ?? [])
       .filter((employee) => scope.allStores || employee.companyId === scope.companyId)
@@ -85,8 +95,13 @@ export async function GET(request: Request) {
         companyId: employee.companyId,
         companyName: companyNames.get(employee.companyId) || employee.companyName,
         isSeller: isSellerRole(employee.roleTitle),
+        cargoRole: roleFromTitle(employee.roleTitle),
       }));
-    return jsonResponse({ employees });
+    return jsonResponse({
+      employees,
+      rolesEnabled: MONTH_PATTERN.test(requested) && Boolean(resolveCommercialRules(allRules, requested).roles),
+      roleOverrides: Object.fromEntries((overrides.results ?? []).map((row) => [row.employeeId, row.role])),
+    });
   } catch (error) {
     console.error("Não foi possível carregar os funcionários do Comercial.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR OS FUNCIONÁRIOS." }, 500);
@@ -174,7 +189,20 @@ export async function POST(request: Request) {
       (scope.allStores || row.companyId === scope.companyId));
     if (!toCopy.length) return jsonResponse({ copied: 0 });
     const now = new Date().toISOString();
-    await database.batch(toCopy.map((row) =>
+    // O TIPO trocado à mão (ex.: LÍDER) acompanha quem foi copiado.
+    const roles = await database
+      .prepare("SELECT employee_id AS employeeId, role FROM commercial_roles WHERE month=?1")
+      .bind(from)
+      .all<{ employeeId: string; role: string }>();
+    const copied = new Set(toCopy.map((row) => String(row.employeeId)));
+    const roleStatements = (roles.results ?? []).filter((row) => copied.has(row.employeeId)).map((row) =>
+      database
+        .prepare(
+          `INSERT INTO commercial_roles (id, employee_id, month, role, updated_by, updated_by_name, updated_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) ON CONFLICT (employee_id, month) DO NOTHING`,
+        )
+        .bind(crypto.randomUUID(), row.employeeId, month, row.role, actor.id, actorName(actor), new Date().toISOString()));
+    await database.batch([...roleStatements, ...toCopy.map((row) =>
       database
         .prepare(
           `INSERT INTO commercial_monthly
@@ -189,7 +217,7 @@ export async function POST(request: Request) {
           row.targetRevenueCents, row.targetItems, row.targetSuperItems, row.targetWarrantyCents, row.targetRealme,
           actor.id, actorName(actor), now,
         ),
-    ));
+    )]);
     await syncHrCommissions(database, month, actor);
     return jsonResponse({ copied: toCopy.length }, 201);
   } catch (error) {

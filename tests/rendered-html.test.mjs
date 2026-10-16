@@ -4492,7 +4492,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /#comViewVendedores thead th:first-child,#comViewVendedores tbody td:first-child\{position:sticky;left:0;/);
   // Sem o quadro "Novato no mês" nas regras da Comissão (o vendedor não fica sabendo do novato).
   assert.doesNotMatch(html, /rule\('Novato no mês'/);
-  assert.match(storesRoute, /const body: JsonMap = \{ month, items, itemStores, totalPercent: progressPercent\(revenueSum, targetSum\) \};/);
+  assert.match(storesRoute, /month, items, itemStores,\s*totalPercent: progressPercent\(revenueSum, targetSum\),\s*totalAssistPercent: progressPercent\(assist\.revenue, assist\.target\),/);
   assert.match(storesRoute, /if \(canManageCommercialStores\(actor\) && scope\)/);
   // Ao vivo: qualquer escrita em /api/commercial avisa o canal "commercial".
   assert.match(liveEvents, /if \(path\.startsWith\("\/api\/commercial\/"\)\) \{[\s\S]*?module: "commercial", audience: \{ kind: "all" \}/);
@@ -4538,8 +4538,11 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</);
   assert.match(html, /'comercial:rules':'Comercial: Cadastro de Regras de Comissão'/);
   assert.doesNotMatch(html, /value="comercial:(view|manage)"/);
-  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores",/);
-  assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores",\s*\],/);
+  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores", "comercial:indications",/);
+  assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores", "comercial:indications",\s*\],/);
+  // Aba Indicação (só controle) com permissão própria.
+  assert.match(html, /data-com-view="indicacao" data-permission="comercial:indications">Indicação</);
+  assert.match(html, /name="userPermission" value="comercial:indications"> INDICAÇÃO/);
   // As antigas viram as novas na leitura (ninguém perde acesso).
   assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission"\],/);
   assert.match(workerSource, /"comercial:manage": \["comercial:goals"\],/);

@@ -3681,6 +3681,9 @@ export const commercialRules = pgTable(
     creditRateBps: integer("credit_rate_bps").notNull().default(0),
     // VENDA P.A / VENDA UNIGAMES
     partnerSaleRateBps: integer("partner_sale_rate_bps").notNull().default(0),
+    // LÍDER COMERCIAL e OPERACIONAL (RoleRules em app/lib/commercial.ts);
+    // '' = vigência sem essas regras (líder é vendedor comum, sem operacionais).
+    rolesJson: text("roles_json").notNull().default(""),
     notes: text("notes").notNull().default(""),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
@@ -3747,11 +3750,67 @@ export const commercialStoreGoals = pgTable(
     items: integer("items").notNull().default(0),
     targetRealme: integer("target_realme").notNull().default(0),
     realme: integer("realme").notNull().default(0),
+    // META ASSISTÊNCIA / FEITO ASSISTÊNCIA (R$) — comissão do OPERACIONAL e
+    // premiação do LÍDER.
+    assistTargetCents: integer("assist_target_cents").notNull().default(0),
+    assistRevenueCents: integer("assist_revenue_cents").notNull().default(0),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(""),
   },
   (table) => [uniqueIndex("commercial_store_goals_month_company_idx").on(table.month, table.companyId)],
+);
+
+// Comercial — TIPO do colaborador no mês escolhido à mão na aba Vendedores
+// ('vendedor' | 'lider' | 'operacional'). Sem linha, o tipo vem do cargo do RH.
+export const commercialRoles = pgTable(
+  "commercial_roles",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    // YYYY-MM
+    month: text("month").notNull(),
+    role: text("role").notNull(),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [uniqueIndex("commercial_roles_employee_month_idx").on(table.employeeId, table.month)],
+);
+
+// Comercial > Indicação — SÓ controle (não gera comissão, premiação nem vai
+// para o RH). Quem indicou: funcionário do RH (employee_id) ou texto livre
+// (referrer_name). Quem criou, editou e excluiu fica em history_json.
+export const commercialIndications = pgTable(
+  "commercial_indications",
+  {
+    id: text("id").primaryKey(),
+    // YYYY-MM (derivado de date)
+    month: text("month").notNull(),
+    // YYYY-MM-DD
+    date: text("date").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    employeeId: text("employee_id").notNull().default(""),
+    referrerName: text("referrer_name").notNull().default(""),
+    customer: text("customer").notNull().default(""),
+    // ID da venda / O.S.
+    reference: text("reference").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+    // Exclusão lógica: some dos totais, mas fica no histórico da aba.
+    deletedAt: text("deleted_at").notNull().default(""),
+    deletedByName: text("deleted_by_name").notNull().default(""),
+    // [{action: 'CRIOU'|'EDITOU'|'EXCLUIU', byName, at, changes: string[]}]
+    historyJson: text("history_json").notNull().default("[]"),
+  },
+  (table) => [index("commercial_indications_month_idx").on(table.month, table.companyId)],
 );
 
 // Comercial — histórico de importações da planilha (auditoria; importação
