@@ -3754,11 +3754,36 @@ export const commercialStoreGoals = pgTable(
     // premiação do LÍDER.
     assistTargetCents: integer("assist_target_cents").notNull().default(0),
     assistRevenueCents: integer("assist_revenue_cents").notNull().default(0),
+    // INDICAÇÃO (quantidade) e R$ DE INDICAÇÃO da loja — só controle.
+    indicationQty: integer("indication_qty").notNull().default(0),
+    indicationCents: integer("indication_cents").notNull().default(0),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(""),
   },
   (table) => [uniqueIndex("commercial_store_goals_month_company_idx").on(table.month, table.companyId)],
+);
+
+// Comercial > Meta do Fim de Semana — meta e feito de cada loja por fim de
+// semana (lançados à mão, aba própria). SÓ CONTROLE: não alimenta vendedores,
+// comissão nem RH. weekend = sábado do fim de semana (YYYY-MM-DD); month =
+// mês desse sábado.
+export const commercialWeekendGoals = pgTable(
+  "commercial_weekend_goals",
+  {
+    id: text("id").primaryKey(),
+    weekend: text("weekend").notNull(),
+    month: text("month").notNull(),
+    companyId: text("company_id").notNull(),
+    targetCents: integer("target_cents").notNull().default(0),
+    revenueCents: integer("revenue_cents").notNull().default(0),
+    targetItems: integer("target_items").notNull().default(0),
+    items: integer("items").notNull().default(0),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [uniqueIndex("commercial_weekend_goals_weekend_company_idx").on(table.weekend, table.companyId)],
 );
 
 // Comercial — TIPO do colaborador no mês escolhido à mão na aba Vendedores

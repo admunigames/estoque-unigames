@@ -9,7 +9,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 const db = await setupRouteDb([
   "shared_state", "hr_employees", "commercial_monthly", "commercial_rules", "commercial_newcomers",
   "commercial_credit_entries", "commercial_store_goals", "hr_commissions", "hr_commission_items", "hr_payroll_settings",
-  "commercial_roles", "commercial_indications",
+  "commercial_roles", "commercial_indications", "commercial_weekend_goals",
 ]);
 const migration = await readFile(new URL("../drizzle/0098_comercial_lider_operacional_indicacao.sql", import.meta.url), "utf8");
 
@@ -23,6 +23,8 @@ const storesRoute = await import("../app/api/commercial/stores/route.ts");
 const rankingRoute = await import("../app/api/commercial/ranking/route.ts");
 const newcomersRoute = await import("../app/api/commercial/newcomers/route.ts");
 const indicationsRoute = await import("../app/api/commercial/indications/route.ts");
+const weekendRoute = await import("../app/api/commercial/weekend/route.ts");
+const migration0099 = await readFile(new URL("../drizzle/0099_comercial_fim_de_semana_indicacao_loja.sql", import.meta.url), "utf8");
 const hrCommissionsRoute = await import("../app/api/hr-payroll/commissions/route.ts");
 
 const STORE_A = "clojaalfa1";
@@ -389,4 +391,60 @@ test("migration 0098: só ADD COLUMN / CREATE TABLE/INDEX (e RLS nas tabelas nov
     assert.match(statement, /^(ALTER TABLE "\w+" ADD COLUMN IF NOT EXISTS|CREATE TABLE IF NOT EXISTS|CREATE (UNIQUE )?INDEX IF NOT EXISTS|ALTER TABLE "commercial_(roles|indications)" ENABLE ROW LEVEL SECURITY;$)/, statement);
   }
   assert.doesNotMatch(migration, /\b(DROP|DELETE|UPDATE|INSERT|TRUNCATE|RENAME)\b/i);
+});
+
+test("Meta Loja: INDICAÇÃO (quantidade e R$) por loja, só controle — não muda comissão nem RH", async () => {
+  const hrBefore = db.sqlite.prepare("SELECT employee_id AS e, commission_cents AS c FROM hr_commissions ORDER BY e, month").all().map((row) => ({ ...row }));
+  await putStore("2026-10", STORE_A, {
+    targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 1_200_000,
+    indicationQty: 7, indicationCents: 350_000,
+  });
+  const bad = await callRoute(storesRoute.PUT, ADMIN, "PUT", "/api/commercial/stores", { month: "2026-10", companyId: STORE_A, indicationQty: -1 });
+  assert.equal(bad.status, 400);
+  const editor = await (await callRoute(storesRoute.GET, ADMIN, "GET", "/api/commercial/stores?month=2026-10")).json();
+  const row = editor.rows.find((item) => item.companyId === STORE_A);
+  assert.deepEqual([row.indicationQty, row.indicationCents, row.assistRevenueCents], [7, 350_000, 1_200_000]);
+  const viewer = await (await callRoute(storesRoute.GET, DASHBOARD, "GET", "/api/commercial/stores?month=2026-10")).json();
+  assert.equal(JSON.stringify(viewer).includes("indication"), false, "quem só vê o painel não recebe a indicação");
+  const hrAfter = db.sqlite.prepare("SELECT employee_id AS e, commission_cents AS c FROM hr_commissions ORDER BY e, month").all().map((row) => ({ ...row }));
+  assert.deepEqual(hrAfter, hrBefore);
+});
+
+test("Meta do Fim de Semana: comercial:stores, por sábado, escopo de loja, total; só controle", async () => {
+  const STORES_A = { id: "u-stores-a", companyId: STORE_A, permissions: ["comercial:stores"] };
+  const put = (user, body) => callRoute(weekendRoute.PUT, user, "PUT", "/api/commercial/weekend", body);
+  const get = async (user, query) => (await callRoute(weekendRoute.GET, user, "GET", `/api/commercial/weekend?${query}`)).json();
+  const hrBefore = db.sqlite.prepare("SELECT COUNT(*) AS n, SUM(commission_cents) AS c FROM hr_commissions").get();
+  const sellersBefore = db.sqlite.prepare("SELECT COUNT(*) AS n FROM commercial_monthly").get().n;
+
+  assert.equal((await callRoute(weekendRoute.GET, DASHBOARD, "GET", "/api/commercial/weekend?month=2026-10")).status, 403);
+  assert.equal((await put(ADMIN, { weekend: "2026-10-12", companyId: STORE_A })).status, 400, "domingo não é a chave do fim de semana");
+  assert.equal((await put(STORES_A, { weekend: "2026-10-10", companyId: STORE_B })).status, 404, "loja de fora do alcance");
+  assert.equal((await put(ADMIN, { weekend: "2026-10-10", companyId: STORE_A, revenueCents: -5 })).status, 400);
+  assert.equal((await put(STORES_A, { weekend: "2026-10-10", companyId: STORE_A, revenueCents: 7_010_916, targetCents: 7_000_000, targetItems: 150, items: 95 })).status, 200);
+  assert.equal((await put(ADMIN, { weekend: "2026-10-10", companyId: STORE_B, revenueCents: 3_000_000, targetCents: 6_000_000, targetItems: 100, items: 50 })).status, 200);
+  assert.equal((await put(ADMIN, { weekend: "2026-10-17", companyId: STORE_A, revenueCents: 1, targetCents: 2 })).status, 200);
+
+  const all = await get(ADMIN, "month=2026-10&weekend=2026-10-10");
+  assert.deepEqual(all.weekends, ["2026-10-03", "2026-10-10", "2026-10-17", "2026-10-24", "2026-10-31"]);
+  assert.equal(all.weekend, "2026-10-10");
+  assert.deepEqual(all.total, { targetCents: 13_000_000, revenueCents: 10_010_916, percent: 77, targetItems: 250, items: 145 });
+  const mine = await get(STORES_A, "month=2026-10&weekend=2026-10-10");
+  assert.deepEqual(mine.rows.map((row) => row.companyId), [STORE_A]);
+  assert.equal(mine.total.revenueCents, 7_010_916);
+  // Outro fim de semana é outro registro.
+  assert.equal((await get(ADMIN, "month=2026-10&weekend=2026-10-17")).total.revenueCents, 1);
+  // Fim de semana inválido cai num sábado do mês.
+  assert.ok(all.weekends.includes((await get(ADMIN, "month=2026-10&weekend=2026-10-12")).weekend));
+
+  assert.deepEqual(db.sqlite.prepare("SELECT COUNT(*) AS n, SUM(commission_cents) AS c FROM hr_commissions").get(), hrBefore);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM commercial_monthly").get().n, sellersBefore);
+});
+
+test("migration 0099: só ADD COLUMN / CREATE TABLE/INDEX (e RLS na tabela nova)", () => {
+  const statements = migration0099.split("--> statement-breakpoint").map((part) => part.replace(/^--.*$/gm, "").trim()).filter(Boolean);
+  for (const statement of statements) {
+    assert.match(statement, /^(ALTER TABLE "\w+" ADD COLUMN IF NOT EXISTS|CREATE TABLE IF NOT EXISTS|CREATE (UNIQUE )?INDEX IF NOT EXISTS|ALTER TABLE "commercial_weekend_goals" ENABLE ROW LEVEL SECURITY;$)/, statement);
+  }
+  assert.doesNotMatch(migration0099, /\b(DROP|DELETE|UPDATE|INSERT|TRUNCATE|RENAME)\b/i);
 });

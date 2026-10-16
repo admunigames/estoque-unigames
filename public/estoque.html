@@ -3307,6 +3307,7 @@
   .com-edit-table tr.saving td{opacity:.7}
   .com-edit-table tr.com-assist-row td{border-top:0;background:rgba(79,134,189,.05)}
   .com-edit-table tr.com-assist-row td.nome{padding-left:22px}
+  .com-edit-table tr.com-weekend-total td{border-top:2px solid var(--surface-border);font-weight:900}
   @media (max-width:680px){ .com-edit-table tbody td.com-assist-pad{display:none} }
   .com-edit-table tr.saved td:first-child{box-shadow:inset 3px 0 0 #54c48a}
   /* Aba Vendedores (18 colunas): a tabela rola DENTRO do quadro (a barra
@@ -7050,6 +7051,7 @@
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="vendedores" data-permission="comercial:goals">Vendedores</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="crediarios" data-permission="comercial:credit">Crediários</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="lojas" data-permission="comercial:stores">Meta Loja</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="fimsemana" data-permission="comercial:stores">Meta do Fim de Semana</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="regras" data-permission="comercial:rules">Regras de Comissão</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="indicacao" data-permission="comercial:indications">Indicação</button>
       </div>
@@ -7179,8 +7181,24 @@
         <div class="table-panel responsive-table com-edit-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Loja</th><th>Meta da loja (R$)</th><th>Feito da loja (R$)</th><th style="text-align:right">% feito ÷ meta</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th><th>Meta realme</th><th>Realmes feito</th><th style="text-align:right">% realmes</th></tr></thead>
-              <tbody id="comStoreGoalsBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th>Loja</th><th>Meta da loja (R$)</th><th>Feito da loja (R$)</th><th style="text-align:right">% feito ÷ meta</th><th>Indicação (qtd.)</th><th>R$ de indicação</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th><th>Meta realme</th><th>Realmes feito</th><th style="text-align:right">% realmes</th></tr></thead>
+              <tbody id="comStoreGoalsBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="com-view-panel" id="comViewFimsemana" hidden>
+        <!-- Meta do Fim de Semana: SÓ CONTROLE (como a Meta Loja, mas por fim
+             de semana) — não alimenta vendedores, comissão nem RH. -->
+        <div class="dre-toolbar-actions com-rules-actions">
+          <div class="field"><label for="comWeekendSelect">Fim de semana</label><select id="comWeekendSelect"></select></div>
+        </div>
+        <div class="table-panel responsive-table com-edit-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Loja</th><th>Feito no fim de semana (R$)</th><th>Meta do fim de semana (R$)</th><th style="text-align:right">Percentual</th><th>Meta itens</th><th>Itens vendidos</th></tr></thead>
+              <tbody id="comWeekendBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -47079,7 +47097,7 @@ function renderHomeTasks(){
   }
 
   function comData(){
-    if(comView === 'regras' || comView === 'lojas' || comView === 'indicacao') return null;
+    if(['regras', 'lojas', 'indicacao', 'fimsemana'].includes(comView)) return null;
     return comView === 'vendedores' || comView === 'crediarios' ? comManage : comOverview;
   }
 
@@ -47115,7 +47133,7 @@ function renderHomeTasks(){
     const ownOnly = comView !== 'ranking' && Boolean(data && data.ownOnly);
     const allStores = comView === 'ranking' || Boolean(data && data.allStores);
     // Abas de atualização: sem filtros (a lista já é a do alcance de quem lança).
-    const editing = ['vendedores', 'crediarios', 'lojas', 'regras', 'indicacao'].includes(comView);
+    const editing = ['vendedores', 'crediarios', 'lojas', 'regras', 'indicacao', 'fimsemana'].includes(comView);
     if(el('comStoreField')) el('comStoreField').hidden = !data || ownOnly || editing || comView === 'ranking' || !allStores;
     // No Ranking, Zona e "Rankear por" só valem para a subaba VENDEDORES.
     const storeChart = comView === 'ranking' && comRankSub !== 'vendedores';
@@ -48273,6 +48291,9 @@ function renderHomeTasks(){
       '<td data-label="Meta da loja (R$)">'+comMoneyInput('targetCents', store.targetCents, 'Meta da loja')+'</td>'+
       '<td data-label="Feito da loja (R$)">'+comMoneyInput('revenueCents', store.revenueCents, 'Feito da loja')+'</td>'+
       '<td data-label="% feito ÷ meta" class="calc" style="text-align:right" data-com-calc="storePct">'+escapeHtml(comFormatPct(comShare(store.revenueCents, store.targetCents)))+'</td>'+
+      // INDICAÇÃO da loja no mês: só controle (não entra em comissão).
+      '<td data-label="Indicação (qtd.)"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Quantidade de indicações da loja" data-com-field="indicationQty" value="'+(Number(store.indicationQty) || 0)+'"></td>'+
+      '<td data-label="R$ de indicação">'+comMoneyInput('indicationCents', store.indicationCents, 'Valor das indicações da loja')+'</td>'+
       '<td data-label="Meta itens"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Meta de itens da loja" data-com-field="targetItems" value="'+(Number(store.targetItems) || 0)+'"></td>'+
       '<td data-label="Itens feito"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Itens feitos pela loja" data-com-field="items" value="'+(Number(store.items) || 0)+'"></td>'+
       '<td data-label="% itens" class="calc" style="text-align:right" data-com-calc="storeItemsPct">'+escapeHtml(comFormatPct(comShare(store.items, store.targetItems)))+'</td>'+
@@ -48286,7 +48307,7 @@ function renderHomeTasks(){
       '<td data-label="Meta da assistência (R$)">'+comMoneyInput('assistTargetCents', store.assistTargetCents, 'Meta da assistência')+'</td>'+
       '<td data-label="Feito da assistência (R$)">'+comMoneyInput('assistRevenueCents', store.assistRevenueCents, 'Feito da assistência')+'</td>'+
       '<td data-label="% assistência" class="calc" style="text-align:right" data-com-calc="storeAssistPct">'+escapeHtml(comFormatPct(comShare(store.assistRevenueCents, store.assistTargetCents)))+'</td>'+
-      '<td class="com-assist-pad" colspan="6"></td></tr>';
+      '<td class="com-assist-pad" colspan="8"></td></tr>';
   }
 
   function comRenderStoreGoalsTotal(){
@@ -48304,7 +48325,7 @@ function renderHomeTasks(){
     const body = el('comStoreGoalsBody');
     if(!body || !comStores) return;
     const rows = comStores.rows || [];
-    body.innerHTML = rows.length ? rows.map(comStoreRowHtml).join('') : '<tr><td colspan="10" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
+    body.innerHTML = rows.length ? rows.map(comStoreRowHtml).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
     comMaskMoney(body);
     comRenderStoreGoalsTotal();
   }
@@ -48314,7 +48335,7 @@ function renderHomeTasks(){
       comStores = await comApi('/stores?month='+encodeURIComponent(comMonth));
     }catch(error){
       comStores = null;
-      if(comView === 'lojas' && el('comStoreGoalsBody')) el('comStoreGoalsBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(comView === 'lojas' && el('comStoreGoalsBody')) el('comStoreGoalsBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
     if(comView === 'lojas') comRenderStoreGoals();
     if(comView === 'ranking') comRenderRanking();
@@ -48334,7 +48355,9 @@ function renderHomeTasks(){
     const realme = Math.round(Number(field('realme').value || 0));
     const assistTargetCents = comMoneyCents(field('assistTargetCents'));
     const assistRevenueCents = comMoneyCents(field('assistRevenueCents'));
-    if(targetCents === null || revenueCents === null || assistTargetCents === null || assistRevenueCents === null || ![targetItems, items, targetRealme, realme].every(value => value >= 0)){
+    const indicationQty = Math.round(Number(field('indicationQty').value || 0));
+    const indicationCents = comMoneyCents(field('indicationCents'));
+    if(targetCents === null || revenueCents === null || assistTargetCents === null || assistRevenueCents === null || indicationCents === null || ![targetItems, items, targetRealme, realme, indicationQty].every(value => value >= 0)){
       showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
       return;
     }
@@ -48348,6 +48371,8 @@ function renderHomeTasks(){
       store.realme = realme;
       store.assistTargetCents = assistTargetCents;
       store.assistRevenueCents = assistRevenueCents;
+      store.indicationQty = indicationQty;
+      store.indicationCents = indicationCents;
     }
     field('storeAssistPct').textContent = comFormatPct(comShare(assistRevenueCents, assistTargetCents));
     field('storePct').textContent = comFormatPct(comShare(revenueCents, targetCents));
@@ -48358,8 +48383,103 @@ function renderHomeTasks(){
     row.classList.add('saving');
     comQueueSave('store:'+row.dataset.comStore, async () => {
       try{
-        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme, assistTargetCents, assistRevenueCents})});
+        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme, assistTargetCents, assistRevenueCents, indicationQty, indicationCents})});
         comOverview = null;
+        row.classList.add('saved');
+      }catch(error){
+        showPurchaseToast(error.message);
+      }finally{
+        row.classList.remove('saving');
+      }
+    });
+  });
+
+  // ----- Meta do Fim de Semana (comercial:stores) — só controle -----
+  // Cada fim de semana é guardado pelo SÁBADO; o seletor lista os sábados do
+  // mês escolhido.
+  let comWeekend = null;
+  let comWeekendKey = '';
+
+  function comWeekendLabel(saturday){
+    const day = new Date(saturday+'T12:00:00');
+    const sunday = new Date(day.getTime() + 86400000);
+    const short = date => String(date.getDate()).padStart(2, '0')+'/'+String(date.getMonth() + 1).padStart(2, '0');
+    return short(day)+' E '+short(sunday)+' (SÁB. E DOM.)';
+  }
+
+  function comWeekendTotalHtml(){
+    const sum = key => comWeekend.rows.reduce((total, row) => total + row[key], 0);
+    return '<td data-label="Loja" class="nome"><strong>TOTAL</strong></td>'+
+      '<td data-label="Feito no fim de semana (R$)" class="calc">'+escapeHtml(formatCentsBRL(sum('revenueCents')))+'</td>'+
+      '<td data-label="Meta do fim de semana (R$)" class="calc">'+escapeHtml(formatCentsBRL(sum('targetCents')))+'</td>'+
+      '<td data-label="Percentual" class="calc" style="text-align:right">'+escapeHtml(comFormatPct(comShare(sum('revenueCents'), sum('targetCents'))))+'</td>'+
+      '<td data-label="Meta itens" class="calc">'+sum('targetItems')+'</td>'+
+      '<td data-label="Itens vendidos" class="calc">'+sum('items')+'</td>';
+  }
+
+  function comRenderWeekend(){
+    const body = el('comWeekendBody');
+    if(!body || !comWeekend) return;
+    el('comWeekendSelect').innerHTML = comWeekend.weekends.map(day =>
+      '<option value="'+day+'"'+(day === comWeekend.weekend ? ' selected' : '')+'>'+escapeHtml(comWeekendLabel(day))+'</option>').join('');
+    const qty = (field, value, label) => '<input type="number" min="0" step="1" inputmode="numeric" aria-label="'+escapeHtml(label)+'" data-com-field="'+field+'" value="'+(Number(value) || 0)+'">';
+    body.innerHTML = comWeekend.rows.length
+      ? comWeekend.rows.map(row =>
+        '<tr data-com-weekend-store="'+escapeHtml(row.companyId)+'">'+
+          '<td data-label="Loja" class="nome"><strong>'+escapeHtml(row.name)+'</strong></td>'+
+          '<td data-label="Feito no fim de semana (R$)">'+comMoneyInput('revenueCents', row.revenueCents, 'Feito no fim de semana')+'</td>'+
+          '<td data-label="Meta do fim de semana (R$)">'+comMoneyInput('targetCents', row.targetCents, 'Meta do fim de semana')+'</td>'+
+          '<td data-label="Percentual" class="calc" style="text-align:right" data-com-calc="weekendPct">'+escapeHtml(comFormatPct(comShare(row.revenueCents, row.targetCents)))+'</td>'+
+          '<td data-label="Meta itens">'+qty('targetItems', row.targetItems, 'Meta de itens do fim de semana')+'</td>'+
+          '<td data-label="Itens vendidos">'+qty('items', row.items, 'Itens vendidos no fim de semana')+'</td></tr>').join('')+
+        '<tr class="com-weekend-total" id="comWeekendTotal">'+comWeekendTotalHtml()+'</tr>'
+      : '<tr><td colspan="6" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
+    comMaskMoney(body);
+  }
+
+  async function comLoadWeekend(){
+    try{
+      const keep = comWeekendKey && comWeekendKey.slice(0, 7) === comMonth ? '&weekend='+encodeURIComponent(comWeekendKey) : '';
+      comWeekend = await comApi('/weekend?month='+encodeURIComponent(comMonth)+keep);
+      comWeekendKey = comWeekend.weekend;
+    }catch(error){
+      comWeekend = null;
+      if(el('comWeekendBody')) el('comWeekendBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    comRenderWeekend();
+  }
+
+  if(el('comWeekendSelect')) el('comWeekendSelect').addEventListener('change', () => {
+    comWeekendKey = el('comWeekendSelect').value;
+    comLoadWeekend();
+  });
+
+  if(el('comWeekendBody')) el('comWeekendBody').addEventListener('change', event => {
+    const row = event.target.closest('tr[data-com-weekend-store]');
+    if(!row || !event.target.matches('[data-com-field]') || !comWeekend) return;
+    const companyId = row.dataset.comWeekendStore;
+    const weekend = comWeekend.weekend;
+    const payload = {
+      weekend, companyId,
+      revenueCents: comMoneyCents(row.querySelector('[data-com-field="revenueCents"]')),
+      targetCents: comMoneyCents(row.querySelector('[data-com-field="targetCents"]')),
+      targetItems: Math.round(Number(row.querySelector('[data-com-field="targetItems"]').value || 0)),
+      items: Math.round(Number(row.querySelector('[data-com-field="items"]').value || 0))
+    };
+    if(payload.revenueCents === null || payload.targetCents === null || !(payload.targetItems >= 0 && payload.items >= 0)){
+      showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
+      return;
+    }
+    const local = comWeekend.rows.find(item => item.companyId === companyId);
+    if(local) Object.assign(local, payload);
+    row.querySelector('[data-com-calc="weekendPct"]').textContent = comFormatPct(comShare(payload.revenueCents, payload.targetCents));
+    if(el('comWeekendTotal')) el('comWeekendTotal').innerHTML = comWeekendTotalHtml();
+    row.classList.remove('saved');
+    row.classList.add('saving');
+    comQueueSave('weekend:'+weekend+':'+companyId, async () => {
+      try{
+        await comApi('/weekend', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
         row.classList.add('saved');
       }catch(error){
         showPurchaseToast(error.message);
@@ -48787,7 +48907,7 @@ function renderHomeTasks(){
         tab.classList.toggle('active', active);
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
       });
-      ['Dashboard','Comissao','Ranking','Vendedores','Crediarios','Lojas','Regras','Indicacao'].forEach(name => {
+      ['Dashboard','Comissao','Ranking','Vendedores','Crediarios','Lojas','Fimsemana','Regras','Indicacao'].forEach(name => {
         el('comView'+name).hidden = comView !== name.toLowerCase();
       });
       comStoreFilter = '';
@@ -48796,7 +48916,7 @@ function renderHomeTasks(){
       // Mostra na hora o que já veio do mês (abas de leitura) e SEMPRE busca de
       // novo: outra pessoa pode ter lançado enquanto esta aba estava fechada.
       const data = comView === 'ranking' ? comRanking : comData();
-      const cached = data && data.month === comMonth && !['vendedores', 'crediarios', 'lojas', 'regras', 'indicacao'].includes(comView);
+      const cached = data && data.month === comMonth && !['vendedores', 'crediarios', 'lojas', 'regras', 'indicacao', 'fimsemana'].includes(comView);
       if(cached) comRenderCurrent();
       loadComercialPage('comercialAcompanhamento', {silent: Boolean(cached)});
     });
@@ -48812,6 +48932,7 @@ function renderHomeTasks(){
     if(comView === 'crediarios') comRenderEntries();
     if(comView === 'lojas') comRenderStoreGoals();
     if(comView === 'indicacao') comRenderIndications();
+    if(comView === 'fimsemana') comRenderWeekend();
   }
 
   if(el('comShowInactive')) el('comShowInactive').addEventListener('change', () => comLoadOverview({silent:true}));
@@ -48897,6 +49018,10 @@ function renderHomeTasks(){
     }
     if(comView === 'indicacao'){
       await comLoadIndications();
+      return;
+    }
+    if(comView === 'fimsemana'){
+      await comLoadWeekend();
       return;
     }
     await comLoadOverview(opts);

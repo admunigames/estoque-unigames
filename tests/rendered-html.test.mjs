@@ -4542,6 +4542,8 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores", "comercial:indications",\s*\],/);
   // Aba Indicação (só controle) com permissão própria.
   assert.match(html, /data-com-view="indicacao" data-permission="comercial:indications">Indicação</);
+  // Meta do Fim de Semana: ao lado da Meta Loja, mesma permissão (só controle).
+  assert.match(html, /data-com-view="lojas" data-permission="comercial:stores">Meta Loja<\/button>\s*<button[^>]*data-com-view="fimsemana" data-permission="comercial:stores">Meta do Fim de Semana</);
   assert.match(html, /name="userPermission" value="comercial:indications"> INDICAÇÃO/);
   // As antigas viram as novas na leitura (ninguém perde acesso).
   assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission"\],/);
