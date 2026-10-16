@@ -20,26 +20,27 @@ import {
 // Aba META DO FIM DE SEMANA (comercial:weekend_view ver, comercial:weekend editar): feito, meta,
 // meta de itens e itens vendidos de cada loja POR FIM DE SEMANA, lançados à
 // mão. SÓ CONTROLE: não alimenta vendedores, comissão nem RH (nenhum
-// syncHrCommissions aqui). O fim de semana é identificado pelo SÁBADO
-// (YYYY-MM-DD) e pertence ao mês desse sábado.
-//   GET ?month&weekend → sábados do mês, linhas das lojas do alcance e total
+// syncHrCommissions aqui). O fim de semana vai de SEXTA a DOMINGO, é
+// identificado pela SEXTA (YYYY-MM-DD) e pertence ao mês dessa sexta
+// (decisão do usuário, 2026-10-16).
+//   GET ?month&weekend → sextas do mês, linhas das lojas do alcance e total
 //   PUT {weekend, companyId, targetCents, revenueCents, targetItems, items}
 
 type Row = { companyId: string; targetCents: number; revenueCents: number; targetItems: number; items: number };
 
-/** Sábados do mês (YYYY-MM-DD). */
-function saturdaysOf(month: string): string[] {
+/** Sextas-feiras do mês (YYYY-MM-DD): o início de cada fim de semana. */
+function fridaysOf(month: string): string[] {
   const [year, monthNumber] = month.split("-").map(Number);
   const days = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
   const list: string[] = [];
   for (let day = 1; day <= days; day++) {
-    if (new Date(Date.UTC(year, monthNumber - 1, day)).getUTCDay() === 6) list.push(`${month}-${String(day).padStart(2, "0")}`);
+    if (new Date(Date.UTC(year, monthNumber - 1, day)).getUTCDay() === 5) list.push(`${month}-${String(day).padStart(2, "0")}`);
   }
   return list;
 }
 
-function isSaturday(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && MONTH_PATTERN.test(value.slice(0, 7)) && saturdaysOf(value.slice(0, 7)).includes(value);
+function isFriday(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && MONTH_PATTERN.test(value.slice(0, 7)) && fridaysOf(value.slice(0, 7)).includes(value);
 }
 
 function guard(request: Request) {
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
   const today = todayInTimezone();
   const requested = safeText(url.searchParams.get("month"), 7);
   const month = MONTH_PATTERN.test(requested) ? requested : today.slice(0, 7);
-  const weekends = saturdaysOf(month);
+  const weekends = fridaysOf(month);
   const wanted = safeText(url.searchParams.get("weekend"), 10);
   // Padrão: o último fim de semana já começado no mês (ou o primeiro).
   const weekend = weekends.includes(wanted) ? wanted : [...weekends].reverse().find((day) => day <= today) || weekends[0];
@@ -117,7 +118,7 @@ export async function PUT(request: Request) {
     const weekend = safeText(body.weekend, 10);
     const companyId = safeText(body.companyId, 80);
     const values = ["targetCents", "revenueCents", "targetItems", "items"].map((key) => nonNegativeInt(body[key] ?? 0));
-    if (!isSaturday(weekend)) return jsonResponse({ error: "ESCOLHA O FIM DE SEMANA." }, 400);
+    if (!isFriday(weekend)) return jsonResponse({ error: "ESCOLHA O FIM DE SEMANA." }, 400);
     if (values.some((value) => value === null)) {
       return jsonResponse({ error: "META E FEITO PRECISAM SER POSITIVOS (OU ZERO)." }, 400);
     }

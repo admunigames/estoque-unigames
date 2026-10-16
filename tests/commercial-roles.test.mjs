@@ -394,26 +394,27 @@ test("Meta do Fim de Semana: comercial:weekend(_view), por sábado, escopo de lo
   const sellersBefore = db.sqlite.prepare("SELECT COUNT(*) AS n FROM commercial_monthly").get().n;
 
   assert.equal((await callRoute(weekendRoute.GET, DASHBOARD, "GET", "/api/commercial/weekend?month=2026-10")).status, 403);
-  assert.equal((await put(WEEKEND_VIEW, { weekend: "2026-10-10", companyId: STORE_A })).status, 403, "ver não edita");
+  assert.equal((await put(WEEKEND_VIEW, { weekend: "2026-10-09", companyId: STORE_A })).status, 403, "ver não edita");
   assert.equal((await get(WEEKEND_VIEW, "month=2026-10")).canEdit, false);
-  assert.equal((await put(ADMIN, { weekend: "2026-10-12", companyId: STORE_A })).status, 400, "domingo não é a chave do fim de semana");
-  assert.equal((await put(STORES_A, { weekend: "2026-10-10", companyId: STORE_B })).status, 404, "loja de fora do alcance");
-  assert.equal((await put(ADMIN, { weekend: "2026-10-10", companyId: STORE_A, revenueCents: -5 })).status, 400);
-  assert.equal((await put(STORES_A, { weekend: "2026-10-10", companyId: STORE_A, revenueCents: 7_010_916, targetCents: 7_000_000, targetItems: 150, items: 95 })).status, 200);
-  assert.equal((await put(ADMIN, { weekend: "2026-10-10", companyId: STORE_B, revenueCents: 3_000_000, targetCents: 6_000_000, targetItems: 100, items: 50 })).status, 200);
-  assert.equal((await put(ADMIN, { weekend: "2026-10-17", companyId: STORE_A, revenueCents: 1, targetCents: 2 })).status, 200);
+  assert.equal((await put(ADMIN, { weekend: "2026-10-10", companyId: STORE_A })).status, 400, "sábado não é a chave do fim de semana (é a sexta)");
+  assert.equal((await put(STORES_A, { weekend: "2026-10-09", companyId: STORE_B })).status, 404, "loja de fora do alcance");
+  assert.equal((await put(ADMIN, { weekend: "2026-10-09", companyId: STORE_A, revenueCents: -5 })).status, 400);
+  assert.equal((await put(STORES_A, { weekend: "2026-10-09", companyId: STORE_A, revenueCents: 7_010_916, targetCents: 7_000_000, targetItems: 150, items: 95 })).status, 200);
+  assert.equal((await put(ADMIN, { weekend: "2026-10-09", companyId: STORE_B, revenueCents: 3_000_000, targetCents: 6_000_000, targetItems: 100, items: 50 })).status, 200);
+  assert.equal((await put(ADMIN, { weekend: "2026-10-16", companyId: STORE_A, revenueCents: 1, targetCents: 2 })).status, 200);
 
-  const all = await get(ADMIN, "month=2026-10&weekend=2026-10-10");
-  assert.deepEqual(all.weekends, ["2026-10-03", "2026-10-10", "2026-10-17", "2026-10-24", "2026-10-31"]);
-  assert.equal(all.weekend, "2026-10-10");
+  const all = await get(ADMIN, "month=2026-10&weekend=2026-10-09");
+  // Sextas de outubro/2026 (a de 30/10 vai até domingo 01/11).
+  assert.deepEqual(all.weekends, ["2026-10-02", "2026-10-09", "2026-10-16", "2026-10-23", "2026-10-30"]);
+  assert.equal(all.weekend, "2026-10-09");
   assert.deepEqual(all.total, { targetCents: 13_000_000, revenueCents: 10_010_916, percent: 77, targetItems: 250, items: 145 });
-  const mine = await get(STORES_A, "month=2026-10&weekend=2026-10-10");
+  const mine = await get(STORES_A, "month=2026-10&weekend=2026-10-09");
   assert.deepEqual(mine.rows.map((row) => row.companyId), [STORE_A]);
   assert.equal(mine.total.revenueCents, 7_010_916);
   // Outro fim de semana é outro registro.
-  assert.equal((await get(ADMIN, "month=2026-10&weekend=2026-10-17")).total.revenueCents, 1);
+  assert.equal((await get(ADMIN, "month=2026-10&weekend=2026-10-16")).total.revenueCents, 1);
   // Fim de semana inválido cai num sábado do mês.
-  assert.ok(all.weekends.includes((await get(ADMIN, "month=2026-10&weekend=2026-10-12")).weekend));
+  assert.ok(all.weekends.includes((await get(ADMIN, "month=2026-10&weekend=2026-10-11")).weekend));
 
   assert.deepEqual(db.sqlite.prepare("SELECT COUNT(*) AS n, SUM(commission_cents) AS c FROM hr_commissions").get(), hrBefore);
   assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM commercial_monthly").get().n, sellersBefore);

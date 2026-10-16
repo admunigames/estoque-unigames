@@ -3769,8 +3769,8 @@ export const commercialStoreGoals = pgTable(
 
 // Comercial > Meta do Fim de Semana — meta e feito de cada loja por fim de
 // semana (lançados à mão, aba própria). SÓ CONTROLE: não alimenta vendedores,
-// comissão nem RH. weekend = sábado do fim de semana (YYYY-MM-DD); month =
-// mês desse sábado.
+// comissão nem RH. Fim de semana = SEXTA a DOMINGO; weekend = a sexta
+// (YYYY-MM-DD); month = mês dessa sexta.
 export const commercialWeekendGoals = pgTable(
   "commercial_weekend_goals",
   {

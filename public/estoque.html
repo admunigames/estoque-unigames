@@ -48597,16 +48597,16 @@ function renderHomeTasks(){
   });
 
   // ----- Meta do Fim de Semana (comercial:stores) — só controle -----
-  // Cada fim de semana é guardado pelo SÁBADO; o seletor lista os sábados do
-  // mês escolhido.
+  // Fim de semana = SEXTA a DOMINGO, guardado pela SEXTA; o seletor lista
+  // as sextas do mês escolhido.
   let comWeekend = null;
   let comWeekendKey = '';
 
-  function comWeekendLabel(saturday){
-    const day = new Date(saturday+'T12:00:00');
-    const sunday = new Date(day.getTime() + 86400000);
+  function comWeekendLabel(friday){
+    const day = new Date(friday+'T12:00:00');
+    const sunday = new Date(day.getTime() + 2 * 86400000);
     const short = date => String(date.getDate()).padStart(2, '0')+'/'+String(date.getMonth() + 1).padStart(2, '0');
-    return short(day)+' E '+short(sunday)+' (SÁB. E DOM.)';
+    return 'SEX. '+short(day)+' A DOM. '+short(sunday);
   }
 
   function comWeekendTotalHtml(){
