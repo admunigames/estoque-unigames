@@ -12,7 +12,6 @@ const MODULE_LABELS: [string, string][] = [
   ["/api/finance/suppliers", "FORNECEDORES"],
   ["/api/finance", "FINANCEIRO"],
   ["/api/commercial/academy", "TREINAMENTO"],
-  ["/api/commercial/indications", "INDICAÇÕES"],
   ["/api/commercial", "COMERCIAL"],
   ["/api/controle-gd", "CONTROLE DE GORDURAS"],
   ["/api/gorduras-assistencia", "CONTROLE GORDURAS ASSISTÊNCIA"],

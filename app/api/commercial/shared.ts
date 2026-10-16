@@ -36,7 +36,6 @@ import {
 //   comercial:stores     → aba Meta Loja (meta e feito de cada loja)
 //   comercial:rules      → aba Regras de Comissão (percentuais e premiação
 //                          por vigência) e marcar NOVATO no Dashboard
-//   comercial:indications → aba Indicação (só controle, sem comissão)
 // As antigas comercial:view/manage são expandidas na leitura pelo Worker
 // (LEGACY_PERMISSION_MAP). Conta vinculada a um vendedor continua vendo só
 // os próprios números (ownOnly no overview) — isso vem do vínculo, não da
@@ -94,7 +93,7 @@ export function identity(request: Request): Identity {
 
 const COMMERCIAL_PERMISSIONS = [
   "comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",
-  "comercial:credit", "comercial:stores", "comercial:indications",
+  "comercial:credit", "comercial:stores",
 ] as const;
 
 function hasCommercialPermission(actor: Identity, permission: (typeof COMMERCIAL_PERMISSIONS)[number]) {
@@ -123,10 +122,6 @@ export function canManageCommercialCredit(actor: Identity) {
 
 export function canManageCommercialStores(actor: Identity) {
   return hasCommercialPermission(actor, "comercial:stores");
-}
-
-export function canManageCommercialIndications(actor: Identity) {
-  return hasCommercialPermission(actor, "comercial:indications");
 }
 
 export function canMarkCommercialNewcomer(actor: Identity) {
@@ -648,28 +643,4 @@ export async function syncHrCommissionsAllMonths(database: Database, actor: Iden
     .bind(COMMISSION_SYNC_FROM)
     .all<{ month: string }>();
   for (const row of result.results ?? []) await syncHrCommissions(database, row.month, actor);
-}
-
-export type IndicationTotal = { companyId: string; name: string; count: number; totalCents: number };
-
-/** Indicações do mês por loja (sem as excluídas), só as lojas do alcance. */
-export async function indicationSummary(
-  database: Database,
-  month: string,
-  scope: { allStores: boolean; companyId: string },
-): Promise<IndicationTotal[]> {
-  const [result, companyNames] = await Promise.all([
-    database
-      .prepare(
-        `SELECT company_id AS companyId, MAX(company_name) AS companyName, COUNT(*) AS count, SUM(amount_cents) AS totalCents
-         FROM commercial_indications WHERE month=?1 AND deleted_at='' GROUP BY company_id`,
-      )
-      .bind(month)
-      .all<{ companyId: string; companyName: string; count: number; totalCents: number }>(),
-    loadCompanyNames(database),
-  ]);
-  return (result.results ?? [])
-    .filter((row) => scope.allStores || row.companyId === scope.companyId)
-    .map((row) => ({ companyId: row.companyId, name: companyNames.get(row.companyId) || row.companyName, count: n(row.count), totalCents: n(row.totalCents) }))
-    .sort((a, b) => b.totalCents - a.totalCents || a.name.localeCompare(b.name, "pt-BR"));
 }

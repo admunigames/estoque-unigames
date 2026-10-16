@@ -3803,7 +3803,8 @@ export const commercialRoles = pgTable(
   (table) => [uniqueIndex("commercial_roles_employee_month_idx").on(table.employeeId, table.month)],
 );
 
-// Comercial > Indicação — SÓ controle (não gera comissão, premiação nem vai
+// Comercial > Indicação — aba REMOVIDA em 16/10/2026 a pedido do usuário; a
+// tabela fica com o que já foi lançado. Era SÓ controle (não gera comissão, premiação nem vai
 // para o RH). Quem indicou: funcionário do RH (employee_id) ou texto livre
 // (referrer_name). Quem criou, editou e excluiu fica em history_json.
 export const commercialIndications = pgTable(

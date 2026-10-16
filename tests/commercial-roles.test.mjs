@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
 // Comercial — LÍDER COMERCIAL, OPERACIONAL, META/FEITO DA ASSISTÊNCIA e a aba
-// INDICAÇÃO (pedido de 2026-10-16). Rotas reais sobre SQLite.
+// INDICAÇÃO por loja (pedido de 2026-10-16). Rotas reais sobre SQLite.
 
 const db = await setupRouteDb([
   "shared_state", "hr_employees", "commercial_monthly", "commercial_rules", "commercial_newcomers",
@@ -22,7 +22,6 @@ const entriesRoute = await import("../app/api/commercial/entries/route.ts");
 const storesRoute = await import("../app/api/commercial/stores/route.ts");
 const rankingRoute = await import("../app/api/commercial/ranking/route.ts");
 const newcomersRoute = await import("../app/api/commercial/newcomers/route.ts");
-const indicationsRoute = await import("../app/api/commercial/indications/route.ts");
 const weekendRoute = await import("../app/api/commercial/weekend/route.ts");
 const migration0099 = await readFile(new URL("../drizzle/0099_comercial_fim_de_semana_indicacao_loja.sql", import.meta.url), "utf8");
 const hrCommissionsRoute = await import("../app/api/hr-payroll/commissions/route.ts");
@@ -58,9 +57,6 @@ const RULES = { id: "u-rules", permissions: ["comercial:rules"] };
 const DASHBOARD = { id: "u-dash", permissions: ["comercial:dashboard"] };
 const OP1_DASH = { id: "user-op1", companyId: STORE_A, permissions: ["comercial:dashboard"] };
 const OP1_COMMISSION = { ...OP1_DASH, permissions: ["comercial:dashboard", "comercial:commission"] };
-const IND_A = { id: "u-ind-a", companyId: STORE_A, permissions: ["comercial:indications"] };
-const IND_ALL = { id: "u-ind-all", permissions: ["comercial:indications"] };
-const DASH_A = { id: "u-dash-a", companyId: STORE_A, permissions: ["comercial:dashboard"] };
 const PAYROLL = { id: "u-rh", permissions: ["payroll:manage"] };
 
 const BASE_RULE = {
@@ -329,60 +325,6 @@ test("Meta Loja: META/FEITO ASSISTÊNCIA à mão; % ASSISTÊNCIA para todos (sem
   const editor = await (await callRoute(storesRoute.GET, ADMIN, "GET", "/api/commercial/stores?month=2026-10")).json();
   const row = editor.rows.find((item) => item.companyId === STORE_A);
   assert.deepEqual([row.assistTargetCents, row.assistRevenueCents], [1_000_000, 1_200_000]);
-});
-
-test("Indicação: só controle — permissão própria, escopo de loja, editar/excluir com histórico, totais; nada muda na comissão nem no RH", async () => {
-  const hrBefore = db.sqlite.prepare("SELECT employee_id AS e, commission_cents AS c FROM hr_commissions ORDER BY e, month").all().map((row) => ({ ...row }));
-  const commissionBefore = (await getOverview(ADMIN, "2026-10")).sellers.map((seller) => seller.metrics.commission.totalCents);
-  const post = (user, body) => callRoute(indicationsRoute.POST, user, "POST", "/api/commercial/indications", body);
-  const get = async (user) => (await callRoute(indicationsRoute.GET, user, "GET", "/api/commercial/indications?month=2026-10")).json();
-  const body = { date: "2026-10-15", companyId: STORE_A, employeeId: "emp-v1", customer: "Cliente Um", reference: "OS-1", amountCents: 150_000, notes: "" };
-
-  assert.equal((await post(DASHBOARD, body)).status, 403);
-  assert.equal((await post(IND_A, { ...body, companyId: STORE_B })).status, 400, "loja de fora do alcance");
-  assert.equal((await post(IND_A, { ...body, employeeId: "", referrerName: "" })).status, 400, "sem quem indicou");
-  assert.equal((await post(IND_A, { ...body, customer: "", reference: "" })).status, 400, "sem cliente nem ID");
-  const created = await post(IND_A, body);
-  assert.equal(created.status, 201);
-  const { id } = await created.json();
-  assert.equal((await post(IND_A, { ...body, employeeId: "", referrerName: "Tia da Ana", amountCents: 50_000 })).status, 201);
-  assert.equal((await post(IND_ALL, { ...body, companyId: STORE_B, employeeId: "emp-v5", amountCents: 70_000 })).status, 201);
-
-  const mine = await get(IND_A);
-  assert.ok(mine.items.every((item) => item.companyId === STORE_A), "login com loja só vê a própria loja");
-  assert.equal(mine.items.length, 2);
-  assert.deepEqual(mine.stores.map((store) => store.companyId), [STORE_A]);
-  assert.deepEqual(mine.byStore, [{ companyId: STORE_A, name: "LOJA ALFA", count: 2, totalCents: 200_000 }]);
-  assert.deepEqual(mine.byPerson.map((person) => [person.name, person.count, person.totalCents]), [["VENDEDOR UM", 1, 150_000], ["TIA DA ANA", 1, 50_000]]);
-  assert.equal((await get(IND_ALL)).items.length, 3);
-
-  // Editar: histórico com o que mudou; outra loja = 404.
-  const otherStore = (await get(IND_ALL)).items.find((item) => item.companyId === STORE_B);
-  assert.equal((await callRoute(indicationsRoute.PUT, IND_A, "PUT", "/api/commercial/indications", { ...body, id: otherStore.id })).status, 404);
-  const edited = await callRoute(indicationsRoute.PUT, IND_A, "PUT", "/api/commercial/indications", { ...body, id, amountCents: 200_000 });
-  assert.equal(edited.status, 200);
-  let item = (await get(IND_A)).items.find((entry) => entry.id === id);
-  assert.deepEqual(item.history.map((entry) => entry.action), ["CRIOU", "EDITOU"]);
-  assert.match(item.history[1].changes[0], /^VALOR: R\$\s?1\.500,00 → R\$\s?2\.000,00$/);
-
-  // Excluir: fica riscada (histórico) e sai dos totais.
-  assert.equal((await callRoute(indicationsRoute.DELETE, IND_A, "DELETE", `/api/commercial/indications?id=${id}`)).status, 200);
-  assert.equal((await callRoute(indicationsRoute.DELETE, IND_A, "DELETE", `/api/commercial/indications?id=${id}`)).status, 404);
-  const after = await get(IND_A);
-  item = after.items.find((entry) => entry.id === id);
-  assert.ok(item.deletedAt);
-  assert.deepEqual(item.history.map((entry) => entry.action), ["CRIOU", "EDITOU", "EXCLUIU"]);
-  assert.deepEqual(after.byStore, [{ companyId: STORE_A, name: "LOJA ALFA", count: 1, totalCents: 50_000 }]);
-
-  // Dashboard da loja: resumo do alcance de quem vê.
-  const dashA = await getOverview(DASH_A, "2026-10");
-  assert.deepEqual(dashA.indications, [{ companyId: STORE_A, name: "LOJA ALFA", count: 1, totalCents: 50_000 }]);
-  assert.equal((await getOverview(ADMIN, "2026-10")).indications.length, 2);
-
-  // Nenhum efeito na comissão nem no RH.
-  const hrAfter = db.sqlite.prepare("SELECT employee_id AS e, commission_cents AS c FROM hr_commissions ORDER BY e, month").all().map((row) => ({ ...row }));
-  assert.deepEqual(hrAfter, hrBefore);
-  assert.deepEqual((await getOverview(ADMIN, "2026-10")).sellers.map((seller) => seller.metrics.commission.totalCents), commissionBefore);
 });
 
 test("migration 0098: só ADD COLUMN / CREATE TABLE/INDEX (e RLS nas tabelas novas) — nada apagado ou reescrito", () => {

@@ -3331,12 +3331,6 @@
   .com-commission-note{margin:-2px 0 0;font:600 11px/1.4 var(--sans);color:var(--ink-soft)}
   .com-operationals-title{margin:22px 0 10px}
   .com-operationals{margin-top:16px}
-  .com-indication-summary,.com-indication-totals{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-  .com-indication-chip{padding:8px 12px;border:1px solid var(--surface-border);border-radius:var(--radius-surface);background:var(--bg-card);font:800 10px/1.4 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft)}
-  .com-indication-chip strong{display:block;font:900 14px/1.25 var(--sans);color:var(--ink);letter-spacing:0;text-transform:none}
-  .com-indication-history{margin:4px 0 0;padding-left:16px;font:600 11px/1.45 var(--sans);color:var(--ink-soft)}
-  tr.com-ind-deleted td{opacity:.6}
-  tr.com-ind-deleted td:first-child strong{text-decoration:line-through}
   .com-entry-form .field{min-width:min(100%,200px);flex:1 1 200px}
   .com-entry-form input,.com-entry-form select{width:100%}
   @media(max-width:680px){
@@ -7050,7 +7044,7 @@
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="lojas" data-permission="comercial:stores">Meta Loja</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="fimsemana" data-permission="comercial:stores">Meta do Fim de Semana</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="regras" data-permission="comercial:rules">Regras de Comissão</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="indicacao" data-permission="comercial:indications">Indicação</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="assistencia" data-permission="comercial:stores">Meta Assistência</button>
       </div>
 
       <div class="dre-toolbar com-toolbar no-print">
@@ -7085,8 +7079,6 @@
         <!-- Vendedor inativo no RH some por padrão; aqui volta (em cinza, com
              selo INATIVO) para consultar o histórico dele no mês. -->
         <label class="assist-check com-inactive-toggle" id="comInactiveToggleField" hidden><input type="checkbox" id="comShowInactive"> MOSTRAR INATIVOS</label>
-        <!-- Resumo do mês da aba Indicação (lojas do alcance; nada de comissão). -->
-        <div class="com-indication-summary" id="comDashIndications" hidden></div>
         <div class="com-seller-list" id="comDashList"><p class="com-empty">Carregando…</p></div>
         <!-- OPERACIONAIS: um cartão por loja, só % (assistência e loja) e a faixa. -->
         <div class="com-seller-list com-operationals" id="comDashOperationals" hidden></div>
@@ -7201,6 +7193,21 @@
         </div>
       </div>
 
+      <div class="com-view-panel" id="comViewAssistencia" hidden>
+        <!-- Meta Assistência (comercial:stores): META e FEITO DA ASSISTÊNCIA de
+             cada loja no mês — base da comissão do OPERACIONAL e do prêmio
+             do LÍDER (loja E assistência em 120%). -->
+        <div class="com-total" id="comAssistTotal" hidden></div>
+        <div class="table-panel responsive-table com-edit-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Loja</th><th>Meta da assistência (R$)</th><th>Feito da assistência (R$)</th><th style="text-align:right">% feito ÷ meta</th></tr></thead>
+              <tbody id="comAssistBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="com-view-panel" id="comViewRegras" hidden>
         <!-- Regras de Comissão: só comercial:rules. Cada vigência vale do mês
              dela em diante; meses anteriores não mudam. -->
@@ -7217,32 +7224,6 @@
         </div>
       </div>
 
-      <div class="com-view-panel" id="comViewIndicacao" hidden>
-        <!-- Indicação: SÓ CONTROLE (comercial:indications) — não gera comissão,
-             premiação nem vai para o RH. Login com loja vê e lança só a dela. -->
-        <form class="com-entry-form com-indication-form" id="comIndForm" novalidate>
-          <div class="field"><label for="comIndDate">Data</label><input type="date" id="comIndDate" required></div>
-          <div class="field"><label for="comIndStore">Loja</label><select id="comIndStore" required></select></div>
-          <div class="field"><label for="comIndEmployee">Quem indicou</label><select id="comIndEmployee"></select></div>
-          <div class="field" id="comIndReferrerField" hidden><label for="comIndReferrer">Nome de quem indicou</label><input id="comIndReferrer" maxlength="120" autocomplete="off"></div>
-          <div class="field"><label for="comIndCustomer">Cliente</label><input id="comIndCustomer" maxlength="160" autocomplete="off"></div>
-          <div class="field"><label for="comIndReference">ID da venda / O.S.</label><input id="comIndReference" maxlength="80" autocomplete="off"></div>
-          <div class="field"><label for="comIndAmount">Valor (R$)</label><input type="text" id="comIndAmount" inputmode="decimal" placeholder="R$ 0,00"></div>
-          <div class="field"><label for="comIndNotes">Observação</label><input id="comIndNotes" maxlength="500" autocomplete="off"></div>
-          <button class="btn-accent" type="submit" id="btnComIndSubmit">LANÇAR</button>
-          <button class="btn-outline" type="button" id="btnComIndCancel" hidden>CANCELAR EDIÇÃO</button>
-        </form>
-        <div class="user-form-status" id="comIndStatus" role="status" aria-live="polite"></div>
-        <div class="com-indication-totals" id="comIndTotals"></div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table>
-              <thead><tr><th>Data</th><th>Loja</th><th>Quem indicou</th><th>Cliente</th><th>ID da venda / O.S.</th><th style="text-align:right">Valor</th><th>Observação</th><th>Lançado por</th><th></th></tr></thead>
-              <tbody id="comIndBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     </section>
 
     <section id="pageComercialControleGd" class="page wrap">
@@ -9859,7 +9840,6 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:credit"> LANÇAR CREDIÁRIOS (PAYJOY, CREFAZ, PARCELEX, ODRES, VENDA P.A E UNIGAMES)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:stores"> ATUALIZAR META LOJA</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:indications"> INDICAÇÃO (LANÇAR E VER AS INDICAÇÕES DA LOJA)</label>
               </div>
             </details>
             <details class="permission-module">
@@ -41969,7 +41949,7 @@ function renderHomeTasks(){
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
     'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
-    'comercial:dashboard':'Comercial: visualizar Dashboard e Ranking','comercial:commission':'Comercial: visualizar Comissão','comercial:goals':'Comercial: Atualizar Vendedores','comercial:credit':'Comercial: Lançar Crediários','comercial:stores':'Comercial: Atualizar Meta Loja','comercial:rules':'Comercial: Cadastro de Regras de Comissão','comercial:indications':'Comercial: Indicação',
+    'comercial:dashboard':'Comercial: visualizar Dashboard e Ranking','comercial:commission':'Comercial: visualizar Comissão','comercial:goals':'Comercial: Atualizar Vendedores','comercial:credit':'Comercial: Lançar Crediários','comercial:stores':'Comercial: Atualizar Meta Loja','comercial:rules':'Comercial: Cadastro de Regras de Comissão',
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Estoque - Relatório NF: visualizar','relatorio_nf:manage':'Estoque - Relatório NF: lançar/gerenciar',
@@ -47094,7 +47074,7 @@ function renderHomeTasks(){
   }
 
   function comData(){
-    if(['regras', 'lojas', 'indicacao', 'fimsemana'].includes(comView)) return null;
+    if(['regras', 'lojas', 'assistencia', 'fimsemana'].includes(comView)) return null;
     return comView === 'vendedores' || comView === 'crediarios' ? comManage : comOverview;
   }
 
@@ -47130,7 +47110,7 @@ function renderHomeTasks(){
     const ownOnly = comView !== 'ranking' && Boolean(data && data.ownOnly);
     const allStores = comView === 'ranking' || Boolean(data && data.allStores);
     // Abas de atualização: sem filtros (a lista já é a do alcance de quem lança).
-    const editing = ['vendedores', 'crediarios', 'lojas', 'regras', 'indicacao', 'fimsemana'].includes(comView);
+    const editing = ['vendedores', 'crediarios', 'lojas', 'regras', 'assistencia', 'fimsemana'].includes(comView);
     if(el('comStoreField')) el('comStoreField').hidden = !data || ownOnly || editing || comView === 'ranking' || !allStores;
     // No Ranking, Zona e "Rankear por" só valem para a subaba VENDEDORES.
     const storeChart = comView === 'ranking' && comRankSub !== 'vendedores';
@@ -47175,7 +47155,6 @@ function renderHomeTasks(){
     // "MOSTRAR INATIVOS" só para quem vê a equipe (a conta do vendedor já vê o
     // próprio histórico).
     if(el('comInactiveToggleField')) el('comInactiveToggleField').hidden = Boolean(comOverview.ownOnly);
-    comRenderDashIndications();
     comRenderDashOperationals();
     const sellers = comFilteredSellers();
     if(!sellers.length){ list.innerHTML = comFilteredOperationals().length ? '' : comEmptyHtml(); return; }
@@ -47200,16 +47179,6 @@ function renderHomeTasks(){
         '</div>'+
       '</article>';
     }).join('');
-  }
-
-  // Resumo da aba Indicação no Dashboard: quantidade e R$ do mês por loja.
-  function comRenderDashIndications(){
-    const box = el('comDashIndications');
-    if(!box) return;
-    const stores = (comOverview.indications || []).filter(store => !comStoreFilter || store.companyId === comStoreFilter);
-    box.hidden = !stores.length;
-    box.innerHTML = stores.map(store =>
-      '<div class="com-indication-chip">INDICAÇÕES · '+escapeHtml(store.name)+'<strong>'+escapeHtml(comFormatQty(store.count, 'indicação', 'indicações')+' · '+formatCentsBRL(store.totalCents))+'</strong></div>').join('');
   }
 
   // Barra de % sem valores em R$ (cartões dos operacionais no Dashboard).
@@ -48325,8 +48294,10 @@ function renderHomeTasks(){
     }catch(error){
       comStores = null;
       if(comView === 'lojas' && el('comStoreGoalsBody')) el('comStoreGoalsBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(comView === 'assistencia' && el('comAssistBody')) el('comAssistBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
     if(comView === 'lojas') comRenderStoreGoals();
+    if(comView === 'assistencia') comRenderAssist();
     if(comView === 'ranking') comRenderRanking();
   }
 
@@ -48341,8 +48312,8 @@ function renderHomeTasks(){
     const items = Math.round(Number(field('items').value || 0));
     const targetRealme = Math.round(Number(field('targetRealme').value || 0));
     const realme = Math.round(Number(field('realme').value || 0));
-    // META/FEITO DA ASSISTÊNCIA saíram desta aba (vão ter aba própria):
-    // reenvia os valores guardados para não zerá-los.
+    // META/FEITO DA ASSISTÊNCIA ficam na aba Meta Assistência: reenvia os
+    // valores guardados para não zerá-los.
     const assistTargetCents = store ? Number(store.assistTargetCents) || 0 : 0;
     const assistRevenueCents = store ? Number(store.assistRevenueCents) || 0 : 0;
     const indicationQty = Math.round(Number(field('indicationQty').value || 0));
@@ -48372,6 +48343,65 @@ function renderHomeTasks(){
     comQueueSave('store:'+row.dataset.comStore, async () => {
       try{
         await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme, assistTargetCents, assistRevenueCents, indicationQty, indicationCents})});
+        comOverview = null;
+        row.classList.add('saved');
+      }catch(error){
+        showPurchaseToast(error.message);
+      }finally{
+        row.classList.remove('saving');
+      }
+    });
+  });
+
+  // ----- Meta Assistência (comercial:stores) -----
+  // Mesmos dados e a mesma gravação da Meta Loja (/stores): aqui só META e
+  // FEITO DA ASSISTÊNCIA; os outros números da loja vão junto como estão.
+  function comRenderAssistTotal(){
+    const total = el('comAssistTotal');
+    if(!total || !comStores) return;
+    const rows = comStores.rows || [];
+    const sum = rows.reduce((acc, row) => row.assistTargetCents > 0 ? {target: acc.target + row.assistTargetCents, revenue: acc.revenue + row.assistRevenueCents} : acc, {target:0, revenue:0});
+    total.hidden = !comStores.total || !(sum.target > 0);
+    total.innerHTML = '<span>Todas as lojas · '+escapeHtml(formatCentsBRL(sum.revenue)+' de '+formatCentsBRL(sum.target))+'</span>'+
+      '<strong>'+escapeHtml(comFormatPct(comShare(sum.revenue, sum.target)))+'</strong>';
+  }
+
+  function comRenderAssist(){
+    const body = el('comAssistBody');
+    if(!body || !comStores) return;
+    const rows = comStores.rows || [];
+    body.innerHTML = rows.length ? rows.map(store =>
+      '<tr data-com-assist-store="'+escapeHtml(store.companyId)+'">'+
+        '<td data-label="Loja" class="nome"><strong>'+escapeHtml(store.name)+'</strong></td>'+
+        '<td data-label="Meta da assistência (R$)">'+comMoneyInput('assistTargetCents', store.assistTargetCents, 'Meta da assistência')+'</td>'+
+        '<td data-label="Feito da assistência (R$)">'+comMoneyInput('assistRevenueCents', store.assistRevenueCents, 'Feito da assistência')+'</td>'+
+        '<td data-label="% feito ÷ meta" class="calc" style="text-align:right" data-com-calc="assistPct">'+escapeHtml(comFormatPct(comShare(store.assistRevenueCents, store.assistTargetCents)))+'</td></tr>').join('')
+      : '<tr><td colspan="4" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
+    comMaskMoney(body);
+    comRenderAssistTotal();
+  }
+
+  if(el('comAssistBody')) el('comAssistBody').addEventListener('change', event => {
+    const row = event.target.closest('tr[data-com-assist-store]');
+    if(!row || !event.target.matches('[data-com-field]') || !comStores) return;
+    const store = comStores.rows.find(item => item.companyId === row.dataset.comAssistStore);
+    if(!store) return;
+    const assistTargetCents = comMoneyCents(row.querySelector('[data-com-field="assistTargetCents"]'));
+    const assistRevenueCents = comMoneyCents(row.querySelector('[data-com-field="assistRevenueCents"]'));
+    if(assistTargetCents === null || assistRevenueCents === null){
+      showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
+      return;
+    }
+    store.assistTargetCents = assistTargetCents;
+    store.assistRevenueCents = assistRevenueCents;
+    row.querySelector('[data-com-calc="assistPct"]').textContent = comFormatPct(comShare(assistRevenueCents, assistTargetCents));
+    comRenderAssistTotal();
+    row.classList.remove('saved');
+    row.classList.add('saving');
+    const {companyId, targetCents, revenueCents, targetItems, items, targetRealme, realme, indicationQty, indicationCents} = store;
+    comQueueSave('store:'+companyId, async () => {
+      try{
+        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId, targetCents, revenueCents, targetItems, items, targetRealme, realme, assistTargetCents, assistRevenueCents, indicationQty, indicationCents})});
         comOverview = null;
         row.classList.add('saved');
       }catch(error){
@@ -48713,179 +48743,6 @@ function renderHomeTasks(){
     }
   });
 
-  // ---------- Indicação (comercial:indications) ----------
-  // SÓ CONTROLE: não gera comissão nem premiação e nada vai para o RH. O
-  // servidor limita à loja de quem tem loja; quem indicou é um funcionário do
-  // RH ou um nome livre. Exclusão é lógica (fica riscada, com o histórico).
-  let comIndData = null;
-  let comIndEditing = null;
-  const COM_IND_FREE = '__livre';
-
-  function comIndFillSelects(){
-    const store = el('comIndStore');
-    const keepStore = store.value;
-    store.innerHTML = (comIndData.stores.length > 1 ? '<option value="">ESCOLHA A LOJA</option>' : '')+
-      comIndData.stores.map(item => '<option value="'+escapeHtml(item.companyId)+'">'+escapeHtml(item.name)+'</option>').join('');
-    if(comIndData.stores.some(item => item.companyId === keepStore)) store.value = keepStore;
-    comIndFillEmployees();
-  }
-
-  // Funcionários da loja escolhida primeiro; "OUTRO" abre o nome livre.
-  function comIndFillEmployees(){
-    const select = el('comIndEmployee');
-    const keep = select.value;
-    const companyId = el('comIndStore').value;
-    const names = new Map(comIndData.stores.map(item => [item.companyId, item.name]));
-    const list = comIndData.employees.slice().sort((a, b) =>
-      Number(b.companyId === companyId) - Number(a.companyId === companyId) || a.fullName.localeCompare(b.fullName, 'pt-BR'));
-    select.innerHTML = '<option value="">ESCOLHA QUEM INDICOU</option><option value="'+COM_IND_FREE+'">OUTRO (DIGITAR O NOME)</option>'+
-      list.map(item => '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(item.fullName+(item.companyId !== companyId && names.get(item.companyId) ? ' — '+names.get(item.companyId) : ''))+'</option>').join('');
-    if(Array.from(select.options).some(option => option.value === keep)) select.value = keep;
-    el('comIndReferrerField').hidden = select.value !== COM_IND_FREE;
-  }
-
-  function comIndResetForm(){
-    comIndEditing = null;
-    el('comIndForm').reset();
-    setCurrencyValue(el('comIndAmount'), '');
-    el('comIndDate').value = todayDateKeyRecife().slice(0, 7) === comMonth ? todayDateKeyRecife() : comMonth+'-01';
-    el('btnComIndSubmit').textContent = 'LANÇAR';
-    el('btnComIndCancel').hidden = true;
-    if(comIndData && comIndData.stores.length === 1) el('comIndStore').value = comIndData.stores[0].companyId;
-    if(comIndData) comIndFillEmployees();
-  }
-
-  function comIndChip(label, count, cents){
-    return '<div class="com-indication-chip">'+escapeHtml(label)+'<strong>'+escapeHtml(comFormatQty(count, 'indicação', 'indicações')+' · '+formatCentsBRL(cents))+'</strong></div>';
-  }
-
-  function comRenderIndications(){
-    const body = el('comIndBody');
-    if(!body || !comIndData) return;
-    comIndFillSelects();
-    if(!comIndEditing && el('comIndDate').value.slice(0, 7) !== comMonth) comIndResetForm();
-    el('comIndTotals').innerHTML =
-      comIndData.byStore.map(store => comIndChip('LOJA · '+store.name, store.count, store.totalCents)).join('')+
-      comIndData.byPerson.map(person => comIndChip('QUEM INDICOU · '+person.name, person.count, person.totalCents)).join('');
-    const active = comIndData.items.filter(item => !item.deletedAt);
-    const deleted = comIndData.items.filter(item => item.deletedAt);
-    const historyHtml = item => item.history.length
-      ? '<details><summary>HISTÓRICO</summary><ul class="com-indication-history">'+item.history.map(entry =>
-          '<li>'+escapeHtml(entry.action+' · '+entry.byName+' · '+formatDateTimeBR(entry.at)+(entry.changes && entry.changes.length ? ' — '+entry.changes.join('; ') : ''))+'</li>').join('')+'</ul></details>'
-      : '';
-    const rowHtml = item =>
-      '<tr'+(item.deletedAt ? ' class="com-ind-deleted"' : '')+'>'+
-        '<td data-label="Data"><strong>'+escapeHtml(formatDateBR(item.date))+'</strong></td>'+
-        '<td data-label="Loja">'+escapeHtml(item.companyName || '—')+'</td>'+
-        '<td data-label="Quem indicou">'+escapeHtml(item.referrerName)+'</td>'+
-        '<td data-label="Cliente">'+escapeHtml(item.customer || '—')+'</td>'+
-        '<td data-label="ID da venda / O.S.">'+escapeHtml(item.reference || '—')+'</td>'+
-        '<td data-label="Valor" style="text-align:right">'+escapeHtml(formatCentsBRL(item.amountCents))+'</td>'+
-        '<td data-label="Observação">'+escapeHtml(item.notes || '—')+'</td>'+
-        '<td data-label="Lançado por">'+escapeHtml(item.createdByName || '—')+
-          (item.deletedAt ? '<br><small>EXCLUÍDA POR '+escapeHtml(item.deletedByName || '—')+'</small>' : '')+historyHtml(item)+'</td>'+
-        '<td data-label="Ações">'+(item.deletedAt ? '' :
-          '<button class="btn-outline" type="button" data-com-ind-edit="'+escapeHtml(item.id)+'">EDITAR</button> '+
-          '<button class="btn-outline" type="button" data-com-ind-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>')+'</td>'+
-      '</tr>';
-    body.innerHTML = active.length || deleted.length
-      ? active.concat(deleted).map(rowHtml).join('')
-      : '<tr><td colspan="9" class="responsive-empty">Nenhuma indicação em '+escapeHtml(comMonthLabelShort(comMonth))+'.</td></tr>';
-  }
-
-  async function comLoadIndications(){
-    try{
-      comIndData = await comApi('/indications?month='+encodeURIComponent(comMonth));
-    }catch(error){
-      comIndData = null;
-      if(el('comIndBody')) el('comIndBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-      return;
-    }
-    comRenderIndications();
-  }
-
-  if(el('comIndAmount')) attachCurrencyMask(el('comIndAmount'));
-  if(el('comIndStore')) el('comIndStore').addEventListener('change', () => { if(comIndData) comIndFillEmployees(); });
-  if(el('comIndEmployee')) el('comIndEmployee').addEventListener('change', () => {
-    el('comIndReferrerField').hidden = el('comIndEmployee').value !== COM_IND_FREE;
-  });
-  if(el('btnComIndCancel')) el('btnComIndCancel').addEventListener('click', () => { comIndResetForm(); comStatus('comIndStatus', ''); });
-  if(el('comIndForm')) el('comIndForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const who = el('comIndEmployee').value;
-    const payload = {
-      date: el('comIndDate').value,
-      companyId: el('comIndStore').value,
-      employeeId: who && who !== COM_IND_FREE ? who : '',
-      referrerName: who === COM_IND_FREE ? el('comIndReferrer').value.trim() : '',
-      customer: el('comIndCustomer').value.trim(),
-      reference: el('comIndReference').value.trim(),
-      amountCents: comMoneyCents(el('comIndAmount')) || 0,
-      notes: el('comIndNotes').value.trim()
-    };
-    if(!payload.date) return comStatus('comIndStatus', 'INFORME A DATA.', 'error');
-    if(!payload.companyId) return comStatus('comIndStatus', 'ESCOLHA A LOJA.', 'error');
-    if(!payload.employeeId && !payload.referrerName) return comStatus('comIndStatus', 'INFORME QUEM INDICOU.', 'error');
-    if(!payload.customer && !payload.reference) return comStatus('comIndStatus', 'INFORME O CLIENTE OU O ID DA VENDA / O.S.', 'error');
-    const button = el('btnComIndSubmit');
-    button.disabled = true;
-    try{
-      await comApi('/indications', {
-        method: comIndEditing ? 'PUT' : 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(comIndEditing ? {...payload, id: comIndEditing} : payload)
-      });
-      comStatus('comIndStatus', '');
-      // Lançou em outro mês: a lista acompanha a data.
-      if(payload.date.slice(0, 7) !== comMonth){
-        comMonth = payload.date.slice(0, 7);
-        document.querySelectorAll('[data-com-month]').forEach(input => { input.value = comMonth; });
-        comOverview = null;
-      }
-      comIndResetForm();
-      await comLoadIndications();
-      showPurchaseToast('INDICAÇÃO SALVA.');
-    }catch(error){
-      comStatus('comIndStatus', error.message, 'error');
-    }finally{
-      button.disabled = false;
-    }
-  });
-  if(el('comIndBody')) el('comIndBody').addEventListener('click', async event => {
-    const edit = event.target.closest('[data-com-ind-edit]');
-    const remove = event.target.closest('[data-com-ind-delete]');
-    const id = (edit && edit.dataset.comIndEdit) || (remove && remove.dataset.comIndDelete);
-    const item = id && comIndData && comIndData.items.find(entry => entry.id === id);
-    if(!item) return;
-    if(edit){
-      comIndEditing = item.id;
-      el('comIndDate').value = item.date;
-      el('comIndStore').value = item.companyId;
-      comIndFillEmployees();
-      el('comIndEmployee').value = item.employeeId || COM_IND_FREE;
-      el('comIndReferrerField').hidden = Boolean(item.employeeId);
-      el('comIndReferrer').value = item.employeeId ? '' : item.referrerName;
-      el('comIndCustomer').value = item.customer;
-      el('comIndReference').value = item.reference;
-      setCurrencyValue(el('comIndAmount'), item.amountCents ? (item.amountCents / 100).toFixed(2) : '');
-      el('comIndNotes').value = item.notes;
-      el('btnComIndSubmit').textContent = 'SALVAR EDIÇÃO';
-      el('btnComIndCancel').hidden = false;
-      el('comIndForm').scrollIntoView({behavior:'smooth', block:'start'});
-      return;
-    }
-    if(!confirm('EXCLUIR A INDICAÇÃO DE '+item.referrerName+' ('+formatCentsBRL(item.amountCents)+')? ELA FICA NO HISTÓRICO, RISCADA.')) return;
-    remove.disabled = true;
-    try{
-      await comApi('/indications?id='+encodeURIComponent(item.id), {method:'DELETE'});
-      if(comIndEditing === item.id) comIndResetForm();
-      await comLoadIndications();
-    }catch(error){
-      remove.disabled = false;
-      comStatus('comIndStatus', error.message, 'error');
-    }
-  });
-
   // ---------- Abas, carregamento e filtros ----------
   document.querySelectorAll('[data-com-view]').forEach(button => {
     button.addEventListener('click', () => {
@@ -48895,7 +48752,7 @@ function renderHomeTasks(){
         tab.classList.toggle('active', active);
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
       });
-      ['Dashboard','Comissao','Ranking','Vendedores','Crediarios','Lojas','Fimsemana','Regras','Indicacao'].forEach(name => {
+      ['Dashboard','Comissao','Ranking','Vendedores','Crediarios','Lojas','Fimsemana','Regras','Assistencia'].forEach(name => {
         el('comView'+name).hidden = comView !== name.toLowerCase();
       });
       comStoreFilter = '';
@@ -48904,7 +48761,7 @@ function renderHomeTasks(){
       // Mostra na hora o que já veio do mês (abas de leitura) e SEMPRE busca de
       // novo: outra pessoa pode ter lançado enquanto esta aba estava fechada.
       const data = comView === 'ranking' ? comRanking : comData();
-      const cached = data && data.month === comMonth && !['vendedores', 'crediarios', 'lojas', 'regras', 'indicacao', 'fimsemana'].includes(comView);
+      const cached = data && data.month === comMonth && !['vendedores', 'crediarios', 'lojas', 'regras', 'assistencia', 'fimsemana'].includes(comView);
       if(cached) comRenderCurrent();
       loadComercialPage('comercialAcompanhamento', {silent: Boolean(cached)});
     });
@@ -48919,8 +48776,8 @@ function renderHomeTasks(){
     if(comView === 'vendedores') comRenderSellersEdit();
     if(comView === 'crediarios') comRenderEntries();
     if(comView === 'lojas') comRenderStoreGoals();
-    if(comView === 'indicacao') comRenderIndications();
     if(comView === 'fimsemana') comRenderWeekend();
+    if(comView === 'assistencia') comRenderAssist();
   }
 
   if(el('comShowInactive')) el('comShowInactive').addEventListener('change', () => comLoadOverview({silent:true}));
@@ -49000,12 +48857,8 @@ function renderHomeTasks(){
       await Promise.all([comLoadManage(), comLoadEntries()]);
       return;
     }
-    if(comView === 'lojas'){
+    if(comView === 'lojas' || comView === 'assistencia'){
       await comLoadStores();
-      return;
-    }
-    if(comView === 'indicacao'){
-      await comLoadIndications();
       return;
     }
     if(comView === 'fimsemana'){

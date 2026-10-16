@@ -16,7 +16,6 @@ import {
   identity,
   jsonResponse,
   linkedEmployeeIds,
-  indicationSummary,
   loadSellers,
   safeText,
   withoutInactive,
@@ -46,9 +45,7 @@ import {
 // inactive=true. A conta vinculada continua vendo o próprio histórico.
 // LÍDER vem em sellers (role='lider', premiação de líder na comissão).
 // OPERACIONAIS vêm à parte (`operationals`), com o mesmo escopo; sem
-// comercial:commission saem só os % e a faixa (nenhum R$). `indications` =
-// resumo do mês da aba Indicação por loja do alcance (não vai para a conta
-// vinculada a um vendedor nem para o cadastro).
+// comercial:commission saem só os % e a faixa (nenhum R$).
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -123,7 +120,6 @@ export async function GET(request: Request) {
       rules,
       sellers: visible,
       operationals: forCadastro ? [] : visibleOperationals,
-      indications: forCadastro || ownOnly ? [] : await indicationSummary(database, month, scope),
     });
   } catch (error) {
     console.error("Não foi possível carregar o Comercial.", error);

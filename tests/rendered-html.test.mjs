@@ -4538,13 +4538,13 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</);
   assert.match(html, /'comercial:rules':'Comercial: Cadastro de Regras de Comissão'/);
   assert.doesNotMatch(html, /value="comercial:(view|manage)"/);
-  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores", "comercial:indications",/);
-  assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores", "comercial:indications",\s*\],/);
-  // Aba Indicação (só controle) com permissão própria.
-  assert.match(html, /data-com-view="indicacao" data-permission="comercial:indications">Indicação</);
+  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores",/);
+  assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores",\s*\],/);
+  // Aba Indicação removida (16/10/2026); Meta Assistência ao lado das Regras.
+  assert.doesNotMatch(html, /data-com-view="indicacao"|comercial:indications/);
+  assert.match(html, /data-permission="comercial:rules">Regras de Comissão<\/button>\s*<button[^>]*data-com-view="assistencia" data-permission="comercial:stores">Meta Assistência</);
   // Meta do Fim de Semana: ao lado da Meta Loja, mesma permissão (só controle).
   assert.match(html, /data-com-view="lojas" data-permission="comercial:stores">Meta Loja<\/button>\s*<button[^>]*data-com-view="fimsemana" data-permission="comercial:stores">Meta do Fim de Semana</);
-  assert.match(html, /name="userPermission" value="comercial:indications"> INDICAÇÃO/);
   // As antigas viram as novas na leitura (ninguém perde acesso).
   assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission"\],/);
   assert.match(workerSource, /"comercial:manage": \["comercial:goals"\],/);

@@ -66,7 +66,7 @@ type Permission =
   | "rh_odontologico:view" | "rh_odontologico:manage"
   | "rh_escalas:view" | "rh_escalas:manage"
   | "comercial:dashboard" | "comercial:commission" | "comercial:goals" | "comercial:rules"
-  | "comercial:credit" | "comercial:stores" | "comercial:indications"
+  | "comercial:credit" | "comercial:stores"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -213,7 +213,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // app/api/commercial/shared.ts). As antigas comercial:view/manage ficam só
   // em LEGACY_PERMISSION_MAP.
   "comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",
-  "comercial:credit", "comercial:stores", "comercial:indications",
+  "comercial:credit", "comercial:stores",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -1366,7 +1366,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   schedules: ["rh_escalas:view", "rh_escalas:manage"],
   commercial: [
     "comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",
-    "comercial:credit", "comercial:stores", "comercial:indications",
+    "comercial:credit", "comercial:stores",
   ],
   works: ["works:manage", "finance:manage"],
   loans: [
