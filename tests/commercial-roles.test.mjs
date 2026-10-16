@@ -23,6 +23,7 @@ const storesRoute = await import("../app/api/commercial/stores/route.ts");
 const rankingRoute = await import("../app/api/commercial/ranking/route.ts");
 const newcomersRoute = await import("../app/api/commercial/newcomers/route.ts");
 const weekendRoute = await import("../app/api/commercial/weekend/route.ts");
+const assistanceRoute = await import("../app/api/commercial/assistance/route.ts");
 const migration0099 = await readFile(new URL("../drizzle/0099_comercial_fim_de_semana_indicacao_loja.sql", import.meta.url), "utf8");
 const hrCommissionsRoute = await import("../app/api/hr-payroll/commissions/route.ts");
 
@@ -54,7 +55,7 @@ for (const [id, name, companyId, roleTitle, status = "active", admission = "", u
 
 const ADMIN = { id: "admin", role: "admin" };
 const RULES = { id: "u-rules", permissions: ["comercial:rules"] };
-const DASHBOARD = { id: "u-dash", permissions: ["comercial:dashboard"] };
+const DASHBOARD = { id: "u-dash", permissions: ["comercial:dashboard", "comercial:ranking"] };
 const OP1_DASH = { id: "user-op1", companyId: STORE_A, permissions: ["comercial:dashboard"] };
 const OP1_COMMISSION = { ...OP1_DASH, permissions: ["comercial:dashboard", "comercial:commission"] };
 const PAYROLL = { id: "u-rh", permissions: ["payroll:manage"] };
@@ -75,9 +76,17 @@ const putSeller = async (body) => {
   const response = await callRoute(sellersRoute.PUT, ADMIN, "PUT", "/api/commercial/sellers", body);
   assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
 };
-const putStore = async (month, companyId, values) => {
-  const response = await callRoute(storesRoute.PUT, ADMIN, "PUT", "/api/commercial/stores", { month, companyId, ...values });
-  assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
+// Meta Loja e Meta Assistência são rotas separadas: os campos assist* vão
+// para /assistance, o resto para /stores.
+const putStore = async (month, companyId, { assistTargetCents, assistRevenueCents, ...values }) => {
+  if (Object.keys(values).length) {
+    const response = await callRoute(storesRoute.PUT, ADMIN, "PUT", "/api/commercial/stores", { month, companyId, ...values });
+    assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
+  }
+  if (assistTargetCents !== undefined || assistRevenueCents !== undefined) {
+    const response = await callRoute(assistanceRoute.PUT, ADMIN, "PUT", "/api/commercial/assistance", { month, companyId, assistTargetCents, assistRevenueCents });
+    assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
+  }
 };
 const putRole = (user, body) => callRoute(rolesRoute.PUT, user, "PUT", "/api/commercial/roles", body);
 const getOverview = async (user, month, extra = "") => {
@@ -315,16 +324,40 @@ test("copiar o mês anterior leva junto o tipo trocado (LÍDER)", async () => {
   assert.deepEqual(roles, [{ e: "emp-lider", role: "lider" }]);
 });
 
-test("Meta Loja: META/FEITO ASSISTÊNCIA à mão; % ASSISTÊNCIA para todos (sem R$)", async () => {
-  const bad = await callRoute(storesRoute.PUT, ADMIN, "PUT", "/api/commercial/stores", { month: "2026-10", companyId: STORE_A, assistTargetCents: -1 });
-  assert.equal(bad.status, 400);
-  const data = await (await callRoute(storesRoute.GET, DASHBOARD, "GET", "/api/commercial/stores?month=2026-10")).json();
-  assert.equal(data.items.find((item) => item.companyId === STORE_A).assistPercent, 120);
-  assert.equal(data.totalAssistPercent, 120);
-  assert.equal("rows" in data, false);
-  const editor = await (await callRoute(storesRoute.GET, ADMIN, "GET", "/api/commercial/stores?month=2026-10")).json();
-  const row = editor.rows.find((item) => item.companyId === STORE_A);
-  assert.deepEqual([row.assistTargetCents, row.assistRevenueCents], [1_000_000, 1_200_000]);
+test("Meta Assistência: rota própria (ver/editar), escopo de loja, mês anterior; a Meta Loja não mexe nela", async () => {
+  const ASSIST_VIEW = { id: "u-assist-view", permissions: ["comercial:assist_view"] };
+  const ASSIST_B = { id: "u-assist-b", companyId: STORE_B, permissions: ["comercial:assist"] };
+  const get = async (user, month) => callRoute(assistanceRoute.GET, user, "GET", `/api/commercial/assistance?month=${month}`);
+  const put = (user, body) => callRoute(assistanceRoute.PUT, user, "PUT", "/api/commercial/assistance", body);
+  assert.equal((await get(DASHBOARD, "2026-10")).status, 403);
+  assert.equal((await put(ASSIST_VIEW, { month: "2026-10", companyId: STORE_A, assistTargetCents: 1, assistRevenueCents: 1 })).status, 403, "ver não edita");
+  assert.equal((await put(ASSIST_B, { month: "2026-10", companyId: STORE_A, assistTargetCents: 1, assistRevenueCents: 1 })).status, 404, "loja de fora do alcance");
+  assert.equal((await put(ADMIN, { month: "2026-10", companyId: STORE_A, assistTargetCents: -1 })).status, 400);
+  await putStore("2026-09", STORE_A, { assistTargetCents: 900_000, assistRevenueCents: 800_000 });
+  const view = await (await get(ASSIST_VIEW, "2026-10")).json();
+  assert.equal(view.canEdit, false);
+  assert.equal(view.previousMonth, "2026-09");
+  assert.equal(view.premiumPercent, 120);
+  const row = view.rows.find((item) => item.companyId === STORE_A);
+  assert.deepEqual([row.targetCents, row.revenueCents, row.previousTargetCents, row.previousRevenueCents], [1_000_000, 1_200_000, 900_000, 800_000]);
+  assert.ok(row.updatedAt);
+  assert.deepEqual((await (await get(ASSIST_B, "2026-10")).json()).rows.map((item) => item.companyId), [STORE_B]);
+  // Salvar a Meta Loja não zera a assistência (e vice-versa).
+  await putStore("2026-10", STORE_A, { targetCents: 10_000_000, revenueCents: 12_000_000, indicationQty: 1 });
+  const after = (await (await get(ADMIN, "2026-10")).json()).rows.find((item) => item.companyId === STORE_A);
+  assert.deepEqual([after.targetCents, after.revenueCents], [1_000_000, 1_200_000]);
+  const store = (await (await callRoute(storesRoute.GET, ADMIN, "GET", "/api/commercial/stores?month=2026-10")).json()).rows.find((item) => item.companyId === STORE_A);
+  assert.equal(store.revenueCents, 12_000_000);
+  assert.equal("assistTargetCents" in store, false);
+});
+
+test("Dashboard do operacional e do líder: acompanhamento da loja (loja + assistência) só das lojas deles", async () => {
+  const op = await getOverview(OP1_DASH, "2026-10");
+  assert.deepEqual(op.tracking, [{ companyId: STORE_A, name: "LOJA ALFA", targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 1_200_000 }]);
+  const all = await getOverview(ADMIN, "2026-10");
+  // ALFA (líder e operacionais) e BETA (operacional); nunca loja sem eles.
+  assert.deepEqual(all.tracking.map((item) => item.companyId).sort(), [STORE_A, STORE_B].sort());
+  assert.deepEqual((await getOverview(ADMIN, "2026-10", "&for=cadastro")).tracking, []);
 });
 
 test("migration 0098: só ADD COLUMN / CREATE TABLE/INDEX (e RLS nas tabelas novas) — nada apagado ou reescrito", () => {
@@ -345,21 +378,24 @@ test("Meta Loja: INDICAÇÃO (quantidade e R$) por loja, só controle — não m
   assert.equal(bad.status, 400);
   const editor = await (await callRoute(storesRoute.GET, ADMIN, "GET", "/api/commercial/stores?month=2026-10")).json();
   const row = editor.rows.find((item) => item.companyId === STORE_A);
-  assert.deepEqual([row.indicationQty, row.indicationCents, row.assistRevenueCents], [7, 350_000, 1_200_000]);
+  assert.deepEqual([row.indicationQty, row.indicationCents], [7, 350_000]);
   const viewer = await (await callRoute(storesRoute.GET, DASHBOARD, "GET", "/api/commercial/stores?month=2026-10")).json();
   assert.equal(JSON.stringify(viewer).includes("indication"), false, "quem só vê o painel não recebe a indicação");
   const hrAfter = db.sqlite.prepare("SELECT employee_id AS e, commission_cents AS c FROM hr_commissions ORDER BY e, month").all().map((row) => ({ ...row }));
   assert.deepEqual(hrAfter, hrBefore);
 });
 
-test("Meta do Fim de Semana: comercial:stores, por sábado, escopo de loja, total; só controle", async () => {
-  const STORES_A = { id: "u-stores-a", companyId: STORE_A, permissions: ["comercial:stores"] };
+test("Meta do Fim de Semana: comercial:weekend(_view), por sábado, escopo de loja, total; só controle", async () => {
+  const STORES_A = { id: "u-stores-a", companyId: STORE_A, permissions: ["comercial:weekend"] };
+  const WEEKEND_VIEW = { id: "u-weekend-view", permissions: ["comercial:weekend_view"] };
   const put = (user, body) => callRoute(weekendRoute.PUT, user, "PUT", "/api/commercial/weekend", body);
   const get = async (user, query) => (await callRoute(weekendRoute.GET, user, "GET", `/api/commercial/weekend?${query}`)).json();
   const hrBefore = db.sqlite.prepare("SELECT COUNT(*) AS n, SUM(commission_cents) AS c FROM hr_commissions").get();
   const sellersBefore = db.sqlite.prepare("SELECT COUNT(*) AS n FROM commercial_monthly").get().n;
 
   assert.equal((await callRoute(weekendRoute.GET, DASHBOARD, "GET", "/api/commercial/weekend?month=2026-10")).status, 403);
+  assert.equal((await put(WEEKEND_VIEW, { weekend: "2026-10-10", companyId: STORE_A })).status, 403, "ver não edita");
+  assert.equal((await get(WEEKEND_VIEW, "month=2026-10")).canEdit, false);
   assert.equal((await put(ADMIN, { weekend: "2026-10-12", companyId: STORE_A })).status, 400, "domingo não é a chave do fim de semana");
   assert.equal((await put(STORES_A, { weekend: "2026-10-10", companyId: STORE_B })).status, 404, "loja de fora do alcance");
   assert.equal((await put(ADMIN, { weekend: "2026-10-10", companyId: STORE_A, revenueCents: -5 })).status, 400);

@@ -17,7 +17,7 @@ import {
   type LiveModule,
 } from "./live-updates";
 
-import { isSellerRole } from "../app/lib/commercial";
+import { isSellerRole, roleFromTitle } from "../app/lib/commercial";
 import { isSellingStore } from "../app/lib/selling-stores";
 import { auditAction, auditModule, auditRecordId, auditSummary, shouldAudit } from "../app/lib/audit";
 import { documentsApiAllowed, isCommercialOnlyAccess } from "../app/lib/documents-access";
@@ -65,8 +65,10 @@ type Permission =
   | "rh_aniversariantes:view" | "rh_aniversariantes:manage"
   | "rh_odontologico:view" | "rh_odontologico:manage"
   | "rh_escalas:view" | "rh_escalas:manage"
-  | "comercial:dashboard" | "comercial:commission" | "comercial:goals" | "comercial:rules"
-  | "comercial:credit" | "comercial:stores"
+  | "comercial:dashboard" | "comercial:commission" | "comercial:ranking"
+  | "comercial:goals_view" | "comercial:goals" | "comercial:credit_view" | "comercial:credit"
+  | "comercial:stores_view" | "comercial:stores" | "comercial:weekend_view" | "comercial:weekend"
+  | "comercial:assist_view" | "comercial:assist" | "comercial:rules_view" | "comercial:rules"
   | "works:manage"
   | "payables:invoices_view" | "payables:invoices_reconcile" | "payables:confirm_payment" | "payables:return_to_purchases"
   | "loans:view" | "loans:create" | "loans:edit" | "loans:delete" | "loans:request" | "loans:manage_requests"
@@ -204,16 +206,17 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // folgas e resumo por colaborador calculados ao vivo. Permissão própria,
   // independente das demais (ver MODULE_VIEW_PERMISSIONS.schedules).
   "rh_escalas:view", "rh_escalas:manage",
-  // Comercial — metas e comissionamento dos vendedores. Uma permissão por
-  // aba: dashboard (Dashboard e Ranking), commission (Comissão, valores em
-  // R$), goals (aba Vendedores: metas e realizado), credit (aba Crediários),
-  // stores (aba Meta Loja) e rules (Regras de Comissão: percentuais e
-  // premiação por vigência). Independente do Financeiro e do RH
-  // Financeiro (ver MODULE_VIEW_PERMISSIONS.commercial e
-  // app/api/commercial/shared.ts). As antigas comercial:view/manage ficam só
-  // em LEGACY_PERMISSION_MAP.
-  "comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",
-  "comercial:credit", "comercial:stores",
+  // Comercial (Acompanhamento Metas) — VER e EDITAR por aba (2026-10-16):
+  // dashboard, commission e ranking só ver; goals (Vendedores), credit
+  // (Crediários), stores (Meta Loja), weekend (Meta do Fim de Semana),
+  // assist (Meta Assistência) e rules (Regras) com *_view para ver — quem
+  // edita também vê. Independente do Financeiro e do RH Financeiro (ver
+  // MODULE_VIEW_PERMISSIONS.commercial e app/api/commercial/shared.ts). As
+  // antigas comercial:view/manage ficam só em LEGACY_PERMISSION_MAP.
+  "comercial:dashboard", "comercial:commission", "comercial:ranking",
+  "comercial:goals_view", "comercial:goals", "comercial:credit_view", "comercial:credit",
+  "comercial:stores_view", "comercial:stores", "comercial:weekend_view", "comercial:weekend",
+  "comercial:assist_view", "comercial:assist", "comercial:rules_view", "comercial:rules",
   // Módulo Obras (CAPEX) — permissão própria, com fallback para
   // finance:manage (ver MODULE_VIEW_PERMISSIONS.works e canManageWorks em
   // app/api/obras/shared.ts).
@@ -313,7 +316,7 @@ const LEGACY_PERMISSION_MAP: Record<string, Permission[]> = {
   "documents_manage": ["documents:create", "documents:edit", "documents:delete"],
   // Comercial: view/manage viraram uma permissão por aba (sem UPDATE no
   // banco — a expansão é na leitura; ao salvar o usuário já grava as novas).
-  "comercial:view": ["comercial:dashboard", "comercial:commission"],
+  "comercial:view": ["comercial:dashboard", "comercial:commission", "comercial:ranking"],
   "comercial:manage": ["comercial:goals"],
   // Controle GD: lançar/cancelar ajuste virou lançar, alterar/excluir e saldo anterior.
   "controle_gd:manage": ["controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
@@ -1365,8 +1368,10 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   dentalPlan: ["rh_odontologico:view", "rh_odontologico:manage"],
   schedules: ["rh_escalas:view", "rh_escalas:manage"],
   commercial: [
-    "comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",
-    "comercial:credit", "comercial:stores",
+    "comercial:dashboard", "comercial:commission", "comercial:ranking",
+    "comercial:goals_view", "comercial:goals", "comercial:credit_view", "comercial:credit",
+    "comercial:stores_view", "comercial:stores", "comercial:weekend_view", "comercial:weekend",
+    "comercial:assist_view", "comercial:assist", "comercial:rules_view", "comercial:rules",
   ],
   works: ["works:manage", "finance:manage"],
   loans: [
@@ -1796,12 +1801,12 @@ function publicUser(row: StoredUserRow) {
 }
 
 // ---------------------------------------------------------------------------
-// Acessos dos vendedores (Cadastro de Usuários › "Criar acessos dos
-// vendedores"). Vendedor = funcionário ATIVO com "vendedor" no cargo, ou que
-// esteja na última importação do Comercial (ex.: líderes comerciais que
-// aparecem na aba VENDEDORES). Cada acesso nasce com: usuário nome.sobrenome,
-// só comercial:dashboard + comercial:commission (vê os próprios números, a
-// própria comissão e o ranking), loja
+// Acessos dos vendedores e operacionais (Cadastro de Usuários › "Criar
+// acessos dos vendedores e operacionais"). Candidato = funcionário ATIVO com
+// "vendedor" ou "operacional" no cargo, ou que esteja no último mês do
+// Comercial (ex.: líderes comerciais da aba VENDEDORES). Cada acesso nasce
+// com: usuário nome.sobrenome, só comercial:dashboard + commission + ranking
+// (vê os próprios números/acompanhamento, a própria comissão e o ranking), loja
 // do RH, vínculo com o cadastro do funcionário e troca de senha obrigatória
 // no primeiro acesso. Um funcionário por requisição: cada senha passa por
 // PBKDF2 (100 mil iterações) e várias numa requisição só poderiam estourar
@@ -1853,7 +1858,8 @@ async function sellerCandidates(database: D1Database) {
   ]);
   const taken = new Set((users.results ?? []).map((row) => row.username));
   return (rows.results ?? [])
-    .filter((row) => isSellerRole(row.roleTitle) || Number(row.inLastImport) === 1)
+    // Vendedores e OPERACIONAIS (qualquer cargo com "OPERACIONAL").
+    .filter((row) => isSellerRole(row.roleTitle) || roleFromTitle(row.roleTitle) === "operacional" || Number(row.inLastImport) === 1)
     .map((row) => {
       const hasAccount = row.linkedUserActive !== null && row.linkedUserActive !== undefined;
       let username = "";
@@ -1905,7 +1911,7 @@ async function handleSellerAccounts(
     return jsonError("A SENHA INICIAL PRECISA TER ENTRE 8 E 200 CARACTERES.", 400);
   }
   const candidate = (await sellerCandidates(env.DB)).find((item) => item.employeeId === employeeId);
-  if (!candidate) return jsonError("FUNCIONÁRIO NÃO É VENDEDOR ATIVO.", 400);
+  if (!candidate) return jsonError("FUNCIONÁRIO NÃO É VENDEDOR NEM OPERACIONAL ATIVO.", 400);
   if (candidate.hasAccount) return jsonError(`${candidate.fullName} JÁ TEM ACESSO.`, 409);
   if (!validUsername(candidate.suggestedUsername)) {
     return jsonError(`NÃO FOI POSSÍVEL GERAR UM USUÁRIO VÁLIDO PARA ${candidate.fullName}.`, 400);
@@ -1922,7 +1928,7 @@ async function handleSellerAccounts(
          must_change_password)
        VALUES (?1, ?2, ?3, '', ?4, ?5, 'user', 'custom', ?6, ?7, 'administrative', '', 1, 1, 1)`,
     ).bind(id, candidate.suggestedUsername, candidate.fullName, password.hash, password.salt,
-      JSON.stringify(["comercial:dashboard", "comercial:commission"]), companyId),
+      JSON.stringify(["comercial:dashboard", "comercial:commission", "comercial:ranking"]), companyId),
     env.DB.prepare(
       "UPDATE hr_employees SET user_id=?1, updated_at=CURRENT_TIMESTAMP WHERE id=?2",
     ).bind(id, candidate.employeeId),

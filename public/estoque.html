@@ -3306,6 +3306,27 @@
   .com-edit-table td.calc{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
   .com-edit-table tr.saving td{opacity:.7}
   .com-edit-table tr.com-weekend-total td{border-top:2px solid var(--surface-border);font-weight:900}
+  /* Meta Assistência: painel comparativo */
+  .com-assist-dash{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+  .com-assist-dash .com-section-title{margin:10px 0 0}
+  .com-kpis{margin-bottom:0}
+  .com-kpi.tier-green strong{color:#54c48a}
+  .com-kpi.tier-yellow strong{color:#e1ad49}
+  .com-kpi.tier-red strong{color:#ef6a55}
+  .com-rank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:10px}
+  .com-rank-card{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border:1px solid var(--surface-border);border-radius:var(--radius-surface);background:var(--bg-card);min-width:0}
+  .com-rank-card span{font:800 10px/1.3 var(--mono);letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase;overflow-wrap:anywhere}
+  .com-rank-card strong{font:900 15px/1.25 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums}
+  .com-rank-card .com-pct{font:900 20px/1.2 var(--sans)}
+  .com-rank-card small{font:700 10px/1.3 var(--mono);color:var(--ink-faint)}
+  .com-rank-card.tier-green .com-pct{color:#54c48a}
+  .com-rank-card.tier-yellow .com-pct{color:#e1ad49}
+  .com-rank-card.tier-red .com-pct{color:#ef6a55}
+  .com-rank-card.company,.com-block.company{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .com-track-meta{margin:-4px 0 0;font:700 11px/1.4 var(--mono);color:var(--ink-soft);text-transform:uppercase}
+  .com-track-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr))}
+  .com-change.up{color:#54c48a}
+  .com-change.down{color:#ef6a55}
   .com-edit-table tr.saved td:first-child{box-shadow:inset 3px 0 0 #54c48a}
   /* Aba Vendedores (18 colunas): a tabela rola DENTRO do quadro (a barra
      lateral fica sempre à vista), cabeçalho e coluna VENDEDOR fixos, e os
@@ -3331,6 +3352,7 @@
   .com-commission-note{margin:-2px 0 0;font:600 11px/1.4 var(--sans);color:var(--ink-soft)}
   .com-operationals-title{margin:22px 0 10px}
   .com-operationals{margin-top:16px}
+  .com-leader-track-title{margin:16px 0 10px;font:800 10.5px/1.4 var(--mono);letter-spacing:.05em;color:var(--ink-soft)}
   .com-entry-form .field{min-width:min(100%,200px);flex:1 1 200px}
   .com-entry-form input,.com-entry-form select{width:100%}
   @media(max-width:680px){
@@ -6367,7 +6389,7 @@
             </div>
             <div class="user-list-head-actions">
               <button class="btn-accent" type="button" id="btnNewUser">+ NOVO USUÁRIO</button>
-              <button class="btn-outline" type="button" id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES</button>
+              <button class="btn-outline" type="button" id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES E OPERACIONAIS</button>
             </div>
           </div>
           <div class="user-form-status" id="userListStatus" role="status" aria-live="polite"></div>
@@ -7038,13 +7060,13 @@
       <div class="supply-tabs" role="tablist" aria-label="Acompanhamento de metas">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-com-view="dashboard" data-permission="comercial:dashboard">Dashboard</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="comissao" data-permission="comercial:commission">Comissão</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="ranking" data-permission="comercial:dashboard">Ranking</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="vendedores" data-permission="comercial:goals">Vendedores</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="crediarios" data-permission="comercial:credit">Crediários</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="lojas" data-permission="comercial:stores">Meta Loja</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="fimsemana" data-permission="comercial:stores">Meta do Fim de Semana</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="regras" data-permission="comercial:rules">Regras de Comissão</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="assistencia" data-permission="comercial:stores">Meta Assistência</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="ranking" data-permission="comercial:ranking">Ranking</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="vendedores" data-any-permission="comercial:goals_view,comercial:goals">Vendedores</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="crediarios" data-any-permission="comercial:credit_view,comercial:credit">Crediários</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="lojas" data-any-permission="comercial:stores_view,comercial:stores">Meta Loja</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="fimsemana" data-any-permission="comercial:weekend_view,comercial:weekend">Meta do Fim de Semana</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="regras" data-any-permission="comercial:rules_view,comercial:rules">Regras de Comissão</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="assistencia" data-any-permission="comercial:assist_view,comercial:assist">Meta Assistência</button>
       </div>
 
       <div class="dre-toolbar com-toolbar no-print">
@@ -7194,9 +7216,10 @@
       </div>
 
       <div class="com-view-panel" id="comViewAssistencia" hidden>
-        <!-- Meta Assistência (comercial:stores): META e FEITO DA ASSISTÊNCIA de
-             cada loja no mês — base da comissão do OPERACIONAL e do prêmio
-             do LÍDER (loja E assistência em 120%). -->
+        <!-- Meta Assistência (comercial:assist_view ver / comercial:assist
+             editar): META e FEITO DA ASSISTÊNCIA de cada loja no mês — base da
+             comissão do OPERACIONAL e do prêmio do LÍDER (loja E assistência
+             em 120%). Embaixo, o painel comparativo (como o Base44 da UNITEC). -->
         <div class="com-total" id="comAssistTotal" hidden></div>
         <div class="table-panel responsive-table com-edit-table">
           <div class="table-scroll">
@@ -7206,6 +7229,7 @@
             </table>
           </div>
         </div>
+        <div class="com-assist-dash" id="comAssistDash"></div>
       </div>
 
       <div class="com-view-panel" id="comViewRegras" hidden>
@@ -9655,11 +9679,11 @@
 
 <dialog class="purchase-dialog" id="sellerAccountsDialog" aria-labelledby="sellerAccountsTitle">
   <div class="purchase-dialog-head">
-    <h3 id="sellerAccountsTitle">CRIAR ACESSOS DOS VENDEDORES</h3>
+    <h3 id="sellerAccountsTitle">CRIAR ACESSOS DOS VENDEDORES E OPERACIONAIS</h3>
     <button class="purchase-dialog-close" id="btnCloseSellerAccounts" type="button" aria-label="Fechar">×</button>
   </div>
   <form class="purchase-form" id="sellerAccountsForm">
-    <p class="seller-accounts-hint">Cada vendedor recebe um login só com o <strong>Comercial</strong> (vê os próprios números e o ranking) e as Instruções. Na primeira entrada, o sistema obriga a criar uma senha própria.</p>
+    <p class="seller-accounts-hint">Cada vendedor e operacional recebe um login só com o <strong>Comercial</strong> (Dashboard com os próprios números e o acompanhamento da loja, Comissão e Ranking) e as Instruções. Na primeira entrada, o sistema obriga a criar uma senha própria.</p>
     <div class="purchase-field full"><label for="sellerAccountsPassword">SENHA INICIAL (IGUAL PARA TODOS, MÍNIMO 8 CARACTERES) *</label>
       <input id="sellerAccountsPassword" type="text" minlength="8" maxlength="200" autocomplete="off" required>
     </div>
@@ -9834,11 +9858,20 @@
             <details class="permission-module">
               <summary>Comercial - Metas e Comissão</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals"> ATUALIZAR VENDEDORES (METAS E REALIZADO)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:dashboard"> VER DASHBOARD</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:commission"> VER COMISSÃO (VALORES EM R$)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:ranking"> VER RANKING</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals_view"> VER VENDEDORES</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals"> EDITAR VENDEDORES (METAS, REALIZADO, TIPO E NOVATO)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:credit_view"> VER CREDIÁRIOS</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:credit"> LANÇAR CREDIÁRIOS (PAYJOY, CREFAZ, PARCELEX, ODRES, VENDA P.A E UNIGAMES)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:stores"> ATUALIZAR META LOJA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:stores_view"> VER META LOJA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:stores"> EDITAR META LOJA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:weekend_view"> VER META DO FIM DE SEMANA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:weekend"> EDITAR META DO FIM DE SEMANA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:assist_view"> VER META ASSISTÊNCIA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:assist"> EDITAR META ASSISTÊNCIA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules_view"> VER REGRAS DE COMISSÃO</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</label>
               </div>
             </details>
@@ -41949,7 +41982,7 @@ function renderHomeTasks(){
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
     'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
-    'comercial:dashboard':'Comercial: visualizar Dashboard e Ranking','comercial:commission':'Comercial: visualizar Comissão','comercial:goals':'Comercial: Atualizar Vendedores','comercial:credit':'Comercial: Lançar Crediários','comercial:stores':'Comercial: Atualizar Meta Loja','comercial:rules':'Comercial: Cadastro de Regras de Comissão',
+    'comercial:dashboard':'Comercial: ver Dashboard','comercial:commission':'Comercial: ver Comissão','comercial:ranking':'Comercial: ver Ranking','comercial:goals_view':'Comercial: ver Vendedores','comercial:goals':'Comercial: Atualizar Vendedores','comercial:credit_view':'Comercial: ver Crediários','comercial:credit':'Comercial: Lançar Crediários','comercial:stores_view':'Comercial: ver Meta Loja','comercial:stores':'Comercial: Atualizar Meta Loja','comercial:weekend_view':'Comercial: ver Meta do Fim de Semana','comercial:weekend':'Comercial: Atualizar Meta do Fim de Semana','comercial:assist_view':'Comercial: ver Meta Assistência','comercial:assist':'Comercial: Atualizar Meta Assistência','comercial:rules_view':'Comercial: ver Regras de Comissão','comercial:rules':'Comercial: Cadastro de Regras de Comissão',
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Estoque - Relatório NF: visualizar','relatorio_nf:manage':'Estoque - Relatório NF: lançar/gerenciar',
@@ -42085,7 +42118,7 @@ function renderHomeTasks(){
 
   function renderSellerAccounts(){
     const list = el('sellerAccountsList');
-    if(!sellerAccountItems.length){ list.innerHTML = '<li class="task-empty">Nenhum vendedor ativo encontrado em RH › Funcionários.</li>'; return; }
+    if(!sellerAccountItems.length){ list.innerHTML = '<li class="task-empty">Nenhum vendedor ou operacional ativo encontrado em RH › Funcionários.</li>'; return; }
     list.innerHTML = sellerAccountItems.map(item => {
       const state = item.created ? ' done' : item.hasAccount ? ' has-account' : '';
       const login = item.created
@@ -47171,14 +47204,30 @@ function renderHomeTasks(){
       const leader = seller.role === 'lider';
       return '<article class="com-seller'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller, !leader)+
         '<div class="com-blocks">'+
-          comBlockHtml('money', 'Faturamento', m.revenue, clock, leader)+
+          // Para o líder o alvo é só a meta (100%): batida, não há "próxima faixa".
+          comBlockHtml('money', 'Faturamento', leader && m.revenue.target > 0 && m.revenue.realized >= m.revenue.target ? {...m.revenue, next:null} : m.revenue, clock, leader)+
           comBlockHtml('items', 'Itens vendidos', m.items, clock, true, superLine)+
           comBlockHtml('units', 'Realmes', m.realme, clock, true)+
           comWarrantyBlockHtml(m.warranty)+
           (comRules().creditRateBps > 0 || seller.realized.creditSalesCents > 0 ? comCreditBlockHtml(seller) : '')+
         '</div>'+
+        (leader ? comLeaderTrackingHtml(seller) : '')+
       '</article>';
     }).join('');
+  }
+
+  // LÍDER: acompanhamento da loja dele — loja e assistência, com a meta do
+  // prêmio (120%: só sai com as duas).
+  function comLeaderTrackingHtml(seller){
+    const track = (comOverview.tracking || []).find(item => item.companyId === seller.companyId);
+    const roles = comRules().roles;
+    if(!track || !roles) return '';
+    const percent = roles.leader.storePercent;
+    return '<h4 class="com-leader-track-title">ACOMPANHAMENTO DA LOJA · PRÊMIO DE '+escapeHtml(comMoneyShort(roles.leader.storeCents))+' COM LOJA E ASSISTÊNCIA EM '+percent+'%</h4>'+
+      '<div class="com-blocks">'+
+        comTrackCardHtml('Loja · '+(seller.companyName || ''), track.targetCents, track.revenueCents, comOverview.clock, percent)+
+        comTrackCardHtml('Assistência · '+(seller.companyName || ''), track.assistTargetCents, track.assistRevenueCents, comOverview.clock, percent)+
+      '</div>';
   }
 
   // Barra de % sem valores em R$ (cartões dos operacionais no Dashboard).
@@ -47211,11 +47260,23 @@ function renderHomeTasks(){
       const rateText = c.rateBps > 0 ? 'Faixa de '+comFormatBps(c.rateBps)+' do feito da assistência.' : 'Abaixo de 80% da meta da assistência — sem comissão.';
       const assistNote = rateText+(c.assistPercent !== null && c.assistPercent >= op.premiumPercent ? ' Premiação da assistência atingida.' : ' Premiação a partir de '+op.premiumPercent+'%.');
       const storeNote = c.storePercent !== null && c.storePercent >= op.premiumPercent ? 'Premiação da loja atingida.' : 'Premiação a partir de '+op.premiumPercent+'% da meta da loja.';
+      // Acompanhamento da loja (meta, realizado, faltando, diária e meta
+      // 120%); sem os valores da loja, só os %.
+      const track = (comOverview.tracking || []).find(item => item.companyId === group[0].companyId);
+      const blocks = track
+        ? comTrackCardHtml('Assistência', track.assistTargetCents, track.assistRevenueCents, comOverview.clock, op.premiumPercent)+
+          comTrackCardHtml('Loja', track.targetCents, track.revenueCents, comOverview.clock, op.premiumPercent)
+        : comPctBlockHtml('Assistência', c.assistPercent, assistNote)+comPctBlockHtml('Loja', c.storePercent, storeNote);
+      // Comissão estimada só com comercial:commission (o servidor manda o total).
+      const earn = c.totalCents !== undefined
+        ? '<p class="com-incentive">'+escapeHtml(rateText)+'<small>'+(comOverview.ownOnly ? 'Sua comissão estimada: ' : 'Comissão estimada de cada operacional: ')+escapeHtml(formatCentsBRL(c.totalCents))+
+          ' (contracheque '+escapeHtml(formatCentsBRL(c.payslipCents))+' + premiação '+escapeHtml(formatCentsBRL(c.premiumCents))+')</small></p>'
+        : '';
       return '<article class="com-seller">'+
         '<header class="com-seller-head"><div class="com-seller-name"><strong>OPERACIONAIS · '+escapeHtml(group[0].companyName || 'SEM LOJA')+'</strong>'+
           '<span>'+escapeHtml(group.map(person => person.name).join(' · '))+'</span></div>'+
           '<div class="com-seller-side"><span class="com-criteria operational">OPERACIONAL'+(c.rateBps > 0 ? ' · '+escapeHtml(comFormatBps(c.rateBps)) : '')+'</span></div></header>'+
-        '<div class="com-blocks">'+comPctBlockHtml('Assistência', c.assistPercent, assistNote)+comPctBlockHtml('Loja', c.storePercent, storeNote)+'</div>'+
+        '<div class="com-blocks">'+blocks+'</div>'+earn+
       '</article>';
     }).join('');
   }
@@ -47856,6 +47917,12 @@ function renderHomeTasks(){
     return seller.realized[key] || 0;
   }
 
+  // Aba só com a permissão de VER: campos e botões de lançamento desligados.
+  function comLock(container, locked){
+    if(!container || !locked) return;
+    container.querySelectorAll('input,select,textarea,button').forEach(node => { node.disabled = true; });
+  }
+
   function comStatus(id, message, tone){
     const node = el(id);
     if(!node) return;
@@ -47963,6 +48030,10 @@ function renderHomeTasks(){
     const options = comEmployees
       .filter(employee => !inMonth.has(employee.id) && !comPendingSellers.has(employee.id))
       .sort((a, b) => Number(b.isSeller) - Number(a.isSeller) || a.fullName.localeCompare(b.fullName, 'pt-BR'));
+    // Só VER (comercial:goals_view): nada se edita, sem adicionar/copiar.
+    const readOnly = !comManage.canGoals;
+    comLock(body, readOnly);
+    document.querySelector('#comViewVendedores .com-sellers-actions').hidden = readOnly;
     requestAnimationFrame(comUpdateScrollHint);
     el('comAddSellerSelect').innerHTML = '<option value="">ESCOLHA O FUNCIONÁRIO</option>'+options.map(employee =>
       '<option value="'+escapeHtml(employee.id)+'">'+escapeHtml(employee.fullName+(employee.companyName ? ' — '+employee.companyName : ''))+'</option>').join('');
@@ -48166,6 +48237,8 @@ function renderHomeTasks(){
         '<option value="'+escapeHtml(seller.employeeId)+'">'+escapeHtml(seller.name+(seller.companyName ? ' — '+seller.companyName : '')+(seller.inactive ? ' (INATIVO)' : ''))+'</option>').join('');
       select.value = comManage.sellers.some(seller => seller.employeeId === current) ? current : '';
     }
+    // Só VER (comercial:credit_view): sem o formulário e sem excluir.
+    if(el('comEntryForm') && comManage) el('comEntryForm').hidden = !comManage.canCredit;
     const body = el('comEntriesBody');
     const total = el('comEntryTotal');
     if(!body || !comEntries || comEntries.kind !== comEntryKind) return;
@@ -48175,7 +48248,7 @@ function renderHomeTasks(){
       '<td data-label="Vendedor" class="nome">'+escapeHtml(item.employeeName)+'</td>'+
       '<td data-label="Total da venda" style="text-align:right">'+escapeHtml(formatCentsBRL(item.amountCents))+'</td>'+
       '<td data-label="Lançado por">'+escapeHtml((item.createdByName || '—')+(item.createdAt ? ' · '+formatDateTimeBR(item.createdAt) : ''))+'</td>'+
-      '<td data-label="Ações"><button class="btn-outline" type="button" data-com-entry-delete="'+escapeHtml(item.id)+'">EXCLUIR</button></td></tr>'
+      '<td data-label="Ações">'+(comManage && !comManage.canCredit ? '' : '<button class="btn-outline" type="button" data-com-entry-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>')+'</td></tr>'
     ).join('') : '<tr><td colspan="5" class="responsive-empty">Nenhuma venda lançada em '+escapeHtml(comKindLabel(comEntryKind))+' neste mês.</td></tr>';
     if(total){
       total.innerHTML = '<span>Total '+escapeHtml(comKindLabel(comEntryKind))+' · '+items.length+(items.length === 1 ? ' venda' : ' vendas')+'</span>'+
@@ -48285,6 +48358,7 @@ function renderHomeTasks(){
     const rows = comStores.rows || [];
     body.innerHTML = rows.length ? rows.map(comStoreRowHtml).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
     comMaskMoney(body);
+    comLock(body, !comStores.canManage);
     comRenderStoreGoalsTotal();
   }
 
@@ -48294,10 +48368,8 @@ function renderHomeTasks(){
     }catch(error){
       comStores = null;
       if(comView === 'lojas' && el('comStoreGoalsBody')) el('comStoreGoalsBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-      if(comView === 'assistencia' && el('comAssistBody')) el('comAssistBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
     if(comView === 'lojas') comRenderStoreGoals();
-    if(comView === 'assistencia') comRenderAssist();
     if(comView === 'ranking') comRenderRanking();
   }
 
@@ -48312,10 +48384,6 @@ function renderHomeTasks(){
     const items = Math.round(Number(field('items').value || 0));
     const targetRealme = Math.round(Number(field('targetRealme').value || 0));
     const realme = Math.round(Number(field('realme').value || 0));
-    // META/FEITO DA ASSISTÊNCIA ficam na aba Meta Assistência: reenvia os
-    // valores guardados para não zerá-los.
-    const assistTargetCents = store ? Number(store.assistTargetCents) || 0 : 0;
-    const assistRevenueCents = store ? Number(store.assistRevenueCents) || 0 : 0;
     const indicationQty = Math.round(Number(field('indicationQty').value || 0));
     const indicationCents = comMoneyCents(field('indicationCents'));
     if(targetCents === null || revenueCents === null || indicationCents === null || ![targetItems, items, targetRealme, realme, indicationQty].every(value => value >= 0)){
@@ -48329,8 +48397,6 @@ function renderHomeTasks(){
       store.items = items;
       store.targetRealme = targetRealme;
       store.realme = realme;
-      store.assistTargetCents = assistTargetCents;
-      store.assistRevenueCents = assistRevenueCents;
       store.indicationQty = indicationQty;
       store.indicationCents = indicationCents;
     }
@@ -48342,7 +48408,7 @@ function renderHomeTasks(){
     row.classList.add('saving');
     comQueueSave('store:'+row.dataset.comStore, async () => {
       try{
-        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme, assistTargetCents, assistRevenueCents, indicationQty, indicationCents})});
+        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme, indicationQty, indicationCents})});
         comOverview = null;
         row.classList.add('saved');
       }catch(error){
@@ -48353,38 +48419,152 @@ function renderHomeTasks(){
     });
   });
 
-  // ----- Meta Assistência (comercial:stores) -----
-  // Mesmos dados e a mesma gravação da Meta Loja (/stores): aqui só META e
-  // FEITO DA ASSISTÊNCIA; os outros números da loja vão junto como estão.
+  // ----- Meta Assistência (comercial:assist_view / comercial:assist) -----
+  // Rota própria (/assistance): grava só META e FEITO DA ASSISTÊNCIA. Embaixo
+  // da tabela, o painel comparativo: destaques, ranking, acompanhamento por
+  // loja (faltando e diária necessária), meta 120% e o mês anterior.
+  let comAssist = null;
+
+  // Cartão de acompanhamento (meta, realizado, faltando, diária necessária e
+  // a meta de premiação). Também usado no Dashboard do operacional e do líder.
+  function comTrackCardHtml(title, targetCents, revenueCents, clock, premiumPercent, extraClass){
+    const percent = comShare(revenueCents, targetCents);
+    const missing = Math.max(0, targetCents - revenueCents);
+    const premiumTarget = Math.ceil(targetCents * premiumPercent / 100);
+    const premiumMissing = Math.max(0, premiumTarget - revenueCents);
+    const days = clock && clock.daysRemaining > 0 ? clock.daysRemaining : 0;
+    const perDay = days && missing ? Math.ceil(missing / days) : 0;
+    const premiumPct = comShare(revenueCents, premiumTarget);
+    const width = percent === null ? 0 : Math.min(100, percent);
+    return '<section class="com-block tier-'+comTier(percent)+(extraClass ? ' '+extraClass : '')+'">'+
+      '<div class="com-block-head"><span class="com-block-title">'+escapeHtml(title)+'</span><strong class="com-pct">'+escapeHtml(targetCents > 0 ? comFormatPct(percent) : 'SEM META')+'</strong></div>'+
+      '<div class="com-bar simple" role="img" aria-label="'+escapeHtml(title+': '+comFormatPct(percent))+'"><div class="com-bar-track"><div class="com-bar-fill" style="width:'+width+'%"></div></div></div>'+
+      '<dl class="com-figures">'+
+        '<div><dt>Meta</dt><dd>'+escapeHtml(formatCentsBRL(targetCents))+'</dd></div>'+
+        '<div><dt>Realizado</dt><dd>'+escapeHtml(formatCentsBRL(revenueCents))+'</dd></div>'+
+        '<div><dt>Faltando</dt><dd>'+escapeHtml(missing ? formatCentsBRL(missing) : 'META BATIDA')+'</dd></div>'+
+        '<div><dt>Diária necessária</dt><dd>'+escapeHtml(perDay ? formatCentsBRL(perDay) : '—')+'</dd></div>'+
+        '<div><dt>Meta '+premiumPercent+'%</dt><dd>'+escapeHtml(formatCentsBRL(premiumTarget))+'</dd></div>'+
+        '<div><dt>Falta p/ '+premiumPercent+'% ('+escapeHtml(comFormatPct(premiumPct))+')</dt><dd>'+escapeHtml(premiumMissing ? formatCentsBRL(premiumMissing) : 'ATINGIDA')+'</dd></div>'+
+      '</dl>'+
+    '</section>';
+  }
+
+  function comAssistStores(){
+    return (comAssist ? comAssist.rows : []).filter(row => row.targetCents > 0 || row.revenueCents > 0);
+  }
+
+  function comAssistTotals(){
+    const sum = (key) => comAssistStores().reduce((total, row) => total + row[key], 0);
+    const all = (comAssist ? comAssist.rows : []);
+    return {
+      name: 'EMPRESA',
+      targetCents: sum('targetCents'), revenueCents: sum('revenueCents'),
+      previousTargetCents: all.reduce((total, row) => total + row.previousTargetCents, 0),
+      previousRevenueCents: all.reduce((total, row) => total + row.previousRevenueCents, 0)
+    };
+  }
+
   function comRenderAssistTotal(){
     const total = el('comAssistTotal');
-    if(!total || !comStores) return;
-    const rows = comStores.rows || [];
-    const sum = rows.reduce((acc, row) => row.assistTargetCents > 0 ? {target: acc.target + row.assistTargetCents, revenue: acc.revenue + row.assistRevenueCents} : acc, {target:0, revenue:0});
-    total.hidden = !comStores.total || !(sum.target > 0);
-    total.innerHTML = '<span>Todas as lojas · '+escapeHtml(formatCentsBRL(sum.revenue)+' de '+formatCentsBRL(sum.target))+'</span>'+
-      '<strong>'+escapeHtml(comFormatPct(comShare(sum.revenue, sum.target)))+'</strong>';
+    if(!total || !comAssist) return;
+    const company = comAssistTotals();
+    total.hidden = !(company.targetCents > 0);
+    total.innerHTML = '<span>Todas as lojas · '+escapeHtml(formatCentsBRL(company.revenueCents)+' de '+formatCentsBRL(company.targetCents))+'</span>'+
+      '<strong>'+escapeHtml(comFormatPct(comShare(company.revenueCents, company.targetCents)))+'</strong>';
+  }
+
+  function comRenderAssistDash(){
+    const box = el('comAssistDash');
+    if(!box || !comAssist) return;
+    const stores = comAssistStores()
+      .map(row => ({...row, percent: comShare(row.revenueCents, row.targetCents)}))
+      .sort((a, b) => (b.percent ?? -1) - (a.percent ?? -1) || a.name.localeCompare(b.name, 'pt-BR'));
+    if(!stores.length){ box.innerHTML = '<p class="com-empty">Lance a meta e o feito da assistência acima para ver o comparativo.</p>'; return; }
+    const company = comAssistTotals();
+    company.percent = comShare(company.revenueCents, company.targetCents);
+    const clock = comAssist.clock;
+    const premium = comAssist.premiumPercent;
+    const current = comMonthLong(comAssist.month).split('/')[0];
+    const previous = comMonthLong(comAssist.previousMonth).split('/')[0];
+    const withTarget = stores.filter(row => row.percent !== null);
+    const best = withTarget[0];
+    const worst = withTarget[withTarget.length - 1];
+    const rule = (title, value, note, tier) => '<div class="com-rule com-kpi tier-'+(tier || 'none')+'"><span>'+escapeHtml(title)+'</span><strong>'+escapeHtml(value)+'</strong><small>'+escapeHtml(note)+'</small></div>';
+    const bestMonth = company.revenueCents >= company.previousRevenueCents
+      ? rule('Melhor mês', current, 'Anterior: '+formatCentsBRL(company.previousRevenueCents), 'green')
+      : rule('Melhor mês', previous, 'Atual: '+formatCentsBRL(company.revenueCents), 'red');
+    const kpis = '<div class="com-rules com-kpis">'+
+      (best ? rule('Melhor performance', best.name, comFormatPct(best.percent)+' da meta', comTier(best.percent)) : '')+
+      (worst && worst !== best ? rule('Pior performance', worst.name, comFormatPct(worst.percent)+' da meta', comTier(worst.percent)) : '')+
+      rule('Total do mês', formatCentsBRL(company.revenueCents), 'Meta: '+formatCentsBRL(company.targetCents), 'none')+
+      rule('Atingimento da meta', comFormatPct(company.percent), company.percent !== null && company.percent < 100 ? 'Faltam '+comFormatPct(Math.round((100 - company.percent) * 10) / 10) : 'Meta batida', comTier(company.percent))+
+      bestMonth+
+    '</div>';
+    const rankCard = (row, position) => '<div class="com-rank-card tier-'+comTier(row.percent)+(position ? '' : ' company')+'">'+
+      '<span>'+(position ? '#'+position+' ' : '')+escapeHtml(row.name)+'</span><strong>'+escapeHtml(formatCentsBRL(row.revenueCents))+'</strong>'+
+      '<b class="com-pct">'+escapeHtml(comFormatPct(row.percent))+'</b><small>da meta</small></div>';
+    const ranking = '<h3 class="com-section-title">Ranking — % da meta</h3><div class="com-rank-grid">'+
+      rankCard(company, 0)+stores.map((row, index) => rankCard(row, index + 1)).join('')+'</div>';
+    const latest = (comAssist.rows || []).filter(row => row.updatedAt).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    const tracking = '<h3 class="com-section-title">Acompanhamento por loja</h3>'+
+      '<p class="com-track-meta">'+escapeHtml((latest ? 'Atualizado em '+formatDateTimeBR(latest.updatedAt)+(latest.updatedByName ? ' por '+latest.updatedByName : '')+' · ' : '')+
+        (clock.daysRemaining > 0 ? 'Dias restantes: '+clock.daysRemaining+' de '+clock.daysInMonth+' no mês' : 'Mês encerrado'))+'</p>'+
+      '<div class="com-blocks com-track-grid">'+
+        comTrackCardHtml('EMPRESA', company.targetCents, company.revenueCents, clock, premium, 'company')+
+        stores.map(row => comTrackCardHtml(row.name, row.targetCents, row.revenueCents, clock, premium)).join('')+
+      '</div>';
+    const variation = (now, before) => before > 0 ? Math.round((now - before) / before * 1000) / 10 : null;
+    const compareCard = (row, position) => {
+      const change = variation(row.revenueCents, row.previousRevenueCents);
+      return '<section class="com-block tier-'+comTier(row.percent)+(position ? '' : ' company')+'">'+
+        '<div class="com-block-head"><span class="com-block-title">'+(position ? '#'+position+' ' : '')+escapeHtml(row.name)+'</span>'+
+          '<strong class="com-pct">'+escapeHtml(comFormatPct(row.percent))+'</strong></div>'+
+        '<dl class="com-figures">'+
+          '<div><dt>Feito '+escapeHtml(previous)+'</dt><dd>'+escapeHtml(formatCentsBRL(row.previousRevenueCents))+'</dd></div>'+
+          '<div><dt>Feito '+escapeHtml(current)+'</dt><dd>'+escapeHtml(formatCentsBRL(row.revenueCents))+'</dd></div>'+
+          '<div><dt>Meta '+escapeHtml(current)+'</dt><dd>'+escapeHtml(formatCentsBRL(row.targetCents))+'</dd></div>'+
+          '<div><dt>Evolução</dt><dd class="com-change '+(change === null ? '' : change >= 0 ? 'up' : 'down')+'">'+escapeHtml(change === null ? '—' : (change >= 0 ? '▲ +' : '▼ ')+comFormatPct(change))+'</dd></div>'+
+        '</dl></section>';
+    };
+    const compare = '<h3 class="com-section-title">Desempenho por loja — '+escapeHtml(current)+' x '+escapeHtml(previous)+'</h3>'+
+      '<div class="com-blocks com-track-grid">'+compareCard(company, 0)+stores.map((row, index) => compareCard(row, index + 1)).join('')+'</div>';
+    box.innerHTML = kpis+ranking+tracking+compare;
   }
 
   function comRenderAssist(){
     const body = el('comAssistBody');
-    if(!body || !comStores) return;
-    const rows = comStores.rows || [];
+    if(!body || !comAssist) return;
+    const rows = comAssist.rows || [];
     body.innerHTML = rows.length ? rows.map(store =>
       '<tr data-com-assist-store="'+escapeHtml(store.companyId)+'">'+
         '<td data-label="Loja" class="nome"><strong>'+escapeHtml(store.name)+'</strong></td>'+
-        '<td data-label="Meta da assistência (R$)">'+comMoneyInput('assistTargetCents', store.assistTargetCents, 'Meta da assistência')+'</td>'+
-        '<td data-label="Feito da assistência (R$)">'+comMoneyInput('assistRevenueCents', store.assistRevenueCents, 'Feito da assistência')+'</td>'+
-        '<td data-label="% feito ÷ meta" class="calc" style="text-align:right" data-com-calc="assistPct">'+escapeHtml(comFormatPct(comShare(store.assistRevenueCents, store.assistTargetCents)))+'</td></tr>').join('')
+        '<td data-label="Meta da assistência (R$)">'+comMoneyInput('assistTargetCents', store.targetCents, 'Meta da assistência')+'</td>'+
+        '<td data-label="Feito da assistência (R$)">'+comMoneyInput('assistRevenueCents', store.revenueCents, 'Feito da assistência')+'</td>'+
+        '<td data-label="% feito ÷ meta" class="calc" style="text-align:right" data-com-calc="assistPct">'+escapeHtml(comFormatPct(comShare(store.revenueCents, store.targetCents)))+'</td></tr>').join('')
       : '<tr><td colspan="4" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
     comMaskMoney(body);
+    comLock(body, !comAssist.canEdit);
     comRenderAssistTotal();
+    comRenderAssistDash();
+  }
+
+  async function comLoadAssist(){
+    try{
+      comAssist = await comApi('/assistance?month='+encodeURIComponent(comMonth));
+    }catch(error){
+      comAssist = null;
+      if(el('comAssistBody')) el('comAssistBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(el('comAssistDash')) el('comAssistDash').innerHTML = '';
+      return;
+    }
+    comRenderAssist();
   }
 
   if(el('comAssistBody')) el('comAssistBody').addEventListener('change', event => {
     const row = event.target.closest('tr[data-com-assist-store]');
-    if(!row || !event.target.matches('[data-com-field]') || !comStores) return;
-    const store = comStores.rows.find(item => item.companyId === row.dataset.comAssistStore);
+    if(!row || !event.target.matches('[data-com-field]') || !comAssist) return;
+    const store = comAssist.rows.find(item => item.companyId === row.dataset.comAssistStore);
     if(!store) return;
     const assistTargetCents = comMoneyCents(row.querySelector('[data-com-field="assistTargetCents"]'));
     const assistRevenueCents = comMoneyCents(row.querySelector('[data-com-field="assistRevenueCents"]'));
@@ -48392,16 +48572,20 @@ function renderHomeTasks(){
       showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
       return;
     }
-    store.assistTargetCents = assistTargetCents;
-    store.assistRevenueCents = assistRevenueCents;
+    store.targetCents = assistTargetCents;
+    store.revenueCents = assistRevenueCents;
     row.querySelector('[data-com-calc="assistPct"]').textContent = comFormatPct(comShare(assistRevenueCents, assistTargetCents));
     comRenderAssistTotal();
+    comRenderAssistDash();
     row.classList.remove('saved');
     row.classList.add('saving');
-    const {companyId, targetCents, revenueCents, targetItems, items, targetRealme, realme, indicationQty, indicationCents} = store;
-    comQueueSave('store:'+companyId, async () => {
+    const companyId = store.companyId;
+    comQueueSave('assist:'+companyId, async () => {
       try{
-        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId, targetCents, revenueCents, targetItems, items, targetRealme, realme, assistTargetCents, assistRevenueCents, indicationQty, indicationCents})});
+        await comApi('/assistance', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId, assistTargetCents, assistRevenueCents})});
+        store.updatedAt = new Date().toISOString();
+        store.updatedByName = currentSession.displayName || '';
+        comRenderAssistDash();
         comOverview = null;
         row.classList.add('saved');
       }catch(error){
@@ -48453,6 +48637,7 @@ function renderHomeTasks(){
         '<tr class="com-weekend-total" id="comWeekendTotal">'+comWeekendTotalHtml()+'</tr>'
       : '<tr><td colspan="6" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
     comMaskMoney(body);
+    comLock(body, !comWeekend.canEdit);
   }
 
   async function comLoadWeekend(){
@@ -48834,8 +49019,10 @@ function renderHomeTasks(){
     // Cada aba tem a sua permissão: se a aba atual não é permitida, cai na
     // primeira que for.
     const currentTab = document.querySelector('[data-com-view="'+comView+'"]');
-    if(!currentTab || !canAccess(currentTab.dataset.permission)){
-      const firstTab = Array.from(document.querySelectorAll('[data-com-view]')).find(tab => canAccess(tab.dataset.permission));
+    // Aba com VER e EDITAR: data-any-permission (qualquer uma das duas libera).
+    const tabAllowed = tab => tab.dataset.permission ? canAccess(tab.dataset.permission) : tab.dataset.anyPermission.split(',').some(permission => canAccess(permission));
+    if(!currentTab || !tabAllowed(currentTab)){
+      const firstTab = Array.from(document.querySelectorAll('[data-com-view]')).find(tabAllowed);
       if(firstTab) firstTab.click();
       return;
     }
@@ -48857,8 +49044,12 @@ function renderHomeTasks(){
       await Promise.all([comLoadManage(), comLoadEntries()]);
       return;
     }
-    if(comView === 'lojas' || comView === 'assistencia'){
+    if(comView === 'lojas'){
       await comLoadStores();
+      return;
+    }
+    if(comView === 'assistencia'){
+      await comLoadAssist();
       return;
     }
     if(comView === 'fimsemana'){

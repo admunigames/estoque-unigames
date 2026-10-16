@@ -3757,6 +3757,9 @@ export const commercialStoreGoals = pgTable(
     // INDICAÇÃO (quantidade) e R$ DE INDICAÇÃO da loja — só controle.
     indicationQty: integer("indication_qty").notNull().default(0),
     indicationCents: integer("indication_cents").notNull().default(0),
+    // Última gravação da aba Meta Assistência ("Atualizado em").
+    assistUpdatedAt: text("assist_updated_at").notNull().default(""),
+    assistUpdatedByName: text("assist_updated_by_name").notNull().default(""),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(""),

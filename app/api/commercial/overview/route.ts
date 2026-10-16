@@ -9,6 +9,8 @@ import {
   canManageCommercialCredit,
   canManageCommercialGoals,
   canManageCommercialRules,
+  canViewCommercialCredit,
+  canViewCommercialGoals,
   canMarkCommercialNewcomer,
   canViewCommercialCommission,
   canViewCommercialDashboard,
@@ -16,6 +18,7 @@ import {
   identity,
   jsonResponse,
   linkedEmployeeIds,
+  loadStoreGoals,
   loadSellers,
   safeText,
   withoutInactive,
@@ -45,7 +48,9 @@ import {
 // inactive=true. A conta vinculada continua vendo o próprio histórico.
 // LÍDER vem em sellers (role='lider', premiação de líder na comissão).
 // OPERACIONAIS vêm à parte (`operationals`), com o mesmo escopo; sem
-// comercial:commission saem só os % e a faixa (nenhum R$).
+// comercial:commission saem só os % e a faixa (nenhum R$). `tracking` =
+// meta e feito (R$) da loja e da assistência de cada loja que tem operacional
+// ou líder visível — o acompanhamento e a meta 120% do Dashboard deles.
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -58,7 +63,7 @@ export async function GET(request: Request) {
   const canCommission = canViewCommercialCommission(actor);
   const canGoals = canManageCommercialGoals(actor);
   if (forCadastro) {
-    if (!canGoals && !canManageCommercialCredit(actor)) {
+    if (!canViewCommercialGoals(actor) && !canViewCommercialCredit(actor)) {
       return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ATUALIZAR OS VENDEDORES." }, 403);
     }
   } else if (!canDashboard && !canCommission) {
@@ -105,9 +110,23 @@ export async function GET(request: Request) {
         const { assistPercent, storePercent, rateBps, premiumPercent } = person.commission;
         return { ...person, commission: { assistPercent, storePercent, rateBps, premiumPercent } };
       });
+    // Acompanhamento das lojas dos operacionais e líderes que aparecem aqui.
+    const trackedStores = new Map<string, string>();
+    for (const person of scopedOperationals) trackedStores.set(person.companyId, person.companyName);
+    for (const seller of shown) if (seller.role === "lider") trackedStores.set(seller.companyId, seller.companyName);
+    const storeGoals = !forCadastro && trackedStores.size ? await loadStoreGoals(database, month) : new Map();
+    const tracking = forCadastro ? [] : [...trackedStores.entries()].map(([companyId, name]) => {
+      const goal = storeGoals.get(companyId);
+      return {
+        companyId, name,
+        targetCents: goal?.targetCents ?? 0, revenueCents: goal?.revenueCents ?? 0,
+        assistTargetCents: goal?.assistTargetCents ?? 0, assistRevenueCents: goal?.assistRevenueCents ?? 0,
+      };
+    });
     return jsonResponse({
       month,
       clock,
+      tracking,
       ownOnly,
       includeInactive,
       allStores: !ownOnly && scope.allStores,
@@ -115,6 +134,7 @@ export async function GET(request: Request) {
       canDashboard,
       canCommission,
       canGoals,
+      canCredit: canManageCommercialCredit(actor),
       canRules: canManageCommercialRules(actor),
       canMarkNewcomer: !ownOnly && canMarkCommercialNewcomer(actor),
       rules,

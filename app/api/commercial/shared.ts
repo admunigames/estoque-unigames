@@ -24,18 +24,21 @@ import {
   type StoreGoal,
 } from "../../lib/commercial";
 
-// Comercial — metas e comissionamento dos vendedores. Permissões próprias
+// Comercial — metas e comissionamento. Permissões próprias
 // (MODULE_VIEW_PERMISSIONS.commercial em worker/index.ts), independentes do
-// Financeiro e do RH Financeiro:
-//   comercial:dashboard  → abas Dashboard e Ranking (sem R$ de comissão)
-//   comercial:commission → aba Comissão (valores em R$ da comissão)
-//   comercial:goals      → aba Vendedores (metas e realizado do mês) e
-//                          marcar NOVATO no Dashboard
-//   comercial:credit     → aba Crediários (PAYJOY, CREFAZ, PARCELEX, ODRES,
-//                          VENDA P.A, VENDA UNIGAMES)
-//   comercial:stores     → aba Meta Loja (meta e feito de cada loja)
-//   comercial:rules      → aba Regras de Comissão (percentuais e premiação
-//                          por vigência) e marcar NOVATO no Dashboard
+// Financeiro e do RH Financeiro. VER e EDITAR separados por aba (pedido de
+// 2026-10-16); quem EDITA também vê:
+//   comercial:dashboard  → VER Dashboard (sem R$ de comissão)
+//   comercial:commission → VER Comissão (valores em R$ da comissão)
+//   comercial:ranking    → VER Ranking
+//   comercial:goals_view / comercial:goals   → Vendedores (editar também
+//                          marca NOVATO e troca o TIPO)
+//   comercial:credit_view / comercial:credit → Crediários
+//   comercial:stores_view / comercial:stores → Meta Loja
+//   comercial:weekend_view / comercial:weekend → Meta do Fim de Semana
+//   comercial:assist_view / comercial:assist → Meta Assistência
+//   comercial:rules_view / comercial:rules   → Regras de Comissão (editar
+//                          também marca NOVATO)
 // As antigas comercial:view/manage são expandidas na leitura pelo Worker
 // (LEGACY_PERMISSION_MAP). Conta vinculada a um vendedor continua vendo só
 // os próprios números (ownOnly no overview) — isso vem do vínculo, não da
@@ -92,8 +95,10 @@ export function identity(request: Request): Identity {
 }
 
 const COMMERCIAL_PERMISSIONS = [
-  "comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",
-  "comercial:credit", "comercial:stores",
+  "comercial:dashboard", "comercial:commission", "comercial:ranking",
+  "comercial:goals_view", "comercial:goals", "comercial:credit_view", "comercial:credit",
+  "comercial:stores_view", "comercial:stores", "comercial:weekend_view", "comercial:weekend",
+  "comercial:assist_view", "comercial:assist", "comercial:rules_view", "comercial:rules",
 ] as const;
 
 function hasCommercialPermission(actor: Identity, permission: (typeof COMMERCIAL_PERMISSIONS)[number]) {
@@ -106,6 +111,42 @@ export function canViewCommercialDashboard(actor: Identity) {
 
 export function canViewCommercialCommission(actor: Identity) {
   return hasCommercialPermission(actor, "comercial:commission");
+}
+
+export function canViewCommercialRanking(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:ranking");
+}
+
+export function canViewCommercialGoals(actor: Identity) {
+  return canManageCommercialGoals(actor) || hasCommercialPermission(actor, "comercial:goals_view");
+}
+
+export function canViewCommercialCredit(actor: Identity) {
+  return canManageCommercialCredit(actor) || hasCommercialPermission(actor, "comercial:credit_view");
+}
+
+export function canViewCommercialStores(actor: Identity) {
+  return canManageCommercialStores(actor) || hasCommercialPermission(actor, "comercial:stores_view");
+}
+
+export function canManageCommercialWeekend(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:weekend");
+}
+
+export function canViewCommercialWeekend(actor: Identity) {
+  return canManageCommercialWeekend(actor) || hasCommercialPermission(actor, "comercial:weekend_view");
+}
+
+export function canManageCommercialAssist(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:assist");
+}
+
+export function canViewCommercialAssist(actor: Identity) {
+  return canManageCommercialAssist(actor) || hasCommercialPermission(actor, "comercial:assist_view");
+}
+
+export function canViewCommercialRules(actor: Identity) {
+  return canManageCommercialRules(actor) || hasCommercialPermission(actor, "comercial:rules_view");
 }
 
 export function canManageCommercialGoals(actor: Identity) {

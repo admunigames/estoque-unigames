@@ -54,9 +54,9 @@ for (const [id, name, companyId, userId] of [
 const ADMIN = { id: "admin", role: "admin" };
 const RULES = { id: "u-rules", permissions: ["comercial:rules"] };
 const GOALS_A = { id: "u-goals-a", companyId: STORE_A, permissions: ["comercial:goals", "comercial:dashboard"] };
-const DASHBOARD = { id: "u-dash", permissions: ["comercial:dashboard"] };
+const DASHBOARD = { id: "u-dash", permissions: ["comercial:dashboard", "comercial:ranking"] };
 const COMMISSION = { id: "u-com", permissions: ["comercial:dashboard", "comercial:commission"] };
-const SELLER_ANA = { id: "user-ana", companyId: STORE_A, permissions: ["comercial:dashboard", "comercial:commission"] };
+const SELLER_ANA = { id: "user-ana", companyId: STORE_A, permissions: ["comercial:dashboard", "comercial:commission", "comercial:ranking"] };
 const SELLER_ANA_GOALS = { ...SELLER_ANA, permissions: [...SELLER_ANA.permissions, "comercial:goals"] };
 const CREDIT_A = { id: "u-cred-a", companyId: STORE_A, permissions: ["comercial:credit"] };
 const STORES = { id: "u-stores", permissions: ["comercial:stores", "comercial:dashboard"] };
@@ -444,7 +444,7 @@ test("Ranking > META VENDEDORES: o vendedor vê só a própria loja; gestor a de
   assert.deepEqual(own.data.items.map((item) => item.name).sort(), ["ANA SOUZA", "BRUNO LIMA"]);
   assert.deepEqual(Object.keys(own.data.items[0]).sort(), ["employeeId", "inactive", "name", "percent", "revenueCents", "targetRevenueCents"]);
   // Gestor com loja: a loja dele.
-  const manager = await team({ ...GOALS_A, permissions: ["comercial:dashboard"] }, `&companyId=${STORE_B}`);
+  const manager = await team({ ...GOALS_A, permissions: ["comercial:ranking"] }, `&companyId=${STORE_B}`);
   assert.deepEqual(manager.data.stores.map((store) => store.companyId), [STORE_A]);
   // Sem loja (vê todas): escolhe a loja.
   const all = await team(DASHBOARD, `&companyId=${STORE_B}`);
@@ -507,7 +507,7 @@ test("Meta Loja: itens e realmes da loja à mão; os gráficos de itens/realmes 
   const editor = await (await callRoute(storesRoute.GET, STORES, "GET", "/api/commercial/stores?month=2027-02")).json();
   assert.deepEqual(editor.rows.find((row) => row.companyId === STORE_A), {
     companyId: STORE_A, name: "LOJA ALFA", targetCents: 0, revenueCents: 0, targetItems: 760, items: 178, targetRealme: 28, realme: 9,
-    assistTargetCents: 0, assistRevenueCents: 0, indicationQty: 0, indicationCents: 0,
+    indicationQty: 0, indicationCents: 0,
   });
   // O Ranking não manda mais quantidades por loja (vêm da Meta Loja).
   const rank = await (await callRoute(rankingRoute.GET, DASHBOARD, "GET", "/api/commercial/ranking?month=2027-02")).json();

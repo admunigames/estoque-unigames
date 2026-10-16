@@ -1,8 +1,11 @@
--- Comercial: INDICAÇÃO (quantidade e R$) por loja na Meta Loja e a aba META
--- DO FIM DE SEMANA — tudo só controle (não alimenta vendedores, comissão nem
--- RH). Só ADD COLUMN / CREATE TABLE/INDEX (e RLS na tabela nova).
+-- Comercial: INDICAÇÃO (quantidade e R$) por loja na Meta Loja, "atualizado
+-- em" próprio da aba META ASSISTÊNCIA e a aba META DO FIM DE SEMANA (só
+-- controle: não alimenta vendedores, comissão nem RH). Só ADD COLUMN /
+-- CREATE TABLE/INDEX (e RLS na tabela nova).
 ALTER TABLE "commercial_store_goals" ADD COLUMN IF NOT EXISTS "indication_qty" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE "commercial_store_goals" ADD COLUMN IF NOT EXISTS "indication_cents" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "commercial_store_goals" ADD COLUMN IF NOT EXISTS "assist_updated_at" text DEFAULT '' NOT NULL;--> statement-breakpoint
+ALTER TABLE "commercial_store_goals" ADD COLUMN IF NOT EXISTS "assist_updated_by_name" text DEFAULT '' NOT NULL;--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "commercial_weekend_goals" (
   "id" text PRIMARY KEY NOT NULL,
   "weekend" text NOT NULL,

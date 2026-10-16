@@ -4,7 +4,8 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 // Permissões do Comercial > Acompanhamento Metas, uma por aba:
-//   comercial:dashboard  → Dashboard e Ranking (sem R$ de comissão)
+//   comercial:dashboard  → Dashboard (sem R$ de comissão)
+//   comercial:ranking    → Ranking (permissão própria desde 2026-10-16)
 //   comercial:commission → Comissão
 //   comercial:goals      → Vendedores (metas e realizado, lançados à mão)
 // Carrega as rotas reais de /api/commercial trocando só o getD1() por um
@@ -140,10 +141,12 @@ const putSeller = (user, body) =>
     body: JSON.stringify(body),
   }));
 
-const DASHBOARD = { id: "u-dash", permissions: ["comercial:dashboard"] };
+const DASHBOARD = { id: "u-dash", permissions: ["comercial:dashboard", "comercial:ranking"] };
+const DASHBOARD_ONLY = { id: "u-dash-only", permissions: ["comercial:dashboard"] };
+const GOALS_VIEW = { id: "u-goals-view", permissions: ["comercial:goals_view"] };
 const COMMISSION = { id: "u-com", permissions: ["comercial:commission"] };
 const GOALS = { id: "u-goals", permissions: ["comercial:goals"] };
-const SELLER = { id: "user-ana", companyId: "loja-a", permissions: ["comercial:dashboard", "comercial:commission"] };
+const SELLER = { id: "user-ana", companyId: "loja-a", permissions: ["comercial:dashboard", "comercial:commission", "comercial:ranking"] };
 const ADMIN = { id: "admin", role: "admin", permissions: [] };
 
 test("só comercial:dashboard: overview sem comissão, ranking ok, aba Vendedores 403", async () => {
@@ -226,4 +229,12 @@ test("sem nenhuma permissão do Comercial: tudo 403; admin vê tudo", async () =
   const data = await (await get(overview, ADMIN, `/overview?month=${MONTH}`)).json();
   assert.deepEqual([data.canDashboard, data.canCommission, data.canGoals], [true, true, true]);
   assert.equal(typeof data.sellers[0].metrics.commission.totalCents, "number");
+});
+
+test("granular: Ranking só com comercial:ranking; Vendedores com comercial:goals_view só lê", async () => {
+  assert.equal((await get(ranking, DASHBOARD_ONLY, `/ranking?month=${MONTH}`)).status, 403);
+  assert.equal((await get(overview, GOALS_VIEW, `/overview?month=${MONTH}&for=cadastro`)).status, 200);
+  const data = await (await get(overview, GOALS_VIEW, `/overview?month=${MONTH}&for=cadastro`)).json();
+  assert.equal(data.canGoals, false);
+  assert.equal((await get(overview, GOALS_VIEW, `/overview?month=${MONTH}`)).status, 403);
 });

@@ -5,6 +5,7 @@ import { ENTRY_KINDS, MONTH_PATTERN, isEntryKind } from "../../../lib/commercial
 import {
   actorName,
   canManageCommercialCredit,
+  canViewCommercialCredit,
   commercialScope,
   employeeInScope,
   identity,
@@ -30,7 +31,8 @@ function guard(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return { error: unauthorized };
   const actor = identity(request);
-  if (!canManageCommercialCredit(actor)) {
+  // Ver: comercial:credit_view; lançar e excluir: comercial:credit.
+  if (request.method === "GET" ? !canViewCommercialCredit(actor) : !canManageCommercialCredit(actor)) {
     return { error: jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA LANÇAR CREDIÁRIOS." }, 403) };
   }
   if (request.method !== "GET" && !sameOrigin(request)) {

@@ -5,6 +5,7 @@ import { MONTH_PATTERN, isSellerRole, resolveCommercialRules, roleFromTitle } fr
 import {
   actorName,
   canManageCommercialGoals,
+  canViewCommercialGoals,
   commercialScope,
   employeeInScope,
   identity,
@@ -54,7 +55,8 @@ function guard(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return { error: unauthorized };
   const actor = identity(request);
-  if (!canManageCommercialGoals(actor)) {
+  // Ver: comercial:goals_view; lançar: comercial:goals.
+  if (request.method === "GET" ? !canViewCommercialGoals(actor) : !canManageCommercialGoals(actor)) {
     return { error: jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ATUALIZAR OS VENDEDORES." }, 403) };
   }
   if (request.method !== "GET" && !sameOrigin(request)) {

@@ -4,7 +4,7 @@ import { NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { MONTH_PATTERN } from "../../../lib/commercial";
 import { todayInTimezone } from "../../../lib/finance-status";
 import {
-  canViewCommercialDashboard,
+  canViewCommercialRanking,
   commercialScope,
   identity,
   jsonResponse,
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canViewCommercialDashboard(actor)) {
+  if (!canViewCommercialRanking(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O COMERCIAL." }, 403);
   }
   const url = new URL(request.url);

@@ -5,7 +5,8 @@ import { MONTH_PATTERN, progressPercent } from "../../../lib/commercial";
 import { todayInTimezone } from "../../../lib/finance-status";
 import {
   actorName,
-  canManageCommercialStores,
+  canManageCommercialWeekend,
+  canViewCommercialWeekend,
   commercialScope,
   identity,
   jsonResponse,
@@ -16,7 +17,7 @@ import {
   type JsonMap,
 } from "../shared";
 
-// Aba META DO FIM DE SEMANA (comercial:stores, como a Meta Loja): feito, meta,
+// Aba META DO FIM DE SEMANA (comercial:weekend_view ver, comercial:weekend editar): feito, meta,
 // meta de itens e itens vendidos de cada loja POR FIM DE SEMANA, lançados à
 // mão. SÓ CONTROLE: não alimenta vendedores, comissão nem RH (nenhum
 // syncHrCommissions aqui). O fim de semana é identificado pelo SÁBADO
@@ -45,7 +46,7 @@ function guard(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return { error: unauthorized };
   const actor = identity(request);
-  if (!canManageCommercialStores(actor)) {
+  if (request.method === "GET" ? !canViewCommercialWeekend(actor) : !canManageCommercialWeekend(actor)) {
     return { error: jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA A META DO FIM DE SEMANA." }, 403) };
   }
   if (request.method !== "GET" && !sameOrigin(request)) {
@@ -94,7 +95,7 @@ export async function GET(request: Request) {
       });
     const sum = (key: keyof Row) => rows.reduce((total, row) => total + (row[key] as number), 0);
     return jsonResponse({
-      month, weekends, weekend, rows,
+      month, weekends, weekend, rows, canEdit: canManageCommercialWeekend(checked.actor),
       total: {
         targetCents: sum("targetCents"), revenueCents: sum("revenueCents"),
         percent: progressPercent(sum("revenueCents"), sum("targetCents")),

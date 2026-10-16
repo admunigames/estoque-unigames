@@ -27,6 +27,8 @@ export async function GET(request: Request) {
   }
   try {
     const items = await loadRules(await getD1());
+    // Os textos das regras servem a todas as abas; a aba Regras em si é
+    // comercial:rules_view (ver) / comercial:rules (editar).
     return jsonResponse({ items, defaults: DEFAULT_COMMERCIAL_RULES, roleDefaults: DEFAULT_ROLE_RULES, canManage: canManageCommercialRules(actor) });
   } catch (error) {
     console.error("Não foi possível carregar as regras de comissão.", error);

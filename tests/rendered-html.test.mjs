@@ -4111,7 +4111,7 @@ test("Cadastros > Usuários: lista em página inteira, criação/edição e VISU
   const page = html.slice(pageStart, pageEnd);
   assert.doesNotMatch(page, /id="userForm"/);
   assert.match(page, /<button class="btn-accent" type="button" id="btnNewUser">\+ NOVO USUÁRIO<\/button>/);
-  assert.match(page, /id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES</);
+  assert.match(page, /id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES E OPERACIONAIS</);
   assert.match(page, /id="userListStatus" role="status"/);
   assert.match(page, /id="userList"/);
 
@@ -4445,10 +4445,10 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Vendedores (goals), Crediários (credit) e Meta Loja (stores).
   assert.match(html, /data-com-view="dashboard" data-permission="comercial:dashboard">Dashboard</);
   assert.match(html, /data-com-view="comissao" data-permission="comercial:commission">Comissão</);
-  assert.match(html, /data-com-view="ranking" data-permission="comercial:dashboard">Ranking</);
-  assert.match(html, /data-com-view="vendedores" data-permission="comercial:goals">Vendedores</);
-  assert.match(html, /data-com-view="crediarios" data-permission="comercial:credit">Crediários</);
-  assert.match(html, /data-com-view="lojas" data-permission="comercial:stores">Meta Loja</);
+  assert.match(html, /data-com-view="ranking" data-permission="comercial:ranking">Ranking</);
+  assert.match(html, /data-com-view="vendedores" data-any-permission="comercial:goals_view,comercial:goals">Vendedores</);
+  assert.match(html, /data-com-view="crediarios" data-any-permission="comercial:credit_view,comercial:credit">Crediários</);
+  assert.match(html, /data-com-view="lojas" data-any-permission="comercial:stores_view,comercial:stores">Meta Loja</);
   // Sem importação de arquivo/planilha em lugar nenhum do Comercial.
   assert.doesNotMatch(html, /comImportFile|comImportPreview|btnComImportConfirm|com-import-|\/import\?month/);
   await assert.rejects(readFile(new URL("../app/api/commercial/import/route.ts", import.meta.url), "utf8"));
@@ -4492,8 +4492,8 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /#comViewVendedores thead th:first-child,#comViewVendedores tbody td:first-child\{position:sticky;left:0;/);
   // Sem o quadro "Novato no mês" nas regras da Comissão (o vendedor não fica sabendo do novato).
   assert.doesNotMatch(html, /rule\('Novato no mês'/);
-  assert.match(storesRoute, /month, items, itemStores,\s*totalPercent: progressPercent\(revenueSum, targetSum\),\s*totalAssistPercent: progressPercent\(assist\.revenue, assist\.target\),/);
-  assert.match(storesRoute, /if \(canManageCommercialStores\(actor\) && scope\)/);
+  assert.match(storesRoute, /month, items, itemStores,\s*totalPercent: progressPercent\(revenueSum, targetSum\),\s*\};/);
+  assert.match(storesRoute, /if \(canViewCommercialStores\(actor\) && scope\) \{\s*body\.canManage = canManageCommercialStores\(actor\);/);
   // Ao vivo: qualquer escrita em /api/commercial avisa o canal "commercial".
   assert.match(liveEvents, /if \(path\.startsWith\("\/api\/commercial\/"\)\) \{[\s\S]*?module: "commercial", audience: \{ kind: "all" \}/);
   assert.match(html, /comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico',assistenciaEstoque:'estoque_assistencia'\}\);/);
@@ -4506,7 +4506,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Regras de Comissão (comercial:rules) — pedido de 2026-10-06.
   // Sem aba de crediário: ele fica no cartão (Dashboard) e na Comissão.
   assert.doesNotMatch(html, /data-com-view="crediario"|comViewCrediario\b|comRenderCredit\b/);
-  assert.match(html, /data-com-view="regras" data-permission="comercial:rules">Regras de Comissão</);
+  assert.match(html, /data-com-view="regras" data-any-permission="comercial:rules_view,comercial:rules">Regras de Comissão</);
   assert.match(html, /<dialog class="purchase-dialog" id="comRuleDialog"/);
   assert.match(html, /' · crediário feito '\+formatCentsBRL\(creditSum\)/);
   assert.match(html, /data-com-newcomer="'\+escapeHtml\(seller\.employeeId\)/);
@@ -4521,8 +4521,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
     assert.doesNotMatch(source, /0,6%|0,4%|R\$ 500\b|R\$ 1\.500|\(4%\)|GARANTIA 30%|COM_TARGET_LABELS/);
   }
   assert.match(html, /<div class="com-rules" id="comRulesBox" aria-label="Regras de comissão"><\/div>/);
-  assert.match(sellersRoute, /if \(!canManageCommercialGoals\(actor\)\)/);
-  assert.match(overviewRoute, /if \(forCadastro\) \{\s*if \(!canGoals && !canManageCommercialCredit\(actor\)\)/);
+  // Ver (goals_view) só lê; lançar exige comercial:goals.
+  assert.match(sellersRoute, /request\.method === "GET" \? !canViewCommercialGoals\(actor\) : !canManageCommercialGoals\(actor\)/);
+  assert.match(overviewRoute, /if \(forCadastro\) \{\s*if \(!canViewCommercialGoals\(actor\) && !canViewCommercialCredit\(actor\)\)/);
   // Sem comercial:commission os valores em R$ da comissão nem saem do
   // servidor; o selo do Dashboard (critérios + taxa) continua igual.
   assert.match(overviewRoute, /commission: \{ allCriteriaMet, revenueRateBps, newcomer \}/);
@@ -4530,23 +4531,27 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.doesNotMatch(html, /COM_TARGET_LABELS_PLAIN|comCanCommission/);
 
   // Checkboxes no Cadastro de Usuários, no mesmo padrão das demais permissões.
-  assert.match(html, /name="userPermission" value="comercial:dashboard"> VISUALIZAR DASHBOARD E RANKING</);
-  assert.match(html, /name="userPermission" value="comercial:commission"> VISUALIZAR COMISSÃO</);
-  assert.match(html, /name="userPermission" value="comercial:goals"> ATUALIZAR VENDEDORES \(METAS E REALIZADO\)</);
+  assert.match(html, /name="userPermission" value="comercial:dashboard"> VER DASHBOARD/);
+  assert.match(html, /name="userPermission" value="comercial:commission"> VER COMISSÃO/);
+  assert.match(html, /name="userPermission" value="comercial:goals"> EDITAR VENDEDORES/);
   assert.match(html, /name="userPermission" value="comercial:credit"> LANÇAR CREDIÁRIOS/);
-  assert.match(html, /name="userPermission" value="comercial:stores"> ATUALIZAR META LOJA</);
-  assert.match(html, /name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</);
+  assert.match(html, /name="userPermission" value="comercial:stores"> EDITAR META LOJA/);
+  assert.match(html, /name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO/);
   assert.match(html, /'comercial:rules':'Comercial: Cadastro de Regras de Comissão'/);
   assert.doesNotMatch(html, /value="comercial:(view|manage)"/);
-  assert.match(workerSource, /"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores",/);
-  assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:goals", "comercial:rules",\s*"comercial:credit", "comercial:stores",\s*\],/);
+  // VER e EDITAR por aba (2026-10-16).
+  for (const permission of ["ranking", "goals_view", "credit_view", "stores_view", "weekend_view", "weekend", "assist_view", "assist", "rules_view"]) {
+    assert.match(html, new RegExp(`name="userPermission" value="comercial:${permission}"`));
+    assert.match(workerSource, new RegExp(`"comercial:${permission}",`));
+  }
+  assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:ranking",/);
   // Aba Indicação removida (16/10/2026); Meta Assistência ao lado das Regras.
   assert.doesNotMatch(html, /data-com-view="indicacao"|comercial:indications/);
-  assert.match(html, /data-permission="comercial:rules">Regras de Comissão<\/button>\s*<button[^>]*data-com-view="assistencia" data-permission="comercial:stores">Meta Assistência</);
+  assert.match(html, /data-any-permission="comercial:rules_view,comercial:rules">Regras de Comissão<\/button>\s*<button[^>]*data-com-view="assistencia" data-any-permission="comercial:assist_view,comercial:assist">Meta Assistência</);
   // Meta do Fim de Semana: ao lado da Meta Loja, mesma permissão (só controle).
-  assert.match(html, /data-com-view="lojas" data-permission="comercial:stores">Meta Loja<\/button>\s*<button[^>]*data-com-view="fimsemana" data-permission="comercial:stores">Meta do Fim de Semana</);
+  assert.match(html, /data-com-view="lojas" data-any-permission="comercial:stores_view,comercial:stores">Meta Loja<\/button>\s*<button[^>]*data-com-view="fimsemana" data-any-permission="comercial:weekend_view,comercial:weekend">Meta do Fim de Semana</);
   // As antigas viram as novas na leitura (ninguém perde acesso).
-  assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission"\],/);
+  assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission", "comercial:ranking"\],/);
   assert.match(workerSource, /"comercial:manage": \["comercial:goals"\],/);
   assert.match(workerSource, /path\.startsWith\("\/comercial\/"\) \|\| path\.startsWith\("\/api\/commercial"\),\s*"commercial",/);
 
@@ -4655,7 +4660,7 @@ test("acessos de vendedor: troca obrigatória da senha inicial, só Comercial + 
   const legacy = { ...ready, permissionsJson: JSON.stringify(["comercial:view", "comercial:manage"]) };
   const legacySession = await call("/api/session", legacy);
   assert.equal(legacySession.status, 200);
-  assert.deepEqual((await legacySession.json()).permissions, ["comercial:dashboard", "comercial:commission", "comercial:goals"]);
+  assert.deepEqual((await legacySession.json()).permissions, ["comercial:dashboard", "comercial:commission", "comercial:ranking", "comercial:goals"]);
   assert.equal((await call("/documentos", legacy)).status, 403);
   assert.equal((await call("/api/documents", legacy)).status, 403);
   // Só uma das chaves novas também é só-Comercial.
@@ -4673,10 +4678,10 @@ test("acessos de vendedor: troca obrigatória da senha inicial, só Comercial + 
   ]);
   assert.match(migration, /ADD COLUMN IF NOT EXISTS "must_change_password" integer DEFAULT 0 NOT NULL/);
   // Criação em lote: só Dashboard/Ranking + Comissão, vínculo com o RH e troca obrigatória.
-  assert.match(workerSource, /JSON\.stringify\(\["comercial:dashboard", "comercial:commission"\]\)/);
+  assert.match(workerSource, /JSON\.stringify\(\["comercial:dashboard", "comercial:commission", "comercial:ranking"\]\)/);
   assert.match(workerSource, /UPDATE hr_employees SET user_id=\?1/);
   assert.match(workerSource, /'administrative', '', 1, 1, 1\)/);
-  assert.match(html, /id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES</);
+  assert.match(html, /id="btnSellerAccounts">CRIAR ACESSOS DOS VENDEDORES E OPERACIONAIS</);
   assert.match(html, /<div class="nav-group" data-hide-for-commercial-only>\s*<button class="nav-group-toggle" id="navDocumentos"/);
   // Desligamento no RH bloqueia o login vinculado (sessões caem na hora).
   assert.match(hrShared, /UPDATE app_users SET active=0, session_version=session_version\+1/);

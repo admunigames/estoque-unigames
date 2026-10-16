@@ -2,10 +2,10 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { MONTH_PATTERN } from "../../../lib/commercial";
 import { todayInTimezone } from "../../../lib/finance-status";
-import { canViewCommercialDashboard, identity, jsonResponse, loadSellers, safeText, withoutInactive } from "../shared";
+import { canViewCommercialRanking, identity, jsonResponse, loadSellers, safeText, withoutInactive } from "../shared";
 
 // Ranking — SEMPRE a empresa inteira (todas as lojas), para qualquer
-// usuário com comercial:dashboard, independente da loja dele. Por isso a
+// usuário com comercial:ranking, independente da loja dele. Por isso a
 // resposta leva SÓ nome, loja e percentual: nenhum valor em R$, nenhuma
 // quantidade e nenhuma comissão sai desta rota. (Itens/realmes por loja vêm
 // da Meta Loja, rota /stores.) Vendedor inativo no RH só com ?inactive=1.
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canViewCommercialDashboard(actor)) {
+  if (!canViewCommercialRanking(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O COMERCIAL." }, 403);
   }
 
