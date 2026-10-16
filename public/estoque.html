@@ -47450,17 +47450,11 @@ function renderHomeTasks(){
     }
     if(comRankSub === 'lojas'){
       const items = comStores ? comStores.items : [];
-      const has = value => value !== null && value !== undefined;
-      const subtitle = [
-        comStores && has(comStores.totalPercent) ? 'TODAS AS LOJAS: '+comFormatPct(comStores.totalPercent) : '',
-        comStores && has(comStores.totalAssistPercent) ? 'ASSISTÊNCIA: '+comFormatPct(comStores.totalAssistPercent) : ''
-      ].filter(Boolean).join(' · ');
       return {
         title: 'METAS DAS LOJAS',
-        subtitle,
+        subtitle: comStores && comStores.totalPercent !== null && comStores.totalPercent !== undefined ? 'TODAS AS LOJAS: '+comFormatPct(comStores.totalPercent) : '',
         percent: true,
-        // % ASSISTÊNCIA da loja embaixo do nome (aba Meta Loja).
-        bars: items.map(item => ({label: item.name, sub: has(item.assistPercent) ? 'ASSIST. '+comFormatPct(item.assistPercent) : '', value: item.percent || 0})),
+        bars: items.map(item => ({label: item.name, sub: '', value: item.percent || 0})),
         empty: 'Nenhuma loja com meta neste mês (aba Meta Loja).'
       };
     }
