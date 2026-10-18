@@ -21,6 +21,7 @@ import { isSellerRole, roleFromTitle } from "../app/lib/commercial";
 import { isSellingStore } from "../app/lib/selling-stores";
 import { auditAction, auditModule, auditRecordId, auditSummary, shouldAudit } from "../app/lib/audit";
 import { documentsApiAllowed, isCommercialOnlyAccess } from "../app/lib/documents-access";
+import { upperText } from "../app/lib/upper-text";
 
 export { LiveUpdates };
 
@@ -2029,7 +2030,7 @@ async function handleAdminUsers(
   }
 
   const username = String(body.username ?? "").trim().toLowerCase();
-  const displayName = String(body.displayName ?? "").trim();
+  const displayName = upperText(String(body.displayName ?? "").trim());
   const email = String(body.email ?? "").trim().toLowerCase().slice(0, 200);
   const password = String(body.password ?? "");
   const requestedCompanyId = /^c[a-z0-9]{6,40}$/i.test(String(body.companyId ?? "").trim())

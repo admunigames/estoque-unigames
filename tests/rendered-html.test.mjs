@@ -2271,7 +2271,8 @@ test("aplica o sistema visual responsivo sem alterar os módulos existentes", as
     "utf8",
   );
 
-  assert.doesNotMatch(html, /body\{[^}]*text-transform:uppercase/);
+  // CAIXA ALTA no site inteiro desde 18/10/2026 (ver tests/upper-text.test.mjs).
+  assert.match(html, /body\{[^}]*text-transform:uppercase/);
   // Fundo liso nos dois temas: sem textura repetida de pontos (body) nem de
   // grade (menu lateral), feitas com gradientes de 1px.
   assert.doesNotMatch(html, /gradient\([^)]*\)?[^;{}]*1px,\s*transparent 1px/);
@@ -3740,7 +3741,7 @@ test("Módulo Compras nativo (Fase F): Divisão com template novo e painel Por P
   // agora com inProgressQuantity (itens de pedidos 'aguardando_chegada') e
   // lateQuantity (atrasados).
   assert.match(historicoRoute, /product_code IN \(\$\{codePlaceholders\}\) AND po\.origin='native' AND po\.canceled=0/);
-  assert.match(historicoRoute, /FROM product_catalog WHERE code_unigames=\?1 OR code_pa=\?1 OR name=\?1/);
+  assert.match(historicoRoute, /FROM product_catalog WHERE code_unigames=\?1 OR code_pa=\?1 OR name=\?2/);
   assert.match(historicoRoute, /ORDER BY po\.order_date DESC/);
   assert.match(historicoRoute, /bySupplier\.get\(supplierId\)/);
   assert.match(historicoRoute, /\.sort\(\(a, b\) => b\.totalQuantity - a\.totalQuantity\)/);
@@ -3853,7 +3854,7 @@ test("Compras nativo: cards do painel Por Produto (Pedidos Distintos/A Caminho/A
   // filtro novo de /orders — mesma resolução Unigames/P.A Loja pelo
   // catálogo geral, senão o filtro perderia pedidos do outro código.
   assert.match(sharedSource, /export async function resolveProductCodes/);
-  assert.match(sharedSource, /code_unigames=\?1 OR code_pa=\?1 OR name=\?1/);
+  assert.match(sharedSource, /code_unigames=\?1 OR code_pa=\?1 OR name=\?2/);
   assert.match(ordersRoute, /resolveProductCodes/);
   assert.match(ordersRoute, /id IN \(SELECT order_id FROM purchase_order_items WHERE product_code IN/);
 

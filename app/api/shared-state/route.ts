@@ -1,5 +1,6 @@
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
+import { UPPER_JSON_STATE_KEY, upperJsonFields } from "../../lib/upper-text";
 
 type JsonMap = Record<string, unknown>;
 
@@ -170,6 +171,7 @@ export async function PUT(request: Request) {
     const now = new Date().toISOString();
     const database = await getD1();
     const resolvedKey = scopedStateKey(request, key);
+    const stored = UPPER_JSON_STATE_KEY.test(key) ? JSON.stringify(upperJsonFields(JSON.parse(value))) : value;
     if (ifAbsent) {
       await database
         .prepare(
@@ -177,7 +179,7 @@ export async function PUT(request: Request) {
            VALUES (?1, ?2, 1, ?3)
            ON CONFLICT (state_key) DO NOTHING`,
         )
-        .bind(resolvedKey, value, now)
+        .bind(resolvedKey, stored, now)
         .run();
     } else {
       await database
@@ -189,13 +191,13 @@ export async function PUT(request: Request) {
              version = shared_state.version + 1,
              updated_at = excluded.updated_at`,
         )
-        .bind(resolvedKey, value, now)
+        .bind(resolvedKey, stored, now)
         .run();
     }
 
     const row = await readState(resolvedKey);
     return jsonResponse({
-      value: row?.value ?? value,
+      value: row?.value ?? stored,
       version: row?.version ?? 1,
       updatedAt: row?.updatedAt ?? now,
     });

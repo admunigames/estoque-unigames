@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { register } from "node:module";
 import { DatabaseSync } from "node:sqlite";
+import { withUpperText } from "../../app/lib/upper-text.ts";
 
 // Banco fictício para testar as rotas reais de app/api: troca o getD1() por
 // um SQLite em memória com as tabelas geradas a partir do db/schema.ts (só
@@ -139,7 +140,8 @@ export async function setupRouteDb(tables) {
   register("data:text/javascript," + encodeURIComponent(hooks));
   const db = createFakeD1(tables);
   const deletedKeys = [];
-  globalThis.__routeTestDb = db;
+  // Mesmo embrulho do getD1() real: texto livre gravado em CAIXA ALTA.
+  globalThis.__routeTestDb = withUpperText(db);
   globalThis.__routeTestBucket = { deletedKeys, async delete(keys) { deletedKeys.push(...[].concat(keys)); } };
   return db;
 }

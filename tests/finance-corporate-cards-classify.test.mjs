@@ -192,7 +192,7 @@ test("lote: classificar só os campos enviados; lançar cria Despesa + contas a 
   assert.equal(expense.original_amount_cents, 15000);
   assert.equal(expense.card_id, CARD);
   assert.equal(expense.idempotency_key, `card-entry:${posto.id}`);
-  assert.match(expense.notes, /parcela 2\/10/);
+  assert.match(expense.notes, /PARCELA 2\/10/);
   assert.equal(db.sqlite.prepare("SELECT count(*) AS n FROM accounts_payable").get().n, 4);
   // DRE recalculada por loja/categoria/mês (mesma regra do POST /expenses).
   const dre = db.sqlite.prepare("SELECT item_id, amount_cents FROM finance_store_entries ORDER BY item_id").all();

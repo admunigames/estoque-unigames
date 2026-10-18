@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../../db";
+import { upperText } from "../../../../lib/upper-text";
 import { todayInTimezone } from "../../../../lib/finance-status";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { canManageComprasDraft, identity, jsonResponse } from "../../shared";
@@ -40,9 +41,9 @@ export async function GET(request: Request) {
     const catalogMatch = await database
       .prepare(
         `SELECT name, code_unigames AS codeUnigames, code_pa AS codePa
-         FROM product_catalog WHERE code_unigames=?1 OR code_pa=?1 OR name=?1 LIMIT 1`,
+         FROM product_catalog WHERE code_unigames=?1 OR code_pa=?1 OR name=?2 LIMIT 1`,
       )
-      .bind(produto)
+      .bind(produto, upperText(produto))
       .first<CatalogMatchRow>();
     const matchCodes = Array.from(
       new Set([produto, catalogMatch?.codeUnigames, catalogMatch?.codePa].filter((code): code is string => Boolean(code))),

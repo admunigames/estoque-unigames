@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { upperText } from "../../../lib/upper-text";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { isValidCpfOrCnpj, isValidPixKey, PIX_KEY_TYPES, type PixKeyType } from "../../../lib/br-documents";
@@ -181,7 +182,7 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "VOCÊ SÓ PODE CADASTRAR CONTAS PARA A PRÓPRIA LOJA." }, 403);
     }
 
-    const name = safeText(body.name, 160);
+    const name = upperText(safeText(body.name, 160));
     if (name.length < 2) return jsonResponse({ error: "INFORME O NOME/DESCRIÇÃO DA CONTA." }, 400);
 
     const type = safeText(body.type, 20) as AccountType;

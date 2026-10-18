@@ -116,7 +116,7 @@ test("fluxo completo: criar, marcar, finalizar, resumo, escopo de loja e itens",
   assert.equal(nextDetail.answers[0].text, items[2].text);
   assert.equal(nextDetail.answers[1].text, "TEXTO NOVO");
   assert.ok(!nextDetail.answers.some((answer) => answer.text === items[1].text));
-  assert.equal(nextDetail.answers.at(-1).text, "Bancada limpa.");
+  assert.equal(nextDetail.answers.at(-1).text, "BANCADA LIMPA.");
 
   // Excluir só com delete (admin).
   assert.equal((await call(AUDITORA, "DELETE", { id: next.id })).status, 403);

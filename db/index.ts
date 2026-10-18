@@ -1,3 +1,4 @@
+import { withUpperText } from "../app/lib/upper-text";
 import * as schema from "./schema";
 
 // Ponto único de acesso ao banco. Durante a migração para Supabase, o
@@ -18,7 +19,7 @@ export async function getD1(): Promise<D1Database> {
       import("./d1-compat"),
       import("./pg-client"),
     ]);
-    return createD1CompatFromPg(await getSql()) as unknown as D1Database;
+    return withUpperText(createD1CompatFromPg(await getSql())) as unknown as D1Database;
   }
 
   const { env } = await import("cloudflare:workers");
@@ -28,7 +29,7 @@ export async function getD1(): Promise<D1Database> {
     );
   }
 
-  return env.DB;
+  return withUpperText(env.DB);
 }
 
 export async function getDb() {

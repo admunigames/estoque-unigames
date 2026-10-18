@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { upperText } from "../../../lib/upper-text";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { loadCompanyList } from "../../finance/shared";
 import { normalizeProductKey } from "../../product-catalog/shared";
@@ -67,9 +68,9 @@ export async function GET(request: Request) {
       database
         .prepare(
           `SELECT name, code_unigames AS codeUnigames, code_pa AS codePa
-           FROM product_catalog WHERE code_unigames=?1 OR code_pa=?1 OR name=?1 LIMIT 1`,
+           FROM product_catalog WHERE code_unigames=?1 OR code_pa=?1 OR name=?2 LIMIT 1`,
         )
-        .bind(produto)
+        .bind(produto, upperText(produto))
         .first<CatalogMatchRow>(),
       database
         .prepare("SELECT state_key AS stateKey, value_json AS value FROM shared_state WHERE state_key LIKE 'estoque:c%'")

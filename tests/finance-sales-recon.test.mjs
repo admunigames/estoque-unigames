@@ -262,7 +262,7 @@ test("cartão × banco: esperado × depositado por adquirente, conciliar e revis
   assert.equal(reviewed.applied, 1);
   data = await json(await get(deposits.GET, ADMIN, "/api/finance/sales-recon/deposits?month=2026-08"));
   assert.equal(day("cielo|2026-08-11").status, "reviewed");
-  assert.equal(day("cielo|2026-08-11").note, "Taxa de antecipação");
+  assert.equal(day("cielo|2026-08-11").note, "TAXA DE ANTECIPAÇÃO");
 });
 
 test("resumo + ATUALIZAR FATURAMENTO: vendas/serviços por unidade e loja sem dados intocada", async () => {

@@ -1,4 +1,5 @@
 import { identity, jsonResponse, safeText, sameOrigin, type Identity, type JsonMap } from "../finance/shared";
+import { upperText } from "../../lib/upper-text";
 
 export { identity, jsonResponse, safeText, sameOrigin };
 export type { Identity, JsonMap };
@@ -32,9 +33,9 @@ export async function resolveProductCodes(database: D1Database, produto: string)
   const catalogMatch = await database
     .prepare(
       `SELECT code_unigames AS codeUnigames, code_pa AS codePa
-       FROM product_catalog WHERE code_unigames=?1 OR code_pa=?1 OR name=?1 LIMIT 1`,
+       FROM product_catalog WHERE code_unigames=?1 OR code_pa=?1 OR name=?2 LIMIT 1`,
     )
-    .bind(produto)
+    .bind(produto, upperText(produto))
     .first<{ codeUnigames: string; codePa: string }>();
   return Array.from(
     new Set([produto, catalogMatch?.codeUnigames, catalogMatch?.codePa].filter((code): code is string => Boolean(code))),

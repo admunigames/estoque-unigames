@@ -1,4 +1,5 @@
 import { identity, jsonResponse, safeText, sameOrigin, type Identity, type JsonMap } from "../finance/shared";
+import { upperText } from "../../lib/upper-text";
 
 export { identity, jsonResponse, safeText, sameOrigin };
 export type { Identity, JsonMap };
@@ -99,7 +100,7 @@ export async function upsertProductCatalogEntries(
 ): Promise<ProductCatalogUpsertResult> {
   const result: ProductCatalogUpsertResult = { created: 0, updated: 0, unchanged: 0, skipped: 0 };
   const cleanedItems = items
-    .map((item) => ({ code: safeText(item.code, 80), name: safeText(item.name, 200) }))
+    .map((item) => ({ code: safeText(item.code, 80), name: upperText(safeText(item.name, 200)) }))
     .filter((item) => item.code && item.name);
   if (!cleanedItems.length) return result;
 

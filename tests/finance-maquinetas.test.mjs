@@ -210,7 +210,7 @@ test("conferência + revisão/exclusão em lote", async () => {
   data = await json(await get(conference.GET, ADMIN, "/api/finance/card-sales/conference?from=2026-08-01&to=2026-09-30&status=divergent"));
   assert.equal(data.rows.length, 0);
   data = await json(await get(conference.GET, ADMIN, "/api/finance/card-sales/conference?from=2026-08-01&to=2026-09-30&status=reviewed"));
-  assert.equal(data.rows[0].reviewedNote, "Taxa promocional");
+  assert.equal(data.rows[0].reviewedNote, "TAXA PROMOCIONAL");
 
   const extra = db.sqlite.prepare("SELECT id FROM finance_card_sales WHERE nsu='L1'").get().id;
   const deleted = await json(await post(salesBulk.POST, ADMIN, "/api/finance/card-sales/bulk", { action: "delete", ids: [extra] }));

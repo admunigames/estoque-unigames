@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { upperText } from "../../../lib/upper-text";
 import { unauthorizedResponse } from "../../../lib/notion";
 import {
   COMMISSION_KINDS,
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const editId = safeText(body.id, 80);
-    const name = safeText(body.name, 120);
+    const name = upperText(safeText(body.name, 120));
     const kind = safeText(body.kind, 20);
     const defaultAmountCents = centsValue(body.defaultAmountCents ?? 0);
     const active = body.active === false ? 0 : 1;
