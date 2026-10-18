@@ -523,7 +523,6 @@
   .home-access-icon svg{width:22px; height:22px; stroke-width:1.8; overflow:visible;}
   .home-access-copy{display:flex; flex-direction:column; gap:6px; width:100%; min-width:0;}
   .home-access-copy strong{color:#10233a; font:800 13px/1.25 var(--sans); letter-spacing:.25px;}
-  .home-access-copy span{color:#5c7187; font:600 11px/1.45 var(--sans); overflow-wrap:anywhere;}
   .home-access-arrow{align-self:flex-end; color:#386b9c; font:800 18px/1 var(--mono);}
   .home-health-alert{
     display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px;
@@ -14218,9 +14217,8 @@
     copy.className = 'home-access-copy';
     const title = document.createElement('strong');
     title.textContent = labelNode.textContent;
-    const desc = document.createElement('span');
-    desc.textContent = source.dataset.homeDesc;
-    copy.append(title, desc);
+    // Só o título do módulo (sem legenda) — pedido de 18/10/2026.
+    copy.append(title);
     const arrow = document.createElement('span');
     arrow.className = 'home-access-arrow';
     arrow.setAttribute('aria-hidden', 'true');
