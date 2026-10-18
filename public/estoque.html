@@ -7086,6 +7086,10 @@
           <label for="comSellerFilter">Vendedor</label>
           <select id="comSellerFilter"><option value="">TODOS</option></select>
         </div>
+        <div class="field" id="comOperationalField" hidden>
+          <label for="comOperationalFilter">Operacional</label>
+          <select id="comOperationalFilter"><option value="">TODOS</option></select>
+        </div>
         <div class="field" id="comRankMetricField" hidden>
           <label for="comRankMetric">Rankear por</label>
           <select id="comRankMetric">
@@ -46651,6 +46655,8 @@ function renderHomeTasks(){
   let comStoreFilter = '';
   let comZoneFilter = '';
   let comSellerFilter = '';
+  // Filtro de OPERACIONAL: escolhido, a tela mostra só ele (sem vendedores).
+  let comOperationalFilter = '';
   let comCurrentPage = '';
   let comView = 'dashboard';
 
@@ -47111,22 +47117,24 @@ function renderHomeTasks(){
     return comView === 'vendedores' || comView === 'crediarios' ? comManage : comOverview;
   }
 
-  function comFilteredSellers(options){
+  function comFilteredSellers(){
     const data = comData();
-    const sellers = data ? data.sellers : [];
+    const sellers = data && !comOperationalFilter ? data.sellers : [];
     return sellers.filter(seller =>
       (!comStoreFilter || seller.companyId === comStoreFilter) &&
       (!comZoneFilter || seller.zone === comZoneFilter) &&
-      (!(options && options.ignoreSeller) && comSellerFilter ? seller.employeeId === comSellerFilter : true)
+      (!comSellerFilter || seller.employeeId === comSellerFilter)
     );
   }
 
-  // Operacionais dentro dos filtros: só o de Loja vale (eles não têm zona e
-  // não estão no seletor de vendedor — com esses filtros, somem).
+  // Operacionais dentro dos filtros: Loja e Operacional valem (eles não têm
+  // zona e não estão no seletor de vendedor — com esses filtros, somem).
   function comFilteredOperationals(){
     const data = comData();
     if(!data || comZoneFilter || comSellerFilter) return [];
-    return (data.operationals || []).filter(person => !comStoreFilter || person.companyId === comStoreFilter);
+    return (data.operationals || []).filter(person =>
+      (!comStoreFilter || person.companyId === comStoreFilter) &&
+      (!comOperationalFilter || person.employeeId === comOperationalFilter));
   }
 
   function comEmptyHtml(){
@@ -47149,6 +47157,7 @@ function renderHomeTasks(){
     const storeChart = comView === 'ranking' && comRankSub !== 'vendedores';
     if(el('comZoneField')) el('comZoneField').hidden = !data || ownOnly || editing || storeChart;
     if(el('comSellerField')) el('comSellerField').hidden = !data || ownOnly || editing || comView === 'ranking';
+    if(el('comOperationalField')) el('comOperationalField').hidden = !data || ownOnly || editing || comView === 'ranking' || !(data.operationals || []).length;
     if(el('comRankMetricField')) el('comRankMetricField').hidden = comView !== 'ranking' || storeChart;
     // Regras de Comissão não dependem do mês (cada vigência tem o seu).
     if(el('comMonthField')) el('comMonthField').hidden = comView === 'regras';
@@ -47176,10 +47185,16 @@ function renderHomeTasks(){
     comStoreFilter = comFillFilter('comStoreFilter', 'TODAS', Array.from(stores.entries())
       .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'))
       .map(([value, label]) => ({value, label})), comStoreFilter);
-    comSellerFilter = comFillFilter('comSellerFilter', 'TODOS', comFilteredSellers({ignoreSeller:true}).map(seller => ({
+    comSellerFilter = comFillFilter('comSellerFilter', 'TODOS', (data.sellers || []).filter(seller =>
+      (!comStoreFilter || seller.companyId === comStoreFilter) && (!comZoneFilter || seller.zone === comZoneFilter)).map(seller => ({
       value: seller.employeeId,
       label: seller.name + (data.allStores && !comStoreFilter && seller.companyName ? ' — '+seller.companyName : '')
     })), comSellerFilter);
+    comOperationalFilter = comFillFilter('comOperationalFilter', 'TODOS', (data.operationals || [])
+      .filter(person => !comStoreFilter || person.companyId === comStoreFilter).map(person => ({
+      value: person.employeeId,
+      label: person.name + (data.allStores && !comStoreFilter && person.companyName ? ' — '+person.companyName : '')
+    })), comOperationalFilter);
   }
 
   function comRenderDashboard(){
@@ -48943,6 +48958,7 @@ function renderHomeTasks(){
       comStoreFilter = '';
       comZoneFilter = '';
       comSellerFilter = '';
+      comOperationalFilter = '';
       // Mostra na hora o que já veio do mês (abas de leitura) e SEMPRE busca de
       // novo: outra pessoa pode ter lançado enquanto esta aba estava fechada.
       const data = comView === 'ranking' ? comRanking : comData();
@@ -49074,15 +49090,24 @@ function renderHomeTasks(){
   if(el('comStoreFilter')) el('comStoreFilter').addEventListener('change', () => {
     comStoreFilter = el('comStoreFilter').value;
     comSellerFilter = '';
+    comOperationalFilter = '';
     comRenderCurrent();
   });
   if(el('comZoneFilter')) el('comZoneFilter').addEventListener('change', () => {
     comZoneFilter = el('comZoneFilter').value;
     comSellerFilter = '';
+    comOperationalFilter = '';
     comRenderCurrent();
   });
+  // Vendedor e Operacional se excluem: escolher um limpa o outro.
   if(el('comSellerFilter')) el('comSellerFilter').addEventListener('change', () => {
     comSellerFilter = el('comSellerFilter').value;
+    if(comSellerFilter) comOperationalFilter = '';
+    comRenderCurrent();
+  });
+  if(el('comOperationalFilter')) el('comOperationalFilter').addEventListener('change', () => {
+    comOperationalFilter = el('comOperationalFilter').value;
+    if(comOperationalFilter){ comSellerFilter = ''; comZoneFilter = ''; }
     comRenderCurrent();
   });
   if(el('comRankMetric')) el('comRankMetric').addEventListener('change', comRenderRanking);

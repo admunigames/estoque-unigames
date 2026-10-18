@@ -4545,6 +4545,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
     assert.match(workerSource, new RegExp(`"comercial:${permission}",`));
   }
   assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:ranking",/);
+  // Filtro OPERACIONAL ao lado do Vendedor (18/10/2026): escolhido, só ele aparece.
+  assert.match(html, /id="comSellerFilter">[\s\S]*?<\/div>\s*<div class="field" id="comOperationalField" hidden>\s*<label for="comOperationalFilter">Operacional<\/label>/);
+  assert.match(html, /const sellers = data && !comOperationalFilter \? data\.sellers : \[\];/);
   // Aba Indicação removida (16/10/2026); Meta Assistência ao lado das Regras.
   assert.doesNotMatch(html, /data-com-view="indicacao"|comercial:indications/);
   assert.match(html, /data-any-permission="comercial:rules_view,comercial:rules">Regras de Comissão<\/button>\s*<button[^>]*data-com-view="assistencia" data-any-permission="comercial:assist_view,comercial:assist">Meta Assistência</);
