@@ -86,6 +86,7 @@ type Permission =
   | "ordens_servico:view" | "ordens_servico:create" | "ordens_servico:edit" | "ordens_servico:delete" | "ordens_servico:store_test"
   | "precos_assistencia:view" | "precos_assistencia:create" | "precos_assistencia:edit" | "precos_assistencia:delete"
   | "estoque_assistencia:view" | "estoque_assistencia:entrada" | "estoque_assistencia:baixa" | "estoque_assistencia:manage" | "estoque_assistencia:delete"
+  | "inventario:view" | "inventario:count" | "inventario:manage" | "inventario:delete"
   | "auditoria_operacional:view" | "auditoria_operacional:audit" | "auditoria_operacional:manage" | "auditoria_operacional:delete"
   | "treinamento:view" | "treinamento:team"
   | "audit:view"
@@ -256,6 +257,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "precos_assistencia:view", "precos_assistencia:create", "precos_assistencia:edit", "precos_assistencia:delete",
   // Assistência > Estoque — só login sem loja (a rota confere).
   "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
+  // Estoque > Inventário — contagem por loja (login com loja só a própria).
+  "inventario:view", "inventario:count", "inventario:manage", "inventario:delete",
   // Auditoria Operacional (checklist de loja) — loja só lê as finalizadas da própria loja (a rota confere).
   "auditoria_operacional:view", "auditoria_operacional:audit", "auditoria_operacional:manage", "auditoria_operacional:delete",
   // Comercial > Treinamento (Unigames Academy) — permissão própria,
@@ -372,6 +375,7 @@ const APP_ROUTE_PATHS = new Set([
   "/assistencia/ordens-servico",
   "/assistencia/precos",
   "/assistencia/estoque",
+  "/inventario",
   "/auditoria-operacional",
   "/entradas",
   "/insumos",
@@ -1401,6 +1405,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   ],
   relatorioNf: ["relatorio_nf:view", "relatorio_nf:manage"],
   controleGd: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
+  inventario: ["inventario:view", "inventario:count", "inventario:manage", "inventario:delete"],
   estoqueAssistencia: [
     "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
   ],
@@ -1429,6 +1434,7 @@ const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_P
   commercial: "commercial",
   ordens_servico: "ordensServico",
   estoque_assistencia: "estoqueAssistencia",
+  inventario: "inventario",
 };
 
 async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): Promise<boolean> {
@@ -1510,6 +1516,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
     [path === "/divergencias" || path.startsWith("/api/divergences"), "divergences"],
+    // Estoque > Inventário — permissão própria (inventario:*).
+    [path === "/inventario" || path.startsWith("/api/inventario"), "inventario"],
     // Cadastros > Auditoria — permissão própria (audit:view). Checado antes
     // do bucket "/cadastros/" (Base de Dados).
     [path === "/cadastros/auditoria" || path.startsWith("/api/audit"), "audit"],

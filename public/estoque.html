@@ -2730,6 +2730,13 @@
   .os-update-item small{color:var(--ink-faint);font:700 8.5px/1.3 var(--mono);}
   .os-update-item p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;}
   #osTabs,#prcTabs,#astTabs{flex-wrap:wrap;margin-bottom:12px;}
+  #invTabs{flex-wrap:wrap;margin:12px 0;}
+  .inv-detail-actions{justify-content:flex-end;margin-top:10px;}
+  .inv-count-input{width:96px;min-height:40px;font:800 16px/1 var(--sans);text-align:center;}
+  .inv-reason{width:100%;min-width:200px;}
+  .inv-count-input.inv-saved,.inv-reason.inv-saved{box-shadow:0 0 0 2px #54c48a;}
+  tr.inv-over td{background:rgba(84,196,138,.06);}
+  tr.inv-under td{background:rgba(239,106,85,.07);}
   .ast-qty{font:900 15px/1 var(--sans);color:#54c48a;}
   .ast-qty.zero{color:#ef817b;}
   .ast-in{border-color:rgba(84,196,138,.55);color:#54c48a;}
@@ -3880,6 +3887,20 @@
       display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
     }
     body.os-printing #osPrintBody{display:block !important; width:100%; color:#111827;}
+    /* PDFs do Inventário (diretor, recontagem, Pontti): só o relatório. */
+    body.inv-printing > :not(.shell),
+    body.inv-printing .shell > :not(.content),
+    body.inv-printing .content > :not(#pageInventario),
+    body.inv-printing #pageInventario > :not(#invDetailView),
+    body.inv-printing #invDetailView > :not(#invPrintBody){display:none !important;}
+    body.inv-printing .shell,body.inv-printing .content,body.inv-printing #pageInventario,body.inv-printing #invDetailView{
+      display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+    }
+    body.inv-printing #invPrintBody{display:block !important; width:100%; color:#111827;}
+    .inv-print-totals{margin:6px 0 10px; font-size:11px;}
+    .inv-print-box{width:110px; height:26px;}
+    #invPrintBody .num{white-space:nowrap;}
+    .inv-print-sign{margin-top:22px; font-size:11px;}
     /* Resumo da Auditoria Operacional: só o resumo. */
     body.aop-printing > :not(.shell),
     body.aop-printing .shell > :not(.content),
@@ -3966,6 +3987,7 @@
         <a class="nav-item sub-item" id="navRelatorio41" data-page="relatorio41" data-permission="report41" data-home-desc="Vendas e estoque baixo da sua loja." title="Relatório 41" href="/relatorio-41"><span class="nav-icon nav-icon-text" aria-hidden="true">41</span><span class="nav-label">Relatório 41</span></a>
         <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc="Saídas Gerais Solicitadas pelas lojas." title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5"/><path d="M11 12h9.5"/><path d="m16.5 8 4 4-4 4"/></svg></span><span class="nav-label">Saídas</span></a>
         <a class="nav-item sub-item" id="navDivergencias" data-page="divergencias" data-permission="divergencias" data-home-desc="Pedidos de verificação de divergência entre o físico e o sistema." title="Divergências" href="/divergencias"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11l-3-3"/><path d="M18 16H7l3 3"/></svg></span><span class="nav-label">Divergências</span></a>
+        <a class="nav-item sub-item" id="navInventario" data-page="inventario" data-permission="inventario" data-home-desc="Inventário por loja: sobe o estoque por categoria, contagem física ao vivo, divergências com custo, PDFs para o diretor, recontagem e Pontti." title="Inventário" href="/inventario"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><path d="M8 16l2 2 4-4"/></svg></span><span class="nav-label">Inventário</span></a>
         <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
       </div>
     </div>
@@ -4744,6 +4766,119 @@
         </div>
         <div class="output-list" id="outputList" aria-live="polite"><div class="output-empty">Carregando solicitações…</div></div>
       </section>
+    </section>
+
+    <!-- ================= ESTOQUE / INVENTÁRIO ================= -->
+    <section id="pageInventario" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title" id="invPageTitle">Inventário</h2>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnInvBack" type="button" hidden>← INVENTÁRIOS</button>
+          <button class="btn-outline" id="btnInvReload" type="button">ATUALIZAR</button>
+          <button class="btn-accent" id="btnInvNew" type="button" hidden>NOVO INVENTÁRIO</button>
+        </div>
+      </header>
+
+      <div id="invListView">
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="invListTable">
+              <thead><tr><th>Data</th><th>Loja</th><th>Status</th><th>Categorias contadas</th><th>Produtos</th><th>Divergentes</th><th></th></tr></thead>
+              <tbody id="invListBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="invDetailView" hidden>
+        <div class="supply-dashboard-grid gd-summary" id="invSummary"></div>
+        <div class="dre-toolbar-actions inv-detail-actions">
+          <button class="btn-outline" id="btnInvFinalize" type="button" hidden>FINALIZAR INVENTÁRIO</button>
+          <button class="btn-outline" id="btnInvDelete" type="button" hidden>EXCLUIR INVENTÁRIO</button>
+        </div>
+        <div class="supply-tabs" role="tablist" aria-label="Etapas do inventário" id="invTabs">
+          <button class="supply-tab active" type="button" role="tab" data-inv-tab="categorias">CATEGORIAS</button>
+          <button class="supply-tab" type="button" role="tab" data-inv-tab="contagem">CONTAGEM</button>
+          <button class="supply-tab" type="button" role="tab" data-inv-tab="resultado">RESULTADO</button>
+          <button class="supply-tab" type="button" role="tab" data-inv-tab="divergentes">DIVERGENTES</button>
+          <button class="supply-tab" type="button" role="tab" data-inv-tab="recontagem">RECONTAGEM</button>
+        </div>
+
+        <div class="inv-panel" data-inv-panel="categorias">
+          <div class="dre-toolbar">
+            <button class="btn-accent" id="btnInvUpload" type="button" hidden>SUBIR RELATÓRIOS DE ESTOQUE (EXCEL)</button>
+            <input type="file" id="invUploadInput" accept=".xls,.xlsx,.csv,.html,.htm" multiple hidden>
+            <p class="purchase-field-help">Cada relatório é uma categoria (lida do cabeçalho do arquivo). O "Estoque Atual" vira a quantidade em sistema daquele dia.</p>
+          </div>
+          <div class="table-panel responsive-table"><div class="table-scroll">
+            <table><thead><tr><th>Categoria</th><th>Produtos</th><th>Contados</th><th>Situação</th><th>Arquivo</th><th></th></tr></thead>
+            <tbody id="invCatBody"></tbody></table>
+          </div></div>
+        </div>
+
+        <div class="inv-panel" data-inv-panel="contagem" hidden>
+          <div class="dre-toolbar">
+            <div class="field"><label for="invCountCategory">CATEGORIA</label><select id="invCountCategory"></select></div>
+            <div class="field"><label for="invCountSearch">BUSCAR</label><input type="search" id="invCountSearch" placeholder="Produto ou código"></div>
+            <button class="btn-accent" id="btnInvFinishCategory" type="button">FINALIZAR CONTAGEM DA CATEGORIA</button>
+          </div>
+          <p class="purchase-field-help" id="invCountHint"></p>
+          <div class="table-panel responsive-table"><div class="table-scroll">
+            <table id="invCountTable"><thead><tr><th>Código</th><th>Produto</th><th>Contado</th><th>Contado por</th></tr></thead>
+            <tbody id="invCountBody"></tbody></table>
+          </div></div>
+        </div>
+
+        <div class="inv-panel" data-inv-panel="resultado" hidden>
+          <div class="dre-toolbar">
+            <button class="btn-outline" id="btnInvCosts" type="button" hidden>ANEXAR RELATÓRIO DE CUSTOS</button>
+            <input type="file" id="invCostsInput" accept=".xls,.xlsx,.csv,.html,.htm" hidden>
+            <div class="field"><label for="invResultCategory">CATEGORIA</label><select id="invResultCategory"></select></div>
+            <div class="field"><label for="invResultSearch">BUSCAR</label><input type="search" id="invResultSearch" placeholder="Produto ou código"></div>
+          </div>
+          <p class="purchase-field-help" id="invCostsHint"></p>
+          <div class="table-panel responsive-table"><div class="table-scroll">
+            <table><thead><tr><th>Categoria</th><th>Código</th><th>Produto</th><th>Contado</th><th>Sistema</th><th>Diferença</th><th>Custo</th><th>Valor</th></tr></thead>
+            <tbody id="invResultBody"></tbody></table>
+          </div></div>
+          <h3 class="supply-section-title">ANOTADOS PARA INVENTÁRIO NAS DIVERGÊNCIAS (ESTA LOJA)</h3>
+          <div class="table-panel responsive-table"><div class="table-scroll">
+            <table><thead><tr><th>Código</th><th>Produto</th><th>Físico</th><th>Sistema</th><th>Resposta do estoque</th><th>No inventário</th></tr></thead>
+            <tbody id="invNotedBody"></tbody></table>
+          </div></div>
+        </div>
+
+        <div class="inv-panel" data-inv-panel="divergentes" hidden>
+          <div class="dre-toolbar">
+            <div class="field"><label for="invDivView">MOSTRAR</label>
+              <select id="invDivView"><option value="">DIVERGENTES (LISTA FINAL)</option><option value="removed">ENCONTRADOS / RETIRADOS</option></select>
+            </div>
+            <button class="btn-outline" type="button" data-inv-pdf="diretor">PDF RELATÓRIO FINAL (DIRETOR)</button>
+            <button class="btn-outline" type="button" data-inv-pdf="recontagem">PDF RECONTAGEM DE LOJA</button>
+            <button class="btn-outline" type="button" data-inv-pdf="pontti">PDF DIVERGÊNCIA PONTTI</button>
+          </div>
+          <div class="table-panel responsive-table"><div class="table-scroll">
+            <table><thead><tr><th>Categoria</th><th>Produto</th><th>Contado</th><th>Sistema</th><th>Diferença</th><th>Valor</th><th>Motivo da divergência</th><th></th></tr></thead>
+            <tbody id="invDivBody"></tbody></table>
+          </div></div>
+        </div>
+
+        <div class="inv-panel" data-inv-panel="recontagem" hidden>
+          <div class="dre-toolbar">
+            <button class="btn-accent" id="btnInvAttach" type="button" hidden>ANEXAR RECONTAGEM ESCANEADA</button>
+            <input type="file" id="invAttachInput" accept=".pdf,image/*" hidden>
+            <p class="purchase-field-help">Imprima o PDF RECONTAGEM DE LOJA (aba DIVERGENTES), reconte na loja e anexe aqui o escaneado.</p>
+          </div>
+          <div class="table-panel responsive-table"><div class="table-scroll">
+            <table><thead><tr><th>Arquivo</th><th>Enviado por</th><th>Quando</th><th></th></tr></thead>
+            <tbody id="invAttachBody"></tbody></table>
+          </div></div>
+        </div>
+        <div class="print-only" id="invPrintBody"></div>
+      </div>
     </section>
 
     <section id="pageDivergencias" class="page wrap">
@@ -10180,6 +10315,15 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Estoque - Inventário</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inventario:view"> Ver os inventários (login com loja: só a própria loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inventario:count"> Fazer a contagem física (e anexar recontagem)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inventario:manage"> Criar inventário, subir relatórios e custos, motivos, retirar divergências e finalizar</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="inventario:delete"> Excluir inventário</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Estoque - Relatório NF</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:view"> Ver o lançamento do dia e o histórico de dias salvos</label>
@@ -11760,6 +11904,24 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" type="button" data-prc-close>CANCELAR</button>
       <button class="btn-accent" id="btnPrcSave" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="invNewDialog" aria-labelledby="invNewDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="invNewDialogTitle">NOVO INVENTÁRIO</h3>
+    <button class="purchase-dialog-close" type="button" data-inv-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="invNewForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="invNewStore">LOJA *</label><select id="invNewStore" required></select></div>
+      <div class="purchase-field"><label for="invNewDate">DATA DO INVENTÁRIO *</label><input type="date" id="invNewDate" required></div>
+    </div>
+    <div class="user-form-status" id="invNewStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-inv-close>CANCELAR</button>
+      <button class="btn-accent" type="submit">CRIAR</button>
     </div>
   </form>
 </dialog>
@@ -13919,7 +14081,7 @@
 
   // O canal ao vivo carrega somente avisos de invalidacao. Os dados continuam
   // sendo buscados pelas APIs existentes, que aplicam as permissoes da sessao.
-  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans',comprasNovo:'compras',comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico',assistenciaEstoque:'estoque_assistencia'});
+  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans',comprasNovo:'compras',comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico',assistenciaEstoque:'estoque_assistencia',inventario:'inventario'});
   let livePageName = '';
   let liveModule = '';
   let liveSocket = null;
@@ -13960,6 +14122,7 @@
     if(livePageName === 'comercialAcompanhamento') await comLiveRefresh();
     if(livePageName === 'assistenciaOrdensServico') await refreshAfterAction(() => loadOrdensServicoPage());
     if(livePageName === 'assistenciaEstoque') await refreshAfterAction(() => loadAstPage());
+    if(livePageName === 'inventario') await refreshAfterAction(() => loadInvPage({live:true}));
     if(livePageName === 'insumos'){
       await refreshAfterAction(() => {
         const refreshes = [loadSupplyAdminData(),loadSupplyExitData(),loadSupplyMissing({silent:true}),loadSupplyRequest(),loadSupplyRequestPendingOld()];
@@ -14384,6 +14547,7 @@
     captacao:'/captacao',
     saidas:'/saidas',
     divergencias:'/divergencias',
+    inventario:'/inventario',
     assistenciaOrcamentos:'/assistencia/orcamentos',
     entradas:'/entradas',
     insumos:'/insumos',
@@ -14452,6 +14616,7 @@
     captacao:'CAPTAÇÃO',
     saidas:'SAÍDAS',
     divergencias:'DIVERGÊNCIAS',
+    inventario:'INVENTÁRIO',
     assistenciaOrcamentos:'ORÇAMENTOS',
     entradas:'ENTRADA',
     insumos:'INSUMOS',
@@ -14515,6 +14680,7 @@
     captacao:'captures',
     saidas:'outputs',
     divergencias:'divergencias',
+    inventario:'inventario',
     assistenciaOrcamentos:'assistencia:manage',
     entradas:'inputs',
     insumos:'supplies',
@@ -15224,7 +15390,7 @@
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'fornecedores' || name === 'usuarios' || name === 'auditoria';
     const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento' || name === 'rhDreFuncionario';
     const isRh = name === 'rhFolgas' || name === 'rhEscalas' || isRhFinanceiro;
-    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'comercialRelatorioNf';
+    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'inventario' || name === 'comercialRelatorioNf';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico' || name === 'assistenciaPrecos' || name === 'assistenciaEstoque';
@@ -15281,6 +15447,7 @@
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
     if(name === 'divergencias') loadDivergencias();
+    if(name === 'inventario') loadInvPage();
     if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
@@ -15352,6 +15519,7 @@
     if(name === 'captacao') loadCaptures();
     if(name === 'saidas') loadOutputs();
     if(name === 'divergencias') loadDivergencias();
+    if(name === 'inventario') loadInvPage();
     if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
@@ -27898,6 +28066,498 @@ function renderHomeTasks(){
   el('btnAuditMore') && el('btnAuditMore').addEventListener('click', () => loadAuditPage(false));
   ['auditFrom','auditTo','auditModule'].forEach(id => el(id) && el(id).addEventListener('change', () => loadAuditPage(true)));
   ['auditUser','auditQuery'].forEach(id => el(id) && el(id).addEventListener('keydown', event => { if(event.key === 'Enter') loadAuditPage(true); }));
+
+  // ---------- ESTOQUE · INVENTÁRIO ----------
+  // Inventário por loja e data: cada relatório de estoque subido é uma
+  // categoria (Estoque Atual = sistema no dia); vários usuários contam ao vivo.
+  // A contagem é "às cegas": a tela de CONTAGEM não mostra o estoque em sistema.
+  const INV_API = '/api/inventario';
+  let invList = null;
+  let invData = null;
+  let invId = '';
+  let invTab = 'categorias';
+  const invCan = action => canAccess('inventario:'+action);
+  async function invApi(method, body, query, url){
+    const response = await fetch((url || INV_API)+(query || ''), {
+      method: method || 'GET', cache:'no-store',
+      headers: body ? {Accept:'application/json','Content-Type':'application/json'} : {Accept:'application/json'},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){ location.assign('/login?next='+encodeURIComponent(location.pathname)); throw new Error('SESSÃO EXPIRADA.'); }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+  const invPatch = (action, extra) => invApi('PATCH', {id: invId, action, ...(extra || {})});
+  const invDiff = item => item.countedQty === null ? null : item.countedQty - item.systemQty;
+  const invValue = item => { const d = invDiff(item); return d === null || item.costCents === null ? null : d * item.costCents; };
+  const invSigned = n => n === null ? '—' : (n > 0 ? '+'+n : String(n));
+  const invMoney = cents => cents === null ? '—' : formatCentsBRL(cents);
+  const invOpen = () => invData && invData.inventory && invData.inventory.status !== 'finalizado';
+  const invDivergent = () => ((invData && invData.items) || []).filter(item => invDiff(item) !== null && invDiff(item) !== 0);
+
+  async function loadInvPage(opts){
+    try{
+      if(invId){
+        invData = await invApi('GET', null, '?id='+encodeURIComponent(invId));
+        renderInvDetail(opts && opts.live);
+      }else{
+        invList = await invApi();
+        renderInvList();
+      }
+    }catch(error){
+      if(invId && /NÃO ENCONTRADO/.test(error.message)){ invId = ''; return loadInvPage(); }
+      showPurchaseToast(error.message, 'error');
+    }
+  }
+
+  function renderInvList(){
+    el('invListView').hidden = false;
+    el('invDetailView').hidden = true;
+    el('btnInvBack').hidden = true;
+    el('btnInvNew').hidden = !invCan('manage');
+    el('invPageTitle').textContent = 'Inventário';
+    const rows = (invList && invList.inventories) || [];
+    el('invListBody').innerHTML = rows.length ? rows.map(row =>
+      '<tr>'+
+        '<td data-label="Data"><strong>'+escapeHtml(gdDateLabel(row.inventoryDate))+'</strong></td>'+
+        '<td data-label="Loja">'+escapeHtml(row.storeName)+'</td>'+
+        '<td data-label="Status"><span class="status-pill '+(row.status === 'finalizado' ? 'done' : 'progress')+'">'+(row.status === 'finalizado' ? 'FINALIZADO' : 'EM ANDAMENTO')+'</span></td>'+
+        '<td data-label="Categorias contadas">'+row.countedCategories+' DE '+row.categories+'</td>'+
+        '<td data-label="Produtos">'+row.items+'</td>'+
+        '<td data-label="Divergentes">'+row.divergent+'</td>'+
+        '<td><button class="btn-accent btn-sm" type="button" data-inv-open="'+escapeHtml(row.id)+'">ABRIR</button></td>'+
+      '</tr>').join('') : '<tr><td colspan="7" class="responsive-empty">Nenhum inventário ainda.</td></tr>';
+  }
+
+  function invSetTab(name){
+    invTab = name;
+    document.querySelectorAll('[data-inv-tab]').forEach(button => {
+      const active = button.dataset.invTab === name;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll('[data-inv-panel]').forEach(panel => { panel.hidden = panel.dataset.invPanel !== name; });
+  }
+
+  function invCategorySelect(select, withAll){
+    const previous = select.value;
+    const cats = invData.categories.map(cat => cat.category);
+    select.innerHTML = (withAll ? '<option value="">TODAS</option>' : '')+cats.map(cat => '<option>'+escapeHtml(cat)+'</option>').join('');
+    if(cats.includes(previous) || (withAll && previous === '')) select.value = previous;
+  }
+
+  function renderInvDetail(live){
+    const inv = invData.inventory;
+    const items = invData.items;
+    el('invListView').hidden = true;
+    el('invDetailView').hidden = false;
+    el('btnInvBack').hidden = false;
+    el('btnInvNew').hidden = true;
+    el('invPageTitle').textContent = 'Inventário · '+inv.storeName+' · '+gdDateLabel(inv.inventoryDate);
+    const counted = items.filter(item => item.countedQty !== null).length;
+    const divergent = invDivergent().filter(item => !item.removed);
+    const value = divergent.reduce((sum, item) => sum + (invValue(item) || 0), 0);
+    el('invSummary').innerHTML =
+      '<article class="supply-dashboard-card"><span>STATUS</span><strong>'+(inv.status === 'finalizado' ? 'FINALIZADO' : 'EM ANDAMENTO')+'</strong><small>'+escapeHtml(inv.status === 'finalizado' ? 'POR '+inv.finalizedByName+' · '+(formatDateTimeBR(inv.finalizedAt) || '') : 'CRIADO POR '+inv.createdByName)+'</small></article>'+
+      '<article class="supply-dashboard-card"><span>CATEGORIAS CONTADAS</span><strong>'+invData.categories.filter(cat => cat.countedAt).length+' / '+invData.categories.length+'</strong></article>'+
+      '<article class="supply-dashboard-card"><span>PRODUTOS CONTADOS</span><strong>'+counted+' / '+items.length+'</strong></article>'+
+      '<article class="supply-dashboard-card warning"><span>DIVERGENTES (LISTA FINAL)</span><strong>'+divergent.length+'</strong></article>'+
+      '<article class="supply-dashboard-card '+(value < 0 ? 'danger' : '')+'"><span>VALOR DAS DIVERGÊNCIAS</span><strong class="'+gdMoneyClass(value)+'">'+formatCentsBRL(value)+'</strong><small>'+(inv.costsFileName ? 'CUSTOS: '+escapeHtml(inv.costsFileName) : 'SEM RELATÓRIO DE CUSTOS')+'</small></article>';
+    const open = invOpen();
+    el('btnInvFinalize').hidden = !invCan('manage');
+    el('btnInvFinalize').textContent = open ? 'FINALIZAR INVENTÁRIO' : 'REABRIR INVENTÁRIO';
+    el('btnInvDelete').hidden = !invCan('delete');
+    el('btnInvUpload').hidden = !invCan('manage') || !open;
+    el('btnInvCosts').hidden = !invCan('manage') || !open;
+    el('btnInvAttach').hidden = !(invCan('count') || invCan('manage'));
+    renderInvCategories();
+    invCategorySelect(el('invCountCategory'), false);
+    invCategorySelect(el('invResultCategory'), true);
+    renderInvCount(live);
+    renderInvResult();
+    renderInvDivergent(live);
+    renderInvAttachments();
+  }
+
+  function renderInvCategories(){
+    const canManage = invCan('manage') && invOpen();
+    el('invCatBody').innerHTML = invData.categories.length ? invData.categories.map(cat => {
+      const items = invData.items.filter(item => item.category === cat.category);
+      const counted = items.filter(item => item.countedQty !== null).length;
+      return '<tr>'+
+        '<td data-label="Categoria"><strong>'+escapeHtml(cat.category)+'</strong></td>'+
+        '<td data-label="Produtos">'+items.length+'</td>'+
+        '<td data-label="Contados">'+counted+'</td>'+
+        '<td data-label="Situação">'+(cat.countedAt
+          ? '<span class="status-pill done">CONTADA</span><small class="os-update-meta">'+escapeHtml(cat.countedByName+' · '+(formatDateTimeBR(cat.countedAt) || ''))+'</small>'
+          : '<span class="status-pill progress">EM CONTAGEM</span>')+'</td>'+
+        '<td data-label="Arquivo"><small class="os-update-meta">'+escapeHtml((cat.fileName || '')+' · '+(cat.uploadedByName || ''))+'</small></td>'+
+        '<td style="white-space:nowrap"><button class="btn-outline btn-sm" type="button" data-inv-count="'+escapeHtml(cat.category)+'">CONTAR</button> '+
+          (canManage ? '<button class="btn-outline btn-sm" type="button" data-inv-delcat="'+escapeHtml(cat.category)+'">EXCLUIR</button>' : '')+'</td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="6" class="responsive-empty">Suba os relatórios de estoque (um por categoria).</td></tr>';
+  }
+
+  function renderInvCount(live){
+    const category = el('invCountCategory').value;
+    const cat = invData.categories.find(item => item.category === category);
+    const canCount = (invCan('count') || invCan('manage')) && invOpen();
+    const terms = el('invCountSearch').value.trim().toLocaleUpperCase('pt-BR').split(/\s+/).filter(Boolean);
+    const items = invData.items.filter(item => item.category === category && terms.every(term => (item.product+' '+item.code).includes(term)));
+    el('btnInvFinishCategory').hidden = !canCount || !cat;
+    el('btnInvFinishCategory').textContent = cat && cat.countedAt ? 'REABRIR CONTAGEM DA CATEGORIA' : 'FINALIZAR CONTAGEM DA CATEGORIA';
+    el('invCountHint').textContent = !cat ? 'SUBA OS RELATÓRIOS NA ABA CATEGORIAS.' : cat.countedAt
+      ? 'CONTAGEM FINALIZADA POR '+cat.countedByName+' EM '+(formatDateTimeBR(cat.countedAt) || '')+'. AINDA DÁ PARA CORRIGIR UM PRODUTO ENCONTRADO DEPOIS.'
+      : 'DIGITE A QUANTIDADE CONTADA FISICAMENTE: SALVA SOZINHO AO SAIR DO CAMPO. AO FINALIZAR, O QUE NÃO FOI CONTADO FICA ZERO.';
+    // Ao vivo com alguém digitando: só atualiza os outros campos, sem redesenhar.
+    const body = el('invCountBody');
+    if(live && body.contains(document.activeElement)){
+      body.querySelectorAll('[data-inv-item]').forEach(input => {
+        if(input === document.activeElement) return;
+        const item = invData.items.find(row => row.id === input.dataset.invItem);
+        if(item) input.value = item.countedQty === null ? '' : item.countedQty;
+      });
+      return;
+    }
+    body.innerHTML = items.length ? items.map(item =>
+      '<tr>'+
+        '<td data-label="Código">'+escapeHtml(item.code || '—')+'</td>'+
+        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong></td>'+
+        '<td data-label="Contado"><input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+(item.countedQty === null ? '' : item.countedQty)+'"'+(canCount ? '' : ' disabled')+'></td>'+
+        '<td data-label="Contado por"><small class="os-update-meta">'+escapeHtml(item.countedByName ? item.countedByName+' · '+(formatDateTimeBR(item.countedAt) || '') : '—')+'</small></td>'+
+      '</tr>').join('') : '<tr><td colspan="4" class="responsive-empty">Nenhum produto.</td></tr>';
+  }
+
+  function renderInvResult(){
+    const inv = invData.inventory;
+    el('invCostsHint').textContent = inv.costsFileName
+      ? 'CUSTOS: '+inv.costsFileName+' · '+inv.costsUploadedByName+' · '+(formatDateTimeBR(inv.costsUploadedAt) || '')+' · '+invData.items.filter(item => item.costCents !== null).length+' DE '+invData.items.length+' PRODUTOS COM CUSTO.'
+      : 'ANEXE O RELATÓRIO DE PRODUTO (COM A COLUNA CUSTO) PARA CALCULAR O VALOR DAS DIVERGÊNCIAS.';
+    const category = el('invResultCategory').value;
+    const terms = el('invResultSearch').value.trim().toLocaleUpperCase('pt-BR').split(/\s+/).filter(Boolean);
+    const notedCodes = new Set(invData.divergencesNoted.map(row => String(row.code || '').toUpperCase()));
+    const rows = invData.items.filter(item => (!category || item.category === category) && terms.every(term => (item.product+' '+item.code).includes(term)));
+    el('invResultBody').innerHTML = rows.length ? rows.map(item => {
+      const diff = invDiff(item); const value = invValue(item);
+      return '<tr class="'+(diff ? (diff > 0 ? 'inv-over' : 'inv-under') : '')+'">'+
+        '<td data-label="Categoria">'+escapeHtml(item.category)+'</td>'+
+        '<td data-label="Código">'+escapeHtml(item.code || '—')+'</td>'+
+        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong>'+(notedCodes.has(String(item.code).toUpperCase()) ? ' <span class="status-pill waiting">ANOTADO NAS DIVERGÊNCIAS</span>' : '')+'</td>'+
+        '<td data-label="Contado">'+(item.countedQty === null ? '—' : item.countedQty)+'</td>'+
+        '<td data-label="Sistema">'+item.systemQty+'</td>'+
+        '<td data-label="Diferença" class="'+gdMoneyClass(diff || 0)+'"><strong>'+invSigned(diff)+'</strong></td>'+
+        '<td data-label="Custo">'+invMoney(item.costCents)+'</td>'+
+        '<td data-label="Valor" class="'+gdMoneyClass(value || 0)+'"><strong>'+invMoney(value)+'</strong></td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum produto.</td></tr>';
+    const codes = new Set(invData.items.map(item => String(item.code).toUpperCase()));
+    el('invNotedBody').innerHTML = invData.divergencesNoted.length ? invData.divergencesNoted.map(row =>
+      '<tr><td data-label="Código">'+escapeHtml(row.code || '—')+'</td><td data-label="Produto">'+escapeHtml(row.product)+'</td>'+
+      '<td data-label="Físico">'+row.physicalQty+'</td><td data-label="Sistema">'+row.systemQty+'</td>'+
+      '<td data-label="Resposta do estoque">'+escapeHtml(row.stockResponse || '—')+'</td>'+
+      '<td data-label="No inventário">'+(codes.has(String(row.code).toUpperCase()) ? 'SIM' : '<span class="status-pill alert">FORA DOS RELATÓRIOS</span>')+'</td></tr>'
+    ).join('') : '<tr><td colspan="6" class="responsive-empty">Nenhum item anotado para inventário nas Divergências desta loja.</td></tr>';
+  }
+
+  function renderInvDivergent(live){
+    const showRemoved = el('invDivView').value === 'removed';
+    const canManage = invCan('manage') && invOpen();
+    const rows = invDivergent().filter(item => Boolean(item.removed) === showRemoved).sort((a, b) => a.category.localeCompare(b.category) || a.product.localeCompare(b.product));
+    const body = el('invDivBody');
+    if(live && body.contains(document.activeElement)) return;
+    body.innerHTML = rows.length ? rows.map(item => {
+      const diff = invDiff(item); const value = invValue(item);
+      return '<tr>'+
+        '<td data-label="Categoria">'+escapeHtml(item.category)+'</td>'+
+        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong><small class="os-update-meta">'+escapeHtml(item.code || '')+'</small></td>'+
+        '<td data-label="Contado">'+item.countedQty+'</td>'+
+        '<td data-label="Sistema">'+item.systemQty+'</td>'+
+        '<td data-label="Diferença" class="'+gdMoneyClass(diff)+'"><strong>'+invSigned(diff)+'</strong></td>'+
+        '<td data-label="Valor" class="'+gdMoneyClass(value || 0)+'">'+invMoney(value)+'</td>'+
+        '<td data-label="Motivo da divergência"><input type="text" class="inv-reason" maxlength="1000" data-inv-reason="'+escapeHtml(item.id)+'" value="'+escapeHtml(item.reason || '')+'" placeholder="Motivo"'+(canManage ? '' : ' disabled')+'>'+
+          (item.removed ? '<small class="os-update-meta">RETIRADO POR '+escapeHtml(item.removedByName+' · '+(formatDateTimeBR(item.removedAt) || ''))+'</small>' : '')+'</td>'+
+        '<td style="white-space:nowrap">'+(canManage ? '<button class="btn-outline btn-sm" type="button" data-inv-remove="'+escapeHtml(item.id)+'" data-removed="'+(item.removed ? '0' : '1')+'">'+(item.removed ? 'VOLTAR PARA A LISTA' : 'ENCONTRADO / RETIRAR')+'</button>' : '')+'</td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="8" class="responsive-empty">'+(showRemoved ? 'Nenhuma divergência retirada.' : 'Nenhuma divergência na lista final.')+'</td></tr>';
+  }
+
+  function renderInvAttachments(){
+    const canManage = invCan('manage');
+    el('invAttachBody').innerHTML = invData.attachments.length ? invData.attachments.map(file =>
+      '<tr><td data-label="Arquivo"><a href="/api/inventario/file?id='+encodeURIComponent(file.id)+'" target="_blank" rel="noopener">'+escapeHtml(file.fileName)+'</a></td>'+
+      '<td data-label="Enviado por">'+escapeHtml(file.uploadedByName || '')+'</td>'+
+      '<td data-label="Quando">'+escapeHtml(formatDateTimeBR(file.uploadedAt) || '')+'</td>'+
+      '<td>'+(canManage ? '<button class="btn-outline btn-sm" type="button" data-inv-delfile="'+escapeHtml(file.id)+'">EXCLUIR</button>' : '')+'</td></tr>'
+    ).join('') : '<tr><td colspan="4" class="responsive-empty">Nenhuma recontagem anexada.</td></tr>';
+  }
+
+  // Relatório de estoque (HTML .xls do sistema da loja): categoria e loja no
+  // cabeçalho "- CATEGORIA - UNIGAMES LOJA"; colunas Código, Produto, Estoque Atual.
+  function invParseStockRows(rows){
+    let category = '', store = '', iCode = -1, iProduct = -1, iQty = -1;
+    const items = [];
+    for(const row of rows){
+      const cells = row.map(cell => String(cell || '').trim());
+      const joined = cells.filter(Boolean).join(' ');
+      if(!category && /^-\s/.test(joined)){
+        const parts = joined.replace(/^-\s*/, '').split(/\s+-\s+/);
+        category = (parts[0] || '').toLocaleUpperCase('pt-BR').trim();
+        store = (parts[1] || '').toLocaleUpperCase('pt-BR').replace(/^UNIGAMES\s+/, '').trim();
+        continue;
+      }
+      const headers = cells.map(normalizeHeader);
+      if(iQty < 0 && headers.includes('produto') && headers.some(h => h.startsWith('estoque'))){
+        iCode = headers.findIndex(h => h === 'codigo');
+        iProduct = headers.indexOf('produto');
+        iQty = headers.findIndex(h => h.startsWith('estoque'));
+        continue;
+      }
+      if(iQty < 0 || !cells[iProduct] || cells.some(cell => /^totais?\s*:?$/i.test(cell))) continue;
+      if(cells.length <= iQty) continue;
+      items.push({code: iCode >= 0 ? cells[iCode] : '', product: cells[iProduct], systemQty: Math.round(parseNumeroBR(cells[iQty]))});
+    }
+    if(iQty < 0) throw new Error('NÃO ACHEI AS COLUNAS PRODUTO E ESTOQUE ATUAL NO RELATÓRIO.');
+    return {category, store, items};
+  }
+
+  // Relatório de Produto (custos): Código, Cód Barras, Gtin, Produto, Custo.
+  function invParseCostRows(rows){
+    let idx = null;
+    const costs = [];
+    for(const row of rows){
+      const cells = row.map(cell => String(cell || '').trim());
+      const headers = cells.map(normalizeHeader);
+      if(!idx && headers.includes('custo') && headers.includes('produto')){
+        idx = {code: headers.indexOf('codigo'), barcode: headers.indexOf('cod barras'), gtin: headers.indexOf('gtin'), name: headers.indexOf('produto'), cost: headers.indexOf('custo')};
+        continue;
+      }
+      if(!idx || !cells[idx.name] || cells.length <= idx.cost) continue;
+      costs.push({code: cells[idx.code] || '', barcode: idx.barcode >= 0 ? cells[idx.barcode] : '', gtin: idx.gtin >= 0 ? cells[idx.gtin] : '', name: cells[idx.name], costCents: Math.round(parseNumeroBR(cells[idx.cost]) * 100)});
+    }
+    if(!idx) throw new Error('NÃO ACHEI AS COLUNAS PRODUTO E CUSTO NO RELATÓRIO DE CUSTOS.');
+    return costs;
+  }
+
+  // PDFs (A4, folha limpa): diretor, recontagem de loja e Divergência Pontti.
+  function invPrint(kind){
+    const inv = invData.inventory;
+    const rows = invDivergent().filter(item => !item.removed);
+    if(!rows.length){ showPurchaseToast('NENHUMA DIVERGÊNCIA NA LISTA FINAL.', 'error'); return; }
+    const head = (title, extra) => '<header class="print-report-header"><div class="print-report-kicker">ESTOQUE · INVENTÁRIO · '+escapeHtml(inv.storeName)+'</div><h1>'+escapeHtml(title)+'</h1>'+
+      '<div class="print-report-meta">INVENTÁRIO DE '+escapeHtml(gdDateLabel(inv.inventoryDate))+' · '+escapeHtml(extra)+' · GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+'</div></header>';
+    const table = (cols, body) => '<table class="os-print-table"><thead><tr>'+cols.map(col => '<th>'+col+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table>';
+    let html = '';
+    if(kind === 'diretor'){
+      const total = rows.reduce((sum, item) => sum + (invValue(item) || 0), 0);
+      const over = rows.filter(item => invDiff(item) > 0).reduce((sum, item) => sum + (invValue(item) || 0), 0);
+      html = head('RELATÓRIO FINAL DE DIVERGÊNCIAS', rows.length+' PRODUTOS DIVERGENTES')+
+        '<p class="inv-print-totals">SOBRAS: <b>'+formatCentsBRL(over)+'</b> · FALTAS: <b>'+formatCentsBRL(total - over)+'</b> · RESULTADO: <b>'+formatCentsBRL(total)+'</b></p>'+
+        [...new Set(rows.map(item => item.category))].sort().map(cat => {
+          const catRows = rows.filter(item => item.category === cat).sort((a, b) => a.product.localeCompare(b.product, 'pt-BR'));
+          const catTotal = catRows.reduce((sum, item) => sum + (invValue(item) || 0), 0);
+          return '<section class="os-print-section"><h2>'+escapeHtml(cat)+' · '+catRows.length+' PRODUTO(S) · '+formatCentsBRL(catTotal)+'</h2>'+
+            table(['Código','Produto','<span class="num">Contado</span>','<span class="num">Sistema</span>','<span class="num">Dif.</span>','<span class="num">Custo</span>','<span class="num">Valor</span>','Motivo'], catRows.map(item =>
+              '<tr><td class="num">'+escapeHtml(item.code || '')+'</td><td>'+escapeHtml(item.product)+'</td><td class="num">'+item.countedQty+'</td><td class="num">'+item.systemQty+'</td>'+
+              '<td class="num">'+invSigned(invDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td><td>'+escapeHtml(item.reason || '—')+'</td></tr>').join(''))+'</section>';
+        }).join('');
+    }else if(kind === 'recontagem'){
+      html = head('RECONTAGEM DE LOJA', 'RECONTE E ESCREVA A QUANTIDADE NA CAIXA')+
+        table(['Código','Produto','Recontagem'], rows.slice().sort((a, b) => a.product.localeCompare(b.product, 'pt-BR')).map(item =>
+          '<tr><td>'+escapeHtml(item.code || '')+'</td><td>'+escapeHtml(item.product)+'</td><td class="inv-print-box"></td></tr>').join(''))+
+        '<p class="inv-print-sign">RECONTADO POR: ______________________________ DATA: ____/____/________</p>';
+    }else{
+      const cats = [...new Set(rows.map(item => item.category))].sort();
+      html = head('DIVERGÊNCIA PONTTI', rows.length+' PRODUTOS · QUANTIDADE CONTADA FISICAMENTE')+cats.map(cat =>
+        '<section class="os-print-section"><h2>'+escapeHtml(cat)+'</h2>'+table(['Código','Produto','Contado'], rows.filter(item => item.category === cat).sort((a, b) => a.product.localeCompare(b.product, 'pt-BR')).map(item =>
+          '<tr><td>'+escapeHtml(item.code || '')+'</td><td>'+escapeHtml(item.product)+'</td><td>'+item.countedQty+'</td></tr>').join(''))+'</section>').join('');
+    }
+    el('invPrintBody').innerHTML = html;
+    invPrintTitleBefore = document.title;
+    document.title = ({diretor:'INVENTARIO-DIVERGENCIAS', recontagem:'INVENTARIO-RECONTAGEM', pontti:'DIVERGENCIA-PONTTI'})[kind]+'-'+inv.storeName.replace(/[^A-Z0-9]+/gi, '-')+'-'+inv.inventoryDate;
+    document.body.classList.add('pdf-export', 'inv-printing');
+    window.print();
+  }
+  let invPrintTitleBefore = '';
+  window.addEventListener('afterprint', () => {
+    if(!invPrintTitleBefore) return;
+    document.body.classList.remove('pdf-export', 'inv-printing');
+    document.title = invPrintTitleBefore;
+    invPrintTitleBefore = '';
+  });
+
+  async function invUploadAttachment(file){
+    file = await prepareUploadFile(file);
+    if(!file || file.size <= 0) throw new Error('SELECIONE UM ARQUIVO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O ARQUIVO DEVE TER NO MÁXIMO 25 MB.');
+    const url = '/api/inventario/attachment';
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const created = await invApi('POST', {action:'create', id: invId, fileName: file.name, contentType: file.type || 'application/octet-stream', fileSize: file.size, numberOfParts}, '', url);
+    const sessionId = created.session && created.session.id;
+    try{
+      for(let index = 0; index < numberOfParts; index += 1){
+        showPurchaseToast('Enviando parte '+(index + 1)+' de '+numberOfParts+'…');
+        const response = await fetch(url, {method:'POST', headers:{Accept:'application/json','Content-Type':'application/octet-stream','x-inventory-upload-id':sessionId,'x-inventory-part-number':String(index + 1)},
+          body: file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size, (index + 1) * DOCUMENT_CHUNK_SIZE))});
+        if(!response.ok) throw new Error(((await response.json().catch(() => ({}))).error) || 'FALHA NO ENVIO.');
+      }
+      await invApi('POST', {action:'complete', sessionId}, '', url);
+    }catch(error){
+      invApi('POST', {action:'cancel', sessionId}, '', url).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  document.querySelectorAll('[data-inv-tab]').forEach(button => button.addEventListener('click', () => invSetTab(button.dataset.invTab)));
+  el('btnInvReload') && el('btnInvReload').addEventListener('click', () => loadInvPage());
+  el('btnInvBack') && el('btnInvBack').addEventListener('click', () => { invId = ''; invData = null; loadInvPage(); });
+  el('invListBody') && el('invListBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-inv-open]');
+    if(!button) return;
+    invId = button.dataset.invOpen;
+    invSetTab('categorias');
+    loadInvPage();
+  });
+  el('btnInvNew') && el('btnInvNew').addEventListener('click', () => {
+    el('invNewStore').innerHTML = '<option value="">SELECIONE A LOJA</option>'+((invList && invList.stores) || []).map(store => '<option value="'+escapeHtml(store.id)+'">'+escapeHtml(store.name)+'</option>').join('');
+    el('invNewDate').value = financeCurrentDateKey();
+    el('invNewStatus').textContent = '';
+    el('invNewDialog').showModal();
+  });
+  document.querySelectorAll('#invNewDialog [data-inv-close]').forEach(button => button.addEventListener('click', () => el('invNewDialog').close()));
+  el('invNewForm') && el('invNewForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    try{
+      const created = await invApi('POST', {storeId: el('invNewStore').value, inventoryDate: el('invNewDate').value});
+      el('invNewDialog').close();
+      invId = created.id;
+      invSetTab('categorias');
+      await loadInvPage();
+    }catch(error){ el('invNewStatus').textContent = error.message; }
+  });
+  el('btnInvUpload') && el('btnInvUpload').addEventListener('click', () => { el('invUploadInput').value = ''; el('invUploadInput').click(); });
+  el('invUploadInput') && el('invUploadInput').addEventListener('change', async () => {
+    const files = [...el('invUploadInput').files];
+    for(const file of files){
+      try{
+        const parsed = invParseStockRows(await extractRowsFromFile(file));
+        // O cabeçalho "- CATEGORIA - UNIGAMES LOJA" fica numa tabela à parte do relatório.
+        if(!parsed.category){
+          const text = (await readAsText(file, 'ISO-8859-1')).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ');
+          const match = text.match(/-\s*([^\n-][^\n]*?)\s+-\s+UNIGAMES\s+([^\n]+?)\s*(?:\n|$)/i);
+          if(match){ parsed.category = match[1].toLocaleUpperCase('pt-BR').trim(); parsed.store = match[2].toLocaleUpperCase('pt-BR').trim(); }
+        }
+        if(!parsed.category) throw new Error('NÃO ACHEI A CATEGORIA NO CABEÇALHO DO ARQUIVO.');
+        const storeName = invData.inventory.storeName;
+        if(parsed.store && parsed.store !== storeName.toLocaleUpperCase('pt-BR')){
+          const ok = await askConfirm('O ARQUIVO '+file.name+' É DA LOJA '+parsed.store+', MAS O INVENTÁRIO É DA '+storeName+'. SUBIR MESMO ASSIM?', {okText:'SUBIR'});
+          if(!ok) continue;
+        }
+        const result = await invPatch('upload_category', {category: parsed.category, fileName: file.name, items: parsed.items});
+        showPurchaseToast(result.category+': '+result.items+' produtos.');
+      }catch(error){ showPurchaseToast(file.name+': '+error.message, 'error'); }
+    }
+    await loadInvPage();
+  });
+  el('invCatBody') && el('invCatBody').addEventListener('click', async event => {
+    const countButton = event.target.closest('[data-inv-count]');
+    if(countButton){ el('invCountCategory').value = countButton.dataset.invCount; el('invCountSearch').value = ''; invSetTab('contagem'); renderInvCount(); return; }
+    const delButton = event.target.closest('[data-inv-delcat]');
+    if(!delButton) return;
+    if(!await askConfirm('EXCLUIR A CATEGORIA '+delButton.dataset.invDelcat+' DESTE INVENTÁRIO (PRODUTOS E CONTAGEM)?', {okText:'EXCLUIR', danger:true})) return;
+    try{ await invPatch('delete_category', {category: delButton.dataset.invDelcat}); await loadInvPage(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('invCountCategory') && el('invCountCategory').addEventListener('change', () => renderInvCount());
+  el('invCountSearch') && el('invCountSearch').addEventListener('input', debounce(() => renderInvCount(), 120));
+  el('invCountBody') && el('invCountBody').addEventListener('change', async event => {
+    const input = event.target.closest('[data-inv-item]');
+    if(!input) return;
+    const item = invData.items.find(row => row.id === input.dataset.invItem);
+    const value = input.value === '' ? null : Number(input.value);
+    try{
+      await invPatch('count', {itemId: input.dataset.invItem, countedQty: value});
+      if(item){ item.countedQty = value; item.countedByName = value === null ? '' : currentSession.displayName; item.countedAt = new Date().toISOString(); }
+      input.classList.add('inv-saved');
+      setTimeout(() => input.classList.remove('inv-saved'), 900);
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  // Enter passa para o próximo produto (contagem rápida).
+  el('invCountBody') && el('invCountBody').addEventListener('keydown', event => {
+    if(event.key !== 'Enter' || !event.target.matches('[data-inv-item]')) return;
+    event.preventDefault();
+    const inputs = [...el('invCountBody').querySelectorAll('[data-inv-item]')];
+    const next = inputs[inputs.indexOf(event.target) + 1];
+    event.target.blur();
+    if(next){ next.focus(); next.select(); }
+  });
+  el('btnInvFinishCategory') && el('btnInvFinishCategory').addEventListener('click', async () => {
+    const category = el('invCountCategory').value;
+    const cat = invData.categories.find(item => item.category === category);
+    if(!cat) return;
+    if(!cat.countedAt){
+      const missing = invData.items.filter(item => item.category === category && item.countedQty === null).length;
+      if(!await askConfirm('FINALIZAR A CONTAGEM DE '+category+'?'+(missing ? ' '+missing+' PRODUTO(S) SEM CONTAGEM FICAM COM ZERO.' : ''), {okText:'FINALIZAR'})) return;
+    }
+    try{ await invPatch(cat.countedAt ? 'reopen_category' : 'finish_category', {category}); await loadInvPage(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('btnInvCosts') && el('btnInvCosts').addEventListener('click', () => { el('invCostsInput').value = ''; el('invCostsInput').click(); });
+  el('invCostsInput') && el('invCostsInput').addEventListener('change', async () => {
+    const file = el('invCostsInput').files[0];
+    if(!file) return;
+    try{
+      const costs = invParseCostRows(await extractRowsFromFile(file));
+      const result = await invPatch('costs', {fileName: file.name, costs});
+      showPurchaseToast('Custos: '+result.matched+' de '+result.items+' produtos encontrados no relatório.');
+      await loadInvPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('invResultCategory') && el('invResultCategory').addEventListener('change', renderInvResult);
+  el('invResultSearch') && el('invResultSearch').addEventListener('input', debounce(renderInvResult, 120));
+  el('invDivView') && el('invDivView').addEventListener('change', () => renderInvDivergent());
+  el('invDivBody') && el('invDivBody').addEventListener('change', async event => {
+    const input = event.target.closest('[data-inv-reason]');
+    if(!input) return;
+    try{
+      await invPatch('reason', {itemId: input.dataset.invReason, reason: input.value});
+      const item = invData.items.find(row => row.id === input.dataset.invReason);
+      if(item) item.reason = input.value.toLocaleUpperCase('pt-BR');
+      input.classList.add('inv-saved');
+      setTimeout(() => input.classList.remove('inv-saved'), 900);
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('invDivBody') && el('invDivBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-inv-remove]');
+    if(!button) return;
+    try{ await invPatch('remove', {itemId: button.dataset.invRemove, removed: button.dataset.removed === '1'}); await loadInvPage(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  document.querySelectorAll('[data-inv-pdf]').forEach(button => button.addEventListener('click', () => invPrint(button.dataset.invPdf)));
+  el('btnInvFinalize') && el('btnInvFinalize').addEventListener('click', async () => {
+    const finalizing = invOpen();
+    if(finalizing && !await askConfirm('FINALIZAR O INVENTÁRIO? DEPOIS DISSO NADA PODE SER ALTERADO ATÉ REABRIR.', {okText:'FINALIZAR'})) return;
+    try{ await invPatch('finalize', {finalized: finalizing}); await loadInvPage(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('btnInvDelete') && el('btnInvDelete').addEventListener('click', async () => {
+    if(!await askConfirm('EXCLUIR ESTE INVENTÁRIO?', {okText:'EXCLUIR', danger:true})) return;
+    try{ await invApi('DELETE', {id: invId}); invId = ''; invData = null; await loadInvPage(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('btnInvAttach') && el('btnInvAttach').addEventListener('click', () => { el('invAttachInput').value = ''; el('invAttachInput').click(); });
+  el('invAttachInput') && el('invAttachInput').addEventListener('change', async () => {
+    const file = el('invAttachInput').files[0];
+    if(!file) return;
+    try{ await invUploadAttachment(file); showPurchaseToast('Recontagem anexada.'); await loadInvPage(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('invAttachBody') && el('invAttachBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-inv-delfile]');
+    if(!button || !await askConfirm('EXCLUIR ESTE ANEXO?', {okText:'EXCLUIR', danger:true})) return;
+    try{ await invApi('DELETE', {id: invId, attachmentId: button.dataset.invDelfile}, '', '/api/inventario/attachment'); await loadInvPage(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
 
   // ---------- ASSISTÊNCIA · ESTOQUE ----------
   let astData = null;

@@ -4527,3 +4527,90 @@ export const commercialGdStoreInfo = pgTable(
   },
   (table) => [uniqueIndex("commercial_gd_store_info_module_store_idx").on(table.module, table.storeId)],
 );
+
+// Estoque > Inventário — contagem por loja e data. Cada relatório de estoque
+// subido é uma CATEGORIA (estoque em sistema naquele dia); vários usuários
+// contam categorias diferentes ao mesmo tempo (ao vivo). O custo vem do
+// Relatório de Produto anexado no fim. Divergências podem ter motivo e ser
+// tiradas da lista final (removed=1) quando descobertas.
+export const inventories = pgTable(
+  "inventories",
+  {
+    id: text("id").primaryKey(),
+    storeId: text("store_id").notNull(),
+    storeName: text("store_name").notNull().default(""),
+    // YYYY-MM-DD
+    inventoryDate: text("inventory_date").notNull(),
+    // 'aberto' | 'finalizado'
+    status: text("status").notNull().default("aberto"),
+    costsFileName: text("costs_file_name").notNull().default(""),
+    costsUploadedByName: text("costs_uploaded_by_name").notNull().default(""),
+    costsUploadedAt: text("costs_uploaded_at").notNull().default(""),
+    finalizedByName: text("finalized_by_name").notNull().default(""),
+    finalizedAt: text("finalized_at").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+  },
+  (table) => [index("inventories_store_idx").on(table.deleted, table.storeId, table.inventoryDate)],
+);
+
+export const inventoryCategories = pgTable(
+  "inventory_categories",
+  {
+    id: text("id").primaryKey(),
+    inventoryId: text("inventory_id").notNull(),
+    category: text("category").notNull(),
+    fileName: text("file_name").notNull().default(""),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    uploadedAt: text("uploaded_at").notNull().default(""),
+    // '' = em contagem; preenchido = contagem finalizada (quem e quando).
+    countedByName: text("counted_by_name").notNull().default(""),
+    countedAt: text("counted_at").notNull().default(""),
+  },
+  (table) => [uniqueIndex("inventory_categories_inventory_category_idx").on(table.inventoryId, table.category)],
+);
+
+export const inventoryItems = pgTable(
+  "inventory_items",
+  {
+    id: text("id").primaryKey(),
+    inventoryId: text("inventory_id").notNull(),
+    category: text("category").notNull(),
+    code: text("code").notNull().default(""),
+    product: text("product").notNull(),
+    systemQty: integer("system_qty").notNull().default(0),
+    // NULL = ainda não contado.
+    countedQty: integer("counted_qty"),
+    countedByName: text("counted_by_name").notNull().default(""),
+    countedAt: text("counted_at").notNull().default(""),
+    // NULL = sem custo no relatório de custos.
+    costCents: integer("cost_cents"),
+    reason: text("reason").notNull().default(""),
+    removed: integer("removed").notNull().default(0),
+    removedByName: text("removed_by_name").notNull().default(""),
+    removedAt: text("removed_at").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("inventory_items_inventory_idx").on(table.inventoryId, table.category)],
+);
+
+// Recontagem da loja escaneada (PDF/foto), guardada no R2.
+export const inventoryAttachments = pgTable(
+  "inventory_attachments",
+  {
+    id: text("id").primaryKey(),
+    inventoryId: text("inventory_id").notNull(),
+    fileName: text("file_name").notNull(),
+    r2Key: text("r2_key").notNull(),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    contentType: text("content_type").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+    uploadedBy: text("uploaded_by").notNull().default(""),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    uploadedAt: text("uploaded_at").notNull().default(""),
+  },
+  (table) => [index("inventory_attachments_inventory_idx").on(table.inventoryId)],
+);

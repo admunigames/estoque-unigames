@@ -144,6 +144,13 @@ export async function liveInvalidationForRequest(
     return { module: "ordens_servico", audience: { kind: "all" } };
   }
 
+  if (path === "/api/inventario") {
+    // Inventário ao vivo: contagem, categorias, custos e motivos avisam as
+    // telas abertas (vários usuários contam ao mesmo tempo); cada sessão
+    // recarrega pela API, que aplica o escopo de loja.
+    return { module: "inventario", audience: { kind: "all" } };
+  }
+
   if (path === "/api/assistencia/estoque") {
     // Estoque da Assistência ao vivo: entrada, baixa e cadastro de item
     // avisam as telas abertas; cada sessão recarrega pela API.
