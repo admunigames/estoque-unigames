@@ -1,7 +1,7 @@
 import { getD1 } from "../../../../db";
 import { isValidCnpj } from "../../../lib/br-documents";
 import { notifyUsers, usersWithPermission, vapidFromEnv } from "../../../lib/hr-notify";
-import { recifeToday, recruitmentNotice } from "../../../lib/hr-rh";
+import { checklistValue, recifeToday, recruitmentNotice } from "../../../lib/hr-rh";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { loadCompanyList } from "../../finance/shared";
 import {
@@ -48,12 +48,13 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const where = status ? "WHERE status=?1" : "";
+    // CONTRATADO e INTEGRAÇÃO viraram um filtro só (integração é etapa do contratado).
+    const where = status === "contratado" ? "WHERE status IN ('contratado','integracao')" : status ? "WHERE status=?1" : "";
     const statement = database.prepare(
       `SELECT ${CANDIDATE_COLUMNS} FROM hr_recruitment_candidates ${where}
        ORDER BY interview_date DESC, created_at DESC`,
     );
-    const result = await (status ? statement.bind(status) : statement).all<CandidateRow>();
+    const result = await (status && status !== "contratado" ? statement.bind(status) : statement).all<CandidateRow>();
     return jsonResponse({ candidates: result.results ?? [] });
   } catch (error) {
     console.error("Não foi possível carregar os candidatos.", error);
@@ -152,6 +153,12 @@ export async function POST(request: Request) {
     if (!isStatusValid(status)) return jsonResponse({ error: "STATUS INVÁLIDO." }, 400);
 
     const fields = {
+      phone: safeText(body.phone, 40),
+      trainingScheduleScriptSent: boolToInt(body.trainingScheduleScriptSent),
+      trainingConfirmed: boolToInt(body.trainingConfirmed),
+      trainingScriptSent: boolToInt(body.trainingScriptSent),
+      trainingTrainerInformed: boolToInt(body.trainingTrainerInformed),
+      checklistDate: dateOrEmpty(body.checklistDate),
       desiredRole: safeText(body.desiredRole, 120),
       interviewDate: dateOrEmpty(body.interviewDate),
       interviewTime: safeText(body.interviewTime, 5),
@@ -162,7 +169,7 @@ export async function POST(request: Request) {
       testConfirmed: boolToInt(body.testConfirmed),
       cancelledAt: dateOrEmpty(body.cancelledAt),
       cancelledReason: safeText(body.cancelledReason, 2000),
-      kitDelivered: boolToInt(body.kitDelivered),
+      kitDelivered: checklistValue(body.kitDelivered),
       kitDeliveredDate: dateOrEmpty(body.kitDeliveredDate),
       trainingStartDate: dateOrEmpty(body.trainingStartDate),
       admissionDate: dateOrEmpty(body.admissionDate),
@@ -170,36 +177,36 @@ export async function POST(request: Request) {
       admissionCompanyName: safeText(body.admissionCompanyName, 160),
       fixedUnitId: safeText(body.fixedUnitId, 80),
       fixedUnitName: safeText(body.fixedUnitName, 160),
-      uniformSent: boolToInt(body.uniformSent),
+      uniformSent: checklistValue(body.uniformSent),
       uniformSentDate: dateOrEmpty(body.uniformSentDate),
-      system1Done: boolToInt(body.system1Done),
+      system1Done: checklistValue(body.system1Done),
       system1Date: dateOrEmpty(body.system1Date),
-      system2Done: boolToInt(body.system2Done),
+      system2Done: checklistValue(body.system2Done),
       system2Date: dateOrEmpty(body.system2Date),
-      system3Done: boolToInt(body.system3Done),
+      system3Done: checklistValue(body.system3Done),
       system3Date: dateOrEmpty(body.system3Date),
-      ifoodDone: boolToInt(body.ifoodDone),
+      ifoodDone: checklistValue(body.ifoodDone),
       ifoodDate: dateOrEmpty(body.ifoodDate),
-      benefitsIncluded: boolToInt(body.benefitsIncluded),
-      benefitsCalculated: boolToInt(body.benefitsCalculated),
+      benefitsIncluded: checklistValue(body.benefitsIncluded),
+      benefitsCalculated: checklistValue(body.benefitsCalculated),
       benefitsDate: dateOrEmpty(body.benefitsDate),
-      facepontoDone: boolToInt(body.facepontoDone),
+      facepontoDone: checklistValue(body.facepontoDone),
       facepontoDate: dateOrEmpty(body.facepontoDate),
-      payjoyDone: boolToInt(body.payjoyDone),
+      payjoyDone: checklistValue(body.payjoyDone),
       payjoyDate: dateOrEmpty(body.payjoyDate),
-      birthdayListAdded: boolToInt(body.birthdayListAdded),
+      birthdayListAdded: checklistValue(body.birthdayListAdded),
       birthdayListDate: dateOrEmpty(body.birthdayListDate),
-      photoTaken: boolToInt(body.photoTaken),
-      asoRequested: boolToInt(body.asoRequested),
+      photoTaken: checklistValue(body.photoTaken),
+      asoRequested: checklistValue(body.asoRequested),
       asoClinic: safeText(body.asoClinic, 160),
       asoValueCents: centsValue(body.asoValueCents ?? 0),
       asoDate: dateOrEmpty(body.asoDate),
       asoClinicCnpj: safeText(body.asoClinicCnpj, 30).replace(/\D+/g, ""),
-      shoppingRegistered: boolToInt(body.shoppingRegistered),
+      shoppingRegistered: checklistValue(body.shoppingRegistered),
       admissionDocsDriveLink: safeText(body.admissionDocsDriveLink, 500),
-      dentalPlanIncluded: boolToInt(body.dentalPlanIncluded),
+      dentalPlanIncluded: checklistValue(body.dentalPlanIncluded),
       dentalPlanDate: dateOrEmpty(body.dentalPlanDate),
-      referencesChecked: boolToInt(body.referencesChecked),
+      referencesChecked: checklistValue(body.referencesChecked),
       integrationMeetingDone: boolToInt(body.integrationMeetingDone),
       integrationTermSigned: boolToInt(body.integrationTermSigned),
       integrationMeetingTranscript: safeText(body.integrationMeetingTranscript, 20000),
@@ -266,7 +273,9 @@ export async function POST(request: Request) {
             integration_meeting_done=?49, integration_term_signed=?50, integration_meeting_transcript=?51,
             hr_employee_id=?52,
             updated_by=?53, updated_by_name=?54, updated_at=CURRENT_TIMESTAMP,
-            aso_date=?56, aso_clinic_cnpj=?57
+            aso_date=?56, aso_clinic_cnpj=?57,
+            phone=?58, training_schedule_script_sent=?59, training_confirmed=?60,
+            training_script_sent=?61, training_trainer_informed=?62, checklist_date=?63
            WHERE id=?55`,
         )
         .bind(
@@ -327,6 +336,12 @@ export async function POST(request: Request) {
           editId,
           fields.asoDate,
           fields.asoClinicCnpj,
+          fields.phone,
+          fields.trainingScheduleScriptSent,
+          fields.trainingConfirmed,
+          fields.trainingScriptSent,
+          fields.trainingTrainerInformed,
+          fields.checklistDate,
         );
 
       const statements = [];
@@ -379,8 +394,8 @@ export async function POST(request: Request) {
         `INSERT INTO hr_recruitment_candidates
           (id, full_name, desired_role, status, interview_date, interview_time, script_sent,
            interview_result, interview_result_reason, created_by, created_by_name, created_at,
-           updated_by, updated_by_name, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, CURRENT_TIMESTAMP, ?10, ?11, CURRENT_TIMESTAMP)`,
+           updated_by, updated_by_name, updated_at, phone)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, CURRENT_TIMESTAMP, ?10, ?11, CURRENT_TIMESTAMP, ?12)`,
       )
       .bind(
         id,
@@ -394,6 +409,7 @@ export async function POST(request: Request) {
         fields.interviewResultReason,
         actor.id,
         actorName(actor),
+        fields.phone,
       )
       .run();
 

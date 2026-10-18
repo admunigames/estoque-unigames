@@ -37,6 +37,7 @@ type TerminationRow = {
   reason: string;
   reasonOther: string;
   checklistJson: string;
+  severancePaidDate: string;
   createdByName: string;
   updatedAt: string;
 };
@@ -44,7 +45,7 @@ type TerminationRow = {
 const COLUMNS = `id, employee_id AS employeeId, employee_name AS employeeName,
   company_id AS companyId, company_name AS companyName, termination_date AS terminationDate,
   severance_cents AS severanceCents, fgts_cents AS fgtsCents, notes,
-  reason, reason_other AS reasonOther, checklist_json AS checklistJson,
+  reason, reason_other AS reasonOther, checklist_json AS checklistJson, severance_paid_date AS severancePaidDate,
   created_by_name AS createdByName, updated_at AS updatedAt`;
 
 export async function GET(request: Request) {

@@ -74,6 +74,8 @@ export type DrePerson = {
   totalCents: number;
   /** Aniversário no mês (AAAA-MM-DD da data de nascimento) ou ''. */
   birthDate: string;
+  /** Dias em que o treinamento/teste foi pago no mês (AAAA-MM-DD). */
+  trainingDates: string[];
 };
 
 export type DreTotals = {
@@ -182,6 +184,7 @@ export function buildEmployeeDre(
         fgtsCents: 0,
         totalCents: 0,
         birthDate: "",
+        trainingDates: [],
       };
       map.set(key, person);
     }
@@ -202,11 +205,13 @@ export function buildEmployeeDre(
     store.trainings.push(training);
     store.totals.trainingCents += amount;
     store.totals.trainingCount += 1;
-    personFor(
+    const person = personFor(
       store,
       personKey(training.employeeId, training.candidateId, training.personName),
       training.personName,
-    ).trainingCents += amount;
+    );
+    person.trainingCents += amount;
+    if (training.paidDate) person.trainingDates = [...person.trainingDates, training.paidDate].sort();
   }
   for (const termination of sources.terminations) {
     const store = storeFor(termination.companyId, termination.companyName);
@@ -253,4 +258,72 @@ export function buildEmployeeDre(
     }
   }
   return { month, stores: ordered, totals };
+}
+
+// ---------------------------------------------------------------------------
+// Por CNPJ (out/2026): o fechamento agrupado pelo CNPJ da loja (cadastro de
+// Lojas) + FGTS do mês = 8% do salário de quem esteve ativo no mês, na loja
+// do mês (RH > Escalas, "loja fixa do mês"; sem ela, a loja do cadastro).
+// ---------------------------------------------------------------------------
+
+export const FGTS_RATE = 0.08;
+
+export type DreStaff = { employeeId: string; personName: string; companyId: string; salaryCents: number };
+
+export type DreCnpjRow = {
+  cnpj: string;
+  storeNames: string[];
+  headcount: number;
+  salaryCents: number;
+  fgtsMonthCents: number;
+  asoCents: number;
+  trainingCents: number;
+  severanceCents: number;
+  terminationFgtsCents: number;
+  totalCents: number;
+};
+
+export function buildCnpjSummary(
+  stores: DreStore[],
+  staff: DreStaff[],
+  companies: Array<{ id: string; name: string; cnpj?: string }>,
+): DreCnpjRow[] {
+  const cnpjOf = (companyId: string) => String(companies.find((company) => company.id === companyId)?.cnpj || "").replace(/\D+/g, "");
+  const nameOf = (companyId: string) => companies.find((company) => company.id === companyId)?.name || companyId || NO_STORE_LABEL;
+  const rows = new Map<string, DreCnpjRow>();
+  const rowFor = (companyId: string) => {
+    const cnpj = cnpjOf(companyId);
+    let row = rows.get(cnpj);
+    if (!row) {
+      row = { cnpj, storeNames: [], headcount: 0, salaryCents: 0, fgtsMonthCents: 0, asoCents: 0, trainingCents: 0,
+        severanceCents: 0, terminationFgtsCents: 0, totalCents: 0 };
+      rows.set(cnpj, row);
+    }
+    const name = nameOf(companyId);
+    if (!row.storeNames.includes(name)) row.storeNames.push(name);
+    return row;
+  };
+  for (const person of staff) {
+    const row = rowFor(person.companyId);
+    row.headcount += 1;
+    row.salaryCents += cents(person.salaryCents);
+  }
+  for (const store of stores) {
+    const row = rowFor(store.companyId);
+    row.asoCents += store.totals.asoCents;
+    row.trainingCents += store.totals.trainingCents;
+    row.severanceCents += store.totals.severanceCents;
+    row.terminationFgtsCents += store.totals.fgtsCents;
+  }
+  return [...rows.values()]
+    .map((row) => {
+      const fgtsMonthCents = Math.round(row.salaryCents * FGTS_RATE);
+      return {
+        ...row,
+        storeNames: row.storeNames.sort((a, b) => a.localeCompare(b, "pt-BR")),
+        fgtsMonthCents,
+        totalCents: fgtsMonthCents + row.asoCents + row.trainingCents + row.severanceCents + row.terminationFgtsCents,
+      };
+    })
+    .sort((a, b) => (!a.cnpj !== !b.cnpj ? (a.cnpj ? -1 : 1) : a.cnpj.localeCompare(b.cnpj)));
 }

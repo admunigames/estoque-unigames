@@ -1,5 +1,8 @@
 import { notifyUsers, usersWithPermission, type Vapid } from "./hr-notify";
-import { addDays, asoExpiry, daysBetween, EXAM_ALERT_OFFSETS, examSituation, isBirthdayOn, type ExamSituation } from "./hr-rh";
+import {
+  ADMISSION_CHECKLIST, ADMISSION_REMINDER_DAYS, addDays, admissionPending, asoExpiry, daysBetween, EXAM_ALERT_OFFSETS, examSituation,
+  isBirthdayOn, type ExamSituation,
+} from "./hr-rh";
 import { roleFromTitle } from "./commercial";
 
 // Avisos automáticos do RH disparados pelo cron do Worker (1x por dia, às
@@ -118,9 +121,40 @@ export async function dispatchBirthdayEve(db: Db, vapid: Vapid | null, today: st
   }
 }
 
+/**
+ * Contratado com item do checklist admissional pendente (ex.: NÃO CADASTRADO
+ * NO IFOOD): tarefa todo dia para o RH do Recrutamento e quem cadastrou, até
+ * marcar FEITO ou NÃO SE APLICA. Só admissões dos últimos 45 dias.
+ */
+export async function dispatchAdmissionReminders(db: Db, vapid: Vapid | null, today: string) {
+  const result = await db
+    .prepare(`SELECT id, full_name AS fullName, admission_company_name AS admissionCompanyName, created_by AS createdBy,
+        ${ADMISSION_CHECKLIST.map(([field]) => `${field.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)} AS ${field}`).join(", ")}
+      FROM hr_recruitment_candidates
+      WHERE status IN ('contratado','integracao') AND admission_date>=?1 AND admission_date<=?2`)
+    .bind(addDays(today, -ADMISSION_REMINDER_DAYS), today)
+    .all<Record<string, unknown>>();
+  const candidates = (result.results ?? [])
+    .map((candidate) => ({ candidate, pending: admissionPending(candidate) }))
+    .filter((item) => item.pending.length);
+  if (!candidates.length) return;
+  const recipients = await usersWithPermission(db, ["rh_recrutamento:manage"]);
+  for (const { candidate, pending } of candidates) {
+    const id = String(candidate.id);
+    const store = String(candidate.admissionCompanyName || "");
+    const text = `PENDÊNCIAS ADMISSIONAIS — ${candidate.fullName}${store ? ` — ${store}` : ""}: ${pending.join(", ")}`;
+    await notifyUsers(db, vapid, [...recipients, String(candidate.createdBy || "")], {
+      push: { title: "CHECKLIST ADMISSIONAL PENDENTE", body: text, url: "/rh/recrutamento", tag: `unigames-rec-pend-${id}-${today}` },
+      task: { date: today, id: `rec-pend-${id}-${today}`, text },
+      onceKey: { key: `rec-pend:${id}`, id: "dia", scheduledFor: today },
+    });
+  }
+}
+
 /** Cron: roda a cada minuto, mas só age na janela das 08:00 (Recife). */
 export async function dispatchHrAlerts(db: Db, vapid: Vapid | null, now: { date: string; time: string }) {
   if (now.time < "08:00" || now.time > "08:04") return;
   await dispatchExamAlerts(db, vapid, now.date);
   await dispatchBirthdayEve(db, vapid, now.date);
+  await dispatchAdmissionReminders(db, vapid, now.date);
 }

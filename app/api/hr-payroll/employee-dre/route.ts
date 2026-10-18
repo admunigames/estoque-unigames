@@ -1,5 +1,8 @@
 import { getD1 } from "../../../../db";
+import { activeOn } from "../../../lib/hr-rh";
+import { loadCompanyList } from "../../finance/shared";
 import {
+  buildCnpjSummary,
   buildEmployeeDre,
   type DreAso,
   type DreBirthday,
@@ -97,7 +100,45 @@ export async function GET(request: Request) {
       terminations: byCompany(terminations.results),
       birthdays: byCompany(birthdays.results),
     });
-    return jsonResponse(report as unknown as Record<string, unknown>);
+
+    // Por CNPJ: quem esteve ativo no mês, na loja do mês (Escalas) ou do
+    // cadastro, com o salário da folha do mês (ou o do cadastro) → FGTS 8%.
+    const monthEnd = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
+    const [employees, allTerminations, assignments, payroll] = await Promise.all([
+      database
+        .prepare(
+          `SELECT id, full_name AS fullName, admission_date AS admissionDate, status, company_id AS companyId,
+                  salary_cents AS salaryCents FROM hr_employees`,
+        )
+        .all<{ id: string; fullName: string; admissionDate: string; status: string; companyId: string; salaryCents: number }>(),
+      database
+        .prepare("SELECT employee_id AS employeeId, termination_date AS terminationDate FROM hr_terminations")
+        .all<{ employeeId: string; terminationDate: string }>(),
+      database
+        .prepare("SELECT employee_id AS employeeId, company_id AS companyId FROM hr_schedule_assignments WHERE reference_month=?1")
+        .bind(month)
+        .all<{ employeeId: string; companyId: string }>(),
+      database
+        .prepare("SELECT employee_id AS employeeId, base_salary_cents AS baseSalaryCents FROM hr_payroll_entries WHERE month=?1")
+        .bind(month)
+        .all<{ employeeId: string; baseSalaryCents: number }>(),
+    ]);
+    const terms = allTerminations.results ?? [];
+    const monthStoreOf = new Map((assignments.results ?? []).filter((row) => row.companyId).map((row) => [row.employeeId, row.companyId]));
+    const payrollSalaryOf = new Map((payroll.results ?? []).map((row) => [row.employeeId, Number(row.baseSalaryCents) || 0]));
+    const staff = (employees.results ?? [])
+      .filter((employee) => activeOn(employee, terms, monthEnd) ||
+        terms.some((item) => item.employeeId === employee.id && item.terminationDate.slice(0, 7) === month))
+      .map((employee) => ({
+        employeeId: employee.id,
+        personName: employee.fullName,
+        companyId: monthStoreOf.get(employee.id) || employee.companyId,
+        salaryCents: payrollSalaryOf.get(employee.id) || Number(employee.salaryCents) || 0,
+      }))
+      .filter((person) => !companyId || person.companyId === companyId);
+    const companies = (await loadCompanyList(database)) as Array<{ id: string; name: string; cnpj?: string }>;
+    const byCnpj = buildCnpjSummary(report.stores, staff, [...companies, { id: "assistencia", name: "Assistência" }]);
+    return jsonResponse({ ...report, byCnpj } as unknown as Record<string, unknown>);
   } catch (error) {
     console.error("Não foi possível montar o DRE Funcionário.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL MONTAR O DRE FUNCIONÁRIO." }, 500);

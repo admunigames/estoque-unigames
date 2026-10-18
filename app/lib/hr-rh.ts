@@ -95,16 +95,24 @@ export const TERMINATION_REASONS: Record<string, string> = {
   outro: "OUTRO",
 };
 
+// Espelha o checklist admissional do Recrutamento (sistemas Pontti, iFood,
+// Faceponto, PayJoy, plano odontológico) — cada um vira um item de saída.
 export const TERMINATION_CHECKLIST: Record<string, string> = {
   aviso_previo: "AVISO PRÉVIO ASSINADO (TRABALHADO OU INDENIZADO)",
   aso_demissional: "EXAME DEMISSIONAL (ASO) REALIZADO",
   devolucao: "DEVOLUÇÃO DE UNIFORME, CRACHÁ, CHAVES E EQUIPAMENTOS (NOTEBOOK, CELULAR, CARTÃO CORPORATIVO)",
-  acessos: "BLOQUEIO DOS ACESSOS (LOGIN DO SISTEMA, E-MAIL, WHATSAPP DA LOJA, SISTEMAS DE VENDA) E RETIRADA DO VÍNCULO DE LOGIN",
+  acessos: "BLOQUEIO DO LOGIN DO SISTEMA, E-MAIL E WHATSAPP DA LOJA E RETIRADA DO VÍNCULO DE LOGIN",
+  pontti_unigames: "INATIVADO NO SISTEMA UNIGAMES (PONTTI)",
+  pontti_pa: "INATIVADO NO SISTEMA PA (PONTTI)",
+  pontti_assistencia: "INATIVADO NO SISTEMA ASSISTÊNCIA (PONTTI)",
+  ifood: "EXCLUÍDO DO IFOOD",
+  faceponto: "EXCLUÍDO DO FACEPONTO",
+  payjoy: "EXCLUÍDO DO PAYJOY",
   baixa_ctps: "BAIXA NA CARTEIRA DE TRABALHO (ESOCIAL) E RESCISÃO CALCULADA",
   pagamento: "PAGAMENTO DA RESCISÃO E GUIAS (FGTS/MULTA, SEGURO-DESEMPREGO)",
   pendencias: "CONFERÊNCIA DE PENDÊNCIAS (VALES, COMISSÕES, DEVOLUÇÕES, PONTO)",
   entrevista: "ENTREVISTA DE DESLIGAMENTO",
-  beneficios: "RETIRADA DO PLANO ODONTOLÓGICO/BENEFÍCIOS",
+  beneficios: "EXCLUSÃO DO PLANO ODONTOLÓGICO/BENEFÍCIOS",
 };
 
 export type ChecklistEntry = { status: "feito" | "na" | ""; note: string };
@@ -121,7 +129,10 @@ export function normalizeChecklist(value: unknown): Record<string, ChecklistEntr
   return result;
 }
 
-/** Quantos itens do checklist ainda não estão FEITO nem NÃO SE APLICA. */
+/**
+ * Quantos itens do checklist ainda não estão FEITO nem NÃO SE APLICA.
+ * Rescisão anterior ao checklist (JSON vazio) não gera alerta: 0.
+ */
 export function checklistPendingCount(json: string): number {
   let parsed: unknown = {};
   try {
@@ -129,6 +140,7 @@ export function checklistPendingCount(json: string): number {
   } catch {
     parsed = {};
   }
+  if (!parsed || typeof parsed !== "object" || !Object.keys(parsed).length) return 0;
   return Object.values(normalizeChecklist(parsed)).filter((entry) => !entry.status).length;
 }
 
@@ -281,3 +293,42 @@ export function videoAppliesTo(
   if (video.companyId && video.companyId !== employee.companyId) return false;
   return !video.roleTitle || normalizeRole(employee.roleTitle).includes(normalizeRole(video.roleTitle));
 }
+
+// ---------------------------------------------------------------------------
+// Recrutamento — pendências do checklist admissional (CONTRATADO)
+// ---------------------------------------------------------------------------
+
+/** Itens do checklist: 1 = feito, 2 = não se aplica, 0 = pendente. */
+export const ADMISSION_CHECKLIST: Array<[string, string]> = [
+  ["kitDelivered", "KIT ADMISSIONAL"],
+  ["uniformSent", "FARDAS/CASACO"],
+  ["system1Done", "SISTEMA UNIGAMES"],
+  ["system2Done", "SISTEMA PA"],
+  ["system3Done", "SISTEMA ASSISTÊNCIA"],
+  ["ifoodDone", "IFOOD"],
+  ["benefitsIncluded", "PLANILHA DE BENEFÍCIOS"],
+  ["benefitsCalculated", "CÁLCULO DOS BENEFÍCIOS"],
+  ["facepontoDone", "FACEPONTO"],
+  ["payjoyDone", "PAYJOY"],
+  ["birthdayListAdded", "CONTROLE DE ANIVERSÁRIO"],
+  ["photoTaken", "FOTO"],
+  ["asoRequested", "ASO"],
+  ["shoppingRegistered", "SHOPPING FIXO"],
+  ["dentalPlanIncluded", "PLANO ODONTOLÓGICO"],
+  ["referencesChecked", "REFERÊNCIAS"],
+  ["integrationMeetingDone", "REUNIÃO DE INTEGRAÇÃO"],
+  ["integrationTermSigned", "TERMO DE INTEGRAÇÃO"],
+];
+
+/** 'sim'/true/1 → 1; 'na'/2 → 2 (não se aplica); resto → 0. */
+export function checklistValue(value: unknown): number {
+  if (value === "na" || value === 2 || value === "2") return 2;
+  return value === true || value === "sim" || value === "true" || value === 1 || value === "1" ? 1 : 0;
+}
+
+export function admissionPending(candidate: Record<string, unknown>): string[] {
+  return ADMISSION_CHECKLIST.filter(([field]) => !Number(candidate[field])).map(([, label]) => label);
+}
+
+/** Lembrete diário só para contratações recentes (evita cobrar histórico antigo). */
+export const ADMISSION_REMINDER_DAYS = 45;

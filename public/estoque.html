@@ -376,8 +376,8 @@
   .theme-toggle:hover{opacity:1; border-color:var(--accent);}
   .theme-toggle:active{transform:scale(.95);}
   /* Funcionários sem RH Financeiro: sem as colunas Salário (6) e Pagamento (7). */
-  #rhEmployeesTable.rh-no-fin th:nth-child(6),#rhEmployeesTable.rh-no-fin th:nth-child(7),
-  #rhEmployeesTable.rh-no-fin td:nth-child(6),#rhEmployeesTable.rh-no-fin td:nth-child(7){display:none;}
+  #rhEmployeesTable.rh-no-fin th:nth-child(7),#rhEmployeesTable.rh-no-fin th:nth-child(8),
+  #rhEmployeesTable.rh-no-fin td:nth-child(7),#rhEmployeesTable.rh-no-fin td:nth-child(8){display:none;}
   .loan-return-note{font:800 10px/1.3 var(--mono);color:var(--ink-soft);letter-spacing:.3px;}
   /* Ícone "sol que vira lua": tema claro = sol com raios; tema escuro = os
      raios giram e somem, o sol cresce e a máscara (clipPath) desliza
@@ -2701,6 +2701,13 @@
   .rh-onb-card p{margin:6px 0;color:var(--ink-soft);font-size:12px;}
   .rh-onb-card small{color:var(--ink-faint);font:700 9px var(--mono);}
   .rh-onb-card.done{opacity:.75;}
+  .rh-follow-cell{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:0;padding:6px 10px;}
+  .rh-follow-cell small{color:var(--ink-faint);font:700 9px var(--mono);}
+  .rh-grid-dialog{width:min(1100px,96vw);}
+  .rh-time-grid input[type=time]{min-width:92px;min-height:0;padding:4px 6px;}
+  .rh-time-grid tr.rh-grid-sunday td{opacity:.6;}
+  .rh-time-grid td{white-space:nowrap;}
+  #recContactsTable input{width:100%;min-width:200px;}
   @media (max-width:680px){
     .rh-checklist-row,.rh-pdi-action-row{grid-template-columns:1fr;}
     .rh-bar-row{grid-template-columns:1fr auto;}
@@ -6546,8 +6553,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="rhEmployeesTable">
-            <thead><tr><th>Funcionário</th><th>Documentos</th><th>Cargo</th><th>Loja</th><th>Admissão</th><th>Salário</th><th>Pagamento</th><th>Situação</th><th class="no-print"></th></tr></thead>
-            <tbody id="rhEmployeesTableBody"><tr><td colspan="9" class="responsive-empty">Carregando funcionários…</td></tr></tbody>
+            <thead><tr><th>Funcionário</th><th>Documentos</th><th>Cargo</th><th>Loja</th><th>Admissão</th><th>Aniversário</th><th>Salário</th><th>Pagamento</th><th>Situação</th><th class="no-print"></th></tr></thead>
+            <tbody id="rhEmployeesTableBody"><tr><td colspan="10" class="responsive-empty">Carregando funcionários…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -6806,6 +6813,7 @@
 
       <div class="output-tabs no-print" role="tablist" aria-label="Seção do recrutamento" id="recSectionTabs">
         <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rec-section-tab="candidates">CANDIDATOS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rec-section-tab="contacts">CONTATOS DOS SELECIONADOS</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-rec-section-tab="sponsors">ACOMPANHAMENTO DE PADRINHOS</button>
       </div>
 
@@ -6817,8 +6825,7 @@
               <option value="selecionado_entrevista">SELECIONADO ENTREVISTA</option>
               <option value="em_teste">EM TESTE</option>
               <option value="em_treinamento">EM TREINAMENTO</option>
-              <option value="contratado">CONTRATADO</option>
-              <option value="integracao">INTEGRAÇÃO</option>
+              <option value="contratado">CONTRATADO / INTEGRAÇÃO</option>
               <option value="cancelado">CANCELADO</option>
             </select>
           </div>
@@ -6831,8 +6838,26 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="recCandidatesTable">
-              <thead><tr><th>Semana da entrevista</th><th>Nome</th><th>Cargo pretendido</th><th>Data da entrevista</th><th>Status</th><th>Loja de admissão</th><th></th></tr></thead>
+              <thead id="recCandidatesHead"></thead>
               <tbody id="recCandidatesTableBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="recContactsPanel" hidden>
+        <div class="dre-toolbar no-print">
+          <p class="rh-onb-hint" style="flex:1;">SELECIONADOS PARA ENTREVISTA: EDITE NOME E CONTATO DE TODOS DE UMA VEZ, COPIE A LISTA PARA O WHATSAPP OU ABRA A CONVERSA DE CADA UM.</p>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnRecContactsCopy" type="button">COPIAR LISTA PARA WHATSAPP</button>
+            <button class="btn-accent" id="btnRecContactsSave" type="button" data-permission="rh_recrutamento:manage">SALVAR TODOS</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="recContactsTable">
+              <thead><tr><th>Nome</th><th>Contato</th><th>Entrevista</th><th class="no-print"></th></tr></thead>
+              <tbody id="recContactsBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -6928,8 +6953,8 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="rhOffTable">
-              <thead><tr><th>Funcionário</th><th>Loja</th><th>Desligamento</th><th>Motivo</th><th>Checklist</th><th class="no-print"></th></tr></thead>
-              <tbody id="rhOffTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th>Funcionário</th><th>Loja</th><th>Desligamento</th><th>Motivo</th><th>Rescisão</th><th>Checklist</th><th class="no-print"></th></tr></thead>
+              <tbody id="rhOffTableBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -7133,6 +7158,24 @@
       </div>
 
       <div id="rhStoreTrackStorePanel" hidden>
+        <h3 class="supply-section-title">ACOMPANHAMENTO POR LIDERADO — SEMANA 1 E 2 ONLINE · SEMANA 3 PRESENCIAL</h3>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="rhFollowLeader">LÍDER</label><select id="rhFollowLeader"><option value="">TODOS OS LÍDERES</option></select></div>
+          <div class="field"><label for="rhFollowMember">LIDERADO</label><select id="rhFollowMember"><option value="">TODOS OS LIDERADOS</option></select></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnNewRhFollowCycle" type="button">NOVO CICLO DE LIDERADO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table" style="margin-bottom:18px;">
+          <div class="table-scroll">
+            <table id="rhFollowTable">
+              <thead><tr><th>Liderado</th><th>Líder</th><th>Início do ciclo</th><th>Semana 1 · online</th><th>Semana 2 · online</th><th>Semana 3 · presencial</th><th class="no-print"></th></tr></thead>
+              <tbody id="rhFollowBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <datalist id="rhFollowTeamList"></datalist>
+        <h3 class="supply-section-title">ENCONTROS SEMANAIS DA LOJA</h3>
         <div class="dre-toolbar no-print">
           <div class="dre-toolbar-actions">
             <button class="btn-accent" id="btnNewRhStoreTrack" type="button">NOVO ACOMPANHAMENTO</button>
@@ -7181,7 +7224,8 @@
             <input type="month" id="rhTimeTrackMonth">
           </div>
           <div class="dre-toolbar-actions">
-            <button class="btn-accent" id="btnNewRhTimeTrackEntry" type="button" hidden>NOVO REGISTRO</button>
+            <button class="btn-accent" id="btnRhTimeTrackGrid" type="button" hidden>LANÇAR O MÊS (GRADE)</button>
+            <button class="btn-outline" id="btnNewRhTimeTrackEntry" type="button" hidden>NOVO REGISTRO</button>
           </div>
         </div>
         <div class="table-panel responsive-table">
@@ -11916,6 +11960,7 @@
       <div class="purchase-field"><label for="rhDesligamentoData">DATA DO DESLIGAMENTO *</label><input type="date" id="rhDesligamentoData" required></div>
       <div class="purchase-field"><label for="rhDesligamentoMotivo">MOTIVO *</label><select id="rhDesligamentoMotivo" required></select></div>
       <div class="purchase-field full" id="rhDesligamentoOutroWrap" hidden><label for="rhDesligamentoOutro">DESCREVA O MOTIVO *</label><input id="rhDesligamentoOutro" maxlength="300"></div>
+      <div class="purchase-field"><label for="rhDesligamentoPago">RESCISÃO PAGA EM (EM BRANCO = NÃO PAGA)</label><input type="date" id="rhDesligamentoPago"></div>
     </div>
     <h4 class="rh-checklist-title">CHECKLIST DEMISSIONAL <small>(PODE FICAR PENDENTE — FICA O ALERTA ATÉ CONCLUIR)</small></h4>
     <div class="rh-checklist" id="rhDesligamentoChecklist"></div>
@@ -12305,6 +12350,78 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog rh-grid-dialog" id="rhTimeGridDialog" aria-labelledby="rhTimeGridDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhTimeGridDialogTitle">PONTO DO MÊS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhTimeGrid" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhTimeGridForm">
+    <p class="rh-onb-hint" id="rhTimeGridInfo"></p>
+    <div class="dre-toolbar no-print" style="margin-bottom:8px;">
+      <div class="dre-toolbar-actions">
+        <button class="btn-outline" id="btnRhTimeGridCopy" type="button">COPIAR O 1º DIA PREENCHIDO PARA OS DIAS ÚTEIS VAZIOS</button>
+      </div>
+    </div>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table class="rh-time-grid">
+          <thead><tr><th>Dia</th><th>Entrada</th><th>Saída</th><th>Entrada</th><th>Saída</th><th>Entrada</th><th>Saída</th><th>Trabalhado</th><th>Saldo</th></tr></thead>
+          <tbody id="rhTimeGridBody"></tbody>
+          <tfoot><tr><td colspan="7"><strong>TOTAL DO MÊS</strong></td><td id="rhTimeGridTotalWorked"></td><td id="rhTimeGridTotalBalance"></td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="rhTimeGridStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhTimeGrid" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhTimeGrid" type="submit">SALVAR O MÊS</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhFollowCycleDialog" aria-labelledby="rhFollowCycleDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhFollowCycleDialogTitle">NOVO CICLO DE LIDERADO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhFollowCycle" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhFollowCycleForm">
+    <p class="rh-onb-hint">CRIA OS 3 ENCONTROS DO CICLO: SEMANA 1 E 2 ONLINE E SEMANA 3 PRESENCIAL (DATAS SUGERIDAS A CADA 7 DIAS, EDITÁVEIS).</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhFollowCycleLeader">LÍDER *</label><input id="rhFollowCycleLeader" list="rhFollowTeamList" maxlength="160" required></div>
+      <div class="purchase-field"><label for="rhFollowCycleArea">ÁREA DO LÍDER *</label><select id="rhFollowCycleArea"><option value="comercial">COMERCIAL</option><option value="operacional">OPERACIONAL</option></select></div>
+      <div class="purchase-field"><label for="rhFollowCycleMember">LIDERADO *</label><input id="rhFollowCycleMember" list="rhFollowTeamList" maxlength="160" required></div>
+      <div class="purchase-field"><label for="rhFollowCycleStart">INÍCIO DO CICLO (SEMANA 1) *</label><input type="date" id="rhFollowCycleStart" required></div>
+    </div>
+    <div class="user-form-status" id="rhFollowCycleStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhFollowCycle" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">CRIAR CICLO</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhFollowMeetingDialog" aria-labelledby="rhFollowMeetingDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhFollowMeetingDialogTitle">ENCONTRO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhFollowMeeting" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhFollowMeetingForm">
+    <input type="hidden" id="rhFollowMeetingId">
+    <p class="rh-onb-hint" id="rhFollowMeetingInfo"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhFollowMeetingDate">DATA DO ENCONTRO</label><input type="date" id="rhFollowMeetingDate"></div>
+      <div class="purchase-field"><label for="rhFollowMeetingDone">REALIZADO?</label><select id="rhFollowMeetingDone"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field full"><label for="rhFollowMeetingTopic">ASSUNTO</label><textarea id="rhFollowMeetingTopic" rows="2" maxlength="2000"></textarea></div>
+      <div class="purchase-field full"><label for="rhFollowMeetingNotes">O QUE FOI FEITO / COMBINADO</label><textarea id="rhFollowMeetingNotes" rows="4" maxlength="4000"></textarea></div>
+    </div>
+    <div class="user-form-status" id="rhFollowMeetingStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhFollowMeeting" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhFollowMeeting" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="rhStoreTrackDialog" aria-labelledby="rhStoreTrackDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="rhStoreTrackDialogTitle">NOVO ACOMPANHAMENTO</h3>
@@ -12425,6 +12542,7 @@
     <input type="hidden" id="recCandidateId">
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="recFullName">NOME DO CANDIDATO *</label><input id="recFullName" maxlength="160" required></div>
+      <div class="purchase-field"><label for="recPhone">TELEFONE / WHATSAPP</label><input id="recPhone" type="tel" maxlength="40" placeholder="(81) 90000-0000"></div>
       <div class="purchase-field"><label for="recDesiredRole">CARGO PRETENDIDO</label><input id="recDesiredRole" maxlength="120"></div>
       <div class="purchase-field"><label for="recStatus">STATUS *</label>
         <select id="recStatus" required>
@@ -12432,24 +12550,24 @@
           <option value="em_teste">EM TESTE</option>
           <option value="em_treinamento">EM TREINAMENTO</option>
           <option value="contratado">CONTRATADO</option>
-          <option value="integracao">INTEGRAÇÃO</option>
+          <option value="integracao" hidden>CONTRATADO</option>
           <option value="cancelado">CANCELADO</option>
         </select>
       </div>
-      <div class="purchase-field full"><label for="recStatusNote">JUSTIFICATIVA/OBSERVAÇÃO DESTA ATUALIZAÇÃO</label><textarea id="recStatusNote" rows="2" maxlength="2000" placeholder="Visível no histórico do candidato, em qualquer etapa."></textarea></div>
+      <div class="purchase-field full" hidden><label for="recStatusNote">JUSTIFICATIVA/OBSERVAÇÃO DESTA ATUALIZAÇÃO</label><textarea id="recStatusNote" rows="2" maxlength="2000" placeholder="Visível no histórico do candidato, em qualquer etapa."></textarea></div>
 
-      <div class="purchase-form-section">ETAPA 1 — SELECIONADO ENTREVISTA</div>
-      <div class="purchase-field"><label for="recInterviewDate">DATA DA ENTREVISTA</label><input type="date" id="recInterviewDate"></div>
-      <div class="purchase-field"><label for="recInterviewTime">HORÁRIO DA ENTREVISTA</label><input type="time" id="recInterviewTime"></div>
-      <div class="purchase-field"><label for="recScriptSent">SCRIPT ENVIADO?</label><select id="recScriptSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
-      <div class="purchase-field"><label for="recInterviewResult">APROVADO/REPROVADO</label>
+      <div class="purchase-form-section" data-rec-stage="1">ETAPA 1 — SELECIONADO ENTREVISTA</div>
+      <div class="purchase-field" data-rec-stage="1"><label for="recInterviewDate">DATA DA ENTREVISTA</label><input type="date" id="recInterviewDate"></div>
+      <div class="purchase-field" hidden><label for="recInterviewTime">HORÁRIO DA ENTREVISTA</label><input type="time" id="recInterviewTime"></div>
+      <div class="purchase-field" data-rec-stage="1"><label for="recScriptSent">SCRIPT ENVIADO?</label><select id="recScriptSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" data-rec-stage="1"><label for="recInterviewResult">APROVADO/REPROVADO</label>
         <select id="recInterviewResult"><option value="">AINDA NÃO AVALIADO</option><option value="aprovado">APROVADO</option><option value="reprovado">REPROVADO</option></select>
       </div>
-      <div class="purchase-field full"><label for="recInterviewResultReason">MOTIVO</label><textarea id="recInterviewResultReason" rows="2" maxlength="2000"></textarea></div>
+      <div class="purchase-field full" data-rec-stage="1"><label for="recInterviewResultReason">MOTIVO DA APROVAÇÃO OU REPROVAÇÃO</label><textarea id="recInterviewResultReason" rows="2" maxlength="2000"></textarea></div>
 
-      <div class="purchase-form-section">ETAPA 2 — AGENDAMENTO DE TESTE</div>
-      <div class="purchase-field"><label for="recTestScriptSent">SCRIPT DE AGENDAMENTO ENVIADO?</label><select id="recTestScriptSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
-      <div class="purchase-field"><label for="recTestConfirmed">CONFIRMADO?</label><select id="recTestConfirmed"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-form-section" data-rec-stage="2">ETAPA 2 — AGENDAMENTO DE TESTE</div>
+      <div class="purchase-field" data-rec-stage="2"><label for="recTestScriptSent">SCRIPT DE AGENDAMENTO ENVIADO?</label><select id="recTestScriptSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" data-rec-stage="2"><label for="recTestConfirmed">CONFIRMADO?</label><select id="recTestConfirmed"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field full" id="recCancelFieldset" hidden>
         <label>CANCELAMENTO</label>
         <div class="purchase-form-grid" style="padding:0;">
@@ -12457,8 +12575,14 @@
           <div class="purchase-field full"><label for="recCancelledReason">MOTIVO DO CANCELAMENTO</label><textarea id="recCancelledReason" rows="2" maxlength="2000"></textarea></div>
         </div>
       </div>
+      <div class="purchase-form-section" data-rec-stage="3">ETAPA 3 — TREINAMENTO</div>
+      <div class="purchase-field" data-rec-stage="3"><label for="recTrainingScheduleScriptSent">SCRIPT DE AGENDAMENTO DO TREINAMENTO ENVIADO?</label><select id="recTrainingScheduleScriptSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" data-rec-stage="3"><label for="recTrainingConfirmed">TREINAMENTO CONFIRMADO?</label><select id="recTrainingConfirmed"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" data-rec-stage="3"><label for="recTrainingScriptSent">SCRIPT DE TREINAMENTO ENVIADO?</label><select id="recTrainingScriptSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" data-rec-stage="3"><label for="recTrainingTrainerInformed">INFORMADO AO RESPONSÁVEL QUE IRÁ TREINAR?</label><select id="recTrainingTrainerInformed"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recTrainingStartField" data-rec-stage="3"><label for="recTrainingStartDate">DATA DE INÍCIO DO TREINAMENTO</label><input type="date" id="recTrainingStartDate"></div>
       <div class="purchase-field full" id="recPaymentsSection" hidden>
-        <label>PAGAMENTOS DE TESTE/TREINAMENTO</label>
+        <label>PAGAMENTOS DE TESTE/TREINAMENTO (DIAS PAGOS)</label>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="recPaymentsTable">
@@ -12475,45 +12599,46 @@
         </div>
       </div>
 
-      <div class="purchase-form-section" id="recStage3Section" hidden>ETAPA 3 — CHECKLIST ADMISSIONAL</div>
+      <div class="purchase-form-section" id="recStage3Section" hidden>ETAPA 4 — CHECKLIST ADMISSIONAL (CONTRATADO)</div>
+      <div class="purchase-field" id="recChecklistDateField" hidden><label for="recChecklistDate">DATA DO CHECKLIST</label><input type="date" id="recChecklistDate"></div>
       <div class="purchase-field" id="recAdmissionDateField" hidden><label for="recAdmissionDate">DATA DE ADMISSÃO *</label><input type="date" id="recAdmissionDate"></div>
       <div class="purchase-field" id="recAdmissionCompanyField" hidden><label for="recAdmissionCompanyId">LOJA DE ADMISSÃO *</label><select id="recAdmissionCompanyId"><option value="">SELECIONE</option></select></div>
       <div class="purchase-field" id="recFixedUnitField" hidden><label for="recFixedUnitId">UNIDADE FIXA</label><select id="recFixedUnitId"><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field" id="recTrainingStartField" hidden><label for="recTrainingStartDate">DATA DE INÍCIO DO TREINAMENTO</label><input type="date" id="recTrainingStartDate"></div>
-      <div class="purchase-field" id="recKitField" hidden><label for="recKitDelivered">KIT ADMISSIONAL ENTREGUE?</label><select id="recKitDelivered"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recKitField" hidden><label for="recKitDelivered">KIT ADMISSIONAL ENTREGUE?</label><select id="recKitDelivered"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recKitDateField" hidden><label for="recKitDeliveredDate">DATA DA ENTREGA DO KIT</label><input type="date" id="recKitDeliveredDate"></div>
-      <div class="purchase-field" id="recUniformField" hidden><label for="recUniformSent">FARDAS/CASACO ENVIADOS?</label><select id="recUniformSent"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recUniformField" hidden><label for="recUniformSent">FARDAS/CASACO ENVIADOS?</label><select id="recUniformSent"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recUniformDateField" hidden><label for="recUniformSentDate">DATA DO ENVIO</label><input type="date" id="recUniformSentDate"></div>
-      <div class="purchase-field" id="recSystem1Field" hidden><label for="recSystem1Done">SISTEMA 1 CADASTRADO?</label><select id="recSystem1Done"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
-      <div class="purchase-field" id="recSystem1DateField" hidden><label for="recSystem1Date">DATA — SISTEMA 1</label><input type="date" id="recSystem1Date"></div>
-      <div class="purchase-field" id="recSystem2Field" hidden><label for="recSystem2Done">SISTEMA 2 CADASTRADO?</label><select id="recSystem2Done"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
-      <div class="purchase-field" id="recSystem2DateField" hidden><label for="recSystem2Date">DATA — SISTEMA 2</label><input type="date" id="recSystem2Date"></div>
-      <div class="purchase-field" id="recSystem3Field" hidden><label for="recSystem3Done">SISTEMA 3 CADASTRADO?</label><select id="recSystem3Done"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
-      <div class="purchase-field" id="recSystem3DateField" hidden><label for="recSystem3Date">DATA — SISTEMA 3</label><input type="date" id="recSystem3Date"></div>
-      <div class="purchase-field" id="recIfoodField" hidden><label for="recIfoodDone">IFOOD CADASTRADO?</label><select id="recIfoodDone"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recSystem1Field" hidden><label for="recSystem1Done">SISTEMA UNIGAMES CADASTRADO?</label><select id="recSystem1Done"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
+      <div class="purchase-field" id="recSystem1DateField" hidden><label for="recSystem1Date">DATA — SISTEMA UNIGAMES</label><input type="date" id="recSystem1Date"></div>
+      <div class="purchase-field" id="recSystem2Field" hidden><label for="recSystem2Done">SISTEMA PA CADASTRADO?</label><select id="recSystem2Done"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
+      <div class="purchase-field" id="recSystem2DateField" hidden><label for="recSystem2Date">DATA — SISTEMA PA</label><input type="date" id="recSystem2Date"></div>
+      <div class="purchase-field" id="recSystem3Field" hidden><label for="recSystem3Done">SISTEMA ASSISTÊNCIA CADASTRADO?</label><select id="recSystem3Done"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
+      <div class="purchase-field" id="recSystem3DateField" hidden><label for="recSystem3Date">DATA — SISTEMA ASSISTÊNCIA</label><input type="date" id="recSystem3Date"></div>
+      <div class="purchase-field" id="recIfoodField" hidden><label for="recIfoodDone">IFOOD CADASTRADO?</label><select id="recIfoodDone"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recIfoodDateField" hidden><label for="recIfoodDate">DATA — IFOOD</label><input type="date" id="recIfoodDate"></div>
-      <div class="purchase-field" id="recBenefitsIncludedField" hidden><label for="recBenefitsIncluded">INCLUSO NA PLANILHA DE BENEFÍCIOS?</label><select id="recBenefitsIncluded"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
-      <div class="purchase-field" id="recBenefitsCalculatedField" hidden><label for="recBenefitsCalculated">CÁLCULO FEITO/PAGO?</label><select id="recBenefitsCalculated"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recBenefitsIncludedField" hidden><label for="recBenefitsIncluded">INCLUSO NA PLANILHA DE BENEFÍCIOS?</label><select id="recBenefitsIncluded"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
+      <div class="purchase-field" id="recBenefitsCalculatedField" hidden><label for="recBenefitsCalculated">CÁLCULO FEITO/PAGO?</label><select id="recBenefitsCalculated"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recBenefitsDateField" hidden><label for="recBenefitsDate">DATA — BENEFÍCIOS</label><input type="date" id="recBenefitsDate"></div>
-      <div class="purchase-field" id="recFacepontoField" hidden><label for="recFacepontoDone">FACEPONTO CADASTRADO?</label><select id="recFacepontoDone"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recFacepontoField" hidden><label for="recFacepontoDone">FACEPONTO CADASTRADO?</label><select id="recFacepontoDone"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recFacepontoDateField" hidden><label for="recFacepontoDate">DATA — FACEPONTO</label><input type="date" id="recFacepontoDate"></div>
-      <div class="purchase-field" id="recPayjoyField" hidden><label for="recPayjoyDone">PAYJOY CADASTRADO?</label><select id="recPayjoyDone"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recPayjoyField" hidden><label for="recPayjoyDone">PAYJOY CADASTRADO?</label><select id="recPayjoyDone"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recPayjoyDateField" hidden><label for="recPayjoyDate">DATA — PAYJOY</label><input type="date" id="recPayjoyDate"></div>
-      <div class="purchase-field" id="recBirthdayField" hidden><label for="recBirthdayListAdded">ADICIONADO NO CONTROLE DE ANIVERSÁRIO?</label><select id="recBirthdayListAdded"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recBirthdayField" hidden><label for="recBirthdayListAdded">ADICIONADO NO CONTROLE DE ANIVERSÁRIO?</label><select id="recBirthdayListAdded"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recBirthdayDateField" hidden><label for="recBirthdayListDate">DATA — ANIVERSÁRIO</label><input type="date" id="recBirthdayListDate"></div>
-      <div class="purchase-field" id="recPhotoField" hidden><label for="recPhotoTaken">FOTO FEITA?</label><select id="recPhotoTaken"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
-      <div class="purchase-field" id="recAsoRequestedField" hidden><label for="recAsoRequested">ASO SOLICITADO?</label><select id="recAsoRequested"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recPhotoField" hidden><label for="recPhotoTaken">FOTO FEITA?</label><select id="recPhotoTaken"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
+      <div class="purchase-field" id="recAsoRequestedField" hidden><label for="recAsoRequested">ASO SOLICITADO?</label><select id="recAsoRequested"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recAsoClinicField" hidden><label for="recAsoClinic">CLÍNICA DO ASO</label><input id="recAsoClinic" maxlength="160"></div>
       <div class="purchase-field" id="recAsoValueField" hidden><label for="recAsoValue">VALOR DO EXAME (R$)</label><input type="text" inputmode="decimal" id="recAsoValue" placeholder="R$ 0,00"></div>
       <div class="purchase-field" id="recAsoDateField" hidden><label for="recAsoDate">DATA DO EXAME (DRE FUNCIONÁRIO)</label><input type="date" id="recAsoDate"></div>
-      <div class="purchase-field" id="recAsoCnpjField" hidden><label for="recAsoClinicCnpj">CNPJ DA CLÍNICA</label><input id="recAsoClinicCnpj" maxlength="20" inputmode="numeric" placeholder="Somente números"></div>
-      <div class="purchase-field" id="recShoppingField" hidden><label for="recShoppingRegistered">CADASTRADO NO SHOPPING FIXO?</label><select id="recShoppingRegistered"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recAsoCnpjField" hidden><label for="recAsoClinicCnpj">CNPJ DA CLÍNICA (ANTIGO)</label><input id="recAsoClinicCnpj" maxlength="20" inputmode="numeric" placeholder="Somente números"></div>
+      <div class="purchase-field" id="recAdmissionCnpjField" hidden><label for="recAdmissionCnpj">CNPJ DE ADMISSÃO (DA LOJA)</label><input id="recAdmissionCnpj" readonly placeholder="Escolha a loja de admissão"></div>
+      <div class="purchase-field" id="recShoppingField" hidden><label for="recShoppingRegistered">CADASTRADO NO SHOPPING FIXO?</label><select id="recShoppingRegistered"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field full" id="recDriveLinkField" hidden><label for="recAdmissionDocsDriveLink">LINK DOS DOCUMENTOS ADMISSIONAIS NO GOOGLE DRIVE</label><input id="recAdmissionDocsDriveLink" maxlength="500" placeholder="https://drive.google.com/..."></div>
-      <div class="purchase-field" id="recDentalField" hidden><label for="recDentalPlanIncluded">INCLUSO NO PLANO ODONTOLÓGICO?</label><select id="recDentalPlanIncluded"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recDentalField" hidden><label for="recDentalPlanIncluded">INCLUSO NO PLANO ODONTOLÓGICO?</label><select id="recDentalPlanIncluded"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recDentalDateField" hidden><label for="recDentalPlanDate">DATA — ODONTOLÓGICO</label><input type="date" id="recDentalPlanDate"></div>
-      <div class="purchase-field" id="recReferencesField" hidden><label for="recReferencesChecked">REFERÊNCIAS BUSCADAS?</label><select id="recReferencesChecked"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field" id="recReferencesField" hidden><label for="recReferencesChecked">REFERÊNCIAS BUSCADAS?</label><select id="recReferencesChecked"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
 
-      <div class="purchase-form-section" id="recStage4Section" hidden>ETAPA 4 — INTEGRAÇÃO</div>
+      <div class="purchase-form-section" id="recStage4Section" hidden>ETAPA 5 — INTEGRAÇÃO</div>
       <div class="purchase-field" id="recIntegrationMeetingField" hidden><label for="recIntegrationMeetingDone">REUNIÃO DE INTEGRAÇÃO FEITA?</label><select id="recIntegrationMeetingDone"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field" id="recIntegrationTermSignedField" hidden><label for="recIntegrationTermSigned">TERMO ASSINADO?</label><select id="recIntegrationTermSigned"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field full" id="recIntegrationTermFileField" hidden><label for="recIntegrationTermFile">UPLOAD DO TERMO ASSINADO (PDF OU IMAGEM)</label><input type="file" id="recIntegrationTermFile" accept="application/pdf,image/*"><div id="recIntegrationTermCurrent" class="user-form-status"></div></div>
@@ -12603,7 +12728,7 @@
   <form class="purchase-form" id="rhTimeTrackSettingsForm">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="rhTimeTrackSettingsEmployee">COLABORADOR *</label><select id="rhTimeTrackSettingsEmployee" required></select></div>
-      <div class="purchase-field"><label for="rhTimeTrackSettingsHours">JORNADA DIÁRIA (HORAS) *</label><input type="number" id="rhTimeTrackSettingsHours" min="0" max="24" step="0.25" required></div>
+      <div class="purchase-field"><label for="rhTimeTrackSettingsHours">JORNADA DIÁRIA (HH:MM, EX.: 08:48) *</label><input type="time" id="rhTimeTrackSettingsHours" step="60" required></div>
       <div class="purchase-field full"><label for="rhTimeTrackSettingsNotes">OBSERVAÇÕES</label><textarea id="rhTimeTrackSettingsNotes" rows="2" maxlength="500"></textarea></div>
     </div>
     <div class="user-form-status" id="rhTimeTrackSettingsFormStatus" role="status" aria-live="polite"></div>
@@ -43000,7 +43125,7 @@ function renderHomeTasks(){
     if(!body) return;
     const rows = rhFilteredEmployees();
     if(!rows.length){
-      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhum funcionário encontrado.</td></tr>';
+      body.innerHTML = '<tr><td colspan="10" class="responsive-empty">Nenhum funcionário encontrado.</td></tr>';
       return;
     }
     body.innerHTML = rows.map(employee => {
@@ -43016,6 +43141,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(employee.roleTitle || '—')+'</td>'+
         '<td>'+escapeHtml(employee.companyName || '—')+'</td>'+
         '<td>'+escapeHtml(rhFormatDate(employee.admissionDate))+'</td>'+
+        '<td>'+escapeHtml(employee.birthDate ? employee.birthDate.slice(8,10)+'/'+employee.birthDate.slice(5,7) : '—')+'</td>'+
         '<td>'+formatCentsBRL(employee.salaryCents)+'</td>'+
         '<td>'+escapeHtml(payment)+'</td>'+
         '<td>'+statusPill+'</td>'+
@@ -43053,14 +43179,14 @@ function renderHomeTasks(){
     el('btnNewRhEmployee').hidden = !rhEmployeeCan('create');
     el('rhEmployeesTable').classList.toggle('rh-no-fin', !canAccess('payroll'));
     const body = el('rhEmployeesTableBody');
-    if(body && (!opts || !opts.silent)) body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando funcionários…</td></tr>';
+    if(body && (!opts || !opts.silent)) body.innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando funcionários…</td></tr>';
     try{
       await rhEnsureBaseData(true);
       if(canManageUsers() && !managedUsers.length) await loadAdminUsers();
       rhRenderEmployeeUserOptions();
       renderRhEmployeesTable();
     }catch(error){
-      if(body) body.innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      if(body) body.innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
@@ -44331,11 +44457,29 @@ function renderHomeTasks(){
   function renderRhDreFuncionario(report){
     const wrap = el('rhDreFuncConteudo');
     const stores = report && Array.isArray(report.stores) ? report.stores : [];
+    const byCnpj = report && Array.isArray(report.byCnpj) ? report.byCnpj : [];
     el('rhDreFuncPrintMeta').textContent = 'Mês '+rhFormatMonth(report ? report.month : '')+' · '+
       (el('rhDreFuncLoja').value ? (companies.find(company => company.id === el('rhDreFuncLoja').value) || {name:'—'}).name : 'Todas as lojas');
+    // Por CNPJ (cadastro de Lojas): colaboradores ativos no mês, salários e
+    // FGTS do mês (8%), mais ASO, treinamento e rescisão de cada CNPJ.
+    const cnpjRows = byCnpj.map(row => '<tr>'+
+      '<td>'+escapeHtml(row.cnpj ? rhFormatCnpj(row.cnpj) : 'SEM CNPJ CADASTRADO')+'<br><small style="color:var(--ink-faint);">'+escapeHtml(row.storeNames.join(', '))+'</small></td>'+
+      '<td class="num">'+row.headcount+'</td>'+
+      '<td class="num">'+formatCentsBRL(row.salaryCents)+'</td>'+
+      '<td class="num">'+formatCentsBRL(row.fgtsMonthCents)+'</td>'+
+      '<td class="num">'+formatCentsBRL(row.asoCents)+'</td>'+
+      '<td class="num">'+formatCentsBRL(row.trainingCents)+'</td>'+
+      '<td class="num">'+formatCentsBRL(row.severanceCents + row.terminationFgtsCents)+'</td>'+
+      '<td class="num"><strong>'+formatCentsBRL(row.totalCents)+'</strong></td>'+
+    '</tr>');
+    const cnpjBlock = cnpjRows.length ? '<div class="table-panel rh-print-block" style="padding:12px 14px;margin-bottom:14px;">'+
+      '<h3 style="margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;">POR CNPJ</h3>'+
+      rhDreFuncSubTable('FGTS DO MÊS = 8% DO SALÁRIO DE QUEM ESTEVE ATIVO (LOJA DO MÊS EM RH > ESCALAS OU A DO CADASTRO)',
+        ['CNPJ','Colaboradores','Salários','FGTS (8%)','ASO','Treinamento','Rescisão + FGTS rescisório','Total'], cnpjRows)+
+      '</div>' : '';
     if(!stores.length){
       el('rhDreFuncResumo').textContent = 'Nenhum ASO, treinamento, rescisão ou aniversariante neste mês.';
-      wrap.innerHTML = '';
+      wrap.innerHTML = cnpjBlock;
       return;
     }
     const t = report.totals;
@@ -44346,12 +44490,13 @@ function renderHomeTasks(){
       ' · FGTS: <strong>'+formatCentsBRL(t.fgtsCents)+'</strong>'+
       ' · Aniversariantes: <strong>'+t.birthdaysCount+'</strong>'+
       ' · Total do mês: <strong>'+formatCentsBRL(t.totalCents)+'</strong>';
-    wrap.innerHTML = stores.map(store => {
+    wrap.innerHTML = cnpjBlock + stores.map(store => {
       const st = store.totals;
       const people = store.people.map(person => '<tr>'+
         '<td>'+escapeHtml(person.personName)+'</td>'+
         '<td class="num">'+(person.asoCents ? formatCentsBRL(person.asoCents) : '—')+'</td>'+
-        '<td class="num">'+(person.trainingCents ? formatCentsBRL(person.trainingCents) : '—')+'</td>'+
+        '<td class="num">'+(person.trainingCents ? formatCentsBRL(person.trainingCents)+
+          ((person.trainingDates || []).length ? '<br><small style="color:var(--ink-faint);">PAGO EM '+escapeHtml(person.trainingDates.map(date => date.slice(8,10)+'/'+date.slice(5,7)).join(', '))+'</small>' : '') : '—')+'</td>'+
         '<td class="num">'+(person.severanceCents ? formatCentsBRL(person.severanceCents) : '—')+'</td>'+
         '<td class="num">'+(person.fgtsCents ? formatCentsBRL(person.fgtsCents) : '—')+'</td>'+
         '<td>'+(person.birthDate ? escapeHtml(person.birthDate.slice(8,10)+'/'+person.birthDate.slice(5,7)) : '—')+'</td>'+
@@ -45274,6 +45419,7 @@ function renderHomeTasks(){
     }else{
       el('rhStoreTrackTableBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
       try{
+        loadRhFollowups();
         const data = await rhStoreTrackApiRequest('/store?companyId='+encodeURIComponent(rhStoreTrackTab));
         rhStoreTrackRows = Array.isArray(data.records) ? data.records : [];
         renderRhStoreTrackTable();
@@ -45283,6 +45429,127 @@ function renderHomeTasks(){
       }
     }
   }
+
+  // ---------- Acompanhamento POR LIDERADO (ciclos de 3 encontros) ----------
+  let rhFollowRows = [];
+  let rhFollowTeam = [];
+  async function loadRhFollowups(){
+    const companyId = rhStoreTrackTab;
+    if(!companyId || companyId === 'pdi') return;
+    el('btnNewRhFollowCycle').hidden = !rhStoreTrackCanManage();
+    el('rhFollowBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await rhStoreTrackApiRequest('/followups?companyId='+encodeURIComponent(companyId));
+      rhFollowRows = data.followups || [];
+      rhFollowTeam = data.team || [];
+      el('rhFollowTeamList').innerHTML = rhFollowTeam.map(person => '<option value="'+escapeHtml(person.fullName)+'">'+escapeHtml(person.roleTitle || '')+'</option>').join('');
+      const leaders = [...new Set(rhFollowRows.map(row => row.leaderName))].sort();
+      const members = [...new Set(rhFollowRows.map(row => row.memberName))].sort();
+      rhFillSelect('rhFollowLeader','TODOS OS LÍDERES',leaders.map(name => ({value:name, label:name})));
+      rhFillSelect('rhFollowMember','TODOS OS LIDERADOS',members.map(name => ({value:name, label:name})));
+      renderRhFollowups();
+    }catch(error){
+      el('rhFollowBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function renderRhFollowups(){
+    const leader = el('rhFollowLeader').value;
+    const member = el('rhFollowMember').value;
+    const cycles = new Map();
+    rhFollowRows.filter(row => (!leader || row.leaderName === leader) && (!member || row.memberName === member)).forEach(row => {
+      const key = row.memberName+'|'+row.cycleStart;
+      if(!cycles.has(key)) cycles.set(key, {memberName:row.memberName, leaderName:row.leaderName, leaderArea:row.leaderArea, cycleStart:row.cycleStart, weeks:{}});
+      cycles.get(key).weeks[row.week] = row;
+    });
+    const manage = rhStoreTrackCanManage();
+    const cell = row => row
+      ? '<button class="btn-outline rh-follow-cell" type="button" data-rh-follow-meeting="'+escapeHtml(row.id)+'">'+
+          (row.done ? '<span class="status-pill done">FEITO</span>' : '<span class="status-pill waiting">PENDENTE</span>')+
+          '<small>'+escapeHtml(row.meetingDate ? rhFormatDate(row.meetingDate) : 'SEM DATA')+'</small></button>'
+      : '—';
+    el('rhFollowBody').innerHTML = cycles.size ? [...cycles.values()].map(cycle =>
+      '<tr><td>'+escapeHtml(cycle.memberName)+'</td>'+
+      '<td>'+escapeHtml(cycle.leaderName)+'<br><small style="color:var(--ink-faint);">'+(cycle.leaderArea === 'operacional' ? 'OPERACIONAL' : 'COMERCIAL')+'</small></td>'+
+      '<td>'+escapeHtml(rhFormatDate(cycle.cycleStart))+'</td>'+
+      '<td>'+cell(cycle.weeks[1])+'</td><td>'+cell(cycle.weeks[2])+'</td><td>'+cell(cycle.weeks[3])+'</td>'+
+      '<td class="no-print">'+(manage ? '<button class="btn-outline" type="button" data-rh-follow-delete="'+escapeHtml(cycle.memberName)+'|'+escapeHtml(cycle.cycleStart)+'">EXCLUIR CICLO</button>' : '')+'</td></tr>'
+    ).join('') : '<tr><td colspan="7" class="responsive-empty">Nenhum ciclo de liderado nesta loja. Use NOVO CICLO DE LIDERADO.</td></tr>';
+  }
+  ['rhFollowLeader','rhFollowMember'].forEach(id => { if(el(id)) el(id).addEventListener('change', renderRhFollowups); });
+  if(el('btnNewRhFollowCycle')) el('btnNewRhFollowCycle').addEventListener('click', () => {
+    el('rhFollowCycleForm').reset();
+    el('rhFollowCycleStart').value = todayDateKey();
+    el('rhFollowCycleStatus').textContent = '';
+    el('rhFollowCycleDialog').showModal();
+  });
+  if(el('rhFollowCycleLeader')) el('rhFollowCycleLeader').addEventListener('change', () => {
+    const person = rhFollowTeam.find(item => item.fullName === el('rhFollowCycleLeader').value.trim().toUpperCase());
+    if(person && /OPERACIONAL/i.test(person.roleTitle || '')) el('rhFollowCycleArea').value = 'operacional';
+  });
+  ['btnCloseRhFollowCycle','btnCancelRhFollowCycle'].forEach(id => { if(el(id)) el(id).addEventListener('click', () => el('rhFollowCycleDialog').close()); });
+  ['btnCloseRhFollowMeeting','btnCancelRhFollowMeeting'].forEach(id => { if(el(id)) el(id).addEventListener('click', () => el('rhFollowMeetingDialog').close()); });
+  if(el('rhFollowCycleForm')) el('rhFollowCycleForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    try{
+      await rhStoreTrackApiRequest('/followups', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        action:'cycle', companyId:rhStoreTrackTab,
+        companyName:(companies.find(company => company.id === rhStoreTrackTab) || {}).name || '',
+        leaderName:el('rhFollowCycleLeader').value, leaderArea:el('rhFollowCycleArea').value,
+        memberName:el('rhFollowCycleMember').value, cycleStart:el('rhFollowCycleStart').value
+      })});
+      el('rhFollowCycleDialog').close();
+      await loadRhFollowups();
+      showPurchaseToast('CICLO CRIADO COM OS 3 ENCONTROS.');
+    }catch(error){
+      el('rhFollowCycleStatus').textContent = error.message;
+    }
+  });
+  if(el('rhFollowBody')) el('rhFollowBody').addEventListener('click', async event => {
+    const meeting = event.target.closest('[data-rh-follow-meeting]');
+    const remove = event.target.closest('[data-rh-follow-delete]');
+    if(meeting){
+      const row = rhFollowRows.find(item => item.id === meeting.dataset.rhFollowMeeting);
+      if(!row) return;
+      const manage = rhStoreTrackCanManage();
+      el('rhFollowMeetingId').value = row.id;
+      el('rhFollowMeetingDialogTitle').textContent = 'SEMANA '+row.week+' — '+(row.mode === 'presencial' ? 'PRESENCIAL' : 'ONLINE');
+      el('rhFollowMeetingInfo').textContent = row.memberName+' · LÍDER '+row.leaderName+(row.updatedByName ? ' · ATUALIZADO POR '+row.updatedByName : '');
+      el('rhFollowMeetingDate').value = row.meetingDate || '';
+      el('rhFollowMeetingDone').value = row.done ? 'sim' : 'nao';
+      el('rhFollowMeetingTopic').value = row.topic || '';
+      el('rhFollowMeetingNotes').value = row.notes || '';
+      el('rhFollowMeetingStatus').textContent = '';
+      el('rhFollowMeetingForm').querySelectorAll('input, select, textarea').forEach(field => { field.disabled = !manage; });
+      el('btnSaveRhFollowMeeting').hidden = !manage;
+      el('rhFollowMeetingDialog').showModal();
+      return;
+    }
+    if(remove){
+      if(!confirm('Excluir este ciclo (os 3 encontros)?')) return;
+      const [memberName, cycleStart] = remove.dataset.rhFollowDelete.split('|');
+      try{
+        await rhStoreTrackApiRequest('/followups?companyId='+encodeURIComponent(rhStoreTrackTab)+'&memberName='+encodeURIComponent(memberName)+'&cycleStart='+encodeURIComponent(cycleStart), {method:'DELETE'});
+        await loadRhFollowups();
+        showPurchaseToast('CICLO EXCLUÍDO.');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    }
+  });
+  if(el('rhFollowMeetingForm')) el('rhFollowMeetingForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    try{
+      await rhStoreTrackApiRequest('/followups', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        action:'meeting', id:el('rhFollowMeetingId').value, meetingDate:el('rhFollowMeetingDate').value,
+        done:el('rhFollowMeetingDone').value === 'sim', topic:el('rhFollowMeetingTopic').value, notes:el('rhFollowMeetingNotes').value
+      })});
+      el('rhFollowMeetingDialog').close();
+      await loadRhFollowups();
+      showPurchaseToast('ENCONTRO SALVO.');
+    }catch(error){
+      el('rhFollowMeetingStatus').textContent = error.message;
+    }
+  });
 
   function rhStoreTrackLinesFromTextarea(value){
     return String(value || '').split('\n').map(line => line.trim()).filter(Boolean);
@@ -45647,19 +45914,24 @@ function renderHomeTasks(){
     return data;
   }
 
-  function recWeekLabel(dateStr){
-    if(!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return '—';
-    const date = new Date(dateStr+'T00:00:00');
-    const weekday = (date.getDay() + 6) % 7; // 0 = segunda
-    const monday = new Date(date);
-    monday.setDate(date.getDate() - weekday);
-    const dd = String(monday.getDate()).padStart(2,'0');
-    const mm = String(monday.getMonth() + 1).padStart(2,'0');
-    return 'SEMANA DE '+dd+'/'+mm;
+  // Itens do checklist admissional (espelha ADMISSION_CHECKLIST em app/lib/hr-rh.ts):
+  // 1 = feito, 2 = não se aplica, 0 = pendente.
+  const REC_ADMISSION_CHECKLIST = [
+    ['kitDelivered','KIT ADMISSIONAL'],['uniformSent','FARDAS/CASACO'],['system1Done','SISTEMA UNIGAMES'],
+    ['system2Done','SISTEMA PA'],['system3Done','SISTEMA ASSISTÊNCIA'],['ifoodDone','IFOOD'],
+    ['benefitsIncluded','PLANILHA DE BENEFÍCIOS'],['benefitsCalculated','CÁLCULO DOS BENEFÍCIOS'],['facepontoDone','FACEPONTO'],
+    ['payjoyDone','PAYJOY'],['birthdayListAdded','CONTROLE DE ANIVERSÁRIO'],['photoTaken','FOTO'],['asoRequested','ASO'],
+    ['shoppingRegistered','SHOPPING FIXO'],['dentalPlanIncluded','PLANO ODONTOLÓGICO'],['referencesChecked','REFERÊNCIAS'],
+    ['integrationMeetingDone','REUNIÃO DE INTEGRAÇÃO'],['integrationTermSigned','TERMO DE INTEGRAÇÃO']
+  ];
+  function recAdmissionPending(row){
+    if(row.status !== 'contratado' && row.status !== 'integracao') return [];
+    return REC_ADMISSION_CHECKLIST.filter(([field]) => !Number(row[field])).map(([, label]) => label);
   }
 
   function renderRecSectionTabs(){
     el('recCandidatesPanel').hidden = recSectionTab !== 'candidates';
+    el('recContactsPanel').hidden = recSectionTab !== 'contacts';
     el('recSponsorsPanel').hidden = recSectionTab !== 'sponsors';
     document.querySelectorAll('#recSectionTabs [data-rec-section-tab]').forEach(button => {
       const active = button.dataset.recSectionTab === recSectionTab;
@@ -45673,7 +45945,63 @@ function renderHomeTasks(){
     if(!button) return;
     recSectionTab = button.dataset.recSectionTab;
     renderRecSectionTabs();
-    if(recSectionTab === 'candidates') loadRecCandidates(); else loadRecSponsors();
+    if(recSectionTab === 'candidates') loadRecCandidates();
+    else if(recSectionTab === 'contacts') loadRecContacts();
+    else loadRecSponsors();
+  });
+
+  // CONTATOS DOS SELECIONADOS: NOME - CONTATO de todos os selecionados para
+  // entrevista, editáveis de uma vez, com lista pronta para o WhatsApp.
+  let recContacts = [];
+  async function loadRecContacts(){
+    const body = el('recContactsBody');
+    body.innerHTML = '<tr><td colspan="4" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await recApiRequest('/candidates?status=selecionado_entrevista');
+      recContacts = (Array.isArray(data.candidates) ? data.candidates : [])
+        .sort((a, b) => (a.interviewDate || '9').localeCompare(b.interviewDate || '9') || a.fullName.localeCompare(b.fullName));
+      const manage = recCanManage();
+      el('btnRecContactsSave').hidden = !manage;
+      body.innerHTML = recContacts.length ? recContacts.map(row => {
+        const digits = String(row.phone || '').replace(/\D+/g, '');
+        const wa = digits ? 'https://wa.me/'+(digits.length <= 11 ? '55' : '')+digits : '';
+        return '<tr data-rec-contact-row="'+escapeHtml(row.id)+'">'+
+          '<td><input data-rec-contact-name maxlength="160" value="'+escapeHtml(row.fullName)+'" aria-label="Nome"'+(manage ? '' : ' disabled')+'></td>'+
+          '<td><input data-rec-contact-phone type="tel" maxlength="40" value="'+escapeHtml(row.phone || '')+'" placeholder="(81) 90000-0000" aria-label="Contato"'+(manage ? '' : ' disabled')+'></td>'+
+          '<td>'+escapeHtml(rhFormatDate(row.interviewDate))+'</td>'+
+          '<td class="no-print">'+(wa ? '<a class="btn-outline" href="'+wa+'" target="_blank" rel="noopener">WHATSAPP</a>' : '—')+'</td></tr>';
+      }).join('') : '<tr><td colspan="4" class="responsive-empty">Nenhum candidato selecionado para entrevista.</td></tr>';
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function recContactsFromTable(){
+    return Array.from(document.querySelectorAll('[data-rec-contact-row]')).map(row => ({
+      id:row.dataset.recContactRow,
+      fullName:row.querySelector('[data-rec-contact-name]').value.trim(),
+      phone:row.querySelector('[data-rec-contact-phone]').value.trim()
+    }));
+  }
+  if(el('btnRecContactsSave')) el('btnRecContactsSave').addEventListener('click', async () => {
+    try{
+      await recApiRequest('/contacts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({items:recContactsFromTable()})});
+      await loadRecContacts();
+      showPurchaseToast('CONTATOS SALVOS.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+  if(el('btnRecContactsCopy')) el('btnRecContactsCopy').addEventListener('click', async () => {
+    const items = recContactsFromTable();
+    if(!items.length){ showPurchaseToast('NENHUM CONTATO NA LISTA.','error'); return; }
+    const text = 'SELECIONADOS PARA ENTREVISTA — '+formatDateBR(todayDateKey())+'\n\n'+
+      items.map(item => item.fullName.toUpperCase()+' - '+(item.phone || 'SEM CONTATO')).join('\n');
+    try{
+      await navigator.clipboard.writeText(text);
+      showPurchaseToast('LISTA COPIADA — COLE NO WHATSAPP.');
+    }catch{
+      showPurchaseToast('NÃO FOI POSSÍVEL COPIAR AUTOMATICAMENTE.','error');
+    }
   });
 
   function renderRecCandidatesTable(){
@@ -45682,24 +46010,33 @@ function renderHomeTasks(){
     const manage = recCanManage();
     const search = normalizeSearchText(el('recFilterSearch').value);
     const rows = recCandidates.filter(row => !search || normalizeSearchText(row.fullName).includes(search));
+    // Loja de admissão só no filtro CONTRATADO (com as pendências do checklist).
+    const hiredView = el('recFilterStatus').value === 'contratado';
+    el('recCandidatesHead').innerHTML = '<tr><th>Data da entrevista</th><th>Nome</th><th>Contato</th><th>Cargo pretendido</th><th>Status</th>'+
+      (hiredView ? '<th>Loja de admissão</th><th>Checklist</th>' : '')+'<th></th></tr>';
+    const columns = hiredView ? 8 : 6;
     if(!rows.length){
-      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Nenhum candidato encontrado.</td></tr>';
+      body.innerHTML = '<tr><td colspan="'+columns+'" class="responsive-empty">Nenhum candidato encontrado.</td></tr>';
       return;
     }
-    body.innerHTML = rows.map(row =>
-      '<tr>'+
-      '<td>'+recWeekLabel(row.interviewDate)+'</td>'+
-      '<td>'+escapeHtml(row.fullName)+'</td>'+
-      '<td>'+escapeHtml(row.desiredRole || '—')+'</td>'+
+    body.innerHTML = rows.map(row => {
+      const pending = recAdmissionPending(row);
+      return '<tr>'+
       '<td>'+rhFormatDate(row.interviewDate)+'</td>'+
-      '<td>'+escapeHtml(REC_STATUS_LABELS[row.status] || row.status)+'</td>'+
-      '<td>'+escapeHtml(row.admissionCompanyName || '—')+'</td>'+
-      '<td>'+(manage ?
-        '<button class="btn-outline" type="button" data-rec-candidate-edit="'+row.id+'">EDITAR</button> '+
-        '<button class="btn-outline" type="button" data-rec-candidate-delete="'+row.id+'">EXCLUIR</button>'
-        : '<button class="btn-outline" type="button" data-rec-candidate-edit="'+row.id+'">VER</button>')+'</td>'+
-      '</tr>'
-    ).join('');
+      '<td>'+escapeHtml(row.fullName)+'</td>'+
+      '<td>'+escapeHtml(row.phone || '—')+'</td>'+
+      '<td>'+escapeHtml(row.desiredRole || '—')+'</td>'+
+      '<td>'+escapeHtml(row.status === 'integracao' ? 'CONTRATADO' : (REC_STATUS_LABELS[row.status] || row.status))+'</td>'+
+      (hiredView ? '<td>'+escapeHtml(row.admissionCompanyName || '—')+'</td>'+
+        '<td>'+(pending.length ? '<span class="status-pill waiting" title="'+escapeHtml(pending.join(', '))+'">'+pending.length+' PENDENTE'+(pending.length > 1 ? 'S' : '')+'</span>' : '<span class="status-pill done">COMPLETO</span>')+'</td>' : '')+
+      '<td><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+        '<button class="btn-outline" type="button" data-rec-candidate-details="'+row.id+'">DETALHES</button>'+
+        (manage ?
+          '<button class="btn-outline" type="button" data-rec-candidate-edit="'+row.id+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-rec-candidate-delete="'+row.id+'">EXCLUIR</button>' : '')+
+      '</span></td>'+
+      '</tr>';
+    }).join('');
   }
 
   async function loadRecCandidates(){
@@ -45741,12 +46078,18 @@ function renderHomeTasks(){
     aviso_previo:'AVISO PRÉVIO ASSINADO (TRABALHADO OU INDENIZADO)',
     aso_demissional:'EXAME DEMISSIONAL (ASO) REALIZADO',
     devolucao:'DEVOLUÇÃO DE UNIFORME, CRACHÁ, CHAVES E EQUIPAMENTOS (NOTEBOOK, CELULAR, CARTÃO CORPORATIVO)',
-    acessos:'BLOQUEIO DOS ACESSOS (LOGIN DO SISTEMA, E-MAIL, WHATSAPP DA LOJA, SISTEMAS DE VENDA) E RETIRADA DO VÍNCULO DE LOGIN',
+    acessos:'BLOQUEIO DO LOGIN DO SISTEMA, E-MAIL E WHATSAPP DA LOJA E RETIRADA DO VÍNCULO DE LOGIN',
+    pontti_unigames:'INATIVADO NO SISTEMA UNIGAMES (PONTTI)',
+    pontti_pa:'INATIVADO NO SISTEMA PA (PONTTI)',
+    pontti_assistencia:'INATIVADO NO SISTEMA ASSISTÊNCIA (PONTTI)',
+    ifood:'EXCLUÍDO DO IFOOD',
+    faceponto:'EXCLUÍDO DO FACEPONTO',
+    payjoy:'EXCLUÍDO DO PAYJOY',
     baixa_ctps:'BAIXA NA CARTEIRA DE TRABALHO (ESOCIAL) E RESCISÃO CALCULADA',
     pagamento:'PAGAMENTO DA RESCISÃO E GUIAS (FGTS/MULTA, SEGURO-DESEMPREGO)',
     pendencias:'CONFERÊNCIA DE PENDÊNCIAS (VALES, COMISSÕES, DEVOLUÇÕES, PONTO)',
     entrevista:'ENTREVISTA DE DESLIGAMENTO',
-    beneficios:'RETIRADA DO PLANO ODONTOLÓGICO/BENEFÍCIOS'
+    beneficios:'EXCLUSÃO DO PLANO ODONTOLÓGICO/BENEFÍCIOS'
   };
 
   async function rhRhApi(path, options){
@@ -45788,6 +46131,7 @@ function renderHomeTasks(){
     el('rhDesligamentoData').value = data.terminationDate || todayDateKey();
     rhFillTerminationReasons('rhDesligamentoMotivo', data.reason);
     el('rhDesligamentoOutro').value = data.reasonOther || '';
+    el('rhDesligamentoPago').value = data.severancePaidDate || '';
     el('rhDesligamentoOutroWrap').hidden = el('rhDesligamentoMotivo').value !== 'outro';
     const checklist = data.checklist || {};
     el('rhDesligamentoChecklist').innerHTML = Object.entries(RH_TERMINATION_CHECKLIST).map(([key, label]) => {
@@ -45817,6 +46161,7 @@ function renderHomeTasks(){
       terminationDate:el('rhDesligamentoData').value,
       reason:el('rhDesligamentoMotivo').value,
       reasonOther:el('rhDesligamentoOutro').value.trim(),
+      severancePaidDate:el('rhDesligamentoPago').value,
       checklist
     };
   }
@@ -46071,12 +46416,12 @@ function renderHomeTasks(){
   // Desligamentos
   async function loadRhOffboarding(){
     const body = el('rhOffTableBody');
-    body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
     try{
       rhOffRows = (await rhRhApi('/offboarding')).terminations || [];
       renderRhOffboarding();
     }catch(error){
-      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
   function renderRhOffboarding(){
@@ -46088,9 +46433,10 @@ function renderHomeTasks(){
       '<tr><td>'+escapeHtml(row.employeeName)+'</td><td>'+escapeHtml(row.companyName || '—')+'</td>'+
       '<td>'+escapeHtml(rhFormatDate(row.terminationDate))+'</td>'+
       '<td>'+escapeHtml(row.reason === 'outro' ? 'OUTRO: '+row.reasonOther : (RH_TERMINATION_REASONS[row.reason] || 'NÃO INFORMADO'))+'</td>'+
+      '<td>'+(row.severancePaidDate ? '<span class="status-pill done">PAGA '+escapeHtml(rhFormatDate(row.severancePaidDate))+'</span>' : '<span class="status-pill waiting">NÃO PAGA</span>')+'</td>'+
       '<td>'+(row.pending ? '<span class="status-pill waiting">'+row.pending+' PENDENTE'+(row.pending > 1 ? 'S' : '')+'</span>' : '<span class="status-pill done">CONCLUÍDO</span>')+'</td>'+
       '<td class="no-print">'+(manage ? '<button class="btn-outline" type="button" data-rh-off-edit="'+escapeHtml(row.id)+'">CHECKLIST</button>' : '')+'</td></tr>'
-    ).join('') : '<tr><td colspan="6" class="responsive-empty">'+(onlyPending ? 'Nenhum checklist demissional pendente.' : 'Nenhum desligamento registrado.')+'</td></tr>';
+    ).join('') : '<tr><td colspan="7" class="responsive-empty">'+(onlyPending ? 'Nenhum checklist demissional pendente.' : 'Nenhum desligamento registrado.')+'</td></tr>';
   }
   ['rhOffFiltro','rhOffLoja'].forEach(id => { if(el(id)) el(id).addEventListener('change', renderRhOffboarding); });
   if(el('rhOffTableBody')) el('rhOffTableBody').addEventListener('click', event => {
@@ -46500,27 +46846,42 @@ function renderHomeTasks(){
     if(recSectionTab === 'candidates') await loadRecCandidates(); else await loadRecSponsors();
   }
 
+  // Cada status mostra só a etapa atual (Etapa 2 só depois de APROVADO na
+  // entrevista); CONTRATADO e INTEGRAÇÃO são o mesmo filtro. No modo
+  // DETALHES (somente leitura) aparece tudo. As datas por item do checklist
+  // ficam escondidas: vale a DATA DO CHECKLIST, única.
+  const REC_CHECKLIST_FIELD_IDS = [
+    'recStage3Section','recAdmissionDateField','recAdmissionCompanyField','recAdmissionCnpjField','recFixedUnitField',
+    'recChecklistDateField','recKitField','recUniformField','recSystem1Field','recSystem2Field','recSystem3Field',
+    'recIfoodField','recBenefitsIncludedField','recBenefitsCalculatedField','recFacepontoField','recPayjoyField',
+    'recBirthdayField','recPhotoField','recAsoRequestedField','recAsoClinicField','recAsoValueField','recAsoDateField',
+    'recShoppingField','recDriveLinkField','recDentalField','recReferencesField',
+    'recStage4Section','recIntegrationMeetingField','recIntegrationTermSignedField',
+    'recIntegrationTermFileField','recIntegrationPrintFileField','recIntegrationTranscriptField'
+  ];
+  let recDetailsMode = false;
   function recToggleStageFields(status){
-    const isCancelled = status === 'cancelado';
-    el('recCancelFieldset').hidden = !isCancelled;
-    const stage3 = status === 'contratado' || status === 'integracao';
-    const stage3Ids = [
-      'recStage3Section','recAdmissionDateField','recAdmissionCompanyField','recFixedUnitField',
-      'recTrainingStartField','recKitField','recKitDateField','recUniformField','recUniformDateField',
-      'recSystem1Field','recSystem1DateField','recSystem2Field','recSystem2DateField',
-      'recSystem3Field','recSystem3DateField','recIfoodField','recIfoodDateField',
-      'recBenefitsIncludedField','recBenefitsCalculatedField','recBenefitsDateField',
-      'recFacepontoField','recFacepontoDateField','recPayjoyField','recPayjoyDateField',
-      'recBirthdayField','recBirthdayDateField','recPhotoField','recAsoRequestedField',
-      'recAsoClinicField','recAsoValueField','recAsoDateField','recAsoCnpjField','recShoppingField','recDriveLinkField',
-      'recDentalField','recDentalDateField','recReferencesField'
-    ];
-    stage3Ids.forEach(id => { el(id).hidden = !stage3; });
-    const stage4 = status === 'integracao';
-    ['recStage4Section','recIntegrationMeetingField','recIntegrationTermSignedField',
-      'recIntegrationTermFileField','recIntegrationPrintFileField','recIntegrationTranscriptField']
-      .forEach(id => { el(id).hidden = !stage4; });
-    el('recPaymentsSection').hidden = !el('recCandidateId').value;
+    const all = recDetailsMode;
+    const hired = status === 'contratado' || status === 'integracao';
+    const approved = el('recInterviewResult').value === 'aprovado';
+    const stages = {
+      1: all || status === 'selecionado_entrevista',
+      2: all || status === 'em_teste' || (status === 'selecionado_entrevista' && approved),
+      3: all || status === 'em_treinamento'
+    };
+    document.querySelectorAll('#recCandidateForm [data-rec-stage]').forEach(node => { node.hidden = !stages[node.dataset.recStage]; });
+    REC_CHECKLIST_FIELD_IDS.forEach(id => { el(id).hidden = !(all || hired); });
+    el('recCancelFieldset').hidden = !(status === 'cancelado' || (all && Boolean(el('recCancelledAt').value || el('recCancelledReason').value)));
+    el('recPaymentsSection').hidden = !el('recCandidateId').value || !(all || status === 'em_teste' || status === 'em_treinamento');
+  }
+  function recUpdateAdmissionCnpj(){
+    const company = companies.find(item => item.id === el('recAdmissionCompanyId').value);
+    el('recAdmissionCnpj').value = company ? (company.cnpj || 'LOJA SEM CNPJ CADASTRADO') : '';
+  }
+  if(el('recInterviewResult')) el('recInterviewResult').addEventListener('change', () => recToggleStageFields(el('recStatus').value));
+  if(el('recAdmissionCompanyId')) el('recAdmissionCompanyId').addEventListener('change', recUpdateAdmissionCnpj);
+  function recTriOption(value){
+    return Number(value) === 2 ? 'na' : value ? 'sim' : 'nao';
   }
 
   if(el('recStatus')) el('recStatus').addEventListener('change', () => recToggleStageFields(el('recStatus').value));
@@ -46631,11 +46992,18 @@ function renderHomeTasks(){
     container.innerHTML = 'Arquivo atual: <a href="/api/hr-recruitment/file?kind='+kind+'&id='+encodeURIComponent(row.id)+'" target="_blank" rel="noopener">'+escapeHtml(fileName || 'ARQUIVO')+'</a>';
   }
 
-  function openRecCandidateDialog(row){
+  function openRecCandidateDialog(row, details){
     el('recCandidateForm').reset();
+    recDetailsMode = Boolean(details && row);
     el('recCandidateId').value = row ? row.id : '';
-    el('recCandidateDialogTitle').textContent = row ? 'EDITAR CANDIDATO' : 'NOVO CANDIDATO';
+    el('recCandidateDialogTitle').textContent = recDetailsMode ? 'DETALHES DO CANDIDATO' : row ? 'EDITAR CANDIDATO' : 'NOVO CANDIDATO';
     el('recFullName').value = row ? row.fullName : '';
+    el('recPhone').value = row ? (row.phone || '') : '';
+    el('recTrainingScheduleScriptSent').value = recBoolOption(row && row.trainingScheduleScriptSent);
+    el('recTrainingConfirmed').value = recBoolOption(row && row.trainingConfirmed);
+    el('recTrainingScriptSent').value = recBoolOption(row && row.trainingScriptSent);
+    el('recTrainingTrainerInformed').value = recBoolOption(row && row.trainingTrainerInformed);
+    el('recChecklistDate').value = row ? (row.checklistDate || '') : '';
     el('recDesiredRole').value = row ? row.desiredRole : '';
     el('recStatus').value = row ? row.status : 'selecionado_entrevista';
     el('recStatusNote').value = '';
@@ -46648,42 +47016,42 @@ function renderHomeTasks(){
     el('recTestConfirmed').value = recBoolOption(row && row.testConfirmed);
     el('recCancelledAt').value = row ? row.cancelledAt : '';
     el('recCancelledReason').value = row ? row.cancelledReason : '';
-    el('recKitDelivered').value = recBoolOption(row && row.kitDelivered);
+    el('recKitDelivered').value = recTriOption(row && row.kitDelivered);
     el('recKitDeliveredDate').value = row ? row.kitDeliveredDate : '';
     el('recTrainingStartDate').value = row ? row.trainingStartDate : '';
     el('recAdmissionDate').value = row ? row.admissionDate : '';
     el('recAdmissionCompanyId').value = row ? row.admissionCompanyId : '';
     el('recFixedUnitId').value = row ? row.fixedUnitId : '';
-    el('recUniformSent').value = recBoolOption(row && row.uniformSent);
+    el('recUniformSent').value = recTriOption(row && row.uniformSent);
     el('recUniformSentDate').value = row ? row.uniformSentDate : '';
-    el('recSystem1Done').value = recBoolOption(row && row.system1Done);
+    el('recSystem1Done').value = recTriOption(row && row.system1Done);
     el('recSystem1Date').value = row ? row.system1Date : '';
-    el('recSystem2Done').value = recBoolOption(row && row.system2Done);
+    el('recSystem2Done').value = recTriOption(row && row.system2Done);
     el('recSystem2Date').value = row ? row.system2Date : '';
-    el('recSystem3Done').value = recBoolOption(row && row.system3Done);
+    el('recSystem3Done').value = recTriOption(row && row.system3Done);
     el('recSystem3Date').value = row ? row.system3Date : '';
-    el('recIfoodDone').value = recBoolOption(row && row.ifoodDone);
+    el('recIfoodDone').value = recTriOption(row && row.ifoodDone);
     el('recIfoodDate').value = row ? row.ifoodDate : '';
-    el('recBenefitsIncluded').value = recBoolOption(row && row.benefitsIncluded);
-    el('recBenefitsCalculated').value = recBoolOption(row && row.benefitsCalculated);
+    el('recBenefitsIncluded').value = recTriOption(row && row.benefitsIncluded);
+    el('recBenefitsCalculated').value = recTriOption(row && row.benefitsCalculated);
     el('recBenefitsDate').value = row ? row.benefitsDate : '';
-    el('recFacepontoDone').value = recBoolOption(row && row.facepontoDone);
+    el('recFacepontoDone').value = recTriOption(row && row.facepontoDone);
     el('recFacepontoDate').value = row ? row.facepontoDate : '';
-    el('recPayjoyDone').value = recBoolOption(row && row.payjoyDone);
+    el('recPayjoyDone').value = recTriOption(row && row.payjoyDone);
     el('recPayjoyDate').value = row ? row.payjoyDate : '';
-    el('recBirthdayListAdded').value = recBoolOption(row && row.birthdayListAdded);
+    el('recBirthdayListAdded').value = recTriOption(row && row.birthdayListAdded);
     el('recBirthdayListDate').value = row ? row.birthdayListDate : '';
-    el('recPhotoTaken').value = recBoolOption(row && row.photoTaken);
-    el('recAsoRequested').value = recBoolOption(row && row.asoRequested);
+    el('recPhotoTaken').value = recTriOption(row && row.photoTaken);
+    el('recAsoRequested').value = recTriOption(row && row.asoRequested);
     el('recAsoClinic').value = row ? row.asoClinic : '';
     setCurrencyValue(el('recAsoValue'), row && row.asoValueCents ? row.asoValueCents / 100 : '');
     el('recAsoDate').value = row ? (row.asoDate || '') : '';
     el('recAsoClinicCnpj').value = row ? (row.asoClinicCnpj || '') : '';
-    el('recShoppingRegistered').value = recBoolOption(row && row.shoppingRegistered);
+    el('recShoppingRegistered').value = recTriOption(row && row.shoppingRegistered);
     el('recAdmissionDocsDriveLink').value = row ? row.admissionDocsDriveLink : '';
-    el('recDentalPlanIncluded').value = recBoolOption(row && row.dentalPlanIncluded);
+    el('recDentalPlanIncluded').value = recTriOption(row && row.dentalPlanIncluded);
     el('recDentalPlanDate').value = row ? row.dentalPlanDate : '';
-    el('recReferencesChecked').value = recBoolOption(row && row.referencesChecked);
+    el('recReferencesChecked').value = recTriOption(row && row.referencesChecked);
     el('recIntegrationMeetingDone').value = recBoolOption(row && row.integrationMeetingDone);
     el('recIntegrationTermSigned').value = recBoolOption(row && row.integrationTermSigned);
     el('recIntegrationTermFile').value = '';
@@ -46691,12 +47059,14 @@ function renderHomeTasks(){
     el('recIntegrationMeetingTranscript').value = row ? row.integrationMeetingTranscript : '';
     recSetAttachmentStatus('term', row);
     recSetAttachmentStatus('print', row);
+    recUpdateAdmissionCnpj();
     recToggleStageFields(el('recStatus').value);
-    const manage = recCanManage();
-    el('recCandidateForm').querySelectorAll('input, select, textarea, button[type=submit]').forEach(field => {
-      if(field.id === 'recCandidateId') return;
+    const manage = recCanManage() && !recDetailsMode;
+    el('recCandidateForm').querySelectorAll('input, select, textarea, button').forEach(field => {
+      if(field.id === 'recCandidateId' || field.id === 'btnCancelRecCandidateDialog') return;
       field.disabled = !manage;
     });
+    el('btnSaveRecCandidate').hidden = !manage;
     el('recCandidateFormStatus').textContent = '';
     recCurrentPayments = [];
     recCurrentHistory = [];
@@ -46774,6 +47144,12 @@ function renderHomeTasks(){
     const payload = {
       id: el('recCandidateId').value || undefined,
       fullName: el('recFullName').value,
+      phone: el('recPhone').value,
+      trainingScheduleScriptSent: recBoolValue(el('recTrainingScheduleScriptSent').value),
+      trainingConfirmed: recBoolValue(el('recTrainingConfirmed').value),
+      trainingScriptSent: recBoolValue(el('recTrainingScriptSent').value),
+      trainingTrainerInformed: recBoolValue(el('recTrainingTrainerInformed').value),
+      checklistDate: el('recChecklistDate').value,
       desiredRole: el('recDesiredRole').value,
       status: el('recStatus').value,
       statusNote: el('recStatusNote').value,
@@ -46786,7 +47162,7 @@ function renderHomeTasks(){
       testConfirmed: recBoolValue(el('recTestConfirmed').value),
       cancelledAt: el('recCancelledAt').value,
       cancelledReason: el('recCancelledReason').value,
-      kitDelivered: recBoolValue(el('recKitDelivered').value),
+      kitDelivered: el('recKitDelivered').value,
       kitDeliveredDate: el('recKitDeliveredDate').value,
       trainingStartDate: el('recTrainingStartDate').value,
       admissionDate: el('recAdmissionDate').value,
@@ -46794,36 +47170,36 @@ function renderHomeTasks(){
       admissionCompanyName: (companies.find(company => company.id === companyId) || {}).name || '',
       fixedUnitId: el('recFixedUnitId').value,
       fixedUnitName: (companies.find(company => company.id === el('recFixedUnitId').value) || {}).name || '',
-      uniformSent: recBoolValue(el('recUniformSent').value),
+      uniformSent: el('recUniformSent').value,
       uniformSentDate: el('recUniformSentDate').value,
-      system1Done: recBoolValue(el('recSystem1Done').value),
+      system1Done: el('recSystem1Done').value,
       system1Date: el('recSystem1Date').value,
-      system2Done: recBoolValue(el('recSystem2Done').value),
+      system2Done: el('recSystem2Done').value,
       system2Date: el('recSystem2Date').value,
-      system3Done: recBoolValue(el('recSystem3Done').value),
+      system3Done: el('recSystem3Done').value,
       system3Date: el('recSystem3Date').value,
-      ifoodDone: recBoolValue(el('recIfoodDone').value),
+      ifoodDone: el('recIfoodDone').value,
       ifoodDate: el('recIfoodDate').value,
-      benefitsIncluded: recBoolValue(el('recBenefitsIncluded').value),
-      benefitsCalculated: recBoolValue(el('recBenefitsCalculated').value),
+      benefitsIncluded: el('recBenefitsIncluded').value,
+      benefitsCalculated: el('recBenefitsCalculated').value,
       benefitsDate: el('recBenefitsDate').value,
-      facepontoDone: recBoolValue(el('recFacepontoDone').value),
+      facepontoDone: el('recFacepontoDone').value,
       facepontoDate: el('recFacepontoDate').value,
-      payjoyDone: recBoolValue(el('recPayjoyDone').value),
+      payjoyDone: el('recPayjoyDone').value,
       payjoyDate: el('recPayjoyDate').value,
-      birthdayListAdded: recBoolValue(el('recBirthdayListAdded').value),
+      birthdayListAdded: el('recBirthdayListAdded').value,
       birthdayListDate: el('recBirthdayListDate').value,
-      photoTaken: recBoolValue(el('recPhotoTaken').value),
-      asoRequested: recBoolValue(el('recAsoRequested').value),
+      photoTaken: el('recPhotoTaken').value,
+      asoRequested: el('recAsoRequested').value,
       asoClinic: el('recAsoClinic').value,
       asoValueCents: Math.round(Number(getCurrencyValue(el('recAsoValue')) || 0) * 100),
       asoDate: el('recAsoDate').value,
       asoClinicCnpj: el('recAsoClinicCnpj').value,
-      shoppingRegistered: recBoolValue(el('recShoppingRegistered').value),
+      shoppingRegistered: el('recShoppingRegistered').value,
       admissionDocsDriveLink: el('recAdmissionDocsDriveLink').value,
-      dentalPlanIncluded: recBoolValue(el('recDentalPlanIncluded').value),
+      dentalPlanIncluded: el('recDentalPlanIncluded').value,
       dentalPlanDate: el('recDentalPlanDate').value,
-      referencesChecked: recBoolValue(el('recReferencesChecked').value),
+      referencesChecked: el('recReferencesChecked').value,
       integrationMeetingDone: recBoolValue(el('recIntegrationMeetingDone').value),
       integrationTermSigned: recBoolValue(el('recIntegrationTermSigned').value),
       integrationMeetingTranscript: el('recIntegrationMeetingTranscript').value
@@ -46849,6 +47225,12 @@ function renderHomeTasks(){
     if(editButton){
       const row = recCandidates.find(item => item.id === editButton.dataset.recCandidateEdit);
       if(row) openRecCandidateDialog(row);
+      return;
+    }
+    const detailsButton = event.target.closest('[data-rec-candidate-details]');
+    if(detailsButton){
+      const row = recCandidates.find(item => item.id === detailsButton.dataset.recCandidateDetails);
+      if(row) openRecCandidateDialog(row, true);
       return;
     }
     const deleteButton = event.target.closest('[data-rec-candidate-delete]');
@@ -51024,6 +51406,107 @@ function renderHomeTasks(){
     }
   }
 
+  // Grade do mês: todos os dias numa tabela (como a planilha), salvos de uma vez.
+  let rhTimeGridTarget = 480;
+  const RH_WEEKDAYS = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+  function rhTimeGridMinutes(times){
+    let total = 0;
+    for(let index = 0; index + 1 < times.length; index += 2){
+      const [h1, m1] = times[index].split(':').map(Number);
+      const [h2, m2] = times[index + 1].split(':').map(Number);
+      total += Math.max(0, (h2 * 60 + m2) - (h1 * 60 + m1));
+    }
+    return total;
+  }
+  function rhTimeGridFmt(minutes){
+    const sign = minutes < 0 ? '-' : '';
+    const abs = Math.abs(minutes);
+    return sign+Math.floor(abs / 60)+'h'+String(abs % 60).padStart(2,'0');
+  }
+  function rhTimeGridRowTimes(row){
+    return Array.from(row.querySelectorAll('input[type=time]')).map(input => input.value).filter(Boolean);
+  }
+  function rhTimeGridRecalc(){
+    let worked = 0, balance = 0;
+    document.querySelectorAll('#rhTimeGridBody tr').forEach(row => {
+      const times = rhTimeGridRowTimes(row);
+      const minutes = times.length >= 2 ? rhTimeGridMinutes(times) : 0;
+      row.querySelector('[data-grid-worked]').textContent = times.length ? rhTimeGridFmt(minutes) : '—';
+      row.querySelector('[data-grid-balance]').textContent = times.length ? rhTimeGridFmt(minutes - rhTimeGridTarget) : '—';
+      if(times.length){ worked += minutes; balance += minutes - rhTimeGridTarget; }
+    });
+    el('rhTimeGridTotalWorked').textContent = rhTimeGridFmt(worked);
+    el('rhTimeGridTotalBalance').textContent = rhTimeGridFmt(balance);
+  }
+  async function openRhTimeGrid(){
+    const employeeId = el('rhTimeTrackEmployeeSelect').value;
+    const month = el('rhTimeTrackMonth').value;
+    if(!employeeId || !month){ showPurchaseToast('SELECIONE O COLABORADOR E O MÊS.','error'); return; }
+    try{
+      const [entries, settings] = await Promise.all([
+        rhTimeTrackApiRequest('/entries?employeeId='+encodeURIComponent(employeeId)+'&month='+encodeURIComponent(month)),
+        rhTimeTrackApiRequest('/settings')
+      ]);
+      const setting = (settings.settings || []).find(item => item.employeeId === employeeId);
+      rhTimeGridTarget = setting ? Number(setting.dailyTargetMinutes) : 480;
+      const byDate = new Map((entries.entries || []).map(entry => [entry.entryDate, entry]));
+      const [year, monthNumber] = month.split('-').map(Number);
+      const days = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+      const rows = [];
+      for(let day = 1; day <= days; day++){
+        const date = month+'-'+String(day).padStart(2,'0');
+        const weekday = new Date(date+'T12:00:00Z').getUTCDay();
+        const punches = String((byDate.get(date) || {}).punches || '').split(',').map(item => item.trim()).filter(Boolean);
+        rows.push('<tr data-grid-date="'+date+'"'+(weekday === 0 ? ' class="rh-grid-sunday"' : '')+'><td>'+String(day).padStart(2,'0')+' '+RH_WEEKDAYS[weekday]+'</td>'+
+          [0,1,2,3,4,5].map(index => '<td><input type="time" step="60" value="'+escapeHtml(punches[index] || '')+'" aria-label="Marcação '+(index + 1)+' do dia '+day+'"></td>').join('')+
+          '<td data-grid-worked></td><td data-grid-balance></td></tr>');
+      }
+      el('rhTimeGridBody').innerHTML = rows.join('');
+      el('rhTimeGridInfo').textContent = (el('rhTimeTrackEmployeeSelect').selectedOptions[0] || {}).textContent+' · '+rhFormatMonth(month)+' · JORNADA '+rhTimeGridFmt(rhTimeGridTarget)+' POR DIA. DIA EM BRANCO = SEM LANÇAMENTO.';
+      el('rhTimeGridStatus').textContent = '';
+      rhTimeGridRecalc();
+      el('rhTimeGridDialog').showModal();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  }
+  if(el('btnRhTimeTrackGrid')) el('btnRhTimeTrackGrid').addEventListener('click', openRhTimeGrid);
+  ['btnCloseRhTimeGrid','btnCancelRhTimeGrid'].forEach(id => { if(el(id)) el(id).addEventListener('click', () => el('rhTimeGridDialog').close()); });
+  if(el('rhTimeGridBody')) el('rhTimeGridBody').addEventListener('input', rhTimeGridRecalc);
+  if(el('btnRhTimeGridCopy')) el('btnRhTimeGridCopy').addEventListener('click', () => {
+    const rows = Array.from(document.querySelectorAll('#rhTimeGridBody tr'));
+    const source = rows.find(row => rhTimeGridRowTimes(row).length);
+    if(!source){ showPurchaseToast('PREENCHA PRIMEIRO UM DIA.','error'); return; }
+    const values = Array.from(source.querySelectorAll('input[type=time]')).map(input => input.value);
+    rows.forEach(row => {
+      const weekday = new Date(row.dataset.gridDate+'T12:00:00Z').getUTCDay();
+      if(weekday === 0 || weekday === 6 || rhTimeGridRowTimes(row).length) return;
+      row.querySelectorAll('input[type=time]').forEach((input, index) => { input.value = values[index] || ''; });
+    });
+    rhTimeGridRecalc();
+  });
+  if(el('rhTimeGridForm')) el('rhTimeGridForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const days = Array.from(document.querySelectorAll('#rhTimeGridBody tr')).map(row => ({
+      entryDate:row.dataset.gridDate,
+      punches:rhTimeGridRowTimes(row).join(',')
+    }));
+    const button = el('btnSaveRhTimeGrid');
+    button.disabled = true;
+    try{
+      await rhTimeTrackApiRequest('/entries', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        employeeId:el('rhTimeTrackEmployeeSelect').value, month:el('rhTimeTrackMonth').value, days
+      })});
+      el('rhTimeGridDialog').close();
+      await loadRhTimeTrackEntries();
+      showPurchaseToast('MÊS SALVO.');
+    }catch(error){
+      el('rhTimeGridStatus').textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
   async function loadRhTimeTrackBalance(){
     const employeeId = el('rhTimeTrackEmployeeSelect').value;
     const body = el('rhTimeTrackBalanceTableBody');
@@ -51056,6 +51539,7 @@ function renderHomeTasks(){
     await loadRhTimeTrackEmployees();
     if(el('btnRhTimeTrackSettings')) el('btnRhTimeTrackSettings').hidden = !rhTimeTrackCanManage();
     if(el('btnNewRhTimeTrackEntry')) el('btnNewRhTimeTrackEntry').hidden = !rhTimeTrackCanManage();
+    if(el('btnRhTimeTrackGrid')) el('btnRhTimeTrackGrid').hidden = !rhTimeTrackCanManage();
     if(el('rhTimeTrackMonth') && !el('rhTimeTrackMonth').value){
       const now = new Date();
       el('rhTimeTrackMonth').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
@@ -51180,12 +51664,14 @@ function renderHomeTasks(){
     const status = el('rhTimeTrackSettingsFormStatus');
     status.textContent = '';
     const employeeId = el('rhTimeTrackSettingsEmployee').value;
-    const hours = Number(el('rhTimeTrackSettingsHours').value);
+    // Jornada em HH:MM (ex.: 08:48 = 528 min). O campo numérico antigo só
+    // aceitava múltiplos de 0,25h e recusava 8h48.
+    const match = /^(\d{1,2}):(\d{2})$/.exec(el('rhTimeTrackSettingsHours').value);
     if(!employeeId){ status.textContent = 'SELECIONE O COLABORADOR.'; return; }
-    if(!Number.isFinite(hours) || hours < 0){ status.textContent = 'INFORME UMA JORNADA VÁLIDA.'; return; }
+    if(!match){ status.textContent = 'INFORME A JORNADA EM HORAS E MINUTOS (EX.: 08:48).'; return; }
     const payload = {
       employeeId,
-      dailyTargetMinutes: Math.round(hours * 60),
+      dailyTargetMinutes: Number(match[1]) * 60 + Number(match[2]),
       notes: el('rhTimeTrackSettingsNotes').value
     };
     try{

@@ -126,6 +126,7 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   hr_schedule_weekday_off: ["employee_name", "created_by_name", "updated_by_name"],
   hr_schedule_day_notes: ["company_name", "notes", "created_by_name", "updated_by_name"],
   hr_terminations: ["employee_name", "company_name", "notes", "reason_other", "created_by_name", "updated_by_name"],
+  hr_store_followups: ["company_name", "leader_name", "member_name", "topic", "notes", "created_by_name", "updated_by_name"],
   hr_onboarding_videos: ["title", "description", "role_title", "company_name", "created_by_name", "updated_by_name"],
   hr_aso_exams: ["employee_name", "company_name", "clinic_name", "notes", "created_by_name", "updated_by_name"],
   commercial_monthly: ["employee_name", "company_name", "updated_by_name"],

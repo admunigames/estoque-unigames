@@ -125,7 +125,10 @@ export function centsValue(value: unknown) {
 }
 
 export const CANDIDATE_COLUMNS = `
-  id, full_name AS fullName, desired_role AS desiredRole, status,
+  id, full_name AS fullName, desired_role AS desiredRole, status, phone,
+  training_schedule_script_sent AS trainingScheduleScriptSent, training_confirmed AS trainingConfirmed,
+  training_script_sent AS trainingScriptSent, training_trainer_informed AS trainingTrainerInformed,
+  checklist_date AS checklistDate,
   interview_date AS interviewDate, interview_time AS interviewTime, script_sent AS scriptSent,
   interview_result AS interviewResult, interview_result_reason AS interviewResultReason,
   test_script_sent AS testScriptSent, test_confirmed AS testConfirmed,
@@ -165,6 +168,12 @@ export type CandidateRow = {
   fullName: string;
   desiredRole: string;
   status: string;
+  phone: string;
+  trainingScheduleScriptSent: number;
+  trainingConfirmed: number;
+  trainingScriptSent: number;
+  trainingTrainerInformed: number;
+  checklistDate: string;
   interviewDate: string;
   interviewTime: string;
   scriptSent: number;

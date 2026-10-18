@@ -1,5 +1,5 @@
 import { getD1 } from "../../../../db";
-import { checklistPendingCount, normalizeChecklist, terminationError } from "../../../lib/hr-rh";
+import { DATE_RE, checklistPendingCount, normalizeChecklist, terminationError } from "../../../lib/hr-rh";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { actorName, identity, jsonResponse, rhCan, safeText, sameOrigin, type JsonMap } from "../shared";
 
@@ -19,6 +19,7 @@ type Row = {
   reason: string;
   reasonOther: string;
   checklistJson: string;
+  severancePaidDate: string;
   updatedByName: string;
   updatedAt: string;
 };
@@ -35,6 +36,7 @@ export async function GET(request: Request) {
         `SELECT id, employee_id AS employeeId, employee_name AS employeeName, company_id AS companyId,
                 company_name AS companyName, termination_date AS terminationDate, reason,
                 reason_other AS reasonOther, checklist_json AS checklistJson,
+                severance_paid_date AS severancePaidDate,
                 updated_by_name AS updatedByName, updated_at AS updatedAt
          FROM hr_terminations ORDER BY termination_date DESC, employee_name ASC`,
       )
@@ -65,7 +67,9 @@ export async function POST(request: Request) {
     const terminationDate = safeText(body.terminationDate, 10);
     const reason = safeText(body.reason, 30);
     const reasonOther = safeText(body.reasonOther, 300);
-    const error = terminationError(terminationDate, reason, reasonOther);
+    const paid = safeText(body.severancePaidDate, 10);
+    const error = terminationError(terminationDate, reason, reasonOther) ||
+      (paid && !DATE_RE.test(paid) ? "INFORME UMA DATA DE PAGAMENTO DA RESCISÃO VÁLIDA." : "");
     if (error) return jsonResponse({ error }, 400);
     const checklist = normalizeChecklist(body.checklist);
     for (const entry of Object.values(checklist)) entry.note = entry.note.toLocaleUpperCase("pt-BR");
@@ -75,9 +79,9 @@ export async function POST(request: Request) {
     await database
       .prepare(
         `UPDATE hr_terminations SET termination_date=?1, reason=?2, reason_other=?3, checklist_json=?4,
-           updated_by=?5, updated_by_name=?6, updated_at=CURRENT_TIMESTAMP WHERE id=?7`,
+           updated_by=?5, updated_by_name=?6, updated_at=CURRENT_TIMESTAMP, severance_paid_date=?8 WHERE id=?7`,
       )
-      .bind(terminationDate, reason, reason === "outro" ? reasonOther : "", JSON.stringify(checklist), actor.id, actorName(actor), id)
+      .bind(terminationDate, reason, reason === "outro" ? reasonOther : "", JSON.stringify(checklist), actor.id, actorName(actor), id, paid)
       .run();
     return jsonResponse({ updated: true, id, pending: checklistPendingCount(JSON.stringify(checklist)) });
   } catch (error) {

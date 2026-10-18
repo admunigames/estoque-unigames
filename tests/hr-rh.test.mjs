@@ -12,7 +12,8 @@ const db = await setupRouteDb([
   "shared_state", "app_users", "push_subscriptions", "push_delivery_log", "hr_settings",
   "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_terminations", "hr_aso_exams",
   "hr_recruitment_candidates", "hr_recruitment_status_history", "hr_recruitment_test_payments", "hr_leader_pdi",
-  "hr_onboarding_videos", "hr_onboarding_progress",
+  "hr_onboarding_videos", "hr_onboarding_progress", "hr_store_followups", "hr_time_tracking_entries",
+  "hr_time_tracking_settings", "hr_schedule_assignments",
 ]);
 db.insert("shared_state", { state_key: "companies_list", value_json: JSON.stringify([{ id: "clojaalfa1", name: "LOJA ALFA" }, { id: "clojabeta1", name: "LOJA BETA" }]) });
 db.insert("app_users", { id: "rh1", username: "rh1", display_name: "RH", password_hash: "x", password_salt: "x", role: "user", access_group: "custom", permissions_json: JSON.stringify(["rh_recrutamento:manage", "rh_exames:view", "rh_aniversariantes:view", "rh_onboarding:track"]), active: 1 });
@@ -85,9 +86,10 @@ test("desligamento: só fica INATIVO com data e motivo; checklist pode ficar pen
   assert.equal(ok.status, 200);
   const termination = db.sqlite.prepare("SELECT termination_date, reason, checklist_json FROM hr_terminations WHERE employee_id=?").get(id);
   assert.equal(termination.reason, "pedido_demissao");
-  assert.equal(lib.checklistPendingCount(termination.checklist_json), 8);
+  assert.equal(lib.checklistPendingCount(termination.checklist_json), 14);
+  assert.equal(lib.checklistPendingCount("{}"), 0, "rescisão anterior ao checklist não gera alerta");
   const listed = (await (await callRoute(employees.GET, ADMIN, "GET", "/api/hr-payroll/employees")).json()).employees.find((e) => e.id === id);
-  assert.equal(listed.offboardingPending, 8, "alerta de checklist pendente na lista");
+  assert.equal(listed.offboardingPending, 14, "alerta de checklist pendente na lista");
 });
 
 test("exames: vencimento = exame + 12 meses; SEM EXAME e alertas só de funcionários ativos", async () => {
@@ -181,4 +183,108 @@ test("onboarding: vídeo só conclui assistido até o fim; pular não conta", as
   const track = await (await callRoute(onboarding.GET, { id: "rh1", permissions: ["rh_onboarding:track"] }, "GET", "/api/hr-rh/onboarding?scope=track")).json();
   assert.equal(track.people.find((person) => person.id === "e-novo").percent, 100);
   assert.equal((await callRoute(onboarding.GET, COLAB, "GET", "/api/hr-rh/onboarding?scope=track")).status, 403);
+});
+
+const contacts = await import("../app/api/hr-recruitment/contacts/route.ts");
+const dre = await import("../app/api/hr-payroll/employee-dre/route.ts");
+const followups = await import("../app/api/hr-store-tracking/followups/route.ts");
+const timeEntries = await import("../app/api/hr-time-tracking/entries/route.ts");
+const offboarding = await import("../app/api/hr-rh/offboarding/route.ts");
+
+test("recrutamento por etapas: telefone, NÃO SE APLICA, filtro CONTRATADO inclui INTEGRAÇÃO e contatos em lote", async () => {
+  const created = await callRoute(candidates.POST, ADMIN, "POST", "/api/hr-recruitment/candidates", { fullName: "lia", phone: "(81) 99999-0000" });
+  const id = (await created.json()).id;
+  db.sqlite.prepare("UPDATE hr_recruitment_candidates SET status='integracao' WHERE id=?").run(id);
+  const hired = (await (await callRoute(candidates.GET, ADMIN, "GET", "/api/hr-recruitment/candidates?status=contratado")).json()).candidates;
+  assert.ok(hired.some((row) => row.id === id), "INTEGRAÇÃO aparece no filtro CONTRATADO");
+  assert.equal(hired.find((row) => row.id === id).phone, "(81) 99999-0000");
+  assert.equal(lib.checklistValue("na"), 2);
+  assert.equal(lib.checklistValue("sim"), 1);
+  assert.equal(lib.checklistValue("nao"), 0);
+  const saved = await callRoute(contacts.POST, ADMIN, "POST", "/api/hr-recruitment/contacts", { items: [{ id, fullName: "lia souza", phone: "81988887777" }] });
+  assert.equal(saved.status, 200);
+  assert.deepEqual({ ...db.sqlite.prepare("SELECT full_name, phone FROM hr_recruitment_candidates WHERE id=?").get(id) }, { full_name: "LIA SOUZA", phone: "81988887777" });
+  assert.equal((await callRoute(contacts.POST, { id: "v", permissions: ["rh_recrutamento:view"] }, "POST", "/api/hr-recruitment/contacts", { items: [] })).status, 403);
+});
+
+test("recrutamento: lembrete diário dos itens pendentes do checklist admissional (NÃO SE APLICA não cobra)", async () => {
+  const day = "2026-10-18";
+  const all = Object.fromEntries(lib.ADMISSION_CHECKLIST.map(([field]) => [field.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase()), 1]));
+  db.insert("hr_recruitment_candidates", { id: "c-pend", full_name: "RUI", status: "contratado", admission_date: "2026-10-10", admission_company_name: "LOJA ALFA", created_by: "admin1", ...all, ifood_done: 0, payjoy_done: 2 });
+  db.insert("hr_recruitment_candidates", { id: "c-velho", full_name: "VELHO", status: "contratado", admission_date: "2026-01-10", created_by: "admin1" });
+  await alerts.dispatchAdmissionReminders(db, null, day);
+  const task = tasksOf("rh1", day).find((item) => item.id === "rec-pend-c-pend-" + day);
+  assert.equal(task.text, "PENDÊNCIAS ADMISSIONAIS — RUI — LOJA ALFA: IFOOD");
+  assert.equal(tasksOf("rh1", day).some((item) => item.id.startsWith("rec-pend-c-velho")), false, "admissão antiga não é cobrada");
+});
+
+test("desligamento: rescisão paga com data", async () => {
+  db.insert("hr_terminations", { id: "t-pago", employee_id: "x", employee_name: "X", termination_date: "2026-10-01", checklist_json: "{}" });
+  const response = await callRoute(offboarding.POST, ADMIN, "POST", "/api/hr-rh/offboarding", { id: "t-pago", terminationDate: "2026-10-01", reason: "acordo", severancePaidDate: "2026-10-11", checklist: {} });
+  assert.equal(response.status, 200);
+  assert.equal(db.sqlite.prepare("SELECT severance_paid_date FROM hr_terminations WHERE id='t-pago'").get().severance_paid_date, "2026-10-11");
+  assert.equal((await callRoute(offboarding.POST, ADMIN, "POST", "/api/hr-rh/offboarding", { id: "t-pago", terminationDate: "2026-10-01", reason: "acordo", severancePaidDate: "11/10" })).status, 400);
+});
+
+test("DRE: por CNPJ com FGTS de 8% do salário (loja do mês das Escalas) e dias pagos do treinamento", async () => {
+  db.sqlite.exec("DELETE FROM hr_employees; DELETE FROM hr_terminations; DELETE FROM hr_recruitment_candidates; DELETE FROM hr_aso_exams;");
+  db.sqlite.prepare("UPDATE shared_state SET value_json=? WHERE state_key='companies_list'").run(JSON.stringify([
+    { id: "clojaalfa1", name: "LOJA ALFA", cnpj: "11.222.333/0001-81" },
+    { id: "clojabeta1", name: "LOJA BETA", cnpj: "11222333000181" },
+    { id: "clojagama1", name: "LOJA GAMA", cnpj: "" },
+  ]));
+  const emp = (id, company, salary, extra = {}) => db.insert("hr_employees", { id, full_name: id.toUpperCase(), company_id: company, salary_cents: salary, status: "active", admission_date: "2026-01-01", created_by: "x", ...extra });
+  emp("p1", "clojaalfa1", 200000);
+  emp("p2", "clojabeta1", 300000);
+  emp("p3", "clojagama1", 100000);
+  emp("p4", "clojagama1", 150000, { admission_date: "2026-11-01" });
+  db.insert("hr_schedule_assignments", { id: "s1", employee_id: "p3", employee_name: "P3", company_id: "clojaalfa1", reference_month: "2026-10" });
+  db.insert("hr_recruitment_candidates", { id: "c-tr", full_name: "TREINO", status: "em_treinamento", fixed_unit_id: "clojaalfa1", fixed_unit_name: "LOJA ALFA", created_by: "x" });
+  db.insert("hr_recruitment_test_payments", { id: "tp1", candidate_id: "c-tr", amount_cents: 5000, paid_date: "2026-10-05" });
+  db.insert("hr_recruitment_test_payments", { id: "tp2", candidate_id: "c-tr", amount_cents: 5000, paid_date: "2026-10-03" });
+  const report = await (await callRoute(dre.GET, ADMIN, "GET", "/api/hr-payroll/employee-dre?month=2026-10")).json();
+  const sameCnpj = report.byCnpj.find((row) => row.cnpj === "11222333000181");
+  assert.equal(sameCnpj.headcount, 3, "ALFA + BETA (mesmo CNPJ) + P3 escalado na ALFA no mês");
+  assert.equal(sameCnpj.salaryCents, 600000);
+  assert.equal(sameCnpj.fgtsMonthCents, 48000);
+  assert.equal(sameCnpj.trainingCents, 10000);
+  assert.equal(report.byCnpj.some((row) => row.cnpj === "" && row.headcount > 0), false, "admitido em novembro não conta em outubro");
+  const person = report.stores.find((store) => store.companyId === "clojaalfa1").people.find((item) => item.personName === "TREINO");
+  assert.deepEqual(person.trainingDates, ["2026-10-03", "2026-10-05"]);
+});
+
+test("acompanhamento por liderado: ciclo com 3 encontros (online, online, presencial) e filtro por loja", async () => {
+  const MANAGER = { id: "m", permissions: ["rh_acompanhamento:manage"] };
+  const post = (body) => callRoute(followups.POST, MANAGER, "POST", "/api/hr-store-tracking/followups", body);
+  const cycle = { action: "cycle", companyId: "clojaalfa1", companyName: "LOJA ALFA", leaderName: "LUIZ", leaderArea: "operacional", memberName: "ana", cycleStart: "2026-10-05" };
+  assert.equal((await post(cycle)).status, 201);
+  assert.equal((await post(cycle)).status, 409, "mesmo ciclo não duplica");
+  const list = (await (await callRoute(followups.GET, MANAGER, "GET", "/api/hr-store-tracking/followups?companyId=clojaalfa1")).json()).followups;
+  assert.deepEqual(list.map((row) => [row.week, row.mode, row.meetingDate]), [[1, "online", "2026-10-05"], [2, "online", "2026-10-12"], [3, "presencial", "2026-10-19"]]);
+  assert.equal(list[0].memberName, "ANA");
+  assert.equal((await post({ action: "meeting", id: list[2].id, meetingDate: "2026-10-20", done: true, topic: "vitrine", notes: "feito" })).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT done FROM hr_store_followups WHERE id=?").get(list[2].id).done, 1);
+  assert.equal((await callRoute(followups.GET, MANAGER, "GET", "/api/hr-store-tracking/followups?companyId=clojabeta1").then((r) => r.json())).followups.length, 0);
+  assert.equal((await callRoute(followups.POST, { id: "v", permissions: ["rh_acompanhamento:view"] }, "POST", "/api/hr-store-tracking/followups", cycle)).status, 403);
+});
+
+test("ponto em grade: salva o mês de uma vez, apaga dia limpo e recusa marcação inválida", async () => {
+  const MANAGER = { id: "pm", permissions: ["rh_ponto_logistica:manage"] };
+  db.insert("hr_time_tracking_settings", { id: "set1", employee_id: "log1", daily_target_minutes: 528, notes: "", created_by: "x" });
+  db.insert("hr_time_tracking_entries", { id: "old", employee_id: "log1", entry_date: "2026-10-03", punches: "08:00,12:00", worked_minutes: 240, target_minutes: 528, balance_minutes: -288, created_by: "x" });
+  const put = (days) => callRoute(timeEntries.PUT, MANAGER, "PUT", "/api/hr-time-tracking/entries", { employeeId: "log1", month: "2026-10", days });
+  const ok = await put([
+    { entryDate: "2026-10-01", punches: "08:00,12:00,13:00,17:48" },
+    { entryDate: "2026-10-02", punches: "08:00,12:00,13:00,18:00" },
+    { entryDate: "2026-10-03", punches: "" },
+  ]);
+  assert.equal(ok.status, 200);
+  const rows = db.sqlite.prepare("SELECT entry_date, worked_minutes, balance_minutes FROM hr_time_tracking_entries WHERE employee_id='log1' ORDER BY entry_date").all().map((row) => ({ ...row }));
+  assert.deepEqual(rows, [
+    { entry_date: "2026-10-01", worked_minutes: 528, balance_minutes: 0 },
+    { entry_date: "2026-10-02", worked_minutes: 540, balance_minutes: 12 },
+  ], "jornada 8h48 e dia limpo apagado");
+  const bad = await put([{ entryDate: "2026-10-04", punches: "08:00" }]);
+  assert.equal(bad.status, 400);
+  assert.match((await bad.json()).error, /^04\/10:/);
 });

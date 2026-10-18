@@ -3038,6 +3038,40 @@ export const hrLeaderPdi = pgTable(
   ],
 );
 
+// RH > Acompanhamento - Lojas — acompanhamento POR LIDERADO (out/2026): cada
+// liderado tem ciclos de 3 encontros (Semana 1 e 2 online, Semana 3
+// presencial), ligados ao líder (a loja pode ter líder COMERCIAL e
+// OPERACIONAL). Uma linha por encontro.
+export const hrStoreFollowups = pgTable(
+  "hr_store_followups",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    leaderName: text("leader_name").notNull().default(""),
+    // 'comercial' | 'operacional'
+    leaderArea: text("leader_area").notNull().default("comercial"),
+    memberName: text("member_name").notNull(),
+    cycleStart: text("cycle_start").notNull(),
+    week: integer("week").notNull(),
+    // 'online' | 'presencial'
+    mode: text("mode").notNull().default("online"),
+    meetingDate: text("meeting_date").notNull().default(""),
+    topic: text("topic").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    done: integer("done").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [
+    uniqueIndex("hr_store_followups_cycle_week_idx").on(table.companyId, table.memberName, table.cycleStart, table.week),
+  ],
+);
+
 // RH > Controle de Horas - Logística — lançamento manual do ponto de papel
 // (transcrição, não integração com relógio de ponto), por colaborador e
 // dia. A jornada (quantidade de marcações) e a jornada contratada (meta de
@@ -3171,6 +3205,16 @@ export const hrRecruitmentCandidates = pgTable(
     fullName: text("full_name").notNull(),
     desiredRole: text("desired_role").notNull().default(""),
     status: text("status").notNull().default("selecionado_entrevista"),
+    // Telefone/WhatsApp (lista NOME - CONTATO dos selecionados).
+    phone: text("phone").notNull().default(""),
+    // Etapa de TREINAMENTO (out/2026): agendamento igual ao do teste +
+    // script de treinamento e aviso ao responsável que vai treinar.
+    trainingScheduleScriptSent: integer("training_schedule_script_sent").notNull().default(0),
+    trainingConfirmed: integer("training_confirmed").notNull().default(0),
+    trainingScriptSent: integer("training_script_sent").notNull().default(0),
+    trainingTrainerInformed: integer("training_trainer_informed").notNull().default(0),
+    // Data única do checklist admissional (substitui uma data por item na tela).
+    checklistDate: text("checklist_date").notNull().default(""),
 
     // Etapa 1 — Selecionado Entrevista.
     interviewDate: text("interview_date").notNull().default(""),
@@ -3592,6 +3636,8 @@ export const hrTerminations = pgTable(
     reason: text("reason").notNull().default(""),
     reasonOther: text("reason_other").notNull().default(""),
     checklistJson: text("checklist_json").notNull().default("{}"),
+    // Data em que a rescisão foi paga ('' = ainda não paga).
+    severancePaidDate: text("severance_paid_date").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),

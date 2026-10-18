@@ -196,7 +196,7 @@ export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, rg, telefone, a
   salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName, status,
   work_schedule AS workSchedule, food_per_day_cents AS foodPerDayCents,
   transport_per_day_cents AS transportPerDayCents, benefit_notes AS benefitNotes,
-  user_id AS userId, notes, created_by AS createdBy, created_by_name AS createdByName,
+  user_id AS userId, notes, birth_date AS birthDate, created_by AS createdBy, created_by_name AS createdByName,
   created_at AS createdAt, updated_by AS updatedBy, updated_by_name AS updatedByName,
   updated_at AS updatedAt`;
 
@@ -229,18 +229,21 @@ export function terminationFields(value: unknown) {
   const date = safeText(raw.terminationDate, 10);
   const reason = safeText(raw.reason, 30);
   const reasonOther = safeText(raw.reasonOther, 300);
-  const error = terminationError(date, reason, reasonOther);
+  const paid = safeText(raw.severancePaidDate, 10);
+  const severancePaidDate = DATE_PATTERN.test(paid) ? paid : "";
+  const error = terminationError(date, reason, reasonOther) ||
+    (paid && !severancePaidDate ? "INFORME UMA DATA DE PAGAMENTO DA RESCISÃO VÁLIDA." : "");
   const checklist = normalizeChecklist(raw.checklist);
   // JSON não passa pela CAIXA ALTA do getD1: as observações convertem aqui.
   for (const entry of Object.values(checklist)) entry.note = entry.note.toLocaleUpperCase("pt-BR");
-  return { error, date, reason, reasonOther: reason === "outro" ? reasonOther : "", checklistJson: JSON.stringify(checklist) };
+  return { error, date, reason, reasonOther: reason === "outro" ? reasonOther : "", checklistJson: JSON.stringify(checklist), severancePaidDate };
 }
 
 export function insertTermination(
   database: Database,
   values: {
     employeeId: string; employeeName: string; companyId: string; companyName: string;
-    date: string; reason: string; reasonOther: string; checklistJson: string;
+    date: string; reason: string; reasonOther: string; checklistJson: string; severancePaidDate?: string;
     severanceCents?: number; fgtsCents?: number; notes?: string;
   },
   actor: Identity,
@@ -253,13 +256,13 @@ export function insertTermination(
         `INSERT INTO hr_terminations
           (id, employee_id, employee_name, company_id, company_name, termination_date,
            severance_cents, fgts_cents, notes, created_by, created_by_name, created_at,
-           updated_by, updated_by_name, updated_at, reason, reason_other, checklist_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, CURRENT_TIMESTAMP, ?10, ?11, CURRENT_TIMESTAMP, ?12, ?13, ?14)`,
+           updated_by, updated_by_name, updated_at, reason, reason_other, checklist_json, severance_paid_date)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, CURRENT_TIMESTAMP, ?10, ?11, CURRENT_TIMESTAMP, ?12, ?13, ?14, ?15)`,
       )
       .bind(
         id, values.employeeId, values.employeeName, values.companyId, values.companyName, values.date,
         values.severanceCents ?? 0, values.fgtsCents ?? 0, values.notes ?? "", actor.id, actorName(actor),
-        values.reason, values.reasonOther, values.checklistJson,
+        values.reason, values.reasonOther, values.checklistJson, values.severancePaidDate ?? "",
       ),
   };
 }
