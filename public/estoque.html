@@ -47269,8 +47269,7 @@ function renderHomeTasks(){
         : comPctBlockHtml('Assistência', c.assistPercent, assistNote)+comPctBlockHtml('Loja', c.storePercent, storeNote);
       // Comissão estimada só com comercial:commission (o servidor manda o total).
       const earn = c.totalCents !== undefined
-        ? '<p class="com-incentive">'+escapeHtml(rateText)+'<small>'+(comOverview.ownOnly ? 'Sua comissão estimada: ' : 'Comissão estimada de cada operacional: ')+escapeHtml(formatCentsBRL(c.totalCents))+
-          ' (contracheque '+escapeHtml(formatCentsBRL(c.payslipCents))+' + premiação '+escapeHtml(formatCentsBRL(c.premiumCents))+')</small></p>'
+        ? '<p class="com-incentive">'+escapeHtml(rateText)+'<small>'+(comOverview.ownOnly ? 'Sua comissão estimada: ' : 'Comissão estimada de cada operacional: ')+escapeHtml(formatCentsBRL(c.totalCents))+'</small></p>'
         : '';
       return '<article class="com-seller">'+
         '<header class="com-seller-head"><div class="com-seller-name"><strong>OPERACIONAIS · '+escapeHtml(group[0].companyName || 'SEM LOJA')+'</strong>'+
@@ -47335,7 +47334,7 @@ function renderHomeTasks(){
           row('Prêmio líder · loja '+comFormatPct(leader.storeRevenuePercent)+' e assistência '+comFormatPct(leader.assistPercent)+' (meta '+leader.storePercent+'%)', leader.storePremiumCents)+
         '</ul>'+
         (leader.qualified.length ? '<p class="com-commission-note">Vendedores com '+leader.sellerPercent+'%+: '+escapeHtml(leader.qualified.join(', '))+'</p>' : '')+
-        comCommissionSumHtml(commission)+
+        comCommissionSumHtml(commission, true)+
       '</article>';
     }
 
@@ -47352,10 +47351,12 @@ function renderHomeTasks(){
   }
 
   // CONTRACHEQUE (comissões) e PREMIAÇÃO separados; o total vai para o RH.
-  function comCommissionSumHtml(commission){
+  // Líder e operacional: só o total estimado (pedido de 18/10/2026).
+  function comCommissionSumHtml(commission, totalOnly){
+    const total = '<div class="com-commission-sum"><span>Total estimado</span><strong>'+escapeHtml(formatCentsBRL(commission.totalCents))+'</strong></div>';
+    if(totalOnly) return total;
     return '<div class="com-commission-split"><span>Contracheque</span><strong>'+escapeHtml(formatCentsBRL(commission.payslipCents))+'</strong></div>'+
-      '<div class="com-commission-split"><span>Premiação</span><strong>'+escapeHtml(formatCentsBRL(commission.premiumCents))+'</strong></div>'+
-      '<div class="com-commission-sum"><span>Total estimado</span><strong>'+escapeHtml(formatCentsBRL(commission.totalCents))+'</strong></div>';
+      '<div class="com-commission-split"><span>Premiação</span><strong>'+escapeHtml(formatCentsBRL(commission.premiumCents))+'</strong></div>'+total;
   }
 
   // Cartão do OPERACIONAL na aba Comissão (valor cheio, pela meta da loja).
@@ -47377,8 +47378,7 @@ function renderHomeTasks(){
         row('Premiação · assistência '+op.premiumPercent+'%+', c.assistPremiumCents)+
         row('Premiação · loja '+op.premiumPercent+'%+', c.storePremiumCents)+
       '</ul>'+
-      '<p class="com-commission-note">Comissão de natureza salarial: integra DSR, 13º, férias e FGTS.</p>'+
-      comCommissionSumHtml(c)+
+      comCommissionSumHtml(c, true)+
     '</article>';
   }
 
