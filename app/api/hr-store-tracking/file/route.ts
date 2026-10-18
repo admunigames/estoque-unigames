@@ -1,7 +1,7 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { DEFAULT_ATTACHMENT_CONTENT_TYPE, contentDisposition, documentsBucket } from "../../documents/shared";
-import { canViewStoreTracking, identity, safeText } from "../shared";
+import { canViewPdi, canViewStoreTracking, identity, safeText } from "../shared";
 
 // Abre/baixa a ata de presença anexada a um registro de PDI de líder ou de
 // acompanhamento por loja. Mesmo formato de app/api/hr-payroll/file/route.ts
@@ -32,12 +32,11 @@ async function storeTrackingFile(request: Request, head = false) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canViewStoreTracking(actor)) {
-    return fileError("VOCÊ NÃO TEM ACESSO A ESTA ATA.", 403);
-  }
-
   const url = new URL(request.url);
   const kind = safeText(url.searchParams.get("kind"), 20);
+  if (!(kind === "leader" ? canViewPdi(actor) : canViewStoreTracking(actor))) {
+    return fileError("VOCÊ NÃO TEM ACESSO A ESTA ATA.", 403);
+  }
   const id = safeText(url.searchParams.get("id"), 80);
   const table = TABLES[kind];
   if (!table || !/^[0-9a-f-]{36}$/i.test(id)) return fileError("REGISTRO INVÁLIDO.", 400);

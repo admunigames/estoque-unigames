@@ -10,6 +10,7 @@ import {
 } from "../../documents/shared";
 import {
   actorName,
+  canManagePdi,
   canManageStoreTracking,
   identity,
   jsonResponse,
@@ -270,7 +271,7 @@ export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManageStoreTracking(actor)) {
+  if (!canManagePdi(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ANEXAR A ATA." }, 403);
   }
   if (!sameOrigin(request)) {
@@ -282,6 +283,10 @@ export async function POST(request: Request) {
     if (contentType.includes("application/json")) {
       const payload = (await request.json()) as JsonMap;
       const action = safeText(payload.action, 20);
+      // Só PDI (rh_pdi:manage) não anexa no acompanhamento por loja.
+      if (action === "create" && payload.kind !== "leader" && !canManageStoreTracking(actor)) {
+        return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ANEXAR A ATA." }, 403);
+      }
       if (action === "create") return await createSession(payload);
       if (action === "complete") return await completeSession(payload, actor);
       if (action === "cancel") return await cancelSession(payload);
@@ -301,14 +306,14 @@ export async function DELETE(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
   const actor = identity(request);
-  if (!canManageStoreTracking(actor)) {
+  const url = new URL(request.url);
+  const kind = safeText(url.searchParams.get("kind"), 20);
+  if (!(kind === "leader" ? canManagePdi(actor) : canManageStoreTracking(actor))) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA REMOVER A ATA." }, 403);
   }
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
   }
-  const url = new URL(request.url);
-  const kind = safeText(url.searchParams.get("kind"), 20);
   const id = safeText(url.searchParams.get("id"), 80);
   const table = TABLES[kind];
   if (!table || !recordIdIsValid(id)) return jsonResponse({ error: "REGISTRO INVÁLIDO." }, 400);

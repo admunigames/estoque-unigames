@@ -2408,7 +2408,7 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.deepEqual(moduleNames, [...moduleNames].sort((a, b) => sortKey(a).localeCompare(sortKey(b))));
   assert.equal(moduleNames.filter((name) => /^RH/.test(name)).join(), "RH");
   const rhAreas = [...permissionGrid.matchAll(/data-permission-subgroup="([^"]+)"/g)].map((m) => m[1]);
-  assert.equal(rhAreas.length, 9);
+  assert.equal(rhAreas.length, 14);
   assert.deepEqual(rhAreas, [...rhAreas].sort((a, b) => sortKey(a).localeCompare(sortKey(b))));
   for (const value of ["payroll:manage", "rh_acompanhamento:view", "rh_ponto_logistica:view", "rh_recrutamento:view",
     "rh_fardamento:view", "rh_aniversariantes:view", "rh_odontologico:view", "rh_escalas:view"]) {
@@ -5481,4 +5481,13 @@ test("Insumos: painel SOLICITAÇÃO só aparece para quem pode solicitar (suppli
   const loader = extractNamedFunction(html, "loadSupplyRequest");
   assert.match(loader, /const canRequest = canAccess\('supplies:request'\);\n\s*el\('supplyRequestPanel'\)\.hidden = managesAllStores \|\| !canRequest;/);
   assert.match(loader, /if\(managesAllStores \|\| !canRequest \|\| supplyRequestLoading\) return;/);
+});
+
+test("o script inline do estoque.html compila (sem identificador declarado duas vezes)", async () => {
+  const { Script } = await import("node:vm");
+  const source = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  const scripts = [...source.matchAll(/<script(?![^>]*\bsrc=)([^>]*)>([\s\S]*?)<\/script>/g)]
+    .filter(([, attrs]) => !/type="(application\/json|module)"/.test(attrs));
+  assert.ok(scripts.length > 0);
+  for (const [, , code] of scripts) assert.doesNotThrow(() => new Script(code));
 });

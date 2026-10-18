@@ -1559,6 +1559,15 @@ export const hrEmployees = pgTable(
     foodPerDayCents: integer("food_per_day_cents").notNull().default(0),
     transportPerDayCents: integer("transport_per_day_cents").notNull().default(0),
     benefitNotes: text("benefit_notes").notNull().default(""),
+    // RH > Onboarding — trilha aberta na admissão (cadastro novo ou CONTRATADO
+    // no Recrutamento); '' = sem trilha (funcionários anteriores ao módulo).
+    // Concluída quando todos os vídeos do cargo/loja foram assistidos até o
+    // fim; a reunião com líder/RH registra as dúvidas sobre os vídeos.
+    onboardingStartedAt: text("onboarding_started_at").notNull().default(""),
+    onboardingCompletedAt: text("onboarding_completed_at").notNull().default(""),
+    onboardingMeetingDate: text("onboarding_meeting_date").notNull().default(""),
+    onboardingMeetingNotes: text("onboarding_meeting_notes").notNull().default(""),
+    onboardingMeetingByName: text("onboarding_meeting_by_name").notNull().default(""),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -3008,6 +3017,14 @@ export const hrLeaderPdi = pgTable(
     attachmentFileName: text("attachment_file_name").notNull().default(""),
     attachmentR2Key: text("attachment_r2_key").notNull().default(""),
     attachmentSizeBytes: integer("attachment_size_bytes").notNull().default(0),
+    // Transcrição da reunião (colada ou lida do arquivo no navegador — sem IA)
+    // e o que o RH preencheu a partir dela. next_actions_json:
+    // [{action, owner, dueDate}] — cada prazo vira lembrete nas Tarefas.
+    transcriptText: text("transcript_text").notNull().default(""),
+    transcriptFileName: text("transcript_file_name").notNull().default(""),
+    agreedText: text("agreed_text").notNull().default(""),
+    participants: text("participants").notNull().default(""),
+    nextActionsJson: text("next_actions_json").notNull().default("[]"),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -3569,6 +3586,12 @@ export const hrTerminations = pgTable(
     severanceCents: integer("severance_cents").notNull().default(0),
     fgtsCents: integer("fgts_cents").notNull().default(0),
     notes: text("notes").notNull().default(""),
+    // Desligamento (RH > Funcionários): motivo (ver TERMINATION_REASONS em
+    // app/lib/hr-rh.ts), texto do "OUTRO" e o checklist demissional
+    // {item: {status: 'feito'|'na'|'', note}} — pendente até concluir.
+    reason: text("reason").notNull().default(""),
+    reasonOther: text("reason_other").notNull().default(""),
+    checklistJson: text("checklist_json").notNull().default("{}"),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -3601,6 +3624,8 @@ export const hrAsoExams = pgTable(
     clinicCnpj: text("clinic_cnpj").notNull().default(""),
     amountCents: integer("amount_cents").notNull().default(0),
     notes: text("notes").notNull().default(""),
+    // Vencimento = data do exame + 12 meses (PCMSO anual), editável.
+    expiryDate: text("expiry_date").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -3611,6 +3636,57 @@ export const hrAsoExams = pgTable(
   (table) => [
     index("hr_aso_exams_date_idx").on(table.examDate),
     index("hr_aso_exams_employee_idx").on(table.employeeId),
+  ],
+);
+
+// Parâmetros do RH em chave/valor (ex.: 'recruitment_pending_texts' = texto
+// da pendência por status do Recrutamento).
+export const hrSettings = pgTable("hr_settings", {
+  key: text("key").primaryKey(),
+  valueJson: text("value_json").notNull().default("{}"),
+  updatedBy: text("updated_by").notNull().default(""),
+  updatedByName: text("updated_by_name").notNull().default(""),
+  updatedAt: text("updated_at").notNull().default(""),
+});
+
+// RH > Onboarding — vídeos (arquivo no R2) por cargo/loja ('' = todos).
+export const hrOnboardingVideos = pgTable("hr_onboarding_videos", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull().default(""),
+  sortOrder: integer("sort_order").notNull().default(0),
+  roleTitle: text("role_title").notNull().default(""),
+  companyId: text("company_id").notNull().default(""),
+  companyName: text("company_name").notNull().default(""),
+  fileName: text("file_name").notNull().default(""),
+  r2Key: text("r2_key").notNull().default(""),
+  contentType: text("content_type").notNull().default(""),
+  sizeBytes: integer("size_bytes").notNull().default(0),
+  durationSeconds: integer("duration_seconds").notNull().default(0),
+  active: integer("active").notNull().default(1),
+  createdBy: text("created_by").notNull().default(""),
+  createdByName: text("created_by_name").notNull().default(""),
+  createdAt: text("created_at").notNull().default(""),
+  updatedBy: text("updated_by").notNull().default(""),
+  updatedByName: text("updated_by_name").notNull().default(""),
+  updatedAt: text("updated_at").notNull().default(""),
+});
+
+// Progresso de cada colaborador em cada vídeo: watched_seconds só avança em
+// tempo real assistido (pular não conta); position_seconds = onde parou.
+export const hrOnboardingProgress = pgTable(
+  "hr_onboarding_progress",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    videoId: text("video_id").notNull(),
+    watchedSeconds: integer("watched_seconds").notNull().default(0),
+    positionSeconds: integer("position_seconds").notNull().default(0),
+    completedAt: text("completed_at").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [
+    uniqueIndex("hr_onboarding_progress_employee_video_idx").on(table.employeeId, table.videoId),
   ],
 );
 

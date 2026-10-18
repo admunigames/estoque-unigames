@@ -8,10 +8,12 @@ import {
   centsValue,
   deactivateLinkedLogin,
   identity,
+  insertTermination,
   jsonResponse,
   loadEmployee,
   safeText,
   sameOrigin,
+  terminationFields,
   type JsonMap,
 } from "../shared";
 
@@ -32,6 +34,9 @@ type TerminationRow = {
   severanceCents: number;
   fgtsCents: number;
   notes: string;
+  reason: string;
+  reasonOther: string;
+  checklistJson: string;
   createdByName: string;
   updatedAt: string;
 };
@@ -39,6 +44,7 @@ type TerminationRow = {
 const COLUMNS = `id, employee_id AS employeeId, employee_name AS employeeName,
   company_id AS companyId, company_name AS companyName, termination_date AS terminationDate,
   severance_cents AS severanceCents, fgts_cents AS fgtsCents, notes,
+  reason, reason_other AS reasonOther, checklist_json AS checklistJson,
   created_by_name AS createdByName, updated_at AS updatedAt`;
 
 export async function GET(request: Request) {
@@ -101,6 +107,9 @@ export async function POST(request: Request) {
     if (!DATE_PATTERN.test(terminationDate)) {
       return jsonResponse({ error: "INFORME A DATA DO DESLIGAMENTO." }, 400);
     }
+    // Motivo obrigatório (o funcionário só fica INATIVO com data e motivo).
+    const termination = terminationFields({ terminationDate, reason: body.reason, reasonOther: body.reasonOther, checklist: body.checklist });
+    if (termination.error) return jsonResponse({ error: termination.error }, 400);
     if (!Number.isFinite(severanceCents) || severanceCents < 0) {
       return jsonResponse({ error: "INFORME UM VALOR DE RESCISÃO VÁLIDO." }, 400);
     }
@@ -128,7 +137,8 @@ export async function POST(request: Request) {
                company_id=CASE WHEN ?3 = 1 THEN company_id ELSE ?4 END,
                company_name=CASE WHEN ?3 = 1 THEN company_name ELSE ?5 END,
                termination_date=?6, severance_cents=?7, fgts_cents=?8, notes=?9,
-               updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP
+               updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP,
+               reason=?13, reason_other=?14
            WHERE id=?12`,
         )
         .bind(
@@ -144,34 +154,23 @@ export async function POST(request: Request) {
           actor.id,
           actorName(actor),
           editId,
+          termination.reason,
+          termination.reasonOther,
         )
         .run();
       return jsonResponse({ updated: true, id: editId });
     }
 
-    const id = crypto.randomUUID();
+    const { id, statement } = insertTermination(
+      database,
+      {
+        employeeId, employeeName: employee.fullName, companyId: employee.companyId, companyName: employee.companyName,
+        ...termination, severanceCents, fgtsCents, notes,
+      },
+      actor,
+    );
     await database.batch([
-      database
-        .prepare(
-          `INSERT INTO hr_terminations
-            (id, employee_id, employee_name, company_id, company_name, termination_date,
-             severance_cents, fgts_cents, notes, created_by, created_by_name, created_at,
-             updated_by, updated_by_name, updated_at)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, CURRENT_TIMESTAMP, ?10, ?11, CURRENT_TIMESTAMP)`,
-        )
-        .bind(
-          id,
-          employeeId,
-          employee.fullName,
-          employee.companyId,
-          employee.companyName,
-          terminationDate,
-          severanceCents,
-          fgtsCents,
-          notes,
-          actor.id,
-          actorName(actor),
-        ),
+      statement,
       database
         .prepare(
           `UPDATE hr_employees SET status='inactive', updated_by=?1, updated_by_name=?2,

@@ -38,12 +38,20 @@ const MODULE_LABELS: [string, string][] = [
   ["/api/supplies", "INSUMOS"],
   ["/api/shared-state", "CADASTROS"],
   ["/api/backup", "BACKUP"],
+  ["/api/hr-rh/onboarding", "RH - ONBOARDING"],
+  ["/api/hr-rh/offboarding", "RH - DESLIGAMENTO"],
+  ["/api/hr-store-tracking/leader-pdi", "RH - PDI"],
   ["/api/hr-", "RH"],
 ];
 
 // Gravações que não interessam à auditoria (preferência de tema, inscrição
 // de notificação, sessão).
-const IGNORED_PREFIXES = ["/api/preferences", "/api/push", "/api/session", "/api/live", "/api/health"];
+// Também ficam de fora a batida do player do Onboarding (a cada ~10 s) e as
+// partes do envio de vídeo — o registro fica no cadastro/conclusão.
+const IGNORED_PREFIXES = [
+  "/api/preferences", "/api/push", "/api/session", "/api/live", "/api/health",
+  "/api/hr-rh/onboarding/progress", "/api/hr-rh/onboarding/upload-part",
+];
 
 export function shouldAudit(method: string, path: string): boolean {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase())) return false;

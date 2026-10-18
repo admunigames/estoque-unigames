@@ -7,6 +7,7 @@ import {
   type ScheduleData,
 } from "../../lib/hr-benefit-cycle";
 import { isWorkSchedule } from "../../lib/working-days";
+import { normalizeChecklist, terminationError } from "../../lib/hr-rh";
 
 // RH Financeiro (Financeiro Fase 5) — base compartilhada da Folha de
 // Pagamento, dos Benefícios e do Comissionamento.
@@ -216,6 +217,51 @@ export function deactivateLinkedLogin(database: Database, employeeId: string) {
          AND id=(SELECT user_id FROM hr_employees WHERE id=?1 AND user_id<>'')`,
     )
     .bind(employeeId);
+}
+
+/**
+ * Desligamento (motivo + checklist demissional) lido do corpo da requisição:
+ * { terminationDate, reason, reasonOther, checklist }. Devolve o erro de
+ * validação ou os campos prontos para gravar em hr_terminations.
+ */
+export function terminationFields(value: unknown) {
+  const raw = value && typeof value === "object" ? (value as JsonMap) : {};
+  const date = safeText(raw.terminationDate, 10);
+  const reason = safeText(raw.reason, 30);
+  const reasonOther = safeText(raw.reasonOther, 300);
+  const error = terminationError(date, reason, reasonOther);
+  const checklist = normalizeChecklist(raw.checklist);
+  // JSON não passa pela CAIXA ALTA do getD1: as observações convertem aqui.
+  for (const entry of Object.values(checklist)) entry.note = entry.note.toLocaleUpperCase("pt-BR");
+  return { error, date, reason, reasonOther: reason === "outro" ? reasonOther : "", checklistJson: JSON.stringify(checklist) };
+}
+
+export function insertTermination(
+  database: Database,
+  values: {
+    employeeId: string; employeeName: string; companyId: string; companyName: string;
+    date: string; reason: string; reasonOther: string; checklistJson: string;
+    severanceCents?: number; fgtsCents?: number; notes?: string;
+  },
+  actor: Identity,
+) {
+  const id = crypto.randomUUID();
+  return {
+    id,
+    statement: database
+      .prepare(
+        `INSERT INTO hr_terminations
+          (id, employee_id, employee_name, company_id, company_name, termination_date,
+           severance_cents, fgts_cents, notes, created_by, created_by_name, created_at,
+           updated_by, updated_by_name, updated_at, reason, reason_other, checklist_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, CURRENT_TIMESTAMP, ?10, ?11, CURRENT_TIMESTAMP, ?12, ?13, ?14)`,
+      )
+      .bind(
+        id, values.employeeId, values.employeeName, values.companyId, values.companyName, values.date,
+        values.severanceCents ?? 0, values.fgtsCents ?? 0, values.notes ?? "", actor.id, actorName(actor),
+        values.reason, values.reasonOther, values.checklistJson,
+      ),
+  };
 }
 
 export async function loadEmployee(database: Database, employeeId: string) {

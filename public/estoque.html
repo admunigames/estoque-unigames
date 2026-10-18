@@ -2667,6 +2667,47 @@
   #gdStoresGrid .supply-dashboard-list span{display:inline;font:inherit;letter-spacing:0;}
   #gdStoresGrid .supply-dashboard-card.selected{outline:2px solid var(--accent);}
   .supply-dashboard-empty{color:var(--ink-faint);font:700 9px/1.4 var(--mono);margin-top:8px;}
+  /* RH (out/2026): Painel do RH, desligamento, PDI e Onboarding */
+  .rh-dash-kpis{margin-bottom:12px;}
+  .rh-kpi-before{display:block;margin-top:8px;color:var(--ink-faint);font:700 8px/1.4 var(--mono);}
+  .rh-dash-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin:12px 0;}
+  .rh-dash-chart{padding:var(--pad-panel,14px);}
+  .rh-bars{display:grid;gap:8px;}
+  .rh-bar-row{display:grid;grid-template-columns:minmax(120px,1.2fr) 2fr auto;gap:4px 10px;align-items:center;}
+  .rh-bar-label{grid-row:span 2;color:var(--ink-soft);font:800 9px/1.3 var(--mono);}
+  .rh-bar-row:not(:has(.before)) .rh-bar-label{grid-row:auto;}
+  .rh-bar-track{display:block;height:12px;border-radius:6px;background:var(--line);overflow:hidden;}
+  .rh-bar-track.before{height:7px;opacity:.55;}
+  .rh-bar-track.inline{display:inline-block;width:80px;vertical-align:middle;}
+  .rh-bar-fill{display:block;height:100%;border-radius:inherit;background:var(--accent);}
+  .rh-bar-value{font:800 10px var(--mono);color:var(--ink);text-align:right;}
+  small.rh-bar-value{font-weight:700;color:var(--ink-faint);}
+  .rh-checklist-title{margin:14px 0 8px;font:800 10px var(--mono);letter-spacing:.06em;}
+  .rh-checklist-title small{color:var(--ink-faint);font-weight:700;}
+  .rh-checklist{display:grid;gap:8px;}
+  .rh-checklist-row{display:grid;grid-template-columns:1fr 150px 1fr;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);}
+  .rh-checklist-label{font:700 10px/1.35 var(--mono);color:var(--ink);}
+  .rh-pdi-transcript-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;}
+  .rh-pdi-transcript-actions small{color:var(--ink-faint);font:700 9px var(--mono);}
+  .rh-pdi-actions-label{display:block;margin-bottom:6px;color:var(--ink-soft);font:800 9px/1.4 var(--mono);}
+  .rh-pdi-actions{display:grid;gap:6px;margin-bottom:6px;}
+  .rh-pdi-action-row{display:grid;grid-template-columns:2fr 1fr 150px auto;gap:6px;}
+  .rh-onb-hint{color:var(--ink-soft);font:700 10px/1.45 var(--mono);margin:8px 0;}
+  .rh-onb-player-panel{padding:var(--pad-panel,14px);margin-bottom:12px;}
+  .rh-onb-player-panel video{display:block;width:100%;max-width:960px;aspect-ratio:16/9;background:#000;border-radius:10px;}
+  .rh-onb-progress{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin:0 0 12px;font:800 10px var(--mono);color:var(--ink-soft);}
+  .rh-onb-list{display:grid;gap:10px;}
+  .rh-onb-card{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px;border:1px solid var(--surface-border,var(--line));border-radius:var(--radius-surface,12px);background:var(--bg-card);}
+  .rh-onb-card p{margin:6px 0;color:var(--ink-soft);font-size:12px;}
+  .rh-onb-card small{color:var(--ink-faint);font:700 9px var(--mono);}
+  .rh-onb-card.done{opacity:.75;}
+  @media (max-width:680px){
+    .rh-checklist-row,.rh-pdi-action-row{grid-template-columns:1fr;}
+    .rh-bar-row{grid-template-columns:1fr auto;}
+    .rh-bar-label{grid-row:auto;grid-column:1 / -1;}
+    .rh-onb-card{flex-direction:column;align-items:stretch;}
+    .rh-onb-progress{grid-template-columns:1fr;}
+  }
   html[data-theme="light"] .supply-dashboard-card{background:#f6f9fb;border-color:var(--inset-border);}
   /* Ordens de Serviço: borda da linha pela criticidade da data limite. */
   #osTable tr.os-row td:first-child{border-left:4px solid transparent;}
@@ -4004,7 +4045,7 @@
         <a class="nav-item sub-item" id="navFinanceiroRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="rh_funcionarios,payroll,rh_escalas,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento,rh_aniversariantes,rh_odontologico">
+    <div class="nav-group" data-any-permission="rh_funcionarios,payroll,rh_escalas,rh_acompanhamento,rh_ponto_logistica,rh_recrutamento,rh_fardamento,rh_aniversariantes,rh_odontologico,rh_pdi,rh_dashboard,rh_desligamento,rh_exames,rh_onboarding">
       <button class="nav-group-toggle" id="navRh" type="button" aria-expanded="false" aria-controls="navRhSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 8.6a2.7 2.7 0 1 0 0-5.2"/><path d="M15.5 14c2.1.4 3.7 1.9 4.2 5"/></svg></span><span class="nav-label">RH</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -4020,6 +4061,8 @@
         <a class="nav-item sub-item" id="navRhFolgas" data-page="rhFolgas" data-permission="rh_escalas" data-home-desc="Escala de folgas gerada automaticamente e resumo por colaborador." title="Folgas" href="/rh/folgas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12.5" r="8"/><path d="M12 8v4.5l3 2"/><path d="M9 2.5h6"/></svg></span><span class="nav-label">Folgas</span></a>
         <a class="nav-item sub-item" id="navRhFolha" data-page="rhFolha" data-permission="payroll" data-home-desc="Folha de pagamento mensal, com comissão e benefícios calculados na hora." title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
         <a class="nav-item sub-item" id="navRhFuncionarios" data-page="rhFuncionarios" data-any-permission="payroll,rh_funcionarios" data-home-desc="Cadastro de funcionários: cargo, admissão, salário e dados de pagamento." title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
+        <a class="nav-item sub-item" id="navRhOnboarding" data-page="rhOnboarding" data-permission="rh_onboarding" data-home-desc="Vídeos de onboarding por cargo, trilha do colaborador e reunião de onboarding." title="Onboarding" href="/rh/onboarding"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.2"/><path d="m10 9.2 5 2.8-5 2.8z"/></svg></span><span class="nav-label">Onboarding</span></a>
+        <a class="nav-item sub-item" id="navRhPainel" data-page="rhPainel" data-any-permission="payroll,rh_dashboard,rh_desligamento,rh_exames" data-home-desc="Dashboard de recrutamento e pessoas, desligamentos com checklist e exames a vencer." title="Painel do RH" href="/rh/painel"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.3"/><rect x="13" y="3.5" width="7.5" height="4.8" rx="1.3"/><rect x="13" y="10.4" width="7.5" height="10.1" rx="1.3"/><rect x="3.5" y="13.2" width="7.5" height="7.3" rx="1.3"/></svg></span><span class="nav-label">Painel do RH</span></a>
         <a class="nav-item sub-item" id="navRhOdontologico" data-page="rhOdontologico" data-permission="rh_odontologico" data-home-desc="Controle de inclusão e exclusão de colaboradores no plano odontológico." title="Plano Odontológico" href="/rh/odontologico"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-3 0-5 2-5 5 0 2.5 1 3.5 1 6.5 0 2 1 4.5 2.5 4.5S12 17 12 14c0-1 .5-1 .5 0 0 3 1 5 2.5 5s2.5-2.5 2.5-4.5c0-3 1-4 1-6.5 0-3-2-5-5-5-1 0-1 .8-1.5.8S13 3 12 3Z"/></svg></span><span class="nav-label">Plano Odontológico</span></a>
         <a class="nav-item sub-item" id="navRhRecrutamento" data-page="rhRecrutamento" data-permission="rh_recrutamento" data-home-desc="Pipeline de Recrutamento e Seleção: entrevista, teste, treinamento, contratação e integração." title="Recrutamento e Seleção" href="/rh/recrutamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/><path d="m17 4 2 2-2 2"/><path d="M19 6h-4"/></svg></span><span class="nav-label">Recrutamento e Seleção</span></a>
       </div>
@@ -6781,6 +6824,7 @@
           </div>
           <div class="field full"><label for="recFilterSearch">BUSCAR POR NOME</label><input id="recFilterSearch" placeholder="Nome do candidato..."></div>
           <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnRecPendingTexts" type="button" data-permission="rh_recrutamento:manage">TEXTOS DAS PENDÊNCIAS</button>
             <button class="btn-accent" id="btnNewRecCandidate" type="button">NOVO CANDIDATO</button>
           </div>
         </div>
@@ -6809,6 +6853,162 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- ================= RH / PAINEL DO RH ================= -->
+    <section id="pageRhPainel" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Painel do RH</h2>
+        </div>
+      </header>
+
+      <div class="print-report-header" id="rhDashPrintHeader">
+        <div class="print-report-kicker">UNIGAMES · RH</div>
+        <h1>Dashboard do RH — recrutamento e pessoas</h1>
+        <div class="print-report-meta" id="rhDashPrintMeta"></div>
+      </div>
+
+      <div class="output-tabs no-print" role="tablist" aria-label="Seção do painel do RH" id="rhPainelTabs">
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-painel-tab="dashboard" data-any-permission="payroll,rh_dashboard">DASHBOARD</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-painel-tab="desligamentos" data-any-permission="payroll,rh_desligamento">DESLIGAMENTOS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-painel-tab="exames" data-any-permission="payroll,rh_exames">EXAMES A VENCER</button>
+      </div>
+
+      <div id="rhPainelDashboard" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="rhDashFrom">DE</label><input type="date" id="rhDashFrom"></div>
+          <div class="field"><label for="rhDashTo">ATÉ</label><input type="date" id="rhDashTo"></div>
+          <div class="field"><label for="rhDashLoja">LOJA</label><select id="rhDashLoja"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="rhDashLider">LÍDER</label><select id="rhDashLider"><option value="">TODOS OS LÍDERES</option></select></div>
+          <div class="field"><label for="rhDashPessoa">PESSOA</label><input id="rhDashPessoa" placeholder="Candidato ou funcionário"></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnRhDashPdf" type="button">PDF A4</button>
+            <button class="btn-outline" id="btnRhDashImage" type="button">IMAGEM</button>
+          </div>
+        </div>
+        <div class="supply-dashboard-grid rh-dash-kpis" id="rhDashKpis"></div>
+        <div class="rh-dash-charts">
+          <section class="table-panel rh-dash-chart"><h3 class="supply-section-title">COMPARAÇÃO COM O MÊS ANTERIOR</h3><div id="rhDashCompare"></div></section>
+          <section class="table-panel rh-dash-chart"><h3 class="supply-section-title">CANDIDATOS POR STATUS</h3><div id="rhDashStatus"></div></section>
+        </div>
+        <h3 class="supply-section-title">ORDEM DE ADMISSÃO (APROVADOS AGUARDANDO ADMISSÃO)</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhDashQueueTable">
+              <thead><tr><th>#</th><th>Candidato</th><th>Cargo</th><th>Loja</th><th>Entrevista</th><th>Status</th></tr></thead>
+              <tbody id="rhDashQueueBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="rh-dash-charts">
+          <section>
+            <h3 class="supply-section-title">ADMITIDOS NO PERÍODO</h3>
+            <div class="table-panel responsive-table"><div class="table-scroll"><table>
+              <thead><tr><th>Funcionário</th><th>Loja</th><th>Admissão</th></tr></thead>
+              <tbody id="rhDashAdmittedBody"></tbody>
+            </table></div></div>
+          </section>
+          <section>
+            <h3 class="supply-section-title">DEMITIDOS NO PERÍODO</h3>
+            <div class="table-panel responsive-table"><div class="table-scroll"><table>
+              <thead><tr><th>Funcionário</th><th>Loja</th><th>Desligamento</th><th>Motivo</th></tr></thead>
+              <tbody id="rhDashDismissedBody"></tbody>
+            </table></div></div>
+          </section>
+        </div>
+      </div>
+
+      <div id="rhPainelDesligamentos" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="rhOffFiltro">SITUAÇÃO</label><select id="rhOffFiltro"><option value="pending">CHECKLIST PENDENTE</option><option value="">TODOS</option></select></div>
+          <div class="field"><label for="rhOffLoja">LOJA</label><select id="rhOffLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhOffTable">
+              <thead><tr><th>Funcionário</th><th>Loja</th><th>Desligamento</th><th>Motivo</th><th>Checklist</th><th class="no-print"></th></tr></thead>
+              <tbody id="rhOffTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="rhPainelExames" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="rhExamLoja">LOJA</label><select id="rhExamLoja"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="rhExamSituacao">SITUAÇÃO</label><select id="rhExamSituacao"><option value="alerta">VENCIDOS, A VENCER E SEM EXAME</option><option value="">TODOS OS ATIVOS</option></select></div>
+        </div>
+        <div class="supply-dashboard-grid" id="rhExamCards"></div>
+        <p class="no-print" style="color:var(--ink-soft);font-size:11px;margin:10px 0;">Vencimento = data do exame + 12 meses (PCMSO anual), editável no lançamento do ASO (RH &gt; DRE Funcionário &gt; Exames ASO). Só funcionários ATIVOS. O RH recebe aviso com 30 dias, 7 dias e no dia do vencimento.</p>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhExamTable">
+              <thead><tr><th>Funcionário</th><th>Loja</th><th>Cargo</th><th>Último exame</th><th>Vencimento</th><th>Situação</th></tr></thead>
+              <tbody id="rhExamTableBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RH / ONBOARDING ================= -->
+    <section id="pageRhOnboarding" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Onboarding</h2>
+        </div>
+      </header>
+
+      <div class="output-tabs no-print" role="tablist" aria-label="Seção do onboarding" id="rhOnbTabs">
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-onb-tab="mine">MINHA TRILHA</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-onb-tab="videos" data-any-permission="payroll,rh_onboarding:videos,rh_onboarding:track">VÍDEOS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-onb-tab="track" data-any-permission="payroll,rh_onboarding:track">ACOMPANHAMENTO</button>
+      </div>
+
+      <div id="rhOnbMine" hidden>
+        <div class="table-panel rh-onb-player-panel" id="rhOnbPlayerPanel" hidden>
+          <h3 class="supply-section-title" id="rhOnbPlayerTitle"></h3>
+          <video id="rhOnbPlayer" controls playsinline preload="metadata" controlsList="nodownload noplaybackrate" disablePictureInPicture></video>
+          <p class="rh-onb-hint" id="rhOnbPlayerHint">O vídeo só conta como concluído assistido até o fim. Adiantar não conta; ao voltar, ele continua de onde você parou.</p>
+        </div>
+        <div class="rh-onb-progress" id="rhOnbMineSummary"></div>
+        <div class="rh-onb-list" id="rhOnbMineList"><p class="supply-dashboard-empty">Carregando…</p></div>
+      </div>
+
+      <div id="rhOnbVideos" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnNewRhOnbVideo" type="button" data-any-permission="payroll,rh_onboarding:videos">NOVO VÍDEO</button>
+          </div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhOnbVideosTable">
+              <thead><tr><th>Ordem</th><th>Título</th><th>Cargo</th><th>Loja</th><th>Duração</th><th>Arquivo</th><th>Situação</th><th class="no-print"></th></tr></thead>
+              <tbody id="rhOnbVideosBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="rhOnbTrack" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="rhOnbTrackFiltro">SITUAÇÃO</label><select id="rhOnbTrackFiltro"><option value="pending">ONBOARDING PENDENTE</option><option value="trail">TODOS NA TRILHA</option><option value="">TODOS OS ATIVOS</option></select></div>
+          <div class="field"><label for="rhOnbTrackBusca">BUSCAR</label><input id="rhOnbTrackBusca" placeholder="Nome, loja ou cargo"></div>
+        </div>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhOnbTrackTable">
+              <thead><tr><th>Colaborador</th><th>Loja</th><th>Cargo</th><th>Admissão</th><th>Assistido</th><th>Situação</th><th class="no-print"></th></tr></thead>
+              <tbody id="rhOnbTrackBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="rhOnbVideoInput" hidden accept="video/mp4,video/webm,video/quicktime,video/x-m4v">
     </section>
 
     <!-- ================= RH / FARDAMENTO ================= -->
@@ -10027,10 +10227,23 @@
                   <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:view"> Ver registros de ponto, horas extras e banco de horas</label>
                   <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_ponto_logistica:manage"> Lançar ponto, configurar jornada e registrar horas pagas</label>
                 </div>
+                <div class="permission-subgroup" data-permission-subgroup="Dashboard do RH">
+                  <span class="permission-subtitle">Dashboard do RH</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_dashboard:view"> Ver o dashboard de recrutamento e pessoas (admitidos, demitidos, turnover)</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Desligamento">
+                  <span class="permission-subtitle">Desligamento</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_desligamento:view"> Ver desligamentos e checklist demissional</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_desligamento:manage"> Editar motivo e concluir o checklist demissional</label>
+                </div>
                 <div class="permission-subgroup" data-permission-subgroup="Escalas e Folgas">
                   <span class="permission-subtitle">Escalas e Folgas</span>
                   <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:view"> Ver a loja fixa do mês, a escala de domingos e a escala de folgas calculada</label>
                   <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_escalas:manage"> Cadastrar loja fixa do mês e lançar domingos trabalhados e folgas de segunda a sábado</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Exames (Segurança do Trabalho)">
+                  <span class="permission-subtitle">Exames (Segurança do Trabalho)</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_exames:view"> Ver exames a vencer, vencidos e funcionários sem exame (recebe os avisos)</label>
                 </div>
                 <div class="permission-subgroup" data-permission-subgroup="Fardamento">
                   <span class="permission-subtitle">Fardamento</span>
@@ -10047,6 +10260,16 @@
                   <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_funcionarios:create"> Cadastrar funcionário</label>
                   <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_funcionarios:edit"> Editar funcionário</label>
                   <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_funcionarios:delete"> Excluir funcionário</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="Onboarding">
+                  <span class="permission-subtitle">Onboarding</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_onboarding:videos"> Cadastrar e enviar vídeos de onboarding</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_onboarding:track"> Acompanhar o onboarding dos colaboradores e registrar a reunião</label>
+                </div>
+                <div class="permission-subgroup" data-permission-subgroup="PDI de Líderes">
+                  <span class="permission-subtitle">PDI de Líderes</span>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_pdi:view"> Ver o PDI de líderes (sem o acompanhamento por loja)</label>
+                  <label class="permission-option"><input type="checkbox" name="userPermission" value="rh_pdi:manage"> Lançar, editar e excluir PDI de líderes</label>
                 </div>
                 <div class="permission-subgroup" data-permission-subgroup="Plano Odontológico">
                   <span class="permission-subtitle">Plano Odontológico</span>
@@ -11682,6 +11905,88 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="rhDesligamentoDialog" aria-labelledby="rhDesligamentoDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhDesligamentoDialogTitle">DESLIGAMENTO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhDesligamento" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhDesligamentoForm">
+    <p class="rh-onb-hint" id="rhDesligamentoNome"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhDesligamentoData">DATA DO DESLIGAMENTO *</label><input type="date" id="rhDesligamentoData" required></div>
+      <div class="purchase-field"><label for="rhDesligamentoMotivo">MOTIVO *</label><select id="rhDesligamentoMotivo" required></select></div>
+      <div class="purchase-field full" id="rhDesligamentoOutroWrap" hidden><label for="rhDesligamentoOutro">DESCREVA O MOTIVO *</label><input id="rhDesligamentoOutro" maxlength="300"></div>
+    </div>
+    <h4 class="rh-checklist-title">CHECKLIST DEMISSIONAL <small>(PODE FICAR PENDENTE — FICA O ALERTA ATÉ CONCLUIR)</small></h4>
+    <div class="rh-checklist" id="rhDesligamentoChecklist"></div>
+    <div class="user-form-status" id="rhDesligamentoStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhDesligamento" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="recPendingDialog" aria-labelledby="recPendingDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="recPendingDialogTitle">TEXTOS DAS PENDÊNCIAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRecPending" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="recPendingForm">
+    <p class="rh-onb-hint">A cada mudança de status do candidato, o RH e quem cadastrou recebem notificação e uma tarefa no Início com este texto. Em branco = só o aviso, sem tarefa.</p>
+    <div class="purchase-form-grid" id="recPendingFields"></div>
+    <div class="user-form-status" id="recPendingStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRecPending" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhOnbVideoDialog" aria-labelledby="rhOnbVideoDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhOnbVideoDialogTitle">NOVO VÍDEO</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhOnbVideo" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhOnbVideoForm">
+    <input type="hidden" id="rhOnbVideoId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhOnbVideoTitle">TÍTULO *</label><input id="rhOnbVideoTitle" maxlength="160" required></div>
+      <div class="purchase-field full"><label for="rhOnbVideoDesc">DESCRIÇÃO</label><textarea id="rhOnbVideoDesc" rows="3" maxlength="2000"></textarea></div>
+      <div class="purchase-field"><label for="rhOnbVideoOrder">ORDEM NA TRILHA</label><input type="number" id="rhOnbVideoOrder" min="0" max="9999" value="0"></div>
+      <div class="purchase-field"><label for="rhOnbVideoRole">CARGO (EM BRANCO = TODOS)</label><input id="rhOnbVideoRole" maxlength="120" placeholder="Ex.: VENDEDOR"></div>
+      <div class="purchase-field"><label for="rhOnbVideoLoja">LOJA</label><select id="rhOnbVideoLoja"><option value="">TODAS AS LOJAS</option></select></div>
+      <div class="purchase-field"><label for="rhOnbVideoAtivo">SITUAÇÃO</label><select id="rhOnbVideoAtivo"><option value="1">ATIVO NA TRILHA</option><option value="0">INATIVO</option></select></div>
+      <div class="purchase-field full"><label for="rhOnbVideoFile">ARQUIVO DO VÍDEO (MP4, WEBM OU MOV — ATÉ 2 GB)</label><input type="file" id="rhOnbVideoFile" accept="video/mp4,video/webm,video/quicktime,video/x-m4v"></div>
+    </div>
+    <div class="user-form-status" id="rhOnbVideoStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhOnbVideo" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhOnbVideo" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhOnbMeetingDialog" aria-labelledby="rhOnbMeetingDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhOnbMeetingDialogTitle">REUNIÃO DE ONBOARDING</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhOnbMeeting" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhOnbMeetingForm">
+    <input type="hidden" id="rhOnbMeetingEmployee">
+    <p class="rh-onb-hint" id="rhOnbMeetingNome"></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="rhOnbMeetingDate">DATA DA REUNIÃO *</label><input type="date" id="rhOnbMeetingDate" required></div>
+      <div class="purchase-field full"><label for="rhOnbMeetingNotes">DÚVIDAS E PERGUNTAS SOBRE O VÍDEO *</label><textarea id="rhOnbMeetingNotes" rows="6" maxlength="4000" required placeholder="O que o colaborador perguntou na reunião (confirma que assistiu)"></textarea></div>
+    </div>
+    <div class="user-form-status" id="rhOnbMeetingStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhOnbMeeting" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="rhFolhaDialog" aria-labelledby="rhFolhaDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="rhFolhaDialogTitle">FOLHA DO FUNCIONÁRIO</h3>
@@ -11843,6 +12148,7 @@
       <div class="purchase-field full"><label for="rhAsoFuncionario">COLABORADOR *</label><select id="rhAsoFuncionario" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="rhAsoTipo">TIPO *</label><select id="rhAsoTipo"><option value="periodico">PERIÓDICO</option><option value="demissional">DEMISSIONAL</option><option value="retorno">RETORNO AO TRABALHO</option><option value="mudanca_funcao">MUDANÇA DE FUNÇÃO</option><option value="admissional">ADMISSIONAL (FORA DO RECRUTAMENTO)</option></select></div>
       <div class="purchase-field"><label for="rhAsoData">DATA DO EXAME *</label><input type="date" id="rhAsoData" required></div>
+      <div class="purchase-field"><label for="rhAsoVencimento">VENCIMENTO (EXAME + 12 MESES)</label><input type="date" id="rhAsoVencimento"></div>
       <div class="purchase-field"><label for="rhAsoClinica">CLÍNICA *</label><input id="rhAsoClinica" maxlength="160" required></div>
       <div class="purchase-field"><label for="rhAsoCnpj">CNPJ DA CLÍNICA</label><input id="rhAsoCnpj" maxlength="20" inputmode="numeric" placeholder="Somente números"></div>
       <div class="purchase-field"><label for="rhAsoValor">VALOR (R$)</label><input type="text" inputmode="decimal" id="rhAsoValor" placeholder="R$ 0,00"></div>
@@ -11866,6 +12172,8 @@
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="rhRescisaoFuncionario">COLABORADOR *</label><select id="rhRescisaoFuncionario" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="rhRescisaoData">DATA DO DESLIGAMENTO *</label><input type="date" id="rhRescisaoData" required></div>
+      <div class="purchase-field"><label for="rhRescisaoMotivo">MOTIVO *</label><select id="rhRescisaoMotivo" required></select></div>
+      <div class="purchase-field full" id="rhRescisaoOutroWrap" hidden><label for="rhRescisaoOutro">DESCREVA O MOTIVO *</label><input id="rhRescisaoOutro" maxlength="300"></div>
       <div class="purchase-field"><label for="rhRescisaoValor">VALOR DA RESCISÃO (R$)</label><input type="text" inputmode="decimal" id="rhRescisaoValor" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhRescisaoFgts">FGTS (R$)</label><input type="text" inputmode="decimal" id="rhRescisaoFgts" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><label for="rhRescisaoObs">OBSERVAÇÕES</label><textarea id="rhRescisaoObs" rows="2" maxlength="500"></textarea></div>
@@ -11975,8 +12283,16 @@
       <div class="purchase-field"><label for="rhLeaderPdiLoja">LOJA *</label><select id="rhLeaderPdiLoja" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="rhLeaderPdiData">DATA DO ENCONTRO *</label><input type="date" id="rhLeaderPdiData" required></div>
       <div class="purchase-field"><label for="rhLeaderPdiAtaAssinada">ATA DE PRESENÇA ASSINADA?</label><select id="rhLeaderPdiAtaAssinada"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
+      <div class="purchase-field full"><label for="rhLeaderPdiTranscricao">TRANSCRIÇÃO DA REUNIÃO (COLE O TEXTO OU ANEXE O ARQUIVO)</label><textarea id="rhLeaderPdiTranscricao" rows="6" maxlength="200000" placeholder="Cole aqui a transcrição da reunião"></textarea>
+        <span class="rh-pdi-transcript-actions"><button class="btn-outline" id="btnRhLeaderPdiTranscricaoArquivo" type="button">ANEXAR ARQUIVO (.TXT, .VTT, .SRT, .DOCX)</button><small id="rhLeaderPdiTranscricaoNome"></small></span>
+        <input type="file" id="rhLeaderPdiTranscricaoInput" hidden accept=".txt,.vtt,.srt,.md,.docx,text/plain,text/vtt"></div>
+      <div class="purchase-field full"><label for="rhLeaderPdiParticipantes">PARTICIPANTES</label><textarea id="rhLeaderPdiParticipantes" rows="2" maxlength="4000"></textarea></div>
       <div class="purchase-field full"><label for="rhLeaderPdiLiderados">LIDERADOS (UM POR LINHA)</label><textarea id="rhLeaderPdiLiderados" rows="3" maxlength="4000"></textarea></div>
-      <div class="purchase-field full"><label for="rhLeaderPdiPonto">PONTO ABORDADO</label><textarea id="rhLeaderPdiPonto" rows="2" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhLeaderPdiPonto">ASSUNTO DISCUTIDO</label><textarea id="rhLeaderPdiPonto" rows="2" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><label for="rhLeaderPdiCombinado">O QUE FOI COMBINADO</label><textarea id="rhLeaderPdiCombinado" rows="2" maxlength="4000"></textarea></div>
+      <div class="purchase-field full"><span class="rh-pdi-actions-label">PRÓXIMAS AÇÕES (AÇÃO, RESPONSÁVEL E PRAZO — CADA PRAZO VIRA LEMBRETE NAS TAREFAS)</span>
+        <div class="rh-pdi-actions" id="rhLeaderPdiAcoes"></div>
+        <button class="btn-outline" id="btnRhLeaderPdiNovaAcao" type="button">+ AÇÃO</button></div>
       <div class="purchase-field full"><label for="rhLeaderPdiAtividade">ATIVIDADE SUGERIDA</label><textarea id="rhLeaderPdiAtividade" rows="2" maxlength="4000"></textarea></div>
       <div class="purchase-field full"><label for="rhLeaderPdiFeedback">FEEDBACK DA GESTÃO</label><textarea id="rhLeaderPdiFeedback" rows="2" maxlength="4000"></textarea></div>
       <div class="purchase-field full"><label for="rhLeaderPdiAnexo">ATA DE PRESENÇA (PDF OU IMAGEM)</label><input type="file" id="rhLeaderPdiAnexo" accept="application/pdf,image/*"></div>
@@ -13954,6 +14270,8 @@
     usuarios:'/cadastros/usuarios',
     auditoria:'/cadastros/auditoria',
     rhRecrutamento:'/rh/recrutamento',
+    rhPainel:'/rh/painel',
+    rhOnboarding:'/rh/onboarding',
     rhFardamento:'/rh/fardamento',
     rhFolgas:'/rh/folgas',
     rhEscalas:'/rh/escalas',
@@ -14019,6 +14337,8 @@
     usuarios:'USUÁRIOS E ACESSOS',
     auditoria:'AUDITORIA',
     rhRecrutamento:'RECRUTAMENTO E SELEÇÃO',
+    rhPainel:'PAINEL DO RH',
+    rhOnboarding:'ONBOARDING',
     rhFardamento:'FARDAMENTO',
     rhFolgas:'FOLGAS',
     rhEscalas:'ESCALAS',
@@ -14080,6 +14400,7 @@
     lojas:'database',
     dados:'database',
     rhRecrutamento:'rh_recrutamento',
+    rhOnboarding:'rh_onboarding',
     rhFardamento:'rh_fardamento',
     rhFolgas:'rh_escalas',
     rhEscalas:'rh_escalas',
@@ -14171,6 +14492,12 @@
     if(name === 'usuarios') return canManageUsers();
     // Funcionários: RH Financeiro OU as permissões próprias do cadastro.
     if(name === 'rhFuncionarios') return canAccess('payroll') || canAccess('rh_funcionarios');
+    // Painel do RH: qualquer uma das abas. Onboarding: qualquer login abre (vê
+    // a própria trilha; o servidor confere o resto).
+    if(name === 'rhPainel') return ['payroll','rh_dashboard','rh_desligamento','rh_exames'].some(canAccess);
+    if(name === 'rhOnboarding') return true;
+    // PDI de líderes também abre o Acompanhamento - Lojas (só a aba do PDI).
+    if(name === 'rhAcompanhamentoLojas') return canAccess('rh_acompanhamento') || canAccess('rh_pdi');
     // Estoque da Assistência: só login sem loja (o backend também bloqueia).
     if(name === 'assistenciaEstoque') return canAccess('estoque_assistencia') && (currentSession.role === 'admin' || !currentSession.companyId);
     if(name === 'documentos' && isCommercialOnlySession()) return false;
@@ -14590,6 +14917,8 @@
     currentSession.sector = String(currentSession.sector || '');
     await loadUserPreferences();
     applyAccessVisibility();
+    // Fora do boot em lotes da Início (pool do Postgres): consulta leve depois.
+    setTimeout(rhCheckMyOnboarding, 4000);
   }
 
   function setSidebarOpen(open, returnFocus){
@@ -14860,6 +15189,8 @@
     if(name === 'rhDreFuncionario') loadRhDreFuncionario();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
     if(name === 'rhRecrutamento') loadRhRecrutamento();
+    if(name === 'rhPainel') loadRhPainel();
+    if(name === 'rhOnboarding') loadRhOnboarding();
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
@@ -14929,6 +15260,8 @@
     if(name === 'rhDreFuncionario') loadRhDreFuncionario();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
     if(name === 'rhRecrutamento') loadRhRecrutamento();
+    if(name === 'rhPainel') loadRhPainel();
+    if(name === 'rhOnboarding') loadRhOnboarding();
     if(name === 'rhFardamento') loadRhFardamento();
     if(name === 'rhAniversariantes') loadRhAniversariantes();
     if(name === 'rhOdontologico') loadRhOdontologico();
@@ -42011,6 +42344,11 @@ function renderHomeTasks(){
     'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
     'comercial:dashboard':'Comercial: ver Dashboard','comercial:commission':'Comercial: ver Comissão','comercial:ranking':'Comercial: ver Ranking','comercial:goals_view':'Comercial: ver Vendedores','comercial:goals':'Comercial: Atualizar Vendedores','comercial:credit_view':'Comercial: ver Crediários','comercial:credit':'Comercial: Lançar Crediários','comercial:stores_view':'Comercial: ver Meta Loja','comercial:stores':'Comercial: Atualizar Meta Loja','comercial:weekend_view':'Comercial: ver Meta do Fim de Semana','comercial:weekend':'Comercial: Atualizar Meta do Fim de Semana','comercial:assist_view':'Comercial: ver Meta Assistência','comercial:assist':'Comercial: Atualizar Meta Assistência','comercial:rules_view':'Comercial: ver Regras de Comissão','comercial:rules':'Comercial: Cadastro de Regras de Comissão',
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
+    'rh_pdi:view':'RH - PDI de Líderes: visualizar','rh_pdi:manage':'RH - PDI de Líderes: lançar/editar/excluir',
+    'rh_dashboard:view':'RH - Dashboard do RH: visualizar',
+    'rh_desligamento:view':'RH - Desligamento: visualizar','rh_desligamento:manage':'RH - Desligamento: editar/concluir checklist',
+    'rh_exames:view':'RH - Exames a vencer: visualizar',
+    'rh_onboarding:videos':'RH - Onboarding: cadastrar vídeos','rh_onboarding:track':'RH - Onboarding: acompanhar',
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Estoque - Relatório NF: visualizar','relatorio_nf:manage':'Estoque - Relatório NF: lançar/gerenciar',
     'treinamento:view':'Comercial - Treinamento: ver o próprio','treinamento:team':'Comercial - Treinamento: equipe e vínculos',
@@ -42668,9 +43006,10 @@ function renderHomeTasks(){
     body.innerHTML = rows.map(employee => {
       const payment = [employee.pixKey ? 'PIX: '+employee.pixKey : '', employee.bankName]
         .filter(Boolean).join(' · ') || '—';
-      const statusPill = employee.status === 'active'
+      const statusPill = (employee.status === 'active'
         ? '<span class="status-pill done">ATIVO</span>'
-        : '<span class="status-pill alert">INATIVO</span>';
+        : '<span class="status-pill alert">INATIVO</span>')+
+        (employee.offboardingPending ? ' <span class="status-pill waiting" title="Checklist demissional pendente">CHECKLIST PENDENTE ('+Number(employee.offboardingPending)+')</span>' : '');
       return '<tr>'+
         '<td>'+escapeHtml(employee.fullName)+(employee.telefone ? '<br><small style="color:var(--ink-faint);">'+escapeHtml(employee.telefone)+'</small>' : '')+'</td>'+
         '<td>'+escapeHtml(rhFormatCpf(employee.cpf))+(employee.rg ? '<br><small style="color:var(--ink-faint);">RG '+escapeHtml(employee.rg)+'</small>' : '')+'</td>'+
@@ -42754,6 +43093,7 @@ function renderHomeTasks(){
     el('rhEmployeeBenefitNotes').value = employee ? (employee.benefitNotes || '') : '';
     el('rhEmployeeUser').value = employee ? (employee.userId || '') : '';
     el('rhEmployeeNotes').value = employee ? (employee.notes || '') : '';
+    rhPendingTermination = null;
     el('rhEmployeeFormStatus').textContent = '';
     el('rhEmployeeDialog').showModal();
   }
@@ -42788,10 +43128,28 @@ function renderHomeTasks(){
     }
   });
 
+  // Ao marcar INATIVO: DESLIGAMENTO obrigatório (data, motivo e checklist).
+  let rhPendingTermination = null;
+  function rhEmployeeBecomingInactive(){
+    const editing = rhEmployees.find(item => item.id === el('rhEmployeeId').value);
+    return el('rhEmployeeStatus').value === 'inactive' && (!editing || editing.status !== 'inactive');
+  }
+  function rhAskTermination(){
+    openRhDesligamento({mode:'employee', employeeName:el('rhEmployeeName').value, termination:rhPendingTermination});
+  }
+  if(el('rhEmployeeStatus')) el('rhEmployeeStatus').addEventListener('change', () => {
+    rhPendingTermination = null;
+    if(rhEmployeeBecomingInactive()) rhAskTermination();
+  });
+
   if(el('rhEmployeeForm')) el('rhEmployeeForm').addEventListener('submit', async event => {
     event.preventDefault();
     const status = el('rhEmployeeFormStatus');
     status.textContent = '';
+    if(rhEmployeeBecomingInactive() && !rhPendingTermination){
+      rhAskTermination();
+      return;
+    }
     const salaryCents = parseBRLToCents(getCurrencyValue(el('rhEmployeeSalary')) || '0');
     if(salaryCents === null){
       status.textContent = 'INFORME UM SALÁRIO VÁLIDO.';
@@ -42821,7 +43179,8 @@ function renderHomeTasks(){
       transportPerDayCents,
       benefitNotes: el('rhEmployeeBenefitNotes').value,
       userId: el('rhEmployeeUser').disabled ? '' : el('rhEmployeeUser').value,
-      notes: el('rhEmployeeNotes').value
+      notes: el('rhEmployeeNotes').value,
+      termination: rhEmployeeBecomingInactive() ? rhPendingTermination : undefined
     };
     try{
       await rhApiRequest('/employees', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
@@ -44050,7 +44409,7 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(row.employeeName)+'</td>'+
       '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
       '<td>'+escapeHtml(RH_ASO_TYPE_LABELS[row.examType] || row.examType)+'</td>'+
-      '<td>'+escapeHtml(rhFormatDate(row.examDate))+'</td>'+
+      '<td>'+escapeHtml(rhFormatDate(row.examDate))+(row.expiryDate ? '<br><small style="color:var(--ink-faint);">VENCE '+escapeHtml(rhFormatDate(row.expiryDate))+'</small>' : '')+'</td>'+
       '<td>'+escapeHtml(row.clinicName || '—')+'</td>'+
       '<td>'+escapeHtml(rhFormatCnpj(row.clinicCnpj))+'</td>'+
       '<td>'+formatCentsBRL(row.amountCents)+'</td>'+
@@ -44158,6 +44517,7 @@ function renderHomeTasks(){
     el('rhAsoFuncionario').value = row ? row.employeeId : '';
     el('rhAsoTipo').value = row ? row.examType : 'periodico';
     el('rhAsoData').value = row ? row.examDate : financeCurrentDateKey();
+    el('rhAsoVencimento').value = (row && row.expiryDate) || rhAddMonths(el('rhAsoData').value, 12);
     el('rhAsoClinica').value = row ? (row.clinicName || '') : '';
     el('rhAsoCnpj').value = row ? (row.clinicCnpj || '') : '';
     setCurrencyValue(el('rhAsoValor'), row ? Number(row.amountCents || 0)/100 : '');
@@ -44211,6 +44571,7 @@ function renderHomeTasks(){
         employeeId: el('rhAsoFuncionario').value,
         examType: el('rhAsoTipo').value,
         examDate: el('rhAsoData').value,
+        expiryDate: el('rhAsoVencimento').value,
         clinicName: el('rhAsoClinica').value,
         clinicCnpj: el('rhAsoCnpj').value,
         amountCents,
@@ -44237,6 +44598,9 @@ function renderHomeTasks(){
     setCurrencyValue(el('rhRescisaoValor'), row ? Number(row.severanceCents || 0)/100 : '');
     setCurrencyValue(el('rhRescisaoFgts'), row ? Number(row.fgtsCents || 0)/100 : '');
     el('rhRescisaoObs').value = row ? (row.notes || '') : '';
+    rhFillTerminationReasons('rhRescisaoMotivo', row ? row.reason : '');
+    el('rhRescisaoOutro').value = row ? (row.reasonOther || '') : '';
+    el('rhRescisaoOutroWrap').hidden = el('rhRescisaoMotivo').value !== 'outro';
     el('rhRescisaoFormStatus').textContent = '';
     el('rhRescisaoDialog').showModal();
   }
@@ -44288,6 +44652,8 @@ function renderHomeTasks(){
         id: el('rhRescisaoId').value || undefined,
         employeeId: el('rhRescisaoFuncionario').value,
         terminationDate: el('rhRescisaoData').value,
+        reason: el('rhRescisaoMotivo').value,
+        reasonOther: el('rhRescisaoOutro').value,
         severanceCents,
         fgtsCents,
         notes: el('rhRescisaoObs').value
@@ -44776,6 +45142,10 @@ function renderHomeTasks(){
   function rhStoreTrackCanManage(){
     return canAccess('rh_acompanhamento:manage');
   }
+  // PDI de líderes: também com permissão própria (rh_pdi:*).
+  function rhPdiCanManage(){
+    return rhStoreTrackCanManage() || canAccess('rh_pdi:manage');
+  }
 
   async function rhStoreTrackApiRequest(path, options){
     const response = await fetch('/api/hr-store-tracking'+path, {
@@ -44814,7 +45184,7 @@ function renderHomeTasks(){
     const tabs = el('rhStoreTrackTabs');
     if(!tabs) return;
     const items = [{id:'pdi', label:'PDI LÍDERES'}].concat(
-      companies.map(company => ({id:company.id, label:company.name}))
+      canAccess('rh_acompanhamento') ? companies.map(company => ({id:company.id, label:company.name})) : []
     );
     if(!items.some(item => item.id === rhStoreTrackTab)) rhStoreTrackTab = 'pdi';
     tabs.innerHTML = items.map(item =>
@@ -44843,7 +45213,7 @@ function renderHomeTasks(){
   function renderRhLeaderPdiTable(){
     const body = el('rhLeaderPdiTableBody');
     if(!body) return;
-    const manage = rhStoreTrackCanManage();
+    const manage = rhPdiCanManage();
     if(!rhLeaderPdiRows.length){
       body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Nenhum PDI cadastrado.</td></tr>';
       return;
@@ -44886,10 +45256,10 @@ function renderHomeTasks(){
   }
 
   async function loadRhAcompanhamentoLojas(){
-    if(!canAccess('rh_acompanhamento')) return;
+    if(!canAccess('rh_acompanhamento') && !canAccess('rh_pdi')) return;
     if(!companies.length) await loadCompanies();
     renderRhStoreTrackTabs();
-    if(el('btnNewRhLeaderPdi')) el('btnNewRhLeaderPdi').hidden = !rhStoreTrackCanManage();
+    if(el('btnNewRhLeaderPdi')) el('btnNewRhLeaderPdi').hidden = !rhPdiCanManage();
     if(el('btnNewRhStoreTrack')) el('btnNewRhStoreTrack').hidden = !rhStoreTrackCanManage();
     if(rhStoreTrackTab === 'pdi'){
       el('rhLeaderPdiTableBody').innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
@@ -44931,12 +45301,100 @@ function renderHomeTasks(){
     el('rhLeaderPdiPonto').value = row ? row.topicDiscussed : '';
     el('rhLeaderPdiAtividade').value = row ? row.suggestedActivity : '';
     el('rhLeaderPdiFeedback').value = row ? row.managementFeedback : '';
+    el('rhLeaderPdiTranscricao').value = row ? (row.transcriptText || '') : '';
+    el('rhLeaderPdiTranscricaoNome').textContent = row && row.transcriptFileName ? 'ARQUIVO: '+row.transcriptFileName : '';
+    rhLeaderPdiTranscriptFileName = row ? (row.transcriptFileName || '') : '';
+    el('rhLeaderPdiParticipantes').value = row ? (row.participants || '') : '';
+    el('rhLeaderPdiCombinado').value = row ? (row.agreedText || '') : '';
+    let actions = [];
+    try{ actions = row ? JSON.parse(row.nextActionsJson || '[]') : []; }catch{ actions = []; }
+    el('rhLeaderPdiAcoes').innerHTML = '';
+    (actions.length ? actions : [{}]).forEach(rhLeaderPdiAddAction);
     el('rhLeaderPdiAnexo').value = '';
     el('rhLeaderPdiFormStatus').textContent = '';
     el('rhLeaderPdiDialog').showModal();
   }
 
   if(el('btnNewRhLeaderPdi')) el('btnNewRhLeaderPdi').addEventListener('click', () => openRhLeaderPdiDialog(null));
+
+  // Próximas ações do PDI: uma linha por ação (ação, responsável, prazo).
+  let rhLeaderPdiTranscriptFileName = '';
+  function rhLeaderPdiAddAction(action){
+    const row = document.createElement('div');
+    row.className = 'rh-pdi-action-row';
+    row.innerHTML = '<input data-pdi-action maxlength="300" placeholder="Ação" aria-label="Ação">'+
+      '<input data-pdi-owner maxlength="120" placeholder="Responsável" aria-label="Responsável">'+
+      '<input type="date" data-pdi-due aria-label="Prazo">'+
+      '<button class="btn-outline" type="button" data-pdi-remove aria-label="Remover ação">×</button>';
+    row.querySelector('[data-pdi-action]').value = (action && action.action) || '';
+    row.querySelector('[data-pdi-owner]').value = (action && action.owner) || '';
+    row.querySelector('[data-pdi-due]').value = (action && action.dueDate) || '';
+    el('rhLeaderPdiAcoes').appendChild(row);
+  }
+  function rhLeaderPdiActions(){
+    return Array.from(el('rhLeaderPdiAcoes').querySelectorAll('.rh-pdi-action-row')).map(row => ({
+      action:row.querySelector('[data-pdi-action]').value.trim(),
+      owner:row.querySelector('[data-pdi-owner]').value.trim(),
+      dueDate:row.querySelector('[data-pdi-due]').value
+    })).filter(item => item.action);
+  }
+  if(el('btnRhLeaderPdiNovaAcao')) el('btnRhLeaderPdiNovaAcao').addEventListener('click', () => rhLeaderPdiAddAction({}));
+  if(el('rhLeaderPdiAcoes')) el('rhLeaderPdiAcoes').addEventListener('click', event => {
+    const remove = event.target.closest('[data-pdi-remove]');
+    if(remove) remove.closest('.rh-pdi-action-row').remove();
+  });
+
+  // Transcrição anexada: o texto é lido no próprio navegador (sem IA) e vai
+  // para o campo — TXT/VTT/SRT direto; DOCX abrindo o ZIP com a
+  // DecompressionStream nativa e tirando o texto do word/document.xml.
+  async function rhDocxText(file){
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const view = new DataView(bytes.buffer);
+    let end = bytes.length - 22;
+    while(end >= 0 && view.getUint32(end, true) !== 0x06054b50) end--;
+    if(end < 0) throw new Error('ARQUIVO DOCX INVÁLIDO.');
+    let pointer = view.getUint32(end + 16, true);
+    const entries = view.getUint16(end + 10, true);
+    for(let index = 0; index < entries; index++){
+      const method = view.getUint16(pointer + 10, true);
+      const size = view.getUint32(pointer + 20, true);
+      const nameLength = view.getUint16(pointer + 28, true);
+      const extraLength = view.getUint16(pointer + 30, true);
+      const commentLength = view.getUint16(pointer + 32, true);
+      const local = view.getUint32(pointer + 42, true);
+      const name = new TextDecoder().decode(bytes.subarray(pointer + 46, pointer + 46 + nameLength));
+      pointer += 46 + nameLength + extraLength + commentLength;
+      if(name !== 'word/document.xml') continue;
+      const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
+      const data = bytes.subarray(start, start + size);
+      const xml = method === 0 ? new TextDecoder().decode(data)
+        : await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+      const doc = new DOMParser().parseFromString(xml.replace(/<\/w:p>/g, '</w:p>\n'), 'application/xml');
+      return (doc.documentElement.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    throw new Error('NÃO ENCONTREI TEXTO NO ARQUIVO DOCX.');
+  }
+  async function rhTranscriptFromFile(file){
+    if(/\.docx$/i.test(file.name)) return rhDocxText(file);
+    const text = await file.text();
+    // Legenda (VTT/SRT): tira cabeçalho, numeração e marcações de tempo.
+    return text.split(/\r?\n/).filter(line => !/^(WEBVTT|NOTE\b|\d+$|[\d:.,]+\s*-->)/.test(line.trim())).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  if(el('btnRhLeaderPdiTranscricaoArquivo')) el('btnRhLeaderPdiTranscricaoArquivo').addEventListener('click', () => el('rhLeaderPdiTranscricaoInput').click());
+  if(el('rhLeaderPdiTranscricaoInput')) el('rhLeaderPdiTranscricaoInput').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    try{
+      const text = await rhTranscriptFromFile(file);
+      if(!text) throw new Error('O ARQUIVO NÃO TEM TEXTO.');
+      el('rhLeaderPdiTranscricao').value = text;
+      rhLeaderPdiTranscriptFileName = file.name;
+      el('rhLeaderPdiTranscricaoNome').textContent = 'ARQUIVO: '+file.name;
+    }catch(error){
+      el('rhLeaderPdiFormStatus').textContent = error.message || 'NÃO FOI POSSÍVEL LER O ARQUIVO.';
+    }
+  });
   if(el('btnCloseRhLeaderPdiDialog')) el('btnCloseRhLeaderPdiDialog').addEventListener('click', () => el('rhLeaderPdiDialog').close());
   if(el('btnCancelRhLeaderPdiDialog')) el('btnCancelRhLeaderPdiDialog').addEventListener('click', () => el('rhLeaderPdiDialog').close());
 
@@ -45002,7 +45460,12 @@ function renderHomeTasks(){
       suggestedActivity: el('rhLeaderPdiAtividade').value,
       managementFeedback: el('rhLeaderPdiFeedback').value,
       teamMembers: rhStoreTrackLinesFromTextarea(el('rhLeaderPdiLiderados').value).join('\n'),
-      attendanceSigned: el('rhLeaderPdiAtaAssinada').value === 'sim'
+      attendanceSigned: el('rhLeaderPdiAtaAssinada').value === 'sim',
+      transcriptText: el('rhLeaderPdiTranscricao').value,
+      transcriptFileName: el('rhLeaderPdiTranscricao').value.trim() ? rhLeaderPdiTranscriptFileName : '',
+      participants: el('rhLeaderPdiParticipantes').value,
+      agreedText: el('rhLeaderPdiCombinado').value,
+      nextActions: rhLeaderPdiActions()
     };
     try{
       const result = await rhStoreTrackApiRequest('/leader-pdi', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
@@ -45010,7 +45473,7 @@ function renderHomeTasks(){
       if(file) await uploadRhStoreTrackAttachment('leader', result.id, file);
       el('rhLeaderPdiDialog').close();
       await refreshAfterAction(() => loadRhAcompanhamentoLojas());
-      showPurchaseToast('PDI salvo.');
+      showPurchaseToast('PDI SALVO. TAREFA COM AS PRÓXIMAS AÇÕES CRIADA PARA AMANHÃ.');
     }catch(error){
       status.textContent = error.message;
     }
@@ -45260,6 +45723,776 @@ function renderHomeTasks(){
 
   if(el('recFilterStatus')) el('recFilterStatus').addEventListener('change', loadRecCandidates);
   if(el('recFilterSearch')) el('recFilterSearch').addEventListener('input', debounce(renderRecCandidatesTable, 150));
+
+  // ====================== RH (out/2026) ======================
+  // Desligamento com checklist, textos das pendências do Recrutamento,
+  // Painel do RH (dashboard, desligamentos, exames a vencer) e Onboarding.
+  // Motivos e itens do checklist espelham app/lib/hr-rh.ts.
+
+  const RH_TERMINATION_REASONS = {
+    pedido_demissao:'PEDIDO DE DEMISSÃO',
+    sem_justa_causa:'DISPENSA SEM JUSTA CAUSA',
+    com_justa_causa:'DISPENSA COM JUSTA CAUSA',
+    termino_contrato:'TÉRMINO DE CONTRATO/EXPERIÊNCIA',
+    acordo:'ACORDO',
+    outro:'OUTRO'
+  };
+  const RH_TERMINATION_CHECKLIST = {
+    aviso_previo:'AVISO PRÉVIO ASSINADO (TRABALHADO OU INDENIZADO)',
+    aso_demissional:'EXAME DEMISSIONAL (ASO) REALIZADO',
+    devolucao:'DEVOLUÇÃO DE UNIFORME, CRACHÁ, CHAVES E EQUIPAMENTOS (NOTEBOOK, CELULAR, CARTÃO CORPORATIVO)',
+    acessos:'BLOQUEIO DOS ACESSOS (LOGIN DO SISTEMA, E-MAIL, WHATSAPP DA LOJA, SISTEMAS DE VENDA) E RETIRADA DO VÍNCULO DE LOGIN',
+    baixa_ctps:'BAIXA NA CARTEIRA DE TRABALHO (ESOCIAL) E RESCISÃO CALCULADA',
+    pagamento:'PAGAMENTO DA RESCISÃO E GUIAS (FGTS/MULTA, SEGURO-DESEMPREGO)',
+    pendencias:'CONFERÊNCIA DE PENDÊNCIAS (VALES, COMISSÕES, DEVOLUÇÕES, PONTO)',
+    entrevista:'ENTREVISTA DE DESLIGAMENTO',
+    beneficios:'RETIRADA DO PLANO ODONTOLÓGICO/BENEFÍCIOS'
+  };
+
+  async function rhRhApi(path, options){
+    const response = await fetch('/api/hr-rh'+path, {
+      ...(options || {}),
+      cache:'no-store',
+      headers:{Accept:'application/json',...((options && options.headers) || {})}
+    });
+    const payload = await response.json().catch(() => ({}));
+    if(response.status === 401){
+      location.assign('/login?next='+encodeURIComponent(location.pathname));
+      throw new Error('SESSÃO EXPIRADA.');
+    }
+    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    return payload;
+  }
+  const rhJsonPost = body => ({method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+
+  function rhFillTerminationReasons(id, selected){
+    const select = el(id);
+    if(!select) return;
+    select.innerHTML = '<option value="">SELECIONE</option>'+Object.entries(RH_TERMINATION_REASONS)
+      .map(([value, label]) => '<option value="'+value+'">'+escapeHtml(label)+'</option>').join('');
+    select.value = selected || '';
+  }
+  if(el('rhRescisaoMotivo')) el('rhRescisaoMotivo').addEventListener('change', () => {
+    el('rhRescisaoOutroWrap').hidden = el('rhRescisaoMotivo').value !== 'outro';
+  });
+
+  // ---------------------- DESLIGAMENTO ----------------------
+  // mode 'employee': devolve os dados para o salvamento do funcionário;
+  // mode 'edit': grava direto (Painel do RH > Desligamentos).
+  let rhDesligamentoContext = null;
+  function openRhDesligamento(context){
+    rhDesligamentoContext = context;
+    const data = context.termination || {};
+    el('rhDesligamentoForm').reset();
+    el('rhDesligamentoNome').textContent = context.employeeName ? 'FUNCIONÁRIO: '+String(context.employeeName).toUpperCase() : '';
+    el('rhDesligamentoData').value = data.terminationDate || todayDateKey();
+    rhFillTerminationReasons('rhDesligamentoMotivo', data.reason);
+    el('rhDesligamentoOutro').value = data.reasonOther || '';
+    el('rhDesligamentoOutroWrap').hidden = el('rhDesligamentoMotivo').value !== 'outro';
+    const checklist = data.checklist || {};
+    el('rhDesligamentoChecklist').innerHTML = Object.entries(RH_TERMINATION_CHECKLIST).map(([key, label]) => {
+      const entry = checklist[key] || {};
+      return '<div class="rh-checklist-row" data-check-key="'+key+'">'+
+        '<span class="rh-checklist-label">'+escapeHtml(label)+'</span>'+
+        '<select data-check-status aria-label="Situação: '+escapeHtml(label)+'">'+
+          '<option value="">PENDENTE</option>'+
+          '<option value="feito"'+(entry.status === 'feito' ? ' selected' : '')+'>FEITO</option>'+
+          '<option value="na"'+(entry.status === 'na' ? ' selected' : '')+'>NÃO SE APLICA</option>'+
+        '</select>'+
+        '<input data-check-note maxlength="300" placeholder="Observação" aria-label="Observação: '+escapeHtml(label)+'" value="'+escapeHtml(entry.note || '')+'">'+
+      '</div>';
+    }).join('');
+    el('rhDesligamentoStatus').textContent = '';
+    el('rhDesligamentoDialog').showModal();
+  }
+  function rhDesligamentoData(){
+    const checklist = {};
+    el('rhDesligamentoChecklist').querySelectorAll('[data-check-key]').forEach(row => {
+      checklist[row.dataset.checkKey] = {
+        status:row.querySelector('[data-check-status]').value,
+        note:row.querySelector('[data-check-note]').value.trim()
+      };
+    });
+    return {
+      terminationDate:el('rhDesligamentoData').value,
+      reason:el('rhDesligamentoMotivo').value,
+      reasonOther:el('rhDesligamentoOutro').value.trim(),
+      checklist
+    };
+  }
+  function closeRhDesligamento(cancelled){
+    if(el('rhDesligamentoDialog').open) el('rhDesligamentoDialog').close();
+    // Cancelou ao inativar: o funcionário volta para ATIVO no formulário.
+    if(cancelled && rhDesligamentoContext && rhDesligamentoContext.mode === 'employee' && !rhPendingTermination){
+      el('rhEmployeeStatus').value = 'active';
+    }
+  }
+  if(el('rhDesligamentoMotivo')) el('rhDesligamentoMotivo').addEventListener('change', () => {
+    el('rhDesligamentoOutroWrap').hidden = el('rhDesligamentoMotivo').value !== 'outro';
+  });
+  if(el('btnCloseRhDesligamento')) el('btnCloseRhDesligamento').addEventListener('click', () => closeRhDesligamento(true));
+  if(el('btnCancelRhDesligamento')) el('btnCancelRhDesligamento').addEventListener('click', () => closeRhDesligamento(true));
+  if(el('rhDesligamentoDialog')) el('rhDesligamentoDialog').addEventListener('cancel', () => closeRhDesligamento(true));
+  if(el('rhDesligamentoForm')) el('rhDesligamentoForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const data = rhDesligamentoData();
+    const status = el('rhDesligamentoStatus');
+    if(!data.terminationDate){ status.textContent = 'INFORME A DATA DO DESLIGAMENTO.'; return; }
+    if(!data.reason){ status.textContent = 'INFORME O MOTIVO DO DESLIGAMENTO.'; return; }
+    if(data.reason === 'outro' && !data.reasonOther){ status.textContent = 'DESCREVA O MOTIVO DO DESLIGAMENTO (OUTRO).'; return; }
+    if(rhDesligamentoContext.mode === 'employee'){
+      rhPendingTermination = data;
+      closeRhDesligamento(false);
+      el('rhEmployeeFormStatus').textContent = 'DESLIGAMENTO INFORMADO — CLIQUE EM SALVAR PARA CONCLUIR.';
+      return;
+    }
+    try{
+      await rhRhApi('/offboarding', rhJsonPost({id:rhDesligamentoContext.id, ...data}));
+      closeRhDesligamento(false);
+      await refreshAfterAction(loadRhOffboarding);
+      showPurchaseToast('DESLIGAMENTO SALVO.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
+
+  // ---------------------- TEXTOS DAS PENDÊNCIAS (RECRUTAMENTO) ----------------------
+  async function openRecPendingTexts(){
+    el('recPendingStatus').textContent = '';
+    try{
+      const response = await fetch('/api/hr-recruitment/settings', {cache:'no-store', headers:{Accept:'application/json'}});
+      const data = await response.json().catch(() => ({}));
+      if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL CARREGAR OS TEXTOS.');
+      el('recPendingFields').innerHTML = Object.entries(REC_STATUS_LABELS).map(([status, label]) =>
+        '<div class="purchase-field full"><label for="recPending_'+status+'">'+escapeHtml(label)+'</label>'+
+        '<input id="recPending_'+status+'" data-rec-pending="'+status+'" maxlength="120" value="'+escapeHtml(data.pendingTexts[status] || '')+'"></div>'
+      ).join('');
+      el('recPendingDialog').showModal();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  }
+  if(el('btnRecPendingTexts')) el('btnRecPendingTexts').addEventListener('click', openRecPendingTexts);
+  ['btnCloseRecPending','btnCancelRecPending'].forEach(id => { if(el(id)) el(id).addEventListener('click', () => el('recPendingDialog').close()); });
+  if(el('recPendingForm')) el('recPendingForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const pendingTexts = {};
+    el('recPendingFields').querySelectorAll('[data-rec-pending]').forEach(input => { pendingTexts[input.dataset.recPending] = input.value.trim(); });
+    try{
+      const response = await fetch('/api/hr-recruitment/settings', {method:'POST', headers:{Accept:'application/json','Content-Type':'application/json'}, body:JSON.stringify({pendingTexts})});
+      const data = await response.json().catch(() => ({}));
+      if(!response.ok) throw new Error(data.error || 'NÃO FOI POSSÍVEL SALVAR OS TEXTOS.');
+      el('recPendingDialog').close();
+      showPurchaseToast('TEXTOS DAS PENDÊNCIAS SALVOS.');
+    }catch(error){
+      el('recPendingStatus').textContent = error.message;
+    }
+  });
+
+  // ---------------------- PAINEL DO RH ----------------------
+  let rhPainelTab = '';
+  let rhDashData = null;
+  let rhOffRows = [];
+  let rhExamRows = [];
+  const rhPainelTabAllowed = {
+    dashboard:() => canAccess('payroll') || canAccess('rh_dashboard'),
+    desligamentos:() => canAccess('payroll') || canAccess('rh_desligamento'),
+    exames:() => canAccess('payroll') || canAccess('rh_exames')
+  };
+
+  function renderRhPainelTabs(){
+    if(!rhPainelTab || !rhPainelTabAllowed[rhPainelTab]()) rhPainelTab = Object.keys(rhPainelTabAllowed).find(tab => rhPainelTabAllowed[tab]()) || 'dashboard';
+    document.querySelectorAll('[data-rh-painel-tab]').forEach(button => {
+      const active = button.dataset.rhPainelTab === rhPainelTab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    el('rhPainelDashboard').hidden = rhPainelTab !== 'dashboard';
+    el('rhPainelDesligamentos').hidden = rhPainelTab !== 'desligamentos';
+    el('rhPainelExames').hidden = rhPainelTab !== 'exames';
+  }
+
+  async function loadRhPainel(){
+    if(!canAccessPage('rhPainel')) return;
+    if(!companies.length) await loadCompanies();
+    ['rhDashLoja','rhOffLoja','rhExamLoja'].forEach(id => rhFillSelect(id,'TODAS AS LOJAS',rhCompanyOptions()));
+    if(!el('rhDashFrom').value){
+      const today = todayDateKey();
+      el('rhDashFrom').value = today.slice(0,8)+'01';
+      el('rhDashTo').value = today;
+    }
+    renderRhPainelTabs();
+    if(rhPainelTab === 'dashboard') await loadRhDashboard();
+    if(rhPainelTab === 'desligamentos') await loadRhOffboarding();
+    if(rhPainelTab === 'exames') await loadRhExams();
+  }
+
+  if(el('rhPainelTabs')) el('rhPainelTabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-painel-tab]');
+    if(!button) return;
+    rhPainelTab = button.dataset.rhPainelTab;
+    loadRhPainel();
+  });
+
+  // Dashboard
+  function rhDashQuery(){
+    const params = new URLSearchParams({from:el('rhDashFrom').value, to:el('rhDashTo').value});
+    if(el('rhDashLoja').value) params.set('companyId', el('rhDashLoja').value);
+    if(el('rhDashPessoa').value.trim()) params.set('person', el('rhDashPessoa').value.trim());
+    return params.toString();
+  }
+  async function loadRhDashboard(){
+    el('rhDashKpis').innerHTML = '<p class="supply-dashboard-empty">Carregando…</p>';
+    try{
+      rhDashData = await rhRhApi('/dashboard?'+rhDashQuery());
+      const leaderSelect = el('rhDashLider');
+      const selected = leaderSelect.value;
+      leaderSelect.innerHTML = '<option value="">TODOS OS LÍDERES</option>'+rhDashData.leaders.map(leader =>
+        '<option value="'+escapeHtml(leader.companyId)+'|'+escapeHtml(leader.name)+'">'+escapeHtml(leader.name+(leader.companyName ? ' · '+leader.companyName : ''))+'</option>').join('');
+      leaderSelect.value = selected;
+      renderRhDashboard();
+    }catch(error){
+      rhDashData = null;
+      el('rhDashKpis').innerHTML = '<p class="supply-dashboard-empty">'+escapeHtml(error.message)+'</p>';
+    }
+  }
+  const RH_DASH_KPIS = [
+    ['admitted','ADMITIDOS NO PERÍODO'],
+    ['dismissed','DEMITIDOS NO PERÍODO'],
+    ['turnover','TURNOVER (%)'],
+    ['scheduled','ENTREVISTAS AGENDADAS'],
+    ['interviewed','ENTREVISTADOS'],
+    ['approved','APROVADOS'],
+    ['rejected','REPROVADOS']
+  ];
+  function rhDashValue(key, value){
+    return key === 'turnover' ? Number(value || 0).toLocaleString('pt-BR',{minimumFractionDigits:1, maximumFractionDigits:1})+'%' : String(Number(value || 0));
+  }
+  function rhDashDelta(current, before){
+    const diff = Math.round((Number(current || 0) - Number(before || 0)) * 10) / 10;
+    return diff > 0 ? '+'+diff.toLocaleString('pt-BR') : diff < 0 ? '−'+Math.abs(diff).toLocaleString('pt-BR') : 'IGUAL';
+  }
+  function rhBarsHtml(rows){
+    // Com comparação, cada indicador tem a própria escala (atual × anterior).
+    const globalMax = Math.max(1, ...rows.map(row => Math.max(Number(row.value) || 0, Number(row.before) || 0)));
+    return '<div class="rh-bars">'+rows.map(row => {
+      const max = row.before !== undefined ? Math.max(1, Number(row.value) || 0, Number(row.before) || 0) : globalMax;
+      return '<div class="rh-bar-row"><span class="rh-bar-label">'+escapeHtml(row.label)+'</span>'+
+        '<span class="rh-bar-track"><span class="rh-bar-fill" style="width:'+((Number(row.value) || 0) / max * 100).toFixed(1)+'%"></span></span>'+
+        '<strong class="rh-bar-value">'+escapeHtml(row.text || String(row.value))+'</strong>'+
+        (row.before !== undefined ? '<span class="rh-bar-track before"><span class="rh-bar-fill" style="width:'+((Number(row.before) || 0) / max * 100).toFixed(1)+'%"></span></span><small class="rh-bar-value">'+escapeHtml(row.beforeText || String(row.before))+'</small>' : '')+
+      '</div>';
+    }).join('')+'</div>';
+  }
+  function renderRhDashboard(){
+    const data = rhDashData;
+    if(!data) return;
+    const queue = data.admissionQueue || [];
+    el('rhDashKpis').innerHTML = RH_DASH_KPIS.map(([key, label]) =>
+      '<div class="supply-dashboard-card"><span>'+label+'</span><strong>'+rhDashValue(key, data.current[key])+'</strong>'+
+      '<small class="rh-kpi-before">ANTERIOR: '+rhDashValue(key, data.before[key])+' · '+rhDashDelta(data.current[key], data.before[key])+'</small></div>'
+    ).join('')+
+      '<div class="supply-dashboard-card'+(queue.length ? ' warning' : '')+'"><span>AGUARDANDO ADMISSÃO</span><strong>'+queue.length+'</strong><small class="rh-kpi-before">ATIVOS NO FIM DO PERÍODO: '+data.current.activeEnd+'</small></div>';
+    el('rhDashCompare').innerHTML = rhBarsHtml(RH_DASH_KPIS.map(([key, label]) => ({
+      label, value:data.current[key], before:data.before[key],
+      text:rhDashValue(key, data.current[key]), beforeText:'ANT. '+rhDashValue(key, data.before[key])
+    })))+'<p class="rh-onb-hint">BARRA CHEIA = '+escapeHtml(formatDateBR(data.from)+' A '+formatDateBR(data.to))+' · BARRA CLARA = '+escapeHtml(formatDateBR(data.previous.from)+' A '+formatDateBR(data.previous.to))+'</p>';
+    el('rhDashStatus').innerHTML = rhBarsHtml(Object.entries(REC_STATUS_LABELS).map(([status, label]) => ({label, value:data.current.byStatus[status] || 0})));
+    el('rhDashQueueBody').innerHTML = queue.length ? queue.map((item, index) =>
+      '<tr><td>'+(index + 1)+'º</td><td>'+escapeHtml(item.fullName)+'</td><td>'+escapeHtml(item.desiredRole || '—')+'</td><td>'+escapeHtml(item.storeName || '—')+'</td>'+
+      '<td>'+escapeHtml(rhFormatDate(item.interviewDate))+'</td><td><span class="status-pill progress">'+escapeHtml(REC_STATUS_LABELS[item.status] || item.status)+'</span></td></tr>'
+    ).join('') : '<tr><td colspan="6" class="responsive-empty">Nenhum aprovado aguardando admissão.</td></tr>';
+    el('rhDashAdmittedBody').innerHTML = data.admitted.length ? data.admitted.map(item =>
+      '<tr><td>'+escapeHtml(item.fullName)+'</td><td>'+escapeHtml(item.companyName || '—')+'</td><td>'+escapeHtml(rhFormatDate(item.date))+'</td></tr>').join('')
+      : '<tr><td colspan="3" class="responsive-empty">Nenhuma admissão no período.</td></tr>';
+    el('rhDashDismissedBody').innerHTML = data.dismissed.length ? data.dismissed.map(item =>
+      '<tr><td>'+escapeHtml(item.fullName)+'</td><td>'+escapeHtml(item.companyName || '—')+'</td><td>'+escapeHtml(rhFormatDate(item.date))+'</td><td>'+escapeHtml(RH_TERMINATION_REASONS[item.reason] || '—')+'</td></tr>').join('')
+      : '<tr><td colspan="4" class="responsive-empty">Nenhum desligamento no período.</td></tr>';
+    const store = el('rhDashLoja').value ? el('rhDashLoja').selectedOptions[0].textContent : 'TODAS AS LOJAS';
+    el('rhDashPrintMeta').textContent = 'PERÍODO '+formatDateBR(data.from)+' A '+formatDateBR(data.to)+' · '+store+
+      (el('rhDashPessoa').value.trim() ? ' · PESSOA: '+el('rhDashPessoa').value.trim().toUpperCase() : '')+' · GERADO EM '+formatDateTimeBR(new Date().toISOString()).toUpperCase();
+  }
+  ['rhDashFrom','rhDashTo','rhDashLoja'].forEach(id => { if(el(id)) el(id).addEventListener('change', loadRhDashboard); });
+  if(el('rhDashPessoa')) el('rhDashPessoa').addEventListener('change', loadRhDashboard);
+  // Líder: filtra pela loja do líder.
+  if(el('rhDashLider')) el('rhDashLider').addEventListener('change', () => {
+    const value = el('rhDashLider').value;
+    if(value) el('rhDashLoja').value = value.split('|')[0];
+    loadRhDashboard();
+  });
+  if(el('btnRhDashPdf')) el('btnRhDashPdf').addEventListener('click', () => {
+    if(!rhDashData) return;
+    rhStartPrint('DASHBOARD RH '+formatDateBR(rhDashData.from).replace(/\//g,'-')+' A '+formatDateBR(rhDashData.to).replace(/\//g,'-'));
+  });
+  if(el('btnRhDashImage')) el('btnRhDashImage').addEventListener('click', async () => {
+    if(!rhDashData) return;
+    const data = rhDashData;
+    const W = 1600, H = 1000;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const store = el('rhDashLoja').value ? el('rhDashLoja').selectedOptions[0].textContent : 'TODAS AS LOJAS';
+    const {HEADER, FOOTER} = await comDrawImageFrame(ctx, W, H, {
+      title:'DASHBOARD DO RH', subtitle:store,
+      pill:formatDateBR(data.from)+' A '+formatDateBR(data.to),
+      footer:'UNIGAMES · RH'
+    });
+    const kpis = RH_DASH_KPIS.concat([['queue','AGUARDANDO ADMISSÃO']]);
+    const boxW = (W - 96 - 3 * 16) / 4, boxH = 128;
+    kpis.forEach(([key, label], index) => {
+      const x = 48 + (index % 4) * (boxW + 16);
+      const y = HEADER + 30 + Math.floor(index / 4) * (boxH + 16);
+      ctx.fillStyle = '#ffffff';
+      comRoundRect(ctx, x, y, boxW, boxH, 18);
+      ctx.fill();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = COM_IMAGE_PALETTE.soft;
+      ctx.font = comFont(800, 20);
+      ctx.fillText(comFitText(ctx, label, boxW - 40), x + 20, y + 36);
+      ctx.fillStyle = '#1d487e';
+      ctx.font = comFont(900, 46);
+      ctx.fillText(key === 'queue' ? String(data.admissionQueue.length) : rhDashValue(key, data.current[key]), x + 20, y + 88);
+      if(key !== 'queue'){
+        ctx.fillStyle = COM_IMAGE_PALETTE.faint;
+        ctx.font = comFont(700, 18);
+        ctx.fillText(comFitText(ctx, 'ANTERIOR: '+rhDashValue(key, data.before[key])+' · '+rhDashDelta(data.current[key], data.before[key]), boxW - 40), x + 20, y + 114);
+      }
+    });
+    const chartTop = HEADER + 30 + 2 * (boxH + 16) + 10;
+    comDrawBars(ctx, {
+      title:'CANDIDATOS POR STATUS', noRank:true,
+      bars:Object.entries(REC_STATUS_LABELS).map(([status, label], index) => ({label, value:data.current.byStatus[status] || 0, sort:-index}))
+    }, {x:40, y:chartTop, width:W - 80, height:H - chartTop - FOOTER - 20, palette:COM_IMAGE_PALETTE, k:1.4});
+    await shareCanvasImage(canvas, 'dashboard-rh-'+data.from+'-'+data.to+'.png', 'DASHBOARD DO RH');
+  });
+
+  // Desligamentos
+  async function loadRhOffboarding(){
+    const body = el('rhOffTableBody');
+    body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      rhOffRows = (await rhRhApi('/offboarding')).terminations || [];
+      renderRhOffboarding();
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function renderRhOffboarding(){
+    const onlyPending = el('rhOffFiltro').value === 'pending';
+    const store = el('rhOffLoja').value;
+    const rows = rhOffRows.filter(row => (!onlyPending || row.pending > 0) && (!store || row.companyId === store));
+    const manage = canAccess('payroll') || canAccess('rh_desligamento:manage');
+    el('rhOffTableBody').innerHTML = rows.length ? rows.map(row =>
+      '<tr><td>'+escapeHtml(row.employeeName)+'</td><td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+escapeHtml(rhFormatDate(row.terminationDate))+'</td>'+
+      '<td>'+escapeHtml(row.reason === 'outro' ? 'OUTRO: '+row.reasonOther : (RH_TERMINATION_REASONS[row.reason] || 'NÃO INFORMADO'))+'</td>'+
+      '<td>'+(row.pending ? '<span class="status-pill waiting">'+row.pending+' PENDENTE'+(row.pending > 1 ? 'S' : '')+'</span>' : '<span class="status-pill done">CONCLUÍDO</span>')+'</td>'+
+      '<td class="no-print">'+(manage ? '<button class="btn-outline" type="button" data-rh-off-edit="'+escapeHtml(row.id)+'">CHECKLIST</button>' : '')+'</td></tr>'
+    ).join('') : '<tr><td colspan="6" class="responsive-empty">'+(onlyPending ? 'Nenhum checklist demissional pendente.' : 'Nenhum desligamento registrado.')+'</td></tr>';
+  }
+  ['rhOffFiltro','rhOffLoja'].forEach(id => { if(el(id)) el(id).addEventListener('change', renderRhOffboarding); });
+  if(el('rhOffTableBody')) el('rhOffTableBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-off-edit]');
+    if(!button) return;
+    const row = rhOffRows.find(item => item.id === button.dataset.rhOffEdit);
+    if(row) openRhDesligamento({mode:'edit', id:row.id, employeeName:row.employeeName, termination:row});
+  });
+
+  // Exames a vencer
+  const RH_EXAM_SITUATIONS = {
+    vencido:['VENCIDO','alert'], '7':['ATÉ 7 DIAS','alert'], '15':['ATÉ 15 DIAS','waiting'], '30':['ATÉ 30 DIAS','waiting'],
+    sem_exame:['SEM EXAME','alert'], ok:['EM DIA','done']
+  };
+  const RH_EXAM_ORDER = ['vencido','7','15','30','sem_exame','ok'];
+  async function loadRhExams(){
+    const body = el('rhExamTableBody');
+    body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      rhExamRows = (await rhRhApi('/exams')).exams || [];
+      renderRhExams();
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function renderRhExams(){
+    const store = el('rhExamLoja').value;
+    const inStore = rhExamRows.filter(row => !store || row.companyId === store);
+    el('rhExamCards').innerHTML = RH_EXAM_ORDER.slice(0, 5).map(key => {
+      const count = inStore.filter(row => row.situation === key).length;
+      const [label, tone] = RH_EXAM_SITUATIONS[key];
+      return '<div class="supply-dashboard-card'+(count ? (tone === 'alert' ? ' danger' : ' warning') : '')+'"><span>'+label+'</span><strong>'+count+'</strong></div>';
+    }).join('');
+    const rows = inStore
+      .filter(row => !el('rhExamSituacao').value || row.situation !== 'ok')
+      .sort((a, b) => (a.companyName || '').localeCompare(b.companyName || '') || RH_EXAM_ORDER.indexOf(a.situation) - RH_EXAM_ORDER.indexOf(b.situation) || (a.expiryDate || '').localeCompare(b.expiryDate || ''));
+    el('rhExamTableBody').innerHTML = rows.length ? rows.map(row => {
+      const [label, tone] = RH_EXAM_SITUATIONS[row.situation] || ['—',''];
+      const days = row.daysLeft === null ? '' : row.daysLeft < 0 ? ' ('+Math.abs(row.daysLeft)+' DIAS)' : row.situation !== 'ok' ? ' ('+row.daysLeft+' DIAS)' : '';
+      return '<tr><td>'+escapeHtml(row.fullName)+'</td><td>'+escapeHtml(row.companyName || '—')+'</td><td>'+escapeHtml(row.roleTitle || '—')+'</td>'+
+        '<td>'+escapeHtml(row.examDate ? rhFormatDate(row.examDate) : '—')+'</td><td>'+escapeHtml(row.expiryDate ? rhFormatDate(row.expiryDate) : '—')+'</td>'+
+        '<td><span class="status-pill '+tone+'">'+escapeHtml(label+days)+'</span></td></tr>';
+    }).join('') : '<tr><td colspan="6" class="responsive-empty">Nenhum exame vencido, a vencer ou faltando.</td></tr>';
+  }
+  ['rhExamLoja','rhExamSituacao'].forEach(id => { if(el(id)) el(id).addEventListener('change', renderRhExams); });
+
+  // ASO: vencimento = exame + 12 meses (sugestão editável).
+  function rhAddMonths(date, months){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return '';
+    const [year, month, day] = date.split('-').map(Number);
+    const target = new Date(Date.UTC(year, month - 1 + months, 1, 12));
+    const last = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0, 12)).getUTCDate();
+    target.setUTCDate(Math.min(day, last));
+    return target.toISOString().slice(0, 10);
+  }
+  if(el('rhAsoData')) el('rhAsoData').addEventListener('change', () => {
+    el('rhAsoVencimento').value = rhAddMonths(el('rhAsoData').value, 12);
+  });
+
+  // ---------------------- ONBOARDING ----------------------
+  let rhOnbTab = '';
+  let rhOnbMine = null;
+  let rhOnbVideosRows = [];
+  let rhOnbPeople = [];
+  let rhOnbCurrent = null;
+  const rhOnbCanVideos = () => canAccess('payroll') || canAccess('rh_onboarding:videos');
+  const rhOnbCanTrack = () => canAccess('payroll') || canAccess('rh_onboarding:track');
+  function rhFormatDuration(seconds){
+    const total = Math.max(0, Math.round(Number(seconds) || 0));
+    return Math.floor(total / 60)+':'+String(total % 60).padStart(2,'0');
+  }
+
+  function renderRhOnbTabs(){
+    const allowed = {mine:true, videos:rhOnbCanVideos() || rhOnbCanTrack(), track:rhOnbCanTrack()};
+    if(!rhOnbTab || !allowed[rhOnbTab]) rhOnbTab = rhOnbMine && rhOnbMine.employee ? 'mine' : (allowed.track ? 'track' : allowed.videos ? 'videos' : 'mine');
+    document.querySelectorAll('[data-rh-onb-tab]').forEach(button => {
+      const active = button.dataset.rhOnbTab === rhOnbTab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    el('rhOnbMine').hidden = rhOnbTab !== 'mine';
+    el('rhOnbVideos').hidden = rhOnbTab !== 'videos';
+    el('rhOnbTrack').hidden = rhOnbTab !== 'track';
+  }
+
+  async function loadRhOnboarding(){
+    try{ rhOnbMine = await rhRhApi('/onboarding?scope=my'); }catch{ rhOnbMine = null; }
+    renderRhOnbTabs();
+    if(rhOnbTab === 'mine') renderRhOnbMine();
+    if(rhOnbTab === 'videos') await loadRhOnbVideos();
+    if(rhOnbTab === 'track') await loadRhOnbTrack();
+  }
+  if(el('rhOnbTabs')) el('rhOnbTabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-onb-tab]');
+    if(!button) return;
+    rhOnbStopPlayer();
+    rhOnbTab = button.dataset.rhOnbTab;
+    loadRhOnboarding();
+  });
+
+  // Minha trilha + player que não deixa pular.
+  function renderRhOnbMine(){
+    const list = el('rhOnbMineList');
+    if(!rhOnbMine || !rhOnbMine.employee){
+      el('rhOnbMineSummary').innerHTML = '';
+      list.innerHTML = '<p class="supply-dashboard-empty">VOCÊ NÃO TEM TRILHA DE ONBOARDING. ELA É ABERTA PELO RH NA ADMISSÃO (CADASTRO DO RH VINCULADO AO SEU LOGIN).</p>';
+      return;
+    }
+    const videos = rhOnbMine.videos || [];
+    el('rhOnbMineSummary').innerHTML = '<span>TRILHA DE '+escapeHtml(rhOnbMine.employee.fullName)+'</span>'+
+      '<span class="rh-bar-track"><span class="rh-bar-fill" style="width:'+Number(rhOnbMine.percent || 0)+'%"></span></span>'+
+      '<strong>'+Number(rhOnbMine.percent || 0)+'% '+(rhOnbMine.completed ? '· CONCLUÍDA' : 'ASSISTIDO')+'</strong>';
+    list.innerHTML = videos.length ? videos.map((video, index) =>
+      '<article class="rh-onb-card'+(video.completed ? ' done' : '')+'">'+
+        '<div><strong>'+(index + 1)+'. '+escapeHtml(video.title)+'</strong>'+
+        (video.description ? '<p>'+escapeHtml(video.description)+'</p>' : '')+
+        '<small>'+rhFormatDuration(video.durationSeconds)+' · '+(video.completed ? 'CONCLUÍDO' : 'ASSISTIDO '+rhFormatDuration(video.watchedSeconds))+'</small></div>'+
+        '<button class="btn-accent" type="button" data-rh-onb-play="'+escapeHtml(video.id)+'">'+(video.completed ? 'ASSISTIR DE NOVO' : video.watchedSeconds ? 'CONTINUAR' : 'ASSISTIR')+'</button>'+
+      '</article>'
+    ).join('') : '<p class="supply-dashboard-empty">NENHUM VÍDEO NA SUA TRILHA AINDA. O RH VAI ADICIONAR EM BREVE.</p>';
+  }
+
+  let rhOnbMaxWatched = 0;
+  let rhOnbBeatTimer = null;
+  async function rhOnbBeat(){
+    const player = el('rhOnbPlayer');
+    if(!rhOnbCurrent) return;
+    try{
+      const result = await rhRhApi('/onboarding/progress', rhJsonPost({
+        videoId:rhOnbCurrent.id, watchedSeconds:Math.floor(rhOnbMaxWatched), positionSeconds:Math.floor(player.currentTime || 0)
+      }));
+      rhOnbCurrent.watchedSeconds = result.watchedSeconds;
+      if(result.completed && !rhOnbCurrent.completed){
+        rhOnbCurrent.completed = true;
+        el('rhOnbPlayerHint').textContent = 'VÍDEO CONCLUÍDO.';
+        showPurchaseToast('VÍDEO CONCLUÍDO.');
+        loadRhOnboarding();
+      }
+    }catch{ /* tenta de novo na próxima batida */ }
+  }
+  function rhOnbStopPlayer(){
+    const player = el('rhOnbPlayer');
+    if(rhOnbBeatTimer){ clearInterval(rhOnbBeatTimer); rhOnbBeatTimer = null; }
+    if(rhOnbCurrent && !player.paused) rhOnbBeat();
+    player.pause();
+    player.removeAttribute('src');
+    player.load();
+    el('rhOnbPlayerPanel').hidden = true;
+    rhOnbCurrent = null;
+  }
+  function rhOnbPlay(video, preview){
+    rhOnbStopPlayer();
+    rhOnbCurrent = preview ? null : video;
+    rhOnbMaxWatched = preview ? Infinity : (video.completed ? video.durationSeconds : Number(video.watchedSeconds || 0));
+    const player = el('rhOnbPlayer');
+    el('rhOnbPlayerTitle').textContent = video.title;
+    el('rhOnbPlayerHint').textContent = preview ? 'PRÉ-VISUALIZAÇÃO DO RH (NÃO CONTA PROGRESSO).' : 'O vídeo só conta como concluído assistido até o fim. Adiantar não conta; ao voltar, ele continua de onde você parou.';
+    el('rhOnbPlayerPanel').hidden = false;
+    player.src = '/api/hr-rh/onboarding/file?id='+encodeURIComponent(video.id);
+    player.addEventListener('loadedmetadata', () => {
+      const resume = Math.min(Number(video.positionSeconds || 0), rhOnbMaxWatched);
+      if(!preview && !video.completed && resume > 0 && resume < player.duration - 2) player.currentTime = resume;
+    }, {once:true});
+    el('rhOnbPlayerPanel').scrollIntoView({behavior:'smooth', block:'start'});
+    player.play().catch(() => undefined);
+  }
+  if(el('rhOnbPlayer')){
+    const player = el('rhOnbPlayer');
+    player.addEventListener('timeupdate', () => {
+      if(!rhOnbCurrent || player.seeking) return;
+      // Só avança o "assistido" quando a reprodução vem em sequência.
+      if(player.currentTime <= rhOnbMaxWatched + 2) rhOnbMaxWatched = Math.max(rhOnbMaxWatched, player.currentTime);
+    });
+    player.addEventListener('seeking', () => {
+      if(rhOnbCurrent && player.currentTime > rhOnbMaxWatched + 1) player.currentTime = rhOnbMaxWatched;
+    });
+    player.addEventListener('ratechange', () => {
+      if(rhOnbCurrent && player.playbackRate > 1.25) player.playbackRate = 1;
+    });
+    player.addEventListener('play', () => {
+      if(!rhOnbCurrent) return;
+      rhOnbBeat();
+      if(!rhOnbBeatTimer) rhOnbBeatTimer = setInterval(rhOnbBeat, 10000);
+    });
+    player.addEventListener('pause', () => {
+      if(rhOnbBeatTimer){ clearInterval(rhOnbBeatTimer); rhOnbBeatTimer = null; }
+      if(rhOnbCurrent) rhOnbBeat();
+    });
+    player.addEventListener('ended', () => {
+      if(rhOnbCurrent && rhOnbMaxWatched >= player.duration - 2) rhOnbMaxWatched = player.duration;
+      if(rhOnbCurrent) rhOnbBeat();
+    });
+  }
+  if(el('rhOnbMineList')) el('rhOnbMineList').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-onb-play]');
+    if(!button || !rhOnbMine) return;
+    const video = (rhOnbMine.videos || []).find(item => item.id === button.dataset.rhOnbPlay);
+    if(video) rhOnbPlay(video, false);
+  });
+  window.addEventListener('pagehide', () => { if(rhOnbCurrent) rhOnbBeat(); });
+
+  // Vídeos (cadastro e envio do arquivo para o R2)
+  async function loadRhOnbVideos(){
+    if(el('btnNewRhOnbVideo')) el('btnNewRhOnbVideo').hidden = !rhOnbCanVideos();
+    const body = el('rhOnbVideosBody');
+    body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      rhOnbVideosRows = (await rhRhApi('/onboarding?scope=videos')).videos || [];
+      const manage = rhOnbCanVideos();
+      body.innerHTML = rhOnbVideosRows.length ? rhOnbVideosRows.map(video =>
+        '<tr><td>'+Number(video.sortOrder)+'</td><td>'+escapeHtml(video.title)+'</td><td>'+escapeHtml(video.roleTitle || 'TODOS')+'</td>'+
+        '<td>'+escapeHtml(video.companyName || 'TODAS')+'</td><td>'+(video.durationSeconds ? rhFormatDuration(video.durationSeconds) : '—')+'</td>'+
+        '<td>'+(video.fileName ? escapeHtml(video.fileName) : '<span class="status-pill waiting">SEM ARQUIVO</span>')+'</td>'+
+        '<td>'+(Number(video.active) ? '<span class="status-pill done">ATIVO</span>' : '<span class="status-pill alert">INATIVO</span>')+'</td>'+
+        '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+          (video.fileName ? '<button class="btn-outline" type="button" data-rh-onb-preview="'+escapeHtml(video.id)+'">ASSISTIR</button>' : '')+
+          (manage ? '<button class="btn-outline" type="button" data-rh-onb-video-edit="'+escapeHtml(video.id)+'">EDITAR</button>' : '')+
+        '</span></td></tr>'
+      ).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum vídeo cadastrado. Use NOVO VÍDEO para montar a trilha.</td></tr>';
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function openRhOnbVideo(video){
+    el('rhOnbVideoForm').reset();
+    rhFillSelect('rhOnbVideoLoja','TODAS AS LOJAS',rhCompanyOptions());
+    el('rhOnbVideoId').value = video ? video.id : '';
+    el('rhOnbVideoDialogTitle').textContent = video ? 'EDITAR VÍDEO' : 'NOVO VÍDEO';
+    el('rhOnbVideoTitle').value = video ? video.title : '';
+    el('rhOnbVideoDesc').value = video ? video.description : '';
+    el('rhOnbVideoOrder').value = video ? Number(video.sortOrder) : rhOnbVideosRows.length + 1;
+    el('rhOnbVideoRole').value = video ? video.roleTitle : '';
+    el('rhOnbVideoLoja').value = video ? video.companyId : '';
+    el('rhOnbVideoAtivo').value = video && !Number(video.active) ? '0' : '1';
+    el('rhOnbVideoStatus').textContent = video && video.fileName ? 'ARQUIVO ATUAL: '+video.fileName+' (ESCOLHA OUTRO PARA SUBSTITUIR)' : '';
+    el('btnSaveRhOnbVideo').disabled = false;
+    el('rhOnbVideoDialog').showModal();
+  }
+  function rhVideoDuration(file){
+    return new Promise((resolve, reject) => {
+      const probe = document.createElement('video');
+      const url = URL.createObjectURL(file);
+      probe.preload = 'metadata';
+      probe.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(probe.duration); };
+      probe.onerror = () => { URL.revokeObjectURL(url); reject(new Error('NÃO FOI POSSÍVEL LER O VÍDEO. USE MP4 (H.264).')); };
+      probe.src = url;
+    });
+  }
+  async function rhUploadOnbVideo(videoId, file, onProgress){
+    const durationSeconds = Math.round(await rhVideoDuration(file));
+    if(!durationSeconds || !Number.isFinite(durationSeconds)) throw new Error('NÃO FOI POSSÍVEL LER A DURAÇÃO DO VÍDEO.');
+    const contentType = file.type || (/\.mov$/i.test(file.name) ? 'video/quicktime' : 'video/mp4');
+    const session = await rhRhApi('/onboarding/upload', rhJsonPost({action:'create', videoId, fileName:file.name, contentType, fileSize:file.size}));
+    const parts = [];
+    const total = Math.ceil(file.size / session.partSize);
+    try{
+      for(let index = 0; index < total; index++){
+        const response = await fetch('/api/hr-rh/onboarding/upload-part', {
+          method:'PUT',
+          headers:{Accept:'application/json','Content-Type':'application/octet-stream','x-upload-key':session.key,'x-upload-id':session.uploadId,'x-part-number':String(index + 1)},
+          body:file.slice(index * session.partSize, Math.min(file.size, (index + 1) * session.partSize))
+        });
+        const part = await response.json().catch(() => ({}));
+        if(!response.ok) throw new Error(part.error || 'FALHA AO ENVIAR O VÍDEO.');
+        parts.push({partNumber:part.partNumber, etag:part.etag});
+        onProgress(Math.round((index + 1) / total * 100));
+      }
+      await rhRhApi('/onboarding/upload', rhJsonPost({action:'complete', videoId, key:session.key, uploadId:session.uploadId, parts, fileName:file.name, durationSeconds}));
+    }catch(error){
+      rhRhApi('/onboarding/upload', rhJsonPost({action:'abort', videoId, key:session.key, uploadId:session.uploadId})).catch(() => undefined);
+      throw error;
+    }
+  }
+  if(el('btnNewRhOnbVideo')) el('btnNewRhOnbVideo').addEventListener('click', () => openRhOnbVideo(null));
+  ['btnCloseRhOnbVideo','btnCancelRhOnbVideo'].forEach(id => { if(el(id)) el(id).addEventListener('click', () => el('rhOnbVideoDialog').close()); });
+  if(el('rhOnbVideosBody')) el('rhOnbVideosBody').addEventListener('click', event => {
+    const edit = event.target.closest('[data-rh-onb-video-edit]');
+    const preview = event.target.closest('[data-rh-onb-preview]');
+    const id = edit ? edit.dataset.rhOnbVideoEdit : preview ? preview.dataset.rhOnbPreview : '';
+    const video = rhOnbVideosRows.find(item => item.id === id);
+    if(!video) return;
+    if(edit) openRhOnbVideo(video);
+    if(preview){
+      rhOnbTab = 'mine';
+      renderRhOnbTabs();
+      renderRhOnbMine();
+      rhOnbPlay(video, true);
+    }
+  });
+  if(el('rhOnbVideoForm')) el('rhOnbVideoForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhOnbVideoStatus');
+    const button = el('btnSaveRhOnbVideo');
+    button.disabled = true;
+    status.textContent = 'SALVANDO…';
+    try{
+      const saved = await rhRhApi('/onboarding', rhJsonPost({
+        action:'video', id:el('rhOnbVideoId').value || undefined,
+        title:el('rhOnbVideoTitle').value, description:el('rhOnbVideoDesc').value,
+        sortOrder:Number(el('rhOnbVideoOrder').value) || 0, roleTitle:el('rhOnbVideoRole').value,
+        companyId:el('rhOnbVideoLoja').value, active:el('rhOnbVideoAtivo').value === '1'
+      }));
+      el('rhOnbVideoId').value = saved.id;
+      const file = el('rhOnbVideoFile').files && el('rhOnbVideoFile').files[0];
+      if(file) await rhUploadOnbVideo(saved.id, file, percent => { status.textContent = 'ENVIANDO O VÍDEO… '+percent+'%'; });
+      el('rhOnbVideoDialog').close();
+      await loadRhOnbVideos();
+      showPurchaseToast('VÍDEO SALVO.');
+    }catch(error){
+      status.textContent = error.message;
+    }finally{
+      button.disabled = false;
+    }
+  });
+
+  // Acompanhamento do RH
+  async function loadRhOnbTrack(){
+    const body = el('rhOnbTrackBody');
+    body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      rhOnbPeople = (await rhRhApi('/onboarding?scope=track')).people || [];
+      renderRhOnbTrack();
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function rhOnbSituation(person){
+    if(!person.inTrail) return ['FORA DA TRILHA',''];
+    if(person.meetingDate) return ['CONCLUÍDO','done'];
+    if(person.completedAt) return ['AGUARDANDO REUNIÃO','waiting'];
+    if(!person.videos) return ['SEM VÍDEOS NA TRILHA','waiting'];
+    return [person.hasLogin ? 'ASSISTINDO' : 'SEM LOGIN VINCULADO', person.hasLogin ? 'progress' : 'alert'];
+  }
+  function renderRhOnbTrack(){
+    const filter = el('rhOnbTrackFiltro').value;
+    const search = normalizeSearchText(el('rhOnbTrackBusca').value || '');
+    const rows = rhOnbPeople.filter(person => {
+      if(filter === 'pending' && (!person.inTrail || person.meetingDate)) return false;
+      if(filter === 'trail' && !person.inTrail) return false;
+      return !search || [person.fullName, person.companyName, person.roleTitle].some(text => normalizeSearchText(String(text || '')).includes(search));
+    });
+    el('rhOnbTrackBody').innerHTML = rows.length ? rows.map(person => {
+      const [label, tone] = rhOnbSituation(person);
+      return '<tr><td>'+escapeHtml(person.fullName)+'</td><td>'+escapeHtml(person.companyName || '—')+'</td><td>'+escapeHtml(person.roleTitle || '—')+'</td>'+
+        '<td>'+escapeHtml(rhFormatDate(person.admissionDate))+'</td>'+
+        '<td>'+(person.inTrail ? '<span class="rh-bar-track inline"><span class="rh-bar-fill" style="width:'+Number(person.percent)+'%"></span></span> '+Number(person.percent)+'% ('+person.videosDone+'/'+person.videos+')' : '—')+'</td>'+
+        '<td><span class="status-pill '+tone+'">'+escapeHtml(label)+'</span>'+(person.meetingDate ? '<br><small>REUNIÃO '+escapeHtml(rhFormatDate(person.meetingDate))+'</small>' : '')+'</td>'+
+        '<td class="no-print">'+(!person.inTrail
+          ? '<button class="btn-outline" type="button" data-rh-onb-start="'+escapeHtml(person.id)+'">INCLUIR NA TRILHA</button>'
+          : '<button class="btn-outline" type="button" data-rh-onb-meeting="'+escapeHtml(person.id)+'">'+(person.meetingDate ? 'VER REUNIÃO' : 'REGISTRAR REUNIÃO')+'</button>')+'</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="responsive-empty">Nenhum colaborador com onboarding pendente.</td></tr>';
+  }
+  ['rhOnbTrackFiltro'].forEach(id => { if(el(id)) el(id).addEventListener('change', renderRhOnbTrack); });
+  if(el('rhOnbTrackBusca')) el('rhOnbTrackBusca').addEventListener('input', renderRhOnbTrack);
+  if(el('rhOnbTrackBody')) el('rhOnbTrackBody').addEventListener('click', async event => {
+    const start = event.target.closest('[data-rh-onb-start]');
+    const meeting = event.target.closest('[data-rh-onb-meeting]');
+    if(start){
+      try{
+        await rhRhApi('/onboarding', rhJsonPost({action:'start', employeeId:start.dataset.rhOnbStart}));
+        await loadRhOnbTrack();
+        showPurchaseToast('COLABORADOR INCLUÍDO NA TRILHA.');
+      }catch(error){ showPurchaseToast(error.message,'error'); }
+      return;
+    }
+    if(meeting){
+      const person = rhOnbPeople.find(item => item.id === meeting.dataset.rhOnbMeeting);
+      if(!person) return;
+      el('rhOnbMeetingForm').reset();
+      el('rhOnbMeetingEmployee').value = person.id;
+      el('rhOnbMeetingNome').textContent = person.fullName+(person.companyName ? ' — '+person.companyName : '')+' · '+person.percent+'% ASSISTIDO'+(person.meetingByName ? ' · REGISTRADO POR '+person.meetingByName : '');
+      el('rhOnbMeetingDate').value = person.meetingDate || todayDateKey();
+      el('rhOnbMeetingNotes').value = person.meetingNotes || '';
+      el('rhOnbMeetingStatus').textContent = person.completedAt ? '' : 'ATENÇÃO: O COLABORADOR AINDA NÃO CONCLUIU TODOS OS VÍDEOS.';
+      el('rhOnbMeetingDialog').showModal();
+    }
+  });
+  ['btnCloseRhOnbMeeting','btnCancelRhOnbMeeting'].forEach(id => { if(el(id)) el(id).addEventListener('click', () => el('rhOnbMeetingDialog').close()); });
+  if(el('rhOnbMeetingForm')) el('rhOnbMeetingForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    try{
+      await rhRhApi('/onboarding', rhJsonPost({action:'meeting', employeeId:el('rhOnbMeetingEmployee').value, meetingDate:el('rhOnbMeetingDate').value, notes:el('rhOnbMeetingNotes').value}));
+      el('rhOnbMeetingDialog').close();
+      await loadRhOnbTrack();
+      showPurchaseToast('REUNIÃO DE ONBOARDING REGISTRADA.');
+    }catch(error){
+      el('rhOnbMeetingStatus').textContent = error.message;
+    }
+  });
+
+  // Colaborador com trilha (sem permissão do RH): mostra o item Onboarding no
+  // menu. Uma consulta leve, depois do boot da Início.
+  async function rhCheckMyOnboarding(){
+    if(canAccess('rh_onboarding')) return;
+    try{
+      const mine = await rhRhApi('/onboarding?scope=my');
+      if(mine && mine.employee){
+        currentSession.permissions.push('rh_onboarding:mine');
+        applyAccessVisibility();
+      }
+    }catch{ /* sem trilha: nada a mostrar */ }
+  }
 
   async function loadRhRecrutamento(){
     if(!canAccess('rh_recrutamento')) return;
@@ -47662,7 +48895,8 @@ function renderHomeTasks(){
       ctx.fillText(valueText, cx, Math.min(plotBottom - h, targetTop) - 4);
 
       // Posição + nome (e a linha de baixo) embaixo da coluna.
-      const name = (index + 1)+'º '+bar.label;
+      // chart.noRank: categorias (ex.: status do RH), sem posição de ranking.
+      const name = chart.noRank ? bar.label : (index + 1)+'º '+bar.label;
       ctx.fillStyle = palette.ink;
       ctx.font = font(800, 12 * k);
       if(rotate){

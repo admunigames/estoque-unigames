@@ -22,6 +22,8 @@ import { isSellingStore } from "../app/lib/selling-stores";
 import { auditAction, auditModule, auditRecordId, auditSummary, shouldAudit } from "../app/lib/audit";
 import { documentsApiAllowed, isCommercialOnlyAccess } from "../app/lib/documents-access";
 import { upperText } from "../app/lib/upper-text";
+import { dispatchHrAlerts } from "../app/lib/hr-alerts";
+import { vapidFromEnv } from "../app/lib/hr-notify";
 
 export { LiveUpdates };
 
@@ -66,6 +68,11 @@ type Permission =
   | "rh_aniversariantes:view" | "rh_aniversariantes:manage"
   | "rh_odontologico:view" | "rh_odontologico:manage"
   | "rh_escalas:view" | "rh_escalas:manage"
+  | "rh_pdi:view" | "rh_pdi:manage"
+  | "rh_dashboard:view"
+  | "rh_desligamento:view" | "rh_desligamento:manage"
+  | "rh_exames:view"
+  | "rh_onboarding:videos" | "rh_onboarding:track"
   | "comercial:dashboard" | "comercial:commission" | "comercial:ranking"
   | "comercial:goals_view" | "comercial:goals" | "comercial:credit_view" | "comercial:credit"
   | "comercial:stores_view" | "comercial:stores" | "comercial:weekend_view" | "comercial:weekend"
@@ -207,6 +214,15 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // folgas e resumo por colaborador calculados ao vivo. Permissão própria,
   // independente das demais (ver MODULE_VIEW_PERMISSIONS.schedules).
   "rh_escalas:view", "rh_escalas:manage",
+  // RH (out/2026) — PDI de líderes com permissão própria (além do
+  // Acompanhamento - Lojas), Painel do RH (dashboard, desligamento/checklist
+  // e exames a vencer) e Onboarding (cadastrar vídeo / acompanhar; assistir
+  // à própria trilha não precisa de permissão — ver isAllowed).
+  "rh_pdi:view", "rh_pdi:manage",
+  "rh_dashboard:view",
+  "rh_desligamento:view", "rh_desligamento:manage",
+  "rh_exames:view",
+  "rh_onboarding:videos", "rh_onboarding:track",
   // Comercial (Acompanhamento Metas) — VER e EDITAR por aba (2026-10-16):
   // dashboard, commission e ranking só ver; goals (Vendedores), credit
   // (Crediários), stores (Meta Loja), weekend (Meta do Fim de Semana),
@@ -382,6 +398,8 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/fardamento",
   "/rh/aniversariantes",
   "/rh/odontologico",
+  "/rh/painel",
+  "/rh/onboarding",
   "/comercial/acompanhamento",
   "/comercial/controle-gd",
   "/comercial/relatorio-nf",
@@ -1361,7 +1379,10 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "payables:invoices_view", "payables:invoices_reconcile", "payables:confirm_payment", "payables:return_to_purchases",
   ],
   payroll: ["payroll:manage"],
-  storeTracking: ["rh_acompanhamento:view", "rh_acompanhamento:manage"],
+  storeTracking: ["rh_acompanhamento:view", "rh_acompanhamento:manage", "rh_pdi:view", "rh_pdi:manage"],
+  hrPanel: [
+    "payroll:manage", "rh_dashboard:view", "rh_desligamento:view", "rh_desligamento:manage", "rh_exames:view",
+  ],
   timeTracking: ["rh_ponto_logistica:view", "rh_ponto_logistica:manage"],
   recruitment: ["rh_recrutamento:view", "rh_recrutamento:manage"],
   uniformStock: ["rh_fardamento:view", "rh_fardamento:manage"],
@@ -1431,6 +1452,12 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
   }
   if (path.startsWith("/api/instructions")) {
     return hasPermission(user, "instructions:manage");
+  }
+  // RH > Onboarding: qualquer login abre a tela e assiste à PRÓPRIA trilha
+  // (cadastro do RH vinculado); cadastrar vídeo e acompanhar são conferidos
+  // na rota (rh_onboarding:videos / :track).
+  if (path === "/rh/onboarding" || path.startsWith("/api/hr-rh/onboarding")) {
+    return true;
   }
   if (path === "/documentos" || path.startsWith("/documentos/")) {
     return !isCommercialOnlyUser(user);
@@ -1546,8 +1573,15 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
         path.startsWith("/api/hr-payroll"),
       "payroll",
     ],
+    // RH > Painel do RH (dashboard, desligamentos, exames a vencer) — cada
+    // aba confere a própria permissão na rota (app/api/hr-rh/shared.ts).
+    [
+      path === "/rh/painel" || path.startsWith("/api/hr-rh/dashboard") ||
+        path.startsWith("/api/hr-rh/offboarding") || path.startsWith("/api/hr-rh/exams"),
+      "hrPanel",
+    ],
     // RH > Acompanhamento - Lojas — permissão própria (rh_acompanhamento:*),
-    // independente do payroll acima.
+    // independente do payroll acima. O PDI também abre com rh_pdi:*.
     [
       path === "/rh/acompanhamento-lojas" || path.startsWith("/api/hr-store-tracking"),
       "storeTracking",
@@ -3065,6 +3099,8 @@ const worker = {
       dispatchDueTaskNotifications(env),
       dispatchDueMissionNotifications(env),
       dispatchDuePhoneRechargeNotifications(env),
+      dispatchHrAlerts(env.DB, vapidFromEnv(env as unknown as Record<string, string | undefined>), recifeDateTime())
+        .catch((error) => console.error("Falha nos avisos automáticos do RH.", error)),
       advanceOperationalRoutines(env),
       createAutomaticBackup(env, config.sessionSecret),
       purgeOldOsNotes(env),

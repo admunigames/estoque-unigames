@@ -64,6 +64,16 @@ export function canManageStoreTracking(actor: Identity) {
   return actor.role === "admin" || actor.permissions.includes("rh_acompanhamento:manage");
 }
 
+// PDI de líderes: permissão própria (rh_pdi:view/manage) além do
+// Acompanhamento - Lojas, que continua valendo para o PDI.
+export function canViewPdi(actor: Identity) {
+  return canViewStoreTracking(actor) || actor.permissions.includes("rh_pdi:view") || actor.permissions.includes("rh_pdi:manage");
+}
+
+export function canManagePdi(actor: Identity) {
+  return canManageStoreTracking(actor) || actor.permissions.includes("rh_pdi:manage");
+}
+
 export function actorName(actor: Identity) {
   return actor.displayName || "Usuário";
 }

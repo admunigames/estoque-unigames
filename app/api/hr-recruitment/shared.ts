@@ -1,4 +1,5 @@
 import { getD1 } from "../../../db";
+import { recruitmentPendingTexts } from "../../lib/hr-rh";
 
 // RH > Recrutamento e Seleção — pipeline único de candidato (Selecionado
 // Entrevista > Em Teste > Em Treinamento > Contratado > Integração >
@@ -228,3 +229,18 @@ export type CandidateRow = {
   updatedByName: string;
   updatedAt: string;
 };
+
+// Texto da pendência por status (configurável em RH > Recrutamento).
+export async function loadPendingTexts(database: Database) {
+  const row = await database
+    .prepare("SELECT value_json AS value FROM hr_settings WHERE key='recruitment_pending_texts'")
+    .first<{ value: string }>();
+  let saved: unknown = {};
+  try {
+    saved = row ? JSON.parse(row.value) : {};
+  } catch {
+    saved = {};
+  }
+  return recruitmentPendingTexts(saved);
+}
+

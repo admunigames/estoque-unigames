@@ -1,5 +1,7 @@
 import { getD1 } from "../../../../db";
 import { isValidCnpj } from "../../../lib/br-documents";
+import { notifyUsers, usersWithPermission, vapidFromEnv } from "../../../lib/hr-notify";
+import { recifeToday, recruitmentNotice } from "../../../lib/hr-rh";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { loadCompanyList } from "../../finance/shared";
 import {
@@ -13,6 +15,7 @@ import {
   identity,
   isStatusValid,
   jsonResponse,
+  loadPendingTexts,
   safeText,
   sameOrigin,
   uuidIsValid,
@@ -88,8 +91,9 @@ async function buildHiredEmployeeInsert(
     .prepare(
       `INSERT INTO hr_employees
         (id, full_name, admission_date, company_id, company_name, role_title, status,
-         created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', ?7, ?8, CURRENT_TIMESTAMP, ?7, ?8, CURRENT_TIMESTAMP)`,
+         created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at,
+         onboarding_started_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', ?7, ?8, CURRENT_TIMESTAMP, ?7, ?8, CURRENT_TIMESTAMP, ?9)`,
     )
     .bind(
       employeeId,
@@ -100,11 +104,30 @@ async function buildHiredEmployeeInsert(
       candidate.desiredRole,
       actor.id,
       actorName(actor),
+      new Date().toISOString(),
     );
   return { employeeId, statement };
 }
 
 type Database = Awaited<ReturnType<typeof getD1>>;
+
+// Mudança de status = push + tarefa do dia para quem cuida do Recrutamento
+// (rh_recrutamento:manage/admin) e quem cadastrou o candidato.
+async function notifyStatusChange(
+  database: Database,
+  candidate: { id: string; fullName: string; storeName: string; createdBy: string },
+  fromStatus: string,
+  toStatus: string,
+) {
+  const notice = recruitmentNotice(fromStatus, toStatus, candidate.fullName, candidate.storeName, await loadPendingTexts(database));
+  const recipients = await usersWithPermission(database, ["rh_recrutamento:manage"]);
+  await notifyUsers(database, vapidFromEnv(process.env), [...recipients, candidate.createdBy], {
+    push: { title: notice.title, body: notice.body, url: "/rh/recrutamento", tag: `unigames-rec-${candidate.id}-${toStatus}` },
+    task: notice.taskText
+      ? { date: recifeToday(), id: `rec-${candidate.id}-${toStatus}`, text: notice.taskText }
+      : undefined,
+  });
+}
 
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -199,9 +222,9 @@ export async function POST(request: Request) {
 
     if (editId) {
       const existing = await database
-        .prepare("SELECT status, hr_employee_id AS hrEmployeeId FROM hr_recruitment_candidates WHERE id=?1")
+        .prepare("SELECT status, hr_employee_id AS hrEmployeeId, created_by AS createdBy FROM hr_recruitment_candidates WHERE id=?1")
         .bind(editId)
-        .first<{ status: string; hrEmployeeId: string }>();
+        .first<{ status: string; hrEmployeeId: string; createdBy: string }>();
       if (!existing) return jsonResponse({ error: "CANDIDATO NÃO ENCONTRADO." }, 404);
 
       let hrEmployeeId = existing.hrEmployeeId;
@@ -325,6 +348,20 @@ export async function POST(request: Request) {
       // é revertido junto — evita funcionário órfão ou duplicado em caso de
       // erro parcial ou nova tentativa (ver buildHiredEmployeeInsert).
       await database.batch(statements);
+      if (status !== existing.status) {
+        // O aviso não desfaz o salvamento: falha aqui só vai para o log.
+        await notifyStatusChange(
+          database,
+          {
+            id: editId,
+            fullName,
+            storeName: fields.admissionCompanyName || fields.fixedUnitName,
+            createdBy: existing.createdBy,
+          },
+          existing.status,
+          status,
+        ).catch((error) => console.error("Não foi possível avisar a mudança de status.", error));
+      }
 
       return jsonResponse({ updated: true, id: editId, hrEmployeeId });
     }

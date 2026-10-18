@@ -1,6 +1,7 @@
 import { getD1 } from "../../../../db";
 import { isValidCnpj } from "../../../lib/br-documents";
 import { ASO_EXAM_TYPES } from "../../../lib/hr-employee-dre";
+import { asoExpiry } from "../../../lib/hr-rh";
 import { unauthorizedResponse } from "../../../lib/notion";
 import {
   DATE_PATTERN,
@@ -36,6 +37,7 @@ type AsoRow = {
   clinicCnpj: string;
   amountCents: number;
   notes: string;
+  expiryDate: string;
   createdByName: string;
   updatedAt: string;
 };
@@ -43,7 +45,7 @@ type AsoRow = {
 const COLUMNS = `id, employee_id AS employeeId, employee_name AS employeeName,
   company_id AS companyId, company_name AS companyName, exam_type AS examType,
   exam_date AS examDate, clinic_name AS clinicName, clinic_cnpj AS clinicCnpj,
-  amount_cents AS amountCents, notes, created_by_name AS createdByName, updated_at AS updatedAt`;
+  amount_cents AS amountCents, notes, expiry_date AS expiryDate, created_by_name AS createdByName, updated_at AS updatedAt`;
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -102,12 +104,15 @@ export async function POST(request: Request) {
     const clinicCnpj = onlyDigits(safeText(body.clinicCnpj, 30));
     const amountCents = centsValue(body.amountCents ?? 0);
     const notes = safeText(body.notes, 500);
+    // Vencimento: o informado ou, em branco, exame + 12 meses (PCMSO anual).
+    const expiryDate = asoExpiry(examDate, safeText(body.expiryDate, 10));
 
     if (!employeeId) return jsonResponse({ error: "SELECIONE O FUNCIONÁRIO." }, 400);
     if (!isOneOf(ASO_EXAM_TYPES, examType)) {
       return jsonResponse({ error: "SELECIONE UM TIPO DE EXAME VÁLIDO." }, 400);
     }
     if (!DATE_PATTERN.test(examDate)) return jsonResponse({ error: "INFORME A DATA DO EXAME." }, 400);
+    if (expiryDate < examDate) return jsonResponse({ error: "O VENCIMENTO NÃO PODE SER ANTES DA DATA DO EXAME." }, 400);
     if (!clinicName) return jsonResponse({ error: "INFORME A CLÍNICA." }, 400);
     if (clinicCnpj && !isValidCnpj(clinicCnpj)) {
       return jsonResponse({ error: "INFORME UM CNPJ VÁLIDO PARA A CLÍNICA." }, 400);
@@ -134,7 +139,8 @@ export async function POST(request: Request) {
                company_id=CASE WHEN ?3 = 1 THEN company_id ELSE ?4 END,
                company_name=CASE WHEN ?3 = 1 THEN company_name ELSE ?5 END,
                exam_type=?6, exam_date=?7, clinic_name=?8, clinic_cnpj=?9, amount_cents=?10,
-               notes=?11, updated_by=?12, updated_by_name=?13, updated_at=CURRENT_TIMESTAMP
+               notes=?11, updated_by=?12, updated_by_name=?13, updated_at=CURRENT_TIMESTAMP,
+               expiry_date=?15
            WHERE id=?14`,
         )
         .bind(
@@ -152,6 +158,7 @@ export async function POST(request: Request) {
           actor.id,
           actorName(actor),
           editId,
+          expiryDate,
         )
         .run();
       return jsonResponse({ updated: true, id: editId });
@@ -163,9 +170,9 @@ export async function POST(request: Request) {
         `INSERT INTO hr_aso_exams
           (id, employee_id, employee_name, company_id, company_name, exam_type, exam_date,
            clinic_name, clinic_cnpj, amount_cents, notes, created_by, created_by_name, created_at,
-           updated_by, updated_by_name, updated_at)
+           updated_by, updated_by_name, updated_at, expiry_date)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, CURRENT_TIMESTAMP,
-                 ?12, ?13, CURRENT_TIMESTAMP)`,
+                 ?12, ?13, CURRENT_TIMESTAMP, ?14)`,
       )
       .bind(
         id,
@@ -181,6 +188,7 @@ export async function POST(request: Request) {
         notes,
         actor.id,
         actorName(actor),
+        expiryDate,
       )
       .run();
     return jsonResponse({ created: true, id }, 201);

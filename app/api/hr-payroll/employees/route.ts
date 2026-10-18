@@ -1,5 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
+import { checklistPendingCount } from "../../../lib/hr-rh";
 import { loadCompanyList } from "../../finance/shared";
 import {
   canEmployees,
@@ -13,12 +14,14 @@ import {
   actorName,
   deactivateLinkedLogin,
   identity,
+  insertTermination,
   isOneOf,
   isValidCpf,
   jsonResponse,
   onlyDigits,
   safeText,
   sameOrigin,
+  terminationFields,
   type EmployeeRow,
   type JsonMap,
 } from "../shared";
@@ -61,7 +64,14 @@ export async function GET(request: Request) {
       .bind(...params)
       .all<EmployeeRow>();
     const financial = canManagePayroll(actor);
-    const employees = (result.results ?? []).map((row) => {
+    // Checklist demissional pendente do último desligamento (alerta na lista).
+    const terminations = await database
+      .prepare("SELECT employee_id AS employeeId, checklist_json AS checklistJson FROM hr_terminations ORDER BY termination_date ASC, created_at ASC")
+      .all<{ employeeId: string; checklistJson: string }>();
+    const pendingByEmployee = new Map<string, number>();
+    for (const item of terminations.results ?? []) pendingByEmployee.set(item.employeeId, checklistPendingCount(item.checklistJson));
+    const employees = (result.results ?? []).map((source) => {
+      const row = { ...source, offboardingPending: source.status === "inactive" ? pendingByEmployee.get(source.id) ?? 0 : 0 };
       if (financial) return row;
       // Sem RH Financeiro: salário, PIX, banco e benefícios não saem do servidor.
       const copy: Record<string, unknown> = { ...row, financialHidden: true };
@@ -134,6 +144,13 @@ export async function POST(request: Request) {
     }
 
     const database = await getD1();
+    const previousStatus = editId
+      ? (await database.prepare("SELECT status FROM hr_employees WHERE id=?1").bind(editId).first<{ status: string }>())?.status
+      : "";
+    // Só fica INATIVO com data e motivo do desligamento (checklist pode ficar pendente).
+    const becomingInactive = status === "inactive" && previousStatus !== "inactive";
+    const termination = terminationFields(body.termination);
+    if (becomingInactive && termination.error) return jsonResponse({ error: termination.error }, 400);
 
     let companyName = "";
     if (companyId === "assistencia") {
@@ -184,7 +201,7 @@ export async function POST(request: Request) {
         transportPerDayCents = Number(existing.transportPerDayCents) || 0;
         benefitNotes = existing.benefitNotes || "";
       }
-      await database
+      const updateStatement = database
         .prepare(
           `UPDATE hr_employees
            SET full_name=?1, cpf=?2, admission_date=?3, company_id=?4, company_name=?5,
@@ -216,9 +233,12 @@ export async function POST(request: Request) {
           benefitNotes,
           rg,
           telefone,
-        )
-        .run();
-      // Marcado como inativo (desligado): bloqueia o login vinculado na hora.
+        );
+      // Marcado como inativo (desligado): cadastro + desligamento juntos
+      // (mesma transação) e o login vinculado é bloqueado na hora.
+      await database.batch(becomingInactive
+        ? [updateStatement, insertTermination(database, { employeeId: editId, employeeName: fullName, companyId, companyName, ...termination }, actor).statement]
+        : [updateStatement]);
       if (status === "inactive") await deactivateLinkedLogin(database, editId).run();
       // O nome/loja do funcionário são desnormalizados nos lançamentos —
       // manter os já existentes em sincronia evita relatório com nome antigo.
@@ -253,9 +273,9 @@ export async function POST(request: Request) {
           (id, full_name, cpf, admission_date, company_id, company_name, role_title, salary_cents,
            pix_key, bank_name, status, work_schedule, user_id, notes, created_by, created_by_name,
            created_at, updated_by, updated_by_name, updated_at,
-           food_per_day_cents, transport_per_day_cents, benefit_notes, rg, telefone)
+           food_per_day_cents, transport_per_day_cents, benefit_notes, rg, telefone, onboarding_started_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16,
-                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP, ?17, ?18, ?19, ?20, ?21)`,
+                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP, ?17, ?18, ?19, ?20, ?21, ?22)`,
       )
       .bind(
         id,
@@ -279,8 +299,15 @@ export async function POST(request: Request) {
         benefitNotes,
         rg,
         telefone,
+        // Funcionário novo recebe a trilha de Onboarding do cargo/loja.
+        status === "active" ? new Date().toISOString() : "",
       )
       .run();
+    if (becomingInactive) {
+      await database.batch([
+        insertTermination(database, { employeeId: id, employeeName: fullName, companyId, companyName, ...termination }, actor).statement,
+      ]);
+    }
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
     console.error("Não foi possível salvar o funcionário.", error);
