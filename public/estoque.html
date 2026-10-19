@@ -4892,6 +4892,7 @@
             <div class="field"><label for="invCountCategory">CATEGORIA</label><select id="invCountCategory"></select></div>
             <div class="field"><label for="invCountSearch">BUSCAR</label><input type="search" id="invCountSearch" placeholder="Produto ou código"></div>
             <button class="btn-accent" id="btnInvFinishCategory" type="button">FINALIZAR CONTAGEM DA CATEGORIA</button>
+            <button class="btn-outline" id="btnInvAddItem" type="button" hidden>+ PRODUTO FORA DA LISTA</button>
           </div>
           <p class="purchase-field-help" id="invCountHint"></p>
           <div class="table-panel responsive-table"><div class="table-scroll">
@@ -11972,6 +11973,30 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" type="button" data-prc-close>CANCELAR</button>
       <button class="btn-accent" id="btnPrcSave" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="invItemDialog" aria-labelledby="invItemDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="invItemDialogTitle">PRODUTO FORA DA LISTA</h3>
+    <button class="purchase-dialog-close" type="button" data-inv-item-close aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="invItemForm">
+    <input type="hidden" id="invItemId">
+    <p class="purchase-field-help">Produto encontrado na loja que não está no relatório de estoque. Entra com estoque 0 (aparece como SOBRA) e o custo digitado aqui não é trocado pelo relatório de custos.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="invItemCategory">CATEGORIA</label><select id="invItemCategory"></select></div>
+      <div class="purchase-field full"><label for="invItemProduct">PRODUTO *</label><input type="text" id="invItemProduct" maxlength="200" autocomplete="off" required></div>
+      <div class="purchase-field"><label for="invItemCode">CÓDIGO (OPCIONAL)</label><input type="text" id="invItemCode" maxlength="60" autocomplete="off"></div>
+      <div class="purchase-field"><label for="invItemQty">QUANTIDADE CONTADA *</label><input type="number" id="invItemQty" min="0" step="1" inputmode="numeric" required></div>
+      <div class="purchase-field full"><label for="invItemCost">CUSTO DO PRODUTO (R$)</label><input type="text" inputmode="decimal" id="invItemCost" placeholder="R$ 0,00"></div>
+    </div>
+    <div class="user-form-status" id="invItemStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" id="btnInvItemDelete" hidden>EXCLUIR</button>
+      <button class="btn-outline" type="button" data-inv-item-close>CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
     </div>
   </form>
 </dialog>
@@ -28307,6 +28332,7 @@ function renderHomeTasks(){
     const allCats = category === '';
     const items = invData.items.filter(item => (allCats || item.category === category) && terms.every(term => (item.product+' '+item.code).includes(term)));
     el('btnInvFinishCategory').hidden = !canCount || !cat;
+    el('btnInvAddItem').hidden = !canCount;
     el('btnInvFinishCategory').textContent = cat && cat.countedAt ? 'REABRIR CONTAGEM DA CATEGORIA' : 'FINALIZAR CONTAGEM DA CATEGORIA';
     el('invCountHint').textContent = !invData.categories.length ? 'SUBA OS RELATÓRIOS NA ABA CATEGORIAS.'
       : allCats ? 'TODAS AS CATEGORIAS: BUSQUE O PRODUTO PELO NOME OU CÓDIGO E AJUSTE A QUANTIDADE. PARA FINALIZAR, ESCOLHA A CATEGORIA.'
@@ -28326,7 +28352,8 @@ function renderHomeTasks(){
     body.innerHTML = items.length ? items.map(item =>
       '<tr>'+
         '<td data-label="Código">'+escapeHtml(item.code || '—')+'</td>'+
-        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong>'+(allCats ? '<small class="os-update-meta">'+escapeHtml(item.category)+'</small>' : '')+'</td>'+
+        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong>'+(allCats ? '<small class="os-update-meta">'+escapeHtml(item.category)+'</small>' : '')+
+          (item.source === 'manual' ? ' <span class="status-pill waiting">FORA DA LISTA · CUSTO '+escapeHtml(invMoney(item.costCents))+'</span>'+(canCount ? ' <button class="btn-outline btn-sm" type="button" data-inv-edit-item="'+escapeHtml(item.id)+'">EDITAR</button>' : '') : '')+'</td>'+
         '<td data-label="Em estoque"><strong>'+item.systemQty+'</strong></td>'+
         '<td data-label="Contado"><input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+(item.countedQty === null ? '' : item.countedQty)+'"'+(canCount ? '' : ' disabled')+'></td>'+
         '<td data-label="Diferença" class="'+gdMoneyClass(invDiff(item) || 0)+'" data-inv-diff="'+escapeHtml(item.id)+'"><strong>'+invDiffLabel(invDiff(item))+'</strong></td>'+
@@ -28358,7 +28385,7 @@ function renderHomeTasks(){
       return '<tr class="'+(diff ? (diff > 0 ? 'inv-over' : 'inv-under') : '')+'">'+
         '<td data-label="Categoria">'+escapeHtml(item.category)+'</td>'+
         '<td data-label="Código">'+escapeHtml(item.code || '—')+'</td>'+
-        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong>'+(notedCodes.has(String(item.code).toUpperCase()) ? ' <span class="status-pill waiting">ANOTADO NAS DIVERGÊNCIAS</span>' : '')+'</td>'+
+        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong>'+(notedCodes.has(String(item.code).toUpperCase()) ? ' <span class="status-pill waiting">ANOTADO NAS DIVERGÊNCIAS</span>' : '')+(item.source === 'manual' ? ' <span class="status-pill waiting">FORA DA LISTA</span>' : '')+'</td>'+
         '<td data-label="Contado">'+(item.countedQty === null ? '—' : item.countedQty)+'</td>'+
         '<td data-label="Sistema">'+item.systemQty+'</td>'+
         '<td data-label="Diferença" class="'+gdMoneyClass(diff || 0)+'"><strong>'+invDiffLabel(diff)+'</strong></td>'+
@@ -28638,6 +28665,53 @@ function renderHomeTasks(){
     event.target.blur();
     if(next){ next.focus(); next.select(); }
   });
+  // PRODUTO FORA DA LISTA (novo ou edição).
+  function invOpenItemDialog(item){
+    el('invItemForm').reset();
+    el('invItemId').value = item ? item.id : '';
+    el('invItemDialogTitle').textContent = item ? 'EDITAR PRODUTO FORA DA LISTA' : 'PRODUTO FORA DA LISTA';
+    const cats = invData.categories.map(cat => cat.category);
+    const current = item ? item.category : (el('invCountCategory').value || 'FORA DA LISTA');
+    el('invItemCategory').innerHTML = [...new Set(['FORA DA LISTA'].concat(cats))].map(cat => '<option>'+escapeHtml(cat)+'</option>').join('');
+    el('invItemCategory').value = current;
+    el('invItemCategory').disabled = Boolean(item);
+    el('invItemProduct').value = item ? item.product : (el('invCountSearch').value || '');
+    el('invItemCode').value = item ? item.code : '';
+    el('invItemQty').value = item ? String(item.countedQty ?? '') : '';
+    attachCurrencyMask(el('invItemCost'));
+    setCurrencyValue(el('invItemCost'), item && item.costCents !== null ? item.costCents / 100 : '');
+    el('btnInvItemDelete').hidden = !item;
+    el('invItemStatus').textContent = '';
+    el('invItemDialog').showModal();
+  }
+  el('btnInvAddItem') && el('btnInvAddItem').addEventListener('click', () => invOpenItemDialog(null));
+  document.querySelectorAll('#invItemDialog [data-inv-item-close]').forEach(button => button.addEventListener('click', () => el('invItemDialog').close()));
+  el('invCountBody') && el('invCountBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-inv-edit-item]');
+    if(!button) return;
+    const item = invData.items.find(row => row.id === button.dataset.invEditItem);
+    if(item) invOpenItemDialog(item);
+  });
+  el('invItemForm') && el('invItemForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const raw = getCurrencyValue(el('invItemCost'));
+    try{
+      const result = await invPatch('add_item', {itemId: el('invItemId').value, category: el('invItemCategory').value, code: el('invItemCode').value,
+        product: el('invItemProduct').value, countedQty: Number(el('invItemQty').value), costCents: raw ? parseBRLToCents(raw) : null});
+      el('invItemDialog').close();
+      showPurchaseToast(el('invItemId').value ? 'Produto alterado.' : 'Produto fora da lista adicionado em '+result.category+'.');
+      await loadInvPage();
+    }catch(error){ el('invItemStatus').textContent = error.message; }
+  });
+  el('btnInvItemDelete') && el('btnInvItemDelete').addEventListener('click', async () => {
+    try{
+      await invPatch('delete_item', {itemId: el('invItemId').value});
+      el('invItemDialog').close();
+      showPurchaseToast('Produto fora da lista excluído.');
+      await loadInvPage();
+    }catch(error){ el('invItemStatus').textContent = error.message; }
+  });
+
   el('btnInvFinishCategory') && el('btnInvFinishCategory').addEventListener('click', async () => {
     const category = el('invCountCategory').value;
     const cat = invData.categories.find(item => item.category === category);

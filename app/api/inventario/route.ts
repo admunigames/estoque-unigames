@@ -28,6 +28,9 @@ import {
 //     count {itemId, countedQty|null}              (count) → ao vivo
 //     finish_category / reopen_category {category} (count) → quem contou
 //     costs {fileName, costs[{code, barcode, gtin, name, costCents}]} (manage)
+//     add_item {itemId?, category?, code, product, countedQty, costCents|null} (count) →
+//       produto FORA DA LISTA (sistema 0, custo à mão, não sobrescrito pelos custos)
+//     delete_item {itemId}                         (count) → só produto fora da lista
 //     reason {itemId, reason} / remove {itemId, removed} (manage)
 //     finalize {finalized}                          (manage)
 //   DELETE {id}                                     (delete; deleted=1)
@@ -116,7 +119,7 @@ async function inventoryDetail(database: Database, actor: Actor, id: string) {
       .prepare(
         `SELECT id, category, code, product, system_qty AS systemQty, counted_qty AS countedQty,
                 counted_by_name AS countedByName, counted_at AS countedAt, cost_cents AS costCents, reason,
-                removed, removed_by_name AS removedByName, removed_at AS removedAt
+                source, added_by_name AS addedByName, removed, removed_by_name AS removedByName, removed_at AS removedAt
          FROM inventory_items WHERE inventory_id=?1 ORDER BY category, product`,
       )
       .bind(id)
@@ -181,6 +184,7 @@ export async function POST(request: Request) {
 }
 
 const ACTION_PERMISSION: Record<string, string> = {
+  add_item: "count", delete_item: "count",
   upload_category: "manage", delete_category: "manage", count: "count", finish_category: "count",
   reopen_category: "count", costs: "manage", reason: "manage", remove: "manage", finalize: "manage",
 };
@@ -253,6 +257,60 @@ export async function PATCH(request: Request) {
       return jsonResponse({ deleted: true });
     }
 
+    if (action === "add_item" || action === "delete_item") {
+      const itemId = safeText(body.itemId, 80);
+      const existing = itemId
+        ? await database
+          .prepare("SELECT id FROM inventory_items WHERE id=?1 AND inventory_id=?2 AND source='manual'")
+          .bind(itemId, inventory.id)
+          .first<{ id: string }>()
+        : null;
+      if (itemId && !existing) return jsonResponse({ error: "PRODUTO FORA DA LISTA NÃO ENCONTRADO." }, 404);
+      if (action === "delete_item") {
+        if (!existing) return jsonResponse({ error: "PRODUTO FORA DA LISTA NÃO ENCONTRADO." }, 404);
+        await database.prepare("DELETE FROM inventory_items WHERE id=?1").bind(existing.id).run();
+        return jsonResponse({ deleted: true });
+      }
+      const product = upper(body.product, 200);
+      const countedQty = qty(body.countedQty);
+      const rawCost = body.costCents;
+      const costCents = rawCost === null || rawCost === undefined || rawCost === "" ? null : Number(rawCost);
+      if (!product) return jsonResponse({ error: "INFORME O PRODUTO." }, 400);
+      if (countedQty === null || countedQty < 0) return jsonResponse({ error: "INFORME A QUANTIDADE CONTADA." }, 400);
+      if (costCents !== null && (!Number.isInteger(costCents) || costCents < 0 || costCents > 100_000_00)) {
+        return jsonResponse({ error: "CUSTO INVÁLIDO." }, 400);
+      }
+      if (existing) {
+        await database
+          .prepare(
+            `UPDATE inventory_items SET code=?1, product=?2, counted_qty=?3, cost_cents=?4, counted_by_name=?5, counted_at=?6,
+               updated_by_name=?5, updated_at=?6 WHERE id=?7`,
+          )
+          .bind(safeText(body.code, 60), product, countedQty, costCents, actor.displayName, now, existing.id)
+          .run();
+        return jsonResponse({ updated: true, id: existing.id });
+      }
+      // Categoria escolhida ou "FORA DA LISTA" (criada na hora, se ainda não existir).
+      const target = category || "FORA DA LISTA";
+      const id = crypto.randomUUID();
+      await database.batch([
+        database
+          .prepare(
+            `INSERT INTO inventory_categories (id, inventory_id, category, file_name, uploaded_by_name, uploaded_at, counted_by_name, counted_at)
+             VALUES (?1, ?2, ?3, '', ?4, ?5, '', '') ON CONFLICT (inventory_id, category) DO NOTHING`,
+          )
+          .bind(crypto.randomUUID(), inventory.id, target, actor.displayName, now),
+        database
+          .prepare(
+            `INSERT INTO inventory_items (id, inventory_id, category, code, product, system_qty, counted_qty, counted_by_name, counted_at,
+               cost_cents, reason, source, added_by_name, removed, updated_by_name, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, 0, ?6, ?7, ?8, ?9, '', 'manual', ?7, 0, ?7, ?8)`,
+          )
+          .bind(id, inventory.id, target, safeText(body.code, 60), product, countedQty, actor.displayName, now, costCents),
+      ]);
+      return jsonResponse({ created: true, id, category: target }, 201);
+    }
+
     if (action === "count") {
       const raw = body.countedQty;
       const countedQty = raw === null || raw === "" ? null : qty(raw);
@@ -302,12 +360,13 @@ export async function PATCH(request: Request) {
         }))
         .filter((row) => Number.isInteger(row.costCents) && row.costCents >= 0);
       const items = await database
-        .prepare("SELECT id, code, product FROM inventory_items WHERE inventory_id=?1")
+        .prepare("SELECT id, code, product FROM inventory_items WHERE inventory_id=?1 AND source<>'manual'")
         .bind(inventory.id)
         .all<{ id: string; code: string; product: string }>();
       const matched = matchCosts(items.results ?? [], costs);
       await database.batch([
-        database.prepare("UPDATE inventory_items SET cost_cents=NULL WHERE inventory_id=?1").bind(inventory.id),
+        // Produto fora da lista mantém o custo digitado à mão.
+        database.prepare("UPDATE inventory_items SET cost_cents=NULL WHERE inventory_id=?1 AND source<>'manual'").bind(inventory.id),
         // Um UPDATE por valor de custo (muitos produtos têm o mesmo custo).
         ...[...groupByCost(matched)].flatMap(([costCents, ids]) => chunk(ids, 500).map((part) =>
           database

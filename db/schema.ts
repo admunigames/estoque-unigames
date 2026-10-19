@@ -4590,6 +4590,11 @@ export const inventoryItems = pgTable(
     // NULL = sem custo no relatório de custos.
     costCents: integer("cost_cents"),
     reason: text("reason").notNull().default(""),
+    // 'relatorio' = veio do relatório de estoque; 'manual' = produto fora da
+    // lista, adicionado na contagem com custo digitado à mão (o relatório de
+    // custos não sobrescreve).
+    source: text("source").notNull().default("relatorio"),
+    addedByName: text("added_by_name").notNull().default(""),
     removed: integer("removed").notNull().default(0),
     removedByName: text("removed_by_name").notNull().default(""),
     removedAt: text("removed_at").notNull().default(""),

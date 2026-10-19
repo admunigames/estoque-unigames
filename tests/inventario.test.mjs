@@ -110,3 +110,27 @@ test("fluxo completo: categoria, contagem por vários usuários, custos, diverg�
   assert.equal((await call({ id: "adm", role: "admin", permissions: [] }, "DELETE", { id })).status, 200);
   assert.equal((await (await call(GESTOR, "GET")).json()).inventories.length, 0);
 });
+
+test("produto FORA DA LISTA: entra com estoque 0, custo à mão preservado pelo relatório de custos", async () => {
+  const { id } = await (await call(GESTOR, "POST", { storeId: A, inventoryDate: "2026-10-19" })).json();
+  assert.equal((await call(GESTOR, "PATCH", { id, action: "upload_category", category: "ACESSORIOS", items: [{ code: "1", product: "CABO USB", systemQty: 2 }] })).status, 200);
+  assert.equal((await call(CONTADOR, "PATCH", { id, action: "add_item", product: "", countedQty: 1 })).status, 400);
+  const added = await call(CONTADOR, "PATCH", { id, action: "add_item", product: "fone bluetooth x9", code: "", countedQty: 3, costCents: 2550 });
+  assert.equal(added.status, 201);
+  const { id: itemId, category } = await added.json();
+  assert.equal(category, "FORA DA LISTA");
+  // Relatório de custos não sobrescreve o custo digitado à mão.
+  await call(GESTOR, "PATCH", { id, action: "costs", costs: [{ code: "1", barcode: "", gtin: "", name: "CABO USB", costCents: 1000 }, { code: "", barcode: "", gtin: "", name: "FONE BLUETOOTH X9", costCents: 99999 }] });
+  let detail = await (await call(GESTOR, "GET", undefined, `?id=${id}`)).json();
+  const fone = detail.items.find((item) => item.id === itemId);
+  assert.deepEqual([fone.product, fone.systemQty, fone.countedQty, fone.costCents, fone.source, fone.addedByName], ["FONE BLUETOOTH X9", 0, 3, 2550, "manual", "LIDIANE"]);
+  assert.ok(detail.categories.some((cat) => cat.category === "FORA DA LISTA"));
+  assert.equal(detail.items.find((item) => item.product === "CABO USB").costCents, 1000);
+  // Edição e exclusão só valem para produto fora da lista.
+  assert.equal((await call(CONTADOR, "PATCH", { id, action: "add_item", itemId, product: "FONE BLUETOOTH X9", countedQty: 4, costCents: 3000 })).status, 200);
+  const cabo = detail.items.find((item) => item.product === "CABO USB");
+  assert.equal((await call(CONTADOR, "PATCH", { id, action: "delete_item", itemId: cabo.id })).status, 404);
+  assert.equal((await call(CONTADOR, "PATCH", { id, action: "delete_item", itemId })).status, 200);
+  detail = await (await call(GESTOR, "GET", undefined, `?id=${id}`)).json();
+  assert.equal(detail.items.length, 1);
+});
