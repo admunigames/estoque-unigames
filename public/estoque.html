@@ -4827,7 +4827,7 @@
           </div>
           <p class="purchase-field-help" id="invCountHint"></p>
           <div class="table-panel responsive-table"><div class="table-scroll">
-            <table id="invCountTable"><thead><tr><th>Código</th><th>Produto</th><th>Contado</th><th>Contado por</th></tr></thead>
+            <table id="invCountTable"><thead><tr><th>Código</th><th>Produto</th><th>Em estoque</th><th>Contado</th><th>Diferença</th><th>Contado por</th></tr></thead>
             <tbody id="invCountBody"></tbody></table>
           </div></div>
         </div>
@@ -28089,7 +28089,8 @@ function renderHomeTasks(){
   // ---------- ESTOQUE · INVENTÁRIO ----------
   // Inventário por loja e data: cada relatório de estoque subido é uma
   // categoria (Estoque Atual = sistema no dia); vários usuários contam ao vivo.
-  // A contagem é "às cegas": a tela de CONTAGEM não mostra o estoque em sistema.
+  // A tela de CONTAGEM mostra o estoque em sistema e a diferença (pedido do
+  // usuário, 19/10/2026: a contagem não é às cegas).
   const INV_API = '/api/inventario';
   let invList = null;
   let invData = null;
@@ -28228,14 +28229,14 @@ function renderHomeTasks(){
     el('btnInvFinishCategory').textContent = cat && cat.countedAt ? 'REABRIR CONTAGEM DA CATEGORIA' : 'FINALIZAR CONTAGEM DA CATEGORIA';
     el('invCountHint').textContent = !cat ? 'SUBA OS RELATÓRIOS NA ABA CATEGORIAS.' : cat.countedAt
       ? 'CONTAGEM FINALIZADA POR '+cat.countedByName+' EM '+(formatDateTimeBR(cat.countedAt) || '')+'. AINDA DÁ PARA CORRIGIR UM PRODUTO ENCONTRADO DEPOIS.'
-      : 'DIGITE A QUANTIDADE CONTADA FISICAMENTE: SALVA SOZINHO AO SAIR DO CAMPO. AO FINALIZAR, O QUE NÃO FOI CONTADO FICA ZERO.';
+      : 'DIGITE A QUANTIDADE CONTADA FISICAMENTE: SALVA SOZINHO AO SAIR DO CAMPO (ENTER PASSA PARA O PRÓXIMO). AO FINALIZAR, O QUE NÃO FOI CONTADO FICA ZERO.';
     // Ao vivo com alguém digitando: só atualiza os outros campos, sem redesenhar.
     const body = el('invCountBody');
     if(live && body.contains(document.activeElement)){
       body.querySelectorAll('[data-inv-item]').forEach(input => {
         if(input === document.activeElement) return;
         const item = invData.items.find(row => row.id === input.dataset.invItem);
-        if(item) input.value = item.countedQty === null ? '' : item.countedQty;
+        if(item){ input.value = item.countedQty === null ? '' : item.countedQty; invUpdateDiffCell(item.id, input.value); }
       });
       return;
     }
@@ -28243,9 +28244,21 @@ function renderHomeTasks(){
       '<tr>'+
         '<td data-label="Código">'+escapeHtml(item.code || '—')+'</td>'+
         '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong></td>'+
+        '<td data-label="Em estoque"><strong>'+item.systemQty+'</strong></td>'+
         '<td data-label="Contado"><input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+(item.countedQty === null ? '' : item.countedQty)+'"'+(canCount ? '' : ' disabled')+'></td>'+
+        '<td data-label="Diferença" class="'+gdMoneyClass(invDiff(item) || 0)+'" data-inv-diff="'+escapeHtml(item.id)+'"><strong>'+invSigned(invDiff(item))+'</strong></td>'+
         '<td data-label="Contado por"><small class="os-update-meta">'+escapeHtml(item.countedByName ? item.countedByName+' · '+(formatDateTimeBR(item.countedAt) || '') : '—')+'</small></td>'+
-      '</tr>').join('') : '<tr><td colspan="4" class="responsive-empty">Nenhum produto.</td></tr>';
+      '</tr>').join('') : '<tr><td colspan="6" class="responsive-empty">Nenhum produto.</td></tr>';
+  }
+
+  // Diferença na hora em que digita (antes de salvar).
+  function invUpdateDiffCell(itemId, value){
+    const cell = document.querySelector('[data-inv-diff="'+CSS.escape(itemId)+'"]');
+    const item = invData && invData.items.find(row => row.id === itemId);
+    if(!cell || !item) return;
+    const diff = value === '' || value === null ? null : Number(value) - item.systemQty;
+    cell.className = gdMoneyClass(diff || 0);
+    cell.innerHTML = '<strong>'+invSigned(diff)+'</strong>';
   }
 
   function renderInvResult(){
@@ -28529,6 +28542,10 @@ function renderHomeTasks(){
       input.classList.add('inv-saved');
       setTimeout(() => input.classList.remove('inv-saved'), 900);
     }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('invCountBody') && el('invCountBody').addEventListener('input', event => {
+    const input = event.target.closest('[data-inv-item]');
+    if(input) invUpdateDiffCell(input.dataset.invItem, input.value);
   });
   // Enter passa para o próximo produto (contagem rápida).
   el('invCountBody') && el('invCountBody').addEventListener('keydown', event => {
