@@ -28240,7 +28240,7 @@ function renderHomeTasks(){
   function invCategorySelect(select, withAll){
     const previous = select.value;
     const cats = invData.categories.map(cat => cat.category);
-    select.innerHTML = (withAll ? '<option value="">TODAS</option>' : '')+cats.map(cat => '<option>'+escapeHtml(cat)+'</option>').join('');
+    select.innerHTML = (withAll ? '<option value="">TODAS AS CATEGORIAS</option>' : '')+cats.map(cat => '<option>'+escapeHtml(cat)+'</option>').join('');
     if(cats.includes(previous) || (withAll && previous === '')) select.value = previous;
   }
 
@@ -28271,7 +28271,7 @@ function renderHomeTasks(){
     el('btnInvCosts').hidden = !invCan('manage') || !open;
     el('btnInvAttach').hidden = !(invCan('count') || invCan('manage'));
     renderInvCategories();
-    invCategorySelect(el('invCountCategory'), false);
+    invCategorySelect(el('invCountCategory'), true);
     invCategorySelect(el('invResultCategory'), true);
     renderInvCount(live);
     renderInvResult();
@@ -28303,10 +28303,14 @@ function renderHomeTasks(){
     const cat = invData.categories.find(item => item.category === category);
     const canCount = (invCan('count') || invCan('manage')) && invOpen();
     const terms = el('invCountSearch').value.trim().toLocaleUpperCase('pt-BR').split(/\s+/).filter(Boolean);
-    const items = invData.items.filter(item => item.category === category && terms.every(term => (item.product+' '+item.code).includes(term)));
+    // TODAS AS CATEGORIAS: busca o produto em qualquer categoria para ajustar a quantidade.
+    const allCats = category === '';
+    const items = invData.items.filter(item => (allCats || item.category === category) && terms.every(term => (item.product+' '+item.code).includes(term)));
     el('btnInvFinishCategory').hidden = !canCount || !cat;
     el('btnInvFinishCategory').textContent = cat && cat.countedAt ? 'REABRIR CONTAGEM DA CATEGORIA' : 'FINALIZAR CONTAGEM DA CATEGORIA';
-    el('invCountHint').textContent = !cat ? 'SUBA OS RELATÓRIOS NA ABA CATEGORIAS.' : cat.countedAt
+    el('invCountHint').textContent = !invData.categories.length ? 'SUBA OS RELATÓRIOS NA ABA CATEGORIAS.'
+      : allCats ? 'TODAS AS CATEGORIAS: BUSQUE O PRODUTO PELO NOME OU CÓDIGO E AJUSTE A QUANTIDADE. PARA FINALIZAR, ESCOLHA A CATEGORIA.'
+      : !cat ? 'SUBA OS RELATÓRIOS NA ABA CATEGORIAS.' : cat.countedAt
       ? 'CONTAGEM FINALIZADA POR '+cat.countedByName+' EM '+(formatDateTimeBR(cat.countedAt) || '')+'. AINDA DÁ PARA CORRIGIR UM PRODUTO ENCONTRADO DEPOIS.'
       : 'DIGITE A QUANTIDADE CONTADA FISICAMENTE: SALVA SOZINHO AO SAIR DO CAMPO (ENTER PASSA PARA O PRÓXIMO). AO FINALIZAR, O QUE NÃO FOI CONTADO FICA ZERO.';
     // Ao vivo com alguém digitando: só atualiza os outros campos, sem redesenhar.
@@ -28322,7 +28326,7 @@ function renderHomeTasks(){
     body.innerHTML = items.length ? items.map(item =>
       '<tr>'+
         '<td data-label="Código">'+escapeHtml(item.code || '—')+'</td>'+
-        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong></td>'+
+        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong>'+(allCats ? '<small class="os-update-meta">'+escapeHtml(item.category)+'</small>' : '')+'</td>'+
         '<td data-label="Em estoque"><strong>'+item.systemQty+'</strong></td>'+
         '<td data-label="Contado"><input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+(item.countedQty === null ? '' : item.countedQty)+'"'+(canCount ? '' : ' disabled')+'></td>'+
         '<td data-label="Diferença" class="'+gdMoneyClass(invDiff(item) || 0)+'" data-inv-diff="'+escapeHtml(item.id)+'"><strong>'+invDiffLabel(invDiff(item))+'</strong></td>'+
