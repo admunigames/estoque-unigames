@@ -2799,6 +2799,12 @@
     #invDivBody td:nth-child(8){grid-column:1 / -1; grid-row:6;}
     #invDivBody td:nth-child(8) button{width:100%;}
     .inv-reason{min-width:0;}
+    /* Botões das tabelas (CONTAR / EXCLUIR / ABRIR): lado a lado, na largura do cartão. */
+    #invCatBody td:not([data-label]),#invListBody td:not([data-label]),#invAttachBody td:not([data-label]){
+      display:flex; gap:8px; white-space:normal;
+    }
+    #invCatBody td:not([data-label])::before,#invListBody td:not([data-label])::before,#invAttachBody td:not([data-label])::before{display:none;}
+    #invCatBody td:not([data-label]) button,#invListBody td:not([data-label]) button,#invAttachBody td:not([data-label]) button{flex:1 1 0; min-width:0; min-height:42px;}
   }
   .ast-qty{font:900 15px/1 var(--sans);color:#54c48a;}
   .ast-qty.zero{color:#ef817b;}
