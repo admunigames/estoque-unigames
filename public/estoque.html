@@ -2754,7 +2754,6 @@
     #invSummary .supply-dashboard-card{padding:10px 12px;}
     #invSummary .supply-dashboard-card strong{margin-top:4px; font-size:18px;}
     #invSummary .supply-dashboard-card small{font-size:8px;}
-    #invSummary .supply-dashboard-card:last-child{grid-column:1 / -1;}
     .inv-detail-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
     .inv-detail-actions button{min-height:38px; padding:8px; font-size:10px; white-space:normal;}
     #invTabs{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
@@ -28180,8 +28179,16 @@ function renderHomeTasks(){
   }
   const invPatch = (action, extra) => invApi('PATCH', {id: invId, action, ...(extra || {})});
   const invDiff = item => item.countedQty === null ? null : item.countedQty - item.systemQty;
-  const invValue = item => { const d = invDiff(item); return d === null || item.costCents === null ? null : d * item.costCents; };
-  const invSigned = n => n === null ? '—' : (n > 0 ? '+'+n : String(n));
+  // Diferença mostrada como FALTA 2 (físico 2, estoque 4) ou SOBRA +1 (físico
+  // 2, estoque 1); valor = custo × quantidade faltante/sobrando, sempre
+  // positivo, com faltas e sobras somadas separadamente (pedido de 19/10/2026).
+  const invValue = item => { const d = invDiff(item); return d === null || item.costCents === null ? null : Math.abs(d) * item.costCents; };
+  const invDiffLabel = n => n === null ? '—' : n < 0 ? 'FALTA '+(-n) : n > 0 ? 'SOBRA +'+n : '0';
+  const invTotals = rows => rows.reduce((acc, item) => {
+    const d = invDiff(item), v = invValue(item) || 0;
+    if(d < 0) acc.missing += v; else if(d > 0) acc.surplus += v;
+    return acc;
+  }, {missing:0, surplus:0});
   const invMoney = cents => cents === null ? '—' : formatCentsBRL(cents);
   const invOpen = () => invData && invData.inventory && invData.inventory.status !== 'finalizado';
   const invDivergent = () => ((invData && invData.items) || []).filter(item => invDiff(item) !== null && invDiff(item) !== 0);
@@ -28248,13 +28255,14 @@ function renderHomeTasks(){
     el('invPageTitle').textContent = (window.matchMedia('(max-width:680px)').matches ? '' : 'Inventário · ')+inv.storeName+' · '+gdDateLabel(inv.inventoryDate);
     const counted = items.filter(item => item.countedQty !== null).length;
     const divergent = invDivergent().filter(item => !item.removed);
-    const value = divergent.reduce((sum, item) => sum + (invValue(item) || 0), 0);
+    const totals = invTotals(divergent);
     el('invSummary').innerHTML =
       '<article class="supply-dashboard-card"><span>STATUS</span><strong>'+(inv.status === 'finalizado' ? 'FINALIZADO' : 'EM ANDAMENTO')+'</strong><small>'+escapeHtml(inv.status === 'finalizado' ? 'POR '+inv.finalizedByName+' · '+(formatDateTimeBR(inv.finalizedAt) || '') : 'CRIADO POR '+inv.createdByName)+'</small></article>'+
       '<article class="supply-dashboard-card"><span>CATEGORIAS CONTADAS</span><strong>'+invData.categories.filter(cat => cat.countedAt).length+' / '+invData.categories.length+'</strong></article>'+
       '<article class="supply-dashboard-card"><span>PRODUTOS CONTADOS</span><strong>'+counted+' / '+items.length+'</strong></article>'+
       '<article class="supply-dashboard-card warning"><span>DIVERGENTES (LISTA FINAL)</span><strong>'+divergent.length+'</strong></article>'+
-      '<article class="supply-dashboard-card '+(value < 0 ? 'danger' : '')+'"><span>VALOR DAS DIVERGÊNCIAS</span><strong class="'+gdMoneyClass(value)+'">'+formatCentsBRL(value)+'</strong><small>'+(inv.costsFileName ? 'CUSTOS: '+escapeHtml(inv.costsFileName) : 'SEM RELATÓRIO DE CUSTOS')+'</small></article>';
+      '<article class="supply-dashboard-card danger"><span>VALOR EM FALTA</span><strong class="gd-neg">'+formatCentsBRL(totals.missing)+'</strong><small>CUSTO × QUANTIDADE FALTANTE</small></article>'+
+      '<article class="supply-dashboard-card"><span>VALOR EM SOBRA</span><strong class="gd-pos">'+formatCentsBRL(totals.surplus)+'</strong><small>'+(inv.costsFileName ? 'CUSTOS: '+escapeHtml(inv.costsFileName) : 'SEM RELATÓRIO DE CUSTOS')+'</small></article>';
     const open = invOpen();
     el('btnInvFinalize').hidden = !invCan('manage');
     el('btnInvFinalize').textContent = open ? 'FINALIZAR INVENTÁRIO' : 'REABRIR INVENTÁRIO';
@@ -28317,7 +28325,7 @@ function renderHomeTasks(){
         '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong></td>'+
         '<td data-label="Em estoque"><strong>'+item.systemQty+'</strong></td>'+
         '<td data-label="Contado"><input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+(item.countedQty === null ? '' : item.countedQty)+'"'+(canCount ? '' : ' disabled')+'></td>'+
-        '<td data-label="Diferença" class="'+gdMoneyClass(invDiff(item) || 0)+'" data-inv-diff="'+escapeHtml(item.id)+'"><strong>'+invSigned(invDiff(item))+'</strong></td>'+
+        '<td data-label="Diferença" class="'+gdMoneyClass(invDiff(item) || 0)+'" data-inv-diff="'+escapeHtml(item.id)+'"><strong>'+invDiffLabel(invDiff(item))+'</strong></td>'+
         '<td data-label="Contado por">'+(item.countedByName ? '<small class="os-update-meta">'+escapeHtml(item.countedByName+' · '+(formatDateTimeBR(item.countedAt) || ''))+'</small>' : '')+'</td>'+
       '</tr>').join('') : '<tr><td colspan="6" class="responsive-empty">Nenhum produto.</td></tr>';
   }
@@ -28329,7 +28337,7 @@ function renderHomeTasks(){
     if(!cell || !item) return;
     const diff = value === '' || value === null ? null : Number(value) - item.systemQty;
     cell.className = gdMoneyClass(diff || 0);
-    cell.innerHTML = '<strong>'+invSigned(diff)+'</strong>';
+    cell.innerHTML = '<strong>'+invDiffLabel(diff)+'</strong>';
   }
 
   function renderInvResult(){
@@ -28349,9 +28357,9 @@ function renderHomeTasks(){
         '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong>'+(notedCodes.has(String(item.code).toUpperCase()) ? ' <span class="status-pill waiting">ANOTADO NAS DIVERGÊNCIAS</span>' : '')+'</td>'+
         '<td data-label="Contado">'+(item.countedQty === null ? '—' : item.countedQty)+'</td>'+
         '<td data-label="Sistema">'+item.systemQty+'</td>'+
-        '<td data-label="Diferença" class="'+gdMoneyClass(diff || 0)+'"><strong>'+invSigned(diff)+'</strong></td>'+
+        '<td data-label="Diferença" class="'+gdMoneyClass(diff || 0)+'"><strong>'+invDiffLabel(diff)+'</strong></td>'+
         '<td data-label="Custo">'+invMoney(item.costCents)+'</td>'+
-        '<td data-label="Valor" class="'+gdMoneyClass(value || 0)+'"><strong>'+invMoney(value)+'</strong></td>'+
+        '<td data-label="Valor" class="'+gdMoneyClass(diff || 0)+'"><strong>'+invMoney(value)+'</strong></td>'+
       '</tr>';
     }).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum produto.</td></tr>';
     const codes = new Set(invData.items.map(item => String(item.code).toUpperCase()));
@@ -28376,8 +28384,8 @@ function renderHomeTasks(){
         '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong><small class="os-update-meta">'+escapeHtml(item.code || '')+'</small></td>'+
         '<td data-label="Contado">'+item.countedQty+'</td>'+
         '<td data-label="Sistema">'+item.systemQty+'</td>'+
-        '<td data-label="Diferença" class="'+gdMoneyClass(diff)+'"><strong>'+invSigned(diff)+'</strong></td>'+
-        '<td data-label="Valor" class="'+gdMoneyClass(value || 0)+'">'+invMoney(value)+'</td>'+
+        '<td data-label="Diferença" class="'+gdMoneyClass(diff)+'"><strong>'+invDiffLabel(diff)+'</strong></td>'+
+        '<td data-label="Valor" class="'+gdMoneyClass(diff || 0)+'">'+invMoney(value)+'</td>'+
         '<td data-label="Motivo da divergência"><input type="text" class="inv-reason" maxlength="1000" data-inv-reason="'+escapeHtml(item.id)+'" value="'+escapeHtml(item.reason || '')+'" placeholder="Motivo"'+(canManage ? '' : ' disabled')+'>'+
           (item.removed ? '<small class="os-update-meta">RETIRADO POR '+escapeHtml(item.removedByName+' · '+(formatDateTimeBR(item.removedAt) || ''))+'</small>' : '')+'</td>'+
         '<td style="white-space:nowrap">'+(canManage ? '<button class="btn-outline btn-sm" type="button" data-inv-remove="'+escapeHtml(item.id)+'" data-removed="'+(item.removed ? '0' : '1')+'">'+(item.removed ? 'VOLTAR PARA A LISTA' : 'ENCONTRADO / RETIRAR')+'</button>' : '')+'</td>'+
@@ -28452,17 +28460,16 @@ function renderHomeTasks(){
     const table = (cols, body) => '<table class="os-print-table"><thead><tr>'+cols.map(col => '<th>'+col+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table>';
     let html = '';
     if(kind === 'diretor'){
-      const total = rows.reduce((sum, item) => sum + (invValue(item) || 0), 0);
-      const over = rows.filter(item => invDiff(item) > 0).reduce((sum, item) => sum + (invValue(item) || 0), 0);
+      const all = invTotals(rows);
       html = head('RELATÓRIO FINAL DE DIVERGÊNCIAS', rows.length+' PRODUTOS DIVERGENTES')+
-        '<p class="inv-print-totals">SOBRAS: <b>'+formatCentsBRL(over)+'</b> · FALTAS: <b>'+formatCentsBRL(total - over)+'</b> · RESULTADO: <b>'+formatCentsBRL(total)+'</b></p>'+
+        '<p class="inv-print-totals">FALTAS: <b>'+formatCentsBRL(all.missing)+'</b> · SOBRAS: <b>'+formatCentsBRL(all.surplus)+'</b> (VALOR = CUSTO × QUANTIDADE FALTANTE OU SOBRANDO)</p>'+
         [...new Set(rows.map(item => item.category))].sort().map(cat => {
           const catRows = rows.filter(item => item.category === cat).sort((a, b) => a.product.localeCompare(b.product, 'pt-BR'));
-          const catTotal = catRows.reduce((sum, item) => sum + (invValue(item) || 0), 0);
-          return '<section class="os-print-section"><h2>'+escapeHtml(cat)+' · '+catRows.length+' PRODUTO(S) · '+formatCentsBRL(catTotal)+'</h2>'+
-            table(['Código','Produto','<span class="num">Contado</span>','<span class="num">Sistema</span>','<span class="num">Dif.</span>','<span class="num">Custo</span>','<span class="num">Valor</span>','Motivo'], catRows.map(item =>
+          const catTotals = invTotals(catRows);
+          return '<section class="os-print-section"><h2>'+escapeHtml(cat)+' · '+catRows.length+' PRODUTO(S) · FALTAS '+formatCentsBRL(catTotals.missing)+' · SOBRAS '+formatCentsBRL(catTotals.surplus)+'</h2>'+
+            table(['Código','Produto','<span class="num">Contado</span>','<span class="num">Sistema</span>','<span class="num">Diferença</span>','<span class="num">Custo</span>','<span class="num">Valor</span>','Motivo'], catRows.map(item =>
               '<tr><td class="num">'+escapeHtml(item.code || '')+'</td><td>'+escapeHtml(item.product)+'</td><td class="num">'+item.countedQty+'</td><td class="num">'+item.systemQty+'</td>'+
-              '<td class="num">'+invSigned(invDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td><td>'+escapeHtml(item.reason || '—')+'</td></tr>').join(''))+'</section>';
+              '<td class="num">'+invDiffLabel(invDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td><td>'+escapeHtml(item.reason || '—')+'</td></tr>').join(''))+'</section>';
         }).join('');
     }else if(kind === 'recontagem'){
       html = head('RECONTAGEM DE LOJA', 'RECONTE E ESCREVA A QUANTIDADE NA CAIXA')+
