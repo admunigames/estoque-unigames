@@ -11908,6 +11908,25 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="invCatDialog" aria-labelledby="invCatDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="invCatDialogTitle">CATEGORIA DO RELATÓRIO</h3>
+  </div>
+  <form class="purchase-form" id="invCatForm">
+    <p class="gd-opening-hint" id="invCatFile"></p>
+    <p class="purchase-field-help" id="invCatHint"></p>
+    <p class="user-form-status" id="invCatStoreWarn" hidden></p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="invCatName">CATEGORIA *</label><input type="text" id="invCatName" maxlength="120" autocomplete="off" required></div>
+    </div>
+    <div class="user-form-status" id="invCatStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" id="btnInvCatSkip">NÃO SUBIR ESTE</button>
+      <button class="btn-accent" type="submit">SUBIR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="invNewDialog" aria-labelledby="invNewDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="invNewDialogTitle">NOVO INVENTÁRIO</h3>
@@ -28435,25 +28454,54 @@ function renderHomeTasks(){
       await loadInvPage();
     }catch(error){ el('invNewStatus').textContent = error.message; }
   });
+  function invAskCategory(fileName, parsed){
+    const storeName = invData.inventory.storeName.toLocaleUpperCase('pt-BR');
+    const sameStore = !parsed.store || parsed.store === storeName;
+    el('invCatFile').textContent = fileName+' · '+parsed.items.length+' PRODUTOS';
+    el('invCatName').value = parsed.category || '';
+    el('invCatStoreWarn').hidden = sameStore;
+    el('invCatStoreWarn').textContent = 'ATENÇÃO: O CABEÇALHO DO ARQUIVO É DA LOJA "'+parsed.store+'", MAS ESTE INVENTÁRIO É DA '+storeName+'.';
+    el('invCatHint').textContent = parsed.category ? 'CATEGORIA LIDA DO CABEÇALHO DO ARQUIVO. CORRIJA SE PRECISAR.' : 'NÃO ACHEI A CATEGORIA NO CABEÇALHO: DIGITE A CATEGORIA DESTE RELATÓRIO.';
+    el('invCatStatus').textContent = '';
+    const dialog = el('invCatDialog');
+    dialog.showModal();
+    el('invCatName').select();
+    return new Promise(resolve => {
+      const finish = value => { el('invCatForm').onsubmit = null; el('btnInvCatSkip').onclick = null; dialog.onclose = null; if(dialog.open) dialog.close(); resolve(value); };
+      el('invCatForm').onsubmit = event => {
+        event.preventDefault();
+        const value = el('invCatName').value.trim().toLocaleUpperCase('pt-BR');
+        if(!value){ el('invCatStatus').textContent = 'INFORME A CATEGORIA.'; return; }
+        finish(value);
+      };
+      el('btnInvCatSkip').onclick = () => finish('');
+      dialog.onclose = () => finish('');
+    });
+  }
+
   el('btnInvUpload') && el('btnInvUpload').addEventListener('click', () => { el('invUploadInput').value = ''; el('invUploadInput').click(); });
   el('invUploadInput') && el('invUploadInput').addEventListener('change', async () => {
     const files = [...el('invUploadInput').files];
     for(const file of files){
       try{
         const parsed = invParseStockRows(await extractRowsFromFile(file));
-        // O cabeçalho "- CATEGORIA - UNIGAMES LOJA" fica numa tabela à parte do relatório.
+        // O cabeçalho "- CATEGORIA - LOJA" (ex.: "- ACESSORIOS EM GERAL - UNIGAMES
+        // GUARARAPES" ou "- ACESSORIOS EM GERAL - PAULISTA ACESSORIOS") fica numa
+        // tabela à parte do relatório: procura no arquivo inteiro.
         if(!parsed.category){
-          const text = (await readAsText(file, 'ISO-8859-1')).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ');
-          const match = text.match(/-\s*([^\n-][^\n]*?)\s+-\s+UNIGAMES\s+([^\n]+?)\s*(?:\n|$)/i);
-          if(match){ parsed.category = match[1].toLocaleUpperCase('pt-BR').trim(); parsed.store = match[2].toLocaleUpperCase('pt-BR').trim(); }
+          const text = (await readAsText(file, 'ISO-8859-1')).replace(/<[^>]+>/g, '\n').replace(/&nbsp;/g, ' ');
+          const line = text.split('\n').map(part => part.trim()).find(part => /^-\s*\S.*\s-\s+\S/.test(part));
+          if(line){
+            const parts = line.replace(/^-\s*/, '').split(/\s+-\s+/);
+            parsed.category = (parts[0] || '').toLocaleUpperCase('pt-BR').trim();
+            parsed.store = (parts.slice(1).join(' - ') || '').toLocaleUpperCase('pt-BR').replace(/^UNIGAMES\s+/, '').trim();
+          }
         }
-        if(!parsed.category) throw new Error('NÃO ACHEI A CATEGORIA NO CABEÇALHO DO ARQUIVO.');
-        const storeName = invData.inventory.storeName;
-        if(parsed.store && parsed.store !== storeName.toLocaleUpperCase('pt-BR')){
-          const ok = await askConfirm('O ARQUIVO '+file.name+' É DA LOJA '+parsed.store+', MAS O INVENTÁRIO É DA '+storeName+'. SUBIR MESMO ASSIM?', {okText:'SUBIR'});
-          if(!ok) continue;
-        }
-        const result = await invPatch('upload_category', {category: parsed.category, fileName: file.name, items: parsed.items});
+        if(!parsed.items.length) throw new Error('O RELATÓRIO NÃO TEM PRODUTOS.');
+        // Confirma (ou corrige) a categoria antes de subir; avisa se a loja do arquivo for outra.
+        const chosen = await invAskCategory(file.name, parsed);
+        if(!chosen) continue;
+        const result = await invPatch('upload_category', {category: chosen, fileName: file.name, items: parsed.items});
         showPurchaseToast(result.category+': '+result.items+' produtos.');
       }catch(error){ showPurchaseToast(file.name+': '+error.message, 'error'); }
     }
