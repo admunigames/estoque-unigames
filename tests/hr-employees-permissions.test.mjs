@@ -39,3 +39,14 @@ test("funcionários: ver/cadastrar/editar/excluir separados; financeiro só com 
   assert.equal((await del(EDIT)).status, 403);
   assert.equal((await del(DELETE)).status, 200);
 });
+
+test("funcionários: link do Drive dos documentos é salvo como digitado e só aceita http(s)", async () => {
+  const link = "https://drive.google.com/drive/folders/1AbC-dEf_GhI?usp=sharing";
+  assert.equal((await post(PAYROLL, { fullName: "ana", driveLink: "javascript:alert(1)" })).status, 400);
+  const created = await post(PAYROLL, { fullName: "ana", driveLink: link });
+  assert.equal(created.status, 201);
+  const id = (await created.json()).id;
+  assert.equal((await list(VIEW)).find((e) => e.id === id).driveLink, link, "link não vira maiúsculas");
+  assert.equal((await post(EDIT, { id, fullName: "ANA", driveLink: "" })).status, 200);
+  assert.equal((await list(VIEW)).find((e) => e.id === id).driveLink, "");
+});

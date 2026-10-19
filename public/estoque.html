@@ -2734,9 +2734,72 @@
   .inv-detail-actions{justify-content:flex-end;margin-top:10px;}
   .inv-count-input{width:96px;min-height:40px;font:800 16px/1 var(--sans);text-align:center;}
   .inv-reason{width:100%;min-width:200px;}
+  .rh-drive-link{display:inline-flex;margin-top:6px;text-decoration:none;}
   .inv-count-input.inv-saved,.inv-reason.inv-saved{box-shadow:0 0 0 2px #54c48a;}
   tr.inv-over td{background:rgba(84,196,138,.06);}
   tr.inv-under td{background:rgba(239,106,85,.07);}
+  /* INVENTÁRIO NO CELULAR: resumo compacto, abas roláveis, filtros na largura
+     toda e produtos em cartão curto (nome em cima, números lado a lado). */
+  @media (max-width:680px){
+    #invPageTitle{font-size:15px; line-height:1.25; hyphens:none; -webkit-hyphens:none; overflow-wrap:normal; word-break:normal;}
+    #invCountTable tbody td:nth-child(6):empty{display:none;}
+    #pageInventario .dre-toolbar{gap:10px;}
+    #pageInventario .dre-toolbar > .field{flex:1 1 100%; min-width:0;}
+    #pageInventario .dre-toolbar > .field input,#pageInventario .dre-toolbar > .field select{width:100%;}
+    #pageInventario .dre-toolbar > button{flex:1 1 100%; width:100%; white-space:normal; line-height:1.3;}
+    #pageInventario .dre-toolbar > .purchase-field-help{flex:1 1 100%; margin:0;}
+    #pageInventario .page-header .dre-toolbar-actions{gap:8px;}
+    #pageInventario .page-header .dre-toolbar-actions button{min-height:38px; padding:8px 12px; font-size:11px;}
+    #invSummary{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
+    #invSummary .supply-dashboard-card{padding:10px 12px;}
+    #invSummary .supply-dashboard-card strong{margin-top:4px; font-size:18px;}
+    #invSummary .supply-dashboard-card small{font-size:8px;}
+    #invSummary .supply-dashboard-card:last-child{grid-column:1 / -1;}
+    .inv-detail-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+    .inv-detail-actions button{min-height:38px; padding:8px; font-size:10px; white-space:normal;}
+    #invTabs{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+    #invTabs::-webkit-scrollbar{display:none;}
+    #invTabs .supply-tab{flex:0 0 auto;}
+    /* Cartões curtos das tabelas do inventário. */
+    #invCountTable tbody tr,#invResultBody tr,#invDivBody tr{
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px 10px; padding:10px 12px;
+    }
+    #invCountTable tbody td,#invResultBody td,#invDivBody td{
+      display:block; min-height:0; padding:0; border:0; text-align:left;
+    }
+    #invCountTable tbody td::before,#invResultBody td::before,#invDivBody td::before{display:block; margin-bottom:2px;}
+    #invCountTable tbody td.responsive-empty,#invResultBody td.responsive-empty,#invDivBody td.responsive-empty{grid-column:1 / -1;}
+    /* CONTAGEM: 1 código, 2 produto, 3 estoque, 4 contado, 5 diferença, 6 contado por */
+    #invCountTable tbody td:nth-child(2){grid-column:1 / -1; grid-row:1; font-size:14px;}
+    #invCountTable tbody td:nth-child(1){grid-column:1 / -1; grid-row:2; color:var(--ink-faint); font-size:11px;}
+    #invCountTable tbody td:nth-child(1)::before,#invCountTable tbody td:nth-child(2)::before{display:none;}
+    #invCountTable tbody td:nth-child(3){grid-row:3;}
+    #invCountTable tbody td:nth-child(4){grid-row:3;}
+    #invCountTable tbody td:nth-child(5){grid-row:3; text-align:right;}
+    #invCountTable tbody td:nth-child(3) strong{font-size:18px;}
+    #invCountTable tbody td:nth-child(5) strong{font-size:18px;}
+    #invCountTable tbody td:nth-child(6){grid-column:1 / -1; grid-row:4;}
+    #invCountTable tbody td:nth-child(6)::before{display:none;}
+    #invCountTable .inv-count-input{width:100%; min-height:46px; font-size:20px;}
+    /* RESULTADO: 1 categoria, 2 código, 3 produto, 4 contado, 5 sistema, 6 dif, 7 custo, 8 valor */
+    #invResultBody td:nth-child(3){grid-column:1 / -1; grid-row:1; font-size:13px;}
+    #invResultBody td:nth-child(3)::before{display:none;}
+    #invResultBody td:nth-child(1){grid-column:1 / 3; grid-row:2;}
+    #invResultBody td:nth-child(2){grid-column:3; grid-row:2;}
+    #invResultBody td:nth-child(4),#invResultBody td:nth-child(5),#invResultBody td:nth-child(6){grid-row:3;}
+    #invResultBody td:nth-child(7){grid-column:1; grid-row:4;}
+    #invResultBody td:nth-child(8){grid-column:2 / -1; grid-row:4;}
+    /* DIVERGENTES: 1 categoria, 2 produto, 3 contado, 4 sistema, 5 dif, 6 valor, 7 motivo, 8 botão */
+    #invDivBody td:nth-child(2){grid-column:1 / -1; grid-row:1; font-size:13px;}
+    #invDivBody td:nth-child(2)::before{display:none;}
+    #invDivBody td:nth-child(1){grid-column:1 / -1; grid-row:2;}
+    #invDivBody td:nth-child(3),#invDivBody td:nth-child(4),#invDivBody td:nth-child(5){grid-row:3;}
+    #invDivBody td:nth-child(6){grid-column:1 / -1; grid-row:4;}
+    #invDivBody td:nth-child(7){grid-column:1 / -1; grid-row:5;}
+    #invDivBody td:nth-child(8){grid-column:1 / -1; grid-row:6;}
+    #invDivBody td:nth-child(8) button{width:100%;}
+    .inv-reason{min-width:0;}
+  }
   .ast-qty{font:900 15px/1 var(--sans);color:#54c48a;}
   .ast-qty.zero{color:#ef817b;}
   .ast-in{border-color:rgba(84,196,138,.55);color:#54c48a;}
@@ -12120,6 +12183,7 @@
       <div class="purchase-field" data-rh-fin><label for="rhEmployeeTransportPerDay">TRANSPORTE POR DIA (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeTransportPerDay" placeholder="R$ 0,00"></div>
       <div class="purchase-field full" data-rh-fin><label for="rhEmployeeBenefitNotes">OBSERVAÇÕES DOS BENEFÍCIOS</label><input id="rhEmployeeBenefitNotes" maxlength="500"></div>
       <div class="purchase-field full"><label for="rhEmployeeUser">CONTA DE ACESSO (OPCIONAL)</label><select id="rhEmployeeUser"><option value="">SEM CONTA VINCULADA</option></select></div>
+      <div class="purchase-field full"><label for="rhEmployeeDriveLink">LINK DO DRIVE (DOCUMENTOS DO FUNCIONÁRIO)</label><input type="url" id="rhEmployeeDriveLink" maxlength="600" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..."></div>
       <div class="purchase-field full"><label for="rhEmployeeNotes">OBSERVAÇÕES</label><textarea id="rhEmployeeNotes" rows="2" maxlength="500"></textarea></div>
     </div>
     <div class="user-form-status" id="rhEmployeeFormStatus" role="status" aria-live="polite"></div>
@@ -28174,7 +28238,8 @@ function renderHomeTasks(){
     el('invDetailView').hidden = false;
     el('btnInvBack').hidden = false;
     el('btnInvNew').hidden = true;
-    el('invPageTitle').textContent = 'Inventário · '+inv.storeName+' · '+gdDateLabel(inv.inventoryDate);
+    // No celular, título curto (loja · data) para não ocupar três linhas.
+    el('invPageTitle').textContent = (window.matchMedia('(max-width:680px)').matches ? '' : 'Inventário · ')+inv.storeName+' · '+gdDateLabel(inv.inventoryDate);
     const counted = items.filter(item => item.countedQty !== null).length;
     const divergent = invDivergent().filter(item => !item.removed);
     const value = divergent.reduce((sum, item) => sum + (invValue(item) || 0), 0);
@@ -28247,7 +28312,7 @@ function renderHomeTasks(){
         '<td data-label="Em estoque"><strong>'+item.systemQty+'</strong></td>'+
         '<td data-label="Contado"><input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+(item.countedQty === null ? '' : item.countedQty)+'"'+(canCount ? '' : ' disabled')+'></td>'+
         '<td data-label="Diferença" class="'+gdMoneyClass(invDiff(item) || 0)+'" data-inv-diff="'+escapeHtml(item.id)+'"><strong>'+invSigned(invDiff(item))+'</strong></td>'+
-        '<td data-label="Contado por"><small class="os-update-meta">'+escapeHtml(item.countedByName ? item.countedByName+' · '+(formatDateTimeBR(item.countedAt) || '') : '—')+'</small></td>'+
+        '<td data-label="Contado por">'+(item.countedByName ? '<small class="os-update-meta">'+escapeHtml(item.countedByName+' · '+(formatDateTimeBR(item.countedAt) || ''))+'</small>' : '')+'</td>'+
       '</tr>').join('') : '<tr><td colspan="6" class="responsive-empty">Nenhum produto.</td></tr>';
   }
 
@@ -43862,7 +43927,8 @@ function renderHomeTasks(){
         (employee.offboardingPending ? ' <span class="status-pill waiting" title="Checklist demissional pendente">CHECKLIST PENDENTE ('+Number(employee.offboardingPending)+')</span>' : '');
       return '<tr>'+
         '<td>'+escapeHtml(employee.fullName)+(employee.telefone ? '<br><small style="color:var(--ink-faint);">'+escapeHtml(employee.telefone)+'</small>' : '')+'</td>'+
-        '<td>'+escapeHtml(rhFormatCpf(employee.cpf))+(employee.rg ? '<br><small style="color:var(--ink-faint);">RG '+escapeHtml(employee.rg)+'</small>' : '')+'</td>'+
+        '<td>'+escapeHtml(rhFormatCpf(employee.cpf))+(employee.rg ? '<br><small style="color:var(--ink-faint);">RG '+escapeHtml(employee.rg)+'</small>' : '')+
+          (/^https?:\/\//i.test(employee.driveLink || '') ? '<br><a class="btn-outline btn-sm rh-drive-link" href="'+escapeHtml(employee.driveLink)+'" target="_blank" rel="noopener noreferrer">DRIVE · DOCUMENTOS</a>' : '')+'</td>'+
         '<td>'+escapeHtml(employee.roleTitle || '—')+'</td>'+
         '<td>'+escapeHtml(employee.companyName || '—')+'</td>'+
         '<td>'+escapeHtml(rhFormatDate(employee.admissionDate))+'</td>'+
@@ -43944,6 +44010,7 @@ function renderHomeTasks(){
     el('rhEmployeeBenefitNotes').value = employee ? (employee.benefitNotes || '') : '';
     el('rhEmployeeUser').value = employee ? (employee.userId || '') : '';
     el('rhEmployeeNotes').value = employee ? (employee.notes || '') : '';
+    el('rhEmployeeDriveLink').value = employee ? (employee.driveLink || '') : '';
     rhPendingTermination = null;
     el('rhEmployeeFormStatus').textContent = '';
     el('rhEmployeeDialog').showModal();
@@ -44031,6 +44098,7 @@ function renderHomeTasks(){
       benefitNotes: el('rhEmployeeBenefitNotes').value,
       userId: el('rhEmployeeUser').disabled ? '' : el('rhEmployeeUser').value,
       notes: el('rhEmployeeNotes').value,
+      driveLink: el('rhEmployeeDriveLink').value.trim(),
       termination: rhEmployeeBecomingInactive() ? rhPendingTermination : undefined
     };
     try{

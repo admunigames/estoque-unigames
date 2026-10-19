@@ -1548,6 +1548,8 @@ export const hrEmployees = pgTable(
     workSchedule: text("work_schedule").notNull().default("5x2"),
     userId: text("user_id").notNull().default(""),
     notes: text("notes").notNull().default(""),
+    // Link da pasta do Drive com os documentos do funcionário ('' = sem link).
+    driveLink: text("drive_link").notNull().default(""),
     // RH > Aniversariantes — data de nascimento ('' = não cadastrada) e o
     // ano em que o chocolate já foi entregue (0 = nunca). Reaproveita este
     // cadastro em vez de duplicar nome/loja numa tabela própria (decisão

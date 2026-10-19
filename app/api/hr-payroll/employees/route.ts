@@ -117,6 +117,11 @@ export async function POST(request: Request) {
     const workSchedule = safeText(body.workSchedule, 10) || "5x2";
     const userId = safeText(body.userId, 80);
     const notes = safeText(body.notes, 500);
+    // Link do Drive dos documentos: só http(s), nunca convertido para maiúsculas.
+    const driveLink = safeText(body.driveLink, 600);
+    if (driveLink && !/^https?:\/\/\S+$/i.test(driveLink)) {
+      return jsonResponse({ error: "O LINK DO DRIVE PRECISA COMEÇAR COM https://." }, 400);
+    }
     let salaryCents = centsValue(body.salaryCents ?? 0);
     let foodPerDayCents = centsValue(body.foodPerDayCents ?? 0);
     let transportPerDayCents = centsValue(body.transportPerDayCents ?? 0);
@@ -208,7 +213,7 @@ export async function POST(request: Request) {
                role_title=?6, salary_cents=?7, pix_key=?8, bank_name=?9, status=?10,
                work_schedule=?11, user_id=?12, notes=?13, updated_by=?14, updated_by_name=?15,
                food_per_day_cents=?17, transport_per_day_cents=?18, benefit_notes=?19,
-               rg=?20, telefone=?21, updated_at=CURRENT_TIMESTAMP
+               rg=?20, telefone=?21, drive_link=?22, updated_at=CURRENT_TIMESTAMP
            WHERE id=?16`,
         )
         .bind(
@@ -233,6 +238,7 @@ export async function POST(request: Request) {
           benefitNotes,
           rg,
           telefone,
+          driveLink,
         );
       // Marcado como inativo (desligado): cadastro + desligamento juntos
       // (mesma transação) e o login vinculado é bloqueado na hora.
@@ -273,9 +279,9 @@ export async function POST(request: Request) {
           (id, full_name, cpf, admission_date, company_id, company_name, role_title, salary_cents,
            pix_key, bank_name, status, work_schedule, user_id, notes, created_by, created_by_name,
            created_at, updated_by, updated_by_name, updated_at,
-           food_per_day_cents, transport_per_day_cents, benefit_notes, rg, telefone, onboarding_started_at)
+           food_per_day_cents, transport_per_day_cents, benefit_notes, rg, telefone, onboarding_started_at, drive_link)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16,
-                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP, ?17, ?18, ?19, ?20, ?21, ?22)`,
+                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP, ?17, ?18, ?19, ?20, ?21, ?22, ?23)`,
       )
       .bind(
         id,
@@ -301,6 +307,7 @@ export async function POST(request: Request) {
         telefone,
         // Funcionário novo recebe a trilha de Onboarding do cargo/loja.
         status === "active" ? new Date().toISOString() : "",
+        driveLink,
       )
       .run();
     if (becomingInactive) {

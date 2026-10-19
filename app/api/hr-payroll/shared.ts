@@ -183,6 +183,8 @@ export type EmployeeRow = {
   benefitNotes: string;
   userId: string;
   notes: string;
+  // Link da pasta do Drive com os documentos do funcionário ('' = sem link).
+  driveLink: string;
   createdBy: string;
   createdByName: string;
   createdAt: string;
@@ -196,7 +198,7 @@ export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, rg, telefone, a
   salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName, status,
   work_schedule AS workSchedule, food_per_day_cents AS foodPerDayCents,
   transport_per_day_cents AS transportPerDayCents, benefit_notes AS benefitNotes,
-  user_id AS userId, notes, birth_date AS birthDate, created_by AS createdBy, created_by_name AS createdByName,
+  user_id AS userId, notes, drive_link AS driveLink, birth_date AS birthDate, created_by AS createdBy, created_by_name AS createdByName,
   created_at AS createdAt, updated_by AS updatedBy, updated_by_name AS updatedByName,
   updated_at AS updatedAt`;
 
