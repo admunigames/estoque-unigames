@@ -4926,6 +4926,7 @@
               <select id="invDivView"><option value="">DIVERGENTES (LISTA FINAL)</option><option value="removed">ENCONTRADOS / RETIRADOS</option></select>
             </div>
             <button class="btn-outline" type="button" data-inv-pdf="diretor">PDF RELATÓRIO FINAL (DIRETOR)</button>
+            <button class="btn-outline" type="button" data-inv-pdf="final">PDF DIVERGÊNCIA FINAL DA LOJA</button>
             <button class="btn-outline" type="button" data-inv-pdf="recontagem">PDF RECONTAGEM DE LOJA</button>
             <button class="btn-outline" type="button" data-inv-pdf="pontti">PDF DIVERGÊNCIA PONTTI</button>
           </div>
@@ -28484,38 +28485,53 @@ function renderHomeTasks(){
   // PDFs (A4, folha limpa): diretor, recontagem de loja e Divergência Pontti.
   function invPrint(kind){
     const inv = invData.inventory;
-    const rows = invDivergent().filter(item => !item.removed);
-    if(!rows.length){ showPurchaseToast('NENHUMA DIVERGÊNCIA NA LISTA FINAL.', 'error'); return; }
+    const byName = (a, b) => a.product.localeCompare(b.product, 'pt-BR');
+    // Diretor e Pontti: TODAS as divergências (retiradas também); final e
+    // recontagem: só as que ficaram na lista (não encontradas nem retiradas).
+    const everything = invDivergent().slice().sort(byName);
+    const open = everything.filter(item => !item.removed);
+    const rows = kind === 'diretor' || kind === 'pontti' ? everything : open;
+    if(!rows.length){ showPurchaseToast(kind === 'diretor' || kind === 'pontti' ? 'NENHUMA DIVERGÊNCIA NESTE INVENTÁRIO.' : 'NENHUMA DIVERGÊNCIA NA LISTA FINAL.', 'error'); return; }
     const head = (title, extra) => '<header class="print-report-header"><div class="print-report-kicker">ESTOQUE · INVENTÁRIO · '+escapeHtml(inv.storeName)+'</div><h1>'+escapeHtml(title)+'</h1>'+
       '<div class="print-report-meta">INVENTÁRIO DE '+escapeHtml(gdDateLabel(inv.inventoryDate))+' · '+escapeHtml(extra)+' · GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+'</div></header>';
     const table = (cols, body) => '<table class="os-print-table"><thead><tr>'+cols.map(col => '<th>'+col+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table>';
+    const num = label => '<span class="num">'+label+'</span>';
     let html = '';
     if(kind === 'diretor'){
-      const all = invTotals(rows);
-      html = head('RELATÓRIO FINAL DE DIVERGÊNCIAS', rows.length+' PRODUTOS DIVERGENTES')+
-        '<p class="inv-print-totals">FALTAS: <b>'+formatCentsBRL(all.missing)+'</b> · SOBRAS: <b>'+formatCentsBRL(all.surplus)+'</b> (VALOR = CUSTO × QUANTIDADE FALTANTE OU SOBRANDO)</p>'+
-        [...new Set(rows.map(item => item.category))].sort().map(cat => {
-          const catRows = rows.filter(item => item.category === cat).sort((a, b) => a.product.localeCompare(b.product, 'pt-BR'));
-          const catTotals = invTotals(catRows);
-          return '<section class="os-print-section"><h2>'+escapeHtml(cat)+' · '+catRows.length+' PRODUTO(S) · FALTAS '+formatCentsBRL(catTotals.missing)+' · SOBRAS '+formatCentsBRL(catTotals.surplus)+'</h2>'+
-            table(['Código','Produto','<span class="num">Contado</span>','<span class="num">Sistema</span>','<span class="num">Diferença</span>','<span class="num">Custo</span>','<span class="num">Valor</span>','Motivo'], catRows.map(item =>
-              '<tr><td class="num">'+escapeHtml(item.code || '')+'</td><td>'+escapeHtml(item.product)+'</td><td class="num">'+item.countedQty+'</td><td class="num">'+item.systemQty+'</td>'+
-              '<td class="num">'+invDiffLabel(invDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td><td>'+escapeHtml(item.reason || '—')+'</td></tr>').join(''))+'</section>';
-        }).join('');
+      // Lista única, ordem alfabética, com situação e motivo na lateral.
+      const totalsOpen = invTotals(open);
+      const totalsAll = invTotals(everything);
+      html = head('RELATÓRIO FINAL DE DIVERGÊNCIAS (DIRETOR)', everything.length+' DIVERGÊNCIAS · '+(everything.length - open.length)+' ENCONTRADAS/RETIRADAS · '+open.length+' NA LISTA FINAL')+
+        '<p class="inv-print-totals">TODAS AS DIVERGÊNCIAS — FALTAS: <b>'+formatCentsBRL(totalsAll.missing)+'</b> · SOBRAS: <b>'+formatCentsBRL(totalsAll.surplus)+'</b><br>'+
+        'LISTA FINAL (SEM AS ENCONTRADAS/RETIRADAS) — FALTAS: <b>'+formatCentsBRL(totalsOpen.missing)+'</b> · SOBRAS: <b>'+formatCentsBRL(totalsOpen.surplus)+'</b></p>'+
+        table(['Produto', num('Estoque'), num('Contado'), num('Diferença'), num('Custo'), num('Valor'), 'Situação', 'Motivo'], rows.map(item =>
+          '<tr><td>'+escapeHtml(item.product)+(item.code ? '<br><small>'+escapeHtml(item.code)+'</small>' : '')+'</td><td class="num">'+item.systemQty+'</td><td class="num">'+item.countedQty+'</td>'+
+          '<td class="num">'+invDiffLabel(invDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td>'+
+          '<td>'+(item.removed ? 'ENCONTRADO / RETIRADO' : 'EM ABERTO')+'</td><td>'+escapeHtml(item.reason || '—')+'</td></tr>').join(''));
+    }else if(kind === 'final'){
+      // Divergência final da loja: só o que não foi encontrado nem retirado.
+      const totals = invTotals(rows);
+      html = head('DIVERGÊNCIA FINAL DA LOJA', rows.length+' PRODUTOS NÃO ENCONTRADOS')+
+        '<p class="inv-print-totals">VALOR EM FALTA: <b>'+formatCentsBRL(totals.missing)+'</b> · VALOR EM SOBRA: <b>'+formatCentsBRL(totals.surplus)+'</b> (VALOR FINAL = CUSTO × DIFERENÇA)</p>'+
+        table(['Produto', num('Estoque no dia'), num('Contado'), num('Diferença'), num('Custo'), num('Valor final')], rows.map(item =>
+          '<tr><td>'+escapeHtml(item.product)+'</td><td class="num">'+item.systemQty+'</td><td class="num">'+item.countedQty+'</td>'+
+          '<td class="num">'+invDiffLabel(invDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td></tr>').join(''))+
+        '<p class="inv-print-totals">TOTAL EM FALTA: <b>'+formatCentsBRL(totals.missing)+'</b> · TOTAL EM SOBRA: <b>'+formatCentsBRL(totals.surplus)+'</b></p>';
     }else if(kind === 'recontagem'){
       html = head('RECONTAGEM DE LOJA', 'RECONTE E ESCREVA A QUANTIDADE NA CAIXA')+
-        table(['Código','Produto','Recontagem'], rows.slice().sort((a, b) => a.product.localeCompare(b.product, 'pt-BR')).map(item =>
+        table(['Código','Produto','Recontagem'], rows.map(item =>
           '<tr><td>'+escapeHtml(item.code || '')+'</td><td>'+escapeHtml(item.product)+'</td><td class="inv-print-box"></td></tr>').join(''))+
         '<p class="inv-print-sign">RECONTADO POR: ______________________________ DATA: ____/____/________</p>';
     }else{
+      // Pontti: todas as divergências (para mais e para menos, retiradas também), só o contado.
       const cats = [...new Set(rows.map(item => item.category))].sort();
       html = head('DIVERGÊNCIA PONTTI', rows.length+' PRODUTOS · QUANTIDADE CONTADA FISICAMENTE')+cats.map(cat =>
-        '<section class="os-print-section"><h2>'+escapeHtml(cat)+'</h2>'+table(['Código','Produto','Contado'], rows.filter(item => item.category === cat).sort((a, b) => a.product.localeCompare(b.product, 'pt-BR')).map(item =>
+        '<section class="os-print-section"><h2>'+escapeHtml(cat)+'</h2>'+table(['Código','Produto','Contado'], rows.filter(item => item.category === cat).map(item =>
           '<tr><td>'+escapeHtml(item.code || '')+'</td><td>'+escapeHtml(item.product)+'</td><td>'+item.countedQty+'</td></tr>').join(''))+'</section>').join('');
     }
     el('invPrintBody').innerHTML = html;
     invPrintTitleBefore = document.title;
-    document.title = ({diretor:'INVENTARIO-DIVERGENCIAS', recontagem:'INVENTARIO-RECONTAGEM', pontti:'DIVERGENCIA-PONTTI'})[kind]+'-'+inv.storeName.replace(/[^A-Z0-9]+/gi, '-')+'-'+inv.inventoryDate;
+    document.title = ({diretor:'INVENTARIO-DIVERGENCIAS-DIRETOR', final:'DIVERGENCIA-FINAL-DA-LOJA', recontagem:'INVENTARIO-RECONTAGEM', pontti:'DIVERGENCIA-PONTTI'})[kind]+'-'+inv.storeName.replace(/[^A-Z0-9]+/gi, '-')+'-'+inv.inventoryDate;
     document.body.classList.add('pdf-export', 'inv-printing');
     window.print();
   }
