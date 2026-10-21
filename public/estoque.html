@@ -29571,7 +29571,7 @@ function renderHomeTasks(){
   // mais crítica (data limite mais vencida) para a menos.
   const OS_API = '/api/assistencia/ordens-servico';
   const OS_CATEGORIES = ['CONSOLE','INFORMÁTICA','CONTROLE','CELULAR','TERCEIRIZADO'];
-  const OS_STATUSES = ['ORÇAMENTO PENDENTE','PASSADO ORÇAMENTO','AUTORIZADA','NÃO AUTORIZADO','PRODUÇÃO','PREVENTIVA','SETOR QUALIDADE','SEM SOLUÇÃO','REPROVADO NA ASSISTÊNCIA','REPROVADO EM LOJA','APROVADA'];
+  const OS_STATUSES = ['ORÇAMENTO PENDENTE','PASSADO ORÇAMENTO','AUTORIZADA','NÃO AUTORIZADO','PREVENTIVA','SETOR QUALIDADE','SEM SOLUÇÃO','REPROVADO NA ASSISTÊNCIA','REPROVADO EM LOJA','APROVADA'];
   // Sem conserto: finaliza e segue para a loja só para devolver ao cliente.
   const OS_RETURN_STATUSES = ['NÃO AUTORIZADO','SEM SOLUÇÃO'];
   const OS_SITUATIONS = ['GARANTIA DE VENDA','GARANTIA DE SERVIÇO','DE VENDA','AGUARDANDO ORÇAMENTO','AGUARDANDO AUTORIZAÇÃO','CLIENTE AGUARDANDO ORÇAMENTO','AGUARDANDO PEÇA','REPROVADO'];
@@ -29780,7 +29780,8 @@ function renderHomeTasks(){
     finally{ button.disabled = false; }
   });
 
-  // Relatório PDF (A4): O.S. em PRODUÇÃO, UM PDF POR CATEGORIA, com o filtro de
+  // Relatório PDF (A4): O.S. em produção (status AUTORIZADA, que já segue para
+  // produção), UM PDF POR CATEGORIA, com o filtro de
   // loja da tela. Aba de uma categoria → só ela; aba TODAS → janela com as
   // categorias que têm O.S. em produção (GERAR PDF por categoria ou GERAR TODOS,
   // que abre a impressão de uma por vez: a próxima abre quando a anterior fecha).
@@ -29792,7 +29793,7 @@ function renderHomeTasks(){
 
   function osProductionByCategory(){
     const store = el('osStoreFilter').value;
-    const rows = ((osData && osData.orders) || []).filter(row => !row.closed && row.status === 'PRODUÇÃO' && (!store || row.storeId === store));
+    const rows = ((osData && osData.orders) || []).filter(row => !row.closed && row.status === 'AUTORIZADA' && (!store || row.storeId === store));
     const extra = [...new Set(rows.map(row => row.category))].filter(category => !OS_CATEGORIES.includes(category)).sort();
     return OS_CATEGORIES.concat(extra)
       .map(category => ({category, items: rows.filter(row => row.category === category)}))

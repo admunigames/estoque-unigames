@@ -124,8 +124,8 @@ test("approvalState: APROVADA finaliza ou espera a loja; voltar para a assistên
   assert.deepEqual(approvalState("SEM SOLUÇÃO", "", "pendente"), { closed: 1, storeCheck: "" });
   assert.deepEqual(approvalState("APROVADA", "sim", ""), { closed: 0, storeCheck: "pendente" });
   assert.deepEqual(approvalState("APROVADA", "sim", "aprovada"), { closed: 1, storeCheck: "aprovada" });
-  assert.deepEqual(approvalState("PRODUÇÃO", "", "pendente"), { closed: 0, storeCheck: "" });
-  assert.deepEqual(approvalState("PRODUÇÃO", "", "reprovada"), { closed: 0, storeCheck: "reprovada" });
+  assert.deepEqual(approvalState("AUTORIZADA", "", "pendente"), { closed: 0, storeCheck: "" });
+  assert.deepEqual(approvalState("AUTORIZADA", "", "reprovada"), { closed: 0, storeCheck: "reprovada" });
 });
 
 test("segue para a loja: loja testa; reprovado em loja volta para a assistência com quem e quando", async () => {

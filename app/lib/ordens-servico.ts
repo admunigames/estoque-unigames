@@ -4,8 +4,9 @@
 
 export const OS_CATEGORIES = ["CONSOLE", "INFORMÁTICA", "CONTROLE", "CELULAR", "TERCEIRIZADO"] as const;
 
-// Coluna STATUS da planilha + PRODUÇÃO, reprovações e APROVADA (decisão do
-// usuário, 14/10/2026). APROVADA pede SEGUE PARA A LOJA: "nao" finaliza na
+// Coluna STATUS da planilha + reprovações e APROVADA (decisão do usuário,
+// 14/10/2026). PRODUÇÃO saiu em 21/10/2026: AUTORIZADA já segue para produção.
+// APROVADA pede SEGUE PARA A LOJA: "nao" finaliza na
 // hora; "sim" espera o teste da loja (aprovada = finaliza; reprovada = volta
 // para a assistência como REPROVADO EM LOJA).
 export const OS_STATUSES = [
@@ -13,7 +14,6 @@ export const OS_STATUSES = [
   "PASSADO ORÇAMENTO",
   "AUTORIZADA",
   "NÃO AUTORIZADO",
-  "PRODUÇÃO",
   "PREVENTIVA",
   "SETOR QUALIDADE",
   "SEM SOLUÇÃO",

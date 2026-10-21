@@ -5499,6 +5499,8 @@ test("Ordens de Serviço: PDF de produção — um arquivo por categoria (aba TO
   const end = html.indexOf("  async function osOpenUpdates");
   assert.ok(start > 0 && end > start);
   assert.match(html, /<dialog class="purchase-dialog" id="osProductionDialog"/);
+  // PRODUÇÃO saiu da lista de status (21/10/2026): AUTORIZADA já é produção.
+  assert.doesNotMatch(html.match(/const OS_STATUSES = \[.*\];/)[0], /PRODUÇÃO/);
 
   const elements = {};
   const node = (id) => (elements[id] ||= {
@@ -5511,7 +5513,7 @@ test("Ordens de Serviço: PDF de produção — um arquivo por categoria (aba TO
   const toasts = [];
   const afterprint = [];
   const order = (osNumber, category, extra = {}) => ({
-    osNumber, category, equipment: "EQ " + osNumber, storeId: "loja-recife", storeName: "RECIFE", status: "PRODUÇÃO",
+    osNumber, category, equipment: "EQ " + osNumber, storeId: "loja-recife", storeName: "RECIFE", status: "AUTORIZADA",
     closed: false, deadline: "2026-10-20", deadlineDays: -1, deadlineLevel: "atrasada", situation: "", lastUpdateText: "", ...extra,
   });
   const context = {
@@ -5519,7 +5521,7 @@ test("Ordens de Serviço: PDF de produção — um arquivo por categoria (aba TO
     osTab: "",
     osData: { today: "2026-10-21", orders: [
       order("1", "CONSOLE"), order("2", "CONSOLE"), order("3", "INFORMÁTICA"), order("4", "CELULAR"),
-      order("5", "CONTROLE", { status: "AUTORIZADA" }), order("6", "TERCEIRIZADO", { closed: true }),
+      order("5", "CONTROLE", { status: "PASSADO ORÇAMENTO" }), order("6", "TERCEIRIZADO", { closed: true }),
       order("7", "CONTROLE", { storeId: "loja-patteo", storeName: "PATTEO" }),
     ] },
     OS_CATEGORIES: ["CONSOLE", "INFORMÁTICA", "CONTROLE", "CELULAR", "TERCEIRIZADO"],
@@ -5545,7 +5547,7 @@ test("Ordens de Serviço: PDF de produção — um arquivo por categoria (aba TO
   runInNewContext(html.slice(start, end) + "\nthis.report = osPrintProductionReport;", context);
   const finishPrint = () => afterprint.forEach((fn) => fn());
 
-  // Aba TODAS + loja RECIFE: janela com as 3 categorias (CONTROLE da PATTEO e as que não estão em PRODUÇÃO ficam fora).
+  // Aba TODAS + loja RECIFE: janela com as 3 categorias (CONTROLE da PATTEO e as que não estão AUTORIZADAS ficam fora).
   node("osStoreFilter").value = "loja-recife";
   context.report();
   assert.equal(node("osProductionDialog").opened, 1);
