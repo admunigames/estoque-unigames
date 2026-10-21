@@ -255,9 +255,13 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const database = await getD1();
     const result = await database
       .prepare(
-        `SELECT id, order_id AS orderId, attachment_type AS attachmentType, file_name AS fileName,
-                content_type AS contentType, size_bytes AS sizeBytes, uploaded_by_name AS uploadedByName, created_at AS createdAt
-         FROM purchase_order_attachments WHERE order_id=?1 ORDER BY created_at DESC`,
+        `SELECT poa.id, poa.order_id AS orderId, poa.attachment_type AS attachmentType, poa.file_name AS fileName,
+                poa.content_type AS contentType, poa.size_bytes AS sizeBytes, poa.uploaded_by_name AS uploadedByName,
+                poa.created_at AS createdAt,
+                (SELECT si.invoice_number FROM supplier_invoice_attachments sia
+                   JOIN supplier_invoices si ON si.id = sia.invoice_id
+                  WHERE sia.r2_key = poa.r2_key LIMIT 1) AS invoiceNumber
+         FROM purchase_order_attachments poa WHERE poa.order_id=?1 ORDER BY poa.created_at DESC`,
       )
       .bind(orderId)
       .all();
@@ -265,5 +269,44 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   } catch (error) {
     console.error("Não foi possível carregar os anexos do pedido.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR OS ANEXOS." }, 500);
+  }
+}
+
+// Exclusão definitiva de um anexo enviado errado: apaga o arquivo no R2 e o
+// registro. A NF do Financeiro criada pelo pedido reaproveita a MESMA r2_key
+// (ver purchaseOrderNfAttachmentCopyStatements), então a referência dela sai
+// junto — a tela avisa antes. A Auditoria (Worker) registra quem, quando e o
+// nome do arquivo (campo "name" da resposta).
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canManageComprasDraft(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR ANEXOS DE PEDIDOS DE COMPRA." }, 403);
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+  const { id: orderId } = await context.params;
+  const attachmentId = safeText(new URL(request.url).searchParams.get("attachmentId"), 80);
+  if (!attachmentId) return jsonResponse({ error: "ANEXO INVÁLIDO." }, 400);
+
+  try {
+    const database = await getD1();
+    const row = await database
+      .prepare("SELECT r2_key AS r2Key, file_name AS fileName FROM purchase_order_attachments WHERE id=?1 AND order_id=?2")
+      .bind(attachmentId, safeText(orderId, 80))
+      .first<{ r2Key: string; fileName: string }>();
+    if (!row) return jsonResponse({ error: "ANEXO NÃO ENCONTRADO." }, 404);
+    // R2 antes do banco: se o banco falhar, o registro continua e dá pra
+    // tentar de novo (apagar chave que já não existe no R2 não dá erro).
+    const bucket = await documentsBucket();
+    await bucket.delete(row.r2Key);
+    await database.prepare("DELETE FROM supplier_invoice_attachments WHERE r2_key=?1").bind(row.r2Key).run();
+    await database.prepare("DELETE FROM purchase_order_attachments WHERE id=?1").bind(attachmentId).run();
+    return jsonResponse({ deleted: true, id: attachmentId, name: row.fileName });
+  } catch (error) {
+    console.error("Não foi possível excluir o anexo do pedido.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR O ANEXO." }, 500);
   }
 }

@@ -38221,6 +38221,11 @@ function renderHomeTasks(){
     return comprasOrderDetailEl;
   }
 
+  function comprasOrderStatusLabel(order){
+    if(Number(order.canceled)) return 'CANCELADO';
+    return {concluido:'CONCLUÍDO', aguardando_chegada:'AGUARDANDO CHEGADA', em_andamento:'EM ANDAMENTO', aberto:'ABERTO'}[order.status] || 'PENDENTE';
+  }
+
   function comprasOrderStatusBadge(status){
     if(status === 'concluido') return '<span class="status-pill done">CONCLUÍDO</span>';
     if(status === 'aguardando_chegada') return '<span class="status-pill waiting">AGUARDANDO CHEGADA</span>';
@@ -38390,6 +38395,7 @@ function renderHomeTasks(){
         '<div class="purchase-card-details">'+
           '<div class="purchase-card-detail"><span>STATUS DA DIVISÃO</span>'+(divisionBadge || '—')+'</div>'+
         '</div>'+
+        (order.outsideFilter ? '<p class="page-desc" style="margin:0;font-size:12px;">PEDIDO AGORA EM '+comprasOrderStatusLabel(order)+'</p>' : '')+
         '<footer class="purchase-card-footer"><div class="purchase-card-actions">'+
           '<button class="btn-outline" type="button" data-compras-order-open="'+escapeHtml(order.id)+'">'+(order.id === comprasOrderDetailOpenId ? 'FECHAR' : 'ABRIR')+'</button>'+
         '</div></footer>'+
@@ -38431,9 +38437,23 @@ function renderHomeTasks(){
       if(showCanceled) query.set('includeCanceled', '1');
       if(comprasOrdersProdutoFilter) query.set('produto', comprasOrdersProdutoFilter);
       const qs = query.toString();
+      const previous = comprasOrders;
       const data = await comprasNovoApiRequest('/orders'+(qs ? '?'+qs : ''));
-      comprasOrders = Array.isArray(data.orders) ? data.orders : [];
-      if(comprasOrdersLateOnlyFilter) comprasOrders = comprasOrders.filter(comprasOrderIsLate);
+      let fresh = Array.isArray(data.orders) ? data.orders : [];
+      if(comprasOrdersLateOnlyFilter) fresh = fresh.filter(comprasOrderIsLate);
+      // Pedido aberto fica no MESMO cartão/posição depois de salvar (ou de
+      // outra pessoa salvar, via canal "compras"), mesmo que o novo status
+      // mude a ordenação ou saia do filtro — nesse caso fica marcado como
+      // fora do filtro até fechar o pedido ou trocar o filtro.
+      const openIndex = comprasOrderDetailOpenId ? previous.findIndex(o => o.id === comprasOrderDetailOpenId) : -1;
+      if(openIndex >= 0){
+        const freshIndex = fresh.findIndex(o => o.id === comprasOrderDetailOpenId);
+        const kept = freshIndex >= 0
+          ? fresh.splice(freshIndex, 1)[0]
+          : {...previous[openIndex], ...(comprasCurrentOrder && comprasCurrentOrder.id === comprasOrderDetailOpenId ? comprasCurrentOrder : {}), outsideFilter:true};
+        fresh.splice(Math.min(openIndex, fresh.length), 0, kept);
+      }
+      comprasOrders = fresh;
       renderComprasOrdersTable();
       el('comprasOrdersLateOnlyNotice').hidden = !(comprasOrdersLateOnlyFilter || comprasOrdersProdutoFilter);
       el('comprasOrdersLateOnlyNoticeText').textContent = comprasOrdersProdutoFilter
@@ -38450,6 +38470,7 @@ function renderHomeTasks(){
     }
   }
   function handleComprasOrdersFilterChange(){
+    comprasOrders = []; // filtro novo: o pedido aberto só continua se entrar nele
     comprasOrdersLateOnlyFilter = false;
     comprasOrdersProdutoFilter = '';
     loadComprasOrdersPage();
@@ -38468,6 +38489,7 @@ function renderHomeTasks(){
     // outra já filtrada) corriam risco de a resposta sem filtro chegar depois
     // e sobrescrever a lista filtrada na tela, mesmo com os <select> já
     // mostrando o valor certo.
+    comprasOrders = [];
     el('comprasOrdersStatusFilter').value = status || '';
     el('comprasOrdersOriginFilter').value = 'native';
     comprasOrdersLateOnlyFilter = Boolean(lateOnly);
@@ -39235,6 +39257,8 @@ function renderHomeTasks(){
       const order = data.order;
       comprasApplyItemTotals(order, comprasCurrentOrderItems);
       comprasCurrentOrder = order;
+      const pinned = comprasOrders.find(o => o.id === orderId && o.outsideFilter);
+      if(pinned) Object.assign(pinned, order);
       // Reposiciona a linha de detalhe ANTES de popular os campos (o nó só
       // é encontrado por document.getElementById depois de voltar ao DOM).
       renderComprasOrdersTable();
@@ -39429,12 +39453,31 @@ function renderHomeTasks(){
       const list = (Array.isArray(data.attachments) ? data.attachments : []).filter(a => a.attachmentType === attachmentType);
       box.innerHTML = list.length ? list.map(a =>
         '<div class="dre-catalog-row"><a href="/api/compras-novo/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/attachments/file?attachmentId='+encodeURIComponent(a.id)+'" target="_blank" rel="noopener">'+escapeHtml(a.fileName)+'</a>'+
-          ' <span style="opacity:.7;">('+escapeHtml(formatDocumentSize(a.sizeBytes))+')</span></div>'
+          ' <span style="opacity:.7;">('+escapeHtml(formatDocumentSize(a.sizeBytes))+')</span>'+
+          ' <button class="btn-danger-outline btn-sm" type="button" data-compras-attachment-del="'+escapeHtml(a.id)+'" data-file-name="'+escapeHtml(a.fileName)+'" data-invoice-number="'+escapeHtml(a.invoiceNumber || '')+'" data-attachment-type="'+escapeHtml(attachmentType)+'">EXCLUIR</button></div>'
       ).join('') : 'Nenhum arquivo anexado.';
     }catch(error){
       box.textContent = error.message;
     }
   }
+
+  ['comprasOrderAttachmentsPedido', 'comprasOrderAttachmentsNota'].forEach(id => el(id) && el(id).addEventListener('click', async event => {
+    const del = event.target.closest('[data-compras-attachment-del]');
+    if(!del || !comprasCurrentOrderId) return;
+    const {comprasAttachmentDel: attachmentId, fileName, invoiceNumber, attachmentType} = del.dataset;
+    // Mesmo arquivo da NF cadastrada no Financeiro pelo pedido: some de lá também.
+    const nfWarning = invoiceNumber ? ' ESTE ARQUIVO TAMBÉM É O ANEXO DA NF '+invoiceNumber+' NO FINANCEIRO E SAIRÁ DE LÁ.' : '';
+    if(!await askConfirm('EXCLUIR DE VEZ O ANEXO '+fileName+'? O ARQUIVO SERÁ APAGADO E NÃO PODERÁ SER RECUPERADO.'+nfWarning, {okText:'EXCLUIR'})) return;
+    del.disabled = true;
+    try{
+      await comprasNovoApiRequest('/orders/'+encodeURIComponent(comprasCurrentOrderId)+'/attachments?attachmentId='+encodeURIComponent(attachmentId), {method:'DELETE'});
+      showPurchaseToast('Anexo excluído.');
+      await renderComprasOrderAttachments(attachmentType);
+    }catch(error){
+      del.disabled = false;
+      showPurchaseToast(error.message, 'error');
+    }
+  }));
 
   async function comprasOrderUploadAttachment(file, attachmentType){
     if(!file || !comprasCurrentOrderId) return;
@@ -39495,6 +39538,7 @@ function renderHomeTasks(){
   function closeComprasOrderDetail(){
     comprasOrderDetailOpenId = '';
     comprasCurrentOrderId = '';
+    comprasOrders = comprasOrders.filter(o => !o.outsideFilter);
     comprasOrderDetailNode().hidden = true;
     renderComprasOrdersTable();
   }

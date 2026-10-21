@@ -2920,7 +2920,9 @@ async function writeAuditLog(
       .bind(
         crypto.randomUUID(), new Date().toISOString(), user.id, user.displayName || user.username, user.companyId,
         request.method, url.pathname.slice(0, 300), auditModule(url.pathname), auditAction(request.method, url.pathname),
-        auditRecordId(url.pathname, responseBody), auditSummary(body), response.status,
+        auditRecordId(url.pathname, responseBody),
+        // DELETE costuma vir sem corpo: o resumo sai do que a rota devolveu (ex.: nome do anexo excluído).
+        auditSummary(body) || (request.method === "DELETE" ? auditSummary(responseBody) : ""), response.status,
       )
       .run();
   } catch (error) {
