@@ -5491,3 +5491,98 @@ test("o script inline do estoque.html compila (sem identificador declarado duas 
   assert.ok(scripts.length > 0);
   for (const [, , code] of scripts) assert.doesNotThrow(() => new Script(code));
 });
+
+test("Ordens de Serviço: PDF de produção — um arquivo por categoria (aba TODAS → janela; aba da categoria → só ela)", async () => {
+  const { runInNewContext } = await import("node:vm");
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  const start = html.indexOf("  const osCategoryLabel");
+  const end = html.indexOf("  async function osOpenUpdates");
+  assert.ok(start > 0 && end > start);
+  assert.match(html, /<dialog class="purchase-dialog" id="osProductionDialog"/);
+
+  const elements = {};
+  const node = (id) => (elements[id] ||= {
+    id, value: "", innerHTML: "", textContent: "", hidden: false, listeners: {}, opened: 0,
+    selectedOptions: [{ textContent: "RECIFE" }],
+    addEventListener(type, fn) { this.listeners[type] = fn; },
+    showModal() { this.opened++; },
+  });
+  const printed = [];
+  const toasts = [];
+  const afterprint = [];
+  const order = (osNumber, category, extra = {}) => ({
+    osNumber, category, equipment: "EQ " + osNumber, storeId: "loja-recife", storeName: "RECIFE", status: "PRODUÇÃO",
+    closed: false, deadline: "2026-10-20", deadlineDays: -1, deadlineLevel: "atrasada", situation: "", lastUpdateText: "", ...extra,
+  });
+  const context = {
+    el: node,
+    osTab: "",
+    osData: { today: "2026-10-21", orders: [
+      order("1", "CONSOLE"), order("2", "CONSOLE"), order("3", "INFORMÁTICA"), order("4", "CELULAR"),
+      order("5", "CONTROLE", { status: "AUTORIZADA" }), order("6", "TERCEIRIZADO", { closed: true }),
+      order("7", "CONTROLE", { storeId: "loja-patteo", storeName: "PATTEO" }),
+    ] },
+    OS_CATEGORIES: ["CONSOLE", "INFORMÁTICA", "CONTROLE", "CELULAR", "TERCEIRIZADO"],
+    currentSession: { role: "admin", companyId: "", displayName: "TESTE" },
+    escapeHtml: (value) => String(value),
+    formatDateTimeBR: () => "21/10/2026 10:00",
+    gdDateLabel: (value) => value,
+    osDeadlineLabel: () => "ATRASADA 1 DIA",
+    todayDateKeyRecife: () => "2026-10-21",
+    showPurchaseToast: (message) => toasts.push(message),
+    CSS: { escape: (value) => value },
+    setTimeout: (fn) => fn(),
+    document: {
+      title: "Estoque",
+      querySelector: () => null,
+      body: { classList: { add() {}, remove() {} } },
+    },
+  };
+  context.window = {
+    addEventListener: (type, fn) => type === "afterprint" && afterprint.push(fn),
+    print: () => printed.push({ title: context.document.title, body: node("osPrintBody").innerHTML }),
+  };
+  runInNewContext(html.slice(start, end) + "\nthis.report = osPrintProductionReport;", context);
+  const finishPrint = () => afterprint.forEach((fn) => fn());
+
+  // Aba TODAS + loja RECIFE: janela com as 3 categorias (CONTROLE da PATTEO e as que não estão em PRODUÇÃO ficam fora).
+  node("osStoreFilter").value = "loja-recife";
+  context.report();
+  assert.equal(node("osProductionDialog").opened, 1);
+  assert.equal(printed.length, 0);
+  const list = node("osProductionList").innerHTML;
+  assert.deepEqual([...list.matchAll(/data-os-production="([^"]+)"/g)].map((m) => m[1]), ["CONSOLE", "INFORMÁTICA", "CELULAR"]);
+  assert.match(list, /PC \/ INFORMÁTICA/);
+
+  // GERAR TODOS: uma impressão por vez, a próxima só depois de fechar a anterior.
+  node("btnOsProductionAll").listeners.click();
+  assert.equal(printed.length, 1);
+  finishPrint();
+  finishPrint();
+  finishPrint();
+  assert.deepEqual(printed.map((p) => p.title), [
+    "PRODUCAO-CONSOLE-RECIFE-2026-10-21",
+    "PRODUCAO-PC-RECIFE-2026-10-21",
+    "PRODUCAO-CELULAR-RECIFE-2026-10-21",
+  ]);
+  assert.match(printed[0].body, /PRODUTOS EM PRODUÇÃO — CONSOLE<\/h1>[\s\S]*RECIFE · 2 O\.S\. · GERADO EM 21\/10\/2026 10:00 POR TESTE/);
+  assert.match(printed[1].body, /PRODUTOS EM PRODUÇÃO — PC \/ INFORMÁTICA/);
+  assert.doesNotMatch(printed[1].body, /EQ 1</);
+  assert.equal(context.document.title, "Estoque");
+
+  // Aba CONSOLE: um PDF só de CONSOLE, sem janela.
+  context.osTab = "CONSOLE";
+  runInNewContext("osTab = this.osTab;", context);
+  context.report();
+  assert.equal(printed.length, 4);
+  assert.equal(printed[3].title, "PRODUCAO-CONSOLE-RECIFE-2026-10-21");
+  assert.equal(node("osProductionDialog").opened, 1);
+  finishPrint();
+
+  // Aba de categoria sem O.S. em produção: não gera arquivo.
+  context.osTab = "TERCEIRIZADO";
+  runInNewContext("osTab = this.osTab;", context);
+  context.report();
+  assert.equal(printed.length, 4);
+  assert.match(toasts.at(-1), /NENHUMA O\.S\. EM PRODUÇÃO EM TERCEIRIZADO/);
+});

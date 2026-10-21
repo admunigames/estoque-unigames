@@ -12091,6 +12091,21 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="osProductionDialog" aria-labelledby="osProductionDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="osProductionDialogTitle">PDF DE PRODUÇÃO POR CATEGORIA</h3>
+    <button class="purchase-dialog-close" type="button" data-os-close aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <p class="gd-opening-hint" id="osProductionHint"></p>
+    <div class="table-panel"><table><thead><tr><th>Categoria</th><th>O.S. em produção</th><th></th></tr></thead><tbody id="osProductionList"></tbody></table></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-os-close>FECHAR</button>
+      <button class="btn-accent" id="btnOsProductionAll" type="button">GERAR TODOS</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog class="purchase-dialog" id="osUpdateDialog" aria-labelledby="osUpdateDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="osUpdateDialogTitle">ATUALIZAÇÃO DIÁRIA</h3>
@@ -29765,33 +29780,61 @@ function renderHomeTasks(){
     finally{ button.disabled = false; }
   });
 
-  // Relatório PDF (A4): O.S. em PRODUÇÃO por categoria, com o filtro de loja da tela.
-  function osPrintProductionReport(){
-    if(currentSession.companyId && currentSession.role !== 'admin') return;
+  // Relatório PDF (A4): O.S. em PRODUÇÃO, UM PDF POR CATEGORIA, com o filtro de
+  // loja da tela. Aba de uma categoria → só ela; aba TODAS → janela com as
+  // categorias que têm O.S. em produção (GERAR PDF por categoria ou GERAR TODOS,
+  // que abre a impressão de uma por vez: a próxima abre quando a anterior fecha).
+  const osCategoryLabel = category => category === 'INFORMÁTICA' ? 'PC / INFORMÁTICA' : category;
+  const osFileToken = text => String(text || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const osStoreLabel = () => el('osStoreFilter').value ? el('osStoreFilter').selectedOptions[0].textContent : 'TODAS AS LOJAS';
+  let osProductionGroups = [];
+  let osPrintQueue = [];
+
+  function osProductionByCategory(){
     const store = el('osStoreFilter').value;
     const rows = ((osData && osData.orders) || []).filter(row => !row.closed && row.status === 'PRODUÇÃO' && (!store || row.storeId === store));
-    const storeLabel = store ? el('osStoreFilter').selectedOptions[0].textContent : 'TODAS AS LOJAS';
-    const sections = OS_CATEGORIES.map(category => {
-      const items = rows.filter(row => row.category === category);
-      if(!items.length && category === 'TERCEIRIZADO') return '';
-      return '<section class="os-print-section"><h2>'+escapeHtml(category)+' ('+items.length+')</h2>'+
-        (items.length
-          ? '<table class="os-print-table"><thead><tr><th>O.S.</th><th>Equipamento</th><th>Loja</th><th>Data limite</th><th>Prazo</th><th>Observações</th><th>Última atualização</th></tr></thead><tbody>'+
-            items.map(row => '<tr><td>'+escapeHtml(row.osNumber)+'</td><td>'+escapeHtml(row.equipment || '—')+'</td><td>'+escapeHtml(row.storeName || '—')+'</td>'+
-              '<td>'+escapeHtml(row.deadline ? gdDateLabel(row.deadline) : '—')+'</td><td>'+escapeHtml(osDeadlineLabel(row))+'</td>'+
-              '<td>'+escapeHtml(row.situation || '—')+'</td><td>'+escapeHtml(row.lastUpdateText || '—')+'</td></tr>').join('')+
-            '</tbody></table>'
-          : '<p class="os-print-empty">Nenhuma O.S. em produção.</p>')+
-      '</section>';
-    }).join('');
+    const extra = [...new Set(rows.map(row => row.category))].filter(category => !OS_CATEGORIES.includes(category)).sort();
+    return OS_CATEGORIES.concat(extra)
+      .map(category => ({category, items: rows.filter(row => row.category === category)}))
+      .filter(group => group.items.length);
+  }
+
+  function osPrintProductionCategory(group){
+    const label = osCategoryLabel(group.category);
+    const storeLabel = osStoreLabel();
     el('osPrintBody').innerHTML =
       '<header class="print-report-header"><div class="print-report-kicker">ASSISTÊNCIA · ORDENS DE SERVIÇO</div>'+
-      '<h1>PRODUTOS EM PRODUÇÃO POR CATEGORIA</h1>'+
-      '<div class="print-report-meta">'+escapeHtml(storeLabel)+' · '+rows.length+' O.S. · GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+'</div></header>'+sections;
-    osPrintTitleBefore = document.title;
-    document.title = 'PRODUCAO-OS-'+((osData && osData.today) || '');
+      '<h1>PRODUTOS EM PRODUÇÃO — '+escapeHtml(label)+'</h1>'+
+      '<div class="print-report-meta">'+escapeHtml(storeLabel)+' · '+group.items.length+' O.S. · GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+'</div></header>'+
+      '<section class="os-print-section"><table class="os-print-table"><thead><tr><th>O.S.</th><th>Equipamento</th><th>Loja</th><th>Data limite</th><th>Prazo</th><th>Observações</th><th>Última atualização</th></tr></thead><tbody>'+
+      group.items.map(row => '<tr><td>'+escapeHtml(row.osNumber)+'</td><td>'+escapeHtml(row.equipment || '—')+'</td><td>'+escapeHtml(row.storeName || '—')+'</td>'+
+        '<td>'+escapeHtml(row.deadline ? gdDateLabel(row.deadline) : '—')+'</td><td>'+escapeHtml(osDeadlineLabel(row))+'</td>'+
+        '<td>'+escapeHtml(row.situation || '—')+'</td><td>'+escapeHtml(row.lastUpdateText || '—')+'</td></tr>').join('')+
+      '</tbody></table></section>';
+    if(!osPrintTitleBefore) osPrintTitleBefore = document.title;
+    // Nome sugerido do arquivo: PRODUCAO-CONSOLE-RECIFE-2026-10-21.
+    document.title = ['PRODUCAO', group.category === 'INFORMÁTICA' ? 'PC' : osFileToken(group.category), osFileToken(storeLabel), (osData && osData.today) || todayDateKeyRecife()].join('-');
+    const mark = document.querySelector('#osProductionList [data-os-production-status="'+CSS.escape(group.category)+'"]');
+    if(mark) mark.textContent = 'IMPRESSÃO ABERTA';
     document.body.classList.add('pdf-export', 'os-printing');
     window.print();
+  }
+
+  function osPrintProductionReport(){
+    if(currentSession.companyId && currentSession.role !== 'admin') return;
+    osPrintQueue = [];
+    osProductionGroups = osProductionByCategory();
+    if(osTab){
+      const group = osProductionGroups.find(item => item.category === osTab);
+      if(!group) return showPurchaseToast('NENHUMA O.S. EM PRODUÇÃO EM '+osCategoryLabel(osTab)+' ('+osStoreLabel()+').', 'error');
+      return osPrintProductionCategory(group);
+    }
+    if(!osProductionGroups.length) return showPurchaseToast('NENHUMA O.S. EM PRODUÇÃO ('+osStoreLabel()+').', 'error');
+    el('osProductionHint').textContent = osStoreLabel()+' · UM PDF POR CATEGORIA. EM GERAR TODOS, SALVE CADA PDF: A PRÓXIMA CATEGORIA ABRE QUANDO A ANTERIOR FECHAR.';
+    el('osProductionList').innerHTML = osProductionGroups.map(group =>
+      '<tr><td>'+escapeHtml(osCategoryLabel(group.category))+'</td><td>'+group.items.length+' <small class="os-muted" data-os-production-status="'+escapeHtml(group.category)+'"></small></td>'+
+      '<td><button class="btn-outline" type="button" data-os-production="'+escapeHtml(group.category)+'">GERAR PDF</button></td></tr>').join('');
+    el('osProductionDialog').showModal();
   }
   let osPrintTitleBefore = '';
   window.addEventListener('afterprint', () => {
@@ -29799,8 +29842,23 @@ function renderHomeTasks(){
     document.body.classList.remove('pdf-export', 'os-printing');
     document.title = osPrintTitleBefore;
     osPrintTitleBefore = '';
+    const next = osPrintQueue.shift();
+    // Pausa curta: o navegador ignora print() chamado logo em seguida.
+    if(next) setTimeout(() => osPrintProductionCategory(next), 600);
   });
   el('btnOsProductionReport') && el('btnOsProductionReport').addEventListener('click', osPrintProductionReport);
+  el('osProductionList') && el('osProductionList').addEventListener('click', event => {
+    const button = event.target.closest('[data-os-production]');
+    const group = button && osProductionGroups.find(item => item.category === button.dataset.osProduction);
+    if(!group) return;
+    osPrintQueue = [];
+    osPrintProductionCategory(group);
+  });
+  el('btnOsProductionAll') && el('btnOsProductionAll').addEventListener('click', () => {
+    if(!osProductionGroups.length) return;
+    osPrintQueue = osProductionGroups.slice(1);
+    osPrintProductionCategory(osProductionGroups[0]);
+  });
 
   async function osOpenUpdates(order){
     const canWrite = osCan('edit') && !order.closed;
@@ -29833,7 +29891,7 @@ function renderHomeTasks(){
   ['osStoreFilter','osStatusFilter','osLevelFilter'].forEach(id => el(id) && el(id).addEventListener('change', renderOrdensServico));
   el('osSearch') && el('osSearch').addEventListener('input', debounce(renderOrdensServico, 120));
   el('btnOsNew') && el('btnOsNew').addEventListener('click', () => osOpenOrderDialog(null));
-  document.querySelectorAll('#osOrderDialog [data-os-close],#osUpdateDialog [data-os-close],#osStoreTestDialog [data-os-close]').forEach(button =>
+  document.querySelectorAll('#osOrderDialog [data-os-close],#osUpdateDialog [data-os-close],#osStoreTestDialog [data-os-close],#osProductionDialog [data-os-close]').forEach(button =>
     button.addEventListener('click', () => { const dialog = button.closest('dialog'); if(dialog.open) dialog.close(); }));
 
   el('osOrderForm') && el('osOrderForm').addEventListener('submit', async event => {
