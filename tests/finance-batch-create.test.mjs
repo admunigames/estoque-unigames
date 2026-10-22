@@ -12,6 +12,7 @@ const db = await setupRouteDb([
   "supplier_open_debts", "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",
   "expenses", "expense_rateio_shares", "expense_attachments", "finance_rateio_model_shares",
   "finance_store_revenue", "finance_store_headcount",
+  "finance_bank_statement_entries", "finance_sales_recon_rows", "finance_credit_sales", "finance_replacement_entries",
 ]);
 
 const ALFA = "clojaalfa1";
@@ -128,4 +129,23 @@ test("Notas Fiscais: cadastro em lote recusa NF repetida (no lote e já cadastra
   assert.equal(again.status, 400);
   assert.match((await again.json()).errors[0].error, /JÁ EXISTE UMA NOTA FISCAL/);
   assert.equal(count("supplier_invoices"), 2, "tudo ou nada");
+});
+
+test("Conciliação Bancária: EXCLUIR em lote só o lançamento importado ainda não conciliado", async () => {
+  const bulk = await import("../app/api/finance/bank-reconciliation/bulk/route.ts");
+  const entry = (id, extra = {}) => db.insert("finance_bank_statement_entries", {
+    id, import_id: "imp", finance_account_id: "acc", company_id: ALFA, entry_date: "2026-10-01", description: id.toUpperCase(),
+    raw_merchant: "X", amount_cents: -100, status: "pending", ...extra,
+  });
+  entry("b-pend"); entry("b-class", { status: "classified" }); entry("b-conf", { status: "confirmed" });
+  entry("b-desp", { status: "expensed" }); entry("b-vendas", { sales_recon_status: "ok" }); entry("b-repo");
+  db.insert("finance_replacement_entries", { id: "rep-1", bank_entry_id: "b-repo" });
+  const res = await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/bank-reconciliation/bulk", {
+    action: "delete", ids: ["b-pend", "b-class", "b-conf", "b-desp", "b-vendas", "b-repo"],
+  });
+  const body = await res.json();
+  assert.equal(body.applied, 2);
+  assert.deepEqual(body.skipped.map((s) => s.id).sort(), ["b-conf", "b-desp", "b-repo", "b-vendas"]);
+  assert.equal(count("finance_bank_statement_entries"), 4);
+  assert.equal((await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/bank-reconciliation/bulk", { action: "delete", ids: ["b-pend"] })).status, 404);
 });
