@@ -4707,7 +4707,7 @@ test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no w
   assert.match(html, /divergencias:'\/divergencias'/);
   assert.match(html, /divergencias:'DIVERGÊNCIAS'/);
   assert.match(html, /divergencias:'divergencias',/);
-  assert.match(html, /name === 'saidas' \|\| name === 'divergencias' \|\| name === 'inventario' \|\| name === 'comercialRelatorioNf';/);
+  assert.match(html, /name === 'saidas' \|\| name === 'divergencias' \|\| name === 'inventario' \|\| name === 'assistenciaRma' \|\| name === 'comercialRelatorioNf';/);
   assert.match(html, /<section id="pageDivergencias" class="page wrap">/);
 
   // Abas no estilo único do site; INVENTÁRIO só com divergencias:inventory.
@@ -4924,7 +4924,7 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
 
   // Menu: grupo novo "Assistência" com o submenu "Orçamentos" (mesmo formato
   // dos grupos existentes), ícones copiados de itens já existentes.
-  assert.match(html, /<div class="nav-group" data-any-permission="assistencia,gorduras_assistencia,ordens_servico,precos_assistencia,estoque_assistencia,rma">\n\s*<button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">/);
+  assert.match(html, /<div class="nav-group" data-any-permission="assistencia,gorduras_assistencia,ordens_servico,precos_assistencia,estoque_assistencia">\n\s*<button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">/);
   assert.match(html, /<a class="nav-item sub-item" id="navAssistenciaOrcamentos" data-page="assistenciaOrcamentos" data-permission="assistencia:manage" data-home-desc="[^"]+" title="Orçamentos" href="\/assistencia\/orcamentos">/);
   const navGroup = html.slice(html.indexOf('id="navAssistencia"'), html.indexOf('id="navComercialMenu"'));
   const loansIcon = /id="navAparelhosEmprestimo"[^\n]*?(<svg[^\n]*?<\/svg>)/.exec(html)[1];
