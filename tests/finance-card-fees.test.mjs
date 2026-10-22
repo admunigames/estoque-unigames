@@ -149,7 +149,11 @@ test("Financeiro Fase 7: Taxas de Cartão (hoje dentro de Maquinetas) + religaç
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0040_finance_card_fees.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/receivables/shared.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
+    // O cadastro mora em create.ts (POST e lote).
+    Promise.all([
+      readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/receivables/create.ts", import.meta.url), "utf8"),
+    ]).then((parts) => parts.join("\n")),
   ]);
 
   // Financeiro 5/9: a tela virou abas de Maquinetas; o link antigo continua

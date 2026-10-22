@@ -6,7 +6,7 @@ import test from "node:test";
 
 // Financeiro 1/9 — Declaração de Vendas (ex-"Declaração de Shopping"):
 // fórmulas (sugerido = mínimo ÷ %, aluguel % = máx(0, declarado × % − mínimo)),
-// mesma conta no front e no back, faturamento puxado de finance_store_revenue,
+// mesma conta no front e no back, faturamento puxado do Comercial (receita da DRE),
 // cadastro em lote e ações em lote. Rotas reais de app/api com o getD1()
 // trocado por um SQLite em memória (mesmo esquema de tests/store-scope.test.mjs).
 const hooks = `
@@ -33,7 +33,10 @@ register("data:text/javascript," + encodeURIComponent(hooks));
 
 const sqlite = new DatabaseSync(":memory:");
 sqlite.exec(`
-  CREATE TABLE finance_store_revenue (id TEXT PRIMARY KEY, store_id TEXT, month TEXT, amount_cents INTEGER DEFAULT 0);
+  CREATE TABLE commercial_store_goals (
+    id TEXT PRIMARY KEY, month TEXT, company_id TEXT, revenue_cents INTEGER DEFAULT 0, assist_revenue_cents INTEGER DEFAULT 0,
+    updated_at TEXT DEFAULT '', updated_by_name TEXT DEFAULT '', assist_updated_at TEXT DEFAULT '', assist_updated_by_name TEXT DEFAULT ''
+  );
   CREATE TABLE finance_mall_declarations (
     id TEXT PRIMARY KEY, mall_name TEXT NOT NULL DEFAULT '', company_id TEXT NOT NULL DEFAULT '',
     company_name TEXT NOT NULL DEFAULT '', competence_month TEXT NOT NULL,
@@ -189,8 +192,8 @@ test("sem finance:manage recebe 403 em todas as rotas", async () => {
   assert.equal((await call(route.GET, FINANCE, "GET", "/api/finance/mall-declarations")).status, 200);
 });
 
-test("faturamento real é puxado de finance_store_revenue quando vem vazio; sugerido e aluguel % são recalculados", async () => {
-  sqlite.prepare("INSERT INTO finance_store_revenue (id, store_id, month, amount_cents) VALUES ('r1','lojaA','2026-08',12000000)").run();
+test("faturamento real é puxado do Comercial (receita da DRE) quando vem vazio; sugerido e aluguel % são recalculados", async () => {
+  sqlite.prepare("INSERT INTO commercial_store_goals (id, company_id, month, revenue_cents) VALUES ('r1','lojaA','2026-08',12000000)").run();
   const res = await call(route.POST, ADMIN, "POST", "/api/finance/mall-declarations", {
     companyId: "lojaA", companyName: "LOJA A", competenceMonth: "2026-08", declaredCents: 11_000_000,
     contractPercentBps: 700, minimumRentCents: 700_000, suggestedDeclaredCents: 1,
@@ -240,7 +243,7 @@ test("contexto do mês: faturamento, declaração existente e % / mínimo da úl
 });
 
 test("lote cria só as lojas sem declaração no mês e pula as existentes / sem declarado", async () => {
-  sqlite.prepare("INSERT INTO finance_store_revenue (id, store_id, month, amount_cents) VALUES ('r2','lojaD','2026-08',8000000)").run();
+  sqlite.prepare("INSERT INTO commercial_store_goals (id, company_id, month, revenue_cents) VALUES ('r2','lojaD','2026-08',8000000)").run();
   const res = await call(batch.POST, FINANCE, "POST", "/api/finance/mall-declarations/batch", {
     competenceMonth: "2026-08",
     rows: [

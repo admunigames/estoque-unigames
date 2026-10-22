@@ -65,7 +65,11 @@ test("Financeiro Fase 8: os três módulos estão registrados", async () => {
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0043_finance_fase8_itens_diversos.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/replacement-control/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/phone-recharges/route.ts", import.meta.url), "utf8"),
+    // A validação da linha (período 30/60/90) mora em shared.ts (POST e lote).
+    Promise.all([
+      readFile(new URL("../app/api/finance/phone-recharges/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/phone-recharges/shared.ts", import.meta.url), "utf8"),
+    ]).then((parts) => parts.join("\n")),
     readFile(new URL("../app/api/finance/mall-declarations/route.ts", import.meta.url), "utf8"),
   ]);
 

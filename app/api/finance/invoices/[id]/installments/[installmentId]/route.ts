@@ -11,6 +11,9 @@ import {
   type InstallmentRow,
   INSTALLMENT_ROW_SELECT,
 } from "../../../shared";
+import { loadPayable } from "../../../../payables/shared";
+import { allocationSlotsOf, loadPayableDestination, planDreDestination, recalcSlotsSql } from "../../../../payables/dre-destination";
+import { effectiveDreAmountCents } from "../../../../../../lib/payables-recurrence";
 
 async function loadInstallment(
   database: Awaited<ReturnType<typeof getD1>>,
@@ -106,6 +109,18 @@ export async function PATCH(
         ],
       ]);
     }
+    // Destino na DRE escolhido: a fatia da duplicata acompanha o novo valor.
+    const linkedPayable = installment.accountsPayableId ? await loadPayable(database, installment.accountsPayableId) : null;
+    if (linkedPayable?.dreTarget && originalAmountCents !== installment.originalAmountCents) {
+      const destinationPlan = await planDreDestination(database, await loadPayableDestination(database, linkedPayable), [
+        {
+          payableId: linkedPayable.id,
+          month: linkedPayable.competenceMonth,
+          amountCents: effectiveDreAmountCents(linkedPayable.dreAmountCents, originalAmountCents),
+        },
+      ]);
+      statements.push(...destinationPlan.statements, ...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
+    }
     if (originalAmountCents !== installment.originalAmountCents) {
       const entryId = crypto.randomUUID();
       for (const [sql, values] of recalcPayableEntrySql(
@@ -181,6 +196,7 @@ export async function DELETE(
          WHERE id=?3`,
         [actor.id, actorName, installment.accountsPayableId],
       ]);
+      statements.push(...recalcSlotsSql(await allocationSlotsOf(database, [installment.accountsPayableId]), { id: actor.id, name: actorName }));
     }
     const entryId = crypto.randomUUID();
     for (const [sql, values] of recalcPayableEntrySql(

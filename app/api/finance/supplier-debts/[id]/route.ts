@@ -1,7 +1,9 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { computeStoredStatus, todayInTimezone } from "../../../../lib/finance-status";
-import { DATE_PATTERN, recalcPayableEntrySql } from "../../payables/shared";
+import { DATE_PATTERN, assertSlotAvailableForPayable, loadPayable, recalcPayableEntrySql } from "../../payables/shared";
+import { loadPayableDestination, parseDreDestination, planDreDestination, recalcSlotsSql } from "../../payables/dre-destination";
+import { canSeeAllStores } from "../../../../lib/access-scope";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
 import { assertSupplierDebtAccess, canManageSupplierDebts, loadSupplierDebt, supplierDebtStatusView } from "../shared";
 
@@ -73,6 +75,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
         ...supplierDebtStatusView(payable.status, payable.dueDate, today),
       },
       payments: payments.results ?? [],
+      dreDestination: await (async () => {
+        const full = await loadPayable(database, debt.accountsPayableId);
+        return full ? loadPayableDestination(database, full) : null;
+      })(),
     });
   } catch (error) {
     console.error("Não foi possível carregar a dívida de fornecedor.", error);
@@ -139,6 +145,33 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       );
     }
 
+    const payerName = body.payerName === undefined ? debt.payerName : safeText(body.payerName, 160);
+    // Destino na DRE: novo (dreTarget veio) ou o já gravado, refeito pelo
+    // valor/competência novos (mesma regra de payables/[id]).
+    const fullPayable = await loadPayable(database, debt.accountsPayableId);
+    let destination = null as Awaited<ReturnType<typeof loadPayableDestination>> | null;
+    if (fullPayable && (body.dreTarget !== undefined || fullPayable.dreTarget)) {
+      if (body.dreTarget !== undefined) {
+        const parsed = await parseDreDestination(database, body, {
+          companyId: payable.companyId,
+          companyName: payable.companyName,
+          financeItemId: payable.financeItemId,
+          competenceMonth: dueDate.slice(0, 7),
+          totalAmountCents: originalAmountCents,
+          allStores: canSeeAllStores(scopeActor, "finance:manage"),
+          actorCompanyId: scopeActor.companyId,
+        });
+        if ("error" in parsed) return jsonResponse({ error: parsed.error }, parsed.status);
+        destination = parsed.destination;
+      } else {
+        destination = await loadPayableDestination(database, fullPayable);
+      }
+      for (const share of destination?.shares ?? []) {
+        const conflict = await assertSlotAvailableForPayable(database, share.companyId, destination!.itemId, dueDate.slice(0, 7));
+        if (conflict) return jsonResponse({ error: conflict }, 409);
+      }
+    }
+
     const actorName = actor.displayName || "Administrador";
     const status = computeStoredStatus({
       originalAmountCents,
@@ -152,15 +185,15 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       [
         `UPDATE supplier_open_debts
          SET description=?1, invoice_number=?2, order_reference=?3, notes=?4, purchase_date=?5, due_date=?6,
-             original_amount_cents=?7, updated_by=?8, updated_by_name=?9, updated_at=CURRENT_TIMESTAMP
+             original_amount_cents=?7, updated_by=?8, updated_by_name=?9, updated_at=CURRENT_TIMESTAMP, payer_name=?11
          WHERE id=?10`,
-        [description, invoiceNumber, orderReference, notes, purchaseDate, dueDate, originalAmountCents, actor.id, actorName, id],
+        [description, invoiceNumber, orderReference, notes, purchaseDate, dueDate, originalAmountCents, actor.id, actorName, id, payerName],
       ],
       [
         `UPDATE accounts_payable
          SET description=?1, invoice_number=?2, order_reference=?3, notes=?4, issue_date=?5, due_date=?6,
              competence_month=?7, original_amount_cents=?8, status=?9,
-             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP
+             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP, payer_name=?13
          WHERE id=?12`,
         [
           description,
@@ -175,9 +208,30 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           actor.id,
           actorName,
           debt.accountsPayableId,
+          payerName,
         ],
       ],
     ];
+    if (destination) {
+      if (destination.target === "none") {
+        statements.push(["UPDATE accounts_payable SET dre_amount_cents=0 WHERE id=?1", [debt.accountsPayableId]]);
+      } else if (body.dreTarget !== undefined) {
+        statements.push(["UPDATE accounts_payable SET dre_amount_cents=NULL WHERE id=?1", [debt.accountsPayableId]]);
+      }
+      const destinationPlan = await planDreDestination(database, destination, [
+        {
+          payableId: debt.accountsPayableId,
+          month: competenceMonth,
+          amountCents:
+            destination.target === "none"
+              ? 0
+              : body.dreTarget !== undefined || fullPayable?.dreAmountCents === null || fullPayable?.dreAmountCents === undefined
+                ? originalAmountCents
+                : fullPayable.dreAmountCents,
+        },
+      ]);
+      statements.push(...destinationPlan.statements, ...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
+    }
 
     const slots = new Set([`${payable.companyId}::${payable.financeItemId}::${payable.competenceMonth}`]);
     slots.add(`${payable.companyId}::${payable.financeItemId}::${competenceMonth}`);

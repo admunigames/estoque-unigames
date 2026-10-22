@@ -2472,7 +2472,8 @@ test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", 
       readFile(new URL("../app/api/finance/categories/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/finance/items/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/finance/entries/route.ts", import.meta.url), "utf8"),
-      Promise.all(["route.ts", "shared.ts"].map((f) => readFile(new URL(`../app/api/finance/revenue/${f}`, import.meta.url), "utf8"))).then((parts) => parts.join("\n")),
+      // Receita da DRE = Comercial (revenue/commercial.ts); a rota só lê.
+      Promise.all(["route.ts", "commercial.ts"].map((f) => readFile(new URL(`../app/api/finance/revenue/${f}`, import.meta.url), "utf8"))).then((parts) => parts.join("\n")),
       // A montagem da DRE (buildStoreDre/buildConsolidatedDre/etc.) foi
       // extraída para dre/shared.ts na Fase 2 do Financeiro (Dashboard
       // Geral), pra ser reaproveitada sem duplicar a fórmula de
@@ -2510,7 +2511,10 @@ test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", 
   assert.match(itemsRoute, /INSERT INTO finance_items/);
   assert.match(itemsRoute, /finance_store_entries WHERE item_id=\?1/);
   assert.match(entriesRoute, /INSERT INTO finance_store_entries/);
-  assert.match(revenueRoute, /INSERT INTO finance_store_revenue/);
+  assert.match(revenueRoute, /FROM commercial_store_goals WHERE month=\?1/);
+  assert.match(revenueRoute, /revenue_cents AS salesCents, assist_revenue_cents AS servicesCents/);
+  assert.doesNotMatch(revenueRoute, /INSERT INTO finance_store_revenue/);
+  assert.match(revenueRoute, /410/); // receita não é mais digitada na DRE
   assert.match(dreShared, /FROM finance_store_entries WHERE store_id=\?1 AND month=\?2/);
 
   assert.match(schema, /export const financeCategories = pgTable/);
@@ -2590,7 +2594,8 @@ test("DRE Por Loja/Consolidada/Gerencial vivem na mesma página, alternadas por 
 
   assert.match(dreRoute, /scope === "consolidated"/);
   assert.match(dreShared, /FROM finance_store_entries WHERE month=\?1/);
-  assert.match(dreShared, /FROM finance_store_revenue WHERE month=\?1/);
+  // CONSOLIDADA = soma do Comercial de todas as lojas.
+  assert.match(dreShared, /loadCommercialRevenueByStore\(database, month\)/);
   // Percentual continua fora da soma de despesa também na Consolidada.
   assert.match(dreShared, /entry\?\.entryType === "fixed" \? entry\.amountCents \?\? 0 : 0/);
   assert.match(dreRoute, /scope === "managerial"/);
@@ -3193,7 +3198,11 @@ test("Financeiro Fase 3: Fornecedores em Aberto e Conta Corrente do Fornecedor",
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0034_supplier_open_debts.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/supplier-debts/shared.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/supplier-debts/route.ts", import.meta.url), "utf8"),
+    // O cadastro (validação + INSERTs) mora em create.ts, usado pelo POST e pelo lote.
+    Promise.all([
+      readFile(new URL("../app/api/finance/supplier-debts/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/supplier-debts/create.ts", import.meta.url), "utf8"),
+    ]).then((parts) => parts.join("\n")),
     readFile(new URL("../app/api/finance/supplier-debts/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/supplier-debts/[id]/cancel/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/supplier-debts/dashboard/route.ts", import.meta.url), "utf8"),
@@ -3309,7 +3318,11 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0037_finance_cash_flow.sql", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0038_accounts_receivable_received_idx.sql", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
+    // O cadastro mora em create.ts (POST e lote).
+    Promise.all([
+      readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/receivables/create.ts", import.meta.url), "utf8"),
+    ]).then((parts) => parts.join("\n")),
     // Desde o Financeiro 4/9 o SQL do fluxo mora em cash-flow/shared.ts (fonte
     // única da projeção e da lista de pagamentos).
     Promise.all([
@@ -3615,7 +3628,11 @@ test("Módulo Compras nativo (Fase C): anexos do pedido, vínculo com NF, alerta
     readFile(new URL("../app/api/compras-novo/orders/[id]/attachments/file/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/orders/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/invoices/route.ts", import.meta.url), "utf8"),
+    // Cadastro da NF (validação + INSERT) mora em create.ts, usado pelo POST e pelo lote.
+    Promise.all([
+      readFile(new URL("../app/api/finance/invoices/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/invoices/create.ts", import.meta.url), "utf8"),
+    ]).then((parts) => parts.join("\n")),
     readFile(new URL("../app/api/finance/invoices/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/invoices/shared.ts", import.meta.url), "utf8"),
   ]);
@@ -4371,7 +4388,7 @@ test("permissão própria suppliers:manage libera só o Cadastro de Fornecedores
   // UI: checkbox no cadastro de usuário, item no grupo Cadastros e as duas
   // telas (aba do Compras nativo + página nova) montadas pela mesma função.
   assert.match(html, /name="userPermission" value="suppliers:manage"/);
-  assert.match(html, /<div class="nav-group" data-any-permission="database,suppliers,finance:manage,purchases_draft,audit">/);
+  assert.match(html, /<div class="nav-group" data-any-permission="database,suppliers,finance:manage,purchases_draft,audit,info_gerais">/);
   assert.match(html, /id="navFornecedores" data-page="fornecedores" data-any-permission="suppliers,finance:manage,purchases_draft"[^>]*href="\/cadastros\/fornecedores"/);
   assert.match(html, /id="navDados" data-page="dados" data-permission="database"/);
   assert.match(html, /id="navLojas" data-page="lojas" data-permission="database"/);
@@ -5306,6 +5323,26 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
       ["2026-10-05", "TED RECEBIDA ACME", 123456],
       ["2026-10-06", "PAGAMENTO BOLETO LUZ", -30000],
     ]);
+    // Stone: lançamento em BLOCO (data + Entrada/Saída, nome em 1–2 linhas,
+    // tipo e só depois o valor), cabeçalho/rodapé repetidos a cada página.
+    const stone = JSON.parse(await readFile(new URL("./fixtures/stone-extrato-pdf-lines.json", import.meta.url), "utf8"));
+    const stoneRows = parsePdf(stone.lines);
+    assert.equal(stoneRows.length, stone.lines.filter((l) => /^\d{2}\/\d{2}\/\d{2}\s/.test(l)).length);
+    assert.equal(stoneRows.reduce((sum, r) => sum + r.amountCents, 0), stone.finalBalanceCents - stone.initialBalanceCents);
+    const stoneIn = stoneRows.filter((r) => r.amountCents > 0).reduce((s, r) => s + r.amountCents, 0);
+    const stoneOut = stoneRows.filter((r) => r.amountCents < 0).reduce((s, r) => s + r.amountCents, 0);
+    assert.equal(stoneIn, 153574);
+    assert.equal(stoneOut, -153596);
+    assert.deepEqual(stoneRows.map((r) => [r.entryDate, r.description, r.amountCents]), [
+      ["2026-10-16", "OBJETIVA NUCLEO DE SAUDE LTDA · PAGAMENTO", -3500],
+      ["2026-10-16", "TARIFA", -48],
+      ["2026-10-16", "RECEBIMENTO VENDAS · MASTERCARD | CRÉDITO", 120000],
+      ["2026-10-15", "FULANO DE TAL · PIX", -50000],
+      ["2026-10-14", "FULANO DA SILVA · PIX | MAQUININHA", 25000],
+      ["2026-10-10", "FORNECEDOR EXEMPLO COMERCIO LTDA · PAGAMENTO", -100000],
+      ["2026-10-09", "TARIFA", -48],
+      ["2026-10-09", "RECEBIMENTO VENDAS · VISA | DÉBITO", 8574],
+    ]);
     for (const id of ["reconFile", "svBankFile", "rpBankFile"]) assert.match(html, new RegExp(`id="${id}" accept="[^"]*\\.pdf"`), id);
     assert.match(html, /PDF SEM TEXTO \(DIGITALIZADO\?\)/);
     assert.match(html, /CONFIRA COM OS TOTAIS DO EXTRATO ANTES DE IMPORTAR/);
@@ -5318,9 +5355,8 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
   assert.match(html, /id="svRowsBulkBar"[\s\S]*?data-bulk-action="sale"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO VENDA[\s\S]*?data-bulk-action="service"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO SERVIÇO[\s\S]*?data-bulk-action="machine"(?: data-bulk-confirm="[^"]*")?>DEFINIR MAQUINETA[\s\S]*?data-bulk-action="ignore"(?: data-bulk-confirm="[^"]*")?>IGNORAR[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /id="svDaysBulkBar"[\s\S]*?data-bulk-action="review"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO REVISADO/);
   for (const name of ["svRowsBulk", "svDaysBulk"]) assert.match(html, new RegExp(`const ${name} = setupBulkSelection\\(`), name);
-  assert.match(html, /id="btnSvRevenue" type="button">ATUALIZAR FATURAMENTO DO MÊS/);
-  assert.match(html, /id="svRevenueDialog"/);
-  assert.match(html, /financeApiRequest\('\/sales-recon\/apply-revenue'/);
+  // Sem ligação com a DRE: o ATUALIZAR FATURAMENTO DO MÊS saiu (22/10/2026).
+  assert.doesNotMatch(html, /id="btnSvRevenue"|id="svRevenueDialog"|sales-recon\/apply-revenue/);
   // Prazo de recebimento e texto do extrato no cadastro de adquirente.
   for (const id of ["acquirerDebitDays", "acquirerCreditDays", "acquirerAnticipated", "acquirerBankKeyword"]) assert.match(html, new RegExp(`id="${id}"`), id);
   // Migration 0082: tabelas novas e colunas, nada apagado.

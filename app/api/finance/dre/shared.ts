@@ -1,6 +1,7 @@
 import { getD1 } from "../../../../db";
 import { loadCompanyList } from "../shared";
-import { loadPayrollDreContribution } from "./payroll";
+import { loadCommercialRevenue, loadCommercialRevenueByStore } from "../revenue/commercial";
+import { loadPayrollDreContribution, PAYROLL_DRE_CATEGORY, PAYROLL_DRE_ITEMS } from "./payroll";
 
 // Lógica de cálculo da DRE (por loja, consolidada, gerencial, comparativo
 // entre unidades e série temporal) — extraída de route.ts pra poder ser
@@ -161,7 +162,19 @@ export async function loadCatalog(database: Awaited<ReturnType<typeof getD1>>) {
       )
       .all<ItemRow>(),
   ]);
-  return { allCategories: categories.results ?? [], allItems: items.results ?? [] };
+  // RH automático (Folha, Benefícios, Comissões — custo total) numa
+  // categoria própria, fixa no código: não depende do antigo RH NA DRE.
+  const allCategories: CategoryRow[] = [
+    ...(categories.results ?? []),
+    { id: PAYROLL_DRE_CATEGORY.id, name: PAYROLL_DRE_CATEGORY.name, parentId: null, position: 100000 } as CategoryRow,
+  ];
+  const allItems: ItemRow[] = [
+    ...(items.results ?? []),
+    ...Object.values(PAYROLL_DRE_ITEMS).map(
+      (item, index) => ({ id: item.id, categoryId: PAYROLL_DRE_CATEGORY.id, name: item.name, position: index }) as ItemRow,
+    ),
+  ];
+  return { allCategories, allItems };
 }
 
 export async function buildStoreDre(
@@ -179,12 +192,7 @@ export async function buildStoreDre(
       )
       .bind(storeId, month)
       .all<EntryRow>(),
-    database
-      .prepare(
-        "SELECT amount_cents AS amountCents FROM finance_store_revenue WHERE store_id=?1 AND month=?2",
-      )
-      .bind(storeId, month)
-      .first<{ amountCents: number }>(),
+    loadCommercialRevenue(database, storeId, month),
     loadPayrollDreContribution(database, { companyId: storeId }, month),
   ]);
 
@@ -226,7 +234,7 @@ export async function buildStoreDre(
     return { id: category.id, name: category.name, totalCents, items: directItems, subgroups };
   });
 
-  const revenueCents = revenue?.amountCents ?? 0;
+  const revenueCents = revenue.amountCents;
   const expenseTotalCents = dreCategories.reduce((sum, category) => sum + category.totalCents, 0);
   const resultCents = revenueCents - expenseTotalCents;
   const marginBasisPoints = revenueCents > 0 ? Math.round((resultCents / revenueCents) * 10000) : 0;
@@ -245,10 +253,7 @@ export async function loadMonthWideTotals(database: Awaited<ReturnType<typeof ge
       )
       .bind(month, ASSISTENCIA_STORE_ID)
       .all<EntryRow>(),
-    database
-      .prepare("SELECT amount_cents AS amountCents FROM finance_store_revenue WHERE month=?1 AND store_id <> ?2")
-      .bind(month, ASSISTENCIA_STORE_ID)
-      .all<{ amountCents: number }>(),
+    loadCommercialRevenueByStore(database, month),
     loadPayrollDreContribution(database, "stores", month),
   ]);
 
@@ -262,7 +267,8 @@ export async function loadMonthWideTotals(database: Awaited<ReturnType<typeof ge
   for (const [itemId, cents] of payroll.byItem) {
     totalByItem.set(itemId, (totalByItem.get(itemId) ?? 0) + cents);
   }
-  const revenueCents = (revenue.results ?? []).reduce((sum, row) => sum + (row.amountCents ?? 0), 0);
+  // CONSOLIDADA = soma do Comercial de todas as lojas no mês.
+  const revenueCents = [...revenue.values()].reduce((sum, row) => sum + row.amountCents, 0);
 
   return { allCategories, allItems, totalByItem, revenueCents };
 }

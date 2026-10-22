@@ -19,7 +19,12 @@ import {
   planInvoiceReview,
   purchaseOrderNfAttachmentCopyStatements,
   toInstallmentSnapshot,
+  isMerchandisePurchaseInvoice,
 } from "../shared";
+import { loadPayable } from "../../payables/shared";
+import { canSeeAllStores } from "../../../../lib/access-scope";
+import { loadPayableDestination, parseDreDestination, planDreDestination, recalcSlotsSql } from "../../payables/dre-destination";
+import { effectiveDreAmountCents } from "../../../../lib/payables-recurrence";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const unauthorized = unauthorizedResponse(request);
@@ -104,6 +109,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       events: events.results ?? [],
       today,
       dre,
+      // NF de compra de mercadoria: a tela abre o destino em NÃO INCLUIR.
+      merchandisePurchase: await isMerchandisePurchaseInvoice(database, invoice),
     });
   } catch (error) {
     console.error("Não foi possível carregar a nota fiscal.", error);
@@ -234,7 +241,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         `UPDATE supplier_invoices
          SET supplier_id=?1, supplier_document=?2, finance_category_id=?3, finance_item_id=?4, cost_center=?5,
              notes=?6, access_key=?7, entry_date=?8, total_amount_cents=?9,
-             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP, cost_center_id=?13, purchase_order_id=?14
+             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP, cost_center_id=?13, purchase_order_id=?14,
+             payer_name=?15
          WHERE id=?12`,
         [
           supplierId,
@@ -251,6 +259,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           id,
           costCenterId,
           purchaseOrderId,
+          body.payerName === undefined ? invoice.payerName : safeText(body.payerName, 160),
         ],
       ],
     ];
@@ -273,6 +282,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     // valor é gravado, na âncora = 1ª duplicata). Ver installments/route.ts
     // (POST) pra quando o toggle é definido junto da geração das duplicatas.
     let dreWarning: string | null = null;
+    let dreAssignmentsForDestination: Map<string, number> | null = null;
     if (body.dreIncluded !== undefined) {
       const installmentsForDre = await loadInstallments(database, id);
       const activeInstallments = installmentsForDre.filter((installment) => !installment.canceled);
@@ -293,6 +303,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       }
       const orderedPayableIds = activeInstallments.map((installment) => installment.accountsPayableId).filter(Boolean);
       const assignments = computeDreAnchorAssignments(orderedPayableIds, dreIncludedFlag, dreAmountCentsRaw);
+      dreAssignmentsForDestination = assignments;
       for (const payableId of orderedPayableIds) {
         statements.push([
           `UPDATE accounts_payable SET dre_amount_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP WHERE id=?4`,
@@ -309,6 +320,50 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         actorName,
       )) {
         statements.push([sql, values]);
+      }
+    }
+
+    // Destino na DRE (NÃO INCLUIR / RATEAR / INCLUIR EM) das duplicatas: novo
+    // (dreTarget veio) ou o já gravado, refeito pelos valores de DRE.
+    if (body.dreTarget !== undefined || body.dreIncluded !== undefined) {
+      const active = (await loadInstallments(database, id)).filter((row) => !row.canceled && row.accountsPayableId);
+      const firstPayable = active.length ? await loadPayable(database, active[0].accountsPayableId) : null;
+      if (firstPayable && (body.dreTarget !== undefined || firstPayable.dreTarget)) {
+        let destination = await loadPayableDestination(database, firstPayable);
+        if (body.dreTarget !== undefined) {
+          const parsed = await parseDreDestination(database, body, {
+            companyId: invoice.companyId,
+            companyName: invoice.companyName,
+            financeItemId: financeItemId || invoice.financeItemId,
+            competenceMonth: invoice.competenceMonth,
+            totalAmountCents,
+            allStores: canSeeAllStores(scopeActor, "finance:manage"),
+            actorCompanyId: scopeActor.companyId,
+          });
+          if ("error" in parsed) return jsonResponse({ error: parsed.error }, parsed.status);
+          if (parsed.destination) destination = parsed.destination;
+        }
+        const rows = [];
+        for (const installment of active) {
+          const payable = await loadPayable(database, installment.accountsPayableId);
+          let dreAmount = dreAssignmentsForDestination
+            ? dreAssignmentsForDestination.get(installment.accountsPayableId) ?? null
+            : payable?.dreAmountCents ?? null;
+          if (destination.target === "none") {
+            dreAmount = 0;
+            statements.push(["UPDATE accounts_payable SET dre_amount_cents=0 WHERE id=?1", [installment.accountsPayableId]]);
+          }
+          rows.push({
+            payableId: installment.accountsPayableId,
+            month: invoice.competenceMonth,
+            amountCents: effectiveDreAmountCents(dreAmount, installment.originalAmountCents),
+          });
+        }
+        const destinationPlan = await planDreDestination(database, destination, rows);
+        statements.push(...destinationPlan.statements, ...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
+        statements.push(
+          ...recalcPayableEntrySql(crypto.randomUUID(), invoice.companyId, invoice.financeItemId, invoice.competenceMonth, actor.id, actorName),
+        );
       }
     }
 

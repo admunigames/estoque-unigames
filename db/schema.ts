@@ -978,6 +978,12 @@ export const accountsPayable = pgTable(
     canceledBy: text("canceled_by").notNull().default(""),
     canceledByName: text("canceled_by_name").notNull().default(""),
     canceledAt: text("canceled_at").notNull().default(""),
+    // Destino na DRE (migration 0107): '' = regra antiga (loja/categoria da
+    // própria conta); 'none' | 'include' | 'rateio' com as fatias em
+    // finance_dre_allocations.
+    dreTarget: text("dre_target").notNull().default(""),
+    dreRateioModel: text("dre_rateio_model").notNull().default(""),
+    payerName: text("payer_name").notNull().default(""),
   },
   (table) => [
     index("accounts_payable_company_status_due_idx").on(
@@ -1270,6 +1276,7 @@ export const supplierInvoices = pgTable(
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    payerName: text("payer_name").notNull().default(""),
   },
   (table) => [
     uniqueIndex("supplier_invoices_unique_doc_idx").on(
@@ -1396,6 +1403,7 @@ export const supplierOpenDebts = pgTable(
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    payerName: text("payer_name").notNull().default(""),
   },
   (table) => [
     index("supplier_open_debts_company_idx").on(table.companyId),
@@ -1536,6 +1544,10 @@ export const hrEmployees = pgTable(
     admissionDate: text("admission_date").notNull().default(""),
     companyId: text("company_id").notNull().default(""),
     companyName: text("company_name").notNull().default(""),
+    // Loja de ADMISSÃO (onde está registrado) — migration 0108. A loja em que
+    // atua em cada mês fica em hr_schedule_assignments (app/lib/acting-store.ts).
+    admissionCompanyId: text("admission_company_id").notNull().default(""),
+    admissionCompanyName: text("admission_company_name").notNull().default(""),
     roleTitle: text("role_title").notNull().default(""),
     salaryCents: integer("salary_cents").notNull().default(0),
     pixKey: text("pix_key").notNull().default(""),
@@ -1821,6 +1833,8 @@ export const hrCommissions = pgTable(
     companyName: text("company_name").notNull().default(""),
     month: text("month").notNull(),
     commissionCents: integer("commission_cents").notNull().default(0),
+    // PREMIAÇÃO do Comercial, separada da comissão (migration 0110).
+    commercialPremiumCents: integer("commercial_premium_cents").notNull().default(0),
     bonusesCents: integer("bonuses_cents").notNull().default(0),
     premiumsCents: integer("premiums_cents").notNull().default(0),
     discountsCents: integer("discounts_cents").notNull().default(0),
@@ -3140,6 +3154,15 @@ export const hrTimeTrackingPayouts = pgTable(
     employeeId: text("employee_id").notNull(),
     yearMonth: text("year_month").notNull(),
     paidMinutes: integer("paid_minutes").notNull().default(0),
+    // HORAS EXTRAS A PAGAR por tipo (migration 0110): minutos e valor da
+    // hora em centavos (salário ÷ 220 × fator, editável). HE 50% + HE 100%
+    // = paid_minutes (abate o banco); adicional noturno não abate.
+    he50Minutes: integer("he50_minutes").notNull().default(0),
+    he100Minutes: integer("he100_minutes").notNull().default(0),
+    nightMinutes: integer("night_minutes").notNull().default(0),
+    he50RateCents: integer("he50_rate_cents").notNull().default(0),
+    he100RateCents: integer("he100_rate_cents").notNull().default(0),
+    nightRateCents: integer("night_rate_cents").notNull().default(0),
     notes: text("notes").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
@@ -4813,4 +4836,76 @@ export const rmaOptions = pgTable(
     updatedAt: text("updated_at").notNull().default(""),
   },
   (table) => [index("rma_options_category_idx").on(table.deleted, table.category)],
+);
+
+// Destino na DRE de uma conta a pagar (migration 0107): uma linha por loja
+// que recebe o valor da conta (INCLUIR EM = 1 linha com 100%; RATEAR = uma
+// por loja, com o percentual). NÃO INCLUIR = nenhuma linha. A célula da DRE
+// (finance_store_entries 'payable') soma estas fatias das contas não
+// canceladas — ver recalcPayableEntrySql.
+// INFORMAÇÕES GERAIS (Cadastros) — migration 0111. Itens por loja:
+// kind 'internet' | 'prestador' | 'outros'; sem senha de Wi-Fi/roteador.
+export const infoGeraisItems = pgTable(
+  "info_gerais_items",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    kind: text("kind").notNull(),
+    position: integer("position").notNull().default(0),
+    // Provedor (internet) ou nome (prestador).
+    title: text("title").notNull().default(""),
+    // Plano (internet) ou serviço (prestador).
+    service: text("service").notNull().default(""),
+    contract: text("contract").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("info_gerais_items_company_idx").on(table.companyId, table.kind, table.position)],
+);
+
+// RH: valores MANUAIS por funcionário e competência — migration 0109.
+// kind 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO) | 'inss' (DRE Funcionário).
+export const hrEmployeeMonthValues = pgTable(
+  "hr_employee_month_values",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    month: text("month").notNull(),
+    kind: text("kind").notNull(),
+    amountCents: integer("amount_cents").notNull().default(0),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_employee_month_values_key_idx").on(table.employeeId, table.month, table.kind),
+    index("hr_employee_month_values_month_idx").on(table.month, table.kind),
+  ],
+);
+
+export const financeDreAllocations = pgTable(
+  "finance_dre_allocations",
+  {
+    id: text("id").primaryKey(),
+    payableId: text("payable_id").notNull(),
+    storeId: text("store_id").notNull(),
+    storeName: text("store_name").notNull().default(""),
+    itemId: text("item_id").notNull(),
+    month: text("month").notNull(),
+    percentBasisPoints: integer("percent_basis_points").notNull().default(10000),
+    amountCents: integer("amount_cents").notNull().default(0),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_dre_allocations_payable_idx").on(table.payableId),
+    index("finance_dre_allocations_slot_idx").on(table.storeId, table.itemId, table.month),
+  ],
 );

@@ -8,6 +8,8 @@ import {
 } from "../../lib/hr-benefit-cycle";
 import { isWorkSchedule } from "../../lib/working-days";
 import { normalizeChecklist, terminationError } from "../../lib/hr-rh";
+import { actingStoreFor } from "../../lib/acting-store";
+import { computeOvertime } from "../../lib/hr-accounting-report";
 
 // RH Financeiro (Financeiro Fase 5) — base compartilhada da Folha de
 // Pagamento, dos Benefícios e do Comissionamento.
@@ -172,6 +174,10 @@ export type EmployeeRow = {
   admissionDate: string;
   companyId: string;
   companyName: string;
+  // Loja de ADMISSÃO (onde está registrado) — a loja de cada mês vem de
+  // actingStoreFor (app/lib/acting-store.ts).
+  admissionCompanyId: string;
+  admissionCompanyName: string;
   roleTitle: string;
   salaryCents: number;
   pixKey: string;
@@ -195,6 +201,7 @@ export type EmployeeRow = {
 
 export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, rg, telefone, admission_date AS admissionDate,
   company_id AS companyId, company_name AS companyName, role_title AS roleTitle,
+  admission_company_id AS admissionCompanyId, admission_company_name AS admissionCompanyName,
   salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName, status,
   work_schedule AS workSchedule, food_per_day_cents AS foodPerDayCents,
   transport_per_day_cents AS transportPerDayCents, benefit_notes AS benefitNotes,
@@ -276,8 +283,22 @@ export async function loadEmployee(database: Database, employeeId: string) {
     .first<EmployeeRow>();
 }
 
+/**
+ * Funcionário com a LOJA ATUANTE do mês no lugar da loja do cadastro — é a
+ * loja que vai para a Folha, os Benefícios e o Comissionamento daquele mês
+ * (e, por eles, para a DRE). Ver app/lib/acting-store.ts.
+ */
+export async function loadEmployeeForMonth(database: Database, employeeId: string, month: string) {
+  const employee = await loadEmployee(database, employeeId);
+  if (!employee) return null;
+  const store = await actingStoreFor(database, employeeId, month);
+  return store ? { ...employee, companyId: store.companyId, companyName: store.companyName } : employee;
+}
+
 export type CommissionTotalsRow = {
   commissionCents: number;
+  /** Premiação do Comercial (migration 0110) — separada da comissão. */
+  commercialPremiumCents?: number;
   bonusesCents: number;
   premiumsCents: number;
   discountsCents: number;
@@ -291,6 +312,7 @@ export type CommissionTotalsRow = {
 export function commissionNetCents(row: CommissionTotalsRow) {
   return (
     Number(row.commissionCents || 0) +
+    Number(row.commercialPremiumCents || 0) +
     Number(row.bonusesCents || 0) +
     Number(row.premiumsCents || 0) -
     Number(row.discountsCents || 0) +
@@ -310,8 +332,8 @@ export async function computedCommissionCentsFor(
 ): Promise<number> {
   const row = await database
     .prepare(
-      `SELECT commission_cents AS commissionCents, bonuses_cents AS bonusesCents,
-              premiums_cents AS premiumsCents, discounts_cents AS discountsCents,
+      `SELECT commission_cents AS commissionCents, commercial_premium_cents AS commercialPremiumCents,
+              bonuses_cents AS bonusesCents, premiums_cents AS premiumsCents, discounts_cents AS discountsCents,
               adjustments_cents AS adjustmentsCents
        FROM hr_commissions WHERE employee_id=?1 AND month=?2 LIMIT 1`,
     )
@@ -351,7 +373,7 @@ export async function computedCommissionGrossCentsFor(
 ): Promise<number> {
   const row = await database
     .prepare(
-      `SELECT commission_cents AS commissionCents, bonuses_cents AS bonusesCents,
+      `SELECT commission_cents + commercial_premium_cents AS commissionCents, bonuses_cents AS bonusesCents,
               premiums_cents AS premiumsCents, adjustments_cents AS adjustmentsCents
        FROM hr_commissions WHERE employee_id=?1 AND month=?2 LIMIT 1`,
     )
@@ -518,4 +540,115 @@ export async function workingDaysForEmployee(
     scheduleData = schedules.get(employee.id) ?? null;
   }
   return { ...workingDaysInCycle(cycle, schedule, holidays, scheduleData), cycle, schedule };
+}
+
+/**
+ * Grava a LOJA ATUANTE do funcionário num mês (hr_schedule_assignments, a
+ * mesma tabela das Escalas — fonte única). Um registro por funcionário e mês.
+ */
+export function upsertActingStoreStatement(
+  database: Database,
+  input: { employeeId: string; employeeName: string; month: string; companyId: string; companyName: string },
+  actor: Identity,
+) {
+  return database
+    .prepare(
+      `INSERT INTO hr_schedule_assignments
+        (id, employee_id, employee_name, company_id, company_name, reference_month, notes,
+         created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, '', ?7, ?8, CURRENT_TIMESTAMP, ?7, ?8, CURRENT_TIMESTAMP)
+       ON CONFLICT (employee_id, reference_month) DO UPDATE
+         SET company_id = EXCLUDED.company_id, company_name = EXCLUDED.company_name,
+             employee_name = EXCLUDED.employee_name, updated_by = EXCLUDED.updated_by,
+             updated_by_name = EXCLUDED.updated_by_name, updated_at = CURRENT_TIMESTAMP`,
+    )
+    .bind(
+      crypto.randomUUID(), input.employeeId, input.employeeName, input.companyId, input.companyName, input.month,
+      actor.id, actorName(actor),
+    );
+}
+
+// Valores MANUAIS por funcionário e competência (migration 0109):
+// 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO) e 'inss' (DRE Funcionário).
+export const MONTH_VALUE_KINDS = ["dsr", "inss"] as const;
+export type MonthValueKind = (typeof MONTH_VALUE_KINDS)[number];
+
+export function isMonthValueKind(value: unknown): value is MonthValueKind {
+  return typeof value === "string" && (MONTH_VALUE_KINDS as readonly string[]).includes(value);
+}
+
+/** employeeId → centavos do tipo no mês (sem linha = 0). */
+export async function loadMonthValues(database: Database, month: string, kind: MonthValueKind): Promise<Map<string, number>> {
+  const rows = await database
+    .prepare("SELECT employee_id AS employeeId, amount_cents AS amountCents FROM hr_employee_month_values WHERE month=?1 AND kind=?2")
+    .bind(month, kind)
+    .all<{ employeeId: string; amountCents: number }>();
+  return new Map((rows.results ?? []).map((row) => [row.employeeId, Number(row.amountCents || 0)]));
+}
+
+/** Grava (ou apaga, com 0) o valor manual de um funcionário no mês. */
+export function upsertMonthValueStatement(
+  database: Database,
+  input: { employeeId: string; employeeName: string; month: string; kind: MonthValueKind; amountCents: number },
+  actor: Identity,
+) {
+  if (input.amountCents <= 0) {
+    return database
+      .prepare("DELETE FROM hr_employee_month_values WHERE employee_id=?1 AND month=?2 AND kind=?3")
+      .bind(input.employeeId, input.month, input.kind);
+  }
+  return database
+    .prepare(
+      `INSERT INTO hr_employee_month_values
+        (id, employee_id, employee_name, month, kind, amount_cents, updated_by, updated_by_name, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
+       ON CONFLICT (employee_id, month, kind) DO UPDATE
+         SET amount_cents = EXCLUDED.amount_cents, employee_name = EXCLUDED.employee_name,
+             updated_by = EXCLUDED.updated_by, updated_by_name = EXCLUDED.updated_by_name, updated_at = CURRENT_TIMESTAMP`,
+    )
+    .bind(
+      crypto.randomUUID(), input.employeeId, input.employeeName, input.month, input.kind, input.amountCents,
+      actor.id, actorName(actor),
+    );
+}
+
+/**
+ * HORAS EXTRAS A PAGAR do mês em R$ (Controle de Horas > HORAS PAGAS, três
+ * tipos — migration 0110): employeeId → total. Quando há valor aqui, ele é a
+ * HE do mês na Folha, na DRE e nos relatórios (fonte única); sem valor, vale o
+ * campo HE digitado na Folha.
+ */
+export async function loadOvertimePayouts(database: Database, month: string): Promise<Map<string, number>> {
+  const rows = await database
+    .prepare(
+      `SELECT employee_id AS employeeId, he50_minutes AS he50Minutes, he100_minutes AS he100Minutes, night_minutes AS nightMinutes,
+              he50_rate_cents AS he50RateCents, he100_rate_cents AS he100RateCents, night_rate_cents AS nightRateCents
+       FROM hr_time_tracking_payouts WHERE year_month=?1`,
+    )
+    .bind(month)
+    .all<OvertimePayoutRow>();
+  const result = new Map<string, number>();
+  for (const row of rows.results ?? []) {
+    const amount = computeOvertime(overtimeInputOf(row)).totalCents;
+    if (amount > 0) result.set(row.employeeId, amount);
+  }
+  return result;
+}
+
+export type OvertimePayoutRow = {
+  employeeId: string;
+  he50Minutes: number;
+  he100Minutes: number;
+  nightMinutes: number;
+  he50RateCents: number;
+  he100RateCents: number;
+  nightRateCents: number;
+};
+
+export function overtimeInputOf(row: OvertimePayoutRow) {
+  return {
+    he50: { minutes: Number(row.he50Minutes || 0), rateCents: Number(row.he50RateCents || 0) },
+    he100: { minutes: Number(row.he100Minutes || 0), rateCents: Number(row.he100RateCents || 0) },
+    night: { minutes: Number(row.nightMinutes || 0), rateCents: Number(row.nightRateCents || 0) },
+  };
 }

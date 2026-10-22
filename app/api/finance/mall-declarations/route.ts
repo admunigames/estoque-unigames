@@ -11,6 +11,7 @@ import {
 } from "../shared";
 import { deriveMallDeclaration } from "../../../lib/mall-declarations";
 import { insertDeclarationStatement, parseDeclarationValues } from "./shared";
+import { loadCommercialRevenue } from "../revenue/commercial";
 
 // Declaração de Vendas (ex-"Declaração de Shopping", Financeiro — Fase 8).
 // Um registro por loja/competência, com histórico mensal, comparativo e
@@ -119,11 +120,8 @@ export async function POST(request: Request) {
 
     let realRevenueCents = values.realRevenueCents;
     if (!realRevenueCents) {
-      const revenue = await database
-        .prepare("SELECT amount_cents AS amountCents FROM finance_store_revenue WHERE store_id=?1 AND month=?2")
-        .bind(companyId, competenceMonth)
-        .first<{ amountCents: number }>();
-      realRevenueCents = Number(revenue?.amountCents) || 0;
+      // Faturamento real = Comercial (mesma receita da DRE).
+      realRevenueCents = (await loadCommercialRevenue(database, companyId, competenceMonth)).amountCents;
     }
     const derived = deriveMallDeclaration({ ...values, realRevenueCents });
     const percentageRentCents = values.contractPercentBps && typedRent !== null ? typedRent : derived.percentageRentCents;

@@ -16,12 +16,18 @@ import {
   canReconcileInvoices,
   canViewInvoices,
   invoiceEventStatement,
+  isMerchandisePurchaseInvoice,
   loadInstallments,
   loadInvoice,
   loadInvoiceDreView,
   loadPendingScheduleIds,
   toInstallmentSnapshot,
 } from "../../shared";
+import { loadPayable } from "../../../payables/shared";
+import { loadPayableDestination, parseDreDestination, planDreDestination, recalcSlotsSql } from "../../../payables/dre-destination";
+import { noneDestination } from "../../../../../lib/dre-destination";
+import { canSeeAllStores } from "../../../../../lib/access-scope";
+import { effectiveDreAmountCents } from "../../../../../lib/payables-recurrence";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const unauthorized = unauthorizedResponse(request);
@@ -106,6 +112,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     const mode = safeText(body.mode, 20) || "manual";
     let plans: Plan[];
+    let customAmountsUsed = false;
 
     if (mode === "generate") {
       const installmentTotal = Math.trunc(Number(body.installmentTotal));
@@ -127,7 +134,18 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         return jsonResponse({ error: "INFORME UM VALOR VÁLIDO PARA DISTRIBUIR NAS PARCELAS." }, 400);
       }
       const generated = planInstallments({ totalAmountCents: amountCents, installmentTotal, firstDueDate, customDueDates });
-      plans = generated.map((entry) => ({ dueDate: entry.dueDate, amountCents: entry.amountCents, documentNumber: "" }));
+      // Valores digitados parcela a parcela (tabela editável da tela): um por
+      // parcela, todos positivos; a soma é conferida com o total da NF abaixo.
+      const customAmounts = Array.isArray(body.customAmounts) ? body.customAmounts.map((value) => Math.round(Number(value))) : undefined;
+      if (customAmounts && (customAmounts.length !== installmentTotal || customAmounts.some((value) => !Number.isInteger(value) || value <= 0))) {
+        return jsonResponse({ error: "INFORME UM VALOR VÁLIDO PARA CADA PARCELA." }, 400);
+      }
+      customAmountsUsed = Boolean(customAmounts);
+      plans = generated.map((entry, index) => ({
+        dueDate: entry.dueDate,
+        amountCents: customAmounts ? customAmounts[index] : entry.amountCents,
+        documentNumber: "",
+      }));
     } else {
       const dueDate = safeText(body.dueDate, 10);
       if (!DATE_PATTERN.test(dueDate)) return jsonResponse({ error: "INFORME O VENCIMENTO DA DUPLICATA." }, 400);
@@ -141,6 +159,20 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const existing = await loadInstallments(database, id);
     const existingActive = existing.filter((installment) => !installment.canceled);
     const newInstallmentTotal = existingActive.length + plans.length;
+    if (customAmountsUsed) {
+      const distributed =
+        existingActive.reduce((sum, installment) => sum + installment.originalAmountCents, 0) +
+        plans.reduce((sum, plan) => sum + plan.amountCents, 0);
+      if (distributed !== invoice.totalAmountCents) {
+        const brl = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
+        return jsonResponse(
+          {
+            error: `A SOMA DAS PARCELAS (R$ ${brl(distributed)}) É DIFERENTE DO TOTAL DA NF (R$ ${brl(invoice.totalAmountCents)}) — DIFERENÇA DE R$ ${brl(invoice.totalAmountCents - distributed)}.`,
+          },
+          400,
+        );
+      }
+    }
 
     // Decisão de "Incluir na DRE?" (opcional, nível da NF inteira) — quando
     // não vem na requisição, as novas duplicatas ficam com
@@ -148,23 +180,49 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     // Quando vem, a âncora é sempre a 1ª duplicata (existente ou nova, na
     // ordem de installment_number) — reescreve TODAS as accounts_payable
     // já vinculadas a esta NF, não só as recém-criadas.
-    const dreCustomized = body.dreIncluded !== undefined;
-    const dreIncludedFlag = Boolean(body.dreIncluded);
+    // Destino na DRE (NÃO INCLUIR / RATEAR / INCLUIR EM) vale para TODAS as
+    // duplicatas da NF. Sem dreTarget: herda o das duplicatas já cadastradas;
+    // NF sem loja e sem destino = NÃO INCLUIR; senão a regra antiga.
+    let destination = null as Awaited<ReturnType<typeof loadPayableDestination>> | null;
+    const firstExisting = existingActive.find((installment) => installment.accountsPayableId);
+    const existingPayable = firstExisting ? await loadPayable(database, firstExisting.accountsPayableId) : null;
+    if (body.dreTarget !== undefined || !invoice.companyId) {
+      const parsed = await parseDreDestination(database, body, {
+        companyId: invoice.companyId,
+        companyName: invoice.companyName,
+        financeItemId: invoice.financeItemId,
+        competenceMonth: invoice.competenceMonth,
+        totalAmountCents: invoice.totalAmountCents,
+        allStores: canSeeAllStores(scopeActor, "finance:manage"),
+        actorCompanyId: scopeActor.companyId,
+      });
+      if ("error" in parsed) return jsonResponse({ error: parsed.error }, parsed.status);
+      destination = parsed.destination;
+    } else if (existingPayable?.dreTarget) {
+      destination = await loadPayableDestination(database, existingPayable);
+    } else if (!existingActive.length && (await isMerchandisePurchaseInvoice(database, invoice))) {
+      // NF de compra de mercadoria nasce fora da DRE (vira estoque).
+      destination = noneDestination();
+    }
+    for (const share of destination?.shares ?? []) {
+      const shareConflict = await assertSlotAvailableForPayable(database, share.companyId, destination!.itemId, invoice.competenceMonth);
+      if (shareConflict && existingActive.length === 0) return jsonResponse({ error: shareConflict }, 409);
+    }
+
+    const dreCustomized = body.dreIncluded !== undefined || destination?.target === "none";
+    const dreIncludedFlag = destination?.target === "none" ? false : Boolean(body.dreIncluded);
     let dreAmountCentsTotal = 0;
     let dreWarning: string | null = null;
     if (dreCustomized) {
-      dreAmountCentsTotal = Number(body.dreAmountCents);
+      dreAmountCentsTotal = Number(body.dreAmountCents ?? 0);
       if (!Number.isFinite(dreAmountCentsTotal) || !Number.isInteger(dreAmountCentsTotal) || dreAmountCentsTotal < 0) {
         return jsonResponse({ error: "INFORME UM VALOR VÁLIDO (EM CENTAVOS, NÃO NEGATIVO) PARA A DRE." }, 400);
       }
     }
 
-    const conflict = await assertSlotAvailableForPayable(
-      database,
-      invoice.companyId,
-      invoice.financeItemId,
-      invoice.competenceMonth,
-    );
+    const conflict = destination
+      ? null
+      : await assertSlotAvailableForPayable(database, invoice.companyId, invoice.financeItemId, invoice.competenceMonth);
     // Só bloqueia se o slot já não é usado por esta MESMA NF (as duplicatas
     // desta NF já ocupam o slot 'payable' legitimamente).
     if (conflict && existingActive.length === 0) return jsonResponse({ error: conflict }, 409);
@@ -285,6 +343,33 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       createdIds.push(installmentId);
     }
 
+    if (destination) {
+      const existingDre = new Map<string, number | null>();
+      for (const installment of existingActive) {
+        if (!installment.accountsPayableId) continue;
+        const row = await loadPayable(database, installment.accountsPayableId);
+        existingDre.set(installment.accountsPayableId, row ? row.dreAmountCents : null);
+      }
+      const rows = [
+        ...existingActive
+          .filter((installment) => installment.accountsPayableId)
+          .map((installment) => ({ payableId: installment.accountsPayableId, original: installment.originalAmountCents })),
+        ...plans.map((plan, offset) => ({ payableId: newPayableIds[offset], original: plan.amountCents })),
+      ];
+      const destinationPlan = await planDreDestination(
+        database,
+        destination,
+        rows.map((row) => ({
+          payableId: row.payableId,
+          month: invoice.competenceMonth,
+          amountCents: effectiveDreAmountCents(
+            dreAssignments ? dreAssignments.get(row.payableId) ?? null : existingDre.get(row.payableId) ?? null,
+            row.original,
+          ),
+        })),
+      );
+      statements.push(...destinationPlan.statements, ...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
+    }
     const entryId = crypto.randomUUID();
     for (const [sql, values] of recalcPayableEntrySql(
       entryId,

@@ -11,11 +11,13 @@ import { planRuleLearning } from "../shared";
 // - confirm: CONFIRMAR — precisa de categoria; alimenta as regras de
 //   aprendizado como o CONFIRMAR individual;
 // - unclassify: VOLTAR PARA A CLASSIFICAR (mantém a classificação como sugestão).
+// - delete: EXCLUIR o lançamento importado (importou errado/duplicado) — só
+//   o que ainda NÃO foi conciliado: confirmado, conciliado com vendas, ligado
+//   a crediário ou ao Controle de Reposição é pulado com o motivo.
 // Lançamento que virou despesa ou crediário é pulado (sai pela própria tela).
-// Excluir não existe na tela individual, então não existe no lote.
 // "VIRAR DESPESA" continua individual. Ids conferidos antes (404/403); uma transação.
 
-const ACTIONS = ["classify", "confirm", "unclassify"];
+const ACTIONS = ["classify", "confirm", "unclassify", "delete"];
 
 type Entry = {
   id: string;
@@ -28,6 +30,7 @@ type Entry = {
   inDre: number;
   inRateio: number;
   status: string;
+  salesReconStatus: string;
 };
 
 export async function POST(request: Request) {
@@ -66,7 +69,8 @@ export async function POST(request: Request) {
     const found = await database
       .prepare(
         `SELECT id, company_id AS companyId, raw_merchant AS rawMerchant, description, category_item_id AS categoryItemId,
-                subcategory, cost_center_id AS costCenterId, in_dre AS inDre, in_rateio AS inRateio, status
+                subcategory, cost_center_id AS costCenterId, in_dre AS inDre, in_rateio AS inRateio, status,
+                sales_recon_status AS salesReconStatus
          FROM finance_bank_statement_entries WHERE id IN (${ids.map((_, i) => `?${i + 1}`).join(",")})`,
       )
       .bind(...ids)
@@ -85,6 +89,21 @@ export async function POST(request: Request) {
       const skip = (reason: string) => skipped.push({ id: entry.id, description: entry.description, reason });
       if (entry.status === "expensed") { skip("JÁ VIROU DESPESA"); continue; }
       if (entry.status === "credit_sale") { skip("VINCULADO A CREDIÁRIO — DESFAÇA PELO CREDIÁRIO"); continue; }
+      if (action === "delete") {
+        if (entry.status === "confirmed") { skip("JÁ CONCILIADO (CONFIRMADO) — VOLTE PARA A CLASSIFICAR ANTES"); continue; }
+        if (entry.salesReconStatus) { skip("CONCILIADO NA CONCILIAÇÃO DE VENDAS"); continue; }
+        const linked = await database
+          .prepare(
+            `SELECT (SELECT COUNT(*) FROM finance_sales_recon_rows WHERE bank_entry_id=?1)
+                  + (SELECT COUNT(*) FROM finance_credit_sales WHERE bank_entry_id=?1)
+                  + (SELECT COUNT(*) FROM finance_replacement_entries WHERE bank_entry_id=?1) AS n`,
+          )
+          .bind(entry.id)
+          .first<{ n: number }>();
+        if (Number(linked?.n || 0)) { skip("LIGADO A VENDAS, CREDIÁRIO OU REPOSIÇÃO — DESFAÇA O VÍNCULO ANTES"); continue; }
+        statements.push(["DELETE FROM finance_bank_statement_entries WHERE id=?1", [entry.id]]);
+        continue;
+      }
       if (action === "unclassify") {
         if (entry.status === "pending") { skip("JÁ ESTÁ A CLASSIFICAR"); continue; }
         statements.push([

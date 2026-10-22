@@ -24,7 +24,9 @@ import {
   terminationFields,
   type EmployeeRow,
   type JsonMap,
+  upsertActingStoreStatement,
 } from "../shared";
+import { todayInTimezone } from "../../../lib/finance-status";
 
 // Cadastro de funcionários — base da Folha, dos Benefícios e do
 // Comissionamento. Não tem relação com app_users (contas de login): o
@@ -157,16 +159,18 @@ export async function POST(request: Request) {
     const termination = terminationFields(body.termination);
     if (becomingInactive && termination.error) return jsonResponse({ error: termination.error }, 400);
 
-    let companyName = "";
-    if (companyId === "assistencia") {
-      // Setor interno tratado como unidade própria na DRE (item 8).
-      companyName = "Assistência";
-    } else if (companyId) {
-      const companies = await loadCompanyList(database);
-      const company = companies.find((item) => item.id === companyId);
-      if (!company) return jsonResponse({ error: "LOJA NÃO ENCONTRADA." }, 400);
-      companyName = company.name;
-    }
+    const companies = await loadCompanyList(database);
+    const storeName = (id: string) =>
+      id === "assistencia" ? "Assistência" : (companies.find((item) => item.id === id)?.name ?? null);
+    // Setor interno "assistencia" é tratado como unidade própria na DRE (item 8).
+    const companyName = companyId ? storeName(companyId) : "";
+    if (companyName === null) return jsonResponse({ error: "LOJA NÃO ENCONTRADA." }, 400);
+    // LOJA DE ADMISSÃO (onde está registrado); sem informar = a loja atual.
+    const admissionRequested = body.admissionCompanyId !== undefined;
+    const admissionCompanyId = safeText(body.admissionCompanyId, 80);
+    const admissionCompanyName = admissionCompanyId ? storeName(admissionCompanyId) : "";
+    if (admissionCompanyName === null) return jsonResponse({ error: "LOJA DE ADMISSÃO NÃO ENCONTRADA." }, 400);
+    const currentMonth = todayInTimezone().slice(0, 7);
 
     if (userId) {
       const account = await database
@@ -191,11 +195,16 @@ export async function POST(request: Request) {
         .prepare(
           `SELECT id, salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName,
                   food_per_day_cents AS foodPerDayCents, transport_per_day_cents AS transportPerDayCents,
-                  benefit_notes AS benefitNotes
+                  benefit_notes AS benefitNotes, company_id AS companyId, company_name AS companyName,
+                  admission_company_id AS admissionCompanyId, admission_company_name AS admissionCompanyName
            FROM hr_employees WHERE id=?1`,
         )
         .bind(editId)
-        .first<{ id: string; salaryCents: number; pixKey: string; bankName: string; foodPerDayCents: number; transportPerDayCents: number; benefitNotes: string }>();
+        .first<{
+          id: string; salaryCents: number; pixKey: string; bankName: string; foodPerDayCents: number;
+          transportPerDayCents: number; benefitNotes: string; companyId: string; companyName: string;
+          admissionCompanyId: string; admissionCompanyName: string;
+        }>();
       if (!existing) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
       // Sem RH Financeiro: os dados financeiros ficam como estavam.
       if (!financial) {
@@ -213,7 +222,8 @@ export async function POST(request: Request) {
                role_title=?6, salary_cents=?7, pix_key=?8, bank_name=?9, status=?10,
                work_schedule=?11, user_id=?12, notes=?13, updated_by=?14, updated_by_name=?15,
                food_per_day_cents=?17, transport_per_day_cents=?18, benefit_notes=?19,
-               rg=?20, telefone=?21, drive_link=?22, updated_at=CURRENT_TIMESTAMP
+               rg=?20, telefone=?21, drive_link=?22, admission_company_id=?23, admission_company_name=?24,
+               updated_at=CURRENT_TIMESTAMP
            WHERE id=?16`,
         )
         .bind(
@@ -239,6 +249,10 @@ export async function POST(request: Request) {
           rg,
           telefone,
           driveLink,
+          // Loja de admissão: a informada; sem informar, a que já tinha (ou a
+          // loja de antes da troca, para o passado continuar onde estava).
+          admissionRequested ? admissionCompanyId : existing.admissionCompanyId || existing.companyId,
+          admissionRequested ? admissionCompanyName : existing.admissionCompanyName || existing.companyName,
         );
       // Marcado como inativo (desligado): cadastro + desligamento juntos
       // (mesma transação) e o login vinculado é bloqueado na hora.
@@ -246,18 +260,25 @@ export async function POST(request: Request) {
         ? [updateStatement, insertTermination(database, { employeeId: editId, employeeName: fullName, companyId, companyName, ...termination }, actor).statement]
         : [updateStatement]);
       if (status === "inactive") await deactivateLinkedLogin(database, editId).run();
-      // O nome/loja do funcionário são desnormalizados nos lançamentos —
-      // manter os já existentes em sincronia evita relatório com nome antigo.
+      // O nome do funcionário é desnormalizado nos lançamentos — mantê-lo em
+      // sincronia evita relatório com nome antigo. A LOJA não: trocar a loja do
+      // cadastro vale do MÊS CORRENTE em diante (vira a loja atuante deste mês
+      // em hr_schedule_assignments) e os meses passados ficam onde estavam.
+      const storeChanged = (existing.companyId || "") !== companyId;
       await database.batch([
-        database
-          .prepare("UPDATE hr_payroll_entries SET employee_name=?1, company_id=?2, company_name=?3 WHERE employee_id=?4")
-          .bind(fullName, companyId, companyName, editId),
-        database
-          .prepare("UPDATE hr_benefits SET employee_name=?1, company_id=?2, company_name=?3 WHERE employee_id=?4")
-          .bind(fullName, companyId, companyName, editId),
-        database
-          .prepare("UPDATE hr_commissions SET employee_name=?1, company_id=?2, company_name=?3 WHERE employee_id=?4")
-          .bind(fullName, companyId, companyName, editId),
+        database.prepare("UPDATE hr_payroll_entries SET employee_name=?1 WHERE employee_id=?2").bind(fullName, editId),
+        database.prepare("UPDATE hr_benefits SET employee_name=?1 WHERE employee_id=?2").bind(fullName, editId),
+        database.prepare("UPDATE hr_commissions SET employee_name=?1 WHERE employee_id=?2").bind(fullName, editId),
+        ...(storeChanged && companyId
+          ? [
+              upsertActingStoreStatement(database, { employeeId: editId, employeeName: fullName, month: currentMonth, companyId, companyName }, actor),
+              ...["hr_payroll_entries", "hr_benefits", "hr_commissions"].map((table) =>
+                database
+                  .prepare(`UPDATE ${table} SET company_id=?1, company_name=?2 WHERE employee_id=?3 AND month >= ?4`)
+                  .bind(companyId, companyName, editId, currentMonth),
+              ),
+            ]
+          : []),
       ]);
       // Rescisão e ASO guardam a loja DA ÉPOCA (histórico do DRE Funcionário);
       // só o nome acompanha a correção do cadastro.
@@ -279,9 +300,10 @@ export async function POST(request: Request) {
           (id, full_name, cpf, admission_date, company_id, company_name, role_title, salary_cents,
            pix_key, bank_name, status, work_schedule, user_id, notes, created_by, created_by_name,
            created_at, updated_by, updated_by_name, updated_at,
-           food_per_day_cents, transport_per_day_cents, benefit_notes, rg, telefone, onboarding_started_at, drive_link)
+           food_per_day_cents, transport_per_day_cents, benefit_notes, rg, telefone, onboarding_started_at, drive_link,
+           admission_company_id, admission_company_name)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16,
-                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP, ?17, ?18, ?19, ?20, ?21, ?22, ?23)`,
+                 CURRENT_TIMESTAMP, ?15, ?16, CURRENT_TIMESTAMP, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)`,
       )
       .bind(
         id,
@@ -308,6 +330,8 @@ export async function POST(request: Request) {
         // Funcionário novo recebe a trilha de Onboarding do cargo/loja.
         status === "active" ? new Date().toISOString() : "",
         driveLink,
+        admissionCompanyId || companyId,
+        admissionCompanyId ? admissionCompanyName : companyName,
       )
       .run();
     if (becomingInactive) {

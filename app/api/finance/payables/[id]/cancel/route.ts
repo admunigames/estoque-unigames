@@ -2,6 +2,7 @@ import { getD1 } from "../../../../../../db";
 import { unauthorizedResponse } from "../../../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin } from "../../../shared";
 import { assertAccess, loadPayable, recalcPayableEntrySql } from "../../shared";
+import { allocationSlotsOf, recalcSlotsSql } from "../../dre-destination";
 
 // Cancelamento é sempre um soft-cancel (status='canceled' + auditoria de
 // quem/quando) — nunca exclui fisicamente a obrigação, só remove/estorna o
@@ -48,6 +49,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         [actor.id, actorName, id],
       ],
       ...recalcPayableEntrySql(entryId, payable.companyId, payable.financeItemId, payable.competenceMonth, actor.id, actorName),
+      // Destino na DRE escolhido (INCLUIR EM / RATEAR): as células das fatias.
+      ...recalcSlotsSql(await allocationSlotsOf(database, [id]), { id: actor.id, name: actorName }),
     ];
 
     // Se esta conta a pagar é a gêmea de uma dívida de Fornecedores em

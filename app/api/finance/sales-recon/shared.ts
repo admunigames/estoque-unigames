@@ -364,31 +364,10 @@ export async function loadRevenueRows(database: Database, month: string, scopeCo
 }
 
 /**
- * Faturamento ATUAL (finance_store_revenue) × NOVO (Ponttie conciliado) por
- * unidade que tem vendas no mês. Unidade sem linhas não entra (não é zerada).
+ * VENDAS · SERVIÇOS · TOTAL do Ponttie conciliado por unidade que tem vendas
+ * no mês (RESUMO DO MÊS). Só conferência: a Conciliação de Vendas não tem
+ * ligação com a DRE — a receita da DRE vem do Comercial (22/10/2026).
  */
 export async function buildRevenuePlan(database: Database, month: string, scopeCompanyId: string) {
-  const units = summarizeRevenueUnits(await loadRevenueRows(database, month, scopeCompanyId));
-  const current = units.length
-    ? await database
-        .prepare(
-          `SELECT id, store_id AS storeId, sales_amount_cents AS salesCents, services_amount_cents AS servicesCents,
-                  updated_by_name AS updatedByName, updated_at AS updatedAt
-           FROM finance_store_revenue WHERE month=?1 AND store_id IN (${units.map((_, i) => `?${i + 2}`).join(",")})`,
-        )
-        .bind(month, ...units.map((unit) => unit.companyId))
-        .all<{ id: string; storeId: string; salesCents: number; servicesCents: number; updatedByName: string; updatedAt: string }>()
-    : { results: [] };
-  const byStore = new Map((current.results ?? []).map((row) => [row.storeId, row]));
-  return units.map((unit) => {
-    const existing = byStore.get(unit.companyId);
-    return {
-      ...unit,
-      revenueId: existing?.id ?? null,
-      currentSalesCents: Number(existing?.salesCents ?? 0),
-      currentServicesCents: Number(existing?.servicesCents ?? 0),
-      currentUpdatedByName: existing?.updatedByName ?? "",
-      currentUpdatedAt: existing?.updatedAt ?? "",
-    };
-  });
+  return summarizeRevenueUnits(await loadRevenueRows(database, month, scopeCompanyId));
 }

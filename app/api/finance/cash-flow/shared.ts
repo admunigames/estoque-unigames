@@ -253,7 +253,7 @@ export async function loadCashFlowOutflows(
       return database
         .prepare(
           `SELECT month, '' AS paymentDate, company_id AS companyId, MAX(company_name) AS companyName,
-                  COALESCE(SUM(commission_cents + bonuses_cents + premiums_cents
+                  COALESCE(SUM(commission_cents + commercial_premium_cents + bonuses_cents + premiums_cents
                                - discounts_cents + adjustments_cents), 0) AS amountCents
            FROM hr_commissions
            WHERE month >= ${from} AND month <= ${to} ${company}

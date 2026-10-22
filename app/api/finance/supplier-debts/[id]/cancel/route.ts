@@ -3,6 +3,7 @@ import { unauthorizedResponse } from "../../../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin } from "../../../shared";
 import { recalcPayableEntrySql } from "../../../payables/shared";
 import { assertSupplierDebtAccess, loadSupplierDebt } from "../../shared";
+import { allocationSlotsOf, recalcSlotsSql } from "../../../payables/dre-destination";
 
 type PayableTwin = {
   companyId: string;
@@ -69,6 +70,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       ]);
       statements.push(
         ...recalcPayableEntrySql(entryId, payable.companyId, payable.financeItemId, payable.competenceMonth, actor.id, actorName),
+        ...recalcSlotsSql(await allocationSlotsOf(database, [debt.accountsPayableId]), { id: actor.id, name: actorName }),
       );
     }
 

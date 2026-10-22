@@ -122,6 +122,11 @@ export function competenceMonthOf(dueDate: string): string {
  *
  * Nunca sobrescreve uma célula com source='manual' — a checagem de conflito
  * acontece antes, em assertSlotAvailableForPayable() (payables/shared.ts).
+ *
+ * A soma tem duas partes (migration 0107): as contas na regra antiga
+ * (dre_target='' — entram na DRE da própria loja/categoria) e as fatias de
+ * finance_dre_allocations das contas com destino escolhido (INCLUIR EM /
+ * RATEAR), sempre só de contas não canceladas.
  */
 export function recalcPayableEntrySql(
   newEntryId: string,
@@ -136,7 +141,12 @@ export function recalcPayableEntrySql(
      WHERE store_id=?1 AND item_id=?2 AND month=?3 AND source='payable'
        AND NOT EXISTS (
          SELECT 1 FROM accounts_payable
-         WHERE company_id=?1 AND finance_item_id=?2 AND competence_month=?3 AND status != 'canceled'
+         WHERE company_id=?1 AND finance_item_id=?2 AND competence_month=?3 AND status != 'canceled' AND dre_target=''
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM finance_dre_allocations a
+         JOIN accounts_payable p ON p.id = a.payable_id
+         WHERE a.store_id=?1 AND a.item_id=?2 AND a.month=?3 AND p.status != 'canceled'
        )`,
     [storeId, itemId, month],
   ] as [string, unknown[]];
@@ -147,9 +157,18 @@ export function recalcPayableEntrySql(
        created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
      SELECT ?4, ?1, ?2, ?3, 'fixed', agg.total, NULL, 'payable', ?5, ?6, CURRENT_TIMESTAMP, ?5, ?6, CURRENT_TIMESTAMP
      FROM (
-       SELECT COALESCE(SUM(COALESCE(dre_amount_cents, original_amount_cents)), 0) AS total
-       FROM accounts_payable
-       WHERE company_id=?1 AND finance_item_id=?2 AND competence_month=?3 AND status != 'canceled'
+       SELECT
+         COALESCE((
+           SELECT SUM(COALESCE(dre_amount_cents, original_amount_cents))
+           FROM accounts_payable
+           WHERE company_id=?1 AND finance_item_id=?2 AND competence_month=?3 AND status != 'canceled' AND dre_target=''
+         ), 0)
+         + COALESCE((
+           SELECT SUM(a.amount_cents)
+           FROM finance_dre_allocations a
+           JOIN accounts_payable p ON p.id = a.payable_id
+           WHERE a.store_id=?1 AND a.item_id=?2 AND a.month=?3 AND p.status != 'canceled'
+         ), 0) AS total
      ) AS agg
      WHERE agg.total > 0
      ON CONFLICT (store_id, item_id, month) DO UPDATE

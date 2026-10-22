@@ -2,7 +2,6 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, MONTH_PATTERN, safeText } from "../shared";
 import {
-  ASSISTENCIA_STORE_ID,
   buildByStoreDre,
   buildConsolidatedDre,
   buildDreSeries,
@@ -24,7 +23,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const scope = safeText(url.searchParams.get("scope"), 20) || "store";
 
-  const VALID_SCOPES = new Set(["store", "consolidated", "managerial", "by-store", "series", "assistencia"]);
+  // A aba DRE ASSISTÊNCIA saiu (22/10/2026); os lançamentos ficam guardados.
+  const VALID_SCOPES = new Set(["store", "consolidated", "managerial", "by-store", "series"]);
   if (!VALID_SCOPES.has(scope)) {
     return jsonResponse({ error: "ESCOPO DE DRE AINDA NÃO DISPONÍVEL." }, 400);
   }
@@ -68,11 +68,6 @@ export async function GET(request: Request) {
     if (scope === "managerial") {
       const result = await buildManagerialDre(database, month);
       return jsonResponse({ scope, month, ...result });
-    }
-
-    if (scope === "assistencia") {
-      const result = await buildStoreDre(database, ASSISTENCIA_STORE_ID, month);
-      return jsonResponse({ scope, storeId: ASSISTENCIA_STORE_ID, month, ...result });
     }
 
     const storeId = safeText(url.searchParams.get("storeId"), 80);

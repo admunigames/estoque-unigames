@@ -41,6 +41,7 @@ export type SupplierDebtRow = {
   createdByName: string;
   createdAt: string;
   updatedAt: string;
+  payerName: string;
 };
 
 export const SUPPLIER_DEBT_SELECT = `sod.id, sod.company_id AS companyId, sod.company_name AS companyName,
@@ -50,6 +51,7 @@ export const SUPPLIER_DEBT_SELECT = `sod.id, sod.company_id AS companyId, sod.co
   sod.description, sod.original_amount_cents AS originalAmountCents,
   sod.paid_amount_cents AS paidAmountCents, sod.due_date AS dueDate, sod.notes,
   sod.accounts_payable_id AS accountsPayableId, sod.canceled,
+  sod.payer_name AS payerName,
   sod.created_by AS createdBy, sod.created_by_name AS createdByName,
   sod.created_at AS createdAt, sod.updated_at AS updatedAt`;
 

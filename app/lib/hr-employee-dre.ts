@@ -262,13 +262,34 @@ export function buildEmployeeDre(
 
 // ---------------------------------------------------------------------------
 // Por CNPJ (out/2026): o fechamento agrupado pelo CNPJ da loja (cadastro de
-// Lojas) + FGTS do mês = 8% do salário de quem esteve ativo no mês, na loja
-// do mês (RH > Escalas, "loja fixa do mês"; sem ela, a loja do cadastro).
+// Lojas) + FGTS do mês de quem esteve ativo no mês, na loja atuante do mês.
+// Desde 22/10/2026 o FGTS é calculado POR COLABORADOR (8% da base de cada
+// um, arredondado por pessoa) e o total do CNPJ é a soma das pessoas; o INSS
+// é digitado à mão por colaborador (hr_employee_month_values, kind 'inss').
+// Base = salário + comissão + HE + DSR do mês quando há folha lançada; sem
+// folha, o salário do cadastro (montada na rota).
 // ---------------------------------------------------------------------------
 
 export const FGTS_RATE = 0.08;
 
-export type DreStaff = { employeeId: string; personName: string; companyId: string; salaryCents: number };
+export type DreStaff = {
+  employeeId: string;
+  personName: string;
+  companyId: string;
+  /** Base do FGTS do mês (ver acima). */
+  salaryCents: number;
+  /** INSS manual do mês (0 = não lançado). */
+  inssCents?: number;
+};
+
+export type DreCnpjPerson = {
+  employeeId: string;
+  personName: string;
+  storeName: string;
+  baseCents: number;
+  fgtsCents: number;
+  inssCents: number;
+};
 
 export type DreCnpjRow = {
   cnpj: string;
@@ -276,6 +297,8 @@ export type DreCnpjRow = {
   headcount: number;
   salaryCents: number;
   fgtsMonthCents: number;
+  inssCents: number;
+  people: DreCnpjPerson[];
   asoCents: number;
   trainingCents: number;
   severanceCents: number;
@@ -295,8 +318,8 @@ export function buildCnpjSummary(
     const cnpj = cnpjOf(companyId);
     let row = rows.get(cnpj);
     if (!row) {
-      row = { cnpj, storeNames: [], headcount: 0, salaryCents: 0, fgtsMonthCents: 0, asoCents: 0, trainingCents: 0,
-        severanceCents: 0, terminationFgtsCents: 0, totalCents: 0 };
+      row = { cnpj, storeNames: [], headcount: 0, salaryCents: 0, fgtsMonthCents: 0, inssCents: 0, people: [], asoCents: 0,
+        trainingCents: 0, severanceCents: 0, terminationFgtsCents: 0, totalCents: 0 };
       rows.set(cnpj, row);
     }
     const name = nameOf(companyId);
@@ -305,8 +328,14 @@ export function buildCnpjSummary(
   };
   for (const person of staff) {
     const row = rowFor(person.companyId);
+    const baseCents = cents(person.salaryCents);
+    const fgtsCents = Math.round(baseCents * FGTS_RATE);
+    const inssCents = cents(person.inssCents ?? 0);
     row.headcount += 1;
-    row.salaryCents += cents(person.salaryCents);
+    row.salaryCents += baseCents;
+    row.fgtsMonthCents += fgtsCents;
+    row.inssCents += inssCents;
+    row.people.push({ employeeId: person.employeeId, personName: person.personName, storeName: nameOf(person.companyId), baseCents, fgtsCents, inssCents });
   }
   for (const store of stores) {
     const row = rowFor(store.companyId);
@@ -316,14 +345,11 @@ export function buildCnpjSummary(
     row.terminationFgtsCents += store.totals.fgtsCents;
   }
   return [...rows.values()]
-    .map((row) => {
-      const fgtsMonthCents = Math.round(row.salaryCents * FGTS_RATE);
-      return {
-        ...row,
-        storeNames: row.storeNames.sort((a, b) => a.localeCompare(b, "pt-BR")),
-        fgtsMonthCents,
-        totalCents: fgtsMonthCents + row.asoCents + row.trainingCents + row.severanceCents + row.terminationFgtsCents,
-      };
-    })
+    .map((row) => ({
+      ...row,
+      storeNames: row.storeNames.sort((a, b) => a.localeCompare(b, "pt-BR")),
+      people: row.people.sort((a, b) => a.personName.localeCompare(b.personName, "pt-BR")),
+      totalCents: row.fgtsMonthCents + row.inssCents + row.asoCents + row.trainingCents + row.severanceCents + row.terminationFgtsCents,
+    }))
     .sort((a, b) => (!a.cnpj !== !b.cnpj ? (a.cnpj ? -1 : 1) : a.cnpj.localeCompare(b.cnpj)));
 }

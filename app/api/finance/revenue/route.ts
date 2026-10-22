@@ -6,22 +6,8 @@ import {
   jsonResponse,
   MONTH_PATTERN,
   safeText,
-  sameOrigin,
-  type JsonMap,
 } from "../shared";
-import { planRevenueUpsert } from "./shared";
-
-type RevenueRow = {
-  id: string;
-  storeId: string;
-  month: string;
-  amountCents: number;
-  salesAmountCents: number;
-  servicesAmountCents: number;
-  updatedBy: string;
-  updatedByName: string;
-  updatedAt: string;
-};
+import { loadCommercialRevenue } from "./commercial";
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -44,75 +30,33 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const revenue = await database
-      .prepare(
-        `SELECT id, store_id AS storeId, month, amount_cents AS amountCents,
-                sales_amount_cents AS salesAmountCents, services_amount_cents AS servicesAmountCents,
-                updated_by AS updatedBy, updated_by_name AS updatedByName,
-                updated_at AS updatedAt
-         FROM finance_store_revenue
-         WHERE store_id=?1 AND month=?2`,
-      )
-      .bind(storeId, month)
-      .first<RevenueRow>();
-    return jsonResponse({ revenue: revenue ?? null });
+    // Receita da DRE = Comercial (FEITO e FEITO ASSISTÊNCIA da loja no mês).
+    const revenue = await loadCommercialRevenue(database, storeId, month);
+    return jsonResponse({
+      revenue: {
+        storeId,
+        month,
+        amountCents: revenue.amountCents,
+        salesAmountCents: revenue.salesCents,
+        servicesAmountCents: revenue.servicesCents,
+        updatedAt: revenue.updatedAt,
+        updatedByName: revenue.updatedByName,
+        source: "commercial",
+      },
+    });
   } catch (error) {
     console.error("Não foi possível carregar a receita financeira.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR A RECEITA." }, 500);
   }
 }
 
+// A receita não é mais digitada na DRE: vem do Comercial (Meta Loja / Meta
+// Assistência). Mantido só para responder a telas antigas abertas.
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
-  const actor = identity(request);
-  if (!canManageFinance(actor)) {
-    return jsonResponse(
-      { error: "VOCÊ NÃO TEM PERMISSÃO PARA LANÇAR A RECEITA." },
-      403,
-    );
-  }
-  if (!sameOrigin(request)) {
-    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
-  }
-
-  try {
-    const body = (await request.json()) as JsonMap;
-    const storeId = safeText(body.storeId, 80);
-    const month = safeText(body.month, 7);
-    if (!storeId) return jsonResponse({ error: "SELECIONE A LOJA." }, 400);
-    if (!MONTH_PATTERN.test(month)) {
-      return jsonResponse({ error: "INFORME UM MÊS VÁLIDO (AAAA-MM)." }, 400);
-    }
-
-    // Novo formato: salesAmountCents + servicesAmountCents. Formato antigo
-    // (só amountCents) tratado como Vendas para não quebrar callers legados.
-    const hasSplit = body.salesAmountCents !== undefined || body.servicesAmountCents !== undefined;
-    const salesAmount = hasSplit ? Number(body.salesAmountCents ?? 0) : Number(body.amountCents ?? 0);
-    const servicesAmount = hasSplit ? Number(body.servicesAmountCents ?? 0) : 0;
-    for (const value of [salesAmount, servicesAmount]) {
-      if (!Number.isFinite(value) || value < 0 || !Number.isInteger(value)) {
-        return jsonResponse({ error: "INFORME VALORES DE RECEITA VÁLIDOS." }, 400);
-      }
-    }
-
-    const database = await getD1();
-    const existing = await database
-      .prepare("SELECT id FROM finance_store_revenue WHERE store_id=?1 AND month=?2")
-      .bind(storeId, month)
-      .first<{ id: string }>();
-
-    const [sql, values] = planRevenueUpsert(
-      existing?.id ?? null,
-      { storeId, month, salesCents: salesAmount, servicesCents: servicesAmount },
-      { id: actor.id, name: actor.displayName || "Administrador" },
-    );
-    await database.prepare(sql).bind(...values).run();
-    return existing
-      ? jsonResponse({ updated: true, id: existing.id })
-      : jsonResponse({ created: true, id: values[0] }, 201);
-  } catch (error) {
-    console.error("Não foi possível salvar a receita financeira.", error);
-    return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR A RECEITA." }, 500);
-  }
+  return jsonResponse(
+    { error: "A RECEITA DA DRE VEM DO COMERCIAL (META LOJA E META ASSISTÊNCIA) — ATUALIZE O FEITO NO COMERCIAL." },
+    410,
+  );
 }

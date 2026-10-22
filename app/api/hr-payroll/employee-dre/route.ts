@@ -10,7 +10,8 @@ import {
   type DreTraining,
 } from "../../../lib/hr-employee-dre";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { MONTH_PATTERN, canManagePayroll, identity, jsonResponse, safeText } from "../shared";
+import { MONTH_PATTERN, canManagePayroll, identity, jsonResponse, loadMonthValues, loadOvertimePayouts, safeText } from "../shared";
+import { actingStoresForMonth } from "../../../lib/acting-store";
 
 // DRE Funcionário — fechamento do mês (civil), por loja com detalhe por
 // colaborador. Tudo calculado ao vivo a partir das fontes; nada é gravado.
@@ -101,10 +102,11 @@ export async function GET(request: Request) {
       birthdays: byCompany(birthdays.results),
     });
 
-    // Por CNPJ: quem esteve ativo no mês, na loja do mês (Escalas) ou do
-    // cadastro, com o salário da folha do mês (ou o do cadastro) → FGTS 8%.
+    // Por CNPJ: quem esteve ativo no mês, na loja atuante do mês. FGTS 8% por
+    // colaborador sobre a base = salário + comissão + HE + DSR do mês (com
+    // folha lançada) ou o salário do cadastro (sem folha); INSS manual.
     const monthEnd = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
-    const [employees, allTerminations, assignments, payroll] = await Promise.all([
+    const [employees, allTerminations, assignments, payroll, commissions, dsr, inss, overtimePayouts] = await Promise.all([
       database
         .prepare(
           `SELECT id, full_name AS fullName, admission_date AS admissionDate, status, company_id AS companyId,
@@ -114,18 +116,41 @@ export async function GET(request: Request) {
       database
         .prepare("SELECT employee_id AS employeeId, termination_date AS terminationDate FROM hr_terminations")
         .all<{ employeeId: string; terminationDate: string }>(),
+      // Loja do mês = loja atuante (RH > Funcionários / Escalas), herdando o
+      // último mês com registro; sem registro, a loja de admissão.
+      actingStoresForMonth(database, month),
       database
-        .prepare("SELECT employee_id AS employeeId, company_id AS companyId FROM hr_schedule_assignments WHERE reference_month=?1")
+        .prepare(
+          `SELECT employee_id AS employeeId, base_salary_cents AS baseSalaryCents, overtime_cents AS overtimeCents
+           FROM hr_payroll_entries WHERE month=?1`,
+        )
         .bind(month)
-        .all<{ employeeId: string; companyId: string }>(),
+        .all<{ employeeId: string; baseSalaryCents: number; overtimeCents: number }>(),
+      // Comissão bruta (comissão + bônus + premiação + ajustes) — a mesma do
+      // CUSTO TOTAL POR FUNCIONÁRIO.
       database
-        .prepare("SELECT employee_id AS employeeId, base_salary_cents AS baseSalaryCents FROM hr_payroll_entries WHERE month=?1")
+        .prepare(
+          `SELECT employee_id AS employeeId,
+                  COALESCE(SUM(commission_cents + commercial_premium_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
+           FROM hr_commissions WHERE month=?1 GROUP BY employee_id`,
+        )
         .bind(month)
-        .all<{ employeeId: string; baseSalaryCents: number }>(),
+        .all<{ employeeId: string; total: number }>(),
+      loadMonthValues(database, month, "dsr"),
+      loadMonthValues(database, month, "inss"),
+      loadOvertimePayouts(database, month),
     ]);
     const terms = allTerminations.results ?? [];
-    const monthStoreOf = new Map((assignments.results ?? []).filter((row) => row.companyId).map((row) => [row.employeeId, row.companyId]));
-    const payrollSalaryOf = new Map((payroll.results ?? []).map((row) => [row.employeeId, Number(row.baseSalaryCents) || 0]));
+    const monthStoreOf = new Map([...assignments].map(([employeeId, store]) => [employeeId, store.companyId]));
+    const commissionOf = new Map((commissions.results ?? []).map((row) => [row.employeeId, Number(row.total) || 0]));
+    const payrollBaseOf = new Map(
+      (payroll.results ?? []).map((row) => [
+        row.employeeId,
+        (Number(row.baseSalaryCents) || 0) + (overtimePayouts.get(row.employeeId) ?? (Number(row.overtimeCents) || 0)) +
+          (commissionOf.get(row.employeeId) ?? 0) +
+          (dsr.get(row.employeeId) ?? 0),
+      ]),
+    );
     const staff = (employees.results ?? [])
       .filter((employee) => activeOn(employee, terms, monthEnd) ||
         terms.some((item) => item.employeeId === employee.id && item.terminationDate.slice(0, 7) === month))
@@ -133,7 +158,8 @@ export async function GET(request: Request) {
         employeeId: employee.id,
         personName: employee.fullName,
         companyId: monthStoreOf.get(employee.id) || employee.companyId,
-        salaryCents: payrollSalaryOf.get(employee.id) || Number(employee.salaryCents) || 0,
+        salaryCents: payrollBaseOf.get(employee.id) ?? (Number(employee.salaryCents) || 0),
+        inssCents: inss.get(employee.id) ?? 0,
       }))
       .filter((person) => !companyId || person.companyId === companyId);
     const companies = (await loadCompanyList(database)) as Array<{ id: string; name: string; cnpj?: string }>;

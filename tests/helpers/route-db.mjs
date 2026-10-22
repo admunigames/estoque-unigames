@@ -79,7 +79,19 @@ export function createTableSql(table) {
   return `CREATE TABLE "${table}" (${columns.join(", ")});\n${indexes.join("\n")}`;
 }
 
-export function createFakeD1(tables) {
+export function createFakeD1(requestedTables) {
+  // A célula da DRE soma as fatias do destino escolhido (finance_dre_allocations,
+  // migration 0107) junto das contas a pagar — toda base com contas a pagar
+  // precisa da tabela.
+  // Idem a LOJA ATUANTE do funcionário no mês (hr_employees +
+  // hr_schedule_assignments, app/lib/acting-store.ts): lida pelo RH, pela DRE e
+  // pelo Comercial; e os valores manuais do RH (DSR/INSS, migration 0109) e a
+  // HE a pagar do Controle de Horas (migration 0110).
+  const tables = [...requestedTables];
+  if (tables.includes("accounts_payable") && !tables.includes("finance_dre_allocations")) tables.push("finance_dre_allocations");
+  if (tables.some((table) => table.startsWith("hr_") || table.startsWith("commercial_"))) {
+    for (const table of ["hr_employees", "hr_schedule_assignments", "hr_employee_month_values", "hr_time_tracking_payouts"]) if (!tables.includes(table)) tables.push(table);
+  }
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(tables.map(createTableSql).join("\n"));
 

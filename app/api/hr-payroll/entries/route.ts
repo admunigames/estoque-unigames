@@ -4,24 +4,19 @@ import { documentsBucket } from "../../documents/shared";
 import {
   canManagePayroll,
   centsValue,
-  computedBenefitsCentsFor,
-  computedBenefitsSplitFor,
-  computedCommissionCentsFor,
-  computedCommissionGrossCentsFor,
   DATE_PATTERN,
   MONTH_PATTERN,
   actorName,
   identity,
   jsonResponse,
-  loadEmployee,
-  loadEmployerChargesBps,
+  loadEmployeeForMonth,
   safeText,
   sameOrigin,
   type Database,
   type Identity,
   type JsonMap,
 } from "../shared";
-import { computePayrollBreakdown, legacyNetCents } from "../../../lib/hr-payroll";
+import { ENTRY_COLUMNS, loadPayrollRows, type EntryRow } from "./rows";
 
 // Folha de Pagamento mensal.
 //
@@ -33,55 +28,6 @@ import { computePayrollBreakdown, legacyNetCents } from "../../../lib/hr-payroll
 //
 // Comissão e Benefícios NUNCA são colunas desta tabela: são recalculados a
 // cada leitura a partir de hr_commissions/hr_benefits.
-
-type EntryRow = {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  companyId: string;
-  companyName: string;
-  month: string;
-  baseSalaryCents: number;
-  bonusCents: number;
-  overtimeCents: number;
-  additionsCents: number;
-  deductionsCents: number;
-  otherCents: number;
-  notes: string;
-  paymentDone: number;
-  paymentDate: string;
-  attachmentFileName: string;
-  attachmentR2Key: string;
-  attachmentSizeBytes: number;
-  createdBy: string;
-  createdByName: string;
-  createdAt: string;
-  updatedBy: string;
-  updatedByName: string;
-  updatedAt: string;
-};
-
-type EmployeeBasics = {
-  id: string;
-  fullName: string;
-  companyId: string;
-  companyName: string;
-  roleTitle: string;
-  admissionDate: string;
-  salaryCents: number;
-  status: string;
-};
-
-const ENTRY_COLUMNS = `id, employee_id AS employeeId, employee_name AS employeeName,
-  company_id AS companyId, company_name AS companyName, month,
-  base_salary_cents AS baseSalaryCents, bonus_cents AS bonusCents,
-  overtime_cents AS overtimeCents, additions_cents AS additionsCents,
-  deductions_cents AS deductionsCents, other_cents AS otherCents, notes,
-  payment_done AS paymentDone, payment_date AS paymentDate,
-  attachment_file_name AS attachmentFileName, attachment_r2_key AS attachmentR2Key,
-  attachment_size_bytes AS attachmentSizeBytes, created_by AS createdBy,
-  created_by_name AS createdByName, created_at AS createdAt, updated_by AS updatedBy,
-  updated_by_name AS updatedByName, updated_at AS updatedAt`;
 
 const MANUAL_FIELDS = [
   "baseSalaryCents",
@@ -104,18 +50,6 @@ function manualValuesFrom(source: JsonMap | EntryRow): ManualValues | null {
   return values;
 }
 
-async function loadEmployeesFor(database: Database, companyId: string) {
-  const where = companyId ? "WHERE company_id=?1" : "";
-  const result = await database
-    .prepare(
-      `SELECT id, full_name AS fullName, company_id AS companyId, company_name AS companyName,
-              role_title AS roleTitle, admission_date AS admissionDate, salary_cents AS salaryCents, status
-       FROM hr_employees ${where} ORDER BY full_name ASC`,
-    )
-    .bind(...(companyId ? [companyId] : []))
-    .all<EmployeeBasics>();
-  return result.results ?? [];
-}
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -134,88 +68,7 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const [employees, entriesResult, employerChargesBps] = await Promise.all([
-      loadEmployeesFor(database, companyId),
-      database
-        .prepare(`SELECT ${ENTRY_COLUMNS} FROM hr_payroll_entries WHERE month=?1`)
-        .bind(month)
-        .all<EntryRow>(),
-      loadEmployerChargesBps(database),
-    ]);
-    const entriesByEmployee = new Map(
-      (entriesResult.results ?? []).map((entry) => [entry.employeeId, entry]),
-    );
-
-    const visible = employees.filter(
-      (employee) => employee.status === "active" || entriesByEmployee.has(employee.id),
-    );
-
-    const rows = await Promise.all(
-      visible.map(async (employee) => {
-        const entry = entriesByEmployee.get(employee.id) ?? null;
-        const values: ManualValues = entry
-          ? {
-              baseSalaryCents: Number(entry.baseSalaryCents || 0),
-              bonusCents: Number(entry.bonusCents || 0),
-              overtimeCents: Number(entry.overtimeCents || 0),
-              additionsCents: Number(entry.additionsCents || 0),
-              deductionsCents: Number(entry.deductionsCents || 0),
-              otherCents: Number(entry.otherCents || 0),
-            }
-          : {
-              baseSalaryCents: Number(employee.salaryCents || 0),
-              bonusCents: 0,
-              overtimeCents: 0,
-              additionsCents: 0,
-              deductionsCents: 0,
-              otherCents: 0,
-            };
-        const [commissionCents, benefitsCents, commissionGrossCents, benefitsSplit] =
-          await Promise.all([
-            computedCommissionCentsFor(database, employee.id, month),
-            computedBenefitsCentsFor(database, employee.id, month),
-            computedCommissionGrossCentsFor(database, employee.id, month),
-            computedBenefitsSplitFor(database, employee.id, month),
-          ]);
-        const inputs = {
-          commissionNetCents: commissionCents,
-          commissionGrossCents,
-          benefitsNetCents: benefitsCents,
-          benefitsGrossCents: benefitsSplit.grossCents,
-          benefitsPixNetCents: benefitsSplit.pixNetCents,
-          employerChargesBps,
-        };
-        const breakdown = computePayrollBreakdown(values, inputs);
-        return {
-          id: entry?.id ?? "",
-          saved: Boolean(entry),
-          employeeId: employee.id,
-          employeeName: employee.fullName,
-          employeeStatus: employee.status,
-          roleTitle: employee.roleTitle,
-          admissionDate: employee.admissionDate,
-          companyId: employee.companyId,
-          companyName: employee.companyName,
-          month,
-          ...values,
-          commissionCents,
-          benefitsCents,
-          commissionGrossCents,
-          benefitsGrossCents: benefitsSplit.grossCents,
-          employerChargesBps,
-          employerChargesCents: breakdown.employerChargesCents,
-          folhaPagaCents: breakdown.folhaPagaCents,
-          custoTotalCents: breakdown.custoTotalCents,
-          netCents: legacyNetCents(values, inputs),
-          notes: entry?.notes ?? "",
-          paymentDone: Number(entry?.paymentDone ?? 0),
-          paymentDate: entry?.paymentDate ?? "",
-          attachmentFileName: entry?.attachmentFileName ?? "",
-          attachmentSizeBytes: Number(entry?.attachmentSizeBytes ?? 0),
-        };
-      }),
-    );
-
+    const rows = await loadPayrollRows(database, month, companyId);
     return jsonResponse({ month, companyId, entries: rows });
   } catch (error) {
     console.error("Não foi possível carregar a folha de pagamento.", error);
@@ -238,7 +91,8 @@ async function saveEntry(database: Database, actor: Identity, body: JsonMap) {
     return jsonResponse({ error: "INFORME UM MÊS DE ORIGEM VÁLIDO (AAAA-MM)." }, 400);
   }
 
-  const employee = await loadEmployee(database, employeeId);
+  // Unidade da folha = loja atuante do funcionário NESTE mês.
+  const employee = await loadEmployeeForMonth(database, employeeId, month);
   if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
 
   // "Copiar do mês anterior": os valores manuais vêm da folha daquele mês,

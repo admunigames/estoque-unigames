@@ -1,4 +1,6 @@
 import type { getD1 } from "../../../../db";
+import { actingStoresForMonth } from "../../../lib/acting-store";
+import { loadOvertimePayouts } from "../../hr-payroll/shared";
 
 // Contribuição do RH (Folha, Benefícios, Comissões) para a DRE — item 13.
 //
@@ -7,9 +9,11 @@ import type { getD1 } from "../../../../db";
 // Calculado ao vivo a partir de hr_payroll_entries / hr_benefits /
 // hr_commissions — nunca gravado em finance_store_entries.
 //
-// O mapeamento bloco → item da DRE fica em hr_dre_mapping (config global).
-// Rateio/centro de custo não se aplicam: o custo é atribuído à loja do
-// funcionário (company_id, denormalizado nos lançamentos de RH).
+// O RH entra AUTOMÁTICO numa categoria fixa no código (PESSOAL — RH), um item
+// por bloco (ajuste do Financeiro, 22/10/2026: saiu o botão RH NA DRE). A
+// tabela hr_dre_mapping fica guardada, sem uso. Rateio/centro de custo não se
+// aplicam: o custo é atribuído à loja do funcionário (company_id,
+// denormalizado nos lançamentos de RH).
 
 export type PayrollBlock = "folha" | "beneficios" | "comissoes";
 
@@ -28,7 +32,12 @@ export type PayrollDreContribution = {
   blocks: Array<{ block: PayrollBlock; financeItemId: string; amountCents: number }>;
 };
 
-const EMPTY: PayrollDreContribution = { byItem: new Map(), blocks: [] };
+export const PAYROLL_DRE_CATEGORY = { id: "rh-pessoal", name: "PESSOAL — RH (AUTOMÁTICO)" };
+export const PAYROLL_DRE_ITEMS: Record<PayrollBlock, { id: string; name: string }> = {
+  folha: { id: "rh-folha", name: "FOLHA DE PAGAMENTO (CUSTO TOTAL)" },
+  beneficios: { id: "rh-beneficios", name: "BENEFÍCIOS" },
+  comissoes: { id: "rh-comissoes", name: "COMISSÕES E PREMIAÇÕES" },
+};
 
 /**
  * `scope`: uma loja (companyId) para a DRE Por Loja, ou "stores" para a
@@ -40,68 +49,83 @@ export async function loadPayrollDreContribution(
   scope: { companyId: string } | "stores",
   month: string,
 ): Promise<PayrollDreContribution> {
-  const mappingResult = await database
-    .prepare("SELECT block, finance_item_id AS financeItemId FROM hr_dre_mapping WHERE finance_item_id <> ''")
-    .all<{ block: string; financeItemId: string }>();
-  const mapping = new Map<PayrollBlock, string>();
-  for (const row of mappingResult.results ?? []) {
-    if (row.block === "folha" || row.block === "beneficios" || row.block === "comissoes") {
-      mapping.set(row.block, row.financeItemId);
-    }
-  }
-  if (!mapping.size) return EMPTY;
+  const mapping = new Map<PayrollBlock, string>(
+    (Object.keys(PAYROLL_DRE_ITEMS) as PayrollBlock[]).map((block) => [block, PAYROLL_DRE_ITEMS[block].id]),
+  );
 
   const isStore = scope !== "stores";
   const companyId = isStore ? scope.companyId : "";
-  // "stores" = todas as lojas reais: exclui RH sem loja e o da Assistência,
-  // que têm DRE própria (item 8).
-  const companyCond = isStore ? "company_id = ?2" : "company_id <> '' AND company_id <> 'assistencia'";
-  const bind = (extra: unknown[]) => (isStore ? [month, companyId, ...extra] : [month, ...extra]);
+  // Loja do custo = loja ATUANTE do funcionário no mês (RH > Funcionários),
+  // com a loja gravada no lançamento como reserva. "stores" = todas as lojas
+  // reais: exclui RH sem loja e o da Assistência.
+  const actingStores = await actingStoresForMonth(database, month);
+  const storeOf = (row: { employeeId: string; companyId: string }) => actingStores.get(row.employeeId)?.companyId || row.companyId || "";
+  const inScope = (store: string) => (isStore ? store === companyId : store !== "" && store !== "assistencia");
 
   const chargesRow = await database
     .prepare("SELECT employer_charges_bps AS bps FROM hr_payroll_settings WHERE company_id='' LIMIT 1")
     .first<{ bps: number }>();
   const employerChargesBps = Math.max(0, Number(chargesRow?.bps ?? 0));
 
-  const [folhaRow, beneficiosRow, comissoesRow] = await Promise.all([
-    mapping.has("folha")
-      ? database
-          .prepare(
-            `SELECT
-               COALESCE(SUM(base_salary_cents + bonus_cents + overtime_cents + additions_cents + other_cents), 0) AS salaryGross,
-               COALESCE(SUM(base_salary_cents), 0) AS baseTotal
-             FROM hr_payroll_entries WHERE month = ?1 AND ${companyCond}`,
-          )
-          .bind(...bind([]))
-          .first<{ salaryGross: number; baseTotal: number }>()
-      : Promise.resolve(null),
-    mapping.has("beneficios")
-      ? database
-          .prepare(
-            `SELECT COALESCE(SUM(gross_cents), 0) AS total
-             FROM hr_benefits WHERE month = ?1 AND ${companyCond}`,
-          )
-          .bind(...bind([]))
-          .first<{ total: number }>()
-      : Promise.resolve(null),
-    mapping.has("comissoes")
-      ? database
-          .prepare(
-            `SELECT COALESCE(SUM(commission_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
-             FROM hr_commissions WHERE month = ?1 AND ${companyCond}`,
-          )
-          .bind(...bind([]))
-          .first<{ total: number }>()
-      : Promise.resolve(null),
+  const [folhaRows, beneficiosRows, comissoesRows, dsrRows] = await Promise.all([
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, company_id AS companyId,
+                COALESCE(SUM(base_salary_cents + bonus_cents + overtime_cents + additions_cents + other_cents), 0) AS salaryGross,
+                COALESCE(SUM(base_salary_cents), 0) AS baseTotal,
+                COALESCE(SUM(overtime_cents), 0) AS overtimeTotal
+         FROM hr_payroll_entries WHERE month = ?1 GROUP BY employee_id, company_id`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; companyId: string; salaryGross: number; baseTotal: number; overtimeTotal: number }>(),
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, company_id AS companyId, COALESCE(SUM(gross_cents), 0) AS total
+         FROM hr_benefits WHERE month = ?1 GROUP BY employee_id, company_id`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; companyId: string; total: number }>(),
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, company_id AS companyId,
+                COALESCE(SUM(commission_cents + commercial_premium_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
+         FROM hr_commissions WHERE month = ?1 GROUP BY employee_id, company_id`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; companyId: string; total: number }>(),
+    // DSR MANUAL do mês (migration 0109) — parte da remuneração da Folha.
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, '' AS companyId, COALESCE(SUM(amount_cents), 0) AS total
+         FROM hr_employee_month_values WHERE month = ?1 AND kind = 'dsr' GROUP BY employee_id`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; companyId: string; total: number }>(),
   ]);
+  // HE A PAGAR do Controle de Horas substitui a HE digitada na Folha (e conta
+  // mesmo para quem ainda não tem folha lançada no mês).
+  const overtimePayouts = await loadOvertimePayouts(database, month);
+  const folha = (folhaRows.results ?? []).filter((row) => inScope(storeOf(row)));
+  const withFolha = new Set((folhaRows.results ?? []).map((row) => row.employeeId));
+  const overtimeAdjust =
+    folha.reduce((sum, row) => {
+      const payout = overtimePayouts.get(row.employeeId);
+      return payout === undefined ? sum : sum - Number(row.overtimeTotal || 0) + payout;
+    }, 0) +
+    [...overtimePayouts]
+      .filter(([employeeId]) => !withFolha.has(employeeId) && inScope(storeOf({ employeeId, companyId: "" })))
+      .reduce((sum, [, cents]) => sum + cents, 0);
+  const sumOf = (rows: Array<{ employeeId: string; companyId: string; total: number }> | undefined) =>
+    (rows ?? []).filter((row) => inScope(storeOf(row))).reduce((sum, row) => sum + Number(row.total || 0), 0);
 
   const amounts: Record<PayrollBlock, number> = {
-    folha: folhaRow
-      ? Number(folhaRow.salaryGross || 0) +
-        Math.round((Number(folhaRow.baseTotal || 0) * employerChargesBps) / 10000)
-      : 0,
-    beneficios: beneficiosRow ? Number(beneficiosRow.total || 0) : 0,
-    comissoes: comissoesRow ? Number(comissoesRow.total || 0) : 0,
+    folha:
+      folha.reduce((sum, row) => sum + Number(row.salaryGross || 0), 0) +
+      overtimeAdjust +
+      sumOf(dsrRows.results) +
+      Math.round((folha.reduce((sum, row) => sum + Number(row.baseTotal || 0), 0) * employerChargesBps) / 10000),
+    beneficios: sumOf(beneficiosRows.results),
+    comissoes: sumOf(comissoesRows.results),
   };
 
   const byItem = new Map<string, number>();

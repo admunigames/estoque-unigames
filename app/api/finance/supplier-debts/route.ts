@@ -2,9 +2,9 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { todayInTimezone } from "../../../lib/finance-status";
-import { assertFinanceAccountBelongsToCompany, DATE_PATTERN, recalcPayableEntrySql } from "../payables/shared";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
-import { canManageSupplierDebts, DEFAULT_SUPPLIER_DEBT_FINANCE_ITEM_ID } from "./shared";
+import { canManageSupplierDebts } from "./shared";
+import { planSupplierDebtCreate } from "./create";
 
 type ListRow = Record<string, unknown>;
 
@@ -67,7 +67,9 @@ export async function GET(request: Request) {
     conditions.push(fragment);
   }
 
-  if (effectiveCompanyId) addCondition("sod.company_id = ?", effectiveCompanyId);
+  // "__none__" = SEM LOJA (escritório / PF / outros).
+  if (effectiveCompanyId === "__none__") addCondition("sod.company_id = ''");
+  else if (effectiveCompanyId) addCondition("sod.company_id = ?", effectiveCompanyId);
   const supplierId = safeText(params.get("supplierId"), 80);
   if (supplierId) addCondition("sod.supplier_id = ?", supplierId);
 
@@ -127,7 +129,7 @@ export async function GET(request: Request) {
                 sod.invoice_number AS invoiceNumber, sod.supplier_invoice_id AS supplierInvoiceId,
                 sod.order_reference AS orderReference, sod.purchase_date AS purchaseDate,
                 sod.description, sod.due_date AS dueDate, sod.notes,
-                sod.accounts_payable_id AS accountsPayableId, sod.canceled,
+                sod.accounts_payable_id AS accountsPayableId, sod.canceled, sod.payer_name AS payerName,
                 sod.created_at AS createdAt, sod.updated_at AS updatedAt,
                 ap.original_amount_cents AS originalAmountCents, ap.paid_amount_cents AS paidAmountCents,
                 ap.status AS payableStatus,
@@ -184,140 +186,10 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as JsonMap;
-    const idempotencyKey = safeText(body.idempotencyKey, 120);
-    if (!idempotencyKey) return jsonResponse({ error: "REQUISIÇÃO INVÁLIDA (SEM CHAVE DE IDEMPOTÊNCIA)." }, 400);
-
-    const companyId = safeText(body.companyId, 80);
-    const companyName = safeText(body.companyName, 160);
-    if (!companyId) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
-    if (!allStores && companyId !== scopeActor.companyId) {
-      return jsonResponse({ error: "VOCÊ SÓ PODE CADASTRAR DÍVIDAS PARA A PRÓPRIA LOJA." }, 403);
-    }
-
-    const supplierId = safeText(body.supplierId, 80);
-    if (!supplierId) return jsonResponse({ error: "SELECIONE O FORNECEDOR." }, 400);
-
-    const description = safeText(body.description, 200);
-    if (description.length < 2) return jsonResponse({ error: "INFORME A DESCRIÇÃO DA DÍVIDA." }, 400);
-
-    const dueDate = safeText(body.dueDate, 10);
-    if (!DATE_PATTERN.test(dueDate)) return jsonResponse({ error: "INFORME A DATA PREVISTA DE PAGAMENTO." }, 400);
-
-    const purchaseDate = safeText(body.purchaseDate, 10);
-    if (purchaseDate && !DATE_PATTERN.test(purchaseDate)) {
-      return jsonResponse({ error: "DATA DA COMPRA INVÁLIDA." }, 400);
-    }
-
-    const originalAmountCents = Number(body.originalAmountCents);
-    if (!Number.isFinite(originalAmountCents) || !Number.isInteger(originalAmountCents) || originalAmountCents <= 0) {
-      return jsonResponse({ error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." }, 400);
-    }
-
-    const invoiceNumber = safeText(body.invoiceNumber, 60);
-    const supplierInvoiceId = safeText(body.supplierInvoiceId, 80);
-    const orderReference = safeText(body.orderReference, 60);
-    const notes = safeText(body.notes, 2000);
-    const financeItemId = safeText(body.financeItemId, 80) || DEFAULT_SUPPLIER_DEBT_FINANCE_ITEM_ID;
-    const financeAccountId = safeText(body.financeAccountId, 80);
-
     const database = await getD1();
-
-    const [supplier, item] = await Promise.all([
-      database.prepare("SELECT id, name FROM finance_suppliers WHERE id=?1").bind(supplierId).first<{ id: string; name: string }>(),
-      database.prepare("SELECT id FROM finance_items WHERE id=?1").bind(financeItemId).first<{ id: string }>(),
-    ]);
-    if (!supplier) return jsonResponse({ error: "FORNECEDOR NÃO ENCONTRADO NO CADASTRO." }, 400);
-    if (!item) return jsonResponse({ error: "ITEM FINANCEIRO NÃO ENCONTRADO NO CATÁLOGO." }, 400);
-
-    const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
-    if (accountError) return jsonResponse({ error: accountError }, 409);
-
-    if (supplierInvoiceId) {
-      const invoice = await database
-        .prepare("SELECT id FROM supplier_invoices WHERE id=?1")
-        .bind(supplierInvoiceId)
-        .first<{ id: string }>();
-      if (!invoice) return jsonResponse({ error: "NOTA FISCAL VINCULADA NÃO ENCONTRADA." }, 400);
-    }
-
-    const existingPayable = await database
-      .prepare("SELECT id FROM accounts_payable WHERE idempotency_key=?1")
-      .bind(`supplier-debt:${idempotencyKey}`)
-      .first<{ id: string }>();
-    if (existingPayable) {
-      const existingDebt = await database
-        .prepare("SELECT id FROM supplier_open_debts WHERE accounts_payable_id=?1")
-        .bind(existingPayable.id)
-        .first<{ id: string }>();
-      return jsonResponse({ created: true, alreadyProcessed: true, id: existingDebt?.id ?? "", accountsPayableId: existingPayable.id });
-    }
-
-    const debtId = crypto.randomUUID();
-    const payableId = crypto.randomUUID();
-    const actorName = actor.displayName || "Administrador";
-    const competenceMonth = dueDate.slice(0, 7);
-
-    const statements: [string, unknown[]][] = [
-      [
-        `INSERT INTO accounts_payable
-          (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
-           original_amount_cents, paid_amount_cents, dre_amount_cents, issue_date, competence_month, due_date, payment_method,
-           invoice_number, order_reference, billing_code, notes, status,
-           idempotency_key, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,NULL,?9,?10,?11,?12,?13,?14,'',?15,'open',
-           ?16,?17,?18,CURRENT_TIMESTAMP,?17,?18,CURRENT_TIMESTAMP)`,
-        [
-          payableId,
-          companyId,
-          companyName,
-          description,
-          supplierId,
-          financeItemId,
-          financeAccountId,
-          originalAmountCents,
-          purchaseDate,
-          competenceMonth,
-          dueDate,
-          "",
-          invoiceNumber,
-          orderReference,
-          notes,
-          `supplier-debt:${idempotencyKey}`,
-          actor.id,
-          actorName,
-        ],
-      ],
-      [
-        `INSERT INTO supplier_open_debts
-          (id, company_id, company_name, supplier_id, supplier_name, invoice_number, supplier_invoice_id,
-           order_reference, purchase_date, description, original_amount_cents, paid_amount_cents, due_date, notes,
-           accounts_payable_id, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,0,?12,?13,?14,?15,?16,CURRENT_TIMESTAMP,?15,?16,CURRENT_TIMESTAMP)`,
-        [
-          debtId,
-          companyId,
-          companyName,
-          supplierId,
-          supplier.name,
-          invoiceNumber,
-          supplierInvoiceId,
-          orderReference,
-          purchaseDate,
-          description,
-          originalAmountCents,
-          dueDate,
-          notes,
-          payableId,
-          actor.id,
-          actorName,
-        ],
-      ],
-    ];
-
-    const entryId = crypto.randomUUID();
-    for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, companyId, financeItemId, competenceMonth, actor.id, actorName)) {
-      statements.push([sql, sqlValues]);
-    }
+    const plan = await planSupplierDebtCreate(database, actor, scopeActor, allStores, body);
+    if ("reply" in plan) return jsonResponse(plan.reply.payload, plan.reply.status);
+    const { statements, debtId, payableId } = plan;
 
     await database.batch(statements.map(([sql, sqlValues]) => database.prepare(sql).bind(...sqlValues)));
 

@@ -3,20 +3,11 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { quickViewDueRange, todayInTimezone, type QuickView } from "../../../lib/finance-status";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, MONTH_PATTERN, type JsonMap } from "../shared";
-import {
-  DATE_PATTERN,
-  RECURRENCE_FREQUENCIES,
-  assertFinanceAccountBelongsToCompany,
-  assertSlotAvailableForPayable,
-  competenceMonthOf,
-  computeDreAnchorAssignments,
-  displayStatusCaseSql,
-  generateInstallmentDueDates,
-  generateRecurrenceDueDates,
-  recalcPayableEntrySql,
-  splitIntoInstallments,
-  type RecurrenceFrequency,
-} from "./shared";
+import { DATE_PATTERN, displayStatusCaseSql } from "./shared";
+import { planPayableCreate } from "./create";
+
+// Filtro "SEM LOJA" (escritório / PF / outros) da listagem.
+const NO_COMPANY_FILTER = "__none__";
 
 type ListRow = Record<string, unknown>;
 type PayableUnit = {
@@ -36,7 +27,8 @@ const LIST_COLUMNS = `id, company_id AS companyId, company_name AS companyName, 
   recurrence_id AS recurrenceId, recurrence_frequency AS recurrenceFrequency,
   installment_group_id AS installmentGroupId, installment_number AS installmentNumber,
   installment_total AS installmentTotal, expense_id AS expenseId, cost_center AS costCenter,
-  cost_center_id AS costCenterId, created_at AS createdAt, updated_at AS updatedAt`;
+  cost_center_id AS costCenterId, dre_target AS dreTarget, payer_name AS payerName,
+  created_at AS createdAt, updated_at AS updatedAt`;
 
 /**
  * Linha agrupada de uma despesa rateada (mesmo vencimento): descrição e loja
@@ -137,7 +129,9 @@ export async function GET(request: Request) {
   // Despesa rateada (visão agrupada): com a loja filtrada, a despesa aparece
   // se a loja for a da despesa OU uma das lojas do rateio. Login de loja
   // continua vendo só as fatias da própria loja.
-  if (effectiveCompanyId && allStores) {
+  if (effectiveCompanyId === NO_COMPANY_FILTER && allStores) {
+    addCondition("company_id = ''");
+  } else if (effectiveCompanyId && allStores) {
     addCondition(
       "(company_id = ? OR expense_id IN (SELECT id FROM expenses WHERE rateio_type = 'rateio' AND company_id = ?))",
       effectiveCompanyId,
@@ -195,8 +189,9 @@ export async function GET(request: Request) {
   if (search) {
     addCondition(
       `(LOWER(description) LIKE LOWER(?) OR LOWER(invoice_number) LIKE LOWER(?) OR LOWER(order_reference) LIKE LOWER(?)
-        OR LOWER(billing_code) LIKE LOWER(?)
+        OR LOWER(billing_code) LIKE LOWER(?) OR LOWER(payer_name) LIKE LOWER(?)
         OR EXISTS (SELECT 1 FROM finance_suppliers s WHERE s.id = accounts_payable.supplier_id AND LOWER(s.name) LIKE LOWER(?)))`,
+      `%${search}%`,
       `%${search}%`,
       `%${search}%`,
       `%${search}%`,
@@ -350,14 +345,6 @@ export async function GET(request: Request) {
   }
 }
 
-type PayablePlanRow = {
-  dueDate: string;
-  competenceMonth: string;
-  amountCents: number;
-  installmentNumber: number;
-  installmentTotal: number;
-  recurrenceIndex: number;
-};
 
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -379,248 +366,10 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as JsonMap;
-    const idempotencyKey = safeText(body.idempotencyKey, 120);
-    if (!idempotencyKey) return jsonResponse({ error: "REQUISIÇÃO INVÁLIDA (SEM CHAVE DE IDEMPOTÊNCIA)." }, 400);
-
-    const companyId = safeText(body.companyId, 80);
-    const companyName = safeText(body.companyName, 160);
-    if (!companyId) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
-    if (!allStores && companyId !== scopeActor.companyId) {
-      return jsonResponse({ error: "VOCÊ SÓ PODE CADASTRAR CONTAS PARA A PRÓPRIA LOJA." }, 403);
-    }
-
-    const description = safeText(body.description, 200);
-    if (description.length < 2) return jsonResponse({ error: "INFORME A DESCRIÇÃO DA CONTA." }, 400);
-
-    const financeItemId = safeText(body.financeItemId, 80);
-    if (!financeItemId) return jsonResponse({ error: "SELECIONE A CATEGORIA/ITEM DA DESPESA." }, 400);
-
-    const supplierId = safeText(body.supplierId, 80);
-    const financeAccountId = safeText(body.financeAccountId, 80);
-    const paymentMethod = safeText(body.paymentMethod, 40);
-    const invoiceNumber = safeText(body.invoiceNumber, 60);
-    const orderReference = safeText(body.orderReference, 60);
-    const billingCode = safeText(body.billingCode, 80);
-    const notes = safeText(body.notes, 2000);
-    const issueDate = safeText(body.issueDate, 10);
-    if (issueDate && !DATE_PATTERN.test(issueDate)) {
-      return jsonResponse({ error: "DATA DE EMISSÃO INVÁLIDA." }, 400);
-    }
-
-    const firstDueDate = safeText(body.dueDate, 10);
-    if (!DATE_PATTERN.test(firstDueDate)) return jsonResponse({ error: "INFORME O VENCIMENTO." }, 400);
-
-    const totalAmountCents = Number(body.originalAmountCents);
-    if (!Number.isFinite(totalAmountCents) || !Number.isInteger(totalAmountCents) || totalAmountCents <= 0) {
-      return jsonResponse({ error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." }, 400);
-    }
-
-    // Decisão de "Incluir na DRE?" (opcional) — quando o campo dreIncluded
-    // não vem na requisição, a conta é criada com dre_amount_cents=NULL em
-    // todas as linhas (comportamento padrão: entra na DRE pelo valor
-    // cheio), sem precisar de nenhum tratamento especial. Só quando o
-    // usuário mexeu ativamente no toggle é que a lógica de âncora entra em
-    // ação — ver computeDreAnchorAssignments.
-    const dreCustomized = body.dreIncluded !== undefined;
-    const dreIncluded = Boolean(body.dreIncluded);
-    let dreAmountCents = 0;
-    let dreWarning: string | null = null;
-    if (dreCustomized) {
-      dreAmountCents = Number(body.dreAmountCents);
-      if (!Number.isFinite(dreAmountCents) || !Number.isInteger(dreAmountCents) || dreAmountCents < 0) {
-        return jsonResponse({ error: "INFORME UM VALOR VÁLIDO (EM CENTAVOS, NÃO NEGATIVO) PARA A DRE." }, 400);
-      }
-      if (dreIncluded && dreAmountCents > totalAmountCents) {
-        dreWarning = "O VALOR INFORMADO PARA A DRE É MAIOR QUE O VALOR TOTAL DA CONTA.";
-      }
-    }
-
-    const kind = safeText(body.kind, 20) || "single"; // 'single' | 'installment' | 'recurring'
     const database = await getD1();
-
-    const item = await database
-      .prepare("SELECT id FROM finance_items WHERE id=?1")
-      .bind(financeItemId)
-      .first<{ id: string }>();
-    if (!item) return jsonResponse({ error: "ITEM DE DESPESA NÃO ENCONTRADO NO CATÁLOGO FINANCEIRO." }, 400);
-
-    const costCenterId = safeText(body.costCenterId, 80);
-    let costCenter = "";
-    if (costCenterId) {
-      const costCenterRow = await database
-        .prepare("SELECT name FROM finance_cost_centers WHERE id=?1")
-        .bind(costCenterId)
-        .first<{ name: string }>();
-      if (!costCenterRow) return jsonResponse({ error: "CENTRO DE CUSTO NÃO ENCONTRADO." }, 400);
-      costCenter = costCenterRow.name;
-    }
-
-    const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
-    if (accountError) return jsonResponse({ error: accountError }, 409);
-
-    const existingByKey = await database
-      .prepare("SELECT id FROM accounts_payable WHERE idempotency_key=?1")
-      .bind(idempotencyKey)
-      .first<{ id: string }>();
-    if (existingByKey) {
-      return jsonResponse({ created: true, alreadyProcessed: true, ids: [existingByKey.id] });
-    }
-
-    let plan: PayablePlanRow[];
-    let recurrenceId: string | null = null;
-    let installmentGroupId: string | null = null;
-    let recurrenceFrequency = "";
-    let recurrenceOccurrenceCount: number | null = null;
-    let recurrenceEndDate = "";
-
-    if (kind === "installment") {
-      const installmentTotal = Math.trunc(Number(body.installmentTotal));
-      if (!Number.isInteger(installmentTotal) || installmentTotal < 2 || installmentTotal > 360) {
-        return jsonResponse({ error: "INFORME A QUANTIDADE DE PARCELAS (MÍNIMO 2)." }, 400);
-      }
-      const amounts = splitIntoInstallments(totalAmountCents, installmentTotal);
-      const dueDates = generateInstallmentDueDates(firstDueDate, installmentTotal);
-      installmentGroupId = crypto.randomUUID();
-      plan = dueDates.map((dueDate, index) => ({
-        dueDate,
-        competenceMonth: competenceMonthOf(dueDate),
-        amountCents: amounts[index],
-        installmentNumber: index + 1,
-        installmentTotal,
-        recurrenceIndex: 0,
-      }));
-    } else if (kind === "recurring") {
-      const frequency = safeText(body.recurrenceFrequency, 20) as RecurrenceFrequency;
-      if (!RECURRENCE_FREQUENCIES.includes(frequency)) {
-        return jsonResponse({ error: "FREQUÊNCIA DE RECORRÊNCIA INVÁLIDA." }, 400);
-      }
-      const occurrenceCountRaw = body.recurrenceOccurrenceCount;
-      const occurrenceCount =
-        occurrenceCountRaw === undefined || occurrenceCountRaw === null || occurrenceCountRaw === ""
-          ? null
-          : Math.trunc(Number(occurrenceCountRaw));
-      const endDate = safeText(body.recurrenceEndDate, 10);
-      if (!occurrenceCount && !DATE_PATTERN.test(endDate)) {
-        return jsonResponse(
-          { error: "INFORME A QUANTIDADE DE OCORRÊNCIAS OU UMA DATA FINAL DA RECORRÊNCIA." },
-          400,
-        );
-      }
-      if (occurrenceCount !== null && (!Number.isInteger(occurrenceCount) || occurrenceCount < 1 || occurrenceCount > 260)) {
-        return jsonResponse({ error: "QUANTIDADE DE OCORRÊNCIAS INVÁLIDA." }, 400);
-      }
-      const dueDates = generateRecurrenceDueDates({
-        firstDueDate,
-        frequency,
-        occurrenceCount,
-        endDate,
-      });
-      recurrenceId = crypto.randomUUID();
-      recurrenceFrequency = frequency;
-      recurrenceOccurrenceCount = occurrenceCount;
-      recurrenceEndDate = endDate;
-      plan = dueDates.map((dueDate, index) => ({
-        dueDate,
-        competenceMonth: competenceMonthOf(dueDate),
-        amountCents: totalAmountCents,
-        installmentNumber: 0,
-        installmentTotal: 0,
-        recurrenceIndex: index,
-      }));
-    } else {
-      plan = [
-        {
-          dueDate: firstDueDate,
-          competenceMonth: competenceMonthOf(firstDueDate),
-          amountCents: totalAmountCents,
-          installmentNumber: 0,
-          installmentTotal: 0,
-          recurrenceIndex: 0,
-        },
-      ];
-    }
-
-    // Confere ANTES de escrever se algum slot loja+item+mês da série já é
-    // ocupado por um lançamento manual da DRE — falha tudo, sem criar nada
-    // pela metade (parcelamento/recorrência é tudo ou nada).
-    const distinctMonths = [...new Set(plan.map((entry) => entry.competenceMonth))];
-    for (const month of distinctMonths) {
-      const conflict = await assertSlotAvailableForPayable(database, companyId, financeItemId, month);
-      if (conflict) return jsonResponse({ error: conflict }, 409);
-    }
-
-    const statements: [string, unknown[]][] = [];
-    const createdIds: string[] = [];
-    const actorName = actor.displayName || "Administrador";
-
-    // plan já está na ordem estável (1ª parcela / 1ª ocorrência primeiro) —
-    // createdIds preserva essa ordem, então serve direto de entrada pra
-    // computeDreAnchorAssignments (a 1ª linha criada é a âncora).
-    for (let i = 0; i < plan.length; i += 1) {
-      createdIds.push(crypto.randomUUID());
-    }
-    const dreAssignments = dreCustomized
-      ? computeDreAnchorAssignments(createdIds, dreIncluded, dreAmountCents)
-      : null;
-
-    plan.forEach((occurrence, index) => {
-      const id = createdIds[index];
-      statements.push([
-        `INSERT INTO accounts_payable
-          (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
-           original_amount_cents, paid_amount_cents, dre_amount_cents, issue_date, competence_month, due_date, payment_method,
-           invoice_number, order_reference, billing_code, notes, status,
-           recurrence_id, recurrence_frequency, recurrence_occurrence_index, recurrence_occurrence_count, recurrence_end_date,
-           installment_group_id, installment_number, installment_total, idempotency_key,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, cost_center, cost_center_id)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,?9,?10,?11,?12,?13,?14,?15,?16,?17,'open',
-           ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP,?29,?30)`,
-        [
-          id,
-          companyId,
-          companyName,
-          description,
-          supplierId,
-          financeItemId,
-          financeAccountId,
-          occurrence.amountCents,
-          dreAssignments ? dreAssignments.get(id) ?? null : null,
-          issueDate,
-          occurrence.competenceMonth,
-          occurrence.dueDate,
-          paymentMethod,
-          invoiceNumber,
-          orderReference,
-          billingCode,
-          notes,
-          recurrenceId,
-          recurrenceFrequency,
-          occurrence.recurrenceIndex,
-          recurrenceOccurrenceCount,
-          recurrenceEndDate,
-          installmentGroupId,
-          occurrence.installmentNumber,
-          occurrence.installmentTotal,
-          // idempotencyKey único por linha: a chave enviada pelo cliente vale
-          // pra 1ª ocorrência; as demais recebem uma derivada determinística,
-          // então reenviar a mesma requisição nunca duplica a série inteira.
-          occurrence.recurrenceIndex === 0 && occurrence.installmentNumber <= 1
-            ? idempotencyKey
-            : `${idempotencyKey}:${occurrence.recurrenceIndex}:${occurrence.installmentNumber}`,
-          actor.id,
-          actorName,
-          costCenter,
-          costCenterId || null,
-        ],
-      ]);
-    });
-
-    for (const month of distinctMonths) {
-      const entryId = crypto.randomUUID();
-      for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, companyId, financeItemId, month, actor.id, actorName)) {
-        statements.push([sql, sqlValues]);
-      }
-    }
+    const plan = await planPayableCreate(database, actor, scopeActor, allStores, body);
+    if ("reply" in plan) return jsonResponse(plan.reply.payload, plan.reply.status);
+    const { statements, ids: createdIds, dreWarning } = plan;
 
     const prepared = statements.map(([sql, sqlValues]) => database.prepare(sql).bind(...sqlValues));
     await database.batch(prepared);

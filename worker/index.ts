@@ -59,6 +59,7 @@ type Permission =
   | "instructions:manage"
   | "pdv_requests:view" | "pdv_requests:create" | "pdv_requests:delete" | "pdv_requests:status"
   | "os_notes:view" | "os_notes:create" | "os_notes:attach" | "os_notes:delete"
+  | "info_gerais:view" | "info_gerais:create" | "info_gerais:edit" | "info_gerais:delete"
   | "finance:manage"
   | "payroll:manage"
   | "rh_acompanhamento:view" | "rh_acompanhamento:manage"
@@ -183,6 +184,9 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "instructions:manage",
   "pdv_requests:view", "pdv_requests:create", "pdv_requests:delete", "pdv_requests:status",
   "os_notes:view", "os_notes:create", "os_notes:attach", "os_notes:delete",
+  // Cadastros > Informações Gerais (internet, prestadores e outros dados de
+  // cada loja) — permissão própria; login com loja vê só a própria loja.
+  "info_gerais:view", "info_gerais:create", "info_gerais:edit", "info_gerais:delete",
   "finance:manage",
   // RH Financeiro (Folha, Benefícios, Comissionamento) — permissão única e
   // independente de finance:manage, pra quem cuida do RH acessar só esses
@@ -393,6 +397,7 @@ const APP_ROUTE_PATHS = new Set([
   "/cadastros/fornecedores",
   "/cadastros/usuarios",
   "/cadastros/auditoria",
+  "/cadastros/informacoes-gerais",
   "/rh/folgas",
   "/rh/escalas",
   "/rh/funcionarios",
@@ -400,6 +405,7 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/beneficios",
   "/rh/comissionamento",
   "/rh/dre-funcionario",
+  "/rh/relatorio-contabilidade",
   "/rh/acompanhamento-lojas",
   "/rh/controle-horas-logistica",
   "/rh/recrutamento",
@@ -1382,6 +1388,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   osNotes: [
     "os_notes:view", "os_notes:create", "os_notes:attach", "os_notes:delete",
   ],
+  infoGerais: ["info_gerais:view", "info_gerais:create", "info_gerais:edit", "info_gerais:delete"],
   finance: [
     "finance:manage",
     "payables:invoices_view", "payables:invoices_reconcile", "payables:confirm_payment", "payables:return_to_purchases",
@@ -1527,6 +1534,9 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     // Cadastros > Auditoria — permissão própria (audit:view). Checado antes
     // do bucket "/cadastros/" (Base de Dados).
     [path === "/cadastros/auditoria" || path.startsWith("/api/audit"), "audit"],
+    // Cadastros > Informações Gerais — permissão própria (info_gerais:*),
+    // checada antes do bucket "/cadastros/" (Base de Dados).
+    [path === "/cadastros/informacoes-gerais" || path.startsWith("/api/info-gerais"), "infoGerais"],
     // Assistência > Ordens de Serviço — permissão própria (ordens_servico:*),
     // antes do prefixo /api/assistencia (Orçamentos).
     [
@@ -1579,13 +1589,17 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     // do "hr" das telas de Folgas/Escalas, nem de finance:manage.
     // RH > Funcionários: payroll:manage OU as permissões próprias do cadastro.
     // Checado antes do bucket do RH Financeiro abaixo.
-    [path === "/rh/funcionarios" || path === "/api/hr-payroll/employees", "employees"],
+    [
+      path === "/rh/funcionarios" || path === "/api/hr-payroll/employees" || path.startsWith("/api/hr-payroll/employees/"),
+      "employees",
+    ],
     [
       path === "/rh/funcionarios" ||
         path === "/rh/folha" ||
         path === "/rh/beneficios" ||
         path === "/rh/comissionamento" ||
         path === "/rh/dre-funcionario" ||
+        path === "/rh/relatorio-contabilidade" ||
         path.startsWith("/api/hr-payroll"),
       "payroll",
     ],

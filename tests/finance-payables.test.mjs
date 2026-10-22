@@ -263,15 +263,63 @@ test("chave Pix: valida formato de acordo com o tipo selecionado", () => {
 
 // ---- Categoria/Item e conta financeira: estrutura da UI e migration ----
 
-test("formulário de Contas a Pagar tem categoria e item em cascata, com cadastro inline", async () => {
+test("formulários do Financeiro têm um campo único de CATEGORIA (categoria › subcategoria) com busca e + NOVA", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /id="payableCategory"/);
-  assert.match(html, /id="payableItem"/);
-  assert.match(html, /id="btnTogglePayableNewCategory"/);
-  assert.match(html, /id="btnTogglePayableNewItem"/);
-  assert.match(html, /id="payableItemSearch"/);
-  // Item filtrado pela categoria selecionada, nunca lista tudo de uma vez.
-  assert.match(html, /function renderPayableItemOptions\(/);
+  // O par categoria → subcategoria saiu: o item financeiro já traz a categoria.
+  for (const removed of ["payableCategory", "payableItemSearch", "btnTogglePayableNewItem", "expenseCategory", "expenseItemSearch", "btnToggleExpenseNewItem", "invoiceCategory"]) {
+    assert.doesNotMatch(html, new RegExp(`id="${removed}"`), removed);
+  }
+  for (const id of ["payableItem", "expenseItem", "invoiceItem", "corpEntryExpenseItem", "corpClassifyItem", "reconEntryExpenseItem", "reposicaoExpenseItem", "recargaEventItem", "recargaBulkItem", "supplierDebtFinanceItem", "pInvoiceItem"]) {
+    assert.match(html, new RegExp(`<label for="${id}">CATEGORIA[^<]*</label><select id="${id}" data-finance-item-picker`), id);
+  }
+  assert.match(html, /function renderFinanceItemPicker\(/);
+  assert.match(html, /function mountFinanceItemPicker\(/);
+  assert.match(html, /BUSCAR CATEGORIA OU SUBCATEGORIA…/);
+  assert.match(html, /financeApiRequest\('\/items', \{\s*method:'POST'[\s\S]{0,120}JSON\.stringify\(\{name, categoryId\}\)/);
+  assert.doesNotMatch(html, /BUSCAR SUBCATEGORIA/);
+
+  // Busca em todas as opções, exibidas como CATEGORIA › SUBCATEGORIA.
+  const source = (name) => {
+    const start = html.indexOf(`function ${name}(`);
+    let depth = 0;
+    let end = html.indexOf("{", start);
+    for (; end < html.length; end++) {
+      if (html[end] === "{") depth++;
+      if (html[end] === "}" && --depth === 0) break;
+    }
+    return html.slice(start, end + 1);
+  };
+  const financeCategories = [
+    { id: "c1", name: "DESPESAS FIXAS", parentId: "" },
+    { id: "c2", name: "OCUPAÇÃO", parentId: "c1" },
+    { id: "c3", name: "PESSOAL", parentId: "" },
+  ];
+  const financeItems = [
+    { id: "i1", categoryId: "c3", name: "VALE TRANSPORTE" },
+    { id: "i2", categoryId: "c2", name: "ALUGUEL" },
+    { id: "i3", categoryId: "c1", name: "INTERNET" },
+  ];
+  const select = { value: "", dataset: {}, innerHTML: "" };
+  const search = { value: "" };
+  const make = new Function("financeCategories", "financeItems", "el", "document", "escapeHtml", "normalizeSearchText", `
+    ${source("financeCategorySelectOptions")}
+    ${source("financeCategoryPathLabel")}
+    ${source("financeItemPathLabel")}
+    ${source("financeItemPickerOptions")}
+    ${source("renderFinanceItemPicker")}
+    return {financeItemPickerOptions, renderFinanceItemPicker};
+  `);
+  const api = make(financeCategories, financeItems, () => select, { querySelector: () => search }, (v) => String(v), (v) => String(v || "").toUpperCase());
+  assert.deepEqual(api.financeItemPickerOptions().map((o) => o.label), [
+    "DESPESAS FIXAS › INTERNET",
+    "DESPESAS FIXAS › OCUPAÇÃO › ALUGUEL",
+    "PESSOAL › VALE TRANSPORTE",
+  ]);
+  search.value = "aluguel";
+  api.renderFinanceItemPicker("x");
+  assert.equal(select.value, "i2"); // buscando, já escolhe a 1ª encontrada
+  assert.match(select.innerHTML, /OCUPAÇÃO › ALUGUEL/);
+  assert.doesNotMatch(select.innerHTML, /VALE TRANSPORTE/);
 });
 
 test("filtros de Contas a Pagar também têm categoria e item separados", async () => {
