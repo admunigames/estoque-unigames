@@ -36,12 +36,20 @@ export async function GET(request: Request) {
   try {
     const database = await getD1();
     if (rechargeId) {
+      // HISTÓRICO do número: cada recarga com a categoria da despesa gerada e a
+      // situação da conta a pagar (PAGA quando não sobra saldo).
       const events = await database
         .prepare(
-          `SELECT id, recharge_date AS rechargeDate, amount_cents AS amountCents, notes, expense_id AS expenseId,
-                  created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt
-           FROM finance_phone_recharge_events WHERE recharge_id=?1
-           ORDER BY recharge_date DESC, created_at DESC LIMIT 500`,
+          `SELECT ev.id, ev.recharge_date AS rechargeDate, ev.amount_cents AS amountCents, ev.notes, ev.expense_id AS expenseId,
+                  ev.created_by AS createdBy, ev.created_by_name AS createdByName, ev.created_at AS createdAt,
+                  e.finance_item_id AS financeItemId,
+                  (SELECT COUNT(*) FROM accounts_payable ap
+                   WHERE ap.expense_id = ev.expense_id AND ev.expense_id <> ''
+                     AND (ap.status = 'paid' OR ap.paid_amount_cents > 0)) AS paidPayables
+           FROM finance_phone_recharge_events ev
+           LEFT JOIN expenses e ON e.id = ev.expense_id
+           WHERE ev.recharge_id=?1
+           ORDER BY ev.recharge_date DESC, ev.created_at DESC LIMIT 500`,
         )
         .bind(rechargeId)
         .all();

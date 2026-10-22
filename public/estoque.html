@@ -11025,6 +11025,39 @@
   </form>
 </dialog>
 
+<!-- HISTÓRICO do número: recargas (mais recente primeiro) com categoria,
+     quem lançou e situação da despesa; EDITAR (data/valor/categoria — paga
+     só categoria) e EXCLUIR. -->
+<dialog class="purchase-dialog decl-batch-dialog" id="recargaHistoryDialog" aria-labelledby="recargaHistoryTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="recargaHistoryTitle">HISTÓRICO DE RECARGAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRecargaHistory" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Data</th><th>Valor</th><th>Categoria</th><th>Lançada por</th><th>Despesa</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="recargaHistoryBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <form class="purchase-form-grid" id="recargaHistoryEditForm" hidden>
+      <input type="hidden" id="recargaHistoryEditId">
+      <div class="purchase-form-section full">EDITAR RECARGA</div>
+      <div class="purchase-field"><label for="recargaHistoryEditDate">DATA *</label><input type="date" id="recargaHistoryEditDate"></div>
+      <div class="purchase-field"><label for="recargaHistoryEditValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaHistoryEditValor" placeholder="R$ 0,00"></div>
+      <div class="purchase-field full"><label for="recargaHistoryEditItem">CATEGORIA</label><select id="recargaHistoryEditItem" data-finance-item-picker data-placeholder="NÃO ALTERAR"><option value="">NÃO ALTERAR</option></select></div>
+      <div class="purchase-field full"><span class="purchase-field-help" id="recargaHistoryEditHelp"></span></div>
+      <div class="purchase-form-actions full">
+        <button class="btn-outline" id="btnCancelRecargaHistoryEdit" type="button">CANCELAR</button>
+        <button class="btn-accent" type="submit">SALVAR</button>
+      </div>
+    </form>
+    <div class="user-form-status" id="recargaHistoryStatus" role="status" aria-live="polite"></div>
+  </div>
+</dialog>
+
 <dialog class="purchase-dialog" id="recargaEventDialog" aria-labelledby="recargaEventTitle">
   <div class="purchase-dialog-head">
     <h3 id="recargaEventTitle">REGISTRAR RECARGA</h3>
@@ -39328,6 +39361,7 @@ function renderHomeTasks(){
         '<td data-label="Situação">'+(r.active ? 'ATIVA' : 'INATIVA')+'</td>'+
         '<td data-label="Ações" style="white-space:nowrap">'+
           '<button class="btn-outline btn-sm" type="button" data-recarga-event="'+escapeHtml(r.id)+'">REGISTRAR RECARGA</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-recarga-history="'+escapeHtml(r.id)+'">HISTÓRICO</button> '+
           '<button class="btn-outline btn-sm" type="button" data-recarga-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
           '<button class="btn-outline btn-sm" type="button" data-recarga-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</td>'+
@@ -39406,10 +39440,98 @@ function renderHomeTasks(){
       showPurchaseToast('Recarga salva.');
     }catch(error){ status.textContent = error.message; }
   });
+  let recargaHistoryLine = null;
+  let recargaHistoryEvents = [];
+  async function openRecargaHistory(line){
+    recargaHistoryLine = line;
+    if(!financeItems.length) await loadFinanceCatalog();
+    el('recargaHistoryTitle').textContent = 'HISTÓRICO — '+(line.phoneNumber || '')+(line.carrier ? ' ('+line.carrier+')' : '');
+    el('recargaHistoryEditForm').hidden = true;
+    el('recargaHistoryStatus').textContent = '';
+    el('recargaHistoryDialog').showModal();
+    await loadRecargaHistory();
+  }
+  async function loadRecargaHistory(){
+    const body = el('recargaHistoryBody');
+    body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await financeApiRequest('/phone-recharges?rechargeId='+encodeURIComponent(recargaHistoryLine.id));
+      recargaHistoryEvents = Array.isArray(data.events) ? data.events : [];
+      body.innerHTML = recargaHistoryEvents.length ? recargaHistoryEvents.map(e => {
+        const paid = Number(e.paidPayables || 0) > 0;
+        const situation = !e.expenseId ? 'SEM DESPESA' : (paid ? 'PAGA' : 'EM ABERTO');
+        return '<tr>'+
+          '<td data-label="Data">'+escapeHtml(formatDateBR(e.rechargeDate))+'</td>'+
+          '<td data-label="Valor">'+formatCentsBRL(e.amountCents)+'</td>'+
+          '<td data-label="Categoria">'+escapeHtml(e.financeItemId ? financeItemPathLabel(e.financeItemId) || '—' : '—')+'</td>'+
+          '<td data-label="Lançada por">'+escapeHtml(e.createdByName || '—')+'</td>'+
+          '<td data-label="Despesa">'+(e.expenseId ? 'LANÇADA' : '—')+'</td>'+
+          '<td data-label="Situação"><span class="status-pill'+(paid ? ' ok' : '')+'">'+situation+'</span></td>'+
+          '<td data-label="Ações" style="white-space:nowrap">'+
+            '<button class="btn-outline btn-sm" type="button" data-recarga-history-edit="'+escapeHtml(e.id)+'">EDITAR</button> '+
+            (paid ? '' : '<button class="btn-outline btn-sm" type="button" data-recarga-history-del="'+escapeHtml(e.id)+'">EXCLUIR</button>')+
+          '</td>'+
+        '</tr>';
+      }).join('') : '<tr><td colspan="7" class="responsive-empty">Sem recargas registradas ainda.</td></tr>';
+    }catch(error){ body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>'; }
+  }
+  attachCurrencyMask(el('recargaHistoryEditValor'));
+  el('recargaHistoryBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-recarga-history-edit]');
+    const delButton = event.target.closest('[data-recarga-history-del]');
+    if(editButton){
+      const e = recargaHistoryEvents.find(x => x.id === editButton.dataset.recargaHistoryEdit);
+      if(!e) return;
+      const paid = Number(e.paidPayables || 0) > 0;
+      el('recargaHistoryEditId').value = e.id;
+      el('recargaHistoryEditDate').value = e.rechargeDate;
+      setCurrencyValue(el('recargaHistoryEditValor'), Number(e.amountCents || 0) / 100);
+      el('recargaHistoryEditDate').disabled = paid;
+      el('recargaHistoryEditValor').disabled = paid;
+      renderFlatFinanceItemOptions('recargaHistoryEditItem');
+      setFinanceItemPickerValue('recargaHistoryEditItem', e.financeItemId || '');
+      el('recargaHistoryEditHelp').textContent = paid
+        ? 'A DESPESA DESTA RECARGA JÁ FOI PAGA: SÓ A CATEGORIA PODE SER ALTERADA.'
+        : 'EDITAR ATUALIZA A DESPESA E A CONTA A PAGAR GERADAS. SE FOR A ÚLTIMA RECARGA, A PRÓXIMA DATA DA LINHA É RECALCULADA.';
+      el('recargaHistoryEditForm').hidden = false;
+      el('recargaHistoryStatus').textContent = '';
+      return;
+    }
+    if(delButton){
+      if(!await askConfirm('Excluir esta recarga do histórico (com a despesa e a conta a pagar geradas)?')) return;
+      try{
+        await financeApiRequest('/phone-recharges/events?id='+encodeURIComponent(delButton.dataset.recargaHistoryDel), {method:'DELETE'});
+        showPurchaseToast('Recarga excluída.');
+        await Promise.all([loadRecargaHistory(), reloadRecargas()]);
+      }catch(error){ el('recargaHistoryStatus').textContent = error.message; }
+    }
+  });
+  el('btnCancelRecargaHistoryEdit').addEventListener('click', () => { el('recargaHistoryEditForm').hidden = true; });
+  el('recargaHistoryEditForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const payload = {financeItemId: el('recargaHistoryEditItem').value};
+    if(!el('recargaHistoryEditDate').disabled){
+      payload.rechargeDate = el('recargaHistoryEditDate').value;
+      payload.amountCents = parseBRLToCents(getCurrencyValue(el('recargaHistoryEditValor')) || '0') || 0;
+      if(!payload.rechargeDate){ el('recargaHistoryStatus').textContent = 'INFORME A DATA.'; return; }
+      if(!payload.amountCents){ el('recargaHistoryStatus').textContent = 'INFORME O VALOR.'; return; }
+    }
+    try{
+      await financeApiRequest('/phone-recharges/events?id='+encodeURIComponent(el('recargaHistoryEditId').value), {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      });
+      el('recargaHistoryEditForm').hidden = true;
+      showPurchaseToast('Recarga atualizada.');
+      await Promise.all([loadRecargaHistory(), reloadRecargas()]);
+    }catch(error){ el('recargaHistoryStatus').textContent = error.message; }
+  });
+  el('btnCloseRecargaHistory').addEventListener('click', () => el('recargaHistoryDialog').close());
   el('recargaTableBody') && el('recargaTableBody').addEventListener('click', async event => {
     const edit = event.target.closest('[data-recarga-edit]');
     const del = event.target.closest('[data-recarga-del]');
     const ev = event.target.closest('[data-recarga-event]');
+    const history = event.target.closest('[data-recarga-history]');
+    if(history){ const r = recargaRows.find(x => x.id === history.dataset.recargaHistory); if(r) openRecargaHistory(r); return; }
     if(edit){ const r = recargaRows.find(x => x.id === edit.dataset.recargaEdit); if(r) openRecargaDialog(r); }
     else if(del){
       if(!await askConfirm('Excluir esta linha e todo o histórico de recargas?')) return;
