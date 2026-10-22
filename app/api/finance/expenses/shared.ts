@@ -243,6 +243,7 @@ export async function planExpense(
     database,
     financeAccountId,
     rateioType === "rateio" ? "" : companyId,
+    { requireGlobal: rateioType === "rateio" },
   );
   if (accountError) {
     return reply(

@@ -22,6 +22,10 @@ import {
   loadPendingScheduleIds,
   toInstallmentSnapshot,
 } from "../../shared";
+import { loadPayable } from "../../../payables/shared";
+import { loadPayableDestination, parseDreDestination, planDreDestination, recalcSlotsSql } from "../../../payables/dre-destination";
+import { canSeeAllStores } from "../../../../../lib/access-scope";
+import { effectiveDreAmountCents } from "../../../../../lib/payables-recurrence";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const unauthorized = unauthorizedResponse(request);
@@ -148,23 +152,46 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     // Quando vem, a âncora é sempre a 1ª duplicata (existente ou nova, na
     // ordem de installment_number) — reescreve TODAS as accounts_payable
     // já vinculadas a esta NF, não só as recém-criadas.
-    const dreCustomized = body.dreIncluded !== undefined;
-    const dreIncludedFlag = Boolean(body.dreIncluded);
+    // Destino na DRE (NÃO INCLUIR / RATEAR / INCLUIR EM) vale para TODAS as
+    // duplicatas da NF. Sem dreTarget: herda o das duplicatas já cadastradas;
+    // NF sem loja e sem destino = NÃO INCLUIR; senão a regra antiga.
+    let destination = null as Awaited<ReturnType<typeof loadPayableDestination>> | null;
+    const firstExisting = existingActive.find((installment) => installment.accountsPayableId);
+    const existingPayable = firstExisting ? await loadPayable(database, firstExisting.accountsPayableId) : null;
+    if (body.dreTarget !== undefined || !invoice.companyId) {
+      const parsed = await parseDreDestination(database, body, {
+        companyId: invoice.companyId,
+        companyName: invoice.companyName,
+        financeItemId: invoice.financeItemId,
+        competenceMonth: invoice.competenceMonth,
+        totalAmountCents: invoice.totalAmountCents,
+        allStores: canSeeAllStores(scopeActor, "finance:manage"),
+        actorCompanyId: scopeActor.companyId,
+      });
+      if ("error" in parsed) return jsonResponse({ error: parsed.error }, parsed.status);
+      destination = parsed.destination;
+    } else if (existingPayable?.dreTarget) {
+      destination = await loadPayableDestination(database, existingPayable);
+    }
+    for (const share of destination?.shares ?? []) {
+      const shareConflict = await assertSlotAvailableForPayable(database, share.companyId, destination!.itemId, invoice.competenceMonth);
+      if (shareConflict && existingActive.length === 0) return jsonResponse({ error: shareConflict }, 409);
+    }
+
+    const dreCustomized = body.dreIncluded !== undefined || destination?.target === "none";
+    const dreIncludedFlag = destination?.target === "none" ? false : Boolean(body.dreIncluded);
     let dreAmountCentsTotal = 0;
     let dreWarning: string | null = null;
     if (dreCustomized) {
-      dreAmountCentsTotal = Number(body.dreAmountCents);
+      dreAmountCentsTotal = Number(body.dreAmountCents ?? 0);
       if (!Number.isFinite(dreAmountCentsTotal) || !Number.isInteger(dreAmountCentsTotal) || dreAmountCentsTotal < 0) {
         return jsonResponse({ error: "INFORME UM VALOR VÁLIDO (EM CENTAVOS, NÃO NEGATIVO) PARA A DRE." }, 400);
       }
     }
 
-    const conflict = await assertSlotAvailableForPayable(
-      database,
-      invoice.companyId,
-      invoice.financeItemId,
-      invoice.competenceMonth,
-    );
+    const conflict = destination
+      ? null
+      : await assertSlotAvailableForPayable(database, invoice.companyId, invoice.financeItemId, invoice.competenceMonth);
     // Só bloqueia se o slot já não é usado por esta MESMA NF (as duplicatas
     // desta NF já ocupam o slot 'payable' legitimamente).
     if (conflict && existingActive.length === 0) return jsonResponse({ error: conflict }, 409);
@@ -285,6 +312,33 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       createdIds.push(installmentId);
     }
 
+    if (destination) {
+      const existingDre = new Map<string, number | null>();
+      for (const installment of existingActive) {
+        if (!installment.accountsPayableId) continue;
+        const row = await loadPayable(database, installment.accountsPayableId);
+        existingDre.set(installment.accountsPayableId, row ? row.dreAmountCents : null);
+      }
+      const rows = [
+        ...existingActive
+          .filter((installment) => installment.accountsPayableId)
+          .map((installment) => ({ payableId: installment.accountsPayableId, original: installment.originalAmountCents })),
+        ...plans.map((plan, offset) => ({ payableId: newPayableIds[offset], original: plan.amountCents })),
+      ];
+      const destinationPlan = await planDreDestination(
+        database,
+        destination,
+        rows.map((row) => ({
+          payableId: row.payableId,
+          month: invoice.competenceMonth,
+          amountCents: effectiveDreAmountCents(
+            dreAssignments ? dreAssignments.get(row.payableId) ?? null : existingDre.get(row.payableId) ?? null,
+            row.original,
+          ),
+        })),
+      );
+      statements.push(...destinationPlan.statements, ...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
+    }
     const entryId = crypto.randomUUID();
     for (const [sql, values] of recalcPayableEntrySql(
       entryId,

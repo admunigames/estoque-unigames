@@ -2,7 +2,8 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { todayInTimezone } from "../../../lib/finance-status";
-import { assertFinanceAccountBelongsToCompany, DATE_PATTERN, recalcPayableEntrySql } from "../payables/shared";
+import { assertFinanceAccountBelongsToCompany, assertSlotAvailableForPayable, DATE_PATTERN, recalcPayableEntrySql } from "../payables/shared";
+import { parseDreDestination, planDreDestination, recalcSlotsSql } from "../payables/dre-destination";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
 import { canManageSupplierDebts, DEFAULT_SUPPLIER_DEBT_FINANCE_ITEM_ID } from "./shared";
 
@@ -67,7 +68,9 @@ export async function GET(request: Request) {
     conditions.push(fragment);
   }
 
-  if (effectiveCompanyId) addCondition("sod.company_id = ?", effectiveCompanyId);
+  // "__none__" = SEM LOJA (escritório / PF / outros).
+  if (effectiveCompanyId === "__none__") addCondition("sod.company_id = ''");
+  else if (effectiveCompanyId) addCondition("sod.company_id = ?", effectiveCompanyId);
   const supplierId = safeText(params.get("supplierId"), 80);
   if (supplierId) addCondition("sod.supplier_id = ?", supplierId);
 
@@ -127,7 +130,7 @@ export async function GET(request: Request) {
                 sod.invoice_number AS invoiceNumber, sod.supplier_invoice_id AS supplierInvoiceId,
                 sod.order_reference AS orderReference, sod.purchase_date AS purchaseDate,
                 sod.description, sod.due_date AS dueDate, sod.notes,
-                sod.accounts_payable_id AS accountsPayableId, sod.canceled,
+                sod.accounts_payable_id AS accountsPayableId, sod.canceled, sod.payer_name AS payerName,
                 sod.created_at AS createdAt, sod.updated_at AS updatedAt,
                 ap.original_amount_cents AS originalAmountCents, ap.paid_amount_cents AS paidAmountCents,
                 ap.status AS payableStatus,
@@ -187,9 +190,11 @@ export async function POST(request: Request) {
     const idempotencyKey = safeText(body.idempotencyKey, 120);
     if (!idempotencyKey) return jsonResponse({ error: "REQUISIÇÃO INVÁLIDA (SEM CHAVE DE IDEMPOTÊNCIA)." }, 400);
 
+    // Loja OPCIONAL (escritório / PF / outros) — só para quem vê todas as lojas.
     const companyId = safeText(body.companyId, 80);
-    const companyName = safeText(body.companyName, 160);
-    if (!companyId) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
+    const companyName = companyId ? safeText(body.companyName, 160) : "";
+    if (!companyId && !allStores) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
+    const payerName = safeText(body.payerName, 160);
     if (!allStores && companyId !== scopeActor.companyId) {
       return jsonResponse({ error: "VOCÊ SÓ PODE CADASTRAR DÍVIDAS PARA A PRÓPRIA LOJA." }, 403);
     }
@@ -232,6 +237,22 @@ export async function POST(request: Request) {
     const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
     if (accountError) return jsonResponse({ error: accountError }, 409);
 
+    const parsedDestination = await parseDreDestination(database, body, {
+      companyId,
+      companyName,
+      financeItemId,
+      competenceMonth: dueDate.slice(0, 7),
+      totalAmountCents: originalAmountCents,
+      allStores,
+      actorCompanyId: scopeActor.companyId,
+    });
+    if ("error" in parsedDestination) return jsonResponse({ error: parsedDestination.error }, parsedDestination.status);
+    const destination = parsedDestination.destination;
+    for (const share of destination?.shares ?? []) {
+      const conflict = await assertSlotAvailableForPayable(database, share.companyId, destination!.itemId, dueDate.slice(0, 7));
+      if (conflict) return jsonResponse({ error: conflict }, 409);
+    }
+
     if (supplierInvoiceId) {
       const invoice = await database
         .prepare("SELECT id FROM supplier_invoices WHERE id=?1")
@@ -263,9 +284,9 @@ export async function POST(request: Request) {
           (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
            original_amount_cents, paid_amount_cents, dre_amount_cents, issue_date, competence_month, due_date, payment_method,
            invoice_number, order_reference, billing_code, notes, status,
-           idempotency_key, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,NULL,?9,?10,?11,?12,?13,?14,'',?15,'open',
-           ?16,?17,?18,CURRENT_TIMESTAMP,?17,?18,CURRENT_TIMESTAMP)`,
+           idempotency_key, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, payer_name)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,?20,?9,?10,?11,?12,?13,?14,'',?15,'open',
+           ?16,?17,?18,CURRENT_TIMESTAMP,?17,?18,CURRENT_TIMESTAMP,?19)`,
         [
           payableId,
           companyId,
@@ -285,14 +306,16 @@ export async function POST(request: Request) {
           `supplier-debt:${idempotencyKey}`,
           actor.id,
           actorName,
+          payerName,
+          destination?.target === "none" ? 0 : null,
         ],
       ],
       [
         `INSERT INTO supplier_open_debts
           (id, company_id, company_name, supplier_id, supplier_name, invoice_number, supplier_invoice_id,
            order_reference, purchase_date, description, original_amount_cents, paid_amount_cents, due_date, notes,
-           accounts_payable_id, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,0,?12,?13,?14,?15,?16,CURRENT_TIMESTAMP,?15,?16,CURRENT_TIMESTAMP)`,
+           accounts_payable_id, created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, payer_name)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,0,?12,?13,?14,?15,?16,CURRENT_TIMESTAMP,?15,?16,CURRENT_TIMESTAMP,?17)`,
         [
           debtId,
           companyId,
@@ -310,13 +333,21 @@ export async function POST(request: Request) {
           payableId,
           actor.id,
           actorName,
+          payerName,
         ],
       ],
     ];
 
-    const entryId = crypto.randomUUID();
-    for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, companyId, financeItemId, competenceMonth, actor.id, actorName)) {
-      statements.push([sql, sqlValues]);
+    if (destination) {
+      const destinationPlan = await planDreDestination(database, destination, [
+        { payableId, month: competenceMonth, amountCents: destination.target === "none" ? 0 : originalAmountCents },
+      ]);
+      statements.push(...destinationPlan.statements, ...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
+    } else {
+      const entryId = crypto.randomUUID();
+      for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, companyId, financeItemId, competenceMonth, actor.id, actorName)) {
+        statements.push([sql, sqlValues]);
+      }
     }
 
     await database.batch(statements.map(([sql, sqlValues]) => database.prepare(sql).bind(...sqlValues)));

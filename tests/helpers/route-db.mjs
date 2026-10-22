@@ -79,7 +79,13 @@ export function createTableSql(table) {
   return `CREATE TABLE "${table}" (${columns.join(", ")});\n${indexes.join("\n")}`;
 }
 
-export function createFakeD1(tables) {
+export function createFakeD1(requestedTables) {
+  // A célula da DRE soma as fatias do destino escolhido (finance_dre_allocations,
+  // migration 0107) junto das contas a pagar — toda base com contas a pagar
+  // precisa da tabela.
+  const tables = requestedTables.includes("accounts_payable") && !requestedTables.includes("finance_dre_allocations")
+    ? [...requestedTables, "finance_dre_allocations"]
+    : requestedTables;
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(tables.map(createTableSql).join("\n"));
 

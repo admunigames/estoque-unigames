@@ -13270,7 +13270,8 @@
   <form class="purchase-form" id="payableForm">
     <input type="hidden" id="payableId">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="payableCompany">EMPRESA/LOJA *</label><select id="payableCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="payableCompany">EMPRESA/LOJA</label><select id="payableCompany"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="payablePayerName">TITULAR / PAGADOR</label><input id="payablePayerName" maxlength="160" placeholder="EX.: NOME DA PESSOA FÍSICA"></div>
       <div class="purchase-field full"><label for="payableDescription">DESCRIÇÃO *</label><input id="payableDescription" maxlength="200" required></div>
       <div class="purchase-field"><label for="payableSupplier">FORNECEDOR</label><select id="payableSupplier"><option value="">SEM FORNECEDOR</option></select></div>
       <div class="purchase-field full"><label for="payableItem">CATEGORIA *</label><select id="payableItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
@@ -13286,14 +13287,10 @@
       <div class="purchase-field"><label for="payableBillingCode">BOLETO/CÓDIGO DE COBRANÇA</label><input id="payableBillingCode" maxlength="80"></div>
       <div class="purchase-field full"><label for="payableNotes">OBSERVAÇÕES</label><textarea id="payableNotes" rows="2" maxlength="2000"></textarea></div>
 
-      <div class="purchase-form-section">DRE</div>
-      <div class="purchase-field full" style="display:flex;align-items:center;gap:8px;">
-        <label for="payableDreIncluded" style="display:flex;align-items:center;gap:6px;width:auto;">
-          <input type="checkbox" id="payableDreIncluded" style="width:auto;" checked> INCLUIR NA DRE?
-        </label>
-      </div>
+      <div class="purchase-form-section">DESTINO NA DRE</div>
+      <div data-dre-destination="payable"></div>
       <div class="purchase-field"><label for="payableDreAmount">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="payableDreAmount" placeholder="R$ 0,00"></div>
-      <div class="purchase-field full" id="payableDreHelp"><span class="purchase-field-help">Por padrão, o valor total da conta entra inteiro na DRE. Em contas parceladas/recorrentes, essa decisão vale pro conjunto inteiro (não dá pra escolher por parcela).</span></div>
+      <div class="purchase-field full" id="payableDreHelp"><span class="purchase-field-help">A conta é só o lançamento: escolha onde ela entra na DRE (a loja da conta não decide mais). Por padrão, o valor total entra inteiro. Em contas parceladas/recorrentes, a decisão vale pro conjunto inteiro.</span></div>
 
       <div class="purchase-form-section">TIPO DE CONTA</div>
       <div class="purchase-field full payables-kind-tabs">
@@ -13370,7 +13367,8 @@
   </div>
   <form class="purchase-form" id="supplierDebtForm">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="supplierDebtCompany">EMPRESA/LOJA *</label><select id="supplierDebtCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="supplierDebtCompany">EMPRESA/LOJA</label><select id="supplierDebtCompany"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="supplierDebtPayerName">TITULAR / PAGADOR</label><input id="supplierDebtPayerName" maxlength="160" placeholder="EX.: NOME DA PESSOA FÍSICA"></div>
       <div class="purchase-field"><label for="supplierDebtSupplier">FORNECEDOR *</label><select id="supplierDebtSupplier" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="supplierDebtDescription">DESCRIÇÃO *</label><input id="supplierDebtDescription" maxlength="200" required></div>
       <div class="purchase-field"><label for="supplierDebtInvoiceNumber">NOTA FISCAL (OPCIONAL)</label><input id="supplierDebtInvoiceNumber" maxlength="60"></div>
@@ -13381,6 +13379,8 @@
       <div class="purchase-field"><label for="supplierDebtFinanceItem">CATEGORIA (OPCIONAL)</label><select id="supplierDebtFinanceItem" data-finance-item-picker data-placeholder="FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)"><option value="">FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)</option></select></div>
       <div class="purchase-field"><label for="supplierDebtAccount">CONTA FINANCEIRA</label><select id="supplierDebtAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field full"><label for="supplierDebtNotes">OBSERVAÇÕES</label><textarea id="supplierDebtNotes" rows="2" maxlength="2000"></textarea></div>
+      <div class="purchase-form-section">DESTINO NA DRE</div>
+      <div data-dre-destination="supplierDebt"></div>
     </div>
     <div class="user-form-status" id="supplierDebtFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -13700,7 +13700,8 @@
   </div>
   <form class="purchase-form" id="invoiceForm">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="invoiceCompany">EMPRESA/LOJA *</label><select id="invoiceCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="invoiceCompany">EMPRESA/LOJA</label><select id="invoiceCompany"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="invoicePayerName">TITULAR / PAGADOR</label><input id="invoicePayerName" maxlength="160" placeholder="EX.: NOME DA PESSOA FÍSICA"></div>
       <div class="purchase-field"><label for="invoiceSupplier">FORNECEDOR</label><select id="invoiceSupplier"><option value="">SEM FORNECEDOR</option></select></div>
       <div class="purchase-field full" id="invoiceNewSupplierField" hidden><label for="invoiceNewSupplierName">NOME DO NOVO FORNECEDOR *</label><input id="invoiceNewSupplierName" maxlength="160" placeholder="Ex.: OEX"><span class="purchase-field-help">O FORNECEDOR É CADASTRADO JUNTO COM A NOTA (USA O CNPJ/CPF INFORMADO AO LADO).</span></div>
       <div class="purchase-field"><label for="invoiceSupplierDocument">CNPJ/CPF DO FORNECEDOR</label><input id="invoiceSupplierDocument" maxlength="20"></div>
@@ -13748,13 +13749,10 @@
       <div class="purchase-field"><label for="invoiceInstallmentPaymentMethod">FORMA DE PAGAMENTO</label><input id="invoiceInstallmentPaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX"></div>
       <div class="purchase-field"><label for="invoiceInstallmentAccount">CONTA FINANCEIRA</label><select id="invoiceInstallmentAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="invoiceInstallmentBoleto">LINHA DIGITÁVEL (BOLETO)</label><input id="invoiceInstallmentBoleto" maxlength="80"></div>
-      <div class="purchase-field full" style="display:flex;align-items:center;gap:8px;">
-        <label for="invoiceDreIncluded" style="display:flex;align-items:center;gap:6px;width:auto;">
-          <input type="checkbox" id="invoiceDreIncluded" style="width:auto;" checked> INCLUIR NA DRE?
-        </label>
-      </div>
+      <div class="purchase-form-section">DESTINO NA DRE</div>
+      <div data-dre-destination="invoice"></div>
       <div class="purchase-field"><label for="invoiceDreAmount">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="invoiceDreAmount" placeholder="R$ 0,00"></div>
-      <div class="purchase-field full"><span class="purchase-field-help">Vale pra NF inteira (todas as duplicatas juntas) — útil, por exemplo, pra NF de compra pra revenda, que vira estoque e não deveria entrar na DRE do mesmo jeito que uma nota de bem de consumo. "CADASTRAR" aplica junto da criação de novas duplicatas; se as duplicatas já existem e você só quer mudar essa decisão, use "SALVAR DECISÃO DA DRE".</span></div>
+      <div class="purchase-field full"><span class="purchase-field-help">Vale pra NF inteira (todas as duplicatas juntas): INCLUIR EM uma loja, RATEAR entre lojas ou NÃO INCLUIR — por exemplo, NF de compra pra revenda vira estoque e não entra na DRE. "CADASTRAR" aplica junto da criação de novas duplicatas; se as duplicatas já existem e você só quer mudar essa decisão, use "SALVAR DECISÃO DA DRE".</span></div>
       <div class="purchase-field full" style="display:flex;justify-content:flex-end;gap:8px;">
         <button class="btn-outline" id="btnSaveInvoiceDreOnly" type="button">SALVAR DECISÃO DA DRE</button>
         <button class="btn-accent" id="btnSaveInvoiceInstallments" type="submit">CADASTRAR</button>
@@ -31586,6 +31584,141 @@ function renderHomeTasks(){
     });
   }
 
+  // DESTINO NA DRE (Contas a Pagar, Dívidas com Fornecedores e Notas
+  // Fiscais): a conta/boleto é só o lançamento; quem lança DISCRIMINA onde ele
+  // entra — INCLUIR EM (loja + categoria), RATEAR (categoria + lojas/modelo,
+  // mesmo cálculo do rateio da Despesa) ou NÃO INCLUIR. O marcador
+  // <div data-dre-destination="prefixo"> vira os campos na abertura da página.
+  const DRE_RATEIO_MODEL_OPTIONS = [
+    ['padrao','RATEIO PADRÃO'], ['administrativo','RATEIO ADMINISTRATIVO'],
+    ['faturamento','POR FATURAMENTO (VENDAS + SERVIÇOS)'], ['faturamento_vendas','POR FATURAMENTO DE VENDAS'],
+    ['faturamento_servicos','POR FATURAMENTO DE SERVIÇOS'], ['funcionarios','POR QUANTIDADE DE FUNCIONÁRIOS'],
+    ['personalizado','PERSONALIZADO (% POR LOJA)']
+  ];
+  const dreDestinationState = {};
+  function mountDreDestinations(){
+    document.querySelectorAll('[data-dre-destination]').forEach(marker => {
+      const prefix = marker.dataset.dreDestination;
+      dreDestinationState[prefix] = {touched:false};
+      marker.outerHTML =
+        '<div class="purchase-field full payables-kind-tabs" data-dre-dest="'+prefix+'" role="radiogroup" aria-label="Destino na DRE">'+
+          '<label><input type="radio" name="'+prefix+'DreTarget" value="include" checked> INCLUIR EM</label>'+
+          '<label><input type="radio" name="'+prefix+'DreTarget" value="rateio"> RATEAR</label>'+
+          '<label><input type="radio" name="'+prefix+'DreTarget" value="none"> NÃO INCLUIR</label>'+
+        '</div>'+
+        '<div class="purchase-field" data-dre-show="'+prefix+':include"><label for="'+prefix+'DreCompany">LOJA NA DRE *</label><select id="'+prefix+'DreCompany"><option value="">SELECIONE</option></select></div>'+
+        '<div class="purchase-field" data-dre-show="'+prefix+':rateio" hidden><label for="'+prefix+'DreModel">MODELO DE RATEIO *</label><select id="'+prefix+'DreModel">'+
+          DRE_RATEIO_MODEL_OPTIONS.map(([value, label]) => '<option value="'+value+'">'+label+'</option>').join('')+'</select></div>'+
+        '<div class="purchase-field full" data-dre-show="'+prefix+':include '+prefix+':rateio"><label for="'+prefix+'DreItem">CATEGORIA NA DRE</label><select id="'+prefix+'DreItem" data-finance-item-picker data-placeholder="A MESMA CATEGORIA DA CONTA"><option value="">A MESMA CATEGORIA DA CONTA</option></select></div>'+
+        '<div class="purchase-field full" data-dre-show="'+prefix+':rateio" hidden><label>LOJAS DO RATEIO</label>'+
+          '<div class="rateio-store-list" id="'+prefix+'DreStores"></div>'+
+          '<p class="purchase-field-help">NENHUMA MARCADA = TODAS AS LOJAS DO MODELO. MARCADAS: O MODELO É RECALCULADO SÓ ENTRE ELAS (100%). NO PERSONALIZADO, INFORME O % DE CADA LOJA MARCADA.</p></div>';
+      const group = document.querySelector('[data-dre-dest="'+prefix+'"]');
+      group.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener('change', () => {
+        dreDestinationState[prefix].touched = true;
+        syncDreDestination(prefix);
+      }));
+      el(prefix+'DreModel').addEventListener('change', () => { dreDestinationState[prefix].touched = true; renderDreDestinationStores(prefix); });
+      el(prefix+'DreCompany').addEventListener('change', () => { dreDestinationState[prefix].touched = true; });
+      el(prefix+'DreStores').addEventListener('change', event => {
+        if(event.target.matches('[data-dre-store]')){ dreDestinationState[prefix].touched = true; renderDreDestinationStores(prefix); }
+      });
+      mountFinanceItemPicker(el(prefix+'DreItem'));
+      renderFinanceItemPicker(prefix+'DreItem');
+    });
+  }
+  function dreDestinationTarget(prefix){
+    const checked = document.querySelector('input[name="'+prefix+'DreTarget"]:checked');
+    return checked ? checked.value : 'include';
+  }
+  function syncDreDestination(prefix){
+    const target = dreDestinationTarget(prefix);
+    document.querySelectorAll('[data-dre-show]').forEach(field => {
+      const keys = field.dataset.dreShow.split(' ');
+      if(!keys.some(key => key.startsWith(prefix+':'))) return;
+      field.hidden = !keys.includes(prefix+':'+target);
+    });
+    if(target === 'rateio') renderDreDestinationStores(prefix);
+    const state = dreDestinationState[prefix];
+    if(state && typeof state.onChange === 'function') state.onChange(target);
+  }
+  function renderDreDestinationCompanies(prefix, selected){
+    const select = el(prefix+'DreCompany');
+    if(!select) return;
+    const own = !canActAcrossStores('finance:manage') && currentSession.companyId;
+    const list = own ? companies.filter(c => c.id === currentSession.companyId) : companies;
+    select.innerHTML = '<option value="">SELECIONE</option>'+list.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    select.value = own ? currentSession.companyId : (list.some(c => c.id === selected) ? selected : '');
+  }
+  function renderDreDestinationStores(prefix){
+    const box = el(prefix+'DreStores');
+    if(!box) return;
+    const state = dreDestinationState[prefix] || (dreDestinationState[prefix] = {});
+    if(!state.checked) state.checked = new Set();
+    if(!state.percents) state.percents = {};
+    box.querySelectorAll('[data-dre-store]').forEach(input => { if(input.checked) state.checked.add(input.dataset.dreStore); else state.checked.delete(input.dataset.dreStore); });
+    box.querySelectorAll('[data-dre-store-percent]').forEach(input => { state.percents[input.dataset.dreStorePercent] = input.value; });
+    const custom = el(prefix+'DreModel').value === 'personalizado';
+    box.innerHTML = companies.map(c => {
+      const checked = state.checked.has(c.id);
+      return '<div class="rateio-store-row">'+
+        '<label class="assist-check"><input type="checkbox" data-dre-store="'+escapeHtml(c.id)+'"'+(checked ? ' checked' : '')+'> '+escapeHtml(c.name)+'</label>'+
+        (custom && checked ? '<input type="number" min="0" max="100" step="0.01" placeholder="%" aria-label="% de '+escapeHtml(c.name)+'" data-dre-store-percent="'+escapeHtml(c.id)+'" value="'+escapeHtml(state.percents[c.id] ?? '')+'">' : '')+
+      '</div>';
+    }).join('');
+  }
+  // Abre o formulário: destino gravado (edição) ou o padrão (INCLUIR EM a
+  // loja da conta; conta SEM loja = NÃO INCLUIR).
+  function setDreDestination(prefix, destination, defaults){
+    const state = dreDestinationState[prefix] = {touched:false, checked:new Set(), percents:{}, onChange:(dreDestinationState[prefix] || {}).onChange};
+    const fallbackCompany = (defaults && defaults.companyId) || '';
+    const dest = destination || {target: fallbackCompany ? 'include' : 'none', itemId:'', rateioModel:'', shares: fallbackCompany ? [{companyId:fallbackCompany, percentBasisPoints:10000}] : []};
+    document.querySelectorAll('input[name="'+prefix+'DreTarget"]').forEach(input => { input.checked = input.value === dest.target; });
+    renderDreDestinationCompanies(prefix, dest.target === 'include' && dest.shares[0] ? dest.shares[0].companyId : fallbackCompany);
+    el(prefix+'DreModel').value = dest.rateioModel || 'padrao';
+    if(dest.target === 'rateio'){
+      dest.shares.forEach(share => {
+        state.checked.add(share.companyId);
+        state.percents[share.companyId] = String(Number(share.percentBasisPoints || 0) / 100);
+      });
+    }
+    const sameItem = !dest.itemId || (defaults && dest.itemId === defaults.financeItemId);
+    setFinanceItemPickerValue(prefix+'DreItem', sameItem ? '' : dest.itemId);
+    el(prefix+'DreStores').innerHTML = '';
+    syncDreDestination(prefix);
+  }
+  // A loja da conta mudou: enquanto ninguém mexeu no destino, ele acompanha.
+  function followDreDestinationCompany(prefix, companyId){
+    const state = dreDestinationState[prefix];
+    if(!state || state.touched) return;
+    document.querySelectorAll('input[name="'+prefix+'DreTarget"]').forEach(input => { input.checked = input.value === (companyId ? 'include' : 'none'); });
+    renderDreDestinationCompanies(prefix, companyId);
+    syncDreDestination(prefix);
+  }
+  // Campos do destino para o corpo da requisição (ou {error}).
+  function readDreDestination(prefix){
+    const target = dreDestinationTarget(prefix);
+    if(target === 'none') return {dreTarget:'none'};
+    const dreFinanceItemId = el(prefix+'DreItem').value;
+    if(target === 'include'){
+      const dreCompanyId = el(prefix+'DreCompany').value;
+      if(!dreCompanyId) return {error:'ESCOLHA A LOJA EM QUE A CONTA ENTRA NA DRE.'};
+      return {dreTarget:'include', dreCompanyId, dreFinanceItemId};
+    }
+    renderDreDestinationStores(prefix);
+    const state = dreDestinationState[prefix];
+    const ids = [...state.checked];
+    const body = {dreTarget:'rateio', dreFinanceItemId, dreRateioModel: el(prefix+'DreModel').value, dreRateioCompanyIds: ids};
+    if(body.dreRateioModel === 'personalizado'){
+      if(!ids.length) return {error:'MARQUE AS LOJAS DO RATEIO PERSONALIZADO.'};
+      body.dreRateioShares = ids.map(companyId => ({companyId, percentBasisPoints: Math.round(Number(String(state.percents[companyId] || '0').replace(',', '.')) * 100)}));
+      const total = body.dreRateioShares.reduce((sum, share) => sum + share.percentBasisPoints, 0);
+      if(total !== 10000) return {error:'OS PERCENTUAIS DO RATEIO PRECISAM SOMAR 100% (HOJE '+(total / 100).toFixed(2).replace('.', ',')+'%).'};
+    }
+    return body;
+  }
+  mountDreDestinations();
+
   function renderFinanceCategorySelects(){
     const parentSelect = el('financeSubgroupParent');
     const itemSelect = el('financeItemCategory');
@@ -32543,6 +32676,12 @@ function renderHomeTasks(){
   function payablesCanActAcrossStores(){
     return canActAcrossStores('finance:manage');
   }
+  const NO_COMPANY_LABEL = 'SEM LOJA (ESCRITÓRIO / PF / OUTROS)';
+  // Loja da linha nas listagens: conta sem loja mostra SEM LOJA + o titular.
+  function payableCompanyCell(row){
+    const name = row.companyName || row.companyId || 'SEM LOJA';
+    return escapeHtml(name)+(row.payerName ? '<div class="purchase-field-help">'+escapeHtml(row.payerName)+'</div>' : '');
+  }
 
   function renderPayablesCompanyOptions(){
     const filterSelect = el('payablesLoja');
@@ -32550,8 +32689,8 @@ function renderHomeTasks(){
     const options = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
     if(filterSelect){
       const selected = filterSelect.value;
-      filterSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+options;
-      if(companies.some(c => c.id === selected)) filterSelect.value = selected;
+      filterSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+(payablesCanActAcrossStores() ? '<option value="__none__">SEM LOJA</option>' : '')+options;
+      if(companies.some(c => c.id === selected) || selected === '__none__') filterSelect.value = selected;
       if(!payablesCanActAcrossStores() && currentSession.companyId){
         filterSelect.value = currentSession.companyId;
         filterSelect.disabled = true;
@@ -32559,7 +32698,8 @@ function renderHomeTasks(){
     }
     if(formSelect){
       const selected = formSelect.value;
-      formSelect.innerHTML = '<option value="">SELECIONE</option>'+options;
+      // Conta SEM loja (escritório / PF / outros): só quem vê todas as lojas.
+      formSelect.innerHTML = '<option value="">'+(payablesCanActAcrossStores() ? NO_COMPANY_LABEL : 'SELECIONE')+'</option>'+options;
       if(companies.some(c => c.id === selected)) formSelect.value = selected;
       if(!payablesCanActAcrossStores() && currentSession.companyId){
         formSelect.value = currentSession.companyId;
@@ -32644,6 +32784,7 @@ function renderHomeTasks(){
 
   el('payableCompany') && el('payableCompany').addEventListener('change', () => {
     renderPayableAccountOptionsForCompany('payableAccount', el('payableCompany').value, 'SEM CONTA');
+    followDreDestinationCompany('payable', el('payableCompany').value);
   });
 
   el('payablesCategory') && el('payablesCategory').addEventListener('change', () => {
@@ -32738,7 +32879,7 @@ function renderHomeTasks(){
       return '<tr>'+
         '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar '+row.description)+'</td>'+
         '<td data-label="Descrição">'+escapeHtml(row.description)+'</td>'+
-        '<td data-label="Empresa/Loja">'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+        '<td data-label="Empresa/Loja">'+payableCompanyCell(row)+'</td>'+
         '<td data-label="Fornecedor">'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
         '<td data-label="Categoria">'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
         '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
@@ -32906,7 +33047,7 @@ function renderHomeTasks(){
     renderPayablesCompanyOptions();
     renderPayablesCatalogSelects();
     payableFormIdempotencyKey = crypto.randomUUID();
-    el('payableDreIncluded').checked = true;
+    setDreDestination('payable', null, {companyId: el('payableCompany').value});
     setCurrencyValue(el('payableOriginalAmount'), '');
     setCurrencyValue(el('payableDreAmount'), '');
     el('payableDreAmount').disabled = false;
@@ -32915,7 +33056,7 @@ function renderHomeTasks(){
   }
 
   function updatePayableDreField(){
-    const included = el('payableDreIncluded').checked;
+    const included = dreDestinationTarget('payable') !== 'none';
     const amountEl = el('payableDreAmount');
     if(!included){
       const current = getCurrencyValue(amountEl);
@@ -32932,7 +33073,7 @@ function renderHomeTasks(){
   }
   attachCurrencyMask(el('payableOriginalAmount'));
   attachCurrencyMask(el('payableDreAmount'));
-  el('payableDreIncluded').addEventListener('change', () => { payableDreTouched = true; updatePayableDreField(); });
+  dreDestinationState.payable = Object.assign(dreDestinationState.payable || {}, {onChange: () => updatePayableDreField()});
   el('payableDreAmount').addEventListener('input', () => { payableDreTouched = true; });
   el('payableOriginalAmount').addEventListener('input', () => {
     if(!payableDreTouched) setCurrencyValue(el('payableDreAmount'), getCurrencyValue(el('payableOriginalAmount')));
@@ -32989,11 +33130,15 @@ function renderHomeTasks(){
     el('payableOrderReference').value = row.orderReference || '';
     el('payableBillingCode').value = row.billingCode || '';
     el('payableNotes').value = row.notes || '';
-    const rowDreIncluded = row.dreAmountCents === null || row.dreAmountCents === undefined || row.dreAmountCents > 0;
+    el('payablePayerName').value = row.payerName || '';
+    renderPayableAccountOptionsForCompany('payableAccount', row.companyId || '', 'SEM CONTA');
+    el('payableAccount').value = row.financeAccountId || '';
     const rowDreAmountCents = row.dreAmountCents === null || row.dreAmountCents === undefined ? row.originalAmountCents : row.dreAmountCents;
-    el('payableDreIncluded').checked = rowDreIncluded;
+    let destination = null;
+    try{ destination = (await financeApiRequest('/payables/'+encodeURIComponent(row.id))).dreDestination || null; }catch(_e){}
+    setDreDestination('payable', destination, {companyId: row.companyId, financeItemId: row.financeItemId});
     setCurrencyValue(el('payableDreAmount'), rowDreAmountCents / 100);
-    el('payableDreAmount').disabled = !rowDreIncluded;
+    el('payableDreAmount').disabled = dreDestinationTarget('payable') === 'none';
     payableDreTouched = false;
     el('payableDialogTitle').textContent = 'EDITAR CONTA A PAGAR';
     el('payableFormStatus').textContent = '';
@@ -33021,18 +33166,20 @@ function renderHomeTasks(){
     const companyId = el('payableCompany').value;
     const companySelect = el('payableCompany');
     const companyName = companySelect.options[companySelect.selectedIndex] ? companySelect.options[companySelect.selectedIndex].textContent : '';
-    if(!companyId){ statusEl.textContent = 'SELECIONE A EMPRESA/LOJA.'; return; }
+    if(!companyId && !payablesCanActAcrossStores()){ statusEl.textContent = 'SELECIONE A EMPRESA/LOJA.'; return; }
     const financeItemId = el('payableItem').value;
     if(!financeItemId){ statusEl.textContent = 'SELECIONE A CATEGORIA/ITEM DA DESPESA.'; return; }
     const dueDate = el('payableDueDate').value;
     if(!dueDate){ statusEl.textContent = 'INFORME O VENCIMENTO.'; return; }
 
+    const destination = readDreDestination('payable');
+    if(destination.error){ statusEl.textContent = destination.error; return; }
     const button = el('btnSavePayable');
     button.disabled = true;
     try{
-      const dreFields = {};
-      if(payableDreTouched){
-        dreFields.dreIncluded = el('payableDreIncluded').checked;
+      const dreFields = {...destination, payerName: el('payablePayerName').value.trim()};
+      if(payableDreTouched && destination.dreTarget !== 'none'){
+        dreFields.dreIncluded = true;
         dreFields.dreAmountCents = parseBRLToCents(getCurrencyValue(el('payableDreAmount')) || '0') || 0;
       }
       let response;
@@ -33414,9 +33561,9 @@ function renderHomeTasks(){
     const select = el('supplierDebtsLoja');
     if(!select) return;
     const selected = select.value;
-    select.innerHTML = '<option value="">TODAS AS LOJAS</option>'+
+    select.innerHTML = '<option value="">TODAS AS LOJAS</option>'+(payablesCanActAcrossStores() ? '<option value="__none__">SEM LOJA</option>' : '')+
       companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-    if(companies.some(c => c.id === selected)) select.value = selected;
+    if(companies.some(c => c.id === selected) || selected === '__none__') select.value = selected;
     if(!payablesCanActAcrossStores() && currentSession.companyId){
       select.value = currentSession.companyId;
       select.disabled = true;
@@ -33460,7 +33607,7 @@ function renderHomeTasks(){
       return '<tr>'+
         '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar dívida '+row.description)+'</td>'+
         '<td data-label="Fornecedor">'+escapeHtml(row.supplierName || '—')+'</td>'+
-        '<td data-label="Empresa/Loja">'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+        '<td data-label="Empresa/Loja">'+payableCompanyCell(row)+'</td>'+
         '<td data-label="Descrição">'+escapeHtml(row.description)+'</td>'+
         '<td data-label="NF/Pedido">'+escapeHtml(row.invoiceNumber || row.orderReference || '—')+'</td>'+
         '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
@@ -33540,7 +33687,7 @@ function renderHomeTasks(){
     setCurrencyValue(el('supplierDebtOriginalAmount'), '');
     el('supplierDebtForm').dataset.editId = '';
     renderSupplierDebtsCompanyOptions();
-    el('supplierDebtCompany').innerHTML = '<option value="">SELECIONE</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    el('supplierDebtCompany').innerHTML = '<option value="">'+(payablesCanActAcrossStores() ? NO_COMPANY_LABEL : 'SELECIONE')+'</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
     if(!payablesCanActAcrossStores() && currentSession.companyId){
       el('supplierDebtCompany').value = currentSession.companyId;
       el('supplierDebtCompany').disabled = true;
@@ -33549,8 +33696,13 @@ function renderHomeTasks(){
     el('supplierDebtSupplier').innerHTML = '<option value="">SELECIONE</option>'+supplierOptions;
     renderSupplierDebtFinanceItemOptions();
     renderPayableAccountOptionsForCompany('supplierDebtAccount', el('supplierDebtCompany').value, 'SEM CONTA');
+    setDreDestination('supplierDebt', null, {companyId: el('supplierDebtCompany').value});
     supplierDebtFormIdempotencyKey = crypto.randomUUID();
   }
+  el('supplierDebtCompany').addEventListener('change', () => {
+    renderPayableAccountOptionsForCompany('supplierDebtAccount', el('supplierDebtCompany').value, 'SEM CONTA');
+    followDreDestinationCompany('supplierDebt', el('supplierDebtCompany').value);
+  });
 
   async function openNewSupplierDebtDialog(){
     if(!financeCategories.length && !financeItems.length) await loadFinanceCatalog();
@@ -33561,8 +33713,12 @@ function renderHomeTasks(){
     el('supplierDebtDialog').showModal();
   }
 
-  function openEditSupplierDebtDialog(row){
+  async function openEditSupplierDebtDialog(row){
     resetSupplierDebtForm();
+    el('supplierDebtPayerName').value = row.payerName || '';
+    let destination = null;
+    try{ destination = (await financeApiRequest('/supplier-debts/'+encodeURIComponent(row.id))).dreDestination || null; }catch(_e){}
+    setDreDestination('supplierDebt', destination, {companyId: row.companyId});
     el('supplierDebtForm').dataset.editId = row.id;
     el('supplierDebtCompany').value = row.companyId;
     el('supplierDebtCompany').disabled = true;
@@ -33603,6 +33759,8 @@ function renderHomeTasks(){
     const description = el('supplierDebtDescription').value.trim();
     if(description.length < 2){ statusEl.textContent = 'INFORME A DESCRIÇÃO DA DÍVIDA.'; return; }
 
+    const destination = readDreDestination('supplierDebt');
+    if(destination.error){ statusEl.textContent = destination.error; return; }
     const editId = el('supplierDebtForm').dataset.editId;
     const button = el('btnSaveSupplierDebt');
     button.disabled = true;
@@ -33613,13 +33771,14 @@ function renderHomeTasks(){
           body:JSON.stringify({
             description, invoiceNumber:el('supplierDebtInvoiceNumber').value.trim(),
             orderReference:el('supplierDebtOrderReference').value.trim(), purchaseDate:el('supplierDebtPurchaseDate').value,
-            dueDate, originalAmountCents, notes:el('supplierDebtNotes').value.trim()
+            dueDate, originalAmountCents, notes:el('supplierDebtNotes').value.trim(),
+            payerName:el('supplierDebtPayerName').value.trim(), ...destination
           })
         });
         showPurchaseToast('Dívida atualizada.');
       }else{
         const companyId = el('supplierDebtCompany').value;
-        if(!companyId){ statusEl.textContent = 'SELECIONE A EMPRESA/LOJA.'; button.disabled = false; return; }
+        if(!companyId && !payablesCanActAcrossStores()){ statusEl.textContent = 'SELECIONE A EMPRESA/LOJA.'; button.disabled = false; return; }
         const supplierId = el('supplierDebtSupplier').value;
         if(!supplierId){ statusEl.textContent = 'SELECIONE O FORNECEDOR.'; button.disabled = false; return; }
         const companySelect = el('supplierDebtCompany');
@@ -33631,7 +33790,8 @@ function renderHomeTasks(){
             description, invoiceNumber:el('supplierDebtInvoiceNumber').value.trim(),
             orderReference:el('supplierDebtOrderReference').value.trim(), purchaseDate:el('supplierDebtPurchaseDate').value,
             dueDate, originalAmountCents, financeItemId:el('supplierDebtFinanceItem').value,
-            financeAccountId:el('supplierDebtAccount').value, notes:el('supplierDebtNotes').value.trim()
+            financeAccountId:el('supplierDebtAccount').value, notes:el('supplierDebtNotes').value.trim(),
+            payerName:el('supplierDebtPayerName').value.trim(), ...destination
           })
         });
         showPurchaseToast('Dívida cadastrada.');
@@ -43594,9 +43754,8 @@ function renderHomeTasks(){
   attachCurrencyMask(el('invoiceInstallmentSingleAmount'));
   attachCurrencyMask(el('invoiceDreAmount'));
   attachCurrencyMask(el('invoicePaymentAmount'));
-  el('invoiceDreIncluded').addEventListener('change', () => {
-    invoiceDreTouched = true;
-    const included = el('invoiceDreIncluded').checked;
+  dreDestinationState.invoice = Object.assign(dreDestinationState.invoice || {}, {onChange: () => {
+    const included = dreDestinationTarget('invoice') !== 'none';
     const amountEl = el('invoiceDreAmount');
     if(!included){
       const current = getCurrencyValue(amountEl);
@@ -43610,7 +43769,7 @@ function renderHomeTasks(){
         delete amountEl.dataset.prevValue;
       }
     }
-  });
+  }});
   el('invoiceDreAmount').addEventListener('input', () => { invoiceDreTouched = true; });
   let invoiceCurrentDetail = null;
   let invoicePaymentIdempotencyKey = '';
@@ -43743,14 +43902,14 @@ function renderHomeTasks(){
     const invoicesLojaSelect = el('invoicesLoja');
     if(invoicesLojaSelect){
       const selected = invoicesLojaSelect.value;
-      invoicesLojaSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+
+      invoicesLojaSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+(payablesCanActAcrossStores() ? '<option value="__none__">SEM LOJA</option>' : '')+
         companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-      if(companies.some(c => c.id === selected)) invoicesLojaSelect.value = selected;
+      if(companies.some(c => c.id === selected) || selected === '__none__') invoicesLojaSelect.value = selected;
     }
     const invoiceCompanySelect = el('invoiceCompany');
     if(invoiceCompanySelect){
       const selected = invoiceCompanySelect.value;
-      invoiceCompanySelect.innerHTML = '<option value="">SELECIONE</option>'+
+      invoiceCompanySelect.innerHTML = '<option value="">'+(payablesCanActAcrossStores() ? NO_COMPANY_LABEL : 'SELECIONE')+'</option>'+
         companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
       if(companies.some(c => c.id === selected)) invoiceCompanySelect.value = selected;
     }
@@ -43781,7 +43940,7 @@ function renderHomeTasks(){
       '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar NF '+row.invoiceNumber)+'</td>'+
       '<td data-label="Nota fiscal">'+escapeHtml(row.invoiceNumber)+(row.series ? '/'+escapeHtml(row.series) : '')+'</td>'+
       '<td data-label="Fornecedor">'+escapeHtml((supplier && supplier.name) || row.supplierDocument || '—')+'</td>'+
-      '<td data-label="Empresa/Loja">'+escapeHtml(row.companyName || row.companyId)+'</td>'+
+      '<td data-label="Empresa/Loja">'+payableCompanyCell(row)+'</td>'+
       '<td data-label="Competência">'+escapeHtml(row.competenceMonth)+'</td>'+
       '<td data-label="Valor total">'+formatCentsBRL(row.totalAmountCents)+'</td>'+
       '<td data-label="Status">'+invoiceStatusPillHtml(row.financialStatus)+'</td>'+
@@ -43970,9 +44129,9 @@ function renderHomeTasks(){
       : '<tr><td colspan="7" class="responsive-empty">Nenhuma duplicata cadastrada.</td></tr>';
 
     const dre = data.dre || { included: true, amountCents: invoice.totalAmountCents };
-    el('invoiceDreIncluded').checked = dre.included;
+    setDreDestination('invoice', dre.destination || null, {companyId: invoice.companyId, financeItemId: invoice.financeItemId});
     setCurrencyValue(el('invoiceDreAmount'), (dre.amountCents || invoice.totalAmountCents) / 100);
-    el('invoiceDreAmount').disabled = !dre.included;
+    el('invoiceDreAmount').disabled = dreDestinationTarget('invoice') === 'none';
     invoiceDreTouched = false;
 
     const attachments = data.attachments || [];
@@ -44116,6 +44275,7 @@ function renderHomeTasks(){
         body:JSON.stringify({
           companyId: el('invoiceCompany').value,
           companyName: (companies.find(c => c.id === el('invoiceCompany').value) || {}).name || '',
+          payerName: el('invoicePayerName').value.trim(),
           supplierId: el('invoiceSupplier').value,
           supplierDocument: el('invoiceSupplierDocument').value,
           invoiceNumber: el('invoiceNumberInput').value,
@@ -44174,8 +44334,11 @@ function renderHomeTasks(){
         if(!amountCents) throw new Error('INFORME UM VALOR VÁLIDO PARA A DUPLICATA.');
         body.originalAmountCents = amountCents;
       }
-      if(invoiceDreTouched){
-        body.dreIncluded = el('invoiceDreIncluded').checked;
+      const destination = readDreDestination('invoice');
+      if(destination.error) throw new Error(destination.error);
+      Object.assign(body, destination);
+      if(invoiceDreTouched && destination.dreTarget !== 'none'){
+        body.dreIncluded = true;
         body.dreAmountCents = parseBRLToCents(getCurrencyValue(el('invoiceDreAmount')) || '0') || 0;
       }
       const installmentsResponse = await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments', {
@@ -44203,10 +44366,15 @@ function renderHomeTasks(){
     try{
       const response = await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId), {
         method:'PATCH', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          dreIncluded: el('invoiceDreIncluded').checked,
-          dreAmountCents: parseBRLToCents(getCurrencyValue(el('invoiceDreAmount')) || '0') || 0
-        })
+        body:JSON.stringify((() => {
+          const destination = readDreDestination('invoice');
+          if(destination.error) throw new Error(destination.error);
+          return {
+            ...destination,
+            dreIncluded: destination.dreTarget !== 'none',
+            dreAmountCents: destination.dreTarget === 'none' ? 0 : parseBRLToCents(getCurrencyValue(el('invoiceDreAmount')) || '0') || 0
+          };
+        })())
       });
       showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Decisão da DRE salva.');
       await openInvoiceDetailDialog(invoiceCurrentDetailId);

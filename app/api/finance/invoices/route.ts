@@ -48,7 +48,9 @@ export async function GET(request: Request) {
     conditions.push(fragment);
   }
 
-  if (effectiveCompanyId) addCondition("company_id = ?", effectiveCompanyId);
+  // "__none__" = SEM LOJA (escritório / PF / outros).
+  if (effectiveCompanyId === "__none__") addCondition("company_id = ''");
+  else if (effectiveCompanyId) addCondition("company_id = ?", effectiveCompanyId);
   const statuses = params.getAll("status").map((value) => safeText(value, 30)).filter(Boolean);
   if (statuses.length === 1) addCondition("financial_status = ?", statuses[0]);
   if (statuses.length > 1) {
@@ -144,9 +146,11 @@ export async function POST(request: Request) {
     // Pelo pedido de compra vale o alcance do Compras (central vê todas as lojas).
     const allStores = canSeeAllStores(scopeActor, viaPurchaseOrder ? "purchases_draft:manage" : "finance:manage");
 
+    // Loja OPCIONAL (escritório / PF / outros) — só para quem vê todas as lojas.
     const companyId = safeText(body.companyId, 80);
-    const companyName = safeText(body.companyName, 160);
-    if (!companyId) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
+    const companyName = companyId ? safeText(body.companyName, 160) : "";
+    if (!companyId && !allStores) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
+    const payerName = safeText(body.payerName, 160);
     if (!allStores && companyId !== scopeActor.companyId) {
       return jsonResponse({ error: "VOCÊ SÓ PODE CADASTRAR NOTAS PARA A PRÓPRIA LOJA." }, 403);
     }
@@ -250,9 +254,9 @@ export async function POST(request: Request) {
            issue_date, entry_date, competence_month, notion_purchase_id, notion_purchase_url, purchase_order_id,
            total_amount_cents, finance_category_id, finance_item_id, cost_center, notes, origin, financial_status,
            created_by, created_by_name, sent_to_finance_by, sent_to_finance_by_name, sent_to_finance_at,
-           created_at, updated_by, updated_by_name, updated_at, cost_center_id)
+           created_at, updated_by, updated_by_name, updated_at, cost_center_id, payer_name)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,'','',?12,?13,?14,?15,?16,?17,'manual',?18,
-           ?19,?20,?19,?20,?21,CURRENT_TIMESTAMP,?19,?20,CURRENT_TIMESTAMP,?22)`,
+           ?19,?20,?19,?20,?21,CURRENT_TIMESTAMP,?19,?20,CURRENT_TIMESTAMP,?22,?23)`,
       )
       .bind(
         id,
@@ -277,6 +281,7 @@ export async function POST(request: Request) {
         actorName,
         now,
         costCenterId || null,
+        payerName,
       )
       .run();
 

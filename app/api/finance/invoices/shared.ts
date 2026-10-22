@@ -7,6 +7,9 @@ import {
   type InvoiceFinancialStatus,
 } from "../../../lib/supplier-invoice-status";
 import type { Identity } from "../shared";
+import { allocationSlotsOf, loadPayableDestination, recalcSlotsSql } from "../payables/dre-destination";
+import { loadPayable } from "../payables/shared";
+import type { DreDestination } from "../../../lib/dre-destination";
 
 export type { InstallmentSnapshot };
 
@@ -85,6 +88,7 @@ export type InvoiceRow = {
   returnedBy: string;
   returnedByName: string;
   returnedAt: string;
+  payerName: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -102,7 +106,7 @@ export const INVOICE_ROW_SELECT = `id, company_id AS companyId, company_name AS 
   created_by AS createdBy, created_by_name AS createdByName,
   sent_to_finance_by AS sentToFinanceBy, sent_to_finance_by_name AS sentToFinanceByName,
   sent_to_finance_at AS sentToFinanceAt, returned_by AS returnedBy, returned_by_name AS returnedByName,
-  returned_at AS returnedAt, created_at AS createdAt, updated_at AS updatedAt`;
+  returned_at AS returnedAt, payer_name AS payerName, created_at AS createdAt, updated_at AS updatedAt`;
 
 export async function loadInvoice(
   database: Awaited<ReturnType<typeof getD1>>,
@@ -325,9 +329,12 @@ export type DreView = { included: boolean; amountCents: number; isCustomized: bo
 export async function loadInvoiceDreView(
   database: Awaited<ReturnType<typeof getD1>>,
   installments: InstallmentRow[],
-): Promise<DreView> {
+): Promise<DreView & { destination?: DreDestination }> {
   const activePayableIds = installments.filter((i) => !i.canceled).map((i) => i.accountsPayableId).filter(Boolean);
   if (!activePayableIds.length) return { included: true, amountCents: 0, isCustomized: false };
+  // Destino na DRE da NF = o da 1ª duplicata (todas recebem o mesmo).
+  const firstPayable = await loadPayable(database, activePayableIds[0]);
+  const destination = firstPayable ? await loadPayableDestination(database, firstPayable) : undefined;
   const placeholders = activePayableIds.map((_, index) => `?${index + 1}`).join(",");
   const result = await database
     .prepare(
@@ -339,7 +346,7 @@ export async function loadInvoiceDreView(
   const rows = result.results ?? [];
   const totalDreImpact = rows.reduce((sum, row) => sum + effectiveDreAmountCents(row.dreAmountCents, row.originalAmountCents), 0);
   const isCustomized = rows.some((row) => row.dreAmountCents !== null && row.dreAmountCents !== undefined);
-  return { included: !isCustomized || totalDreImpact > 0, amountCents: totalDreImpact, isCustomized };
+  return { included: !isCustomized || totalDreImpact > 0, amountCents: totalDreImpact, isCustomized, destination };
 }
 
 export async function loadPendingScheduleIds(
@@ -419,6 +426,7 @@ export async function planInvoiceCancel(
   if (installments.length) {
     statements.push(
       ...recalcPayableEntrySql(crypto.randomUUID(), invoice.companyId, invoice.financeItemId, invoice.competenceMonth, actor.id, actor.name),
+      ...recalcSlotsSql(await allocationSlotsOf(database, installments.map((i) => i.accountsPayableId)), actor),
     );
   }
   return statements;

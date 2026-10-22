@@ -17,6 +17,11 @@ import {
   splitIntoInstallments,
   type RecurrenceFrequency,
 } from "./shared";
+import { parseDreDestination, planDreDestination, recalcSlotsSql } from "./dre-destination";
+import { effectiveDreAmountCents } from "../../../lib/payables-recurrence";
+
+// Filtro "SEM LOJA" (escritório / PF / outros) da listagem.
+const NO_COMPANY_FILTER = "__none__";
 
 type ListRow = Record<string, unknown>;
 type PayableUnit = {
@@ -36,7 +41,8 @@ const LIST_COLUMNS = `id, company_id AS companyId, company_name AS companyName, 
   recurrence_id AS recurrenceId, recurrence_frequency AS recurrenceFrequency,
   installment_group_id AS installmentGroupId, installment_number AS installmentNumber,
   installment_total AS installmentTotal, expense_id AS expenseId, cost_center AS costCenter,
-  cost_center_id AS costCenterId, created_at AS createdAt, updated_at AS updatedAt`;
+  cost_center_id AS costCenterId, dre_target AS dreTarget, payer_name AS payerName,
+  created_at AS createdAt, updated_at AS updatedAt`;
 
 /**
  * Linha agrupada de uma despesa rateada (mesmo vencimento): descrição e loja
@@ -137,7 +143,9 @@ export async function GET(request: Request) {
   // Despesa rateada (visão agrupada): com a loja filtrada, a despesa aparece
   // se a loja for a da despesa OU uma das lojas do rateio. Login de loja
   // continua vendo só as fatias da própria loja.
-  if (effectiveCompanyId && allStores) {
+  if (effectiveCompanyId === NO_COMPANY_FILTER && allStores) {
+    addCondition("company_id = ''");
+  } else if (effectiveCompanyId && allStores) {
     addCondition(
       "(company_id = ? OR expense_id IN (SELECT id FROM expenses WHERE rateio_type = 'rateio' AND company_id = ?))",
       effectiveCompanyId,
@@ -195,8 +203,9 @@ export async function GET(request: Request) {
   if (search) {
     addCondition(
       `(LOWER(description) LIKE LOWER(?) OR LOWER(invoice_number) LIKE LOWER(?) OR LOWER(order_reference) LIKE LOWER(?)
-        OR LOWER(billing_code) LIKE LOWER(?)
+        OR LOWER(billing_code) LIKE LOWER(?) OR LOWER(payer_name) LIKE LOWER(?)
         OR EXISTS (SELECT 1 FROM finance_suppliers s WHERE s.id = accounts_payable.supplier_id AND LOWER(s.name) LIKE LOWER(?)))`,
+      `%${search}%`,
       `%${search}%`,
       `%${search}%`,
       `%${search}%`,
@@ -382,12 +391,15 @@ export async function POST(request: Request) {
     const idempotencyKey = safeText(body.idempotencyKey, 120);
     if (!idempotencyKey) return jsonResponse({ error: "REQUISIÇÃO INVÁLIDA (SEM CHAVE DE IDEMPOTÊNCIA)." }, 400);
 
+    // Loja OPCIONAL: conta SEM loja (escritório / PF / outros) só para quem
+    // vê todas as lojas — login de loja continua só na própria loja.
     const companyId = safeText(body.companyId, 80);
-    const companyName = safeText(body.companyName, 160);
-    if (!companyId) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
+    const companyName = companyId ? safeText(body.companyName, 160) : "";
+    if (!companyId && !allStores) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
     if (!allStores && companyId !== scopeActor.companyId) {
       return jsonResponse({ error: "VOCÊ SÓ PODE CADASTRAR CONTAS PARA A PRÓPRIA LOJA." }, 403);
     }
+    const payerName = safeText(body.payerName, 160);
 
     const description = safeText(body.description, 200);
     if (description.length < 2) return jsonResponse({ error: "INFORME A DESCRIÇÃO DA CONTA." }, 400);
@@ -540,12 +552,29 @@ export async function POST(request: Request) {
       ];
     }
 
+    // Destino na DRE escolhido por quem lança (NÃO INCLUIR / RATEAR /
+    // INCLUIR EM). Sem destino (null) = regra antiga: DRE da loja da conta.
+    const parsedDestination = await parseDreDestination(database, body, {
+      companyId,
+      companyName,
+      financeItemId,
+      competenceMonth: plan[0].competenceMonth,
+      totalAmountCents: dreCustomized ? dreAmountCents : totalAmountCents,
+      allStores,
+      actorCompanyId: scopeActor.companyId,
+    });
+    if ("error" in parsedDestination) return jsonResponse({ error: parsedDestination.error }, parsedDestination.status);
+    const destination = parsedDestination.destination;
+
     // Confere ANTES de escrever se algum slot loja+item+mês da série já é
     // ocupado por um lançamento manual da DRE — falha tudo, sem criar nada
     // pela metade (parcelamento/recorrência é tudo ou nada).
     const distinctMonths = [...new Set(plan.map((entry) => entry.competenceMonth))];
-    for (const month of distinctMonths) {
-      const conflict = await assertSlotAvailableForPayable(database, companyId, financeItemId, month);
+    const slotsToCheck = destination
+      ? destination.shares.flatMap((share) => distinctMonths.map((month) => [share.companyId, destination.itemId, month]))
+      : distinctMonths.map((month) => [companyId, financeItemId, month]);
+    for (const [slotCompanyId, slotItemId, month] of slotsToCheck) {
+      const conflict = await assertSlotAvailableForPayable(database, slotCompanyId, slotItemId, month);
       if (conflict) return jsonResponse({ error: conflict }, 409);
     }
 
@@ -559,9 +588,11 @@ export async function POST(request: Request) {
     for (let i = 0; i < plan.length; i += 1) {
       createdIds.push(crypto.randomUUID());
     }
-    const dreAssignments = dreCustomized
-      ? computeDreAnchorAssignments(createdIds, dreIncluded, dreAmountCents)
-      : null;
+    const dreAssignments = destination?.target === "none"
+      ? computeDreAnchorAssignments(createdIds, false, 0)
+      : dreCustomized
+        ? computeDreAnchorAssignments(createdIds, dreIncluded, dreAmountCents)
+        : null;
 
     plan.forEach((occurrence, index) => {
       const id = createdIds[index];
@@ -572,9 +603,10 @@ export async function POST(request: Request) {
            invoice_number, order_reference, billing_code, notes, status,
            recurrence_id, recurrence_frequency, recurrence_occurrence_index, recurrence_occurrence_count, recurrence_end_date,
            installment_group_id, installment_number, installment_total, idempotency_key,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, cost_center, cost_center_id)
+           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, cost_center, cost_center_id,
+           payer_name)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,?9,?10,?11,?12,?13,?14,?15,?16,?17,'open',
-           ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP,?29,?30)`,
+           ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,CURRENT_TIMESTAMP,?27,?28,CURRENT_TIMESTAMP,?29,?30,?31)`,
         [
           id,
           companyId,
@@ -611,14 +643,29 @@ export async function POST(request: Request) {
           actorName,
           costCenter,
           costCenterId || null,
+          payerName,
         ],
       ]);
     });
 
-    for (const month of distinctMonths) {
-      const entryId = crypto.randomUUID();
-      for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, companyId, financeItemId, month, actor.id, actorName)) {
-        statements.push([sql, sqlValues]);
+    if (destination) {
+      const destinationPlan = await planDreDestination(
+        database,
+        destination,
+        plan.map((occurrence, index) => ({
+          payableId: createdIds[index],
+          month: occurrence.competenceMonth,
+          amountCents: effectiveDreAmountCents(dreAssignments ? dreAssignments.get(createdIds[index]) ?? null : null, occurrence.amountCents),
+        })),
+      );
+      statements.push(...destinationPlan.statements);
+      statements.push(...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
+    } else {
+      for (const month of distinctMonths) {
+        const entryId = crypto.randomUUID();
+        for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, companyId, financeItemId, month, actor.id, actorName)) {
+          statements.push([sql, sqlValues]);
+        }
       }
     }
 

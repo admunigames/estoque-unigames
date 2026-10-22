@@ -119,14 +119,41 @@ export async function GET(request: Request) {
            LEFT JOIN finance_categories pfc ON pfc.id = fc.parent_id
            LEFT JOIN finance_cost_centers fcc ON fcc.id = ap.cost_center_id
            LEFT JOIN finance_accounts fa ON fa.id = ap.finance_account_id
-           WHERE ap.competence_month=?1 AND ap.status<>'canceled'
+           WHERE ap.competence_month=?1 AND ap.status<>'canceled' AND ap.dre_target=''
              AND ap.finance_item_id IN (${placeholders})
              ${companyFilter}
            ORDER BY ap.due_date ASC, ap.id ASC`,
         )
         .bind(month, ...itemIds, ...(storeId ? [storeId] : []))
         .all<PayableDetailRow>();
-      payableRows = rows.results ?? [];
+      // Contas com destino escolhido (INCLUIR EM / RATEAR): a fatia da loja,
+      // na categoria escolhida — a loja/categoria da própria conta não importa.
+      const allocationFilter = storeId ? "AND a.store_id=?" + (itemIds.length + 2) : "";
+      const allocated = await database
+        .prepare(
+          `SELECT ap.id, ap.due_date AS dueDate, ap.issue_date AS issueDate, a.store_name AS companyName,
+                  s.name AS supplierName, fi.name AS itemName, fc.name AS categoryName, pfc.name AS parentCategoryName,
+                  fcc.name AS costCenterName, ap.cost_center AS costCenterText,
+                  ap.description, ap.original_amount_cents AS originalAmountCents, a.amount_cents AS dreAmountCents,
+                  ap.payment_method AS paymentMethod, fa.name AS financeAccountLabel, ap.notes
+           FROM finance_dre_allocations a
+           JOIN accounts_payable ap ON ap.id = a.payable_id
+           LEFT JOIN finance_suppliers s ON s.id = ap.supplier_id
+           LEFT JOIN finance_items fi ON fi.id = a.item_id
+           LEFT JOIN finance_categories fc ON fc.id = fi.category_id
+           LEFT JOIN finance_categories pfc ON pfc.id = fc.parent_id
+           LEFT JOIN finance_cost_centers fcc ON fcc.id = ap.cost_center_id
+           LEFT JOIN finance_accounts fa ON fa.id = ap.finance_account_id
+           WHERE a.month=?1 AND ap.status<>'canceled'
+             AND a.item_id IN (${placeholders})
+             ${allocationFilter}
+           ORDER BY ap.due_date ASC, ap.id ASC`,
+        )
+        .bind(month, ...itemIds, ...(storeId ? [storeId] : []))
+        .all<PayableDetailRow>();
+      payableRows = [...(rows.results ?? []), ...(allocated.results ?? [])].sort(
+        (a, b) => a.dueDate.localeCompare(b.dueDate) || a.id.localeCompare(b.id),
+      );
     }
 
     const entryDetails = payableRows.map((row) => ({

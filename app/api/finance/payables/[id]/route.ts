@@ -16,6 +16,8 @@ import {
   recalcPayableEntrySql,
   statusView,
 } from "../shared";
+import { allocationSlotsOf, loadPayableDestination, parseDreDestination, planDreDestination, recalcSlotsSql } from "../dre-destination";
+import { effectiveDreAmountCents } from "../../../../lib/payables-recurrence";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const unauthorized = unauthorizedResponse(request);
@@ -66,6 +68,9 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       payments: payments.results ?? [],
       dreOriginSiblings: siblings.results ?? [],
       dre: dreViewFromGroup(groupRows),
+      // Destino na DRE (conta antiga = INCLUIR EM a própria loja/categoria,
+      // ou NÃO INCLUIR se a DRE foi zerada).
+      dreDestination: await loadPayableDestination(database, payable),
     });
   } catch (error) {
     console.error("Não foi possível carregar a conta a pagar.", error);
@@ -138,11 +143,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     }
 
     const companyId = body.companyId === undefined ? payable.companyId : safeText(body.companyId, 80);
-    const companyName = body.companyName === undefined ? payable.companyName : safeText(body.companyName, 160);
+    const companyName = !companyId ? "" : body.companyName === undefined ? payable.companyName : safeText(body.companyName, 160);
     const allStores = canSeeAllStores(scopeActor, "finance:manage");
     if (!allStores && companyId !== scopeActor.companyId) {
       return jsonResponse({ error: "VOCÊ SÓ PODE MOVER A CONTA PARA A PRÓPRIA LOJA." }, 403);
     }
+    const payerName = body.payerName === undefined ? payable.payerName : safeText(body.payerName, 160);
 
     const item = await database
       .prepare("SELECT id FROM finance_items WHERE id=?1")
@@ -169,11 +175,37 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
     if (accountError) return jsonResponse({ error: accountError }, 409);
 
+    // Destino na DRE: novo (dreTarget veio) ou o já gravado (conta com
+    // destino escolhido), refeito pelos valores/competências novos. Conta na
+    // regra antiga que perdeu a loja vira NÃO INCLUIR.
+    let destination = null as Awaited<ReturnType<typeof loadPayableDestination>> | null;
+    if (body.dreTarget !== undefined || payable.dreTarget || !companyId) {
+      const parsed = await parseDreDestination(database, body.dreTarget === undefined ? {} : body, {
+        companyId,
+        companyName,
+        financeItemId,
+        competenceMonth,
+        totalAmountCents: originalAmountCents,
+        allStores,
+        actorCompanyId: scopeActor.companyId,
+      });
+      if ("error" in parsed) return jsonResponse({ error: parsed.error }, parsed.status);
+      destination =
+        body.dreTarget !== undefined || !payable.dreTarget
+          ? parsed.destination
+          : await loadPayableDestination(database, payable);
+    }
+
     const slotChanged =
       companyId !== payable.companyId ||
       financeItemId !== payable.financeItemId ||
       competenceMonth !== payable.competenceMonth;
-    if (slotChanged) {
+    if (destination && destination.target !== "none") {
+      for (const share of destination.shares) {
+        const conflict = await assertSlotAvailableForPayable(database, share.companyId, destination.itemId, competenceMonth);
+        if (conflict) return jsonResponse({ error: conflict }, 409);
+      }
+    } else if (!destination && slotChanged) {
       const conflict = await assertSlotAvailableForPayable(database, companyId, financeItemId, competenceMonth);
       if (conflict) return jsonResponse({ error: conflict }, 409);
     }
@@ -198,7 +230,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
          SET company_id=?1, company_name=?2, description=?3, supplier_id=?4, finance_item_id=?5, finance_account_id=?6,
              original_amount_cents=?7, issue_date=?8, competence_month=?9, due_date=?10, payment_method=?11,
              invoice_number=?12, order_reference=?13, billing_code=?14, notes=?15, status=?16,
-             updated_by=?17, updated_by_name=?18, updated_at=CURRENT_TIMESTAMP, cost_center=?20, cost_center_id=?21
+             updated_by=?17, updated_by_name=?18, updated_at=CURRENT_TIMESTAMP, cost_center=?20, cost_center_id=?21,
+             payer_name=?22
          WHERE id=?19`,
         [
           companyId,
@@ -222,6 +255,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           id,
           costCenter,
           costCenterId,
+          payerName,
         ],
       ],
     ];
@@ -247,7 +281,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     addSlot(companyId, financeItemId, competenceMonth);
 
     let dreWarning: string | null = null;
-    if (body.dreIncluded !== undefined) {
+    const groupForDestination = await loadPayableGroupRows(database, payable);
+    const dreAmountById = new Map<string, number | null>(groupForDestination.map((row) => [row.id, row.dreAmountCents]));
+    if (destination?.target === "none") {
+      for (const row of groupForDestination) dreAmountById.set(row.id, 0);
+    }
+    if (body.dreIncluded !== undefined && destination?.target !== "none") {
       const dreIncluded = Boolean(body.dreIncluded);
       const dreAmountCentsRaw = Number(body.dreAmountCents);
       if (!Number.isFinite(dreAmountCentsRaw) || !Number.isInteger(dreAmountCentsRaw) || dreAmountCentsRaw < 0) {
@@ -260,6 +299,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       }
       const orderedIds = groupRows.map((row) => row.id);
       const assignments = computeDreAnchorAssignments(orderedIds, dreIncluded, dreAmountCentsRaw);
+      for (const row of groupRows) dreAmountById.set(row.id, assignments.get(row.id) ?? 0);
       for (const row of groupRows) {
         statements.push([
           `UPDATE accounts_payable SET dre_amount_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP WHERE id=?4`,
@@ -274,6 +314,36 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
             : { companyId: payable.companyId, financeItemId: payable.financeItemId, month: row.competenceMonth };
         addSlot(rowSlot.companyId, rowSlot.financeItemId, rowSlot.month);
       }
+    }
+
+    if (destination) {
+      // Âncora: NÃO INCLUIR zera a DRE do grupo; os demais destinos usam o
+      // valor de DRE de cada linha (dre_amount_cents ou o original).
+      if (destination.target === "none") {
+        for (const row of groupForDestination) {
+          statements.push([
+            `UPDATE accounts_payable SET dre_amount_cents=0, updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP WHERE id=?3`,
+            [actor.id, actorName, row.id],
+          ]);
+        }
+      }
+      const destinationPlan = await planDreDestination(
+        database,
+        destination,
+        groupForDestination.map((row) => ({
+          payableId: row.id,
+          month: row.id === payable.id ? competenceMonth : row.competenceMonth,
+          amountCents: effectiveDreAmountCents(
+            dreAmountById.get(row.id) ?? null,
+            row.id === payable.id ? originalAmountCents : row.originalAmountCents,
+          ),
+        })),
+      );
+      statements.push(...destinationPlan.statements);
+      statements.push(...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
+    } else {
+      // Regra antiga: as fatias que porventura existam não valem mais.
+      for (const slot of await allocationSlotsOf(database, [payable.id])) addSlot(slot.storeId, slot.itemId, slot.month);
     }
 
     for (const slot of slotKeySet.values()) {

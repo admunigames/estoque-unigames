@@ -17,6 +17,7 @@ import {
   type RecurrenceFrequency,
 } from "../../../lib/payables-recurrence";
 import { MONTH_PATTERN } from "../shared";
+import { allocationSlotsOf } from "./dre-destination";
 
 export {
   DATE_PATTERN,
@@ -62,6 +63,9 @@ export type PayableRow = {
   expenseId: string | null;
   costCenter: string;
   costCenterId: string | null;
+  dreTarget: string;
+  dreRateioModel: string;
+  payerName: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -82,7 +86,8 @@ export async function loadPayable(
               recurrence_id AS recurrenceId, recurrence_frequency AS recurrenceFrequency,
               installment_group_id AS installmentGroupId, installment_number AS installmentNumber,
               installment_total AS installmentTotal, expense_id AS expenseId, cost_center AS costCenter,
-              cost_center_id AS costCenterId,
+              cost_center_id AS costCenterId, dre_target AS dreTarget, dre_rateio_model AS dreRateioModel,
+              payer_name AS payerName,
               created_at AS createdAt, updated_at AS updatedAt
        FROM accounts_payable WHERE id=?1`,
     )
@@ -129,14 +134,16 @@ export async function assertSlotAvailableForPayable(
 
 /**
  * Confirma que a conta financeira selecionada é da MESMA empresa/loja da
- * conta a pagar (ou global — company_id='' — pra registros antigos de
- * antes da migration 0029) e está ativa. Nunca confia só no que o
- * frontend já filtrou. Retorna mensagem de erro (409) ou null se ok.
+ * conta a pagar (ou global — company_id='' — sem loja/PF, que paga qualquer
+ * conta) e está ativa. Conta a pagar SEM loja (escritório/PF/outros) aceita
+ * qualquer conta financeira. Nunca confia só no que o frontend já filtrou.
+ * Retorna mensagem de erro (409) ou null se ok.
  */
 export async function assertFinanceAccountBelongsToCompany(
   database: Awaited<ReturnType<typeof getD1>>,
   financeAccountId: string,
   companyId: string,
+  options: { requireGlobal?: boolean } = {},
 ): Promise<string | null> {
   if (!financeAccountId) return null;
   const account = await database
@@ -144,7 +151,8 @@ export async function assertFinanceAccountBelongsToCompany(
     .bind(financeAccountId)
     .first<{ companyId: string; active: number }>();
   if (!account) return "CONTA FINANCEIRA NÃO ENCONTRADA.";
-  if (account.companyId && account.companyId !== companyId) {
+  if (account.companyId && options.requireGlobal) return "ESSA CONTA FINANCEIRA PERTENCE A UMA EMPRESA/LOJA.";
+  if (account.companyId && companyId && account.companyId !== companyId) {
     return "ESSA CONTA FINANCEIRA PERTENCE A OUTRA EMPRESA/LOJA.";
   }
   if (!account.active) {
@@ -387,6 +395,20 @@ export async function planPayablesBulk(
         addSlot(payable.companyId, payable.financeItemId, payable.competenceMonth);
         addSlot(payable.companyId, nextItem, payable.competenceMonth);
       }
+      if (payable.dreTarget && nextItem !== payable.financeItemId) {
+        // Destino escolhido: a categoria da DRE acompanha a nova categoria.
+        const previousSlots = await allocationSlotsOf(database, [payable.id]);
+        for (const slot of previousSlots) {
+          const conflict = await assertSlotAvailableForPayable(database, slot.storeId, nextItem, slot.month);
+          if (conflict) { skip(conflict); break; }
+        }
+        if (skipped.some((row) => row.id === payable.id)) continue;
+        statements.push(["UPDATE finance_dre_allocations SET item_id=?1 WHERE payable_id=?2", [nextItem, payable.id]]);
+        for (const slot of previousSlots) {
+          addSlot(slot.storeId, slot.itemId, slot.month);
+          addSlot(slot.storeId, nextItem, slot.month);
+        }
+      }
       statements.push([
         `UPDATE accounts_payable SET finance_item_id=?1, cost_center=?2, cost_center_id=?3,
            updated_by=?4, updated_by_name=?5, updated_at=CURRENT_TIMESTAMP WHERE id=?6`,
@@ -421,6 +443,7 @@ export async function planPayablesBulk(
         [actor.id, actorName, payable.id],
       ]);
       addSlot(payable.companyId, payable.financeItemId, payable.competenceMonth);
+      for (const slot of await allocationSlotsOf(database, [payable.id])) addSlot(slot.storeId, slot.itemId, slot.month);
       continue;
     }
     const openCents = payable.originalAmountCents - payable.paidAmountCents - (scheduledOf.get(payable.id) ?? 0);
@@ -499,6 +522,7 @@ export async function planPayablesDelete(
       ],
       ["DELETE FROM accounts_payable_payments WHERE payable_id=?1", [payableId]],
       ["DELETE FROM supplier_open_debts WHERE accounts_payable_id=?1", [payableId]],
+      ["DELETE FROM finance_dre_allocations WHERE payable_id=?1", [payableId]],
       ["DELETE FROM accounts_payable WHERE id=?1", [payableId]],
     );
     deletedPayables.add(payableId);

@@ -978,6 +978,12 @@ export const accountsPayable = pgTable(
     canceledBy: text("canceled_by").notNull().default(""),
     canceledByName: text("canceled_by_name").notNull().default(""),
     canceledAt: text("canceled_at").notNull().default(""),
+    // Destino na DRE (migration 0107): '' = regra antiga (loja/categoria da
+    // própria conta); 'none' | 'include' | 'rateio' com as fatias em
+    // finance_dre_allocations.
+    dreTarget: text("dre_target").notNull().default(""),
+    dreRateioModel: text("dre_rateio_model").notNull().default(""),
+    payerName: text("payer_name").notNull().default(""),
   },
   (table) => [
     index("accounts_payable_company_status_due_idx").on(
@@ -1270,6 +1276,7 @@ export const supplierInvoices = pgTable(
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    payerName: text("payer_name").notNull().default(""),
   },
   (table) => [
     uniqueIndex("supplier_invoices_unique_doc_idx").on(
@@ -1396,6 +1403,7 @@ export const supplierOpenDebts = pgTable(
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    payerName: text("payer_name").notNull().default(""),
   },
   (table) => [
     index("supplier_open_debts_company_idx").on(table.companyId),
@@ -4813,4 +4821,28 @@ export const rmaOptions = pgTable(
     updatedAt: text("updated_at").notNull().default(""),
   },
   (table) => [index("rma_options_category_idx").on(table.deleted, table.category)],
+);
+
+// Destino na DRE de uma conta a pagar (migration 0107): uma linha por loja
+// que recebe o valor da conta (INCLUIR EM = 1 linha com 100%; RATEAR = uma
+// por loja, com o percentual). NÃO INCLUIR = nenhuma linha. A célula da DRE
+// (finance_store_entries 'payable') soma estas fatias das contas não
+// canceladas — ver recalcPayableEntrySql.
+export const financeDreAllocations = pgTable(
+  "finance_dre_allocations",
+  {
+    id: text("id").primaryKey(),
+    payableId: text("payable_id").notNull(),
+    storeId: text("store_id").notNull(),
+    storeName: text("store_name").notNull().default(""),
+    itemId: text("item_id").notNull(),
+    month: text("month").notNull(),
+    percentBasisPoints: integer("percent_basis_points").notNull().default(10000),
+    amountCents: integer("amount_cents").notNull().default(0),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("finance_dre_allocations_payable_idx").on(table.payableId),
+    index("finance_dre_allocations_slot_idx").on(table.storeId, table.itemId, table.month),
+  ],
 );
