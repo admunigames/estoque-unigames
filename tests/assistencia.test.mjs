@@ -626,3 +626,11 @@ test("aba CATEGORIAS: CELULAR/TABLET criada, nova categoria, renomear leva a tab
   assert.equal(detail.equipments[0].category, "CELULARES E TABLETS");
   assert.equal(categoriesRoute.DELETE, undefined);
 });
+
+test("observações gravadas com o JSON em maiúsculas (CAIXA ALTA, 19–22/10) voltam inteiras", async () => {
+  const upper = JSON.stringify([{ key: "novos_defeitos", title: "AVISO", text: "TEXTO" }]).toLocaleUpperCase("pt-BR");
+  assert.deepEqual(lib.parseSavedObservations(upper), [{ key: "novos_defeitos", title: "AVISO", text: "TEXTO" }]);
+  // A coluna é JSON: não pode voltar para a lista da CAIXA ALTA.
+  const { UPPER_TEXT_COLUMNS } = await import("../app/lib/upper-text.ts");
+  assert.ok(!UPPER_TEXT_COLUMNS.assist_quotes.includes("observations"));
+});
