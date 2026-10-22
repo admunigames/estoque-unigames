@@ -5,7 +5,9 @@ import {
   DEFAULT_COMMERCIAL_RULES,
   ENTRY_KINDS,
   computeSellerMetrics,
+  digitalCommission,
   isCommercialRole,
+  isDigitalStore,
   isEntryKind,
   leaderCommission,
   leaderQualifiedSellers,
@@ -471,6 +473,14 @@ export async function loadSellers(
       employeeId: seller.employeeId, name: seller.name, companyId: seller.companyId, inactive: seller.inactive,
       role: seller.role, targetRevenueCents: seller.goal.targetRevenueCents, revenueCents: seller.realized.revenueCents,
     }));
+    // VENDEDOR DA LOJA DIGITAL: comissão própria (só % do faturamento).
+    const digitalRules = roleRules.digital;
+    if (digitalRules) {
+      for (const seller of sellers) {
+        if (seller.role !== "vendedor" || !isDigitalStore(seller.companyName)) continue;
+        seller.metrics = { ...seller.metrics, commission: digitalCommission(seller.metrics, digitalRules) };
+      }
+    }
     for (const seller of sellers) {
       if (seller.role !== "lider") continue;
       seller.metrics = {

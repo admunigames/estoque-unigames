@@ -31,7 +31,7 @@ const STORE_A = "clojaalfa1";
 const STORE_B = "clojabeta1";
 db.insert("shared_state", {
   state_key: "companies_list",
-  value_json: JSON.stringify([{ id: STORE_A, name: "LOJA ALFA" }, { id: STORE_B, name: "LOJA BETA" }]),
+  value_json: JSON.stringify([{ id: STORE_A, name: "LOJA ALFA" }, { id: STORE_B, name: "LOJA BETA" }, { id: "clojadigit1", name: "LOJA DIGITAL" }]),
 });
 // [id, nome, loja, cargo, status, admissão, conta]
 for (const [id, name, companyId, roleTitle, status = "active", admission = "", userId = ""] of [
@@ -46,9 +46,10 @@ for (const [id, name, companyId, roleTitle, status = "active", admission = "", u
   ["emp-op3", "Waleska Queiroz", STORE_B, "Supervisor Operacional"],
   ["emp-op-off", "Operacional Saiu", STORE_A, "OPERACIONAL", "inactive"],
   ["emp-op-new", "Operacional Novo", STORE_A, "OPERACIONAL", "active", "2026-11-05"],
+  ["emp-dig", "Vendedor Digital", "clojadigit1", "Vendedor"],
 ]) {
   db.insert("hr_employees", {
-    id, full_name: name, company_id: companyId, company_name: companyId === STORE_A ? "LOJA ALFA" : "LOJA BETA",
+    id, full_name: name, company_id: companyId, company_name: { [STORE_A]: "LOJA ALFA", [STORE_B]: "LOJA BETA" }[companyId] || "LOJA DIGITAL",
     role_title: roleTitle, status, admission_date: admission, user_id: userId, cpf: id,
   });
 }
@@ -358,6 +359,41 @@ test("Dashboard do operacional e do líder: acompanhamento da loja (loja + assis
   // ALFA (líder e operacionais) e BETA (operacional); nunca loja sem eles.
   assert.deepEqual(all.tracking.map((item) => item.companyId).sort(), [STORE_A, STORE_B].sort());
   assert.deepEqual((await getOverview(ADMIN, "2026-10", "&for=cadastro")).tracking, []);
+});
+
+test("lib: LOJA DIGITAL — abaixo de 100% a % do vendedor de loja; 0,8% de 100% a 119,9% e 1% a partir de 120% sobre o faturamento total; nada mais", () => {
+  const digital = lib.DEFAULT_ROLE_RULES.digital;
+  const clock = lib.monthClock("2026-10", "2026-10-22");
+  const rules = { ...lib.DEFAULT_COMMERCIAL_RULES, creditRateBps: 200, warrantyRateBps: 600 };
+  const goal = { targetRevenueCents: 10_000_000, targetItems: 10, targetSuperItems: 0, targetWarrantyCents: 0, targetRealme: 1 };
+  const run = (revenueCents) => {
+    const realized = { revenueCents, items: 10, warrantyCents: 100_000, realme: 1, warrantyQty: 3, notebookQty: 10, salesQty: 0, creditSalesCents: 1_000_000, partnerSalesCents: 50_000 };
+    return lib.digitalCommission(lib.computeSellerMetrics(goal, realized, clock, rules), digital);
+  };
+  assert.deepEqual([run(9_000_000).revenueRateBps, run(9_000_000).revenueBaseCents], [60, 8_000_000], "abaixo de 100%: regra de loja (critérios batidos, sem o crediário)");
+  assert.deepEqual([run(10_000_000).revenueRateBps, run(10_000_000).revenueCommissionCents], [80, 80_000]);
+  assert.equal(run(11_999_999).revenueRateBps, 80);
+  assert.deepEqual([run(12_000_000).revenueRateBps, run(12_000_000).revenueCommissionCents], [100, 120_000]);
+  const top = run(15_000_000);
+  assert.deepEqual([top.revenuePremiumCents, top.warrantyCommissionCents, top.creditCommissionCents, top.partnerCommissionCents, top.totalCents], [0, 0, 0, 0, 150_000]);
+  assert.equal(lib.isDigitalStore("Loja Digital"), true);
+  assert.equal(lib.isDigitalStore("RIOMAR"), false);
+});
+
+test("LOJA DIGITAL na rota: vendedor da loja do RH com DIGITAL ganha só a comissão própria e vai assim para o RH", async () => {
+  await putSeller(sellerBody("2026-10", "emp-dig", 10_000_000, 12_500_000, { warrantyCents: 100_000 }));
+  const data = await getOverview(ADMIN, "2026-10");
+  const seller = data.sellers.find((item) => item.employeeId === "emp-dig");
+  assert.equal(seller.metrics.commission.digital, true);
+  assert.deepEqual([seller.metrics.commission.revenueRateBps, seller.metrics.commission.totalCents], [100, 125_000]);
+  assert.equal(hrRow("emp-dig", "2026-10").c, 125_000);
+  // Quem não vê R$ recebe só o selo.
+  const dash = (await getOverview(DASHBOARD, "2026-10")).sellers.find((item) => item.employeeId === "emp-dig");
+  assert.deepEqual(Object.keys(dash.metrics.commission).sort(), ["allCriteriaMet", "digital", "newcomer", "revenueRateBps"]);
+  // Setembro (vigência sem regra da loja digital): vendedor comum.
+  await putSeller(sellerBody("2026-09", "emp-dig", 10_000_000, 12_500_000, { warrantyCents: 100_000 }));
+  const september = (await getOverview(ADMIN, "2026-09")).sellers.find((item) => item.employeeId === "emp-dig");
+  assert.equal(september.metrics.commission.digital, undefined);
 });
 
 test("migration 0098: só ADD COLUMN / CREATE TABLE/INDEX (e RLS nas tabelas novas) — nada apagado ou reescrito", () => {

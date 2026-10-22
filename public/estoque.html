@@ -9926,6 +9926,10 @@
           <div class="purchase-field"><label for="comRuleOpPct">PREMIAÇÃO COM ≥ (% DA META)</label><input type="number" id="comRuleOpPct" min="1" max="1000" step="1" inputmode="numeric" data-com-role-field="operational.premiumPercent" data-kind="percent"></div>
           <div class="purchase-field"><label for="comRuleOpAssist">PREMIAÇÃO PELA ASSISTÊNCIA (R$)</label><input type="number" id="comRuleOpAssist" min="0" step="0.01" inputmode="decimal" data-com-role-field="operational.assistPremiumCents" data-kind="cents"></div>
           <div class="purchase-field"><label for="comRuleOpStore">PREMIAÇÃO PELA LOJA (R$)</label><input type="number" id="comRuleOpStore" min="0" step="0.01" inputmode="decimal" data-com-role-field="operational.storePremiumCents" data-kind="cents"></div>
+          <div class="purchase-field full"><strong>VENDEDOR DA LOJA DIGITAL</strong> — só a comissão sobre o faturamento total; abaixo de 100%, a % do vendedor de loja</div>
+          <div class="purchase-field"><label for="comRuleDigitalLow">% A PARTIR DE 100% DA META</label><input type="number" id="comRuleDigitalLow" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="digital.rateLowBps" data-kind="bps"></div>
+          <div class="purchase-field"><label for="comRuleDigitalPct">FAIXA MAIOR A PARTIR DE (% DA META)</label><input type="number" id="comRuleDigitalPct" min="1" max="1000" step="1" inputmode="numeric" data-com-role-field="digital.highPercent" data-kind="percent"></div>
+          <div class="purchase-field"><label for="comRuleDigitalHigh">% NA FAIXA MAIOR</label><input type="number" id="comRuleDigitalHigh" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="digital.rateHighBps" data-kind="bps"></div>
         </div>
       </div>
       <div class="purchase-field full"><label for="comRuleNotes">OBSERVAÇÃO (OPCIONAL)</label><input id="comRuleNotes" maxlength="500"></div>
@@ -50683,11 +50687,11 @@ function renderHomeTasks(){
     const next = block.next;
     const marks = simple ? [] : comRevenueMarks();
     if(!next) return {text:marks.length > 1 ? 'Meta e todas as faixas de prêmio atingidas!' : 'Meta batida!', sub:''};
-    const goalName = simple ? 'a meta' : marks[next.index - 1].name;
+    const goalName = block.nextLabel || (simple ? 'a meta' : marks[next.index - 1].name);
     if(clock.status === 'past') return {text:'Mês encerrado — faltaram '+fmt(next.missing)+' para '+goalName+'.', sub:''};
     const days = clock.daysRemaining;
     const daysText = days === 1 ? 'último dia do mês' : days+' dias restantes';
-    if(!simple && block.reachedTargets >= 1){
+    if((!simple || block.nextLabel) && block.reachedTargets >= 1){
       return {text:'Meta batida — faltam '+fmt(next.missing)+' para '+goalName+'.', sub:'Média de '+fmt(next.perDay)+' por dia · '+daysText};
     }
     const when = clock.status === 'future' ? 'por dia' : 'hoje';
@@ -50770,6 +50774,7 @@ function renderHomeTasks(){
     const rate = seller.role === 'lider' && rules.roles ? rules.roles.leader.creditRateBps : rules.creditRateBps;
     let text;
     if(!(rate > 0)) text = 'Sem comissão de crediário neste mês.';
+    else if(seller.metrics.commission.digital) text = 'Loja digital — o crediário não gera comissão.';
     else if(seller.newcomer) text = 'Novato — o crediário não gera comissão neste mês.';
     else text = 'Paga '+comFormatBps(rate)+' sobre o valor vendido em crediário.';
     return '<section class="com-block tier-'+(credit > 0 ? 'green' : 'none')+'">'+
@@ -50792,6 +50797,13 @@ function renderHomeTasks(){
     const rate = comFormatBps(metrics.commission.revenueRateBps);
     // LÍDER: a taxa vem só da própria meta (os critérios não mudam a %).
     if(role === 'lider') return '<span class="com-criteria leader">LÍDER · '+escapeHtml(rate)+'</span>';
+    // LOJA DIGITAL: a partir de 100% da meta a % é a da loja digital (os
+    // critérios só valem abaixo disso).
+    if(metrics.commission.digital){
+      const tag = '<span class="com-criteria leader">LOJA DIGITAL · '+escapeHtml(rate)+'</span>';
+      if(metrics.revenue.target > 0 && metrics.revenue.realized >= metrics.revenue.target) return tag;
+      return tag+comCriteriaHtml({...metrics, commission:{...metrics.commission, digital:false}});
+    }
     const newcomer = metrics.commission.newcomer ? '<span class="com-criteria newcomer">NOVATO · SÓ % DO FATURAMENTO</span>' : '';
     if(metrics.commission.allCriteriaMet) return '<span class="com-criteria ok">METAS BATIDAS · '+escapeHtml(rate)+'</span>'+newcomer;
     const missing = [];
@@ -50922,7 +50934,7 @@ function renderHomeTasks(){
       return '<article class="com-seller'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller, !leader)+
         '<div class="com-blocks">'+
           // Para o líder o alvo é só a meta (100%): batida, não há "próxima faixa".
-          comBlockHtml('money', 'Faturamento', leader && m.revenue.target > 0 && m.revenue.realized >= m.revenue.target ? {...m.revenue, next:null} : m.revenue, clock, leader)+
+          comBlockHtml('money', 'Faturamento', comDigitalRevenueBlock(seller) || (leader && m.revenue.target > 0 && m.revenue.realized >= m.revenue.target ? {...m.revenue, next:null} : m.revenue), clock, leader || Boolean(m.commission.digital))+
           comBlockHtml('items', 'Itens vendidos', m.items, clock, true, superLine)+
           comBlockHtml('units', 'Realmes', m.realme, clock, true)+
           comWarrantyBlockHtml(m.warranty)+
@@ -50931,6 +50943,19 @@ function renderHomeTasks(){
         (leader ? comLeaderTrackingHtml(seller) : '')+
       '</article>';
     }).join('');
+  }
+
+  // LOJA DIGITAL: barra até a meta e o alvo seguinte é a meta (100%) ou a
+  // faixa maior (120%) — nunca as faixas de prêmio do vendedor de loja.
+  function comDigitalRevenueBlock(seller){
+    const block = seller.metrics.revenue;
+    const digital = comRules().roles && comRules().roles.digital;
+    if(!seller.metrics.commission.digital || !digital || !(block.target > 0) || block.realized < block.target) return null;
+    const value = comTargetValue(block.target, digital.highPercent);
+    if(block.realized >= value) return {...block, next:null};
+    const missing = value - block.realized;
+    const days = comOverview.clock.daysRemaining;
+    return {...block, nextLabel: digital.highPercent+'% ('+comFormatBps(digital.rateHighBps)+')', next:{index:1, percent:digital.highPercent, value, missing, perDay: days > 0 ? Math.ceil(missing / days) : null}};
   }
 
   // LÍDER: acompanhamento da loja dele — loja e assistência, com a meta do
@@ -51025,7 +51050,9 @@ function renderHomeTasks(){
       rule('Operacional · assistência', comFormatBps(op.rateHighBps)+' / '+comFormatBps(op.rateLowBps),
         'Sobre o feito da assistência da loja: '+comFormatBps(op.rateHighBps)+' a partir de 100% da meta, '+comFormatBps(op.rateLowBps)+' de 80% a 99,9% — natureza salarial (integra DSR, 13º, férias e FGTS)')+
       rule('Operacional · premiação', comMoneyShort(op.assistPremiumCents)+' + '+comMoneyShort(op.storePremiumCents),
-        comMoneyShort(op.assistPremiumCents)+' com a assistência e '+comMoneyShort(op.storePremiumCents)+' com a loja em '+op.premiumPercent+'%+ da meta — valor cheio para cada operacional');
+        comMoneyShort(op.assistPremiumCents)+' com a assistência e '+comMoneyShort(op.storePremiumCents)+' com a loja em '+op.premiumPercent+'%+ da meta — valor cheio para cada operacional')+
+      (roles.digital ? rule('Vendedor da loja digital', comFormatBps(roles.digital.rateHighBps)+' / '+comFormatBps(roles.digital.rateLowBps),
+        comFormatBps(roles.digital.rateLowBps)+' de 100% a '+(roles.digital.highPercent - 0.1).toLocaleString('pt-BR')+'% e '+comFormatBps(roles.digital.rateHighBps)+' a partir de '+roles.digital.highPercent+'% da meta, sobre o faturamento total; abaixo de 100%, a % do vendedor de loja. Só essa comissão') : '');
   }
 
   // Comissão: só o título e o valor de cada regra (pedido do usuário —
@@ -51039,6 +51066,13 @@ function renderHomeTasks(){
       '<span class="value">'+escapeHtml(notApplicable ? 'NÃO SE APLICA (NOVATO)' : formatCentsBRL(cents))+'</span></li>';
     const showCredit = rules.creditRateBps > 0;
     const leader = commission.leader;
+    if(commission.digital){
+      const total = commission.revenueBaseCents === seller.realized.revenueCents ? 'faturamento total' : 'sem o crediário';
+      return '<article class="com-commission'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller)+
+        '<ul class="com-commission-rows">'+row('Comissão por vendas · loja digital ('+comFormatBps(commission.revenueRateBps)+' · '+total+')', commission.revenueCommissionCents)+'</ul>'+
+        comCommissionSumHtml(commission, true)+
+      '</article>';
+    }
     if(leader && rules.roles){
       const lr = rules.roles.leader;
       return '<article class="com-commission'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller)+
@@ -52445,7 +52479,8 @@ function renderHomeTasks(){
       '<td data-label="Crediário">'+escapeHtml(comFormatBps(rule.creditRateBps))+'</td>'+
       '<td data-label="Venda P.A / Unigames">'+escapeHtml(comFormatBps(rule.partnerSaleRateBps || 0))+'</td>'+
       '<td data-label="Líder / Operacional">'+escapeHtml(rule.roles
-        ? 'LÍDER '+comFormatBps(rule.roles.leader.rateHighBps)+' / '+comFormatBps(rule.roles.leader.rateLowBps)+' · OPERACIONAL '+comFormatBps(rule.roles.operational.rateHighBps)+' / '+comFormatBps(rule.roles.operational.rateLowBps)
+        ? 'LÍDER '+comFormatBps(rule.roles.leader.rateHighBps)+' / '+comFormatBps(rule.roles.leader.rateLowBps)+' · OPERACIONAL '+comFormatBps(rule.roles.operational.rateHighBps)+' / '+comFormatBps(rule.roles.operational.rateLowBps)+
+          (rule.roles.digital ? ' · LOJA DIGITAL '+comFormatBps(rule.roles.digital.rateHighBps)+' / '+comFormatBps(rule.roles.digital.rateLowBps) : '')
         : 'NÃO PAGA')+'</td>'+
       '<td data-label="Quem alterou">'+escapeHtml(isDefault ? 'REGRA DO CÓDIGO' : (rule.updatedByName || '—'))+'</td>'+
       '<td data-label="Quando">'+escapeHtml(isDefault || !rule.updatedAt ? '—' : formatDateTimeBR(rule.updatedAt))+'</td>'+
@@ -52504,7 +52539,9 @@ function renderHomeTasks(){
     el('comRuleRoles').hidden = !base.roles;
     document.querySelectorAll('[data-com-role-field]').forEach(input => {
       const [group, key] = input.dataset.comRoleField.split('.');
-      const value = roles ? Number(roles[group][key]) : 0;
+      // Vigência gravada antes da loja digital: começa com os valores padrão.
+      const source = (roles && roles[group]) || (comRulesData && comRulesData.roleDefaults && comRulesData.roleDefaults[group]);
+      const value = source ? Number(source[key]) : 0;
       input.value = input.dataset.kind === 'percent' ? value : value / 100;
     });
     el('comRuleWarning').textContent = comRuleWarningText();
@@ -52536,7 +52573,7 @@ function renderHomeTasks(){
     });
     let roles = null;
     if(el('comRuleRolesOn').checked){
-      roles = {leader:{}, operational:{}};
+      roles = {leader:{}, operational:{}, digital:{}};
       document.querySelectorAll('[data-com-role-field]').forEach(input => {
         const [group, key] = input.dataset.comRoleField.split('.');
         const label = input.closest('.purchase-field').querySelector('label').textContent;

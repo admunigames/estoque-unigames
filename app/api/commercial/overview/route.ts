@@ -99,8 +99,9 @@ export async function GET(request: Request) {
       : shown.map((seller) => {
         // Dashboard igual para todos: fica só o que o selo usa (critérios
         // batidos e taxa); os valores em R$ são exclusivos da aba Comissão.
-        const { allCriteriaMet, revenueRateBps, newcomer } = seller.metrics.commission;
-        return { ...seller, metrics: { ...seller.metrics, commission: { allCriteriaMet, revenueRateBps, newcomer } } };
+        // digital: selo LOJA DIGITAL (sem R$).
+        const { allCriteriaMet, revenueRateBps, newcomer, digital } = seller.metrics.commission;
+        return { ...seller, metrics: { ...seller.metrics, commission: { allCriteriaMet, revenueRateBps, newcomer, digital } } };
       });
     const scopedOperationals = operationals.filter((person) =>
       ownOnly ? linked.includes(person.employeeId) : scope.allStores || person.companyId === scope.companyId);

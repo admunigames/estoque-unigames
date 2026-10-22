@@ -4530,7 +4530,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(overviewRoute, /if \(forCadastro\) \{\s*if \(!canViewCommercialGoals\(actor\) && !canViewCommercialCredit\(actor\)\)/);
   // Sem comercial:commission os valores em R$ da comissão nem saem do
   // servidor; o selo do Dashboard (critérios + taxa) continua igual.
-  assert.match(overviewRoute, /commission: \{ allCriteriaMet, revenueRateBps, newcomer \}/);
+  assert.match(overviewRoute, /commission: \{ allCriteriaMet, revenueRateBps, newcomer, digital \}/);
   assert.match(html, /'<span class="com-criteria ok">METAS BATIDAS · '\+escapeHtml\(rate\)/);
   assert.doesNotMatch(html, /COM_TARGET_LABELS_PLAIN|comCanCommission/);
 

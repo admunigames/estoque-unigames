@@ -96,7 +96,19 @@ export type OperationalRules = {
   storePremiumCents: number;
 };
 
-export type RoleRules = { leader: LeaderRules; operational: OperationalRules };
+// VENDEDOR DA LOJA DIGITAL (loja do RH com "DIGITAL" no nome — pedido de
+// 2026-10-22): abaixo de 100% da meta, a % do vendedor de loja; de 100% a
+// highPercent − 0,1%, rateLowBps; a partir de highPercent, rateHighBps — as
+// duas sobre o FATURAMENTO TOTAL. Recebe só essa comissão (sem premiação,
+// garantia, crediário nem venda P.A/Unigames).
+export type DigitalRules = {
+  rateLowBps: number;
+  rateHighBps: number;
+  highPercent: number;
+};
+
+// digital é opcional: vigência gravada antes dela fica sem regra da loja digital.
+export type RoleRules = { leader: LeaderRules; operational: OperationalRules; digital?: DigitalRules };
 
 // Valores do pedido de 2026-10-16 (vigência 10/2026) — ponto de partida do
 // formulário de vigência; só valem quando gravados numa vigência.
@@ -106,6 +118,7 @@ export const DEFAULT_ROLE_RULES: RoleRules = {
     sellerPercent: 110, perSellerCents: 50_000, storePercent: 120, storeCents: 150_000,
   },
   operational: { rateLowBps: 50, rateHighBps: 100, premiumPercent: 120, assistPremiumCents: 20_000, storePremiumCents: 40_000 },
+  digital: { rateLowBps: 80, rateHighBps: 100, highPercent: 120 },
 };
 
 export const DEFAULT_COMMERCIAL_RULES: CommercialRules = {
@@ -178,6 +191,12 @@ const OPERATIONAL_FIELDS: Array<[keyof OperationalRules, "bps" | "percent" | "ce
   ["storePremiumCents", "cents", "PREMIAÇÃO DO OPERACIONAL PELA LOJA"],
 ];
 
+const DIGITAL_FIELDS: Array<[keyof DigitalRules, "bps" | "percent" | "cents", string]> = [
+  ["rateLowBps", "bps", "% DA LOJA DIGITAL A PARTIR DE 100%"],
+  ["rateHighBps", "bps", "% DA LOJA DIGITAL NA FAIXA MAIOR"],
+  ["highPercent", "percent", "% DA META PARA A FAIXA MAIOR DA LOJA DIGITAL"],
+];
+
 function parseFields<T>(raw: unknown, fields: Array<[keyof T, "bps" | "percent" | "cents", string]>):
   { value: T; error: "" } | { value: null; error: string } {
   const input = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
@@ -207,7 +226,12 @@ export function parseRoleRules(input: unknown): { roles: RoleRules | null; error
   if (!leader.value) return { roles: null, error: leader.error };
   const operational = parseFields<OperationalRules>(raw.operational, OPERATIONAL_FIELDS);
   if (!operational.value) return { roles: null, error: operational.error };
-  return { roles: { leader: leader.value, operational: operational.value }, error: "" };
+  if (raw.digital === undefined || raw.digital === null) {
+    return { roles: { leader: leader.value, operational: operational.value }, error: "" };
+  }
+  const digital = parseFields<DigitalRules>(raw.digital, DIGITAL_FIELDS);
+  if (!digital.value) return { roles: null, error: digital.error };
+  return { roles: { leader: leader.value, operational: operational.value, digital: digital.value }, error: "" };
 }
 
 /**
@@ -449,6 +473,8 @@ export type CommissionBreakdown = {
   totalCents: number;
   // Só do LÍDER (a premiação dele fica em revenuePremiumCents).
   leader?: LeaderBreakdown;
+  // Vendedor da LOJA DIGITAL (só a comissão sobre o faturamento).
+  digital?: true;
 };
 
 export type LeaderBreakdown = {
@@ -698,5 +724,39 @@ export function operationalCommission(store: StoreGoal | null, rules: Operationa
     storePremiumCents,
     premiumPercent: rules.premiumPercent,
     ...totals(commissionCents, assistPremiumCents + storePremiumCents),
+  };
+}
+
+/** A loja é a LOJA DIGITAL? (nome do cadastro de lojas com "DIGITAL"). */
+export function isDigitalStore(name: string): boolean {
+  return normalizeText(name).includes("DIGITAL");
+}
+
+/**
+ * Comissão do VENDEDOR DA LOJA DIGITAL: abaixo de 100% da meta, a mesma % do
+ * vendedor de loja (taxa e base de sempre); a partir de 100%, rateLowBps e, a
+ * partir de highPercent, rateHighBps — sobre o faturamento TOTAL. Nenhum outro
+ * item (premiação, garantia, crediário, venda P.A/Unigames).
+ */
+export function digitalCommission(metrics: SellerMetrics, rules: DigitalRules): CommissionBreakdown {
+  const { target, realized } = metrics.revenue;
+  const metGoal = reached(realized, target, 100);
+  const revenueRateBps = !metGoal ? metrics.commission.revenueRateBps
+    : reached(realized, target, rules.highPercent) ? rules.rateHighBps
+    : rules.rateLowBps;
+  const revenueBaseCents = metGoal ? realized : metrics.commission.revenueBaseCents;
+  const revenueCommissionCents = applyBps(revenueBaseCents, revenueRateBps);
+  return {
+    allCriteriaMet: metrics.commission.allCriteriaMet,
+    newcomer: metrics.commission.newcomer,
+    revenueRateBps,
+    revenueBaseCents,
+    revenueCommissionCents,
+    revenuePremiumCents: 0,
+    warrantyCommissionCents: 0,
+    creditCommissionCents: 0,
+    partnerCommissionCents: 0,
+    ...totals(revenueCommissionCents, 0),
+    digital: true,
   };
 }
