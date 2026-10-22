@@ -278,11 +278,17 @@ test("operacional: pelo cargo (ativo, com loja, admitido até o mês), valor CHE
   assert.ok(!data.sellers.some((seller) => seller.employeeId.startsWith("emp-op")));
   const rank = await (await callRoute(rankingRoute.GET, DASHBOARD, "GET", "/api/commercial/ranking?month=2026-10")).json();
   assert.ok(!rank.items.some((item) => item.employeeId.startsWith("emp-op")));
-  // Assistência em 85%: 0,5%; em 79%: nada.
+  // Assistência em 85%: 0,5%; em 79%: nada. A loja vale pelo TOTAL (vendas +
+  // assistência): 12.000.000 + 850.000 de 11.000.000 = 116,8% → sem os R$ 400.
   await putStore("2026-10", STORE_A, { targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 850_000 });
   let op1 = (await getOverview(ADMIN, "2026-10")).operationals.find((item) => item.employeeId === "emp-op1");
-  assert.deepEqual([op1.commission.rateBps, op1.commission.commissionCents, op1.commission.totalCents], [50, 4_250, 44_250]);
-  assert.equal(hrRow("emp-op1", "2026-10").c, 44_250);
+  assert.deepEqual([op1.commission.rateBps, op1.commission.commissionCents, op1.commission.storePremiumCents, op1.commission.totalCents], [50, 4_250, 0, 4_250]);
+  assert.equal(hrRow("emp-op1", "2026-10").c, 4_250);
+  // Vendas compensam: 12.350.000 + 850.000 = 13.200.000 de 11.000.000 = 120% → volta os R$ 400.
+  await putStore("2026-10", STORE_A, { targetCents: 10_000_000, revenueCents: 12_350_000 });
+  op1 = (await getOverview(ADMIN, "2026-10")).operationals.find((item) => item.employeeId === "emp-op1");
+  assert.equal(op1.commission.storePremiumCents, 40_000);
+  assert.equal(op1.commission.storePercent, 120);
   await putStore("2026-10", STORE_A, { targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 790_000 });
   op1 = (await getOverview(ADMIN, "2026-10")).operationals.find((item) => item.employeeId === "emp-op1");
   assert.deepEqual([op1.commission.rateBps, op1.commission.commissionCents], [0, 0]);
@@ -349,12 +355,16 @@ test("Meta Assistência: rota própria (ver/editar), escopo de loja, mês anteri
   assert.deepEqual([after.targetCents, after.revenueCents], [1_000_000, 1_200_000]);
   const store = (await (await callRoute(storesRoute.GET, ADMIN, "GET", "/api/commercial/stores?month=2026-10")).json()).rows.find((item) => item.companyId === STORE_A);
   assert.equal(store.revenueCents, 12_000_000);
-  assert.equal("assistTargetCents" in store, false);
+  // A Meta Loja mostra a assistência só para leitura (o total da loja soma as duas).
+  assert.deepEqual([store.assistTargetCents, store.assistRevenueCents], [1_000_000, 1_200_000]);
+  const panel = await (await callRoute(storesRoute.GET, DASHBOARD, "GET", "/api/commercial/stores?month=2026-10")).json();
+  assert.equal(panel.items.find((item) => item.companyId === STORE_A).percent, lib.progressPercent(13_200_000, 11_000_000));
 });
 
 test("Dashboard do operacional e do líder: acompanhamento da loja (loja + assistência) só das lojas deles", async () => {
   const op = await getOverview(OP1_DASH, "2026-10");
-  assert.deepEqual(op.tracking, [{ companyId: STORE_A, name: "LOJA ALFA", targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 1_200_000 }]);
+  // Loja = TOTAL (vendas 10.000.000/12.000.000 + assistência 1.000.000/1.200.000).
+  assert.deepEqual(op.tracking, [{ companyId: STORE_A, name: "LOJA ALFA", targetCents: 11_000_000, revenueCents: 13_200_000, assistTargetCents: 1_000_000, assistRevenueCents: 1_200_000 }]);
   const all = await getOverview(ADMIN, "2026-10");
   // ALFA (líder e operacionais) e BETA (operacional); nunca loja sem eles.
   assert.deepEqual(all.tracking.map((item) => item.companyId).sort(), [STORE_A, STORE_B].sort());

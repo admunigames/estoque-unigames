@@ -19,13 +19,17 @@ import {
   type JsonMap,
 } from "../shared";
 
-// Meta Loja: meta e feito do mês de cada loja (R$), META ITENS / ITENS FEITO e
-// META REALME / REALMES FEITO, tudo lançado à mão (o feito da loja não é a soma dos vendedores).
-//   GET ?month → painel visual para TODOS do Comercial: só o % de cada loja
-//                com meta e o % da rede (nenhum R$). Quem tem
+// Meta Loja: meta e feito de VENDAS do mês de cada loja (R$) — a assistência
+// fica na Meta Assistência (pedido de 2026-10-22) —, META ITENS / ITENS FEITO e
+// META REALME / REALMES FEITO, tudo lançado à mão (o feito da loja não é a
+// soma dos vendedores). O TOTAL DA LOJA = vendas + assistência, e é ele que
+// vale no ranking, nas comissões e nas premiações.
+//   GET ?month → painel visual para TODOS do Comercial: só o % TOTAL de cada
+//                loja com meta e o % da rede (nenhum R$). Quem tem
 //                comercial:stores_view (ver) ou comercial:stores (editar,
 //                canManage) recebe também os valores das lojas do seu
-//                alcance (`rows`); o total em R$ só com todas.
+//                alcance (`rows`: vendas editáveis, assistência só leitura e
+//                o total); o total em R$ só com todas.
 //                `itemStores` = itens e realmes de cada loja (quantidades,
 //                gráficos ITENS/REALMES TOTAIS POR LOJA do Ranking) — para todos.
 //                INDICAÇÃO (quantidade) e R$ DE INDICAÇÃO só em `rows` (só controle).
@@ -37,7 +41,7 @@ import {
 type GoalRow = {
   companyId: string; targetCents: number; revenueCents: number;
   targetItems: number; items: number; targetRealme: number; realme: number;
-  indicationQty: number; indicationCents: number;
+  indicationQty: number; indicationCents: number; assistTargetCents: number; assistRevenueCents: number;
 };
 
 export async function GET(request: Request) {
@@ -56,7 +60,8 @@ export async function GET(request: Request) {
         .prepare(
           `SELECT company_id AS companyId, target_cents AS targetCents, revenue_cents AS revenueCents,
                   target_items AS targetItems, items, target_realme AS targetRealme, realme,
-                  indication_qty AS indicationQty, indication_cents AS indicationCents
+                  indication_qty AS indicationQty, indication_cents AS indicationCents,
+                  assist_target_cents AS assistTargetCents, assist_revenue_cents AS assistRevenueCents
            FROM commercial_store_goals WHERE month=?1`,
         )
         .bind(month)
@@ -64,16 +69,21 @@ export async function GET(request: Request) {
       loadCompanyNames(database),
     ]);
     const goals = new Map((result.results ?? []).map((row) => [row.companyId, row]));
+    // TOTAL DA LOJA = vendas (Meta Loja) + assistência (Meta Assistência).
+    const totalOf = (goal: GoalRow | undefined) => ({
+      targetCents: (Number(goal?.targetCents) || 0) + (Number(goal?.assistTargetCents) || 0),
+      revenueCents: (Number(goal?.revenueCents) || 0) + (Number(goal?.assistRevenueCents) || 0),
+    });
     const withTarget = [...companyNames.entries()]
-      .map(([companyId, name]) => ({ companyId, name, goal: goals.get(companyId) }))
-      .filter((store) => Number(store.goal?.targetCents) > 0);
-    const targetSum = withTarget.reduce((sum, store) => sum + Number(store.goal?.targetCents), 0);
-    const revenueSum = withTarget.reduce((sum, store) => sum + Number(store.goal?.revenueCents), 0);
+      .map(([companyId, name]) => ({ companyId, name, total: totalOf(goals.get(companyId)) }))
+      .filter((store) => store.total.targetCents > 0);
+    const targetSum = withTarget.reduce((sum, store) => sum + store.total.targetCents, 0);
+    const revenueSum = withTarget.reduce((sum, store) => sum + store.total.revenueCents, 0);
     const items = withTarget
       .map((store) => ({
         companyId: store.companyId,
         name: store.name,
-        percent: progressPercent(Number(store.goal?.revenueCents), Number(store.goal?.targetCents)),
+        percent: progressPercent(store.total.revenueCents, store.total.targetCents),
       }))
       .sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0) || a.name.localeCompare(b.name, "pt-BR"));
     const itemStores = [...companyNames.entries()]
@@ -107,6 +117,9 @@ export async function GET(request: Request) {
           realme: Number(goals.get(companyId)?.realme) || 0,
           indicationQty: Number(goals.get(companyId)?.indicationQty) || 0,
           indicationCents: Number(goals.get(companyId)?.indicationCents) || 0,
+          // Só leitura aqui (lançadas na Meta Assistência).
+          assistTargetCents: Number(goals.get(companyId)?.assistTargetCents) || 0,
+          assistRevenueCents: Number(goals.get(companyId)?.assistRevenueCents) || 0,
         }));
       if (scope.allStores) body.total = { targetCents: targetSum, revenueCents: revenueSum };
     }

@@ -507,7 +507,12 @@ export async function loadSellers(
   return { sellers, tabOperationals, operationals, clock, rules };
 }
 
-/** Meta e feito do mês por loja (aba Meta Loja). */
+/**
+ * Meta e feito do mês por loja. Desde 2026-10-22 a Meta Loja guarda só
+ * VENDAS e a Meta Assistência só a ASSISTÊNCIA: aqui targetCents/revenueCents
+ * já são o TOTAL DA LOJA (vendas + assistência), que é o que vale para
+ * ranking, comissões e premiações; assist* = só a assistência.
+ */
 export async function loadStoreGoals(database: Database, month: string): Promise<Map<string, StoreGoal>> {
   const result = await database
     .prepare(
@@ -518,7 +523,7 @@ export async function loadStoreGoals(database: Database, month: string): Promise
     .bind(month)
     .all<StoreGoal & { companyId: string }>();
   return new Map((result.results ?? []).map((row) => [row.companyId, {
-    targetCents: n(row.targetCents), revenueCents: n(row.revenueCents),
+    targetCents: n(row.targetCents) + n(row.assistTargetCents), revenueCents: n(row.revenueCents) + n(row.assistRevenueCents),
     assistTargetCents: n(row.assistTargetCents), assistRevenueCents: n(row.assistRevenueCents),
   }]));
 }
