@@ -3344,7 +3344,8 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
 
   // Gráfico e imagem de compartilhamento sem dependência externa nova.
   assert.match(html, /<svg viewBox="0 0 '\+width\+' '\+height\+'"/);
-  assert.match(html, /canvas\.toDataURL\('image\/png'\)/);
+  // Imagem baixa direto como arquivo (sem dataURL no link, sem "Compartilhar").
+  assert.match(html, /shareCanvasImage\(el\('cashFlowShareCanvas'\), 'fluxo-de-caixa-'/);
   assert.doesNotMatch(html, /cdn\.jsdelivr|chart\.js|unpkg\.com/i);
 
   // Schema/migration: status de recebível NUNCA é persistido (só o
@@ -4468,7 +4469,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /const HEADER = 172, FOOTER = 58;/);
   assert.match(html, /logo\.src = LOGO_DATA_URI;/);
   assert.match(html, /comDrawBars\(ctx, chart, \{x:40, y:HEADER \+ 30,/);
-  assert.match(html, /navigator\.share\(\{files:\[file\], title\}\)/);
+  // Baixa o PNG direto, sem abrir o "Compartilhar" do celular (22/10/2026).
+  assert.match(html, /async function shareCanvasImage\(canvas, fileName\)\{/);
+  assert.doesNotMatch(html, /navigator\.share\(\{files:\[file\], title\}\)/);
   assert.doesNotMatch(html, /comRankList/);
   // Cor das colunas pela posição: 1º verde → último vermelho (degradê).
   assert.match(html, /const hue = Math\.round\(145 - t \* 140\);/);

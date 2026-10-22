@@ -12039,7 +12039,7 @@
     <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Imagem compacta, pensada para compartilhar por mensagem.</p>
     <canvas id="cashFlowShareCanvas" width="720" height="900" style="max-width:100%;border:1px solid var(--line);border-radius:10px;"></canvas>
     <div class="purchase-form-actions" style="justify-content:center;">
-      <a class="btn-accent" id="btnDownloadCashFlowImage" download="fluxo-de-caixa.png" href="#">BAIXAR PNG</a>
+      <button class="btn-accent" id="btnDownloadCashFlowImage" type="button">BAIXAR PNG</button>
     </div>
   </div>
 </dialog>
@@ -38388,9 +38388,12 @@ function renderHomeTasks(){
       context.fillText(note, 40, height - 34 - (footerNotes.length - 1 - index) * 22);
     });
 
-    const link = el('btnDownloadCashFlowImage');
-    if(link) link.href = canvas.toDataURL('image/png');
   }
+
+  el('btnDownloadCashFlowImage') && el('btnDownloadCashFlowImage').addEventListener('click', event => {
+    event.preventDefault();
+    shareCanvasImage(el('cashFlowShareCanvas'), 'fluxo-de-caixa-'+todayDateKeyRecife()+'.png');
+  });
 
   el('btnCashFlowShare') && el('btnCashFlowShare').addEventListener('click', () => {
     if(!cashFlowData){
@@ -51528,22 +51531,19 @@ function renderHomeTasks(){
     return canvas;
   }
 
-  // Imagem para o WhatsApp: no celular abre o "Compartilhar"
-  // (WhatsApp aparece na lista); onde não dá, baixa o PNG.
-  // downloadOnly: baixa o PNG direto, sem abrir o "Compartilhar" do celular.
-  async function shareCanvasImage(canvas, fileName, title, downloadOnly){
+  // Imagem (PNG) em todo o sistema: BAIXA direto, como arquivo — sem abrir o
+  // "Compartilhar" do celular (decisão do usuário, 22/10/2026). O usuário
+  // anexa no WhatsApp pelo arquivo baixado. Navegador sem suporte a download
+  // (iPhone antigo no PWA): abre a imagem numa aba nova.
+  async function shareCanvasImage(canvas, fileName){
     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     if(!blob){ showPurchaseToast('NÃO FOI POSSÍVEL GERAR A IMAGEM.'); return; }
-    const file = new File([blob], fileName, {type:'image/png'});
-    if(!downloadOnly && navigator.canShare && navigator.canShare({files:[file]})){
-      try{
-        await navigator.share({files:[file], title});
-        return;
-      }catch(error){
-        if(error && error.name === 'AbortError') return;
-      }
-    }
     const url = URL.createObjectURL(blob);
+    if(!('download' in HTMLAnchorElement.prototype)){
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      return;
+    }
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
@@ -51551,7 +51551,7 @@ function renderHomeTasks(){
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showPurchaseToast('IMAGEM BAIXADA — ANEXE NO WHATSAPP.');
+    showPurchaseToast('IMAGEM BAIXADA.');
   }
 
   async function comShareRankImage(){
