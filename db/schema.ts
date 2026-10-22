@@ -4843,6 +4843,33 @@ export const rmaOptions = pgTable(
 // por loja, com o percentual). NÃO INCLUIR = nenhuma linha. A célula da DRE
 // (finance_store_entries 'payable') soma estas fatias das contas não
 // canceladas — ver recalcPayableEntrySql.
+// INFORMAÇÕES GERAIS (Cadastros) — migration 0111. Itens por loja:
+// kind 'internet' | 'prestador' | 'outros'; sem senha de Wi-Fi/roteador.
+export const infoGeraisItems = pgTable(
+  "info_gerais_items",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    kind: text("kind").notNull(),
+    position: integer("position").notNull().default(0),
+    // Provedor (internet) ou nome (prestador).
+    title: text("title").notNull().default(""),
+    // Plano (internet) ou serviço (prestador).
+    service: text("service").notNull().default(""),
+    contract: text("contract").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("info_gerais_items_company_idx").on(table.companyId, table.kind, table.position)],
+);
+
 // RH: valores MANUAIS por funcionário e competência — migration 0109.
 // kind 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO) | 'inss' (DRE Funcionário).
 export const hrEmployeeMonthValues = pgTable(

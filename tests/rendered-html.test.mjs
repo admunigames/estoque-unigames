@@ -4388,7 +4388,7 @@ test("permissão própria suppliers:manage libera só o Cadastro de Fornecedores
   // UI: checkbox no cadastro de usuário, item no grupo Cadastros e as duas
   // telas (aba do Compras nativo + página nova) montadas pela mesma função.
   assert.match(html, /name="userPermission" value="suppliers:manage"/);
-  assert.match(html, /<div class="nav-group" data-any-permission="database,suppliers,finance:manage,purchases_draft,audit">/);
+  assert.match(html, /<div class="nav-group" data-any-permission="database,suppliers,finance:manage,purchases_draft,audit,info_gerais">/);
   assert.match(html, /id="navFornecedores" data-page="fornecedores" data-any-permission="suppliers,finance:manage,purchases_draft"[^>]*href="\/cadastros\/fornecedores"/);
   assert.match(html, /id="navDados" data-page="dados" data-permission="database"/);
   assert.match(html, /id="navLojas" data-page="lojas" data-permission="database"/);
