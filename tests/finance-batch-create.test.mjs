@@ -81,3 +81,35 @@ test("Fornecedores: cadastro em lote (dívida + conta gêmea) e EXCLUIR em lote 
   assert.equal(count("supplier_open_debts"), 1);
   assert.equal((await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/supplier-debts/bulk", { action: "delete", ids: ["nao-existe"] })).status, 404);
 });
+
+test("Despesas: cadastro em lote e barra de lote (categoria nas contas e EXCLUIR sem pagamento)", async () => {
+  const route = await import("../app/api/finance/expenses/batch/route.ts");
+  const bulk = await import("../app/api/finance/expenses/bulk/route.ts");
+  db.insert("finance_items", { id: "item-agua", category_id: "cat-1", name: "ÁGUA", created_by: "admin" });
+  const row = { companyId: BETA, description: "MATERIAL DE LIMPEZA", financeItemId: "item-luz", originalAmountCents: 2500, dueDate: "2026-11-05" };
+  const preview = await (await batch(route, ADMIN, "/api/finance/expenses/batch", [row, { ...row, companyId: "" }], true)).json();
+  assert.deepEqual(preview.errors.map((e) => e.line), [2]);
+  assert.match(preview.errors[0].error, /EMPRESA\/LOJA/);
+  const ok = await batch(route, ADMIN, "/api/finance/expenses/batch", [row, { ...row, description: "CAFÉ", originalAmountCents: 900 }]);
+  assert.equal(ok.status, 201);
+  assert.equal(count("expenses"), 2);
+  const cell = () => db.sqlite.prepare("SELECT amount_cents AS c FROM finance_store_entries WHERE store_id=? AND item_id=? AND month='2026-11'").get(BETA, "item-luz")?.c ?? 0;
+  assert.equal(cell(), 3400);
+
+  const [cafe, limpeza] = db.sqlite.prepare("SELECT id FROM expenses ORDER BY description").all().map((r) => r.id);
+  const category = await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/expenses/bulk", { action: "category", ids: [cafe], fields: { financeItemId: "item-agua" } });
+  assert.equal((await category.json()).applied, 1);
+  assert.equal(db.sqlite.prepare("SELECT finance_item_id AS i FROM expenses WHERE id=?").get(cafe).i, "item-agua");
+  assert.equal(db.sqlite.prepare("SELECT finance_item_id AS i FROM accounts_payable WHERE expense_id=?").get(cafe).i, "item-agua");
+  assert.equal(cell(), 2500);
+
+  const payableOfLimpeza = db.sqlite.prepare("SELECT id FROM accounts_payable WHERE expense_id=?").get(limpeza).id;
+  db.insert("accounts_payable_payments", { id: "pay-limpeza", payable_id: payableOfLimpeza, amount_cents: 2500, payment_date: "2026-11-05", scheduled: 0, confirmed_at: "2026-11-05T10:00:00Z", created_by: "admin" });
+  const del = await (await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/expenses/bulk", { action: "delete", ids: [cafe, limpeza] })).json();
+  assert.equal(del.applied, 1);
+  assert.match(del.skipped[0].reason, /PAGAMENTO/);
+  assert.equal(count("expenses"), 1);
+  assert.equal(count("accounts_payable", `expense_id='${cafe}'`), 0);
+  assert.equal((await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/expenses/bulk", { action: "delete", ids: [cafe] })).status, 404);
+  assert.equal((await callRoute(bulk.POST, STORE_USER, "POST", "/api/finance/expenses/bulk", { action: "delete", ids: [limpeza] })).status, 403);
+});

@@ -8528,7 +8528,7 @@
               <strong class="bulk-bar-count" data-bulk-count></strong>
               <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
               <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel" data-bulk-confirm="CONFIRMAR CANCELAMENTO">CANCELAR</button>
-              <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
+              <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO (SÓ CANCELADAS)">EXCLUIR</button>
               <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
             </div>
           </div>
@@ -8602,6 +8602,7 @@
         <div class="field"><label for="expensesLoja">EMPRESA/LOJA</label><select id="expensesLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnConfigureRateio" type="button">CONFIGURAR RATEIO</button>
+          <button class="btn-outline" id="btnBatchExpenses" type="button">+ CADASTRAR EM LOTE</button>
           <button class="btn-accent" id="btnNewExpense" type="button">NOVA DESPESA</button>
         </div>
       </div>
@@ -8639,9 +8640,19 @@
           </div>
         </div>
 
+        <div class="bulk-bar" id="expensesBulkBar">
+          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+          <div class="bulk-bar-actions" data-bulk-actions hidden>
+            <strong class="bulk-bar-count" data-bulk-count></strong>
+            <button class="btn-outline btn-sm" type="button" data-bulk-action="category">ALTERAR CATEGORIA / CENTRO DE CUSTO</button>
+            <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO (SEM PAGAMENTO)">EXCLUIR</button>
+            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+          </div>
+        </div>
         <div class="table-scroll">
           <table>
             <thead><tr>
+              <th class="bulk-col" aria-label="Selecionar"></th>
               <th data-expenses-sort="description" class="sortable">Descrição</th>
               <th>Empresa/Loja</th>
               <th>Fornecedor</th>
@@ -8654,7 +8665,7 @@
               <th>Parcela/Recorrência</th>
               <th></th>
             </tr></thead>
-            <tbody id="expensesBody"><tr><td colspan="11" class="responsive-empty">Carregando despesas…</td></tr></tbody>
+            <tbody id="expensesBody"><tr><td colspan="12" class="responsive-empty">Carregando despesas…</td></tr></tbody>
           </table>
         </div>
         <div class="payables-totals" id="expensesTotals"></div>
@@ -42947,11 +42958,13 @@ function renderHomeTasks(){
     const tbody = el('expensesBody');
     if(!tbody) return;
     if(!expensesRows.length){
-      tbody.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhuma despesa encontrada com os filtros atuais.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="responsive-empty">Nenhuma despesa encontrada com os filtros atuais.</td></tr>';
+      expensesBulk.sync();
       return;
     }
     tbody.innerHTML = expensesRows.map(row => {
       return '<tr>'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar despesa '+row.description)+'</td>'+
         '<td>'+escapeHtml(row.description)+'</td>'+
         '<td>'+escapeHtml(row.companyName || row.companyId)+'</td>'+
         '<td>'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
@@ -42965,7 +42978,41 @@ function renderHomeTasks(){
         '<td><button class="btn-outline" type="button" data-expense-open="'+escapeHtml(row.id)+'">ABRIR</button></td>'+
       '</tr>';
     }).join('');
+    expensesBulk.sync();
   }
+  // Barra de lote de Despesas: categoria/centro de custo (mesmo diálogo do
+  // lote de Contas a Pagar) e EXCLUIR (sem pagamento; cartão/extrato não).
+  const expensesBulk = setupBulkSelection(el('expensesBulkBar'), el('expensesBody'), (action, ids) =>
+    openPayBulk('/expenses/bulk', action, ids, el('expensesLoja') ? el('expensesLoja').value : '',
+      () => loadExpensesList({silent:true}), expensesBulk));
+  el('btnBatchExpenses').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    await loadPayablesCatalogData();
+    if(!financeItems.length) await loadFinanceCatalog();
+    openFinanceBatchDialog({
+      title: 'CADASTRAR DESPESAS EM LOTE',
+      help: 'UMA DESPESA AVULSA POR LINHA (PARCELADA, RECORRENTE OU RATEADA: PELO CADASTRO INDIVIDUAL).',
+      endpoint: '/expenses/batch',
+      columns: [
+        {key:'companyId', label:'LOJA', type:'select', required:true, options: () => financeBatchCompanyOptions(false)},
+        {key:'description', label:'DESCRIÇÃO', type:'text', required:true},
+        {key:'financeItemId', label:'CATEGORIA', type:'item', required:true},
+        {key:'originalAmountCents', label:'VALOR', type:'money', required:true},
+        {key:'dueDate', label:'VENCIMENTO', type:'date', required:true},
+        {key:'competenceMonth', label:'COMPETÊNCIA', type:'month'},
+        {key:'issueDate', label:'DATA', type:'date'},
+        {key:'supplierId', label:'FORNECEDOR', type:'select', placeholder:'SEM FORNECEDOR', options: () => payableSuppliers.filter(x => x.active).map(x => ({value:x.id, label:x.name}))},
+        {key:'costCenterId', label:'CENTRO DE CUSTO', type:'select', placeholder:'SEM CENTRO DE CUSTO', options: () => financeCostCenters.map(c => ({value:c.id, label:c.name}))},
+        {key:'financeAccountId', label:'CONTA BANCÁRIA', type:'select', placeholder:'SEM CONTA', options: () => payableAccounts.filter(a => a.active).map(a => ({value:a.id, label:a.displayLabel || a.name}))},
+        {key:'paymentMethod', label:'FORMA DE PAGAMENTO', type:'text', maxLength:40},
+        {key:'invoiceNumber', label:'NÚMERO DA NF', type:'text', maxLength:60},
+        {key:'rateioType', label:'RATEIO', type:'select', placeholder:'LOJA ÚNICA', options: [{value:'single_store', label:'LOJA ÚNICA'}, {value:'no_rateio', label:'NÃO ENTRA EM RATEIO'}]},
+        {key:'notes', label:'OBSERVAÇÕES', type:'text', maxLength:500}
+      ],
+      isFilled: values => Boolean(values.description || values.originalAmountCents),
+      onDone: () => loadExpensesList({silent:true})
+    });
+  });
 
   function renderExpensesTotals(totals){
     const el2 = el('expensesTotals');
