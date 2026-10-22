@@ -9131,6 +9131,7 @@
           </div>
           <div class="dre-toolbar-actions">
             <button class="btn-outline" id="btnNewAcquirer" type="button">NOVA ADQUIRENTE</button>
+            <button class="btn-outline" id="btnBatchMachines" type="button">+ CADASTRAR EM LOTE</button>
             <button class="btn-accent" id="btnNewMachine" type="button">NOVA MAQUINETA</button>
           </div>
         </div>
@@ -35569,6 +35570,28 @@ function renderHomeTasks(){
     el('machineFormStatus').textContent = '';
     el('machineDialog').showModal();
   }
+  el('btnBatchMachines') && el('btnBatchMachines').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    await loadFinanceAcquirers();
+    openFinanceBatchDialog({
+      title: 'CADASTRAR MAQUINETAS EM LOTE',
+      help: 'UMA MAQUINETA POR LINHA. O SERIAL NÃO PODE SE REPETIR.',
+      endpoint: '/card-machines/batch',
+      columns: [
+        {key:'companyId', label:'UNIDADE', type:'select', required:true, options: () => financeBatchCompanyOptions(false)},
+        {key:'acquirerId', label:'ADQUIRENTE', type:'select', required:true, options: () => financeAcquirersCache.filter(a => a.status === 'active').map(a => ({value:a.id, label:a.name+(a.companyId ? ' (LOJA)' : '')}))},
+        {key:'model', label:'MODELO', type:'text', maxLength:120},
+        {key:'serial', label:'SERIAL', type:'text', maxLength:80},
+        {key:'establishmentCode', label:'CÓDIGO DO ESTABELECIMENTO', type:'text', maxLength:60},
+        {key:'terminal', label:'TERMINAL', type:'text', maxLength:60},
+        {key:'installedAt', label:'INSTALADA EM', type:'date'},
+        {key:'status', label:'SITUAÇÃO', type:'select', placeholder:'ATIVA', options: Object.keys(MACHINE_STATUS_LABELS).map(k => ({value:k, label:MACHINE_STATUS_LABELS[k]}))},
+        {key:'notes', label:'OBSERVAÇÕES', type:'text', maxLength:500}
+      ],
+      isFilled: values => Boolean(values.acquirerId || values.serial || values.model),
+      onDone: () => loadMachinesTab()
+    });
+  });
   el('btnNewMachine') && el('btnNewMachine').addEventListener('click', () => {
     if(!acquirersRows.some(a => a.status === 'active')){
       showPurchaseToast('Cadastre uma adquirente antes de cadastrar a maquineta.', 'error');

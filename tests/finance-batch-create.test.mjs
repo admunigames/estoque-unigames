@@ -13,7 +13,7 @@ const db = await setupRouteDb([
   "expenses", "expense_rateio_shares", "expense_attachments", "finance_rateio_model_shares",
   "finance_store_revenue", "finance_store_headcount",
   "finance_bank_statement_entries", "finance_sales_recon_rows", "finance_credit_sales", "finance_replacement_entries",
-  "accounts_receivable", "finance_acquirers",
+  "accounts_receivable", "finance_acquirers", "finance_card_machines",
 ]);
 
 const ALFA = "clojaalfa1";
@@ -166,4 +166,18 @@ test("Recebíveis: cadastro em lote e EXCLUIR em lote só o que não foi recebid
   assert.equal(del.applied, 1);
   assert.equal(del.skipped[0].reason, "JÁ RECEBIDO");
   assert.equal(count("accounts_receivable"), 1);
+});
+
+test("Maquinetas: cadastro em lote recusa serial repetido (no lote e já cadastrado) e adquirente de outra unidade", async () => {
+  const route = await import("../app/api/finance/card-machines/batch/route.ts");
+  db.insert("finance_acquirers", { id: "acq-1", name: "STONE", company_id: "", status: "active", created_by: "admin" });
+  db.insert("finance_acquirers", { id: "acq-beta", name: "CIELO BETA", company_id: BETA, status: "active", created_by: "admin" });
+  const row = { companyId: ALFA, acquirerId: "acq-1", model: "S920", serial: "ab-123" };
+  const preview = await (await batch(route, ADMIN, "/api/finance/card-machines/batch", [row, row, { ...row, serial: "X9", acquirerId: "acq-beta" }], true)).json();
+  assert.deepEqual(preview.errors.map((e) => [e.line, e.error]), [[2, "SERIAL REPETIDO NESTE LOTE."], [3, "ESSA ADQUIRENTE É DE OUTRA UNIDADE."]]);
+  const ok = await batch(route, ADMIN, "/api/finance/card-machines/batch", [row, { ...row, serial: "CD-456" }]);
+  assert.equal(ok.status, 201);
+  assert.equal(count("finance_card_machines"), 2);
+  const again = await (await batch(route, ADMIN, "/api/finance/card-machines/batch", [row], true)).json();
+  assert.match(again.errors[0].error, /JÁ EXISTE UMA MAQUINETA COM ESSE SERIAL/);
 });

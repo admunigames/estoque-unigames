@@ -1,17 +1,17 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
-import { isMachineStatus, normalizeSerial, validateMachineDraft } from "../../../lib/card-machines";
+import { isMachineStatus } from "../../../lib/card-machines";
 import { todayInTimezone } from "../../../lib/finance-status";
 import {
   canManageFinance,
   identity,
   jsonResponse,
-  loadCompanyList,
   safeText,
   sameOrigin,
   type JsonMap,
 } from "../shared";
+import { insertMachineSql, validateMachineInput } from "./create";
 
 // Maquinetas (POS) — Financeiro Fase 7. Escopo por loja igual a Recebíveis:
 // quem tem loja vinculada só vê/gerencia as maquinetas da própria loja; quem
@@ -133,47 +133,10 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const editId = safeText(body.id, 80);
-    const acquirerId = safeText(body.acquirerId, 80);
-    const model = safeText(body.model, 120);
-    // Senha administrativa da maquineta (visível para quem tem o Financeiro, por decisão do usuário).
-    const adminPassword = safeText(body.adminPassword, 60);
-    const serial = normalizeSerial(body.serial);
-    const establishmentCode = safeText(body.establishmentCode, 60);
-    const terminal = safeText(body.terminal, 60);
-    const installedAt = safeText(body.installedAt, 10);
-    const notes = safeText(body.notes, 1000);
-    const status = isMachineStatus(body.status) ? body.status : "active";
-
-    let companyId = safeText(body.companyId, 80);
-    if (!allStores) companyId = scopeActor.companyId;
-
-    const draftError = validateMachineDraft({ acquirerId, companyId, installedAt });
-    if (draftError) return jsonResponse({ error: draftError }, 400);
-    if (allStores && !hasCompany(companyId)) {
-      return jsonResponse({ error: "SELECIONE A UNIDADE." }, 400);
-    }
-
     const database = await getD1();
-    const acquirer = await database
-      .prepare("SELECT name, company_id AS companyId FROM finance_acquirers WHERE id=?1")
-      .bind(acquirerId)
-      .first<{ name: string; companyId: string }>();
-    if (!acquirer) return jsonResponse({ error: "ADQUIRENTE NÃO ENCONTRADA." }, 400);
-    if (acquirer.companyId && acquirer.companyId !== companyId) {
-      return jsonResponse({ error: "ESSA ADQUIRENTE É DE OUTRA UNIDADE." }, 400);
-    }
-
-    const companies = await loadCompanyList(database);
-    const companyName = companies.find((row) => row.id === companyId)?.name ?? "";
-    if (!companyName) return jsonResponse({ error: "UNIDADE NÃO ENCONTRADA." }, 400);
-
-    if (serial) {
-      const dupSerial = await database
-        .prepare("SELECT id FROM finance_card_machines WHERE serial=?1 AND id<>?2")
-        .bind(serial, editId || "")
-        .first<{ id: string }>();
-      if (dupSerial) return jsonResponse({ error: "JÁ EXISTE UMA MAQUINETA COM ESSE SERIAL." }, 409);
-    }
+    const validated = await validateMachineInput(database, scopeActor, allStores, body, editId);
+    if ("error" in validated) return jsonResponse({ error: validated.error }, validated.status);
+    const { input } = validated;
 
     const who = actor.displayName || "Administrador";
     if (editId) {
@@ -194,53 +157,29 @@ export async function POST(request: Request) {
            WHERE id=?14`,
         )
         .bind(
-          acquirerId,
-          acquirer.name,
-          model,
-          serial,
-          establishmentCode,
-          terminal,
-          companyId,
-          companyName,
-          installedAt,
-          status,
-          notes,
+          input.acquirerId,
+          input.acquirerName,
+          input.model,
+          input.serial,
+          input.establishmentCode,
+          input.terminal,
+          input.companyId,
+          input.companyName,
+          input.installedAt,
+          input.status,
+          input.notes,
           actor.id,
           who,
           editId,
-          adminPassword,
+          input.adminPassword,
         )
         .run();
       return jsonResponse({ updated: true, id: editId });
     }
 
     const id = crypto.randomUUID();
-    await database
-      .prepare(
-        `INSERT INTO finance_card_machines
-          (id, acquirer_id, acquirer_name, model, serial, establishment_code, terminal,
-           company_id, company_name, installed_at, status, notes,
-           created_by, created_by_name, updated_by, updated_by_name, admin_password)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?13, ?14, ?15)`,
-      )
-      .bind(
-        id,
-        acquirerId,
-        acquirer.name,
-        model,
-        serial,
-        establishmentCode,
-        terminal,
-        companyId,
-        companyName,
-        installedAt,
-        status,
-        notes,
-        actor.id,
-        who,
-        adminPassword,
-      )
-      .run();
+    const [insertSql, insertValues] = insertMachineSql(id, input, actor);
+    await database.prepare(insertSql).bind(...insertValues).run();
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
     console.error("Não foi possível cadastrar a maquineta.", error);
