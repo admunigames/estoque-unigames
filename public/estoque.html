@@ -3724,6 +3724,8 @@
   .rateio-store-row{display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:34px;}
   .rateio-store-row input[type="number"]{width:84px;}
   .cr-batch-table input[data-cr-amount="fee"]{width:72px;}
+  .finance-batch-table tr.is-error td{background:color-mix(in srgb,#ef6a55 10%,transparent);}
+  .finance-batch-table [data-fb-situation]{font-size:11px; min-width:140px;}
   .cr-link-dialog{width:min(980px,calc(100vw - 28px));}
   .cr-link-dialog tr.is-suggested td{background:color-mix(in srgb,var(--accent) 8%,transparent);}
   @media (max-width:680px){
@@ -8417,6 +8419,7 @@
         <div class="field"><label for="payablesLoja">EMPRESA/LOJA</label><select id="payablesLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnManagePayablesCatalog" type="button">FORNECEDORES E CONTAS</button>
+          <button class="btn-outline" id="btnBatchPayables" type="button">+ CADASTRAR EM LOTE</button>
           <button class="btn-accent" id="btnNewPayable" type="button">NOVA CONTA</button>
         </div>
       </div>
@@ -11830,6 +11833,43 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelReposicaoBulk" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">APLICAR</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Cadastro em LOTE do Financeiro (componente único: openFinanceBatchDialog).
+     Grade editável + COLAR DA PLANILHA (colunas na ordem da grade) + prévia
+     linha a linha (dryRun) + gravação numa transação só (tudo ou nada). -->
+<dialog class="purchase-dialog decl-batch-dialog" id="financeBatchDialog" aria-labelledby="financeBatchTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="financeBatchTitle">CADASTRAR EM LOTE</h3>
+    <button class="purchase-dialog-close" id="btnCloseFinanceBatch" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="financeBatchForm">
+    <p class="purchase-field-help" id="financeBatchHelp"></p>
+    <div class="table-panel responsive-table decl-batch-table cr-batch-table finance-batch-table">
+      <div class="table-scroll">
+        <table>
+          <thead id="financeBatchHead"></thead>
+          <tbody id="financeBatchBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="purchase-field full" id="financeBatchPasteRow" hidden>
+      <label for="financeBatchPaste">COLE AQUI AS LINHAS COPIADAS DO EXCEL — COLUNAS NA ORDEM DA GRADE (<span id="financeBatchPasteOrder"></span>)</label>
+      <textarea id="financeBatchPaste" rows="5" placeholder="Copie as células no Excel (Ctrl+C) e cole aqui (Ctrl+V)."></textarea>
+      <div class="purchase-form-actions">
+        <button class="btn-outline" id="btnFinanceBatchPasteCancel" type="button">CANCELAR</button>
+        <button class="btn-accent" id="btnFinanceBatchPasteApply" type="button">USAR LINHAS COLADAS</button>
+      </div>
+    </div>
+    <div class="user-form-status" id="financeBatchStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnFinanceBatchAddRows" type="button">+ 5 LINHAS</button>
+      <button class="btn-outline" id="btnFinanceBatchPaste" type="button">COLAR DA PLANILHA</button>
+      <button class="btn-outline" id="btnFinanceBatchPreview" type="button">PRÉ-VISUALIZAR</button>
+      <button class="btn-outline" id="btnCancelFinanceBatch" type="button">FECHAR</button>
+      <button class="btn-accent" id="btnSaveFinanceBatch" type="submit">CADASTRAR TUDO</button>
     </div>
   </form>
 </dialog>
@@ -33150,6 +33190,34 @@ function renderHomeTasks(){
   }
 
   el('btnNewPayable').addEventListener('click', openNewPayableDialog);
+  // CADASTRAR EM LOTE (contas únicas) — componente único openFinanceBatchDialog.
+  el('btnBatchPayables').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    await loadPayablesCatalogData();
+    if(!financeItems.length) await loadFinanceCatalog();
+    openFinanceBatchDialog({
+      title: 'CADASTRAR CONTAS A PAGAR EM LOTE',
+      help: 'UMA CONTA ÚNICA POR LINHA. DESTINO NA DRE: NA LOJA DA CONTA OU NÃO INCLUIR (RATEIO SÓ PELO CADASTRO INDIVIDUAL).',
+      endpoint: '/payables/batch',
+      columns: [
+        {key:'companyId', label:'LOJA', type:'select', options: () => financeBatchCompanyOptions(true), placeholder: payablesCanActAcrossStores() ? 'SEM LOJA' : 'SELECIONE'},
+        {key:'description', label:'DESCRIÇÃO', type:'text', required:true},
+        {key:'financeItemId', label:'CATEGORIA', type:'item', required:true},
+        {key:'originalAmountCents', label:'VALOR', type:'money', required:true},
+        {key:'dueDate', label:'VENCIMENTO', type:'date', required:true},
+        {key:'competenceMonth', label:'COMPETÊNCIA', type:'month'},
+        {key:'supplierId', label:'FORNECEDOR', type:'select', placeholder:'SEM FORNECEDOR', options: () => payableSuppliers.filter(x => x.active).map(x => ({value:x.id, label:x.name}))},
+        {key:'financeAccountId', label:'CONTA FINANCEIRA', type:'select', placeholder:'SEM CONTA', options: () => payableAccounts.filter(a => a.active).map(a => ({value:a.id, label:a.displayLabel || a.name}))},
+        {key:'paymentMethod', label:'FORMA DE PAGAMENTO', type:'text', maxLength:40},
+        {key:'billingCode', label:'BOLETO', type:'text', maxLength:80},
+        {key:'payerName', label:'TITULAR / PAGADOR', type:'text', maxLength:160},
+        {key:'dreTarget', label:'DESTINO NA DRE', type:'select', placeholder:'NA LOJA DA CONTA', options: [{value:'include', label:'NA LOJA DA CONTA'}, {value:'none', label:'NÃO INCLUIR'}]},
+        {key:'notes', label:'OBSERVAÇÕES', type:'text', maxLength:500}
+      ],
+      isFilled: values => Boolean(values.description || values.originalAmountCents),
+      onDone: () => loadPayablesList()
+    });
+  });
   el('btnCancelPayableDialog').addEventListener('click', closePayableDialog);
   el('btnClosePayableDialog').addEventListener('click', closePayableDialog);
   el('payableDialog').addEventListener('click', event => { if(event.target === el('payableDialog')) closePayableDialog(); });
@@ -41663,6 +41731,196 @@ function renderHomeTasks(){
     });
     sync();
     return {sync, clear(){ selected.clear(); sync(); }};
+  }
+
+  // ----- Cadastro em LOTE do Financeiro (componente único) -----
+  // config = {title, help, endpoint, columns:[{key, label, type, required,
+  // options}], isFilled(values), extraBody(), onDone()}. Tipos: text, money,
+  // date, month, number, select (options [{value,label}] ou função), item
+  // (categoria › subcategoria). O servidor recebe {rows, dryRun, batchKey} e
+  // devolve {ok, created, errors:[{line, error}]}: com qualquer erro NADA é
+  // gravado (tudo ou nada) e cada linha mostra o motivo na coluna SITUAÇÃO.
+  let financeBatchConfig = null;
+  let financeBatchKey = '';
+  function financeBatchOptions(col){
+    if(col.type === 'item') return financeItemPickerOptions().map(o => ({value:o.id, label:o.label}));
+    return typeof col.options === 'function' ? col.options() : (col.options || []);
+  }
+  function financeBatchCellHtml(col){
+    const attrs = ' data-fb="'+escapeHtml(col.key)+'" aria-label="'+escapeHtml(col.label)+'"';
+    if(col.type === 'select' || col.type === 'item'){
+      return '<select'+attrs+'><option value="">'+escapeHtml(col.placeholder || 'SELECIONE')+'</option>'+
+        financeBatchOptions(col).map(o => '<option value="'+escapeHtml(o.value)+'">'+escapeHtml(o.label)+'</option>').join('')+'</select>';
+    }
+    if(col.type === 'date') return '<input type="date"'+attrs+'>';
+    if(col.type === 'month') return '<input type="month"'+attrs+'>';
+    if(col.type === 'number') return '<input type="number" step="any"'+attrs+'>';
+    return '<input'+attrs+(col.type === 'money' ? ' inputmode="decimal" placeholder="R$ 0,00"' : ' maxlength="'+(col.maxLength || 200)+'"')+'>';
+  }
+  function financeBatchAddRows(count){
+    const body = el('financeBatchBody');
+    const before = body.rows.length;
+    body.insertAdjacentHTML('beforeend', Array.from({length: count}, () =>
+      '<tr data-fb-row>'+financeBatchConfig.columns.map(col =>
+        '<td data-label="'+escapeHtml(col.label)+'">'+financeBatchCellHtml(col)+'</td>').join('')+
+        '<td data-label="SITUAÇÃO" data-fb-situation></td>'+
+        '<td data-label=""><button class="btn-outline btn-sm" type="button" data-fb-remove aria-label="Remover linha">×</button></td>'+
+      '</tr>').join(''));
+    Array.from(body.rows).slice(before).forEach(tr => {
+      financeBatchConfig.columns.forEach(col => {
+        const input = tr.querySelector('[data-fb="'+col.key+'"]');
+        if(col.type === 'money') attachCurrencyMask(input);
+        const initial = typeof col.default === 'function' ? col.default() : col.default;
+        if(initial !== undefined && initial !== null && initial !== '') financeBatchSetValue(col, input, initial);
+      });
+    });
+  }
+  function financeBatchSetValue(col, input, value){
+    if(col.type === 'money'){ setCurrencyValue(input, value); return; }
+    input.value = value;
+  }
+  function financeBatchRowValues(tr){
+    const values = {};
+    financeBatchConfig.columns.forEach(col => {
+      const input = tr.querySelector('[data-fb="'+col.key+'"]');
+      if(col.type === 'money'){
+        const raw = getCurrencyValue(input);
+        values[col.key] = raw ? Math.round(Number(raw) * 100) : 0;
+      }else if(col.type === 'number'){
+        values[col.key] = input.value === '' ? '' : Number(input.value);
+      }else{
+        values[col.key] = input.value.trim();
+      }
+    });
+    return values;
+  }
+  function financeBatchFilledRows(){
+    return Array.from(el('financeBatchBody').rows).map(tr => ({tr, values: financeBatchRowValues(tr)}))
+      .filter(({values}) => financeBatchConfig.isFilled ? financeBatchConfig.isFilled(values)
+        : financeBatchConfig.columns.some(col => col.type !== 'select' && col.type !== 'item' && col.type !== 'date' && col.type !== 'month' && values[col.key]));
+  }
+  // Valor colado do Excel → valor do campo (DD/MM/AAAA, R$ 1.234,56, opção pelo texto).
+  function financeBatchParseCell(col, raw){
+    const text = String(raw == null ? '' : raw).trim();
+    if(!text) return '';
+    if(col.type === 'money'){
+      const clean = text.replace(/R\$\s?/i, '').replace(/\s/g, '');
+      const normalized = /,\d{1,2}$/.test(clean) ? clean.replace(/\./g, '').replace(',', '.') : clean.replace(/,/g, '');
+      const number = Number(normalized);
+      return Number.isFinite(number) ? number : '';
+    }
+    if(col.type === 'date'){
+      const br = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if(br) return (br[3].length === 2 ? '20'+br[3] : br[3])+'-'+br[2].padStart(2, '0')+'-'+br[1].padStart(2, '0');
+      return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : '';
+    }
+    if(col.type === 'month'){
+      const br = text.match(/^(\d{1,2})\/(\d{4})$/);
+      if(br) return br[2]+'-'+br[1].padStart(2, '0');
+      return /^\d{4}-\d{2}$/.test(text) ? text : '';
+    }
+    if(col.type === 'number') return text.replace(/\./g, '').replace(',', '.');
+    if(col.type === 'select' || col.type === 'item'){
+      const wanted = normalizeSearchText(text);
+      const options = financeBatchOptions(col);
+      const exact = options.find(o => normalizeSearchText(o.value) === wanted || normalizeSearchText(o.label) === wanted);
+      if(exact) return exact.value;
+      const partial = options.filter(o => normalizeSearchText(o.label).endsWith(wanted) || normalizeSearchText(o.label).includes(wanted));
+      return partial.length === 1 ? partial[0].value : '';
+    }
+    return text;
+  }
+  function financeBatchApplyPaste(text){
+    const lines = String(text || '').replace(/\r/g, '').split('\n').filter(line => line.trim());
+    if(!lines.length) return 0;
+    const body = el('financeBatchBody');
+    // Reaproveita as linhas vazias do fim antes de criar novas.
+    const empty = Array.from(body.rows).filter(tr => !financeBatchFilledRows().some(row => row.tr === tr));
+    empty.forEach(tr => tr.remove());
+    const start = body.rows.length;
+    financeBatchAddRows(lines.length);
+    lines.forEach((line, index) => {
+      const cells = line.split('\t');
+      const tr = body.rows[start + index];
+      financeBatchConfig.columns.forEach((col, colIndex) => {
+        if(colIndex >= cells.length) return;
+        const value = financeBatchParseCell(col, cells[colIndex]);
+        if(value !== '') financeBatchSetValue(col, tr.querySelector('[data-fb="'+col.key+'"]'), value);
+      });
+    });
+    return lines.length;
+  }
+  function openFinanceBatchDialog(config){
+    financeBatchConfig = config;
+    financeBatchKey = crypto.randomUUID();
+    el('financeBatchTitle').textContent = config.title;
+    el('financeBatchHelp').textContent = (config.help ? config.help+' ' : '')+'LINHAS EM BRANCO SÃO IGNORADAS. PRÉ-VISUALIZAR CONFERE LINHA A LINHA SEM GRAVAR; CADASTRAR GRAVA TUDO OU NADA.';
+    el('financeBatchHead').innerHTML = '<tr>'+config.columns.map(col => '<th>'+escapeHtml(col.label)+(col.required ? ' *' : '')+'</th>').join('')+'<th>SITUAÇÃO</th><th></th></tr>';
+    el('financeBatchPasteOrder').textContent = config.columns.map(col => col.label).join(' · ');
+    el('financeBatchBody').innerHTML = '';
+    el('financeBatchStatus').textContent = '';
+    el('financeBatchPasteRow').hidden = true;
+    financeBatchAddRows(5);
+    el('financeBatchDialog').showModal();
+  }
+  async function financeBatchSend(dryRun){
+    const status = el('financeBatchStatus');
+    const filled = financeBatchFilledRows();
+    Array.from(el('financeBatchBody').rows).forEach(tr => { tr.classList.remove('is-error'); tr.querySelector('[data-fb-situation]').textContent = ''; });
+    if(!filled.length){ status.textContent = 'PREENCHA AO MENOS UMA LINHA.'; return; }
+    const buttons = [el('btnSaveFinanceBatch'), el('btnFinanceBatchPreview')];
+    buttons.forEach(b => { b.disabled = true; });
+    status.textContent = dryRun ? 'Conferindo…' : 'Cadastrando…';
+    try{
+      const endpoint = financeBatchConfig.endpoint;
+      const res = await fetch(endpoint.startsWith('/api/') ? endpoint : '/api/finance'+endpoint, {
+        method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(Object.assign({rows: filled.map(row => row.values), dryRun, batchKey: financeBatchKey}, financeBatchConfig.extraBody ? financeBatchConfig.extraBody() : {}))
+      });
+      const data = await res.json().catch(() => ({}));
+      const errors = Array.isArray(data.errors) ? data.errors : [];
+      filled.forEach(({tr}, index) => {
+        const error = errors.find(item => item.line === index + 1);
+        tr.classList.toggle('is-error', Boolean(error));
+        tr.querySelector('[data-fb-situation]').textContent = error ? error.error : (data.ok ? (dryRun ? 'OK' : 'CADASTRADA') : '');
+      });
+      if(errors.length){
+        status.textContent = errors.length+' LINHA(S) COM ERRO'+(dryRun ? '' : ' — NADA FOI GRAVADO')+'. CORRIJA E TENTE DE NOVO.';
+        return;
+      }
+      if(!res.ok){ status.textContent = data.error || 'NÃO FOI POSSÍVEL CADASTRAR.'; return; }
+      if(dryRun){ status.textContent = filled.length+' LINHA(S) OK — PODE CADASTRAR.'; return; }
+      status.textContent = '';
+      showPurchaseToast(Number(data.created || filled.length)+' CADASTRADO(S).');
+      el('financeBatchDialog').close();
+      if(financeBatchConfig.onDone) await financeBatchConfig.onDone();
+    }catch(error){ status.textContent = error.message; }
+    finally{ buttons.forEach(b => { b.disabled = false; }); }
+  }
+  el('btnFinanceBatchAddRows').addEventListener('click', () => financeBatchAddRows(5));
+  el('btnFinanceBatchPaste').addEventListener('click', () => {
+    el('financeBatchPasteRow').hidden = false;
+    el('financeBatchPaste').value = '';
+    el('financeBatchPaste').focus();
+  });
+  el('btnFinanceBatchPasteCancel').addEventListener('click', () => { el('financeBatchPasteRow').hidden = true; });
+  el('btnFinanceBatchPasteApply').addEventListener('click', () => {
+    const count = financeBatchApplyPaste(el('financeBatchPaste').value);
+    el('financeBatchPasteRow').hidden = true;
+    el('financeBatchStatus').textContent = count ? count+' LINHA(S) COLADA(S). CONFIRA E PRÉ-VISUALIZE.' : 'NADA PARA COLAR.';
+  });
+  el('financeBatchBody').addEventListener('click', event => {
+    const remove = event.target.closest('[data-fb-remove]');
+    if(remove) remove.closest('tr').remove();
+  });
+  el('btnFinanceBatchPreview').addEventListener('click', () => financeBatchSend(true));
+  el('financeBatchForm').addEventListener('submit', event => { event.preventDefault(); financeBatchSend(false); });
+  el('btnCloseFinanceBatch').addEventListener('click', () => el('financeBatchDialog').close());
+  el('btnCancelFinanceBatch').addEventListener('click', () => el('financeBatchDialog').close());
+  // Opções comuns das grades.
+  function financeBatchCompanyOptions(withNone){
+    const list = payablesCanActAcrossStores() ? companies : companies.filter(c => c.id === currentSession.companyId);
+    return (withNone && payablesCanActAcrossStores() ? [{value:'', label:'SEM LOJA'}] : []).concat(list.map(c => ({value:c.id, label:c.name})));
   }
 
   // ----- Declaração de Vendas (ex-"Declaração de Shopping") -----
