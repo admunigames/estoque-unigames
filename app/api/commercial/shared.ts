@@ -623,14 +623,37 @@ export function previousMonth(month: string): string {
 // ---------------------------------------------------------------------------
 export const COMMISSION_SYNC_FROM = "2026-10";
 
-type CommercialPayee = { employeeId: string; name: string; companyId: string; companyName: string; role: CommercialRole; totalCents: number };
+// COMISSÃO (contracheque) e PREMIAÇÃO do Comercial vão SEPARADAS para o RH
+// (22/10/2026): commission_cents = comissão; commercial_premium_cents =
+// premiação. O total do recibo (a soma) é o mesmo de antes.
+type CommercialPayee = {
+  employeeId: string;
+  name: string;
+  companyId: string;
+  companyName: string;
+  role: CommercialRole;
+  commissionCents: number;
+  premiumCents: number;
+  totalCents: number;
+};
 
-/** Vendedores, líderes e operacionais do mês com o total que vai para o RH. */
+/** Vendedores, líderes e operacionais do mês com o que vai para o RH. */
 async function commercialPayees(database: Database, month: string): Promise<CommercialPayee[]> {
   const { sellers, operationals } = await loadSellers(database, month);
   return [
-    ...sellers.map((seller) => ({ ...seller, totalCents: seller.metrics.commission.totalCents })),
-    ...operationals.map((person) => ({ ...person, role: "operacional" as const, totalCents: person.commission.totalCents })),
+    ...sellers.map((seller) => ({
+      ...seller,
+      commissionCents: seller.metrics.commission.payslipCents,
+      premiumCents: seller.metrics.commission.premiumCents,
+      totalCents: seller.metrics.commission.totalCents,
+    })),
+    ...operationals.map((person) => ({
+      ...person,
+      role: "operacional" as const,
+      commissionCents: person.commission.payslipCents,
+      premiumCents: person.commission.premiumCents,
+      totalCents: person.commission.totalCents,
+    })),
   ];
 }
 
@@ -643,11 +666,15 @@ export async function commercialEmployeeRoles(database: Database, month: string)
   return new Map((await commercialPayees(database, month)).map((payee) => [payee.employeeId, payee.role]));
 }
 
-/** Total do Comercial para o funcionário no mês — null quando não vem do Comercial. */
-export async function commercialCommissionFor(database: Database, employeeId: string, month: string): Promise<number | null> {
+/** Comissão e premiação do Comercial para o funcionário no mês — null quando não vem do Comercial. */
+export async function commercialCommissionFor(
+  database: Database,
+  employeeId: string,
+  month: string,
+): Promise<{ commissionCents: number; premiumCents: number } | null> {
   if (month < COMMISSION_SYNC_FROM) return null;
   const payee = (await commercialPayees(database, month)).find((item) => item.employeeId === employeeId);
-  return payee ? payee.totalCents : null;
+  return payee ? { commissionCents: payee.commissionCents, premiumCents: payee.premiumCents } : null;
 }
 
 /**
@@ -676,19 +703,22 @@ export async function syncHrCommissions(database: Database, month: string, actor
       const id = headers.get(seller.employeeId);
       return id
         ? database
-          .prepare("UPDATE hr_commissions SET commission_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=?4 WHERE id=?5")
-          .bind(seller.totalCents, actor.id, who, now, id)
+          .prepare(
+            `UPDATE hr_commissions SET commission_cents=?1, commercial_premium_cents=?6, updated_by=?2, updated_by_name=?3, updated_at=?4
+             WHERE id=?5`,
+          )
+          .bind(seller.commissionCents, actor.id, who, now, id, seller.premiumCents)
         : database
           .prepare(
             `INSERT INTO hr_commissions
-              (id, employee_id, employee_name, company_id, company_name, month, commission_cents,
+              (id, employee_id, employee_name, company_id, company_name, month, commission_cents, commercial_premium_cents,
                bonuses_cents, premiums_cents, discounts_cents, adjustments_cents, notes,
                created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, 0, 0, 0, '', ?8, ?9, ?10, ?8, ?9, ?10)`,
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?11, 0, 0, 0, 0, '', ?8, ?9, ?10, ?8, ?9, ?10)`,
           )
           .bind(
             crypto.randomUUID(), seller.employeeId, seller.name, seller.companyId, seller.companyName, month,
-            seller.totalCents, actor.id, who, now,
+            seller.commissionCents, actor.id, who, now, seller.premiumCents,
           );
     });
     if (statements.length) await database.batch(statements);

@@ -10,7 +10,7 @@ import {
   type DreTraining,
 } from "../../../lib/hr-employee-dre";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { MONTH_PATTERN, canManagePayroll, identity, jsonResponse, loadMonthValues, safeText } from "../shared";
+import { MONTH_PATTERN, canManagePayroll, identity, jsonResponse, loadMonthValues, loadOvertimePayouts, safeText } from "../shared";
 import { actingStoresForMonth } from "../../../lib/acting-store";
 
 // DRE Funcionário — fechamento do mês (civil), por loja com detalhe por
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
     // colaborador sobre a base = salário + comissão + HE + DSR do mês (com
     // folha lançada) ou o salário do cadastro (sem folha); INSS manual.
     const monthEnd = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
-    const [employees, allTerminations, assignments, payroll, commissions, dsr, inss] = await Promise.all([
+    const [employees, allTerminations, assignments, payroll, commissions, dsr, inss, overtimePayouts] = await Promise.all([
       database
         .prepare(
           `SELECT id, full_name AS fullName, admission_date AS admissionDate, status, company_id AS companyId,
@@ -131,13 +131,14 @@ export async function GET(request: Request) {
       database
         .prepare(
           `SELECT employee_id AS employeeId,
-                  COALESCE(SUM(commission_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
+                  COALESCE(SUM(commission_cents + commercial_premium_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
            FROM hr_commissions WHERE month=?1 GROUP BY employee_id`,
         )
         .bind(month)
         .all<{ employeeId: string; total: number }>(),
       loadMonthValues(database, month, "dsr"),
       loadMonthValues(database, month, "inss"),
+      loadOvertimePayouts(database, month),
     ]);
     const terms = allTerminations.results ?? [];
     const monthStoreOf = new Map([...assignments].map(([employeeId, store]) => [employeeId, store.companyId]));
@@ -145,7 +146,8 @@ export async function GET(request: Request) {
     const payrollBaseOf = new Map(
       (payroll.results ?? []).map((row) => [
         row.employeeId,
-        (Number(row.baseSalaryCents) || 0) + (Number(row.overtimeCents) || 0) + (commissionOf.get(row.employeeId) ?? 0) +
+        (Number(row.baseSalaryCents) || 0) + (overtimePayouts.get(row.employeeId) ?? (Number(row.overtimeCents) || 0)) +
+          (commissionOf.get(row.employeeId) ?? 0) +
           (dsr.get(row.employeeId) ?? 0),
       ]),
     );

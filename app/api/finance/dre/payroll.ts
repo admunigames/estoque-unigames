@@ -1,5 +1,6 @@
 import type { getD1 } from "../../../../db";
 import { actingStoresForMonth } from "../../../lib/acting-store";
+import { loadOvertimePayouts } from "../../hr-payroll/shared";
 
 // Contribuição do RH (Folha, Benefícios, Comissões) para a DRE — item 13.
 //
@@ -71,11 +72,12 @@ export async function loadPayrollDreContribution(
       .prepare(
         `SELECT employee_id AS employeeId, company_id AS companyId,
                 COALESCE(SUM(base_salary_cents + bonus_cents + overtime_cents + additions_cents + other_cents), 0) AS salaryGross,
-                COALESCE(SUM(base_salary_cents), 0) AS baseTotal
+                COALESCE(SUM(base_salary_cents), 0) AS baseTotal,
+                COALESCE(SUM(overtime_cents), 0) AS overtimeTotal
          FROM hr_payroll_entries WHERE month = ?1 GROUP BY employee_id, company_id`,
       )
       .bind(month)
-      .all<{ employeeId: string; companyId: string; salaryGross: number; baseTotal: number }>(),
+      .all<{ employeeId: string; companyId: string; salaryGross: number; baseTotal: number; overtimeTotal: number }>(),
     database
       .prepare(
         `SELECT employee_id AS employeeId, company_id AS companyId, COALESCE(SUM(gross_cents), 0) AS total
@@ -86,7 +88,7 @@ export async function loadPayrollDreContribution(
     database
       .prepare(
         `SELECT employee_id AS employeeId, company_id AS companyId,
-                COALESCE(SUM(commission_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
+                COALESCE(SUM(commission_cents + commercial_premium_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
          FROM hr_commissions WHERE month = ?1 GROUP BY employee_id, company_id`,
       )
       .bind(month)
@@ -100,13 +102,26 @@ export async function loadPayrollDreContribution(
       .bind(month)
       .all<{ employeeId: string; companyId: string; total: number }>(),
   ]);
+  // HE A PAGAR do Controle de Horas substitui a HE digitada na Folha (e conta
+  // mesmo para quem ainda não tem folha lançada no mês).
+  const overtimePayouts = await loadOvertimePayouts(database, month);
   const folha = (folhaRows.results ?? []).filter((row) => inScope(storeOf(row)));
+  const withFolha = new Set((folhaRows.results ?? []).map((row) => row.employeeId));
+  const overtimeAdjust =
+    folha.reduce((sum, row) => {
+      const payout = overtimePayouts.get(row.employeeId);
+      return payout === undefined ? sum : sum - Number(row.overtimeTotal || 0) + payout;
+    }, 0) +
+    [...overtimePayouts]
+      .filter(([employeeId]) => !withFolha.has(employeeId) && inScope(storeOf({ employeeId, companyId: "" })))
+      .reduce((sum, [, cents]) => sum + cents, 0);
   const sumOf = (rows: Array<{ employeeId: string; companyId: string; total: number }> | undefined) =>
     (rows ?? []).filter((row) => inScope(storeOf(row))).reduce((sum, row) => sum + Number(row.total || 0), 0);
 
   const amounts: Record<PayrollBlock, number> = {
     folha:
       folha.reduce((sum, row) => sum + Number(row.salaryGross || 0), 0) +
+      overtimeAdjust +
       sumOf(dsrRows.results) +
       Math.round((folha.reduce((sum, row) => sum + Number(row.baseTotal || 0), 0) * employerChargesBps) / 10000),
     beneficios: sumOf(beneficiosRows.results),

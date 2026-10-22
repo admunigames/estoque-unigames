@@ -95,8 +95,10 @@ const getOverview = async (user, month, extra = "") => {
   assert.equal(response.status, 200);
   return response.json();
 };
+// Total enviado ao RH = comissão + premiação do Comercial (gravadas separadas
+// desde 22/10/2026 — o total do recibo não muda).
 const hrRow = (employeeId, month) =>
-  db.sqlite.prepare("SELECT commission_cents AS c FROM hr_commissions WHERE employee_id=? AND month=?").get(employeeId, month);
+  db.sqlite.prepare("SELECT commission_cents + commercial_premium_cents AS c, commission_cents AS commission, commercial_premium_cents AS premium FROM hr_commissions WHERE employee_id=? AND month=?").get(employeeId, month);
 
 // Mês com o líder, os vendedores da loja ALFA (+ um da BETA) e as metas da loja.
 async function seedMonth(month) {
@@ -283,6 +285,8 @@ test("operacional: pelo cargo (ativo, com loja, admitido até o mês), valor CHE
   let op1 = (await getOverview(ADMIN, "2026-10")).operationals.find((item) => item.employeeId === "emp-op1");
   assert.deepEqual([op1.commission.rateBps, op1.commission.commissionCents, op1.commission.totalCents], [50, 4_250, 44_250]);
   assert.equal(hrRow("emp-op1", "2026-10").c, 44_250);
+  // Comissão (4.250) e premiação (R$ 400) vão separadas para o RH.
+  assert.deepEqual([hrRow("emp-op1", "2026-10").commission, hrRow("emp-op1", "2026-10").premium], [4_250, 40_000]);
   await putStore("2026-10", STORE_A, { targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 790_000 });
   op1 = (await getOverview(ADMIN, "2026-10")).operationals.find((item) => item.employeeId === "emp-op1");
   assert.deepEqual([op1.commission.rateBps, op1.commission.commissionCents], [0, 0]);
@@ -405,7 +409,7 @@ test("migration 0098: só ADD COLUMN / CREATE TABLE/INDEX (e RLS nas tabelas nov
 });
 
 test("Meta Loja: INDICAÇÃO (quantidade e R$) por loja, só controle — não muda comissão nem RH", async () => {
-  const hrBefore = db.sqlite.prepare("SELECT employee_id AS e, commission_cents AS c FROM hr_commissions ORDER BY e, month").all().map((row) => ({ ...row }));
+  const hrBefore = db.sqlite.prepare("SELECT employee_id AS e, commission_cents + commercial_premium_cents AS c FROM hr_commissions ORDER BY e, month").all().map((row) => ({ ...row }));
   await putStore("2026-10", STORE_A, {
     targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 1_200_000,
     indicationQty: 7, indicationCents: 350_000,
@@ -417,7 +421,7 @@ test("Meta Loja: INDICAÇÃO (quantidade e R$) por loja, só controle — não m
   assert.deepEqual([row.indicationQty, row.indicationCents], [7, 350_000]);
   const viewer = await (await callRoute(storesRoute.GET, DASHBOARD, "GET", "/api/commercial/stores?month=2026-10")).json();
   assert.equal(JSON.stringify(viewer).includes("indication"), false, "quem só vê o painel não recebe a indicação");
-  const hrAfter = db.sqlite.prepare("SELECT employee_id AS e, commission_cents AS c FROM hr_commissions ORDER BY e, month").all().map((row) => ({ ...row }));
+  const hrAfter = db.sqlite.prepare("SELECT employee_id AS e, commission_cents + commercial_premium_cents AS c FROM hr_commissions ORDER BY e, month").all().map((row) => ({ ...row }));
   assert.deepEqual(hrAfter, hrBefore);
 });
 
@@ -426,7 +430,7 @@ test("Meta do Fim de Semana: comercial:weekend(_view), por sábado, escopo de lo
   const WEEKEND_VIEW = { id: "u-weekend-view", permissions: ["comercial:weekend_view"] };
   const put = (user, body) => callRoute(weekendRoute.PUT, user, "PUT", "/api/commercial/weekend", body);
   const get = async (user, query) => (await callRoute(weekendRoute.GET, user, "GET", `/api/commercial/weekend?${query}`)).json();
-  const hrBefore = db.sqlite.prepare("SELECT COUNT(*) AS n, SUM(commission_cents) AS c FROM hr_commissions").get();
+  const hrBefore = db.sqlite.prepare("SELECT COUNT(*) AS n, SUM(commission_cents + commercial_premium_cents) AS c FROM hr_commissions").get();
   const sellersBefore = db.sqlite.prepare("SELECT COUNT(*) AS n FROM commercial_monthly").get().n;
 
   assert.equal((await callRoute(weekendRoute.GET, DASHBOARD, "GET", "/api/commercial/weekend?month=2026-10")).status, 403);
@@ -452,7 +456,7 @@ test("Meta do Fim de Semana: comercial:weekend(_view), por sábado, escopo de lo
   // Fim de semana inválido cai num sábado do mês.
   assert.ok(all.weekends.includes((await get(ADMIN, "month=2026-10&weekend=2026-10-11")).weekend));
 
-  assert.deepEqual(db.sqlite.prepare("SELECT COUNT(*) AS n, SUM(commission_cents) AS c FROM hr_commissions").get(), hrBefore);
+  assert.deepEqual(db.sqlite.prepare("SELECT COUNT(*) AS n, SUM(commission_cents + commercial_premium_cents) AS c FROM hr_commissions").get(), hrBefore);
   assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM commercial_monthly").get().n, sellersBefore);
 });
 

@@ -456,7 +456,7 @@ test("Ranking > META VENDEDORES: o vendedor vê só a própria loja; gestor a de
 });
 
 test("comissão do Comercial preenche o comissionamento do RH (a partir de 10/2026)", async () => {
-  const hrRow = (employeeId, month) => { const row = db.sqlite.prepare("SELECT commission_cents AS c, bonuses_cents AS b FROM hr_commissions WHERE employee_id=? AND month=?").get(employeeId, month); return row ? { ...row } : undefined; }
+  const hrRow = (employeeId, month) => { const row = db.sqlite.prepare("SELECT commission_cents + commercial_premium_cents AS c, bonuses_cents AS b FROM hr_commissions WHERE employee_id=? AND month=?").get(employeeId, month); return row ? { ...row } : undefined; }
   // Setembro (antes de 10/2026): o RH não é tocado.
   assert.equal(hrRow("emp-ana", "2026-09"), undefined);
   // Outubro: todo vendedor do mês tem o "comissão" = total do Comercial.
@@ -518,7 +518,7 @@ test("vendedor INATIVO no RH: some do Dashboard/Ranking/Equipe por padrão, mas 
   const setStatus = (id, status) => db.sqlite.prepare("UPDATE hr_employees SET status=? WHERE id=?").run(status, id);
   const names = (list) => list.map((item) => item.name);
   const getJson = async (route, user, path) => (await callRoute(route.GET, user, "GET", path)).json();
-  const hrCents = () => db.sqlite.prepare("SELECT commission_cents AS c FROM hr_commissions WHERE employee_id='emp-ana' AND month='2026-10'").get().c;
+  const hrCents = () => db.sqlite.prepare("SELECT commission_cents + commercial_premium_cents AS c FROM hr_commissions WHERE employee_id='emp-ana' AND month='2026-10'").get().c;
   const storesBefore = await getJson(storesRoute, DASHBOARD, "/api/commercial/stores?month=2026-10");
   const hrBefore = hrCents();
   setStatus("emp-ana", "inactive");

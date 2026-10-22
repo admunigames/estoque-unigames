@@ -1631,6 +1631,8 @@
     /* Recibo individual do comissionamento: esconde o resto da página. */
     body.rh-recibo-only #rhComissaoMain{display:none !important;}
     body.rh-custo-only #rhFolhaPrintHeader{display:none !important;}
+    #pageRhContabilidade .rh-contab-table th,#pageRhContabilidade .rh-contab-table td{padding:3px 3px !important; font-size:6.5px !important; white-space:normal !important; letter-spacing:0 !important;}
+    #pageRhContabilidade .rh-contab-table{width:100% !important; min-width:0 !important; table-layout:fixed;}
     body.rh-custo-only #rhCustoFuncTable{width:100% !important; min-width:0 !important; table-layout:fixed;}
     body.rh-custo-only #rhCustoFuncTable th,body.rh-custo-only #rhCustoFuncTable td{padding:3px 3px !important; font-size:6.5px !important; white-space:normal !important; letter-spacing:0 !important;}
     body.rh-custo-only #rhCustoFuncTable th:first-child,body.rh-custo-only #rhCustoFuncTable td:first-child{width:14%;}
@@ -4209,6 +4211,7 @@
         <a class="nav-item sub-item" id="navFinanceiroRhAcompanhamentoLojas" data-page="rhAcompanhamentoLojas" data-permission="rh_acompanhamento" title="Acompanhamento - Lojas" href="/rh/acompanhamento-lojas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M6 19V10l5-3 5 3v9"/><path d="M10 19v-5h4v5"/></svg></span><span class="nav-label">Acompanhamento - Lojas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRhBeneficios" data-page="rhBeneficios" data-permission="payroll" title="Benefícios" href="/rh/beneficios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11" rx="1.8"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11"/></svg></span><span class="nav-label">Benefícios</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRhComissionamento" data-page="rhComissionamento" data-permission="payroll" title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
+        <a class="nav-item sub-item" id="navFinanceiroRhContabilidade" data-page="rhContabilidade" data-permission="payroll" title="Relatório Contabilidade" href="/rh/relatorio-contabilidade"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8h7"/><path d="M8.5 11.5h7"/><path d="M8.5 15h4"/></svg></span><span class="nav-label">Relatório Contabilidade</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRhDreFuncionario" data-page="rhDreFuncionario" data-permission="payroll" title="DRE Funcionário" href="/rh/dre-funcionario"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE Funcionário</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRhFolha" data-page="rhFolha" data-permission="payroll" title="Folha de Pagamento" href="/rh/folha"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17"/><path d="M7 13.5h4"/><path d="M7 16.2h6.5"/></svg></span><span class="nav-label">Folha de Pagamento</span></a>
         <a class="nav-item sub-item" id="navFinanceiroRhFuncionarios" data-page="rhFuncionarios" data-permission="payroll" title="Funcionários" href="/rh/funcionarios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 19.5c.7-3.6 3.4-5.6 7-5.6s6.3 2 7 5.6"/></svg></span><span class="nav-label">Funcionários</span></a>
@@ -4223,6 +4226,7 @@
         <a class="nav-item sub-item" id="navRhAniversariantes" data-page="rhAniversariantes" data-permission="rh_aniversariantes" data-home-desc="Lista de aniversariantes do mês com status de chocolate entregue." title="Aniversariantes" href="/rh/aniversariantes"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20v-6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 20h16"/><path d="M4 14a2 2 0 0 1-1.4-3.4l1.4-2 2 2 2-2 2 2 2-2 2 2 2-2 1.4 2A2 2 0 0 1 20 14"/><path d="M12 8V5"/><path d="M12 5c-.8 0-1.5-.6-1.5-1.5S12 2 12 2s1.5.6 1.5 1.5S12.8 5 12 5Z"/></svg></span><span class="nav-label">Aniversariantes</span></a>
         <a class="nav-item sub-item" id="navRhBeneficios" data-page="rhBeneficios" data-permission="payroll" data-home-desc="Vales, premiações e demais benefícios pagos por competência." title="Benefícios" href="/rh/beneficios"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11" rx="1.8"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11"/><path d="M12 8.5c-2.5 0-4-1-4-2.3S9.5 4 12 8.5Zm0 0c2.5 0 4-1 4-2.3S14.5 4 12 8.5Z"/></svg></span><span class="nav-label">Benefícios</span></a>
         <a class="nav-item sub-item" id="navRhComissionamento" data-page="rhComissionamento" data-permission="payroll" data-home-desc="Comissão, bônus, premiações e recibo detalhado por funcionário." title="Comissionamento" href="/rh/comissionamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 19.5 4.5"/><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="16" r="3"/></svg></span><span class="nav-label">Comissionamento</span></a>
+        <a class="nav-item sub-item" id="navRhContabilidade" data-page="rhContabilidade" data-permission="payroll" data-home-desc="Comissão, descontos, premiação e horas extras a pagar por empresa (CNPJ), para a contabilidade." title="Relatório Contabilidade" href="/rh/relatorio-contabilidade"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8h7"/><path d="M8.5 11.5h7"/><path d="M8.5 15h4"/></svg></span><span class="nav-label">Relatório Contabilidade</span></a>
         <a class="nav-item sub-item" id="navRhControleHoras" data-page="rhControleHoras" data-permission="rh_ponto_logistica" data-home-desc="Registro manual do ponto da logística, horas extras e banco de horas." title="Controle de Horas - Logística" href="/rh/controle-horas-logistica"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="nav-label">Controle de Horas - Logística</span></a>
         <a class="nav-item sub-item" id="navRhDreFuncionario" data-page="rhDreFuncionario" data-permission="payroll" data-home-desc="Fechamento do mês por loja e colaborador: ASO, treinamento, rescisão/FGTS e aniversariantes." title="DRE Funcionário" href="/rh/dre-funcionario"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE Funcionário</span></a>
         <a class="nav-item sub-item" id="navRhEscalas" data-page="rhEscalas" data-permission="rh_escalas" data-home-desc="Cadastro de loja fixa do mês e lançamento das escalas de trabalho." title="Escalas" href="/rh/escalas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="nav-label">Escalas</span></a>
@@ -7040,6 +7044,33 @@
     </section>
 
     <!-- ================= RH / COMISSIONAMENTO ================= -->
+    <!-- ================= RH / RELATÓRIO CONTABILIDADE ================= -->
+    <section id="pageRhContabilidade" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Relatório Contabilidade</h2>
+        </div>
+      </header>
+
+      <div class="print-report-header">
+        <div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div>
+        <h1>Comissionamento, horas e premiação</h1>
+        <div class="print-report-meta" id="rhContabPrintMeta"></div>
+      </div>
+
+      <div class="dre-toolbar no-print">
+        <div class="field"><label for="rhContabMes">COMPETÊNCIA</label><input type="month" id="rhContabMes"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnRhContabXlsx" type="button">XLSX</button>
+          <button class="btn-outline" id="btnRhContabPdf" type="button">PDF (A4)</button>
+        </div>
+      </div>
+      <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">AGRUPADO POR EMPRESA (CNPJ DO CADASTRO DE LOJAS, PELA LOJA ATUANTE DO MÊS). DESCONTO SEMPRE NA COMISSÃO — SE PASSAR DA COMISSÃO, A COMISSÃO FICA ZERO E A SOBRA VAI PARA O MÊS SEGUINTE (NUNCA ABATE A PREMIAÇÃO). HE = HORAS EXTRAS A PAGAR DO CONTROLE DE HORAS.</p>
+      <div class="table-panel" id="rhContabResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
+      <div id="rhContabConteudo"></div>
+    </section>
+
     <section id="pageRhComissionamento" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
@@ -13351,7 +13382,14 @@
     <input type="hidden" id="rhTimeTrackPayoutMonth">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label>COMPETÊNCIA</label><p id="rhTimeTrackPayoutMonthLabel"></p></div>
-      <div class="purchase-field"><label for="rhTimeTrackPayoutHours">HORAS PAGAS EM CONTRACHEQUE *</label><input type="number" id="rhTimeTrackPayoutHours" min="0" step="0.25" required></div>
+      <div class="purchase-field"><label>HORAS QUE ABATEM O BANCO</label><p id="rhTimeTrackPayoutBank">00:00</p></div>
+      <div class="purchase-field full">
+        <label>HORAS EXTRAS A PAGAR</label>
+        <div class="table-wrap"><table><thead><tr><th>TIPO</th><th>HORAS (HH:MM)</th><th>VALOR DA HORA</th><th class="num">TOTAL</th></tr></thead>
+          <tbody id="rhTimeTrackPayoutTypes"></tbody>
+          <tfoot><tr><th colspan="3">TOTAL A PAGAR</th><th class="num" id="rhTimeTrackPayoutTotal">R$ 0,00</th></tr></tfoot></table></div>
+        <small class="purchase-field-help">VALOR DA HORA = SALÁRIO ÷ 220 × FATOR (HE 50% 1,5 · HE 100% 2 · ADICIONAL NOTURNO 0,2) — EDITÁVEL; EM BRANCO, O SISTEMA USA O DO SALÁRIO. HE 50% + HE 100% ABATEM O BANCO DE HORAS; O ADICIONAL NOTURNO NÃO.</small>
+      </div>
     </div>
     <div class="user-form-status" id="rhTimeTrackPayoutFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -14972,6 +15010,7 @@
     rhBeneficios:'/rh/beneficios',
     rhComissionamento:'/rh/comissionamento',
     rhDreFuncionario:'/rh/dre-funcionario',
+    rhContabilidade:'/rh/relatorio-contabilidade',
     rhAcompanhamentoLojas:'/rh/acompanhamento-lojas',
     rhAniversariantes:'/rh/aniversariantes',
     rhOdontologico:'/rh/odontologico',
@@ -15041,6 +15080,7 @@
     rhBeneficios:'BENEFÍCIOS',
     rhComissionamento:'COMISSIONAMENTO',
     rhDreFuncionario:'DRE FUNCIONÁRIO',
+    rhContabilidade:'RELATÓRIO CONTABILIDADE',
     rhAcompanhamentoLojas:'ACOMPANHAMENTO - LOJAS',
     rhAniversariantes:'ANIVERSARIANTES',
     rhOdontologico:'PLANO ODONTOLÓGICO',
@@ -15105,6 +15145,7 @@
     rhBeneficios:'payroll',
     rhComissionamento:'payroll',
     rhDreFuncionario:'payroll',
+    rhContabilidade:'payroll',
     rhAcompanhamentoLojas:'rh_acompanhamento',
     rhAniversariantes:'rh_aniversariantes',
     rhOdontologico:'rh_odontologico',
@@ -15794,7 +15835,7 @@
     navItem.classList.add('active');
     const isHome = name === 'inicio';
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'fornecedores' || name === 'usuarios' || name === 'auditoria';
-    const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento' || name === 'rhDreFuncionario';
+    const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento' || name === 'rhDreFuncionario' || name === 'rhContabilidade';
     const isRh = name === 'rhFolgas' || name === 'rhEscalas' || isRhFinanceiro;
     const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'inventario' || name === 'assistenciaRma' || name === 'comercialRelatorioNf';
     const isDocumentos = name === 'documentos';
@@ -15885,6 +15926,7 @@
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhDreFuncionario') loadRhDreFuncionario();
+    if(name === 'rhContabilidade') loadRhContabilidade();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
     if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhPainel') loadRhPainel();
@@ -15958,6 +16000,7 @@
     if(name === 'rhBeneficios') loadRhBeneficios();
     if(name === 'rhComissionamento') loadRhComissionamento();
     if(name === 'rhDreFuncionario') loadRhDreFuncionario();
+    if(name === 'rhContabilidade') loadRhContabilidade();
     if(name === 'rhAcompanhamentoLojas') loadRhAcompanhamentoLojas();
     if(name === 'rhRecrutamento') loadRhRecrutamento();
     if(name === 'rhPainel') loadRhPainel();
@@ -45642,6 +45685,7 @@ function renderHomeTasks(){
   let rhComissaoPresets = [];
   let rhComissaoDialogItems = [];
   let rhComissaoInheritedItems = [];
+  let rhComissaoCommercialPremium = 0;
   let rhComissaoRuleText = '';
   let rhFolhaAttachTargetId = '';
   let rhPrintTitleBefore = '';
@@ -47759,6 +47803,116 @@ function renderHomeTasks(){
     }
   });
 
+  // ---------------------- RELATÓRIO CONTABILIDADE ----------------------
+  // Comissão bruta, descontos (com descrição e sobra do mês anterior),
+  // comissão líquida, premiação e HE a pagar (3 tipos), por EMPRESA/CNPJ.
+  let rhContabData = null;
+  const RH_CONTAB_HEAD = ['FUNCIONÁRIO','COMISSÃO BRUTA','DESCONTOS','COMISSÃO LÍQUIDA','PREMIAÇÃO','HE 50% (QTD)','HE 50% (R$)','HE 100% (QTD)','HE 100% (R$)','AD. NOTURNO (QTD)','AD. NOTURNO (R$)','TOTAL'];
+  function rhContabMonth(){
+    if(!el('rhContabMes').value) el('rhContabMes').value = financeCurrentMonthKey();
+    return el('rhContabMes').value;
+  }
+  function rhContabGroupLabel(group){
+    return (group.cnpj ? 'CNPJ '+rhFormatCnpj(group.cnpj) : 'SEM CNPJ CADASTRADO')+(group.companyNames.length ? ' · '+group.companyNames.join(', ').toUpperCase() : '');
+  }
+  function rhContabDiscountHtml(row){
+    const c = row.carry;
+    if(!c.discountCents && !c.carryInCents) return '—';
+    // A sobra do mês anterior tem linha própria abaixo.
+    const labels = row.discountLabels.filter(label => label !== 'SOBRA DE DESCONTO DO MÊS ANTERIOR');
+    return '-'+formatCentsBRL(c.discountCents + c.carryInCents)+
+      (labels.length ? '<br><small>'+escapeHtml(labels.join(' · ').toUpperCase())+'</small>' : '')+
+      (c.carryInCents ? '<br><small>SOBRA DO MÊS ANTERIOR: '+formatCentsBRL(c.carryInCents)+'</small>' : '')+
+      (c.carryOutCents ? '<br><small><strong>SOBRA P/ O MÊS SEGUINTE: '+formatCentsBRL(c.carryOutCents)+'</strong></small>' : '');
+  }
+  function rhContabCells(values){
+    return values.map((value, index) => '<td'+(index ? ' class="num"' : '')+'>'+value+'</td>').join('');
+  }
+  function rhContabTotalsCells(label, t){
+    return rhContabCells(['<strong>'+escapeHtml(label)+'</strong>', formatCentsBRL(t.commissionCents),
+      (t.discountCents + t.carryInCents ? '-'+formatCentsBRL(t.discountCents + t.carryInCents) : '—')+(t.carryOutCents ? '<br><small>SOBRA P/ O MÊS SEGUINTE: '+formatCentsBRL(t.carryOutCents)+'</small>' : ''),
+      formatCentsBRL(t.netCommissionCents), formatCentsBRL(t.premiumCents),
+      rhHoursText(t.he50Minutes), formatCentsBRL(t.he50Cents), rhHoursText(t.he100Minutes), formatCentsBRL(t.he100Cents),
+      rhHoursText(t.nightMinutes), formatCentsBRL(t.nightCents), '<strong>'+formatCentsBRL(t.totalCents)+'</strong>']);
+  }
+  function renderRhContabilidade(){
+    const data = rhContabData;
+    const groups = data && Array.isArray(data.groups) ? data.groups : [];
+    el('rhContabPrintMeta').textContent = 'Competência '+rhFormatMonth(data ? data.month : rhContabMonth());
+    if(!groups.length){
+      el('rhContabResumo').textContent = 'Nenhuma comissão, premiação, desconto ou hora extra a pagar nesta competência.';
+      el('rhContabConteudo').innerHTML = '';
+      return;
+    }
+    const t = data.total;
+    el('rhContabResumo').innerHTML = '<strong>'+groups.reduce((sum, group) => sum + group.rows.length, 0)+'</strong> funcionário(s) em <strong>'+groups.length+'</strong> empresa(s) · '+
+      'Comissão líquida: <strong>'+formatCentsBRL(t.netCommissionCents)+'</strong> · Premiação: <strong>'+formatCentsBRL(t.premiumCents)+'</strong> · '+
+      'HE: <strong>'+formatCentsBRL(t.he50Cents + t.he100Cents + t.nightCents)+'</strong> · Total geral: <strong>'+formatCentsBRL(t.totalCents)+'</strong>';
+    const head = '<thead><tr>'+RH_CONTAB_HEAD.map((label, index) => '<th'+(index ? ' class="num"' : '')+'>'+label+'</th>').join('')+'</tr></thead>';
+    el('rhContabConteudo').innerHTML = groups.map(group =>
+      '<div class="table-panel rh-print-block" style="padding:12px 14px;margin-bottom:14px;">'+
+        '<h3 style="margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;">'+escapeHtml(rhContabGroupLabel(group))+'</h3>'+
+        '<div class="table-scroll"><table class="rh-print-table rh-contab-table">'+head+'<tbody>'+
+        group.rows.map(row => {
+          const o = row.overtime;
+          return '<tr>'+rhContabCells([escapeHtml(row.employeeName)+'<br><small>'+escapeHtml(String(row.companyName || '—').toUpperCase())+'</small>',
+            formatCentsBRL(row.carry.commissionCents), rhContabDiscountHtml(row), formatCentsBRL(row.carry.netCommissionCents), formatCentsBRL(row.premiumCents),
+            rhHoursText(o.he50.minutes), formatCentsBRL(o.he50.amountCents), rhHoursText(o.he100.minutes), formatCentsBRL(o.he100.amountCents),
+            rhHoursText(o.night.minutes), formatCentsBRL(o.night.amountCents), '<strong>'+formatCentsBRL(row.totalCents)+'</strong>'])+'</tr>';
+        }).join('')+
+        '<tr>'+rhContabTotalsCells('SUBTOTAL DA EMPRESA', group.subtotal)+'</tr>'+
+        '</tbody></table></div></div>'
+    ).join('')+
+    '<div class="table-panel rh-print-block" style="padding:12px 14px;"><div class="table-scroll"><table class="rh-print-table rh-contab-table">'+head+
+      '<tbody><tr>'+rhContabTotalsCells('TOTAL GERAL', t)+'</tr></tbody></table></div></div>';
+  }
+  async function loadRhContabilidade(){
+    if(!canAccess('payroll')) return;
+    const month = rhContabMonth();
+    el('rhContabResumo').textContent = 'Carregando…';
+    try{
+      rhContabData = await rhApiRequest('/accounting-report?month='+encodeURIComponent(month));
+    }catch(error){
+      rhContabData = null;
+      el('rhContabResumo').textContent = error.message;
+      el('rhContabConteudo').innerHTML = '';
+      return;
+    }
+    renderRhContabilidade();
+  }
+  if(el('rhContabMes')) el('rhContabMes').addEventListener('change', loadRhContabilidade);
+  if(el('btnRhContabPdf')) el('btnRhContabPdf').addEventListener('click', () => {
+    if(!rhContabData || !(rhContabData.groups || []).length){ showPurchaseToast('Nada para gerar.','error'); return; }
+    rhStartPrint('relatorio-contabilidade-'+rhContabData.month);
+  });
+  if(el('btnRhContabXlsx')) el('btnRhContabXlsx').addEventListener('click', async () => {
+    if(!rhContabData || !(rhContabData.groups || []).length){ showPurchaseToast('Nada para exportar.','error'); return; }
+    let XLSX;
+    try{ XLSX = await ensureXlsx(); }
+    catch(error){ showPurchaseToast(error.message,'error'); return; }
+    const money = cents => Math.round(Number(cents || 0)) / 100;
+    const hours = minutes => rhHoursText(minutes);
+    const header = ['EMPRESA (CNPJ)','FUNCIONÁRIO','LOJA','COMISSÃO BRUTA','DESCONTOS','DESCRIÇÃO DOS DESCONTOS','SOBRA DO MÊS ANTERIOR','SOBRA P/ O MÊS SEGUINTE','COMISSÃO LÍQUIDA','PREMIAÇÃO',
+      'HE 50% (QTD)','HE 50% (R$)','HE 100% (QTD)','HE 100% (R$)','AD. NOTURNO (QTD)','AD. NOTURNO (R$)','TOTAL'];
+    const totalsLine = (label, t) => [label,'','',money(t.commissionCents),money(t.discountCents + t.carryInCents),'',money(t.carryInCents),money(t.carryOutCents),money(t.netCommissionCents),money(t.premiumCents),
+      hours(t.he50Minutes),money(t.he50Cents),hours(t.he100Minutes),money(t.he100Cents),hours(t.nightMinutes),money(t.nightCents),money(t.totalCents)];
+    const rows = [header];
+    rhContabData.groups.forEach(group => {
+      const label = rhContabGroupLabel(group);
+      group.rows.forEach(row => {
+        const c = row.carry, o = row.overtime;
+        rows.push([label,row.employeeName,String(row.companyName || '').toUpperCase(),money(c.commissionCents),money(c.discountCents + c.carryInCents),row.discountLabels.join(' · ').toUpperCase(),
+          money(c.carryInCents),money(c.carryOutCents),money(c.netCommissionCents),money(row.premiumCents),
+          hours(o.he50.minutes),money(o.he50.amountCents),hours(o.he100.minutes),money(o.he100.amountCents),hours(o.night.minutes),money(o.night.amountCents),money(row.totalCents)]);
+      });
+      rows.push(totalsLine('SUBTOTAL — '+label, group.subtotal));
+    });
+    rows.push(totalsLine('TOTAL GERAL', rhContabData.total));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), 'CONTABILIDADE');
+    XLSX.writeFile(workbook, 'relatorio-contabilidade-'+rhContabData.month+'.xlsx');
+  });
+
   // ---------------------- COMISSIONAMENTO ----------------------
 
   function rhCommissionNet(row){
@@ -47919,7 +48073,8 @@ function renderHomeTasks(){
         '</tr>').join('');
       }
     }
-    const base = parseBRLToCents(getCurrencyValue(el('rhComissaoValor')) || '0') || 0;
+    // Premiação do Comercial (separada da comissão) também entra no total.
+    const base = (parseBRLToCents(getCurrencyValue(el('rhComissaoValor')) || '0') || 0) + rhComissaoCommercialPremium;
     const applyItem = (sum, item) => item.kind === 'desconto' ? sum - Number(item.amountCents || 0) : sum + Number(item.amountCents || 0);
     const total = rhComissaoInheritedItems.reduce(applyItem, rhComissaoDialogItems.reduce(applyItem, base));
     el('rhComissaoItensTotal').textContent = 'VALOR FINAL: '+formatCentsBRL(total);
@@ -48022,8 +48177,13 @@ function renderHomeTasks(){
     // Vendedor do Comercial: a comissão é calculada lá (o servidor ignora o
     // valor digitado); aqui só bônus, premiações, descontos e ajustes.
     const fromCommercial = Boolean(row && row.fromCommercial);
+    rhComissaoCommercialPremium = row ? Number(row.commercialPremiumCents || 0) : 0;
     el('rhComissaoValor').readOnly = fromCommercial;
-    if(el('rhComissaoValorHint')) el('rhComissaoValorHint').hidden = !fromCommercial;
+    if(el('rhComissaoValorHint')){
+      el('rhComissaoValorHint').hidden = !fromCommercial && !rhComissaoCommercialPremium;
+      el('rhComissaoValorHint').textContent = (fromCommercial ? 'VEM DO COMERCIAL (ACOMPANHAMENTO METAS) — ATUALIZA SOZINHA A CADA LANÇAMENTO.' : '')+
+        (rhComissaoCommercialPremium ? ' PREMIAÇÃO DO COMERCIAL (SEPARADA DA COMISSÃO): '+formatCentsBRL(rhComissaoCommercialPremium)+'.' : '');
+    }
     el('rhComissaoObs').value = row ? (row.notes || '') : '';
     el('rhComissaoFormStatus').textContent = '';
     renderRhComissaoDialogItems();
@@ -54660,14 +54820,79 @@ function renderHomeTasks(){
 
   // --- Horas pagas (aba Saldo) ---
 
-  function openRhTimeTrackPayoutDialog(yearMonth){
+  // HORAS EXTRAS A PAGAR em três tipos (fonte única da HE paga — Folha, DRE
+  // e relatório da contabilidade). Quantidade em HH:MM + valor da hora.
+  const RH_PAYOUT_KINDS = [
+    {key:'he50', label:'HE 50%', minutes:'he50Minutes', rate:'he50RateCents'},
+    {key:'he100', label:'HE 100%', minutes:'he100Minutes', rate:'he100RateCents'},
+    {key:'night', label:'ADICIONAL NOTURNO', minutes:'nightMinutes', rate:'nightRateCents'}
+  ];
+  function rhHoursText(minutes){
+    const total = Math.max(0, Math.round(Number(minutes) || 0));
+    return String(Math.floor(total / 60)).padStart(2,'0')+':'+String(total % 60).padStart(2,'0');
+  }
+  function rhParseHours(text){
+    const value = String(text || '').trim();
+    if(!value) return 0;
+    const hhmm = /^(\d{1,3}):([0-5]\d)$/.exec(value);
+    if(hhmm) return Number(hhmm[1]) * 60 + Number(hhmm[2]);
+    const decimal = Number(value.replace(',', '.'));
+    return Number.isFinite(decimal) && decimal >= 0 ? Math.round(decimal * 60) : null;
+  }
+  function rhPayoutTypeValues(){
+    const values = {};
+    for(const kind of RH_PAYOUT_KINDS){
+      const minutes = rhParseHours(document.querySelector('[data-payout-minutes="'+kind.key+'"]').value);
+      const rate = parseBRLToCents(getCurrencyValue(document.querySelector('[data-payout-rate="'+kind.key+'"]')) || '0');
+      if(minutes === null || rate === null) return null;
+      values[kind.key] = {minutes, rate};
+    }
+    return values;
+  }
+  function updateRhPayoutTotals(){
+    const values = rhPayoutTypeValues();
+    if(!values){ el('rhTimeTrackPayoutTotal').textContent = '—'; return; }
+    let total = 0;
+    RH_PAYOUT_KINDS.forEach(kind => {
+      const amount = Math.round(values[kind.key].minutes / 60 * values[kind.key].rate);
+      total += amount;
+      document.querySelector('[data-payout-amount="'+kind.key+'"]').textContent = formatCentsBRL(amount);
+    });
+    el('rhTimeTrackPayoutTotal').textContent = formatCentsBRL(total);
+    el('rhTimeTrackPayoutBank').textContent = rhHoursText(values.he50.minutes + values.he100.minutes);
+  }
+  async function openRhTimeTrackPayoutDialog(yearMonth){
     const month = rhTimeTrackBalanceMonths.find(item => item.yearMonth === yearMonth);
     el('rhTimeTrackPayoutForm').reset();
     el('rhTimeTrackPayoutMonth').value = yearMonth;
     el('rhTimeTrackPayoutMonthLabel').textContent = rhFormatMonth(yearMonth);
-    el('rhTimeTrackPayoutHours').value = month ? String(month.paidMinutes / 60) : '0';
     el('rhTimeTrackPayoutFormStatus').textContent = '';
+    el('rhTimeTrackPayoutTypes').innerHTML = RH_PAYOUT_KINDS.map(kind => '<tr><td>'+kind.label+'</td>'+
+      '<td><input data-payout-minutes="'+kind.key+'" placeholder="00:00" inputmode="numeric" aria-label="Horas '+kind.label+'"></td>'+
+      '<td><input data-payout-rate="'+kind.key+'" inputmode="decimal" placeholder="R$ 0,00" aria-label="Valor da hora '+kind.label+'"></td>'+
+      '<td class="num" data-payout-amount="'+kind.key+'">R$ 0,00</td></tr>').join('');
+    el('rhTimeTrackPayoutTypes').querySelectorAll('input').forEach(input => {
+      if(input.dataset.payoutRate) attachCurrencyMask(input);
+      input.addEventListener('input', updateRhPayoutTotals);
+    });
     el('rhTimeTrackPayoutDialog').showModal();
+    try{
+      const data = await rhTimeTrackApiRequest('/payouts?employeeId='+encodeURIComponent(el('rhTimeTrackEmployeeSelect').value));
+      const payout = (data.payouts || []).find(item => item.yearMonth === yearMonth) || null;
+      const suggested = data.suggestedRateCents || {};
+      const typed = payout && RH_PAYOUT_KINDS.some(kind => Number(payout[kind.minutes] || 0) > 0);
+      RH_PAYOUT_KINDS.forEach(kind => {
+        // Lançamento antigo (só o total de horas): entra como HE 50%.
+        const minutes = typed ? Number(payout[kind.minutes] || 0)
+          : (kind.key === 'he50' ? Number((payout && payout.paidMinutes) || (month && month.paidMinutes) || 0) : 0);
+        const rate = typed && Number(payout[kind.rate] || 0) ? Number(payout[kind.rate]) : Number(suggested[kind.key] || 0);
+        document.querySelector('[data-payout-minutes="'+kind.key+'"]').value = minutes ? rhHoursText(minutes) : '';
+        if(rate) setCurrencyValue(document.querySelector('[data-payout-rate="'+kind.key+'"]'), rate/100);
+      });
+      updateRhPayoutTotals();
+    }catch(error){
+      el('rhTimeTrackPayoutFormStatus').textContent = error.message;
+    }
   }
 
   if(el('rhTimeTrackBalanceTableBody')) el('rhTimeTrackBalanceTableBody').addEventListener('click', event => {
@@ -54683,9 +54908,9 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('rhTimeTrackPayoutFormStatus');
     status.textContent = '';
-    const hours = Number(el('rhTimeTrackPayoutHours').value);
-    if(!Number.isFinite(hours) || hours < 0){
-      status.textContent = 'INFORME UM VALOR VÁLIDO DE HORAS.';
+    const values = rhPayoutTypeValues();
+    if(!values){
+      status.textContent = 'INFORME AS HORAS EM HH:MM E VALORES DA HORA VÁLIDOS.';
       return;
     }
     try{
@@ -54695,7 +54920,9 @@ function renderHomeTasks(){
         body:JSON.stringify({
           employeeId: el('rhTimeTrackEmployeeSelect').value,
           yearMonth: el('rhTimeTrackPayoutMonth').value,
-          paidMinutes: Math.round(hours * 60)
+          he50Minutes: values.he50.minutes, he50RateCents: values.he50.rate,
+          he100Minutes: values.he100.minutes, he100RateCents: values.he100.rate,
+          nightMinutes: values.night.minutes, nightRateCents: values.night.rate
         })
       });
       el('rhTimeTrackPayoutDialog').close();

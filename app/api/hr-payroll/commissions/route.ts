@@ -56,6 +56,7 @@ type CommissionRow = {
   companyName: string;
   month: string;
   commissionCents: number;
+  commercialPremiumCents: number;
   bonusesCents: number;
   premiumsCents: number;
   discountsCents: number;
@@ -94,8 +95,8 @@ type ParsedItem = {
 
 const COMMISSION_COLUMNS = `id, employee_id AS employeeId, employee_name AS employeeName,
   company_id AS companyId, company_name AS companyName, month,
-  commission_cents AS commissionCents, bonuses_cents AS bonusesCents,
-  premiums_cents AS premiumsCents, discounts_cents AS discountsCents,
+  commission_cents AS commissionCents, commercial_premium_cents AS commercialPremiumCents,
+  bonuses_cents AS bonusesCents, premiums_cents AS premiumsCents, discounts_cents AS discountsCents,
   adjustments_cents AS adjustmentsCents, notes, created_by AS createdBy,
   created_by_name AS createdByName, created_at AS createdAt, updated_by AS updatedBy,
   updated_by_name AS updatedByName, updated_at AS updatedAt`;
@@ -296,6 +297,10 @@ export async function GET(request: Request) {
     const commercialRoles = await commercialEmployeeRoles(database, month);
     const rows = commissions.map((row) => ({
       ...row,
+      // PREMIAÇÕES = premiação do Comercial + premiações lançadas no RH
+      // (rhPremiumsCents = só as do RH, os itens desta tela).
+      premiumsCents: Number(row.premiumsCents || 0) + Number(row.commercialPremiumCents || 0),
+      rhPremiumsCents: Number(row.premiumsCents || 0),
       netCents: commissionNetCents(row),
       items: itemsByCommission.get(row.id) ?? [],
       fromCommercial: commercialRoles.has(row.employeeId),
@@ -350,9 +355,10 @@ export async function POST(request: Request) {
     // Loja atuante do funcionário NESTE mês (vai para a DRE do mês).
     const employee = await loadEmployeeForMonth(database, employeeId, month);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
-    // Vendedor do Comercial: a comissão é a calculada lá, nunca a digitada.
-    const commercialCents = await commercialCommissionFor(database, employeeId, month);
-    if (commercialCents !== null) commissionCents = commercialCents;
+    // Vendedor do Comercial: comissão e premiação são as calculadas lá, nunca
+    // a digitada. Fora do Comercial a premiação do Comercial já gravada fica.
+    const commercial = await commercialCommissionFor(database, employeeId, month);
+    if (commercial) commissionCents = commercial.commissionCents;
 
     const existing = await database
       .prepare("SELECT id FROM hr_commissions WHERE employee_id=?1 AND month=?2 LIMIT 1")
@@ -392,6 +398,7 @@ export async function POST(request: Request) {
             `UPDATE hr_commissions
              SET employee_id=?1, employee_name=?2, company_id=?3, company_name=?4, month=?5,
                  commission_cents=?6, notes=?7, updated_by=?8, updated_by_name=?9,
+                 commercial_premium_cents=COALESCE(?11, commercial_premium_cents),
                  updated_at=CURRENT_TIMESTAMP
              WHERE id=?10`,
           )
@@ -406,15 +413,17 @@ export async function POST(request: Request) {
             actor.id,
             actorName(actor),
             commissionId,
+            commercial ? commercial.premiumCents : null,
           )
       : database
           .prepare(
             `INSERT INTO hr_commissions
               (id, employee_id, employee_name, company_id, company_name, month, commission_cents,
                bonuses_cents, premiums_cents, discounts_cents, adjustments_cents, notes,
-               created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+               created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at,
+               commercial_premium_cents)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, 0, 0, 0, ?8, ?9, ?10,
-                     CURRENT_TIMESTAMP, ?9, ?10, CURRENT_TIMESTAMP)`,
+                     CURRENT_TIMESTAMP, ?9, ?10, CURRENT_TIMESTAMP, ?11)`,
           )
           .bind(
             commissionId,
@@ -427,6 +436,7 @@ export async function POST(request: Request) {
             notes,
             actor.id,
             actorName(actor),
+            commercial ? commercial.premiumCents : 0,
           );
 
     // Cabeçalho + troca das linhas NÃO geradas (installment_number < 2) da

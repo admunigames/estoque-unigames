@@ -85,11 +85,12 @@ export function createFakeD1(requestedTables) {
   // precisa da tabela.
   // Idem a LOJA ATUANTE do funcionário no mês (hr_employees +
   // hr_schedule_assignments, app/lib/acting-store.ts): lida pelo RH, pela DRE e
-  // pelo Comercial; e os valores manuais do RH (DSR/INSS, migration 0109).
+  // pelo Comercial; e os valores manuais do RH (DSR/INSS, migration 0109) e a
+  // HE a pagar do Controle de Horas (migration 0110).
   const tables = [...requestedTables];
   if (tables.includes("accounts_payable") && !tables.includes("finance_dre_allocations")) tables.push("finance_dre_allocations");
   if (tables.some((table) => table.startsWith("hr_") || table.startsWith("commercial_"))) {
-    for (const table of ["hr_employees", "hr_schedule_assignments", "hr_employee_month_values"]) if (!tables.includes(table)) tables.push(table);
+    for (const table of ["hr_employees", "hr_schedule_assignments", "hr_employee_month_values", "hr_time_tracking_payouts"]) if (!tables.includes(table)) tables.push(table);
   }
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(tables.map(createTableSql).join("\n"));

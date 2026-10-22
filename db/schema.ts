@@ -1833,6 +1833,8 @@ export const hrCommissions = pgTable(
     companyName: text("company_name").notNull().default(""),
     month: text("month").notNull(),
     commissionCents: integer("commission_cents").notNull().default(0),
+    // PREMIAÇÃO do Comercial, separada da comissão (migration 0110).
+    commercialPremiumCents: integer("commercial_premium_cents").notNull().default(0),
     bonusesCents: integer("bonuses_cents").notNull().default(0),
     premiumsCents: integer("premiums_cents").notNull().default(0),
     discountsCents: integer("discounts_cents").notNull().default(0),
@@ -3152,6 +3154,15 @@ export const hrTimeTrackingPayouts = pgTable(
     employeeId: text("employee_id").notNull(),
     yearMonth: text("year_month").notNull(),
     paidMinutes: integer("paid_minutes").notNull().default(0),
+    // HORAS EXTRAS A PAGAR por tipo (migration 0110): minutos e valor da
+    // hora em centavos (salário ÷ 220 × fator, editável). HE 50% + HE 100%
+    // = paid_minutes (abate o banco); adicional noturno não abate.
+    he50Minutes: integer("he50_minutes").notNull().default(0),
+    he100Minutes: integer("he100_minutes").notNull().default(0),
+    nightMinutes: integer("night_minutes").notNull().default(0),
+    he50RateCents: integer("he50_rate_cents").notNull().default(0),
+    he100RateCents: integer("he100_rate_cents").notNull().default(0),
+    nightRateCents: integer("night_rate_cents").notNull().default(0),
     notes: text("notes").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),

@@ -5,6 +5,7 @@ import {
   computedCommissionGrossCentsFor,
   loadEmployerChargesBps,
   loadMonthValues,
+  loadOvertimePayouts,
   type Database,
 } from "../shared";
 import { computePayrollBreakdown, legacyNetCents, type PayrollManualValues } from "../../../lib/hr-payroll";
@@ -77,7 +78,7 @@ async function loadEmployeesFor(database: Database, companyId: string) {
 }
 
 export async function loadPayrollRows(database: Database, month: string, companyId: string) {
-  const [allEmployees, entriesResult, employerChargesBps, actingStores, dsrByEmployee] = await Promise.all([
+  const [allEmployees, entriesResult, employerChargesBps, actingStores, dsrByEmployee, overtimePayouts] = await Promise.all([
     loadEmployeesFor(database, ""),
     database
       .prepare(`SELECT ${ENTRY_COLUMNS} FROM hr_payroll_entries WHERE month=?1`)
@@ -87,6 +88,8 @@ export async function loadPayrollRows(database: Database, month: string, company
     actingStoresForMonth(database, month),
     // DSR MANUAL do mês (hr_employee_month_values) — entra no custo total.
     loadMonthValues(database, month, "dsr"),
+    // HE A PAGAR do Controle de Horas (fonte única quando lançada).
+    loadOvertimePayouts(database, month),
   ]);
   // Unidade do mês = loja atuante (não a loja de hoje do cadastro).
   const employees = allEmployees
@@ -123,6 +126,8 @@ export async function loadPayrollRows(database: Database, month: string, company
             deductionsCents: 0,
             otherCents: 0,
           };
+      const overtimePayoutCents = overtimePayouts.get(employee.id);
+      if (overtimePayoutCents !== undefined) values.overtimeCents = overtimePayoutCents;
       const [commissionCents, benefitsCents, commissionGrossCents, benefitsSplit] =
         await Promise.all([
           computedCommissionCentsFor(database, employee.id, month),
@@ -157,6 +162,7 @@ export async function loadPayrollRows(database: Database, month: string, company
         commissionGrossCents,
         benefitsGrossCents: benefitsSplit.grossCents,
         dsrCents: inputs.dsrCents,
+        overtimeFromTimeTracking: overtimePayoutCents !== undefined,
         employerChargesBps,
         employerChargesCents: breakdown.employerChargesCents,
         folhaPagaCents: breakdown.folhaPagaCents,

@@ -400,6 +400,7 @@ const APP_ROUTE_PATHS = new Set([
   "/rh/beneficios",
   "/rh/comissionamento",
   "/rh/dre-funcionario",
+  "/rh/relatorio-contabilidade",
   "/rh/acompanhamento-lojas",
   "/rh/controle-horas-logistica",
   "/rh/recrutamento",
@@ -1589,6 +1590,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
         path === "/rh/beneficios" ||
         path === "/rh/comissionamento" ||
         path === "/rh/dre-funcionario" ||
+        path === "/rh/relatorio-contabilidade" ||
         path.startsWith("/api/hr-payroll"),
       "payroll",
     ],
