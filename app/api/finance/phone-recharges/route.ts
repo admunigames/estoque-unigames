@@ -8,14 +8,12 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../shared";
-import { nextRechargeDate as computeNextRecharge, parseRechargePeriod, RECHARGE_PERIOD_ERROR } from "../../../lib/phone-recharges";
+import { insertRechargeLineSql, validateRechargeLine } from "./shared";
 
 // Recargas de Celulares (Financeiro — Fase 8; período no 8/9). Próxima
 // recarga = última recarga + período da linha (30/60/90 dias, calculada aqui;
 // editar recalcula a partir da última recarga). O lembrete é enviado por push
 // ao Financeiro pelo cron (dispatchDuePhoneRechargeNotifications no Worker).
-
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const SELECT_COLUMNS = `id, phone_number AS phoneNumber, carrier, company_id AS companyId,
   company_name AS companyName, responsible_name AS responsibleName,
@@ -87,27 +85,12 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const editId = safeText(body.id, 80);
-    const phoneNumber = safeText(body.phoneNumber, 40);
-    if (phoneNumber.length < 8) return jsonResponse({ error: "INFORME O NÚMERO DO CELULAR." }, 400);
-    const carrier = safeText(body.carrier, 60);
-    if (!carrier) return jsonResponse({ error: "INFORME A OPERADORA." }, 400);
-    const companyId = safeText(body.companyId, 80);
-    const companyName = safeText(body.companyName, 160);
-    if (!companyId) return jsonResponse({ error: "SELECIONE A UNIDADE." }, 400);
-    const responsibleName = safeText(body.responsibleName, 160);
-    const notes = safeText(body.notes, 2000);
-    const active = body.active === false ? 0 : 1;
-    const lastRechargeDate = safeText(body.lastRechargeDate, 10);
-    if (!DATE_PATTERN.test(lastRechargeDate)) {
-      return jsonResponse({ error: "INFORME A DATA DA ÚLTIMA RECARGA." }, 400);
-    }
-    const lastAmountCents = Number(body.lastAmountCents);
-    if (!Number.isInteger(lastAmountCents) || lastAmountCents < 0) {
-      return jsonResponse({ error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." }, 400);
-    }
-    const periodDays = parseRechargePeriod(body.periodDays);
-    if (!periodDays) return jsonResponse({ error: RECHARGE_PERIOD_ERROR }, 400);
-    const nextRechargeDate = computeNextRecharge(lastRechargeDate, periodDays);
+    const validated = validateRechargeLine(body);
+    if ("error" in validated) return jsonResponse({ error: validated.error }, 400);
+    const {
+      phoneNumber, carrier, companyId, companyName, responsibleName, notes, active, lastRechargeDate, lastAmountCents,
+      periodDays, nextRechargeDate,
+    } = validated.input;
 
     const database = await getD1();
     const who = actor.displayName || "Administrador";
@@ -135,19 +118,8 @@ export async function POST(request: Request) {
     }
 
     const id = crypto.randomUUID();
-    await database
-      .prepare(
-        `INSERT INTO finance_phone_recharges
-          (id, phone_number, carrier, company_id, company_name, responsible_name,
-           last_amount_cents, last_recharge_date, next_recharge_date, notes, active,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, period_days)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,CURRENT_TIMESTAMP,?12,?13,CURRENT_TIMESTAMP,?14)`,
-      )
-      .bind(
-        id, phoneNumber, carrier, companyId, companyName, responsibleName, lastAmountCents,
-        lastRechargeDate, nextRechargeDate, notes, active, actor.id, who, periodDays,
-      )
-      .run();
+    const [insertSql, insertValues] = insertRechargeLineSql(id, validated.input, actor);
+    await database.prepare(insertSql).bind(...insertValues).run();
     return jsonResponse({ created: true, id, nextRechargeDate, periodDays }, 201);
   } catch (error) {
     console.error("Não foi possível salvar a recarga de celular.", error);

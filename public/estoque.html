@@ -9793,6 +9793,7 @@
         <div class="field"><label for="recargaPeriodoFiltro">PERÍODO</label><select id="recargaPeriodoFiltro"><option value="">TODOS</option><option value="30">30 DIAS</option><option value="60">60 DIAS</option><option value="90">90 DIAS</option></select></div>
         <label class="assist-check"><input type="checkbox" id="recargaSomenteAtivas" checked> SOMENTE ATIVAS</label>
         <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnBatchRecargas" type="button">+ CADASTRAR EM LOTE</button>
           <button class="btn-accent" id="btnNewRecarga" type="button">NOVA RECARGA</button>
         </div>
       </div>
@@ -39232,6 +39233,26 @@ function renderHomeTasks(){
     fase8CompanyOptions('recargaUnidade', '');
     await reloadRecargas();
   }
+  el('btnBatchRecargas').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    openFinanceBatchDialog({
+      title: 'CADASTRAR LINHAS DE RECARGA EM LOTE',
+      help: 'UMA LINHA (NÚMERO) POR LINHA DA GRADE. A PRÓXIMA RECARGA É CALCULADA PELO PERÍODO.',
+      endpoint: '/phone-recharges/batch',
+      columns: [
+        {key:'phoneNumber', label:'NÚMERO', type:'text', required:true, maxLength:40},
+        {key:'carrier', label:'OPERADORA', type:'text', required:true, maxLength:60},
+        {key:'companyId', label:'UNIDADE', type:'select', required:true, options: () => financeBatchCompanyOptions(false)},
+        {key:'responsibleName', label:'RESPONSÁVEL', type:'text', maxLength:160},
+        {key:'lastRechargeDate', label:'ÚLTIMA RECARGA', type:'date', required:true, default: () => todayDateKeyRecife()},
+        {key:'lastAmountCents', label:'VALOR', type:'money'},
+        {key:'periodDays', label:'PERÍODO', type:'select', placeholder:'90 DIAS', options: [{value:'30', label:'30 DIAS'}, {value:'60', label:'60 DIAS'}, {value:'90', label:'90 DIAS'}]},
+        {key:'notes', label:'OBSERVAÇÕES', type:'text', maxLength:500}
+      ],
+      isFilled: values => Boolean(values.phoneNumber || values.carrier),
+      onDone: () => reloadRecargas()
+    });
+  });
   async function reloadRecargas(){
     const body = el('recargaTableBody');
     if(!body) return;

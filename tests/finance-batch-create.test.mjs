@@ -14,6 +14,7 @@ const db = await setupRouteDb([
   "finance_store_revenue", "finance_store_headcount",
   "finance_bank_statement_entries", "finance_sales_recon_rows", "finance_credit_sales", "finance_replacement_entries",
   "accounts_receivable", "finance_acquirers", "finance_card_machines",
+  "finance_phone_recharges", "finance_phone_recharge_events",
 ]);
 
 const ALFA = "clojaalfa1";
@@ -180,4 +181,15 @@ test("Maquinetas: cadastro em lote recusa serial repetido (no lote e já cadastr
   assert.equal(count("finance_card_machines"), 2);
   const again = await (await batch(route, ADMIN, "/api/finance/card-machines/batch", [row], true)).json();
   assert.match(again.errors[0].error, /JÁ EXISTE UMA MAQUINETA COM ESSE SERIAL/);
+});
+
+test("Recargas: cadastro em lote calcula a próxima recarga e recusa número repetido", async () => {
+  const route = await import("../app/api/finance/phone-recharges/batch/route.ts");
+  const row = { phoneNumber: "(81) 99999-0001", carrier: "TIM", companyId: ALFA, lastRechargeDate: "2026-10-01", lastAmountCents: 2000, periodDays: "30" };
+  const preview = await (await batch(route, ADMIN, "/api/finance/phone-recharges/batch", [row, { ...row, phoneNumber: "81999990001" }, { ...row, phoneNumber: "81999990002", carrier: "" }], true)).json();
+  assert.deepEqual(preview.errors.map((e) => e.line), [2, 3]);
+  const ok = await batch(route, ADMIN, "/api/finance/phone-recharges/batch", [row, { ...row, phoneNumber: "81999990003", periodDays: "" }]);
+  assert.equal(ok.status, 201);
+  const lines = db.sqlite.prepare("SELECT phone_number AS p, next_recharge_date AS n, period_days AS d, company_name AS c FROM finance_phone_recharges ORDER BY p").all();
+  assert.deepEqual(lines.map((l) => [l.n, l.d, l.c]), [["2026-10-31", 30, "LOJA ALFA"], ["2026-12-30", 90, "LOJA ALFA"]]);
 });
