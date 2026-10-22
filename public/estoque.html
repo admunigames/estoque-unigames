@@ -2733,7 +2733,52 @@
   .rma-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px 16px;margin:10px 0 12px;}
   .rma-info span{display:block;color:var(--ink-faint);font:700 8.5px/1.3 var(--mono);}
   #rmaDetailDialog{width:min(980px,96vw);}
-  #rmaDetailActions{flex-wrap:wrap;justify-content:flex-end;}
+  .rma-pill{color:color-mix(in srgb,var(--rma-c) 72%,var(--ink,#e8f0fa)) !important;border-color:color-mix(in srgb,var(--rma-c) 60%,transparent) !important;background:color-mix(in srgb,var(--rma-c) 16%,transparent) !important;}
+  .rma-detail-pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0;}
+  .rma-code{font:700 11px/1 var(--mono);color:var(--ink-faint);}
+  .rma-detail-product{margin:8px 0 2px;font-size:18px;line-height:1.3;}
+  .rma-detail-sub{margin:0 0 10px;color:var(--ink-faint);font:700 11px/1.3 var(--mono);}
+  .rma-detail-actions{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .rma-danger{color:#ef817b !important;}
+  .rma-os-banner{display:inline-block;margin:0 0 10px;padding:7px 12px;border-radius:9px;border:1px solid;font:700 11px/1.4 var(--mono);}
+  .rma-os-banner small{display:block;font-weight:600;opacity:.8;}
+  .rma-os-banner.late{color:#ffb4a8;border-color:rgba(239,106,85,.5);background:rgba(239,106,85,.12);}
+  .rma-os-banner.soon{color:#ffd08a;border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.12);}
+  .rma-os-banner.ok{color:#b7ead0;border-color:rgba(84,196,138,.4);background:rgba(84,196,138,.1);}
+  #rmaDetailTabs{flex-wrap:wrap;margin:4px 0 10px;}
+  .rma-detail-panel{min-height:120px;}
+  .rma-panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 0 10px;}
+  .rma-panel-head h4{margin:0;}
+  .rma-update-card{padding:10px 12px;margin-bottom:8px;border:1px solid var(--inset-border);border-radius:10px;background:var(--bg-card-2);}
+  .rma-update-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+  .rma-update-date{margin-left:auto;color:var(--ink-faint);font:700 9.5px/1.3 var(--mono);white-space:nowrap;}
+  .rma-update-card p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .rma-update-card small{display:block;margin-top:4px;color:var(--ink-faint);font:700 9px/1.3 var(--mono);}
+  .rma-text-block{margin:0 0 10px;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .rma-text-block span{display:block;color:var(--ink-faint);font:700 8.5px/1.3 var(--mono);}
+  .rma-files{display:flex;flex-wrap:wrap;gap:6px;}
+  .rma-chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0;}
+  .rma-days.late{color:#ef817b;} .rma-days.soon{color:#f5b041;} .rma-days.ok{color:#66d49e;}
+  .rma-deadline-title.late{color:#ef817b;} .rma-deadline-title.soon{color:#f5b041;}
+  .rma-deadline-panel.late{border-color:rgba(239,106,85,.5);} .rma-deadline-panel.soon{border-color:rgba(245,158,11,.5);}
+  .rma-config{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:14px;align-items:start;}
+  .rma-config-menu{display:grid;border:1px solid var(--inset-border);border-radius:10px;overflow:hidden;}
+  .rma-config-item{padding:10px 12px;text-align:left;border:0;border-bottom:1px solid var(--inset-border);background:transparent;color:inherit;font:700 11px/1.3 var(--mono);cursor:pointer;}
+  .rma-config-item.active{background:var(--accent);color:var(--accent-ink,#fff);}
+  .rma-config-panel{border:1px solid var(--inset-border);border-radius:10px;padding:12px;}
+  .rma-config-row{display:grid;grid-template-columns:16px 1fr auto auto;gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--inset-border);}
+  .rma-config-row.inactive{opacity:.55;}
+  .rma-config-dot{width:14px;height:14px;border-radius:50%;border:1px solid var(--inset-border);}
+  .rma-config-order{color:var(--ink-faint);font:700 10px/1 var(--mono);}
+  .rma-config-actions{white-space:nowrap;}
+  html[data-theme="light"] .rma-os-banner.late{color:#a93428;} html[data-theme="light"] .rma-os-banner.soon{color:#8a5300;} html[data-theme="light"] .rma-os-banner.ok{color:#236a47;}
+  html[data-theme="light"] .rma-pill{color:color-mix(in srgb,var(--rma-c) 80%,#000) !important;}
+  @media (max-width:680px){
+    .rma-config{grid-template-columns:1fr;}
+    .rma-config-row{grid-template-columns:16px 1fr;}
+    .rma-config-order{display:none;}
+    .rma-config-actions{grid-column:1 / -1;white-space:normal;}
+  }
   #rmaCreditsBody tr.rma-credit-ok td:first-child{box-shadow:inset 4px 0 0 #3fb27f;}
   #rmaCreditsBody tr.rma-credit-off td:first-child{box-shadow:inset 4px 0 0 #e0574a;}
   #rmaCreditsView .dre-toolbar-actions,#rmaDisposalsView .dre-toolbar-actions,#rmaSuppliersView .dre-toolbar-actions{justify-content:flex-end;margin:10px 0;}
@@ -7962,9 +8007,11 @@
 
       <div class="supply-tabs" role="tablist" aria-label="RMA" id="rmaTabs">
         <button class="supply-tab active" type="button" role="tab" data-rma-tab="rmas">RMAs</button>
+        <button class="supply-tab" type="button" role="tab" data-rma-tab="prazo">O.S. COM PRAZO</button>
         <button class="supply-tab" type="button" role="tab" data-rma-tab="creditos" hidden>CRÉDITOS</button>
         <button class="supply-tab" type="button" role="tab" data-rma-tab="descartes" hidden>DESCARTES</button>
         <button class="supply-tab" type="button" role="tab" data-rma-tab="fornecedores" hidden>FORNECEDORES</button>
+        <button class="supply-tab" type="button" role="tab" data-rma-tab="config" hidden>CONFIGURAÇÕES</button>
       </div>
 
       <div id="rmaListView">
@@ -7999,6 +8046,18 @@
               <tbody id="rmaTableBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      <div id="rmaDeadlinesView" hidden>
+        <p class="gd-opening-hint">RMAs EM ABERTO COM PRAZO DE O.S., DO MAIS URGENTE PARA O MENOS. O AVISO DE VENCENDO SEGUE OS DIAS DE CONFIGURAÇÕES &gt; PRAZOS DE ALERTA.</p>
+        <div id="rmaDeadlinesBody"></div>
+      </div>
+
+      <div id="rmaConfigView" hidden>
+        <div class="rma-config">
+          <nav class="rma-config-menu" id="rmaConfigMenu" aria-label="Listas do RMA"></nav>
+          <section class="rma-config-panel" id="rmaConfigPanel"></section>
         </div>
       </div>
 
@@ -10514,6 +10573,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="rma:edit"> Editar RMA, registrar atualizações, anexos e finalizar</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="rma:finance"> Créditos, descartes e fornecedores do RMA</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="rma:delete"> Excluir RMA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="rma:config"> Configurações do RMA: status, cores, prioridades, tipos, motivos e prazos de alerta</label>
               </div>
             </details>
             <details class="permission-module">
@@ -12248,10 +12308,11 @@
     <button class="purchase-dialog-close" type="button" data-rma-close aria-label="Fechar">×</button>
   </div>
   <div class="purchase-form">
-    <div id="rmaDetailBody"><p class="os-muted">Carregando…</p></div>
-    <div class="purchase-form-actions" id="rmaDetailActions"></div>
-    <h4 class="supply-section-title">ATUALIZAÇÕES</h4>
-    <div class="os-update-history" id="rmaDetailHistory"></div>
+    <div id="rmaDetailHead"><p class="os-muted">Carregando…</p></div>
+    <div class="rma-detail-actions" id="rmaDetailActions"></div>
+    <div id="rmaDetailOs"></div>
+    <div class="supply-tabs" role="tablist" aria-label="Detalhe do RMA" id="rmaDetailTabs"></div>
+    <div class="rma-detail-panel" id="rmaDetailPanel"></div>
   </div>
 </dialog>
 
@@ -30115,15 +30176,11 @@ function renderHomeTasks(){
   // atualizações (o backend confere); créditos, descartes e fornecedores são só
   // da assistência (rma:finance). RMA AVULSO = sem loja (só a assistência vê).
   const RMA_API = '/api/assistencia/rma';
-  const RMA_STATUSES = ['RECEBIDO','PREPARANDO ENVIO DO PRODUTO AO FORNECEDOR','ENVIADO AO FORNECEDOR','AGUARDANDO RETORNO DO FORNECEDOR','AGUARDANDO RETORNO NF','CRÉDITO GERADO','PRODUTO SUBSTITUÍDO','DESCARTADO','CANCELADO','FINALIZADO'];
-  const RMA_PRIORITIES = ['BAIXA','MÉDIA','ALTA','CRÍTICA'];
-  const RMA_SOLUTION_TYPES = ['CRÉDITO GERADO','PRODUTO SUBSTITUÍDO','CONSERTO REALIZADO','PRODUTO DESCARTADO','PRODUTO DEVOLVIDO SEM SOLUÇÃO','CANCELADO','OUTRO'];
-  const RMA_DEFECT_TYPES = ['NÃO LIGA','TELA QUEBRADA','BATERIA','PROBLEMA DE SOFTWARE','CONECTOR DANIFICADO','DANIFICADO NO TRANSPORTE','DEFEITO DE FÁBRICA','OUTRO'];
-  const RMA_CATEGORIES = ['SMARTPHONES','NOTEBOOKS','TABLETS','ACESSÓRIOS','PERIFÉRICOS','GAMES','OUTROS'];
-  const RMA_DISPOSAL_REASONS = ['PRODUTO SEM CONSERTO','PRODUTO SEM GARANTIA','CUSTO DE REPARO INVIÁVEL','PRODUTO DANIFICADO NO TRANSPORTE','PRODUTO SEM RETORNO DO FORNECEDOR','PRODUTO OBSOLETO','OUTRO'];
-  const RMA_CREDIT_STATUSES = ['DISPONÍVEL','PARCIALMENTE UTILIZADO','UTILIZADO EM COMPRA','ABATIDO EM BOLETO','CANCELADO'];
-  const RMA_CREDIT_USAGES = ['ABATIDO EM NF','ABATIDO EM BOLETO','UTILIZADO EM NOVA COMPRA','CRÉDITO PARCIAL','CANCELADO','OUTRO'];
-  const RMA_OS_SITUATIONS = ['COBERTURA DE GARANTIA','PRODUTO DE VENDA'];
+  // Listas e cores vêm de RMA > CONFIGURAÇÕES (API: options; categoria sem
+  // cadastro usa os padrões do servidor).
+  const rmaOptionList = category => ((rmaData && rmaData.options && rmaData.options[category]) || []);
+  const rmaOpts = category => rmaOptionList(category).filter(option => Number(option.active)).map(option => option.name);
+  const rmaColor = (category, name) => (rmaOptionList(category).find(option => option.name === name) || {}).color || '';
   const RMA_AVULSO = '__avulso';
   let rmaData = null;
   let rmaExtra = {suppliers:[], credits:[], disposals:[]};
@@ -30156,7 +30213,14 @@ function renderHomeTasks(){
   const rmaResponsibles = () => rmaUnique(((rmaData && rmaData.cases) || []).map(row => row.responsible).concat(['THIERRY','NAOMI','LIDIANE']));
   const rmaSupplierNames = () => rmaUnique(rmaExtra.suppliers.filter(item => Number(item.active)).map(item => item.name).concat(((rmaData && rmaData.cases) || []).map(row => row.supplier)));
   const RMA_PRIORITY_PILL = {'CRÍTICA':'alert','ALTA':'alert','MÉDIA':'waiting','BAIXA':''};
-  const rmaStatusPill = status => '<span class="status-pill '+(status === 'FINALIZADO' ? 'done' : status === 'CANCELADO' ? '' : status === 'RECEBIDO' ? 'waiting' : 'progress')+'">'+escapeHtml(status)+'</span>';
+  // Cor da opção (CONFIGURAÇÕES) quando houver; senão a classe padrão.
+  const rmaPill = (category, name, fallback) => {
+    if(!name) return '—';
+    const color = rmaColor(category, name);
+    return color ? '<span class="status-pill rma-pill" style="--rma-c:'+escapeHtml(color)+'">'+escapeHtml(name)+'</span>' : '<span class="status-pill '+(fallback || '')+'">'+escapeHtml(name)+'</span>';
+  };
+  const rmaPriorityPill = priority => rmaPill('priority', priority, RMA_PRIORITY_PILL[priority]);
+  const rmaStatusPill = status => rmaPill('rma_status', status, status === 'FINALIZADO' ? 'done' : status === 'CANCELADO' ? '' : status === 'RECEBIDO' ? 'waiting' : 'progress');
 
   function rmaAlertPills(row){
     const a = row.alerts || {};
@@ -30246,7 +30310,7 @@ function renderHomeTasks(){
         '<td data-label="Qtd">'+escapeHtml(String(row.quantity))+'</td>'+
         '<td data-label="Chegada" style="white-space:nowrap">'+rmaDate(row.arrivalDate)+'</td>'+
         '<td data-label="Status">'+rmaStatusPill(row.status)+(row.solutionType ? '<small class="os-update-meta">'+escapeHtml(row.solutionType)+'</small>' : '')+'</td>'+
-        '<td data-label="Prioridade">'+(row.priority ? '<span class="status-pill '+(RMA_PRIORITY_PILL[row.priority] || '')+'">'+escapeHtml(row.priority)+'</span>' : '—')+'</td>'+
+        '<td data-label="Prioridade">'+rmaPriorityPill(row.priority)+'</td>'+
         '<td data-label="O.S." style="white-space:nowrap">'+escapeHtml(row.osNumber || '—')+(row.osDeadline ? '<small class="os-update-meta">PRAZO '+rmaDate(row.osDeadline)+'</small>' : '')+'</td>'+
         '<td data-label="Últ. atualização">'+escapeHtml(formatDateTimeBR(row.lastUpdateAt || row.createdAt) || '—')+(rmaAlertPills(row) ? '<br>'+rmaAlertPills(row) : '')+'</td>'+
         '<td><button class="btn-outline btn-sm" type="button" data-rma-open="'+escapeHtml(row.id)+'">VER</button></td>'+
@@ -30326,11 +30390,15 @@ function renderHomeTasks(){
     el('rmaCreditsView').hidden = tab !== 'creditos';
     el('rmaDisposalsView').hidden = tab !== 'descartes';
     el('rmaSuppliersView').hidden = tab !== 'fornecedores';
+    el('rmaDeadlinesView').hidden = tab !== 'prazo';
+    el('rmaConfigView').hidden = tab !== 'config';
     el('btnRmaReport').hidden = tab !== 'rmas';
     if(tab === 'rmas') renderRmaList();
     if(tab === 'creditos') renderRmaCredits();
     if(tab === 'descartes') renderRmaDisposals();
     if(tab === 'fornecedores') renderRmaSuppliers();
+    if(tab === 'prazo') renderRmaDeadlines();
+    if(tab === 'config') renderRmaConfig();
   }
 
   async function loadRmaPage(){
@@ -30339,15 +30407,17 @@ function renderHomeTasks(){
       rmaExtra = rmaData.readOnly ? {suppliers:[], credits:[], disposals:[]} : Object.assign({suppliers:[], credits:[], disposals:[]}, await rmaRequest('', 'GET', null, RMA_API+'/cadastros'));
       const finance = !rmaData.readOnly && canAccess('rma:finance');
       document.querySelectorAll('[data-rma-tab="creditos"],[data-rma-tab="descartes"],[data-rma-tab="fornecedores"]').forEach(button => { button.hidden = !finance; });
-      if(!finance && rmaTab !== 'rmas') rmaTab = 'rmas';
+      const config = !rmaData.readOnly && canAccess('rma:config');
+      document.querySelector('[data-rma-tab="config"]').hidden = !config;
+      if((!finance && ['creditos','descartes','fornecedores'].includes(rmaTab)) || (!config && rmaTab === 'config')) rmaTab = 'rmas';
       const companies = rmaData.companies || [];
       const storeLabels = Object.fromEntries(companies.map(company => [company.id, company.name]));
       storeLabels[RMA_AVULSO] = 'AVULSO (SEM LOJA)';
       rmaSetSelect('rmaStoreFilter', companies.map(company => company.id).concat(rmaData.allStores ? [RMA_AVULSO] : []), 'TODAS AS LOJAS', storeLabels);
       el('rmaStoreField').hidden = !rmaData.allStores;
-      rmaSetSelect('rmaStatusFilter', RMA_STATUSES, 'TODOS');
+      rmaSetSelect('rmaStatusFilter', rmaOpts('rma_status'), 'TODOS');
       rmaSetSelect('rmaSupplierFilter', rmaUnique(rmaData.cases.map(row => row.supplier)), 'TODOS');
-      rmaSetSelect('rmaPriorityFilter', RMA_PRIORITIES, 'TODAS');
+      rmaSetSelect('rmaPriorityFilter', rmaOpts('priority'), 'TODAS');
       el('btnRmaNew').hidden = !rmaCan('create');
       rmaSetTab(rmaTab);
       if(rmaDetailId && el('rmaDetailDialog').open) rmaOpenDetail(rmaDetailId, {silent:true});
@@ -30395,7 +30465,7 @@ function renderHomeTasks(){
       else if(field.type === 'file') input = '<input type="file"'+idAttr+'>';
       else input = '<input type="'+(field.type === 'money' ? 'text' : field.type || 'text')+'"'+idAttr+(field.type === 'money' ? ' inputmode="decimal" placeholder="0,00"' : '')+(field.type === 'number' ? ' min="1" step="1"' : '')+(listId ? ' list="'+listId+'"' : '')+' autocomplete="off" value="'+escapeHtml(value)+'"'+req+'>'+
         (listId ? '<datalist id="'+listId+'">'+field.list.map(option => '<option value="'+escapeHtml(option)+'">').join('')+'</datalist>' : '');
-      return '<div class="purchase-field'+(field.full || field.type === 'textarea' ? ' full' : '')+'" data-rma-field="'+escapeHtml(field.key)+'"><label for="'+id+'">'+escapeHtml(field.label)+(field.required ? ' *' : '')+'</label>'+input+(field.hint ? '<small class="os-update-meta">'+escapeHtml(field.hint)+'</small>' : '')+'</div>';
+      return '<div class="purchase-field'+(field.full || field.type === 'textarea' ? ' full' : '')+'" data-rma-field="'+escapeHtml(field.key)+'"><label for="'+id+'">'+escapeHtml(field.label)+(field.required ? ' *' : '')+'</label>'+input+(field.chips && field.chips.length ? '<p class="rma-chips">'+field.chips.map(chip => '<button class="btn-outline btn-sm" type="button" data-rma-chip="'+escapeHtml(field.key)+'" data-rma-chip-value="'+escapeHtml(chip)+'">+ '+escapeHtml(chip)+'</button>').join(' ')+'</p>' : '')+(field.hint ? '<small class="os-update-meta">'+escapeHtml(field.hint)+'</small>' : '')+'</div>';
     }).join('');
     rmaFormSubmit = onSubmit;
     el('rmaFormDialog').showModal();
@@ -30435,19 +30505,19 @@ function renderHomeTasks(){
       {key:'storeId', label:'UNIDADE (LOJA)', type:'select', options:[['', 'AVULSO (SEM LOJA)']].concat(companies.map(company => [company.id, company.name])), value:v.storeId, hint:'AVULSO: SÓ A ASSISTÊNCIA VÊ. COM LOJA: A LOJA ACOMPANHA AS ATUALIZAÇÕES.'},
       {key:'supplier', label:'FORNECEDOR', required:true, list:rmaSupplierNames(), value:v.supplier},
       {key:'responsible', label:'RESPONSÁVEL', list:rmaResponsibles(), value:v.responsible},
-      {key:'priority', label:'PRIORIDADE', type:'select', options:rmaOptions(RMA_PRIORITIES, '—'), value:v.priority},
-      ...(row && row.finalized ? [] : [{key:'status', label:'STATUS', type:'select', options:rmaOptions(RMA_STATUSES.filter(status => status !== 'FINALIZADO')), value:v.status}]),
+      {key:'priority', label:'PRIORIDADE', type:'select', options:rmaOptions(rmaOpts('priority'), '—'), value:v.priority},
+      ...(row && row.finalized ? [] : [{key:'status', label:'STATUS', type:'select', options:rmaOptions(rmaOpts('rma_status').filter(status => status !== 'FINALIZADO')), value:v.status}]),
       {key:'productName', label:'PRODUTO', required:true, full:true, value:v.productName},
-      {key:'productCategory', label:'CATEGORIA', list:RMA_CATEGORIES, value:v.productCategory},
+      {key:'productCategory', label:'CATEGORIA', list:rmaOpts('product_category'), value:v.productCategory},
       {key:'brand', label:'MARCA', value:v.brand},
       {key:'serialNumber', label:'Nº DE SÉRIE / IMEI', value:v.serialNumber},
       {key:'quantity', label:'QUANTIDADE', type:'number', required:true, value:v.quantity},
       {key:'invoiceNumber', label:'NOTA FISCAL', value:v.invoiceNumber},
       {key:'osNumber', label:'Nº DA O.S.', value:v.osNumber, hint:'LIGA COM ASSISTÊNCIA > ORDENS DE SERVIÇO.'},
       {key:'osDeadline', label:'PRAZO DA O.S.', type:'date', value:v.osDeadline},
-      {key:'osSituation', label:'SITUAÇÃO DA O.S.', list:RMA_OS_SITUATIONS, value:v.osSituation},
-      {key:'accessories', label:'ACESSÓRIOS', full:true, value:v.accessories, hint:'EX.: CAIXA, CAPA, CARREGADOR. VAZIO = SEM ACESSÓRIOS.'},
-      {key:'defectType', label:'TIPO DE DEFEITO', list:RMA_DEFECT_TYPES, value:v.defectType},
+      {key:'osSituation', label:'SITUAÇÃO DA O.S.', list:rmaOpts('os_situation'), value:v.osSituation},
+      {key:'accessories', label:'ACESSÓRIOS', full:true, value:v.accessories, chips:rmaOpts('accessory_type'), hint:'TOQUE NOS TIPOS PARA SOMAR. VAZIO = SEM ACESSÓRIOS.'},
+      {key:'defectType', label:'TIPO DE DEFEITO', list:rmaOpts('defect_type'), value:v.defectType},
       {key:'defectDescription', label:'DESCRIÇÃO DO DEFEITO (LOJA)', type:'textarea', value:v.defectDescription},
       {key:'technicalAnalysis', label:'ANÁLISE TÉCNICA', type:'textarea', value:v.technicalAnalysis},
       {key:'productNotes', label:'OBSERVAÇÕES DO PRODUTO', type:'textarea', value:v.productNotes},
@@ -30476,8 +30546,8 @@ function renderHomeTasks(){
   function rmaOpenUpdateForm(rma, finalize){
     rmaOpenForm((finalize ? 'FINALIZAR ' : 'NOVA ATUALIZAÇÃO · ')+rma.code, [
       {key:'responsible', label:'RESPONSÁVEL', required:true, list:rmaResponsibles(), value:rma.responsible || ''},
-      {key:'newStatus', label:'NOVO STATUS', type:'select', options:[['', 'MANTER ATUAL ('+rma.status+')']].concat(RMA_STATUSES.map(status => [status, status])), value: finalize ? 'FINALIZADO' : ''},
-      {key:'solutionType', label:'TIPO DE SOLUÇÃO', type:'select', options:rmaOptions(RMA_SOLUTION_TYPES, 'SELECIONE')},
+      {key:'newStatus', label:'NOVO STATUS', type:'select', options:[['', 'MANTER ATUAL ('+rma.status+')']].concat(rmaOpts('rma_status').map(status => [status, status])), value: finalize ? 'FINALIZADO' : ''},
+      {key:'solutionType', label:'TIPO DE SOLUÇÃO', type:'select', options:rmaOptions(rmaOpts('solution_type'), 'SELECIONE')},
       {key:'solutionDescription', label:'DESCRIÇÃO DA SOLUÇÃO', type:'textarea'},
       {key:'description', label:'DESCRIÇÃO DA ATUALIZAÇÃO', type:'textarea', required:true},
       {key:'nextAction', label:'PRÓXIMA AÇÃO NECESSÁRIA', full:true},
@@ -30518,8 +30588,8 @@ function renderHomeTasks(){
       {key:'generatedDate', label:'GERADO EM', type:'date', value:v.generatedDate},
       {key:'creditValue', label:'VALOR DO CRÉDITO (R$)', type:'money', required:true, value:rmaMoneyInput(v.creditCents)},
       {key:'usedValue', label:'VALOR JÁ USADO (R$)', type:'money', value:rmaMoneyInput(v.usedCents)},
-      {key:'status', label:'STATUS', type:'select', options:rmaOptions(RMA_CREDIT_STATUSES), value:v.status},
-      {key:'usageType', label:'FORMA DE USO', list:RMA_CREDIT_USAGES, value:v.usageType},
+      {key:'status', label:'STATUS', type:'select', options:rmaOptions(rmaOpts('credit_status')), value:v.status},
+      {key:'usageType', label:'FORMA DE USO', list:rmaOpts('credit_usage'), value:v.usageType},
       {key:'usageDate', label:'DATA DO USO', type:'date', value:v.usageDate},
       {key:'documentNumber', label:'DOCUMENTO (NF / NFD)', value:v.documentNumber},
       {key:'rmaCode', label:'RMA (OPCIONAL)', value:v.rmaCode, hint:'CÓDIGO DO RMA, EX.: RMA-41F6CF.'},
@@ -30551,7 +30621,7 @@ function renderHomeTasks(){
       {key:'disposalDate', label:'DATA DO DESCARTE', type:'date', required:true, value:v.disposalDate},
       {key:'quantity', label:'QUANTIDADE', type:'number', required:true, value:v.quantity},
       {key:'unitCost', label:'CUSTO UNITÁRIO (R$)', type:'money', value:rmaMoneyInput(v.unitCostCents)},
-      {key:'reason', label:'MOTIVO', list:RMA_DISPOSAL_REASONS, value:v.reason},
+      {key:'reason', label:'MOTIVO', list:rmaOpts('disposal_reason'), value:v.reason},
       {key:'authorizedBy', label:'AUTORIZADO POR', list:rmaResponsibles(), value:v.authorizedBy},
       {key:'supplier', label:'FORNECEDOR', list:rmaSupplierNames(), value:v.supplier},
       {key:'notes', label:'OBSERVAÇÕES', type:'textarea', value:v.notes},
@@ -30588,64 +30658,196 @@ function renderHomeTasks(){
     });
   }
 
-  // ---- Detalhe do RMA ----
+  // ---- Detalhe do RMA (padrão do sistema antigo: cabeçalho, faixa da O.S. e abas) ----
   let rmaDetail = null;
+  let rmaDetailTab = 'atualizacoes';
   const rmaFileLinks = files => (files || []).map(file => '<a class="btn-outline btn-sm" href="'+RMA_API+'/file?id='+encodeURIComponent(file.id)+'" target="_blank" rel="noopener">📎 '+escapeHtml(file.fileName)+'</a>'+(rmaCan('edit') ? ' <button class="btn-outline btn-sm" type="button" data-rma-delete-file="'+escapeHtml(file.id)+'" aria-label="Excluir anexo">×</button>' : '')).join(' ');
+  const rmaOsDaysLabel = days => days < 0 ? 'VENCIDA HÁ '+(-days)+(days === -1 ? ' DIA' : ' DIAS') : days === 0 ? 'VENCE HOJE' : 'VENCE EM '+days+(days === 1 ? ' DIA' : ' DIAS');
 
   async function rmaOpenDetail(id, options){
-    rmaDetailId = id;
-    if(!(options && options.silent)){
+    const silent = options && options.silent;
+    if(!silent){
+      if(rmaDetailId !== id) rmaDetailTab = 'atualizacoes';
+      rmaDetailId = id;
       el('rmaDetailTitle').textContent = 'RMA';
-      el('rmaDetailBody').innerHTML = '<p class="os-muted">Carregando…</p>';
-      el('rmaDetailActions').innerHTML = '';
-      el('rmaDetailHistory').innerHTML = '';
+      el('rmaDetailHead').innerHTML = '<p class="os-muted">Carregando…</p>';
+      ['rmaDetailActions','rmaDetailOs','rmaDetailTabs','rmaDetailPanel'].forEach(key => { el(key).innerHTML = ''; });
       if(!el('rmaDetailDialog').open) el('rmaDetailDialog').showModal();
     }
     try{
       rmaDetail = await rmaRequest('?id='+encodeURIComponent(id));
     }catch(error){
-      el('rmaDetailBody').innerHTML = '<p class="os-muted">'+escapeHtml(error.message)+'</p>';
+      el('rmaDetailHead').innerHTML = '<p class="os-muted">'+escapeHtml(error.message)+'</p>';
       return;
     }
+    renderRmaDetail();
+  }
+
+  function renderRmaDetail(){
     const {rma, updates, attachments, os, disposals, credits} = rmaDetail;
-    el('rmaDetailTitle').textContent = rma.code+' · '+rma.productName;
-    const info = (label, value) => value ? '<div><span>'+escapeHtml(label)+'</span>'+escapeHtml(String(value))+'</div>' : '';
-    const osLine = rma.osNumber
-      ? '<p class="gd-opening-hint">O.S. '+escapeHtml(rma.osNumber)+(rma.osDeadline ? ' · PRAZO '+rmaDate(rma.osDeadline) : '')+(rma.osSituation ? ' · '+escapeHtml(rma.osSituation) : '')+
-        (os ? ' · ORDENS DE SERVIÇO: '+escapeHtml(os.status)+(Number(os.closed) ? ' (FINALIZADA)' : '')+' · '+escapeHtml(os.storeName || '')+(os.equipment ? ' · '+escapeHtml(os.equipment) : '') : ' · NÃO ENCONTRADA EM ORDENS DE SERVIÇO')+'</p>'
+    const finance = rmaCan('finance');
+    const allFiles = attachments.concat(...updates.map(update => update.attachments));
+    el('rmaDetailTitle').textContent = rma.code;
+    el('rmaDetailHead').innerHTML =
+      '<p class="rma-detail-pills"><span class="rma-code">'+escapeHtml(rma.code)+'</span> '+rmaStatusPill(rma.status)+' '+rmaPriorityPill(rma.priority)+' '+rmaAlertPills(rma)+'</p>'+
+      '<h3 class="rma-detail-product">'+escapeHtml(rma.productName)+'</h3>'+
+      '<p class="rma-detail-sub">'+escapeHtml([rma.brand, rma.supplier, rma.storeName || 'AVULSO'].filter(Boolean).join(' · '))+'</p>';
+    el('rmaDetailActions').innerHTML = rmaCan('edit')
+      ? '<button class="btn-outline btn-sm" type="button" data-rma-action="update">+ ATUALIZAÇÃO</button>'+
+        (rma.finalized ? '' : '<button class="btn-outline btn-sm" type="button" data-rma-action="finalize">FINALIZAR</button>')+
+        '<button class="btn-outline btn-sm" type="button" data-rma-action="edit">EDITAR</button>'+
+        (finance ? '<button class="btn-outline btn-sm" type="button" data-rma-action="credit">CRÉDITO</button><button class="btn-outline btn-sm" type="button" data-rma-action="disposal">DESCARTE</button>' : '')+
+        (rmaCan('delete') ? '<button class="btn-outline btn-sm rma-danger" type="button" data-rma-action="delete">EXCLUIR</button>' : '')
       : '';
-    el('rmaDetailBody').innerHTML =
-      '<p>'+rmaStatusPill(rma.status)+' '+(rma.priority ? '<span class="status-pill '+(RMA_PRIORITY_PILL[rma.priority] || '')+'">'+escapeHtml(rma.priority)+'</span> ' : '')+rmaAlertPills(rma)+'</p>'+
-      osLine+
-      '<div class="rma-info">'+
-        info('CHEGADA', rmaDate(rma.arrivalDate))+info('UNIDADE', rma.storeName || 'AVULSO')+info('FORNECEDOR', rma.supplier)+info('RESPONSÁVEL', rma.responsible)+
+    const level = rma.alerts && rma.alerts.osLevel;
+    el('rmaDetailOs').innerHTML = rma.osNumber
+      ? '<div class="rma-os-banner '+(level === 'vencida' ? 'late' : level === 'vence_em_breve' ? 'soon' : 'ok')+'">O.S. '+escapeHtml(rma.osNumber)+
+        (rma.osDeadline ? ' · PRAZO: '+rmaDate(rma.osDeadline)+(rma.alerts && rma.alerts.osDays !== null && !rma.finalized ? ' — <strong>'+rmaOsDaysLabel(rma.alerts.osDays)+'</strong>' : '') : '')+
+        (rma.osSituation ? ' · '+escapeHtml(rma.osSituation) : '')+
+        '<small>'+(os ? 'ORDENS DE SERVIÇO: '+escapeHtml(os.status)+(Number(os.closed) ? ' (FINALIZADA)' : '')+(os.storeName ? ' · '+escapeHtml(os.storeName) : '')+(os.equipment ? ' · '+escapeHtml(os.equipment) : '') : 'NÃO ENCONTRADA EM ORDENS DE SERVIÇO')+'</small></div>'
+      : '';
+    const tabs = [['informacoes','INFORMAÇÕES'],['atualizacoes','ATUALIZAÇÕES ('+updates.length+')'],['solucao','SOLUÇÃO']]
+      .concat(finance ? [['creditos','CRÉDITOS ('+credits.length+')'],['descarte','DESCARTE ('+disposals.length+')']] : [])
+      .concat([['anexos','ANEXOS ('+allFiles.length+')']]);
+    if(!tabs.some(([key]) => key === rmaDetailTab)) rmaDetailTab = 'atualizacoes';
+    el('rmaDetailTabs').innerHTML = tabs.map(([key, label]) => '<button class="supply-tab'+(key === rmaDetailTab ? ' active' : '')+'" type="button" role="tab" aria-selected="'+(key === rmaDetailTab)+'" data-rma-dtab="'+key+'">'+label+'</button>').join('');
+    const info = (label, value) => '<div><span>'+escapeHtml(label)+'</span>'+escapeHtml(value === undefined || value === null || value === '' ? '—' : String(value))+'</div>';
+    const panelHead = (title, button) => '<div class="rma-panel-head"><h4>'+title+'</h4>'+(button || '')+'</div>';
+    let html = '';
+    if(rmaDetailTab === 'informacoes'){
+      html = '<div class="rma-info">'+
+        info('DATA DE CHEGADA', rmaDate(rma.arrivalDate))+info('UNIDADE', rma.storeName || 'AVULSO')+info('FORNECEDOR', rma.supplier)+info('RESPONSÁVEL', rma.responsible)+
         info('QUANTIDADE', rma.quantity)+info('CATEGORIA', rma.productCategory)+info('MARCA', rma.brand)+info('Nº DE SÉRIE / IMEI', rma.serialNumber)+
         info('NOTA FISCAL', rma.invoiceNumber)+info('TIPO DE DEFEITO', rma.defectType)+info('ACESSÓRIOS', rma.accessories || 'SEM ACESSÓRIOS')+
         info('PRÓXIMA AÇÃO', rma.nextAction)+info('PRÓXIMA ATUALIZAÇÃO', rma.nextUpdateDate ? rmaDate(rma.nextUpdateDate) : '')+
+        info('CADASTRADO', (formatDateTimeBR(rma.createdAt) || '—')+(rma.createdByName ? ' · '+rma.createdByName : ''))+
       '</div>'+
-      (rma.defectDescription ? '<p><strong>DESCRIÇÃO DO DEFEITO (LOJA):</strong> '+escapeHtml(rma.defectDescription)+'</p>' : '')+
-      (rma.technicalAnalysis ? '<p><strong>ANÁLISE TÉCNICA:</strong> '+escapeHtml(rma.technicalAnalysis)+'</p>' : '')+
-      (rma.productNotes ? '<p><strong>OBSERVAÇÕES:</strong> '+escapeHtml(rma.productNotes)+'</p>' : '')+
-      (rma.finalized ? '<p class="gd-opening-hint"><strong>FINALIZADO</strong> EM '+escapeHtml(formatDateTimeBR(rma.finalizedAt) || '—')+(rma.finalizedByName ? ' POR '+escapeHtml(rma.finalizedByName) : '')+(rma.solutionType ? ' · SOLUÇÃO: '+escapeHtml(rma.solutionType) : '')+(rma.solutionDescription ? ' · '+escapeHtml(rma.solutionDescription) : '')+'</p>' : '')+
-      (attachments.length || updates.some(update => update.attachments.length) ? '<p><strong>ANEXOS:</strong> '+rmaFileLinks(attachments.concat(...updates.map(update => update.attachments)))+'</p>' : '')+
-      (disposals.length ? '<p><strong>DESCARTES:</strong> '+disposals.map(item => escapeHtml(rmaDate(item.disposalDate)+' · '+item.quantity+' UN. · '+formatCentsBRL(item.totalCostCents)+(item.reason ? ' · '+item.reason : ''))).join('<br>')+'</p>' : '')+
-      (credits.length ? '<p><strong>CRÉDITOS:</strong> '+credits.map(item => escapeHtml(item.supplier+' · '+formatCentsBRL(item.creditCents)+' · SALDO '+formatCentsBRL(item.creditCents - item.usedCents)+(item.status ? ' · '+item.status : ''))).join('<br>')+'</p>' : '');
-    const finance = rmaCan('finance');
-    el('rmaDetailActions').innerHTML =
-      '<button class="btn-outline" type="button" data-rma-close>FECHAR</button>'+
-      (rmaCan('delete') ? '<button class="btn-outline" type="button" data-rma-action="delete">EXCLUIR</button>' : '')+
-      (finance ? '<button class="btn-outline" type="button" data-rma-action="disposal">DESCARTE</button><button class="btn-outline" type="button" data-rma-action="credit">CRÉDITO</button>' : '')+
-      (rmaCan('edit') ? '<button class="btn-outline" type="button" data-rma-action="attach">ANEXAR</button><button class="btn-outline" type="button" data-rma-action="edit">EDITAR</button>'+
-        (rma.finalized ? '' : '<button class="btn-outline" type="button" data-rma-action="finalize">FINALIZAR</button>')+
-        '<button class="btn-accent" type="button" data-rma-action="update">ATUALIZAÇÃO</button>' : '');
-    el('rmaDetailHistory').innerHTML = updates.length
-      ? updates.map(update => '<div class="os-update-item"><small>'+escapeHtml((formatDateTimeBR(update.updateAt) || '')+' · '+(update.responsible || update.createdByName || ''))+'</small> '+(update.newStatus ? rmaStatusPill(update.newStatus) : '')+
-          '<p>'+escapeHtml(update.description)+'</p>'+
-          (update.nextAction || update.nextUpdateDate ? '<small class="os-update-meta">PRÓXIMA AÇÃO: '+escapeHtml(update.nextAction || '—')+(update.nextUpdateDate ? ' · ATÉ '+rmaDate(update.nextUpdateDate) : '')+'</small>' : '')+
-          (update.attachments.length ? '<p>'+rmaFileLinks(update.attachments)+'</p>' : '')+
-          (rmaCan('edit') ? '<p><button class="btn-outline btn-sm" type="button" data-rma-edit-update="'+escapeHtml(update.id)+'">EDITAR</button> <button class="btn-outline btn-sm" type="button" data-rma-attach-update="'+escapeHtml(update.id)+'">ANEXAR</button> <button class="btn-outline btn-sm" type="button" data-rma-delete-update="'+escapeHtml(update.id)+'">EXCLUIR</button></p>' : '')+
-        '</div>').join('')
-      : '<p class="os-muted">Nenhuma atualização registrada.</p>';
+      '<div class="rma-text-block"><span>DESCRIÇÃO DO DEFEITO (LOJA)</span>'+escapeHtml(rma.defectDescription || '—')+'</div>'+
+      '<div class="rma-text-block"><span>ANÁLISE TÉCNICA</span>'+escapeHtml(rma.technicalAnalysis || '—')+'</div>'+
+      (rma.productNotes ? '<div class="rma-text-block"><span>OBSERVAÇÕES DO PRODUTO</span>'+escapeHtml(rma.productNotes)+'</div>' : '');
+    }
+    if(rmaDetailTab === 'atualizacoes'){
+      html = panelHead('HISTÓRICO DE ATUALIZAÇÕES', rmaCan('edit') ? '<button class="btn-accent btn-sm" type="button" data-rma-action="update">+ NOVA ATUALIZAÇÃO</button>' : '')+
+        (updates.length ? updates.map(update =>
+          '<div class="rma-update-card">'+
+            '<div class="rma-update-top"><strong>'+escapeHtml(update.responsible || update.createdByName || '—')+'</strong>'+(update.newStatus ? ' '+rmaStatusPill(update.newStatus) : '')+
+              '<span class="rma-update-date">'+escapeHtml(formatDateTimeBR(update.updateAt) || '')+
+              (rmaCan('edit') ? ' <button class="btn-outline btn-sm" type="button" data-rma-edit-update="'+escapeHtml(update.id)+'" aria-label="Editar atualização">✎</button> <button class="btn-outline btn-sm" type="button" data-rma-attach-update="'+escapeHtml(update.id)+'" aria-label="Anexar arquivo">📎</button> <button class="btn-outline btn-sm rma-danger" type="button" data-rma-delete-update="'+escapeHtml(update.id)+'" aria-label="Excluir atualização">🗑</button>' : '')+'</span></div>'+
+            '<p>'+escapeHtml(update.description)+'</p>'+
+            (update.nextAction ? '<small>PRÓXIMA AÇÃO: '+escapeHtml(update.nextAction)+'</small>' : '')+
+            (update.nextUpdateDate ? '<small>PRÓXIMA ATUALIZAÇÃO PREVISTA: '+rmaDate(update.nextUpdateDate)+'</small>' : '')+
+            (update.attachments.length ? '<p>'+rmaFileLinks(update.attachments)+'</p>' : '')+
+          '</div>').join('')
+        : '<p class="os-muted">Nenhuma atualização registrada.</p>');
+    }
+    if(rmaDetailTab === 'solucao'){
+      html = rma.finalized
+        ? '<div class="rma-info">'+info('TIPO DE SOLUÇÃO', rma.solutionType)+info('FINALIZADO EM', formatDateTimeBR(rma.finalizedAt))+info('RESPONSÁVEL', rma.finalizedByName)+'</div>'+
+          '<div class="rma-text-block"><span>DESCRIÇÃO DA SOLUÇÃO</span>'+escapeHtml(rma.solutionDescription || '—')+'</div>'
+        : '<p class="os-muted">RMA ainda não finalizado.</p>'+(rmaCan('edit') ? '<p><button class="btn-accent btn-sm" type="button" data-rma-action="finalize">FINALIZAR RMA</button></p>' : '');
+    }
+    if(rmaDetailTab === 'creditos'){
+      html = panelHead('CRÉDITOS DO RMA', '<button class="btn-accent btn-sm" type="button" data-rma-action="credit">+ CRÉDITO</button>')+
+        (credits.length ? credits.map(item => '<div class="rma-update-card"><div class="rma-update-top"><strong>'+escapeHtml(item.supplier)+'</strong> <span class="status-pill '+(rmaCreditAvailable(item) ? 'done' : 'alert')+'">'+escapeHtml(item.status || (rmaCreditAvailable(item) ? 'DISPONÍVEL' : 'SEM SALDO'))+'</span><span class="rma-update-date">'+rmaDate(item.generatedDate)+'</span></div>'+
+          '<p>VALOR '+formatCentsBRL(item.creditCents)+' · USADO '+formatCentsBRL(item.usedCents)+' · SALDO <strong class="'+(rmaCreditAvailable(item) ? 'gd-pos' : 'gd-neg')+'">'+formatCentsBRL(item.creditCents - item.usedCents)+'</strong></p></div>').join('')
+        : '<p class="os-muted">Nenhum crédito ligado a este RMA.</p>');
+    }
+    if(rmaDetailTab === 'descarte'){
+      html = panelHead('DESCARTES DO RMA', '<button class="btn-accent btn-sm" type="button" data-rma-action="disposal">+ DESCARTE</button>')+
+        (disposals.length ? disposals.map(item => '<div class="rma-update-card"><div class="rma-update-top"><strong>'+escapeHtml(item.reason || 'DESCARTE')+'</strong><span class="rma-update-date">'+rmaDate(item.disposalDate)+'</span></div>'+
+          '<p>'+escapeHtml(String(item.quantity))+' UN. × '+formatCentsBRL(item.unitCostCents)+' = <strong class="gd-neg">'+formatCentsBRL(item.totalCostCents)+'</strong>'+(item.authorizedBy ? ' · AUTORIZADO POR '+escapeHtml(item.authorizedBy) : '')+'</p>'+
+          (item.notes ? '<small>'+escapeHtml(item.notes)+'</small>' : '')+'</div>').join('')
+        : '<p class="os-muted">Nenhum descarte registrado.</p>');
+    }
+    if(rmaDetailTab === 'anexos'){
+      html = panelHead('ANEXOS', rmaCan('edit') ? '<button class="btn-accent btn-sm" type="button" data-rma-action="attach">+ ANEXAR</button>' : '')+
+        (allFiles.length ? '<p class="rma-files">'+rmaFileLinks(allFiles)+'</p>' : '<p class="os-muted">Nenhum anexo.</p>');
+    }
+    el('rmaDetailPanel').innerHTML = html;
+  }
+
+  // ---- O.S. COM PRAZO: RMAs em aberto com prazo de O.S., do mais urgente ----
+  function renderRmaDeadlines(){
+    const store = el('rmaStoreFilter').value;
+    const rows = ((rmaData && rmaData.cases) || [])
+      .filter(row => rmaIsOpen(row) && row.osDeadline && row.alerts && row.alerts.osDays !== null && (!store || (store === RMA_AVULSO ? !row.storeId : row.storeId === store)))
+      .sort((a, b) => a.osDeadline.localeCompare(b.osDeadline));
+    const warn = (rmaData && rmaData.alertDays && rmaData.alertDays.osWarningDays) || 5;
+    const groups = [
+      ['VENCIDAS', 'late', rows.filter(row => row.alerts.osDays < 0)],
+      ['VENCE EM ATÉ '+warn+' DIAS', 'soon', rows.filter(row => row.alerts.osDays >= 0 && row.alerts.osDays <= warn)],
+      ['DENTRO DO PRAZO', 'ok', rows.filter(row => row.alerts.osDays > warn)],
+    ];
+    const deadline = row => {
+      const days = row.alerts.osDays;
+      return '<strong class="rma-days '+(days < 0 ? 'late' : days <= warn ? 'soon' : 'ok')+'">'+(days < 0 ? (-days)+'D ATRASADA' : days === 0 ? 'VENCE HOJE' : days+'D RESTANTES')+'</strong><small class="os-update-meta">'+rmaDate(row.osDeadline)+'</small>';
+    };
+    el('rmaDeadlinesBody').innerHTML = groups.map(([title, tone, list]) =>
+      '<h3 class="supply-section-title rma-deadline-title '+tone+'">'+title+' ('+list.length+')</h3>'+
+      (list.length
+        ? '<div class="table-panel responsive-table rma-deadline-panel '+tone+'"><div class="table-scroll"><table><thead><tr><th>Prazo</th><th>RMA</th><th>Produto</th><th>O.S.</th><th>Fornecedor</th><th>Unidade</th><th>Status</th><th>Prioridade</th><th></th></tr></thead><tbody>'+
+          list.map(row => '<tr><td data-label="Prazo" style="white-space:nowrap">'+deadline(row)+'</td><td data-label="RMA"><strong>'+escapeHtml(row.code)+'</strong></td>'+
+            '<td data-label="Produto">'+escapeHtml(row.productName)+'</td><td data-label="O.S.">'+escapeHtml(row.osNumber || '—')+'</td>'+
+            '<td data-label="Fornecedor">'+escapeHtml(row.supplier || '—')+'</td><td data-label="Unidade">'+escapeHtml(row.storeName || 'AVULSO')+'</td>'+
+            '<td data-label="Status">'+rmaStatusPill(row.status)+'</td><td data-label="Prioridade">'+rmaPriorityPill(row.priority)+'</td>'+
+            '<td><button class="btn-outline btn-sm" type="button" data-rma-open="'+escapeHtml(row.id)+'">VER</button></td></tr>').join('')+
+          '</tbody></table></div></div>'
+        : '<p class="os-muted">Nenhuma O.S. '+(tone === 'late' ? 'vencida' : tone === 'soon' ? 'vencendo' : 'dentro do prazo')+'.</p>')).join('');
+  }
+
+  // ---- CONFIGURAÇÕES: listas de opções (nome, descrição, cor, ordem, ativo) ----
+  let rmaConfigCategory = 'rma_status';
+  function renderRmaConfig(){
+    const categories = (rmaData && rmaData.optionCategories) || [];
+    el('rmaConfigMenu').innerHTML = categories.map(category =>
+      '<button class="rma-config-item'+(category.key === rmaConfigCategory ? ' active' : '')+'" type="button" data-rma-config-cat="'+escapeHtml(category.key)+'">'+escapeHtml(category.label)+'</button>').join('');
+    const category = categories.find(item => item.key === rmaConfigCategory) || categories[0];
+    if(!category) return;
+    const list = rmaOptionList(category.key);
+    const days = category.key === 'alert_days';
+    el('rmaConfigPanel').innerHTML =
+      '<div class="rma-panel-head"><div><h4>'+escapeHtml(category.label)+'</h4><small class="os-update-meta">'+list.length+' OPÇÃO(ÕES)'+(days ? ' · DIAS USADOS NOS ALERTAS' : ' · OPÇÕES INATIVAS NÃO APARECEM EM NOVOS CADASTROS')+'</small></div>'+
+      (days ? '' : '<button class="btn-accent btn-sm" type="button" data-rma-config-new>+ NOVA OPÇÃO</button>')+'</div>'+
+      list.map((option, index) => {
+        const isLocked = (category.locked || []).includes(option.name);
+        return '<div class="rma-config-row'+(Number(option.active) ? '' : ' inactive')+'">'+
+          '<span class="rma-config-dot" style="background:'+escapeHtml(option.color || 'transparent')+'"></span>'+
+          '<div class="rma-config-name"><strong>'+escapeHtml(days ? (rmaData.alertDayLabels[option.name] || option.name) : option.name)+'</strong> '+
+            (days ? '<span class="status-pill done">'+escapeHtml(option.description)+' DIAS</span>' : (option.color ? '<span class="status-pill rma-pill" style="--rma-c:'+escapeHtml(option.color)+'">PRÉVIA</span>' : ''))+
+            (isLocked && !days ? ' <span class="status-pill">USADA PELO SISTEMA</span>' : '')+(Number(option.active) ? '' : ' <span class="status-pill alert">INATIVA</span>')+
+            (!days && option.description ? '<small class="os-update-meta">'+escapeHtml(option.description)+'</small>' : '')+'</div>'+
+          '<span class="rma-config-order">'+escapeHtml(String(option.sortOrder))+'</span>'+
+          '<span class="rma-config-actions"><button class="btn-outline btn-sm" type="button" data-rma-config-edit="'+index+'">EDITAR</button>'+
+            (days || isLocked ? '' : ' <button class="btn-outline btn-sm" type="button" data-rma-config-toggle="'+index+'">'+(Number(option.active) ? 'DESATIVAR' : 'ATIVAR')+'</button> <button class="btn-outline btn-sm rma-danger" type="button" data-rma-config-delete="'+index+'">EXCLUIR</button>')+'</span>'+
+        '</div>';
+      }).join('');
+  }
+
+  const rmaOptionBody = (option, changes) => ({id: option.id, category: rmaConfigCategory, originalName: option.name, name: option.name, description: option.description, color: option.color, sortOrder: option.sortOrder, active: Number(option.active), ...changes});
+  function rmaOpenOptionForm(option){
+    const days = rmaConfigCategory === 'alert_days';
+    const category = ((rmaData && rmaData.optionCategories) || []).find(item => item.key === rmaConfigCategory) || {};
+    const isLocked = option && (category.locked || []).includes(option.name);
+    const list = rmaOptionList(rmaConfigCategory);
+    const v = option || {name:'', description:'', color:'', sortOrder: list.reduce((max, item) => Math.max(max, Number(item.sortOrder) || 0), 0) + 1, active: 1};
+    rmaOpenForm(days ? 'PRAZO DE ALERTA' : (option ? 'EDITAR OPÇÃO' : 'NOVA OPÇÃO')+' · '+(category.label || ''), days
+      ? [{key:'description', label:(rmaData.alertDayLabels[v.name] || v.name), type:'number', required:true, value:v.description}]
+      : [
+        {key:'name', label:'NOME', required:true, full:true, value:v.name, hint: isLocked ? 'USADA PELO SISTEMA: O NOME NÃO PODE MUDAR.' : (option ? 'RENOMEAR ATUALIZA OS REGISTROS QUE JÁ USAM ESTA OPÇÃO.' : '')},
+        {key:'description', label:'DESCRIÇÃO', full:true, value:v.description},
+        {key:'color', label:'COR', type:'color', value:v.color || '#6b7280'},
+        {key:'noColor', label:'SEM COR', type:'select', options:[['0','USAR A COR'],['1','SEM COR']], value: v.color || !option ? '0' : '1'},
+        {key:'sortOrder', label:'ORDEM', type:'number', value:v.sortOrder},
+      ], async () => {
+        const values = days
+          ? {description: rmaFieldValue('description')}
+          : {name: rmaFieldValue('name'), description: rmaFieldValue('description'), color: rmaFieldValue('noColor') === '1' ? '' : rmaFieldValue('color'), sortOrder: Number(rmaFieldValue('sortOrder') || 0)};
+        if(option) await rmaRequest('', 'PATCH', rmaOptionBody(option, values), RMA_API+'/opcoes');
+        else await rmaRequest('', 'POST', {category: rmaConfigCategory, active: 1, ...values}, RMA_API+'/opcoes');
+        showPurchaseToast(option ? 'Opção alterada.' : 'Opção criada.');
+        return '';
+      });
+    if(isLocked) document.getElementById('rmaField_name').readOnly = true;
   }
 
   // Relatório PDF (A4): a lista filtrada da tela, com o total por fornecedor.
@@ -30695,9 +30897,22 @@ function renderHomeTasks(){
     el('rmaAlertFilter').value = card.dataset.rmaAlert;
     renderRmaList();
   });
-  el('rmaTableBody') && el('rmaTableBody').addEventListener('click', event => {
+  ['rmaTableBody','rmaDeadlinesBody'].forEach(id => el(id) && el(id).addEventListener('click', event => {
     const button = event.target.closest('[data-rma-open]');
     if(button) rmaOpenDetail(button.dataset.rmaOpen);
+  }));
+  el('rmaConfigView') && el('rmaConfigView').addEventListener('click', async event => {
+    const cat = event.target.closest('[data-rma-config-cat]');
+    if(cat){ rmaConfigCategory = cat.dataset.rmaConfigCat; renderRmaConfig(); return; }
+    if(event.target.closest('[data-rma-config-new]')) return rmaOpenOptionForm(null);
+    const button = event.target.closest('[data-rma-config-edit],[data-rma-config-toggle],[data-rma-config-delete]');
+    if(!button) return;
+    const option = rmaOptionList(rmaConfigCategory)[Number(button.dataset.rmaConfigEdit || button.dataset.rmaConfigToggle || button.dataset.rmaConfigDelete)];
+    if(!option) return;
+    if(button.dataset.rmaConfigEdit !== undefined) return rmaOpenOptionForm(option);
+    if(button.dataset.rmaConfigToggle !== undefined) return rmaRun(() => rmaRequest('', 'PATCH', rmaOptionBody(option, {active: Number(option.active) ? 0 : 1}), RMA_API+'/opcoes'), Number(option.active) ? 'Opção desativada.' : 'Opção ativada.');
+    if(!(await askConfirm('EXCLUIR A OPÇÃO '+option.name+'? OS REGISTROS ANTIGOS MANTÊM O NOME.', {okText:'EXCLUIR', danger:true}))) return;
+    rmaRun(() => rmaRequest('', 'DELETE', {id: option.id, category: rmaConfigCategory, originalName: option.name}, RMA_API+'/opcoes'), 'Opção excluída.');
   });
   document.querySelectorAll('#rmaDetailDialog,#rmaFormDialog').forEach(dialog => dialog.addEventListener('click', event => {
     const close = event.target.closest('[data-rma-close]');
@@ -30705,6 +30920,14 @@ function renderHomeTasks(){
   }));
   el('rmaDetailDialog') && el('rmaDetailDialog').addEventListener('close', () => { rmaDetailId = ''; });
 
+  el('rmaFormFields') && el('rmaFormFields').addEventListener('click', event => {
+    const chip = event.target.closest('[data-rma-chip]');
+    if(!chip) return;
+    const input = document.getElementById('rmaField_'+chip.dataset.rmaChip);
+    const parts = input.value.split(',').map(part => part.trim()).filter(Boolean);
+    if(!parts.includes(chip.dataset.rmaChipValue)) parts.push(chip.dataset.rmaChipValue);
+    input.value = parts.join(', ');
+  });
   el('rmaForm') && el('rmaForm').addEventListener('submit', async event => {
     event.preventDefault();
     if(!rmaFormSubmit) return;
@@ -30741,6 +30964,8 @@ function renderHomeTasks(){
   el('rmaDetailDialog') && el('rmaDetailDialog').addEventListener('click', async event => {
     if(!rmaDetail) return;
     const {rma, updates} = rmaDetail;
+    const dtab = event.target.closest('[data-rma-dtab]');
+    if(dtab){ rmaDetailTab = dtab.dataset.rmaDtab; renderRmaDetail(); return; }
     const button = event.target.closest('[data-rma-action],[data-rma-edit-update],[data-rma-delete-update],[data-rma-attach-update],[data-rma-delete-file]');
     if(!button) return;
     const action = button.dataset.rmaAction;

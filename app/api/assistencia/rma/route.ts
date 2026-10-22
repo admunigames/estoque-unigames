@@ -2,14 +2,18 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import {
+  isOption,
   newRmaCode,
   recifeDate,
   rmaAlerts,
+  RMA_ALERT_DAY_LABELS,
   RMA_FINAL_STATUS,
-  RMA_PRIORITIES,
-  RMA_SOLUTION_TYPES,
-  RMA_STATUSES,
+  RMA_LOCKED_OPTIONS,
+  RMA_OPTION_CATEGORIES,
+  type RmaOption,
 } from "../../../lib/rma";
+
+const OPTION_CATEGORIES = RMA_OPTION_CATEGORIES.map(({ key, label }) => ({ key, label, locked: RMA_LOCKED_OPTIONS[key] || [] }));
 import {
   can,
   canView,
@@ -19,6 +23,7 @@ import {
   isStoreLogin,
   jsonResponse,
   loadCompanies,
+  loadOptions,
   NOT_FOUND,
   safeText,
   storeScope,
@@ -58,7 +63,9 @@ type CaseInput = {
   productNotes: string; defectType: string; defectDescription: string; technicalAnalysis: string;
 };
 
-function parseCase(body: JsonMap): { error: string } | { input: CaseInput } {
+type Options = Record<string, RmaOption[]>;
+
+function parseCase(body: JsonMap, options: Options, current: { status?: string; priority?: string } = {}): { error: string } | { input: CaseInput } {
   const quantity = Number(body.quantity ?? 1);
   const input: CaseInput = {
     arrivalDate: dateOrEmpty(body.arrivalDate),
@@ -86,8 +93,8 @@ function parseCase(body: JsonMap): { error: string } | { input: CaseInput } {
   if (!input.productName) return { error: "INFORME O PRODUTO." };
   if (!input.supplier) return { error: "INFORME O FORNECEDOR." };
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100000) return { error: "QUANTIDADE INVÁLIDA." };
-  if (!(RMA_STATUSES as readonly string[]).includes(input.status)) return { error: "STATUS INVÁLIDO." };
-  if (input.priority && !(RMA_PRIORITIES as readonly string[]).includes(input.priority)) return { error: "PRIORIDADE INVÁLIDA." };
+  if (!isOption(options, "rma_status", input.status, current.status)) return { error: "STATUS INVÁLIDO." };
+  if (input.priority && !isOption(options, "priority", input.priority, current.priority)) return { error: "PRIORIDADE INVÁLIDA." };
   if (input.status === RMA_FINAL_STATUS) return { error: "PARA FINALIZAR, REGISTRE UMA ATUALIZAÇÃO COM O STATUS FINALIZADO." };
   return { input };
 }
@@ -169,7 +176,8 @@ export async function GET(request: Request) {
             .all<JsonMap>(),
         ])
         : [null, null];
-      const rma = { ...row, alerts: rmaAlerts(row as never, today) };
+      const { alertDays } = await loadOptions(database);
+      const rma = { ...row, alerts: rmaAlerts(row as never, today, alertDays) };
       return jsonResponse({
         today, rma, updates, attachments, os,
         disposals: disposals?.results ?? [], credits: credits?.results ?? [],
@@ -178,16 +186,21 @@ export async function GET(request: Request) {
 
     const filter = scope.allStores ? "" : " AND store_id=?1";
     const statement = database.prepare(`SELECT ${CASE_COLUMNS} FROM rma_cases WHERE deleted=0${filter} ORDER BY arrival_date DESC, created_at DESC`);
-    const [result, companies] = await Promise.all([
+    const [result, companies, { options, alertDays }] = await Promise.all([
       (scope.allStores ? statement : statement.bind(actor.companyId)).all<JsonMap>(),
       loadCompanies(database),
+      loadOptions(database),
     ]);
-    const cases = (result.results ?? []).map((row) => ({ ...row, alerts: rmaAlerts(row as never, today) }));
+    const cases = (result.results ?? []).map((row) => ({ ...row, alerts: rmaAlerts(row as never, today, alertDays) }));
     return jsonResponse({
       today,
       allStores: scope.allStores,
       readOnly: isStoreLogin(actor),
       companies: scope.allStores ? companies : companies.filter((company) => company.id === actor.companyId),
+      options,
+      optionCategories: OPTION_CATEGORIES,
+      alertDayLabels: RMA_ALERT_DAY_LABELS,
+      alertDays,
       cases,
     });
   } catch (error) {
@@ -202,10 +215,10 @@ export async function POST(request: Request) {
   const { actor } = guard;
   try {
     const body = (await request.json().catch(() => ({}))) as JsonMap;
-    const parsed = parseCase(body);
+    const database = await getD1();
+    const parsed = parseCase(body, (await loadOptions(database)).options);
     if ("error" in parsed) return jsonResponse({ error: parsed.error }, 400);
     const { input } = parsed;
-    const database = await getD1();
     const store = await storeFor(database, input.storeId);
     if (!store) return jsonResponse({ error: "LOJA INVÁLIDA." }, 400);
     const id = crypto.randomUUID();
@@ -293,8 +306,10 @@ export async function PATCH(request: Request) {
     const database = await getD1();
     const existing = await findCase(database, actor, safeText(body.id, 80));
     if (!existing) return jsonResponse({ error: NOT_FOUND }, 404);
+    const current = await database.prepare("SELECT priority FROM rma_cases WHERE id=?1").bind(existing.id).first<{ priority: string }>();
     // Finalizado mantém o status pela edição (reabrir = atualização com outro status).
-    const parsed = parseCase({ ...body, status: existing.finalized ? "RECEBIDO" : body.status });
+    const parsed = parseCase({ ...body, status: existing.finalized ? "RECEBIDO" : body.status }, (await loadOptions(database)).options,
+      { status: existing.finalized ? "RECEBIDO" : existing.status, priority: current?.priority || "" });
     if ("error" in parsed) return jsonResponse({ error: parsed.error }, 400);
     const { input } = parsed;
     const status = existing.finalized ? existing.status : input.status;
@@ -337,13 +352,14 @@ export async function PUT(request: Request) {
     const newStatus = upper(body.newStatus, 60);
     if (!responsible) return jsonResponse({ error: "INFORME O RESPONSÁVEL." }, 400);
     if (!description) return jsonResponse({ error: "ESCREVA A DESCRIÇÃO DA ATUALIZAÇÃO." }, 400);
-    if (newStatus && !(RMA_STATUSES as readonly string[]).includes(newStatus)) return jsonResponse({ error: "STATUS INVÁLIDO." }, 400);
+    const database = await getD1();
+    const { options } = await loadOptions(database);
+    if (newStatus && !isOption(options, "rma_status", newStatus)) return jsonResponse({ error: "STATUS INVÁLIDO." }, 400);
     const finalizing = newStatus === RMA_FINAL_STATUS;
     const solutionType = upper(body.solutionType, 60);
-    if (finalizing && !(RMA_SOLUTION_TYPES as readonly string[]).includes(solutionType)) {
+    if (finalizing && !isOption(options, "solution_type", solutionType)) {
       return jsonResponse({ error: "ESCOLHA O TIPO DE SOLUÇÃO PARA FINALIZAR." }, 400);
     }
-    const database = await getD1();
     const existing = await findCase(database, actor, safeText(body.id, 80));
     if (!existing) return jsonResponse({ error: NOT_FOUND }, 404);
     const now = new Date().toISOString();

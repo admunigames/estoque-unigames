@@ -1,6 +1,7 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canActOnStore, hasCompany, resolveStoreScope } from "../../../lib/access-scope";
+import { resolveOptions, type RmaOption } from "../../../lib/rma";
 import { identity as baseIdentity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
 
 // Base comum de Assistência > RMA (permissões rma:view/create/edit/finance/
@@ -15,7 +16,7 @@ export type CaseRow = { id: string; code: string; storeId: string; status: strin
 
 export { jsonResponse, safeText, type JsonMap };
 
-export const PERMISSIONS = ["view", "create", "edit", "finance", "delete"].map((action) => `rma:${action}`);
+export const PERMISSIONS = ["view", "create", "edit", "finance", "delete", "config"].map((action) => `rma:${action}`);
 export const NOT_FOUND = "RMA NÃO ENCONTRADO.";
 
 export function identity(request: Request): Actor {
@@ -99,4 +100,15 @@ export async function ownerRma(database: Database, actor: Actor, ownerType: stri
     ? (await database.prepare("SELECT rma_id AS rmaId FROM rma_updates WHERE id=?1 AND deleted=0").bind(ownerId).first<{ rmaId: string }>())?.rmaId
     : ownerType === "rma" ? ownerId : "";
   return rmaId && (await findCase(database, actor, rmaId)) ? rmaId : null;
+}
+
+/** Opções de RMA > CONFIGURAÇÕES (banco ou padrões) + prazos de alerta. */
+export async function loadOptions(database: Database) {
+  const rows = await database
+    .prepare(
+      `SELECT id, category, name, description, color, sort_order AS sortOrder, active
+       FROM rma_options WHERE deleted=0`,
+    )
+    .all<RmaOption>();
+  return resolveOptions((rows.results ?? []).map((row) => ({ ...row, sortOrder: Number(row.sortOrder), active: Number(row.active) })));
 }

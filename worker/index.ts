@@ -86,7 +86,7 @@ type Permission =
   | "ordens_servico:view" | "ordens_servico:create" | "ordens_servico:edit" | "ordens_servico:delete" | "ordens_servico:store_test"
   | "precos_assistencia:view" | "precos_assistencia:create" | "precos_assistencia:edit" | "precos_assistencia:delete"
   | "estoque_assistencia:view" | "estoque_assistencia:entrada" | "estoque_assistencia:baixa" | "estoque_assistencia:manage" | "estoque_assistencia:delete"
-  | "rma:view" | "rma:create" | "rma:edit" | "rma:finance" | "rma:delete"
+  | "rma:view" | "rma:create" | "rma:edit" | "rma:finance" | "rma:delete" | "rma:config"
   | "inventario:view" | "inventario:count" | "inventario:manage" | "inventario:delete"
   | "auditoria_operacional:view" | "auditoria_operacional:audit" | "auditoria_operacional:manage" | "auditoria_operacional:delete"
   | "treinamento:view" | "treinamento:team"
@@ -259,7 +259,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // Assistência > Estoque — só login sem loja (a rota confere).
   "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
   // Assistência > RMA — login com loja só visualiza os da própria loja (a rota confere).
-  "rma:view", "rma:create", "rma:edit", "rma:finance", "rma:delete",
+  "rma:view", "rma:create", "rma:edit", "rma:finance", "rma:delete", "rma:config",
   // Estoque > Inventário — contagem por loja (login com loja só a própria).
   "inventario:view", "inventario:count", "inventario:manage", "inventario:delete",
   // Auditoria Operacional (checklist de loja) — loja só lê as finalizadas da própria loja (a rota confere).
@@ -1410,7 +1410,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   relatorioNf: ["relatorio_nf:view", "relatorio_nf:manage"],
   controleGd: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
   inventario: ["inventario:view", "inventario:count", "inventario:manage", "inventario:delete"],
-  rma: ["rma:view", "rma:create", "rma:edit", "rma:finance", "rma:delete"],
+  rma: ["rma:view", "rma:create", "rma:edit", "rma:finance", "rma:delete", "rma:config"],
   estoqueAssistencia: [
     "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
   ],

@@ -163,6 +163,7 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   rma_attachments: ["uploaded_by_name"],
   rma_credits: ["supplier", "notes", "created_by_name", "updated_by_name"],
   rma_disposals: ["product_name", "product_category", "store_name", "supplier", "reason", "authorized_by", "notes", "created_by_name"],
+  rma_options: ["name", "description", "updated_by_name"],
   rma_suppliers: ["name", "contact_name", "notes", "created_by_name", "updated_by_name"],
 };
 

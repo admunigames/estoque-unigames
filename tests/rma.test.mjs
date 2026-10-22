@@ -6,10 +6,11 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // visualiza os da própria loja (AVULSO só a assistência), créditos e descartes
 // fora do alcance da loja.
 
-const db = await setupRouteDb(["shared_state", "rma_cases", "rma_updates", "rma_attachments", "rma_credits", "rma_disposals", "rma_suppliers", "assist_service_orders"]);
+const db = await setupRouteDb(["shared_state", "rma_cases", "rma_updates", "rma_attachments", "rma_credits", "rma_disposals", "rma_suppliers", "rma_options", "assist_service_orders"]);
 const route = await import("../app/api/assistencia/rma/route.ts");
 const cadastros = await import("../app/api/assistencia/rma/cadastros/route.ts");
 const file = await import("../app/api/assistencia/rma/file/route.ts");
+const opcoes = await import("../app/api/assistencia/rma/opcoes/route.ts");
 const { rmaAlerts, parseMoneyCents } = await import("../app/lib/rma.ts");
 
 const A = "clojaalfa1";
@@ -109,4 +110,35 @@ test("anexo importado: só copia da pasta pública do Base44; fora do escopo = 4
   assert.equal((await callRoute(file.POST, LOJA_A, "POST", "/api/assistencia/rma/file", { action: "sync" })).status, 403);
   const sync = await (await callRoute(file.POST, RMA, "POST", "/api/assistencia/rma/file", { action: "sync" })).json();
   assert.deepEqual([sync.copied, sync.failed, sync.pending], [0, ["nf.pdf"], 1]);
+});
+
+test("configurações: padrões, nova opção com cor, renomear atualiza os registros, travadas e prazos", async () => {
+  const CONFIG = { id: "cfg", name: "NAOMI", permissions: ["rma:view", "rma:create", "rma:edit", "rma:config"] };
+  const opt = (method, body) => callRoute(opcoes[method], CONFIG, method, "/api/assistencia/rma/opcoes", body);
+  let list = await (await call(route, CONFIG, "GET")).json();
+  assert.ok(list.options.rma_status.some((o) => o.name === "RECEBIDO"));
+  assert.equal(list.alertDays.staleDays, 7);
+  assert.equal((await callRoute(opcoes.POST, RMA, "POST", "/api/assistencia/rma/opcoes", { category: "rma_status", name: "x" })).status, 403);
+  assert.equal((await opt("POST", { category: "rma_status", name: "em análise técnica", color: "#8B5CF6", sortOrder: 2 })).status, 201);
+  assert.equal((await opt("POST", { category: "rma_status", name: "EM ANÁLISE TÉCNICA" })).status, 409);
+  list = await (await call(route, CONFIG, "GET")).json();
+  const novo = list.options.rma_status.find((o) => o.name === "EM ANÁLISE TÉCNICA");
+  assert.equal(novo.color, "#8b5cf6");
+  assert.equal(list.options.rma_status.length, 11);
+  // Usa o status novo num RMA e depois renomeia: o RMA acompanha.
+  const { id } = await (await call(route, CONFIG, "POST", { arrivalDate: "2026-10-22", supplier: "SONY", productName: "PS5", status: "EM ANÁLISE TÉCNICA" })).json();
+  assert.equal((await opt("PATCH", { id: novo.id, name: "ANÁLISE TÉCNICA", color: "#8b5cf6", sortOrder: 2, active: 1 })).status, 200);
+  assert.equal((await (await call(route, CONFIG, "GET", undefined, `?id=${id}`)).json()).rma.status, "ANÁLISE TÉCNICA");
+  // Travadas: FINALIZADO não muda de nome nem sai; cor pode.
+  const fin = list.options.rma_status.find((o) => o.name === "FINALIZADO");
+  assert.equal((await opt("PATCH", { id: fin.id, name: "ENCERRADO", sortOrder: 1, active: 1 })).status, 409);
+  assert.equal((await opt("DELETE", { id: fin.id })).status, 409);
+  assert.equal((await opt("PATCH", { id: fin.id, name: "FINALIZADO", color: "#059669", sortOrder: 13, active: 1 })).status, 200);
+  // Prazos: padrão gravado na primeira alteração (sem id) e usado nos alertas.
+  assert.equal((await opt("PATCH", { id: "", category: "alert_days", originalName: "SEM_ATUALIZACAO", name: "SEM_ATUALIZACAO", description: "abc", sortOrder: 1, active: 1 })).status, 400);
+  assert.equal((await opt("PATCH", { id: "", category: "alert_days", originalName: "SEM_ATUALIZACAO", name: "SEM_ATUALIZACAO", description: "3", sortOrder: 1, active: 1 })).status, 200);
+  assert.equal((await (await call(route, CONFIG, "GET")).json()).alertDays.staleDays, 3);
+  // Inativa não serve para cadastro novo.
+  assert.equal((await opt("PATCH", { id: novo.id, name: "ANÁLISE TÉCNICA", sortOrder: 2, active: 0 })).status, 200);
+  assert.equal((await call(route, CONFIG, "POST", { arrivalDate: "2026-10-22", supplier: "SONY", productName: "PS5", status: "ANÁLISE TÉCNICA" })).status, 400);
 });

@@ -4793,3 +4793,24 @@ export const rmaSuppliers = pgTable(
   },
   (table) => [index("rma_suppliers_name_idx").on(table.name)],
 );
+
+// RMA > CONFIGURAÇÕES — opções editáveis (status com cor, prioridades, tipos
+// de solução/defeito, motivos de descarte, prazos de alerta…). Categoria sem
+// linhas usa os padrões de app/lib/rma.ts.
+export const rmaOptions = pgTable(
+  "rma_options",
+  {
+    id: text("id").primaryKey(),
+    category: text("category").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    // #RRGGBB ou ''.
+    color: text("color").notNull().default(""),
+    sortOrder: integer("sort_order").notNull().default(0),
+    active: integer("active").notNull().default(1),
+    deleted: integer("deleted").notNull().default(0),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("rma_options_category_idx").on(table.deleted, table.category)],
+);

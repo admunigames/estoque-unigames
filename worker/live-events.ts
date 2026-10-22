@@ -144,7 +144,7 @@ export async function liveInvalidationForRequest(
     return { module: "ordens_servico", audience: { kind: "all" } };
   }
 
-  if (path === "/api/assistencia/rma" || path === "/api/assistencia/rma/cadastros") {
+  if (path === "/api/assistencia/rma" || path === "/api/assistencia/rma/cadastros" || path === "/api/assistencia/rma/opcoes") {
     // RMA ao vivo: cadastro, atualização, crédito e descarte avisam as telas
     // abertas; cada sessão recarrega pela API (escopo de loja). O envio de
     // anexo (em partes) não avisa.
