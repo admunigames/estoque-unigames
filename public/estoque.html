@@ -36940,14 +36940,23 @@ function renderHomeTasks(){
   // Conciliação de Vendas (as duas importam pela mesma rota, mesmo dedupe).
   // Extrato em PDF (texto do pdf.js, uma linha por altura na página). É
   // aproximado — quem importa confere o resumo. Linha de lançamento começa com
-  // a data (DD/MM ou DD/MM/AAAA; sem data = mesmo dia da anterior); o 1º valor
-  // é o lançamento e o último (com 2+) é o saldo. Sinal: "-", "D" ou "C"
-  // escritos; senão a variação do saldo; senão palavras de saída no histórico.
+  // a data (DD/MM, DD/MM/AA ou DD/MM/AAAA; sem data = mesmo dia da anterior);
+  // o 1º valor é o lançamento e o último (com 2+) é o saldo. Sinal: a palavra
+  // Entrada/Saída da linha da data (Stone); senão "-", "D" ou "C" escritos;
+  // senão a variação do saldo; senão palavras de saída no histórico.
   // Linhas de SALDO só atualizam o saldo; TOTAL/RESUMO/LIMITE são ignoradas.
+  // Lançamento em BLOCO (Stone: data + tipo numa linha, nome em 1–2 linhas,
+  // tipo da operação e só depois o valor): a linha com data e sem valor abre o
+  // lançamento, as linhas sem valor entram na descrição e a 1ª linha com valor
+  // fecha. Descrição = nome · tipo; o texto da contraparte depois do saldo, as
+  // linhas soltas da contraparte e o cabeçalho/rodapé de cada página ficam fora.
   function parseBankPdfLines(lines){
     const MONEY = /(-\s?)?(?:R\$\s?)?(\d{1,3}(?:\.\d{3})*,\d{2})(\s?-(?!\d)|\s?[DC]\b)?/g;
     const OUT_WORDS = /\b(PAG(AMENTO|TO)?|PIX ENV(IADO)?|ENVIAD[OA]|TRANSF(ERENCIA)? ENV|TED|DOC|DEBITO|DÉBITO|TARIFA|COMPRA|SAQUE|IOF|JUROS|ENCARGOS?)\b/i;
     const IN_WORDS = /RECEBID[OA]|\bDEP[OÓ]SITO|\bCR[EÉ]DITO|\bESTORNO|\bRENDIMENTO/i;
+    const PAGE_NOISE = /^(EXTRATO DE CONTA CORRENTE|EMITIDO EM\b|P[ÁA]GINA \d+ (DE|\/) \d+|PER[ÍI]ODO\s*:|DATA\s+TIPO\s+DESCRI[ÇC][ÃA]O|DADOS DA CONTA)/i;
+    const COUNTERPART_NOISE = /^(-|INSTITUI[ÇC][ÃA]O DE PAGAMENTOS?|(.*\s)?PAGAMENTOS? S\.?\s?A\.?)$/i;
+    const DIRECTION = /^(ENTRADA|SA[ÍI]DA)\b\s*/i;
     const cents = text => Math.round(Number(text.replace(/\./g, '').replace(',', '.')) * 100);
     const signOf = m => (m[1] || /-|D/.test(m[3] || '')) ? -1 : (/C/.test(m[3] || '') ? 1 : 0);
     const yearHit = lines.join(' ').match(/\b\d{2}\/\d{2}\/(\d{4})\b/);
@@ -36955,28 +36964,16 @@ function renderHomeTasks(){
     const rows = [];
     let balance = null;
     let lastDate = '';
-    for(const raw of lines){
-      const line = String(raw || '').trim();
-      const money = [...line.matchAll(MONEY)];
-      if(!money.length) continue;
-      const balanceOf = m => (signOf(m) || 1) * cents(m[2]);
-      if(/SALDO/i.test(line)){ balance = balanceOf(money[money.length - 1]); continue; }
-      if(/TOTAL|RESUMO|LIMITE/i.test(line)) continue;
-      const dm = line.match(/^(\d{2})\/(\d{2})(?:\/(\d{2}|\d{4}))?\s+/);
-      let entryDate = lastDate;
-      if(dm){
-        const year = dm[3] ? (dm[3].length === 2 ? '20'+dm[3] : dm[3]) : defaultYear;
-        entryDate = year+'-'+dm[2]+'-'+dm[1];
-      }
-      if(!entryDate) continue;
-      lastDate = entryDate;
+    let pending = null; // {entryDate, sign, parts[]}
+    const balanceOf = m => (signOf(m) || 1) * cents(m[2]);
+    const directionSign = word => /^ENTRADA$/i.test(word) ? 1 : -1;
+    // Fecha um lançamento (linha única ou bloco) com o 1º valor e o saldo.
+    const pushEntry = (entryDate, description, money, forcedSign) => {
       const first = money[0];
-      const description = line.slice(dm ? dm[0].length : 0, first.index).replace(/\s+/g, ' ').trim();
-      if(!description) continue;
       const amount = cents(first[2]);
-      if(!amount) continue;
+      if(!description || !amount) return;
       const newBalance = money.length > 1 ? balanceOf(money[money.length - 1]) : null;
-      let sign = signOf(first);
+      let sign = forcedSign || signOf(first);
       if(!sign && balance !== null && newBalance !== null){
         if(newBalance - balance === -amount) sign = -1;
         else if(newBalance - balance === amount) sign = 1;
@@ -36984,6 +36981,55 @@ function renderHomeTasks(){
       if(!sign) sign = IN_WORDS.test(description) ? 1 : (OUT_WORDS.test(description) ? -1 : 1);
       balance = newBalance !== null ? newBalance : (balance !== null ? balance + sign * amount : null);
       rows.push({entryDate, description, amountCents: sign * amount, fitId: ''});
+    };
+    // Nome em várias linhas + tipo da operação na última: "NOME · TIPO".
+    const blockDescription = parts => {
+      const clean = parts.map(p => p.replace(/\s+/g, ' ').trim()).filter(Boolean);
+      if(clean.length < 2) return (clean[0] || '').toUpperCase();
+      return (clean.slice(0, -1).join(' ')+' · '+clean[clean.length - 1]).toUpperCase();
+    };
+    for(const raw of lines){
+      const line = String(raw || '').replace(/\s+/g, ' ').trim();
+      if(!line || PAGE_NOISE.test(line)) continue;
+      const money = [...line.matchAll(MONEY)];
+      const dm = line.match(/^(\d{2})\/(\d{2})(?:\/(\d{2}|\d{4}))?(?:\s+|$)/);
+      let dateOfLine = '';
+      if(dm){
+        const year = dm[3] ? (dm[3].length === 2 ? '20'+dm[3] : dm[3]) : defaultYear;
+        dateOfLine = year+'-'+dm[2]+'-'+dm[1];
+      }
+      if(pending && !dm){
+        if(!money.length){
+          if(!COUNTERPART_NOISE.test(line)) pending.parts.push(line);
+          continue;
+        }
+        const before = line.slice(0, money[0].index).trim();
+        if(before && !COUNTERPART_NOISE.test(before)) pending.parts.push(before);
+        pushEntry(pending.entryDate, blockDescription(pending.parts), money, pending.sign);
+        pending = null;
+        continue;
+      }
+      pending = null; // data nova antes do valor: o bloco anterior ficou incompleto
+      if(!money.length){
+        // Data sem valor: abre o lançamento em bloco.
+        if(dm){
+          lastDate = dateOfLine;
+          let rest = line.slice(dm[0].length).trim();
+          const dir = rest.match(DIRECTION);
+          if(dir) rest = rest.slice(dir[0].length).trim();
+          pending = {entryDate: dateOfLine, sign: dir ? directionSign(dir[1]) : 0, parts: rest ? [rest] : []};
+        }
+        continue;
+      }
+      if(/SALDO/i.test(line)){ balance = balanceOf(money[money.length - 1]); continue; }
+      if(/TOTAL|RESUMO|LIMITE/i.test(line)) continue;
+      const entryDate = dateOfLine || lastDate;
+      if(!entryDate) continue;
+      lastDate = entryDate;
+      let description = line.slice(dm ? dm[0].length : 0, money[0].index).replace(/\s+/g, ' ').trim();
+      const dir = description.match(DIRECTION);
+      if(dir) description = description.slice(dir[0].length).trim().toUpperCase();
+      pushEntry(entryDate, description, money, dir ? directionSign(dir[1]) : 0);
     }
     return rows;
   }

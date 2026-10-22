@@ -5301,6 +5301,26 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
       ["2026-10-05", "TED RECEBIDA ACME", 123456],
       ["2026-10-06", "PAGAMENTO BOLETO LUZ", -30000],
     ]);
+    // Stone: lançamento em BLOCO (data + Entrada/Saída, nome em 1–2 linhas,
+    // tipo e só depois o valor), cabeçalho/rodapé repetidos a cada página.
+    const stone = JSON.parse(await readFile(new URL("./fixtures/stone-extrato-pdf-lines.json", import.meta.url), "utf8"));
+    const stoneRows = parsePdf(stone.lines);
+    assert.equal(stoneRows.length, stone.lines.filter((l) => /^\d{2}\/\d{2}\/\d{2}\s/.test(l)).length);
+    assert.equal(stoneRows.reduce((sum, r) => sum + r.amountCents, 0), stone.finalBalanceCents - stone.initialBalanceCents);
+    const stoneIn = stoneRows.filter((r) => r.amountCents > 0).reduce((s, r) => s + r.amountCents, 0);
+    const stoneOut = stoneRows.filter((r) => r.amountCents < 0).reduce((s, r) => s + r.amountCents, 0);
+    assert.equal(stoneIn, 153574);
+    assert.equal(stoneOut, -153596);
+    assert.deepEqual(stoneRows.map((r) => [r.entryDate, r.description, r.amountCents]), [
+      ["2026-10-16", "OBJETIVA NUCLEO DE SAUDE LTDA · PAGAMENTO", -3500],
+      ["2026-10-16", "TARIFA", -48],
+      ["2026-10-16", "RECEBIMENTO VENDAS · MASTERCARD | CRÉDITO", 120000],
+      ["2026-10-15", "FULANO DE TAL · PIX", -50000],
+      ["2026-10-14", "FULANO DA SILVA · PIX | MAQUININHA", 25000],
+      ["2026-10-10", "FORNECEDOR EXEMPLO COMERCIO LTDA · PAGAMENTO", -100000],
+      ["2026-10-09", "TARIFA", -48],
+      ["2026-10-09", "RECEBIMENTO VENDAS · VISA | DÉBITO", 8574],
+    ]);
     for (const id of ["reconFile", "svBankFile", "rpBankFile"]) assert.match(html, new RegExp(`id="${id}" accept="[^"]*\\.pdf"`), id);
     assert.match(html, /PDF SEM TEXTO \(DIGITALIZADO\?\)/);
     assert.match(html, /CONFIRA COM OS TOTAIS DO EXTRATO ANTES DE IMPORTAR/);
