@@ -16,6 +16,7 @@ import {
   canReconcileInvoices,
   canViewInvoices,
   invoiceEventStatement,
+  isMerchandisePurchaseInvoice,
   loadInstallments,
   loadInvoice,
   loadInvoiceDreView,
@@ -24,6 +25,7 @@ import {
 } from "../../shared";
 import { loadPayable } from "../../../payables/shared";
 import { loadPayableDestination, parseDreDestination, planDreDestination, recalcSlotsSql } from "../../../payables/dre-destination";
+import { noneDestination } from "../../../../../lib/dre-destination";
 import { canSeeAllStores } from "../../../../../lib/access-scope";
 import { effectiveDreAmountCents } from "../../../../../lib/payables-recurrence";
 
@@ -110,6 +112,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     const mode = safeText(body.mode, 20) || "manual";
     let plans: Plan[];
+    let customAmountsUsed = false;
 
     if (mode === "generate") {
       const installmentTotal = Math.trunc(Number(body.installmentTotal));
@@ -131,7 +134,18 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         return jsonResponse({ error: "INFORME UM VALOR VÁLIDO PARA DISTRIBUIR NAS PARCELAS." }, 400);
       }
       const generated = planInstallments({ totalAmountCents: amountCents, installmentTotal, firstDueDate, customDueDates });
-      plans = generated.map((entry) => ({ dueDate: entry.dueDate, amountCents: entry.amountCents, documentNumber: "" }));
+      // Valores digitados parcela a parcela (tabela editável da tela): um por
+      // parcela, todos positivos; a soma é conferida com o total da NF abaixo.
+      const customAmounts = Array.isArray(body.customAmounts) ? body.customAmounts.map((value) => Math.round(Number(value))) : undefined;
+      if (customAmounts && (customAmounts.length !== installmentTotal || customAmounts.some((value) => !Number.isInteger(value) || value <= 0))) {
+        return jsonResponse({ error: "INFORME UM VALOR VÁLIDO PARA CADA PARCELA." }, 400);
+      }
+      customAmountsUsed = Boolean(customAmounts);
+      plans = generated.map((entry, index) => ({
+        dueDate: entry.dueDate,
+        amountCents: customAmounts ? customAmounts[index] : entry.amountCents,
+        documentNumber: "",
+      }));
     } else {
       const dueDate = safeText(body.dueDate, 10);
       if (!DATE_PATTERN.test(dueDate)) return jsonResponse({ error: "INFORME O VENCIMENTO DA DUPLICATA." }, 400);
@@ -145,6 +159,20 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const existing = await loadInstallments(database, id);
     const existingActive = existing.filter((installment) => !installment.canceled);
     const newInstallmentTotal = existingActive.length + plans.length;
+    if (customAmountsUsed) {
+      const distributed =
+        existingActive.reduce((sum, installment) => sum + installment.originalAmountCents, 0) +
+        plans.reduce((sum, plan) => sum + plan.amountCents, 0);
+      if (distributed !== invoice.totalAmountCents) {
+        const brl = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
+        return jsonResponse(
+          {
+            error: `A SOMA DAS PARCELAS (R$ ${brl(distributed)}) É DIFERENTE DO TOTAL DA NF (R$ ${brl(invoice.totalAmountCents)}) — DIFERENÇA DE R$ ${brl(invoice.totalAmountCents - distributed)}.`,
+          },
+          400,
+        );
+      }
+    }
 
     // Decisão de "Incluir na DRE?" (opcional, nível da NF inteira) — quando
     // não vem na requisição, as novas duplicatas ficam com
@@ -172,6 +200,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       destination = parsed.destination;
     } else if (existingPayable?.dreTarget) {
       destination = await loadPayableDestination(database, existingPayable);
+    } else if (!existingActive.length && (await isMerchandisePurchaseInvoice(database, invoice))) {
+      // NF de compra de mercadoria nasce fora da DRE (vira estoque).
+      destination = noneDestination();
     }
     for (const share of destination?.shares ?? []) {
       const shareConflict = await assertSlotAvailableForPayable(database, share.companyId, destination!.itemId, invoice.competenceMonth);

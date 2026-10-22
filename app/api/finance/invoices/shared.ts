@@ -431,3 +431,23 @@ export async function planInvoiceCancel(
   }
   return statements;
 }
+
+/**
+ * NF de COMPRA DE MERCADORIA (veio do pedido de Compras, ou a categoria é de
+ * mercadoria para revenda): nasce FORA da DRE — a mercadoria vira estoque,
+ * não despesa do mês (ajuste do Financeiro, 22/10/2026).
+ */
+export async function isMerchandisePurchaseInvoice(
+  database: Awaited<ReturnType<typeof getD1>>,
+  invoice: Pick<InvoiceRow, "origin" | "purchaseOrderId" | "notionPurchaseId" | "financeCategoryId" | "financeItemId">,
+): Promise<boolean> {
+  if (invoice.origin === "purchase" || invoice.purchaseOrderId || invoice.notionPurchaseId) return true;
+  const names = await database
+    .prepare(
+      `SELECT COALESCE((SELECT name FROM finance_categories WHERE id=?1), '') || ' ' ||
+              COALESCE((SELECT name FROM finance_items WHERE id=?2), '') AS label`,
+    )
+    .bind(invoice.financeCategoryId || "", invoice.financeItemId || "")
+    .first<{ label: string }>();
+  return /MERCADORIA|REVENDA/i.test(names?.label ?? "");
+}

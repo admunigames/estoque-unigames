@@ -19,6 +19,7 @@ import {
   planInvoiceReview,
   purchaseOrderNfAttachmentCopyStatements,
   toInstallmentSnapshot,
+  isMerchandisePurchaseInvoice,
 } from "../shared";
 import { loadPayable } from "../../payables/shared";
 import { canSeeAllStores } from "../../../../lib/access-scope";
@@ -108,6 +109,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       events: events.results ?? [],
       today,
       dre,
+      // NF de compra de mercadoria: a tela abre o destino em NÃO INCLUIR.
+      merchandisePurchase: await isMerchandisePurchaseInvoice(database, invoice),
     });
   } catch (error) {
     console.error("Não foi possível carregar a nota fiscal.", error);

@@ -3724,6 +3724,8 @@
   .rateio-store-row{display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:34px;}
   .rateio-store-row input[type="number"]{width:84px;}
   .cr-batch-table input[data-cr-amount="fee"]{width:72px;}
+  .invoice-plan-sum{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:6px; font-size:12px;}
+  .invoice-plan-sum .is-off{color:#ef6a55; font-weight:700;}
   .finance-batch-table tr.is-error td{background:color-mix(in srgb,#ef6a55 10%,transparent);}
   .finance-batch-table [data-fb-situation]{font-size:11px; min-width:140px;}
   .cr-link-dialog{width:min(980px,calc(100vw - 28px));}
@@ -13784,6 +13786,26 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="invoiceInstallmentEditDialog" aria-labelledby="invoiceInstallmentEditTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="invoiceInstallmentEditTitle">EDITAR DUPLICATA</h3>
+    <button class="purchase-dialog-close" id="btnCloseInvoiceInstallmentEdit" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="invoiceInstallmentEditForm">
+    <input type="hidden" id="invoiceInstallmentEditId">
+    <p class="purchase-field-help">SÓ DUPLICATA AINDA NÃO PAGA. O VENCIMENTO E O VALOR DA CONTA A PAGAR LIGADA MUDAM JUNTO.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="invoiceInstallmentEditDue">VENCIMENTO *</label><input type="date" id="invoiceInstallmentEditDue" required></div>
+      <div class="purchase-field"><label for="invoiceInstallmentEditAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="invoiceInstallmentEditAmount" placeholder="R$ 0,00" required></div>
+    </div>
+    <div class="user-form-status" id="invoiceInstallmentEditStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelInvoiceInstallmentEdit" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="invoiceDetailDialog" aria-labelledby="invoiceDetailDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="invoiceDetailDialogTitle">NOTA FISCAL</h3>
@@ -13804,12 +13826,22 @@
       </div>
       <div class="purchase-field" id="invoiceInstallmentCountField"><label for="invoiceInstallmentCount">QUANTIDADE DE PARCELAS</label><input type="number" id="invoiceInstallmentCount" min="1" max="120" value="1"></div>
       <div class="purchase-field" id="invoiceInstallmentFirstDueField"><label for="invoiceInstallmentFirstDue">1º VENCIMENTO</label><input type="date" id="invoiceInstallmentFirstDue"></div>
+      <div class="purchase-field full" id="invoiceInstallmentPlanField">
+        <label>PARCELAS — CONFIRA E AJUSTE VENCIMENTO E VALOR DE CADA UMA</label>
+        <div class="table-panel responsive-table"><div class="table-scroll"><table>
+          <thead><tr><th>PARCELA</th><th>VENCIMENTO</th><th>VALOR</th></tr></thead>
+          <tbody id="invoiceInstallmentPlanBody"></tbody>
+        </table></div></div>
+        <div class="invoice-plan-sum"><span id="invoiceInstallmentPlanSum" role="status" aria-live="polite"></span>
+          <button class="btn-outline btn-sm" type="button" id="btnInvoiceAdjustLast" hidden>AJUSTAR ÚLTIMA PARCELA</button></div>
+      </div>
       <div class="purchase-field" id="invoiceInstallmentSingleDueField" hidden><label for="invoiceInstallmentSingleDue">VENCIMENTO</label><input type="date" id="invoiceInstallmentSingleDue"></div>
       <div class="purchase-field" id="invoiceInstallmentSingleAmountField" hidden><label for="invoiceInstallmentSingleAmount">VALOR (R$)</label><input type="text" inputmode="decimal" id="invoiceInstallmentSingleAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="invoiceInstallmentPaymentMethod">FORMA DE PAGAMENTO</label><input id="invoiceInstallmentPaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX"></div>
       <div class="purchase-field"><label for="invoiceInstallmentAccount">CONTA FINANCEIRA</label><select id="invoiceInstallmentAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="invoiceInstallmentBoleto">LINHA DIGITÁVEL (BOLETO)</label><input id="invoiceInstallmentBoleto" maxlength="80"></div>
       <div class="purchase-form-section">DESTINO NA DRE</div>
+      <div class="purchase-field full" id="invoiceDreMerchandiseNotice" hidden><span class="status-pill waiting">COMPRA DE MERCADORIA NÃO ENTRA NA DRE</span></div>
       <div data-dre-destination="invoice"></div>
       <div class="purchase-field"><label for="invoiceDreAmount">VALOR NA DRE (R$)</label><input type="text" inputmode="decimal" id="invoiceDreAmount" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><span class="purchase-field-help">Vale pra NF inteira (todas as duplicatas juntas): INCLUIR EM uma loja, RATEAR entre lojas ou NÃO INCLUIR — por exemplo, NF de compra pra revenda vira estoque e não entra na DRE. "CADASTRAR" aplica junto da criação de novas duplicatas; se as duplicatas já existem e você só quer mudar essa decisão, use "SALVAR DECISÃO DA DRE".</span></div>
@@ -44522,6 +44554,7 @@ function renderHomeTasks(){
       '<td><span class="status-pill">'+escapeHtml(INSTALLMENT_STATUS_LABELS[installment.status] || installment.status)+'</span></td>'+
       '<td style="display:flex;gap:6px;flex-wrap:wrap;">'+
         (canAct ? '<button class="btn-outline" type="button" data-installment-pay="'+escapeHtml(installment.id)+'" data-balance="'+balance+'">PAGAR</button>' : '')+
+        (canEdit ? '<button class="btn-outline" type="button" data-installment-edit="'+escapeHtml(installment.id)+'" data-due="'+escapeHtml(installment.dueDate)+'" data-amount="'+installment.originalAmountCents+'">EDITAR</button>' : '')+
         (canEdit ? '<button class="btn-outline" type="button" data-installment-delete="'+escapeHtml(installment.id)+'">EXCLUIR</button>' : '')+
       '</td>'+
     '</tr>';
@@ -44554,7 +44587,13 @@ function renderHomeTasks(){
       : '<tr><td colspan="7" class="responsive-empty">Nenhuma duplicata cadastrada.</td></tr>';
 
     const dre = data.dre || { included: true, amountCents: invoice.totalAmountCents };
-    setDreDestination('invoice', dre.destination || null, {companyId: invoice.companyId, financeItemId: invoice.financeItemId});
+    const activeInstallments = installments.filter(item => !Number(item.canceled));
+    invoicePlanTargetCents = Math.max(0, invoice.totalAmountCents - activeInstallments.reduce((sum, item) => sum + Number(item.originalAmountCents || 0), 0));
+    // NF de compra de mercadoria nasce com NÃO INCLUIR (vira estoque).
+    const merchandiseDefault = data.merchandisePurchase && !activeInstallments.length ? {target:'none', itemId:'', rateioModel:'', shares:[]} : null;
+    setDreDestination('invoice', merchandiseDefault || dre.destination || null, {companyId: invoice.companyId, financeItemId: invoice.financeItemId});
+    el('invoiceDreMerchandiseNotice').hidden = !data.merchandisePurchase;
+    renderInvoiceInstallmentPlan(true);
     setCurrencyValue(el('invoiceDreAmount'), (dre.amountCents || invoice.totalAmountCents) / 100);
     el('invoiceDreAmount').disabled = dreDestinationTarget('invoice') === 'none';
     invoiceDreTouched = false;
@@ -44628,7 +44667,66 @@ function renderHomeTasks(){
     el('invoiceInstallmentFirstDueField').hidden = !isGenerate;
     el('invoiceInstallmentSingleDueField').hidden = isGenerate;
     el('invoiceInstallmentSingleAmountField').hidden = isGenerate;
+    el('invoiceInstallmentPlanField').hidden = !isGenerate;
+    if(isGenerate) renderInvoiceInstallmentPlan(false);
   }
+  // Parcelas da NF antes de cadastrar: divisão igual e meses seguidos já
+  // preenchidos, cada VENCIMENTO e VALOR editável; a soma tem de bater com o
+  // total da NF (menos as duplicatas já cadastradas) — senão bloqueia.
+  let invoicePlanTargetCents = 0;
+  function invoicePlanAddMonths(dateKey, months){
+    const [year, month, day] = String(dateKey).split('-').map(Number);
+    if(!year) return '';
+    const target = new Date(Date.UTC(year, month - 1 + months, 1));
+    const last = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+    target.setUTCDate(Math.min(day, last));
+    return target.toISOString().slice(0, 10);
+  }
+  function renderInvoiceInstallmentPlan(reset){
+    const body = el('invoiceInstallmentPlanBody');
+    const count = Math.max(1, Math.min(120, Number(el('invoiceInstallmentCount').value) || 1));
+    const first = el('invoiceInstallmentFirstDue').value;
+    if(reset || body.rows.length !== count){
+      const base = Math.floor(invoicePlanTargetCents / count);
+      body.innerHTML = Array.from({length: count}, (_v, index) =>
+        '<tr><td data-label="PARCELA">'+(index + 1)+'/'+count+'</td>'+
+        '<td data-label="VENCIMENTO"><input type="date" data-plan-due aria-label="Vencimento da parcela '+(index + 1)+'" value="'+escapeHtml(first ? invoicePlanAddMonths(first, index) : '')+'"></td>'+
+        '<td data-label="VALOR"><input data-plan-amount inputmode="decimal" aria-label="Valor da parcela '+(index + 1)+'"></td></tr>').join('');
+      Array.from(body.querySelectorAll('[data-plan-amount]')).forEach((input, index) => {
+        attachCurrencyMask(input);
+        const cents = index === count - 1 ? invoicePlanTargetCents - base * (count - 1) : base;
+        setCurrencyValue(input, cents / 100);
+      });
+    }
+    updateInvoicePlanSum();
+  }
+  function invoicePlanRows(){
+    return Array.from(el('invoiceInstallmentPlanBody').rows).map(tr => ({
+      dueDate: tr.querySelector('[data-plan-due]').value,
+      amountCents: parseBRLToCents(getCurrencyValue(tr.querySelector('[data-plan-amount]')) || '0') || 0
+    }));
+  }
+  function updateInvoicePlanSum(){
+    const sum = invoicePlanRows().reduce((total, row) => total + row.amountCents, 0);
+    const diff = invoicePlanTargetCents - sum;
+    el('invoiceInstallmentPlanSum').innerHTML = 'SOMA <strong>'+formatCentsBRL(sum)+'</strong> · TOTAL A DISTRIBUIR <strong>'+formatCentsBRL(invoicePlanTargetCents)+'</strong>'+
+      (diff ? ' · <span class="is-off">DIFERENÇA '+formatCentsBRL(diff)+'</span>' : ' · OK');
+    el('btnInvoiceAdjustLast').hidden = !diff;
+    return diff;
+  }
+  el('invoiceInstallmentCount').addEventListener('input', () => renderInvoiceInstallmentPlan(true));
+  el('invoiceInstallmentFirstDue').addEventListener('change', () => renderInvoiceInstallmentPlan(true));
+  el('invoiceInstallmentPlanBody').addEventListener('input', updateInvoicePlanSum);
+  el('btnInvoiceAdjustLast').addEventListener('click', () => {
+    const inputs = el('invoiceInstallmentPlanBody').querySelectorAll('[data-plan-amount]');
+    const last = inputs[inputs.length - 1];
+    if(!last) return;
+    const diff = updateInvoicePlanSum();
+    const next = (parseBRLToCents(getCurrencyValue(last) || '0') || 0) + diff;
+    if(next <= 0){ showPurchaseToast('A ÚLTIMA PARCELA FICARIA ZERADA OU NEGATIVA — AJUSTE AS OUTRAS.', 'error'); return; }
+    setCurrencyValue(last, next / 100);
+    updateInvoicePlanSum();
+  });
   document.querySelectorAll('input[name="invoiceInstallmentMode"]').forEach(input => {
     input.addEventListener('change', updateInvoiceInstallmentModeFields);
   });
@@ -44778,8 +44876,16 @@ function renderHomeTasks(){
         boletoCode: el('invoiceInstallmentBoleto').value
       };
       if(mode === 'generate'){
-        body.installmentTotal = Number(el('invoiceInstallmentCount').value) || 1;
-        body.firstDueDate = el('invoiceInstallmentFirstDue').value;
+        const plan = invoicePlanRows();
+        if(plan.some(row => !row.dueDate)) throw new Error('INFORME O VENCIMENTO DE TODAS AS PARCELAS.');
+        if(plan.some(row => row.amountCents <= 0)) throw new Error('INFORME O VALOR DE TODAS AS PARCELAS.');
+        const diff = updateInvoicePlanSum();
+        if(diff) throw new Error('A SOMA DAS PARCELAS NÃO BATE COM O TOTAL DA NF (DIFERENÇA '+formatCentsBRL(diff)+') — USE "AJUSTAR ÚLTIMA PARCELA".');
+        body.installmentTotal = plan.length;
+        body.firstDueDate = plan[0].dueDate;
+        body.customDueDates = plan.map(row => row.dueDate);
+        body.customAmounts = plan.map(row => row.amountCents);
+        body.amountCents = invoicePlanTargetCents;
       }else{
         body.dueDate = el('invoiceInstallmentSingleDue').value;
         const amountCents = parseBRLToCents(getCurrencyValue(el('invoiceInstallmentSingleAmount')));
@@ -44850,6 +44956,15 @@ function renderHomeTasks(){
       el('invoicePaymentDialog').showModal();
       return;
     }
+    const editButton = event.target.closest('[data-installment-edit]');
+    if(editButton){
+      el('invoiceInstallmentEditId').value = editButton.dataset.installmentEdit;
+      el('invoiceInstallmentEditDue').value = editButton.dataset.due || '';
+      setCurrencyValue(el('invoiceInstallmentEditAmount'), Number(editButton.dataset.amount || 0) / 100);
+      el('invoiceInstallmentEditStatus').textContent = '';
+      el('invoiceInstallmentEditDialog').showModal();
+      return;
+    }
     const deleteButton = event.target.closest('[data-installment-delete]');
     if(deleteButton){
       if(!await askConfirm('Excluir esta duplicata?')) return;
@@ -44862,6 +44977,26 @@ function renderHomeTasks(){
     }
   });
 
+  attachCurrencyMask(el('invoiceInstallmentEditAmount'));
+  el('btnCloseInvoiceInstallmentEdit').addEventListener('click', () => el('invoiceInstallmentEditDialog').close());
+  el('btnCancelInvoiceInstallmentEdit').addEventListener('click', () => el('invoiceInstallmentEditDialog').close());
+  el('invoiceInstallmentEditForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('invoiceInstallmentEditStatus');
+    const amountCents = parseBRLToCents(getCurrencyValue(el('invoiceInstallmentEditAmount')));
+    if(!amountCents){ status.textContent = 'INFORME UM VALOR VÁLIDO.'; return; }
+    if(!el('invoiceInstallmentEditDue').value){ status.textContent = 'INFORME O VENCIMENTO.'; return; }
+    try{
+      await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments/'+encodeURIComponent(el('invoiceInstallmentEditId').value), {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({dueDate: el('invoiceInstallmentEditDue').value, originalAmountCents: amountCents})
+      });
+      el('invoiceInstallmentEditDialog').close();
+      showPurchaseToast('Duplicata atualizada.');
+      await openInvoiceDetailDialog(invoiceCurrentDetailId);
+      await refreshAfterAction(() => loadInvoicesList({silent:true}));
+    }catch(error){ status.textContent = error.message; }
+  });
   el('btnCloseInvoicePaymentDialog') && el('btnCloseInvoicePaymentDialog').addEventListener('click', () => el('invoicePaymentDialog').close());
   el('btnCancelInvoicePayment') && el('btnCancelInvoicePayment').addEventListener('click', () => el('invoicePaymentDialog').close());
   el('invoicePaymentDialog') && el('invoicePaymentDialog').addEventListener('click', event => {
