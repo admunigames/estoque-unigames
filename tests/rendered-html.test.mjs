@@ -3193,7 +3193,11 @@ test("Financeiro Fase 3: Fornecedores em Aberto e Conta Corrente do Fornecedor",
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0034_supplier_open_debts.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/supplier-debts/shared.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/supplier-debts/route.ts", import.meta.url), "utf8"),
+    // O cadastro (validação + INSERTs) mora em create.ts, usado pelo POST e pelo lote.
+    Promise.all([
+      readFile(new URL("../app/api/finance/supplier-debts/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/supplier-debts/create.ts", import.meta.url), "utf8"),
+    ]).then((parts) => parts.join("\n")),
     readFile(new URL("../app/api/finance/supplier-debts/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/supplier-debts/[id]/cancel/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/supplier-debts/dashboard/route.ts", import.meta.url), "utf8"),
