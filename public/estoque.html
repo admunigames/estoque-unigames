@@ -7711,7 +7711,7 @@
         <div class="table-panel responsive-table com-edit-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Loja</th><th>Meta de vendas (R$)</th><th>Vendas feitas (R$)</th><th style="text-align:right">Meta assistência</th><th style="text-align:right">Assistência feita</th><th style="text-align:right">Meta total da loja</th><th style="text-align:right">Total feito</th><th style="text-align:right">% total ÷ meta</th><th>Indicação (qtd.)</th><th>R$ de indicação</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th><th>Meta realme</th><th>Realmes feito</th><th style="text-align:right">% realmes</th></tr></thead>
+              <thead><tr><th>Loja</th><th>Meta de vendas (R$)</th><th>Vendas feitas (R$)</th><th>Meta assistência (R$)</th><th>Assistência feita (R$)</th><th style="text-align:right">Meta total da loja</th><th style="text-align:right">Total feito</th><th style="text-align:right">% total ÷ meta</th><th>Indicação (qtd.)</th><th>R$ de indicação</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th><th>Meta realme</th><th>Realmes feito</th><th style="text-align:right">% realmes</th></tr></thead>
               <tbody id="comStoreGoalsBody"><tr><td colspan="16" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
@@ -7735,19 +7735,10 @@
       </div>
 
       <div class="com-view-panel" id="comViewAssistencia" hidden>
-        <!-- Meta Assistência (comercial:assist_view ver / comercial:assist
-             editar): META e FEITO DA ASSISTÊNCIA de cada loja no mês — base da
-             comissão do OPERACIONAL e do prêmio do LÍDER (loja E assistência
-             em 120%). Embaixo, o painel comparativo (como o Base44 da UNITEC). -->
+        <!-- Meta Assistência (comercial:assist_view): SÓ O PAINEL comparativo
+             da assistência (como o Base44 da UNITEC). A META e o FEITO DA
+             ASSISTÊNCIA são lançados na Meta Loja, ao lado das vendas. -->
         <div class="com-total" id="comAssistTotal" hidden></div>
-        <div class="table-panel responsive-table com-edit-table">
-          <div class="table-scroll">
-            <table>
-              <thead><tr><th>Loja</th><th>Meta da assistência (R$)</th><th>Feito da assistência (R$)</th><th style="text-align:right">% feito ÷ meta</th></tr></thead>
-              <tbody id="comAssistBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
-            </table>
-          </div>
-        </div>
         <div class="com-assist-dash" id="comAssistDash"></div>
       </div>
 
@@ -10495,8 +10486,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:stores"> EDITAR META LOJA</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:weekend_view"> VER META DO FIM DE SEMANA</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:weekend"> EDITAR META DO FIM DE SEMANA</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:assist_view"> VER META ASSISTÊNCIA</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:assist"> EDITAR META ASSISTÊNCIA</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:assist_view"> VER META ASSISTÊNCIA (PAINEL; O LANÇAMENTO É NA META LOJA)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules_view"> VER REGRAS DE COMISSÃO</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:rules"> CADASTRO DE REGRAS DE COMISSÃO</label>
               </div>
@@ -52073,8 +52063,13 @@ function renderHomeTasks(){
   });
 
   // ----- Meta Loja + painel visual das lojas (Dashboard, só %) -----
-  // TOTAL DA LOJA = vendas (Meta Loja) + assistência (Meta Assistência).
+  // TOTAL DA LOJA = vendas + assistência. Linha ASSISTÊNCIA: meta própria e
+  // feito = soma da assistência de todas as lojas.
   function comStoreTotal(store){
+    if(store.assistanceHub) return {
+      targetCents: Number(store.targetCents) || 0,
+      revenueCents: (comStores ? comStores.rows : []).reduce((sum, row) => sum + (row.assistanceHub ? 0 : Number(row.assistRevenueCents) || 0), 0)
+    };
     return {
       targetCents: (Number(store.targetCents) || 0) + (Number(store.assistTargetCents) || 0),
       revenueCents: (Number(store.revenueCents) || 0) + (Number(store.assistRevenueCents) || 0)
@@ -52082,14 +52077,20 @@ function renderHomeTasks(){
   }
 
   function comStoreRowHtml(store){
-    return '<tr data-com-store="'+escapeHtml(store.companyId)+'">'+
-      '<td data-label="Loja" class="nome"><strong>'+escapeHtml(store.name)+'</strong></td>'+
-      // Meta Loja = só VENDAS; a assistência vem da aba Meta Assistência (só
-      // leitura aqui) e o TOTAL DA LOJA (vendas + assistência) é o que vale.
-      '<td data-label="Meta de vendas (R$)">'+comMoneyInput('targetCents', store.targetCents, 'Meta de vendas da loja')+'</td>'+
-      '<td data-label="Vendas feitas (R$)">'+comMoneyInput('revenueCents', store.revenueCents, 'Vendas feitas pela loja')+'</td>'+
-      '<td data-label="Meta assistência" class="calc" style="text-align:right">'+escapeHtml(formatCentsBRL(store.assistTargetCents || 0))+'</td>'+
-      '<td data-label="Assistência feita" class="calc" style="text-align:right">'+escapeHtml(formatCentsBRL(store.assistRevenueCents || 0))+'</td>'+
+    const total = comStoreTotal(store);
+    // Linha ASSISTÊNCIA: só a meta (digitada); o feito soma a assistência das lojas.
+    const cells = store.assistanceHub
+      ? '<td data-label="Meta de vendas (R$)" class="calc">—</td><td data-label="Vendas feitas (R$)" class="calc">—</td>'+
+        '<td data-label="Meta assistência (R$)">'+comMoneyInput('targetCents', store.targetCents, 'Meta da assistência (todas as lojas)')+'</td>'+
+        '<td data-label="Assistência feita (soma das lojas)" class="calc" style="text-align:right" data-com-calc="hubRevenue">'+escapeHtml(formatCentsBRL(total.revenueCents))+'</td>'
+      // Lojas: VENDAS e ASSISTÊNCIA lado a lado; o TOTAL DA LOJA soma as duas.
+      : '<td data-label="Meta de vendas (R$)">'+comMoneyInput('targetCents', store.targetCents, 'Meta de vendas da loja')+'</td>'+
+        '<td data-label="Vendas feitas (R$)">'+comMoneyInput('revenueCents', store.revenueCents, 'Vendas feitas pela loja')+'</td>'+
+        '<td data-label="Meta assistência (R$)">'+comMoneyInput('assistTargetCents', store.assistTargetCents, 'Meta da assistência da loja')+'</td>'+
+        '<td data-label="Assistência feita (R$)">'+comMoneyInput('assistRevenueCents', store.assistRevenueCents, 'Assistência feita pela loja')+'</td>';
+    return '<tr data-com-store="'+escapeHtml(store.companyId)+'"'+(store.assistanceHub ? ' data-com-hub="1"' : '')+'>'+
+      '<td data-label="Loja" class="nome"><strong>'+escapeHtml(store.name)+'</strong>'+(store.assistanceHub ? '<br><small>FORA DO TOTAL DAS LOJAS</small>' : '')+'</td>'+
+      cells+
       '<td data-label="Meta total da loja" class="calc" style="text-align:right" data-com-calc="storeTotalTarget">'+escapeHtml(formatCentsBRL(comStoreTotal(store).targetCents))+'</td>'+
       '<td data-label="Total feito" class="calc" style="text-align:right" data-com-calc="storeTotalRevenue">'+escapeHtml(formatCentsBRL(comStoreTotal(store).revenueCents))+'</td>'+
       '<td data-label="% total ÷ meta" class="calc" style="text-align:right" data-com-calc="storePct">'+escapeHtml(comFormatPct(comShare(comStoreTotal(store).revenueCents, comStoreTotal(store).targetCents)))+'</td>'+
@@ -52109,7 +52110,7 @@ function renderHomeTasks(){
     if(!total || !comStores) return;
     // Total em R$ só para quem alcança todas as lojas (o servidor manda `total`).
     if(!comStores.total){ total.hidden = true; return; }
-    const sum = comStores.rows.map(comStoreTotal).reduce((acc, row) => row.targetCents > 0 ? {target: acc.target + row.targetCents, revenue: acc.revenue + row.revenueCents} : acc, {target:0, revenue:0});
+    const sum = comStores.rows.filter(row => !row.assistanceHub).map(comStoreTotal).reduce((acc, row) => row.targetCents > 0 ? {target: acc.target + row.targetCents, revenue: acc.revenue + row.revenueCents} : acc, {target:0, revenue:0});
     total.innerHTML = '<span>Total das lojas (vendas + assistência) · '+escapeHtml(formatCentsBRL(sum.revenue)+' de '+formatCentsBRL(sum.target))+'</span>'+
       '<strong>'+escapeHtml(comFormatPct(comShare(sum.revenue, sum.target)))+'</strong>';
     total.hidden = false;
@@ -52141,15 +52142,18 @@ function renderHomeTasks(){
     if(!row || !event.target.matches('[data-com-field]')) return;
     const field = name => row.querySelector('[data-com-field="'+name+'"],[data-com-calc="'+name+'"]');
     const store = comStores && comStores.rows.find(item => item.companyId === row.dataset.comStore);
+    const hub = Boolean(store && store.assistanceHub);
     const targetCents = comMoneyCents(field('targetCents'));
-    const revenueCents = comMoneyCents(field('revenueCents'));
+    const revenueCents = hub ? 0 : comMoneyCents(field('revenueCents'));
+    const assistTargetCents = hub ? 0 : comMoneyCents(field('assistTargetCents'));
+    const assistRevenueCents = hub ? 0 : comMoneyCents(field('assistRevenueCents'));
     const targetItems = Math.round(Number(field('targetItems').value || 0));
     const items = Math.round(Number(field('items').value || 0));
     const targetRealme = Math.round(Number(field('targetRealme').value || 0));
     const realme = Math.round(Number(field('realme').value || 0));
     const indicationQty = Math.round(Number(field('indicationQty').value || 0));
     const indicationCents = comMoneyCents(field('indicationCents'));
-    if(targetCents === null || revenueCents === null || indicationCents === null || ![targetItems, items, targetRealme, realme, indicationQty].every(value => value >= 0)){
+    if(targetCents === null || revenueCents === null || assistTargetCents === null || assistRevenueCents === null || indicationCents === null || ![targetItems, items, targetRealme, realme, indicationQty].every(value => value >= 0)){
       showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
       return;
     }
@@ -52162,11 +52166,24 @@ function renderHomeTasks(){
       store.realme = realme;
       store.indicationQty = indicationQty;
       store.indicationCents = indicationCents;
+      if(!hub){
+        store.assistTargetCents = assistTargetCents;
+        store.assistRevenueCents = assistRevenueCents;
+      }
     }
-    const storeTotal = comStoreTotal({...store, targetCents, revenueCents});
+    const storeTotal = comStoreTotal({...store, targetCents, revenueCents, assistTargetCents, assistRevenueCents});
     field('storeTotalTarget').textContent = formatCentsBRL(storeTotal.targetCents);
     field('storeTotalRevenue').textContent = formatCentsBRL(storeTotal.revenueCents);
     field('storePct').textContent = comFormatPct(comShare(storeTotal.revenueCents, storeTotal.targetCents));
+    // A linha ASSISTÊNCIA acompanha a assistência feita pelas lojas.
+    const hubRow = el('comStoreGoalsBody').querySelector('tr[data-com-hub]');
+    const hubStore = hubRow && comStores.rows.find(item => item.assistanceHub);
+    if(hubRow && hubStore){
+      const hubTotal = comStoreTotal(hubStore);
+      hubRow.querySelector('[data-com-calc="hubRevenue"]').textContent = formatCentsBRL(hubTotal.revenueCents);
+      hubRow.querySelector('[data-com-calc="storeTotalRevenue"]').textContent = formatCentsBRL(hubTotal.revenueCents);
+      hubRow.querySelector('[data-com-calc="storePct"]').textContent = comFormatPct(comShare(hubTotal.revenueCents, hubTotal.targetCents));
+    }
     field('storeItemsPct').textContent = comFormatPct(comShare(items, targetItems));
     field('storeRealmePct').textContent = comFormatPct(comShare(realme, targetRealme));
     comRenderStoreGoalsTotal();
@@ -52174,7 +52191,7 @@ function renderHomeTasks(){
     row.classList.add('saving');
     comQueueSave('store:'+row.dataset.comStore, async () => {
       try{
-        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme, indicationQty, indicationCents})});
+        await comApi('/stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId: row.dataset.comStore, targetCents, revenueCents, targetItems, items, targetRealme, realme, indicationQty, indicationCents, assistTargetCents, assistRevenueCents})});
         comOverview = null;
         row.classList.add('saved');
       }catch(error){
@@ -52185,10 +52202,10 @@ function renderHomeTasks(){
     });
   });
 
-  // ----- Meta Assistência (comercial:assist_view / comercial:assist) -----
-  // Rota própria (/assistance): grava só META e FEITO DA ASSISTÊNCIA. Embaixo
-  // da tabela, o painel comparativo: destaques, ranking, acompanhamento por
-  // loja (faltando e diária necessária), meta 120% e o mês anterior.
+  // ----- Meta Assistência (comercial:assist_view) — só o painel -----
+  // Lê /assistance (o lançamento é na Meta Loja): destaques, ranking,
+  // acompanhamento por loja (faltando e diária necessária), meta 120% e o
+  // mês anterior.
   let comAssist = null;
 
   // Cartão de acompanhamento (meta, realizado, faltando, diária necessária e
@@ -52223,10 +52240,12 @@ function renderHomeTasks(){
   function comAssistTotals(){
     const sum = (key) => comAssistStores().reduce((total, row) => total + row[key], 0);
     const all = (comAssist ? comAssist.rows : []);
+    // Meta da rede: a da linha ASSISTÊNCIA da Meta Loja, quando lançada;
+    // senão, a soma das metas das lojas. O feito é sempre a soma das lojas.
     return {
       name: 'EMPRESA',
-      targetCents: sum('targetCents'), revenueCents: sum('revenueCents'),
-      previousTargetCents: all.reduce((total, row) => total + row.previousTargetCents, 0),
+      targetCents: comAssist.companyTargetCents || sum('targetCents'), revenueCents: sum('revenueCents'),
+      previousTargetCents: comAssist.previousCompanyTargetCents || all.reduce((total, row) => total + row.previousTargetCents, 0),
       previousRevenueCents: all.reduce((total, row) => total + row.previousRevenueCents, 0)
     };
   }
@@ -52246,7 +52265,7 @@ function renderHomeTasks(){
     const stores = comAssistStores()
       .map(row => ({...row, percent: comShare(row.revenueCents, row.targetCents)}))
       .sort((a, b) => (b.percent ?? -1) - (a.percent ?? -1) || a.name.localeCompare(b.name, 'pt-BR'));
-    if(!stores.length){ box.innerHTML = '<p class="com-empty">Lance a meta e o feito da assistência acima para ver o comparativo.</p>'; return; }
+    if(!stores.length){ box.innerHTML = '<p class="com-empty">Lance a meta e o feito da assistência de cada loja na aba Meta Loja para ver o comparativo.</p>'; return; }
     const company = comAssistTotals();
     company.percent = comShare(company.revenueCents, company.targetCents);
     const clock = comAssist.clock;
@@ -52299,18 +52318,7 @@ function renderHomeTasks(){
   }
 
   function comRenderAssist(){
-    const body = el('comAssistBody');
-    if(!body || !comAssist) return;
-    const rows = comAssist.rows || [];
-    body.innerHTML = rows.length ? rows.map(store =>
-      '<tr data-com-assist-store="'+escapeHtml(store.companyId)+'">'+
-        '<td data-label="Loja" class="nome"><strong>'+escapeHtml(store.name)+'</strong></td>'+
-        '<td data-label="Meta da assistência (R$)">'+comMoneyInput('assistTargetCents', store.targetCents, 'Meta da assistência')+'</td>'+
-        '<td data-label="Feito da assistência (R$)">'+comMoneyInput('assistRevenueCents', store.revenueCents, 'Feito da assistência')+'</td>'+
-        '<td data-label="% feito ÷ meta" class="calc" style="text-align:right" data-com-calc="assistPct">'+escapeHtml(comFormatPct(comShare(store.revenueCents, store.targetCents)))+'</td></tr>').join('')
-      : '<tr><td colspan="4" class="responsive-empty">Nenhuma loja no seu alcance.</td></tr>';
-    comMaskMoney(body);
-    comLock(body, !comAssist.canEdit);
+    if(!comAssist) return;
     comRenderAssistTotal();
     comRenderAssistDash();
   }
@@ -52320,47 +52328,11 @@ function renderHomeTasks(){
       comAssist = await comApi('/assistance?month='+encodeURIComponent(comMonth));
     }catch(error){
       comAssist = null;
-      if(el('comAssistBody')) el('comAssistBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-      if(el('comAssistDash')) el('comAssistDash').innerHTML = '';
+      if(el('comAssistDash')) el('comAssistDash').innerHTML = '<p class="com-empty">'+escapeHtml(error.message)+'</p>';
       return;
     }
     comRenderAssist();
   }
-
-  if(el('comAssistBody')) el('comAssistBody').addEventListener('change', event => {
-    const row = event.target.closest('tr[data-com-assist-store]');
-    if(!row || !event.target.matches('[data-com-field]') || !comAssist) return;
-    const store = comAssist.rows.find(item => item.companyId === row.dataset.comAssistStore);
-    if(!store) return;
-    const assistTargetCents = comMoneyCents(row.querySelector('[data-com-field="assistTargetCents"]'));
-    const assistRevenueCents = comMoneyCents(row.querySelector('[data-com-field="assistRevenueCents"]'));
-    if(assistTargetCents === null || assistRevenueCents === null){
-      showPurchaseToast('META E FEITO PRECISAM SER POSITIVOS (OU ZERO).');
-      return;
-    }
-    store.targetCents = assistTargetCents;
-    store.revenueCents = assistRevenueCents;
-    row.querySelector('[data-com-calc="assistPct"]').textContent = comFormatPct(comShare(assistRevenueCents, assistTargetCents));
-    comRenderAssistTotal();
-    comRenderAssistDash();
-    row.classList.remove('saved');
-    row.classList.add('saving');
-    const companyId = store.companyId;
-    comQueueSave('assist:'+companyId, async () => {
-      try{
-        await comApi('/assistance', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, companyId, assistTargetCents, assistRevenueCents})});
-        store.updatedAt = new Date().toISOString();
-        store.updatedByName = currentSession.displayName || '';
-        comRenderAssistDash();
-        comOverview = null;
-        row.classList.add('saved');
-      }catch(error){
-        showPurchaseToast(error.message);
-      }finally{
-        row.classList.remove('saving');
-      }
-    });
-  });
 
   // ----- Meta do Fim de Semana (comercial:stores) — só controle -----
   // Fim de semana = SEXTA a DOMINGO, guardado pela SEXTA; o seletor lista

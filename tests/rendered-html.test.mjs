@@ -4544,10 +4544,13 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /'comercial:rules':'Comercial: Cadastro de Regras de Comissão'/);
   assert.doesNotMatch(html, /value="comercial:(view|manage)"/);
   // VER e EDITAR por aba (2026-10-16).
-  for (const permission of ["ranking", "goals_view", "credit_view", "stores_view", "weekend_view", "weekend", "assist_view", "assist", "rules_view"]) {
+  for (const permission of ["ranking", "goals_view", "credit_view", "stores_view", "weekend_view", "weekend", "assist_view", "rules_view"]) {
     assert.match(html, new RegExp(`name="userPermission" value="comercial:${permission}"`));
     assert.match(workerSource, new RegExp(`"comercial:${permission}",`));
   }
+  // Assistência é lançada na Meta Loja (22/10/2026): a aba é só o painel (ver).
+  assert.doesNotMatch(html, /name="userPermission" value="comercial:assist"/);
+  assert.doesNotMatch(html, /id="comAssistBody"/);
   assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:ranking",/);
   // Filtro OPERACIONAL ao lado do Vendedor (18/10/2026): escolhido, só ele aparece.
   assert.match(html, /id="comSellerFilter">[\s\S]*?<\/div>\s*<div class="field" id="comOperationalField" hidden>\s*<label for="comOperationalFilter">Operacional<\/label>/);

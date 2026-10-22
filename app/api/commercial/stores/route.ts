@@ -1,7 +1,7 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { NO_COMPANY_ERROR } from "../../../lib/access-scope";
-import { MONTH_PATTERN, progressPercent } from "../../../lib/commercial";
+import { MONTH_PATTERN, isAssistanceHub, progressPercent } from "../../../lib/commercial";
 import { todayInTimezone } from "../../../lib/finance-status";
 import {
   actorName,
@@ -28,15 +28,17 @@ import {
 //                loja com meta e o % da rede (nenhum R$). Quem tem
 //                comercial:stores_view (ver) ou comercial:stores (editar,
 //                canManage) recebe também os valores das lojas do seu
-//                alcance (`rows`: vendas editáveis, assistência só leitura e
-//                o total); o total em R$ só com todas.
+//                alcance (`rows`: vendas e assistência e o total); o total
+//                em R$ só com todas. Linha ASSISTÊNCIA (isAssistanceHub): meta
+//                à mão, feito = soma da assistência das lojas, fora do total.
 //                `itemStores` = itens e realmes de cada loja (quantidades,
 //                gráficos ITENS/REALMES TOTAIS POR LOJA do Ranking) — para todos.
 //                INDICAÇÃO (quantidade) e R$ DE INDICAÇÃO só em `rows` (só controle).
 //   PUT {month, companyId, targetCents, revenueCents, targetItems, items, targetRealme, realme,
-//        indicationQty, indicationCents} → comercial:stores, só lojas do alcance de quem
-//       lança. Recalcula a comissão de líderes e operacionais no RH. META/FEITO
-//       DA ASSISTÊNCIA ficam na rota /assistance (não são tocados aqui).
+//        assistTargetCents, assistRevenueCents, indicationQty, indicationCents} →
+//       comercial:stores, só lojas do alcance de quem lança. Recalcula a
+//       comissão de líderes e operacionais no RH. A aba Meta Assistência virou
+//       só o painel (lê estes mesmos campos).
 
 type GoalRow = {
   companyId: string; targetCents: number; revenueCents: number;
@@ -69,16 +71,26 @@ export async function GET(request: Request) {
       loadCompanyNames(database),
     ]);
     const goals = new Map((result.results ?? []).map((row) => [row.companyId, row]));
-    // TOTAL DA LOJA = vendas (Meta Loja) + assistência (Meta Assistência).
-    const totalOf = (goal: GoalRow | undefined) => ({
-      targetCents: (Number(goal?.targetCents) || 0) + (Number(goal?.assistTargetCents) || 0),
-      revenueCents: (Number(goal?.revenueCents) || 0) + (Number(goal?.assistRevenueCents) || 0),
-    });
+    const hubs = new Set([...companyNames.entries()].filter(([, name]) => isAssistanceHub(name)).map(([companyId]) => companyId));
+    // Feito da linha ASSISTÊNCIA = soma da assistência das lojas.
+    const assistanceDone = [...goals.values()].reduce((sum, goal) => sum + (Number(goal.assistRevenueCents) || 0), 0);
+    // TOTAL DA LOJA = vendas + assistência (a linha ASSISTÊNCIA: meta própria e feito somado).
+    const totalOf = (companyId: string) => {
+      const goal = goals.get(companyId);
+      return hubs.has(companyId)
+        ? { targetCents: Number(goal?.targetCents) || 0, revenueCents: assistanceDone }
+        : {
+          targetCents: (Number(goal?.targetCents) || 0) + (Number(goal?.assistTargetCents) || 0),
+          revenueCents: (Number(goal?.revenueCents) || 0) + (Number(goal?.assistRevenueCents) || 0),
+        };
+    };
     const withTarget = [...companyNames.entries()]
-      .map(([companyId, name]) => ({ companyId, name, total: totalOf(goals.get(companyId)) }))
+      .map(([companyId, name]) => ({ companyId, name, total: totalOf(companyId) }))
       .filter((store) => store.total.targetCents > 0);
-    const targetSum = withTarget.reduce((sum, store) => sum + store.total.targetCents, 0);
-    const revenueSum = withTarget.reduce((sum, store) => sum + store.total.revenueCents, 0);
+    // A linha ASSISTÊNCIA fica fora da soma da rede (já está em cada loja).
+    const network = withTarget.filter((store) => !hubs.has(store.companyId));
+    const targetSum = network.reduce((sum, store) => sum + store.total.targetCents, 0);
+    const revenueSum = network.reduce((sum, store) => sum + store.total.revenueCents, 0);
     const items = withTarget
       .map((store) => ({
         companyId: store.companyId,
@@ -109,17 +121,17 @@ export async function GET(request: Request) {
         .map(([companyId, name]) => ({
           companyId,
           name,
+          assistanceHub: hubs.has(companyId),
           targetCents: Number(goals.get(companyId)?.targetCents) || 0,
-          revenueCents: Number(goals.get(companyId)?.revenueCents) || 0,
+          revenueCents: hubs.has(companyId) ? assistanceDone : Number(goals.get(companyId)?.revenueCents) || 0,
           targetItems: Number(goals.get(companyId)?.targetItems) || 0,
           items: Number(goals.get(companyId)?.items) || 0,
           targetRealme: Number(goals.get(companyId)?.targetRealme) || 0,
           realme: Number(goals.get(companyId)?.realme) || 0,
           indicationQty: Number(goals.get(companyId)?.indicationQty) || 0,
           indicationCents: Number(goals.get(companyId)?.indicationCents) || 0,
-          // Só leitura aqui (lançadas na Meta Assistência).
-          assistTargetCents: Number(goals.get(companyId)?.assistTargetCents) || 0,
-          assistRevenueCents: Number(goals.get(companyId)?.assistRevenueCents) || 0,
+          assistTargetCents: hubs.has(companyId) ? 0 : Number(goals.get(companyId)?.assistTargetCents) || 0,
+          assistRevenueCents: hubs.has(companyId) ? 0 : Number(goals.get(companyId)?.assistRevenueCents) || 0,
         }));
       if (scope.allStores) body.total = { targetCents: targetSum, revenueCents: revenueSum };
     }
@@ -152,8 +164,10 @@ export async function PUT(request: Request) {
     const realme = nonNegativeInt(body.realme ?? 0);
     const indicationQty = nonNegativeInt(body.indicationQty ?? 0);
     const indicationCents = nonNegativeInt(body.indicationCents ?? 0);
+    let assistTargetCents = nonNegativeInt(body.assistTargetCents ?? 0);
+    let assistRevenueCents = nonNegativeInt(body.assistRevenueCents ?? 0);
     if (!MONTH_PATTERN.test(month)) return jsonResponse({ error: "MÊS INVÁLIDO." }, 400);
-    if ([targetCents, revenueCents, targetItems, items, targetRealme, realme, indicationQty, indicationCents].some((value) => value === null)) {
+    if ([targetCents, revenueCents, targetItems, items, targetRealme, realme, indicationQty, indicationCents, assistTargetCents, assistRevenueCents].some((value) => value === null)) {
       return jsonResponse({ error: "META E FEITO PRECISAM SER POSITIVOS (OU ZERO)." }, 400);
     }
     const database = await getD1();
@@ -161,21 +175,38 @@ export async function PUT(request: Request) {
     if (!companyNames.has(companyId) || (!scope.allStores && companyId !== scope.companyId)) {
       return jsonResponse({ error: "LOJA NÃO ENCONTRADA." }, 404);
     }
+    // Linha ASSISTÊNCIA: só a meta (o feito é calculado).
+    const hub = isAssistanceHub(companyNames.get(companyId) || "");
+    if (hub) assistTargetCents = assistRevenueCents = 0;
+    // "Atualizado em" do painel da assistência só muda se a assistência mudou.
+    const before = await database
+      .prepare("SELECT assist_target_cents AS t, assist_revenue_cents AS r, assist_updated_at AS at, assist_updated_by_name AS byName FROM commercial_store_goals WHERE month=?1 AND company_id=?2")
+      .bind(month, companyId)
+      .first<{ t: number; r: number; at: string; byName: string }>();
+    const assistChanged = !before || Number(before.t) !== assistTargetCents || Number(before.r) !== assistRevenueCents;
+    const now = new Date().toISOString();
     await database
       .prepare(
         `INSERT INTO commercial_store_goals
           (id, month, company_id, target_cents, revenue_cents, updated_by, updated_by_name, updated_at,
-           target_items, items, target_realme, realme, indication_qty, indication_cents)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+           target_items, items, target_realme, realme, indication_qty, indication_cents,
+           assist_target_cents, assist_revenue_cents, assist_updated_at, assist_updated_by_name)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
          ON CONFLICT (month, company_id) DO UPDATE SET
            target_cents=excluded.target_cents, revenue_cents=excluded.revenue_cents,
            target_items=excluded.target_items, items=excluded.items,
            target_realme=excluded.target_realme, realme=excluded.realme,
            indication_qty=excluded.indication_qty, indication_cents=excluded.indication_cents,
+           assist_target_cents=excluded.assist_target_cents, assist_revenue_cents=excluded.assist_revenue_cents,
+           assist_updated_at=excluded.assist_updated_at, assist_updated_by_name=excluded.assist_updated_by_name,
            updated_by=excluded.updated_by, updated_by_name=excluded.updated_by_name,
            updated_at=excluded.updated_at`,
       )
-      .bind(crypto.randomUUID(), month, companyId, targetCents, revenueCents, actor.id, actorName(actor), new Date().toISOString(), targetItems, items, targetRealme, realme, indicationQty, indicationCents)
+      .bind(
+        crypto.randomUUID(), month, companyId, targetCents, hub ? 0 : revenueCents, actor.id, actorName(actor), now,
+        targetItems, items, targetRealme, realme, indicationQty, indicationCents, assistTargetCents, assistRevenueCents,
+        assistChanged ? now : before?.at ?? "", assistChanged ? actorName(actor) : before?.byName ?? "",
+      )
       .run();
     // Meta/feito da loja e da assistência mudam o líder e os operacionais.
     await syncHrCommissions(database, month, actor);
