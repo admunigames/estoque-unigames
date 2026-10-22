@@ -6998,6 +6998,7 @@
         <div class="dre-toolbar-actions">
           <button class="btn-accent" id="btnNewRhAso" type="button" hidden>NOVO EXAME ASO</button>
           <button class="btn-accent" id="btnNewRhRescisao" type="button" hidden>NOVA RESCISÃO</button>
+          <button class="btn-outline" id="btnRhDreFuncInss" type="button">INSS DO MÊS</button>
           <button class="btn-outline" id="btnRhDreFuncPrint" type="button">RELATÓRIO / PDF</button>
         </div>
       </div>
@@ -47368,19 +47369,23 @@ function renderHomeTasks(){
       '<tbody>'+rows.join('')+'</tbody></table></div></div>';
   }
 
+  let rhDreFuncReport = null;
   function renderRhDreFuncionario(report){
+    rhDreFuncReport = report;
     const wrap = el('rhDreFuncConteudo');
     const stores = report && Array.isArray(report.stores) ? report.stores : [];
     const byCnpj = report && Array.isArray(report.byCnpj) ? report.byCnpj : [];
     el('rhDreFuncPrintMeta').textContent = 'Mês '+rhFormatMonth(report ? report.month : '')+' · '+
       (el('rhDreFuncLoja').value ? (companies.find(company => company.id === el('rhDreFuncLoja').value) || {name:'—'}).name : 'Todas as lojas');
-    // Por CNPJ (cadastro de Lojas): colaboradores ativos no mês, salários e
-    // FGTS do mês (8%), mais ASO, treinamento e rescisão de cada CNPJ.
+    // Por CNPJ (cadastro de Lojas): colaboradores ativos no mês, base, FGTS
+    // (8% por colaborador) e INSS manual, mais ASO, treinamento e rescisão.
+    const cnpjLabel = row => row.cnpj ? rhFormatCnpj(row.cnpj) : 'SEM CNPJ CADASTRADO';
     const cnpjRows = byCnpj.map(row => '<tr>'+
-      '<td>'+escapeHtml(row.cnpj ? rhFormatCnpj(row.cnpj) : 'SEM CNPJ CADASTRADO')+'<br><small style="color:var(--ink-faint);">'+escapeHtml(row.storeNames.join(', '))+'</small></td>'+
+      '<td>'+escapeHtml(cnpjLabel(row))+'<br><small style="color:var(--ink-faint);">'+escapeHtml(row.storeNames.join(', '))+'</small></td>'+
       '<td class="num">'+row.headcount+'</td>'+
       '<td class="num">'+formatCentsBRL(row.salaryCents)+'</td>'+
       '<td class="num">'+formatCentsBRL(row.fgtsMonthCents)+'</td>'+
+      '<td class="num">'+formatCentsBRL(row.inssCents || 0)+'</td>'+
       '<td class="num">'+formatCentsBRL(row.asoCents)+'</td>'+
       '<td class="num">'+formatCentsBRL(row.trainingCents)+'</td>'+
       '<td class="num">'+formatCentsBRL(row.severanceCents + row.terminationFgtsCents)+'</td>'+
@@ -47388,8 +47393,17 @@ function renderHomeTasks(){
     '</tr>');
     const cnpjBlock = cnpjRows.length ? '<div class="table-panel rh-print-block" style="padding:12px 14px;margin-bottom:14px;">'+
       '<h3 style="margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;">POR CNPJ</h3>'+
-      rhDreFuncSubTable('FGTS DO MÊS = 8% DO SALÁRIO DE QUEM ESTEVE ATIVO (LOJA DO MÊS EM RH > ESCALAS OU A DO CADASTRO)',
-        ['CNPJ','Colaboradores','Salários','FGTS (8%)','ASO','Treinamento','Rescisão + FGTS rescisório','Total'], cnpjRows)+
+      rhDreFuncSubTable('FGTS = 8% DA BASE DE CADA COLABORADOR ATIVO NO MÊS (LOJA ATUANTE DO MÊS) · INSS LANÇADO À MÃO',
+        ['CNPJ','Colaboradores','Base','FGTS (8%)','INSS','ASO','Treinamento','Rescisão + FGTS rescisório','Total'], cnpjRows)+
+      byCnpj.filter(row => (row.people || []).length).map(row => rhDreFuncSubTable(
+        'COLABORADORES — '+cnpjLabel(row)+' · BASE = SALÁRIO + COMISSÃO + HE + DSR (COM FOLHA) OU SALÁRIO DO CADASTRO',
+        ['Colaborador','Loja','Base','FGTS (8%)','INSS'],
+        row.people.map(person => '<tr><td>'+escapeHtml(person.personName)+'</td><td>'+escapeHtml(String(person.storeName || '—').toUpperCase())+'</td>'+
+          '<td class="num">'+formatCentsBRL(person.baseCents)+'</td><td class="num">'+formatCentsBRL(person.fgtsCents)+'</td>'+
+          '<td class="num">'+(person.inssCents ? formatCentsBRL(person.inssCents) : '—')+'</td></tr>')
+          .concat(['<tr><td colspan="2"><strong>TOTAL DO CNPJ</strong></td><td class="num"><strong>'+formatCentsBRL(row.salaryCents)+'</strong></td>'+
+            '<td class="num"><strong>'+formatCentsBRL(row.fgtsMonthCents)+'</strong></td><td class="num"><strong>'+formatCentsBRL(row.inssCents || 0)+'</strong></td></tr>'])
+      )).join('')+
       '</div>' : '';
     if(!stores.length){
       el('rhDreFuncResumo').textContent = 'Nenhum ASO, treinamento, rescisão ou aniversariante neste mês.';
@@ -47501,6 +47515,22 @@ function renderHomeTasks(){
     '</tr>').join('');
   }
 
+  // INSS MANUAL por colaborador (decisão do usuário, 22/10/2026).
+  if(el('btnRhDreFuncInss')) el('btnRhDreFuncInss').addEventListener('click', () => {
+    const month = rhDreFuncMonth();
+    const people = [];
+    ((rhDreFuncReport && rhDreFuncReport.byCnpj) || []).forEach(row => (row.people || []).forEach(person =>
+      people.push({employeeId:person.employeeId, employeeName:person.personName, companyName:person.storeName})));
+    if(!people.length){ showPurchaseToast('Nenhum colaborador ativo neste mês.','error'); return; }
+    openRhMonthValues({
+      kind:'inss', month,
+      title:'INSS — '+rhFormatMonth(month),
+      help:'INSS EM R$ DIGITADO POR COLABORADOR (NADA AUTOMÁTICO). O TOTAL DO CNPJ É A SOMA DOS COLABORADORES. VALOR 0 APAGA.',
+      people,
+      onSaved:() => loadRhDreFuncionario()
+    });
+  });
+
   async function loadRhDreFuncionario(){
     if(!canAccess('payroll')) return;
     try{
@@ -47553,6 +47583,7 @@ function renderHomeTasks(){
       el('btnNewRhAso').hidden = rhDreFuncTab !== 'aso';
       el('btnNewRhRescisao').hidden = rhDreFuncTab !== 'rescisoes';
       el('btnRhDreFuncPrint').hidden = rhDreFuncTab !== 'fechamento';
+      el('btnRhDreFuncInss').hidden = rhDreFuncTab !== 'fechamento';
       loadRhDreFuncionario();
     });
   });
