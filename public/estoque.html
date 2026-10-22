@@ -9041,6 +9041,7 @@
           <div class="field"><label for="receivableShowCanceled" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="receivableShowCanceled"> MOSTRAR CANCELADOS</label></div>
           <!-- Filtro de situação (previsto/recebido/divergente) removido no item 4. -->
           <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnBatchReceivables" type="button">+ CADASTRAR EM LOTE</button>
             <button class="btn-accent" id="btnNewReceivable" type="button">NOVO RECEBÍVEL</button>
           </div>
         </div>
@@ -9057,6 +9058,7 @@
             <strong class="bulk-bar-count" data-bulk-count></strong>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="receive">MARCAR COMO RECEBIDO</button>
             <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="cancel" data-bulk-confirm="CONFIRMAR CANCELAMENTO">CANCELAR</button>
+            <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO (SÓ NÃO RECEBIDOS)">EXCLUIR</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
         </div>
@@ -35177,11 +35179,11 @@ function renderHomeTasks(){
     const res = await financeApiRequest('/receivables/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids, fields: fields || {}})});
     await Promise.all([loadRecebiveisPage({silent:true}), loadCashFlowFutureReceivables()]);
     const skipped = Array.isArray(res.skipped) ? res.skipped : [];
-    showPurchaseToast(res.applied+(action === 'receive' ? ' recebido(s).' : ' cancelado(s).')+(skipped.length ? ' Pulados: '+skipped.map(x => x.label+' ('+x.reason+')').join('; ')+'.' : ''), skipped.length && !res.applied ? 'error' : undefined);
+    showPurchaseToast(res.applied+(action === 'receive' ? ' recebido(s).' : action === 'delete' ? ' excluído(s).' : ' cancelado(s).')+(skipped.length ? ' Pulados: '+skipped.map(x => x.label+' ('+x.reason+')').join('; ')+'.' : ''), skipped.length && !res.applied ? 'error' : undefined);
   }
   const receivablesBulk = setupBulkSelection(el('receivablesBulkBar'), el('receivablesTableBody'), async (action, ids) => {
-    if(action === 'cancel'){
-      await runReceivablesBulk('cancel', ids);
+    if(action === 'cancel' || action === 'delete'){
+      await runReceivablesBulk(action, ids);
       return;
     }
     receivablesBulkIds = ids;
@@ -35190,6 +35192,26 @@ function renderHomeTasks(){
     el('cfReceiveStatus').textContent = '';
     el('cfReceiveDialog').showModal();
     return false;
+  });
+  // CADASTRAR EM LOTE de recebíveis (mesmos campos do cadastro: unidade,
+  // competência, adquirente e valor).
+  el('btnBatchReceivables').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    await loadFinanceAcquirers();
+    openFinanceBatchDialog({
+      title: 'CADASTRAR RECEBÍVEIS EM LOTE',
+      help: 'UM RECEBÍVEL POR LINHA.',
+      endpoint: '/receivables/batch',
+      columns: [
+        {key:'companyId', label:'UNIDADE', type:'select', required:true, options: () => financeBatchCompanyOptions(false)},
+        {key:'competenceMonth', label:'COMPETÊNCIA', type:'month', required:true},
+        {key:'acquirerId', label:'ADQUIRENTE', type:'select', required:true, options: () => financeAcquirersCache.filter(a => a.status === 'active').map(a => ({value:a.id, label:a.name+(a.companyId ? ' (LOJA)' : '')}))},
+        {key:'amountCents', label:'VALOR', type:'money', required:true},
+        {key:'expectedDate', label:'DATA PREVISTA', type:'date'}
+      ],
+      isFilled: values => Boolean(values.amountCents || values.acquirerId),
+      onDone: () => Promise.all([loadRecebiveisPage({silent:true}), loadCashFlowFutureReceivables()])
+    });
   });
   el('btnCloseCfReceive').addEventListener('click', () => el('cfReceiveDialog').close());
   el('btnCancelCfReceive').addEventListener('click', () => el('cfReceiveDialog').close());

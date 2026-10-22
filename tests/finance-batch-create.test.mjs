@@ -13,6 +13,7 @@ const db = await setupRouteDb([
   "expenses", "expense_rateio_shares", "expense_attachments", "finance_rateio_model_shares",
   "finance_store_revenue", "finance_store_headcount",
   "finance_bank_statement_entries", "finance_sales_recon_rows", "finance_credit_sales", "finance_replacement_entries",
+  "accounts_receivable", "finance_acquirers",
 ]);
 
 const ALFA = "clojaalfa1";
@@ -148,4 +149,21 @@ test("Conciliação Bancária: EXCLUIR em lote só o lançamento importado ainda
   assert.deepEqual(body.skipped.map((s) => s.id).sort(), ["b-conf", "b-desp", "b-repo", "b-vendas"]);
   assert.equal(count("finance_bank_statement_entries"), 4);
   assert.equal((await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/bank-reconciliation/bulk", { action: "delete", ids: ["b-pend"] })).status, 404);
+});
+
+test("Recebíveis: cadastro em lote e EXCLUIR em lote só o que não foi recebido", async () => {
+  const route = await import("../app/api/finance/receivables/batch/route.ts");
+  const bulk = await import("../app/api/finance/receivables/bulk/route.ts");
+  const row = { companyId: ALFA, competenceMonth: "2026-10", operatorText: "STONE", amountCents: 12345 };
+  const preview = await (await batch(route, ADMIN, "/api/finance/receivables/batch", [row, { ...row, amountCents: 0 }], true)).json();
+  assert.deepEqual(preview.errors.map((e) => e.line), [2]);
+  const ok = await batch(route, ADMIN, "/api/finance/receivables/batch", [row, { ...row, competenceMonth: "2026-11" }]);
+  assert.equal(ok.status, 201);
+  const ids = db.sqlite.prepare("SELECT id FROM accounts_receivable ORDER BY competence_month").all().map((r) => r.id);
+  assert.equal(ids.length, 2);
+  db.sqlite.prepare("UPDATE accounts_receivable SET received_amount_cents=12345, received_date='2026-10-31' WHERE id=?").run(ids[0]);
+  const del = await (await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/receivables/bulk", { action: "delete", ids })).json();
+  assert.equal(del.applied, 1);
+  assert.equal(del.skipped[0].reason, "JÁ RECEBIDO");
+  assert.equal(count("accounts_receivable"), 1);
 });

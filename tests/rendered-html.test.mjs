@@ -3313,7 +3313,11 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0037_finance_cash_flow.sql", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0038_accounts_receivable_received_idx.sql", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
+    // O cadastro mora em create.ts (POST e lote).
+    Promise.all([
+      readFile(new URL("../app/api/finance/receivables/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/receivables/create.ts", import.meta.url), "utf8"),
+    ]).then((parts) => parts.join("\n")),
     // Desde o Financeiro 4/9 o SQL do fluxo mora em cash-flow/shared.ts (fonte
     // única da projeção e da lista de pagamentos).
     Promise.all([

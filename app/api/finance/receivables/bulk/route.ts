@@ -13,7 +13,9 @@ import {
 // Ações em lote nos recebíveis: { action: 'receive' | 'cancel', ids[], fields }.
 // - receive: valor recebido = valor previsto, na data fields.receivedDate
 //   (validação de parseReceived, a mesma do PUT [id]);
-// - cancel: cancelamento SOFT, igual ao POST [id]/cancel.
+// - cancel: cancelamento SOFT, igual ao POST [id]/cancel;
+// - delete: EXCLUIR de vez — só o que ainda NÃO foi recebido (recebido é
+//   pulado com o motivo, como conta paga em Contas a Pagar).
 // Todos os ids conferidos antes (404 se algum sumiu, 403 se for de outra
 // loja); gravação numa transação. Cancelado ou já recebido é pulado.
 export async function POST(request: Request) {
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const action = safeText(body.action, 20);
-    if (action !== "receive" && action !== "cancel") return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
+    if (action !== "receive" && action !== "cancel" && action !== "delete") return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
     const ids = [...new Set((Array.isArray(body.ids) ? body.ids : []).map((value) => safeText(value, 80)).filter(Boolean))];
     if (!ids.length) return jsonResponse({ error: "SELECIONE AO MENOS UM RECEBÍVEL." }, 400);
     if (ids.length > 500) return jsonResponse({ error: "SELEÇÃO GRANDE DEMAIS (MÁX. 500)." }, 400);
@@ -55,6 +57,11 @@ export async function POST(request: Request) {
     const statements: ReturnType<typeof database.prepare>[] = [];
     for (const row of rows) {
       const skip = (reason: string) => skipped.push({ id: row.id, label: `${row.operatorText} ${row.competenceMonth}`, reason });
+      if (action === "delete") {
+        if (row.receivedAmountCents !== null && row.receivedAmountCents !== undefined) { skip("JÁ RECEBIDO"); continue; }
+        statements.push(database.prepare("DELETE FROM accounts_receivable WHERE id=?1").bind(row.id));
+        continue;
+      }
       if (Number(row.canceled) === 1) { skip("JÁ CANCELADO"); continue; }
       if (action === "cancel") {
         statements.push(cancelReceivableStatement(database, row.id, actor));

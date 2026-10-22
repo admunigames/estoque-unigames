@@ -4,7 +4,6 @@ import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/acce
 import { todayInTimezone } from "../../../lib/finance-status";
 import { DATE_PATTERN } from "../../../lib/payables-recurrence";
 import {
-  expectedDateFromCompetence,
   isReceivableStatus,
   receivableStatusCaseSql,
 } from "../../../lib/receivables-status";
@@ -12,14 +11,13 @@ import {
   canManageFinance,
   identity,
   jsonResponse,
-  loadCompanyList,
   MONTH_PATTERN,
   safeText,
   sameOrigin,
   type JsonMap,
 } from "../shared";
 import { loadEffectiveCashFlowSettings } from "../cash-flow-settings/shared";
-import { parseReceived, resolveReceivableOperator } from "./shared";
+import { planReceivableCreate } from "./create";
 
 type ListRow = Record<string, unknown>;
 
@@ -205,81 +203,11 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as JsonMap;
-    const requestedCompanyId = safeText(body.companyId, 80);
-    const companyId = allStores ? requestedCompanyId : scopeActor.companyId;
-    if (!allStores && requestedCompanyId && requestedCompanyId !== scopeActor.companyId) {
-      return jsonResponse({ error: "VOCÊ NÃO TEM ACESSO A ESSA LOJA." }, 403);
-    }
-    if (!companyId) return jsonResponse({ error: "SELECIONE A UNIDADE." }, 400);
-
-    const competenceMonth = safeText(body.competenceMonth, 7);
-    const notes = safeText(body.notes, 500);
-    // Cadastro simplificado (item 4): o cliente manda só `amountCents`.
-    // `expectedAmountCents` continua aceito por compatibilidade.
-    const expectedAmountCents = Math.round(Number(body.amountCents ?? body.expectedAmountCents));
-
-    if (!MONTH_PATTERN.test(competenceMonth)) {
-      return jsonResponse({ error: "INFORME UMA COMPETÊNCIA VÁLIDA (AAAA-MM)." }, 400);
-    }
-    // Data prevista não é mais pedida no cadastro — quando o cliente não
-    // manda uma data válida, cai no último dia da competência.
-    const requestedExpectedDate = safeText(body.expectedDate, 10);
-    const expectedDate = DATE_PATTERN.test(requestedExpectedDate)
-      ? requestedExpectedDate
-      : expectedDateFromCompetence(competenceMonth);
-    if (!Number.isFinite(expectedAmountCents) || expectedAmountCents <= 0) {
-      return jsonResponse({ error: "INFORME UM VALOR MAIOR QUE ZERO." }, 400);
-    }
-
-    // Recebimento já pode vir preenchido na criação (lançamento retroativo).
-    const receivedParsed = parseReceived(body);
-    if (receivedParsed.error) return jsonResponse({ error: receivedParsed.error }, 400);
-
     const database = await getD1();
-    const companies = await loadCompanyList(database);
-    const company = companies.find((item) => item.id === companyId);
-    if (!company) return jsonResponse({ error: "LOJA NÃO ENCONTRADA." }, 400);
-
-    const operator = await resolveReceivableOperator(database, body, companyId);
-    if (operator.error) return jsonResponse({ error: operator.error }, 400);
-    const { operatorText } = operator;
-
-    const idempotencyKey =
-      safeText(body.idempotencyKey, 120) ||
-      `receivable:${companyId}:${competenceMonth}:${expectedDate}:${operatorText}:${expectedAmountCents}:${crypto.randomUUID()}`;
-    const existing = await database
-      .prepare("SELECT id FROM accounts_receivable WHERE idempotency_key=?1")
-      .bind(idempotencyKey)
-      .first<{ id: string }>();
-    if (existing) return jsonResponse({ created: true, alreadyProcessed: true, id: existing.id });
-
-    const id = crypto.randomUUID();
-    const actorName = actor.displayName || "Administrador";
-    await database
-      .prepare(
-        `INSERT INTO accounts_receivable
-          (id, company_id, company_name, operator_text, acquirer_id, competence_month, expected_date,
-           expected_amount_cents, received_amount_cents, received_date, notes, canceled, idempotency_key,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 0, ?12, ?13, ?14, CURRENT_TIMESTAMP, ?13, ?14, CURRENT_TIMESTAMP)`,
-      )
-      .bind(
-        id,
-        companyId,
-        company.name,
-        operatorText,
-        operator.acquirerId,
-        competenceMonth,
-        expectedDate,
-        expectedAmountCents,
-        receivedParsed.receivedAmountCents,
-        receivedParsed.receivedDate,
-        notes,
-        idempotencyKey,
-        actor.id,
-        actorName,
-      )
-      .run();
+    const plan = await planReceivableCreate(database, actor, scopeActor, allStores, body);
+    if ("reply" in plan) return jsonResponse(plan.reply.payload, plan.reply.status);
+    const { id, statements } = plan;
+    await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
 
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
