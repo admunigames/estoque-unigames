@@ -14,7 +14,7 @@ const db = await setupRouteDb([
   "finance_store_revenue", "finance_store_headcount",
   "finance_bank_statement_entries", "finance_sales_recon_rows", "finance_credit_sales", "finance_replacement_entries",
   "accounts_receivable", "finance_acquirers", "finance_card_machines",
-  "finance_phone_recharges", "finance_phone_recharge_events",
+  "finance_phone_recharges", "finance_phone_recharge_events", "obras", "obra_entries",
 ]);
 
 const ALFA = "clojaalfa1";
@@ -192,4 +192,19 @@ test("Recargas: cadastro em lote calcula a próxima recarga e recusa número rep
   assert.equal(ok.status, 201);
   const lines = db.sqlite.prepare("SELECT phone_number AS p, next_recharge_date AS n, period_days AS d, company_name AS c FROM finance_phone_recharges ORDER BY p").all();
   assert.deepEqual(lines.map((l) => [l.n, l.d, l.c]), [["2026-10-31", 30, "LOJA ALFA"], ["2026-12-30", 90, "LOJA ALFA"]]);
+});
+
+test("Obras: cadastro em lote (tudo ou nada) e só para quem gerencia obras", async () => {
+  const route = await import("../app/api/obras/batch/route.ts");
+  const rows = [{ title: "REFORMA FACHADA", companyId: ALFA, budgetCents: 150000, kind: "reforma" }, { title: "PINTURA", status: "andamento" }];
+  const bad = await batch(route, ADMIN, "/api/obras/batch", [...rows, { title: "", budgetCents: 100 }]);
+  assert.equal(bad.status, 400);
+  assert.equal(count("obras"), 0);
+  const ok = await batch(route, ADMIN, "/api/obras/batch", rows);
+  assert.equal(ok.status, 201);
+  assert.deepEqual(db.sqlite.prepare("SELECT title, company_name AS c, status FROM obras ORDER BY title").all().map((r) => [r.title, r.c, r.status]), [
+    ["PINTURA", "", "andamento"],
+    ["REFORMA FACHADA", "LOJA ALFA", "planejada"],
+  ]);
+  assert.equal((await batch(route, { id: "x", permissions: ["stock:view"] }, "/api/obras/batch", rows)).status, 403);
 });

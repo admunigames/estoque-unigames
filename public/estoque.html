@@ -9879,6 +9879,7 @@
         <div class="field"><label for="obrasFiltroLoja">LOJA</label><select id="obrasFiltroLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="field"><label for="obrasFiltroStatus">STATUS</label><select id="obrasFiltroStatus"><option value="">TODOS</option><option value="planejada">PLANEJADA</option><option value="andamento">EM ANDAMENTO</option><option value="concluida">CONCLUÍDA</option><option value="cancelada">CANCELADA</option></select></div>
         <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnBatchObras" type="button">+ CADASTRAR EM LOTE</button>
           <button class="btn-accent" id="btnNewObra" type="button">NOVA OBRA</button>
         </div>
       </div>
@@ -41556,6 +41557,28 @@ function renderHomeTasks(){
   }
   if(el('obraOrcado')) attachCurrencyMask(el('obraOrcado'));
   if(el('btnNewObra')) el('btnNewObra').addEventListener('click', () => openObraDialog(null));
+  if(el('btnBatchObras')) el('btnBatchObras').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    openFinanceBatchDialog({
+      title: 'CADASTRAR OBRAS EM LOTE',
+      help: 'UMA OBRA POR LINHA. OS GASTOS SEGUEM PELO DETALHE DE CADA OBRA.',
+      endpoint: '/api/obras/batch',
+      columns: [
+        {key:'title', label:'TÍTULO', type:'text', required:true, maxLength:160},
+        {key:'companyId', label:'LOJA', type:'select', placeholder:'SEM LOJA', options: () => companies.map(c => ({value:c.id, label:c.name}))},
+        {key:'kind', label:'TIPO', type:'select', placeholder:'REFORMA', options: Object.keys(OBRA_KIND_LABELS).map(k => ({value:k, label:OBRA_KIND_LABELS[k]}))},
+        {key:'status', label:'STATUS', type:'select', placeholder:'PLANEJADA', options: Object.keys(OBRA_STATUS_LABELS).map(k => ({value:k, label:OBRA_STATUS_LABELS[k]}))},
+        {key:'responsible', label:'RESPONSÁVEL', type:'text', maxLength:160},
+        {key:'budgetCents', label:'ORÇADO', type:'money'},
+        {key:'startDate', label:'INÍCIO', type:'date'},
+        {key:'expectedEndDate', label:'PREVISÃO DE CONCLUSÃO', type:'date'},
+        {key:'description', label:'DESCRIÇÃO', type:'text', maxLength:500},
+        {key:'notes', label:'OBSERVAÇÕES', type:'text', maxLength:500}
+      ],
+      isFilled: values => Boolean(values.title || values.budgetCents),
+      onDone: () => loadObrasPage()
+    });
+  });
   if(el('btnCloseObraDialog')) el('btnCloseObraDialog').addEventListener('click', () => el('obraDialog').close());
   if(el('btnCancelObraDialog')) el('btnCancelObraDialog').addEventListener('click', () => el('obraDialog').close());
   if(el('obraForm')) el('obraForm').addEventListener('submit', async event => {
