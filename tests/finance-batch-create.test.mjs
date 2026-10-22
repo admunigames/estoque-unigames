@@ -113,3 +113,19 @@ test("Despesas: cadastro em lote e barra de lote (categoria nas contas e EXCLUIR
   assert.equal((await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/expenses/bulk", { action: "delete", ids: [cafe] })).status, 404);
   assert.equal((await callRoute(bulk.POST, STORE_USER, "POST", "/api/finance/expenses/bulk", { action: "delete", ids: [limpeza] })).status, 403);
 });
+
+test("Notas Fiscais: cadastro em lote recusa NF repetida (no lote e já cadastrada) sem gravar nada", async () => {
+  const route = await import("../app/api/finance/invoices/batch/route.ts");
+  const row = { companyId: ALFA, supplierId: "sup-1", invoiceNumber: "1001", competenceMonth: "2026-10", totalAmountCents: 9900, financeItemId: "item-luz" };
+  const repeated = await (await batch(route, ADMIN, "/api/finance/invoices/batch", [row, row], true)).json();
+  assert.deepEqual(repeated.errors.map((e) => [e.line, e.error]), [[2, "NOTA REPETIDA NESTE LOTE."]]);
+  const ok = await batch(route, ADMIN, "/api/finance/invoices/batch", [row, { ...row, invoiceNumber: "1002", companyId: "" }]);
+  assert.equal(ok.status, 201);
+  assert.equal(count("supplier_invoices"), 2);
+  assert.equal(count("supplier_invoices", "finance_category_id='cat-1' AND origin='manual'"), 2);
+  assert.equal(count("supplier_invoice_events", "event_type='created'"), 2);
+  const again = await batch(route, ADMIN, "/api/finance/invoices/batch", [{ ...row, invoiceNumber: "1003" }, row]);
+  assert.equal(again.status, 400);
+  assert.match((await again.json()).errors[0].error, /JÁ EXISTE UMA NOTA FISCAL/);
+  assert.equal(count("supplier_invoices"), 2, "tudo ou nada");
+});

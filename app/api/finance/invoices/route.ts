@@ -1,10 +1,8 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
-import { isValidCpfOrCnpj } from "../../../lib/br-documents";
-import { computeInvoiceFinancialStatus } from "../../../lib/supplier-invoice-status";
-import { identity, jsonResponse, safeText, sameOrigin, MONTH_PATTERN, type JsonMap } from "../shared";
-import { DATE_PATTERN } from "../payables/shared";
+import { identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
+import { planInvoiceCreate } from "./create";
 import { canViewInvoices, INVOICE_ROW_SELECT, purchaseOrderNfAttachmentCopyStatements } from "./shared";
 
 type ListRow = Record<string, unknown>;
@@ -146,152 +144,12 @@ export async function POST(request: Request) {
     // Pelo pedido de compra vale o alcance do Compras (central vê todas as lojas).
     const allStores = canSeeAllStores(scopeActor, viaPurchaseOrder ? "purchases_draft:manage" : "finance:manage");
 
-    // Loja OPCIONAL (escritório / PF / outros) — só para quem vê todas as lojas.
-    const companyId = safeText(body.companyId, 80);
-    const companyName = companyId ? safeText(body.companyName, 160) : "";
-    if (!companyId && !allStores) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
-    const payerName = safeText(body.payerName, 160);
-    if (!allStores && companyId !== scopeActor.companyId) {
-      return jsonResponse({ error: "VOCÊ SÓ PODE CADASTRAR NOTAS PARA A PRÓPRIA LOJA." }, 403);
-    }
-
-    const invoiceNumber = safeText(body.invoiceNumber, 60);
-    if (!invoiceNumber) return jsonResponse({ error: "INFORME O NÚMERO DA NOTA FISCAL." }, 400);
-    const series = safeText(body.series, 20);
-    const accessKey = safeText(body.accessKey, 44);
-    if (accessKey && !/^\d{44}$/.test(accessKey)) {
-      return jsonResponse({ error: "A CHAVE DE ACESSO DA NF-E DEVE TER 44 DÍGITOS." }, 400);
-    }
-    const supplierId = safeText(body.supplierId, 80);
-    const supplierDocument = safeText(body.supplierDocument, 20);
-    if (supplierDocument && !isValidCpfOrCnpj(supplierDocument)) {
-      return jsonResponse({ error: "O CNPJ/CPF DO FORNECEDOR É INVÁLIDO." }, 400);
-    }
-
-    const totalAmountCents = Number(body.totalAmountCents);
-    if (!Number.isFinite(totalAmountCents) || !Number.isInteger(totalAmountCents) || totalAmountCents <= 0) {
-      return jsonResponse({ error: "INFORME UM VALOR TOTAL VÁLIDO EM CENTAVOS." }, 400);
-    }
-
-    const issueDate = safeText(body.issueDate, 10);
-    if (issueDate && !DATE_PATTERN.test(issueDate)) return jsonResponse({ error: "DATA DE EMISSÃO INVÁLIDA." }, 400);
-    const entryDate = safeText(body.entryDate, 10);
-    if (entryDate && !DATE_PATTERN.test(entryDate)) return jsonResponse({ error: "DATA DE ENTRADA INVÁLIDA." }, 400);
-
-    const competenceMonth = safeText(body.competenceMonth, 7);
-    if (!MONTH_PATTERN.test(competenceMonth)) {
-      return jsonResponse({ error: "INFORME UMA COMPETÊNCIA VÁLIDA (AAAA-MM)." }, 400);
-    }
-
-    const financeCategoryId = safeText(body.financeCategoryId, 80);
-    const financeItemId = safeText(body.financeItemId, 80);
-    const notes = safeText(body.notes, 2000);
-    // Vínculo opcional com um pedido nativo (Compras Fase C) — só usado
-    // quando a NF nasce do botão "Criar Nota Fiscal para este pedido" no
-    // detalhe do pedido; fluxo manual normal segue sem preencher isto.
-    const purchaseOrderId = safeText(body.purchaseOrderId, 80);
-
     const database = await getD1();
-    if (viaPurchaseOrder) {
-      const order = await database
-        .prepare("SELECT id FROM purchase_orders WHERE id=?1 AND origin='native' AND canceled=0")
-        .bind(purchaseOrderId)
-        .first<{ id: string }>();
-      if (!order) return jsonResponse({ error: "PEDIDO DE COMPRA NÃO ENCONTRADO." }, 404);
-    }
-
-    const costCenterId = safeText(body.costCenterId, 80);
-    let costCenter = "";
-    if (costCenterId) {
-      const costCenterRow = await database
-        .prepare("SELECT name FROM finance_cost_centers WHERE id=?1")
-        .bind(costCenterId)
-        .first<{ name: string }>();
-      if (!costCenterRow) return jsonResponse({ error: "CENTRO DE CUSTO NÃO ENCONTRADO." }, 400);
-      costCenter = costCenterRow.name;
-    }
-
-    const duplicate = await database
-      .prepare(
-        `SELECT id FROM supplier_invoices
-         WHERE company_id=?1 AND supplier_id=?2 AND invoice_number=?3 AND series=?4`,
-      )
-      .bind(companyId, supplierId, invoiceNumber, series)
-      .first<{ id: string }>();
-    if (duplicate) {
-      return jsonResponse(
-        { error: "JÁ EXISTE UMA NOTA FISCAL CADASTRADA COM ESSE NÚMERO/SÉRIE PARA ESSE FORNECEDOR E LOJA." },
-        409,
-      );
-    }
-    if (accessKey) {
-      const duplicateKey = await database
-        .prepare("SELECT id FROM supplier_invoices WHERE access_key=?1")
-        .bind(accessKey)
-        .first<{ id: string }>();
-      if (duplicateKey) {
-        return jsonResponse({ error: "JÁ EXISTE UMA NOTA FISCAL CADASTRADA COM ESSA CHAVE DE ACESSO." }, 409);
-      }
-    }
-
+    const plan = await planInvoiceCreate(database, actor, scopeActor, allStores, viaPurchaseOrder, body);
+    if ("reply" in plan) return jsonResponse(plan.reply.payload, plan.reply.status);
+    const { id, purchaseOrderId, statements } = plan;
     const actorName = actor.displayName || "Administrador";
-    const now = new Date().toISOString();
-    const id = crypto.randomUUID();
-    // NF manual entra direto no Financeiro (não passa por Compras) — já
-    // conta como "enviada", só falta a etapa explícita de conferência.
-    const financialStatus = computeInvoiceFinancialStatus({
-      totalAmountCents,
-      canceled: false,
-      sentToFinance: true,
-      reviewed: false,
-      installments: [],
-    });
-
-    await database
-      .prepare(
-        `INSERT INTO supplier_invoices
-          (id, company_id, company_name, supplier_id, supplier_document, invoice_number, series, access_key,
-           issue_date, entry_date, competence_month, notion_purchase_id, notion_purchase_url, purchase_order_id,
-           total_amount_cents, finance_category_id, finance_item_id, cost_center, notes, origin, financial_status,
-           created_by, created_by_name, sent_to_finance_by, sent_to_finance_by_name, sent_to_finance_at,
-           created_at, updated_by, updated_by_name, updated_at, cost_center_id, payer_name)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,'','',?12,?13,?14,?15,?16,?17,'manual',?18,
-           ?19,?20,?19,?20,?21,CURRENT_TIMESTAMP,?19,?20,CURRENT_TIMESTAMP,?22,?23)`,
-      )
-      .bind(
-        id,
-        companyId,
-        companyName,
-        supplierId,
-        supplierDocument,
-        invoiceNumber,
-        series,
-        accessKey,
-        issueDate,
-        entryDate,
-        competenceMonth,
-        purchaseOrderId,
-        totalAmountCents,
-        financeCategoryId,
-        financeItemId,
-        costCenter,
-        notes,
-        financialStatus,
-        actor.id,
-        actorName,
-        now,
-        costCenterId || null,
-        payerName,
-      )
-      .run();
-
-    await database
-      .prepare(
-        `INSERT INTO supplier_invoice_events (id, invoice_id, event_type, description, metadata_json, actor_id, actor_name, created_at)
-         VALUES (?1,?2,'created','NOTA FISCAL CADASTRADA MANUALMENTE NO FINANCEIRO.','{}',?3,?4,CURRENT_TIMESTAMP)`,
-      )
-      .bind(crypto.randomUUID(), id, actor.id, actorName)
-      .run();
+    await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
 
     // Reaproveita o anexo da NF já enviado no pedido de Compras (Fase C),
     // sem exigir novo upload no Financeiro — ver purchaseOrderNfAttachmentCopyStatements.

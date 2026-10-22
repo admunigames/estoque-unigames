@@ -3619,7 +3619,11 @@ test("Módulo Compras nativo (Fase C): anexos do pedido, vínculo com NF, alerta
     readFile(new URL("../app/api/compras-novo/orders/[id]/attachments/file/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/orders/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/orders/[id]/items/[itemId]/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/finance/invoices/route.ts", import.meta.url), "utf8"),
+    // Cadastro da NF (validação + INSERT) mora em create.ts, usado pelo POST e pelo lote.
+    Promise.all([
+      readFile(new URL("../app/api/finance/invoices/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/finance/invoices/create.ts", import.meta.url), "utf8"),
+    ]).then((parts) => parts.join("\n")),
     readFile(new URL("../app/api/finance/invoices/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/finance/invoices/shared.ts", import.meta.url), "utf8"),
   ]);

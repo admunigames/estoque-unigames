@@ -8557,6 +8557,7 @@
 
       <div class="page-header-actions purchases-heading-actions">
         <button class="btn-outline" id="btnInvoicesRefresh" type="button">Atualizar</button>
+        <button class="btn-outline" id="btnBatchInvoices" type="button" data-permission="payables:invoices_reconcile">+ CADASTRAR EM LOTE</button>
         <button class="btn-accent" id="btnNewInvoice" type="button" data-permission="payables:invoices_reconcile">+ NF MANUAL</button>
       </div>
 
@@ -44574,6 +44575,33 @@ function renderHomeTasks(){
     el('invoiceFormDialog').showModal();
   });
   el('btnCloseInvoiceFormDialog') && el('btnCloseInvoiceFormDialog').addEventListener('click', () => el('invoiceFormDialog').close());
+  // CADASTRAR EM LOTE de NFs manuais (as duplicatas seguem pelo detalhe da NF).
+  el('btnBatchInvoices') && el('btnBatchInvoices').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    await loadPayablesCatalogData();
+    if(!financeItems.length) await loadFinanceCatalog();
+    openFinanceBatchDialog({
+      title: 'CADASTRAR NOTAS FISCAIS EM LOTE',
+      help: 'UMA NF MANUAL POR LINHA. DEPOIS, ABRA CADA NF PARA GERAR AS DUPLICATAS.',
+      endpoint: '/invoices/batch',
+      columns: [
+        {key:'companyId', label:'LOJA', type:'select', options: () => financeBatchCompanyOptions(true), placeholder: payablesCanActAcrossStores() ? 'SEM LOJA' : 'SELECIONE'},
+        {key:'supplierId', label:'FORNECEDOR', type:'select', placeholder:'SEM FORNECEDOR', options: () => payableSuppliers.filter(x => x.active).map(x => ({value:x.id, label:x.name}))},
+        {key:'invoiceNumber', label:'NÚMERO DA NF', type:'text', required:true, maxLength:60},
+        {key:'series', label:'SÉRIE', type:'text', maxLength:20},
+        {key:'issueDate', label:'EMISSÃO', type:'date'},
+        {key:'entryDate', label:'ENTRADA', type:'date'},
+        {key:'competenceMonth', label:'COMPETÊNCIA', type:'month', required:true},
+        {key:'totalAmountCents', label:'VALOR TOTAL', type:'money', required:true},
+        {key:'financeItemId', label:'CATEGORIA', type:'item'},
+        {key:'accessKey', label:'CHAVE DE ACESSO', type:'text', maxLength:44},
+        {key:'payerName', label:'TITULAR / PAGADOR', type:'text', maxLength:160},
+        {key:'notes', label:'OBSERVAÇÕES', type:'text', maxLength:500}
+      ],
+      isFilled: values => Boolean(values.invoiceNumber || values.totalAmountCents),
+      onDone: () => loadInvoicesList({silent:true})
+    });
+  });
   el('btnCancelInvoiceForm') && el('btnCancelInvoiceForm').addEventListener('click', () => el('invoiceFormDialog').close());
   el('invoiceFormDialog') && el('invoiceFormDialog').addEventListener('click', event => {
     if(event.target === el('invoiceFormDialog')) el('invoiceFormDialog').close();
