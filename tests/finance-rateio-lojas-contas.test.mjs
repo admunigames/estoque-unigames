@@ -8,7 +8,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
 const db = await setupRouteDb([
   "shared_state", "accounts_payable", "accounts_payable_payments", "expenses", "expense_rateio_shares",
-  "finance_rateio_model_shares", "finance_store_revenue", "finance_store_headcount", "finance_items", "finance_categories",
+  "finance_rateio_model_shares", "commercial_store_goals", "finance_store_headcount", "finance_items", "finance_categories",
   "finance_cost_centers", "finance_store_entries", "finance_accounts", "supplier_open_debts", "finance_suppliers",
 ]);
 const lib = await import("../app/lib/rateio-distribute.ts");
@@ -86,8 +86,9 @@ test("rateio: modelo padrão com 8 lojas, escolhidas 3 → 3 contas renormalizad
   const all = await json(await post(expenses.POST, "/api/finance/expenses", expenseBody({ description: "TODAS" })));
   assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM accounts_payable WHERE expense_id=?").get(all.id).n, 8);
   // Prévia já filtrada, com as lojas sem peso informadas.
-  db.insert("finance_store_revenue", { id: "rv1", store_id: STORES[0], month: "2026-11", amount_cents: 300_000, sales_amount_cents: 300_000, services_amount_cents: 0, created_by: "seed" });
-  db.insert("finance_store_revenue", { id: "rv2", store_id: STORES[1], month: "2026-11", amount_cents: 100_000, sales_amount_cents: 100_000, services_amount_cents: 0, created_by: "seed" });
+  // Faturamento do rateio = Comercial (FEITO da loja no mês).
+  db.insert("commercial_store_goals", { id: "rv1", company_id: STORES[0], month: "2026-11", revenue_cents: 300_000 });
+  db.insert("commercial_store_goals", { id: "rv2", company_id: STORES[1], month: "2026-11", revenue_cents: 100_000 });
   const prev = await json(await post(preview.POST, "/api/finance/expenses/rateio-preview", {
     rateioModel: "faturamento", competenceMonth: "2026-11", originalAmountCents: 1000, companyIds: [STORES[0], STORES[1], STORES[3]],
   }));

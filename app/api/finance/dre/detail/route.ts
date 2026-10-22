@@ -2,7 +2,7 @@ import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { effectiveDreAmountCents } from "../../../../lib/payables-recurrence";
 import { canManageFinance, identity, jsonResponse, MONTH_PATTERN, safeText } from "../../shared";
-import { loadPayrollDreContribution, PAYROLL_BLOCK_LABELS } from "../payroll";
+import { loadPayrollDreContribution, PAYROLL_BLOCK_LABELS, PAYROLL_DRE_CATEGORY, PAYROLL_DRE_ITEMS } from "../payroll";
 
 type EntryRow = {
   id: string;
@@ -67,6 +67,8 @@ export async function GET(request: Request) {
     let itemIds: string[];
     if (itemId) {
       itemIds = [itemId];
+    } else if (categoryId === PAYROLL_DRE_CATEGORY.id) {
+      itemIds = Object.values(PAYROLL_DRE_ITEMS).map((item) => item.id);
     } else {
       const categories = await database
         .prepare("SELECT id, parent_id AS parentId FROM finance_categories WHERE id=?1 OR parent_id=?1")

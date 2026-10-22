@@ -17,7 +17,6 @@ const salesRoute = await import("../app/api/finance/sales-recon/route.ts");
 const bulk = await import("../app/api/finance/sales-recon/bulk/route.ts");
 const deposits = await import("../app/api/finance/sales-recon/deposits/route.ts");
 const summary = await import("../app/api/finance/sales-recon/summary/route.ts");
-const applyRevenue = await import("../app/api/finance/sales-recon/apply-revenue/route.ts");
 
 // ---------------------------------------------------------------------------
 // Lógica pura
@@ -157,7 +156,6 @@ test("sem finance:manage recebe 403", async () => {
     [deposits.GET, "GET", "/api/finance/sales-recon/deposits?month=2026-08"],
     [deposits.POST, "POST", "/api/finance/sales-recon/deposits"],
     [summary.GET, "GET", "/api/finance/sales-recon/summary?month=2026-08"],
-    [applyRevenue.POST, "POST", "/api/finance/sales-recon/apply-revenue"],
   ]) {
     const response = await callRoute(handler, NO_FINANCE, method, path, method === "POST" ? {} : undefined);
     assert.equal(response.status, 403, path);
@@ -265,29 +263,22 @@ test("cartão × banco: esperado × depositado por adquirente, conciliar e revis
   assert.equal(day("cielo|2026-08-11").note, "TAXA DE ANTECIPAÇÃO");
 });
 
-test("resumo + ATUALIZAR FATURAMENTO: vendas/serviços por unidade e loja sem dados intocada", async () => {
+test("resumo do mês: vendas/serviços por unidade; sem ligação com a DRE (não grava faturamento)", async () => {
   const data = await json(await get(summary.GET, ADMIN, "/api/finance/sales-recon/summary?month=2026-08"));
   const unit = (id) => data.units.find((u) => u.companyId === id);
   // RIOMAR: V1 3000 + V2 5000 + V3 10000 + T1 ignorada (fora).
   assert.deepEqual([unit(RIOMAR).salesCents, unit(RIOMAR).servicesCents], [18000, 0]);
-  assert.equal(unit(RIOMAR).currentSalesCents, 1);
+  assert.equal(unit(RIOMAR).currentSalesCents, undefined);
   assert.deepEqual([unit(ASSIST).salesCents, unit(ASSIST).servicesCents], [0, 20000]);
   assert.equal(unit(ASSIST).byMethod.credit, 20000);
   assert.equal(data.cards.ignored.count, 1);
   assert.equal(data.units.at(-1).companyId, ASSIST); // assistência por último
-
-  const applied = await json(await post(applyRevenue.POST, ADMIN, "/api/finance/sales-recon/apply-revenue", { month: "2026-08" }));
-  assert.equal(applied.applied, 2);
+  // A Conciliação de Vendas não grava a receita da DRE (vem do Comercial).
   const revenue = (store) => db.sqlite.prepare("SELECT * FROM finance_store_revenue WHERE store_id=? AND month='2026-08'").get(store);
-  assert.deepEqual([revenue(RIOMAR).sales_amount_cents, revenue(RIOMAR).services_amount_cents, revenue(RIOMAR).amount_cents], [18000, 0, 18000]);
-  assert.equal(revenue(RIOMAR).updated_by, "admin");
-  assert.deepEqual([revenue(ASSIST).sales_amount_cents, revenue(ASSIST).services_amount_cents, revenue(ASSIST).amount_cents], [0, 20000, 20000]);
-  assert.equal(revenue(FABRICA).amount_cents, 777); // sem vendas no Ponttie: intocada
-  assert.equal(revenue(TACARUNA), undefined);
+  assert.equal(revenue(RIOMAR).amount_cents, 1);
+  assert.equal(revenue(FABRICA).amount_cents, 777);
 
   // Login com loja: só a própria loja (sem ASSISTÊNCIA).
   const own = await json(await get(summary.GET, RIOMAR_LOGIN, "/api/finance/sales-recon/summary?month=2026-08"));
   assert.deepEqual(own.units.map((u) => u.companyId), [RIOMAR]);
-  const ownApply = await json(await post(applyRevenue.POST, RIOMAR_LOGIN, "/api/finance/sales-recon/apply-revenue", { month: "2026-08" }));
-  assert.deepEqual(ownApply.units.map((u) => u.companyId), [RIOMAR]);
 });

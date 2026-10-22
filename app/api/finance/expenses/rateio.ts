@@ -9,6 +9,7 @@ import {
   type RateioWeight,
 } from "../../../lib/rateio-distribute";
 import { loadCompanyList } from "../shared";
+import { loadCommercialRevenueByStore } from "../revenue/commercial";
 import type { RateioModel } from "./shared";
 
 export { BASIS_POINTS_TOTAL, distributeAmount };
@@ -108,31 +109,24 @@ export async function computeRateioShares(
   if (model === "faturamento" || model === "faturamento_vendas" || model === "faturamento_servicos") {
     // Base do rateio: total (vendas+serviços), só vendas, ou só serviços.
     // Recalculado a cada mês a partir do faturamento real da competência.
-    const column =
-      model === "faturamento_vendas"
-        ? "sales_amount_cents"
-        : model === "faturamento_servicos"
-          ? "services_amount_cents"
-          : "amount_cents";
+    // Base: o faturamento do Comercial na competência (mesma leitura da DRE).
+    const pick = (row: { salesCents: number; servicesCents: number; amountCents: number }) =>
+      model === "faturamento_vendas" ? row.salesCents : model === "faturamento_servicos" ? row.servicesCents : row.amountCents;
     const baseLabel =
       model === "faturamento_vendas"
         ? "FATURAMENTO DE VENDAS"
         : model === "faturamento_servicos"
           ? "FATURAMENTO DE SERVIÇOS"
           : "FATURAMENTO";
-    const rows = await database
-      .prepare(
-        `SELECT store_id AS companyId, ${column} AS amountCents FROM finance_store_revenue
-         WHERE month=?1 AND ${column} > 0 ORDER BY store_id`,
-      )
-      .bind(competenceMonth)
-      .all<{ companyId: string; amountCents: number }>();
-    const revenueRows = (rows.results ?? []).map((row) => ({ ...row, amountCents: Number(row.amountCents) }));
+    const revenueRows = [...(await loadCommercialRevenueByStore(database, competenceMonth)).values()]
+      .map((row) => ({ companyId: row.storeId, amountCents: pick(row) }))
+      .filter((row) => row.amountCents > 0)
+      .sort((a, b) => a.companyId.localeCompare(b.companyId));
     const total = revenueRows.reduce((sum, row) => sum + row.amountCents, 0);
     if (!revenueRows.length || total <= 0) {
       if (chosen.length === 1) return done([{ companyId: chosen[0].id, companyName: chosen[0].name, percentBasisPoints: BASIS_POINTS_TOTAL }]);
       return {
-        error: `NÃO HÁ ${baseLabel} CADASTRADO NA DRE PARA A COMPETÊNCIA ${competenceMonth} — CADASTRE O FATURAMENTO DAS LOJAS ANTES DE USAR ESSE RATEIO NESSE MÊS.`,
+        error: `NÃO HÁ ${baseLabel} LANÇADO NO COMERCIAL PARA A COMPETÊNCIA ${competenceMonth} — LANCE O FEITO DAS LOJAS NO COMERCIAL ANTES DE USAR ESSE RATEIO NESSE MÊS.`,
         status: 409,
       };
     }

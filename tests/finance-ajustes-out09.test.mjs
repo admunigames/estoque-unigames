@@ -7,7 +7,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // Controle de Reposição × extrato e Conciliação Uber.
 
 const db = await setupRouteDb([
-  "shared_state", "finance_mall_declarations", "finance_store_revenue",
+  "shared_state", "finance_mall_declarations", "commercial_store_goals",
   "finance_card_machines", "finance_acquirers", "finance_card_fees", "finance_card_machine_events",
   "finance_replacement_entries", "finance_bank_statement_entries",
   "finance_corporate_cards", "finance_card_invoice_entries", "finance_uber_rides",

@@ -7,9 +7,11 @@ import type { getD1 } from "../../../../db";
 // Calculado ao vivo a partir de hr_payroll_entries / hr_benefits /
 // hr_commissions — nunca gravado em finance_store_entries.
 //
-// O mapeamento bloco → item da DRE fica em hr_dre_mapping (config global).
-// Rateio/centro de custo não se aplicam: o custo é atribuído à loja do
-// funcionário (company_id, denormalizado nos lançamentos de RH).
+// O RH entra AUTOMÁTICO numa categoria fixa no código (PESSOAL — RH), um item
+// por bloco (ajuste do Financeiro, 22/10/2026: saiu o botão RH NA DRE). A
+// tabela hr_dre_mapping fica guardada, sem uso. Rateio/centro de custo não se
+// aplicam: o custo é atribuído à loja do funcionário (company_id,
+// denormalizado nos lançamentos de RH).
 
 export type PayrollBlock = "folha" | "beneficios" | "comissoes";
 
@@ -28,7 +30,12 @@ export type PayrollDreContribution = {
   blocks: Array<{ block: PayrollBlock; financeItemId: string; amountCents: number }>;
 };
 
-const EMPTY: PayrollDreContribution = { byItem: new Map(), blocks: [] };
+export const PAYROLL_DRE_CATEGORY = { id: "rh-pessoal", name: "PESSOAL — RH (AUTOMÁTICO)" };
+export const PAYROLL_DRE_ITEMS: Record<PayrollBlock, { id: string; name: string }> = {
+  folha: { id: "rh-folha", name: "FOLHA DE PAGAMENTO (CUSTO TOTAL)" },
+  beneficios: { id: "rh-beneficios", name: "BENEFÍCIOS" },
+  comissoes: { id: "rh-comissoes", name: "COMISSÕES E PREMIAÇÕES" },
+};
 
 /**
  * `scope`: uma loja (companyId) para a DRE Por Loja, ou "stores" para a
@@ -40,16 +47,9 @@ export async function loadPayrollDreContribution(
   scope: { companyId: string } | "stores",
   month: string,
 ): Promise<PayrollDreContribution> {
-  const mappingResult = await database
-    .prepare("SELECT block, finance_item_id AS financeItemId FROM hr_dre_mapping WHERE finance_item_id <> ''")
-    .all<{ block: string; financeItemId: string }>();
-  const mapping = new Map<PayrollBlock, string>();
-  for (const row of mappingResult.results ?? []) {
-    if (row.block === "folha" || row.block === "beneficios" || row.block === "comissoes") {
-      mapping.set(row.block, row.financeItemId);
-    }
-  }
-  if (!mapping.size) return EMPTY;
+  const mapping = new Map<PayrollBlock, string>(
+    (Object.keys(PAYROLL_DRE_ITEMS) as PayrollBlock[]).map((block) => [block, PAYROLL_DRE_ITEMS[block].id]),
+  );
 
   const isStore = scope !== "stores";
   const companyId = isStore ? scope.companyId : "";

@@ -3785,7 +3785,6 @@
   .responsive-table tbody td.neg{color:var(--neg); font-weight:700;}
   /* CONCILIAÇÃO DE VENDAS (Financeiro 6/9) */
   [data-sv-bulk-field][hidden]{display:none !important;}
-  .sv-revenue-dialog{width:min(900px,calc(100vw - 28px));}
   .sv-day-detail-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; text-align:left; font-size:12px;}
   .sv-day-detail-grid ul{margin:6px 0 0; padding-left:18px;}
   .sv-day-detail-grid p{margin:6px 0 0;}
@@ -8243,21 +8242,19 @@
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="vertical">ANÁLISE VERTICAL</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="horizontal">ANÁLISE HORIZONTAL</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="orcado">REALIZADO X ORÇADO</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="assistencia">DRE ASSISTÊNCIA</button>
       </div>
 
       <div id="dreTabPorLoja">
         <div class="dre-toolbar">
           <div class="field"><label for="dreLoja">LOJA</label><select id="dreLoja"><option value="">SELECIONE A LOJA</option></select></div>
           <div class="field"><label for="dreMes">MÊS</label><input type="month" id="dreMes"></div>
-          <div class="field"><label for="dreRevenueSales">RECEITA — VENDAS (R$)</label><input type="text" inputmode="decimal" id="dreRevenueSales" placeholder="R$ 0,00"></div>
-          <div class="field"><label for="dreRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="text" inputmode="decimal" id="dreRevenueServices" placeholder="R$ 0,00"></div>
+          <div class="field"><label for="dreRevenueSales">RECEITA — VENDAS (R$)</label><input type="text" id="dreRevenueSales" placeholder="R$ 0,00" readonly></div>
+          <div class="field"><label for="dreRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="text" id="dreRevenueServices" placeholder="R$ 0,00" readonly></div>
           <div class="dre-toolbar-actions">
-            <button class="btn-accent" id="btnSaveDreRevenue" type="button">SALVAR RECEITA</button>
             <button class="btn-outline" id="btnOpenFinanceCatalog" type="button">GERENCIAR CATEGORIAS</button>
-            <button class="btn-outline" id="btnOpenRhDreMapping" type="button">RH NA DRE</button>
           </div>
         </div>
+        <p class="purchase-field-help" id="dreRevenueSource">A RECEITA VEM DO COMERCIAL: VENDAS = META LOJA (FEITO) · SERVIÇOS = META ASSISTÊNCIA (FEITO ASSISTÊNCIA). O CUSTO DO RH ENTRA AUTOMÁTICO EM PESSOAL — RH.</p>
 
         <section class="summary" aria-label="Resumo da DRE">
           <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreSummaryRevenue">R$ 0,00</div></div>
@@ -8381,25 +8378,6 @@
             </table>
           </div>
         </div>
-      </div>
-
-      <div id="dreTabAssistencia" hidden>
-        <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Assistência é tratada como uma unidade própria: despesas e receita marcadas com a unidade "Assistência" (e o custo de pessoal dos funcionários lotados na Assistência) entram só aqui — <strong>nunca</strong> nas lojas nem na DRE Consolidada.</p>
-        <div class="dre-toolbar">
-          <div class="field"><label for="dreAssistMes">MÊS</label><input type="month" id="dreAssistMes"></div>
-          <div class="field"><label for="dreAssistRevenueSales">RECEITA — VENDAS (R$)</label><input type="text" inputmode="decimal" id="dreAssistRevenueSales" placeholder="R$ 0,00"></div>
-          <div class="field"><label for="dreAssistRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="text" inputmode="decimal" id="dreAssistRevenueServices" placeholder="R$ 0,00"></div>
-          <div class="dre-toolbar-actions">
-            <button class="btn-accent" id="btnSaveDreAssistRevenue" type="button">SALVAR RECEITA</button>
-          </div>
-        </div>
-        <section class="summary" aria-label="Resumo da DRE Assistência">
-          <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreAssistSummaryRevenue">R$ 0,00</div></div>
-          <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreAssistSummaryExpense">R$ 0,00</div></div>
-          <div class="card" id="dreAssistSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreAssistSummaryResult">R$ 0,00</div></div>
-          <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreAssistSummaryMargin">0,00%</div></div>
-        </section>
-        <div class="dre-flat-list" id="dreAssistCategoryList"><div class="dre-empty">Selecione o mês para ver a DRE da Assistência.</div></div>
       </div>
     </section>
 
@@ -9677,9 +9655,7 @@
 
       <div data-sv-panel="resumo" hidden>
         <section class="summary" id="svSummaryCards" aria-label="Resumo do mês"></section>
-        <div class="dre-toolbar">
-          <div class="dre-toolbar-actions"><button class="btn-accent" id="btnSvRevenue" type="button">ATUALIZAR FATURAMENTO DO MÊS</button></div>
-        </div>
+        <p class="purchase-field-help">CONFERÊNCIA DA MAQUINETA × O LANÇADO NO SISTEMA — SEM LIGAÇÃO COM A DRE (A RECEITA DA DRE VEM DO COMERCIAL).</p>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="svUnitsTable">
@@ -11190,25 +11166,6 @@
   </form>
 </dialog>
 
-<dialog class="purchase-dialog" id="rhDreMappingDialog" aria-labelledby="rhDreMappingTitle">
-  <div class="purchase-dialog-head">
-    <h3 id="rhDreMappingTitle">RH NA DRE</h3>
-    <button class="purchase-dialog-close" id="btnCloseRhDreMapping" type="button" aria-label="Fechar">×</button>
-  </div>
-  <form class="purchase-form" id="rhDreMappingForm">
-    <p style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Escolha em qual item da DRE cada bloco de custo de pessoal entra. O valor lançado é sempre o <strong>Custo Total</strong> (valores brutos + encargos patronais no caso da folha), calculado na hora a partir do RH Financeiro. Deixe "NÃO LANÇAR NA DRE" para desligar um bloco.</p>
-    <div class="purchase-form-grid">
-      <div class="purchase-field full"><label for="rhDreMapFolha">FOLHA DE PAGAMENTO →</label><select id="rhDreMapFolha"><option value="">NÃO LANÇAR NA DRE</option></select></div>
-      <div class="purchase-field full"><label for="rhDreMapBeneficios">BENEFÍCIOS →</label><select id="rhDreMapBeneficios"><option value="">NÃO LANÇAR NA DRE</option></select></div>
-      <div class="purchase-field full"><label for="rhDreMapComissoes">COMISSÕES →</label><select id="rhDreMapComissoes"><option value="">NÃO LANÇAR NA DRE</option></select></div>
-    </div>
-    <div class="user-form-status" id="rhDreMappingStatus" role="status" aria-live="polite"></div>
-    <div class="purchase-form-actions">
-      <button class="btn-outline" id="btnCancelRhDreMapping" type="button">CANCELAR</button>
-      <button class="btn-accent" id="btnSaveRhDreMapping" type="submit">SALVAR</button>
-    </div>
-  </form>
-</dialog>
 
 <dialog class="purchase-dialog" id="dreDetailDialog" aria-labelledby="dreDetailDialogTitle">
   <div class="purchase-dialog-head">
@@ -11684,29 +11641,6 @@
   </form>
 </dialog>
 
-<dialog class="purchase-dialog sv-revenue-dialog" id="svRevenueDialog" aria-labelledby="svRevenueTitle">
-  <div class="purchase-dialog-head">
-    <h3 id="svRevenueTitle">ATUALIZAR FATURAMENTO DO MÊS</h3>
-    <button class="purchase-dialog-close" id="btnCloseSvRevenue" type="button" aria-label="Fechar">×</button>
-  </div>
-  <div class="purchase-form">
-    <div class="user-form-status" id="svRevenueWarn" role="status" aria-live="polite"></div>
-    <div class="table-panel responsive-table">
-      <div class="table-scroll">
-        <table id="svRevenueTable">
-          <thead><tr><th>Unidade</th><th>Atual — vendas</th><th>Atual — serviços</th><th>Novo — vendas</th><th>Novo — serviços</th><th>Diferença</th></tr></thead>
-          <tbody id="svRevenueBody"></tbody>
-        </table>
-      </div>
-    </div>
-    <p class="purchase-field-help">GRAVA EM FATURAMENTO (DRE / RATEIO) SÓ AS UNIDADES ACIMA. QUEM APLICOU E QUANDO FICA REGISTRADO.</p>
-    <div class="user-form-status" id="svRevenueStatus" role="status" aria-live="polite"></div>
-    <div class="purchase-form-actions">
-      <button class="btn-outline" id="btnCancelSvRevenue" type="button">CANCELAR</button>
-      <button class="btn-accent" id="btnConfirmSvRevenue" type="button">CONFIRMAR E GRAVAR</button>
-    </div>
-  </div>
-</dialog>
 
 <dialog class="purchase-dialog" id="corpCardDialog" aria-labelledby="corpCardDialogTitle">
   <div class="purchase-dialog-head">
@@ -31919,6 +31853,15 @@ function renderHomeTasks(){
   }
 
   function dreItemRowHtml(item){
+    // PESSOAL — RH: automático (custo total do RH Financeiro), só leitura.
+    if(String(item.id).startsWith('rh-')){
+      return '<div class="dre-item-row" data-dre-rh-row>'+
+        '<span class="dre-item-name">'+escapeHtml(item.name)+'</span>'+
+        '<span class="dre-item-controls"><strong>'+formatCentsBRL(item.payrollCents || 0)+'</strong>'+
+          '<span class="purchase-field-help">AUTOMÁTICO (RH)</span>'+
+          '<button class="btn-outline" type="button" data-dre-detail-item="'+escapeHtml(item.id)+'" title="Ver lançamentos deste item">DETALHES</button>'+
+        '</span></div>';
+    }
     const type = item.entryType || 'fixed';
     const amount = item.entryType === 'fixed' && item.amountCents != null ? (item.amountCents/100).toFixed(2) : '';
     const percent = item.entryType === 'percentage' && item.percentBasisPoints != null ? (item.percentBasisPoints/100).toFixed(2) : '';
@@ -32012,8 +31955,10 @@ function renderHomeTasks(){
       ]);
       financeDre = dreData;
       const rev = revenueData.revenue;
-      setCurrencyValue(el('dreRevenueSales'), rev ? Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100 : '');
+      setCurrencyValue(el('dreRevenueSales'), rev ? Number(rev.salesAmountCents || 0)/100 : '');
       setCurrencyValue(el('dreRevenueServices'), rev ? Number(rev.servicesAmountCents || 0)/100 : '');
+      el('dreRevenueSource').textContent = 'VEM DO COMERCIAL'+(rev && rev.updatedAt ? ' (ATUALIZADO EM '+formatDateTimeBR(rev.updatedAt)+(rev.updatedByName ? ' POR '+rev.updatedByName : '')+')' : ' (SEM FEITO LANÇADO NO MÊS)')+
+        ': VENDAS = META LOJA · SERVIÇOS = META ASSISTÊNCIA. O CUSTO DO RH ENTRA AUTOMÁTICO EM PESSOAL — RH.';
       renderDreSummary();
       renderDreCategories();
     }catch(error){
@@ -32027,8 +31972,6 @@ function renderHomeTasks(){
 
   el('dreLoja').addEventListener('change', loadDrePorLoja);
   el('dreMes').addEventListener('change', loadDrePorLoja);
-  attachCurrencyMask(el('dreRevenueSales'));
-  attachCurrencyMask(el('dreRevenueServices'));
 
   function renderDreConsolidadaSummary(){
     const data = financeDreConsolidada;
@@ -32075,69 +32018,6 @@ function renderHomeTasks(){
   }
 
   el('dreConsolidadaMes').addEventListener('change', loadDreConsolidada);
-
-  // ================= DRE ASSISTÊNCIA (unidade própria, fora da consolidada) =================
-  let financeDreAssist = null, financeAssistLoading = false;
-  function renderDreAssistSummary(){
-    const d = financeDreAssist;
-    el('dreAssistSummaryRevenue').textContent = formatCentsBRL(d ? d.revenueCents : 0);
-    el('dreAssistSummaryExpense').textContent = formatCentsBRL(d ? d.expenseTotalCents : 0);
-    el('dreAssistSummaryResult').textContent = formatCentsBRL(d ? d.resultCents : 0);
-    el('dreAssistSummaryMargin').textContent = ((d ? d.marginBasisPoints : 0)/100).toFixed(2).replace('.',',')+'%';
-    el('dreAssistSummaryResultCard').classList.toggle('neg', Boolean(d && d.resultCents < 0));
-  }
-  function renderDreAssistCategories(){
-    const container = el('dreAssistCategoryList');
-    if(!financeDreAssist){ container.innerHTML = '<div class="dre-empty">Selecione o mês para ver a DRE da Assistência.</div>'; return; }
-    if(!financeDreAssist.categories.length){ container.innerHTML = '<div class="dre-empty">Nenhuma categoria cadastrada ainda.</div>'; return; }
-    container.innerHTML = financeDreAssist.categories.map(category => dreGerencialCategoryCardHtml(category)).join('');
-  }
-  async function loadDreAssistencia(){
-    if(!canAccess('finance') || financeAssistLoading) return;
-    if(!el('dreAssistMes').value) el('dreAssistMes').value = financeCurrentMonthKey();
-    const month = el('dreAssistMes').value;
-    financeAssistLoading = true;
-    el('dreAssistCategoryList').innerHTML = '<div class="dre-empty">Carregando…</div>';
-    try{
-      const [dreData, revenueData] = await Promise.all([
-        financeApiRequest('/dre?scope=assistencia&month='+encodeURIComponent(month)),
-        financeApiRequest('/revenue?storeId=assistencia&month='+encodeURIComponent(month))
-      ]);
-      financeDreAssist = dreData;
-      const rev = revenueData.revenue;
-      setCurrencyValue(el('dreAssistRevenueSales'), rev ? Number(rev.salesAmountCents != null ? rev.salesAmountCents : rev.amountCents || 0)/100 : '');
-      setCurrencyValue(el('dreAssistRevenueServices'), rev ? Number(rev.servicesAmountCents || 0)/100 : '');
-      renderDreAssistSummary();
-      renderDreAssistCategories();
-    }catch(error){
-      financeDreAssist = null;
-      el('dreAssistCategoryList').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
-      renderDreAssistSummary();
-    }finally{
-      financeAssistLoading = false;
-    }
-  }
-  el('dreAssistMes').addEventListener('change', loadDreAssistencia);
-  attachCurrencyMask(el('dreAssistRevenueSales'));
-  attachCurrencyMask(el('dreAssistRevenueServices'));
-  el('btnSaveDreAssistRevenue').addEventListener('click', async () => {
-    const month = el('dreAssistMes').value;
-    const salesAmountCents = parseBRLToCents(el('dreAssistRevenueSales').value || '0');
-    const servicesAmountCents = parseBRLToCents(el('dreAssistRevenueServices').value || '0');
-    if(salesAmountCents === null || servicesAmountCents === null){ showPurchaseToast('Informe valores de receita válidos.','error'); return; }
-    const button = el('btnSaveDreAssistRevenue');
-    button.disabled = true;
-    try{
-      await financeApiRequest('/revenue', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({storeId:'assistencia', month, salesAmountCents, servicesAmountCents})});
-      showPurchaseToast('Receita salva.');
-      await loadDreAssistencia();
-    }catch(error){
-      showPurchaseToast(error.message,'error');
-    }finally{
-      button.disabled = false;
-    }
-  });
-  wireDreDetailButtons('dreAssistCategoryList', () => el('dreAssistMes').value, () => 'assistencia');
 
   function dreGerencialItemRowHtml(item){
     return '<div class="dre-flat-row"><span class="dre-flat-name">'+escapeHtml(item.name)+'</span><span class="dre-flat-total">'+formatCentsBRL(item.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-item="'+escapeHtml(item.id)+'" title="Ver lançamentos deste item">DETALHES</button></div>';
@@ -32503,8 +32383,7 @@ function renderHomeTasks(){
     temporal: loadDreTemporal,
     vertical: loadDreVertical,
     horizontal: loadDreHorizontal,
-    orcado: loadDreOrcado,
-    assistencia: loadDreAssistencia
+    orcado: loadDreOrcado
   };
 
   function setDreActiveTab(tab){
@@ -32522,7 +32401,6 @@ function renderHomeTasks(){
     el('dreTabVertical').hidden = dreActiveTab !== 'vertical';
     el('dreTabHorizontal').hidden = dreActiveTab !== 'horizontal';
     el('dreTabOrcado').hidden = dreActiveTab !== 'orcado';
-    el('dreTabAssistencia').hidden = dreActiveTab !== 'assistencia';
     DRE_TAB_LOADERS[dreActiveTab]();
   }
 
@@ -32532,69 +32410,6 @@ function renderHomeTasks(){
 
   document.querySelectorAll('[data-dre-tab]').forEach(button => {
     button.addEventListener('click', () => setDreActiveTab(button.dataset.dreTab));
-  });
-
-  el('btnSaveDreRevenue').addEventListener('click', async () => {
-    const storeId = el('dreLoja').value;
-    const month = el('dreMes').value;
-    if(!storeId){ showPurchaseToast('Selecione a loja.','error'); return; }
-    const salesAmountCents = parseBRLToCents(getCurrencyValue(el('dreRevenueSales')) || '0');
-    const servicesAmountCents = parseBRLToCents(getCurrencyValue(el('dreRevenueServices')) || '0');
-    if(salesAmountCents === null || servicesAmountCents === null){ showPurchaseToast('Informe valores de receita válidos.','error'); return; }
-    const button = el('btnSaveDreRevenue');
-    button.disabled = true;
-    try{
-      await financeApiRequest('/revenue', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({storeId, month, salesAmountCents, servicesAmountCents})
-      });
-      showPurchaseToast('Receita salva.');
-      await loadDrePorLoja();
-    }catch(error){
-      showPurchaseToast(error.message,'error');
-    }finally{
-      button.disabled = false;
-    }
-  });
-
-  el('dreCategoryList').addEventListener('change', async event => {
-    const row = event.target.closest('[data-finance-item-id]');
-    if(!row) return;
-    const itemId = row.dataset.financeItemId;
-    const storeId = el('dreLoja').value;
-    const month = el('dreMes').value;
-    if(!storeId) return;
-    if(event.target.matches('[data-finance-entry-type]')){
-      const type = event.target.value;
-      row.querySelector('[data-finance-entry-fixed]').hidden = type !== 'fixed';
-      row.querySelector('[data-finance-entry-percent]').hidden = type !== 'percentage';
-      return;
-    }
-    if(event.target.matches('[data-finance-entry-fixed],[data-finance-entry-percent]')){
-      const type = row.querySelector('[data-finance-entry-type]').value;
-      const body = {storeId, itemId, month, entryType: type};
-      if(type === 'fixed'){
-        const cents = parseBRLToCents(getCurrencyValue(row.querySelector('[data-finance-entry-fixed]')) || '0');
-        if(cents === null){ showPurchaseToast('Informe um valor válido.','error'); return; }
-        body.amountCents = cents;
-      }else{
-        const raw = Number(row.querySelector('[data-finance-entry-percent]').value || '0');
-        if(!Number.isFinite(raw) || raw < 0){ showPurchaseToast('Informe um percentual válido.','error'); return; }
-        body.percentBasisPoints = Math.round(raw * 100);
-      }
-      try{
-        await financeApiRequest('/entries', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify(body)
-        });
-        showPurchaseToast('Lançamento salvo.');
-        await loadDrePorLoja();
-      }catch(error){
-        showPurchaseToast(error.message,'error');
-      }
-    }
   });
 
   el('dreCategoryList').addEventListener('click', async event => {
@@ -32615,45 +32430,6 @@ function renderHomeTasks(){
   el('btnOpenFinanceCatalog').addEventListener('click', openFinanceCatalogDialog);
   el('btnCloseFinanceCatalog').addEventListener('click', closeFinanceCatalogDialog);
 
-  // ================= RH NA DRE (mapeamento) =================
-  async function openRhDreMappingDialog(){
-    el('rhDreMappingStatus').textContent = '';
-    try{
-      const data = await financeApiRequest('/payroll-dre-mapping');
-      const optionsHtml = '<option value="">NÃO LANÇAR NA DRE</option>'+
-        (data.items || []).map(item => '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(item.label)+'</option>').join('');
-      const byBlock = {};
-      (data.mapping || []).forEach(row => { byBlock[row.block] = row.financeItemId || ''; });
-      [['folha','rhDreMapFolha'],['beneficios','rhDreMapBeneficios'],['comissoes','rhDreMapComissoes']].forEach(([block, id]) => {
-        el(id).innerHTML = optionsHtml;
-        el(id).value = byBlock[block] || '';
-      });
-      el('rhDreMappingDialog').showModal();
-    }catch(error){
-      showPurchaseToast(error.message,'error');
-    }
-  }
-  if(el('btnOpenRhDreMapping')) el('btnOpenRhDreMapping').addEventListener('click', openRhDreMappingDialog);
-  if(el('btnCloseRhDreMapping')) el('btnCloseRhDreMapping').addEventListener('click', () => el('rhDreMappingDialog').close());
-  if(el('btnCancelRhDreMapping')) el('btnCancelRhDreMapping').addEventListener('click', () => el('rhDreMappingDialog').close());
-  if(el('rhDreMappingForm')) el('rhDreMappingForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const status = el('rhDreMappingStatus');
-    status.textContent = '';
-    const mapping = [
-      { block:'folha', financeItemId: el('rhDreMapFolha').value },
-      { block:'beneficios', financeItemId: el('rhDreMapBeneficios').value },
-      { block:'comissoes', financeItemId: el('rhDreMapComissoes').value }
-    ];
-    try{
-      await financeApiRequest('/payroll-dre-mapping', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ mapping })});
-      el('rhDreMappingDialog').close();
-      showPurchaseToast('Mapeamento RH → DRE salvo.');
-      if(typeof loadDrePorLoja === 'function') loadDrePorLoja();
-    }catch(error){
-      status.textContent = error.message;
-    }
-  });
   el('financeCatalogDialog').addEventListener('click', event => {
     if(event.target === el('financeCatalogDialog')) closeFinanceCatalogDialog();
   });
@@ -38471,50 +38247,11 @@ function renderHomeTasks(){
           '<td data-label="Total"><strong>'+formatCentsBRL(u.salesCents + u.servicesCents)+'</strong></td>'+
           ['cash','pix','debit','credit','other'].map(m => '<td data-label="'+SV_METHOD[m]+'">'+formatCentsBRL(u.byMethod[m] || 0)+'</td>').join('')+
         '</tr>').join('') : '<tr><td colspan="9" class="responsive-empty">Nenhuma venda do Ponttie no mês (ignoradas ficam fora).</td></tr>';
-      el('btnSvRevenue').disabled = !units.length;
     }catch(error){
       svSummary = null;
       el('svUnitsBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
-  el('btnSvRevenue').addEventListener('click', async () => {
-    await loadSvSummary();
-    if(!svSummary || !(svSummary.units || []).length) return;
-    const c = svSummary.cards;
-    const open = c.divergent.count + c.notFound.count + c.pixPending.count;
-    el('svRevenueWarn').textContent = open
-      ? 'ATENÇÃO: AINDA HÁ '+open+' LINHA(S) SEM CONCILIAR ('+c.divergent.count+' DIVERGENTE(S), '+c.notFound.count+' NÃO ENCONTRADA(S) NA MAQUINETA, '+c.pixPending.count+' PIX SEM CRÉDITO NO EXTRATO). ELAS ENTRAM PELA CLASSIFICAÇÃO ATUAL.'
-      : 'TUDO CONCILIADO OU SEM CONCILIAÇÃO (DINHEIRO).';
-    el('svRevenueBody').innerHTML = svSummary.units.map(u => {
-      const diff = (u.salesCents + u.servicesCents) - (u.currentSalesCents + u.currentServicesCents);
-      return '<tr>'+
-        '<td data-label="Unidade">'+escapeHtml(u.companyName)+(u.currentUpdatedByName ? '<br><small>ATUAL POR '+escapeHtml(u.currentUpdatedByName)+'</small>' : '')+'</td>'+
-        '<td data-label="Atual — vendas">'+formatCentsBRL(u.currentSalesCents)+'</td>'+
-        '<td data-label="Atual — serviços">'+formatCentsBRL(u.currentServicesCents)+'</td>'+
-        '<td data-label="Novo — vendas">'+formatCentsBRL(u.salesCents)+'</td>'+
-        '<td data-label="Novo — serviços">'+formatCentsBRL(u.servicesCents)+'</td>'+
-        '<td data-label="Diferença"'+(diff ? ' class="neg"' : '')+'>'+formatCentsBRL(diff)+'</td>'+
-      '</tr>';
-    }).join('');
-    el('svRevenueStatus').textContent = '';
-    el('btnConfirmSvRevenue').disabled = false;
-    el('svRevenueDialog').showModal();
-  });
-  el('btnCloseSvRevenue').addEventListener('click', () => el('svRevenueDialog').close());
-  el('btnCancelSvRevenue').addEventListener('click', () => el('svRevenueDialog').close());
-  el('btnConfirmSvRevenue').addEventListener('click', async () => {
-    el('btnConfirmSvRevenue').disabled = true;
-    try{
-      const res = await financeApiRequest('/sales-recon/apply-revenue', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: svMonth()})});
-      el('svRevenueDialog').close();
-      showPurchaseToast('Faturamento de '+res.applied+' unidade(s) atualizado.');
-      await loadSvSummary();
-    }catch(error){
-      el('svRevenueStatus').textContent = error.message;
-      el('btnConfirmSvRevenue').disabled = false;
-    }
-  });
-
   function renderReconEntries(){
     const body = el('reconEntriesBody');
     if(!reconEntries.length){

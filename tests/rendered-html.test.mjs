@@ -2472,7 +2472,8 @@ test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", 
       readFile(new URL("../app/api/finance/categories/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/finance/items/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/finance/entries/route.ts", import.meta.url), "utf8"),
-      Promise.all(["route.ts", "shared.ts"].map((f) => readFile(new URL(`../app/api/finance/revenue/${f}`, import.meta.url), "utf8"))).then((parts) => parts.join("\n")),
+      // Receita da DRE = Comercial (revenue/commercial.ts); a rota só lê.
+      Promise.all(["route.ts", "commercial.ts"].map((f) => readFile(new URL(`../app/api/finance/revenue/${f}`, import.meta.url), "utf8"))).then((parts) => parts.join("\n")),
       // A montagem da DRE (buildStoreDre/buildConsolidatedDre/etc.) foi
       // extraída para dre/shared.ts na Fase 2 do Financeiro (Dashboard
       // Geral), pra ser reaproveitada sem duplicar a fórmula de
@@ -2510,7 +2511,10 @@ test("expõe o módulo Financeiro (DRE) e restringe o acesso a finance:manage", 
   assert.match(itemsRoute, /INSERT INTO finance_items/);
   assert.match(itemsRoute, /finance_store_entries WHERE item_id=\?1/);
   assert.match(entriesRoute, /INSERT INTO finance_store_entries/);
-  assert.match(revenueRoute, /INSERT INTO finance_store_revenue/);
+  assert.match(revenueRoute, /FROM commercial_store_goals WHERE month=\?1/);
+  assert.match(revenueRoute, /revenue_cents AS salesCents, assist_revenue_cents AS servicesCents/);
+  assert.doesNotMatch(revenueRoute, /INSERT INTO finance_store_revenue/);
+  assert.match(revenueRoute, /410/); // receita não é mais digitada na DRE
   assert.match(dreShared, /FROM finance_store_entries WHERE store_id=\?1 AND month=\?2/);
 
   assert.match(schema, /export const financeCategories = pgTable/);
@@ -2590,7 +2594,8 @@ test("DRE Por Loja/Consolidada/Gerencial vivem na mesma página, alternadas por 
 
   assert.match(dreRoute, /scope === "consolidated"/);
   assert.match(dreShared, /FROM finance_store_entries WHERE month=\?1/);
-  assert.match(dreShared, /FROM finance_store_revenue WHERE month=\?1/);
+  // CONSOLIDADA = soma do Comercial de todas as lojas.
+  assert.match(dreShared, /loadCommercialRevenueByStore\(database, month\)/);
   // Percentual continua fora da soma de despesa também na Consolidada.
   assert.match(dreShared, /entry\?\.entryType === "fixed" \? entry\.amountCents \?\? 0 : 0/);
   assert.match(dreRoute, /scope === "managerial"/);
@@ -5345,9 +5350,8 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
   assert.match(html, /id="svRowsBulkBar"[\s\S]*?data-bulk-action="sale"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO VENDA[\s\S]*?data-bulk-action="service"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO SERVIÇO[\s\S]*?data-bulk-action="machine"(?: data-bulk-confirm="[^"]*")?>DEFINIR MAQUINETA[\s\S]*?data-bulk-action="ignore"(?: data-bulk-confirm="[^"]*")?>IGNORAR[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /id="svDaysBulkBar"[\s\S]*?data-bulk-action="review"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO REVISADO/);
   for (const name of ["svRowsBulk", "svDaysBulk"]) assert.match(html, new RegExp(`const ${name} = setupBulkSelection\\(`), name);
-  assert.match(html, /id="btnSvRevenue" type="button">ATUALIZAR FATURAMENTO DO MÊS/);
-  assert.match(html, /id="svRevenueDialog"/);
-  assert.match(html, /financeApiRequest\('\/sales-recon\/apply-revenue'/);
+  // Sem ligação com a DRE: o ATUALIZAR FATURAMENTO DO MÊS saiu (22/10/2026).
+  assert.doesNotMatch(html, /id="btnSvRevenue"|id="svRevenueDialog"|sales-recon\/apply-revenue/);
   // Prazo de recebimento e texto do extrato no cadastro de adquirente.
   for (const id of ["acquirerDebitDays", "acquirerCreditDays", "acquirerAnticipated", "acquirerBankKeyword"]) assert.match(html, new RegExp(`id="${id}"`), id);
   // Migration 0082: tabelas novas e colunas, nada apagado.

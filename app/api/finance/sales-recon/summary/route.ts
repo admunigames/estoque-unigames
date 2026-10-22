@@ -8,9 +8,8 @@ import { buildRevenuePlan, loadDepositDays, monthRange } from "../shared";
 
 // RESUMO DO MÊS (Financeiro 6/9): por unidade do faturamento (cada loja e a
 // ASSISTÊNCIA) VENDAS · SERVIÇOS · TOTAL e por forma de pagamento; cards de
-// conciliação; faturamento ATUAL × NOVO para o diálogo "ATUALIZAR
-// FATURAMENTO DO MÊS". Linhas IGNORADAS ficam fora. Login com loja só vê o
-// que entra na própria loja.
+// conciliação. Linhas IGNORADAS ficam fora. Login com loja só vê o que entra
+// na própria loja. Sem ligação com a DRE (a receita da DRE vem do Comercial).
 
 type CountRow = { paymentMethod: string; status: string; count: number; amountCents: number };
 

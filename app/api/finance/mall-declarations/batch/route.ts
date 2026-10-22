@@ -11,6 +11,7 @@ import {
 } from "../../shared";
 import { deriveMallDeclaration } from "../../../../lib/mall-declarations";
 import { insertDeclarationStatement, parseDeclarationValues } from "../shared";
+import { loadCommercialRevenueByStore } from "../../revenue/commercial";
 
 // Declaração de Vendas — cadastro em lote de uma competência.
 // GET ?month=AAAA-MM: contexto do mês por loja (faturamento cadastrado em
@@ -34,10 +35,10 @@ async function monthContext(database: Awaited<ReturnType<typeof getD1>>, month: 
   const store = (id: string) =>
     (stores[id] ??= { revenueCents: null, existingId: "", existingDeclaredCents: 0, plannedCents: 0, lastContractPercentBps: 0, lastMinimumRentCents: 0 });
   const [revenues, declarations] = await Promise.all([
-    database
-      .prepare("SELECT store_id AS storeId, amount_cents AS amountCents FROM finance_store_revenue WHERE month=?1")
-      .bind(month)
-      .all<{ storeId: string; amountCents: number }>(),
+    // Faturamento real = Comercial (mesma receita da DRE).
+    loadCommercialRevenueByStore(database, month).then((byStore) => ({
+      results: [...byStore.values()].map((row) => ({ storeId: row.storeId, amountCents: row.amountCents })),
+    })),
     database
       .prepare(
         `SELECT id, company_id AS companyId, competence_month AS competenceMonth,
