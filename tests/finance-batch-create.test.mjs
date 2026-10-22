@@ -57,3 +57,27 @@ test("Contas a Pagar: prévia aponta a linha com erro; lote com erro não grava 
   const other = await (await batch(route, STORE_USER, "/api/finance/payables/batch", [{ ...good, companyId: BETA }], true)).json();
   assert.match(other.errors[0].error, /PRÓPRIA LOJA/);
 });
+
+test("Fornecedores: cadastro em lote (dívida + conta gêmea) e EXCLUIR em lote só da cancelada sem pagamento", async () => {
+  const route = await import("../app/api/finance/supplier-debts/batch/route.ts");
+  const bulk = await import("../app/api/finance/supplier-debts/bulk/route.ts");
+  const row = { companyId: ALFA, supplierId: "sup-1", description: "COMPRA", originalAmountCents: 500, dueDate: "2026-10-20" };
+  const failed = await batch(route, ADMIN, "/api/finance/supplier-debts/batch", [row, { ...row, supplierId: "" }]);
+  assert.equal(failed.status, 400);
+  assert.match((await failed.json()).errors[0].error, /FORNECEDOR/);
+  assert.equal(count("supplier_open_debts"), 0);
+  const ok = await batch(route, ADMIN, "/api/finance/supplier-debts/batch", [row, { ...row, description: "OUTRA", companyId: "" }]);
+  assert.equal(ok.status, 201);
+  assert.equal(count("supplier_open_debts"), 2);
+  assert.equal(count("accounts_payable", "idempotency_key LIKE 'supplier-debt:supplier-debts-batch:%'"), 2);
+
+  const [open, toDelete] = db.sqlite.prepare("SELECT id, accounts_payable_id AS payableId FROM supplier_open_debts ORDER BY description").all();
+  db.sqlite.prepare("UPDATE accounts_payable SET status='canceled' WHERE id=?").run(toDelete.payableId);
+  db.sqlite.prepare("UPDATE supplier_open_debts SET canceled=1 WHERE id=?").run(toDelete.id);
+  const res = await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/supplier-debts/bulk", { action: "delete", ids: [open.id, toDelete.id] });
+  const body = await res.json();
+  assert.equal(body.applied, 1);
+  assert.match(body.skipped[0].reason, /CANCELE A DÍVIDA/);
+  assert.equal(count("supplier_open_debts"), 1);
+  assert.equal((await callRoute(bulk.POST, ADMIN, "POST", "/api/finance/supplier-debts/bulk", { action: "delete", ids: ["nao-existe"] })).status, 404);
+});

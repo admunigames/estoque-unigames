@@ -8498,6 +8498,7 @@
         <div class="dre-toolbar">
           <div class="field"><label for="supplierDebtsLoja">EMPRESA/LOJA</label><select id="supplierDebtsLoja"><option value="">TODAS AS LOJAS</option></select></div>
           <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnBatchSupplierDebts" type="button">+ CADASTRAR EM LOTE</button>
             <button class="btn-accent" id="btnNewSupplierDebt" type="button">+ NOVA DÍVIDA</button>
           </div>
         </div>
@@ -8527,6 +8528,7 @@
               <strong class="bulk-bar-count" data-bulk-count></strong>
               <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
               <button class="btn-outline btn-sm" type="button" data-bulk-action="cancel" data-bulk-confirm="CONFIRMAR CANCELAMENTO">CANCELAR</button>
+              <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
               <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
             </div>
           </div>
@@ -33812,6 +33814,33 @@ function renderHomeTasks(){
 
   attachCurrencyMask(el('supplierDebtOriginalAmount'));
   el('btnNewSupplierDebt').addEventListener('click', openNewSupplierDebtDialog);
+  el('btnBatchSupplierDebts').addEventListener('click', async () => {
+    if(!companies.length) await loadCompanies();
+    await loadPayablesCatalogData();
+    if(!financeItems.length) await loadFinanceCatalog();
+    openFinanceBatchDialog({
+      title: 'CADASTRAR DÍVIDAS DE FORNECEDORES EM LOTE',
+      help: 'UMA DÍVIDA POR LINHA. SEM CATEGORIA = FORNECEDORES (PADRÃO).',
+      endpoint: '/supplier-debts/batch',
+      columns: [
+        {key:'companyId', label:'LOJA', type:'select', options: () => financeBatchCompanyOptions(true), placeholder: payablesCanActAcrossStores() ? 'SEM LOJA' : 'SELECIONE'},
+        {key:'supplierId', label:'FORNECEDOR', type:'select', required:true, options: () => payableSuppliers.filter(x => x.active).map(x => ({value:x.id, label:x.name}))},
+        {key:'description', label:'DESCRIÇÃO', type:'text', required:true},
+        {key:'originalAmountCents', label:'VALOR', type:'money', required:true},
+        {key:'dueDate', label:'DATA PREVISTA', type:'date', required:true},
+        {key:'purchaseDate', label:'DATA DA COMPRA', type:'date'},
+        {key:'invoiceNumber', label:'NOTA FISCAL', type:'text', maxLength:60},
+        {key:'orderReference', label:'PEDIDO', type:'text', maxLength:60},
+        {key:'financeItemId', label:'CATEGORIA', type:'item', placeholder:'FORNECEDORES (PADRÃO)'},
+        {key:'financeAccountId', label:'CONTA FINANCEIRA', type:'select', placeholder:'SEM CONTA', options: () => payableAccounts.filter(a => a.active).map(a => ({value:a.id, label:a.displayLabel || a.name}))},
+        {key:'payerName', label:'TITULAR / PAGADOR', type:'text', maxLength:160},
+        {key:'dreTarget', label:'DESTINO NA DRE', type:'select', placeholder:'NA LOJA DA DÍVIDA', options: [{value:'include', label:'NA LOJA DA DÍVIDA'}, {value:'none', label:'NÃO INCLUIR'}]},
+        {key:'notes', label:'OBSERVAÇÕES', type:'text', maxLength:500}
+      ],
+      isFilled: values => Boolean(values.description || values.originalAmountCents),
+      onDone: () => Promise.all([loadSupplierDebtsList({silent:true}), renderPayablesQuickViews()])
+    });
+  });
   el('btnCancelSupplierDebtDialog').addEventListener('click', closeSupplierDebtDialog);
   el('btnCloseSupplierDebtDialog').addEventListener('click', closeSupplierDebtDialog);
   el('supplierDebtDialog').addEventListener('click', event => { if(event.target === el('supplierDebtDialog')) closeSupplierDebtDialog(); });

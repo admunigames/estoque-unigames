@@ -1,11 +1,13 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
-import { planPayablesBulk } from "../../payables/shared";
+import { planPayablesBulk, planPayablesDelete } from "../../payables/shared";
 import { assertSupplierDebtAccess, loadSupplierDebt, type SupplierDebtRow } from "../shared";
 
 // Ações em lote de FORNECEDORES EM ABERTO (Financeiro 9/9): { action: 'pay' |
-// 'cancel', ids: debtIds[], fields }. Cada dívida tem a conta a pagar gêmea
+// 'cancel' | 'delete', ids: debtIds[], fields }. EXCLUIR segue a regra da
+// exclusão de Contas a Pagar (planPayablesDelete): só dívida cancelada e sem
+// pagamento; a dívida sai junto com a conta gêmea. Cada dívida tem a conta a pagar gêmea
 // (accounts_payable_id), que é onde a tela registra o pagamento — então o lote
 // age sobre as gêmeas pela MESMA função de Contas a Pagar (planPayablesBulk);
 // cancelar a gêmea cancela a dívida junto. Uma transação só.
@@ -25,7 +27,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as JsonMap;
     const action = safeText(body.action, 20);
-    if (action !== "pay" && action !== "cancel") return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
+    if (action !== "pay" && action !== "cancel" && action !== "delete") return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
     const ids = [...new Set((Array.isArray(body.ids) ? body.ids : []).map((value) => safeText(value, 80)).filter(Boolean))];
     if (!ids.length) return jsonResponse({ error: "SELECIONE AO MENOS UMA DÍVIDA." }, 400);
     if (ids.length > 300) return jsonResponse({ error: "SELEÇÃO GRANDE DEMAIS (MÁX. 300)." }, 400);
@@ -41,6 +43,17 @@ export async function POST(request: Request) {
       debts.push(debt);
     }
     const skipped: Array<{ id: string; description: string; reason: string }> = [];
+    if (action === "delete") {
+      const debtOfPayable = new Map(debts.map((debt) => [debt.accountsPayableId, debt]));
+      const plan = await planPayablesDelete(database, scopeActor, [...debtOfPayable.keys()].filter(Boolean));
+      if ("error" in plan) return jsonResponse({ error: plan.error }, plan.status);
+      if (plan.statements.length) await database.batch(plan.statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
+      for (const item of plan.skipped) {
+        const debt = debtOfPayable.get(item.id);
+        skipped.push({ id: debt?.id ?? item.id, description: debt?.description ?? item.description, reason: item.reason.replace("CANCELE A CONTA", "CANCELE A DÍVIDA") });
+      }
+      return jsonResponse({ applied: plan.applied, skipped });
+    }
     const live = debts.filter((debt) => {
       if (debt.canceled) skipped.push({ id: debt.id, description: debt.description, reason: "DÍVIDA CANCELADA" });
       return !debt.canceled;
