@@ -7611,7 +7611,7 @@
             <option value="revenuePercent">FATURAMENTO</option>
             <option value="itemsPercent">ITENS VENDIDOS</option>
             <option value="warrantyPercent">ANEXO DE GARANTIA</option>
-            <option value="realmePercent">REALMES</option>
+            <option value="realmePercent">CELULARES</option>
           </select>
         </div>
       </div>
@@ -7642,7 +7642,7 @@
           <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-com-rank="vendedores">Vendedores</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-rank="lojas">Metas Lojas</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-rank="itens">Itens Totais por Loja</button>
-          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-rank="realmes">Realmes Totais por Loja</button>
+          <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-rank="realmes">Celulares Totais por Loja</button>
           <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-rank="equipe">Meta Vendedores</button>
         </div>
         <section class="com-chart-card">
@@ -7676,7 +7676,7 @@
             <table>
               <thead><tr>
                 <th>Vendedor</th><th>Tipo</th><th>Zona</th><th>Meta itens</th><th>Super itens</th><th>Itens feito</th>
-                <th>Meta realme</th><th>Realmes feito</th><th>Crediário (soma)</th><th>Meta G.A.R (R$)</th><th>G.A.R feito (R$)</th>
+                <th>Meta celular</th><th>Celulares feitos</th><th>Crediário (soma)</th><th>Meta G.A.R (R$)</th><th>G.A.R feito (R$)</th>
                 <th>Qtd. G.A.R</th><th>Qtd. vendas</th><th>Notebook/PC</th><th>% G.A.R ÷ notebook/PC</th>
                 <th>Meta do mês (R$)</th><th>Feito no mês (R$)</th><th>% feito ÷ meta</th><th></th>
               </tr></thead>
@@ -7711,7 +7711,7 @@
         <div class="table-panel responsive-table com-edit-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Loja</th><th>Meta de vendas (R$)</th><th>Vendas feitas (R$)</th><th>Meta assistência (R$)</th><th>Assistência feita (R$)</th><th style="text-align:right">Meta total da loja</th><th style="text-align:right">Total feito</th><th style="text-align:right">% total ÷ meta</th><th>Indicação (qtd.)</th><th>R$ de indicação</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th><th>Meta realme</th><th>Realmes feito</th><th style="text-align:right">% realmes</th></tr></thead>
+              <thead><tr><th>Loja</th><th>Meta de vendas (R$)</th><th>Vendas feitas (R$)</th><th>Meta assistência (R$)</th><th>Assistência feita (R$)</th><th style="text-align:right">Meta total da loja</th><th style="text-align:right">Total feito</th><th style="text-align:right">% total ÷ meta</th><th>Indicação (qtd.)</th><th>R$ de indicação</th><th>Meta itens</th><th>Itens feito</th><th style="text-align:right">% itens</th><th>Meta celular</th><th>Celulares feitos</th><th style="text-align:right">% celulares</th></tr></thead>
               <tbody id="comStoreGoalsBody"><tr><td colspan="16" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
@@ -50607,7 +50607,7 @@ function renderHomeTasks(){
     return number.toLocaleString('pt-BR')+' '+(number === 1 ? singular : plural);
   }
 
-  // kind: 'money' (centavos), 'items' ou 'units' (Realmes)
+  // kind: 'money' (centavos), 'items' ou 'units' (Celulares)
   function comFormatValue(kind, value){
     if(kind === 'money') return formatCentsBRL(value);
     if(kind === 'items') return comFormatQty(value, 'item', 'itens');
@@ -50777,7 +50777,7 @@ function renderHomeTasks(){
     '</section>';
   }
 
-  // Selo dos critérios da comissão: com Itens 100%, Realme 100% e o anexo
+  // Selo dos critérios da comissão: com Itens 100%, Celular 100% e o anexo
   // mínimo de garantia o faturamento paga a % alta (e libera a premiação);
   // sem, a % baixa (taxas da regra do mês, em revenueRateBps).
   // comercial:commission afeta SÓ a aba Comissão: o selo do Dashboard é o
@@ -50798,7 +50798,7 @@ function renderHomeTasks(){
     if(metrics.commission.allCriteriaMet) return '<span class="com-criteria ok">METAS BATIDAS · '+escapeHtml(rate)+'</span>'+newcomer;
     const missing = [];
     if(!metrics.items.met) missing.push('ITENS');
-    if(!metrics.realme.met) missing.push('REALME');
+    if(!metrics.realme.met) missing.push('CELULAR');
     if(!metrics.warranty.met) missing.push('GARANTIA '+metrics.warranty.attachTarget+'%');
     return '<span class="com-criteria pending">'+escapeHtml(rate)+' · FALTA: '+escapeHtml(missing.join(', '))+'</span>'+newcomer;
   }
@@ -50926,7 +50926,7 @@ function renderHomeTasks(){
           // Para o líder o alvo é só a meta (100%): batida, não há "próxima faixa".
           comBlockHtml('money', 'Faturamento', comDigitalRevenueBlock(seller) || (leader && m.revenue.target > 0 && m.revenue.realized >= m.revenue.target ? {...m.revenue, next:null} : m.revenue), clock, leader || Boolean(m.commission.digital))+
           comBlockHtml('items', 'Itens vendidos', m.items, clock, true, superLine)+
-          comBlockHtml('units', 'Realmes', m.realme, clock, true)+
+          comBlockHtml('units', 'Celulares', m.realme, clock, true)+
           comWarrantyBlockHtml(m.warranty)+
           (comRules().creditRateBps > 0 || seller.realized.creditSalesCents > 0 ? comCreditBlockHtml(seller) : '')+
         '</div>'+
@@ -51020,7 +51020,7 @@ function renderHomeTasks(){
     const tiers = rules.premiumTiers;
     const rule = (title, value, note) =>
       '<div class="com-rule"><span>'+escapeHtml(title)+'</span><strong>'+escapeHtml(value)+'</strong><small>'+escapeHtml(note)+'</small></div>';
-    return rule('Critérios para '+high, 'Itens · Realme · Garantia', 'Itens 100% da meta, Realme 100% da meta e garantia em '+rules.warrantyAttachTarget+'% dos notebooks/PC vendidos')+
+    return rule('Critérios para '+high, 'Itens · Celular · Garantia', 'Itens 100% da meta, Celular 100% da meta e garantia em '+rules.warrantyAttachTarget+'% dos notebooks/PC vendidos')+
       rule('Comissão por vendas (Faturamento)', high+' / '+low, high+' batendo os 3 critérios; '+low+' sem eles'+(rules.creditRateBps > 0 ? ' — sobre o faturado sem o crediário' : ''))+
       rule('Premiação por faturamento', tiers.length ? tiers.map(tier => comMoneyShort(tier.cents)).join(' / ') : 'Sem premiação',
         tiers.length ? tiers.map(tier => tier.percent+'%').join(' / ')+' da meta de faturamento, só batendo os 3 critérios (não cumulativa)' : 'Nenhuma faixa nesta regra')+
@@ -51162,12 +51162,12 @@ function renderHomeTasks(){
 
   // ---------- Ranking em gráfico de colunas ("vela") ----------
   // Subabas: VENDEDORES (% da métrica escolhida em "Rankear por"), METAS
-  // LOJAS (% feito ÷ meta, aba Meta Loja), ITENS e REALMES TOTAIS POR LOJA
-  // (itens e realmes lançados na aba Meta Loja). Cor pela posição (verde → vermelho). Sempre do
+  // LOJAS (% feito ÷ meta, aba Meta Loja), ITENS e CELULARES TOTAIS POR LOJA
+  // (itens e celulares lançados na aba Meta Loja). Cor pela posição (verde → vermelho). Sempre do
   // maior para o menor. O MESMO desenho das colunas (comDrawBars) vai para a
   // tela e para a imagem do WhatsApp (1600x900, 16:9 — o WhatsApp mostra
   // inteira, sem cortar —, com a logo, faixa da marca e rodapé).
-  const COM_RANK_METRICS = {revenuePercent:'FATURAMENTO', itemsPercent:'ITENS VENDIDOS', warrantyPercent:'ANEXO DE GARANTIA', realmePercent:'REALMES'};
+  const COM_RANK_METRICS = {revenuePercent:'FATURAMENTO', itemsPercent:'ITENS VENDIDOS', warrantyPercent:'ANEXO DE GARANTIA', realmePercent:'CELULARES'};
   // Cor da coluna pela POSIÇÃO no ranking: degradê do 1º (verde) ao último
   // (vermelho), passando pelo amarelo. alpha < 1 = base mais clara da coluna.
   function comRankColor(index, count, alpha){
@@ -51247,12 +51247,12 @@ function renderHomeTasks(){
     const isItems = comRankSub === 'itens';
     const key = isItems ? 'items' : 'realme';
     const targetKey = isItems ? 'targetItems' : 'targetRealme';
-    // ITENS e REALMES: lançados à mão na aba Meta Loja.
+    // ITENS e CELULARES: lançados à mão na aba Meta Loja.
     const source = comStores && comStores.itemStores;
     const stores = (source || []).filter(store => store[key] > 0 || store[targetKey] > 0);
     const totalDone = stores.reduce((sum, store) => sum + store[key], 0);
     return {
-      title: (isItems ? 'ITENS' : 'REALMES')+' TOTAIS POR LOJA',
+      title: (isItems ? 'ITENS' : 'CELULARES')+' TOTAIS POR LOJA',
       subtitle: 'TOTAL: '+comFormatValue(isItems ? 'items' : 'units', totalDone).toUpperCase(),
       percent: false,
       unit: isItems ? 'items' : 'units',
@@ -51260,7 +51260,7 @@ function renderHomeTasks(){
         const share = comShare(store[key], store[targetKey]);
         return {label: store.name, sub: share === null ? 'SEM META' : comFormatPct(share)+' DA META', value: store[key]};
       }),
-      empty: 'Nenhum '+(isItems ? 'item' : 'realme')+' lançado na aba Meta Loja neste mês.'
+      empty: 'Nenhum '+(isItems ? 'item' : 'celular')+' lançado na aba Meta Loja neste mês.'
     };
   }
 
@@ -51616,7 +51616,7 @@ function renderHomeTasks(){
   // servidor), qty = quantidade, auto = soma dos Crediários, calc = % na tela.
   const COM_SELLER_FIELDS = [
     ['targetItems','Meta itens','qty'], ['targetSuperItems','Super itens','qty'], ['items','Itens feito','qty'],
-    ['targetRealme','Meta realme','qty'], ['realme','Realmes feito','qty'], ['creditSalesCents','Crediário (soma)','auto'],
+    ['targetRealme','Meta celular','qty'], ['realme','Celulares feitos','qty'], ['creditSalesCents','Crediário (soma)','auto'],
     ['targetWarrantyCents','Meta G.A.R (R$)','money'], ['warrantyCents','G.A.R feito (R$)','money'],
     ['warrantyQty','Qtd. G.A.R','qty'], ['salesQty','Qtd. vendas','qty'], ['notebookQty','Notebook/PC','qty'],
     ['attach','% G.A.R ÷ notebook/PC','calc'],
@@ -52100,9 +52100,9 @@ function renderHomeTasks(){
       '<td data-label="Meta itens"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Meta de itens da loja" data-com-field="targetItems" value="'+(Number(store.targetItems) || 0)+'"></td>'+
       '<td data-label="Itens feito"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Itens feitos pela loja" data-com-field="items" value="'+(Number(store.items) || 0)+'"></td>'+
       '<td data-label="% itens" class="calc" style="text-align:right" data-com-calc="storeItemsPct">'+escapeHtml(comFormatPct(comShare(store.items, store.targetItems)))+'</td>'+
-      '<td data-label="Meta realme"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Meta de realmes da loja" data-com-field="targetRealme" value="'+(Number(store.targetRealme) || 0)+'"></td>'+
-      '<td data-label="Realmes feito"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Realmes feitos pela loja" data-com-field="realme" value="'+(Number(store.realme) || 0)+'"></td>'+
-      '<td data-label="% realmes" class="calc" style="text-align:right" data-com-calc="storeRealmePct">'+escapeHtml(comFormatPct(comShare(store.realme, store.targetRealme)))+'</td></tr>';
+      '<td data-label="Meta celular"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Meta de celulares da loja" data-com-field="targetRealme" value="'+(Number(store.targetRealme) || 0)+'"></td>'+
+      '<td data-label="Celulares feitos"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Celulares feitos pela loja" data-com-field="realme" value="'+(Number(store.realme) || 0)+'"></td>'+
+      '<td data-label="% celulares" class="calc" style="text-align:right" data-com-calc="storeRealmePct">'+escapeHtml(comFormatPct(comShare(store.realme, store.targetRealme)))+'</td></tr>';
   }
 
   function comRenderStoreGoalsTotal(){

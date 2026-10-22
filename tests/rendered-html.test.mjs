@@ -4460,7 +4460,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /\['payjoy','PAYJOY'\], \['crefaz','CREFAZ'\], \['parcelex','PARCELEX'\], \['odres','ODRES'\],\s*\['venda_pa','VENDA P\.A'\], \['venda_unigames','VENDA UNIGAMES'\]/);
   assert.doesNotMatch(html, /comStoresVisual|comRenderStoresVisual|com-stores-visual/);
   // Ranking: subabas em gráfico de colunas (canvas) + imagem para o WhatsApp.
-  for (const [sub, label] of [["vendedores", "Vendedores"], ["lojas", "Metas Lojas"], ["itens", "Itens Totais por Loja"], ["realmes", "Realmes Totais por Loja"]]) {
+  for (const [sub, label] of [["vendedores", "Vendedores"], ["lojas", "Metas Lojas"], ["itens", "Itens Totais por Loja"], ["realmes", "Celulares Totais por Loja"]]) {
     assert.match(html, new RegExp(`data-com-rank="${sub}">${label}</button>`));
   }
   assert.match(html, /<canvas id="comRankCanvas" role="img"/);
@@ -4484,7 +4484,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /const withInactive = comView === 'comissao' \|\| \(el\('comShowInactive'\) && el\('comShowInactive'\)\.checked\);/);
   // Meta Loja: itens da loja à mão; comissão do Comercial travada no RH (vem de lá).
   assert.match(html, /<th>Meta itens<\/th><th>Itens feito<\/th>/);
-  assert.match(html, /<th>Meta realme<\/th><th>Realmes feito<\/th>/);
+  // REALME passou a se chamar CELULAR (22/10/2026) — só o nome na tela.
+  assert.match(html, /<th>Meta celular<\/th><th>Celulares feitos<\/th>/);
+  assert.match(html, /missing\.push\('CELULAR'\)/);
   assert.match(html, /id="rhComissaoValorHint" hidden>VEM DO COMERCIAL/);
   assert.match(html, /el\('rhComissaoValor'\)\.readOnly = fromCommercial;/);
   // META VENDEDORES: meta (tracejada) × feito por vendedor, só da loja de quem vê (rota /team).
