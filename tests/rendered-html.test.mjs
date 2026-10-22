@@ -2062,7 +2062,7 @@ test("cadastra aparelhos de empréstimo, controla solicitações das lojas e o s
   assert.match(schema, /accessories: text\("accessories"\)/);
 
   assert.match(liveUpdates, /"missions", "captures", "supplies", "tasks", "loans"/);
-  assert.match(workerSource, /loans: "loans",\s*\n\s*compras: "purchasesDraft",\s*\n\s*commercial: "commercial",\s*\n\s*ordens_servico: "ordensServico",\s*\n\s*estoque_assistencia: "estoqueAssistencia",\s*\n\s*inventario: "inventario",\s*\n\s*\};/);
+  assert.match(workerSource, /loans: "loans",\s*\n\s*compras: "purchasesDraft",\s*\n\s*commercial: "commercial",\s*\n\s*ordens_servico: "ordensServico",\s*\n\s*estoque_assistencia: "estoqueAssistencia",\s*\n\s*inventario: "inventario",\s*\n\s*rma: "rma",\s*\n\s*\};/);
   assert.match(html, /aparelhosEmprestimo:'loans'/);
   assert.match(
     html,
@@ -4497,7 +4497,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(storesRoute, /if \(canViewCommercialStores\(actor\) && scope\) \{\s*body\.canManage = canManageCommercialStores\(actor\);/);
   // Ao vivo: qualquer escrita em /api/commercial avisa o canal "commercial".
   assert.match(liveEvents, /if \(path\.startsWith\("\/api\/commercial\/"\)\) \{[\s\S]*?module: "commercial", audience: \{ kind: "all" \}/);
-  assert.match(html, /comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico',assistenciaEstoque:'estoque_assistencia',inventario:'inventario'\}\);/);
+  assert.match(html, /comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico',assistenciaEstoque:'estoque_assistencia',inventario:'inventario',assistenciaRma:'rma'\}\);/);
   // Ordens de Serviço ao vivo: canal "ordens_servico".
   assert.match(liveEvents, /if \(path === "\/api\/assistencia\/ordens-servico"\) \{[\s\S]*?module: "ordens_servico", audience: \{ kind: "all" \}/);
   assert.match(html, /if\(livePageName === 'assistenciaOrdensServico'\) await refreshAfterAction\(\(\) => loadOrdensServicoPage\(\)\);/);
@@ -4924,7 +4924,7 @@ test("Assistência > Orçamentos: menu, abas, observações, histórico, Lojas, 
 
   // Menu: grupo novo "Assistência" com o submenu "Orçamentos" (mesmo formato
   // dos grupos existentes), ícones copiados de itens já existentes.
-  assert.match(html, /<div class="nav-group" data-any-permission="assistencia,gorduras_assistencia,ordens_servico,precos_assistencia,estoque_assistencia">\n\s*<button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">/);
+  assert.match(html, /<div class="nav-group" data-any-permission="assistencia,gorduras_assistencia,ordens_servico,precos_assistencia,estoque_assistencia,rma">\n\s*<button class="nav-group-toggle" id="navAssistencia" type="button" aria-expanded="false" aria-controls="navAssistenciaSubmenu">/);
   assert.match(html, /<a class="nav-item sub-item" id="navAssistenciaOrcamentos" data-page="assistenciaOrcamentos" data-permission="assistencia:manage" data-home-desc="[^"]+" title="Orçamentos" href="\/assistencia\/orcamentos">/);
   const navGroup = html.slice(html.indexOf('id="navAssistencia"'), html.indexOf('id="navComercialMenu"'));
   const loansIcon = /id="navAparelhosEmprestimo"[^\n]*?(<svg[^\n]*?<\/svg>)/.exec(html)[1];

@@ -158,6 +158,12 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   ops_audits: ["company_name", "auditor_name", "finalized_by_name"],
   ops_audit_answers: ["section", "group_name", "text", "note", "updated_by_name"],
   commercial_gd_store_info: ["updated_by_name"],
+  rma_cases: ["store_name", "supplier", "responsible", "os_situation", "accessories", "product_name", "product_category", "brand", "product_notes", "defect_description", "technical_analysis", "finalized_by_name", "solution_description", "next_action", "created_by_name", "updated_by_name"],
+  rma_updates: ["responsible", "description", "next_action", "created_by_name", "updated_by_name"],
+  rma_attachments: ["uploaded_by_name"],
+  rma_credits: ["supplier", "notes", "created_by_name", "updated_by_name"],
+  rma_disposals: ["product_name", "product_category", "store_name", "supplier", "reason", "authorized_by", "notes", "created_by_name"],
+  rma_suppliers: ["name", "contact_name", "notes", "created_by_name", "updated_by_name"],
 };
 
 const PLACEHOLDER = /^\?(\d*)$/;

@@ -86,6 +86,7 @@ type Permission =
   | "ordens_servico:view" | "ordens_servico:create" | "ordens_servico:edit" | "ordens_servico:delete" | "ordens_servico:store_test"
   | "precos_assistencia:view" | "precos_assistencia:create" | "precos_assistencia:edit" | "precos_assistencia:delete"
   | "estoque_assistencia:view" | "estoque_assistencia:entrada" | "estoque_assistencia:baixa" | "estoque_assistencia:manage" | "estoque_assistencia:delete"
+  | "rma:view" | "rma:create" | "rma:edit" | "rma:finance" | "rma:delete"
   | "inventario:view" | "inventario:count" | "inventario:manage" | "inventario:delete"
   | "auditoria_operacional:view" | "auditoria_operacional:audit" | "auditoria_operacional:manage" | "auditoria_operacional:delete"
   | "treinamento:view" | "treinamento:team"
@@ -257,6 +258,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "precos_assistencia:view", "precos_assistencia:create", "precos_assistencia:edit", "precos_assistencia:delete",
   // Assistência > Estoque — só login sem loja (a rota confere).
   "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
+  // Assistência > RMA — login com loja só visualiza os da própria loja (a rota confere).
+  "rma:view", "rma:create", "rma:edit", "rma:finance", "rma:delete",
   // Estoque > Inventário — contagem por loja (login com loja só a própria).
   "inventario:view", "inventario:count", "inventario:manage", "inventario:delete",
   // Auditoria Operacional (checklist de loja) — loja só lê as finalizadas da própria loja (a rota confere).
@@ -375,6 +378,7 @@ const APP_ROUTE_PATHS = new Set([
   "/assistencia/ordens-servico",
   "/assistencia/precos",
   "/assistencia/estoque",
+  "/assistencia/rma",
   "/inventario",
   "/auditoria-operacional",
   "/entradas",
@@ -1406,6 +1410,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   relatorioNf: ["relatorio_nf:view", "relatorio_nf:manage"],
   controleGd: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
   inventario: ["inventario:view", "inventario:count", "inventario:manage", "inventario:delete"],
+  rma: ["rma:view", "rma:create", "rma:edit", "rma:finance", "rma:delete"],
   estoqueAssistencia: [
     "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
   ],
@@ -1435,6 +1440,7 @@ const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_P
   ordens_servico: "ordensServico",
   estoque_assistencia: "estoqueAssistencia",
   inventario: "inventario",
+  rma: "rma",
 };
 
 async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): Promise<boolean> {
@@ -1531,6 +1537,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/assistencia/precos" || path.startsWith("/api/assistencia/precos"), "precosAssistencia"],
     // Assistência > Estoque — permissão própria (estoque_assistencia:*).
     [path === "/assistencia/estoque" || path.startsWith("/api/assistencia/estoque"), "estoqueAssistencia"],
+    // Assistência > RMA — permissão própria (rma:*).
+    [path === "/assistencia/rma" || path.startsWith("/api/assistencia/rma"), "rma"],
     // Assistência > Controle Gorduras Assistência — permissão própria
     // (gorduras_assistencia:*), independente de assistencia:manage.
     [

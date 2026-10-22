@@ -4621,3 +4621,175 @@ export const inventoryAttachments = pgTable(
   },
   (table) => [index("inventory_attachments_inventory_idx").on(table.inventoryId)],
 );
+
+// Assistência > RMA — casos de RMA (produto que segue para o fornecedor),
+// substitui o sistema RMA do Base44 (histórico importado em 22/10/2026,
+// source='base44'). Login com loja só VISUALIZA os RMAs da própria loja e as
+// atualizações; store_id '' = AVULSO (sem loja), que só a assistência vê.
+export const rmaCases = pgTable(
+  "rma_cases",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull(),
+    // YYYY-MM-DD
+    arrivalDate: text("arrival_date").notNull().default(""),
+    storeId: text("store_id").notNull().default(""),
+    storeName: text("store_name").notNull().default(""),
+    supplier: text("supplier").notNull().default(""),
+    responsible: text("responsible").notNull().default(""),
+    status: text("status").notNull(),
+    priority: text("priority").notNull().default(""),
+    osNumber: text("os_number").notNull().default(""),
+    osDeadline: text("os_deadline").notNull().default(""),
+    osSituation: text("os_situation").notNull().default(""),
+    invoiceNumber: text("invoice_number").notNull().default(""),
+    accessories: text("accessories").notNull().default(""),
+    productName: text("product_name").notNull(),
+    productCategory: text("product_category").notNull().default(""),
+    brand: text("brand").notNull().default(""),
+    serialNumber: text("serial_number").notNull().default(""),
+    quantity: integer("quantity").notNull().default(1),
+    productNotes: text("product_notes").notNull().default(""),
+    defectType: text("defect_type").notNull().default(""),
+    defectDescription: text("defect_description").notNull().default(""),
+    technicalAnalysis: text("technical_analysis").notNull().default(""),
+    // 1 = status FINALIZADO (com tipo de solução, quem e quando).
+    finalized: integer("finalized").notNull().default(0),
+    finalizedAt: text("finalized_at").notNull().default(""),
+    finalizedByName: text("finalized_by_name").notNull().default(""),
+    solutionType: text("solution_type").notNull().default(""),
+    solutionDescription: text("solution_description").notNull().default(""),
+    lastUpdateAt: text("last_update_at").notNull().default(""),
+    nextUpdateDate: text("next_update_date").notNull().default(""),
+    nextAction: text("next_action").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+    source: text("source").notNull().default("manual"),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("rma_cases_store_idx").on(table.deleted, table.storeId), index("rma_cases_os_idx").on(table.osNumber)],
+);
+
+// Linha do tempo do RMA (o que a loja acompanha).
+export const rmaUpdates = pgTable(
+  "rma_updates",
+  {
+    id: text("id").primaryKey(),
+    rmaId: text("rma_id").notNull(),
+    updateAt: text("update_at").notNull(),
+    responsible: text("responsible").notNull().default(""),
+    description: text("description").notNull(),
+    newStatus: text("new_status").notNull().default(""),
+    nextAction: text("next_action").notNull().default(""),
+    nextUpdateDate: text("next_update_date").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("rma_updates_rma_idx").on(table.rmaId, table.updateAt)],
+);
+
+// Anexos do RMA, de uma atualização ou de um crédito (R2). Importados do
+// Base44: r2_key '' + source_url → copiados para o R2 na primeira abertura.
+export const rmaAttachments = pgTable(
+  "rma_attachments",
+  {
+    id: text("id").primaryKey(),
+    // 'rma' | 'update' | 'credit'
+    ownerType: text("owner_type").notNull(),
+    ownerId: text("owner_id").notNull(),
+    rmaId: text("rma_id").notNull().default(""),
+    fileName: text("file_name").notNull(),
+    r2Key: text("r2_key").notNull().default(""),
+    sourceUrl: text("source_url").notNull().default(""),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    contentType: text("content_type").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+    uploadedBy: text("uploaded_by").notNull().default(""),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    uploadedAt: text("uploaded_at").notNull().default(""),
+  },
+  (table) => [index("rma_attachments_owner_idx").on(table.ownerType, table.ownerId)],
+);
+
+// Crédito com o fornecedor (saldo = valor − usado).
+export const rmaCredits = pgTable(
+  "rma_credits",
+  {
+    id: text("id").primaryKey(),
+    supplier: text("supplier").notNull(),
+    rmaId: text("rma_id").notNull().default(""),
+    rmaCode: text("rma_code").notNull().default(""),
+    generatedDate: text("generated_date").notNull().default(""),
+    creditCents: integer("credit_cents").notNull().default(0),
+    usedCents: integer("used_cents").notNull().default(0),
+    status: text("status").notNull().default(""),
+    usageType: text("usage_type").notNull().default(""),
+    usageDate: text("usage_date").notNull().default(""),
+    documentNumber: text("document_number").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+    source: text("source").notNull().default("manual"),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("rma_credits_supplier_idx").on(table.deleted, table.supplier)],
+);
+
+export const rmaDisposals = pgTable(
+  "rma_disposals",
+  {
+    id: text("id").primaryKey(),
+    rmaId: text("rma_id").notNull().default(""),
+    rmaCode: text("rma_code").notNull().default(""),
+    productName: text("product_name").notNull(),
+    productCategory: text("product_category").notNull().default(""),
+    storeId: text("store_id").notNull().default(""),
+    storeName: text("store_name").notNull().default(""),
+    supplier: text("supplier").notNull().default(""),
+    quantity: integer("quantity").notNull().default(1),
+    unitCostCents: integer("unit_cost_cents").notNull().default(0),
+    totalCostCents: integer("total_cost_cents").notNull().default(0),
+    reason: text("reason").notNull().default(""),
+    authorizedBy: text("authorized_by").notNull().default(""),
+    disposalDate: text("disposal_date").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+    source: text("source").notNull().default("manual"),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+  },
+  (table) => [index("rma_disposals_date_idx").on(table.deleted, table.disposalDate)],
+);
+
+export const rmaSuppliers = pgTable(
+  "rma_suppliers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    contactName: text("contact_name").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    whatsapp: text("whatsapp").notNull().default(""),
+    email: text("email").notNull().default(""),
+    cnpj: text("cnpj").notNull().default(""),
+    // Como o fornecedor trata o RMA (texto ou link do portal).
+    treatmentModel: text("treatment_model").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    active: integer("active").notNull().default(1),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+  },
+  (table) => [index("rma_suppliers_name_idx").on(table.name)],
+);
