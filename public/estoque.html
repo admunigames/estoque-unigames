@@ -1916,6 +1916,9 @@
   .field-with-action button{white-space:nowrap;padding-inline:10px;font-size:10px;}
   .field-inline-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;border:1px dashed var(--line);border-radius:8px;background:rgba(79,134,189,.04);}
   .field-inline-form select,.field-inline-form input{flex:1;min-width:140px;}
+  .finance-item-picker{display:grid;gap:6px;}
+  .finance-item-picker .finance-item-search{width:100%;}
+  .finance-item-picker .user-form-status:empty{display:none;}
   .field-inline-form button{white-space:nowrap;}
   .payable-detail-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 20px;margin:14px 0;font-size:12px;}
   .payable-detail-summary div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:4px;}
@@ -10937,7 +10940,7 @@
   <form class="purchase-form" id="reposicaoExpenseForm">
     <input type="hidden" id="reposicaoExpenseEntryId">
     <div class="purchase-form-grid">
-      <div class="purchase-field full"><label for="reposicaoExpenseItem">CATEGORIA/SUBCATEGORIA *</label><select id="reposicaoExpenseItem" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="reposicaoExpenseItem">CATEGORIA *</label><select id="reposicaoExpenseItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="reposicaoExpenseCostCenter">CENTRO DE CUSTO</label><select id="reposicaoExpenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="reposicaoExpenseDue">VENCIMENTO *</label><input type="date" id="reposicaoExpenseDue" required></div>
     </div>
@@ -11007,7 +11010,7 @@
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="recargaEventData">DATA DA RECARGA *</label><input type="date" id="recargaEventData" required></div>
       <div class="purchase-field"><label for="recargaEventValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaEventValor" placeholder="R$ 0,00" required></div>
-      <div class="purchase-field full"><label for="recargaEventItem">CATEGORIA DA DESPESA *</label><select id="recargaEventItem" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="recargaEventItem">CATEGORIA *</label><select id="recargaEventItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="recargaEventObs">OBSERVAÇÕES</label><textarea id="recargaEventObs" rows="2" maxlength="1000"></textarea></div>
     </div>
     <p class="purchase-field-help" id="recargaEventProxima" role="status" aria-live="polite"></p>
@@ -11031,7 +11034,7 @@
       <div class="purchase-field" data-recarga-bulk-field="period"><label for="recargaBulkPeriodo">PERÍODO DE RECARGA *</label><select id="recargaBulkPeriodo"><option value="30">30 DIAS</option><option value="60">60 DIAS</option><option value="90" selected>90 DIAS</option></select></div>
       <div class="purchase-field" data-recarga-bulk-field="recharge"><label for="recargaBulkData">DATA DA RECARGA *</label><input type="date" id="recargaBulkData"></div>
       <div class="purchase-field" data-recarga-bulk-field="recharge"><label for="recargaBulkValor">VALOR (R$)</label><input type="text" inputmode="decimal" id="recargaBulkValor" placeholder="VAZIO = ÚLTIMO VALOR DE CADA LINHA"></div>
-      <div class="purchase-field full" data-recarga-bulk-field="recharge"><label for="recargaBulkItem">CATEGORIA DA DESPESA *</label><select id="recargaBulkItem"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full" data-recarga-bulk-field="recharge"><label for="recargaBulkItem">CATEGORIA *</label><select id="recargaBulkItem" data-finance-item-picker><option value="">SELECIONE</option></select></div>
     </div>
     <p class="purchase-field-help" data-recarga-bulk-field="period">A PRÓXIMA RECARGA DE CADA LINHA É RECALCULADA A PARTIR DA ÚLTIMA RECARGA.</p>
     <p class="purchase-field-help" data-recarga-bulk-field="recharge">GRAVA UMA RECARGA NO HISTÓRICO DE CADA LINHA E UMA DESPESA EM ABERTO NA UNIDADE DE CADA UMA; A PRÓXIMA USA O PERÍODO DE CADA LINHA.</p>
@@ -11685,7 +11688,7 @@
   <form class="purchase-form" id="corpClassifyForm">
     <p class="page-desc" id="corpClassifySummary"></p>
     <div class="purchase-form-grid">
-      <div class="purchase-field full"><label for="corpClassifyItem">CATEGORIA / SUBCATEGORIA</label><select id="corpClassifyItem"><option value="">— MANTER —</option></select></div>
+      <div class="purchase-field full"><label for="corpClassifyItem">CATEGORIA</label><select id="corpClassifyItem" data-finance-item-picker data-placeholder="— MANTER —"><option value="">— MANTER —</option></select></div>
       <div class="purchase-field"><label for="corpClassifyCostCenter">CENTRO DE CUSTO</label><select id="corpClassifyCostCenter"><option value="">— MANTER —</option></select></div>
       <div class="purchase-field"><label for="corpClassifyHolder">RESPONSÁVEL PELA COMPRA</label><input id="corpClassifyHolder" maxlength="120" list="corpHolderList" placeholder="— MANTER —"></div>
       <datalist id="corpHolderList"></datalist>
@@ -11710,7 +11713,7 @@
     <input type="hidden" id="corpEntryExpenseEntryId">
     <p class="page-desc" id="corpEntryExpenseSummary"></p>
     <div class="purchase-form-grid">
-      <div class="purchase-field full"><label for="corpEntryExpenseItem">CATEGORIA / SUBCATEGORIA *</label><select id="corpEntryExpenseItem" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="corpEntryExpenseItem">CATEGORIA *</label><select id="corpEntryExpenseItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="corpEntryExpenseCostCenter">CENTRO DE CUSTO</label><select id="corpEntryExpenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="corpEntryExpenseDueDate">VENCIMENTO *</label><input type="date" id="corpEntryExpenseDueDate" required></div>
       <div class="purchase-field full"><label for="corpEntryExpenseNotes">OBSERVAÇÃO</label><textarea id="corpEntryExpenseNotes" rows="2" maxlength="500"></textarea></div>
@@ -11732,7 +11735,7 @@
     <input type="hidden" id="reconEntryExpenseEntryId">
     <p class="page-desc" id="reconEntryExpenseSummary"></p>
     <div class="purchase-form-grid">
-      <div class="purchase-field full"><label for="reconEntryExpenseItem">CATEGORIA / SUBCATEGORIA *</label><select id="reconEntryExpenseItem" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="reconEntryExpenseItem">CATEGORIA *</label><select id="reconEntryExpenseItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="reconEntryExpenseCompany">UNIDADE *</label><select id="reconEntryExpenseCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="reconEntryExpenseCostCenter">CENTRO DE CUSTO</label><select id="reconEntryExpenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="reconEntryExpenseDueDate">VENCIMENTO *</label><input type="date" id="reconEntryExpenseDueDate" required></div>
@@ -11797,7 +11800,7 @@
   </div>
   <form class="purchase-form" id="reconBulkForm">
     <div class="purchase-form-grid">
-      <div class="purchase-field full"><label for="reconBulkItem">CATEGORIA</label><select id="reconBulkItem"><option value="">NÃO ALTERAR</option></select></div>
+      <div class="purchase-field full"><label for="reconBulkItem">CATEGORIA</label><select id="reconBulkItem" data-finance-item-picker data-placeholder="NÃO ALTERAR"><option value="">NÃO ALTERAR</option></select></div>
       <div class="purchase-field"><label for="reconBulkSubcategory">SUBCATEGORIA</label><input id="reconBulkSubcategory" maxlength="120" placeholder="EM BRANCO = NÃO ALTERAR"></div>
       <div class="purchase-field"><label for="reconBulkCompany">UNIDADE</label><select id="reconBulkCompany"><option value="">NÃO ALTERAR</option></select></div>
       <div class="purchase-field"><label for="reconBulkCostCenter">CENTRO DE CUSTO</label><select id="reconBulkCostCenter"><option value="">NÃO ALTERAR</option></select></div>
@@ -13270,40 +13273,7 @@
       <div class="purchase-field"><label for="payableCompany">EMPRESA/LOJA *</label><select id="payableCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="payableDescription">DESCRIÇÃO *</label><input id="payableDescription" maxlength="200" required></div>
       <div class="purchase-field"><label for="payableSupplier">FORNECEDOR</label><select id="payableSupplier"><option value="">SEM FORNECEDOR</option></select></div>
-      <div class="purchase-field">
-        <label for="payableCategory">CATEGORIA *</label>
-        <div class="field-with-action">
-          <select id="payableCategory" required><option value="">SELECIONE</option></select>
-          <button class="btn-outline" type="button" id="btnTogglePayableNewCategory" title="Cadastrar nova categoria">+ NOVA</button>
-        </div>
-      </div>
-      <div class="purchase-field full" id="payableNewCategoryRow" hidden>
-        <label for="payableNewCategoryName">NOVA CATEGORIA/SUBGRUPO</label>
-        <div class="field-inline-form">
-          <select id="payableNewCategoryParent"><option value="">CATEGORIA (NÍVEL PRINCIPAL)</option></select>
-          <input id="payableNewCategoryName" maxlength="120" placeholder="Nome da categoria/subgrupo">
-          <button class="btn-accent" type="button" id="btnSavePayableNewCategory">SALVAR</button>
-          <button class="btn-outline" type="button" id="btnCancelPayableNewCategory">CANCELAR</button>
-        </div>
-        <div class="user-form-status" id="payableNewCategoryStatus" role="status" aria-live="polite"></div>
-      </div>
-      <div class="purchase-field full"><label for="payableItemSearch">BUSCAR ITEM</label><input id="payableItemSearch" placeholder="Digite pra filtrar os itens da categoria selecionada..."></div>
-      <div class="purchase-field">
-        <label for="payableItem">ITEM DA DESPESA *</label>
-        <div class="field-with-action">
-          <select id="payableItem" required><option value="">SELECIONE A CATEGORIA PRIMEIRO</option></select>
-          <button class="btn-outline" type="button" id="btnTogglePayableNewItem" title="Cadastrar novo item">+ NOVO</button>
-        </div>
-      </div>
-      <div class="purchase-field full" id="payableNewItemRow" hidden>
-        <label for="payableNewItemName">NOVO ITEM (NA CATEGORIA SELECIONADA ACIMA)</label>
-        <div class="field-inline-form">
-          <input id="payableNewItemName" maxlength="120" placeholder="Nome do item">
-          <button class="btn-accent" type="button" id="btnSavePayableNewItem">SALVAR</button>
-          <button class="btn-outline" type="button" id="btnCancelPayableNewItem">CANCELAR</button>
-        </div>
-        <div class="user-form-status" id="payableNewItemStatus" role="status" aria-live="polite"></div>
-      </div>
+      <div class="purchase-field full"><label for="payableItem">CATEGORIA *</label><select id="payableItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="payableAccount">CONTA FINANCEIRA</label><select id="payableAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="payableCostCenter">CENTRO DE CUSTO</label><select id="payableCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="payablePaymentMethod">FORMA DE PAGAMENTO</label><input id="payablePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
@@ -13408,7 +13378,7 @@
       <div class="purchase-field"><label for="supplierDebtPurchaseDate">DATA DA COMPRA</label><input type="date" id="supplierDebtPurchaseDate"></div>
       <div class="purchase-field"><label for="supplierDebtDueDate">DATA PREVISTA DE PAGAMENTO *</label><input type="date" id="supplierDebtDueDate" required></div>
       <div class="purchase-field"><label for="supplierDebtOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="text" inputmode="decimal" id="supplierDebtOriginalAmount" placeholder="R$ 0,00" required></div>
-      <div class="purchase-field"><label for="supplierDebtFinanceItem">CATEGORIA/ITEM FINANCEIRO (OPCIONAL)</label><select id="supplierDebtFinanceItem"><option value="">FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)</option></select></div>
+      <div class="purchase-field"><label for="supplierDebtFinanceItem">CATEGORIA (OPCIONAL)</label><select id="supplierDebtFinanceItem" data-finance-item-picker data-placeholder="FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)"><option value="">FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)</option></select></div>
       <div class="purchase-field"><label for="supplierDebtAccount">CONTA FINANCEIRA</label><select id="supplierDebtAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field full"><label for="supplierDebtNotes">OBSERVAÇÕES</label><textarea id="supplierDebtNotes" rows="2" maxlength="2000"></textarea></div>
     </div>
@@ -13430,40 +13400,7 @@
       <div class="purchase-field"><label for="expenseCompany">EMPRESA/LOJA *</label><select id="expenseCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="expenseDescription">DESCRIÇÃO *</label><input id="expenseDescription" maxlength="200" required></div>
       <div class="purchase-field"><label for="expenseSupplier">FORNECEDOR</label><select id="expenseSupplier"><option value="">SEM FORNECEDOR</option></select></div>
-      <div class="purchase-field">
-        <label for="expenseCategory">CATEGORIA *</label>
-        <div class="field-with-action">
-          <select id="expenseCategory" required><option value="">SELECIONE</option></select>
-          <button class="btn-outline" type="button" id="btnToggleExpenseNewCategory" title="Cadastrar nova categoria">+ NOVA</button>
-        </div>
-      </div>
-      <div class="purchase-field full" id="expenseNewCategoryRow" hidden>
-        <label for="expenseNewCategoryName">NOVA CATEGORIA/SUBGRUPO</label>
-        <div class="field-inline-form">
-          <select id="expenseNewCategoryParent"><option value="">CATEGORIA (NÍVEL PRINCIPAL)</option></select>
-          <input id="expenseNewCategoryName" maxlength="120" placeholder="Nome da categoria/subgrupo">
-          <button class="btn-accent" type="button" id="btnSaveExpenseNewCategory">SALVAR</button>
-          <button class="btn-outline" type="button" id="btnCancelExpenseNewCategory">CANCELAR</button>
-        </div>
-        <div class="user-form-status" id="expenseNewCategoryStatus" role="status" aria-live="polite"></div>
-      </div>
-      <div class="purchase-field full"><label for="expenseItemSearch">BUSCAR SUBCATEGORIA</label><input id="expenseItemSearch" placeholder="Digite pra filtrar as subcategorias da categoria selecionada..."></div>
-      <div class="purchase-field">
-        <label for="expenseItem">SUBCATEGORIA *</label>
-        <div class="field-with-action">
-          <select id="expenseItem" required><option value="">SELECIONE A CATEGORIA PRIMEIRO</option></select>
-          <button class="btn-outline" type="button" id="btnToggleExpenseNewItem" title="Cadastrar nova subcategoria">+ NOVA</button>
-        </div>
-      </div>
-      <div class="purchase-field full" id="expenseNewItemRow" hidden>
-        <label for="expenseNewItemName">NOVA SUBCATEGORIA (NA CATEGORIA SELECIONADA ACIMA)</label>
-        <div class="field-inline-form">
-          <input id="expenseNewItemName" maxlength="120" placeholder="Nome da subcategoria">
-          <button class="btn-accent" type="button" id="btnSaveExpenseNewItem">SALVAR</button>
-          <button class="btn-outline" type="button" id="btnCancelExpenseNewItem">CANCELAR</button>
-        </div>
-        <div class="user-form-status" id="expenseNewItemStatus" role="status" aria-live="polite"></div>
-      </div>
+      <div class="purchase-field full"><label for="expenseItem">CATEGORIA *</label><select id="expenseItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="expenseCostCenter">CENTRO DE CUSTO</label><select id="expenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="expenseAccount">CONTA BANCÁRIA</label><select id="expenseAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="expensePaymentMethod">FORMA DE PAGAMENTO</label><input id="expensePaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX, CARTÃO"></div>
@@ -13774,8 +13711,7 @@
       <div class="purchase-field"><label for="invoiceEntryDate">DATA DE ENTRADA</label><input type="date" id="invoiceEntryDate"></div>
       <div class="purchase-field"><label for="invoiceCompetenceMonth">COMPETÊNCIA *</label><input type="month" id="invoiceCompetenceMonth" required></div>
       <div class="purchase-field"><label for="invoiceTotalAmount">VALOR TOTAL (R$) *</label><input type="text" inputmode="decimal" id="invoiceTotalAmount" placeholder="R$ 0,00" required></div>
-      <div class="purchase-field"><label for="invoiceCategory">CATEGORIA</label><select id="invoiceCategory"><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field"><label for="invoiceItem">ITEM DA DESPESA</label><select id="invoiceItem"><option value="">SELECIONE A CATEGORIA</option></select></div>
+      <div class="purchase-field full"><label for="invoiceItem">CATEGORIA</label><select id="invoiceItem" data-finance-item-picker><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="invoiceCostCenter">CENTRO DE CUSTO</label><select id="invoiceCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field full"><label for="invoiceNotes">OBSERVAÇÕES</label><textarea id="invoiceNotes" rows="2" maxlength="2000"></textarea></div>
     </div>
@@ -13913,7 +13849,7 @@
       <div class="purchase-field"><label for="pInvoiceIssueDate">DATA DE EMISSÃO</label><input type="date" id="pInvoiceIssueDate"></div>
       <div class="purchase-field"><label for="pInvoiceCompetence">COMPETÊNCIA *</label><input type="month" id="pInvoiceCompetence"></div>
       <div class="purchase-field"><label for="pInvoiceTotal">VALOR TOTAL (R$) *</label><input type="text" inputmode="decimal" id="pInvoiceTotal" placeholder="R$ 0,00"></div>
-      <div class="purchase-field"><label for="pInvoiceItem">ITEM FINANCEIRO *</label><select id="pInvoiceItem"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="pInvoiceItem">CATEGORIA *</label><select id="pInvoiceItem" data-finance-item-picker><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="pInvoiceFile">ARQUIVO DA NF</label><input type="file" id="pInvoiceFile"></div>
       <div class="purchase-field full" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
         <button class="btn-outline" id="btnSavePurchaseInvoice" type="button">SALVAR NF</button>
@@ -31526,6 +31462,130 @@ function renderHomeTasks(){
     return options;
   }
 
+  // Campo único de CATEGORIA do Financeiro: cada opção é o item financeiro,
+  // exibido como CATEGORIA › SUBCATEGORIA (o item já carrega a categoria, não
+  // há mais o par categoria → subcategoria). Todo <select data-finance-item-picker>
+  // ganha a busca em TODAS as opções e o + NOVA (grupo + nome) no mesmo campo.
+  function financeCategoryPathLabel(categoryId){
+    const category = financeCategories.find(c => c.id === categoryId);
+    if(!category) return '';
+    const parent = category.parentId ? financeCategories.find(c => c.id === category.parentId) : null;
+    return (parent ? parent.name+' › ' : '')+category.name;
+  }
+  function financeItemPathLabel(financeItemId){
+    const item = financeItems.find(i => i.id === financeItemId);
+    if(!item) return '';
+    const path = financeCategoryPathLabel(item.categoryId);
+    return (path ? path+' › ' : '')+item.name;
+  }
+  function financeItemPickerOptions(){
+    const rank = new Map(financeCategorySelectOptions().map((o, index) => [o.id, index]));
+    return financeItems
+      .map((item, index) => ({id:item.id, label:financeItemPathLabel(item.id), rank:rank.has(item.categoryId) ? rank.get(item.categoryId) : rank.size, index}))
+      .sort((a, b) => a.rank - b.rank || a.index - b.index);
+  }
+  function renderFinanceItemPicker(selectId, options){
+    const select = el(selectId);
+    if(!select) return;
+    const settings = options || {};
+    const selectedId = settings.selectedId !== undefined ? settings.selectedId : select.value;
+    const search = document.querySelector('[data-finance-item-search="'+selectId+'"]');
+    if(settings.selectedId !== undefined && search) search.value = '';
+    const searchText = normalizeSearchText(search ? search.value : '');
+    const all = financeItemPickerOptions();
+    const shown = searchText ? all.filter(o => normalizeSearchText(o.label).includes(searchText)) : all;
+    let value = all.some(o => o.id === selectedId) ? selectedId : '';
+    // Buscando: a seleção atual fica na lista; se ela não bate, já escolhe a 1ª encontrada.
+    if(searchText && shown.length && !shown.some(o => o.id === value)) value = shown[0].id;
+    const list = value && !shown.some(o => o.id === value) ? [all.find(o => o.id === value)].concat(shown) : shown;
+    const placeholder = searchText && !shown.length ? 'NADA ENCONTRADO' : (select.dataset.placeholder || 'SELECIONE');
+    select.innerHTML = '<option value="">'+escapeHtml(placeholder)+'</option>'+
+      list.map(o => '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
+    select.value = value;
+  }
+  function setFinanceItemPickerValue(selectId, financeItemId){
+    renderFinanceItemPicker(selectId, {selectedId: financeItemId || ''});
+  }
+  function renderFinanceItemPickers(){
+    document.querySelectorAll('select[data-finance-item-picker]').forEach(select => {
+      mountFinanceItemPicker(select);
+      renderFinanceItemPicker(select.id);
+    });
+  }
+  function mountFinanceItemPicker(select){
+    if(!select || select.dataset.pickerMounted) return;
+    select.dataset.pickerMounted = '1';
+    const id = select.id;
+    const wrap = document.createElement('div');
+    wrap.className = 'finance-item-picker';
+    select.parentNode.insertBefore(wrap, select);
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'finance-item-search';
+    search.dataset.financeItemSearch = id;
+    search.placeholder = 'BUSCAR CATEGORIA OU SUBCATEGORIA…';
+    search.autocomplete = 'off';
+    search.setAttribute('aria-label', 'Buscar categoria');
+    const row = document.createElement('div');
+    row.className = 'field-with-action';
+    row.appendChild(select);
+    const newButton = document.createElement('button');
+    newButton.type = 'button';
+    newButton.className = 'btn-outline';
+    newButton.textContent = '+ NOVA';
+    newButton.title = 'Cadastrar nova categoria';
+    newButton.dataset.financeItemNew = id;
+    row.appendChild(newButton);
+    const newRow = document.createElement('div');
+    newRow.className = 'field-inline-form';
+    newRow.hidden = true;
+    newRow.innerHTML = '<select data-finance-item-new-group aria-label="Grupo da nova categoria"></select>'+
+      '<input data-finance-item-new-name maxlength="120" placeholder="NOME DA NOVA CATEGORIA" aria-label="Nome da nova categoria">'+
+      '<button class="btn-accent" type="button" data-finance-item-new-save>SALVAR</button>'+
+      '<button class="btn-outline" type="button" data-finance-item-new-cancel>CANCELAR</button>';
+    const status = document.createElement('div');
+    status.className = 'user-form-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    wrap.append(search, row, newRow, status);
+    search.addEventListener('input', () => {
+      const before = select.value;
+      renderFinanceItemPicker(id);
+      if(select.value !== before) select.dispatchEvent(new Event('change', {bubbles:true}));
+    });
+    const closeNew = () => { newRow.hidden = true; newRow.querySelector('[data-finance-item-new-name]').value = ''; status.textContent = ''; };
+    newButton.addEventListener('click', () => {
+      if(!newRow.hidden){ closeNew(); return; }
+      const group = newRow.querySelector('[data-finance-item-new-group]');
+      const current = financeItems.find(i => i.id === select.value);
+      group.innerHTML = '<option value="">GRUPO (CATEGORIA)</option>'+financeCategorySelectOptions().map(o =>
+        '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
+      if(current) group.value = current.categoryId;
+      newRow.hidden = false;
+      newRow.querySelector('[data-finance-item-new-name]').focus();
+    });
+    newRow.querySelector('[data-finance-item-new-cancel]').addEventListener('click', closeNew);
+    // form.reset() limpa a busca: a lista volta inteira e sem seleção.
+    if(select.form) select.form.addEventListener('reset', () => setTimeout(() => { closeNew(); setFinanceItemPickerValue(id, ''); }, 0));
+    newRow.querySelector('[data-finance-item-new-save]').addEventListener('click', async () => {
+      const categoryId = newRow.querySelector('[data-finance-item-new-group]').value;
+      const name = newRow.querySelector('[data-finance-item-new-name]').value.trim();
+      if(!categoryId){ status.textContent = 'ESCOLHA O GRUPO.'; return; }
+      if(name.length < 2){ status.textContent = 'INFORME O NOME.'; return; }
+      try{
+        const data = await financeApiRequest('/items', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({name, categoryId})
+        });
+        await loadFinanceCatalog();
+        setFinanceItemPickerValue(id, data.id);
+        select.dispatchEvent(new Event('change', {bubbles:true}));
+        closeNew();
+        showPurchaseToast('Categoria cadastrada.');
+      }catch(error){ status.textContent = error.message; }
+    });
+  }
+
   function renderFinanceCategorySelects(){
     const parentSelect = el('financeSubgroupParent');
     const itemSelect = el('financeItemCategory');
@@ -31588,6 +31648,7 @@ function renderHomeTasks(){
     }
     renderFinanceCategorySelects();
     renderFinanceCatalogList();
+    renderFinanceItemPickers();
   }
 
   function openFinanceCatalogDialog(){
@@ -32514,8 +32575,6 @@ function renderHomeTasks(){
     const optionsHtml = options.map(o => '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
     [
       {id:'payablesCategory', placeholder:'TODAS'},
-      {id:'payableCategory', placeholder:'SELECIONE'},
-      {id:'payableNewCategoryParent', placeholder:'CATEGORIA (NÍVEL PRINCIPAL)', onlyTop:true},
     ].forEach(config => {
       const select = el(config.id);
       if(!select) return;
@@ -32580,20 +32639,13 @@ function renderHomeTasks(){
     renderPayableAccountOptionsForCompany('payablesAccount', el('payablesLoja') ? el('payablesLoja').value : '', 'TODAS');
     renderPayableAccountOptionsForCompany('payableAccount', el('payableCompany') ? el('payableCompany').value : '', 'SEM CONTA');
     renderPayableItemOptions('payablesItem', el('payablesCategory') ? el('payablesCategory').value : '', {placeholder:'TODOS'});
-    renderPayableItemOptions('payableItem', el('payableCategory') ? el('payableCategory').value : '');
+    renderFinanceItemPicker('payableItem');
   }
 
   el('payableCompany') && el('payableCompany').addEventListener('change', () => {
     renderPayableAccountOptionsForCompany('payableAccount', el('payableCompany').value, 'SEM CONTA');
   });
 
-  el('payableCategory') && el('payableCategory').addEventListener('change', () => {
-    renderPayableItemOptions('payableItem', el('payableCategory').value, {selectedId:''});
-    el('payableItemSearch').value = '';
-  });
-  el('payableItemSearch') && el('payableItemSearch').addEventListener('input', () => {
-    renderPayableItemOptions('payableItem', el('payableCategory').value, {searchText: el('payableItemSearch').value, selectedId: el('payableItem').value});
-  });
   el('payablesCategory') && el('payablesCategory').addEventListener('change', () => {
     renderPayableItemOptions('payablesItem', el('payablesCategory').value, {placeholder:'TODOS', selectedId:''});
   });
@@ -32604,63 +32656,6 @@ function renderHomeTasks(){
     row.hidden = !show;
     if(show) row.querySelector('input,select')?.focus();
   }
-  el('btnTogglePayableNewCategory') && el('btnTogglePayableNewCategory').addEventListener('click', () => {
-    togglePayableInlineForm('payableNewCategoryRow', el('payableNewCategoryRow').hidden);
-  });
-  el('btnCancelPayableNewCategory') && el('btnCancelPayableNewCategory').addEventListener('click', () => {
-    togglePayableInlineForm('payableNewCategoryRow', false);
-    el('payableNewCategoryName').value = '';
-    el('payableNewCategoryStatus').textContent = '';
-  });
-  el('btnSavePayableNewCategory') && el('btnSavePayableNewCategory').addEventListener('click', async () => {
-    const status = el('payableNewCategoryStatus');
-    const name = el('payableNewCategoryName').value.trim();
-    if(name.length < 2){ status.textContent = 'INFORME O NOME.'; return; }
-    try{
-      const data = await financeApiRequest('/categories', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name, parentId: el('payableNewCategoryParent').value})
-      });
-      await loadFinanceCatalog();
-      renderPayablesCatalogSelects();
-      el('payableCategory').value = data.id;
-      renderPayableItemOptions('payableItem', data.id, {selectedId:''});
-      el('payableNewCategoryName').value = '';
-      status.textContent = '';
-      togglePayableInlineForm('payableNewCategoryRow', false);
-      showPurchaseToast('Categoria cadastrada.');
-    }catch(error){ status.textContent = error.message; }
-  });
-
-  el('btnTogglePayableNewItem') && el('btnTogglePayableNewItem').addEventListener('click', () => {
-    if(!el('payableCategory').value){ showPurchaseToast('Selecione a categoria antes de cadastrar um item.','error'); return; }
-    togglePayableInlineForm('payableNewItemRow', el('payableNewItemRow').hidden);
-  });
-  el('btnCancelPayableNewItem') && el('btnCancelPayableNewItem').addEventListener('click', () => {
-    togglePayableInlineForm('payableNewItemRow', false);
-    el('payableNewItemName').value = '';
-    el('payableNewItemStatus').textContent = '';
-  });
-  el('btnSavePayableNewItem') && el('btnSavePayableNewItem').addEventListener('click', async () => {
-    const status = el('payableNewItemStatus');
-    const name = el('payableNewItemName').value.trim();
-    const categoryId = el('payableCategory').value;
-    if(!categoryId){ status.textContent = 'SELECIONE A CATEGORIA PRIMEIRO.'; return; }
-    if(name.length < 2){ status.textContent = 'INFORME O NOME.'; return; }
-    try{
-      const data = await financeApiRequest('/items', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name, categoryId})
-      });
-      await loadFinanceCatalog();
-      renderPayableItemOptions('payableItem', categoryId, {selectedId:data.id});
-      el('payableNewItemName').value = '';
-      status.textContent = '';
-      togglePayableInlineForm('payableNewItemRow', false);
-      showPurchaseToast('Item cadastrado.');
-    }catch(error){ status.textContent = error.message; }
-  });
-
   async function loadPayablesCatalogData(){
     // Cada lista carrega por conta própria: quem abre a NF pelo Compras não
     // tem acesso a contas/centros de custo, mas precisa dos fornecedores.
@@ -32981,9 +32976,7 @@ function renderHomeTasks(){
     el('payableCompany').value = row.companyId;
     el('payableDescription').value = row.description;
     el('payableSupplier').value = row.supplierId || '';
-    const itemForEdit = financeItems.find(i => i.id === row.financeItemId);
-    el('payableCategory').value = itemForEdit ? itemForEdit.categoryId : '';
-    renderPayableItemOptions('payableItem', itemForEdit ? itemForEdit.categoryId : '', {selectedId: row.financeItemId});
+    setFinanceItemPickerValue('payableItem', row.financeItemId);
     el('payableAccount').value = row.financeAccountId || '';
     el('payableCostCenter').value = row.costCenterId || '';
     el('payablePaymentMethod').value = row.paymentMethod || '';
@@ -33539,16 +33532,7 @@ function renderHomeTasks(){
   el('supplierDebtsLoja').addEventListener('change', () => { supplierDebtsPage = 1; loadSupplierDebtsList(); });
 
   function renderSupplierDebtFinanceItemOptions(){
-    const select = el('supplierDebtFinanceItem');
-    if(!select) return;
-    const selected = select.value;
-    select.innerHTML = '<option value="">FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)</option>'+
-      financeItems.map(item => {
-        const category = financeCategories.find(c => c.id === item.categoryId);
-        const label = (category ? category.name+' › ' : '')+item.name;
-        return '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(label)+'</option>';
-      }).join('');
-    if(financeItems.some(i => i.id === selected)) select.value = selected;
+    renderFlatFinanceItemOptions('supplierDebtFinanceItem');
   }
 
   function resetSupplierDebtForm(){
@@ -36466,10 +36450,7 @@ function renderHomeTasks(){
     if(!select) return;
     const placeholder = selectId === 'corpEntryExpenseItem' ? '<option value="">SELECIONE</option>' : '<option value="">SEM CENTRO DE CUSTO</option>';
     if(selectId === 'corpEntryExpenseItem'){
-      select.innerHTML = placeholder + financeItems.map(item => {
-        const category = financeCategories.find(c => c.id === item.categoryId);
-        return '<option value="'+escapeHtml(item.id)+'">'+escapeHtml((category ? category.name+' › ' : '')+item.name)+'</option>';
-      }).join('');
+      renderFlatFinanceItemOptions(selectId);
     }else{
       select.innerHTML = placeholder + (financeCostCenters||[]).map(cc => '<option value="'+escapeHtml(cc.id)+'">'+escapeHtml(cc.name)+'</option>').join('');
     }
@@ -36566,12 +36547,13 @@ function renderHomeTasks(){
   function openCorpClassifyDialog(ids, entry){
     corpClassifyIds = ids;
     el('corpClassifyForm').reset();
-    el('corpClassifyItem').innerHTML = '<option value="">— MANTER —</option>'+financeItems.map(item => '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(corpItemLabel(item.id))+'</option>').join('');
+    renderFlatFinanceItemOptions('corpClassifyItem');
+    setFinanceItemPickerValue('corpClassifyItem', '');
     el('corpClassifyCostCenter').innerHTML = '<option value="">— MANTER —</option>'+(financeCostCenters || []).map(cc => '<option value="'+escapeHtml(cc.id)+'">'+escapeHtml(cc.name)+'</option>').join('');
     el('corpClassifyTitle').textContent = entry ? 'EDITAR LANÇAMENTO' : 'CLASSIFICAR '+ids.length+(ids.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS');
     el('corpClassifySummary').textContent = entry ? formatDateBR(entry.entryDate)+' · '+(entry.merchant || 'sem estabelecimento')+' · '+formatCentsBRL(entry.amountCents)+(entry.installmentLabel ? ' · parcela '+entry.installmentLabel : '') : '';
     if(entry){
-      el('corpClassifyItem').value = entry.categoryItemId || '';
+      setFinanceItemPickerValue('corpClassifyItem', entry.categoryItemId);
       el('corpClassifyCostCenter').value = entry.costCenterId || '';
       el('corpClassifyHolder').value = entry.holderName || '';
       el('corpClassifyNotes').value = entry.notes || '';
@@ -36613,7 +36595,7 @@ function renderHomeTasks(){
     renderCorpEntryItemOptions('corpEntryExpenseCostCenter');
     el('corpEntryExpenseEntryId').value = entry.id;
     el('corpEntryExpenseSummary').textContent = formatDateBR(entry.entryDate)+' · '+(entry.merchant || 'sem estabelecimento')+' · '+formatCentsBRL(entry.amountCents)+(entry.installmentLabel ? ' · parcela '+entry.installmentLabel : '');
-    el('corpEntryExpenseItem').value = entry.categoryItemId || '';
+    setFinanceItemPickerValue('corpEntryExpenseItem', entry.categoryItemId);
     el('corpEntryExpenseCostCenter').value = entry.costCenterId || '';
     el('corpEntryExpenseDueDate').value = entry.entryDate;
     el('corpEntryExpenseNotes').value = entry.notes || '';
@@ -38281,7 +38263,8 @@ function renderHomeTasks(){
       reconBulkIds = ids;
       el('reconBulkForm').reset();
       el('reconBulkTitle').textContent = 'CLASSIFICAR — '+ids.length+(ids.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS');
-      el('reconBulkItem').innerHTML = reconItemOptions('').replace('<option value="">—</option>', '<option value="">NÃO ALTERAR</option>');
+      renderFlatFinanceItemOptions('reconBulkItem');
+      setFinanceItemPickerValue('reconBulkItem', '');
       el('reconBulkCompany').innerHTML = reconCompanyOptions('').replace('<option value="">—</option>', '<option value="">NÃO ALTERAR</option>');
       el('reconBulkCostCenter').innerHTML = reconCostCenterOptions('').replace('<option value="">—</option>', '<option value="">NÃO ALTERAR</option>');
       el('reconBulkStatus').textContent = '';
@@ -38314,7 +38297,8 @@ function renderHomeTasks(){
   // --- Lançar lançamento do extrato como Despesa (reaproveita /expenses) ---
   function openReconEntryExpenseDialog(entry){
     el('reconEntryExpenseForm').reset();
-    el('reconEntryExpenseItem').innerHTML = reconItemOptions(entry.categoryItemId);
+    renderFlatFinanceItemOptions('reconEntryExpenseItem');
+    setFinanceItemPickerValue('reconEntryExpenseItem', entry.categoryItemId);
     el('reconEntryExpenseCompany').innerHTML = reconCompanyOptions(entry.companyId);
     el('reconEntryExpenseCostCenter').innerHTML = reconCostCenterOptions(entry.costCenterId);
     el('reconEntryExpenseEntryId').value = entry.id;
@@ -39068,12 +39052,10 @@ function renderHomeTasks(){
   // Categoria da despesa da recarga: lembrada neste navegador (a mais usada é sempre a mesma).
   async function fillRecargaItemSelect(id){
     if(!financeItems.length) await loadFinanceCatalog();
-    const select = el(id);
-    select.innerHTML = '<option value="">SELECIONE</option>'+financeItems.map(item =>
-      '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(payableFinanceItemLabel(item.id))+'</option>').join('');
+    renderFlatFinanceItemOptions(id);
     let remembered = '';
     try{ remembered = localStorage.getItem('recargaFinanceItemId') || ''; }catch(_e){}
-    if(financeItems.some(item => item.id === remembered)) select.value = remembered;
+    setFinanceItemPickerValue(id, remembered);
   }
   function rememberRecargaItem(value){ try{ localStorage.setItem('recargaFinanceItemId', value); }catch(_e){} }
   async function openRecargaEventDialog(row){
@@ -42413,8 +42395,6 @@ function renderHomeTasks(){
     const optionsHtml = options.map(o => '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
     [
       {id:'expensesCategory', placeholder:'TODAS'},
-      {id:'expenseCategory', placeholder:'SELECIONE'},
-      {id:'expenseNewCategoryParent', placeholder:'CATEGORIA (NÍVEL PRINCIPAL)', onlyTop:true},
     ].forEach(config => {
       const select = el(config.id);
       if(!select) return;
@@ -42450,78 +42430,14 @@ function renderHomeTasks(){
     renderCostCenterOptionsFor('expensesCostCenter', 'TODOS');
     renderCostCenterOptionsFor('expenseCostCenter', 'SEM CENTRO DE CUSTO');
     renderExpenseItemOptions('expensesItem', el('expensesCategory') ? el('expensesCategory').value : '', {placeholder:'TODAS'});
-    renderExpenseItemOptions('expenseItem', el('expenseCategory') ? el('expenseCategory').value : '');
+    renderFinanceItemPicker('expenseItem');
   }
 
   el('expenseCompany') && el('expenseCompany').addEventListener('change', () => {
     renderPayableAccountOptionsForCompany('expenseAccount', el('expenseCompany').value, 'SEM CONTA');
   });
-  el('expenseCategory') && el('expenseCategory').addEventListener('change', () => {
-    renderExpenseItemOptions('expenseItem', el('expenseCategory').value, {selectedId:''});
-    el('expenseItemSearch').value = '';
-  });
-  el('expenseItemSearch') && el('expenseItemSearch').addEventListener('input', () => {
-    renderExpenseItemOptions('expenseItem', el('expenseCategory').value, {searchText: el('expenseItemSearch').value, selectedId: el('expenseItem').value});
-  });
   el('expensesCategory') && el('expensesCategory').addEventListener('change', () => {
     renderExpenseItemOptions('expensesItem', el('expensesCategory').value, {selectedId:'', placeholder:'TODAS'});
-  });
-
-  el('btnToggleExpenseNewCategory') && el('btnToggleExpenseNewCategory').addEventListener('click', () => {
-    togglePayableInlineForm('expenseNewCategoryRow', el('expenseNewCategoryRow').hidden);
-  });
-  el('btnCancelExpenseNewCategory') && el('btnCancelExpenseNewCategory').addEventListener('click', () => {
-    togglePayableInlineForm('expenseNewCategoryRow', false);
-    el('expenseNewCategoryName').value = '';
-    el('expenseNewCategoryStatus').textContent = '';
-  });
-  el('btnSaveExpenseNewCategory') && el('btnSaveExpenseNewCategory').addEventListener('click', async () => {
-    const status = el('expenseNewCategoryStatus');
-    const name = el('expenseNewCategoryName').value.trim();
-    if(name.length < 2){ status.textContent = 'INFORME O NOME.'; return; }
-    try{
-      const data = await financeApiRequest('/categories', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name, parentId: el('expenseNewCategoryParent').value})
-      });
-      await loadFinanceCatalog();
-      renderExpensesCatalogSelects();
-      el('expenseCategory').value = data.id;
-      renderExpenseItemOptions('expenseItem', data.id, {selectedId:''});
-      el('expenseNewCategoryName').value = '';
-      status.textContent = '';
-      togglePayableInlineForm('expenseNewCategoryRow', false);
-      showPurchaseToast('Categoria cadastrada.');
-    }catch(error){ status.textContent = error.message; }
-  });
-
-  el('btnToggleExpenseNewItem') && el('btnToggleExpenseNewItem').addEventListener('click', () => {
-    if(!el('expenseCategory').value){ showPurchaseToast('Selecione a categoria antes de cadastrar uma subcategoria.','error'); return; }
-    togglePayableInlineForm('expenseNewItemRow', el('expenseNewItemRow').hidden);
-  });
-  el('btnCancelExpenseNewItem') && el('btnCancelExpenseNewItem').addEventListener('click', () => {
-    togglePayableInlineForm('expenseNewItemRow', false);
-    el('expenseNewItemName').value = '';
-    el('expenseNewItemStatus').textContent = '';
-  });
-  el('btnSaveExpenseNewItem') && el('btnSaveExpenseNewItem').addEventListener('click', async () => {
-    const status = el('expenseNewItemStatus');
-    const name = el('expenseNewItemName').value.trim();
-    const categoryId = el('expenseCategory').value;
-    if(!categoryId){ status.textContent = 'SELECIONE A CATEGORIA PRIMEIRO.'; return; }
-    if(name.length < 2){ status.textContent = 'INFORME O NOME.'; return; }
-    try{
-      const data = await financeApiRequest('/items', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name, categoryId})
-      });
-      await loadFinanceCatalog();
-      renderExpenseItemOptions('expenseItem', categoryId, {selectedId:data.id});
-      el('expenseNewItemName').value = '';
-      status.textContent = '';
-      togglePayableInlineForm('expenseNewItemRow', false);
-      showPurchaseToast('Subcategoria cadastrada.');
-    }catch(error){ status.textContent = error.message; }
   });
 
   async function loadExpensesCatalogData(){
@@ -43027,9 +42943,7 @@ function renderHomeTasks(){
     el('expenseCompany').value = expense.companyId;
     el('expenseDescription').value = expense.description;
     el('expenseSupplier').value = expense.supplierId || '';
-    const itemForDuplicate = financeItems.find(i => i.id === expense.financeItemId);
-    el('expenseCategory').value = itemForDuplicate ? itemForDuplicate.categoryId : '';
-    renderExpenseItemOptions('expenseItem', itemForDuplicate ? itemForDuplicate.categoryId : '', {selectedId: expense.financeItemId});
+    setFinanceItemPickerValue('expenseItem', expense.financeItemId);
     el('expenseCostCenter').value = expense.costCenterId || '';
     renderPayableAccountOptionsForCompany('expenseAccount', expense.companyId, 'SEM CONTA');
     el('expenseAccount').value = expense.financeAccountId || '';
@@ -43820,14 +43734,9 @@ function renderHomeTasks(){
   function renderFlatFinanceItemOptions(selectId, placeholder){
     const select = el(selectId);
     if(!select) return;
-    const selected = select.value;
-    select.innerHTML = '<option value="">'+placeholder+'</option>'+
-      financeItems.map(item => {
-        const category = financeCategories.find(c => c.id === item.categoryId);
-        const label = (category ? category.name+' › ' : '')+item.name;
-        return '<option value="'+escapeHtml(item.id)+'">'+escapeHtml(label)+'</option>';
-      }).join('');
-    if(financeItems.some(item => item.id === selected)) select.value = selected;
+    if(placeholder && !select.dataset.placeholder) select.dataset.placeholder = placeholder;
+    mountFinanceItemPicker(select);
+    renderFinanceItemPicker(selectId);
   }
 
   function renderInvoiceFormSelects(){
@@ -43851,15 +43760,7 @@ function renderHomeTasks(){
       syncInvoiceNewSupplierField();
     }
     renderCostCenterOptionsFor('invoiceCostCenter', 'SEM CENTRO DE CUSTO');
-    const categorySelect = el('invoiceCategory');
-    if(categorySelect){
-      const selected = categorySelect.value;
-      const options = financeCategorySelectOptions();
-      categorySelect.innerHTML = '<option value="">SELECIONE</option>'+
-        options.map(o => '<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.label)+'</option>').join('');
-      if(options.some(o => o.id === selected)) categorySelect.value = selected;
-    }
-    renderPayableItemOptions('invoiceItem', categorySelect ? categorySelect.value : '');
+    renderFinanceItemPicker('invoiceItem');
   }
 
   function renderInvoiceStatusChips(){
@@ -44184,9 +44085,6 @@ function renderHomeTasks(){
   el('invoiceFormDialog') && el('invoiceFormDialog').addEventListener('click', event => {
     if(event.target === el('invoiceFormDialog')) el('invoiceFormDialog').close();
   });
-  el('invoiceCategory') && el('invoiceCategory').addEventListener('change', () => {
-    renderPayableItemOptions('invoiceItem', el('invoiceCategory').value, {selectedId:''});
-  });
 
   function syncInvoiceNewSupplierField(){
     const isNew = el('invoiceSupplier').value === '__new__';
@@ -44227,7 +44125,7 @@ function renderHomeTasks(){
           entryDate: el('invoiceEntryDate').value,
           competenceMonth: el('invoiceCompetenceMonth').value,
           totalAmountCents,
-          financeCategoryId: el('invoiceCategory').value,
+          financeCategoryId: (financeItems.find(i => i.id === el('invoiceItem').value) || {}).categoryId || '',
           financeItemId: el('invoiceItem').value,
           costCenterId: el('invoiceCostCenter').value,
           notes: el('invoiceNotes').value,
