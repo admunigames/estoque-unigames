@@ -2734,6 +2734,8 @@
   .rma-info span{display:block;color:var(--ink-faint);font:700 8.5px/1.3 var(--mono);}
   #rmaDetailDialog{width:min(980px,96vw);}
   #rmaDetailActions{flex-wrap:wrap;justify-content:flex-end;}
+  #rmaCreditsBody tr.rma-credit-ok td:first-child{box-shadow:inset 4px 0 0 #3fb27f;}
+  #rmaCreditsBody tr.rma-credit-off td:first-child{box-shadow:inset 4px 0 0 #e0574a;}
   #rmaCreditsView .dre-toolbar-actions,#rmaDisposalsView .dre-toolbar-actions,#rmaSuppliersView .dre-toolbar-actions{justify-content:flex-end;margin:10px 0;}
   #invTabs{flex-wrap:wrap;margin:12px 0;}
   .inv-detail-actions{justify-content:flex-end;margin-top:10px;}
@@ -30209,7 +30211,7 @@ function renderHomeTasks(){
     const card = (label, value, alert, tone) => '<article class="supply-dashboard-card'+(tone ? ' '+tone : '')+'"'+(alert !== null ? ' data-rma-alert="'+alert+'" role="button" tabindex="0" style="cursor:pointer"' : '')+'><span>'+label+'</span><strong>'+value+'</strong></article>';
     const month = todayDateKeyRecife().slice(0, 7);
     const finance = !rmaReadOnly() && canAccess('rma:finance');
-    const available = rmaExtra.credits.filter(item => item.status !== 'CANCELADO' && item.creditCents > item.usedCents);
+    const available = rmaExtra.credits.filter(rmaCreditAvailable);
     el('rmaSummary').innerHTML =
       card('EM ABERTO', open.length, '', '')+
       card('FINALIZADOS', rows.filter(row => row.finalized).length, null, '')+
@@ -30251,20 +30253,23 @@ function renderHomeTasks(){
       '</tr>').join('');
   }
 
+  // Disponível = tem saldo e não está cancelado nem totalmente usado (verde); o resto, vermelho.
+  const rmaCreditAvailable = item => item.creditCents > item.usedCents && !['CANCELADO','UTILIZADO EM COMPRA','ABATIDO EM BOLETO'].includes(item.status);
   function renderRmaCredits(){
     const rows = rmaExtra.credits;
     const live = rows.filter(item => item.status !== 'CANCELADO');
     el('rmaCreditsSummary').innerHTML =
       '<article class="supply-dashboard-card"><span>CRÉDITOS</span><strong>'+rows.length+'</strong></article>'+
       '<article class="supply-dashboard-card"><span>VALOR TOTAL</span><strong>'+formatCentsBRL(live.reduce((sum, item) => sum + item.creditCents, 0))+'</strong></article>'+
-      '<article class="supply-dashboard-card"><span>SALDO DISPONÍVEL</span><strong>'+formatCentsBRL(live.reduce((sum, item) => sum + item.creditCents - item.usedCents, 0))+'</strong></article>';
+      '<article class="supply-dashboard-card"><span>SALDO DISPONÍVEL</span><strong class="gd-pos">'+formatCentsBRL(rows.filter(rmaCreditAvailable).reduce((sum, item) => sum + item.creditCents - item.usedCents, 0))+'</strong></article>'+
+      '<article class="supply-dashboard-card"><span>NÃO DISPONÍVEIS</span><strong class="gd-neg">'+rows.filter(item => !rmaCreditAvailable(item)).length+'</strong></article>';
     el('rmaCreditsBody').innerHTML = rows.length ? rows.map(item =>
-      '<tr><td data-label="Fornecedor"><strong>'+escapeHtml(item.supplier)+'</strong>'+(item.notes ? '<small class="os-update-meta">'+escapeHtml(item.notes)+'</small>' : '')+'</td>'+
+      '<tr class="'+(rmaCreditAvailable(item) ? 'rma-credit-ok' : 'rma-credit-off')+'"><td data-label="Fornecedor"><strong>'+escapeHtml(item.supplier)+'</strong>'+(item.notes ? '<small class="os-update-meta">'+escapeHtml(item.notes)+'</small>' : '')+'</td>'+
       '<td data-label="Gerado em">'+rmaDate(item.generatedDate)+'</td>'+
       '<td data-label="Valor">'+formatCentsBRL(item.creditCents)+'</td>'+
       '<td data-label="Usado">'+formatCentsBRL(item.usedCents)+'</td>'+
-      '<td data-label="Saldo"><strong>'+formatCentsBRL(item.creditCents - item.usedCents)+'</strong></td>'+
-      '<td data-label="Status">'+escapeHtml(item.status || '—')+'</td>'+
+      '<td data-label="Saldo"><strong class="'+(rmaCreditAvailable(item) ? 'gd-pos' : 'gd-neg')+'">'+formatCentsBRL(item.creditCents - item.usedCents)+'</strong></td>'+
+      '<td data-label="Status"><span class="status-pill '+(rmaCreditAvailable(item) ? 'done' : 'alert')+'">'+escapeHtml(rmaCreditAvailable(item) ? (item.status || 'DISPONÍVEL') : (item.status && item.status !== 'DISPONÍVEL' ? item.status : 'SEM SALDO'))+'</span></td>'+
       '<td data-label="Uso">'+escapeHtml(item.usageType || '—')+(item.usageDate ? '<small class="os-update-meta">'+rmaDate(item.usageDate)+'</small>' : '')+'</td>'+
       '<td data-label="Documento">'+escapeHtml(item.documentNumber || '—')+(item.attachments || []).map(file => '<br><a href="'+RMA_API+'/file?id='+encodeURIComponent(file.id)+'" target="_blank" rel="noopener">'+escapeHtml(file.fileName)+'</a>').join('')+'</td>'+
       '<td data-label="RMA">'+escapeHtml(item.rmaCode || '—')+'</td>'+
@@ -30346,10 +30351,28 @@ function renderHomeTasks(){
       el('btnRmaNew').hidden = !rmaCan('create');
       rmaSetTab(rmaTab);
       if(rmaDetailId && el('rmaDetailDialog').open) rmaOpenDetail(rmaDetailId, {silent:true});
+      if(rmaCan('edit')) rmaSyncLegacyFiles();
     }catch(error){
       el('rmaSummary').innerHTML = '';
       el('rmaTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
+  }
+
+  // Anexos importados do Base44: copia todos para o R2 em segundo plano (uma
+  // vez por sessão), em lotes, enquanto houver pendentes e o lote copiar algo.
+  let rmaSyncStarted = false;
+  async function rmaSyncLegacyFiles(){
+    if(rmaSyncStarted) return;
+    rmaSyncStarted = true;
+    let total = 0;
+    try{
+      for(let round = 0; round < 60; round += 1){
+        const result = await rmaRequest('', 'POST', {action:'sync'}, RMA_API+'/file');
+        total += result.copied;
+        if(!result.pending || !result.copied) break;
+      }
+      if(total) showPurchaseToast(total+' anexo(s) do Base44 copiado(s) para o Unigames.');
+    }catch(error){ rmaSyncStarted = false; }
   }
 
   // ---- Formulário genérico (RMA, atualização, crédito, descarte, fornecedor) ----
@@ -30604,7 +30627,7 @@ function renderHomeTasks(){
       (rma.technicalAnalysis ? '<p><strong>ANÁLISE TÉCNICA:</strong> '+escapeHtml(rma.technicalAnalysis)+'</p>' : '')+
       (rma.productNotes ? '<p><strong>OBSERVAÇÕES:</strong> '+escapeHtml(rma.productNotes)+'</p>' : '')+
       (rma.finalized ? '<p class="gd-opening-hint"><strong>FINALIZADO</strong> EM '+escapeHtml(formatDateTimeBR(rma.finalizedAt) || '—')+(rma.finalizedByName ? ' POR '+escapeHtml(rma.finalizedByName) : '')+(rma.solutionType ? ' · SOLUÇÃO: '+escapeHtml(rma.solutionType) : '')+(rma.solutionDescription ? ' · '+escapeHtml(rma.solutionDescription) : '')+'</p>' : '')+
-      (attachments.length ? '<p><strong>ANEXOS:</strong> '+rmaFileLinks(attachments)+'</p>' : '')+
+      (attachments.length || updates.some(update => update.attachments.length) ? '<p><strong>ANEXOS:</strong> '+rmaFileLinks(attachments.concat(...updates.map(update => update.attachments)))+'</p>' : '')+
       (disposals.length ? '<p><strong>DESCARTES:</strong> '+disposals.map(item => escapeHtml(rmaDate(item.disposalDate)+' · '+item.quantity+' UN. · '+formatCentsBRL(item.totalCostCents)+(item.reason ? ' · '+item.reason : ''))).join('<br>')+'</p>' : '')+
       (credits.length ? '<p><strong>CRÉDITOS:</strong> '+credits.map(item => escapeHtml(item.supplier+' · '+formatCentsBRL(item.creditCents)+' · SALDO '+formatCentsBRL(item.creditCents - item.usedCents)+(item.status ? ' · '+item.status : ''))).join('<br>')+'</p>' : '');
     const finance = rmaCan('finance');

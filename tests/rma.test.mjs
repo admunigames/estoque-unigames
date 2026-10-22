@@ -105,4 +105,8 @@ test("anexo importado: só copia da pasta pública do Base44; fora do escopo = 4
   assert.equal((await get(LOJA_A)).status, 404);
   // Endereço fora do Base44 não é buscado.
   assert.equal((await get(LOJA_B)).status, 404);
+  // Cópia em lote: loja não pode; endereço fora do Base44 não é copiado e continua pendente.
+  assert.equal((await callRoute(file.POST, LOJA_A, "POST", "/api/assistencia/rma/file", { action: "sync" })).status, 403);
+  const sync = await (await callRoute(file.POST, RMA, "POST", "/api/assistencia/rma/file", { action: "sync" })).json();
+  assert.deepEqual([sync.copied, sync.failed, sync.pending], [0, ["nf.pdf"], 1]);
 });

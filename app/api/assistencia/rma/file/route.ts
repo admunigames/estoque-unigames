@@ -1,11 +1,13 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { DEFAULT_ATTACHMENT_CONTENT_TYPE, contentDisposition, documentsBucket, safeR2FileName } from "../../../documents/shared";
-import { canView, identity, ownerRma, safeText } from "../shared";
+import { canView, identity, jsonResponse, ownerRma, safeText, writeGuard } from "../shared";
 
 // Abre/baixa um anexo do RMA (?id=<anexo>), no escopo de loja. Anexo importado
 // do Base44 (r2_key '') é copiado para o R2 na primeira abertura — só da pasta
 // pública do app RMA antigo (nenhum outro endereço é buscado).
+//   POST {action:"sync"} → copia até 8 anexos ainda no Base44 por chamada
+//   (rma:edit, login sem loja); a tela repete enquanto houver pendentes.
 const LEGACY_PREFIX = "https://base44.app/api/apps/6a0f1ab5fe3a52c5678c3c51/files/";
 
 function fileError(message: string, status: number) {
@@ -63,6 +65,38 @@ async function rmaFile(request: Request, head = false) {
   } catch (error) {
     console.error("Não foi possível abrir o anexo do RMA.", error);
     return fileError("NÃO FOI POSSÍVEL ABRIR O ANEXO.", 500);
+  }
+}
+
+const SYNC_BATCH = 8;
+
+export async function POST(request: Request) {
+  const guard = writeGuard(request, "edit", "VOCÊ NÃO TEM PERMISSÃO PARA COPIAR OS ANEXOS.");
+  if ("error" in guard) return guard.error;
+  try {
+    const database = await getD1();
+    const bucket = await documentsBucket();
+    const pending = await database
+      .prepare(
+        `SELECT id, owner_type AS ownerType, owner_id AS ownerId, rma_id AS rmaId, file_name AS fileName, r2_key AS r2Key,
+                source_url AS sourceUrl, content_type AS contentType
+         FROM rma_attachments WHERE deleted=0 AND r2_key='' AND source_url<>'' ORDER BY id LIMIT ${SYNC_BATCH}`,
+      )
+      .all<Row>();
+    let copied = 0;
+    const failed: string[] = [];
+    for (const row of pending.results ?? []) {
+      const key = await copyLegacy(database, bucket, row).catch(() => null);
+      if (key) copied += 1;
+      else failed.push(row.fileName);
+    }
+    const left = await database
+      .prepare("SELECT count(*) AS n FROM rma_attachments WHERE deleted=0 AND r2_key='' AND source_url<>''")
+      .first<{ n: number }>();
+    return jsonResponse({ copied, failed, pending: Number(left?.n || 0) });
+  } catch (error) {
+    console.error("Não foi possível copiar os anexos do RMA.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL COPIAR OS ANEXOS." }, 500);
   }
 }
 
