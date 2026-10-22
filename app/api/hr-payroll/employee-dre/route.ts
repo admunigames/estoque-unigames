@@ -11,6 +11,7 @@ import {
 } from "../../../lib/hr-employee-dre";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { MONTH_PATTERN, canManagePayroll, identity, jsonResponse, safeText } from "../shared";
+import { actingStoresForMonth } from "../../../lib/acting-store";
 
 // DRE Funcionário — fechamento do mês (civil), por loja com detalhe por
 // colaborador. Tudo calculado ao vivo a partir das fontes; nada é gravado.
@@ -101,8 +102,7 @@ export async function GET(request: Request) {
       birthdays: byCompany(birthdays.results),
     });
 
-    // Por CNPJ: quem esteve ativo no mês, na loja do mês (Escalas) ou do
-    // cadastro, com o salário da folha do mês (ou o do cadastro) → FGTS 8%.
+    // Por CNPJ: quem esteve ativo no mês, na loja atuante do mês, com o salário da folha do mês (ou o do cadastro) → FGTS 8%.
     const monthEnd = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
     const [employees, allTerminations, assignments, payroll] = await Promise.all([
       database
@@ -114,17 +114,16 @@ export async function GET(request: Request) {
       database
         .prepare("SELECT employee_id AS employeeId, termination_date AS terminationDate FROM hr_terminations")
         .all<{ employeeId: string; terminationDate: string }>(),
-      database
-        .prepare("SELECT employee_id AS employeeId, company_id AS companyId FROM hr_schedule_assignments WHERE reference_month=?1")
-        .bind(month)
-        .all<{ employeeId: string; companyId: string }>(),
+      // Loja do mês = loja atuante (RH > Funcionários / Escalas), herdando o
+      // último mês com registro; sem registro, a loja de admissão.
+      actingStoresForMonth(database, month),
       database
         .prepare("SELECT employee_id AS employeeId, base_salary_cents AS baseSalaryCents FROM hr_payroll_entries WHERE month=?1")
         .bind(month)
         .all<{ employeeId: string; baseSalaryCents: number }>(),
     ]);
     const terms = allTerminations.results ?? [];
-    const monthStoreOf = new Map((assignments.results ?? []).filter((row) => row.companyId).map((row) => [row.employeeId, row.companyId]));
+    const monthStoreOf = new Map([...assignments].map(([employeeId, store]) => [employeeId, store.companyId]));
     const payrollSalaryOf = new Map((payroll.results ?? []).map((row) => [row.employeeId, Number(row.baseSalaryCents) || 0]));
     const staff = (employees.results ?? [])
       .filter((employee) => activeOn(employee, terms, monthEnd) ||

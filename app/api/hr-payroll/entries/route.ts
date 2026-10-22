@@ -13,7 +13,7 @@ import {
   actorName,
   identity,
   jsonResponse,
-  loadEmployee,
+  loadEmployeeForMonth,
   loadEmployerChargesBps,
   safeText,
   sameOrigin,
@@ -22,6 +22,7 @@ import {
   type JsonMap,
 } from "../shared";
 import { computePayrollBreakdown, legacyNetCents } from "../../../lib/hr-payroll";
+import { actingStoresForMonth } from "../../../lib/acting-store";
 
 // Folha de Pagamento mensal.
 //
@@ -134,14 +135,22 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const [employees, entriesResult, employerChargesBps] = await Promise.all([
-      loadEmployeesFor(database, companyId),
+    const [allEmployees, entriesResult, employerChargesBps, actingStores] = await Promise.all([
+      loadEmployeesFor(database, ""),
       database
         .prepare(`SELECT ${ENTRY_COLUMNS} FROM hr_payroll_entries WHERE month=?1`)
         .bind(month)
         .all<EntryRow>(),
       loadEmployerChargesBps(database),
+      actingStoresForMonth(database, month),
     ]);
+    // Unidade do mês = loja atuante (não a loja de hoje do cadastro).
+    const employees = allEmployees
+      .map((employee) => {
+        const store = actingStores.get(employee.id);
+        return store ? { ...employee, companyId: store.companyId, companyName: store.companyName } : employee;
+      })
+      .filter((employee) => !companyId || employee.companyId === companyId);
     const entriesByEmployee = new Map(
       (entriesResult.results ?? []).map((entry) => [entry.employeeId, entry]),
     );
@@ -238,7 +247,8 @@ async function saveEntry(database: Database, actor: Identity, body: JsonMap) {
     return jsonResponse({ error: "INFORME UM MÊS DE ORIGEM VÁLIDO (AAAA-MM)." }, 400);
   }
 
-  const employee = await loadEmployee(database, employeeId);
+  // Unidade da folha = loja atuante do funcionário NESTE mês.
+  const employee = await loadEmployeeForMonth(database, employeeId, month);
   if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
 
   // "Copiar do mês anterior": os valores manuais vêm da folha daquele mês,

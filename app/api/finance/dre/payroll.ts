@@ -1,4 +1,5 @@
 import type { getD1 } from "../../../../db";
+import { actingStoresForMonth } from "../../../lib/acting-store";
 
 // Contribuição do RH (Folha, Benefícios, Comissões) para a DRE — item 13.
 //
@@ -53,55 +54,54 @@ export async function loadPayrollDreContribution(
 
   const isStore = scope !== "stores";
   const companyId = isStore ? scope.companyId : "";
-  // "stores" = todas as lojas reais: exclui RH sem loja e o da Assistência,
-  // que têm DRE própria (item 8).
-  const companyCond = isStore ? "company_id = ?2" : "company_id <> '' AND company_id <> 'assistencia'";
-  const bind = (extra: unknown[]) => (isStore ? [month, companyId, ...extra] : [month, ...extra]);
+  // Loja do custo = loja ATUANTE do funcionário no mês (RH > Funcionários),
+  // com a loja gravada no lançamento como reserva. "stores" = todas as lojas
+  // reais: exclui RH sem loja e o da Assistência.
+  const actingStores = await actingStoresForMonth(database, month);
+  const storeOf = (row: { employeeId: string; companyId: string }) => actingStores.get(row.employeeId)?.companyId || row.companyId || "";
+  const inScope = (store: string) => (isStore ? store === companyId : store !== "" && store !== "assistencia");
 
   const chargesRow = await database
     .prepare("SELECT employer_charges_bps AS bps FROM hr_payroll_settings WHERE company_id='' LIMIT 1")
     .first<{ bps: number }>();
   const employerChargesBps = Math.max(0, Number(chargesRow?.bps ?? 0));
 
-  const [folhaRow, beneficiosRow, comissoesRow] = await Promise.all([
-    mapping.has("folha")
-      ? database
-          .prepare(
-            `SELECT
-               COALESCE(SUM(base_salary_cents + bonus_cents + overtime_cents + additions_cents + other_cents), 0) AS salaryGross,
-               COALESCE(SUM(base_salary_cents), 0) AS baseTotal
-             FROM hr_payroll_entries WHERE month = ?1 AND ${companyCond}`,
-          )
-          .bind(...bind([]))
-          .first<{ salaryGross: number; baseTotal: number }>()
-      : Promise.resolve(null),
-    mapping.has("beneficios")
-      ? database
-          .prepare(
-            `SELECT COALESCE(SUM(gross_cents), 0) AS total
-             FROM hr_benefits WHERE month = ?1 AND ${companyCond}`,
-          )
-          .bind(...bind([]))
-          .first<{ total: number }>()
-      : Promise.resolve(null),
-    mapping.has("comissoes")
-      ? database
-          .prepare(
-            `SELECT COALESCE(SUM(commission_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
-             FROM hr_commissions WHERE month = ?1 AND ${companyCond}`,
-          )
-          .bind(...bind([]))
-          .first<{ total: number }>()
-      : Promise.resolve(null),
+  const [folhaRows, beneficiosRows, comissoesRows] = await Promise.all([
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, company_id AS companyId,
+                COALESCE(SUM(base_salary_cents + bonus_cents + overtime_cents + additions_cents + other_cents), 0) AS salaryGross,
+                COALESCE(SUM(base_salary_cents), 0) AS baseTotal
+         FROM hr_payroll_entries WHERE month = ?1 GROUP BY employee_id, company_id`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; companyId: string; salaryGross: number; baseTotal: number }>(),
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, company_id AS companyId, COALESCE(SUM(gross_cents), 0) AS total
+         FROM hr_benefits WHERE month = ?1 GROUP BY employee_id, company_id`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; companyId: string; total: number }>(),
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, company_id AS companyId,
+                COALESCE(SUM(commission_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
+         FROM hr_commissions WHERE month = ?1 GROUP BY employee_id, company_id`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; companyId: string; total: number }>(),
   ]);
+  const folha = (folhaRows.results ?? []).filter((row) => inScope(storeOf(row)));
+  const sumOf = (rows: Array<{ employeeId: string; companyId: string; total: number }> | undefined) =>
+    (rows ?? []).filter((row) => inScope(storeOf(row))).reduce((sum, row) => sum + Number(row.total || 0), 0);
 
   const amounts: Record<PayrollBlock, number> = {
-    folha: folhaRow
-      ? Number(folhaRow.salaryGross || 0) +
-        Math.round((Number(folhaRow.baseTotal || 0) * employerChargesBps) / 10000)
-      : 0,
-    beneficios: beneficiosRow ? Number(beneficiosRow.total || 0) : 0,
-    comissoes: comissoesRow ? Number(comissoesRow.total || 0) : 0,
+    folha:
+      folha.reduce((sum, row) => sum + Number(row.salaryGross || 0), 0) +
+      Math.round((folha.reduce((sum, row) => sum + Number(row.baseTotal || 0), 0) * employerChargesBps) / 10000),
+    beneficios: sumOf(beneficiosRows.results),
+    comissoes: sumOf(comissoesRows.results),
   };
 
   const byItem = new Map<string, number>();

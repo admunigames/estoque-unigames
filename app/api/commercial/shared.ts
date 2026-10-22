@@ -25,6 +25,7 @@ import {
   type SellerMetrics,
   type StoreGoal,
 } from "../../lib/commercial";
+import { actingStoresForMonth } from "../../lib/acting-store";
 
 // Comercial — metas e comissionamento. Permissões próprias
 // (MODULE_VIEW_PERMISSIONS.commercial em worker/index.ts), independentes do
@@ -379,7 +380,7 @@ export async function loadSellers(
   database: Database,
   month: string,
 ): Promise<{ sellers: Seller[]; tabOperationals: Seller[]; operationals: Operational[]; clock: MonthClock; rules: CommercialRules }> {
-  const [result, companyNames, allRules, newcomersResult, entriesResult, rolesResult, storeGoals] = await Promise.all([
+  const [result, companyNames, allRules, newcomersResult, entriesResult, rolesResult, storeGoals, actingStores] = await Promise.all([
     database
       .prepare(
         `SELECT ${MONTHLY_COLUMNS}, e.company_id AS currentCompanyId, e.status AS currentStatus
@@ -406,6 +407,9 @@ export async function loadSellers(
       .bind(month)
       .all<{ employeeId: string; role: string }>(),
     loadStoreGoals(database, month),
+    // Loja atuante de cada um NESTE mês (RH > Funcionários): vale para a meta,
+    // o ranking e a premiação do mês — trocar a loja depois não mexe no passado.
+    actingStoresForMonth(database, month),
   ]);
   const clock = monthClock(month, todayInTimezone());
   const rules = resolveCommercialRules(allRules, month);
@@ -427,7 +431,7 @@ export async function loadSellers(
   const roleTitles = new Map<string, string>();
   const everyone = (result.results ?? []).map((row): Seller => {
     roleTitles.set(row.employeeId, row.roleTitle || "");
-    const companyId = row.currentCompanyId || row.companyId;
+    const companyId = actingStores.get(row.employeeId)?.companyId || row.currentCompanyId || row.companyId;
     const goal: Goal = {
       targetRevenueCents: n(row.targetRevenueCents),
       targetItems: n(row.targetItems),
@@ -538,15 +542,21 @@ async function operationalPeople(
   companyNames: Map<string, string>,
   inSellersTab: Set<string>,
 ): Promise<Array<Omit<Operational, "commission">>> {
-  const result = await database
-    .prepare(
-      `SELECT id, full_name AS fullName, role_title AS roleTitle, company_id AS companyId, company_name AS companyName
-       FROM hr_employees
-       WHERE status='active' AND company_id<>'' AND (admission_date='' OR admission_date<=?1)`,
-    )
-    .bind(`${month}-31`)
-    .all<{ id: string; fullName: string; roleTitle: string; companyId: string; companyName: string }>();
+  const [result, actingStores] = await Promise.all([
+    database
+      .prepare(
+        `SELECT id, full_name AS fullName, role_title AS roleTitle, company_id AS companyId, company_name AS companyName
+         FROM hr_employees
+         WHERE status='active' AND (admission_date='' OR admission_date<=?1)`,
+      )
+      .bind(`${month}-31`)
+      .all<{ id: string; fullName: string; roleTitle: string; companyId: string; companyName: string }>(),
+    actingStoresForMonth(database, month),
+  ]);
   const fromRh = (result.results ?? [])
+    // Loja do mês = loja atuante (RH > Funcionários), não a de hoje.
+    .map((employee) => ({ ...employee, ...(actingStores.get(employee.id) ?? {}) }))
+    .filter((employee) => employee.companyId)
     .filter((employee) => !inSellersTab.has(employee.id) && roleOf(employee.id, employee.roleTitle) === "operacional")
     .map((employee) => ({
       employeeId: employee.id,

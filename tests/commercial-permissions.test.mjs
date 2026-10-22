@@ -42,7 +42,10 @@ function createFakeD1() {
     CREATE TABLE hr_employees (
       id text PRIMARY KEY, full_name text NOT NULL, company_id text, user_id text,
       role_title text DEFAULT 'Vendedor', company_name text DEFAULT '', status text DEFAULT 'active',
-      admission_date text DEFAULT ''
+      admission_date text DEFAULT '', admission_company_id text DEFAULT '', admission_company_name text DEFAULT ''
+    );
+    CREATE TABLE hr_schedule_assignments (
+      employee_id text NOT NULL, reference_month text NOT NULL, company_id text DEFAULT '', company_name text DEFAULT ''
     );
     CREATE TABLE commercial_monthly (
       employee_id text NOT NULL, employee_name text NOT NULL, company_id text NOT NULL, company_name text,

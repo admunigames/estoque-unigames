@@ -12460,7 +12460,8 @@
       <div class="purchase-field"><label for="rhEmployeeRg">RG</label><input id="rhEmployeeRg" maxlength="30"></div>
       <div class="purchase-field"><label for="rhEmployeeTelefone">TELEFONE</label><input type="tel" id="rhEmployeeTelefone" maxlength="40" placeholder="(81) 90000-0000"></div>
       <div class="purchase-field"><label for="rhEmployeeAdmission">DATA DE ADMISSÃO</label><input type="date" id="rhEmployeeAdmission"></div>
-      <div class="purchase-field"><label for="rhEmployeeCompany">LOJA</label><select id="rhEmployeeCompany"><option value="">SEM LOJA DEFINIDA</option></select></div>
+      <div class="purchase-field"><label for="rhEmployeeCompany">LOJA ATUANTE (MÊS ATUAL)</label><select id="rhEmployeeCompany"><option value="">SEM LOJA DEFINIDA</option></select></div>
+      <div class="purchase-field"><label for="rhEmployeeAdmissionCompany">LOJA DE ADMISSÃO</label><select id="rhEmployeeAdmissionCompany"><option value="">MESMA DA LOJA ATUANTE</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeRole">CARGO</label><input id="rhEmployeeRole" maxlength="120"></div>
       <div class="purchase-field" data-rh-fin><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeSalary" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhEmployeeStatus">SITUAÇÃO</label><select id="rhEmployeeStatus"><option value="active">ATIVO</option><option value="inactive">INATIVO</option></select></div>
@@ -12473,6 +12474,17 @@
       <div class="purchase-field full"><label for="rhEmployeeUser">CONTA DE ACESSO (OPCIONAL)</label><select id="rhEmployeeUser"><option value="">SEM CONTA VINCULADA</option></select></div>
       <div class="purchase-field full"><label for="rhEmployeeDriveLink">LINK DO DRIVE (DOCUMENTOS DO FUNCIONÁRIO)</label><input type="url" id="rhEmployeeDriveLink" maxlength="600" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..."></div>
       <div class="purchase-field full"><label for="rhEmployeeNotes">OBSERVAÇÕES</label><textarea id="rhEmployeeNotes" rows="2" maxlength="500"></textarea></div>
+      <div class="purchase-field full" id="rhActingStoreBox" hidden>
+        <label>LOJA ATUANTE POR MÊS</label>
+        <p class="muted" style="margin:0 0 6px;font-size:12px;">A loja de cada mês vale para a meta do Comercial, a DRE, a DRE Funcionário e a Folha. Mês sem registro segue o último mês anterior registrado; sem nenhum registro, a loja de admissão. Mudar um mês não altera os meses anteriores.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field"><label for="rhActingStoreMonth">MÊS</label><input type="month" id="rhActingStoreMonth"></div>
+          <div class="field"><label for="rhActingStoreCompany">LOJA</label><select id="rhActingStoreCompany"><option value="">SELECIONE</option></select></div>
+          <button class="btn-outline" type="button" id="btnSaveRhActingStore">GRAVAR MÊS</button>
+        </div>
+        <div class="table-wrap" style="margin-top:8px;"><table><thead><tr><th>MÊS</th><th>LOJA</th><th>ATUALIZADO POR</th><th></th></tr></thead>
+          <tbody id="rhActingStoreBody"><tr><td colspan="4" class="responsive-empty">Nenhum mês registrado.</td></tr></tbody></table></div>
+      </div>
     </div>
     <div class="user-form-status" id="rhEmployeeFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -45661,6 +45673,8 @@ function renderHomeTasks(){
     // Assistência: setor interno tratado como unidade — o custo de pessoal
     // de quem está lotado aqui alimenta a DRE Assistência (item 8).
     rhFillSelect('rhEmployeeCompany','SEM LOJA DEFINIDA',rhCompanyOptions().concat([{value:'assistencia',label:'ASSISTÊNCIA (SETOR)'}]));
+    rhFillSelect('rhEmployeeAdmissionCompany','MESMA DA LOJA ATUANTE',rhCompanyOptions().concat([{value:'assistencia',label:'ASSISTÊNCIA (SETOR)'}]));
+    rhFillSelect('rhActingStoreCompany','SELECIONE',rhCompanyOptions().concat([{value:'assistencia',label:'ASSISTÊNCIA (SETOR)'}]));
     rhFillSelect('rhFolhaLoja','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhFolgasCompany','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhBeneficioFiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
@@ -45832,6 +45846,11 @@ function renderHomeTasks(){
     el('rhEmployeeTelefone').value = employee ? (employee.telefone || '') : '';
     el('rhEmployeeAdmission').value = employee ? (employee.admissionDate || '') : '';
     el('rhEmployeeCompany').value = employee ? (employee.companyId || '') : (el('rhEmployeeFiltroLoja').value || '');
+    el('rhEmployeeAdmissionCompany').value = employee ? (employee.admissionCompanyId || employee.companyId || '') : '';
+    el('rhActingStoreBox').hidden = !employee;
+    el('rhActingStoreMonth').value = todayDateKeyRecife().slice(0,7);
+    el('rhActingStoreCompany').value = '';
+    if(employee) loadRhActingStores(employee.id);
     el('rhEmployeeRole').value = employee ? (employee.roleTitle || '') : '';
     setCurrencyValue(el('rhEmployeeSalary'), employee ? Number(employee.salaryCents || 0)/100 : 0);
     el('rhEmployeeStatus').value = employee ? employee.status : 'active';
@@ -45852,6 +45871,61 @@ function renderHomeTasks(){
   function closeRhEmployeeDialog(){
     if(el('rhEmployeeDialog').open) el('rhEmployeeDialog').close();
   }
+
+  // LOJA ATUANTE POR MÊS (MÊS → LOJA em hr_schedule_assignments).
+  function renderRhActingStores(payload){
+    const body = el('rhActingStoreBody');
+    const months = Array.isArray(payload && payload.months) ? payload.months : [];
+    const canEdit = rhEmployeeCan('edit');
+    body.innerHTML = months.length ? months.map(row =>
+      '<tr><td>'+escapeHtml(rhFormatMonth(row.month))+'</td><td>'+escapeHtml(String(row.companyName || '').toUpperCase())+'</td>'+
+      '<td>'+escapeHtml(String(row.updatedByName || '—').toUpperCase())+'</td>'+
+      '<td>'+(canEdit ? '<button class="btn-outline" type="button" data-rh-acting-remove="'+escapeHtml(row.month)+'">REMOVER</button>' : '')+'</td></tr>'
+    ).join('') : '<tr><td colspan="4" class="responsive-empty">Nenhum mês registrado — vale a loja de admissão.</td></tr>';
+    el('btnSaveRhActingStore').hidden = !canEdit;
+  }
+  async function loadRhActingStores(employeeId){
+    el('rhActingStoreBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      renderRhActingStores(await rhApiRequest('/employees/acting-stores?employeeId='+encodeURIComponent(employeeId)));
+    }catch(error){
+      el('rhActingStoreBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  async function afterRhActingStoreChange(employeeId, payload){
+    if(payload && payload.current && payload.current.companyId) el('rhEmployeeCompany').value = payload.current.companyId;
+    await loadRhActingStores(employeeId);
+    await refreshAfterAction(() => loadRhFuncionarios({silent:true}));
+  }
+  if(el('btnSaveRhActingStore')) el('btnSaveRhActingStore').addEventListener('click', async () => {
+    const employeeId = el('rhEmployeeId').value;
+    const month = el('rhActingStoreMonth').value;
+    const companyId = el('rhActingStoreCompany').value;
+    if(!employeeId) return;
+    if(!/^\d{4}-\d{2}$/.test(month)){ showPurchaseToast('INFORME O MÊS.','error'); return; }
+    if(!companyId){ showPurchaseToast('ESCOLHA A LOJA DO MÊS.','error'); return; }
+    try{
+      const payload = await rhApiRequest('/employees/acting-stores', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({employeeId, month, companyId})});
+      await afterRhActingStoreChange(employeeId, payload);
+      showPurchaseToast('Loja de '+rhFormatMonth(month)+' gravada.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
+  if(el('rhActingStoreBody')) el('rhActingStoreBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-rh-acting-remove]');
+    if(!button) return;
+    const employeeId = el('rhEmployeeId').value;
+    const month = button.dataset.rhActingRemove;
+    if(!(await askConfirm('Remover a loja de '+rhFormatMonth(month)+'? O mês passa a seguir o mês anterior registrado.'))) return;
+    try{
+      const payload = await rhApiRequest('/employees/acting-stores?employeeId='+encodeURIComponent(employeeId)+'&month='+encodeURIComponent(month), {method:'DELETE'});
+      await afterRhActingStoreChange(employeeId, payload);
+      showPurchaseToast('Mês removido.');
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+    }
+  });
 
   if(el('rhEmployeeSalary')) attachCurrencyMask(el('rhEmployeeSalary'));
   ['rhEmployeeFoodPerDay','rhEmployeeTransportPerDay'].forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
@@ -45920,6 +45994,7 @@ function renderHomeTasks(){
       telefone: el('rhEmployeeTelefone').value,
       admissionDate: el('rhEmployeeAdmission').value,
       companyId: el('rhEmployeeCompany').value,
+      admissionCompanyId: el('rhEmployeeAdmissionCompany').value || el('rhEmployeeCompany').value,
       roleTitle: el('rhEmployeeRole').value,
       salaryCents,
       pixKey: el('rhEmployeePix').value,

@@ -16,7 +16,7 @@ import {
   identity,
   isOneOf,
   jsonResponse,
-  loadEmployee,
+  loadEmployeeForMonth,
   safeText,
   sameOrigin,
   workingDaysForEmployee,
@@ -189,7 +189,8 @@ export async function POST(request: Request) {
     }
 
     const database = await getD1();
-    const employee = await loadEmployee(database, employeeId);
+    // Loja atuante do funcionário NESTE mês (vai para a DRE do mês).
+    const employee = await loadEmployeeForMonth(database, employeeId, month);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
 
     // Benefício pago por dia trabalhado: os dias vêm do ciclo 20→19 da

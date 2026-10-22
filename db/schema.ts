@@ -1544,6 +1544,10 @@ export const hrEmployees = pgTable(
     admissionDate: text("admission_date").notNull().default(""),
     companyId: text("company_id").notNull().default(""),
     companyName: text("company_name").notNull().default(""),
+    // Loja de ADMISSÃO (onde está registrado) — migration 0108. A loja em que
+    // atua em cada mês fica em hr_schedule_assignments (app/lib/acting-store.ts).
+    admissionCompanyId: text("admission_company_id").notNull().default(""),
+    admissionCompanyName: text("admission_company_name").notNull().default(""),
     roleTitle: text("role_title").notNull().default(""),
     salaryCents: integer("salary_cents").notNull().default(0),
     pixKey: text("pix_key").notNull().default(""),

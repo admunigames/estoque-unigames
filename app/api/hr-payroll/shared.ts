@@ -8,6 +8,7 @@ import {
 } from "../../lib/hr-benefit-cycle";
 import { isWorkSchedule } from "../../lib/working-days";
 import { normalizeChecklist, terminationError } from "../../lib/hr-rh";
+import { actingStoreFor } from "../../lib/acting-store";
 
 // RH Financeiro (Financeiro Fase 5) — base compartilhada da Folha de
 // Pagamento, dos Benefícios e do Comissionamento.
@@ -172,6 +173,10 @@ export type EmployeeRow = {
   admissionDate: string;
   companyId: string;
   companyName: string;
+  // Loja de ADMISSÃO (onde está registrado) — a loja de cada mês vem de
+  // actingStoreFor (app/lib/acting-store.ts).
+  admissionCompanyId: string;
+  admissionCompanyName: string;
   roleTitle: string;
   salaryCents: number;
   pixKey: string;
@@ -195,6 +200,7 @@ export type EmployeeRow = {
 
 export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, rg, telefone, admission_date AS admissionDate,
   company_id AS companyId, company_name AS companyName, role_title AS roleTitle,
+  admission_company_id AS admissionCompanyId, admission_company_name AS admissionCompanyName,
   salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName, status,
   work_schedule AS workSchedule, food_per_day_cents AS foodPerDayCents,
   transport_per_day_cents AS transportPerDayCents, benefit_notes AS benefitNotes,
@@ -274,6 +280,18 @@ export async function loadEmployee(database: Database, employeeId: string) {
     .prepare(`SELECT ${EMPLOYEE_COLUMNS} FROM hr_employees WHERE id=?1 LIMIT 1`)
     .bind(employeeId)
     .first<EmployeeRow>();
+}
+
+/**
+ * Funcionário com a LOJA ATUANTE do mês no lugar da loja do cadastro — é a
+ * loja que vai para a Folha, os Benefícios e o Comissionamento daquele mês
+ * (e, por eles, para a DRE). Ver app/lib/acting-store.ts.
+ */
+export async function loadEmployeeForMonth(database: Database, employeeId: string, month: string) {
+  const employee = await loadEmployee(database, employeeId);
+  if (!employee) return null;
+  const store = await actingStoreFor(database, employeeId, month);
+  return store ? { ...employee, companyId: store.companyId, companyName: store.companyName } : employee;
 }
 
 export type CommissionTotalsRow = {
@@ -518,4 +536,30 @@ export async function workingDaysForEmployee(
     scheduleData = schedules.get(employee.id) ?? null;
   }
   return { ...workingDaysInCycle(cycle, schedule, holidays, scheduleData), cycle, schedule };
+}
+
+/**
+ * Grava a LOJA ATUANTE do funcionário num mês (hr_schedule_assignments, a
+ * mesma tabela das Escalas — fonte única). Um registro por funcionário e mês.
+ */
+export function upsertActingStoreStatement(
+  database: Database,
+  input: { employeeId: string; employeeName: string; month: string; companyId: string; companyName: string },
+  actor: Identity,
+) {
+  return database
+    .prepare(
+      `INSERT INTO hr_schedule_assignments
+        (id, employee_id, employee_name, company_id, company_name, reference_month, notes,
+         created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, '', ?7, ?8, CURRENT_TIMESTAMP, ?7, ?8, CURRENT_TIMESTAMP)
+       ON CONFLICT (employee_id, reference_month) DO UPDATE
+         SET company_id = EXCLUDED.company_id, company_name = EXCLUDED.company_name,
+             employee_name = EXCLUDED.employee_name, updated_by = EXCLUDED.updated_by,
+             updated_by_name = EXCLUDED.updated_by_name, updated_at = CURRENT_TIMESTAMP`,
+    )
+    .bind(
+      crypto.randomUUID(), input.employeeId, input.employeeName, input.companyId, input.companyName, input.month,
+      actor.id, actorName(actor),
+    );
 }

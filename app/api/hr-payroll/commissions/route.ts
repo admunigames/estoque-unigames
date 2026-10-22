@@ -15,7 +15,7 @@ import {
   identity,
   isOneOf,
   jsonResponse,
-  loadEmployee,
+  loadEmployeeForMonth,
   safeText,
   sameOrigin,
   type CommissionKind,
@@ -347,7 +347,8 @@ export async function POST(request: Request) {
     if (itemsError) return jsonResponse({ error: itemsError }, 400);
 
     const database = await getD1();
-    const employee = await loadEmployee(database, employeeId);
+    // Loja atuante do funcionário NESTE mês (vai para a DRE do mês).
+    const employee = await loadEmployeeForMonth(database, employeeId, month);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
     // Vendedor do Comercial: a comissão é a calculada lá, nunca a digitada.
     const commercialCents = await commercialCommissionFor(database, employeeId, month);
