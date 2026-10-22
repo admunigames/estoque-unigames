@@ -760,3 +760,12 @@ export function digitalCommission(metrics: SellerMetrics, rules: DigitalRules): 
     digital: true,
   };
 }
+
+/**
+ * A "loja" ASSISTÊNCIA da Meta Loja (pedido de 2026-10-22): a META é digitada
+ * à mão e o FEITO é a soma do que todas as lojas fizeram na assistência. Fica
+ * fora do total "Todas as lojas" (a assistência de cada loja já está no total dela).
+ */
+export function isAssistanceHub(name: string): boolean {
+  return normalizeText(name) === "ASSISTENCIA";
+}

@@ -263,11 +263,15 @@ export function parseSavedObservations(raw: unknown): SavedObservation[] {
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        key: typeof item.key === "string" ? item.key : "",
-        title: typeof item.title === "string" ? item.title : "",
-        text: typeof item.text === "string" ? item.text : "",
-      }))
+      // Gravados de 19/10 a 22/10/2026 com o JSON inteiro em maiúsculas (a CAIXA
+      // ALTA pegou a coluna): aceita KEY/TITLE/TEXT e devolve a chave minúscula.
+      .map((item) => {
+        const pick = (name: string) => {
+          const value = item[name] ?? item[name.toUpperCase()];
+          return typeof value === "string" ? value : "";
+        };
+        return { key: pick("key").toLowerCase(), title: pick("title"), text: pick("text") };
+      })
       .filter((item) => item.title || item.text);
   } catch {
     return [];

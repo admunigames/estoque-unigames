@@ -506,8 +506,8 @@ test("Meta Loja: itens e realmes da loja à mão; os gráficos de itens/realmes 
   assert.deepEqual(data.itemStores, [{ companyId: STORE_A, name: "LOJA ALFA", items: 178, targetItems: 760, realme: 9, targetRealme: 28 }]);
   const editor = await (await callRoute(storesRoute.GET, STORES, "GET", "/api/commercial/stores?month=2027-02")).json();
   assert.deepEqual(editor.rows.find((row) => row.companyId === STORE_A), {
-    companyId: STORE_A, name: "LOJA ALFA", targetCents: 0, revenueCents: 0, targetItems: 760, items: 178, targetRealme: 28, realme: 9,
-    indicationQty: 0, indicationCents: 0,
+    companyId: STORE_A, name: "LOJA ALFA", assistanceHub: false, targetCents: 0, revenueCents: 0, targetItems: 760, items: 178, targetRealme: 28, realme: 9,
+    indicationQty: 0, indicationCents: 0, assistTargetCents: 0, assistRevenueCents: 0,
   });
   // O Ranking não manda mais quantidades por loja (vêm da Meta Loja).
   const rank = await (await callRoute(rankingRoute.GET, DASHBOARD, "GET", "/api/commercial/ranking?month=2027-02")).json();

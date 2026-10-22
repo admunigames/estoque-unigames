@@ -4477,7 +4477,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /\['payjoy','PAYJOY'\], \['crefaz','CREFAZ'\], \['parcelex','PARCELEX'\], \['odres','ODRES'\],\s*\['venda_pa','VENDA P\.A'\], \['venda_unigames','VENDA UNIGAMES'\]/);
   assert.doesNotMatch(html, /comStoresVisual|comRenderStoresVisual|com-stores-visual/);
   // Ranking: subabas em gráfico de colunas (canvas) + imagem para o WhatsApp.
-  for (const [sub, label] of [["vendedores", "Vendedores"], ["lojas", "Metas Lojas"], ["itens", "Itens Totais por Loja"], ["realmes", "Realmes Totais por Loja"]]) {
+  for (const [sub, label] of [["vendedores", "Vendedores"], ["lojas", "Metas Lojas"], ["itens", "Itens Totais por Loja"], ["realmes", "Celulares Totais por Loja"]]) {
     assert.match(html, new RegExp(`data-com-rank="${sub}">${label}</button>`));
   }
   assert.match(html, /<canvas id="comRankCanvas" role="img"/);
@@ -4501,7 +4501,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /const withInactive = comView === 'comissao' \|\| \(el\('comShowInactive'\) && el\('comShowInactive'\)\.checked\);/);
   // Meta Loja: itens da loja à mão; comissão do Comercial travada no RH (vem de lá).
   assert.match(html, /<th>Meta itens<\/th><th>Itens feito<\/th>/);
-  assert.match(html, /<th>Meta realme<\/th><th>Realmes feito<\/th>/);
+  // REALME passou a se chamar CELULAR (22/10/2026) — só o nome na tela.
+  assert.match(html, /<th>Meta celular<\/th><th>Celulares feitos<\/th>/);
+  assert.match(html, /missing\.push\('CELULAR'\)/);
   assert.match(html, /id="rhComissaoValorHint" hidden>VEM DO COMERCIAL/);
   assert.match(html, /el\('rhComissaoValor'\)\.readOnly = fromCommercial;/);
   // META VENDEDORES: meta (tracejada) × feito por vendedor, só da loja de quem vê (rota /team).
@@ -4561,10 +4563,13 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /'comercial:rules':'Comercial: Cadastro de Regras de Comissão'/);
   assert.doesNotMatch(html, /value="comercial:(view|manage)"/);
   // VER e EDITAR por aba (2026-10-16).
-  for (const permission of ["ranking", "goals_view", "credit_view", "stores_view", "weekend_view", "weekend", "assist_view", "assist", "rules_view"]) {
+  for (const permission of ["ranking", "goals_view", "credit_view", "stores_view", "weekend_view", "weekend", "assist_view", "rules_view"]) {
     assert.match(html, new RegExp(`name="userPermission" value="comercial:${permission}"`));
     assert.match(workerSource, new RegExp(`"comercial:${permission}",`));
   }
+  // Assistência é lançada na Meta Loja (22/10/2026): a aba é só o painel (ver).
+  assert.doesNotMatch(html, /name="userPermission" value="comercial:assist"/);
+  assert.doesNotMatch(html, /id="comAssistBody"/);
   assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:ranking",/);
   // Filtro OPERACIONAL ao lado do Vendedor (18/10/2026): escolhido, só ele aparece.
   assert.match(html, /id="comSellerFilter">[\s\S]*?<\/div>\s*<div class="field" id="comOperationalField" hidden>\s*<label for="comOperationalFilter">Operacional<\/label>/);

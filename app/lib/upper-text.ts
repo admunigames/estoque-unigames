@@ -148,7 +148,8 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   divergence_items: ["product_name", "store_notes", "stock_response", "responded_by_name", "store_reply", "store_reply_by_name", "inventoried_by_name", "created_by_name", "updated_by_name"],
   divergence_item_events: ["text", "actor_name"],
   assist_defects: ["category", "device", "name", "created_by_name", "updated_by_name"],
-  assist_quotes: ["company_name", "client_name", "client_address", "observations", "extra_notes", "created_by_name", "updated_by_name"],
+  // observations é JSON (chave/título/texto, já em maiúsculas): fica de fora.
+  assist_quotes: ["company_name", "client_name", "client_address", "extra_notes", "created_by_name", "updated_by_name"],
   assist_quote_items: ["category", "device", "model", "service", "defect_name", "description"],
   assist_payment_options: ["label", "created_by_name", "updated_by_name"],
   assist_categories: ["name", "created_by_name", "updated_by_name"],
