@@ -563,3 +563,47 @@ export function upsertActingStoreStatement(
       actor.id, actorName(actor),
     );
 }
+
+// Valores MANUAIS por funcionário e competência (migration 0109):
+// 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO) e 'inss' (DRE Funcionário).
+export const MONTH_VALUE_KINDS = ["dsr", "inss"] as const;
+export type MonthValueKind = (typeof MONTH_VALUE_KINDS)[number];
+
+export function isMonthValueKind(value: unknown): value is MonthValueKind {
+  return typeof value === "string" && (MONTH_VALUE_KINDS as readonly string[]).includes(value);
+}
+
+/** employeeId → centavos do tipo no mês (sem linha = 0). */
+export async function loadMonthValues(database: Database, month: string, kind: MonthValueKind): Promise<Map<string, number>> {
+  const rows = await database
+    .prepare("SELECT employee_id AS employeeId, amount_cents AS amountCents FROM hr_employee_month_values WHERE month=?1 AND kind=?2")
+    .bind(month, kind)
+    .all<{ employeeId: string; amountCents: number }>();
+  return new Map((rows.results ?? []).map((row) => [row.employeeId, Number(row.amountCents || 0)]));
+}
+
+/** Grava (ou apaga, com 0) o valor manual de um funcionário no mês. */
+export function upsertMonthValueStatement(
+  database: Database,
+  input: { employeeId: string; employeeName: string; month: string; kind: MonthValueKind; amountCents: number },
+  actor: Identity,
+) {
+  if (input.amountCents <= 0) {
+    return database
+      .prepare("DELETE FROM hr_employee_month_values WHERE employee_id=?1 AND month=?2 AND kind=?3")
+      .bind(input.employeeId, input.month, input.kind);
+  }
+  return database
+    .prepare(
+      `INSERT INTO hr_employee_month_values
+        (id, employee_id, employee_name, month, kind, amount_cents, updated_by, updated_by_name, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
+       ON CONFLICT (employee_id, month, kind) DO UPDATE
+         SET amount_cents = EXCLUDED.amount_cents, employee_name = EXCLUDED.employee_name,
+             updated_by = EXCLUDED.updated_by, updated_by_name = EXCLUDED.updated_by_name, updated_at = CURRENT_TIMESTAMP`,
+    )
+    .bind(
+      crypto.randomUUID(), input.employeeId, input.employeeName, input.month, input.kind, input.amountCents,
+      actor.id, actorName(actor),
+    );
+}

@@ -1630,6 +1630,10 @@
     body.pdf-export .print-only{display:block !important;}
     /* Recibo individual do comissionamento: esconde o resto da página. */
     body.rh-recibo-only #rhComissaoMain{display:none !important;}
+    body.rh-custo-only #rhFolhaPrintHeader{display:none !important;}
+    body.rh-custo-only #rhCustoFuncTable{width:100% !important; min-width:0 !important; table-layout:fixed;}
+    body.rh-custo-only #rhCustoFuncTable th,body.rh-custo-only #rhCustoFuncTable td{padding:3px 3px !important; font-size:6.5px !important; white-space:normal !important; letter-spacing:0 !important;}
+    body.rh-custo-only #rhCustoFuncTable th:first-child,body.rh-custo-only #rhCustoFuncTable td:first-child{width:14%;}
     .rh-print-table th,.rh-print-table td{border:1px solid #cfd8e3 !important; font-size:8px !important;}
     .rh-print-block{break-inside:avoid; page-break-inside:avoid;}
     .print-report-kicker{font-size:8px; font-weight:700; letter-spacing:1.2px; color:#244f83;}
@@ -6851,27 +6855,58 @@
       <div class="dre-toolbar no-print">
         <div class="field"><label for="rhFolhaLoja">LOJA</label><select id="rhFolhaLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="field"><label for="rhFolhaMes">COMPETÊNCIA</label><input type="month" id="rhFolhaMes"></div>
-        <div class="field"><label for="rhFolhaVisao">VISÃO</label><select id="rhFolhaVisao"><option value="paga">FOLHA PAGA (SAI DA CONTA)</option><option value="custo">CUSTO TOTAL (DESPESAS/DRE)</option></select></div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnRhFolhaCopiar" type="button">COPIAR DO MÊS ANTERIOR</button>
           <button class="btn-outline" id="btnRhDecimoTerceiro" type="button">13º SALÁRIO</button>
           <button class="btn-outline" id="btnRhFolhaParametros" type="button">PARÂMETROS</button>
+          <button class="btn-outline" id="btnRhFolhaDsr" type="button">DSR DO MÊS</button>
+          <button class="btn-outline" id="btnRhCustoFuncionario" type="button" hidden>CUSTO TOTAL POR FUNCIONÁRIO</button>
           <button class="btn-outline" id="btnRhFolhaPrint" type="button">RELATÓRIO / PDF</button>
         </div>
       </div>
 
+      <div id="rhFolhaMain">
       <div class="table-panel" id="rhFolhaResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
 
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="rhFolhaTable">
-            <thead><tr><th>Funcionário</th><th>Admissão</th><th>Unidade</th><th>Salário</th><th>Bonificação</th><th>Desconto</th><th id="rhFolhaValorFinalHead">Valor final a pagar</th><th>Observações</th><th>Pagamento</th><th>Comprovante</th><th class="no-print"></th></tr></thead>
-            <tbody id="rhFolhaTableBody"><tr><td colspan="11" class="responsive-empty">Selecione a competência para montar a folha.</td></tr></tbody>
+            <thead><tr><th>Funcionário</th><th>Admissão</th><th>Unidade</th><th>Salário</th><th>DSR</th><th>Bonificação</th><th>Desconto</th><th>Custo total p/ empresa</th><th>Observações</th><th>Pagamento</th><th>Comprovante</th><th class="no-print"></th></tr></thead>
+            <tbody id="rhFolhaTableBody"><tr><td colspan="12" class="responsive-empty">Selecione a competência para montar a folha.</td></tr></tbody>
           </table>
         </div>
       </div>
 
       <div class="print-only" id="rhFolhaPrintPorLoja"></div>
+      </div>
+
+      <!-- CUSTO TOTAL POR FUNCIONÁRIO (só quem tem RH Financeiro + Financeiro). -->
+      <div id="rhCustoFuncPanel" hidden>
+        <div class="print-report-header">
+          <div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div>
+          <h1>Custo total por funcionário</h1>
+          <div class="print-report-meta" id="rhCustoFuncPrintMeta"></div>
+        </div>
+        <div class="dre-toolbar no-print">
+          <strong style="align-self:center;">CUSTO TOTAL POR FUNCIONÁRIO</strong>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnRhCustoFuncDsr" type="button">EDITAR DSR</button>
+            <button class="btn-outline" id="btnRhCustoFuncXlsx" type="button">XLSX</button>
+            <button class="btn-outline" id="btnRhCustoFuncPdf" type="button">PDF</button>
+            <button class="btn-outline" id="btnRhCustoFuncClose" type="button">VOLTAR À FOLHA</button>
+          </div>
+        </div>
+        <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">REMUNERAÇÃO = SALÁRIO BASE + COMISSÃO + HE + DSR (DSR MANUAL). FGTS 8% · FÉRIAS + 1/3 = REMUNERAÇÃO ÷ 12 × 4/3 · 13º = REMUNERAÇÃO ÷ 12 · FGTS FÉRIAS/13º = 8% DA PROVISÃO · FGTS RESCISÓRIO = 40% DOS FGTS.</p>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rhCustoFuncTable" class="rh-print-table">
+              <thead><tr><th>Funcionário</th><th class="num">Salário base</th><th class="num">Comissão</th><th class="num">HE</th><th class="num">DSR</th><th class="num">FGTS mensal</th><th class="num">Provisão férias + 1/3</th><th class="num">Provisão 13º</th><th class="num">Provisão FGTS férias</th><th class="num">Provisão FGTS 13º</th><th class="num">Provisão FGTS rescisório</th><th class="num">Custo total</th></tr></thead>
+              <tbody id="rhCustoFuncBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
+              <tfoot id="rhCustoFuncFoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
       <input type="file" id="rhFolhaAttachInput" hidden>
     </section>
 
@@ -12490,6 +12525,28 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelRhEmployeeDialog" type="button">CANCELAR</button>
       <button class="btn-accent" id="btnSaveRhEmployee" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhMonthValuesDialog" aria-labelledby="rhMonthValuesTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhMonthValuesTitle">DSR DO MÊS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhMonthValues" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhMonthValuesForm">
+    <p class="muted" id="rhMonthValuesHelp" style="margin:0 0 8px;font-size:12px;"></p>
+    <details style="margin-bottom:8px;">
+      <summary>COLAR DA PLANILHA</summary>
+      <textarea id="rhMonthValuesPaste" rows="4" style="width:100%;margin-top:6px;" placeholder="NOME (OU CPF) [TAB] VALOR — UMA LINHA POR FUNCIONÁRIO"></textarea>
+      <button class="btn-outline" id="btnRhMonthValuesApplyPaste" type="button" style="margin-top:6px;">APLICAR COLAGEM</button>
+    </details>
+    <div class="table-wrap"><table><thead><tr><th>FUNCIONÁRIO</th><th>LOJA</th><th>VALOR (R$)</th></tr></thead>
+      <tbody id="rhMonthValuesBody"></tbody></table></div>
+    <div class="user-form-status" id="rhMonthValuesStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhMonthValues" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhMonthValues" type="submit">SALVAR</button>
     </div>
   </form>
 </dialog>
@@ -45716,6 +45773,7 @@ function renderHomeTasks(){
 
   window.addEventListener('afterprint', () => {
     document.body.classList.remove('rh-recibo-only');
+    document.body.classList.remove('rh-custo-only');
     const recibo = el('rhComissaoRecibo');
     if(recibo) recibo.hidden = true;
     if(rhPrintTitleBefore){
@@ -46038,16 +46096,13 @@ function renderHomeTasks(){
     const body = el('rhFolhaTableBody');
     if(!body) return;
     if(!rhFolhaRows.length){
-      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhum funcionário ativo para esta loja/competência.</td></tr>';
+      body.innerHTML = '<tr><td colspan="12" class="responsive-empty">Nenhum funcionário ativo para esta loja/competência.</td></tr>';
       el('rhFolhaResumo').textContent = '';
       el('rhFolhaPrintPorLoja').innerHTML = '';
       return;
     }
-    const visao = (el('rhFolhaVisao') && el('rhFolhaVisao').value) === 'custo' ? 'custo' : 'paga';
-    const valorFinalOf = row => visao === 'custo'
-      ? Number(row.custoTotalCents != null ? row.custoTotalCents : row.netCents || 0)
-      : Number(row.folhaPagaCents != null ? row.folhaPagaCents : row.netCents || 0);
-    if(el('rhFolhaValorFinalHead')) el('rhFolhaValorFinalHead').textContent = visao === 'custo' ? 'Custo total p/ empresa' : 'Valor final a pagar';
+    // A Folha mostra só o CUSTO TOTAL (decisão do usuário, 22/10/2026).
+    const valorFinalOf = row => Number(row.custoTotalCents != null ? row.custoTotalCents : row.netCents || 0);
     body.innerHTML = rhFolhaRows.map(row => {
       const paymentCell = row.paymentDone
         ? '<span class="status-pill done">PAGO'+(row.paymentDate ? ' · '+escapeHtml(rhFormatDate(row.paymentDate)) : '')+'</span>'
@@ -46064,12 +46119,13 @@ function renderHomeTasks(){
       const detalhe = 'HE '+formatCentsBRL(row.overtimeCents)+' · Adic. '+formatCentsBRL(row.additionsCents)
         +' · Comissão '+formatCentsBRL(row.commissionCents)+' · Benefícios '+formatCentsBRL(row.benefitsCents)
         +' · Outros '+formatCentsBRL(row.otherCents)
-        + (visao === 'custo' ? ' · Encargos '+formatCentsBRL(row.employerChargesCents || 0) : '');
+        +' · Encargos '+formatCentsBRL(row.employerChargesCents || 0);
       return '<tr>'+
         '<td>'+escapeHtml(row.employeeName)+(row.employeeStatus === 'inactive' ? ' <span class="status-pill alert">INATIVO</span>' : '')+'</td>'+
         '<td>'+escapeHtml(row.admissionDate ? rhFormatDate(row.admissionDate) : '—')+'</td>'+
         '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
         '<td>'+formatCentsBRL(row.baseSalaryCents)+'</td>'+
+        '<td>'+formatCentsBRL(row.dsrCents || 0)+'</td>'+
         '<td>'+formatCentsBRL(row.bonusCents)+'</td>'+
         '<td>'+formatCentsBRL(row.deductionsCents)+'</td>'+
         '<td title="'+escapeHtml(detalhe)+'"><strong>'+formatCentsBRL(valorFinal)+'</strong></td>'+
@@ -46086,7 +46142,7 @@ function renderHomeTasks(){
     const totalFinal = rhFolhaRows.reduce((sum, row) => sum + valorFinalOf(row), 0);
     const totalPago = rhFolhaRows.filter(row => row.paymentDone).reduce((sum, row) => sum + valorFinalOf(row), 0);
     const lancados = rhFolhaRows.filter(row => row.saved).length;
-    const rotulo = visao === 'custo' ? 'Custo total' : 'Total a pagar';
+    const rotulo = 'Custo total';
     el('rhFolhaResumo').innerHTML =
       '<strong>'+rhFolhaRows.length+'</strong> funcionário(s) · <strong>'+lancados+'</strong> com folha lançada · '+
       rotulo+': <strong>'+formatCentsBRL(totalFinal)+'</strong> · Já pago: <strong>'+formatCentsBRL(totalPago)+'</strong>';
@@ -46097,7 +46153,6 @@ function renderHomeTasks(){
       row => row.companyName
     );
   }
-  if(el('rhFolhaVisao')) el('rhFolhaVisao').addEventListener('change', renderRhFolhaTable);
 
   async function openRhFolhaParametros(){
     el('rhFolhaParametrosStatus').textContent = '';
@@ -46283,7 +46338,7 @@ function renderHomeTasks(){
     if(!el('rhFolhaMes').value) el('rhFolhaMes').value = financeCurrentMonthKey();
     const month = el('rhFolhaMes').value;
     const companyId = el('rhFolhaLoja').value;
-    if(!opts || !opts.silent) el('rhFolhaTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    if(!opts || !opts.silent) el('rhFolhaTableBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">Carregando…</td></tr>';
     try{
       const params = new URLSearchParams({month});
       if(companyId) params.set('companyId', companyId);
@@ -46294,9 +46349,167 @@ function renderHomeTasks(){
       renderRhFolhaTable();
     }catch(error){
       rhFolhaRows = [];
-      el('rhFolhaTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('rhFolhaTableBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
+    el('btnRhCustoFuncionario').hidden = !rhCanSeeCostReport();
+    if(!el('rhCustoFuncPanel').hidden) loadRhCustoFuncionario();
   }
+
+  // ------------- VALORES MANUAIS DO MÊS (DSR / INSS) -------------
+  // Um valor em R$ por funcionário e competência (hr_employee_month_values),
+  // editável aqui um a um ou colando da planilha (NOME ou CPF ⇥ VALOR).
+  let rhMonthValuesConfig = null;
+  function rhMonthValueInputs(){
+    return Array.from(el('rhMonthValuesBody').querySelectorAll('[data-rh-mv]'));
+  }
+  async function openRhMonthValues(config){
+    rhMonthValuesConfig = {...config, initial:new Map()};
+    el('rhMonthValuesTitle').textContent = config.title;
+    el('rhMonthValuesHelp').textContent = config.help || '';
+    el('rhMonthValuesPaste').value = '';
+    el('rhMonthValuesStatus').textContent = '';
+    el('rhMonthValuesBody').innerHTML = '<tr><td colspan="3" class="responsive-empty">Carregando…</td></tr>';
+    el('rhMonthValuesDialog').showModal();
+    try{
+      const data = await rhApiRequest('/month-values?month='+encodeURIComponent(config.month)+'&kind='+encodeURIComponent(config.kind));
+      (data.values || []).forEach(row => rhMonthValuesConfig.initial.set(row.employeeId, Number(row.amountCents || 0)));
+    }catch(error){
+      el('rhMonthValuesBody').innerHTML = '<tr><td colspan="3" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    const people = config.people.slice().sort((a, b) => String(a.employeeName).localeCompare(String(b.employeeName), 'pt-BR'));
+    el('rhMonthValuesBody').innerHTML = people.length ? people.map(person =>
+      '<tr><td>'+escapeHtml(person.employeeName)+'</td><td>'+escapeHtml(String(person.companyName || '—').toUpperCase())+'</td>'+
+      '<td><input data-rh-mv="'+escapeHtml(person.employeeId)+'" inputmode="decimal" placeholder="R$ 0,00" aria-label="'+escapeHtml(person.employeeName)+'"></td></tr>'
+    ).join('') : '<tr><td colspan="3" class="responsive-empty">Nenhum funcionário nesta competência.</td></tr>';
+    rhMonthValueInputs().forEach(input => {
+      attachCurrencyMask(input);
+      const cents = rhMonthValuesConfig.initial.get(input.dataset.rhMv) || 0;
+      if(cents) setCurrencyValue(input, cents/100);
+    });
+  }
+  function closeRhMonthValues(){ if(el('rhMonthValuesDialog').open) el('rhMonthValuesDialog').close(); }
+  if(el('btnCloseRhMonthValues')) el('btnCloseRhMonthValues').addEventListener('click', closeRhMonthValues);
+  if(el('btnCancelRhMonthValues')) el('btnCancelRhMonthValues').addEventListener('click', closeRhMonthValues);
+  if(el('btnRhMonthValuesApplyPaste')) el('btnRhMonthValuesApplyPaste').addEventListener('click', () => {
+    const lines = el('rhMonthValuesPaste').value.replace(/\r/g, '').split('\n').filter(line => line.trim());
+    const inputs = new Map(rhMonthValueInputs().map(input => [input.dataset.rhMv, input]));
+    const people = rhMonthValuesConfig ? rhMonthValuesConfig.people : [];
+    let applied = 0;
+    const missing = [];
+    lines.forEach(line => {
+      const cells = line.split('\t').map(cell => cell.trim()).filter(Boolean);
+      if(cells.length < 2) { missing.push(line.trim()); return; }
+      const key = cells[0];
+      const digits = key.replace(/\D+/g, '');
+      const wanted = normalizeSearchText(key);
+      const byCpf = digits.length === 11 ? people.filter(person => {
+        const employee = rhEmployees.find(item => item.id === person.employeeId);
+        return employee && String(employee.cpf || '').replace(/\D+/g, '') === digits;
+      }) : [];
+      const byName = people.filter(person => normalizeSearchText(person.employeeName) === wanted);
+      const byStart = people.filter(person => normalizeSearchText(person.employeeName).startsWith(wanted));
+      const match = byCpf.length === 1 ? byCpf[0] : byName.length === 1 ? byName[0] : byStart.length === 1 ? byStart[0] : null;
+      const value = financeBatchParseCell({type:'money'}, cells[cells.length - 1]);
+      if(!match || value === '' || !inputs.has(match.employeeId)){ missing.push(key); return; }
+      setCurrencyValue(inputs.get(match.employeeId), value);
+      applied++;
+    });
+    el('rhMonthValuesStatus').textContent = applied+' VALOR(ES) APLICADO(S)'+(missing.length ? ' · NÃO ENCONTRADOS: '+missing.join(', ').toUpperCase() : '')+'. CONFIRA E CLIQUE EM SALVAR.';
+  });
+  if(el('rhMonthValuesForm')) el('rhMonthValuesForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const config = rhMonthValuesConfig;
+    if(!config) return;
+    const values = [];
+    for(const input of rhMonthValueInputs()){
+      const cents = parseBRLToCents(getCurrencyValue(input) || '0');
+      if(cents === null){ el('rhMonthValuesStatus').textContent = 'VALOR INVÁLIDO EM '+input.getAttribute('aria-label').toUpperCase()+'.'; return; }
+      if(cents !== (config.initial.get(input.dataset.rhMv) || 0)) values.push({employeeId:input.dataset.rhMv, amountCents:cents});
+    }
+    if(!values.length){ closeRhMonthValues(); return; }
+    try{
+      await rhApiRequest('/month-values', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month:config.month, kind:config.kind, values})});
+      closeRhMonthValues();
+      showPurchaseToast(values.length+' valor(es) salvo(s).');
+      if(config.onSaved) await config.onSaved();
+    }catch(error){
+      el('rhMonthValuesStatus').textContent = error.message;
+    }
+  });
+
+  function openRhFolhaDsr(){
+    const month = el('rhFolhaMes').value;
+    if(!month){ showPurchaseToast('Escolha a competência.','error'); return; }
+    openRhMonthValues({
+      kind:'dsr', month,
+      title:'DSR — '+rhFormatMonth(month),
+      help:'DSR EM R$ DIGITADO POR FUNCIONÁRIO (SEM CÁLCULO AUTOMÁTICO). ENTRA NA REMUNERAÇÃO E NO CUSTO TOTAL. VALOR 0 APAGA.',
+      people:rhFolhaRows.map(row => ({employeeId:row.employeeId, employeeName:row.employeeName, companyName:row.companyName})),
+      onSaved:() => loadRhFolha({silent:true})
+    });
+  }
+  if(el('btnRhFolhaDsr')) el('btnRhFolhaDsr').addEventListener('click', openRhFolhaDsr);
+  if(el('btnRhCustoFuncDsr')) el('btnRhCustoFuncDsr').addEventListener('click', openRhFolhaDsr);
+
+  // ------------- CUSTO TOTAL POR FUNCIONÁRIO -------------
+  const RH_COST_COLUMNS = [
+    ['baseSalaryCents','SALÁRIO BASE'], ['commissionCents','COMISSÃO'], ['overtimeCents','HE'], ['dsrCents','DSR'],
+    ['fgtsCents','FGTS MENSAL'], ['vacationProvisionCents','PROVISÃO FÉRIAS + 1/3'], ['thirteenthProvisionCents','PROVISÃO 13º'],
+    ['fgtsVacationCents','PROVISÃO FGTS FÉRIAS'], ['fgtsThirteenthCents','PROVISÃO FGTS 13º'],
+    ['fgtsTerminationCents','PROVISÃO FGTS RESCISÓRIO'], ['totalCostCents','CUSTO TOTAL']
+  ];
+  let rhCustoFuncData = null;
+  function rhCanSeeCostReport(){ return canAccess('payroll') && canAccess('finance'); }
+  function rhCostCells(row){
+    return RH_COST_COLUMNS.map(([key]) => '<td class="num">'+formatCentsBRL(row[key] || 0)+'</td>').join('');
+  }
+  async function loadRhCustoFuncionario(){
+    const month = el('rhFolhaMes').value;
+    const companyId = el('rhFolhaLoja').value;
+    el('rhCustoFuncBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">Carregando…</td></tr>';
+    el('rhCustoFuncFoot').innerHTML = '';
+    try{
+      const params = new URLSearchParams({month});
+      if(companyId) params.set('companyId', companyId);
+      rhCustoFuncData = await rhApiRequest('/cost-report?'+params.toString());
+    }catch(error){
+      rhCustoFuncData = null;
+      el('rhCustoFuncBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      return;
+    }
+    const rows = rhCustoFuncData.rows || [];
+    el('rhCustoFuncBody').innerHTML = rows.length ? rows.map(row =>
+      '<tr><td>'+escapeHtml(row.employeeName)+'<br><small class="muted">'+escapeHtml(String(row.companyName || '—').toUpperCase())+'</small></td>'+rhCostCells(row)+'</tr>'
+    ).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhum funcionário nesta competência.</td></tr>';
+    el('rhCustoFuncFoot').innerHTML = rows.length ? '<tr><th>TOTAL</th>'+rhCostCells(rhCustoFuncData.total).replace(/<td /g,'<th ').replace(/<\/td>/g,'</th>')+'</tr>' : '';
+    el('rhCustoFuncPrintMeta').textContent = 'Competência '+rhFormatMonth(month)+' · '+
+      (companyId ? (companies.find(company => company.id === companyId) || {name:'—'}).name : 'Todas as lojas')+' · '+rows.length+' funcionário(s)';
+  }
+  function showRhCustoFuncionario(show){
+    el('rhCustoFuncPanel').hidden = !show;
+    el('rhFolhaMain').hidden = show;
+    if(show) loadRhCustoFuncionario();
+  }
+  if(el('btnRhCustoFuncionario')) el('btnRhCustoFuncionario').addEventListener('click', () => showRhCustoFuncionario(true));
+  if(el('btnRhCustoFuncClose')) el('btnRhCustoFuncClose').addEventListener('click', () => showRhCustoFuncionario(false));
+  if(el('btnRhCustoFuncPdf')) el('btnRhCustoFuncPdf').addEventListener('click', () => {
+    if(!rhCustoFuncData || !(rhCustoFuncData.rows || []).length){ showPurchaseToast('Nada para gerar.','error'); return; }
+    rhStartPrint('custo-total-por-funcionario-'+rhCustoFuncData.month, 'rh-custo-only');
+  });
+  if(el('btnRhCustoFuncXlsx')) el('btnRhCustoFuncXlsx').addEventListener('click', async () => {
+    if(!rhCustoFuncData || !(rhCustoFuncData.rows || []).length){ showPurchaseToast('Nada para exportar.','error'); return; }
+    let XLSX;
+    try{ XLSX = await ensureXlsx(); }
+    catch(error){ showPurchaseToast(error.message,'error'); return; }
+    const money = cents => Math.round(Number(cents || 0)) / 100;
+    const sheetRows = [['FUNCIONÁRIO','LOJA'].concat(RH_COST_COLUMNS.map(([, label]) => label))]
+      .concat(rhCustoFuncData.rows.map(row => [row.employeeName, String(row.companyName || '').toUpperCase()].concat(RH_COST_COLUMNS.map(([key]) => money(row[key])))))
+      .concat([['TOTAL',''].concat(RH_COST_COLUMNS.map(([key]) => money(rhCustoFuncData.total[key])))]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(sheetRows), 'CUSTO POR FUNCIONÁRIO');
+    XLSX.writeFile(workbook, 'custo-total-por-funcionario-'+rhCustoFuncData.month+'.xlsx');
+  });
 
   if(el('rhFolhaMes')) el('rhFolhaMes').addEventListener('change', loadRhFolha);
   if(el('rhFolhaLoja')) el('rhFolhaLoja').addEventListener('change', loadRhFolha);

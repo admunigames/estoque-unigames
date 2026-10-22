@@ -1579,7 +1579,10 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     // do "hr" das telas de Folgas/Escalas, nem de finance:manage.
     // RH > Funcionários: payroll:manage OU as permissões próprias do cadastro.
     // Checado antes do bucket do RH Financeiro abaixo.
-    [path === "/rh/funcionarios" || path === "/api/hr-payroll/employees", "employees"],
+    [
+      path === "/rh/funcionarios" || path === "/api/hr-payroll/employees" || path.startsWith("/api/hr-payroll/employees/"),
+      "employees",
+    ],
     [
       path === "/rh/funcionarios" ||
         path === "/rh/folha" ||

@@ -30,6 +30,8 @@ export type PayrollInputs = {
   benefitsPixNetCents: number;
   /** Encargos patronais em pontos-base sobre o salário base. */
   employerChargesBps: number;
+  /** DSR MANUAL do mês em R$ (hr_employee_month_values) — parte da remuneração. */
+  dsrCents?: number;
 };
 
 export type PayrollBreakdown = {
@@ -44,7 +46,9 @@ export function computePayrollBreakdown(
   values: PayrollManualValues,
   inputs: PayrollInputs,
 ): PayrollBreakdown {
+  const dsrCents = Math.max(0, Math.round(Number(inputs.dsrCents ?? 0)));
   const salaryGrossCents =
+    dsrCents +
     values.baseSalaryCents +
     values.bonusCents +
     values.overtimeCents +

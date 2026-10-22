@@ -4832,6 +4832,27 @@ export const rmaOptions = pgTable(
 // por loja, com o percentual). NÃO INCLUIR = nenhuma linha. A célula da DRE
 // (finance_store_entries 'payable') soma estas fatias das contas não
 // canceladas — ver recalcPayableEntrySql.
+// RH: valores MANUAIS por funcionário e competência — migration 0109.
+// kind 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO) | 'inss' (DRE Funcionário).
+export const hrEmployeeMonthValues = pgTable(
+  "hr_employee_month_values",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    month: text("month").notNull(),
+    kind: text("kind").notNull(),
+    amountCents: integer("amount_cents").notNull().default(0),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("hr_employee_month_values_key_idx").on(table.employeeId, table.month, table.kind),
+    index("hr_employee_month_values_month_idx").on(table.month, table.kind),
+  ],
+);
+
 export const financeDreAllocations = pgTable(
   "finance_dre_allocations",
   {

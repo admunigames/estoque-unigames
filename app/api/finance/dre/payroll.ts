@@ -66,7 +66,7 @@ export async function loadPayrollDreContribution(
     .first<{ bps: number }>();
   const employerChargesBps = Math.max(0, Number(chargesRow?.bps ?? 0));
 
-  const [folhaRows, beneficiosRows, comissoesRows] = await Promise.all([
+  const [folhaRows, beneficiosRows, comissoesRows, dsrRows] = await Promise.all([
     database
       .prepare(
         `SELECT employee_id AS employeeId, company_id AS companyId,
@@ -91,6 +91,14 @@ export async function loadPayrollDreContribution(
       )
       .bind(month)
       .all<{ employeeId: string; companyId: string; total: number }>(),
+    // DSR MANUAL do mês (migration 0109) — parte da remuneração da Folha.
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, '' AS companyId, COALESCE(SUM(amount_cents), 0) AS total
+         FROM hr_employee_month_values WHERE month = ?1 AND kind = 'dsr' GROUP BY employee_id`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; companyId: string; total: number }>(),
   ]);
   const folha = (folhaRows.results ?? []).filter((row) => inScope(storeOf(row)));
   const sumOf = (rows: Array<{ employeeId: string; companyId: string; total: number }> | undefined) =>
@@ -99,6 +107,7 @@ export async function loadPayrollDreContribution(
   const amounts: Record<PayrollBlock, number> = {
     folha:
       folha.reduce((sum, row) => sum + Number(row.salaryGross || 0), 0) +
+      sumOf(dsrRows.results) +
       Math.round((folha.reduce((sum, row) => sum + Number(row.baseTotal || 0), 0) * employerChargesBps) / 10000),
     beneficios: sumOf(beneficiosRows.results),
     comissoes: sumOf(comissoesRows.results),
