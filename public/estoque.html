@@ -9495,7 +9495,7 @@
             <div class="field"><label for="corpUberFile">PLANILHA DAS CORRIDAS (.xlsx / .xls / .csv)</label><input type="file" id="corpUberFile" accept=".xls,.xlsx,.csv"></div>
             <div class="dre-toolbar-actions"><button class="btn-outline" id="btnCorpUberMatch" type="button">CONCILIAR DE NOVO</button></div>
           </div>
-          <p class="page-desc">COLUNAS RECONHECIDAS: DATA, VALOR, PASSAGEIRO (NOME/COLABORADOR/USUÁRIO) E MOTIVO (DESCRIÇÃO/DESTINO). CADA CORRIDA CASA COM A COBRANÇA UBER DA FATURA DESTE CARTÃO DE MESMO VALOR, ATÉ 1 DIA DE DIFERENÇA. IMPORTOU A FATURA DEPOIS? USE CONCILIAR DE NOVO.</p>
+          <p class="page-desc">COLUNAS RECONHECIDAS: DATA, VALOR, PASSAGEIRO (NOME/COLABORADOR/USUÁRIO) E MOTIVO (DESCRIÇÃO/DESTINO). CADA CORRIDA CASA COM A COBRANÇA UBER DA FATURA DESTE CARTÃO DE MESMO VALOR, ATÉ 1 DIA DE DIFERENÇA. IMPORTOU A FATURA DEPOIS? USE CONCILIAR DE NOVO. AS GORDURAS MARCADAS COMO CORRIDA UBER ENTRAM AQUI SOZINHAS (ETIQUETA GORDURA) E FICAM NO CARTÃO CUJA COBRANÇA CASAR.</p>
           <div class="user-form-status" id="corpUberStatus" role="status" aria-live="polite"></div>
           <section class="summary" id="corpUberSummary" aria-label="Resumo da conciliação Uber"></section>
           <h3 class="supply-section-title">CORRIDAS ANOTADAS</h3>
@@ -12605,6 +12605,7 @@
       </div>
       <div class="purchase-field full"><label for="gdAdjustAmount">VALOR *</label><input type="text" inputmode="decimal" id="gdAdjustAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="gdAdjustReason">OBSERVAÇÕES</label><textarea id="gdAdjustReason" rows="3" maxlength="1000"></textarea></div>
+      <div class="purchase-field full"><label class="assist-check" for="gdAdjustUber"><input type="checkbox" id="gdAdjustUber"> CORRIDA UBER</label><small class="purchase-field-help">MARCADA, A GORDURA VIRA CORRIDA NA CONCILIAÇÃO UBER DOS CARTÕES CORPORATIVOS E É BATIDA COM A COBRANÇA DA FATURA.</small></div>
     </div>
     <div class="user-form-status" id="gdAdjustFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -31467,7 +31468,7 @@ function renderHomeTasks(){
         '<td data-label="ID da venda">'+escapeHtml(row.saleCode || '—')+'</td>'+
         '<td data-label="Vendedor">'+escapeHtml(row.sellerName || '—')+'</td>'+
         '<td data-label="Valor" class="'+gdMoneyClass(row.amountCents)+'" style="white-space:nowrap;font-weight:800;">'+gdSignedBRL(row.amountCents)+'</td>'+
-        '<td data-label="Observações">'+escapeHtml(row.notes || '—')+'</td>'+
+        '<td data-label="Observações">'+(Number(row.uberRide) ? '<span class="status-pill warn">CORRIDA UBER</span> ' : '')+escapeHtml(row.notes || '—')+'</td>'+
         '<td style="white-space:nowrap">'+actions+'</td>'+
       '</tr>';
     }).join('');
@@ -31557,6 +31558,7 @@ function renderHomeTasks(){
     el('gdAdjustSaleCode').value = entry ? entry.saleCode : '';
     el('gdAdjustSeller').value = entry ? entry.sellerName : '';
     el('gdAdjustReason').value = entry ? (entry.notes || '') : '';
+    el('gdAdjustUber').checked = Boolean(entry && Number(entry.uberRide));
     const negative = entry ? entry.amountCents < 0 : false;
     document.querySelector('input[name="gdAdjustSign"][value="'+(negative ? '-1' : '1')+'"]').checked = true;
     const amountInput = el('gdAdjustAmount');
@@ -31592,6 +31594,7 @@ function renderHomeTasks(){
         sellerName: el('gdAdjustSeller').value,
         amountCents: sign * cents,
         notes: el('gdAdjustReason').value,
+        uberRide: el('gdAdjustUber').checked,
       })});
       el('gdAdjustDialog').close();
       showPurchaseToast(id ? 'Gordura alterada.' : 'Gordura lançada.');
@@ -37133,7 +37136,7 @@ function renderHomeTasks(){
     el('corpUberRidesBody').innerHTML = rides.length ? rides.map(ride =>
       '<tr>'+
         '<td data-label="Data">'+escapeHtml(formatDateBR(ride.rideDate))+'</td>'+
-        '<td data-label="Passageiro">'+escapeHtml(ride.passenger || '—')+'</td>'+
+        '<td data-label="Passageiro">'+escapeHtml(ride.passenger || '—')+(ride.gdAdjustmentId ? ' <span class="status-pill warn" title="Lançada na gordura como CORRIDA UBER">GORDURA</span>' : '')+'</td>'+
         '<td data-label="Motivo">'+escapeHtml(ride.reason || '—')+'</td>'+
         '<td data-label="Valor">'+formatCentsBRL(ride.amountCents)+'</td>'+
         '<td data-label="Cobrança">'+(ride.charge
@@ -37141,7 +37144,7 @@ function renderHomeTasks(){
           : (free.length ? '<select data-uber-link="'+escapeHtml(ride.id)+'" aria-label="Bater com cobrança"><option value="">SEM COBRANÇA — BATER COM…</option>'+freeOptions+'</select>' : '<span class="status-pill alert">SEM COBRANÇA</span>'))+'</td>'+
         '<td data-label="Ações"><div class="loan-cell-actions assist-row-actions">'+
           (ride.charge ? '<button class="btn-outline btn-sm" type="button" data-uber-unlink="'+escapeHtml(ride.id)+'">DESFAZER</button>' : '')+
-          '<button class="btn-outline btn-sm" type="button" data-uber-delete="'+escapeHtml(ride.id)+'">EXCLUIR</button>'+
+          (ride.gdAdjustmentId ? '' : '<button class="btn-outline btn-sm" type="button" data-uber-delete="'+escapeHtml(ride.id)+'">EXCLUIR</button>')+
         '</div></td>'+
       '</tr>').join('') : '<tr><td colspan="6" class="responsive-empty">Nenhuma corrida anotada neste mês. Importe a planilha.</td></tr>';
     el('corpUberChargesBody').innerHTML = free.length ? free.map(charge =>

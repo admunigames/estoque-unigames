@@ -2555,11 +2555,15 @@ export const financeUberRides = pgTable(
     reason: text("reason").notNull().default(""),
     sourceName: text("source_name").notNull().default(""),
     cardEntryId: text("card_entry_id").notNull().default(""),
+    // Corrida lançada pela gordura (CORRIDA UBER): card_id fica '' até casar
+    // com a cobrança da fatura de um cartão.
+    gdAdjustmentId: text("gd_adjustment_id").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [
+    index("finance_uber_rides_gd_idx").on(table.gdAdjustmentId),
     index("finance_uber_rides_card_date_idx").on(table.cardId, table.rideDate),
     index("finance_uber_rides_entry_idx").on(table.cardEntryId),
   ],
@@ -4118,6 +4122,9 @@ export const commercialGdBalanceAdjustments = pgTable(
     updatedAt: text("updated_at").notNull().default(""),
     // 'comercial' (Controle de Gorduras) ou 'assistencia' (Controle Gorduras Assistência).
     module: text("module").notNull().default("comercial"),
+    // 1 = CORRIDA UBER (23/10/2026): vira corrida na Conciliação Uber dos
+    // cartões corporativos (finance_uber_rides.gd_adjustment_id).
+    uberRide: integer("uber_ride").notNull().default(0),
   },
   (table) => [
     index("commercial_gd_adjustments_store_date_idx").on(table.storeId, table.adjustmentDate),
