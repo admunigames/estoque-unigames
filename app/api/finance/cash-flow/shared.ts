@@ -49,6 +49,11 @@ export type CashFlowItem = {
   companyName: string;
   amountCents: number;
   status: CashFlowItemStatus;
+  /**
+   * Conta bancária de onde sai (pagamento → conta do pagamento; em aberto →
+   * conta prevista na conta a pagar). '' = sem conta definida (e todo o RH).
+   */
+  financeAccountId: string;
 };
 
 export const ORIGIN_LABELS: Record<CashFlowOrigin, string> = {
@@ -101,6 +106,7 @@ type PayableRow = {
   companyName: string;
   expenseId: string | null;
   idempotencyKey: string;
+  payableAccountId: string | null;
 };
 
 function payableOrigin(row: { expenseId: string | null; idempotencyKey: string }): CashFlowOrigin {
@@ -130,7 +136,7 @@ export async function loadCashFlowOutflows(
   const payableColumns = `a.description, f.name AS supplierName,
      CASE WHEN c.name IS NULL THEN i.name ELSE c.name || ' › ' || i.name END AS categoryName,
      a.company_id AS companyId, a.company_name AS companyName, a.expense_id AS expenseId,
-     a.idempotency_key AS idempotencyKey`;
+     a.idempotency_key AS idempotencyKey, a.finance_account_id AS payableAccountId`;
 
   const [open, payments, payroll, payrollMissing, benefits, commissions] = await Promise.all([
     // Saldo ainda NÃO coberto por pagamento, no vencimento. Agendado não
@@ -167,7 +173,8 @@ export async function loadCashFlowOutflows(
       return database
         .prepare(
           `SELECT a.id, p.id AS paymentId, p.payment_date AS date, p.amount_cents AS amountCents,
-                  p.scheduled AS scheduled, p.confirmed_at AS confirmedAt, ${payableColumns}
+                  p.scheduled AS scheduled, p.confirmed_at AS confirmedAt,
+                  p.finance_account_id AS paymentAccountId, ${payableColumns}
            FROM accounts_payable_payments p
            JOIN accounts_payable a ON a.id = p.payable_id
            ${payableJoins}
@@ -177,7 +184,7 @@ export async function loadCashFlowOutflows(
              ${company}`,
         )
         .bind(...q.values)
-        .all<PayableRow & { paymentId: string; scheduled: number; confirmedAt: string }>();
+        .all<PayableRow & { paymentId: string; scheduled: number; confirmedAt: string; paymentAccountId: string | null }>();
     })(),
     // RH: folha lançada (líquido = adições − descontos, como em
     // hr-payroll/entries netCentsFor). Recorte de competência a partir do mês
@@ -280,6 +287,7 @@ export async function loadCashFlowOutflows(
       companyName: row.companyName || "",
       amountCents,
       status: statusOf(row.date, false),
+      financeAccountId: row.payableAccountId || "",
     });
   }
   for (const row of payments.results ?? []) {
@@ -298,6 +306,7 @@ export async function loadCashFlowOutflows(
       companyName: row.companyName || "",
       amountCents,
       status: scheduled ? "scheduled" : "paid",
+      financeAccountId: row.paymentAccountId || row.payableAccountId || "",
     });
   }
 
@@ -327,6 +336,7 @@ export async function loadCashFlowOutflows(
         companyName: row.companyName || "",
         amountCents,
         status: statusOf(date, false),
+        financeAccountId: "",
       });
     }
   }
@@ -348,14 +358,32 @@ export function cashFlowLastDate(today: string, days: number) {
 }
 
 /**
+ * Fluxo de Caixa por CONTA (23/10/2026): com `accountId`, só entra o que tem
+ * essa conta definida. O que não tem conta (RH e contas/recebíveis sem conta
+ * prevista) fica só na visão TODAS AS CONTAS e é somado em `unassigned` para
+ * a tela avisar.
+ */
+export function splitByAccount<T extends { financeAccountId: string; amountCents: number }>(rows: T[], accountId: string) {
+  if (!accountId) return { rows, unassignedCents: 0, unassignedCount: 0 };
+  const unassigned = rows.filter((row) => !row.financeAccountId);
+  return {
+    rows: rows.filter((row) => row.financeAccountId === accountId),
+    unassignedCents: unassigned.reduce((sum, row) => sum + row.amountCents, 0),
+    unassignedCount: unassigned.length,
+  };
+}
+
+/**
  * Projeção completa de 90 dias (mesma conta de sempre): entradas dos
  * recebíveis + saídas de loadCashFlowOutflows, sobre o Caixa Atual de
  * loadAccountBalances. Usada pela rota da projeção e pelo Caixa Semanal.
+ * `accountId` recorta uma conta (ver splitByAccount).
  */
-export async function loadCashFlowProjection(database: Database, companyId: string, today: string) {
+export async function loadCashFlowProjection(database: Database, companyId: string, today: string, accountId = "") {
   const lastDate = cashFlowLastDate(today, MAX_CASH_FLOW_DAYS);
   const settings = await loadEffectiveCashFlowSettings(database, companyId);
-  const [receivablesPending, receivablesReceived, outflows, balances] = await Promise.all([
+  type InflowRow = { date: string; financeAccountId: string; amountCents: number };
+  const [receivablesPending, receivablesReceived, allOutflows, balances] = await Promise.all([
     // ENTRADAS — recebíveis ainda não recebidos, na data prevista.
     (() => {
       const q = queryParams();
@@ -363,14 +391,15 @@ export async function loadCashFlowProjection(database: Database, companyId: stri
       const company = companyId ? `AND company_id = ${q.bind(companyId)}` : "";
       return database
         .prepare(
-          `SELECT expected_date AS date, COALESCE(SUM(expected_amount_cents), 0) AS amountCents
+          `SELECT expected_date AS date, finance_account_id AS financeAccountId,
+                  COALESCE(SUM(expected_amount_cents), 0) AS amountCents
            FROM accounts_receivable
            WHERE canceled = 0 AND received_amount_cents IS NULL
              AND expected_date <= ${dateLimit} ${company}
-           GROUP BY expected_date`,
+           GROUP BY expected_date, finance_account_id`,
         )
         .bind(...q.values)
-        .all<DailyAmount>();
+        .all<InflowRow>();
     })(),
     // ENTRADAS — recebidos entram pelo valor e pela data reais.
     (() => {
@@ -380,14 +409,15 @@ export async function loadCashFlowProjection(database: Database, companyId: stri
       const company = companyId ? `AND company_id = ${q.bind(companyId)}` : "";
       return database
         .prepare(
-          `SELECT received_date AS date, COALESCE(SUM(received_amount_cents), 0) AS amountCents
+          `SELECT received_date AS date, finance_account_id AS financeAccountId,
+                  COALESCE(SUM(received_amount_cents), 0) AS amountCents
            FROM accounts_receivable
            WHERE canceled = 0 AND received_amount_cents IS NOT NULL AND received_date <> ''
              AND received_date >= ${from} AND received_date <= ${to} ${company}
-           GROUP BY received_date`,
+           GROUP BY received_date, finance_account_id`,
         )
         .bind(...q.values)
-        .all<DailyAmount>();
+        .all<InflowRow>();
     })(),
     loadCashFlowOutflows(database, {
       companyId,
@@ -396,19 +426,26 @@ export async function loadCashFlowProjection(database: Database, companyId: stri
       payrollDefaultPaymentDay: settings.payrollDefaultPaymentDay,
     }),
     // Caixa Atual pela MESMA função da tela de saldos.
-    loadAccountBalances(database, companyId),
+    loadAccountBalances(database, companyId, accountId),
   ]);
-  const toDaily = (rows: { results?: DailyAmount[] }): DailyAmount[] =>
-    (rows.results ?? [])
-      .filter((row) => Boolean(row.date))
-      .map((row) => ({ date: row.date, amountCents: Number(row.amountCents || 0) }));
+  const inflowRows = [...(receivablesPending.results ?? []), ...(receivablesReceived.results ?? [])]
+    .filter((row) => Boolean(row.date))
+    .map((row) => ({ date: row.date, financeAccountId: row.financeAccountId || "", amountCents: Number(row.amountCents || 0) }));
+  const inflows = splitByAccount(inflowRows, accountId);
+  const outflowSplit = splitByAccount(allOutflows, accountId);
+  const outflows = outflowSplit.rows;
   const series = buildCashFlowSeries({
     today,
     days: MAX_CASH_FLOW_DAYS,
     caixaAtualCents: balances.caixaAtualCents,
-    entradas: [...toDaily(receivablesPending), ...toDaily(receivablesReceived)],
+    entradas: inflows.rows.map((row) => ({ date: row.date, amountCents: row.amountCents })),
     saidasPayables: outflowsToDaily(outflows, "payables"),
     saidasPayroll: outflowsToDaily(outflows, "payroll"),
   });
-  return { settings, balances, series, outflows, lastDate };
+  const unassigned = {
+    inflowCents: inflows.unassignedCents,
+    outflowCents: outflowSplit.unassignedCents,
+    outflowCount: outflowSplit.unassignedCount,
+  };
+  return { settings, balances, series, outflows, lastDate, unassigned };
 }

@@ -143,7 +143,7 @@ export async function GET(request: Request) {
     const rows = await database
       .prepare(
         `SELECT id, company_id AS companyId, company_name AS companyName, operator_text AS operatorText,
-                acquirer_id AS acquirerId,
+                acquirer_id AS acquirerId, finance_account_id AS financeAccountId, bank_entry_id AS bankEntryId,
                 competence_month AS competenceMonth, expected_date AS expectedDate,
                 expected_amount_cents AS expectedAmountCents, received_amount_cents AS receivedAmountCents,
                 received_date AS receivedDate, notes, canceled,

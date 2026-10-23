@@ -1631,7 +1631,8 @@
     /* Recibo individual do comissionamento: esconde o resto da página. */
     body.rh-recibo-only #rhComissaoMain{display:none !important;}
     body.rh-custo-only #rhFolhaPrintHeader{display:none !important;}
-    #pageRhContabilidade .rh-contab-table th,#pageRhContabilidade .rh-contab-table td{padding:3px 3px !important; font-size:6.5px !important; white-space:normal !important; letter-spacing:0 !important;}
+    body.recon-report-only #pageFinanceiroConciliacao > *:not(#reconReport){display:none !important;}
+    #pageRhContabilidade .rh-contab-table th,#pageRhContabilidade .rh-contab-table td{padding:4px 5px !important; font-size:8px !important; white-space:normal !important; letter-spacing:0 !important;}
     #pageRhContabilidade .rh-contab-table{width:100% !important; min-width:0 !important; table-layout:fixed;}
     body.rh-custo-only #rhCustoFuncTable{width:100% !important; min-width:0 !important; table-layout:fixed;}
     body.rh-custo-only #rhCustoFuncTable th,body.rh-custo-only #rhCustoFuncTable td{padding:3px 3px !important; font-size:6.5px !important; white-space:normal !important; letter-spacing:0 !important;}
@@ -7109,11 +7110,12 @@
       <div class="dre-toolbar no-print">
         <div class="field"><label for="rhContabMes">COMPETÊNCIA</label><input type="month" id="rhContabMes"></div>
         <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnRhContabHe" type="button">LANÇAR HORAS EXTRAS</button>
           <button class="btn-outline" id="btnRhContabXlsx" type="button">XLSX</button>
           <button class="btn-outline" id="btnRhContabPdf" type="button">PDF (A4)</button>
         </div>
       </div>
-      <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">AGRUPADO POR EMPRESA (CNPJ DO CADASTRO DE LOJAS, PELA LOJA ATUANTE DO MÊS). DESCONTO SEMPRE NA COMISSÃO — SE PASSAR DA COMISSÃO, A COMISSÃO FICA ZERO E A SOBRA VAI PARA O MÊS SEGUINTE (NUNCA ABATE A PREMIAÇÃO). HE = HORAS EXTRAS A PAGAR DO CONTROLE DE HORAS.</p>
+      <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">AGRUPADO POR EMPRESA (CNPJ DO CADASTRO DE LOJAS, PELA LOJA ATUANTE DO MÊS). COMISSIONAMENTO JÁ COM O DESCONTO (SE PASSAR DA COMISSÃO, A SOBRA VAI PARA O MÊS SEGUINTE — NUNCA ABATE A PREMIAÇÃO). HORAS EXTRAS: VALOR EM R$ LANÇADO À MÃO EM "LANÇAR HORAS EXTRAS".</p>
       <div class="table-panel" id="rhContabResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
       <div id="rhContabConteudo"></div>
     </section>
@@ -8967,7 +8969,11 @@
       </header>
 
       <div class="dre-toolbar">
-        <div class="field"><label for="cashFlowLoja">UNIDADE</label><select id="cashFlowLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+        <!-- 23/10/2026: o fluxo é por CONTA cadastrada, não por unidade. O
+             select de unidade fica oculto (sempre consolidado); login de loja
+             continua recortado pela própria loja no servidor. -->
+        <div class="field" hidden><label for="cashFlowLoja">UNIDADE</label><select id="cashFlowLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+        <div class="field"><label for="cashFlowConta">CONTA</label><select id="cashFlowConta"><option value="">TODAS AS CONTAS (CONSOLIDADO)</option></select></div>
       </div>
 
       <div class="output-tabs" role="tablist" aria-label="Visões do fluxo de caixa">
@@ -8988,6 +8994,7 @@
           </select>
         </div>
         <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnCashFlowImportReceivables" type="button">IMPORTAR RECEBIMENTOS PREVISTOS</button>
           <button class="btn-accent" id="btnCashFlowBalances" type="button">SALDOS DAS CONTAS</button>
           <button class="btn-accent" id="btnCashFlowSettings" type="button">CONFIGURAÇÕES</button>
           <button class="btn-accent" id="btnCashFlowShare" type="button">GERAR IMAGEM</button>
@@ -9038,7 +9045,7 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="cfPayTable">
-            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Origem</th><th>Descrição</th><th>Fornecedor</th><th>Categoria</th><th>Unidade</th><th>Valor</th><th>Situação</th></tr></thead>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Origem</th><th>Descrição</th><th>Fornecedor</th><th>Categoria</th><th>Conta</th><th>Valor</th><th>Situação</th></tr></thead>
             <tbody id="cfPayBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
@@ -9116,11 +9123,39 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="cfReceivablesFutureTable">
-              <thead><tr><th>Data prevista</th><th>Adquirente</th><th>Unidade</th><th>Competência</th><th>Valor</th></tr></thead>
+              <thead><tr><th>Data prevista</th><th>Adquirente</th><th>Conta</th><th>Competência</th><th>Valor</th></tr></thead>
               <tbody id="cfReceivablesFutureBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
+        <h3 class="supply-section-title">CONCILIAÇÃO DE CONTAS A RECEBER (PREVISTO × ENTROU NA CONTA)</h3>
+        <div class="dre-toolbar">
+          <div class="field"><label for="rrAccount">CONTA</label><select id="rrAccount"><option value="">SELECIONE</option></select></div>
+          <div class="field"><label for="rrMonth">MÊS (DATA PREVISTA)</label><input type="month" id="rrMonth"></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnRrLinkSuggested" type="button">CONCILIAR SUGESTÕES (VALOR IGUAL)</button>
+          </div>
+        </div>
+        <p class="purchase-field-help">OS CRÉDITOS VÊM DO EXTRATO IMPORTADO NA CONCILIAÇÃO BANCÁRIA DA CONTA. A SUGESTÃO PROCURA UM CRÉDITO DE VALOR IGUAL (OU PARECIDO, ATÉ 2%) EM ATÉ 5 DIAS DA DATA PREVISTA. CONCILIAR MARCA O RECEBÍVEL COMO RECEBIDO PELO VALOR E DATA DO EXTRATO.</p>
+        <section class="summary" id="rrTotals" aria-label="Totais da conciliação de contas a receber"></section>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rrTable">
+              <thead><tr><th>Data prevista</th><th>Adquirente</th><th>Unidade</th><th>Previsto</th><th>Entrou na conta</th><th>Diferença</th><th>Situação</th><th>Ações</th></tr></thead>
+              <tbody id="rrBody"><tr><td colspan="8" class="responsive-empty">Escolha a conta.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <h3 class="supply-section-title">ENTROU NA CONTA SEM RECEBÍVEL PREVISTO</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rrCreditsTable">
+              <thead><tr><th>Data</th><th>Descrição do extrato</th><th>Valor</th></tr></thead>
+              <tbody id="rrCreditsBody"><tr><td colspan="3" class="responsive-empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
         <h3 class="supply-section-title">RECEBÍVEIS POR COMPETÊNCIA</h3>
         <div class="dre-toolbar">
           <div class="field"><label for="receivableMes">COMPETÊNCIA</label><input type="month" id="receivableMes"></div>
@@ -9363,6 +9398,44 @@
       <div class="output-tabs" role="tablist" aria-label="Visões dos cartões">
         <button class="output-tab active" type="button" role="tab" aria-selected="true" data-corp-view="cartoes">CARTÕES</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-corp-view="gastos">GASTOS POR CATEGORIA</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-corp-view="socio">CARTÕES DE CRÉDITO SÓCIO</button>
+      </div>
+
+      <div data-corp-view-panel="socio" hidden>
+        <p class="page-desc">COMPRAS DA EMPRESA FEITAS NO CARTÃO PESSOAL DE UM SÓCIO. CADA LANÇAMENTO ENTRA NO MÊS PELA PARCELA (OU TODO MÊS, SE FIXO), JÁ COM O DESCONTO. INFORME A DATA DE PAGAMENTO DO RESPONSÁVEL E O TOTAL DO MÊS VAI PARA CONTAS A PAGAR.</p>
+        <div class="dre-toolbar">
+          <div class="field"><label for="pcMonth">MÊS</label><input type="month" id="pcMonth"></div>
+          <div class="field"><label for="pcResponsibleFilter">RESPONSÁVEL</label><select id="pcResponsibleFilter"><option value="">TODOS</option></select></div>
+          <div class="dre-toolbar-actions"><button class="btn-accent" id="btnNewPartnerCard" type="button">NOVO LANÇAMENTO</button></div>
+        </div>
+        <h3 class="supply-section-title">TOTAL DO MÊS POR RESPONSÁVEL</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="pcSummaryTable">
+              <thead><tr><th>Responsável</th><th>Total do mês</th><th>Data de pagamento</th><th>Contas a Pagar</th><th></th></tr></thead>
+              <tbody id="pcSummaryBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <h3 class="supply-section-title">LANÇAMENTOS DO MÊS</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="pcEntriesTable">
+              <thead><tr><th>Data de compra</th><th>Responsável</th><th>Lançamento</th><th>Valor</th><th>Desconto</th><th>Parcelas</th><th>Valor no mês</th><th></th></tr></thead>
+              <tbody id="pcEntriesBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <details class="page-desc"><summary>LANÇAMENTOS FORA DESTE MÊS (JÁ QUITADOS OU QUE AINDA VÃO COMEÇAR)</summary>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="pcOthersTable">
+                <thead><tr><th>Data de compra</th><th>Responsável</th><th>Lançamento</th><th>Valor</th><th>Parcelas</th><th>1º mês</th><th></th></tr></thead>
+                <tbody id="pcOthersBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div data-corp-view-panel="gastos" hidden>
@@ -9460,7 +9533,7 @@
             <div class="field"><label for="corpUberFile">PLANILHA DAS CORRIDAS (.xlsx / .xls / .csv)</label><input type="file" id="corpUberFile" accept=".xls,.xlsx,.csv"></div>
             <div class="dre-toolbar-actions"><button class="btn-outline" id="btnCorpUberMatch" type="button">CONCILIAR DE NOVO</button></div>
           </div>
-          <p class="page-desc">COLUNAS RECONHECIDAS: DATA, VALOR, PASSAGEIRO (NOME/COLABORADOR/USUÁRIO) E MOTIVO (DESCRIÇÃO/DESTINO). CADA CORRIDA CASA COM A COBRANÇA UBER DA FATURA DESTE CARTÃO DE MESMO VALOR, ATÉ 1 DIA DE DIFERENÇA. IMPORTOU A FATURA DEPOIS? USE CONCILIAR DE NOVO.</p>
+          <p class="page-desc">COLUNAS RECONHECIDAS: DATA, VALOR, PASSAGEIRO (NOME/COLABORADOR/USUÁRIO) E MOTIVO (DESCRIÇÃO/DESTINO). CADA CORRIDA CASA COM A COBRANÇA UBER DA FATURA DESTE CARTÃO DE MESMO VALOR, ATÉ 1 DIA DE DIFERENÇA. IMPORTOU A FATURA DEPOIS? USE CONCILIAR DE NOVO. AS GORDURAS MARCADAS COMO CORRIDA UBER ENTRAM AQUI SOZINHAS (ETIQUETA GORDURA) E FICAM NO CARTÃO CUJA COBRANÇA CASAR.</p>
           <div class="user-form-status" id="corpUberStatus" role="status" aria-live="polite"></div>
           <section class="summary" id="corpUberSummary" aria-label="Resumo da conciliação Uber"></section>
           <h3 class="supply-section-title">CORRIDAS ANOTADAS</h3>
@@ -9529,6 +9602,24 @@
             <option value="credit_sale">CREDIÁRIO</option>
           </select>
         </div>
+        <div class="field"><label for="reconKindFilter">TIPO</label>
+          <select id="reconKindFilter"><option value="">ENTRADAS E SAÍDAS</option><option value="in">SÓ ENTRADAS</option><option value="out">SÓ SAÍDAS</option></select>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnReconActivities" type="button">ATIVIDADES</button>
+          <button class="btn-outline" id="btnReconReportPdf" type="button">RELATÓRIO PDF</button>
+          <button class="btn-outline" id="btnReconReportXlsx" type="button">XLSX</button>
+          <button class="btn-danger-outline" id="btnReconClearMonth" type="button">LIMPAR EXTRATO DO MÊS</button>
+        </div>
+      </div>
+
+      <section class="summary" id="reconPeriodSummary" aria-label="Saldo do período" hidden></section>
+      <div class="dre-toolbar" id="reconOpeningBar" hidden>
+        <div class="field"><label for="reconOpeningInput">SALDO INICIAL DO PERÍODO</label><input id="reconOpeningInput" inputmode="decimal" placeholder="R$ 0,00"></div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnReconOpeningSave" type="button">SALVAR SALDO INICIAL</button>
+          <button class="btn-outline" id="btnReconOpeningReset" type="button">USAR O CALCULADO</button>
+        </div>
       </div>
 
       <div class="user-form-status" id="reconImportStatus" role="status" aria-live="polite"></div>
@@ -9559,11 +9650,14 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="reconEntriesTable">
-            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Histórico</th><th>Valor</th><th>Categoria / Subcategoria</th><th>Unidade</th><th>Centro de custo</th><th>DRE</th><th>Rateio</th><th>Situação</th><th></th></tr></thead>
-            <tbody id="reconEntriesBody"><tr><td colspan="11" class="responsive-empty">Selecione uma conta bancária.</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Histórico</th><th>Valor</th><th>Atividade</th><th>Categoria / Subcategoria</th><th>Unidade</th><th>Centro de custo</th><th>DRE</th><th>Rateio</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="reconEntriesBody"><tr><td colspan="12" class="responsive-empty">Selecione uma conta bancária.</td></tr></tbody>
           </table>
         </div>
       </div>
+
+      <!-- Relatório da conciliação (só impressão / PDF). -->
+      <div class="print-only" id="reconReport"></div>
     </section>
 
     <section id="pageFinanceiroCrediarios" class="page wrap">
@@ -9836,11 +9930,10 @@
       </div>
 
       <h3 class="supply-section-title">BATER COM O EXTRATO BANCÁRIO</h3>
-      <p class="page-desc">SUBA O EXTRATO (O MESMO DA CONCILIAÇÃO BANCÁRIA, SEM DUPLICAR) E BATA CADA SAÍDA COM O LANÇAMENTO DE REPOSIÇÃO. O QUE FICAR SEM PAR APARECE NOS DOIS LADOS.</p>
+      <p class="page-desc">AS SAÍDAS VÊM DOS EXTRATOS JÁ IMPORTADOS NA CONCILIAÇÃO BANCÁRIA. BATA CADA SAÍDA COM O LANÇAMENTO DE REPOSIÇÃO — A REPOSIÇÃO NÃO É LIGADA A CONTA CADASTRADA, SÓ AO RESPONSÁVEL. O QUE FICAR SEM PAR APARECE NOS DOIS LADOS.</p>
       <div class="dre-toolbar">
-        <div class="field"><label for="rpBankAccount">CONTA BANCÁRIA</label><select id="rpBankAccount"><option value="">TODAS</option></select></div>
+        <div class="field"><label for="rpBankResponsible">RESPONSÁVEL</label><select id="rpBankResponsible"><option value="">TODOS</option></select></div>
         <div class="field"><label for="rpBankMonth">MÊS</label><input type="month" id="rpBankMonth"></div>
-        <div class="field"><label for="rpBankFile">IMPORTAR EXTRATO (.ofx / .xls / .xlsx / .csv / .pdf)</label><input type="file" id="rpBankFile" accept=".ofx,.xls,.xlsx,.csv,.htm,.html,.pdf"></div>
       </div>
       <div class="user-form-status" id="rpBankStatus" role="status" aria-live="polite"></div>
       <section class="summary" id="rpBankSummary" aria-label="Resumo do extrato"></section>
@@ -9944,8 +10037,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="declShoppingTable">
-            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Loja</th><th>Faturamento real</th><th>Sugerido</th><th>A declarar (previsto)</th><th>Valor declarado</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Alerta</th><th></th></tr></thead>
-            <tbody id="declShoppingTableBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Loja</th><th>Faturamento real</th><th>Sugerido</th><th>Projetado</th><th>Efetivamente declarado</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Valor efetivamente pago</th><th>Alerta</th><th></th></tr></thead>
+            <tbody id="declShoppingTableBody"><tr><td colspan="13" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -10391,7 +10484,7 @@
           <option value="outros">OUTROS</option>
         </select>
       </div>
-      <div class="purchase-field"><label for="reposicaoResponsavel">RESPONSÁVEL</label><input id="reposicaoResponsavel" maxlength="160"></div>
+      <div class="purchase-field"><label for="reposicaoResponsavel">RESPONSÁVEL *</label><input id="reposicaoResponsavel" maxlength="160" required></div>
       <div class="purchase-field"><label for="reposicaoTipoForm">TIPO *</label>
         <select id="reposicaoTipoForm" required>
           <option value="">SELECIONE</option>
@@ -11206,12 +11299,14 @@
       <div class="purchase-field"><label for="declShoppingLojaForm">LOJA *</label><select id="declShoppingLojaForm" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="declShoppingCompetencia">COMPETÊNCIA *</label><input type="month" id="declShoppingCompetencia" required></div>
       <div class="purchase-field"><label for="declShoppingFatReal">FATURAMENTO REAL (R$)</label><input type="text" inputmode="decimal" id="declShoppingFatReal" placeholder="R$ 0,00"><small class="purchase-field-help" id="declShoppingFatRealInfo">ESCOLHA A LOJA E A COMPETÊNCIA.</small></div>
+      <div class="purchase-field"><label for="declShoppingProjetado">VALOR PROJETADO DA DECLARAÇÃO (R$)</label><input type="text" inputmode="decimal" id="declShoppingProjetado" placeholder="R$ 0,00"><small class="purchase-field-help">DIGITE O VALOR QUE PRETENDE DECLARAR.</small></div>
       <div class="purchase-field"><label for="declShoppingDeclarado">VALOR EFETIVAMENTE DECLARADO (R$)</label><input type="text" inputmode="decimal" id="declShoppingDeclarado" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><label class="assist-check" for="declShoppingTemPct"><input type="checkbox" id="declShoppingTemPct"> LOJA COM ALUGUEL PERCENTUAL</label></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingPercentual">PERCENTUAL CONTRATUAL (%)</label><input type="number" id="declShoppingPercentual" min="0" max="100" step="0.01" placeholder="Ex.: 7"></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="text" inputmode="decimal" id="declShoppingMinimo" placeholder="R$ 0,00"></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="text" id="declShoppingSugerido" readonly placeholder="—"><small class="purchase-field-help" id="declShoppingSugeridoConta"></small></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="text" inputmode="decimal" id="declShoppingAluguelPct" placeholder="R$ 0,00"><small class="purchase-field-help" id="declShoppingAluguelPctInfo">CALCULADO: DECLARADO × % − MÍNIMO · PODE DIGITAR O VALOR COBRADO</small></div>
+      <div class="purchase-field" data-decl-pct-field><label for="declShoppingValorPago">VALOR EFETIVAMENTE PAGO (R$)</label><input type="text" id="declShoppingValorPago" readonly placeholder="—"><small class="purchase-field-help" id="declShoppingValorPagoConta">ALUGUEL MÍNIMO + PERCENTUAL SOBRE O VALOR EFETIVAMENTE DECLARADO.</small></div>
       <div class="purchase-field full" data-decl-pct-field><label class="assist-check" for="declShoppingPctPago"><input type="checkbox" id="declShoppingPctPago"> ALUGUEL PERCENTUAL PAGO</label></div>
       <div class="purchase-field full"><label for="declShoppingObs">OBSERVAÇÕES</label><textarea id="declShoppingObs" rows="2" maxlength="2000"></textarea></div>
     </div>
@@ -11425,6 +11520,7 @@
       <div class="purchase-field"><label for="receivableCompany">UNIDADE *</label><select id="receivableCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="receivableCompetence">COMPETÊNCIA *</label><input type="month" id="receivableCompetence" required></div>
       <div class="purchase-field full"><label for="receivableAcquirer">ADQUIRENTE *</label><select id="receivableAcquirer" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="receivableAccount">CONTA ONDE CAI</label><select id="receivableAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="receivableExpectedAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="receivableExpectedAmount" placeholder="R$ 0,00" required></div>
       <!-- Campos previsto/recebido/data ocultos (item 4): o cadastro passou a
            ter só unidade, adquirente, competência e valor. Os inputs seguem
@@ -11833,6 +11929,23 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="reconActivitiesDialog" aria-labelledby="reconActivitiesTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="reconActivitiesTitle">ATIVIDADES FINANCEIRAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseReconActivities" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <p class="muted" style="font-size:12px;margin:0 0 8px;">CADASTRE AS OPÇÕES DE ENTRADA (EX.: ENTRADA DE VENDA, DEPÓSITO) E DE SAÍDA PARA MARCAR CADA LANÇAMENTO DO EXTRATO.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+      <div class="field"><label for="reconActivityKind">TIPO</label><select id="reconActivityKind"><option value="entrada">ENTRADA</option><option value="saida">SAÍDA</option></select></div>
+      <div class="field" style="flex:1;"><label for="reconActivityName">NOME</label><input id="reconActivityName" maxlength="120" placeholder="EX.: ENTRADA DE VENDA"></div>
+      <button class="btn-accent" id="btnReconActivityAdd" type="button">ADICIONAR</button>
+    </div>
+    <div class="user-form-status" id="reconActivitiesStatus" role="status" aria-live="polite"></div>
+    <div id="reconActivitiesList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:10px;"></div>
+  </div>
+</dialog>
+
 <dialog class="purchase-dialog" id="reconEntryExpenseDialog" aria-labelledby="reconEntryExpenseTitle">
   <div class="purchase-dialog-head">
     <h3 id="reconEntryExpenseTitle">LANÇAR COMO DESPESA</h3>
@@ -12123,6 +12236,63 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCfReceive" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">CONFIRMAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="pcDialog" aria-labelledby="pcDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="pcDialogTitle">NOVO LANÇAMENTO — CARTÃO DO SÓCIO</h3>
+    <button class="purchase-dialog-close" id="btnClosePcDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="pcForm">
+    <input type="hidden" id="pcId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="pcResponsible">RESPONSÁVEL *</label><input id="pcResponsible" list="pcResponsibleOptions" maxlength="120" required><datalist id="pcResponsibleOptions"></datalist></div>
+      <div class="purchase-field"><label for="pcPurchaseDate">DATA DE COMPRA</label><input type="date" id="pcPurchaseDate"></div>
+      <div class="purchase-field full"><label for="pcDescription">LANÇAMENTO *</label><input id="pcDescription" maxlength="300" required placeholder="O QUE FOI COMPRADO"></div>
+      <div class="purchase-field"><label for="pcAmount">VALOR TOTAL (R$) *</label><input type="text" inputmode="decimal" id="pcAmount" placeholder="R$ 0,00" required></div>
+      <div class="purchase-field"><label for="pcDiscount">DESCONTO (R$)</label><input type="text" inputmode="decimal" id="pcDiscount" placeholder="R$ 0,00"></div>
+      <div class="purchase-field full"><label class="assist-check" for="pcFixed"><input type="checkbox" id="pcFixed"> FIXO (COBRA TODO MÊS)</label></div>
+      <div class="purchase-field" data-pc-installments><label for="pcInstallments">Nº DE PARCELAS *</label><input type="number" id="pcInstallments" min="1" max="60" step="1" value="1"></div>
+      <div class="purchase-field"><label for="pcFirstMonth">MÊS DA 1ª PARCELA *</label><input type="month" id="pcFirstMonth" required></div>
+      <div class="purchase-field" data-pc-fixed hidden><label for="pcEndMonth">ATÉ (MÊS, OPCIONAL)</label><input type="month" id="pcEndMonth"></div>
+      <div class="purchase-field full"><label for="pcNotes">OBSERVAÇÕES</label><input id="pcNotes" maxlength="1000"></div>
+    </div>
+    <small class="purchase-field-help" id="pcPreview"></small>
+    <div class="user-form-status" id="pcStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelPcDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="cfImportReceivablesDialog" aria-labelledby="cfImportReceivablesTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cfImportReceivablesTitle">IMPORTAR RECEBIMENTOS PREVISTOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseCfImportReceivables" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cfImportReceivablesForm">
+    <p class="purchase-field-help">TRAZ AS PARCELAS DAS VENDAS NO CARTÃO (ARQUIVO DE VENDAS JÁ IMPORTADO NA CONCILIAÇÃO DE VENDAS) QUE CAEM NO BANCO NO PERÍODO, PELO PRAZO DE CADA ADQUIRENTE. VIRAM RECEBÍVEIS NA CONTA ESCOLHIDA E ENTRAM NA PROJEÇÃO JUNTO COM OS PAGAMENTOS CADASTRADOS. IMPORTAR DE NOVO ATUALIZA OS VALORES (NÃO DUPLICA). OUTROS RECEBIMENTOS: ABA RECEBÍVEIS → CADASTRAR EM LOTE.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="cfImportAccount">CONTA ONDE OS RECEBIMENTOS CAEM *</label><select id="cfImportAccount" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="cfImportFrom">DE</label><input type="date" id="cfImportFrom"></div>
+      <div class="purchase-field"><label for="cfImportTo">ATÉ</label><input type="date" id="cfImportTo"></div>
+    </div>
+    <section class="summary" id="cfImportTotals" aria-label="Totais da prévia"></section>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table id="cfImportTable">
+          <thead><tr><th>Data prevista</th><th>Adquirente</th><th>Unidade</th><th>Competência</th><th>Vendas</th><th>Valor líquido</th><th>Situação</th></tr></thead>
+          <tbody id="cfImportBody"><tr><td colspan="7" class="responsive-empty">—</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="cfImportStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCfImportReceivables" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnConfirmCfImportReceivables" type="submit">IMPORTAR</button>
     </div>
   </form>
 </dialog>
@@ -12501,6 +12671,7 @@
       </div>
       <div class="purchase-field full"><label for="gdAdjustAmount">VALOR *</label><input type="text" inputmode="decimal" id="gdAdjustAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="gdAdjustReason">OBSERVAÇÕES</label><textarea id="gdAdjustReason" rows="3" maxlength="1000"></textarea></div>
+      <div class="purchase-field full"><label class="assist-check" for="gdAdjustUber"><input type="checkbox" id="gdAdjustUber"> CORRIDA UBER</label><small class="purchase-field-help">MARCADA, A GORDURA VIRA CORRIDA NA CONCILIAÇÃO UBER DOS CARTÕES CORPORATIVOS E É BATIDA COM A COBRANÇA DA FATURA.</small></div>
     </div>
     <div class="user-form-status" id="gdAdjustFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -13829,7 +14000,7 @@
       <form id="payableAccountForm">
         <input type="hidden" id="payableAccountId">
         <div class="purchase-form-grid">
-          <div class="purchase-field"><label for="payableAccountCompany">EMPRESA/LOJA *</label><select id="payableAccountCompany" required><option value="">SELECIONE</option></select></div>
+          <div class="purchase-field" hidden><label for="payableAccountCompany">EMPRESA/LOJA</label><select id="payableAccountCompany"><option value="">SEM LOJA</option></select></div>
           <div class="purchase-field"><label for="payableAccountName">NOME/DESCRIÇÃO *</label><input id="payableAccountName" maxlength="160" placeholder="Ex.: CAIXA LOJA CENTRO" required></div>
           <div class="purchase-field"><label for="payableAccountType">TIPO *</label>
             <select id="payableAccountType" required>
@@ -13876,7 +14047,7 @@
       </form>
 
       <div class="dre-toolbar payables-filters" style="margin-top:20px;">
-        <div class="field"><label for="payableAccountsFilterCompany">EMPRESA/LOJA</label><select id="payableAccountsFilterCompany"><option value="">TODAS</option></select></div>
+        <div class="field" hidden><label for="payableAccountsFilterCompany">EMPRESA/LOJA</label><select id="payableAccountsFilterCompany"><option value="">TODAS</option></select></div>
         <div class="field"><label for="payableAccountsFilterType">TIPO</label>
           <select id="payableAccountsFilterType">
             <option value="">TODOS</option>
@@ -13902,7 +14073,7 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table>
-            <thead><tr><th>Nome</th><th>Empresa/Loja</th><th>Tipo</th><th>Banco</th><th>Agência/Conta</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Nome</th><th>Tipo</th><th>Banco</th><th>Agência/Conta</th><th>Status</th><th></th></tr></thead>
             <tbody id="payableAccountsBody"><tr><td colspan="7" class="responsive-empty">Carregando contas financeiras…</td></tr></tbody>
           </table>
         </div>
@@ -13987,23 +14158,20 @@
 
     <div class="purchase-form-section">GERAR/CADASTRAR DUPLICATAS</div>
     <form class="purchase-form-grid" id="invoiceInstallmentForm" style="margin-bottom:10px;">
-      <div class="purchase-field full payables-kind-tabs">
-        <label><input type="radio" name="invoiceInstallmentMode" value="generate" checked> GERAR N PARCELAS IGUAIS</label>
-        <label><input type="radio" name="invoiceInstallmentMode" value="manual"> DUPLICATA ÚNICA</label>
-      </div>
-      <div class="purchase-field" id="invoiceInstallmentCountField"><label for="invoiceInstallmentCount">QUANTIDADE DE PARCELAS</label><input type="number" id="invoiceInstallmentCount" min="1" max="120" value="1"></div>
-      <div class="purchase-field" id="invoiceInstallmentFirstDueField"><label for="invoiceInstallmentFirstDue">1º VENCIMENTO</label><input type="date" id="invoiceInstallmentFirstDue"></div>
       <div class="purchase-field full" id="invoiceInstallmentPlanField">
-        <label>PARCELAS — CONFIRA E AJUSTE VENCIMENTO E VALOR DE CADA UMA</label>
+        <label>DUPLICATAS A CADASTRAR — DIGITE O VENCIMENTO E O VALOR DE CADA UMA</label>
         <div class="table-panel responsive-table"><div class="table-scroll"><table>
-          <thead><tr><th>PARCELA</th><th>VENCIMENTO</th><th>VALOR</th></tr></thead>
+          <thead><tr><th>DUPLICATA</th><th>VENCIMENTO</th><th>VALOR</th><th></th></tr></thead>
           <tbody id="invoiceInstallmentPlanBody"></tbody>
         </table></div></div>
-        <div class="invoice-plan-sum"><span id="invoiceInstallmentPlanSum" role="status" aria-live="polite"></span>
+        <div class="invoice-plan-sum" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn-outline btn-sm" type="button" id="btnInvoiceAddPlanRow">+ ADICIONAR DUPLICATA</button>
+          <span id="invoiceInstallmentPlanSum" role="status" aria-live="polite"></span>
           <button class="btn-outline btn-sm" type="button" id="btnInvoiceAdjustLast" hidden>AJUSTAR ÚLTIMA PARCELA</button></div>
       </div>
-      <div class="purchase-field" id="invoiceInstallmentSingleDueField" hidden><label for="invoiceInstallmentSingleDue">VENCIMENTO</label><input type="date" id="invoiceInstallmentSingleDue"></div>
-      <div class="purchase-field" id="invoiceInstallmentSingleAmountField" hidden><label for="invoiceInstallmentSingleAmount">VALOR (R$)</label><input type="text" inputmode="decimal" id="invoiceInstallmentSingleAmount" placeholder="R$ 0,00"></div>
+      <div class="purchase-field" id="invoiceInstallmentCountField"><label for="invoiceInstallmentCount">ATALHO: DIVIDIR EM</label><input type="number" id="invoiceInstallmentCount" min="1" max="120" value="1"></div>
+      <div class="purchase-field" id="invoiceInstallmentFirstDueField"><label for="invoiceInstallmentFirstDue">1º VENCIMENTO (MESES SEGUIDOS)</label>
+        <div style="display:flex;gap:6px;"><input type="date" id="invoiceInstallmentFirstDue"><button class="btn-outline btn-sm" type="button" id="btnInvoiceSplitPlan">DIVIDIR IGUAL</button></div></div>
       <div class="purchase-field"><label for="invoiceInstallmentPaymentMethod">FORMA DE PAGAMENTO</label><input id="invoiceInstallmentPaymentMethod" maxlength="40" placeholder="Ex.: BOLETO, PIX"></div>
       <div class="purchase-field"><label for="invoiceInstallmentAccount">CONTA FINANCEIRA</label><select id="invoiceInstallmentAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="invoiceInstallmentBoleto">LINHA DIGITÁVEL (BOLETO)</label><input id="invoiceInstallmentBoleto" maxlength="80"></div>
@@ -31366,7 +31534,7 @@ function renderHomeTasks(){
         '<td data-label="ID da venda">'+escapeHtml(row.saleCode || '—')+'</td>'+
         '<td data-label="Vendedor">'+escapeHtml(row.sellerName || '—')+'</td>'+
         '<td data-label="Valor" class="'+gdMoneyClass(row.amountCents)+'" style="white-space:nowrap;font-weight:800;">'+gdSignedBRL(row.amountCents)+'</td>'+
-        '<td data-label="Observações">'+escapeHtml(row.notes || '—')+'</td>'+
+        '<td data-label="Observações">'+(Number(row.uberRide) ? '<span class="status-pill warn">CORRIDA UBER</span> ' : '')+escapeHtml(row.notes || '—')+'</td>'+
         '<td style="white-space:nowrap">'+actions+'</td>'+
       '</tr>';
     }).join('');
@@ -31456,6 +31624,7 @@ function renderHomeTasks(){
     el('gdAdjustSaleCode').value = entry ? entry.saleCode : '';
     el('gdAdjustSeller').value = entry ? entry.sellerName : '';
     el('gdAdjustReason').value = entry ? (entry.notes || '') : '';
+    el('gdAdjustUber').checked = Boolean(entry && Number(entry.uberRide));
     const negative = entry ? entry.amountCents < 0 : false;
     document.querySelector('input[name="gdAdjustSign"][value="'+(negative ? '-1' : '1')+'"]').checked = true;
     const amountInput = el('gdAdjustAmount');
@@ -31491,6 +31660,7 @@ function renderHomeTasks(){
         sellerName: el('gdAdjustSeller').value,
         amountCents: sign * cents,
         notes: el('gdAdjustReason').value,
+        uberRide: el('gdAdjustUber').checked,
       })});
       el('gdAdjustDialog').close();
       showPurchaseToast(id ? 'Gordura alterada.' : 'Gordura lançada.');
@@ -31840,10 +32010,19 @@ function renderHomeTasks(){
     const path = financeCategoryPathLabel(item.categoryId);
     return (path ? path+' › ' : '')+item.name;
   }
+  // Categorias/subcategorias cadastradas SEM item também aparecem (valor
+  // "cat:<id>"): ao escolher, o item é criado com o mesmo nome (23/10/2026 —
+  // "não está puxando as categorias já cadastradas").
   function financeItemPickerOptions(){
     const rank = new Map(financeCategorySelectOptions().map((o, index) => [o.id, index]));
+    const withItems = new Set(financeItems.map(item => item.categoryId));
+    const parents = new Set(financeCategories.map(category => category.parentId).filter(Boolean));
+    const bareCategories = financeCategories
+      .filter(category => !withItems.has(category.id) && !parents.has(category.id))
+      .map((category, index) => ({id:'cat:'+category.id, label:financeCategoryPathLabel(category.id), rank:rank.has(category.id) ? rank.get(category.id) : rank.size, index:-1 - index}));
     return financeItems
       .map((item, index) => ({id:item.id, label:financeItemPathLabel(item.id), rank:rank.has(item.categoryId) ? rank.get(item.categoryId) : rank.size, index}))
+      .concat(bareCategories)
       .sort((a, b) => a.rank - b.rank || a.index - b.index);
   }
   function renderFinanceItemPicker(selectId, options){
@@ -31927,6 +32106,31 @@ function renderHomeTasks(){
       newRow.querySelector('[data-finance-item-new-name]').focus();
     });
     newRow.querySelector('[data-finance-item-new-cancel]').addEventListener('click', closeNew);
+    // Catálogo não carregou (falha na abertura do sistema): recarrega ao usar o campo.
+    const reloadIfEmpty = () => {
+      if(!financeItems.length && !financeCategories.length && !financeCatalogReloading){
+        financeCatalogReloading = loadFinanceCatalog().finally(() => { financeCatalogReloading = null; });
+      }
+    };
+    select.addEventListener('focus', reloadIfEmpty);
+    search.addEventListener('focus', reloadIfEmpty);
+    // Categoria sem item ("cat:<id>"): cria o item com o mesmo nome e seleciona.
+    select.addEventListener('change', async event => {
+      if(!select.value.startsWith('cat:')) return;
+      event.stopImmediatePropagation();
+      const categoryId = select.value.slice(4);
+      const category = financeCategories.find(c => c.id === categoryId);
+      if(!category) return;
+      try{
+        const data = await financeApiRequest('/items', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name: category.name, categoryId})});
+        await loadFinanceCatalog();
+        setFinanceItemPickerValue(id, data.id);
+        select.dispatchEvent(new Event('change', {bubbles:true}));
+      }catch(error){
+        status.textContent = error.message;
+        setFinanceItemPickerValue(id, '');
+      }
+    }, true);
     // form.reset() limpa a busca: a lista volta inteira e sem seleção.
     if(select.form) select.form.addEventListener('reset', () => setTimeout(() => { closeNew(); setFinanceItemPickerValue(id, ''); }, 0));
     newRow.querySelector('[data-finance-item-new-save]').addEventListener('click', async () => {
@@ -32131,17 +32335,24 @@ function renderHomeTasks(){
     container.innerHTML = html;
   }
 
+  let financeCatalogReloading = null;
   async function loadFinanceCatalog(){
-    try{
-      const [categoriesData, itemsData] = await Promise.all([
-        financeApiRequest('/categories'),
-        financeApiRequest('/items')
-      ]);
-      financeCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
-      financeItems = Array.isArray(itemsData.items) ? itemsData.items : [];
-    }catch(error){
-      financeCategories = [];
-      financeItems = [];
+    // Na abertura do sistema muitas chamadas saem juntas e uma pode falhar:
+    // tenta de novo uma vez antes de deixar o campo CATEGORIA vazio.
+    for(let attempt = 0; attempt < 2; attempt++){
+      try{
+        const [categoriesData, itemsData] = await Promise.all([
+          financeApiRequest('/categories'),
+          financeApiRequest('/items')
+        ]);
+        financeCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
+        financeItems = Array.isArray(itemsData.items) ? itemsData.items : [];
+        break;
+      }catch(error){
+        financeCategories = [];
+        financeItems = [];
+        if(attempt === 0) await new Promise(resolve => setTimeout(resolve, 800));
+      }
     }
     renderFinanceCategorySelects();
     renderFinanceCatalogList();
@@ -32950,17 +33161,18 @@ function renderHomeTasks(){
     if(items.some(item => item.id === selectedId)) select.value = selectedId;
   }
 
-  // Só ativas, e só da loja informada — contas de outra loja nem aparecem
-  // pra escolher (o backend também recusa, isso é só a UX). companyId=''
-  // inclui as contas antigas sem loja (cadastradas antes da migration).
-  function renderPayableAccountOptionsForCompany(selectId, companyId, placeholder){
+  // Conta bancária não é associada a unidade (23/10/2026): qualquer conta
+  // ATIVA, de qualquer loja. Inativa não aparece (só a que já estava
+  // escolhida, marcada INATIVA). `companyId` fica por compatibilidade.
+  function renderPayableAccountOptionsForCompany(selectId, _companyId, placeholder){
     const select = el(selectId);
     if(!select) return;
-    const selected = select.value;
-    const options = payableAccounts.filter(a => a.active && (!companyId || !a.companyId || a.companyId === companyId));
-    select.innerHTML = '<option value="">'+placeholder+'</option>'+
-      options.map(a => '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.displayLabel || a.name)+'</option>').join('');
-    if(options.some(a => a.id === selected)) select.value = selected;
+    select.innerHTML = '<option value="">'+placeholder+'</option>'+financeAccountOptionsHtml(payableAccounts, select.value);
+  }
+  function financeAccountOptionsHtml(accounts, selected){
+    const options = (accounts || []).filter(a => Number(a.active) || a.id === selected);
+    return options.map(a => '<option value="'+escapeHtml(a.id)+'"'+(a.id === selected ? ' selected' : '')+'>'+
+      escapeHtml((a.displayLabel || a.name)+(Number(a.active) ? '' : ' (INATIVA)'))+'</option>').join('');
   }
 
   function renderCostCenterOptionsFor(selectId, placeholder){
@@ -34661,6 +34873,7 @@ function renderHomeTasks(){
     el('receivableId').value = row ? row.id : '';
     el('receivableDialogTitle').textContent = row ? 'EDITAR RECEBÍVEL' : 'NOVO RECEBÍVEL';
     el('receivableCompany').value = row ? row.companyId : (el('cashFlowLoja').value || '');
+    el('receivableAccount').innerHTML = '<option value="">SEM CONTA</option>'+financeAccountOptionsHtml(payableAccounts, row ? (row.financeAccountId || '') : cfAccountId());
     el('receivableCompany').disabled = Boolean(row);
     el('receivableCompetence').value = row ? row.competenceMonth : (el('receivableMes').value || financeCurrentMonthKey());
     el('receivableAcquirer').value = row ? (row.acquirerId || (row.operatorText ? 'legacy:'+row.operatorText : '')) : '';
@@ -34731,7 +34944,8 @@ function renderHomeTasks(){
       expectedDate: legacyExpectedDate || undefined,
       receivedAmountCents: legacyReceivedCents,
       receivedDate: legacyReceivedCents === null ? '' : el('receivableReceivedDate').value,
-      notes: el('receivableNotes').value
+      notes: el('receivableNotes').value,
+      financeAccountId: el('receivableAccount').value
     };
     if(acquirerValue.indexOf('legacy:') === 0){
       // Registro antigo ainda sem adquirente cadastrada: preserva o texto.
@@ -34796,6 +35010,10 @@ function renderHomeTasks(){
     }
     if(cashFlowData.taxesAndFeesIncluded === false){
       warnings.push('<strong>Impostos e taxas de cartão: não incluídos ainda (Fase 7)</strong> — entram como R$ 0,00 nos cálculos, então a projeção está incompleta nesse ponto.');
+    }
+    const unassigned = cashFlowData.unassigned || {};
+    if(cashFlowData.accountId && (unassigned.outflowCents || unassigned.inflowCents)){
+      warnings.push('<strong>SEM CONTA DEFINIDA: '+formatCentsBRL(unassigned.outflowCents || 0)+' EM SAÍDAS e '+formatCentsBRL(unassigned.inflowCents || 0)+' EM ENTRADAS</strong> — RH e contas/recebíveis sem conta prevista só entram em TODAS AS CONTAS. Defina a conta no Contas a Pagar / Recebíveis para vê-los aqui.');
     }
     const negative = (cashFlowData.horizons || []).find(row => row.firstNegativeDate);
     if(negative){
@@ -34943,23 +35161,42 @@ function renderHomeTasks(){
   }
   function loadCashFlowTab(){
     if(cashFlowTab === 'semanal') return loadCashFlowWeekly();
-    if(cashFlowTab === 'recebiveis') return Promise.all([loadRecebiveisPage(), loadCashFlowFutureReceivables()]);
+    if(cashFlowTab === 'recebiveis') return Promise.all([loadRecebiveisPage(), loadCashFlowFutureReceivables(), loadReceivablesRecon()]);
     return Promise.all([loadCashFlowSeries(), loadCashFlowPayments()]);
   }
   document.querySelectorAll('[data-cf-tab]').forEach(btn => btn.addEventListener('click', () => setCashFlowTab(btn.dataset.cfTab)));
 
+  // Fluxo por CONTA cadastrada (23/10/2026): o filtro do topo vale para as
+  // três abas; '' = todas as contas.
+  function cfAccountId(){ return el('cashFlowConta') ? el('cashFlowConta').value : ''; }
+  function cfAccountName(id){
+    if(!id) return 'SEM CONTA';
+    const account = payableAccounts.find(a => a.id === id);
+    return account ? (account.displayLabel || account.name) : 'CONTA REMOVIDA';
+  }
+  function cfSetScopeParams(params){
+    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    if(cfAccountId()) params.set('accountId', cfAccountId());
+    return params;
+  }
+  function renderCashFlowAccountOptions(){
+    const select = el('cashFlowConta');
+    if(!select) return;
+    select.innerHTML = '<option value="">TODAS AS CONTAS (CONSOLIDADO)</option>'+financeAccountOptionsHtml(payableAccounts, select.value);
+  }
+
   async function loadFluxoCaixaPage(){
     if(!canAccess('finance')) return;
     if(!companies.length) await loadCompanies();
+    if(!payableAccounts.length) await loadPayablesCatalogData();
+    renderCashFlowAccountOptions();
     renderReceivableCompanyOptions();
     await setCashFlowTab(new URLSearchParams(location.search).get('aba') || 'projecao', {url:false});
   }
 
   async function loadCashFlowSeries(){
-    const companyId = el('cashFlowLoja').value;
     el('cashFlowChart').innerHTML = '<div class="dre-empty">Carregando…</div>';
-    const params = new URLSearchParams();
-    if(companyId) params.set('companyId', companyId);
+    const params = cfSetScopeParams(new URLSearchParams());
     try{
       cashFlowData = await financeApiRequest('/cash-flow'+(params.toString() ? '?'+params.toString() : ''));
       renderCashFlowPage();
@@ -34971,6 +35208,7 @@ function renderHomeTasks(){
   }
 
   el('cashFlowLoja').addEventListener('change', loadCashFlowTab);
+  el('cashFlowConta').addEventListener('change', loadCashFlowTab);
   el('cashFlowHorizon').addEventListener('change', renderCashFlowPage);
   el('cashFlowBalanceAmount') && attachCurrencyMask(el('cashFlowBalanceAmount'), {allowNegative:true});
 
@@ -34999,8 +35237,7 @@ function renderHomeTasks(){
     const today = financeCurrentDateKey();
     if(!el('cfPayFrom').value) el('cfPayFrom').value = today;
     if(!el('cfPayTo').value) el('cfPayTo').value = cfAddDays(today, 30);
-    const params = new URLSearchParams({from: el('cfPayFrom').value, to: el('cfPayTo').value});
-    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    const params = cfSetScopeParams(new URLSearchParams({from: el('cfPayFrom').value, to: el('cfPayTo').value}));
     body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
     try{
       cfPayData = await financeApiRequest('/cash-flow/payments?'+params.toString());
@@ -35051,7 +35288,7 @@ function renderHomeTasks(){
         '<td data-label="DESCRIÇÃO">'+(i.payableId ? '<button class="cf-link" type="button" data-cf-open-payable="'+escapeHtml(i.payableId)+'" title="Abrir em Contas a Pagar">'+escapeHtml(i.description || '—')+'</button>' : escapeHtml(i.description || '—'))+'</td>'+
         '<td data-label="FORNECEDOR">'+escapeHtml(i.supplierName || '—')+'</td>'+
         '<td data-label="CATEGORIA">'+escapeHtml(i.categoryName || '—')+'</td>'+
-        '<td data-label="UNIDADE">'+escapeHtml(i.companyName || '—')+'</td>'+
+        '<td data-label="CONTA">'+escapeHtml(cfAccountName(i.financeAccountId))+'</td>'+
         '<td data-label="VALOR">'+formatCentsBRL(i.amountCents)+'</td>'+
         '<td data-label="SITUAÇÃO">'+(status[0] ? '<span class="status-pill '+status[0]+'">'+status[1]+'</span>' : status[1])+'</td>'+
       '</tr>';
@@ -35094,6 +35331,7 @@ function renderHomeTasks(){
     if(action === 'pay'){
       await loadPayablesCatalogData();
       renderPayableAccountOptionsForCompany('cfPayBulkAccount', el('cashFlowLoja').value, 'SEM CONTA');
+      if(cfAccountId()) el('cfPayBulkAccount').value = cfAccountId();
     }
     el('cfPayBulkDialog').showModal();
     return false;
@@ -35123,17 +35361,16 @@ function renderHomeTasks(){
   async function loadCashFlowWeekly(){
     const body = el('cfWeeklyBody');
     body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
-    const companyId = el('cashFlowLoja').value;
-    const params = new URLSearchParams();
-    if(companyId) params.set('companyId', companyId);
+    const params = cfSetScopeParams(new URLSearchParams());
     try{
       cfWeeklyData = await financeApiRequest('/cash-flow/weekly?'+params.toString());
       const weeks = cfWeeklyData.weeks || [];
       const historyParams = new URLSearchParams(params);
+      historyParams.delete('accountId');
       historyParams.set('from', weeks.length ? weeks[0].weekDate : cfWeeklyData.currentMonday);
       historyParams.set('to', cfAddDays(cfWeeklyData.currentMonday, 7));
       const history = await financeApiRequest('/account-weekly-balances?'+historyParams.toString());
-      cfWeeklyHistory = Array.isArray(history.rows) ? history.rows : [];
+      cfWeeklyHistory = (Array.isArray(history.rows) ? history.rows : []).filter(r => !cfAccountId() || r.accountId === cfAccountId());
       if(!el('cfWeekDate').value) el('cfWeekDate').value = cfWeeklyData.currentMonday;
       renderCfWeekly();
     }catch(error){
@@ -35289,8 +35526,7 @@ function renderHomeTasks(){
   async function loadCashFlowFutureReceivables(){
     const body = el('cfReceivablesFutureBody');
     body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
-    const params = new URLSearchParams({days:'90'});
-    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    const params = cfSetScopeParams(new URLSearchParams({days:'90'}));
     try{
       const data = await financeApiRequest('/receivables/upcoming?'+params.toString());
       const sum = list => list.reduce((total, r) => total + r.expectedAmountCents, 0);
@@ -35302,7 +35538,7 @@ function renderHomeTasks(){
       const row = r => '<tr>'+
         '<td data-label="DATA PREVISTA">'+escapeHtml(formatDateBR(r.expectedDate))+'</td>'+
         '<td data-label="ADQUIRENTE">'+escapeHtml(r.operatorText || '—')+'</td>'+
-        '<td data-label="UNIDADE">'+escapeHtml(r.companyName || '—')+'</td>'+
+        '<td data-label="CONTA">'+escapeHtml(cfAccountName(r.financeAccountId))+'</td>'+
         '<td data-label="COMPETÊNCIA">'+escapeHtml(r.competenceMonth || '—')+'</td>'+
         '<td data-label="VALOR">'+formatCentsBRL(r.expectedAmountCents)+'</td>'+
       '</tr>';
@@ -35346,6 +35582,7 @@ function renderHomeTasks(){
   // competência, adquirente e valor).
   el('btnBatchReceivables').addEventListener('click', async () => {
     if(!companies.length) await loadCompanies();
+    if(!payableAccounts.length) await loadPayablesCatalogData();
     await loadFinanceAcquirers();
     openFinanceBatchDialog({
       title: 'CADASTRAR RECEBÍVEIS EM LOTE',
@@ -35356,7 +35593,8 @@ function renderHomeTasks(){
         {key:'competenceMonth', label:'COMPETÊNCIA', type:'month', required:true},
         {key:'acquirerId', label:'ADQUIRENTE', type:'select', required:true, options: () => financeAcquirersCache.filter(a => a.status === 'active').map(a => ({value:a.id, label:a.name+(a.companyId ? ' (LOJA)' : '')}))},
         {key:'amountCents', label:'VALOR', type:'money', required:true},
-        {key:'expectedDate', label:'DATA PREVISTA', type:'date'}
+        {key:'expectedDate', label:'DATA PREVISTA', type:'date'},
+        {key:'financeAccountId', label:'CONTA', type:'select', placeholder:'SEM CONTA', options: () => payableAccounts.filter(a => Number(a.active)).map(a => ({value:a.id, label:a.displayLabel || a.name}))}
       ],
       isFilled: values => Boolean(values.amountCents || values.acquirerId),
       onDone: () => Promise.all([loadRecebiveisPage({silent:true}), loadCashFlowFutureReceivables()])
@@ -35372,6 +35610,159 @@ function renderHomeTasks(){
       el('cfReceiveDialog').close();
       receivablesBulk.clear();
     }catch(error){ el('cfReceiveStatus').textContent = error.message; }
+  });
+
+  // --- CONCILIAÇÃO DE CONTAS A RECEBER (previsto × entrou na conta) ---
+  const RR_STATUS = {ok:['ok','CONCILIADO'], divergent:['danger','ENTROU COM DIFERENÇA'], manual:['warn','RECEBIDO SEM EXTRATO'], suggested:['warn','SUGESTÃO'], missing:['danger','NÃO ENTROU'], awaiting:['','AGUARDANDO']};
+  let rrData = null;
+  async function loadReceivablesRecon(){
+    const body = el('rrBody');
+    if(!payableAccounts.length) await loadPayablesCatalogData();
+    const select = el('rrAccount');
+    const keep = select.value || cfAccountId() || ((payableAccounts.find(a => Number(a.active)) || {}).id || '');
+    select.innerHTML = '<option value="">SELECIONE</option>'+financeAccountOptionsHtml(payableAccounts, keep);
+    if(!el('rrMonth').value) el('rrMonth').value = financeCurrentMonthKey();
+    if(!select.value){ body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Escolha a conta.</td></tr>'; el('rrTotals').innerHTML = ''; return; }
+    body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams({accountId: select.value, month: el('rrMonth').value});
+    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    try{
+      rrData = await financeApiRequest('/receivables/reconciliation?'+params.toString());
+      renderReceivablesRecon();
+    }catch(error){
+      rrData = null;
+      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('rrTotals').innerHTML = '';
+      el('rrCreditsBody').innerHTML = '<tr><td colspan="3" class="responsive-empty">—</td></tr>';
+    }
+  }
+  function renderReceivablesRecon(){
+    const t = rrData.totals;
+    const card = (label, cents, extra) => '<div class="card'+(extra || '')+'"><div class="lbl">'+label+'</div><div class="num">'+formatCentsBRL(cents)+'</div></div>';
+    el('rrTotals').innerHTML = card('PREVISTO NO MÊS', t.expectedCents)+card('ENTROU NA CONTA (CONCILIADO)', t.enteredCents)+
+      card('AINDA NÃO RECEBIDO', t.pendingCents)+card('NÃO ENTROU (VENCIDO)', t.missingCents, t.missingCents ? ' neg' : '')+card('ENTROU SEM PREVISTO', t.unmatchedCreditsCents);
+    const creditLabel = c => escapeHtml(formatDateBR(c.entryDate))+' · '+formatCentsBRL(c.amountCents)+' · '+escapeHtml((c.description || '').slice(0, 40));
+    el('rrBody').innerHTML = rrData.lines.map(r => {
+      const status = RR_STATUS[r.status] || ['', r.status];
+      let entered = '—', actions = '';
+      if(r.entry) entered = creditLabel(r.entry);
+      else if(r.receivedAmountCents !== null) entered = escapeHtml(formatDateBR(r.receivedDate))+' · '+formatCentsBRL(r.receivedAmountCents);
+      else if(r.suggestion) entered = '<em>SUGESTÃO: '+creditLabel(r.suggestion)+(r.suggestion.exact ? '' : ' (VALOR DIFERENTE)')+'</em>';
+      if(r.bankEntryId) actions = '<button class="btn-outline btn-sm" type="button" data-rr-unlink="'+escapeHtml(r.id)+'">DESFAZER</button>';
+      else if(r.receivedAmountCents === null){
+        if(r.suggestion) actions = '<button class="btn-accent btn-sm" type="button" data-rr-link="'+escapeHtml(r.id)+'" data-rr-entry="'+escapeHtml(r.suggestion.id)+'">CONFIRMAR</button> ';
+        actions += '<select data-rr-pick="'+escapeHtml(r.id)+'" aria-label="Vincular crédito do extrato"><option value="">VINCULAR OUTRO CRÉDITO…</option>'+
+          rrData.credits.map(c => '<option value="'+escapeHtml(c.id)+'">'+creditLabel(c)+'</option>').join('')+'</select>';
+      }
+      const diff = r.differenceCents === null ? '—' : '<span class="status-pill '+(r.differenceCents === 0 ? 'ok' : 'danger')+'">'+(r.differenceCents > 0 ? '+' : '')+formatCentsBRL(r.differenceCents)+'</span>';
+      return '<tr>'+
+        '<td data-label="DATA PREVISTA">'+escapeHtml(formatDateBR(r.expectedDate))+'</td>'+
+        '<td data-label="ADQUIRENTE">'+escapeHtml(r.operatorText || '—')+'</td>'+
+        '<td data-label="UNIDADE">'+escapeHtml(r.companyName || '—')+'</td>'+
+        '<td data-label="PREVISTO">'+formatCentsBRL(r.expectedAmountCents)+'</td>'+
+        '<td data-label="ENTROU NA CONTA">'+entered+'</td>'+
+        '<td data-label="DIFERENÇA">'+diff+'</td>'+
+        '<td data-label="SITUAÇÃO">'+(status[0] ? '<span class="status-pill '+status[0]+'">'+status[1]+'</span>' : status[1])+'</td>'+
+        '<td data-label="AÇÕES">'+actions+'</td>'+
+      '</tr>';
+    }).join('') || '<tr><td colspan="8" class="responsive-empty">Nenhum recebível previsto no mês para esta conta (ou sem conta definida).</td></tr>';
+    el('rrCreditsBody').innerHTML = rrData.unmatchedCredits.map(c => '<tr>'+
+      '<td data-label="DATA">'+escapeHtml(formatDateBR(c.entryDate))+'</td>'+
+      '<td data-label="DESCRIÇÃO DO EXTRATO">'+escapeHtml(c.description || '—')+'</td>'+
+      '<td data-label="VALOR">'+formatCentsBRL(c.amountCents)+'</td>'+
+    '</tr>').join('') || '<tr><td colspan="3" class="responsive-empty">Nenhum crédito sem recebível no mês.</td></tr>';
+  }
+  async function rrAction(payload, message){
+    try{
+      await financeApiRequest('/receivables/reconciliation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      await Promise.all([loadReceivablesRecon(), loadRecebiveisPage({silent:true}), loadCashFlowFutureReceivables()]);
+      showPurchaseToast(message);
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+  ['rrAccount','rrMonth'].forEach(id => el(id).addEventListener('change', loadReceivablesRecon));
+  el('rrBody').addEventListener('click', event => {
+    const link = event.target.closest('[data-rr-link]');
+    if(link) return rrAction({action:'link', receivableId: link.dataset.rrLink, entryId: link.dataset.rrEntry}, 'Recebível conciliado com o extrato.');
+    const unlink = event.target.closest('[data-rr-unlink]');
+    if(unlink) return rrAction({action:'unlink', receivableId: unlink.dataset.rrUnlink}, 'Conciliação desfeita — recebível voltou a pendente.');
+  });
+  el('rrBody').addEventListener('change', event => {
+    const pick = event.target.closest('[data-rr-pick]');
+    if(pick && pick.value) rrAction({action:'link', receivableId: pick.dataset.rrPick, entryId: pick.value}, 'Recebível conciliado com o extrato.');
+  });
+  el('btnRrLinkSuggested').addEventListener('click', async () => {
+    if(!el('rrAccount').value){ showPurchaseToast('ESCOLHA A CONTA.', 'error'); return; }
+    try{
+      const res = await financeApiRequest('/receivables/reconciliation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'link-suggested', accountId: el('rrAccount').value, month: el('rrMonth').value, companyId: el('cashFlowLoja').value})});
+      await Promise.all([loadReceivablesRecon(), loadRecebiveisPage({silent:true}), loadCashFlowFutureReceivables()]);
+      showPurchaseToast(res.linked+' recebível(is) conciliado(s).'+(res.skipped ? ' '+res.skipped+' sugestão(ões) com valor diferente ficaram para conferir.' : ''));
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // --- IMPORTAR RECEBIMENTOS PREVISTOS (vendas no cartão → recebíveis) ---
+  let cfImportLines = [];
+  const CF_IMPORT_ACTION = {new:['','NOVO'], update:['warn','ATUALIZA'], locked:['ok','JÁ RECEBIDO/CANCELADO']};
+  async function loadCfImportPreview(){
+    const body = el('cfImportBody');
+    body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    el('cfImportTotals').innerHTML = '';
+    const params = new URLSearchParams();
+    if(el('cfImportFrom').value) params.set('from', el('cfImportFrom').value);
+    if(el('cfImportTo').value) params.set('to', el('cfImportTo').value);
+    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    try{
+      const data = await financeApiRequest('/cash-flow/import-receivables?'+params.toString());
+      el('cfImportFrom').value = data.from;
+      el('cfImportTo').value = data.to;
+      cfImportLines = Array.isArray(data.lines) ? data.lines : [];
+      const importable = cfImportLines.filter(l => l.action !== 'locked');
+      const total = importable.reduce((sum, l) => sum + l.amountCents, 0);
+      el('cfImportTotals').innerHTML =
+        '<div class="card"><div class="lbl">A IMPORTAR</div><div class="num">'+formatCentsBRL(total)+'</div><div class="sub">'+importable.length+' recebimento(s)</div></div>'+
+        '<div class="card"><div class="lbl">NOVOS</div><div class="num">'+cfImportLines.filter(l => l.action === 'new').length+'</div></div>'+
+        '<div class="card"><div class="lbl">ATUALIZA</div><div class="num">'+cfImportLines.filter(l => l.action === 'update').length+'</div></div>';
+      body.innerHTML = cfImportLines.map(l => {
+        const action = CF_IMPORT_ACTION[l.action] || ['', l.action];
+        return '<tr>'+
+          '<td data-label="DATA PREVISTA">'+escapeHtml(formatDateBR(l.date))+'</td>'+
+          '<td data-label="ADQUIRENTE">'+escapeHtml(l.acquirerName || '—')+'</td>'+
+          '<td data-label="UNIDADE">'+escapeHtml(l.companyName || '—')+'</td>'+
+          '<td data-label="COMPETÊNCIA">'+escapeHtml(l.competenceMonth.slice(5,7)+'/'+l.competenceMonth.slice(0,4))+'</td>'+
+          '<td data-label="VENDAS">'+l.sales+'</td>'+
+          '<td data-label="VALOR LÍQUIDO">'+formatCentsBRL(l.amountCents)+'</td>'+
+          '<td data-label="SITUAÇÃO">'+(action[0] ? '<span class="status-pill '+action[0]+'">'+action[1]+'</span>' : action[1])+'</td>'+
+        '</tr>';
+      }).join('') || '<tr><td colspan="7" class="responsive-empty">NENHUMA VENDA NO CARTÃO COM DEPÓSITO PREVISTO NO PERÍODO. IMPORTE O ARQUIVO DE VENDAS EM CONCILIAÇÃO DE VENDAS.</td></tr>';
+      el('btnConfirmCfImportReceivables').disabled = !importable.length;
+    }catch(error){
+      cfImportLines = [];
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('btnConfirmCfImportReceivables').disabled = true;
+    }
+  }
+  el('btnCashFlowImportReceivables').addEventListener('click', async () => {
+    if(!payableAccounts.length) await loadPayablesCatalogData();
+    el('cfImportAccount').innerHTML = '<option value="">SELECIONE</option>'+financeAccountOptionsHtml(payableAccounts, cfAccountId());
+    el('cfImportStatus').textContent = '';
+    el('cfImportFrom').value = '';
+    el('cfImportTo').value = '';
+    el('cfImportReceivablesDialog').showModal();
+    loadCfImportPreview();
+  });
+  ['cfImportFrom','cfImportTo'].forEach(id => el(id).addEventListener('change', loadCfImportPreview));
+  el('btnCloseCfImportReceivables').addEventListener('click', () => el('cfImportReceivablesDialog').close());
+  el('btnCancelCfImportReceivables').addEventListener('click', () => el('cfImportReceivablesDialog').close());
+  el('cfImportReceivablesForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!el('cfImportAccount').value){ el('cfImportStatus').textContent = 'ESCOLHA A CONTA ONDE OS RECEBIMENTOS CAEM.'; return; }
+    try{
+      const res = await financeApiRequest('/cash-flow/import-receivables', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        from: el('cfImportFrom').value, to: el('cfImportTo').value, companyId: el('cashFlowLoja').value, financeAccountId: el('cfImportAccount').value
+      })});
+      el('cfImportReceivablesDialog').close();
+      await loadCashFlowTab();
+      showPurchaseToast(res.created+' recebimento(s) novo(s), '+res.updated+' atualizado(s) — '+formatCentsBRL(res.totalCents)+' na projeção.');
+    }catch(error){ el('cfImportStatus').textContent = error.message; }
   });
 
   // --- Saldos das contas (fonte do Caixa Atual) -------------------------
@@ -36811,7 +37202,7 @@ function renderHomeTasks(){
     el('corpUberRidesBody').innerHTML = rides.length ? rides.map(ride =>
       '<tr>'+
         '<td data-label="Data">'+escapeHtml(formatDateBR(ride.rideDate))+'</td>'+
-        '<td data-label="Passageiro">'+escapeHtml(ride.passenger || '—')+'</td>'+
+        '<td data-label="Passageiro">'+escapeHtml(ride.passenger || '—')+(ride.gdAdjustmentId ? ' <span class="status-pill warn" title="Lançada na gordura como CORRIDA UBER">GORDURA</span>' : '')+'</td>'+
         '<td data-label="Motivo">'+escapeHtml(ride.reason || '—')+'</td>'+
         '<td data-label="Valor">'+formatCentsBRL(ride.amountCents)+'</td>'+
         '<td data-label="Cobrança">'+(ride.charge
@@ -36819,7 +37210,7 @@ function renderHomeTasks(){
           : (free.length ? '<select data-uber-link="'+escapeHtml(ride.id)+'" aria-label="Bater com cobrança"><option value="">SEM COBRANÇA — BATER COM…</option>'+freeOptions+'</select>' : '<span class="status-pill alert">SEM COBRANÇA</span>'))+'</td>'+
         '<td data-label="Ações"><div class="loan-cell-actions assist-row-actions">'+
           (ride.charge ? '<button class="btn-outline btn-sm" type="button" data-uber-unlink="'+escapeHtml(ride.id)+'">DESFAZER</button>' : '')+
-          '<button class="btn-outline btn-sm" type="button" data-uber-delete="'+escapeHtml(ride.id)+'">EXCLUIR</button>'+
+          (ride.gdAdjustmentId ? '' : '<button class="btn-outline btn-sm" type="button" data-uber-delete="'+escapeHtml(ride.id)+'">EXCLUIR</button>')+
         '</div></td>'+
       '</tr>').join('') : '<tr><td colspan="6" class="responsive-empty">Nenhuma corrida anotada neste mês. Importe a planilha.</td></tr>';
     el('corpUberChargesBody').innerHTML = free.length ? free.map(charge =>
@@ -37222,7 +37613,151 @@ function renderHomeTasks(){
       });
       document.querySelectorAll('[data-corp-view-panel]').forEach(panel => { panel.hidden = panel.dataset.corpViewPanel !== btn.dataset.corpView; });
       if(btn.dataset.corpView === 'gastos') loadCorpSpending();
+      if(btn.dataset.corpView === 'socio') loadPartnerCards();
     });
+  });
+
+  // --- CARTÕES DE CRÉDITO SÓCIO (compras no cartão pessoal do sócio) ---
+  let pcData = null;
+  function pcRequest(path, options){ return financeApiRequest('/partner-cards'+(path || ''), options); }
+  function pcInstallmentLabel(e){
+    if(Number(e.fixed)) return 'FIXO'+(e.endMonth ? ' ATÉ '+rhFormatMonth(e.endMonth) : '');
+    return e.installmentNumber ? e.installmentNumber+'/'+e.installments : e.installments+'X';
+  }
+  async function loadPartnerCards(){
+    if(!el('pcMonth').value) el('pcMonth').value = financeCurrentMonthKey();
+    el('pcSummaryBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      pcData = await pcRequest('?month='+encodeURIComponent(el('pcMonth').value));
+      const filter = el('pcResponsibleFilter');
+      const keep = filter.value;
+      filter.innerHTML = '<option value="">TODOS</option>'+pcData.names.map(n => '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>').join('');
+      if(pcData.names.includes(keep)) filter.value = keep;
+      el('pcResponsibleOptions').innerHTML = pcData.names.map(n => '<option value="'+escapeHtml(n)+'"></option>').join('');
+      renderPartnerCards();
+    }catch(error){
+      pcData = null;
+      el('pcSummaryBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('pcEntriesBody').innerHTML = '';
+    }
+  }
+  function renderPartnerCards(){
+    const who = el('pcResponsibleFilter').value;
+    const keep = r => !who || r.responsibleName === who;
+    const actions = e => '<div class="loan-cell-actions assist-row-actions"><button class="btn-outline btn-sm" type="button" data-pc-edit="'+escapeHtml(e.id)+'">EDITAR</button><button class="btn-outline btn-sm" type="button" data-pc-del="'+escapeHtml(e.id)+'">EXCLUIR</button></div>';
+    el('pcSummaryBody').innerHTML = pcData.summary.filter(keep).map(s => {
+      const payable = s.payableId
+        ? '<span class="status-pill '+(s.payableStatus === 'paid' ? 'ok' : (s.outdated ? 'danger' : 'warn'))+'">'+(s.payableStatus === 'paid' ? 'PAGA' : (s.outdated ? 'DESATUALIZADA ('+formatCentsBRL(s.payableAmountCents)+')' : 'GERADA'))+'</span>'
+        : '<span class="status-pill">NÃO GERADA</span>';
+      return '<tr>'+
+        '<td data-label="RESPONSÁVEL"><strong>'+escapeHtml(s.responsibleName)+'</strong></td>'+
+        '<td data-label="TOTAL DO MÊS">'+formatCentsBRL(s.totalCents)+'</td>'+
+        '<td data-label="DATA DE PAGAMENTO"><input type="date" data-pc-date="'+escapeHtml(s.responsibleName)+'" value="'+escapeHtml(s.paymentDate || '')+'" aria-label="Data de pagamento de '+escapeHtml(s.responsibleName)+'"></td>'+
+        '<td data-label="CONTAS A PAGAR">'+payable+'</td>'+
+        '<td data-label="AÇÕES">'+(s.totalCents > 0 && s.payableStatus !== 'paid' ? '<button class="btn-accent btn-sm" type="button" data-pc-pay="'+escapeHtml(s.responsibleName)+'">'+(s.payableId ? 'ATUALIZAR CONTA A PAGAR' : 'LANÇAR EM CONTAS A PAGAR')+'</button>' : '')+'</td>'+
+      '</tr>';
+    }).join('') || '<tr><td colspan="5" class="responsive-empty">Nada a pagar aos sócios neste mês.</td></tr>';
+    const entries = pcData.entries.filter(keep);
+    el('pcEntriesBody').innerHTML = entries.map(e => '<tr>'+
+      '<td data-label="DATA DE COMPRA">'+escapeHtml(formatDateBR(e.purchaseDate) || '—')+'</td>'+
+      '<td data-label="RESPONSÁVEL">'+escapeHtml(e.responsibleName)+'</td>'+
+      '<td data-label="LANÇAMENTO">'+escapeHtml(e.description)+(e.notes ? '<br><small>'+escapeHtml(e.notes)+'</small>' : '')+'</td>'+
+      '<td data-label="VALOR">'+formatCentsBRL(e.amountCents)+'</td>'+
+      '<td data-label="DESCONTO">'+(e.discountCents ? formatCentsBRL(e.discountCents) : '—')+'</td>'+
+      '<td data-label="PARCELAS">'+escapeHtml(pcInstallmentLabel(e))+'</td>'+
+      '<td data-label="VALOR NO MÊS"><strong>'+formatCentsBRL(e.monthCents)+'</strong></td>'+
+      '<td data-label="AÇÕES">'+actions(e)+'</td>'+
+    '</tr>').join('') || '<tr><td colspan="8" class="responsive-empty">Nenhum lançamento neste mês.</td></tr>';
+    el('pcOthersBody').innerHTML = pcData.others.filter(keep).map(e => '<tr>'+
+      '<td data-label="DATA DE COMPRA">'+escapeHtml(formatDateBR(e.purchaseDate) || '—')+'</td>'+
+      '<td data-label="RESPONSÁVEL">'+escapeHtml(e.responsibleName)+'</td>'+
+      '<td data-label="LANÇAMENTO">'+escapeHtml(e.description)+'</td>'+
+      '<td data-label="VALOR">'+formatCentsBRL(e.amountCents)+'</td>'+
+      '<td data-label="PARCELAS">'+escapeHtml(pcInstallmentLabel(e))+'</td>'+
+      '<td data-label="1º MÊS">'+escapeHtml(rhFormatMonth(e.firstMonth))+'</td>'+
+      '<td data-label="AÇÕES">'+actions(e)+'</td>'+
+    '</tr>').join('') || '<tr><td colspan="7" class="responsive-empty">Nenhum.</td></tr>';
+  }
+  function pcUpdateForm(){
+    const fixed = el('pcFixed').checked;
+    document.querySelectorAll('#pcForm [data-pc-installments]').forEach(n => { n.hidden = fixed; });
+    document.querySelectorAll('#pcForm [data-pc-fixed]').forEach(n => { n.hidden = !fixed; });
+    const net = Math.max(0, parseBRLToCents(getCurrencyValue(el('pcAmount')) || '') - parseBRLToCents(getCurrencyValue(el('pcDiscount')) || ''));
+    const n = Math.max(1, Number(el('pcInstallments').value) || 1);
+    el('pcPreview').textContent = !net ? '' : fixed
+      ? formatCentsBRL(net)+' TODO MÊS.'
+      : n+'X DE '+formatCentsBRL(Math.floor(net / n))+(net % n ? ' (A ÚLTIMA COM OS CENTAVOS)' : '')+' = '+formatCentsBRL(net)+'.';
+  }
+  function openPartnerCardDialog(entry){
+    el('pcForm').reset();
+    ['pcAmount','pcDiscount'].forEach(id => setCurrencyValue(el(id), ''));
+    el('pcId').value = entry ? entry.id : '';
+    el('pcDialogTitle').textContent = entry ? 'EDITAR LANÇAMENTO — CARTÃO DO SÓCIO' : 'NOVO LANÇAMENTO — CARTÃO DO SÓCIO';
+    el('pcResponsible').value = entry ? entry.responsibleName : (el('pcResponsibleFilter').value || '');
+    el('pcPurchaseDate').value = entry ? entry.purchaseDate : todayDateKeyRecife();
+    el('pcDescription').value = entry ? entry.description : '';
+    setCurrencyValue(el('pcAmount'), entry ? entry.amountCents / 100 : '');
+    setCurrencyValue(el('pcDiscount'), entry && entry.discountCents ? entry.discountCents / 100 : '');
+    el('pcFixed').checked = Boolean(entry && Number(entry.fixed));
+    el('pcInstallments').value = entry ? String(entry.installments) : '1';
+    el('pcFirstMonth').value = entry ? entry.firstMonth : el('pcMonth').value;
+    el('pcEndMonth').value = entry ? (entry.endMonth || '') : '';
+    el('pcNotes').value = entry ? (entry.notes || '') : '';
+    el('pcStatus').textContent = '';
+    pcUpdateForm();
+    el('pcDialog').showModal();
+  }
+  ['pcAmount','pcDiscount'].forEach(id => attachCurrencyMask(el(id)));
+  ['pcAmount','pcDiscount','pcInstallments','pcFixed'].forEach(id => { el(id).addEventListener('input', pcUpdateForm); el(id).addEventListener('change', pcUpdateForm); });
+  el('btnNewPartnerCard').addEventListener('click', () => openPartnerCardDialog(null));
+  el('btnClosePcDialog').addEventListener('click', () => el('pcDialog').close());
+  el('btnCancelPcDialog').addEventListener('click', () => el('pcDialog').close());
+  el('pcMonth').addEventListener('change', loadPartnerCards);
+  el('pcResponsibleFilter').addEventListener('change', () => { if(pcData) renderPartnerCards(); });
+  el('pcForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const fixed = el('pcFixed').checked;
+    const payload = {
+      id: el('pcId').value || undefined,
+      responsibleName: el('pcResponsible').value,
+      purchaseDate: el('pcPurchaseDate').value,
+      description: el('pcDescription').value,
+      amountCents: parseBRLToCents(getCurrencyValue(el('pcAmount')) || ''),
+      discountCents: parseBRLToCents(getCurrencyValue(el('pcDiscount')) || ''),
+      fixed,
+      installments: fixed ? 1 : Number(el('pcInstallments').value) || 1,
+      firstMonth: el('pcFirstMonth').value,
+      endMonth: fixed ? el('pcEndMonth').value : '',
+      notes: el('pcNotes').value
+    };
+    try{
+      await pcRequest('', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('pcDialog').close();
+      await loadPartnerCards();
+      showPurchaseToast('Lançamento salvo.');
+    }catch(error){ el('pcStatus').textContent = error.message; }
+  });
+  el('pageFinanceiroCartoesCorp').addEventListener('click', async event => {
+    const edit = event.target.closest('[data-pc-edit]');
+    const del = event.target.closest('[data-pc-del]');
+    const pay = event.target.closest('[data-pc-pay]');
+    if(!pcData || !(edit || del || pay)) return;
+    const all = pcData.entries.concat(pcData.others);
+    if(edit){ const entry = all.find(e => e.id === edit.dataset.pcEdit); if(entry) openPartnerCardDialog(entry); return; }
+    if(del){
+      if(!await askConfirm('EXCLUIR ESTE LANÇAMENTO DO CARTÃO DO SÓCIO? A CONTA A PAGAR JÁ GERADA NÃO MUDA SOZINHA — ATUALIZE DEPOIS.', {okText:'EXCLUIR', danger:true})) return;
+      try{ await pcRequest('?id='+encodeURIComponent(del.dataset.pcDel), {method:'DELETE'}); await loadPartnerCards(); showPurchaseToast('Lançamento excluído.'); }
+      catch(error){ showPurchaseToast(error.message, 'error'); }
+      return;
+    }
+    const name = pay.dataset.pcPay;
+    const dateInput = Array.from(document.querySelectorAll('[data-pc-date]')).find(input => input.dataset.pcDate === name);
+    if(!dateInput || !dateInput.value){ showPurchaseToast('INFORME A DATA DE PAGAMENTO DE '+name+'.', 'error'); return; }
+    try{
+      const res = await pcRequest('', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({responsibleName: name, month: el('pcMonth').value, paymentDate: dateInput.value})});
+      await loadPartnerCards();
+      showPurchaseToast(formatCentsBRL(res.totalCents)+' lançado em Contas a Pagar para '+formatDateBR(dateInput.value)+'.');
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
   // --- Gastos por categoria (somados no servidor) ---
@@ -37370,13 +37905,144 @@ function renderHomeTasks(){
     }
     const select = el('reconAccount');
     const selected = select.value;
-    select.innerHTML = '<option value="">SELECIONE</option>'+reconAccounts.map(a =>
-      '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name+(a.companyName ? ' — '+a.companyName : ''))+'</option>').join('');
-    if(reconAccounts.some(a => a.id === selected)) select.value = selected;
+    select.innerHTML = '<option value="">SELECIONE</option>'+financeAccountOptionsHtml(reconAccounts, selected);
     if(!el('reconMonth').value) el('reconMonth').value = financeCurrentMonthKey();
     if(select.value) await loadReconEntries();
-    else el('reconEntriesBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Selecione uma conta bancária.</td></tr>';
+    else el('reconEntriesBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">Selecione uma conta bancária.</td></tr>';
   }
+  if(el('reconOpeningInput')) attachCurrencyMask(el('reconOpeningInput'), {allowNegative:true});
+  if(el('reconKindFilter')) el('reconKindFilter').addEventListener('change', () => renderReconEntries());
+  // Saldo inicial do período (informado; vazio = calculado).
+  if(el('btnReconOpeningSave')) el('btnReconOpeningSave').addEventListener('click', async () => {
+    const cents = parseBRLToCentsAllowNegative(getCurrencyValue(el('reconOpeningInput')) || '0');
+    if(cents === null){ showPurchaseToast('SALDO INICIAL INVÁLIDO.', 'error'); return; }
+    try{
+      await financeApiRequest('/bank-reconciliation/period-balance', {method:'PUT', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({financeAccountId: el('reconAccount').value, month: el('reconMonth').value, openingCents: cents})});
+      showPurchaseToast('Saldo inicial salvo.');
+      await loadReconEntries({silent:true});
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  if(el('btnReconOpeningReset')) el('btnReconOpeningReset').addEventListener('click', async () => {
+    try{
+      await financeApiRequest('/bank-reconciliation/period-balance', {method:'PUT', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({financeAccountId: el('reconAccount').value, month: el('reconMonth').value, openingCents: null})});
+      await loadReconEntries({silent:true});
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // LIMPAR EXTRATO DO MÊS: exclui os lançamentos ainda NÃO conciliados da
+  // conta/mês (mesma regra do EXCLUIR em lote — conciliado fica).
+  if(el('btnReconClearMonth')) el('btnReconClearMonth').addEventListener('click', async () => {
+    if(!el('reconAccount').value || !el('reconMonth').value){ showPurchaseToast('Escolha a conta e o mês.', 'error'); return; }
+    const ids = reconEntries.map(e => e.id);
+    if(!ids.length){ showPurchaseToast('Nada para limpar neste mês.', 'error'); return; }
+    if(!(await askConfirm('LIMPAR O EXTRATO DE '+rhFormatMonth(el('reconMonth').value)+' DESTA CONTA? OS LANÇAMENTOS JÁ CONCILIADOS (CONFIRMADOS, DESPESA, CREDIÁRIO OU CONTA BAIXADA) FICAM.', {okText:'LIMPAR'}))) return;
+    try{
+      const res = await financeApiRequest('/bank-reconciliation/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'delete', ids})});
+      showPurchaseToast('Extrato limpo: '+Number(res.applied || 0)+' excluído(s)'+((res.skipped || []).length ? ', '+res.skipped.length+' conciliado(s) mantido(s)' : '')+'.');
+      await loadReconEntries({silent:true});
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // ATIVIDADES FINANCEIRAS: cadastro (entradas e saídas).
+  function renderReconActivitiesList(){
+    const block = (kind, label) => {
+      const list = reconActivities.filter(a => a.kind === kind && Number(a.active));
+      return '<div><h4 style="margin:0 0 6px;font:800 10px var(--mono);letter-spacing:.06em;">'+label+'</h4>'+
+        (list.length ? list.map(a => '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">'+
+          '<span style="flex:1;">'+escapeHtml(a.name)+'</span>'+
+          '<button class="btn-outline btn-sm" type="button" data-recon-activity-rename="'+escapeHtml(a.id)+'">RENOMEAR</button>'+
+          '<button class="btn-outline btn-sm" type="button" data-recon-activity-delete="'+escapeHtml(a.id)+'">EXCLUIR</button></div>').join('')
+          : '<p class="muted" style="font-size:11px;margin:0;">Nenhuma cadastrada.</p>')+'</div>';
+    };
+    el('reconActivitiesList').innerHTML = block('entrada', 'ENTRADAS')+block('saida', 'SAÍDAS');
+  }
+  if(el('btnReconActivities')) el('btnReconActivities').addEventListener('click', async () => {
+    await loadReconActivities();
+    el('reconActivitiesStatus').textContent = '';
+    renderReconActivitiesList();
+    el('reconActivitiesDialog').showModal();
+  });
+  if(el('btnCloseReconActivities')) el('btnCloseReconActivities').addEventListener('click', () => {
+    el('reconActivitiesDialog').close();
+    if(el('reconAccount').value) renderReconEntries();
+  });
+  if(el('btnReconActivityAdd')) el('btnReconActivityAdd').addEventListener('click', async () => {
+    const name = el('reconActivityName').value.trim();
+    if(name.length < 2){ el('reconActivitiesStatus').textContent = 'INFORME O NOME.'; return; }
+    try{
+      await financeApiRequest('/bank-activities', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({kind: el('reconActivityKind').value, name})});
+      el('reconActivityName').value = '';
+      await loadReconActivities();
+      renderReconActivitiesList();
+    }catch(error){ el('reconActivitiesStatus').textContent = error.message; }
+  });
+  if(el('reconActivitiesList')) el('reconActivitiesList').addEventListener('click', async event => {
+    const renameBtn = event.target.closest('[data-recon-activity-rename]');
+    const deleteBtn = event.target.closest('[data-recon-activity-delete]');
+    try{
+      if(renameBtn){
+        const current = reconActivities.find(a => a.id === renameBtn.dataset.reconActivityRename);
+        const name = window.prompt('Novo nome da atividade:', current ? current.name : '');
+        if(!name || name.trim().length < 2) return;
+        await financeApiRequest('/bank-activities?id='+encodeURIComponent(renameBtn.dataset.reconActivityRename), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name: name.trim()})});
+      }else if(deleteBtn){
+        if(!(await askConfirm('Excluir esta atividade? Se já foi usada, ela só sai das opções.'))) return;
+        await financeApiRequest('/bank-activities?id='+encodeURIComponent(deleteBtn.dataset.reconActivityDelete), {method:'DELETE'});
+      }else return;
+      await loadReconActivities();
+      renderReconActivitiesList();
+    }catch(error){ el('reconActivitiesStatus').textContent = error.message; }
+  });
+
+  // RELATÓRIO DA CONCILIAÇÃO (PDF / XLSX): conta, mês, saldo inicial,
+  // entradas, saídas, saldo final e os lançamentos (com o filtro de tipo).
+  function reconReportRows(){
+    return reconVisibleEntries().slice().sort((a, b) => String(a.entryDate).localeCompare(String(b.entryDate)));
+  }
+  if(el('btnReconReportPdf')) el('btnReconReportPdf').addEventListener('click', () => {
+    if(!el('reconAccount').value || !reconPeriod){ showPurchaseToast('Escolha a conta e o mês.', 'error'); return; }
+    const p = reconPeriod;
+    const rows = reconReportRows();
+    el('reconReport').innerHTML =
+      '<div class="print-report-header" style="display:block;"><div class="print-report-kicker">UNIGAMES · FINANCEIRO</div>'+
+        '<h1>Conciliação bancária</h1><div class="print-report-meta">'+escapeHtml(reconAccountName)+' · '+escapeHtml(rhFormatMonth(p.month))+'</div></div>'+
+      '<table class="rh-print-table" style="margin-bottom:10px;"><tbody>'+
+        '<tr><td>SALDO INICIAL DO PERÍODO ('+(p.openingSource === 'informado' ? 'INFORMADO' : 'CALCULADO')+')</td><td class="num">'+formatCentsBRL(p.openingCents)+'</td></tr>'+
+        '<tr><td>ENTRADAS</td><td class="num">'+formatCentsBRL(p.inflowCents)+'</td></tr>'+
+        '<tr><td>SAÍDAS</td><td class="num">-'+formatCentsBRL(p.outflowCents)+'</td></tr>'+
+        '<tr><td><strong>SALDO FINAL</strong></td><td class="num"><strong>'+formatCentsBRL(p.closingCents)+'</strong></td></tr>'+
+      '</tbody></table>'+
+      '<table class="rh-print-table"><thead><tr><th>DATA</th><th>HISTÓRICO</th><th>ATIVIDADE</th><th>CATEGORIA</th><th>SITUAÇÃO</th><th class="num">VALOR</th></tr></thead><tbody>'+
+      rows.map(e => '<tr><td>'+escapeHtml(formatDateBR(e.entryDate))+'</td><td>'+escapeHtml(e.description || '—')+'</td><td>'+escapeHtml(reconActivityLabel(e.activityId) || '—')+'</td>'+
+        '<td>'+escapeHtml(reconItemLabel(e.categoryItemId) || '—')+'</td><td>'+escapeHtml(RECON_STATUS_LABELS[e.status] || e.status)+(e.payableId ? ' · CONTA BAIXADA' : '')+'</td>'+
+        '<td class="num">'+formatCentsBRL(e.amountCents)+'</td></tr>').join('')+
+      '</tbody></table>';
+    document.title = 'conciliacao-'+String(reconAccountName || 'conta').toLowerCase().replace(/\s+/g,'-')+'-'+p.month;
+    document.body.classList.add('pdf-export', 'recon-report-only');
+    window.print();
+  });
+  window.addEventListener('afterprint', () => { document.body.classList.remove('recon-report-only'); });
+  if(el('btnReconReportXlsx')) el('btnReconReportXlsx').addEventListener('click', async () => {
+    if(!el('reconAccount').value || !reconPeriod){ showPurchaseToast('Escolha a conta e o mês.', 'error'); return; }
+    let XLSX;
+    try{ XLSX = await ensureXlsx(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); return; }
+    const p = reconPeriod;
+    const money = cents => Math.round(Number(cents || 0)) / 100;
+    const sheet = [
+      ['CONCILIAÇÃO BANCÁRIA', reconAccountName, rhFormatMonth(p.month)],
+      ['SALDO INICIAL ('+(p.openingSource === 'informado' ? 'INFORMADO' : 'CALCULADO')+')', money(p.openingCents)],
+      ['ENTRADAS', money(p.inflowCents)], ['SAÍDAS', -money(p.outflowCents)], ['SALDO FINAL', money(p.closingCents)], [],
+      ['DATA','HISTÓRICO','ATIVIDADE','CATEGORIA','SITUAÇÃO','VALOR']
+    ].concat(reconReportRows().map(e => [formatDateBR(e.entryDate), e.description || '', reconActivityLabel(e.activityId), reconItemLabel(e.categoryItemId) || '',
+      (RECON_STATUS_LABELS[e.status] || e.status)+(e.payableId ? ' · CONTA BAIXADA' : ''), money(e.amountCents)]));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(sheet), 'CONCILIAÇÃO');
+    XLSX.writeFile(workbook, 'conciliacao-'+p.month+'.xlsx');
+  });
+
   ['reconAccount','reconMonth','reconStatusFilter'].forEach(id => {
     el(id) && el(id).addEventListener('change', () => { if(el('reconAccount').value) loadReconEntries(); });
   });
@@ -37541,7 +38207,12 @@ function renderHomeTasks(){
         '<tr><td>'+escapeHtml(formatDateBR(r.entryDate))+'</td><td>'+escapeHtml(r.description || '—')+'</td><td>'+formatCentsBRL(r.amountCents)+'</td><td></td></tr>').join('');
       el('reconPreviewTable').hidden = false;
       el('reconImportActions').hidden = false;
-      status.textContent = rows.length+' lançamento(s) no arquivo. Revise e importe.';
+      const exits = rows.filter(r => r.amountCents < 0);
+      const entries = rows.filter(r => r.amountCents > 0);
+      const sum = list => formatCentsBRL(Math.abs(list.reduce((total, r) => total + r.amountCents, 0)));
+      // PDF é lido por aproximação: mostra os totais para conferir com o extrato.
+      status.textContent = rows.length+' lançamento(s) no arquivo: '+exits.length+' SAÍDA(S) SOMANDO '+sum(exits)+' E '+
+        entries.length+' ENTRADA(S) SOMANDO '+sum(entries)+'.'+(sourceFormat === 'pdf' ? ' CONFIRA COM OS TOTAIS DO EXTRATO ANTES DE IMPORTAR.' : ' Revise e importe.');
     }catch(error){
       status.textContent = error.message;
     }
@@ -37696,8 +38367,7 @@ function renderHomeTasks(){
       const accounts = await financeApiRequest('/accounts?includeInactive=1');
       reconAccounts = Array.isArray(accounts.accounts) ? accounts.accounts : [];
     }catch(_error){ /* a aba mostra o erro ao carregar */ }
-    fillSelect('crEntryAccount', '<option value="">TODAS</option>', reconAccounts.map(a =>
-      '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name+(a.companyName ? ' — '+a.companyName : ''))+'</option>').join(''));
+    fillSelect('crEntryAccount', '<option value="">TODAS</option>', financeAccountOptionsHtml(reconAccounts, el('crEntryAccount') ? el('crEntryAccount').value : ''));
     await crLoadProviders();
     await setCrTab(crEntryFilter ? 'crediarios' : (params.get('aba') || 'crediarios'), {url:false});
   }
@@ -38149,8 +38819,7 @@ function renderHomeTasks(){
       reconAccounts = Array.isArray(accounts.accounts) ? accounts.accounts : [];
       svMachines = Array.isArray(machines.machines) ? machines.machines : [];
     }catch(_error){ /* a aba mostra o erro ao carregar */ }
-    fillSelect('svBankAccount', '<option value="">SELECIONE</option>', reconAccounts.map(a =>
-      '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name+(a.companyName ? ' — '+a.companyName : ''))+'</option>').join(''));
+    fillSelect('svBankAccount', '<option value="">SELECIONE</option>', financeAccountOptionsHtml(reconAccounts, el('svBankAccount') ? el('svBankAccount').value : ''));
     await setSvTab(new URLSearchParams(location.search).get('aba') || 'importar', {url:false});
   }
 
@@ -38557,14 +39226,56 @@ function renderHomeTasks(){
       el('svUnitsBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
+  // ATIVIDADES FINANCEIRAS (cadastráveis) e saldo do período — 23/10/2026.
+  let reconActivities = [];
+  let reconPeriod = null;
+  async function loadReconActivities(){
+    try{ reconActivities = (await financeApiRequest('/bank-activities')).activities || []; }catch(_e){ reconActivities = []; }
+  }
+  function reconActivityLabel(id){
+    const activity = reconActivities.find(a => a.id === id);
+    return activity ? activity.name : '';
+  }
+  function reconActivityOptions(entry){
+    const kind = Number(entry.amountCents) > 0 ? 'entrada' : 'saida';
+    const list = reconActivities.filter(a => a.kind === kind && (Number(a.active) || a.id === entry.activityId));
+    return '<option value="">—</option>'+list.map(a => '<option value="'+escapeHtml(a.id)+'"'+(a.id === entry.activityId ? ' selected' : '')+'>'+escapeHtml(a.name)+'</option>').join('');
+  }
+  function reconVisibleEntries(){
+    const kind = el('reconKindFilter') ? el('reconKindFilter').value : '';
+    return reconEntries.filter(e => !kind || (kind === 'in' ? Number(e.amountCents) > 0 : Number(e.amountCents) < 0));
+  }
+  function reconSuggestionHtml(e){
+    const s = e.payableSuggestion;
+    if(!s) return '';
+    return '<div class="muted" style="font-size:11px;margin-top:4px;">PARECE COM: <strong>'+escapeHtml(s.supplierName || s.description || 'CONTA A PAGAR')+'</strong>'+
+      (s.supplierName && s.description ? ' · '+escapeHtml(s.description) : '')+' · VENC. '+escapeHtml(formatDateBR(s.dueDate))+' · '+formatCentsBRL(s.openCents)+
+      ' <button class="btn-outline btn-sm" type="button" data-recon-pay-payable="'+escapeHtml(s.id)+'" data-recon-entry="'+escapeHtml(e.id)+'">BAIXAR ESTA CONTA</button></div>';
+  }
+  function renderReconPeriod(){
+    const box = el('reconPeriodSummary');
+    const bar = el('reconOpeningBar');
+    const p = reconPeriod;
+    box.hidden = !p;
+    bar.hidden = !p;
+    if(!p) return;
+    box.innerHTML =
+      '<div class="card"><div class="lbl">SALDO INICIAL ('+(p.openingSource === 'informado' ? 'INFORMADO' : 'CALCULADO')+')</div><div class="num">'+formatCentsBRL(p.openingCents)+'</div></div>'+
+      '<div class="card"><div class="lbl">ENTRADAS DO MÊS</div><div class="num">'+formatCentsBRL(p.inflowCents)+'</div></div>'+
+      '<div class="card'+(p.outflowCents ? ' neg' : '')+'"><div class="lbl">SAÍDAS DO MÊS</div><div class="num">'+formatCentsBRL(p.outflowCents)+'</div></div>'+
+      '<div class="card"><div class="lbl">SALDO FINAL</div><div class="num">'+formatCentsBRL(p.closingCents)+'</div></div>';
+    setCurrencyValue(el('reconOpeningInput'), p.openingCents / 100);
+  }
+
   function renderReconEntries(){
     const body = el('reconEntriesBody');
-    if(!reconEntries.length){
-      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhum lançamento. Importe um extrato.</td></tr>';
+    const visible = reconVisibleEntries();
+    if(!visible.length){
+      body.innerHTML = '<tr><td colspan="12" class="responsive-empty">'+(reconEntries.length ? 'Nenhum lançamento desse tipo.' : 'Nenhum lançamento. Importe um extrato.')+'</td></tr>';
       reconBulk.sync();
       return;
     }
-    body.innerHTML = reconEntries.map(e => {
+    body.innerHTML = visible.map(e => {
       const done = e.status === 'confirmed' || e.status === 'expensed' || e.status === 'credit_sale';
       const suggested = e.status === 'pending' && e.categoryItemId;
       if(done){
@@ -38573,7 +39284,8 @@ function renderHomeTasks(){
           '<td data-label="Data">'+escapeHtml(formatDateBR(e.entryDate))+'</td>'+
           '<td data-label="Histórico">'+escapeHtml(e.description || '—')+'</td>'+
           '<td data-label="Valor">'+formatCentsBRL(e.amountCents)+'</td>'+
-          '<td data-label="Categoria / Subcategoria">'+escapeHtml(reconItemLabel(e.categoryItemId) || '—')+'</td>'+
+          '<td data-label="Atividade">'+escapeHtml(reconActivityLabel(e.activityId) || '—')+'</td>'+
+          '<td data-label="Categoria / Subcategoria">'+escapeHtml(reconItemLabel(e.categoryItemId) || '—')+(e.payableId ? ' <span class="receivable-tag received_ok">CONTA A PAGAR BAIXADA</span>' : '')+'</td>'+
           '<td data-label="Unidade">'+escapeHtml((companies.find(c => c.id === e.companyId)||{}).name || '—')+'</td>'+
           '<td data-label="Centro de custo">'+escapeHtml((financeCostCenters.find(c => c.id === e.costCenterId)||{}).name || '—')+'</td>'+
           '<td data-label="DRE">'+(Number(e.inDre) ? 'sim' : 'não')+'</td>'+
@@ -38585,8 +39297,9 @@ function renderHomeTasks(){
       return '<tr data-recon-row="'+escapeHtml(e.id)+'">'+
         '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(e.id, 'Selecionar lançamento '+(e.description || ''))+'</td>'+
         '<td data-label="Data">'+escapeHtml(formatDateBR(e.entryDate))+'</td>'+
-        '<td data-label="Histórico">'+escapeHtml(e.description || '—')+(suggested ? ' <span class="receivable-tag received_ok">SUGERIDO</span>' : '')+'</td>'+
+        '<td data-label="Histórico">'+escapeHtml(e.description || '—')+(suggested ? ' <span class="receivable-tag received_ok">SUGERIDO</span>' : '')+reconSuggestionHtml(e)+'</td>'+
         '<td data-label="Valor">'+formatCentsBRL(e.amountCents)+'</td>'+
+        '<td data-label="Atividade"><select data-recon-field="activityId">'+reconActivityOptions(e)+'</select></td>'+
         '<td data-label="Categoria / Subcategoria"><select data-recon-field="categoryItemId">'+reconItemOptions(e.categoryItemId)+'</select></td>'+
         '<td data-label="Unidade"><select data-recon-field="companyId">'+reconCompanyOptions(e.companyId)+'</select></td>'+
         '<td data-label="Centro de custo"><select data-recon-field="costCenterId">'+reconCostCenterOptions(e.costCenterId)+'</select></td>'+
@@ -38606,17 +39319,21 @@ function renderHomeTasks(){
   async function loadReconEntries(opts){
     const financeAccountId = el('reconAccount').value;
     if(!financeAccountId) return;
-    if(!opts || !opts.silent) el('reconEntriesBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    if(!opts || !opts.silent) el('reconEntriesBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">Carregando…</td></tr>';
     try{
       const params = new URLSearchParams({financeAccountId});
       if(el('reconMonth').value) params.set('month', el('reconMonth').value);
       if(el('reconStatusFilter').value) params.set('status', el('reconStatusFilter').value);
+      if(!reconActivities.length) await loadReconActivities();
       const data = await financeApiRequest('/bank-reconciliation?'+params.toString());
       reconEntries = Array.isArray(data.entries) ? data.entries : [];
+      reconPeriod = data.period || null;
+      reconAccountName = data.accountName || '';
+      renderReconPeriod();
       renderReconEntries();
     }catch(error){
       reconEntries = [];
-      el('reconEntriesBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('reconEntriesBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
@@ -38629,7 +39346,23 @@ function renderHomeTasks(){
     return payload;
   }
 
+  let reconAccountName = '';
   el('reconEntriesBody') && el('reconEntriesBody').addEventListener('click', async event => {
+    // Baixar a conta a pagar sugerida (mesmo valor) com esta saída do extrato.
+    const payBtn = event.target.closest('[data-recon-pay-payable]');
+    if(payBtn){
+      const entry = reconEntries.find(item => item.id === payBtn.dataset.reconEntry);
+      const s = entry && entry.payableSuggestion;
+      if(!s) return;
+      if(!(await askConfirm('BAIXAR A CONTA A PAGAR "'+(s.supplierName || s.description || '')+'" ('+formatCentsBRL(s.openCents)+', VENC. '+formatDateBR(s.dueDate)+') COM ESTA SAÍDA DE '+formatDateBR(entry.entryDate)+'?', {okText:'BAIXAR', danger:false}))) return;
+      payBtn.disabled = true;
+      try{
+        await financeApiRequest('/bank-reconciliation/'+encodeURIComponent(entry.id), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({payPayableId: s.id})});
+        showPurchaseToast('Conta a pagar baixada e lançamento conciliado.');
+        await refreshAfterAction(() => loadReconEntries({silent:true}));
+      }catch(error){ showPurchaseToast(error.message, 'error'); payBtn.disabled = false; }
+      return;
+    }
     const confirmBtn = event.target.closest('[data-recon-confirm]');
     const expenseBtn = event.target.closest('[data-recon-expense]');
     // Crediários (Financeiro 7/9): ver o crediário do depósito / vincular a entrada.
@@ -38671,6 +39404,12 @@ function renderHomeTasks(){
     const input = event.target.closest('[data-recon-field]');
     const rowEl = event.target.closest('[data-recon-row]');
     if(!input || !rowEl) return;
+    // DRE chega desmarcado: marca ao classificar (escolher a categoria) — dá para desmarcar depois.
+    if(input.dataset.reconField === 'categoryItemId' && input.value){
+      const dre = rowEl.querySelector('[data-recon-field="inDre"]');
+      if(dre && !dre.checked && !rowEl.dataset.dreTouched) dre.checked = true;
+    }
+    if(input.dataset.reconField === 'inDre') rowEl.dataset.dreTouched = '1';
     const id = rowEl.dataset.reconRow;
     try{
       await financeApiRequest('/bank-reconciliation/'+encodeURIComponent(id), {
@@ -39083,16 +39822,13 @@ function renderHomeTasks(){
   let rpLinkExitId = '';
   async function loadRpBank(){
     if(!el('rpBankMonth').value) el('rpBankMonth').value = financeCurrentMonthKey();
-    if(!reconAccounts.length){
-      try{ const data = await financeApiRequest('/accounts?includeInactive=1'); reconAccounts = Array.isArray(data.accounts) ? data.accounts : []; }catch(_e){}
-    }
-    fillSelect('rpBankAccount', '<option value="">TODAS</option>', reconAccounts.map(a =>
-      '<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.name+(a.companyName ? ' — '+a.companyName : ''))+'</option>').join(''));
     const params = new URLSearchParams({month: el('rpBankMonth').value});
-    if(el('rpBankAccount').value) params.set('financeAccountId', el('rpBankAccount').value);
+    if(el('rpBankResponsible').value) params.set('responsibleName', el('rpBankResponsible').value);
     el('rpBankBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
     try{
       rpBankData = await financeApiRequest('/replacement-control/bank?'+params.toString());
+      fillSelect('rpBankResponsible', '<option value="">TODOS</option>', (rpBankData.responsibles || []).map(name =>
+        '<option value="'+escapeHtml(name)+'">'+escapeHtml(name)+'</option>').join(''));
     }catch(error){
       rpBankData = null;
       el('rpBankBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
@@ -39132,33 +39868,7 @@ function renderHomeTasks(){
       '<td data-label="Produto">'+escapeHtml(item.product || '—')+'</td><td data-label="Motivo">'+escapeHtml(item.reason || '—')+'</td><td data-label="Valor">'+formatCentsBRL(item.amountCents)+'</td></tr>').join('')
       : '<tr><td colspan="5" class="responsive-empty">Todos os lançamentos do mês estão batidos com o extrato.</td></tr>';
   }
-  ['rpBankAccount','rpBankMonth'].forEach(id => el(id).addEventListener('change', loadRpBank));
-  el('rpBankFile').addEventListener('change', async event => {
-    const file = event.target.files && event.target.files[0];
-    const status = el('rpBankStatus');
-    if(!file) return;
-    if(!el('rpBankAccount').value){ status.textContent = 'ESCOLHA A CONTA BANCÁRIA ANTES DO ARQUIVO.'; el('rpBankFile').value = ''; return; }
-    status.textContent = 'Lendo arquivo…';
-    try{
-      const {rows, sourceFormat} = await parseBankStatementFile(file);
-      // PDF é lido por aproximação e o extrato importado não tem excluir: confere antes.
-      if(sourceFormat === 'pdf'){
-        const exits = rows.filter(r => r.amountCents < 0);
-        const entries = rows.filter(r => r.amountCents > 0);
-        const sum = list => formatCentsBRL(Math.abs(list.reduce((total, r) => total + r.amountCents, 0)));
-        const dates = rows.map(r => r.entryDate).sort();
-        const ok = await askConfirm('LI '+rows.length+' LANÇAMENTO(S) DO PDF, DE '+formatDateBR(dates[0])+' A '+formatDateBR(dates[dates.length - 1])+': '+
-          exits.length+' SAÍDA(S) SOMANDO '+sum(exits)+' E '+entries.length+' ENTRADA(S) SOMANDO '+sum(entries)+
-          '. CONFIRA COM OS TOTAIS DO EXTRATO ANTES DE IMPORTAR.', {okText:'IMPORTAR', danger:false});
-        if(!ok){ status.textContent = 'IMPORTAÇÃO CANCELADA.'; el('rpBankFile').value = ''; return; }
-      }
-      const res = await financeApiRequest('/bank-reconciliation', {method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({financeAccountId: el('rpBankAccount').value, sourceName: file.name, sourceFormat, rows})});
-      status.textContent = 'EXTRATO IMPORTADO: '+res.inserted+' NOVO(S), '+res.duplicates+' JÁ EXISTIAM.';
-      el('rpBankFile').value = '';
-      await loadRpBank();
-    }catch(error){ status.textContent = error.message; }
-  });
+  ['rpBankResponsible','rpBankMonth'].forEach(id => el(id).addEventListener('change', loadRpBank));
   function openRpLinkDialog(exitId){
     const exit = (rpBankData.exits || []).find(item => item.id === exitId);
     if(!exit) return;
@@ -42070,7 +42780,7 @@ function renderHomeTasks(){
   let financeBatchConfig = null;
   let financeBatchKey = '';
   function financeBatchOptions(col){
-    if(col.type === 'item') return financeItemPickerOptions().map(o => ({value:o.id, label:o.label}));
+    if(col.type === 'item') return financeItemPickerOptions().filter(o => !o.id.startsWith('cat:')).map(o => ({value:o.id, label:o.label}));
     return typeof col.options === 'function' ? col.options() : (col.options || []);
   }
   function financeBatchCellHtml(col){
@@ -42270,7 +42980,8 @@ function renderHomeTasks(){
     let alertLevel = 'none';
     if(breakpointCents > 0 && declared > breakpointCents) alertLevel = 'declared';
     else if(breakpointCents > 0 && real > breakpointCents) alertLevel = 'real';
-    return {breakpointCents, percentageRentCents, alertLevel};
+    const paidRentCents = bps > 0 ? minimum + percentageRentCents : 0;
+    return {breakpointCents, percentageRentCents, paidRentCents, alertLevel};
   }
   function declPctLabel(bps){ return (Number(bps || 0) / 100).toLocaleString('pt-BR', {maximumFractionDigits:2}) + '%'; }
   function declPctToBps(value){ return value === '' || value == null ? 0 : Math.round(Number(String(value).replace(',', '.')) * 100) || 0; }
@@ -42325,18 +43036,19 @@ function renderHomeTasks(){
         '<td data-label="LOJA">'+escapeHtml(storeName(r))+'</td>'+
         '<td data-label="FATURAMENTO REAL">'+formatCentsBRL(r.realRevenueCents)+'</td>'+
         '<td data-label="SUGERIDO">'+(d.breakpointCents ? formatCentsBRL(d.breakpointCents) : '—')+'</td>'+
-        '<td data-label="A DECLARAR (PREVISTO)">'+(Number(r.plannedCents) ? formatCentsBRL(r.plannedCents) : '—')+'</td>'+
-        '<td data-label="VALOR DECLARADO">'+(Number(r.declaredCents) > 0 ? formatCentsBRL(r.declaredCents) : '<span class="status-pill warn">AGUARDANDO DECLARAÇÃO</span>')+'</td>'+
+        '<td data-label="PROJETADO">'+(Number(r.plannedCents) ? formatCentsBRL(r.plannedCents) : '—')+'</td>'+
+        '<td data-label="EFETIVAMENTE DECLARADO">'+(Number(r.declaredCents) > 0 ? formatCentsBRL(r.declaredCents) : '<span class="status-pill warn">AGUARDANDO DECLARAÇÃO</span>')+'</td>'+
         '<td data-label="% S/ FATURAMENTO">'+pctFromBps(d.declaredShareBps)+'</td>'+
         '<td data-label="ALUGUEL MÍNIMO">'+(hasPct ? formatCentsBRL(r.minimumRentCents)+' · '+declPctLabel(r.contractPercentBps) : '—')+'</td>'+
         '<td data-label="ALUGUEL PERCENTUAL"><span>'+(hasPct ? formatCentsBRL(d.percentageRentCents)+' <span class="status-pill '+(r.percentageRentPaid ? 'ok' : 'warn')+'">'+(r.percentageRentPaid ? 'PAGO' : 'NÃO PAGO')+'</span>' : 'SEM PERCENTUAL')+'</span></td>'+
+        '<td data-label="VALOR EFETIVAMENTE PAGO">'+(hasPct ? formatCentsBRL(d.paidRentCents) : '—')+'</td>'+
         '<td data-label="ALERTA">'+(d.alertLevel && d.alertLevel !== 'none' ? '<span class="status-pill '+(d.alertLevel === 'declared' ? 'danger' : 'warn')+'">'+(d.alertLevel === 'declared' ? 'DECLARADO' : 'RISCO')+'</span>' : '—')+'</td>'+
         '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
           '<button class="btn-outline btn-sm" type="button" data-decl-edit="'+escapeHtml(r.id)+'">EDITAR</button>'+
           '<button class="btn-outline btn-sm" type="button" data-decl-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</div></td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma declaração.</td></tr>';
+    }).join('') : '<tr><td colspan="13" class="responsive-empty">Nenhuma declaração.</td></tr>';
     declShoppingBulk.sync();
   }
   const declShoppingBulk = setupBulkSelection(el('declShoppingBulkBar'), el('declShoppingTableBody'), async (action, ids) => {
@@ -42353,6 +43065,7 @@ function renderHomeTasks(){
       competenceMonth: el('declShoppingCompetencia').value,
       realRevenueCents: declMoneyCents(el('declShoppingFatReal')),
       declaredCents: declMoneyCents(el('declShoppingDeclarado')),
+      plannedCents: declMoneyCents(el('declShoppingProjetado')),
       contractPercentBps: hasPct ? declPctToBps(el('declShoppingPercentual').value) : 0,
       minimumRentCents: hasPct ? declMoneyCents(el('declShoppingMinimo')) : 0,
       percentageRentPaid: hasPct && el('declShoppingPctPago').checked,
@@ -42375,6 +43088,11 @@ function renderHomeTasks(){
     el('declShoppingAluguelPctInfo').textContent = rentInput.dataset.manual === '1'
       ? 'DIGITADO · CALCULADO SERIA '+formatCentsBRL(d.percentageRentCents)+' (APAGUE PARA VOLTAR AO CÁLCULO)'
       : 'CALCULADO: DECLARADO × % − MÍNIMO · PODE DIGITAR O VALOR COBRADO';
+    const rentCents = rentInput.dataset.manual === '1' ? declMoneyCents(rentInput) : d.percentageRentCents;
+    el('declShoppingValorPago').value = hasPct ? formatCentsBRL(f.minimumRentCents + rentCents) : '';
+    el('declShoppingValorPagoConta').textContent = hasPct
+      ? formatCentsBRL(f.minimumRentCents)+' (MÍNIMO) + '+formatCentsBRL(rentCents)+' (PERCENTUAL SOBRE '+formatCentsBRL(f.declaredCents)+' DECLARADO)'
+      : 'ALUGUEL MÍNIMO + PERCENTUAL SOBRE O VALOR EFETIVAMENTE DECLARADO.';
     const hint = el('declShoppingCalcHint');
     if(!hasPct || !d.breakpointCents){ hint.textContent = ''; return; }
     let msg = 'PONTO DE VIRADA: '+formatCentsBRL(d.breakpointCents)+' (ATÉ ESTE VALOR DECLARADO O ALUGUEL PERCENTUAL FICA ZERADO).';
@@ -42419,7 +43137,7 @@ function renderHomeTasks(){
   let declShoppingCurrentId = '';
   function openDeclShoppingDialog(row){
     el('declShoppingForm').reset();
-    ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => setCurrencyValue(el(id), ''));
+    ['declShoppingFatReal','declShoppingProjetado','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => setCurrencyValue(el(id), ''));
     el('declShoppingAluguelPct').dataset.manual = '';
     fase8CompanyOptions('declShoppingLojaForm', '');
     declShoppingCurrentId = row ? row.id : '';
@@ -42429,9 +43147,9 @@ function renderHomeTasks(){
       el('declShoppingLojaForm').value = row.companyId || '';
       el('declShoppingCompetencia').value = row.competenceMonth || '';
       setCurrencyValue(el('declShoppingFatReal'), row.realRevenueCents ? row.realRevenueCents / 100 : '');
-      // Mês planejado ainda sem o real: o A DECLARAR já vem no campo para conferir.
-      const declaredOrPlanned = Number(row.declaredCents) || Number(row.plannedCents) || 0;
-      setCurrencyValue(el('declShoppingDeclarado'), declaredOrPlanned ? declaredOrPlanned / 100 : '');
+      // Projetado e efetivamente declarado em campos separados (23/10/2026).
+      setCurrencyValue(el('declShoppingProjetado'), Number(row.plannedCents) ? row.plannedCents / 100 : '');
+      setCurrencyValue(el('declShoppingDeclarado'), Number(row.declaredCents) ? row.declaredCents / 100 : '');
       el('declShoppingTemPct').checked = Number(row.contractPercentBps) > 0;
       el('declShoppingPercentual').value = row.contractPercentBps ? String(row.contractPercentBps / 100) : '';
       setCurrencyValue(el('declShoppingMinimo'), row.minimumRentCents ? row.minimumRentCents / 100 : '');
@@ -42487,7 +43205,7 @@ function renderHomeTasks(){
       showPurchaseToast('Anexo enviado.');
     }catch(error){ status.textContent = error.message; }
   });
-  ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => attachCurrencyMask(el(id)));
+  ['declShoppingFatReal','declShoppingProjetado','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => attachCurrencyMask(el(id)));
   el('declShoppingAluguelPct').addEventListener('input', () => {
     el('declShoppingAluguelPct').dataset.manual = getCurrencyValue(el('declShoppingAluguelPct')) === '' ? '' : '1';
     declShoppingUpdateHint();
@@ -44011,7 +44729,6 @@ function renderHomeTasks(){
       const agencyAccount = [a.agency && ('ag. '+a.agency+(a.agencyDigit ? '-'+a.agencyDigit : '')), a.accountNumber && ('cc. '+a.accountNumber+(a.accountDigit ? '-'+a.accountDigit : ''))].filter(Boolean).join(' / ') || '—';
       return '<tr>'+
         '<td>'+escapeHtml(a.name)+'</td>'+
-        '<td>'+escapeHtml(a.companyName || '—')+'</td>'+
         '<td>'+escapeHtml(ACCOUNT_TYPE_LABELS[a.type] || a.type)+'</td>'+
         '<td>'+escapeHtml(a.bankName || '—')+'</td>'+
         '<td>'+escapeHtml(agencyAccount)+'</td>'+
@@ -44021,7 +44738,7 @@ function renderHomeTasks(){
           '<button class="btn-outline" type="button" data-payable-toggle-account="'+escapeHtml(a.id)+'">'+(a.active ? 'INATIVAR' : 'REATIVAR')+'</button>'+
         '</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="7" class="responsive-empty">Nenhuma conta financeira encontrada.</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="responsive-empty">Nenhuma conta financeira encontrada.</td></tr>';
   }
 
   function renderPayableAccountsFilterCompanyOptions(){
@@ -44108,10 +44825,6 @@ function renderHomeTasks(){
     clearPayableAccountFieldErrors();
     updatePayableAccountBankFieldsVisibility();
     renderPayableAccountsFilterCompanyOptions();
-    if(!payablesCanActAcrossStores() && currentSession.companyId){
-      el('payableAccountCompany').value = currentSession.companyId;
-      el('payableAccountCompany').disabled = true;
-    }
     updatePayableAccountBankFieldsVisibility();
   }
 
@@ -44251,10 +44964,9 @@ function renderHomeTasks(){
     const status = el('payableAccountFormStatus');
     status.textContent = '';
     clearPayableAccountFieldErrors();
-    const companyId = el('payableAccountCompany').value;
-    const companySelect = el('payableAccountCompany');
-    const companyName = companySelect.options[companySelect.selectedIndex] ? companySelect.options[companySelect.selectedIndex].textContent : '';
-    if(!companyId){ showPayableAccountError('SELECIONE A EMPRESA/LOJA DA CONTA.'); return; }
+    // Conta bancária não é associada a unidade (23/10/2026).
+    const companyId = '';
+    const companyName = '';
     const name = el('payableAccountName').value.trim();
     if(!name){ showPayableAccountError('INFORME O NOME/DESCRIÇÃO DA CONTA.'); return; }
     const type = el('payableAccountType').value;
@@ -44372,7 +45084,6 @@ function renderHomeTasks(){
   let invoiceCurrentDetailId = null;
   let invoiceDreTouched = false;
   attachCurrencyMask(el('invoiceTotalAmount'));
-  attachCurrencyMask(el('invoiceInstallmentSingleAmount'));
   attachCurrencyMask(el('invoiceDreAmount'));
   attachCurrencyMask(el('invoicePaymentAmount'));
   dreDestinationState.invoice = Object.assign(dreDestinationState.invoice || {}, {onChange: () => {
@@ -44543,15 +45254,25 @@ function renderHomeTasks(){
     renderFinanceItemPicker('invoiceItem');
   }
 
+  // Painel das NFs: quantidade e valor total por situação (resumo do
+  // servidor, com os filtros de loja/busca — sem o filtro de situação).
+  let invoiceStatusSummary = [];
   function renderInvoiceStatusChips(){
     const container = el('invoicesStatusChips');
     if(!container) return;
     const allActive = !invoiceStatusFilter;
-    container.innerHTML = '<div class="card'+(allActive ? ' active' : '')+'" data-invoice-status-chip="">'+
-        '<div class="lbl">TODOS</div></div>'+
+    const totals = status => invoiceStatusSummary
+      .filter(row => !status || row.status === status)
+      .reduce((acc, row) => ({count: acc.count + Number(row.count || 0), cents: acc.cents + Number(row.totalCents || 0)}), {count:0, cents:0});
+    const cardBody = (label, status) => {
+      const t = totals(status);
+      return '<div class="lbl">'+escapeHtml(label)+'</div><div class="num">'+t.count+'</div>'+
+        '<div class="lbl" style="margin-top:4px;">'+formatCentsBRL(t.cents)+'</div>';
+    };
+    container.innerHTML = '<div class="card'+(allActive ? ' active' : '')+'" data-invoice-status-chip="">'+cardBody('TODOS', '')+'</div>'+
       INVOICE_STATUS_ORDER.map(status =>
         '<div class="card'+(invoiceStatusFilter === status ? ' active' : '')+'" data-invoice-status-chip="'+status+'">'+
-          '<div class="lbl">'+escapeHtml(INVOICE_STATUS_LABELS[status])+'</div></div>'
+          cardBody(INVOICE_STATUS_LABELS[status], status)+'</div>'
       ).join('');
   }
 
@@ -44582,6 +45303,8 @@ function renderHomeTasks(){
     try{
       const data = await invoicesApiRequest('?'+params.toString());
       invoiceRows = Array.isArray(data.rows) ? data.rows : [];
+      invoiceStatusSummary = Array.isArray(data.summary) ? data.summary : [];
+      renderInvoiceStatusChips();
       if(tbody){
         tbody.innerHTML = invoiceRows.length
           ? invoiceRows.map(invoiceRowHtml).join('')
@@ -44755,6 +45478,9 @@ function renderHomeTasks(){
     invoicePlanTargetCents = Math.max(0, invoice.totalAmountCents - activeInstallments.reduce((sum, item) => sum + Number(item.originalAmountCents || 0), 0));
     // NF de compra de mercadoria nasce com NÃO INCLUIR (vira estoque).
     const merchandiseDefault = data.merchandisePurchase && !activeInstallments.length ? {target:'none', itemId:'', rateioModel:'', shares:[]} : null;
+    // NF sem categoria: a CATEGORIA NA DRE escolhida aqui vira a categoria da NF.
+    const invoiceDreItemSelect = document.getElementById('invoice'+'DreItem');
+    if(invoiceDreItemSelect) invoiceDreItemSelect.dataset.placeholder = invoice.financeItemId ? 'A MESMA CATEGORIA DA CONTA' : 'ESCOLHA A CATEGORIA DA NF';
     setDreDestination('invoice', merchandiseDefault || dre.destination || null, {companyId: invoice.companyId, financeItemId: invoice.financeItemId});
     el('invoiceDreMerchandiseNotice').hidden = !data.merchandisePurchase;
     renderInvoiceInstallmentPlan(true);
@@ -44825,18 +45551,12 @@ function renderHomeTasks(){
   }
 
   function updateInvoiceInstallmentModeFields(){
-    const mode = (document.querySelector('input[name="invoiceInstallmentMode"]:checked') || {}).value || 'generate';
-    const isGenerate = mode === 'generate';
-    el('invoiceInstallmentCountField').hidden = !isGenerate;
-    el('invoiceInstallmentFirstDueField').hidden = !isGenerate;
-    el('invoiceInstallmentSingleDueField').hidden = isGenerate;
-    el('invoiceInstallmentSingleAmountField').hidden = isGenerate;
-    el('invoiceInstallmentPlanField').hidden = !isGenerate;
-    if(isGenerate) renderInvoiceInstallmentPlan(false);
+    renderInvoiceInstallmentPlan(false);
   }
-  // Parcelas da NF antes de cadastrar: divisão igual e meses seguidos já
-  // preenchidos, cada VENCIMENTO e VALOR editável; a soma tem de bater com o
-  // total da NF (menos as duplicatas já cadastradas) — senão bloqueia.
+  // Duplicatas da NF digitadas À MÃO (23/10/2026): uma linha por duplicata,
+  // VENCIMENTO e VALOR de cada uma; "+ ADICIONAR DUPLICATA" e o atalho
+  // "DIVIDIR IGUAL". Soma diferente do total da NF (menos as já cadastradas)
+  // só AVISA — a NF fica COM DIVERGÊNCIA até ajustar.
   let invoicePlanTargetCents = 0;
   function invoicePlanAddMonths(dateKey, months){
     const [year, month, day] = String(dateKey).split('-').map(Number);
@@ -44846,21 +45566,39 @@ function renderHomeTasks(){
     target.setUTCDate(Math.min(day, last));
     return target.toISOString().slice(0, 10);
   }
-  function renderInvoiceInstallmentPlan(reset){
+  function invoicePlanRowHtml(dueDate){
+    return '<tr><td data-label="DUPLICATA" data-plan-number></td>'+
+      '<td data-label="VENCIMENTO"><input type="date" data-plan-due aria-label="Vencimento" value="'+escapeHtml(dueDate || '')+'"></td>'+
+      '<td data-label="VALOR"><input data-plan-amount inputmode="decimal" placeholder="R$ 0,00" aria-label="Valor"></td>'+
+      '<td><button class="btn-outline btn-sm" type="button" data-plan-remove aria-label="Remover duplicata">×</button></td></tr>';
+  }
+  function numberInvoicePlanRows(){
+    const rows = Array.from(el('invoiceInstallmentPlanBody').rows);
+    rows.forEach((tr, index) => { tr.querySelector('[data-plan-number]').textContent = (index + 1)+'/'+rows.length; });
+  }
+  function addInvoicePlanRow(dueDate, cents){
     const body = el('invoiceInstallmentPlanBody');
-    const count = Math.max(1, Math.min(120, Number(el('invoiceInstallmentCount').value) || 1));
-    const first = el('invoiceInstallmentFirstDue').value;
-    if(reset || body.rows.length !== count){
+    body.insertAdjacentHTML('beforeend', invoicePlanRowHtml(dueDate));
+    const input = body.rows[body.rows.length - 1].querySelector('[data-plan-amount]');
+    attachCurrencyMask(input);
+    if(cents > 0) setCurrencyValue(input, cents / 100);
+    numberInvoicePlanRows();
+  }
+  // reset=true: começa com UMA duplicata do valor que falta; o atalho
+  // DIVIDIR IGUAL (split) troca a tabela por N parcelas iguais em meses seguidos.
+  function renderInvoiceInstallmentPlan(reset, split){
+    const body = el('invoiceInstallmentPlanBody');
+    if(split){
+      const count = Math.max(1, Math.min(120, Number(el('invoiceInstallmentCount').value) || 1));
+      const first = el('invoiceInstallmentFirstDue').value;
       const base = Math.floor(invoicePlanTargetCents / count);
-      body.innerHTML = Array.from({length: count}, (_v, index) =>
-        '<tr><td data-label="PARCELA">'+(index + 1)+'/'+count+'</td>'+
-        '<td data-label="VENCIMENTO"><input type="date" data-plan-due aria-label="Vencimento da parcela '+(index + 1)+'" value="'+escapeHtml(first ? invoicePlanAddMonths(first, index) : '')+'"></td>'+
-        '<td data-label="VALOR"><input data-plan-amount inputmode="decimal" aria-label="Valor da parcela '+(index + 1)+'"></td></tr>').join('');
-      Array.from(body.querySelectorAll('[data-plan-amount]')).forEach((input, index) => {
-        attachCurrencyMask(input);
-        const cents = index === count - 1 ? invoicePlanTargetCents - base * (count - 1) : base;
-        setCurrencyValue(input, cents / 100);
-      });
+      body.innerHTML = '';
+      for(let index = 0; index < count; index++){
+        addInvoicePlanRow(first ? invoicePlanAddMonths(first, index) : '', index === count - 1 ? invoicePlanTargetCents - base * (count - 1) : base);
+      }
+    }else if(reset || !body.rows.length){
+      body.innerHTML = '';
+      addInvoicePlanRow('', invoicePlanTargetCents);
     }
     updateInvoicePlanSum();
   }
@@ -44873,14 +45611,29 @@ function renderHomeTasks(){
   function updateInvoicePlanSum(){
     const sum = invoicePlanRows().reduce((total, row) => total + row.amountCents, 0);
     const diff = invoicePlanTargetCents - sum;
-    el('invoiceInstallmentPlanSum').innerHTML = 'SOMA <strong>'+formatCentsBRL(sum)+'</strong> · TOTAL A DISTRIBUIR <strong>'+formatCentsBRL(invoicePlanTargetCents)+'</strong>'+
-      (diff ? ' · <span class="is-off">DIFERENÇA '+formatCentsBRL(diff)+'</span>' : ' · OK');
+    el('invoiceInstallmentPlanSum').innerHTML = 'SOMA <strong>'+formatCentsBRL(sum)+'</strong> · FALTA NA NF <strong>'+formatCentsBRL(invoicePlanTargetCents)+'</strong>'+
+      (diff > 0 ? ' · <span class="is-off">FALTAM '+formatCentsBRL(diff)+' (PODE SALVAR E CADASTRAR O RESTANTE DEPOIS)</span>'
+        : diff < 0 ? ' · <span class="is-off">PASSOU '+formatCentsBRL(-diff)+' DO TOTAL (PODE SALVAR — A NF FICA COM DIVERGÊNCIA)</span>' : ' · OK');
     el('btnInvoiceAdjustLast').hidden = !diff;
     return diff;
   }
-  el('invoiceInstallmentCount').addEventListener('input', () => renderInvoiceInstallmentPlan(true));
-  el('invoiceInstallmentFirstDue').addEventListener('change', () => renderInvoiceInstallmentPlan(true));
+  el('btnInvoiceSplitPlan').addEventListener('click', () => renderInvoiceInstallmentPlan(false, true));
+  el('btnInvoiceAddPlanRow').addEventListener('click', () => {
+    const rows = invoicePlanRows();
+    const missing = invoicePlanTargetCents - rows.reduce((total, row) => total + row.amountCents, 0);
+    const lastDue = rows.length ? rows[rows.length - 1].dueDate : '';
+    addInvoicePlanRow(lastDue ? invoicePlanAddMonths(lastDue, 1) : '', Math.max(0, missing));
+    updateInvoicePlanSum();
+  });
   el('invoiceInstallmentPlanBody').addEventListener('input', updateInvoicePlanSum);
+  el('invoiceInstallmentPlanBody').addEventListener('click', event => {
+    const remove = event.target.closest('[data-plan-remove]');
+    if(!remove) return;
+    remove.closest('tr').remove();
+    if(!el('invoiceInstallmentPlanBody').rows.length) addInvoicePlanRow('', 0);
+    numberInvoicePlanRows();
+    updateInvoicePlanSum();
+  });
   el('btnInvoiceAdjustLast').addEventListener('click', () => {
     const inputs = el('invoiceInstallmentPlanBody').querySelectorAll('[data-plan-amount]');
     const last = inputs[inputs.length - 1];
@@ -44890,9 +45643,6 @@ function renderHomeTasks(){
     if(next <= 0){ showPurchaseToast('A ÚLTIMA PARCELA FICARIA ZERADA OU NEGATIVA — AJUSTE AS OUTRAS.', 'error'); return; }
     setCurrencyValue(last, next / 100);
     updateInvoicePlanSum();
-  });
-  document.querySelectorAll('input[name="invoiceInstallmentMode"]').forEach(input => {
-    input.addEventListener('change', updateInvoiceInstallmentModeFields);
   });
 
   el('btnInvoicesRefresh') && el('btnInvoicesRefresh').addEventListener('click', loadInvoicesList);
@@ -45028,34 +45778,25 @@ function renderHomeTasks(){
   el('invoiceInstallmentForm') && el('invoiceInstallmentForm').addEventListener('submit', async event => {
     event.preventDefault();
     if(!invoiceCurrentDetailId) return;
-    const mode = (document.querySelector('input[name="invoiceInstallmentMode"]:checked') || {}).value || 'generate';
     const button = el('btnSaveInvoiceInstallments');
     button.disabled = true;
     el('invoiceInstallmentFormStatus').textContent = 'SALVANDO…';
     try{
       const body = {
-        mode,
+        mode: 'generate',
         paymentMethod: el('invoiceInstallmentPaymentMethod').value,
         financeAccountId: el('invoiceInstallmentAccount').value,
         boletoCode: el('invoiceInstallmentBoleto').value
       };
-      if(mode === 'generate'){
-        const plan = invoicePlanRows();
-        if(plan.some(row => !row.dueDate)) throw new Error('INFORME O VENCIMENTO DE TODAS AS PARCELAS.');
-        if(plan.some(row => row.amountCents <= 0)) throw new Error('INFORME O VALOR DE TODAS AS PARCELAS.');
-        const diff = updateInvoicePlanSum();
-        if(diff) throw new Error('A SOMA DAS PARCELAS NÃO BATE COM O TOTAL DA NF (DIFERENÇA '+formatCentsBRL(diff)+') — USE "AJUSTAR ÚLTIMA PARCELA".');
-        body.installmentTotal = plan.length;
-        body.firstDueDate = plan[0].dueDate;
-        body.customDueDates = plan.map(row => row.dueDate);
-        body.customAmounts = plan.map(row => row.amountCents);
-        body.amountCents = invoicePlanTargetCents;
-      }else{
-        body.dueDate = el('invoiceInstallmentSingleDue').value;
-        const amountCents = parseBRLToCents(getCurrencyValue(el('invoiceInstallmentSingleAmount')));
-        if(!amountCents) throw new Error('INFORME UM VALOR VÁLIDO PARA A DUPLICATA.');
-        body.originalAmountCents = amountCents;
-      }
+      const plan = invoicePlanRows();
+      if(!plan.length) throw new Error('ADICIONE AO MENOS UMA DUPLICATA.');
+      if(plan.some(row => !row.dueDate)) throw new Error('INFORME O VENCIMENTO DE TODAS AS DUPLICATAS.');
+      if(plan.some(row => row.amountCents <= 0)) throw new Error('INFORME O VALOR DE TODAS AS DUPLICATAS.');
+      body.installmentTotal = plan.length;
+      body.firstDueDate = plan[0].dueDate;
+      body.customDueDates = plan.map(row => row.dueDate);
+      body.customAmounts = plan.map(row => row.amountCents);
+      body.amountCents = plan.reduce((total, row) => total + row.amountCents, 0);
       const destination = readDreDestination('invoice');
       if(destination.error) throw new Error(destination.error);
       Object.assign(body, destination);
@@ -45066,10 +45807,9 @@ function renderHomeTasks(){
       const installmentsResponse = await invoicesApiRequest('/'+encodeURIComponent(invoiceCurrentDetailId)+'/installments', {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
       });
-      showPurchaseToast(installmentsResponse && installmentsResponse.dreWarning ? installmentsResponse.dreWarning : 'Duplicata(s) cadastrada(s).');
+      const warning = installmentsResponse && (installmentsResponse.divergenceWarning || installmentsResponse.dreWarning);
+      showPurchaseToast(warning || 'Duplicata(s) cadastrada(s).', warning ? 'error' : undefined);
       el('invoiceInstallmentForm').reset();
-      setCurrencyValue(el('invoiceInstallmentSingleAmount'), '');
-      updateInvoiceInstallmentModeFields();
       await openInvoiceDetailDialog(invoiceCurrentDetailId);
       await refreshAfterAction(() => loadInvoicesList({silent:true}));
     }catch(error){
@@ -48153,7 +48893,7 @@ function renderHomeTasks(){
   // Comissão bruta, descontos (com descrição e sobra do mês anterior),
   // comissão líquida, premiação e HE a pagar (3 tipos), por EMPRESA/CNPJ.
   let rhContabData = null;
-  const RH_CONTAB_HEAD = ['FUNCIONÁRIO','COMISSÃO BRUTA','DESCONTOS','COMISSÃO LÍQUIDA','PREMIAÇÃO','HE 50% (QTD)','HE 50% (R$)','HE 100% (QTD)','HE 100% (R$)','AD. NOTURNO (QTD)','AD. NOTURNO (R$)','TOTAL'];
+  const RH_CONTAB_HEAD = ['FUNCIONÁRIO','COMISSIONAMENTO','HORAS EXTRAS','PREMIAÇÃO','TOTAL'];
   function rhContabMonth(){
     if(!el('rhContabMes').value) el('rhContabMes').value = financeCurrentMonthKey();
     return el('rhContabMes').value;
@@ -48161,51 +48901,34 @@ function renderHomeTasks(){
   function rhContabGroupLabel(group){
     return (group.cnpj ? 'CNPJ '+rhFormatCnpj(group.cnpj) : 'SEM CNPJ CADASTRADO')+(group.companyNames.length ? ' · '+group.companyNames.join(', ').toUpperCase() : '');
   }
-  function rhContabDiscountHtml(row){
-    const c = row.carry;
-    if(!c.discountCents && !c.carryInCents) return '—';
-    // A sobra do mês anterior tem linha própria abaixo.
-    const labels = row.discountLabels.filter(label => label !== 'SOBRA DE DESCONTO DO MÊS ANTERIOR');
-    return '-'+formatCentsBRL(c.discountCents + c.carryInCents)+
-      (labels.length ? '<br><small>'+escapeHtml(labels.join(' · ').toUpperCase())+'</small>' : '')+
-      (c.carryInCents ? '<br><small>SOBRA DO MÊS ANTERIOR: '+formatCentsBRL(c.carryInCents)+'</small>' : '')+
-      (c.carryOutCents ? '<br><small><strong>SOBRA P/ O MÊS SEGUINTE: '+formatCentsBRL(c.carryOutCents)+'</strong></small>' : '');
-  }
   function rhContabCells(values){
     return values.map((value, index) => '<td'+(index ? ' class="num"' : '')+'>'+value+'</td>').join('');
   }
   function rhContabTotalsCells(label, t){
-    return rhContabCells(['<strong>'+escapeHtml(label)+'</strong>', formatCentsBRL(t.commissionCents),
-      (t.discountCents + t.carryInCents ? '-'+formatCentsBRL(t.discountCents + t.carryInCents) : '—')+(t.carryOutCents ? '<br><small>SOBRA P/ O MÊS SEGUINTE: '+formatCentsBRL(t.carryOutCents)+'</small>' : ''),
-      formatCentsBRL(t.netCommissionCents), formatCentsBRL(t.premiumCents),
-      rhHoursText(t.he50Minutes), formatCentsBRL(t.he50Cents), rhHoursText(t.he100Minutes), formatCentsBRL(t.he100Cents),
-      rhHoursText(t.nightMinutes), formatCentsBRL(t.nightCents), '<strong>'+formatCentsBRL(t.totalCents)+'</strong>']);
+    return rhContabCells(['<strong>'+escapeHtml(label)+'</strong>', formatCentsBRL(t.commissionCents), formatCentsBRL(t.overtimeCents),
+      formatCentsBRL(t.premiumCents), '<strong>'+formatCentsBRL(t.totalCents)+'</strong>']);
   }
   function renderRhContabilidade(){
     const data = rhContabData;
     const groups = data && Array.isArray(data.groups) ? data.groups : [];
     el('rhContabPrintMeta').textContent = 'Competência '+rhFormatMonth(data ? data.month : rhContabMonth());
     if(!groups.length){
-      el('rhContabResumo').textContent = 'Nenhuma comissão, premiação, desconto ou hora extra a pagar nesta competência.';
+      el('rhContabResumo').textContent = 'Nenhum comissionamento, hora extra ou premiação nesta competência.';
       el('rhContabConteudo').innerHTML = '';
       return;
     }
     const t = data.total;
     el('rhContabResumo').innerHTML = '<strong>'+groups.reduce((sum, group) => sum + group.rows.length, 0)+'</strong> funcionário(s) em <strong>'+groups.length+'</strong> empresa(s) · '+
-      'Comissão líquida: <strong>'+formatCentsBRL(t.netCommissionCents)+'</strong> · Premiação: <strong>'+formatCentsBRL(t.premiumCents)+'</strong> · '+
-      'HE: <strong>'+formatCentsBRL(t.he50Cents + t.he100Cents + t.nightCents)+'</strong> · Total geral: <strong>'+formatCentsBRL(t.totalCents)+'</strong>';
+      'Comissionamento: <strong>'+formatCentsBRL(t.commissionCents)+'</strong> · Horas extras: <strong>'+formatCentsBRL(t.overtimeCents)+'</strong> · '+
+      'Premiação: <strong>'+formatCentsBRL(t.premiumCents)+'</strong> · Total geral: <strong>'+formatCentsBRL(t.totalCents)+'</strong>';
     const head = '<thead><tr>'+RH_CONTAB_HEAD.map((label, index) => '<th'+(index ? ' class="num"' : '')+'>'+label+'</th>').join('')+'</tr></thead>';
     el('rhContabConteudo').innerHTML = groups.map(group =>
       '<div class="table-panel rh-print-block" style="padding:12px 14px;margin-bottom:14px;">'+
         '<h3 style="margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;">'+escapeHtml(rhContabGroupLabel(group))+'</h3>'+
         '<div class="table-scroll"><table class="rh-print-table rh-contab-table">'+head+'<tbody>'+
-        group.rows.map(row => {
-          const o = row.overtime;
-          return '<tr>'+rhContabCells([escapeHtml(row.employeeName)+'<br><small>'+escapeHtml(String(row.companyName || '—').toUpperCase())+'</small>',
-            formatCentsBRL(row.carry.commissionCents), rhContabDiscountHtml(row), formatCentsBRL(row.carry.netCommissionCents), formatCentsBRL(row.premiumCents),
-            rhHoursText(o.he50.minutes), formatCentsBRL(o.he50.amountCents), rhHoursText(o.he100.minutes), formatCentsBRL(o.he100.amountCents),
-            rhHoursText(o.night.minutes), formatCentsBRL(o.night.amountCents), '<strong>'+formatCentsBRL(row.totalCents)+'</strong>'])+'</tr>';
-        }).join('')+
+        group.rows.map(row => '<tr>'+rhContabCells([escapeHtml(row.employeeName)+'<br><small>'+escapeHtml(String(row.companyName || '—').toUpperCase())+'</small>',
+          formatCentsBRL(row.carry.netCommissionCents)+(row.carry.carryOutCents ? '<br><small>SOBRA DE DESCONTO P/ O MÊS SEGUINTE: '+formatCentsBRL(row.carry.carryOutCents)+'</small>' : ''),
+          formatCentsBRL(row.overtimeCents), formatCentsBRL(row.premiumCents), '<strong>'+formatCentsBRL(row.totalCents)+'</strong>'])+'</tr>').join('')+
         '<tr>'+rhContabTotalsCells('SUBTOTAL DA EMPRESA', group.subtotal)+'</tr>'+
         '</tbody></table></div></div>'
     ).join('')+
@@ -48227,6 +48950,19 @@ function renderHomeTasks(){
     renderRhContabilidade();
   }
   if(el('rhContabMes')) el('rhContabMes').addEventListener('change', loadRhContabilidade);
+  // HORAS EXTRAS do relatório: valor único em R$ por funcionário, digitado à
+  // mão (ou colado da planilha) — mesmo diálogo do DSR/INSS.
+  if(el('btnRhContabHe')) el('btnRhContabHe').addEventListener('click', async () => {
+    const month = rhContabMonth();
+    try{ await rhEnsureBaseData(false); }catch(error){ showPurchaseToast(error.message,'error'); return; }
+    openRhMonthValues({
+      kind:'he', month,
+      title:'HORAS EXTRAS — '+rhFormatMonth(month),
+      help:'VALOR DAS HORAS EXTRAS EM R$ POR FUNCIONÁRIO (UM VALOR ÚNICO, DIGITADO À MÃO). VALOR 0 APAGA.',
+      people:rhEmployees.filter(employee => employee.status === 'active').map(employee => ({employeeId:employee.id, employeeName:employee.fullName, companyName:employee.companyName})),
+      onSaved:() => loadRhContabilidade()
+    });
+  });
   if(el('btnRhContabPdf')) el('btnRhContabPdf').addEventListener('click', () => {
     if(!rhContabData || !(rhContabData.groups || []).length){ showPurchaseToast('Nada para gerar.','error'); return; }
     rhStartPrint('relatorio-contabilidade-'+rhContabData.month);
@@ -48237,20 +48973,13 @@ function renderHomeTasks(){
     try{ XLSX = await ensureXlsx(); }
     catch(error){ showPurchaseToast(error.message,'error'); return; }
     const money = cents => Math.round(Number(cents || 0)) / 100;
-    const hours = minutes => rhHoursText(minutes);
-    const header = ['EMPRESA (CNPJ)','FUNCIONÁRIO','LOJA','COMISSÃO BRUTA','DESCONTOS','DESCRIÇÃO DOS DESCONTOS','SOBRA DO MÊS ANTERIOR','SOBRA P/ O MÊS SEGUINTE','COMISSÃO LÍQUIDA','PREMIAÇÃO',
-      'HE 50% (QTD)','HE 50% (R$)','HE 100% (QTD)','HE 100% (R$)','AD. NOTURNO (QTD)','AD. NOTURNO (R$)','TOTAL'];
-    const totalsLine = (label, t) => [label,'','',money(t.commissionCents),money(t.discountCents + t.carryInCents),'',money(t.carryInCents),money(t.carryOutCents),money(t.netCommissionCents),money(t.premiumCents),
-      hours(t.he50Minutes),money(t.he50Cents),hours(t.he100Minutes),money(t.he100Cents),hours(t.nightMinutes),money(t.nightCents),money(t.totalCents)];
+    const header = ['EMPRESA (CNPJ)','FUNCIONÁRIO','LOJA','COMISSIONAMENTO','HORAS EXTRAS','PREMIAÇÃO','TOTAL'];
+    const totalsLine = (label, t) => [label,'','',money(t.commissionCents),money(t.overtimeCents),money(t.premiumCents),money(t.totalCents)];
     const rows = [header];
     rhContabData.groups.forEach(group => {
       const label = rhContabGroupLabel(group);
-      group.rows.forEach(row => {
-        const c = row.carry, o = row.overtime;
-        rows.push([label,row.employeeName,String(row.companyName || '').toUpperCase(),money(c.commissionCents),money(c.discountCents + c.carryInCents),row.discountLabels.join(' · ').toUpperCase(),
-          money(c.carryInCents),money(c.carryOutCents),money(c.netCommissionCents),money(row.premiumCents),
-          hours(o.he50.minutes),money(o.he50.amountCents),hours(o.he100.minutes),money(o.he100.amountCents),hours(o.night.minutes),money(o.night.amountCents),money(row.totalCents)]);
-      });
+      group.rows.forEach(row => rows.push([label,row.employeeName,String(row.companyName || '').toUpperCase(),
+        money(row.carry.netCommissionCents),money(row.overtimeCents),money(row.premiumCents),money(row.totalCents)]));
       rows.push(totalsLine('SUBTOTAL — '+label, group.subtotal));
     });
     rows.push(totalsLine('TOTAL GERAL', rhContabData.total));

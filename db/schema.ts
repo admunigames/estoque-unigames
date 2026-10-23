@@ -1936,8 +1936,14 @@ export const accountsReceivable = pgTable(
     canceledBy: text("canceled_by").notNull().default(""),
     canceledByName: text("canceled_by_name").notNull().default(""),
     canceledAt: text("canceled_at").notNull().default(""),
+    // 23/10/2026: conta bancária onde o recebimento cai (Fluxo de Caixa por
+    // conta) e lançamento do extrato que o confirmou (Conciliação de Contas a
+    // Receber). '' = sem conta / ainda não conciliado.
+    financeAccountId: text("finance_account_id").notNull().default(""),
+    bankEntryId: text("bank_entry_id").notNull().default(""),
   },
   (table) => [
+    index("accounts_receivable_account_expected_idx").on(table.financeAccountId, table.expectedDate),
     index("accounts_receivable_company_competence_idx").on(table.companyId, table.competenceMonth),
     index("accounts_receivable_company_expected_idx").on(table.companyId, table.expectedDate),
     // O Fluxo de Caixa filtra e agrupa por received_date toda vez que a tela
@@ -2389,6 +2395,38 @@ export const financeBankStatementImports = pgTable(
 // id único do OFX, usado para não reimportar a mesma transação.
 // status: 'pending' | 'classified' | 'confirmed' | 'expensed' | 'credit_sale'
 // ('credit_sale' = depósito de financeira vinculado a crediário, in_dre 0).
+// Conciliação Bancária — ATIVIDADES FINANCEIRAS cadastráveis (migration
+// 0112): kind 'entrada' | 'saida' (ex.: ENTRADA DE VENDA, DEPÓSITO).
+export const financeBankActivities = pgTable(
+  "finance_bank_activities",
+  {
+    id: text("id").primaryKey(),
+    kind: text("kind").notNull(),
+    name: text("name").notNull(),
+    position: integer("position").notNull().default(0),
+    active: integer("active").notNull().default(1),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("finance_bank_activities_kind_idx").on(table.kind, table.position)],
+);
+
+// SALDO INICIAL do período da conciliação (conta + mês) — migration 0112.
+export const financeBankPeriodBalances = pgTable(
+  "finance_bank_period_balances",
+  {
+    id: text("id").primaryKey(),
+    financeAccountId: text("finance_account_id").notNull(),
+    month: text("month").notNull(),
+    openingCents: integer("opening_cents").notNull().default(0),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [uniqueIndex("finance_bank_period_balances_key_idx").on(table.financeAccountId, table.month)],
+);
+
 export const financeBankStatementEntries = pgTable(
   "finance_bank_statement_entries",
   {
@@ -2414,6 +2452,10 @@ export const financeBankStatementEntries = pgTable(
     salesReconStatus: text("sales_recon_status").notNull().default(""),
     salesReconNote: text("sales_recon_note").notNull().default(""),
     acquirerId: text("acquirer_id").notNull().default(""),
+    // Conciliação (migration 0112): ATIVIDADE FINANCEIRA do lançamento e a
+    // conta a pagar baixada por ele.
+    activityId: text("activity_id").notNull().default(""),
+    payableId: text("payable_id").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -2513,14 +2555,65 @@ export const financeUberRides = pgTable(
     reason: text("reason").notNull().default(""),
     sourceName: text("source_name").notNull().default(""),
     cardEntryId: text("card_entry_id").notNull().default(""),
+    // Corrida lançada pela gordura (CORRIDA UBER): card_id fica '' até casar
+    // com a cobrança da fatura de um cartão.
+    gdAdjustmentId: text("gd_adjustment_id").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [
+    index("finance_uber_rides_gd_idx").on(table.gdAdjustmentId),
     index("finance_uber_rides_card_date_idx").on(table.cardId, table.rideDate),
     index("finance_uber_rides_entry_idx").on(table.cardEntryId),
   ],
+);
+
+// ---------------------------------------------------------------------------
+// CARTÕES DE CRÉDITO SÓCIO (23/10/2026): compras no cartão pessoal de um sócio
+// que a empresa devolve. Parcelada (installments, a partir de first_month) ou
+// FIXA (todo mês de first_month até end_month; '' = sem fim). Valor do mês =
+// (amount − discount) ÷ parcelas — ver app/lib/partner-cards.ts. O total do
+// mês por responsável vira UMA conta a pagar (finance_partner_card_payments).
+// ---------------------------------------------------------------------------
+export const financePartnerCardEntries = pgTable(
+  "finance_partner_card_entries",
+  {
+    id: text("id").primaryKey(),
+    responsibleName: text("responsible_name").notNull(),
+    description: text("description").notNull().default(""),
+    purchaseDate: text("purchase_date").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    discountCents: integer("discount_cents").notNull().default(0),
+    installments: integer("installments").notNull().default(1),
+    fixed: integer("fixed").notNull().default(0),
+    firstMonth: text("first_month").notNull(),
+    endMonth: text("end_month").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("finance_partner_card_entries_resp_idx").on(table.responsibleName, table.firstMonth)],
+);
+
+export const financePartnerCardPayments = pgTable(
+  "finance_partner_card_payments",
+  {
+    id: text("id").primaryKey(),
+    responsibleName: text("responsible_name").notNull(),
+    month: text("month").notNull(),
+    paymentDate: text("payment_date").notNull(),
+    payableId: text("payable_id").notNull().default(""),
+    totalCents: integer("total_cents").notNull().default(0),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [uniqueIndex("finance_partner_card_payments_key_idx").on(table.responsibleName, table.month)],
 );
 
 // ---------------------------------------------------------------------------
@@ -4076,6 +4169,9 @@ export const commercialGdBalanceAdjustments = pgTable(
     updatedAt: text("updated_at").notNull().default(""),
     // 'comercial' (Controle de Gorduras) ou 'assistencia' (Controle Gorduras Assistência).
     module: text("module").notNull().default("comercial"),
+    // 1 = CORRIDA UBER (23/10/2026): vira corrida na Conciliação Uber dos
+    // cartões corporativos (finance_uber_rides.gd_adjustment_id).
+    uberRide: integer("uber_ride").notNull().default(0),
   },
   (table) => [
     index("commercial_gd_adjustments_store_date_idx").on(table.storeId, table.adjustmentDate),

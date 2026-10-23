@@ -28,6 +28,104 @@ function num(value: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+type ReconEntry = { id: string; entryDate: string; amountCents: number; status: string; payableId: string; expenseId: string };
+type Database = Awaited<ReturnType<typeof getD1>>;
+
+const SUGGEST_DAYS = 7;
+function shiftDate(date: string, days: number) {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+/**
+ * CONTAS A PAGAR parecidas com cada SAÍDA ainda aberta do extrato: mesmo
+ * valor em aberto e vencimento até 7 dias antes/depois (a mais próxima da
+ * data do extrato). Só sugestão — quem baixa é o usuário.
+ */
+async function suggestPayables(database: Database, entries: ReconEntry[]) {
+  const open = entries.filter(
+    (entry) => entry.amountCents < 0 && !entry.payableId && !entry.expenseId && (entry.status === "pending" || entry.status === "classified"),
+  );
+  const result = new Map<string, Record<string, unknown>>();
+  if (!open.length) return result;
+  const amounts = [...new Set(open.map((entry) => -entry.amountCents))].slice(0, 400);
+  const dates = open.map((entry) => entry.entryDate).sort();
+  const candidates = await database
+    .prepare(
+      `SELECT p.id, p.description, p.due_date AS dueDate, p.company_name AS companyName,
+              p.original_amount_cents - p.paid_amount_cents AS openCents, COALESCE(s.name, '') AS supplierName
+       FROM accounts_payable p LEFT JOIN finance_suppliers s ON s.id = p.supplier_id
+       WHERE p.status <> 'paid' AND p.status <> 'canceled'
+         AND p.due_date >= ?1 AND p.due_date <= ?2
+         AND (p.original_amount_cents - p.paid_amount_cents) IN (${amounts.map((_, index) => `?${index + 3}`).join(",")})`,
+    )
+    .bind(shiftDate(dates[0], -SUGGEST_DAYS), shiftDate(dates[dates.length - 1], SUGGEST_DAYS), ...amounts)
+    .all<{ id: string; description: string; dueDate: string; companyName: string; openCents: number; supplierName: string }>();
+  const taken = new Set<string>();
+  const dayDiff = (a: string, b: string) => Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86_400_000;
+  for (const entry of open) {
+    const best = (candidates.results ?? [])
+      .filter((row) => Number(row.openCents) === -entry.amountCents && !taken.has(row.id) && dayDiff(row.dueDate, entry.entryDate) <= SUGGEST_DAYS)
+      .sort((a, b) => dayDiff(a.dueDate, entry.entryDate) - dayDiff(b.dueDate, entry.entryDate))[0];
+    if (best) {
+      taken.add(best.id);
+      result.set(entry.id, { ...best, openCents: Number(best.openCents) });
+    }
+  }
+  return result;
+}
+
+/**
+ * Resumo do período (conta + mês): SALDO INICIAL (o informado na tela, ou o
+ * calculado = saldo de abertura da conta + lançamentos do extrato antes do
+ * mês), entradas, saídas e saldo final.
+ */
+async function periodSummary(database: Database, financeAccountId: string, month: string) {
+  const start = `${month}-01`;
+  const account = await database
+    .prepare("SELECT opening_balance_cents AS openingBalanceCents, opening_balance_date AS openingBalanceDate FROM finance_accounts WHERE id=?1")
+    .bind(financeAccountId)
+    .first<{ openingBalanceCents: number; openingBalanceDate: string }>();
+  // Saldo de abertura da conta vale a partir da data dele: soma o extrato desde então.
+  const sinceDate = String(account?.openingBalanceDate || "");
+  const [stored, before, within] = await Promise.all([
+    database
+      .prepare("SELECT opening_cents AS openingCents FROM finance_bank_period_balances WHERE finance_account_id=?1 AND month=?2")
+      .bind(financeAccountId, month)
+      .first<{ openingCents: number }>(),
+    database
+      .prepare(
+        `SELECT COALESCE(SUM(amount_cents), 0) AS total FROM finance_bank_statement_entries
+         WHERE finance_account_id=?1 AND entry_date < ?2 AND entry_date >= ?3`,
+      )
+      .bind(financeAccountId, start, sinceDate)
+      .first<{ total: number }>(),
+    database
+      .prepare(
+        `SELECT COALESCE(SUM(CASE WHEN amount_cents > 0 THEN amount_cents ELSE 0 END), 0) AS inflow,
+                COALESCE(SUM(CASE WHEN amount_cents < 0 THEN -amount_cents ELSE 0 END), 0) AS outflow
+         FROM finance_bank_statement_entries
+         WHERE finance_account_id=?1 AND entry_date >= ?2 AND entry_date <= ?3`,
+      )
+      .bind(financeAccountId, start, `${month}-31`)
+      .first<{ inflow: number; outflow: number }>(),
+  ]);
+  const computed = Number(account?.openingBalanceCents ?? 0) + Number(before?.total ?? 0);
+  const openingCents = stored ? Number(stored.openingCents) : computed;
+  const inflowCents = Number(within?.inflow ?? 0);
+  const outflowCents = Number(within?.outflow ?? 0);
+  return {
+    month,
+    openingCents,
+    openingSource: stored ? "informado" : "calculado",
+    computedOpeningCents: computed,
+    inflowCents,
+    outflowCents,
+    closingCents: openingCents + inflowCents - outflowCents,
+  };
+}
+
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -73,16 +171,24 @@ export async function GET(request: Request) {
         `SELECT id, entry_date AS entryDate, description, raw_merchant AS rawMerchant,
                 amount_cents AS amountCents, category_item_id AS categoryItemId, subcategory,
                 cost_center_id AS costCenterId, company_id AS companyId, in_dre AS inDre,
-                in_rateio AS inRateio, status, expense_id AS expenseId
+                in_rateio AS inRateio, status, expense_id AS expenseId,
+                activity_id AS activityId, payable_id AS payableId
          FROM finance_bank_statement_entries
          WHERE ${conditions.join(" AND ")}
          ORDER BY entry_date DESC, id ASC
          LIMIT 3000`,
       )
       .bind(...values)
-      .all();
+      .all<ReconEntry>();
+    const entries = (rows.results ?? []).map((row) => ({ ...row, amountCents: Number(row.amountCents) }));
+    const suggestions = await suggestPayables(database, entries);
+    const period = MONTH_PATTERN.test(month) ? await periodSummary(database, financeAccountId, month) : null;
 
-    return jsonResponse({ accountName: account.name, entries: rows.results ?? [] });
+    return jsonResponse({
+      accountName: account.name,
+      entries: entries.map((entry) => ({ ...entry, payableSuggestion: suggestions.get(entry.id) ?? null })),
+      period,
+    });
   } catch (error) {
     console.error("Não foi possível carregar a conciliação.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR A CONCILIAÇÃO." }, 500);
@@ -207,7 +313,9 @@ export async function POST(request: Request) {
           suggestion ? suggestion.categoryItemId : "",
           suggestion ? suggestion.subcategory : "",
           suggestion ? suggestion.costCenterId : "",
-          suggestion ? suggestion.inDre : 1,
+          // Sem regra aprendida, DRE e RATEIO chegam DESMARCADOS (23/10/2026):
+          // quem classifica marca conforme a classificação.
+          suggestion ? suggestion.inDre : 0,
           suggestion ? suggestion.inRateio : 0,
           actor.id,
           who,

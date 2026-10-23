@@ -171,8 +171,8 @@ test("o front (declShoppingDerive) faz a mesma conta da função pura", async ()
         const back = mall.deriveMallDeclaration(input);
         const got = front(input);
         assert.deepEqual(
-          [got.breakpointCents, got.percentageRentCents, got.alertLevel],
-          [back.breakpointCents, back.percentageRentCents, back.alertLevel],
+          [got.breakpointCents, got.percentageRentCents, got.paidRentCents, got.alertLevel],
+          [back.breakpointCents, back.percentageRentCents, back.paidRentCents, back.alertLevel],
           JSON.stringify(input),
         );
       }
@@ -294,4 +294,34 @@ test("ações em lote: marcar/desmarcar pago e excluir (com anexos); id inexiste
   assert.ok(rowOf(ids[2]));
   assert.equal(sqlite.prepare("SELECT count(*) AS n FROM finance_mall_declaration_attachments").get().n, 0);
   assert.deepEqual(deletedKeys, ["k1"]);
+});
+
+test("23/10/2026: VALOR PROJETADO digitado e VALOR EFETIVAMENTE PAGO (mínimo + % sobre o declarado)", async () => {
+  const res = await call(route.POST, ADMIN, "POST", "/api/finance/mall-declarations", {
+    companyId: "lojaP", competenceMonth: "2026-10", realRevenueCents: 15_000_000, plannedCents: 9_500_000,
+    declaredCents: 12_000_000, contractPercentBps: 700, minimumRentCents: 700_000,
+  });
+  assert.equal(res.status, 201);
+  const { id } = await res.json();
+  assert.equal(rowOf(id).planned_cents, 9_500_000);
+  const list = await (await call(route.GET, FINANCE, "GET", "/api/finance/mall-declarations?companyId=lojaP")).json();
+  const row = list.rows[0];
+  assert.equal(row.plannedCents, 9_500_000);
+  assert.equal(row.derived.breakpointCents, 10_000_000, "sugerido = mínimo ÷ %");
+  assert.equal(row.derived.percentageRentCents, 140_000);
+  assert.equal(row.derived.paidRentCents, 840_000, "700.000 de mínimo + 140.000 de percentual");
+
+  // Editar sem mandar o projetado mantém; mandar vazio zera.
+  await call(route.POST, ADMIN, "POST", "/api/finance/mall-declarations", { id, companyId: "lojaP", competenceMonth: "2026-10", declaredCents: 5_000_000, contractPercentBps: 700, minimumRentCents: 700_000 });
+  assert.equal(rowOf(id).planned_cents, 9_500_000);
+  const after = (await (await call(route.GET, FINANCE, "GET", "/api/finance/mall-declarations?companyId=lojaP")).json()).rows[0];
+  assert.equal(after.derived.paidRentCents, 700_000, "abaixo do ponto de virada paga só o mínimo");
+  await call(route.POST, ADMIN, "POST", "/api/finance/mall-declarations", { id, companyId: "lojaP", competenceMonth: "2026-10", plannedCents: "" });
+  assert.equal(rowOf(id).planned_cents, 0);
+  assert.equal((await call(route.POST, ADMIN, "POST", "/api/finance/mall-declarations", { companyId: "lojaQ", competenceMonth: "2026-10", plannedCents: -1 })).status, 400);
+
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="declShoppingProjetado"/);
+  assert.match(html, /id="declShoppingValorPago" readonly/);
+  assert.match(html, /<th>Valor efetivamente pago<\/th>/);
 });

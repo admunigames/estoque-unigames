@@ -3,7 +3,9 @@ import test from "node:test";
 import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
 // Relatório COMISSIONAMENTO / HORAS / PREMIAÇÃO para a contabilidade e HORAS
-// EXTRAS A PAGAR em três tipos (prompt 11, 22/10/2026).
+// EXTRAS A PAGAR em três tipos (prompt 11, 22/10/2026). Desde 23/10/2026 o
+// relatório tem só COMISSIONAMENTO, HORAS EXTRAS (valor único manual) e
+// PREMIAÇÃO.
 
 const lib = await import("../app/lib/hr-accounting-report.ts");
 const db = await setupRouteDb([
@@ -41,10 +43,10 @@ test("desconto maior que a comissão: comissão 0, sobra vai para o mês seguint
   );
   const { groups, total } = lib.buildAccountingReport([{
     employeeId: "e", employeeName: "ANA", companyId: ALFA, companyName: "LOJA ALFA", cnpj: "1",
-    carry: chain.get("2026-10"), discountLabels: ["VALE"], premiumCents: 30000, overtime: lib.computeOvertime({}),
+    carry: chain.get("2026-10"), premiumCents: 30000, overtimeCents: 12345,
   }]);
-  assert.equal(groups[0].rows[0].totalCents, 30000, "premiação não é abatida");
-  assert.equal(total.carryOutCents, 5000);
+  assert.equal(groups[0].rows[0].totalCents, 30000 + 12345, "premiação não é abatida");
+  assert.deepEqual(total, { commissionCents: 0, premiumCents: 30000, overtimeCents: 12345, totalCents: 42345 });
 });
 
 test("três tipos de HE: valor da hora = salário ÷ 220 × fator; só HE 50% e 100% abatem o banco", () => {
@@ -74,7 +76,7 @@ test("HORAS PAGAS: lança os três tipos, valor da hora em branco = sugerido, ab
   assert.deepEqual([ana.overtimeCents, ana.overtimeFromTimeTracking], [3750 + 2500 + 400, true]);
 });
 
-test("relatório: por CNPJ, comissão bruta/descontos com descrição/líquida, premiação separada e HE; sobra aparece nos dois meses", async () => {
+test("relatório: por CNPJ, só comissionamento (com desconto e sobra), HE manual e premiação", async () => {
   db.insert("hr_employees", { id: "bia", full_name: "BIA", company_id: BETA, company_name: "LOJA BETA", salary_cents: 100000, status: "active", cpf: "2", created_by: "x" });
   db.insert("hr_commissions", { id: "c-ana-10", month: "2026-10", employee_id: "ana", company_id: ALFA, commission_cents: 50000, commercial_premium_cents: 20000, premiums_cents: 5000, discounts_cents: 0, created_by: "x" });
   db.insert("hr_commissions", { id: "c-bia-09", month: "2026-09", employee_id: "bia", company_id: BETA, commission_cents: 10000, discounts_cents: 25000, created_by: "x" });
@@ -85,15 +87,17 @@ test("relatório: por CNPJ, comissão bruta/descontos com descrição/líquida, 
   const biaSep = september.groups.flatMap((g) => g.rows).find((r) => r.employeeId === "bia");
   assert.deepEqual([biaSep.carry.netCommissionCents, biaSep.carry.carryOutCents], [0, 15000]);
 
+  // HORAS EXTRAS: valor único digitado à mão (kind 'he').
+  const monthValues = await import("../app/api/hr-payroll/month-values/route.ts");
+  assert.equal((await callRoute(monthValues.PUT, ADMIN, "PUT", "/api/hr-payroll/month-values", { month: "2026-10", kind: "he", values: [{ employeeId: "ana", amountCents: 6650 }] })).status, 200);
   const october = await (await callRoute(report.GET, ADMIN, "GET", "/api/hr-payroll/accounting-report?month=2026-10")).json();
   assert.deepEqual(october.groups.map((g) => g.cnpj), ["11222333000181", "99888777000166"]);
   const ana = october.groups[0].rows[0];
-  assert.deepEqual([ana.carry.netCommissionCents, ana.premiumCents, ana.overtime.totalCents], [50000, 25000, 6650]);
+  assert.deepEqual([ana.carry.netCommissionCents, ana.premiumCents, ana.overtimeCents], [50000, 25000, 6650]);
   assert.equal(ana.totalCents, 50000 + 25000 + 6650);
   const bia = october.groups[1].rows[0];
   // 300 de comissão − (20 do mês + 150 de sobra de setembro) = 130; premiação 100 intacta.
   assert.deepEqual([bia.carry.carryInCents, bia.carry.netCommissionCents, bia.carry.carryOutCents, bia.premiumCents], [15000, 13000, 0, 10000]);
-  assert.deepEqual(bia.discountLabels, ["SOBRA DE DESCONTO DO MÊS ANTERIOR", "ADIANTAMENTO"]);
   assert.equal(october.total.totalCents, ana.totalCents + bia.totalCents);
   assert.equal(october.groups[1].subtotal.totalCents, bia.totalCents);
 });
@@ -108,6 +112,8 @@ test("tela: página do relatório (RH + atalho no RH Financeiro), PDF/XLSX e di�
   assert.match(html, /rhContabilidade:'\/rh\/relatorio-contabilidade'/);
   assert.match(html, /id="btnRhContabXlsx"/);
   assert.match(html, /id="btnRhContabPdf"/);
+  assert.match(html, /id="btnRhContabHe"/);
+  assert.match(html, /const RH_CONTAB_HEAD = \['FUNCIONÁRIO','COMISSIONAMENTO','HORAS EXTRAS','PREMIAÇÃO','TOTAL'\];/);
   assert.match(html, /data-payout-minutes="'\+kind.key\+'"/);
   assert.match(worker, /"\/rh\/relatorio-contabilidade"/);
 });

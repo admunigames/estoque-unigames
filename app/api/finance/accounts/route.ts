@@ -175,10 +175,11 @@ export async function POST(request: Request) {
     const body = (await request.json()) as JsonMap;
     const id = safeText(body.id, 80);
 
+    // Conta bancária NÃO é associada a unidade (23/10/2026): a conta é da
+    // empresa toda e paga lançamentos de qualquer loja. Sem loja = ''.
     const companyId = safeText(body.companyId, 80);
-    const companyName = safeText(body.companyName, 160);
-    if (!companyId) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA DA CONTA." }, 400);
-    if (!allStores && companyId !== scopeActor.companyId) {
+    const companyName = companyId ? safeText(body.companyName, 160) : "";
+    if (!allStores && companyId && companyId !== scopeActor.companyId) {
       return jsonResponse({ error: "VOCÊ SÓ PODE CADASTRAR CONTAS PARA A PRÓPRIA LOJA." }, 403);
     }
 
@@ -255,7 +256,7 @@ export async function POST(request: Request) {
       .bind(companyId, id || "", name)
       .first<{ id: string }>();
     if (sameName) {
-      return jsonResponse({ error: "JÁ EXISTE UMA CONTA FINANCEIRA COM ESSE NOME NESSA LOJA." }, 409);
+      return jsonResponse({ error: "JÁ EXISTE UMA CONTA FINANCEIRA COM ESSE NOME." }, 409);
     }
     if (accountNumber) {
       const sameNumber = await database
@@ -266,7 +267,7 @@ export async function POST(request: Request) {
         .bind(companyId, id || "", accountNumber, bankCode, agency)
         .first<{ id: string }>();
       if (sameNumber) {
-        return jsonResponse({ error: "JÁ EXISTE UMA CONTA COM ESSE BANCO, AGÊNCIA E NÚMERO NESSA LOJA." }, 409);
+        return jsonResponse({ error: "JÁ EXISTE UMA CONTA COM ESSE BANCO, AGÊNCIA E NÚMERO." }, 409);
       }
     }
 

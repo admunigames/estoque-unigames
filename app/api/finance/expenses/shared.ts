@@ -234,24 +234,13 @@ export async function planExpense(
     .first<{ id: string }>();
   if (!item) return reply({ error: "ITEM DE DESPESA NÃO ENCONTRADO NO CATÁLOGO FINANCEIRO." }, 400);
 
-  // Numa despesa rateada, a mesma conta financeira vale pra todas as contas
-  // a pagar geradas (uma por loja) — só uma conta GLOBAL (sem loja própria)
-  // pode ser usada nesse caso, senão uma conta de uma loja específica
-  // ficaria vinculada a pagáveis de outras lojas, violando a mesma regra
-  // que assertFinanceAccountBelongsToCompany existe pra proteger.
-  const accountError = await assertFinanceAccountBelongsToCompany(
-    database,
-    financeAccountId,
-    rateioType === "rateio" ? "" : companyId,
-    { requireGlobal: rateioType === "rateio" },
-  );
+  // Conta bancária não é associada a unidade (23/10/2026): qualquer conta
+  // ativa serve, inclusive na despesa rateada.
+  const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId);
   if (accountError) {
     return reply(
       {
-        error:
-          rateioType === "rateio" && financeAccountId
-            ? "EM DESPESA RATEADA, A CONTA FINANCEIRA PRECISA SER UMA CONTA GLOBAL (SEM LOJA PRÓPRIA) — ESCOLHA OUTRA CONTA OU DEIXE SEM CONTA."
-            : accountError,
+        error: accountError,
       },
       409,
     );

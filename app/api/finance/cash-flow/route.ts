@@ -19,16 +19,21 @@ export async function GET(request: Request) {
   if (!canManageFinance(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O FINANCEIRO." }, 403);
   }
-  const scope = resolveCashFlowScope(request, safeText(new URL(request.url).searchParams.get("companyId"), 80));
+  const params = new URL(request.url).searchParams;
+  const scope = resolveCashFlowScope(request, safeText(params.get("companyId"), 80));
   if (scope.error) return scope.error;
   const companyId = scope.companyId;
+  // Fluxo por CONTA cadastrada (23/10/2026); '' = todas as contas.
+  const accountId = safeText(params.get("accountId"), 80);
   const today = todayInTimezone();
 
   try {
     const database = await getD1();
-    const { settings, balances, series } = await loadCashFlowProjection(database, companyId, today);
+    const { settings, balances, series, unassigned } = await loadCashFlowProjection(database, companyId, today, accountId);
     return jsonResponse({
       companyId,
+      accountId,
+      unassigned,
       today,
       settings,
       caixaAtualCents: balances.caixaAtualCents,
