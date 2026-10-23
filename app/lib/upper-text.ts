@@ -123,6 +123,8 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   hr_dental_plan: ["employee_name", "unit_name", "reason", "notes", "created_by_name", "updated_by_name"],
   hr_employee_month_values: ["employee_name", "updated_by_name"],
   // Contrato/ID e telefone ficam como digitados.
+  finance_bank_activities: ["name", "created_by_name"],
+  finance_bank_period_balances: ["updated_by_name"],
   info_gerais_items: ["company_name", "title", "service", "notes", "created_by_name", "updated_by_name"],
   hr_schedule_assignments: ["employee_name", "company_name", "notes", "created_by_name", "updated_by_name"],
   hr_schedule_sunday_work: ["employee_name", "created_by_name", "updated_by_name"],

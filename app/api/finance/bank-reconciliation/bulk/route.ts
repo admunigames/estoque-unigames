@@ -31,6 +31,7 @@ type Entry = {
   inRateio: number;
   status: string;
   salesReconStatus: string;
+  payableId: string;
 };
 
 export async function POST(request: Request) {
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
       .prepare(
         `SELECT id, company_id AS companyId, raw_merchant AS rawMerchant, description, category_item_id AS categoryItemId,
                 subcategory, cost_center_id AS costCenterId, in_dre AS inDre, in_rateio AS inRateio, status,
-                sales_recon_status AS salesReconStatus
+                sales_recon_status AS salesReconStatus, payable_id AS payableId
          FROM finance_bank_statement_entries WHERE id IN (${ids.map((_, i) => `?${i + 1}`).join(",")})`,
       )
       .bind(...ids)
@@ -89,6 +90,8 @@ export async function POST(request: Request) {
       const skip = (reason: string) => skipped.push({ id: entry.id, description: entry.description, reason });
       if (entry.status === "expensed") { skip("JÁ VIROU DESPESA"); continue; }
       if (entry.status === "credit_sale") { skip("VINCULADO A CREDIÁRIO — DESFAÇA PELO CREDIÁRIO"); continue; }
+      // Saída que baixou uma conta a pagar: o pagamento está registrado lá.
+      if (entry.payableId) { skip("BAIXOU UMA CONTA A PAGAR — ESTORNE O PAGAMENTO NA CONTA ANTES"); continue; }
       if (action === "delete") {
         if (entry.status === "confirmed") { skip("JÁ CONCILIADO (CONFIRMADO) — VOLTE PARA A CLASSIFICAR ANTES"); continue; }
         if (entry.salesReconStatus) { skip("CONCILIADO NA CONCILIAÇÃO DE VENDAS"); continue; }
