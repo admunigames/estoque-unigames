@@ -31837,10 +31837,19 @@ function renderHomeTasks(){
     const path = financeCategoryPathLabel(item.categoryId);
     return (path ? path+' › ' : '')+item.name;
   }
+  // Categorias/subcategorias cadastradas SEM item também aparecem (valor
+  // "cat:<id>"): ao escolher, o item é criado com o mesmo nome (23/10/2026 —
+  // "não está puxando as categorias já cadastradas").
   function financeItemPickerOptions(){
     const rank = new Map(financeCategorySelectOptions().map((o, index) => [o.id, index]));
+    const withItems = new Set(financeItems.map(item => item.categoryId));
+    const parents = new Set(financeCategories.map(category => category.parentId).filter(Boolean));
+    const bareCategories = financeCategories
+      .filter(category => !withItems.has(category.id) && !parents.has(category.id))
+      .map((category, index) => ({id:'cat:'+category.id, label:financeCategoryPathLabel(category.id), rank:rank.has(category.id) ? rank.get(category.id) : rank.size, index:-1 - index}));
     return financeItems
       .map((item, index) => ({id:item.id, label:financeItemPathLabel(item.id), rank:rank.has(item.categoryId) ? rank.get(item.categoryId) : rank.size, index}))
+      .concat(bareCategories)
       .sort((a, b) => a.rank - b.rank || a.index - b.index);
   }
   function renderFinanceItemPicker(selectId, options){
@@ -31924,6 +31933,31 @@ function renderHomeTasks(){
       newRow.querySelector('[data-finance-item-new-name]').focus();
     });
     newRow.querySelector('[data-finance-item-new-cancel]').addEventListener('click', closeNew);
+    // Catálogo não carregou (falha na abertura do sistema): recarrega ao usar o campo.
+    const reloadIfEmpty = () => {
+      if(!financeItems.length && !financeCategories.length && !financeCatalogReloading){
+        financeCatalogReloading = loadFinanceCatalog().finally(() => { financeCatalogReloading = null; });
+      }
+    };
+    select.addEventListener('focus', reloadIfEmpty);
+    search.addEventListener('focus', reloadIfEmpty);
+    // Categoria sem item ("cat:<id>"): cria o item com o mesmo nome e seleciona.
+    select.addEventListener('change', async event => {
+      if(!select.value.startsWith('cat:')) return;
+      event.stopImmediatePropagation();
+      const categoryId = select.value.slice(4);
+      const category = financeCategories.find(c => c.id === categoryId);
+      if(!category) return;
+      try{
+        const data = await financeApiRequest('/items', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name: category.name, categoryId})});
+        await loadFinanceCatalog();
+        setFinanceItemPickerValue(id, data.id);
+        select.dispatchEvent(new Event('change', {bubbles:true}));
+      }catch(error){
+        status.textContent = error.message;
+        setFinanceItemPickerValue(id, '');
+      }
+    }, true);
     // form.reset() limpa a busca: a lista volta inteira e sem seleção.
     if(select.form) select.form.addEventListener('reset', () => setTimeout(() => { closeNew(); setFinanceItemPickerValue(id, ''); }, 0));
     newRow.querySelector('[data-finance-item-new-save]').addEventListener('click', async () => {
@@ -32128,17 +32162,24 @@ function renderHomeTasks(){
     container.innerHTML = html;
   }
 
+  let financeCatalogReloading = null;
   async function loadFinanceCatalog(){
-    try{
-      const [categoriesData, itemsData] = await Promise.all([
-        financeApiRequest('/categories'),
-        financeApiRequest('/items')
-      ]);
-      financeCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
-      financeItems = Array.isArray(itemsData.items) ? itemsData.items : [];
-    }catch(error){
-      financeCategories = [];
-      financeItems = [];
+    // Na abertura do sistema muitas chamadas saem juntas e uma pode falhar:
+    // tenta de novo uma vez antes de deixar o campo CATEGORIA vazio.
+    for(let attempt = 0; attempt < 2; attempt++){
+      try{
+        const [categoriesData, itemsData] = await Promise.all([
+          financeApiRequest('/categories'),
+          financeApiRequest('/items')
+        ]);
+        financeCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
+        financeItems = Array.isArray(itemsData.items) ? itemsData.items : [];
+        break;
+      }catch(error){
+        financeCategories = [];
+        financeItems = [];
+        if(attempt === 0) await new Promise(resolve => setTimeout(resolve, 800));
+      }
     }
     renderFinanceCategorySelects();
     renderFinanceCatalogList();
@@ -42063,7 +42104,7 @@ function renderHomeTasks(){
   let financeBatchConfig = null;
   let financeBatchKey = '';
   function financeBatchOptions(col){
-    if(col.type === 'item') return financeItemPickerOptions().map(o => ({value:o.id, label:o.label}));
+    if(col.type === 'item') return financeItemPickerOptions().filter(o => !o.id.startsWith('cat:')).map(o => ({value:o.id, label:o.label}));
     return typeof col.options === 'function' ? col.options() : (col.options || []);
   }
   function financeBatchCellHtml(col){
