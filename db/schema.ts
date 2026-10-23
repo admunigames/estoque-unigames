@@ -2570,6 +2570,53 @@ export const financeUberRides = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// CARTÕES DE CRÉDITO SÓCIO (23/10/2026): compras no cartão pessoal de um sócio
+// que a empresa devolve. Parcelada (installments, a partir de first_month) ou
+// FIXA (todo mês de first_month até end_month; '' = sem fim). Valor do mês =
+// (amount − discount) ÷ parcelas — ver app/lib/partner-cards.ts. O total do
+// mês por responsável vira UMA conta a pagar (finance_partner_card_payments).
+// ---------------------------------------------------------------------------
+export const financePartnerCardEntries = pgTable(
+  "finance_partner_card_entries",
+  {
+    id: text("id").primaryKey(),
+    responsibleName: text("responsible_name").notNull(),
+    description: text("description").notNull().default(""),
+    purchaseDate: text("purchase_date").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    discountCents: integer("discount_cents").notNull().default(0),
+    installments: integer("installments").notNull().default(1),
+    fixed: integer("fixed").notNull().default(0),
+    firstMonth: text("first_month").notNull(),
+    endMonth: text("end_month").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("finance_partner_card_entries_resp_idx").on(table.responsibleName, table.firstMonth)],
+);
+
+export const financePartnerCardPayments = pgTable(
+  "finance_partner_card_payments",
+  {
+    id: text("id").primaryKey(),
+    responsibleName: text("responsible_name").notNull(),
+    month: text("month").notNull(),
+    paymentDate: text("payment_date").notNull(),
+    payableId: text("payable_id").notNull().default(""),
+    totalCents: integer("total_cents").notNull().default(0),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [uniqueIndex("finance_partner_card_payments_key_idx").on(table.responsibleName, table.month)],
+);
+
+// ---------------------------------------------------------------------------
 // Financeiro 7/9 — Crediários: venda financiada por uma FINANCEIRA PARCEIRA,
 // que aprova a proposta e deposita de uma vez o VALOR SEM TAXA (a taxa é paga
 // pela loja). Um depósito do extrato pode quitar vários crediários; a entrada

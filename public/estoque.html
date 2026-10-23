@@ -9398,6 +9398,44 @@
       <div class="output-tabs" role="tablist" aria-label="Visões dos cartões">
         <button class="output-tab active" type="button" role="tab" aria-selected="true" data-corp-view="cartoes">CARTÕES</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-corp-view="gastos">GASTOS POR CATEGORIA</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-corp-view="socio">CARTÕES DE CRÉDITO SÓCIO</button>
+      </div>
+
+      <div data-corp-view-panel="socio" hidden>
+        <p class="page-desc">COMPRAS DA EMPRESA FEITAS NO CARTÃO PESSOAL DE UM SÓCIO. CADA LANÇAMENTO ENTRA NO MÊS PELA PARCELA (OU TODO MÊS, SE FIXO), JÁ COM O DESCONTO. INFORME A DATA DE PAGAMENTO DO RESPONSÁVEL E O TOTAL DO MÊS VAI PARA CONTAS A PAGAR.</p>
+        <div class="dre-toolbar">
+          <div class="field"><label for="pcMonth">MÊS</label><input type="month" id="pcMonth"></div>
+          <div class="field"><label for="pcResponsibleFilter">RESPONSÁVEL</label><select id="pcResponsibleFilter"><option value="">TODOS</option></select></div>
+          <div class="dre-toolbar-actions"><button class="btn-accent" id="btnNewPartnerCard" type="button">NOVO LANÇAMENTO</button></div>
+        </div>
+        <h3 class="supply-section-title">TOTAL DO MÊS POR RESPONSÁVEL</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="pcSummaryTable">
+              <thead><tr><th>Responsável</th><th>Total do mês</th><th>Data de pagamento</th><th>Contas a Pagar</th><th></th></tr></thead>
+              <tbody id="pcSummaryBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <h3 class="supply-section-title">LANÇAMENTOS DO MÊS</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="pcEntriesTable">
+              <thead><tr><th>Data de compra</th><th>Responsável</th><th>Lançamento</th><th>Valor</th><th>Desconto</th><th>Parcelas</th><th>Valor no mês</th><th></th></tr></thead>
+              <tbody id="pcEntriesBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <details class="page-desc"><summary>LANÇAMENTOS FORA DESTE MÊS (JÁ QUITADOS OU QUE AINDA VÃO COMEÇAR)</summary>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="pcOthersTable">
+                <thead><tr><th>Data de compra</th><th>Responsável</th><th>Lançamento</th><th>Valor</th><th>Parcelas</th><th>1º mês</th><th></th></tr></thead>
+                <tbody id="pcOthersBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div data-corp-view-panel="gastos" hidden>
@@ -12198,6 +12236,34 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCfReceive" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">CONFIRMAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="pcDialog" aria-labelledby="pcDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="pcDialogTitle">NOVO LANÇAMENTO — CARTÃO DO SÓCIO</h3>
+    <button class="purchase-dialog-close" id="btnClosePcDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="pcForm">
+    <input type="hidden" id="pcId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="pcResponsible">RESPONSÁVEL *</label><input id="pcResponsible" list="pcResponsibleOptions" maxlength="120" required><datalist id="pcResponsibleOptions"></datalist></div>
+      <div class="purchase-field"><label for="pcPurchaseDate">DATA DE COMPRA</label><input type="date" id="pcPurchaseDate"></div>
+      <div class="purchase-field full"><label for="pcDescription">LANÇAMENTO *</label><input id="pcDescription" maxlength="300" required placeholder="O QUE FOI COMPRADO"></div>
+      <div class="purchase-field"><label for="pcAmount">VALOR TOTAL (R$) *</label><input type="text" inputmode="decimal" id="pcAmount" placeholder="R$ 0,00" required></div>
+      <div class="purchase-field"><label for="pcDiscount">DESCONTO (R$)</label><input type="text" inputmode="decimal" id="pcDiscount" placeholder="R$ 0,00"></div>
+      <div class="purchase-field full"><label class="assist-check" for="pcFixed"><input type="checkbox" id="pcFixed"> FIXO (COBRA TODO MÊS)</label></div>
+      <div class="purchase-field" data-pc-installments><label for="pcInstallments">Nº DE PARCELAS *</label><input type="number" id="pcInstallments" min="1" max="60" step="1" value="1"></div>
+      <div class="purchase-field"><label for="pcFirstMonth">MÊS DA 1ª PARCELA *</label><input type="month" id="pcFirstMonth" required></div>
+      <div class="purchase-field" data-pc-fixed hidden><label for="pcEndMonth">ATÉ (MÊS, OPCIONAL)</label><input type="month" id="pcEndMonth"></div>
+      <div class="purchase-field full"><label for="pcNotes">OBSERVAÇÕES</label><input id="pcNotes" maxlength="1000"></div>
+    </div>
+    <small class="purchase-field-help" id="pcPreview"></small>
+    <div class="user-form-status" id="pcStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelPcDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
     </div>
   </form>
 </dialog>
@@ -37547,7 +37613,151 @@ function renderHomeTasks(){
       });
       document.querySelectorAll('[data-corp-view-panel]').forEach(panel => { panel.hidden = panel.dataset.corpViewPanel !== btn.dataset.corpView; });
       if(btn.dataset.corpView === 'gastos') loadCorpSpending();
+      if(btn.dataset.corpView === 'socio') loadPartnerCards();
     });
+  });
+
+  // --- CARTÕES DE CRÉDITO SÓCIO (compras no cartão pessoal do sócio) ---
+  let pcData = null;
+  function pcRequest(path, options){ return financeApiRequest('/partner-cards'+(path || ''), options); }
+  function pcInstallmentLabel(e){
+    if(Number(e.fixed)) return 'FIXO'+(e.endMonth ? ' ATÉ '+rhFormatMonth(e.endMonth) : '');
+    return e.installmentNumber ? e.installmentNumber+'/'+e.installments : e.installments+'X';
+  }
+  async function loadPartnerCards(){
+    if(!el('pcMonth').value) el('pcMonth').value = financeCurrentMonthKey();
+    el('pcSummaryBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      pcData = await pcRequest('?month='+encodeURIComponent(el('pcMonth').value));
+      const filter = el('pcResponsibleFilter');
+      const keep = filter.value;
+      filter.innerHTML = '<option value="">TODOS</option>'+pcData.names.map(n => '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>').join('');
+      if(pcData.names.includes(keep)) filter.value = keep;
+      el('pcResponsibleOptions').innerHTML = pcData.names.map(n => '<option value="'+escapeHtml(n)+'"></option>').join('');
+      renderPartnerCards();
+    }catch(error){
+      pcData = null;
+      el('pcSummaryBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('pcEntriesBody').innerHTML = '';
+    }
+  }
+  function renderPartnerCards(){
+    const who = el('pcResponsibleFilter').value;
+    const keep = r => !who || r.responsibleName === who;
+    const actions = e => '<div class="loan-cell-actions assist-row-actions"><button class="btn-outline btn-sm" type="button" data-pc-edit="'+escapeHtml(e.id)+'">EDITAR</button><button class="btn-outline btn-sm" type="button" data-pc-del="'+escapeHtml(e.id)+'">EXCLUIR</button></div>';
+    el('pcSummaryBody').innerHTML = pcData.summary.filter(keep).map(s => {
+      const payable = s.payableId
+        ? '<span class="status-pill '+(s.payableStatus === 'paid' ? 'ok' : (s.outdated ? 'danger' : 'warn'))+'">'+(s.payableStatus === 'paid' ? 'PAGA' : (s.outdated ? 'DESATUALIZADA ('+formatCentsBRL(s.payableAmountCents)+')' : 'GERADA'))+'</span>'
+        : '<span class="status-pill">NÃO GERADA</span>';
+      return '<tr>'+
+        '<td data-label="RESPONSÁVEL"><strong>'+escapeHtml(s.responsibleName)+'</strong></td>'+
+        '<td data-label="TOTAL DO MÊS">'+formatCentsBRL(s.totalCents)+'</td>'+
+        '<td data-label="DATA DE PAGAMENTO"><input type="date" data-pc-date="'+escapeHtml(s.responsibleName)+'" value="'+escapeHtml(s.paymentDate || '')+'" aria-label="Data de pagamento de '+escapeHtml(s.responsibleName)+'"></td>'+
+        '<td data-label="CONTAS A PAGAR">'+payable+'</td>'+
+        '<td data-label="AÇÕES">'+(s.totalCents > 0 && s.payableStatus !== 'paid' ? '<button class="btn-accent btn-sm" type="button" data-pc-pay="'+escapeHtml(s.responsibleName)+'">'+(s.payableId ? 'ATUALIZAR CONTA A PAGAR' : 'LANÇAR EM CONTAS A PAGAR')+'</button>' : '')+'</td>'+
+      '</tr>';
+    }).join('') || '<tr><td colspan="5" class="responsive-empty">Nada a pagar aos sócios neste mês.</td></tr>';
+    const entries = pcData.entries.filter(keep);
+    el('pcEntriesBody').innerHTML = entries.map(e => '<tr>'+
+      '<td data-label="DATA DE COMPRA">'+escapeHtml(formatDateBR(e.purchaseDate) || '—')+'</td>'+
+      '<td data-label="RESPONSÁVEL">'+escapeHtml(e.responsibleName)+'</td>'+
+      '<td data-label="LANÇAMENTO">'+escapeHtml(e.description)+(e.notes ? '<br><small>'+escapeHtml(e.notes)+'</small>' : '')+'</td>'+
+      '<td data-label="VALOR">'+formatCentsBRL(e.amountCents)+'</td>'+
+      '<td data-label="DESCONTO">'+(e.discountCents ? formatCentsBRL(e.discountCents) : '—')+'</td>'+
+      '<td data-label="PARCELAS">'+escapeHtml(pcInstallmentLabel(e))+'</td>'+
+      '<td data-label="VALOR NO MÊS"><strong>'+formatCentsBRL(e.monthCents)+'</strong></td>'+
+      '<td data-label="AÇÕES">'+actions(e)+'</td>'+
+    '</tr>').join('') || '<tr><td colspan="8" class="responsive-empty">Nenhum lançamento neste mês.</td></tr>';
+    el('pcOthersBody').innerHTML = pcData.others.filter(keep).map(e => '<tr>'+
+      '<td data-label="DATA DE COMPRA">'+escapeHtml(formatDateBR(e.purchaseDate) || '—')+'</td>'+
+      '<td data-label="RESPONSÁVEL">'+escapeHtml(e.responsibleName)+'</td>'+
+      '<td data-label="LANÇAMENTO">'+escapeHtml(e.description)+'</td>'+
+      '<td data-label="VALOR">'+formatCentsBRL(e.amountCents)+'</td>'+
+      '<td data-label="PARCELAS">'+escapeHtml(pcInstallmentLabel(e))+'</td>'+
+      '<td data-label="1º MÊS">'+escapeHtml(rhFormatMonth(e.firstMonth))+'</td>'+
+      '<td data-label="AÇÕES">'+actions(e)+'</td>'+
+    '</tr>').join('') || '<tr><td colspan="7" class="responsive-empty">Nenhum.</td></tr>';
+  }
+  function pcUpdateForm(){
+    const fixed = el('pcFixed').checked;
+    document.querySelectorAll('#pcForm [data-pc-installments]').forEach(n => { n.hidden = fixed; });
+    document.querySelectorAll('#pcForm [data-pc-fixed]').forEach(n => { n.hidden = !fixed; });
+    const net = Math.max(0, parseBRLToCents(getCurrencyValue(el('pcAmount')) || '') - parseBRLToCents(getCurrencyValue(el('pcDiscount')) || ''));
+    const n = Math.max(1, Number(el('pcInstallments').value) || 1);
+    el('pcPreview').textContent = !net ? '' : fixed
+      ? formatCentsBRL(net)+' TODO MÊS.'
+      : n+'X DE '+formatCentsBRL(Math.floor(net / n))+(net % n ? ' (A ÚLTIMA COM OS CENTAVOS)' : '')+' = '+formatCentsBRL(net)+'.';
+  }
+  function openPartnerCardDialog(entry){
+    el('pcForm').reset();
+    ['pcAmount','pcDiscount'].forEach(id => setCurrencyValue(el(id), ''));
+    el('pcId').value = entry ? entry.id : '';
+    el('pcDialogTitle').textContent = entry ? 'EDITAR LANÇAMENTO — CARTÃO DO SÓCIO' : 'NOVO LANÇAMENTO — CARTÃO DO SÓCIO';
+    el('pcResponsible').value = entry ? entry.responsibleName : (el('pcResponsibleFilter').value || '');
+    el('pcPurchaseDate').value = entry ? entry.purchaseDate : todayDateKeyRecife();
+    el('pcDescription').value = entry ? entry.description : '';
+    setCurrencyValue(el('pcAmount'), entry ? entry.amountCents / 100 : '');
+    setCurrencyValue(el('pcDiscount'), entry && entry.discountCents ? entry.discountCents / 100 : '');
+    el('pcFixed').checked = Boolean(entry && Number(entry.fixed));
+    el('pcInstallments').value = entry ? String(entry.installments) : '1';
+    el('pcFirstMonth').value = entry ? entry.firstMonth : el('pcMonth').value;
+    el('pcEndMonth').value = entry ? (entry.endMonth || '') : '';
+    el('pcNotes').value = entry ? (entry.notes || '') : '';
+    el('pcStatus').textContent = '';
+    pcUpdateForm();
+    el('pcDialog').showModal();
+  }
+  ['pcAmount','pcDiscount'].forEach(id => attachCurrencyMask(el(id)));
+  ['pcAmount','pcDiscount','pcInstallments','pcFixed'].forEach(id => { el(id).addEventListener('input', pcUpdateForm); el(id).addEventListener('change', pcUpdateForm); });
+  el('btnNewPartnerCard').addEventListener('click', () => openPartnerCardDialog(null));
+  el('btnClosePcDialog').addEventListener('click', () => el('pcDialog').close());
+  el('btnCancelPcDialog').addEventListener('click', () => el('pcDialog').close());
+  el('pcMonth').addEventListener('change', loadPartnerCards);
+  el('pcResponsibleFilter').addEventListener('change', () => { if(pcData) renderPartnerCards(); });
+  el('pcForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const fixed = el('pcFixed').checked;
+    const payload = {
+      id: el('pcId').value || undefined,
+      responsibleName: el('pcResponsible').value,
+      purchaseDate: el('pcPurchaseDate').value,
+      description: el('pcDescription').value,
+      amountCents: parseBRLToCents(getCurrencyValue(el('pcAmount')) || ''),
+      discountCents: parseBRLToCents(getCurrencyValue(el('pcDiscount')) || ''),
+      fixed,
+      installments: fixed ? 1 : Number(el('pcInstallments').value) || 1,
+      firstMonth: el('pcFirstMonth').value,
+      endMonth: fixed ? el('pcEndMonth').value : '',
+      notes: el('pcNotes').value
+    };
+    try{
+      await pcRequest('', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      el('pcDialog').close();
+      await loadPartnerCards();
+      showPurchaseToast('Lançamento salvo.');
+    }catch(error){ el('pcStatus').textContent = error.message; }
+  });
+  el('pageFinanceiroCartoesCorp').addEventListener('click', async event => {
+    const edit = event.target.closest('[data-pc-edit]');
+    const del = event.target.closest('[data-pc-del]');
+    const pay = event.target.closest('[data-pc-pay]');
+    if(!pcData || !(edit || del || pay)) return;
+    const all = pcData.entries.concat(pcData.others);
+    if(edit){ const entry = all.find(e => e.id === edit.dataset.pcEdit); if(entry) openPartnerCardDialog(entry); return; }
+    if(del){
+      if(!await askConfirm('EXCLUIR ESTE LANÇAMENTO DO CARTÃO DO SÓCIO? A CONTA A PAGAR JÁ GERADA NÃO MUDA SOZINHA — ATUALIZE DEPOIS.', {okText:'EXCLUIR', danger:true})) return;
+      try{ await pcRequest('?id='+encodeURIComponent(del.dataset.pcDel), {method:'DELETE'}); await loadPartnerCards(); showPurchaseToast('Lançamento excluído.'); }
+      catch(error){ showPurchaseToast(error.message, 'error'); }
+      return;
+    }
+    const name = pay.dataset.pcPay;
+    const dateInput = Array.from(document.querySelectorAll('[data-pc-date]')).find(input => input.dataset.pcDate === name);
+    if(!dateInput || !dateInput.value){ showPurchaseToast('INFORME A DATA DE PAGAMENTO DE '+name+'.', 'error'); return; }
+    try{
+      const res = await pcRequest('', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({responsibleName: name, month: el('pcMonth').value, paymentDate: dateInput.value})});
+      await loadPartnerCards();
+      showPurchaseToast(formatCentsBRL(res.totalCents)+' lançado em Contas a Pagar para '+formatDateBR(dateInput.value)+'.');
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
   // --- Gastos por categoria (somados no servidor) ---

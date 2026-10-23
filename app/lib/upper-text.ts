@@ -94,6 +94,8 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   finance_sales_recon_imports: ["created_by_name"],
   finance_sales_recon_rows: ["notes", "created_by_name", "updated_by_name"],
   finance_uber_rides: ["created_by_name"],
+  finance_partner_card_entries: ["responsible_name", "description", "notes", "created_by_name", "updated_by_name"],
+  finance_partner_card_payments: ["responsible_name", "updated_by_name"],
   finance_credit_providers: ["name", "notes", "created_by_name", "updated_by_name"],
   finance_credit_sales: ["company_name", "provider_name", "proposal", "customer_name", "notes", "created_by_name", "updated_by_name"],
   finance_bank_classification_rules: ["updated_by_name"],
