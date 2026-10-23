@@ -5292,7 +5292,8 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
   assert.match(html, /financeApiRequest\('\/sales-recon', \{method:'POST'[\s\S]{0,120}dryRun:true/);
   assert.match(html, /SERVIÇO \(AUTO\)/);
   assert.match(html, /MAQUINETA NÃO IDENTIFICADA/);
-  assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 3); // Conciliação Bancária, de Vendas e Reposição
+  // Conciliação Bancária e de Vendas (a Reposição usa os extratos já importados — 23/10/2026).
+  assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 2);
   // Extrato em PDF (as 3 importações): leitura aproximada das linhas do pdf.js.
   {
     const start = html.indexOf("function parseBankPdfLines(");
@@ -5343,7 +5344,7 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
       ["2026-10-09", "TARIFA", -48],
       ["2026-10-09", "RECEBIMENTO VENDAS · VISA | DÉBITO", 8574],
     ]);
-    for (const id of ["reconFile", "svBankFile", "rpBankFile"]) assert.match(html, new RegExp(`id="${id}" accept="[^"]*\\.pdf"`), id);
+    for (const id of ["reconFile", "svBankFile"]) assert.match(html, new RegExp(`id="${id}" accept="[^"]*\\.pdf"`), id);
     assert.match(html, /PDF SEM TEXTO \(DIGITALIZADO\?\)/);
     assert.match(html, /CONFIRA COM OS TOTAIS DO EXTRATO ANTES DE IMPORTAR/);
   }

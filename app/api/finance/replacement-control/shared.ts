@@ -33,6 +33,8 @@ export function parseReplacementEntry(body: JsonMap): { error: string } | Replac
   if (!KINDS.has(kind)) return { error: "SELECIONE O TIPO DO LANÇAMENTO." };
   const amountCents = Number(body.amountCents);
   if (!Number.isInteger(amountCents) || amountCents <= 0) return { error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." };
+  // A reposição não é ligada a conta cadastrada — só ao RESPONSÁVEL (23/10/2026).
+  if (!safeText(body.responsibleName, 160)) return { error: "INFORME O RESPONSÁVEL." };
   return {
     entryDate,
     companyId,

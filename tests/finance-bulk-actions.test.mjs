@@ -221,7 +221,7 @@ test("Conciliação Bancária: classificar só os campos enviados, confirmar (ap
 // ---------------------------------------------------------------------------
 
 test("Reposição: cadastrar em lote (cria e pula), alterar setor/motivo, excluir (pula o que virou despesa), 404", async () => {
-  const base = { entryDate: today, companyId: STORE_A, companyName: "RIOMAR", sector: "assistencia", kind: "reposicao", amountCents: 5000 };
+  const base = { entryDate: today, companyId: STORE_A, companyName: "RIOMAR", sector: "assistencia", kind: "reposicao", amountCents: 5000, responsibleName: "ANA" };
   const created = await json(await post(reposicaoBatch.POST, ADMIN, "/api/finance/replacement-control/batch", {
     rows: [{ ...base, product: "CONTROLE PS5" }, { ...base, product: "X" }, { ...base, product: "CABO HDMI", amountCents: 0 }, { ...base, product: "FONTE", sector: "logistica" }],
   }));

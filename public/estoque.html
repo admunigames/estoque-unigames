@@ -9836,11 +9836,10 @@
       </div>
 
       <h3 class="supply-section-title">BATER COM O EXTRATO BANCÁRIO</h3>
-      <p class="page-desc">SUBA O EXTRATO (O MESMO DA CONCILIAÇÃO BANCÁRIA, SEM DUPLICAR) E BATA CADA SAÍDA COM O LANÇAMENTO DE REPOSIÇÃO. O QUE FICAR SEM PAR APARECE NOS DOIS LADOS.</p>
+      <p class="page-desc">AS SAÍDAS VÊM DOS EXTRATOS JÁ IMPORTADOS NA CONCILIAÇÃO BANCÁRIA. BATA CADA SAÍDA COM O LANÇAMENTO DE REPOSIÇÃO — A REPOSIÇÃO NÃO É LIGADA A CONTA CADASTRADA, SÓ AO RESPONSÁVEL. O QUE FICAR SEM PAR APARECE NOS DOIS LADOS.</p>
       <div class="dre-toolbar">
-        <div class="field"><label for="rpBankAccount">CONTA BANCÁRIA</label><select id="rpBankAccount"><option value="">TODAS</option></select></div>
+        <div class="field"><label for="rpBankResponsible">RESPONSÁVEL</label><select id="rpBankResponsible"><option value="">TODOS</option></select></div>
         <div class="field"><label for="rpBankMonth">MÊS</label><input type="month" id="rpBankMonth"></div>
-        <div class="field"><label for="rpBankFile">IMPORTAR EXTRATO (.ofx / .xls / .xlsx / .csv / .pdf)</label><input type="file" id="rpBankFile" accept=".ofx,.xls,.xlsx,.csv,.htm,.html,.pdf"></div>
       </div>
       <div class="user-form-status" id="rpBankStatus" role="status" aria-live="polite"></div>
       <section class="summary" id="rpBankSummary" aria-label="Resumo do extrato"></section>
@@ -10391,7 +10390,7 @@
           <option value="outros">OUTROS</option>
         </select>
       </div>
-      <div class="purchase-field"><label for="reposicaoResponsavel">RESPONSÁVEL</label><input id="reposicaoResponsavel" maxlength="160"></div>
+      <div class="purchase-field"><label for="reposicaoResponsavel">RESPONSÁVEL *</label><input id="reposicaoResponsavel" maxlength="160" required></div>
       <div class="purchase-field"><label for="reposicaoTipoForm">TIPO *</label>
         <select id="reposicaoTipoForm" required>
           <option value="">SELECIONE</option>
@@ -37578,7 +37577,12 @@ function renderHomeTasks(){
         '<tr><td>'+escapeHtml(formatDateBR(r.entryDate))+'</td><td>'+escapeHtml(r.description || '—')+'</td><td>'+formatCentsBRL(r.amountCents)+'</td><td></td></tr>').join('');
       el('reconPreviewTable').hidden = false;
       el('reconImportActions').hidden = false;
-      status.textContent = rows.length+' lançamento(s) no arquivo. Revise e importe.';
+      const exits = rows.filter(r => r.amountCents < 0);
+      const entries = rows.filter(r => r.amountCents > 0);
+      const sum = list => formatCentsBRL(Math.abs(list.reduce((total, r) => total + r.amountCents, 0)));
+      // PDF é lido por aproximação: mostra os totais para conferir com o extrato.
+      status.textContent = rows.length+' lançamento(s) no arquivo: '+exits.length+' SAÍDA(S) SOMANDO '+sum(exits)+' E '+
+        entries.length+' ENTRADA(S) SOMANDO '+sum(entries)+'.'+(sourceFormat === 'pdf' ? ' CONFIRA COM OS TOTAIS DO EXTRATO ANTES DE IMPORTAR.' : ' Revise e importe.');
     }catch(error){
       status.textContent = error.message;
     }
@@ -39118,15 +39122,13 @@ function renderHomeTasks(){
   let rpLinkExitId = '';
   async function loadRpBank(){
     if(!el('rpBankMonth').value) el('rpBankMonth').value = financeCurrentMonthKey();
-    if(!reconAccounts.length){
-      try{ const data = await financeApiRequest('/accounts?includeInactive=1'); reconAccounts = Array.isArray(data.accounts) ? data.accounts : []; }catch(_e){}
-    }
-    fillSelect('rpBankAccount', '<option value="">TODAS</option>', financeAccountOptionsHtml(reconAccounts, el('rpBankAccount') ? el('rpBankAccount').value : ''));
     const params = new URLSearchParams({month: el('rpBankMonth').value});
-    if(el('rpBankAccount').value) params.set('financeAccountId', el('rpBankAccount').value);
+    if(el('rpBankResponsible').value) params.set('responsibleName', el('rpBankResponsible').value);
     el('rpBankBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
     try{
       rpBankData = await financeApiRequest('/replacement-control/bank?'+params.toString());
+      fillSelect('rpBankResponsible', '<option value="">TODOS</option>', (rpBankData.responsibles || []).map(name =>
+        '<option value="'+escapeHtml(name)+'">'+escapeHtml(name)+'</option>').join(''));
     }catch(error){
       rpBankData = null;
       el('rpBankBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
@@ -39166,33 +39168,7 @@ function renderHomeTasks(){
       '<td data-label="Produto">'+escapeHtml(item.product || '—')+'</td><td data-label="Motivo">'+escapeHtml(item.reason || '—')+'</td><td data-label="Valor">'+formatCentsBRL(item.amountCents)+'</td></tr>').join('')
       : '<tr><td colspan="5" class="responsive-empty">Todos os lançamentos do mês estão batidos com o extrato.</td></tr>';
   }
-  ['rpBankAccount','rpBankMonth'].forEach(id => el(id).addEventListener('change', loadRpBank));
-  el('rpBankFile').addEventListener('change', async event => {
-    const file = event.target.files && event.target.files[0];
-    const status = el('rpBankStatus');
-    if(!file) return;
-    if(!el('rpBankAccount').value){ status.textContent = 'ESCOLHA A CONTA BANCÁRIA ANTES DO ARQUIVO.'; el('rpBankFile').value = ''; return; }
-    status.textContent = 'Lendo arquivo…';
-    try{
-      const {rows, sourceFormat} = await parseBankStatementFile(file);
-      // PDF é lido por aproximação e o extrato importado não tem excluir: confere antes.
-      if(sourceFormat === 'pdf'){
-        const exits = rows.filter(r => r.amountCents < 0);
-        const entries = rows.filter(r => r.amountCents > 0);
-        const sum = list => formatCentsBRL(Math.abs(list.reduce((total, r) => total + r.amountCents, 0)));
-        const dates = rows.map(r => r.entryDate).sort();
-        const ok = await askConfirm('LI '+rows.length+' LANÇAMENTO(S) DO PDF, DE '+formatDateBR(dates[0])+' A '+formatDateBR(dates[dates.length - 1])+': '+
-          exits.length+' SAÍDA(S) SOMANDO '+sum(exits)+' E '+entries.length+' ENTRADA(S) SOMANDO '+sum(entries)+
-          '. CONFIRA COM OS TOTAIS DO EXTRATO ANTES DE IMPORTAR.', {okText:'IMPORTAR', danger:false});
-        if(!ok){ status.textContent = 'IMPORTAÇÃO CANCELADA.'; el('rpBankFile').value = ''; return; }
-      }
-      const res = await financeApiRequest('/bank-reconciliation', {method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({financeAccountId: el('rpBankAccount').value, sourceName: file.name, sourceFormat, rows})});
-      status.textContent = 'EXTRATO IMPORTADO: '+res.inserted+' NOVO(S), '+res.duplicates+' JÁ EXISTIAM.';
-      el('rpBankFile').value = '';
-      await loadRpBank();
-    }catch(error){ status.textContent = error.message; }
-  });
+  ['rpBankResponsible','rpBankMonth'].forEach(id => el(id).addEventListener('change', loadRpBank));
   function openRpLinkDialog(exitId){
     const exit = (rpBankData.exits || []).find(item => item.id === exitId);
     if(!exit) return;
