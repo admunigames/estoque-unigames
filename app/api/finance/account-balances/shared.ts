@@ -58,7 +58,11 @@ type BalanceRow = {
 export async function loadAccountBalances(
   database: Database,
   companyId: string,
+  accountId = "",
 ): Promise<AccountBalancesSnapshot> {
+  // Fluxo de Caixa por CONTA (23/10/2026): accountId recorta uma conta só.
+  const values = [companyId, accountId].filter(Boolean);
+  const filters = [companyId ? "AND a.company_id = ?1" : "", accountId ? `AND a.id = ?${values.length}` : ""].join(" ");
   const rows = await database
     .prepare(
       `SELECT a.id AS accountId, a.name AS accountName, a.type AS accountType,
@@ -67,10 +71,10 @@ export async function loadAccountBalances(
               b.updated_by_name AS updatedByName, b.updated_at AS updatedAt
        FROM finance_accounts a
        LEFT JOIN finance_account_balances b ON b.account_id = a.id
-       WHERE a.active = 1 ${companyId ? "AND a.company_id = ?1" : ""}
+       WHERE a.active = 1 ${filters}
        ORDER BY a.company_name ASC, a.name ASC`,
     )
-    .bind(...(companyId ? [companyId] : []))
+    .bind(...values)
     .all<BalanceRow>();
 
   const accounts: AccountBalance[] = (rows.results ?? []).map((row) => ({

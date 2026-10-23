@@ -25,9 +25,13 @@ export async function GET(request: Request) {
   if (!canManageFinance(actor)) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O FINANCEIRO." }, 403);
   }
-  const scope = resolveCashFlowScope(request, safeText(new URL(request.url).searchParams.get("companyId"), 80));
+  const params = new URL(request.url).searchParams;
+  const scope = resolveCashFlowScope(request, safeText(params.get("companyId"), 80));
   if (scope.error) return scope.error;
   const companyId = scope.companyId;
+  // Recorte por CONTA (23/10/2026): só a conta escolhida; RH não tem conta e
+  // fica de fora nessa visão.
+  const accountId = safeText(params.get("accountId"), 80);
   const today = todayInTimezone();
   const currentMonday = mondayOf(today);
   const weeks = Array.from({ length: WEEKS_BACK + 1 + WEEKS_AHEAD }, (_, i) => addDays(currentMonday, (i - WEEKS_BACK) * 7));
@@ -44,32 +48,37 @@ export async function GET(request: Request) {
     };
     const company = (q: ReturnType<typeof queryParams>, column: string) =>
       companyId ? `AND ${column} = ${q.bind(companyId)}` : "";
+    const account = (q: ReturnType<typeof queryParams>, column: string) =>
+      accountId ? `AND ${column} = ${q.bind(accountId)}` : "";
+    const none = { results: [] as DailyAmount[] };
 
     const [projection, balances, received, paid, payrollPaid, benefitsPaid] = await Promise.all([
-      loadCashFlowProjection(database, companyId, today),
+      loadCashFlowProjection(database, companyId, today, accountId),
       (() => {
         const q = queryParams();
         const text = `SELECT account_id AS accountId, week_date AS weekDate, balance_cents AS balanceCents
           FROM finance_account_weekly_balances
-          WHERE week_date >= ${q.bind(firstWeek)} AND week_date <= ${q.bind(lastBalanceWeek)} ${company(q, "company_id")}`;
+          WHERE week_date >= ${q.bind(firstWeek)} AND week_date <= ${q.bind(lastBalanceWeek)} ${company(q, "company_id")} ${account(q, "account_id")}`;
         return database.prepare(text).bind(...q.values).all<{ accountId: string; weekDate: string; balanceCents: number }>();
       })(),
       realized((q) => `SELECT received_date AS date, COALESCE(SUM(received_amount_cents), 0) AS amountCents
         FROM accounts_receivable
         WHERE canceled = 0 AND received_amount_cents IS NOT NULL
           AND received_date >= ${q.bind(firstWeek)} AND received_date <= ${q.bind(yesterday)} ${company(q, "company_id")}
+          ${account(q, "finance_account_id")}
         GROUP BY received_date`),
       realized((q) => `SELECT p.payment_date AS date, COALESCE(SUM(p.amount_cents), 0) AS amountCents
         FROM accounts_payable_payments p JOIN accounts_payable a ON a.id = p.payable_id
         WHERE a.status <> 'canceled' AND p.confirmed_at <> ''
           AND p.payment_date >= ${q.bind(firstWeek)} AND p.payment_date <= ${q.bind(yesterday)} ${company(q, "a.company_id")}
+          ${account(q, "(CASE WHEN p.finance_account_id <> '' THEN p.finance_account_id ELSE a.finance_account_id END)")}
         GROUP BY p.payment_date`),
-      realized((q) => `SELECT payment_date AS date,
+      accountId ? Promise.resolve(none) : realized((q) => `SELECT payment_date AS date,
           COALESCE(SUM(base_salary_cents + bonus_cents + overtime_cents + additions_cents + other_cents - deductions_cents), 0) AS amountCents
         FROM hr_payroll_entries
         WHERE payment_done = 1 AND payment_date >= ${q.bind(firstWeek)} AND payment_date <= ${q.bind(yesterday)} ${company(q, "company_id")}
         GROUP BY payment_date`),
-      realized((q) => `SELECT payment_date AS date, COALESCE(SUM(amount_cents), 0) AS amountCents
+      accountId ? Promise.resolve(none) : realized((q) => `SELECT payment_date AS date, COALESCE(SUM(amount_cents), 0) AS amountCents
         FROM hr_benefits
         WHERE payment_date >= ${q.bind(firstWeek)} AND payment_date <= ${q.bind(yesterday)} ${company(q, "company_id")}
         GROUP BY payment_date`),

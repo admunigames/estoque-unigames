@@ -145,7 +145,7 @@ export async function GET(request: Request) {
            FROM accounts_receivable
            WHERE canceled = 0 AND competence_month = ?1 ${companyCondition}
            GROUP BY company_id
-           ORDER BY expectedCents DESC`,
+           ORDER BY COALESCE(SUM(expected_amount_cents), 0) DESC`,
         )
         .bind(month, ...companyParams)
         .all<GroupRow>(),
@@ -155,7 +155,7 @@ export async function GET(request: Request) {
            FROM accounts_receivable
            WHERE canceled = 0 AND competence_month = ?1 ${companyCondition}
            GROUP BY operator_text
-           ORDER BY expectedCents DESC`,
+           ORDER BY COALESCE(SUM(expected_amount_cents), 0) DESC`,
         )
         .bind(month, ...companyParams)
         .all<GroupRow>(),

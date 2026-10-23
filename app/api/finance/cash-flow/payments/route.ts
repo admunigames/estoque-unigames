@@ -4,7 +4,7 @@ import { addDays, todayInTimezone } from "../../../../lib/finance-status";
 import { MAX_CASH_FLOW_DAYS } from "../../../../lib/cash-flow";
 import { canManageFinance, identity, jsonResponse, safeText } from "../../shared";
 import { loadEffectiveCashFlowSettings } from "../../cash-flow-settings/shared";
-import { cashFlowLastDate, loadCashFlowOutflows, resolveCashFlowScope } from "../shared";
+import { cashFlowLastDate, loadCashFlowOutflows, resolveCashFlowScope, splitByAccount } from "../shared";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -35,17 +35,20 @@ export async function GET(request: Request) {
   try {
     const database = await getD1();
     const settings = await loadEffectiveCashFlowSettings(database, scope.companyId);
-    const all = await loadCashFlowOutflows(database, {
+    const outflows = await loadCashFlowOutflows(database, {
       companyId: scope.companyId,
       today,
       lastDate,
       payrollDefaultPaymentDay: settings.payrollDefaultPaymentDay,
     });
+    // Mesmo recorte por CONTA da projeção (?accountId).
+    const { rows: all, unassignedCents, unassignedCount } = splitByAccount(outflows, safeText(params.get("accountId"), 80));
     return jsonResponse({
       today,
       from,
       to,
       maxDate: lastDate,
+      unassigned: { outflowCents: unassignedCents, outflowCount: unassignedCount },
       overdue: all.filter((item) => item.date < today),
       items: all.filter((item) => item.date >= from && item.date <= to),
     });

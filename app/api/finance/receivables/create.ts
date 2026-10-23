@@ -2,6 +2,7 @@ import type { getD1 } from "../../../../db";
 import { DATE_PATTERN } from "../../../lib/payables-recurrence";
 import { expectedDateFromCompetence } from "../../../lib/receivables-status";
 import { loadCompanyList, MONTH_PATTERN, safeText, type JsonMap } from "../shared";
+import { assertFinanceAccountBelongsToCompany } from "../payables/shared";
 import { parseReceived, resolveReceivableOperator } from "./shared";
 
 // Valida o corpo de UM recebível e monta o INSERT sem executar — usada pelo
@@ -51,6 +52,10 @@ export async function planReceivableCreate(
   const operator = await resolveReceivableOperator(database, body, companyId);
   if (operator.error) return reply({ error: operator.error }, 400);
   const { operatorText } = operator;
+  // Conta onde o recebimento cai (opcional) — Fluxo de Caixa por conta.
+  const financeAccountId = safeText(body.financeAccountId, 80);
+  const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId);
+  if (accountError) return reply({ error: accountError }, 400);
 
   const idempotencyKey =
     safeText(body.idempotencyKey, 120) ||
@@ -67,8 +72,8 @@ export async function planReceivableCreate(
       `INSERT INTO accounts_receivable
         (id, company_id, company_name, operator_text, acquirer_id, competence_month, expected_date,
          expected_amount_cents, received_amount_cents, received_date, notes, canceled, idempotency_key,
-         created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 0, ?12, ?13, ?14, CURRENT_TIMESTAMP, ?13, ?14, CURRENT_TIMESTAMP)`,
+         created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, finance_account_id)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 0, ?12, ?13, ?14, CURRENT_TIMESTAMP, ?13, ?14, CURRENT_TIMESTAMP, ?15)`,
     [
       id,
       companyId,
@@ -84,6 +89,7 @@ export async function planReceivableCreate(
       idempotencyKey,
       actor.id,
       actorName,
+      financeAccountId,
     ],
   ]];
 

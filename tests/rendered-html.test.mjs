@@ -3397,7 +3397,7 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
   assert.match(balancesShared, /hasBalance/);
   assert.match(balancesShared, /accountsMissingBalance/);
   assert.match(balancesRoute, /loadAccountBalances\(database, companyId\)/);
-  assert.match(cashFlowRoute, /loadAccountBalances\(database, companyId\)/);
+  assert.match(cashFlowRoute, /loadAccountBalances\(database, companyId, accountId\)/);
   assert.doesNotMatch(cashFlowRoute, /FROM finance_account_balances/);
 
   // RH no Fluxo de Caixa: as três consultas precisam de LIMITE INFERIOR de

@@ -8969,7 +8969,11 @@
       </header>
 
       <div class="dre-toolbar">
-        <div class="field"><label for="cashFlowLoja">UNIDADE</label><select id="cashFlowLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+        <!-- 23/10/2026: o fluxo é por CONTA cadastrada, não por unidade. O
+             select de unidade fica oculto (sempre consolidado); login de loja
+             continua recortado pela própria loja no servidor. -->
+        <div class="field" hidden><label for="cashFlowLoja">UNIDADE</label><select id="cashFlowLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
+        <div class="field"><label for="cashFlowConta">CONTA</label><select id="cashFlowConta"><option value="">TODAS AS CONTAS (CONSOLIDADO)</option></select></div>
       </div>
 
       <div class="output-tabs" role="tablist" aria-label="Visões do fluxo de caixa">
@@ -8990,6 +8994,7 @@
           </select>
         </div>
         <div class="dre-toolbar-actions">
+          <button class="btn-accent" id="btnCashFlowImportReceivables" type="button">IMPORTAR RECEBIMENTOS PREVISTOS</button>
           <button class="btn-accent" id="btnCashFlowBalances" type="button">SALDOS DAS CONTAS</button>
           <button class="btn-accent" id="btnCashFlowSettings" type="button">CONFIGURAÇÕES</button>
           <button class="btn-accent" id="btnCashFlowShare" type="button">GERAR IMAGEM</button>
@@ -9040,7 +9045,7 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="cfPayTable">
-            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Origem</th><th>Descrição</th><th>Fornecedor</th><th>Categoria</th><th>Unidade</th><th>Valor</th><th>Situação</th></tr></thead>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Origem</th><th>Descrição</th><th>Fornecedor</th><th>Categoria</th><th>Conta</th><th>Valor</th><th>Situação</th></tr></thead>
             <tbody id="cfPayBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
@@ -9118,7 +9123,7 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="cfReceivablesFutureTable">
-              <thead><tr><th>Data prevista</th><th>Adquirente</th><th>Unidade</th><th>Competência</th><th>Valor</th></tr></thead>
+              <thead><tr><th>Data prevista</th><th>Adquirente</th><th>Conta</th><th>Competência</th><th>Valor</th></tr></thead>
               <tbody id="cfReceivablesFutureBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
@@ -11447,6 +11452,7 @@
       <div class="purchase-field"><label for="receivableCompany">UNIDADE *</label><select id="receivableCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="receivableCompetence">COMPETÊNCIA *</label><input type="month" id="receivableCompetence" required></div>
       <div class="purchase-field full"><label for="receivableAcquirer">ADQUIRENTE *</label><select id="receivableAcquirer" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="receivableAccount">CONTA ONDE CAI</label><select id="receivableAccount"><option value="">SEM CONTA</option></select></div>
       <div class="purchase-field"><label for="receivableExpectedAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="receivableExpectedAmount" placeholder="R$ 0,00" required></div>
       <!-- Campos previsto/recebido/data ocultos (item 4): o cadastro passou a
            ter só unidade, adquirente, competência e valor. Os inputs seguem
@@ -12162,6 +12168,35 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCfReceive" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">CONFIRMAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="cfImportReceivablesDialog" aria-labelledby="cfImportReceivablesTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cfImportReceivablesTitle">IMPORTAR RECEBIMENTOS PREVISTOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseCfImportReceivables" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cfImportReceivablesForm">
+    <p class="purchase-field-help">TRAZ AS PARCELAS DAS VENDAS NO CARTÃO (ARQUIVO DE VENDAS JÁ IMPORTADO NA CONCILIAÇÃO DE VENDAS) QUE CAEM NO BANCO NO PERÍODO, PELO PRAZO DE CADA ADQUIRENTE. VIRAM RECEBÍVEIS NA CONTA ESCOLHIDA E ENTRAM NA PROJEÇÃO JUNTO COM OS PAGAMENTOS CADASTRADOS. IMPORTAR DE NOVO ATUALIZA OS VALORES (NÃO DUPLICA). OUTROS RECEBIMENTOS: ABA RECEBÍVEIS → CADASTRAR EM LOTE.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="cfImportAccount">CONTA ONDE OS RECEBIMENTOS CAEM *</label><select id="cfImportAccount" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="cfImportFrom">DE</label><input type="date" id="cfImportFrom"></div>
+      <div class="purchase-field"><label for="cfImportTo">ATÉ</label><input type="date" id="cfImportTo"></div>
+    </div>
+    <section class="summary" id="cfImportTotals" aria-label="Totais da prévia"></section>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table id="cfImportTable">
+          <thead><tr><th>Data prevista</th><th>Adquirente</th><th>Unidade</th><th>Competência</th><th>Vendas</th><th>Valor líquido</th><th>Situação</th></tr></thead>
+          <tbody id="cfImportBody"><tr><td colspan="7" class="responsive-empty">—</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="cfImportStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCfImportReceivables" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnConfirmCfImportReceivables" type="submit">IMPORTAR</button>
     </div>
   </form>
 </dialog>
@@ -34739,6 +34774,7 @@ function renderHomeTasks(){
     el('receivableId').value = row ? row.id : '';
     el('receivableDialogTitle').textContent = row ? 'EDITAR RECEBÍVEL' : 'NOVO RECEBÍVEL';
     el('receivableCompany').value = row ? row.companyId : (el('cashFlowLoja').value || '');
+    el('receivableAccount').innerHTML = '<option value="">SEM CONTA</option>'+financeAccountOptionsHtml(payableAccounts, row ? (row.financeAccountId || '') : cfAccountId());
     el('receivableCompany').disabled = Boolean(row);
     el('receivableCompetence').value = row ? row.competenceMonth : (el('receivableMes').value || financeCurrentMonthKey());
     el('receivableAcquirer').value = row ? (row.acquirerId || (row.operatorText ? 'legacy:'+row.operatorText : '')) : '';
@@ -34809,7 +34845,8 @@ function renderHomeTasks(){
       expectedDate: legacyExpectedDate || undefined,
       receivedAmountCents: legacyReceivedCents,
       receivedDate: legacyReceivedCents === null ? '' : el('receivableReceivedDate').value,
-      notes: el('receivableNotes').value
+      notes: el('receivableNotes').value,
+      financeAccountId: el('receivableAccount').value
     };
     if(acquirerValue.indexOf('legacy:') === 0){
       // Registro antigo ainda sem adquirente cadastrada: preserva o texto.
@@ -34874,6 +34911,10 @@ function renderHomeTasks(){
     }
     if(cashFlowData.taxesAndFeesIncluded === false){
       warnings.push('<strong>Impostos e taxas de cartão: não incluídos ainda (Fase 7)</strong> — entram como R$ 0,00 nos cálculos, então a projeção está incompleta nesse ponto.');
+    }
+    const unassigned = cashFlowData.unassigned || {};
+    if(cashFlowData.accountId && (unassigned.outflowCents || unassigned.inflowCents)){
+      warnings.push('<strong>SEM CONTA DEFINIDA: '+formatCentsBRL(unassigned.outflowCents || 0)+' EM SAÍDAS e '+formatCentsBRL(unassigned.inflowCents || 0)+' EM ENTRADAS</strong> — RH e contas/recebíveis sem conta prevista só entram em TODAS AS CONTAS. Defina a conta no Contas a Pagar / Recebíveis para vê-los aqui.');
     }
     const negative = (cashFlowData.horizons || []).find(row => row.firstNegativeDate);
     if(negative){
@@ -35026,18 +35067,37 @@ function renderHomeTasks(){
   }
   document.querySelectorAll('[data-cf-tab]').forEach(btn => btn.addEventListener('click', () => setCashFlowTab(btn.dataset.cfTab)));
 
+  // Fluxo por CONTA cadastrada (23/10/2026): o filtro do topo vale para as
+  // três abas; '' = todas as contas.
+  function cfAccountId(){ return el('cashFlowConta') ? el('cashFlowConta').value : ''; }
+  function cfAccountName(id){
+    if(!id) return 'SEM CONTA';
+    const account = payableAccounts.find(a => a.id === id);
+    return account ? (account.displayLabel || account.name) : 'CONTA REMOVIDA';
+  }
+  function cfSetScopeParams(params){
+    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    if(cfAccountId()) params.set('accountId', cfAccountId());
+    return params;
+  }
+  function renderCashFlowAccountOptions(){
+    const select = el('cashFlowConta');
+    if(!select) return;
+    select.innerHTML = '<option value="">TODAS AS CONTAS (CONSOLIDADO)</option>'+financeAccountOptionsHtml(payableAccounts, select.value);
+  }
+
   async function loadFluxoCaixaPage(){
     if(!canAccess('finance')) return;
     if(!companies.length) await loadCompanies();
+    if(!payableAccounts.length) await loadPayablesCatalogData();
+    renderCashFlowAccountOptions();
     renderReceivableCompanyOptions();
     await setCashFlowTab(new URLSearchParams(location.search).get('aba') || 'projecao', {url:false});
   }
 
   async function loadCashFlowSeries(){
-    const companyId = el('cashFlowLoja').value;
     el('cashFlowChart').innerHTML = '<div class="dre-empty">Carregando…</div>';
-    const params = new URLSearchParams();
-    if(companyId) params.set('companyId', companyId);
+    const params = cfSetScopeParams(new URLSearchParams());
     try{
       cashFlowData = await financeApiRequest('/cash-flow'+(params.toString() ? '?'+params.toString() : ''));
       renderCashFlowPage();
@@ -35049,6 +35109,7 @@ function renderHomeTasks(){
   }
 
   el('cashFlowLoja').addEventListener('change', loadCashFlowTab);
+  el('cashFlowConta').addEventListener('change', loadCashFlowTab);
   el('cashFlowHorizon').addEventListener('change', renderCashFlowPage);
   el('cashFlowBalanceAmount') && attachCurrencyMask(el('cashFlowBalanceAmount'), {allowNegative:true});
 
@@ -35077,8 +35138,7 @@ function renderHomeTasks(){
     const today = financeCurrentDateKey();
     if(!el('cfPayFrom').value) el('cfPayFrom').value = today;
     if(!el('cfPayTo').value) el('cfPayTo').value = cfAddDays(today, 30);
-    const params = new URLSearchParams({from: el('cfPayFrom').value, to: el('cfPayTo').value});
-    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    const params = cfSetScopeParams(new URLSearchParams({from: el('cfPayFrom').value, to: el('cfPayTo').value}));
     body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
     try{
       cfPayData = await financeApiRequest('/cash-flow/payments?'+params.toString());
@@ -35129,7 +35189,7 @@ function renderHomeTasks(){
         '<td data-label="DESCRIÇÃO">'+(i.payableId ? '<button class="cf-link" type="button" data-cf-open-payable="'+escapeHtml(i.payableId)+'" title="Abrir em Contas a Pagar">'+escapeHtml(i.description || '—')+'</button>' : escapeHtml(i.description || '—'))+'</td>'+
         '<td data-label="FORNECEDOR">'+escapeHtml(i.supplierName || '—')+'</td>'+
         '<td data-label="CATEGORIA">'+escapeHtml(i.categoryName || '—')+'</td>'+
-        '<td data-label="UNIDADE">'+escapeHtml(i.companyName || '—')+'</td>'+
+        '<td data-label="CONTA">'+escapeHtml(cfAccountName(i.financeAccountId))+'</td>'+
         '<td data-label="VALOR">'+formatCentsBRL(i.amountCents)+'</td>'+
         '<td data-label="SITUAÇÃO">'+(status[0] ? '<span class="status-pill '+status[0]+'">'+status[1]+'</span>' : status[1])+'</td>'+
       '</tr>';
@@ -35172,6 +35232,7 @@ function renderHomeTasks(){
     if(action === 'pay'){
       await loadPayablesCatalogData();
       renderPayableAccountOptionsForCompany('cfPayBulkAccount', el('cashFlowLoja').value, 'SEM CONTA');
+      if(cfAccountId()) el('cfPayBulkAccount').value = cfAccountId();
     }
     el('cfPayBulkDialog').showModal();
     return false;
@@ -35201,17 +35262,16 @@ function renderHomeTasks(){
   async function loadCashFlowWeekly(){
     const body = el('cfWeeklyBody');
     body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
-    const companyId = el('cashFlowLoja').value;
-    const params = new URLSearchParams();
-    if(companyId) params.set('companyId', companyId);
+    const params = cfSetScopeParams(new URLSearchParams());
     try{
       cfWeeklyData = await financeApiRequest('/cash-flow/weekly?'+params.toString());
       const weeks = cfWeeklyData.weeks || [];
       const historyParams = new URLSearchParams(params);
+      historyParams.delete('accountId');
       historyParams.set('from', weeks.length ? weeks[0].weekDate : cfWeeklyData.currentMonday);
       historyParams.set('to', cfAddDays(cfWeeklyData.currentMonday, 7));
       const history = await financeApiRequest('/account-weekly-balances?'+historyParams.toString());
-      cfWeeklyHistory = Array.isArray(history.rows) ? history.rows : [];
+      cfWeeklyHistory = (Array.isArray(history.rows) ? history.rows : []).filter(r => !cfAccountId() || r.accountId === cfAccountId());
       if(!el('cfWeekDate').value) el('cfWeekDate').value = cfWeeklyData.currentMonday;
       renderCfWeekly();
     }catch(error){
@@ -35367,8 +35427,7 @@ function renderHomeTasks(){
   async function loadCashFlowFutureReceivables(){
     const body = el('cfReceivablesFutureBody');
     body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
-    const params = new URLSearchParams({days:'90'});
-    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    const params = cfSetScopeParams(new URLSearchParams({days:'90'}));
     try{
       const data = await financeApiRequest('/receivables/upcoming?'+params.toString());
       const sum = list => list.reduce((total, r) => total + r.expectedAmountCents, 0);
@@ -35380,7 +35439,7 @@ function renderHomeTasks(){
       const row = r => '<tr>'+
         '<td data-label="DATA PREVISTA">'+escapeHtml(formatDateBR(r.expectedDate))+'</td>'+
         '<td data-label="ADQUIRENTE">'+escapeHtml(r.operatorText || '—')+'</td>'+
-        '<td data-label="UNIDADE">'+escapeHtml(r.companyName || '—')+'</td>'+
+        '<td data-label="CONTA">'+escapeHtml(cfAccountName(r.financeAccountId))+'</td>'+
         '<td data-label="COMPETÊNCIA">'+escapeHtml(r.competenceMonth || '—')+'</td>'+
         '<td data-label="VALOR">'+formatCentsBRL(r.expectedAmountCents)+'</td>'+
       '</tr>';
@@ -35424,6 +35483,7 @@ function renderHomeTasks(){
   // competência, adquirente e valor).
   el('btnBatchReceivables').addEventListener('click', async () => {
     if(!companies.length) await loadCompanies();
+    if(!payableAccounts.length) await loadPayablesCatalogData();
     await loadFinanceAcquirers();
     openFinanceBatchDialog({
       title: 'CADASTRAR RECEBÍVEIS EM LOTE',
@@ -35434,7 +35494,8 @@ function renderHomeTasks(){
         {key:'competenceMonth', label:'COMPETÊNCIA', type:'month', required:true},
         {key:'acquirerId', label:'ADQUIRENTE', type:'select', required:true, options: () => financeAcquirersCache.filter(a => a.status === 'active').map(a => ({value:a.id, label:a.name+(a.companyId ? ' (LOJA)' : '')}))},
         {key:'amountCents', label:'VALOR', type:'money', required:true},
-        {key:'expectedDate', label:'DATA PREVISTA', type:'date'}
+        {key:'expectedDate', label:'DATA PREVISTA', type:'date'},
+        {key:'financeAccountId', label:'CONTA', type:'select', placeholder:'SEM CONTA', options: () => payableAccounts.filter(a => Number(a.active)).map(a => ({value:a.id, label:a.displayLabel || a.name}))}
       ],
       isFilled: values => Boolean(values.amountCents || values.acquirerId),
       onDone: () => Promise.all([loadRecebiveisPage({silent:true}), loadCashFlowFutureReceivables()])
@@ -35450,6 +35511,72 @@ function renderHomeTasks(){
       el('cfReceiveDialog').close();
       receivablesBulk.clear();
     }catch(error){ el('cfReceiveStatus').textContent = error.message; }
+  });
+
+  // --- IMPORTAR RECEBIMENTOS PREVISTOS (vendas no cartão → recebíveis) ---
+  let cfImportLines = [];
+  const CF_IMPORT_ACTION = {new:['','NOVO'], update:['warn','ATUALIZA'], locked:['ok','JÁ RECEBIDO/CANCELADO']};
+  async function loadCfImportPreview(){
+    const body = el('cfImportBody');
+    body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
+    el('cfImportTotals').innerHTML = '';
+    const params = new URLSearchParams();
+    if(el('cfImportFrom').value) params.set('from', el('cfImportFrom').value);
+    if(el('cfImportTo').value) params.set('to', el('cfImportTo').value);
+    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    try{
+      const data = await financeApiRequest('/cash-flow/import-receivables?'+params.toString());
+      el('cfImportFrom').value = data.from;
+      el('cfImportTo').value = data.to;
+      cfImportLines = Array.isArray(data.lines) ? data.lines : [];
+      const importable = cfImportLines.filter(l => l.action !== 'locked');
+      const total = importable.reduce((sum, l) => sum + l.amountCents, 0);
+      el('cfImportTotals').innerHTML =
+        '<div class="card"><div class="lbl">A IMPORTAR</div><div class="num">'+formatCentsBRL(total)+'</div><div class="sub">'+importable.length+' recebimento(s)</div></div>'+
+        '<div class="card"><div class="lbl">NOVOS</div><div class="num">'+cfImportLines.filter(l => l.action === 'new').length+'</div></div>'+
+        '<div class="card"><div class="lbl">ATUALIZA</div><div class="num">'+cfImportLines.filter(l => l.action === 'update').length+'</div></div>';
+      body.innerHTML = cfImportLines.map(l => {
+        const action = CF_IMPORT_ACTION[l.action] || ['', l.action];
+        return '<tr>'+
+          '<td data-label="DATA PREVISTA">'+escapeHtml(formatDateBR(l.date))+'</td>'+
+          '<td data-label="ADQUIRENTE">'+escapeHtml(l.acquirerName || '—')+'</td>'+
+          '<td data-label="UNIDADE">'+escapeHtml(l.companyName || '—')+'</td>'+
+          '<td data-label="COMPETÊNCIA">'+escapeHtml(l.competenceMonth.slice(5,7)+'/'+l.competenceMonth.slice(0,4))+'</td>'+
+          '<td data-label="VENDAS">'+l.sales+'</td>'+
+          '<td data-label="VALOR LÍQUIDO">'+formatCentsBRL(l.amountCents)+'</td>'+
+          '<td data-label="SITUAÇÃO">'+(action[0] ? '<span class="status-pill '+action[0]+'">'+action[1]+'</span>' : action[1])+'</td>'+
+        '</tr>';
+      }).join('') || '<tr><td colspan="7" class="responsive-empty">NENHUMA VENDA NO CARTÃO COM DEPÓSITO PREVISTO NO PERÍODO. IMPORTE O ARQUIVO DE VENDAS EM CONCILIAÇÃO DE VENDAS.</td></tr>';
+      el('btnConfirmCfImportReceivables').disabled = !importable.length;
+    }catch(error){
+      cfImportLines = [];
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('btnConfirmCfImportReceivables').disabled = true;
+    }
+  }
+  el('btnCashFlowImportReceivables').addEventListener('click', async () => {
+    if(!payableAccounts.length) await loadPayablesCatalogData();
+    el('cfImportAccount').innerHTML = '<option value="">SELECIONE</option>'+financeAccountOptionsHtml(payableAccounts, cfAccountId());
+    el('cfImportStatus').textContent = '';
+    el('cfImportFrom').value = '';
+    el('cfImportTo').value = '';
+    el('cfImportReceivablesDialog').showModal();
+    loadCfImportPreview();
+  });
+  ['cfImportFrom','cfImportTo'].forEach(id => el(id).addEventListener('change', loadCfImportPreview));
+  el('btnCloseCfImportReceivables').addEventListener('click', () => el('cfImportReceivablesDialog').close());
+  el('btnCancelCfImportReceivables').addEventListener('click', () => el('cfImportReceivablesDialog').close());
+  el('cfImportReceivablesForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!el('cfImportAccount').value){ el('cfImportStatus').textContent = 'ESCOLHA A CONTA ONDE OS RECEBIMENTOS CAEM.'; return; }
+    try{
+      const res = await financeApiRequest('/cash-flow/import-receivables', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        from: el('cfImportFrom').value, to: el('cfImportTo').value, companyId: el('cashFlowLoja').value, financeAccountId: el('cfImportAccount').value
+      })});
+      el('cfImportReceivablesDialog').close();
+      await loadCashFlowTab();
+      showPurchaseToast(res.created+' recebimento(s) novo(s), '+res.updated+' atualizado(s) — '+formatCentsBRL(res.totalCents)+' na projeção.');
+    }catch(error){ el('cfImportStatus').textContent = error.message; }
   });
 
   // --- Saldos das contas (fonte do Caixa Atual) -------------------------

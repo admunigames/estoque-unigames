@@ -1936,8 +1936,14 @@ export const accountsReceivable = pgTable(
     canceledBy: text("canceled_by").notNull().default(""),
     canceledByName: text("canceled_by_name").notNull().default(""),
     canceledAt: text("canceled_at").notNull().default(""),
+    // 23/10/2026: conta bancária onde o recebimento cai (Fluxo de Caixa por
+    // conta) e lançamento do extrato que o confirmou (Conciliação de Contas a
+    // Receber). '' = sem conta / ainda não conciliado.
+    financeAccountId: text("finance_account_id").notNull().default(""),
+    bankEntryId: text("bank_entry_id").notNull().default(""),
   },
   (table) => [
+    index("accounts_receivable_account_expected_idx").on(table.financeAccountId, table.expectedDate),
     index("accounts_receivable_company_competence_idx").on(table.companyId, table.competenceMonth),
     index("accounts_receivable_company_expected_idx").on(table.companyId, table.expectedDate),
     // O Fluxo de Caixa filtra e agrupa por received_date toda vez que a tela

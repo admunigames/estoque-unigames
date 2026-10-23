@@ -74,7 +74,7 @@ export async function GET(request: Request) {
            WHERE ${baseCondition} AND supplier_id != '' AND status NOT IN ('canceled','paid')
            GROUP BY company_id, company_name
            HAVING COALESCE(SUM(original_amount_cents - paid_amount_cents), 0) > 0
-           ORDER BY balanceCents DESC`,
+           ORDER BY COALESCE(SUM(original_amount_cents - paid_amount_cents), 0) DESC`,
         )
         .bind(...baseParams)
         .all<{ companyId: string; companyName: string; balanceCents: number }>(),
