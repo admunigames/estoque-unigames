@@ -432,6 +432,10 @@ export async function loadSellers(
   const roleTitles = new Map<string, string>();
   const everyone = (result.results ?? []).map((row): Seller => {
     roleTitles.set(row.employeeId, row.roleTitle || "");
+    const role = roleOf(row.employeeId, row.roleTitle);
+    // Crediário/venda P.A de OPERACIONAL é SÓ REGISTRO (decisão de
+    // 2026-10-23): não entra em nenhum cálculo.
+    const entries = role === "operacional" ? undefined : entrySums.get(row.employeeId);
     const companyId = actingStores.get(row.employeeId)?.companyId || row.currentCompanyId || row.companyId;
     const goal: Goal = {
       targetRevenueCents: n(row.targetRevenueCents),
@@ -448,8 +452,8 @@ export async function loadSellers(
       warrantyQty: n(row.warrantyQty),
       notebookQty: n(row.notebookQty),
       salesQty: n(row.salesQty),
-      creditSalesCents: entrySums.get(row.employeeId)?.credit ?? 0,
-      partnerSalesCents: entrySums.get(row.employeeId)?.partner ?? 0,
+      creditSalesCents: entries?.credit ?? 0,
+      partnerSalesCents: entries?.partner ?? 0,
     };
     const newcomer = newcomers.has(row.employeeId);
     return {
@@ -464,7 +468,7 @@ export async function loadSellers(
       updatedAt: row.updatedAt,
       updatedByName: row.updatedByName,
       newcomer,
-      role: roleOf(row.employeeId, row.roleTitle),
+      role,
       inactive: row.currentStatus !== "active",
       metrics: computeSellerMetrics(goal, realized, clock, rules, newcomer),
     };

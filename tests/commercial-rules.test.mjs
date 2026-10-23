@@ -333,11 +333,11 @@ test("Crediários (comercial:credit): ID, vendedor e valor por tabela; somam no 
   assert.equal((await postEntry(CREDIT_A, { ...body, kind: "boleto" })).status, 400);
   assert.equal((await postEntry(CREDIT_A, { ...body, saleRef: "" })).status, 400);
   assert.equal((await postEntry(CREDIT_A, { ...body, amountCents: 0 })).status, 400);
-  // Vendedor de outra loja → 404; vendedor fora da aba Vendedores do mês → 400.
+  // Vendedor de outra loja → 404; quem não é vendedor nem operacional do mês → 400.
   assert.equal((await postEntry(CREDIT_A, { ...body, employeeId: "emp-carla", month: "2026-12" })).status, 404);
   const notInMonth = await postEntry(CREDIT_A, { ...body, month: "2027-02" });
   assert.equal(notInMonth.status, 400);
-  assert.match((await notInMonth.json()).error, /ABA VENDEDORES/);
+  assert.match((await notInMonth.json()).error, /NÃO É VENDEDOR NEM OPERACIONAL NESTE MÊS/);
 
   assert.equal((await postEntry(CREDIT_A, body)).status, 201);
   // Mesmo ID na mesma tabela (até em outro mês) → 409; em outra tabela pode.

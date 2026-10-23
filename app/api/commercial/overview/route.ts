@@ -140,7 +140,9 @@ export async function GET(request: Request) {
       canMarkNewcomer: !ownOnly && canMarkCommercialNewcomer(actor),
       rules,
       sellers: visible,
-      operationals: forCadastro ? [] : visibleOperationals,
+      // No cadastro (aba Crediários) os operacionais também aparecem: o
+      // crediário deles é só registro.
+      operationals: visibleOperationals,
     });
   } catch (error) {
     console.error("Não foi possível carregar o Comercial.", error);

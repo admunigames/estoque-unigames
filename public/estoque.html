@@ -7783,7 +7783,7 @@
         <div class="supply-tabs com-kind-tabs" role="tablist" aria-label="Tabelas de crediário" id="comKindTabs"></div>
         <form class="com-entry-form" id="comEntryForm" novalidate>
           <div class="field"><label for="comEntryRef">ID da venda</label><input id="comEntryRef" maxlength="60" autocomplete="off" required></div>
-          <div class="field"><label for="comEntrySeller">Vendedor</label><select id="comEntrySeller" required><option value="">ESCOLHA O VENDEDOR</option></select></div>
+          <div class="field"><label for="comEntrySeller">Vendedor / Operacional</label><select id="comEntrySeller" required><option value="">ESCOLHA O VENDEDOR OU OPERACIONAL</option></select></div>
           <div class="field"><label for="comEntryAmount">Total da venda (R$)</label><input type="text" id="comEntryAmount" inputmode="decimal" placeholder="R$ 0,00" required></div>
           <button class="btn-accent" type="submit">LANÇAR</button>
         </form>
@@ -7792,7 +7792,7 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table>
-              <thead><tr><th>ID da venda</th><th>Vendedor</th><th style="text-align:right">Total da venda</th><th>Lançado por</th><th></th></tr></thead>
+              <thead><tr><th>ID da venda</th><th>Vendedor / Operacional</th><th style="text-align:right">Total da venda</th><th>Lançado por</th><th></th></tr></thead>
               <tbody id="comEntriesBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
@@ -53221,9 +53221,15 @@ function renderHomeTasks(){
     const select = el('comEntrySeller');
     if(select && comManage){
       const current = select.value;
-      select.innerHTML = '<option value="">ESCOLHA O VENDEDOR</option>'+comManage.sellers.map(seller =>
-        '<option value="'+escapeHtml(seller.employeeId)+'">'+escapeHtml(seller.name+(seller.companyName ? ' — '+seller.companyName : '')+(seller.inactive ? ' (INATIVO)' : ''))+'</option>').join('');
-      select.value = comManage.sellers.some(seller => seller.employeeId === current) ? current : '';
+      // VENDEDORES e OPERACIONAIS (o crediário do operacional é só registro).
+      const option = person => '<option value="'+escapeHtml(person.employeeId)+'">'+escapeHtml(person.name+(person.companyName ? ' — '+person.companyName : '')+(person.inactive ? ' (INATIVO)' : ''))+'</option>';
+      const sellers = comManage.sellers.filter(person => person.role !== 'operacional');
+      const operationals = comManage.sellers.filter(person => person.role === 'operacional').concat(comManage.operationals || [])
+        .sort((a, b) => (a.companyName || '').localeCompare(b.companyName || '', 'pt-BR') || a.name.localeCompare(b.name, 'pt-BR'));
+      select.innerHTML = '<option value="">ESCOLHA O VENDEDOR OU OPERACIONAL</option>'+
+        (sellers.length ? '<optgroup label="VENDEDORES">'+sellers.map(option).join('')+'</optgroup>' : '')+
+        (operationals.length ? '<optgroup label="OPERACIONAIS (SÓ REGISTRO)">'+operationals.map(option).join('')+'</optgroup>' : '');
+      select.value = sellers.concat(operationals).some(person => person.employeeId === current) ? current : '';
     }
     // Só VER (comercial:credit_view): sem o formulário e sem excluir.
     if(el('comEntryForm') && comManage) el('comEntryForm').hidden = !comManage.canCredit;
@@ -53233,7 +53239,10 @@ function renderHomeTasks(){
     const items = comEntries.items;
     body.innerHTML = items.length ? items.map(item =>
       '<tr><td data-label="ID da venda"><strong>'+escapeHtml(item.saleRef)+'</strong></td>'+
-      '<td data-label="Vendedor" class="nome">'+escapeHtml(item.employeeName)+'</td>'+
+      '<td data-label="Vendedor / Operacional" class="nome">'+escapeHtml(item.employeeName)+
+        (item.role === 'operacional'
+          ? ' <span class="com-inactive-tag">OPERACIONAL</span> <span class="com-inactive-tag com-new-tag" title="Não entra em comissão, premiação nem no RH">SÓ REGISTRO</span>'
+          : ' <span class="com-inactive-tag">VENDEDOR</span>')+'</td>'+
       '<td data-label="Total da venda" style="text-align:right">'+escapeHtml(formatCentsBRL(item.amountCents))+'</td>'+
       '<td data-label="Lançado por">'+escapeHtml((item.createdByName || '—')+(item.createdAt ? ' · '+formatDateTimeBR(item.createdAt) : ''))+'</td>'+
       '<td data-label="Ações">'+(comManage && !comManage.canCredit ? '' : '<button class="btn-outline" type="button" data-com-entry-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>')+'</td></tr>'
@@ -53275,7 +53284,7 @@ function renderHomeTasks(){
     const employeeId = el('comEntrySeller').value;
     const amountCents = comMoneyCents(el('comEntryAmount'));
     if(!saleRef) return comStatus('comEntryStatus', 'INFORME O ID DA VENDA.', 'error');
-    if(!employeeId) return comStatus('comEntryStatus', 'ESCOLHA O VENDEDOR.', 'error');
+    if(!employeeId) return comStatus('comEntryStatus', 'ESCOLHA O VENDEDOR OU OPERACIONAL.', 'error');
     if(!amountCents) return comStatus('comEntryStatus', 'INFORME O TOTAL DA VENDA.', 'error');
     const button = el('comEntryForm').querySelector('[type="submit"]');
     button.disabled = true;

@@ -10,20 +10,25 @@ import {
   employeeInScope,
   identity,
   jsonResponse,
+  loadSellers,
   nonNegativeInt,
   safeText,
   sameOrigin,
   syncHrCommissions,
+  type Database,
   type JsonMap,
 } from "../shared";
 
 // Aba Crediários (comercial:credit): vendas lançadas à mão por tabela —
 // PAYJOY, CREFAZ, PARCELEX, ODRES (somam no CREDIÁRIO do vendedor) e VENDA
 // P.A, VENDA UNIGAMES (% própria). Só ID DA VENDA, VENDEDOR e VALOR. O
-// vendedor precisa estar na aba Vendedores do mês (é lá que a comissão
-// aparece). Escopo de loja de sempre: gestor com loja só vê/lança a própria.
+// funcionário precisa ser VENDEDOR do mês (aba Vendedores) ou OPERACIONAL do
+// mês (mesma regra de loadSellers). Lançamento de OPERACIONAL é SÓ REGISTRO
+// (decisão de 2026-10-23): aparece na lista e no total da tabela, mas não
+// entra em comissão, premiação nem no RH. Escopo de loja de sempre: gestor
+// com loja só vê/lança a própria.
 // NÃO se mistura com Financeiro > Crediários (finance_credit_sales).
-//   GET    ?month&kind → lançamentos da tabela no mês + total
+//   GET    ?month&kind → lançamentos da tabela no mês + total (role de cada um)
 //   POST   {month, kind, saleRef, employeeId, amountCents}
 //   DELETE ?id
 
@@ -41,6 +46,12 @@ function guard(request: Request) {
   const scope = commercialScope(actor);
   if (!scope) return { error: jsonResponse({ error: NO_COMPANY_ERROR }, 403) };
   return { actor, scope };
+}
+
+/** Quem é OPERACIONAL no mês (aba Vendedores com tipo operacional ou pelo cargo). */
+async function operationalIds(database: Database, month: string): Promise<Set<string>> {
+  const { tabOperationals, operationals } = await loadSellers(database, month);
+  return new Set([...tabOperationals, ...operationals].map((person) => person.employeeId));
 }
 
 export async function GET(request: Request) {
@@ -61,10 +72,15 @@ export async function GET(request: Request) {
          FROM commercial_credit_entries WHERE month=?1 AND kind=?2 ORDER BY created_at DESC`,
       )
       .bind(month, kind)
-      .all<{ companyId: string; amountCents: number; employeeName: string }>();
+      .all<{ companyId: string; amountCents: number; employeeName: string; employeeId: string }>();
+    const operational = await operationalIds(database, month);
     const items = (result.results ?? [])
       .filter((item) => scope.allStores || item.companyId === scope.companyId)
-      .map((item) => ({ ...item, employeeName: String(item.employeeName || "").toLocaleUpperCase("pt-BR") }));
+      .map((item) => ({
+        ...item,
+        employeeName: String(item.employeeName || "").toLocaleUpperCase("pt-BR"),
+        role: operational.has(item.employeeId) ? "operacional" : "vendedor",
+      }));
     return jsonResponse({
       month,
       kind,
@@ -93,12 +109,10 @@ export async function POST(request: Request) {
     if (!amountCents) return jsonResponse({ error: "INFORME O VALOR DA VENDA." }, 400);
     const database = await getD1();
     const employee = await employeeInScope(database, scope, safeText(body.employeeId, 80));
-    if (!employee) return jsonResponse({ error: "VENDEDOR NÃO ENCONTRADO." }, 404);
-    const inMonth = await database
-      .prepare("SELECT id FROM commercial_monthly WHERE employee_id=?1 AND month=?2")
-      .bind(employee.id, month)
-      .first();
-    if (!inMonth) return jsonResponse({ error: "ADICIONE O VENDEDOR NA ABA VENDEDORES DESTE MÊS ANTES." }, 400);
+    if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
+    const { sellers, tabOperationals, operationals } = await loadSellers(database, month);
+    const allowed = [...sellers, ...tabOperationals, ...operationals].some((person) => person.employeeId === employee.id);
+    if (!allowed) return jsonResponse({ error: "FUNCIONÁRIO NÃO É VENDEDOR NEM OPERACIONAL NESTE MÊS." }, 400);
     const duplicate = await database
       .prepare("SELECT month FROM commercial_credit_entries WHERE kind=?1 AND sale_ref=?2")
       .bind(kind, saleRef)

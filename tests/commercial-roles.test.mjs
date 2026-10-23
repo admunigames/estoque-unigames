@@ -422,6 +422,61 @@ test("LOJA DIGITAL na rota: vendedor da loja do RH com DIGITAL ganha só a comis
   assert.equal(september.metrics.commission.digital, undefined);
 });
 
+test("Crediários: lança também para OPERACIONAL do mês — SÓ REGISTRO (não muda comissão, vendedor nem RH)", async () => {
+  const CREDIT_B = { id: "u-credit-b", companyId: STORE_B, permissions: ["comercial:credit"] };
+  const post = (user, body) => callRoute(entriesRoute.POST, user, "POST", "/api/commercial/entries", { month: "2026-10", kind: "payjoy", amountCents: 500_000, ...body });
+  const opCommission = async () => (await getOverview(ADMIN, "2026-10")).operationals.find((item) => item.employeeId === "emp-op1").commission.totalCents;
+  const sellerTotals = async () => (await getOverview(ADMIN, "2026-10")).sellers.map((seller) => [seller.employeeId, seller.metrics.commission.totalCents, seller.realized.creditSalesCents]);
+  const hrRows = () => db.sqlite.prepare("SELECT employee_id AS e, commission_cents AS c FROM hr_commissions WHERE month='2026-10' ORDER BY e").all().map((row) => ({ ...row }));
+  const [opBefore, sellersBefore, hrBefore] = [await opCommission(), await sellerTotals(), hrRows()];
+
+  // Operacional pelo cargo (não está na aba Vendedores): aceito.
+  const created = await post(ADMIN, { saleRef: "OP-PJ-1", employeeId: "emp-op1" });
+  assert.equal(created.status, 201, JSON.stringify(await created.clone().json()));
+  // Nem vendedor nem operacional no mês (admitido depois / inativo): recusado.
+  for (const employeeId of ["emp-op-new", "emp-op-off"]) {
+    const refused = await post(ADMIN, { saleRef: `NAO-${employeeId}`, employeeId });
+    assert.equal(refused.status, 400);
+    assert.equal((await refused.json()).error, "FUNCIONÁRIO NÃO É VENDEDOR NEM OPERACIONAL NESTE MÊS.");
+  }
+  // Login de loja: só a própria loja.
+  assert.equal((await post(CREDIT_B, { saleRef: "OP-PJ-B", employeeId: "emp-op1" })).status, 404);
+  assert.equal((await post(CREDIT_B, { saleRef: "OP-PJ-B", employeeId: "emp-op3" })).status, 201);
+  // Mesma checagem de venda duplicada.
+  assert.equal((await post(ADMIN, { saleRef: "OP-PJ-1", employeeId: "emp-op2" })).status, 409);
+
+  // Nada muda nos cálculos nem no RH.
+  assert.equal(await opCommission(), opBefore);
+  assert.deepEqual(await sellerTotals(), sellersBefore);
+  assert.deepEqual(hrRows(), hrBefore);
+
+  // Na lista: o tipo de cada um e o total da tabela (com o registro).
+  const list = await (await callRoute(entriesRoute.GET, ADMIN, "GET", "/api/commercial/entries?month=2026-10&kind=payjoy")).json();
+  const entry = list.items.find((item) => item.saleRef === "OP-PJ-1");
+  assert.equal(entry.role, "operacional");
+  assert.equal(list.items.find((item) => item.saleRef === "2026-10-lider").role, "vendedor");
+  assert.equal(list.totalCents, list.items.reduce((sum, item) => sum + item.amountCents, 0));
+  // A aba Crediários recebe os operacionais para o seletor.
+  const cadastro = await getOverview(ADMIN, "2026-10", "&for=cadastro");
+  assert.ok(cadastro.operationals.some((item) => item.employeeId === "emp-op1"));
+
+  // Operacional que está na aba Vendedores (tipo trocado): também só registro.
+  assert.equal((await putRole(ADMIN, { month: "2026-10", employeeId: "emp-v4", role: "operacional" })).status, 200);
+  try {
+    const hrMid = hrRows();
+    assert.equal((await post(ADMIN, { saleRef: "OP-PJ-V4", employeeId: "emp-v4" })).status, 201);
+    const v4 = (await getOverview(ADMIN, "2026-10", "&for=cadastro")).sellers.find((item) => item.employeeId === "emp-v4");
+    assert.equal(v4.realized.creditSalesCents, 0);
+    assert.deepEqual(hrRows(), hrMid);
+    const v4Entry = (await (await callRoute(entriesRoute.GET, ADMIN, "GET", "/api/commercial/entries?month=2026-10&kind=payjoy")).json()).items.find((item) => item.saleRef === "OP-PJ-V4");
+    assert.equal(v4Entry.role, "operacional");
+  } finally {
+    await putRole(ADMIN, { month: "2026-10", employeeId: "emp-v4", role: "" });
+    const id = db.sqlite.prepare("SELECT id FROM commercial_credit_entries WHERE sale_ref='OP-PJ-V4'").get()?.id;
+    if (id) await callRoute(entriesRoute.DELETE, ADMIN, "DELETE", `/api/commercial/entries?id=${id}`);
+  }
+});
+
 test("migration 0098: só ADD COLUMN / CREATE TABLE/INDEX (e RLS nas tabelas novas) — nada apagado ou reescrito", () => {
   const statements = migration.split("--> statement-breakpoint").map((part) => part.replace(/^--.*$/gm, "").trim()).filter(Boolean);
   for (const statement of statements) {
