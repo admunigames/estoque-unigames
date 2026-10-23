@@ -9128,6 +9128,34 @@
             </table>
           </div>
         </div>
+        <h3 class="supply-section-title">CONCILIAÇÃO DE CONTAS A RECEBER (PREVISTO × ENTROU NA CONTA)</h3>
+        <div class="dre-toolbar">
+          <div class="field"><label for="rrAccount">CONTA</label><select id="rrAccount"><option value="">SELECIONE</option></select></div>
+          <div class="field"><label for="rrMonth">MÊS (DATA PREVISTA)</label><input type="month" id="rrMonth"></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnRrLinkSuggested" type="button">CONCILIAR SUGESTÕES (VALOR IGUAL)</button>
+          </div>
+        </div>
+        <p class="purchase-field-help">OS CRÉDITOS VÊM DO EXTRATO IMPORTADO NA CONCILIAÇÃO BANCÁRIA DA CONTA. A SUGESTÃO PROCURA UM CRÉDITO DE VALOR IGUAL (OU PARECIDO, ATÉ 2%) EM ATÉ 5 DIAS DA DATA PREVISTA. CONCILIAR MARCA O RECEBÍVEL COMO RECEBIDO PELO VALOR E DATA DO EXTRATO.</p>
+        <section class="summary" id="rrTotals" aria-label="Totais da conciliação de contas a receber"></section>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rrTable">
+              <thead><tr><th>Data prevista</th><th>Adquirente</th><th>Unidade</th><th>Previsto</th><th>Entrou na conta</th><th>Diferença</th><th>Situação</th><th>Ações</th></tr></thead>
+              <tbody id="rrBody"><tr><td colspan="8" class="responsive-empty">Escolha a conta.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <h3 class="supply-section-title">ENTROU NA CONTA SEM RECEBÍVEL PREVISTO</h3>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="rrCreditsTable">
+              <thead><tr><th>Data</th><th>Descrição do extrato</th><th>Valor</th></tr></thead>
+              <tbody id="rrCreditsBody"><tr><td colspan="3" class="responsive-empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
         <h3 class="supply-section-title">RECEBÍVEIS POR COMPETÊNCIA</h3>
         <div class="dre-toolbar">
           <div class="field"><label for="receivableMes">COMPETÊNCIA</label><input type="month" id="receivableMes"></div>
@@ -35062,7 +35090,7 @@ function renderHomeTasks(){
   }
   function loadCashFlowTab(){
     if(cashFlowTab === 'semanal') return loadCashFlowWeekly();
-    if(cashFlowTab === 'recebiveis') return Promise.all([loadRecebiveisPage(), loadCashFlowFutureReceivables()]);
+    if(cashFlowTab === 'recebiveis') return Promise.all([loadRecebiveisPage(), loadCashFlowFutureReceivables(), loadReceivablesRecon()]);
     return Promise.all([loadCashFlowSeries(), loadCashFlowPayments()]);
   }
   document.querySelectorAll('[data-cf-tab]').forEach(btn => btn.addEventListener('click', () => setCashFlowTab(btn.dataset.cfTab)));
@@ -35511,6 +35539,93 @@ function renderHomeTasks(){
       el('cfReceiveDialog').close();
       receivablesBulk.clear();
     }catch(error){ el('cfReceiveStatus').textContent = error.message; }
+  });
+
+  // --- CONCILIAÇÃO DE CONTAS A RECEBER (previsto × entrou na conta) ---
+  const RR_STATUS = {ok:['ok','CONCILIADO'], divergent:['danger','ENTROU COM DIFERENÇA'], manual:['warn','RECEBIDO SEM EXTRATO'], suggested:['warn','SUGESTÃO'], missing:['danger','NÃO ENTROU'], awaiting:['','AGUARDANDO']};
+  let rrData = null;
+  async function loadReceivablesRecon(){
+    const body = el('rrBody');
+    if(!payableAccounts.length) await loadPayablesCatalogData();
+    const select = el('rrAccount');
+    const keep = select.value || cfAccountId() || ((payableAccounts.find(a => Number(a.active)) || {}).id || '');
+    select.innerHTML = '<option value="">SELECIONE</option>'+financeAccountOptionsHtml(payableAccounts, keep);
+    if(!el('rrMonth').value) el('rrMonth').value = financeCurrentMonthKey();
+    if(!select.value){ body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Escolha a conta.</td></tr>'; el('rrTotals').innerHTML = ''; return; }
+    body.innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams({accountId: select.value, month: el('rrMonth').value});
+    if(el('cashFlowLoja').value) params.set('companyId', el('cashFlowLoja').value);
+    try{
+      rrData = await financeApiRequest('/receivables/reconciliation?'+params.toString());
+      renderReceivablesRecon();
+    }catch(error){
+      rrData = null;
+      body.innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('rrTotals').innerHTML = '';
+      el('rrCreditsBody').innerHTML = '<tr><td colspan="3" class="responsive-empty">—</td></tr>';
+    }
+  }
+  function renderReceivablesRecon(){
+    const t = rrData.totals;
+    const card = (label, cents, extra) => '<div class="card'+(extra || '')+'"><div class="lbl">'+label+'</div><div class="num">'+formatCentsBRL(cents)+'</div></div>';
+    el('rrTotals').innerHTML = card('PREVISTO NO MÊS', t.expectedCents)+card('ENTROU NA CONTA (CONCILIADO)', t.enteredCents)+
+      card('AINDA NÃO RECEBIDO', t.pendingCents)+card('NÃO ENTROU (VENCIDO)', t.missingCents, t.missingCents ? ' neg' : '')+card('ENTROU SEM PREVISTO', t.unmatchedCreditsCents);
+    const creditLabel = c => escapeHtml(formatDateBR(c.entryDate))+' · '+formatCentsBRL(c.amountCents)+' · '+escapeHtml((c.description || '').slice(0, 40));
+    el('rrBody').innerHTML = rrData.lines.map(r => {
+      const status = RR_STATUS[r.status] || ['', r.status];
+      let entered = '—', actions = '';
+      if(r.entry) entered = creditLabel(r.entry);
+      else if(r.receivedAmountCents !== null) entered = escapeHtml(formatDateBR(r.receivedDate))+' · '+formatCentsBRL(r.receivedAmountCents);
+      else if(r.suggestion) entered = '<em>SUGESTÃO: '+creditLabel(r.suggestion)+(r.suggestion.exact ? '' : ' (VALOR DIFERENTE)')+'</em>';
+      if(r.bankEntryId) actions = '<button class="btn-outline btn-sm" type="button" data-rr-unlink="'+escapeHtml(r.id)+'">DESFAZER</button>';
+      else if(r.receivedAmountCents === null){
+        if(r.suggestion) actions = '<button class="btn-accent btn-sm" type="button" data-rr-link="'+escapeHtml(r.id)+'" data-rr-entry="'+escapeHtml(r.suggestion.id)+'">CONFIRMAR</button> ';
+        actions += '<select data-rr-pick="'+escapeHtml(r.id)+'" aria-label="Vincular crédito do extrato"><option value="">VINCULAR OUTRO CRÉDITO…</option>'+
+          rrData.credits.map(c => '<option value="'+escapeHtml(c.id)+'">'+creditLabel(c)+'</option>').join('')+'</select>';
+      }
+      const diff = r.differenceCents === null ? '—' : '<span class="status-pill '+(r.differenceCents === 0 ? 'ok' : 'danger')+'">'+(r.differenceCents > 0 ? '+' : '')+formatCentsBRL(r.differenceCents)+'</span>';
+      return '<tr>'+
+        '<td data-label="DATA PREVISTA">'+escapeHtml(formatDateBR(r.expectedDate))+'</td>'+
+        '<td data-label="ADQUIRENTE">'+escapeHtml(r.operatorText || '—')+'</td>'+
+        '<td data-label="UNIDADE">'+escapeHtml(r.companyName || '—')+'</td>'+
+        '<td data-label="PREVISTO">'+formatCentsBRL(r.expectedAmountCents)+'</td>'+
+        '<td data-label="ENTROU NA CONTA">'+entered+'</td>'+
+        '<td data-label="DIFERENÇA">'+diff+'</td>'+
+        '<td data-label="SITUAÇÃO">'+(status[0] ? '<span class="status-pill '+status[0]+'">'+status[1]+'</span>' : status[1])+'</td>'+
+        '<td data-label="AÇÕES">'+actions+'</td>'+
+      '</tr>';
+    }).join('') || '<tr><td colspan="8" class="responsive-empty">Nenhum recebível previsto no mês para esta conta (ou sem conta definida).</td></tr>';
+    el('rrCreditsBody').innerHTML = rrData.unmatchedCredits.map(c => '<tr>'+
+      '<td data-label="DATA">'+escapeHtml(formatDateBR(c.entryDate))+'</td>'+
+      '<td data-label="DESCRIÇÃO DO EXTRATO">'+escapeHtml(c.description || '—')+'</td>'+
+      '<td data-label="VALOR">'+formatCentsBRL(c.amountCents)+'</td>'+
+    '</tr>').join('') || '<tr><td colspan="3" class="responsive-empty">Nenhum crédito sem recebível no mês.</td></tr>';
+  }
+  async function rrAction(payload, message){
+    try{
+      await financeApiRequest('/receivables/reconciliation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      await Promise.all([loadReceivablesRecon(), loadRecebiveisPage({silent:true}), loadCashFlowFutureReceivables()]);
+      showPurchaseToast(message);
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+  ['rrAccount','rrMonth'].forEach(id => el(id).addEventListener('change', loadReceivablesRecon));
+  el('rrBody').addEventListener('click', event => {
+    const link = event.target.closest('[data-rr-link]');
+    if(link) return rrAction({action:'link', receivableId: link.dataset.rrLink, entryId: link.dataset.rrEntry}, 'Recebível conciliado com o extrato.');
+    const unlink = event.target.closest('[data-rr-unlink]');
+    if(unlink) return rrAction({action:'unlink', receivableId: unlink.dataset.rrUnlink}, 'Conciliação desfeita — recebível voltou a pendente.');
+  });
+  el('rrBody').addEventListener('change', event => {
+    const pick = event.target.closest('[data-rr-pick]');
+    if(pick && pick.value) rrAction({action:'link', receivableId: pick.dataset.rrPick, entryId: pick.value}, 'Recebível conciliado com o extrato.');
+  });
+  el('btnRrLinkSuggested').addEventListener('click', async () => {
+    if(!el('rrAccount').value){ showPurchaseToast('ESCOLHA A CONTA.', 'error'); return; }
+    try{
+      const res = await financeApiRequest('/receivables/reconciliation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'link-suggested', accountId: el('rrAccount').value, month: el('rrMonth').value, companyId: el('cashFlowLoja').value})});
+      await Promise.all([loadReceivablesRecon(), loadRecebiveisPage({silent:true}), loadCashFlowFutureReceivables()]);
+      showPurchaseToast(res.linked+' recebível(is) conciliado(s).'+(res.skipped ? ' '+res.skipped+' sugestão(ões) com valor diferente ficaram para conferir.' : ''));
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
   // --- IMPORTAR RECEBIMENTOS PREVISTOS (vendas no cartão → recebíveis) ---
