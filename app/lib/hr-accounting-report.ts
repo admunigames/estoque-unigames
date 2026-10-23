@@ -1,5 +1,5 @@
 // Relatório COMISSIONAMENTO / HORAS / PREMIAÇÃO para a contabilidade (RH,
-// 22/10/2026) — lógica pura, sem banco.
+// 22/10/2026; colunas simplificadas em 23/10/2026) — lógica pura, sem banco.
 //
 // Regras do usuário:
 //  - DESCONTO sempre na COMISSÃO, nunca na premiação. Se o desconto (do mês +
@@ -122,68 +122,54 @@ export type AccountingPerson = {
   companyId: string;
   companyName: string;
   cnpj: string;
+  /** Comissão do mês com o desconto aplicado (e a sobra do mês anterior). */
   carry: CommissionCarry;
-  discountLabels: string[];
   premiumCents: number;
-  overtime: OvertimeResult;
+  /** HORAS EXTRAS do mês: valor ÚNICO em R$ digitado à mão (23/10/2026). */
+  overtimeCents: number;
 };
 
 export type AccountingRow = AccountingPerson & { totalCents: number };
 
 export type AccountingTotals = {
   commissionCents: number;
-  discountCents: number;
-  carryInCents: number;
-  netCommissionCents: number;
-  carryOutCents: number;
   premiumCents: number;
-  he50Minutes: number;
-  he50Cents: number;
-  he100Minutes: number;
-  he100Cents: number;
-  nightMinutes: number;
-  nightCents: number;
+  overtimeCents: number;
   totalCents: number;
 };
 
 export type AccountingGroup = { cnpj: string; companyNames: string[]; rows: AccountingRow[]; subtotal: AccountingTotals };
 
 function emptyTotals(): AccountingTotals {
-  return {
-    commissionCents: 0, discountCents: 0, carryInCents: 0, netCommissionCents: 0, carryOutCents: 0, premiumCents: 0,
-    he50Minutes: 0, he50Cents: 0, he100Minutes: 0, he100Cents: 0, nightMinutes: 0, nightCents: 0, totalCents: 0,
-  };
+  return { commissionCents: 0, premiumCents: 0, overtimeCents: 0, totalCents: 0 };
 }
 
 function addRow(totals: AccountingTotals, row: AccountingRow) {
-  totals.commissionCents += row.carry.commissionCents;
-  totals.discountCents += row.carry.discountCents;
-  totals.carryInCents += row.carry.carryInCents;
-  totals.netCommissionCents += row.carry.netCommissionCents;
-  totals.carryOutCents += row.carry.carryOutCents;
+  totals.commissionCents += row.carry.netCommissionCents;
   totals.premiumCents += row.premiumCents;
-  totals.he50Minutes += row.overtime.he50.minutes;
-  totals.he50Cents += row.overtime.he50.amountCents;
-  totals.he100Minutes += row.overtime.he100.minutes;
-  totals.he100Cents += row.overtime.he100.amountCents;
-  totals.nightMinutes += row.overtime.night.minutes;
-  totals.nightCents += row.overtime.night.amountCents;
+  totals.overtimeCents += row.overtimeCents;
   totals.totalCents += row.totalCents;
 }
 
 /**
- * Agrupa por EMPRESA (CNPJ do cadastro de Lojas; lojas sem CNPJ ficam no
- * grupo "SEM CNPJ"). TOTAL da linha = comissão líquida + premiação + HE.
- * Linhas sem nenhum valor (nem sobra) ficam de fora.
+ * Relatório para a contabilidade (23/10/2026): só COMISSIONAMENTO (comissão
+ * com o desconto aplicado), HORAS EXTRAS (valor único digitado à mão) e
+ * PREMIAÇÃO, agrupado por EMPRESA (CNPJ do cadastro de Lojas; lojas sem CNPJ
+ * ficam no grupo "SEM CNPJ"). TOTAL da linha = comissionamento + HE +
+ * premiação. Linhas sem nenhum valor (nem sobra de desconto) ficam de fora.
  */
 export function buildAccountingReport(people: AccountingPerson[]): { groups: AccountingGroup[]; total: AccountingTotals } {
   const groups = new Map<string, AccountingGroup>();
   const total = emptyTotals();
   for (const person of people) {
-    const row: AccountingRow = { ...person, totalCents: person.carry.netCommissionCents + person.premiumCents + person.overtime.totalCents };
-    const hasValue =
-      row.carry.commissionCents || row.carry.discountCents || row.carry.carryInCents || row.premiumCents || row.overtime.totalCents ||
-      row.overtime.he50.minutes || row.overtime.he100.minutes || row.overtime.night.minutes;
+    const overtimeCents = Math.max(0, Math.round(Number(person.overtimeCents) || 0));
+    const row: AccountingRow = {
+      ...person,
+      overtimeCents,
+      totalCents: person.carry.netCommissionCents + person.premiumCents + overtimeCents,
+    };
+    // Sem valor nenhum fica de fora — mas a sobra de desconto aparece nos dois meses.
+    const hasValue = row.carry.netCommissionCents || row.premiumCents || row.overtimeCents || row.carry.carryInCents || row.carry.carryOutCents;
     if (!hasValue) continue;
     let group = groups.get(person.cnpj);
     if (!group) {

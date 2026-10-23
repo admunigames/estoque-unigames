@@ -569,8 +569,9 @@ export function upsertActingStoreStatement(
 }
 
 // Valores MANUAIS por funcionário e competência (migration 0109):
-// 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO) e 'inss' (DRE Funcionário).
-export const MONTH_VALUE_KINDS = ["dsr", "inss"] as const;
+// 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO), 'inss' (DRE Funcionário) e
+// 'he' (HORAS EXTRAS em R$ do Relatório Contabilidade — 23/10/2026).
+export const MONTH_VALUE_KINDS = ["dsr", "inss", "he"] as const;
 export type MonthValueKind = (typeof MONTH_VALUE_KINDS)[number];
 
 export function isMonthValueKind(value: unknown): value is MonthValueKind {
